@@ -82,7 +82,7 @@ type CounterStyleType = CounterStyleOrNone;
 
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum Content {
     
     Normal,
@@ -92,6 +92,7 @@ pub enum Content {
     #[cfg(feature = "gecko")]
     MozAltContent,
     
+    #[css(iterable)]
     Items(Box<[ContentItem]>),
 }
 
