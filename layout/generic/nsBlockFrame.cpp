@@ -4037,40 +4037,40 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     
     
+    
+    
+    
     NS_ASSERTION(NS_UNCONSTRAINEDSIZE !=
                  aFloatAvailableSpace.mRect.BSize(outerWM),
                  "unconstrained block size on totally empty line");
 
     
-    if (aFloatAvailableSpace.mRect.BSize(outerWM) > 0) {
-      NS_ASSERTION(aFloatAvailableSpace.HasFloats(),
+    nscoord bandBSize = aFloatAvailableSpace.mRect.BSize(outerWM);
+    if (bandBSize > 0 ||
+        NS_UNCONSTRAINEDSIZE == aState.mReflowInput.AvailableBSize()) {
+      NS_ASSERTION(bandBSize == 0 || aFloatAvailableSpace.HasFloats(),
                    "redo line on totally empty line with non-empty band...");
       
       
       
       
       aState.FloatManager()->AssertStateMatches(aFloatStateBeforeLine);
-      aState.mBCoord += aFloatAvailableSpace.mRect.BSize(outerWM);
-      aFloatAvailableSpace = aState.GetFloatAvailableSpace();
-    } else {
-      NS_ASSERTION(NS_UNCONSTRAINEDSIZE != aState.mReflowInput.AvailableBSize(),
-                   "We shouldn't be running out of height here");
-      if (NS_UNCONSTRAINEDSIZE == aState.mReflowInput.AvailableBSize()) {
+
+      if (!aFloatAvailableSpace.MayWiden() && bandBSize > 0) {
         
-        aState.mBCoord += 1;
-        
-        
-        
-        
-        aState.FloatManager()->AssertStateMatches(aFloatStateBeforeLine);
-        aFloatAvailableSpace = aState.GetFloatAvailableSpace();
+        aState.mBCoord += bandBSize;
       } else {
         
-        
-        
-        lineReflowStatus = LineReflowStatus::Truncated;
-        PushTruncatedLine(aState, aLine, aKeepReflowGoing);
+        aState.mBCoord += aState.mPresContext->DevPixelsToAppUnits(1);
       }
+
+      aFloatAvailableSpace = aState.GetFloatAvailableSpace();
+    } else {
+      
+      
+      
+      lineReflowStatus = LineReflowStatus::Truncated;
+      PushTruncatedLine(aState, aLine, aKeepReflowGoing);
     }
 
     
