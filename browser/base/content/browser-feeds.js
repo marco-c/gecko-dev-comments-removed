@@ -381,7 +381,7 @@ var FeedHandler = {
     
     
     
-    let feedURI = NetUtil.newURI(aSpec);
+    let feedURI = Services.io.newURI(aSpec);
     if (feedURI.schemeIs("http")) {
       feedURI = feedURI.mutate()
                        .setScheme("feed")
