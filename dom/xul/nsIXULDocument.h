@@ -38,18 +38,6 @@ public:
   
 
 
-
-
-
-
-
-
-
-  NS_IMETHOD OnPrototypeLoadDone(bool aResumeWalk) = 0;
-
-  
-
-
   virtual bool OnDocumentParserError() = 0;
 
   

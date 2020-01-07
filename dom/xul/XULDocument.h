@@ -100,7 +100,17 @@ public:
 
 
     nsresult RemoveSubtreeFromDocument(nsIContent* aContent);
-    NS_IMETHOD OnPrototypeLoadDone(bool aResumeWalk) override;
+    
+
+
+
+
+
+
+
+
+
+    nsresult OnPrototypeLoadDone(bool aResumeWalk);
     bool OnDocumentParserError() override;
 
     
