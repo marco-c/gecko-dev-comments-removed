@@ -123,6 +123,16 @@ impl FontWeight {
     }
 }
 
+impl Hash for FontWeight {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        
+        state.write_u32((self.0 * 10000.).trunc() as u32)
+    }
+}
+
 impl FontSize {
     
     pub fn size(self) -> Au {
