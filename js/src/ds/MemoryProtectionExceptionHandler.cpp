@@ -49,6 +49,10 @@ class ProtectedRegionTree
         Region(uintptr_t addr, size_t size) : first(addr),
                                               last(addr + (size - 1)) {}
 
+        
+        
+        
+        
         static int compare(const Region& A, const Region& B) {
             if (A.last < B.first)
                 return -1;
