@@ -137,6 +137,12 @@ InterceptedChannelBase::SaveTimeStamps()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  if (mHandleFetchEventStart.IsNull()) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIChannel> underlyingChannel;
   nsresult rv = GetChannel(getter_AddRefs(underlyingChannel));
   MOZ_ASSERT(NS_SUCCEEDED(rv));
