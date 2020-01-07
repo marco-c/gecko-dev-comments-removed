@@ -1,28 +1,28 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsTextNode_h
 #define nsTextNode_h
 
-/*
- * Implementation of DOM Core's nsIDOMText node.
- */
+
+
+
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
-#include "nsIDOMText.h"
+#include "nsIDOMCharacterData.h"
 #include "nsDebug.h"
 
 class nsNodeInfoManager;
 
-/**
- * Class used to implement DOM text nodes
- */
+
+
+
 class nsTextNode : public mozilla::dom::Text,
-                   public nsIDOMText
+                   public nsIDOMCharacterData
 {
 private:
   void Init()
@@ -44,17 +44,14 @@ public:
     Init();
   }
 
-  // nsISupports
+  
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIDOMCharacterData
+  
   NS_FORWARD_NSIDOMCHARACTERDATA(nsGenericDOMDataNode::)
-  using nsGenericDOMDataNode::SetData; // Prevent hiding overloaded virtual function.
+  using nsGenericDOMDataNode::SetData; 
 
-  // nsIDOMText
-  NS_FORWARD_NSIDOMTEXT(nsGenericDOMDataNode::)
-
-  // nsINode
+  
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
   virtual nsGenericDOMDataNode* CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
@@ -71,8 +68,8 @@ public:
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
-  // Need to have a copy here because including nsDocument.h in this file will
-  // fail to build on Windows.
+  
+  
   static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject);
 
 #ifdef DEBUG
@@ -86,4 +83,4 @@ protected:
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 };
 
-#endif // nsTextNode_h
+#endif 

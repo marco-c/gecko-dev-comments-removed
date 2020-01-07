@@ -24,7 +24,6 @@
 #include "mozilla/dom/ShadowRoot.h"
 
 class nsIDocument;
-class nsIDOMText;
 
 namespace mozilla {
 namespace dom {
