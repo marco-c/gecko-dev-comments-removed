@@ -7,7 +7,7 @@
 const {Cu} = require("chrome");
 const Services = require("Services");
 
-const {DevToolsShim} = require("chrome://devtools-shim/content/DevToolsShim.jsm");
+const {DevToolsShim} = require("chrome://devtools-startup/content/DevToolsShim.jsm");
 
 
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
