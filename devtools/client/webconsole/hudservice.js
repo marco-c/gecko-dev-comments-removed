@@ -14,7 +14,6 @@ loader.lazyRequireGetter(this, "NewWebConsoleFrame", "devtools/client/webconsole
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugger-client", true);
-loader.lazyRequireGetter(this, "showDoorhanger", "devtools/client/shared/doorhanger", true);
 loader.lazyRequireGetter(this, "viewSource", "devtools/client/shared/view-source");
 loader.lazyRequireGetter(this, "l10n", "devtools/client/webconsole/webconsole-l10n");
 const BC_WINDOW_FEATURES = "chrome,titlebar,toolbar,centerscreen,resizable,dialog=no";
@@ -598,17 +597,10 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
     
     
     window.addEventListener("unload", () => {
-      window.removeEventListener("focus", onFocus);
       this.destroy();
     }, {once: true});
 
     this._telemetry.toolOpened("browserconsole");
-
-    
-    
-    
-    let onFocus = () => showDoorhanger({ window, type: "deveditionpromo" });
-    window.addEventListener("focus", onFocus);
 
     this._bcInit = this.$init();
     return this._bcInit;

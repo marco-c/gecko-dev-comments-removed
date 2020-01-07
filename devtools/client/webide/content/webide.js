@@ -20,7 +20,6 @@ const {GetAvailableAddons} = require("devtools/client/webide/modules/addons");
 const {getJSON} = require("devtools/client/shared/getjson");
 const Telemetry = require("devtools/client/shared/telemetry");
 const {RuntimeScanners} = require("devtools/client/webide/modules/runtimes");
-const {showDoorhanger} = require("devtools/client/shared/doorhanger");
 
 const Strings =
   Services.strings.createBundle("chrome://devtools/locale/webide.properties");
@@ -119,11 +118,6 @@ var UI = {
         AppManager.selectedProject.type != "tab") {
       AppManager.validateAndUpdateProject(AppManager.selectedProject);
     }
-
-    
-    
-    
-    showDoorhanger({ window, type: "deveditionpromo", anchor: document.querySelector("#deck") });
   },
 
   appManagerUpdate: function(what, details) {
