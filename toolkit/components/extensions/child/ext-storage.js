@@ -5,63 +5,13 @@ ChromeUtils.defineModuleGetter(this, "ExtensionStorage",
 ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
                                "resource://gre/modules/TelemetryStopwatch.jsm");
 
-var {
-  ExtensionError,
-} = ExtensionUtils;
-
 const storageGetHistogram = "WEBEXT_STORAGE_LOCAL_GET_MS";
 const storageSetHistogram = "WEBEXT_STORAGE_LOCAL_SET_MS";
 
 this.storage = class extends ExtensionAPI {
   getAPI(context) {
-    
-
-
-
-
-
-
-
-
-
-    function serialize(items) {
-      if (items && typeof items === "object" && !Array.isArray(items)) {
-        let result = {};
-        for (let [key, value] of Object.entries(items)) {
-          try {
-            result[key] = new StructuredCloneHolder(value, context.cloneScope);
-          } catch (e) {
-            throw new ExtensionError(String(e));
-          }
-        }
-        return result;
-      }
-      return items;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    function deserialize(items) {
-      let result = new context.cloneScope.Object();
-      for (let [key, value] of Object.entries(items)) {
-        if (value && typeof value === "object" && Cu.getClassName(value, true) === "StructuredCloneHolder") {
-          value = value.deserialize(context.cloneScope);
-        } else {
-          value = Cu.cloneInto(value, context.cloneScope);
-        }
-        result[key] = value;
-      }
-      return result;
-    }
+    const serialize = ExtensionStorage.serializeForContext.bind(null, context);
+    const deserialize = ExtensionStorage.deserializeForContext.bind(null, context);
 
     function sanitize(items) {
       
