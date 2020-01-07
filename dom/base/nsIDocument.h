@@ -2473,7 +2473,7 @@ public:
   
 
 
-  virtual void FlushSkinBindings() = 0;
+  void FlushSkinBindings();
 
   
 
