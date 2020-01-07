@@ -28,13 +28,9 @@ const CALLBACK = "__webDriverCallback";
 const COMPLETE = "__webDriverComplete";
 const DEFAULT_TIMEOUT = 10000; 
 const FINISH = "finish";
-const MARIONETTE_SCRIPT_FINISHED = "marionetteScriptFinished";
 
 
 this.evaluate = {};
-
-
-
 
 
 
@@ -94,7 +90,6 @@ evaluate.sandbox = function(sb, script, args = [],
       async = false,
       file = "dummy file",
       line = 0,
-      sandboxName = null,
       timeout = DEFAULT_TIMEOUT,
     } = {}) {
   let scriptTimeoutID, timeoutHandler, unloadHandler;
@@ -121,12 +116,6 @@ evaluate.sandbox = function(sb, script, args = [],
     }
 
     src += `(function() { ${script} }).apply(null, ${ARGUMENTS})`;
-
-    
-    
-    if (sandboxName) {
-      sb[MARIONETTE_SCRIPT_FINISHED] = sb[CALLBACK];
-    }
 
     
     scriptTimeoutID = setTimeout(timeoutHandler, timeout);
