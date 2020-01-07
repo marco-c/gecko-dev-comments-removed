@@ -180,7 +180,7 @@ const query = function* (detailsIn, props, context) {
   if ("url" in details) {
     try {
       url = new URL(details.url);
-      enumerator = Services.cookies.getCookiesFromHost(url.host, originAttributes);
+      enumerator = Services.cookies.getCookiesFromHost(url.hostname, originAttributes);
     } catch (ex) {
       
       return;
@@ -216,7 +216,7 @@ const query = function* (detailsIn, props, context) {
 
     
     if (url) {
-      if (!domainMatches(url.host)) {
+      if (!domainMatches(url.hostname)) {
         return false;
       }
 
