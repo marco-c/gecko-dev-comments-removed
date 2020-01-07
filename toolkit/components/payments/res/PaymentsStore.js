@@ -13,6 +13,7 @@ export default class PaymentsStore {
 
 
   constructor(defaultState = {}) {
+    this._defaultState = Object.assign({}, defaultState);
     this._state = defaultState;
     this._nextNotifification = 0;
     this._subscribers = new Set();
@@ -27,6 +28,14 @@ export default class PaymentsStore {
 
   getState() {
     return Object.freeze(Object.assign({}, this._state));
+  }
+
+  
+
+
+
+  async reset() {
+    return this.setState(this._defaultState);
   }
 
   
