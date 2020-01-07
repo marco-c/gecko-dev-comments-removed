@@ -153,7 +153,7 @@ private:
 
 
 
-  ParentLayerCoord GetYSpanFromStartPoint();
+  ParentLayerCoord GetYSpanFromGestureStartPoint();
 
   
 
@@ -207,6 +207,16 @@ private:
 
 
   MultiTouchInput mLastTapInput;
+
+  
+
+
+
+
+
+
+
+  ParentLayerPoint mOneTouchPinchStartPosition;
 
   
 
