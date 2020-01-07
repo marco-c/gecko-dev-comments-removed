@@ -124,7 +124,7 @@ this.AboutPreferences = class AboutPreferences {
 
 
 
-  renderPreferences({document, Preferences}, strings, prefStructure) {
+  renderPreferences({document, Preferences, gHomePane}, strings, prefStructure) {
     
     const createAppend = (tag, parent) => parent.appendChild(
       document.createElementNS(XUL_NS, tag));
@@ -253,6 +253,9 @@ this.AboutPreferences = class AboutPreferences {
         linkPref(subcheck, nested.name, "bool");
       });
     });
+
+    
+    gHomePane.toggleRestoreDefaultsBtn();
   }
 };
 
