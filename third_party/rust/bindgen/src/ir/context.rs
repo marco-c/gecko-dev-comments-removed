@@ -24,7 +24,7 @@ use cexpr;
 use clang::{self, Cursor};
 use clang_sys;
 use parse::ClangItemParser;
-use quote;
+use proc_macro2;
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet, hash_map};
@@ -881,7 +881,7 @@ impl BindgenContext {
     }
 
     
-    pub fn rust_ident<S>(&self, name: S) -> quote::Ident
+    pub fn rust_ident<S>(&self, name: S) -> proc_macro2::Term
     where
         S: AsRef<str>
     {
@@ -889,11 +889,11 @@ impl BindgenContext {
     }
 
     
-    pub fn rust_ident_raw<T>(&self, name: T) -> quote::Ident
+    pub fn rust_ident_raw<T>(&self, name: T) -> proc_macro2::Term
     where
-        T: Into<quote::Ident>
+        T: AsRef<str>
     {
-        name.into()
+        proc_macro2::Term::intern(name.as_ref())
     }
 
     
@@ -2321,7 +2321,7 @@ impl BindgenContext {
 
     
     
-    pub fn trait_prefix(&self) -> quote::Ident {
+    pub fn trait_prefix(&self) -> proc_macro2::Term {
         if self.options().use_core {
             self.rust_ident_raw("core")
         } else {
