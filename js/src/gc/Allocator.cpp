@@ -365,17 +365,18 @@ js::gc::AllocateCellInGC(Zone* zone, AllocKind thingKind)
 
 
 
-void
+bool
 GCRuntime::startBackgroundAllocTaskIfIdle()
 {
     AutoLockHelperThreadState helperLock;
     if (allocTask.isRunningWithLockHeld(helperLock))
-        return;
+        return true;
 
     
     
     allocTask.joinWithLockHeld(helperLock);
-    allocTask.startWithLockHeld(helperLock);
+
+    return allocTask.startWithLockHeld(helperLock);
 }
 
  TenuredCell*

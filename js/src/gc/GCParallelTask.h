@@ -74,12 +74,12 @@ class GCParallelTask
     mozilla::TimeDuration duration() const { return duration_; }
 
     
-    bool start();
+    MOZ_MUST_USE bool start();
     void join();
 
     
     
-    bool startWithLockHeld(AutoLockHelperThreadState& locked);
+    MOZ_MUST_USE bool startWithLockHeld(AutoLockHelperThreadState& locked);
     void joinWithLockHeld(AutoLockHelperThreadState& locked);
 
     
