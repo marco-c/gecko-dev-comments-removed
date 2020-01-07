@@ -77,7 +77,7 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
   _getSelectionController(aEvent) {
     if (aEvent.selectionEditable) {
       const focus = aEvent.target.activeElement;
-      if (focus && focus.editor) {
+      if (focus instanceof Ci.nsIDOMNSEditableElement && focus.editor) {
         return focus.editor.selectionController;
       }
     }
@@ -146,7 +146,9 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
     } else if (aEvent.selectionEditable &&
                aEvent.collapsed &&
                reason !== "longpressonemptycontent" &&
-               reason !== "taponcaret") {
+               reason !== "taponcaret" &&
+               !Services.prefs.getBoolPref(
+                   "geckoview.selection_action.show_on_focus", false)) {
       
       
       
@@ -205,10 +207,12 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
         onSuccess: response => {
           if (response.seqNo !== this._seqNo) {
             
+            warn `Stale response ${response.id}`;
             return;
           }
           let action = actions.find(action => action.id === response.id);
           if (action) {
+            debug `Performing ${response.id}`;
             action.perform.call(this, aEvent, response);
           } else {
             warn `Invalid action ${response.id}`;
