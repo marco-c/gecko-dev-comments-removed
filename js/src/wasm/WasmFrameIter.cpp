@@ -843,7 +843,14 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
       case CodeRange::BuiltinThunk:
       case CodeRange::DebugTrap:
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
+        if (codeRange->isThunk()) {
+            
+            
+            fixedPC = pc;
+            fixedFP = fp;
+            *unwoundCaller = false;
+            AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
+        } else if (offsetFromEntry < PushedFP) {
             
             
             
