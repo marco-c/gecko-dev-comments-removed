@@ -1130,47 +1130,41 @@ WebRenderCommandBuilder::BuildWebRenderCommands(wr::DisplayListBuilder& aBuilder
                                                 wr::LayoutSize& aContentSize,
                                                 const nsTArray<wr::WrFilterOp>& aFilters)
 {
-  { 
+  StackingContextHelper sc;
+  aScrollData = WebRenderScrollData(mManager);
+  MOZ_ASSERT(mLayerScrollData.empty());
+  mLastCanvasDatas.Clear();
+  mLastAsr = nullptr;
+  mScrollingHelper.BeginBuild(mManager, aBuilder);
 
-    StackingContextHelper sc;
-    mParentCommands.Clear();
-    aScrollData = WebRenderScrollData(mManager);
-    MOZ_ASSERT(mLayerScrollData.empty());
-    mLastCanvasDatas.Clear();
-    mLastAsr = nullptr;
-    mScrollingHelper.BeginBuild(mManager, aBuilder);
-
-    {
-      StackingContextHelper pageRootSc(sc, aBuilder, aFilters);
-      CreateWebRenderCommandsFromDisplayList(aDisplayList, nullptr, aDisplayListBuilder,
-                                             pageRootSc, aBuilder, aResourceUpdates);
-    }
-
-    
-    mLayerScrollData.emplace_back();
-    mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
-    auto callback = [&aScrollData](FrameMetrics::ViewID aScrollId) -> bool {
-      return aScrollData.HasMetadataFor(aScrollId).isSome();
-    };
-    if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
-          aDisplayListBuilder, mManager, ContainerLayerParameters(), callback)) {
-      mLayerScrollData.back().AppendScrollMetadata(aScrollData, rootMetadata.ref());
-    }
-    
-    
-    
-    for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
-      aScrollData.AddLayerData(*i);
-    }
-    mLayerScrollData.clear();
-    mScrollingHelper.EndBuild();
-
-    
-    
-    RemoveUnusedAndResetWebRenderUserData();
+  {
+    StackingContextHelper pageRootSc(sc, aBuilder, aFilters);
+    CreateWebRenderCommandsFromDisplayList(aDisplayList, nullptr, aDisplayListBuilder,
+                                           pageRootSc, aBuilder, aResourceUpdates);
   }
 
-  mManager->WrBridge()->AddWebRenderParentCommands(mParentCommands);
+  
+  mLayerScrollData.emplace_back();
+  mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
+  auto callback = [&aScrollData](FrameMetrics::ViewID aScrollId) -> bool {
+    return aScrollData.HasMetadataFor(aScrollId).isSome();
+  };
+  if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
+        aDisplayListBuilder, mManager, ContainerLayerParameters(), callback)) {
+    mLayerScrollData.back().AppendScrollMetadata(aScrollData, rootMetadata.ref());
+  }
+  
+  
+  
+  for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
+    aScrollData.AddLayerData(*i);
+  }
+  mLayerScrollData.clear();
+  mScrollingHelper.EndBuild();
+
+  
+  
+  RemoveUnusedAndResetWebRenderUserData();
 }
 
 void

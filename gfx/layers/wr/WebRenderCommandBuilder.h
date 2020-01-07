@@ -164,10 +164,6 @@ private:
 
   
   
-  nsTArray<WebRenderParentCommand> mParentCommands;
-
-  
-  
   std::vector<WebRenderLayerScrollData> mLayerScrollData;
   
   
