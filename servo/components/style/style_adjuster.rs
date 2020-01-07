@@ -557,6 +557,15 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         layout_parent_style: &ComputedValues,
         flags: CascadeFlags,
     ) {
+        
+        
+        
+        
+        
+        if flags.contains(CascadeFlags::VISITED_DEPENDENT_ONLY) {
+            return;
+        }
+
         self.adjust_for_visited(flags);
         #[cfg(feature = "gecko")]
         {
