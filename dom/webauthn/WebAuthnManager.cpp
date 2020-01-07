@@ -380,6 +380,7 @@ WebAuthnManager::MakeCredential(const MakePublicKeyCredentialOptions& aOptions,
 
   const auto& selection = aOptions.mAuthenticatorSelection;
   const auto& attachment = selection.mAuthenticatorAttachment;
+  const AttestationConveyancePreference& attestation = aOptions.mAttestation;
 
   
   bool requirePlatformAttachment =
@@ -388,6 +389,15 @@ WebAuthnManager::MakeCredential(const MakePublicKeyCredentialOptions& aOptions,
   
   bool requireUserVerification =
     selection.mUserVerification == UserVerificationRequirement::Required;
+
+  
+  
+  bool requestDirectAttestation =
+    attestation == AttestationConveyancePreference::Direct;
+
+  
+  
+  Unused << requestDirectAttestation;
 
   
   WebAuthnAuthenticatorSelection authSelection(selection.mRequireResidentKey,
