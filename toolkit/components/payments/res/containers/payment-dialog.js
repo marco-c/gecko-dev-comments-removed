@@ -91,12 +91,15 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
     this.requestStore.setState(state);
 
     
+    state = this.requestStore.getState();
     let {
       savedAddresses,
       savedBasicCards,
       selectedPaymentCard,
       selectedShippingAddress,
-    } = this.requestStore.getState();
+      selectedShippingOption,
+    } = state;
+    let shippingOptions = state.request.paymentDetails.shippingOptions;
 
     
     
@@ -112,6 +115,24 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
       this.requestStore.setState({
         selectedPaymentCard: Object.keys(savedBasicCards)[0] || null,
         selectedPaymentCardSecurityCode: null,
+      });
+    }
+
+    
+    
+    if (!shippingOptions.find(option => option.id == selectedShippingOption)) {
+      
+      for (let i = shippingOptions.length - 1; i >= 0; i--) {
+        if (shippingOptions[i].selected) {
+          selectedShippingOption = shippingOptions[i].id;
+          break;
+        }
+      }
+      if (!selectedShippingOption && shippingOptions.length) {
+        selectedShippingOption = shippingOptions[0].id;
+      }
+      this.requestStore.setState({
+        selectedShippingOption,
       });
     }
   }
