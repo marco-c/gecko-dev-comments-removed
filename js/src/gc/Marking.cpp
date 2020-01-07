@@ -625,7 +625,7 @@ js::TraceProcessGlobalRoot(JSTracer* trc, T* thing, const char* name)
     
     CheckTracedThing(trc, *ConvertToBase(&thing));
     if (trc->isMarkingTracer())
-        thing->markIfUnmarked(gc::MarkColor::Black);
+        thing->asTenured().markIfUnmarked(gc::MarkColor::Black);
     else
         DoCallback(trc->asCallbackTracer(), ConvertToBase(&thing), name);
 }
