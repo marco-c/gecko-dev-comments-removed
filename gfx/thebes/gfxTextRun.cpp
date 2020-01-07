@@ -472,11 +472,6 @@ gfxTextRun::DrawPartialLigature(gfxFont* aFont, Range aRange,
         return;
     }
 
-    if (auto* textDrawer = aParams.context->GetTextDrawer()) {
-        textDrawer->FoundUnsupportedFeature();
-        return;
-    }
-
     
     LigatureData data = ComputeLigatureData(aRange, aProvider);
     gfxRect clipExtents = aParams.context->GetClipExtents();
