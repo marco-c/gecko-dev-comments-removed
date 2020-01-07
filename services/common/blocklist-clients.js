@@ -147,14 +147,17 @@ async function targetAppFilter(entry, environment) {
     return entry;
   }
 
-  const { appID, version: appVersion } = environment;
+  const { appID, version: appVersion, toolkitVersion } = environment;
   const { versionRange } = entry;
 
   
+  
+  
+
+  
   if (!Array.isArray(versionRange)) {
-    const { minVersion = "0", maxVersion = "*" } = versionRange;
-    const matchesRange = (Services.vc.compare(appVersion, minVersion) >= 0 &&
-                          Services.vc.compare(appVersion, maxVersion) <= 0);
+    const { maxVersion = "*" } = versionRange;
+    const matchesRange = (Services.vc.compare(appVersion, maxVersion) <= 0);
     return matchesRange ? entry : null;
   }
 
@@ -173,10 +176,13 @@ async function targetAppFilter(entry, environment) {
       if (!guid) {
         return entry;
       }
-      const { minVersion = "0", maxVersion = "*" } = ta;
+      const { maxVersion = "*" } = ta;
       if (guid == appID &&
-          Services.vc.compare(appVersion, minVersion) >= 0 &&
           Services.vc.compare(appVersion, maxVersion) <= 0) {
+        return entry;
+      }
+      if (guid == "toolkit@mozilla.org" &&
+          Services.vc.compare(toolkitVersion, maxVersion) <= 0) {
         return entry;
       }
     }
