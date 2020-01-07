@@ -2,8 +2,9 @@
 
 
 
-use api::{TileOffset, LayoutRect, LayoutSize, LayoutVector2D, DeviceUintSize};
-use euclid::rect;
+use api::{TileOffset, LayoutRect, LayoutSize, LayoutPoint, DeviceUintSize};
+use euclid::vec2;
+use prim_store::EdgeAaSegmentMask;
 
 
 
@@ -27,102 +28,77 @@ pub fn simplify_repeated_primitive(
     }
 }
 
-pub struct DecomposedTile {
-    pub rect: LayoutRect,
-    pub stretch_size: LayoutSize,
-    pub tile_offset: TileOffset,
-}
+pub fn for_each_repetition(
+    prim_rect: &LayoutRect,
+    visible_rect: &LayoutRect,
+    stride: &LayoutSize,
+    callback: &mut FnMut(&LayoutPoint, EdgeAaSegmentMask),
+) {
+    assert!(stride.width > 0.0);
+    assert!(stride.height > 0.0);
 
-pub struct TiledImageInfo {
-    
-    pub rect: LayoutRect,
-    
-    pub tile_spacing: LayoutSize,
-    
-    pub stretch_size: LayoutSize,
+    let visible_rect = match prim_rect.intersection(&visible_rect) {
+       Some(rect) => rect,
+       None => return,
+    };
 
-    
-    pub device_image_size: DeviceUintSize,
-    
-    pub device_tile_size: u32,
-}
+    let nx = if visible_rect.origin.x > prim_rect.origin.x {
+        f32::floor((visible_rect.origin.x - prim_rect.origin.x) / stride.width)
+    } else {
+        0.0
+    };
 
+    let ny = if visible_rect.origin.y > prim_rect.origin.y {
+        f32::floor((visible_rect.origin.y - prim_rect.origin.y) / stride.height)
+    } else {
+        0.0
+    };
 
+    let x0 = prim_rect.origin.x + nx * stride.width;
+    let y0 = prim_rect.origin.y + ny * stride.height;
 
+    let mut p = LayoutPoint::new(x0, y0);
 
+    let x_most = visible_rect.max_x();
+    let y_most = visible_rect.max_y();
 
+    let x_count = f32::ceil((x_most - x0) / stride.width) as i32;
+    let y_count = f32::ceil((y_most - y0) / stride.height) as i32;
 
-
-
-
-
-
-
-
-
-
-
-pub fn decompose_image(info: &TiledImageInfo, callback: &mut FnMut(&DecomposedTile)) {
-
-    let no_vertical_tiling = info.device_image_size.height <= info.device_tile_size;
-    let no_vertical_spacing = info.tile_spacing.height == 0.0;
-
-    if no_vertical_tiling && no_vertical_spacing {
-        decompose_row(&info.rect, info, callback);
-        return;
-    }
-
-    
-    let layout_stride = info.stretch_size.height + info.tile_spacing.height;
-    let num_repetitions = (info.rect.size.height / layout_stride).ceil() as u32;
-
-    for i in 0 .. num_repetitions {
-        let row_rect = rect(
-            info.rect.origin.x,
-            info.rect.origin.y + (i as f32) * layout_stride,
-            info.rect.size.width,
-            info.stretch_size.height,
-        ).intersection(&info.rect);
-
-        if let Some(row_rect) = row_rect {
-            decompose_row(&row_rect, info, callback);
+    for y in 0..y_count {
+        let mut row_flags = EdgeAaSegmentMask::empty();
+        if y == 0 {
+            row_flags |= EdgeAaSegmentMask::TOP;
         }
-    }
-}
-
-
-fn decompose_row(item_rect: &LayoutRect, info: &TiledImageInfo, callback: &mut FnMut(&DecomposedTile)) {
-
-    let no_horizontal_tiling = info.device_image_size.width <= info.device_tile_size;
-    let no_horizontal_spacing = info.tile_spacing.width == 0.0;
-
-    if no_horizontal_tiling && no_horizontal_spacing {
-        decompose_cache_tiles(item_rect, info, callback);
-        return;
-    }
-
-    
-    let layout_stride = info.stretch_size.width + info.tile_spacing.width;
-    let num_repetitions = (item_rect.size.width / layout_stride).ceil() as u32;
-
-    for i in 0 .. num_repetitions {
-        let decomposed_rect = rect(
-            item_rect.origin.x + (i as f32) * layout_stride,
-            item_rect.origin.y,
-            info.stretch_size.width,
-            item_rect.size.height,
-        ).intersection(item_rect);
-
-        if let Some(decomposed_rect) = decomposed_rect {
-            decompose_cache_tiles(&decomposed_rect, info, callback);
+        if y == y_count - 1 {
+            row_flags |= EdgeAaSegmentMask::BOTTOM;
         }
+
+        for x in 0..x_count {
+            let mut edge_flags = row_flags;
+            if x == 0 {
+                edge_flags |= EdgeAaSegmentMask::LEFT;
+            }
+            if x == x_count - 1 {
+                edge_flags |= EdgeAaSegmentMask::RIGHT;
+            }
+
+            callback(&p, edge_flags);
+
+            p.x += stride.width;
+        }
+
+        p.x = x0;
+        p.y += stride.height;
     }
 }
 
-fn decompose_cache_tiles(
-    item_rect: &LayoutRect,
-    info: &TiledImageInfo,
-    callback: &mut FnMut(&DecomposedTile),
+pub fn for_each_tile(
+    prim_rect: &LayoutRect,
+    visible_rect: &LayoutRect,
+    device_image_size: &DeviceUintSize,
+    device_tile_size: u32,
+    callback: &mut FnMut(&LayoutRect, TileOffset, EdgeAaSegmentMask),
 ) {
     
     
@@ -148,155 +124,166 @@ fn decompose_cache_tiles(
     
     
     
-    
-    
-    
-    
-    
-    
-
-    let needs_repeat_x = info.stretch_size.width < item_rect.size.width;
-    let needs_repeat_y = info.stretch_size.height < item_rect.size.height;
-
-    let tiled_in_x = info.device_image_size.width > info.device_tile_size;
-    let tiled_in_y = info.device_image_size.height > info.device_tile_size;
-
-    
-    let shader_repeat_x = needs_repeat_x && !tiled_in_x;
-    let shader_repeat_y = needs_repeat_y && !tiled_in_y;
-
-    let tile_size_f32 = info.device_tile_size as f32;
 
     
     
-    let num_tiles_x = (info.device_image_size.width / info.device_tile_size) as u16;
-    let num_tiles_y = (info.device_image_size.height / info.device_tile_size) as u16;
+
+    let visible_rect = match prim_rect.intersection(&visible_rect) {
+       Some(rect) => rect,
+       None => return,
+    };
+
+    let device_tile_size_f32 = device_tile_size as f32;
 
     
-    let img_dw = tile_size_f32 / (info.device_image_size.width as f32);
-    let img_dh = tile_size_f32 / (info.device_image_size.height as f32);
+    let tile_dw = device_tile_size_f32 / (device_image_size.width as f32);
+    let tile_dh = device_tile_size_f32 / (device_image_size.height as f32);
 
     
-    let stretched_tile_size = LayoutSize::new(
-        img_dw * info.stretch_size.width,
-        img_dh * info.stretch_size.height,
+    let layer_tile_size = LayoutSize::new(
+        tile_dw * prim_rect.size.width,
+        tile_dh * prim_rect.size.height,
     );
 
     
     
     
-    let leftover = DeviceUintSize::new(
-        info.device_image_size.width % info.device_tile_size,
-        info.device_image_size.height % info.device_tile_size
+    let leftover_device_size = DeviceUintSize::new(
+        device_image_size.width % device_tile_size,
+        device_image_size.height % device_tile_size
     );
 
-    for ty in 0 .. num_tiles_y {
-        for tx in 0 .. num_tiles_x {
-            add_device_tile(
-                item_rect,
-                stretched_tile_size,
-                TileOffset::new(tx, ty),
-                1.0,
-                1.0,
-                shader_repeat_x,
-                shader_repeat_y,
-                callback,
-            );
-        }
-        if leftover.width != 0 {
-            
-            add_device_tile(
-                item_rect,
-                stretched_tile_size,
-                TileOffset::new(num_tiles_x, ty),
-                (leftover.width as f32) / tile_size_f32,
-                1.0,
-                shader_repeat_x,
-                shader_repeat_y,
-                callback,
-            );
-        }
-    }
+    
+    let leftover_layer_size = LayoutSize::new(
+        layer_tile_size.width * leftover_device_size.width as f32 / device_tile_size_f32,
+        layer_tile_size.height * leftover_device_size.height as f32 / device_tile_size_f32,
+    );
 
-    if leftover.height != 0 {
-        for tx in 0 .. num_tiles_x {
-            
-            add_device_tile(
-                item_rect,
-                stretched_tile_size,
-                TileOffset::new(tx, num_tiles_y),
-                1.0,
-                (leftover.height as f32) / tile_size_f32,
-                shader_repeat_x,
-                shader_repeat_y,
-                callback,
-            );
+    
+    let leftover_offset = TileOffset::new(
+        (device_image_size.width / device_tile_size) as u16,
+        (device_image_size.height / device_tile_size) as u16,
+    );
+
+    
+    let t0 = TileOffset::new(
+        if visible_rect.origin.x > prim_rect.origin.x {
+            f32::floor((visible_rect.origin.x - prim_rect.origin.x) / layer_tile_size.width) as u16
+        } else {
+            0
+        },
+        if visible_rect.origin.y > prim_rect.origin.y {
+            f32::floor((visible_rect.origin.y - prim_rect.origin.y) / layer_tile_size.height) as u16
+        } else {
+            0
+        },
+    );
+
+    let x_count = f32::ceil((visible_rect.max_x() - prim_rect.origin.x) / layer_tile_size.width) as u16 - t0.x;
+    let y_count = f32::ceil((visible_rect.max_y() - prim_rect.origin.y) / layer_tile_size.height) as u16 - t0.y;
+
+    for y in 0..y_count {
+
+        let mut row_flags = EdgeAaSegmentMask::empty();
+        if y == 0 {
+            row_flags |= EdgeAaSegmentMask::TOP;
+        }
+        if y == y_count - 1 {
+            row_flags |= EdgeAaSegmentMask::BOTTOM;
         }
 
-        if leftover.width != 0 {
-            
-            add_device_tile(
-                item_rect,
-                stretched_tile_size,
-                TileOffset::new(num_tiles_x, num_tiles_y),
-                (leftover.width as f32) / tile_size_f32,
-                (leftover.height as f32) / tile_size_f32,
-                shader_repeat_x,
-                shader_repeat_y,
-                callback,
-            );
+        for x in 0..x_count {
+            let tile_offset = t0 + vec2(x, y);
+
+
+            let mut segment_rect = LayoutRect {
+                origin: LayoutPoint::new(
+                    prim_rect.origin.x + tile_offset.x as f32 * layer_tile_size.width,
+                    prim_rect.origin.y + tile_offset.y as f32 * layer_tile_size.height,
+                ),
+                size: layer_tile_size,
+            };
+
+            if tile_offset.x == leftover_offset.x {
+                segment_rect.size.width = leftover_layer_size.width;
+            }
+
+            if tile_offset.y == leftover_offset.y {
+                segment_rect.size.height = leftover_layer_size.height;
+            }
+
+            let mut edge_flags = row_flags;
+            if x == 0 {
+                edge_flags |= EdgeAaSegmentMask::LEFT;
+            }
+            if x == x_count - 1 {
+                edge_flags |= EdgeAaSegmentMask::RIGHT;
+            }
+
+            callback(&segment_rect, tile_offset, edge_flags);
         }
     }
 }
 
-fn add_device_tile(
-    item_rect: &LayoutRect,
-    stretched_tile_size: LayoutSize,
-    tile_offset: TileOffset,
-    tile_ratio_width: f32,
-    tile_ratio_height: f32,
-    shader_repeat_x: bool,
-    shader_repeat_y: bool,
-    callback: &mut FnMut(&DecomposedTile),
-) {
-    
-    
-    
-    
-    
-    
-    
-    
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+    use api::{LayoutRect, DeviceUintSize};
+    use euclid::{rect, size2};
 
-    let stretch_size = LayoutSize::new(
-        stretched_tile_size.width * tile_ratio_width,
-        stretched_tile_size.height * tile_ratio_height,
-    );
-
-    let mut prim_rect = LayoutRect::new(
-        item_rect.origin + LayoutVector2D::new(
-            tile_offset.x as f32 * stretched_tile_size.width,
-            tile_offset.y as f32 * stretched_tile_size.height,
-        ),
-        stretch_size,
-    );
-
-    if shader_repeat_x {
-        assert_eq!(tile_offset.x, 0);
-        prim_rect.size.width = item_rect.size.width;
+    
+    fn checked_for_each_tile(
+        prim_rect: &LayoutRect,
+        visible_rect: &LayoutRect,
+        device_image_size: &DeviceUintSize,
+        device_tile_size: u32,
+        callback: &mut FnMut(&LayoutRect, TileOffset, EdgeAaSegmentMask),
+    ) {
+        let mut coverage = LayoutRect::zero();
+        let mut tiles = HashSet::new();
+        for_each_tile(prim_rect,
+                      visible_rect,
+                      device_image_size,
+                      device_tile_size,
+                      &mut |tile_rect, tile_offset, tile_flags| {
+                          
+                          assert!(!tiles.contains(&tile_offset));
+                          tiles.insert(tile_offset);
+                          coverage = coverage.union(tile_rect);
+                          assert!(prim_rect.contains_rect(&tile_rect));
+                          callback(tile_rect, tile_offset, tile_flags);
+                      },
+        );
+        assert!(prim_rect.contains_rect(&coverage));
+        assert!(coverage.contains_rect(&visible_rect.intersection(&prim_rect).unwrap_or(LayoutRect::zero())));
     }
 
-    if shader_repeat_y {
-        assert_eq!(tile_offset.y, 0);
-        prim_rect.size.height = item_rect.size.height;
+    #[test]
+    fn basic() {
+        let mut count = 0;
+        checked_for_each_tile(&rect(0., 0., 1000., 1000.),
+            &rect(75., 75., 400., 400.),
+            &size2(400, 400),
+            36,
+            &mut |_tile_rect, _tile_offset, _tile_flags| {
+                count += 1;
+            },
+        );
+        assert_eq!(count, 36);
     }
 
-    
-    if let Some(rect) = prim_rect.intersection(item_rect) {
-        callback(&DecomposedTile {
-            tile_offset,
-            rect,
-            stretch_size,
-        });
+    #[test]
+    fn empty() {
+        let mut count = 0;
+        checked_for_each_tile(&rect(0., 0., 74., 74.),
+              &rect(75., 75., 400., 400.),
+              &size2(400, 400),
+              36,
+              &mut |_tile_rect, _tile_offset, _tile_flags| {
+                count += 1;
+              },
+        );
+        assert_eq!(count, 0);
     }
 }

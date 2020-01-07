@@ -280,11 +280,7 @@ impl Transaction {
     
     
     
-    pub fn scroll(
-        &mut self,
-        scroll_location: ScrollLocation,
-        cursor: WorldPoint,
-    ) {
+    pub fn scroll(&mut self, scroll_location: ScrollLocation, cursor: WorldPoint) {
         self.frame_ops.push(FrameMsg::Scroll(scroll_location, cursor));
     }
 
