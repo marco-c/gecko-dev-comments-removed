@@ -7,34 +7,33 @@
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-this.EXPORTED_SYMBOLS = ["cert"];
+this.EXPORTED_SYMBOLS = [
+  "CertificateOverrideManager",
+  "InsecureSweepingOverride",
+];
 
 const registrar =
     Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 const sss = Cc["@mozilla.org/ssservice;1"]
     .getService(Ci.nsISiteSecurityService);
 
+const CERT_PINNING_ENFORCEMENT_PREF = "security.cert_pinning.enforcement_level";
+const CID = Components.ID("{4b67cce0-a51c-11e6-9598-0800200c9a66}");
 const CONTRACT_ID = "@mozilla.org/security/certoverride;1";
-const CERT_PINNING_ENFORCEMENT_PREF =
-    "security.cert_pinning.enforcement_level";
-const HSTS_PRELOAD_LIST_PREF =
-    "network.stricttransportsecurity.preloadlist";
+const DESC = "All-encompassing cert service that matches on a bitflag";
+const HSTS_PRELOAD_LIST_PREF = "network.stricttransportsecurity.preloadlist";
 
-
-
-
-
-
-this.cert = {
-  Error: {
-    Untrusted: 1,
-    Mismatch: 2,
-    Time: 4,
-  },
-
-  currentOverride: null,
+const Error = {
+  Untrusted: 1,
+  Mismatch: 2,
+  Time: 4,
 };
 
+let currentOverride = null;
+
+
+class CertificateOverrideManager {
+  
 
 
 
@@ -53,33 +52,30 @@ this.cert = {
 
 
 
+  static install(service) {
+    if (currentOverride) {
+      return;
+    }
 
-
-cert.installOverride = function(service) {
-  if (this.currentOverride) {
-    return;
+    service.register();
+    currentOverride = service;
   }
 
-  service.register();
-  cert.currentOverride = service;
-};
+  
 
 
 
 
 
-
-
-
-
-
-cert.uninstallOverride = function() {
-  if (!cert.currentOverride) {
-    return;
+  static uninstall() {
+    if (!currentOverride) {
+      return;
+    }
+    currentOverride.unregister();
+    currentOverride = null;
   }
-  cert.currentOverride.unregister();
-  this.currentOverride = null;
-};
+}
+this.CertificateOverrideManager = CertificateOverrideManager;
 
 
 
@@ -88,16 +84,7 @@ cert.uninstallOverride = function() {
 
 
 
-
-
-
-
-
-
-cert.InsecureSweepingOverride = function() {
-  const CID = Components.ID("{4b67cce0-a51c-11e6-9598-0800200c9a66}");
-  const DESC = "All-encompassing cert service that matches on a bitflag";
-
+function InsecureSweepingOverride() {
   
   
   
@@ -107,8 +94,7 @@ cert.InsecureSweepingOverride = function() {
     hasMatchingOverride(
         aHostName, aPort, aCert, aOverrideBits, aIsTemporary) {
       aIsTemporary.value = false;
-      aOverrideBits.value =
-          cert.Error.Untrusted | cert.Error.Mismatch | cert.Error.Time;
+      aOverrideBits.value = Error.Untrusted | Error.Mismatch | Error.Time;
 
       return true;
     },
@@ -139,4 +125,5 @@ cert.InsecureSweepingOverride = function() {
       sss.clearPreloads();
     },
   };
-};
+}
+this.InsecureSweepingOverride = InsecureSweepingOverride;
