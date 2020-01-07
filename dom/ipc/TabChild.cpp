@@ -645,7 +645,7 @@ TabChild::Init()
           static_cast<TabChild*>(tabChild.get())->ContentReceivedInputBlock(aGuid, aInputBlockId, aPreventDefault);
         }
       });
-  mAPZEventState = new APZEventState(mPuppetWidget, std::move(callback));
+  mAPZEventState = new APZEventState(mPuppetWidget, Move(callback));
 
   mIPCOpen = true;
   return NS_OK;
@@ -2304,7 +2304,7 @@ TabChild::RecvAsyncMessage(const nsString& aMessage,
                            const ClonedMessageData& aData)
 {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
-    "TabChild::RecvAsyncMessage", EVENTS, aMessage);
+    "TabChild::RecvAsyncMessage", OTHER, aMessage);
 
   CrossProcessCpowHolder cpows(Manager(), aCpows);
   if (!mTabChildGlobal) {
@@ -3612,9 +3612,9 @@ TabChildGlobal::Dispatch(TaskCategory aCategory,
                          already_AddRefed<nsIRunnable>&& aRunnable)
 {
   if (mTabChild && mTabChild->TabGroup()) {
-    return mTabChild->TabGroup()->Dispatch(aCategory, std::move(aRunnable));
+    return mTabChild->TabGroup()->Dispatch(aCategory, Move(aRunnable));
   }
-  return DispatcherTrait::Dispatch(aCategory, std::move(aRunnable));
+  return DispatcherTrait::Dispatch(aCategory, Move(aRunnable));
 }
 
 nsISerialEventTarget*

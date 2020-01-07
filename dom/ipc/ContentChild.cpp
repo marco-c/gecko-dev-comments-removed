@@ -162,7 +162,7 @@
 #include "mozilla/dom/PCycleCollectWithLogsChild.h"
 
 #include "nsIScriptSecurityManager.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "nsHostObjectProtocolHandler.h"
 
 #ifdef MOZ_WEBRTC
 #include "signaling/src/peerconnection/WebrtcGlobalChild.h"
@@ -593,8 +593,8 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
     return IPC_OK();
   }
 
-  mLookAndFeelCache = std::move(aLookAndFeelIntCache);
-  mFontList = std::move(aFontList);
+  mLookAndFeelCache = Move(aLookAndFeelIntCache);
+  mFontList = Move(aFontList);
   gfx::gfxVars::SetValuesForInitialize(aXPCOMInit.gfxNonDefaultVarUpdates());
   InitXPCOM(aXPCOMInit, aInitialData);
   InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
@@ -1077,7 +1077,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     newChild->SendBrowserFrameOpenWindow(aTabOpener, renderFrame,
                                          NS_ConvertUTF8toUTF16(url),
                                          name, NS_ConvertUTF8toUTF16(features),
-                                         std::move(resolve), std::move(reject));
+                                         Move(resolve), Move(reject));
   } else {
     nsAutoCString baseURIString;
     float fullZoom;
@@ -1101,7 +1101,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
                      aChromeFlags, aCalledFromJS, aPositionSpecified,
                      aSizeSpecified, uriToLoad, features, baseURIString,
                      fullZoom, Principal(triggeringPrincipal), referrerPolicy,
-                     std::move(resolve), std::move(reject));
+                     Move(resolve), Move(reject));
   }
 
   
@@ -1332,14 +1332,14 @@ ContentChild::DeallocPCycleCollectWithLogsChild(PCycleCollectWithLogsChild* )
 mozilla::ipc::IPCResult
 ContentChild::RecvInitContentBridgeChild(Endpoint<PContentBridgeChild>&& aEndpoint)
 {
-  ContentBridgeChild::Create(std::move(aEndpoint));
+  ContentBridgeChild::Create(Move(aEndpoint));
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 ContentChild::RecvInitGMPService(Endpoint<PGMPServiceChild>&& aGMPService)
 {
-  if (!GMPServiceChild::Create(std::move(aGMPService))) {
+  if (!GMPServiceChild::Create(Move(aGMPService))) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
@@ -1349,7 +1349,7 @@ mozilla::ipc::IPCResult
 ContentChild::RecvInitProfiler(Endpoint<PProfilerChild>&& aEndpoint)
 {
 #ifdef MOZ_GECKO_PROFILER
-  mProfilerController = ChildProfilerController::Create(std::move(aEndpoint));
+  mProfilerController = ChildProfilerController::Create(Move(aEndpoint));
 #endif
   return IPC_OK();
 }
@@ -1357,14 +1357,14 @@ ContentChild::RecvInitProfiler(Endpoint<PProfilerChild>&& aEndpoint)
 mozilla::ipc::IPCResult
 ContentChild::RecvGMPsChanged(nsTArray<GMPCapabilityData>&& capabilities)
 {
-  GeckoMediaPluginServiceChild::UpdateGMPCapabilities(std::move(capabilities));
+  GeckoMediaPluginServiceChild::UpdateGMPCapabilities(Move(capabilities));
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 ContentChild::RecvInitProcessHangMonitor(Endpoint<PProcessHangMonitorChild>&& aHangMonitor)
 {
-  CreateHangMonitorChild(std::move(aHangMonitor));
+  CreateHangMonitorChild(Move(aHangMonitor));
   return IPC_OK();
 }
 
@@ -1409,19 +1409,19 @@ ContentChild::RecvInitRendering(Endpoint<PCompositorManagerChild>&& aCompositor,
   
   
   
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(Move(aCompositor), namespaces[0])) {
     return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
     return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
-  if (!ImageBridgeChild::InitForContent(std::move(aImageBridge), namespaces[2])) {
+  if (!ImageBridgeChild::InitForContent(Move(aImageBridge), namespaces[2])) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
   }
-  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::InitForContent(Move(aVRBridge))) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
   }
-  VideoDecoderManagerChild::InitForContent(std::move(aVideoManager));
+  VideoDecoderManagerChild::InitForContent(Move(aVideoManager));
   return IPC_OK();
 }
 
@@ -1443,16 +1443,16 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorManagerChild>&& aComposito
   }
 
   
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(Move(aCompositor), namespaces[0])) {
     return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
     return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
-  if (!ImageBridgeChild::ReinitForContent(std::move(aImageBridge), namespaces[2])) {
+  if (!ImageBridgeChild::ReinitForContent(Move(aImageBridge), namespaces[2])) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
   }
-  if (!gfx::VRManagerChild::ReinitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::ReinitForContent(Move(aVRBridge))) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
   }
   gfxPlatform::GetPlatform()->CompositorUpdated();
@@ -1464,7 +1464,7 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorManagerChild>&& aComposito
     }
   }
 
-  VideoDecoderManagerChild::InitForContent(std::move(aVideoManager));
+  VideoDecoderManagerChild::InitForContent(Move(aVideoManager));
   return IPC_OK();
 }
 
@@ -2367,7 +2367,7 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
     gFirstIdleTask = nullptr;
   }
 
-  BlobURLProtocolHandler::RemoveDataEntries();
+  nsHostObjectProtocolHandler::RemoveDataEntries();
 
   mAlertObservers.Clear();
 
@@ -2520,7 +2520,7 @@ ContentChild::RecvAsyncMessage(const nsString& aMsg,
                                const ClonedMessageData& aData)
 {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
-    "ContentChild::RecvAsyncMessage", EVENTS, aMsg);
+    "ContentChild::RecvAsyncMessage", OTHER, aMsg);
 
   CrossProcessCpowHolder cpows(this, aCpows);
   RefPtr<nsFrameMessageManager> cpm =
@@ -2569,7 +2569,7 @@ ContentChild::RecvUpdateDictionaryList(InfallibleTArray<nsString>&& aDictionarie
 mozilla::ipc::IPCResult
 ContentChild::RecvUpdateFontList(InfallibleTArray<SystemFontListEntry>&& aFontList)
 {
-  mFontList = std::move(aFontList);
+  mFontList = Move(aFontList);
   gfxPlatform::GetPlatform()->UpdateFontList();
   return IPC_OK();
 }
@@ -2765,14 +2765,15 @@ ContentChild::RecvInitBlobURLs(nsTArray<BlobURLRegistrationData>&& aRegistration
     RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(registration.blob());
     MOZ_ASSERT(blobImpl);
 
-    BlobURLProtocolHandler::AddDataEntry(registration.url(),
-                                         registration.principal(),
-                                         blobImpl);
+    nsHostObjectProtocolHandler::AddDataEntry(registration.url(),
+                                              registration.principal(),
+                                              blobImpl);
     
     
     
     if (registration.revoked()) {
-      BlobURLProtocolHandler::RemoveDataEntry(registration.url(), false);
+      nsHostObjectProtocolHandler::RemoveDataEntry(registration.url(),
+                                                   false);
     }
   }
 
@@ -3363,15 +3364,15 @@ ContentChild::RecvBlobURLRegistration(const nsCString& aURI,
   RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
   MOZ_ASSERT(blobImpl);
 
-  BlobURLProtocolHandler::AddDataEntry(aURI, aPrincipal, blobImpl);
+  nsHostObjectProtocolHandler::AddDataEntry(aURI, aPrincipal, blobImpl);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 ContentChild::RecvBlobURLUnregistration(const nsCString& aURI)
 {
-  BlobURLProtocolHandler::RemoveDataEntry(aURI,
-                                           false);
+  nsHostObjectProtocolHandler::RemoveDataEntry(aURI,
+                                                false);
   return IPC_OK();
 }
 
@@ -3630,7 +3631,7 @@ mozilla::ipc::IPCResult
 ContentChild::RecvRefreshScreens(nsTArray<ScreenDetails>&& aScreens)
 {
   ScreenManager& screenManager = ScreenManager::GetSingleton();
-  screenManager.Refresh(std::move(aScreens));
+  screenManager.Refresh(Move(aScreens));
   return IPC_OK();
 }
 

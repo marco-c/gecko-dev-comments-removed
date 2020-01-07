@@ -707,7 +707,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
 {
     EVLOG("nsAppShell::ProcessNextNativeEvent %d", mayWait);
 
-    AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent", EVENTS);
+    AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent", OTHER);
 
     mozilla::UniquePtr<Event> curEvent;
 
@@ -726,7 +726,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
             }
 
             AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent:Wait",
-                                EVENTS);
+                                OTHER);
             mozilla::HangMonitor::Suspend();
 
             curEvent = mEventQueue.Pop( true);
@@ -773,13 +773,13 @@ nsAppShell::SyncRunEvent(Event&& event,
     };
 
     UniquePtr<Event> runAndNotifyEvent = mozilla::MakeUnique<
-            LambdaEvent<decltype(runAndNotify)>>(std::move(runAndNotify));
+            LambdaEvent<decltype(runAndNotify)>>(mozilla::Move(runAndNotify));
 
     if (eventFactory) {
-        runAndNotifyEvent = (*eventFactory)(std::move(runAndNotifyEvent));
+        runAndNotifyEvent = (*eventFactory)(mozilla::Move(runAndNotifyEvent));
     }
 
-    appShell->mEventQueue.Post(std::move(runAndNotifyEvent));
+    appShell->mEventQueue.Post(mozilla::Move(runAndNotifyEvent));
 
     while (!finished && MOZ_LIKELY(sAppShell && !sAppShell->mSyncRunQuit)) {
         appShell->mSyncRunFinished.Wait();

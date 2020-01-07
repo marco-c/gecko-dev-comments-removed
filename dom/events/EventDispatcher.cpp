@@ -222,7 +222,7 @@ public:
 
   void SetRetargetedTouchTarget(Maybe<nsTArray<RefPtr<EventTarget>>>&& aTargets)
   {
-    mRetargetedTouchTargets = std::move(aTargets);
+    mRetargetedTouchTargets = Move(aTargets);
   }
 
   bool HasRetargetTouchTargets()
@@ -266,7 +266,7 @@ public:
   void SetInitialTargetTouches(Maybe<nsTArray<RefPtr<dom::Touch>>>&&
                                  aInitialTargetTouches)
   {
-    mInitialTargetTouches = std::move(aInitialTargetTouches);
+    mInitialTargetTouches = Move(aInitialTargetTouches);
   }
 
   void SetForceContentDispatch(bool aForce)
@@ -484,7 +484,7 @@ EventTargetChainItem::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   SetPreHandleEventOnly(aVisitor.mWantsPreHandleEvent && !aVisitor.mCanHandle);
   SetRootOfClosedTree(aVisitor.mRootOfClosedTree);
   SetRetargetedRelatedTarget(aVisitor.mRetargetedRelatedTarget);
-  SetRetargetedTouchTarget(std::move(aVisitor.mRetargetedTouchTargets));
+  SetRetargetedTouchTarget(Move(aVisitor.mRetargetedTouchTargets));
   mItemFlags = aVisitor.mItemFlags;
   mItemData = aVisitor.mItemData;
 }
@@ -794,7 +794,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
                           EventDispatchingCallback* aCallback,
                           nsTArray<EventTarget*>* aTargets)
 {
-  AUTO_PROFILER_LABEL("EventDispatcher::Dispatch", EVENTS);
+  AUTO_PROFILER_LABEL("EventDispatcher::Dispatch", OTHER);
 
   NS_ASSERTION(aEvent, "Trying to dispatch without WidgetEvent!");
   NS_ENSURE_TRUE(!aEvent->mFlags.mIsBeingDispatched,
@@ -1009,7 +1009,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
         for (uint32_t i = 0; i < targetTouches->Length(); ++i) {
           initialTargetTouches->AppendElement(targetTouches->Item(i));
         }
-        targetEtci->SetInitialTargetTouches(std::move(initialTargetTouches));
+        targetEtci->SetInitialTargetTouches(Move(initialTargetTouches));
         targetTouches->Clear();
       }
     }

@@ -36,14 +36,13 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ChildProcessMessageManager.h"
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
+#include "mozilla/dom/ChromeMessageSender.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/ParentProcessMessageManager.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/ProcessGlobal.h"
-#include "mozilla/dom/ProcessMessageManager.h"
 #include "mozilla/dom/ResolveSystemBinding.h"
 #include "mozilla/dom/SameProcessMessageQueue.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -163,7 +162,7 @@ MessageManagerCallback::DoGetRemoteType(nsAString& aRemoteType,
                                         ErrorResult& aError) const
 {
   aRemoteType.Truncate();
-  mozilla::dom::ProcessMessageManager* parent = GetProcessMessageManager();
+  mozilla::dom::ChromeMessageSender* parent = GetProcessMessageManager();
   if (!parent) {
     return;
   }
@@ -509,7 +508,7 @@ nsFrameMessageManager::SendMessage(JSContext* aCx,
                "Should not have parent manager in content!");
 
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
-    "nsFrameMessageManager::SendMessage", EVENTS, aMessageName);
+    "nsFrameMessageManager::SendMessage", OTHER, aMessageName);
 
   if (sSendingSyncMessage && aIsSync) {
     
@@ -760,7 +759,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
           aError.Throw(NS_ERROR_FAILURE);
           return;
         }
-        argument.mPorts.Construct(std::move(ports));
+        argument.mPorts.Construct(Move(ports));
       }
 
       argument.mName = aMessage;
@@ -917,7 +916,8 @@ nsFrameMessageManager::Close()
   if (!mClosed) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
-      obs->NotifyObservers(this, "message-manager-close", nullptr);
+      obs->NotifyObservers(NS_ISUPPORTS_CAST(nsIContentFrameMessageManager*, this),
+                            "message-manager-close", nullptr);
     }
   }
   mClosed = true;
@@ -934,7 +934,8 @@ nsFrameMessageManager::Disconnect(bool aRemoveFromParent)
   if (!mDisconnected) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
-       obs->NotifyObservers(this, "message-manager-disconnect", nullptr);
+       obs->NotifyObservers(NS_ISUPPORTS_CAST(nsIContentFrameMessageManager*, this),
+                            "message-manager-disconnect", nullptr);
     }
   }
 
@@ -999,10 +1000,10 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx,
   aInitialProcessData.set(init);
 }
 
-already_AddRefed<ProcessMessageManager>
+already_AddRefed<ChromeMessageSender>
 nsFrameMessageManager::GetProcessMessageManager(ErrorResult& aError)
 {
-  RefPtr<ProcessMessageManager> pmm;
+  RefPtr<ChromeMessageSender> pmm;
   if (mCallback) {
     pmm = mCallback->GetProcessMessageManager();
   }
@@ -1441,7 +1442,7 @@ nsMessageManagerScriptExecutor::MarkScopesForCC()
 NS_IMPL_ISUPPORTS(nsScriptCacheCleaner, nsIObserver)
 
 ChildProcessMessageManager* nsFrameMessageManager::sChildProcessManager = nullptr;
-ParentProcessMessageManager* nsFrameMessageManager::sParentProcessManager = nullptr;
+ChromeMessageBroadcaster* nsFrameMessageManager::sParentProcessManager = nullptr;
 nsFrameMessageManager* nsFrameMessageManager::sSameProcessParentManager = nullptr;
 
 class nsAsyncMessageToSameProcessChild : public nsSameProcessAsyncMessageBase,
@@ -1456,7 +1457,7 @@ public:
   NS_IMETHOD Run() override
   {
     nsFrameMessageManager* ppm = nsFrameMessageManager::GetChildProcessManager();
-    ReceiveMessage(ppm, nullptr, ppm);
+    ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm), nullptr, ppm);
     return NS_OK;
   }
 };
@@ -1593,7 +1594,7 @@ public:
   nsresult HandleMessage() override
   {
     nsFrameMessageManager* ppm = nsFrameMessageManager::sSameProcessParentManager;
-    ReceiveMessage(ppm, nullptr, ppm);
+    ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm), nullptr, ppm);
     return NS_OK;
   }
 };
@@ -1661,7 +1662,8 @@ NS_NewParentProcessMessageManager(nsISupports** aResult)
 {
   NS_ASSERTION(!nsFrameMessageManager::sParentProcessManager,
                "Re-creating sParentProcessManager");
-  RefPtr<ParentProcessMessageManager> mm = new ParentProcessMessageManager();
+  RefPtr<ChromeMessageBroadcaster> mm =
+    new ChromeMessageBroadcaster(MessageManagerFlags::MM_PROCESSMANAGER);
   nsFrameMessageManager::sParentProcessManager = mm;
   nsFrameMessageManager::NewProcessMessageManager(false); 
   mm.forget(aResult);
@@ -1669,7 +1671,7 @@ NS_NewParentProcessMessageManager(nsISupports** aResult)
 }
 
 
-ProcessMessageManager*
+ChromeMessageSender*
 nsFrameMessageManager::NewProcessMessageManager(bool aIsRemote)
 {
   if (!nsFrameMessageManager::sParentProcessManager) {
@@ -1679,16 +1681,18 @@ nsFrameMessageManager::NewProcessMessageManager(bool aIsRemote)
 
   MOZ_ASSERT(nsFrameMessageManager::sParentProcessManager,
              "parent process manager not created");
-  ProcessMessageManager* mm;
+  ChromeMessageSender* mm;
   if (aIsRemote) {
     
     
-    mm = new ProcessMessageManager(nullptr,
-                                   nsFrameMessageManager::sParentProcessManager);
+    mm = new ChromeMessageSender(nullptr,
+                                 nsFrameMessageManager::sParentProcessManager,
+                                 MessageManagerFlags::MM_PROCESSMANAGER);
   } else {
-    mm = new ProcessMessageManager(new SameParentProcessMessageManagerCallback(),
-                                   nsFrameMessageManager::sParentProcessManager,
-                                   MessageManagerFlags::MM_OWNSCALLBACK);
+    mm = new ChromeMessageSender(new SameParentProcessMessageManagerCallback(),
+                                 nsFrameMessageManager::sParentProcessManager,
+                                 MessageManagerFlags::MM_PROCESSMANAGER |
+                                 MessageManagerFlags::MM_OWNSCALLBACK);
     sSameProcessParentManager = mm;
   }
   return mm;

@@ -301,7 +301,7 @@ EventListenerManager::AddEventListenerInternal(
   } else {
     listener->mListenerType = Listener::eNativeListener;
   }
-  listener->mListener = std::move(aListenerHolder);
+  listener->mListener = Move(aListenerHolder);
 
 
   if (aFlags.mInSystemGroup) {
@@ -731,7 +731,7 @@ EventListenerManager::AddEventListenerByType(
     }
   }
 
-  AddEventListenerInternal(std::move(aListenerHolder),
+  AddEventListenerInternal(Move(aListenerHolder),
                            message, atom, aType, flags);
 }
 
@@ -746,7 +746,7 @@ EventListenerManager::RemoveEventListenerByType(
     nsContentUtils::GetEventMessageAndAtomForListener(aType,
                                                       getter_AddRefs(atom)) :
     eUnidentifiedEvent;
-  RemoveEventListenerInternal(std::move(aListenerHolder),
+  RemoveEventListenerInternal(Move(aListenerHolder),
                               message, atom, aType, aFlags);
 }
 
@@ -1245,7 +1245,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                   nsAutoString typeStr;
                   (*aDOMEvent)->GetType(typeStr);
                   uint16_t phase = (*aDOMEvent)->EventPhase();
-                  timelines->AddMarkerForDocShell(docShell, std::move(
+                  timelines->AddMarkerForDocShell(docShell, Move(
                     MakeUnique<EventTimelineMarker>(
                       typeStr, phase, MarkerTracingType::START)));
                 }
@@ -1258,7 +1258,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
               
               
               
-              listenerHolder.emplace(std::move(*listener));
+              listenerHolder.emplace(Move(*listener));
               listener = listenerHolder.ptr();
               hasRemovedListener = true;
             }
@@ -1273,7 +1273,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
               nsAutoString typeStr;
               (*aDOMEvent)->GetType(typeStr);
               AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
-                "EventListenerManager::HandleEventInternal", EVENTS, typeStr);
+                "EventListenerManager::HandleEventInternal", OTHER, typeStr);
 
               uint16_t phase = (*aDOMEvent)->EventPhase();
               profiler_add_marker(
@@ -1393,7 +1393,7 @@ EventListenerManager::AddEventListener(
   EventListenerFlags flags;
   flags.mCapture = aUseCapture;
   flags.mAllowUntrustedEvents = aWantsUntrusted;
-  return AddEventListenerByType(std::move(aListenerHolder), aType, flags);
+  return AddEventListenerByType(Move(aListenerHolder), aType, flags);
 }
 
 void
@@ -1417,7 +1417,7 @@ EventListenerManager::AddEventListener(
     }
   }
   flags.mAllowUntrustedEvents = aWantsUntrusted;
-  return AddEventListenerByType(std::move(aListenerHolder), aType, flags, passive);
+  return AddEventListenerByType(Move(aListenerHolder), aType, flags, passive);
 }
 
 void
@@ -1428,7 +1428,7 @@ EventListenerManager::RemoveEventListener(
 {
   EventListenerFlags flags;
   flags.mCapture = aUseCapture;
-  RemoveEventListenerByType(std::move(aListenerHolder), aType, flags);
+  RemoveEventListenerByType(Move(aListenerHolder), aType, flags);
 }
 
 void
@@ -1445,7 +1445,7 @@ EventListenerManager::RemoveEventListener(
     flags.mCapture = options.mCapture;
     flags.mInSystemGroup = options.mMozSystemGroup;
   }
-  RemoveEventListenerByType(std::move(aListenerHolder), aType, flags);
+  RemoveEventListenerByType(Move(aListenerHolder), aType, flags);
 }
 
 void
