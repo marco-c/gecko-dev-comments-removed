@@ -61,26 +61,19 @@ public:
   
   wr::LayoutPoint ToRelativeLayoutPoint(const LayoutDevicePoint& aPoint) const
   {
-    return wr::ToLayoutPoint(aPoint - mOrigin);
+    return wr::ToLayoutPoint(aPoint);
   }
 
 
   
   gfx::Size GetInheritedScale() const { return mScale; }
 
-  const gfx::Matrix& GetInheritedTransform() const
-  {
-    return mInheritedTransform;
-  }
-
   bool IsBackfaceVisible() const { return mTransform.IsBackfaceVisible(); }
 
 private:
   wr::DisplayListBuilder* mBuilder;
-  LayoutDevicePoint mOrigin;
   gfx::Matrix4x4 mTransform;
   gfx::Size mScale;
-  gfx::Matrix mInheritedTransform;
 };
 
 } 
