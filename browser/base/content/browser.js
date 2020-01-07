@@ -1844,6 +1844,10 @@ var gBrowserInit = {
 
     TabsInTitlebar.uninit();
 
+    ToolbarIconColor.uninit();
+
+    CompactTheme.uninit();
+
     
     
     
@@ -1877,8 +1881,6 @@ var gBrowserInit = {
 
     BookmarkingUI.uninit();
 
-    ToolbarIconColor.uninit();
-
     TabletModeUpdater.uninit();
 
     gTabletModePageCounter.finish();
@@ -1886,8 +1888,6 @@ var gBrowserInit = {
     BrowserOnClick.uninit();
 
     FeedHandler.uninit();
-
-    CompactTheme.uninit();
 
     AboutCapabilitiesListener.uninit();
 
