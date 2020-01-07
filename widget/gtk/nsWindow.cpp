@@ -6910,6 +6910,10 @@ nsWindow::DoDrawTitlebar() const
 
 nsWindow::CSDSupportLevel
 nsWindow::GetCSDSupportLevel() {
+    
+    return CSD_SUPPORT_NONE;
+
+
     if (sCSDSupportLevel != CSD_SUPPORT_UNKNOWN) {
         return sCSDSupportLevel;
     }
