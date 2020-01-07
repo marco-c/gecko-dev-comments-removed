@@ -225,13 +225,6 @@ void nsScrollbarButtonFrame::Notify()
   }
 }
 
-void
-nsScrollbarButtonFrame::MouseClicked(WidgetGUIEvent* aEvent)
-{
-  nsButtonBoxFrame::MouseClicked(aEvent);
-  
-}
-
 nsresult
 nsScrollbarButtonFrame::GetChildWithTag(nsAtom* atom, nsIFrame* start,
                                         nsIFrame*& result)

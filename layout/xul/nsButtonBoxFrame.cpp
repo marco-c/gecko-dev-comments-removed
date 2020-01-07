@@ -197,7 +197,7 @@ nsButtonBoxFrame::Blurred()
 }
 
 void
-nsButtonBoxFrame::DoMouseClick(WidgetGUIEvent* aEvent, bool aTrustEvent)
+nsButtonBoxFrame::MouseClicked(WidgetGUIEvent* aEvent)
 {
   
   if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
@@ -205,32 +205,17 @@ nsButtonBoxFrame::DoMouseClick(WidgetGUIEvent* aEvent, bool aTrustEvent)
     return;
 
   
-  bool isShift = false;
-  bool isControl = false;
-  bool isAlt = false;
-  bool isMeta = false;
-  uint16_t inputSource = MouseEventBinding::MOZ_SOURCE_UNKNOWN;
-
-  if(aEvent) {
-    WidgetInputEvent* inputEvent = aEvent->AsInputEvent();
-    isShift = inputEvent->IsShift();
-    isControl = inputEvent->IsControl();
-    isAlt = inputEvent->IsAlt();
-    isMeta = inputEvent->IsMeta();
-
-    WidgetMouseEventBase* mouseEvent = aEvent->AsMouseEventBase();
-    if (mouseEvent) {
-      inputSource = mouseEvent->inputSource;
-    }
-  }
+  nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
+  if (!shell)
+    return;
 
   
-  nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
-  if (shell) {
-    nsContentUtils::DispatchXULCommand(mContent,
-                                       aEvent ?
-                                         aEvent->IsTrusted() : aTrustEvent,
-                                       nullptr, shell,
-                                       isControl, isAlt, isShift, isMeta, inputSource);
-  }
+  WidgetInputEvent* inputEvent = aEvent->AsInputEvent();
+  WidgetMouseEventBase* mouseEvent = aEvent->AsMouseEventBase();
+  nsContentUtils::DispatchXULCommand(mContent, aEvent->IsTrusted(), nullptr,
+                                     shell, inputEvent->IsControl(),
+                                     inputEvent->IsAlt(), inputEvent->IsShift(),
+                                     inputEvent->IsMeta(),
+                                     mouseEvent ? mouseEvent->inputSource
+                                                : MouseEventBinding::MOZ_SOURCE_UNKNOWN);
 }
