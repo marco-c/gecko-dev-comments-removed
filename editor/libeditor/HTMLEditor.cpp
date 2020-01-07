@@ -4948,6 +4948,11 @@ HTMLEditor::GetFocusedNode()
     return nullptr;
   }
 
+  
+  
+  
+  
+
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ASSERTION(fm, "Focus manager is null");
   nsCOMPtr<nsIDOMElement> focusedElement;
