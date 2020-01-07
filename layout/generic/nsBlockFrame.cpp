@@ -4147,11 +4147,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
                                 nsIFrame* aFrame,
                                 LineReflowStatus* aLineReflowStatus)
 {
-  if (!aFrame) { 
-    NS_ERROR("why call me?");
-    return;
-  }
-
+  MOZ_ASSERT(aFrame);
   *aLineReflowStatus = LineReflowStatus::OK;
 
 #ifdef NOISY_FIRST_LETTER
@@ -4169,7 +4165,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
 
   
   nsReflowStatus frameReflowStatus;
-  bool           pushedFrame;
+  bool pushedFrame;
   aLineLayout.ReflowFrame(aFrame, frameReflowStatus, nullptr, pushedFrame);
 
   if (frameReflowStatus.NextInFlowNeedsReflow()) {

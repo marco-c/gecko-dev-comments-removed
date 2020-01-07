@@ -662,6 +662,7 @@ nsLineLayout::NewPerFrameData(nsIFrame* aFrame)
   pfd->mIsBullet = false;
   pfd->mSkipWhenTrimmingWhitespace = false;
   pfd->mIsEmpty = false;
+  pfd->mIsPlaceholder = false;
   pfd->mIsLinkedToBase = false;
 
   pfd->mWritingMode = aFrame->GetWritingMode();
@@ -840,7 +841,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
 
   
   LayoutFrameType frameType = aFrame->Type();
-  bool isText = frameType == LayoutFrameType::Text;
+  const bool isText = frameType == LayoutFrameType::Text;
 
   
   
@@ -940,6 +941,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
   } else {
     if (LayoutFrameType::Placeholder == frameType) {
       isEmpty = true;
+      pfd->mIsPlaceholder = true;
       pfd->mSkipWhenTrimmingWhitespace = true;
       nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
       if (outOfFlowFrame) {
@@ -2209,17 +2211,17 @@ nsLineLayout::VerticalAlignFrames(PerSpanData* psd)
       
       
       
-#if 0
-      if (!pfd->mIsTextFrame) {
-#else
-
-      bool canUpdate = !pfd->mIsTextFrame;
-      if (!canUpdate && pfd->mIsNonWhitespaceTextFrame) {
-        canUpdate =
+      bool canUpdate;
+      if (pfd->mIsTextFrame) {
+        
+        
+        canUpdate = pfd->mIsNonWhitespaceTextFrame &&
           frame->StyleText()->mLineHeight.GetUnit() == eStyleUnit_Normal;
+      } else {
+        canUpdate = !pfd->mIsPlaceholder;
       }
+
       if (canUpdate) {
-#endif
         nscoord blockStart, blockEnd;
         if (frameSpan) {
           
