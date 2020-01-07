@@ -79,8 +79,15 @@ public:
   }
 
   
+  
   NS_IMETHOD Run() override
   {
+    
+    
+    
+    
+    
+    
     mStartToPrevTracer_us = uint64_t(profiler_time() * 1000.0);
 
     if (!mStop) {
@@ -101,7 +108,7 @@ public:
   
   NS_IMETHOD Notify(nsITimer* aTimer) final override
   {
-    mThread->Dispatch(this, nsIThread::NS_DISPATCH_NORMAL);
+    Run();
     return NS_OK;
   }
 
