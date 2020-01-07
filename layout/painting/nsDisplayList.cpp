@@ -919,6 +919,17 @@ nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::SetCurrentActiveScrol
   mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
     mBuilder->mCurrentContainerASR, finiteBoundsASR);
 
+  
+  
+  if (mBuilder->mFilterASR &&
+      ActiveScrolledRoot::IsAncestor(aActiveScrolledRoot, mBuilder->mFilterASR)) {
+    for (const ActiveScrolledRoot* asr = mBuilder->mFilterASR;
+         asr && asr != aActiveScrolledRoot;
+         asr = asr->mParent) {
+      asr->mScrollableFrame->SetHasOutOfFlowContentInsideFilter();
+    }
+  }
+
   mUsed = true;
 }
 
@@ -970,6 +981,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mCurrentScrollbarFlags(nsDisplayOwnLayerFlags::eNone),
       mPerspectiveItemIndex(0),
       mSVGEffectsBuildingDepth(0),
+      mFilterASR(nullptr),
       mContainsBlendMode(false),
       mIsBuildingScrollbar(false),
       mCurrentScrollbarWillHaveLayer(false),

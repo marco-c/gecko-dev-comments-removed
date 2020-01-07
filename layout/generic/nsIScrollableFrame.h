@@ -451,6 +451,13 @@ public:
   
 
 
+
+
+  virtual void SetHasOutOfFlowContentInsideFilter() = 0;
+
+  
+
+
   virtual bool UsesContainerScrolling() const = 0;
 
   
