@@ -1238,7 +1238,7 @@ FxAccountsInternal.prototype = {
       const response = await this.checkEmailStatus(sessionToken, { reason: why });
       log.debug("checkEmailStatus -> " + JSON.stringify(response));
       if (response && response.verified) {
-        await this.onPollEmailSuccess(currentState, why);
+        await this.onPollEmailSuccess(currentState);
         return;
       }
     } catch (error) {
@@ -1286,7 +1286,7 @@ FxAccountsInternal.prototype = {
     }, nextPollMs);
   },
 
-  async onPollEmailSuccess(currentState, why) {
+  async onPollEmailSuccess(currentState) {
     try {
       await currentState.updateUserAccountData({ verified: true });
       const accountData = await currentState.getUserAccountData();
@@ -1297,9 +1297,6 @@ FxAccountsInternal.prototype = {
       }
       
       await this.notifyObservers(ON_FXA_UPDATE_NOTIFICATION, ONVERIFIED_NOTIFICATION);
-      
-      Services.telemetry.scalarSet("services.sync.fxa_verification_method",
-                                   why == "push" ? "push" : "poll");
     } catch (e) {
       log.error(e);
     }
