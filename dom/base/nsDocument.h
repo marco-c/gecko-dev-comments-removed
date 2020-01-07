@@ -434,30 +434,6 @@ public:
   virtual Element* FindContentForSubDocument(nsIDocument *aDocument) const override;
   virtual Element* GetRootElementInternal() const override;
 
-  virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet) override;
-
-  virtual void AddStyleSheet(mozilla::StyleSheet* aSheet) override;
-  virtual void RemoveStyleSheet(mozilla::StyleSheet* aSheet) override;
-
-  virtual void UpdateStyleSheets(
-      nsTArray<RefPtr<mozilla::StyleSheet>>& aOldSheets,
-      nsTArray<RefPtr<mozilla::StyleSheet>>& aNewSheets) override;
-  virtual void AddStyleSheetToStyleSets(mozilla::StyleSheet* aSheet);
-  virtual void RemoveStyleSheetFromStyleSets(mozilla::StyleSheet* aSheet);
-
-  virtual void InsertStyleSheetAt(mozilla::StyleSheet* aSheet,
-                                  size_t aIndex) override;
-  virtual void SetStyleSheetApplicableState(mozilla::StyleSheet* aSheet,
-                                            bool aApplicable) override;
-
-  virtual nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
-                                            nsIURI* aSheetURI) override;
-  virtual nsresult AddAdditionalStyleSheet(additionalSheetType aType,
-                                           mozilla::StyleSheet* aSheet) override;
-  virtual void RemoveAdditionalStyleSheet(additionalSheetType aType,
-                                          nsIURI* sheetURI) override;
-  virtual mozilla::StyleSheet* GetFirstAdditionalAuthorSheet() override;
-
   virtual nsIChannel* GetChannel() const override {
     return mChannel;
   }
@@ -584,9 +560,6 @@ public:
 
   virtual void NotifyLayerManagerRecreated() override;
 
-  virtual void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) override;
-  virtual void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) override;
-  virtual void ResolveScheduledSVGPresAttrs() override;
   bool IsSynthesized();
 
   
@@ -594,7 +567,6 @@ public:
   
   static bool IsShadowDOMEnabled(const nsINode* aNode);
 private:
-  void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
 
 public:
@@ -749,15 +721,6 @@ public:
   virtual void MaybePreconnect(nsIURI* uri,
                                mozilla::CORSMode aCORSMode) override;
 
-  virtual void PreloadStyle(nsIURI* uri,
-                            const mozilla::Encoding* aEncoding,
-                            const nsAString& aCrossOriginAttr,
-                            ReferrerPolicy aReferrerPolicy,
-                            const nsAString& aIntegrity) override;
-
-  virtual nsresult LoadChromeSheetSync(nsIURI* uri, bool isAgentSheet,
-                                       RefPtr<mozilla::StyleSheet>* aSheet) override;
-
   virtual nsISupports* GetCurrentContentSink() override;
 
   
@@ -902,10 +865,6 @@ public:
   virtual mozilla::dom::DOMImplementation*
     GetImplementation(mozilla::ErrorResult& rv) override;
 
-  virtual void SetSelectedStyleSheetSet(const nsAString& aSheetSet) override;
-  virtual void GetLastStyleSheetSet(nsAString& aSheetSet) override;
-  virtual mozilla::dom::DOMStringList* StyleSheetSets() override;
-  virtual void EnableStyleSheetsForSet(const nsAString& aSheetSet) override;
   virtual already_AddRefed<Element> CreateElement(const nsAString& aTagName,
                                                   const mozilla::dom::ElementCreationOptionsOrString& aOptions,
                                                   ErrorResult& rv) override;
@@ -976,12 +935,6 @@ public:
   bool ContainsMSEContent();
 
 protected:
-  void RemoveDocStyleSheetsFromStyleSets();
-  void RemoveStyleSheetsFromStyleSets(
-      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets,
-      mozilla::SheetType aType);
-  void ResetStylesheetsToURI(nsIURI* aURI);
-  void FillStyleSet(mozilla::StyleSetHandle aStyleSet);
 
   void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
                               const nsAString& aType,
@@ -1015,8 +968,6 @@ protected:
 
   void EnsureOnloadBlocker();
 
-  void NotifyStyleSheetApplicableStateChanged();
-
   
   
   
@@ -1034,9 +985,6 @@ protected:
 
   
   nsAttrAndChildArray mChildren;
-
-  nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
-  nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
 
   
   nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
@@ -1068,7 +1016,6 @@ protected:
 
 public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
-  RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
   RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
   nsDocHeaderData* mHeaderData;
 
@@ -1102,19 +1049,11 @@ public:
 
   
   
-  bool mSSApplicableStateNotificationPending:1;
-
-  
-  
   
   
   
   
   bool mReportedUseCounters:1;
-
-  
-  
-  bool mStyleSetFilled:1;
 
   uint8_t mPendingFullscreenRequests;
 
@@ -1137,19 +1076,11 @@ private:
   friend class nsUnblockOnloadEvent;
   
   mozilla::dom::VisibilityState GetVisibilityState() const;
-  void NotifyStyleSheetAdded(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
-  void NotifyStyleSheetRemoved(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
 
   void PostUnblockOnloadEvent();
   void DoUnblockOnload();
 
   nsresult InitCSP(nsIChannel* aChannel);
-
-  
-  
-  
-  void EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
-                                       bool aUpdateCSSLoader);
 
   void ClearAllBoxObjects();
 
@@ -1183,9 +1114,6 @@ private:
 
   
   nsTHashtable< nsPtrHashKey<nsIContent> > mResponsiveContent;
-
-  
-  nsString mLastStyleSheetSet;
 
   nsTArray<RefPtr<nsFrameLoader> > mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable> > mFrameLoaderFinalizers;
@@ -1252,11 +1180,6 @@ private:
   
   
   bool mMaybeServiceWorkerControlled;
-
-  
-  
-  
-  nsTHashtable<nsPtrHashKey<nsSVGElement>> mLazySVGPresElements;
 
 #ifdef DEBUG
 public:

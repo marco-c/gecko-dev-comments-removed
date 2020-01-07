@@ -68,6 +68,7 @@ class nsCachableElementsByNameNodeList;
 class nsIDocShell;
 class nsDocShell;
 class nsDOMNavigationTiming;
+class nsDOMStyleSheetSetList;
 class nsFrameLoader;
 class nsGlobalWindowInner;
 class nsHTMLCSSStyleSheet;
@@ -1110,12 +1111,20 @@ public:
 
 
 
-  virtual void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) = 0;
-  
-  virtual void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG) = 0;
+  void ScheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG)
+  {
+    mLazySVGPresElements.PutEntry(aSVG);
+  }
 
   
-  virtual void ResolveScheduledSVGPresAttrs() = 0;
+  
+  void UnscheduleSVGForPresAttrEvaluation(nsSVGElement* aSVG)
+  {
+    mLazySVGPresElements.RemoveEntry(aSVG);
+  }
+
+  
+  void ResolveScheduledSVGPresAttrs();
 
   mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
   mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
@@ -1330,7 +1339,7 @@ public:
 
 
 
-  virtual void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet) = 0;
+  void EnsureOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
 
   mozilla::dom::StyleSheetList* StyleSheets()
   {
@@ -1343,8 +1352,7 @@ public:
 
 
 
-  virtual void InsertStyleSheetAt(mozilla::StyleSheet* aSheet,
-                                  size_t aIndex) = 0;
+  void InsertStyleSheetAt(mozilla::StyleSheet* aSheet, size_t aIndex);
 
 
   
@@ -1355,26 +1363,26 @@ public:
 
 
 
-  virtual void UpdateStyleSheets(
+  void UpdateStyleSheets(
       nsTArray<RefPtr<mozilla::StyleSheet>>& aOldSheets,
-      nsTArray<RefPtr<mozilla::StyleSheet>>& aNewSheets) = 0;
+      nsTArray<RefPtr<mozilla::StyleSheet>>& aNewSheets);
 
   
 
 
-  virtual void AddStyleSheet(mozilla::StyleSheet* aSheet) = 0;
+  void AddStyleSheet(mozilla::StyleSheet* aSheet);
 
   
 
 
-  virtual void RemoveStyleSheet(mozilla::StyleSheet* aSheet) = 0;
+  void RemoveStyleSheet(mozilla::StyleSheet* aSheet);
 
   
 
 
 
-  virtual void SetStyleSheetApplicableState(mozilla::StyleSheet* aSheet,
-                                            bool aApplicable) = 0;
+  void SetStyleSheetApplicableState(mozilla::StyleSheet* aSheet,
+                                    bool aApplicable);
 
   enum additionalSheetType {
     eAgentSheet,
@@ -1383,13 +1391,16 @@ public:
     AdditionalSheetTypeCount
   };
 
-  virtual nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
-                                            nsIURI* aSheetURI) = 0;
-  virtual nsresult AddAdditionalStyleSheet(additionalSheetType aType,
-                                           mozilla::StyleSheet* aSheet) = 0;
-  virtual void RemoveAdditionalStyleSheet(additionalSheetType aType,
-                                          nsIURI* sheetURI) = 0;
-  virtual mozilla::StyleSheet* GetFirstAdditionalAuthorSheet() = 0;
+  nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
+                                    nsIURI* aSheetURI);
+  nsresult AddAdditionalStyleSheet(additionalSheetType aType,
+                                   mozilla::StyleSheet* aSheet);
+  void RemoveAdditionalStyleSheet(additionalSheetType aType, nsIURI* sheetURI);
+
+  mozilla::StyleSheet* GetFirstAdditionalAuthorSheet()
+  {
+    return mAdditionalSheets[eAuthorSheet].SafeElementAt(0);
+  }
 
   
 
@@ -2551,11 +2562,11 @@ public:
 
 
 
-  virtual void PreloadStyle(nsIURI* aURI,
-                            const mozilla::Encoding* aEncoding,
-                            const nsAString& aCrossOriginAttr,
-                            ReferrerPolicyEnum aReferrerPolicy,
-                            const nsAString& aIntegrity) = 0;
+  void PreloadStyle(nsIURI* aURI,
+                    const mozilla::Encoding* aEncoding,
+                    const nsAString& aCrossOriginAttr,
+                    ReferrerPolicyEnum aReferrerPolicy,
+                    const nsAString& aIntegrity);
 
   
 
@@ -2565,8 +2576,8 @@ public:
 
 
 
-  virtual nsresult LoadChromeSheetSync(nsIURI* aURI, bool aIsAgentSheet,
-                                       RefPtr<mozilla::StyleSheet>* aSheet) = 0;
+  nsresult LoadChromeSheetSync(nsIURI* aURI, bool aIsAgentSheet,
+                               RefPtr<mozilla::StyleSheet>* aSheet);
 
   
 
@@ -2580,8 +2591,7 @@ public:
   
 
 
-  virtual void MaybePreconnect(nsIURI* uri,
-                               mozilla::CORSMode aCORSMode) = 0;
+  virtual void MaybePreconnect(nsIURI* uri, mozilla::CORSMode aCORSMode) = 0;
 
   enum DocumentTheme {
     Doc_Theme_Uninitialized, 
@@ -2935,11 +2945,11 @@ public:
   }
 #endif
   void GetSelectedStyleSheetSet(nsAString& aSheetSet);
-  virtual void SetSelectedStyleSheetSet(const nsAString& aSheetSet) = 0;
-  virtual void GetLastStyleSheetSet(nsAString& aSheetSet) = 0;
+  void SetSelectedStyleSheetSet(const nsAString& aSheetSet);
+  void GetLastStyleSheetSet(nsAString& aSheetSet);
   void GetPreferredStyleSheetSet(nsAString& aSheetSet);
-  virtual mozilla::dom::DOMStringList* StyleSheetSets() = 0;
-  virtual void EnableStyleSheetsForSet(const nsAString& aSheetSet) = 0;
+  mozilla::dom::DOMStringList* StyleSheetSets();
+  void EnableStyleSheetsForSet(const nsAString& aSheetSet);
 
   
 
@@ -3222,6 +3232,24 @@ protected:
   }
 
   void UpdateDocumentStates(mozilla::EventStates);
+
+  void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
+  void RemoveDocStyleSheetsFromStyleSets();
+  void RemoveStyleSheetsFromStyleSets(
+      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets,
+      mozilla::SheetType aType);
+  void ResetStylesheetsToURI(nsIURI* aURI);
+  void FillStyleSet(mozilla::StyleSetHandle aStyleSet);
+  void AddStyleSheetToStyleSets(mozilla::StyleSheet* aSheet);
+  void RemoveStyleSheetFromStyleSets(mozilla::StyleSheet* aSheet);
+  void NotifyStyleSheetAdded(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
+  void NotifyStyleSheetRemoved(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
+  void NotifyStyleSheetApplicableStateChanged();
+  
+  
+  
+  void EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
+                                       bool aUpdateCSSLoader);
 
 private:
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
@@ -3594,6 +3622,14 @@ protected:
   bool mNeedsReleaseAfterStackRefCntRelease: 1;
 
   
+  
+  bool mStyleSetFilled: 1;
+
+  
+  
+  bool mSSApplicableStateNotificationPending: 1;
+
+  
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 
@@ -3794,6 +3830,18 @@ protected:
 
   
   uint32_t mUpdateNestLevel;
+
+  nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
+  nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
+
+  
+  nsString mLastStyleSheetSet;
+  RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
+
+  
+  
+  
+  nsTHashtable<nsPtrHashKey<nsSVGElement>> mLazySVGPresElements;
 
   
   
