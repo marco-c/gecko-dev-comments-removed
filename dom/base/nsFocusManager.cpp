@@ -3489,7 +3489,8 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
     
     
     
-    if (aRootContent != FindOwner(aStartContent)) {
+    nsIContent* rootElement = aRootContent->OwnerDoc()->GetRootElement();
+    if (rootElement != FindOwner(aStartContent)) {
       nsIContent* contentToFocus =
         GetNextTabbableContentInAncestorScopes(&aStartContent,
                                                aOriginalStartContent,
