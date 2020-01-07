@@ -103,7 +103,7 @@ PushNotifier::Dispatch(PushDispatcher& aDispatcher)
 
     nsTArray<ContentParent*> contentActors;
     ContentParent::GetAll(contentActors);
-    if (!contentActors.IsEmpty()) {
+    if (!contentActors.IsEmpty() && !ServiceWorkerParentInterceptEnabled()) {
       
       
       for (uint32_t i = 0; i < contentActors.Length(); ++i) {
@@ -128,7 +128,7 @@ PushNotifier::Dispatch(PushDispatcher& aDispatcher)
       return NS_OK;
     }
 
-    if (BrowserTabsRemoteAutostart()) {
+    if (BrowserTabsRemoteAutostart() && !ServiceWorkerParentInterceptEnabled()) {
       
       return aDispatcher.HandleNoChildProcesses();
     }
