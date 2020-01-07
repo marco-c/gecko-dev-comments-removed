@@ -52,8 +52,11 @@ const prefs = {
       FILTER_BAR: "ui.filterbar",
       
       PERSIST: "devtools.webconsole.persistlog",
+    },
+    FEATURES: {
       
       SIDEBAR_TOGGLE: "devtools.webconsole.sidebarToggle",
+      JSTERM_CODE_MIRROR: "devtools.webconsole.jsterm.codeMirror",
     }
   }
 };
