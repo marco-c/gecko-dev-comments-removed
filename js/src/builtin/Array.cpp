@@ -1025,10 +1025,7 @@ IsArrayConstructor(const JSObject* obj)
 {
     
     
-    
-    return obj->is<JSFunction>() &&
-           obj->as<JSFunction>().isNative() &&
-           obj->as<JSFunction>().native() == ArrayConstructor;
+    return IsNativeFunction(obj, ArrayConstructor);
 }
 
 static bool
@@ -1038,23 +1035,23 @@ IsArrayConstructor(const Value& v)
 }
 
 bool
-js::IsWrappedArrayConstructor(JSContext* cx, const Value& v, bool* result)
+js::IsCrossRealmArrayConstructor(JSContext* cx, const Value& v, bool* result)
 {
     if (!v.isObject()) {
         *result = false;
         return true;
     }
-    if (v.toObject().is<WrapperObject>()) {
-        JSObject* obj = CheckedUnwrap(&v.toObject());
+
+    JSObject* obj = &v.toObject();
+    if (obj->is<WrapperObject>()) {
+        obj = CheckedUnwrap(obj);
         if (!obj) {
             ReportAccessDenied(cx);
             return false;
         }
-
-        *result = IsArrayConstructor(obj);
-    } else {
-        *result = false;
     }
+
+    *result = IsArrayConstructor(obj) && obj->as<JSFunction>().realm() != cx->realm();
     return true;
 }
 
@@ -1087,6 +1084,11 @@ IsArraySpecies(JSContext* cx, HandleObject origArray)
 
     if (!IsArrayConstructor(ctor))
         return ctor.isUndefined();
+
+    
+    
+    if (cx->realm() != ctor.toObject().as<JSFunction>().realm())
+        return true;
 
     jsid speciesId = SYMBOL_TO_JSID(cx->wellKnownSymbols().species);
     JSFunction* getter;

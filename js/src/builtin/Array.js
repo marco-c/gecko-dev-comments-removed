@@ -982,7 +982,7 @@ function ArraySpeciesCreate(originalArray, length) {
     var C = originalArray.constructor;
 
     
-    if (IsConstructor(C) && IsWrappedArrayConstructor(C))
+    if (IsConstructor(C) && IsCrossRealmArrayConstructor(C))
         return std_Array(length);
 
     

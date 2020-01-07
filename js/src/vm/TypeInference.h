@@ -879,6 +879,13 @@ class TemporaryTypeSet : public TypeSet
     const Class* getKnownClass(CompilerConstraintList* constraints);
 
     
+
+
+
+
+    Realm* getKnownRealm(CompilerConstraintList* constraints);
+
+    
     enum ForAllResult {
         EMPTY=1,                
         ALL_TRUE,               
