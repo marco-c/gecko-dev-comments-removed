@@ -151,7 +151,7 @@ this.Intl = function Intl() {
   
   this._accepted = "";
   this._everRead = false;
-  this._log = Log.repository.getLogger("Services.common.RESTRequest");
+  this._log = Log.repository.getLogger("Services.Common.RESTRequest");
   this._log.level = Log.Level[Prefs.get("log.logger.rest.request")];
   this.init();
 };

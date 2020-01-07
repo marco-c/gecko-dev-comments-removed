@@ -15,9 +15,6 @@ Cu.import("resource://gre/modules/Log.jsm");
 const PREF_LOG_LEVEL = "identity.fxaccounts.loglevel";
 
 
-const PREF_LOG_LEVEL_DUMP = "identity.fxaccounts.log.appender.dump";
-
-
 
 const PREF_LOG_SENSITIVE_DETAILS = "identity.fxaccounts.log.sensitive";
 
@@ -25,30 +22,7 @@ var exports = Object.create(null);
 
 XPCOMUtils.defineLazyGetter(exports, "log", function() {
   let log = Log.repository.getLogger("FirefoxAccounts");
-  
-  
-  
-  log.level = Log.Level.Debug;
-  let appender = new Log.DumpAppender();
-  appender.level = Log.Level.Error;
-
-  log.addAppender(appender);
-  try {
-    
-    let level =
-      Services.prefs.getPrefType(PREF_LOG_LEVEL) == Ci.nsIPrefBranch.PREF_STRING
-      && Services.prefs.getCharPref(PREF_LOG_LEVEL);
-    log.level = Log.Level[level] || Log.Level.Debug;
-
-    
-    level =
-      Services.prefs.getPrefType(PREF_LOG_LEVEL_DUMP) == Ci.nsIPrefBranch.PREF_STRING
-      && Services.prefs.getCharPref(PREF_LOG_LEVEL_DUMP);
-    appender.level = Log.Level[level] || Log.Level.Error;
-  } catch (e) {
-    log.error(e);
-  }
-
+  log.manageLevelFromPref(PREF_LOG_LEVEL);
   return log;
 });
 
