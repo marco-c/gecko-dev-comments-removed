@@ -894,7 +894,7 @@ GetOrCreateMapEntryForPrototype(JSContext *cx, JS::Handle<JSObject*> proto)
   
   JS::Rooted<JSObject*> scope(cx, xpc::GetXBLScopeOrGlobal(cx, proto));
   NS_ENSURE_TRUE(scope, nullptr);
-  MOZ_ASSERT(js::GetGlobalForObjectCrossCompartment(scope) == scope);
+  MOZ_ASSERT(JS_IsGlobalObject(scope));
 
   JS::Rooted<JSObject*> wrappedProto(cx, proto);
   JSAutoRealm ar(cx, scope);
