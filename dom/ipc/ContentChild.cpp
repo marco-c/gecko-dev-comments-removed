@@ -44,6 +44,7 @@
 #include "mozilla/dom/nsIContentChild.h"
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/psm/PSMContentListener.h"
 #include "mozilla/hal_sandbox/PHalChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -1321,6 +1322,21 @@ ContentChild::RecvInitProcessHangMonitor(Endpoint<PProcessHangMonitorChild>&& aH
 }
 
 mozilla::ipc::IPCResult
+ContentChild::GetResultForRenderingInitFailure(base::ProcessId aOtherPid)
+{
+  if (aOtherPid == base::GetCurrentProcId() || aOtherPid == OtherPid()) {
+    
+    
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  
+  
+  gfxCriticalNote << "Could not initialize rendering with GPU process";
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 ContentChild::RecvInitRendering(Endpoint<PCompositorManagerChild>&& aCompositor,
                                 Endpoint<PImageBridgeChild>&& aImageBridge,
                                 Endpoint<PVRManagerChild>&& aVRBridge,
@@ -1329,17 +1345,24 @@ ContentChild::RecvInitRendering(Endpoint<PCompositorManagerChild>&& aCompositor,
 {
   MOZ_ASSERT(namespaces.Length() == 3);
 
+  
+  
+  
+  
+  
+  
+  
   if (!CompositorManagerChild::Init(Move(aCompositor), namespaces[0])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!ImageBridgeChild::InitForContent(Move(aImageBridge), namespaces[2])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
   }
   if (!gfx::VRManagerChild::InitForContent(Move(aVRBridge))) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
   }
   VideoDecoderManagerChild::InitForContent(Move(aVideoManager));
   return IPC_OK();
@@ -1364,16 +1387,16 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorManagerChild>&& aComposito
 
   
   if (!CompositorManagerChild::Init(Move(aCompositor), namespaces[0])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }
   if (!ImageBridgeChild::ReinitForContent(Move(aImageBridge), namespaces[2])) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aImageBridge.OtherPid());
   }
   if (!gfx::VRManagerChild::ReinitForContent(Move(aVRBridge))) {
-    return IPC_FAIL_NO_REASON(this);
+    return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
   }
   gfxPlatform::GetPlatform()->CompositorUpdated();
 
