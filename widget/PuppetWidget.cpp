@@ -748,6 +748,15 @@ PuppetWidget::DefaultProcOfPluginEvent(const WidgetPluginEvent& aEvent)
   mTabChild->SendDefaultProcOfPluginEvent(aEvent);
 }
 
+
+
+bool
+PuppetWidget::HaveValidInputContextCache() const
+{
+  return (mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
+          IMEStateManager::GetWidgetForActiveInputContext() == this);
+}
+
 void
 PuppetWidget::SetInputContext(const InputContext& aContext,
                               const InputContextAction& aAction)
@@ -778,9 +787,7 @@ PuppetWidget::GetInputContext()
 
   
   
-  
-  if (mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
-      IMEStateManager::GetWidgetForActiveInputContext() == this) {
+  if (HaveValidInputContextCache()) {
     return mInputContext;
   }
 
@@ -1400,6 +1407,25 @@ PuppetWidget::SetCandidateWindowForPlugin(
   }
 
   mTabChild->SendSetCandidateWindowForPlugin(aPosition);
+}
+
+void
+PuppetWidget::EnableIMEForPlugin(bool aEnable)
+{
+  if (!mTabChild) {
+    return;
+  }
+
+  
+  if (NS_WARN_IF(HaveValidInputContextCache() &&
+                 mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
+                 mInputContext.mIMEState.mEnabled != IMEState::PLUGIN)) {
+    return;
+  }
+
+  
+  
+  mTabChild->SendEnableIMEForPlugin(aEnable);
 }
 
 void

@@ -75,20 +75,15 @@ static WindowsDllInterceptor sUser32Intercept;
 static HWND sWinlessPopupSurrogateHWND = nullptr;
 static User32TrackPopupMenu sUser32TrackPopupMenuStub = nullptr;
 
-typedef HIMC (WINAPI *Imm32ImmGetContext)(HWND hWND);
-typedef LONG (WINAPI *Imm32ImmGetCompositionString)(HIMC hIMC,
-                                                    DWORD dwIndex,
-                                                    LPVOID lpBuf,
-                                                    DWORD dwBufLen);
-typedef BOOL (WINAPI *Imm32ImmSetCandidateWindow)(HIMC hIMC,
-                                                  LPCANDIDATEFORM lpCandidate);
-typedef BOOL (WINAPI *Imm32ImmNotifyIME)(HIMC hIMC, DWORD dwAction,
-                                        DWORD dwIndex, DWORD dwValue);
 static WindowsDllInterceptor sImm32Intercept;
-static Imm32ImmGetContext sImm32ImmGetContextStub = nullptr;
-static Imm32ImmGetCompositionString sImm32ImmGetCompositionStringStub = nullptr;
-static Imm32ImmSetCandidateWindow sImm32ImmSetCandidateWindowStub = nullptr;
-static Imm32ImmNotifyIME sImm32ImmNotifyIME = nullptr;
+static decltype(ImmGetContext)* sImm32ImmGetContextStub = nullptr;
+static decltype(ImmGetCompositionStringW)* sImm32ImmGetCompositionStringStub =
+                                             nullptr;
+static decltype(ImmSetCandidateWindow)* sImm32ImmSetCandidateWindowStub =
+                                          nullptr;
+static decltype(ImmNotifyIME)* sImm32ImmNotifyIME = nullptr;
+static decltype(ImmAssociateContextEx)* sImm32ImmAssociateContextExStub =
+                                          nullptr;
 static PluginInstanceChild* sCurrentPluginInstance = nullptr;
 static const HIMC sHookIMC = (const HIMC)0xefefefef;
 
@@ -180,6 +175,7 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
     , mDestroyed(false)
 #ifdef XP_WIN
     , mLastKeyEventConsumed(false)
+    , mLastEnableIMEState(true)
 #endif 
     , mStackDepth(0)
 {
@@ -2105,6 +2101,30 @@ PluginInstanceChild::ImmNotifyIME(HIMC aIMC, DWORD aAction, DWORD aIndex,
     return TRUE;
 }
 
+
+BOOL
+PluginInstanceChild::ImmAssociateContextExProc(HWND hWND, HIMC hImc,
+                                               DWORD dwFlags)
+{
+    PluginInstanceChild* self = sCurrentPluginInstance;
+    if (!self) {
+        
+        
+        self = reinterpret_cast<PluginInstanceChild*>(
+                   GetProp(hWND, kFlashThrottleProperty));
+        NS_WARNING_ASSERTION(self, "Cannot find PluginInstanceChild");
+    }
+
+    
+    if (!hImc && self) {
+        
+        
+        self->mLastEnableIMEState = !!(dwFlags & IACE_DEFAULT);
+        self->SendEnableIME(self->mLastEnableIMEState);
+    }
+    return sImm32ImmAssociateContextExStub(hWND, hImc, dwFlags);
+}
+
 void
 PluginInstanceChild::InitImm32Hook()
 {
@@ -2138,6 +2158,10 @@ PluginInstanceChild::InitImm32Hook()
         "ImmNotifyIME",
         reinterpret_cast<intptr_t>(ImmNotifyIME),
         (void**)&sImm32ImmNotifyIME);
+    sImm32Intercept.AddHook(
+        "ImmAssociateContextEx",
+        reinterpret_cast<intptr_t>(ImmAssociateContextExProc),
+        (void**)&sImm32ImmAssociateContextExStub);
 }
 
 void
@@ -2176,6 +2200,7 @@ PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
     AutoRestore<PluginInstanceChild *> pluginInstance(sCurrentPluginInstance);
     if (event.event == WM_IME_STARTCOMPOSITION ||
         event.event == WM_IME_COMPOSITION ||
+        event.event == WM_LBUTTONDOWN ||
         event.event == WM_KILLFOCUS) {
       sCurrentPluginInstance = this;
     }
@@ -2189,6 +2214,27 @@ PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
 
     if (IsWindow(focusHwnd)) {
       SetFocus(focusHwnd);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (event.event == WM_SETFOCUS) {
+        
+        
+        SendEnableIME(mLastEnableIMEState);
+    } else if (event.event == WM_KILLFOCUS) {
+        
+        
+        mLastEnableIMEState = true;
     }
 
     return handled;

@@ -1826,6 +1826,13 @@ public:
     
 
 
+    virtual void EnableIMEForPlugin(bool aEnable)
+    {
+    }
+
+    
+
+
     virtual void SetInputContext(const InputContext& aContext,
                                  const InputContextAction& aAction) = 0;
 

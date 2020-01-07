@@ -320,6 +320,7 @@ public:
         const mozilla::widget::CandidateWindowPosition& aPosition) override;
     virtual mozilla::ipc::IPCResult
     RecvRequestCommitOrCancel(const bool& aCommitted) override;
+    virtual mozilla::ipc::IPCResult RecvEnableIME(const bool& aEnable) override;
 
     
     nsresult HandledWindowedPluginKeyEvent(

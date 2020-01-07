@@ -341,6 +341,8 @@ private:
                                                  LPCANDIDATEFORM plCandidate);
     static BOOL WINAPI ImmNotifyIME(HIMC aIMC, DWORD aAction, DWORD aIndex,
                                     DWORD aValue);
+    static BOOL WINAPI ImmAssociateContextExProc(HWND hWnd, HIMC aIMC,
+                                                 DWORD dwFlags);
 
     class FlashThrottleMsg : public CancelableRunnable
     {
@@ -646,6 +648,10 @@ private:
     
     
     bool mLastKeyEventConsumed;
+
+    
+    
+    bool mLastEnableIMEState;
 #endif 
 
     
