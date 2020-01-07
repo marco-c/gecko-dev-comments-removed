@@ -9968,9 +9968,12 @@ nsIDocument::CaretPositionFromPoint(float aX, float aY)
   }
 
   
-  
-  
-  nsPoint adjustedPoint = pt - ptFrame->GetOffsetTo(rootFrame);
+  nsPoint aOffset;
+  nsCOMPtr<nsIWidget> widget = nsContentUtils::GetWidget(ps, &aOffset);
+  LayoutDeviceIntPoint refPoint =
+    nsContentUtils::ToWidgetPoint(CSSPoint(aX, aY), aOffset, GetPresContext());
+  nsPoint adjustedPoint =
+    nsLayoutUtils::GetEventCoordinatesRelativeTo(widget, refPoint, ptFrame);
 
   nsFrame::ContentOffsets offsets =
     ptFrame->GetContentOffsetsFromPoint(adjustedPoint);
