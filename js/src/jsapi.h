@@ -560,14 +560,19 @@ typedef bool
                                 JS::HandleObject allocationSite, JS::HandleObject incumbentGlobal,
                                 void* data);
 
+namespace JS {
+
 enum class PromiseRejectionHandlingState {
     Unhandled,
     Handled
 };
 
+} 
+
 typedef void
 (* JSPromiseRejectionTrackerCallback)(JSContext* cx, JS::HandleObject promise,
-                                      PromiseRejectionHandlingState state, void* data);
+                                      JS::PromiseRejectionHandlingState state,
+                                      void* data);
 
 typedef void
 (* JSProcessPromiseCallback)(JSContext* cx, JS::HandleObject promise);
@@ -5806,6 +5811,7 @@ JS_DropExceptionState(JSContext* cx, JSExceptionState* state);
 extern JS_PUBLIC_API(JSErrorReport*)
 JS_ErrorFromException(JSContext* cx, JS::HandleObject obj);
 
+namespace JS {
 
 
 
@@ -5815,6 +5821,8 @@ JS_ErrorFromException(JSContext* cx, JS::HandleObject obj);
 
 extern JS_PUBLIC_API(JSObject*)
 ExceptionStackOrNull(JS::HandleObject obj);
+
+} 
 
 
 
