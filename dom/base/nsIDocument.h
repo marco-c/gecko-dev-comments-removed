@@ -1539,7 +1539,7 @@ public:
     return mScriptGlobalObject ? mScriptGlobalObject.get() :
                                  GetScriptHandlingObjectInternal();
   }
-  virtual void SetScriptHandlingObject(nsIScriptGlobalObject* aScriptObject) = 0;
+  void SetScriptHandlingObject(nsIScriptGlobalObject* aScriptObject);
 
   
 
@@ -1548,8 +1548,8 @@ public:
 
 
 
-  virtual nsIGlobalObject* GetScopeObject() const = 0;
-  virtual void SetScopeObject(nsIGlobalObject* aGlobal) = 0;
+  nsIGlobalObject* GetScopeObject() const;
+  void SetScopeObject(nsIGlobalObject* aGlobal);
 
   
 
@@ -3389,10 +3389,10 @@ protected:
   nsPropertyTable* GetExtraPropertyTable(uint16_t aCategory);
 
   
-  virtual nsPIDOMWindowOuter* GetWindowInternal() const = 0;
+  nsPIDOMWindowOuter* GetWindowInternal() const;
 
   
-  virtual nsIScriptGlobalObject* GetScriptHandlingObjectInternal() const = 0;
+  nsIScriptGlobalObject* GetScriptHandlingObjectInternal() const;
 
   
   bool InternalAllowXULXBL();
@@ -3983,6 +3983,11 @@ protected:
   mozilla::TimeStamp mLoadingTimeStamp;
 
   nsWeakPtr mAutoFocusElement;
+
+  
+  
+  
+  nsWeakPtr mScopeObject;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];

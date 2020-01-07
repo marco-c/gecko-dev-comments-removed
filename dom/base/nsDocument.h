@@ -385,10 +385,6 @@ public:
 
   virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject) override;
 
-  virtual void SetScriptHandlingObject(nsIScriptGlobalObject* aScriptObject) override;
-
-  virtual nsIGlobalObject* GetScopeObject() const override;
-  void SetScopeObject(nsIGlobalObject* aGlobal) override;
   
 
 
@@ -825,9 +821,6 @@ protected:
                               const nsAString& aType,
                               bool aPersisted);
 
-  virtual nsPIDOMWindowOuter* GetWindowInternal() const override;
-  virtual nsIScriptGlobalObject* GetScriptHandlingObjectInternal() const override;
-
   void UpdateScreenOrientation();
 
 #define NS_DOCUMENT_NOTIFY_OBSERVERS(func_, params_) do {                     \
@@ -864,11 +857,6 @@ protected:
   
   
   RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
-
-  
-  
-  
-  nsWeakPtr mScopeObject;
 
   
   
