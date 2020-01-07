@@ -403,8 +403,17 @@ protected:
 
   nsresult WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
                                bool* aCancel, bool* aHandled);
-  nsresult WillMakeBasicBlock(const nsAString& aBlockType,
-                              bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillMakeBasicBlock(const nsAString& aBlockType,
+                                           bool* aCancel, bool* aHandled);
 
   
 
