@@ -11,8 +11,6 @@ this.event = {};
 const {interfaces: Ci, utils: Cu, classes: Cc} = Components;
 
 Cu.import("chrome://marionette/content/element.js");
-const {ElementNotInteractableError} =
-    Cu.import("chrome://marionette/content/error.js", {});
 
 const dblclickTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
@@ -1353,44 +1351,16 @@ event.sendSingleKey = function(keyToSend, modifiers, window = undefined) {
 
 
 
-
-
-function focusElement(element) {
-  let t = element.type;
-  if (t && (t == "text" || t == "textarea")) {
-    if (element.selectionEnd == 0) {
-      let len = element.value.length;
-      element.setSelectionRange(len, len);
-    }
+event.sendKeysToElement = function(keyString, el, window = undefined) {
+  
+  let modifiers = Object.create(event.Modifiers);
+  for (let modifier in event.Modifiers) {
+    modifiers[modifier] = false;
   }
-  element.focus();
-}
 
-
-
-
-
-
-
-event.sendKeysToElement = function(
-    keyString, el, opts = {}, window = undefined) {
-
-  if (opts.ignoreVisibility || element.isVisible(el)) {
-    focusElement(el);
-
-    
-    let modifiers = Object.create(event.Modifiers);
-    for (let modifier in event.Modifiers) {
-      modifiers[modifier] = false;
-    }
-
-    for (let i = 0; i < keyString.length; i++) {
-      let c = keyString.charAt(i);
-      event.sendSingleKey(c, modifiers, window);
-    }
-
-  } else {
-    throw new ElementNotInteractableError("Element is not visible");
+  for (let i = 0; i < keyString.length; i++) {
+    let c = keyString.charAt(i);
+    event.sendSingleKey(c, modifiers, window);
   }
 };
 

@@ -6,6 +6,8 @@
 
 const {utils: Cu} = Components;
 
+Cu.import("resource://gre/modules/Preferences.jsm");
+
 Cu.import("chrome://marionette/content/accessibility.js");
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/element.js");
@@ -334,6 +336,24 @@ interaction.flushEventLoop = async function(el) {
 
 
 
+interaction.focusElement = function(el) {
+  let t = el.type;
+  if (t && (t == "text" || t == "textarea")) {
+    if (el.selectionEnd == 0) {
+      let len = el.value.length;
+      el.setSelectionRange(len, len);
+    }
+  }
+  el.focus();
+};
+
+
+
+
+
+
+
+
 
 
 
@@ -401,15 +421,32 @@ interaction.setFormControlValue = function(el, value) {
 
 
 
-
-
 interaction.sendKeysToElement = async function(
-    el, value, ignoreVisibility, strict = false) {
-  let win = getWindow(el);
-  let a11y = accessibility.get(strict);
-  let acc = await a11y.getAccessible(el, true);
-  a11y.assertActionable(acc, el);
-  event.sendKeysToElement(value, el, {ignoreVisibility: false}, win);
+    el, value, strict = false) {
+  const a11y = accessibility.get(strict);
+  const win = getWindow(el);
+
+  if (el.type == "file") {
+    await interaction.uploadFile(el, value);
+  } else if ((el.type == "date" || el.type == "time") &&
+      Preferences.get("dom.forms.datetime")) {
+    interaction.setFormControlValue(el, value);
+  } else {
+    let visibilityCheckEl  = el;
+    if (el.localName == "option") {
+      visibilityCheckEl = element.getContainer(el);
+    }
+
+    if (!element.isVisible(visibilityCheckEl)) {
+      throw new ElementNotInteractableError("Element is not visible");
+    }
+
+    let acc = await a11y.getAccessible(el, true);
+    a11y.assertActionable(acc, el);
+
+    interaction.focusElement(el);
+    event.sendKeysToElement(value, el, win);
+  }
 };
 
 

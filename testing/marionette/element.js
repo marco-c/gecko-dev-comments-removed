@@ -932,8 +932,7 @@ element.isInView = function(el) {
 element.isVisible = function(el, x = undefined, y = undefined) {
   let win = el.ownerGlobal;
 
-  
-  if (!element.isXULElement(el) && !atom.isElementDisplayed(el, win)) {
+  if (!atom.isElementDisplayed(el, win)) {
     return false;
   }
 
