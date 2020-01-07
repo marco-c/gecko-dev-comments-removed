@@ -193,8 +193,7 @@ ScriptLoader::~ScriptLoader()
 
 
 static void
-CollectScriptTelemetry(nsIIncrementalStreamLoader* aLoader,
-                       ScriptLoadRequest* aRequest)
+CollectScriptTelemetry(ScriptLoadRequest* aRequest)
 {
   using namespace mozilla::Telemetry;
 
@@ -211,43 +210,25 @@ CollectScriptTelemetry(nsIIncrementalStreamLoader* aLoader,
   }
 
   
+  
+  
   if (aRequest->IsLoadingSource()) {
     if (aRequest->mIsInline) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::Inline);
       nsAutoString inlineData;
       aRequest->mElement->GetScriptText(inlineData);
-      Accumulate(DOM_SCRIPT_INLINE_SIZE, inlineData.Length());
     } else if (aRequest->IsTextSource()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::SourceFallback);
-      Accumulate(DOM_SCRIPT_SOURCE_SIZE, aRequest->ScriptText().length());
     }
     
   } else {
     MOZ_ASSERT(aRequest->IsLoading());
     if (aRequest->IsTextSource()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::Source);
-      Accumulate(DOM_SCRIPT_SOURCE_SIZE, aRequest->ScriptText().length());
     } else if (aRequest->IsBytecode()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::AltData);
-      Accumulate(DOM_SCRIPT_BYTECODE_SIZE, aRequest->mScriptBytecode.length());
     }
     
-  }
-
-  
-  if (!aLoader) {
-    return;
-  }
-  nsCOMPtr<nsIRequest> channel;
-  aLoader->GetRequest(getter_AddRefs(channel));
-  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
-  if (!cic) {
-    return;
-  }
-
-  int32_t fetchCount = 0;
-  if (NS_SUCCEEDED(cic->GetCacheTokenFetchCount(&fetchCount))) {
-    Accumulate(DOM_SCRIPT_FETCH_COUNT, fetchCount);
   }
 }
 
@@ -1519,7 +1500,7 @@ ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   request->mProgress = ScriptLoadRequest::Progress::eLoading_Source;
   request->SetTextSource();
   TRACE_FOR_TEST_BOOL(request->mElement, "scriptloader_load_source");
-  CollectScriptTelemetry(nullptr, request);
+  CollectScriptTelemetry(request);
 
   
   
@@ -2199,20 +2180,6 @@ ScriptLoader::ShouldCacheBytecode(ScriptLoadRequest* aRequest)
   return true;
 }
 
-static bool
-ShouldRecordParseTimeTelemetry(ScriptLoadRequest* aRequest)
-{
-  static const size_t MinScriptChars = 1024;
-  static const size_t MinBinASTBytes = 700;
-
-  if (aRequest->IsTextSource()) {
-    return aRequest->ScriptText().length() >= MinScriptChars;
-  } else {
-    MOZ_ASSERT(aRequest->IsBinASTSource());
-    return aRequest->ScriptBinASTData().length() >= MinBinASTBytes;
-  }
-}
-
 nsresult
 ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
 {
@@ -2230,9 +2197,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
     
     return NS_ERROR_FAILURE;
   }
-
-  
-  mDocument->SetDocumentIncCounter(IncCounter::eIncCounter_ScriptTag);
 
   
   NS_ASSERTION(scriptContent, "no content - what is default script-type?");
@@ -2318,11 +2282,9 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
           nsJSUtils::ExecutionContext exec(cx, global);
           if (aRequest->mOffThreadToken) {
             LOG(("ScriptLoadRequest (%p): Decode Bytecode & Join and Execute", aRequest));
-            AutoTimer<DOM_SCRIPT_OFF_THREAD_DECODE_EXEC_MS> timer;
             rv = exec.DecodeJoinAndExec(&aRequest->mOffThreadToken);
           } else {
             LOG(("ScriptLoadRequest (%p): Decode Bytecode and Execute", aRequest));
-            AutoTimer<DOM_SCRIPT_MAIN_THREAD_DECODE_EXEC_MS> timer;
             rv = exec.DecodeAndExec(options, aRequest->mScriptBytecode,
                                     aRequest->mBytecodeOffset);
           }
@@ -2333,14 +2295,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
           MOZ_ASSERT(aRequest->IsSource());
           JS::Rooted<JSScript*> script(cx);
           bool encodeBytecode = ShouldCacheBytecode(aRequest);
-
-          TimeStamp start;
-          if (Telemetry::CanRecordExtended()) {
-            
-            if (aRequest->mCacheInfo && ShouldRecordParseTimeTelemetry(aRequest)) {
-                start = TimeStamp::Now();
-            }
-          }
 
           {
             nsJSUtils::ExecutionContext exec(cx, global);
@@ -2356,12 +2310,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
                 MOZ_ASSERT(aRequest->IsTextSource());
                 rv = exec.JoinAndExec(&aRequest->mOffThreadToken, &script);
               }
-              if (start) {
-                AccumulateTimeDelta(encodeBytecode
-                                    ? DOM_SCRIPT_OFF_THREAD_PARSE_ENCODE_EXEC_MS
-                                    : DOM_SCRIPT_OFF_THREAD_PARSE_EXEC_MS,
-                                    start);
-              }
             } else {
               
               LOG(("ScriptLoadRequest (%p): Compile And Exec", aRequest));
@@ -2375,12 +2323,6 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
                 nsAutoString inlineData;
                 SourceBufferHolder srcBuf = GetScriptSource(aRequest, inlineData);
                 rv = exec.CompileAndExec(options, srcBuf, &script);
-              }
-              if (start) {
-                AccumulateTimeDelta(encodeBytecode
-                                    ? DOM_SCRIPT_MAIN_THREAD_PARSE_ENCODE_EXEC_MS
-                                    : DOM_SCRIPT_MAIN_THREAD_PARSE_EXEC_MS,
-                                    start);
               }
             }
           }
@@ -2499,7 +2441,6 @@ ScriptLoader::EncodeBytecode()
     return;
   }
 
-  Telemetry::AutoTimer<Telemetry::DOM_SCRIPT_ENCODING_MS_PER_DOCUMENT> timer;
   AutoEntryScript aes(globalObject, "encode bytecode", true);
   RefPtr<ScriptLoadRequest> request;
   while (!mBytecodeEncodingQueue.isEmpty()) {
@@ -2524,14 +2465,12 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
   if (!JS::FinishIncrementalEncoding(aCx, script, aRequest->mScriptBytecode)) {
     LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode",
          aRequest));
-    AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::EncodingFailure);
     return;
   }
 
   if (aRequest->mScriptBytecode.length() >= UINT32_MAX) {
     LOG(("ScriptLoadRequest (%p): Bytecode cache is too large to be decoded correctly.",
          aRequest));
-    AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::BufferTooLarge);
     return;
   }
 
@@ -2545,7 +2484,6 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
   if (NS_FAILED(rv)) {
     LOG(("ScriptLoadRequest (%p): Cannot open bytecode cache (rv = %X, output = %p)",
          aRequest, unsigned(rv), output.get()));
-    AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::OpenFailure);
     return;
   }
   MOZ_ASSERT(output);
@@ -2553,9 +2491,6 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
     nsresult rv = output->Close();
     LOG(("ScriptLoadRequest (%p): Closing (rv = %X)",
          aRequest, unsigned(rv)));
-    if (NS_FAILED(rv)) {
-      AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::CloseFailure);
-    }
   });
 
   uint32_t n;
@@ -2564,13 +2499,11 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
   LOG(("ScriptLoadRequest (%p): Write bytecode cache (rv = %X, length = %u, written = %u)",
        aRequest, unsigned(rv), unsigned(aRequest->mScriptBytecode.length()), n));
   if (NS_FAILED(rv)) {
-    AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::WriteFailure);
     return;
   }
 
   bytecodeFailed.release();
   TRACE_FOR_TEST_NONE(aRequest->mElement, "scriptloader_bytecode_saved");
-  AccumulateCategorical(LABELS_DOM_SCRIPT_ENCODING_STATUS::EncodingSuccess);
 }
 
 void
@@ -2816,10 +2749,6 @@ ScriptLoader::ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
   Unused << hadErrors;
   aLengthOut = written;
 
-  nsAutoCString charset;
-  unicodeDecoder->Encoding()->Name(charset);
-  mozilla::Telemetry::Accumulate(mozilla::Telemetry::DOM_SCRIPT_SRC_ENCODING,
-    charset);
   return NS_OK;
 }
 
@@ -3135,7 +3064,7 @@ ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
     return NS_BINDING_ABORTED;
   }
   MOZ_ASSERT(aRequest->IsLoading());
-  CollectScriptTelemetry(aLoader, aRequest);
+  CollectScriptTelemetry(aRequest);
 
   
   
