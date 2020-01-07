@@ -280,6 +280,9 @@ var gPlayTests = [
   
   
   { name:"bipbop-lateaudio.mp4", type:"video/mp4" },
+  
+  
+  { name:"ambisonics.mp4", type:"audio/mp4", duration:16.48 },
 
   { name:"small-shot.m4a", type:"audio/mp4", duration:0.29 },
   { name:"small-shot.mp3", type:"audio/mpeg", duration:0.27 },
