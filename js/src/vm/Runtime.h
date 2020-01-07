@@ -21,7 +21,7 @@
 
 #include <setjmp.h>
 
-#include "builtin/Atomics.h"
+#include "builtin/AtomicsObject.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "builtin/Promise.h"
 #include "frontend/NameCollections.h"
@@ -49,7 +49,7 @@
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/Stack.h"
 #include "vm/Stopwatch.h"
-#include "vm/SymbolType.h"
+#include "vm/Symbol.h"
 #include "wasm/WasmSignalHandlers.h"
 
 #ifdef _MSC_VER

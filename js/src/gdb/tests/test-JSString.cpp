@@ -3,7 +3,7 @@
 #include "vm/JSContext.h"
 
 
-#include "vm/StringType.h"
+#include "vm/String.h"
 
 FRAGMENT(JSString, simple) {
   AutoSuppressHazardsForTest noanalysis;

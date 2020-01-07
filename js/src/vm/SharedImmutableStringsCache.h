@@ -13,7 +13,7 @@
 #include <cstring>
 #include <new> 
 
-#include "builtin/String.h"
+#include "jsstr.h"
 
 #include "js/HashTable.h"
 #include "js/Utility.h"
