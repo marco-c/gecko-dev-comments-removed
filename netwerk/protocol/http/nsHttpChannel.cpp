@@ -7213,6 +7213,8 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
             Unused << mCacheEntry->SetNetworkTimes(onStartTime, onStopTime);
         }
 
+        mResponseTrailers = mTransaction->TakeResponseTrailers();
+
         
         mTransactionTimings = mTransaction->Timings();
         mTransaction = nullptr;

@@ -30,6 +30,7 @@ class nsIRequestContext;
 namespace mozilla { namespace net {
 
 class nsHttpChunkedDecoder;
+class nsHttpHeaderArray;
 class nsHttpRequestHead;
 class nsHttpResponseHead;
 
@@ -103,6 +104,10 @@ public:
     
     
     nsHttpResponseHead *TakeResponseHead();
+
+    
+    
+    nsHttpHeaderArray *TakeResponseTrailers();
 
     
     
@@ -377,6 +382,8 @@ private:
     
     nsHttpResponseHead             *mForTakeResponseHead;
     bool                            mResponseHeadTaken;
+    nsAutoPtr<nsHttpHeaderArray>    mForTakeResponseTrailers;
+    bool                            mResponseTrailersTaken;
 
     
     TimeStamp                       mPendingTime;
