@@ -130,8 +130,6 @@ public:
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
 
-  nsresult MouseMove(nsIDOMMouseEvent* aMouseEvent);
-
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
@@ -443,6 +441,30 @@ public:
   {
     mDefaultParagraphSeparator = aSep;
   }
+
+  
+
+
+
+
+
+
+  nsresult OnMouseDown(int32_t aX, int32_t aY, nsIDOMElement* aTarget,
+                       nsIDOMEvent* aMouseEvent);
+
+  
+
+
+
+
+
+  nsresult OnMouseUp(int32_t aX, int32_t aY, nsIDOMElement* aTarget);
+
+  
+
+
+
+  nsresult OnMouseMove(nsIDOMMouseEvent* aMouseEvent);
 
 protected:
   class BlobReader final : public nsIEditorBlobListener
