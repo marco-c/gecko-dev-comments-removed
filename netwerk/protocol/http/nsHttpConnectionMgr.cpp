@@ -4087,7 +4087,7 @@ nsHalfOpenSocket::SetupStreams(nsISocketTransport **transport,
             socketTransport->SetTimeout(nsISocketTransport::TIMEOUT_CONNECT,
                                         fallbackTimeout);
         }
-    } else if (isBackup) {
+    } else if (isBackup && gHttpHandler->FastFallbackToIPv4()) {
         
         
         
