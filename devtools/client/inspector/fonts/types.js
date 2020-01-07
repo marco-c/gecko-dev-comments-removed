@@ -94,13 +94,7 @@ exports.fontEditor = {
   instance: PropTypes.shape(fontVariationInstance),
 
   
-  isVisible: PropTypes.bool,
-
-  
   properties: PropTypes.object,
-
-  
-  selector: PropTypes.string,
 };
 
 
