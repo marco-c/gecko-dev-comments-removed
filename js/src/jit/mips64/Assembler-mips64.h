@@ -92,12 +92,6 @@ struct ScratchDoubleScope : public AutoFloatRegisterScope
     { }
 };
 
-
-
-static constexpr Register WasmIonExitRegReturnData = JSReturnReg_Data;
-static constexpr Register WasmIonExitRegReturnType = JSReturnReg_Type;
-static constexpr Register WasmIonExitTlsReg = s5;
-
 static constexpr FloatRegister f0  = { FloatRegisters::f0, FloatRegisters::Double };
 static constexpr FloatRegister f1  = { FloatRegisters::f1, FloatRegisters::Double };
 static constexpr FloatRegister f2  = { FloatRegisters::f2, FloatRegisters::Double };

@@ -149,19 +149,6 @@ static constexpr FloatRegister FloatArgRegs[NumFloatArgRegs] = { xmm0, xmm1, xmm
 #endif
 
 
-static constexpr Register WasmIonExitRegCallee = r10;
-static constexpr Register WasmIonExitRegE0 = rax;
-static constexpr Register WasmIonExitRegE1 = rdi;
-
-
-static constexpr Register WasmIonExitRegReturnData = ecx;
-static constexpr Register WasmIonExitRegReturnType = ecx;
-static constexpr Register WasmIonExitTlsReg = r14;
-static constexpr Register WasmIonExitRegD0 = rax;
-static constexpr Register WasmIonExitRegD1 = rdi;
-static constexpr Register WasmIonExitRegD2 = rbx;
-
-
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;

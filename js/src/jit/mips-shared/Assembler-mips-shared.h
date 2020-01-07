@@ -113,17 +113,6 @@ static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
 static const int32_t WasmGlobalRegBias = 32768;
 
 
-static constexpr Register WasmIonExitRegCallee = t0;
-static constexpr Register WasmIonExitRegE0 = a0;
-static constexpr Register WasmIonExitRegE1 = a1;
-
-
-
-static constexpr Register WasmIonExitRegD0 = a0;
-static constexpr Register WasmIonExitRegD1 = a1;
-static constexpr Register WasmIonExitRegD2 = t0;
-
-
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
