@@ -1,6 +1,4 @@
-import os
-
-from webdriver import Element, WebDriverException
+from webdriver import Element, NoSuchAlertException, WebDriverException
 
 
 
@@ -90,19 +88,16 @@ def assert_success(response, value=None):
 
 
 def assert_dialog_handled(session, expected_text):
-    result = session.transport.send("GET",
-                                    "session/%s/alert/text" % session.session_id)
-
     
     
     
     
     try:
-        assert_error(result, "no such alert")
-    except:
-        assert (result.status == 200 and
-                result.body["value"] != expected_text), (
-            "Dialog with text '%s' was not handled." % expected_text)
+        assert session.alert.text != expected_text, (
+            "User prompt with text '%s' was not handled." % expected_text)
+
+    except NoSuchAlertException:
+        pass
 
 
 def assert_files_uploaded(session, element, files):
