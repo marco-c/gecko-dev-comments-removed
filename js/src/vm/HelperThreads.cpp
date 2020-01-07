@@ -347,7 +347,7 @@ js::HasOffThreadIonCompile(JSCompartment* comp)
 {
     AutoLockHelperThreadState lock;
 
-    if (!HelperThreadState().threads || comp->isAtomsCompartment())
+    if (!HelperThreadState().threads || JS::GetRealmForCompartment(comp)->isAtomsRealm())
         return false;
 
     GlobalHelperThreadState::IonBuilderVector& worklist = HelperThreadState().ionWorklist(lock);
@@ -664,7 +664,6 @@ js::CancelOffThreadParses(JSRuntime* rt)
 bool
 js::OffThreadParsingMustWaitForGC(JSRuntime* rt)
 {
-    
     
     
     

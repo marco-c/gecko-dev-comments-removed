@@ -60,7 +60,7 @@ js::AutoRealm::AutoRealm(JSContext* cx, JS::Realm* target,
     origin_(cx->realm()),
     maybeLock_(&lock)
 {
-    MOZ_ASSERT(target->isAtomsCompartment());
+    MOZ_ASSERT(target->isAtomsRealm());
     cx_->enterAtomsRealm(target, lock);
 }
 
@@ -71,7 +71,7 @@ js::AutoRealm::AutoRealm(JSContext* cx, JS::Realm* target)
     origin_(cx->realm()),
     maybeLock_(nullptr)
 {
-    MOZ_ASSERT(!target->isAtomsCompartment());
+    MOZ_ASSERT(!target->isAtomsRealm());
     cx_->enterNonAtomsRealm(target);
 }
 
@@ -82,7 +82,7 @@ js::AutoRealm::~AutoRealm()
 
 js::AutoAtomsRealm::AutoAtomsRealm(JSContext* cx,
                                    js::AutoLockForExclusiveAccess& lock)
-  : AutoRealm(cx, JS::GetRealmForCompartment(cx->atomsCompartment(lock)), lock)
+  : AutoRealm(cx, cx->atomsRealm(lock), lock)
 {}
 
 js::AutoRealmUnchecked::AutoRealmUnchecked(JSContext* cx, JSCompartment* target)

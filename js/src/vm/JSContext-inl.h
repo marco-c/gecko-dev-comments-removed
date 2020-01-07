@@ -520,12 +520,12 @@ JSContext::setRealm(JS::Realm* realm,
                     const js::AutoLockForExclusiveAccess* maybeLock )
 {
     
-    MOZ_ASSERT_IF(runtime_->isAtomsCompartment(realm), maybeLock != nullptr);
-    MOZ_ASSERT_IF(runtime_->isAtomsCompartment(realm) || runtime_->isAtomsCompartment(realm_),
+    MOZ_ASSERT_IF(realm && realm->isAtomsRealm(), maybeLock != nullptr);
+    MOZ_ASSERT_IF((realm && realm->isAtomsRealm()) || (realm_ && realm_->isAtomsRealm()),
                   runtime_->currentThreadHasExclusiveAccess());
 
     
-    MOZ_ASSERT_IF(realm && !runtime_->isAtomsCompartment(realm),
+    MOZ_ASSERT_IF(realm && !realm->isAtomsRealm(),
                   !realm->zone()->isAtomsZone());
 
     

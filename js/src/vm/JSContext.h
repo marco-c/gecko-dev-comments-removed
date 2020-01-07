@@ -275,8 +275,8 @@ struct JSContext : public JS::RootingContext,
     js::AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->atoms(lock);
     }
-    JSCompartment* atomsCompartment(js::AutoLockForExclusiveAccess& lock) {
-        return runtime_->atomsCompartment(lock);
+    JS::Realm* atomsRealm(js::AutoLockForExclusiveAccess& lock) {
+        return runtime_->atomsRealm(lock);
     }
     js::SymbolRegistry& symbolRegistry(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->symbolRegistry(lock);

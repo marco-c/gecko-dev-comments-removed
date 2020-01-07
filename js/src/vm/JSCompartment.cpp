@@ -46,7 +46,6 @@ JSCompartment::JSCompartment(Zone* zone)
     runtime_(zone->runtimeFromAnyThread()),
     principals_(nullptr),
     isSystem_(false),
-    isAtomsCompartment_(false),
     isSelfHosting(false),
     marked(true),
     warnedAboutStringGenericsMethods(0),
@@ -606,7 +605,7 @@ bool
 JSCompartment::addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name)
 {
     MOZ_ASSERT(name);
-    MOZ_ASSERT(!isAtomsCompartment());
+    MOZ_ASSERT(!JS::GetRealmForCompartment(this)->isAtomsRealm());
 
     if (varNames_.put(name))
         return true;

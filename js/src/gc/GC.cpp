@@ -3845,7 +3845,7 @@ Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime
     bool foundOne = false;
     while (read < end) {
         JSCompartment* comp = *read++;
-        MOZ_ASSERT(!rt->isAtomsCompartment(comp));
+        MOZ_ASSERT(!JS::GetRealmForCompartment(comp)->isAtomsRealm());
 
         
 
@@ -4490,7 +4490,7 @@ GCRuntime::markCompartments()
 
     for (GCCompartmentsIter comp(rt); !comp.done(); comp.next()) {
         MOZ_ASSERT(!comp->scheduledForDestruction);
-        if (!comp->maybeAlive && !rt->isAtomsCompartment(comp))
+        if (!comp->maybeAlive && !JS::GetRealmForCompartment(comp)->isAtomsRealm())
             comp->scheduledForDestruction = true;
     }
 }

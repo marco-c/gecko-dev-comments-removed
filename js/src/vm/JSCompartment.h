@@ -596,13 +596,6 @@ struct JSCompartment
         isSystem_ = isSystem;
     }
 
-    bool isAtomsCompartment() const {
-        return isAtomsCompartment_;
-    }
-    void setIsAtomsCompartment() {
-        isAtomsCompartment_ = true;
-    }
-
     
     inline bool isProbablySystemCode() const {
         return isSystem_;
@@ -610,7 +603,6 @@ struct JSCompartment
   private:
     JSPrincipals*                principals_;
     bool                         isSystem_;
-    bool                         isAtomsCompartment_;
 
   public:
     bool                         isSelfHosting;
@@ -1214,6 +1206,16 @@ class JS::Realm : public JSCompartment
 
     
     bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
+
+  private:
+    bool isAtomsRealm_ = false;
+  public:
+    bool isAtomsRealm() const {
+        return isAtomsRealm_;
+    }
+    void setIsAtomsRealm() {
+        isAtomsRealm_ = true;
+    }
 };
 
 namespace js {

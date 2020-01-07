@@ -703,7 +703,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::WriteOnceData<JSCompartment*> atomsCompartment_;
+    js::WriteOnceData<JS::Realm*> atomsRealm_;
 
     
     
@@ -735,15 +735,18 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
         return atomsAddedWhileSweeping_;
     }
 
-    JSCompartment* atomsCompartment(js::AutoLockForExclusiveAccess& lock) {
-        return atomsCompartment_;
+    JS::Realm* atomsRealm(js::AutoLockForExclusiveAccess& lock) {
+        return atomsRealm_;
     }
-    JSCompartment* unsafeAtomsCompartment() {
-        return atomsCompartment_;
+    JS::Realm* unsafeAtomsRealm() {
+        return atomsRealm_;
     }
 
+    
+    
+    
     bool isAtomsCompartment(JSCompartment* comp) {
-        return comp == atomsCompartment_;
+        return JS::GetRealmForCompartment(comp) == atomsRealm_;
     }
 
     const JS::Zone* atomsZone(js::AutoLockForExclusiveAccess& lock) const {
