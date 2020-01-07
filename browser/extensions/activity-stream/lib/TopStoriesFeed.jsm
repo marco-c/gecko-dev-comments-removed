@@ -443,6 +443,7 @@ this.TopStoriesFeed = class TopStoriesFeed {
   removeSpocs() {
     
     
+    
     this.uninit();
     this.init();
   }
