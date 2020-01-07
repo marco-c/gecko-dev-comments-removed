@@ -4332,7 +4332,7 @@ IntersectionObserverPropertyDtor(void* aObject, nsAtom* aPropertyName,
     static_cast<IntersectionObserverList*>(aPropertyValue);
   for (auto iter = observers->Iter(); !iter.Done(); iter.Next()) {
     DOMIntersectionObserver* observer = iter.Key();
-    observer->UnlinkElement(*element);
+    observer->UnlinkTarget(*element);
   }
   delete observers;
 }
@@ -4387,7 +4387,7 @@ Element::UnlinkIntersectionObservers()
   }
   for (auto iter = observers->Iter(); !iter.Done(); iter.Next()) {
     DOMIntersectionObserver* observer = iter.Key();
-    observer->UnlinkElement(*this);
+    observer->UnlinkTarget(*this);
   }
   observers->Clear();
 }
