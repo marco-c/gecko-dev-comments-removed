@@ -215,7 +215,7 @@ module.exports = {
     "no-undefined": "off",
     
     
-    "no-unused-vars": ["error", {"vars": "all", "args": "none"}],
+    "no-unused-vars": ["error", {"args": "none", "vars": "all"}],
     
     "no-use-before-define": "off",
     

@@ -12,12 +12,10 @@
 
 var EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components; 
-
-ChromeUtils.import("resource://gre/modules/Accounts.jsm"); 
-ChromeUtils.import("resource://gre/modules/Services.jsm"); 
-ChromeUtils.import("resource://gre/modules/WebChannel.jsm"); 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
+ChromeUtils.import("resource://gre/modules/Accounts.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/WebChannel.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("FxAccounts");
 
@@ -34,7 +32,7 @@ const COMMAND_SYNC_PREFERENCES     = "fxaccounts:sync_preferences";
 const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 
 XPCOMUtils.defineLazyGetter(this, "strings",
-                            () => Services.strings.createBundle("chrome://browser/locale/aboutAccounts.properties")); 
+                            () => Services.strings.createBundle("chrome://browser/locale/aboutAccounts.properties"));
 
 ChromeUtils.defineModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
 ChromeUtils.defineModuleGetter(this, "Prompt", "resource://gre/modules/Prompt.jsm");
