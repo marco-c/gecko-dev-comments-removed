@@ -19,6 +19,27 @@
 
 namespace mozilla {
 
+static void
+PrintLongString(const char* const begin, const size_t len)
+{
+    
+    
+
+    const size_t chunkSize = 1000;
+    const UniqueBuffer buf(moz_xmalloc(chunkSize+1)); 
+    const auto bufBegin = (char*)buf.get();
+    bufBegin[chunkSize] = '\0';
+
+    auto chunkBegin = begin;
+    const auto end = begin + len;
+    while (chunkBegin + chunkSize < end) {
+        memcpy(bufBegin, chunkBegin, chunkSize);
+        printf_stderr("%s", bufBegin);
+        chunkBegin += chunkSize;
+    }
+    printf_stderr("%s", chunkBegin);
+}
+
 
 
 static bool
@@ -166,33 +187,6 @@ WebGLShader::ShaderSource(const nsAString& source)
     
     const NS_LossyConvertUTF16toASCII cleanSource(sourceWithoutComments);
 
-    if (PR_GetEnv("MOZ_WEBGL_DUMP_SHADERS")) {
-        printf_stderr("////////////////////////////////////////\n");
-        printf_stderr("// MOZ_WEBGL_DUMP_SHADERS:\n");
-
-        
-        
-
-        const size_t maxChunkSize = 1024-1; 
-        const UniqueBuffer buf(moz_xmalloc(maxChunkSize+1)); 
-        const auto bufBegin = (char*)buf.get();
-
-        size_t chunkStart = 0;
-        while (chunkStart != cleanSource.Length()) {
-            const auto chunkEnd = std::min(chunkStart + maxChunkSize,
-                                           size_t(cleanSource.Length()));
-            const auto chunkSize = chunkEnd - chunkStart;
-
-            memcpy(bufBegin, cleanSource.BeginReading() + chunkStart, chunkSize);
-            bufBegin[chunkSize + 1] = '\0';
-
-            printf_stderr("%s", bufBegin);
-            chunkStart += chunkSize;
-        }
-
-        printf_stderr("////////////////////////////////////////\n");
-    }
-
     mSource = source;
     mCleanSource = cleanSource;
 }
@@ -208,6 +202,12 @@ WebGLShader::CompileShader()
 
     mValidator.reset(mContext->CreateShaderValidator(mType));
 
+    static const bool kDumpShaders = PR_GetEnv("MOZ_WEBGL_DUMP_SHADERS");
+    if (MOZ_UNLIKELY(kDumpShaders)) {
+        printf_stderr("==== begin MOZ_WEBGL_DUMP_SHADERS ====\n");
+        PrintLongString(mCleanSource.BeginReading(), mCleanSource.Length());
+    }
+
     bool success;
     if (mValidator) {
         success = Translate(mCleanSource, mValidator.get(), &mValidationLog,
@@ -215,6 +215,16 @@ WebGLShader::CompileShader()
     } else {
         success = TranslateWithoutValidation(mCleanSource, mContext->IsWebGL2(),
                                              &mValidationLog, &mTranslatedSource);
+    }
+
+    if (MOZ_UNLIKELY(kDumpShaders)) {
+        printf_stderr("\n==== \\/ \\/ \\/ ====\n");
+        if (success) {
+            PrintLongString(mTranslatedSource.BeginReading(), mTranslatedSource.Length());
+        } else {
+            printf_stderr("Validation failed:\n%s", mValidationLog.BeginReading());
+        }
+        printf_stderr("\n==== end ====\n");
     }
 
     if (!success)
