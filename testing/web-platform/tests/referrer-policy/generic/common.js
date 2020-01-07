@@ -248,7 +248,3 @@ function queryScript(url, callback) {
 function SanityChecker() {}
 SanityChecker.prototype.checkScenario = function() {};
 SanityChecker.prototype.checkSubresourceResult = function() {};
-
-
-
-document.origin = document.origin || (location.protocol + "//" + location.host);
