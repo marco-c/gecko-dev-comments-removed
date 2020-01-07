@@ -7,7 +7,6 @@
 
 
 #include "mozilla/dom/PointerEvent.h"
-#include "mozilla/dom/PointerEventBinding.h"
 #include "mozilla/MouseEvents.h"
 #include "prtime.h"
 
@@ -36,13 +35,6 @@ PointerEvent::PointerEvent(EventTarget* aOwner,
   
   
   mDetail = 0;
-}
-
-JSObject*
-PointerEvent::WrapObjectInternal(JSContext* aCx,
-                                 JS::Handle<JSObject*> aGivenProto)
-{
-  return PointerEventBinding::Wrap(aCx, this, aGivenProto);
 }
 
 static uint16_t
@@ -109,9 +101,6 @@ PointerEvent::Constructor(EventTarget* aOwner,
   widgetEvent->mIsPrimary = aParam.mIsPrimary;
   widgetEvent->buttons = aParam.mButtons;
 
-  if (!aParam.mCoalescedEvents.IsEmpty()) {
-    e->mCoalescedEvents.AppendElements(aParam.mCoalescedEvents);
-  }
   e->SetTrusted(trusted);
   e->SetComposed(aParam.mComposed);
   return e.forget();
@@ -127,22 +116,6 @@ PointerEvent::Constructor(const GlobalObject& aGlobal,
   nsCOMPtr<EventTarget> owner = do_QueryInterface(aGlobal.GetAsSupports());
   return Constructor(owner, aType, aParam);
 }
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(PointerEvent)
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PointerEvent, MouseEvent)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCoalescedEvents)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PointerEvent, MouseEvent)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCoalescedEvents)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PointerEvent)
-NS_INTERFACE_MAP_END_INHERITING(MouseEvent)
-
-NS_IMPL_ADDREF_INHERITED(PointerEvent, MouseEvent)
-NS_IMPL_RELEASE_INHERITED(PointerEvent, MouseEvent)
 
 void
 PointerEvent::GetPointerType(nsAString& aPointerType)
@@ -202,50 +175,6 @@ bool
 PointerEvent::IsPrimary()
 {
   return mEvent->AsPointerEvent()->mIsPrimary;
-}
-
-void
-PointerEvent::GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents)
-{
-  WidgetPointerEvent* widgetEvent = mEvent->AsPointerEvent();
-  if (mCoalescedEvents.IsEmpty() && widgetEvent &&
-      widgetEvent->mCoalescedWidgetEvents &&
-      !widgetEvent->mCoalescedWidgetEvents->mEvents.IsEmpty()) {
-    for (WidgetPointerEvent& event :
-         widgetEvent->mCoalescedWidgetEvents->mEvents) {
-      RefPtr<PointerEvent> domEvent =
-        NS_NewDOMPointerEvent(nullptr, nullptr, &event);
-
-      
-      
-      
-      domEvent->mEvent->AsGUIEvent()->mWidget = widgetEvent->mWidget;
-      domEvent->mPresContext = mPresContext;
-
-      
-      MOZ_ASSERT(!domEvent->mEvent->mTarget);
-      
-      domEvent->mEvent->mTarget = mEvent->mTarget;
-
-      
-      
-      domEvent->DuplicatePrivateData();
-
-      
-      
-      domEvent->mPresContext = mPresContext;
-      mCoalescedEvents.AppendElement(domEvent);
-    }
-  }
-  if (mEvent->mTarget) {
-    for (RefPtr<PointerEvent>& pointerEvent : mCoalescedEvents) {
-      
-      if (!pointerEvent->mEvent->mTarget) {
-        pointerEvent->mEvent->mTarget = mEvent->mTarget;
-      }
-    }
-  }
-  aPointerEvents.AppendElements(mCoalescedEvents);
 }
 
 } 
