@@ -750,8 +750,6 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
 {
   nsIFrame* currentFrame = aFrame;
 
-  aBuilder.MarkFrameForDisplayIfVisible(aFrame, aBuilder.RootReferenceFrame());
-
   while (currentFrame != aStopAtFrame) {
     CRR_LOG("currentFrame: %p (placeholder=%d), aOverflow: %d %d %d %d\n",
              currentFrame, !aStopAtStackingContext,
@@ -1113,26 +1111,31 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
     result = PartialUpdateResult::Updated;
   }
 
-  mBuilder.SetDirtyRect(modifiedDirty);
-  mBuilder.SetPartialUpdate(true);
-
   nsDisplayList modifiedDL;
-  mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
-  if (!modifiedDL.IsEmpty()) {
+  if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
+    mBuilder.SetDirtyRect(modifiedDirty);
+    mBuilder.SetPartialUpdate(true);
+    mBuilder.RootReferenceFrame()->BuildDisplayListForStackingContext(&mBuilder, &modifiedDL);
     nsLayoutUtils::AddExtraBackgroundItems(mBuilder, modifiedDL, mBuilder.RootReferenceFrame(),
                                            nsRect(nsPoint(0, 0), mBuilder.RootReferenceFrame()->GetSize()),
                                            mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf(),
                                            aBackstop);
-  }
-  mBuilder.SetPartialUpdate(false);
+    mBuilder.SetPartialUpdate(false);
 
+    
+    
+    
+
+  } else {
+    
+    
+    
+    
+  }
+    
   if (aChecker) {
     aChecker->Set(&modifiedDL, "TM");
   }
-
-  
-  
-  
 
   
   
