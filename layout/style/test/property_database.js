@@ -4741,6 +4741,7 @@ var gCSSProperties = {
       "calc(50px/(2 - 1))",
     ],
     invalid_values: [ "none", "-2px",
+      "content",  
       
       "calc(50%+ 2px)",
       "calc(50% +2px)",
@@ -5261,7 +5262,9 @@ var gCSSProperties = {
         
         
         
-    other_values: [ "15px", "3em", "15%", "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
+    other_values: [
+      "content",
+      "15px", "3em", "15%", "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available",
       
       "calc(-2px)",
       "calc(2px)",

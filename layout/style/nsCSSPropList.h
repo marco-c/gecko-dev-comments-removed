@@ -1406,7 +1406,7 @@ CSS_PROP_POSITION(
     
     
     VARIANT_AHKLP | VARIANT_CALC,
-    kWidthKTable,
+    kFlexBasisKTable,
     eStyleAnimType_Coord)
 CSS_PROP_POSITION(
     flex-direction,

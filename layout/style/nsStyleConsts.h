@@ -678,6 +678,12 @@ enum class StyleGridTrackBreadth : uint8_t {
 #define NS_STYLE_WIDTH_AVAILABLE                3
 
 
+
+
+
+#define NS_STYLE_FLEX_BASIS_CONTENT             4
+
+
 #define NS_STYLE_POSITION_STATIC                0
 #define NS_STYLE_POSITION_RELATIVE              1
 #define NS_STYLE_POSITION_ABSOLUTE              2
