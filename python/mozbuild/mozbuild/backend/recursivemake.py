@@ -533,6 +533,10 @@ class RecursiveMakeBackend(CommonBackend):
 
             first_output = outputs[0]
             dep_file = "%s.pp" % first_output
+            
+            
+            
+            stub_file = "$(MDDEPDIR)/%s.stub" % first_output
 
             if obj.inputs:
                 if obj.localized:
@@ -562,21 +566,6 @@ class RecursiveMakeBackend(CommonBackend):
             if needs_AB_rCD:
                 backend_file.write_once('include $(topsrcdir)/config/AB_rCD.mk\n')
 
-            
-            
-            
-            
-            if tier != 'export' or not self.environment.is_artifact_build:
-                if not needs_AB_rCD:
-                    
-                    
-                    backend_file.write('%s:: %s\n' % (tier, first_output))
-            for output in outputs:
-                if output != first_output:
-                    backend_file.write('%s: %s ;\n' % (output, first_output))
-                backend_file.write('GARBAGE += %s\n' % output)
-            backend_file.write('EXTRA_MDDEPEND_FILES += %s\n' % dep_file)
-
             force = ''
             if obj.force:
                 force = ' FORCE'
@@ -584,11 +573,28 @@ class RecursiveMakeBackend(CommonBackend):
                 force = ' $(if $(IS_LANGUAGE_REPACK),FORCE)'
 
             if obj.script:
-                backend_file.write("""{output}: {script}{inputs}{backend}{force}
-\t$(REPORT_BUILD)
-\t$(call py_action,file_generate,{locale}{script} {method} {output} $(MDDEPDIR)/{dep_file}{inputs}{flags})
+                
+                
+                
+                
+                if tier != 'export' or not self.environment.is_artifact_build:
+                    if not needs_AB_rCD:
+                        
+                        
+                        backend_file.write('%s:: %s\n' % (tier, stub_file))
+                for output in outputs:
+                    backend_file.write('%s: %s ;\n' % (output, stub_file))
+                    backend_file.write('GARBAGE += %s\n' % output)
+                backend_file.write('GARBAGE += %s\n' % stub_file)
+                backend_file.write('EXTRA_MDDEPEND_FILES += %s\n' % dep_file)
 
-""".format(output=first_output,
+                backend_file.write("""{stub}: {script}{inputs}{backend}{force}
+\t$(REPORT_BUILD)
+\t$(call py_action,file_generate,{locale}{script} {method} {output} $(MDDEPDIR)/{dep_file} {stub}{inputs}{flags})
+\t@$(TOUCH) $@
+
+""".format(stub=stub_file,
+           output=first_output,
            dep_file=dep_file,
            inputs=' ' + ' '.join(inputs) if inputs else '',
            flags=' ' + ' '.join(shell_quote(f) for f in obj.flags) if obj.flags else '',
