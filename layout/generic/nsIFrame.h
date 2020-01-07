@@ -1153,10 +1153,10 @@ public:
                                  aContainerSize - mRect.Size());
   }
 
-  virtual nsPoint GetPositionOfChildIgnoringScrolling(nsIFrame* aChild)
+  virtual nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild)
   { return aChild->GetPosition(); }
 
-  nsPoint GetPositionIgnoringScrolling();
+  nsPoint GetPositionIgnoringScrolling() const;
 
   typedef AutoTArray<nsDisplayItem*, 4> DisplayItemArray;
 
@@ -2709,6 +2709,12 @@ public:
 
 
   nsPoint GetOffsetTo(const nsIFrame* aOther) const;
+
+  
+
+
+
+  nsPoint GetOffsetToIgnoringScrolling(const nsIFrame* aOther) const;
 
   
 
