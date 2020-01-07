@@ -430,7 +430,7 @@ protected:
   
   
   template<typename StyleType> bool
-  DoUpdateTransitions(const nsStyleDisplay* aDisp,
+  DoUpdateTransitions(const nsStyleDisplay& aDisp,
                       mozilla::dom::Element* aElement,
                       mozilla::CSSPseudoElementType aPseudoType,
                       CSSTransitionCollection*& aElementTransitions,

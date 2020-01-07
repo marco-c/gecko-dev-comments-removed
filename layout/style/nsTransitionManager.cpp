@@ -522,7 +522,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
 
   
   
-  const nsStyleDisplay *disp = newStyleContext->StyleDisplay();
+  const nsStyleDisplay* disp = newStyleContext->StyleDisplay();
   CSSPseudoElementType pseudoType = newStyleContext->GetPseudoType();
   if (pseudoType != CSSPseudoElementType::NotPseudo) {
     if (pseudoType != CSSPseudoElementType::before &&
@@ -598,7 +598,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
   
   
   if (!afterChangeStyle->IsInDisplayNoneSubtree()) {
-    startedAny = DoUpdateTransitions(disp,
+    startedAny = DoUpdateTransitions(*disp,
                                      aElement,
                                      afterChangeStyle->GetPseudoType(),
                                      collection,
@@ -647,9 +647,9 @@ nsTransitionManager::UpdateTransitions(
 
   CSSTransitionCollection* collection =
     CSSTransitionCollection::GetAnimationCollection(aElement, aPseudoType);
-  const nsStyleDisplay *disp =
+  const nsStyleDisplay* disp =
       aNewStyle->ComputedData()->GetStyleDisplay();
-  return DoUpdateTransitions(disp,
+  return DoUpdateTransitions(*disp,
                              aElement, aPseudoType,
                              collection,
                              aOldStyle, aNewStyle);
@@ -658,14 +658,13 @@ nsTransitionManager::UpdateTransitions(
 template<typename StyleType>
 bool
 nsTransitionManager::DoUpdateTransitions(
-  const nsStyleDisplay* aDisp,
+  const nsStyleDisplay& aDisp,
   dom::Element* aElement,
   CSSPseudoElementType aPseudoType,
   CSSTransitionCollection*& aElementTransitions,
   StyleType aOldStyle,
   StyleType aNewStyle)
 {
-  MOZ_ASSERT(aDisp, "Null nsStyleDisplay");
   MOZ_ASSERT(!aElementTransitions ||
              aElementTransitions->mElement == aElement, "Element mismatch");
 
@@ -675,8 +674,8 @@ nsTransitionManager::DoUpdateTransitions(
   
   bool startedAny = false;
   nsCSSPropertyIDSet whichStarted;
-  for (uint32_t i = aDisp->mTransitionPropertyCount; i-- != 0; ) {
-    const StyleTransition& t = aDisp->mTransitions[i];
+  for (uint32_t i = aDisp.mTransitionPropertyCount; i-- != 0; ) {
+    const StyleTransition& t = aDisp.mTransitions[i];
     
     
     
@@ -728,11 +727,11 @@ nsTransitionManager::DoUpdateTransitions(
   
   if (aElementTransitions) {
     bool checkProperties =
-      aDisp->mTransitions[0].GetProperty() != eCSSPropertyExtra_all_properties;
+      aDisp.mTransitions[0].GetProperty() != eCSSPropertyExtra_all_properties;
     nsCSSPropertyIDSet allTransitionProperties;
     if (checkProperties) {
-      for (uint32_t i = aDisp->mTransitionPropertyCount; i-- != 0; ) {
-        const StyleTransition& t = aDisp->mTransitions[i];
+      for (uint32_t i = aDisp.mTransitionPropertyCount; i-- != 0; ) {
+        const StyleTransition& t = aDisp.mTransitions[i];
         
         
         nsCSSPropertyID property = t.GetProperty();
