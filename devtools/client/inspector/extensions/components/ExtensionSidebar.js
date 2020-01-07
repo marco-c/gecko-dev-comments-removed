@@ -10,6 +10,10 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
 const ObjectTreeView = createFactory(require("./ObjectTreeView"));
+const ObjectValueGripView = createFactory(require("./ObjectValueGripView"));
+const Types = require("../types");
+
+
 
 
 
@@ -25,15 +29,23 @@ class ExtensionSidebar extends PureComponent {
     return {
       id: PropTypes.string.isRequired,
       extensionsSidebar: PropTypes.object.isRequired,
+      
+      serviceContainer: PropTypes.shape(Types.serviceContainer).isRequired,
     };
   }
 
   render() {
-    const { id, extensionsSidebar } = this.props;
+    const {
+      id,
+      extensionsSidebar,
+      serviceContainer,
+    } = this.props;
 
     let {
       viewMode = "empty-sidebar",
-      object
+      object,
+      objectValueGrip,
+      rootTitle
     } = extensionsSidebar[id] || {};
 
     let sidebarContentEl;
@@ -41,6 +53,13 @@ class ExtensionSidebar extends PureComponent {
     switch (viewMode) {
       case "object-treeview":
         sidebarContentEl = ObjectTreeView({ object });
+        break;
+      case "object-value-grip-view":
+        sidebarContentEl = ObjectValueGripView({
+          objectValueGrip,
+          serviceContainer,
+          rootTitle,
+        });
         break;
       case "empty-sidebar":
         break;
