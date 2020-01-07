@@ -720,15 +720,7 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
 
   RefPtr<nsRange> foundRange;
 
-  
-  if (!aWrapping)
-    rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, false);
-
-  
-  
-  else
-    rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, true);
-
+  rv = GetSearchLimits(searchRange, startPt, endPt, theDoc, sel, aWrapping);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = find->Find(mSearchString.get(), searchRange, startPt, endPt,
