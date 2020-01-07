@@ -399,15 +399,28 @@ impl PropertyDeclarationBlock {
         importance: Importance,
         source: DeclarationSource,
     ) -> bool {
-        let all_shorthand_len = match drain.all_shorthand {
-            AllShorthand::NotSet => 0,
-            AllShorthand::CSSWideKeyword(_) |
-            AllShorthand::WithVariables(_) => ShorthandId::All.longhands().len()
-        };
-        let push_calls_count = drain.declarations.len() + all_shorthand_len;
+        match source {
+            DeclarationSource::Parsing => {
+                let all_shorthand_len = match drain.all_shorthand {
+                    AllShorthand::NotSet => 0,
+                    AllShorthand::CSSWideKeyword(_) |
+                    AllShorthand::WithVariables(_) => ShorthandId::All.longhands().len()
+                };
+                let push_calls_count =
+                    drain.declarations.len() + all_shorthand_len;
 
-        
-        self.declarations.reserve(push_calls_count);
+                
+                self.declarations.reserve(push_calls_count);
+            }
+            DeclarationSource::CssOm => {
+                
+                
+                
+                
+                
+                
+            }
+        }
 
         let mut changed = false;
         for decl in &mut drain.declarations {
