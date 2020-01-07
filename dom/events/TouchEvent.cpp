@@ -70,6 +70,7 @@ TouchEvent::TouchEvent(EventTarget* aOwner,
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(TouchEvent, UIEvent,
+                                   mEvent->AsTouchEvent()->mTouches,
                                    mTouches,
                                    mTargetTouches,
                                    mChangedTouches)
@@ -99,9 +100,36 @@ TouchEvent::InitTouchEvent(const nsAString& aType,
   UIEvent::InitUIEvent(aType, aCanBubble, aCancelable, aView, aDetail);
   mEvent->AsInputEvent()->InitBasicModifiers(aCtrlKey, aAltKey,
                                              aShiftKey, aMetaKey);
-  mTouches = aTouches;
+
+  mEvent->AsTouchEvent()->mTouches.Clear();
+
+  
+  
+  
+  
   mTargetTouches = aTargetTouches;
+  AssignTouchesToWidgetEvent(mTargetTouches, false);
+  mTouches = aTouches;
+  AssignTouchesToWidgetEvent(mTouches, true);
   mChangedTouches = aChangedTouches;
+  AssignTouchesToWidgetEvent(mChangedTouches, true);
+}
+
+void
+TouchEvent::AssignTouchesToWidgetEvent(TouchList* aList, bool aCheckDuplicates)
+{
+  if (!aList) {
+    return;
+  }
+  WidgetTouchEvent* widgetTouchEvent = mEvent->AsTouchEvent();
+  for (uint32_t i = 0; i < aList->Length(); ++i) {
+    Touch* touch = aList->Item(i);
+    if (touch &&
+        (!aCheckDuplicates ||
+         !widgetTouchEvent->mTouches.Contains(touch))) {
+      widgetTouchEvent->mTouches.AppendElement(touch);
+    }
+  }
 }
 
 TouchList*
@@ -129,21 +157,34 @@ TouchEvent::Touches()
 TouchList*
 TouchEvent::TargetTouches()
 {
-  if (!mTargetTouches) {
-    WidgetTouchEvent::AutoTouchArray targetTouches;
+  if (!mTargetTouches || !mTargetTouches->Length()) {
     WidgetTouchEvent* touchEvent = mEvent->AsTouchEvent();
+    if (!mTargetTouches) {
+      mTargetTouches = new TouchList(ToSupports(this));
+    }
     const WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
     for (uint32_t i = 0; i < touches.Length(); ++i) {
       
       
       if ((mEvent->mMessage != eTouchEnd && mEvent->mMessage != eTouchCancel) ||
           !touches[i]->mChanged) {
-        if (touches[i]->mTarget == mEvent->mOriginalTarget) {
-          targetTouches.AppendElement(touches[i]);
+        bool equalTarget = touches[i]->mTarget == mEvent->mTarget;
+        if (!equalTarget) {
+          
+          
+          nsCOMPtr<nsIContent> touchTarget =
+            do_QueryInterface(touches[i]->mTarget);
+          nsCOMPtr<nsIContent> eventTarget =
+            do_QueryInterface(mEvent->mTarget);
+          equalTarget = touchTarget && eventTarget &&
+            touchTarget->FindFirstNonChromeOnlyAccessContent() ==
+            eventTarget->FindFirstNonChromeOnlyAccessContent();
+        }
+        if (equalTarget) {
+          mTargetTouches->Append(touches[i]);
         }
       }
     }
-    mTargetTouches = new TouchList(ToSupports(this), targetTouches);
   }
   return mTargetTouches;
 }

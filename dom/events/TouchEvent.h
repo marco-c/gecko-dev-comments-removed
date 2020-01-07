@@ -70,6 +70,11 @@ public:
     return mPoints[aIndex];
   }
 
+  void Clear()
+  {
+    mPoints.Clear();
+  }
+
 protected:
   ~TouchList() {}
 
@@ -96,7 +101,13 @@ public:
   CopyTouches(const Sequence<OwningNonNull<Touch>>& aTouches);
 
   TouchList* Touches();
+  
   TouchList* TargetTouches();
+  
+  TouchList* GetExistingTargetTouches()
+  {
+    return mTargetTouches;
+  }
   TouchList* ChangedTouches();
 
   bool AltKey();
@@ -127,6 +138,8 @@ public:
 
 protected:
   ~TouchEvent() {}
+
+  void AssignTouchesToWidgetEvent(TouchList* aList, bool aCheckDuplicates);
 
   RefPtr<TouchList> mTouches;
   RefPtr<TouchList> mTargetTouches;

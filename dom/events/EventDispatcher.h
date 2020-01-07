@@ -9,7 +9,9 @@
 #define mozilla_EventDispatcher_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Touch.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 
@@ -155,6 +157,7 @@ public:
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
     mRetargetedRelatedTarget = nullptr;
+    mRetargetedTouchTargets.reset();
   }
 
   dom::EventTarget* GetParentTarget()
@@ -269,6 +272,13 @@ public:
 
 
   dom::EventTarget* mRetargetedRelatedTarget;
+
+  
+
+
+
+
+  mozilla::Maybe<nsTArray<RefPtr<dom::EventTarget>>> mRetargetedTouchTargets;
 
   
 
