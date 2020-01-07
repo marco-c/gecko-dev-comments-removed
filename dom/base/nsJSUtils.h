@@ -179,6 +179,14 @@ public:
     
     
     MOZ_MUST_USE nsresult DecodeJoinAndExec(JS::OffThreadToken** aOffThreadToken);
+
+    MOZ_MUST_USE nsresult DecodeBinASTJoinAndExec(JS::OffThreadToken** aOffThreadToken,
+                                                  JS::MutableHandle<JSScript*> aScript);
+
+    
+    nsresult DecodeBinASTAndExec(JS::CompileOptions& aCompileOptions,
+                                 const uint8_t* aBuf, size_t aLength,
+                                 JS::MutableHandle<JSScript*> aScript);
   };
 
   static nsresult CompileModule(JSContext* aCx,
