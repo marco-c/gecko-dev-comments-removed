@@ -1194,6 +1194,31 @@ public:
     const ActiveScrolledRoot* mOldValue;
   };
 
+  class AutoSaveRestorePerspectiveIndex {
+  public:
+    AutoSaveRestorePerspectiveIndex(nsDisplayListBuilder* aBuilder,
+                                    const bool aChildrenHavePerspective)
+      : mBuilder(nullptr)
+    {
+      if (aChildrenHavePerspective) {
+        mBuilder = aBuilder;
+        mCachedItemIndex = aBuilder->mPerspectiveItemIndex;
+        aBuilder->mPerspectiveItemIndex = 0;
+      }
+    }
+
+    ~AutoSaveRestorePerspectiveIndex()
+    {
+      if (mBuilder) {
+        mBuilder->mPerspectiveItemIndex = mCachedItemIndex;
+      }
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    uint32_t mCachedItemIndex;
+  };
+
   
 
 
@@ -1616,6 +1641,8 @@ public:
   void SetContainsBlendMode(bool aContainsBlendMode) { mContainsBlendMode = aContainsBlendMode; }
   bool ContainsBlendMode() const { return mContainsBlendMode; }
 
+  uint32_t AllocatePerspectiveItemIndex() { return mPerspectiveItemIndex++; }
+
   DisplayListClipState& ClipState() { return mClipState; }
   const ActiveScrolledRoot* CurrentActiveScrolledRoot() { return mCurrentActiveScrolledRoot; }
   const ActiveScrolledRoot* CurrentAncestorASRStackingContextContents() { return mCurrentContainerASR; }
@@ -1795,7 +1822,6 @@ private:
   friend class nsDisplayCanvasBackgroundImage;
   friend class nsDisplayBackgroundImage;
   friend class nsDisplayFixedPosition;
-  friend class nsDisplayPerspective;
   AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsDisplayItem* aItem);
 
   friend class nsDisplayItem;
@@ -1937,6 +1963,7 @@ private:
   ViewID                         mCurrentScrollbarTarget;
   MaybeScrollDirection           mCurrentScrollbarDirection;
   Preserves3DContext             mPreserves3DCtx;
+  uint32_t                       mPerspectiveItemIndex;
   int32_t                        mSVGEffectsBuildingDepth;
   
   
@@ -4226,6 +4253,7 @@ TableType GetTableTypeFromFrame(nsIFrame* aFrame);
 class nsDisplayTableBackgroundImage : public nsDisplayBackgroundImage {
 public:
   nsDisplayTableBackgroundImage(nsDisplayListBuilder* aBuilder, const InitData& aInitData, nsIFrame* aCellFrame);
+  ~nsDisplayTableBackgroundImage();
 
   virtual uint32_t GetPerFrameKey() const override {
     return (mLayer << (TYPE_BITS + static_cast<uint8_t>(TableTypeBits::COUNT))) |
@@ -4236,6 +4264,17 @@ public:
   virtual bool IsInvalid(nsRect& aRect) const override;
 
   virtual nsIFrame* FrameForInvalidation() const override { return mStyleFrame; }
+
+  virtual bool HasDeletedFrame() const override {
+    return !mStyleFrame || nsDisplayBackgroundImage::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mStyleFrame) {
+      mStyleFrame = nullptr;
+    }
+    nsDisplayBackgroundImage::RemoveFrame(aFrame);
+  }
 
   NS_DISPLAY_DECL_NAME("TableBackgroundImage", TYPE_TABLE_BACKGROUND_IMAGE)
 protected:
@@ -4324,7 +4363,16 @@ public:
     : nsDisplayThemedBackground(aBuilder, aFrame, aBackgroundRect)
     , mAncestorFrame(aAncestorFrame)
     , mTableType(GetTableTypeFromFrame(aAncestorFrame))
-  { }
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
+  ~nsDisplayTableThemedBackground() {
+    if (mAncestorFrame) {
+      mAncestorFrame->RemoveDisplayItem(this);
+    }
+  }
 
   virtual uint32_t GetPerFrameKey() const override {
     return (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
@@ -4332,6 +4380,17 @@ public:
   }
 
   virtual nsIFrame* FrameForInvalidation() const override { return mAncestorFrame; }
+
+  virtual bool HasDeletedFrame() const override {
+    return !mAncestorFrame || nsDisplayThemedBackground::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mAncestorFrame) {
+      mAncestorFrame = nullptr;
+    }
+    nsDisplayThemedBackground::RemoveFrame(aFrame);
+  }
 
   NS_DISPLAY_DECL_NAME("TableThemedBackground", TYPE_TABLE_THEMED_BACKGROUND_IMAGE)
 protected:
@@ -4467,9 +4526,29 @@ public:
     : nsDisplayBackgroundColor(aBuilder, aFrame, aBackgroundRect, aBackgroundStyle, aColor)
     , mAncestorFrame(aAncestorFrame)
     , mTableType(GetTableTypeFromFrame(aAncestorFrame))
-  { }
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
+  ~nsDisplayTableBackgroundColor() {
+    if (mAncestorFrame) {
+      mAncestorFrame->RemoveDisplayItem(this);
+    }
+  }
 
   virtual nsIFrame* FrameForInvalidation() const override { return mAncestorFrame; }
+
+  virtual bool HasDeletedFrame() const override {
+    return !mAncestorFrame || nsDisplayBackgroundColor::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mAncestorFrame) {
+      mAncestorFrame = nullptr;
+    }
+    nsDisplayBackgroundColor::RemoveFrame(aFrame);
+  }
 
   virtual uint32_t GetPerFrameKey() const override {
     return (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
@@ -5459,14 +5538,27 @@ public:
     : nsDisplayBlendMode(aBuilder, aFrame, aList, aBlendMode, aActiveScrolledRoot, aIndex)
     , mAncestorFrame(aAncestorFrame)
     , mTableType(GetTableTypeFromFrame(aAncestorFrame))
-  {}
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
 
   nsDisplayTableBlendMode(nsDisplayListBuilder* aBuilder,
                           const nsDisplayTableBlendMode& aOther)
     : nsDisplayBlendMode(aBuilder, aOther)
     , mAncestorFrame(aOther.mAncestorFrame)
     , mTableType(aOther.mTableType)
-  {}
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
+  ~nsDisplayTableBlendMode() {
+    if (mAncestorFrame) {
+      mAncestorFrame->RemoveDisplayItem(this);
+    }
+  }
 
   virtual nsDisplayWrapList* Clone(nsDisplayListBuilder* aBuilder) const override
   {
@@ -5474,6 +5566,17 @@ public:
   }
 
   virtual nsIFrame* FrameForInvalidation() const override { return mAncestorFrame; }
+
+  virtual bool HasDeletedFrame() const override {
+    return !mAncestorFrame || nsDisplayBlendMode::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mAncestorFrame) {
+      mAncestorFrame = nullptr;
+    }
+    nsDisplayBlendMode::RemoveFrame(aFrame);
+  }
 
   virtual uint32_t GetPerFrameKey() const override {
     return (mIndex << (TYPE_BITS + static_cast<uint8_t>(TableTypeBits::COUNT))) |
@@ -5571,6 +5674,17 @@ public:
 
   virtual nsIFrame* FrameForInvalidation() const override { return mAncestorFrame; }
 
+  virtual bool HasDeletedFrame() const override {
+    return !mAncestorFrame || nsDisplayBlendContainer::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mAncestorFrame) {
+      mAncestorFrame = nullptr;
+    }
+    nsDisplayBlendContainer::RemoveFrame(aFrame);
+  }
+
   virtual uint32_t GetPerFrameKey() const override {
     return (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
            nsDisplayItem::GetPerFrameKey();
@@ -5586,14 +5700,27 @@ protected:
     : nsDisplayBlendContainer(aBuilder, aFrame, aList, aActiveScrolledRoot, aIsForBackground)
     , mAncestorFrame(aAncestorFrame)
     , mTableType(GetTableTypeFromFrame(aAncestorFrame))
-  {}
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
 
   nsDisplayTableBlendContainer(nsDisplayListBuilder* aBuilder,
                                const nsDisplayTableBlendContainer& aOther)
     : nsDisplayBlendContainer(aBuilder, aOther)
     , mAncestorFrame(aOther.mAncestorFrame)
     , mTableType(aOther.mTableType)
-  {}
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
+  ~nsDisplayTableBlendContainer() {
+    if (mAncestorFrame) {
+      mAncestorFrame->RemoveDisplayItem(this);
+    }
+  }
 
   nsIFrame* mAncestorFrame;
   TableType mTableType;
@@ -5939,6 +6066,17 @@ public:
 
   virtual nsIFrame* FrameForInvalidation() const override { return mAncestorFrame; }
 
+  virtual bool HasDeletedFrame() const override {
+    return !mAncestorFrame || nsDisplayFixedPosition::HasDeletedFrame();
+  }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override {
+    if (aFrame == mAncestorFrame) {
+      mAncestorFrame = nullptr;
+    }
+    nsDisplayFixedPosition::RemoveFrame(aFrame);
+  }
+
   virtual uint32_t GetPerFrameKey() const override {
     return (mIndex << (TYPE_BITS + static_cast<uint8_t>(TableTypeBits::COUNT))) |
            (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
@@ -5956,7 +6094,16 @@ protected:
     : nsDisplayFixedPosition(aBuilder, aOther)
     , mAncestorFrame(aOther.mAncestorFrame)
     , mTableType(aOther.mTableType)
-  {}
+  {
+    if (aBuilder->IsRetainingDisplayList()) {
+      mAncestorFrame->AddDisplayItem(this);
+    }
+  }
+  ~nsDisplayTableFixedPosition() {
+    if (mAncestorFrame) {
+      mAncestorFrame->RemoveDisplayItem(this);
+    }
+  }
 
   nsIFrame* mAncestorFrame;
   TableType mTableType;
@@ -6742,10 +6889,18 @@ class nsDisplayPerspective : public nsDisplayItem
 public:
   NS_DISPLAY_DECL_NAME("nsDisplayPerspective", TYPE_PERSPECTIVE)
 
-  nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+  nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aTransformFrame,
+                       nsIFrame* aPerspectiveFrame,
                        nsDisplayList* aList);
   ~nsDisplayPerspective()
   {
+    if (mTransformFrame) {
+      mTransformFrame->RemoveDisplayItem(this);
+    }
+  }
+
+  virtual uint32_t GetPerFrameKey() const override {
+    return (mIndex << TYPE_BITS) | nsDisplayItem::GetPerFrameKey();
   }
 
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
@@ -6830,6 +6985,12 @@ public:
     return mList.GetComponentAlphaBounds(aBuilder);
   }
 
+  nsIFrame* TransformFrame() { return mTransformFrame; }
+
+  virtual nsIFrame* FrameForInvalidation() const override { return mTransformFrame; }
+
+  virtual int32_t ZIndex() const override;
+
   virtual void
   DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) override {
     if (mList.GetChildren()->GetTop()) {
@@ -6843,14 +7004,21 @@ public:
     nsDisplayItem::Destroy(aBuilder);
   }
 
+  virtual bool HasDeletedFrame() const override { return !mTransformFrame || nsDisplayItem::HasDeletedFrame(); }
+
   virtual void RemoveFrame(nsIFrame* aFrame) override
   {
+    if (aFrame == mTransformFrame) {
+      mTransformFrame = nullptr;
+    }
     nsDisplayItem::RemoveFrame(aFrame);
     mList.RemoveFrame(aFrame);
   }
 
 private:
   nsDisplayWrapList mList;
+  nsIFrame* mTransformFrame;
+  uint32_t mIndex;
 };
 
 
