@@ -842,27 +842,20 @@ var gPrivacyPane = {
 
 
 
-
   readAcceptCookies() {
-    let pref = Preferences.get("network.cookie.cookieBehavior");
-    let acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
-    let acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
-    let keepUntilLabel = document.getElementById("keepUntil");
-    let keepUntilMenu = document.getElementById("keepCookiesUntil");
+    var pref = Preferences.get("network.cookie.cookieBehavior");
+    var acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
+    var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
+    var keepUntil = document.getElementById("keepUntil");
+    var menu = document.getElementById("keepCookiesUntil");
 
     
-    let acceptCookies = (pref.value != 2);
+    var acceptCookies = (pref.value != 2);
 
-    if (!acceptThirdPartyMenu.disabled) {
-      acceptThirdPartyMenu.disabled = !acceptCookies;
-    }
-    acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled;
+    acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = !acceptCookies;
 
     let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
-    if (!keepUntilMenu.disabled) {
-      keepUntilMenu.disabled = privateBrowsing || !acceptCookies;
-    }
-    keepUntilLabel.disabled = keepUntilMenu.disabled;
+    keepUntil.disabled = menu.disabled = privateBrowsing || !acceptCookies;
 
     
     
