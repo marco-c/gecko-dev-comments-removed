@@ -495,9 +495,9 @@ imgFrame::DrawableRef()
 }
 
 RawAccessFrameRef
-imgFrame::RawAccessRef()
+imgFrame::RawAccessRef(bool aOnlyFinished )
 {
-  return RawAccessFrameRef(this);
+  return RawAccessFrameRef(this, aOnlyFinished);
 }
 
 void
@@ -506,7 +506,7 @@ imgFrame::SetRawAccessOnly()
   AssertImageDataLocked();
 
   
-  LockImageData();
+  LockImageData(false);
 }
 
 
@@ -747,35 +747,33 @@ imgFrame::GetPaletteData() const
   return data;
 }
 
-nsresult
-imgFrame::LockImageData()
+uint8_t*
+imgFrame::LockImageData(bool aOnlyFinished)
 {
   MonitorAutoLock lock(mMonitor);
 
   MOZ_ASSERT(mLockCount >= 0, "Unbalanced locks and unlocks");
-  if (mLockCount < 0) {
-    return NS_ERROR_FAILURE;
+  if (mLockCount < 0 || (aOnlyFinished && !mFinished)) {
+    return nullptr;
   }
 
-  mLockCount++;
-
-  
-  if (mLockCount != 1) {
-    return NS_OK;
-  }
-
-  
-  if (mLockedSurface) {
-    return NS_OK;
-  }
-
-  
+  uint8_t* data;
   if (mPalettedImageData) {
-    return NS_OK;
+    data = mPalettedImageData;
+  } else if (mLockedSurface) {
+    data = mLockedSurface->GetData();
+  } else {
+    data = nullptr;
   }
 
-  MOZ_ASSERT_UNREACHABLE("It's illegal to re-lock an optimized imgFrame");
-  return NS_ERROR_FAILURE;
+  
+  if (!data) {
+    MOZ_ASSERT_UNREACHABLE("It's illegal to re-lock an optimized imgFrame");
+    return nullptr;
+  }
+
+  ++mLockCount;
+  return data;
 }
 
 void

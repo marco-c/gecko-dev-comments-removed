@@ -129,7 +129,14 @@ public:
                             gfx::BackendType aBackend);
 
   DrawableFrameRef DrawableRef();
-  RawAccessFrameRef RawAccessRef();
+
+  
+
+
+
+
+
+  RawAccessFrameRef RawAccessRef(bool aOnlyFinished = false);
 
   
 
@@ -234,7 +241,15 @@ private:
 
   ~imgFrame();
 
-  nsresult LockImageData();
+  
+
+
+
+
+
+
+
+  uint8_t* LockImageData(bool aOnlyFinished);
   nsresult UnlockImageData();
   nsresult Optimize(gfx::DrawTarget* aTarget);
 
@@ -437,22 +452,27 @@ private:
 class RawAccessFrameRef final
 {
 public:
-  RawAccessFrameRef() { }
+  RawAccessFrameRef() : mData(nullptr) { }
 
-  explicit RawAccessFrameRef(imgFrame* aFrame)
+  explicit RawAccessFrameRef(imgFrame* aFrame,
+                             bool aOnlyFinished)
     : mFrame(aFrame)
+    , mData(nullptr)
   {
     MOZ_ASSERT(mFrame, "Need a frame");
 
-    if (NS_FAILED(mFrame->LockImageData())) {
-      mFrame->UnlockImageData();
+    mData = mFrame->LockImageData(aOnlyFinished);
+    if (!mData) {
       mFrame = nullptr;
     }
   }
 
   RawAccessFrameRef(RawAccessFrameRef&& aOther)
     : mFrame(aOther.mFrame.forget())
-  { }
+    , mData(aOther.mData)
+  {
+    aOther.mData = nullptr;
+  }
 
   ~RawAccessFrameRef()
   {
@@ -470,6 +490,8 @@ public:
     }
 
     mFrame = aOther.mFrame.forget();
+    mData = aOther.mData;
+    aOther.mData = nullptr;
 
     return *this;
   }
@@ -497,12 +519,18 @@ public:
       mFrame->UnlockImageData();
     }
     mFrame = nullptr;
+    mData = nullptr;
   }
+
+  uint8_t* Data() const { return mData; }
+  uint32_t PaletteDataLength() const { return mFrame->PaletteDataLength(); }
 
 private:
   RawAccessFrameRef(const RawAccessFrameRef& aOther) = delete;
+  RawAccessFrameRef& operator=(const RawAccessFrameRef& aOther) = delete;
 
   RefPtr<imgFrame> mFrame;
+  uint8_t* mData;
 };
 
 } 
