@@ -107,11 +107,11 @@ struct FullscreenRequest : public LinkedListElement<FullscreenRequest>
   ~FullscreenRequest();
 
   Element* GetElement() const { return mElement; }
-  nsDocument* GetDocument() const { return mDocument; }
+  nsIDocument* GetDocument() const { return mDocument; }
 
 private:
   RefPtr<Element> mElement;
-  RefPtr<nsDocument> mDocument;
+  RefPtr<nsIDocument> mDocument;
 
 public:
   
@@ -669,18 +669,6 @@ public:
 
   virtual Element* FindImageMap(const nsAString& aNormalizedMapName) override;
 
-  virtual nsTArray<Element*> GetFullscreenStack() const override;
-  virtual void AsyncRequestFullScreen(
-    mozilla::UniquePtr<FullscreenRequest>&& aRequest) override;
-  virtual void RestorePreviousFullScreenState() override;
-  virtual bool IsFullscreenLeaf() override;
-  virtual nsresult
-    RemoteFrameFullscreenChanged(nsIDOMElement* aFrameElement) override;
-
-  virtual nsresult RemoteFrameFullscreenReverted() override;
-  virtual nsIDocument* GetFullscreenRoot() override;
-  virtual void SetFullscreenRoot(nsIDocument* aRoot) override;
-
   
   
   
@@ -706,34 +694,6 @@ public:
   
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
-
-  
-  
-  bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
-
-  
-  
-  void RequestFullScreen(mozilla::UniquePtr<FullscreenRequest>&& aRequest);
-
-  
-  
-  void CleanupFullscreenState();
-
-  
-  
-  
-  bool FullScreenStackPush(Element* aElement);
-
-  
-  
-  
-  void FullScreenStackPop();
-
-  
-  Element* FullScreenStackTop() override;
-
-  
-  bool FullscreenEnabled(mozilla::dom::CallerType aCallerType) override;
 
   void RequestPointerLock(Element* aElement,
                           mozilla::dom::CallerType aCallerType) override;
@@ -821,25 +781,11 @@ protected:
   void EnsureOnloadBlocker();
 
   
-  
-  
-  bool ApplyFullscreen(const FullscreenRequest& aRequest);
-
-  
   nsAttrAndChildArray mChildren;
 
   
   
   RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
-
-  
-  
-  
-  nsTArray<nsWeakPtr> mFullScreenStack;
-
-  
-  
-  nsWeakPtr mFullscreenRoot;
 
 public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
@@ -873,8 +819,6 @@ public:
   
   
   bool mReportedUseCounters:1;
-
-  uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
 

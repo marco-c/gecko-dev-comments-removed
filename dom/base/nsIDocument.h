@@ -1611,7 +1611,7 @@ public:
   
 
 
-  virtual nsTArray<Element*> GetFullscreenStack() const = 0;
+  nsTArray<Element*> GetFullscreenStack() const;
 
   
 
@@ -1624,8 +1624,29 @@ public:
 
 
 
-  virtual void AsyncRequestFullScreen(
-    mozilla::UniquePtr<FullscreenRequest>&& aRequest) = 0;
+  void AsyncRequestFullScreen(mozilla::UniquePtr<FullscreenRequest>&&);
+
+  
+  
+  bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
+
+  
+  
+  void RequestFullScreen(mozilla::UniquePtr<FullscreenRequest>&& aRequest);
+
+  
+  
+  void CleanupFullscreenState();
+
+  
+  
+  
+  bool FullScreenStackPush(Element* aElement);
+
+  
+  
+  
+  void FullScreenStackPop();
 
   
 
@@ -1633,8 +1654,7 @@ public:
 
 
 
-  virtual nsresult
-    RemoteFrameFullscreenChanged(nsIDOMElement* aFrameElement) = 0;
+  nsresult RemoteFrameFullscreenChanged(nsIDOMElement* aFrameElement);
 
   
 
@@ -1645,33 +1665,33 @@ public:
 
 
 
-   virtual nsresult RemoteFrameFullscreenReverted() = 0;
+   nsresult RemoteFrameFullscreenReverted();
 
   
 
 
 
 
-  virtual void RestorePreviousFullScreenState() = 0;
+  void RestorePreviousFullScreenState();
 
   
 
 
 
-  virtual bool IsFullscreenLeaf() = 0;
+  bool IsFullscreenLeaf();
 
   
 
 
 
 
-  virtual nsIDocument* GetFullscreenRoot() = 0;
+  nsIDocument* GetFullscreenRoot();
 
   
 
 
 
-  virtual void SetFullscreenRoot(nsIDocument* aRoot) = 0;
+  void SetFullscreenRoot(nsIDocument* aRoot);
 
   
 
@@ -3002,8 +3022,8 @@ public:
   void MozSetImageElement(const nsAString& aImageElementId, Element* aElement);
   nsIURI* GetDocumentURIObject() const;
   
-  virtual bool FullscreenEnabled(mozilla::dom::CallerType aCallerType) = 0;
-  virtual Element* FullScreenStackTop() = 0;
+  bool FullscreenEnabled(mozilla::dom::CallerType aCallerType);
+  Element* FullScreenStackTop();
   bool Fullscreen()
   {
     return !!GetFullscreenElement();
@@ -3343,6 +3363,11 @@ protected:
   
   
   void MaybeActiveMediaComponents();
+
+  
+  
+  
+  bool ApplyFullscreen(const FullscreenRequest& aRequest);
 
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3781,6 +3806,8 @@ protected:
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
   unsigned int mIsScopedStyleEnabled : 2;
 
+  uint8_t mPendingFullscreenRequests;
+
   
   nsCompatibility mCompatMode;
 
@@ -4015,6 +4042,15 @@ protected:
   
   nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
     mIntersectionObservers;
+
+  
+  
+  
+  nsTArray<nsWeakPtr> mFullScreenStack;
+
+  
+  
+  nsWeakPtr mFullscreenRoot;
 
   nsTArray<RefPtr<mozilla::StyleSheet>> mOnDemandBuiltInUASheets;
   nsTArray<RefPtr<mozilla::StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
