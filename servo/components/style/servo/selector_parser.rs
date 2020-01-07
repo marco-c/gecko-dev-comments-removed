@@ -548,12 +548,6 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 
 impl SelectorImpl {
     
-    #[inline]
-    pub fn pseudo_element_cascade_type(pseudo: &PseudoElement) -> PseudoElementCascadeType {
-        pseudo.cascade_type()
-    }
-
-    
     
     #[inline]
     pub fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
