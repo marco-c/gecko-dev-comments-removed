@@ -10,6 +10,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const FontAxis = createFactory(require("./FontAxis"));
 
+const { getStr } = require("../utils/l10n");
 const Types = require("../types");
 
 class FontEditor extends PureComponent {
@@ -17,6 +18,7 @@ class FontEditor extends PureComponent {
     return {
       fontEditor: PropTypes.shape(Types.fontEditor).isRequired,
       onAxisUpdate: PropTypes.func.isRequired,
+      onInstanceChange: PropTypes.func.isRequired,
     };
   }
 
@@ -74,22 +76,87 @@ class FontEditor extends PureComponent {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+  renderInstances(fontInstances = [], selectedInstance) {
+    
+    const customInstance = {
+      name: getStr("fontinspector.customInstanceName"),
+      values: this.props.fontEditor.customInstanceValues
+    };
+    fontInstances = [ ...fontInstances, customInstance ];
+
+    
+    const instanceOptions = fontInstances.map(instance =>
+      dom.option(
+        {
+          value: instance.name,
+          selected: instance.name === selectedInstance.name ? "selected" : null,
+        },
+        instance.name
+      )
+    );
+
+    
+    const instanceSelect = dom.select(
+      {
+        className: "font-control-input",
+        onChange: (e) => {
+          const instance = fontInstances.find(inst => e.target.value === inst.name);
+          instance && this.props.onInstanceChange(instance.name, instance.values);
+        }
+      },
+      instanceOptions
+    );
+
+    return dom.label(
+      {
+        className: "font-control",
+      },
+      dom.span(
+        {
+          className: "font-control-label",
+        },
+        "Instances"
+      ),
+      instanceSelect
+    );
+  }
+
+  
   
   renderPlaceholder() {
     return dom.div({}, "No fonts with variation axes apply to this element.");
   }
 
   render() {
-    const { fonts, axes } = this.props.fontEditor;
+    const { fonts, axes, instance } = this.props.fontEditor;
     
     
-    const fontAxes = (fonts[0] && fonts[0].variationAxes) ? fonts[0].variationAxes : null;
+    const font = fonts[0];
+    const fontAxes = (font && font.variationAxes) ? font.variationAxes : null;
+    const fontInstances = (font && font.variationInstances) ?
+      font.variationInstances
+      :
+      null;
 
     return dom.div(
       {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-fontinspector"
       },
+      fontInstances && this.renderInstances(fontInstances, instance),
       fontAxes ?
         this.renderAxes(fontAxes, axes)
         :
