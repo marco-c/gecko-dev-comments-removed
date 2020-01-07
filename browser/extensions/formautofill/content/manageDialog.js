@@ -286,45 +286,8 @@ class ManageAddresses extends ManageRecords {
     this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, address);
   }
 
-  
-
-
-
-
-
-
   getLabel(address) {
-    
-    
-    
-    const fieldOrder = [
-      "name",
-      "-moz-street-address-one-line",  
-      "address-level2",  
-      "organization",    
-      "address-level1",  
-      "country-name",    
-      "postal-code",     
-      "tel",             
-      "email",           
-    ];
-
-    let parts = [];
-    if (address["street-address"]) {
-      address["-moz-street-address-one-line"] = FormAutofillUtils.toOneLineAddress(
-        address["street-address"]
-      );
-    }
-    for (const fieldName of fieldOrder) {
-      let string = address[fieldName];
-      if (string) {
-        parts.push(string);
-      }
-      if (parts.length == 2) {
-        break;
-      }
-    }
-    return parts.join(", ");
+    return FormAutofillUtils.getAddressLabel(address);
   }
 }
 
@@ -364,21 +327,12 @@ class ManageCreditCards extends ManageRecords {
 
 
   async getLabel(creditCard, showCreditCards = false) {
-    let parts = [];
-    if (creditCard["cc-number"]) {
-      let ccLabel;
-      if (showCreditCards) {
-        ccLabel = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
-      } else {
-        let {affix, label} = FormAutofillUtils.fmtMaskedCreditCardLabel(creditCard["cc-number"]);
-        ccLabel = `${affix} ${label}`;
-      }
-      parts.push(ccLabel);
+    let patchObj = {};
+    if (creditCard["cc-number"] && showCreditCards) {
+      patchObj["cc-number-decrypted"] = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
     }
-    if (creditCard["cc-name"]) {
-      parts.push(creditCard["cc-name"]);
-    }
-    return parts.join(", ");
+
+    return FormAutofillUtils.getCreditCardLabel({...creditCard, ...patchObj}, showCreditCards);
   }
 
   async toggleShowHideCards(options) {
