@@ -525,7 +525,13 @@ class ArenaCellSet
 #endif
 
     
-    ArenaCellSet();
+    constexpr ArenaCellSet()
+      : arena(nullptr)
+      , next(nullptr)
+#ifdef DEBUG
+      , minorGCNumberAtCreation(0)
+#endif
+    {}
 
   public:
     ArenaCellSet(Arena* arena, ArenaCellSet* next);

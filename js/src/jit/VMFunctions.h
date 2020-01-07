@@ -261,7 +261,7 @@ struct VMFunction
     { }
 
     VMFunction(const VMFunction& o)
-      : next(nullptr),
+      : next(functions),
         wrapped(o.wrapped),
 #ifdef JS_TRACE_LOGGING
         name_(o.name_),
@@ -277,13 +277,15 @@ struct VMFunction
         expectTailCall(o.expectTailCall)
     {
         
+        functions = this;
+
+        
         MOZ_ASSERT_IF(outParam != Type_Void,
                       returnType == Type_Void ||
                       returnType == Type_Bool);
         MOZ_ASSERT(returnType == Type_Void ||
                    returnType == Type_Bool ||
                    returnType == Type_Object);
-        addToFunctions();
     }
 
     typedef const VMFunction* Lookup;
@@ -317,10 +319,6 @@ struct VMFunction
         MOZ_ASSERT(f1->outParamRootType == f2->outParamRootType);
         return true;
     }
-
-  private:
-    
-    void addToFunctions();
 };
 
 template <class> struct TypeToDataType {  };
