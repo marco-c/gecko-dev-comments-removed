@@ -477,11 +477,19 @@ protected:
 
 
 
+
+
+
+
+
+
   nsIContent* GetNextTabbableContentInScope(nsIContent* aOwner,
                                             nsIContent* aStartContent,
+                                            nsIContent* aOriginalStartContent,
                                             bool aForward,
                                             int32_t aCurrentTabIndex,
                                             bool aIgnoreTabIndex,
+                                            bool aForDocumentNavigation,
                                             bool aSkipOwner);
 
   
@@ -509,10 +517,18 @@ protected:
 
 
 
+
+
+
+
+
+
   nsIContent* GetNextTabbableContentInAncestorScopes(nsIContent** aStartContent,
+                                                     nsIContent* aOriginalStartContent,
                                                      bool aForward,
                                                      int32_t* aCurrentTabIndex,
-                                                     bool aIgnoreTabIndex);
+                                                     bool aIgnoreTabIndex,
+                                                     bool aForDocumentNavigation);
 
   
 
@@ -633,6 +649,16 @@ private:
                                      bool aGettingFocus);
 
   void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow);
+
+  bool TryDocumentNavigation(nsIContent* aCurrentContent,
+                             bool* aCheckSubDocument,
+                             nsIContent** aResultContent);
+
+  bool TryToMoveFocusToSubDocument(nsIContent* aCurrentContent,
+                                   nsIContent* aOriginalStartContent,
+                                   bool aForward,
+                                   bool aForDocumentNavigation,
+                                   nsIContent** aResultContent);
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mActiveWindow;

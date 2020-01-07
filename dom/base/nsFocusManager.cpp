@@ -3239,9 +3239,11 @@ nsFocusManager::HostOrSlotTabIndexValue(nsIContent* aContent)
 nsIContent*
 nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
                                               nsIContent* aStartContent,
+                                              nsIContent* aOriginalStartContent,
                                               bool aForward,
                                               int32_t aCurrentTabIndex,
                                               bool aIgnoreTabIndex,
+                                              bool aForDocumentNavigation,
                                               bool aSkipOwner)
 {
   
@@ -3361,14 +3363,33 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
       }
 
       if (!IsHostOrSlot(iterContent)) {
+        nsCOMPtr<nsIContent> elementInFrame;
+        bool checkSubDocument = true;
+        if (aForDocumentNavigation &&
+            TryDocumentNavigation(iterContent, &checkSubDocument,
+                                  getter_AddRefs(elementInFrame))) {
+          return elementInFrame;
+        }
+        if (!checkSubDocument) {
+          continue;
+        }
+
+        if (TryToMoveFocusToSubDocument(iterContent, aOriginalStartContent,
+                                        aForward, aForDocumentNavigation,
+                                        getter_AddRefs(elementInFrame))) {
+          return elementInFrame;
+        }
+
         
         return iterContent;
       }
 
       
       nsIContent* contentToFocus =
-        GetNextTabbableContentInScope(iterContent, iterContent, aForward,
+        GetNextTabbableContentInScope(iterContent, iterContent,
+                                      aOriginalStartContent, aForward,
                                       aForward ? 1 : 0, aIgnoreTabIndex,
+                                      aForDocumentNavigation,
                                       false );
       if (contentToFocus) {
         return contentToFocus;
@@ -3402,9 +3423,11 @@ nsFocusManager::GetNextTabbableContentInScope(nsIContent* aOwner,
 nsIContent*
 nsFocusManager::GetNextTabbableContentInAncestorScopes(
   nsIContent** aStartContent,
+  nsIContent* aOriginalStartContent,
   bool aForward,
   int32_t* aCurrentTabIndex,
-  bool aIgnoreTabIndex)
+  bool aIgnoreTabIndex,
+  bool aForDocumentNavigation)
 {
   nsIContent* startContent = *aStartContent;
   while (1) {
@@ -3414,8 +3437,9 @@ nsFocusManager::GetNextTabbableContentInAncestorScopes(
     int32_t tabIndex = 0;
     startContent->IsFocusable(&tabIndex);
     nsIContent* contentToFocus =
-      GetNextTabbableContentInScope(owner, startContent, aForward,
-                                    tabIndex, aIgnoreTabIndex,
+      GetNextTabbableContentInScope(owner, startContent, aOriginalStartContent,
+                                    aForward, tabIndex, aIgnoreTabIndex,
+                                    aForDocumentNavigation,
                                     false );
     if (contentToFocus) {
       return contentToFocus;
@@ -3461,8 +3485,10 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
     
     if (aForward && IsHostOrSlot(aStartContent)) {
       nsIContent* contentToFocus =
-        GetNextTabbableContentInScope(aStartContent, aStartContent, aForward,
+        GetNextTabbableContentInScope(aStartContent, aStartContent,
+                                      aOriginalStartContent, aForward,
                                       aForward ? 1 : 0, aIgnoreTabIndex,
+                                      aForDocumentNavigation,
                                       true );
       if (contentToFocus) {
         NS_ADDREF(*aResultContent = contentToFocus);
@@ -3475,9 +3501,12 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
     
     if (aRootContent != FindOwner(aStartContent)) {
       nsIContent* contentToFocus =
-        GetNextTabbableContentInAncestorScopes(&aStartContent, aForward,
+        GetNextTabbableContentInAncestorScopes(&aStartContent,
+                                               aOriginalStartContent,
+                                               aForward,
                                                &aCurrentTabIndex,
-                                               aIgnoreTabIndex);
+                                               aIgnoreTabIndex,
+                                               aForDocumentNavigation);
       if (contentToFocus) {
         NS_ADDREF(*aResultContent = contentToFocus);
         return NS_OK;
@@ -3609,8 +3638,10 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
         if (tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           nsIContent* contentToFocus =
-            GetNextTabbableContentInScope(currentContent, currentContent, aForward,
+            GetNextTabbableContentInScope(currentContent, currentContent,
+                                          aOriginalStartContent, aForward,
                                           aForward ? 1 : 0, aIgnoreTabIndex,
+                                          aForDocumentNavigation,
                                           true );
           if (contentToFocus) {
             NS_ADDREF(*aResultContent = contentToFocus);
@@ -3667,54 +3698,21 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
 
           
           bool checkSubDocument = true;
-          if (aForDocumentNavigation) {
-            Element* docRoot = GetRootForChildDocument(currentContent);
-            if (docRoot) {
-              
-              
-              
-              
-              
-              if (!docRoot->IsHTMLElement(nsGkAtoms::frameset)) {
-                return FocusFirst(docRoot, aResultContent);
-              }
-            } else {
-              
-              
-              checkSubDocument = false;
-            }
+          if (aForDocumentNavigation &&
+              TryDocumentNavigation(currentContent, &checkSubDocument,
+                                    aResultContent)) {
+            return NS_OK;
           }
 
           if (checkSubDocument) {
             
             
-            nsIDocument* doc = currentContent->GetComposedDoc();
-            NS_ASSERTION(doc, "content not in document");
-            nsIDocument* subdoc = doc->GetSubDocumentFor(currentContent);
-            if (subdoc && !subdoc->EventHandlingSuppressed()) {
-              if (aForward) {
-                
-                
-                nsCOMPtr<nsPIDOMWindowOuter> subframe = subdoc->GetWindow();
-                if (subframe) {
-                  *aResultContent = GetRootForFocus(subframe, subdoc, false, true);
-                  if (*aResultContent) {
-                    NS_ADDREF(*aResultContent);
-                    return NS_OK;
-                  }
-                }
-              }
-              Element* rootElement = subdoc->GetRootElement();
-              nsIPresShell* subShell = subdoc->GetShell();
-              if (rootElement && subShell) {
-                rv = GetNextTabbableContent(subShell, rootElement,
-                                            aOriginalStartContent, rootElement,
-                                            aForward, (aForward ? 1 : 0),
-                                            false, aForDocumentNavigation, aResultContent);
-                NS_ENSURE_SUCCESS(rv, rv);
-                if (*aResultContent)
-                  return NS_OK;
-              }
+            if (TryToMoveFocusToSubDocument(currentContent,
+                                            aOriginalStartContent,
+                                            aForward, aForDocumentNavigation,
+                                            aResultContent)) {
+              MOZ_ASSERT(*aResultContent);
+              return NS_OK;
             }
             
             
@@ -3738,8 +3736,10 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
                   nsIContent* contentToFocus =
                     GetNextTabbableContentInScope(currentContent,
                                                   currentContent,
+                                                  aOriginalStartContent,
                                                   aForward, aForward ? 1 : 0,
                                                   aIgnoreTabIndex,
+                                                  aForDocumentNavigation,
                                                   true );
                   if (contentToFocus) {
                     NS_ADDREF(*aResultContent = contentToFocus);
@@ -3801,6 +3801,73 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
   }
 
   return NS_OK;
+}
+
+bool
+nsFocusManager::TryDocumentNavigation(nsIContent* aCurrentContent,
+                                      bool* aCheckSubDocument,
+                                      nsIContent** aResultContent)
+{
+  *aCheckSubDocument = true;
+  Element* docRoot = GetRootForChildDocument(aCurrentContent);
+  if (docRoot) {
+    
+    
+    
+    
+    
+    if (!docRoot->IsHTMLElement(nsGkAtoms::frameset)) {
+      *aCheckSubDocument = false;
+      Unused << FocusFirst(docRoot, aResultContent);
+      return *aResultContent != nullptr;
+    }
+  } else {
+    
+    
+    *aCheckSubDocument = false;
+  }
+
+  return false;
+}
+
+bool
+nsFocusManager::TryToMoveFocusToSubDocument(nsIContent* aCurrentContent,
+                                            nsIContent* aOriginalStartContent,
+                                            bool aForward,
+                                            bool aForDocumentNavigation,
+                                            nsIContent** aResultContent)
+{
+  nsIDocument* doc = aCurrentContent->GetComposedDoc();
+  NS_ASSERTION(doc, "content not in document");
+  nsIDocument* subdoc = doc->GetSubDocumentFor(aCurrentContent);
+  if (subdoc && !subdoc->EventHandlingSuppressed()) {
+    if (aForward) {
+      
+      
+      nsCOMPtr<nsPIDOMWindowOuter> subframe = subdoc->GetWindow();
+      if (subframe) {
+        *aResultContent = GetRootForFocus(subframe, subdoc, false, true);
+        if (*aResultContent) {
+          NS_ADDREF(*aResultContent);
+          return true;
+        }
+      }
+    }
+    Element* rootElement = subdoc->GetRootElement();
+    nsIPresShell* subShell = subdoc->GetShell();
+    if (rootElement && subShell) {
+      nsresult rv = GetNextTabbableContent(subShell, rootElement,
+                                           aOriginalStartContent, rootElement,
+                                           aForward, (aForward ? 1 : 0),
+                                           false, aForDocumentNavigation,
+                                           aResultContent);
+      NS_ENSURE_SUCCESS(rv, false);
+      if (*aResultContent) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 nsIContent*
