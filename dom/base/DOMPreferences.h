@@ -67,6 +67,10 @@ public:
   
   static bool PushEnabled();
   static bool PushEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool StreamsEnabled();
+  static bool StreamsEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
