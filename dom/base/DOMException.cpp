@@ -330,8 +330,7 @@ Exception::ToString(JSContext* aCx, nsACString& _retval)
 
   if (mLocation) {
     
-    nsresult rv = mLocation->ToString(aCx, location);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mLocation->ToString(aCx, location);
   }
 
   if (location.IsEmpty()) {
