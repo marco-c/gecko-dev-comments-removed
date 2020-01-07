@@ -6475,124 +6475,18 @@ nsCSSFrameConstructor::GetFloatContainingBlock(nsIFrame* aFrame)
 
 
 
-static nsContainerFrame*
-AdjustAppendParentForAfterContent(nsFrameManager* aFrameManager,
-                                  nsIContent* aContainer,
-                                  nsContainerFrame* aParentFrame,
-                                  nsIContent* aChild,
-                                  nsIFrame** aAfterFrame)
-{
-  
-  
-  
-  
-  
-  
-  if (nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
-                                    CSSPseudoElementType::after,
-                                    aParentFrame->PresContext()) ||
-      aFrameManager->GetDisplayContentsStyleFor(aContainer) ||
-      aFrameManager->GetAllRegisteredDisplayContentsStylesIn(aContainer)) {
-    nsIFrame* afterFrame = nullptr;
-    nsContainerFrame* parent =
-      static_cast<nsContainerFrame*>(aParentFrame->LastContinuation());
-    bool done = false;
-    while (!done && parent) {
-      
-      parent->DrainSelfOverflowList();
-
-      nsIFrame* child = parent->GetChildList(nsIFrame::kPrincipalList).LastChild();
-      if (child && child->IsPseudoFrame(aContainer) &&
-          !child->IsGeneratedContentFrame()) {
-        
-        nsContainerFrame* childAsContainer = do_QueryFrame(child);
-        if (childAsContainer) {
-          parent = nsLayoutUtils::LastContinuationWithChild(childAsContainer);
-          continue;
-        }
-      }
-
-      for (; child; child = child->GetPrevSibling()) {
-        nsIContent* c = child->GetContent();
-        if (child->IsGeneratedContentFrame()) {
-          nsIContent* p = c->GetParent();
-          if (c->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentafter) {
-            if (!nsContentUtils::ContentIsDescendantOf(aChild, p) &&
-                p != aContainer &&
-                nsContentUtils::PositionIsBefore(p, aChild)) {
-              
-              
-              
-              
-              
-              
-              done = true;
-              break;
-            }
-          } else if (nsContentUtils::PositionIsBefore(p, aChild)) {
-            
-            done = true;
-            break;
-          }
-        } else if (nsContentUtils::PositionIsBefore(c, aChild)) {
-          
-          done = true;
-          break;
-        }
-        afterFrame = child;
-      }
-
-      parent = static_cast<nsContainerFrame*>(parent->GetPrevContinuation());
-    }
-    if (afterFrame) {
-      *aAfterFrame = afterFrame;
-      return afterFrame->GetParent();
-    }
-  }
-
-  *aAfterFrame = nullptr;
-
-  if (IsFramePartOfIBSplit(aParentFrame)) {
-    
-    
-    
-    
-    
-    nsContainerFrame* trailingInline = GetIBSplitSibling(aParentFrame);
-    if (trailingInline) {
-      aParentFrame = trailingInline;
-    }
-
-    
-    
-    
-    
-    
-    
-    aParentFrame =
-      static_cast<nsContainerFrame*>(aParentFrame->LastContinuation());
-  }
-
-  return aParentFrame;
-}
-
-
-
-
-
-
 static nsIFrame*
-FindAppendPrevSibling(nsIFrame* aParentFrame, nsIFrame* aAfterFrame)
+FindAppendPrevSibling(nsIFrame* aParentFrame, nsIFrame* aNextSibling)
 {
-  if (aAfterFrame) {
-    NS_ASSERTION(aAfterFrame->GetParent() == aParentFrame, "Wrong parent");
-    NS_ASSERTION(aAfterFrame->GetPrevSibling() ||
-                 aParentFrame->PrincipalChildList().FirstChild() == aAfterFrame,
-                 ":after frame must be on the principal child list here");
-    return aAfterFrame->GetPrevSibling();
-  }
-
   aParentFrame->DrainSelfOverflowList();
+
+  if (aNextSibling) {
+    MOZ_ASSERT(aNextSibling->GetParent() == aParentFrame, "Wrong parent");
+    MOZ_ASSERT(aNextSibling->GetPrevSibling() ||
+               aParentFrame->PrincipalChildList().FirstChild() == aNextSibling,
+               "next sibling must be on the principal child list here");
+    return aNextSibling->GetPrevSibling();
+  }
 
   return aParentFrame->GetChildList(kPrincipalList).LastChild();
 }
@@ -7637,7 +7531,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   
   
-  bool parentIBSplit = IsFramePartOfIBSplit(parentFrame);
+  const bool parentIBSplit = IsFramePartOfIBSplit(parentFrame);
   if (parentIBSplit) {
 #ifdef DEBUG
     if (gNoisyContentUpdates) {
@@ -7663,35 +7557,65 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
              "Parent frame should not be fieldset or details!");
 
   
-  nsIFrame* parentAfterFrame;
-  nsContainerFrame* preAdjustedParentFrame = parentFrame;
-  parentFrame =
-    ::AdjustAppendParentForAfterContent(this, insertion.mContainer, parentFrame,
-                                        aFirstNewContent, &parentAfterFrame);
-
   
-  bool haveFirstLetterStyle = false, haveFirstLineStyle = false;
-  nsContainerFrame* containingBlock = GetFloatContainingBlock(parentFrame);
-  if (containingBlock) {
-    haveFirstLetterStyle = HasFirstLetterStyle(containingBlock);
-    haveFirstLineStyle =
-      ShouldHaveFirstLineStyle(containingBlock->GetContent(),
-                               containingBlock->StyleContext());
+  nsIFrame* nextSibling = nullptr;
+  if (GetDisplayContentsStyleFor(insertion.mContainer) ||
+      nsLayoutUtils::GetAfterFrame(insertion.mContainer)) {
+    FlattenedChildIterator iter(insertion.mContainer);
+    iter.Seek(insertion.mContainer->GetLastChild());
+    StyleDisplay unused = UNSET_DISPLAY;
+    nextSibling = FindNextSibling(iter, unused);
   }
 
+  if (nextSibling) {
+    parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
+  } else if (parentIBSplit) {
+    
+    
+    
+    
+    
+    if (nsContainerFrame* trailingInline = GetIBSplitSibling(parentFrame)) {
+      parentFrame = trailingInline;
+    }
+
+    
+    
+    
+    
+    
+    
+    parentFrame =
+      static_cast<nsContainerFrame*>(parentFrame->LastContinuation());
+  }
+
+  nsContainerFrame* containingBlock = GetFloatContainingBlock(parentFrame);
+
+  
+  const bool haveFirstLetterStyle =
+    containingBlock && HasFirstLetterStyle(containingBlock);
+
+  const bool haveFirstLineStyle =
+    containingBlock &&
+    ShouldHaveFirstLineStyle(containingBlock->GetContent(),
+                             containingBlock->StyleContext());
+
   if (haveFirstLetterStyle) {
-    AutoWeakFrame wf(parentAfterFrame);
+    AutoWeakFrame wf(nextSibling);
+
     
     RemoveLetterFrames(mPresShell, containingBlock);
 
-    if (parentAfterFrame && !wf) {
-      
-      
-      parentFrame =
-        ::AdjustAppendParentForAfterContent(this, insertion.mContainer,
-                                            preAdjustedParentFrame,
-                                            aFirstNewContent, &parentAfterFrame);
-      if (parentFrame != preAdjustedParentFrame) {
+    
+    
+    
+    if (nextSibling && !wf) {
+      FlattenedChildIterator iter(insertion.mContainer);
+      iter.Seek(insertion.mContainer->GetLastChild());
+      StyleDisplay unused = UNSET_DISPLAY;
+      nextSibling = FindNextSibling(iter, unused);
+      if (nextSibling) {
+        parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
         containingBlock = GetFloatContainingBlock(parentFrame);
       }
     }
@@ -7717,7 +7641,8 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   LayoutFrameType frameType = parentFrame->Type();
 
   FlattenedChildIterator iter(aContainer);
-  bool haveNoXBLChildren = (!iter.XBLInvolved() || !iter.GetNextChild());
+  const bool haveNoXBLChildren = !iter.XBLInvolved() || !iter.GetNextChild();
+
   AutoFrameConstructionItemList items(this);
   if (aFirstNewContent->GetPreviousSibling() &&
       GetParentType(frameType) == eTypeBlock &&
@@ -7742,7 +7667,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     AddFrameConstructionItems(state, child, false, insertion, items);
   }
 
-  nsIFrame* prevSibling = ::FindAppendPrevSibling(parentFrame, parentAfterFrame);
+  nsIFrame* prevSibling = ::FindAppendPrevSibling(parentFrame, nextSibling);
 
   
   
@@ -7765,8 +7690,11 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                  !prevSibling->IsInlineOutside() ||
                                  prevSibling->IsBrFrame());
     
-    items.SetLineBoundaryAtEnd(!parentAfterFrame ||
-        !parentAfterFrame->IsInlineOutside());
+    
+    
+    
+    items.SetLineBoundaryAtEnd(
+        !nextSibling || !nextSibling->IsInlineOutside());
   }
   
   
