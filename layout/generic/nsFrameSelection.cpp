@@ -2839,8 +2839,6 @@ nsFrameSelection::SetAncestorLimiter(nsIContent *aLimiter)
 nsresult
 nsFrameSelection::DeleteFromDocument()
 {
-  nsresult res;
-
   
   bool isCollapsed;
   int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
@@ -2856,9 +2854,11 @@ nsFrameSelection::DeleteFromDocument()
   RefPtr<Selection> selection = mDomSelections[index];
   for (uint32_t rangeIdx = 0; rangeIdx < selection->RangeCount(); ++rangeIdx) {
     RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
-    res = range->DeleteContents();
-    if (NS_FAILED(res))
-      return res;
+    ErrorResult res;
+    range->DeleteContents(res);
+    if (res.Failed()) {
+      return res.StealNSResult();
+    }
   }
 
   
