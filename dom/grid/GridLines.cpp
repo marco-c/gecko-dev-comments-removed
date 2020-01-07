@@ -145,6 +145,14 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
 
       
       for (auto area : aAreas) {
+        
+        
+        
+        
+        if (area->Type() == GridDeclaration::Implicit) {
+          continue;
+        }
+
         bool haveNameToAdd = false;
         nsAutoString nameToAdd;
         area->GetName(nameToAdd);
