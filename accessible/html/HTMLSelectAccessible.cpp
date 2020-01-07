@@ -431,7 +431,7 @@ HTMLComboboxAccessible::Description(nsString& aDescription)
 }
 
 void
-HTMLComboboxAccessible::Value(nsString& aValue)
+HTMLComboboxAccessible::Value(nsString& aValue) const
 {
   
   Accessible* option = SelectedOption();

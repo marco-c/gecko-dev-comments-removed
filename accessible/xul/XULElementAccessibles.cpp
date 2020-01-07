@@ -180,7 +180,7 @@ XULLinkAccessible::~XULLinkAccessible()
 
 
 void
-XULLinkAccessible::Value(nsString& aValue)
+XULLinkAccessible::Value(nsString& aValue) const
 {
   aValue.Truncate();
 

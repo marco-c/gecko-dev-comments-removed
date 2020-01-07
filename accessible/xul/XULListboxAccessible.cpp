@@ -138,7 +138,7 @@ XULListboxAccessible::NativeState()
 
 
 void
-XULListboxAccessible::Value(nsString& aValue)
+XULListboxAccessible::Value(nsString& aValue) const
 {
   aValue.Truncate();
 

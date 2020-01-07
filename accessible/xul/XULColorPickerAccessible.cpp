@@ -29,7 +29,7 @@ XULColorPickerTileAccessible::
 
 
 void
-XULColorPickerTileAccessible::Value(nsString& aValue)
+XULColorPickerTileAccessible::Value(nsString& aValue) const
 {
   aValue.Truncate();
 

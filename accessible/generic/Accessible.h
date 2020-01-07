@@ -195,7 +195,7 @@ public:
   
 
 
-  virtual void Value(nsString& aValue);
+  virtual void Value(nsString& aValue) const;
 
   
 
