@@ -12,6 +12,7 @@
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -51,15 +52,15 @@ private:
 namespace {
 
 nsIPrincipal*
-GetPrincipalFromWorkerPrivate(WorkerPrivate* aWorkerPrivate)
+GetPrincipalFromThreadSafeWorkerRef(ThreadSafeWorkerRef* aWorkerRef)
 {
-  nsIPrincipal* principal = aWorkerPrivate->GetPrincipal();
+  nsIPrincipal* principal = aWorkerRef->Private()->GetPrincipal();
   if (principal) {
     return principal;
   }
 
   
-  WorkerPrivate* wp = aWorkerPrivate;
+  WorkerPrivate* wp = aWorkerRef->Private();
   while (wp->GetParent()) {
     wp = wp->GetParent();
   }
@@ -70,23 +71,23 @@ GetPrincipalFromWorkerPrivate(WorkerPrivate* aWorkerPrivate)
 class InitializeRunnable final : public WorkerMainThreadRunnable
 {
 public:
-  InitializeRunnable(WorkerPrivate* aWorkerPrivate, nsACString& aOrigin,
+  InitializeRunnable(ThreadSafeWorkerRef* aWorkerRef, nsACString& aOrigin,
                      PrincipalInfo& aPrincipalInfo, ErrorResult& aRv)
-    : WorkerMainThreadRunnable(aWorkerPrivate,
+    : WorkerMainThreadRunnable(aWorkerRef->Private(),
                                NS_LITERAL_CSTRING("BroadcastChannel :: Initialize"))
-    , mWorkerPrivate(GetCurrentThreadWorkerPrivate())
+    , mWorkerRef(aWorkerRef)
     , mOrigin(aOrigin)
     , mPrincipalInfo(aPrincipalInfo)
     , mRv(aRv)
   {
-    MOZ_ASSERT(mWorkerPrivate);
+    MOZ_ASSERT(mWorkerRef);
   }
 
   bool MainThreadRun() override
   {
     MOZ_ASSERT(NS_IsMainThread());
 
-    nsIPrincipal* principal = GetPrincipalFromWorkerPrivate(mWorkerPrivate);
+    nsIPrincipal* principal = GetPrincipalFromThreadSafeWorkerRef(mWorkerRef);
     if (!principal) {
       mRv.Throw(NS_ERROR_FAILURE);
       return true;
@@ -103,7 +104,7 @@ public:
     }
 
     
-    WorkerPrivate* wp = mWorkerPrivate;
+    WorkerPrivate* wp = mWorkerRef->Private();
     while (wp->GetParent()) {
       wp = wp->GetParent();
     }
@@ -118,7 +119,7 @@ public:
   }
 
 private:
-  WorkerPrivate* mWorkerPrivate;
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
   nsACString& mOrigin;
   PrincipalInfo& mPrincipalInfo;
   ErrorResult& mRv;
@@ -277,42 +278,12 @@ public:
   {}
 };
 
-class BroadcastChannelWorkerHolder final : public WorkerHolder
-{
-  BroadcastChannel* mChannel;
-
-public:
-  explicit BroadcastChannelWorkerHolder(BroadcastChannel* aChannel)
-    : WorkerHolder("BroadcastChannelWorkerHolder")
-    , mChannel(aChannel)
-  {
-    MOZ_COUNT_CTOR(BroadcastChannelWorkerHolder);
-  }
-
-  virtual bool Notify(WorkerStatus aStatus) override
-  {
-    if (aStatus >= Closing) {
-      mChannel->Shutdown();
-    }
-
-    return true;
-  }
-
-private:
-  ~BroadcastChannelWorkerHolder()
-  {
-    MOZ_COUNT_DTOR(BroadcastChannelWorkerHolder);
-  }
-};
 
 } 
 
 BroadcastChannel::BroadcastChannel(nsPIDOMWindowInner* aWindow,
-                                   const PrincipalInfo& aPrincipalInfo,
-                                   const nsACString& aOrigin,
                                    const nsAString& aChannel)
   : DOMEventTargetHelper(aWindow)
-  , mWorkerHolder(nullptr)
   , mChannel(aChannel)
   , mInnerID(0)
   , mState(StateActive)
@@ -325,7 +296,7 @@ BroadcastChannel::BroadcastChannel(nsPIDOMWindowInner* aWindow,
 BroadcastChannel::~BroadcastChannel()
 {
   Shutdown();
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_ASSERT(!mWorkerRef);
 }
 
 JSObject*
@@ -343,9 +314,10 @@ BroadcastChannel::Constructor(const GlobalObject& aGlobal,
     do_QueryInterface(aGlobal.GetAsSupports());
   
 
+  RefPtr<BroadcastChannel> bc = new BroadcastChannel(window, aChannel);
+
   nsAutoCString origin;
   PrincipalInfo principalInfo;
-  WorkerPrivate* workerPrivate = nullptr;
 
   if (NS_IsMainThread()) {
     nsCOMPtr<nsIGlobalObject> incumbent = mozilla::dom::GetIncumbentGlobal();
@@ -372,20 +344,31 @@ BroadcastChannel::Constructor(const GlobalObject& aGlobal,
     }
   } else {
     JSContext* cx = aGlobal.Context();
-    workerPrivate = GetWorkerPrivateFromContext(cx);
+
+    WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(cx);
     MOZ_ASSERT(workerPrivate);
 
+    RefPtr<StrongWorkerRef> workerRef =
+      StrongWorkerRef::Create(workerPrivate, "BroadcastChannel",
+                              [bc] () { bc->Shutdown(); });
+    
+    
+    if (NS_WARN_IF(!workerRef)) {
+      bc->mState = StateClosed;
+      return bc.forget();
+    }
+
+    RefPtr<ThreadSafeWorkerRef> tsr = new ThreadSafeWorkerRef(workerRef);
+
     RefPtr<InitializeRunnable> runnable =
-      new InitializeRunnable(workerPrivate, origin, principalInfo, aRv);
+      new InitializeRunnable(tsr, origin, principalInfo, aRv);
     runnable->Dispatch(Closing, aRv);
-  }
+    if (aRv.Failed()) {
+      return nullptr;
+    }
 
-  if (aRv.Failed()) {
-    return nullptr;
+    bc->mWorkerRef = Move(workerRef);
   }
-
-  RefPtr<BroadcastChannel> bc =
-    new BroadcastChannel(window, principalInfo, origin, aChannel);
 
   
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
@@ -404,7 +387,7 @@ BroadcastChannel::Constructor(const GlobalObject& aGlobal,
 
   bc->mActor->SetParent(bc);
 
-  if (!workerPrivate) {
+  if (!bc->mWorkerRef) {
     MOZ_ASSERT(window);
     bc->mInnerID = window->WindowID();
 
@@ -412,13 +395,6 @@ BroadcastChannel::Constructor(const GlobalObject& aGlobal,
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->AddObserver(bc, "inner-window-destroyed", false);
-    }
-  } else {
-    bc->mWorkerHolder = new BroadcastChannelWorkerHolder(bc);
-    if (NS_WARN_IF(!bc->mWorkerHolder->HoldWorker(workerPrivate, Closing))) {
-      bc->mWorkerHolder = nullptr;
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
     }
   }
 
@@ -490,7 +466,7 @@ BroadcastChannel::Shutdown()
   mState = StateClosed;
 
   
-  mWorkerHolder = nullptr;
+  mWorkerRef = nullptr;
 
   if (mActor) {
     mActor->SetParent(nullptr);

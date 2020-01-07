@@ -18,7 +18,7 @@
 #include "mozilla/dom/PMessagePort.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/StructuredCloneTags.h"
-#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -200,41 +200,6 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 NS_IMPL_ADDREF_INHERITED(MessagePort, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(MessagePort, DOMEventTargetHelper)
 
-namespace {
-
-class MessagePortWorkerHolder final : public WorkerHolder
-{
-  MessagePort* mPort;
-
-public:
-  explicit MessagePortWorkerHolder(MessagePort* aPort)
-    : WorkerHolder("MessagePortWorkerHolder")
-    , mPort(aPort)
-  {
-    MOZ_ASSERT(aPort);
-    MOZ_COUNT_CTOR(MessagePortWorkerHolder);
-  }
-
-  virtual bool Notify(WorkerStatus aStatus) override
-  {
-    if (aStatus > Running) {
-      
-      
-      mPort->CloseForced();
-    }
-
-    return true;
-  }
-
-private:
-  ~MessagePortWorkerHolder()
-  {
-    MOZ_COUNT_DTOR(MessagePortWorkerHolder);
-  }
-};
-
-} 
-
 MessagePort::MessagePort(nsIGlobalObject* aGlobal)
   : DOMEventTargetHelper(aGlobal)
   , mInnerID(0)
@@ -251,7 +216,7 @@ MessagePort::MessagePort(nsIGlobalObject* aGlobal)
 MessagePort::~MessagePort()
 {
   CloseForced();
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_ASSERT(!mWorkerRef);
 }
 
  already_AddRefed<MessagePort>
@@ -322,17 +287,24 @@ MessagePort::Initialize(const nsID& aUUID,
   UpdateMustKeepAlive();
 
   if (!NS_IsMainThread()) {
+    RefPtr<MessagePort> self = this;
+
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(workerPrivate);
-    MOZ_ASSERT(!mWorkerHolder);
 
-    nsAutoPtr<WorkerHolder> workerHolder(new MessagePortWorkerHolder(this));
-    if (NS_WARN_IF(!workerHolder->HoldWorker(workerPrivate, Closing))) {
-      aRv.Throw(NS_ERROR_FAILURE);
+    
+    
+    RefPtr<StrongWorkerRef> strongWorkerRef =
+      StrongWorkerRef::Create(workerPrivate, "MessagePort",
+                              [self]() { self->CloseForced(); });
+    if (NS_WARN_IF(!strongWorkerRef)) {
+      
+      mState = eStateDisentangledForClose;
       return;
     }
 
-    mWorkerHolder = Move(workerHolder);
+    MOZ_ASSERT(!mWorkerRef);
+    mWorkerRef = Move(strongWorkerRef);
   } else if (GetOwner()) {
     MOZ_ASSERT(NS_IsMainThread());
     mInnerID = GetOwner()->WindowID();
@@ -870,7 +842,7 @@ MessagePort::UpdateMustKeepAlive()
     mIsKeptAlive = false;
 
     
-    mWorkerHolder = nullptr;
+    mWorkerRef = nullptr;
 
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIObserverService> obs =
