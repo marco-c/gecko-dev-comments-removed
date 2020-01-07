@@ -9,6 +9,7 @@
 
 #include "nsISupports.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/Result.h"
 
 class nsICSSLoaderObserver;
 class nsIURI;
@@ -19,6 +20,57 @@ class nsIURI;
 
 class nsIStyleSheetLinkingElement : public nsISupports {
 public:
+  enum class ForceUpdate
+  {
+    Yes,
+    No,
+  };
+
+  enum class IsAlternate
+  {
+    Yes,
+    No,
+  };
+
+  enum class WillNotify
+  {
+    Yes,
+    No,
+  };
+
+  struct Update
+  {
+  private:
+    bool mWillNotify;
+    bool mIsAlternate;
+
+  public:
+    Update()
+      : mWillNotify(false)
+      , mIsAlternate(false)
+    {
+    }
+
+    Update(WillNotify aWillNotify, IsAlternate aIsAlternate)
+      : mWillNotify(aWillNotify == WillNotify::Yes)
+      , mIsAlternate(aIsAlternate == IsAlternate::Yes)
+    { }
+
+    bool WillNotify() const
+    {
+      return mWillNotify;
+    }
+
+    bool ShouldBlock() const
+    {
+      if (!mWillNotify) {
+        return false;
+      }
+
+      return !mIsAlternate;
+    }
+  };
+
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISTYLESHEETLINKINGELEMENT_IID)
 
   
@@ -53,18 +105,9 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-  virtual nsresult UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
-                                    bool *aWillNotify,
-                                    bool *aIsAlternate,
-                                    bool aForceUpdate = false) = 0;
+  virtual mozilla::Result<Update, nsresult>
+    UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
+                     ForceUpdate = ForceUpdate::No) = 0;
 
   
 

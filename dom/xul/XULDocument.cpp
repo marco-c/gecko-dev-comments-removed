@@ -2104,18 +2104,20 @@ XULDocument::InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
 
     
     
-    bool willNotify;
-    bool isAlternate;
-    rv = ssle->UpdateStyleSheet(this, &willNotify, &isAlternate);
-    if (NS_SUCCEEDED(rv) && willNotify && !isAlternate) {
-        ++mPendingSheets;
+    auto result = ssle->UpdateStyleSheet(this);
+    if (result.isErr()) {
+        
+        
+        
+        if (result.unwrapErr() == NS_ERROR_OUT_OF_MEMORY) {
+            return result.unwrapErr();
+        }
+        return NS_OK;
     }
 
-    
-    
-    
-    if (rv == NS_ERROR_OUT_OF_MEMORY) {
-        return rv;
+    auto update = result.unwrap();
+    if (update.ShouldBlock()) {
+        ++mPendingSheets;
     }
 
     return NS_OK;
@@ -2492,10 +2494,7 @@ XULDocument::ResumeWalk()
                                 do_QueryInterface(element);
                             NS_ASSERTION(ssle, "<html:style> doesn't implement "
                                                "nsIStyleSheetLinkingElement?");
-                            bool willNotify;
-                            bool isAlternate;
-                            ssle->UpdateStyleSheet(nullptr, &willNotify,
-                                                   &isAlternate);
+                            Unused << ssle->UpdateStyleSheet(nullptr);
                         }
                     }
                 }

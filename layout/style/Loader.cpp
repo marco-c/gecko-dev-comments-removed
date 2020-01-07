@@ -840,6 +840,9 @@ Loader::IsAlternate(const nsAString& aTitle, bool aHasAlternateRel)
   
   
   
+  
+  
+  
   if (aTitle.IsEmpty()) {
     return false;
   }
