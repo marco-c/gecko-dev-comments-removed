@@ -10,7 +10,9 @@ GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
 
 
 
-MAX_DEPENDENCIES = 100
+
+
+MAX_DEPENDENCIES = 99
 
 
 
