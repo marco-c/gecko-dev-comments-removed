@@ -47,9 +47,6 @@ public final class SysInfo {
 
 
 
-
-
-
     public static int getCPUCount() {
         if (cpuCount > 0) {
             return cpuCount;

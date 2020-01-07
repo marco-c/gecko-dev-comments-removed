@@ -1323,9 +1323,13 @@ public class GeckoSession extends LayerSession
 
 
 
+
+
             boolean hasCheckbox();
 
             
+
+
 
 
             String getCheckboxMessage();
@@ -1333,16 +1337,19 @@ public class GeckoSession extends LayerSession
             
 
 
+
+
             boolean getCheckboxValue();
 
             
+
+
 
 
             void setCheckboxValue(boolean value);
         }
 
         
-
 
 
 
@@ -1360,6 +1367,8 @@ public class GeckoSession extends LayerSession
 
 
 
+
+
             void confirm(int button);
         }
 
@@ -1368,7 +1377,6 @@ public class GeckoSession extends LayerSession
         static final int BUTTON_TYPE_NEGATIVE = 2;
 
         
-
 
 
 
@@ -1393,11 +1401,12 @@ public class GeckoSession extends LayerSession
 
 
 
+
+
             void confirm(String text);
         }
 
         
-
 
 
 
@@ -1417,9 +1426,14 @@ public class GeckoSession extends LayerSession
 
 
 
+
+
             void confirm(String password);
 
             
+
+
+
 
 
 
@@ -1461,7 +1475,6 @@ public class GeckoSession extends LayerSession
         static final int AUTH_LEVEL_SECURE = 2;
 
         
-
 
 
 
@@ -1553,12 +1566,10 @@ public class GeckoSession extends LayerSession
 
 
 
-
         void promptForChoice(GeckoSession session, String title, String msg, int type,
                              GeckoBundle[] choices, ChoiceCallback callback);
 
         
-
 
 
 
@@ -1607,7 +1618,6 @@ public class GeckoSession extends LayerSession
 
 
 
-
         void promptForDateTime(GeckoSession session, String title, int type,
                                String value, String min, String max, TextCallback callback);
 
@@ -1638,7 +1648,6 @@ public class GeckoSession extends LayerSession
         static final int FILE_TYPE_MULTIPLE = 2;
 
         
-
 
 
 

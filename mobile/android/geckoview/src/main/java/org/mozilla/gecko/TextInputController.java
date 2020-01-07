@@ -130,7 +130,6 @@ public final class TextInputController {
 
 
 
-
     public @NonNull Handler getHandler(final @NonNull Handler defHandler) {
         
         if (mInputConnection != null) {
@@ -257,6 +256,7 @@ public final class TextInputController {
     }
 
     
+
 
 
 

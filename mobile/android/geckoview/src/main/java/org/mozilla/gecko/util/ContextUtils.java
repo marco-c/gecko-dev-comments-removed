@@ -19,8 +19,6 @@ public class ContextUtils {
     
 
 
-
-
     public static PackageInfo getCurrentPackageInfo(final Context context) {
         try {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);

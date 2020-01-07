@@ -84,6 +84,8 @@ public final class DynamicToolbarAnimator {
     
 
 
+
+
     public boolean isPinned() {
         ThreadUtils.assertOnUiThread();
 
