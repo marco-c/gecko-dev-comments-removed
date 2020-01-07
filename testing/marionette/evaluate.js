@@ -11,6 +11,7 @@ Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+Cu.import("chrome://marionette/content/assert.js");
 const {
   element,
   WebElement,
@@ -258,6 +259,35 @@ evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 evaluate.toJSON = function(obj, seenEls) {
   const t = Object.prototype.toString.call(obj);
 
@@ -273,6 +303,7 @@ evaluate.toJSON = function(obj, seenEls) {
 
   
   } else if (element.isCollection(obj)) {
+    assert.acyclic(obj);
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
   
@@ -293,6 +324,8 @@ evaluate.toJSON = function(obj, seenEls) {
   
   let rv = {};
   for (let prop in obj) {
+    assert.acyclic(obj[prop]);
+
     try {
       rv[prop] = evaluate.toJSON(obj[prop], seenEls);
     } catch (e) {
