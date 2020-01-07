@@ -670,9 +670,12 @@ public:
 
 #ifdef MOZ_PULSEAUDIO
   ResultExpr PrctlPolicy() const override {
-    Arg<int> op(0);
-    return If(op == PR_GET_NAME, Allow())
-      .Else(SandboxPolicyCommon::PrctlPolicy());
+    if (BelowLevel(4)) {
+      Arg<int> op(0);
+      return If(op == PR_GET_NAME, Allow())
+             .Else(SandboxPolicyCommon::PrctlPolicy());
+    }
+    return SandboxPolicyCommon::PrctlPolicy();
   }
 #endif
 
@@ -758,9 +761,12 @@ public:
     case __NR_getcwd:
       return Error(ENOENT);
 
+#ifdef MOZ_PULSEAUDIO
+    CASES_FOR_fchown:
+    case __NR_fchmod:
+      return AllowBelowLevel(4);
+#endif
     CASES_FOR_fstatfs: 
-    CASES_FOR_fchown: 
-    case __NR_fchmod: 
     case __NR_flock: 
       return Allow();
 
@@ -931,15 +937,18 @@ public:
       
       
     case __NR_umask:
-      return Allow();
+      return AllowBelowLevel(4);
 
     case __NR_kill: {
-      Arg<int> sig(1);
-      
-      
-      
-      return If(sig == 0, Error(EPERM))
-        .Else(InvalidSyscall());
+      if (BelowLevel(4)) {
+        Arg<int> sig(1);
+        
+        
+        
+        return If(sig == 0, Error(EPERM))
+               .Else(InvalidSyscall());
+      }
+      return InvalidSyscall();
     }
 
     case __NR_wait4:
