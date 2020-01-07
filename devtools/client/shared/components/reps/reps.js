@@ -4417,7 +4417,6 @@ class Tree extends Component {
           } else {
             this.props.onExpand(item, e.altKey);
           }
-          e.stopPropagation();
         }
       });
     });
@@ -4442,11 +4441,12 @@ class Tree extends Component {
           return;
         }
 
-        const { explicitOriginalTarget } = nativeEvent;
+        const { relatedTarget } = nativeEvent;
+
         
         
         
-        if (explicitOriginalTarget !== this.treeRef && !this.treeRef.contains(explicitOriginalTarget)) {
+        if (relatedTarget !== this.treeRef && !this.treeRef.contains(relatedTarget)) {
           this._focus(traversal[0].item);
         }
       },

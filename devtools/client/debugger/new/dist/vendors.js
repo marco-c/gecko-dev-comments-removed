@@ -7975,11 +7975,12 @@ class Tree extends Component {
           return;
         }
 
-        const { explicitOriginalTarget } = nativeEvent;
+        const { relatedTarget } = nativeEvent;
+
         
         
         
-        if (explicitOriginalTarget !== this.treeRef && !this.treeRef.contains(explicitOriginalTarget)) {
+        if (relatedTarget !== this.treeRef && !this.treeRef.contains(relatedTarget)) {
           this._focus(traversal[0].item);
         }
       },
@@ -8044,13 +8045,6 @@ module.exports = "<!-- This Source Code Form is subject to the terms of the Mozi
 "use strict";
 (function(process) {
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isDevelopment = isDevelopment;
-exports.isTesting = isTesting;
-exports.isFirefoxPanel = isFirefoxPanel;
-exports.isFirefox = isFirefox;
 
 
 
@@ -8066,7 +8060,7 @@ function isNode() {
 }
 
 function isDevelopment() {
-  if (!isNode && isBrowser()) {
+  if (!isNode() && isBrowser()) {
     const href = window.location ? window.location.href : "";
     return href.match(/^file:/) || href.match(/localhost:/);
   }
@@ -8086,6 +8080,13 @@ function isFirefox() {
   return (/firefox/i.test(navigator.userAgent)
   );
 }
+
+module.exports = {
+  isDevelopment,
+  isTesting,
+  isFirefoxPanel,
+  isFirefox
+};
 }.call(exports, __webpack_require__(120)))
 
  }),
