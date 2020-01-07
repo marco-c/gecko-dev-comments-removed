@@ -123,6 +123,7 @@ public:
 
 
 
+
   nsresult DeleteSelectionAsAction(EDirection aDirection,
                                    EStripWrappers aStripWrappers);
 
@@ -197,6 +198,18 @@ protected:
                                             bool aSuppressTransaction) override;
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
+
+  
+
+
+
+
+
+
+
+
+  nsresult DeleteSelectionAsSubAction(EDirection aDirection,
+                                      EStripWrappers aStripWrappers);
 
   
 

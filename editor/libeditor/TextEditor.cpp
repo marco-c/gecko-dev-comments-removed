@@ -656,6 +656,28 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
                                     EStripWrappers aStripWrappers)
 {
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+  
+  
+  
+  NS_ASSERTION(!mPlaceholderBatch,
+    "Should be called only when this is the only edit action of the operation "
+    "unless mutation event listener nests some operations");
+
+  
+  AutoPlaceholderBatch batch(this, nsGkAtoms::DeleteTxnName);
+  nsresult rv = DeleteSelectionAsSubAction(aDirection, aStripWrappers);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TextEditor::DeleteSelectionAsSubAction(EDirection aDirection,
+                                       EStripWrappers aStripWrappers)
+{
+  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+  MOZ_ASSERT(mPlaceholderBatch);
 
   if (!mRules) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -665,15 +687,10 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
   RefPtr<TextEditRules> rules(mRules);
 
   
-  AutoPlaceholderBatch batch(this, nsGkAtoms::DeleteTxnName);
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this,
-                                      EditSubAction::eDeleteSelectedContent,
-                                      aDirection);
-
-  
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -702,6 +719,10 @@ TextEditor::DeleteSelectionAsAction(EDirection aDirection,
     }
   }
 
+  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
+                                      *this,
+                                      EditSubAction::eDeleteSelectedContent,
+                                      aDirection);
   EditSubActionInfo subActionInfo(EditSubAction::eDeleteSelectedContent);
   subActionInfo.collapsedAction = aDirection;
   subActionInfo.stripWrappers = aStripWrappers;
@@ -864,7 +885,7 @@ TextEditor::DeleteSelectionAndPrepareToCreateNode()
   }
 
   if (!selection->GetAnchorFocusRange()->Collapsed()) {
-    nsresult rv = DeleteSelectionAsAction(eNone, eStrip);
+    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1142,7 +1163,7 @@ TextEditor::SetText(const nsAString& aString)
     }
     if (NS_SUCCEEDED(rv)) {
       if (aString.IsEmpty()) {
-        rv = DeleteSelectionAsAction(eNone, eStrip);
+        rv = DeleteSelectionAsSubAction(eNone, eStrip);
         NS_WARNING_ASSERTION(NS_FAILED(rv), "Failed to remove all text");
       } else {
         rv = InsertTextAsAction(aString);
@@ -1631,7 +1652,10 @@ TextEditor::Cut()
 {
   bool actionTaken = false;
   if (FireClipboardEvent(eCut, nsIClipboard::kGlobalClipboard, &actionTaken)) {
-    DeleteSelectionAsAction(eNone, eStrip);
+    
+    
+    AutoPlaceholderBatch batch(this, nsGkAtoms::DeleteTxnName);
+    DeleteSelectionAsSubAction(eNone, eStrip);
   }
   return actionTaken ? NS_OK : NS_ERROR_FAILURE;
 }

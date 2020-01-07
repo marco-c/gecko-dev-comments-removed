@@ -681,7 +681,7 @@ HTMLEditor::DeleteTable2(Element* aTable,
   rv = AppendNodeToSelectionAsRange(aTable);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = DeleteSelectionAsAction(eNext, eStrip);
+  rv = DeleteSelectionAsSubAction(eNext, eStrip);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -980,6 +980,8 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
   rv = GetTableSize(table, &rowCount, &colCount);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  AutoPlaceholderBatch beginBatching(this);
+
   
   if (!startColIndex && aNumber >= colCount) {
     return DeleteTable2(table, selection);
@@ -988,7 +990,6 @@ HTMLEditor::DeleteTableColumn(int32_t aNumber)
   
   aNumber = std::min(aNumber,(colCount-startColIndex));
 
-  AutoPlaceholderBatch beginBatching(this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eDeleteNode,
