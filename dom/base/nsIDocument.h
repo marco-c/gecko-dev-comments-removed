@@ -1635,7 +1635,10 @@ public:
   
 
 
-  virtual mozilla::dom::ScriptLoader* ScriptLoader() = 0;
+  mozilla::dom::ScriptLoader* ScriptLoader()
+  {
+    return mScriptLoader;
+  }
 
   
 
@@ -4136,6 +4139,8 @@ protected:
 
   RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
   mozilla::LinkedList<mozilla::dom::DocumentTimeline> mTimelines;
+
+  RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
