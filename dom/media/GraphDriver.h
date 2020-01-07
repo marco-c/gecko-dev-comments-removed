@@ -135,6 +135,8 @@ public:
 
   
   bool Switching();
+  
+  void SwitchToNextDriver();
 
   
   
