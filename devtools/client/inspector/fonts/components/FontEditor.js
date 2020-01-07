@@ -6,6 +6,7 @@
 
 const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const { PluralForm } = require("devtools/shared/plural-form");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const FontMeta = createFactory(require("./FontMeta"));
@@ -79,6 +80,37 @@ class FontEditor extends PureComponent {
       });
     });
   }
+
+  renderFamilesNotUsed(familiesNotUsed = []) {
+    if (!familiesNotUsed.length) {
+      return null;
+    }
+
+    const familiesNotUsedLabel = PluralForm
+      .get(familiesNotUsed.length, getStr("fontinspector.familiesNotUsedLabel"))
+      .replace("#1", familiesNotUsed.length);
+
+    const familiesList = familiesNotUsed.map(family => {
+      return dom.div(
+        {
+          className: "font-family-unused",
+        },
+        family
+      );
+    });
+
+    return dom.details(
+      {},
+      dom.summary(
+        {
+          className: "font-family-unused-header",
+        },
+        familiesNotUsedLabel
+      ),
+      familiesList
+    );
+  }
+
   
 
 
@@ -88,7 +120,9 @@ class FontEditor extends PureComponent {
 
 
 
-  renderFontFamily(fonts, onToggleFontHighlight) {
+
+
+  renderFontFamily(fonts, families, onToggleFontHighlight) {
     if (!fonts.length) {
       return null;
     }
@@ -119,7 +153,8 @@ class FontEditor extends PureComponent {
         {
           className: "font-control-box",
         },
-        fontList
+        fontList,
+        this.renderFamilesNotUsed(families.notUsed)
       )
     );
   }
@@ -215,7 +250,7 @@ class FontEditor extends PureComponent {
 
   render() {
     const { fontEditor, onToggleFontHighlight } = this.props;
-    const { fonts, axes, instance, properties } = fontEditor;
+    const { fonts, families, axes, instance, properties } = fontEditor;
     
     const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
@@ -237,7 +272,7 @@ class FontEditor extends PureComponent {
       
       !hasWeight && this.renderWarning(),
       
-      this.renderFontFamily(fonts, onToggleFontHighlight),
+      this.renderFontFamily(fonts, families, onToggleFontHighlight),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
