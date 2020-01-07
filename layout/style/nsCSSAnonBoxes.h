@@ -118,10 +118,6 @@ public:
   
   
   static NonInheriting NonInheritingTypeForPseudoTag(nsAtom* aPseudo);
-
-  
-  
-  static nsAtom* GetNonInheritingPseudoAtom(NonInheriting aBoxType);
 };
 
 #endif 
