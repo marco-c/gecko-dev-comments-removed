@@ -326,13 +326,6 @@ LossyUTF8CharsToNewLatin1CharsZ(JSContext* cx, const UTF8Chars utf8, size_t* out
 extern JS_PUBLIC_API(bool)
 StringIsASCII(const char* s);
 
-
-
-
-
-extern JS_PUBLIC_API(bool)
-StringIsUTF8(const uint8_t* s, uint32_t length);
-
 } 
 
 inline void JS_free(JS::Latin1CharsZ& ptr) { js_free((void*)ptr.get()); }
