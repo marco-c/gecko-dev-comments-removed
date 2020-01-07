@@ -4402,6 +4402,7 @@ WorkerPrivate::EnterDebuggerEventLoop()
 
   JSContext* cx = GetJSContext();
   MOZ_ASSERT(cx);
+  CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
 
   uint32_t currentEventLoopLevel = ++mDebuggerEventLoopLevel;
 
@@ -4424,9 +4425,8 @@ WorkerPrivate::EnterDebuggerEventLoop()
     {
       MutexAutoLock lock(mMutex);
 
-      CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
       std::queue<RefPtr<MicroTaskRunnable>>& debuggerMtQueue =
-        context->GetDebuggerMicroTaskQueue();
+        ccjscx->GetDebuggerMicroTaskQueue();
       while (mControlQueue.IsEmpty() &&
              !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
              debuggerMtQueue.empty()) {
@@ -4437,8 +4437,7 @@ WorkerPrivate::EnterDebuggerEventLoop()
 
       
     }
-    CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
-    context->PerformDebuggerMicroTaskCheckpoint();
+    ccjscx->PerformDebuggerMicroTaskCheckpoint();
     if (debuggerRunnablesPending) {
       
       SetGCTimerMode(PeriodicTimer);
@@ -4455,8 +4454,7 @@ WorkerPrivate::EnterDebuggerEventLoop()
       static_cast<nsIRunnable*>(runnable)->Run();
       runnable->Release();
 
-      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-      ccjs->PerformDebuggerMicroTaskCheckpoint();
+      ccjscx->PerformDebuggerMicroTaskCheckpoint();
 
       
       if (JS::CurrentGlobalOrNull(cx)) {
