@@ -554,7 +554,6 @@ impl LineBreaker {
                        layout_context: &LayoutContext) {
         
         fragment.reset_text_range_and_inline_size();
-
         
         
         
@@ -566,7 +565,21 @@ impl LineBreaker {
             self.pending_line.green_zone = line_bounds.size;
             false
         } else {
-            fragment.white_space().allow_wrap()
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if fragment.suppress_line_break_before() ||
+               !fragment.is_on_glyph_run_boundary() {
+                false
+            } else {
+                fragment.white_space().allow_wrap()
+            }
         };
 
         debug!("LineBreaker: trying to append to line {} \
@@ -657,10 +670,10 @@ impl LineBreaker {
         };
 
         inline_start_fragment = split_result.inline_start.as_ref().map(|x| {
-            fragment.transform_with_split_info(x, split_result.text_run.clone())
+            fragment.transform_with_split_info(x, split_result.text_run.clone(), true)
         });
         inline_end_fragment = split_result.inline_end.as_ref().map(|x| {
-            fragment.transform_with_split_info(x, split_result.text_run.clone())
+            fragment.transform_with_split_info(x, split_result.text_run.clone(), false)
         });
 
         
