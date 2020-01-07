@@ -111,11 +111,6 @@ Preferences.addAll([
 
   { id: "browser.safebrowsing.downloads.remote.block_potentially_unwanted", type: "bool" },
   { id: "browser.safebrowsing.downloads.remote.block_uncommon", type: "bool" },
-
-  
-  { id: "browser.cache.disk.capacity", type: "int" },
-
-  { id: "browser.cache.disk.smart_size.enabled", type: "bool", inverted: "true" },
 ]);
 
 
@@ -328,14 +323,10 @@ var gPrivacyPane = {
       gPrivacyPane.showCertificates);
     setEventListener("viewSecurityDevicesButton", "command",
       gPrivacyPane.showSecurityDevices);
-    setEventListener("clearCacheButton", "command",
-      gPrivacyPane.clearCache);
 
     this._pane = document.getElementById("panePrivacy");
     this._initMasterPasswordUI();
     this._initSafeBrowsing();
-    this.updateCacheSizeInputField();
-    this.updateActualCacheSize();
 
     setEventListener("notificationSettingsButton", "command",
       gPrivacyPane.showNotificationExceptions);
@@ -369,9 +360,6 @@ var gPrivacyPane = {
         notificationsDoNotDisturb.setAttribute("checked", true);
       }
     }
-
-    setEventListener("cacheSize", "change",
-      gPrivacyPane.updateCacheSizePref);
 
     if (Services.prefs.getBoolPref("browser.storageManager.enabled")) {
       Services.obs.addObserver(this, "sitedatamanager:sites-updated");
@@ -1418,16 +1406,6 @@ var gPrivacyPane = {
     gSubDialog.open("chrome://pippki/content/device_manager.xul");
   },
 
-  
-
-
-  clearCache() {
-    try {
-      Services.cache2.clear();
-    } catch (ex) { }
-    this.updateActualCacheSize();
-  },
-
   showSiteDataSettings() {
     gSubDialog.open("chrome://browser/content/preferences/siteDataSettings.xul");
   },
@@ -1439,90 +1417,20 @@ var gPrivacyPane = {
     settingsButton.disabled = !shouldShow;
   },
 
-  updateTotalDataSizeLabel(usage) {
-    let prefStrBundle = document.getElementById("bundlePreferences");
+  showSiteDataLoading() {
     let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
-    if (usage < 0) {
-      totalSiteDataSizeLabel.textContent = prefStrBundle.getString("loadingSiteDataSize");
-    } else {
-      let size = DownloadUtils.convertByteUnits(usage);
-      totalSiteDataSizeLabel.textContent = prefStrBundle.getFormattedString("totalSiteDataSize", size);
-    }
+    let prefStrBundle = document.getElementById("bundlePreferences");
+    totalSiteDataSizeLabel.textContent = prefStrBundle.getString("loadingSiteDataSize1");
   },
 
-  
-  updateActualCacheSize() {
-    var actualSizeLabel = document.getElementById("actualDiskCacheSize");
-    var prefStrBundle = document.getElementById("bundlePreferences");
-
-    
-    this.observer = {
-      onNetworkCacheDiskConsumption(consumption) {
-        var size = DownloadUtils.convertByteUnits(consumption);
-        
-        
-        if (!prefStrBundle.getFormattedString) {
-          return;
-        }
-        actualSizeLabel.textContent = prefStrBundle.getFormattedString("actualDiskCacheSize", size);
-      },
-
-      QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsICacheStorageConsumptionObserver,
-        Components.interfaces.nsISupportsWeakReference
-      ])
-    };
-
-    actualSizeLabel.textContent = prefStrBundle.getString("actualDiskCacheSizeCalculated");
-
-    try {
-      Services.cache2.asyncGetDiskConsumption(this.observer);
-    } catch (e) { }
-  },
-
-  updateCacheSizeUI(smartSizeEnabled) {
-    document.getElementById("useCacheBefore").disabled = smartSizeEnabled;
-    document.getElementById("cacheSize").disabled = smartSizeEnabled;
-    document.getElementById("useCacheAfter").disabled = smartSizeEnabled;
-  },
-
-  readSmartSizeEnabled() {
-    
-    
-    var disabled = Preferences.get("browser.cache.disk.smart_size.enabled").value;
-    this.updateCacheSizeUI(!disabled);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  updateCacheSizeInputField() {
-    let cacheSizeElem = document.getElementById("cacheSize");
-    let cachePref = Preferences.get("browser.cache.disk.capacity");
-    cacheSizeElem.value = cachePref.value / 1024;
-    if (cachePref.locked)
-      cacheSizeElem.disabled = true;
-  },
-
-  
-
-
-
-
-
-  updateCacheSizePref() {
-    let cacheSizeElem = document.getElementById("cacheSize");
-    let cachePref = Preferences.get("browser.cache.disk.capacity");
-    
-    let intValue = parseInt(cacheSizeElem.value, 10);
-    cachePref.value = isNaN(intValue) ? 0 : intValue * 1024;
+  updateTotalDataSizeLabel(siteDataUsage) {
+    SiteDataManager.getCacheSize().then(function(cacheUsage) {
+      let prefStrBundle = document.getElementById("bundlePreferences");
+      let totalSiteDataSizeLabel = document.getElementById("totalSiteDataSize");
+      let totalUsage = siteDataUsage + cacheUsage;
+      let size = DownloadUtils.convertByteUnits(totalUsage);
+      totalSiteDataSizeLabel.textContent = prefStrBundle.getFormattedString("totalSiteDataSize1", size);
+    });
   },
 
   clearSiteData() {
@@ -1593,7 +1501,7 @@ var gPrivacyPane = {
       case "sitedatamanager:updating-sites":
         
         this.toggleSiteData(false);
-        this.updateTotalDataSizeLabel(-1);
+        this.showSiteDataLoading();
         break;
 
       case "sitedatamanager:sites-updated":

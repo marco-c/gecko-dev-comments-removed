@@ -56,17 +56,20 @@ var gClearSiteDataDialog = {
   onClear() {
     let allowed = true;
 
+    if (this._clearCacheCheckbox.checked && allowed) {
+      SiteDataManager.removeCache();
+      
+      
+      if (!this._clearSiteDataCheckbox.checked) {
+        SiteDataManager.updateSites();
+      }
+    }
+
     if (this._clearSiteDataCheckbox.checked) {
       allowed = SiteDataManager.promptSiteDataRemoval(window);
       if (allowed) {
         SiteDataManager.removeSiteData();
       }
-    }
-
-    if (this._clearCacheCheckbox.checked && allowed) {
-      SiteDataManager.removeCache();
-      
-      window.opener.gPrivacyPane.updateActualCacheSize();
     }
 
     if (allowed) {
