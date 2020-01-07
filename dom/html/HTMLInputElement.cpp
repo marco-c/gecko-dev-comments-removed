@@ -55,7 +55,6 @@
 #include "nsDateTimeControlFrame.h"
 
 #include "mozilla/PresState.h"
-#include "nsIDOMNodeList.h"
 #include "nsLinebreakConverter.h" 
 #include "nsReadableUtils.h"
 #include "nsUnicharUtils.h"

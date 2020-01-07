@@ -27,7 +27,6 @@
 #include "nsIPresShell.h"
 
 #include <algorithm>
-#include "nsIDOMNodeList.h" 
 #include "nsRange.h" 
 #include "nsINode.h"
 #include "nsPIDOMWindow.h" 

@@ -1,11 +1,6 @@
 
 function run_test()
 {
-
-  
-
-
-
   
   test_getElementsByTagName();
   test_getElementsByTagNameNS();
@@ -23,8 +18,10 @@ function test_getElementsByTagName()
   var root = doc.documentElement;
 
   
-  Assert.ok(doc.getElementsByTagName("*") instanceof nsIDOMNodeList);
-  Assert.ok(root.getElementsByTagName("*") instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagName("*")),
+               "HTMLCollection")
+  Assert.ok(ChromeUtils.getClassName(root.getElementsByTagName("*")),
+            "HTMLCollection");
   
   
   Assert.equal(doc.getElementsByTagName("*").length,
@@ -49,16 +46,16 @@ function test_getElementsByTagName()
   }
 
   
-  Assert.ok(doc.getElementsByTagName("foo:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagName("foo:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagName("foo:test").length, 2);
 
-  Assert.ok(doc.getElementsByTagName("foo2:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagName("foo2:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagName("foo2:test").length, 3);
 
-  Assert.ok(doc.getElementsByTagName("bar:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagName("bar:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagName("bar:test").length, 4);
 }
 
@@ -68,8 +65,10 @@ function test_getElementsByTagNameNS()
   var root = doc.documentElement;
 
   
-  Assert.ok(doc.getElementsByTagNameNS("*", "*") instanceof nsIDOMNodeList);
-  Assert.ok(root.getElementsByTagNameNS("*", "*") instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagNameNS("*", "*")),
+               "HTMLCollection");
+  Assert.equal(ChromeUtils.getClassName(root.getElementsByTagNameNS("*", "*")),
+               "HTMLCollection");
 
   
   var list1 = doc.getElementsByTagNameNS("", "test");
@@ -129,22 +128,22 @@ function test_getElementsByTagNameNS()
                2);
 
   
-  Assert.ok(doc.getElementsByTagNameNS(null, "foo:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagNameNS(null, "foo:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagNameNS(null, "foo:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("foo", "foo:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("bar", "foo:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("*", "foo:test").length, 0);
   
-  Assert.ok(doc.getElementsByTagNameNS(null, "foo2:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagNameNS(null, "foo2:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagNameNS(null, "foo2:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("foo2", "foo2:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("bar", "foo2:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("*", "foo2:test").length, 0);
   
-  Assert.ok(doc.getElementsByTagNameNS(null, "bar:test")
-            instanceof nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(doc.getElementsByTagNameNS(null, "bar:test")),
+               "HTMLCollection");
   Assert.equal(doc.getElementsByTagNameNS(null, "bar:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("bar", "bar:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("*", "bar:test").length, 0);
@@ -177,8 +176,8 @@ function test_getElementsByAttribute()
 
   Assert.equal(ChromeUtils.getClassName(root), "XULElement");
 
-  Assert.ok(root.getElementsByAttribute("foo", "foo") instanceof
-            nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(root.getElementsByAttribute("foo", "foo")),
+               "HTMLCollection");
 
   var master1 = doc.getElementById("master1");
   var master2 = doc.getElementById("master2");
@@ -295,8 +294,8 @@ function test_getElementsByAttributeNS()
   Assert.equal(ChromeUtils.getClassName(root), "XULElement");
 
   
-  Assert.ok(root.getElementsByAttributeNS("*", "*", "*") instanceof
-            nsIDOMNodeList);
+  Assert.equal(ChromeUtils.getClassName(root.getElementsByAttributeNS("*", "*", "*")),
+               "HTMLCollection");
 
   var master1 = doc.getElementById("master1");
   var master2 = doc.getElementById("master2");

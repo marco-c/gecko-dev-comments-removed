@@ -43,7 +43,6 @@ class nsIAnimationObserver;
 class nsIContent;
 class nsIDocument;
 class nsIDOMElement;
-class nsIDOMNodeList;
 class nsIFrame;
 class nsIMutationObserver;
 class nsINode;
