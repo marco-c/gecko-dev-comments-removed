@@ -200,6 +200,8 @@ public final class NotificationClient implements NotificationListener {
             
             
             mNotificationManager.notify(R.id.foregroundNotification, notification);
+        } else {
+            mNotificationManager.notify(name, 0, notification);
         }
     }
 
@@ -317,6 +319,10 @@ public final class NotificationClient implements NotificationListener {
         for (final String name : mNotifications.keySet()) {
             final Notification notification = mNotifications.get(name);
             if (isOngoing(notification)) {
+                
+                
+                
+                onNotificationClose(name);
                 setForegroundNotificationLocked(name, notification);
                 return;
             }
