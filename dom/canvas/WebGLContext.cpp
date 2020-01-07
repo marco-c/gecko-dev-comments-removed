@@ -5,6 +5,7 @@
 
 #include "WebGLContext.h"
 
+#include <algorithm>
 #include <queue>
 
 #include "AccessCheck.h"
@@ -1153,15 +1154,12 @@ WebGLContext::ClearBackbufferIfNeeded()
 void
 WebGLContext::LoseOldestWebGLContextIfLimitExceeded()
 {
-#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+    const size_t maxWebGLContexts = gfxPrefs::WebGLMaxContexts();
+    size_t maxWebGLContextsPerPrincipal = gfxPrefs::WebGLMaxContextsPerPrincipal();
+
     
-    const size_t kMaxWebGLContextsPerPrincipal = 2;
-    const size_t kMaxWebGLContexts             = 4;
-#else
-    const size_t kMaxWebGLContextsPerPrincipal = 16;
-    const size_t kMaxWebGLContexts             = 32;
-#endif
-    MOZ_ASSERT(kMaxWebGLContextsPerPrincipal < kMaxWebGLContexts);
+    MOZ_ASSERT(maxWebGLContextsPerPrincipal < maxWebGLContexts);
+    maxWebGLContextsPerPrincipal = std::min(maxWebGLContextsPerPrincipal, maxWebGLContexts - 1);
 
     if (!NS_IsMainThread()) {
         
@@ -1176,7 +1174,7 @@ WebGLContext::LoseOldestWebGLContextIfLimitExceeded()
     WebGLMemoryTracker::ContextsArrayType& contexts = WebGLMemoryTracker::Contexts();
 
     
-    if (contexts.Length() <= kMaxWebGLContextsPerPrincipal)
+    if (contexts.Length() <= maxWebGLContextsPerPrincipal)
         return;
 
     
@@ -1225,14 +1223,14 @@ WebGLContext::LoseOldestWebGLContextIfLimitExceeded()
         }
     }
 
-    if (numContextsThisPrincipal > kMaxWebGLContextsPerPrincipal) {
+    if (numContextsThisPrincipal > maxWebGLContextsPerPrincipal) {
         GenerateWarning("Exceeded %zu live WebGL contexts for this principal, losing the "
-                        "least recently used one.", kMaxWebGLContextsPerPrincipal);
+                        "least recently used one.", maxWebGLContextsPerPrincipal);
         MOZ_ASSERT(oldestContextThisPrincipal); 
         const_cast<WebGLContext*>(oldestContextThisPrincipal)->LoseContext();
-    } else if (numContexts > kMaxWebGLContexts) {
+    } else if (numContexts > maxWebGLContexts) {
         GenerateWarning("Exceeded %zu live WebGL contexts, losing the least "
-                        "recently used one.", kMaxWebGLContexts);
+                        "recently used one.", maxWebGLContexts);
         MOZ_ASSERT(oldestContext); 
         const_cast<WebGLContext*>(oldestContext)->LoseContext();
     }
