@@ -49,15 +49,10 @@ KeyboardEvent::AltKey(CallerType aCallerType)
 bool
 KeyboardEvent::CtrlKey(CallerType aCallerType)
 {
-  bool ctrlState = mEvent->AsKeyboardEvent()->IsControl();
-
-  if (!ShouldResistFingerprinting(aCallerType)) {
-    return ctrlState;
-  }
-
   
   
-  return GetSpoofedModifierStates(Modifier::MODIFIER_CONTROL, ctrlState);
+  
+  return mEvent->AsKeyboardEvent()->IsControl();
 }
 
 bool
@@ -75,6 +70,9 @@ KeyboardEvent::ShiftKey(CallerType aCallerType)
 bool
 KeyboardEvent::MetaKey()
 {
+  
+  
+  
   return mEvent->AsKeyboardEvent()->IsMeta();
 }
 
