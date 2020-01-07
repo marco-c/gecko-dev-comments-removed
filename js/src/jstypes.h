@@ -38,33 +38,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define JS_EXTERN_API(type)  extern MOZ_EXPORT type
-#define JS_EXPORT_API(type)  MOZ_EXPORT type
-#define JS_EXPORT_DATA(type) MOZ_EXPORT type
-#define JS_IMPORT_API(type)  MOZ_IMPORT_API type
-#define JS_IMPORT_DATA(type) MOZ_IMPORT_DATA type
-
-
-
-
-
-
-
 #if defined(STATIC_JS_API)
 #  define JS_PUBLIC_API(t)   t
 #  define JS_PUBLIC_DATA(t)  t
@@ -136,9 +109,6 @@
 #define JS_HOWMANY(x,y) (((x)+(y)-1)/(y))
 #define JS_ROUNDUP(x,y) (JS_HOWMANY(x,y)*(y))
 
-#define JS_BITS_PER_BYTE 8
-#define JS_BITS_PER_BYTE_LOG2 3
-
 #if defined(JS_64BIT)
 # define JS_BITS_PER_WORD 64
 #else
@@ -163,13 +133,5 @@
 
 #define JS_FUNC_TO_DATA_PTR(type, fun)  (mozilla::BitwiseCast<type>(fun))
 #define JS_DATA_TO_FUNC_PTR(type, ptr)  (mozilla::BitwiseCast<type>(ptr))
-
-#ifdef __GNUC__
-# define JS_EXTENSION __extension__
-# define JS_EXTENSION_(s) __extension__ ({ s; })
-#else
-# define JS_EXTENSION
-# define JS_EXTENSION_(s) s
-#endif
 
 #endif 
