@@ -271,18 +271,20 @@ interaction.selectOption = function(el) {
   event.mousemove(containerEl);
   event.mousedown(containerEl);
   event.focus(containerEl);
-  event.input(containerEl);
 
-  
-  
-  
-  if (containerEl.multiple) {
-    el.selected = !el.selected;
-  } else if (!el.selected) {
-    el.selected = true;
+  if (!el.disabled) {
+    
+    
+    
+    if (containerEl.multiple) {
+      el.selected = !el.selected;
+    } else if (!el.selected) {
+      el.selected = true;
+    }
+    event.input(containerEl);
+    event.change(containerEl);
   }
 
-  event.change(containerEl);
   event.mouseup(containerEl);
   event.click(containerEl);
 };
