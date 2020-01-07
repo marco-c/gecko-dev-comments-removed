@@ -6,13 +6,9 @@
 
 #include "ClientManagerService.h"
 
-#include "ClientManagerParent.h"
 #include "ClientSourceParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/SystemGroup.h"
-#include "nsIAsyncShutdown.h"
 
 namespace mozilla {
 namespace dom {
@@ -60,135 +56,20 @@ MatchPrincipalInfo(const PrincipalInfo& aLeft, const PrincipalInfo& aRight)
   MOZ_CRASH("unexpected principal type!");
 }
 
-class ClientShutdownBlocker final : public nsIAsyncShutdownBlocker
-{
-  RefPtr<GenericPromise::Private> mPromise;
-
-  ~ClientShutdownBlocker() = default;
-
-public:
-  explicit ClientShutdownBlocker(GenericPromise::Private* aPromise)
-    : mPromise(aPromise)
-  {
-    MOZ_DIAGNOSTIC_ASSERT(mPromise);
-  }
-
-  NS_IMETHOD
-  GetName(nsAString& aNameOut) override
-  {
-    aNameOut =
-      NS_LITERAL_STRING("ClientManagerService: start destroying IPC actors early");
-    return NS_OK;
-  }
-
-  NS_IMETHOD
-  BlockShutdown(nsIAsyncShutdownClient* aClient) override
-  {
-    mPromise->Resolve(true, __func__);
-    aClient->RemoveBlocker(this);
-    return NS_OK;
-  }
-
-  NS_IMETHOD
-  GetState(nsIPropertyBag**) override
-  {
-    return NS_OK;
-  }
-
-  NS_DECL_ISUPPORTS
-};
-
-NS_IMPL_ISUPPORTS(ClientShutdownBlocker, nsIAsyncShutdownBlocker)
-
-
-
-RefPtr<GenericPromise>
-OnShutdown()
-{
-  RefPtr<GenericPromise::Private> ref = new GenericPromise::Private(__func__);
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction("ClientManagerServer::OnShutdown",
-  [ref] () {
-    nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
-    if (!svc) {
-      ref->Resolve(true, __func__);
-      return;
-    }
-
-    nsCOMPtr<nsIAsyncShutdownClient> phase;
-    MOZ_ALWAYS_SUCCEEDS(svc->GetXpcomWillShutdown(getter_AddRefs(phase)));
-    if (!phase) {
-      ref->Resolve(true, __func__);
-      return;
-    }
-
-    nsCOMPtr<nsIAsyncShutdownBlocker> blocker = new ClientShutdownBlocker(ref);
-    nsresult rv =
-      phase->AddBlocker(blocker, NS_LITERAL_STRING(__FILE__), __LINE__,
-                        NS_LITERAL_STRING("ClientManagerService shutdown"));
-
-    if (NS_FAILED(rv)) {
-      ref->Resolve(true, __func__);
-      return;
-    }
-  });
-
-  MOZ_ALWAYS_SUCCEEDS(
-    SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
-
-  return ref.forget();
-}
-
 } 
 
 ClientManagerService::ClientManagerService()
-  : mShutdown(false)
 {
   AssertIsOnBackgroundThread();
-
-  
-  
-  
-  
-  
-  
-  OnShutdown()->Then(GetCurrentThreadSerialEventTarget(), __func__,
-    [] () {
-      RefPtr<ClientManagerService> svc = ClientManagerService::GetInstance();
-      if (svc) {
-        svc->Shutdown();
-      }
-    });
 }
 
 ClientManagerService::~ClientManagerService()
 {
   AssertIsOnBackgroundThread();
   MOZ_DIAGNOSTIC_ASSERT(mSourceTable.Count() == 0);
-  MOZ_DIAGNOSTIC_ASSERT(mManagerList.IsEmpty());
 
   MOZ_DIAGNOSTIC_ASSERT(sClientManagerServiceInstance == this);
   sClientManagerServiceInstance = nullptr;
-}
-
-void
-ClientManagerService::Shutdown()
-{
-  AssertIsOnBackgroundThread();
-
-  
-  
-  if (mShutdown) {
-    return;
-  }
-  mShutdown = true;
-
-  
-  
-  AutoTArray<ClientManagerParent*, 16> list(mManagerList);
-  for (auto actor : list) {
-    Unused << PClientManagerParent::Send__delete__(actor);
-  }
 }
 
 
@@ -199,20 +80,6 @@ ClientManagerService::GetOrCreateInstance()
 
   if (!sClientManagerServiceInstance) {
     sClientManagerServiceInstance = new ClientManagerService();
-  }
-
-  RefPtr<ClientManagerService> ref(sClientManagerServiceInstance);
-  return ref.forget();
-}
-
-
-already_AddRefed<ClientManagerService>
-ClientManagerService::GetInstance()
-{
-  AssertIsOnBackgroundThread();
-
-  if (!sClientManagerServiceInstance) {
-    return nullptr;
   }
 
   RefPtr<ClientManagerService> ref(sClientManagerServiceInstance);
@@ -265,29 +132,6 @@ ClientManagerService::FindSource(const nsID& aID, const PrincipalInfo& aPrincipa
   }
 
   return source;
-}
-
-void
-ClientManagerService::AddManager(ClientManagerParent* aManager)
-{
-  AssertIsOnBackgroundThread();
-  MOZ_DIAGNOSTIC_ASSERT(aManager);
-  MOZ_ASSERT(!mManagerList.Contains(aManager));
-  mManagerList.AppendElement(aManager);
-
-  
-  if (mShutdown) {
-    Unused << PClientManagerParent::Send__delete__(aManager);
-  }
-}
-
-void
-ClientManagerService::RemoveManager(ClientManagerParent* aManager)
-{
-  AssertIsOnBackgroundThread();
-  MOZ_DIAGNOSTIC_ASSERT(aManager);
-  DebugOnly<bool> removed = mManagerList.RemoveElement(aManager);
-  MOZ_ASSERT(removed);
 }
 
 } 

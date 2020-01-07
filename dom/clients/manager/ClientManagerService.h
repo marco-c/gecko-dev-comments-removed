@@ -7,14 +7,12 @@
 #define _mozilla_dom_ClientManagerService_h
 
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/MozPromise.h"
 #include "nsDataHashtable.h"
 
 namespace mozilla {
 
 namespace dom {
 
-class ClientManagerParent;
 class ClientSourceParent;
 
 
@@ -26,23 +24,12 @@ class ClientManagerService final
   
   nsDataHashtable<nsIDHashKey, ClientSourceParent*> mSourceTable;
 
-  nsTArray<ClientManagerParent*> mManagerList;
-
-  bool mShutdown;
-
   ClientManagerService();
   ~ClientManagerService();
-
-  void
-  Shutdown();
 
 public:
   static already_AddRefed<ClientManagerService>
   GetOrCreateInstance();
-
-  
-  static already_AddRefed<ClientManagerService>
-  GetInstance();
 
   bool
   AddSource(ClientSourceParent* aSource);
@@ -53,12 +40,6 @@ public:
   ClientSourceParent*
   FindSource(const nsID& aID,
              const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
-
-  void
-  AddManager(ClientManagerParent* aManager);
-
-  void
-  RemoveManager(ClientManagerParent* aManager);
 
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::ClientManagerService)
 };
