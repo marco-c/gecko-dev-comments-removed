@@ -1794,6 +1794,12 @@ public:
 
     bool IsSyntheticBold() { return mApplySyntheticBold; }
 
+    bool IsSyntheticOblique() {
+        return mFontEntry->IsUpright() &&
+               mStyle.style != NS_FONT_STYLE_NORMAL &&
+               mStyle.allowSyntheticStyle;
+    }
+
     
     
     
