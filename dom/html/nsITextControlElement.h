@@ -136,11 +136,6 @@ public:
   
 
 
-  NS_IMETHOD_(mozilla::dom::Element*) GetPlaceholderNode() = 0;
-
-  
-
-
   NS_IMETHOD_(mozilla::dom::Element*) GetPreviewNode() = 0;
 
   
