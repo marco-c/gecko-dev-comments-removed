@@ -17,8 +17,23 @@ module.exports = {
     "no-redeclare": "off",
     "no-useless-call": "off",
     "no-useless-concat": "off",
-    "no-undef": "off",
     "no-unused-vars": "off",
     "object-shorthand": "off",
-  }
+  },
+
+  "overrides": [{
+    files: [
+      
+      "chrome/**",
+      
+      "components/extensions/**",
+      
+      "modules/WebsiteMetadata.jsm",
+      
+      "tests/browser/robocop/**",
+    ],
+    rules: {
+      "no-undef": "off",
+    }
+  }],
 };
