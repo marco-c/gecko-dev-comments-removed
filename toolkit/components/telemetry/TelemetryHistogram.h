@@ -12,12 +12,10 @@
 #include "mozilla/TelemetryComms.h"
 #include "nsXULAppAPI.h"
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
 namespace mozilla{
 
 class JSONWriter;
 }
-#endif
 
 
 
@@ -87,12 +85,10 @@ GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
 
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
 nsresult SerializeHistograms(mozilla::JSONWriter &aWriter);
 nsresult SerializeKeyedHistograms(mozilla::JSONWriter &aWriter);
 nsresult DeserializeHistograms(JSContext* aCx, JS::HandleValue aData);
 nsresult DeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue aData);
-#endif 
 
 } 
 

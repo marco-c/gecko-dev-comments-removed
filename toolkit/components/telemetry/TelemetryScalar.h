@@ -15,10 +15,8 @@
 
 
 namespace mozilla {
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
 
 class JSONWriter;
-#endif
 namespace Telemetry {
   struct ScalarAction;
   struct KeyedScalarAction;
@@ -94,12 +92,10 @@ void AddDynamicScalarDefinitions(const nsTArray<mozilla::Telemetry::DynamicScala
 
 
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
 nsresult SerializeScalars(mozilla::JSONWriter &aWriter);
 nsresult SerializeKeyedScalars(mozilla::JSONWriter &aWriter);
 nsresult DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData);
 nsresult DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData);
-#endif 
 } 
 
 #endif 

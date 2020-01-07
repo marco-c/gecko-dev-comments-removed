@@ -18,10 +18,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/PContent.h"
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-
 #include "mozilla/JSONWriter.h"
-#endif
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -260,7 +257,6 @@ GetVariantFromIVariant(nsIVariant* aInput, uint32_t aScalarKind,
   return ScalarResult::Ok;
 }
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
 
 
 
@@ -302,7 +298,6 @@ WriteVariantToJSONWriter(uint32_t aScalarType, nsIVariant* aInputValue,
 
   return NS_OK;
 }
-#endif 
 
 
 const char *
@@ -3084,7 +3079,11 @@ TelemetryScalar::AddDynamicScalarDefinitions(
   }
 }
 
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
+
+
+
+
+
 
 
 
@@ -3505,4 +3504,3 @@ TelemetryScalar::DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValu
 
   return NS_OK;
 }
-#endif 
