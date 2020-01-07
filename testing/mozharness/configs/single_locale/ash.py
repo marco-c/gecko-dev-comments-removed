@@ -35,17 +35,5 @@ config = {
     ),
 
     
-    "repos": [{
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/build/tools",
-        "branch": "default",
-        "dest": "tools",
-    }, {
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/mozilla-central",
-        "branch": "default",
-        "dest": "ash",
-    }],
-    
     'is_automation': True,
 }

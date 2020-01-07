@@ -13,19 +13,6 @@ config = {
     "mar_tools_url": os.environ["MAR_TOOLS_URL"],
 
     
-    "repos": [{
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/build/tools",
-        "branch": "default",
-        "dest": "tools",
-    }, {
-        "vcs": "hg",
-        "repo": "https://hg.mozilla.org/releases/mozilla-beta",
-        "revision": "%(revision)s",
-        "dest": "mozilla-beta",
-        "clone_upstream_url": "https://hg.mozilla.org/mozilla-unified",
-    }],
-    
     'purge_minsize': 12,
     'is_automation': True,
 }
