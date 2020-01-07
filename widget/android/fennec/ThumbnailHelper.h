@@ -240,16 +240,14 @@ public:
 
         
         nsCOMPtr<nsIDOMWindowUtils> utils = do_GetInterface(window);
-        nsCOMPtr<nsISupports> rectSupports;
+        RefPtr<DOMRect> rect;
         if (!utils ||
-                NS_FAILED(utils->GetRootBounds(getter_AddRefs(rectSupports))) ||
-                !rectSupports) {
+                NS_FAILED(utils->GetRootBounds(getter_AddRefs(rect))) ||
+                !rect) {
             java::ThumbnailHelper::NotifyThumbnail(
                     aData, aTab,  false,  false);
             return;
         }
-        
-        DOMRect* rect = DOMRect::FromSupports(rectSupports);
         float pageLeft = rect->Left();
         float pageTop = rect->Top();
         float pageWidth = rect->Width();
