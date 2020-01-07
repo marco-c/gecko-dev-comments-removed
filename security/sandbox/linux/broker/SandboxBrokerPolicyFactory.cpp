@@ -14,6 +14,7 @@
 #include "mozilla/SandboxSettings.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/SandboxLaunch.h"
 #include "mozilla/dom/ContentChild.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
@@ -51,6 +52,7 @@ static const int rdonly = SandboxBroker::MAY_READ;
 static const int wronly = SandboxBroker::MAY_WRITE;
 static const int rdwr = rdonly | wronly;
 static const int rdwrcr = rdwr | SandboxBroker::MAY_CREATE;
+static const int access = SandboxBroker::MAY_ACCESS;
 }
 #endif
 
@@ -526,6 +528,15 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
     
     
     policy->AddPath(rdonly, "/var/lib/dbus/machine-id");
+  }
+
+  
+  
+  if (HasAtiDrivers()) {
+    policy->AddDir(rdonly, "/opt/amdgpu/share");
+    policy->AddPath(rdonly, "/sys/module/amdgpu");
+    
+    policy->AddDir(access, "/sys");
   }
 
   

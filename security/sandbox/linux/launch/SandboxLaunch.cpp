@@ -119,6 +119,31 @@ IsDisplayLocal()
   return true;
 }
 
+bool HasAtiDrivers()
+{
+  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  nsAutoString vendorID;
+  static const Array<nsresult (nsIGfxInfo::*)(nsAString&), 2> kMethods = {
+    &nsIGfxInfo::GetAdapterVendorID,
+    &nsIGfxInfo::GetAdapterVendorID2,
+  };
+  for (const auto method : kMethods) {
+    if (NS_SUCCEEDED((gfxInfo->*method)(vendorID))) {
+      
+      
+      
+      
+      
+      
+      if (vendorID.EqualsLiteral("ATI Technologies Inc.")) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 
 
 static bool
@@ -138,24 +163,10 @@ ContentNeedsSysVIPC()
   }
 
   
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsAutoString vendorID;
-  static const Array<nsresult (nsIGfxInfo::*)(nsAString&), 2> kMethods = {
-    &nsIGfxInfo::GetAdapterVendorID,
-    &nsIGfxInfo::GetAdapterVendorID2,
-  };
-  for (const auto method : kMethods) {
-    if (NS_SUCCEEDED((gfxInfo->*method)(vendorID))) {
-      
-      
-      
-      
-      
-      if (vendorID.EqualsLiteral("ATI Technologies Inc.")) {
-        return true;
-      }
-    }
+  if (HasAtiDrivers()) {
+    return true;
   }
+
   return false;
 }
 

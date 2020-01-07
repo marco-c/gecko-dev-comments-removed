@@ -144,8 +144,9 @@ SandboxBrokerClient::DoCall(const Request* aReq, const char* aPath,
     
     
     
-    SANDBOX_LOG_ERROR("Failed errno %d op %d flags 0%o path %s",
-                      resp.mError, aReq->mOp, aReq->mFlags, path);
+    SANDBOX_LOG_ERROR("Failed errno %d op %s flags 0%o path %s",
+                      resp.mError, OperationDescription[aReq->mOp],
+                      aReq->mFlags, path);
   }
   if (openedFd >= 0) {
     close(openedFd);

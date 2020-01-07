@@ -655,6 +655,7 @@ SandboxBroker::SymlinkPermissions(const char* aPath, const size_t aPathLen)
     return perms;
   } else {
     
+    
     return 0;
   }
 }
@@ -798,26 +799,26 @@ SandboxBroker::ThreadMain(void)
         
         pathLen = RemapTempDirs(pathBuf, sizeof(pathBuf), pathLen);
         perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
-        if (!perms) {
-          
-          
-          
-            
-          int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
-          if (symlinkPerms > 0) {
-            perms = symlinkPerms;
-          }
-          if (!perms) {
-            
-            
-            
-            
-            
-            
-            pathLen = RealPath(pathBuf, sizeof(pathBuf), pathLen);
-            perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
-          }
+      }
+      if (!perms) {
+        
+        
+        
+        
+        int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
+        if (symlinkPerms > 0) {
+          perms = symlinkPerms;
         }
+      }
+      if (!perms) {
+        
+        
+        
+        
+        
+        
+        pathLen = RealPath(pathBuf, sizeof(pathBuf), pathLen);
+        perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
       }
 
       
@@ -1055,8 +1056,9 @@ SandboxBroker::AuditPermissive(int aOp, int aFlags, int aPerms, const char* aPat
     errno = 0;
   }
 
-  SANDBOX_LOG_ERROR("SandboxBroker: would have denied op=%d rflags=%o perms=%d path=%s for pid=%d" \
-                    " permissive=1 error=\"%s\"", aOp, aFlags, aPerms,
+  SANDBOX_LOG_ERROR("SandboxBroker: would have denied op=%s rflags=%o perms=%d path=%s for pid=%d" \
+                    " permissive=1 error=\"%s\"", OperationDescription[aOp],
+                    aFlags, aPerms,
                     aPath, mChildPid, strerror(errno));
 }
 

@@ -17,6 +17,7 @@ namespace mozilla {
 
 void SandboxLaunchPrepare(GeckoProcessType aType,
                           base::LaunchOptions* aOptions);
+bool HasAtiDrivers();
 
 } 
 
