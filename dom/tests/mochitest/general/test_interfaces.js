@@ -151,6 +151,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "AudioParam", insecureContext: true},
 
+    {name: "AudioParamMap", insecureContext: true, disabled: true},
+
     {name: "AudioProcessingEvent", insecureContext: true},
 
     {name: "AudioScheduledSourceNode", insecureContext: true},
