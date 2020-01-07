@@ -33,6 +33,7 @@ var SiteDataManager = {
   
   
   
+  
   _sites: new Map(),
 
   _getCacheSizeObserver: null,
@@ -314,14 +315,6 @@ var SiteDataManager = {
     site.cookies = [];
   },
 
-  _removeServiceWorkersForSites(sites) {
-    let promises = [];
-    sites.forEach(s => {
-      promises.push(ServiceWorkerCleanUp.removeFromHost(s.principals[0].URI.host));
-    });
-    return Promise.all(promises);
-  },
-
   
 
 
@@ -335,29 +328,24 @@ var SiteDataManager = {
     this._updateAppCache();
 
     let unknownHost = "";
-    let targetSites = new Map();
+    let promises = [];
     for (let host of hosts) {
       let site = this._sites.get(host);
       if (site) {
+        
+        Services.obs.notifyObservers(null, "browser:purge-domain-data", host);
         this._removePermission(site);
         this._removeAppCache(site);
         this._removeCookies(site);
-        Services.obs.notifyObservers(null, "browser:purge-domain-data", host);
-        targetSites.set(host, site);
+        promises.push(ServiceWorkerCleanUp.removeFromHost(host));
+        promises.push(this._removeQuotaUsage(site));
       } else {
         unknownHost = host;
         break;
       }
     }
 
-    if (targetSites.size > 0) {
-      await this._removeServiceWorkersForSites(targetSites);
-      let promises = [];
-      for (let [, site] of targetSites) {
-        promises.push(this._removeQuotaUsage(site));
-      }
-      await Promise.all(promises);
-    }
+    await Promise.all(promises);
 
     if (unknownHost) {
       throw `SiteDataManager: removing unknown site of ${unknownHost}`;
@@ -427,7 +415,11 @@ var SiteDataManager = {
 
 
 
+
   async removeSiteData() {
+    
+    Services.obs.notifyObservers(null, "extension:purge-localStorage");
+
     Services.cookies.removeAll();
     OfflineAppCacheHelper.clear();
 
