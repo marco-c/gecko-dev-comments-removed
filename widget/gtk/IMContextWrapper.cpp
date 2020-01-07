@@ -584,40 +584,39 @@ IMContextWrapper::OnDestroyWindow(nsWindow* aWindow)
          this));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void
 IMContextWrapper::PrepareToDestroyContext(GtkIMContext* aContext)
 {
-    GtkIMContext *slave = nullptr; 
-    if (!slave) {
-        return;
-    }
-
-    GType slaveType = G_TYPE_FROM_INSTANCE(slave);
-    const gchar *im_type_name = g_type_name(slaveType);
-    if (strcmp(im_type_name, "GtkIMContextIIIM") == 0) {
+    if (mIMContextID == IMContextID::eIIIMF) {
         
-        static gpointer gtk_iiim_context_class =
-            g_type_class_ref(slaveType);
         
-        (void)gtk_iiim_context_class;
+        
+        
+        
+        static gpointer sGtkIIIMContextClass = nullptr;
+        if (!sGtkIIIMContextClass) {
+            
+            
+            
+            
+            
+            
+            
+            
+            GType IIMContextType = g_type_from_name("GtkIMContextIIIM");
+            if (IIMContextType) {
+                sGtkIIIMContextClass = g_type_class_ref(IIMContextType);
+                MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                    ("0x%p PrepareToDestroyContext(), added to reference to "
+                     "GtkIMContextIIIM class to prevent it from being unloaded",
+                     this));
+            } else {
+                MOZ_LOG(gGtkIMLog, LogLevel::Error,
+                    ("0x%p PrepareToDestroyContext(), FAILED to prevent the "
+                     "IIIM module from being uploaded",
+                     this));
+            }
+        }
     }
 }
 
