@@ -257,7 +257,7 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                 return;
             }
 
-            RootedObject currentScope(cx, JS_GetGlobalForObject(cx, obj));
+            RootedObject currentScope(cx, JS::GetNonCCWObjectGlobal(obj));
             if (MOZ_UNLIKELY(wrapScope != currentScope)) {
                 
                 

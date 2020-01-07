@@ -2450,14 +2450,8 @@ nsXPCComponents_Utils::GetGlobalForObject(HandleValue object,
     
     
     
-    
-    
     Rooted<JSObject*> obj(cx, &object.toObject());
-    obj = js::UncheckedUnwrap(obj);
-    {
-        JSAutoRealm ar(cx, obj);
-        obj = JS_GetGlobalForObject(cx, obj);
-    }
+    obj = JS::GetNonCCWObjectGlobal(js::UncheckedUnwrap(obj));
 
     if (!JS_WrapObject(cx, &obj))
         return NS_ERROR_FAILURE;
