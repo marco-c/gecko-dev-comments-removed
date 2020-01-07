@@ -3795,7 +3795,8 @@ nsWindow::Create(nsIWidget* aParent,
 
 
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
-        drawToContainer = gtk_style_context_has_class(style, "csd");
+        drawToContainer = mIsCSDAvailable ||
+                          gtk_style_context_has_class(style, "csd");
 #endif
         eventWidget = (drawToContainer) ? container : mShell;
 
@@ -6649,6 +6650,63 @@ nsWindow::SetDrawsInTitlebar(bool aState)
   if (mShell) {
       if (GetCSDSupportLevel() == CSD_SUPPORT_FULL) {
           SetWindowDecoration(aState ? eBorderStyle_border : mBorderStyle);
+      }
+      else {
+          
+
+
+
+
+
+
+
+
+
+          NativeShow(false);
+
+          
+          
+          
+          GtkWidget* tmpWindow = gtk_window_new(GTK_WINDOW_POPUP);
+          gtk_widget_realize(tmpWindow);
+
+          gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
+          gtk_widget_unrealize(GTK_WIDGET(mShell));
+
+          
+          static auto sGtkWindowSetTitlebar = (void (*)(GtkWindow*, GtkWidget*))
+              dlsym(RTLD_DEFAULT, "gtk_window_set_titlebar");
+          MOZ_ASSERT(sGtkWindowSetTitlebar,
+              "Missing gtk_window_set_titlebar(), old Gtk+ library?");
+
+          if (aState) {
+              
+              
+              
+              
+              sGtkWindowSetTitlebar(GTK_WINDOW(mShell), gtk_fixed_new());
+          } else {
+              sGtkWindowSetTitlebar(GTK_WINDOW(mShell), nullptr);
+          }
+
+          
+
+
+
+
+          GtkAllocation allocation = {0, 0, 0, 0};
+          gtk_widget_get_preferred_width(GTK_WIDGET(mShell), nullptr,
+                                         &allocation.width);
+          gtk_widget_get_preferred_height(GTK_WIDGET(mShell), nullptr,
+                                          &allocation.height);
+          gtk_widget_size_allocate(GTK_WIDGET(mShell), &allocation);
+
+          gtk_widget_realize(GTK_WIDGET(mShell));
+          gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
+          mNeedsShow = true;
+          NativeResize();
+
+          gtk_widget_destroy(tmpWindow);
       }
   }
 
