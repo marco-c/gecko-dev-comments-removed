@@ -188,10 +188,8 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 
   
   
-  bool copiedFromDiscarded = false;
-  nsIntRegion copyableRegion;
-
   if (discardedFrontBuffer) {
+    nsIntRegion copyableRegion;
     copyableRegion.And(aNewValidRegion, discardedValidRegion);
     copyableRegion.SubOut(aDirtyRegion);
 
@@ -254,22 +252,17 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 
         
         paintRegion.SubOut(copyableRegion);
-        copiedFromDiscarded = true;
+        copyableRegion.MoveBy(-mTilingOrigin);
+        tileDirtyRegion.SubOut(copyableRegion);
       }
     }
   }
 
   if (mode != SurfaceMode::SURFACE_OPAQUE) {
-    nsIntRegion regionToClear = tileDirtyRegion;
-    if (copiedFromDiscarded) {
-      copyableRegion.MoveBy(-mTilingOrigin);
-      regionToClear.SubOut(copyableRegion);
-    }
-
     auto clear = CapturedTiledPaintState::Clear{
       dt,
       dtOnWhite,
-      regionToClear,
+      tileDirtyRegion,
     };
 
     if (asyncPaint) {
