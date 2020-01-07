@@ -321,7 +321,7 @@ WebrtcVideoConduit::~WebrtcVideoConduit()
 
   
   SyncTo(nullptr);
-  Destroy();
+  MOZ_ASSERT(!mSendStream && !mRecvStream, "Call DeleteStreams prior to ~WebrtcVideoConduit.");
 }
 
 MediaConduitErrorCode
@@ -1219,7 +1219,7 @@ WebrtcVideoConduit::Init()
 }
 
 void
-WebrtcVideoConduit::Destroy()
+WebrtcVideoConduit::DeleteStreams()
 {
   
   
