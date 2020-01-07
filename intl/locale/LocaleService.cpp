@@ -81,12 +81,14 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
     if (str.Length() > 0) {
       for (const nsACString& part : str.Split(',')) {
         nsAutoCString locale(part);
-        if (locale.EqualsLiteral("ja-JP-mac")) {
+        if (SanitizeForBCP47(locale, true)) {
           
-          if (!aRetVal.Contains(locale)) {
-            aRetVal.AppendElement(locale);
+          
+          
+          
+          if (locale.EqualsLiteral("ja-JP-x-lvariant-mac")) {
+            locale.Assign("ja-JP-mac");
           }
-        } else if (SanitizeForBCP47(locale, true)) {
           if (!aRetVal.Contains(locale)) {
             aRetVal.AppendElement(locale);
           }
@@ -835,7 +837,7 @@ LocaleService::Locale::Locale(const nsCString& aLocale, bool aRange)
         }
         break;
       case 3:
-        if (part.EqualsLiteral("*") || part.Length() >= 3 && part.Length() <= 8) {
+        if (part.EqualsLiteral("*") || part.Length() == 3) {
           mVariant.Assign(part);
         }
         break;
@@ -990,10 +992,13 @@ LocaleService::SetRequestedLocales(const char** aRequested,
 
   for (uint32_t i = 0; i < aRequestedCount; i++) {
     nsAutoCString locale(aRequested[i]);
-    if (!locale.EqualsLiteral("ja-JP-mac") &&
-        !SanitizeForBCP47(locale, true)) {
+    if (!SanitizeForBCP47(locale, true)) {
       NS_ERROR("Invalid language tag provided to SetRequestedLocales!");
       return NS_ERROR_INVALID_ARG;
+    }
+    if (locale.EqualsLiteral("ja-JP-x-lvariant-mac")) {
+      
+      locale.Assign("ja-JP-mac");
     }
 
     if (i > 0) {
