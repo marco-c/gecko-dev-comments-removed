@@ -245,8 +245,7 @@ Performance::RoundTime(double aTime) const
 {
   
   
-  
-  const double maxResolutionMs = 0.005;
+  const double maxResolutionMs = 0.020;
   return nsRFPService::ReduceTimePrecisionAsMSecs(
     floor(aTime / maxResolutionMs) * maxResolutionMs);
 }
