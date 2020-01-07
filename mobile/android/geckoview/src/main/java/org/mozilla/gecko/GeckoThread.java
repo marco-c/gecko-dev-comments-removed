@@ -28,7 +28,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,8 +125,10 @@ public class GeckoThread extends Thread {
     private static int uiThreadId;
 
     
-    public static final int FLAG_DEBUGGING = 1; 
-    public static final int FLAG_PRELOAD_CHILD = 2; 
+    public static final int FLAG_DEBUGGING = 1 << 0; 
+    public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
+    public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER = 1 << 2; 
+    public static final int FLAG_ENABLE_JAVA_CRASHREPORTER = 1 << 3; 
 
     private static final String EXTRA_ARGS = "args";
     private static final String EXTRA_PREFS_FD = "prefsFd";
@@ -183,11 +184,14 @@ public class GeckoThread extends Thread {
                               -1,  -1,  -1);
     }
 
-    public static boolean initChildProcess(final String[] args, final Bundle extras,
-                                           final int prefsFd, final int ipcFd,
+    public static boolean initChildProcess(final String[] args,
+                                           final Bundle extras,
+                                           final int flags,
+                                           final int prefsFd,
+                                           final int ipcFd,
                                            final int crashFd,
                                            final int crashAnnotationFd) {
-        return INSTANCE.init( null, args, extras,  0,
+        return INSTANCE.init( null, args, extras, flags,
                              prefsFd, ipcFd, crashFd, crashAnnotationFd);
     }
 
@@ -379,7 +383,17 @@ public class GeckoThread extends Thread {
             if (!INSTANCE.mInitialized) {
                 return null;
             }
-            return INSTANCE.mExtras;
+            return new Bundle(INSTANCE.mExtras);
+        }
+    }
+
+    public static int getActiveFlags() {
+        synchronized (INSTANCE) {
+            if (!INSTANCE.mInitialized) {
+                return 0;
+            }
+
+            return INSTANCE.mFlags;
         }
     }
 
@@ -464,7 +478,20 @@ public class GeckoThread extends Thread {
             Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
         }
 
-        final ArrayList<String> env = getEnvFromExtras(mExtras);
+        final List<String> env = getEnvFromExtras(mExtras);
+
+        
+        
+        if ((mFlags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
+            env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
+        } else if ((mFlags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0 && BuildConfig.DEBUG_BUILD) {
+            env.add(0, "MOZ_CRASHREPORTER=1");
+        }
+
+        if ((mFlags & FLAG_ENABLE_JAVA_CRASHREPORTER) != 0) {
+            GeckoAppShell.ensureCrashHandling();
+        }
+
         GeckoLoader.setupGeckoEnvironment(context, context.getFilesDir().getPath(), env);
 
         

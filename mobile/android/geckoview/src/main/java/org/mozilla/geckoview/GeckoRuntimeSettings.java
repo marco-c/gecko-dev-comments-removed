@@ -42,6 +42,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
+
         public @NonNull Builder useContentProcessHint(final boolean use) {
             mSettings.mUseContentProcess = use;
             return this;
@@ -81,6 +83,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder javaScriptEnabled(final boolean flag) {
             mSettings.mJavaScript.set(flag);
             return this;
@@ -103,8 +106,37 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder webFontsEnabled(final boolean flag) {
             mSettings.mWebFonts.set(flag);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+        public @NonNull Builder nativeCrashReportingEnabled(final boolean enabled) {
+            mSettings.mNativeCrashReporting = enabled;
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+        public @NonNull Builder javaCrashReportingEnabled(final boolean enabled) {
+            mSettings.mJavaCrashReporting = enabled;
             return this;
         }
     }
@@ -150,6 +182,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "devtools.debugger.remote-enabled", false);
      Pref<Boolean> mWebFonts = new Pref<Boolean>(
         "browser.display.use_document_fonts", true);
+     boolean mNativeCrashReporting;
+     boolean mJavaCrashReporting;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mJavaScript, mRemoteDebugging, mWebFonts
@@ -180,6 +214,9 @@ public final class GeckoRuntimeSettings implements Parcelable {
             final Pref<Object> uncheckedPref = (Pref<Object>) mPrefs[i];
             uncheckedPref.set(settings.mPrefs[i].get());
         }
+
+        mNativeCrashReporting = settings.mNativeCrashReporting;
+        mJavaCrashReporting = settings.mJavaCrashReporting;
     }
 
      void flush() {
@@ -275,6 +312,24 @@ public final class GeckoRuntimeSettings implements Parcelable {
         return this;
     }
 
+    
+
+
+
+
+    public boolean getNativeCrashReportingEnabled() {
+        return mNativeCrashReporting;
+    }
+
+    
+
+
+
+
+    public boolean getJavaCrashReportingEnabled() {
+        return mJavaCrashReporting;
+    }
+
     @Override 
     public int describeContents() {
         return 0;
@@ -282,18 +337,21 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
     @Override 
     public void writeToParcel(Parcel out, int flags) {
-        out.writeByte((byte) (mUseContentProcess ? 1 : 0));
+        ParcelableUtils.writeBoolean(out, mUseContentProcess);
         out.writeStringArray(mArgs);
         mExtras.writeToParcel(out, flags);
 
         for (final Pref<?> pref : mPrefs) {
             out.writeValue(pref.get());
         }
+
+        ParcelableUtils.writeBoolean(out, mNativeCrashReporting);
+        ParcelableUtils.writeBoolean(out, mJavaCrashReporting);
     }
 
     
     public void readFromParcel(final Parcel source) {
-        mUseContentProcess = source.readByte() == 1;
+        mUseContentProcess = ParcelableUtils.readBoolean(source);
         mArgs = source.createStringArray();
         mExtras.readFromParcel(source);
 
@@ -303,6 +361,9 @@ public final class GeckoRuntimeSettings implements Parcelable {
             final Pref<Object> uncheckedPref = (Pref<Object>) pref;
             uncheckedPref.set(source.readValue(getClass().getClassLoader()));
         }
+
+        mNativeCrashReporting = ParcelableUtils.readBoolean(source);
+        mJavaCrashReporting = ParcelableUtils.readBoolean(source);
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
