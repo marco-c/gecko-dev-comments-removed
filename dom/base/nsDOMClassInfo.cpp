@@ -1699,6 +1699,7 @@ const InterfaceShimEntry kInterfaceShimMap[] =
   { "nsIDOMOfflineResourceList", "OfflineResourceList" },
   { "nsIDOMRange", "Range" },
   { "nsIDOMSVGLength", "SVGLength" },
+  
   { "nsIDOMNodeFilter", "NodeFilter" },
   { "nsIDOMXPathResult", "XPathResult" } };
 
