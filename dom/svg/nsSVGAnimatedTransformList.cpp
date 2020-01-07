@@ -64,10 +64,8 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue,
     mIsAttrSet = true;
     
     
-    
-    
-    mHadTransformBeforeLastBaseValChange =
-      !aSVGElement->GetPrimaryFrame() || hadTransform;
+    mRequiresFrameReconstruction =
+      aSVGElement->GetPrimaryFrame() && !hadTransform;
   }
   return rv;
 }
@@ -75,7 +73,7 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue,
 void
 nsSVGAnimatedTransformList::ClearBaseValue()
 {
-  mHadTransformBeforeLastBaseValChange = HasTransform();
+  mRequiresFrameReconstruction = !HasTransform();
 
   SVGAnimatedTransformList *domWrapper =
     SVGAnimatedTransformList::GetDOMWrapperIfExists(this);

@@ -47,7 +47,7 @@ class nsSVGAnimatedTransformList
 public:
   nsSVGAnimatedTransformList()
     : mIsAttrSet(false),
-      mHadTransformBeforeLastBaseValChange(false) { }
+      mRequiresFrameReconstruction(true) { }
 
   
 
@@ -108,8 +108,8 @@ public:
 
 
 
-  bool HadTransformBeforeLastBaseValChange() const {
-    return mHadTransformBeforeLastBaseValChange;
+  bool RequiresFrameReconstruction() const {
+    return mRequiresFrameReconstruction;
   }
 
   mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
@@ -125,7 +125,7 @@ private:
   nsAutoPtr<SVGTransformList> mAnimVal;
   bool mIsAttrSet;
    
-  bool mHadTransformBeforeLastBaseValChange;
+  bool mRequiresFrameReconstruction;
 
   struct SMILAnimatedTransformList : public nsISMILAttr
   {
