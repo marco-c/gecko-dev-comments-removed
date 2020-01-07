@@ -243,7 +243,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  virtual bool CheckElementStart(Element* aElement,
+  virtual bool CheckElementStart(mozilla::dom::Element* aElement,
                                  bool & aForceFormat,
                                  nsAString& aStr,
                                  nsresult& aResult);
