@@ -52,7 +52,17 @@ cron_yml_schema = Schema({
         
         'when': optionally_keyed_by(
             'project',
-            [{'hour': int, 'minute': All(int, even_15_minutes)}]),
+            [
+                {
+                    'hour': int,
+                    'minute': All(int, even_15_minutes),
+                    
+                    'day': int,  
+                    'weekday': Any('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+                                   'Saturday', 'Sunday')
+                }
+            ]
+        ),
     }],
 })
 
