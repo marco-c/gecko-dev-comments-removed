@@ -11,9 +11,6 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 const font = exports.font = {
   
-  CSSFamilyName: PropTypes.string,
-
-  
   format: PropTypes.string,
 
   

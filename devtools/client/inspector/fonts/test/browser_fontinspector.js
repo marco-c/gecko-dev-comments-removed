@@ -55,12 +55,6 @@ function getFormat(fontLi) {
   return link.textContent;
 }
 
-function getCSSName(fontLi) {
-  let text = fontLi.querySelector(".font-css-name").textContent;
-
-  return text.substring(text.indexOf('"') + 1, text.lastIndexOf('"'));
-}
-
 function* testBodyFonts(inspector, viewDoc) {
   let lis = getUsedFontsEls(viewDoc);
   is(lis.length, 5, "Found 5 fonts");
@@ -73,7 +67,6 @@ function* testBodyFonts(inspector, viewDoc) {
     is(isRemote(li), font.remote, "font " + i + " remote value correct");
     is(li.querySelector(".font-url").href, font.url, "font " + i + " url correct");
     is(getFormat(li), font.format, "font " + i + " format correct");
-    is(getCSSName(li), font.cssName, "font " + i + " css name correct");
   }
 
   
@@ -83,15 +76,12 @@ function* testBodyFonts(inspector, viewDoc) {
 
   
   let localFontName = getName(lis[4]);
-  let localFontCSSName = getCSSName(lis[4]);
 
   
   
   ok((localFontName == "Arial") || (localFontName == "Liberation Sans"),
      "local font right font name");
   ok(!isRemote(lis[4]), "local font is local");
-  ok((localFontCSSName == "Arial") || (localFontCSSName == "Liberation Sans"),
-     "Arial", "local font has right css name");
 }
 
 function* testDivFonts(inspector, viewDoc) {
