@@ -6,8 +6,6 @@
 
 
 
-use std::fmt;
-use style_traits::{CssWriter, ToCss};
 use values::computed::{Context, ToComputedValue};
 use values::specified;
 
@@ -18,20 +16,30 @@ pub use super::specified::{AlignSelf, JustifySelf};
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct JustifyItems {
     
+    #[css(skip)]
     pub specified: specified::JustifyItems,
     
     pub computed: specified::JustifyItems,
-}
-
-impl ToCss for JustifyItems {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-        where W: fmt::Write,
-    {
-        self.computed.to_css(dest)
-    }
 }
 
 impl JustifyItems {
