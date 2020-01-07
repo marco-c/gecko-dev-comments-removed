@@ -7181,10 +7181,16 @@ nsComputedDOMStyle::RegisterPrefChangeCallbacks()
   if (pref_[0]) {                                                            \
     Preferences::RegisterCallback(MarkComputedStyleMapDirty, pref_, data);   \
   }
-#define CSS_PROP(prop_, id_, method_, flags_, pref_, ...) \
+#define CSS_PROP_LONGHAND(prop_, id_, method_, flags_, pref_) \
   REGISTER_CALLBACK(pref_)
-#include "nsCSSPropList.h"
-#undef CSS_PROP
+#define CSS_PROP_SHORTHAND(prop_, id_, method_, flags_, pref_) \
+  REGISTER_CALLBACK(pref_)
+#define CSS_PROP_ALIAS(prop_, aliasid_, id_, method_, pref_) \
+  REGISTER_CALLBACK(pref_)
+#include "mozilla/ServoCSSPropList.h"
+#undef CSS_PROP_ALIAS
+#undef CSS_PROP_SHORTHAND
+#undef CSS_PROP_LONGHAND
 #undef REGISTER_CALLBACK
 }
 
@@ -7196,9 +7202,15 @@ nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
   if (pref_[0]) {                                                              \
     Preferences::UnregisterCallback(MarkComputedStyleMapDirty, pref_, data);   \
   }
-#define CSS_PROP(prop_, id_, method_, flags_, pref_, ...) \
+#define CSS_PROP_LONGHAND(prop_, id_, method_, flags_, pref_) \
   UNREGISTER_CALLBACK(pref_)
-#include "nsCSSPropList.h"
-#undef CSS_PROP
+#define CSS_PROP_SHORTHAND(prop_, id_, method_, flags_, pref_) \
+  UNREGISTER_CALLBACK(pref_)
+#define CSS_PROP_ALIAS(prop_, aliasid_, id_, method_, pref_) \
+  UNREGISTER_CALLBACK(pref_)
+#include "mozilla/ServoCSSPropList.h"
+#undef CSS_PROP_ALIAS
+#undef CSS_PROP_SHORTHAND
+#undef CSS_PROP_LONGHAND
 #undef UNREGISTER_CALLBACK
 }
