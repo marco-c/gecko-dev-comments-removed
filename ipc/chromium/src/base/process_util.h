@@ -27,6 +27,7 @@
 #include <mach/mach.h>
 #endif
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,10 +39,6 @@
 
 #include "base/command_line.h"
 #include "base/process.h"
-
-#if defined(OS_POSIX)
-#include "base/file_descriptor_shuffle.h"
-#endif
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/EnvironmentMap.h"
@@ -95,7 +92,8 @@ void SetAllFDsToCloseOnExec();
 
 
 
-void CloseSuperfluousFds(const base::InjectiveMultimap& saved_map);
+
+void CloseSuperfluousFds(std::function<bool(int)>&& should_preserve);
 
 typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
 typedef std::map<std::string, std::string> environment_map;
