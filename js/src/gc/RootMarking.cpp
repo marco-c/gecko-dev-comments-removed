@@ -247,6 +247,7 @@ PropertyDescriptor::trace(JSTracer* trc)
 void
 js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoTraceSession& session)
 {
+    MOZ_ASSERT(!TlsContext.get()->suppressGC);
     MOZ_ASSERT_IF(atomsZone->isCollecting(), session.maybeLock.isSome());
 
     
@@ -264,6 +265,8 @@ js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoTraceSession& sessi
 void
 js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoTraceSession& session)
 {
+    MOZ_ASSERT(!TlsContext.get()->suppressGC);
+
     
     
     
@@ -314,8 +317,6 @@ void
 js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
                                       AutoTraceSession& session)
 {
-    MOZ_ASSERT(!TlsContext.get()->suppressGC);
-
     {
         gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_STACK);
 
