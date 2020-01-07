@@ -739,6 +739,18 @@ JitRuntime::getVMWrapper(const VMFunction& f) const
     return trampolineCode(p->value());
 }
 
+void
+JitCodeHeader::init(JitCode* jitCode)
+{
+    jitCode_ = jitCode;
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+    
+    if (CPUInfo::NeedAmdBugWorkaround())
+        memset((char *)&nops_, X86Encoding::OneByteOpcodeID::OP_NOP, sizeof(nops_));
+#endif
+}
+
 template <AllowGC allowGC>
 JitCode*
 JitCode::New(JSContext* cx, uint8_t* code, uint32_t bufferSize, uint32_t headerSize,
