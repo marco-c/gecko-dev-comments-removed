@@ -34,10 +34,33 @@ def package_fennec_apk(inputs=[], omni_ja=None, classes_dex=None,
 
     
     
+    
+    
+    
+    
+    last_input_with_dex_files = None
     for input in inputs:
         jar = JarReader(input)
         for file in jar:
             path = file.filename
+
+            if mozpath.match(path, '/classes*.dex'):
+                last_input_with_dex_files = input
+                continue
+
+            if jarrer.contains(path):
+                jarrer.remove(path)
+            jarrer.add(path, DeflatedFile(file), compress=file.compressed)
+
+    
+    if last_input_with_dex_files:
+        jar = JarReader(last_input_with_dex_files)
+        for file in jar:
+            path = file.filename
+
+            if not mozpath.match(path, '/classes*.dex'):
+                continue
+
             if jarrer.contains(path):
                 jarrer.remove(path)
             jarrer.add(path, DeflatedFile(file), compress=file.compressed)
@@ -115,6 +138,10 @@ def package_fennec_apk(inputs=[], omni_ja=None, classes_dex=None,
         add(mozpath.join('assets', 'omni.ja'), File(omni_ja), compress=False)
 
     if classes_dex:
+        if buildconfig.substs.get('MOZ_BUILD_MOBILE_ANDROID_WITH_GRADLE'):
+            raise ValueError("Fennec APKs built --with-gradle "
+                             "should never specify classes.dex")
+
         add('classes.dex', File(classes_dex))
 
     return jarrer
@@ -143,7 +170,7 @@ def main(args):
     args = parser.parse_args(args)
 
     if buildconfig.substs.get('OMNIJAR_NAME') != 'assets/omni.ja':
-        raise ValueError("Don't know how package Fennec APKs when "
+        raise ValueError("Don't know how to package Fennec APKs when "
                          " OMNIJAR_NAME is not 'assets/omni.jar'.")
 
     jarrer = package_fennec_apk(inputs=args.inputs,
