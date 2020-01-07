@@ -11,7 +11,6 @@ module.exports = {
     
     
     
-    "no-cond-assign": "off",
     "no-lonely-if": "off",
     "no-nested-ternary": "off",
     "no-new-object": "off",
