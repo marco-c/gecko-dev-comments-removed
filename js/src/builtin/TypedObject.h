@@ -7,6 +7,8 @@
 #ifndef builtin_TypedObject_h
 #define builtin_TypedObject_h
 
+#include "mozilla/CheckedInt.h"
+
 #include "builtin/TypedObjectConstants.h"
 #include "gc/WeakMap.h"
 #include "js/Conversions.h"
@@ -457,6 +459,27 @@ class StructMetaTypeDescr : public NativeObject
     
     
     static MOZ_MUST_USE bool construct(JSContext* cx, unsigned argc, Value* vp);
+
+    class Layout
+    {
+        
+        friend class StructMetaTypeDescr;
+
+        mozilla::CheckedInt32 sizeSoFar = 0;
+        int32_t structAlignment = 1;
+
+        mozilla::CheckedInt32 addField(int32_t fieldAlignment, int32_t fieldSize);
+
+      public:
+        
+        mozilla::CheckedInt32 addScalar(Scalar::Type type);
+        mozilla::CheckedInt32 addReference(ReferenceTypeDescr::Type type);
+
+        
+        
+        
+        mozilla::CheckedInt32 close(int32_t* alignment = nullptr);
+    };
 };
 
 class StructTypeDescr : public ComplexTypeDescr

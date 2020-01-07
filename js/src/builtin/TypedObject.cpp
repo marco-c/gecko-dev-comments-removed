@@ -766,6 +766,44 @@ const JSFunctionSpec StructMetaTypeDescr::typedObjectMethods[] = {
     JS_FS_END
 };
 
+CheckedInt32
+StructMetaTypeDescr::Layout::addField(int32_t fieldAlignment, int32_t fieldSize)
+{
+    
+    structAlignment = js::Max(structAlignment, fieldAlignment);
+
+    
+    CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
+    if (!offset.isValid())
+        return offset;
+
+    
+    sizeSoFar = offset + fieldSize;
+    if (!sizeSoFar.isValid())
+        return sizeSoFar;
+
+    return offset;
+}
+
+CheckedInt32
+StructMetaTypeDescr::Layout::addScalar(Scalar::Type type) {
+    return addField(ScalarTypeDescr::alignment(type),
+                    ScalarTypeDescr::size(type));
+}
+
+CheckedInt32
+StructMetaTypeDescr::Layout::addReference(ReferenceTypeDescr::Type type) {
+    return addField(ReferenceTypeDescr::alignment(type),
+                    ReferenceTypeDescr::size(type));
+}
+
+CheckedInt32
+StructMetaTypeDescr::Layout::close(int32_t *alignment) {
+    if (alignment)
+        *alignment = structAlignment;
+    return RoundUpToAlignment(sizeSoFar, structAlignment);
+}
+
  JSObject*
 StructMetaTypeDescr::create(JSContext* cx,
                             HandleObject metaTypeDescr,
@@ -835,8 +873,7 @@ StructMetaTypeDescr::createFromArrays(JSContext* cx,
     AutoValueVector fieldOffsets(cx);  
     RootedObject userFieldOffsets(cx); 
     RootedObject userFieldTypes(cx);   
-    CheckedInt32 sizeSoFar(0);         
-    uint32_t alignment = 1;            
+    Layout layout;                     
 
     userFieldOffsets = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
     if (!userFieldOffsets)
@@ -879,9 +916,7 @@ StructMetaTypeDescr::createFromArrays(JSContext* cx,
         if (!stringBuffer.append(&fieldType->stringRepr()))
             return nullptr;
 
-        
-        
-        CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldType->alignment());
+        CheckedInt32 offset = layout.addField(fieldType->alignment(), fieldType->size());
         if (!offset.isValid()) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPEDOBJECT_TOO_BIG);
             return nullptr;
@@ -897,16 +932,6 @@ StructMetaTypeDescr::createFromArrays(JSContext* cx,
         {
             return nullptr;
         }
-
-        
-        sizeSoFar = offset + fieldType->size();
-        if (!sizeSoFar.isValid()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPEDOBJECT_TOO_BIG);
-            return nullptr;
-        }
-
-        
-        alignment = js::Max(alignment, fieldType->alignment());
     }
 
     
@@ -917,8 +942,8 @@ StructMetaTypeDescr::createFromArrays(JSContext* cx,
     if (!stringRepr)
         return nullptr;
 
-    
-    CheckedInt32 totalSize = RoundUpToAlignment(sizeSoFar, alignment);
+    int32_t alignment;
+    CheckedInt32 totalSize = layout.close(&alignment);
     if (!totalSize.isValid()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPEDOBJECT_TOO_BIG);
         return nullptr;
