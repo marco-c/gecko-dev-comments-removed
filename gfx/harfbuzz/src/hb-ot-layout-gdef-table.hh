@@ -41,7 +41,7 @@ namespace OT {
 
 
 
-typedef ArrayOf<UINT16> AttachPoint;	
+typedef ArrayOf<HBUINT16> AttachPoint;	
 
 
 struct AttachList
@@ -62,7 +62,7 @@ struct AttachList
     const AttachPoint &points = this+attachPoint[index];
 
     if (point_count) {
-      const UINT16 *array = points.sub_array (start_offset, point_count);
+      const HBUINT16 *array = points.sub_array (start_offset, point_count);
       unsigned int count = *point_count;
       for (unsigned int i = 0; i < count; i++)
 	point_array[i] = array[i];
@@ -109,8 +109,8 @@ struct CaretValueFormat1
   }
 
   protected:
-  UINT16	caretValueFormat;	
-  INT16		coordinate;		
+  HBUINT16	caretValueFormat;	
+  HBINT16		coordinate;		
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -136,8 +136,8 @@ struct CaretValueFormat2
   }
 
   protected:
-  UINT16	caretValueFormat;	
-  UINT16	caretValuePoint;	
+  HBUINT16	caretValueFormat;	
+  HBUINT16	caretValuePoint;	
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -160,8 +160,8 @@ struct CaretValueFormat3
   }
 
   protected:
-  UINT16	caretValueFormat;	
-  INT16		coordinate;		
+  HBUINT16	caretValueFormat;	
+  HBINT16		coordinate;		
   OffsetTo<Device>
 		deviceTable;		
 
@@ -199,7 +199,7 @@ struct CaretValue
 
   protected:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   CaretValueFormat1	format1;
   CaretValueFormat2	format2;
   CaretValueFormat3	format3;
@@ -294,7 +294,7 @@ struct MarkGlyphSetsFormat1
   }
 
   protected:
-  UINT16	format;			
+  HBUINT16	format;			
   ArrayOf<LOffsetTo<Coverage> >
 		coverage;		
 
@@ -324,7 +324,7 @@ struct MarkGlyphSets
 
   protected:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   MarkGlyphSetsFormat1	format1;
   } u;
   public:

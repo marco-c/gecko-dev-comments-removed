@@ -298,6 +298,9 @@ def map_to_use(data):
 		if 0x1CE2 <= U <= 0x1CE8: UISC = Cantillation_Mark
 
 		
+		if 0x1BF2 <= U <= 0x1BF3: UISC = Nukta; UIPC = Bottom
+
+		
 		
 		if U == 0x1CED: UISC = Tone_Mark
 
@@ -348,12 +351,6 @@ def map_to_use(data):
 
 defaults = ('O', 'No_Block')
 data = map_to_use(data)
-
-
-singles = {}
-for u in [0x034F, 0x25CC, 0x1107F]:
-	singles[u] = data[u]
-	del data[u]
 
 print "/* == Start of generated table == */"
 print "/*"
@@ -456,16 +453,13 @@ print "hb_use_get_categories (hb_codepoint_t u)"
 print "{"
 print "  switch (u >> %d)" % page_bits
 print "  {"
-pages = set([u>>page_bits for u in starts+ends+singles.keys()])
+pages = set([u>>page_bits for u in starts+ends])
 for p in sorted(pages):
 	print "    case 0x%0Xu:" % p
 	for (start,end) in zip (starts, ends):
 		if p not in [start>>page_bits, end>>page_bits]: continue
 		offset = "use_offset_0x%04xu" % start
 		print "      if (hb_in_range<hb_codepoint_t> (u, 0x%04Xu, 0x%04Xu)) return use_table[u - 0x%04Xu + %s];" % (start, end-1, start, offset)
-	for u,d in singles.items ():
-		if p != u>>page_bits: continue
-		print "      if (unlikely (u == 0x%04Xu)) return %s;" % (u, d[0])
 	print "      break;"
 	print ""
 print "    default:"

@@ -187,7 +187,8 @@ struct hb_sanitize_context_t :
 	debug_depth (0),
 	start (nullptr), end (nullptr),
 	writable (false), edit_count (0),
-	blob (nullptr) {}
+	blob (nullptr),
+	num_glyphs (0) {}
 
   inline const char *get_name (void) { return "SANITIZE"; }
   template <typename T, typename F>
@@ -298,6 +299,7 @@ struct hb_sanitize_context_t :
   bool writable;
   unsigned int edit_count;
   hb_blob_t *blob;
+  unsigned int num_glyphs;
 };
 
 
@@ -306,8 +308,9 @@ struct hb_sanitize_context_t :
 template <typename Type>
 struct Sanitizer
 {
-  static hb_blob_t *sanitize (hb_blob_t *blob) {
-    hb_sanitize_context_t c[1];
+  inline Sanitizer (void) {}
+
+  inline hb_blob_t *sanitize (hb_blob_t *blob) {
     bool sane;
 
     
@@ -370,6 +373,11 @@ struct Sanitizer
     const char *base = hb_blob_get_data (blob, nullptr);
     return unlikely (!base) ? &Null(Type) : CastP<Type> (base);
   }
+
+  inline void set_num_glyphs (unsigned int num_glyphs) { c->num_glyphs = num_glyphs; }
+
+  private:
+  hb_sanitize_context_t c[1];
 };
 
 
@@ -533,8 +541,6 @@ struct Supplier
 
 
 
-
-
 template <typename Type, int Bytes> struct BEInt;
 
 template <typename Type>
@@ -635,22 +641,22 @@ struct IntType
   DEFINE_SIZE_STATIC (Size);
 };
 
-typedef IntType<uint8_t,  1> UINT8;	
-typedef IntType<int8_t,   1> INT8;	
-typedef IntType<uint16_t, 2> UINT16;	
-typedef IntType<int16_t,  2> INT16;	
-typedef IntType<uint32_t, 4> UINT32;	
-typedef IntType<int32_t,  4> INT32;	
+typedef IntType<uint8_t,  1> HBUINT8;	
+typedef IntType<int8_t,   1> HBINT8;	
+typedef IntType<uint16_t, 2> HBUINT16;	
+typedef IntType<int16_t,  2> HBINT16;	
+typedef IntType<uint32_t, 4> HBUINT32;	
+typedef IntType<int32_t,  4> HBINT32;	
 typedef IntType<uint32_t, 3> UINT24;	
 
 
-typedef INT16 FWORD;
+typedef HBINT16 FWORD;
 
 
-typedef UINT16 UFWORD;
+typedef HBUINT16 UFWORD;
 
 
-struct F2DOT14 : INT16
+struct F2DOT14 : HBINT16
 {
   
   
@@ -659,7 +665,7 @@ struct F2DOT14 : INT16
 };
 
 
-struct Fixed: INT32
+struct Fixed: HBINT32
 {
   
   
@@ -677,15 +683,15 @@ struct LONGDATETIME
     return_trace (likely (c->check_struct (this)));
   }
   protected:
-  INT32 major;
-  UINT32 minor;
+  HBINT32 major;
+  HBUINT32 minor;
   public:
   DEFINE_SIZE_STATIC (8);
 };
 
 
 
-struct Tag : UINT32
+struct Tag : HBUINT32
 {
   
   inline operator const char* (void) const { return reinterpret_cast<const char *> (&this->v); }
@@ -696,10 +702,10 @@ struct Tag : UINT32
 DEFINE_NULL_DATA (Tag, "    ");
 
 
-typedef UINT16 GlyphID;
+typedef HBUINT16 GlyphID;
 
 
-struct Index : UINT16 {
+struct Index : HBUINT16 {
   static const unsigned int NOT_FOUND_INDEX = 0xFFFFu;
 };
 DEFINE_NULL_DATA (Index, "\xff\xff");
@@ -713,18 +719,18 @@ struct Offset : Type
   DEFINE_SIZE_STATIC (sizeof(Type));
 };
 
-typedef Offset<UINT16> Offset16;
-typedef Offset<UINT32> Offset32;
+typedef Offset<HBUINT16> Offset16;
+typedef Offset<HBUINT32> Offset32;
 
 
 
-struct CheckSum : UINT32
+struct CheckSum : HBUINT32
 {
   
-  static inline uint32_t CalcTableChecksum (const UINT32 *Table, uint32_t Length)
+  static inline uint32_t CalcTableChecksum (const HBUINT32 *Table, uint32_t Length)
   {
     uint32_t Sum = 0L;
-    const UINT32 *EndPtr = Table+((Length+3) & ~3) / UINT32::static_size;
+    const HBUINT32 *EndPtr = Table+((Length+3) & ~3) / HBUINT32::static_size;
 
     while (Table < EndPtr)
       Sum += *Table++;
@@ -733,7 +739,7 @@ struct CheckSum : UINT32
 
   
   inline void set_for_data (const void *data, unsigned int length)
-  { set (CalcTableChecksum ((const UINT32 *) data, length)); }
+  { set (CalcTableChecksum ((const HBUINT32 *) data, length)); }
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -744,7 +750,7 @@ struct CheckSum : UINT32
 
 
 
-template <typename FixedType=UINT16>
+template <typename FixedType=HBUINT16>
 struct FixedVersion
 {
   inline uint32_t to_int (void) const { return (major << (sizeof(FixedType) * 8)) + minor; }
@@ -768,7 +774,7 @@ struct FixedVersion
 
 
 
-template <typename Type, typename OffsetType=UINT16>
+template <typename Type, typename OffsetType=HBUINT16>
 struct OffsetTo : Offset<OffsetType>
 {
   inline const Type& operator () (const void *base) const
@@ -813,7 +819,7 @@ struct OffsetTo : Offset<OffsetType>
   }
   DEFINE_SIZE_STATIC (sizeof(OffsetType));
 };
-template <typename Type> struct LOffsetTo : OffsetTo<Type, UINT32> {};
+template <typename Type> struct LOffsetTo : OffsetTo<Type, HBUINT32> {};
 template <typename Base, typename OffsetType, typename Type>
 static inline const Type& operator + (const Base &base, const OffsetTo<Type, OffsetType> &offset) { return offset (base); }
 template <typename Base, typename OffsetType, typename Type>
@@ -825,7 +831,7 @@ static inline Type& operator + (Base &base, OffsetTo<Type, OffsetType> &offset) 
 
 
 
-template <typename Type, typename LenType=UINT16>
+template <typename Type, typename LenType=HBUINT16>
 struct ArrayOf
 {
   const Type *sub_array (unsigned int start_offset, unsigned int *pcount ) const
@@ -935,10 +941,10 @@ struct ArrayOf
   public:
   DEFINE_SIZE_ARRAY (sizeof (LenType), array);
 };
-template <typename Type> struct LArrayOf : ArrayOf<Type, UINT32> {};
+template <typename Type> struct LArrayOf : ArrayOf<Type, HBUINT32> {};
 
 
-template <typename Type, typename OffsetType=UINT16>
+template <typename Type, typename OffsetType=HBUINT16>
 struct OffsetArrayOf : ArrayOf<OffsetTo<Type, OffsetType> > {};
 
 
@@ -966,7 +972,7 @@ struct OffsetListOf : OffsetArrayOf<Type>
 
 
 
-template <typename Type, typename LenType=UINT16>
+template <typename Type, typename LenType=HBUINT16>
 struct HeadlessArrayOf
 {
   inline const Type& operator [] (unsigned int i) const
@@ -1028,19 +1034,19 @@ struct HeadlessArrayOf
 
 
 
-template <typename Type, typename LenType=UINT16>
+template <typename Type, typename LenType=HBUINT16>
 struct SortedArrayOf : ArrayOf<Type, LenType>
 {
   template <typename SearchType>
   inline int bsearch (const SearchType &x) const
   {
     
-    const Type *array = this->array;
+    const Type *arr = this->array;
     int min = 0, max = (int) this->len - 1;
     while (min <= max)
     {
       int mid = (min + max) / 2;
-      int c = array[mid].cmp (x);
+      int c = arr[mid].cmp (x);
       if (c < 0)
         max = mid - 1;
       else if (c > 0)
@@ -1067,10 +1073,10 @@ struct BinSearchHeader
   }
 
   protected:
-  UINT16	len;
-  UINT16	searchRangeZ;
-  UINT16	entrySelectorZ;
-  UINT16	rangeShiftZ;
+  HBUINT16	len;
+  HBUINT16	searchRangeZ;
+  HBUINT16	entrySelectorZ;
+  HBUINT16	rangeShiftZ;
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -1139,8 +1145,8 @@ struct hb_lazy_table_loader_t
   inline void init (hb_face_t *face_)
   {
     face = face_;
-    instance = nullptr;
     blob = nullptr;
+    instance = nullptr;
   }
 
   inline void fini (void)
@@ -1154,7 +1160,7 @@ struct hb_lazy_table_loader_t
     T *p = (T *) hb_atomic_ptr_get (&instance);
     if (unlikely (!p))
     {
-      hb_blob_t *blob_ = OT::Sanitizer<T>::sanitize (face->reference_table (T::tableTag));
+      hb_blob_t *blob_ = OT::Sanitizer<T>().sanitize (face->reference_table (T::tableTag));
       p = const_cast<T *>(OT::Sanitizer<T>::lock_instance (blob_));
       if (!hb_atomic_ptr_cmpexch (const_cast<T **>(&instance), nullptr, p))
       {
@@ -1171,10 +1177,10 @@ struct hb_lazy_table_loader_t
     return get();
   }
 
-  private:
   hb_face_t *face;
-  T *instance;
   mutable hb_blob_t *blob;
+  private:
+  mutable T *instance;
 };
 
 

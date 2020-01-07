@@ -524,6 +524,7 @@ hb_script_get_horizontal_direction (hb_script_t script)
     case HB_SCRIPT_PSALTER_PAHLAVI:
 
     
+    case HB_SCRIPT_HATRAN:
     case HB_SCRIPT_OLD_HUNGARIAN:
 
     

@@ -64,21 +64,21 @@ struct _hea
 
   FWORD		maxExtent;		
 
-  INT16		caretSlopeRise;		
+  HBINT16		caretSlopeRise;		
 
 
-  INT16		caretSlopeRun;		
-  INT16		caretOffset;		
+  HBINT16		caretSlopeRun;		
+  HBINT16		caretOffset;		
 
 
 
 
-  INT16		reserved1;		
-  INT16		reserved2;		
-  INT16		reserved3;		
-  INT16		reserved4;		
-  INT16		metricDataFormat;	
-  UINT16	numberOfLongMetrics;	
+  HBINT16		reserved1;		
+  HBINT16		reserved2;		
+  HBINT16		reserved3;		
+  HBINT16		reserved4;		
+  HBINT16		metricDataFormat;	
+  HBUINT16	numberOfLongMetrics;	
 
   public:
   DEFINE_SIZE_STATIC (36);

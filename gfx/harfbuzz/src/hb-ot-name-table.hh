@@ -65,12 +65,12 @@ struct NameRecord
     return_trace (c->check_struct (this) && c->check_range ((char *) base, (unsigned int) length + offset));
   }
 
-  UINT16	platformID;	
-  UINT16	encodingID;	
-  UINT16	languageID;	
-  UINT16	nameID;		
-  UINT16	length;		
-  UINT16	offset;		
+  HBUINT16	platformID;	
+  HBUINT16	encodingID;	
+  HBUINT16	languageID;	
+  HBUINT16	nameID;		
+  HBUINT16	length;		
+  HBUINT16	offset;		
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -123,8 +123,8 @@ struct name
   }
 
   
-  UINT16	format;			
-  UINT16	count;			
+  HBUINT16	format;			
+  HBUINT16	count;			
   Offset16	stringOffset;		
   NameRecord	nameRecord[VAR];	
   public:

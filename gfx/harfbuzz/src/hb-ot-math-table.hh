@@ -48,7 +48,7 @@ struct MathValueRecord
   }
 
   protected:
-  INT16			value;		
+  HBINT16			value;		
   OffsetTo<Device>	deviceTable;	
 
 
@@ -154,10 +154,10 @@ struct MathConstants
   }
 
   protected:
-  INT16 percentScaleDown[2];
-  UINT16 minHeight[2];
+  HBINT16 percentScaleDown[2];
+  HBUINT16 minHeight[2];
   MathValueRecord mathValueRecords[51];
-  INT16 radicalDegreeBottomRaisePercent;
+  HBINT16 radicalDegreeBottomRaisePercent;
 
   public:
   DEFINE_SIZE_STATIC (214);
@@ -279,7 +279,7 @@ struct MathKern
   }
 
   protected:
-  UINT16	  heightCount;
+  HBUINT16	  heightCount;
   MathValueRecord mathValueRecords[VAR]; 
 
 
@@ -425,7 +425,7 @@ struct MathGlyphVariantRecord
 
   protected:
   GlyphID variantGlyph;       
-  UINT16  advanceMeasurement; 
+  HBUINT16  advanceMeasurement; 
 
 
 
@@ -433,7 +433,7 @@ struct MathGlyphVariantRecord
   DEFINE_SIZE_STATIC (4);
 };
 
-struct PartFlags : UINT16
+struct PartFlags : HBUINT16
 {
   enum Flags {
     Extender	= 0x0001u, 
@@ -473,15 +473,15 @@ struct MathGlyphPartRecord
 
   protected:
   GlyphID   glyph;		  
-  UINT16    startConnectorLength; 
+  HBUINT16    startConnectorLength; 
 
 
 
-  UINT16    endConnectorLength;   
+  HBUINT16    endConnectorLength;   
 
 
 
-  UINT16    fullAdvance;	  
+  HBUINT16    fullAdvance;	  
 
 
   PartFlags partFlags;		  
@@ -651,7 +651,7 @@ struct MathVariants
   }
 
   protected:
-  UINT16	     minConnectorOverlap; 
+  HBUINT16	     minConnectorOverlap; 
 
 
   OffsetTo<Coverage> vertGlyphCoverage;   
@@ -660,10 +660,10 @@ struct MathVariants
   OffsetTo<Coverage> horizGlyphCoverage;  
 
 
-  UINT16	     vertGlyphCount;      
+  HBUINT16	     vertGlyphCount;      
 
 
-  UINT16	     horizGlyphCount;     
+  HBUINT16	     horizGlyphCount;     
 
 
 

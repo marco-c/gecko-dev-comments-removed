@@ -56,10 +56,10 @@ struct postV2Tail
     return_trace (glyphNameIndex.sanitize (c));
   }
 
-  ArrayOf<UINT16>glyphNameIndex;	
+  ArrayOf<HBUINT16>glyphNameIndex;	
 
 
-  UINT8		namesX[VAR];		
+  HBUINT8		namesX[VAR];		
 
 
   DEFINE_SIZE_ARRAY2 (2, glyphNameIndex, namesX);
@@ -86,7 +86,7 @@ struct post
   {
     inline void init (hb_face_t *face)
     {
-      blob = Sanitizer<post>::sanitize (face->reference_table (HB_OT_TAG_post));
+      blob = Sanitizer<post>().sanitize (face->reference_table (HB_OT_TAG_post));
       const post *table = Sanitizer<post>::lock_instance (blob);
       unsigned int table_length = hb_blob_get_length (blob);
 
@@ -234,7 +234,7 @@ struct post
     private:
     hb_blob_t *blob;
     uint32_t version;
-    const ArrayOf<UINT16> *glyphNameIndex;
+    const ArrayOf<HBUINT16> *glyphNameIndex;
     hb_prealloced_array_t<uint32_t, 1> index_to_offset;
     const uint8_t *pool;
     mutable uint16_t *gids_sorted_by_name;
@@ -261,16 +261,16 @@ struct post
 
   FWORD		underlineThickness;	
 
-  UINT32		isFixedPitch;		
+  HBUINT32	isFixedPitch;		
 
 
-  UINT32		minMemType42;		
+  HBUINT32	minMemType42;		
 
-  UINT32		maxMemType42;		
+  HBUINT32	maxMemType42;		
 
-  UINT32		minMemType1;		
+  HBUINT32	minMemType1;		
 
-  UINT32		maxMemType1;		
+  HBUINT32	maxMemType1;		
 
 
   DEFINE_SIZE_STATIC (32);

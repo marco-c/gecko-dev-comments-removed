@@ -42,9 +42,9 @@ struct InstanceRecord
   }
 
   protected:
-  UINT16	subfamilyNameID;
+  HBUINT16	subfamilyNameID;
 
-  UINT16	reserved;	
+  HBUINT16	reserved;	
   Fixed		coordinates[VAR];
   
   
@@ -67,8 +67,8 @@ struct AxisRecord
   Fixed		minValue;	
   Fixed		defaultValue;	
   Fixed		maxValue;	
-  UINT16	reserved;	
-  UINT16	axisNameID;	
+  HBUINT16	reserved;	
+  HBUINT16	axisNameID;	
 
 
   public:
@@ -188,14 +188,14 @@ struct fvar
 
   Offset16	things;		
 
-  UINT16	reserved;	
-  UINT16	axisCount;	
+  HBUINT16	reserved;	
+  HBUINT16	axisCount;	
 
-  UINT16	axisSize;	
+  HBUINT16	axisSize;	
 
-  UINT16	instanceCount;	
+  HBUINT16	instanceCount;	
 
-  UINT16	instanceSize;	
+  HBUINT16	instanceSize;	
 
 
 

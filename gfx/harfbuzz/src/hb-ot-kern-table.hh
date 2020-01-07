@@ -104,8 +104,8 @@ struct KernClassTable
   }
 
   protected:
-  UINT16		firstGlyph;	
-  ArrayOf<UINT16>	classes;	
+  HBUINT16		firstGlyph;	
+  ArrayOf<HBUINT16>	classes;	
   public:
   DEFINE_SIZE_ARRAY (4, classes);
 };
@@ -115,7 +115,7 @@ struct KernSubTableFormat2
   inline int get_kerning (hb_codepoint_t left, hb_codepoint_t right, const char *end) const
   {
     unsigned int l = (this+leftClassTable).get_class (left);
-    unsigned int r = (this+leftClassTable).get_class (left);
+    unsigned int r = (this+rightClassTable).get_class (right);
     unsigned int offset = l * rowWidth + r * sizeof (FWORD);
     const FWORD *arr = &(this+array);
     if (unlikely ((const void *) arr < (const void *) this || (const void *) arr >= (const void *) end))
@@ -136,7 +136,7 @@ struct KernSubTableFormat2
   }
 
   protected:
-  UINT16	rowWidth;	
+  HBUINT16	rowWidth;	
   OffsetTo<KernClassTable>
 		leftClassTable;	
 
@@ -275,19 +275,19 @@ struct KernOT : KernTable<KernOT>
     };
 
     protected:
-    UINT16	versionZ;	
-    UINT16	length;		
-    UINT8	format;		
-    UINT8	coverage;	
+    HBUINT16	versionZ;	
+    HBUINT16	length;		
+    HBUINT8	format;		
+    HBUINT8	coverage;	
     KernSubTable subtable;	
     public:
     DEFINE_SIZE_MIN (6);
   };
 
   protected:
-  UINT16	version;	
-  UINT16	nTables;	
-  UINT8		data[VAR];
+  HBUINT16	version;	
+  HBUINT16	nTables;	
+  HBUINT8		data[VAR];
   public:
   DEFINE_SIZE_ARRAY (4, data);
 };
@@ -314,10 +314,10 @@ struct KernAAT : KernTable<KernAAT>
     };
 
     protected:
-    UINT32	length;		
-    UINT8	coverage;	
-    UINT8	format;		
-    UINT16	tupleIndex;	
+    HBUINT32	length;		
+    HBUINT8	coverage;	
+    HBUINT8	format;		
+    HBUINT16	tupleIndex;	
 
     KernSubTable subtable;	
     public:
@@ -325,9 +325,9 @@ struct KernAAT : KernTable<KernAAT>
   };
 
   protected:
-  UINT32		version;	
-  UINT32		nTables;	
-  UINT8		data[VAR];
+  HBUINT32		version;	
+  HBUINT32		nTables;	
+  HBUINT8		data[VAR];
   public:
   DEFINE_SIZE_ARRAY (8, data);
 };
@@ -360,7 +360,7 @@ struct kern
   {
     inline void init (hb_face_t *face)
     {
-      blob = Sanitizer<kern>::sanitize (face->reference_table (HB_OT_TAG_kern));
+      blob = Sanitizer<kern>().sanitize (face->reference_table (HB_OT_TAG_kern));
       table = Sanitizer<kern>::lock_instance (blob);
       table_length = hb_blob_get_length (blob);
     }
@@ -380,7 +380,7 @@ struct kern
 
   protected:
   union {
-  UINT16		major;
+  HBUINT16		major;
   KernOT		ot;
   KernAAT		aat;
   } u;

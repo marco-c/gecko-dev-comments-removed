@@ -161,7 +161,7 @@ struct RangeRecord
 
   GlyphID	start;		
   GlyphID	end;		
-  UINT16	value;		
+  HBUINT16	value;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -175,7 +175,7 @@ struct IndexArray : ArrayOf<Index>
 				   unsigned int *_indexes ) const
   {
     if (_count) {
-      const UINT16 *arr = this->sub_array (start_offset, _count);
+      const HBUINT16 *arr = this->sub_array (start_offset, _count);
       unsigned int count = *_count;
       for (unsigned int i = 0; i < count; i++)
 	_indexes[i] = arr[i];
@@ -218,7 +218,7 @@ struct LangSys
 
   Offset16	lookupOrderZ;	
 
-  UINT16	reqFeatureIndex;
+  HBUINT16	reqFeatureIndex;
 
 
   IndexArray	featureIndex;	
@@ -343,22 +343,12 @@ struct FeatureParamsSize
       return_trace (true);
   }
 
-  UINT16	designSize;	
+  HBUINT16	designSize;	
 
 
 
 
-  UINT16	subfamilyID;	
-
-
-
-
-
-
-
-
-
-  UINT16	subfamilyNameID;
+  HBUINT16	subfamilyID;	
 
 
 
@@ -368,14 +358,24 @@ struct FeatureParamsSize
 
 
 
+  HBUINT16	subfamilyNameID;
 
 
 
 
-  UINT16	rangeStart;	
 
 
-  UINT16	rangeEnd;	
+
+
+
+
+
+
+
+  HBUINT16	rangeStart;	
+
+
+  HBUINT16	rangeEnd;	
 
 
   public:
@@ -393,12 +393,12 @@ struct FeatureParamsStylisticSet
     return_trace (c->check_struct (this));
   }
 
-  UINT16	version;	
+  HBUINT16	version;	
 
 
 
 
-  UINT16	uiNameID;	
+  HBUINT16	uiNameID;	
 
 
 
@@ -426,25 +426,25 @@ struct FeatureParamsCharacterVariants
 		  characters.sanitize (c));
   }
 
-  UINT16	format;			
-  UINT16	featUILableNameID;	
+  HBUINT16	format;			
+  HBUINT16	featUILableNameID;	
 
 
 
 
-  UINT16	featUITooltipTextNameID;
+  HBUINT16	featUITooltipTextNameID;
 
 
 
 
 
-  UINT16	sampleTextNameID;	
+  HBUINT16	sampleTextNameID;	
 
 
 
-  UINT16	numNamedParameters;	
+  HBUINT16	numNamedParameters;	
 
-  UINT16	firstParamUILabelNameID;
+  HBUINT16	firstParamUILabelNameID;
 
 
 
@@ -562,7 +562,7 @@ struct Feature
 typedef RecordListOf<Feature> FeatureList;
 
 
-struct LookupFlag : UINT16
+struct LookupFlag : HBUINT16
 {
   enum Flags {
     RightToLeft		= 0x0001u,
@@ -608,7 +608,7 @@ struct Lookup
     unsigned int flag = lookupFlag;
     if (unlikely (flag & LookupFlag::UseMarkFilteringSet))
     {
-      const UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
+      const HBUINT16 &markFilteringSet = StructAfter<HBUINT16> (subTable);
       flag += (markFilteringSet << 16);
     }
     return flag;
@@ -640,7 +640,7 @@ struct Lookup
     if (unlikely (!subTable.serialize (c, num_subtables))) return_trace (false);
     if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
-      UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
+      HBUINT16 &markFilteringSet = StructAfter<HBUINT16> (subTable);
       markFilteringSet.set (lookup_props >> 16);
     }
     return_trace (true);
@@ -653,18 +653,18 @@ struct Lookup
     if (!(c->check_struct (this) && subTable.sanitize (c))) return_trace (false);
     if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
-      const UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
+      const HBUINT16 &markFilteringSet = StructAfter<HBUINT16> (subTable);
       if (!markFilteringSet.sanitize (c)) return_trace (false);
     }
     return_trace (true);
   }
 
   private:
-  UINT16	lookupType;		
-  UINT16	lookupFlag;		
+  HBUINT16	lookupType;		
+  HBUINT16	lookupFlag;		
   ArrayOf<Offset16>
 		subTable;		
-  UINT16	markFilteringSetX[VAR];	
+  HBUINT16	markFilteringSetX[VAR];	
 
 
   public:
@@ -735,7 +735,7 @@ struct CoverageFormat1
   private:
 
   protected:
-  UINT16	coverageFormat;	
+  HBUINT16	coverageFormat;	
   SortedArrayOf<GlyphID>
 		glyphArray;	
   public:
@@ -860,7 +860,7 @@ struct CoverageFormat2
   private:
 
   protected:
-  UINT16	coverageFormat;	
+  HBUINT16	coverageFormat;	
   SortedArrayOf<RangeRecord>
 		rangeRecord;	
 
@@ -874,8 +874,8 @@ struct Coverage
   inline unsigned int get_coverage (hb_codepoint_t glyph_id) const
   {
     switch (u.format) {
-    case 1: return u.format1.get_coverage(glyph_id);
-    case 2: return u.format2.get_coverage(glyph_id);
+    case 1: return u.format1.get_coverage (glyph_id);
+    case 2: return u.format2.get_coverage (glyph_id);
     default:return NOT_COVERED;
     }
   }
@@ -987,7 +987,7 @@ struct Coverage
 
   protected:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   CoverageFormat1	format1;
   CoverageFormat2	format2;
   } u;
@@ -1074,9 +1074,9 @@ struct ClassDefFormat1
   }
 
   protected:
-  UINT16	classFormat;		
+  HBUINT16	classFormat;		
   GlyphID	startGlyph;		
-  ArrayOf<UINT16>
+  ArrayOf<HBUINT16>
 		classValue;		
   public:
   DEFINE_SIZE_ARRAY (6, classValue);
@@ -1148,7 +1148,7 @@ struct ClassDefFormat2
   }
 
   protected:
-  UINT16	classFormat;	
+  HBUINT16	classFormat;	
   SortedArrayOf<RangeRecord>
 		rangeRecord;	
 
@@ -1161,8 +1161,8 @@ struct ClassDef
   inline unsigned int get_class (hb_codepoint_t glyph_id) const
   {
     switch (u.format) {
-    case 1: return u.format1.get_class(glyph_id);
-    case 2: return u.format2.get_class(glyph_id);
+    case 1: return u.format1.get_class (glyph_id);
+    case 2: return u.format2.get_class (glyph_id);
     default:return 0;
     }
   }
@@ -1210,7 +1210,7 @@ struct ClassDef
 
   protected:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   ClassDefFormat1	format1;
   ClassDefFormat2	format2;
   } u;
@@ -1275,10 +1275,11 @@ struct VarRegionList
     const VarRegionAxis *axes = axesZ + (region_index * axisCount);
 
     float v = 1.;
-    unsigned int count = MIN (coord_len, (unsigned int) axisCount);
+    unsigned int count = axisCount;
     for (unsigned int i = 0; i < count; i++)
     {
-      float factor = axes[i].evaluate (coords[i]);
+      int coord = i < coord_len ? coords[i] : 0;
+      float factor = axes[i].evaluate (coord);
       if (factor == 0.)
         return 0.;
       v *= factor;
@@ -1295,8 +1296,8 @@ struct VarRegionList
   }
 
   protected:
-  UINT16	axisCount;
-  UINT16	regionCount;
+  HBUINT16	axisCount;
+  HBUINT16	regionCount;
   VarRegionAxis	axesZ[VAR];
   public:
   DEFINE_SIZE_ARRAY (4, axesZ);
@@ -1320,19 +1321,19 @@ struct VarData
    unsigned int count = regionIndices.len;
    unsigned int scount = shortCount;
 
-   const UINT8 *bytes = &StructAfter<UINT8> (regionIndices);
-   const UINT8 *row = bytes + inner * (scount + count);
+   const HBUINT8 *bytes = &StructAfter<HBUINT8> (regionIndices);
+   const HBUINT8 *row = bytes + inner * (scount + count);
 
    float delta = 0.;
    unsigned int i = 0;
 
-   const INT16 *scursor = reinterpret_cast<const INT16 *> (row);
+   const HBINT16 *scursor = reinterpret_cast<const HBINT16 *> (row);
    for (; i < scount; i++)
    {
      float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
      delta += scalar * *scursor++;
    }
-   const INT8 *bcursor = reinterpret_cast<const INT8 *> (scursor);
+   const HBINT8 *bcursor = reinterpret_cast<const HBINT8 *> (scursor);
    for (; i < count; i++)
    {
      float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
@@ -1348,15 +1349,15 @@ struct VarData
     return_trace (c->check_struct (this) &&
 		  regionIndices.sanitize(c) &&
 		  shortCount <= regionIndices.len &&
-		  c->check_array (&StructAfter<UINT8> (regionIndices),
+		  c->check_array (&StructAfter<HBUINT8> (regionIndices),
 				  get_row_size (), itemCount));
   }
 
   protected:
-  UINT16		itemCount;
-  UINT16		shortCount;
-  ArrayOf<UINT16>	regionIndices;
-  UINT8			bytesX[VAR];
+  HBUINT16		itemCount;
+  HBUINT16		shortCount;
+  ArrayOf<HBUINT16>	regionIndices;
+  HBUINT8			bytesX[VAR];
   public:
   DEFINE_SIZE_ARRAY2 (6, regionIndices, bytesX);
 };
@@ -1392,9 +1393,9 @@ struct VariationStore
   }
 
   protected:
-  UINT16				format;
+  HBUINT16				format;
   LOffsetTo<VarRegionList>		regions;
-  OffsetArrayOf<VarData, UINT32>		dataSets;
+  OffsetArrayOf<VarData, HBUINT32>	dataSets;
   public:
   DEFINE_SIZE_ARRAY (8, dataSets);
 };
@@ -1421,8 +1422,8 @@ struct ConditionFormat1
   }
 
   protected:
-  UINT16	format;		
-  UINT16	axisIndex;
+  HBUINT16	format;		
+  HBUINT16	axisIndex;
   F2DOT14	filterRangeMinValue;
   F2DOT14	filterRangeMaxValue;
   public:
@@ -1451,7 +1452,7 @@ struct Condition
 
   protected:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   ConditionFormat1	format1;
   } u;
   public:
@@ -1476,7 +1477,7 @@ struct ConditionSet
   }
 
   protected:
-  OffsetArrayOf<Condition, UINT32> conditions;
+  OffsetArrayOf<Condition, HBUINT32> conditions;
   public:
   DEFINE_SIZE_ARRAY (2, conditions);
 };
@@ -1492,7 +1493,7 @@ struct FeatureTableSubstitutionRecord
   }
 
   protected:
-  UINT16		featureIndex;
+  HBUINT16		featureIndex;
   LOffsetTo<Feature>	feature;
   public:
   DEFINE_SIZE_STATIC (6);
@@ -1612,8 +1613,8 @@ struct HintingDevice
   inline unsigned int get_size (void) const
   {
     unsigned int f = deltaFormat;
-    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * UINT16::static_size;
-    return UINT16::static_size * (4 + ((endSize - startSize) >> (4 - f)));
+    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * HBUINT16::static_size;
+    return HBUINT16::static_size * (4 + ((endSize - startSize) >> (4 - f)));
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -1658,14 +1659,14 @@ struct HintingDevice
   }
 
   protected:
-  UINT16	startSize;		
-  UINT16	endSize;		
-  UINT16	deltaFormat;		
+  HBUINT16	startSize;		
+  HBUINT16	endSize;		
+  HBUINT16	deltaFormat;		
 
 
 
 
-  UINT16	deltaValue[VAR];	
+  HBUINT16	deltaValue[VAR];	
   public:
   DEFINE_SIZE_ARRAY (6, deltaValue);
 };
@@ -1696,9 +1697,9 @@ struct VariationDevice
   }
 
   protected:
-  UINT16	outerIndex;
-  UINT16	innerIndex;
-  UINT16	deltaFormat;	
+  HBUINT16	outerIndex;
+  HBUINT16	innerIndex;
+  HBUINT16	deltaFormat;	
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -1706,10 +1707,10 @@ struct VariationDevice
 struct DeviceHeader
 {
   protected:
-  UINT16		reserved1;
-  UINT16		reserved2;
+  HBUINT16		reserved1;
+  HBUINT16		reserved2;
   public:
-  UINT16		format;		
+  HBUINT16		format;		
   public:
   DEFINE_SIZE_STATIC (6);
 };

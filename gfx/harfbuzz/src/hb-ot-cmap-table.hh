@@ -58,10 +58,10 @@ struct CmapSubtableFormat0
   }
 
   protected:
-  UINT16	format;		
-  UINT16	lengthZ;	
-  UINT16	languageZ;	
-  UINT8		glyphIdArray[256];
+  HBUINT16	format;		
+  HBUINT16	lengthZ;	
+  HBUINT16	languageZ;	
+  HBUINT8		glyphIdArray[256];
 
   public:
   DEFINE_SIZE_STATIC (6 + 256);
@@ -88,8 +88,8 @@ struct CmapSubtableFormat4
 
       
       int min = 0, max = (int) thiz->segCount - 1;
-      const UINT16 *startCount = thiz->startCount;
-      const UINT16 *endCount = thiz->endCount;
+      const HBUINT16 *startCount = thiz->startCount;
+      const HBUINT16 *endCount = thiz->endCount;
       unsigned int i;
       while (min <= max)
       {
@@ -127,11 +127,11 @@ struct CmapSubtableFormat4
       return true;
     }
 
-    const UINT16 *endCount;
-    const UINT16 *startCount;
-    const UINT16 *idDelta;
-    const UINT16 *idRangeOffset;
-    const UINT16 *glyphIdArray;
+    const HBUINT16 *endCount;
+    const HBUINT16 *startCount;
+    const HBUINT16 *idDelta;
+    const HBUINT16 *idRangeOffset;
+    const HBUINT16 *glyphIdArray;
     unsigned int segCount;
     unsigned int glyphIdArrayLength;
   };
@@ -165,24 +165,24 @@ struct CmapSubtableFormat4
   }
 
   protected:
-  UINT16	format;		
-  UINT16	length;		
+  HBUINT16	format;		
+  HBUINT16	length;		
 
-  UINT16	languageZ;	
-  UINT16	segCountX2;	
-  UINT16	searchRangeZ;	
-  UINT16	entrySelectorZ;	
-  UINT16	rangeShiftZ;	
+  HBUINT16	languageZ;	
+  HBUINT16	segCountX2;	
+  HBUINT16	searchRangeZ;	
+  HBUINT16	entrySelectorZ;	
+  HBUINT16	rangeShiftZ;	
 
-  UINT16	values[VAR];
+  HBUINT16	values[VAR];
 #if 0
-  UINT16	endCount[segCount];	
+  HBUINT16	endCount[segCount];	
 
-  UINT16	reservedPad;		
-  UINT16	startCount[segCount];	
-  INT16		idDelta[segCount];	
-  UINT16	idRangeOffset[segCount];
-  UINT16	glyphIdArray[VAR];	
+  HBUINT16	reservedPad;		
+  HBUINT16	startCount[segCount];	
+  HBINT16		idDelta[segCount];	
+  HBUINT16	idRangeOffset[segCount];
+  HBUINT16	glyphIdArray[VAR];	
 #endif
 
   public:
@@ -208,9 +208,9 @@ struct CmapSubtableLongGroup
   }
 
   private:
-  UINT32		startCharCode;	
-  UINT32		endCharCode;	
-  UINT32		glyphID;	
+  HBUINT32		startCharCode;	
+  HBUINT32		endCharCode;	
+  HBUINT32		glyphID;	
 
   public:
   DEFINE_SIZE_STATIC (12);
@@ -247,8 +247,8 @@ struct CmapSubtableTrimmed
   DEFINE_SIZE_ARRAY (5 * sizeof (UINT), glyphIdArray);
 };
 
-struct CmapSubtableFormat6  : CmapSubtableTrimmed<UINT16> {};
-struct CmapSubtableFormat10 : CmapSubtableTrimmed<UINT32 > {};
+struct CmapSubtableFormat6  : CmapSubtableTrimmed<HBUINT16> {};
+struct CmapSubtableFormat10 : CmapSubtableTrimmed<HBUINT32 > {};
 
 template <typename T>
 struct CmapSubtableLongSegmented
@@ -269,11 +269,11 @@ struct CmapSubtableLongSegmented
   }
 
   protected:
-  UINT16	format;		
-  UINT16	reservedZ;	
-  UINT32		lengthZ;	
-  UINT32		languageZ;	
-  SortedArrayOf<CmapSubtableLongGroup, UINT32>
+  HBUINT16	format;		
+  HBUINT16	reservedZ;	
+  HBUINT32		lengthZ;	
+  HBUINT32		languageZ;	
+  SortedArrayOf<CmapSubtableLongGroup, HBUINT32>
 		groups;		
   public:
   DEFINE_SIZE_ARRAY (16, groups);
@@ -316,13 +316,13 @@ struct UnicodeValueRange
   }
 
   UINT24	startUnicodeValue;	
-  UINT8		additionalCount;	
+  HBUINT8		additionalCount;	
 
   public:
   DEFINE_SIZE_STATIC (4);
 };
 
-typedef SortedArrayOf<UnicodeValueRange, UINT32> DefaultUVS;
+typedef SortedArrayOf<UnicodeValueRange, HBUINT32> DefaultUVS;
 
 struct UVSMapping
 {
@@ -343,7 +343,7 @@ struct UVSMapping
   DEFINE_SIZE_STATIC (5);
 };
 
-typedef SortedArrayOf<UVSMapping, UINT32> NonDefaultUVS;
+typedef SortedArrayOf<UVSMapping, HBUINT32> NonDefaultUVS;
 
 struct VariationSelectorRecord
 {
@@ -405,9 +405,9 @@ struct CmapSubtableFormat14
   }
 
   protected:
-  UINT16	format;		
-  UINT32		lengthZ;	
-  SortedArrayOf<VariationSelectorRecord, UINT32>
+  HBUINT16	format;		
+  HBUINT32		lengthZ;	
+  SortedArrayOf<VariationSelectorRecord, HBUINT32>
 		record;		
 
   public:
@@ -451,7 +451,7 @@ struct CmapSubtable
 
   public:
   union {
-  UINT16		format;		
+  HBUINT16		format;		
   CmapSubtableFormat0	format0;
   CmapSubtableFormat4	format4;
   CmapSubtableFormat6	format6;
@@ -484,8 +484,8 @@ struct EncodingRecord
 		  subtable.sanitize (c, base));
   }
 
-  UINT16	platformID;	
-  UINT16	encodingID;	
+  HBUINT16	platformID;	
+  HBUINT16	encodingID;	
   LOffsetTo<CmapSubtable>
 		subtable;	
   public:
@@ -508,7 +508,7 @@ struct cmap
   {
     inline void init (hb_face_t *face)
     {
-      this->blob = OT::Sanitizer<OT::cmap>::sanitize (face->reference_table (HB_OT_TAG_cmap));
+      this->blob = OT::Sanitizer<OT::cmap>().sanitize (face->reference_table (HB_OT_TAG_cmap));
       const OT::cmap *cmap = OT::Sanitizer<OT::cmap>::lock_instance (this->blob);
       const OT::CmapSubtable *subtable = nullptr;
       const OT::CmapSubtableFormat14 *subtable_uvs = nullptr;
@@ -654,7 +654,7 @@ struct cmap
   }
 
   protected:
-  UINT16		version;	
+  HBUINT16		version;	
   SortedArrayOf<EncodingRecord>
 			encodingRecord;	
   public:

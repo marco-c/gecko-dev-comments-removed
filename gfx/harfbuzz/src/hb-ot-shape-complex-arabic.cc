@@ -644,13 +644,15 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
 {
   hb_glyph_info_t *info = buffer->info;
 
+  DEBUG_MSG (ARABIC, buffer, "Reordering marks from %d to %d", start, end);
+
   unsigned int i = start;
   for (unsigned int cc = 220; cc <= 230; cc += 10)
   {
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's starting at %d\n", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %d's starting at %d", cc, i);
     while (i < end && info_cc(info[i]) < cc)
       i++;
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's stopped at %d\n", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %d's stopped at %d", cc, i);
 
     if (i == end)
       break;
@@ -658,20 +660,17 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
     if (info_cc(info[i]) > cc)
       continue;
 
-    
-
-
-
     unsigned int j = i;
-    while (j < end && info_is_mcm (info[j]))
+    while (j < end && info_cc(info[j]) == cc && info_is_mcm (info[j]))
       j++;
-    DEBUG_MSG (ARABIC, buffer, "Found %d's from %d to %d\n", cc, i, j);
 
     if (i == j)
       continue;
 
+    DEBUG_MSG (ARABIC, buffer, "Found %d's from %d to %d", cc, i, j);
+
     
-    DEBUG_MSG (ARABIC, buffer, "Shifting %d's: %d %d\n", cc, i, j);
+    DEBUG_MSG (ARABIC, buffer, "Shifting %d's: %d %d", cc, i, j);
     hb_glyph_info_t temp[HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS];
     assert (j - i <= ARRAY_LENGTH (temp));
     buffer->merge_clusters (start, j);
@@ -679,7 +678,25 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
     memmove (&info[start + j - i], &info[start], (i - start) * sizeof (hb_glyph_info_t));
     memmove (&info[start], temp, (j - i) * sizeof (hb_glyph_info_t));
 
-    start += j - i;
+    
+
+
+
+
+
+
+
+
+
+
+
+    unsigned int new_start = start + j - i;
+    unsigned int new_cc = cc == 220 ? HB_MODIFIED_COMBINING_CLASS_CCC22 : HB_MODIFIED_COMBINING_CLASS_CCC26;
+    while (start < new_start)
+    {
+      _hb_glyph_info_set_modified_combining_class (&info[start], new_cc);
+      start++;
+    }
 
     i = j;
   }

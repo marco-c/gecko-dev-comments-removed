@@ -346,8 +346,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
         break;
 
     
-
-    if (end - i < 2 || end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
+    if (end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
       i = end;
       continue;
     }
@@ -373,13 +372,11 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
   buffer->clear_output ();
   count = buffer->len;
   unsigned int starter = 0;
-  bool combine = true;
   buffer->next_glyph ();
   while (buffer->idx < count && !buffer->in_error)
   {
     hb_codepoint_t composed, glyph;
-    if (combine &&
-	
+    if (
 
 
 
@@ -410,22 +407,27 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 
 	continue;
       }
-      else if (
-
-	       starter < buffer->out_len - 1 &&
-	       info_cc (buffer->prev()) > info_cc (buffer->cur()))
-        combine = false;
     }
 
     
     buffer->next_glyph ();
 
     if (info_cc (buffer->prev()) == 0)
-    {
       starter = buffer->out_len - 1;
-      combine = true;
-    }
   }
   buffer->swap_buffers ();
 
+  if (buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_CGJ)
+  {
+    
+
+
+
+    for (unsigned int i = 1; i + 1 < buffer->len; i++)
+      if (buffer->info[i].codepoint == 0x034Fu &&
+	  info_cc(buffer->info[i-1]) <= info_cc(buffer->info[i+1]))
+      {
+	_hb_glyph_info_unhide (&buffer->info[i]);
+      }
+  }
 }
