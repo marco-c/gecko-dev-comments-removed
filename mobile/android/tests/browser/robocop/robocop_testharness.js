@@ -10,8 +10,7 @@ function sendMessageToJava(message) {
 function _evalURI(uri, sandbox) {
   
   
-  let req = SpecialPowers.Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                         .createInstance();
+  let req = new XMLHttpRequest();
 
   let baseURI = SpecialPowers.Services.io
                              .newURI(window.document.baseURI, window.document.characterSet);
