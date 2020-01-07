@@ -115,7 +115,7 @@ static const int64_t kCookiePurgeAge =
 
 
 static const uint32_t kMaxNumberOfCookies = 3000;
-static const uint32_t kMaxCookiesPerHost  = 150;
+static const uint32_t kMaxCookiesPerHost  = 180;
 static const uint32_t kMaxBytesPerCookie  = 4096;
 static const uint32_t kMaxBytesPerPath    = 1024;
 
