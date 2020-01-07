@@ -367,7 +367,7 @@ class nsStyleSet final
   void SheetChanged(mozilla::CSSStyleSheet&);
 
   
-  void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot);
+  void RecordShadowStyleChange(mozilla::dom::ShadowRoot& aShadowRoot);
 
   bool StyleSheetsHaveChanged() const
   {

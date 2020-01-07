@@ -83,6 +83,8 @@ public:
     return mServoStyles.get();
   }
 
+  void SyncServoStyles();
+
   mozilla::ServoStyleRuleMap* GetServoStyleRuleMap();
 
   

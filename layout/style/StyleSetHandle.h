@@ -192,7 +192,7 @@ public:
 
     
     inline void RecordStyleSheetChange(StyleSheet* aSheet, StyleSheet::ChangeType);
-    inline void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot);
+    inline void RecordShadowStyleChange(mozilla::dom::ShadowRoot& aShadowRoot);
     inline bool StyleSheetsHaveChanged() const;
     inline void InvalidateStyleForCSSRuleChanges();
     inline nsRestyleHint MediumFeaturesChanged(mozilla::MediaFeatureChangeReason);

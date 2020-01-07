@@ -120,11 +120,7 @@ public:
   
   void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);
 
-  void RecordShadowStyleChange(dom::ShadowRoot* aShadowRoot) {
-    
-    
-    MarkOriginsDirty(OriginFlags::All);
-  }
+  void RecordShadowStyleChange(dom::ShadowRoot&);
 
   bool StyleSheetsHaveChanged() const
   {

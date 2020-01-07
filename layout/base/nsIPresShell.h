@@ -542,8 +542,8 @@ public:
 
   
   
-  
-  virtual void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot) = 0;
+  void RecordShadowStyleChange(mozilla::dom::ShadowRoot& aShadowRoot);
+
 
   
 

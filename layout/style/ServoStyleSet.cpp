@@ -161,6 +161,16 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
   
   
   SetStylistStyleSheetsDirty();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  SetStylistXBLStyleSheetsDirty();
 }
 
 void
@@ -179,6 +189,20 @@ ServoStyleSet::InvalidateStyleForCSSRuleChanges()
   MOZ_ASSERT(StylistNeedsUpdate());
   if (nsPresContext* pc = GetPresContext()) {
     pc->RestyleManager()->AsServo()->PostRestyleEventForCSSRuleChanges();
+  }
+}
+
+void
+ServoStyleSet::RecordShadowStyleChange(ShadowRoot& aShadowRoot)
+{
+  
+  
+  SetStylistXBLStyleSheetsDirty();
+
+  
+  if (nsPresContext* pc = GetPresContext()) {
+    pc->RestyleManager()->PostRestyleEvent(
+      aShadowRoot.Host(), eRestyle_Subtree, nsChangeHint(0));
   }
 }
 
