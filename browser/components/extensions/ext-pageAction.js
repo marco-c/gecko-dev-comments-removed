@@ -232,9 +232,8 @@ this.pageAction = class extends ExtensionAPI {
 
 
   triggerAction(window) {
-    let pageAction = pageActionMap.get(this.extension);
-    if (pageAction.getProperty(window.gBrowser.selectedTab, "show")) {
-      pageAction.handleClick(window);
+    if (this.isShown(window.gBrowser.selectedTab)) {
+      this.handleClick(window);
     }
   }
 
