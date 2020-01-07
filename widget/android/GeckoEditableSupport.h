@@ -101,6 +101,7 @@ class GeckoEditableSupport final
     AutoTArray<IMETextChange, 4> mIMETextChanges;
     RefPtr<TextRangeArray> mIMERanges;
     int32_t mIMEMaskEventsCount; 
+    int32_t mIMEFocusCount; 
     bool mIMEUpdatingContext;
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
@@ -180,6 +181,7 @@ public:
         , mEditableAttached(!mIsRemote)
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
+        , mIMEFocusCount(0)
         , mIMEUpdatingContext(false)
         , mIMESelectionChanged(false)
         , mIMETextChangedDuringFlush(false)
