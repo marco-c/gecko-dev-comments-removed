@@ -50,6 +50,8 @@ var ActionBarHandler = {
 
 
   handleEvent: function(e) {
+    e.stopImmediatePropagation();
+
     
     if (this._selectionID && !e.caretVisible) {
       this._uninit(false);

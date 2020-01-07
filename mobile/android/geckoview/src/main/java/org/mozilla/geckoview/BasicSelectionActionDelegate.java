@@ -133,6 +133,9 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
 
     protected boolean performAction(final String id) {
+        if (mResponse == null) {
+            return false;
+        }
         mResponse.respond(id);
 
         
