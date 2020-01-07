@@ -393,7 +393,7 @@ TenuredCell::readBarrier(TenuredCell* thing)
     if (thing->isMarkedGray()) {
         
         MOZ_ASSERT(CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()));
-        if (!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone))
+        if (!JS::CurrentThreadIsHeapCollecting())
             JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr(thing, thing->getTraceKind()));
     }
 }
