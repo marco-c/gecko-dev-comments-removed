@@ -44,6 +44,8 @@ public:
   
   nsIURI* URI() const { return mURI; }
 
+  const OriginAttributes& OriginAttributesRef() const { return mOriginAttributes; }
+
   
   bool IsChrome() const { return mIsChrome; }
 
