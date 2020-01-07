@@ -1,9 +1,9 @@
 
 
 
+
 add_task(async function() {
   const iconUrl = "http://example.org/browser/extensions/cookie/test/damonbowling.jpg";
-  const pageUrl = "http://example.com/browser/extensions/cookie/test/file_favicon.html";
 	await SpecialPowers.pushPrefEnv({"set": [["network.cookie.cookieBehavior", 1]]});
 
   let promise = TestUtils.topicObserved("cookie-rejected", subject => {
@@ -11,12 +11,13 @@ add_task(async function() {
     return uri.spec == iconUrl;
   });
 
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
   registerCleanupFunction(async function() {
     BrowserTestUtils.removeTab(tab);
   });
 
+  
+  gBrowser.setIcon(tab, iconUrl);
   await promise;
   ok(true, "foreign favicon cookie was blocked");
 });
