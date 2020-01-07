@@ -4,8 +4,14 @@
 
 
 
+#[cfg(feature = "servo")]
+use computed_values::list_style_type::T as ListStyleType;
 use std::ops::Deref;
 use values::CustomIdent;
+#[cfg(feature = "gecko")]
+use values::generics::CounterStyleOrNone;
+#[cfg(feature = "gecko")]
+use values::specified::Attr;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
@@ -73,4 +79,79 @@ impl<I> Default for Counters<I> {
     fn default() -> Self {
         Counters(vec![].into_boxed_slice())
     }
+}
+
+#[cfg(feature = "servo")]
+type CounterStyleType = ListStyleType;
+
+#[cfg(feature = "gecko")]
+type CounterStyleType = CounterStyleOrNone;
+
+#[cfg(feature = "servo")]
+#[inline]
+fn is_decimal(counter_type: &CounterStyleType) -> bool {
+    *counter_type == ListStyleType::Decimal
+}
+
+#[cfg(feature = "gecko")]
+#[inline]
+fn is_decimal(counter_type: &CounterStyleType) -> bool {
+    *counter_type == CounterStyleOrNone::decimal()
+}
+
+
+
+
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
+pub enum Content<ImageUrl> {
+    
+    Normal,
+    
+    None,
+    
+    #[cfg(feature = "gecko")]
+    MozAltContent,
+    
+    Items(#[css(iterable)] Box<[ContentItem<ImageUrl>]>),
+}
+
+impl<ImageUrl> Content<ImageUrl> {
+    
+    #[inline]
+    pub fn normal() -> Self {
+        Content::Normal
+    }
+
+}
+
+
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
+         ToComputedValue, ToCss)]
+pub enum ContentItem<ImageUrl> {
+    
+    String(Box<str>),
+    
+    #[css(comma, function)]
+    Counter(CustomIdent, #[css(skip_if = "is_decimal")] CounterStyleType),
+    
+    #[css(comma, function)]
+    Counters(
+        CustomIdent,
+        Box<str>,
+        #[css(skip_if = "is_decimal")] CounterStyleType,
+    ),
+    
+    OpenQuote,
+    
+    CloseQuote,
+    
+    NoOpenQuote,
+    
+    NoCloseQuote,
+    
+    #[cfg(feature = "gecko")]
+    Attr(Attr),
+    
+    Url(ImageUrl),
 }

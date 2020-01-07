@@ -19,7 +19,6 @@ use values::generics::effects::SimpleShadow as GenericSimpleShadow;
 use values::specified::{Angle, NumberOrPercentage};
 use values::specified::color::RGBAColor;
 use values::specified::length::{Length, NonNegativeLength};
-#[cfg(feature = "gecko")]
 use values::specified::url::SpecifiedUrl;
 
 
@@ -28,11 +27,11 @@ pub type BoxShadow =
 
 
 #[cfg(feature = "gecko")]
-pub type Filter = GenericFilter<Angle, Factor, NonNegativeLength, SimpleShadow>;
+pub type Filter = GenericFilter<Angle, Factor, NonNegativeLength, SimpleShadow, SpecifiedUrl>;
 
 
 #[cfg(not(feature = "gecko"))]
-pub type Filter = GenericFilter<Angle, Factor, NonNegativeLength, Impossible>;
+pub type Filter = GenericFilter<Angle, Factor, NonNegativeLength, Impossible, SpecifiedUrl>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]

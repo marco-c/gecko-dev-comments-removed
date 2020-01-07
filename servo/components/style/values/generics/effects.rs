@@ -4,9 +4,6 @@
 
 
 
-#[cfg(feature = "gecko")]
-use values::specified::url::SpecifiedUrl;
-
 
 #[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
          ToAnimatedValue, ToAnimatedZero, ToCss)]
@@ -23,9 +20,10 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[animation(no_bound(Url))]
 #[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
          SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
-pub enum Filter<Angle, Factor, Length, DropShadow> {
+pub enum Filter<Angle, Factor, Length, DropShadow, Url> {
     
     #[css(function)]
     Blur(Length),
@@ -58,8 +56,7 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
     DropShadow(DropShadow),
     
     #[animation(error)]
-    #[cfg(feature = "gecko")]
-    Url(SpecifiedUrl),
+    Url(Url),
 }
 
 

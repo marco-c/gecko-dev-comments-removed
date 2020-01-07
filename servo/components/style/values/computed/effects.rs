@@ -9,6 +9,7 @@ use values::Impossible;
 use values::computed::{Angle, NonNegativeNumber};
 use values::computed::color::RGBAColor;
 use values::computed::length::{Length, NonNegativeLength};
+use values::computed::url::ComputedUrl;
 use values::generics::effects::BoxShadow as GenericBoxShadow;
 use values::generics::effects::Filter as GenericFilter;
 use values::generics::effects::SimpleShadow as GenericSimpleShadow;
@@ -18,11 +19,11 @@ pub type BoxShadow = GenericBoxShadow<Option<RGBAColor>, Length, NonNegativeLeng
 
 
 #[cfg(feature = "gecko")]
-pub type Filter = GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, SimpleShadow>;
+pub type Filter = GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, SimpleShadow, ComputedUrl>;
 
 
 #[cfg(not(feature = "gecko"))]
-pub type Filter = GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, Impossible>;
+pub type Filter = GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, Impossible, ComputedUrl>;
 
 
 pub type SimpleShadow = GenericSimpleShadow<Option<RGBAColor>, Length, NonNegativeLength>;
