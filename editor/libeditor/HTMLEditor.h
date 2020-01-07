@@ -1193,6 +1193,12 @@ protected:
 
   already_AddRefed<dom::Element> GetSelectedElement(const nsAString& aTagName);
 
+  
+
+
+
+  nsresult RemoveStyleSheetWithTransaction(const nsAString& aURL);
+
 protected:
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
