@@ -2381,7 +2381,7 @@ RuntimeService::CreateSharedWorkerFromLoadInfo(JSContext* aCx,
     
     shouldAttachToWorkerPrivate =
       workerPrivate->IsSecureContext() ==
-        JS_GetIsSecureContext(js::GetContextCompartment(aCx));
+        JS::GetIsSecureContext(js::GetContextRealm(aCx));
 
     
     
