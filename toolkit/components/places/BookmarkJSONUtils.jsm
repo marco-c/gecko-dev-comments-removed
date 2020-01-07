@@ -9,8 +9,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "NetUtil",
-  "resource://gre/modules/NetUtil.jsm");
+Cu.importGlobalProperties(["fetch"]);
+
 ChromeUtils.defineModuleGetter(this, "PlacesBackups",
   "resource://gre/modules/PlacesBackups.jsm");
 
@@ -171,34 +171,14 @@ BookmarkImporter.prototype = {
 
 
 
-  importFromURL(spec) {
-    return new Promise((resolve, reject) => {
-      let streamObserver = {
-        onStreamComplete: (aLoader, aContext, aStatus, aLength, aResult) => {
-          let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                          createInstance(Ci.nsIScriptableUnicodeConverter);
-          converter.charset = "UTF-8";
-          try {
-            let jsonString = converter.convertFromByteArray(aResult,
-                                                            aResult.length);
-            resolve(this.importFromJSON(jsonString));
-          } catch (ex) {
-            Cu.reportError("Failed to import from URL: " + ex);
-            reject(ex);
-          }
-        }
-      };
+  async importFromURL(spec) {
+    let nodes = await (await fetch(spec)).json();
 
-      let uri = NetUtil.newURI(spec);
-      let channel = NetUtil.newChannel({
-        uri,
-        loadUsingSystemPrincipal: true
-      });
-      let streamLoader = Cc["@mozilla.org/network/stream-loader;1"]
-                           .createInstance(Ci.nsIStreamLoader);
-      streamLoader.init(streamObserver);
-      channel.asyncOpen2(streamLoader);
-    });
+    if (!nodes.children || !nodes.children.length) {
+      return;
+    }
+
+    await this.import(nodes);
   },
 
   
@@ -213,10 +193,8 @@ BookmarkImporter.prototype = {
 
   importFromCompressedFile: async function BI_importFromCompressedFile(aFilePath) {
       let aResult = await OS.File.read(aFilePath, { compression: "lz4" });
-      let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                        createInstance(Ci.nsIScriptableUnicodeConverter);
-      converter.charset = "UTF-8";
-      let jsonString = converter.convertFromByteArray(aResult, aResult.length);
+      let decoder = new TextDecoder();
+      let jsonString = decoder.decode(aResult);
       await this.importFromJSON(jsonString);
   },
 
@@ -237,9 +215,13 @@ BookmarkImporter.prototype = {
       return;
     }
 
+    await this.import(nodes[0]);
+  },
+
+  async import(rootNode) {
     
     
-    nodes = nodes[0].children.filter(node => !node.root || node.root != "tagsFolder");
+    let nodes = rootNode.children.filter(node => node.root !== "tagsFolder");
 
     
     if (this._replace) {

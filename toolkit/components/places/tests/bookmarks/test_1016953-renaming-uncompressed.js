@@ -27,11 +27,9 @@ add_task(async function test_same_date_same_hash() {
   
   Assert.equal(mostRecentBackupFile, backupFile);
   
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                        createInstance(Ci.nsIScriptableUnicodeConverter);
-  converter.charset = "UTF-8";
   let result = await OS.File.read(mostRecentBackupFile);
-  let jsonString = converter.convertFromByteArray(result, result.length);
+  let decoder = new TextDecoder();
+  let jsonString = decoder.decode(result);
   info("Check is valid JSON");
   JSON.parse(jsonString);
 
@@ -57,11 +55,9 @@ add_task(async function test_same_date_diff_hash() {
   let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
 
   
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                        createInstance(Ci.nsIScriptableUnicodeConverter);
-  converter.charset = "UTF-8";
   let result = await OS.File.read(mostRecentBackupFile, { compression: "lz4" });
-  let jsonString = converter.convertFromByteArray(result, result.length);
+  let decoder = new TextDecoder();
+  let jsonString = decoder.decode(result);
   info("Check is valid JSON");
   JSON.parse(jsonString);
 
