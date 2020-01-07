@@ -16,6 +16,10 @@
 #include "mozilla/gfx/2D.h"
 #endif 
 
+#if defined(__ANDROID__)
+#include <pthread.h>
+#endif 
+
 namespace mozilla {
 #ifdef MOZILLA_INTERNAL_API
 namespace dom {
@@ -23,6 +27,8 @@ namespace dom {
 }
 #endif 
 namespace gfx {
+
+static const int32_t kVRExternalVersion = 0;
 
 
 
@@ -216,6 +222,9 @@ struct VRDisplayState
     NumEyes
   };
 
+#if defined(__ANDROID__)
+  bool shutdown;
+#endif 
   char mDisplayName[kVRDisplayNameMaxLen];
   VRDisplayCapabilityFlags mCapabilityFlags;
   VRFieldOfView mEyeFOV[VRDisplayState::NumEyes];
@@ -226,6 +235,7 @@ struct VRDisplayState
   FloatSize_POD mStageSize;
   
   float mSittingToStandingTransform[16];
+  uint32_t mPresentingGeneration;
 };
 
 struct VRControllerState
@@ -296,11 +306,15 @@ struct VRLayerState
 
 struct VRBrowserState
 {
+#if defined(__ANDROID__)
+  bool shutdown;
+#endif 
   VRLayerState layerState[kVRLayerMaxCount];
 };
 
 struct VRSystemState
 {
+  uint32_t presentingGeneration;
   VRDisplayState displayState;
   VRHMDSensorState sensorState;
   VRControllerState controllerState[kVRControllerMaxCount];
@@ -308,12 +322,23 @@ struct VRSystemState
 
 struct VRExternalShmem
 {
+  int32_t version;
+  int32_t size;
+#if defined(__ANDROID__)
+  pthread_mutex_t systemMutex;
+  pthread_mutex_t browserMutex;
+#else
   int64_t generationA;
+#endif 
   VRSystemState state;
+#if !defined(__ANDROID__)
   int64_t generationB;
   int64_t browserGenerationA;
+#endif 
   VRBrowserState browserState;
+#if !defined(__ANDROID__)
   int64_t browserGenerationB;
+#endif 
 };
 
 
