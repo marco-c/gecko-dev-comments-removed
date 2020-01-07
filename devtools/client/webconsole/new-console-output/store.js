@@ -228,22 +228,11 @@ function enableNetProvider(hud) {
       }
 
       
-      
-      
-      
-      
-      
       if (type == NETWORK_MESSAGE_UPDATE) {
         let actor = action.response.networkInfo.actor;
         let open = getAllMessagesUiById(state).includes(actor);
         if (open) {
-          let message = getMessage(state, actor);
-          message.updates.forEach(updateType => {
-            dataProvider.onNetworkEventUpdate(null, {
-              packet: { updateType },
-              networkInfo: message,
-            });
-          });
+          dataProvider.onNetworkEventUpdate(null, action.response);
         }
       }
 
