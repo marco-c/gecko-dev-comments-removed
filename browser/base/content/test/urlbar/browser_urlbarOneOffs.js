@@ -8,7 +8,8 @@ add_task(async function init() {
 
   
   
-  let engine = await promiseNewSearchEngine(TEST_ENGINE_BASENAME);
+  let engine = await SearchTestUtils.promiseNewSearchEngine(
+    getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME);
   Services.search.moveEngine(engine, 0);
 
   registerCleanupFunction(async function() {

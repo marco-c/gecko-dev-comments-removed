@@ -17,7 +17,8 @@ var extraEngine;
 var tabs = [];
 
 add_task(async function setup() {
-  extraEngine = await promiseNewSearchEngine(TEST_ENGINE_BASENAME);
+  let rootDir = getRootDirectory(gTestPath);
+  extraEngine = await SearchTestUtils.promiseNewSearchEngine(rootDir + TEST_ENGINE_BASENAME);
 
   
   
