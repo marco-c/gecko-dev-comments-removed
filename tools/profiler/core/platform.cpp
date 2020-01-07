@@ -1793,7 +1793,7 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
      
      
      RefPtr<ThreadInfo> threadInfo =
-       new ThreadInfo("Java Main Thread", 0, false);
+       new ThreadInfo("Java Main Thread", 0, false, CorePS::ProcessStartTime());
      ProfiledThreadData profiledThreadData(threadInfo, nullptr,
                                            ActivePS::FeatureResponsiveness(aLock));
      profiledThreadData.StreamJSON(*javaBuffer.get(), nullptr, aWriter,
