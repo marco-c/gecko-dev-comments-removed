@@ -1378,7 +1378,6 @@ CustomizeMode.prototype = {
       tbb.addEventListener("focus", previewTheme);
       tbb.addEventListener("mouseover", previewTheme);
       tbb.addEventListener("blur", resetPreview);
-      tbb.addEventListener("mouseout", resetPreview);
 
       return tbb;
     }
@@ -1418,6 +1417,23 @@ CustomizeMode.prototype = {
       });
       panel.insertBefore(button, recommendedLabel);
     }
+
+    function panelMouseOut(e) {
+      
+      
+      
+      
+      
+      if (e.explicitOriginalTarget == panel) {
+        resetPreview();
+      }
+    }
+
+    panel.addEventListener("mouseout", panelMouseOut);
+    panel.addEventListener("popuphidden", () => {
+      panel.removeEventListener("mouseout", panelMouseOut);
+      resetPreview();
+    }, {once: true});
 
     let lwthemePrefs = Services.prefs.getBranch("lightweightThemes.");
     let recommendedThemes = lwthemePrefs.getStringPref("recommendedThemes");
