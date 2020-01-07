@@ -377,7 +377,7 @@ class FakeRemoteGATTCharacteristic {
       await this.fake_central_ptr_.setNextWriteCharacteristicResponse(
         gatt_code, ...this.ids_);
 
-    if (!success) throw 'setNextWriteResponse failed';
+    if (!success) throw 'setNextWriteCharacteristicResponse failed';
   }
 
   
@@ -397,9 +397,10 @@ class FakeRemoteGATTCharacteristic {
   
   async getLastWrittenValue() {
     let {success, value} =
-      await this.fake_central_ptr_.getLastWrittenValue(...this.ids_);
+      await this.fake_central_ptr_.getLastWrittenCharacteristicValue(
+          ...this.ids_);
 
-    if (!success) throw 'getLastWrittenValue failed';
+    if (!success) throw 'getLastWrittenCharacteristicValue failed';
 
     return value;
   }
@@ -443,6 +444,31 @@ class FakeRemoteGATTDescriptor {
         gatt_code, value, ...this.ids_);
 
     if (!success) throw 'setNextReadDescriptorResponse failed';
+  }
+
+  
+  
+  
+  
+  
+  async setNextWriteResponse(gatt_code) {
+    let {success} =
+      await this.fake_central_ptr_.setNextWriteDescriptorResponse(
+        gatt_code, ...this.ids_);
+
+    if (!success) throw 'setNextWriteDescriptorResponse failed';
+  }
+
+  
+  
+  async getLastWrittenValue() {
+    let {success, value} =
+      await this.fake_central_ptr_.getLastWrittenDescriptorValue(
+          ...this.ids_);
+
+    if (!success) throw 'getLastWrittenDescriptorValue failed';
+
+    return value;
   }
 
   
