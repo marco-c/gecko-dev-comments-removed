@@ -151,10 +151,7 @@ for (let type of ['f32', 'f64']) {
         (export "" $foo)
     )`,
     WebAssembly.RuntimeError,
-    
-    
-    
-    ["", ">", "0,>", "1,0,>", "1,>", "trap handling,0,>", "", ">", ""]);
+    ["", ">", "0,>", "1,0,>", ">", "", ">", ""]);
 })();
 
 (function() {
