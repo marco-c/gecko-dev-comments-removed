@@ -2013,9 +2013,6 @@ var XPIProvider = {
             Services.obs.removeObserver(observer, event);
           }
 
-          
-          
-          
           XPIDatabase.asyncLoadDB();
         };
         for (let event of EVENTS) {
