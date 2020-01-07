@@ -70,6 +70,14 @@ this.PaymentTestUtils = {
     completePayment: () => {
       content.document.getElementById("pay").click();
     },
+
+    setSecurityCode: ({securityCode}) => {
+      
+      let picker = Cu.waiveXrays(content.document.querySelector("payment-method-picker"));
+      
+      
+      Cu.unwaiveXrays(picker.securityCodeInput).setUserInput(securityCode);
+    },
   },
 
   
