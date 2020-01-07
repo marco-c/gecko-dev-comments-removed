@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_APZSampler_h
 #define mozilla_layers_APZSampler_h
 
+#include "base/message_loop.h"
 #include "LayersTypes.h"
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/AsyncCompositionManager.h" 
@@ -124,6 +125,16 @@ public:
 
 
   bool IsSamplerThread();
+
+  
+
+
+
+
+
+
+
+  void RunOnControllerThread(already_AddRefed<Runnable> aTask);
 
 protected:
   virtual ~APZSampler();
