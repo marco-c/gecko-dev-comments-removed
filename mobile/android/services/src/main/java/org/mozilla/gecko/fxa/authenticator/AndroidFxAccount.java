@@ -645,6 +645,20 @@ public class AndroidFxAccount {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+  public void updateFirstRunScope(final Context context) {
+    String firstRunUUID = EnvironmentUtils.firstRunUUID(context);
+    accountManager.setUserData(account, ACCOUNT_KEY_FIRST_RUN_SCOPE, firstRunUUID);
+  }
+
   private void clearSyncPrefs() throws UnsupportedEncodingException, GeneralSecurityException {
     getSyncPrefs().edit().clear().apply();
   }
