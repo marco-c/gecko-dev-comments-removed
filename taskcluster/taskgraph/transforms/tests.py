@@ -704,13 +704,13 @@ def handle_suite_category(config, tests):
 def enable_code_coverage(config, tests):
     """Enable code coverage for the ccov and jsdcov build-platforms"""
     for test in tests:
-        if 'ccov' in test['build-platform'] and not test['test-name'].startswith('test-verify'):
+        if 'ccov' in test['build-platform']:
             test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
             test['instance-size'] = 'xlarge'
             
-            if 'mozilla-central' in test['run-on-projects'] or \
-                    test['run-on-projects'] == 'built-projects':
-                test['run-on-projects'] = ['mozilla-central', 'try']
+            
+            if test['run-on-projects'] not in [[], ['try']]:
+                test['run-on-projects'] = 'built-projects'
 
             
             
@@ -736,9 +736,9 @@ def enable_code_coverage(config, tests):
                     test['docker-image'] = {"in-tree": "desktop1604-test"}
         elif test['build-platform'] == 'linux64-jsdcov/opt':
             
-            if 'mozilla-central' in test['run-on-projects'] or \
-                    test['run-on-projects'] == 'built-projects':
-                test['run-on-projects'] = ['mozilla-central', 'try']
+            
+            if test['run-on-projects'] not in [[], ['try']]:
+                test['run-on-projects'] = 'built-projects'
             test['mozharness'].setdefault('extra-options', []).append('--jsd-code-coverage')
         yield test
 
