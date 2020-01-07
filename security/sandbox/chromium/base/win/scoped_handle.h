@@ -5,7 +5,6 @@
 #ifndef BASE_WIN_SCOPED_HANDLE_H_
 #define BASE_WIN_SCOPED_HANDLE_H_
 
-#include <intrin.h>
 #include <windows.h>
 
 #include "base/base_export.h"
@@ -15,7 +14,13 @@
 #include "base/macros.h"
 
 
+#if defined(COMPILER_MSVC)
+#include <intrin.h>
 #define BASE_WIN_GET_CALLER _ReturnAddress()
+#elif defined(COMPILER_GCC)
+#define BASE_WIN_GET_CALLER __builtin_extract_return_addr(\
+    __builtin_return_address(0))
+#endif
 
 namespace base {
 namespace win {
