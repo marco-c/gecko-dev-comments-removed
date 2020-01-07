@@ -187,10 +187,6 @@ private:
   
   nsRefPtrHashtable<nsUint64HashKey, Layer> mLayerMap;
 
-  
-  
-  
-  
   uint64_t mId;
 
   
