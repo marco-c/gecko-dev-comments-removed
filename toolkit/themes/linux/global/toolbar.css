@@ -46,11 +46,6 @@ toolbarpaletteitem {
   cursor: grab;
 }
 
-.toolbarpaletteitem-box {
-  
-  pointer-events: none;
-}
-
 
 
 toolbarpaletteitem[place="toolbar"] {
