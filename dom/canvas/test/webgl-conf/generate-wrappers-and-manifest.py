@@ -380,10 +380,20 @@ def WriteManifest(wrapperPathStrList, supportPathStrList):
         sectionName = '[' + wrapperManifestPathStr + ']'
         manifestTestLineList.append(sectionName)
 
+        def always_skip():
+            
+            if '/test_deqp__' in wrapperPathStr:
+                return True
+            if '/test_2_deqp__' in wrapperPathStr:
+                return True
+            return False
+
         errataLines = []
         if wrapperPathStr in errataMap:
             errataLines = errataMap[wrapperPathStr]
             del errataMap[wrapperPathStr]
+        elif always_skip():
+            errataLines.append('skip-if = 1')
 
         if IsWrapperWebGL2(wrapperPathStr):
             needsSkip = True
