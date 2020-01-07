@@ -48,6 +48,10 @@ public:
   explicit CompositorVsyncScheduler(CompositorVsyncSchedulerOwner* aVsyncSchedulerOwner,
                                     widget::CompositorWidget* aWidget);
 
+  
+
+
+
   bool NotifyVsync(TimeStamp aVsyncTimestamp);
 
   
@@ -55,9 +59,28 @@ public:
 
   void Destroy();
 
+  
+
+
+
+
   void ScheduleComposition();
+
+  
+
+
   void CancelCurrentCompositeTask();
+
+  
+
+
+
   bool NeedsComposite();
+
+  
+
+
+
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect);
 
   const TimeStamp& GetLastComposeTime()
