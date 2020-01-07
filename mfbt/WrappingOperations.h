@@ -94,29 +94,16 @@ struct WrapToSignedHelper
 
 
 template<typename UnsignedType>
-inline constexpr typename detail::WrapToSignedHelper<UnsignedType>::SignedType
+constexpr typename detail::WrapToSignedHelper<UnsignedType>::SignedType
 WrapToSigned(UnsignedType aValue)
 {
   return detail::WrapToSignedHelper<UnsignedType>::compute(aValue);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace detail {
 
 template<typename T>
-inline constexpr T
+constexpr T
 ToResult(typename MakeUnsigned<T>::Type aUnsigned)
 {
   
@@ -132,7 +119,7 @@ private:
 
 public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static T compute(T aX, T aY)
+  static constexpr T compute(T aX, T aY)
   {
     return ToResult<T>(static_cast<UnsignedT>(aX) + static_cast<UnsignedT>(aY));
   }
@@ -165,7 +152,7 @@ public:
 
 
 template<typename T>
-inline T
+constexpr T
 WrappingAdd(T aX, T aY)
 {
   return detail::WrappingAddHelper<T>::compute(aX, aY);
@@ -181,7 +168,7 @@ private:
 
 public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static T compute(T aX, T aY)
+  static constexpr T compute(T aX, T aY)
   {
     return ToResult<T>(static_cast<UnsignedT>(aX) - static_cast<UnsignedT>(aY));
   }
@@ -215,7 +202,7 @@ public:
 
 
 template<typename T>
-inline T
+constexpr T
 WrappingSubtract(T aX, T aY)
 {
   return detail::WrappingSubtractHelper<T>::compute(aX, aY);
@@ -231,7 +218,7 @@ private:
 
 public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static T compute(T aX, T aY)
+  static constexpr T compute(T aX, T aY)
   {
     
     
@@ -277,11 +264,35 @@ public:
 
 
 template<typename T>
-inline T
+constexpr T
 WrappingMultiply(T aX, T aY)
 {
   return detail::WrappingMultiplyHelper<T>::compute(aX, aY);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef _MSC_VER
+#define MOZ_PUSH_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING \
+  __pragma(warning(push)) \
+  __pragma(warning(disable:4307))
+#define MOZ_POP_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING \
+  __pragma(warning(pop))
+#else
+#define MOZ_PUSH_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING
+#define MOZ_POP_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING
+#endif
 
 } 
 

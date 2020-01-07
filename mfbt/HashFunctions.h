@@ -65,7 +65,14 @@ static const uint32_t kGoldenRatioU32 = 0x9E3779B9U;
 
 namespace detail {
 
-inline uint32_t
+MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
+constexpr uint32_t
+RotateLeft5(uint32_t aValue)
+{
+  return (aValue << 5) | (aValue >> 27);
+}
+
+constexpr uint32_t
 AddU32ToHash(uint32_t aHash, uint32_t aValue)
 {
   
@@ -110,14 +117,14 @@ AddU32ToHash(uint32_t aHash, uint32_t aValue)
 
 
   return mozilla::WrappingMultiply(kGoldenRatioU32,
-                                   RotateLeft(aHash, 5) ^ aValue);
+                                   RotateLeft5(aHash) ^ aValue);
 }
 
 
 
 
 template<size_t PtrSize>
-inline uint32_t
+constexpr uint32_t
 AddUintptrToHash(uint32_t aHash, uintptr_t aValue)
 {
   return AddU32ToHash(aHash, static_cast<uint32_t>(aValue));
@@ -173,7 +180,7 @@ AddToHash(uint32_t aHash, A* aA)
 
 template<typename T,
          typename U = typename mozilla::EnableIf<mozilla::IsIntegral<T>::value>::Type>
-MOZ_MUST_USE inline uint32_t
+MOZ_MUST_USE constexpr uint32_t
 AddToHash(uint32_t aHash, T aA)
 {
   return detail::AddUintptrToHash<sizeof(T)>(aHash, aA);
@@ -211,6 +218,19 @@ HashUntilZero(const T* aStr)
     hash = AddToHash(hash, c);
   }
   return hash;
+}
+
+
+
+
+
+template<typename T>
+constexpr uint32_t
+ConstExprHashUntilZero(const T* aStr, uint32_t aHash)
+{
+  return !*aStr
+       ? aHash
+       : ConstExprHashUntilZero(aStr + 1, AddToHash(aHash, *aStr));
 }
 
 template<typename T>
@@ -255,6 +275,21 @@ MOZ_MUST_USE inline uint32_t
 HashString(const char16_t* aStr)
 {
   return detail::HashUntilZero(aStr);
+}
+
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE constexpr uint32_t
+ConstExprHashString(const char16_t* aStr)
+{
+  return detail::ConstExprHashUntilZero(aStr, 0);
 }
 
 MOZ_MUST_USE inline uint32_t
