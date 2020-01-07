@@ -145,13 +145,37 @@ private:
 class UniqueStacks
 {
 public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct JITAddress
+  {
+    void* mAddress;
+    uint32_t mStreamingGen;
+
+    uint32_t Hash() const;
+    bool operator==(const JITAddress& aRhs) const
+    {
+      return mAddress == aRhs.mAddress && mStreamingGen == aRhs.mStreamingGen;
+    }
+    bool operator!=(const JITAddress& aRhs) const { return !(*this == aRhs); }
+  };
+
   struct FrameKey {
     
     
     nsCString mLocation;
     mozilla::Maybe<unsigned> mLine;
     mozilla::Maybe<unsigned> mCategory;
-    mozilla::Maybe<void*> mJITAddress;
+    mozilla::Maybe<JITAddress> mJITAddress;
     mozilla::Maybe<uint32_t> mJITDepth;
 
     explicit FrameKey(const char* aLocation)
@@ -170,7 +194,7 @@ public:
       mHash = Hash();
     }
 
-    FrameKey(void* aJITAddress, uint32_t aJITDepth)
+    FrameKey(const JITAddress& aJITAddress, uint32_t aJITDepth)
      : mJITAddress(mozilla::Some(aJITAddress))
      , mJITDepth(mozilla::Some(aJITDepth))
     {
@@ -221,6 +245,12 @@ public:
   explicit UniqueStacks();
 
   
+  
+  
+  void AdvanceStreamingGeneration() { mStreamingGeneration++; }
+  uint32_t CurrentGen() { return mStreamingGeneration; }
+
+  
   MOZ_MUST_USE StackKey BeginStack(const FrameKey& aFrame);
 
   
@@ -228,7 +258,8 @@ public:
                                     const FrameKey& aFrame);
 
   MOZ_MUST_USE nsTArray<FrameKey>
-  GetOrAddJITFrameKeysForAddress(JSContext* aContext, void* aJITAddress);
+  GetOrAddJITFrameKeysForAddress(JSContext* aContext,
+                                 const JITAddress& aJITAddress);
 
   MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
   MOZ_MUST_USE uint32_t GetOrAddStackIndex(const StackKey& aStack);
@@ -255,13 +286,17 @@ private:
   
   
   
-  nsClassHashtable<nsPtrHashKey<void>, nsTArray<FrameKey>> mAddressToJITFrameKeysMap;
+  nsClassHashtable<nsGenericHashKey<JITAddress>, nsTArray<FrameKey>> mAddressToJITFrameKeysMap;
 
   SpliceableChunkedJSONWriter mFrameTableWriter;
   nsDataHashtable<nsGenericHashKey<FrameKey>, uint32_t> mFrameToIndexMap;
 
   SpliceableChunkedJSONWriter mStackTableWriter;
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
+
+  
+  
+  uint32_t mStreamingGeneration;
 };
 
 
