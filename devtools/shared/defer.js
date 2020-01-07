@@ -7,11 +7,6 @@
 
 
 
-const Promise = require("promise");
-
-
-
-
 
 module.exports = function defer() {
   let resolve, reject;
