@@ -1507,7 +1507,11 @@ struct TlsData
     Instance* instance;
 
     
-    JSContext** addressOfContext;
+    JSContext* cx;
+
+    
+    
+    uintptr_t stackLimit;
 
     
     void* allocatedBase;
