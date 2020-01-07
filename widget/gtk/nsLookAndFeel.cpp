@@ -1079,7 +1079,7 @@ nsLookAndFeel::EnsureInit()
 
     
     mCSDAvailable = (gtk_check_version(3, 10, 0) == nullptr &&
-        nsWindow::GetCSDSupportLevel() != nsWindow::CSD_SUPPORT_NONE);
+        nsWindow::GetCSDSupportLevel() == nsWindow::CSD_SUPPORT_FULL);
 
     
     
