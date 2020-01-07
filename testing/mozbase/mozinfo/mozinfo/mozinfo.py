@@ -16,7 +16,6 @@ import re
 import sys
 from .string_version import StringVersion
 from ctypes.util import find_library
-from six import string_types
 
 
 _os = os
@@ -189,6 +188,11 @@ def update(new_info):
                      to a json file containing the new info.
     """
 
+    PY3 = sys.version_info[0] == 3
+    if PY3:
+        string_types = str,
+    else:
+        string_types = basestring,
     if isinstance(new_info, string_types):
         
         import mozfile
