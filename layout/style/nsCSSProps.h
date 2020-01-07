@@ -124,8 +124,6 @@
 
 
 
-#define CSS_PROPERTY_VALUE_LIST_USES_COMMAS       (1<<1) /* otherwise spaces */
-
 
 
 
