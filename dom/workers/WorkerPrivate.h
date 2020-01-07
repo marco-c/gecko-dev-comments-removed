@@ -102,20 +102,6 @@ public:
 
 class WorkerPrivate
 {
-  class EventTarget;
-  friend class EventTarget;
-  friend class mozilla::dom::WorkerHolder;
-  friend class AutoSyncLoopHolder;
-
-  struct TimeoutInfo;
-
-  class MemoryReporter;
-  friend class MemoryReporter;
-
-  friend class mozilla::dom::WorkerThread;
-
-  typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
-
 public:
   struct LocationInfo
   {
@@ -130,162 +116,6 @@ public:
     nsString mOrigin;
   };
 
-private:
-  enum GCTimerMode
-  {
-    PeriodicTimer = 0,
-    IdleTimer,
-    NoTimer
-  };
-
-  SharedMutex mMutex;
-  mozilla::CondVar mCondVar;
-
-  WorkerPrivate* mParent;
-
-  nsString mScriptURL;
-
-  
-  nsString mWorkerName;
-
-  WorkerType mWorkerType;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Worker> mParentEventTargetRef;
-  RefPtr<WorkerPrivate> mSelfRef;
-
-  
-  
-  WorkerLoadInfo mLoadInfo;
-  LocationInfo mLocationInfo;
-
-  
-  workerinternals::JSSettings mJSSettings;
-
-  bool mDebuggerRegistered;
-  WorkerDebugger* mDebugger;
-
-  workerinternals::Queue<WorkerControlRunnable*, 4> mControlQueue;
-  workerinternals::Queue<WorkerRunnable*, 4> mDebuggerQueue;
-
-  
-  JSContext* mJSContext;
-  RefPtr<WorkerThread> mThread;
-  PRThread* mPRThread;
-
-  
-  RefPtr<WorkerGlobalScope> mScope;
-  RefPtr<WorkerDebuggerGlobalScope> mDebuggerScope;
-  nsTArray<WorkerPrivate*> mChildWorkers;
-  nsTObserverArray<WorkerHolder*> mHolders;
-  uint32_t mNumHoldersPreventingShutdownStart;
-  nsTArray<nsAutoPtr<TimeoutInfo>> mTimeouts;
-  uint32_t mDebuggerEventLoopLevel;
-  RefPtr<ThrottledEventQueue> mMainThreadThrottledEventQueue;
-  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
-  RefPtr<WorkerEventTarget> mWorkerControlEventTarget;
-  RefPtr<WorkerEventTarget> mWorkerHybridEventTarget;
-
-  struct SyncLoopInfo
-  {
-    explicit SyncLoopInfo(EventTarget* aEventTarget);
-
-    RefPtr<EventTarget> mEventTarget;
-    bool mCompleted;
-    bool mResult;
-#ifdef DEBUG
-    bool mHasRun;
-#endif
-  };
-
-  
-  
-  
-  nsTArray<nsAutoPtr<SyncLoopInfo>> mSyncLoopStack;
-
-  nsCOMPtr<nsITimer> mTimer;
-  nsCOMPtr<nsITimerCallback> mTimerRunnable;
-
-  nsCOMPtr<nsITimer> mGCTimer;
-
-  RefPtr<MemoryReporter> mMemoryReporter;
-
-  
-  nsCOMPtr<nsIRunnable> mLoadFailedRunnable;
-
-  RefPtr<PerformanceStorage> mPerformanceStorage;
-
-  
-  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  
-  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
-
-  
-  
-  nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
-
-  JS::UniqueChars mDefaultLocale; 
-  TimeStamp mKillTime;
-  uint32_t mErrorHandlerRecursionCount;
-  uint32_t mNextTimeoutId;
-
-  
-  
-  uint32_t mParentWindowPausedDepth;
-
-  WorkerStatus mParentStatus;
-  WorkerStatus mStatus;
-  UniquePtr<ClientSource> mClientSource;
-  bool mFrozen;
-  bool mTimerRunning;
-  bool mRunningExpiredTimeouts;
-  bool mPendingEventQueueClearing;
-  bool mCancelAllPendingRunnables;
-  bool mPeriodicGCTimerRunning;
-  bool mIdleGCTimerRunning;
-  bool mWorkerScriptExecutedSuccessfully;
-  bool mFetchHandlerWasAdded;
-  bool mOnLine;
-  bool mMainThreadObjectsForgotten;
-  bool mIsChromeWorker;
-  bool mParentFrozen;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mIsSecureContext;
-
-  
-  
-  Atomic<uint64_t> mBusyCount;
-
-  Atomic<bool> mLoadingWorkerScript;
-
-  TimeStamp mCreationTimeStamp;
-  DOMHighResTimeStamp mCreationTimeHighRes;
-
-protected:
-  ~WorkerPrivate();
-
-public:
   NS_INLINE_DECL_REFCOUNTING(WorkerPrivate)
 
   static already_AddRefed<WorkerPrivate>
@@ -1094,7 +924,7 @@ public:
     return mLoadInfo.mPrincipalIsSystem;
   }
 
-  const PrincipalInfo&
+  const mozilla::ipc::PrincipalInfo&
   GetPrincipalInfo() const
   {
     return *mLoadInfo.mPrincipalInfo;
@@ -1366,6 +1196,8 @@ private:
                 const nsACString& aServiceWorkerScope,
                 WorkerLoadInfo& aLoadInfo);
 
+  ~WorkerPrivate();
+
   nsresult
   DispatchPrivate(already_AddRefed<WorkerRunnable> aRunnable,
                   nsIEventTarget* aSyncLoopTarget);
@@ -1451,6 +1283,13 @@ private:
   void
   InitializeGCTimers();
 
+  enum GCTimerMode
+  {
+    PeriodicTimer = 0,
+    IdleTimer,
+    NoTimer
+  };
+
   void
   SetGCTimerMode(GCTimerMode aMode);
 
@@ -1472,6 +1311,166 @@ private:
     return !(mChildWorkers.IsEmpty() && mTimeouts.IsEmpty() &&
              mHolders.IsEmpty());
   }
+
+  class EventTarget;
+  friend class EventTarget;
+  friend class mozilla::dom::WorkerHolder;
+  friend class AutoSyncLoopHolder;
+
+  struct TimeoutInfo;
+
+  class MemoryReporter;
+  friend class MemoryReporter;
+
+  friend class mozilla::dom::WorkerThread;
+
+  SharedMutex mMutex;
+  mozilla::CondVar mCondVar;
+
+  WorkerPrivate* mParent;
+
+  nsString mScriptURL;
+
+  
+  nsString mWorkerName;
+
+  WorkerType mWorkerType;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Worker> mParentEventTargetRef;
+  RefPtr<WorkerPrivate> mSelfRef;
+
+  
+  
+  WorkerLoadInfo mLoadInfo;
+  LocationInfo mLocationInfo;
+
+  
+  workerinternals::JSSettings mJSSettings;
+
+  WorkerDebugger* mDebugger;
+
+  workerinternals::Queue<WorkerControlRunnable*, 4> mControlQueue;
+  workerinternals::Queue<WorkerRunnable*, 4> mDebuggerQueue;
+
+  
+  JSContext* mJSContext;
+  RefPtr<WorkerThread> mThread;
+  PRThread* mPRThread;
+
+  
+  RefPtr<WorkerGlobalScope> mScope;
+  RefPtr<WorkerDebuggerGlobalScope> mDebuggerScope;
+  nsTArray<WorkerPrivate*> mChildWorkers;
+  nsTObserverArray<WorkerHolder*> mHolders;
+  nsTArray<nsAutoPtr<TimeoutInfo>> mTimeouts;
+  RefPtr<ThrottledEventQueue> mMainThreadThrottledEventQueue;
+  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
+  RefPtr<WorkerEventTarget> mWorkerControlEventTarget;
+  RefPtr<WorkerEventTarget> mWorkerHybridEventTarget;
+
+  struct SyncLoopInfo
+  {
+    explicit SyncLoopInfo(EventTarget* aEventTarget);
+
+    RefPtr<EventTarget> mEventTarget;
+    bool mCompleted;
+    bool mResult;
+#ifdef DEBUG
+    bool mHasRun;
+#endif
+  };
+
+  
+  
+  
+  nsTArray<nsAutoPtr<SyncLoopInfo>> mSyncLoopStack;
+
+  nsCOMPtr<nsITimer> mTimer;
+  nsCOMPtr<nsITimerCallback> mTimerRunnable;
+
+  nsCOMPtr<nsITimer> mGCTimer;
+
+  RefPtr<MemoryReporter> mMemoryReporter;
+
+  
+  nsCOMPtr<nsIRunnable> mLoadFailedRunnable;
+
+  RefPtr<PerformanceStorage> mPerformanceStorage;
+
+  
+  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
+
+  
+  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
+
+  
+  
+  nsTArray<RefPtr<SharedWorker>> mSharedWorkers;
+
+  JS::UniqueChars mDefaultLocale; 
+  TimeStamp mKillTime;
+  WorkerStatus mParentStatus;
+  WorkerStatus mStatus;
+  UniquePtr<ClientSource> mClientSource;
+
+  
+  
+  Atomic<uint64_t> mBusyCount;
+
+  Atomic<bool> mLoadingWorkerScript;
+
+  TimeStamp mCreationTimeStamp;
+  DOMHighResTimeStamp mCreationTimeHighRes;
+
+  
+  uint32_t mNumHoldersPreventingShutdownStart;
+  uint32_t mDebuggerEventLoopLevel;
+
+  uint32_t mErrorHandlerRecursionCount;
+  uint32_t mNextTimeoutId;
+
+  
+  
+  uint32_t mParentWindowPausedDepth;
+
+  bool mFrozen;
+  bool mTimerRunning;
+  bool mRunningExpiredTimeouts;
+  bool mPendingEventQueueClearing;
+  bool mCancelAllPendingRunnables;
+  bool mPeriodicGCTimerRunning;
+  bool mIdleGCTimerRunning;
+  bool mWorkerScriptExecutedSuccessfully;
+  bool mFetchHandlerWasAdded;
+  bool mOnLine;
+  bool mMainThreadObjectsForgotten;
+  bool mIsChromeWorker;
+  bool mParentFrozen;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mIsSecureContext;
+
+  bool mDebuggerRegistered;
 };
 
 class AutoSyncLoopHolder
