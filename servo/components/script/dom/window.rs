@@ -1048,6 +1048,10 @@ impl Window {
         self.navigation_start_precise.get()
     }
 
+    pub fn has_document(&self) -> bool {
+        self.document.get().is_some()
+    }
+
     
     
     

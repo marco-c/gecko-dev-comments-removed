@@ -12,7 +12,6 @@ use dom::bindings::root::{DomRoot, MutNullableDom};
 use dom::cssstylesheet::CSSStyleSheet;
 use dom::document::Document;
 use dom::element::{Element, ElementCreator};
-use dom::eventtarget::EventTarget;
 use dom::htmlelement::HTMLElement;
 use dom::node::{ChildrenMutation, Node, UnbindContext, document_from_node, window_from_node};
 use dom::stylesheet::StyleSheet as DOMStyleSheet;
@@ -107,7 +106,8 @@ impl HTMLStyleElement {
 
         
         if self.pending_loads.get() == 0 {
-            self.upcast::<EventTarget>().fire_event(atom!("load"));
+            let window = window_from_node(self);
+            window.dom_manipulation_task_source().queue_simple_event(self.upcast(), atom!("load"), &window);
         }
 
         self.set_stylesheet(sheet);
