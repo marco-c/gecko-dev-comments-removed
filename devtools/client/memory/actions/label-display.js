@@ -12,10 +12,10 @@ const { refresh } = require("./refresh");
 
 
 exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
-  return function* (dispatch, getState) {
+  return async function (dispatch, getState) {
     
     dispatch(setLabelDisplay(display));
-    yield dispatch(refresh(heapWorker));
+    await dispatch(refresh(heapWorker));
   };
 };
 

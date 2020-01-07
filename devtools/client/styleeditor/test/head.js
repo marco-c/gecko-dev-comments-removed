@@ -50,50 +50,50 @@ var navigateTo = function (url) {
   return BrowserTestUtils.browserLoaded(browser);
 };
 
-var navigateToAndWaitForStyleSheets = Task.async(function* (url, ui) {
+var navigateToAndWaitForStyleSheets = async function (url, ui) {
   let onReset = ui.once("stylesheets-reset");
-  yield navigateTo(url);
-  yield onReset;
-});
+  await navigateTo(url);
+  await onReset;
+};
 
-var reloadPageAndWaitForStyleSheets = Task.async(function* (ui) {
+var reloadPageAndWaitForStyleSheets = async function (ui) {
   info("Reloading the page.");
 
   let onReset = ui.once("stylesheets-reset");
   let browser = gBrowser.selectedBrowser;
-  yield ContentTask.spawn(browser, null, "() => content.location.reload()");
-  yield onReset;
-});
+  await ContentTask.spawn(browser, null, "() => content.location.reload()");
+  await onReset;
+};
 
 
 
 
-var openStyleEditor = Task.async(function* (tab) {
+var openStyleEditor = async function (tab) {
   if (!tab) {
     tab = gBrowser.selectedTab;
   }
   let target = TargetFactory.forTab(tab);
-  let toolbox = yield gDevTools.showToolbox(target, "styleeditor");
+  let toolbox = await gDevTools.showToolbox(target, "styleeditor");
   let panel = toolbox.getPanel("styleeditor");
   let ui = panel.UI;
 
   
   let animations = ui._root.getAnimations({subtree: true});
-  yield Promise.all(animations.map(a => a.finished));
+  await Promise.all(animations.map(a => a.finished));
 
   return { toolbox, panel, ui };
-});
+};
 
 
 
 
 
-var openStyleEditorForURL = Task.async(function* (url, win) {
-  let tab = yield addTab(url, win);
-  let result = yield openStyleEditor(tab);
+var openStyleEditorForURL = async function (url, win) {
+  let tab = await addTab(url, win);
+  let result = await openStyleEditor(tab);
   result.tab = tab;
   return result;
-});
+};
 
 
 
@@ -106,8 +106,8 @@ var openStyleEditorForURL = Task.async(function* (url, win) {
 
 
 
-var getComputedStyleProperty = function* (args) {
-  return yield ContentTask.spawn(gBrowser.selectedBrowser, args,
+var getComputedStyleProperty = async function (args) {
+  return ContentTask.spawn(gBrowser.selectedBrowser, args,
     function ({selector, pseudo, name}) {
       let element = content.document.querySelector(selector);
       let style = content.getComputedStyle(element, pseudo);

@@ -10,14 +10,14 @@ const TEST_PAGE_URL = URL_ROOT + "page_basic.html";
 
 
 
-add_task(function* () {
+add_task(async function () {
   info("Test DOM panel basic started");
 
-  let { panel } = yield addTestTab(TEST_PAGE_URL);
+  let { panel } = await addTestTab(TEST_PAGE_URL);
 
   
-  yield evaluateJSAsync(panel, "var _b = 10");
-  yield refreshPanel(panel);
+  await evaluateJSAsync(panel, "var _b = 10");
+  await refreshPanel(panel);
 
   
   let row = getRowByLabel(panel, "_b");

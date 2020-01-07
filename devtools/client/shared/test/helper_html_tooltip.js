@@ -20,10 +20,10 @@
 
 
 
-function* showTooltip(tooltip, anchor, {position, x, y} = {}) {
+async function showTooltip(tooltip, anchor, {position, x, y} = {}) {
   let onShown = tooltip.once("shown");
   tooltip.show(anchor, {position, x, y});
-  yield onShown;
+  await onShown;
   return waitForReflow(tooltip);
 }
 
@@ -36,10 +36,10 @@ function* showTooltip(tooltip, anchor, {position, x, y} = {}) {
 
 
 
-function* hideTooltip(tooltip) {
+async function hideTooltip(tooltip) {
   let onPopupHidden = tooltip.once("hidden");
   tooltip.hide();
-  yield onPopupHidden;
+  await onPopupHidden;
   return waitForReflow(tooltip);
 }
 

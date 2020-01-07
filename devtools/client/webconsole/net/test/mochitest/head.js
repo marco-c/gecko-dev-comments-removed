@@ -25,7 +25,7 @@ registerCleanupFunction(() => {
 
 
 Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
-registerCleanupFunction(function* () {
+registerCleanupFunction(function() {
   Services.prefs.clearUserPref("devtools.webconsole.new-frontend-enabled");
 });
 
@@ -37,21 +37,21 @@ registerCleanupFunction(function* () {
 function addTestTab(url) {
   info("Adding a new JSON tab with URL: '" + url + "'");
 
-  return Task.spawn(function* () {
-    let tab = yield addTab(url);
+  return (async function () {
+    let tab = await addTab(url);
 
     
     loadFrameScriptUtils(tab.linkedBrowser);
 
     
-    let hud = yield openConsole();
+    let hud = await openConsole();
 
     return {
       tab: tab,
       browser: tab.linkedBrowser,
       hud: hud
     };
-  });
+  })();
 }
 
 
@@ -73,9 +73,9 @@ function executeAndInspectXhr(hud, options) {
     requestHeaders: options.requestHeaders
   });
 
-  return Task.spawn(function* () {
+  return (async function () {
     
-    let rules = yield waitForMessages({
+    let rules = await waitForMessages({
       webconsole: hud,
       messages: [{
         text: options.url,
@@ -92,12 +92,12 @@ function executeAndInspectXhr(hud, options) {
     
     
     
-    yield synthesizeMouseClickSoon(hud, body);
-    yield waitForBackend(msg);
+    await synthesizeMouseClickSoon(hud, body);
+    await waitForBackend(msg);
     let netInfoBody = body.querySelector(".netInfoBody");
     ok(netInfoBody, "Net info body must exist");
     return netInfoBody;
-  });
+  })();
 }
 
 
@@ -128,14 +128,14 @@ function selectNetInfoTab(hud, netInfoBody, tabId) {
   
   
   
-  return Task.spawn(function* () {
-    yield synthesizeMouseClickSoon(hud, tab);
+  return (async function () {
+    await synthesizeMouseClickSoon(hud, tab);
     let msg = getAncestorByClass(netInfoBody, "message");
-    yield waitForBackend(msg);
+    await waitForBackend(msg);
     let tabBody = netInfoBody.querySelector("." + tabId + "TabBox");
     ok(tabBody, "Tab body must exist");
     return tabBody;
-  });
+  })();
 }
 
 

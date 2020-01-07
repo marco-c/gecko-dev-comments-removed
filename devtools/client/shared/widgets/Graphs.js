@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 const { setNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
@@ -186,8 +185,8 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  destroy: Task.async(function* () {
-    yield this.ready();
+  async destroy() {
+    await this.ready();
 
     this._topWindow.removeEventListener("mousemove", this._onMouseMove);
     this._topWindow.removeEventListener("mouseup", this._onMouseUp);
@@ -221,7 +220,7 @@ AbstractCanvasGraph.prototype = {
     gCachedStripePattern.clear();
 
     this.emit("destroyed");
-  }),
+  },
 
   
 
@@ -297,10 +296,10 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setDataWhenReady: Task.async(function* (data) {
-    yield this.ready();
+  async setDataWhenReady(data) {
+    await this.ready();
     this.setData(data);
-  }),
+  },
 
   
 
@@ -1316,12 +1315,12 @@ this.CanvasGraphUtils = {
   
 
 
-  linkAnimation: Task.async(function* (graph1, graph2) {
+  async linkAnimation(graph1, graph2) {
     if (!graph1 || !graph2) {
       return;
     }
-    yield graph1.ready();
-    yield graph2.ready();
+    await graph1.ready();
+    await graph2.ready();
 
     let window = graph1._window;
     window.cancelAnimationFrame(graph1._animationId);
@@ -1334,7 +1333,7 @@ this.CanvasGraphUtils = {
     };
 
     window.requestAnimationFrame(loop);
-  }),
+  },
 
   
 

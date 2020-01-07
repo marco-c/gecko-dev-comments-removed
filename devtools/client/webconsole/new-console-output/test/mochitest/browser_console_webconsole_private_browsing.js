@@ -41,7 +41,7 @@ function test() {
     ConsoleAPIStorage.clearEvents();
 
     
-    ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+    ContentTask.spawn(gBrowser.selectedBrowser, null, async function () {
       content.console.log("bug874061-not-private");
     });
 

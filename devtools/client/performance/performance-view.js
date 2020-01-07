@@ -115,7 +115,7 @@ var PerformanceView = {
   
 
 
-  initialize: Task.async(function* () {
+  async initialize() {
     this._onRecordButtonClick = this._onRecordButtonClick.bind(this);
     this._onImportButtonClick = this._onImportButtonClick.bind(this);
     this._onClearButtonClick = this._onClearButtonClick.bind(this);
@@ -133,7 +133,7 @@ var PerformanceView = {
     PerformanceController.on(EVENTS.BACKEND_FAILED_AFTER_RECORDING_START,
                              this._onNewRecordingFailed);
 
-    if (yield PerformanceController.canCurrentlyRecord()) {
+    if (await PerformanceController.canCurrentlyRecord()) {
       this.setState("empty");
     } else {
       this.setState("unavailable");
@@ -141,10 +141,10 @@ var PerformanceView = {
 
     
     
-    yield ToolbarView.initialize();
-    yield RecordingsView.initialize();
-    yield OverviewView.initialize();
-    yield DetailsView.initialize();
+    await ToolbarView.initialize();
+    await RecordingsView.initialize();
+    await OverviewView.initialize();
+    await DetailsView.initialize();
 
     
     this._recordingControlsState = {
@@ -161,7 +161,7 @@ var PerformanceView = {
                                         .map(createHtmlMount);
 
     this._renderRecordingControls();
-  }),
+  },
 
   
 
@@ -177,7 +177,7 @@ var PerformanceView = {
   
 
 
-  destroy: Task.async(function* () {
+  async destroy() {
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     PerformanceController.off(EVENTS.RECORDING_PROFILER_STATUS_UPDATE,
                               this._onProfilerStatusUpdated);
@@ -187,11 +187,11 @@ var PerformanceView = {
     PerformanceController.off(EVENTS.BACKEND_FAILED_AFTER_RECORDING_START,
                               this._onNewRecordingFailed);
 
-    yield ToolbarView.destroy();
-    yield RecordingsView.destroy();
-    yield OverviewView.destroy();
-    yield DetailsView.destroy();
-  }),
+    await ToolbarView.destroy();
+    await RecordingsView.destroy();
+    await OverviewView.destroy();
+    await DetailsView.destroy();
+  },
 
   
 

@@ -7,7 +7,7 @@
 
 const TESTCASE_URI = TEST_BASE_HTTP + "longload.html";
 
-add_task(function* () {
+add_task(async function () {
   
   
   
@@ -16,7 +16,7 @@ add_task(function* () {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   let styleEditorLoaded = gDevTools.showToolbox(target, "styleeditor");
 
-  yield Promise.all([tabAdded, styleEditorLoaded]);
+  await Promise.all([tabAdded, styleEditorLoaded]);
 
   let toolbox = gDevTools.getToolbox(target);
   let panel = toolbox.getPanel("styleeditor");

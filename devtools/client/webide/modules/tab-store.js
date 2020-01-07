@@ -7,7 +7,6 @@ const { Cu } = require("chrome");
 const { TargetFactory } = require("devtools/client/framework/target");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { Connection } = require("devtools/shared/client/connection-manager");
-const { Task } = require("devtools/shared/task");
 
 const _knownTabStores = new WeakMap();
 
@@ -155,18 +154,18 @@ TabStore.prototype = {
       return this._selectedTabTargetPromise;
     }
     let store = this;
-    this._selectedTabTargetPromise = Task.spawn(function* () {
+    this._selectedTabTargetPromise = (async function () {
       
       
       
       
-      yield store.listTabs();
+      await store.listTabs();
       return TargetFactory.forRemoteTab({
         form: store._selectedTab,
         client: store._connection.client,
         chrome: false
       });
-    });
+    })();
     this._selectedTabTargetPromise.then(target => {
       target.once("close", () => {
         this._selectedTabTargetPromise = null;

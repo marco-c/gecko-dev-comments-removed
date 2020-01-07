@@ -6,25 +6,26 @@
 
 
 
-add_task(function* () {
-  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-updates.html");
+add_task(async function () {
+  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-updates.html");
 
   gUI.tree.expandAll();
 
   ok(gUI.sidebar.hidden, "Sidebar is initially hidden");
 
-  yield checkState([
+  await checkState([
     [
       ["sessionStorage", "http://test1.example.org"],
       ["ss1", "ss2", "ss3"]
     ],
   ]);
 
-  yield setSessionStorageItem("ss4", "new-item");
+  gWindow.sessionStorage.setItem("ss4", "new-item");
 
-  yield gUI.once("store-objects-edit");
+  await gUI.once("store-objects-updated");
+  await gUI.once("store-objects-updated");
 
-  yield checkState([
+  await checkState([
     [
       ["sessionStorage", "http://test1.example.org"],
       ["ss1", "ss2", "ss3", "ss4"]
@@ -33,65 +34,49 @@ add_task(function* () {
 
   
 
-  yield removeSessionStorageItem("ss3");
+  gWindow.sessionStorage.removeItem("ss3");
 
-  yield gUI.once("store-objects-edit");
+  await gUI.once("store-objects-updated");
 
-  yield removeSessionStorageItem("ss1");
+  gWindow.sessionStorage.removeItem("ss1");
 
-  yield gUI.once("store-objects-edit");
+  await gUI.once("store-objects-updated");
 
-  yield checkState([
+  await checkState([
     [
       ["sessionStorage", "http://test1.example.org"],
       ["ss2", "ss4"]
     ],
   ]);
 
-  yield selectTableItem("ss2");
+  await selectTableItem("ss2");
 
   ok(!gUI.sidebar.hidden, "sidebar is visible");
 
   
-  yield findVariableViewProperties([{name: "ss2", value: "foobar"}]);
+  await findVariableViewProperties([{name: "ss2", value: "foobar"}]);
 
-  yield setSessionStorageItem("ss2", "changed=ss2");
+  gWindow.sessionStorage.setItem("ss2", "changed=ss2");
 
-  yield gUI.once("sidebar-updated");
+  await gUI.once("sidebar-updated");
 
   checkCell("ss2", "value", "changed=ss2");
 
-  yield findVariableViewProperties([{name: "ss2", value: "changed=ss2"}]);
+  await findVariableViewProperties([{name: "ss2", value: "changed=ss2"}]);
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
     content.wrappedJSObject.clear();
   });
 
-  yield gUI.once("store-objects-cleared");
+  await gUI.once("store-objects-cleared");
 
-  yield checkState([
+  await checkState([
     [
       ["sessionStorage", "http://test1.example.org"],
       [ ]
     ],
   ]);
 
-  yield finishTests();
+  await finishTests();
 });
-
-function* setSessionStorageItem(key, value) {
-  yield ContentTask.spawn(gBrowser.selectedBrowser, [key, value],
-    ([innerKey, innerValue]) => {
-      content.wrappedJSObject.sessionStorage.setItem(innerKey, innerValue);
-    }
-  );
-}
-
-function* removeSessionStorageItem(key) {
-  yield ContentTask.spawn(gBrowser.selectedBrowser, key,
-    innerKey => {
-      content.wrappedJSObject.sessionStorage.removeItem(innerKey);
-    }
-  );
-}

@@ -179,33 +179,33 @@ var SnapshotsListView = extend(WidgetMethods, {
     $("#screenshot-container").hidden = true;
     $("#snapshot-filmstrip").hidden = true;
 
-    Task.spawn(function* () {
+    (async function () {
       
       
       
 
-      yield DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
+      await DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
       CallsListView.showCalls(calls);
       $("#debugging-pane-contents").hidden = false;
       $("#waiting-notice").hidden = true;
 
-      yield DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
+      await DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
       CallsListView.showThumbnails(thumbnails);
       $("#snapshot-filmstrip").hidden = false;
 
-      yield DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
+      await DevToolsUtils.waitForTime(SNAPSHOT_DATA_DISPLAY_DELAY);
       CallsListView.showScreenshot(screenshot);
       $("#screenshot-container").hidden = false;
 
       window.emit(EVENTS.SNAPSHOT_RECORDING_SELECTED);
-    });
+    })();
   },
 
   
 
 
   _onClearButtonClick: function () {
-    Task.spawn(function* () {
+    (async function () {
       SnapshotsListView.empty();
       CallsListView.empty();
 
@@ -213,7 +213,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       $("#empty-notice").hidden = true;
       $("#waiting-notice").hidden = true;
 
-      if (yield gFront.isInitialized()) {
+      if (await gFront.isInitialized()) {
         $("#empty-notice").hidden = false;
       } else {
         $("#reload-notice").hidden = false;
@@ -224,7 +224,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       $("#snapshot-filmstrip").hidden = true;
 
       window.emit(EVENTS.SNAPSHOTS_LIST_CLEARED);
-    });
+    })();
   },
 
   
@@ -270,7 +270,7 @@ var SnapshotsListView = extend(WidgetMethods, {
   
 
 
-  _recordAnimation: Task.async(function* () {
+  async _recordAnimation() {
     if (this._recording) {
       return;
     }
@@ -279,7 +279,7 @@ var SnapshotsListView = extend(WidgetMethods, {
 
     setNamedTimeout("canvas-actor-recording", CANVAS_ACTOR_RECORDING_ATTEMPT, this._stopRecordingAnimation);
 
-    yield DevToolsUtils.waitForTime(SNAPSHOT_START_RECORDING_DELAY);
+    await DevToolsUtils.waitForTime(SNAPSHOT_START_RECORDING_DELAY);
     window.emit(EVENTS.SNAPSHOT_RECORDING_STARTED);
 
     gFront.recordAnimationFrame().then(snapshot => {
@@ -292,20 +292,20 @@ var SnapshotsListView = extend(WidgetMethods, {
 
     
     
-    yield DevToolsUtils.waitForTime(SNAPSHOT_START_RECORDING_DELAY);
+    await DevToolsUtils.waitForTime(SNAPSHOT_START_RECORDING_DELAY);
     this._enableRecordButton();
-  }),
+  },
 
   
 
 
 
-  _stopRecordingAnimation: Task.async(function* () {
+  async _stopRecordingAnimation() {
     clearNamedTimeout("canvas-actor-recording");
-    let actorCanStop = yield gTarget.actorHasMethod("canvas", "stopRecordingAnimationFrame");
+    let actorCanStop = await gTarget.actorHasMethod("canvas", "stopRecordingAnimationFrame");
 
     if (actorCanStop) {
-      yield gFront.stopRecordingAnimationFrame();
+      await gFront.stopRecordingAnimationFrame();
     }
     
     
@@ -318,16 +318,16 @@ var SnapshotsListView = extend(WidgetMethods, {
     this._recording = false;
     $("#record-snapshot").removeAttribute("checked");
     this._enableRecordButton();
-  }),
+  },
 
   
 
 
-  _onRecordSuccess: Task.async(function* (snapshotActor) {
+  async _onRecordSuccess(snapshotActor) {
     
     clearNamedTimeout("canvas-actor-recording");
     let snapshotItem = this.getItemAtIndex(this.itemCount - 1);
-    let snapshotOverview = yield snapshotActor.getOverview();
+    let snapshotOverview = await snapshotActor.getOverview();
     this.customizeSnapshot(snapshotItem, snapshotActor, snapshotOverview);
 
     this._recording = false;
@@ -335,7 +335,7 @@ var SnapshotsListView = extend(WidgetMethods, {
 
     window.emit(EVENTS.SNAPSHOT_RECORDING_COMPLETED);
     window.emit(EVENTS.SNAPSHOT_RECORDING_FINISHED);
-  }),
+  },
 
   
 
@@ -408,7 +408,7 @@ var SnapshotsListView = extend(WidgetMethods, {
 
     
     
-    let serialized = Task.spawn(function* () {
+    let serialized = (async function () {
       let data = {
         fileType: CALLS_LIST_SERIALIZER_IDENTIFIER,
         version: CALLS_LIST_SERIALIZER_VERSION,
@@ -421,7 +421,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       let screenshot = snapshotItem.attachment.screenshot;
 
       
-      yield DevToolsUtils.yieldingEach(functionCalls, (call, i) => {
+      await DevToolsUtils.yieldingEach(functionCalls, (call, i) => {
         let { type, name, file, line, timestamp, argsPreview, callerPreview } = call;
         return call.getDetails().then(({ stack }) => {
           data.calls[i] = {
@@ -438,7 +438,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       });
 
       
-      yield DevToolsUtils.yieldingEach(thumbnails, (thumbnail, i) => {
+      await DevToolsUtils.yieldingEach(thumbnails, (thumbnail, i) => {
         let { index, width, height, flipped, pixels } = thumbnail;
         data.thumbnails.push({ index, width, height, flipped, pixels });
       });
@@ -453,7 +453,7 @@ var SnapshotsListView = extend(WidgetMethods, {
 
       converter.charset = "UTF-8";
       return converter.convertToInputStream(string);
-    });
+    })();
 
     
     

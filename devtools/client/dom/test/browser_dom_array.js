@@ -14,13 +14,13 @@ const TEST_ARRAY = [
 
 
 
-add_task(function* () {
+add_task(async function () {
   info("Test DOM Panel Array Expansion started");
 
-  let { panel } = yield addTestTab(TEST_PAGE_URL);
+  let { panel } = await addTestTab(TEST_PAGE_URL);
 
   
-  yield expandRow(panel, "_a");
+  await expandRow(panel, "_a");
 
   
   let childRows = getAllRowsForLabel(panel, "_a");

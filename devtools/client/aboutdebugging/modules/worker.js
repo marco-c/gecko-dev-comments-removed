@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
-
 loader.lazyRequireGetter(this, "gDevTools",
   "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "TargetFactory",
@@ -42,28 +40,28 @@ exports.debugWorker = function (client, workerActor) {
 
 
 
-exports.getWorkerForms = Task.async(function* (client) {
+exports.getWorkerForms = async function (client) {
   let registrations = [];
   let workers = [];
 
   try {
     
     ({ registrations } =
-      yield client.mainRoot.listServiceWorkerRegistrations());
+      await client.mainRoot.listServiceWorkerRegistrations());
 
     
-    ({ workers } = yield client.mainRoot.listWorkers());
+    ({ workers } = await client.mainRoot.listWorkers());
 
     
-    let { processes } = yield client.mainRoot.listProcesses();
+    let { processes } = await client.mainRoot.listProcesses();
     for (let process of processes) {
       
       if (process.parent) {
         continue;
       }
-      let { form } = yield client.getProcess(process.id);
+      let { form } = await client.getProcess(process.id);
       let processActor = form.actor;
-      let response = yield client.request({
+      let response = await client.request({
         to: processActor,
         type: "listWorkers"
       });
@@ -74,4 +72,4 @@ exports.getWorkerForms = Task.async(function* (client) {
   }
 
   return { registrations, workers };
-});
+};
