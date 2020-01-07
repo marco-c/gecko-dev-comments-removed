@@ -694,7 +694,14 @@ bool ExceptionHandler::UninstallHandler(bool in_exception) {
     mprotect(gProtectedData.protected_buffer, PAGE_SIZE,
         PROT_READ | PROT_WRITE);
 #endif
-    old_handler_.reset();
+    
+    
+    
+    if (in_exception) {
+      old_handler_.release();
+    } else {
+      old_handler_.reset();
+    }
     gProtectedData.handler = NULL;
   }
 
