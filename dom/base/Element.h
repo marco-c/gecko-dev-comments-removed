@@ -927,9 +927,7 @@ public:
 
 
 
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID,
-                             nsAtom* aAttribute,
-                             bool aNotify);
+  nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttribute, bool aNotify);
 
   
 
