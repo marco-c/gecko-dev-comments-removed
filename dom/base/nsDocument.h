@@ -586,8 +586,6 @@ public:
   virtual void MaybePreconnect(nsIURI* uri,
                                mozilla::CORSMode aCORSMode) override;
 
-  virtual nsISupports* GetCurrentContentSink() override;
-
   
   void AsyncBlockOnload();
 
