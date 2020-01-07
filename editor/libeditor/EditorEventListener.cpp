@@ -1073,8 +1073,7 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
 
   
   
-  if (node->IsNodeOfType(nsINode::eDOCUMENT) &&
-      !node->HasFlag(NODE_IS_EDITABLE)) {
+  if (node->IsDocument() && !node->HasFlag(NODE_IS_EDITABLE)) {
     return NS_OK;
   }
 

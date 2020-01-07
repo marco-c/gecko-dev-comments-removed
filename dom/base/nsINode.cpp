@@ -344,8 +344,8 @@ nsINode::GetSelectionRootContent(nsIPresShell* aPresShell)
 {
   NS_ENSURE_TRUE(aPresShell, nullptr);
 
-  if (IsNodeOfType(eDOCUMENT))
-    return static_cast<nsIDocument*>(this)->GetRootElement();
+  if (IsDocument())
+    return AsDocument()->GetRootElement();
   if (!IsContent())
     return nullptr;
 
@@ -1339,8 +1339,7 @@ nsINode::doInsertChildAt(nsIContent* aKid, uint32_t aIndex,
     mFirstChild = aKid;
   }
 
-  nsIContent* parent =
-    IsNodeOfType(eDOCUMENT) ? nullptr : static_cast<nsIContent*>(this);
+  nsIContent* parent = IsContent() ? AsContent() : nullptr;
 
   rv = aKid->BindToTree(doc, parent,
                         parent ? parent->GetBindingParent() : nullptr,
@@ -1683,7 +1682,7 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
   MOZ_ASSERT(aNewChild, "Must have new child");
   MOZ_ASSERT_IF(aIsReplace, aRefChild);
   MOZ_ASSERT(aParent);
-  MOZ_ASSERT(aParent->IsNodeOfType(nsINode::eDOCUMENT) ||
+  MOZ_ASSERT(aParent->IsDocument() ||
              aParent->IsNodeOfType(nsINode::eDOCUMENT_FRAGMENT) ||
              aParent->IsElement(),
              "Nodes that are not documents, document fragments or elements "
@@ -1718,12 +1717,12 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
     return aParent->NodeType() != nsINode::DOCUMENT_NODE;
   case nsINode::ELEMENT_NODE :
     {
-      if (!aParent->IsNodeOfType(nsINode::eDOCUMENT)) {
+      if (!aParent->IsDocument()) {
         
         return true;
       }
 
-      nsIDocument* parentDocument = static_cast<nsIDocument*>(aParent);
+      nsIDocument* parentDocument = aParent->AsDocument();
       Element* rootElement = parentDocument->GetRootElement();
       if (rootElement) {
         
@@ -1755,12 +1754,12 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
     }
   case nsINode::DOCUMENT_TYPE_NODE :
     {
-      if (!aParent->IsNodeOfType(nsINode::eDOCUMENT)) {
+      if (!aParent->IsDocument()) {
         
         return false;
       }
 
-      nsIDocument* parentDocument = static_cast<nsIDocument*>(aParent);
+      nsIDocument* parentDocument = aParent->AsDocument();
       nsIContent* docTypeContent = parentDocument->GetDoctype();
       if (docTypeContent) {
         
@@ -1795,7 +1794,7 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       
       
       
-      if (!aParent->IsNodeOfType(nsINode::eDOCUMENT)) {
+      if (!aParent->IsDocument()) {
         
         return true;
       }
@@ -1846,7 +1845,7 @@ void
 nsINode::EnsurePreInsertionValidity1(nsINode& aNewChild, nsINode* aRefChild,
                                      ErrorResult& aError)
 {
-  if ((!IsNodeOfType(eDOCUMENT) &&
+  if ((!IsDocument() &&
        !IsNodeOfType(eDOCUMENT_FRAGMENT) &&
        !IsElement()) ||
       !aNewChild.IsContent()) {
@@ -2105,7 +2104,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       
       
       
-      if (IsNodeOfType(nsINode::eDOCUMENT)) {
+      if (IsDocument()) {
         bool sawElement = false;
         for (uint32_t i = 0; i < count; ++i) {
           nsIContent* child = fragChildren->ElementAt(i);
@@ -2202,8 +2201,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       return result;
     }
 
-    bool appending =
-      !IsNodeOfType(eDOCUMENT) && uint32_t(insPos) == GetChildCount();
+    bool appending = !IsDocument() && uint32_t(insPos) == GetChildCount();
     nsIContent* firstInsertedContent = fragChildren->ElementAt(0);
 
     
@@ -2449,7 +2447,8 @@ FindMatchingElementsWithId(const nsAString& aId, nsINode* aRoot,
 {
   MOZ_ASSERT(aRoot->IsInUncomposedDoc(),
              "Don't call me if the root is not in the document");
-  MOZ_ASSERT(aRoot->IsElement() || aRoot->IsNodeOfType(nsINode::eDOCUMENT),
+  
+  MOZ_ASSERT(aRoot->IsElement() || aRoot->IsDocument(),
              "The optimization below to check ContentIsDescendantOf only for "
              "elements depends on aRoot being either an element or a "
              "document if it's in the document.  Note that document fragments "

@@ -210,8 +210,7 @@ void
 nsNodeUtils::ContentInserted(nsINode* aContainer,
                              nsIContent* aChild)
 {
-  NS_PRECONDITION(aContainer->IsContent() ||
-                  aContainer->IsNodeOfType(nsINode::eDOCUMENT),
+  NS_PRECONDITION(aContainer->IsContent() || aContainer->IsDocument(),
                   "container must be an nsIContent or an nsIDocument");
   nsIDocument* doc = aContainer->OwnerDoc();
   IMPL_MUTATION_NOTIFICATION(ContentInserted, aContainer, (aChild),
@@ -223,8 +222,7 @@ nsNodeUtils::ContentRemoved(nsINode* aContainer,
                             nsIContent* aChild,
                             nsIContent* aPreviousSibling)
 {
-  NS_PRECONDITION(aContainer->IsContent() ||
-                  aContainer->IsNodeOfType(nsINode::eDOCUMENT),
+  NS_PRECONDITION(aContainer->IsContent() || aContainer->IsDocument(),
                   "container must be an nsIContent or an nsIDocument");
   nsIDocument* doc = aContainer->OwnerDoc();
   MOZ_ASSERT(aChild->GetParentNode() == aContainer,
@@ -309,11 +307,11 @@ nsNodeUtils::LastRelease(nsINode* aNode)
 
   
   
-  if (aNode->IsNodeOfType(nsINode::eDOCUMENT)) {
+  if (aNode->IsDocument()) {
     
     
     
-    static_cast<nsIDocument*>(aNode)->DeleteAllProperties();
+    aNode->AsDocument()->DeleteAllProperties();
   }
   else {
     if (aNode->HasProperties()) {
@@ -489,7 +487,7 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
         return nullptr;
       }
     }
-    else if (aDeep && clone->IsNodeOfType(nsINode::eDOCUMENT)) {
+    else if (aDeep && clone->IsDocument()) {
       
       
       

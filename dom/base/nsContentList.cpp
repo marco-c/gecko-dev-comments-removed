@@ -993,13 +993,9 @@ nsContentList::AssertInSync()
 
   
   
-  nsIContent *root;
-  if (mRootNode->IsNodeOfType(nsINode::eDOCUMENT)) {
-    root = static_cast<nsIDocument*>(mRootNode)->GetRootElement();
-  }
-  else {
-    root = static_cast<nsIContent*>(mRootNode);
-  }
+  nsIContent* root = mRootNode->IsDocument()
+    ? mRootNode->AsDocument()->GetRootElement()
+    : mRootNode->AsContent();
 
   nsCOMPtr<nsIContentIterator> iter;
   if (mDeep) {

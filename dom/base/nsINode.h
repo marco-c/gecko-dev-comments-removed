@@ -412,8 +412,6 @@ public:
 
   enum {
     
-    eDOCUMENT            = 1 << 1,
-    
     eATTRIBUTE           = 1 << 2,
     
     ePROCESSING_INSTRUCTION = 1 << 4,
