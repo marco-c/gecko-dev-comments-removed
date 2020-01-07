@@ -6600,7 +6600,7 @@ HTMLInputElement::IntrinsicState() const
 
   if (PlaceholderApplies() &&
       HasAttr(kNameSpaceID_None, nsGkAtoms::placeholder) &&
-      IsValueEmpty()) {
+      ShouldShowPlaceholder()) {
     state |= NS_EVENT_STATE_PLACEHOLDERSHOWN;
   }
 
@@ -6609,6 +6609,24 @@ HTMLInputElement::IntrinsicState() const
   }
 
   return state;
+}
+
+bool
+HTMLInputElement::ShouldShowPlaceholder() const
+{
+  MOZ_ASSERT(PlaceholderApplies());
+
+  if (IsValueEmpty()) {
+    return true;
+  }
+
+  
+  
+  if (nsNumberControlFrame* frame = do_QueryFrame(GetPrimaryFrame())) {
+    return frame->AnonTextControlIsEmpty();
+  }
+
+  return false;
 }
 
 void
