@@ -10,24 +10,6 @@
 namespace mozilla {
 namespace dom {
 
-ChromeMessageSender::ChromeMessageSender(ipc::MessageManagerCallback* aCallback,
-                                         ChromeMessageBroadcaster* aParentManager,
-                                         MessageManagerFlags aFlags)
-  : MessageSender(aCallback, aParentManager, aFlags | MessageManagerFlags::MM_CHROME)
-{
-  MOZ_ASSERT(!(aFlags & ~(MessageManagerFlags::MM_GLOBAL |
-                          MessageManagerFlags::MM_PROCESSMANAGER |
-                          MessageManagerFlags::MM_OWNSCALLBACK)));
-
-  
-  
-  
-  
-  if (aParentManager && mCallback) {
-    aParentManager->AddChildManager(this);
-  }
-}
-
 JSObject*
 ChromeMessageSender::WrapObject(JSContext* aCx,
                                 JS::Handle<JSObject*> aGivenProto)

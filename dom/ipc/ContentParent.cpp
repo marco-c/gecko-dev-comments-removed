@@ -157,7 +157,8 @@
 #include "nsThread.h"
 #include "nsWindowWatcher.h"
 #include "nsIXULRuntime.h"
-#include "mozilla/dom/ChromeMessageBroadcaster.h"
+#include "mozilla/dom/ParentProcessMessageManager.h"
+#include "mozilla/dom/ProcessMessageManager.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "nsMemoryInfoDumper.h"
 #include "nsMemoryReporterManager.h"
@@ -534,7 +535,7 @@ ScriptableCPInfo::GetMessageManager(nsISupports** aMessenger)
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr<ChromeMessageSender> manager = mContentParent->GetMessageManager();
+  RefPtr<ProcessMessageManager> manager = mContentParent->GetMessageManager();
   manager.forget(aMessenger);
   return NS_OK;
 }
@@ -1599,8 +1600,7 @@ ContentParent::RecvAllocateLayerTreeId(const ContentParentId& aCpId,
   
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   RefPtr<ContentParent> contentParent = cpm->GetContentProcessById(aCpId);
-  if (!contentParent ||
-      (ChildID() != aCpId && !contentParent->CanCommunicateWith(ChildID()))) {
+  if (ChildID() != aCpId && !contentParent->CanCommunicateWith(ChildID())) {
     return IPC_FAIL_NO_REASON(this);
   }
 
@@ -2239,7 +2239,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
   if (ssm) {
     ssm->CloneDomainPolicy(&xpcomInit.domainPolicy());
 
-    if (ChromeMessageBroadcaster* mm = nsFrameMessageManager::sParentProcessManager) {
+    if (ParentProcessMessageManager* mm = nsFrameMessageManager::sParentProcessManager) {
       AutoJSAPI jsapi;
       if (NS_WARN_IF(!jsapi.Init(xpc::PrivilegedJunkScope()))) {
         MOZ_CRASH();
