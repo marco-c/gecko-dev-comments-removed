@@ -23,16 +23,13 @@ add_task(function* () {
 
   
   let serviceWorkersElement = getServiceWorkerList(document);
-  let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
 
   
   let swTab = yield addTab(TAB_URL);
 
   
-  yield onMutation;
-
-  
-  assertHasTarget(true, document, "service-workers", SERVICE_WORKER);
+  info("Wait until the service worker appears in about:debugging");
+  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
   info("Ensure that the registration resolved before trying to interact with " +
     "the service worker.");
@@ -48,17 +45,11 @@ add_task(function* () {
   let targetElement = name.parentNode.parentNode;
 
   
-  if (!targetElement.querySelector(".start-button")) {
-    
-    ok(targetElement.querySelector(".debug-button"), "Found its debug button");
-
-    
-    yield waitForMutation(targetElement, { childList: true });
-  } else {
-    
-    ok(!targetElement.querySelector(".debug-button"), "No debug button when " +
-      "the worker is already killed");
-  }
+  
+  
+  
+  info("Wait until the start button is visible");
+  yield waitUntilElement(".start-button", targetElement);
 
   
   let startBtn = targetElement.querySelector(".start-button");
@@ -66,12 +57,13 @@ add_task(function* () {
   ok(!targetElement.querySelector(".debug-button"), "No debug button");
 
   
-  let onStarted = waitForMutation(targetElement, { childList: true });
   startBtn.click();
-  yield onStarted;
+
+  info("Wait until the service worker starts and the debug button appears");
+  yield waitUntilElement(".debug-button", targetElement);
+  info("Found the debug button");
 
   
-  ok(targetElement.querySelector(".debug-button"), "Found its debug button");
   ok(!targetElement.querySelector(".start-button"), "No start button");
 
   

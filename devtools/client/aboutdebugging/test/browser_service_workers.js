@@ -17,13 +17,13 @@ add_task(function* () {
 
   let serviceWorkersElement = getServiceWorkerList(document);
 
-  yield waitForMutation(serviceWorkersElement, { childList: true });
-
-  
-  let names = [...document.querySelectorAll("#service-workers .target-name")];
-  names = names.map(element => element.textContent);
-  ok(names.includes(SERVICE_WORKER),
-    "The service worker url appears in the list: " + names);
+  yield waitUntil(() => {
+    
+    let names = [...document.querySelectorAll("#service-workers .target-name")];
+    names = names.map(element => element.textContent);
+    return names.includes(SERVICE_WORKER);
+  });
+  info("The service worker url appears in the list");
 
   try {
     yield unregisterServiceWorker(swTab, serviceWorkersElement);
@@ -33,7 +33,7 @@ add_task(function* () {
   }
 
   
-  names = [...document.querySelectorAll("#service-workers .target-name")];
+  let names = [...document.querySelectorAll("#service-workers .target-name")];
   names = names.map(element => element.textContent);
   ok(!names.includes(SERVICE_WORKER),
     "The service worker url is no longer in the list: " + names);

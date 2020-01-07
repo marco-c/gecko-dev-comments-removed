@@ -20,17 +20,10 @@ add_task(function* () {
   let { tab, document } = yield openAboutDebugging("workers");
 
   
-  let serviceWorkersElement = getServiceWorkerList(document);
-  let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
-
-  
   let swTab = yield addTab(TAB_URL);
 
-  
-  yield onMutation;
-
-  
-  assertHasTarget(true, document, "service-workers", SERVICE_WORKER);
+  info("Wait until the service worker appears in about:debugging");
+  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
   yield waitForServiceWorkerActivation(SERVICE_WORKER, document);
 
@@ -55,12 +48,12 @@ add_task(function* () {
   let unregisterLink = target.querySelector(".unregister-link");
   ok(unregisterLink, "Found the unregister link");
 
-  onMutation = waitForMutation(serviceWorkersElement, { childList: true });
   unregisterLink.click();
-  yield onMutation;
 
-  is(document.querySelector("#service-workers .target"), null,
-   "No service worker displayed anymore.");
+  info("Wait until the service worker disappears");
+  yield waitUntil(() => {
+    return !document.querySelector("#service-workers .target");
+  });
 
   yield removeTab(swTab);
   yield closeAboutDebugging(tab);

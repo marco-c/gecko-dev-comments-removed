@@ -18,12 +18,12 @@ add_task(function* () {
 
   let { tab, document } = yield openAboutDebugging("workers");
 
+  let serviceWorkersElement = getServiceWorkerList(document);
+
   let swTab = yield addTab(TAB_URL);
 
-  let serviceWorkersElement = getServiceWorkerList(document);
-  yield waitForMutation(serviceWorkersElement, { childList: true });
-
-  assertHasTarget(true, document, "service-workers", SERVICE_WORKER);
+  info("Wait until the service worker appears in about:debugging");
+  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
   
   yield waitForServiceWorkerRegistered(swTab);
@@ -64,9 +64,10 @@ add_task(function* () {
   
   
   
-  yield waitForMutation(targetElement, { childList: true });
-  ok(!targetElement.querySelector(".debug-button"),
-    "The debug button was removed when the worker was killed");
+  info("Wait until the debug button disappears");
+  yield waitUntil(() => {
+    return !targetElement.querySelector(".debug-button");
+  });
 
   
   try {

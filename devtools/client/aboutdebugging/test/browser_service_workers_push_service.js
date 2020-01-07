@@ -56,16 +56,12 @@ add_task(function* () {
 
   
   let serviceWorkersElement = document.getElementById("service-workers");
-  let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
 
   
   let swTab = yield addTab(TAB_URL);
 
-  
-  yield onMutation;
-
-  
-  assertHasTarget(true, document, "service-workers", SERVICE_WORKER);
+  info("Wait until the service worker appears in about:debugging");
+  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
   yield waitForServiceWorkerActivation(SERVICE_WORKER, document);
 
@@ -74,17 +70,13 @@ add_task(function* () {
   let name = names.filter(element => element.textContent === SERVICE_WORKER)[0];
   ok(name, "Found the service worker in the list");
 
-  let targetContainer = name.parentNode.parentNode;
-  let targetDetailsElement = targetContainer.querySelector(".target-details");
+  let targetContainer = name.closest(".target-container");
 
   
-  let pushURL = targetContainer.querySelector(".service-worker-push-url");
-  if (!pushURL) {
-    yield waitForMutation(targetDetailsElement, { childList: true });
-    pushURL = targetContainer.querySelector(".service-worker-push-url");
-  }
+  info("Wait for the push URL");
+  let pushURL = yield waitUntilElement(".service-worker-push-url", targetContainer);
 
-  ok(pushURL, "Found the push service URL in the service worker details");
+  info("Found the push service URL in the service worker details");
   is(pushURL.textContent, FAKE_ENDPOINT, "The push service URL looks correct");
 
   
@@ -94,9 +86,9 @@ add_task(function* () {
   });
 
   
-  yield waitForMutation(targetDetailsElement, { childList: true });
-  ok(!targetContainer.querySelector(".service-worker-push-url"),
-    "The push service URL should be removed");
+  info("Wait until the push URL is removed from the UI");
+  yield waitUntil(() => !targetContainer.querySelector(".service-worker-push-url"), 100);
+  info("The push service URL should be removed");
 
   
   try {

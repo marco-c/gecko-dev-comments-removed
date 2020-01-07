@@ -152,6 +152,41 @@ function getServiceWorkerContainer(name, document) {
 
 
 
+
+
+
+
+
+function* waitUntilServiceWorkerContainer(name, document) {
+  yield waitUntil(() => {
+    return getServiceWorkerContainer(name, document);
+  }, 100);
+  return getServiceWorkerContainer(name, document);
+}
+
+
+
+
+
+
+
+
+
+
+
+function* waitUntilElement(selector, parent) {
+  yield waitUntil(() => {
+    return parent.querySelector(selector);
+  }, 100);
+  return parent.querySelector(selector);
+}
+
+
+
+
+
+
+
 function getTabList(document) {
   return document.querySelector("#tabs .target-list") ||
     document.querySelector("#tabs.targets");
@@ -441,10 +476,9 @@ function* waitForServiceWorkerActivation(swUrl, document) {
 
   let targetElement = name.parentNode.parentNode;
   let targetStatus = targetElement.querySelector(".target-status");
-  while (targetStatus.textContent === "Registering") {
-    
-    yield waitForMutation(serviceWorkersElement, { childList: true, subtree: true });
-  }
+  yield waitUntil(() => {
+    return targetStatus.textContent !== "Registering";
+  }, 100);
 }
 
 
