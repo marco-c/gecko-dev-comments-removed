@@ -14,6 +14,7 @@
 #include "nsIDOMNode.h"
 #include "mozilla/dom/NodeInfo.h"            
 #include "nsIVariant.h"             
+#include "nsIWeakReference.h"
 #include "nsNodeInfoManager.h"      
 #include "nsPropertyTable.h"        
 #include "nsTObserverArray.h"       
@@ -51,7 +52,6 @@ class nsIPresShell;
 class nsIPrincipal;
 class nsIURI;
 class nsNodeSupportsWeakRefTearoff;
-class nsNodeWeakReference;
 class nsDOMMutationObserver;
 class nsRange;
 class nsWindowSizes;
@@ -262,6 +262,30 @@ private:
 
   
   static uint64_t sGeneration;
+};
+
+
+
+
+class nsNodeWeakReference final : public nsIWeakReference
+{
+public:
+  explicit nsNodeWeakReference(nsINode* aNode);
+
+  
+  NS_DECL_ISUPPORTS
+
+  
+  NS_DECL_NSIWEAKREFERENCE
+  size_t SizeOfOnlyThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+
+  void NoticeNodeDestruction()
+  {
+    mObject = nullptr;
+  }
+
+private:
+  ~nsNodeWeakReference();
 };
 
 
@@ -1574,6 +1598,9 @@ private:
     
     ElementMayHaveAnonymousChildren,
     
+    
+    NodeMayHaveChildrenWithLayoutBoxesDisabled,
+    
     BooleanFlagCount
   };
 
@@ -1697,6 +1724,19 @@ public:
 
   void SetMayHaveAnonymousChildren() { SetBoolFlag(ElementMayHaveAnonymousChildren); }
   bool MayHaveAnonymousChildren() const { return GetBoolFlag(ElementMayHaveAnonymousChildren); }
+
+  void SetMayHaveChildrenWithLayoutBoxesDisabled()
+  {
+    SetBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
+  }
+  void UnsetMayHaveChildrenWithLayoutBoxesDisabled()
+  {
+    ClearBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
+  }
+  bool MayHaveChildrenWithLayoutBoxesDisabled() const
+  {
+    return GetBoolFlag(NodeMayHaveChildrenWithLayoutBoxesDisabled);
+  }
 
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
@@ -1898,6 +1938,11 @@ public:
   mozilla::UniquePtr<mozilla::LinkedList<nsRange>>& GetCommonAncestorRangesPtr()
   {
     return Slots()->mCommonAncestorRanges;
+  }
+
+  nsIWeakReference* GetExistingWeakReference()
+  {
+    return HasSlots() ? GetExistingSlots()->mWeakReference : nullptr;
   }
 
 protected:

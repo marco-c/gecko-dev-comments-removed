@@ -19,7 +19,6 @@
 #include "nsAttrAndChildArray.h"          
 #include "nsCycleCollectionParticipant.h" 
 #include "nsIContent.h"                   
-#include "nsIWeakReference.h"             
 #include "nsNodeUtils.h"                  
 #include "nsIHTMLCollection.h"
 #include "nsDataHashtable.h"
@@ -44,34 +43,6 @@ struct CustomElementData;
 class Element;
 } 
 } 
-
-
-
-
-
-class nsNodeWeakReference final : public nsIWeakReference
-{
-public:
-  explicit nsNodeWeakReference(nsINode* aNode)
-    : nsIWeakReference(aNode)
-  {
-  }
-
-  
-  NS_DECL_ISUPPORTS
-
-  
-  NS_DECL_NSIWEAKREFERENCE
-  virtual size_t SizeOfOnlyThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
-
-  void NoticeNodeDestruction()
-  {
-    mObject = nullptr;
-  }
-
-private:
-  ~nsNodeWeakReference();
-};
 
 
 
