@@ -43,7 +43,7 @@ struct VariationValueRecord
 
   public:
   Tag		valueTag;	
-  ULONG		varIdx;		
+  UINT32		varIdx;		
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -95,13 +95,13 @@ protected:
   protected:
   FixedVersion<>version;	
 
-  USHORT	reserved;	
-  USHORT	valueRecordSize;
+  UINT16	reserved;	
+  UINT16	valueRecordSize;
 
-  USHORT	valueRecordCount;
+  UINT16	valueRecordCount;
   OffsetTo<VariationStore>
 		varStore;	
-  BYTE		values[VAR];	
+  UINT8		values[VAR];	
 
 
   public:

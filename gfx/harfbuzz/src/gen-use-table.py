@@ -44,6 +44,7 @@ defaults = ('Other', 'Not_Applicable', 'Cn', 'No_Block')
 
 data[0][0x034F] = defaults[0]
 data[0][0x2060] = defaults[0]
+data[0][0x20F0] = defaults[0]
 for u in range (0xFE00, 0xFE0F + 1):
 	data[0][u] = defaults[0]
 
@@ -302,6 +303,12 @@ def map_to_use(data):
 
 		
 		if U == 0x1A7F: UISC = Consonant_Final; UIPC = Bottom
+
+		
+		if U == 0x20F0: UISC = Cantillation_Mark; UIPC = Top
+
+		
+		if U == 0xA8B4: UISC = Consonant_Medial
 
 		values = [k for k,v in items if v(U,UISC,UGC)]
 		assert len(values) == 1, "%s %s %s %s" % (hex(U), UISC, UGC, values)

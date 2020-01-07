@@ -110,11 +110,11 @@ struct SingleSubstFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
-  SHORT		deltaGlyphID;		
+  INT16		deltaGlyphID;		
 
   public:
   DEFINE_SIZE_STATIC (6);
@@ -195,7 +195,7 @@ struct SingleSubstFormat2
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -249,7 +249,7 @@ struct SingleSubst
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   SingleSubstFormat1	format1;
   SingleSubstFormat2	format2;
   } u;
@@ -400,7 +400,7 @@ struct MultipleSubstFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -442,7 +442,7 @@ struct MultipleSubst
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   MultipleSubstFormat1	format1;
   } u;
 };
@@ -552,7 +552,7 @@ struct AlternateSubstFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -594,7 +594,7 @@ struct AlternateSubst
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   AlternateSubstFormat1	format1;
   } u;
 };
@@ -868,7 +868,7 @@ struct LigatureSubstFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -918,7 +918,7 @@ struct LigatureSubst
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   LigatureSubstFormat1	format1;
   } u;
 };
@@ -1016,11 +1016,11 @@ struct ReverseChainSingleSubstFormat1
 
   unsigned int start_index = 0, end_index = 0;
     if (match_backtrack (c,
-			 backtrack.len, (USHORT *) backtrack.array,
+			 backtrack.len, (UINT16 *) backtrack.array,
 			 match_coverage, this,
 			 &start_index) &&
         match_lookahead (c,
-			 lookahead.len, (USHORT *) lookahead.array,
+			 lookahead.len, (UINT16 *) lookahead.array,
 			 match_coverage, this,
 			 1, &end_index))
     {
@@ -1048,7 +1048,7 @@ struct ReverseChainSingleSubstFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -1082,7 +1082,7 @@ struct ReverseChainSingleSubst
 
   protected:
   union {
-  USHORT				format;		
+  UINT16				format;		
   ReverseChainSingleSubstFormat1	format1;
   } u;
 };
@@ -1128,7 +1128,7 @@ struct SubstLookupSubTable
 
   protected:
   union {
-  USHORT			sub_format;
+  UINT16			sub_format;
   SingleSubst			single;
   MultipleSubst			multiple;
   AlternateSubst		alternate;
@@ -1283,6 +1283,8 @@ struct SubstLookup : Lookup
 
 
       unsigned int type = get_subtable (0).u.extension.get_type ();
+      if (unlikely (type == SubstLookupSubTable::Extension))
+	return_trace (false);
       unsigned int count = get_subtable_count ();
       for (unsigned int i = 1; i < count; i++)
         if (get_subtable (i).u.extension.get_type () != type)

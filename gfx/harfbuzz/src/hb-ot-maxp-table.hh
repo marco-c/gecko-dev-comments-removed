@@ -60,7 +60,7 @@ struct maxp
   protected:
   FixedVersion<>version;		
 
-  USHORT	numGlyphs;		
+  UINT16	numGlyphs;		
   public:
   DEFINE_SIZE_STATIC (6);
 };

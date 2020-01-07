@@ -55,7 +55,7 @@ struct DeltaSetIndexMap
     unsigned int u = 0;
     { 
       unsigned int w = get_width ();
-      const BYTE *p = mapData + w * v;
+      const UINT8 *p = mapData + w * v;
       for (; w; w--)
 	u = (u << 8) + *p++;
     }
@@ -78,10 +78,10 @@ struct DeltaSetIndexMap
   { return (format & 0xF) + 1; }
 
   protected:
-  USHORT	format;		
+  UINT16	format;		
 
-  USHORT	mapCount;	
-  BYTE		mapData[VAR];	
+  UINT16	mapCount;	
+  UINT8		mapData[VAR];	
 
   public:
   DEFINE_SIZE_ARRAY (4, mapData);

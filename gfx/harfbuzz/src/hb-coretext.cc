@@ -81,20 +81,11 @@ _hb_cg_font_release (void *data)
   CGFontRelease ((CGFontRef) data);
 }
 
-hb_face_t *
-hb_coretext_face_create (CGFontRef cg_font)
-{
-  return hb_face_create_for_tables (reference_table, CGFontRetain (cg_font), _hb_cg_font_release);
-}
 
 HB_SHAPER_DATA_ENSURE_DEFINE(coretext, face)
 HB_SHAPER_DATA_ENSURE_DEFINE_WITH_CONDITION(coretext, font,
 	fabs (CTFontGetSize((CTFontRef) data) - coretext_font_size (font->ptem)) <= .5
 )
-
-
-
-
 
 static CTFontDescriptorRef
 get_last_resort_font_desc (void)
@@ -267,6 +258,12 @@ _hb_coretext_shaper_face_data_destroy (hb_coretext_shaper_face_data_t *data)
   CFRelease ((CGFontRef) data);
 }
 
+hb_face_t *
+hb_coretext_face_create (CGFontRef cg_font)
+{
+  return hb_face_create_for_tables (reference_table, CGFontRetain (cg_font), _hb_cg_font_release);
+}
+
 
 
 
@@ -276,10 +273,6 @@ hb_coretext_face_get_cg_font (hb_face_t *face)
   if (unlikely (!hb_coretext_shaper_face_data_ensure (face))) return nullptr;
   return (CGFontRef) HB_SHAPER_DATA_GET (face);
 }
-
-
-
-
 
 
 hb_coretext_shaper_font_data_t *
@@ -309,6 +302,35 @@ _hb_coretext_shaper_font_data_destroy (hb_coretext_shaper_font_data_t *data)
 
 
 
+hb_font_t *
+hb_coretext_font_create (CTFontRef ct_font)
+{
+  CGFontRef cg_font = CTFontCopyGraphicsFont (ct_font, 0);
+  hb_face_t *face = hb_coretext_face_create (cg_font);
+  CFRelease (cg_font);
+  hb_font_t *font = hb_font_create (face);
+  hb_face_destroy (face);
+
+  if (unlikely (hb_object_is_inert (font)))
+    return font;
+
+  
+  HB_SHAPER_DATA_GET (font) = (hb_coretext_shaper_font_data_t *) CFRetain (ct_font);
+
+  return font;
+}
+
+CTFontRef
+hb_coretext_font_get_ct_font (hb_font_t *font)
+{
+  if (unlikely (!hb_coretext_shaper_font_data_ensure (font))) return nullptr;
+  return (CTFontRef) HB_SHAPER_DATA_GET (font);
+}
+
+
+
+
+
 
 
 struct hb_coretext_shaper_shape_plan_data_t {};
@@ -326,13 +348,6 @@ _hb_coretext_shaper_shape_plan_data_create (hb_shape_plan_t    *shape_plan HB_UN
 void
 _hb_coretext_shaper_shape_plan_data_destroy (hb_coretext_shaper_shape_plan_data_t *data HB_UNUSED)
 {
-}
-
-CTFontRef
-hb_coretext_font_get_ct_font (hb_font_t *font)
-{
-  if (unlikely (!hb_coretext_shaper_font_data_ensure (font))) return nullptr;
-  return (CTFontRef)HB_SHAPER_DATA_GET (font);
 }
 
 

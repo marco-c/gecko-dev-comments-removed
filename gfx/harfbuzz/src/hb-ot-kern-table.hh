@@ -104,8 +104,8 @@ struct KernClassTable
   }
 
   protected:
-  USHORT		firstGlyph;	
-  ArrayOf<USHORT>	classes;	
+  UINT16		firstGlyph;	
+  ArrayOf<UINT16>	classes;	
   public:
   DEFINE_SIZE_ARRAY (4, classes);
 };
@@ -136,7 +136,7 @@ struct KernSubTableFormat2
   }
 
   protected:
-  USHORT	rowWidth;	
+  UINT16	rowWidth;	
   OffsetTo<KernClassTable>
 		leftClassTable;	
 
@@ -275,19 +275,19 @@ struct KernOT : KernTable<KernOT>
     };
 
     protected:
-    USHORT	versionZ;	
-    USHORT	length;		
-    BYTE	format;		
-    BYTE	coverage;	
+    UINT16	versionZ;	
+    UINT16	length;		
+    UINT8	format;		
+    UINT8	coverage;	
     KernSubTable subtable;	
     public:
     DEFINE_SIZE_MIN (6);
   };
 
   protected:
-  USHORT	version;	
-  USHORT	nTables;	
-  BYTE		data[VAR];
+  UINT16	version;	
+  UINT16	nTables;	
+  UINT8		data[VAR];
   public:
   DEFINE_SIZE_ARRAY (4, data);
 };
@@ -314,10 +314,10 @@ struct KernAAT : KernTable<KernAAT>
     };
 
     protected:
-    ULONG	length;		
-    BYTE	coverage;	
-    BYTE	format;		
-    USHORT	tupleIndex;	
+    UINT32	length;		
+    UINT8	coverage;	
+    UINT8	format;		
+    UINT16	tupleIndex;	
 
     KernSubTable subtable;	
     public:
@@ -325,9 +325,9 @@ struct KernAAT : KernTable<KernAAT>
   };
 
   protected:
-  ULONG		version;	
-  ULONG		nTables;	
-  BYTE		data[VAR];
+  UINT32		version;	
+  UINT32		nTables;	
+  UINT8		data[VAR];
   public:
   DEFINE_SIZE_ARRAY (8, data);
 };
@@ -358,24 +358,29 @@ struct kern
 
   struct accelerator_t
   {
-    inline void init (const kern *table_, unsigned int table_length_)
+    inline void init (hb_face_t *face)
     {
-      table = table_;
-      table_length = table_length_;
+      blob = Sanitizer<kern>::sanitize (face->reference_table (HB_OT_TAG_kern));
+      table = Sanitizer<kern>::lock_instance (blob);
+      table_length = hb_blob_get_length (blob);
     }
-    inline void fini (void) {}
+    inline void fini (void)
+    {
+      hb_blob_destroy (blob);
+    }
 
     inline int get_h_kerning (hb_codepoint_t left, hb_codepoint_t right) const
     { return table->get_h_kerning (left, right, table_length); }
 
     private:
+    hb_blob_t *blob;
     const kern *table;
     unsigned int table_length;
   };
 
   protected:
   union {
-  USHORT		major;
+  UINT16		major;
   KernOT		ot;
   KernAAT		aat;
   } u;

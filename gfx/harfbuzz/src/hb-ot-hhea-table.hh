@@ -44,11 +44,6 @@ namespace OT {
 
 struct _hea
 {
-  static const hb_tag_t tableTag = HB_TAG('_','h','e','a');
-
-  static const hb_tag_t hheaTag	= HB_OT_TAG_hhea;
-  static const hb_tag_t vheaTag	= HB_OT_TAG_vhea;
-
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -69,21 +64,21 @@ struct _hea
 
   FWORD		maxExtent;		
 
-  SHORT		caretSlopeRise;		
+  INT16		caretSlopeRise;		
 
 
-  SHORT		caretSlopeRun;		
-  SHORT		caretOffset;		
+  INT16		caretSlopeRun;		
+  INT16		caretOffset;		
 
 
 
 
-  SHORT		reserved1;		
-  SHORT		reserved2;		
-  SHORT		reserved3;		
-  SHORT		reserved4;		
-  SHORT		metricDataFormat;	
-  USHORT	numberOfLongMetrics;	
+  INT16		reserved1;		
+  INT16		reserved2;		
+  INT16		reserved3;		
+  INT16		reserved4;		
+  INT16		metricDataFormat;	
+  UINT16	numberOfLongMetrics;	
 
   public:
   DEFINE_SIZE_STATIC (36);

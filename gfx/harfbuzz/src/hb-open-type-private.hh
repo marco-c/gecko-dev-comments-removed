@@ -635,23 +635,22 @@ struct IntType
   DEFINE_SIZE_STATIC (Size);
 };
 
-typedef IntType<int8_t,   1> CHAR;	
-typedef IntType<uint8_t,  1> BYTE;	
+typedef IntType<uint8_t,  1> UINT8;	
 typedef IntType<int8_t,   1> INT8;	
-typedef IntType<uint16_t, 2> USHORT;	
-typedef IntType<int16_t,  2> SHORT;	
-typedef IntType<uint32_t, 4> ULONG;	
-typedef IntType<int32_t,  4> LONG;	
+typedef IntType<uint16_t, 2> UINT16;	
+typedef IntType<int16_t,  2> INT16;	
+typedef IntType<uint32_t, 4> UINT32;	
+typedef IntType<int32_t,  4> INT32;	
 typedef IntType<uint32_t, 3> UINT24;	
 
 
-typedef SHORT FWORD;
+typedef INT16 FWORD;
 
 
-typedef USHORT UFWORD;
+typedef UINT16 UFWORD;
 
 
-struct F2DOT14 : SHORT
+struct F2DOT14 : INT16
 {
   
   
@@ -660,7 +659,7 @@ struct F2DOT14 : SHORT
 };
 
 
-struct Fixed: LONG
+struct Fixed: INT32
 {
   
   
@@ -678,15 +677,15 @@ struct LONGDATETIME
     return_trace (likely (c->check_struct (this)));
   }
   protected:
-  LONG major;
-  ULONG minor;
+  INT32 major;
+  UINT32 minor;
   public:
   DEFINE_SIZE_STATIC (8);
 };
 
 
 
-struct Tag : ULONG
+struct Tag : UINT32
 {
   
   inline operator const char* (void) const { return reinterpret_cast<const char *> (&this->v); }
@@ -697,16 +696,16 @@ struct Tag : ULONG
 DEFINE_NULL_DATA (Tag, "    ");
 
 
-typedef USHORT GlyphID;
+typedef UINT16 GlyphID;
 
 
-struct Index : USHORT {
+struct Index : UINT16 {
   static const unsigned int NOT_FOUND_INDEX = 0xFFFFu;
 };
 DEFINE_NULL_DATA (Index, "\xff\xff");
 
 
-template <typename Type=USHORT>
+template <typename Type>
 struct Offset : Type
 {
   inline bool is_null (void) const { return 0 == *this; }
@@ -714,15 +713,18 @@ struct Offset : Type
   DEFINE_SIZE_STATIC (sizeof(Type));
 };
 
+typedef Offset<UINT16> Offset16;
+typedef Offset<UINT32> Offset32;
 
 
-struct CheckSum : ULONG
+
+struct CheckSum : UINT32
 {
   
-  static inline uint32_t CalcTableChecksum (const ULONG *Table, uint32_t Length)
+  static inline uint32_t CalcTableChecksum (const UINT32 *Table, uint32_t Length)
   {
     uint32_t Sum = 0L;
-    const ULONG *EndPtr = Table+((Length+3) & ~3) / ULONG::static_size;
+    const UINT32 *EndPtr = Table+((Length+3) & ~3) / UINT32::static_size;
 
     while (Table < EndPtr)
       Sum += *Table++;
@@ -731,7 +733,7 @@ struct CheckSum : ULONG
 
   
   inline void set_for_data (const void *data, unsigned int length)
-  { set (CalcTableChecksum ((const ULONG *) data, length)); }
+  { set (CalcTableChecksum ((const UINT32 *) data, length)); }
 
   public:
   DEFINE_SIZE_STATIC (4);
@@ -742,7 +744,7 @@ struct CheckSum : ULONG
 
 
 
-template <typename FixedType=USHORT>
+template <typename FixedType=UINT16>
 struct FixedVersion
 {
   inline uint32_t to_int (void) const { return (major << (sizeof(FixedType) * 8)) + minor; }
@@ -766,7 +768,7 @@ struct FixedVersion
 
 
 
-template <typename Type, typename OffsetType=USHORT>
+template <typename Type, typename OffsetType=UINT16>
 struct OffsetTo : Offset<OffsetType>
 {
   inline const Type& operator () (const void *base) const
@@ -811,7 +813,7 @@ struct OffsetTo : Offset<OffsetType>
   }
   DEFINE_SIZE_STATIC (sizeof(OffsetType));
 };
-template <typename Type> struct LOffsetTo : OffsetTo<Type, ULONG> {};
+template <typename Type> struct LOffsetTo : OffsetTo<Type, UINT32> {};
 template <typename Base, typename OffsetType, typename Type>
 static inline const Type& operator + (const Base &base, const OffsetTo<Type, OffsetType> &offset) { return offset (base); }
 template <typename Base, typename OffsetType, typename Type>
@@ -823,7 +825,7 @@ static inline Type& operator + (Base &base, OffsetTo<Type, OffsetType> &offset) 
 
 
 
-template <typename Type, typename LenType=USHORT>
+template <typename Type, typename LenType=UINT16>
 struct ArrayOf
 {
   const Type *sub_array (unsigned int start_offset, unsigned int *pcount ) const
@@ -933,10 +935,10 @@ struct ArrayOf
   public:
   DEFINE_SIZE_ARRAY (sizeof (LenType), array);
 };
-template <typename Type> struct LArrayOf : ArrayOf<Type, ULONG> {};
+template <typename Type> struct LArrayOf : ArrayOf<Type, UINT32> {};
 
 
-template <typename Type, typename OffsetType=USHORT>
+template <typename Type, typename OffsetType=UINT16>
 struct OffsetArrayOf : ArrayOf<OffsetTo<Type, OffsetType> > {};
 
 
@@ -964,7 +966,7 @@ struct OffsetListOf : OffsetArrayOf<Type>
 
 
 
-template <typename Type, typename LenType=USHORT>
+template <typename Type, typename LenType=UINT16>
 struct HeadlessArrayOf
 {
   inline const Type& operator [] (unsigned int i) const
@@ -1026,7 +1028,7 @@ struct HeadlessArrayOf
 
 
 
-template <typename Type, typename LenType=USHORT>
+template <typename Type, typename LenType=UINT16>
 struct SortedArrayOf : ArrayOf<Type, LenType>
 {
   template <typename SearchType>
@@ -1065,10 +1067,10 @@ struct BinSearchHeader
   }
 
   protected:
-  USHORT	len;
-  USHORT	searchRangeZ;
-  USHORT	entrySelectorZ;
-  USHORT	rangeShiftZ;
+  UINT16	len;
+  UINT16	searchRangeZ;
+  UINT16	entrySelectorZ;
+  UINT16	rangeShiftZ;
 
   public:
   DEFINE_SIZE_STATIC (8);

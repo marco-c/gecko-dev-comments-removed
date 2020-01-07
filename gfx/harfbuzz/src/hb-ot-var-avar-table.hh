@@ -133,8 +133,8 @@ struct avar
   protected:
   FixedVersion<>version;	
 
-  USHORT	reserved;	
-  USHORT	axisCount;	
+  UINT16	reserved;	
+  UINT16	axisCount;	
 
 
   SegmentMaps	axisSegmentMapsZ;

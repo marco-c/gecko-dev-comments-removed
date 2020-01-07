@@ -51,11 +51,11 @@ enum attach_type_t {
 
 
 
-typedef USHORT Value;
+typedef UINT16 Value;
 
 typedef Value ValueRecord[VAR];
 
-struct ValueFormat : USHORT
+struct ValueFormat : UINT16
 {
   enum Flags {
     xPlacement	= 0x0001u,	
@@ -74,14 +74,14 @@ struct ValueFormat : USHORT
 
 
 #if 0
-  SHORT		xPlacement;		
+  INT16		xPlacement;		
 
-  SHORT		yPlacement;		
+  INT16		yPlacement;		
 
-  SHORT		xAdvance;		
+  INT16		xAdvance;		
 
 
-  SHORT		yAdvance;		
+  INT16		yAdvance;		
 
 
   Offset	xPlaDevice;		
@@ -178,8 +178,8 @@ struct ValueFormat : USHORT
   static inline const OffsetTo<Device>& get_device (const Value* value)
   { return *CastP<OffsetTo<Device> > (value); }
 
-  static inline const SHORT& get_short (const Value* value)
-  { return *CastP<SHORT> (value); }
+  static inline const INT16& get_short (const Value* value)
+  { return *CastP<INT16> (value); }
 
   public:
 
@@ -247,9 +247,9 @@ struct AnchorFormat1
   }
 
   protected:
-  USHORT	format;			
-  SHORT		xCoordinate;		
-  SHORT		yCoordinate;		
+  UINT16	format;			
+  INT16		xCoordinate;		
+  INT16		yCoordinate;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -278,10 +278,10 @@ struct AnchorFormat2
   }
 
   protected:
-  USHORT	format;			
-  SHORT		xCoordinate;		
-  SHORT		yCoordinate;		
-  USHORT	anchorPoint;		
+  UINT16	format;			
+  INT16		xCoordinate;		
+  INT16		yCoordinate;		
+  UINT16	anchorPoint;		
   public:
   DEFINE_SIZE_STATIC (8);
 };
@@ -308,9 +308,9 @@ struct AnchorFormat3
   }
 
   protected:
-  USHORT	format;			
-  SHORT		xCoordinate;		
-  SHORT		yCoordinate;		
+  UINT16	format;			
+  INT16		xCoordinate;		
+  INT16		yCoordinate;		
   OffsetTo<Device>
 		xDeviceTable;		
 
@@ -351,7 +351,7 @@ struct Anchor
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   AnchorFormat1		format1;
   AnchorFormat2		format2;
   AnchorFormat3		format3;
@@ -382,7 +382,7 @@ struct AnchorMatrix
     return_trace (true);
   }
 
-  USHORT	rows;			
+  UINT16	rows;			
   protected:
   OffsetTo<Anchor>
 		matrixZ[VAR];		
@@ -403,7 +403,7 @@ struct MarkRecord
   }
 
   protected:
-  USHORT	klass;			
+  UINT16	klass;			
   OffsetTo<Anchor>
 		markAnchor;		
 
@@ -492,7 +492,7 @@ struct SinglePosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -544,13 +544,13 @@ struct SinglePosFormat2
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
   ValueFormat	valueFormat;		
 
-  USHORT	valueCount;		
+  UINT16	valueCount;		
   ValueRecord	values;			
 
   public:
@@ -573,7 +573,7 @@ struct SinglePos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   SinglePosFormat1	format1;
   SinglePosFormat2	format2;
   } u;
@@ -604,7 +604,7 @@ struct PairSet
     TRACE_COLLECT_GLYPHS (this);
     unsigned int len1 = valueFormats[0].get_len ();
     unsigned int len2 = valueFormats[1].get_len ();
-    unsigned int record_size = USHORT::static_size * (1 + len1 + len2);
+    unsigned int record_size = UINT16::static_size * (1 + len1 + len2);
 
     const PairValueRecord *record = CastP<PairValueRecord> (arrayZ);
     unsigned int count = len;
@@ -623,7 +623,7 @@ struct PairSet
     hb_buffer_t *buffer = c->buffer;
     unsigned int len1 = valueFormats[0].get_len ();
     unsigned int len2 = valueFormats[1].get_len ();
-    unsigned int record_size = USHORT::static_size * (1 + len1 + len2);
+    unsigned int record_size = UINT16::static_size * (1 + len1 + len2);
 
     const PairValueRecord *record_array = CastP<PairValueRecord> (arrayZ);
     unsigned int count = len;
@@ -668,7 +668,7 @@ struct PairSet
   {
     TRACE_SANITIZE (this);
     if (!(c->check_struct (this)
-       && c->check_array (arrayZ, USHORT::static_size * closure->stride, len))) return_trace (false);
+       && c->check_array (arrayZ, UINT16::static_size * closure->stride, len))) return_trace (false);
 
     unsigned int count = len;
     const PairValueRecord *record = CastP<PairValueRecord> (arrayZ);
@@ -677,8 +677,8 @@ struct PairSet
   }
 
   protected:
-  USHORT	len;			
-  USHORT	arrayZ[VAR];		
+  UINT16	len;			
+  UINT16	arrayZ[VAR];		
 
   public:
   DEFINE_SIZE_ARRAY (2, arrayZ);
@@ -733,7 +733,7 @@ struct PairPosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -823,7 +823,7 @@ struct PairPosFormat2
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -841,9 +841,9 @@ struct PairPosFormat2
 		classDef2;		
 
 
-  USHORT	class1Count;		
+  UINT16	class1Count;		
 
-  USHORT	class2Count;		
+  UINT16	class2Count;		
 
   ValueRecord	values;			
 
@@ -868,7 +868,7 @@ struct PairPos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   PairPosFormat1	format1;
   PairPosFormat2	format2;
   } u;
@@ -1022,7 +1022,7 @@ struct CursivePosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		coverage;		
 
@@ -1048,7 +1048,7 @@ struct CursivePos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   CursivePosFormat1	format1;
   } u;
 };
@@ -1113,14 +1113,14 @@ struct MarkBasePosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		markCoverage;		
 
   OffsetTo<Coverage>
 		baseCoverage;		
 
-  USHORT	classCount;		
+  UINT16	classCount;		
   OffsetTo<MarkArray>
 		markArray;		
 
@@ -1146,7 +1146,7 @@ struct MarkBasePos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   MarkBasePosFormat1	format1;
   } u;
 };
@@ -1230,7 +1230,7 @@ struct MarkLigPosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		markCoverage;		
 
@@ -1238,7 +1238,7 @@ struct MarkLigPosFormat1
 		ligatureCoverage;	
 
 
-  USHORT	classCount;		
+  UINT16	classCount;		
   OffsetTo<MarkArray>
 		markArray;		
 
@@ -1264,7 +1264,7 @@ struct MarkLigPos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   MarkLigPosFormat1	format1;
   } u;
 };
@@ -1344,7 +1344,7 @@ struct MarkMarkPosFormat1
   }
 
   protected:
-  USHORT	format;			
+  UINT16	format;			
   OffsetTo<Coverage>
 		mark1Coverage;		
 
@@ -1353,7 +1353,7 @@ struct MarkMarkPosFormat1
 		mark2Coverage;		
 
 
-  USHORT	classCount;		
+  UINT16	classCount;		
   OffsetTo<MarkArray>
 		mark1Array;		
 
@@ -1379,7 +1379,7 @@ struct MarkMarkPos
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   MarkMarkPosFormat1	format1;
   } u;
 };
@@ -1438,7 +1438,7 @@ struct PosLookupSubTable
 
   protected:
   union {
-  USHORT		sub_format;
+  UINT16		sub_format;
   SinglePos		single;
   PairPos		pair;
   CursivePos		cursive;

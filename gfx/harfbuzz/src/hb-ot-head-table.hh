@@ -64,14 +64,11 @@ struct head
   FixedVersion<>version;		
 
   FixedVersion<>fontRevision;		
-  ULONG		checkSumAdjustment;	
+  UINT32		checkSumAdjustment;	
 
 
-  ULONG		magicNumber;		
-  USHORT	flags;			
-
-
-
+  UINT32		magicNumber;		
+  UINT16	flags;			
 
 
 
@@ -114,18 +111,21 @@ struct head
 
 
 
-  USHORT	unitsPerEm;		
+
+
+
+  UINT16	unitsPerEm;		
 
 
   LONGDATETIME	created;		
 
   LONGDATETIME	modified;		
 
-  SHORT		xMin;			
-  SHORT		yMin;			
-  SHORT		xMax;			
-  SHORT		yMax;			
-  USHORT	macStyle;		
+  INT16		xMin;			
+  INT16		yMin;			
+  INT16		xMax;			
+  INT16		yMax;			
+  UINT16	macStyle;		
 
 
 
@@ -133,16 +133,16 @@ struct head
 
 
 
-  USHORT	lowestRecPPEM;		
-  SHORT		fontDirectionHint;	
+  UINT16	lowestRecPPEM;		
+  INT16		fontDirectionHint;	
 
 
 
 
 
   public:
-  SHORT		indexToLocFormat;	
-  SHORT		glyphDataFormat;	
+  INT16		indexToLocFormat;	
+  INT16		glyphDataFormat;	
 
   DEFINE_SIZE_STATIC (54);
 };

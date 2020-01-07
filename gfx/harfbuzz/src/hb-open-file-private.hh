@@ -64,9 +64,9 @@ typedef struct TableRecord
 
   Tag		tag;		
   CheckSum	checkSum;	
-  ULONG		offset;		
+  UINT32		offset;		
 
-  ULONG		length;		
+  UINT32		length;		
   public:
   DEFINE_SIZE_STATIC (16);
 } OpenTypeTable;
@@ -154,7 +154,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  ArrayOf<LOffsetTo<OffsetTable>, ULONG>
+  ArrayOf<LOffsetTo<OffsetTable>, UINT32>
 		table;		
 
   public:

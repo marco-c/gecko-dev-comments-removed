@@ -161,7 +161,7 @@ struct RangeRecord
 
   GlyphID	start;		
   GlyphID	end;		
-  USHORT	value;		
+  UINT16	value;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -175,7 +175,7 @@ struct IndexArray : ArrayOf<Index>
 				   unsigned int *_indexes ) const
   {
     if (_count) {
-      const USHORT *arr = this->sub_array (start_offset, _count);
+      const UINT16 *arr = this->sub_array (start_offset, _count);
       unsigned int count = *_count;
       for (unsigned int i = 0; i < count; i++)
 	_indexes[i] = arr[i];
@@ -216,9 +216,9 @@ struct LangSys
     return_trace (c->check_struct (this) && featureIndex.sanitize (c));
   }
 
-  Offset<>	lookupOrderZ;	
+  Offset16	lookupOrderZ;	
 
-  USHORT	reqFeatureIndex;
+  UINT16	reqFeatureIndex;
 
 
   IndexArray	featureIndex;	
@@ -343,22 +343,12 @@ struct FeatureParamsSize
       return_trace (true);
   }
 
-  USHORT	designSize;	
+  UINT16	designSize;	
 
 
 
 
-  USHORT	subfamilyID;	
-
-
-
-
-
-
-
-
-
-  USHORT	subfamilyNameID;
+  UINT16	subfamilyID;	
 
 
 
@@ -368,14 +358,24 @@ struct FeatureParamsSize
 
 
 
+  UINT16	subfamilyNameID;
 
 
 
 
-  USHORT	rangeStart;	
 
 
-  USHORT	rangeEnd;	
+
+
+
+
+
+
+
+  UINT16	rangeStart;	
+
+
+  UINT16	rangeEnd;	
 
 
   public:
@@ -393,12 +393,12 @@ struct FeatureParamsStylisticSet
     return_trace (c->check_struct (this));
   }
 
-  USHORT	version;	
+  UINT16	version;	
 
 
 
 
-  USHORT	uiNameID;	
+  UINT16	uiNameID;	
 
 
 
@@ -426,25 +426,25 @@ struct FeatureParamsCharacterVariants
 		  characters.sanitize (c));
   }
 
-  USHORT	format;			
-  USHORT	featUILableNameID;	
+  UINT16	format;			
+  UINT16	featUILableNameID;	
 
 
 
 
-  USHORT	featUITooltipTextNameID;
+  UINT16	featUITooltipTextNameID;
 
 
 
 
 
-  USHORT	sampleTextNameID;	
+  UINT16	sampleTextNameID;	
 
 
 
-  USHORT	numNamedParameters;	
+  UINT16	numNamedParameters;	
 
-  USHORT	firstParamUILabelNameID;
+  UINT16	firstParamUILabelNameID;
 
 
 
@@ -562,7 +562,7 @@ struct Feature
 typedef RecordListOf<Feature> FeatureList;
 
 
-struct LookupFlag : USHORT
+struct LookupFlag : UINT16
 {
   enum Flags {
     RightToLeft		= 0x0001u,
@@ -608,7 +608,7 @@ struct Lookup
     unsigned int flag = lookupFlag;
     if (unlikely (flag & LookupFlag::UseMarkFilteringSet))
     {
-      const USHORT &markFilteringSet = StructAfter<USHORT> (subTable);
+      const UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
       flag += (markFilteringSet << 16);
     }
     return flag;
@@ -640,7 +640,7 @@ struct Lookup
     if (unlikely (!subTable.serialize (c, num_subtables))) return_trace (false);
     if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
-      USHORT &markFilteringSet = StructAfter<USHORT> (subTable);
+      UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
       markFilteringSet.set (lookup_props >> 16);
     }
     return_trace (true);
@@ -653,18 +653,18 @@ struct Lookup
     if (!(c->check_struct (this) && subTable.sanitize (c))) return_trace (false);
     if (lookupFlag & LookupFlag::UseMarkFilteringSet)
     {
-      const USHORT &markFilteringSet = StructAfter<USHORT> (subTable);
+      const UINT16 &markFilteringSet = StructAfter<UINT16> (subTable);
       if (!markFilteringSet.sanitize (c)) return_trace (false);
     }
     return_trace (true);
   }
 
   private:
-  USHORT	lookupType;		
-  USHORT	lookupFlag;		
-  ArrayOf<Offset<> >
+  UINT16	lookupType;		
+  UINT16	lookupFlag;		
+  ArrayOf<Offset16>
 		subTable;		
-  USHORT	markFilteringSetX[VAR];	
+  UINT16	markFilteringSetX[VAR];	
 
 
   public:
@@ -737,7 +737,7 @@ struct CoverageFormat1
   private:
 
   protected:
-  USHORT	coverageFormat;	
+  UINT16	coverageFormat;	
   SortedArrayOf<GlyphID>
 		glyphArray;	
   public:
@@ -860,7 +860,7 @@ struct CoverageFormat2
   private:
 
   protected:
-  USHORT	coverageFormat;	
+  UINT16	coverageFormat;	
   SortedArrayOf<RangeRecord>
 		rangeRecord;	
 
@@ -985,7 +985,7 @@ struct Coverage
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   CoverageFormat1	format1;
   CoverageFormat2	format2;
   } u;
@@ -1047,9 +1047,9 @@ struct ClassDefFormat1
   }
 
   protected:
-  USHORT	classFormat;		
+  UINT16	classFormat;		
   GlyphID	startGlyph;		
-  ArrayOf<USHORT>
+  ArrayOf<UINT16>
 		classValue;		
   public:
   DEFINE_SIZE_ARRAY (6, classValue);
@@ -1107,7 +1107,7 @@ struct ClassDefFormat2
   }
 
   protected:
-  USHORT	classFormat;	
+  UINT16	classFormat;	
   SortedArrayOf<RangeRecord>
 		rangeRecord;	
 
@@ -1155,7 +1155,7 @@ struct ClassDef
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   ClassDefFormat1	format1;
   ClassDefFormat2	format2;
   } u;
@@ -1240,8 +1240,8 @@ struct VarRegionList
   }
 
   protected:
-  USHORT	axisCount;
-  USHORT	regionCount;
+  UINT16	axisCount;
+  UINT16	regionCount;
   VarRegionAxis	axesZ[VAR];
   public:
   DEFINE_SIZE_ARRAY (4, axesZ);
@@ -1265,13 +1265,13 @@ struct VarData
    unsigned int count = regionIndices.len;
    unsigned int scount = shortCount;
 
-   const BYTE *bytes = &StructAfter<BYTE> (regionIndices);
-   const BYTE *row = bytes + inner * (scount + count);
+   const UINT8 *bytes = &StructAfter<UINT8> (regionIndices);
+   const UINT8 *row = bytes + inner * (scount + count);
 
    float delta = 0.;
    unsigned int i = 0;
 
-   const SHORT *scursor = reinterpret_cast<const SHORT *> (row);
+   const INT16 *scursor = reinterpret_cast<const INT16 *> (row);
    for (; i < scount; i++)
    {
      float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
@@ -1293,15 +1293,15 @@ struct VarData
     return_trace (c->check_struct (this) &&
 		  regionIndices.sanitize(c) &&
 		  shortCount <= regionIndices.len &&
-		  c->check_array (&StructAfter<BYTE> (regionIndices),
+		  c->check_array (&StructAfter<UINT8> (regionIndices),
 				  get_row_size (), itemCount));
   }
 
   protected:
-  USHORT		itemCount;
-  USHORT		shortCount;
-  ArrayOf<USHORT>	regionIndices;
-  BYTE			bytesX[VAR];
+  UINT16		itemCount;
+  UINT16		shortCount;
+  ArrayOf<UINT16>	regionIndices;
+  UINT8			bytesX[VAR];
   public:
   DEFINE_SIZE_ARRAY2 (6, regionIndices, bytesX);
 };
@@ -1337,9 +1337,9 @@ struct VariationStore
   }
 
   protected:
-  USHORT				format;
+  UINT16				format;
   LOffsetTo<VarRegionList>		regions;
-  OffsetArrayOf<VarData, ULONG>		dataSets;
+  OffsetArrayOf<VarData, UINT32>		dataSets;
   public:
   DEFINE_SIZE_ARRAY (8, dataSets);
 };
@@ -1366,8 +1366,8 @@ struct ConditionFormat1
   }
 
   protected:
-  USHORT	format;		
-  USHORT	axisIndex;
+  UINT16	format;		
+  UINT16	axisIndex;
   F2DOT14	filterRangeMinValue;
   F2DOT14	filterRangeMaxValue;
   public:
@@ -1396,7 +1396,7 @@ struct Condition
 
   protected:
   union {
-  USHORT		format;		
+  UINT16		format;		
   ConditionFormat1	format1;
   } u;
   public:
@@ -1421,7 +1421,7 @@ struct ConditionSet
   }
 
   protected:
-  OffsetArrayOf<Condition, ULONG> conditions;
+  OffsetArrayOf<Condition, UINT32> conditions;
   public:
   DEFINE_SIZE_ARRAY (2, conditions);
 };
@@ -1437,7 +1437,7 @@ struct FeatureTableSubstitutionRecord
   }
 
   protected:
-  USHORT		featureIndex;
+  UINT16		featureIndex;
   LOffsetTo<Feature>	feature;
   public:
   DEFINE_SIZE_STATIC (6);
@@ -1557,8 +1557,8 @@ struct HintingDevice
   inline unsigned int get_size (void) const
   {
     unsigned int f = deltaFormat;
-    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * USHORT::static_size;
-    return USHORT::static_size * (4 + ((endSize - startSize) >> (4 - f)));
+    if (unlikely (f < 1 || f > 3 || startSize > endSize)) return 3 * UINT16::static_size;
+    return UINT16::static_size * (4 + ((endSize - startSize) >> (4 - f)));
   }
 
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -1603,14 +1603,14 @@ struct HintingDevice
   }
 
   protected:
-  USHORT	startSize;		
-  USHORT	endSize;		
-  USHORT	deltaFormat;		
+  UINT16	startSize;		
+  UINT16	endSize;		
+  UINT16	deltaFormat;		
 
 
 
 
-  USHORT	deltaValue[VAR];	
+  UINT16	deltaValue[VAR];	
   public:
   DEFINE_SIZE_ARRAY (6, deltaValue);
 };
@@ -1641,9 +1641,9 @@ struct VariationDevice
   }
 
   protected:
-  USHORT	outerIndex;
-  USHORT	innerIndex;
-  USHORT	deltaFormat;	
+  UINT16	outerIndex;
+  UINT16	innerIndex;
+  UINT16	deltaFormat;	
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -1651,10 +1651,10 @@ struct VariationDevice
 struct DeviceHeader
 {
   protected:
-  USHORT		reserved1;
-  USHORT		reserved2;
+  UINT16		reserved1;
+  UINT16		reserved2;
   public:
-  USHORT		format;		
+  UINT16		format;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
