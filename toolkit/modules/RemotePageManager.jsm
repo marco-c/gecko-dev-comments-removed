@@ -6,8 +6,80 @@
 
 var EXPORTED_SYMBOLS = ["RemotePages", "RemotePageManager", "PageListener"];
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "AsyncPrefs",
+  "resource://gre/modules/AsyncPrefs.jsm");
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
+
+
+
+
+
+let RPMAccessManager = {
+  accessMap: {
+    "about:privatebrowsing": {
+      
+      
+      
+      "getBoolPref": ["privacy.trackingprotection.enabled",
+                      "privacy.trackingprotection.pbmode.enabled"],
+      "getFormatURLPref": ["privacy.trackingprotection.introURL",
+                           "app.support.baseURL"],
+      "isWindowPrivate": ["yes"],
+    },
+  },
+
+  checkAllowAccess(aPrincipal, aFeature, aValue) {
+    
+    if (!aPrincipal || !aPrincipal.URI) {
+      return false;
+    }
+    let uri = aPrincipal.URI.asciiSpec;
+
+    
+    
+    let accessMapForURI = this.accessMap[uri];
+    if (!accessMapForURI) {
+      Cu.reportError("RPMAccessManager does not allow access to Feature: " + aFeature + " for: " + uri);
+      return false;
+    }
+
+    
+    
+    let accessMapForFeature = accessMapForURI[aFeature];
+    if (!accessMapForFeature) {
+      Cu.reportError("RPMAccessManager does not allow access to Feature: " + aFeature + " for: " + uri);
+      return false;
+    }
+
+    
+    
+    if (accessMapForFeature.includes(aValue)) {
+      return true;
+    }
+
+    
+    Cu.reportError("RPMAccessManager does not allow access to Feature: " + aFeature + " for: " + uri);
+    return false;
+  },
+};
 
 function MessageListener() {
   this.listeners = new Map();
@@ -304,6 +376,38 @@ MessagePort.prototype = {
     this.portID = null;
     this.listener = null;
   },
+
+  getBoolPref(aPref) {
+    let principal = this.window.document.nodePrincipal;
+    if (!RPMAccessManager.checkAllowAccess(principal, "getBoolPref", aPref)) {
+      throw new Error("RPMAccessManager does not allow access to getBoolPref");
+    }
+    return Services.prefs.getBoolPref(aPref);
+  },
+
+  setBoolPref(aPref, aVal) {
+    return new this.window.Promise(function(resolve) {
+      AsyncPrefs.set(aPref, aVal).then(function() {
+        resolve();
+      });
+    });
+  },
+
+  getFormatURLPref(aFormatURL) {
+    let principal = this.window.document.nodePrincipal;
+    if (!RPMAccessManager.checkAllowAccess(principal, "getFormatURLPref", aFormatURL)) {
+      throw new Error("RPMAccessManager does not allow access to getFormatURLPref");
+    }
+    return Services.urlFormatter.formatURLPref(aFormatURL);
+  },
+
+  isWindowPrivate() {
+    let principal = this.window.document.nodePrincipal;
+    if (!RPMAccessManager.checkAllowAccess(principal, "isWindowPrivate", "yes")) {
+      throw new Error("RPMAccessManager does not allow access to isWindowPrivate");
+    }
+    return PrivateBrowsingUtils.isContentWindowPrivate(this.window);
+  },
 };
 
 
@@ -417,6 +521,18 @@ function ChildMessagePort(contentFrame, window) {
   Cu.exportFunction(this.removeMessageListener.bind(this), window, {
     defineAs: "removeMessageListener",
     allowCallbacks: true,
+  });
+  Cu.exportFunction(this.getBoolPref.bind(this), window, {
+    defineAs: "RPMGetBoolPref",
+  });
+  Cu.exportFunction(this.setBoolPref.bind(this), window, {
+    defineAs: "RPMSetBoolPref",
+  });
+  Cu.exportFunction(this.getFormatURLPref.bind(this), window, {
+    defineAs: "RPMGetFormatURLPref",
+  });
+  Cu.exportFunction(this.isWindowPrivate.bind(this), window, {
+    defineAs: "RPMIsWindowPrivate",
   });
 
   
