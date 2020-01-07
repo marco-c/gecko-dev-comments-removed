@@ -1148,6 +1148,10 @@ MockAddon.prototype = {
     
   },
 
+  async getBlocklistURL() {
+    return this.blocklistURL;
+  },
+
   uninstall(aAlwaysAllowUndo = false) {
     if ((this.operationsRequiringRestart & AddonManager.OP_NEED_RESTART_UNINSTALL)
         && this.pendingOperations & AddonManager.PENDING_UNINSTALL)

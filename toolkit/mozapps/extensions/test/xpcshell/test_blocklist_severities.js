@@ -353,11 +353,11 @@ add_task(async function test_pt3() {
   equal(await getAddonBlocklistURL(addons[4]), create_blocklistURL(addons[4].id));
 
   
-  equal(Blocklist.getPluginBlocklistURL(PLUGINS[0]), create_blocklistURL("test_bug455906_plugin"));
-  equal(Blocklist.getPluginBlocklistURL(PLUGINS[1]), create_blocklistURL("test_bug455906_plugin"));
-  equal(Blocklist.getPluginBlocklistURL(PLUGINS[2]), create_blocklistURL("test_bug455906_plugin"));
-  equal(Blocklist.getPluginBlocklistURL(PLUGINS[3]), create_blocklistURL("test_bug455906_plugin"));
-  equal(Blocklist.getPluginBlocklistURL(PLUGINS[4]), create_blocklistURL("test_bug455906_plugin"));
+  equal(await Blocklist.getPluginBlockURL(PLUGINS[0]), create_blocklistURL("test_bug455906_plugin"));
+  equal(await Blocklist.getPluginBlockURL(PLUGINS[1]), create_blocklistURL("test_bug455906_plugin"));
+  equal(await Blocklist.getPluginBlockURL(PLUGINS[2]), create_blocklistURL("test_bug455906_plugin"));
+  equal(await Blocklist.getPluginBlockURL(PLUGINS[3]), create_blocklistURL("test_bug455906_plugin"));
+  equal(await Blocklist.getPluginBlockURL(PLUGINS[4]), create_blocklistURL("test_bug455906_plugin"));
 
   
   checkAddonState(addons[5], {userDisabled: false, softDisabled: false, appDisabled: true});
