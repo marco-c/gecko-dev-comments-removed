@@ -305,17 +305,14 @@ AddonsStore.prototype = {
 
 
   async create(record) {
-    let cb = Async.makeSpinningCallback();
-    AddonUtils.installAddons([{
+    
+    
+    const results = await AddonUtils.installAddons([{
       id:               record.addonID,
       syncGUID:         record.id,
       enabled:          record.enabled,
       requireSecureURI: this._extensionsPrefs.get("install.requireSecureOrigin", true),
-    }], cb);
-
-    
-    
-    let results = cb.wait();
+    }]);
 
     if (results.skipped.includes(record.addonID)) {
       this._log.info("Add-on skipped: " + record.addonID);
@@ -370,7 +367,7 @@ AddonsStore.prototype = {
     
     
     if (!addon) {
-      this.create(record);
+      await this.create(record);
       return;
     }
 
