@@ -38,13 +38,6 @@ class TestShadowDom(MarionetteTestCase):
         
         self.button.click()
 
-    def test_shadow_dom_after_switch_away_from_shadow_root(self):
-        
-        self.button.click()
-        self.marionette.switch_to_shadow_root()
-        
-        self.assertRaises(StaleElementException, self.button.click)
-
     def test_shadow_dom_raises_stale_element_exception_when_button_remove(self):
         self.marionette.execute_script(
             'document.getElementById("host").shadowRoot.getElementById("button").remove();')
@@ -72,11 +65,3 @@ class TestShadowDom(MarionetteTestCase):
         
         self.inner_button.click()
         self.marionette.switch_to_shadow_root()
-        
-        
-        self.button.click()
-        self.assertRaises(StaleElementException, self.inner_button.click)
-        self.marionette.switch_to_shadow_root()
-        
-        self.assertRaises(StaleElementException, self.button.click)
-        self.assertRaises(StaleElementException, self.inner_button.click)
