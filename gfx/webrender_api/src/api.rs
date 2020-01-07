@@ -123,6 +123,174 @@ impl ResourceUpdates {
     }
 }
 
+
+
+
+
+
+
+pub struct Transaction {
+    ops: Vec<DocumentMsg>,
+    payloads: Vec<Payload>,
+}
+
+impl Transaction {
+    pub fn new() -> Self {
+        Transaction {
+            ops: Vec::new(),
+            payloads: Vec::new(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.ops.is_empty()
+    }
+
+    pub fn update_epoch(&mut self, pipeline_id: PipelineId, epoch: Epoch) {
+        self.ops.push(DocumentMsg::UpdateEpoch(pipeline_id, epoch));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_root_pipeline(&mut self, pipeline_id: PipelineId) {
+        self.ops.push(DocumentMsg::SetRootPipeline(pipeline_id));
+    }
+
+    
+    
+    
+    pub fn remove_pipeline(&mut self, pipeline_id: PipelineId) {
+        self.ops.push(DocumentMsg::RemovePipeline(pipeline_id));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_display_list(
+        &mut self,
+        epoch: Epoch,
+        background: Option<ColorF>,
+        viewport_size: LayoutSize,
+        (pipeline_id, content_size, display_list): (PipelineId, LayoutSize, BuiltDisplayList),
+        preserve_frame_state: bool,
+    ) {
+        let (display_list_data, list_descriptor) = display_list.into_data();
+        self.ops.push(
+            DocumentMsg::SetDisplayList {
+                epoch,
+                pipeline_id,
+                background,
+                viewport_size,
+                content_size,
+                list_descriptor,
+                preserve_frame_state,
+                resources: ResourceUpdates::new(),
+            }
+        );
+        self.payloads.push(Payload { epoch, pipeline_id, display_list_data });
+    }
+
+    pub fn update_resources(&mut self, resources: ResourceUpdates) {
+        self.ops.push(DocumentMsg::UpdateResources(resources));
+    }
+
+    pub fn set_window_parameters(
+        &mut self,
+        window_size: DeviceUintSize,
+        inner_rect: DeviceUintRect,
+        device_pixel_ratio: f32,
+    ) {
+        self.ops.push(
+            DocumentMsg::SetWindowParameters {
+                window_size,
+                inner_rect,
+                device_pixel_ratio,
+            },
+        );
+    }
+
+    
+    
+    
+    
+    pub fn scroll(
+        &mut self,
+        scroll_location: ScrollLocation,
+        cursor: WorldPoint,
+        phase: ScrollEventPhase,
+    ) {
+        self.ops.push(DocumentMsg::Scroll(scroll_location, cursor, phase));
+    }
+
+    pub fn scroll_node_with_id(
+        &mut self,
+        origin: LayoutPoint,
+        id: ClipId,
+        clamp: ScrollClamping,
+    ) {
+        self.ops.push(DocumentMsg::ScrollNodeWithId(origin, id, clamp));
+    }
+
+    pub fn set_page_zoom(&mut self, page_zoom: ZoomFactor) {
+        self.ops.push(DocumentMsg::SetPageZoom(page_zoom));
+    }
+
+    pub fn set_pinch_zoom(&mut self, pinch_zoom: ZoomFactor) {
+        self.ops.push(DocumentMsg::SetPinchZoom(pinch_zoom));
+    }
+
+    pub fn set_pan(&mut self, pan: DeviceIntPoint) {
+        self.ops.push(DocumentMsg::SetPan(pan));
+    }
+
+    pub fn tick_scrolling_bounce_animations(&mut self) {
+        self.ops.push(DocumentMsg::TickScrollingBounce);
+    }
+
+    
+    pub fn generate_frame(&mut self) {
+        self.ops.push(DocumentMsg::GenerateFrame);
+    }
+
+    
+    
+    pub fn update_dynamic_properties(&mut self, properties: DynamicProperties) {
+        self.ops.push(DocumentMsg::UpdateDynamicProperties(properties));
+    }
+}
+
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AddImage {
     pub key: ImageKey,
@@ -199,11 +367,14 @@ pub enum DocumentMsg {
         preserve_frame_state: bool,
         resources: ResourceUpdates,
     },
+    UpdateResources(ResourceUpdates),
+    
     UpdatePipelineResources {
         resources: ResourceUpdates,
         pipeline_id: PipelineId,
         epoch: Epoch,
     },
+    UpdateEpoch(PipelineId, Epoch),
     SetPageZoom(ZoomFactor),
     SetPinchZoom(ZoomFactor),
     SetPan(DeviceIntPoint),
@@ -219,7 +390,8 @@ pub enum DocumentMsg {
     ScrollNodeWithId(LayoutPoint, ClipId, ScrollClamping),
     TickScrollingBounce,
     GetScrollNodeState(MsgSender<Vec<ScrollLayerState>>),
-    GenerateFrame(Option<DynamicProperties>),
+    GenerateFrame,
+    UpdateDynamicProperties(DynamicProperties),
 }
 
 impl fmt::Debug for DocumentMsg {
@@ -238,8 +410,11 @@ impl fmt::Debug for DocumentMsg {
             DocumentMsg::ScrollNodeWithId(..) => "DocumentMsg::ScrollNodeWithId",
             DocumentMsg::TickScrollingBounce => "DocumentMsg::TickScrollingBounce",
             DocumentMsg::GetScrollNodeState(..) => "DocumentMsg::GetScrollNodeState",
-            DocumentMsg::GenerateFrame(..) => "DocumentMsg::GenerateFrame",
+            DocumentMsg::GenerateFrame => "DocumentMsg::GenerateFrame",
             DocumentMsg::EnableFrameOutput(..) => "DocumentMsg::EnableFrameOutput",
+            DocumentMsg::UpdateResources(..) => "DocumentMsg::UpdateResources",
+            DocumentMsg::UpdateEpoch(..) => "DocumentMsg::UpdateEpoch",
+            DocumentMsg::UpdateDynamicProperties(..) => "DocumentMsg::UpdateDynamicProperties",
         })
     }
 }
@@ -293,7 +468,7 @@ pub enum ApiMsg {
     
     AddDocument(DocumentId, DeviceUintSize, DocumentLayer),
     
-    UpdateDocument(DocumentId, DocumentMsg),
+    UpdateDocument(DocumentId, Vec<DocumentMsg>),
     
     DeleteDocument(DocumentId),
     
@@ -570,9 +745,14 @@ impl RenderApi {
         
         
         self.api_sender
-            .send(ApiMsg::UpdateDocument(document_id, msg))
+            .send(ApiMsg::UpdateDocument(document_id, vec![msg]))
             .unwrap()
     }
+
+    
+    
+    
+    
 
     
     
@@ -630,8 +810,14 @@ impl RenderApi {
         viewport_size: LayoutSize,
         (pipeline_id, content_size, display_list): (PipelineId, LayoutSize, BuiltDisplayList),
         preserve_frame_state: bool,
-        resources: ResourceUpdates,
+        resources: ResourceUpdates, 
     ) {
+        
+        
+        
+        
+        
+
         let (display_list_data, list_descriptor) = display_list.into_data();
         self.send(
             document_id,
@@ -654,6 +840,13 @@ impl RenderApi {
                 display_list_data,
             })
             .unwrap();
+    }
+
+    pub fn send_transaction(&mut self, document_id: DocumentId, transaction: Transaction) {
+        for payload in transaction.payloads {
+            self.payload_sender.send_payload(payload).unwrap();
+        }
+        self.api_sender.send(ApiMsg::UpdateDocument(document_id, transaction.ops)).unwrap();
     }
 
     
@@ -764,7 +957,10 @@ impl RenderApi {
         document_id: DocumentId,
         property_bindings: Option<DynamicProperties>,
     ) {
-        self.send(document_id, DocumentMsg::GenerateFrame(property_bindings));
+        if let Some(properties) = property_bindings {
+            self.send(document_id, DocumentMsg::UpdateDynamicProperties(properties));
+        }
+        self.send(document_id, DocumentMsg::GenerateFrame);
     }
 
     
