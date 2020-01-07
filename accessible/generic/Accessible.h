@@ -512,17 +512,7 @@ public:
   
 
 
-  virtual nsRect BoundsInAppUnits() const;
-
-  
-
-
-  nsIntRect Bounds() const;
-
-  
-
-
-  virtual nsIntRect BoundsInCSSPixels() const;
+  virtual nsIntRect Bounds() const;
 
   
 

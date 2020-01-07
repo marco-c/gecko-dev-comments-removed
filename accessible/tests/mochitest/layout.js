@@ -201,23 +201,10 @@ function getPos(aID) {
 
 
 
-
-function getBounds(aID, aDPR = window.devicePixelRatio) {
-  const accessible = getAccessible(aID);
-  let x = {}, y = {}, width = {}, height = {};
-  let xInCSS = {}, yInCSS = {}, widthInCSS = {}, heightInCSS = {};
+function getBounds(aID) {
+  var accessible = getAccessible(aID);
+  var x = {}, y = {}, width = {}, height = {};
   accessible.getBounds(x, y, width, height);
-  accessible.getBoundsInCSSPixels(xInCSS, yInCSS, widthInCSS, heightInCSS);
-
-  ok(Math.trunc(x.value / aDPR) <= xInCSS.value,
-    "X in CSS pixels is calculated correctly");
-  ok(Math.trunc(y.value / aDPR) <= yInCSS.value,
-    "Y in CSS pixels is calculated correctly");
-  ok(Math.trunc(width.value / aDPR) <= widthInCSS.value,
-    "Width in CSS pixels is calculated correctly");
-  ok(Math.trunc(height.value / aDPR) <= heightInCSS.value,
-    "Heights in CSS pixels is calculated correctly");
-
   return [x.value, y.value, width.value, height.value];
 }
 
