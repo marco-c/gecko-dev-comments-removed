@@ -511,20 +511,22 @@ class Telemetry {
 
 
 
-  recordEvent(category, method, object, value, extra) {
+  recordEvent(category, method, object, value = null, extra = null) {
     
-    for (let [name, val] of Object.entries(extra)) {
-      val = val + "";
-      extra[name] = val;
+    if (extra) {
+      for (let [name, val] of Object.entries(extra)) {
+        val = val + "";
+        extra[name] = val;
 
-      if (val.length > 80) {
-        const sig = `${category},${method},${object},${value}`;
+        if (val.length > 80) {
+          const sig = `${category},${method},${object},${value}`;
 
-        throw new Error(`The property "${name}" was added to a telemetry ` +
-                        `event with the signature ${sig} but it's value ` +
-                        `"${val}" is longer than the maximum allowed length ` +
-                        `of 80 characters\n` +
-                        `CALLER: ${getCaller()}`);
+          throw new Error(`The property "${name}" was added to a telemetry ` +
+                          `event with the signature ${sig} but it's value ` +
+                          `"${val}" is longer than the maximum allowed length ` +
+                          `of 80 characters\n` +
+                          `CALLER: ${getCaller()}`);
+        }
       }
     }
     Services.telemetry.recordEvent(category, method, object, value, extra);

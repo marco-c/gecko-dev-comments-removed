@@ -54,6 +54,7 @@ function RuleEditor(ruleView, rule) {
   this.ruleView = ruleView;
   this.doc = this.ruleView.styleDocument;
   this.toolbox = this.ruleView.inspector.toolbox;
+  this.telemetry = this.toolbox.telemetry;
   this.rule = rule;
 
   this.isEditable = !rule.isSystem;
@@ -589,6 +590,8 @@ RuleEditor.prototype = {
     
     
     this.editor.input.blur();
+
+    this.telemetry.recordEvent("devtools.main", "edit_rule", "ruleview");
   },
 
   
