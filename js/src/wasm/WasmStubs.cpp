@@ -329,14 +329,15 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmP
 
     
 #ifdef JS_USE_LINK_REGISTER
-# if defined(JS_CODEGEN_ARM)
+# if defined(JS_CODEGEN_ARM) || \
+     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.pushReturnAddress();
 # elif defined(JS_CODEGEN_ARM64)
     
     
     WasmPush(masm, lr);
 # else
-#   MOZ_CRASH("Implement this");
+    MOZ_CRASH("Implement this");
 # endif
 #endif
 
