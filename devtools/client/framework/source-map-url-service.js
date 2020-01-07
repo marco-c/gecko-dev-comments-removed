@@ -70,7 +70,7 @@ SourceMapURLService.prototype._getLoadingPromise = function () {
       
       
       for (let source of sources) {
-        this._onSourceUpdated(null, {source});
+        this._onSourceUpdated({source});
       }
     }, e => {
       
@@ -110,7 +110,7 @@ SourceMapURLService.prototype.destroy = function () {
 
 
 
-SourceMapURLService.prototype._onSourceUpdated = function (_, sourceEvent) {
+SourceMapURLService.prototype._onSourceUpdated = function (sourceEvent) {
   
   if (!this._urls) {
     return;

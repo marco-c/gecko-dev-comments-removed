@@ -21,7 +21,7 @@ var defer = require("devtools/shared/defer");
 var Services = require("Services");
 var ChromeUtils = require("ChromeUtils");
 var {gDevTools} = require("devtools/client/framework/devtools");
-var EventEmitter = require("devtools/shared/old-event-emitter");
+var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
 var { attachThread, detachThread } = require("./attach-thread");
 var Menu = require("devtools/client/framework/menu");
@@ -308,7 +308,7 @@ Toolbox.prototype = {
     if (panel) {
       deferred.resolve(panel);
     } else {
-      this.on(id + "-ready", (e, initializedPanel) => {
+      this.on(id + "-ready", initializedPanel => {
         deferred.resolve(initializedPanel);
       });
     }
@@ -2183,7 +2183,7 @@ Toolbox.prototype = {
       type: "listFrames"
     };
     return this._target.client.request(packet, resp => {
-      this._updateFrames(null, { frames: resp.frames });
+      this._updateFrames({ frames: resp.frames });
     });
   },
 
@@ -2308,7 +2308,7 @@ Toolbox.prototype = {
 
 
 
-  _updateFrames: function(event, data) {
+  _updateFrames: function(data) {
     if (!Services.prefs.getBoolPref("devtools.command-button-frames.enabled")) {
       return;
     }
@@ -2505,9 +2505,7 @@ Toolbox.prototype = {
 
 
 
-
-
-  _toolRegistered: function(event, toolId) {
+  _toolRegistered: function(toolId) {
     
     
     let definition = gDevTools.getToolDefinition(toolId);
@@ -2537,9 +2535,7 @@ Toolbox.prototype = {
 
 
 
-
-
-  _toolUnregistered: function(event, toolId) {
+  _toolUnregistered: function(toolId) {
     this.unloadTool(toolId);
     
     
@@ -2572,14 +2568,14 @@ Toolbox.prototype = {
     return this._initInspector;
   },
 
-  _onNewSelectedNodeFront: function(evt) {
+  _onNewSelectedNodeFront: function() {
     
     
     
     this.emit("selection-changed");
   },
 
-  _onInspectObject: function(evt, packet) {
+  _onInspectObject: function(packet) {
     this.inspectObjectActor(packet.objectActor, packet.inspectFromAnnotation);
   },
 

@@ -8,7 +8,7 @@
 
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
 
-const EventEmitter = require("devtools/shared/old-event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 function toggleAllTools(state) {
   for (let [, tool] of gDevTools._tools) {
@@ -55,11 +55,11 @@ function getSourceActor(aSources, aURL) {
 
 
 
-function* openScratchpadWindow() {
+async function openScratchpadWindow() {
   let { promise: p, resolve } = defer();
   let win = ScratchpadManager.openScratchpad();
 
-  yield once(win, "load");
+  await once(win, "load");
 
   win.Scratchpad.addObserver({
     onReady: function () {
@@ -180,7 +180,7 @@ function waitForSourceLoad(toolbox, url) {
   return new Promise(resolve => {
     let target = toolbox.target;
 
-    function sourceHandler(_, sourceEvent) {
+    function sourceHandler(sourceEvent) {
       if (sourceEvent && sourceEvent.source && sourceEvent.source.url === url) {
         resolve();
         target.off("source-updated", sourceHandler);
