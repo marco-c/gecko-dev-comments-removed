@@ -149,20 +149,6 @@ class ProfileEntry
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
 
   public:
-    ProfileEntry() = default;
-    ProfileEntry& operator=(const ProfileEntry& other)
-    {
-        label_ = other.label();
-        dynamicString_ = other.dynamicString();
-        void* spScript = other.spOrScript;
-        spOrScript = spScript;
-        int32_t offset = other.lineOrPcOffset;
-        lineOrPcOffset = offset;
-        uint32_t kindAndCategory = other.kindAndCategory_;
-        kindAndCategory_ = kindAndCategory;
-        return *this;
-    }
-
     enum class Kind : uint32_t {
         
         CPP_NORMAL = 0,
@@ -325,42 +311,47 @@ class PseudoStack final
       : stackPointer(0)
     {}
 
-    ~PseudoStack();
+    ~PseudoStack() {
+        
+        
+        
+        MOZ_RELEASE_ASSERT(stackPointer == 0);
+    }
 
     void pushCppFrame(const char* label, const char* dynamicString, void* sp, uint32_t line,
                       js::ProfileEntry::Kind kind, js::ProfileEntry::Category category) {
+        if (stackPointer < MaxEntries) {
+            entries[stackPointer].initCppFrame(label, dynamicString, sp, line, kind, category);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
         uint32_t oldStackPointer = stackPointer;
-
-        if (MOZ_LIKELY(entryCapacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
-            entries[oldStackPointer].initCppFrame(label, dynamicString, sp, line, kind, category);
-
-        
-        
-        
-        
-        
-        
-        
-        
         stackPointer = oldStackPointer + 1;
     }
 
     void pushJsFrame(const char* label, const char* dynamicString, JSScript* script,
                      jsbytecode* pc) {
+        if (stackPointer < MaxEntries) {
+            entries[stackPointer].initJsFrame(label, dynamicString, script, pc);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
         uint32_t oldStackPointer = stackPointer;
-
-        if (MOZ_LIKELY(entryCapacity > oldStackPointer) || MOZ_LIKELY(ensureCapacitySlow()))
-            entries[oldStackPointer].initJsFrame(label, dynamicString, script, pc);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
         stackPointer = oldStackPointer + 1;
     }
 
@@ -375,31 +366,18 @@ class PseudoStack final
         stackPointer = oldStackPointer - 1;
     }
 
-    uint32_t stackSize() const { return std::min(uint32_t(stackPointer), stackCapacity()); }
-    uint32_t stackCapacity() const { return entryCapacity; }
+    uint32_t stackSize() const { return std::min(uint32_t(stackPointer), uint32_t(MaxEntries)); }
 
   private:
-    
-    
-    MOZ_COLD MOZ_MUST_USE bool ensureCapacitySlow();
-
     
     PseudoStack(const PseudoStack&) = delete;
     void operator=(const PseudoStack&) = delete;
 
-    
-    PseudoStack(PseudoStack&&) = delete;
-    void operator=(PseudoStack&&) = delete;
-
-    uint32_t entryCapacity = 0;
-
   public:
+    static const uint32_t MaxEntries = 1024;
 
     
-    
-    
-    
-    mozilla::Atomic<js::ProfileEntry*> entries { nullptr };
+    js::ProfileEntry entries[MaxEntries];
 
     
     
