@@ -131,7 +131,7 @@ def taskgraph_decision(options, parameters=None):
     write_artifact('parameters.yml', dict(**parameters))
 
     
-    write_artifact('actions.json', render_actions_json(parameters))
+    write_artifact('actions.json', render_actions_json(parameters, tgg.graph_config))
 
     
     full_task_json = tgg.full_task_graph.to_json()
