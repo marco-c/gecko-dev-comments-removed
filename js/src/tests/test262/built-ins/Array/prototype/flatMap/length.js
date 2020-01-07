@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.flatMap.length, 1,
   'The value of `Array.prototype.flatmap.length` is `1`'

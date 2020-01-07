@@ -9,7 +9,6 @@
 
 
 
-
 assert.sameValue(
   Array.prototype.flatMap.name, 'flatMap',
   'The value of `Array.prototype.flatMap.name` is `"flatMap"`'

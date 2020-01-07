@@ -8,7 +8,6 @@
 
 
 
-
 var a = [];
 a.constructor = null;
 assert.throws(TypeError, function() {
