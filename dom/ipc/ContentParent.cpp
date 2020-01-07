@@ -1519,6 +1519,10 @@ ContentParent::OnChannelConnected(int32_t pid)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+#ifndef ASYNC_CONTENTPROC_LAUNCH
+  SetOtherProcessId(pid);
+#endif
+
 #if defined(ANDROID) || defined(LINUX)
   
   int32_t nice = Preferences::GetInt("dom.ipc.content.nice", 0);
@@ -1543,7 +1547,7 @@ ContentParent::OnChannelConnected(int32_t pid)
   }
 #endif
 
-#ifdef MOZ_CODE_COVERAGE
+#if defined(MOZ_CODE_COVERAGE) && defined(ASYNC_CONTENTPROC_LAUNCH)
   Unused << SendShareCodeCoverageMutex(
               CodeCoverageHandler::Get()->GetMutexHandle(pid));
 #endif
@@ -2059,13 +2063,27 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   extraArgs.push_back(parentBuildID.get());
 
   SetOtherProcessId(kInvalidProcessId, ProcessIdState::ePending);
+#ifdef ASYNC_CONTENTPROC_LAUNCH
   if (!mSubprocess->Launch(extraArgs)) {
+#else
+  if (!mSubprocess->LaunchAndWaitForProcessHandle(extraArgs)) {
+#endif
     NS_ERROR("failed to launch child in the parent");
     MarkAsDead();
     return false;
   }
 
+#ifdef ASYNC_CONTENTPROC_LAUNCH
   OpenWithAsyncPid(mSubprocess->GetChannel());
+#else
+  base::ProcessId procId =
+    base::GetProcId(mSubprocess->GetChildProcessHandle());
+  Open(mSubprocess->GetChannel(), procId);
+#ifdef MOZ_CODE_COVERAGE
+  Unused << SendShareCodeCoverageMutex(
+              CodeCoverageHandler::Get()->GetMutexHandle(procId));
+#endif
+#endif 
 
   InitInternal(aInitialPriority);
 
@@ -2076,6 +2094,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   
   SetReplyTimeoutMs(Preferences::GetInt("dom.ipc.cpow.timeout", 0));
 
+  
   
   
   Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_TIME_MS,
