@@ -609,7 +609,7 @@ DecompileValueGenerator(JSContext* cx, int spindex, HandleValue v,
 
 
 
-char*
+UniqueChars
 DecompileArgument(JSContext* cx, int formalIndex, HandleValue v);
 
 extern bool

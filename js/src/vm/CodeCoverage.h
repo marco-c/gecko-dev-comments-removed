@@ -13,6 +13,7 @@
 
 #include "js/HashTable.h"
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
 
 #include "vm/Printer.h"
 
@@ -25,13 +26,13 @@ namespace coverage {
 class LCovSource
 {
   public:
-    LCovSource(LifoAlloc* alloc, const char* name);
+    LCovSource(LifoAlloc* alloc, JS::UniqueChars name);
     LCovSource(LCovSource&& src);
-    ~LCovSource();
+    ~LCovSource() = default;
 
     
     bool match(const char* name) const {
-        return strcmp(name_, name) == 0;
+        return strcmp(name_.get(), name) == 0;
     }
 
     
@@ -53,7 +54,7 @@ class LCovSource
 
   private:
     
-    const char* name_;
+    JS::UniqueChars name_;
 
     
     

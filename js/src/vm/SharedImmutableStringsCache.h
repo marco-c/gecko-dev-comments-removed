@@ -44,8 +44,8 @@ class SharedImmutableStringsCache
     struct Hasher;
 
   public:
-    using OwnedChars = mozilla::UniquePtr<char[], JS::FreePolicy>;
-    using OwnedTwoByteChars = mozilla::UniquePtr<char16_t[], JS::FreePolicy>;
+    using OwnedChars = JS::UniqueChars;
+    using OwnedTwoByteChars = JS::UniqueTwoByteChars;
 
     
 
