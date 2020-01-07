@@ -1770,13 +1770,6 @@ WinUtils::SetupKeyModifiersSequence(nsTArray<KeyPair>* aArray,
 }
 
 
-bool
-WinUtils::ShouldHideScrollbars()
-{
-  return false;
-}
-
-
 
 uint32_t
 WinUtils::IsTouchDeviceSupportPresent()

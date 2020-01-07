@@ -489,8 +489,6 @@ public:
 
   static void Initialize();
 
-  static bool ShouldHideScrollbars();
-
   
 
 
