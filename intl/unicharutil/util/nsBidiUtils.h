@@ -263,9 +263,17 @@ typedef enum nsCharType nsCharType;
                                      ((0xfe70 <= (c)) && ((c) <= 0xfefc)))
 #define IS_IN_SMP_RTL_BLOCK(c) (((0x10800 <= (c)) && ((c) <= 0x10fff)) || \
                                 ((0x1e800 <= (c)) && ((c) <= 0x1eFFF)))
-#define UCS2_CHAR_IS_BIDI(c) ((IS_IN_BMP_RTL_BLOCK(c)) || \
-                              (IS_RTL_PRESENTATION_FORM(c)) || \
-                              (c) == 0xD802 || (c) == 0xD803)
+
+
+
+
+
+
+
+#define UTF16_CODE_UNIT_IS_BIDI(c) ((IS_IN_BMP_RTL_BLOCK(c)) || \
+                                    (IS_RTL_PRESENTATION_FORM(c)) || \
+                                    (c) == 0xD802 || (c) == 0xD803 || \
+                                    (c) == 0xD83A || (c) == 0xD83B)
 #define UTF32_CHAR_IS_BIDI(c)  ((IS_IN_BMP_RTL_BLOCK(c)) || \
                                (IS_RTL_PRESENTATION_FORM(c)) || \
                                (IS_IN_SMP_RTL_BLOCK(c)))
