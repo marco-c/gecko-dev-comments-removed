@@ -448,9 +448,6 @@ NS_IMETHODIMP nsXULWindow::Create()
 
 NS_IMETHODIMP nsXULWindow::Destroy()
 {
-  MOZ_DIAGNOSTIC_ASSERT(!mSyncingAttributesToWidget,
-                        "Destroying the window from SyncAttributesToWidget?");
-
   if (!mWindow)
      return NS_OK;
 
@@ -1124,13 +1121,15 @@ void nsXULWindow::OnChromeLoaded()
     mChromeLoaded = true;
     ApplyChromeFlags();
     SyncAttributesToWidget();
-    SizeShell();
-
-    if (mShowAfterLoad) {
-      SetVisibility(true);
-      
-      
+    if (mWindow) {
+      SizeShell();
+      if (mShowAfterLoad) {
+        SetVisibility(true);
+      }
     }
+    
+    
+    
   }
   mPersistentAttributesMask |= PAD_POSITION | PAD_SIZE | PAD_MISC;
 }
@@ -1549,9 +1548,6 @@ void nsXULWindow::SyncAttributesToWidget()
   nsCOMPtr<dom::Element> windowElement = GetWindowDOMElement();
   if (!windowElement)
     return;
-
-  AutoRestore<bool> scope { mSyncingAttributesToWidget };
-  mSyncingAttributesToWidget = true;
 
   MOZ_DIAGNOSTIC_ASSERT(mWindow, "No widget on SyncAttributesToWidget?");
 
@@ -2426,7 +2422,9 @@ nsXULWindow::BeforeStartLayout()
   ApplyChromeFlags();
   LoadPersistentWindowState();
   SyncAttributesToWidget();
-  SizeShell();
+  if (mWindow) {
+    SizeShell();
+  }
   return NS_OK;
 }
 
