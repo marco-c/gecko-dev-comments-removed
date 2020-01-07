@@ -542,9 +542,9 @@ GCRuntime::markBufferedGrayRoots(JS::Zone* zone)
     
     MOZ_RELEASE_ASSERT(roots.length() > 1);
     MOZ_RELEASE_ASSERT(roots.back() == GrayBufferCanary);
-    roots.popBack();
 
-    for (auto cell : zone->gcGrayRoots()) {
+    for (size_t i = 0; i < roots.length() - 1; i++) {
+        Cell* cell = roots[i];
         MOZ_ASSERT(IsCellPointerValid(cell));
         TraceManuallyBarrieredGenericPointerEdge(&marker, &cell, "buffered gray root");
     }
