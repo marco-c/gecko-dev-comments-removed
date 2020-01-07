@@ -3256,6 +3256,16 @@ public:
   virtual bool AllowPaymentRequest() const = 0;
   virtual void SetAllowPaymentRequest(bool aAllowPaymentRequest) = 0;
 
+  bool IsWebComponentsEnabled() const
+  {
+    return mIsWebComponentsEnabled;
+  }
+
+  void SetWebComponentsEnabled(bool aEnabled)
+  {
+    mIsWebComponentsEnabled = aEnabled;
+  }
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3611,6 +3621,10 @@ protected:
 
   
   bool mEncodingMenuDisabled : 1;
+
+  
+  
+  bool mIsWebComponentsEnabled : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
