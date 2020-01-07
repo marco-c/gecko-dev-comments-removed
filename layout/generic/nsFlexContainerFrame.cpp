@@ -262,12 +262,6 @@ PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
 
 
 
-#define GET_MAIN_COMPONENT(axisTracker_, width_, height_)  \
-  (axisTracker_).IsMainAxisHorizontal() ? (width_) : (height_)
-
-#define GET_CROSS_COMPONENT(axisTracker_, width_, height_)  \
-  (axisTracker_).IsCrossAxisHorizontal() ? (width_) : (height_)
-
 
 #define GET_MAIN_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_)  \
   wm_.IsOrthogonalTo(axisTracker_.GetWritingMode()) != \
@@ -334,7 +328,7 @@ public:
     return IsRowOriented() ? aSize.ISize(mWM) : aSize.BSize(mWM);
   }
   int32_t GetMainComponent(const LayoutDeviceIntSize& aIntSize) const {
-    return GET_MAIN_COMPONENT(*this, aIntSize.width, aIntSize.height);
+    return IsMainAxisHorizontal() ? aIntSize.width : aIntSize.height;
   }
 
   
@@ -342,7 +336,7 @@ public:
     return IsRowOriented() ? aSize.BSize(mWM) : aSize.ISize(mWM);
   }
   int32_t GetCrossComponent(const LayoutDeviceIntSize& aIntSize) const {
-    return GET_CROSS_COMPONENT(*this, aIntSize.width, aIntSize.height);
+    return IsMainAxisHorizontal() ? aIntSize.height : aIntSize.width;
   }
 
   
