@@ -198,7 +198,10 @@ HTMLSelectOptionAccessible::NativeState()
     
     if (!selected) {
       state |= states::OFFSCREEN;
-      state ^= states::INVISIBLE;
+      
+      
+      
+      state &= ~states::INVISIBLE;
     } else {
       
       state &= ~(states::OFFSCREEN | states::INVISIBLE);
