@@ -1636,6 +1636,10 @@ nsJSContext::BeginCycleCollectionCallback()
 
   MOZ_ASSERT(!sICCRunner, "Tried to create a new ICC timer when one already existed.");
 
+  if (sShuttingDown) {
+    return;
+  }
+
   
   
   sICCRunner = IdleTaskRunner::Create(ICCRunnerFired,
@@ -1863,6 +1867,11 @@ void
 GCTimerFired(nsITimer *aTimer, void *aClosure)
 {
   nsJSContext::KillGCTimer();
+  nsJSContext::KillInterSliceGCRunner();
+  if (sShuttingDown) {
+    return;
+  }
+
   
   sInterSliceGCRunner = IdleTaskRunner::Create([aClosure](TimeStamp aDeadline) {
     return InterSliceGCRunnerFired(aDeadline, aClosure);
