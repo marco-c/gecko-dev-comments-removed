@@ -90,25 +90,9 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
         super(FxDesktopBuild, self).__init__(**buildscript_kwargs)
 
     def _pre_config_lock(self, rw_config):
-        """grab buildbot props if we are running this in automation"""
+        """grab properties if we are running this in automation"""
         super(FxDesktopBuild, self)._pre_config_lock(rw_config)
         c = self.config
-        if c['is_automation']:
-            
-            self.info("We are running this in buildbot, grab the build props")
-            self.read_buildbot_config()
-            
-            if c.get('stage_platform'):
-                platform_for_log_url = c['stage_platform']
-                if c.get('pgo_build'):
-                    platform_for_log_url += '-pgo'
-                
-                self.set_buildbot_property('stage_platform',
-                                           platform_for_log_url,
-                                           write_to_file=True)
-            else:
-                self.fatal("'stage_platform' not determined and is required in your config")
-
         if self.try_message_has_flag('artifact') or os.environ.get('USE_ARTIFACT'):
             
             
@@ -222,7 +206,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
-        
         
         
 
