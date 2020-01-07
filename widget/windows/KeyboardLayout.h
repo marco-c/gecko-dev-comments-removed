@@ -161,29 +161,49 @@ public:
 class VirtualKey
 {
 public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  enum ShiftStateIndex : uint8_t
+  {
+    
+    eNormal = 0,
+    
+    eShift,
+    
+    eControl,
+    
+    eControlShift,
+    
+    eAlt,
+    
+    eAltShift,
+    
+    eAltGr,
+    
+    eAltGrShift,
+    
+    eWithCapsLock,
+    
+    eShiftWithCapsLock,
+    
+    eControlWithCapsLock,
+    
+    eControlShiftWithCapsLock,
+    
+    eAltWithCapsLock,
+    
+    eAltShiftWithCapsLock,
+    
+    eAltGrWithCapsLock,
+    
+    eAltGrShiftWithCapsLock,
+  };
 
   enum ShiftStateFlag
   {
     STATE_SHIFT    = 0x01,
     STATE_CONTROL  = 0x02,
     STATE_ALT      = 0x04,
-    STATE_CAPSLOCK = 0x08
+    STATE_CAPSLOCK = 0x08,
+    STATE_CONTROL_ALT = STATE_CONTROL | STATE_ALT,
   };
 
   typedef uint8_t ShiftState;
@@ -195,6 +215,10 @@ public:
     return ModifiersToShiftState(aModKeyState.GetModifiers());
   }
   static Modifiers ShiftStateToModifiers(ShiftState aShiftState);
+  static bool IsAltGrIndex(uint8_t aIndex)
+  {
+    return (aIndex & STATE_CONTROL_ALT) == STATE_CONTROL_ALT;
+  }
 
 private:
   union KeyShiftState
@@ -228,6 +252,41 @@ public:
   bool IsDeadKey(ShiftState aShiftState) const
   {
     return (mIsDeadKey & (1 << aShiftState)) != 0;
+  }
+
+  
+
+
+
+
+
+
+
+  bool IsChangedByAltGr(ShiftState aShiftState) const
+  {
+    MOZ_ASSERT(IsAltGrIndex(aShiftState));
+    MOZ_ASSERT(IsDeadKey(aShiftState) ||
+               mShiftStates[aShiftState].Normal.Chars[0]);
+    const ShiftState kShiftStateWithoutAltGr =
+      aShiftState - ShiftStateIndex::eAltGr;
+    if (IsDeadKey(aShiftState) != IsDeadKey(kShiftStateWithoutAltGr)) {
+      return false;
+    }
+    if (IsDeadKey(aShiftState)) {
+      return mShiftStates[aShiftState].DeadKey.DeadChar !=
+               mShiftStates[kShiftStateWithoutAltGr].DeadKey.DeadChar;
+    }
+    for(size_t i = 0; i < 4; i++) {
+      if (mShiftStates[aShiftState].Normal.Chars[i] !=
+            mShiftStates[kShiftStateWithoutAltGr].Normal.Chars[i]) {
+        return true;
+      }
+      if (!mShiftStates[aShiftState].Normal.Chars[i] &&
+          !mShiftStates[kShiftStateWithoutAltGr].Normal.Chars[i]) {
+        return false;
+      }
+    }
+    return false;
   }
 
   void AttachDeadKeyTable(ShiftState aShiftState,
@@ -730,6 +789,12 @@ public:
 
 
 
+  bool HasAltGr() const { return mHasAltGr; }
+
+  
+
+
+
   bool IsDeadKey(uint8_t aVirtualKey,
                  const ModifierKeyState& aModKeyState) const;
 
@@ -866,6 +931,7 @@ private:
 
   bool mIsOverridden;
   bool mIsPendingToRestoreKeyboardLayout;
+  bool mHasAltGr;
 
   static inline int32_t GetKeyIndex(uint8_t aVirtualKey);
   static int CompareDeadKeyEntries(const void* aArg1, const void* aArg2,
