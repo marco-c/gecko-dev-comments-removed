@@ -428,6 +428,9 @@ BaselineCompiler::emitPrologue()
     if (!initEnvironmentChain())
         return false;
 
+    frame.assertSyncedStack();
+    masm.debugAssertContextRealm(script->realm(), R1.scratchReg());
+
     if (!emitStackCheck())
         return false;
 
@@ -4822,6 +4825,8 @@ BaselineCompiler::emit_JSOP_RESUME()
     masm.bind(&noExprStack);
     masm.pushValue(retVal);
 
+    masm.switchToObjectRealm(genObj, scratch2);
+
     if (resumeKind == GeneratorObject::NEXT) {
         
         
@@ -4894,6 +4899,7 @@ BaselineCompiler::emit_JSOP_RESUME()
     
     masm.bind(&returnTarget);
     masm.computeEffectiveAddress(frame.addressOfStackValue(frame.peek(-1)), masm.getStackPointer());
+    masm.switchToRealm(script->realm(), R2.scratchReg());
     frame.popn(2);
     frame.push(R0);
     return true;

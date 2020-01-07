@@ -5028,7 +5028,7 @@ MDefinition*
 IonBuilder::createThis(JSFunction* target, MDefinition* callee, MDefinition* newTarget)
 {
     
-    if (!target) {
+    if (!target || target->realm() != script()->realm()) {
         if (MDefinition* createThis = createThisScriptedBaseline(callee))
             return createThis;
 
@@ -5233,6 +5233,9 @@ IonBuilder::jsop_spreadcall()
     current->push(apply);
     MOZ_TRY(resumeAfter(apply));
 
+    if (target && target->realm() == script()->realm())
+        apply->setNotCrossRealm();
+
     
     TemporaryTypeSet* types = bytecodeTypes(pc);
     return pushTypeBarrier(apply, types, BarrierKind::TypeSet);
@@ -5270,6 +5273,9 @@ IonBuilder::jsop_funapplyarray(uint32_t argc)
     current->add(apply);
     current->push(apply);
     MOZ_TRY(resumeAfter(apply));
+
+    if (target && target->realm() == script()->realm())
+        apply->setNotCrossRealm();
 
     TemporaryTypeSet* types = bytecodeTypes(pc);
     return pushTypeBarrier(apply, types, BarrierKind::TypeSet);
@@ -5331,6 +5337,9 @@ IonBuilder::jsop_funapplyarguments(uint32_t argc)
         current->add(apply);
         current->push(apply);
         MOZ_TRY(resumeAfter(apply));
+
+        if (target && target->realm() == script()->realm())
+            apply->setNotCrossRealm();
 
         TemporaryTypeSet* types = bytecodeTypes(pc);
         return pushTypeBarrier(apply, types, BarrierKind::TypeSet);
@@ -5621,13 +5630,12 @@ IonBuilder::makeCallHelper(const Maybe<CallTargets>& targets, CallInfo& callInfo
         call->disableClassCheck();
 
         
+        
         bool needArgCheck = false;
         bool maybeCrossRealm = false;
         for (JSFunction* target : targets.ref()) {
-            if (testNeedsArgumentCheck(target, callInfo)) {
+            if (testNeedsArgumentCheck(target, callInfo))
                 needArgCheck = true;
-                break;
-            }
             if (target->realm() != script()->realm())
                 maybeCrossRealm = true;
         }

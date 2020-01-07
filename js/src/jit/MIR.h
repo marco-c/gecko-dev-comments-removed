@@ -4421,6 +4421,7 @@ class MApplyArgs
   protected:
     
     WrappedFunction* target_;
+    bool maybeCrossRealm_ = true;
 
     MApplyArgs(WrappedFunction* target, MDefinition* fun, MDefinition* argc, MDefinition* self)
       : MTernaryInstruction(classOpcode, fun, argc, self),
@@ -4438,6 +4439,13 @@ class MApplyArgs
     
     WrappedFunction* getSingleTarget() const {
         return target_;
+    }
+
+    bool maybeCrossRealm() const {
+        return maybeCrossRealm_;
+    }
+    void setNotCrossRealm() {
+        maybeCrossRealm_ = false;
     }
 
     bool possiblyCalls() const override {
@@ -4459,6 +4467,7 @@ class MApplyArray
   protected:
     
     WrappedFunction* target_;
+    bool maybeCrossRealm_ = true;
 
     MApplyArray(WrappedFunction* target, MDefinition* fun, MDefinition* elements, MDefinition* self)
       : MTernaryInstruction(classOpcode, fun, elements, self),
@@ -4475,6 +4484,13 @@ class MApplyArray
     
     WrappedFunction* getSingleTarget() const {
         return target_;
+    }
+
+    bool maybeCrossRealm() const {
+        return maybeCrossRealm_;
+    }
+    void setNotCrossRealm() {
+        maybeCrossRealm_ = false;
     }
 
     bool possiblyCalls() const override {

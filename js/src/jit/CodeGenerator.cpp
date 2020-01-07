@@ -4562,6 +4562,9 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
                                 &invoke);
     }
 
+    if (call->mir()->maybeCrossRealm())
+        masm.switchToObjectRealm(calleereg, objreg);
+
     if (call->mir()->needsArgCheck())
         masm.loadJitCodeRaw(calleereg, objreg);
     else
@@ -4597,6 +4600,12 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
     masm.bind(&makeCall);
     uint32_t callOffset = masm.callJit(objreg);
     markSafepointAt(callOffset, call);
+
+    if (call->mir()->maybeCrossRealm()) {
+        static_assert(!JSReturnOperand.aliases(ReturnReg),
+                      "ReturnReg available as scratch after scripted calls");
+        masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
+    }
 
     
     
@@ -4675,6 +4684,9 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
         masm.branchIfFunctionHasNoJitEntry(calleereg, call->isConstructing(), &uncompiled);
     }
 
+    if (call->mir()->maybeCrossRealm())
+        masm.switchToObjectRealm(calleereg, objreg);
+
     if (call->mir()->needsArgCheck())
         masm.loadJitCodeRaw(calleereg, objreg);
     else
@@ -4693,6 +4705,12 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     
     uint32_t callOffset = masm.callJit(objreg);
     markSafepointAt(callOffset, call);
+
+    if (call->mir()->maybeCrossRealm()) {
+        static_assert(!JSReturnOperand.aliases(ReturnReg),
+                      "ReturnReg available as scratch after scripted calls");
+        masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
+    }
 
     
     
@@ -4983,10 +5001,13 @@ CodeGenerator::emitApplyGeneric(T* apply)
                             calleereg, objreg, &invoke);
 
     
-    masm.loadJitCodeRaw(calleereg, objreg);
-
-    
     {
+        if (apply->mir()->maybeCrossRealm())
+            masm.switchToObjectRealm(calleereg, objreg);
+
+        
+        masm.loadJitCodeRaw(calleereg, objreg);
+
         
         unsigned pushed = masm.framePushed();
         Register stackSpace = extraStackSpace;
@@ -5027,6 +5048,12 @@ CodeGenerator::emitApplyGeneric(T* apply)
         
         uint32_t callOffset = masm.callJit(objreg);
         markSafepointAt(callOffset, apply);
+
+        if (apply->mir()->maybeCrossRealm()) {
+            static_assert(!JSReturnOperand.aliases(ReturnReg),
+                          "ReturnReg available as scratch after scripted calls");
+            masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
+        }
 
         
         masm.loadPtr(Address(masm.getStackPointer(), 0), stackSpace);
@@ -5177,6 +5204,8 @@ CodeGenerator::generateArgumentsChecks(bool assert)
     AllocatableGeneralRegisterSet temps(GeneralRegisterSet::All());
     Register temp1 = temps.takeAny();
     Register temp2 = temps.takeAny();
+
+    masm.debugAssertContextRealm(gen->realm->realmPtr(), temp1);
 
     const CompileInfo& info = gen->info();
 
