@@ -31,7 +31,6 @@
 #include "nsIDocument.h"
 #include "nsIContent.h"
 #include "nsTextFragment.h"
-#include "nsIDOMNSEditableElement.h"
 #include "nsIEditor.h"
 
 #include "nsIDocShellTreeItem.h"
@@ -47,6 +46,8 @@
 #include "nsIObserverService.h"
 #include "nsFocusManager.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
@@ -576,33 +577,38 @@ nsTypeAheadFind::FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
         
         nsCOMPtr<nsINode> node = returnRange->GetStartContainer();
         while (node) {
-          nsCOMPtr<nsIDOMNSEditableElement> editable = do_QueryInterface(node);
-          if (editable) {
-            
-            
-            nsCOMPtr<nsIEditor> editor;
-            editable->GetEditor(getter_AddRefs(editor));
-            NS_ASSERTION(editor, "Editable element has no editor!");
-            if (!editor) {
-              break;
-            }
-            editor->GetSelectionController(
-              getter_AddRefs(selectionController));
-            if (selectionController) {
-              selection = selectionController->GetSelection(
-                nsISelectionController::SELECTION_NORMAL);
-            }
-            mFoundEditable = do_QueryInterface(node);
+          nsCOMPtr<nsIEditor> editor;
+          if (auto input = HTMLInputElement::FromNode(node)) {
+            editor = input->GetEditor();
+          } else if (auto textarea = HTMLTextAreaElement::FromNode(node)) {
+            editor = textarea->GetEditor();
+          } else {
+            node = node->GetParentNode();
+            continue;
+          }
 
-            if (!shouldFocusEditableElement)
-              break;
-
-            
-            if (fm)
-              fm->SetFocus(mFoundEditable, 0);
+          
+          
+          NS_ASSERTION(editor, "Editable element has no editor!");
+          if (!editor) {
             break;
           }
-          node = node->GetParentNode();
+          editor->GetSelectionController(getter_AddRefs(selectionController));
+          if (selectionController) {
+            selection = selectionController->GetSelection(
+              nsISelectionController::SELECTION_NORMAL);
+          }
+          mFoundEditable = node->AsElement();
+
+          if (!shouldFocusEditableElement) {
+            break;
+          }
+
+          
+          if (fm) {
+            fm->SetFocus(mFoundEditable, 0);
+          }
+          break;
         }
 
         
