@@ -46,16 +46,16 @@ add_task(async function() {
   tab.linkedBrowser.stop();
 
   
-  ok(test(() => ss.setTabValue(tab, key, value)), "store a tab value");
+  ok(test(() => ss.setCustomTabValue(tab, key, value)), "store a tab value");
 
   
-  is(ss.getTabValue(tab, key), value, "stored tab value match original");
+  is(ss.getCustomTabValue(tab, key), value, "stored tab value match original");
 
   
   ok(test(() => ss.deleteTabValue(tab, key)), "delete the tab value");
 
   
-  is(ss.getTabValue(tab, key), "", "tab value was deleted");
+  is(ss.getCustomTabValue(tab, key), "", "tab value was deleted");
 
   
   ok(test(() => ss.deleteTabValue(tab, key)), "delete non-existent tab value");

@@ -33,10 +33,10 @@ function test() {
 
   function onSSTabRestoring(aEvent) {
     restoringTabsCount++;
-    let uniq = ss.getTabValue(aEvent.originalTarget, "uniq");
+    let uniq = ss.getCustomTabValue(aEvent.originalTarget, "uniq");
     wasLoaded[uniq] = true;
 
-    is(ss.getTabValue(aEvent.originalTarget, "foo"), "",
+    is(ss.getCustomTabValue(aEvent.originalTarget, "foo"), "",
        "There is no value for 'foo'");
 
     
@@ -57,7 +57,7 @@ function test() {
     
     
     
-    ss.setTabValue(aEvent.originalTarget, "foo", "bar");
+    ss.setCustomTabValue(aEvent.originalTarget, "foo", "bar");
   }
 
   
@@ -66,7 +66,7 @@ function test() {
     info("onFirstSSTabRestoring...");
     for (let i = gBrowser.tabs.length - 1; i >= 0; i--) {
       let tab = gBrowser.tabs[i];
-      let actualUniq = ss.getTabValue(tab, "uniq");
+      let actualUniq = ss.getCustomTabValue(tab, "uniq");
       let expectedUniq = state.windows[0].tabs[i].extData.uniq;
 
       if (wasLoaded[actualUniq]) {
@@ -78,15 +78,15 @@ function test() {
       
       
       uniq2[actualUniq] = r();
-      ss.setTabValue(tab, "uniq2", uniq2[actualUniq]);
+      ss.setCustomTabValue(tab, "uniq2", uniq2[actualUniq]);
 
       
       
       
       try {
-        ss.deleteTabValue(tab, "baz");
+        ss.deleteCustomTabValue(tab, "baz");
       } catch (e) {
-        ok(false, "no error calling deleteTabValue - " + e);
+        ok(false, "no error calling deleteCustomTabValue - " + e);
       }
 
       
@@ -99,11 +99,11 @@ function test() {
     let checked = 0;
     for (let i = 0; i < gBrowser.tabs.length; i++) {
       let tab = gBrowser.tabs[i];
-      let uniq = ss.getTabValue(tab, "uniq");
+      let uniq = ss.getCustomTabValue(tab, "uniq");
 
       
       if (uniq in uniq2) {
-        is(ss.getTabValue(tab, "uniq2"), uniq2[uniq], "tab " + i + " has correct uniq2 value");
+        is(ss.getCustomTabValue(tab, "uniq2"), uniq2[uniq], "tab " + i + " has correct uniq2 value");
         checked++;
       }
     }
