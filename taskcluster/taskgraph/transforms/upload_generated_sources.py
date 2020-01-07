@@ -34,6 +34,8 @@ def add_task_info(config, jobs):
         job['treeherder']['platform'] = plat
         job['treeherder']['tier'] = dep_th['tier']
         
+        
+        
         artifact_url = get_artifact_url('<build>',
                                         'public/build/target.generated-files.tar.gz')
         job['worker'].setdefault('env', {})['ARTIFACT_URL'] = {
