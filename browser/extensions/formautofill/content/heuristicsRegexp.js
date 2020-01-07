@@ -222,6 +222,7 @@ var HeuristicsRegExp = {
     ),
     "cc-number": new RegExp(
       "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
+      "|(cc|kk)nr" + 
       "|nummer" + 
       "|credito|numero|número" + 
       "|numéro" + 
@@ -234,6 +235,7 @@ var HeuristicsRegExp = {
     ),
     "cc-exp-month": new RegExp(
       "expir|exp.*mo|exp.*date|ccmonth|cardmonth|addmonth" +
+      "|(cc|kk)month" + 
       "|gueltig|gültig|monat" + 
       "|fecha" + 
       "|date.*exp" + 
@@ -246,6 +248,7 @@ var HeuristicsRegExp = {
     ),
     "cc-exp-year": new RegExp(
       "exp|^/|(add)?year" +
+      "|(cc|kk)year" + 
       "|ablaufdatum|gueltig|gültig|jahr" + 
       "|fecha" + 
       "|scadenza" + 
