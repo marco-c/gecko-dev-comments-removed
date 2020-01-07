@@ -264,8 +264,6 @@ license file's hash.
         vendor_dir = mozpath.join(self.topsrcdir, relative_vendor_dir)
         self.log(logging.INFO, 'rm_vendor_dir', {}, 'rm -rf %s' % vendor_dir)
         mozfile.remove(vendor_dir)
-        
-        
 
         
         
