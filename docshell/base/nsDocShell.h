@@ -352,8 +352,6 @@ public:
     mAncestorOuterWindowIDs = mozilla::Move(aAncestorOuterWindowIDs);
   }
 
-  bool CanSetOriginAttributes();
-
   
   
   
