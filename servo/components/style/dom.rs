@@ -139,10 +139,13 @@ pub trait TDocument: Sized + Copy + Clone {
     
     
     
-    fn elements_with_id(
+    fn elements_with_id<'a>(
         &self,
         _id: &Atom,
-    ) -> Result<&[<Self::ConcreteNode as TNode>::ConcreteElement], ()> {
+    ) -> Result<&'a [<Self::ConcreteNode as TNode>::ConcreteElement], ()>
+    where
+        Self: 'a,
+    {
         Err(())
     }
 }
@@ -342,6 +345,21 @@ pub trait TShadowRoot: Sized + Copy + Clone + PartialEq {
     fn style_data<'a>(&self) -> &'a CascadeData
     where
         Self: 'a;
+
+    
+    
+    
+    
+    
+    fn elements_with_id<'a>(
+        &self,
+        _id: &Atom,
+    ) -> Result<&'a [<Self::ConcreteNode as TNode>::ConcreteElement], ()>
+    where
+        Self: 'a,
+    {
+        Err(())
+    }
 }
 
 
