@@ -116,8 +116,7 @@ this.PlacesRemoteTabsAutocompleteProvider = {
   
   getMatches(searchString) {
     
-    if (Weave === null ||
-        !Services.prefs.prefHasUserValue("services.sync.username")) {
+    if (!weaveXPCService.ready || !weaveXPCService.enabled) {
       return Promise.resolve([]);
     }
 
