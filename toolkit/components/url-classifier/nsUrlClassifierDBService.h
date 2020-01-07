@@ -146,10 +146,6 @@ private:
   
   nsresult Shutdown();
 
-  
-  nsresult CheckClean(const nsACString &lookupKey,
-                      bool *clean);
-
   nsresult ReadTablesFromPrefs();
 
   RefPtr<nsUrlClassifierDBServiceWorker> mWorker;

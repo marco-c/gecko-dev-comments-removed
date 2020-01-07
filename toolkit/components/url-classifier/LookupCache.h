@@ -82,7 +82,6 @@ public:
   
   bool mConfirmed;
 
-  
   bool mProtocolV2;
 };
 
