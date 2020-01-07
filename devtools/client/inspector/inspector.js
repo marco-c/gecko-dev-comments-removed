@@ -1158,7 +1158,7 @@ Inspector.prototype = {
   
 
 
-  onNewSelection: function(event, value, reason) {
+  onNewSelection: function(value, reason) {
     if (reason === "selection-destroy") {
       return;
     }
@@ -1253,7 +1253,7 @@ Inspector.prototype = {
 
 
 
-  onDetached: function(event, parentNode) {
+  onDetached: function(parentNode) {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
     this.selection.setNodeFront(parentNode ? parentNode : this._defaultNode, "detached");
   },

@@ -153,7 +153,7 @@ class FontInspector {
   
 
 
-  onThemeChanged(event, frame) {
+  onThemeChanged(frame) {
     if (frame === this.document.defaultView) {
       this.update();
     }
