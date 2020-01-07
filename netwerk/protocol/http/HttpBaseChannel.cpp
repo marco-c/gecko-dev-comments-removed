@@ -1688,21 +1688,9 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
   }
 
   
-  
-  
-  static const char *const referrerWhiteList[] = {
-    "http",
-    "https",
-    "ftp",
-    nullptr
-  };
-  match = false;
-  const char *const *scheme = referrerWhiteList;
-  for (; *scheme && !match; ++scheme) {
-    rv = referrer->SchemeIs(*scheme, &match);
-    if (NS_FAILED(rv)) return rv;
+  if (!IsReferrerSchemeAllowed(referrer)) {
+    return NS_OK; 
   }
-  if (!match) return NS_OK; 
 
   
   
@@ -3320,6 +3308,24 @@ HttpBaseChannel::AddCookiesToRequest()
   
   
   SetRequestHeader(nsDependentCString(nsHttp::Cookie), cookie, false);
+}
+
+
+bool
+HttpBaseChannel::IsReferrerSchemeAllowed(nsIURI *aReferrer)
+{
+  NS_ENSURE_TRUE(aReferrer, false);
+
+  nsAutoCString scheme;
+  nsresult rv = aReferrer->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  if (scheme.EqualsIgnoreCase("https") ||
+      scheme.EqualsIgnoreCase("http") ||
+      scheme.EqualsIgnoreCase("ftp")) {
+    return true;
+  }
+  return false;
 }
 
 bool

@@ -348,6 +348,8 @@ public:
     int64_t GetAltDataLength() { return mAltDataLength; }
     bool IsNavigation();
 
+    static bool IsReferrerSchemeAllowed(nsIURI *aReferrer);
+
     
     
     static bool ShouldRewriteRedirectToGET(uint32_t httpStatus,
