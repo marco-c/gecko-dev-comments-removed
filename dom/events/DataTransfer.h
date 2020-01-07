@@ -128,10 +128,38 @@ public:
   Constructor(const GlobalObject& aGlobal, const nsAString& aEventType,
               bool aIsExternal, ErrorResult& aRv);
 
-  void GetDropEffect(nsString& aDropEffect)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void GetDropEffect(nsAString& aDropEffect)
   {
     aDropEffect.AssignASCII(sEffects[mDropEffect]);
   }
+  void SetDropEffect(const nsAString& aDropEffect);
 
   void GetEffectAllowed(nsString& aEffectAllowed)
   {

@@ -30,6 +30,7 @@ namespace mozilla {
 namespace dom {
 
 class BeforeUnloadEvent;
+class DragEvent;
 class EventTarget;
 class EventMessageAutoOverride;
 
@@ -122,6 +123,12 @@ public:
 
   
   virtual KeyboardEvent* AsKeyboardEvent()
+  {
+    return nullptr;
+  }
+
+  
+  virtual DragEvent* AsDragEvent()
   {
     return nullptr;
   }
