@@ -185,11 +185,34 @@ nsPKCS11Module::nsPKCS11Module(SECMODModule* module)
   mModule.reset(SECMOD_ReferenceModule(module));
 }
 
+
+
+
+
+static nsresult
+NormalizeModuleNameOut(const char* moduleNameIn, nsACString& moduleNameOut)
+{
+  
+  if (strnlen(moduleNameIn, kRootModuleNameLen + 1) != kRootModuleNameLen ||
+      strncmp(kRootModuleName, moduleNameIn, kRootModuleNameLen) != 0) {
+    moduleNameOut.Assign(moduleNameIn);
+    return NS_OK;
+  }
+
+  nsAutoString localizedRootModuleName;
+  nsresult rv = GetPIPNSSBundleString("RootCertModuleName",
+                                      localizedRootModuleName);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  moduleNameOut.Assign(NS_ConvertUTF16toUTF8(localizedRootModuleName));
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 nsPKCS11Module::GetName( nsACString& name)
 {
-  name = mModule->commonName;
-  return NS_OK;
+  return NormalizeModuleNameOut(mModule->commonName, name);
 }
 
 NS_IMETHODIMP

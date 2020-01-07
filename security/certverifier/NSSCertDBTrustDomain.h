@@ -51,11 +51,9 @@ void DisableMD5();
 
 
 
+bool LoadLoadableRoots(const nsCString& dir);
 
-
-bool LoadLoadableRoots(const nsCString& dir, const nsCString& modNameUTF8);
-
-void UnloadLoadableRoots(const char* modNameUTF8);
+void UnloadLoadableRoots();
 
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                nsCString& nickname);

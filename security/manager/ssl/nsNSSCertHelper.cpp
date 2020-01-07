@@ -26,6 +26,13 @@
 
 using namespace mozilla;
 
+
+
+
+const char* kRootModuleName = "Builtin Roots Module";
+const size_t kRootModuleNameLen = strlen(kRootModuleName);
+
+
 static nsresult
 GetPIPNSSBundle(nsIStringBundle** pipnssBundle)
 {
