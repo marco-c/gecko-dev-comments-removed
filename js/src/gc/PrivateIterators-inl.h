@@ -89,8 +89,8 @@ class GCZonesIter
     JS::Zone* operator->() const { return get(); }
 };
 
-using GCCompartmentsIter = CompartmentsIterT<GCZonesIter>;
-using GCRealmsIter = RealmsIterT<GCZonesIter>;
+using GCCompartmentsIter = CompartmentsOrRealmsIterT<GCZonesIter, CompartmentsInZoneIter>;
+using GCRealmsIter = CompartmentsOrRealmsIterT<GCZonesIter, RealmsInZoneIter>;
 
 
 class SweepGroupZonesIter {
@@ -118,8 +118,8 @@ class SweepGroupZonesIter {
     JS::Zone* operator->() const { return get(); }
 };
 
-using SweepGroupCompartmentsIter = CompartmentsIterT<SweepGroupZonesIter>;
-using SweepGroupRealmsIter = RealmsIterT<SweepGroupZonesIter>;
+using SweepGroupCompartmentsIter = CompartmentsOrRealmsIterT<SweepGroupZonesIter, CompartmentsInZoneIter>;
+using SweepGroupRealmsIter = CompartmentsOrRealmsIterT<SweepGroupZonesIter, RealmsInZoneIter>;
 
 
 
