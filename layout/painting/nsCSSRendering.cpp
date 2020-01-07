@@ -1801,7 +1801,7 @@ nsCSSRendering::ShouldPaintBoxShadowInner(nsIFrame* aFrame)
     return false;
 
   if (aFrame->IsThemed() && aFrame->GetContent() &&
-      !nsContentUtils::IsChromeDoc(aFrame->GetContent()->GetUncomposedDoc())) {
+      !nsContentUtils::IsChromeDoc(aFrame->GetContent()->GetComposedDoc())) {
     
     
     
