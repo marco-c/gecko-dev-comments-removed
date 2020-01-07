@@ -271,6 +271,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   SYNC_PARENT_ANNO: "sync/parent",
   SYNC_MOBILE_ROOT_ANNO: "mobile/bookmarksRoot",
 
+  SYNC_ID_META_KEY: "sync/bookmarks/syncId",
+  LAST_SYNC_META_KEY: "sync/bookmarks/lastSync",
+  WIPE_REMOTE_META_KEY: "sync/bookmarks/wipeRemote",
+
   
   
   
@@ -286,6 +290,185 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
   get ROOTS() {
     return ROOTS;
+  },
+
+  
+
+
+  async getSyncId() {
+    let syncId = await PlacesUtils.metadata.get(
+      BookmarkSyncUtils.SYNC_ID_META_KEY);
+    return syncId || "";
+  },
+
+  
+
+
+
+
+  async shouldWipeRemote() {
+    let shouldWipeRemote = await PlacesUtils.metadata.get(
+      BookmarkSyncUtils.WIPE_REMOTE_META_KEY);
+    return !!shouldWipeRemote;
+  },
+
+  
+
+
+
+
+
+
+
+
+  resetSyncId() {
+    return PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: resetSyncId",
+      function(db) {
+        let newSyncId = PlacesUtils.history.makeGuid();
+        return db.executeTransaction(async function() {
+          await setBookmarksSyncId(db, newSyncId);
+          await resetAllSyncStatuses(db,
+            PlacesUtils.bookmarks.SYNC_STATUS.NEW);
+          return newSyncId;
+        });
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async ensureCurrentSyncId(newSyncId) {
+    if (!newSyncId || typeof newSyncId != "string") {
+      throw new TypeError("Invalid new bookmarks sync ID");
+    }
+    await PlacesUtils.withConnectionWrapper(
+      "BookmarkSyncUtils: ensureCurrentSyncId",
+      async function(db) {
+        let existingSyncId = await PlacesUtils.metadata.getWithConnection(
+          db, BookmarkSyncUtils.SYNC_ID_META_KEY);
+
+        
+        
+        if (!existingSyncId) {
+          BookmarkSyncLog.debug("Taking new bookmarks sync ID", { newSyncId });
+          await db.executeTransaction(() => setBookmarksSyncId(db, newSyncId));
+          return;
+        }
+
+        
+        if (existingSyncId == newSyncId) {
+          BookmarkSyncLog.debug("Bookmarks sync ID up-to-date",
+                                { existingSyncId });
+          return;
+        }
+
+        
+        
+        
+        BookmarkSyncLog.debug("Bookmarks sync ID changed; resetting sync " +
+                              "statuses", { existingSyncId, newSyncId });
+        await db.executeTransaction(async function() {
+          await setBookmarksSyncId(db, newSyncId);
+          await resetAllSyncStatuses(db,
+            PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN);
+        });
+      }
+    );
+  },
+
+  
+
+
+
+  async getLastSync() {
+    let lastSync = await PlacesUtils.metadata.get(
+      BookmarkSyncUtils.LAST_SYNC_META_KEY);
+    return lastSync ? lastSync / 1000 : 0;
+  },
+
+  
+
+
+
+
+
+  async setLastSync(lastSyncSeconds) {
+    let lastSync = Math.floor(lastSyncSeconds * 1000);
+    if (!Number.isInteger(lastSync)) {
+      throw new TypeError("Invalid bookmarks last sync timestamp");
+    }
+    await PlacesUtils.metadata.set(BookmarkSyncUtils.LAST_SYNC_META_KEY,
+                                   lastSync);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async resetSyncMetadata(db, source) {
+    if (![ PlacesUtils.bookmarks.SOURCES.RESTORE,
+           PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP,
+           PlacesUtils.bookmarks.SOURCES.SYNC ].includes(source)) {
+      return;
+    }
+
+    
+    await PlacesUtils.metadata.deleteWithConnection(db,
+      BookmarkSyncUtils.SYNC_ID_META_KEY,
+      BookmarkSyncUtils.LAST_SYNC_META_KEY);
+
+    
+    
+    
+    
+    await PlacesUtils.metadata.setWithConnection(db,
+      BookmarkSyncUtils.WIPE_REMOTE_META_KEY,
+      source == PlacesUtils.bookmarks.SOURCES.RESTORE);
+
+    
+    
+    let syncStatus =
+      source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP ?
+      PlacesUtils.bookmarks.SYNC_STATUS.UNKNOWN :
+      PlacesUtils.bookmarks.SYNC_STATUS.NEW;
+    await resetAllSyncStatuses(db, syncStatus);
   },
 
   
@@ -746,13 +929,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  async wipe() {
-    
-    await PlacesUtils.bookmarks.eraseEverything({
+  wipe() {
+    return PlacesUtils.bookmarks.eraseEverything({
       source: SOURCE_SYNC,
     });
-    
-    await BookmarkSyncUtils.reset();
   },
 
   
@@ -766,22 +946,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     return PlacesUtils.withConnectionWrapper(
       "BookmarkSyncUtils: reset", function(db) {
         return db.executeTransaction(async function() {
-          
-          await db.executeCached(`
-            UPDATE moz_bookmarks
-            SET syncChangeCounter = 1,
-                syncStatus = :syncStatus`,
-            { syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NEW });
-
-          
-          await db.execute(`
-            DELETE FROM moz_items_annos
-            WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
-                                       WHERE name = :orphanAnno)`,
-            { orphanAnno: BookmarkSyncUtils.SYNC_PARENT_ANNO });
-
-          
-          await db.executeCached("DELETE FROM moz_bookmarks_deleted");
+          await BookmarkSyncUtils.resetSyncMetadata(db, SOURCE_SYNC);
         });
       }
     );
@@ -984,8 +1149,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
       
       return PlacesUtils.bookmarks.SYNC_STATUS.NORMAL;
     }
-    if (source == PlacesUtils.bookmarks.SOURCES.RESTORE ||
-        source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP) {
+    if (source == PlacesUtils.bookmarks.SOURCES.RESTORE_ON_STARTUP) {
       
       
       
@@ -2272,4 +2436,35 @@ function notify(observers, notification, args = []) {
       observer[notification](...args);
     } catch (ex) {}
   }
+}
+
+
+async function setBookmarksSyncId(db, newSyncId) {
+  await PlacesUtils.metadata.setWithConnection(db,
+    BookmarkSyncUtils.SYNC_ID_META_KEY, newSyncId);
+
+  await PlacesUtils.metadata.deleteWithConnection(db,
+    BookmarkSyncUtils.LAST_SYNC_META_KEY,
+    BookmarkSyncUtils.WIPE_REMOTE_META_KEY);
+}
+
+
+
+async function resetAllSyncStatuses(db, syncStatus) {
+  await db.execute(`
+    UPDATE moz_bookmarks
+    SET syncChangeCounter = 1,
+        syncStatus = :syncStatus`,
+    { syncStatus });
+
+  
+  
+  await db.execute(`
+    DELETE FROM moz_items_annos
+    WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
+                               WHERE name = :orphanAnno)`,
+    { orphanAnno: BookmarkSyncUtils.SYNC_PARENT_ANNO });
+
+  
+  await db.execute("DELETE FROM moz_bookmarks_deleted");
 }
