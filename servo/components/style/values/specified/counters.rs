@@ -76,8 +76,21 @@ fn parse_counters<'i, 't>(
 
 #[cfg(feature = "servo")]
 type CounterStyleType = ListStyleType;
+
 #[cfg(feature = "gecko")]
 type CounterStyleType = CounterStyleOrNone;
+
+#[cfg(feature = "servo")]
+#[inline]
+fn is_decimal(counter_type: &CounterStyleType) -> bool {
+    *counter_type == ListStyleType::Decimal
+}
+
+#[cfg(feature = "gecko")]
+#[inline]
+fn is_decimal(counter_type: &CounterStyleType) -> bool {
+    *counter_type == CounterStyleOrNone::decimal()
+}
 
 
 
@@ -102,10 +115,10 @@ pub enum ContentItem {
     String(Box<str>),
     
     #[css(comma, function)]
-    Counter(CustomIdent, CounterStyleType),
+    Counter(CustomIdent, #[css(skip_if = "is_decimal")] CounterStyleType),
     
     #[css(comma, function)]
-    Counters(CustomIdent, Box<str>, CounterStyleType),
+    Counters(CustomIdent, Box<str>, #[css(skip_if = "is_decimal")] CounterStyleType),
     
     OpenQuote,
     
