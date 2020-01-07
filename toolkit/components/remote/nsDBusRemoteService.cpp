@@ -157,7 +157,9 @@ nsDBusRemoteService::Startup(const char* aAppName, const char* aProfileName)
     return NS_ERROR_ALREADY_INITIALIZED;
   }
 
-  if (!aAppName || !aProfileName)
+  
+  if (!aAppName || aAppName[0] == '\0' ||
+      !aProfileName || aProfileName[0] == '\0')
     return NS_ERROR_INVALID_ARG;
 
   mConnection = already_AddRefed<DBusConnection>(
