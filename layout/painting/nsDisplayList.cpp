@@ -9042,29 +9042,6 @@ nsDisplayTransform::GetOpaqueRegion(nsDisplayListBuilder *aBuilder,
 
 
 
-Maybe<nscolor>
-nsDisplayTransform::IsUniform(nsDisplayListBuilder *aBuilder) const
-{
-  nsRect untransformedVisible;
-  if (!UntransformBuildingRect(aBuilder, &untransformedVisible)) {
-    return Nothing();
-  }
-  const Matrix4x4Flagged& matrix = GetTransform();
-
-  Matrix matrix2d;
-  if (matrix.Is2D(&matrix2d) &&
-      matrix2d.PreservesAxisAlignedRectangles() &&
-      mStoredList.GetBuildingRect().Contains(untransformedVisible)) {
-    return mStoredList.IsUniform(aBuilder);
-  }
-
-  return Nothing();
-}
-
-
-
-
-
 
 
 
