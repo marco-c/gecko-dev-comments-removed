@@ -350,10 +350,10 @@ class Assembler : public AssemblerX86Shared
     void mov(Imm32 imm, const Operand& dest) {
         movl(imm, dest);
     }
-    void mov(CodeOffset* label, Register dest) {
+    void mov(CodeLabel* label, Register dest) {
         
         masm.movl_i32r(0, dest.encoding());
-        label->bind(masm.size());
+        label->patchAt()->bind(masm.size());
     }
     void mov(Register src, Register dest) {
         movl(src, dest);
