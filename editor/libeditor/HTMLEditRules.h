@@ -406,7 +406,13 @@ protected:
   nsresult WillMakeBasicBlock(const nsAString& aBlockType,
                               bool* aCancel, bool* aHandled);
   nsresult MakeBasicBlock(nsAtom& aBlockType);
-  nsresult DidMakeBasicBlock(RulesInfo* aInfo, nsresult aResult);
+
+  
+
+
+
+
+  MOZ_MUST_USE nsresult DidMakeBasicBlock();
 
   
 
