@@ -51,7 +51,6 @@ var whitelist = [
   {file: "chrome://pippki/content/load_device.xul"},
 
   
-  {file: "chrome://global/content/XPCNativeWrapper.js"},
   {file: "chrome://global/locale/brand.dtd"},
 
   
