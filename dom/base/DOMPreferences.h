@@ -55,6 +55,10 @@ public:
   
   static bool OpenWindowEnabled();
   static bool OpenWindowEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool StorageManagerEnabled();
+  static bool StorageManagerEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 

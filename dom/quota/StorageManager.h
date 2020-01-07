@@ -25,10 +25,6 @@ class StorageManager final
   nsCOMPtr<nsIGlobalObject> mOwner;
 
 public:
-  
-  static bool
-  PrefEnabled(JSContext* aCx, JSObject* aObj);
-
   explicit
   StorageManager(nsIGlobalObject* aGlobal);
 
