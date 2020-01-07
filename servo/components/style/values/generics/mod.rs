@@ -32,6 +32,7 @@ pub mod size;
 pub mod svg;
 pub mod text;
 pub mod transform;
+pub mod url;
 
 
 #[allow(missing_docs)]

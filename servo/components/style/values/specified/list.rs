@@ -8,12 +8,10 @@ use cssparser::{Parser, Token};
 use parser::{Parse, ParserContext};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use values::{Either, None_};
 #[cfg(feature = "gecko")]
 use values::CustomIdent;
 #[cfg(feature = "gecko")]
 use values::generics::CounterStyleOrNone;
-use values::specified::ImageUrlOrNone;
 
 
 #[cfg(feature = "gecko")]
@@ -70,31 +68,6 @@ impl Parse for ListStyleType {
         }
 
         Ok(ListStyleType::String(input.expect_string()?.as_ref().to_owned()))
-    }
-}
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
-pub struct ListStyleImage(pub ImageUrlOrNone);
-
-
-
-trivial_to_computed_value!(ListStyleImage);
-
-impl ListStyleImage {
-    
-    #[inline]
-    pub fn none() -> ListStyleImage {
-        ListStyleImage(Either::Second(None_))
-    }
-}
-
-impl Parse for ListStyleImage {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<ListStyleImage, ParseError<'i>> {
-        ImageUrlOrNone::parse(context, input).map(ListStyleImage)
     }
 }
 

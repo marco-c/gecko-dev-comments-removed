@@ -62,7 +62,7 @@ pub use self::length::{CalcLengthOrPercentage, Length, LengthOrNumber, LengthOrP
 pub use self::length::{LengthOrPercentageOrAuto, LengthOrPercentageOrNone, MaxLength, MozLength};
 pub use self::length::{CSSPixelLength, ExtremumLength, NonNegativeLength};
 pub use self::length::{NonNegativeLengthOrPercentage, NonNegativeLengthOrPercentageOrAuto};
-pub use self::list::{ListStyleImage, Quotes};
+pub use self::list::Quotes;
 #[cfg(feature = "gecko")]
 pub use self::list::ListStyleType;
 pub use self::outline::OutlineStyle;
@@ -81,7 +81,6 @@ pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, TimingFunction, Transform, TransformOperation};
 pub use self::transform::{TransformOrigin, TransformStyle, Translate};
 pub use self::ui::MozForceBrokenImageIcon;
-pub use self::url::{ComputedUrl, ComputedImageUrl};
 
 #[cfg(feature = "gecko")]
 pub mod align;
@@ -114,14 +113,7 @@ pub mod text;
 pub mod time;
 pub mod transform;
 pub mod ui;
-
-
-pub mod url {
-#[cfg(feature = "servo")]
-pub use ::servo::url::{ComputedUrl, ComputedImageUrl};
-#[cfg(feature = "gecko")]
-pub use ::gecko::url::{ComputedUrl, ComputedImageUrl};
-}
+pub mod url;
 
 
 
@@ -639,9 +631,3 @@ impl ClipRectOrAuto {
         }
     }
 }
-
-
-pub type UrlOrNone = Either<ComputedUrl, None_>;
-
-
-pub type ImageUrlOrNone = Either<ComputedImageUrl, None_>;
