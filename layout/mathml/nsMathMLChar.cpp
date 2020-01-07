@@ -1955,11 +1955,11 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
   
   
   Unused <<
-    nsCSSRendering::PaintBorder(presContext, *aCtx, mFrame, mVisibleRect,
+    nsCSSRendering::PaintBorder(presContext, *aCtx, mFrame, GetPaintRect(),
                                 rect, computedStyle, flags, skipSides);
 
   nsCSSRendering::PaintOutline(presContext, *aCtx, mFrame,
-                               mVisibleRect, rect, computedStyle);
+                               GetPaintRect(), rect, computedStyle);
 }
 #endif
 

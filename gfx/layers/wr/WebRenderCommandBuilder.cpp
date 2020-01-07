@@ -1628,7 +1628,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   
   
   nsRegion visibleRegion(paintBounds);
-  aItem->SetVisibleRect(paintBounds, false);
+  aItem->SetPaintRect(paintBounds);
   aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();

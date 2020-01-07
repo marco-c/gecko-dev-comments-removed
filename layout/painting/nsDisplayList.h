@@ -2142,7 +2142,6 @@ public:
 
   virtual void RestoreState()
   {
-    mVisibleRect = mState.mVisibleRect;
     mClipChain = mState.mClipChain;
     mClip = mState.mClip;
     mDisableSubpixelAA = false;
@@ -2185,7 +2184,8 @@ public:
     , mReferenceFrame(aOther.mReferenceFrame)
     , mAnimatedGeometryRoot(aOther.mAnimatedGeometryRoot)
     , mToReferenceFrame(aOther.mToReferenceFrame)
-    , mVisibleRect(aOther.mVisibleRect)
+    , mBuildingRect(aOther.mBuildingRect)
+    , mPaintRect(aOther.mPaintRect)
     , mForceNotVisible(aOther.mForceNotVisible)
     , mDisableSubpixelAA(aOther.mDisableSubpixelAA)
     , mReusedItem(false)
@@ -2667,15 +2667,16 @@ public:
   
 
 
-  const nsRect& GetVisibleRect() const { return mVisibleRect; }
 
-  void SetVisibleRect(const nsRect& aVisibleRect, bool aStore)
+  const nsRect& GetBuildingRect() const { return mBuildingRect; }
+
+  void SetBuildingRect(const nsRect& aBuildingRect)
   {
-    mVisibleRect = aVisibleRect;
+    mPaintRect = mBuildingRect = aBuildingRect;
+  }
 
-    if (aStore) {
-      mState.mVisibleRect = mVisibleRect;
-    }
+  void SetPaintRect(const nsRect& aPaintRect) {
+    mPaintRect = aPaintRect;
   }
 
   
@@ -2684,7 +2685,7 @@ public:
 
 
 
-  virtual const nsRect& GetVisibleRectForChildren() const { return mVisibleRect; }
+  virtual const nsRect& GetBuildingRectForChildren() const { return mBuildingRect; }
 
   
 
@@ -2865,6 +2866,10 @@ public:
     return mOldListIndex;
   }
 
+  const nsRect& GetPaintRect() const {
+    return mPaintRect;
+  }
+
 protected:
   nsDisplayItem() = delete;
 
@@ -2882,13 +2887,19 @@ protected:
   
   nsPoint   mToReferenceFrame;
   RefPtr<mozilla::DisplayItemData> mDisplayItemData;
+
+private:
+  
+  
+  nsRect    mBuildingRect;
+
   
   
   
   
-  
-  
-  nsRect    mVisibleRect;
+  nsRect    mPaintRect;
+
+protected:
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 public:
@@ -2909,7 +2920,6 @@ protected:
 #endif
 
   struct {
-    nsRect mVisibleRect;
     RefPtr<const DisplayItemClipChain> mClipChain;
     const DisplayItemClip* mClip;
   } mState;
@@ -3193,7 +3203,7 @@ public:
 
   nsRect GetClippedBoundsWithRespectToASR(nsDisplayListBuilder* aBuilder,
                                           const ActiveScrolledRoot* aASR,
-                                          nsRect* aVisibleRect = nullptr) const;
+                                          nsRect* aBuildingRect = nullptr) const;
 
   
 
@@ -3206,7 +3216,7 @@ public:
 
 
 
-  nsRect GetVisibleRect() const;
+  nsRect GetBuildingRect() const;
 
   void SetIsOpaque()
   {
@@ -3584,9 +3594,9 @@ public:
                      gfxContext* aCtx) override {
     MOZ_ASSERT(!!mPaint != !!mOldPaint);
     if (mPaint) {
-      mPaint(mFrame, aCtx->GetDrawTarget(), mVisibleRect, ToReferenceFrame());
+      mPaint(mFrame, aCtx->GetDrawTarget(), GetPaintRect(), ToReferenceFrame());
     } else {
-      mOldPaint(mFrame, aCtx, mVisibleRect, ToReferenceFrame());
+      mOldPaint(mFrame, aCtx, GetPaintRect(), ToReferenceFrame());
     }
   }
   virtual const char* Name() const override { return mName; }
@@ -5040,7 +5050,7 @@ public:
     , mHasZIndexOverride(false)
   {
     MOZ_COUNT_CTOR(nsDisplayWrapList);
-    mBaseVisibleRect = mVisibleRect;
+    mBaseBuildingRect = GetBuildingRect();
     mListPtr = &mList;
   }
 
@@ -5055,7 +5065,7 @@ public:
     , mFrameActiveScrolledRoot(aOther.mFrameActiveScrolledRoot)
     , mMergedFrames(aOther.mMergedFrames)
     , mBounds(aOther.mBounds)
-    , mBaseVisibleRect(aOther.mBaseVisibleRect)
+    , mBaseBuildingRect(aOther.mBaseBuildingRect)
     , mOverrideZIndex(aOther.mOverrideZIndex)
     , mIndex(aOther.mIndex)
     , mHasZIndexOverride(aOther.mHasZIndexOverride)
@@ -5103,9 +5113,9 @@ public:
       SetClipChain(clip, false);
     }
 
-    nsRect visibleRect;
+    nsRect buildingRect;
     mBounds =
-      mListPtr->GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot, &visibleRect);
+      mListPtr->GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot, &buildingRect);
     
     
     
@@ -5113,8 +5123,8 @@ public:
     
     
     
-    mVisibleRect.UnionRect(mBaseVisibleRect, visibleRect);
-    mState.mVisibleRect = mVisibleRect;
+    buildingRect.UnionRect(mBaseBuildingRect, buildingRect);
+    SetBuildingRect(buildingRect);
   }
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
@@ -5228,7 +5238,9 @@ protected:
   void MergeFromTrackingMergedFrames(const nsDisplayWrapList* aOther)
   {
     mBounds.UnionRect(mBounds, aOther->mBounds);
-    mVisibleRect.UnionRect(mVisibleRect, aOther->mVisibleRect);
+    nsRect buildingRect;
+    buildingRect.UnionRect(GetBuildingRect(), aOther->GetBuildingRect());
+    SetBuildingRect(buildingRect);
     mMergedFrames.AppendElement(aOther->mFrame);
     mMergedFrames.AppendElements(aOther->mMergedFrames);
   }
@@ -5244,7 +5256,7 @@ protected:
   nsRect mBounds;
   
   
-  nsRect mBaseVisibleRect;
+  nsRect mBaseBuildingRect;
   int32_t mOverrideZIndex;
   uint32_t mIndex;
   bool mHasZIndexOverride;
@@ -6349,16 +6361,16 @@ public:
 
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
-                     nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
+                     nsDisplayList *aList, const nsRect& aChildrenBuildingRect,
                      uint32_t aIndex = 0, bool aAllowAsyncAnimation = false);
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
-                     nsDisplayItem *aItem, const nsRect& aChildrenVisibleRect,
+                     nsDisplayItem *aItem, const nsRect& aChildrenBuildingRect,
                      uint32_t aIndex = 0);
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
-                     nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
+                     nsDisplayList *aList, const nsRect& aChildrenBuildingRect,
                      ComputeTransformFunction aTransformGetter, uint32_t aIndex = 0);
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
-                     nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
+                     nsDisplayList *aList, const nsRect& aChildrenBuildingRect,
                      const Matrix4x4& aTransform, uint32_t aIndex = 0);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -6460,9 +6472,9 @@ public:
     return mAnimatedGeometryRootForScrollMetadata;
   }
 
-  virtual const nsRect& GetVisibleRectForChildren() const override
+  virtual const nsRect& GetBuildingRectForChildren() const override
   {
-    return mChildrenVisibleRect;
+    return mChildrenBuildingRect;
   }
 
   enum {
@@ -6516,8 +6528,20 @@ public:
                               const nsIFrame* aFrame,
                               nsRect *aOutRect);
 
-  bool UntransformVisibleRect(nsDisplayListBuilder* aBuilder,
-                              nsRect* aOutRect) const;
+  bool UntransformRect(nsDisplayListBuilder* aBuilder,
+                       const nsRect& aRect,
+                       nsRect* aOutRect) const;
+  bool UntransformBuildingRect(nsDisplayListBuilder* aBuilder,
+                               nsRect* aOutRect) const
+  {
+    return UntransformRect(aBuilder, GetBuildingRect(), aOutRect);
+
+  }
+  bool UntransformPaintRect(nsDisplayListBuilder* aBuilder,
+                            nsRect* aOutRect) const
+  {
+    return UntransformRect(aBuilder, GetPaintRect(), aOutRect);
+  }
 
   static Point3D GetDeltaToTransformOrigin(const nsIFrame* aFrame,
                                            float aAppUnitsPerPixel,
@@ -6688,7 +6712,7 @@ private:
   ComputeTransformFunction mTransformGetter;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForChildren;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForScrollMetadata;
-  nsRect mChildrenVisibleRect;
+  nsRect mChildrenBuildingRect;
   uint32_t mIndex;
   mutable nsRect mBounds;
   

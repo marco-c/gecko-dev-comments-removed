@@ -824,7 +824,7 @@ ProcessFrameInternal(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
 
       
       
-      nsRect previousVisible = wrapperItem->GetVisibleRectForChildren();
+      nsRect previousVisible = wrapperItem->GetBuildingRectForChildren();
       if (wrapperItem->ReferenceFrameForChildren() == wrapperItem->ReferenceFrame()) {
         previousVisible -= wrapperItem->ToReferenceFrame();
       } else {
