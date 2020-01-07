@@ -95,10 +95,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = [
@@ -310,11 +306,17 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
+
+
+
+
   static removePopup(panelNode) {
     try {
       let panelMultiViewNode = panelNode.querySelector("panelmultiview");
       if (panelMultiViewNode) {
-        this.forNode(panelMultiViewNode).disconnect();
+        let panelMultiView = this.forNode(panelMultiViewNode);
+        panelMultiView._moveOutKids();
+        panelMultiView.disconnect();
       }
     } finally {
       
@@ -439,7 +441,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     this._cleanupTransitionPhase();
 
-    this._moveOutKids();
     this._panel.removeEventListener("mousemove", this);
     this._panel.removeEventListener("popupshowing", this);
     this._panel.removeEventListener("popuppositioned", this);
