@@ -45,10 +45,7 @@ class AutoAccessAtomsZone;
 
 
 void
-TraceAtoms(JSTracer* trc, const AutoAccessAtomsZone& atomsAccess);
-
-void
-TracePermanentAtoms(JSTracer* trc);
+TraceAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
 
 void
 TraceWellKnownSymbols(JSTracer* trc);
@@ -88,10 +85,6 @@ ToAtom(JSContext* cx, typename MaybeRooted<JS::Value, allowGC>::HandleType v);
 
 extern JS::Handle<PropertyName*>
 ClassName(JSProtoKey key, JSContext* cx);
-
-namespace gc {
-void MergeAtomsAddedWhileSweeping(JSRuntime* rt);
-} 
 
 #ifdef DEBUG
 

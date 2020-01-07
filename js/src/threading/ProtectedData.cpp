@@ -122,7 +122,7 @@ CheckArenaListAccess<Helper>::check() const
     if (zone->isAtomsZone()) {
         
         
-        if (CurrentThreadCanAccessRuntime(rt) && rt->currentThreadHasExclusiveAccess())
+        if (rt->currentThreadHasAtomsTableAccess())
             return;
 
         

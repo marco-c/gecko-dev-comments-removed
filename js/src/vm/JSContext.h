@@ -184,8 +184,8 @@ struct JSContext : public JS::RootingContext,
     js::SharedImmutableStringsCache& sharedImmutableStrings() {
         return runtime_->sharedImmutableStrings();
     }
-    bool isPermanentAtomsInitialized() { return !!runtime_->permanentAtoms; }
-    js::FrozenAtomSet& permanentAtoms() { return *runtime_->permanentAtoms; }
+    bool permanentAtomsPopulated() { return runtime_->permanentAtomsPopulated(); }
+    const js::FrozenAtomSet& permanentAtoms() { return *runtime_->permanentAtoms(); }
     js::WellKnownSymbols& wellKnownSymbols() { return *runtime_->wellKnownSymbols; }
     JS::BuildIdOp buildIdOp() { return runtime_->buildIdOp; }
     const JS::AsmJSCacheOps& asmJSCacheOps() { return runtime_->asmJSCacheOps; }
@@ -278,9 +278,10 @@ struct JSContext : public JS::RootingContext,
     
     inline js::Handle<js::GlobalObject*> global() const;
 
-    js::AtomSet& atoms(const js::AutoAccessAtomsZone& access) {
-        return runtime_->atoms(access);
+    js::AtomsTable& atoms() {
+        return runtime_->atoms();
     }
+
     const JS::Zone* atomsZone(const js::AutoAccessAtomsZone& access) {
         return runtime_->atomsZone(access);
     }
@@ -1202,7 +1203,7 @@ class MOZ_RAII AutoLockScriptData
 class MOZ_STACK_CLASS AutoAccessAtomsZone
 {
   public:
-    MOZ_IMPLICIT AutoAccessAtomsZone(const AutoLockForExclusiveAccess& lock) {}
+    MOZ_IMPLICIT AutoAccessAtomsZone(const AutoLockAllAtoms& lock) {}
     MOZ_IMPLICIT AutoAccessAtomsZone(const gc::AutoCheckCanAccessAtomsDuringGC& canAccess) {}
 };
 

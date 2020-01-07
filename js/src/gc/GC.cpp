@@ -5990,14 +5990,14 @@ GCRuntime::startSweepingAtomsTable()
     auto& maybeAtoms = maybeAtomsToSweep.ref();
     MOZ_ASSERT(maybeAtoms.isNothing());
 
-    AtomSet* atomsTable = rt->atomsForSweeping();
+    AtomsTable* atomsTable = rt->atomsForSweeping();
     if (!atomsTable)
         return;
 
     
     
-    if (!rt->createAtomsAddedWhileSweepingTable()) {
-        atomsTable->sweep();
+    if (!atomsTable->startIncrementalSweep()) {
+        atomsTable->sweepAll(rt);
         return;
     }
 
@@ -6017,25 +6017,11 @@ GCRuntime::sweepAtomsTable(FreeOp* fop, SliceBudget& budget)
     if (!maybeAtoms)
         return Finished;
 
-    MOZ_ASSERT(rt->atomsAddedWhileSweeping());
-
-    
-    auto& atomsToSweep = *maybeAtoms;
-    while (!atomsToSweep.empty()) {
-        budget.step();
-        if (budget.isOverBudget())
-            return NotFinished;
-
-        JSAtom* atom = atomsToSweep.front().asPtrUnbarriered();
-        if (IsAboutToBeFinalizedUnbarriered(&atom))
-            atomsToSweep.removeFront();
-        atomsToSweep.popFront();
-    }
-
-    MergeAtomsAddedWhileSweeping(rt);
-    rt->destroyAtomsAddedWhileSweepingTable();
+    if (!rt->atomsForSweeping()->sweepIncrementally(maybeAtoms.ref(), budget))
+        return NotFinished;
 
     maybeAtoms.reset();
+
     return Finished;
 }
 

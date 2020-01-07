@@ -515,6 +515,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
         return scriptDataLock.ownedByCurrentThread();
     }
+
+    bool currentThreadHasAtomsTableAccess() const {
+        return CurrentThreadCanAccessRuntime(this) && atoms_->mainThreadHasAllLocks();
+    }
 #endif
 
     JS::HeapState heapState() const {
@@ -707,41 +711,29 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
-    
-    
-    js::ExclusiveAccessLockOrGCTaskData<js::AtomSet*> atoms_;
-
-    
-    js::ExclusiveAccessLockOrGCTaskData<js::AtomSet*> atomsAddedWhileSweeping_;
+    js::WriteOnceData<js::AtomsTable*> atoms_;
 
     
     
     
     js::MainThreadOrGCTaskData<js::SymbolRegistry> symbolRegistry_;
 
+    js::WriteOnceData<js::AtomSet*> permanentAtomsDuringInit_;
+    js::WriteOnceData<js::FrozenAtomSet*> permanentAtoms_;
+
   public:
     bool initializeAtoms(JSContext* cx);
     void finishAtoms();
-    bool atomsAreFinished() const { return !atoms_; }
+    bool atomsAreFinished() const { return !atoms_ && !permanentAtomsDuringInit_; }
 
-    js::AtomSet* atomsForSweeping() {
+    js::AtomsTable* atomsForSweeping() {
         MOZ_ASSERT(JS::RuntimeHeapIsCollecting());
         return atoms_;
     }
 
-    js::AtomSet& atoms(const js::AutoAccessAtomsZone& access) {
+    js::AtomsTable& atoms() {
         MOZ_ASSERT(atoms_);
         return *atoms_;
-    }
-    js::AtomSet& unsafeAtoms() {
-        MOZ_ASSERT(atoms_);
-        return *atoms_;
-    }
-
-    bool createAtomsAddedWhileSweepingTable();
-    void destroyAtomsAddedWhileSweepingTable();
-    js::AtomSet* atomsAddedWhileSweeping() {
-        return atomsAddedWhileSweeping_;
     }
 
     const JS::Zone* atomsZone(const js::AutoAccessAtomsZone& access) const {
@@ -778,9 +770,25 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::WriteOnceData<js::FrozenAtomSet*> permanentAtoms;
+    const js::FrozenAtomSet* permanentAtoms() const {
+        MOZ_ASSERT(permanentAtomsPopulated());
+        return permanentAtoms_.ref();
+    }
 
-    bool transformToPermanentAtoms(JSContext* cx);
+    
+    bool permanentAtomsPopulated() const {
+        return permanentAtoms_;
+    }
+
+    
+    
+    js::AtomSet* permanentAtomsDuringInit() const {
+        MOZ_ASSERT(!permanentAtoms_);
+        return permanentAtomsDuringInit_.ref();
+    }
+
+    bool initMainAtomsTables(JSContext* cx);
+    void tracePermanentAtoms(JSTracer* trc);
 
     
     
