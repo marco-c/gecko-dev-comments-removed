@@ -339,6 +339,9 @@ this.SafeBrowsing = {
     }
 
     Object.keys(this.providers).forEach(function(provider) {
+      if (provider == "test") {
+        return; 
+      }
       let updateURL = Services.urlFormatter.formatURLPref(
         "browser.safebrowsing.provider." + provider + ".updateURL");
       let gethashURL = Services.urlFormatter.formatURLPref(
