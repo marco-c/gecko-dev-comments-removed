@@ -38,8 +38,11 @@ class MOZ_RAII AutoTraceSession
     
     
     
-    
-    AutoLockForExclusiveAccess lock;
+    mozilla::Maybe<AutoLockForExclusiveAccess> maybeLock;
+
+    AutoLockForExclusiveAccess& lock() {
+        return maybeLock.ref();
+    }
 
   protected:
     JSRuntime* runtime;
