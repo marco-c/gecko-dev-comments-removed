@@ -41,15 +41,31 @@ const FONT_PROPERTIES = [
   "font-variation-settings",
   "font-weight",
 ];
+const REGISTERED_AXES_TO_FONT_PROPERTIES = {
+  "ital": "font-style",
+  "opsz": "font-optical-sizing",
+  "slnt": "font-style",
+  "wdth": "font-stretch",
+  "wght": "font-weight",
+};
+const REGISTERED_AXES = Object.keys(REGISTERED_AXES_TO_FONT_PROPERTIES);
 
 class FontInspector {
   constructor(inspector, window) {
     this.document = window.document;
     this.inspector = inspector;
+    this.nodeComputedStyle = {};
     this.pageStyle = this.inspector.pageStyle;
     this.ruleView = this.inspector.getPanel("ruleview").view;
     this.selectedRule = null;
     this.store = this.inspector.store;
+    
+    this.textProperties = new Map();
+    
+    
+    
+    
+    this.writers = new Map();
 
     this.snapshotChanges = debounce(this.snapshotChanges, 100, this);
     this.syncChanges = throttle(this.syncChanges, 100, this);
@@ -63,6 +79,7 @@ class FontInspector {
     this.onRuleUpdated = this.onRuleUpdated.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
     this.update = this.update.bind(this);
+    this.updateFontVariationSettings = this.updateFontVariationSettings.bind(this);
 
     this.init();
   }
@@ -134,16 +151,49 @@ class FontInspector {
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewNode);
     this.inspector.sidebar.off("fontinspector-selected", this.onNewNode);
+    this.ruleView.off("property-value-updated", this.onRuleUpdated);
     this.ruleView.off("ruleview-rule-selected", this.onRuleSelected);
     this.ruleView.off("ruleview-rule-unselected", this.onRuleUnselected);
     gDevTools.off("theme-switched", this.onThemeChanged);
 
     this.document = null;
     this.inspector = null;
+    this.nodeComputedStyle = {};
     this.pageStyle = null;
     this.ruleView = null;
     this.selectedRule = null;
     this.store = null;
+    this.textProperties.clear();
+    this.textProperties = null;
+    this.writers.clear();
+    this.writers = null;
+  }
+
+  
+
+
+
+
+
+  getFontProperties() {
+    let properties = {};
+
+    
+    for (let prop of FONT_PROPERTIES) {
+      properties[prop] = this.nodeComputedStyle[prop].value;
+    }
+
+    
+    for (let rule of this.ruleView.rules) {
+      for (let textProp of rule.textProps) {
+        if (FONT_PROPERTIES.includes(textProp.name) && textProp.enabled &&
+            !textProp.overridden) {
+          properties[textProp.name] = textProp.value;
+        }
+      }
+    }
+
+    return properties;
   }
 
   async getFontsForNode(node, options) {
@@ -177,39 +227,143 @@ class FontInspector {
   
 
 
+
+
+
+
+
+  getTextProperty(name) {
+    if (!this.textProperties.has(name)) {
+      let textProperty =
+        this.selectedRule.textProps.find(prop => prop.name === name);
+      if (!textProperty) {
+        textProperty = this.selectedRule.editor.addProperty(name, "initial", "", true);
+      }
+
+      this.textProperties.set(name, textProperty);
+    }
+
+    return this.textProperties.get(name);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getWriterForAxis(axis) {
+    
+    const FVSComputedStyle = this.nodeComputedStyle["font-variation-settings"];
+
+    
+    
+    if (FVSComputedStyle && FVSComputedStyle.value.includes(axis)) {
+      return this.updateFontVariationSettings;
+    }
+
+    
+    const property = REGISTERED_AXES_TO_FONT_PROPERTIES[axis];
+
+    return (value) => {
+      let condition = false;
+
+      switch (axis) {
+        case "wght":
+          
+          condition = this.pageStyle.supportsFontWeightLevel4;
+          break;
+
+        case "wdth":
+          
+          value = `${value}%`;
+          
+          condition = this.pageStyle.supportsFontStretchLevel4;
+          break;
+
+        case "slnt":
+          
+          value = `oblique ${value}deg`;
+          
+          condition = this.pageStyle.supportsFontStyleLevel4;
+          break;
+      }
+
+      if (condition) {
+        this.updatePropertyValue(property, value);
+      } else {
+        
+        this.writers.set(axis, this.updateFontVariationSettings);
+        
+        this.updateFontVariationSettings();
+      }
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getWriterForProperty(name) {
+    if (this.writers.has(name)) {
+      return this.writers.get(name);
+    }
+
+    if (REGISTERED_AXES.includes(name)) {
+      this.writers.set(name, this.getWriterForAxis(name));
+    } else if (FONT_PROPERTIES.includes(name)) {
+      this.writers.set(name, (value) => {
+        this.updateFontProperty(name, value);
+      });
+    } else {
+      this.writers.set(name, this.updateFontVariationSettings);
+    }
+
+    return this.writers.get(name);
+  }
+
+  
+
+
   isPanelVisible() {
     return this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() === "fontinspector";
   }
 
-  
-
-
-
-  applyChanges() {
-    const fontEditor = this.store.getState().fontEditor;
     
-    
-    
-    const name = "font-variation-settings";
-    const value = Object.keys(fontEditor.axes)
-      .map(tag => `"${tag}" ${fontEditor.axes[tag]}`)
-      .join(", ");
-
-    let textProperty = this.selectedRule.textProps.filter(prop => prop.name === name)[0];
-    if (!textProperty) {
-      textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
-    }
-
-    
-    this.ruleView.off("property-value-updated", this.onRuleUpdated);
-    
-    this.selectedRule.previewPropertyValue(textProperty, value, "");
-    
-    this.syncChanges(textProperty, value);
-  }
-
-  
 
 
 
@@ -238,7 +392,9 @@ class FontInspector {
     this.store.dispatch(updateAxis(tag, value));
     this.store.dispatch(applyInstance(CUSTOM_INSTANCE_NAME, null));
     this.snapshotChanges();
-    this.applyChanges();
+
+    const writer = this.getWriterForProperty(tag);
+    writer(value);
   }
 
   
@@ -252,7 +408,11 @@ class FontInspector {
 
   onInstanceChange(name, values) {
     this.store.dispatch(applyInstance(name, values));
-    this.applyChanges();
+    let writer;
+    values.map(obj => {
+      writer = this.getWriterForProperty(obj.axis);
+      writer(obj.value.toString());
+    });
   }
 
   
@@ -317,9 +477,14 @@ class FontInspector {
   onRuleUnselected(eventData) {
     const { editorId, rule } = eventData;
     if (editorId === FONT_EDITOR_ID && rule == this.selectedRule) {
+      this.nodeComputedStyle = {};
       this.selectedRule = null;
+      this.textProperties.clear();
+      this.writers.clear();
+
       this.store.dispatch(toggleFontEditor(false));
       this.store.dispatch(resetFontEditor());
+
       this.ruleView.off("property-value-updated", this.onRuleUpdated);
     }
   }
@@ -399,14 +564,11 @@ class FontInspector {
     const node = this.inspector.selection.nodeFront;
     const fonts = await this.getFontsForNode(node, options);
     
-    const properties = this.selectedRule.textProps.reduce((acc, prop) => {
-      if (FONT_PROPERTIES.includes(prop.name)) {
-        acc[prop.name] = prop.value;
-      }
-
-      return acc;
-    }, {});
-
+    this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
+      filterProperties: FONT_PROPERTIES
+    });
+    
+    const properties = this.getFontProperties();
     const fontEditor = this.store.getState().fontEditor;
 
     
@@ -485,6 +647,46 @@ class FontInspector {
     this.store.dispatch(updateFonts(fonts, otherFonts));
 
     this.inspector.emit("fontinspector-updated");
+  }
+
+  
+
+
+
+  updateFontVariationSettings() {
+    const fontEditor = this.store.getState().fontEditor;
+    const name = "font-variation-settings";
+    const value = Object.keys(fontEditor.axes)
+      
+      
+      .filter(tag => this.writers.get(tag) === this.updateFontVariationSettings)
+      
+      .map(tag => `"${tag}" ${fontEditor.axes[tag]}`)
+      .join(", ");
+
+    this.updatePropertyValue(name, value);
+  }
+
+  
+
+
+
+
+
+
+
+  updatePropertyValue(name, value) {
+    const textProperty = this.getTextProperty(name);
+    if (!textProperty) {
+      return;
+    }
+
+    
+    this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    
+    textProperty.rule.previewPropertyValue(textProperty, value, "");
+    
+    this.syncChanges(textProperty, value);
   }
 }
 

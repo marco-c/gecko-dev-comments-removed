@@ -110,6 +110,10 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
       return this.actorID;
     }
 
+    
+    
+    const CSS = this.inspector.tabActor.window.CSS;
+
     return {
       actor: this.actorID,
       traits: {
@@ -121,8 +125,18 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         
         authoredStyles: true,
         
+        fontStretchLevel4: CSS.supports("font-stretch: 100%"),
+        
+        fontStyleLevel4: CSS.supports("font-style: oblique 20deg"),
+        
         
         fontVariations: FONT_VARIATIONS_ENABLED,
+        
+        
+        
+        
+        fontWeightLevel4: CSS.supports("font-weight: 1") &&
+          CSS.supports("font-stretch: 100%"),
       }
     };
   },
@@ -214,6 +228,10 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     let computed = this.cssLogic.computedStyle || [];
 
     Array.prototype.forEach.call(computed, name => {
+      if (Array.isArray(options.filterProperties) &&
+          !options.filterProperties.includes(name)) {
+        return;
+      }
       ret[name] = {
         value: computed.getPropertyValue(name),
         priority: computed.getPropertyPriority(name) || undefined

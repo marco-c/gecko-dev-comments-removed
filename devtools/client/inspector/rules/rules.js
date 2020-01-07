@@ -227,6 +227,10 @@ CssRuleView.prototype = {
     return this.searchField.value.toLowerCase();
   },
 
+  get rules() {
+    return this._elementStyle ? this._elementStyle.rules : [];
+  },
+
   
 
 
