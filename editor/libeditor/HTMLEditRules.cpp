@@ -4138,7 +4138,9 @@ HTMLEditRules::WillRemoveList(bool aOrdered,
       bool bOutOfList;
       do {
         rv = PopListItem(*curNode->AsContent(), &bOutOfList);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       } while (!bOutOfList); 
     } else if (HTMLEditUtils::IsList(curNode)) {
       
@@ -5019,7 +5021,9 @@ HTMLEditRules::WillOutdent(bool* aCancel,
           curBlockQuoteIsIndentedWithCSS = false;
         }
         rv = PopListItem(*curNode->AsContent());
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         continue;
       }
       
@@ -5101,7 +5105,9 @@ HTMLEditRules::WillOutdent(bool* aCancel,
           while (child) {
             if (HTMLEditUtils::IsListItem(child)) {
               rv = PopListItem(*child);
-              NS_ENSURE_SUCCESS(rv, rv);
+              if (NS_WARN_IF(NS_FAILED(rv))) {
+                return rv;
+              }
             } else if (HTMLEditUtils::IsList(child)) {
               
               
@@ -9243,14 +9249,9 @@ HTMLEditRules::PopListItem(nsIContent& aListItem,
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
-  
   if (aOutOfList) {
     *aOutOfList = false;
   }
-
-  nsCOMPtr<nsIContent> kungFuDeathGrip(&aListItem);
-  Unused << kungFuDeathGrip;
-
 
   if (NS_WARN_IF(!aListItem.GetParent()) ||
       NS_WARN_IF(!aListItem.GetParent()->GetParentNode()) ||
@@ -9260,20 +9261,26 @@ HTMLEditRules::PopListItem(nsIContent& aListItem,
 
   
   
-  bool bIsFirstListItem = HTMLEditorRef().IsFirstEditableChild(&aListItem);
-  bool bIsLastListItem = HTMLEditorRef().IsLastEditableChild(&aListItem);
+  bool isFirstListItem = HTMLEditorRef().IsFirstEditableChild(&aListItem);
+  bool isLastListItem = HTMLEditorRef().IsLastEditableChild(&aListItem);
 
   nsCOMPtr<nsIContent> leftListNode = aListItem.GetParent();
-  if (!bIsFirstListItem && !bIsLastListItem) {
-    EditorDOMPoint atListItem(&aListItem);
+
+  
+  
+  nsCOMPtr<nsIContent> listItem(&aListItem);
+  if (!isFirstListItem && !isLastListItem) {
+    EditorDOMPoint atListItem(listItem);
     if (NS_WARN_IF(!atListItem.IsSet())) {
       return NS_ERROR_INVALID_ARG;
     }
     MOZ_ASSERT(atListItem.IsSetAndValid());
-
-    
     ErrorResult error;
     leftListNode = HTMLEditorRef().SplitNodeWithTransaction(atListItem, error);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      error.SuppressException();
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -9289,23 +9296,36 @@ HTMLEditRules::PopListItem(nsIContent& aListItem,
   
   
   
-  if (!bIsFirstListItem) {
+  if (!isFirstListItem) {
     DebugOnly<bool> advanced = pointToInsertListItem.AdvanceOffset();
     NS_WARNING_ASSERTION(advanced,
       "Failed to advance offset to right list node");
   }
 
   nsresult rv =
-    HTMLEditorRef().MoveNodeWithTransaction(aListItem, pointToInsertListItem);
+    HTMLEditorRef().MoveNodeWithTransaction(*listItem, pointToInsertListItem);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
+  
+  
+  
+  
+  
+  
+  
   if (!HTMLEditUtils::IsList(pointToInsertListItem.GetContainer()) &&
-      HTMLEditUtils::IsListItem(&aListItem)) {
+      HTMLEditUtils::IsListItem(listItem)) {
     rv = HTMLEditorRef().RemoveBlockContainerWithTransaction(
-                           *aListItem.AsElement());
+                           *listItem->AsElement());
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

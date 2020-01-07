@@ -557,7 +557,24 @@ protected:
                                           nsIContent& aRightNode);
 
   Element* GetTopEnclosingMailCite(nsINode& aNode);
-  nsresult PopListItem(nsIContent& aListItem, bool* aOutOfList = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  PopListItem(nsIContent& aListItem, bool* aOutOfList = nullptr);
 
   
 
