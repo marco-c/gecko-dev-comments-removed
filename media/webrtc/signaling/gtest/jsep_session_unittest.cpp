@@ -4280,6 +4280,9 @@ TEST_F(JsepSessionTest, TestExtmap)
   AddTracks(*mSessionOff, "audio");
   AddTracks(*mSessionAns, "audio");
   
+  
+  
+  
   mSessionOff->AddAudioRtpExtension("foo"); 
   mSessionOff->AddAudioRtpExtension("bar"); 
   mSessionAns->AddAudioRtpExtension("bar"); 
@@ -4307,9 +4310,9 @@ TEST_F(JsepSessionTest, TestExtmap)
       offerExtmap[2].extensionname);
   ASSERT_EQ(3U, offerExtmap[2].entry);
   ASSERT_EQ("foo", offerExtmap[3].extensionname);
-  ASSERT_EQ(4U, offerExtmap[3].entry);
+  ASSERT_EQ(6U, offerExtmap[3].entry);
   ASSERT_EQ("bar", offerExtmap[4].extensionname);
-  ASSERT_EQ(5U, offerExtmap[4].entry);
+  ASSERT_EQ(7U, offerExtmap[4].entry);
 
   UniquePtr<Sdp> parsedAnswer(Parse(answer));
   ASSERT_EQ(1U, parsedAnswer->GetMediaSectionCount());
@@ -4319,20 +4322,23 @@ TEST_F(JsepSessionTest, TestExtmap)
   auto& answerExtmap = answerMediaAttrs.GetExtmap().mExtmaps;
   ASSERT_EQ(3U, answerExtmap.size());
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
-      offerExtmap[0].extensionname);
-  ASSERT_EQ(1U, offerExtmap[0].entry);
+      answerExtmap[0].extensionname);
+  ASSERT_EQ(1U, answerExtmap[0].entry);
   ASSERT_EQ("urn:ietf:params:rtp-hdrext:sdes:mid",
       answerExtmap[1].extensionname);
-  ASSERT_EQ(2U, offerExtmap[1].entry);
+  ASSERT_EQ(3U, answerExtmap[1].entry);
   
   ASSERT_EQ("bar", answerExtmap[2].extensionname);
-  ASSERT_EQ(5U, answerExtmap[2].entry);
+  ASSERT_EQ(7U, answerExtmap[2].entry);
 }
 
 TEST_F(JsepSessionTest, TestExtmapWithDuplicates)
 {
   AddTracks(*mSessionOff, "audio");
   AddTracks(*mSessionAns, "audio");
+  
+  
+  
   
   mSessionOff->AddAudioRtpExtension("foo"); 
   mSessionOff->AddAudioRtpExtension("bar"); 
@@ -4359,11 +4365,11 @@ TEST_F(JsepSessionTest, TestExtmapWithDuplicates)
       offerExtmap[2].extensionname);
   ASSERT_EQ(3U, offerExtmap[2].entry);
   ASSERT_EQ("foo", offerExtmap[3].extensionname);
-  ASSERT_EQ(4U, offerExtmap[3].entry);
+  ASSERT_EQ(6U, offerExtmap[3].entry);
   ASSERT_EQ("bar", offerExtmap[4].extensionname);
-  ASSERT_EQ(5U, offerExtmap[4].entry);
+  ASSERT_EQ(7U, offerExtmap[4].entry);
   ASSERT_EQ("baz", offerExtmap[5].extensionname);
-  ASSERT_EQ(6U, offerExtmap[5].entry);
+  ASSERT_EQ(8U, offerExtmap[5].entry);
 }
 
 
