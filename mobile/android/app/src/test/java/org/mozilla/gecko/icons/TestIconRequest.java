@@ -69,10 +69,8 @@ public class TestIconRequest {
                 .pageUrl(TEST_PAGE_URL)
                 .build();
 
-        @SuppressWarnings("unchecked")
         
-        final TreeSet<IconDescriptor> icons = (TreeSet<IconDescriptor>) mock(TreeSet.class);
-        request.icons = icons;
+        request.icons = (TreeSet<IconDescriptor>) mock(TreeSet.class);
 
         
         doReturn(false).when(request.icons).remove(anyObject());

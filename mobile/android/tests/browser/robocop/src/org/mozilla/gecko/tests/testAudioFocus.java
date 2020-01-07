@@ -1,12 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.gecko.tests;
 
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
-import org.mozilla.gecko.media.AudioFocusAgent;
 import org.mozilla.gecko.media.AudioFocusAgent.State;
 
 import android.media.AudioManager;
@@ -84,7 +83,7 @@ public class testAudioFocus extends MediaPlaybackTest {
                      "Should own audio focus.");
 
         info("- abandon audio focus -");
-        AudioFocusAgent.notifyStoppedPlaying();
+        getAudioFocusAgent().notifyStoppedPlaying();
         mAsserter.is(getAudioFocusAgent().getAudioFocusState(),
                      State.LOST_FOCUS,
                      "Should lose audio focus.");
@@ -102,25 +101,25 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        checkTabMediaPlayingState(tab, true );
+        checkTabMediaPlayingState(tab, true /* playing */);
 
         info("- wait tab becomes audible -");
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- simulate losing audio focus transiently -");
         getAudioFocusAgent().changeAudioFocus(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- simulate gaining audio focus again -");
         getAudioFocusAgent().changeAudioFocus(AudioManager.AUDIOFOCUS_GAIN);
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- simulate losing audio focus -");
         getAudioFocusAgent().changeAudioFocus(AudioManager.AUDIOFOCUS_LOSS);
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- close tab -");
@@ -134,10 +133,10 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        checkTabMediaPlayingState(tab, true );
+        checkTabMediaPlayingState(tab, true /* playing */);
 
         info("- wait tab becomes audible -");
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- switch to the another tab -");
@@ -151,9 +150,9 @@ public class testAudioFocus extends MediaPlaybackTest {
         closeAllTabs();
     }
 
-   
-
-
+   /**
+     * Audio focus should only be requested when media is audible.
+     */
     private void testAdjustMediaVolumeOrMuted() {
         info("- create JSBridge -");
         createJSBridge();
@@ -167,35 +166,35 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        checkTabMediaPlayingState(tab, true );
+        checkTabMediaPlayingState(tab, true /* playing */);
 
         info("- wait tab becomes audible -");
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- change media's volume to 0.0 -");
         getJS().syncCall("adjust_audio_volume", 0.0);
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- change media's volume to 1.0 -");
         getJS().syncCall("adjust_audio_volume", 1.0);
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- mute media -");
         getJS().syncCall("adjust_audio_muted", true);
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- unmute media -");
         getJS().syncCall("adjust_audio_muted", false);
-        checkTabAudioPlayingState(tab, true );
+        checkTabAudioPlayingState(tab, true /* audible */);
         checkAudioFocusStateAfterChanged(true);
 
         info("- pause media -");
         getJS().syncCall("pause_audio");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- close tab -");
@@ -218,17 +217,17 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        checkTabMediaPlayingState(tab, true );
+        checkTabMediaPlayingState(tab, true /* playing */);
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- pause media -");
         getJS().syncCall("pause_media_without_audio_track");
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- close tab -");
@@ -249,29 +248,29 @@ public class testAudioFocus extends MediaPlaybackTest {
         info("- play media without audio track -");
         getJS().syncCall("play_media_without_audio_track");
 
-        
-        
-        
-        
+        // We can't know whether it starts or not for media without audio track,
+        // because we won't dispatch Tab:MediaPlaybackChange event for this kind
+        // of media. So we just check the state multiple times to make sure we
+        // don't request audio focus.
         info("- tab should be non-audible and should not request audio focus -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- tab should be non-audible and should not request audio focus -");
-        checkTabAudioPlayingState(tab, false );
+        checkTabAudioPlayingState(tab, false /* non-audible */);
         checkAudioFocusStateAfterChanged(false);
 
         info("- pause media -");

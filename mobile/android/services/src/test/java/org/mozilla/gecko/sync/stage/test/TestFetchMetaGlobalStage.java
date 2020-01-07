@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.gecko.sync.stage.test;
 
@@ -40,7 +40,6 @@ import org.simpleframework.http.Response;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -113,14 +112,14 @@ public class TestFetchMetaGlobalStage {
       this.abort(null, "Missing meta/global");
     }
 
-    
+    // Don't really uploadKeys.
     @Override
     public void uploadKeys(CollectionKeys keys, long lastModified, KeyUploadDelegate keyUploadDelegate) {
       calledUploadKeys = true;
       keyUploadDelegate.onKeysUploaded();
     }
 
-    
+    // On fresh start completed, just stop.
     @Override
     public void freshStart() {
       calledFreshStart = true;
@@ -137,7 +136,7 @@ public class TestFetchMetaGlobalStage {
       });
     }
 
-    
+    // Don't really wipeServer.
     @Override
     protected void wipeServer(final AuthHeaderProvider authHeaderProvider, final WipeServerDelegate wipeDelegate) {
       calledWipeServer = true;
@@ -156,7 +155,7 @@ public class TestFetchMetaGlobalStage {
       super.abort(e, reason);
     }
 
-    
+    // Don't really resetAllStages.
     @Override
     public void resetAllStages() {
       calledResetAllStages = true;
@@ -165,7 +164,7 @@ public class TestFetchMetaGlobalStage {
 
   @Before
   public void setUp() throws Exception {
-    
+    // Set info collections to not have crypto.
     infoCollections = new InfoCollections(new ExtendedJSONObject(TEST_INFO_COLLECTIONS_JSON));
 
     syncKeyBundle = new KeyBundle(TEST_USERNAME, TEST_SYNC_KEY);
@@ -210,12 +209,12 @@ public class TestFetchMetaGlobalStage {
     return declined;
   }
 
-  
-
-
-
-
-
+  /**
+   * Verify that a fetched meta/global with remote syncID == local syncID does
+   * not reset.
+   *
+   * @throws Exception
+   */
   @Test
   public void testFetchSuccessWithSameSyncID() throws Exception {
     session.config.syncID = TEST_SYNC_ID;
@@ -224,7 +223,7 @@ public class TestFetchMetaGlobalStage {
     mg.setSyncID(TEST_SYNC_ID);
     mg.setStorageVersion(Long.valueOf(TEST_STORAGE_VERSION));
 
-    
+    // Set declined engines in the server object.
     final JSONArray testingDeclinedEngines = makeTestDeclinedArray();
     mg.setDeclinedEngineNames(testingDeclinedEngines);
 
@@ -238,17 +237,17 @@ public class TestFetchMetaGlobalStage {
     assertEquals(TEST_STORAGE_VERSION, session.config.metaGlobal.getStorageVersion().longValue());
     assertEquals(TEST_SYNC_ID, session.config.syncID);
 
-    
+    // Declined engines propagate from the server meta/global.
     final Set<String> actual = session.config.metaGlobal.getDeclinedEngineNames();
     assertSameContents(testingDeclinedEngines, actual);
   }
 
-  
-
-
-
-
-
+  /**
+   * Verify that a fetched meta/global with remote syncID != local syncID resets
+   * local and retains remote syncID.
+   *
+   * @throws Exception
+   */
   @Test
   public void testFetchSuccessWithDifferentSyncID() throws Exception {
     session.config.syncID = "NOT TEST SYNC ID";
@@ -257,7 +256,7 @@ public class TestFetchMetaGlobalStage {
     mg.setSyncID(TEST_SYNC_ID);
     mg.setStorageVersion(Long.valueOf(TEST_STORAGE_VERSION));
 
-    
+    // Set declined engines in the server object.
     final JSONArray testingDeclinedEngines = makeTestDeclinedArray();
     mg.setDeclinedEngineNames(testingDeclinedEngines);
 
@@ -271,21 +270,21 @@ public class TestFetchMetaGlobalStage {
     assertEquals(TEST_STORAGE_VERSION, session.config.metaGlobal.getStorageVersion().longValue());
     assertEquals(TEST_SYNC_ID, session.config.syncID);
 
-    
+    // Declined engines propagate from the server meta/global.
     final Set<String> actual = session.config.metaGlobal.getDeclinedEngineNames();
     assertSameContents(testingDeclinedEngines, actual);
   }
 
-  
-
-
-
+  /**
+   * Verify that a fetched meta/global does not merge declined engines.
+   * TODO: eventually it should!
+   */
   @SuppressWarnings("unchecked")
   @Test
   public void testFetchSuccessWithDifferentSyncIDMergesDeclined() throws Exception {
     session.config.syncID = "NOT TEST SYNC ID";
 
-    
+    // Fake the local declined engine names.
     session.config.declinedEngineNames = new HashSet<String>();
     session.config.declinedEngineNames.add("baznoo");
 
@@ -293,16 +292,16 @@ public class TestFetchMetaGlobalStage {
     mg.setSyncID(TEST_SYNC_ID);
     mg.setStorageVersion(Long.valueOf(TEST_STORAGE_VERSION));
 
-    
+    // Set declined engines in the server object.
     final JSONArray testingDeclinedEngines = makeTestDeclinedArray();
     mg.setDeclinedEngineNames(testingDeclinedEngines);
 
     MockServer server = new MockServer(200, mg.asCryptoRecord().toJSONString());
     doSession(server);
 
-    
-    final Set<String> expected = new HashSet<String>((ArrayList) testingDeclinedEngines);
-    
+    // Declined engines propagate from the server meta/global, and are NOT merged.
+    final Set<String> expected = new HashSet<String>(testingDeclinedEngines);
+    // expected.add("baznoo");   // Not until we merge. Local is lost.
 
     final Set<String> newDeclined = session.config.metaGlobal.getDeclinedEngineNames();
     assertEquals(expected, newDeclined);
@@ -317,10 +316,10 @@ public class TestFetchMetaGlobalStage {
     assertTrue(session.calledProcessMissingMetaGlobal);
   }
 
-  
-
-
-
+  /**
+   * Empty payload object has no syncID or storageVersion and should call freshStart.
+   * @throws Exception
+   */
   @Test
   public void testFetchEmptyPayload() throws Exception {
     MockServer server = new MockServer(200, TestMetaGlobal.TEST_META_GLOBAL_EMPTY_PAYLOAD_RESPONSE);
@@ -329,10 +328,10 @@ public class TestFetchMetaGlobalStage {
     assertTrue(session.calledFreshStart);
   }
 
-  
-
-
-
+  /**
+   * No payload means no syncID or storageVersion and therefore we should call freshStart.
+   * @throws Exception
+   */
   @Test
   public void testFetchNoPayload() throws Exception {
     MockServer server = new MockServer(200, TestMetaGlobal.TEST_META_GLOBAL_NO_PAYLOAD_RESPONSE);
@@ -341,11 +340,11 @@ public class TestFetchMetaGlobalStage {
     assertTrue(session.calledFreshStart);
   }
 
-  
-
-
-
-
+  /**
+   * Malformed payload is a server response issue, not a meta/global record
+   * issue. This should error out of the sync.
+   * @throws Exception
+   */
   @Test
   public void testFetchMalformedPayload() throws Exception {
     MockServer server = new MockServer(200, TestMetaGlobal.TEST_META_GLOBAL_MALFORMED_PAYLOAD_RESPONSE);
@@ -391,7 +390,7 @@ public class TestFetchMetaGlobalStage {
           return;
         }
         if (mgUploaded.get()) {
-          
+          // We shouldn't be trying to download anything after uploading meta/global.
           mgDownloaded.set(true);
         }
         this.handle(request, response, 404, "missing");

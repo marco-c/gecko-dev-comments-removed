@@ -72,7 +72,6 @@ public class TestLiveAutopushClient {
 
     @Test
     public void testUserAgent() throws Exception {
-        @SuppressWarnings("unchecked")
         final RequestDelegate<RegisterUserAgentResponse> registerDelegate = mock(RequestDelegate.class);
         client.registerUserAgent(Utils.generateGuid(), registerDelegate);
 
@@ -82,21 +81,18 @@ public class TestLiveAutopushClient {
         Assert.assertNotNull(registerResponse.secret);
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> reregisterDelegate = mock(RequestDelegate.class);
         client.reregisterUserAgent(registerResponse.uaid, registerResponse.secret, Utils.generateGuid(), reregisterDelegate);
 
         Assert.assertNull(assertSuccess(reregisterDelegate, Void.class));
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> unregisterDelegate = mock(RequestDelegate.class);
         client.unregisterUserAgent(registerResponse.uaid, registerResponse.secret, unregisterDelegate);
 
         Assert.assertNull(assertSuccess(unregisterDelegate, Void.class));
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> reunregisterDelegate = mock(RequestDelegate.class);
         client.unregisterUserAgent(registerResponse.uaid, registerResponse.secret, reunregisterDelegate);
 
@@ -107,7 +103,6 @@ public class TestLiveAutopushClient {
 
     @Test
     public void testChannel() throws Exception {
-        @SuppressWarnings("unchecked")
         final RequestDelegate<RegisterUserAgentResponse> registerDelegate = mock(RequestDelegate.class);
         client.registerUserAgent(Utils.generateGuid(), registerDelegate);
 
@@ -117,7 +112,6 @@ public class TestLiveAutopushClient {
         Assert.assertNotNull(registerResponse.secret);
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<SubscribeChannelResponse> subscribeDelegate = mock(RequestDelegate.class);
         client.subscribeChannel(registerResponse.uaid, registerResponse.secret, null, subscribeDelegate);
 
@@ -129,7 +123,6 @@ public class TestLiveAutopushClient {
         Assert.assertThat(subscribeResponse.endpoint, containsString("/v1/"));
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> unsubscribeDelegate = mock(RequestDelegate.class);
         client.unsubscribeChannel(registerResponse.uaid, registerResponse.secret, subscribeResponse.channelID, unsubscribeDelegate);
 
@@ -137,7 +130,6 @@ public class TestLiveAutopushClient {
 
         
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<SubscribeChannelResponse> subscribeWithKeyDelegate = mock(RequestDelegate.class);
         final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECDSA");
         keyPairGenerator.initialize(256);
@@ -154,14 +146,12 @@ public class TestLiveAutopushClient {
         Assert.assertThat(subscribeWithKeyResponse.endpoint, containsString("/v2/"));
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> unsubscribeWithKeyDelegate = mock(RequestDelegate.class);
         client.unsubscribeChannel(registerResponse.uaid, registerResponse.secret, subscribeWithKeyResponse.channelID, unsubscribeWithKeyDelegate);
 
         Assert.assertNull(assertSuccess(unsubscribeWithKeyDelegate, Void.class));
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> reunsubscribeDelegate = mock(RequestDelegate.class);
         client.unsubscribeChannel(registerResponse.uaid, registerResponse.secret, subscribeResponse.channelID, reunsubscribeDelegate);
 
@@ -170,7 +160,6 @@ public class TestLiveAutopushClient {
         Assert.assertTrue(((AutopushClientException.AutopushClientRemoteException) reunsubscribeFailureException).isGone());
 
         
-        @SuppressWarnings("unchecked")
         final RequestDelegate<Void> badUnsubscribeDelegate = mock(RequestDelegate.class);
         client.unsubscribeChannel(registerResponse.uaid + "BAD", registerResponse.secret, subscribeResponse.channelID, badUnsubscribeDelegate);
 

@@ -362,11 +362,6 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             return false;
         }
 
-        @Override
-        public int hashCode() {
-            return method.hashCode();
-        }
-
          int getOrder() {
             if (requirement == null || currentCount == 0) {
                 return 0;
