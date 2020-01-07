@@ -103,27 +103,6 @@ let propNameWhitelist = [
   {propName: "--chrome-nav-buttons-hover-background",
    isFromDevTools: false},
   
-  {propName: "--muteButton-width",
-   isFromDevTools: false},
-  
-  {propName: "--closedCaptionButton-width",
-   isFromDevTools: false},
-  
-  {propName: "--fullscreenButton-width",
-   isFromDevTools: false},
-  
-  {propName: "--durationSpan-width",
-   isFromDevTools: false},
-  
-  {propName: "--durationSpan-width-long",
-   isFromDevTools: false},
-  
-  {propName: "--positionDurationBox-width",
-   isFromDevTools: false},
-  
-  {propName: "--positionDurationBox-width-long",
-   isFromDevTools: false},
-  
   {propName: "--theme-search-overlays-semitransparent",
    isFromDevTools: true},
   
@@ -132,7 +111,23 @@ let propNameWhitelist = [
   
   {propName: "--in-content-category-background",
    isFromDevTools: false},
-
+  
+  
+  
+  {propName: "--muteButton-width",
+   isFromDevTools: false},
+  {propName: "--closedCaptionButton-width",
+   isFromDevTools: false},
+  {propName: "--fullscreenButton-width",
+   isFromDevTools: false},
+  {propName: "--durationSpan-width",
+   isFromDevTools: false},
+  {propName: "--durationSpan-width-long",
+   isFromDevTools: false},
+  {propName: "--positionDurationBox-width",
+   isFromDevTools: false},
+  {propName: "--positionDurationBox-width-long",
+   isFromDevTools: false},
   
   {propName: "--in-content-box-background-odd",
    platforms: ["win", "macosx"],
