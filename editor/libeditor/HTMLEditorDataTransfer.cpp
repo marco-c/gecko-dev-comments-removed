@@ -346,49 +346,40 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   if (!handled) {
     
     
-    nsCOMPtr<nsIDOMNode> parentNode;
-    int32_t offsetOfNewNode;
-    rv = GetStartNodeAndOffset(selection, getter_AddRefs(parentNode), &offsetOfNewNode);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_TRUE(parentNode, NS_ERROR_FAILURE);
-
-    
-    NormalizeEOLInsertPosition(nodeList[0], address_of(parentNode),
-                               &offsetOfNewNode);
+    EditorDOMPoint pointToInsert =
+      GetBetterInsertionPointFor(nodeList[0], GetStartPoint(selection));
+    if (NS_WARN_IF(!pointToInsert.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
 
     
     
     
-    WSRunObject wsObj(this, parentNode, offsetOfNewNode);
+    WSRunObject wsObj(this, pointToInsert.Container(), pointToInsert.Offset());
     if (wsObj.mEndReasonNode &&
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
         !IsVisibleBRElement(wsObj.mEndReasonNode)) {
+      AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
       rv = DeleteNode(wsObj.mEndReasonNode);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
     
-    bool bStartedInLink = IsInLink(parentNode);
+    bool bStartedInLink = IsInLink(pointToInsert.Container()->AsDOMNode());
 
     
-    if (IsTextNode(parentNode)) {
-      nsCOMPtr<nsIContent> parentContent = do_QueryInterface(parentNode);
-      EditorRawDOMPoint pointToSplit(parentContent, offsetOfNewNode);
-      if (NS_WARN_IF(!pointToSplit.IsSet())) {
-        return NS_ERROR_FAILURE;
-      }
+    if (IsTextNode(pointToInsert.Container())) {
       SplitNodeResult splitNodeResult =
-        SplitNodeDeep(*parentContent, pointToSplit,
+        SplitNodeDeep(*pointToInsert.Container()->AsContent(),
+                      pointToInsert.AsRaw(),
                       SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
-      EditorRawDOMPoint splitPoint(splitNodeResult.SplitPoint());
-      if (NS_WARN_IF(!splitPoint.IsSet())) {
+      pointToInsert = splitNodeResult.SplitPoint();
+      if (NS_WARN_IF(!pointToInsert.IsSet())) {
         return NS_ERROR_FAILURE;
       }
-      parentNode = do_QueryInterface(splitPoint.Container());
-      offsetOfNewNode = splitPoint.Offset();
     }
 
     
@@ -429,19 +420,16 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                endListAndTableArray, highWaterMark);
     }
 
-    
-    nsCOMPtr<nsIDOMNode> parentBlock;
-    nsCOMPtr<nsINode> parentNodeNode = do_QueryInterface(parentNode);
-    NS_ENSURE_STATE(parentNodeNode || !parentNode);
-    if (IsBlockNode(parentNodeNode)) {
-      parentBlock = parentNode;
-    } else if (parentNodeNode) {
-      parentBlock = GetAsDOMNode(GetBlockNodeParent(parentNodeNode));
-    }
+    MOZ_ASSERT(pointToInsert.Container()->GetChildAt(pointToInsert.Offset()) ==
+                 pointToInsert.GetChildAtOffset());
 
+    
+    nsCOMPtr<nsINode> parentBlock =
+      IsBlockNode(pointToInsert.Container()) ?
+        pointToInsert.Container() :
+        GetBlockNodeParent(pointToInsert.Container());
     nsCOMPtr<nsIContent> lastInsertNode;
     nsCOMPtr<nsINode> insertedContextParent;
-    EditorDOMPoint pointToInsert(parentNodeNode, offsetOfNewNode);
     for (OwningNonNull<nsINode>& curNode : nodeList) {
       if (NS_WARN_IF(curNode == fragmentAsNodeNode) ||
           NS_WARN_IF(TextEditUtils::IsBody(curNode))) {

@@ -1356,80 +1356,64 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString)
   return BeginningOfDocument();
 }
 
-void
-HTMLEditor::NormalizeEOLInsertPosition(nsINode* firstNodeToInsert,
-                                       nsCOMPtr<nsIDOMNode>* insertParentNode,
-                                       int32_t* insertOffset)
+EditorRawDOMPoint
+HTMLEditor::GetBetterInsertionPointFor(nsINode& aNodeToInsert,
+                                       const EditorRawDOMPoint& aPointToInsert)
 {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return aPointToInsert;
+  }
+
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (!IsBlockNode(firstNodeToInsert)) {
-    return;
+  
+  if (!IsBlockNode(&aNodeToInsert)) {
+    return aPointToInsert;
   }
 
-  WSRunObject wsObj(this, *insertParentNode, *insertOffset);
-  nsCOMPtr<nsINode> nextVisNode, prevVisNode;
-  int32_t nextVisOffset=0;
-  WSType nextVisType;
-  int32_t prevVisOffset=0;
-  WSType prevVisType;
+  WSRunObject wsObj(this, aPointToInsert.Container(), aPointToInsert.Offset());
 
-  nsCOMPtr<nsINode> parent(do_QueryInterface(*insertParentNode));
-  wsObj.NextVisibleNode(parent, *insertOffset, address_of(nextVisNode), &nextVisOffset, &nextVisType);
-  if (!nextVisNode) {
-    return;
+  
+  
+  
+  nsCOMPtr<nsINode> nextVisibleNode;
+  int32_t nextVisibleOffset = 0;
+  WSType nextVisibleType;
+  wsObj.NextVisibleNode(aPointToInsert.Container(), aPointToInsert.Offset(),
+                        address_of(nextVisibleNode),
+                        &nextVisibleOffset, &nextVisibleType);
+  
+  
+  if (!nextVisibleNode ||
+      !(nextVisibleType & WSType::br)) {
+    return aPointToInsert;
   }
 
-  if (!(nextVisType & WSType::br)) {
-    return;
+  
+  
+  
+  
+  nsCOMPtr<nsINode> previousVisibleNode;
+  int32_t previousVisibleOffset = 0;
+  WSType previousVisibleType;
+  wsObj.PriorVisibleNode(aPointToInsert.Container(), aPointToInsert.Offset(),
+                         address_of(previousVisibleNode),
+                         &previousVisibleOffset, &previousVisibleType);
+  
+  
+  
+  
+  
+  if (!previousVisibleNode ||
+      (previousVisibleType & WSType::br) ||
+      (previousVisibleType & WSType::thisBlock)) {
+    return aPointToInsert;
   }
 
-  wsObj.PriorVisibleNode(parent, *insertOffset, address_of(prevVisNode), &prevVisOffset, &prevVisType);
-  if (!prevVisNode) {
-    return;
-  }
-
-  if (prevVisType & WSType::br) {
-    return;
-  }
-
-  if (prevVisType & WSType::thisBlock) {
-    return;
-  }
-
-  int32_t brOffset=0;
-  nsCOMPtr<nsIDOMNode> brNode = GetNodeLocation(GetAsDOMNode(nextVisNode), &brOffset);
-
-  *insertParentNode = brNode;
-  *insertOffset = brOffset + 1;
+  EditorRawDOMPoint afterBRNode(nextVisibleNode);
+  DebugOnly<bool> advanced = afterBRNode.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed to advance offset to after the <br> node");
+  return afterBRNode;
 }
 
 NS_IMETHODIMP
@@ -1490,19 +1474,23 @@ HTMLEditor::InsertElementAtSelection(nsIDOMElement* aElement,
       }
     }
 
-    nsINode* parentSelectedNode = selection->GetAnchorNode();
-    if (parentSelectedNode) {
-      int32_t offsetForInsert = selection->AnchorOffset();
+    if (selection->GetAnchorNode()) {
+      EditorRawDOMPoint atAnchor;
+      if (selection->GetChildAtAnchorOffset()) {
+        atAnchor.Set(selection->GetChildAtAnchorOffset());
+      } else {
+        atAnchor.Set(selection->GetAnchorNode(), selection->AnchorOffset());
+      }
       
-      nsCOMPtr<nsIDOMNode> parentSelectedDOMNode =
-        GetAsDOMNode(parentSelectedNode);
-      NormalizeEOLInsertPosition(element, address_of(parentSelectedDOMNode),
-                                 &offsetForInsert);
+      EditorRawDOMPoint pointToInsert =
+        GetBetterInsertionPointFor(*element, atAnchor);
+      if (NS_WARN_IF(!pointToInsert.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
 
       EditorDOMPoint insertedPoint =
         InsertNodeIntoProperAncestor(
-          *element, EditorRawDOMPoint(parentSelectedDOMNode, offsetForInsert),
-          SplitAtEdges::eAllowToCreateEmptyContainer);
+          *element, pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(!insertedPoint.IsSet())) {
         return NS_ERROR_FAILURE;
       }
