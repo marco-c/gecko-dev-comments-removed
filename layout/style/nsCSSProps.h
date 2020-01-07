@@ -409,25 +409,6 @@ public:
                                          eCSSProperty_COUNT_no_shorthands];
   }
 
-  
-  
-  
-  static const nsCSSPropertyID * ShorthandsContaining(nsCSSPropertyID aProperty) {
-    MOZ_ASSERT(gShorthandsContainingPool, "uninitialized");
-    MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
-               "out of range");
-    return gShorthandsContainingTable[aProperty];
-  }
-private:
-  
-  
-  
-  
-  
-  static nsCSSPropertyID *gShorthandsContainingTable[eCSSProperty_COUNT_no_shorthands];
-  static nsCSSPropertyID* gShorthandsContainingPool;
-  static bool BuildShorthandsContainingTable();
-
 private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
 
