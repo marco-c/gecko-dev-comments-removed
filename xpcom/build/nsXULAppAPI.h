@@ -447,6 +447,9 @@ XRE_API(bool,
 XRE_API(bool,
         XRE_IsGPUProcess, ())
 
+XRE_API(bool,
+        XRE_IsPluginProcess, ())
+
 
 
 
@@ -511,6 +514,12 @@ XRE_API(void,
 XRE_API(int,
         XRE_XPCShellMain, (int argc, char** argv, char** envp,
                            const XREShellData* aShellData))
+
+#if MOZ_WIDGET_GTK == 2
+XRE_API(void,
+        XRE_GlibInit, ())
+#endif
+
 
 #ifdef LIBFUZZER
 #include "LibFuzzerRegistry.h"
