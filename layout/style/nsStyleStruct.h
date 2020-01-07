@@ -1188,10 +1188,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
   
   
   
-  nscoord       mOutlineWidth;    
+  nscoord       mOutlineWidth;
   nscoord       mOutlineOffset;
   mozilla::StyleComplexColor mOutlineColor;
-  uint8_t       mOutlineStyle;    
+  uint8_t       mOutlineStyle;  
 
   nscoord GetOutlineWidth() const
   {
@@ -1461,9 +1461,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   uint8_t       mGridAutoFlow;          
   mozilla::StyleBoxSizing mBoxSizing;
 
+  
   uint16_t      mAlignContent;          
-  uint8_t       mAlignItems;            
-  uint8_t       mAlignSelf;             
+  uint8_t       mAlignItems;
+  uint8_t       mAlignSelf;
   uint16_t      mJustifyContent;        
   
   
@@ -1474,15 +1475,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   
   
   
-  uint8_t       mSpecifiedJustifyItems; 
-  uint8_t       mJustifyItems;          
-  uint8_t       mJustifySelf;           
+  uint8_t       mSpecifiedJustifyItems;
+  uint8_t       mJustifyItems;
+  uint8_t       mJustifySelf;
   uint8_t       mFlexDirection;         
   uint8_t       mFlexWrap;              
   uint8_t       mObjectFit;             
-  int32_t       mOrder;                 
-  float         mFlexGrow;              
-  float         mFlexShrink;            
+  int32_t       mOrder;
+  float         mFlexGrow;
+  float         mFlexShrink;
   nsStyleCoord  mZIndex;                
   mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateColumns;
   mozilla::UniquePtr<nsStyleGridTemplate> mGridTemplateRows;
@@ -1675,8 +1676,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
 
   uint8_t mTextAlign;                   
   uint8_t mTextAlignLast;               
-  bool mTextAlignTrue : 1;              
-  bool mTextAlignLastTrue : 1;          
+  bool mTextAlignTrue : 1;
+  bool mTextAlignLastTrue : 1;
   mozilla::StyleTextJustify mTextJustify;
   uint8_t mTextTransform;               
   mozilla::StyleWhiteSpace mWhiteSpace;
@@ -1884,7 +1885,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility
 
   nsStyleImageOrientation mImageOrientation;
   uint8_t mDirection;                  
-  uint8_t mVisible;
+  uint8_t mVisible;                    
   uint8_t mImageRendering;             
   uint8_t mWritingMode;                
   uint8_t mTextOrientation;            
@@ -2178,7 +2179,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                            
                                            
   uint8_t mContain;             
-  uint8_t mAppearance;
+  uint8_t mAppearance;          
   uint8_t mPosition;            
 
   mozilla::StyleFloat mFloat;
@@ -2578,8 +2579,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable
 
   nsChangeHint CalcDifference(const nsStyleTable& aNewData) const;
 
-  uint8_t       mLayoutStrategy;
-  int32_t       mSpan;          
+  uint8_t mLayoutStrategy;  
+  int32_t mSpan;  
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTableBorder
@@ -2910,8 +2911,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
 
   nsChangeHint CalcDifference(const nsStyleXUL& aNewData) const;
 
-  float         mBoxFlex;               
-  uint32_t      mBoxOrdinal;            
+  float         mBoxFlex;
+  uint32_t      mBoxOrdinal;
   mozilla::StyleBoxAlign mBoxAlign;
   mozilla::StyleBoxDirection mBoxDirection;
   mozilla::StyleBoxOrient mBoxOrient;
@@ -2939,7 +2940,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   nsStyleCoord mColumnWidth; 
 
   mozilla::StyleComplexColor mColumnRuleColor;
-  uint8_t      mColumnRuleStyle;
+  uint8_t      mColumnRuleStyle;  
   uint8_t      mColumnFill;  
   uint8_t      mColumnSpan;  
 
@@ -3077,7 +3078,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   uint8_t          mStrokeLinejoin;   
   uint8_t          mTextAnchor;       
   uint8_t          mContextPropsBits; 
-                                      
                                       
 
   
