@@ -39,14 +39,22 @@
 
 #define CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE  (1<<3)
 
-#define CSS_PSEUDO_ELEMENT_UA_SHEET_ONLY               (1<<4)
+#define CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS (1<<4)
+
+
+#define CSS_PSEUDO_ELEMENT_ENABLED_IN_CHROME (1<<5)
+
+#define CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME \
+  (CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS |               \
+   CSS_PSEUDO_ELEMENT_ENABLED_IN_CHROME)
 
 
 
-#define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC           (1<<5)
+
+#define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC           (1<<6)
 
 
-#define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM        (1<<6)
+#define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM        (1<<7)
 
 namespace mozilla {
 
@@ -137,8 +145,22 @@ public:
 
   static bool IsEnabled(Type aType, EnabledState aEnabledState)
   {
-    return !PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_UA_SHEET_ONLY) ||
-           (aEnabledState & EnabledState::eInUASheets);
+    if (!PseudoElementHasFlags(
+      aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)) {
+      return true;
+    }
+
+    if ((aEnabledState & EnabledState::eInUASheets) &&
+        PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS)) {
+      return true;
+    }
+
+    if ((aEnabledState & EnabledState::eInChrome) &&
+        PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_CHROME)) {
+      return true;
+    }
+
+    return false;
   }
 
   static nsString PseudoTypeAsString(Type aPseudoType);
