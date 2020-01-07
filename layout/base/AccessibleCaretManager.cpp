@@ -964,7 +964,8 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     
     selection->Modify(NS_LITERAL_STRING("extend"),
                       aDirection,
-                      NS_LITERAL_STRING("character"));
+                      NS_LITERAL_STRING("character"),
+                      IgnoreErrors());
     if (IsTerminated()) {
       return;
     }

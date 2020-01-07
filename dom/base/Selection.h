@@ -303,6 +303,24 @@ public:
 
   bool ContainsPoint(const nsPoint& aPoint);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void Modify(const nsAString& aAlter, const nsAString& aDirection,
               const nsAString& aGranularity, mozilla::ErrorResult& aRv);
 
