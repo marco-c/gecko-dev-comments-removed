@@ -24,6 +24,7 @@ from mozpack.chrome.manifest import (
     ManifestLocale,
     parse_manifest,
 )
+from mozbuild.configure.util import Version
 from mozbuild.preprocessor import Preprocessor
 import buildconfig
 
@@ -461,9 +462,20 @@ def main(args):
 
     defines = parse_defines(args.defines)
 
+    min_app_version = args.min_app_ver
+    if 'a' not in min_app_version:  
+        v = Version(min_app_version)
+        if args.app_name == "SeaMonkey":
+            
+            
+            min_app_version = "{}.{}.0".format(v.major, v.minor)
+        else:
+            
+            min_app_version = "{}.0".format(v.major)
+
     res = create_webmanifest(
         args.locales,
-        args.min_app_ver,
+        min_app_version,
         args.max_app_ver,
         args.app_name,
         args.l10n_basedir,
