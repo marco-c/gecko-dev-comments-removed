@@ -12,7 +12,6 @@
 #include "vm/NativeObject.h"
 
 namespace JS {
-class CallArgs;
 union Value;
 } 
 
@@ -63,10 +62,6 @@ IdToStringOrSymbol(JSContext* cx, JS::HandleId id, JS::MutableHandleValue result
 
 JSString*
 ObjectToSource(JSContext* cx, JS::HandleObject obj);
-
-extern MOZ_MUST_USE bool
-WatchHandler(JSContext* cx, JSObject* obj, jsid id, const JS::Value& old,
-             JS::Value* nvp, void* closure);
 
 } 
 

@@ -447,9 +447,6 @@ typedef void
                                       JS::PromiseRejectionHandlingState state,
                                       void* data);
 
-typedef void
-(* JSProcessPromiseCallback)(JSContext* cx, JS::HandleObject promise);
-
 
 
 
