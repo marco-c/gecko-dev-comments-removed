@@ -267,14 +267,6 @@ public:
     return mIsMainThreadEvent;
   }
 
-  
-
-
-
-
-  static nsIContent* GetShadowRelatedTarget(nsIContent* aCurrentTarget,
-                                            nsIContent* aRelatedTarget);
-
   void MarkUninitialized()
   {
     mEvent->mMessage = eVoidEvent;
