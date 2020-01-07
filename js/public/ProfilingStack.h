@@ -190,6 +190,7 @@ class ProfilingStackFrame
 
     
     enum class Category : uint32_t {
+        IDLE,
         OTHER,
         LAYOUT,
         JS,
