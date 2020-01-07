@@ -1015,8 +1015,8 @@ private:
   void* RallocSmallOrLarge(void* aPtr, size_t aSize, size_t aOldSize);
 
   void* RallocHuge(void* aPtr, size_t aSize, size_t aOldSize);
-public:
 
+public:
   inline void* Malloc(size_t aSize, bool aZero);
 
   void* Palloc(size_t aAlignment, size_t aSize);
@@ -1191,6 +1191,7 @@ static size_t base_committed;
 
 
 
+
 #if !defined(XP_DARWIN)
 static MOZ_THREAD_LOCAL(arena_t*) thread_arena;
 #else
@@ -1309,6 +1310,7 @@ _getprogname(void)
 
   return "<jemalloc>";
 }
+
 
 
 
@@ -1596,6 +1598,7 @@ pages_map(void* aAddr, size_t aSize)
     munmap(ret, aSize);
     ret = nullptr;
   }
+  
   
   else if (check_placement && ret != aAddr) {
 #else
@@ -3581,8 +3584,7 @@ arena_t::RallocSmallOrLarge(void* aPtr, size_t aSize, size_t aOldSize)
   
   if (aOldSize <= gMaxLargeClass && sizeClass.Size() == aOldSize) {
     if (aSize < aOldSize) {
-      memset(
-        (void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
+      memset((void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
     }
     return aPtr;
   }
