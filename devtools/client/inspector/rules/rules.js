@@ -295,6 +295,7 @@ CssRuleView.prototype = {
 
 
 
+
   getNodeInfo: function (node) {
     if (!node) {
       return null;
@@ -383,7 +384,11 @@ CssRuleView.prototype = {
       return null;
     }
 
-    return {type, value};
+    return {
+      view: "rule",
+      type,
+      value,
+    };
   },
 
   

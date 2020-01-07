@@ -309,6 +309,7 @@ CssComputedView.prototype = {
 
 
 
+
   getNodeInfo: function (node) {
     if (!node) {
       return null;
@@ -387,7 +388,11 @@ CssComputedView.prototype = {
       return null;
     }
 
-    return {type, value};
+    return {
+      view: "computed",
+      type,
+      value,
+    };
   },
 
   _createPropertyViews: function () {
