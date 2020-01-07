@@ -752,8 +752,8 @@ SendA11yNotifications(nsPresContext* aPresContext,
   if (needsNotify) {
     nsIPresShell* presShell = aPresContext->PresShell();
     if (isVisible) {
-      accService->ContentRangeInserted(presShell, aElement->GetParent(),
-                                       aElement, aElement->GetNextSibling());
+      accService->ContentRangeInserted(
+        presShell, aElement, aElement->GetNextSibling());
       
       
       return Flags::SkipA11yNotifications;

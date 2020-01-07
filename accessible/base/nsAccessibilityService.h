@@ -164,8 +164,9 @@ public:
 
 
 
-  void ContentRangeInserted(nsIPresShell* aPresShell, nsIContent* aContainer,
-                            nsIContent* aStartChild, nsIContent* aEndChild);
+  void ContentRangeInserted(nsIPresShell* aPresShell,
+                            nsIContent* aStartChild,
+                            nsIContent* aEndChild);
 
   
 

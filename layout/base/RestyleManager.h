@@ -146,22 +146,20 @@ public:
     return mAnimationsWithDestroyedFrame;
   }
 
-  void ContentInserted(nsINode* aContainer, nsIContent* aChild);
-  void ContentAppended(nsIContent* aContainer, nsIContent* aFirstNewContent);
+  void ContentInserted(nsIContent* aChild);
+  void ContentAppended(nsIContent* aFirstNewContent);
 
   
   
   
   
   
-  void ContentRemoved(nsINode* aContainer,
-                      nsIContent* aOldChild,
-                      nsIContent* aFollowingSibling);
+  
+  void ContentRemoved(nsIContent* aOldChild, nsIContent* aFollowingSibling);
 
   
   
-  
-  void RestyleForInsertOrChange(nsINode* aContainer, nsIContent* aChild);
+  void RestyleForInsertOrChange(nsIContent* aChild);
 
   
   

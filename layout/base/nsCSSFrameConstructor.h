@@ -123,8 +123,7 @@ private:
 
   
   
-  void IssueSingleInsertNofications(nsIContent* aContainer,
-                                    nsIContent* aStartChild,
+  void IssueSingleInsertNofications(nsIContent* aStartChild,
                                     nsIContent* aEndChild,
                                     InsertionKind);
 
@@ -172,8 +171,10 @@ private:
 
 
 
-  InsertionPoint GetRangeInsertionPoint(nsIContent* aContainer,
-                                        nsIContent* aStartChild,
+
+
+
+  InsertionPoint GetRangeInsertionPoint(nsIContent* aStartChild,
                                         nsIContent* aEndChild,
                                         InsertionKind);
 
@@ -249,14 +250,11 @@ public:
 
   
   
-  void ContentAppended(nsIContent* aContainer,
-                       nsIContent* aFirstNewContent,
-                       InsertionKind aInsertionKind);
+  void ContentAppended(nsIContent* aFirstNewContent, InsertionKind);
 
   
   
-  void ContentInserted(nsIContent* aContainer,
-                       nsIContent* aChild,
+  void ContentInserted(nsIContent* aChild,
                        nsILayoutHistoryState* aFrameState,
                        InsertionKind aInsertionKind);
 
@@ -267,9 +265,7 @@ public:
   
   
   
-  
-  void ContentRangeInserted(nsIContent* aContainer,
-                            nsIContent* aStartChild,
+  void ContentRangeInserted(nsIContent* aStartChild,
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
                             InsertionKind aInsertionKind);
@@ -295,8 +291,7 @@ public:
 
 
 
-  bool ContentRemoved(nsIContent* aContainer,
-                      nsIContent* aChild,
+  bool ContentRemoved(nsIContent* aChild,
                       nsIContent* aOldNextSibling,
                       RemoveFlags aFlags);
 
@@ -1445,8 +1440,7 @@ private:
 
   
   
-  void ReframeTextIfNeeded(nsIContent* aParentContent,
-                           nsIContent* aContent);
+  void ReframeTextIfNeeded(nsIContent* aContent);
 
   void AddPageBreakItem(nsIContent* aContent,
                         FrameConstructionItemList& aItems);
