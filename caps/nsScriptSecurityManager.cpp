@@ -1224,20 +1224,6 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
     }
 
     
-    
-    if (xpc::IsContentXBLScope(contextRealm)) {
-      nsCOMPtr<nsIDOMXULCommandDispatcher> dispatcher = do_QueryInterface(aObj);
-      if (dispatcher) {
-        return NS_OK;
-      }
-
-      nsCOMPtr<nsITreeSelection> treeSelection = do_QueryInterface(aObj);
-      if (treeSelection) {
-        return NS_OK;
-      }
-    }
-
-    
     nsAutoCString originUTF8;
     nsIPrincipal* subjectPrincipal = nsContentUtils::SubjectPrincipal();
     GetPrincipalDomainOrigin(subjectPrincipal, originUTF8);
