@@ -2492,6 +2492,11 @@ nsGlobalWindowInner::MigrateStateForDocumentOpen(nsGlobalWindowInner* aOldInner)
   
   
   mPerformance = aOldInner->mPerformance.forget();
+
+  if (aOldInner->mIndexedDB) {
+    aOldInner->mIndexedDB->RebindToNewWindow(this);
+    mIndexedDB = aOldInner->mIndexedDB.forget();
+  }
 }
 
 void
