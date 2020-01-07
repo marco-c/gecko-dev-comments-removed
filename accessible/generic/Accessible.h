@@ -1096,12 +1096,14 @@ protected:
 
 
 
-  void DoCommand(nsIContent *aContent = nullptr, uint32_t aActionIndex = 0);
+  void DoCommand(nsIContent* aContent = nullptr,
+                 uint32_t aActionIndex = 0) const;
 
   
 
 
-  virtual void DispatchClickEvent(nsIContent *aContent, uint32_t aActionIndex);
+  virtual void DispatchClickEvent(nsIContent *aContent,
+                                  uint32_t aActionIndex) const;
 
   
   
