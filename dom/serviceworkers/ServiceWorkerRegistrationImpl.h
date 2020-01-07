@@ -101,6 +101,8 @@ class WorkerListener;
 
 class ServiceWorkerRegistrationWorkerThread final : public ServiceWorkerRegistration::Inner
 {
+  friend class WorkerListener;
+
 public:
   NS_INLINE_DECL_REFCOUNTING(ServiceWorkerRegistrationWorkerThread, override)
 
@@ -146,6 +148,10 @@ private:
 
   void
   ReleaseListener();
+
+  
+  WorkerPrivate*
+  GetWorkerPrivate(const MutexAutoLock& aProofOfLock);
 
   
   
