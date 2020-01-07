@@ -67,34 +67,6 @@ static const char* const kCSSRawCounterDescs[] = {
 #undef CSS_COUNTER_DESC
 };
 
-static const char* const kCSSRawPredefinedCounterStyles[] = {
-  "none",
-  
-  
-  "decimal", "decimal-leading-zero", "arabic-indic", "armenian",
-  "upper-armenian", "lower-armenian", "bengali", "cambodian", "khmer",
-  "cjk-decimal", "devanagari", "georgian", "gujarati", "gurmukhi", "hebrew",
-  "kannada", "lao", "malayalam", "mongolian", "myanmar", "oriya", "persian",
-  "lower-roman", "upper-roman", "tamil", "telugu", "thai", "tibetan",
-  
-  "lower-alpha", "lower-latin", "upper-alpha", "upper-latin",
-  "cjk-earthly-branch", "cjk-heavenly-stem", "lower-greek",
-  "hiragana", "hiragana-iroha", "katakana", "katakana-iroha",
-  
-  "disc", "circle", "square", "disclosure-open", "disclosure-closed",
-  
-  
-  
-  "japanese-informal", "japanese-formal",
-  
-  "korean-hangul-formal", "korean-hanja-informal", "korean-hanja-formal",
-  
-  "simp-chinese-informal", "simp-chinese-formal",
-  "trad-chinese-informal", "trad-chinese-formal", "cjk-ideographic",
-  
-  "ethiopic-numeric"
-};
-
 
 
 enum {
@@ -390,13 +362,6 @@ nsCSSProps::GetStringValue(nsCSSCounterDesc aCounterDesc)
     static nsDependentCString sNullStr("");
     return sNullStr;
   }
-}
-
-const char* const*
-nsCSSProps::GetListStyleTypes(int32_t *aLength)
-{
-  *aLength = ArrayLength(kCSSRawPredefinedCounterStyles);
-  return kCSSRawPredefinedCounterStyles;
 }
 
 

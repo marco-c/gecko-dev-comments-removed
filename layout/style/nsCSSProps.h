@@ -258,10 +258,6 @@ public:
 
 public:
 
-  
-  
-  static const char* const* GetListStyleTypes(int32_t *aLength);
-
 
 
 
