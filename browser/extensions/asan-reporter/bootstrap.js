@@ -31,12 +31,37 @@ logger.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
 logger.level = Preferences.get(PREF_LOG_LEVEL, Log.Level.Info);
 
+this.TabCrashObserver = {
+  init() {
+    if (this.initialized)
+      return;
+    this.initialized = true;
+
+    Services.obs.addObserver(this, "ipc:content-shutdown");
+  },
+
+  observe(aSubject, aTopic, aData) {
+    if (aTopic == "ipc:content-shutdown") {
+        aSubject.QueryInterface(Ci.nsIPropertyBag2);
+        if (!aSubject.get("abnormal")) {
+          return;
+        }
+        processDirectory("/tmp");
+    }
+  },
+};
+
 function install(aData, aReason) {}
 
 function uninstall(aData, aReason) {}
 
 function startup(aData, aReason) {
   logger.info("Starting up...");
+
+  
+  
+  TabCrashObserver.init();
+
   
   
   
