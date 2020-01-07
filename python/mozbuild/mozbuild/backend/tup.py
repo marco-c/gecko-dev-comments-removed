@@ -629,7 +629,6 @@ class TupBackend(CommonBackend):
                 obj.method,
                 obj.outputs[0],
                 '%s.pp' % obj.outputs[0], 
-                'unused', 
             ])
             full_inputs = [f.full_path for f in obj.inputs]
             cmd.extend(full_inputs)
@@ -654,17 +653,8 @@ class TupBackend(CommonBackend):
                 extra_outputs = [self._installed_files] if obj.required_for_compile else []
                 full_inputs += [self._early_generated_files]
 
-            if len(outputs) > 3:
-                display_outputs = ', '.join(outputs[0:3]) + ', ...'
-            else:
-                display_outputs = ', '.join(outputs)
-            display = 'python {script}:{method} -> [{display_outputs}]'.format(
-                script=obj.script,
-                method=obj.method,
-                display_outputs=display_outputs
-            )
             backend_file.rule(
-                display=display,
+                display='python {script}:{method} -> [%o]'.format(script=obj.script, method=obj.method),
                 cmd=cmd,
                 inputs=full_inputs,
                 outputs=outputs,
@@ -797,8 +787,7 @@ class TupBackend(CommonBackend):
         backend_file.export_shell()
 
         all_xpts = []
-        for module, data in sorted(manager.modules.iteritems()):
-            _, idls = data
+        for module, (idls,) in sorted(manager.modules.iteritems()):
             cmd = [
                 '$(PYTHON_PATH)',
                 '$(PLY_INCLUDE)',

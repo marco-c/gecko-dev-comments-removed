@@ -79,8 +79,9 @@ class XPIDLManager(object):
             raise Exception('IDL already registered: %s' % entry['basename'])
 
         self.idls[entry['basename']] = entry
-        t = self.modules.setdefault(entry['module'], (idl.install_target, set()))
-        t[1].add(entry['root'])
+        
+        t = self.modules.setdefault(entry['module'], (set(),))
+        t[0].add(entry['root'])
 
 class BinariesCollection(object):
     """Tracks state of binaries produced by the build."""
