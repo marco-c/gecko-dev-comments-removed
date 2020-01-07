@@ -42,7 +42,7 @@ WebRenderLayerScrollData::Initialize(WebRenderScrollData& aOwner,
                                      nsDisplayItem* aItem,
                                      int32_t aDescendantCount,
                                      const ActiveScrolledRoot* aStopAtAsr,
-                                     const Maybe<gfx::Matrix4x4>& aTransform)
+                                     const Maybe<gfx::Matrix4x4>& aAncestorTransform)
 {
   MOZ_ASSERT(aDescendantCount >= 0); 
   MOZ_ASSERT(mDescendantCount == -1); 
@@ -50,11 +50,6 @@ WebRenderLayerScrollData::Initialize(WebRenderScrollData& aOwner,
 
   MOZ_ASSERT(aItem);
   aItem->UpdateScrollData(&aOwner, this);
-  if (aTransform) {
-    
-    
-    mTransform = *aTransform * mTransform;
-  }
   for (const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
        asr && asr != aStopAtAsr;
        asr = asr->mParent) {
@@ -70,6 +65,24 @@ WebRenderLayerScrollData::Initialize(WebRenderScrollData& aOwner,
       MOZ_ASSERT(metadata->GetMetrics().GetScrollId() == scrollId);
       mScrollIds.AppendElement(aOwner.AddMetadata(metadata.ref()));
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aAncestorTransform && mScrollbarData.mScrollbarLayerType != ScrollbarLayerType::Thumb) {
+    mAncestorTransform = *aAncestorTransform;
   }
 }
 
@@ -114,6 +127,7 @@ WebRenderLayerScrollData::Dump(const WebRenderScrollData& aOwner) const
   for (size_t i : mScrollIds) {
     printf_stderr("  metadata: %s\n", Stringify(aOwner.GetScrollMetadata(i)).c_str());
   }
+  printf_stderr("  ancestor transform: %s\n", Stringify(mAncestorTransform).c_str());
   printf_stderr("  transform: %s perspective: %d visible: %s\n",
     Stringify(mTransform).c_str(), mTransformIsPerspective,
     Stringify(mVisibleRegion).c_str());
@@ -122,8 +136,8 @@ WebRenderLayerScrollData::Dump(const WebRenderScrollData& aOwner) const
   if (mReferentId) {
     printf_stderr("  ref layers id: 0x%" PRIx64 "\n", uint64_t(*mReferentId));
   }
-  
-  
+  printf_stderr("  scrollbar type: %d animation: %" PRIx64 "\n",
+    (int)mScrollbarData.mScrollbarLayerType, mScrollbarAnimationId);
   printf_stderr("  fixed pos container: %" PRIu64 "\n",
     mFixedPosScrollContainerId);
 }

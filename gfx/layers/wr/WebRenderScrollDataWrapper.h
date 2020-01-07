@@ -222,10 +222,20 @@ public:
   {
     MOZ_ASSERT(IsValid());
 
-    if (AtBottomLayer()) {
-      return mLayer->GetTransform();
+    
+    
+    
+    
+    
+
+    gfx::Matrix4x4 transform;
+    if (AtTopLayer()) {
+      transform = mLayer->GetAncestorTransform();
     }
-    return gfx::Matrix4x4();
+    if (AtBottomLayer()) {
+      transform = transform * mLayer->GetTransform();
+    }
+    return transform;
   }
 
   CSSTransformMatrix GetTransformTyped() const
