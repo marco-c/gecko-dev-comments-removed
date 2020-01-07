@@ -20,7 +20,7 @@ add_task(function* () {
   let { tab, document } = yield openAboutDebugging("workers");
 
   
-  let swTab = yield addTab(TAB_URL, { background: true });
+  let swTab = yield addTab(TAB_URL);
 
   info("Wait until the service worker appears in about:debugging");
   yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
