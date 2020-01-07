@@ -2747,6 +2747,12 @@ window._gBrowser = {
     if (closeWindow && aAdoptedByTab) {
       
       if (aTab.linkedPanel) {
+        const filter = this._tabFilters.get(aTab);
+        browser.webProgress.removeProgressListener(filter);
+        const listener = this._tabListeners.get(aTab);
+        filter.removeProgressListener(listener);
+        listener.destroy();
+        this._tabListeners.delete(aTab);
         this._tabFilters.delete(aTab);
       }
       return true;
