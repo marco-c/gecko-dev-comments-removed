@@ -4411,13 +4411,16 @@ class Tree extends Component {
         onClick: e => {
           
           
+          e.stopPropagation();
+
+          
+          
           this._focus(item, { preventAutoScroll: true });
           if (this.props.isExpanded(item)) {
             this.props.onCollapse(item);
           } else {
             this.props.onExpand(item, e.altKey);
           }
-          e.stopPropagation();
         }
       });
     });
@@ -6446,7 +6449,7 @@ class ObjectInspector extends Component {
         block: nodeIsBlock(item)
       }),
       onClick: e => {
-        if (e.metaKey && onCmdCtrlClick) {
+        if (onCmdCtrlClick && (isMacOS && e.metaKey || !isMacOS && e.ctrlKey)) {
           onCmdCtrlClick(item, {
             depth,
             event: e,

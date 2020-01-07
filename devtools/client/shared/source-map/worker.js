@@ -2146,7 +2146,7 @@ async function getAllGeneratedLocations(location, originalSource) {
   }));
 }
 
-async function getOriginalLocation(location) {
+async function getOriginalLocation(location, { search } = {}) {
   if (!isGeneratedId(location.sourceId)) {
     return location;
   }
@@ -2156,11 +2156,31 @@ async function getOriginalLocation(location) {
     return location;
   }
 
-  const { source: sourceUrl, line, column } = map.originalPositionFor({
+  
+  let match = map.originalPositionFor({
     line: location.line,
     column: location.column == null ? 0 : location.column
   });
 
+  
+  
+  if (search) {
+    let line = location.line;
+    let column = location.column == null ? 0 : location.column;
+
+    while (match.source === null) {
+      match = map.originalPositionFor({
+        line,
+        column,
+        bias: SourceMapConsumer[search]
+      });
+
+      line += search == "LEAST_UPPER_BOUND" ? 1 : -1;
+      column = search == "LEAST_UPPER_BOUND" ? 0 : Infinity;
+    }
+  }
+
+  const { source: sourceUrl, line, column } = match;
   if (sourceUrl == null) {
     
     return location;
