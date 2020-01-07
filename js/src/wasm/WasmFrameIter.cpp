@@ -497,9 +497,8 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 }
 
 void
-wasm::GenerateFunctionPrologue(MacroAssembler& masm, uint32_t framePushed, IsLeaf isLeaf,
-                               const SigIdDesc& sigId, BytecodeOffset trapOffset,
-                               FuncOffsets* offsets, const Maybe<uint32_t>& tier1FuncIndex)
+wasm::GenerateFunctionPrologue(MacroAssembler& masm, const SigIdDesc& sigId,
+                               const Maybe<uint32_t>& tier1FuncIndex, FuncOffsets* offsets)
 {
     
     
@@ -563,34 +562,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, uint32_t framePushed, IsLea
 
     offsets->tierEntry = masm.currentOffset();
 
-    
-    
-    if (framePushed > 0) {
-        
-        
-        if (framePushed > MAX_UNCHECKED_LEAF_FRAME_SIZE) {
-            Label ok;
-            Register scratch = ABINonArgReg0;
-            masm.moveStackPtrTo(scratch);
-            masm.subPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)), scratch);
-            masm.branchPtr(Assembler::GreaterThan, scratch, Imm32(framePushed), &ok);
-            masm.wasmTrap(wasm::Trap::StackOverflow, trapOffset);
-            masm.bind(&ok);
-        }
-
-        masm.reserveStack(framePushed);
-
-        if (framePushed <= MAX_UNCHECKED_LEAF_FRAME_SIZE && !isLeaf) {
-            Label ok;
-            masm.branchStackPtrRhs(Assembler::Below,
-                                   Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
-                                   &ok);
-            masm.wasmTrap(wasm::Trap::StackOverflow, trapOffset);
-            masm.bind(&ok);
-        }
-    }
-
-    MOZ_ASSERT(masm.framePushed() == framePushed);
+    MOZ_ASSERT(masm.framePushed() == 0);
 }
 
 void

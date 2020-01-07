@@ -1529,6 +1529,8 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
 
+    void wasmReserveStackChecked(uint32_t amount, wasm::BytecodeOffset trapOffset);
+
     
     
     

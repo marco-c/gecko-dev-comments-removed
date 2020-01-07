@@ -3380,6 +3380,37 @@ MacroAssembler::wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset)
 }
 
 void
+MacroAssembler::wasmReserveStackChecked(uint32_t amount, wasm::BytecodeOffset trapOffset)
+{
+    if (!amount)
+        return;
+
+    
+    
+
+    if (amount > MAX_UNCHECKED_LEAF_FRAME_SIZE) {
+        Label ok;
+        Register scratch = ABINonArgReg0;
+        moveStackPtrTo(scratch);
+        subPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)), scratch);
+        branchPtr(Assembler::GreaterThan, scratch, Imm32(amount), &ok);
+        wasmTrap(wasm::Trap::StackOverflow, trapOffset);
+        bind(&ok);
+    }
+
+    reserveStack(amount);
+
+    if (amount <= MAX_UNCHECKED_LEAF_FRAME_SIZE) {
+        Label ok;
+        branchStackPtrRhs(Assembler::Below,
+                          Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
+                          &ok);
+        wasmTrap(wasm::Trap::StackOverflow, trapOffset);
+        bind(&ok);
+    }
+}
+
+void
 MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee)
 {
     

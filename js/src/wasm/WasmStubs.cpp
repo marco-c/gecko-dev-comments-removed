@@ -962,11 +962,12 @@ GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, SigIdDes
                        FuncOffsets* offsets)
 {
     AssertExpectedSP(masm);
-    masm.setFramePushed(0);
+
+    GenerateFunctionPrologue(masm, sigId, Nothing(), offsets);
 
     unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.sig().args());
-
-    GenerateFunctionPrologue(masm, framePushed, IsLeaf(false), sigId,  BytecodeOffset(0), offsets);
+    masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
+    MOZ_ASSERT(masm.framePushed() == framePushed);
 
     
     

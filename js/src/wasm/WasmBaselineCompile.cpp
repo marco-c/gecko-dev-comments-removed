@@ -1178,16 +1178,6 @@ class BaseStackFrame
 
   public:
 
-    void endFunctionPrologue() {
-        MOZ_ASSERT(masm.framePushed() == fixedSize());
-        MOZ_ASSERT(fixedSize() % WasmStackAlignment == 0);
-
-        maxFramePushed_ = localSize_;
-#ifdef RABALDR_CHUNKY_STACK
-        currentFramePushed_ = localSize_;
-#endif
-    }
-
     
     bool setupLocals(const ValTypeVector& locals, const ValTypeVector& args, bool debugEnabled,
                      LocalVector* localInfo)
@@ -1218,7 +1208,10 @@ class BaseStackFrame
         }
 
         localSize_ = AlignBytes(varHigh_, WasmStackAlignment);
-
+        maxFramePushed_ = localSize_;
+#ifdef RABALDR_CHUNKY_STACK
+        currentFramePushed_ = localSize_;
+#endif
         return true;
     }
 
@@ -1380,7 +1373,7 @@ class BaseStackFrame
     
     
 
-    void allocStack(Register tmp, BytecodeOffset trapOffset) {
+    void checkStack(Register tmp, BytecodeOffset trapOffset) {
         stackAddOffset_ = masm.sub32FromStackPtrWithPatch(tmp);
         Label ok;
         masm.branchPtr(Assembler::Below,
@@ -1390,9 +1383,8 @@ class BaseStackFrame
         masm.bind(&ok);
     }
 
-    void patchAllocStack() {
-        masm.patchSub32FromStackPtr(stackAddOffset_,
-                                    Imm32(int32_t(maxFramePushed_ - localSize_)));
+    void patchCheckStack() {
+        masm.patchSub32FromStackPtr(stackAddOffset_, Imm32(int32_t(maxFramePushed_)));
     }
 
     
@@ -3161,26 +3153,27 @@ class BaseCompiler final : public BaseCompilerInterface
     void beginFunction() {
         JitSpew(JitSpew_Codegen, "# Emitting wasm baseline code");
 
+        GenerateFunctionPrologue(masm,
+                                 env_.funcSigs[func_.index]->id,
+                                 mode_ == CompileMode::Tier1 ? Some(func_.index) : Nothing(),
+                                 &offsets_);
+
         
         
-        IsLeaf isLeaf = true;
-        SigIdDesc sigId = env_.funcSigs[func_.index]->id;
-        BytecodeOffset trapOffset(func_.lineOrBytecode);
-        GenerateFunctionPrologue(masm, fr.fixedSize(), isLeaf, sigId, trapOffset, &offsets_,
-                                 mode_ == CompileMode::Tier1 ? Some(func_.index) : Nothing());
-
-        fr.endFunctionPrologue();
-
+        
         if (debugEnabled_) {
-            
-            size_t debugFrame = masm.framePushed() - DebugFrame::offsetOfFrame();
+#ifdef JS_CODEGEN_ARM64
+            static_assert(DebugFrame::offsetOfFrame() % WasmStackAlignment == 0, "aligned");
+#endif
+            masm.reserveStack(DebugFrame::offsetOfFrame());
             masm.store32(Imm32(func_.index),
-                         Address(masm.getStackPointer(), debugFrame + DebugFrame::offsetOfFuncIndex()));
+                         Address(masm.getStackPointer(), DebugFrame::offsetOfFuncIndex()));
             masm.storePtr(ImmWord(0),
-                          Address(masm.getStackPointer(), debugFrame + DebugFrame::offsetOfFlagsWord()));
+                          Address(masm.getStackPointer(), DebugFrame::offsetOfFlagsWord()));
         }
 
-        fr.allocStack(ABINonArgReg0, trapOffset);
+        fr.checkStack(ABINonArgReg0, BytecodeOffset(func_.lineOrBytecode));
+        masm.reserveStack(fr.fixedSize() - masm.framePushed());
 
         
 
@@ -3276,7 +3269,7 @@ class BaseCompiler final : public BaseCompilerInterface
         if (masm.oom())
             return false;
 
-        fr.patchAllocStack();
+        fr.patchCheckStack();
 
         masm.bind(&returnLabel_);
 
