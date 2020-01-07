@@ -1271,9 +1271,11 @@ BrowserPageActions.shareURL = {
   },
 
   onShowingSubview(panelViewNode) {
+    let bodyNode = panelViewNode.querySelector(".panel-subview-body");
+
     
     
-    if (this._cached) {
+    if (this._cached && bodyNode.childNodes.length > 0) {
       return;
     }
 
@@ -1301,7 +1303,6 @@ BrowserPageActions.shareURL = {
       fragment.appendChild(item);
     });
 
-    let bodyNode = panelViewNode.querySelector(".panel-subview-body");
     while (bodyNode.firstChild) {
       bodyNode.firstChild.remove();
     }
