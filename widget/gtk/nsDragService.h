@@ -64,7 +64,7 @@ public:
                                            nsIScriptableRegion* aRegion,
                                            uint32_t aActionType) override;
     
-    NS_IMETHOD InvokeDragSession (nsIDOMNode *aDOMNode,
+    NS_IMETHOD InvokeDragSession (nsINode *aDOMNode,
                                   const nsACString& aPrincipalURISpec,
                                   nsIArray * anArrayTransferables,
                                   nsIScriptableRegion * aRegion,

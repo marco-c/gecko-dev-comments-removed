@@ -1808,10 +1808,6 @@ nsChildView::SetInputContext(const InputContext& aContext,
     }
   }
 
-  // IMEInputHandler::IsEditableContent() returns false when both
-  // IsASCIICableOnly() and IsIMEEnabled() return false.  So, be careful
-  // when you change the following code.  You might need to change
-  // IMEInputHandler::IsEditableContent() too.
   mInputContext = aContext;
   switch (aContext.mIMEState.mEnabled) {
     case IMEState::ENABLED:
@@ -6157,7 +6153,7 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
       if (!NS_SUCCEEDED(dragSession->GetCanDrop(&canDrop)) || !canDrop) {
         [self doDragAction:eDragExit sender:aSender];
 
-        nsCOMPtr<nsIDOMNode> sourceNode;
+        nsCOMPtr<nsINode> sourceNode;
         dragSession->GetSourceNode(getter_AddRefs(sourceNode));
         if (!sourceNode) {
           mDragService->EndDragSession(
@@ -6215,7 +6211,7 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
       }
       case eDragExit:
       case eDrop: {
-        nsCOMPtr<nsIDOMNode> sourceNode;
+        nsCOMPtr<nsINode> sourceNode;
         dragSession->GetSourceNode(getter_AddRefs(sourceNode));
         if (!sourceNode) {
           // We're leaving a window while doing a drag that was

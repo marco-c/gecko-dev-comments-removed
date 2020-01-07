@@ -32,7 +32,6 @@
 #include "nsDirectoryService.h"
 #include "nsCRT.h"
 #include "nsNetUtil.h"
-#include "nsIDOMNode.h"
 #include "nsIOutputStream.h"
 #include "nsIInputStream.h"
 #include "nsIWeakReferenceUtils.h"

@@ -29,7 +29,7 @@ public:
                                          uint32_t aActionType) override;
   
   NS_IMETHOD EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) override;
-  NS_IMETHOD UpdateDragImage(nsIDOMNode* aImage, int32_t aImageX, int32_t aImageY) override;
+  NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY) override;
 
   
   NS_IMETHOD GetData(nsITransferable * aTransferable, uint32_t aItemIndex) override;
@@ -45,14 +45,14 @@ private:
 
   
   
-  NSImage* ConstructDragImage(nsIDOMNode* aDOMNode,
+  NSImage* ConstructDragImage(nsINode* aDOMNode,
                               nsIScriptableRegion* aRegion,
                               NSPoint* aImagePoint);
 
   
   
   
-  NSImage* ConstructDragImage(nsIDOMNode* aDOMNode,
+  NSImage* ConstructDragImage(nsINode* aDOMNode,
                               nsIScriptableRegion* aRegion,
                               mozilla::CSSIntPoint aPoint,
                               mozilla::LayoutDeviceIntRect* aDragRect);

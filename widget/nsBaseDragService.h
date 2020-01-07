@@ -23,8 +23,8 @@
 #define DRAG_TRANSLUCENCY 0.65
 
 class nsIContent;
-class nsIDOMNode;
 class nsIDocument;
+class nsINode;
 class nsPresContext;
 class nsIImageLoadingContent;
 
@@ -106,7 +106,7 @@ protected:
 
 
 
-  nsresult DrawDrag(nsIDOMNode* aDOMNode,
+  nsresult DrawDrag(nsINode* aDOMNode,
                     nsIScriptableRegion* aRegion,
                     mozilla::CSSIntPoint aScreenPosition,
                     mozilla::LayoutDeviceIntRect* aScreenDragRect,
@@ -163,7 +163,7 @@ protected:
   uint32_t mDragActionFromChildProcess;
 
   nsSize mTargetSize;
-  nsCOMPtr<nsIDOMNode> mSourceNode;
+  nsCOMPtr<nsINode> mSourceNode;
   nsCString mTriggeringPrincipalURISpec;
   nsCOMPtr<nsIDocument> mSourceDocument;          
                                                   
@@ -172,7 +172,7 @@ protected:
   RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
 
   
-  nsCOMPtr<nsIDOMNode> mImage;
+  nsCOMPtr<nsINode> mImage;
   
   mozilla::CSSIntPoint mImageOffset;
 
