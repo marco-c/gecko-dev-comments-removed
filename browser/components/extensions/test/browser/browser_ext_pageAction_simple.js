@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(async function() {
+add_task(async function test_pageAction_basic() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "page_action": {
