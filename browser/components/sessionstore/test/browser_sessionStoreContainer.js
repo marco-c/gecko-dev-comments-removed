@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -69,13 +69,13 @@ add_task(async function() {
   BrowserTestUtils.removeTab(tab2);
 });
 
-
-
+// Opens "uri" in a new tab with the provided userContextId and focuses it.
+// Returns the newly opened tab.
 async function openTabInUserContext(userContextId) {
-  
+  // Open the tab in the correct userContextId.
   let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com", { userContextId });
 
-  
+  // Select tab and make sure its browser is focused.
   gBrowser.selectedTab = tab;
   tab.ownerGlobal.focus();
 
@@ -102,10 +102,9 @@ add_task(async function test() {
     "work",
   ];
 
-  const ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
   const { TabStateFlusher } = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
 
-  
+  // Make sure userContext is enabled.
   await SpecialPowers.pushPrefEnv({
     "set": [ [ "privacy.userContext.enabled", true ] ]
   });
@@ -113,11 +112,11 @@ add_task(async function test() {
   Services.cookies.removeAll();
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
-    
-    
+    // Load the page in 3 different contexts and set a cookie
+    // which should only be visible in that context.
     let cookie = USER_CONTEXTS[userContextId];
 
-    
+    // Open our tab in the given user context.
     let { tab, browser } = await openTabInUserContext(userContextId);
 
     await Promise.all([
@@ -126,14 +125,14 @@ add_task(async function test() {
         passedCookie => content.document.cookie = passedCookie)
     ]);
 
-    
+    // Ensure the tab's session history is up-to-date.
     await TabStateFlusher.flush(browser);
 
-    
+    // Remove the tab.
     gBrowser.removeTab(tab);
   }
 
-  let state = JSON.parse(ss.getBrowserState());
+  let state = JSON.parse(SessionStore.getBrowserState());
   is(state.cookies.length, USER_CONTEXTS.length,
     "session restore should have each container's cookie");
 });

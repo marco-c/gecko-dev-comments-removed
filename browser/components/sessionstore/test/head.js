@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const {Utils} = ChromeUtils.import("resource://gre/modules/sessionstore/Utils.jsm", {});
 const triggeringPrincipal_base64 = Utils.SERIALIZED_SYSTEMPRINCIPAL;
@@ -25,31 +25,29 @@ registerCleanupFunction(() => {
   }
 });
 
-const {SessionStore} = ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm", {});
 const {SessionSaver} = ChromeUtils.import("resource:///modules/sessionstore/SessionSaver.jsm", {});
 const {SessionFile} = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm", {});
 const {TabState} = ChromeUtils.import("resource:///modules/sessionstore/TabState.jsm", {});
 const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+const ss = SessionStore;
 
-const ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
-
-
-
-
+// Some tests here assume that all restored tabs are loaded without waiting for
+// the user to bring them to the foreground. We ensure this by resetting the
+// related preference (see the "firefox.js" defaults file for details).
 Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", false);
 registerCleanupFunction(function() {
   Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");
 });
 
-
+// Obtain access to internals
 Services.prefs.setBoolPref("browser.sessionstore.debug", true);
 registerCleanupFunction(function() {
   Services.prefs.clearUserPref("browser.sessionstore.debug");
 });
 
 
-
-
+// This kicks off the search service used on about:home and allows the
+// session restore tests to be run standalone without triggering errors.
 Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler).defaultArgs;
 
 function provideWindow(aCallback, aURL, aFeatures) {
@@ -73,7 +71,7 @@ function provideWindow(aCallback, aURL, aFeatures) {
   });
 }
 
-
+// This assumes that tests will at least have some state/entries
 function waitForBrowserState(aState, aSetStateCallback) {
   if (typeof aState == "string") {
     aState = JSON.parse(aState);
@@ -100,9 +98,9 @@ function waitForBrowserState(aState, aSetStateCallback) {
     });
   });
 
-  
-  
-  
+  // If there are only hidden tabs and restoreHiddenTabs = false, we still
+  // expect one of them to be restored because it gets shown automatically.
+  // Otherwise if lazy tab restore there will only be one tab restored per window.
   if (!expectedTabsRestored) {
     expectedTabsRestored = 1;
   } else if (restoreTabsLazily) {
@@ -111,7 +109,7 @@ function waitForBrowserState(aState, aSetStateCallback) {
 
   function onSSTabRestored(aEvent) {
     if (++tabsRestored == expectedTabsRestored) {
-      
+      // Remove the event listener from each window
       windows.forEach(function(win) {
         win.gBrowser.tabContainer.removeEventListener("SSTabRestored", onSSTabRestored, true);
       });
@@ -121,8 +119,8 @@ function waitForBrowserState(aState, aSetStateCallback) {
     }
   }
 
-  
-  
+  // Used to add our listener to further windows so we can catch SSTabRestored
+  // coming from them when creating a multi-window state.
   function windowObserver(aSubject, aTopic, aData) {
     if (aTopic == "domwindowopened") {
       let newWindow = aSubject.QueryInterface(Ci.nsIDOMWindow);
@@ -132,15 +130,15 @@ function waitForBrowserState(aState, aSetStateCallback) {
           windowObserving = false;
         }
 
-        
+        // Track this window so we can remove the progress listener later
         windows.push(newWindow);
-        
+        // Add the progress listener
         newWindow.gBrowser.tabContainer.addEventListener("SSTabRestored", onSSTabRestored, true);
       }, {once: true});
     }
   }
 
-  
+  // We only want to register the notification if we expect more than 1 window
   if (expectedWindows > 1) {
     registerCleanupFunction(function() {
       if (windowObserving) {
@@ -158,14 +156,14 @@ function waitForBrowserState(aState, aSetStateCallback) {
       });
     }
   });
-  
+  // Add the event listener for this window as well.
   listening = true;
   gBrowser.tabContainer.addEventListener("SSTabRestored", onSSTabRestored, true);
 
-  
+  // Ensure setBrowserState() doesn't remove the initial tab.
   gBrowser.selectedTab = gBrowser.tabs[0];
 
-  
+  // Finally, call setBrowserState
   ss.setBrowserState(JSON.stringify(aState));
 }
 
@@ -183,9 +181,9 @@ function promiseTabState(tab, state) {
   return promise;
 }
 
-
-
-
+/**
+ * Wait for a content -> chrome message.
+ */
 function promiseContentMessage(browser, name) {
   let mm = browser.messageManager;
 
@@ -235,14 +233,14 @@ function waitForTopic(aTopic, aTimeout, aCallback) {
   Services.obs.addObserver(observer, aTopic);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Wait until session restore has finished collecting its data and is
+ * has written that data ("sessionstore-state-write-complete").
+ *
+ * @param {function} aCallback If sessionstore-state-write-complete is sent
+ * within buffering interval + 100 ms, the callback is passed |true|,
+ * otherwise, it is passed |false|.
+ */
 function waitForSaveState(aCallback) {
   let timeout = 100 +
     Services.prefs.getIntPref("browser.sessionstore.interval");
@@ -276,7 +274,7 @@ var promiseForEachSessionRestoreFile = async function(cb) {
     try {
       data = await OS.File.read(SessionFile.Paths[key], { encoding: "utf-8", compression: "lz4" });
     } catch (ex) {
-      
+      // Ignore missing files
       if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
         throw ex;
       }
@@ -394,7 +392,7 @@ registerCleanupFunction(function() {
   gProgressListener.unsetCallback();
 });
 
-
+// Close all but our primary window.
 function promiseAllButPrimaryWindowClosed() {
   let windows = [];
   for (let win of BrowserWindowIterator()) {
@@ -406,21 +404,21 @@ function promiseAllButPrimaryWindowClosed() {
   return Promise.all(windows.map(BrowserTestUtils.closeWindow));
 }
 
-
+// Forget all closed windows.
 function forgetClosedWindows() {
   while (ss.getClosedWindowCount() > 0) {
     ss.forgetClosedWindow(0);
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * When opening a new window it is not sufficient to wait for its load event.
+ * We need to use whenDelayedStartupFinshed() here as the browser window's
+ * delayedStartup() routine is executed one tick after the window's load event
+ * has been dispatched. browser-delayed-startup-finished might be deferred even
+ * further if parts of the window's initialization process take more time than
+ * expected (e.g. reading a big session state from disk).
+ */
 function whenNewWindowLoaded(aOptions, aCallback) {
   let features = "";
   let url = "about:blank";
@@ -451,11 +449,11 @@ function promiseNewWindowLoaded(aOptions) {
   return new Promise(resolve => whenNewWindowLoaded(aOptions, resolve));
 }
 
-
-
-
-
-
+/**
+ * This waits for the browser-delayed-startup-finished notification of a given
+ * window. It indicates that the windows has loaded completely and is ready to
+ * be used for testing.
+ */
 function whenDelayedStartupFinished(aWindow, aCallback) {
   Services.obs.addObserver(function observer(aSubject, aTopic) {
     if (aWindow == aSubject) {
@@ -481,13 +479,13 @@ function sendMessage(browser, name, data = {}) {
   return promiseContentMessage(browser, name);
 }
 
-
-
-
-
-
-
-
+// This creates list of functions that we will map to their corresponding
+// ss-test:* messages names. Those will be sent to the frame script and
+// be used to read and modify form data.
+/* global getTextContent, getInputValue, setInputValue, getInputChecked
+          setInputChecked, getSelectedIndex, setSelectedIndex,
+          getMultipleSelected, setMultipleSelected, getFileNameArray,
+          setFileNameArray */
 const FORM_HELPERS = [
   "getTextContent",
   "getInputValue", "setInputValue",
@@ -502,15 +500,15 @@ for (let name of FORM_HELPERS) {
   this[name] = (browser, data) => sendMessage(browser, msg, data);
 }
 
-
-
+// Removes the given tab immediately and returns a promise that resolves when
+// all pending status updates (messages) of the closing tab have been received.
 function promiseRemoveTabAndSessionState(tab) {
   let sessionUpdatePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
   BrowserTestUtils.removeTab(tab);
   return sessionUpdatePromise;
 }
 
-
+// Write DOMSessionStorage data to the given browser.
 function modifySessionStorage(browser, storageData, storageOptions = {}) {
   return ContentTask.spawn(browser, [storageData, storageOptions], async function([data, options]) {
     let frame = content;
