@@ -628,7 +628,6 @@ public:
     , mIsPrimaryFrame(false)
     , mMayHaveTransformAnimation(false)
     , mMayHaveOpacityAnimation(false)
-    , mAllDescendantsAreInvisible(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -4091,13 +4090,6 @@ public:
   }
 
   
-  bool IsVisibleOrMayHaveVisibleDescendants() const {
-    return !mAllDescendantsAreInvisible || StyleVisibility()->IsVisible();
-  }
-  
-  void UpdateVisibleDescendantsState();
-
-  
 
 
 
@@ -4355,16 +4347,6 @@ private:
 
   bool mMayHaveTransformAnimation : 1;
   bool mMayHaveOpacityAnimation : 1;
-
-  
-
-
-
-
-
-
-
-  bool mAllDescendantsAreInvisible : 1;
 
 protected:
 
