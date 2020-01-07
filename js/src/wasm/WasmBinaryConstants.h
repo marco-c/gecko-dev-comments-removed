@@ -63,6 +63,9 @@ enum class TypeCode
     AnyFunc                              = 0x70,  
 
     
+    AnyRef                               = 0x6f,
+
+    
     Func                                 = 0x60,  
 
     
@@ -77,6 +80,8 @@ enum class ValType
     I64                                  = uint8_t(TypeCode::I64),
     F32                                  = uint8_t(TypeCode::F32),
     F64                                  = uint8_t(TypeCode::F64),
+
+    AnyRef                               = uint8_t(TypeCode::AnyRef),
 
     
     
@@ -322,6 +327,10 @@ enum class Op
     I64Extend16S                         = 0xc3,
     I64Extend32S                         = 0xc4,
 #endif
+
+    
+    RefNull                              = 0xd0,
+    RefIsNull                            = 0xd1,
 
     FirstPrefix                          = 0xfc,
     NumericPrefix                        = 0xfc,
