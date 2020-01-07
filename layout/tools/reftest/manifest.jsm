@@ -31,12 +31,12 @@ function ReadTopManifest(aFileURL, aFilter)
         throw "Expected a file or http URL for the manifest.";
 
     g.manifestsLoaded = {};
-    ReadManifest(url, EXPECTED_PASS, aFilter);
+    ReadManifest(url, aFilter);
 }
 
 
 
-function ReadManifest(aURL, inherited_status, aFilter)
+function ReadManifest(aURL, aFilter)
 {
     
     
@@ -237,8 +237,6 @@ function ReadManifest(aURL, inherited_status, aFilter)
             }
         }
 
-        expected_status = Math.max(expected_status, inherited_status);
-
         if (minAsserts > maxAsserts) {
             throw "Bad range in manifest file " + aURL.spec + " line " + lineNo;
         }
@@ -296,7 +294,7 @@ function ReadManifest(aURL, inherited_status, aFilter)
                 var incURI = g.ioService.newURI(items[1], null, listURL);
                 secMan.checkLoadURIWithPrincipal(principal, incURI,
                                                  CI.nsIScriptSecurityManager.DISALLOW_SCRIPT);
-                ReadManifest(incURI, expected_status, aFilter);
+                ReadManifest(incURI, aFilter);
             }
         } else if (items[0] == TYPE_LOAD) {
             if (items.length != 2)
