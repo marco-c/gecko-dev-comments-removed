@@ -246,6 +246,17 @@ Event::GetTarget(nsIDOMEventTarget** aTarget)
   return NS_OK;
 }
 
+bool
+Event::IsSrcElementEnabled(JSContext* , JSObject* )
+{
+  
+#ifdef NIGHTLY_BUILD
+  return true;
+#else
+  return false;
+#endif
+}
+
 EventTarget*
 Event::GetCurrentTarget() const
 {
