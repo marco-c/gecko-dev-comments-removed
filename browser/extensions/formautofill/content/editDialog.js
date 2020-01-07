@@ -25,26 +25,11 @@ class AutofillEditDialog {
   }
 
   async init() {
-    if (this._record) {
-      await this.loadInitialValues(this._record);
-    }
     this.attachEventListeners();
     
     
+    
     window.dispatchEvent(new CustomEvent("FormReady"));
-  }
-
-  
-
-
-
-  loadInitialValues(record) {
-    for (let field in record) {
-      let input = document.getElementById(field);
-      if (input) {
-        input.value = record[field];
-      }
-    }
   }
 
   
@@ -159,9 +144,7 @@ class AutofillEditDialog {
 
 class EditAddressDialog extends AutofillEditDialog {
   constructor(elements, record) {
-    let country = record ? record.country :
-                  FormAutofillUtils.supportedCountries.find(supported => supported == FormAutofillUtils.DEFAULT_REGION);
-    super("addresses", elements, record || {country});
+    super("addresses", elements, record);
   }
 
   localizeDocument() {
@@ -185,15 +168,6 @@ class EditCreditCardDialog extends AutofillEditDialog {
     if (this._record) {
       this._elements.title.dataset.localization = "editCreditCardTitle";
     }
-  }
-
-  
-
-
-
-  async loadInitialValues(creditCard) {
-    let decryptedCC = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
-    super.loadInitialValues(Object.assign({}, creditCard, {"cc-number": decryptedCC}));
   }
 
   async handleSubmit() {
