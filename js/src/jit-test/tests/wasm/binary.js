@@ -488,10 +488,10 @@ function checkIllegalPrefixed(prefix, opcode) {
 
 
 for (let i = 3; i < 0x10; i++)
-    checkIllegalPrefixed(AtomicPrefix, i);
+    checkIllegalPrefixed(ThreadPrefix, i);
 
 for (let i = 0x4f; i < 0x100; i++)
-    checkIllegalPrefixed(AtomicPrefix, i);
+    checkIllegalPrefixed(ThreadPrefix, i);
 
 
 
@@ -499,8 +499,14 @@ for (let i = 0x4f; i < 0x100; i++)
 
 
 
-for (let i = 0x08; i < 256; i++)
-    checkIllegalPrefixed(NumericPrefix, i);
+
+
+
+for (let i = 0; i < 256; i++) {
+    if (i <= 0x07 || i == 0x40 || i == 0x41)
+        continue;
+    checkIllegalPrefixed(MiscPrefix, i);
+}
 
 
 for (let i = 0; i < 256; i++)
@@ -510,7 +516,7 @@ for (let i = 0; i < 256; i++)
 for (let i = 0; i < 256; i++)
     checkIllegalPrefixed(MozPrefix, i);
 
-for (let prefix of [AtomicPrefix, NumericPrefix, SimdPrefix, MozPrefix]) {
+for (let prefix of [ThreadPrefix, MiscPrefix, SimdPrefix, MozPrefix]) {
     
     let binary = moduleWithSections([v2vSigSection, declSection([0]), bodySection([funcBody({locals:[], body:[prefix]})])]);
     assertErrorMessage(() => wasmEval(binary), CompileError, /unrecognized opcode/);

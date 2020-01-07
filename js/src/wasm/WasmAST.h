@@ -1195,17 +1195,17 @@ class AstConversionOperator final : public AstExpr
 
 class AstExtraConversionOperator final : public AstExpr
 {
-    NumericOp op_;
+    MiscOp op_;
     AstExpr* operand_;
 
   public:
     static const AstExprKind Kind = AstExprKind::ExtraConversionOperator;
-    explicit AstExtraConversionOperator(NumericOp op, AstExpr* operand)
+    explicit AstExtraConversionOperator(MiscOp op, AstExpr* operand)
       : AstExpr(Kind, ExprType::Limit),
         op_(op), operand_(operand)
     {}
 
-    NumericOp op() const { return op_; }
+    MiscOp op() const { return op_; }
     AstExpr* operand() const { return operand_; }
 };
 #endif
