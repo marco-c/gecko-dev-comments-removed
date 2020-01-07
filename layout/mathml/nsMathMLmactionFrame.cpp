@@ -330,7 +330,8 @@ nsMathMLmactionFrame::MouseClick()
       nsAutoString value;
       value.AppendInt(selection);
       bool notify = false; 
-      mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::selection_, value, notify);
+      mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::selection_,
+                                     value, notify);
 
       
       PresShell()->

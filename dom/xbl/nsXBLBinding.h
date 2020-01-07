@@ -64,8 +64,8 @@ public:
   nsXBLBinding* GetBaseBinding() const { return mNextBinding; }
   void SetBaseBinding(nsXBLBinding *aBinding);
 
-  nsIContent* GetBoundElement() { return mBoundElement; }
-  void SetBoundElement(nsIContent *aElement);
+  mozilla::dom::Element* GetBoundElement() { return mBoundElement; }
+  void SetBoundElement(mozilla::dom::Element* aElement);
 
   
 
@@ -173,7 +173,7 @@ protected:
   nsCOMPtr<nsIContent> mContent; 
   RefPtr<nsXBLBinding> mNextBinding; 
 
-  nsIContent* mBoundElement; 
+  mozilla::dom::Element* mBoundElement; 
 
   
   

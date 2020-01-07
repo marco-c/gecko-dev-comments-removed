@@ -10,6 +10,11 @@
 
 class nsIWidget;
 class nsIContent;
+namespace mozilla {
+namespace dom {
+class Element;
+}
+}
 
 
 #define NS_INATIVEMENUSERVICE_IID \
@@ -22,7 +27,7 @@ public:
   
   
   
-  NS_IMETHOD CreateNativeMenuBar(nsIWidget* aParent, nsIContent* aMenuBarNode)=0;
+  NS_IMETHOD CreateNativeMenuBar(nsIWidget* aParent, mozilla::dom::Element* aMenuBarNode)=0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsINativeMenuService, NS_INATIVEMENUSERVICE_IID)

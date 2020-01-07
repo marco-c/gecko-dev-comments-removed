@@ -430,6 +430,11 @@ public:
   virtual nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                               int32_t aModType) const;
 
+  NS_IMETHOD WalkContentStyleRules(nsRuleWalker* aRuleWalker)
+  {
+    return NS_OK;
+  }
+
   inline Directionality GetDirectionality() const {
     if (HasFlag(NODE_HAS_DIRECTION_RTL)) {
       return eDir_RTL;
@@ -697,8 +702,6 @@ public:
   already_AddRefed<mozilla::dom::NodeInfo>
   GetExistingAttrNameFromQName(const nsAString& aStr) const;
 
-  using nsIContent::SetAttr;
-
   
 
 
@@ -758,9 +761,6 @@ public:
 
   nsresult SetSingleClassFromParser(nsAtom* aSingleClassName);
 
-  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                           const nsAString& aValue, nsIPrincipal* aSubjectPrincipal,
-                           bool aNotify) override;
   
   
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
@@ -777,19 +777,97 @@ public:
   inline bool AttrValueIs(int32_t aNameSpaceID, nsAtom* aName,
                           nsAtom* aValue,
                           nsCaseTreatment aCaseSensitive) const;
-  virtual int32_t FindAttrValueIn(int32_t aNameSpaceID,
-                                  nsAtom* aName,
-                                  AttrValuesArray* aValues,
-                                  nsCaseTreatment aCaseSensitive) const override;
-  virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aAttribute,
-                             bool aNotify) override;
+  int32_t FindAttrValueIn(int32_t aNameSpaceID,
+                          nsAtom* aName,
+                          AttrValuesArray* aValues,
+                          nsCaseTreatment aCaseSensitive) const override;
 
-  virtual const nsAttrName* GetAttrNameAt(uint32_t aIndex) const final override
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                   const nsAString& aValue, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aNotify);
+  }
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
+                   const nsAString& aValue, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify);
+  }
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
+                   nsIPrincipal* aTriggeringPrincipal, bool aNotify)
+  {
+    return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal, aNotify);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                           nsAtom* aPrefix, const nsAString& aValue,
+                           nsIPrincipal* aMaybeScriptedPrincipal,
+                           bool aNotify);
+
+  
+
+
+
+
+
+
+
+  virtual nsresult UnsetAttr(int32_t aNameSpaceID,
+                             nsAtom* aAttribute,
+                             bool aNotify);
+
+  
+
+
+
+
+
+
+
+
+
+
+  const nsAttrName* GetAttrNameAt(uint32_t aIndex) const
   {
     return mAttrsAndChildren.GetSafeAttrNameAt(aIndex);
   }
 
-  virtual BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const final override
+  
+
+
+  BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const
   {
     if (aIndex >= mAttrsAndChildren.AttrCount()) {
       return BorrowedAttrInfo(nullptr, nullptr);
@@ -798,7 +876,12 @@ public:
     return mAttrsAndChildren.AttrInfoAt(aIndex);
   }
 
-  virtual uint32_t GetAttrCount() const final override
+  
+
+
+
+
+  uint32_t GetAttrCount() const
   {
     return mAttrsAndChildren.AttrCount();
   }
@@ -1466,7 +1549,7 @@ public:
 
   void SetAttr(nsAtom* aAttr, const nsAString& aValue, nsIPrincipal& aTriggeringPrincipal, ErrorResult& aError)
   {
-    aError = nsIContent::SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
+    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, &aTriggeringPrincipal, true);
   }
 
   

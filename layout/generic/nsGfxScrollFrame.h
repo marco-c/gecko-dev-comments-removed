@@ -170,18 +170,20 @@ public:
   
 
 
-  void FinishReflowForScrollbar(nsIContent* aContent, nscoord aMinXY,
-                                nscoord aMaxXY, nscoord aCurPosXY,
-                                nscoord aPageIncrement,
+  void FinishReflowForScrollbar(mozilla::dom::Element* aElement,
+                                nscoord aMinXY, nscoord aMaxXY,
+                                nscoord aCurPosXY, nscoord aPageIncrement,
                                 nscoord aIncrement);
   
 
 
-  void SetScrollbarEnabled(nsIContent* aContent, nscoord aMaxPos);
+  void SetScrollbarEnabled(mozilla::dom::Element* aElement, nscoord aMaxPos);
   
 
 
-  void SetCoordAttribute(nsIContent* aContent, nsAtom* aAtom, nscoord aSize);
+  void SetCoordAttribute(mozilla::dom::Element* aElement,
+                         nsAtom* aAtom,
+                         nscoord aSize);
 
   nscoord GetCoordAttribute(nsIFrame* aFrame, nsAtom* aAtom, nscoord aDefaultValue,
                             nscoord* aRangeStart, nscoord* aRangeLength);
@@ -500,10 +502,10 @@ public:
   bool IsRootScrollFrameOfDocument() const { return mIsRoot; }
 
   
-  nsCOMPtr<nsIContent> mHScrollbarContent;
-  nsCOMPtr<nsIContent> mVScrollbarContent;
-  nsCOMPtr<nsIContent> mScrollCornerContent;
-  nsCOMPtr<nsIContent> mResizerContent;
+  nsCOMPtr<mozilla::dom::Element> mHScrollbarContent;
+  nsCOMPtr<mozilla::dom::Element> mVScrollbarContent;
+  nsCOMPtr<mozilla::dom::Element> mScrollCornerContent;
+  nsCOMPtr<mozilla::dom::Element> mResizerContent;
 
   RefPtr<ScrollEvent> mScrollEvent;
   RefPtr<ScrollEndEvent> mScrollEndEvent;

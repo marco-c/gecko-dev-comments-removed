@@ -479,7 +479,7 @@ private:
 
 
 nsresult
-nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
+nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
                            nsIPrincipal* aOriginPrincipal,
                            nsXBLBinding** aBinding, bool* aResolveStyle)
 {
@@ -488,20 +488,20 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   *aBinding = nullptr;
   *aResolveStyle = false;
 
-  AutoEnsureSubtreeStyled subtreeStyled(aContent->AsElement());
+  AutoEnsureSubtreeStyled subtreeStyled(aElement);
 
   if (MOZ_UNLIKELY(!aURL)) {
     return NS_OK;
   }
 
   
-  nsXBLBinding* binding = aContent->GetXBLBinding();
+  nsXBLBinding* binding = aElement->GetXBLBinding();
   if (binding && !binding->MarkedForDeath() &&
       binding->PrototypeBinding()->CompareBindingURI(aURL)) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDocument> document = aContent->OwnerDoc();
+  nsCOMPtr<nsIDocument> document = aElement->OwnerDoc();
 
   nsAutoCString urlspec;
   nsresult rv;
@@ -518,13 +518,13 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   }
 
   if (binding) {
-    FlushStyleBindings(aContent);
+    FlushStyleBindings(aElement);
     binding = nullptr;
   }
 
   bool ready;
   RefPtr<nsXBLBinding> newBinding;
-  if (NS_FAILED(rv = GetBinding(aContent, aURL, false, aOriginPrincipal,
+  if (NS_FAILED(rv = GetBinding(aElement, aURL, false, aOriginPrincipal,
                                 &ready, getter_AddRefs(newBinding)))) {
     return rv;
   }
@@ -537,21 +537,21 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
     return NS_OK;
   }
 
-  if (::IsAncestorBinding(document, aURL, aContent)) {
+  if (::IsAncestorBinding(document, aURL, aElement)) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  AutoStyleElement styleElement(aContent->AsElement(), aResolveStyle);
+  AutoStyleElement styleElement(aElement, aResolveStyle);
 
   
   
-  aContent->SetXBLBinding(newBinding);
+  aElement->SetXBLBinding(newBinding);
 
   {
     nsAutoScriptBlocker scriptBlocker;
 
     
-    newBinding->SetBoundElement(aContent);
+    newBinding->SetBoundElement(aElement);
 
     
     newBinding->GenerateAnonymousContent();
@@ -572,20 +572,18 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   return NS_OK;
 }
 
-nsresult
-nsXBLService::FlushStyleBindings(nsIContent* aContent)
+void
+nsXBLService::FlushStyleBindings(Element* aElement)
 {
-  nsCOMPtr<nsIDocument> document = aContent->OwnerDoc();
+  nsCOMPtr<nsIDocument> document = aElement->OwnerDoc();
 
-  nsXBLBinding *binding = aContent->GetXBLBinding();
+  nsXBLBinding* binding = aElement->GetXBLBinding();
   if (binding) {
     
     binding->ChangeDocument(document, nullptr);
 
-    aContent->SetXBLBinding(nullptr); 
+    aElement->SetXBLBinding(nullptr); 
   }
-
-  return NS_OK;
 }
 
 

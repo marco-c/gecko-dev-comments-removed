@@ -88,7 +88,7 @@ public:
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                 uint32_t aFilters) override;
 
-  nsIContent* GetPosterImage() { return mPosterImage; }
+  mozilla::dom::Element* GetPosterImage() { return mPosterImage; }
 
   
   
@@ -129,10 +129,10 @@ protected:
   virtual ~nsVideoFrame();
 
   
-  nsCOMPtr<nsIContent> mVideoControls;
+  RefPtr<mozilla::dom::Element> mVideoControls;
 
   
-  nsCOMPtr<nsIContent> mPosterImage;
+  RefPtr<mozilla::dom::Element> mPosterImage;
 
   
   nsCOMPtr<nsIContent> mCaptionDiv;

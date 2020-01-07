@@ -237,7 +237,7 @@ int32_t
 nsScrollbarFrame::MoveToNewPosition()
 {
   
-  nsCOMPtr<nsIContent> content = GetContent();
+  RefPtr<Element> content = GetContent()->AsElement();
 
   
   int32_t curpos = nsSliderFrame::GetCurrentPosition(content);

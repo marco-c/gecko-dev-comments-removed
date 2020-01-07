@@ -13,6 +13,12 @@
 class nsIXULTemplateBuilder;
 class nsIContent;
 
+namespace mozilla {
+namespace dom {
+class Element;
+}
+}
+
 
 
 #define NS_IXULDOCUMENT_IID \
@@ -34,7 +40,8 @@ public:
 
 
 
-  virtual void GetElementsForID(const nsAString& aID, nsCOMArray<nsIContent>& aElements) = 0;
+  virtual void GetElementsForID(const nsAString& aID,
+                                nsCOMArray<mozilla::dom::Element>& aElements) = 0;
 
   
 

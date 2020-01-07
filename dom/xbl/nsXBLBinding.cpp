@@ -262,7 +262,7 @@ nsXBLBinding::UnbindAnonymousContent(nsIDocument* aDocument,
 }
 
 void
-nsXBLBinding::SetBoundElement(nsIContent* aElement)
+nsXBLBinding::SetBoundElement(Element* aElement)
 {
   mBoundElement = aElement;
   if (mNextBinding)
@@ -301,7 +301,7 @@ nsXBLBinding::GenerateAnonymousContent()
                "Someone forgot a script blocker");
 
   
-  nsIContent* content =
+  Element* content =
     mPrototypeBinding->GetImmediateChild(nsGkAtoms::content);
 
   if (!content) {
@@ -417,8 +417,12 @@ nsXBLBinding::GenerateAnonymousContent()
     }
 
     
+    
+    
+    
+    
     if (mContent)
-      mContent->UnsetAttr(namespaceID, name, false);
+      mContent->AsElement()->UnsetAttr(namespaceID, name, false);
   }
 }
 
