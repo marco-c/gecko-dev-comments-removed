@@ -306,7 +306,8 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
       
       
       
-      active: isE10s ? true : !!activeWorker
+      active: isE10s ? true : !!activeWorker,
+      lastUpdateTime: registration.lastUpdateTime,
     };
   },
 
