@@ -19,33 +19,39 @@ const jsmScope = require("resource://gre/modules/Services.jsm");
 const { Services } = jsmScope;
 
 const {
-  atob,
-  btoa,
-  ChromeUtils,
   console,
   HeapSnapshot,
-  TextDecoder,
-  TextEncoder,
-  XMLHttpRequest,
 } = Cu.getGlobalForObject(jsmScope);
 
 
 
 const {
+  atob,
+  btoa,
+  ChromeUtils,
   CSS,
   CSSRule,
   FileReader,
   indexedDB,
   InspectorUtils,
+  TextDecoder,
+  TextEncoder,
   URL,
+  XMLHttpRequest,
 } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(), {
   wantGlobalProperties: [
+    "atob",
+    "btoa",
+    "ChromeUtils",
     "CSS",
     "CSSRule",
     "FileReader",
     "indexedDB",
+    "TextDecoder",
+    "TextEncoder",
     "InspectorUtils",
     "URL",
+    "XMLHttpRequest",
   ]
 });
 
