@@ -54,6 +54,8 @@ public:
   nsresult SuspendForDiversion() override;
   nsresult SuspendMessageDiversion() override;
   nsresult ResumeMessageDiversion() override;
+  nsresult CancelDiversion() override;
+
 
   
   
