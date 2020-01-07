@@ -9,9 +9,10 @@
 
 
 
+#include "mozilla/dom/CharacterData.h"
+
 #include "mozilla/DebugOnly.h"
 
-#include "nsGenericDOMDataNode.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Element.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsGenericDOMDataNode_h___
-#define nsGenericDOMDataNode_h___
+#ifndef mozilla_dom_CharacterData_h
+#define mozilla_dom_CharacterData_h
 
 #include "mozilla/Attributes.h"
 #include "nsIContent.h"
