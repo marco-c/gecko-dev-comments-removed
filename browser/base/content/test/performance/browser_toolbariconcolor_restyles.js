@@ -18,6 +18,12 @@ add_task(async function test_toolbar_element_restyles_on_activation() {
   await new Promise(resolve => waitForFocus(resolve, win2));
 
   
+  
+  
+  Services.focus.activeWindow = win1;
+  Services.focus.activeWindow = win2;
+
+  
   win1.getComputedStyle(win1.document.firstElementChild);
   win2.getComputedStyle(win2.document.firstElementChild);
 
