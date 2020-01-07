@@ -22,19 +22,17 @@
 
 import optparse
 import os
+from os import environ as env
 import plistlib
 import re
 import subprocess
 import sys
 import tempfile
 
-TOP = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+TOP = os.path.join(env['SRCROOT'], '..')
 
-
-def _ConvertPlist(source_plist, output_plist, fmt):
-  """Convert |source_plist| to |fmt| and save as |output_plist|."""
-  return subprocess.call(
-      ['plutil', '-convert', fmt, '-o', output_plist, source_plist])
+sys.path.insert(0, os.path.join(TOP, "build/util"))
+import lastchange
 
 
 def _GetOutput(args):
@@ -67,68 +65,37 @@ def _RemoveKeys(plist, *keys):
       pass
 
 
-def _ApplyVersionOverrides(version, keys, overrides, separator='.'):
-  """Applies version overrides.
-
-  Given a |version| string as "a.b.c.d" (assuming a default separator) with
-  version components named by |keys| then overrides any value that is present
-  in |overrides|.
-
-  >>> _ApplyVersionOverrides('a.b', ['major', 'minor'], {'minor': 'd'})
-  'a.d'
-  """
-  if not overrides:
-    return version
-  version_values = version.split(separator)
-  for i, (key, value) in enumerate(zip(keys, version_values)):
-    if key in overrides:
-      version_values[i] = overrides[key]
-  return separator.join(version_values)
-
-
-def _GetVersion(version_format, values, overrides=None):
-  """Generates a version number according to |version_format| using the values
-  from |values| or |overrides| if given."""
-  result = version_format
-  for key in values:
-    if overrides and key in overrides:
-      value = overrides[key]
-    else:
-      value = values[key]
-    result = result.replace('@%s@' % key, value)
-  return result
-
-
-def _AddVersionKeys(
-    plist, version_format_for_key, version=None, overrides=None):
+def _AddVersionKeys(plist):
   """Adds the product version number into the plist. Returns True on success and
   False on error. The error will be printed to stderr."""
-  if not version:
-    
-    VERSION_TOOL = os.path.join(TOP, 'build/util/version.py')
-    VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
-    (stdout, retval) = _GetOutput([
-        VERSION_TOOL, '-f', VERSION_FILE,
-        '-t', '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'])
+  
+  VERSION_TOOL = os.path.join(TOP, 'chrome/tools/build/version.py')
+  VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
 
-    
-    
-    if retval != 0:
-      return False
+  (stdout, retval1) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+                                  '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'])
+  full_version = stdout.rstrip()
 
-    version = stdout.strip()
+  (stdout, retval2) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t',
+                                  '@BUILD@.@PATCH@'])
+  bundle_version = stdout.rstrip()
 
   
   
-  
-  groups = version.split('.')
-  if len(groups) != 4 or not all(element.isdigit() for element in groups):
-    print >>sys.stderr, 'Invalid version string specified: "%s"' % version
+  if retval1 or retval2:
     return False
-  values = dict(zip(('MAJOR', 'MINOR', 'BUILD', 'PATCH'), groups))
 
-  for key in version_format_for_key:
-    plist[key] = _GetVersion(version_format_for_key[key], values, overrides)
+  
+  plist['CFBundleShortVersionString'] = full_version
+
+  
+  
+  
+  
+  
+  
+  
+  plist['CFBundleVersion'] = bundle_version
 
   
   return True
@@ -137,16 +104,11 @@ def _AddVersionKeys(
 def _DoSCMKeys(plist, add_keys):
   """Adds the SCM information, visible in about:version, to property list. If
   |add_keys| is True, it will insert the keys, otherwise it will remove them."""
-  scm_revision = None
+  scm_path, scm_revision = None, None
   if add_keys:
-    
-    VERSION_TOOL = os.path.join(TOP, 'build/util/version.py')
-    LASTCHANGE_FILE = os.path.join(TOP, 'build/util/LASTCHANGE')
-    (stdout, retval) = _GetOutput([VERSION_TOOL, '-f', LASTCHANGE_FILE, '-t',
-                                  '@LASTCHANGE@'])
-    if retval:
-      return False
-    scm_revision = stdout.rstrip()
+    version_info = lastchange.FetchVersionInfo(
+        default_lastchange=None, directory=TOP)
+    scm_path, scm_revision = version_info.url, version_info.revision
 
   
   _RemoveKeys(plist, 'SCMRevision')
@@ -155,17 +117,67 @@ def _DoSCMKeys(plist, add_keys):
   elif add_keys:
     print >>sys.stderr, 'Could not determine SCM revision.  This may be OK.'
 
-  return True
+  if scm_path != None:
+    plist['SCMPath'] = scm_path
+  else:
+    _RemoveKeys(plist, 'SCMPath')
 
 
-def _AddBreakpadKeys(plist, branding, platform):
+def _DoPDFKeys(plist, add_keys):
+  """Adds PDF support to the document types list. If add_keys is True, it will
+  add the type information dictionary. If it is False, it will remove it if
+  present."""
+
+  PDF_FILE_EXTENSION = 'pdf'
+
+  def __AddPDFKeys(sub_plist):
+    """Writes the keys into a sub-dictionary of the plist."""
+    sub_plist['CFBundleTypeExtensions'] = [PDF_FILE_EXTENSION]
+    sub_plist['CFBundleTypeIconFile'] = 'document.icns'
+    sub_plist['CFBundleTypeMIMETypes'] = 'application/pdf'
+    sub_plist['CFBundleTypeName'] = 'PDF Document'
+    sub_plist['CFBundleTypeRole'] = 'Viewer'
+
+  DOCUMENT_TYPES_KEY = 'CFBundleDocumentTypes'
+
+  
+  try:
+    extensions = plist[DOCUMENT_TYPES_KEY]
+  except KeyError:
+    
+    
+    if not add_keys:
+      return
+    extensions = plist[DOCUMENT_TYPES_KEY] = []
+
+  
+  for i, ext in enumerate(extensions):
+    
+    if 'CFBundleTypeExtensions' not in ext:
+      continue
+    if PDF_FILE_EXTENSION in ext['CFBundleTypeExtensions']:
+      if add_keys:
+        
+        __AddPDFKeys(ext)
+      else:
+        
+        del extensions[i]
+      return
+
+  
+  if add_keys:
+    pdf_entry = {}
+    __AddPDFKeys(pdf_entry)
+    extensions.append(pdf_entry)
+
+
+def _AddBreakpadKeys(plist, branding):
   """Adds the Breakpad keys. This must be called AFTER _AddVersionKeys() and
   also requires the |branding| argument."""
   plist['BreakpadReportInterval'] = '3600'  
-  plist['BreakpadProduct'] = '%s_%s' % (branding, platform)
+  plist['BreakpadProduct'] = '%s_Mac' % branding
   plist['BreakpadProductDisplay'] = branding
-  plist['BreakpadURL'] = 'https://clients2.google.com/cr/report'
-
+  plist['BreakpadVersion'] = plist['CFBundleShortVersionString']
   
   plist['BreakpadSendAndExit'] = 'YES'
   plist['BreakpadSkipConfirm'] = 'YES'
@@ -183,35 +195,12 @@ def _RemoveBreakpadKeys(plist):
       'BreakpadSkipConfirm')
 
 
-def _TagSuffixes():
-  
-  
-  components = ('full',)
-  assert tuple(sorted(components)) == components
-
-  components_len = len(components)
-  combinations = 1 << components_len
-  tag_suffixes = []
-  for combination in xrange(0, combinations):
-    tag_suffix = ''
-    for component_index in xrange(0, components_len):
-      if combination & (1 << component_index):
-        tag_suffix += '-' + components[component_index]
-    tag_suffixes.append(tag_suffix)
-  return tag_suffixes
-
-
 def _AddKeystoneKeys(plist, bundle_identifier):
   """Adds the Keystone keys. This must be called AFTER _AddVersionKeys() and
   also requires the |bundle_identifier| argument (com.example.product)."""
   plist['KSVersion'] = plist['CFBundleShortVersionString']
   plist['KSProductID'] = bundle_identifier
   plist['KSUpdateURL'] = 'https://tools.google.com/service/update2'
-
-  _RemoveKeys(plist, 'KSChannelID')
-  for tag_suffix in _TagSuffixes():
-    if tag_suffix:
-      plist['KSChannelID' + tag_suffix] = tag_suffix
 
 
 def _RemoveKeystoneKeys(plist):
@@ -221,100 +210,37 @@ def _RemoveKeystoneKeys(plist):
       'KSProductID',
       'KSUpdateURL')
 
-  tag_keys = []
-  for tag_suffix in _TagSuffixes():
-    tag_keys.append('KSChannelID' + tag_suffix)
-  _RemoveKeys(plist, *tag_keys)
-
 
 def Main(argv):
   parser = optparse.OptionParser('%prog [options]')
-  parser.add_option('--plist', dest='plist_path', action='store',
-      type='string', default=None, help='The path of the plist to tweak.')
-  parser.add_option('--output', dest='plist_output', action='store',
-      type='string', default=None, help='If specified, the path to output ' + \
-      'the tweaked plist, rather than overwriting the input.')
   parser.add_option('--breakpad', dest='use_breakpad', action='store',
       type='int', default=False, help='Enable Breakpad [1 or 0]')
+  parser.add_option('--breakpad_uploads', dest='breakpad_uploads',
+      action='store', type='int', default=False,
+      help='Enable Breakpad\'s uploading of crash dumps [1 or 0]')
   parser.add_option('--keystone', dest='use_keystone', action='store',
       type='int', default=False, help='Enable Keystone [1 or 0]')
   parser.add_option('--scm', dest='add_scm_info', action='store', type='int',
       default=True, help='Add SCM metadata [1 or 0]')
+  parser.add_option('--pdf', dest='add_pdf_support', action='store', type='int',
+      default=False, help='Add PDF file handler support [1 or 0]')
   parser.add_option('--branding', dest='branding', action='store',
       type='string', default=None, help='The branding of the binary')
   parser.add_option('--bundle_id', dest='bundle_identifier',
       action='store', type='string', default=None,
       help='The bundle id of the binary')
-  parser.add_option('--platform', choices=('ios', 'mac'), default='mac',
-      help='The target platform of the bundle')
-  parser.add_option('--version-overrides', action='append',
-      help='Key-value pair to override specific component of version '
-           'like key=value (can be passed multiple time to configure '
-           'more than one override)')
-  parser.add_option('--format', choices=('binary1', 'xml1', 'json'),
-      default='xml1', help='Format to use when writing property list '
-          '(default: %(default)s)')
-  parser.add_option('--version', dest='version', action='store', type='string',
-      default=None, help='The version string [major.minor.build.patch]')
   (options, args) = parser.parse_args(argv)
 
   if len(args) > 0:
     print >>sys.stderr, parser.get_usage()
     return 1
 
-  if not options.plist_path:
-    print >>sys.stderr, 'No --plist specified.'
-    return 1
+  
+  DEST_INFO_PLIST = os.path.join(env['TARGET_BUILD_DIR'], env['INFOPLIST_PATH'])
+  plist = plistlib.readPlist(DEST_INFO_PLIST)
 
   
-  
-  with tempfile.NamedTemporaryFile() as temp_info_plist:
-    retcode = _ConvertPlist(options.plist_path, temp_info_plist.name, 'xml1')
-    if retcode != 0:
-      return retcode
-    plist = plistlib.readPlist(temp_info_plist.name)
-
-  
-  overrides = {}
-  if options.version_overrides:
-    for pair in options.version_overrides:
-      if not '=' in pair:
-        print >>sys.stderr, 'Invalid value for --version-overrides:', pair
-        return 1
-      key, value = pair.split('=', 1)
-      overrides[key] = value
-      if key not in ('MAJOR', 'MINOR', 'BUILD', 'PATCH'):
-        print >>sys.stderr, 'Unsupported key for --version-overrides:', key
-        return 1
-
-  if options.platform == 'mac':
-    version_format_for_key = {
-      
-      'CFBundleShortVersionString': '@MAJOR@.@MINOR@.@BUILD@.@PATCH@',
-
-      
-      
-      
-      
-      
-      
-      
-      'CFBundleVersion': '@BUILD@.@PATCH@',
-    }
-  else:
-    version_format_for_key = {
-      'CFBundleShortVersionString': '@MAJOR@.@BUILD@.@PATCH@',
-      'CFBundleVersion': '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'
-    }
-
-  if options.use_breakpad:
-    version_format_for_key['BreakpadVersion'] = \
-        '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'
-
-  
-  if not _AddVersionKeys(
-      plist, version_format_for_key, version=options.version,
-      overrides=overrides):
+  if not _AddVersionKeys(plist):
     return 2
 
   
@@ -322,15 +248,22 @@ def Main(argv):
     if options.branding is None:
       print >>sys.stderr, 'Use of Breakpad requires branding.'
       return 1
-    
-    
-    platform = {'mac': 'Mac', 'ios': 'iOS'}[options.platform]
-    _AddBreakpadKeys(plist, options.branding, platform)
+    _AddBreakpadKeys(plist, options.branding)
+    if options.breakpad_uploads:
+      plist['BreakpadURL'] = 'https://clients2.google.com/cr/report'
+    else:
+      
+      
+      
+      
+      
+      
+      plist['BreakpadURL'] = 'none'
   else:
     _RemoveBreakpadKeys(plist)
 
   
-  if options.use_keystone:
+  if options.use_keystone and env['CONFIGURATION'] == 'Release':
     if options.bundle_identifier is None:
       print >>sys.stderr, 'Use of Keystone requires the bundle id.'
       return 1
@@ -339,20 +272,21 @@ def Main(argv):
     _RemoveKeystoneKeys(plist)
 
   
-  if not _DoSCMKeys(plist, options.add_scm_info):
-    return 3
-
-  output_path = options.plist_path
-  if options.plist_output is not None:
-    output_path = options.plist_output
+  _DoSCMKeys(plist, options.add_scm_info)
 
   
-  with tempfile.NamedTemporaryFile() as temp_info_plist:
-    plistlib.writePlist(plist, temp_info_plist.name)
+  _DoPDFKeys(plist, options.add_pdf_support)
 
-    
-    
-    return _ConvertPlist(temp_info_plist.name, output_path, options.format)
+  
+  temp_info_plist = tempfile.NamedTemporaryFile()
+  plistlib.writePlist(plist, temp_info_plist.name)
+
+  
+  
+  proc = subprocess.Popen(['plutil', '-convert', 'xml1', '-o', DEST_INFO_PLIST,
+                           temp_info_plist.name])
+  proc.wait()
+  return proc.returncode
 
 
 if __name__ == '__main__':
