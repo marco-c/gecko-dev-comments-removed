@@ -98,14 +98,14 @@ function testTree() {
   let doc = gPanelWindow.document;
   for (let [item] of testCases) {
     ok(doc.querySelector("[data-id='" + JSON.stringify(item) + "']"),
-       "Tree item " + item[0] + " should be present in the storage tree");
+      `Tree item ${item.toSource()} should be present in the storage tree`);
   }
 }
 
 
 
 
-function* testTables() {
+async function testTables() {
   let doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
@@ -118,7 +118,7 @@ function* testTables() {
 
   
   for (let [treeItem, items] of testCases.slice(1)) {
-    yield selectTreeItem(treeItem);
+    await selectTreeItem(treeItem);
 
     
     is(doc.querySelectorAll(
@@ -133,12 +133,12 @@ function* testTables() {
   }
 }
 
-add_task(function* () {
-  yield openTabAndSetupStorage(
+add_task(async function() {
+  await openTabAndSetupStorage(
     MAIN_DOMAIN + "storage-listings-with-fragment.html#abc");
 
   testTree();
-  yield testTables();
+  await testTables();
 
-  yield finishTests();
+  await finishTests();
 });

@@ -59,6 +59,8 @@ const COOKIE_KEY_MAP = {
   lastAccessed: "LastAccessed"
 };
 
+const SAFE_HOSTS_PREFIXES_REGEX = /^(about:|https?:|file:|moz-extension:)/;
+
 
 
 const ITEM_NAME_MAX_LENGTH = 32;
@@ -129,6 +131,26 @@ class StorageUI {
     });
 
     this.front.listStores().then(storageTypes => {
+      
+      
+      
+      
+      
+      
+      
+      if (!this._target.chrome && storageTypes.indexedDB) {
+        let hosts = storageTypes.indexedDB.hosts;
+        let newHosts = {};
+
+        for (let [host, dbs] of Object.entries(hosts)) {
+          if (SAFE_HOSTS_PREFIXES_REGEX.test(host)) {
+            newHosts[host] = dbs;
+          }
+        }
+
+        storageTypes.indexedDB.hosts = newHosts;
+      }
+
       this.populateStorageTree(storageTypes);
     }).catch(e => {
       if (!this._toolbox || this._toolbox._destroyer) {
