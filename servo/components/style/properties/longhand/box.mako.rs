@@ -37,20 +37,19 @@
 
     pub mod computed_value {
         pub use super::SpecifiedValue as T;
-        use super::SpecifiedValue as Display;
 
-        impl Display {
+        impl T {
             /// Returns whether this "display" value is the display of a flex or
             /// grid container.
             ///
             /// This is used to implement various style fixups.
             pub fn is_item_container(&self) -> bool {
                 matches!(*self,
-                         Display::Flex
-                         | Display::InlineFlex
+                         T::flex
+                         | T::inline_flex
                          % if product == "gecko":
-                         | Display::Grid
-                         | Display::InlineGrid
+                         | T::grid
+                         | T::inline_grid
                          % endif
                 )
             }
@@ -60,11 +59,11 @@
             /// line as itself.
             pub fn is_line_participant(&self) -> bool {
                 matches!(*self,
-                         Display::Inline
+                         T::inline
                          % if product == "gecko":
-                         | Display::Contents
-                         | Display::Ruby
-                         | Display::RubyBaseContainer
+                         | T::contents
+                         | T::ruby
+                         | T::ruby_base_container
                          % endif
                 )
             }
@@ -85,8 +84,8 @@
                 #[cfg(feature = "gecko")]
                 {
                     match (_old_display, _new_display) {
-                        (Display::WebkitBox, Display::MozBox) |
-                        (Display::WebkitInlineBox, Display::MozInlineBox) => {
+                        (T::_webkit_box, T::_moz_box) |
+                        (T::_webkit_inline_box, T::_moz_inline_box) => {
                             return true;
                         }
                         _ => {},
@@ -100,20 +99,14 @@
             /// ruby.
             #[cfg(feature = "gecko")]
             pub fn is_ruby_type(&self) -> bool {
-                matches!(*self,
-                         Display::Ruby |
-                         Display::RubyBase |
-                         Display::RubyText |
-                         Display::RubyBaseContainer |
-                         Display::RubyTextContainer)
+                matches!(*self, T::ruby | T::ruby_base | T::ruby_text |
+                         T::ruby_base_container | T::ruby_text_container)
             }
 
             /// Returns whether this "display" value is a ruby level container.
             #[cfg(feature = "gecko")]
             pub fn is_ruby_level_container(&self) -> bool {
-                matches!(*self,
-                         Display::RubyBaseContainer |
-                         Display::RubyTextContainer)
+                matches!(*self, T::ruby_base_container | T::ruby_text_container)
             }
 
             /// Convert this display into an equivalent block display.
@@ -122,36 +115,28 @@
             pub fn equivalent_block_display(&self, _is_root_element: bool) -> Self {
                 match *self {
                     // Values that have a corresponding block-outside version.
-                    Display::InlineTable => Display::Table,
-                    Display::InlineFlex => Display::Flex,
+                    T::inline_table => T::table,
+                    T::inline_flex => T::flex,
 
                     % if product == "gecko":
-                    Display::InlineGrid => Display::Grid,
-                    Display::WebkitInlineBox => Display::WebkitBox,
+                    T::inline_grid => T::grid,
+                    T::_webkit_inline_box => T::_webkit_box,
                     % endif
 
                     // Special handling for contents and list-item on the root
                     // element for Gecko.
                     % if product == "gecko":
-                    Display::Contents | Display::ListItem if _is_root_element => Display::Block,
+                    T::contents | T::list_item if _is_root_element => T::block,
                     % endif
 
                     // These are not changed by blockification.
-                    Display::None |
-                    Display::Block |
-                    Display::Flex |
-                    Display::ListItem |
-                    Display::Table => *self,
-
+                    T::none | T::block | T::flex | T::list_item | T::table => *self,
                     % if product == "gecko":
-                    Display::Contents |
-                    Display::FlowRoot |
-                    Display::Grid |
-                    Display::WebkitBox => *self,
+                    T::contents | T::flow_root | T::grid | T::_webkit_box => *self,
                     % endif
 
                     // Everything else becomes block.
-                    _ => Display::Block,
+                    _ => T::block,
                 }
 
             }
@@ -163,38 +148,35 @@
             #[cfg(feature = "gecko")]
             pub fn inlinify(&self) -> Self {
                 match *self {
-                    Display::Block |
-                    Display::FlowRoot => Display::InlineBlock,
-                    Display::Table => Display::InlineTable,
-                    Display::Flex => Display::InlineFlex,
-                    Display::Grid => Display::InlineGrid,
-                    Display::MozBox => Display::MozInlineBox,
-                    Display::MozStack => Display::MozInlineStack,
-                    Display::WebkitBox => Display::WebkitInlineBox,
+                    T::block | T::flow_root => T::inline_block,
+                    T::table => T::inline_table,
+                    T::flex => T::inline_flex,
+                    T::grid => T::inline_grid,
+                    T::_moz_box => T::_moz_inline_box,
+                    T::_moz_stack => T::_moz_inline_stack,
+                    T::_webkit_box => T::_webkit_inline_box,
                     other => other,
                 }
             }
         }
     }
 
-    // FIXME(emilio): Why does this reinvent the wheel, again?
     #[allow(non_camel_case_types)]
     #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue)]
     #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
     pub enum SpecifiedValue {
         % for value in values:
-            ${to_camel_case(value)},
+            ${to_rust_ident(value)},
         % endfor
     }
 
-    // TODO(emilio): derive.
     impl ToCss for SpecifiedValue {
         fn to_css<W>(&self, dest: &mut W) -> ::std::fmt::Result
             where W: ::std::fmt::Write,
         {
             match *self {
                 % for value in values:
-                    SpecifiedValue::${to_camel_case(value)} => dest.write_str("${value}"),
+                    SpecifiedValue::${to_rust_ident(value)} => dest.write_str("${value}"),
                 % endfor
             }
         }
@@ -203,7 +185,7 @@
     /// The initial display value.
     #[inline]
     pub fn get_initial_value() -> computed_value::T {
-        computed_value::T::${to_camel_case(values[0])}
+        computed_value::T::${to_rust_ident(values[0])}
     }
 
     /// Parse a display value.
@@ -212,12 +194,12 @@
         try_match_ident_ignore_ascii_case! { input,
             % for value in values:
                 "${value}" => {
-                    Ok(computed_value::T::${to_camel_case(value)})
+                    Ok(computed_value::T::${to_rust_ident(value)})
                 },
             % endfor
             % for value in webkit_prefixed_values:
                 "-webkit-${value}" => {
-                    Ok(computed_value::T::${to_camel_case(value)})
+                    Ok(computed_value::T::${to_rust_ident(value)})
                 },
             % endfor
         }
@@ -268,25 +250,25 @@ ${helpers.single_keyword("position", "static absolute relative fixed sticky",
             let ltr = context.style().writing_mode.is_bidi_ltr();
             // https://drafts.csswg.org/css-logical-props/#float-clear
             match *self {
-                SpecifiedValue::InlineStart => {
+                SpecifiedValue::inline_start => {
                     context.rule_cache_conditions.borrow_mut()
                         .set_writing_mode_dependency(context.builder.writing_mode);
                     if ltr {
-                        computed_value::T::Left
+                        computed_value::T::left
                     } else {
-                        computed_value::T::Right
+                        computed_value::T::right
                     }
                 }
-                SpecifiedValue::InlineEnd => {
+                SpecifiedValue::inline_end => {
                     context.rule_cache_conditions.borrow_mut()
                         .set_writing_mode_dependency(context.builder.writing_mode);
                     if ltr {
-                        computed_value::T::Right
+                        computed_value::T::right
                     } else {
-                        computed_value::T::Left
+                        computed_value::T::left
                     }
                 }
-                % for value in "None Left Right".split():
+                % for value in "none left right".split():
                     SpecifiedValue::${value} => computed_value::T::${value},
                 % endfor
             }
@@ -294,7 +276,7 @@ ${helpers.single_keyword("position", "static absolute relative fixed sticky",
         #[inline]
         fn from_computed_value(computed: &computed_value::T) -> SpecifiedValue {
             match *computed {
-                % for value in "None Left Right".split():
+                % for value in "none left right".split():
                     computed_value::T::${value} => SpecifiedValue::${value},
                 % endfor
             }
@@ -320,25 +302,25 @@ ${helpers.single_keyword("position", "static absolute relative fixed sticky",
             let ltr = context.style().writing_mode.is_bidi_ltr();
             // https://drafts.csswg.org/css-logical-props/#float-clear
             match *self {
-                SpecifiedValue::InlineStart => {
+                SpecifiedValue::inline_start => {
                     context.rule_cache_conditions.borrow_mut()
                         .set_writing_mode_dependency(context.builder.writing_mode);
                     if ltr {
-                        computed_value::T::Left
+                        computed_value::T::left
                     } else {
-                        computed_value::T::Right
+                        computed_value::T::right
                     }
                 }
-                SpecifiedValue::InlineEnd => {
+                SpecifiedValue::inline_end => {
                     context.rule_cache_conditions.borrow_mut()
                         .set_writing_mode_dependency(context.builder.writing_mode);
                     if ltr {
-                        computed_value::T::Right
+                        computed_value::T::right
                     } else {
-                        computed_value::T::Left
+                        computed_value::T::left
                     }
                 }
-                % for value in "None Left Right Both".split():
+                % for value in "none left right both".split():
                     SpecifiedValue::${value} => computed_value::T::${value},
                 % endfor
             }
@@ -346,7 +328,7 @@ ${helpers.single_keyword("position", "static absolute relative fixed sticky",
         #[inline]
         fn from_computed_value(computed: &computed_value::T) -> SpecifiedValue {
             match *computed {
-                % for value in "None Left Right Both".split():
+                % for value in "none left right both".split():
                     computed_value::T::${value} => SpecifiedValue::${value},
                 % endfor
             }
@@ -391,21 +373,12 @@ ${helpers.single_keyword("-servo-overflow-clip-box", "padding-box content-box",
     spec="Internal, not web-exposed, \
           may be standardized in the future (https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-clip-box)")}
 
-% for direction in ["inline", "block"]:
-    ${helpers.predefined_type(
-        "overflow-clip-box-" + direction,
-        "OverflowClipBox",
-        "computed::OverflowClipBox::PaddingBox",
-        products="gecko",
-        enabled_in="ua",
-        needs_context=False,
-        flags="APPLIES_TO_PLACEHOLDER",
-        gecko_pref="layout.css.overscroll-behavior.enabled",
-        animation_value_type="discrete",
-        spec="Internal, may be standardized in the future: \
-              https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-clip-box",
-    )}
-% endfor
+${helpers.single_keyword("overflow-clip-box", "padding-box content-box",
+    products="gecko", animation_value_type="discrete", enabled_in="ua",
+    gecko_pref="layout.css.overflow-clip-box.enabled",
+    flags="APPLIES_TO_PLACEHOLDER",
+    spec="Internal, not web-exposed, \
+          may be standardized in the future (https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-clip-box)")}
 
 <%
     overflow_custom_consts = { "-moz-hidden-unscrollable": "CLIP" }
