@@ -80,6 +80,20 @@ static constexpr FloatRegister ScratchDoubleReg = { FloatRegisters::f23, FloatRe
 static constexpr FloatRegister SecondScratchFloat32Reg = { FloatRegisters::f21, FloatRegisters::Single };
 static constexpr FloatRegister SecondScratchDoubleReg = { FloatRegisters::f21, FloatRegisters::Double };
 
+struct ScratchFloat32Scope : public AutoFloatRegisterScope
+{
+    explicit ScratchFloat32Scope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchFloat32Reg)
+    { }
+};
+
+struct ScratchDoubleScope : public AutoFloatRegisterScope
+{
+    explicit ScratchDoubleScope(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg)
+    { }
+};
+
 
 
 static constexpr Register WasmIonExitRegReturnData = JSReturnReg_Data;
