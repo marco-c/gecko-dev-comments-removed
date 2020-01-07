@@ -24,6 +24,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include <math.h>
 
 typedef struct gr_face gr_face;
 
@@ -690,20 +691,19 @@ gfxFontEntry::SupportsBold()
 
 struct GlobalFontMatch {
     GlobalFontMatch(const uint32_t aCharacter,
-                    const gfxFontStyle *aStyle) :
-        mCh(aCharacter), mStyle(aStyle),
-        mMatchRank(0.0f), mCount(0), mCmapsTested(0)
+                    const gfxFontStyle& aStyle) :
+        mStyle(aStyle), mCh(aCharacter),
+        mCount(0), mCmapsTested(0), mMatchDistance(INFINITY)
         {
-
         }
 
+    RefPtr<gfxFontEntry>   mBestMatch;   
+    RefPtr<gfxFontFamily>  mMatchedFamily; 
+    const gfxFontStyle&    mStyle;       
     const uint32_t         mCh;          
-    const gfxFontStyle*    mStyle;       
-    float                  mMatchRank;   
-    RefPtr<gfxFontEntry> mBestMatch;   
-    RefPtr<gfxFontFamily> mMatchedFamily; 
     uint32_t               mCount;       
     uint32_t               mCmapsTested; 
+    float                  mMatchDistance; 
 };
 
 class gfxFontFamily {
@@ -786,10 +786,10 @@ public:
 
     
     
-    void FindFontForChar(GlobalFontMatch *aMatchData);
+    void FindFontForChar(GlobalFontMatch* aMatchData);
 
     
-    void SearchAllFontsForChar(GlobalFontMatch *aMatchData);
+    void SearchAllFontsForChar(GlobalFontMatch* aMatchData);
 
     
     virtual void ReadOtherFamilyNames(gfxPlatformFontList *aPlatformFontList);

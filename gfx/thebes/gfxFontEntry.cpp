@@ -1524,8 +1524,6 @@ WeightDistance(const gfxFontEntry* aFontEntry, FontWeight aTargetWeight)
     return distance;
 }
 
-#define MAX_DISTANCE 1.0e20 // >> than any WeightStyleStretchDistance result
-
 static inline double
 WeightStyleStretchDistance(gfxFontEntry* aFontEntry,
                            const gfxFontStyle& aTargetStyle)
@@ -1625,7 +1623,7 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     
     
 
-    double minDistance = MAX_DISTANCE;
+    double minDistance = INFINITY;
     gfxFontEntry* matched = nullptr;
     
     
@@ -1735,45 +1733,8 @@ void gfxFontFamily::LocalizedName(nsAString& aLocalizedName)
     aLocalizedName = mName;
 }
 
-
-static float
-CalcStyleMatch(gfxFontEntry *aFontEntry, const gfxFontStyle *aStyle)
-{
-    float rank = 0;
-    if (aStyle) {
-        
-
-        
-        bool wantUpright = aStyle->style.IsNormal();
-        if (aFontEntry->IsUpright() == wantUpright) {
-            rank += 5000.0f;
-        }
-
-        
-        if (aFontEntry->Weight().Min() > aStyle->weight) {
-            rank += 1000.0f - (aFontEntry->Weight().Min() - aStyle->weight);
-        } else if (aFontEntry->Weight().Max() < aStyle->weight) {
-            rank += 1000.0f - (aStyle->weight - aFontEntry->Weight().Max());
-        } else {
-            rank += 2000.0f; 
-        }
-    } else {
-        
-        if (aFontEntry->IsUpright()) {
-            rank += 2000.0f;
-        }
-        if (aFontEntry->Weight().Min() <= FontWeight(500)) {
-            rank += 1000.0f;
-        }
-    }
-
-    return rank;
-}
-
-#define RANK_MATCHED_CMAP   10000.0f
-
 void
-gfxFontFamily::FindFontForChar(GlobalFontMatch *aMatchData)
+gfxFontFamily::FindFontForChar(GlobalFontMatch* aMatchData)
 {
     if (mFamilyCharacterMapInitialized && !TestCharacterMap(aMatchData->mCh)) {
         
@@ -1781,81 +1742,72 @@ gfxFontFamily::FindFontForChar(GlobalFontMatch *aMatchData)
         return;
     }
 
-    gfxFontEntry *fe =
-        FindFontForStyle(aMatchData->mStyle ? *aMatchData->mStyle
-                                            : gfxFontStyle(),
-                         true);
+    gfxFontEntry* fe =
+        FindFontForStyle(aMatchData->mStyle,  true);
+    if (!fe || fe->SkipDuringSystemFallback()) {
+        return;
+    }
 
-    if (fe && !fe->SkipDuringSystemFallback()) {
-        float rank = 0;
+    float distance = INFINITY;
 
-        if (fe->HasCharacter(aMatchData->mCh)) {
-            rank += RANK_MATCHED_CMAP;
-            aMatchData->mCount++;
+    if (fe->HasCharacter(aMatchData->mCh)) {
+        aMatchData->mCount++;
 
-            LogModule* log = gfxPlatform::GetLog(eGfxLog_textrun);
+        LogModule* log = gfxPlatform::GetLog(eGfxLog_textrun);
 
-            if (MOZ_UNLIKELY(MOZ_LOG_TEST(log, LogLevel::Debug))) {
-                uint32_t unicodeRange = FindCharUnicodeRange(aMatchData->mCh);
-                Script script = GetScriptCode(aMatchData->mCh);
-                MOZ_LOG(log, LogLevel::Debug,\
-                       ("(textrun-systemfallback-fonts) char: u+%6.6x "
-                        "unicode-range: %d script: %d match: [%s]\n",
-                        aMatchData->mCh,
-                        unicodeRange, int(script),
-                        NS_ConvertUTF16toUTF8(fe->Name()).get()));
-            }
-
-            
-            
-            rank += CalcStyleMatch(fe, aMatchData->mStyle);
-        } else if (!fe->IsNormalStyle()) {
-            
-            
-            
-            GlobalFontMatch data(aMatchData->mCh, aMatchData->mStyle);
-            SearchAllFontsForChar(&data);
-            if (data.mMatchRank >= RANK_MATCHED_CMAP) {
-                fe = data.mBestMatch;
-                rank = data.mMatchRank;
-            } else {
-                return;
-            }
-        } else {
-            return;
+        if (MOZ_UNLIKELY(MOZ_LOG_TEST(log, LogLevel::Debug))) {
+            uint32_t unicodeRange = FindCharUnicodeRange(aMatchData->mCh);
+            Script script = GetScriptCode(aMatchData->mCh);
+            MOZ_LOG(log, LogLevel::Debug,\
+                   ("(textrun-systemfallback-fonts) char: u+%6.6x "
+                    "unicode-range: %d script: %d match: [%s]\n",
+                    aMatchData->mCh,
+                    unicodeRange, int(script),
+                    NS_ConvertUTF16toUTF8(fe->Name()).get()));
         }
 
-        aMatchData->mCmapsTested++;
-
+        distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+    } else if (!fe->IsNormalStyle()) {
         
-
-        if (rank > aMatchData->mMatchRank
-            || (rank == aMatchData->mMatchRank &&
-                Compare(fe->Name(), aMatchData->mBestMatch->Name()) > 0))
-        {
-            aMatchData->mBestMatch = fe;
-            aMatchData->mMatchedFamily = this;
-            aMatchData->mMatchRank = rank;
+        
+        
+        GlobalFontMatch data(aMatchData->mCh, aMatchData->mStyle);
+        SearchAllFontsForChar(&data);
+        if (isfinite(data.mMatchDistance)) {
+            fe = data.mBestMatch;
+            distance = data.mMatchDistance;
         }
+    }
+    aMatchData->mCmapsTested++;
+
+    if (isinf(distance)) {
+        return;
+    }
+
+    if (distance < aMatchData->mMatchDistance ||
+        (distance == aMatchData->mMatchDistance &&
+         Compare(fe->Name(), aMatchData->mBestMatch->Name()) > 0)) {
+        aMatchData->mBestMatch = fe;
+        aMatchData->mMatchedFamily = this;
+        aMatchData->mMatchDistance = distance;
     }
 }
 
 void
-gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch *aMatchData)
+gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData)
 {
     uint32_t i, numFonts = mAvailableFonts.Length();
     for (i = 0; i < numFonts; i++) {
         gfxFontEntry *fe = mAvailableFonts[i];
         if (fe && fe->HasCharacter(aMatchData->mCh)) {
-            float rank = RANK_MATCHED_CMAP;
-            rank += CalcStyleMatch(fe, aMatchData->mStyle);
-            if (rank > aMatchData->mMatchRank
-                || (rank == aMatchData->mMatchRank &&
+            float distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
+            if (distance < aMatchData->mMatchDistance
+                || (distance == aMatchData->mMatchDistance &&
                     Compare(fe->Name(), aMatchData->mBestMatch->Name()) > 0))
             {
                 aMatchData->mBestMatch = fe;
                 aMatchData->mMatchedFamily = this;
-                aMatchData->mMatchRank = rank;
+                aMatchData->mMatchDistance = distance;
             }
         }
     }
