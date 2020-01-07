@@ -9,21 +9,21 @@
 
 #include <unordered_map>                          
 
+#include "FocusState.h"                 
 #include "gfxPoint.h"                   
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/APZTestData.h" 
-#include "mozilla/layers/FocusState.h"  
 #include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/layers/KeyboardMap.h" 
-#include "mozilla/layers/TouchCounter.h"
 #include "mozilla/RecursiveMutex.h"     
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/UniquePtr.h"          
 #include "nsCOMPtr.h"                   
+#include "TouchCounter.h"               
 
 #if defined(MOZ_WIDGET_ANDROID)
 #include "mozilla/layers/AndroidDynamicToolbarAnimator.h"

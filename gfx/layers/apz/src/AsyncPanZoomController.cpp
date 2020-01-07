@@ -12,6 +12,7 @@
 #include <algorithm>                    
 
 #include "APZCTreeManager.h"            
+#include "AsyncPanZoomAnimation.h"      
 #include "AutoscrollAnimation.h"        
 #include "Axis.h"                       
 #include "CheckerboardEvent.h"          

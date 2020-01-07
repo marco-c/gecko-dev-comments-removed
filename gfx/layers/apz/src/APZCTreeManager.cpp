@@ -24,7 +24,6 @@
 #include "mozilla/layers/AsyncCompositionManager.h" 
 #include "mozilla/layers/AsyncDragMetrics.h" 
 #include "mozilla/layers/CompositorBridgeParent.h" 
-#include "mozilla/layers/FocusState.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"

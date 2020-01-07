@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/layers/FocusState.h"
+#include "FocusState.h"
 
 
 #define FS_LOG(...)
