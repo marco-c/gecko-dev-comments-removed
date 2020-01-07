@@ -240,16 +240,7 @@ NewWebConsoleFrame.prototype = {
                    this.window.top.close.bind(this.window.top));
 
       ZoomKeys.register(this.window);
-
-      if (!AppConstants.MOZILLA_OFFICIAL) {
-        
-        
-        
-        this.window.Services = Services;
-        Services.scriptloader.loadSubScript(
-          "chrome://browser/content/browser-development-helpers.js", this.window);
-        shortcuts.on("CmdOrCtrl+Alt+R", this.window.DevelopmentHelpers.quickRestart);
-      }
+      shortcuts.on("CmdOrCtrl+Alt+R", quickRestart);
     } else if (Services.prefs.getBoolPref(PREF_SIDEBAR_ENABLED)) {
       shortcuts.on("Esc", event => {
         if (!this.jsterm.autocompletePopup || !this.jsterm.autocompletePopup.isOpen) {
@@ -259,6 +250,7 @@ NewWebConsoleFrame.prototype = {
       });
     }
   },
+
   
 
 
@@ -341,5 +333,18 @@ NewWebConsoleFrame.prototype = {
     }
   }
 };
+
+
+
+
+
+function quickRestart() {
+  const { Cc, Ci } = require("chrome");
+  Services.obs.notifyObservers(null, "startupcache-invalidate");
+  let env = Cc["@mozilla.org/process/environment;1"]
+            .getService(Ci.nsIEnvironment);
+  env.set("MOZ_DISABLE_SAFE_MODE_KEY", "1");
+  Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
+}
 
 exports.NewWebConsoleFrame = NewWebConsoleFrame;
