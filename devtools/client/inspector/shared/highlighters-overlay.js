@@ -46,6 +46,7 @@ class HighlightersOverlay {
     this.editors = {};
     this.inspector = inspector;
     this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
+    this.store = this.inspector.store;
 
     
     this.supportsHighlighters = this.highlighterUtils.supportsCustomHighlighters();
@@ -334,22 +335,37 @@ class HighlightersOverlay {
 
 
 
+  getGridHighlighterSettings(nodeFront) {
+    const { grids, highlighterSettings } = this.store.getState();
+    const grid = grids.find(g => g.nodeFront === nodeFront);
+    const color = grid ? grid.color : DEFAULT_GRID_COLOR;
+    return Object.assign({}, highlighterSettings, { color });
+  }
+
+  
 
 
 
 
 
 
-  async toggleGridHighlighter(node, options = {}, trigger) {
+
+
+
+  async toggleGridHighlighter(node, trigger) {
     if (node == this.gridHighlighterShown) {
       await this.hideGridHighlighter(node);
       return;
     }
 
-    await this.showGridHighlighter(node, options, trigger);
+    await this.showGridHighlighter(node, {}, trigger);
   }
 
   
+
+
+
+
 
 
 
@@ -362,6 +378,8 @@ class HighlightersOverlay {
     if (!highlighter) {
       return;
     }
+
+    options = Object.assign({}, options, this.getGridHighlighterSettings(node));
 
     let isShown = await highlighter.show(node, options);
     if (!isShown) {
@@ -407,9 +425,9 @@ class HighlightersOverlay {
 
     
     
-    this.emit("grid-highlighter-hidden", this.gridHighlighterShown,
-      this.state.grid.options);
+    const nodeFront = this.gridHighlighterShown;
     this.gridHighlighterShown = null;
+    this.emit("grid-highlighter-hidden", nodeFront, this.state.grid.options);
 
     
     this.state.grid = {};
@@ -814,20 +832,11 @@ class HighlightersOverlay {
   onClick(event) {
     if (this._isRuleViewDisplayGrid(event.target)) {
       event.stopPropagation();
-
-      let { store } = this.inspector;
-      let { grids, highlighterSettings } = store.getState();
-      let grid = grids.find(g => g.nodeFront == this.inspector.selection.nodeFront);
-
-      highlighterSettings.color = grid ? grid.color : DEFAULT_GRID_COLOR;
-
-      this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
-        "rule");
+      this.toggleGridHighlighter(this.inspector.selection.nodeFront, "rule");
     }
 
     if (this._isRuleViewDisplayFlex(event.target)) {
       event.stopPropagation();
-
       this.toggleFlexboxHighlighter(this.inspector.selection.nodeFront);
     }
 
@@ -987,6 +996,7 @@ class HighlightersOverlay {
     this.highlighterUtils = null;
     this.supportsHighlighters = null;
     this.state = null;
+    this.store = null;
 
     this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
