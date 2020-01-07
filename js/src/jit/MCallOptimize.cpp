@@ -846,7 +846,7 @@ IonBuilder::inlineArrayPush(CallInfo& callInfo)
 
         
         
-        callInfo.pushPriorCallStack(this, current);
+        MOZ_TRY(callInfo.pushPriorCallStack(this, current));
     }
 
     MInstruction* ins = nullptr;
