@@ -884,8 +884,6 @@ long
 AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
                                   AudioDataValue* aOutputBuffer, long aFrames)
 {
-  bool stillProcessing;
-
   
   if (!mAddedMixer) {
     mGraphImpl->mMixer.AddCallback(this);
@@ -924,6 +922,48 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     mIterationDurationMS /= 4;
   }
 
+  mBuffer.SetBuffer(aOutputBuffer, aFrames);
+  
+  
+  mScratchBuffer.Empty(mBuffer);
+
+  
+  
+  
+  GraphTime nextStateComputedTime =
+    mGraphImpl->RoundUpToNextAudioBlock(stateComputedTime + mBuffer.Available());
+
+  mIterationStart = mIterationEnd;
+  
+  
+  
+  GraphTime inGraph = stateComputedTime - mIterationStart;
+  
+  
+  
+  
+  
+  
+  mIterationEnd = mIterationStart + 0.8 * inGraph;
+
+  LOG(LogLevel::Verbose,
+      ("interval[%ld; %ld] state[%ld; %ld] (frames: %ld) (durationMS: %u) "
+       "(duration ticks: %ld)",
+       (long)mIterationStart,
+       (long)mIterationEnd,
+       (long)stateComputedTime,
+       (long)nextStateComputedTime,
+       (long)aFrames,
+       (uint32_t)durationMS,
+       (long)(nextStateComputedTime - stateComputedTime)));
+
+  mCurrentTimeStamp = TimeStamp::Now();
+
+  if (stateComputedTime < mIterationEnd) {
+    LOG(LogLevel::Warning, ("Media graph global underrun detected"));
+    mIterationEnd = stateComputedTime;
+  }
+
   
   if (aInputBuffer) {
     if (mAudioInput) { 
@@ -933,51 +973,10 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     }
   }
 
-  mBuffer.SetBuffer(aOutputBuffer, aFrames);
-  
-  
-  mScratchBuffer.Empty(mBuffer);
-  
-  
+  bool stillProcessing;
   if (mBuffer.Available()) {
-
     
     
-    
-    GraphTime nextStateComputedTime =
-      mGraphImpl->RoundUpToNextAudioBlock(stateComputedTime + mBuffer.Available());
-
-    mIterationStart = mIterationEnd;
-    
-    
-    
-    GraphTime inGraph = stateComputedTime - mIterationStart;
-    
-    
-    
-    
-    
-    
-    mIterationEnd = mIterationStart + 0.8 * inGraph;
-
-    LOG(LogLevel::Verbose,
-        ("interval[%ld; %ld] state[%ld; %ld] (frames: %ld) (durationMS: %u) "
-         "(duration ticks: %ld)",
-         (long)mIterationStart,
-         (long)mIterationEnd,
-         (long)stateComputedTime,
-         (long)nextStateComputedTime,
-         (long)aFrames,
-         (uint32_t)durationMS,
-         (long)(nextStateComputedTime - stateComputedTime)));
-
-    mCurrentTimeStamp = TimeStamp::Now();
-
-    if (stateComputedTime < mIterationEnd) {
-      LOG(LogLevel::Warning, ("Media graph global underrun detected"));
-      mIterationEnd = stateComputedTime;
-    }
-
     stillProcessing = mGraphImpl->OneIteration(nextStateComputedTime);
   } else {
     LOG(LogLevel::Verbose,
