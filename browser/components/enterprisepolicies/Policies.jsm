@@ -291,15 +291,6 @@ var Policies = {
     }
   },
 
-  "DisableProfileRefresh": {
-    onBeforeUIStartup(manager, param) {
-      if (param) {
-        manager.disallowFeature("profileRefresh");
-        setAndLockPref("browser.disableResetPrompt", true);
-      }
-    }
-  },
-
   "DisableSafeMode": {
     onBeforeUIStartup(manager, param) {
       if (param) {
@@ -579,6 +570,22 @@ var Policies = {
   "RememberPasswords": {
     onBeforeUIStartup(manager, param) {
       setAndLockPref("signon.rememberSignons", param);
+    }
+  },
+
+  "SanitizeOnShutdown": {
+    onBeforeUIStartup(manager, param) {
+      setAndLockPref("privacy.sanitize.sanitizeOnShutdown", param);
+      if (param) {
+        setAndLockPref("privacy.clearOnShutdown.cache", true);
+        setAndLockPref("privacy.clearOnShutdown.cookies", true);
+        setAndLockPref("privacy.clearOnShutdown.downloads", true);
+        setAndLockPref("privacy.clearOnShutdown.formdata", true);
+        setAndLockPref("privacy.clearOnShutdown.history", true);
+        setAndLockPref("privacy.clearOnShutdown.sessions", true);
+        setAndLockPref("privacy.clearOnShutdown.siteSettings", true);
+        setAndLockPref("privacy.clearOnShutdown.offlineApps", true);
+      }
     }
   },
 
