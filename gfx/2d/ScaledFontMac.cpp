@@ -75,7 +75,8 @@ bool ScaledFontMac::sSymbolLookupDone = false;
 
 
 static CTFontRef
-CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
+CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
+                                     bool aInstalledFont)
 {
     
     
@@ -87,28 +88,48 @@ CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
     
     
     
-    if (!nsCocoaFeatures::OnSierraExactly()) {
-        return CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
     CTFontRef ctFont;
-    if (vars) {
-        CFDictionaryRef varAttr =
-            CFDictionaryCreate(nullptr,
-                               (const void**)&kCTFontVariationAttribute,
-                               (const void**)&vars, 1,
-                               &kCFTypeDictionaryKeyCallBacks,
-                               &kCFTypeDictionaryValueCallBacks);
-        CFRelease(vars);
+    if (nsCocoaFeatures::OnSierraExactly() ||
+        (aInstalledFont && nsCocoaFeatures::OnHighSierraOrLater())) {
+        CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
+        if (vars) {
+            CFDictionaryRef varAttr =
+                CFDictionaryCreate(nullptr,
+                                   (const void**)&kCTFontVariationAttribute,
+                                   (const void**)&vars, 1,
+                                   &kCFTypeDictionaryKeyCallBacks,
+                                   &kCFTypeDictionaryValueCallBacks);
+            CFRelease(vars);
 
-        CTFontDescriptorRef varDesc = CTFontDescriptorCreateWithAttributes(varAttr);
-        CFRelease(varAttr);
+            CTFontDescriptorRef varDesc =
+                CTFontDescriptorCreateWithAttributes(varAttr);
+            CFRelease(varAttr);
 
-        ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, varDesc);
-        CFRelease(varDesc);
+            ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
+                                                  varDesc);
+            CFRelease(varDesc);
+        } else {
+            ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
+                                                  nullptr);
+        }
     } else {
-        ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
+        ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
+                                              nullptr);
     }
     return ctFont;
 }
@@ -139,7 +160,9 @@ ScaledFontMac::ScaledFontMac(CGFontRef aFont,
 
   if (CTFontDrawGlyphsPtr != nullptr) {
     
-    mCTFont = CreateCTFontFromCGFontWithVariations(aFont, aSize);
+    auto unscaledMac = static_cast<UnscaledFontMac*>(aUnscaledFont.get());
+    bool dataFont = unscaledMac->IsDataFont();
+    mCTFont = CreateCTFontFromCGFontWithVariations(aFont, aSize, !dataFont);
   } else {
     mCTFont = nullptr;
   }
@@ -160,7 +183,10 @@ SkTypeface* ScaledFontMac::GetSkTypeface()
     if (mCTFont) {
       mTypeface = SkCreateTypefaceFromCTFont(mCTFont);
     } else {
-      CTFontRef fontFace = CreateCTFontFromCGFontWithVariations(mFont, mSize);
+      auto unscaledMac = static_cast<UnscaledFontMac*>(GetUnscaledFont().get());
+      bool dataFont = unscaledMac->IsDataFont();
+      CTFontRef fontFace =
+        CreateCTFontFromCGFontWithVariations(mFont, mSize, !dataFont);
       mTypeface = SkCreateTypefaceFromCTFont(fontFace);
       CFRelease(fontFace);
     }

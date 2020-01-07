@@ -353,6 +353,17 @@ CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     if (!Gecko_OnSierraExactly()) {
         return CTFontCreateWithGraphicsFont(aCGFont, aSize, NULL, NULL);
     }

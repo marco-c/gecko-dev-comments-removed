@@ -45,6 +45,7 @@ private:
 
 extern "C" {
     bool Gecko_OnSierraExactly();
+    bool Gecko_OnHighSierraOrLater();
 }
 
 #endif 

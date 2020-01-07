@@ -757,6 +757,7 @@ private:
 
 #ifdef MOZ_SKIA
 extern "C" bool Gecko_OnSierraExactly();
+extern "C" bool Gecko_OnHighSierraOrLater();
 #endif
 static UniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFloat textSize,
                                                        const CGAffineTransform* transform)
@@ -783,7 +784,39 @@ static UniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFlo
     
     
     
-    if (Gecko_OnSierraExactly())
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    auto IsInstalledFont = [](CTFontRef aFont) {
+        CTFontDescriptorRef desc = CTFontCopyFontDescriptor(aFont);
+        CFTypeRef attr = CTFontDescriptorCopyAttribute(desc, kCTFontURLAttribute);
+        CFRelease(desc);
+        bool result = false;
+        if (attr) {
+            result = true;
+            CFRelease(attr);
+        }
+        return result;
+    };
+
+    if (Gecko_OnSierraExactly() ||
+        (Gecko_OnHighSierraOrLater() && IsInstalledFont(baseFont)))
 #endif
     {
         

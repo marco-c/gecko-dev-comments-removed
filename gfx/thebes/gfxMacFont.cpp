@@ -421,6 +421,7 @@ gfxMacFont::GetCharWidth(CFDataRef aCmap, char16_t aUniChar,
 CTFontRef
 gfxMacFont::CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
                                                  CGFloat aSize,
+                                                 bool aInstalledFont,
                                                  CTFontDescriptorRef aFontDesc)
 {
     
@@ -433,32 +434,51 @@ gfxMacFont::CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
     
     
     
-    if (!nsCocoaFeatures::OnSierraExactly()) {
-        return CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aFontDesc);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    CFDictionaryRef variations = ::CGFontCopyVariations(aCGFont);
     CTFontRef ctFont;
-    if (variations) {
-        CFDictionaryRef varAttr =
-            ::CFDictionaryCreate(nullptr,
-                                 (const void**)&kCTFontVariationAttribute,
-                                 (const void**)&variations, 1,
-                                 &kCFTypeDictionaryKeyCallBacks,
-                                 &kCFTypeDictionaryValueCallBacks);
-        ::CFRelease(variations);
+    if (nsCocoaFeatures::OnSierraExactly() ||
+        (aInstalledFont && nsCocoaFeatures::OnHighSierraOrLater())) {
+        CFDictionaryRef variations = ::CGFontCopyVariations(aCGFont);
+        if (variations) {
+            CFDictionaryRef varAttr =
+                ::CFDictionaryCreate(nullptr,
+                                     (const void**)&kCTFontVariationAttribute,
+                                     (const void**)&variations, 1,
+                                     &kCFTypeDictionaryKeyCallBacks,
+                                     &kCFTypeDictionaryValueCallBacks);
+            ::CFRelease(variations);
 
-        CTFontDescriptorRef varDesc = aFontDesc
-            ? ::CTFontDescriptorCreateCopyWithAttributes(aFontDesc, varAttr)
-            : ::CTFontDescriptorCreateWithAttributes(varAttr);
-        ::CFRelease(varAttr);
+            CTFontDescriptorRef varDesc = aFontDesc
+                ? ::CTFontDescriptorCreateCopyWithAttributes(aFontDesc, varAttr)
+                : ::CTFontDescriptorCreateWithAttributes(varAttr);
+            ::CFRelease(varAttr);
 
-        ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, varDesc);
-        ::CFRelease(varDesc);
+            ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
+                                                    varDesc);
+            ::CFRelease(varDesc);
+        } else {
+            ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
+                                                    aFontDesc);
+        }
     } else {
         ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr,
                                                 aFontDesc);
     }
+
     return ctFont;
 }
 
@@ -476,7 +496,10 @@ gfxMacFont::GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID)
     }
 
     if (!mCTFont) {
-        mCTFont = CreateCTFontFromCGFontWithVariations(mCGFont, mAdjustedSize);
+        bool isInstalledFont =
+            !mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont();
+        mCTFont = CreateCTFontFromCGFontWithVariations(mCGFont, mAdjustedSize,
+                                                       isInstalledFont);
         if (!mCTFont) { 
             NS_WARNING("failed to create CTFontRef to measure glyph width");
             return 0;
