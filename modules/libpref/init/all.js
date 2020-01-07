@@ -497,10 +497,13 @@ pref("media.getusermedia.browser.enabled", false);
 pref("media.getusermedia.channels", 0);
 #if defined(ANDROID)
 pref("media.getusermedia.camera.off_while_disabled.enabled", false);
+pref("media.getusermedia.microphone.off_while_disabled.enabled", false);
 #else
 pref("media.getusermedia.camera.off_while_disabled.enabled", true);
+pref("media.getusermedia.microphone.off_while_disabled.enabled", true);
 #endif
 pref("media.getusermedia.camera.off_while_disabled.delay_ms", 3000);
+pref("media.getusermedia.microphone.off_while_disabled.delay_ms", 3000);
 
 
 pref("media.peerconnection.video.min_bitrate", 0);
