@@ -2652,11 +2652,7 @@ pref("security.mixed_content.block_display_content", false);
 pref("security.mixed_content.upgrade_display_content", false);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("security.mixed_content.block_object_subrequest", true);
-#else
 pref("security.mixed_content.block_object_subrequest", false);
-#endif
 
 
 pref("security.sri.enable", true);
