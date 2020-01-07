@@ -826,36 +826,17 @@ function* getDisplayedNodeTextContent(selector, inspector) {
 
 
 
-
-function* toggleShapesHighlighter(view, selector, property, show, options = {}) {
-  info(`Toggle shapes highlighter ${show ? "on" : "off"} for ${property} on ${selector}`);
-  const highlighters = view.highlighters;
-  const container = getRuleViewProperty(view, selector, property).valueSpan;
-  const shapesToggle = container.querySelector(".ruleview-shapeswatch");
-  const SHAPES_IN_CONTEXT_EDITOR = "shapesEditor";
-  
-  
-  
-  
-  if (
-    !highlighters.editors[SHAPES_IN_CONTEXT_EDITOR] ||
-    !highlighters.editors[SHAPES_IN_CONTEXT_EDITOR].hasSwatch(shapesToggle)) {
-    info("Wait for shapes highlighter swatch to be ready");
-    yield highlighters.once("shapes-highlighter-armed");
-  }
-
-  let metaKey = options.transformMode;
-  let ctrlKey = options.transformMode;
-
+function* toggleShapesHighlighter(view, highlighters, selector, property, show) {
+  info("Toggle shapes highlighter");
+  let container = getRuleViewProperty(view, selector, property).valueSpan;
+  let shapesToggle = container.querySelector(".ruleview-shapeswatch");
   if (show) {
     let onHighlighterShown = highlighters.once("shapes-highlighter-shown");
-    EventUtils.sendMouseEvent({type: "click", metaKey, ctrlKey },
-      shapesToggle, view.styleWindow);
+    shapesToggle.click();
     yield onHighlighterShown;
   } else {
     let onHighlighterHidden = highlighters.once("shapes-highlighter-hidden");
-    EventUtils.sendMouseEvent({type: "click", metaKey, ctrlKey },
-      shapesToggle, view.styleWindow);
+    shapesToggle.click();
     yield onHighlighterHidden;
   }
 }
