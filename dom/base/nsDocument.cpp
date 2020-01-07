@@ -283,6 +283,10 @@ static LazyLogModule gDocumentLeakPRLog("DocumentLeak");
 static LazyLogModule gCspPRLog("CSP");
 static LazyLogModule gUserInteractionPRLog("UserInteraction");
 
+static const char kChromeInContentPref[] = "security.allow_chrome_frames_inside_content";
+static bool sChromeInContentAllowed = false;
+static bool sChromeInContentPrefCached = false;
+
 static nsresult
 GetHttpChannelHelper(nsIChannel* aChannel, nsIHttpChannel** aHttpChannel)
 {
@@ -2392,7 +2396,13 @@ nsIDocument::MaybeDowngradePrincipal(nsIPrincipal* aPrincipal)
     return do_AddRef(expanded->WhiteList().LastElement());
   }
 
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+  if (!sChromeInContentPrefCached) {
+    sChromeInContentPrefCached = true;
+    Preferences::AddBoolVarCache(&sChromeInContentAllowed,
+                                 kChromeInContentPref, false);
+  }
+  if (!sChromeInContentAllowed &&
+      nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     
     
     
@@ -5089,45 +5099,6 @@ nsDocument::BeginLoad()
   }
 
   NS_DOCUMENT_NOTIFY_OBSERVERS(BeginLoad, (this));
-}
-
-void
-nsIDocument::ReportEmptyGetElementByIdArg()
-{
-  nsContentUtils::ReportEmptyGetElementByIdArg(this);
-}
-
-Element*
-nsIDocument::AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                void* aData, bool aForImage)
-{
-  nsDependentAtomString id(aID);
-
-  if (!CheckGetElementByIdArg(id))
-    return nullptr;
-
-  nsIdentifierMapEntry* entry = mIdentifierMap.PutEntry(aID);
-  NS_ENSURE_TRUE(entry, nullptr);
-
-  entry->AddContentChangeCallback(aObserver, aData, aForImage);
-  return aForImage ? entry->GetImageIdElement() : entry->GetIdElement();
-}
-
-void
-nsIDocument::RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                                   void* aData, bool aForImage)
-{
-  nsDependentAtomString id(aID);
-
-  if (!CheckGetElementByIdArg(id))
-    return;
-
-  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aID);
-  if (!entry) {
-    return;
-  }
-
-  entry->RemoveContentChangeCallback(aObserver, aData, aForImage);
 }
 
 void
@@ -9238,8 +9209,8 @@ nsIDocument::GetTemplateContentsOwner()
     nsIScriptGlobalObject* scriptObject =
       GetScriptHandlingObject(hasHadScriptObject);
 
-    nsCOMPtr<nsIDocument> document;
-    nsresult rv = NS_NewDOMDocument(getter_AddRefs(document),
+    nsCOMPtr<nsIDOMDocument> domDocument;
+    nsresult rv = NS_NewDOMDocument(getter_AddRefs(domDocument),
                                     EmptyString(), 
                                     EmptyString(), 
                                     nullptr, 
@@ -9251,7 +9222,7 @@ nsIDocument::GetTemplateContentsOwner()
                                     DocumentFlavorHTML);
     NS_ENSURE_SUCCESS(rv, nullptr);
 
-    mTemplateContentsOwner = document;
+    mTemplateContentsOwner = do_QueryInterface(domDocument);
     NS_ENSURE_TRUE(mTemplateContentsOwner, nullptr);
 
     nsDocument* doc = static_cast<nsDocument*>(mTemplateContentsOwner.get());
@@ -11892,9 +11863,9 @@ nsIDocument::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  nsCOMPtr<nsIDocument> doc;
+  nsCOMPtr<nsIDOMDocument> document;
   nsresult res =
-    NS_NewDOMDocument(getter_AddRefs(doc),
+    NS_NewDOMDocument(getter_AddRefs(document),
                       VoidString(),
                       EmptyString(),
                       nullptr,
@@ -11909,6 +11880,7 @@ nsIDocument::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(document);
   doc->SetReadyStateInternal(nsIDocument::READYSTATE_COMPLETE);
 
   return doc.forget();

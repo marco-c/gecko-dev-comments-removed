@@ -139,6 +139,54 @@ public:
   void ElementsFromPointHelper(float aX, float aY, uint32_t aFlags,
                                nsTArray<RefPtr<mozilla::dom::Element>>& aElements);
 
+  
+
+
+
+
+
+
+
+  typedef bool (* IDTargetObserver)(Element* aOldElement,
+                                    Element* aNewelement, void* aData);
+
+  
+
+
+
+
+
+
+
+
+
+
+  Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
+                               void* aData, bool aForImage);
+
+  
+
+
+
+  void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
+                              void* aData, bool aForImage);
+
+  
+
+
+
+
+  inline bool CheckGetElementByIdArg(const nsAString& aId)
+  {
+    if (aId.IsEmpty()) {
+      ReportEmptyGetElementByIdArg();
+      return false;
+    }
+    return true;
+  }
+
+  void ReportEmptyGetElementByIdArg();
+
 protected:
   nsIContent* Retarget(nsIContent* aContent) const;
 

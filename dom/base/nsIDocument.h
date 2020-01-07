@@ -93,6 +93,7 @@ class nsIDocShell;
 class nsIDocShellTreeItem;
 class nsIDocumentEncoder;
 class nsIDocumentObserver;
+class nsIDOMDocument;
 class nsIHTMLCollection;
 class nsILayoutHistoryState;
 class nsILoadContext;
@@ -798,53 +799,6 @@ public:
   {
     mCharacterSetSource = aCharsetSource;
   }
-
-  
-
-
-
-
-
-
-
-  typedef bool (* IDTargetObserver)(Element* aOldElement,
-                                    Element* aNewelement, void* aData);
-
-  
-
-
-
-
-
-
-
-
-
-
-  Element* AddIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                               void* aData, bool aForImage);
-  
-
-
-
-  void RemoveIDTargetObserver(nsAtom* aID, IDTargetObserver aObserver,
-                              void* aData, bool aForImage);
-
-  
-
-
-
-
-  inline bool CheckGetElementByIdArg(const nsAString& aId)
-  {
-    if (aId.IsEmpty()) {
-      ReportEmptyGetElementByIdArg();
-      return false;
-    }
-    return true;
-  }
-
-  void ReportEmptyGetElementByIdArg();
 
   
 
@@ -4576,7 +4530,7 @@ NS_NewVideoDocument(nsIDocument** aInstancePtrResult);
 
 
 nsresult
-NS_NewDOMDocument(nsIDocument** aInstancePtrResult,
+NS_NewDOMDocument(nsIDOMDocument** aInstancePtrResult,
                   const nsAString& aNamespaceURI,
                   const nsAString& aQualifiedName,
                   mozilla::dom::DocumentType* aDoctype,
@@ -4590,7 +4544,7 @@ NS_NewDOMDocument(nsIDocument** aInstancePtrResult,
 
 
 nsresult
-NS_NewXBLDocument(nsIDocument** aInstancePtrResult,
+NS_NewXBLDocument(nsIDOMDocument** aInstancePtrResult,
                   nsIURI* aDocumentURI,
                   nsIURI* aBaseURI,
                   nsIPrincipal* aPrincipal);
