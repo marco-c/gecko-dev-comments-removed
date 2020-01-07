@@ -25,6 +25,13 @@ int GetEffectiveContentSandboxLevel() {
     level = 1;
   }
 #endif
+#ifdef XP_LINUX
+  
+  if (level > 3 && !Preferences::GetBool("media.cubeb.sandbox")) {
+    level = 3;
+  }
+#endif
+
   return level;
 }
 

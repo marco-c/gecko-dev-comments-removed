@@ -15,6 +15,7 @@
 #ifdef MOZ_GMP_SANDBOX
 #include "SandboxOpenedFiles.h"
 #endif
+#include "mozilla/Move.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/UniquePtr.h"
@@ -376,6 +377,16 @@ private:
   SandboxBrokerClient* mBroker;
   ContentProcessSandboxParams mParams;
 
+  bool BelowLevel(int aLevel) const {
+    return mParams.mLevel < aLevel;
+  }
+  ResultExpr AllowBelowLevel(int aLevel, ResultExpr aOrElse) const {
+    return BelowLevel(aLevel) ? Allow() : Move(aOrElse);
+  }
+  ResultExpr AllowBelowLevel(int aLevel) const {
+    return AllowBelowLevel(aLevel, InvalidSyscall());
+  }
+
   
   
 #ifdef __NR_open
@@ -614,10 +625,15 @@ public:
     case SYS_SOCKET:
       return Some(Error(EACCES));
 #else 
+    case SYS_SOCKET: 
+      
+      
+      
+      return Some(AllowBelowLevel(4, Error(EACCES)));
+    case SYS_CONNECT: 
+      return Some(AllowBelowLevel(4));
     case SYS_RECV:
     case SYS_SEND:
-    case SYS_SOCKET: 
-    case SYS_CONNECT: 
     case SYS_GETSOCKOPT:
     case SYS_SETSOCKOPT:
     case SYS_GETSOCKNAME:

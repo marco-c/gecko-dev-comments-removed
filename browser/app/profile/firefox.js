@@ -1104,7 +1104,8 @@ pref("security.sandbox.content.level", 3);
 
 
 
-pref("security.sandbox.content.level", 3);
+
+pref("security.sandbox.content.level", 4);
 pref("security.sandbox.content.write_path_whitelist", "");
 pref("security.sandbox.content.read_path_whitelist", "");
 pref("security.sandbox.content.syscall_whitelist", "");
@@ -1183,7 +1184,6 @@ pref("services.sync.prefs.sync.browser.tabs.loadInBackground", true);
 pref("services.sync.prefs.sync.browser.tabs.warnOnClose", true);
 pref("services.sync.prefs.sync.browser.tabs.warnOnOpen", true);
 pref("services.sync.prefs.sync.browser.urlbar.autocomplete.enabled", true);
-pref("services.sync.prefs.sync.browser.urlbar.matchBuckets", true);
 pref("services.sync.prefs.sync.browser.urlbar.maxRichResults", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.bookmark", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
@@ -1338,10 +1338,6 @@ pref("security.insecure_field_warning.contextual.enabled", true);
 
 pref("security.insecure_connection_icon.enabled", false);
 pref("security.insecure_connection_icon.pbmode.enabled", false);
-
-
-pref("security.insecure_connection_text.enabled", false);
-pref("security.insecure_connection_text.pbmode.enabled", false);
 
 
 pref("security.cert_pinning.enforcement_level", 1);
