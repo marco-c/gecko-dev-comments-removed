@@ -863,6 +863,15 @@ TransceiverImpl::UpdateVideoConduit()
     conduit->SetRemoteSSRC(mJsepTransceiver->mRecvTrack.GetSsrcs().front());
   }
 
+  
+  
+  
+  if (mJsepTransceiver->HasBundleLevel() &&
+      (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
+       !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(webrtc::RtpExtension::kMIdUri))) {
+    conduit->DisableSsrcChanges();
+  }
+
   if (mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() &&
       mJsepTransceiver->mRecvTrack.GetActive()) {
     const auto& details(*mJsepTransceiver->mRecvTrack.GetNegotiatedDetails());
