@@ -3353,6 +3353,15 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
+  
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) &&
+      aBuilder->IsRetainingDisplayList()) {
+    aBuilder->MarkCurrentFrameModifiedDuringBuilding();
+  }
+
+  
+  
+  
   bool ignoringThisScrollFrame =
     aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping();
 
