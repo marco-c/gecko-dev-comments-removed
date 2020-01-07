@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  XPIInstall: "resource://gre/modules/addons/XPIInstall.jsm",
 });
 
 ChromeUtils.import("resource://gre/modules/Log.jsm");
@@ -1039,7 +1040,7 @@ this.XPIDatabaseReconcile = {
       if (!aNewAddon) {
         
         let file = new nsIFile(aAddonState.path);
-        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation);
+        aNewAddon = XPIInstall.syncLoadManifestFromFile(file, aInstallLocation);
       }
       
       if (aNewAddon.id != aId) {
@@ -1126,7 +1127,7 @@ this.XPIDatabaseReconcile = {
       
       if (!aNewAddon) {
         let file = new nsIFile(aAddonState.path);
-        aNewAddon = syncLoadManifestFromFile(file, aInstallLocation, aOldAddon);
+        aNewAddon = XPIInstall.syncLoadManifestFromFile(file, aInstallLocation, aOldAddon);
       }
 
       
@@ -1200,7 +1201,7 @@ this.XPIDatabaseReconcile = {
     if (checkSigning || aReloadMetadata) {
       try {
         let file = new nsIFile(aAddonState.path);
-        manifest = syncLoadManifestFromFile(file, aInstallLocation);
+        manifest = XPIInstall.syncLoadManifestFromFile(file, aInstallLocation);
       } catch (err) {
         
         aOldAddon.brokenManifest = true;
@@ -1485,7 +1486,7 @@ this.XPIDatabaseReconcile = {
           }
 
           
-          flushChromeCaches();
+          XPIInstall.flushChromeCaches();
 
           if (currentAddon.bootstrap) {
             
@@ -1528,7 +1529,7 @@ this.XPIDatabaseReconcile = {
       XPIStates.removeAddon(previousAddon.location, id);
 
       
-      flushChromeCaches();
+      XPIInstall.flushChromeCaches();
     }
 
     
