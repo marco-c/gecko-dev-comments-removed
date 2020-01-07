@@ -215,7 +215,7 @@ HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   if (ServoStyleSet* styleSet = ps->StyleSet()->GetAsServo()) {
     
     
-    if (styleSet->MayTraverseFrom(newContent)) {
+    if (ServoStyleSet::MayTraverseFrom(newContent)) {
       styleSet->StyleNewSubtree(newContent);
     }
   }

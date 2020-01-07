@@ -4042,7 +4042,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
   
   
   resizedFont.size =
-    (fontStyle->mSize * c->AppUnitsPerDevPixel()) / c->AppUnitsPerCSSPixel();
+    (fontStyle->mSize * c->AppUnitsPerDevPixel()) / nsPresContext::AppUnitsPerCSSPixel();
 
   nsFontMetrics::Params params;
   params.language = fontStyle->mLanguage;
