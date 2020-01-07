@@ -172,9 +172,6 @@ public:
 
 
 
-
-
-
   virtual nsresult Stop(const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
