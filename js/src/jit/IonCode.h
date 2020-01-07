@@ -29,29 +29,9 @@ class MacroAssembler;
 class PatchableBackedge;
 class IonBuilder;
 class IonICEntry;
-class JitCode;
 
 typedef Vector<JSObject*, 4, JitAllocPolicy> ObjectVector;
 typedef Vector<TraceLoggerEvent, 0, SystemAllocPolicy> TraceLoggerEventVector;
-
-
-struct JitCodeHeader
-{
-    
-    JitCode*    jitCode_;
-
-    
-    
-    
-    
-    void*       nops_;
-
-    void init(JitCode* jitCode);
-
-    static JitCodeHeader* FromExecutable(uint8_t* buffer) {
-        return (JitCodeHeader*)(buffer - sizeof(JitCodeHeader));
-    }
-};
 
 class JitCode : public gc::TenuredCell
 {
@@ -149,7 +129,7 @@ class JitCode : public gc::TenuredCell
     void copyFrom(MacroAssembler& masm);
 
     static JitCode* FromExecutable(uint8_t* buffer) {
-        JitCode* code = JitCodeHeader::FromExecutable(buffer)->jitCode_;
+        JitCode* code = *(JitCode**)(buffer - sizeof(JitCode*));
         MOZ_ASSERT(code->raw() == buffer);
         return code;
     }
