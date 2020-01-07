@@ -498,47 +498,28 @@ pref("parse.error", true);;
 
   
   
+  
 
-
-#if 0
-
-  P(R"(
-  
-bad
-    )",
+  P("\n \r \r\n bad",
     "test:4: prefs parse error: unknown keyword"
   );
 
-  P(R"(#
-##
-bad
-    )",
+  P("#\n#\r#\r\n bad",
     "test:4: prefs parse error: unknown keyword"
   );
 
-  P(R"(//
-////
-bad
-    )",
+  P("//\n//\r//\r\n bad",
     "test:4: prefs parse error: unknown keyword"
   );
 
-  P(R"(/*
- 
-*/ bad
-    )",
+  P("/*\n \r \r\n*/ bad",
     "test:4: prefs parse error: unknown keyword"
   );
 
   
-  P(R"(pref("foo\n
-\rfoo\r\n
-foo", bad
-    )",
+  P("pref(\"foo\\n\n foo\\r\r foo\\r\\n\r\n foo\", bad);",
     "test:4: prefs parse error: unknown keyword"
   );
-
-#endif
 
   
 }
