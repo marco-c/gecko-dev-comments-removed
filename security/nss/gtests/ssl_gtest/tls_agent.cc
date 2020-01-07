@@ -33,6 +33,7 @@ const char* TlsAgent::states[] = {"INIT", "CONNECTING", "CONNECTED", "ERROR"};
 
 const std::string TlsAgent::kClient = "client";    
 const std::string TlsAgent::kRsa2048 = "rsa2048";  
+const std::string TlsAgent::kRsa8192 = "rsa8192";  
 const std::string TlsAgent::kServerRsa = "rsa";    
 const std::string TlsAgent::kServerRsaSign = "rsa_sign";
 const std::string TlsAgent::kServerRsaPss = "rsa_pss";

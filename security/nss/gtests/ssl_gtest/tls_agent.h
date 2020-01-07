@@ -69,6 +69,7 @@ class TlsAgent : public PollTarget {
 
   static const std::string kClient;     
   static const std::string kRsa2048;    
+  static const std::string kRsa8192;    
   static const std::string kServerRsa;  
   static const std::string kServerRsaSign;
   static const std::string kServerRsaPss;

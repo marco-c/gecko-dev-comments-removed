@@ -122,6 +122,10 @@ typedef enum { SSLAppOpRead = 0,
 #define SSL_NAMED_GROUP_COUNT 31
 
 
+#define SSL_MAX_DH_KEY_BITS 8192
+#define SSL_MAX_RSA_KEY_BITS 8192
+
+
 typedef enum {
     ec_type_explicitPrime = 1,      
     ec_type_explicitChar2Curve = 2, 
@@ -811,7 +815,7 @@ struct ssl3DHParamsStr {
 };
 
 typedef struct SSLWrappedSymWrappingKeyStr {
-    PRUint8 wrappedSymmetricWrappingkey[512];
+    PRUint8 wrappedSymmetricWrappingkey[SSL_MAX_RSA_KEY_BITS / 8];
     CK_MECHANISM_TYPE symWrapMechanism;
     
     CK_MECHANISM_TYPE asymWrapMechanism;

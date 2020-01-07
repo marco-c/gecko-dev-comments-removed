@@ -256,7 +256,8 @@ ssl_PopulateKeyPair(sslServerCert *sc, sslKeyPair *keyPair)
 
         
         sc->serverKeyBits = SECKEY_PublicKeyStrengthInBits(keyPair->pubKey);
-        if (sc->serverKeyBits == 0) {
+        if (sc->serverKeyBits == 0 ||
+            (keyType == rsaKey && sc->serverKeyBits > SSL_MAX_RSA_KEY_BITS)) {
             PORT_SetError(SEC_ERROR_INVALID_ARGS);
             return SECFailure;
         }
