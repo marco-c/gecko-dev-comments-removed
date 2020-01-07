@@ -13,6 +13,7 @@ use style_traits::ParseError;
 use stylesheets::UrlExtraData;
 
 
+#[derive(Debug)]
 pub enum ContextualParseError<'a> {
     
     UnsupportedPropertyDeclaration(&'a str, ParseError<'a>),
