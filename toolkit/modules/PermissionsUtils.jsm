@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PermissionsUtils"];
+var EXPORTED_SYMBOLS = ["PermissionsUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
@@ -52,7 +52,7 @@ function importPrefBranch(aPrefBranch, aPermission, aAction) {
 }
 
 
-this.PermissionsUtils = {
+var PermissionsUtils = {
   
 
 

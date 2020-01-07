@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionStorageSync", "extensionStorageSync"];
+var EXPORTED_SYMBOLS = ["ExtensionStorageSync", "extensionStorageSync"];
 
 const global = this;
 
@@ -107,7 +107,7 @@ function throwIfNoFxA(fxAccounts, action) {
 
 
 
-this.extensionStorageSync = null;
+var extensionStorageSync = null;
 
 
 
@@ -1236,4 +1236,4 @@ class ExtensionStorageSync {
   }
 }
 this.ExtensionStorageSync = ExtensionStorageSync;
-this.extensionStorageSync = new ExtensionStorageSync(_fxaService, Services.telemetry);
+extensionStorageSync = new ExtensionStorageSync(_fxaService, Services.telemetry);

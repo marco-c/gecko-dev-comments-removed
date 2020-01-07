@@ -2,14 +2,14 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Status"];
+var EXPORTED_SYMBOLS = ["Status"];
 
 ChromeUtils.import("resource://services-sync/constants.js");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.import("resource://services-sync/browserid_identity.js");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-this.Status = {
+var Status = {
   _log: Log.repository.getLogger("Sync.Status"),
   __authManager: null,
   ready: false,

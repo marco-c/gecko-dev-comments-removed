@@ -2,13 +2,13 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CanonicalJSON"];
+var EXPORTED_SYMBOLS = ["CanonicalJSON"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "jsesc",
                                "resource://gre/modules/third_party/jsesc/jsesc.js");
 
-this.CanonicalJSON = {
+var CanonicalJSON = {
   
 
 

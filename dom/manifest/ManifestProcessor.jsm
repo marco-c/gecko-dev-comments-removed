@@ -42,7 +42,7 @@ ChromeUtils.import('resource://gre/modules/ValueExtractor.jsm');
 
 ChromeUtils.import('resource://gre/modules/ImageObjectProcessor.jsm');
 
-this.ManifestProcessor = { 
+var ManifestProcessor = { 
   get defaultDisplayMode() {
     return 'browser';
   },
@@ -270,4 +270,4 @@ this.ManifestProcessor = {
     }
   }
 };
-this.EXPORTED_SYMBOLS = ['ManifestProcessor']; 
+var EXPORTED_SYMBOLS = ['ManifestProcessor']; 

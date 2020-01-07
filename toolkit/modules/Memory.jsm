@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Memory"];
+var EXPORTED_SYMBOLS = ["Memory"];
 
 
 const TIMEOUT_INTERVAL = 2000;
@@ -10,7 +10,7 @@ const TIMEOUT_INTERVAL = 2000;
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
-this.Memory = {
+var Memory = {
   
 
 

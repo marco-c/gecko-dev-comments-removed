@@ -5,7 +5,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "InsecurePasswordUtils" ];
+var EXPORTED_SYMBOLS = [ "InsecurePasswordUtils" ];
 
 const STRINGS_URI = "chrome://global/locale/security/security.properties";
 
@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 
-this.InsecurePasswordUtils = {
+var InsecurePasswordUtils = {
   _formRootsWarned: new WeakMap(),
 
   

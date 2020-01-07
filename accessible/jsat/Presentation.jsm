@@ -21,7 +21,7 @@ ChromeUtils.defineModuleGetter(this, "Roles",
 ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
-this.EXPORTED_SYMBOLS = ["Presentation"]; 
+var EXPORTED_SYMBOLS = ["Presentation"]; 
 
 
 
@@ -672,7 +672,7 @@ BraillePresenter.prototype.textSelectionChanged =
     };
   };
 
-this.Presentation = { 
+var Presentation = { 
   get presenters() {
     delete this.presenters;
     let presenterMap = {

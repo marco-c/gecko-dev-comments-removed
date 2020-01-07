@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["read"];
+var EXPORTED_SYMBOLS = ["read"];
 
 var SharedAll = ChromeUtils.import("resource://gre/modules/osfile/osfile_shared_allthreads.jsm", {});
 
@@ -35,7 +35,7 @@ XPCOMUtils.defineLazyServiceGetter(this,
 
 
 
-this.read = function(path, options = {}) {
+var read = function(path, options = {}) {
   
   if ("encoding" in options && typeof options.encoding != "string") {
     return Promise.reject(new TypeError("Invalid type for option encoding"));
@@ -71,7 +71,7 @@ this.read = function(path, options = {}) {
 
 
 
-this.writeAtomic = function(path, buffer, options = {}) {
+var writeAtomic = function(path, buffer, options = {}) {
   
   
   if ("encoding" in options && typeof options.encoding !== "string") {

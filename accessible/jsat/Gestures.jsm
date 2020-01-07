@@ -36,7 +36,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["GestureSettings", "GestureTracker"]; 
+var EXPORTED_SYMBOLS = ["GestureSettings", "GestureTracker"]; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -132,7 +132,7 @@ Point.prototype = {
 
 
 
-this.GestureSettings = { 
+var GestureSettings = { 
   
 
 
@@ -179,7 +179,7 @@ this.GestureSettings = {
 
 
 
-this.GestureTracker = { 
+var GestureTracker = { 
   
 
 

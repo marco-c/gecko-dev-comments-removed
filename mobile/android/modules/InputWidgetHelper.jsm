@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["InputWidgetHelper"];
+var EXPORTED_SYMBOLS = ["InputWidgetHelper"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

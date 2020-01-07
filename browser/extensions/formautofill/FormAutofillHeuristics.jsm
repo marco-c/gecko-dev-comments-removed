@@ -8,14 +8,14 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAutofillHeuristics", "LabelUtils"];
+var EXPORTED_SYMBOLS = ["FormAutofillHeuristics", "LabelUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 
 this.log = null;
-FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
+FormAutofillUtils.defineLazyLogGetter(this, EXPORTED_SYMBOLS[0]);
 
 const PREF_HEURISTICS_ENABLED = "extensions.formautofill.heuristics.enabled";
 const PREF_SECTION_ENABLED = "extensions.formautofill.section.enabled";
@@ -286,7 +286,7 @@ class FieldScanner {
   }
 }
 
-this.LabelUtils = {
+var LabelUtils = {
   
   
   

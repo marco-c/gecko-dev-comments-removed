@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["FormEngine", "FormRec", "FormValidator"];
+var EXPORTED_SYMBOLS = ["FormEngine", "FormRec", "FormValidator"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-sync/engines.js");
@@ -17,9 +17,9 @@ ChromeUtils.defineModuleGetter(this, "FormHistory",
 
 const FORMS_TTL = 3 * 365 * 24 * 60 * 60; 
 
-this.FormRec = function FormRec(collection, id) {
+function FormRec(collection, id) {
   CryptoWrapper.call(this, collection, id);
-};
+}
 FormRec.prototype = {
   __proto__: CryptoWrapper.prototype,
   _logName: "Sync.Record.Form",
@@ -96,9 +96,9 @@ var FormWrapper = {
 
 };
 
-this.FormEngine = function FormEngine(service) {
+function FormEngine(service) {
   SyncEngine.call(this, "Forms", service);
-};
+}
 FormEngine.prototype = {
   __proto__: SyncEngine.prototype,
   _storeObj: FormStore,

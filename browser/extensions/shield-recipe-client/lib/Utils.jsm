@@ -6,11 +6,11 @@
 
 ChromeUtils.import("resource://shield-recipe-client/lib/LogManager.jsm");
 
-this.EXPORTED_SYMBOLS = ["Utils"];
+var EXPORTED_SYMBOLS = ["Utils"];
 
 const log = LogManager.getLogger("utils");
 
-this.Utils = {
+var Utils = {
   
 
 

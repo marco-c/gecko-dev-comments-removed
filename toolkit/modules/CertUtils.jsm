@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "BadCertHandler", "checkCert", "readCertPrefs", "validateCert" ];
+var EXPORTED_SYMBOLS = [ "BadCertHandler", "checkCert", "readCertPrefs", "validateCert" ];
 
 const Ce = Components.Exception;
 
@@ -26,8 +26,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-this.readCertPrefs =
-  function readCertPrefs(aPrefBranch) {
+function readCertPrefs(aPrefBranch) {
   if (Services.prefs.getBranch(aPrefBranch).getChildList("").length == 0)
     return null;
 
@@ -48,7 +47,7 @@ this.readCertPrefs =
   }
 
   return certs;
-};
+}
 
 
 
@@ -66,8 +65,7 @@ this.readCertPrefs =
 
 
 
-this.validateCert =
-  function validateCert(aCertificate, aCerts) {
+function validateCert(aCertificate, aCerts) {
   
   if (!aCerts || aCerts.length == 0)
     return;
@@ -109,7 +107,7 @@ this.validateCert =
     Cu.reportError(certCheckErr);
     throw new Ce(certCheckErr, Cr.NS_ERROR_ILLEGAL_VALUE);
   }
-};
+}
 
 
 
@@ -134,8 +132,7 @@ this.validateCert =
 
 
 
-this.checkCert =
-  function checkCert(aChannel, aAllowNonBuiltInCerts, aCerts) {
+function checkCert(aChannel, aAllowNonBuiltInCerts, aCerts) {
   if (!aChannel.originalURI.schemeIs("https")) {
     
     if (aCerts) {
@@ -164,7 +161,7 @@ this.checkCert =
 
   if (!issuerCert.isBuiltInRoot)
     throw new Ce(certNotBuiltInErr, Cr.NS_ERROR_ABORT);
-};
+}
 
 
 
@@ -175,10 +172,9 @@ this.checkCert =
 
 
 
-this.BadCertHandler =
-  function BadCertHandler(aAllowNonBuiltInCerts) {
+function BadCertHandler(aAllowNonBuiltInCerts) {
   this.allowNonBuiltInCerts = aAllowNonBuiltInCerts;
-};
+}
 BadCertHandler.prototype = {
 
   

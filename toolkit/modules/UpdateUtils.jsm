@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["UpdateUtils"];
+var EXPORTED_SYMBOLS = ["UpdateUtils"];
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -19,7 +19,7 @@ const PREF_APP_DISTRIBUTION_VERSION       = "distribution.version";
 const PREF_APP_UPDATE_CUSTOM              = "app.update.custom";
 
 
-this.UpdateUtils = {
+var UpdateUtils = {
   _locale: undefined,
 
   

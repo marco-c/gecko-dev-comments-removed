@@ -2,13 +2,13 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Panel",
 ];
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
-this.Panel = function(panelElt, iframeURL) {
+var Panel = function(panelElt, iframeURL) {
   this.p = panelElt;
   this.iframeURL = iframeURL;
   this._initPanel();

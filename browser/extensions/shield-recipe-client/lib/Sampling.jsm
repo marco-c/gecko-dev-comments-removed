@@ -6,13 +6,13 @@
 
 Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 
-this.EXPORTED_SYMBOLS = ["Sampling"];
+var EXPORTED_SYMBOLS = ["Sampling"];
 
 const hashBits = 48;
 const hashLength = hashBits / 4; 
 const hashMultiplier = Math.pow(2, hashBits) - 1;
 
-this.Sampling = {
+var Sampling = {
   
 
 

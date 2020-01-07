@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "BookmarkJSONUtils" ];
+var EXPORTED_SYMBOLS = [ "BookmarkJSONUtils" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -35,7 +35,7 @@ function generateHash(aString) {
   return cryptoHash.finish(true).replace(/\//g, "-");
 }
 
-this.BookmarkJSONUtils = Object.freeze({
+var BookmarkJSONUtils = Object.freeze({
   
 
 

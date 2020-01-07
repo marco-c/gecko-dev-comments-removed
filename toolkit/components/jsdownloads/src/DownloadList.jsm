@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadList",
   "DownloadCombinedList",
   "DownloadSummary",
@@ -20,7 +20,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-this.DownloadList = function() {
+var DownloadList = function() {
   this._downloads = [];
   this._views = new Set();
 };
@@ -243,7 +243,7 @@ this.DownloadList.prototype = {
 
 
 
-this.DownloadCombinedList = function(aPublicList, aPrivateList) {
+var DownloadCombinedList = function(aPublicList, aPrivateList) {
   DownloadList.call(this);
   this._publicList = aPublicList;
   this._privateList = aPrivateList;
@@ -334,7 +334,7 @@ this.DownloadCombinedList.prototype = {
 
 
 
-this.DownloadSummary = function() {
+var DownloadSummary = function() {
   this._downloads = [];
   this._views = new Set();
 };

@@ -2,7 +2,7 @@
 
 
 "use strict";
-this.EXPORTED_SYMBOLS = ["FxAccountsConfig"];
+var EXPORTED_SYMBOLS = ["FxAccountsConfig"];
 
 ChromeUtils.import("resource://services-common/rest.js");
 ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
@@ -32,7 +32,7 @@ const CONFIG_PREFS = [
   "identity.sync.tokenserver.uri",
 ];
 
-this.FxAccountsConfig = {
+var FxAccountsConfig = {
   async promiseSignUpURI(entrypoint) {
     return this._buildURL("signup", {entrypoint});
   },

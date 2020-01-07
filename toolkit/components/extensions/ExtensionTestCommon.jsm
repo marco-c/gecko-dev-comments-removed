@@ -12,7 +12,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionTestCommon", "MockExtension"];
+var EXPORTED_SYMBOLS = ["ExtensionTestCommon", "MockExtension"];
 
 Cu.importGlobalProperties(["TextEncoder"]);
 
@@ -138,7 +138,7 @@ class MockExtension {
   }
 }
 
-this.ExtensionTestCommon = class ExtensionTestCommon {
+var ExtensionTestCommon = class ExtensionTestCommon {
   
 
 

@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "newAppInfo",
   "getAppInfo",
   "updateAppInfo",
@@ -33,7 +33,7 @@ let origRuntime = Cc["@mozilla.org/xre/app-info;1"]
 
 
 
-this.newAppInfo = function(options = {}) {
+var newAppInfo = function(options = {}) {
   let ID = ("ID" in options) ? options.ID : "xpcshell@tests.mozilla.org";
   let name = ("name" in options) ? options.name : "xpcshell";
   let version = ("version" in options) ? options.version : "1";
@@ -100,7 +100,7 @@ var currentAppInfo = newAppInfo();
 
 
 
-this.getAppInfo = function() { return currentAppInfo; };
+var getAppInfo = function() { return currentAppInfo; };
 
 
 
@@ -110,7 +110,7 @@ this.getAppInfo = function() { return currentAppInfo; };
 
 
 
-this.updateAppInfo = function(options) {
+var updateAppInfo = function(options) {
   currentAppInfo = newAppInfo(options);
 
   let id = Components.ID("{fbfae60b-64a4-44ef-a911-08ceb70b9f31}");

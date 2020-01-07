@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["RunState"];
+var EXPORTED_SYMBOLS = ["RunState"];
 
 const STATE_STOPPED = 0;
 const STATE_RUNNING = 1;
@@ -21,7 +21,7 @@ var state = STATE_STOPPED;
 
 
 
-this.RunState = Object.freeze({
+var RunState = Object.freeze({
   
   
   

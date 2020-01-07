@@ -15,7 +15,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const Log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("Push");
 
-this.EXPORTED_SYMBOLS = ["PushServiceAndroidGCM"];
+var EXPORTED_SYMBOLS = ["PushServiceAndroidGCM"];
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
   let {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
@@ -38,7 +38,7 @@ const prefs = new Preferences("dom.push.");
 
 
 
-this.PushServiceAndroidGCM = {
+var PushServiceAndroidGCM = {
   _mainPushService: null,
   _serverURI: null,
 

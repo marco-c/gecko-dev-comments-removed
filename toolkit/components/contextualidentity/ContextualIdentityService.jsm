@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ContextualIdentityService"];
+var EXPORTED_SYMBOLS = ["ContextualIdentityService"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -489,4 +489,4 @@ _ContextualIdentityService.prototype = {
 };
 
 let path = OS.Path.join(OS.Constants.Path.profileDir, "containers.json");
-this.ContextualIdentityService = new _ContextualIdentityService(path);
+var ContextualIdentityService = new _ContextualIdentityService(path);

@@ -13,7 +13,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["CloudStorage"];
+var EXPORTED_SYMBOLS = ["CloudStorage"];
 
 Cu.importGlobalProperties(["fetch"]);
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
@@ -101,7 +101,7 @@ const CLOUD_PROVIDERS_URI = "resource://cloudstorage/providers.json";
 
 
 
-this.CloudStorage = {
+var CloudStorage = {
   
 
 

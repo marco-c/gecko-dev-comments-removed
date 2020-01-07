@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [ "ExtensionSearchHandler" ];
+var EXPORTED_SYMBOLS = [ "ExtensionSearchHandler" ];
 
 
 

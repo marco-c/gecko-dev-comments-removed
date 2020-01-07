@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "FileTestUtils",
 ];
 
@@ -22,7 +22,7 @@ ChromeUtils.import("resource://testing-common/Assert.jsm", this);
 let gFileCounter = 1;
 let gPathsToRemove = [];
 
-this.FileTestUtils = {
+var FileTestUtils = {
   
 
 

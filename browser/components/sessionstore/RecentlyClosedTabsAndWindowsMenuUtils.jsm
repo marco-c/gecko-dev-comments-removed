@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RecentlyClosedTabsAndWindowsMenuUtils"];
+var EXPORTED_SYMBOLS = ["RecentlyClosedTabsAndWindowsMenuUtils"];
 
 const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -17,7 +17,7 @@ ChromeUtils.defineModuleGetter(this, "SessionStore",
 
 var navigatorBundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
 
-this.RecentlyClosedTabsAndWindowsMenuUtils = {
+var RecentlyClosedTabsAndWindowsMenuUtils = {
 
   
 

@@ -6,7 +6,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
+var EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -137,7 +137,7 @@ var PointerRelay = {
   }
 };
 
-this.PointerAdapter = { 
+var PointerAdapter = { 
   start: function PointerAdapter_start() {
     Logger.debug("PointerAdapter.start");
     GestureTracker.reset();

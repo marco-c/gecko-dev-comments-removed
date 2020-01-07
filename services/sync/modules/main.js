@@ -2,11 +2,11 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Weave"];
+var EXPORTED_SYMBOLS = ["Weave"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-this.Weave = {};
+var Weave = {};
 ChromeUtils.import("resource://services-sync/constants.js", Weave);
 var lazies = {
   "service.js":           ["Service"],

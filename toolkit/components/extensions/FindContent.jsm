@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FindContent"];
+var EXPORTED_SYMBOLS = ["FindContent"];
 
 
 

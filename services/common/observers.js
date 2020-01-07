@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Observers"];
+var EXPORTED_SYMBOLS = ["Observers"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -13,7 +13,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-this.Observers = {
+var Observers = {
   
 
 

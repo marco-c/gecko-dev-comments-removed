@@ -87,7 +87,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "PanelMultiView",
   "PanelView",
 ];
@@ -123,7 +123,7 @@ let gMultiLineElementsMap = new WeakMap();
 
 
 
-this.AssociatedToNode = class {
+var AssociatedToNode = class {
   constructor(node) {
     
 
@@ -249,7 +249,7 @@ this.AssociatedToNode = class {
 
 
 
-this.PanelMultiView = class extends this.AssociatedToNode {
+var PanelMultiView = class extends this.AssociatedToNode {
   
 
 
@@ -1116,7 +1116,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-this.PanelView = class extends this.AssociatedToNode {
+var PanelView = class extends this.AssociatedToNode {
   
 
 

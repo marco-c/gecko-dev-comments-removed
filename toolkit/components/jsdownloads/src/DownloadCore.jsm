@@ -9,7 +9,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Download",
   "DownloadSource",
   "DownloadTarget",
@@ -106,7 +106,7 @@ const kProgressUpdateIntervalMs = 400;
 
 
 
-this.Download = function() {
+var Download = function() {
   this._deferSucceeded = PromiseUtils.defer();
 };
 
@@ -1192,7 +1192,7 @@ Download.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadSource = function() {};
+var DownloadSource = function() {};
 
 this.DownloadSource.prototype = {
   
@@ -1318,7 +1318,7 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadTarget = function() {};
+var DownloadTarget = function() {};
 
 this.DownloadTarget.prototype = {
   
@@ -1457,7 +1457,7 @@ this.DownloadTarget.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadError = function(aProperties) {
+var DownloadError = function(aProperties) {
   const NS_ERROR_MODULE_BASE_OFFSET = 0x45;
   const NS_ERROR_MODULE_NETWORK = 6;
   const NS_ERROR_MODULE_FILES = 13;
@@ -1632,7 +1632,7 @@ this.DownloadError.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadSaver = function() {};
+var DownloadSaver = function() {};
 
 this.DownloadSaver.prototype = {
   
@@ -1779,7 +1779,7 @@ this.DownloadSaver.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadCopySaver = function() {};
+var DownloadCopySaver = function() {};
 
 this.DownloadCopySaver.prototype = {
   __proto__: DownloadSaver.prototype,
@@ -2251,7 +2251,7 @@ this.DownloadCopySaver.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadLegacySaver = function() {
+var DownloadLegacySaver = function() {
   this.deferExecuted = PromiseUtils.defer();
   this.deferCanceled = PromiseUtils.defer();
 };
@@ -2607,7 +2607,7 @@ this.DownloadLegacySaver.fromSerializable = function() {
 
 
 
-this.DownloadPDFSaver = function() {
+var DownloadPDFSaver = function() {
 };
 
 this.DownloadPDFSaver.prototype = {

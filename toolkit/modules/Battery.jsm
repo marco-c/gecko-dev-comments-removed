@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["GetBattery", "Battery"];
+var EXPORTED_SYMBOLS = ["GetBattery", "Battery"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
@@ -27,7 +27,7 @@ var gFakeBattery = {
 };
 
 
-this.Debugging = {
+var Debugging = {
   
 
 
@@ -36,7 +36,7 @@ this.Debugging = {
   fake: false
 };
 
-this.GetBattery = function() {
+var GetBattery = function() {
   return new Services.appShell.hiddenDOMWindow.Promise(function(resolve, reject) {
     
     if (Debugging.fake) {
@@ -47,7 +47,7 @@ this.GetBattery = function() {
   });
 };
 
-this.Battery = {};
+var Battery = {};
 
 for (let k of ["charging", "chargingTime", "dischargingTime", "level"]) {
   let prop = k;

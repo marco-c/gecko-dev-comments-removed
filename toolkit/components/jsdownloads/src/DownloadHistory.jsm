@@ -13,7 +13,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadHistory",
 ];
 
@@ -47,7 +47,7 @@ const METADATA_STATE_DIRTY = 8;
 
 
 
-this.DownloadHistory = {
+var DownloadHistory = {
   
 
 
@@ -408,7 +408,7 @@ DownloadSlot.prototype = {
 
 
 
-this.DownloadHistoryList = function(publicList, place) {
+var DownloadHistoryList = function(publicList, place) {
   DownloadList.call(this);
 
   

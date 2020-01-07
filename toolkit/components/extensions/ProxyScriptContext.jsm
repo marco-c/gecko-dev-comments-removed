@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ProxyScriptContext"];
+var EXPORTED_SYMBOLS = ["ProxyScriptContext"];
 
 
 

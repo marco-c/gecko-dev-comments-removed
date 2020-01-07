@@ -23,13 +23,13 @@ ChromeUtils.defineModuleGetter(this, "Addons", "resource://shield-recipe-client/
 
 const {generateUUID} = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
-this.EXPORTED_SYMBOLS = ["ClientEnvironment"];
+var EXPORTED_SYMBOLS = ["ClientEnvironment"];
 
 
 
 let _classifyRequest = null;
 
-this.ClientEnvironment = {
+var ClientEnvironment = {
   
 
 

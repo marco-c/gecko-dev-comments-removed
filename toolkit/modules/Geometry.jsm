@@ -2,16 +2,16 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Point", "Rect"];
+var EXPORTED_SYMBOLS = ["Point", "Rect"];
 
 
 
 
 
 
-this.Point = function Point(x, y) {
+function Point(x, y) {
   this.set(x, y);
-};
+}
 
 Point.prototype = {
   clone: function clone() {
@@ -83,12 +83,12 @@ Point.prototype = {
 
 
 
-this.Rect = function Rect(x, y, w, h) {
+function Rect(x, y, w, h) {
   this.left = x;
   this.top = y;
   this.right = x + w;
   this.bottom = y + h;
-};
+}
 
 Rect.fromRect = function fromRect(r) {
   return new Rect(r.left, r.top, r.right - r.left, r.bottom - r.top);

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["MockColorPicker"];
+var EXPORTED_SYMBOLS = ["MockColorPicker"];
 
 const Cm = Components.manager;
 
@@ -32,7 +32,7 @@ var newFactory = function(window) {
   };
 };
 
-this.MockColorPicker = {
+var MockColorPicker = {
   init(window) {
     this.reset();
     this.factory = newFactory(window);

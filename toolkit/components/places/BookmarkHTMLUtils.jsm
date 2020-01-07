@@ -56,7 +56,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "BookmarkHTMLUtils" ];
+var EXPORTED_SYMBOLS = [ "BookmarkHTMLUtils" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -120,7 +120,7 @@ function notifyObservers(aTopic, aInitialImport) {
                                                             : "html");
 }
 
-this.BookmarkHTMLUtils = Object.freeze({
+var BookmarkHTMLUtils = Object.freeze({
   
 
 

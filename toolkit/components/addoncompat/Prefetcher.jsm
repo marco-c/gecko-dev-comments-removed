@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Prefetcher"];
+var EXPORTED_SYMBOLS = ["Prefetcher"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");

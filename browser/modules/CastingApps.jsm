@@ -3,7 +3,7 @@
 
 
 "use strict";
-this.EXPORTED_SYMBOLS = ["CastingApps"];
+var EXPORTED_SYMBOLS = ["CastingApps"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/SimpleServiceDiscovery.jsm");

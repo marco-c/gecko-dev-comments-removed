@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadPaths",
 ];
 
@@ -37,7 +37,7 @@ XPCOMUtils.defineLazyGetter(this, "gConvertToSpaceRegExp", () => {
   
 });
 
-this.DownloadPaths = {
+var DownloadPaths = {
   
 
 

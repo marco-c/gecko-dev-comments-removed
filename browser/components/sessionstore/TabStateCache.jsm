@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["TabStateCache"];
+var EXPORTED_SYMBOLS = ["TabStateCache"];
 
 
 
@@ -16,7 +16,7 @@ this.EXPORTED_SYMBOLS = ["TabStateCache"];
 
 
 
-this.TabStateCache = Object.freeze({
+var TabStateCache = Object.freeze({
   
 
 

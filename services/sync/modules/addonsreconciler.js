@@ -24,14 +24,14 @@ ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 const DEFAULT_STATE_FILE = "addonsreconciler";
 
-this.CHANGE_INSTALLED   = 1;
-this.CHANGE_UNINSTALLED = 2;
-this.CHANGE_ENABLED     = 3;
-this.CHANGE_DISABLED    = 4;
+var CHANGE_INSTALLED   = 1;
+var CHANGE_UNINSTALLED = 2;
+var CHANGE_ENABLED     = 3;
+var CHANGE_DISABLED    = 4;
 
-this.EXPORTED_SYMBOLS = ["AddonsReconciler", "CHANGE_INSTALLED",
-                         "CHANGE_UNINSTALLED", "CHANGE_ENABLED",
-                         "CHANGE_DISABLED"];
+var EXPORTED_SYMBOLS = ["AddonsReconciler", "CHANGE_INSTALLED",
+                        "CHANGE_UNINSTALLED", "CHANGE_ENABLED",
+                        "CHANGE_DISABLED"];
 
 
 
@@ -111,13 +111,13 @@ this.EXPORTED_SYMBOLS = ["AddonsReconciler", "CHANGE_INSTALLED",
 
 
 
-this.AddonsReconciler = function AddonsReconciler(queueCaller) {
+function AddonsReconciler(queueCaller) {
   this._log = Log.repository.getLogger("Sync.AddonsReconciler");
   this._log.manageLevelFromPref("services.sync.log.logger.addonsreconciler");
   this.queueCaller = queueCaller;
 
   Svc.Obs.add("xpcom-shutdown", this.stopListening, this);
-};
+}
 AddonsReconciler.prototype = {
   
   _listening: false,

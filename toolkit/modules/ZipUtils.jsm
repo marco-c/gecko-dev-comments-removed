@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "ZipUtils" ];
+var EXPORTED_SYMBOLS = [ "ZipUtils" ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -82,7 +82,7 @@ function saveStreamAsync(aPath, aStream, aFile) {
 }
 
 
-this.ZipUtils = {
+var ZipUtils = {
 
   
 

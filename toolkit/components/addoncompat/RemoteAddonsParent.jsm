@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RemoteAddonsParent"];
+var EXPORTED_SYMBOLS = ["RemoteAddonsParent"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/RemoteWebProgress.jsm");

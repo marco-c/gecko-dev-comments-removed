@@ -12,7 +12,7 @@ ChromeUtils.defineModuleGetter(
   this, "CleanupManager", "resource://shield-recipe-client/lib/CleanupManager.jsm"
 );
 
-this.EXPORTED_SYMBOLS = ["Addons"];
+var EXPORTED_SYMBOLS = ["Addons"];
 
 
 
@@ -30,7 +30,7 @@ this.EXPORTED_SYMBOLS = ["Addons"];
 
 
 
-this.Addons = {
+var Addons = {
   
 
 

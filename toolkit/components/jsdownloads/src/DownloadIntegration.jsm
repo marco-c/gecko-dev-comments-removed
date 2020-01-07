@@ -9,7 +9,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadIntegration",
 ];
 
@@ -129,7 +129,7 @@ const kVerdictMap = {
 
 
 
-this.DownloadIntegration = {
+var DownloadIntegration = {
   
 
 
@@ -795,7 +795,7 @@ this.DownloadIntegration = {
   },
 };
 
-this.DownloadObserver = {
+var DownloadObserver = {
   
 
 
@@ -999,7 +999,7 @@ this.DownloadObserver = {
 
 
 
-this.DownloadHistoryObserver = function(aList) {
+var DownloadHistoryObserver = function(aList) {
   this._list = aList;
   PlacesUtils.history.addObserver(this);
 };
@@ -1045,7 +1045,7 @@ this.DownloadHistoryObserver.prototype = {
 
 
 
-this.DownloadAutoSaveView = function(aList, aStore) {
+var DownloadAutoSaveView = function(aList, aStore) {
   this._list = aList;
   this._store = aStore;
   this._downloadsMap = new Map();

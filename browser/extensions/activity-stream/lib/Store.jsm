@@ -15,7 +15,7 @@ const {redux} = ChromeUtils.import("resource://activity-stream/vendor/Redux.jsm"
 
 
 
-this.Store = class Store {
+var Store = class Store {
   
 
 
@@ -157,4 +157,4 @@ this.Store = class Store {
   }
 };
 
-this.EXPORTED_SYMBOLS = ["Store"];
+var EXPORTED_SYMBOLS = ["Store"];

@@ -4,13 +4,13 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["LightweightThemes"];
+var EXPORTED_SYMBOLS = ["LightweightThemes"];
 
 ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
-this.LightweightThemes = {
+var LightweightThemes = {
   init(libDir) {
     
     let blackImage = libDir.clone();

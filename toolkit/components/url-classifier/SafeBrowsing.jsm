@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["SafeBrowsing"];
+var EXPORTED_SYMBOLS = ["SafeBrowsing"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -50,7 +50,7 @@ const tablePreferences = [
   "urlclassifier.flashInfobarTable"
 ];
 
-this.SafeBrowsing = {
+var SafeBrowsing = {
 
   init() {
     if (this.initialized) {

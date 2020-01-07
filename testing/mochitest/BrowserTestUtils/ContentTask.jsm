@@ -6,7 +6,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "ContentTask"
 ];
 
@@ -33,7 +33,7 @@ var gMessageID = 1;
 
 
 
-this.ContentTask = {
+var ContentTask = {
   
 
 

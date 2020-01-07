@@ -9,7 +9,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadsViewUI",
 ];
 
@@ -30,7 +30,7 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
 ChromeUtils.defineModuleGetter(this, "RecentWindow",
                                "resource:///modules/RecentWindow.jsm");
 
-this.DownloadsViewUI = {
+var DownloadsViewUI = {
   
 
 

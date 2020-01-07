@@ -8,7 +8,7 @@ const {
 } = Components;
 ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
 
-this.ManifestFinder = {
+var ManifestFinder = {
   
 
 
@@ -60,6 +60,6 @@ function checkForManifest(aWindow) {
   return true;
 }
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "ManifestFinder"
 ];

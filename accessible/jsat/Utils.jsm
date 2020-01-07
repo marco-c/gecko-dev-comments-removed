@@ -22,9 +22,9 @@ ChromeUtils.defineModuleGetter(this, "States",
 ChromeUtils.defineModuleGetter(this, "PluralForm", 
   "resource://gre/modules/PluralForm.jsm");
 
-this.EXPORTED_SYMBOLS = ["Utils", "Logger", "PivotContext", "PrefCache"]; 
+var EXPORTED_SYMBOLS = ["Utils", "Logger", "PivotContext", "PrefCache"]; 
 
-this.Utils = { 
+var Utils = { 
   _buildAppMap: {
     "{3c2e2abc-06d4-11e1-ac3b-374f68613e61}": "b2g",
     "{d1bfe7d9-c01e-4237-998b-7b5f960a4314}": "graphene",
@@ -543,7 +543,7 @@ State.prototype = {
   }
 };
 
-this.Logger = { 
+var Logger = { 
   GESTURE: -1,
   DEBUG: 0,
   INFO: 1,
@@ -701,7 +701,7 @@ this.Logger = {
 
 
 
-this.PivotContext = function PivotContext(aAccessible, aOldAccessible, 
+function PivotContext(aAccessible, aOldAccessible, 
   aStartOffset, aEndOffset, aIgnoreAncestry = false,
   aIncludeInvisible = false) {
   this._accessible = aAccessible;
@@ -712,7 +712,7 @@ this.PivotContext = function PivotContext(aAccessible, aOldAccessible,
   this.endOffset = aEndOffset;
   this._ignoreAncestry = aIgnoreAncestry;
   this._includeInvisible = aIncludeInvisible;
-};
+}
 
 PivotContext.prototype = {
   get accessible() {
@@ -1013,7 +1013,7 @@ PivotContext.prototype = {
   }
 };
 
-this.PrefCache = function PrefCache(aName, aCallback, aRunCallbackNow) { 
+function PrefCache(aName, aCallback, aRunCallbackNow) { 
   this.name = aName;
   this.callback = aCallback;
 
@@ -1029,7 +1029,7 @@ this.PrefCache = function PrefCache(aName, aCallback, aRunCallbackNow) {
   }
 
   branch.addObserver(aName, this, true);
-};
+}
 
 PrefCache.prototype = {
   _getValue: function _getValue(aBranch) {

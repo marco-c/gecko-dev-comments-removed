@@ -62,5 +62,4 @@ ValueExtractor.prototype = {
     return color;
   }
 };
-this.ValueExtractor = ValueExtractor; 
-this.EXPORTED_SYMBOLS = ['ValueExtractor']; 
+var EXPORTED_SYMBOLS = ['ValueExtractor']; 

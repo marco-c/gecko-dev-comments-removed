@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["NewTabUtils"];
+var EXPORTED_SYMBOLS = ["NewTabUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -2101,7 +2101,7 @@ var ExpirationFilter = {
 
 
 
-this.NewTabUtils = {
+var NewTabUtils = {
   _initialized: false,
 
   

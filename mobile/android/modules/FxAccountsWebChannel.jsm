@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
+var EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components; 
 
@@ -381,7 +381,7 @@ var singleton;
 
 
 
-this.EnsureFxAccountsWebChannel = () => {
+var EnsureFxAccountsWebChannel = () => {
   if (!singleton) {
     let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
     

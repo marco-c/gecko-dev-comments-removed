@@ -4,12 +4,12 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Services"];
+var EXPORTED_SYMBOLS = ["Services"];
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-this.Services = {};
+var Services = {};
 
 
 

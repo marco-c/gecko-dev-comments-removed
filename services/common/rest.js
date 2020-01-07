@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "RESTRequest",
   "RESTResponse",
   "TokenAuthenticatedRESTRequest",
@@ -75,7 +75,7 @@ const Prefs = new Preferences("services.common.");
 
 
 
-this.RESTRequest = function RESTRequest(uri) {
+function RESTRequest(uri) {
   this.status = this.NOT_SENT;
 
   
@@ -89,7 +89,7 @@ this.RESTRequest = function RESTRequest(uri) {
   this._log = Log.repository.getLogger(this._logName);
   this._log.level =
     Log.Level[Prefs.get("log.logger.rest.request")];
-};
+}
 RESTRequest.prototype = {
 
   _logName: "Services.Common.RESTRequest",
@@ -642,11 +642,11 @@ RESTRequest.prototype = {
 
 
 
-this.RESTResponse = function RESTResponse() {
+function RESTResponse() {
   this._log = Log.repository.getLogger(this._logName);
   this._log.level =
     Log.Level[Prefs.get("log.logger.rest.response")];
-};
+}
 RESTResponse.prototype = {
 
   _logName: "Services.Common.RESTResponse",
@@ -743,12 +743,11 @@ RESTResponse.prototype = {
 
 
 
-this.TokenAuthenticatedRESTRequest =
- function TokenAuthenticatedRESTRequest(uri, authToken, extra) {
+function TokenAuthenticatedRESTRequest(uri, authToken, extra) {
   RESTRequest.call(this, uri);
   this.authToken = authToken;
   this.extra = extra || {};
-};
+}
 TokenAuthenticatedRESTRequest.prototype = {
   __proto__: RESTRequest.prototype,
 

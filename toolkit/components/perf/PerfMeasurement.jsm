@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "PerfMeasurement" ];
+var EXPORTED_SYMBOLS = [ "PerfMeasurement" ];
 
 
 

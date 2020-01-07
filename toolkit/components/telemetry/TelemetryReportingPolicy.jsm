@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "TelemetryReportingPolicy"
 ];
 
@@ -92,7 +92,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
   },
 });
 
-this.TelemetryReportingPolicy = {
+var TelemetryReportingPolicy = {
   
   
   

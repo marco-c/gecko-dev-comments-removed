@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "CoverageCollector",
 ];
 
@@ -16,7 +16,7 @@ addDebuggerToGlobal(Cu.getGlobalForObject(this));
 
 
 
-this.CoverageCollector = function(prefix) {
+var CoverageCollector = function(prefix) {
   this._prefix = prefix;
   this._dbg = new Debugger();
   this._dbg.collectCoverageInfo = true;

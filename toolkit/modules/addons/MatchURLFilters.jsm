@@ -11,7 +11,7 @@ ChromeUtils.defineModuleGetter(this, "Services",
 
 
 
-this.EXPORTED_SYMBOLS = ["MatchURLFilters"];
+var EXPORTED_SYMBOLS = ["MatchURLFilters"];
 
 
 class MatchURLFilters {

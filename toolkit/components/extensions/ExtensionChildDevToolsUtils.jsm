@@ -11,7 +11,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionChildDevToolsUtils"];
+var EXPORTED_SYMBOLS = ["ExtensionChildDevToolsUtils"];
 
 ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -80,7 +80,7 @@ class ThemeChangeObserver extends EventEmitter {
   }
 }
 
-this.ExtensionChildDevToolsUtils = {
+var ExtensionChildDevToolsUtils = {
   
 
 

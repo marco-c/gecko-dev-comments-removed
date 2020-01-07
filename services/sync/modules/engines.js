@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "EngineManager",
   "SyncEngine",
   "Tracker",
@@ -43,7 +43,7 @@ function ensureDirectory(path) {
 
 
 
-this.Tracker = function Tracker(name, engine) {
+function Tracker(name, engine) {
   if (!engine) {
     throw new Error("Tracker must be associated with an Engine instance.");
   }
@@ -64,7 +64,7 @@ this.Tracker = function Tracker(name, engine) {
   this.ignoreAll = false;
 
   this.asyncObserver = Async.asyncObserver(this, this._log);
-};
+}
 
 Tracker.prototype = {
   
@@ -274,7 +274,7 @@ Tracker.prototype = {
 
 
 
-this.Store = function Store(name, engine) {
+function Store(name, engine) {
   if (!engine) {
     throw new Error("Store must be associated with an Engine instance.");
   }
@@ -288,7 +288,7 @@ this.Store = function Store(name, engine) {
   XPCOMUtils.defineLazyGetter(this, "_timer", function() {
     return Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   });
-};
+}
 Store.prototype = {
 
   
@@ -462,7 +462,7 @@ Store.prototype = {
   }
 };
 
-this.EngineManager = function EngineManager(service) {
+function EngineManager(service) {
   this.service = service;
 
   this._engines = {};
@@ -474,7 +474,7 @@ this.EngineManager = function EngineManager(service) {
   
   
   Log.repository.getLogger(`Sync.Engine`).manageLevelFromPref("services.sync.log.logger.engine");
-};
+}
 EngineManager.prototype = {
   get(name) {
     
@@ -629,7 +629,7 @@ EngineManager.prototype = {
   },
 };
 
-this.SyncEngine = function SyncEngine(name, service) {
+function SyncEngine(name, service) {
   if (!service) {
     throw new Error("SyncEngine must be associated with a Service instance.");
   }
@@ -701,7 +701,7 @@ this.SyncEngine = function SyncEngine(name, service) {
   
   
   this._needWeakUpload = new Map();
-};
+}
 
 
 

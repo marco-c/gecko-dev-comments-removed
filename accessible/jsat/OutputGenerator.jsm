@@ -27,7 +27,7 @@ ChromeUtils.defineModuleGetter(this, "Roles",
 ChromeUtils.defineModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
-this.EXPORTED_SYMBOLS = ["UtteranceGenerator", "BrailleGenerator"]; 
+var EXPORTED_SYMBOLS = ["UtteranceGenerator", "BrailleGenerator"]; 
 
 var OutputGenerator = {
 
@@ -581,7 +581,7 @@ var OutputGenerator = {
 
 
 
-this.UtteranceGenerator = {  
+var UtteranceGenerator = {  
   __proto__: OutputGenerator, 
 
   gActionMap: {
@@ -840,7 +840,7 @@ this.UtteranceGenerator = {
     }
 };
 
-this.BrailleGenerator = {  
+var BrailleGenerator = {  
   __proto__: OutputGenerator, 
 
   genForContext: function genForContext(aContext) {

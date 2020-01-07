@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Async"];
+var EXPORTED_SYMBOLS = ["Async"];
 
 
 const CB_READY = {};
@@ -17,7 +17,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-this.Async = {
+var Async = {
 
   
 

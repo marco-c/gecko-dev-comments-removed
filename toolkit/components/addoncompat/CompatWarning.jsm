@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CompatWarning"];
+var EXPORTED_SYMBOLS = ["CompatWarning"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

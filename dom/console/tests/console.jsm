@@ -2,9 +2,9 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "ConsoleTest" ];
+var EXPORTED_SYMBOLS = [ "ConsoleTest" ];
 
-this.ConsoleTest = {
+var ConsoleTest = {
   go: function(dumpFunction) {
     console.log("Hello world!");
     console.createInstance().log("Hello world!");

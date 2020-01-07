@@ -41,7 +41,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["AeroPeek"];
+var EXPORTED_SYMBOLS = ["AeroPeek"];
 
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
@@ -630,7 +630,7 @@ TabWindow.prototype = {
 
 
 
-this.AeroPeek = {
+var AeroPeek = {
   available: false,
   
   __prefenabled: false,

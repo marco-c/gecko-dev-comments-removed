@@ -6,9 +6,9 @@
 
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
-this.EXPORTED_SYMBOLS = ["PreferenceFilters"];
+var EXPORTED_SYMBOLS = ["PreferenceFilters"];
 
-this.PreferenceFilters = {
+var PreferenceFilters = {
   
   
   preferenceValue(prefKey, defaultValue) {

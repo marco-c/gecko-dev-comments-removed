@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "HAWKAuthenticatedRESTRequest",
   "deriveHawkCredentials"
 ];
@@ -50,7 +50,7 @@ const Prefs = new Preferences("services.common.rest.");
 
 
 
-this.HAWKAuthenticatedRESTRequest =
+var HAWKAuthenticatedRESTRequest =
  function HawkAuthenticatedRESTRequest(uri, credentials, extra = {}) {
   RESTRequest.call(this, uri);
 
@@ -122,7 +122,7 @@ HAWKAuthenticatedRESTRequest.prototype = {
 
 
 
-this.deriveHawkCredentials = function deriveHawkCredentials(tokenHex,
+function deriveHawkCredentials(tokenHex,
                                                             context,
                                                             size = 96,
                                                             hexKey = false) {
@@ -139,20 +139,20 @@ this.deriveHawkCredentials = function deriveHawkCredentials(tokenHex,
   }
 
   return result;
-};
+}
 
 
 
 
 
-this.Intl = function Intl() {
+function Intl() {
   
   this._accepted = "";
   this._everRead = false;
   this._log = Log.repository.getLogger("Services.Common.RESTRequest");
   this._log.level = Log.Level[Prefs.get("log.logger.rest.request")];
   this.init();
-};
+}
 
 this.Intl.prototype = {
   init() {

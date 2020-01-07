@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Downloads",
 ];
 
@@ -33,7 +33,7 @@ Integration.downloads.defineModuleGetter(this, "DownloadIntegration",
 
 
 
-this.Downloads = {
+var Downloads = {
   
 
 

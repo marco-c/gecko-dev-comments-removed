@@ -88,9 +88,9 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "XPCOMUtils" ];
+var EXPORTED_SYMBOLS = [ "XPCOMUtils" ];
 
-this.XPCOMUtils = {
+var XPCOMUtils = {
   
 
 

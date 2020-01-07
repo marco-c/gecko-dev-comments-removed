@@ -20,7 +20,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
+var EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
 
 const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
 

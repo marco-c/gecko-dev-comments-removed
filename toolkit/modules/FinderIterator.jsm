@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FinderIterator"];
+var EXPORTED_SYMBOLS = ["FinderIterator"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
@@ -21,7 +21,7 @@ const kTimeoutPref = "findbar.iteratorTimeout";
 
 
 
-this.FinderIterator = {
+var FinderIterator = {
   _currentParams: null,
   _listeners: new Map(),
   _catchingUp: new Set(),

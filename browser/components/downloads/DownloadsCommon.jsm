@@ -6,7 +6,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadsCommon",
 ];
 
@@ -120,7 +120,7 @@ PrefObserver.register({
 
 
 
-this.DownloadsCommon = {
+var DownloadsCommon = {
   
   
   DOWNLOAD_NOTSTARTED: -1,

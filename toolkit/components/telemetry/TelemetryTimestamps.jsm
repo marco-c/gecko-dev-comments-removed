@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["TelemetryTimestamps"];
+var EXPORTED_SYMBOLS = ["TelemetryTimestamps"];
 
 
 
@@ -15,7 +15,7 @@ this.EXPORTED_SYMBOLS = ["TelemetryTimestamps"];
 
 var timeStamps = {};
 
-this.TelemetryTimestamps = {
+var TelemetryTimestamps = {
   
 
 

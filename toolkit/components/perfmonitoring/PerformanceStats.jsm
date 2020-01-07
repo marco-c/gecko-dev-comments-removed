@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PerformanceStats"];
+var EXPORTED_SYMBOLS = ["PerformanceStats"];
 
 
 
@@ -566,7 +566,7 @@ Services.obs.addObserver(function(subject, topic, value) {
 }, FINALIZATION_TOPIC);
 
 
-this.PerformanceStats = {
+var PerformanceStats = {
   
 
 

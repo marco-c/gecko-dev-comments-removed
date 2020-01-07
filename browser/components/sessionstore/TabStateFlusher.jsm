@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["TabStateFlusher"];
+var EXPORTED_SYMBOLS = ["TabStateFlusher"];
 
 
 
@@ -13,7 +13,7 @@ this.EXPORTED_SYMBOLS = ["TabStateFlusher"];
 
 
 
-this.TabStateFlusher = Object.freeze({
+var TabStateFlusher = Object.freeze({
   
 
 

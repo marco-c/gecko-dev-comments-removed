@@ -4,7 +4,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RemoteFinder", "RemoteFinderListener"];
+var EXPORTED_SYMBOLS = ["RemoteFinder", "RemoteFinderListener"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Geometry.jsm");

@@ -42,7 +42,7 @@ ChromeUtils.defineModuleGetter(this, "TelemetryEvents", "resource://shield-recip
 
 Cu.importGlobalProperties(["fetch"]); 
 
-this.EXPORTED_SYMBOLS = ["AddonStudies"];
+var EXPORTED_SYMBOLS = ["AddonStudies"];
 
 const DB_NAME = "shield";
 const STORE_NAME = "addon-studies";
@@ -111,7 +111,7 @@ async function markAsEnded(db, study, reason) {
   });
 }
 
-this.AddonStudies = {
+var AddonStudies = {
   
 
 

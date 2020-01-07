@@ -531,9 +531,9 @@ var TelemetryScheduler = {
   },
 };
 
-this.EXPORTED_SYMBOLS = ["TelemetrySession"];
+var EXPORTED_SYMBOLS = ["TelemetrySession"];
 
-this.TelemetrySession = Object.freeze({
+var TelemetrySession = Object.freeze({
   
 
 

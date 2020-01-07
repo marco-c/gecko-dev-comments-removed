@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "onSpellCheck",
 ];
 

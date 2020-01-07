@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PlacesUtils"];
+var EXPORTED_SYMBOLS = ["PlacesUtils"];
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -34,10 +34,12 @@ const NEWLINE = AppConstants.platform == "macosx" ? "\n" : "\r\n";
 const TIMERS_RESOLUTION_SKEW_MS = 16;
 
 function QI_node(aNode, aIID) {
+  var result = null;
   try {
-    return aNode.QueryInterface(aIID);
-  } catch (ex) {}
-  return null;
+    result = aNode.QueryInterface(aIID);
+  } catch (e) {
+  }
+  return result;
 }
 function asContainer(aNode) {
   return QI_node(aNode, Ci.nsINavHistoryContainerResultNode);
@@ -77,10 +79,8 @@ async function notifyKeywordChange(url, keyword, source) {
   let bookmarks = [];
   await PlacesUtils.bookmarks.fetch({ url }, b => bookmarks.push(b));
   for (let bookmark of bookmarks) {
-    let ids = await PlacesUtils.promiseManyItemIds([bookmark.guid,
-                                                    bookmark.parentGuid]);
-    bookmark.id = ids.get(bookmark.guid);
-    bookmark.parentId = ids.get(bookmark.parentGuid);
+    bookmark.id = await PlacesUtils.promiseItemId(bookmark.guid);
+    bookmark.parentId = await PlacesUtils.promiseItemId(bookmark.parentGuid);
   }
   let observers = PlacesUtils.bookmarks.getObservers();
   for (let bookmark of bookmarks) {
@@ -198,22 +198,6 @@ const DB_DESCRIPTION_LENGTH_MAX = 256;
 
 
 
-
-
-
-function simpleValidateFunc(boolValidateFn) {
-  return (v, input) => {
-    if (!boolValidateFn(v, input))
-      throw new Error("Invalid value");
-    return v;
-  };
-}
-
-
-
-
-
-
 const BOOKMARK_VALIDATORS = Object.freeze({
   guid: simpleValidateFunc(v => PlacesUtils.isValidGuid(v)),
   parentGuid: simpleValidateFunc(v => PlacesUtils.isValidGuid(v)),
@@ -306,7 +290,7 @@ const SYNC_CHANGE_RECORD_VALIDATORS = Object.freeze({
   synced: simpleValidateFunc(v => v === true || v === false),
 });
 
-this.PlacesUtils = {
+var PlacesUtils = {
   
   TYPE_X_MOZ_PLACE_CONTAINER: "text/x-moz-place-container",
   
@@ -694,6 +678,9 @@ this.PlacesUtils = {
     }
   },
 
+  onPageAnnotationSet() {},
+  onPageAnnotationRemoved() {},
+
   
 
 
@@ -969,7 +956,7 @@ this.PlacesUtils = {
             try {
               titleString = Services.io.newURI(uriString).QueryInterface(Ci.nsIURL)
                                 .fileName;
-            } catch (ex) {}
+            } catch (e) {}
           }
           
           if (Services.io.newURI(uriString)) {
@@ -1432,6 +1419,7 @@ this.PlacesUtils = {
 
   setCharsetForURI: function PU_setCharsetForURI(aURI, aCharset) {
     return new Promise(resolve => {
+
       
       
       Services.tm.dispatchToMainThread(function() {
@@ -1445,6 +1433,7 @@ this.PlacesUtils = {
         }
         resolve();
       });
+
     });
   },
 
@@ -1457,14 +1446,18 @@ this.PlacesUtils = {
 
   getCharsetForURI: function PU_getCharsetForURI(aURI) {
     return new Promise(resolve => {
+
       Services.tm.dispatchToMainThread(function() {
         let charset = null;
+
         try {
           charset = PlacesUtils.annotations.getPageAnnotation(aURI,
                                                               PlacesUtils.CHARSET_ANNO);
         } catch (ex) { }
+
         resolve(charset);
       });
+
     });
   },
 
@@ -1479,9 +1472,12 @@ this.PlacesUtils = {
   promiseFaviconData(aPageUrl) {
     return new Promise((resolve, reject) => {
       PlacesUtils.favicons.getFaviconDataForPage(NetUtil.newURI(aPageUrl),
-        function(uri, dataLen, data, mimeType) {
-          if (uri) {
-            resolve({ uri, dataLen, data, mimeType });
+        function(aURI, aDataLen, aData, aMimeType) {
+          if (aURI) {
+            resolve({ uri: aURI,
+                               dataLen: aDataLen,
+                               data: aData,
+                               mimeType: aMimeType });
           } else {
             reject();
           }
@@ -1681,8 +1677,8 @@ this.PlacesUtils = {
       if (aRow.getResultByName("has_annos")) {
         try {
           item.annos = PlacesUtils.getAnnotationsForItem(itemId);
-        } catch (ex) {
-          Cu.reportError("Unexpected error while reading annotations " + ex);
+        } catch (e) {
+          Cu.reportError("Unexpected error while reading annotations " + e);
         }
       }
 
@@ -1759,6 +1755,7 @@ this.PlacesUtils = {
        LEFT JOIN moz_bookmarks b3 ON b3.id = d.parent
        LEFT JOIN moz_places h ON h.id = d.fk
        ORDER BY d.level, d.parent, d.position`;
+
 
     if (!aItemGuid)
       aItemGuid = this.bookmarks.rootGuid;
@@ -2009,13 +2006,8 @@ PlacesUtils.keywords = {
     if (onResult && typeof onResult != "function")
       throw new Error("onResult callback must be a valid function");
 
-    if (hasUrl) {
-      try {
-        keywordOrEntry.url = BOOKMARK_VALIDATORS.url(keywordOrEntry.url);
-      } catch (ex) {
-        throw new Error(keywordOrEntry.url + " is not a valid URL");
-      }
-    }
+    if (hasUrl)
+      keywordOrEntry.url = new URL(keywordOrEntry.url);
     if (hasKeyword)
       keywordOrEntry.keyword = keywordOrEntry.keyword.trim().toLowerCase();
 
@@ -2089,11 +2081,7 @@ PlacesUtils.keywords = {
     keyword = keyword.trim().toLowerCase();
     let postData = keywordEntry.postData || "";
     
-    try {
-      url = BOOKMARK_VALIDATORS.url(url);
-    } catch (ex) {
-      throw new Error(url + " is not a valid URL");
-    }
+    url = new URL(url);
 
     return PlacesUtils.withConnectionWrapper("PlacesUtils.keywords.insert", async db => {
         let cache = await promiseKeywordsCache();
@@ -2578,3 +2566,19 @@ var GuidHelper = {
     }
   }
 };
+
+
+
+
+
+
+
+
+
+function simpleValidateFunc(boolValidateFn) {
+  return (v, input) => {
+    if (!boolValidateFn(v, input))
+      throw new Error("Invalid value");
+    return v;
+  };
+}

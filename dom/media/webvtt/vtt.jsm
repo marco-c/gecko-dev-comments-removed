@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["WebVTT"];
+var EXPORTED_SYMBOLS = ["WebVTT"];
 
 
 

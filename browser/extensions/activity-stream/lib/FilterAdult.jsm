@@ -35,7 +35,7 @@ function md5Hash(text) {
 
 
 
-this.filterAdult = function filterAdult(links) {
+function filterAdult(links) {
   return links.filter(({url}) => {
     try {
       const uri = Services.io.newURI(url);
@@ -44,9 +44,9 @@ this.filterAdult = function filterAdult(links) {
       return true;
     }
   });
-};
+}
 
-this.EXPORTED_SYMBOLS = ["filterAdult"];
+var EXPORTED_SYMBOLS = ["filterAdult"];
 
 
 

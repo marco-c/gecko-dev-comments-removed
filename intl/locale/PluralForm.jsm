@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "PluralForm" ];
+var EXPORTED_SYMBOLS = [ "PluralForm" ];
 
 
 
@@ -77,7 +77,7 @@ var gFunctions = [
   [6, (n) => n==0?0:n==1?1:n==2?2:n==3?3:n==6?4:5],
 ];
 
-this.PluralForm = {
+var PluralForm = {
   
 
 

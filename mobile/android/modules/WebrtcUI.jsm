@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["WebrtcUI"];
+var EXPORTED_SYMBOLS = ["WebrtcUI"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

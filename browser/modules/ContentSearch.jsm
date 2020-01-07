@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "ContentSearch",
 ];
 
@@ -86,7 +86,7 @@ const MAX_SUGGESTIONS = 6;
 
 
 
-this.ContentSearch = {
+var ContentSearch = {
 
   
   

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Troubleshoot",
 ];
 
@@ -128,7 +128,7 @@ function getPrefList(filter) {
   }, {});
 }
 
-this.Troubleshoot = {
+var Troubleshoot = {
 
   
 

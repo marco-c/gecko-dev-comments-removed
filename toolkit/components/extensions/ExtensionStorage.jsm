@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ExtensionStorage"];
+var EXPORTED_SYMBOLS = ["ExtensionStorage"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -81,7 +81,7 @@ function serialize(value) {
   return value;
 }
 
-this.ExtensionStorage = {
+var ExtensionStorage = {
   
   jsonFilePromises: new Map(),
 

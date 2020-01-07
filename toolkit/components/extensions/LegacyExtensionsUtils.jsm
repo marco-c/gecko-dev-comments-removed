@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["LegacyExtensionsUtils"];
+var EXPORTED_SYMBOLS = ["LegacyExtensionsUtils"];
 
 
 
@@ -245,7 +245,7 @@ EmbeddedExtensionManager = {
   },
 };
 
-this.LegacyExtensionsUtils = {
+var LegacyExtensionsUtils = {
   getEmbeddedExtensionFor: (addon) => {
     return EmbeddedExtensionManager.getEmbeddedExtensionFor(addon);
   },

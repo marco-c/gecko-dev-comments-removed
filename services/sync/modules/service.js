@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Service"];
+var EXPORTED_SYMBOLS = ["Service"];
 
 
 const CLUSTER_BACKOFF = 5 * 60 * 1000; 
@@ -1410,7 +1410,7 @@ Sync11Service.prototype = {
   },
 };
 
-this.Service = new Sync11Service();
+var Service = new Sync11Service();
 this.Service.promiseInitialized = new Promise(resolve => {
   this.Service.onStartup().then(resolve);
 });

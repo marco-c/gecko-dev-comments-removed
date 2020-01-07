@@ -4,7 +4,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PlacesBackups"];
+var EXPORTED_SYMBOLS = ["PlacesBackups"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -92,7 +92,7 @@ async function getTopLevelFolderIds() {
   return guids;
 }
 
-this.PlacesBackups = {
+var PlacesBackups = {
   
 
 

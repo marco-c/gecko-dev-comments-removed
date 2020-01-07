@@ -4,12 +4,12 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["DocShellCapabilities"];
+var EXPORTED_SYMBOLS = ["DocShellCapabilities"];
 
 
 
 
-this.DocShellCapabilities = Object.freeze({
+var DocShellCapabilities = Object.freeze({
   collect(docShell) {
     return DocShellCapabilitiesInternal.collect(docShell);
   },

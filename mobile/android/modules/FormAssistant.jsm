@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAssistant"];
+var EXPORTED_SYMBOLS = ["FormAssistant"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

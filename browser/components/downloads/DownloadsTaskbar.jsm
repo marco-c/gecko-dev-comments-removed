@@ -10,7 +10,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadsTaskbar",
 ];
 
@@ -45,7 +45,7 @@ XPCOMUtils.defineLazyGetter(this, "gMacTaskbarProgress", function() {
 
 
 
-this.DownloadsTaskbar = {
+var DownloadsTaskbar = {
   
 
 

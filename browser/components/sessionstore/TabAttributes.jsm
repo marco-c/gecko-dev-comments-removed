@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["TabAttributes"];
+var EXPORTED_SYMBOLS = ["TabAttributes"];
 
 
 
@@ -23,7 +23,7 @@ const ATTRIBUTES_TO_SKIP = new Set(["image", "muted", "pending", "iconloadingpri
 
 
 
-this.TabAttributes = Object.freeze({
+var TabAttributes = Object.freeze({
   persist(name) {
     return TabAttributesInternal.persist(name);
   },

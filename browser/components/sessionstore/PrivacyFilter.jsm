@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PrivacyFilter"];
+var EXPORTED_SYMBOLS = ["PrivacyFilter"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
@@ -15,7 +15,7 @@ ChromeUtils.defineModuleGetter(this, "PrivacyLevel",
 
 
 
-this.PrivacyFilter = Object.freeze({
+var PrivacyFilter = Object.freeze({
   
 
 

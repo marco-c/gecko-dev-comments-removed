@@ -2,13 +2,13 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CryptoUtils"];
+var EXPORTED_SYMBOLS = ["CryptoUtils"];
 
 ChromeUtils.import("resource://services-common/observers.js");
 ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-this.CryptoUtils = {
+var CryptoUtils = {
   xor: function xor(a, b) {
     let bytes = [];
 

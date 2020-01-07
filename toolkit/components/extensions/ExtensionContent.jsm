@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ExtensionContent"];
+var EXPORTED_SYMBOLS = ["ExtensionContent"];
 
 
 
@@ -758,7 +758,7 @@ DocumentManager = {
   },
 };
 
-this.ExtensionContent = {
+var ExtensionContent = {
   BrowserExtensionContent,
   Script,
 

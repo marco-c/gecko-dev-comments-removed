@@ -7,7 +7,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionChild"];
+var EXPORTED_SYMBOLS = ["ExtensionChild"];
 
 
 

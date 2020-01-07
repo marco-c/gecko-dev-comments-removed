@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "PromiseTestUtils",
 ];
 
@@ -18,7 +18,7 @@ ChromeUtils.import("resource://testing-common/Assert.jsm", this);
 
 let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
 
-this.PromiseTestUtils = {
+var PromiseTestUtils = {
   
 
 

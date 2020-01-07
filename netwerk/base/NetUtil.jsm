@@ -4,7 +4,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "NetUtil",
 ];
 
@@ -26,7 +26,7 @@ const BinaryInputStream = Components.Constructor("@mozilla.org/binaryinputstream
 
 
 
-this.NetUtil = {
+var NetUtil = {
     
 
 

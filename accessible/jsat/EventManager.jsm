@@ -4,6 +4,8 @@
 
 "use strict";
 
+const TEXT_NODE = 3;
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
@@ -20,9 +22,9 @@ ChromeUtils.defineModuleGetter(this, "Events",
 ChromeUtils.defineModuleGetter(this, "States",
   "resource://gre/modules/accessibility/Constants.jsm");
 
-this.EXPORTED_SYMBOLS = ["EventManager"];
+var EXPORTED_SYMBOLS = ["EventManager"];
 
-this.EventManager = function EventManager(aContentScope, aContentControl) {
+function EventManager(aContentScope, aContentControl) {
   this.contentScope = aContentScope;
   this.contentControl = aContentControl;
   this.addEventListener = this.contentScope.addEventListener.bind(
@@ -34,7 +36,7 @@ this.EventManager = function EventManager(aContentScope, aContentControl) {
   this.webProgress = this.contentScope.docShell.
     QueryInterface(Ci.nsIInterfaceRequestor).
     getInterface(Ci.nsIWebProgress);
-};
+}
 
 this.EventManager.prototype = {
   editState: { editing: false },

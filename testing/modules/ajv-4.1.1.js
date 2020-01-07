@@ -1,7 +1,7 @@
 "use strict";
 const global = this;
 
-this.EXPORTED_SYMBOLS = ["Ajv"];
+var EXPORTED_SYMBOLS = ["Ajv"];
 
 
 

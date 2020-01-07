@@ -11,7 +11,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "TelemetrySend",
 ];
 
@@ -172,7 +172,7 @@ function gzipCompressString(string) {
   return observer.buffer;
 }
 
-this.TelemetrySend = {
+var TelemetrySend = {
 
   
 

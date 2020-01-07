@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RemoteWebProgressManager"];
+var EXPORTED_SYMBOLS = ["RemoteWebProgressManager"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");

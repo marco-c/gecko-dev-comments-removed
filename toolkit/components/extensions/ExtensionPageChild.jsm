@@ -7,7 +7,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionPageChild"];
+var EXPORTED_SYMBOLS = ["ExtensionPageChild"];
 
 
 

@@ -9,7 +9,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PlacesRemoteTabsAutocompleteProvider"];
+var EXPORTED_SYMBOLS = ["PlacesRemoteTabsAutocompleteProvider"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -115,7 +115,7 @@ Services.prefs.addObserver(PREF_SHOW_REMOTE_ICONS, observe);
 observe(null, "nsPref:changed", PREF_SHOW_REMOTE_ICONS);
 
 
-this.PlacesRemoteTabsAutocompleteProvider = {
+var PlacesRemoteTabsAutocompleteProvider = {
   
   getMatches(searchString) {
     

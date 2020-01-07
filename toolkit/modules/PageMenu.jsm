@@ -2,10 +2,10 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PageMenuParent", "PageMenuChild"];
+var EXPORTED_SYMBOLS = ["PageMenuParent", "PageMenuChild"];
 
-this.PageMenu = function PageMenu() {
-};
+function PageMenu() {
+}
 
 PageMenu.prototype = {
   PAGEMENU_ATTR: "pagemenu",
@@ -240,8 +240,8 @@ PageMenu.prototype = {
 };
 
 
-this.PageMenuParent = function PageMenuParent() {
-};
+function PageMenuParent() {
+}
 
 PageMenuParent.prototype = {
   __proto__: PageMenu.prototype,
@@ -276,8 +276,8 @@ PageMenuParent.prototype = {
 };
 
 
-this.PageMenuChild = function PageMenuChild() {
-};
+function PageMenuChild() {
+}
 
 PageMenuChild.prototype = {
   __proto__: PageMenu.prototype,

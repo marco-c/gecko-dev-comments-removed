@@ -7,7 +7,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["State", "CommandType"]; 
+var EXPORTED_SYMBOLS = ["State", "CommandType"]; 
 
 const State = Object.freeze({
   INIT: 0,

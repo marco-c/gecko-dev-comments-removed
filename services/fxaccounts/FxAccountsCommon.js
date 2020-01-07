@@ -245,7 +245,7 @@ for (let id in exports) {
 }
 
 
-this.EXPORTED_SYMBOLS = Object.keys(exports);
+var EXPORTED_SYMBOLS = Object.keys(exports);
 
 
 exports.SERVER_ERRNO_TO_ERROR[exports.ERRNO_ACCOUNT_ALREADY_EXISTS]         = exports.ERROR_ACCOUNT_ALREADY_EXISTS;

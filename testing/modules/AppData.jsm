@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "makeFakeAppDir",
 ];
 
@@ -28,7 +28,7 @@ var gFakeAppDirectoryProvider;
 
 
 
-this.makeFakeAppDir = function() {
+var makeFakeAppDir = function() {
   let dirMode = OS.Constants.libc.S_IRWXU;
   let baseFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let appD = baseFile.clone();

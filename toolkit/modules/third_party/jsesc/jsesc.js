@@ -23,7 +23,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["jsesc"];
+var EXPORTED_SYMBOLS = ["jsesc"];
 
 ;(function(root) {
 

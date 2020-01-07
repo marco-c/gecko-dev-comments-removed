@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "DownloadUIHelper",
 ];
 
@@ -35,7 +35,7 @@ const kStringsRequiringFormatting = {
 
 
 
-this.DownloadUIHelper = {
+var DownloadUIHelper = {
   
 
 
@@ -88,7 +88,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
 
 
 
-this.DownloadPrompter = function(aParent) {
+var DownloadPrompter = function(aParent) {
   this._prompter = Services.ww.getNewPrompter(aParent);
 };
 

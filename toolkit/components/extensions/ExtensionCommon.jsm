@@ -13,7 +13,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionCommon"];
+var EXPORTED_SYMBOLS = ["ExtensionCommon"];
 
 Cu.importGlobalProperties(["fetch"]);
 

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["TelemetryStopwatch"];
+var EXPORTED_SYMBOLS = ["TelemetryStopwatch"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -110,7 +110,7 @@ let Timers = {
   }
 };
 
-this.TelemetryStopwatch = {
+var TelemetryStopwatch = {
   
 
 
@@ -337,7 +337,7 @@ this.TelemetryStopwatch = {
   },
 };
 
-this.TelemetryStopwatchImpl = {
+var TelemetryStopwatchImpl = {
   
   _suppressErrors: false,
 

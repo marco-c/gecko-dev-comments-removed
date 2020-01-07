@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "StructuredLogger",
   "StructuredFormatter"
 ];
@@ -23,7 +23,7 @@ this.EXPORTED_SYMBOLS = [
 
 
 
-this.StructuredLogger = function(name, dumpFun = dump, mutators = []) {
+var StructuredLogger = function(name, dumpFun = dump, mutators = []) {
   this.name = name;
   this._dumpFun = dumpFun;
   this._mutatorFuns = mutators;
@@ -214,7 +214,7 @@ StructuredLogger.prototype = {
 
 
 
-this.StructuredFormatter = function() {
+var StructuredFormatter = function() {
     this.testStartTimes = {};
 };
 

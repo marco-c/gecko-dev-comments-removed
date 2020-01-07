@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Finder", "GetClipboardSearchString"];
+var EXPORTED_SYMBOLS = ["Finder", "GetClipboardSearchString"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Geometry.jsm");
@@ -627,5 +627,3 @@ function GetClipboardSearchString(aLoadContext) {
   return searchString;
 }
 
-this.Finder = Finder;
-this.GetClipboardSearchString = GetClipboardSearchString;

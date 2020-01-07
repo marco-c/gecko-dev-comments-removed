@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "uuidgen",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
 
-this.EXPORTED_SYMBOLS = ["PageActions"];
+var EXPORTED_SYMBOLS = ["PageActions"];
 
 
 

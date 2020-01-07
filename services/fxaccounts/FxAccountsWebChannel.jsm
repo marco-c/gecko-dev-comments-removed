@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
+var EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
@@ -521,7 +521,7 @@ var singleton;
 
 
 
-this.EnsureFxAccountsWebChannel = () => {
+var EnsureFxAccountsWebChannel = () => {
   let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.root");
   if (singleton && singleton._contentUri !== contentUri) {
     singleton.tearDown();

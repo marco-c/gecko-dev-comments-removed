@@ -12,7 +12,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "LoginHelper",
 ];
 
@@ -26,7 +26,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-this.LoginHelper = {
+var LoginHelper = {
   
 
 

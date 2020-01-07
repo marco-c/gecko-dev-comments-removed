@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ReceiverStateMachine"]; 
+var EXPORTED_SYMBOLS = ["ReceiverStateMachine"]; 
 
 
 ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
@@ -233,4 +233,3 @@ ReceiverStateMachine.prototype = {
   },
 };
 
-this.ReceiverStateMachine = ReceiverStateMachine; 

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CommonUtils"];
+var EXPORTED_SYMBOLS = ["CommonUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -10,7 +10,7 @@ ChromeUtils.import("resource://gre/modules/Log.jsm");
 ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
 
-this.CommonUtils = {
+var CommonUtils = {
   
 
 

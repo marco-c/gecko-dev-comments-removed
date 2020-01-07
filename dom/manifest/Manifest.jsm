@@ -223,4 +223,4 @@ var Manifests = {
 
 };
 
-this.EXPORTED_SYMBOLS = ["Manifests"]; 
+var EXPORTED_SYMBOLS = ["Manifests"]; 

@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [ "DownloadUtils" ];
+var EXPORTED_SYMBOLS = [ "DownloadUtils" ];
 
 
 
@@ -95,7 +95,7 @@ Object.defineProperty(this, "gBundle", {
 const kCachedLastMaxSize = 10;
 var gCachedLast = [];
 
-this.DownloadUtils = {
+var DownloadUtils = {
   
 
 

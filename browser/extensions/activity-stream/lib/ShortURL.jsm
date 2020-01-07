@@ -33,7 +33,6 @@ function getETLD(host) {
   }
 }
 
-this.getETLD = getETLD;
 
 
 
@@ -43,7 +42,7 @@ this.getETLD = getETLD;
 
 
 
-this.shortURL = function shortURL({url}) {
+function shortURL({url}) {
   if (!url) {
     return "";
   }
@@ -67,6 +66,6 @@ this.shortURL = function shortURL({url}) {
   
   return handleIDNHost(hostname.slice(0, eTLDExtra) || hostname) ||
     parsed.pathname || parsed.href;
-};
+}
 
-this.EXPORTED_SYMBOLS = ["shortURL", "getETLD"];
+var EXPORTED_SYMBOLS = ["shortURL", "getETLD"];

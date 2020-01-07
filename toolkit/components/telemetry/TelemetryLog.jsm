@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["TelemetryLog"];
+var EXPORTED_SYMBOLS = ["TelemetryLog"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -10,7 +10,7 @@ const LOG_ENTRY_MAX_COUNT = 1000;
 
 var gLogEntries = [];
 
-this.TelemetryLog = Object.freeze({
+var TelemetryLog = Object.freeze({
   log(id, data) {
     if (gLogEntries.length >= LOG_ENTRY_MAX_COUNT) {
       return;

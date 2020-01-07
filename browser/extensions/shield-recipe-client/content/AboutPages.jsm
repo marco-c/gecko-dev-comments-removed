@@ -17,7 +17,7 @@ ChromeUtils.defineModuleGetter(
   this, "RecipeRunner", "resource://shield-recipe-client/lib/RecipeRunner.jsm",
 );
 
-this.EXPORTED_SYMBOLS = ["AboutPages"];
+var EXPORTED_SYMBOLS = ["AboutPages"];
 
 const SHIELD_LEARN_MORE_URL_PREF = "extensions.shield-recipe-client.shieldLearnMoreUrl";
 
@@ -95,7 +95,7 @@ AboutPage.prototype.QueryInterface = XPCOMUtils.generateQI([Ci.nsIAboutModule]);
 
 
 
-this.AboutPages = {
+var AboutPages = {
   async init() {
     
     Services.ppmm.loadProcessScript(PROCESS_SCRIPT, true);

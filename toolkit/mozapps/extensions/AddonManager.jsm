@@ -92,7 +92,7 @@ Services.ppmm.loadProcessScript(
 
 const INTEGER = /^[1-9]\d*$/;
 
-this.EXPORTED_SYMBOLS = [ "AddonManager", "AddonManagerPrivate" ];
+var EXPORTED_SYMBOLS = [ "AddonManager", "AddonManagerPrivate" ];
 
 const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
@@ -2962,7 +2962,7 @@ var AddonManagerInternal = {
 
 
 
-this.AddonManagerPrivate = {
+var AddonManagerPrivate = {
   startup() {
     AddonManagerInternal.startup();
   },
@@ -3167,7 +3167,7 @@ this.AddonManagerPrivate = {
 
 
 
-this.AddonManager = {
+var AddonManager = {
   
   
   _states: new Map([

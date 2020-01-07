@@ -6,12 +6,12 @@
 
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 
-this.EXPORTED_SYMBOLS = ["LogManager"];
+var EXPORTED_SYMBOLS = ["LogManager"];
 
 const ROOT_LOGGER_NAME = "extensions.shield-recipe-client";
 let rootLogger = null;
 
-this.LogManager = {
+var LogManager = {
   
 
 

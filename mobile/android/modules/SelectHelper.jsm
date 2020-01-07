@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["SelectHelper"];
+var EXPORTED_SYMBOLS = ["SelectHelper"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

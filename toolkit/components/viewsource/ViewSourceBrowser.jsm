@@ -15,7 +15,7 @@ const BUNDLE_URL = "chrome://global/locale/viewSource.properties";
 
 const FRAME_SCRIPT = "chrome://global/content/viewSource-content.js";
 
-this.EXPORTED_SYMBOLS = ["ViewSourceBrowser"];
+var EXPORTED_SYMBOLS = ["ViewSourceBrowser"];
 
 
 
@@ -30,10 +30,10 @@ var gKnownBrowsers = new WeakSet();
 
 
 
-this.ViewSourceBrowser = function ViewSourceBrowser(aBrowser) {
+function ViewSourceBrowser(aBrowser) {
   this._browser = aBrowser;
   this.init();
-};
+}
 
 ViewSourceBrowser.prototype = {
   

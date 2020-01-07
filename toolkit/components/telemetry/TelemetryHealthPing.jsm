@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "TelemetryHealthPing",
 ];
 
@@ -42,7 +42,7 @@ var Policy = {
   clearSchedulerTickTimeout: (id) => clearTimeout(id)
 };
 
-this.TelemetryHealthPing = {
+var TelemetryHealthPing = {
   Reason: Object.freeze({
     IMMEDIATE: "immediate", 
     DELAYED: "delayed",     

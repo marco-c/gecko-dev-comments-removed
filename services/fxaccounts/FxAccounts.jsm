@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts"];
+var EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts"];
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -325,7 +325,7 @@ function urlsafeBase64Encode(key) {
 
 
 
-this.FxAccounts = function(mockInternal) {
+var FxAccounts = function(mockInternal) {
   let external = {};
   let internal;
 

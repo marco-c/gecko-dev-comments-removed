@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CommonDialog"];
+var EXPORTED_SYMBOLS = ["CommonDialog"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -10,10 +10,10 @@ ChromeUtils.defineModuleGetter(this, "EnableDelayHelper",
                                "resource://gre/modules/SharedPromptUtils.jsm");
 
 
-this.CommonDialog = function CommonDialog(args, ui) {
+function CommonDialog(args, ui) {
     this.args = args;
     this.ui   = ui;
-};
+}
 
 CommonDialog.prototype = {
     args: null,

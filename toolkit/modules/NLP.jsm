@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["NLP"];
+var EXPORTED_SYMBOLS = ["NLP"];
 
 
 
@@ -13,7 +13,7 @@ this.EXPORTED_SYMBOLS = ["NLP"];
 
 
 
-this.NLP = {
+var NLP = {
   
 
 

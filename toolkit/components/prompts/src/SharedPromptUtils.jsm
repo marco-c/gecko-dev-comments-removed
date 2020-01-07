@@ -1,8 +1,8 @@
-this.EXPORTED_SYMBOLS = [ "PromptUtils", "EnableDelayHelper" ];
+var EXPORTED_SYMBOLS = [ "PromptUtils", "EnableDelayHelper" ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-this.PromptUtils = {
+var PromptUtils = {
     
     
     
@@ -56,7 +56,7 @@ this.PromptUtils = {
 
 
 
-this.EnableDelayHelper = function({enableDialog, disableDialog, focusTarget}) {
+var EnableDelayHelper = function({enableDialog, disableDialog, focusTarget}) {
     this.enableDialog = makeSafe(enableDialog);
     this.disableDialog = makeSafe(disableDialog);
     this.focusTarget = focusTarget;

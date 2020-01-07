@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["RemoteSecurityUI"];
+var EXPORTED_SYMBOLS = ["RemoteSecurityUI"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

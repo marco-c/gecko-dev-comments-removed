@@ -2,11 +2,11 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["OfflineAppCacheHelper"];
+var EXPORTED_SYMBOLS = ["OfflineAppCacheHelper"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-this.OfflineAppCacheHelper = {
+var OfflineAppCacheHelper = {
   clear() {
     var appCacheStorage = Services.cache2.appCacheStorage(Services.loadContextInfo.default, null);
     try {

@@ -2,10 +2,10 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["BookmarksEngine", "PlacesItem", "Bookmark",
-                         "BookmarkFolder", "BookmarkQuery",
-                         "Livemark", "BookmarkSeparator",
-                         "BufferedBookmarksEngine"];
+var EXPORTED_SYMBOLS = ["BookmarksEngine", "PlacesItem", "Bookmark",
+                        "BookmarkFolder", "BookmarkQuery",
+                        "Livemark", "BookmarkSeparator",
+                        "BufferedBookmarksEngine"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -87,10 +87,10 @@ function getTypeObject(type) {
   return null;
 }
 
-this.PlacesItem = function PlacesItem(collection, id, type) {
+function PlacesItem(collection, id, type) {
   CryptoWrapper.call(this, collection, id);
   this.type = type || "item";
-};
+}
 PlacesItem.prototype = {
   async decrypt(keyBundle) {
     
@@ -145,9 +145,9 @@ Utils.deferGetSet(PlacesItem,
                   "cleartext",
                   ["hasDupe", "parentid", "parentName", "type", "dateAdded"]);
 
-this.Bookmark = function Bookmark(collection, id, type) {
+function Bookmark(collection, id, type) {
   PlacesItem.call(this, collection, id, type || "bookmark");
-};
+}
 Bookmark.prototype = {
   __proto__: PlacesItem.prototype,
   _logName: "Sync.Record.Bookmark",
@@ -179,9 +179,9 @@ Utils.deferGetSet(Bookmark,
                   ["title", "bmkUri", "description",
                    "loadInSidebar", "tags", "keyword"]);
 
-this.BookmarkQuery = function BookmarkQuery(collection, id) {
+function BookmarkQuery(collection, id) {
   Bookmark.call(this, collection, id, "query");
-};
+}
 BookmarkQuery.prototype = {
   __proto__: Bookmark.prototype,
   _logName: "Sync.Record.BookmarkQuery",
@@ -204,9 +204,9 @@ Utils.deferGetSet(BookmarkQuery,
                   "cleartext",
                   ["folderName", "queryId"]);
 
-this.BookmarkFolder = function BookmarkFolder(collection, id, type) {
+function BookmarkFolder(collection, id, type) {
   PlacesItem.call(this, collection, id, type || "folder");
-};
+}
 BookmarkFolder.prototype = {
   __proto__: PlacesItem.prototype,
   _logName: "Sync.Record.Folder",
@@ -229,9 +229,9 @@ BookmarkFolder.prototype = {
 Utils.deferGetSet(BookmarkFolder, "cleartext", ["description", "title",
                                                 "children"]);
 
-this.Livemark = function Livemark(collection, id) {
+function Livemark(collection, id) {
   BookmarkFolder.call(this, collection, id, "livemark");
-};
+}
 Livemark.prototype = {
   __proto__: BookmarkFolder.prototype,
   _logName: "Sync.Record.Livemark",
@@ -254,9 +254,9 @@ Livemark.prototype = {
 
 Utils.deferGetSet(Livemark, "cleartext", ["siteUri", "feedUri"]);
 
-this.BookmarkSeparator = function BookmarkSeparator(collection, id) {
+function BookmarkSeparator(collection, id) {
   PlacesItem.call(this, collection, id, "separator");
-};
+}
 BookmarkSeparator.prototype = {
   __proto__: PlacesItem.prototype,
   _logName: "Sync.Record.Separator",
@@ -379,9 +379,9 @@ BaseBookmarksEngine.prototype = {
 
 
 
-this.BookmarksEngine = function BookmarksEngine(service) {
+function BookmarksEngine(service) {
   BaseBookmarksEngine.apply(this, arguments);
-};
+}
 
 BookmarksEngine.prototype = {
   __proto__: BaseBookmarksEngine.prototype,
@@ -681,9 +681,9 @@ BookmarksEngine.prototype = {
 
 
 
-this.BufferedBookmarksEngine = function BufferedBookmarksEngine() {
+function BufferedBookmarksEngine() {
   BaseBookmarksEngine.apply(this, arguments);
-};
+}
 
 BufferedBookmarksEngine.prototype = {
   __proto__: BaseBookmarksEngine.prototype,

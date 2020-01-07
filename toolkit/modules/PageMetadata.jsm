@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PageMetadata"];
+var EXPORTED_SYMBOLS = ["PageMetadata"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -27,7 +27,7 @@ const DISCOVER_IMAGES_MAX  = 5;
 
 
 
-this.PageMetadata = {
+var PageMetadata = {
   
 
 

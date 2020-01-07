@@ -8,7 +8,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "Task"
 ];
 
@@ -136,7 +136,7 @@ function isGenerator(aValue) {
 
 
 
-this.Task = {
+var Task = {
   
 
 

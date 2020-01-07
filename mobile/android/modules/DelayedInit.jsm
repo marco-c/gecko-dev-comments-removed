@@ -5,7 +5,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["DelayedInit"];
+var EXPORTED_SYMBOLS = ["DelayedInit"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

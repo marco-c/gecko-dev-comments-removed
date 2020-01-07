@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ControllerStateMachine"]; 
+var EXPORTED_SYMBOLS = ["ControllerStateMachine"]; 
 
 
 ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
@@ -235,4 +235,3 @@ ControllerStateMachine.prototype = {
   },
 };
 
-this.ControllerStateMachine = ControllerStateMachine; 

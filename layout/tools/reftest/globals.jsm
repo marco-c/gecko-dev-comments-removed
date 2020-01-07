@@ -3,7 +3,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [];
+var EXPORTED_SYMBOLS = [];
 
 for (let [key, val] of Object.entries({
   

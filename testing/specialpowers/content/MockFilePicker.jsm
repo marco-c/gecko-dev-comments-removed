@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["MockFilePicker"];
+var EXPORTED_SYMBOLS = ["MockFilePicker"];
 
 const Cm = Components.manager;
 
@@ -33,7 +33,7 @@ var newFactory = function(window) {
   };
 };
 
-this.MockFilePicker = {
+var MockFilePicker = {
   returnOK: Ci.nsIFilePicker.returnOK,
   returnCancel: Ci.nsIFilePicker.returnCancel,
   returnReplace: Ci.nsIFilePicker.returnReplace,

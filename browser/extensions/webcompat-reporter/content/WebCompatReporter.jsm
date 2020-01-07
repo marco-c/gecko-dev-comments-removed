@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["WebCompatReporter"];
+var EXPORTED_SYMBOLS = ["WebCompatReporter"];
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");

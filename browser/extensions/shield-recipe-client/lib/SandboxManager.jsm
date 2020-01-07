@@ -1,6 +1,6 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-this.EXPORTED_SYMBOLS = ["SandboxManager"];
+var EXPORTED_SYMBOLS = ["SandboxManager"];
 
 
 
@@ -10,7 +10,7 @@ this.EXPORTED_SYMBOLS = ["SandboxManager"];
 
 
 
-this.SandboxManager = class {
+var SandboxManager = class {
   constructor() {
     this._sandbox = new Cu.Sandbox(null, {
       wantComponents: false,

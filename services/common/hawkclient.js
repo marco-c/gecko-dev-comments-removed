@@ -24,7 +24,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["HawkClient"];
+var EXPORTED_SYMBOLS = ["HawkClient"];
 
 ChromeUtils.import("resource://services-crypto/utils.js");
 ChromeUtils.import("resource://services-common/hawkrequest.js");
@@ -88,7 +88,7 @@ XPCOMUtils.defineLazyGetter(this, "logPII", function() {
 
 
 
-this.HawkClient = function(host) {
+var HawkClient = function(host) {
   this.host = host;
 
   

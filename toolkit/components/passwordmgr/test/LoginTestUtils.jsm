@@ -7,7 +7,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "LoginTestUtils",
 ];
 
@@ -21,7 +21,7 @@ const LoginInfo =
       Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
                              "nsILoginInfo", "init");
 
-this.LoginTestUtils = {
+var LoginTestUtils = {
   
 
 

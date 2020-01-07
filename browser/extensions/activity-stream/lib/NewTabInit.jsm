@@ -9,7 +9,7 @@ const {actionCreators: ac, actionTypes: at} = ChromeUtils.import("resource://act
 
 
 
-this.NewTabInit = class NewTabInit {
+var NewTabInit = class NewTabInit {
   constructor() {
     this._repliedEarlyTabs = new Map();
   }
@@ -49,4 +49,4 @@ this.NewTabInit = class NewTabInit {
   }
 };
 
-this.EXPORTED_SYMBOLS = ["NewTabInit"];
+var EXPORTED_SYMBOLS = ["NewTabInit"];

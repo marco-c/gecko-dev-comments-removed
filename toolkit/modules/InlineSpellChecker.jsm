@@ -2,18 +2,18 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "InlineSpellChecker",
-                          "SpellCheckHelper" ];
+var EXPORTED_SYMBOLS = [ "InlineSpellChecker",
+                         "SpellCheckHelper" ];
 var gLanguageBundle;
 var gRegionBundle;
 const MAX_UNDO_STACK_DEPTH = 1;
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-this.InlineSpellChecker = function InlineSpellChecker(aEditor) {
+function InlineSpellChecker(aEditor) {
   this.init(aEditor);
   this.mAddedWordStack = []; 
-};
+}
 
 InlineSpellChecker.prototype = {
   

@@ -40,7 +40,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
+var EXPORTED_SYMBOLS = ["ExtensionSettingsStore"];
 
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -241,7 +241,7 @@ function alterSetting(id, type, key, action) {
   return returnItem;
 }
 
-this.ExtensionSettingsStore = {
+var ExtensionSettingsStore = {
   
 
 

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["LightweightThemeConsumer"];
+var EXPORTED_SYMBOLS = ["LightweightThemeConsumer"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -15,8 +15,7 @@ ChromeUtils.import("resource:///modules/ThemeVariableMap.jsm");
 ChromeUtils.defineModuleGetter(this, "LightweightThemeImageOptimizer",
   "resource://gre/modules/addons/LightweightThemeImageOptimizer.jsm");
 
-this.LightweightThemeConsumer =
- function LightweightThemeConsumer(aDocument) {
+function LightweightThemeConsumer(aDocument) {
   this._doc = aDocument;
   this._win = aDocument.defaultView;
 
@@ -26,7 +25,7 @@ this.LightweightThemeConsumer =
   ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm", temp);
   this._update(temp.LightweightThemeManager.currentThemeForDisplay);
   this._win.addEventListener("unload", this, { once: true });
-};
+}
 
 LightweightThemeConsumer.prototype = {
   _lastData: null,

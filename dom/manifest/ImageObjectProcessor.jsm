@@ -149,5 +149,4 @@ ImageObjectProcessor.prototype.process = function(
     }
   }
 };
-this.ImageObjectProcessor = ImageObjectProcessor; 
-this.EXPORTED_SYMBOLS = ['ImageObjectProcessor']; 
+var EXPORTED_SYMBOLS = ['ImageObjectProcessor']; 

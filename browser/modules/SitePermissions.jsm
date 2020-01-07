@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "SitePermissions" ];
+var EXPORTED_SYMBOLS = [ "SitePermissions" ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -136,7 +136,7 @@ const TemporaryBlockedPermissions = {
 
 
 
-this.SitePermissions = {
+var SitePermissions = {
   
   UNKNOWN: Services.perms.UNKNOWN_ACTION,
   ALLOW: Services.perms.ALLOW_ACTION,

@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ActionBarHandler"];
+var EXPORTED_SYMBOLS = ["ActionBarHandler"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

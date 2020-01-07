@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Preferences"];
+var EXPORTED_SYMBOLS = ["Preferences"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -14,19 +14,18 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 const MAX_INT = 0x7FFFFFFF; 
 const MIN_INT = -0x80000000;
 
-this.Preferences =
-  function Preferences(args) {
-    this._cachedPrefBranch = null;
-    if (isObject(args)) {
-      if (args.branch)
-        this._branchStr = args.branch;
-      if (args.defaultBranch)
-        this._defaultBranch = args.defaultBranch;
-      if (args.privacyContext)
-        this._privacyContext = args.privacyContext;
-    } else if (args)
-      this._branchStr = args;
-  };
+function Preferences(args) {
+  this._cachedPrefBranch = null;
+  if (isObject(args)) {
+    if (args.branch)
+      this._branchStr = args.branch;
+    if (args.defaultBranch)
+      this._defaultBranch = args.defaultBranch;
+    if (args.privacyContext)
+      this._privacyContext = args.privacyContext;
+  } else if (args)
+    this._branchStr = args;
+}
 
 
 

@@ -7,7 +7,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PageThumbUtils"];
+var EXPORTED_SYMBOLS = ["PageThumbUtils"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -16,7 +16,7 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm");
 
-this.PageThumbUtils = {
+var PageThumbUtils = {
   
   THUMBNAIL_BG_COLOR: "#fff",
   

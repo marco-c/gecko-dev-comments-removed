@@ -4,13 +4,13 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "AUSTLMY"
 ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
-this.AUSTLMY = {
+var AUSTLMY = {
   
   
   

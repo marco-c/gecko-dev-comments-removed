@@ -4,11 +4,11 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "BinarySearch",
 ];
 
-this.BinarySearch = Object.freeze({
+var BinarySearch = Object.freeze({
 
   
 

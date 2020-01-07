@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["checkVersions", "addTestBlocklistClient"];
+var EXPORTED_SYMBOLS = ["checkVersions", "addTestBlocklistClient"];
 
 const CC = Components.Constructor;
 
@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyGetter(this, "gBlocklistClients", function() {
 });
 
 
-this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; };
+var addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; };
 
 
 async function pollChanges(url, lastEtag) {
@@ -91,7 +91,7 @@ async function pollChanges(url, lastEtag) {
 
 
 
-this.checkVersions = async function() {
+var checkVersions = async function() {
   
   if (Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
     const backoffReleaseTime = Services.prefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);

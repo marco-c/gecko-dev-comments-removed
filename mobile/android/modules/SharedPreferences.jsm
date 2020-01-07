@@ -5,7 +5,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["SharedPreferences"];
+var EXPORTED_SYMBOLS = ["SharedPreferences"];
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");

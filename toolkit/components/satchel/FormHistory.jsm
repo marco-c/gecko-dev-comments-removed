@@ -84,7 +84,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["FormHistory"];
+var EXPORTED_SYMBOLS = ["FormHistory"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -331,7 +331,7 @@ function prepareInsertQuery(change, now) {
 
 
 
-this.InProgressInserts = {
+var InProgressInserts = {
   _inProgress: new Map(),
 
   add(fieldname, value) {
@@ -605,7 +605,7 @@ function expireOldEntriesVacuum(aExpireTime, aBeginningCount) {
 
 
 
-this.DB = {
+var DB = {
   
   
   _instance: null,

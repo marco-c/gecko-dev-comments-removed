@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Resource"];
+var EXPORTED_SYMBOLS = ["Resource"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
@@ -27,12 +27,12 @@ Cu.importGlobalProperties(["fetch"]);
 
 
 
-this.Resource = function Resource(uri) {
+function Resource(uri) {
   this._log = Log.repository.getLogger(this._logName);
   this._log.manageLevelFromPref("services.sync.log.logger.network.resources");
   this.uri = uri;
   this._headers = {};
-};
+}
 
 Resource.serverTime = null;
 

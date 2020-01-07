@@ -3,11 +3,11 @@
 
 "use strict";
 
-this.MAIN_MESSAGE_TYPE = "ActivityStream:Main";
-this.CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
-this.PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
-this.UI_CODE = 1;
-this.BACKGROUND_PROCESS = 2;
+var MAIN_MESSAGE_TYPE = "ActivityStream:Main";
+var CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+var PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
+var UI_CODE = 1;
+var BACKGROUND_PROCESS = 2;
 
 
 
@@ -274,7 +274,7 @@ function WebExtEvent(type, data, importContext = globalImportContext) {
 
 this.actionTypes = actionTypes;
 
-this.actionCreators = {
+var actionCreators = {
   BroadcastToContent,
   UserEvent,
   UndesiredEvent,
@@ -290,7 +290,7 @@ this.actionCreators = {
 };
 
 
-this.actionUtils = {
+var actionUtils = {
   isSendToMain(action) {
     if (!action.meta) {
       return false;
@@ -335,7 +335,7 @@ this.actionUtils = {
   _RouteMessage
 };
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "actionTypes",
   "actionCreators",
   "actionUtils",

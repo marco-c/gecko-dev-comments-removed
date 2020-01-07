@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["PrivateBrowsingUtils"];
+var EXPORTED_SYMBOLS = ["PrivateBrowsingUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -12,7 +12,7 @@ const kAutoStartPref = "browser.privatebrowsing.autostart";
 
 var gTemporaryAutoStartMode = false;
 
-this.PrivateBrowsingUtils = {
+var PrivateBrowsingUtils = {
   
   
   isWindowPrivate: function pbu_isWindowPrivate(aWindow) {

@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["MockPermissionPrompt"];
+var EXPORTED_SYMBOLS = ["MockPermissionPrompt"];
 
 const Cm = Components.manager;
 
@@ -27,7 +27,7 @@ var newFactory = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory])
 };
 
-this.MockPermissionPrompt = {
+var MockPermissionPrompt = {
   init() {
     this.reset();
     if (!registrar.isCIDRegistered(newClassID)) {

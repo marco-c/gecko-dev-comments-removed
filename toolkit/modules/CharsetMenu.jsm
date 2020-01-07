@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = [ "CharsetMenu" ];
+var EXPORTED_SYMBOLS = [ "CharsetMenu" ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

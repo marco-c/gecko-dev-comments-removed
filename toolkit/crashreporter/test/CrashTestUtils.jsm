@@ -1,9 +1,9 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["CrashTestUtils"];
+var EXPORTED_SYMBOLS = ["CrashTestUtils"];
 
-this.CrashTestUtils = {
+var CrashTestUtils = {
   
   crash: null,
   dumpHasStream: null,

@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ScrollPosition"];
+var EXPORTED_SYMBOLS = ["ScrollPosition"];
 
 
 
@@ -12,7 +12,7 @@ this.EXPORTED_SYMBOLS = ["ScrollPosition"];
 
 
 
-this.ScrollPosition = Object.freeze({
+var ScrollPosition = Object.freeze({
   collect(frame) {
     return ScrollPositionInternal.collect(frame);
   },

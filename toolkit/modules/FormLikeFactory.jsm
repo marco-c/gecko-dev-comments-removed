@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormLikeFactory"];
+var EXPORTED_SYMBOLS = ["FormLikeFactory"];
 
 
 

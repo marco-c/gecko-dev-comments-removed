@@ -16,7 +16,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["DOMRequestIpcHelper"];
+var EXPORTED_SYMBOLS = ["DOMRequestIpcHelper"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -25,7 +25,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
                                    "@mozilla.org/childprocessmessagemanager;1",
                                    "nsIMessageListenerManager");
 
-this.DOMRequestIpcHelper = function DOMRequestIpcHelper() {
+function DOMRequestIpcHelper() {
   
   
   

@@ -1,6 +1,6 @@
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "initializeIdentityWithTokenServerResponse",
 ];
 
@@ -13,7 +13,7 @@ ChromeUtils.import("resource://testing-common/services/sync/utils.js");
 
 
 
-this.initializeIdentityWithTokenServerResponse = function(response) {
+var initializeIdentityWithTokenServerResponse = function(response) {
   
   
   let requestLog = Log.repository.getLogger("testing.mock-rest");

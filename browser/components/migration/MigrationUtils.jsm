@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
+var EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
 
 const TOPIC_WILL_IMPORT_BOOKMARKS = "initial-migration-will-import-default-bookmarks";
 const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmarks";
@@ -84,7 +84,7 @@ function getMigrationBundle() {
 
 
 
-this.MigratorPrototype = {
+var MigratorPrototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
 
   
@@ -438,7 +438,7 @@ this.MigratorPrototype = {
   },
 };
 
-this.MigrationUtils = Object.freeze({
+var MigrationUtils = Object.freeze({
   resourceTypes: {
     SETTINGS:   Ci.nsIBrowserProfileMigrator.SETTINGS,
     COOKIES:    Ci.nsIBrowserProfileMigrator.COOKIES,

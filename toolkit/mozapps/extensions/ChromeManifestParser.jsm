@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ChromeManifestParser"];
+var EXPORTED_SYMBOLS = ["ChromeManifestParser"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
@@ -28,7 +28,7 @@ function flushJarCache(aJarFile) {
 
 
 
-this.ChromeManifestParser = {
+var ChromeManifestParser = {
 
   
 

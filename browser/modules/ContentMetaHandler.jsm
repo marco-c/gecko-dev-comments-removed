@@ -68,7 +68,7 @@ function checkLoadURIStr(aURL) {
   return true;
 }
 
-this.EXPORTED_SYMBOLS = [ "ContentMetaHandler" ];
+var EXPORTED_SYMBOLS = [ "ContentMetaHandler" ];
 
 
 
@@ -76,7 +76,7 @@ this.EXPORTED_SYMBOLS = [ "ContentMetaHandler" ];
 
 
 
-this.ContentMetaHandler = {
+var ContentMetaHandler = {
   init(chromeGlobal) {
     
     

@@ -23,7 +23,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/Log.jsm");
 
-this.EXPORTED_SYMBOLS = ["GCTelemetry"];
+var EXPORTED_SYMBOLS = ["GCTelemetry"];
 
 
 const PROCESS_NAMES = ["main", "content"];

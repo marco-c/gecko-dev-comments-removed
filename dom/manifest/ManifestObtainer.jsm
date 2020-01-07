@@ -36,7 +36,7 @@ ChromeUtils.import("resource://gre/modules/ManifestProcessor.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",  
   "resource://gre/modules/BrowserUtils.jsm");
 
-this.ManifestObtainer = { 
+var ManifestObtainer = { 
   
 
 
@@ -156,4 +156,4 @@ const fetchManifest = async function(aWindow) {
   return manifest;
 };
 
-this.EXPORTED_SYMBOLS = ["ManifestObtainer"]; 
+var EXPORTED_SYMBOLS = ["ManifestObtainer"]; 
