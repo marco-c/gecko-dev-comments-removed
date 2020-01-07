@@ -117,6 +117,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -186,6 +189,7 @@ const VALID_ADDRESS_COMPUTED_FIELDS = [
 ].concat(STREET_ADDRESS_COMPONENTS, TEL_COMPONENTS);
 
 const VALID_CREDIT_CARD_FIELDS = [
+  "billingAddressGUID",
   "cc-name",
   "cc-number",
   "cc-exp-month",
@@ -1713,7 +1717,7 @@ class CreditCards extends AutofillRecords {
         return false;
       }
 
-      if (!creditCardToMerge[field]) {
+      if (!creditCardToMerge[field] && typeof(existingField) != "undefined") {
         creditCardToMerge[field] = existingField;
       }
 
