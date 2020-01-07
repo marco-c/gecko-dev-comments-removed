@@ -95,11 +95,14 @@ impl WebGLRenderbuffer {
         
         match internal_format {
             constants::RGBA4 |
-            constants::DEPTH_STENCIL |
+            constants::RGB565 |
+            constants::RGB5_A1 |
             constants::DEPTH_COMPONENT16 |
-            constants::STENCIL_INDEX8 =>
-                self.internal_format.set(Some(internal_format)),
-
+            constants::STENCIL_INDEX8 |
+            
+            constants::DEPTH_STENCIL => {
+                self.internal_format.set(Some(internal_format))
+            }
             _ => return Err(WebGLError::InvalidEnum),
         };
 
