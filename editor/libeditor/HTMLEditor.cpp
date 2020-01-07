@@ -135,13 +135,8 @@ HTMLEditor::HTMLEditor()
 
 HTMLEditor::~HTMLEditor()
 {
-  
-  
-  
-  if (mRules) {
-    nsCOMPtr<nsIEditActionListener> listener =
-      static_cast<nsIEditActionListener*>(mRules->AsHTMLEditRules());
-    RemoveEditActionListener(listener);
+  if (mRules && mRules->AsHTMLEditRules()) {
+    mRules->AsHTMLEditRules()->EndListeningToEditActions();
   }
 
   

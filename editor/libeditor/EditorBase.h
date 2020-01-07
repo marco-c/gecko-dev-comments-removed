@@ -758,15 +758,6 @@ public:
   
 
 
-
-
-
-
-  static nsresult GetLengthOfDOMNode(nsIDOMNode *aNode, uint32_t &aCount);
-
-  
-
-
   nsIContent* GetPreviousNode(const EditorRawDOMPoint& aPoint)
   {
     return GetPreviousNodeInternal(aPoint, false, false);
