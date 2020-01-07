@@ -12,7 +12,6 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZEventState.h"
-#include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "nsIDocument.h"
