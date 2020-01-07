@@ -2015,7 +2015,7 @@ gfxFont::DrawMissingGlyph(const TextRunDrawParams&            aRunParams,
         
         
         gfxContextMatrixAutoSaveRestore matrixRestore;
-        if (aFontParams.needsOblique && !textDrawer) {
+        if (aFontParams.needsOblique && !aFontParams.isVerticalFont && !textDrawer) {
             matrixRestore.SetContext(aRunParams.context);
             gfx::Matrix mat =
                 aRunParams.context->CurrentMatrix().
