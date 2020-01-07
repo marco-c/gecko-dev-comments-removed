@@ -10,9 +10,7 @@
 
 
 
-#ifndef lint
 
-#endif
 
 
 
@@ -50,10 +48,12 @@ scalbn (double x, int n)
         if (k >  0x7fe) return huge*copysign(huge,x); 
         if (k > 0) 				
 	    {SET_HIGH_WORD(x,(hx&0x800fffff)|(k<<20)); return x;}
-        if (k <= -54)
+        if (k <= -54) {
             if (n > 50000) 	
 		return huge*copysign(huge,x);	
-	    else return tiny*copysign(tiny,x); 	
+	    else
+		return tiny*copysign(tiny,x); 	
+	}
         k += 54;				
 	SET_HIGH_WORD(x,(hx&0x800fffff)|(k<<20));
         return x*twom54;

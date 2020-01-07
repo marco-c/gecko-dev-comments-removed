@@ -106,14 +106,14 @@ __ieee754_pow(double x, double y)
 	ix = hx&0x7fffffff;  iy = hy&0x7fffffff;
 
     
-	if((iy|ly)==0) return one; 	
+	if((iy|ly)==0) return one;
 
     
 	if (hx==0x3ff00000 && lx == 0) return one;
 
     
 	if(ix > 0x7ff00000 || ((ix==0x7ff00000)&&(lx!=0)) ||
-	   iy > 0x7ff00000 || ((iy==0x7ff00000)&&(ly!=0))) 
+	   iy > 0x7ff00000 || ((iy==0x7ff00000)&&(ly!=0)))
 		return (x+0.0)+(y+0.0);
 
     
@@ -122,7 +122,7 @@ __ieee754_pow(double x, double y)
 
 
 	yisint  = 0;
-	if(hx<0) {	
+	if(hx<0) {
 	    if(iy>=0x43400000) yisint = 2; 
 	    else if(iy>=0x3ff00000) {
 		k = (iy>>20)-0x3ff;	   
@@ -133,11 +133,11 @@ __ieee754_pow(double x, double y)
 		    j = iy>>(20-k);
 		    if((j<<(20-k))==iy) yisint = 2-(j&1);
 		}
-	    }		
-	} 
+	    }
+	}
 
     
-	if(ly==0) { 	
+	if(ly==0) {
 	    if (iy==0x7ff00000) {	
 	        if(((ix-0x3ff00000)|lx)==0)
 		    return  one;	
@@ -145,14 +145,14 @@ __ieee754_pow(double x, double y)
 		    return (hy>=0)? y: zero;
 	        else			
 		    return (hy<0)?-y: zero;
-	    } 
+	    }
 	    if(iy==0x3ff00000) {	
 		if(hy<0) return one/x; else return x;
 	    }
 	    if(hy==0x40000000) return x*x; 
 	    if(hy==0x3fe00000) {	
 		if(hx>=0)	
-		return sqrt(x);	
+		return sqrt(x);
 	    }
 	}
 
@@ -165,13 +165,13 @@ __ieee754_pow(double x, double y)
 		if(hx<0) {
 		    if(((ix-0x3ff00000)|yisint)==0) {
 			z = (z-z)/(z-z); 
-		    } else if(yisint==1) 
+		    } else if(yisint==1)
 			z = -z;		
 		}
 		return z;
 	    }
 	}
-    
+
     
 
 
@@ -286,7 +286,7 @@ __ieee754_pow(double x, double y)
 	    n = ((n&0x000fffff)|0x00100000)>>(20-k);
 	    if(j<0) n = -n;
 	    p_h -= t;
-	} 
+	}
 	t = p_l+p_h;
 	SET_LOW_WORD(t,0);
 	u = t*lg2_h;
