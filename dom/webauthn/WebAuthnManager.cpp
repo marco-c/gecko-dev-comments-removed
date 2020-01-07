@@ -399,7 +399,22 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
 
   
   
-  Unused << requestDirectAttestation;
+  if (requestDirectAttestation) {
+    nsresult rv;
+    nsCOMPtr<nsIPrefService> prefService = do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
+
+    if (NS_SUCCEEDED(rv)) {
+      nsCOMPtr<nsIPrefBranch> branch;
+      rv = prefService->GetBranch("security.webauth.", getter_AddRefs(branch));
+
+      if (NS_SUCCEEDED(rv)) {
+        rv = branch->GetBoolPref("webauthn_testing_allow_direct_attestation",
+                                 &requestDirectAttestation);
+      }
+    }
+
+    requestDirectAttestation &= NS_SUCCEEDED(rv);
+  }
 
   
   WebAuthnAuthenticatorSelection authSelection(selection.mRequireResidentKey,
@@ -425,6 +440,7 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
   mTransaction = Some(WebAuthnTransaction(promise,
                                           rpIdHash,
                                           clientDataJSON,
+                                          requestDirectAttestation,
                                           signal));
 
   mChild->SendRequestRegister(mTransaction.ref().mId, info);
@@ -604,6 +620,7 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
   mTransaction = Some(WebAuthnTransaction(promise,
                                           rpIdHash,
                                           clientDataJSON,
+                                          false ,
                                           signal));
 
   mChild->SendRequestSign(mTransaction.ref().mId, info);
@@ -733,8 +750,13 @@ WebAuthnManager::FinishMakeCredential(const uint64_t& aTransactionId,
   
   
   CryptoBuffer attObj;
-  rv = CBOREncodeAttestationObj(authDataBuf, attestationCertBuf, signatureBuf,
-                                attObj);
+  if (mTransaction.ref().mDirectAttestation) {
+    rv = CBOREncodeFidoU2FAttestationObj(authDataBuf, attestationCertBuf,
+                                         signatureBuf, attObj);
+  } else {
+    rv = CBOREncodeNoneAttestationObj(authDataBuf, attObj);
+  }
+
   if (NS_FAILED(rv)) {
     RejectTransaction(rv);
     return;
