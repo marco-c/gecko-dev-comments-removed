@@ -28,13 +28,26 @@ class Linker
     }
 
   public:
+    
     explicit Linker(MacroAssembler& masm)
+      : masm(masm)
+    {
+        MOZ_ASSERT(masm.isRooted());
+        masm.finish();
+    }
+
+    
+    
+    Linker(MacroAssembler& masm, JS::AutoRequireNoGC& nogc)
       : masm(masm)
     {
         masm.finish();
     }
 
-    template <AllowGC allowGC>
+    
+    
+    
+    
     JitCode* newCode(JSContext* cx, CodeKind kind, bool hasPatchableBackedges = false);
 };
 
