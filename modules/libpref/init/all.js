@@ -1439,7 +1439,7 @@ pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 pref("privacy.reduceTimerPrecision", true);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 100);
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 1000);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
@@ -5050,6 +5050,8 @@ pref("extensions.webextensions.protocol.remote", true);
 
 
 pref("extensions.webextensions.tabhide.enabled", false);
+
+pref("extensions.webextensions.background-delayed-startup", false);
 
 
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
