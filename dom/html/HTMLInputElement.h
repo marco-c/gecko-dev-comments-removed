@@ -1059,6 +1059,11 @@ protected:
 
   bool IsValueEmpty() const;
 
+  
+
+
+  bool ShouldShowPlaceholder() const;
+
   void ClearFiles(bool aSetValueChanged);
 
   void SetIndeterminateInternal(bool aValue,
