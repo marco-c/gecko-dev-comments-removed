@@ -1119,8 +1119,7 @@ nsSVGElement::IsSVGFocusable(bool* aIsFocusable, int32_t* aTabIndex)
   }
 
   
-  *aIsFocusable =
-    tabIndex >= 0 || HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex);
+  *aIsFocusable = tabIndex >= 0 || HasAttr(nsGkAtoms::tabindex);
 
   return false;
 }
@@ -2464,7 +2463,7 @@ nsSVGElement::RecompileScriptEventListeners()
     }
 
     nsAutoString value;
-    GetAttr(kNameSpaceID_None, attr, value);
+    GetAttr(attr, value);
     SetEventHandler(GetEventNameForAttr(attr), value, true);
   }
 }

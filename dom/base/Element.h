@@ -731,7 +731,13 @@ public:
 
 
 
+
   bool GetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAString& aResult) const;
+
+  bool GetAttr(nsAtom* aName, nsAString& aResult) const
+  {
+    return GetAttr(kNameSpaceID_None, aName, aResult);
+  }
 
   
 
@@ -740,7 +746,14 @@ public:
 
 
 
+
   inline bool HasAttr(int32_t aNameSpaceID, nsAtom* aName) const;
+
+  bool HasAttr(nsAtom* aAttr) const
+  {
+    return HasAttr(kNameSpaceID_None, aAttr);
+  }
+
   
 
 
