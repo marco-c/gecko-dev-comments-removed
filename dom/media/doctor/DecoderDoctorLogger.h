@@ -346,7 +346,9 @@ private:
   
   static constexpr LogState scShutdown = 3;
   
-  static Atomic<LogState> sLogState;
+  
+  
+  static Atomic<LogState, ReleaseAcquire> sLogState;
 
   
   static const char* sShutdownReason;

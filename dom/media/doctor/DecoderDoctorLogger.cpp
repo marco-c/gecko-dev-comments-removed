@@ -14,7 +14,7 @@
 
 namespace mozilla {
 
- Atomic<DecoderDoctorLogger::LogState>
+ Atomic<DecoderDoctorLogger::LogState, ReleaseAcquire>
   DecoderDoctorLogger::sLogState{ DecoderDoctorLogger::scDisabled };
 
  const char* DecoderDoctorLogger::sShutdownReason = nullptr;
