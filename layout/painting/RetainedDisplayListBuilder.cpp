@@ -593,6 +593,46 @@ struct CbData {
   nsTArray<nsIFrame*>* framesWithProps;
 };
 
+static nsIFrame*
+GetRootFrameForPainting(nsDisplayListBuilder* aBuilder, nsIDocument* aDocument)
+{
+  
+  
+  
+
+  nsIPresShell* presShell = aDocument->GetShell();
+  if (!presShell) {
+    return nullptr;
+  }
+  nsView* rootView = presShell->GetViewManager()->GetRootView();
+  if (!rootView) {
+    return nullptr;
+  }
+
+  
+  
+  nsView* innerView = rootView->GetParent();
+  if (!innerView) {
+    return nullptr;
+  }
+
+  nsView* subDocView = innerView->GetParent();
+  if (!subDocView) {
+    return nullptr;
+  }
+
+  nsIFrame* subDocFrame = subDocView->GetFrame();
+  if (!subDocFrame) {
+    return nullptr;
+  }
+
+  nsSubDocumentFrame* subdocumentFrame = do_QueryFrame(subDocFrame);
+  MOZ_ASSERT(subdocumentFrame);
+  presShell = subdocumentFrame->GetSubdocumentPresShellForPainting(
+    aBuilder->IsIgnoringPaintSuppression() ? nsSubDocumentFrame::IGNORE_PAINT_SUPPRESSION : 0);
+  return presShell ? presShell->GetRootFrame() : nullptr;
+}
+
 static bool
 SubDocEnumCb(nsIDocument* aDocument, void* aData)
 {
@@ -601,41 +641,17 @@ SubDocEnumCb(nsIDocument* aDocument, void* aData)
 
   CbData* data = static_cast<CbData*>(aData);
 
-  
-  
-  
+  nsIFrame* rootFrame = GetRootFrameForPainting(data->builder, aDocument);
+  if (rootFrame) {
+    TakeAndAddModifiedAndFramesWithPropsFromRootFrame(data->modifiedFrames,
+                                                      data->framesWithProps,
+                                                      rootFrame);
 
-  nsIPresShell* presShell = aDocument->GetShell();
-  if (presShell) {
-    nsView* rootView = presShell->GetViewManager()->GetRootView();
-    MOZ_ASSERT(rootView);
-
-    
-    
-    nsView* innerView = rootView->GetParent();
-    MOZ_ASSERT(innerView);
-
-    nsView* subDocView = innerView->GetParent();
-    MOZ_ASSERT(subDocView);
-
-    nsIFrame* subDocFrame = subDocView->GetFrame();
-    if (subDocFrame) {
-      nsSubDocumentFrame* subdocumentFrame = do_QueryFrame(subDocFrame);
-      MOZ_ASSERT(subdocumentFrame);
-
-      presShell = subdocumentFrame->GetSubdocumentPresShellForPainting(
-        data->builder->IsIgnoringPaintSuppression() ? nsSubDocumentFrame::IGNORE_PAINT_SUPPRESSION : 0);
-      nsIFrame* rootFrame = presShell ? presShell->GetRootFrame() : nullptr;
-
-      if (rootFrame) {
-        TakeAndAddModifiedAndFramesWithPropsFromRootFrame(data->modifiedFrames,
-                                                          data->framesWithProps,
-                                                          rootFrame);
-      }
+    nsIDocument* innerDoc = rootFrame->PresShell()->GetDocument();
+    if (innerDoc) {
+      innerDoc->EnumerateSubDocuments(SubDocEnumCb, aData);
     }
   }
-
-  aDocument->EnumerateSubDocuments(SubDocEnumCb, aData);
   return true;
 }
 
