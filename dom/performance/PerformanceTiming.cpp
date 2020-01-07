@@ -162,6 +162,8 @@ PerformanceTimingData::PerformanceTimingData(nsITimedChannel* aChannel,
     
     aChannel->GetHandleFetchEventEnd(&mWorkerResponseEnd);
 
+    aChannel->GetServerTiming(getter_AddRefs(mServerTiming));
+
     
     
     
@@ -669,6 +671,19 @@ PerformanceTiming::IsTopLevelContentDocument() const
     return false;
   }
   return rootItem->ItemType() == nsIDocShellTreeItem::typeContent;
+}
+
+already_AddRefed<nsIArray>
+PerformanceTimingData::GetServerTiming() const
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      !TimingAllowed() ||
+      nsContentUtils::ShouldResistFingerprinting()) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIArray> serverTiming = mServerTiming;
+  return serverTiming.forget();
 }
 
 } 

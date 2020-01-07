@@ -169,6 +169,8 @@ public:
     return mTimingAllowed;
   }
 
+  already_AddRefed<nsIArray> GetServerTiming() const;
+
 private:
   
   
@@ -176,6 +178,7 @@ private:
   bool CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
                           nsITimedChannel* aChannel);
 
+  nsCOMPtr<nsIArray> mServerTiming;
   nsString mNextHopProtocol;
 
   TimeStamp mAsyncOpen;
