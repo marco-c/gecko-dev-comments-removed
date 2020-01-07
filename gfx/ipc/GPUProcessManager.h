@@ -109,10 +109,6 @@ public:
 
   
   
-  already_AddRefed<IAPZCTreeManager> GetAPZCTreeManagerForLayers(uint64_t aLayersId);
-
-  
-  
   void MapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
 
   

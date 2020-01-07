@@ -72,6 +72,7 @@ class CompositorBridgeParent;
 class CompositorManagerParent;
 class CompositorVsyncScheduler;
 class HostLayerManager;
+class IAPZCTreeManager;
 class LayerTransactionParent;
 class PAPZParent;
 class CrossProcessCompositorBridgeParent;
@@ -488,7 +489,8 @@ private:
 
 
 
-  static already_AddRefed<APZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
+
+  static already_AddRefed<IAPZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
 
   
 

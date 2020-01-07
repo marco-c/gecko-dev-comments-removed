@@ -6,8 +6,6 @@
 
 #include "InProcessCompositorSession.h"
 
-
-#include "mozilla/layers/APZCTreeManager.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "nsBaseWidget.h"
 
