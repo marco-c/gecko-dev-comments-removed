@@ -40,63 +40,71 @@ function run_test_with_server(server, callback) {
   });
 }
 
-function test_simple_stepping() {
-  gThreadClient.addOneTimeListener("paused", function (event, packet) {
-    gThreadClient.addOneTimeListener("paused", function (event, packet) {
-      
-      Assert.equal(packet.type, "paused");
-      Assert.equal(packet.frame.where.line, gDebuggee.line0 + 5);
-      Assert.equal(packet.why.type, "resumeLimit");
-      Assert.equal(packet.why.frameFinished.return, 10);
+async function test_simple_stepping() {
+  await executeOnNextTickAndWaitForPause(evaluateTestCode, gClient);
 
-      gThreadClient.addOneTimeListener("paused", function (event, packet) {
-        gThreadClient.addOneTimeListener("paused", function (event, packet) {
-          
-          Assert.equal(packet.type, "paused");
-          Assert.equal(packet.frame.where.line, gDebuggee.line0 + 8);
-          Assert.equal(packet.why.type, "resumeLimit");
-          Assert.equal(packet.why.frameFinished.return.type, "undefined");
+  const step1 = await stepOut(gClient, gThreadClient);
+  equal(step1.type, "paused");
+  equal(step1.frame.where.line, 6);
+  equal(step1.why.type, "resumeLimit");
+  equal(step1.why.frameFinished.return, 10);
 
-          gThreadClient.addOneTimeListener("paused", function (event, packet) {
-            gThreadClient.addOneTimeListener("paused", function (event, packet) {
-              
-              Assert.equal(packet.type, "paused");
-              Assert.equal(packet.frame.where.line, gDebuggee.line0 + 11);
-              Assert.equal(packet.why.type, "resumeLimit");
-              Assert.equal(packet.why.frameFinished.throw, "ah");
+  gThreadClient.resume();
+  const step2 = await waitForPause(gThreadClient);
+  equal(step2.type, "paused");
+  equal(step2.frame.where.line, 8);
+  equal(step2.why.type, "debuggerStatement");
 
-              gThreadClient.resume(function () {
-                gClient.close().then(gCallback);
-              });
-            });
-            gThreadClient.stepOut();
-          });
-          gThreadClient.resume();
-        });
-        gThreadClient.stepOut();
-      });
-      gThreadClient.resume();
-    });
-    gThreadClient.stepOut();
-  });
+  gThreadClient.stepOut();
+  const step3 = await waitForPause(gThreadClient);
+  equal(step3.type, "paused");
+  equal(step3.frame.where.line, 9);
+  equal(step3.why.type, "resumeLimit");
+  equal(step3.why.frameFinished.return.type, "undefined");
 
+  gThreadClient.resume();
+  const step4 = await waitForPause(gThreadClient);
+
+  equal(step4.type, "paused");
+  equal(step4.frame.where.line, 11);
+
+  gThreadClient.stepOut();
+  const step5 = await waitForPause(gThreadClient);
+  equal(step5.type, "paused");
+  equal(step5.frame.where.line, 12);
+  equal(step5.why.type, "resumeLimit");
+  equal(step5.why.frameFinished.throw, "ah");
+
+  finishClient(gClient, gCallback);
+}
+
+function evaluateTestCode() {
   
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "function f() {\n" +                   
-                 "  debugger;\n" +                      
-                 "  var a = 10;\n" +                    
-                 "  return a;\n" +                      
-                 "}\n" +                                
-                 "function g() {\n" +                   
-                 "  debugger;\n" +                      
-                 "}\n" +                                
-                 "function h() {\n" +                   
-                 "  debugger;\n" +                      
-                 "  throw 'ah';\n" +                    
-                 "  return 2;\n" +                      
-                 "}\n" +                                
-                 "f();\n" +                             
-                 "g();\n" +                             
-                 "try { h() } catch (ex) { };\n");      
-    
+  Cu.evalInSandbox(
+    `                                   //  1
+    function f() {                      //  2
+      debugger;                         //  3
+      var a = 10;                       //  4
+      return a;                         //  5
+    }                                   //  6
+    function g() {                      //  7
+      debugger;                         //  8
+    }                                   //  9
+    function h() {                      // 10
+      debugger;                         // 11
+      throw 'ah';                       // 12
+      return 2;                         // 13
+    }                                   // 14
+    f()                                 // 15
+    g()                                 // 16
+    try {                               // 17
+      h();                              // 18
+    } catch (ex) { };                   // 19
+    `,                                  
+    gDebuggee,
+    "1.8",
+    "test_stepping-07-test-code.js",
+    1
+  );
+  
 }
