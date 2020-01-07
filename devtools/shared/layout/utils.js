@@ -445,47 +445,6 @@ function getFrameContentOffset(frame) {
 
 
 
-
-
-
-
-
-function getElementFromPoint(document, x, y) {
-  let node = document.elementFromPoint(x, y);
-  if (node && node.contentDocument) {
-    if (ChromeUtils.getClassName(node) === "HTMLIFrameElement") {
-      let rect = node.getBoundingClientRect();
-
-      
-      let [offsetTop, offsetLeft] = getFrameContentOffset(node);
-
-      x -= rect.left + offsetLeft;
-      y -= rect.top + offsetTop;
-
-      if (x < 0 || y < 0) {
-        
-        return node;
-      }
-    }
-    if (ChromeUtils.getClassName(node) === "HTMLIFrameElement" ||
-        ChromeUtils.getClassName(node) === "HTMLFrameElement") {
-      let subnode = getElementFromPoint(node.contentDocument, x, y);
-      if (subnode) {
-        node = subnode;
-      }
-    }
-  }
-  return node;
-}
-exports.getElementFromPoint = getElementFromPoint;
-
-
-
-
-
-
-
-
 function isNodeConnected(node) {
   if (!node.ownerDocument || !node.ownerDocument.defaultView) {
     return false;
