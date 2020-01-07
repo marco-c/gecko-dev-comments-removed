@@ -1142,7 +1142,6 @@ class AstConversionOperator final : public AstExpr
     AstExpr* operand() const { return operand_; }
 };
 
-#ifdef ENABLE_WASM_SATURATING_TRUNC_OPS
 
 class AstExtraConversionOperator final : public AstExpr
 {
@@ -1159,7 +1158,6 @@ class AstExtraConversionOperator final : public AstExpr
     NumericOp op() const { return op_; }
     AstExpr* operand() const { return operand_; }
 };
-#endif
 
 
 
