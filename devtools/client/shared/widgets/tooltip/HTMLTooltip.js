@@ -433,7 +433,55 @@ HTMLTooltip.prototype = {
 
 
 
-  async show(anchor, {position, x = 0, y = 0} = {}) {
+  async show(anchor, options) {
+    const { left, top } = this._updateContainerBounds(anchor, options);
+
+    if (this.useXulWrapper) {
+      await this._showXulWrapperAt(left, top);
+    } else {
+      this.container.style.left = left + "px";
+      this.container.style.top = top + "px";
+    }
+
+    this.container.classList.add("tooltip-visible");
+
+    
+    this._focusedElement = this.doc.activeElement;
+
+    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+    this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
+      if (this.autofocus) {
+        this.focus();
+      }
+      
+      this.topWindow = this._getTopWindow();
+      this.topWindow.addEventListener("click", this._onClick, true);
+      this.emit("shown");
+    }, 0);
+  },
+
+  
+
+
+
+
+
+  updateContainerBounds(anchor, options) {
+    if (!this.isVisible()) {
+      return;
+    }
+
+    const { left, top } = this._updateContainerBounds(anchor, options);
+
+    if (this.useXulWrapper) {
+      this._moveXulWrapperTo(left, top);
+    } else {
+      this.container.style.left = left + "px";
+      this.container.style.top = top + "px";
+    }
+  },
+
+  _updateContainerBounds(anchor, {position, x = 0, y = 0} = {}) {
     
     let anchorRect = getRelativeRect(anchor, this.doc);
     if (this.useXulWrapper) {
@@ -544,28 +592,7 @@ HTMLTooltip.prototype = {
 
     this.container.style.height = height + "px";
 
-    if (this.useXulWrapper) {
-      await this._showXulWrapperAt(left, top);
-    } else {
-      this.container.style.left = left + "px";
-      this.container.style.top = top + "px";
-    }
-
-    this.container.classList.add("tooltip-visible");
-
-    
-    this._focusedElement = this.doc.activeElement;
-
-    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
-    this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
-      if (this.autofocus) {
-        this.focus();
-      }
-      
-      this.topWindow = this._getTopWindow();
-      this.topWindow.addEventListener("click", this._onClick, true);
-      this.emit("shown");
-    }, 0);
+    return { left, top };
   },
 
   
@@ -848,6 +875,11 @@ HTMLTooltip.prototype = {
     const zoom = getCurrentZoom(this.xulPanelWrapper);
     this.xulPanelWrapper.openPopupAtScreen(left * zoom, top * zoom, false);
     return onPanelShown;
+  },
+
+  _moveXulWrapperTo: function(left, top) {
+    const zoom = getCurrentZoom(this.xulPanelWrapper);
+    this.xulPanelWrapper.moveTo(left * zoom, top * zoom);
   },
 
   _hideXulWrapper: function() {
