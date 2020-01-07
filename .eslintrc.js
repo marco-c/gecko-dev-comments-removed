@@ -53,7 +53,6 @@ module.exports = {
     
     
     "files": [
-      "accessible/**/*.jsm",
       "browser/components/**/*.jsm",
       "browser/extensions/**/*.jsm",
       "services/sync/**/*.jsm",
