@@ -328,7 +328,11 @@ public:
     }
 
     
-    void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr);
+    
+    
+    
+    void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr,
+                               bool aForFontEnumerationThread = false);
 
     static FT_Library GetFTLibrary();
 
@@ -370,7 +374,7 @@ protected:
 
     
     bool TryLangForGroup(const nsACString& aOSLang, nsAtom* aLangGroup,
-                         nsACString& aLang);
+                         nsACString& aLang, bool aForFontEnumerationThread);
 
 #ifdef MOZ_BUNDLED_FONTS
     void ActivateBundledFonts();
