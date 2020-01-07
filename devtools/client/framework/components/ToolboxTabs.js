@@ -165,11 +165,12 @@ class ToolboxTabs extends Component {
         let removingToolWidth = this._cachedToolTabsWidthMap.get(removingToolId);
         sumWidth -= removingToolWidth;
       }
-      visibleTabs.push(currentToolId);
-    }
 
-    if (visibleTabs.length === 0) {
-      visibleTabs = [enabledTabs[0]];
+      
+      
+      if ((sumWidth + selectedToolWidth) <= toolboxWidth) {
+        visibleTabs.push(currentToolId);
+      }
     }
 
     let willOverflowTabs = enabledTabs.filter(id => !visibleTabs.includes(id));
