@@ -13,9 +13,16 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
 
+#include <cfloat>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+
+#if defined(XP_UNIX) && !defined(XP_DARWIN)
+#include <time.h>
+#else
+#include <chrono>
+#endif
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -4999,6 +5006,56 @@ AflLoop(JSContext* cx, unsigned argc, Value* vp)
 #endif
 
 static bool
+MonotonicNow(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    double now;
+
+
+
+#if defined(XP_UNIX) && !defined(XP_DARWIN)
+    auto ComputeNow = [](const timespec& ts) {
+        return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    };
+
+    timespec ts;
+    if (false && clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        
+        now = ComputeNow(ts);
+    } else {
+        
+        if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+            
+            JS_ReportErrorASCII(cx, "can't retrieve system clock");
+            return false;
+        }
+
+        now = ComputeNow(ts);
+
+        
+        {
+            static mozilla::Atomic<bool, mozilla::ReleaseAcquire> spinLock;
+            while (!spinLock.compareExchange(false, true))
+                continue;
+
+            static double lastNow = -FLT_MAX;
+            now = lastNow = std::max(now, lastNow);
+
+            spinLock = false;
+        }
+    }
+#else
+    using std::chrono::duration_cast;
+    using std::chrono::milliseconds;
+    using std::chrono::steady_clock;
+    now = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+#endif 
+
+    args.rval().setNumber(now);
+    return true;
+}
+
+static bool
 TimeSinceCreation(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
@@ -5894,6 +5951,11 @@ gc::ZealModeHelpText),
 "aflloop(max_cnt)",
 "  Call the __AFL_LOOP() runtime function (see AFL docs)\n"),
 #endif
+
+    JS_FN_HELP("monotonicNow", MonotonicNow, 0, 0,
+"monotonicNow()",
+"  Return a timestamp reflecting the current elapsed system time.\n"
+"  This is monotonically increasing.\n"),
 
     JS_FN_HELP("timeSinceCreation", TimeSinceCreation, 0, 0,
 "TimeSinceCreation()",
