@@ -181,7 +181,7 @@ AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
       !ASTIsInSystemHeader(Declaration->getASTContext(), *Declaration) &&
       
       !isInIgnoredNamespaceForImplicitCtor(Declaration) &&
-      !isIgnoredPathForImplicitCtor(Declaration) &&
+      !inThirdPartyPath(Declaration) &&
       
       Declaration->isConvertingConstructor(false) &&
       
