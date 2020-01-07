@@ -492,3 +492,28 @@ add_task(async function ensure_search_engine() {
   let engine = Services.search.getEngineByName("MozSearch");
   Services.search.currentEngine = engine;
 });
+
+
+
+
+
+
+
+
+
+function addAdaptiveFeedback(aUrl, aSearch) {
+  let promise = TestUtils.topicObserved("places-autocomplete-feedback-updated");
+  let thing = {
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteInput,
+                                            Ci.nsIAutoCompletePopup,
+                                            Ci.nsIAutoCompleteController]),
+    get popup() { return thing; },
+    get controller() { return thing; },
+    popupOpen: true,
+    selectedIndex: 0,
+    getValueAt: () => aUrl,
+    searchString: aSearch
+  };
+  Services.obs.notifyObservers(thing, "autocomplete-will-enter-text");
+  return promise;
+}

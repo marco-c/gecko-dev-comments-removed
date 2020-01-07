@@ -60,6 +60,7 @@ const PREF_OTHER_DEFAULTS = new Map([
 const QUERYTYPE_FILTERED            = 0;
 const QUERYTYPE_AUTOFILL_ORIGIN     = 1;
 const QUERYTYPE_AUTOFILL_URL        = 2;
+const QUERYTYPE_ADAPTIVE            = 3;
 
 
 
@@ -931,6 +932,10 @@ function Search(searchString, searchParam, autocompleteListener,
   }
 
   
+  this._adaptiveCount = 0;
+  this._extraAdaptiveRows = [];
+
+  
   
   
   this._currentMatchCount = 0;
@@ -1209,6 +1214,12 @@ Search.prototype = {
       await conn.executeCached(query, params, this._onResultRow.bind(this));
       if (!this.pending)
         return;
+    }
+
+    
+    while (this._extraAdaptiveRows.length &&
+           this._currentMatchCount < Prefs.get("maxRichResults")) {
+      this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
     }
 
     
@@ -1806,6 +1817,9 @@ Search.prototype = {
         this._result.setDefaultIndex(0);
         this._addURLAutofillMatch(row);
         break;
+      case QUERYTYPE_ADAPTIVE:
+        this._addAdaptiveQueryMatch(row);
+        break;
       case QUERYTYPE_FILTERED:
         this._addFilteredQueryMatch(row);
         break;
@@ -2116,6 +2130,22 @@ Search.prototype = {
     });
   },
 
+  
+  
+  
+  _addAdaptiveQueryMatch(row) {
+    
+    
+    
+    
+    if (this._adaptiveCount < Math.ceil(Prefs.get("maxRichResults") / 4)) {
+      this._addFilteredQueryMatch(row);
+    } else {
+      this._extraAdaptiveRows.push(row);
+    }
+    this._adaptiveCount++;
+  },
+
   _addFilteredQueryMatch(row) {
     let match = {};
     match.placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
@@ -2278,7 +2308,7 @@ Search.prototype = {
       {
         parent: PlacesUtils.tagsFolderId,
         search_string: this._searchString,
-        query_type: QUERYTYPE_FILTERED,
+        query_type: QUERYTYPE_ADAPTIVE,
         matchBehavior: this._matchBehavior,
         searchBehavior: this._behavior,
         userContextId: this._userContextId,

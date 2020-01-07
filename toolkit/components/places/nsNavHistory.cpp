@@ -111,6 +111,8 @@ using namespace mozilla::places;
 #define PREF_FREC_DECAY_RATE     "places.frecency.decayRate"
 #define PREF_FREC_DECAY_RATE_DEF 0.975f
 
+#define ADAPTIVE_HISTORY_EXPIRE_DAYS 90
+
 
 
 #define RENEW_CACHED_NOW_TIMEOUT ((int32_t)3 * PR_MSEC_PER_SEC)
@@ -2521,7 +2523,12 @@ nsNavHistory::DecayFrecency()
   nsresult rv = FixInvalidFrecencies();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  float decayRate = Preferences::GetFloat(PREF_FREC_DECAY_RATE, PREF_FREC_DECAY_RATE_DEF);
+  float decayRate = Preferences::GetFloat(PREF_FREC_DECAY_RATE,
+                                          PREF_FREC_DECAY_RATE_DEF);
+  if (decayRate > 1.0f) {
+    MOZ_ASSERT(false, "The frecency decay rate should not be greater than 1.0");
+    decayRate = PREF_FREC_DECAY_RATE_DEF;
+  }
 
   
   
@@ -2534,7 +2541,6 @@ nsNavHistory::DecayFrecency()
     "WHERE frecency > 0"
   );
   NS_ENSURE_STATE(decayFrecency);
-
   rv = decayFrecency->BindDoubleByName(NS_LITERAL_CSTRING("decay_rate"),
                                        static_cast<double>(decayRate));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2542,15 +2548,22 @@ nsNavHistory::DecayFrecency()
   
   
   nsCOMPtr<mozIStorageAsyncStatement> decayAdaptive = mDB->GetAsyncStatement(
-    "UPDATE moz_inputhistory SET use_count = use_count * .975"
+    "UPDATE moz_inputhistory SET use_count = use_count * :decay_rate"
   );
   NS_ENSURE_STATE(decayAdaptive);
+  rv = decayAdaptive->BindDoubleByName(NS_LITERAL_CSTRING("decay_rate"),
+                                       static_cast<double>(decayRate));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsCOMPtr<mozIStorageAsyncStatement> deleteAdaptive = mDB->GetAsyncStatement(
-    "DELETE FROM moz_inputhistory WHERE use_count < .01"
+    "DELETE FROM moz_inputhistory WHERE use_count < :use_count"
   );
   NS_ENSURE_STATE(deleteAdaptive);
+  rv = deleteAdaptive->BindDoubleByName(NS_LITERAL_CSTRING("use_count"),
+                                        std::pow(static_cast<double>(decayRate),
+                                                 ADAPTIVE_HISTORY_EXPIRE_DAYS));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<mozIStorageConnection> conn = mDB->MainConn();
   if (!conn) {
@@ -2563,8 +2576,7 @@ nsNavHistory::DecayFrecency()
   };
   nsCOMPtr<mozIStoragePendingStatement> ps;
   RefPtr<PlacesDecayFrecencyCallback> cb = new PlacesDecayFrecencyCallback();
-  rv = conn->ExecuteAsync(stmts, ArrayLength(stmts), cb,
-                                     getter_AddRefs(ps));
+  rv = conn->ExecuteAsync(stmts, ArrayLength(stmts), cb, getter_AddRefs(ps));
   NS_ENSURE_SUCCESS(rv, rv);
 
   mDecayFrecencyPendingCount++;
