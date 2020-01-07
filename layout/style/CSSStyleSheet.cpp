@@ -930,6 +930,10 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
     }
     RuleAdded(*rule);
   }
+
+  
+  ClearModifiedRules();
+
   return NS_OK;
 }
 
