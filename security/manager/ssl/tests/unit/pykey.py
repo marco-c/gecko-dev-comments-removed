@@ -707,26 +707,35 @@ class ECCKey(object):
         spki['subjectPublicKey'] = subjectPublicKey
         return spki
 
+    def signRaw(self, data, hashAlgorithm):
+        """Performs the ECDSA signature algorithm over the given data.
+        The returned value is a string representing the bytes of the
+        resulting point when encoded by left-padding each of (r, s) to
+        the key size and concatenating them.
+        """
+        
+        
+        with mock.patch('ecc.ecdsa.urandom', side_effect=notRandom):
+            
+            if self.keyOID == secp256k1:
+                with mock.patch('ecc.curves.DOMAINS', {256: secp256k1Params}):
+                    return self.key.sign(data, hashAlgorithm.split(':')[-1])
+            else:
+                return self.key.sign(data, hashAlgorithm.split(':')[-1])
+
     def sign(self, data, hashAlgorithm):
         """Returns a hexified bit string representing a
         signature by this key over the specified data.
         Intended for use with pyasn1.type.univ.BitString"""
         
         
-        with mock.patch('ecc.ecdsa.urandom', side_effect=notRandom):
-            
-            
-            
-            
-            if self.keyOID == secp256k1:
-                with mock.patch('ecc.curves.DOMAINS', {256: secp256k1Params}):
-                    x, y = encoding.dec_point(self.key.sign(data, hashAlgorithm.split(':')[-1]))
-            else:
-                x, y = encoding.dec_point(self.key.sign(data, hashAlgorithm.split(':')[-1]))
-            point = ECPoint()
-            point['x'] = x
-            point['y'] = y
-            return byteStringToHexifiedBitString(encoder.encode(point))
+        
+        
+        x, y = encoding.dec_point(self.signRaw(data, hashAlgorithm))
+        point = ECPoint()
+        point['x'] = x
+        point['y'] = y
+        return byteStringToHexifiedBitString(encoder.encode(point))
 
 
 def keyFromSpecification(specification):
