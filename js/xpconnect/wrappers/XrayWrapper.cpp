@@ -145,39 +145,6 @@ XrayAwareCalleeGlobal(JSObject* fun)
   return js::GetGlobalForObjectCrossCompartment(xrayTarget);
 }
 
-bool
-XrayAwareCalleeGlobalForSpecializedGetters(JSContext* cx,
-                                           JS::Handle<JSObject*> thisObj,
-                                           JS::MutableHandle<JSObject*> global)
-{
-    JS::Rooted<JSObject*> wrappedObj(cx, thisObj);
-    if (!JS_WrapObject(cx, &wrappedObj)) {
-        return false;
-    }
-
-    if (xpc::WrapperFactory::IsXrayWrapper(wrappedObj)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        global.set(js::GetGlobalForObjectCrossCompartment(thisObj));
-        return true;
-    }
-
-    global.set(JS::CurrentGlobalOrNull(cx));
-    return true;
-}
-
 JSObject*
 XrayTraits::getExpandoChain(HandleObject obj)
 {
@@ -1363,12 +1330,6 @@ XrayTraits::getExpandoClass(JSContext* cx, HandleObject target) const
 
 static const size_t JSSLOT_XRAY_HOLDER = 0;
 
-static JSObject*
-GetHolder(JSObject* obj)
-{
-    return &js::GetProxyReservedSlot(obj, JSSLOT_XRAY_HOLDER).toObject();
-}
-
  JSObject*
 XrayTraits::getHolder(JSObject* wrapper)
 {
@@ -1706,17 +1667,6 @@ DOMXrayTraits::getExpandoClass(JSContext* cx, HandleObject target) const
 }
 
 namespace XrayUtils {
-
-JSObject*
-GetNativePropertiesObject(JSContext* cx, JSObject* wrapper)
-{
-    MOZ_ASSERT(js::IsWrapper(wrapper) && WrapperFactory::IsXrayWrapper(wrapper),
-               "bad object passed in");
-
-    JSObject* holder = GetHolder(wrapper);
-    MOZ_ASSERT(holder, "uninitialized wrapper being used?");
-    return holder;
-}
 
 bool
 HasNativeProperty(JSContext* cx, HandleObject wrapper, HandleId id, bool* hasProp)
