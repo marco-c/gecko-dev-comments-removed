@@ -479,7 +479,8 @@ PannerNodeEngine::EqualPowerPanningFunction(const AudioBlock& aInput,
 
     
     
-    if (mListenerPosition ==  position &&
+    if (inputChannels == 2 &&
+        mListenerPosition ==  position &&
         mConeInnerAngle == 360 &&
         mConeOuterAngle == 360) {
       *aOutput = aInput;
