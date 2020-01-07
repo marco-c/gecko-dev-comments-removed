@@ -571,10 +571,17 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                     } catch (final NoSuchMethodException e) {
                         throw new RuntimeException(e);
                     }
+                    final Pair<GeckoSession, Method> pair = new Pair<>(session, method);
                     final MethodCall call = new MethodCall(
                             session, callbackMethod,
                             getAssertCalled(callbackMethod, callback), callback);
-                    mDelegates.put(new Pair<>(session, method), call);
+                    
+                    
+                    
+                    
+                    assertThat("Cannot replace an existing delegate",
+                               mDelegates, not(hasKey(pair)));
+                    mDelegates.put(pair, call);
                 }
             }
         }
@@ -1485,7 +1492,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         }
 
         boolean calledAny = false;
-        int index = mLastWaitStart = mLastWaitEnd;
+        int index = mLastWaitEnd;
+        beforeWait();
 
         while (!calledAny || !methodCalls.isEmpty()) {
             while (index >= mCallRecords.size()) {
@@ -1508,7 +1516,15 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             }
         }
 
-        mLastWaitEnd = index;
+        afterWait(index);
+    }
+
+    protected void beforeWait() {
+        mLastWaitStart = mLastWaitEnd;
+    }
+
+    protected void afterWait(final int endCallIndex) {
+        mLastWaitEnd = endCallIndex;
         mWaitScopeDelegates.clearAndAssert();
     }
 
@@ -1798,6 +1814,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
+
     public Object evaluateJS(final @NonNull GeckoSession session, final @NonNull String js) {
         assertThat("Must enable RDP using @WithDevToolsAPI",
                    mWithDevTools, equalTo(true));
@@ -1808,6 +1825,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
     }
 
     
+
 
 
 
@@ -1849,6 +1867,54 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                 }
             }
             throw new AssertionError("Cannot find Promise");
+        }
+        return result;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public @Nullable Object waitForJS(final @NonNull GeckoSession session, final @NonNull String js) {
+        try {
+            beforeWait();
+            return resolvePromise(evaluateJS(session, js));
+        } finally {
+            afterWait(mCallRecords.size());
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public @Nullable Object waitForChromeJS(final @NonNull String js) {
+        try {
+            beforeWait();
+            return resolvePromise(evaluateChromeJS(js));
+        } finally {
+            afterWait(mCallRecords.size());
+        }
+    }
+
+    private @Nullable Object resolvePromise(final @Nullable Object result) {
+        if (result instanceof PromiseWrapper) {
+            return ((PromiseWrapper) result).getValue();
         }
         return result;
     }
