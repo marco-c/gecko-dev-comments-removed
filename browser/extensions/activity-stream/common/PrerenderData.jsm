@@ -57,7 +57,8 @@ this.PrerenderData = new _PrerenderData({
     "section.topstories.collapsed": false,
     "feeds.section.topstories": true,
     "feeds.section.highlights": true,
-    "enableWideLayout": true
+    "enableWideLayout": true,
+    "sectionOrder": "topsites,topstories,highlights"
   },
   
   
@@ -73,6 +74,7 @@ this.PrerenderData = new _PrerenderData({
     "section.highlights.collapsed",
     "section.topstories.collapsed",
     "enableWideLayout",
+    "sectionOrder",
     
     
     {oneOf: ["feeds.section.topstories", "feeds.section.highlights"]}

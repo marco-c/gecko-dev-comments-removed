@@ -55,8 +55,7 @@ this.HighlightsFeed = class HighlightsFeed {
   }
 
   filterForThumbnailExpiration(callback) {
-    const sectionIndex = SectionsManager.sections.get(SECTION_ID).order;
-    const state = this.store.getState().Sections[sectionIndex];
+    const state = this.store.getState().Sections.find(section => section.id === SECTION_ID);
 
     callback(state && state.initialized ? state.rows.reduce((acc, site) => {
       
@@ -140,8 +139,7 @@ this.HighlightsFeed = class HighlightsFeed {
       }
     }
 
-    const sectionIndex = SectionsManager.sections.get(SECTION_ID).order;
-    const {initialized} = this.store.getState().Sections[sectionIndex];
+    const {initialized} = this.store.getState().Sections.find(section => section.id === SECTION_ID);
     
     const shouldBroadcast = options.broadcast || !initialized;
 
