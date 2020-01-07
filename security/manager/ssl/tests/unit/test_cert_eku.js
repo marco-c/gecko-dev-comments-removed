@@ -33,7 +33,13 @@ function checkCertOn25August2016(cert, expectedResult) {
                               certificateUsageSSLServer, VALIDATION_TIME);
 }
 
+
 function run_test() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("privacy.reduceTimerPrecision");
+  });
+  Services.prefs.setBoolPref("privacy.reduceTimerPrecision", false);
+
   loadCertWithTrust("ca", "CTu,,");
   
   checkEndEntity(certFromFile("ee-SA"), PRErrorCodeSuccess);
