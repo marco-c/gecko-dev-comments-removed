@@ -155,13 +155,7 @@ MediaQueryList::RecomputeMatches()
     }
   }
 
-  nsIPresShell* shell = mDocument->GetShell();
-  if (!shell) {
-    
-    return;
-  }
-
-  nsPresContext* presContext = shell->GetPresContext();
+  nsPresContext* presContext = mDocument->GetPresContext();
   if (!presContext) {
     
     return;

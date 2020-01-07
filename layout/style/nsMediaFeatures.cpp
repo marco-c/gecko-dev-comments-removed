@@ -87,22 +87,11 @@ const OperatingSystemVersionInfo kOsVersionStrings[] = {
 };
 #endif
 
-static nsPresContext*
-GetPresContext(nsIDocument* aDocument)
-{
-  nsIPresShell* presShell = aDocument->GetShell();
-  if (!presShell) {
-    return nullptr;
-  }
-
-  return presShell->GetPresContext();
-}
-
 
 static nsSize
 GetSize(nsIDocument* aDocument)
 {
-  nsPresContext* pc = GetPresContext(aDocument);
+  nsPresContext* pc = aDocument->GetPresContext();
 
   
   
@@ -158,7 +147,7 @@ GetDeviceSize(nsIDocument* aDocument)
     return GetSize(aDocument);
   }
 
-  nsPresContext* pc = GetPresContext(aDocument);
+  nsPresContext* pc = aDocument->GetPresContext();
   
   
   
@@ -252,7 +241,7 @@ GetDeviceAspectRatio(nsIDocument* aDocument, const nsMediaFeature*,
 static nsDeviceContext*
 GetDeviceContextFor(nsIDocument* aDocument)
 {
-  nsPresContext* pc = GetPresContext(aDocument);
+  nsPresContext* pc = aDocument->GetPresContext();
   if (!pc) {
     return nullptr;
   }

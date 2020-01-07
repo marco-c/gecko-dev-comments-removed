@@ -122,9 +122,9 @@ nsMathMLElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       
       
       
-      nsCOMPtr<nsIPresShell> shell = doc->GetShell();
-      if (shell) {
-        shell->GetPresContext()->
+      RefPtr<nsPresContext> presContext = doc->GetPresContext();
+      if (presContext) {
+        presContext->
           PostRebuildAllStyleDataEvent(nsChangeHint(0), eRestyle_Subtree);
       }
     }

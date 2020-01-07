@@ -28,11 +28,7 @@ nsHtml5SVGLoadDispatcher::Run()
   
   
   
-  RefPtr<nsPresContext> ctx;
-  nsCOMPtr<nsIPresShell> shell = mElement->OwnerDoc()->GetShell();
-  if (shell) {
-    ctx = shell->GetPresContext();
-  }
+  RefPtr<nsPresContext> ctx = mElement->OwnerDoc()->GetPresContext();
   EventDispatcher::Dispatch(mElement, ctx, &event);
   
   

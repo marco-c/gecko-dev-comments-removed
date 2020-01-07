@@ -1951,15 +1951,12 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   if (document) {
-    nsIPresShell* presShell = document->GetShell();
-    if (presShell) {
-      nsPresContext* presContext = presShell->GetPresContext();
-      if (presContext) {
-        MOZ_ASSERT(this !=
-                   presContext->GetViewportScrollbarStylesOverrideElement(),
-                   "Leaving behind a raw pointer to this element (as having "
-                   "propagated scrollbar styles) - that's dangerous...");
-      }
+    nsPresContext* presContext = document->GetPresContext();
+    if (presContext) {
+      MOZ_ASSERT(this !=
+                 presContext->GetViewportScrollbarStylesOverrideElement(),
+                 "Leaving behind a raw pointer to this element (as having "
+                 "propagated scrollbar styles) - that's dangerous...");
     }
   }
 #endif

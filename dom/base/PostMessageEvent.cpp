@@ -195,11 +195,8 @@ PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent)
   
   
 
-  nsIPresShell *shell = aTargetWindow->GetExtantDoc()->GetShell();
-  RefPtr<nsPresContext> presContext;
-  if (shell) {
-    presContext = shell->GetPresContext();
-  }
+  RefPtr<nsPresContext> presContext =
+    aTargetWindow->GetExtantDoc()->GetPresContext();
 
   aEvent->SetTrusted(mTrustedCaller);
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();

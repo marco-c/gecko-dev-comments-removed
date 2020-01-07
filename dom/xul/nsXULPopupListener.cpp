@@ -223,13 +223,12 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode, bool aIsTo
   nsCOMPtr<nsIDocument> doc = content->OwnerDoc();
 
   
-  nsIPresShell *shell = doc->GetShell();
-  if (!shell)
+  
+  
+  RefPtr<nsPresContext> context = doc->GetPresContext();
+  if (!context) {
     return NS_ERROR_FAILURE;
-
-  
-  
-  RefPtr<nsPresContext> context = shell->GetPresContext();
+  }
 
   nsIFrame* targetFrame = content->GetPrimaryFrame();
   if (!targetFrame) return NS_ERROR_FAILURE;

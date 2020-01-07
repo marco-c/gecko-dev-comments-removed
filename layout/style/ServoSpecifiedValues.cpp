@@ -34,10 +34,8 @@ ServoSpecifiedValues::SetIdentAtomValue(nsCSSPropertyID aId, nsAtom* aValue)
     
     
     
-    if (nsIPresShell* shell = mDocument->GetShell()) {
-      if (nsPresContext* pc = shell->GetPresContext()) {
-        pc->ForceCacheLang(aValue);
-      }
+    if (nsPresContext* pc = mDocument->GetPresContext()) {
+      pc->ForceCacheLang(aValue);
     }
   }
 }
