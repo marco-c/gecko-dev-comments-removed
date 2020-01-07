@@ -7,9 +7,13 @@
 #ifndef FLAC_DECODER_H_
 #define FLAC_DECODER_H_
 
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
+
 namespace mozilla {
 
 class MediaContainerType;
+class TrackInfo;
 
 class FlacDecoder
 {
@@ -18,6 +22,8 @@ public:
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+  static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
+    const MediaContainerType& aType);
 };
 
 } 

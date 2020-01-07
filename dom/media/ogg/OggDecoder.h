@@ -6,9 +6,13 @@
 #if !defined(OggDecoder_h_)
 #define OggDecoder_h_
 
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
+
 namespace mozilla {
 
 class MediaContainerType;
+class TrackInfo;
 
 class OggDecoder
 {
@@ -17,6 +21,8 @@ public:
   
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+  static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
+    const MediaContainerType& aType);
 };
 
 } 

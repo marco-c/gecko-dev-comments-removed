@@ -5,6 +5,7 @@
 
 
 #include "WebMDecoder.h"
+#include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs.h"
 #ifdef MOZ_AV1
@@ -16,6 +17,70 @@
 
 namespace mozilla {
 
+ nsTArray<UniquePtr<TrackInfo>>
+WebMDecoder::GetTracksInfo(const MediaContainerType& aType, MediaResult& aError)
+{
+  nsTArray<UniquePtr<TrackInfo>> tracks;
+  const bool isVideo = aType.Type() == MEDIAMIMETYPE("video/webm");
+
+  if (aType.Type() != MEDIAMIMETYPE("audio/webm") && !isVideo) {
+    aError = MediaResult(
+      NS_ERROR_DOM_MEDIA_FATAL_ERR,
+      RESULT_DETAIL("Invalid type:%s", aType.Type().AsString().get()));
+    return tracks;
+  }
+
+  aError = NS_OK;
+
+  const MediaCodecs& codecs = aType.ExtendedType().Codecs();
+  if (codecs.IsEmpty()) {
+    return tracks;
+  }
+
+  for (const auto& codec : codecs.Range()) {
+    if (codec.EqualsLiteral("opus") || codec.EqualsLiteral("vorbis")) {
+      tracks.AppendElement(
+        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("audio/") + NS_ConvertUTF16toUTF8(codec), aType));
+      continue;
+    }
+    if (isVideo) {
+      UniquePtr<TrackInfo> trackInfo;
+      if (IsVP9CodecString(codec)) {
+        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("video/vp9"), aType);
+      } else if (IsVP8CodecString(codec)) {
+        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("video/vp8"), aType);
+      }
+      if (trackInfo) {
+        uint8_t profile = 0;
+        uint8_t level = 0;
+        uint8_t bitDepth = 0;
+        if (ExtractVPXCodecDetails(codec, profile, level, bitDepth)) {
+          trackInfo->GetAsVideoInfo()->mBitDepth = bitDepth;
+        }
+        tracks.AppendElement(std::move(trackInfo));
+        continue;
+      }
+    }
+#ifdef MOZ_AV1
+    if (AOMDecoder::IsSupportedCodec(codec)) {
+      tracks.AppendElement(
+        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+          NS_LITERAL_CSTRING("video/av1"), aType));
+      continue;
+    }
+#endif
+    
+    aError =
+      MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                  RESULT_DETAIL("Unknown codec:%s",
+                                NS_ConvertUTF16toUTF8(codec).get()));
+  }
+  return tracks;
+}
+
 
 bool
 WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
@@ -24,61 +89,35 @@ WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
     return false;
   }
 
-  bool isVideo = aContainerType.Type() == MEDIAMIMETYPE("video/webm");
-  if (aContainerType.Type() != MEDIAMIMETYPE("audio/webm") && !isVideo) {
+  MediaResult rv = NS_OK;
+  auto tracks = GetTracksInfo(aContainerType, rv);
+
+  if (NS_FAILED(rv)) {
     return false;
   }
 
-  const MediaCodecs& codecs = aContainerType.ExtendedType().Codecs();
-  if (codecs.IsEmpty()) {
+  if (tracks.IsEmpty()) {
     
     return true;
   }
+
   
   
-  for (const auto& codec : codecs.Range()) {
-    if (codec.EqualsLiteral("opus") || codec.EqualsLiteral("vorbis")) {
-      continue;
+  RefPtr<PDMFactory> platform = new PDMFactory();
+  for (const auto& track : tracks) {
+    if (!track || !platform->Supports(*track, nullptr )) {
+      return false;
     }
-    
-    
-
-    if (isVideo) {
-      UniquePtr<TrackInfo> trackInfo;
-      if (IsVP9CodecString(codec))  {
-        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-          NS_LITERAL_CSTRING("video/vp9"), aContainerType);
-      } else if (IsVP8CodecString(codec)) {
-        trackInfo = CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-          NS_LITERAL_CSTRING("video/vp8"), aContainerType);
-      }
-      
-      if (trackInfo) {
-        uint8_t profile = 0;
-        uint8_t level = 0;
-        uint8_t bitDepth = 0;
-        if (ExtractVPXCodecDetails(codec, profile, level, bitDepth)) {
-          trackInfo->GetAsVideoInfo()->mBitDepth = bitDepth;
-
-          
-          RefPtr<PDMFactory> platform = new PDMFactory();
-          if (!platform->Supports(*trackInfo, nullptr)) {
-            return false;
-          }
-        }
-        continue;
-      }
-    }
-#ifdef MOZ_AV1
-    if (isVideo && StaticPrefs::MediaAv1Enabled() &&
-        AOMDecoder::IsSupportedCodec(codec)) {
-      continue;
-    }
-#endif
-    
-    return false;
   }
+
   return true;
+}
+
+ nsTArray<UniquePtr<TrackInfo>>
+WebMDecoder::GetTracksInfo(const MediaContainerType& aType)
+{
+  MediaResult rv = NS_OK;
+  return GetTracksInfo(aType, rv);
 }
 
 } 

@@ -6,9 +6,13 @@
 #if !defined(WaveDecoder_h_)
 #define WaveDecoder_h_
 
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
+
 namespace mozilla {
 
 class MediaContainerType;
+class TrackInfo;
 
 class WaveDecoder
 {
@@ -16,6 +20,8 @@ public:
   
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+  static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
+    const MediaContainerType& aType);
 };
 
 } 

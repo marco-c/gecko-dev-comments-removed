@@ -6,9 +6,13 @@
 #ifndef MP3Decoder_h_
 #define MP3Decoder_h_
 
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
+
 namespace mozilla {
 
 class MediaContainerType;
+class TrackInfo;
 
 class MP3Decoder
 {
@@ -17,6 +21,8 @@ public:
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
+  static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
+    const MediaContainerType& aType);
 };
 
 } 
