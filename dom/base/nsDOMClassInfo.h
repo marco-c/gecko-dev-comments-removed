@@ -43,8 +43,6 @@ struct nsDOMClassInfoData
   const nsIID **mInterfaces;
   uint32_t mScriptableFlags : 31; 
   uint32_t mHasClassInterface : 1;
-  bool mChromeOnly : 1;
-  bool mAllowXBL : 1;
   bool mDisabled : 1;
 #ifdef DEBUG
   uint32_t mDebugID;
