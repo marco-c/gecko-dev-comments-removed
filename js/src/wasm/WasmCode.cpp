@@ -59,17 +59,19 @@ static uint32_t
 RoundupCodeLength(uint32_t codeLength)
 {
     
-    
-    MOZ_ASSERT(codeLength % gc::SystemPageSize() == 0);
     return JS_ROUNDUP(codeLength, ExecutableCodePageSize);
 }
 
  UniqueCodeBytes
 CodeSegment::AllocateCodeBytes(uint32_t codeLength)
 {
-    codeLength = RoundupCodeLength(codeLength);
+    if (codeLength > MaxCodeBytesPerProcess)
+        return nullptr;
 
-    void* p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable);
+    static_assert(MaxCodeBytesPerProcess <= INT32_MAX, "rounding won't overflow");
+    uint32_t roundedCodeLength = RoundupCodeLength(codeLength);
+
+    void* p = AllocateExecutableMemory(roundedCodeLength, ProtectionSetting::Writable);
 
     
     
@@ -77,7 +79,7 @@ CodeSegment::AllocateCodeBytes(uint32_t codeLength)
     if (!p) {
         if (OnLargeAllocationFailure) {
             OnLargeAllocationFailure();
-            p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable);
+            p = AllocateExecutableMemory(roundedCodeLength, ProtectionSetting::Writable);
         }
     }
 
@@ -85,9 +87,12 @@ CodeSegment::AllocateCodeBytes(uint32_t codeLength)
         return nullptr;
 
     
+    memset(((uint8_t*)p) + codeLength, 0, roundedCodeLength - codeLength);
+
+    
     
 
-    return UniqueCodeBytes((uint8_t*)p, FreeCode(codeLength));
+    return UniqueCodeBytes((uint8_t*)p, FreeCode(roundedCodeLength));
 }
 
 const Code&
@@ -262,11 +267,7 @@ ModuleSegment::create(Tier tier,
                       const Metadata& metadata,
                       const CodeRangeVector& codeRanges)
 {
-    
-    
-    uint32_t bytesNeeded = masm.bytesNeeded();
-    uint32_t padding = ComputeByteAlignment(bytesNeeded, gc::SystemPageSize());
-    uint32_t codeLength = bytesNeeded + padding;
+    uint32_t codeLength = masm.bytesNeeded();
 
     UniqueCodeBytes codeBytes = AllocateCodeBytes(codeLength);
     if (!codeBytes)
@@ -274,9 +275,6 @@ ModuleSegment::create(Tier tier,
 
     
     masm.executableCopy(codeBytes.get(),  false);
-
-    
-    memset(codeBytes.get() + bytesNeeded, 0, padding);
 
     return create(tier, Move(codeBytes), codeLength, bytecode, linkData, metadata, codeRanges);
 }
@@ -289,17 +287,13 @@ ModuleSegment::create(Tier tier,
                       const Metadata& metadata,
                       const CodeRangeVector& codeRanges)
 {
-    
-    
-    uint32_t padding = ComputeByteAlignment(unlinkedBytes.length(), gc::SystemPageSize());
-    uint32_t codeLength = unlinkedBytes.length() + padding;
+    uint32_t codeLength = unlinkedBytes.length();
 
     UniqueCodeBytes codeBytes = AllocateCodeBytes(codeLength);
     if (!codeBytes)
         return nullptr;
 
-    memcpy(codeBytes.get(), unlinkedBytes.begin(), unlinkedBytes.length());
-    memset(codeBytes.get() + unlinkedBytes.length(), 0, padding);
+    memcpy(codeBytes.get(), unlinkedBytes.begin(), codeLength);
 
     return create(tier, Move(codeBytes), codeLength, bytecode, linkData, metadata, codeRanges);
 }
@@ -395,7 +389,6 @@ ModuleSegment::deserialize(const uint8_t* cursor, const ShareableBytes& bytecode
     if (!cursor)
         return nullptr;
 
-    MOZ_ASSERT(length % gc::SystemPageSize() == 0);
     UniqueCodeBytes bytes = AllocateCodeBytes(length);
     if (!bytes)
         return nullptr;
