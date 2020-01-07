@@ -21,7 +21,6 @@
 class nsDisplayListBuilder;
 class nsFrameSelection;
 class nsIContent;
-class nsIDOMNode;
 class nsIFrame;
 class nsINode;
 class nsIPresShell;
@@ -131,7 +130,6 @@ class nsCaret final : public nsISelectionListener
 
 
     void SetCaretPosition(nsINode* aNode, int32_t aOffset);
-    void SetCaretPosition(nsIDOMNode* aNode, int32_t aOffset);
 
     
 

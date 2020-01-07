@@ -18,7 +18,6 @@
 #include "nsHTMLParts.h"
 #include "nsIPresShell.h"
 #include "nsIServiceManager.h"
-#include "nsIDOMNode.h"
 #include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
 #include "nsIFrameInlines.h"
@@ -123,10 +122,6 @@ nsTableWrapperFrame::AppendFrames(ChildListID     aListID,
   
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
-  
-  
-  
-  MarkNeedsDisplayItemRebuild();
 }
 
 void
@@ -146,7 +141,6 @@ nsTableWrapperFrame::InsertFrames(ChildListID     aListID,
   
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
-  MarkNeedsDisplayItemRebuild();
 }
 
 void
@@ -168,7 +162,6 @@ nsTableWrapperFrame::RemoveFrame(ChildListID  aListID,
 
   PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);
-  MarkNeedsDisplayItemRebuild();
 }
 
 void

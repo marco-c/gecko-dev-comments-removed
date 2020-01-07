@@ -18,7 +18,6 @@
 #include "nsFrameSelection.h"
 #include "nsIFrame.h"
 #include "nsIScrollableFrame.h"
-#include "nsIDOMNode.h"
 #include "nsIContent.h"
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
@@ -471,13 +470,6 @@ nsCaret::SetCaretPosition(nsINode* aNode, int32_t aOffset)
 }
 
 void
-nsCaret::SetCaretPosition(nsIDOMNode* aNode, int32_t aOffset)
-{
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  SetCaretPosition(node, aOffset);
-}
-
-void
 nsCaret::CheckSelectionLanguageChange()
 {
   if (!IsBidiUI()) {
@@ -862,7 +854,6 @@ bool nsCaret::IsMenuPopupHidingCaret()
 
   
   
-  nsCOMPtr<nsIDOMNode> node;
   if (!mDomSelectionWeak) {
     return true; 
   }

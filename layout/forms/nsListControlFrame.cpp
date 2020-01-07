@@ -1176,12 +1176,8 @@ bool nsListControlFrame::CheckIfAllFramesHere()
 {
   
   
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(mContent));
-  if (node) {
-    
-    
-    mIsAllFramesHere = true;
-  }
+  mIsAllFramesHere = true;
+
   
 
   return mIsAllFramesHere;

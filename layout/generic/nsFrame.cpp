@@ -50,7 +50,6 @@
 #include "LayoutLogging.h"
 #include "mozilla/RestyleManager.h"
 #include "nsInlineFrame.h"
-#include "nsIDOMNode.h"
 #include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsCSSAnonBoxes.h"
@@ -11019,7 +11018,6 @@ nsIFrame::IsVisuallyAtomic(EffectSet* aEffectSet,
                            const nsStyleEffects* aStyleEffects) {
   return HasOpacity(aEffectSet) ||
          IsTransformed(aStyleDisplay) ||
-         aStyleDisplay->IsContainPaint() ||
          
          
          ChildrenHavePerspective(aStyleDisplay) ||
