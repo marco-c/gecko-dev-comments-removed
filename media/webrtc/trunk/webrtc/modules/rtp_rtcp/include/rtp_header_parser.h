@@ -31,7 +31,8 @@ class RtpHeaderParser {
   
   virtual bool Parse(const uint8_t* packet,
                      size_t length,
-                     RTPHeader* header) const = 0;
+                     RTPHeader* header,
+                     bool secured = false) const = 0;
 
   
   virtual bool RegisterRtpHeaderExtension(RTPExtensionType type,
