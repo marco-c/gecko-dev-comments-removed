@@ -187,25 +187,22 @@ var BrowserPageActions = {
   togglePanelForAction(action, panelNode = null) {
     let aaPanelNode = this.activatedActionPanelNode;
     if (panelNode) {
-      
-      
-      
       if (panelNode.state != "closed") {
-        PanelMultiView.hidePopup(panelNode);
+        panelNode.hidePopup();
         return;
       }
       if (aaPanelNode) {
-        PanelMultiView.hidePopup(aaPanelNode);
+        aaPanelNode.hidePopup();
       }
     } else if (aaPanelNode) {
-      PanelMultiView.hidePopup(aaPanelNode);
+      aaPanelNode.hidePopup();
       return;
     } else {
       panelNode = this._makeActivatedActionPanelForAction(action);
     }
 
     
-    PanelMultiView.hidePopup(this.panelNode);
+    this.panelNode.hidePopup();
 
     let anchorNode = this.panelAnchorNodeForAction(action);
     anchorNode.setAttribute("open", "true");
@@ -213,8 +210,7 @@ var BrowserPageActions = {
       anchorNode.removeAttribute("open");
     }, { once: true });
 
-    PanelMultiView.openPopup(panelNode, anchorNode, "bottomcenter topright")
-                  .catch(Cu.reportError);
+    panelNode.openPopup(anchorNode, "bottomcenter topright");
   },
 
   _makeActivatedActionPanelForAction(action) {
@@ -558,7 +554,7 @@ var BrowserPageActions = {
       return;
     }
     
-    PanelMultiView.hidePopup(this.panelNode);
+    this.panelNode.hidePopup();
 
     
     if (action.subview || action.wantsIframe) {
@@ -698,12 +694,12 @@ var BrowserPageActions = {
     
     let panelNode = this.activatedActionPanelNode;
     if (panelNode && panelNode.anchorNode.id == this.mainButtonNode.id) {
-      PanelMultiView.hidePopup(panelNode);
+      panelNode.hidePopup();
       return;
     }
 
     if (this.panelNode.state == "open") {
-      PanelMultiView.hidePopup(this.panelNode);
+      this.panelNode.hidePopup();
     } else if (this.panelNode.state == "closed") {
       this.showPanel(event);
     }
@@ -727,10 +723,10 @@ var BrowserPageActions = {
       this.mainButtonNode.removeAttribute("open");
     }, {once: true});
     this.mainButtonNode.setAttribute("open", "true");
-    PanelMultiView.openPopup(this.panelNode, this.mainButtonNode, {
+    this.panelNode.openPopup(this.mainButtonNode, {
       position: "bottomcenter topright",
       triggerEvent: event,
-    }).catch(Cu.reportError);
+    });
   },
 
   
@@ -885,10 +881,10 @@ var BrowserPageActionFeedback = {
     this.panelNode.hidden = false;
 
     let anchor = BrowserPageActions.panelAnchorNodeForAction(action, event);
-    PanelMultiView.openPopup(this.panelNode, anchor, {
+    this.panelNode.openPopup(anchor, {
       position: "bottomcenter topright",
       triggerEvent: event,
-    }).catch(Cu.reportError);
+    });
 
     this.panelNode.addEventListener("popupshown", () => {
       this.feedbackAnimationBox.setAttribute("animate", "true");
@@ -916,7 +912,7 @@ BrowserPageActions.bookmark = {
   },
 
   onCommand(event, buttonNode) {
-    PanelMultiView.hidePopup(BrowserPageActions.panelNode);
+    BrowserPageActions.panelNode.hidePopup();
     BookmarkingUI.onStarCommand(event);
   },
 };
@@ -929,7 +925,7 @@ BrowserPageActions.copyURL = {
   },
 
   onCommand(event, buttonNode) {
-    PanelMultiView.hidePopup(BrowserPageActions.panelNode);
+    BrowserPageActions.panelNode.hidePopup();
     Cc["@mozilla.org/widget/clipboardhelper;1"]
       .getService(Ci.nsIClipboardHelper)
       .copyString(gURLBar.makeURIReadable(gBrowser.selectedBrowser.currentURI).displaySpec);
@@ -946,7 +942,7 @@ BrowserPageActions.emailLink = {
   },
 
   onCommand(event, buttonNode) {
-    PanelMultiView.hidePopup(BrowserPageActions.panelNode);
+    BrowserPageActions.panelNode.hidePopup();
     MailIntegration.sendLinkForBrowser(gBrowser.selectedBrowser);
   },
 };
@@ -996,7 +992,7 @@ BrowserPageActions.sendToDevice = {
 
       item.addEventListener("command", event => {
         if (panelNode) {
-          PanelMultiView.hidePopup(panelNode);
+          panelNode.hidePopup();
         }
         
         

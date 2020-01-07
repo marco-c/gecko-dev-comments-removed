@@ -41,7 +41,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
-  PanelMultiView: "resource:///modules/PanelMultiView.jsm",
   PanelView: "resource:///modules/PanelMultiView.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -7260,7 +7259,7 @@ var gIdentityHandler = {
   handleMoreInfoClick(event) {
     displaySecurityInfo();
     event.stopPropagation();
-    PanelMultiView.hidePopup(this._identityPopup);
+    this._identityPopup.hidePopup();
   },
 
   showSecuritySubView() {
@@ -7282,14 +7281,14 @@ var gIdentityHandler = {
     
     BrowserReloadWithFlags(
       Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT);
-    PanelMultiView.hidePopup(this._identityPopup);
+    this._identityPopup.hidePopup();
   },
 
   enableMixedContentProtection() {
     gBrowser.selectedBrowser.messageManager.sendAsyncMessage(
       "MixedContent:ReenableProtection", {});
     BrowserReload();
-    PanelMultiView.hidePopup(this._identityPopup);
+    this._identityPopup.hidePopup();
   },
 
   removeCertException() {
@@ -7301,7 +7300,7 @@ var gIdentityHandler = {
     let port = this._uri.port > 0 ? this._uri.port : 443;
     this._overrideService.clearValidityOverride(host, port);
     BrowserReloadSkipCache();
-    PanelMultiView.hidePopup(this._identityPopup);
+    this._identityPopup.hidePopup();
   },
 
   
@@ -7367,7 +7366,7 @@ var gIdentityHandler = {
     
     
     if (shouldHidePopup) {
-      PanelMultiView.hidePopup(this._identityPopup);
+      this._identityPopup.hidePopup();
     }
 
     
@@ -7831,8 +7830,7 @@ var gIdentityHandler = {
     this._identityBox.setAttribute("open", "true");
 
     
-    PanelMultiView.openPopup(this._identityPopup, this._identityIcon,
-                             "bottomcenter topleft").catch(Cu.reportError);
+    this._identityPopup.openPopup(this._identityIcon, "bottomcenter topleft");
   },
 
   onPopupShown(event) {
@@ -7865,7 +7863,7 @@ var gIdentityHandler = {
       
       
       
-      PanelMultiView.hidePopup(this._identityPopup);
+      this._identityPopup.hidePopup();
     }
   },
 

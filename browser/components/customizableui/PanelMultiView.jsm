@@ -39,10 +39,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -53,7 +49,6 @@ this.EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
@@ -141,41 +136,6 @@ this.AssociatedToNode = class {
 
 
 this.PanelMultiView = class extends this.AssociatedToNode {
-  
-
-
-
-
-
-
-
-
-  static async openPopup(panelNode, ...args) {
-    let panelMultiViewNode = panelNode.querySelector("panelmultiview");
-    if (panelMultiViewNode) {
-      return this.forNode(panelMultiViewNode).openPopup(...args);
-    }
-    panelNode.openPopup(...args);
-    return true;
-  }
-
-  
-
-
-
-
-
-
-
-  static hidePopup(panelNode) {
-    let panelMultiViewNode = panelNode.querySelector("panelmultiview");
-    if (panelMultiViewNode) {
-      this.forNode(panelMultiViewNode).hidePopup();
-    } else {
-      panelNode.hidePopup();
-    }
-  }
-
   get _panel() {
     return this.node.parentNode;
   }
@@ -228,15 +188,15 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     let panelView = this.openViews[this.openViews.length - 1];
     return (panelView && panelView.node) || this._mainView;
   }
+  
 
-  constructor(node) {
-    super(node);
-    this._openPopupPromise = Promise.resolve(false);
-    this._openPopupCancelCallback = () => {};
+
+
+  get currentShowPromise() {
+    return this._currentShowPromise || Promise.resolve();
   }
 
   connect() {
-    this.connected = true;
     this.knownViews = new Set(Array.from(
       this.node.getElementsByTagName("panelview"),
       node => PanelView.forNode(node)));
@@ -266,6 +226,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     
     
     this._dir = cs.direction;
+    this.showMainView();
 
     
     
@@ -275,7 +236,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         value: (...args) => this[method](...args)
       });
     });
-    ["current", "showingSubView"].forEach(property => {
+    ["current", "currentShowPromise", "showingSubView"].forEach(property => {
       Object.defineProperty(this.node, property, {
         enumerable: true,
         get: () => this[property]
@@ -305,152 +266,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
-    this.node = this._openPopupPromise = this._openPopupCancelCallback =
-      this._viewContainer = this._viewStack = this.__dwu =
+    this.node = this._viewContainer = this._viewStack = this.__dwu =
       this._panelViewCache = this._transitionDetails = null;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async openPopup(...args) {
-    
-    
-    
-    
-    
-    let canCancel = true;
-    let cancelCallback = this._openPopupCancelCallback = () => {
-      
-      
-      
-      
-      
-      if (canCancel && this.node) {
-        canCancel = false;
-        this.dispatchCustomEvent("popuphidden");
-      }
-    };
-
-    
-    
-    let openPopupPromise = this._openPopupPromise.catch(() => {
-      return false;
-    });
-
-    
-    
-    
-    return this._openPopupPromise = openPopupPromise.then(async wasShown => {
-      
-      if (!this.node) {
-        return false;
-      }
-      
-      
-      
-      
-      if (wasShown && ["open", "showing"].includes(this._panel.state)) {
-        return true;
-      }
-      try {
-        
-        
-        
-        
-        
-        if (!this.connected) {
-          await BrowserUtils.promiseLayoutFlushed(this.document, "layout",
-                                                  () => {});
-          
-          
-          if (!this.connected) {
-            throw new Error("The binding for the panelmultiview element isn't" +
-                            " connected. The containing panel may still have" +
-                            " its display turned off by the hidden attribute.");
-          }
-        }
-        
-        if (!(await this.showMainView())) {
-          cancelCallback();
-        }
-      } catch (ex) {
-        cancelCallback();
-        throw ex;
-      }
-      
-      if (!canCancel || !this.node) {
-        return false;
-      }
-      
-      
-      
-      
-      try {
-        canCancel = false;
-        this._panel.openPopup(...args);
-        return true;
-      } catch (ex) {
-        this.dispatchCustomEvent("popuphidden");
-        throw ex;
-      }
-    });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  hidePopup() {
-    if (!this.node) {
-      return;
-    }
-
-    
-    
-    
-    
-    if (["open", "showing"].includes(this._panel.state)) {
-      this._panel.hidePopup();
-    } else {
-      this._openPopupCancelCallback();
-    }
   }
 
   
@@ -487,7 +304,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
   showMainView() {
     if (!this.node || !this._mainViewId)
-      return Promise.resolve(false);
+      return Promise.resolve();
 
     return this.showSubView(this._mainView);
   }
@@ -519,8 +336,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this.showingSubView = nextPanelView.node.id != this._mainViewId;
   }
 
-  async showSubView(aViewId, aAnchor, aPreviousView) {
-    try {
+  showSubView(aViewId, aAnchor, aPreviousView) {
+    this._currentShowPromise = (async () => {
       
       let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
       if (!viewNode) {
@@ -591,7 +408,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
         if (cancel) {
           this._viewShowing = null;
-          return false;
+          return;
         }
       }
 
@@ -604,12 +421,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       } else {
         this.hideAllViewsExcept(nextPanelView);
       }
-
-      return true;
-    } catch (ex) {
-      Cu.reportError(ex);
-      return false;
-    }
+    })().catch(e => Cu.reportError(e));
+    return this._currentShowPromise;
   }
 
   
@@ -932,14 +745,10 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       case "popuphidden": {
         
         
-        if (this._viewShowing) {
-          PanelView.forNode(this._viewShowing).dispatchCustomEvent("ViewHiding");
-        }
         this._viewShowing = null;
         this._transitioning = false;
         this.node.removeAttribute("panelopen");
-        
-        this.hideAllViewsExcept(null);
+        this.showMainView();
         this.window.removeEventListener("keydown", this);
         this._panel.removeEventListener("mousemove", this);
         this.openViews.forEach(panelView => panelView.clearNavigation());
