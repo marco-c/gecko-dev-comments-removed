@@ -1,7 +1,6 @@
 
 
 add_task(async function setup() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://example.com/?q=%s",
@@ -9,7 +8,6 @@ add_task(async function setup() {
   });
   registerCleanupFunction(async function() {
     await PlacesUtils.bookmarks.remove(bm);
-    BrowserTestUtils.removeTab(tab);
   });
   await PlacesUtils.keywords.insert({ keyword: "keyword",
                                       url: "http://example.com/?q=%s" });
@@ -17,7 +15,7 @@ add_task(async function setup() {
   ok(true, "Setup complete");
 });
 
-add_task(async function test_keyword() {
+add_task(taskWithNewTab(async function test_keyword() {
   await promiseAutocompleteResultPopup("keyword bear");
   gURLBar.focus();
   EventUtils.sendString("d");
@@ -25,9 +23,9 @@ add_task(async function test_keyword() {
   info("wait for the page to load");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedTab.linkedBrowser,
                                       false, "http://example.com/?q=beard");
-});
+}));
 
-add_task(async function test_sametext() {
+add_task(taskWithNewTab(async function test_sametext() {
   await promiseAutocompleteResultPopup("example.com", window, true);
 
   
@@ -42,22 +40,21 @@ add_task(async function test_sametext() {
   info("wait for the page to load");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedTab.linkedBrowser,
                                        false, "http://example.com/");
-});
+}));
 
-add_task(async function test_after_empty_search() {
+add_task(taskWithNewTab(async function test_after_empty_search() {
   await promiseAutocompleteResultPopup("");
   gURLBar.focus();
-  
-  gURLBar.value = "www.e";
+  gURLBar.value = "e";
   EventUtils.synthesizeKey("x");
   EventUtils.synthesizeKey("KEY_Enter");
 
   info("wait for the page to load");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedTab.linkedBrowser,
-                                       false, "http://www.example.com/");
-});
+                                       false, "http://example.com/");
+}));
 
-add_task(async function test_disabled_ac() {
+add_task(taskWithNewTab(async function test_disabled_ac() {
   
   let suggestHistory = Preferences.get("browser.urlbar.suggest.history");
   Preferences.set("browser.urlbar.suggest.history", false);
@@ -94,9 +91,9 @@ add_task(async function test_disabled_ac() {
   await BrowserTestUtils.browserLoaded(gBrowser.selectedTab.linkedBrowser,
                                        false, "http://example.com/?q=ex");
   await cleanup();
-});
+}));
 
-add_task(async function test_delay() {
+add_task(taskWithNewTab(async function test_delay() {
   const TIMEOUT = 10000;
   
   let delay = Preferences.get("browser.urlbar.delay");
@@ -121,4 +118,13 @@ add_task(async function test_delay() {
   await BrowserTestUtils.browserLoaded(gBrowser.selectedTab.linkedBrowser,
                                        false, "http://example.com/");
   Assert.ok((Date.now() - start) < TIMEOUT);
-});
+}));
+
+
+
+
+function taskWithNewTab(fn) {
+  return async function() {
+    await BrowserTestUtils.withNewTab("about:blank", fn);
+  };
+}

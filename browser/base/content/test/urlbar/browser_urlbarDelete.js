@@ -13,7 +13,7 @@ add_task(async function() {
 function sendHome() {
   
   if (Services.appinfo.OS == "Darwin") {
-    EventUtils.synthesizeKey("KEY_ArrowLeft", {altKey: true});
+    EventUtils.synthesizeKey("KEY_ArrowLeft", {metaKey: true});
   } else {
     EventUtils.synthesizeKey("KEY_Home");
   }
@@ -30,10 +30,10 @@ async function testDelete() {
   sendHome();
   
   sendDelete();
-  Assert.equal(gURLBar.inputField.value, "ug1105244");
+  Assert.equal(gURLBar.inputField.value, "ug1105244.example.com/");
 
   await promisePopupShown(gURLBar.popup);
 
   sendDelete();
-  Assert.equal(gURLBar.inputField.value, "g1105244");
+  Assert.equal(gURLBar.inputField.value, "g1105244.example.com/");
 }
