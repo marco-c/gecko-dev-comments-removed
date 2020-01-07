@@ -1191,9 +1191,6 @@ class IonBuilder
 
     
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
-    }
 };
 
 class CallInfo
