@@ -2414,6 +2414,8 @@ PeerConnectionImpl::CreateReceiveTrack(SdpMediaSection::MediaType type)
   }
 
   stream->AddTrackInternal(track);
+  
+  track->MutedChanged(true);
 
   return OwningNonNull<dom::MediaStreamTrack>(*track);
 }
