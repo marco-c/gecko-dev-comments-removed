@@ -80,6 +80,11 @@ SyncedTabsDeckComponent.prototype = {
     Services.obs.addObserver(this, "weave:service:ready");
 
     
+    Services.obs.addObserver(this, "intl:app-locales-changed");
+    Services.prefs.addObserver("intl.uidirection", this);
+    this.updateDir();
+
+    
     this._SyncedTabs.syncTabs()
                     .catch(Cu.reportError);
 
@@ -101,6 +106,8 @@ SyncedTabsDeckComponent.prototype = {
     Services.obs.removeObserver(this, FxAccountsCommon.ONLOGIN_NOTIFICATION);
     Services.obs.removeObserver(this, "weave:service:login:change");
     Services.obs.removeObserver(this, "weave:service:ready");
+    Services.obs.removeObserver(this, "intl:app-locales-changed");
+    Services.prefs.removeObserver("intl.uidirection", this);
     this._deckView.destroy();
   },
 
@@ -116,6 +123,14 @@ SyncedTabsDeckComponent.prototype = {
       case FxAccountsCommon.ONLOGIN_NOTIFICATION:
       case "weave:service:login:change":
         this.updatePanel();
+        break;
+      case "intl:app-locales-changed":
+        this.updateDir();
+        break;
+      case "nsPref:changed":
+        if (data == "intl.uidirection") {
+          this.updateDir();
+        }
         break;
       default:
         break;
@@ -156,6 +171,17 @@ SyncedTabsDeckComponent.prototype = {
       Cu.reportError(err);
       return this.PANELS.NOT_AUTHED_INFO;
     });
+  },
+
+  updateDir() {
+    
+    if (!this._window.document) return;
+
+    if (Services.locale.isAppLocaleRTL) {
+      this._window.document.body.dir = "rtl";
+    } else {
+      this._window.document.body.dir = "ltr";
+    }
   },
 
   updatePanel() {
