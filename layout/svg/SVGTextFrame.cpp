@@ -2760,16 +2760,19 @@ public:
 
 
 
+
   SVGTextDrawPathCallbacks(SVGTextFrame* aSVGTextFrame,
                            gfxContext& aContext,
                            nsTextFrame* aFrame,
                            const gfxMatrix& aCanvasTM,
+                           imgDrawingParams& aImgParams,
                            bool aShouldPaintSVGGlyphs)
     : DrawPathCallbacks(aShouldPaintSVGGlyphs),
       mSVGTextFrame(aSVGTextFrame),
       mContext(aContext),
       mFrame(aFrame),
-      mCanvasTM(aCanvasTM)
+      mCanvasTM(aCanvasTM),
+      mImgParams(aImgParams)
   {
   }
 
@@ -2799,8 +2802,7 @@ private:
 
 
 
-  void MakeFillPattern(GeneralPattern* aOutPattern,
-                       imgDrawingParams& aImgParams);
+  void MakeFillPattern(GeneralPattern* aOutPattern);
 
   
 
@@ -2822,6 +2824,7 @@ private:
   gfxContext& mContext;
   nsTextFrame* mFrame;
   const gfxMatrix& mCanvasTM;
+  imgDrawingParams& mImgParams;
 
   
 
@@ -2846,9 +2849,7 @@ SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
   mColor = aColor; 
 
   GeneralPattern fillPattern;
-  
-  imgDrawingParams imgParams;
-  MakeFillPattern(&fillPattern, imgParams);
+  MakeFillPattern(&fillPattern);
   if (fillPattern.GetPattern()) {
     DrawOptions drawOptions(aColor == NS_40PERCENT_FOREGROUND_COLOR ? 0.4 : 1.0);
     aDrawTarget.FillRect(aBackgroundRect, fillPattern, drawOptions);
@@ -2945,12 +2946,11 @@ SVGTextDrawPathCallbacks::HandleTextGeometry()
 }
 
 void
-SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern,
-                                          imgDrawingParams& aImgParams)
+SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern)
 {
   if (mColor == NS_SAME_AS_FOREGROUND_COLOR ||
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
-    nsSVGUtils::MakeFillPatternFor(mFrame, &mContext, aOutPattern, aImgParams);
+    nsSVGUtils::MakeFillPatternFor(mFrame, &mContext, aOutPattern, mImgParams);
     return;
   }
 
@@ -2999,9 +2999,7 @@ void
 SVGTextDrawPathCallbacks::FillGeometry()
 {
   GeneralPattern fillPattern;
-  
-  imgDrawingParams imgParams;
-  MakeFillPattern(&fillPattern, imgParams);
+  MakeFillPattern(&fillPattern);
   if (fillPattern.GetPattern()) {
     RefPtr<Path> path = mContext.GetPath();
     FillRule fillRule = nsSVGUtils::ToFillRule(IsClipPathChild() ?
@@ -3023,10 +3021,8 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
     if (nsSVGUtils::HasStroke(mFrame,  nullptr)) {
       GeneralPattern strokePattern;
-      
-      imgDrawingParams imgParams;
       nsSVGUtils::MakeStrokePatternFor(mFrame, &mContext, &strokePattern,
-                                       imgParams,  nullptr);
+                                       mImgParams,  nullptr);
       if (strokePattern.GetPattern()) {
         if (!mFrame->GetParent()->GetContent()->IsSVGElement()) {
           
@@ -3682,6 +3678,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
       if (ShouldRenderAsPath(frame, paintSVGGlyphs)) {
         SVGTextDrawPathCallbacks callbacks(this, aContext, frame,
                                            matrixForPaintServers,
+                                           aImgParams,
                                            paintSVGGlyphs);
         params.callbacks = &callbacks;
         frame->PaintText(params, item);
