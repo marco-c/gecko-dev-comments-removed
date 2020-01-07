@@ -7720,6 +7720,10 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
     
     
     (void)FirePageHideNotification(!mSavingOldViewer);
+    
+    if (mIsBeingDestroyed) {
+      return NS_ERROR_DOCSHELL_DYING;
+    }
   }
 
   
@@ -8251,6 +8255,10 @@ nsDocShell::RestoreFromHistory()
 
   
   FirePageHideNotification(!mSavingOldViewer);
+  
+  if (mIsBeingDestroyed) {
+    return NS_ERROR_DOCSHELL_DYING;
+  }
 
   
   
