@@ -10006,7 +10006,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                mLoadType, true, true, true);
 
       nsCOMPtr<nsIInputStream> postData;
-      nsCOMPtr<nsISupports> cacheKey;
+      uint32_t cacheKey = 0;
 
       bool scrollRestorationIsManual = false;
       if (mOSHE) {
@@ -10021,7 +10021,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         
         if (aLoadType & LOAD_CMD_NORMAL) {
           mOSHE->GetPostData(getter_AddRefs(postData));
-          mOSHE->GetCacheKey(getter_AddRefs(cacheKey));
+          mOSHE->GetCacheKey(&cacheKey);
 
           
           
@@ -10057,7 +10057,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
         
         
-        if (cacheKey) {
+        if (cacheKey != 0) {
           mOSHE->SetCacheKey(cacheKey);
         }
       }
@@ -10890,12 +10890,12 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(channel));
   
-  nsCOMPtr<nsISupports> cacheKey;
+  uint32_t cacheKey = 0;
   if (cacheChannel) {
     if (mLSHE) {
-      mLSHE->GetCacheKey(getter_AddRefs(cacheKey));
+      mLSHE->GetCacheKey(&cacheKey);
     } else if (mOSHE) {  
-      mOSHE->GetCacheKey(getter_AddRefs(cacheKey));
+      mOSHE->GetCacheKey(&cacheKey);
     }
   }
 
@@ -10922,7 +10922,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
 
 
-    if (cacheChannel && cacheKey) {
+    if (cacheChannel && cacheKey != 0) {
       if (mLoadType == LOAD_HISTORY ||
           mLoadType == LOAD_RELOAD_CHARSET_CHANGE) {
         cacheChannel->SetCacheKey(cacheKey);
@@ -10947,7 +10947,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         mLoadType == LOAD_RELOAD_CHARSET_CHANGE ||
         mLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
         mLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) {
-      if (cacheChannel && cacheKey) {
+      if (cacheChannel && cacheKey != 0) {
         cacheChannel->SetCacheKey(cacheKey);
       }
     }
@@ -11517,10 +11517,10 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                " reloads unless we're in a newly created iframe!");
 
     nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aChannel));
-    nsCOMPtr<nsISupports> cacheKey;
+    uint32_t cacheKey = 0;
     
     if (cacheChannel) {
-      cacheChannel->GetCacheKey(getter_AddRefs(cacheKey));
+      cacheChannel->GetCacheKey(&cacheKey);
     }
     
     
@@ -12091,7 +12091,7 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
   bool loadReplace = false;
   nsCOMPtr<nsIURI> referrerURI;
   uint32_t referrerPolicy = mozilla::net::RP_Unset;
-  nsCOMPtr<nsISupports> cacheKey;
+  uint32_t cacheKey = 0;
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;
   bool expired = false;
@@ -12104,7 +12104,7 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
 
 
     if (cacheChannel) {
-      cacheChannel->GetCacheKey(getter_AddRefs(cacheKey));
+      cacheChannel->GetCacheKey(&cacheKey);
     }
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
 

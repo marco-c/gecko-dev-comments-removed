@@ -514,7 +514,7 @@ function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
                                              window: null,
                                              charset: null,
                                              principal: null,
-                                             cacheKey: null }) {
+                                             cacheKey: 0 }) {
   
   let url = urlIn.split(" -> ").pop();
   let channel;
@@ -532,7 +532,7 @@ function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
   
   
   if (aOptions.loadFromCache &&
-      aOptions.cacheKey && channel instanceof Ci.nsICacheInfoChannel) {
+      aOptions.cacheKey != 0 && channel instanceof Ci.nsICacheInfoChannel) {
     channel.cacheKey = aOptions.cacheKey;
   }
 

@@ -191,12 +191,12 @@ function saveDocument(aDocument, aSkipPrompt) {
     throw "Must have a document when calling saveDocument";
 
   let contentDisposition = null;
-  let cacheKeyInt = null;
+  let cacheKey = 0;
 
   if (aDocument instanceof Ci.nsIWebBrowserPersistDocument) {
     
     contentDisposition = aDocument.contentDisposition;
-    cacheKeyInt = aDocument.cacheKey;
+    cacheKey = aDocument.cacheKey;
   } else if (aDocument instanceof Ci.nsIDOMDocument) {
     
     
@@ -219,23 +219,10 @@ function saveDocument(aDocument, aSkipPrompt) {
              .currentDescriptor
              .QueryInterface(Ci.nsISHEntry);
 
-      let cacheKey = shEntry.cacheKey
-                            .QueryInterface(Ci.nsISupportsPRUint32)
-                            .data;
-      
-      
-      cacheKeyInt = cacheKey.data;
+      cacheKey = shEntry.cacheKey;
     } catch (ex) {
       
     }
-  }
-
-  
-  let cacheKey = null;
-  if (cacheKeyInt) {
-    cacheKey = Cc["@mozilla.org/supports-PRUint32;1"]
-      .createInstance(Ci.nsISupportsPRUint32);
-    cacheKey.data = cacheKeyInt;
   }
 
   internalSave(aDocument.documentURI, aDocument, null, contentDisposition,
@@ -364,7 +351,7 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
     aSkipPrompt = false;
 
   if (aCacheKey == undefined)
-    aCacheKey = null;
+    aCacheKey = 0;
 
   
   var saveMode = GetSaveModeForContentType(aContentType, aDocument);

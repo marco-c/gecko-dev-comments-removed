@@ -196,7 +196,7 @@ protected:
 private:
   
   
-  nsCOMPtr<nsISupports> mCacheKey;
+  uint32_t mCacheKey;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
   RefPtr<InterceptStreamListener> mInterceptListener;
   
