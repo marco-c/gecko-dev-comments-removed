@@ -9,6 +9,161 @@
 #ifndef frontend_Parser_h
 #define frontend_Parser_h
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "mozilla/Array.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TypeTraits.h"
@@ -48,20 +203,6 @@ public:
                      mozilla::IsSame<ParseHandler, FullParseHandler>::value)
     { }
 };
-
-template <>
-inline bool
-ParseContext::Statement::is<ParseContext::LabelStatement>() const
-{
-    return kind_ == StatementKind::Label;
-}
-
-template <>
-inline bool
-ParseContext::Statement::is<ParseContext::ClassStatement>() const
-{
-    return kind_ == StatementKind::Class;
-}
 
 template <typename T>
 inline T&
@@ -104,28 +245,20 @@ enum class PropertyType {
     DerivedConstructor
 };
 
-
-
-
-
-enum YieldHandling { YieldIsName, YieldIsKeyword };
 enum AwaitHandling : uint8_t { AwaitIsName, AwaitIsKeyword, AwaitIsModuleKeyword };
-enum InHandling { InAllowed, InProhibited };
-enum DefaultHandling { NameRequired, AllowDefaultName };
-enum TripledotHandling { TripledotAllowed, TripledotProhibited };
-
-enum FunctionCallBehavior {
-    PermitAssignmentToFunctionCalls,
-    ForbidAssignmentToFunctionCalls
-};
 
 template <class ParseHandler, typename CharT>
 class AutoAwaitIsKeyword;
 
-class ParserBase : public StrictModeGetter
+class ParserBase
+  : public StrictModeGetter,
+    private JS::AutoGCRooter
 {
   private:
     ParserBase* thisForCtor() { return this; }
+
+    
+    friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
   public:
     JSContext* const context;
@@ -174,6 +307,10 @@ class ParserBase : public StrictModeGetter
                const char16_t* chars, size_t length, bool foldConstants,
                UsedNameTracker& usedNames);
     ~ParserBase();
+
+    bool checkOptions();
+
+    void trace(JSTracer* trc);
 
     const char* getFilename() const { return anyChars.getFilename(); }
     TokenPos pos() const { return anyChars.currentToken().pos; }
@@ -246,6 +383,23 @@ class ParserBase : public StrictModeGetter
   protected:
     enum InvokedPrediction { PredictUninvoked = false, PredictInvoked = true };
     enum ForInitLocation { InForInit, NotInForInit };
+
+    
+    
+    
+    bool nextTokenContinuesLetDeclaration(TokenKind next);
+
+    bool noteUsedNameInternal(HandlePropertyName name);
+    bool hasUsedName(HandlePropertyName name);
+    bool hasUsedFunctionSpecialName(HandlePropertyName name);
+
+    bool checkAndMarkSuperScope();
+
+    bool declareDotGeneratorName();
+
+    bool leaveInnerFunction(ParseContext* outerpc);
+
+    JSAtom* prefixAccessorName(PropertyType propType, HandleAtom propAtom);
 };
 
 inline
@@ -271,6 +425,194 @@ ParseContext::VarScope::VarScope(ParserBase* parser)
     useAsVarScope(parser->pc);
 }
 
+inline
+ParseContext::VarScope::VarScope(JSContext* cx, ParseContext* pc, UsedNameTracker& usedNames)
+  : Scope(cx, pc, usedNames)
+{
+    useAsVarScope(pc);
+}
+
+enum FunctionCallBehavior {
+    PermitAssignmentToFunctionCalls,
+    ForbidAssignmentToFunctionCalls
+};
+
+template <class ParseHandler>
+class PerHandlerParser
+  : public ParserBase
+{
+  private:
+    using Node = typename ParseHandler::Node;
+
+  protected:
+    
+    ParseHandler handler;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void* internalSyntaxParser_;
+
+  protected:
+    PerHandlerParser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
+                     const char16_t* chars, size_t length, bool foldConstants,
+                     UsedNameTracker& usedNames, LazyScript* lazyOuterFunction);
+
+    static Node null() { return ParseHandler::null(); }
+
+    Node stringLiteral();
+
+    const char* nameIsArgumentsOrEval(Node node);
+
+    bool noteDestructuredPositionalFormalParameter(Node fn, Node destruct);
+
+    bool noteUsedName(HandlePropertyName name) {
+        
+        
+        
+        if (handler.canSkipLazyClosedOverBindings())
+            return true;
+
+        return ParserBase::noteUsedNameInternal(name);
+    }
+
+    
+    bool propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope);
+
+    bool finishFunctionScopes(bool isStandaloneFunction);
+    Node finishLexicalScope(ParseContext::Scope& scope, Node body);
+    bool finishFunction(bool isStandaloneFunction = false);
+
+    bool declareFunctionThis();
+    bool declareFunctionArgumentsObject();
+
+    inline Node newName(PropertyName* name);
+    inline Node newName(PropertyName* name, TokenPos pos);
+
+    Node newInternalDotName(HandlePropertyName name);
+    Node newThisName();
+    Node newDotGeneratorName();
+
+    Node identifierReference(Handle<PropertyName*> name);
+
+    Node noSubstitutionTaggedTemplate();
+
+    inline bool processExport(Node node);
+    inline bool processExportFrom(Node node);
+
+    
+    
+    
+    
+    
+    inline void disableSyntaxParser();
+
+    
+    
+    
+    
+    
+    
+    inline bool abortIfSyntaxParser();
+
+    
+    
+    
+    
+    
+    inline bool hadAbortedSyntaxParse();
+
+    
+    
+    
+    
+    inline void clearAbortedSyntaxParse();
+
+  public:
+    bool isValidSimpleAssignmentTarget(Node node,
+                                       FunctionCallBehavior behavior = ForbidAssignmentToFunctionCalls);
+
+    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, uint32_t toStringStart,
+                                Directives directives, GeneratorKind generatorKind,
+                                FunctionAsyncKind asyncKind);
+};
+
+#define ABORTED_SYNTAX_PARSE_SENTINEL reinterpret_cast<void*>(0x1)
+
+template<>
+inline void
+PerHandlerParser<SyntaxParseHandler>::disableSyntaxParser()
+{
+}
+
+template<>
+inline bool
+PerHandlerParser<SyntaxParseHandler>::abortIfSyntaxParser()
+{
+    internalSyntaxParser_ = ABORTED_SYNTAX_PARSE_SENTINEL;
+    return false;
+}
+
+template<>
+inline bool
+PerHandlerParser<SyntaxParseHandler>::hadAbortedSyntaxParse()
+{
+    return internalSyntaxParser_ == ABORTED_SYNTAX_PARSE_SENTINEL;
+}
+
+template<>
+inline void
+PerHandlerParser<SyntaxParseHandler>::clearAbortedSyntaxParse()
+{
+    internalSyntaxParser_ = nullptr;
+}
+
+#undef ABORTED_SYNTAX_PARSE_SENTINEL
+
+
+
+template<>
+inline void
+PerHandlerParser<FullParseHandler>::disableSyntaxParser()
+{
+    internalSyntaxParser_ = nullptr;
+}
+
+template<>
+inline bool
+PerHandlerParser<FullParseHandler>::abortIfSyntaxParser()
+{
+    disableSyntaxParser();
+    return true;
+}
+
+template<>
+inline bool
+PerHandlerParser<FullParseHandler>::hadAbortedSyntaxParse()
+{
+    return false;
+}
+
+template<>
+inline void
+PerHandlerParser<FullParseHandler>::clearAbortedSyntaxParse()
+{
+}
+
 enum class ExpressionClosure { Allowed, Forbidden };
 
 template<class Parser>
@@ -284,21 +626,95 @@ class ParserAnyCharsAccess
     static inline const TokenStreamAnyChars& anyChars(const TokenStreamChars* ts);
 };
 
+
+
+
+
+enum YieldHandling { YieldIsName, YieldIsKeyword };
+enum InHandling { InAllowed, InProhibited };
+enum DefaultHandling { NameRequired, AllowDefaultName };
+enum TripledotHandling { TripledotAllowed, TripledotProhibited };
+
 template <class ParseHandler, typename CharT>
 class Parser;
 
 template <class ParseHandler, typename CharT>
 class GeneralParser
-  : public ParserBase,
-    private JS::AutoGCRooter
+  : public PerHandlerParser<ParseHandler>
 {
+  private:
+    using Base = PerHandlerParser<ParseHandler>;
+    using FinalParser = Parser<ParseHandler, CharT>;
+    using Node = typename ParseHandler::Node;
+    using typename Base::InvokedPrediction;
+    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
+
   protected:
     using Modifier = TokenStreamShared::Modifier;
 
-  private:
-    using FinalParser = Parser<ParseHandler, CharT>;
-    using Node = typename ParseHandler::Node;
+    using Base::PredictUninvoked;
+    using Base::PredictInvoked;
 
+    using Base::alloc;
+    using Base::awaitIsKeyword;
+#if DEBUG
+    using Base::checkOptionsCalled;
+#endif
+    using Base::finishFunctionScopes;
+    using Base::finishLexicalScope;
+    using Base::foldConstants;
+    using Base::getFilename;
+    using Base::hasUsedFunctionSpecialName;
+    using Base::hasValidSimpleStrictParameterNames;
+    using Base::isUnexpectedEOF_;
+    using Base::keepAtoms;
+    using Base::nameIsArgumentsOrEval;
+    using Base::newFunction;
+    using Base::newFunctionBox;
+    using Base::newName;
+    using Base::null;
+    using Base::options;
+    using Base::pos;
+    using Base::propagateFreeNamesAndMarkClosedOverBindings;
+    using Base::setLocalStrictMode;
+    using Base::stringLiteral;
+    using Base::traceListHead;
+    using Base::yieldExpressionsSupported;
+
+    using Base::disableSyntaxParser;
+    using Base::abortIfSyntaxParser;
+    using Base::hadAbortedSyntaxParse;
+    using Base::clearAbortedSyntaxParse;
+
+  public:
+    using Base::anyChars;
+    using Base::context;
+    using Base::handler;
+    using Base::isValidSimpleAssignmentTarget;
+    using Base::pc;
+    using Base::usedNames;
+
+  private:
+    using Base::checkAndMarkSuperScope;
+    using Base::declareDotGeneratorName;
+    using Base::declareFunctionArgumentsObject;
+    using Base::declareFunctionThis;
+    using Base::finishFunction;
+    using Base::hasUsedName;
+    using Base::identifierReference;
+    using Base::leaveInnerFunction;
+    using Base::newDotGeneratorName;
+    using Base::newInternalDotName;
+    using Base::newThisName;
+    using Base::nextTokenContinuesLetDeclaration;
+    using Base::noSubstitutionTaggedTemplate;
+    using Base::noteDestructuredPositionalFormalParameter;
+    using Base::noteUsedName;
+    using Base::prefixAccessorName;
+    using Base::processExport;
+    using Base::processExportFrom;
+
+  private:
     inline FinalParser* asFinalParser();
     inline const FinalParser* asFinalParser() const;
 
@@ -429,29 +845,23 @@ class GeneralParser
         void transferErrorsTo(PossibleError* other);
     };
 
-  protected:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
-    SyntaxParser* syntaxParser_;
-
   private:
-    inline bool abortIfSyntaxParser();
+    
+    
+    using Base::internalSyntaxParser_;
+
+  protected:
+    SyntaxParser* getSyntaxParser() const {
+        return reinterpret_cast<SyntaxParser*>(internalSyntaxParser_);
+    }
+
+    void setSyntaxParser(SyntaxParser* syntaxParser) {
+        internalSyntaxParser_ = syntaxParser;
+    }
 
   public:
     using TokenStream = TokenStreamSpecific<CharT, ParserAnyCharsAccess<GeneralParser>>;
     TokenStream tokenStream;
-
-    
-    ParseHandler handler;
 
     void prepareNodeForMutation(Node node) { handler.prepareNodeForMutation(node); }
     void freeTree(Node node) { handler.freeTree(node); }
@@ -461,24 +871,13 @@ class GeneralParser
                   const CharT* chars, size_t length, bool foldConstants,
                   UsedNameTracker& usedNames, SyntaxParser* syntaxParser,
                   LazyScript* lazyOuterFunction);
-    ~GeneralParser();
 
     inline void setAwaitHandling(AwaitHandling awaitHandling);
-
-    bool checkOptions();
-
-    friend void js::frontend::TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
     
 
 
     Node parse();
-
-    FunctionBox* newFunctionBox(Node fn, JSFunction* fun, uint32_t toStringStart,
-                                Directives directives,
-                                GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
-
-    void trace(JSTracer* trc);
 
     
     void error(unsigned errorNumber, ...);
@@ -526,7 +925,6 @@ class GeneralParser
   private:
     GeneralParser* thisForCtor() { return this; }
 
-    Node noSubstitutionTaggedTemplate();
     Node noSubstitutionUntaggedTemplate();
     Node templateLiteral(YieldHandling yieldHandling);
     bool taggedTemplate(YieldHandling yieldHandling, Node nodeList, TokenKind tt);
@@ -611,16 +1009,9 @@ class GeneralParser
     Node ifStatement(YieldHandling yieldHandling);
     Node consequentOrAlternative(YieldHandling yieldHandling);
 
-    
-    
-    
-    bool nextTokenContinuesLetDeclaration(TokenKind next);
-
     Node lexicalDeclaration(YieldHandling yieldHandling, DeclarationKind kind);
 
     inline Node importDeclaration();
-    inline bool processExport(Node node);
-    inline bool processExportFrom(Node node);
 
     Node exportFrom(uint32_t begin, Node specList);
     Node exportBatch(uint32_t begin);
@@ -723,7 +1114,6 @@ class GeneralParser
                       TripledotHandling tripledotHandling, PossibleError* possibleError = nullptr);
 
     bool tryNewTarget(Node& newTarget);
-    bool checkAndMarkSuperScope();
 
     Node methodDefinition(uint32_t toStringStart, PropertyType propType, HandleAtom funName);
 
@@ -780,32 +1170,13 @@ class GeneralParser
         return labelOrIdentifierReference(yieldHandling);
     }
 
-    Node identifierReference(Handle<PropertyName*> name);
-
     bool matchLabel(YieldHandling yieldHandling, MutableHandle<PropertyName*> label);
 
     
     
     bool matchInOrOf(bool* isForInp, bool* isForOfp);
 
-    bool hasUsedFunctionSpecialName(HandlePropertyName name);
-    bool declareFunctionArgumentsObject();
-    bool declareFunctionThis();
-    Node newInternalDotName(HandlePropertyName name);
-    Node newThisName();
-    Node newDotGeneratorName();
-    bool declareDotGeneratorName();
-
-    inline bool finishFunction(bool isStandaloneFunction = false);
-
-    bool leaveInnerFunction(ParseContext* outerpc);
-
-  public:
-    bool isValidSimpleAssignmentTarget(Node node,
-                                       FunctionCallBehavior behavior = ForbidAssignmentToFunctionCalls);
-
   private:
-    const char* nameIsArgumentsOrEval(Node node);
     bool checkIncDecOperand(Node operand, uint32_t operandOffset);
     bool checkStrictAssignment(Node lhs);
 
@@ -815,14 +1186,9 @@ class GeneralParser
                              uint32_t prevPos);
     bool notePositionalFormalParameter(Node fn, HandlePropertyName name, uint32_t beginPos,
                                        bool disallowDuplicateParams, bool* duplicatedParam);
-    bool noteDestructuredPositionalFormalParameter(Node fn, Node destruct);
 
     bool checkLexicalDeclarationDirectlyWithinBlock(ParseContext::Statement& stmt,
                                                     DeclarationKind kind, TokenPos pos);
-    bool noteUsedName(HandlePropertyName name);
-    bool hasUsedName(HandlePropertyName name);
-
-    inline Node finishLexicalScope(ParseContext::Scope& scope, Node body);
 
     Node propertyName(YieldHandling yieldHandling,
                       const mozilla::Maybe<DeclarationKind>& maybeDecl, Node propList,
@@ -860,13 +1226,6 @@ class GeneralParser
     }
 
   protected:
-    static Node null() { return ParseHandler::null(); }
-
-    Node stringLiteral();
-
-    inline Node newName(PropertyName* name);
-    inline Node newName(PropertyName* name, TokenPos pos);
-
     
     
     
@@ -883,18 +1242,11 @@ class GeneralParser
                        FunctionAsyncKind asyncKind, bool tryAnnexB, Directives inheritedDirectives,
                        Directives* newDirectives);
 
-    bool finishFunctionScopes(bool isStandaloneFunction);
-
     bool matchOrInsertSemicolon();
 
     bool noteDeclaredName(HandlePropertyName name, DeclarationKind kind, TokenPos pos);
 
-    
-    bool propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope);
-
   private:
-    JSAtom* prefixAccessorName(PropertyType propType, HandleAtom propAtom);
-
     inline bool asmJS(Node list);
 };
 
@@ -925,7 +1277,9 @@ class Parser<SyntaxParseHandler, CharT> final
 
   public:
     using Base::anyChars;
+    using Base::clearAbortedSyntaxParse;
     using Base::context;
+    using Base::hadAbortedSyntaxParse;
     using Base::innerFunctionForFunctionBox;
     using Base::tokenStream;
 
@@ -955,8 +1309,11 @@ class Parser<SyntaxParseHandler, CharT> final
     using Base::ss;
     using Base::statementList;
     using Base::stringLiteral;
-    using Base::syntaxParser_;
     using Base::usedNames;
+
+  private:
+    using Base::abortIfSyntaxParser;
+    using Base::disableSyntaxParser;
 
   public:
     
@@ -977,8 +1334,6 @@ class Parser<SyntaxParseHandler, CharT> final
     Node moduleBody(ModuleSharedContext* modulesc);
 
     inline Node importDeclaration();
-    inline bool processExport(Node node);
-    inline bool processExportFrom(Node node);
     inline bool checkLocalExportNames(Node node);
     inline bool checkExportedName(JSAtom* exportName);
     inline bool checkExportedNamesForDeclaration(Node node);
@@ -994,37 +1349,6 @@ class Parser<SyntaxParseHandler, CharT> final
 
     bool skipLazyInnerFunction(Node funcNode, uint32_t toStringStart, FunctionSyntaxKind kind,
                                bool tryAnnexB);
-
-    Node finishLexicalScope(ParseContext::Scope& scope, Node body);
-
-    bool finishFunction(bool isStandaloneFunction = false);
-
-#define ABORTED_SYNTAX_PARSE_SENTINEL reinterpret_cast<SyntaxParser*>(0x1)
-
-    
-    
-    
-    bool abortIfSyntaxParser() {
-        syntaxParser_ = ABORTED_SYNTAX_PARSE_SENTINEL;
-        return false;
-    }
-
-    
-    
-    bool hadAbortedSyntaxParse() {
-        return syntaxParser_ == ABORTED_SYNTAX_PARSE_SENTINEL;
-    }
-
-    
-    void clearAbortedSyntaxParse() {
-        syntaxParser_ = nullptr;
-    }
-
-    
-    
-    void disableSyntaxParser() {}
-
-#undef ABORTED_SYNTAX_PARSE_SENTINEL
 
     bool asmJS(Node list);
 
@@ -1049,19 +1373,6 @@ class Parser<FullParseHandler, CharT> final
     friend class GeneralParser<FullParseHandler, CharT>;
 
   public:
-    Parser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
-           const CharT* chars, size_t length, bool foldConstants, UsedNameTracker& usedNames,
-           SyntaxParser* syntaxParser, LazyScript* lazyOuterFunction)
-      : Base(cx, alloc, options, chars, length, foldConstants, usedNames, syntaxParser,
-             lazyOuterFunction)
-    {
-        
-        
-        
-        if (options.extraWarningsOption)
-            disableSyntaxParser();
-    }
-
     using Base::Base;
 
     
@@ -1071,7 +1382,9 @@ class Parser<FullParseHandler, CharT> final
 
   public:
     using Base::anyChars;
+    using Base::clearAbortedSyntaxParse;
     using Base::functionFormalParametersAndBody;
+    using Base::hadAbortedSyntaxParse;
     using Base::handler;
     using Base::newFunctionBox;
     using Base::options;
@@ -1090,6 +1403,7 @@ class Parser<FullParseHandler, CharT> final
     using Base::error;
     using Base::errorAt;
     using Base::finishFunctionScopes;
+    using Base::finishLexicalScope;
     using Base::innerFunction;
     using Base::innerFunctionForFunctionBox;
     using Base::keepAtoms;
@@ -1106,8 +1420,12 @@ class Parser<FullParseHandler, CharT> final
     using Base::propagateFreeNamesAndMarkClosedOverBindings;
     using Base::statementList;
     using Base::stringLiteral;
-    using Base::syntaxParser_;
     using Base::usedNames;
+
+    using Base::abortIfSyntaxParser;
+    using Base::disableSyntaxParser;
+    using Base::getSyntaxParser;
+    using Base::setSyntaxParser;
 
   public:
     
@@ -1129,8 +1447,6 @@ class Parser<FullParseHandler, CharT> final
     Node moduleBody(ModuleSharedContext* modulesc);
 
     Node importDeclaration();
-    bool processExport(Node node);
-    bool processExportFrom(Node node);
     bool checkLocalExportNames(Node node);
     bool checkExportedName(JSAtom* exportName);
     bool checkExportedNamesForDeclaration(Node node);
@@ -1146,10 +1462,6 @@ class Parser<FullParseHandler, CharT> final
 
     bool skipLazyInnerFunction(Node funcNode, uint32_t toStringStart, FunctionSyntaxKind kind,
                                bool tryAnnexB);
-
-    Node finishLexicalScope(ParseContext::Scope& scope, Node body);
-
-    bool finishFunction(bool isStandaloneFunction = false);
 
     
 
@@ -1171,26 +1483,6 @@ class Parser<FullParseHandler, CharT> final
                             const mozilla::Maybe<uint32_t>& parameterListEnd,
                             GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                             Directives inheritedDirectives, Directives* newDirectives);
-
-    bool abortIfSyntaxParser() {
-        disableSyntaxParser();
-        return true;
-    }
-
-    
-    
-    bool hadAbortedSyntaxParse() {
-        return false;
-    }
-
-    
-    void clearAbortedSyntaxParse() {}
-
-    
-    
-    void disableSyntaxParser() {
-        syntaxParser_ = nullptr;
-    }
 
     bool checkStatementsEOF();
 
@@ -1288,6 +1580,21 @@ class MOZ_STACK_CLASS AutoAwaitIsKeyword
         parser_->setAwaitHandling(oldAwaitHandling_);
     }
 };
+
+template <typename Scope>
+extern typename Scope::Data*
+NewEmptyBindingData(JSContext* cx, LifoAlloc& alloc, uint32_t numBindings);
+
+Maybe<GlobalScope::Data*>
+NewGlobalScopeData(JSContext* context, ParseContext::Scope& scope, LifoAlloc& alloc, ParseContext* pc);
+Maybe<EvalScope::Data*>
+NewEvalScopeData(JSContext* context, ParseContext::Scope& scope, LifoAlloc& alloc, ParseContext* pc);
+Maybe<FunctionScope::Data*>
+NewFunctionScopeData(JSContext* context, ParseContext::Scope& scope, bool hasParameterExprs, LifoAlloc& alloc, ParseContext* pc);
+Maybe<VarScope::Data*>
+NewVarScopeData(JSContext* context, ParseContext::Scope& scope, LifoAlloc& alloc, ParseContext* pc);
+Maybe<LexicalScope::Data*>
+NewLexicalScopeData(JSContext* context, ParseContext::Scope& scope, LifoAlloc& alloc, ParseContext* pc);
 
 } 
 } 

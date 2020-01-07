@@ -181,7 +181,8 @@ class MOZ_STACK_CLASS BinTokenReaderTester
     
 
 
-    void latestTokenPos(TokenPos& out);
+    TokenPos pos();
+    TokenPos pos(size_t startOffset);
     size_t offset() const;
 
     
