@@ -22,7 +22,6 @@ class nsITransaction;
 namespace mozilla {
 
 class EditorBase;
-class RangeUpdater;
 
 namespace dom {
 class Text;
@@ -33,9 +32,13 @@ class Text;
 
 class InsertTextTransaction final : public EditTransactionBase
 {
-public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_INSERTTEXTTXN_IID)
+protected:
+  InsertTextTransaction(EditorBase& aEditorBase,
+                        const nsAString& aStringToInsert,
+                        dom::Text& aTextNode,
+                        uint32_t aOffset);
 
+public:
   
 
 
@@ -43,9 +46,15 @@ public:
 
 
 
-  InsertTextTransaction(dom::Text& aTextNode, uint32_t aOffset,
-                        const nsAString& aString, EditorBase& aEditorBase,
-                        RangeUpdater* aRangeUpdater);
+
+
+  static already_AddRefed<InsertTextTransaction>
+  Create(EditorBase& aEditorBase,
+         const nsAString& aStringToInsert,
+         dom::Text& aTextNode,
+         uint32_t aOffset);
+
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_INSERTTEXTTXN_IID)
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertTextTransaction,
@@ -77,8 +86,6 @@ private:
 
   
   RefPtr<EditorBase> mEditorBase;
-
-  RangeUpdater* mRangeUpdater;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(InsertTextTransaction, NS_INSERTTEXTTXN_IID)

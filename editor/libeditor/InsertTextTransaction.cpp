@@ -18,16 +18,26 @@ namespace mozilla {
 
 using namespace dom;
 
-InsertTextTransaction::InsertTextTransaction(Text& aTextNode,
-                                             uint32_t aOffset,
+
+already_AddRefed<InsertTextTransaction>
+InsertTextTransaction::Create(EditorBase& aEditorBase,
+                              const nsAString& aStringToInsert,
+                              Text& aTextNode,
+                              uint32_t aOffset)
+{
+  RefPtr<InsertTextTransaction> transaction =
+    new InsertTextTransaction(aEditorBase, aStringToInsert, aTextNode, aOffset);
+  return transaction.forget();
+}
+
+InsertTextTransaction::InsertTextTransaction(EditorBase& aEditorBase,
                                              const nsAString& aStringToInsert,
-                                             EditorBase& aEditorBase,
-                                             RangeUpdater* aRangeUpdater)
+                                             Text& aTextNode,
+                                             uint32_t aOffset)
   : mTextNode(&aTextNode)
   , mOffset(aOffset)
   , mStringToInsert(aStringToInsert)
   , mEditorBase(&aEditorBase)
-  , mRangeUpdater(aRangeUpdater)
 {
 }
 
@@ -56,12 +66,16 @@ InsertTextTransaction::DoTransaction()
   }
 
   nsresult rv = mTextNode->InsertData(mOffset, mStringToInsert);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   if (mEditorBase->GetShouldTxnSetSelection()) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
-    NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_FAILURE;
+    }
     DebugOnly<nsresult> rv =
       selection->Collapse(mTextNode, mOffset + mStringToInsert.Length());
     NS_ASSERTION(NS_SUCCEEDED(rv),
@@ -69,7 +83,8 @@ InsertTextTransaction::DoTransaction()
   } else {
     
   }
-  mRangeUpdater->SelAdjInsertText(*mTextNode, mOffset, mStringToInsert);
+  mEditorBase->RangeUpdaterRef().
+                 SelAdjInsertText(*mTextNode, mOffset, mStringToInsert);
 
   return NS_OK;
 }
