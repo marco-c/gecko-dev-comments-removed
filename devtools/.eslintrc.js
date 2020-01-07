@@ -13,15 +13,6 @@ module.exports = {
     "require": true,
   },
   "overrides": [{
-    
-    
-    "files": [
-      "server/tests/mochitest/**",
-    ],
-    "rules": {
-      "no-undef": "off",
-    }
-  }, {
     "files": [
       "client/framework/**",
     ],
