@@ -32,6 +32,9 @@ const CONNECTION_PROTOCOLS = (function() {
 XPCOMUtils.defineLazyServiceGetter(this, "gPushNotifier",
                                    "@mozilla.org/push/Notifier;1",
                                    "nsIPushNotifier");
+XPCOMUtils.defineLazyServiceGetter(this, "eTLDService",
+                                   "@mozilla.org/network/effective-tld-service;1",
+                                   "nsIEffectiveTLDService");
 
 var EXPORTED_SYMBOLS = ["PushService"];
 
@@ -83,33 +86,6 @@ function errorWithResult(message, result = Cr.NS_ERROR_FAILURE) {
   let error = new Error(message);
   error.result = result;
   return error;
-}
-
-
-
-
-
-
-
-
-
-function hasRootDomain(str, aDomain)
-{
-  let index = str.indexOf(aDomain);
-  
-  if (index == -1)
-    return false;
-
-  
-  if (str == aDomain)
-    return true;
-
-  
-  
-  
-  let prevChar = str[index - 1];
-  return (index == (str.length - aDomain.length)) &&
-         (prevChar == "." || prevChar == "/");
 }
 
 
@@ -1134,7 +1110,7 @@ var PushService = {
       .then(_ => {
         return this._dropRegistrationsIf(record =>
           info.domain == "*" ||
-          (record.uri && hasRootDomain(record.uri.prePath, info.domain))
+          (record.uri && eTLDService.hasRootDomain(record.uri.prePath, info.domain))
         );
       })
       .catch(e => {
