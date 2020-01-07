@@ -3,6 +3,7 @@
 
 
 .website-name {
+  overflow: hidden; 
   padding-inline-start: 7px;
   -moz-box-align: center;
 }
