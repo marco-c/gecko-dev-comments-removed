@@ -76,6 +76,12 @@ public:
 
 
 
+  nscolor CalcColor(nscolor aForegroundColor) const;
+
+  
+
+
+
   nscolor CalcColor(mozilla::ComputedStyle* aStyle) const;
 
   

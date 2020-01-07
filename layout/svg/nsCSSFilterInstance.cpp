@@ -224,7 +224,7 @@ nsCSSFilterInstance::SetAttributesForDropShadow(FilterPrimitiveDescription& aDes
   aDescr.Attributes().Set(eDropShadowOffset, offsetInFilterSpace);
 
   
-  nscolor shadowColor = shadow->mHasColor ? shadow->mColor : mShadowFallbackColor;
+  nscolor shadowColor = shadow->mColor.CalcColor(mShadowFallbackColor);
   aDescr.Attributes().Set(eDropShadowColor, ToAttributeColor(shadowColor));
 
   return NS_OK;

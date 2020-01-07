@@ -207,7 +207,6 @@ impl ComputeSquaredDistance for Color {
 impl ToAnimatedZero for Color {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> {
-        
-        Err(())
+        Ok(RGBA::transparent().into())
     }
 }
