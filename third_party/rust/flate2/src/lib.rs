@@ -70,32 +70,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_root_url = "https://docs.rs/flate2/0.2")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
@@ -113,12 +87,10 @@ extern crate rand;
 #[macro_use]
 extern crate tokio_io;
 
-use std::io::prelude::*;
-use std::io;
-
-pub use gz::Builder as GzBuilder;
-pub use gz::Header as GzHeader;
-pub use mem::{Compress, DataError, Decompress, Flush, Status};
+pub use gz::GzBuilder;
+pub use gz::GzHeader;
+pub use mem::{Compress, CompressError, DecompressError, Decompress, Status};
+pub use mem::{FlushCompress, FlushDecompress};
 pub use crc::{Crc, CrcReader};
 
 mod bufreader;
@@ -190,119 +162,43 @@ fn _assert_send_sync() {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Compression {
-    
-    
-    None = 0,
-    
-    Fast = 1,
-    
-    Best = 9,
-    
-    Default = 6,
-}
+pub struct Compression(u32);
 
+impl Compression {
+    
+    
+    
+    
+    
+    pub fn new(level: u32) -> Compression {
+        Compression(level)
+    }
+
+    
+    
+    pub fn none() -> Compression {
+        Compression(0)
+    }
+
+    
+    pub fn fast() -> Compression {
+        Compression(1)
+    }
+
+    
+    pub fn best() -> Compression {
+        Compression(9)
+    }
+
+    
+    
+    pub fn level(&self) -> u32 {
+        self.0
+    }
+}
 
 impl Default for Compression {
     fn default() -> Compression {
-        Compression::Default
-    }
-}
-
-
-pub trait FlateReadExt: Read + Sized {
-    
-    
-    fn gz_encode(self, lvl: Compression) -> read::GzEncoder<Self> {
-        read::GzEncoder::new(self, lvl)
-    }
-
-    
-    fn gz_decode(self) -> io::Result<read::GzDecoder<Self>> {
-        read::GzDecoder::new(self)
-    }
-
-    
-    
-    fn zlib_encode(self, lvl: Compression) -> read::ZlibEncoder<Self> {
-        read::ZlibEncoder::new(self, lvl)
-    }
-
-    
-    fn zlib_decode(self) -> read::ZlibDecoder<Self> {
-        read::ZlibDecoder::new(self)
-    }
-
-    
-    
-    fn deflate_encode(self, lvl: Compression) -> read::DeflateEncoder<Self> {
-        read::DeflateEncoder::new(self, lvl)
-    }
-
-    
-    fn deflate_decode(self) -> read::DeflateDecoder<Self> {
-        read::DeflateDecoder::new(self)
-    }
-}
-
-
-pub trait FlateWriteExt: Write + Sized {
-    
-    
-    fn gz_encode(self, lvl: Compression) -> write::GzEncoder<Self> {
-        write::GzEncoder::new(self, lvl)
-    }
-
-    
-    
-    
-    
-    
-
-    
-    
-    fn zlib_encode(self, lvl: Compression) -> write::ZlibEncoder<Self> {
-        write::ZlibEncoder::new(self, lvl)
-    }
-
-    
-    fn zlib_decode(self) -> write::ZlibDecoder<Self> {
-        write::ZlibDecoder::new(self)
-    }
-
-    
-    
-    fn deflate_encode(self, lvl: Compression) -> write::DeflateEncoder<Self> {
-        write::DeflateEncoder::new(self, lvl)
-    }
-
-    
-    fn deflate_decode(self) -> write::DeflateDecoder<Self> {
-        write::DeflateDecoder::new(self)
-    }
-}
-
-impl<T: Read> FlateReadExt for T {}
-impl<T: Write> FlateWriteExt for T {}
-
-#[cfg(test)]
-mod test {
-    use std::io::prelude::*;
-    use {Compression, FlateReadExt};
-
-    #[test]
-    fn crazy() {
-        let rdr = &mut b"foobar";
-        let mut res = Vec::new();
-        rdr.gz_encode(Compression::Default)
-            .deflate_encode(Compression::Default)
-            .zlib_encode(Compression::Default)
-            .zlib_decode()
-            .deflate_decode()
-            .gz_decode()
-            .unwrap()
-            .read_to_end(&mut res)
-            .unwrap();
-        assert_eq!(res, b"foobar");
+        Compression(6)
     }
 }

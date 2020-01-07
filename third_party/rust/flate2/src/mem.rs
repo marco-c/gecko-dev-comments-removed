@@ -63,10 +63,10 @@ enum DirCompress {}
 #[derive(Debug)]
 enum DirDecompress {}
 
-
-
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Flush {
+
+
+pub enum FlushCompress {
     
     
     
@@ -96,18 +96,6 @@ pub enum Flush {
     
     
     
-    
-    
-    
-    
-    
-    Block = ffi::MZ_BLOCK as isize,
-
-    
-    
-    
-    
-    
     Full = ffi::MZ_FULL_FLUSH as isize,
 
     
@@ -115,12 +103,48 @@ pub enum Flush {
     
     
     Finish = ffi::MZ_FINISH as isize,
+
+    #[doc(hidden)]
+    _Nonexhaustive
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+
+
+pub enum FlushDecompress {
+    
+    
+    
+    None = ffi::MZ_NO_FLUSH as isize,
+
+    
+    
+    
+    
+    
+    
+    
+    Sync = ffi::MZ_SYNC_FLUSH as isize,
+
+    
+    
+    
+    
+    Finish = ffi::MZ_FINISH as isize,
+
+    #[doc(hidden)]
+    _Nonexhaustive
 }
 
 
 
 #[derive(Debug)]
-pub struct DataError(());
+pub struct DecompressError(());
+
+
+
+#[derive(Debug)]
+pub struct CompressError(());
 
 
 
@@ -161,7 +185,7 @@ impl Compress {
         unsafe {
             let mut state = ffi::StreamWrapper::default();
             let ret = ffi::mz_deflateInit2(&mut *state,
-                                           level as c_int,
+                                           level.0 as c_int,
                                            ffi::MZ_DEFLATED,
                                            if zlib_header {
                                                ffi::MZ_DEFAULT_WINDOW_BITS
@@ -215,8 +239,8 @@ impl Compress {
     pub fn compress(&mut self,
                     input: &[u8],
                     output: &mut [u8],
-                    flush: Flush)
-                    -> Status {
+                    flush: FlushCompress)
+                    -> Result<Status, CompressError> {
         let raw = &mut *self.inner.stream_wrapper;
         raw.next_in = input.as_ptr() as *mut _;
         raw.avail_in = input.len() as c_uint;
@@ -233,9 +257,10 @@ impl Compress {
                                  output.as_ptr() as usize) as u64;
 
         match rc {
-            ffi::MZ_OK => Status::Ok,
-            ffi::MZ_BUF_ERROR => Status::BufError,
-            ffi::MZ_STREAM_END => Status::StreamEnd,
+            ffi::MZ_OK => Ok(Status::Ok),
+            ffi::MZ_BUF_ERROR => Ok(Status::BufError),
+            ffi::MZ_STREAM_END => Ok(Status::StreamEnd),
+            ffi::MZ_STREAM_ERROR => Err(CompressError(())),
             c => panic!("unknown return code: {}", c),
         }
     }
@@ -251,8 +276,8 @@ impl Compress {
     pub fn compress_vec(&mut self,
                         input: &[u8],
                         output: &mut Vec<u8>,
-                        flush: Flush)
-                        -> Status {
+                        flush: FlushCompress)
+                        -> Result<Status, CompressError> {
         let cap = output.capacity();
         let len = output.len();
 
@@ -327,11 +352,13 @@ impl Decompress {
     
     
     
+    
+    
     pub fn decompress(&mut self,
                       input: &[u8],
                       output: &mut [u8],
-                      flush: Flush)
-                      -> Result<Status, DataError> {
+                      flush: FlushDecompress)
+                      -> Result<Status, DecompressError> {
         let raw = &mut *self.inner.stream_wrapper;
         raw.next_in = input.as_ptr() as *mut u8;
         raw.avail_in = input.len() as c_uint;
@@ -349,7 +376,7 @@ impl Decompress {
 
         match rc {
             ffi::MZ_DATA_ERROR |
-            ffi::MZ_STREAM_ERROR => Err(DataError(())),
+            ffi::MZ_STREAM_ERROR => Err(DecompressError(())),
             ffi::MZ_OK => Ok(Status::Ok),
             ffi::MZ_BUF_ERROR => Ok(Status::BufError),
             ffi::MZ_STREAM_END => Ok(Status::StreamEnd),
@@ -374,8 +401,8 @@ impl Decompress {
     pub fn decompress_vec(&mut self,
                           input: &[u8],
                           output: &mut Vec<u8>,
-                          flush: Flush)
-                          -> Result<Status, DataError> {
+                          flush: FlushDecompress)
+                          -> Result<Status, DecompressError> {
         let cap = output.capacity();
         let len = output.len();
 
@@ -423,17 +450,33 @@ impl Decompress {
     }
 }
 
-impl Error for DataError {
-    fn description(&self) -> &str { "deflate data error" }
+impl Error for DecompressError {
+    fn description(&self) -> &str { "deflate decompression error" }
 }
 
-impl From<DataError> for io::Error {
-    fn from(data: DataError) -> io::Error {
+impl From<DecompressError> for io::Error {
+    fn from(data: DecompressError) -> io::Error {
         io::Error::new(io::ErrorKind::Other, data)
     }
 }
 
-impl fmt::Display for DataError {
+impl fmt::Display for DecompressError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
+impl Error for CompressError {
+    fn description(&self) -> &str { "deflate compression error" }
+}
+
+impl From<CompressError> for io::Error {
+    fn from(data: CompressError) -> io::Error {
+        io::Error::new(io::ErrorKind::Other, data)
+    }
+}
+
+impl fmt::Display for CompressError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.description().fmt(f)
     }
@@ -463,7 +506,7 @@ mod tests {
     use std::io::Write;
 
     use write;
-    use {Compression, Decompress, Flush};
+    use {Compression, Decompress, FlushDecompress};
 
     #[test]
     fn issue51() {
@@ -485,11 +528,11 @@ mod tests {
 
         let mut d = Decompress::new(false);
         
-        assert!(d.decompress_vec(&data[10..], &mut decoded, Flush::Finish).is_ok());
+        assert!(d.decompress_vec(&data[10..], &mut decoded, FlushDecompress::Finish).is_ok());
 
         
         
-        drop(d.decompress_vec(&[0], &mut decoded, Flush::None));
+        drop(d.decompress_vec(&[0], &mut decoded, FlushDecompress::None));
     }
 
     #[test]
@@ -498,18 +541,18 @@ mod tests {
         let mut zlib = Vec::new();
         let mut deflate = Vec::new();
 
-        let comp = Compression::Default;
+        let comp = Compression::default();
         write::ZlibEncoder::new(&mut zlib, comp).write_all(string).unwrap();
         write::DeflateEncoder::new(&mut deflate, comp).write_all(string).unwrap();
 
         let mut dst = [0; 1024];
         let mut decoder = Decompress::new(true);
-        decoder.decompress(&zlib, &mut dst, Flush::Finish).unwrap();
+        decoder.decompress(&zlib, &mut dst, FlushDecompress::Finish).unwrap();
         assert_eq!(decoder.total_out(), string.len() as u64);
         assert!(dst.starts_with(string));
 
         decoder.reset(false);
-        decoder.decompress(&deflate, &mut dst, Flush::Finish).unwrap();
+        decoder.decompress(&deflate, &mut dst, FlushDecompress::Finish).unwrap();
         assert_eq!(decoder.total_out(), string.len() as u64);
         assert!(dst.starts_with(string));
     }

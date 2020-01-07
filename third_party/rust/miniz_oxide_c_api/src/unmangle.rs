@@ -1,0 +1,22 @@
+
+
+
+
+#[cfg(not(feature = "no_c_export"))]
+#[macro_export]
+macro_rules! unmangle {
+    ($($it:item)*) => {$(
+        #[no_mangle]
+        #[allow(bad_style)]
+        $it
+    )*}
+}
+
+#[cfg(feature = "no_c_export")]
+#[macro_export]
+macro_rules! unmangle {
+    ($($it:item)*) => {$(
+        #[allow(bad_style)]
+        $it
+    )*}
+}

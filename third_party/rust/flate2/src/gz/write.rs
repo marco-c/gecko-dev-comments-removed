@@ -6,7 +6,7 @@ use futures::Poll;
 #[cfg(feature = "tokio")]
 use tokio_io::{AsyncRead, AsyncWrite};
 
-use super::Builder;
+use super::GzBuilder;
 use {Compress, Compression};
 use crc::Crc;
 use zio;
@@ -59,7 +59,7 @@ impl<W: Write> GzEncoder<W> {
     
     
     pub fn new(w: W, level: Compression) -> GzEncoder<W> {
-        Builder::new().write(w, level)
+        GzBuilder::new().write(w, level)
     }
 
     

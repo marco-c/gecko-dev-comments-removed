@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::io;
 
-use super::{Builder, Header};
+use super::{GzBuilder, GzHeader};
 use Compression;
 use bufreader::BufReader;
 use super::bufread;
@@ -52,7 +52,7 @@ impl<R: Read> GzEncoder<R> {
     
     
     pub fn new(r: R, level: Compression) -> GzEncoder<R> {
-        Builder::new().read(r, level)
+        GzBuilder::new().read(r, level)
     }
 }
 
@@ -134,19 +134,16 @@ pub struct GzDecoder<R> {
 impl<R: Read> GzDecoder<R> {
     
     
-    
-    
-    
-    
-    
-    pub fn new(r: R) -> io::Result<GzDecoder<R>> {
-        bufread::GzDecoder::new(BufReader::new(r)).map(|r| GzDecoder { inner: r })
+    pub fn new(r: R) -> GzDecoder<R> {
+        GzDecoder {
+            inner: bufread::GzDecoder::new(BufReader::new(r)),
+        }
     }
 }
 
 impl<R> GzDecoder<R> {
     
-    pub fn header(&self) -> &Header {
+    pub fn header(&self) -> Option<&GzHeader> {
         self.inner.header()
     }
 
@@ -234,19 +231,16 @@ impl<R: Read> MultiGzDecoder<R> {
     
     
     
-    
-    
-    
-    
-    
-    pub fn new(r: R) -> io::Result<MultiGzDecoder<R>> {
-        bufread::MultiGzDecoder::new(BufReader::new(r)).map(|r| MultiGzDecoder { inner: r })
+    pub fn new(r: R) -> MultiGzDecoder<R> {
+        MultiGzDecoder {
+            inner: bufread::MultiGzDecoder::new(BufReader::new(r)),
+        }
     }
 }
 
 impl<R> MultiGzDecoder<R> {
     
-    pub fn header(&self) -> &Header {
+    pub fn header(&self) -> Option<&GzHeader> {
         self.inner.header()
     }
 

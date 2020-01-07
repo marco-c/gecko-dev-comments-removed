@@ -6,7 +6,7 @@ use flate2::write::DeflateEncoder;
 
 
 fn main() {
-    let mut e = DeflateEncoder::new(Vec::new(), Compression::Default);
+    let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
     e.write(b"Hello World").unwrap();
     println!("{:?}", e.finish().unwrap());
 }

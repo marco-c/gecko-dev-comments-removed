@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::io;
 use std::mem;
 
-use super::{Builder, Header};
+use super::{GzBuilder, GzHeader};
 use super::{FCOMMENT, FEXTRA, FHCRC, FNAME};
 use Compression;
 use crc::CrcReader;
@@ -34,7 +34,7 @@ fn read_le_u16<R: Read>(r: &mut R) -> io::Result<u16> {
     Ok((b[0] as u16) | ((b[1] as u16) << 8))
 }
 
-fn read_gz_header<R: Read>(r: &mut R) -> io::Result<Header> {
+fn read_gz_header<R: Read>(r: &mut R) -> io::Result<GzHeader> {
     let mut crc_reader = CrcReader::new(r);
     let mut header = [0; 10];
     try!(crc_reader.read_exact(&mut header));
@@ -53,7 +53,7 @@ fn read_gz_header<R: Read>(r: &mut R) -> io::Result<Header> {
     let mtime = ((header[4] as u32) << 0) | ((header[5] as u32) << 8) | ((header[6] as u32) << 16) |
         ((header[7] as u32) << 24);
     let _xfl = header[8];
-    let _os = header[9];
+    let os = header[9];
 
     let extra = if flg & FEXTRA != 0 {
         let xlen = try!(read_le_u16(&mut crc_reader));
@@ -100,10 +100,11 @@ fn read_gz_header<R: Read>(r: &mut R) -> io::Result<Header> {
         }
     }
 
-    Ok(Header {
+    Ok(GzHeader {
         extra: extra,
         filename: filename,
         comment: comment,
+        operating_system: os,
         mtime: mtime,
     })
 }
@@ -168,7 +169,7 @@ impl<R: BufRead> GzEncoder<R> {
     
     
     pub fn new(r: R, level: Compression) -> GzEncoder<R> {
-        Builder::new().buf_read(r, level)
+        GzBuilder::new().buf_read(r, level)
     }
 
     fn read_footer(&mut self, into: &mut [u8]) -> io::Result<usize> {
@@ -281,7 +282,7 @@ impl<R: BufRead + Write> Write for GzEncoder<R> {
 #[derive(Debug)]
 pub struct GzDecoder<R> {
     inner: CrcReader<deflate::bufread::DeflateDecoder<R>>,
-    header: Header,
+    header: io::Result<GzHeader>,
     finished: bool,
 }
 
@@ -289,20 +290,15 @@ pub struct GzDecoder<R> {
 impl<R: BufRead> GzDecoder<R> {
     
     
-    
-    
-    
-    
-    
-    pub fn new(mut r: R) -> io::Result<GzDecoder<R>> {
-        let header = try!(read_gz_header(&mut r));
+    pub fn new(mut r: R) -> GzDecoder<R> {
+        let header = read_gz_header(&mut r);
 
         let flate = deflate::bufread::DeflateDecoder::new(r);
-        return Ok(GzDecoder {
+        GzDecoder {
             inner: CrcReader::new(flate),
             header: header,
             finished: false,
-        });
+        }
     }
 
     fn finish(&mut self) -> io::Result<()> {
@@ -338,8 +334,8 @@ impl<R: BufRead> GzDecoder<R> {
 
 impl<R> GzDecoder<R> {
     
-    pub fn header(&self) -> &Header {
-        &self.header
+    pub fn header(&self) -> Option<&GzHeader> {
+        self.header.as_ref().ok()
     }
 
     
@@ -363,6 +359,10 @@ impl<R> GzDecoder<R> {
 
 impl<R: BufRead> Read for GzDecoder<R> {
     fn read(&mut self, into: &mut [u8]) -> io::Result<usize> {
+        if let Err(ref mut e) = self.header {
+            let another_error = io::ErrorKind::Other.into();
+            return Err(mem::replace(e, another_error))
+        }
         match try!(self.inner.read(into)) {
             0 => {
                 try!(self.finish());
@@ -428,7 +428,7 @@ impl<R: BufRead + Write> Write for GzDecoder<R> {
 #[derive(Debug)]
 pub struct MultiGzDecoder<R> {
     inner: CrcReader<deflate::bufread::DeflateDecoder<R>>,
-    header: Header,
+    header: io::Result<GzHeader>,
     finished: bool,
 }
 
@@ -437,20 +437,15 @@ impl<R: BufRead> MultiGzDecoder<R> {
     
     
     
-    
-    
-    
-    
-    
-    pub fn new(mut r: R) -> io::Result<MultiGzDecoder<R>> {
-        let header = try!(read_gz_header(&mut r));
+    pub fn new(mut r: R) -> MultiGzDecoder<R> {
+        let header = read_gz_header(&mut r);
 
         let flate = deflate::bufread::DeflateDecoder::new(r);
-        return Ok(MultiGzDecoder {
+        MultiGzDecoder {
             inner: CrcReader::new(flate),
             header: header,
             finished: false,
-        });
+        }
     }
 
     fn finish_member(&mut self) -> io::Result<usize> {
@@ -489,8 +484,8 @@ impl<R: BufRead> MultiGzDecoder<R> {
             Err(e) => return Err(e),
         };
 
-        let next_header = try!(read_gz_header(self.inner.get_mut().get_mut()));
-        mem::replace(&mut self.header, next_header);
+        let next_header = read_gz_header(self.inner.get_mut().get_mut());
+        drop(mem::replace(&mut self.header, next_header));
         self.inner.reset();
         self.inner.get_mut().reset_data();
 
@@ -500,8 +495,8 @@ impl<R: BufRead> MultiGzDecoder<R> {
 
 impl<R> MultiGzDecoder<R> {
     
-    pub fn header(&self) -> &Header {
-        &self.header
+    pub fn header(&self) -> Option<&GzHeader> {
+        self.header.as_ref().ok()
     }
 
     
@@ -525,6 +520,10 @@ impl<R> MultiGzDecoder<R> {
 
 impl<R: BufRead> Read for MultiGzDecoder<R> {
     fn read(&mut self, into: &mut [u8]) -> io::Result<usize> {
+        if let Err(ref mut e) = self.header {
+            let another_error = io::ErrorKind::Other.into();
+            return Err(mem::replace(e, another_error))
+        }
         match try!(self.inner.read(into)) {
             0 => match self.finish_member() {
                 Ok(0) => Ok(0),
