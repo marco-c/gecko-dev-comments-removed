@@ -93,7 +93,7 @@ impl<R, Q> ClientProxy<R, Q> {
         
         
         
-        let _ = self.tx.send((request, tx));
+        let _ = self.tx.unbounded_send((request, tx));
 
         Response { inner: rx }
     }
