@@ -2294,12 +2294,12 @@ public:
 
 
 
-  static nsresult GetFontFacesForText(nsIFrame* aFrame,
-                                      int32_t aStartOffset,
-                                      int32_t aEndOffset,
-                                      bool aFollowContinuations,
-                                      UsedFontFaceTable& aResult,
-                                      uint32_t aMaxRanges);
+  static void GetFontFacesForText(nsIFrame* aFrame,
+                                  int32_t aStartOffset,
+                                  int32_t aEndOffset,
+                                  bool aFollowContinuations,
+                                  UsedFontFaceTable& aResult,
+                                  uint32_t aMaxRanges);
 
   
 
