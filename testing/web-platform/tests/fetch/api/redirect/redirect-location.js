@@ -32,7 +32,7 @@ function redirectLocation(desc, redirectUrl, redirectLocation, redirectStatus, r
 
 var redirUrl = RESOURCES_DIR + "redirect.py";
 var locationUrl = "top.txt";
-var invalidLocationUrl = "#invalidurl:";
+var invalidLocationUrl = "invalidurl:";
 var dataLocationUrl = "data:,data%20url";
 
 
