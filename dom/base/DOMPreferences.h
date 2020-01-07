@@ -15,6 +15,10 @@ class DOMPreferences final
 public:
   
   static bool DumpEnabled();
+
+  
+  static bool ImageBitmapExtensionsEnabled();
+  static bool ImageBitmapExtensionsEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
