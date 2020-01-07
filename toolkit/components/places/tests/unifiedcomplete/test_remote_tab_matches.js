@@ -25,15 +25,14 @@ MockTabsEngine.prototype = {
 
 
 let MockClientsEngine = {
-  isMobile(guid) {
+  getClientType(guid) {
     Assert.ok(guid.endsWith("desktop") || guid.endsWith("mobile"));
-    return guid.endsWith("mobile");
-  },
+    return guid.endsWith("mobile") ? "phone" : "desktop";
+  }
 };
 
 
 Weave.Service.engineManager.register(MockTabsEngine);
-Weave.Service.clientsEngine = MockClientsEngine;
 
 
 let weaveXPCService = Cc["@mozilla.org/weave/service;1"]
@@ -46,6 +45,7 @@ function configureEngine(clients) {
   
   let engine = Weave.Service.engineManager.get("tabs");
   engine.clients = clients;
+  Weave.Service.clientsEngine = MockClientsEngine;
   
   Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
 }
