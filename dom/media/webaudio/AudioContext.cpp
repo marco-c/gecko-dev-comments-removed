@@ -9,7 +9,6 @@
 #include "blink/PeriodicWave.h"
 
 #include "mozilla/ErrorResult.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Preferences.h"
@@ -45,7 +44,6 @@
 #include "AudioListener.h"
 #include "AudioNodeStream.h"
 #include "AudioStream.h"
-#include "AutoplayPolicy.h"
 #include "BiquadFilterNode.h"
 #include "ChannelMergerNode.h"
 #include "ChannelSplitterNode.h"
@@ -85,7 +83,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDestination)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListener)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromiseGripArray)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingResumePromises)
   if (!tmp->mIsStarted) {
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveNodes)
   }
@@ -104,7 +101,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AudioContext,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDestination)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListener)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromiseGripArray)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingResumePromises)
   if (!tmp->mIsStarted) {
     MOZ_ASSERT(tmp->mIsOffline,
                "Online AudioContexts should always be started");
@@ -153,27 +149,12 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
 
   
   
-  bool allowedToStart = AutoplayPolicy::IsAudioContextAllowedToPlay(WrapNotNull(this));
-  mDestination = new AudioDestinationNode(this,
-                                          aIsOffline,
-                                          allowedToStart,
-                                          aNumberOfChannels,
-                                          aLength,
-                                          aSampleRate);
+  mDestination = new AudioDestinationNode(this, aIsOffline,
+                                          aNumberOfChannels, aLength, aSampleRate);
 
   
   if (mute) {
     Mute();
-  }
-
-  
-  
-  if (!allowedToStart) {
-    ErrorResult rv;
-    RefPtr<Promise> dummy = Suspend(rv);
-    MOZ_ASSERT(!rv.Failed(), "can't create promise");
-    MOZ_ASSERT(dummy->State() != Promise::PromiseState::Rejected,
-               "suspend failed");
   }
 }
 
@@ -745,11 +726,6 @@ AudioContext::Shutdown()
     }
 
     mPromiseGripArray.Clear();
-
-    for (const auto& p : mPendingResumePromises) {
-      p->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    }
-    mPendingResumePromises.Clear();
   }
 
   
@@ -929,16 +905,6 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
     }
   }
 
-  
-  
-  if (mAudioContextState == AudioContextState::Suspended &&
-      aNewState == AudioContextState::Running) {
-    for (const auto& p : mPendingResumePromises) {
-      p->MaybeResolveWithUndefined();
-    }
-    mPendingResumePromises.Clear();
-  }
-
   if (mAudioContextState != aNewState) {
     RefPtr<OnStateChangeTask> task = new OnStateChangeTask(this);
     Dispatch(task.forget());
@@ -1022,24 +988,22 @@ AudioContext::Resume(ErrorResult& aRv)
     return promise.forget();
   }
 
-  mPendingResumePromises.AppendElement(promise);
+  Destination()->Resume();
 
-  if (AutoplayPolicy::IsAudioContextAllowedToPlay(WrapNotNull(this))) {
-    Destination()->Resume();
-
-    nsTArray<MediaStream*> streams;
-    
-    
-    
-    
-    if (mSuspendCalled) {
-      streams = GetAllStreams();
-    }
-    Graph()->ApplyAudioContextOperation(DestinationStream()->AsAudioNodeStream(),
-                                        streams,
-                                        AudioContextOperation::Resume, promise);
-    mSuspendCalled = false;
+  nsTArray<MediaStream*> streams;
+  
+  
+  
+  
+  if (mSuspendCalled) {
+    streams = GetAllStreams();
   }
+  mPromiseGripArray.AppendElement(promise);
+  Graph()->ApplyAudioContextOperation(DestinationStream()->AsAudioNodeStream(),
+                                      streams,
+                                      AudioContextOperation::Resume, promise);
+
+  mSuspendCalled = false;
 
   return promise.forget();
 }

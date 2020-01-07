@@ -1,5 +1,3 @@
-
-
 const VIDEO_PAGE = "https://example.com/browser/toolkit/content/tests/browser/file_video.html";
 
 var UserGestures = {
@@ -17,8 +15,7 @@ var UserGestureTests = [
 function setup_test_preference() {
   return SpecialPowers.pushPrefEnv({"set": [
     ["media.autoplay.enabled", false],
-    ["media.autoplay.enabled.user-gestures-needed", true],
-    ["media.navigator.permission.fake", true]
+    ["media.autoplay.enabled.user-gestures-needed", true]
   ]});
 }
 
@@ -99,157 +96,10 @@ async function test_play_with_user_gesture(gesture) {
       ok(video.paused, "video can not start playing.");
     }
   }
-
   await ContentTask.spawn(tab.linkedBrowser, gesture, play_video);
 
   info("- remove tab -");
   BrowserTestUtils.removeTab(tab);
-}
-
-function createAudioContext() {
-  content.ac = new content.AudioContext();
-  let ac = content.ac;
-  ac.resumePromises = [];
-  ac.stateChangePromise = new Promise(resolve => {
-    ac.addEventListener("statechange", function() {
-      resolve();
-    }, {once: true});
-  });
-}
-
-async function checking_audio_context_running_state() {
-  let ac = content.ac;
-  await new Promise(r => setTimeout(r, 2000));
-  is(ac.state, "suspended", "audio context is still suspended");
-}
-
-function resume_without_expected_success() {
-  let ac = content.ac;
-  let promise = ac.resume();
-  ac.resumePromises.push(promise);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (ac.state == "suspended") {
-        ok(true, "audio context is still suspended");
-        resolve();
-      } else {
-        reject("audio context should not be allowed to start");
-      }
-    }, 2000);
-  });
-}
-
-function resume_with_expected_success() {
-  let ac = content.ac;
-  ac.resumePromises.push(ac.resume());
-  return Promise.all(ac.resumePromises).then(() => {
-    ok(ac.state == "running", "audio context starts running");
-  });
-}
-
-function callGUM(testParameters) {
-  info("- calling gum with " + JSON.stringify(testParameters.constraints));
-  if (testParameters.shouldAllowStartingContext) {
-    
-    
-    testParameters.constraints.fake = true;
-    return content.navigator.mediaDevices.getUserMedia(testParameters.constraints);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  content.navigator.mediaDevices.getUserMedia(testParameters.constraints);
-  return Promise.resolve();
-}
-
-
-async function test_webaudio_with_user_gesture(gesture) {
-  info("- open new tab -");
-  let tab = await BrowserTestUtils.openNewForegroundTab(window.gBrowser,
-                                                        "about:blank");
-  info("- create audio context -");
-  
-  
-  let frameScript = createAudioContext;
-  let mm = tab.linkedBrowser.messageManager;
-  mm.loadFrameScript("data:,(" + frameScript.toString() + ")();", false);
-
-  info("- check whether audio context starts running -");
-  try {
-    await ContentTask.spawn(tab.linkedBrowser, null,
-                            checking_audio_context_running_state);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  info("- calling resume() -");
-  try {
-    await ContentTask.spawn(tab.linkedBrowser, null,
-                            resume_without_expected_success);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  info("- simulate user gesture -");
-  await simulateUserGesture(gesture, tab.linkedBrowser);
-
-  info("- calling resume() again");
-  try {
-    let resumeFunc = gesture.isActivationGesture ?
-      resume_with_expected_success :
-      resume_without_expected_success;
-    await ContentTask.spawn(tab.linkedBrowser, null, resumeFunc);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  info("- remove tab -");
-  await BrowserTestUtils.removeTab(tab);
-}
-
-async function test_webaudio_with_gum(testParameters) {
-  info("- open new tab -");
-  let tab = await BrowserTestUtils.openNewForegroundTab(window.gBrowser,
-                                                        "about:blank");
-  info("- create audio context -");
-  
-  
-  let frameScript = createAudioContext;
-  let mm = tab.linkedBrowser.messageManager;
-  mm.loadFrameScript("data:,(" + frameScript.toString() + ")();", false);
-
-  info("- check whether audio context starts running -");
-  try {
-    await ContentTask.spawn(tab.linkedBrowser, null,
-                            checking_audio_context_running_state);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  try {
-    await ContentTask.spawn(tab.linkedBrowser, testParameters, callGUM);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  info("- calling resume() again");
-  try {
-    let resumeFunc = testParameters.shouldAllowStartingContext ?
-      resume_with_expected_success :
-      resume_without_expected_success;
-    await ContentTask.spawn(tab.linkedBrowser, null, resumeFunc);
-  } catch (error) {
-    ok(false, error.toString());
-  }
-
-  info("- remove tab -");
-  await BrowserTestUtils.removeTab(tab);
 }
 
 add_task(async function start_test() {
@@ -261,24 +111,6 @@ add_task(async function start_test() {
 
   info("- test play after page got user gesture -");
   for (let idx = 0; idx < UserGestureTests.length; idx++) {
-    info("- test play after page got user gesture -");
     await test_play_with_user_gesture(UserGestureTests[idx]);
-
-    info("- test web audio with user gesture -");
-    await test_webaudio_with_user_gesture(UserGestureTests[idx]);
   }
-
-  await test_webaudio_with_gum({constraints: { audio: true },
-                                shouldAllowStartingContext: true});
-  await test_webaudio_with_gum({constraints: { video: true },
-                                shouldAllowStartingContext: true});
-  await test_webaudio_with_gum({constraints: { video: true,
-                                               audio: true },
-                                shouldAllowStartingContext: true});
-  await test_webaudio_with_gum({constraints: { video: true },
-                                shouldAllowStartingContext: false});
-  await test_webaudio_with_gum({constraints: { audio: true },
-                                shouldAllowStartingContext: false});
-  await test_webaudio_with_gum({constraints: { video: true, audio: true },
-                                shouldAllowStartingContext: false});
 });
