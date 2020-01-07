@@ -179,6 +179,7 @@ public class GeckoApplication extends Application
         
         
         
+        EventDispatcher.getInstance().dispatch("Session:FlushTabs", null);
         GeckoThread.onPause();
         mPausedGecko = true;
 

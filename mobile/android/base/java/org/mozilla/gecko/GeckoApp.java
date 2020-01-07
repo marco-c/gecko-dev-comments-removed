@@ -608,7 +608,15 @@ public abstract class GeckoApp extends GeckoActivity
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        
+        
         super.onSaveInstanceState(outState);
+
+        
+        
+        if (!isApplicationInBackground()) {
+            EventDispatcher.getInstance().dispatch("Session:FlushTabs", null);
+        }
 
         outState.putBoolean(SAVED_STATE_IN_BACKGROUND, isApplicationInBackground());
         outState.putString(SAVED_STATE_PRIVATE_SESSION, mPrivateBrowsingSession);

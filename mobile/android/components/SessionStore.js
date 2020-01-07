@@ -202,6 +202,17 @@ SessionStore.prototype = {
         log("ClosedTabs:StopNotifications");
         break;
 
+      case "Session:FlushTabs":
+        
+        
+        
+        
+        log("Session:FlushTabs");
+        if (this._loadState == STATE_RUNNING) {
+          this.flushPendingState();
+        }
+        break;
+
       case "Session:Restore": {
         EventDispatcher.instance.unregisterListener(this, "Session:Restore");
         if (data) {
@@ -266,6 +277,7 @@ SessionStore.prototype = {
         EventDispatcher.instance.registerListener(this, [
           "ClosedTabs:StartNotifications",
           "ClosedTabs:StopNotifications",
+          "Session:FlushTabs",
           "Session:Restore",
           "Session:RestoreRecentTabs",
           "Tab:KeepZombified",
@@ -281,7 +293,6 @@ SessionStore.prototype = {
         observerService.addObserver(this, "quit-application", true);
         observerService.addObserver(this, "Session:NotifyLocationChange", true);
         observerService.addObserver(this, "Content:HistoryChange", true);
-        observerService.addObserver(this, "application-background", true);
         observerService.addObserver(this, "application-foreground", true);
         observerService.addObserver(this, "last-pb-context-exited", true);
         break;
@@ -375,16 +386,6 @@ SessionStore.prototype = {
         }
         break;
       }
-      case "application-background":
-        
-        
-        
-        
-        log("application-background");
-        if (this._loadState == STATE_RUNNING) {
-          this.flushPendingState();
-        }
-        break;
       case "application-foreground":
         log("application-foreground");
         
