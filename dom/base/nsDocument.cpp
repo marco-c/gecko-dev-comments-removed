@@ -7389,18 +7389,16 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
       RefPtr<DocumentType> docType = GetDoctype();
       if (docType) {
         nsAutoString docId;
-        nsresult rv = docType->GetPublicId(docId);
-        if (NS_SUCCEEDED(rv)) {
-          if ((docId.Find("WAP") != -1) ||
-              (docId.Find("Mobile") != -1) ||
-              (docId.Find("WML") != -1))
-          {
-            
-            mViewportType = DisplayWidthHeight;
-            return nsViewportInfo(aDisplaySize,
-                                  defaultScale,
-                                  true);
-          }
+        docType->GetPublicId(docId);
+        if ((docId.Find("WAP") != -1) ||
+            (docId.Find("Mobile") != -1) ||
+            (docId.Find("WML") != -1))
+        {
+          
+          mViewportType = DisplayWidthHeight;
+          return nsViewportInfo(aDisplaySize,
+                                defaultScale,
+                                true);
         }
       }
 

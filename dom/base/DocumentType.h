@@ -72,6 +72,12 @@ public:
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
+  
+  void GetName(nsAString& aName) const;
+  void GetPublicId(nsAString& aPublicId) const;
+  void GetSystemId(nsAString& aSystemId) const;
+  void GetInternalSubset(nsAString& aInternalSubset) const;
+
 protected:
   virtual ~DocumentType();
 
