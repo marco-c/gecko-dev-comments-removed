@@ -40,11 +40,6 @@ struct ScalarAction;
 struct KeyedScalarAction;
 struct ChildEventData;
 
-enum TimerResolution {
-  Millisecond,
-  Microsecond
-};
-
 
 
 
@@ -220,62 +215,28 @@ void AccumulateTimeDelta(HistogramID id, TimeStamp start, TimeStamp end = TimeSt
 
 
 
+
+void
+AccumulateTimeDelta(HistogramID id,
+                    const nsCString& key,
+                    TimeStamp start,
+                    TimeStamp end = TimeStamp::Now());
+
+
+
+
+
+
+
+
+
 void SetHistogramRecordingEnabled(HistogramID id, bool enabled);
 
 const char* GetHistogramName(HistogramID id);
 
-
-
-
-
-template<TimerResolution res>
-struct AccumulateDelta_impl
+template<HistogramID id>
+class MOZ_RAII AutoTimer
 {
-  static void compute(HistogramID id, TimeStamp start, TimeStamp end = TimeStamp::Now());
-  static void compute(HistogramID id, const nsCString& key, TimeStamp start, TimeStamp end = TimeStamp::Now());
-};
-
-template<>
-struct AccumulateDelta_impl<Millisecond>
-{
-  static void compute(HistogramID id, TimeStamp start, TimeStamp end = TimeStamp::Now()) {
-    if (start > end) {
-      Accumulate(id, 0);
-      return;
-    }
-    Accumulate(id, static_cast<uint32_t>((end - start).ToMilliseconds()));
-  }
-  static void compute(HistogramID id, const nsCString& key, TimeStamp start, TimeStamp end = TimeStamp::Now()) {
-    if (start > end) {
-      Accumulate(id, key, 0);
-      return;
-    }
-    Accumulate(id, key, static_cast<uint32_t>((end - start).ToMilliseconds()));
-  }
-};
-
-template<>
-struct AccumulateDelta_impl<Microsecond>
-{
-  static void compute(HistogramID id, TimeStamp start, TimeStamp end = TimeStamp::Now()) {
-    if (start > end) {
-      Accumulate(id, 0);
-      return;
-    }
-    Accumulate(id, static_cast<uint32_t>((end - start).ToMicroseconds()));
-  }
-  static void compute(HistogramID id, const nsCString& key, TimeStamp start, TimeStamp end = TimeStamp::Now()) {
-    if (start > end) {
-      Accumulate(id, key, 0);
-      return;
-    }
-    Accumulate(id, key, static_cast<uint32_t>((end - start).ToMicroseconds()));
-  }
-};
-
-
-template<HistogramID id, TimerResolution res = Millisecond>
-class MOZ_RAII AutoTimer {
 public:
   explicit AutoTimer(TimeStamp aStart = TimeStamp::Now() MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
      : start(aStart)
@@ -293,9 +254,9 @@ public:
 
   ~AutoTimer() {
     if (key.IsEmpty()) {
-      AccumulateDelta_impl<res>::compute(id, start);
+      AccumulateTimeDelta(id, start);
     } else {
-      AccumulateDelta_impl<res>::compute(id, key, start);
+      AccumulateTimeDelta(id, key, start);
     }
   }
 

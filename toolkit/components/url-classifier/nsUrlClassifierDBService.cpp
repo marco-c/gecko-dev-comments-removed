@@ -1878,8 +1878,8 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithTables(nsIURI *aURI,
         "nsUrlClassifierDBService::AsyncClassifyLocalWithTables",
         [callback, matchedLists, startTime]() -> void {
           
-          AccumulateDelta_impl<Millisecond>::compute(
-            Telemetry::URLCLASSIFIER_ASYNC_CLASSIFYLOCAL_TIME, startTime);
+          AccumulateTimeDelta(Telemetry::URLCLASSIFIER_ASYNC_CLASSIFYLOCAL_TIME,
+                              startTime);
 
           
           auto cb = const_cast<nsIURIClassifierCallback*>(callback.get());
