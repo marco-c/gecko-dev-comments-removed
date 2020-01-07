@@ -55,7 +55,7 @@ public:
                 int aPageWidth, int aPageHeight);
 
   
-  bool DrawPageToFile(const wchar_t* aFilePath, unsigned int aPageIndex,
+  bool SavePageToFile(const wchar_t* aFilePath, unsigned int aPageIndex,
                       int aPageWidth, int aPageHeight);
 
   
