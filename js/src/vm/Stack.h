@@ -1165,6 +1165,77 @@ struct DefaultHasher<AbstractFramePtr> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LiveSavedFrameCache
 {
   public:
@@ -1188,6 +1259,8 @@ class LiveSavedFrameCache
         struct SetHasCachedMatcher;
 
       public:
+        
+        
         static inline mozilla::Maybe<FramePtr> create(const FrameIter& iter);
 
         inline bool hasCachedSavedFrame() const;
@@ -1259,10 +1332,30 @@ class LiveSavedFrameCache
 
     void trace(JSTracer* trc);
 
-    void find(JSContext* cx, FramePtr& frameptr, const jsbytecode* pc,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void find(JSContext* cx, FramePtr& framePtr, const jsbytecode* pc,
               MutableHandleSavedFrame frame) const;
+
+    
+    
+    
+    
+    
     bool insert(JSContext* cx, FramePtr& framePtr, const jsbytecode* pc,
                 HandleSavedFrame savedFrame);
+
+    
     void clear() { if (frames) frames->clear(); }
 };
 
