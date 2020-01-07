@@ -149,6 +149,7 @@ public:
 
 
 
+
   void UpdateFocusState(uint64_t aRootLayerTreeId,
                         uint64_t aOriginatingLayersId,
                         const FocusTarget& aFocusTarget);
@@ -331,6 +332,7 @@ public:
   void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
 
   
+
 
 
 
