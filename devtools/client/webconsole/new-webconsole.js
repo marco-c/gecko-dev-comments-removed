@@ -241,6 +241,10 @@ NewWebConsoleFrame.prototype = {
     shortcuts.on(clearShortcut, () => this.jsterm.clearOutput(true));
 
     if (this.isBrowserConsole) {
+      
+      
+      this.window.focus();
+
       shortcuts.on(l10n.getStr("webconsole.close.key"),
                    this.window.top.close.bind(this.window.top));
 
