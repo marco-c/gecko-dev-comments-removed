@@ -63,7 +63,7 @@ protected:
   
   
   void LoadData();
-  void SaveData();
+  nsresult SaveData();
 
   nsresult ReadData();
   nsresult WriteData();
