@@ -266,13 +266,18 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize, mLastDisplayListSize);
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge());
 
-  mWebRenderCommandBuilder.BuildWebRenderCommands(builder,
-                                                  resourceUpdates,
-                                                  aDisplayList,
-                                                  aDisplayListBuilder,
-                                                  mScrollData,
-                                                  contentSize,
-                                                  aFilters);
+  { 
+    
+    PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
+
+    mWebRenderCommandBuilder.BuildWebRenderCommands(builder,
+                                                    resourceUpdates,
+                                                    aDisplayList,
+                                                    aDisplayListBuilder,
+                                                    mScrollData,
+                                                    contentSize,
+                                                    aFilters);
+  }
 
   DiscardCompositorAnimations();
 
