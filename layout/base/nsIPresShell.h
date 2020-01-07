@@ -282,8 +282,6 @@ public:
 
   nsCSSFrameConstructor* FrameConstructor() const { return mFrameConstructor; }
 
-  nsFrameManager* FrameManager() const { return mFrameManager; }
-
   
 
 

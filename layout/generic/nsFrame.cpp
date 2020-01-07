@@ -43,7 +43,6 @@
 #include "nsIPresShell.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
-#include "nsFrameManager.h"
 #include "nsLayoutUtils.h"
 #include "LayoutLogging.h"
 #ifdef MOZ_OLD_STYLE
@@ -9920,7 +9919,7 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
           
 
           pseudo == nsCSSAnonBoxes::tableWrapper) {
-        nsFrameManager* fm = PresContext()->FrameManager();
+        nsCSSFrameConstructor* fm = PresContext()->FrameConstructor();
         nsStyleContext* sc = fm->GetDisplayContentsStyleFor(parentContent);
         if (MOZ_UNLIKELY(sc)) {
           return sc;
