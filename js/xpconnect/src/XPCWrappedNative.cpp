@@ -572,13 +572,6 @@ XPCWrappedNative::GatherScriptable(nsISupports* aObj,
     
     if (aClassInfo) {
         scrProto = GatherProtoScriptable(aClassInfo);
-
-        if (scrProto && scrProto->DontAskInstanceForScriptable()) {
-            scrWrapper = scrProto;
-            scrProto.forget(aScrProto);
-            scrWrapper.forget(aScrWrapper);
-            return;
-        }
     }
 
     
@@ -599,23 +592,8 @@ XPCWrappedNative::GatherScriptable(nsISupports* aObj,
 
         
         
-        MOZ_ASSERT_IF(scrWrapper->DontAskInstanceForScriptable(),
-                      scrProto && scrProto->DontAskInstanceForScriptable());
-
-        
-        
-        MOZ_ASSERT_IF(scrWrapper->ClassInfoInterfacesOnly() && scrProto,
-                      scrProto->ClassInfoInterfacesOnly());
-
-        
-        
         MOZ_ASSERT_IF(scrWrapper->AllowPropModsDuringResolve() && scrProto,
                       scrProto->AllowPropModsDuringResolve());
-
-        
-        
-        MOZ_ASSERT_IF(scrWrapper->AllowPropModsToPrototype() && scrProto,
-                      scrProto->AllowPropModsToPrototype());
     } else {
         scrWrapper = scrProto;
     }
@@ -981,15 +959,6 @@ XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
     
     
     RefPtr<nsISupports> qiResult;
-
-    
-    
-    if (mScriptable &&
-        mScriptable->ClassInfoInterfacesOnly() &&
-        !mSet->HasInterface(aInterface) &&
-        !mSet->HasInterfaceWithAncestor(aInterface)) {
-        return NS_ERROR_NO_INTERFACE;
-    }
 
     
     
