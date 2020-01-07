@@ -1297,7 +1297,9 @@ class XPIState {
 
     this.version = aDBAddon.version;
     this.type = aDBAddon.type;
-    this.startupData = aDBAddon.startupData;
+    if (aDBAddon.startupData) {
+      this.startupData = aDBAddon.startupData;
+    }
 
     this.bootstrapped = !!aDBAddon.bootstrap;
     if (this.bootstrapped) {
@@ -3448,6 +3450,23 @@ var XPIProvider = {
       AddonManagerPrivate.notifyAddonChanged(addon.id, addon.type, false);
 
     return addon.wrapper;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  setStartupData(aID, aData) {
+    let state = XPIStates.findAddon(aID);
+    state.startupData = aData;
+    XPIStates.save();
   },
 
   
