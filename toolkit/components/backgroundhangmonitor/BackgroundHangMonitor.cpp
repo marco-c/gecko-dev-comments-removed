@@ -236,6 +236,13 @@ public:
     }
 
     Update();
+    if (mHanging) {
+      
+      
+      
+      ReportHang(mInterval - mHangStart);
+      mHanging = false;
+    }
     mWaiting = true;
   }
 
