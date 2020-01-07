@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {Ci, Cu} = require("chrome");
+const {Cc, Ci, Cu} = require("chrome");
 
 const Services = require("Services");
 const protocol = require("devtools/shared/protocol");
@@ -2013,6 +2013,21 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this._ref(offsetParent);
+  },
+
+  
+
+
+
+  hasAccessibilityProperties: async function(node) {
+    if (isNodeDead(node) || !Services.appinfo.accessibilityEnabled) {
+      return false;
+    }
+
+    const accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+      Ci.nsIAccessibilityService);
+    const acc = accService.getAccessibleFor(node.rawNode);
+    return acc && acc.indexInParent > -1;
   },
 });
 

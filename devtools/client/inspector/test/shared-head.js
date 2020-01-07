@@ -576,13 +576,8 @@ var setSearchFilter = async function(view, searchValue) {
 
 
 
-
-
-function openStyleContextMenuAndGetAllItems(view, target) {
-  let menu = view._contextmenu._openMenu({target: target});
-
-  
-  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
+function buildContextMenuItems(menu) {
+  const allItems = [].concat.apply([], menu.items.map(function addItem(item) {
     if (item.submenu) {
       return addItem(item.submenu.items);
     }
@@ -590,4 +585,26 @@ function openStyleContextMenuAndGetAllItems(view, target) {
   }));
 
   return allItems;
+}
+
+
+
+
+
+
+
+function openStyleContextMenuAndGetAllItems(view, target) {
+  const menu = view._contextmenu._openMenu({target: target});
+  return buildContextMenuItems(menu);
+}
+
+
+
+
+
+
+
+function openContextMenuAndGetAllItems(inspector, options) {
+  const menu = inspector._openMenu(options);
+  return buildContextMenuItems(menu);
 }

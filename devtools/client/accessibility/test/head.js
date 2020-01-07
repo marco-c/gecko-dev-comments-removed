@@ -99,6 +99,7 @@ async function addTestTab(url) {
     browser: tab.linkedBrowser,
     panel,
     win,
+    toolbox: panel._toolbox,
     doc,
     store
   };
@@ -108,10 +109,14 @@ async function addTestTab(url) {
 
 
 
-function disableAccessibilityInspector(env) {
-  let { doc, win } = env;
+async function disableAccessibilityInspector(env) {
+  let { doc, win, panel } = env;
+  
+  
+  let shutdown = panel._front.once("shutdown");
   EventUtils.sendMouseEvent({ type: "click" },
     doc.getElementById("accessibility-disable-button"), win);
+  await shutdown;
 }
 
 
@@ -242,7 +247,7 @@ async function runA11yPanelTests(tests, env) {
 
 
 function buildURL(uri) {
-  return `data:text/html,${encodeURIComponent(uri)}`;
+  return `data:text/html;charset=UTF-8,${encodeURIComponent(uri)}`;
 }
 
 
@@ -260,15 +265,22 @@ function buildURL(uri) {
 
 
 function addA11yPanelTestsTask(tests, uri, msg) {
-  tests.push({
-    desc: "Disable accessibility inspector.",
-    action: env => disableAccessibilityInspector(env),
-    expected: {}
-  });
-  add_task(async function a11yPanelTests() {
+  addA11YPanelTask(msg, uri, env => runA11yPanelTests(tests, env));
+}
+
+
+
+
+
+
+
+
+function addA11YPanelTask(msg, uri, task) {
+  add_task(async function a11YPanelTask() {
     info(msg);
     let env = await addTestTab(buildURL(uri));
-    await runA11yPanelTests(tests, env);
+    await task(env);
+    await disableAccessibilityInspector(env);
   });
 }
 

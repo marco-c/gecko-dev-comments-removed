@@ -755,26 +755,6 @@ async function assertTooltipHiddenOnMouseOut(tooltip, target) {
 
 
 
-function openContextMenuAndGetAllItems(inspector, options) {
-  let menu = inspector._openMenu(options);
-
-  
-  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
-    if (item.submenu) {
-      return addItem(item.submenu.items);
-    }
-    return item;
-  }));
-
-  return allItems;
-}
-
-
-
-
-
-
-
 
 
 
