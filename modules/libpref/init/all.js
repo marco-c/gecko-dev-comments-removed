@@ -666,6 +666,8 @@ pref("media.audioipc.stack_size", 65536);
 pref("media.cubeb.sandbox", false);
 #endif
 
+pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
+
 
 pref("media.playback.warnings-as-errors", false);
 
