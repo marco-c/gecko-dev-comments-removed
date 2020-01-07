@@ -44,9 +44,6 @@ class ToolboxToolbar extends Component {
       currentHostType: PropTypes.string,
       
       
-      areDockButtonsEnabled: PropTypes.bool,
-      
-      
       canCloseToolbox: PropTypes.bool,
       
       isSplitConsoleActive: PropTypes.bool,
