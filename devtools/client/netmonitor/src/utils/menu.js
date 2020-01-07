@@ -24,6 +24,10 @@ function showMenu(items, options) {
   
   let menu = new Menu();
   items.forEach((item) => {
+    if (item == "-") {
+      item = { type: "separator" };
+    }
+
     let menuItem = new MenuItem(item);
     let subItems = item.submenu;
 
