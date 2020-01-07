@@ -6050,7 +6050,9 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
     
     
     
-    mAsyncOpenTime = TimeStamp::Now();
+    if (!mAsyncOpenTimeOverriden) {
+      mAsyncOpenTime = TimeStamp::Now();
+    }
 
     
     

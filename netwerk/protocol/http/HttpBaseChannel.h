@@ -676,6 +676,7 @@ protected:
   
   TimingStruct                      mTransactionTimings;
 
+  bool                              mAsyncOpenTimeOverriden;
   bool                              mForcePending;
 
   bool mCorsIncludeCredentials;

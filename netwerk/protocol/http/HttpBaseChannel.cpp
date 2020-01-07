@@ -201,6 +201,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mRedirectCount(0)
   , mInternalRedirectCount(0)
   , mChannelCreationTime(0)
+  , mAsyncOpenTimeOverriden(false)
   , mForcePending(false)
   , mCorsIncludeCredentials(false)
   , mCorsMode(nsIHttpChannelInternal::CORS_MODE_NO_CORS)
@@ -3784,14 +3785,28 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
       newTimedChannel->SetInternalRedirectCount(mInternalRedirectCount);
     }
 
+    TimeStamp oldAsyncOpenTime;
+    oldTimedChannel->GetAsyncOpen(&oldAsyncOpenTime);
+
+    if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+      TimeStamp oldChannelCreationTimestamp;
+      oldTimedChannel->GetChannelCreation(&oldChannelCreationTimestamp);
+
+      if (!oldChannelCreationTimestamp.IsNull()) {
+        newTimedChannel->SetChannelCreation(oldChannelCreationTimestamp);
+      }
+
+      if (!oldAsyncOpenTime.IsNull()) {
+        newTimedChannel->SetAsyncOpen(oldAsyncOpenTime);
+      }
+    }
+
     
     
     if (mRedirectStartTimeStamp.IsNull()) {
       
       if (!(redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
-        TimeStamp asyncOpen;
-        oldTimedChannel->GetAsyncOpen(&asyncOpen);
-        newTimedChannel->SetRedirectStart(asyncOpen);
+        newTimedChannel->SetRedirectStart(oldAsyncOpenTime);
       }
     } else {
       newTimedChannel->SetRedirectStart(mRedirectStartTimeStamp);
@@ -3929,8 +3944,25 @@ HttpBaseChannel::GetChannelCreation(TimeStamp* _retval) {
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::SetChannelCreation(TimeStamp aValue) {
+  MOZ_DIAGNOSTIC_ASSERT(!aValue.IsNull());
+  TimeDuration adjust = aValue - mChannelCreationTimestamp;
+  mChannelCreationTimestamp = aValue;
+  mChannelCreationTime += (PRTime)adjust.ToMicroseconds();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::GetAsyncOpen(TimeStamp* _retval) {
   *_retval = mAsyncOpenTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetAsyncOpen(TimeStamp aValue) {
+  MOZ_DIAGNOSTIC_ASSERT(!aValue.IsNull());
+  mAsyncOpenTime = aValue;
+  mAsyncOpenTimeOverriden = true;
   return NS_OK;
 }
 
