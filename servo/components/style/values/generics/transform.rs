@@ -80,12 +80,13 @@ pub struct TransformOrigin<H, V, Depth> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum TimingFunction<Integer, Number> {
     
     Keyword(TimingKeyword),
     
     #[allow(missing_docs)]
+    #[css(comma, function)]
     CubicBezier {
         x1: Number,
         y1: Number,
@@ -93,8 +94,10 @@ pub enum TimingFunction<Integer, Number> {
         y2: Number,
     },
     
-    Steps(Integer, StepPosition),
+    #[css(comma, function)]
+    Steps(Integer, #[css(skip_if = "is_end")] StepPosition),
     
+    #[css(comma, function)]
     Frames(Integer),
 }
 
@@ -119,6 +122,11 @@ pub enum StepPosition {
     End,
 }
 
+#[inline]
+fn is_end(position: &StepPosition) -> bool {
+    *position == StepPosition::End
+}
+
 impl<H, V, D> TransformOrigin<H, V, D> {
     
     pub fn new(horizontal: H, vertical: V, depth: D) -> Self {
@@ -135,51 +143,6 @@ impl<Integer, Number> TimingFunction<Integer, Number> {
     #[inline]
     pub fn ease() -> Self {
         TimingFunction::Keyword(TimingKeyword::Ease)
-    }
-}
-
-impl<Integer, Number> ToCss for TimingFunction<Integer, Number>
-where
-    Integer: ToCss,
-    Number: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        match *self {
-            TimingFunction::Keyword(keyword) => keyword.to_css(dest),
-            TimingFunction::CubicBezier {
-                ref x1,
-                ref y1,
-                ref x2,
-                ref y2,
-            } => {
-                dest.write_str("cubic-bezier(")?;
-                x1.to_css(dest)?;
-                dest.write_str(", ")?;
-                y1.to_css(dest)?;
-                dest.write_str(", ")?;
-                x2.to_css(dest)?;
-                dest.write_str(", ")?;
-                y2.to_css(dest)?;
-                dest.write_str(")")
-            },
-            TimingFunction::Steps(ref intervals, position) => {
-                dest.write_str("steps(")?;
-                intervals.to_css(dest)?;
-                if position != StepPosition::End {
-                    dest.write_str(", ")?;
-                    position.to_css(dest)?;
-                }
-                dest.write_str(")")
-            },
-            TimingFunction::Frames(ref frames) => {
-                dest.write_str("frames(")?;
-                frames.to_css(dest)?;
-                dest.write_str(")")
-            },
-        }
     }
 }
 
