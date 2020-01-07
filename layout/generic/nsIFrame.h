@@ -4016,7 +4016,7 @@ public:
   
 
 
-  bool IsScrolledOutOfView();
+  bool IsScrolledOutOfView() const;
 
   
 
