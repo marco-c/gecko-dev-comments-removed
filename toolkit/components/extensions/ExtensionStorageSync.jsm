@@ -1043,7 +1043,7 @@ class ExtensionStorageSync {
         }
 
         if (keyResolution.accepted.uuid != cryptoKeyRecord.uuid) {
-          log.info(`Detected a new UUID (${keyResolution.accepted.uuid}, was ${cryptoKeyRecord.uuid}). Reseting sync status for everything.`);
+          log.info(`Detected a new UUID (${keyResolution.accepted.uuid}, was ${cryptoKeyRecord.uuid}). Resetting sync status for everything.`);
           await this.cryptoCollection.resetSyncStatus();
 
           

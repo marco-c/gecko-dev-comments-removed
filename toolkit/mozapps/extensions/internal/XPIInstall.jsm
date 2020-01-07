@@ -1535,7 +1535,7 @@ class AddonInstall {
       if (isWebExtension(this.existingAddon.type) && !isWebExtension(this.addon.type)) {
         zipreader.close();
         return Promise.reject([AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
-                               "WebExtensions may not be upated to other extension types"]);
+                               "WebExtensions may not be updated to other extension types"]);
       }
     }
 
