@@ -357,10 +357,9 @@ T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
     
     
     
-    
     if ((dontNeedEscape(c, aFlags) || (c == HEX_ESCAPE && !forced)
          || (c > 0x7f && ignoreNonAscii)
-         || (c > 0x20 && c < 0x7f && ignoreAscii))
+         || (c >= 0x20 && c < 0x7f && ignoreAscii))
         && !(c == ':' && colon)
         && !(previousIsNonASCII && c == '|' && !ignoreNonAscii)) {
       if (writing) {
