@@ -45,7 +45,6 @@ public:
   
   ModuleLoadRequest(nsIURI* aURI,
                     nsIScriptElement* aElement,
-                    ValidJSVersion aValidJSVersion,
                     CORSMode aCORSMode,
                     const SRIMetadata& aIntegrity,
                     nsIURI* aReferrer,
