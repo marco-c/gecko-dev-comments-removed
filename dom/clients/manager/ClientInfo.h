@@ -91,6 +91,10 @@ public:
   
   const IPCClientInfo&
   ToIPC() const;
+
+  
+  bool
+  IsPrivateBrowsing() const;
 };
 
 } 

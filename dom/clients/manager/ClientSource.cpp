@@ -355,6 +355,11 @@ ClientSource::SetController(const ServiceWorkerDescriptor& aServiceWorker)
 {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
 
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mClientInfo.IsPrivateBrowsing());
+
   if (mController.isSome() && mController.ref() == aServiceWorker) {
     return;
   }
