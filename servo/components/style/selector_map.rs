@@ -513,28 +513,11 @@ impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
     }
 
     
-    #[cfg(not(feature = "gecko"))]
     pub fn try_entry(
         &mut self,
         mut key: Atom,
         quirks_mode: QuirksMode,
     ) -> Result<hash_map::Entry<Atom, V>, FailedAllocationError> {
-        if quirks_mode == QuirksMode::Quirks {
-            key = key.to_ascii_lowercase()
-        }
-        self.0.try_entry(key)
-    }
-
-    
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    pub fn try_entry(
-        &mut self,
-        mut key: Atom,
-        quirks_mode: QuirksMode,
-    ) -> Result<hash_map::Entry<Atom, V, BuildHasherDefault<PrecomputedHasher>>, FailedAllocationError> {
         if quirks_mode == QuirksMode::Quirks {
             key = key.to_ascii_lowercase()
         }
