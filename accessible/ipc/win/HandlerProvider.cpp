@@ -556,6 +556,16 @@ HandlerProvider::Refresh(DynamicIA2Data* aOutData)
     return E_FAIL;
   }
 
+  if (!aOutData->mUniqueId) {
+    
+    if (!mTargetUnk) {
+      
+      
+      return CO_E_OBJNOTCONNECTED;
+    }
+    return E_FAIL;
+  }
+
   return S_OK;
 }
 
