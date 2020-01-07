@@ -1053,7 +1053,7 @@ nsDisplayListBuilder::EndFrame()
   mFrameToAnimatedGeometryRootMap.Clear();
   mActiveScrolledRoots.Clear();
   FreeClipChains();
-  FreeTemporaryItems();
+
   nsCSSRendering::EndFrameTreesLocked();
 }
 
@@ -1299,6 +1299,9 @@ nsDisplayListBuilder::~nsDisplayListBuilder() {
                "All presshells should have been exited");
   NS_ASSERTION(!mCurrentTableItem, "No table item should be active");
 
+  for (nsDisplayItem* i : mTemporaryItems) {
+    i->Destroy(this);
+  }
   for (DisplayItemClipChain* c : mClipChainsToDestroy) {
     c->DisplayItemClipChain::~DisplayItemClipChain();
   }
@@ -1493,19 +1496,6 @@ nsDisplayListBuilder::FreeClipChains()
       ++it;
     }
   }
-}
-
-void
-nsDisplayListBuilder::FreeTemporaryItems()
-{
-  for (nsDisplayItem* i : mTemporaryItems) {
-    
-    MOZ_ASSERT(i->Frame());
-    i->RemoveFrame(i->Frame());
-    i->Destroy(this);
-  }
-
-  mTemporaryItems.Clear();
 }
 
 void
@@ -4561,7 +4551,12 @@ nsDisplayImageContainer::GetContainer(LayerManager* aManager,
     flags |= imgIContainer::FLAG_SYNC_DECODE;
   }
 
-  return image->GetImageContainer(aManager, flags);
+  RefPtr<ImageContainer> container = image->GetImageContainer(aManager, flags);
+  if (!container || !container->HasCurrentImage()) {
+    return nullptr;
+  }
+
+  return container.forget();
 }
 
 bool
