@@ -64,7 +64,7 @@ class TPSTestRunner(object):
         'browser.warnOnQuit': False,
         
         'extensions.autoDisableScopes': 10,
-        'extensions.getAddons.get.url': 'http://127.0.0.1:4567/addons/api/%IDS%.xml',
+        'extensions.getAddons.get.url': 'http://127.0.0.1:4567/addons/api/%IDS%.json',
         
         'extensions.getAddons.cache.enabled': False,
         'extensions.install.requireSecureOrigin': False,
