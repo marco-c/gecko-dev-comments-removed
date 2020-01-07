@@ -3,7 +3,11 @@
 
 
 from collections import defaultdict
-import urlparse
+
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
 
 from mozpack.chrome.manifest import (
     Manifest,
