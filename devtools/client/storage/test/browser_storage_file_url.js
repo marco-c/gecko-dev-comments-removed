@@ -8,7 +8,7 @@
 
 "use strict";
 
-add_task(function* () {
+add_task(async function() {
   const TESTPAGE = "storage-file-url.html";
 
   
@@ -23,7 +23,7 @@ add_task(function* () {
   const uriString = Services.io.newFileURI(dir).spec;
 
   
-  yield openTabAndSetupStorage(uriString);
+  await openTabAndSetupStorage(uriString);
 
   
   
@@ -35,13 +35,13 @@ add_task(function* () {
   
   
   let browser = gBrowser.selectedBrowser;
-  let actualPath = yield ContentTask.spawn(browser, null, () => {
+  let actualPath = await ContentTask.spawn(browser, null, () => {
     return content.document.location.href;
   });
 
   const cookiePath = actualPath.substr(0, actualPath.lastIndexOf("/") + 1)
                                .replace(/file:\/\//g, "");
-  yield checkState([
+  await checkState([
     [
       ["cookies", actualPath],
       [
@@ -60,5 +60,5 @@ add_task(function* () {
     ]
   ]);
 
-  yield finishTests();
+  await finishTests();
 });

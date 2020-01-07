@@ -148,7 +148,7 @@ add_task(async function testExactHostMatch() {
   }
 });
 
-add_task(function* testDefaultPrefs() {
+add_task(async function testDefaultPrefs() {
   let uri = Services.io.newURI("https://example.com");
 
   

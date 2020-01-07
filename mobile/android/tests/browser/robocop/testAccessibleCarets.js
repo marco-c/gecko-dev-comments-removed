@@ -152,12 +152,12 @@ function closeSelectionUI() {
 
 
 
-add_task(function* testAccessibleCarets() {
+add_task(async function testAccessibleCarets() {
   
   
   
   let BrowserApp = gChromeWin.BrowserApp;
-  yield do_promiseTabChangeEvent(BrowserApp.selectedTab.id, TAB_STOP_EVENT);
+  await do_promiseTabChangeEvent(BrowserApp.selectedTab.id, TAB_STOP_EVENT);
 
   
   Services.prefs.setBoolPref(ACCESSIBLECARET_PREF, true);
@@ -165,7 +165,7 @@ add_task(function* testAccessibleCarets() {
   
   let browser = BrowserApp.addTab(BASE_TEST_URL).browser;
   let tab = BrowserApp.getTabForBrowser(browser);
-  yield do_promiseTabChangeEvent(tab.id, TAB_STOP_EVENT);
+  await do_promiseTabChangeEvent(tab.id, TAB_STOP_EVENT);
 
   do_register_cleanup(function cleanup() {
     BrowserApp.closeTab(tab);
@@ -278,7 +278,7 @@ add_task(function* testAccessibleCarets() {
 
 
 
-add_task(function* testAccessibleCarets_designMode() {
+add_task(async function testAccessibleCarets_designMode() {
   let BrowserApp = gChromeWin.BrowserApp;
 
   
@@ -288,7 +288,7 @@ add_task(function* testAccessibleCarets_designMode() {
   
   let browser = BrowserApp.addTab(DESIGNMODE_TEST_URL).browser;
   let tab = BrowserApp.getTabForBrowser(browser, { selected: true });
-  yield do_promiseTabChangeEvent(tab.id, TAB_STOP_EVENT);
+  await do_promiseTabChangeEvent(tab.id, TAB_STOP_EVENT);
 
   
   let doc = browser.contentDocument;

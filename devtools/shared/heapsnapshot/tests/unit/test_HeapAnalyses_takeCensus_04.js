@@ -5,7 +5,7 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   const client = new HeapAnalysesClient();
 
   
@@ -40,13 +40,13 @@ add_task(function* test() {
   
 
   const snapshotFilePath = saveNewHeapSnapshot({ debugger: dbg });
-  yield client.readHeapSnapshot(snapshotFilePath);
+  await client.readHeapSnapshot(snapshotFilePath);
   ok(true, "Should have read the heap snapshot");
 
   
   
 
-  const { report } = yield client.takeCensus(
+  const { report } = await client.takeCensus(
     snapshotFilePath,
     {
       breakdown: {

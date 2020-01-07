@@ -585,7 +585,7 @@ add_task(async function log_template_literal_message() {
 
 
 
-add_task(function* format_errors() {
+add_task(async function format_errors() {
   let pFormat = new Log.ParameterFormatter();
 
   
@@ -597,7 +597,7 @@ add_task(function* format_errors() {
 
   
   try {
-    yield Promise.resolve(); 
+    await Promise.resolve(); 
     
     eval("javascript syntax error");
   } catch (e) {

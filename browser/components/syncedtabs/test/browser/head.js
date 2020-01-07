@@ -7,7 +7,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
 
-registerCleanupFunction(function* () {
+registerCleanupFunction(async function() {
   
   delete window.sinon;
 });
