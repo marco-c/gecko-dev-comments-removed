@@ -476,8 +476,8 @@ class NativeObject : public ShapedObject
 
   public:
     Shape* lastProperty() const {
-        MOZ_ASSERT(shape_);
-        return shape_;
+        MOZ_ASSERT(shape());
+        return shape();
     }
 
     uint32_t propertyCount() const {
@@ -741,7 +741,7 @@ class NativeObject : public ShapedObject
 
     bool hasAllFlags(js::BaseShape::Flag flags) const {
         MOZ_ASSERT(flags);
-        return shape_->hasAllObjectFlags(flags);
+        return shape()->hasAllObjectFlags(flags);
     }
     bool nonProxyIsExtensible() const {
         return !hasAllFlags(js::BaseShape::NOT_EXTENSIBLE);

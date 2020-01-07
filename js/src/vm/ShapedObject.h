@@ -24,23 +24,30 @@ class ShapedObject : public JSObject
     
     GCPtrShape shape_;
 
+    MOZ_ALWAYS_INLINE const GCPtrShape& shapeRef() const {
+        return shape_;
+    }
+    MOZ_ALWAYS_INLINE GCPtrShape& shapeRef() {
+        return shape_;
+    }
+
+    
+    MOZ_ALWAYS_INLINE GCPtrShape* shapePtr() {
+        return &shape_;
+    }
+
   public:
     
     
     
     
-    void initShape(Shape* shape) {
-        this->shape_.init(shape);
-    }
+    void initShape(Shape* shape) { shapeRef().init(shape); }
 
-    void setShape(Shape* shape) {
-        this->shape_ = shape;
-    }
-
-    Shape* shape() const { return this->shape_; }
+    void setShape(Shape* shape) { shapeRef() = shape; }
+    Shape* shape() const { return shapeRef(); }
 
     void traceShape(JSTracer* trc) {
-        TraceEdge(trc, &shape_, "shape");
+        TraceEdge(trc, shapePtr(), "shape");
     }
 
     static size_t offsetOfShape() { return offsetof(ShapedObject, shape_); }
