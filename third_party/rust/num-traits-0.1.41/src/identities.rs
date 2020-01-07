@@ -1,5 +1,5 @@
-use core::ops::{Add, Mul};
-use core::num::Wrapping;
+use std::ops::{Add, Mul};
+use std::num::Wrapping;
 
 
 pub trait Zero: Sized + Add<Self, Output = Self> {

@@ -1,4 +1,4 @@
-use core::ops::{Add, Sub, Mul, Div, Shl, Shr};
+use std::ops::{Add, Sub, Mul, Div};
 
 
 
@@ -90,73 +90,3 @@ checked_impl!(CheckedDiv, checked_div, i32);
 checked_impl!(CheckedDiv, checked_div, i64);
 checked_impl!(CheckedDiv, checked_div, isize);
 
-
-pub trait CheckedShl: Sized + Shl<u32, Output=Self> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn checked_shl(&self, rhs: u32) -> Option<Self>;
-}
-
-macro_rules! checked_shift_impl {
-    ($trait_name:ident, $method:ident, $t:ty) => {
-        impl $trait_name for $t {
-            #[inline]
-            fn $method(&self, rhs: u32) -> Option<$t> {
-                <$t>::$method(*self, rhs)
-            }
-        }
-    }
-}
-
-checked_shift_impl!(CheckedShl, checked_shl, u8);
-checked_shift_impl!(CheckedShl, checked_shl, u16);
-checked_shift_impl!(CheckedShl, checked_shl, u32);
-checked_shift_impl!(CheckedShl, checked_shl, u64);
-checked_shift_impl!(CheckedShl, checked_shl, usize);
-
-checked_shift_impl!(CheckedShl, checked_shl, i8);
-checked_shift_impl!(CheckedShl, checked_shl, i16);
-checked_shift_impl!(CheckedShl, checked_shl, i32);
-checked_shift_impl!(CheckedShl, checked_shl, i64);
-checked_shift_impl!(CheckedShl, checked_shl, isize);
-
-
-pub trait CheckedShr: Sized + Shr<u32, Output=Self> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn checked_shr(&self, rhs: u32) -> Option<Self>;
-}
-
-checked_shift_impl!(CheckedShr, checked_shr, u8);
-checked_shift_impl!(CheckedShr, checked_shr, u16);
-checked_shift_impl!(CheckedShr, checked_shr, u32);
-checked_shift_impl!(CheckedShr, checked_shr, u64);
-checked_shift_impl!(CheckedShr, checked_shr, usize);
-
-checked_shift_impl!(CheckedShr, checked_shr, i8);
-checked_shift_impl!(CheckedShr, checked_shr, i16);
-checked_shift_impl!(CheckedShr, checked_shr, i32);
-checked_shift_impl!(CheckedShr, checked_shr, i64);
-checked_shift_impl!(CheckedShr, checked_shr, isize);
