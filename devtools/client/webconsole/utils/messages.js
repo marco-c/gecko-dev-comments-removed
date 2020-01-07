@@ -106,16 +106,26 @@ function transformConsoleAPICallPacket(packet) {
         type = MESSAGE_TYPE.NULL_MESSAGE;
       }
       break;
+    case "timeLog":
     case "timeEnd":
-      parameters = null;
       if (timer && timer.error) {
+        parameters = null;
         messageText = l10n.getFormatStr(timer.error, [timer.name]);
         level = MESSAGE_LEVEL.WARN;
       } else if (timer) {
         
         
         let duration = Math.round(timer.duration * 100) / 100;
-        messageText = l10n.getFormatStr("timeEnd", [timer.name, duration]);
+        if (type === "timeEnd") {
+          messageText = l10n.getFormatStr("timeEnd", [timer.name, duration]);
+          parameters = null;
+        } else if (type === "timeLog") {
+          const [, ...rest] = parameters;
+          parameters = [
+            l10n.getFormatStr("timeLog", [timer.name, duration]),
+            ...rest,
+          ];
+        }
       } else {
         
         type = MESSAGE_TYPE.NULL_MESSAGE;
