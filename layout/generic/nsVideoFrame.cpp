@@ -348,20 +348,6 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
                         kidDesiredSize, &kidReflowInput,
                         posterRenderRect.x, posterRenderRect.y, 0);
 
-
-
-#ifdef ANDROID
-    } else if (child->GetContent() == mVideoControls) {
-      
-      nsBoxLayoutState boxState(PresContext(), aReflowInput.mRenderingContext);
-      nsBoxFrame::LayoutChildAt(boxState,
-                                child,
-                                nsRect(borderPadding.left,
-                                       borderPadding.top,
-                                       aReflowInput.ComputedWidth(),
-                                       aReflowInput.ComputedHeight()));
-
-#endif
     } else if (child->GetContent() == mCaptionDiv ||
                child->GetContent() == mVideoControls) {
       
@@ -621,10 +607,6 @@ nsVideoFrame::ComputeSize(gfxContext *aRenderingContext,
                           const LogicalSize& aPadding,
                           ComputeSizeFlags aFlags)
 {
-
-
-
-#ifndef ANDROID
   if (!HasVideoElement()) {
     return nsContainerFrame::ComputeSize(aRenderingContext,
                                          aWM,
@@ -635,7 +617,6 @@ nsVideoFrame::ComputeSize(gfxContext *aRenderingContext,
                                          aPadding,
                                          aFlags);
   }
-#endif 
 
   nsSize size = GetVideoIntrinsicSize(aRenderingContext);
 
@@ -742,21 +723,6 @@ nsVideoFrame::GetVideoIntrinsicSize(gfxContext *aRenderingContext)
 {
   
   nsIntSize size(300, 150);
-
-
-
-#ifdef ANDROID
-  if (!HasVideoElement()) {
-    if (!mFrames.FirstChild()) {
-      return nsSize(0, 0);
-    }
-
-    
-    nsBoxLayoutState boxState(PresContext(), aRenderingContext, 0);
-    nscoord prefHeight = mFrames.LastChild()->GetXULPrefSize(boxState).height;
-    return nsSize(nsPresContext::CSSPixelsToAppUnits(size.width), prefHeight);
-  }
-#endif 
 
   HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
   if (NS_FAILED(element->GetVideoSize(&size)) && ShouldDisplayPoster()) {
