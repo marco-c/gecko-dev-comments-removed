@@ -46,9 +46,6 @@ function getImageStatus(id)
   var img = SpecialPowers.wrap(document.getElementById(id));
 
   
-  img.QueryInterface(SpecialPowers.Ci.nsIImageLoadingContent);
-
-  
   var request = img.getRequest(SpecialPowers.Ci
                                          .nsIImageLoadingContent
                                          .CURRENT_REQUEST);

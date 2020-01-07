@@ -262,9 +262,6 @@ function getClipboardHelper() {
 const gClipboardHelper = getClipboardHelper();
 
 
-const nsIImageLoadingContent = Components.interfaces.nsIImageLoadingContent;
-
-
 const XLinkNS  = "http://www.w3.org/1999/xlink";
 const XULNS    = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XMLNS    = "http://www.w3.org/XML/1998/namespace";
