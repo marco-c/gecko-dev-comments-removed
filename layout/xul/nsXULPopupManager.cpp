@@ -2193,6 +2193,21 @@ nsXULPopupManager::HandleKeyboardNavigation(uint32_t aKeyCode)
                  aKeyCode <= nsIDOMKeyEvent::DOM_VK_DOWN, "Illegal key code");
   theDirection = NS_DIRECTION_FROM_KEY_CODE(itemFrame, aKeyCode);
 
+  bool selectFirstItem = true;
+#ifdef MOZ_WIDGET_GTK
+  nsMenuFrame* currentItem = nullptr;
+  if (item && mActiveMenuBar && NS_DIRECTION_IS_INLINE(theDirection)) {
+    currentItem = item->Frame()->GetCurrentMenuItem();
+    
+    
+    if (!currentItem) {
+      item = nullptr;
+    }
+  }
+  
+  selectFirstItem = currentItem != nullptr;
+#endif
+
   
   if (item && HandleKeyboardNavigationInPopup(item, theDirection))
     return true;
@@ -2205,7 +2220,7 @@ nsXULPopupManager::HandleKeyboardNavigation(uint32_t aKeyCode)
       nsMenuFrame* nextItem = (theDirection == eNavigationDirection_End) ?
                               GetNextMenuItem(mActiveMenuBar, currentMenu, false, true) :
                               GetPreviousMenuItem(mActiveMenuBar, currentMenu, false, true);
-      mActiveMenuBar->ChangeMenuItem(nextItem, true, true);
+      mActiveMenuBar->ChangeMenuItem(nextItem, selectFirstItem, true);
       return true;
     }
     else if (NS_DIRECTION_IS_BLOCK(theDirection)) {

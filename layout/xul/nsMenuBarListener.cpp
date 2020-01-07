@@ -313,7 +313,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
         if (mMenuBarFrame->IsActive()) {
 #ifdef MOZ_WIDGET_GTK
           
-          mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(true);
+          mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(false);
 #endif
           aKeyEvent->StopPropagation();
           aKeyEvent->PreventDefault();
