@@ -95,11 +95,19 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "uuidService",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Sqlite",
+                                  "resource://gre/modules/Sqlite.jsm");
+
 
 const DB_SCHEMA_VERSION = 4;
 const DAY_IN_MS  = 86400000; 
 const MAX_SEARCH_TOKENS = 10;
 const NOOP = function noop() {};
+const DB_FILENAME = "formhistory.sqlite";
 
 var supportsDeletedTable = AppConstants.platform == "android";
 
@@ -381,17 +389,17 @@ XPCOMUtils.defineLazyGetter(this, "dbConnection", function() {
 
   try {
     dbFile = Services.dirsvc.get("ProfD", Ci.nsIFile).clone();
-    dbFile.append("formhistory.sqlite");
+    dbFile.append(DB_FILENAME);
     log("Opening database at " + dbFile.path);
 
-    _dbConnection = Services.storage.openUnsharedDatabase(dbFile);
+    _dbConnection = Services.storage.openDatabase(dbFile);
     dbInit();
   } catch (e) {
     if (e.result != Cr.NS_ERROR_FILE_CORRUPTED) {
       throw e;
     }
     dbCleanup(dbFile);
-    _dbConnection = Services.storage.openUnsharedDatabase(dbFile);
+    _dbConnection = Services.storage.openDatabase(dbFile);
     dbInit();
   }
 
@@ -477,6 +485,16 @@ var Migrators = {
       let table = dbSchema.tables.moz_deleted_formhistory;
       let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
       _dbConnection.createTable("moz_deleted_formhistory", tSQL);
+    }
+  },
+
+  async dbAsyncMigrateToVersion4(conn) {
+    const TABLE_NAME = "moz_deleted_formhistory";
+    let tableExists = await conn.tableExists(TABLE_NAME);
+    if (!tableExists) {
+      let table = dbSchema.tables[TABLE_NAME];
+      let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
+      await conn.execute(`CREATE TABLE ${TABLE_NAME} (${tSQL})`);
     }
   },
 };
@@ -806,7 +824,251 @@ function expireOldEntriesVacuum(aExpireTime, aBeginningCount) {
   });
 }
 
+
+
+
+
+
+
+this.DB = {
+  
+  
+  _instance: null,
+  
+  
+  MAX_ATTEMPTS: 2,
+
+  
+  get path() {
+    return OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  get conn() {
+    delete this.conn;
+    let conn = new Promise(async (resolve, reject) => {
+      try {
+        this._instance = await this._establishConn();
+      } catch (e) {
+        log("Failed to establish database connection.");
+        reject(e);
+        return;
+      }
+
+      AsyncShutdown.profileBeforeChange.addBlocker(
+        "Closing FormHistory database.", () => this._instance.close());
+
+      resolve(this._instance);
+    });
+
+    return this.conn = conn;
+  },
+
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _establishConn(attemptNum = 0) {
+    log(`Establishing database connection - attempt # ${attemptNum}`);
+    let conn;
+    try {
+      conn = await Sqlite.openConnection({ path: this.path });
+    } catch (e) {
+      
+      
+      
+      
+      if (attemptNum < this.MAX_ATTEMPTS) {
+        log("Establishing connection failed.");
+        await this._failover(conn);
+        return this._establishConn(++attemptNum);
+      }
+
+      if (conn) {
+        await conn.close();
+      }
+      log("Establishing connection failed too many times. Giving up.");
+      throw e;
+    }
+
+    try {
+      let dbVersion = parseInt(await conn.getSchemaVersion(), 10);
+
+      
+      if (dbVersion == DB_SCHEMA_VERSION) {
+        return conn;
+      }
+
+      
+      if (dbVersion > DB_SCHEMA_VERSION) {
+        log("Downgrading to version " + DB_SCHEMA_VERSION);
+        
+        
+        
+        
+        
+        if (!(await this._expectedColumnsPresent(conn))) {
+          throw Components.Exception("DB is missing expected columns",
+                                     Cr.NS_ERROR_FILE_CORRUPTED);
+        }
+
+        
+        
+        
+        await conn.setSchemaVersion(DB_SCHEMA_VERSION);
+        return conn;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (dbVersion > 0 && dbVersion < 3) {
+        throw Components.Exception("DB version is unsupported.",
+                                   Cr.NS_ERROR_FILE_CORRUPTED);
+      }
+
+      if (dbVersion == 0) {
+        
+        await conn.executeTransaction(async () => {
+          log("Creating DB -- tables");
+          for (let name in dbSchema.tables) {
+            let table = dbSchema.tables[name];
+            let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
+            log("Creating table " + name + " with " + tSQL);
+            await conn.execute(`CREATE TABLE ${name} (${tSQL})`);
+          }
+
+          log("Creating DB -- indices");
+          for (let name in dbSchema.indices) {
+            let index = dbSchema.indices[name];
+            let statement = "CREATE INDEX IF NOT EXISTS " + name + " ON " + index.table +
+                            "(" + index.columns.join(", ") + ")";
+            await conn.execute(statement);
+          }
+        });
+      } else {
+        
+        await conn.executeTransaction(async () => {
+          for (let v = dbVersion + 1; v <= DB_SCHEMA_VERSION; v++) {
+            log("Upgrading to version " + v + "...");
+            await Migrators["dbAsyncMigrateToVersion" + v](conn);
+          }
+        });
+      }
+
+      await conn.setSchemaVersion(DB_SCHEMA_VERSION);
+
+      return conn;
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_FILE_CORRUPTED) {
+        throw e;
+      }
+
+      if (attemptNum < this.MAX_ATTEMPTS) {
+        log("Setting up database failed.");
+        await this._failover(conn);
+        return this._establishConn(++attemptNum);
+      }
+
+      if (conn) {
+        await conn.close();
+      }
+
+      log("Setting up database failed too many times. Giving up.");
+
+      throw e;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async _failover(conn) {
+    log("Cleaning up DB file - close & remove & backup.");
+    if (conn) {
+      await conn.close();
+    }
+    let backupFile = this.path + ".corrupt";
+    let { file, path: uniquePath } =
+      await OS.File.openUnique(backupFile, { humanReadable: true });
+    await file.close();
+    await OS.File.copy(this.path, uniquePath);
+    await OS.File.remove(this.path);
+    log("Completed DB cleanup.");
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _expectedColumnsPresent(conn) {
+    for (let name in dbSchema.tables) {
+      let table = dbSchema.tables[name];
+      let query = "SELECT " +
+                  Object.keys(table).join(", ") +
+                  " FROM " + name;
+      try {
+        await conn.execute(query, null, (row, cancel) => {
+          
+          cancel();
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    log("Verified that expected columns are present in DB.");
+    return true;
+  },
+};
+
 this.FormHistory = {
+  get db() {
+    return DB.conn;
+  },
+
   get enabled() {
     return Prefs.enabled;
   },
