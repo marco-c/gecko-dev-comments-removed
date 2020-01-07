@@ -166,12 +166,16 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   stateChangeCallback(state) {
     super.stateChangeCallback(state);
 
-    if (state.selectedShippingAddress != this._cachedState.selectedShippingAddress) {
-      this.changeShippingAddress(state.selectedShippingAddress);
-    }
+    
+    
+    if (state.request.paymentOptions.requestShipping) {
+      if (state.selectedShippingAddress != this._cachedState.selectedShippingAddress) {
+        this.changeShippingAddress(state.selectedShippingAddress);
+      }
 
-    if (state.selectedShippingOption != this._cachedState.selectedShippingOption) {
-      this.changeShippingOption(state.selectedShippingOption);
+      if (state.selectedShippingOption != this._cachedState.selectedShippingOption) {
+        this.changeShippingOption(state.selectedShippingOption);
+      }
     }
 
     this._cachedState.selectedShippingAddress = state.selectedShippingAddress;
