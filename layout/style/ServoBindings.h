@@ -715,6 +715,10 @@ const nsTArray<mozilla::dom::Element*>* Gecko_GetElementsWithId(
     const nsIDocument* aDocument,
     nsAtom* aId);
 
+
+
+bool Gecko_GetBoolPrefValue(const char* pref_name);
+
 } 
 
 #endif 
