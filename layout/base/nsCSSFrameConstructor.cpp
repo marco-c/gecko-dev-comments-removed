@@ -7173,14 +7173,15 @@ nsCSSFrameConstructor::AddTextItemIfNeeded(nsFrameConstructorState& aState,
 {
   NS_PRECONDITION(aPossibleTextContent, "Must have node");
   if (!aPossibleTextContent->IsNodeOfType(nsINode::eTEXT) ||
-      !aPossibleTextContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE)) {
+      !aPossibleTextContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE) ||
+      aPossibleTextContent->HasFlag(NODE_NEEDS_FRAME)) {
     
     
     
     return;
   }
-  NS_ASSERTION(!aPossibleTextContent->GetPrimaryFrame(),
-               "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
+  MOZ_ASSERT(!aPossibleTextContent->GetPrimaryFrame(),
+             "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
   AddFrameConstructionItems(aState, aPossibleTextContent, false,
                             aInsertion, aItems);
 }
@@ -7190,14 +7191,15 @@ nsCSSFrameConstructor::ReframeTextIfNeeded(nsIContent* aParentContent,
                                            nsIContent* aContent)
 {
   if (!aContent->IsNodeOfType(nsINode::eTEXT) ||
-      !aContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE)) {
+      !aContent->HasFlag(NS_CREATE_FRAME_IF_NON_WHITESPACE) ||
+      aContent->HasFlag(NODE_NEEDS_FRAME)) {
     
     
     
     return;
   }
-  NS_ASSERTION(!aContent->GetPrimaryFrame(),
-               "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
+  MOZ_ASSERT(!aContent->GetPrimaryFrame(),
+             "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
   ContentInserted(aParentContent, aContent, nullptr, InsertionKind::Async);
 }
 
