@@ -1441,28 +1441,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
 
       rv = StartLoad(request);
       if (NS_FAILED(rv)) {
-        const char* message;
-        bool isScript = scriptKind == ScriptKind::Classic;
-        if (rv == NS_ERROR_MALFORMED_URI) {
-          message =
-            isScript ? "ScriptSourceMalformed" : "ModuleSourceMalformed";
-        }
-        else if (rv == NS_ERROR_DOM_BAD_URI) {
-          message =
-            isScript ? "ScriptSourceNotAllowed" : "ModuleSourceNotAllowed";
-        } else {
-          message =
-            isScript ? "ScriptSourceLoadFailed" : "ModuleSourceLoadFailed";
-        }
-
-        NS_ConvertUTF8toUTF16 url(scriptURI->GetSpecOrDefault());
-        const char16_t* params[] = { url.get() };
-
-        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-            NS_LITERAL_CSTRING("Script Loader"), mDocument,
-            nsContentUtils::eDOM_PROPERTIES, message,
-            params, ArrayLength(params), nullptr,
-            EmptyString(), aElement->GetScriptLineNumber());
+        ReportErrorToConsole(request, rv);
 
         
         NS_DispatchToCurrentThread(
@@ -2765,11 +2744,51 @@ ScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                ScriptLoadRequest* aRequest,
                                nsresult aChannelStatus,
                                nsresult aSRIStatus,
-                               mozilla::dom::SRICheckDataVerifier* aSRIDataVerifier)
+                               SRICheckDataVerifier* aSRIDataVerifier)
 {
   NS_ASSERTION(aRequest, "null request in stream complete handler");
   NS_ENSURE_TRUE(aRequest, NS_ERROR_FAILURE);
 
+  nsresult rv = VerifySRI(aRequest, aLoader, aSRIStatus, aSRIDataVerifier);
+
+  if (NS_SUCCEEDED(rv)) {
+    
+    
+    if (aRequest->IsSource()) {
+      rv = SaveSRIHash(aRequest, aSRIDataVerifier);
+    }
+
+    if (NS_SUCCEEDED(rv)) {
+      rv = PrepareLoadedRequest(aRequest, aLoader, aChannelStatus);
+    }
+
+    if (NS_FAILED(rv)) {
+      ReportErrorToConsole(aRequest, rv);
+    }
+  }
+
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    
+    if (aChannelStatus != NS_BINDING_RETARGETED) {
+      HandleLoadError(aRequest, rv);
+    }
+  }
+
+  
+  ProcessPendingRequests();
+
+  return NS_OK;
+}
+
+nsresult
+ScriptLoader::VerifySRI(ScriptLoadRequest* aRequest,
+                        nsIIncrementalStreamLoader* aLoader,
+                        nsresult aSRIStatus,
+                        SRICheckDataVerifier* aSRIDataVerifier) const
+{
   nsCOMPtr<nsIRequest> channelRequest;
   aLoader->GetRequest(getter_AddRefs(channelRequest));
   nsCOMPtr<nsIChannel> channel;
@@ -2815,87 +2834,89 @@ ScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
     }
   }
 
+  return rv;
+}
+
+nsresult
+ScriptLoader::SaveSRIHash(ScriptLoadRequest *aRequest,
+                          SRICheckDataVerifier* aSRIDataVerifier) const
+{
+  MOZ_ASSERT(aRequest->IsSource());
+  MOZ_ASSERT(aRequest->mScriptBytecode.empty());
+
   
   
-  if (NS_SUCCEEDED(rv)) {
-    if (aRequest->IsSource()) {
-      MOZ_ASSERT(aRequest->mScriptBytecode.empty());
-      
-      
-      if (!aRequest->mIntegrity.IsEmpty() && aSRIDataVerifier->IsComplete()) {
-        
-        uint32_t len = aSRIDataVerifier->DataSummaryLength();
-        if (!aRequest->mScriptBytecode.growBy(len)) {
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-        aRequest->mBytecodeOffset = len;
-
-        DebugOnly<nsresult> res = aSRIDataVerifier->ExportDataSummary(
-          aRequest->mScriptBytecode.length(),
-          aRequest->mScriptBytecode.begin());
-        MOZ_ASSERT(NS_SUCCEEDED(res));
-      } else {
-        
-        uint32_t len = SRICheckDataVerifier::EmptyDataSummaryLength();
-        if (!aRequest->mScriptBytecode.growBy(len)) {
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-        aRequest->mBytecodeOffset = len;
-
-        DebugOnly<nsresult> res = SRICheckDataVerifier::ExportEmptyDataSummary(
-          aRequest->mScriptBytecode.length(),
-          aRequest->mScriptBytecode.begin());
-        MOZ_ASSERT(NS_SUCCEEDED(res));
-      }
-
-      
-      mozilla::DebugOnly<uint32_t> srilen;
-      MOZ_ASSERT(NS_SUCCEEDED(SRICheckDataVerifier::DataSummaryLength(
-                                aRequest->mScriptBytecode.length(),
-                                aRequest->mScriptBytecode.begin(),
-                                &srilen)));
-      MOZ_ASSERT(srilen == aRequest->mBytecodeOffset);
+  if (!aRequest->mIntegrity.IsEmpty() && aSRIDataVerifier->IsComplete()) {
+    
+    uint32_t len = aSRIDataVerifier->DataSummaryLength();
+    if (!aRequest->mScriptBytecode.growBy(len)) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
+    aRequest->mBytecodeOffset = len;
 
-    rv = PrepareLoadedRequest(aRequest, aLoader, aChannelStatus);
-
-    if (NS_FAILED(rv) && aRequest->mElement) {
-      uint32_t lineNo = aRequest->mElement->GetScriptLineNumber();
-
-      nsAutoString url;
-      if (aRequest->mURI) {
-        AppendUTF8toUTF16(aRequest->mURI->GetSpecOrDefault(), url);
-      }
-
-      const char* message = "ScriptSourceLoadFailed";
-      if (aRequest->IsModuleRequest()) {
-        message = "ModuleSourceLoadFailed";
-      }
-
-      const char16_t* params[] = { url.get() };
-
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("Script Loader"), mDocument,
-                                      nsContentUtils::eDOM_PROPERTIES, message,
-                                      params, ArrayLength(params), nullptr,
-                                      EmptyString(), lineNo);
+    DebugOnly<nsresult> res = aSRIDataVerifier->ExportDataSummary(
+      aRequest->mScriptBytecode.length(),
+      aRequest->mScriptBytecode.begin());
+    MOZ_ASSERT(NS_SUCCEEDED(res));
+  } else {
+    
+    uint32_t len = SRICheckDataVerifier::EmptyDataSummaryLength();
+    if (!aRequest->mScriptBytecode.growBy(len)) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
-  }
+    aRequest->mBytecodeOffset = len;
 
-  if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    if (aChannelStatus != NS_BINDING_RETARGETED) {
-      HandleLoadError(aRequest, rv);
-    }
+    DebugOnly<nsresult> res = SRICheckDataVerifier::ExportEmptyDataSummary(
+      aRequest->mScriptBytecode.length(),
+      aRequest->mScriptBytecode.begin());
+    MOZ_ASSERT(NS_SUCCEEDED(res));
   }
 
   
-  ProcessPendingRequests();
+  mozilla::DebugOnly<uint32_t> srilen;
+  MOZ_ASSERT(NS_SUCCEEDED(SRICheckDataVerifier::DataSummaryLength(
+                            aRequest->mScriptBytecode.length(),
+                            aRequest->mScriptBytecode.begin(),
+                            &srilen)));
+  MOZ_ASSERT(srilen == aRequest->mBytecodeOffset);
 
   return NS_OK;
+}
+
+void
+ScriptLoader::ReportErrorToConsole(ScriptLoadRequest *aRequest,
+                                   nsresult aResult) const
+{
+  MOZ_ASSERT(aRequest);
+
+  if (!aRequest->mElement) {
+    return;
+  }
+
+  bool isScript = !aRequest->IsModuleRequest();
+  const char* message;
+  if (aResult == NS_ERROR_MALFORMED_URI) {
+    message =
+      isScript ? "ScriptSourceMalformed" : "ModuleSourceMalformed";
+  }
+  else if (aResult == NS_ERROR_DOM_BAD_URI) {
+    message =
+      isScript ? "ScriptSourceNotAllowed" : "ModuleSourceNotAllowed";
+  } else {
+    message =
+      isScript ? "ScriptSourceLoadFailed" : "ModuleSourceLoadFailed";
+  }
+
+  NS_ConvertUTF8toUTF16 url(aRequest->mURI->GetSpecOrDefault());
+  const char16_t* params[] = { url.get() };
+
+  uint32_t lineNo = aRequest->mElement->GetScriptLineNumber();
+
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("Script Loader"), mDocument,
+                                  nsContentUtils::eDOM_PROPERTIES, message,
+                                  params, ArrayLength(params), nullptr,
+                                  EmptyString(), lineNo);
 }
 
 void

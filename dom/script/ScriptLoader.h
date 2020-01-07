@@ -242,9 +242,7 @@ public:
                             ScriptLoadRequest* aRequest,
                             nsresult aChannelStatus,
                             nsresult aSRIStatus,
-                            mozilla::dom::SRICheckDataVerifier* aSRIDataVerifier);
-
-  void HandleLoadError(ScriptLoadRequest *aRequest, nsresult aResult);
+                            SRICheckDataVerifier* aSRIDataVerifier);
 
   
 
@@ -381,6 +379,8 @@ private:
 
   nsresult RestartLoad(ScriptLoadRequest* aRequest);
 
+  void HandleLoadError(ScriptLoadRequest *aRequest, nsresult aResult);
+
   
 
 
@@ -414,6 +414,16 @@ private:
   {
     return mEnabled && !mBlockerCount;
   }
+
+  nsresult VerifySRI(ScriptLoadRequest *aRequest,
+                     nsIIncrementalStreamLoader* aLoader,
+                     nsresult aSRIStatus,
+                     SRICheckDataVerifier* aSRIDataVerifier) const;
+
+  nsresult SaveSRIHash(ScriptLoadRequest *aRequest,
+                       SRICheckDataVerifier* aSRIDataVerifier) const;
+
+  void ReportErrorToConsole(ScriptLoadRequest *aRequest, nsresult aResult) const;
 
   nsresult AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest);
   nsresult ProcessRequest(ScriptLoadRequest* aRequest);
