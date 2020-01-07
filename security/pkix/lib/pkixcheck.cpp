@@ -118,10 +118,6 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
       
       break;
 
-    case der::PublicKeyAlgorithm::Uninitialized:
-      assert(false);
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-
     MOZILLA_PKIX_UNREACHABLE_DEFAULT_ENUM
   }
 

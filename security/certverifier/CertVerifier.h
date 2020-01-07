@@ -11,7 +11,6 @@
 #include "CTPolicyEnforcer.h"
 #include "CTVerifyResult.h"
 #include "OCSPCache.h"
-#include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
@@ -79,16 +78,11 @@ enum class NetscapeStepUpPolicy : uint32_t;
 class PinningTelemetryInfo
 {
 public:
-  PinningTelemetryInfo()
-    : certPinningResultBucket(0)
-    , rootBucket(ROOT_CERTIFICATE_UNKNOWN)
-  {
-    Reset();
-  }
+  PinningTelemetryInfo() { Reset(); }
 
   
   bool accumulateResult;
-  Maybe<Telemetry::HistogramID> certPinningResultHistogram;
+  Telemetry::HistogramID certPinningResultHistogram;
   int32_t certPinningResultBucket;
   
   bool accumulateForRoot;
@@ -100,12 +94,7 @@ public:
 class CertificateTransparencyInfo
 {
 public:
-  CertificateTransparencyInfo()
-    : enabled(false)
-    , policyCompliance(mozilla::ct::CTPolicyCompliance::Unknown)
-  {
-    Reset();
-  }
+  CertificateTransparencyInfo() { Reset(); }
 
   
   bool enabled;

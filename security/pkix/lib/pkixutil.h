@@ -42,13 +42,11 @@ class BackCert final
 {
 public:
   
-  BackCert(Input aCertDER,
-           EndEntityOrCA aEndEntityOrCA,
+  BackCert(Input aCertDER, EndEntityOrCA aEndEntityOrCA,
            const BackCert* aChildCert)
     : der(aCertDER)
     , endEntityOrCA(aEndEntityOrCA)
     , childCert(aChildCert)
-    , version(der::Version::Uninitialized)
   {
   }
 
