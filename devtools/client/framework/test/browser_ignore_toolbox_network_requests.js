@@ -12,8 +12,7 @@ add_task(async function() {
   
   
   
-  let isTesting = flags.testing;
-  flags.testing = false;
+  await pushPref("devtools.testing", false);
 
   let tab = await addTab(URL_ROOT + "doc_viewsource.html");
   let target = TargetFactory.forTab(tab);
@@ -30,5 +29,4 @@ add_task(async function() {
   await gDevTools.closeToolbox(target);
   tab = target = toolbox = panel = null;
   gBrowser.removeCurrentTab();
-  flags.testing = isTesting;
 });

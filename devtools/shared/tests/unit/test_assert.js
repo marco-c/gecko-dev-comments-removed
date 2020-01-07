@@ -9,9 +9,6 @@
 ALLOW_CONSOLE_ERRORS = true;
 
 function run_test() {
-  
-  flags.testing = true;
-
   const { assert } = DevToolsUtils;
   equal(typeof assert, "function");
 

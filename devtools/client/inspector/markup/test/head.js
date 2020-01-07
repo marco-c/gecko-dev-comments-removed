@@ -20,12 +20,6 @@ var {ActorRegistryFront} = require("devtools/shared/fronts/actor-registry");
 SimpleTest.requestCompleteLog();
 
 
-flags.testing = true;
-registerCleanupFunction(() => {
-  flags.testing = false;
-});
-
-
 
 
 

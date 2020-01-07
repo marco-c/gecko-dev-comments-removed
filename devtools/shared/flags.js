@@ -1,26 +1,42 @@
 "use strict";
 
+const Services = require("Services");
 
 
 
 
 
-function makeWritableFlag(exports, name) {
-  let flag = false;
+
+function makeWritableFlag(exports, name, pref) {
+  let flag;
+  
+  if (isWorker) {
+    flag = false;
+  } else {
+    flag = Services.prefs.getBoolPref(pref, false);
+    let prefObserver = () => {
+      flag = Services.prefs.getBoolPref(pref, false);
+    };
+    Services.prefs.addObserver(pref, prefObserver);
+
+    
+    let unloadObserver = function() {
+      Services.prefs.removeObserver(pref, prefObserver);
+      Services.obs.removeObserver(unloadObserver, "devtools:loader:destroy");
+    };
+    Services.obs.addObserver(unloadObserver, "devtools:loader:destroy");
+  }
   Object.defineProperty(exports, name, {
     get: function() {
       return flag;
-    },
-    set: function(state) {
-      flag = state;
     }
   });
 }
 
-makeWritableFlag(exports, "wantLogging");
-makeWritableFlag(exports, "wantVerbose");
+makeWritableFlag(exports, "wantLogging", "devtools.debugger.log");
+makeWritableFlag(exports, "wantVerbose", "devtools.debugger.log.verbose");
 
 
 
 
-makeWritableFlag(exports, "testing");
+makeWritableFlag(exports, "testing", "devtools.testing");
