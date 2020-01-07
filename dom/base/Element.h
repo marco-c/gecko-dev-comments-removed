@@ -900,6 +900,25 @@ public:
     return nullptr;
   }
 
+  
+
+
+
+
+
+
+  const nsAttrValue* DoGetClasses() const
+  {
+    MOZ_ASSERT(MayHaveClass(), "Unexpected call");
+    if (IsSVGElement()) {
+      if (const nsAttrValue* value = GetSVGAnimatedClass()) {
+        return value;
+      }
+    }
+
+    return GetParsedAttr(nsGkAtoms::_class);
+  }
+
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override
   {
@@ -1902,8 +1921,7 @@ private:
   
 
 
-
-  const nsAttrValue* DoGetClasses() const;
+  const nsAttrValue* GetSVGAnimatedClass() const;
 
   
 
