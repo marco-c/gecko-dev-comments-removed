@@ -2015,7 +2015,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
         } else {
           
           
-          
           nsContentUtils::UnregisterUnresolvedElement(this);
         }
       }

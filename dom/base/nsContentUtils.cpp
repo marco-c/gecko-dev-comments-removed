@@ -9900,7 +9900,6 @@ nsContentUtils::TryToUpgradeElement(Element* aElement)
   } else {
     
     
-    
     nsContentUtils::RegisterUnresolvedElement(aElement, typeAtom);
   }
 }
