@@ -183,8 +183,6 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceObserverEntryList",
 
-    "PerformanceServerTiming",
-
     "ProgressEvent",
 
     "PushManager",

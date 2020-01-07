@@ -733,8 +733,6 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceResourceTiming",
 
-    "PerformanceServerTiming",
-
     "PerformanceTiming",
 
     "PeriodicWave",
