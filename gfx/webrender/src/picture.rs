@@ -2,17 +2,19 @@
 
 
 
-use api::{FilterOp, LayerVector2D, MixBlendMode, PipelineId, PremultipliedColorF};
-use api::{DeviceIntRect, LayerRect};
+use api::{FilterOp, MixBlendMode, PipelineId, PremultipliedColorF};
+use api::{DeviceIntRect, DeviceIntSize, LayerRect};
+use api::{PictureIntPoint, PictureIntRect, PictureIntSize};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip_scroll_tree::ClipScrollNodeIndex;
 use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState};
 use gpu_cache::{GpuCacheHandle};
 use prim_store::{PrimitiveIndex, PrimitiveRun, PrimitiveRunLocalRect};
 use prim_store::{PrimitiveMetadata, ScrollNodeAndClipChain};
-use render_task::{ClearMode, RenderTask};
-use render_task::{RenderTaskId, RenderTaskLocation};
+use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle};
+use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use scene::{FilterOpHelpers, SceneProperties};
+use std::mem;
 use tiling::RenderTargetKind;
 
 
@@ -38,11 +40,79 @@ pub enum PictureCompositeMode {
     Blit,
 }
 
+
+
+
+
+#[derive(Debug)]
+pub enum PictureSurface {
+    RenderTask(RenderTaskId),
+    TextureCache(RenderTaskCacheEntryHandle),
+}
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PictureId(pub u64);
+
+
+
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PictureCacheKey {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    picture_id: PictureId,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pic_relative_render_rect: PictureIntRect,
+
+    
+    
+    
+    
+    unclipped_size: DeviceIntSize,
+}
+
 #[derive(Debug)]
 pub struct PicturePrimitive {
     
     
-    pub surface: Option<RenderTaskId>,
+    pub surface: Option<PictureSurface>,
 
     
     pub runs: Vec<PrimitiveRun>,
@@ -83,6 +153,9 @@ pub struct PicturePrimitive {
     
     
     pub extra_gpu_data_handle: GpuCacheHandle,
+
+    
+    pub id: PictureId,
 }
 
 impl PicturePrimitive {
@@ -103,6 +176,7 @@ impl PicturePrimitive {
     }
 
     pub fn new_image(
+        id: PictureId,
         composite_mode: Option<PictureCompositeMode>,
         is_in_3d_context: bool,
         pipeline_id: PipelineId,
@@ -123,6 +197,7 @@ impl PicturePrimitive {
             apply_local_clip_rect,
             pipeline_id,
             task_rect: DeviceIntRect::zero(),
+            id,
         }
     }
 
@@ -162,6 +237,16 @@ impl PicturePrimitive {
             Some(PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _))) => {
                 let inflate_size = (blur_radius * BLUR_SAMPLE_SCALE).ceil();
                 local_content_rect.inflate(inflate_size, inflate_size)
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
             }
             _ => {
                 local_content_rect
@@ -188,7 +273,7 @@ impl PicturePrimitive {
         &mut self,
         prim_index: PrimitiveIndex,
         prim_metadata: &mut PrimitiveMetadata,
-        pic_state_for_children: PictureState,
+        mut pic_state_for_children: PictureState,
         pic_state: &mut PictureState,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
@@ -229,26 +314,96 @@ impl PicturePrimitive {
                     .intersection(&prim_screen_rect.unclipped)
                     .unwrap();
 
-                let picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, device_rect.size),
-                    prim_index,
-                    device_rect.origin,
-                    pic_state_for_children.tasks,
-                );
+                
+                
+                
+                
+                
+                
+                let surface = if pic_state_for_children.has_non_root_coord_system {
+                    let picture_task = RenderTask::new_picture(
+                        RenderTaskLocation::Dynamic(None, Some(device_rect.size)),
+                        prim_index,
+                        device_rect.origin,
+                        pic_state_for_children.tasks,
+                    );
 
-                let picture_task_id = frame_state.render_tasks.add(picture_task);
+                    let picture_task_id = frame_state.render_tasks.add(picture_task);
 
-                let blur_render_task = RenderTask::new_blur(
-                    blur_std_deviation,
-                    picture_task_id,
-                    frame_state.render_tasks,
-                    RenderTargetKind::Color,
-                    ClearMode::Transparent,
-                );
+                    let blur_render_task = RenderTask::new_blur(
+                        blur_std_deviation,
+                        picture_task_id,
+                        frame_state.render_tasks,
+                        RenderTargetKind::Color,
+                        ClearMode::Transparent,
+                    );
 
-                let render_task_id = frame_state.render_tasks.add(blur_render_task);
-                pic_state.tasks.push(render_task_id);
-                self.surface = Some(render_task_id);
+                    let render_task_id = frame_state.render_tasks.add(blur_render_task);
+
+                    pic_state.tasks.push(render_task_id);
+
+                    PictureSurface::RenderTask(render_task_id)
+                } else {
+                    
+                    
+                    let pic_relative_render_rect = PictureIntRect::new(
+                        PictureIntPoint::new(
+                            device_rect.origin.x - prim_screen_rect.unclipped.origin.x,
+                            device_rect.origin.y - prim_screen_rect.unclipped.origin.y,
+                        ),
+                        PictureIntSize::new(
+                            device_rect.size.width,
+                            device_rect.size.height,
+                        ),
+                    );
+
+                    
+                    
+                    let cache_item = frame_state.resource_cache.request_render_task(
+                        RenderTaskCacheKey {
+                            size: device_rect.size,
+                            kind: RenderTaskCacheKeyKind::Picture(PictureCacheKey {
+                                picture_id: self.id,
+                                unclipped_size: prim_screen_rect.unclipped.size,
+                                pic_relative_render_rect,
+                            }),
+                        },
+                        frame_state.gpu_cache,
+                        frame_state.render_tasks,
+                        None,
+                        false,
+                        |render_tasks| {
+                            let child_tasks = mem::replace(&mut pic_state_for_children.tasks, Vec::new());
+
+                            let picture_task = RenderTask::new_picture(
+                                RenderTaskLocation::Dynamic(None, Some(device_rect.size)),
+                                prim_index,
+                                device_rect.origin,
+                                child_tasks,
+                            );
+
+                            let picture_task_id = render_tasks.add(picture_task);
+
+                            let blur_render_task = RenderTask::new_blur(
+                                blur_std_deviation,
+                                picture_task_id,
+                                render_tasks,
+                                RenderTargetKind::Color,
+                                ClearMode::Transparent,
+                            );
+
+                            let render_task_id = render_tasks.add(blur_render_task);
+
+                            pic_state.tasks.push(render_task_id);
+
+                            render_task_id
+                        }
+                    );
+
+                    PictureSurface::TextureCache(cache_item)
+                };
+
+                self.surface = Some(surface);
 
                 Some(device_rect)
             }
@@ -271,7 +426,7 @@ impl PicturePrimitive {
                     .unwrap();
 
                 let mut picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, device_rect.size),
+                    RenderTaskLocation::Dynamic(None, Some(device_rect.size)),
                     prim_index,
                     device_rect.origin,
                     pic_state_for_children.tasks,
@@ -292,13 +447,13 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(blur_render_task);
                 pic_state.tasks.push(render_task_id);
-                self.surface = Some(render_task_id);
+                self.surface = Some(PictureSurface::RenderTask(render_task_id));
 
                 Some(device_rect)
             }
             Some(PictureCompositeMode::MixBlend(..)) => {
                 let picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, prim_screen_rect.clipped.size),
+                    RenderTaskLocation::Dynamic(None, Some(prim_screen_rect.clipped.size)),
                     prim_index,
                     prim_screen_rect.clipped.origin,
                     pic_state_for_children.tasks,
@@ -313,7 +468,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                self.surface = Some(render_task_id);
+                self.surface = Some(PictureSurface::RenderTask(render_task_id));
 
                 Some(prim_screen_rect.clipped)
             }
@@ -332,7 +487,7 @@ impl PicturePrimitive {
                 };
 
                 let picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, prim_screen_rect.clipped.size),
+                    RenderTaskLocation::Dynamic(None, Some(prim_screen_rect.clipped.size)),
                     prim_index,
                     prim_screen_rect.clipped.origin,
                     pic_state_for_children.tasks,
@@ -340,13 +495,13 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                self.surface = Some(render_task_id);
+                self.surface = Some(PictureSurface::RenderTask(render_task_id));
 
                 device_rect
             }
             Some(PictureCompositeMode::Blit) | None => {
                 let picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, prim_screen_rect.clipped.size),
+                    RenderTaskLocation::Dynamic(None, Some(prim_screen_rect.clipped.size)),
                     prim_index,
                     prim_screen_rect.clipped.origin,
                     pic_state_for_children.tasks,
@@ -354,7 +509,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
                 pic_state.tasks.push(render_task_id);
-                self.surface = Some(render_task_id);
+                self.surface = Some(PictureSurface::RenderTask(render_task_id));
 
                 Some(prim_screen_rect.clipped)
             }
@@ -392,22 +547,39 @@ impl PicturePrimitive {
             }
 
             if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
+                
                 request.push(self.task_rect.to_f32());
+                request.push([0.0; 4]);
+                request.push(PremultipliedColorF::WHITE);
 
                 
                 
                 
-                let (offset, color) = match self.composite_mode {
-                    Some(PictureCompositeMode::Filter(FilterOp::DropShadow(offset, _, color))) => {
-                        (offset, color.premultiplied())
-                    }
-                    _ => {
-                        (LayerVector2D::zero(), PremultipliedColorF::WHITE)
-                    }
-                };
+                if let Some(PictureCompositeMode::Filter(FilterOp::DropShadow(offset, _, color))) = self.composite_mode {
+                    
+                    
+                    
+                    
+                    
+                    
 
-                request.push([offset.x, offset.y, 0.0, 0.0]);
-                request.push(color);
+                    
+                    
+                    
+                    
+                    let shadow_rect = prim_metadata.local_rect.translate(&offset);
+                    let shadow_clip_rect = prim_metadata.local_clip_rect.translate(&offset);
+
+                    request.push(shadow_rect);
+                    request.push(shadow_clip_rect);
+                    request.push(shadow_rect);
+                    request.push([0.0; 4]);
+
+                    
+                    request.push(self.task_rect.to_f32());
+                    request.push([offset.x, offset.y, 0.0, 0.0]);
+                    request.push(color.premultiplied());
+                }
             }
         }
     }

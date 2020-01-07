@@ -83,6 +83,9 @@ enum EntryKind {
     },
 }
 
+#[derive(Debug)]
+pub enum CacheEntryMarker {}
+
 
 
 
@@ -163,7 +166,7 @@ impl CacheEntry {
     }
 }
 
-type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntry>;
+type WeakCacheEntryHandle = WeakFreeListHandle<CacheEntryMarker>;
 
 
 
@@ -240,17 +243,17 @@ pub struct TextureCache {
 
     
     
-    entries: FreeList<CacheEntry>,
+    entries: FreeList<CacheEntry, CacheEntryMarker>,
 
     
     
     
-    standalone_entry_handles: Vec<FreeListHandle<CacheEntry>>,
+    standalone_entry_handles: Vec<FreeListHandle<CacheEntryMarker>>,
 
     
     
     
-    shared_entry_handles: Vec<FreeListHandle<CacheEntry>>,
+    shared_entry_handles: Vec<FreeListHandle<CacheEntryMarker>>,
 }
 
 impl TextureCache {

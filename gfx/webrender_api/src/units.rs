@@ -37,6 +37,15 @@ pub type DeviceSize = TypedSize2D<f32, DevicePixel>;
 
 
 
+#[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct PicturePixel;
+
+pub type PictureIntRect = TypedRect<i32, PicturePixel>;
+pub type PictureIntPoint = TypedPoint2D<i32, PicturePixel>;
+pub type PictureIntSize = TypedSize2D<i32, PicturePixel>;
+
+
+
 
 pub type LayoutPixel = LayerPixel;
 
