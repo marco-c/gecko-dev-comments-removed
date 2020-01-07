@@ -303,11 +303,6 @@ Service::unregisterConnection(Connection *aConnection)
   
   
   
-  
-  
-  nsCOMPtr<nsIThread> thread = forgettingRef->threadOpenedOn;
-  NS_ProxyRelease(
-    "storage::Service::mConnections", thread, forgettingRef.forget(), false);
 }
 
 void

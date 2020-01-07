@@ -9,6 +9,7 @@
 
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
@@ -379,6 +380,16 @@ private:
 
 
   bool mTransactionInProgress;
+
+  
+
+
+
+
+
+
+
+  mozilla::Atomic<bool> mDestroying;
 
   
 

@@ -535,6 +535,7 @@ Connection::Connection(Service *aService,
 , mAsyncExecutionThreadShuttingDown(false)
 , mConnectionClosed(false)
 , mTransactionInProgress(false)
+, mDestroying(false)
 , mProgressHandler(nullptr)
 , mFlags(aFlags)
 , mIgnoreLockingMode(aIgnoreLockingMode)
@@ -583,45 +584,40 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
     
     
     
-    ++mRefCnt;
-    
-    Unused << Close();
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mRefCnt == 3) {
+    if (mDestroying.compareExchange(false, true)) {
+      
+      
+      
+      
+      
+      if (threadOpenedOn->IsOnCurrentThread()) {
+        
+        
+        
+        Unused << Close();
+      } else {
+        nsCOMPtr<nsIRunnable> event =
+          NewRunnableMethod("storage::Connection::Close",
+                            this, &Connection::Close);
+        if (NS_FAILED(threadOpenedOn->Dispatch(event.forget(),
+                                               NS_DISPATCH_NORMAL))) {
+          
+          
+          
+          
+          
+          MOZ_ASSERT(false, "Leaked Connection::Close(), ownership fail.");
+          Unused << Close();
+        }
+      }
+
       
       mStorageService->unregisterConnection(this);
-      
-      
-      --mRefCnt;
-    } else if (mRefCnt == 2) {
-      
-      --mRefCnt;
-      
-      
-      mStorageService->unregisterConnection(this);
-    } else {
-      MOZ_ASSERT(false, "Connection refcount invariant violated.");
     }
   } else if (0 == count) {
     mRefCnt = 1; 
