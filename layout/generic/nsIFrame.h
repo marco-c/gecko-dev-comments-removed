@@ -25,6 +25,7 @@
 
 #include "CaretAssociationHint.h"
 #include "FrameProperties.h"
+#include "LayoutConstants.h"
 #include "mozilla/layout/FrameChildList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SmallPointerArray.h"
@@ -140,29 +141,11 @@ typedef uint32_t nsSplittableType;
 #define NS_FRAME_IS_NOT_SPLITTABLE(type)\
   (0 == ((type) & NS_FRAME_SPLITTABLE))
 
-#define NS_INTRINSIC_WIDTH_UNKNOWN nscoord_MIN
-
 
 
 #define NS_SUBTREE_DIRTY(_frame)  \
   (((_frame)->GetStateBits() &      \
     (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) != 0)
-
-
-
-
-
-
-#define NS_UNCONSTRAINEDSIZE NS_MAXSIZE
-
-#define NS_INTRINSICSIZE    NS_UNCONSTRAINEDSIZE
-#define NS_AUTOHEIGHT       NS_UNCONSTRAINEDSIZE
-
-#define NS_AUTOMARGIN       (NS_UNCONSTRAINEDSIZE + 1)
-#define NS_AUTOOFFSET       NS_UNCONSTRAINEDSIZE
-
-
-
 
 
 
