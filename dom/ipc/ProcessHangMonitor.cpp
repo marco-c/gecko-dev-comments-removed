@@ -95,7 +95,7 @@ class HangMonitorChild
 
   void ClearHang();
   void ClearHangAsync();
-  void ClearForcePaint();
+  void ClearForcePaint(uint64_t aLayerObserverEpoch);
 
   mozilla::ipc::IPCResult RecvTerminateScript(const bool& aTerminateGlobal) override;
   mozilla::ipc::IPCResult RecvBeginStartingDebugger() override;
@@ -422,10 +422,15 @@ HangMonitorChild::RecvForcePaint(const TabId& aTabId, const uint64_t& aLayerObse
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
 
-  mForcePaintMonitor->NotifyActivity();
-
   {
     MonitorAutoLock lock(mMonitor);
+    
+    
+    
+    if (mForcePaintEpoch >= aLayerObserverEpoch) {
+      return IPC_OK();
+    }
+    mForcePaintMonitor->NotifyActivity();
     mForcePaint = true;
     mForcePaintTab = aTabId;
     mForcePaintEpoch = aLayerObserverEpoch;
@@ -437,12 +442,22 @@ HangMonitorChild::RecvForcePaint(const TabId& aTabId, const uint64_t& aLayerObse
 }
 
 void
-HangMonitorChild::ClearForcePaint()
+HangMonitorChild::ClearForcePaint(uint64_t aLayerObserverEpoch)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
 
-  mForcePaintMonitor->NotifyWait();
+  {
+    MonitorAutoLock lock(mMonitor);
+    
+    
+    
+    
+    if (aLayerObserverEpoch > mForcePaintEpoch) {
+      mForcePaintEpoch = aLayerObserverEpoch;
+    }
+    mForcePaintMonitor->NotifyWait();
+  }
 }
 
 void
@@ -1357,12 +1372,12 @@ ProcessHangMonitor::ForcePaint(PProcessHangMonitorParent* aParent,
 }
 
  void
-ProcessHangMonitor::ClearForcePaint()
+ProcessHangMonitor::ClearForcePaint(uint64_t aLayerObserverEpoch)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
 
   if (HangMonitorChild* child = HangMonitorChild::Get()) {
-    child->ClearForcePaint();
+    child->ClearForcePaint(aLayerObserverEpoch);
   }
 }
