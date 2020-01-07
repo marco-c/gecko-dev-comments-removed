@@ -687,7 +687,9 @@ bool NS_IsSafeTopLevelNav(nsIChannel* aChannel);
 
 
 
-bool NS_IsTopLevelForeign(nsIChannel* aChannel);
+
+
+bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI);
 
 
 

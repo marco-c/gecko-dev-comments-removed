@@ -29,7 +29,8 @@ namespace {
 
 
 void
-CreateDummyChannel(nsIURI* aHostURI, OriginAttributes& aAttrs, nsIChannel** aChannel)
+CreateDummyChannel(nsIURI* aHostURI, nsIURI* aChannelURI,
+                   OriginAttributes& aAttrs, nsIChannel** aChannel)
 {
   nsCOMPtr<nsIPrincipal> principal =
     BasePrincipal::CreateCodebasePrincipal(aHostURI, aAttrs);
@@ -37,16 +38,10 @@ CreateDummyChannel(nsIURI* aHostURI, OriginAttributes& aAttrs, nsIChannel** aCha
     return;
   }
 
-  nsCOMPtr<nsIURI> dummyURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(dummyURI), "about:blank");
-  if (NS_FAILED(rv)) {
-      return;
-  }
-
   
   
   nsCOMPtr<nsIChannel> dummyChannel;
-  NS_NewChannel(getter_AddRefs(dummyChannel), dummyURI, principal,
+  NS_NewChannel(getter_AddRefs(dummyChannel), aChannelURI, principal,
                 nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
                 nsIContentPolicy::TYPE_INVALID);
   nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(dummyChannel);
@@ -156,7 +151,7 @@ CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel)
     attrs = loadInfo->GetOriginAttributes();
   }
   bool isSafeTopLevelNav = NS_IsSafeTopLevelNav(aChannel);
-  bool isTopLevelForeign = NS_IsTopLevelForeign(aChannel);
+  bool aIsSameSiteForeign = NS_IsSameSiteForeign(aChannel, uri);
 
   
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
@@ -164,7 +159,7 @@ CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel)
   bool isForeign = true;
   thirdPartyUtil->IsThirdPartyChannel(aChannel, uri, &isForeign);
   nsTArray<nsCookie*> foundCookieList;
-  mCookieService->GetCookiesForURI(uri, isForeign, isSafeTopLevelNav, isTopLevelForeign,
+  mCookieService->GetCookiesForURI(uri, isForeign, isSafeTopLevelNav, aIsSameSiteForeign,
                                    false, attrs, foundCookieList);
   nsTArray<CookieStruct> matchingCookiesList;
   SerialializeCookieList(foundCookieList, matchingCookiesList, uri);
@@ -196,14 +191,14 @@ mozilla::ipc::IPCResult
 CookieServiceParent::RecvPrepareCookieList(const URIParams        &aHost,
                                            const bool             &aIsForeign,
                                            const bool             &aIsSafeTopLevelNav,
-                                           const bool             &aIsTopLevelForeign,
+                                           const bool             &aIsSameSiteForeign,
                                            const OriginAttributes &aAttrs)
 {
   nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
 
   
   nsTArray<nsCookie*> foundCookieList;
-  mCookieService->GetCookiesForURI(hostURI, aIsForeign, aIsSafeTopLevelNav, aIsTopLevelForeign,
+  mCookieService->GetCookiesForURI(hostURI, aIsForeign, aIsSafeTopLevelNav, aIsSameSiteForeign,
                                    false, aAttrs, foundCookieList);
   nsTArray<CookieStruct> matchingCookiesList;
   SerialializeCookieList(foundCookieList, matchingCookiesList, hostURI);
@@ -222,7 +217,7 @@ mozilla::ipc::IPCResult
 CookieServiceParent::RecvGetCookieString(const URIParams& aHost,
                                          const bool& aIsForeign,
                                          const bool& aIsSafeTopLevelNav,
-                                         const bool& aIsToplevelForeign,
+                                         const bool& aIsSameSiteForeign,
                                          const OriginAttributes& aAttrs,
                                          nsCString* aResult)
 {
@@ -234,13 +229,14 @@ CookieServiceParent::RecvGetCookieString(const URIParams& aHost,
   nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
   if (!hostURI)
     return IPC_FAIL_NO_REASON(this);
-  mCookieService->GetCookieStringInternal(hostURI, aIsForeign, aIsSafeTopLevelNav, aIsToplevelForeign,
+  mCookieService->GetCookieStringInternal(hostURI, aIsForeign, aIsSafeTopLevelNav, aIsSameSiteForeign,
                                           false, aAttrs, *aResult);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult
 CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
+                                         const URIParams& aChannelURI,
                                          const bool& aIsForeign,
                                          const nsCString& aCookieString,
                                          const nsCString& aServerTime,
@@ -256,6 +252,10 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   if (!hostURI)
     return IPC_FAIL_NO_REASON(this);
 
+  nsCOMPtr<nsIURI> channelURI = DeserializeURI(aChannelURI);
+  if (!channelURI)
+    return IPC_FAIL_NO_REASON(this);
+
   
   
   
@@ -264,7 +264,8 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   
   
   nsCOMPtr<nsIChannel> dummyChannel;
-  CreateDummyChannel(hostURI, const_cast<OriginAttributes&>(aAttrs),
+  CreateDummyChannel(hostURI, channelURI,
+                     const_cast<OriginAttributes&>(aAttrs),
                      getter_AddRefs(dummyChannel));
 
   
