@@ -504,9 +504,22 @@ protected:
              TouchContent aTouchContent = TouchContent::yes);
   void LookInsideDivBQandList(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
   nsresult BustUpInlinesAtRangeEndpoints(RangeItem& inRange);
-  nsresult BustUpInlinesAtBRs(
-             nsIContent& aNode,
-             nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  BustUpInlinesAtBRs(nsIContent& aNode,
+                     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+
   
 
 
