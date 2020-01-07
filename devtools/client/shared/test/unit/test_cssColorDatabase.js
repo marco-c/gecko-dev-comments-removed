@@ -47,12 +47,16 @@ function run_test() {
 
   
   
-  let names = InspectorUtils.getCSSValuesForProperty("background-color");
-  for (let name of names) {
-    if (name !== "hsl" && name !== "hsla" &&
-        name !== "rgb" && name !== "rgba" &&
-        name !== "inherit" && name !== "initial" && name !== "unset") {
-      checkOne(name, true);
+  
+  
+  if (false) {
+    let names = InspectorUtils.getCSSValuesForProperty("background-color");
+    for (let name of names) {
+      if (name !== "hsl" && name !== "hsla" &&
+          name !== "rgb" && name !== "rgba" &&
+          name !== "inherit" && name !== "initial" && name !== "unset") {
+        checkOne(name, true);
+      }
     }
   }
 }
