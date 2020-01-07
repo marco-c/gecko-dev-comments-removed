@@ -1818,11 +1818,6 @@ impl RenderPass {
                                     
                                     Some(cache_key) => match self.dynamic_tasks.entry(cache_key) {
                                         Entry::Occupied(entry) => {
-                                            
-                                            
-                                            
-                                            
-                                            debug_assert!(task.children.is_empty());
                                             debug_assert_eq!(entry.get().rect.size, size);
                                             task.kind = RenderTaskKind::Alias(entry.get().task_id);
                                             continue;
