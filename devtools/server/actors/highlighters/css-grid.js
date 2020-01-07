@@ -1145,7 +1145,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
 
   renderGridLineNumber(lineNumber, linePos, startPos, breadth, dimensionType,
-    stackedLineIndex) {
+    isStackedLine) {
     let displayPixelRatio = getDisplayPixelRatio(this.win);
     let { devicePixelRatio } = this.win;
     let offset = (displayPixelRatio / 2) % 1;
@@ -1206,7 +1206,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     [x, y] = apply(this.currentMatrix, [x, y]);
 
-    if (stackedLineIndex) {
+    if (isStackedLine) {
       
       const xOffset = boxWidth / 4;
       const yOffset = boxHeight / 4;
@@ -1354,7 +1354,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
     this.ctx.fillStyle = "black";
-    const numberText = stackedLineIndex ? "" : lineNumber;
+    const numberText = isStackedLine ? "" : lineNumber;
     this.ctx.fillText(numberText, x, y);
     this.ctx.restore();
   }
@@ -1472,8 +1472,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
   renderLineNumbers(gridDimension, dimensionType, startPos) {
     const { lines, tracks } = gridDimension;
-    
-    let stackedLines = [];
 
     for (let i = 0, line; (line = lines[i++]);) {
       
@@ -1491,19 +1489,15 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
       
       
-      const gridLine = tracks[line.number - 1];
+      
+      const gridTrack = tracks[i - 1];
 
-      if (gridLine) {
-        const { breadth }  = gridLine;
+      if (gridTrack) {
+        const { breadth }  = gridTrack;
 
         if (breadth === 0) {
-          stackedLines.push(lines[i].number);
-
-          if (stackedLines.length > 0) {
-            this.renderGridLineNumber(line.number, line.start, startPos, line.breadth,
-              dimensionType, 1);
-          }
-
+          this.renderGridLineNumber(line.number, line.start, startPos, line.breadth,
+            dimensionType, true);
           continue;
         }
       }
@@ -1527,8 +1521,6 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
   renderNegativeLineNumbers(gridDimension, dimensionType, startPos) {
     const { lines, tracks } = gridDimension;
-    
-    let stackedLines = [];
 
     for (let i = 0, line; (line = lines[i++]);) {
       let linePos = line.start;
@@ -1541,28 +1533,17 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
       
       
-      const gridLine = tracks[line.number - 1];
+      
+      const gridTrack = tracks[i - 1];
+      if (gridTrack) {
+        const { breadth } = gridTrack;
 
-      if (gridLine) {
-        const { breadth }  = gridLine;
-
-        if (breadth === 0) {
-          stackedLines.push(negativeLineNumber);
-
-          if (stackedLines.length > 0) {
-            this.renderGridLineNumber(negativeLineNumber, linePos, startPos,
-              line.breadth, dimensionType, 1);
-          }
-
+        
+        if (breadth === 0 && negativeLineNumber != -1) {
+          this.renderGridLineNumber(negativeLineNumber, linePos, startPos,
+            line.breadth, dimensionType, true);
           continue;
         }
-      }
-
-      
-      
-      if (stackedLines.length) {
-        negativeLineNumber = stackedLines[0];
-        stackedLines = [];
       }
 
       this.renderGridLineNumber(negativeLineNumber, linePos, startPos, line.breadth,
