@@ -34,6 +34,7 @@ add_task(async function() {
 
   ok(getComputedViewPropertyValue(cView, "color"), "#00F",
     "The computed-view shows the properties for test node two");
-  is(getRuleViewPropertyValue(view, "element", "color"), "blue",
-    "The rule-view shows the properties for test node two");
+
+  is(getRuleViewPropertyValue(view, "element", "color"), "red",
+    "The rule-view doesn't the properties for test node two");
 });

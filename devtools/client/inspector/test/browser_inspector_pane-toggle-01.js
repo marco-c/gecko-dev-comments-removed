@@ -8,8 +8,7 @@
 
 
 add_task(async function() {
-  info("Switch to 2 pane inspector to test that 3 pane toggle button behavior");
-  await pushPref("devtools.inspector.three-pane-enabled", false);
+  await pushPref("devtools.inspector.three-pane-toggle", true);
 
   info("Open the inspector in a bottom toolbox host");
   const { inspector, toolbox } = await openInspectorForURL("about:blank", "bottom");
