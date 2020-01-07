@@ -39,7 +39,7 @@ class IDecodingTask;
 
 
 
-class DecodePool : public nsIObserver
+class DecodePool final : public nsIObserver
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -97,7 +97,6 @@ private:
 
   
   Mutex                         mMutex;
-  nsTArray<nsCOMPtr<nsIThread>> mThreads;
   nsCOMPtr<nsIThread>           mIOThread;
 };
 
