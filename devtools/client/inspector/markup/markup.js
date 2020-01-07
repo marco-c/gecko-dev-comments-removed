@@ -324,11 +324,9 @@ MarkupView.prototype = {
       parentNode = parentNode.parentNode;
     }
 
-    if (container instanceof MarkupElementContainer) {
+    if (typeof container.onContainerClick === "function") {
       
-      
-      container._buildEventTooltipContent(event.target,
-        this.eventDetailsTooltip);
+      container.onContainerClick(event);
     }
   },
 
@@ -541,8 +539,6 @@ MarkupView.prototype = {
     }
 
     if (container instanceof MarkupElementContainer) {
-      
-      
       return container.isImagePreviewTarget(target, this.imagePreviewTooltip);
     }
 
