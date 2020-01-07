@@ -401,7 +401,8 @@ public class GeckoAppShell
     @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
      static native void onLocationChanged(double latitude, double longitude,
                                                        double altitude, float accuracy,
-                                                       float bearing, float speed, long time);
+                                                       float altitudeAccuracy,
+                                                       float heading, float speed, long time);
 
     private static class DefaultListeners implements SensorEventListener,
                                                      LocationListener,
@@ -498,10 +499,34 @@ public class GeckoAppShell
         @Override
         public void onLocationChanged(final Location location) {
             
+
+            double altitude = location.hasAltitude()
+                            ? location.getAltitude()
+                            : Double.NaN;
+
+            float accuracy = location.hasAccuracy()
+                           ? location.getAccuracy()
+                           : Float.NaN;
+
+            float altitudeAccuracy = Build.VERSION.SDK_INT >= 26 &&
+                                     location.hasVerticalAccuracy()
+                                   ? location.getVerticalAccuracyMeters()
+                                   : Float.NaN;
+
+            float speed = location.hasSpeed()
+                        ? location.getSpeed()
+                        : Float.NaN;
+
+            float heading = location.hasBearing()
+                          ? location.getBearing()
+                          : Float.NaN;
+
+            
+            
             GeckoAppShell.onLocationChanged(
                 location.getLatitude(), location.getLongitude(),
-                location.getAltitude(), location.getAccuracy(),
-                location.getBearing(), location.getSpeed(), location.getTime());
+                altitude, accuracy, altitudeAccuracy,
+                heading, speed, location.getTime());
         }
 
         @Override

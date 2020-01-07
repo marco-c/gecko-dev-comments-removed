@@ -6,8 +6,26 @@
 
 #include "nsGeoPosition.h"
 
+#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/PositionBinding.h"
 #include "mozilla/dom/CoordinatesBinding.h"
+
+using mozilla::IsNaN;
+
+
+inline
+double NaN()
+{
+  return mozilla::UnspecifiedNaN<double>();
+}
+
+#ifdef DEBUG
+static
+bool EqualOrNaN(double a, double b)
+{
+  return (a == b) || (IsNaN(a) && IsNaN(b));
+}
+#endif
 
 
 
@@ -19,11 +37,28 @@ nsGeoPositionCoords::nsGeoPositionCoords(double aLat, double aLong,
   : mLat(aLat)
   , mLong(aLong)
   , mAlt(aAlt)
-  , mHError(aHError)
-  , mVError(aVError)
-  , mHeading(aHeading)
-  , mSpeed(aSpeed)
+  , mHError((aHError >= 0) ? aHError : 0)
+    
+  , mVError((aVError >= 0 && !IsNaN(aAlt)) ? aVError : NaN())
+    
+    
+  , mHeading((aHeading >= 0 && aHeading < 360 && aSpeed > 0)
+             ? aHeading : NaN())
+  , mSpeed(aSpeed >= 0 ? aSpeed : NaN())
 {
+  
+  
+  
+  
+  MOZ_ASSERT(aLat >= -90 && aLat <= 90);
+  MOZ_ASSERT(aLong >= -180 && aLong <= 180);
+  MOZ_ASSERT(!(aLat == 0 && aLong == 0)); 
+
+  MOZ_ASSERT(EqualOrNaN(mAlt, aAlt));
+  MOZ_ASSERT(mHError == aHError);
+  MOZ_ASSERT(EqualOrNaN(mVError, aVError));
+  MOZ_ASSERT(EqualOrNaN(mHeading, aHeading));
+  MOZ_ASSERT(EqualOrNaN(mSpeed, aSpeed));
 }
 
 nsGeoPositionCoords::~nsGeoPositionCoords()
@@ -146,7 +181,6 @@ nsGeoPosition::GetCoords(nsIDOMGeoPositionCoords * *aCoords)
 namespace mozilla {
 namespace dom {
 
-
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Position, mParent, mCoordinates)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Position)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Position)
@@ -243,9 +277,13 @@ Coordinates::name() const                    \
 Nullable<double>                                      \
 Coordinates::Get##name() const                        \
 {                                                     \
-  double rv;                                          \
-  mCoords->Get##name(&rv);                            \
-  return Nullable<double>(rv);                        \
+  double value;                                       \
+  mCoords->Get##name(&value);                         \
+  Nullable<double> rv;                                \
+  if (!IsNaN(value)) {                                \
+    rv.SetValue(value);                               \
+  }                                                   \
+  return rv;                                          \
 }
 
 GENERATE_COORDS_WRAPPED_GETTER(Latitude)
