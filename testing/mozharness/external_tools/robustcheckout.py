@@ -37,7 +37,13 @@ from mercurial import (
     util,
 )
 
-testedwith = '3.7 3.8 3.9 4.0 4.1 4.2 4.3'
+
+try:
+    from mercurial import configitems
+except ImportError:
+    configitems = None
+
+testedwith = '3.7 3.8 3.9 4.0 4.1 4.2 4.3 4.4'
 minimumhgversion = '3.7'
 
 cmdtable = {}
@@ -48,6 +54,16 @@ if util.safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)
 else:
     command = cmdutil.command(cmdtable)
+
+
+
+if util.safehasattr(registrar, 'configitem'):
+    configtable = {}
+    configitem = registrar.configitem(configtable)
+
+    configitem('robustcheckout', 'retryjittermin', default=configitems.dynamicdefault)
+    configitem('robustcheckout', 'retryjittermax', default=configitems.dynamicdefault)
+
 
 
 
@@ -206,9 +222,9 @@ def robustcheckout(ui, url, dest, upstream=None, revision=None, branch=None,
     
     
     if sparseprofile:
-        if util.versiontuple(n=2) != (4, 3):
+        if util.versiontuple(n=2) not in ((4, 3), (4, 4)):
             raise error.Abort('sparse profile support only available for '
-                              'Mercurial 4.3 (using %s)' % util.version())
+                              'Mercurial versions greater than 4.3 (using %s)' % util.version())
 
         try:
             extensions.find('sparse')
@@ -545,7 +561,7 @@ def _docheckout(ui, url, dest, upstream, revision, branch, purge, sharebase,
         try:
             old_sparse_fn = getattr(repo.dirstate, '_sparsematchfn', None)
             if old_sparse_fn is not None:
-                assert util.versiontuple(n=2) == (4, 3)
+                assert util.versiontuple(n=2) in ((4, 3), (4, 4))
                 repo.dirstate._sparsematchfn = lambda: matchmod.always(repo.root, '')
 
             if purgeext.purge(ui, repo, all=True, abort_on_err=True,
