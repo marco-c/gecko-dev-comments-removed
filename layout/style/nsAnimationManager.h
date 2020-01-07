@@ -19,6 +19,7 @@
 class nsIGlobalObject;
 class ServoComputedData;
 struct nsStyleDisplay;
+class ServoCSSAnimationBuilder;
 
 namespace mozilla {
 class ComputedStyle;
@@ -350,11 +351,10 @@ private:
   
   nsTHashtable<nsRefPtrHashKey<nsAtom>> mMaybeReferencedAnimations;
 
-  template<class BuilderType>
   void DoUpdateAnimations(
     const mozilla::NonOwningAnimationTarget& aTarget,
     const nsStyleDisplay& aStyleDisplay,
-    BuilderType& aBuilder);
+    ServoCSSAnimationBuilder& aBuilder);
 };
 
 #endif 
