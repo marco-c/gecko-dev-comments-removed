@@ -17,7 +17,8 @@
 
 
 txExprLexer::txExprLexer()
-  : mCurrentItem(nullptr),
+  : mPosition(nullptr),
+    mCurrentItem(nullptr),
     mFirstItem(nullptr),
     mLastItem(nullptr),
     mTokenCount(0)
