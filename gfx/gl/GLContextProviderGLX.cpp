@@ -119,6 +119,7 @@ GLXLibrary::EnsureInitialized()
 
         
         SYMBOL(ChooseFBConfig),
+        SYMBOL(ChooseVisual),
         SYMBOL(GetFBConfigAttrib),
         SYMBOL(GetFBConfigs),
         SYMBOL(CreatePixmap),
