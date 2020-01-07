@@ -10,6 +10,8 @@
 
 
 
+
+
 class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
     return [
@@ -48,8 +50,22 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
     return this.popupBox.querySelector(":scope > [selected]");
   }
 
-  namedItem(name) {
-    return this.popupBox.querySelector(`:scope > [name="${CSS.escape(name)}"]`);
+
+  
+
+
+
+
+  set selectedOption(option) {
+    for (let child of this.popupBox.children) {
+      child.selected = child == option;
+    }
+
+    this.render();
+  }
+
+  getOptionByValue(value) {
+    return this.popupBox.querySelector(`:scope > [value="${CSS.escape(value)}"]`);
   }
 
   handleEvent(event) {
@@ -117,6 +133,9 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
     }
 
     for (let aAttr of aAttrs) {
+      if (aAttr == "selected") {
+        continue;
+      }
       if (a.getAttribute(aAttr) != b.getAttribute(aAttr)) {
         return false;
       }
@@ -145,6 +164,7 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
     for (let child of popupBox.children) {
       if (child.selected) {
         selectedChild = child;
+        break;
       }
     }
     if (!selectedChild && popupBox.children.length) {
@@ -161,6 +181,7 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
       if (selectedChild) {
         selectedClone = selectedChild.cloneNode(false);
         selectedClone.removeAttribute("id");
+        selectedClone.removeAttribute("selected");
         selectedClone.classList.add("rich-select-selected-clone");
         selectedClone = this.appendChild(selectedClone);
       }
