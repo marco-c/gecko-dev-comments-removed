@@ -131,18 +131,18 @@ Selection.prototype = {
 
 
 
-  setNodeFront: function(value, reason = "unknown", isSlotted = false) {
+  setNodeFront: function(nodeFront, { reason = "unknown", isSlotted = false} = {}) {
     this.reason = reason;
-    this._isSlotted = isSlotted;
 
     
-    let parentNode = value && value.parentNode();
-    if (value && parentNode && parentNode.inlineTextChild === value) {
-      value = parentNode;
+    let parentNode = nodeFront && nodeFront.parentNode();
+    if (nodeFront && parentNode && parentNode.inlineTextChild === nodeFront) {
+      nodeFront = parentNode;
     }
 
-    this._nodeFront = value;
-    this.emit("new-node-front", value, this.reason);
+    this._isSlotted = isSlotted;
+    this._nodeFront = nodeFront;
+    this.emit("new-node-front", nodeFront, this.reason);
   },
 
   get documentFront() {
