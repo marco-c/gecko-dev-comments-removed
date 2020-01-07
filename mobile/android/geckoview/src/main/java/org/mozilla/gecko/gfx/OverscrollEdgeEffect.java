@@ -5,6 +5,8 @@
 
 package org.mozilla.gecko.gfx;
 
+import org.mozilla.gecko.util.ThreadUtils;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -12,25 +14,44 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
+import android.view.View;
 import android.widget.EdgeEffect;
 
 import java.lang.reflect.Field;
 
-public class OverscrollEdgeEffect implements Overscroll {
+public class OverscrollEdgeEffect {
     
     private static final int TOP = 0;
     private static final int BOTTOM = 1;
     private static final int LEFT = 2;
     private static final int RIGHT = 3;
 
+     static final int AXIS_X = 0;
+     static final int AXIS_Y = 1;
+
     
     private final EdgeEffect[] mEdges = new EdgeEffect[4];
 
-    
-    private final LayerView mView;
+    private final LayerSession mSession;
+    private Runnable mInvalidationCallback;
+    private int mWidth;
+    private int mHeight;
 
-    public OverscrollEdgeEffect(final LayerView v) {
+     OverscrollEdgeEffect(final LayerSession session) {
+        mSession = session;
+    }
+
+    
+
+
+
+
+    public void setTheme(final Context context) {
+        ThreadUtils.assertOnUiThread();
+
+        final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
         Field paintField = null;
+
         if (Build.VERSION.SDK_INT >= 21) {
             try {
                 paintField = EdgeEffect.class.getDeclaredField("mPaint");
@@ -39,35 +60,62 @@ public class OverscrollEdgeEffect implements Overscroll {
             }
         }
 
-        mView = v;
-        Context context = v.getContext();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < mEdges.length; i++) {
             mEdges[i] = new EdgeEffect(context);
 
-            try {
-                if (paintField != null) {
-                    final Paint p = (Paint) paintField.get(mEdges[i]);
+            if (paintField == null) {
+                continue;
+            }
 
-                    
-                    
-                    
-                    p.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-                }
+            try {
+                final Paint p = (Paint) paintField.get(mEdges[i]);
+
+                
+                
+                
+                
+                p.setXfermode(mode);
             } catch (IllegalAccessException e) {
             }
         }
     }
 
-    @Override
-    public void setSize(final int width, final int height) {
+    
+
+
+
+
+
+
+
+    public void setInvalidationCallback(final Runnable runnable) {
+        ThreadUtils.assertOnUiThread();
+        mInvalidationCallback = runnable;
+    }
+
+    
+
+
+
+
+
+    public Runnable getInvalidationCallback() {
+        ThreadUtils.assertOnUiThread();
+        return mInvalidationCallback;
+    }
+
+     void setSize(final int width, final int height) {
         mEdges[LEFT].setSize(height, width);
         mEdges[RIGHT].setSize(height, width);
         mEdges[TOP].setSize(width, height);
         mEdges[BOTTOM].setSize(width, height);
+
+        mWidth = width;
+        mHeight = height;
     }
 
-    private EdgeEffect getEdgeForAxisAndSide(final Axis axis, final float side) {
-        if (axis == Axis.Y) {
+    private EdgeEffect getEdgeForAxisAndSide(final int axis, final float side) {
+        if (axis == AXIS_Y) {
             if (side < 0) {
                 return mEdges[TOP];
             } else {
@@ -82,16 +130,7 @@ public class OverscrollEdgeEffect implements Overscroll {
         }
     }
 
-    private void invalidate() {
-        if (Build.VERSION.SDK_INT >= 16) {
-            mView.postInvalidateOnAnimation();
-        } else {
-            mView.postInvalidateDelayed(10);
-        }
-    }
-
-    @Override
-    public void setVelocity(final float velocity, final Axis axis) {
+     void setVelocity(final float velocity, final int axis) {
         final EdgeEffect edge = getEdgeForAxisAndSide(axis, velocity);
 
         
@@ -102,29 +141,35 @@ public class OverscrollEdgeEffect implements Overscroll {
             edge.onAbsorb((int)velocity);
         }
 
-        invalidate();
+        if (mInvalidationCallback != null) {
+            mInvalidationCallback.run();
+        }
     }
 
-    @Override
-    public void setDistance(final float distance, final Axis axis) {
+     void setDistance(final float distance, final int axis) {
         
         if (distance == 0.0f) {
             return;
         }
 
         final EdgeEffect edge = getEdgeForAxisAndSide(axis, (int)distance);
-        edge.onPull(distance / (axis == Axis.X ? mView.getWidth() : mView.getHeight()));
-        invalidate();
+        edge.onPull(distance / (axis == AXIS_X ? mWidth : mHeight));
+
+        if (mInvalidationCallback != null) {
+            mInvalidationCallback.run();
+        }
     }
 
-    @Override
+    
+
+
+
+
     public void draw(final Canvas canvas) {
-        if (mView.mSession == null) {
-            return;
-        }
+        ThreadUtils.assertOnUiThread();
 
         final Rect pageRect = new Rect();
-        mView.mSession.getSurfaceBounds(pageRect);
+        mSession.getSurfaceBounds(pageRect);
 
         
         boolean invalidate = false;
@@ -145,8 +190,8 @@ public class OverscrollEdgeEffect implements Overscroll {
         }
 
         
-        if (invalidate) {
-            invalidate();
+        if (invalidate && mInvalidationCallback != null) {
+            mInvalidationCallback.run();
         }
     }
 

@@ -52,9 +52,6 @@ public class LayerView extends FrameLayout {
     private PanZoomController mPanZoomController;
     private FullScreenState mFullScreenState;
 
-    
-    private final Overscroll mOverscroll;
-
     private int mDefaultClearColor = Color.WHITE;
      GetPixelsResult mGetPixelsResult;
     private final List<DrawListener> mDrawListeners;
@@ -86,7 +83,6 @@ public class LayerView extends FrameLayout {
 
         mFullScreenState = FullScreenState.NONE;
 
-        mOverscroll = new OverscrollEdgeEffect(this);
         mDrawListeners = new ArrayList<DrawListener>();
     }
 
@@ -96,9 +92,6 @@ public class LayerView extends FrameLayout {
 
     public void initializeView() {
         mPanZoomController = PanZoomController.Factory.create(this);
-        if (mOverscroll != null) {
-            mPanZoomController.setOverscrollHandler(mOverscroll);
-        }
     }
 
     
@@ -124,16 +117,6 @@ public class LayerView extends FrameLayout {
     protected void destroy() {
         if (mPanZoomController != null) {
             mPanZoomController.destroy();
-        }
-    }
-
-    @Override
-    public void dispatchDraw(final Canvas canvas) {
-        super.dispatchDraw(canvas);
-
-        
-        if (mOverscroll != null) {
-            mOverscroll.draw(canvas);
         }
     }
 
@@ -254,12 +237,6 @@ public class LayerView extends FrameLayout {
     @WrapForJNI(calledFrom = "ui")
     private Object getCompositor() {
         return isCompositorReady() ? mCompositor : null;
-    }
-
-     void onSizeChanged(int width, int height) {
-        if (mOverscroll != null) {
-            mOverscroll.setSize(width, height);
-        }
     }
 
     @RobocopTarget

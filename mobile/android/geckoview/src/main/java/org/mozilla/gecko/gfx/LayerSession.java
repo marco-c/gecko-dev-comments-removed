@@ -144,12 +144,30 @@ public class LayerSession {
         private void updateRootFrameMetrics(float scrollX, float scrollY, float zoom) {
             LayerSession.this.onMetricsChanged(scrollX, scrollY, zoom);
         }
+
+        @WrapForJNI(calledFrom = "ui")
+        private void updateOverscrollVelocity(final float x, final float y) {
+            LayerSession.this.updateOverscrollVelocity(x, y);
+        }
+
+        @WrapForJNI(calledFrom = "ui")
+        private void updateOverscrollOffset(final float x, final float y) {
+            LayerSession.this.updateOverscrollOffset(x, y);
+        }
+
+        @WrapForJNI(calledFrom = "ui")
+        private void onSelectionCaretDrag(final boolean dragging) {
+            
+            
+            LayerSession.this.onSelectionCaretDrag(dragging);
+        }
     }
 
     protected final Compositor mCompositor = new Compositor();
 
     
     private GeckoDisplay mDisplay;
+    private OverscrollEdgeEffect mOverscroll;
     private DynamicToolbarAnimator mToolbar;
 
     private boolean mAttachedCompositor;
@@ -173,6 +191,20 @@ public class LayerSession {
             ThreadUtils.assertOnUiThread();
         }
         return mDisplay;
+    }
+
+    
+
+
+
+
+    public OverscrollEdgeEffect getOverscrollEdgeEffect() {
+        ThreadUtils.assertOnUiThread();
+
+        if (mOverscroll == null) {
+            mOverscroll = new OverscrollEdgeEffect(this);
+        }
+        return mOverscroll;
     }
 
     
@@ -388,6 +420,43 @@ public class LayerSession {
         }
     }
 
+     void updateOverscrollVelocity(final float x, final float y) {
+        if (DEBUG) {
+            ThreadUtils.assertOnUiThread();
+        }
+
+        if (mOverscroll == null) {
+            return;
+        }
+
+        
+        mOverscroll.setVelocity(x * 1000.0f, OverscrollEdgeEffect.AXIS_X);
+        mOverscroll.setVelocity(y * 1000.0f, OverscrollEdgeEffect.AXIS_Y);
+    }
+
+     void updateOverscrollOffset(final float x, final float y) {
+        if (DEBUG) {
+            ThreadUtils.assertOnUiThread();
+        }
+
+        if (mOverscroll == null) {
+            return;
+        }
+
+        mOverscroll.setDistance(x, OverscrollEdgeEffect.AXIS_X);
+        mOverscroll.setDistance(y, OverscrollEdgeEffect.AXIS_Y);
+    }
+
+     void onSelectionCaretDrag(final boolean dragging) {
+        if (DEBUG) {
+            ThreadUtils.assertOnUiThread();
+        }
+
+        if (mToolbar != null) {
+            mToolbar.setPinned(dragging, DynamicToolbarAnimator.PinReason.CARET_DRAG);
+        }
+    }
+
      void onMetricsChanged(final float scrollX, final float scrollY,
                                         final float zoom) {
         if (DEBUG) {
@@ -418,8 +487,8 @@ public class LayerSession {
             mCompositor.onBoundsChanged(mLeft, mClientTop, mWidth, mClientHeight);
         }
 
-        if (mCompositor.layerView != null) {
-            mCompositor.layerView.onSizeChanged(mWidth, mHeight);
+        if (mOverscroll != null) {
+            mOverscroll.setSize(mWidth, mClientHeight);
         }
     }
 
