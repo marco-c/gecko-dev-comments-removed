@@ -66,6 +66,8 @@ included_inclnames_to_ignore = set([
     'frontend/ReservedWordsGenerated.h', 
     'gc/StatsPhasesGenerated.h',         
     'gc/StatsPhasesGenerated.cpp',       
+    'jit/LOpcodes.h',           
+    'jit/MOpcodes.h',           
     'jscustomallocator.h',      
     'js-config.h',              
     'fdlibm.h',                 

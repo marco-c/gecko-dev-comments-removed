@@ -41,6 +41,20 @@ class StringObject;
 
 namespace jit {
 
+
+#define FORWARD_DECLARE(op) class M##op;
+ MIR_OPCODE_LIST(FORWARD_DECLARE)
+#undef FORWARD_DECLARE
+
+
+class MDefinitionVisitorDefaultNoop
+{
+  public:
+#define VISIT_INS(op) void visit##op(M##op*) { }
+    MIR_OPCODE_LIST(VISIT_INS)
+#undef VISIT_INS
+};
+
 class BaselineInspector;
 class Range;
 
@@ -1207,6 +1221,8 @@ class MInstruction
     virtual TypePolicy* typePolicy() = 0;
     virtual MIRType typePolicySpecialization() = 0;
 };
+
+
 
 #define INSTRUCTION_HEADER_WITHOUT_TYPEPOLICY(opcode)                       \
     static const Opcode classOpcode = Opcode::opcode;                       \
