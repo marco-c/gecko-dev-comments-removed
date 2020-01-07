@@ -27,11 +27,20 @@ onmessage = function(e) {
     }
 
     try {
-      importScripts(['importscript.sjs']);
+      
+      importScripts(['importscript.sjs?unique=true']);
       res[0].postMessage("KO");
       return;
     } catch(e) {}
 
-    res[0].postMessage(counter == 2 ? "OK" : "KO");
+    try {
+      
+      importScripts(['importscript.sjs']);
+    } catch(e) {
+      res[0].postMessage("KO");
+      return;
+    }
+
+    res[0].postMessage(counter == 3 ? "OK" : "KO");
   });
 };
