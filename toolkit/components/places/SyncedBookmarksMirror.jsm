@@ -315,9 +315,12 @@ class SyncedBookmarksMirror {
 
 
 
+
+
   async apply({ localTimeSeconds = Date.now() / 1000,
-                remoteTimeSeconds = 0 } = {}) {
-    let hasChanges = await this.hasChanges();
+                remoteTimeSeconds = 0,
+                weakUpload = [] } = {}) {
+    let hasChanges = weakUpload.length > 0 || (await this.hasChanges());
     if (!hasChanges) {
       MirrorLog.debug("No changes detected in both mirror and Places");
       return {};
@@ -425,7 +428,7 @@ class SyncedBookmarksMirror {
       await this.noteObserverChanges(observersToNotify);
 
       MirrorLog.debug("Staging locally changed items for upload");
-      await this.stageItemsToUpload();
+      await this.stageItemsToUpload(weakUpload);
 
       MirrorLog.debug("Fetching records for local items to upload");
       let changeRecords = await this.fetchLocalChangeRecords();
@@ -1473,7 +1476,20 @@ class SyncedBookmarksMirror {
 
 
 
-  async stageItemsToUpload() {
+
+
+
+  async stageItemsToUpload(weakUpload) {
+    
+    for (let chunk of PlacesSyncUtils.chunkArray(weakUpload,
+      SQLITE_MAX_VARIABLE_NUMBER)) {
+      await this.db.execute(`
+        INSERT INTO itemsToWeaklyReupload(id)
+        SELECT b.id FROM moz_bookmarks b
+        WHERE b.guid IN (${new Array(chunk.length).fill("?").join(",")})`,
+        chunk);
+    }
+
     
     
     
