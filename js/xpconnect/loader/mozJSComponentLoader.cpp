@@ -635,7 +635,7 @@ mozJSComponentLoader::ReuseGlobal(nsIURI* aURI)
     
     
     
-    if (FindInReadable(NS_LITERAL_CSTRING("chrome://specialpowers/"), spec)) {
+    if (FindInReadable(NS_LITERAL_CSTRING("resource://specialpowers/"), spec)) {
         return false;
     }
 
