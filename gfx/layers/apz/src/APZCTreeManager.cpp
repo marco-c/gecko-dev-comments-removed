@@ -101,6 +101,10 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   std::unordered_map<ScrollableLayerGuid, AsyncPanZoomController*, ScrollableLayerGuidHash> mApzcMap;
+
+  
+  
+  std::stack<bool> mParentHasPerspective;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -327,6 +331,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
     HitTestingTreeNode* next = nullptr;
     uint64_t layersId = aRootLayerTreeId;
     ancestorTransforms.push(AncestorTransform());
+    state.mParentHasPerspective.push(false);
 
     state.mLayersIdsToDestroy.erase(aRootLayerTreeId);
 
@@ -376,6 +381,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           }
 
           indents.push(gfx::TreeAutoIndent(mApzcTreeLog));
+          state.mParentHasPerspective.push(aLayerMetrics.TransformIsPerspective());
         },
         [&](ScrollNode aLayerMetrics)
         {
@@ -384,6 +390,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(uint64_t aRootLayerTreeId,
           layersId = next->GetLayersId();
           ancestorTransforms.pop();
           indents.pop();
+          state.mParentHasPerspective.pop();
         });
 
     mApzcTreeLog << "[end]\n";
@@ -744,6 +751,8 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
     needsApzc = false;
   }
 
+  bool parentHasPerspective = aState.mParentHasPerspective.top();
+
   RefPtr<HitTestingTreeNode> node = nullptr;
   if (!needsApzc) {
     
@@ -755,7 +764,9 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
         GetEventRegions(aLayer),
         aLayer.GetVisibleRegion(),
         aLayer.GetTransformTyped(),
-        aLayer.GetClipRect() ? Some(ParentLayerIntRegion(*aLayer.GetClipRect())) : Nothing(),
+        (!parentHasPerspective && aLayer.GetClipRect())
+          ? Some(ParentLayerIntRegion(*aLayer.GetClipRect()))
+          : Nothing(),
         GetEventRegionsOverride(aParent, aLayer));
     node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
                            aLayer.GetScrollbarAnimationId(),
@@ -862,12 +873,14 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
     
     MOZ_ASSERT(node->IsPrimaryHolder() && node->GetApzc() && node->GetApzc()->Matches(guid));
 
-    ParentLayerIntRegion clipRegion = ComputeClipRegion(state->mController, aLayer);
+    Maybe<ParentLayerIntRegion> clipRegion = parentHasPerspective
+      ? Nothing()
+      : Some(ComputeClipRegion(state->mController, aLayer));
     node->SetHitTestData(
         GetEventRegions(aLayer),
         aLayer.GetVisibleRegion(),
         aLayer.GetTransformTyped(),
-        Some(clipRegion),
+        clipRegion,
         GetEventRegionsOverride(aParent, aLayer));
     apzc->SetAncestorTransform(aAncestorTransform);
 
@@ -952,12 +965,14 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
       }
     }
 
-    ParentLayerIntRegion clipRegion = ComputeClipRegion(state->mController, aLayer);
+    Maybe<ParentLayerIntRegion> clipRegion = parentHasPerspective
+      ? Nothing()
+      : Some(ComputeClipRegion(state->mController, aLayer));
     node->SetHitTestData(
         GetEventRegions(aLayer),
         aLayer.GetVisibleRegion(),
         aLayer.GetTransformTyped(),
-        Some(clipRegion),
+        clipRegion,
         GetEventRegionsOverride(aParent, aLayer));
   }
 
