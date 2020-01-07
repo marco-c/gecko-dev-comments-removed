@@ -29,6 +29,11 @@ public:
   
 
 
+  static bool sFallbackToUTF8ForFile;
+
+  
+
+
 
 
 

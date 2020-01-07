@@ -362,8 +362,8 @@ protected:
                         int32_t& charsetSource,
                         NotNull<const Encoding*>& aEncoding);
   void TryTLD(int32_t& aCharsetSource, NotNull<const Encoding*>& aCharset);
-  static void TryFallback(int32_t& aCharsetSource,
-                          NotNull<const Encoding*>& aEncoding);
+  void TryFallback(int32_t& aCharsetSource,
+                   NotNull<const Encoding*>& aEncoding);
 
   
   virtual void
