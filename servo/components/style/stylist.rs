@@ -1983,7 +1983,8 @@ pub struct CascadeData {
 }
 
 impl CascadeData {
-    fn new() -> Self {
+    
+    pub fn new() -> Self {
         Self {
             normal_rules: ElementAndPseudoRules::default(),
             slotted_rules: None,
@@ -2005,7 +2006,7 @@ impl CascadeData {
 
     
     
-    fn rebuild<'a, S>(
+    pub fn rebuild<'a, S>(
         &mut self,
         device: &Device,
         quirks_mode: QuirksMode,
@@ -2281,7 +2282,7 @@ impl CascadeData {
 
     
     
-    fn media_feature_affected_matches<S>(
+    pub fn media_feature_affected_matches<S>(
         &self,
         stylesheet: &S,
         guard: &SharedRwLockReadGuard,

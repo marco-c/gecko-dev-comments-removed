@@ -6,7 +6,6 @@
 
 
 use Atom;
-use atomic_refcell::AtomicRef;
 use context::{QuirksMode, SharedStyleContext};
 use data::ElementData;
 use dom::TElement;
@@ -57,7 +56,7 @@ where
 
 pub struct StateAndAttrInvalidationProcessor<'a, 'b: 'a, E: TElement> {
     shared_context: &'a SharedStyleContext<'b>,
-    shadow_rule_datas: &'a [(AtomicRef<'b, CascadeData>, QuirksMode)],
+    shadow_rule_datas: &'a [(&'b CascadeData, QuirksMode)],
     cut_off_inheritance: bool,
     element: E,
     data: &'a mut ElementData,
@@ -68,7 +67,7 @@ impl<'a, 'b: 'a, E: TElement> StateAndAttrInvalidationProcessor<'a, 'b, E> {
     
     pub fn new(
         shared_context: &'a SharedStyleContext<'b>,
-        shadow_rule_datas: &'a [(AtomicRef<'b, CascadeData>, QuirksMode)],
+        shadow_rule_datas: &'a [(&'b CascadeData, QuirksMode)],
         cut_off_inheritance: bool,
         element: E,
         data: &'a mut ElementData,

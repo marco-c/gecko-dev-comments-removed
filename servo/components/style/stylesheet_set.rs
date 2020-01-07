@@ -583,6 +583,20 @@ impl<S> AuthorStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
 {
+    
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            collection: Default::default(),
+            invalidations: StylesheetInvalidationSet::new(),
+        }
+    }
+
+    
+    pub fn dirty(&self) -> bool {
+        self.collection.dirty
+    }
+
     fn collection_for(
         &mut self,
         _sheet: &S,
@@ -592,6 +606,17 @@ where
     }
 
     sheet_set_methods!("AuthorStylesheetSet");
+
+    
+    pub fn iter(&self) -> StylesheetCollectionIterator<S> {
+        self.collection.iter()
+    }
+
+    
+    pub fn force_dirty(&mut self) {
+        self.invalidations.invalidate_fully();
+        self.collection.set_data_validity_at_least(DataValidity::FullyInvalid);
+    }
 
     
     
