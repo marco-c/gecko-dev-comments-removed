@@ -5,7 +5,7 @@
 
 
 
-const {Ci, Cu} = require("chrome");
+const {Cu} = require("chrome");
 const protocol = require("devtools/shared/protocol");
 const ChromeUtils = require("ChromeUtils");
 
@@ -622,7 +622,7 @@ function createContentError(e, win) {
   let { fileName, lineNumber, columnNumber } = parsedStack[parsedStack.length - 1];
   let error;
 
-  let isDOMException = e instanceof Ci.nsIDOMDOMException;
+  let isDOMException = ChromeUtils.getClassName(e) === "DOMException";
   let constructor = isDOMException ? win.DOMException : (win[e.name] || win.Error);
 
   if (isDOMException) {
