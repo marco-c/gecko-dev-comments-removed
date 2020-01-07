@@ -324,11 +324,9 @@ function ReadManifest(aURL, aFilter)
 
                 
                 
-                
                 minAsserts *= 2;
                 maxAsserts *= 2;
 
-                
                 
                 
                 
@@ -481,9 +479,6 @@ function BuildConditionSandbox(aURL) {
 let retainedDisplayListsEnabled = prefs.getBoolPref("layout.display-list.retain", false);
 sandbox.retainedDisplayLists = retainedDisplayListsEnabled && !g.compareRetainedDisplayLists;
 sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
-
-
-sandbox.stylo = true;
 
     sandbox.skiaPdf = false;
 
