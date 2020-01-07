@@ -122,6 +122,8 @@ class FloatRegister : public FloatRegisterMIPSShared
     }
     bool equiv(const FloatRegister& other) const { return other.kind_ == kind_; }
     size_t size() const { return (kind_ == Codes::Double) ? sizeof(double) : sizeof (float); }
+    
+    size_t pushSize() const { return sizeof(double); }
     bool isInvalid() const {
         return reg_ == FloatRegisters::invalid_freg;
     }

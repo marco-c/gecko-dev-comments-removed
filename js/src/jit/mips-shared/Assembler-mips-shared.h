@@ -1139,13 +1139,11 @@ class AssemblerMIPSShared : public AssemblerShared
 
     
 
-    
-    
-    BufferOffset as_ld(FloatRegister fd, Register base, int32_t off);
-    BufferOffset as_sd(FloatRegister fd, Register base, int32_t off);
+    BufferOffset as_ldc1(FloatRegister ft, Register base, int32_t off);
+    BufferOffset as_sdc1(FloatRegister ft, Register base, int32_t off);
 
-    BufferOffset as_ls(FloatRegister fd, Register base, int32_t off);
-    BufferOffset as_ss(FloatRegister fd, Register base, int32_t off);
+    BufferOffset as_lwc1(FloatRegister ft, Register base, int32_t off);
+    BufferOffset as_swc1(FloatRegister ft, Register base, int32_t off);
 
     
     BufferOffset as_gsldl(FloatRegister fd, Register base, int32_t off);
