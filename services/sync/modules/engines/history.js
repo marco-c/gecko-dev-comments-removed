@@ -232,7 +232,7 @@ HistoryStore.prototype = {
       
       
       let observers = PlacesUtils.history.getObservers();
-      function notifyHistoryObservers(notification) {
+      const notifyHistoryObservers = (notification) => {
         for (let observer of observers) {
           try {
             observer[notification]();
@@ -242,7 +242,7 @@ HistoryStore.prototype = {
             this._log.info("history observer failed", ex);
           }
         }
-      }
+      };
       notifyHistoryObservers("onBeginUpdateBatch");
       try {
         if (toRemove.length) {
