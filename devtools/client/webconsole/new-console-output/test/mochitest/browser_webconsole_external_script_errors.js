@@ -8,7 +8,8 @@
 
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "new-console-output/test/mochitest/test-external-script-errors.html";
+                 "new-console-output/test/mochitest/" +
+                 "test-external-script-errors.html";
 
 add_task(async function () {
   

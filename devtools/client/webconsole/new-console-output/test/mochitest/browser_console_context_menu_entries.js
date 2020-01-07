@@ -6,7 +6,7 @@
 
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-  "new-console-output/test/mochitest/test-console.html";
+                 "new-console-output/test/mochitest/test-console.html";
 
 add_task(async function () {
   
@@ -64,6 +64,6 @@ function getSimplifiedContextMenu(popupElement) {
     .map(entry => {
       const key = entry.getAttribute("accesskey");
       const disabled = entry.hasAttribute("disabled");
-      return `#${entry.id} (${key})${disabled ? " [disabled]": ""}`
+      return `#${entry.id} (${key})${disabled ? " [disabled]" : ""}`;
     });
 }

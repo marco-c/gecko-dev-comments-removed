@@ -5,6 +5,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,<p>test code completion";
@@ -27,7 +29,8 @@ add_task(async function () {
 
   
   
-  await jstermSetValueAndComplete(jsterm, "window.Ob", undefined, jsterm.COMPLETE_FORWARD);
+  await jstermSetValueAndComplete(jsterm, "window.Ob", undefined,
+                                  jsterm.COMPLETE_FORWARD);
   is(input.value, "window.Object", "'window.Ob' tab completion");
 
   

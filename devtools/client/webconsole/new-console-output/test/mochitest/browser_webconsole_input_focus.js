@@ -5,6 +5,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI =
@@ -13,7 +15,7 @@ const TEST_URI =
     console.log("console message 1");
   </script>`;
 
-add_task(async function() {
+add_task(async function () {
   let hud = await openNewTabAndConsole(TEST_URI);
 
   let inputNode = hud.jsterm.inputNode;
@@ -24,7 +26,7 @@ add_task(async function() {
   ok(hasFocus(inputNode), "input node is focused after output is cleared");
 
   info("Focus during message logging");
-  ContentTask.spawn(gBrowser.selectedBrowser, {}, function() {
+  ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
     content.wrappedJSObject.console.log("console message 2");
   });
   let msg = await waitFor(() => findMessage(hud, "console message 2"));

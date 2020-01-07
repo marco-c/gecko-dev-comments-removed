@@ -6,13 +6,15 @@
 
 
 
+
+
 "use strict";
 requestLongerTimeout(2);
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-  "new-console-output/test/mochitest/test-location-debugger-link.html";
+                 "new-console-output/test/mochitest/test-location-debugger-link.html";
 
-add_task(async function() {
+add_task(async function () {
   
   
   await pushPref("devtools.debugger.new-debugger-frontend", true);

@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "data:text/html,Test repeated objects";
@@ -23,7 +25,7 @@ add_task(async function () {
   });
 
   ContentTask.spawn(gBrowser.selectedBrowser, null, () => {
-    for (var i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) {
       const o = { id: "abba" };
       content.console.log("abba", o);
     }

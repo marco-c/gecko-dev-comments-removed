@@ -7,6 +7,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf-8,Test console select all";

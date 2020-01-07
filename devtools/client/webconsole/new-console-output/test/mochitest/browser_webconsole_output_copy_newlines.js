@@ -10,7 +10,7 @@
 
 
 const TEST_URI = "data:text/html,<meta charset=utf8>" +
-  "Test copy multiple messages to clipboard";
+                 "Test copy multiple messages to clipboard";
 
 add_task(async function () {
   let hud = await openNewTabAndConsole(TEST_URI);

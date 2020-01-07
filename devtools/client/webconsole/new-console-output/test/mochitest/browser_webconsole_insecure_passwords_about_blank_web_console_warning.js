@@ -6,11 +6,13 @@
 
 
 
+
+
 "use strict";
 
-const TEST_URI =
-  "http://example.com/browser/devtools/client/webconsole/new-console-output/test/" +
-  "mochitest/test-insecure-passwords-about-blank-web-console-warning.html";
+const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
+                 "new-console-output/test/mochitest/" +
+                 "test-insecure-passwords-about-blank-web-console-warning.html";
 const INSECURE_PASSWORD_MSG = "Password fields present on an insecure (http://) iframe." +
   " This is a security risk that allows user login credentials to be stolen.";
 

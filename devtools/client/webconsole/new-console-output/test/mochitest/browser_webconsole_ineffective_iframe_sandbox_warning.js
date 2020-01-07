@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 requestLongerTimeout(2);
@@ -47,5 +49,5 @@ async function testWarningMessageVisibility(uri, visible) {
 
   const warning = findMessage(hud, INEFFECTIVE_IFRAME_SANDBOXING_MSG, ".message.warn");
   is(!!warning, visible,
-    `The warning message is${visible ? "": " not"} visible on ${uri}`);
+    `The warning message is${visible ? "" : " not"} visible on ${uri}`);
 }

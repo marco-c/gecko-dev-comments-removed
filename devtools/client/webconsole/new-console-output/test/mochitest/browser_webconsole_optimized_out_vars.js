@@ -6,10 +6,13 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "new-console-output/test/mochitest/test-closure-optimized-out.html";
+                 "new-console-output/test/mochitest/" +
+                 "test-closure-optimized-out.html";
 
 add_task(async function () {
   

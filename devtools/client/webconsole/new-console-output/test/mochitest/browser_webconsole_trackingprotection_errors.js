@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "http://tracking.example.org/browser/devtools/client/" +
