@@ -129,14 +129,9 @@ add_task(async function test_bookmarks() {
   Assert.ok(bookmarksObserver._itemAddedURI.equals(uri("http://google.com/")));
   Assert.equal(bs.getBookmarkURI(newId).spec, "http://google.com/");
 
-  let dateAdded = bs.getItemDateAdded(newId);
-  
-  Assert.ok(is_time_ordered(beforeInsert, dateAdded));
-
   
   let lastModified = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
     await PlacesUtils.promiseItemGuid(newId))).lastModified);
-  Assert.equal(lastModified, dateAdded);
 
   
   let beforeSetTitle = Date.now() * 1000;
@@ -146,8 +141,6 @@ add_task(async function test_bookmarks() {
   
   lastModified -= 1000;
   bs.setItemLastModified(newId, lastModified);
-  dateAdded -= 1000;
-  bs.setItemDateAdded(newId, dateAdded);
 
   
   bs.setItemTitle(newId, "Google");
@@ -156,19 +149,13 @@ add_task(async function test_bookmarks() {
   Assert.equal(bookmarksObserver._itemChangedValue, "Google");
 
   
-  let dateAdded2 = bs.getItemDateAdded(newId);
-  Assert.equal(dateAdded2, dateAdded);
-
-  
   let lastModified2 = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
     await PlacesUtils.promiseItemGuid(newId))).lastModified);
   info("test setItemTitle");
-  info("dateAdded = " + dateAdded);
   info("beforeSetTitle = " + beforeSetTitle);
   info("lastModified = " + lastModified);
   info("lastModified2 = " + lastModified2);
   Assert.ok(is_time_ordered(lastModified, lastModified2));
-  Assert.ok(is_time_ordered(dateAdded, lastModified2));
 
   
   let title = bs.getItemTitle(newId);
@@ -397,18 +384,11 @@ add_task(async function test_bookmarks() {
   
   let newId10 = bs.insertBookmark(testRoot, uri("http://foo10.com/"),
                                   bs.DEFAULT_INDEX, "");
-  dateAdded = bs.getItemDateAdded(newId10);
-  
-  lastModified = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
-    await PlacesUtils.promiseItemGuid(newId10))).lastModified);
-  Assert.equal(lastModified, dateAdded);
 
   
   
   lastModified -= 1000;
   bs.setItemLastModified(newId10, lastModified);
-  dateAdded -= 1000;
-  bs.setItemDateAdded(newId10, dateAdded);
 
   
   let newId11 = bs.insertBookmark(testRoot, uri("http://foo10.com/"),
@@ -528,17 +508,10 @@ add_task(async function test_bookmarks() {
   
   let newId14 = bs.insertBookmark(testRoot, uri("http://bar.tld/"),
                                   bs.DEFAULT_INDEX, "");
-  dateAdded = bs.getItemDateAdded(newId14);
-  lastModified = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
-    await PlacesUtils.promiseItemGuid(newId14))).lastModified);
-  Assert.equal(lastModified, dateAdded);
   bs.setItemLastModified(newId14, 1234000000000000);
   let fakeLastModified = PlacesUtils.toPRTime((await PlacesUtils.bookmarks.fetch(
     await PlacesUtils.promiseItemGuid(newId14))).lastModified);
   Assert.equal(fakeLastModified, 1234000000000000);
-  bs.setItemDateAdded(newId14, 4321000000000000);
-  let fakeDateAdded = bs.getItemDateAdded(newId14);
-  Assert.equal(fakeDateAdded, 4321000000000000);
 
   
   Assert.ok(anno.itemHasAnnotation(newId3, "test-annotation"));
@@ -579,12 +552,6 @@ function testSimpleFolderResult() {
   
   let parent = bs.createFolder(root, "test", bs.DEFAULT_INDEX);
 
-  let dateCreated = bs.getItemDateAdded(parent);
-  info("check that the folder was created with a valid dateAdded");
-  info("beforeCreate = " + beforeCreate);
-  info("dateCreated = " + dateCreated);
-  Assert.ok(is_time_ordered(beforeCreate, dateCreated));
-
   
   
   let beforeInsert = Date.now() * 1000 - 1;
@@ -592,12 +559,6 @@ function testSimpleFolderResult() {
 
   
   let sep = bs.insertSeparator(parent, bs.DEFAULT_INDEX);
-
-  let dateAdded = bs.getItemDateAdded(sep);
-  info("check that the separator was created with a valid dateAdded");
-  info("beforeInsert = " + beforeInsert);
-  info("dateAdded = " + dateAdded);
-  Assert.ok(is_time_ordered(beforeInsert, dateAdded));
 
   
   let item = bs.insertBookmark(parent, uri("about:blank"),
