@@ -6,12 +6,9 @@
 
 #include "mozilla/dom/MIDIPermissionRequest.h"
 #include "mozilla/dom/MIDIAccessManager.h"
-#include "mozilla/dom/Promise.h"
 #include "nsIGlobalObject.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/Preferences.h"
+#include "nsContentUtils.h"
 
 
 
@@ -40,6 +37,7 @@ MIDIPermissionRequest::MIDIPermissionRequest(nsPIDOMWindowInner* aWindow,
   MOZ_ASSERT(aPromise, "aPromise should not be null!");
   MOZ_ASSERT(aWindow->GetDoc());
   mPrincipal = aWindow->GetDoc()->NodePrincipal();
+  MOZ_ASSERT(mPrincipal);
 }
 
 MIDIPermissionRequest::~MIDIPermissionRequest()
@@ -131,11 +129,12 @@ MIDIPermissionRequest::Run()
   }
 
   
-  if (!mNeedsSysex) {
+  if (nsContentUtils::IsExactSitePermAllow(mPrincipal, "midi-sysex")) {
     Allow(JS::UndefinedHandleValue);
     return NS_OK;
   }
 
+  
   if (NS_FAILED(nsContentPermissionUtils::AskPermission(this, mWindow))) {
     Cancel();
     return NS_ERROR_FAILURE;

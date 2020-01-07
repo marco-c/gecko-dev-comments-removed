@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [ "SitePermissions" ];
+this.EXPORTED_SYMBOLS = [ "SitePermissions" ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -136,7 +136,7 @@ const TemporaryBlockedPermissions = {
 
 
 
-var SitePermissions = {
+this.SitePermissions = {
   
   UNKNOWN: Services.perms.UNKNOWN_ACTION,
   ALLOW: Services.perms.ALLOW_ACTION,
@@ -656,12 +656,28 @@ var gPermissionObject = {
 
   "canvas": {
   },
+
+  "midi": {
+    exactHostMatch: true
+  },
+
+  "midi-sysex": {
+    exactHostMatch: true
+  }
 };
 
 
 
 if (!Services.prefs.getBoolPref("browser.storageManager.enabled")) {
   delete gPermissionObject["persistent-storage"];
+}
+
+if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
+  
+  
+  
+  delete gPermissionObject["midi"];
+  delete gPermissionObject["midi-sysex"];
 }
 
 XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "temporaryPermissionExpireTime",
