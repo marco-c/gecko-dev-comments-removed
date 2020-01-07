@@ -528,9 +528,9 @@ protected:
 
 
   template<typename PT, typename CT>
-  SplitNodeResult MaybeSplitAncestorsForInsertWithTransaction(
-                    nsAtom& aTag,
-                    const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
+  MOZ_MUST_USE SplitNodeResult
+  MaybeSplitAncestorsForInsertWithTransaction(
+    nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 
   
 
