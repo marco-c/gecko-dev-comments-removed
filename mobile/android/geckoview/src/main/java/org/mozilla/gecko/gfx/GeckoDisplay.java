@@ -12,41 +12,13 @@ import android.view.Surface;
 
 
 
-public interface GeckoDisplay {
-    
 
 
+public class GeckoDisplay {
+    private final LayerSession mSession;
 
-
-
-
-    interface Listener {
-        
-
-
-
-
-
-
-
-
-        void surfaceChanged(Surface surface, int width, int height);
-
-        
-
-
-
-
-        void surfaceDestroyed();
-
-        
-
-
-
-
-
-
-        void screenOriginChanged(int left, int top);
+     GeckoDisplay(final LayerSession session) {
+        mSession = session;
     }
 
     
@@ -55,7 +27,21 @@ public interface GeckoDisplay {
 
 
 
-    Listener getListener();
+
+
+
+    public void surfaceChanged(Surface surface, int width, int height) {
+        mSession.onSurfaceChanged(surface, width, height);
+    }
+
+    
+
+
+
+
+    public void surfaceDestroyed() {
+        mSession.onSurfaceDestroyed();
+    }
 
     
 
@@ -66,6 +52,7 @@ public interface GeckoDisplay {
 
 
 
-
-    void setListener(Listener listener);
+    public void screenOriginChanged(final int left, final int top) {
+        mSession.onScreenOriginChanged(left, top);
+    }
 }

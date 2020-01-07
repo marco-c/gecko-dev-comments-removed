@@ -158,7 +158,7 @@ public class LayerSession {
     protected final Compositor mCompositor = new Compositor();
 
     
-    private GeckoDisplay mDisplay;
+    private final GeckoDisplay mDisplay = new GeckoDisplay(this);
     private NativePanZoomController mNPZC;
     private OverscrollEdgeEffect mOverscroll;
     private DynamicToolbarAnimator mToolbar;
@@ -593,43 +593,33 @@ public class LayerSession {
         onWindowBoundsChanged();
     }
 
-    public void addDisplay(final GeckoDisplay display) {
+    
+
+
+
+
+
+
+
+    public @NonNull GeckoDisplay acquireDisplay() {
         ThreadUtils.assertOnUiThread();
 
-        if (display.getListener() != null) {
-            throw new IllegalArgumentException("Display already attached");
-        } else if (mDisplay != null) {
-            throw new IllegalArgumentException("Only one display supported");
-        }
-
-        mDisplay = display;
-        display.setListener(new GeckoDisplay.Listener() {
-            @Override
-            public void surfaceChanged(final Surface surface, final int width,
-                                       final int height) {
-                onSurfaceChanged(surface, width, height);
-            }
-
-            @Override
-            public void surfaceDestroyed() {
-                onSurfaceDestroyed();
-            }
-
-            @Override
-            public void screenOriginChanged(final int left, final int top) {
-                onScreenOriginChanged(left, top);
-            }
-        });
+        return mDisplay;
     }
 
-    public void removeDisplay(final GeckoDisplay display) {
+    
+
+
+
+
+
+
+
+    public void releaseDisplay(final @NonNull GeckoDisplay display) {
         ThreadUtils.assertOnUiThread();
 
-        if (mDisplay != display) {
+        if (display != mDisplay) {
             throw new IllegalArgumentException("Display not attached");
         }
-
-        display.setListener(null);
-        mDisplay = null;
     }
 }
