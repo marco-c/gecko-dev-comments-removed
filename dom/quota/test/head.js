@@ -80,14 +80,11 @@ function dismissNotification(popup, win)
 function waitForMessage(aMessage, browser)
 {
   return new Promise((resolve, reject) => {
-    
-    
-    
     function contentScript() {
       addEventListener("message", function(event) {
         sendAsyncMessage("testLocal:persisted",
           {persisted: event.data});
-      }, {once: true, capture: true}, true);
+      }, {once: true}, true);
     }
 
     let script = "data:,(" + contentScript.toString() + ")();";

@@ -28,6 +28,8 @@ var servicesASTParser = {
     "nsIXULAppInfo": "appinfo",
     "nsIDirectoryService": "dirsvc",
     "nsIProperties": "dirsvc",
+    "nsIFrameScriptLoader": "mm",
+    "nsIProcessScriptLoader": "ppmm",
     "nsIIOService": "io",
     "nsISpeculativeConnect": "io",
     "nsICookieManager": "cookies"
@@ -106,9 +108,6 @@ function getInterfacesFromServicesFile() {
       servicesASTParser[type](node, parents);
     }
   });
-
-  
-  delete servicesASTParser.result.nsISupports;
 
   
   

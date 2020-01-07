@@ -80,14 +80,11 @@ function waitForMessage(aMessage, browser)
 {
   return new Promise((resolve, reject) => {
     
-    
-    
-    
     function contentScript() {
       addEventListener("message", function(event) {
         sendAsyncMessage("testLocal:message",
           {message: event.data});
-      }, {once: true, capture: true}, true);
+      }, {once: true}, true);
     }
     
 

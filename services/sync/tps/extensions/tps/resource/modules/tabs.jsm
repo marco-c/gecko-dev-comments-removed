@@ -16,8 +16,8 @@ ChromeUtils.import("resource://services-sync/main.js");
 
 
 
-Services
-.mm
+Cc["@mozilla.org/globalmessagemanager;1"]
+.getService(Ci.nsIMessageListenerManager)
 .loadFrameScript("data:application/javascript;charset=utf-8," + encodeURIComponent(`
   Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
   addEventListener("load", function(event) {
