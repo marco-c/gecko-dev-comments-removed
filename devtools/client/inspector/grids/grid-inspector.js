@@ -64,7 +64,6 @@ class GridInspector {
     this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
     this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
     this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
-    this.onShowGridLineNamesHighlight = this.onShowGridLineNamesHighlight.bind(this);
     this.onSidebarSelect = this.onSidebarSelect.bind(this);
     this.onToggleGridHighlighter = this.onToggleGridHighlighter.bind(this);
     this.onToggleShowGridAreas = this.onToggleShowGridAreas.bind(this);
@@ -141,7 +140,6 @@ class GridInspector {
       onSetGridOverlayColor: this.onSetGridOverlayColor,
       onShowGridAreaHighlight: this.onShowGridAreaHighlight,
       onShowGridCellHighlight: this.onShowGridCellHighlight,
-      onShowGridLineNamesHighlight: this.onShowGridLineNamesHighlight,
       onToggleGridHighlighter: this.onToggleGridHighlighter,
       onToggleShowGridAreas: this.onToggleShowGridAreas,
       onToggleShowGridLineNumbers: this.onToggleShowGridLineNumbers,
@@ -561,39 +559,6 @@ class GridInspector {
     let { highlighterSettings } = this.store.getState();
 
     highlighterSettings.showGridCell = { gridFragmentIndex, rowNumber, columnNumber };
-    highlighterSettings.color = color;
-
-    this.showGridHighlighter(node, highlighterSettings);
-
-    this.store.dispatch(updateGridHighlighted(node, true));
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  onShowGridLineNamesHighlight(node, gridFragmentIndex, color, lineNumber, type) {
-    let { highlighterSettings } = this.store.getState();
-
-    highlighterSettings.showGridLineNames = {
-      gridFragmentIndex,
-      lineNumber,
-      type
-    };
     highlighterSettings.color = color;
 
     this.showGridHighlighter(node, highlighterSettings);
