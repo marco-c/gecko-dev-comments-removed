@@ -91,7 +91,7 @@
 
 
 
-@media not all and (-moz-mac-yosemite-theme) {
+@media (-moz-mac-yosemite-theme: 0) {
   .titlebar-placeholder[type="fullscreen-button"] {
     margin-right: 4px;
   }
