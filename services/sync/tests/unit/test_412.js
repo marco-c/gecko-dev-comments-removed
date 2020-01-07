@@ -27,7 +27,7 @@ add_task(async function test_412_not_treated_as_failure() {
     
     
     engine._store.items = {new: "new record"};
-    await engine._tracker.addChangedID("new", 0);
+    engine._tracker.addChangedID("new", 0);
 
     let saw412 = false;
     let _uploadOutgoing = engine._uploadOutgoing;

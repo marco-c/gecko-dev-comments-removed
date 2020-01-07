@@ -123,7 +123,7 @@ class CollectionValidator {
 
   
   
-  async syncedByClient(item) {
+  syncedByClient(item) {
     return true;
   }
 
@@ -186,7 +186,7 @@ class CollectionValidator {
     let seenClient = new Map();
     for (let record of clientRecords) {
       let id = record[this.idProp];
-      record.shouldSync = await this.syncedByClient(record);
+      record.shouldSync = this.syncedByClient(record);
       let clientHasPossibleDupe = seenClient.has(id);
       if (clientHasPossibleDupe && record.shouldSync) {
         

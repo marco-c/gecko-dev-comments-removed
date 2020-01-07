@@ -48,6 +48,7 @@ ChromeUtils.import("resource://services-sync/record.js");
 ChromeUtils.import("resource://services-sync/util.js");
 ChromeUtils.import("resource://services-sync/constants.js");
 ChromeUtils.import("resource://services-sync/collection_validator.js");
+ChromeUtils.import("resource://services-common/async.js");
 
 ChromeUtils.defineModuleGetter(this, "AddonManager",
                                "resource://gre/modules/AddonManager.jsm");
@@ -114,7 +115,7 @@ Utils.deferGetSet(AddonRecord, "cleartext", ["addonID",
 this.AddonsEngine = function AddonsEngine(service) {
   SyncEngine.call(this, "Addons", service);
 
-  this._reconciler = new AddonsReconciler(this._tracker.asyncObserver);
+  this._reconciler = new AddonsReconciler();
 };
 AddonsEngine.prototype = {
   __proto__:              SyncEngine.prototype,
@@ -159,8 +160,7 @@ AddonsEngine.prototype = {
 
   async getChangedIDs() {
     let changes = {};
-    const changedIDs = await this._tracker.getChangedIDs();
-    for (let [id, modified] of Object.entries(changedIDs)) {
+    for (let [id, modified] of Object.entries(this._tracker.changedIDs)) {
       changes[id] = modified;
     }
 
@@ -183,7 +183,7 @@ AddonsEngine.prototype = {
           continue;
       }
 
-      if (!(await this.isAddonSyncable(addons[id]))) {
+      if (!this.isAddonSyncable(addons[id])) {
         continue;
       }
 
@@ -239,7 +239,6 @@ AddonsEngine.prototype = {
     return this._reconciler.refreshGlobalState();
   },
 
-  
   isAddonSyncable(addon, ignoreRepoCheck) {
     return this._store.isAddonSyncable(addon, ignoreRepoCheck);
   }
@@ -292,7 +291,7 @@ AddonsStore.prototype = {
     
     
     let existingMeta = this.reconciler.addons[record.addonID];
-    if (existingMeta && !(await this.isAddonSyncable(existingMeta))) {
+    if (existingMeta && !this.isAddonSyncable(existingMeta)) {
       this._log.info("Ignoring incoming record for an existing but non-syncable addon", record.addonID);
       return;
     }
@@ -305,14 +304,17 @@ AddonsStore.prototype = {
 
 
   async create(record) {
-    
-    
-    const results = await AddonUtils.installAddons([{
+    let cb = Async.makeSpinningCallback();
+    AddonUtils.installAddons([{
       id:               record.addonID,
       syncGUID:         record.id,
       enabled:          record.enabled,
       requireSecureURI: this._extensionsPrefs.get("install.requireSecureOrigin", true),
-    }]);
+    }], cb);
+
+    
+    
+    let results = cb.wait();
 
     if (results.skipped.includes(record.addonID)) {
       this._log.info("Add-on skipped: " + record.addonID);
@@ -367,7 +369,7 @@ AddonsStore.prototype = {
     
     
     if (!addon) {
-      await this.create(record);
+      this.create(record);
       return;
     }
 
@@ -382,7 +384,7 @@ AddonsStore.prototype = {
       
     }
 
-    await this.updateUserDisabled(addon, !record.enabled);
+    this.updateUserDisabled(addon, !record.enabled);
   },
 
   
@@ -463,7 +465,7 @@ AddonsStore.prototype = {
     let addons = this.reconciler.addons;
     for (let id in addons) {
       let addon = addons[id];
-      if ((await this.isAddonSyncable(addon))) {
+      if (this.isAddonSyncable(addon)) {
         ids[addon.guid] = true;
       }
     }
@@ -534,7 +536,7 @@ AddonsStore.prototype = {
 
 
 
-  async isAddonSyncable(addon, ignoreRepoCheck = false) {
+  isAddonSyncable: function isAddonSyncable(addon, ignoreRepoCheck = false) {
     
     
     
@@ -587,9 +589,9 @@ AddonsStore.prototype = {
       return true;
     }
 
-    let result = await new Promise(res => {
-      AddonRepository.getCachedAddonByID(addon.id, res);
-    });
+    let cb = Async.makeSyncCallback();
+    AddonRepository.getCachedAddonByID(addon.id, cb);
+    let result = Async.waitForSyncCallback(cb);
 
     if (!result) {
       this._log.debug(addon.id + " not syncable: add-on not found in add-on " +
@@ -651,7 +653,7 @@ AddonsStore.prototype = {
 
 
 
-  async updateUserDisabled(addon, value) {
+  updateUserDisabled(addon, value) {
     if (addon.userDisabled == value) {
       return;
     }
@@ -668,7 +670,7 @@ AddonsStore.prototype = {
     
     
     if (addon.appDisabled) {
-      await this.reconciler.rectifyStateFromAddon(addon);
+      this.reconciler.rectifyStateFromAddon(addon);
     }
   },
 };
@@ -696,31 +698,33 @@ AddonsTracker.prototype = {
 
 
 
-  async changeListener(date, change, addon) {
+  changeListener: function changeHandler(date, change, addon) {
     this._log.debug("changeListener invoked: " + change + " " + addon.id);
     
     if (this.ignoreAll) {
       return;
     }
 
-    if (!(await this.store.isAddonSyncable(addon))) {
+    if (!this.store.isAddonSyncable(addon)) {
       this._log.debug("Ignoring change because add-on isn't syncable: " +
                       addon.id);
       return;
     }
 
-    const added = await this.addChangedID(addon.guid, date.getTime() / 1000);
-    if (added) {
+    if (this.addChangedID(addon.guid, date.getTime() / 1000)) {
       this.score += SCORE_INCREMENT_XLARGE;
     }
   },
 
-  onStart() {
-    this.reconciler.startListening();
+  startTracking() {
+    if (this.engine.enabled) {
+      this.reconciler.startListening();
+    }
+
     this.reconciler.addChangeListener(this);
   },
 
-  onStop() {
+  stopTracking() {
     this.reconciler.removeChangeListener(this);
     this.reconciler.stopListening();
   },
@@ -779,12 +783,10 @@ class AddonValidator extends CollectionValidator {
     return item.applicationID === Services.appinfo.ID;
   }
 
-  async syncedByClient(item) {
+  syncedByClient(item) {
     return !item.original.hidden &&
            !item.original.isSystem &&
            !(item.original.pendingOperations & AddonManager.PENDING_UNINSTALL) &&
-           
-           
            this.engine.isAddonSyncable(item.original, true);
   }
 }
