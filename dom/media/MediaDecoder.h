@@ -141,7 +141,7 @@ public:
 
   
   
-  virtual nsresult Play();
+  virtual void Play();
 
   
   virtual void NotifyOwnerActivityChanged(bool aIsDocumentVisible,
