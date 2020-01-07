@@ -50,6 +50,28 @@ exports.translate = translate;
 
 
 
+
+
+
+
+const rotate = (angle = 0) => {
+  let cos = Math.cos(angle);
+  let sin = Math.sin(angle);
+
+  return [
+    cos,  sin, 0,
+    -sin, cos, 0,
+    0,    0,   1
+  ];
+};
+exports.rotate = rotate;
+
+
+
+
+
+
+
 const identity = () => [
   1, 0, 0,
   0, 1, 0,
@@ -117,6 +139,54 @@ const isIdentity = (M) =>
   M[3] === 0 && M[4] === 1 && M[5] === 0 &&
   M[6] === 0 && M[7] === 0 && M[8] === 1;
 exports.isIdentity = isIdentity;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const getBasis = (u, v) => {
+  let uLength = Math.abs(Math.sqrt(u[0] ** 2 + u[1] ** 2));
+  let vLength = Math.abs(Math.sqrt(v[0] ** 2 + v[1] ** 2));
+  let basis =
+    [ u[0] / uLength, v[0] / vLength, 0,
+      u[1] / uLength, v[1] / vLength, 0,
+      0,                0,                1 ];
+  let determinant = 1 / (basis[0] * basis[4] - basis[1] * basis[3]);
+  let invertedBasis =
+    [ basis[4] / determinant,  -basis[1] / determinant, 0,
+      -basis[3] / determinant,  basis[0] / determinant, 0,
+      0,                        0,                      1 ];
+  return { basis, invertedBasis, uLength, vLength };
+};
+exports.getBasis = getBasis;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const changeMatrixBase = (M, basis, invertedBasis) => {
+  return multiply(invertedBasis, multiply(M, basis));
+};
+exports.changeMatrixBase = changeMatrixBase;
 
 
 
