@@ -34,6 +34,7 @@
 #include "archivereader.h"
 #include "readstrings.h"
 #include "errors.h"
+#include "bzlib.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -108,8 +109,6 @@ struct UpdateServerThreadArgs
 #include "prerror.h"
 #endif
 
-#include "crctable.h"
-
 #ifdef XP_WIN
 #ifdef MOZ_MAINTENANCE_SERVICE
 #include "registrycertificates.h"
@@ -139,6 +138,19 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer,
 
 
 
+#define BZ2_CRC32TABLE_UNDECLARED
+
+#if MOZ_IS_GCC || defined(__clang__)
+extern "C"  __attribute__((visibility("default"))) unsigned int BZ2_crc32Table[256];
+#undef BZ2_CRC32TABLE_UNDECLARED
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+extern "C" __global unsigned int BZ2_crc32Table[256];
+#undef BZ2_CRC32TABLE_UNDECLARED
+#endif
+#if defined(BZ2_CRC32TABLE_UNDECLARED)
+extern "C" unsigned int BZ2_crc32Table[256];
+#undef BZ2_CRC32TABLE_UNDECLARED
+#endif
 
 static unsigned int
 crc32(const unsigned char *buf, unsigned int len)
@@ -3092,7 +3104,7 @@ int NS_main(int argc, NS_tchar **argv)
         return 1;
       }
 
-      wchar_t *cmdLine = MakeCommandLine(argc - 1, argv + 1);
+      auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
       if (!cmdLine) {
         CloseHandle(elevatedFileHandle);
         return 1;
@@ -3238,12 +3250,11 @@ int NS_main(int argc, NS_tchar **argv)
                              SEE_MASK_NOCLOSEPROCESS;
         sinfo.hwnd         = nullptr;
         sinfo.lpFile       = argv[0];
-        sinfo.lpParameters = cmdLine;
+        sinfo.lpParameters = cmdLine.get();
         sinfo.lpVerb       = L"runas";
         sinfo.nShow        = SW_SHOWNORMAL;
 
         bool result = ShellExecuteEx(&sinfo);
-        free(cmdLine);
 
         if (result) {
           WaitForSingleObject(sinfo.hProcess, INFINITE);
