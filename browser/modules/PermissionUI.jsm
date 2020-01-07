@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = [
+var EXPORTED_SYMBOLS = [
   "PermissionUI",
 ];
 
@@ -78,7 +78,7 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
                  .createBundle("chrome://browser/locale/browser.properties");
 });
 
-this.PermissionUI = {};
+var PermissionUI = {};
 
 
 
@@ -89,7 +89,7 @@ this.PermissionUI = {};
 
 
 
-this.PermissionPromptPrototype = {
+var PermissionPromptPrototype = {
   
 
 
@@ -375,7 +375,7 @@ PermissionUI.PermissionPromptPrototype = PermissionPromptPrototype;
 
 
 
-this.PermissionPromptForRequestPrototype = {
+var PermissionPromptForRequestPrototype = {
   __proto__: PermissionPromptPrototype,
 
   get browser() {
