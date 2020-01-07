@@ -26,7 +26,7 @@ namespace mozilla {
 class ChannelMediaResource;
 typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 class MediaResource;
-class ReentrantMonitorAutoEnter;
+class MonitorAutoLock;
 
 
 
@@ -192,7 +192,7 @@ DDLoggedTypeDeclName(MediaCacheStream);
 
 class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream>
 {
-  using AutoLock = ReentrantMonitorAutoEnter;
+  using AutoLock = MonitorAutoLock;
 
 public:
   
@@ -350,7 +350,7 @@ public:
   
   
   
-  nsresult Read(char* aBuffer, uint32_t aCount, uint32_t* aBytes);
+  nsresult Read(AutoLock&, char* aBuffer, uint32_t aCount, uint32_t* aBytes);
   
   
   nsresult ReadAt(int64_t aOffset, char* aBuffer,
