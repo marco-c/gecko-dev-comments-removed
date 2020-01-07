@@ -910,6 +910,8 @@ private:
 
   
   
+  
+  CSSRect mCompositedLayoutViewport;
   CSSPoint mCompositedScrollOffset;
   CSSToParentLayerScale2D mCompositedZoom;
 
@@ -995,6 +997,12 @@ public:
 
 
 
+  CSSRect GetCurrentAsyncLayoutViewport(AsyncTransformConsumer aMode) const;
+
+  
+
+
+
 
   ParentLayerPoint GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode) const;
 
@@ -1046,6 +1054,7 @@ private:
 
 
 
+  CSSRect GetEffectiveLayoutViewport(AsyncTransformConsumer aMode) const;
   CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const;
   CSSToParentLayerScale2D GetEffectiveZoom(AsyncTransformConsumer aMode) const;
 
