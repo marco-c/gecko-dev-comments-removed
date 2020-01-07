@@ -1581,12 +1581,19 @@ public:
 
 
 
-  void AddWindowExcludeGlassRegion(const nsRegion& bounds) {
-    mWindowExcludeGlassRegion.Or(mWindowExcludeGlassRegion, bounds);
+  void AddWindowExcludeGlassRegion(nsIFrame* aFrame, const nsRect& aBounds)
+  {
+    mWindowExcludeGlassRegion.Add(aFrame, aBounds);
   }
-  const nsRegion& GetWindowExcludeGlassRegion() {
-    return mWindowExcludeGlassRegion;
+
+  
+
+
+  nsRegion GetWindowExcludeGlassRegion() const
+  {
+    return mWindowExcludeGlassRegion.ToRegion();
   }
+
   
 
 
@@ -1898,9 +1905,9 @@ private:
   
   nsRect                         mVisibleRect;
   nsRect                         mDirtyRect;
-  nsRegion                       mWindowExcludeGlassRegion;
 
   
+  WeakFrameRegion                mWindowExcludeGlassRegion;
   WeakFrameRegion                mRetainedWindowDraggingRegion;
   WeakFrameRegion                mRetainedWindowNoDraggingRegion;
 
