@@ -2230,18 +2230,9 @@ nsHttpChannel::ProcessResponse()
                                                     lci, mIsTrackingResource);
     }
 
-    if (mTransaction && mTransaction->ProxyConnectFailed()) {
-        
-        if (httpStatus != 407) {
-            return ProcessFailedProxyConnect(httpStatus);
-        }
-        
-        
-    } else {
-        
-        
-        DebugOnly<nsresult> rv = ProcessSecurityHeaders();
-        MOZ_ASSERT(NS_SUCCEEDED(rv), "ProcessSTSHeader failed, continuing load.");
+    
+    if (mTransaction && mTransaction->ProxyConnectFailed() && httpStatus != 407) {
+        return ProcessFailedProxyConnect(httpStatus);
     }
 
     MOZ_ASSERT(!mCachedContentIsValid || mRaceCacheWithNetwork,
@@ -2297,6 +2288,12 @@ nsHttpChannel::ContinueProcessResponse1()
         if (NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
             SetCookie(cookie.get());
         }
+
+        
+        
+        DebugOnly<nsresult> rv = ProcessSecurityHeaders();
+        MOZ_ASSERT(NS_SUCCEEDED(rv), "ProcessSTSHeader failed, continuing load.");
+
         if ((httpStatus < 500) && (httpStatus != 421)) {
             ProcessAltService();
         }
