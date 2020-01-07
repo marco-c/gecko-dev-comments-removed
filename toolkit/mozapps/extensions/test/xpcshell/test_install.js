@@ -272,7 +272,7 @@ add_task(async function test_1() {
   difference = testFile.lastModifiedTime - Date.now();
   ok(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
-  a1.uninstall();
+  await a1.uninstall();
   let { id, version } = a1;
   await promiseRestartManager();
   do_check_not_in_crash_annotation(id, version);
@@ -453,7 +453,7 @@ add_task(async function test_4() {
   
   ok(a2.installDate <= a2.updateDate);
 
-  a2.uninstall();
+  await a2.uninstall();
 });
 
 
@@ -534,7 +534,7 @@ add_task(async function test_6() {
   ok(isExtensionInBootstrappedList(profileDir, a3.id));
 
   ok(XPIS.test_install3.exists());
-  a3.uninstall();
+  await a3.uninstall();
 });
 
 add_task(async function test_8() {
@@ -578,7 +578,7 @@ add_task(async function test_8() {
   ok(isExtensionInBootstrappedList(profileDir, a3.id));
 
   ok(XPIS.test_install3.exists());
-  a3.uninstall();
+  await a3.uninstall();
 });
 
 
@@ -763,7 +763,7 @@ add_task(async function test_16() {
     isActive: false,
   });
 
-  a2_2.uninstall();
+  await a2_2.uninstall();
 });
 
 
@@ -815,7 +815,7 @@ add_task(async function test_17() {
     isActive: false,
   });
 
-  a2_2.uninstall();
+  await a2_2.uninstall();
 });
 
 
@@ -870,7 +870,7 @@ add_task(async function test_18() {
     userDisabled: false,
   });
 
-  a2_2.uninstall();
+  await a2_2.uninstall();
 });
 
 
@@ -905,7 +905,7 @@ add_task(async function test_18_1() {
   let a2 = await AddonManager.getAddonByID("addon2@tests.mozilla.org");
   notEqual(a2.fullDescription, "Repository description");
 
-  a2.uninstall();
+  await a2.uninstall();
 });
 
 
@@ -933,7 +933,7 @@ add_task(async function test_19() {
   let a2 = await AddonManager.getAddonByID("addon2@tests.mozilla.org");
   equal(a2.fullDescription, "Repository description");
 
-  a2.uninstall();
+  await a2.uninstall();
 });
 
 
@@ -959,7 +959,7 @@ add_task(async function test_20() {
   let a2 = await AddonManager.getAddonByID("addon2@tests.mozilla.org");
   equal(a2.fullDescription, "Repository description");
 
-  a2.uninstall();
+  await a2.uninstall();
 });
 
 
@@ -1011,7 +1011,7 @@ add_task(async function test_22() {
   ensure_test_completed();
 
   AddonManager.removeAddonListener(AddonListener);
-  install.addon.uninstall();
+  await install.addon.uninstall();
 });
 
 
@@ -1066,7 +1066,7 @@ add_task(async function test_23() {
   ensure_test_completed();
 
   AddonManager.removeAddonListener(AddonListener);
-  install.addon.uninstall();
+  await install.addon.uninstall();
 });
 
 
@@ -1221,7 +1221,7 @@ add_task(async function test_27() {
   ensure_test_completed();
 
   AddonManager.removeAddonListener(AddonListener);
-  install.addon.uninstall();
+  await install.addon.uninstall();
 });
 
 

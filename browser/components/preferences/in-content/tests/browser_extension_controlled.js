@@ -101,8 +101,9 @@ add_task(async function testExtensionControlledHomepage() {
   is(controlledContent.hidden, true, "The extension controlled row is hidden");
 
   
+  let promise = waitForMessageShown("browserHomePageExtensionContent");
   await installAddon("set_homepage.xpi");
-  await waitForMessageShown("browserHomePageExtensionContent");
+  await promise;
 
   
   let controlledLabel = controlledContent.querySelector("description");
@@ -141,10 +142,11 @@ add_task(async function testExtensionControlledHomepage() {
   
   
   
+  promise = waitForMessageShown("browserHomePageExtensionContent");
   await addon.enable();
-  await waitForMessageShown("browserHomePageExtensionContent");
+  await promise;
   
-  addon.uninstall();
+  await addon.uninstall();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -203,8 +205,9 @@ add_task(async function testPrefLockedHomepage() {
   ok(originalHomepage != extensionHomepage, "The extension will change the homepage");
 
   
+  let promise = waitForMessageShown(controlledContent.id);
   await installAddon("set_homepage.xpi");
-  await waitForMessageShown(controlledContent.id);
+  await promise;
 
   
   is(getHomepage(), extensionHomepage, "The reported homepage is set by the extension");
@@ -249,8 +252,9 @@ add_task(async function testPrefLockedHomepage() {
 
   
   let addon = await AddonManager.getAddonByID("@set_homepage");
-  addon.uninstall();
-  await waitForEnableMessage(controlledContent.id);
+  promise = waitForEnableMessage(controlledContent.id);
+  await addon.uninstall();
+  await promise;
 
   
   is(getHomepage(), originalHomepage, "The reported homepage is reset to original value");
@@ -306,9 +310,9 @@ add_task(async function testExtensionControlledNewTab() {
   is(controlledContent.hidden, true, "The extension controlled row is hidden");
 
   
+  let promise = waitForMessageShown("browserNewTabExtensionContent");
   await installAddon("set_newtab.xpi");
-
-  await waitForMessageShown("browserNewTabExtensionContent");
+  await promise;
 
   
   let controlledLabel = controlledContent.querySelector("description");
@@ -343,7 +347,7 @@ add_task(async function testExtensionControlledNewTab() {
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   let addon = await AddonManager.getAddonByID("@set_newtab");
-  addon.uninstall();
+  await addon.uninstall();
 });
 
 add_task(async function testExtensionControlledDefaultSearch() {

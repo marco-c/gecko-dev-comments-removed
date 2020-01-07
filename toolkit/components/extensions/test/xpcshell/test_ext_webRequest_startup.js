@@ -29,7 +29,7 @@ function trackEvents(wrapper) {
 
 
 
-add_task(async function() {
+add_task(async function test_1() {
   await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -77,7 +77,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function test_2() {
   await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -126,7 +126,7 @@ add_task(async function() {
 
 
 
-add_task(async function() {
+add_task(async function test_3() {
   const DATA = `<!DOCTYPE html>
 <html>
 <body>

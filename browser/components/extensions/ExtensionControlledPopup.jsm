@@ -218,7 +218,6 @@ class ExtensionControlledPopup {
     
     let handleCommand = async (event) => {
       panel.hidePopup();
-
       if (event.originalTarget.getAttribute("anonid") == "button") {
         
         await this.setConfirmation(extensionId);
@@ -227,7 +226,7 @@ class ExtensionControlledPopup {
         if (this.beforeDisableAddon) {
           await this.beforeDisableAddon(this, win);
         }
-        addon.disable();
+        await addon.disable();
       }
 
       

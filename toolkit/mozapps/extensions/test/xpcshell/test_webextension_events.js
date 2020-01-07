@@ -58,22 +58,16 @@ add_task(async function() {
   });
 
   await expectEvents({update: true, uninstall: false}, () =>
-    Promise.all([
-      AddonManager.installTemporaryAddon(v3),
-      promiseWebExtensionStartup(),
-    ]));
+    AddonManager.installTemporaryAddon(v3));
 
   
   
   let addon = await promiseAddonByID(id);
   await expectEvents({update: true, uninstall: false},
-                     () => { addon.uninstall(); });
+                     () => addon.uninstall());
 
   
-  await Promise.all([
-    AddonManager.installTemporaryAddon(v3),
-    promiseWebExtensionStartup(),
-  ]);
+  await AddonManager.installTemporaryAddon(v3);
 
   
   
@@ -88,5 +82,5 @@ add_task(async function() {
   
   
   await expectEvents({update: false, uninstall: true},
-                     () => { addon.uninstall(); });
+                     () => addon.uninstall());
 });
