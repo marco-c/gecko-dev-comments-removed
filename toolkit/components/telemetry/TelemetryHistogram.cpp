@@ -1737,8 +1737,13 @@ void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
 
   
   
+  
   for (uint32_t i = 0; i < HistogramCount; i++) {
-    gNameToHistogramIDMap.Put(nsDependentCString(gHistogramInfos[i].name()), HistogramID(i));
+    auto name = gHistogramInfos[i].name();
+
+    nsCString wrappedName;
+    wrappedName.AssignLiteral(name, strlen(name));
+    gNameToHistogramIDMap.Put(wrappedName, HistogramID(i));
   }
 
 #ifdef DEBUG
