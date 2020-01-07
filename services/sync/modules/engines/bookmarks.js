@@ -738,6 +738,22 @@ BufferedBookmarksEngine.prototype = {
   },
 
   async _createRecord(id) {
+    let record = await this._doCreateRecord(id);
+    if (!record.deleted) {
+      
+      
+      
+      
+      
+      record.hasDupe = true;
+    }
+    return record;
+  },
+
+  async _doCreateRecord(id) {
+    if (this._needWeakUpload.has(id)) {
+      return this._store.createRecord(id, this.name);
+    }
     let change = this._modified.changes[id];
     if (!change) {
       this._log.error("Creating record for item ${id} not in strong " +
