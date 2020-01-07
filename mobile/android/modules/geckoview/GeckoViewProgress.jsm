@@ -10,8 +10,11 @@ ChromeUtils.import("resource://gre/modules/GeckoViewModule.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "EventDispatcher",
-  "resource://gre/modules/Messaging.jsm");
+XPCOMUtils.defineLazyServiceGetter(this, "OverrideService",
+  "@mozilla.org/security/certoverride;1", "nsICertOverrideService");
+
+XPCOMUtils.defineLazyServiceGetter(this, "IDNService",
+  "@mozilla.org/network/idn-service;1", "nsIIDNService");
 
 XPCOMUtils.defineLazyGetter(this, "dump", () =>
     ChromeUtils.import("resource://gre/modules/AndroidLog.jsm",
@@ -126,56 +129,46 @@ var IdentityHandler = {
 
 
   checkIdentity: function checkIdentity(aState, aBrowser) {
-    let lastStatus = aBrowser.securityUI.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus;
-
-    
-    
-    
-    let lastLocation = {};
-    try {
-      let location = aBrowser.contentWindow.location;
-      lastLocation.host = location.host;
-      lastLocation.hostname = location.hostname;
-      lastLocation.port = location.port;
-      lastLocation.origin = location.origin;
-    } catch (ex) {
-      
-      
-      
-    }
-
-    let uri = aBrowser.currentURI;
-    try {
-      uri = Services.uriFixup.createExposableURI(uri);
-    } catch (e) {}
-
     let identityMode = this.getIdentityMode(aState);
     let mixedDisplay = this.getMixedDisplayMode(aState);
     let mixedActive = this.getMixedActiveMode(aState);
     let trackingMode = this.getTrackingMode(aState);
     let result = {
-      origin: lastLocation.origin,
       mode: {
         identity: identityMode,
         mixed_display: mixedDisplay,
         mixed_active: mixedActive,
-        tracking: trackingMode
+        tracking: trackingMode,
       }
     };
+
+    if (aBrowser.contentPrincipal) {
+      result.origin = aBrowser.contentPrincipal.originNoSuffix;
+    }
 
     
     
     if (identityMode === this.IDENTITY_MODE_UNKNOWN ||
-        aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN) {
+        (aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN)) {
       result.secure = false;
       return result;
     }
 
     result.secure = true;
 
-    result.host = this.getEffectiveHost(lastLocation, uri);
+    let uri = aBrowser.currentURI || {};
+    try {
+      uri = Services.uriFixup.createExposableURI(uri);
+    } catch (e) {}
 
-    let status = lastStatus.QueryInterface(Ci.nsISSLStatus);
+    try {
+      result.host = IDNService.convertToDisplayIDN(uri.host, {});
+    } catch (e) {
+      result.host = uri.host;
+    }
+
+    let status = aBrowser.securityUI.QueryInterface(Ci.nsISSLStatusProvider)
+                         .SSLStatus.QueryInterface(Ci.nsISSLStatus);
     let cert = status.serverCert;
 
     result.organization = cert.organization;
@@ -183,44 +176,14 @@ var IdentityHandler = {
     result.issuerOrganization = cert.issuerOrganization;
     result.issuerCommonName = cert.issuerCommonName;
 
-    
-    if (!this._overrideService) {
-      this._overrideService = Cc["@mozilla.org/security/certoverride;1"].getService(Ci.nsICertOverrideService);
+    try {
+      result.securityException = OverrideService.hasMatchingOverride(
+          uri.host, uri.port, cert, {}, {});
+    } catch (e) {
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (lastLocation.hostname &&
-        this._overrideService.hasMatchingOverride(lastLocation.hostname,
-                                                  (lastLocation.port || 443),
-                                                  cert, {}, {})) {
-      result.securityException = true;
-    }
     return result;
   },
-
-  
-
-
-  getEffectiveHost: function getEffectiveHost(aLastLocation, aUri) {
-    if (!this._IDNService) {
-      this._IDNService = Cc["@mozilla.org/network/idn-service;1"]
-                         .getService(Ci.nsIIDNService);
-    }
-    try {
-      return this._IDNService.convertToDisplayIDN(aUri.host, {});
-    } catch (e) {
-      
-      
-      return aLastLocation.hostname;
-    }
-  }
 };
 
 class GeckoViewProgress extends GeckoViewModule {
