@@ -122,7 +122,7 @@ IE7FormPasswords.prototype = {
     }
   },
 
-  migrate(aCallback) {
+  async migrate(aCallback) {
     let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
                             createInstance(Ci.nsISimpleEnumerator);
     let uris = []; 
@@ -138,7 +138,7 @@ IE7FormPasswords.prototype = {
 
       uris.push(uri);
     }
-    this._migrateURIs(uris);
+    await this._migrateURIs(uris);
     aCallback(true);
   },
 
@@ -146,7 +146,7 @@ IE7FormPasswords.prototype = {
 
 
 
-  _migrateURIs(uris) {
+  async _migrateURIs(uris) {
     this.ctypesKernelHelpers = new MSMigrationUtils.CtypesKernelHelpers();
     this._crypto = new OSCrypto();
     let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
@@ -166,6 +166,7 @@ IE7FormPasswords.prototype = {
 
 
 
+    let logins = [];
     for (let uri of uris) {
       try {
         
@@ -200,11 +201,23 @@ IE7FormPasswords.prototype = {
         if (ieLogins.length) {
           successfullyDecryptedValues++;
         }
-        this._addLogins(ieLogins);
+        for (let ieLogin of ieLogins) {
+          logins.push({
+            username: ieLogin.username,
+            password: ieLogin.password,
+            hostname: ieLogin.url,
+            timeCreated: ieLogin.creation,
+          });
+        }
       } catch (e) {
         Cu.reportError("Error while importing logins for " + uri.spec + ": " + e);
       }
     }
+
+    if (logins.length > 0) {
+      await MigrationUtils.insertLoginsWrapper(logins);
+    }
+
     
     
     if (successfullyDecryptedValues < key.valueCount) {
@@ -220,27 +233,6 @@ IE7FormPasswords.prototype = {
   },
 
   _crypto: null,
-
-  
-
-
-
-  _addLogins(ieLogins) {
-    for (let ieLogin of ieLogins) {
-      try {
-        
-        let login = {
-          username: ieLogin.username,
-          password: ieLogin.password,
-          hostname: ieLogin.url,
-          timeCreated: ieLogin.creation,
-        };
-        MigrationUtils.insertLoginWrapper(login);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-  },
 
   
 

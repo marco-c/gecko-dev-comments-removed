@@ -748,7 +748,7 @@ WindowsVaultFormPasswords.prototype = {
 
 
 
-  migrate(aCallback, aOnlyCheckExists = false) {
+  async migrate(aCallback, aOnlyCheckExists = false) {
     
     function _isIEOrEdgePassword(id) {
       return id[0] == INTERNET_EXPLORER_EDGE_GUID[0] &&
@@ -785,6 +785,8 @@ WindowsVaultFormPasswords.prototype = {
       if (error != RESULT_SUCCESS) {
         throw new Error("Unable to enumerate Vault items: " + error);
       }
+
+      let logins = [];
       for (let j = 0; j < itemCount.value; j++) {
         try {
           
@@ -830,12 +832,11 @@ WindowsVaultFormPasswords.prototype = {
             
           }
           
-          let login = {
+          logins.push({
             username, password,
             hostname: realURL.prePath,
             timeCreated: creation,
-          };
-          MigrationUtils.insertLoginWrapper(login);
+          });
 
           
           error = ctypesVaultHelpers._functions.VaultFree(credential);
@@ -849,6 +850,10 @@ WindowsVaultFormPasswords.prototype = {
           
           item = item.increment();
         }
+      }
+
+      if (logins.length > 0) {
+        await MigrationUtils.insertLoginsWrapper(logins);
       }
     } catch (e) {
       Cu.reportError(e);
