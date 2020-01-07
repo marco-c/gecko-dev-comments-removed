@@ -126,12 +126,12 @@ struct EventKey {
 
 struct DynamicEventInfo {
   DynamicEventInfo(const nsACString& category, const nsACString& method,
-                   const nsACString& object, nsTArray<nsCString>&& extra_keys,
+                   const nsACString& object, nsTArray<nsCString>& extra_keys,
                    bool recordOnRelease)
     : category(category)
     , method(method)
     , object(object)
-    , extra_keys(Move(extra_keys))
+    , extra_keys(extra_keys)
     , recordOnRelease(recordOnRelease)
   {}
 
@@ -1066,7 +1066,7 @@ TelemetryEvent::RegisterEvents(const nsACString& aCategory,
         
         
         DynamicEventInfo info{aCategory, method, object,
-                              Move(extra_keys), recordOnRelease};
+                              extra_keys, recordOnRelease};
         newEventInfos.AppendElement(info);
         newEventExpired.AppendElement(expired);
       }
