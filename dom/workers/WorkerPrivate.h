@@ -41,6 +41,7 @@ class WorkerDebuggerGlobalScope;
 class WorkerErrorReport;
 class WorkerGlobalScope;
 struct WorkerOptions;
+class WorkerThread;
 
 } 
 } 
@@ -51,7 +52,6 @@ class WorkerControlRunnable;
 class WorkerDebugger;
 class WorkerEventTarget;
 class WorkerRunnable;
-class WorkerThread;
 
 
 
@@ -883,7 +883,7 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   class MemoryReporter;
   friend class MemoryReporter;
 
-  friend class WorkerThread;
+  friend class mozilla::dom::WorkerThread;
 
   enum GCTimerMode
   {

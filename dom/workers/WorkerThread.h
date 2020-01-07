@@ -18,21 +18,22 @@ class nsIRunnable;
 
 namespace mozilla {
 namespace dom {
-namespace workers {
 
+namespace workers {
 class RuntimeService;
 class WorkerPrivate;
 template <class> class WorkerPrivateParent;
 class WorkerRunnable;
+}
 
 
 
 
 class WorkerThreadFriendKey
 {
-  friend class RuntimeService;
-  friend class WorkerPrivate;
-  friend class WorkerPrivateParent<WorkerPrivate>;
+  friend class workers::RuntimeService;
+  friend class workers::WorkerPrivate;
+  friend class workers::WorkerPrivateParent<workers::WorkerPrivate>;
 
   WorkerThreadFriendKey();
   ~WorkerThreadFriendKey();
@@ -47,7 +48,7 @@ class WorkerThread final
   CondVar mWorkerPrivateCondVar;
 
   
-  WorkerPrivate* mWorkerPrivate;
+  workers::WorkerPrivate* mWorkerPrivate;
 
   
   RefPtr<Observer> mObserver;
@@ -65,7 +66,8 @@ public:
   Create(const WorkerThreadFriendKey& aKey);
 
   void
-  SetWorker(const WorkerThreadFriendKey& aKey, WorkerPrivate* aWorkerPrivate);
+  SetWorker(const WorkerThreadFriendKey& aKey,
+            workers::WorkerPrivate* aWorkerPrivate);
 
   nsresult
   DispatchPrimaryRunnable(const WorkerThreadFriendKey& aKey,
@@ -73,7 +75,7 @@ public:
 
   nsresult
   DispatchAnyThread(const WorkerThreadFriendKey& aKey,
-           already_AddRefed<WorkerRunnable> aWorkerRunnable);
+           already_AddRefed<workers::WorkerRunnable> aWorkerRunnable);
 
   uint32_t
   RecursionDepth(const WorkerThreadFriendKey& aKey) const;
@@ -96,7 +98,6 @@ private:
   DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override;
 };
 
-} 
 } 
 } 
 
