@@ -118,6 +118,8 @@ extern "C" {
 
 
 
+
+
 typedef struct cubeb cubeb;               
 typedef struct cubeb_stream cubeb_stream; 
 
@@ -214,12 +216,22 @@ typedef enum {
 } cubeb_channel_layout;
 
 
+typedef enum {
+  CUBEB_STREAM_PREF_NONE     = 0x00, 
+  CUBEB_STREAM_PREF_LOOPBACK = 0x01 
+
+
+
+} cubeb_stream_prefs;
+
+
 typedef struct {
   cubeb_sample_format format;   
 
   uint32_t rate;                
   uint32_t channels;            
   cubeb_channel_layout layout;  
+  cubeb_stream_prefs prefs;     
 } cubeb_stream_params;
 
 
