@@ -11,6 +11,10 @@ registerCleanupFunction(() => {
 
 add_task(async function() {
   Services.prefs.setBoolPref(gRestyleSearchesPref, true);
+
+  
+  
+  await EventUtils.synthesizeNativeMouseMove(document.documentElement, 0, 0);
 });
 
 add_task(async function() {
