@@ -2353,6 +2353,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   float mShapeImageThreshold = 0.0f; 
 
+  
+  nsStyleCoord mShapeMargin;
+
   mozilla::StyleShapeSource mShapeOutside; 
 
   bool IsBlockInsideStyle() const {
