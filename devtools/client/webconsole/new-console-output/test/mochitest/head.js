@@ -31,6 +31,8 @@ const STATUS_CODES_GA_PARAMS = `?${new URLSearchParams({
   "utm_campaign": "default"
 })}`;
 
+const wcActions = require("devtools/client/webconsole/new-console-output/actions/index");
+
 Services.prefs.setBoolPref("devtools.browserconsole.new-frontend-enabled", true);
 registerCleanupFunction(async function () {
   Services.prefs.clearUserPref("devtools.browserconsole.new-frontend-enabled");
@@ -480,6 +482,8 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 
 
 
+
+
 function simulateLinkClick(element, clickEventProps) {
   
   let oldOpenUILinkIn = window.openUILinkIn;
@@ -501,7 +505,7 @@ function simulateLinkClick(element, clickEventProps) {
 
   
   let timeoutId;
-  const onTimeout = new Promise(function(resolve, reject) {
+  const onTimeout = new Promise(function (resolve) {
     timeoutId = setTimeout(() => {
       window.openUILinkIn = oldOpenUILinkIn;
       timeoutId = null;
@@ -565,11 +569,11 @@ async function openMessageInNetmonitor(toolbox, hud, url, urlInConsole) {
   ok(true, "The netmonitor panel is selected when clicking on the network message");
 
   let { store, windowRequire } = panelWin;
-  let actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  let nmActions = windowRequire("devtools/client/netmonitor/src/actions/index");
   let { getSelectedRequest } =
     windowRequire("devtools/client/netmonitor/src/selectors/index");
 
-  store.dispatch(actions.batchEnable(false));
+  store.dispatch(nmActions.batchEnable(false));
 
   await waitUntil(() => {
     const selected = getSelectedRequest(store.getState());
@@ -607,4 +611,136 @@ async function waitForBrowserConsole() {
       executeSoon(() => resolve(hud));
     }, "web-console-created");
   });
+}
+
+
+
+
+
+
+async function getFilterState(hud) {
+  const filterBar = await setFilterBarVisible(hud, true);
+  const buttons = filterBar.querySelectorAll("button");
+  const result = { };
+
+  for (let button of buttons) {
+    let classes = new Set(button.classList.values());
+    let checked = classes.has("checked");
+
+    classes.delete("devtools-button");
+    classes.delete("checked");
+
+    let category = classes.values().next().value;
+
+    result[category] = checked;
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function setFilterState(hud, settings) {
+  const filterBar = await setFilterBarVisible(hud, true);
+
+  for (let category in settings) {
+    let check = settings[category];
+    let button = filterBar.querySelector(`.${category}`);
+
+    if (!button) {
+      ok(false, `setFilterState() called with a category of ${category}, ` +
+                `which doesn't exist.`);
+    }
+
+    info(`Setting the ${category} category to ${check ? "checked" : "disabled"}`);
+
+    let checked = button.classList.contains("checked");
+    if (check) {
+      
+      if (checked) {
+        return;
+      }
+      button.click();
+      await waitFor(() => {
+        return button.classList.contains("checked");
+      });
+    } else if (checked) {
+      
+      button.click();
+      await waitFor(() => {
+        return !button.classList.contains("checked");
+      });
+    }
+  }
+}
+
+
+
+
+
+
+
+
+async function setFilterBarVisible(hud, state) {
+  info(`Setting the filter bar visibility to ${state}`);
+
+  const outputNode = hud.ui.outputNode;
+  const toolbar = await waitFor(() => {
+    return outputNode.querySelector(".webconsole-filterbar-primary");
+  });
+  let filterBar = outputNode.querySelector(".webconsole-filterbar-secondary");
+
+  
+  if (state) {
+    if (!filterBar) {
+      
+      toolbar.querySelector(".devtools-filter-icon").click();
+      filterBar = await waitFor(() => {
+        return outputNode.querySelector(".webconsole-filterbar-secondary");
+      });
+    }
+    return filterBar;
+  }
+
+  
+  if (filterBar) {
+    
+    toolbar.querySelector(".devtools-filter-icon").click();
+    await waitFor(() => {
+      return !outputNode.querySelector(".webconsole-filterbar-secondary");
+    });
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+async function resetFilters(hud) {
+  info("Resetting filters to their default state");
+
+  const store = hud.ui.newConsoleOutput.getStore();
+  store.dispatch(wcActions.filtersClear());
 }

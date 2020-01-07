@@ -62,28 +62,16 @@ add_task(async function () {
   let msg = await waitFor(() => findMessage(hud, "liveBrowserConsoleMessage"));
   ok(msg, "message element for liveBrowserConsoleMessage (nsIConsoleMessage)");
 
-  const outputNode = hud.ui.outputNode;
-  const toolbar = outputNode.querySelector(".webconsole-filterbar-primary");
-
   
-  
-  toolbar.querySelector(".devtools-filter-icon").click();
-  const filterBar = await waitFor(() => {
-    return outputNode.querySelector(".webconsole-filterbar-secondary");
+  await setFilterState(hud, {
+    log: false
   });
-  ok(filterBar, "Filter bar is shown when filter icon is clicked.");
-
-  
-  filterBar.querySelector(".log").click();
 
   
   await waitFor(() => findMessages(hud, "cachedBrowserConsoleMessage").length === 0);
   await waitFor(() => findMessages(hud, "liveBrowserConsoleMessage").length === 0);
   await waitFor(() => findMessages(hud, "liveBrowserConsoleMessage2").length === 0);
 
-  
-  filterBar.querySelector(".log").click();
-
-  
-  toolbar.querySelector(".devtools-filter-icon").click();
+  resetFilters(hud);
+  await setFilterBarVisible(hud, false);
 });

@@ -6,55 +6,46 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf8,<p>browser console filters";
-const WEB_CONSOLE_PREFIX = "devtools.webconsole.filter.";
-const BROWSER_CONSOLE_PREFIX = "devtools.browserconsole.filter.";
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
-
-  info("open the web console");
-  let hud = yield openConsole();
+add_task(async function () {
+  let hud = await openNewTabAndConsole(TEST_URI);
   ok(hud, "web console opened");
 
-  is(Services.prefs.getBoolPref(BROWSER_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (browser console)");
-  is(Services.prefs.getBoolPref(WEB_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (web console)");
+  let filterState = await getFilterState(hud);
+  ok(filterState.error, "The web console error filter is enabled");
 
-  info("toggle 'exception' filter");
-  hud.setFilterState("exception", false);
+  info(`toggle "error" filter`);
+  await setFilterState(hud, {
+    error: false
+  });
 
-  is(Services.prefs.getBoolPref(BROWSER_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (browser console)");
-  is(Services.prefs.getBoolPref(WEB_CONSOLE_PREFIX + "exception"), false,
-     "'exception' filter is disabled (web console)");
+  filterState = await getFilterState(hud);
+  ok(!filterState.error, "The web console error filter is disabled");
 
-  hud.setFilterState("exception", true);
-
-  
-  let deferred = defer();
-  executeSoon(() => closeConsole().then(() => deferred.resolve(null)));
-  yield deferred.promise;
-
+  await resetFilters(hud);
+  await setFilterBarVisible(hud, false);
+  await closeConsole();
   info("web console closed");
-  hud = yield HUDService.toggleBrowserConsole();
+
+  hud = await HUDService.toggleBrowserConsole();
   ok(hud, "browser console opened");
 
-  is(Services.prefs.getBoolPref(BROWSER_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (browser console)");
-  is(Services.prefs.getBoolPref(WEB_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (web console)");
+  filterState = await getFilterState(hud);
+  ok(filterState.error, "The browser console error filter is enabled");
 
-  info("toggle 'exception' filter");
-  hud.setFilterState("exception", false);
+  info(`toggle "error" filter in browser console`);
+  await setFilterState(hud, {
+    error: false
+  });
 
-  is(Services.prefs.getBoolPref(BROWSER_CONSOLE_PREFIX + "exception"), false,
-     "'exception' filter is disabled (browser console)");
-  is(Services.prefs.getBoolPref(WEB_CONSOLE_PREFIX + "exception"), true,
-     "'exception' filter is enabled (web console)");
+  filterState = await getFilterState(hud);
+  ok(!filterState.error, "The browser console error filter is disabled");
 
-  hud.setFilterState("exception", true);
+  await resetFilters(hud);
+  await setFilterBarVisible(hud, false);
 });
