@@ -169,9 +169,6 @@ class MozbuildSymbols(Directive):
 
 
 def setup(app):
-    from mozbuild.virtualenv import VirtualenvManager
-    from moztreedocs import manager
-
     app.add_directive('mozbuildsymbols', MozbuildSymbols)
 
     
@@ -180,12 +177,20 @@ def setup(app):
     
     
     
+    from moztreedocs import SphinxManager
+
+    topsrcdir = app.config._raw_config['topsrcdir']
+    manager = SphinxManager(topsrcdir,
+        os.path.join(topsrcdir, 'tools', 'docs'),
+        app.outdir)
     manager.generate_docs(app)
-    app.srcdir = manager.staging_dir
+
+    app.srcdir = os.path.join(app.outdir, '_staging')
 
     
     
-    topsrcdir = manager.topsrcdir
+    from mozbuild.virtualenv import VirtualenvManager
+
     ve = VirtualenvManager(topsrcdir,
         os.path.join(topsrcdir, 'dummy-objdir'),
         os.path.join(app.outdir, '_venv'),
