@@ -84,6 +84,13 @@ public:
 
 
 
+
+  bool FlushPendingComposite();
+
+  
+
+
+
   const TimeStamp& GetLastComposeTime() const;
 
 private:
