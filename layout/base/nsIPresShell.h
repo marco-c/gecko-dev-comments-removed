@@ -842,6 +842,12 @@ public:
 
 
 
+
+
+
+
+
+
   virtual nsRectVisibility GetRectVisibility(nsIFrame *aFrame,
                                              const nsRect &aRect,
                                              nscoord aMinTwips) const = 0;
