@@ -176,6 +176,7 @@ public:
   typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
   typedef mozilla::StyleGeometryBox StyleGeometryBox;
   typedef mozilla::SVGImageContext SVGImageContext;
+  typedef mozilla::LogicalSize LogicalSize;
 
   
 
@@ -1417,6 +1418,7 @@ public:
 
 
 
+
   enum class IntrinsicISizeType { MIN_ISIZE, PREF_ISIZE };
   static const auto MIN_ISIZE = IntrinsicISizeType::MIN_ISIZE;
   static const auto PREF_ISIZE = IntrinsicISizeType::PREF_ISIZE;
@@ -1430,7 +1432,7 @@ public:
                    gfxContext*           aRenderingContext,
                    nsIFrame*             aFrame,
                    IntrinsicISizeType    aType,
-                   const mozilla::Maybe<mozilla::LogicalSize>& aPercentageBasis = mozilla::Nothing(),
+                   const mozilla::Maybe<LogicalSize>& aPercentageBasis = mozilla::Nothing(),
                    uint32_t              aFlags = 0,
                    nscoord               aMarginBoxMinSizeClamp = NS_MAXSIZE);
   
@@ -1458,11 +1460,15 @@ public:
 
 
 
-  static nscoord MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
-                                            gfxContext*           aRC,
-                                            nsIFrame*             aFrame,
-                                            IntrinsicISizeType    aType,
-                                            uint32_t              aFlags = 0);
+
+
+  static nscoord
+  MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
+                            gfxContext*            aRC,
+                            nsIFrame*              aFrame,
+                            IntrinsicISizeType     aType,
+                            const LogicalSize&     aPercentageBasis,
+                            uint32_t               aFlags = 0);
 
   
 
