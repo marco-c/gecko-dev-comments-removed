@@ -936,7 +936,7 @@ public:
   {
     auto clone = MakeUnique<MinorGCMarker>(GetTracingType(), mReason);
     clone->SetCustomTime(GetTime());
-    return UniquePtr<AbstractTimelineMarker>(std::move(clone));
+    return UniquePtr<AbstractTimelineMarker>(Move(clone));
   }
 };
 
@@ -1405,6 +1405,8 @@ IncrementalFinalizeRunnable::ReleaseNow(bool aLimited)
 NS_IMETHODIMP
 IncrementalFinalizeRunnable::Run()
 {
+  AUTO_PROFILER_LABEL("IncrementalFinalizeRunnable::Run", GCCC);
+
   if (mRuntime->mFinalizeRunnable != this) {
     
     MOZ_ASSERT(!mDeferredFinalizeFunctions.Length());
@@ -1639,7 +1641,7 @@ CycleCollectedJSRuntime::ErrorInterceptor::interceptError(JSContext* cx, const J
   stack.Append(buf.get());
   CopyUTF8toUTF16(buf.get(), details.mStack);
 
-  mThrownError.emplace(std::move(details));
+  mThrownError.emplace(Move(details));
 }
 
 void
