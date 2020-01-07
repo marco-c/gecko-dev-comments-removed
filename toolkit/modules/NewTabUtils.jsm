@@ -1388,6 +1388,19 @@ var ActivityStreamLinks = {
 
 
 
+  archivePocketEntry(aItemID) {
+    return new Promise((success, error) => pktApi.archiveItem(aItemID, {success, error}));
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 

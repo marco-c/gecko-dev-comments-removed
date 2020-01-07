@@ -392,6 +392,22 @@ var pktApi = (function() {
 
 
 
+    function archiveItem(itemId, options) {
+        var action = {
+            action: "archive",
+            item_id: itemId
+        };
+        return sendAction(action, options);
+    }
+
+    
+
+
+
+
+
+
+
 
 
     function sendAction(action, options) {
@@ -652,6 +668,7 @@ var pktApi = (function() {
         clearUserData,
         addLink,
         deleteItem,
+        archiveItem,
         addTagsToItem,
         addTagsToURL,
         getTags,
