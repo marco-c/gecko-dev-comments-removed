@@ -2931,19 +2931,7 @@ TabParent::SetRenderLayers(bool aEnabled)
 
   mRenderLayers = aEnabled;
 
-  
-  
-  mLayerTreeEpoch++;
-
-  Unused << SendRenderLayers(aEnabled, mLayerTreeEpoch);
-
-  
-  
-  if (aEnabled) {
-    ContentParent* cp = Manager()->AsContentParent();
-    cp->ForceTabPaint(this, mLayerTreeEpoch);
-  }
-
+  SetRenderLayersInternal(aEnabled, false );
   return NS_OK;
 }
 
@@ -2959,6 +2947,31 @@ TabParent::GetHasLayers(bool* aResult)
 {
   *aResult = mHasLayers;
   return NS_OK;
+}
+
+NS_IMETHODIMP
+TabParent::ForceRepaint()
+{
+  SetRenderLayersInternal(true ,
+                          true );
+  return NS_OK;
+}
+
+void
+TabParent::SetRenderLayersInternal(bool aEnabled, bool aForceRepaint)
+{
+  
+  
+  mLayerTreeEpoch++;
+
+  Unused << SendRenderLayers(aEnabled, aForceRepaint, mLayerTreeEpoch);
+
+  
+  
+  if (aEnabled) {
+    ContentParent* cp = Manager()->AsContentParent();
+    cp->PaintTabWhileInterruptingJS(this, aForceRepaint, mLayerTreeEpoch);
+  }
 }
 
 NS_IMETHODIMP
@@ -3079,7 +3092,7 @@ TabParent::LayerTreeUpdate(uint64_t aEpoch, bool aActive)
 }
 
 mozilla::ipc::IPCResult
-TabParent::RecvForcePaintNoOp(const uint64_t& aLayerObserverEpoch)
+TabParent::RecvPaintWhileInterruptingJSNoOp(const uint64_t& aLayerObserverEpoch)
 {
   
   

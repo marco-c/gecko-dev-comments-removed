@@ -2536,7 +2536,9 @@ TabChild::RemovePendingDocShellBlocker()
   }
   if (!mPendingDocShellBlockers && mPendingRenderLayersReceivedMessage) {
     mPendingRenderLayersReceivedMessage = false;
-    RecvRenderLayers(mPendingRenderLayers, mPendingLayerObserverEpoch);
+    RecvRenderLayers(mPendingRenderLayers,
+                     false ,
+                     mPendingLayerObserverEpoch);
   }
 }
 
@@ -2567,7 +2569,7 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive)
 }
 
 mozilla::ipc::IPCResult
-TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverEpoch)
+TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, const uint64_t& aLayerObserverEpoch)
 {
   if (mPendingDocShellBlockers > 0) {
     mPendingRenderLayersReceivedMessage = true;
@@ -2585,19 +2587,19 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverE
   }
   mLayerObserverEpoch = aLayerObserverEpoch;
 
-  auto clearForcePaint = MakeScopeExit([&] {
+  auto clearPaintWhileInterruptingJS = MakeScopeExit([&] {
     
     
     
     
     
     if (aEnabled) {
-      ProcessHangMonitor::ClearForcePaint(mLayerObserverEpoch);
+      ProcessHangMonitor::ClearPaintWhileInterruptingJS(mLayerObserverEpoch);
     }
   });
 
   if (aEnabled) {
-    ProcessHangMonitor::MaybeStartForcePaint();
+    ProcessHangMonitor::MaybeStartPaintWhileInterruptingJS();
   }
 
   if (mCompositorOptions) {
@@ -2612,12 +2614,12 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const uint64_t& aLayerObserverE
   }
 
   if (aEnabled) {
-    if (IsVisible()) {
+    if (!aForceRepaint && IsVisible()) {
       
       
       
       if (IPCOpen()) {
-        Unused << SendForcePaintNoOp(mLayerObserverEpoch);
+        Unused << SendPaintWhileInterruptingJSNoOp(mLayerObserverEpoch);
         return IPC_OK();
       }
     }
@@ -3446,7 +3448,8 @@ TabChild::GetOuterRect()
 }
 
 void
-TabChild::ForcePaint(uint64_t aLayerObserverEpoch)
+TabChild::PaintWhileInterruptingJS(uint64_t aLayerObserverEpoch,
+                                   bool aForceRepaint)
 {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasLayerManager()) {
     
@@ -3455,7 +3458,7 @@ TabChild::ForcePaint(uint64_t aLayerObserverEpoch)
   }
 
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers(true, aLayerObserverEpoch);
+  RecvRenderLayers(true , aForceRepaint, aLayerObserverEpoch);
 }
 
 void
