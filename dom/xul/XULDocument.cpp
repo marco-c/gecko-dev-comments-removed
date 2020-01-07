@@ -2630,6 +2630,27 @@ XULDocument::ResumeWalk()
     return rv;
 }
 
+already_AddRefed<nsIXULWindow>
+XULDocument::GetXULWindowIfToplevelChrome() const
+{
+    nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell();
+    if (!item) {
+        return nullptr;
+    }
+    nsCOMPtr<nsIDocShellTreeOwner> owner;
+    item->GetTreeOwner(getter_AddRefs(owner));
+    nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner);
+    if (!xulWin) {
+        return nullptr;
+    }
+    nsCOMPtr<nsIDocShell> xulWinShell;
+    xulWin->GetDocShell(getter_AddRefs(xulWinShell));
+    if (!SameCOMIdentity(xulWinShell, item)) {
+        return nullptr;
+    }
+    return xulWin.forget();
+}
+
 nsresult
 XULDocument::DoneWalking()
 {
@@ -2671,17 +2692,9 @@ XULDocument::DoneWalking()
         
         
         
-        if (nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell()) {
-            nsCOMPtr<nsIDocShellTreeOwner> owner;
-            item->GetTreeOwner(getter_AddRefs(owner));
-            if (nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner)) {
-                nsCOMPtr<nsIDocShell> xulWinShell;
-                xulWin->GetDocShell(getter_AddRefs(xulWinShell));
-                if (SameCOMIdentity(xulWinShell, item)) {
-                    
-                    xulWin->BeforeStartLayout();
-                }
-            }
+        if (nsCOMPtr<nsIXULWindow> win = GetXULWindowIfToplevelChrome()) {
+            
+            win->BeforeStartLayout();
         }
 
         StartLayout();
