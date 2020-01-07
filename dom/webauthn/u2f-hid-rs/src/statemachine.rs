@@ -14,6 +14,31 @@ fn is_valid_transport(transports: ::AuthenticatorTransports) -> bool {
     transports.is_empty() || transports.contains(::AuthenticatorTransports::USB)
 }
 
+fn find_valid_key_handles<'a, F>(
+    app_ids: &'a Vec<::AppId>,
+    key_handles: &'a Vec<::KeyHandle>,
+    mut is_valid: F,
+) -> (&'a ::AppId, Vec<&'a ::KeyHandle>)
+where
+    F: FnMut(&Vec<u8>, &::KeyHandle) -> bool,
+{
+    
+    for app_id in app_ids {
+      
+      let valid_handles = key_handles
+          .iter()
+          .filter(|key_handle| is_valid(app_id, key_handle))
+          .collect::<Vec<_>>();
+
+       
+       if valid_handles.len() > 0 {
+           return (app_id, valid_handles);
+       }
+    }
+
+    return (&app_ids[0], vec![]);
+}
+
 #[derive(Default)]
 pub struct StateMachine {
     transaction: Option<Transaction>,
@@ -29,9 +54,9 @@ impl StateMachine {
         flags: ::RegisterFlags,
         timeout: u64,
         challenge: Vec<u8>,
-        application: Vec<u8>,
+        application: ::AppId,
         key_handles: Vec<::KeyHandle>,
-        callback: OnceCallback<Vec<u8>>,
+        callback: OnceCallback<::RegisterResult>,
     ) {
         
         self.cancel();
@@ -93,9 +118,9 @@ impl StateMachine {
         flags: ::SignFlags,
         timeout: u64,
         challenge: Vec<u8>,
-        application: Vec<u8>,
+        app_ids: Vec<::AppId>,
         key_handles: Vec<::KeyHandle>,
-        callback: OnceCallback<(Vec<u8>, Vec<u8>)>,
+        callback: OnceCallback<::SignResult>,
     ) {
         
         self.cancel();
@@ -126,13 +151,14 @@ impl StateMachine {
             }
 
             
-            let key_handles = key_handles
-                .iter()
-                .filter(|key_handle| {
-                    u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
-                        .unwrap_or(false) 
-                })
-                .collect::<Vec<_>>();
+            
+            let (app_id, valid_handles) =
+                find_valid_key_handles(&app_ids, &key_handles,
+                    |app_id, key_handle| {
+                        u2f_is_keyhandle_valid(dev, &challenge, app_id,
+                                               &key_handle.credential)
+                            .unwrap_or(false) 
+                    });
 
             
             let transports = key_handles.iter().fold(
@@ -149,7 +175,7 @@ impl StateMachine {
             while alive() {
                 
                 
-                if key_handles.is_empty() {
+                if valid_handles.is_empty() {
                     let blank = vec![0u8; PARAMETER_SIZE];
                     if let Ok(_) = u2f_register(dev, &blank, &blank) {
                         callback.call(Err(io_err("invalid key")));
@@ -157,15 +183,17 @@ impl StateMachine {
                     }
                 } else {
                     
-                    for key_handle in &key_handles {
+                    for key_handle in &valid_handles {
                         if let Ok(bytes) = u2f_sign(
                             dev,
                             &challenge,
-                            &application,
+                            app_id,
                             &key_handle.credential,
                         )
                         {
-                            callback.call(Ok((key_handle.credential.clone(), bytes)));
+                            callback.call(Ok((app_id.clone(),
+                                              key_handle.credential.clone(),
+                                              bytes)));
                             break;
                         }
                     }

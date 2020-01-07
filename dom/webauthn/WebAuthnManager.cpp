@@ -49,8 +49,11 @@ NS_IMPL_ISUPPORTS(WebAuthnManager, nsIDOMEventListener);
 
 
 static nsresult
-AssembleClientData(const nsAString& aOrigin, const CryptoBuffer& aChallenge,
-                   const nsAString& aType,  nsACString& aJsonOut)
+AssembleClientData(const nsAString& aOrigin,
+                   const CryptoBuffer& aChallenge,
+                   const nsAString& aType,
+                   const AuthenticationExtensionsClientInputs& aExtensions,
+                    nsACString& aJsonOut)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -65,6 +68,7 @@ AssembleClientData(const nsAString& aOrigin, const CryptoBuffer& aChallenge,
   clientDataObject.mChallenge.Assign(challengeBase64);
   clientDataObject.mOrigin.Assign(aOrigin);
   clientDataObject.mHashAlgorithm.AssignLiteral(u"SHA-256");
+  clientDataObject.mClientExtensions = aExtensions;
 
   nsAutoString temp;
   if (NS_WARN_IF(!clientDataObject.ToJSON(temp))) {
@@ -264,6 +268,12 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
     }
   }
 
+  
+  if (aOptions.mExtensions.mAppid.WasPassed()) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return promise.forget();
+  }
+
   CryptoBuffer rpIdHash;
   if (!rpIdHash.SetLength(SHA256_LENGTH, fallible)) {
     promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
@@ -345,7 +355,8 @@ WebAuthnManager::MakeCredential(const PublicKeyCredentialCreationOptions& aOptio
 
   nsAutoCString clientDataJSON;
   srv = AssembleClientData(origin, challenge,
-                           NS_LITERAL_STRING("webauthn.create"), clientDataJSON);
+                           NS_LITERAL_STRING("webauthn.create"),
+                           aOptions.mExtensions, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
@@ -537,7 +548,7 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
 
   nsAutoCString clientDataJSON;
   srv = AssembleClientData(origin, challenge, NS_LITERAL_STRING("webauthn.get"),
-                           clientDataJSON);
+                           aOptions.mExtensions, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(srv))) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return promise.forget();
@@ -598,8 +609,34 @@ WebAuthnManager::GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
   
   
   
-  
   nsTArray<WebAuthnExtension> extensions;
+
+  
+  if (aOptions.mExtensions.mAppid.WasPassed()) {
+    nsString appId(aOptions.mExtensions.mAppid.Value());
+
+    
+    if (!EvaluateAppID(mParent, origin, U2FOperation::Sign, appId)) {
+      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+      return promise.forget();
+    }
+
+    CryptoBuffer appIdHash;
+    if (!appIdHash.SetLength(SHA256_LENGTH, fallible)) {
+      promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
+      return promise.forget();
+    }
+
+    
+    nsresult srv = HashCString(hashService, NS_ConvertUTF16toUTF8(appId), appIdHash);
+    if (NS_WARN_IF(NS_FAILED(srv))) {
+      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+      return promise.forget();
+    }
+
+    
+    extensions.AppendElement(WebAuthnExtensionAppId(appIdHash));
+  }
 
   WebAuthnGetAssertionInfo info(rpIdHash,
                                 clientDataHash,
@@ -807,7 +844,7 @@ WebAuthnManager::FinishGetAssertion(const uint64_t& aTransactionId,
   }
 
   CryptoBuffer rpIdHashBuf;
-  if (!rpIdHashBuf.Assign(mTransaction.ref().mRpIdHash)) {
+  if (!rpIdHashBuf.Assign(aResult.RpIdHash())) {
     RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
@@ -861,6 +898,14 @@ WebAuthnManager::FinishGetAssertion(const uint64_t& aTransactionId,
   credential->SetType(NS_LITERAL_STRING("public-key"));
   credential->SetRawId(credentialBuf);
   credential->SetResponse(assertion);
+
+  
+  for (auto& ext: aResult.Extensions()) {
+    if (ext.type() == WebAuthnExtensionResult::TWebAuthnExtensionResultAppId) {
+      bool appid = ext.get_WebAuthnExtensionResultAppId().AppId();
+      credential->SetClientExtensionResultAppId(appid);
+    }
+  }
 
   mTransaction.ref().mPromise->MaybeResolve(credential);
   ClearTransaction();
