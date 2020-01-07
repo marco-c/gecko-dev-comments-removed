@@ -498,9 +498,6 @@ class DesktopInstance(GeckoInstance):
         "browser.EULA.override": True,
 
         
-        "browser.newtabpage.enabled": False,
-
-        
         
         "browser.pagethumbnails.capturing_disabled": True,
 
