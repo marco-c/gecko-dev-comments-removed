@@ -32,7 +32,6 @@ class Promise;
 } 
 
 class GeckoComputedStyle;
-class ComputedStyle;
 enum class CSSPseudoElementType : uint8_t;
 struct NonOwningAnimationTarget;
 
