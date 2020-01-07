@@ -173,7 +173,7 @@ class IonIC
         return (IonInstanceOfIC*)this;
     }
 
-    void updateBaseAddress(JitCode* code, MacroAssembler& masm);
+    void updateBaseAddress(JitCode* code);
 
     
     
