@@ -244,41 +244,31 @@ static bool
 WindowCannotReceiveSensorEvent (nsPIDOMWindowInner* aWindow)
 {
   
-  
-  
   if (!aWindow || !aWindow->IsCurrentInnerWindow()) {
     return true;
   }
 
   bool disabled = aWindow->GetOuterWindow()->IsBackground() ||
-                  !aWindow->IsTopLevelWindowActive();
-  if (!disabled) {
-    nsCOMPtr<nsPIDOMWindowOuter> top = aWindow->GetScriptableTop();
-    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aWindow);
-    nsCOMPtr<nsIScriptObjectPrincipal> topSop = do_QueryInterface(top);
-    if (!sop || !topSop) {
-      return true;
-    }
-
-    nsIPrincipal* principal = sop->GetPrincipal();
-    nsIPrincipal* topPrincipal = topSop->GetPrincipal();
-    if (!principal || !topPrincipal) {
-      return true;
-    }
-
-    disabled = !principal->Subsumes(topPrincipal);
-  }
-
+    !aWindow->IsTopLevelWindowActive();
   if (disabled) {
-    nsCOMPtr<nsIPermissionManager> permMgr =
-      services::GetPermissionManager();
-    NS_ENSURE_TRUE(permMgr, true);
-    uint32_t permission = nsIPermissionManager::DENY_ACTION;
-    permMgr->TestPermissionFromWindow(aWindow, "background-sensors", &permission);
-    return permission != nsIPermissionManager::ALLOW_ACTION;
+    return true;
   }
 
-  return false;
+  
+  nsCOMPtr<nsPIDOMWindowOuter> top = aWindow->GetScriptableTop();
+  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aWindow);
+  nsCOMPtr<nsIScriptObjectPrincipal> topSop = do_QueryInterface(top);
+  if (!sop || !topSop) {
+    return true;
+  }
+
+  nsIPrincipal* principal = sop->GetPrincipal();
+  nsIPrincipal* topPrincipal = topSop->GetPrincipal();
+  if (!principal || !topPrincipal) {
+    return true;
+  }
+
+  return !principal->Subsumes(topPrincipal);
 }
 
 
