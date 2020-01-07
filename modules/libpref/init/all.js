@@ -1895,6 +1895,13 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 
 
+pref("network.jar.open-unsafe-types", false);
+
+pref("network.jar.block-remote-files", true);
+
+
+
+
 pref("network.IDN_show_punycode", false);
 
 
@@ -5681,9 +5688,6 @@ pref("memory.report_concurrency", 10);
 
 
 pref("media.useAudioChannelAPI", false);
-
-
-pref("dom.requestcontext.enabled", false);
 
 pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
