@@ -199,6 +199,10 @@ class Tree extends Component {
       onActivate: PropTypes.func,
 
       
+      
+      preventNavigationOnArrowRight: PropTypes.bool,
+
+      
       autoExpandDepth: PropTypes.number,
 
       
@@ -228,6 +232,7 @@ class Tree extends Component {
   static get defaultProps() {
     return {
       autoExpandDepth: AUTO_EXPAND_DEPTH,
+      preventNavigationOnArrowRight: true,
     };
   }
 
@@ -502,9 +507,10 @@ class Tree extends Component {
         break;
 
       case "ArrowRight":
-        if (!this.props.isExpanded(this.props.focused)) {
+        if (this.props.getChildren(this.props.focused).length &&
+            !this.props.isExpanded(this.props.focused)) {
           this._onExpand(this.props.focused);
-        } else {
+        } else if (!this.props.preventNavigationOnArrowRight) {
           this._focusNextNode();
         }
         break;
