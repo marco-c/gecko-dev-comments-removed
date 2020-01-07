@@ -342,7 +342,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     bool            usesThis:1;             
     bool            usesReturn:1;           
     bool            hasRest_:1;             
-    bool            isExprBody_:1;          
+    bool            hasExprBody_:1;         
 
 
 
@@ -483,9 +483,10 @@ class FunctionBox : public ObjectBox, public SharedContext
         hasRest_ = true;
     }
 
-    bool isExprBody() const { return isExprBody_; }
-    void setIsExprBody() {
-        isExprBody_ = true;
+    bool hasExprBody() const { return hasExprBody_; }
+    void setHasExprBody() {
+        MOZ_ASSERT(isArrow());
+        hasExprBody_ = true;
     }
 
     bool hasExtensibleScope()        const { return hasExtensibleScope_; }
