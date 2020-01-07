@@ -534,6 +534,20 @@ where
 
         let mut any_descendant = false;
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if let Some(anon_content) = self.element.xbl_binding_anonymous_content() {
             any_descendant |=
                 self.invalidate_dom_descendants_of(anon_content, invalidations);
