@@ -1,0 +1,73 @@
+
+
+
+
+
+"use strict";
+
+const AutocompletePopup = require("devtools/client/shared/autocomplete-popup");
+const { InplaceEditor } = require("devtools/client/shared/inplace-editor");
+loadHelperScript("helper_inplace_editor.js");
+
+
+
+
+
+
+
+
+
+
+const testData = [
+  ["u", "u", -1, 0],
+  ["r", "ur", -1, 0],
+  ["l", "url", -1, 0],
+  ["(", "url()", -1, 0],
+  ["v", "url(v)", -1, 0],
+  ["a", "url(va)", -1, 0],
+  ["r", "url(var)", -1, 0],
+  ["(", "url(var())", -1, 0],
+  ["-", "url(var(-))", -1, 0],
+  ["-", "url(var(--))", -1, 0],
+  ["a", "url(var(--a))", -1, 0],
+  [")", "url(var(--a))", -1, 0],
+  [")", "url(var(--a))", -1, 0],
+];
+
+add_task(async function() {
+  await addTab("data:text/html;charset=utf-8," +
+    "inplace editor parentheses autoclose");
+  let [host, win, doc] = await createHost();
+
+  let xulDocument = win.top.document;
+  let popup = new AutocompletePopup(xulDocument, { autoSelect: true });
+  await new Promise(resolve => {
+    createInplaceEditorAndClick({
+      start: runPropertyAutocompletionTest,
+      contentType: InplaceEditor.CONTENT_TYPES.CSS_VALUE,
+      property: {
+        name: "background-image"
+      },
+      cssVariables: new Map(),
+      done: resolve,
+      popup: popup
+    }, doc);
+  });
+
+  popup.destroy();
+  host.destroy();
+  gBrowser.removeCurrentTab();
+});
+
+let runPropertyAutocompletionTest = async function(editor) {
+  info("Starting to test for css property completion");
+
+  
+  editor._getCSSValuesForPropertyName = () => [];
+
+  for (let data of testData) {
+    await testCompletion(data, editor);
+  }
+
+  EventUtils.synthesizeKey("VK_RETURN", {}, editor.input.defaultView);
+};

@@ -26,6 +26,8 @@
 const Services = require("Services");
 const focusManager = Services.focus;
 const {KeyCodes} = require("devtools/client/shared/keycodes");
+const EventEmitter = require("devtools/shared/event-emitter");
+const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
 
 loader.lazyRequireGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm", true);
 
@@ -44,8 +46,10 @@ const MAX_POPUP_ENTRIES = 500;
 const FOCUS_FORWARD = focusManager.MOVEFOCUS_FORWARD;
 const FOCUS_BACKWARD = focusManager.MOVEFOCUS_BACKWARD;
 
-const EventEmitter = require("devtools/shared/event-emitter");
-const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
+const WORD_REGEXP = /\w/;
+const isWordChar = function(str) {
+  return str && WORD_REGEXP.test(str);
+};
 
 
 
@@ -1051,6 +1055,10 @@ InplaceEditor.prototype = {
     let key = event.keyCode;
     let input = this.input;
 
+    
+    
+    this._pressedKey = event.key;
+
     let multilineNavigation = !this._isSingleLine() &&
       isKeyIn(key, "UP", "DOWN", "LEFT", "RIGHT");
     let isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
@@ -1293,6 +1301,7 @@ InplaceEditor.prototype = {
     if (!this.input) {
       return;
     }
+
     let preTimeoutQuery = this.input.value;
 
     
@@ -1477,10 +1486,56 @@ InplaceEditor.prototype = {
       } else {
         this._hideAutocompletePopup();
       }
+
+      this._autocloseParenthesis();
+
       
       this.emit("after-suggest");
       this._doValidation();
     }, 0);
+  },
+
+  
+
+
+  _autocloseParenthesis: function() {
+    
+    let parts = this._splitStringAt(this.input.value, this.input.selectionStart);
+
+    
+    let nextChar = parts[1][0];
+
+    
+    
+    if (this._pressedKey == "(" && !isWordChar(nextChar)) {
+      this._updateValue(parts[0] + ")" + parts[1]);
+    }
+
+    
+    
+    if (this._pressedKey == ")" && nextChar == ")") {
+      this._updateValue(parts[0] + parts[1].substring(1));
+    }
+
+    this._pressedKey = null;
+  },
+
+  
+
+
+  _updateValue: function(str) {
+    let start = this.input.selectionStart;
+    this.input.value = str;
+    this.input.setSelectionRange(start, start);
+    this._updateSize();
+  },
+
+  
+
+
+
+  _splitStringAt: function(str, index) {
+    return [str.substring(0, index), str.substring(index, str.length)];
   },
 
   
