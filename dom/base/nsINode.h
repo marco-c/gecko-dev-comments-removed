@@ -1059,11 +1059,6 @@ public:
 
   nsINode* GetRootNode(const mozilla::dom::GetRootNodeOptions& aOptions);
 
-  
-
-
-  NS_DECL_NSIDOMEVENTTARGET
-
   virtual mozilla::EventListenerManager*
     GetExistingListenerManager() const override;
   virtual mozilla::EventListenerManager*

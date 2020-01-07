@@ -1086,13 +1086,11 @@ nsGlobalWindowOuter::ClearControllers()
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsGlobalWindowOuter)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMEventTarget)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, EventTarget)
   NS_INTERFACE_MAP_ENTRY(nsIDOMWindow)
   NS_INTERFACE_MAP_ENTRY(nsIGlobalObject)
   NS_INTERFACE_MAP_ENTRY(nsIScriptGlobalObject)
   NS_INTERFACE_MAP_ENTRY(nsIScriptObjectPrincipal)
-  NS_INTERFACE_MAP_ENTRY(nsIDOMEventTarget)
   NS_INTERFACE_MAP_ENTRY(mozilla::dom::EventTarget)
   if (aIID.Equals(NS_GET_IID(nsPIDOMWindowOuter))) {
     foundInterface = static_cast<nsPIDOMWindowOuter*>(this);
