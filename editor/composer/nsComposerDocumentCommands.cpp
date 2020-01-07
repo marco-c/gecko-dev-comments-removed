@@ -12,7 +12,6 @@
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsICommandParams.h"           
-#include "nsIDOMDocument.h"             
 #include "nsIDocShell.h"                
 #include "nsIDocument.h"                
 #include "nsIEditingSession.h"          

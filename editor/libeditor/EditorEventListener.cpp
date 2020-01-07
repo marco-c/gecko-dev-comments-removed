@@ -31,7 +31,6 @@
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DragEvent.h"
-#include "nsIDOMDocument.h"             
 #include "nsIDOMEvent.h"                
 #include "nsIDOMEventTarget.h"          
 #include "nsIDocument.h"                

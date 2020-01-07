@@ -16,7 +16,6 @@
 
 class nsIContent;
 class nsIContentIterator;
-class nsIDOMDocument;
 class nsIDOMNode;
 class nsIEditor;
 class nsINode;
@@ -29,6 +28,10 @@ namespace mozilla {
 
 class OffsetEntry;
 class TextEditor;
+
+namespace dom {
+class Elemenent;
+};
 
 
 
@@ -49,7 +52,7 @@ private:
     eNext,
   };
 
-  nsCOMPtr<nsIDOMDocument> mDOMDocument;
+  nsCOMPtr<nsIDocument> mDocument;
   nsCOMPtr<nsISelectionController> mSelCon;
   RefPtr<TextEditor> mTextEditor;
   nsCOMPtr<nsIContentIterator> mIterator;
@@ -83,13 +86,6 @@ public:
 
 
   nsresult InitWithEditor(nsIEditor* aEditor);
-
-  
-
-
-
-
-  nsresult GetDocument(nsIDOMDocument** aDOMDocument);
 
   
 
@@ -243,7 +239,7 @@ private:
   nsresult CreateContentIterator(nsRange* aRange,
                                  nsIContentIterator** aIterator);
 
-  already_AddRefed<nsINode> GetDocumentContentRootNode();
+  dom::Element* GetDocumentContentRootNode() const;
   already_AddRefed<nsRange> CreateDocumentContentRange();
   already_AddRefed<nsRange> CreateDocumentContentRootToNodeOffsetRange(
                               nsINode* aParent,

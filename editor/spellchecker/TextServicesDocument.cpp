@@ -6,6 +6,7 @@
 #include "TextServicesDocument.h"
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/TextEditor.h"         
@@ -19,7 +20,6 @@
 #include "nsIContent.h"                 
 #include "nsIContentIterator.h"         
 #include "nsID.h"                       
-#include "nsIDOMDocument.h"             
 #include "nsIDOMNode.h"                 
 #include "nsIEditor.h"                  
 #include "nsINode.h"                    
@@ -98,7 +98,7 @@ NS_INTERFACE_MAP_BEGIN(TextServicesDocument)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(TextServicesDocument,
-                         mDOMDocument,
+                         mDocument,
                          mSelCon,
                          mTextEditor,
                          mIterator,
@@ -111,7 +111,6 @@ nsresult
 TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
 {
   nsCOMPtr<nsISelectionController> selCon;
-  nsCOMPtr<nsIDOMDocument> doc;
 
   NS_ENSURE_TRUE(aEditor, NS_ERROR_NULL_POINTER);
 
@@ -139,20 +138,14 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
   
   
 
-  rv = aEditor->GetDocument(getter_AddRefs(doc));
-
-  if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
-    return rv;
-  }
-
-  if (!doc || (mDOMDocument && doc != mDOMDocument)) {
+  nsCOMPtr<nsIDocument> doc = aEditor->AsEditorBase()->GetDocument();
+  if (!doc || (mDocument && doc != mDocument)) {
     UNLOCK_DOC(this);
     return NS_ERROR_FAILURE;
   }
 
-  if (!mDOMDocument) {
-    mDOMDocument = doc;
+  if (!mDocument) {
+    mDocument = doc;
 
     rv = CreateDocumentContentIterator(getter_AddRefs(mIterator));
 
@@ -181,24 +174,10 @@ TextServicesDocument::InitWithEditor(nsIEditor* aEditor)
 }
 
 nsresult
-TextServicesDocument::GetDocument(nsIDOMDocument** aDoc)
-{
-  NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
-
-  *aDoc = nullptr; 
-  NS_ENSURE_TRUE(mDOMDocument, NS_ERROR_NOT_INITIALIZED);
-
-  *aDoc = mDOMDocument;
-  NS_ADDREF(*aDoc);
-
-  return NS_OK;
-}
-
-nsresult
 TextServicesDocument::SetExtent(nsRange* aRange)
 {
   NS_ENSURE_ARG_POINTER(aRange);
-  NS_ENSURE_TRUE(mDOMDocument, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
 
   LOCK_DOC(this);
 
@@ -1644,24 +1623,20 @@ TextServicesDocument::CreateContentIterator(nsRange* aRange,
   return NS_OK;
 }
 
-already_AddRefed<nsINode>
-TextServicesDocument::GetDocumentContentRootNode()
+Element*
+TextServicesDocument::GetDocumentContentRootNode() const
 {
-  if (NS_WARN_IF(!mDOMDocument)) {
+  if (NS_WARN_IF(!mDocument)) {
     return nullptr;
   }
 
-  nsCOMPtr<nsIDocument> doc = do_QueryInterface(mDOMDocument);
-
-  if (doc->IsHTMLOrXHTML()) {
+  if (mDocument->IsHTMLOrXHTML()) {
     
-    nsCOMPtr<nsINode> node = doc->GetBody();
-    return node.forget();
+    return mDocument->GetBody();
   }
 
   
-  nsCOMPtr<nsINode> node = doc->GetDocumentElement();
-  return node.forget();
+  return mDocument->GetDocumentElement();
 }
 
 already_AddRefed<nsRange>
@@ -2096,7 +2071,7 @@ TextServicesDocument::GetSelection(BlockSelectionStatus* aSelStatus,
   *aSelOffset = -1;
   *aSelLength = -1;
 
-  NS_ENSURE_TRUE(mDOMDocument && mSelCon, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mDocument && mSelCon, NS_ERROR_FAILURE);
 
   if (mIteratorStatus == IteratorStatus::eDone) {
     return NS_OK;

@@ -24,7 +24,6 @@
 #include "nsIControllerContext.h"       
 #include "nsIControllers.h"             
 #include "nsID.h"                       
-#include "nsIDOMDocument.h"             
 #include "nsHTMLDocument.h"             
 #include "nsIDOMWindow.h"               
 #include "nsIDocShell.h"                
