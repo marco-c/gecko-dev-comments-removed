@@ -233,7 +233,7 @@ public:
       
       r_log(LOG_GENERIC,LOG_DEBUG,"Shutting down wrapped SingletonThread %p",
             mThread.get());
-      mThread->Shutdown();
+      mThread->AsyncShutdown();
       mThread = nullptr;
       
       
