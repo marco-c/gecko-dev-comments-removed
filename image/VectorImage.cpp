@@ -328,36 +328,6 @@ SVGDrawingCallback::operator()(gfxContext* aContext,
   return true;
 }
 
-class MOZ_STACK_CLASS AutoRestoreSVGState final {
-public:
-  AutoRestoreSVGState(const SVGDrawingParameters& aParams,
-                      SVGDocumentWrapper* aSVGDocumentWrapper,
-                      bool& aIsDrawing,
-                      bool aContextPaint)
-    : mIsDrawing(aIsDrawing)
-    
-    
-    , mPAR(aParams.svgContext, aSVGDocumentWrapper->GetRootSVGElem())
-    
-    , mTime(aSVGDocumentWrapper->GetRootSVGElem(), aParams.animationTime)
-  {
-    MOZ_ASSERT(!aIsDrawing);
-    aIsDrawing = true;
-
-    
-    if (aContextPaint) {
-      mContextPaint.emplace(aParams.svgContext->GetContextPaint(),
-                            aSVGDocumentWrapper->GetDocument());
-    }
-  }
-
-private:
-  AutoRestore<bool> mIsDrawing;
-  AutoPreserveAspectRatioOverride mPAR;
-  AutoSVGTimeSetRestore mTime;
-  Maybe<AutoSetRestoreSVGContextPaint> mContextPaint;
-};
-
 
 NS_IMPL_ISUPPORTS(VectorImage,
                   imgIContainer,
@@ -817,30 +787,33 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
 
   
   
-  
-  
-  
-  SVGDrawingParameters params(nullptr, aSize, ImageRegion::Create(aSize),
-                              SamplingFilter::POINT, aSVGContext,
-                              mSVGDocumentWrapper->GetCurrentTime(),
-                              aFlags, 1.0);
-
-  bool didCache; 
-  bool contextPaint = aSVGContext && aSVGContext->GetContextPaint();
-
-  AutoRestoreSVGState autoRestore(params, mSVGDocumentWrapper,
-                                  mIsDrawing, contextPaint);
-
-  RefPtr<gfxDrawable> svgDrawable = CreateSVGDrawable(params);
-  RefPtr<SourceSurface> surface =
-    CreateSurface(params, svgDrawable, didCache);
-  if (!surface) {
-    MOZ_ASSERT(!didCache);
+  RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
+    CreateOffscreenContentDrawTarget(aSize, SurfaceFormat::B8G8R8A8);
+  if (!dt || !dt->IsValid()) {
+    NS_ERROR("Could not create a DrawTarget");
     return MakeTuple(DrawResult::TEMPORARY_ERROR, aSize,
                      RefPtr<SourceSurface>());
   }
 
-  SendFrameComplete(didCache, params.flags);
+  RefPtr<gfxContext> context = gfxContext::CreateOrNull(dt);
+  MOZ_ASSERT(context); 
+
+  SVGDrawingParameters params(context, aSize, ImageRegion::Create(aSize),
+                              SamplingFilter::POINT, aSVGContext,
+                              mSVGDocumentWrapper->GetCurrentTime(),
+                              aFlags, 1.0);
+
+  
+  
+  
+  
+  
+  bool contextPaint = aSVGContext && aSVGContext->GetContextPaint();
+  RefPtr<SourceSurface> surface = DrawInternal(params, contextPaint);
+  if (!surface) {
+    surface = dt->Snapshot();
+  }
+
   return MakeTuple(DrawResult::SUCCESS, aSize, Move(surface));
 }
 
@@ -1022,41 +995,42 @@ VectorImage::Draw(gfxContext* aContext,
     return DrawResult::TEMPORARY_ERROR;
   }
 
-  AutoRestoreSVGState autoRestore(params, mSVGDocumentWrapper,
-                                  mIsDrawing, contextPaint);
-
-  bool didCache; 
-  RefPtr<gfxDrawable> svgDrawable = CreateSVGDrawable(params);
-  sourceSurface = CreateSurface(params, svgDrawable, didCache);
-  if (!sourceSurface) {
-    MOZ_ASSERT(!didCache);
-    Show(svgDrawable, params);
-    return DrawResult::SUCCESS;
-  }
-
-  RefPtr<gfxDrawable> drawable =
-    new gfxSurfaceDrawable(sourceSurface, params.size);
-  Show(drawable, params);
-  SendFrameComplete(didCache, params.flags);
+  RefPtr<SourceSurface> surface = DrawInternal(params, contextPaint);
 
   
   
-  MarkSurfaceShared(sourceSurface);
+  MarkSurfaceShared(surface);
   return DrawResult::SUCCESS;
 }
 
-already_AddRefed<gfxDrawable>
-VectorImage::CreateSVGDrawable(const SVGDrawingParameters& aParams)
+already_AddRefed<SourceSurface>
+VectorImage::DrawInternal(const SVGDrawingParameters& aParams,
+                          bool aContextPaint)
 {
-  RefPtr<gfxDrawingCallback> cb =
-    new SVGDrawingCallback(mSVGDocumentWrapper,
-                           aParams.viewportSize,
-                           aParams.size,
-                           aParams.flags);
+  MOZ_ASSERT(!mIsDrawing);
 
-  RefPtr<gfxDrawable> svgDrawable =
-    new gfxCallbackDrawable(cb, aParams.size);
-  return svgDrawable.forget();
+  AutoRestore<bool> autoRestoreIsDrawing(mIsDrawing);
+  mIsDrawing = true;
+
+  
+  
+  AutoPreserveAspectRatioOverride autoPAR(aParams.svgContext,
+                                          mSVGDocumentWrapper->GetRootSVGElem());
+
+  
+  AutoSVGTimeSetRestore autoSVGTime(mSVGDocumentWrapper->GetRootSVGElem(),
+                                    aParams.animationTime);
+
+  
+  Maybe<AutoSetRestoreSVGContextPaint> autoContextPaint;
+  if (aContextPaint) {
+    autoContextPaint.emplace(aParams.svgContext->GetContextPaint(),
+                             mSVGDocumentWrapper->GetDocument());
+  }
+
+  
+  BackendType backend = aParams.context->GetDrawTarget()->GetBackendType();
+  return CreateSurfaceAndShow(aParams, backend);
 }
 
 already_AddRefed<SourceSurface>
@@ -1096,29 +1070,28 @@ VectorImage::LookupCachedSurface(const IntSize& aSize,
 }
 
 already_AddRefed<SourceSurface>
-VectorImage::CreateSurface(const SVGDrawingParameters& aParams,
-                           gfxDrawable* aSVGDrawable,
-                           bool& aWillCache)
+VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams, BackendType aBackend)
 {
-  MOZ_ASSERT(mIsDrawing);
-
   mSVGDocumentWrapper->UpdateViewportBounds(aParams.viewportSize);
   mSVGDocumentWrapper->FlushImageTransformInvalidation();
 
-  
-  
-  
-  aWillCache = !(aParams.flags & FLAG_BYPASS_SURFACE_CACHE) &&
-               
-               
-               !mHaveAnimations &&
-               
-               SurfaceCache::CanHold(aParams.size);
+  RefPtr<gfxDrawingCallback> cb =
+    new SVGDrawingCallback(mSVGDocumentWrapper,
+                           aParams.viewportSize,
+                           aParams.size,
+                           aParams.flags);
 
-  
-  
-  
-  if (!aWillCache && aParams.context) {
+  RefPtr<gfxDrawable> svgDrawable =
+    new gfxCallbackDrawable(cb, aParams.size);
+
+  bool bypassCache = bool(aParams.flags & FLAG_BYPASS_SURFACE_CACHE) ||
+                     
+                     
+                     mHaveAnimations ||
+                     
+                     !SurfaceCache::CanHold(aParams.size);
+  if (bypassCache) {
+    Show(svgDrawable, aParams);
     return nullptr;
   }
 
@@ -1128,29 +1101,22 @@ VectorImage::CreateSurface(const SVGDrawingParameters& aParams,
   
   
   
-  if (aWillCache) {
-    SurfaceCache::UnlockEntries(ImageKey(this));
-  }
-
-  
-  BackendType backend =
-    aParams.context ? aParams.context->GetDrawTarget()->GetBackendType()
-                    : gfxPlatform::GetPlatform()->GetDefaultContentBackend();
+  SurfaceCache::UnlockEntries(ImageKey(this));
 
   
   
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
   nsresult rv =
-    frame->InitWithDrawable(aSVGDrawable, aParams.size,
+    frame->InitWithDrawable(svgDrawable, aParams.size,
                             SurfaceFormat::B8G8R8A8,
                             SamplingFilter::POINT, aParams.flags,
-                            backend);
+                            aBackend);
 
   
   
   
   if (NS_FAILED(rv)) {
-    aWillCache = false;
+    Show(svgDrawable, aParams);
     return nullptr;
   }
 
@@ -1158,14 +1124,8 @@ VectorImage::CreateSurface(const SVGDrawingParameters& aParams,
   
   RefPtr<SourceSurface> surface = frame->GetSourceSurface();
   if (!surface) {
-    aWillCache = false;
+    Show(svgDrawable, aParams);
     return nullptr;
-  }
-
-  
-  
-  if (!aWillCache) {
-    return surface.forget();
   }
 
   
@@ -1173,20 +1133,15 @@ VectorImage::CreateSurface(const SVGDrawingParameters& aParams,
   NotNull<RefPtr<ISurfaceProvider>> provider =
     MakeNotNull<SimpleSurfaceProvider*>(ImageKey(this), surfaceKey, frame);
   SurfaceCache::Insert(provider);
-  return surface.forget();
-}
 
-void
-VectorImage::SendFrameComplete(bool aDidCache, uint32_t aFlags)
-{
   
-  if (!aDidCache) {
-    return;
-  }
+  RefPtr<gfxDrawable> drawable =
+    new gfxSurfaceDrawable(surface, aParams.size);
+  Show(drawable, aParams);
 
   
   
-  if (!(aFlags & FLAG_ASYNC_NOTIFY)) {
+  if (!(aParams.flags & FLAG_ASYNC_NOTIFY)) {
     mProgressTracker->SyncNotifyProgress(FLAG_FRAME_COMPLETE,
                                          GetMaxSizedIntRect());
   } else {
@@ -1201,6 +1156,8 @@ VectorImage::SendFrameComplete(bool aDidCache, uint32_t aFlags)
       }
     }));
   }
+
+  return surface.forget();
 }
 
 
