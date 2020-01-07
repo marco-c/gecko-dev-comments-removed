@@ -617,6 +617,8 @@ public:
 
 
 
+
+
   nsIDocument* GetComposedDoc() const
   {
     return IsInShadowTree() ?
