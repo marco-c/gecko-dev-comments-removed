@@ -53,8 +53,7 @@ exports.synthesizeProfile = () => {
 
 
 exports.synthesizeCustomTreeClass = () => {
-  const { Cu } = require("chrome");
-  const { AbstractTreeItem } = Cu.import("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm", {});
+  const { AbstractTreeItem } = require("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm");
   const { extend } = require("devtools/shared/extend");
 
   function MyCustomTreeItem(dataSrc, properties) {

@@ -39,7 +39,7 @@ let { Cu } = require("chrome");
 
 
 
-let global = Cu.import("resource://gre/modules/jsdebugger.jsm", {});
+let global = require("resource://gre/modules/jsdebugger.jsm");
 const {addDebuggerToGlobal} = global;
 addDebuggerToGlobal(global);
 let { Debugger } = global;
