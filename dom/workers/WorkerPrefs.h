@@ -21,7 +21,6 @@
 
 
 
-WORKER_SIMPLE_PREF("dom.performance.enable_user_timing_logging", PerformanceLoggingEnabled, PERFORMANCE_LOGGING_ENABLED)
 WORKER_SIMPLE_PREF("dom.webnotifications.enabled", DOMWorkerNotificationEnabled, DOM_WORKERNOTIFICATION)
 WORKER_SIMPLE_PREF("dom.webnotifications.serviceworker.enabled", DOMServiceWorkerNotificationEnabled, DOM_SERVICEWORKERNOTIFICATION)
 WORKER_SIMPLE_PREF("dom.webnotifications.requireinteraction.enabled", DOMWorkerNotificationRIEnabled, DOM_WORKERNOTIFICATIONRI)
