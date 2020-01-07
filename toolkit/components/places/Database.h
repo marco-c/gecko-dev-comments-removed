@@ -302,7 +302,8 @@ protected:
   
 
 
-  nsresult EnsureBookmarkRoots(const int32_t startPosition);
+  nsresult EnsureBookmarkRoots(const int32_t startPosition,
+                               bool shouldReparentRoots);
 
   
 
