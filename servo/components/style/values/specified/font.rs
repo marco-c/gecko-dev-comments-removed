@@ -599,9 +599,19 @@ impl FontSize {
                     
                     
                     
-                    let abs = calc.to_computed_value_zoomed(context, FontBaseSize::Custom(Au(0).into()))
-                                  .length_component().into();
-                    info = parent.keyword_info.map(|i| i.compose(ratio, abs));
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let abs = calc.to_computed_value_zoomed(
+                        context,
+                        FontBaseSize::InheritedStyleButStripEmUnits,
+                    ).length_component();
+
+                    info = parent.keyword_info.map(|i| i.compose(ratio, abs.into()));
                 }
                 let calc = calc.to_computed_value_zoomed(context, base_size);
                 calc.to_used_value(Some(base_size.resolve(context))).unwrap().into()
