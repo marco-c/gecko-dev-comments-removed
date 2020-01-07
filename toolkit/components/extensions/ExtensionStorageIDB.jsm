@@ -27,6 +27,7 @@ XPCOMUtils.defineLazyGetter(this, "WEBEXT_STORAGE_USER_CONTEXT_ID", () => {
 const IDB_NAME = "webExtensions-storage-local";
 const IDB_DATA_STORENAME = "storage-local-data";
 const IDB_VERSION = 1;
+const IDB_MIGRATE_RESULT_HISTOGRAM = "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_COUNT";
 
 
 const BACKEND_ENABLED_PREF = "extensions.webextensions.ExtensionStorageIDB.enabled";
@@ -238,6 +239,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   let hasEmptyIDB;
   let oldDataRead = false;
   let migrated = false;
+  let histogram = Services.telemetry.getHistogramById(IDB_MIGRATE_RESULT_HISTOGRAM);
 
   try {
     idbConn = await ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal);
@@ -279,6 +281,9 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       
       
       Services.qms.clearStoragesForPrincipal(storagePrincipal);
+
+      histogram.add("failure");
+
       throw err;
     }
   } finally {
@@ -289,6 +294,8 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       jsonFile.finalize();
     }
   }
+
+  histogram.add("success");
 
   
   
@@ -307,6 +314,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 
 this.ExtensionStorageIDB = {
   BACKEND_ENABLED_PREF,
+  IDB_MIGRATE_RESULT_HISTOGRAM,
 
   
   listeners: new Map(),
