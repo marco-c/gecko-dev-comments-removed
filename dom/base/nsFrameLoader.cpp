@@ -3375,7 +3375,7 @@ nsFrameLoader::PopulateUserContextIdFromAttribute(OriginAttributes& aAttr)
     
     nsAutoString userContextIdStr;
     int32_t namespaceID = mOwnerContent->GetNameSpaceID();
-    if ((namespaceID == kNameSpaceID_XUL) &&
+    if ((namespaceID == kNameSpaceID_XUL || OwnerIsMozBrowserFrame()) &&
         mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid,
                                userContextIdStr) &&
         !userContextIdStr.IsEmpty()) {
