@@ -1164,7 +1164,7 @@ class GeneralParser
     bool checkBindingIdentifier(PropertyName* ident,
                                 uint32_t offset,
                                 YieldHandling yieldHandling,
-                                TokenKind hint = TokenKind::TOK_LIMIT);
+                                TokenKind hint = TokenKind::Limit);
 
     PropertyName* labelOrIdentifierReference(YieldHandling yieldHandling);
 
@@ -1239,7 +1239,7 @@ class GeneralParser
 
     bool checkLabelOrIdentifierReference(PropertyName* ident, uint32_t offset,
                                          YieldHandling yieldHandling,
-                                         TokenKind hint = TokenKind::TOK_LIMIT);
+                                         TokenKind hint = TokenKind::Limit);
 
     Node statementList(YieldHandling yieldHandling);
 
