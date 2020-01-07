@@ -73,6 +73,7 @@ const enableAnimationFeatures = function () {
 
 
 
+
 const _addTab = addTab;
 addTab = async function (url) {
   await enableAnimationFeatures();
@@ -83,6 +84,43 @@ addTab = async function (url) {
   info("Loading the helper frame script " + COMMON_FRAME_SCRIPT_URL);
   browser.messageManager.loadFrameScript(COMMON_FRAME_SCRIPT_URL, false);
   return tab;
+};
+
+
+
+
+
+
+
+
+
+
+const clickOnAnimation = async function (animationInspector, panel, index) {
+  info("Click on animation " + index + " in the timeline");
+  const summaryGraphEl = panel.querySelectorAll(".animation-summary-graph")[index];
+  
+  summaryGraphEl.scrollIntoView(false);
+  const bounds = summaryGraphEl.getBoundingClientRect();
+  const x = bounds.width / 2;
+  const y = bounds.height / 2;
+  EventUtils.synthesizeMouse(summaryGraphEl, x, y, {}, summaryGraphEl.ownerGlobal);
+
+  await waitForAnimationDetail(animationInspector);
+};
+
+
+
+
+
+
+
+const clickOnDetailCloseButton = function (panel) {
+  info("Click on close button for animation detail pane");
+  const buttonEl = panel.querySelector(".animation-detail-close-button");
+  const bounds = buttonEl.getBoundingClientRect();
+  const x = bounds.width / 2;
+  const y = bounds.height / 2;
+  EventUtils.synthesizeMouse(buttonEl, x, y, {}, buttonEl.ownerGlobal);
 };
 
 
@@ -132,7 +170,19 @@ const waitForRendering = async function (animationInspector) {
   await Promise.all([
     waitForAllAnimationTargets(animationInspector),
     waitForAllSummaryGraph(animationInspector),
+    waitForAnimationDetail(animationInspector),
   ]);
+};
+
+
+
+
+
+
+const waitForAnimationDetail = async function (animationInspector) {
+  if (animationInspector.animations.length === 1) {
+    await animationInspector.once("animation-keyframes-rendered");
+  }
 };
 
 
