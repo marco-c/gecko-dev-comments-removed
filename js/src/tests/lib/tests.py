@@ -16,7 +16,7 @@ JITFLAGS = {
     'all': [
         [], 
         ['--ion-eager', '--ion-offthread-compile=off'], 
-        ['--ion-eager', '--ion-offthread-compile=off', '--non-writable-jitcode',
+        ['--ion-eager', '--ion-offthread-compile=off',
          '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
         ['--baseline-eager'],
         ['--no-baseline', '--no-ion'],
@@ -34,11 +34,12 @@ JITFLAGS = {
     ],
     
     
+    
+    
     'tsan': [
         ['--no-asmjs', '--no-wasm'],
-        ['--no-asmjs', '--no-wasm',
-         '--ion-eager', '--ion-offthread-compile=off', '--non-writable-jitcode',
-         '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3', '--no-threads'],
+        ['--no-asmjs', '--no-wasm', '--ion-eager',
+         '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3'],
         ['--no-asmjs', '--no-wasm', '--no-baseline', '--no-ion'],
     ],
     'baseline': [
