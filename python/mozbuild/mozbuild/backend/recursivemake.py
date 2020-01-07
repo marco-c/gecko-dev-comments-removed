@@ -1056,7 +1056,6 @@ class RecursiveMakeBackend(CommonBackend):
             sources, directories = modules[module]
             all_directories |= directories
             deps = sorted(sources)
-            directories = sorted(directories)
 
             
             
@@ -1069,8 +1068,6 @@ class RecursiveMakeBackend(CommonBackend):
             
             
             mk.add_statement('%s_deps = %s' % (module, ' '.join(deps)))
-
-            mk.add_statement('%s_dirs = %s' % (module, ' '.join(directories)))
 
             build_files.add_optional_exists('%s.xpt' % module)
 
