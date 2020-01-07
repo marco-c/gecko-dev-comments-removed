@@ -2771,25 +2771,25 @@ class BookmarkMergeState {
   valueToString() {
     switch (this.value()) {
       case BookmarkMergeState.TYPE.LOCAL:
-        return "V: L";
+        return "Value: Local";
       case BookmarkMergeState.TYPE.REMOTE:
-        return "V: R";
+        return "Value: Remote";
     }
-    return "V: ?";
+    return "Value: ?";
   }
 
   structureToString() {
     switch (this.structure()) {
       case BookmarkMergeState.TYPE.LOCAL:
-        return "S: L";
+        return "Structure: Local";
       case BookmarkMergeState.TYPE.REMOTE:
-        return "S: R";
+        return "Structure: Remote";
       case BookmarkMergeState.TYPE.NEW:
         
         
-        return "S: +";
+        return "Structure: New";
     }
-    return "S: ?";
+    return "Structure: ?";
   }
 
   toJSON() {
@@ -2944,10 +2944,11 @@ class BookmarkNode {
 
 
 
+
   toString() {
-    let info = `${this.kindToString()}; ${this.age.toFixed(3)}s`;
+    let info = `${this.kindToString()}; ${this.age.toFixed(3)}s `;
     if (this.needsMerge) {
-      info += "; !";
+      info += "; Unmerged";
     }
     return `${this.guid} (${info})`;
   }
@@ -2955,17 +2956,17 @@ class BookmarkNode {
   kindToString() {
     switch (this.kind) {
       case SyncedBookmarksMirror.KIND.BOOKMARK:
-        return "B";
+        return "Bookmark";
       case SyncedBookmarksMirror.KIND.QUERY:
-        return "Q";
+        return "Query";
       case SyncedBookmarksMirror.KIND.FOLDER:
-        return "F";
+        return "Folder";
       case SyncedBookmarksMirror.KIND.LIVEMARK:
-        return "L";
+        return "Livemark";
       case SyncedBookmarksMirror.KIND.SEPARATOR:
-        return "S";
+        return "Separator";
     }
-    return "?";
+    return "Unknown";
   }
 
   
@@ -3063,9 +3064,8 @@ class BookmarkTree {
 
 
   toASCIITreeString() {
-    return this.root.toASCIITreeString() + "\n" + Array.from(this.deletedGuids,
-      guid => `~${guid}`
-    ).join(", ");
+    return `${this.root.toASCIITreeString()}\nDeleted: [${
+            Array.from(this.deletedGuids).join(", ")}]`;
   }
 }
 
