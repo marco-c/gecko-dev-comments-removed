@@ -46,12 +46,7 @@ var TabsInTitlebar = {
     addEventListener("resolutionchange", this, false);
 
     this._initialized = true;
-    if (this._updateOnInit) {
-      
-      
-      
-      this._update();
-    }
+    this._update();
   },
 
   allowedBy(condition, allow) {
@@ -96,7 +91,6 @@ var TabsInTitlebar = {
   },
 
   _initialized: false,
-  _updateOnInit: false,
   _disallowed: {},
   _prefName: "browser.tabs.drawInTitlebar",
   _lastSizeMode: null,
@@ -115,9 +109,7 @@ var TabsInTitlebar = {
       return;
 
     
-    
     if (!this._initialized) {
-      this._updateOnInit = true;
       return;
     }
 
