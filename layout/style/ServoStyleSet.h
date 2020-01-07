@@ -602,8 +602,22 @@ private:
 
   
   
-  nsPresContext* MOZ_NON_OWNING_REF mPresContext = nullptr;
+  
+  
+  nsIDocument* mDocument;
 
+  const nsPresContext* GetPresContext() const {
+    return const_cast<ServoStyleSet*>(this)->GetPresContext();
+  }
+
+  
+
+
+
+  nsPresContext* GetPresContext();
+
+  
+  
   
   
   

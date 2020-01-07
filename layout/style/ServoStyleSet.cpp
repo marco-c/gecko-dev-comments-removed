@@ -81,7 +81,7 @@ public:
     
     
     
-    : mTimelineMarker(aSet->mPresContext->GetDocShell(), false)
+    : mTimelineMarker(aSet->mDocument->GetDocShell(), false)
     , mSetInServoTraversal(aSet)
   {
     MOZ_ASSERT(!aSet->StylistNeedsUpdate());
@@ -96,7 +96,7 @@ private:
 
 ServoStyleSet::ServoStyleSet(Kind aKind)
   : mKind(aKind)
-  , mPresContext(nullptr)
+  , mDocument(nullptr)
   , mAuthorStyleDisabled(false)
   , mStylistState(StylistState::NotDirty)
   , mUserFontSetUpdateGeneration(0)
@@ -133,22 +133,38 @@ ServoStyleSet::CreateXBLServoStyleSet(
 
   
   
-  
-  set->mPresContext = nullptr;
+  set->mDocument = nullptr;
 
   return set;
+}
+
+nsPresContext*
+ServoStyleSet::GetPresContext()
+{
+  if (!mDocument) {
+    return nullptr;
+  }
+
+  auto* shell = mDocument->GetShell();
+  if (!shell) {
+    return nullptr;
+  }
+
+  return shell->GetPresContext();
 }
 
 void
 ServoStyleSet::Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager)
 {
-  mPresContext = aPresContext;
+  mDocument = aPresContext->Document();
+  MOZ_ASSERT(GetPresContext() == aPresContext);
+
   mLastPresContextUsesXBLStyleSet = aPresContext;
 
   mRawSet.reset(Servo_StyleSet_Init(aPresContext));
   mBindingManager = aBindingManager;
 
-  mPresContext->DeviceContext()->InitFontCache();
+  aPresContext->DeviceContext()->InitFontCache();
 
   
   
@@ -179,19 +195,15 @@ ServoStyleSet::Shutdown()
   ClearNonInheritingStyleContexts();
   mRawSet = nullptr;
   mStyleRuleMap = nullptr;
-
-  
-  
-  
-  
-  mPresContext = nullptr;
 }
 
 void
 ServoStyleSet::InvalidateStyleForCSSRuleChanges()
 {
   MOZ_ASSERT(StylistNeedsUpdate());
-  mPresContext->RestyleManager()->AsServo()->PostRestyleEventForCSSRuleChanges();
+  if (nsPresContext* pc = GetPresContext()) {
+    pc->RestyleManager()->AsServo()->PostRestyleEventForCSSRuleChanges();
+  }
 }
 
 bool
@@ -218,10 +230,12 @@ ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged)
   bool viewportUnitsUsed = false;
   bool rulesChanged = MediumFeaturesChangedRules(&viewportUnitsUsed);
 
-  if (mBindingManager &&
-      mBindingManager->MediumFeaturesChanged(mPresContext)) {
-    SetStylistXBLStyleSheetsDirty();
-    rulesChanged = true;
+  if (nsPresContext* pc = GetPresContext()) {
+    if (mDocument->BindingManager()->MediumFeaturesChanged(pc)) {
+      
+      SetStylistXBLStyleSheetsDirty();
+      rulesChanged = true;
+    }
   }
 
   if (rulesChanged) {
@@ -346,17 +360,18 @@ ServoStyleSet::ResolveStyleFor(Element* aElement,
 const ServoElementSnapshotTable&
 ServoStyleSet::Snapshots()
 {
-  return mPresContext->RestyleManager()->AsServo()->Snapshots();
+  MOZ_ASSERT(GetPresContext(), "Styling a document without a shell?");
+  return GetPresContext()->RestyleManager()->AsServo()->Snapshots();
 }
 
 void
 ServoStyleSet::ResolveMappedAttrDeclarationBlocks()
 {
-  if (nsHTMLStyleSheet* sheet = mPresContext->Document()->GetAttributeStyleSheet()) {
+  if (nsHTMLStyleSheet* sheet = mDocument->GetAttributeStyleSheet()) {
     sheet->CalculateMappedServoDeclarations();
   }
 
-  mPresContext->Document()->ResolveScheduledSVGPresAttrs();
+  mDocument->ResolveScheduledSVGPresAttrs();
 }
 
 void
@@ -365,7 +380,7 @@ ServoStyleSet::PreTraverseSync()
   
   
   
-  mozilla::Unused << mPresContext->Document()->GetRootElement();
+  mozilla::Unused << mDocument->GetRootElement();
 
   ResolveMappedAttrDeclarationBlocks();
 
@@ -373,11 +388,14 @@ ServoStyleSet::PreTraverseSync()
 
   LookAndFeel::NativeInit();
 
-  if (gfxUserFontSet* userFontSet = mPresContext->Document()->GetUserFontSet()) {
+  nsPresContext* presContext = GetPresContext();
+  MOZ_ASSERT(presContext,
+             "For now, we don't call into here without a pres context");
+  if (gfxUserFontSet* userFontSet = mDocument->GetUserFontSet()) {
     
     uint64_t generation = userFontSet->GetGeneration();
     if (generation != mUserFontSetUpdateGeneration) {
-      mPresContext->DeviceContext()->UpdateFontCacheUserFonts(userFontSet);
+      presContext->DeviceContext()->UpdateFontCacheUserFonts(userFontSet);
       mUserFontSetUpdateGeneration = generation;
     }
 
@@ -400,7 +418,7 @@ ServoStyleSet::PreTraverseSync()
   }
 
   UpdateStylistIfNeeded();
-  mPresContext->CacheAllLangs();
+  presContext->CacheAllLangs();
 }
 
 void
@@ -411,18 +429,18 @@ ServoStyleSet::PreTraverse(ServoTraversalFlags aFlags, Element* aRoot)
   
   
   nsSMILAnimationController* smilController =
-    mPresContext->Document()->HasAnimationController()
-    ? mPresContext->Document()->GetAnimationController()
+    mDocument->HasAnimationController()
+    ? mDocument->GetAnimationController()
     : nullptr;
 
+  MOZ_ASSERT(GetPresContext());
   if (aRoot) {
-    mPresContext->EffectCompositor()
-                ->PreTraverseInSubtree(aFlags, aRoot);
+    GetPresContext()->EffectCompositor()->PreTraverseInSubtree(aFlags, aRoot);
     if (smilController) {
       smilController->PreTraverseInSubtree(aRoot);
     }
   } else {
-    mPresContext->EffectCompositor()->PreTraverse(aFlags);
+    GetPresContext()->EffectCompositor()->PreTraverse(aFlags);
     if (smilController) {
       smilController->PreTraverse();
     }
@@ -921,8 +939,9 @@ ServoStyleSet::ProbePseudoElementStyle(Element* aOriginatingElement,
 bool
 ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
 {
-  nsIDocument* doc = mPresContext->Document();
-  if (!doc->GetServoRestyleRoot()) {
+  MOZ_ASSERT(GetPresContext(), "Styling a document without a shell?");
+
+  if (!mDocument->GetServoRestyleRoot()) {
     return false;
   }
 
@@ -934,7 +953,7 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
   
   bool postTraversalRequired = false;
 
-  Element* rootElement = doc->GetRootElement();
+  Element* rootElement = mDocument->GetRootElement();
   MOZ_ASSERT_IF(rootElement, rootElement->HasServoData());
 
   if (ShouldTraverseInParallel()) {
@@ -942,7 +961,7 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
   }
 
   
-  DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
+  DocumentStyleRootIterator iter(mDocument->GetServoRestyleRoot());
   while (Element* root = iter.GetNextStyleRoot()) {
     MOZ_ASSERT(MayTraverseFrom(root));
 
@@ -956,15 +975,15 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
       root->HasAnyOfFlags(Element::kAllServoDescendantBits | NODE_NEEDS_FRAME);
 
     if (parent) {
-      MOZ_ASSERT(root == doc->GetServoRestyleRoot());
+      MOZ_ASSERT(root == mDocument->GetServoRestyleRoot());
       if (parent->HasDirtyDescendantsForServo()) {
         
         
         
-        uint32_t existingBits = doc->GetServoRestyleRootDirtyBits();
+        uint32_t existingBits = mDocument->GetServoRestyleRootDirtyBits();
         
         parent->SetFlags(existingBits);
-        doc->SetServoRestyleRoot(
+        mDocument->SetServoRestyleRoot(
             parent,
             existingBits | ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
         postTraversalRequired = true;
@@ -984,8 +1003,8 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
   
   
   
-  if (mPresContext->EffectCompositor()->PreTraverse(aFlags)) {
-    nsINode* styleRoot = doc->GetServoRestyleRoot();
+  if (GetPresContext()->EffectCompositor()->PreTraverse(aFlags)) {
+    nsINode* styleRoot = mDocument->GetServoRestyleRoot();
     Element* root = styleRoot->IsElement() ? styleRoot->AsElement() : rootElement;
 
     postTraversalRequired |=
@@ -1000,6 +1019,7 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags)
 void
 ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
+  MOZ_ASSERT(GetPresContext());
   MOZ_ASSERT(!aRoot->HasServoData());
   PreTraverseSync();
   AutoPrepareTraversal guard(this);
@@ -1019,7 +1039,7 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
   
   
   
-  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(flags, aRoot)) {
+  if (GetPresContext()->EffectCompositor()->PreTraverseInSubtree(flags, aRoot)) {
     postTraversalRequired =
       Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots,
                             ServoTraversalFlags::AnimationOnly |
@@ -1050,10 +1070,11 @@ ServoStyleSet::SetStylistStyleSheetsDirty()
   
   
   
-  if (mPresContext) {
+  if (nsPresContext* presContext = GetPresContext()) {
     
     
-    mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+    
+    presContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
   }
 }
 
@@ -1065,8 +1086,8 @@ ServoStyleSet::SetStylistXBLStyleSheetsDirty()
   
   
   
-  MOZ_ASSERT(mPresContext);
-  mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+  MOZ_ASSERT(GetPresContext());
+  GetPresContext()->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
 }
 
 void
@@ -1102,7 +1123,7 @@ ServoStyleSet::RuleChanged(ServoStyleSheet& aSheet, css::Rule* aRule)
 void
 ServoStyleSet::AssertTreeIsClean()
 {
-  DocumentStyleRootIterator iter(mPresContext->Document());
+  DocumentStyleRootIterator iter(mDocument);
   while (Element* root = iter.GetNextStyleRoot()) {
     Servo_AssertTreeIsClean(root);
   }
@@ -1275,7 +1296,9 @@ ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                                           CSSPseudoElementType aPseudoType,
                                           StyleRuleInclusion aRuleInclusion)
 {
-  mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoType);
+  MOZ_ASSERT(GetPresContext(),
+             "For now, no style resolution without a pres context");
+  GetPresContext()->EffectCompositor()->PreTraverse(aElement, aPseudoType);
   MOZ_ASSERT(!StylistNeedsUpdate());
 
   AutoSetInServoTraversal guard(this);
@@ -1313,7 +1336,7 @@ ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                              mRawSet.get(),
                               false).Consume();
 
-  if (mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoType)) {
+  if (GetPresContext()->EffectCompositor()->PreTraverse(aElement, aPseudoType)) {
     computedValues =
       Servo_ResolveStyleLazily(elementForStyleResolution,
                                pseudoTypeForStyleResolution,
@@ -1323,7 +1346,7 @@ ServoStyleSet::ResolveStyleLazilyInternal(Element* aElement,
                                 false).Consume();
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(computedValues->PresContext() == mPresContext ||
+  MOZ_DIAGNOSTIC_ASSERT(computedValues->PresContext() == GetPresContext() ||
                         aElement->OwnerDoc()->GetBFCacheEntry());
 
   return computedValues.forget();
@@ -1372,15 +1395,14 @@ ServoStyleSet::UpdateStylist()
     
     
     
-    Element* root =
-      IsMaster() ? mPresContext->Document()->GetDocumentElement() : nullptr;
-
+    Element* root = IsMaster() ? mDocument->GetRootElement() : nullptr;
     Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root);
   }
 
   if (MOZ_UNLIKELY(mStylistState & StylistState::XBLStyleSheetsDirty)) {
     MOZ_ASSERT(IsMaster(), "Only master styleset can mark XBL stylesets dirty!");
-    mBindingManager->UpdateBoundContentBindingsForServo(mPresContext);
+    MOZ_ASSERT(GetPresContext(), "How did they get dirty?");
+    mDocument->BindingManager()->UpdateBoundContentBindingsForServo(GetPresContext());
   }
 
   mStylistState = StylistState::NotDirty;
@@ -1417,7 +1439,8 @@ ServoStyleSet::MayTraverseFrom(const Element* aElement)
 bool
 ServoStyleSet::ShouldTraverseInParallel() const
 {
-  return mPresContext->PresShell()->IsActive();
+  MOZ_ASSERT(mDocument->GetShell(), "Styling a document without a shell?");
+  return mDocument->GetShell()->IsActive();
 }
 
 void

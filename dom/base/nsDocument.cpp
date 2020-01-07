@@ -4024,10 +4024,9 @@ nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
   }
 
   RefPtr<PresShell> shell = new PresShell;
-  shell->Init(this, aContext, aViewManager, aStyleSet);
-
   
   mPresShell = shell;
+  shell->Init(this, aContext, aViewManager, aStyleSet);
 
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
