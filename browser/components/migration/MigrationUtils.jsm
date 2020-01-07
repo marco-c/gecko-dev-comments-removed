@@ -188,7 +188,7 @@ this.MigratorPrototype = {
 
 
 
-  get sourceHomePageURL() {
+  getSourceHomePageURL() {
     return "";
   },
 
