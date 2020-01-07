@@ -14,10 +14,6 @@
 
 
 
-
-
-
-
 const PAGE_A1_A2 = "https://example.com/browser/toolkit/content/tests/browser/file_autoplay_two_layers_frame1.html";
 const PAGE_A1_B2 = "https://example.com/browser/toolkit/content/tests/browser/file_autoplay_two_layers_frame2.html";
 const PAGE_A1_B2_C3 = "https://test1.example.org/browser/toolkit/content/tests/browser/file_autoplay_three_layers_frame1.html";
@@ -80,15 +76,15 @@ async function test_permission_propagation(testName, testSrc, layersNum) {
         doc = layerIdx == 2 ? content.frames[0].document :
                               content.frames[0].frames[0].document;
       }
-      doc.notifyUserActivation();
+      doc.notifyUserGestureActivation();
     }
     await ContentTask.spawn(tab.linkedBrowser, [layerIdx, testName],
                             activate_frame);
 
     
+    
+    
     async function playing_video_may_success(testInfo) {
-      let activeLayerIdx = testInfo[0];
-      let testName = testInfo[1];
       let layersNum = testInfo[2];
       for (let layerIdx = 1; layerIdx <= layersNum; layerIdx++) {
         let doc;
@@ -99,43 +95,11 @@ async function test_permission_propagation(testName, testSrc, layersNum) {
                                 content.frames[0].frames[0].document;
         }
         let video = doc.getElementById("v");
-        let shouldSuccess = false;
-        let isActiveLayer = layerIdx == activeLayerIdx;
-        switch (testName) {
-          case "A1_A2":
-          case "A1_A2_A3":
-            
-            shouldSuccess = true;
-            break;
-          case "A1_B2":
-            shouldSuccess = layerIdx == 1 ||
-                            (layerIdx == 2 && isActiveLayer);
-            break;
-          case "A1_B2_C3":
-            shouldSuccess = layerIdx == 1 ||
-                            (layerIdx >= 2 && isActiveLayer);
-            break;
-          case "A1_B2_A3":
-            shouldSuccess = layerIdx != 2 ||
-                            (layerIdx == 2 && isActiveLayer);
-            break;
-          case "A1_B2_B3":
-            shouldSuccess = layerIdx == 1 ||
-                            (layerIdx >= 2 && activeLayerIdx != 1);
-            break;
-          case "A1_A2_B3":
-            shouldSuccess = layerIdx <= 2 ||
-                            (layerIdx == 3 && isActiveLayer);
-            break;
-          default:
-            ok(false, "wrong test name.");
-            break;
-        }
         try {
           await video.play();
-          ok(shouldSuccess, `video in layer ${layerIdx} starts playing.`);
+          ok(true, `video in layer ${layerIdx} starts playing.`);
         } catch (e) {
-          ok(!shouldSuccess, `video in layer ${layerIdx} fails to start.`);
+          ok(false, `video in layer ${layerIdx} fails to start.`);
         }
       }
     }

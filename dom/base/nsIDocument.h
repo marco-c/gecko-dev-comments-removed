@@ -3366,6 +3366,8 @@ public:
 
   void PropagateUseCounters(nsIDocument* aParentDocument);
 
+  
+  
   void SetUserHasInteracted(bool aUserHasInteracted);
   bool UserHasInteracted()
   {
@@ -3374,10 +3376,15 @@ public:
 
   
   
-  void NotifyUserActivation();
+  
+  
+  
+  
+  void NotifyUserGestureActivation();
 
   
-  bool HasBeenUserActivated();
+  
+  bool HasBeenUserGestureActivated();
 
   bool HasScriptsBlockedBySandbox();
 
@@ -3673,14 +3680,6 @@ protected:
 
   
   nsIDocument* GetSameTypeParentDocument();
-
-  
-  
-  nsIDocument* GetFirstParentDocumentWithSamePrincipal(nsIPrincipal* aPrincipal);
-
-  
-  void ActivateByUserGesture();
-  void MaybeActivateByUserGesture(nsIPrincipal* aPrincipal);
 
   
   static bool MatchNameAttribute(mozilla::dom::Element* aElement,
@@ -4223,7 +4222,10 @@ protected:
 
   
   
-  bool mUserHasActivatedInteraction;
+  
+  
+  
+  bool mUserGestureActivated;
 
   mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 

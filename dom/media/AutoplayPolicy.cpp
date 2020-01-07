@@ -55,7 +55,7 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
   }
 
   
-  if (aElement->OwnerDoc()->HasBeenUserActivated()) {
+  if (aElement->OwnerDoc()->HasBeenUserGestureActivated()) {
     return true;
   }
 
@@ -101,7 +101,7 @@ AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
   }
 
   
-  if (window->GetExtantDoc()->HasBeenUserActivated()) {
+  if (window->GetExtantDoc()->HasBeenUserGestureActivated()) {
     return true;
   }
 
