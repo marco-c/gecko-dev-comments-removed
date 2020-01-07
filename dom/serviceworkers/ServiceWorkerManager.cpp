@@ -790,34 +790,8 @@ ServiceWorkerManager::Register(mozIDOMWindow* aWindow,
   
   nsCOMPtr<nsIPrincipal> documentPrincipal = doc->NodePrincipal();
 
-  nsresult rv = documentPrincipal->CheckMayLoad(aScriptURI, true ,
-                                                false );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
-  rv = documentPrincipal->CheckMayLoad(aScopeURI, true ,
-                                       false );
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
-  
-  
-  
-  
-  
-  
-  bool isHttp = false;
-  bool isHttps = false;
-  aScriptURI->SchemeIs("http", &isHttp);
-  aScriptURI->SchemeIs("https", &isHttps);
-  if (NS_WARN_IF(!isHttp && !isHttps)) {
-    return NS_ERROR_DOM_SECURITY_ERR;
-  }
-
   nsCString cleanedScope;
-  rv = aScopeURI->GetSpecIgnoringRef(cleanedScope);
+  nsresult rv = aScopeURI->GetSpecIgnoringRef(cleanedScope);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_FAILURE;
   }
