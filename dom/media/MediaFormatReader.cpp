@@ -1534,10 +1534,8 @@ MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
 
   mCDMProxy = aProxy;
 
-  if (!mCDMProxy) {
-    
-    mEncryptedPlatform = nullptr;
-  }
+  
+  mEncryptedPlatform = nullptr;
 
   if (!mInitDone || mSetCDMForTracks.isEmpty() || !mCDMProxy) {
     
