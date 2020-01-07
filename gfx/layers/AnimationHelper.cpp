@@ -254,7 +254,7 @@ AnimationHelper::SampleAnimationForEachNode(
     
     
     if (iEnd == 1 &&
-        !dom::KeyframeEffectReadOnly::HasComputedTimingChanged(
+        !dom::KeyframeEffect::HasComputedTimingChanged(
           computedTiming,
           iterCompositeOperation,
           animData.mProgressOnLastCompose,

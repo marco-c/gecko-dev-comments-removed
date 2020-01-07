@@ -615,8 +615,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "KeyboardEvent", insecureContext: true},
 
-    {name: "KeyframeEffectReadOnly", insecureContext: true, release: false},
-
     {name: "KeyframeEffect", insecureContext: true, release: false},
 
     {name: "LocalMediaStream", insecureContext: true},

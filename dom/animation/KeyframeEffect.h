@@ -112,34 +112,44 @@ namespace dom {
 
 class Animation;
 
-class KeyframeEffectReadOnly : public AnimationEffectReadOnly
+class KeyframeEffect : public AnimationEffectReadOnly
 {
 public:
-  KeyframeEffectReadOnly(nsIDocument* aDocument,
-                         const Maybe<OwningAnimationTarget>& aTarget,
-                         const TimingParams& aTiming,
-                         const KeyframeEffectParams& aOptions);
+  KeyframeEffect(nsIDocument* aDocument,
+                 const Maybe<OwningAnimationTarget>& aTarget,
+                 const TimingParams& aTiming,
+                 const KeyframeEffectParams& aOptions);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(KeyframeEffectReadOnly,
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(KeyframeEffect,
                                                         AnimationEffectReadOnly)
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  KeyframeEffectReadOnly* AsKeyframeEffect() override { return this; }
+  KeyframeEffect* AsKeyframeEffect() override { return this; }
 
   
-  static already_AddRefed<KeyframeEffectReadOnly>
+  static already_AddRefed<KeyframeEffect>
   Constructor(const GlobalObject& aGlobal,
               const Nullable<ElementOrCSSPseudoElement>& aTarget,
               JS::Handle<JSObject*> aKeyframes,
               const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
               ErrorResult& aRv);
 
-  static already_AddRefed<KeyframeEffectReadOnly>
+  static already_AddRefed<KeyframeEffect>
   Constructor(const GlobalObject& aGlobal,
-              KeyframeEffectReadOnly& aSource,
+              KeyframeEffect& aSource,
+              ErrorResult& aRv);
+
+  
+  
+  
+  static already_AddRefed<KeyframeEffect>
+  Constructor(const GlobalObject& aGlobal,
+              const Nullable<ElementOrCSSPseudoElement>& aTarget,
+              JS::Handle<JSObject*> aKeyframes,
+              const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
               ErrorResult& aRv);
 
   void GetTarget(Nullable<OwningElementOrCSSPseudoElement>& aRv) const;
@@ -290,12 +300,12 @@ public:
     uint64_t aCurrentIterationOnLastCompose);
 
 protected:
-  KeyframeEffectReadOnly(nsIDocument* aDocument,
-                         const Maybe<OwningAnimationTarget>& aTarget,
-                         AnimationEffectTimingReadOnly* aTiming,
-                         const KeyframeEffectParams& aOptions);
+  KeyframeEffect(nsIDocument* aDocument,
+                 const Maybe<OwningAnimationTarget>& aTarget,
+                 AnimationEffectTimingReadOnly* aTiming,
+                 const KeyframeEffectParams& aOptions);
 
-  ~KeyframeEffectReadOnly() override = default;
+  ~KeyframeEffect() override = default;
 
   static Maybe<OwningAnimationTarget>
   ConvertTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
@@ -311,7 +321,7 @@ protected:
   template<class KeyframeEffectType>
   static already_AddRefed<KeyframeEffectType>
   ConstructKeyframeEffect(const GlobalObject& aGlobal,
-                          KeyframeEffectReadOnly& aSource,
+                          KeyframeEffect& aSource,
                           ErrorResult& aRv);
 
   
@@ -452,40 +462,6 @@ private:
   {
     return mCumulativeChangeHint & nsChangeHint_VisibilityChange;
   }
-};
-
-class KeyframeEffect : public KeyframeEffectReadOnly
-{
-public:
-  KeyframeEffect(nsIDocument* aDocument,
-                 const Maybe<OwningAnimationTarget>& aTarget,
-                 const TimingParams& aTiming,
-                 const KeyframeEffectParams& aOptions);
-
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override;
-
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aKeyframes,
-              const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
-              ErrorResult& aRv);
-
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              KeyframeEffectReadOnly& aSource,
-              ErrorResult& aRv);
-
-  
-  
-  
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aKeyframes,
-              const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-              ErrorResult& aRv);
 };
 
 } 

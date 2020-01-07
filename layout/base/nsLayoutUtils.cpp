@@ -207,7 +207,7 @@ template<typename TestType>
 static bool
 HasMatchingAnimations(EffectSet* aEffects, TestType&& aTest)
 {
-  for (KeyframeEffectReadOnly* effect : *aEffects) {
+  for (KeyframeEffect* effect : *aEffects) {
     if (aTest(*effect)) {
       return true;
     }
@@ -232,7 +232,7 @@ bool
 nsLayoutUtils::HasCurrentTransitions(const nsIFrame* aFrame)
 {
   return HasMatchingAnimations(aFrame,
-    [](KeyframeEffectReadOnly& aEffect)
+    [](KeyframeEffect& aEffect)
     {
       
       
@@ -281,7 +281,7 @@ nsLayoutUtils::HasAnimationOfProperty(EffectSet* aEffectSet,
   }
 
   return HasMatchingAnimations(aEffectSet,
-    [&aProperty](KeyframeEffectReadOnly& aEffect)
+    [&aProperty](KeyframeEffect& aEffect)
     {
       return (aEffect.IsInEffect() || aEffect.IsCurrent()) &&
              aEffect.HasAnimationOfProperty(aProperty);
@@ -298,7 +298,7 @@ nsLayoutUtils::HasAnimationOfProperty(const nsIFrame* aFrame,
   }
 
   return HasMatchingAnimations(aFrame,
-    [&aProperty](KeyframeEffectReadOnly& aEffect)
+    [&aProperty](KeyframeEffect& aEffect)
     {
       return (aEffect.IsInEffect() || aEffect.IsCurrent()) &&
              aEffect.HasAnimationOfProperty(aProperty);
@@ -318,7 +318,7 @@ nsLayoutUtils::HasEffectiveAnimation(const nsIFrame* aFrame,
 
 
   return HasMatchingAnimations(effects,
-    [&aProperty](KeyframeEffectReadOnly& aEffect)
+    [&aProperty](KeyframeEffect& aEffect)
     {
       return (aEffect.IsInEffect() || aEffect.IsCurrent()) &&
              aEffect.HasEffectiveAnimationOfProperty(aProperty);
@@ -374,7 +374,7 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
     
     MOZ_ASSERT(anim->IsRelevant());
 
-    dom::KeyframeEffectReadOnly* effect =
+    dom::KeyframeEffect* effect =
       anim->GetEffect() ? anim->GetEffect()->AsKeyframeEffect() : nullptr;
     MOZ_ASSERT(effect, "A playing animation should have a keyframe effect");
     for (size_t propIdx = effect->Properties().Length(); propIdx-- != 0; ) {

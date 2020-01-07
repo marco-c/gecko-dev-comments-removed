@@ -27,7 +27,6 @@ namespace css {
 class Declaration;
 } 
 namespace dom {
-class KeyframeEffectReadOnly;
 class Promise;
 } 
 
