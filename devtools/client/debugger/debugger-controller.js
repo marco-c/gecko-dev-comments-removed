@@ -1171,7 +1171,28 @@ StackFrames.prototype = {
         Parser.reflectionAPI.parse(aString);
         return aString; 
       } catch (e) {
-        return "\"" + e.name + ": " + e.message + "\""; 
+        function safelyEscape(aString) {
+          
+          
+          
+          let str = JSON.stringify(aString);
+
+          
+          str = str.substring(1, str.length - 1);
+
+          
+          
+          
+          
+          str = str.replace(/\u2028/g, "\\u2028");
+          str = str.replace(/\u2029/g, "\\u2029");
+
+          return str;
+        }
+        return "\"" +
+               safelyEscape(e.name) + ": " +
+               safelyEscape(e.message) +
+               "\""; 
       }
     });
 
