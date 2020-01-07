@@ -56,6 +56,11 @@ var EventEmitter = require("devtools/shared/event-emitter");
 function Selection(walker) {
   EventEmitter.decorate(this);
 
+  
+  
+  
+  this._isSlotted = false;
+
   this._onMutations = this._onMutations.bind(this);
   this.setNodeFront = this.setNodeFront.bind(this);
   this.setWalker(walker);
@@ -115,8 +120,20 @@ Selection.prototype = {
     }
   },
 
-  setNodeFront: function(value, reason = "unknown") {
+  
+
+
+
+
+
+
+
+
+
+
+  setNodeFront: function(value, reason = "unknown", isSlotted = false) {
     this.reason = reason;
+    this._isSlotted = isSlotted;
 
     
     let parentNode = value && value.parentNode();
@@ -244,5 +261,9 @@ Selection.prototype = {
 
   isNotationNode: function() {
     return this.isNode() && this.nodeFront.nodeType == nodeConstants.NOTATION_NODE;
+  },
+
+  isSlotted: function() {
+    return this._isSlotted;
   },
 };
