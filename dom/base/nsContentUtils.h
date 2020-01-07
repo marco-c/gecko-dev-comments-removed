@@ -710,7 +710,7 @@ public:
 
 
 
-  static bool IsCustomElementName(nsAtom* aName);
+  static bool IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID);
 
   static nsresult CheckQName(const nsAString& aQualifiedName,
                              bool aNamespaceAware = true,
