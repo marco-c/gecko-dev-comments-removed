@@ -10,7 +10,6 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/Variant.h"
 #include "mozilla/XorShift128PlusRNG.h"
@@ -421,7 +420,7 @@ class JS::Realm : public JS::shadow::Realm
     js::ReadBarrieredScriptSourceObject selfHostingScriptSource { nullptr };
 
     
-    js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
+    int64_t lastAnimationTime = 0;
 
     
 
