@@ -109,8 +109,11 @@ enum class EditSubAction : int32_t
   
   eInsertHTMLSource,
 
-  setAbsolutePosition,
-  removeAbsolutePosition,
+  
+  
+  eSetPositionToAbsolute,
+  eSetPositionToStatic,
+
   decreaseZIndex,
   increaseZIndex,
 };
