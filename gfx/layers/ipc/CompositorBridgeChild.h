@@ -324,6 +324,8 @@ private:
 
   uint64_t GetNextResourceId();
 
+  void ClearSharedFrameMetricsData(LayersId aLayersId);
+
   
   class SharedFrameMetricsData {
   public:
