@@ -4107,7 +4107,11 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   UpdateSrcMediaStreamPlaying();
 
   
-  mIsBlessed = true;
+  
+  
+  
+  mIsBlessed |= EventStateManager::IsHandlingUserInput();
+
 
   
   
@@ -5965,8 +5969,9 @@ HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
         if (IsAllowedToPlay()) {
           mDecoder->Play();
         } else {
-          AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
           mPaused = true;
+          DispatchAsyncEvent(NS_LITERAL_STRING("pause"));
+          AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
         }
       }
       NotifyAboutPlaying();
