@@ -2616,21 +2616,42 @@ public class GeckoSession extends LayerSession
         public void onScrollChanged(GeckoSession session, int scrollX, int scrollY);
     }
 
-    private final TrackingProtection mTrackingProtection = new TrackingProtection(this);
-
     
 
 
 
     public interface TrackingProtectionDelegate {
+        @Retention(RetentionPolicy.SOURCE)
         @IntDef(flag = true,
-                value = {CATEGORY_AD, CATEGORY_ANALYTIC, CATEGORY_SOCIAL,
-                         CATEGORY_CONTENT})
+                value = { CATEGORY_NONE, CATEGORY_AD, CATEGORY_ANALYTIC,
+                          CATEGORY_SOCIAL, CATEGORY_CONTENT, CATEGORY_ALL,
+                          CATEGORY_TEST })
         public @interface Category {}
+        static final int CATEGORY_NONE = 0;
+        
+
+
         static final int CATEGORY_AD = 1 << 0;
+        
+
+
         static final int CATEGORY_ANALYTIC = 1 << 1;
+        
+
+
         static final int CATEGORY_SOCIAL = 1 << 2;
+        
+
+
         static final int CATEGORY_CONTENT = 1 << 3;
+        
+
+
+        static final int CATEGORY_TEST = 1 << 4;
+        
+
+
+        static final int CATEGORY_ALL = (1 << 5) - 1;
 
         
 
@@ -2641,25 +2662,9 @@ public class GeckoSession extends LayerSession
 
 
 
+
         void onTrackerBlocked(GeckoSession session, String uri,
                               @Category int categories);
-    }
-
-    
-
-
-
-
-
-    public void enableTrackingProtection(@TrackingProtectionDelegate.Category int categories) {
-        mTrackingProtection.enable(categories);
-    }
-
-    
-
-
-    public void disableTrackingProtection() {
-        mTrackingProtection.disable();
     }
 
     

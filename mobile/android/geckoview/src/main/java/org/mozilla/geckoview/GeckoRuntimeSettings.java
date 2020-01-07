@@ -16,6 +16,8 @@ import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import org.mozilla.geckoview.GeckoSession.TrackingProtectionDelegate;
+
 public final class GeckoRuntimeSettings implements Parcelable {
     
 
@@ -197,6 +199,21 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mCookieLifetimeDays.set(days);
             return this;
         }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder trackingProtectionCategories(
+                @TrackingProtectionDelegate.Category int categories) {
+            mSettings.mTrackingProtection
+                     .set(TrackingProtection.buildPrefValue(categories));
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -246,14 +263,16 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
      Pref<Integer> mCookieLifetimeDays = new Pref<Integer>(
         "network.cookie.lifetime.days", 90);
+     Pref<String> mTrackingProtection = new Pref<String>(
+        "urlclassifier.trackingTable", "");
 
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
      boolean mDebugPause;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mJavaScript, mRemoteDebugging, mWebFonts,
-        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays
+        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays, mJavaScript,
+        mRemoteDebugging, mTrackingProtection, mWebFonts
     };
 
      GeckoRuntimeSettings() {
@@ -517,6 +536,31 @@ public final class GeckoRuntimeSettings implements Parcelable {
                 "Setting expiration days for incompatible cookie lifetime");
         }
         mCookieLifetimeDays.set(days);
+        return this;
+    }
+
+    
+
+
+
+
+
+
+    public @TrackingProtectionDelegate.Category int getTrackingProtectionCategories() {
+        return TrackingProtection.listToCategory(mTrackingProtection.get());
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setTrackingProtectionCategories(
+            @TrackingProtectionDelegate.Category int categories) {
+        mTrackingProtection.set(TrackingProtection.buildPrefValue(categories));
         return this;
     }
 
