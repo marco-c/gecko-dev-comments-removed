@@ -16,6 +16,8 @@
 
 void* __cdecl operator new(size_t size, sandbox::AllocationType type,
                            void* near_to = NULL);
+void* __cdecl operator new[](size_t size, sandbox::AllocationType type,
+			     void* near_to = NULL);
 void __cdecl operator delete(void* memory, sandbox::AllocationType type);
 
 
