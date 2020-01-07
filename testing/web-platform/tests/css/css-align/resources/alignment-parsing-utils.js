@@ -38,8 +38,8 @@ function checkPlaceShorhand(shorthand, shorthandValue, alignValue, justifyValue)
     var expectedResolvedValue = (alignValue + " " + justifyValue).trim();
 
     assert_equals(div.style[shorthand], specifiedValue, shorthandValue + " specified value");
-    // FIXME: We need https://github.com/w3c/csswg-drafts/issues/1041 to clarify which
-    // value is expected for the shorthand's 'resolved value".
+    
+    
     assert_in_array(resolvedValue, ["", expectedResolvedValue], shorthand + " resolved value");
 }
 
