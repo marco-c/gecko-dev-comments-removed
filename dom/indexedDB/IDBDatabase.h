@@ -288,6 +288,10 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IDBDatabase, IDBWrapperCache)
 
   
+  void
+  DisconnectFromOwner() override;
+
+  
   virtual void
   LastRelease() override;
 
