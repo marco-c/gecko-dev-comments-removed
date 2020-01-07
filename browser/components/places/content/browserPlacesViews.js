@@ -41,7 +41,7 @@ PlacesViewBase.prototype = {
   
   _nativeView: false,
 
-  QueryInterface: XPCOMUtils.generateQI(
+  QueryInterface: ChromeUtils.generateQI(
     [Ci.nsINavHistoryResultObserver,
      Ci.nsISupportsWeakReference]),
 

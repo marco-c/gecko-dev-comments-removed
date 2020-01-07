@@ -45,7 +45,7 @@ CallbackCaller.prototype = {
 };
 
 var ContentPrefServiceChild = {
-  QueryInterface: XPCOMUtils.generateQI([ Ci.nsIContentPrefService2 ]),
+  QueryInterface: ChromeUtils.generateQI([ Ci.nsIContentPrefService2 ]),
 
   
   _observers: new Map(),

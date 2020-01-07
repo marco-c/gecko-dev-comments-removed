@@ -88,7 +88,7 @@ PlacesController.prototype = {
   
   disableUserActions: false,
 
-  QueryInterface: XPCOMUtils.generateQI([
+  QueryInterface: ChromeUtils.generateQI([
     Ci.nsIClipboardOwner
   ]),
 

@@ -8,7 +8,7 @@ function run_test() {
   let complete = false;
 
   let runnable = {
-    internalQI: XPCOMUtils.generateQI([Ci.nsIRunnable]),
+    internalQI: ChromeUtils.generateQI([Ci.nsIRunnable]),
     QueryInterface(iid) {
       
       

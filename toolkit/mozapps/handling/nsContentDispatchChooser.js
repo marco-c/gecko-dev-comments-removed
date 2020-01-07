@@ -64,7 +64,7 @@ nsContentDispatchChooser.prototype =
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentDispatchChooser])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentDispatchChooser])
 };
 
 

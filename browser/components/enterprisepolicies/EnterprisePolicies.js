@@ -69,9 +69,9 @@ function EnterprisePoliciesManager() {
 EnterprisePoliciesManager.prototype = {
   
   classID:          Components.ID("{ea4e1414-779b-458b-9d1f-d18e8efbc145}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsISupportsWeakReference,
-                                         Ci.nsIEnterprisePolicies]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
+                                          Ci.nsISupportsWeakReference,
+                                          Ci.nsIEnterprisePolicies]),
 
   
   _xpcom_factory: EnterprisePoliciesFactory,

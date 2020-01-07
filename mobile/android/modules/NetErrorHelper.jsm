@@ -106,8 +106,8 @@ handlers.searchbutton = {
 handlers.wifi = {
   
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
+                                          Ci.nsISupportsWeakReference]),
 
   GetWeakReference: function() {
     return Cu.getWeakReference(this);

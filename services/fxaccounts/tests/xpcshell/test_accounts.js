@@ -1490,7 +1490,7 @@ function makeObserver(aObserveTopic, aObserveFunc) {
   let observer = {
     
     
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIObserver]),
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 
     observe(aSubject, aTopic, aData) {
       log.debug("observed " + aTopic + " " + aData);

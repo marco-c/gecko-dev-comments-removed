@@ -68,7 +68,7 @@ function createMockedObjects(createHandlerApp) {
     targetFile: null, 
     
     timeDownloadStarted: Date.now() * 1000,
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsICancelable, Ci.nsIHelperAppLauncher])
+    QueryInterface: ChromeUtils.generateQI([Ci.nsICancelable, Ci.nsIHelperAppLauncher])
   };
 
   registerCleanupFunction(function() {

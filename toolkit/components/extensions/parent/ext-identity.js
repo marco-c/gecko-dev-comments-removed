@@ -25,9 +25,9 @@ const checkRedirected = (url, redirectURI) => {
     };
     
     xhr.channel.notificationCallbacks = {
-      QueryInterface: XPCOMUtils.generateQI([Ci.nsIInterfaceRequestor, Ci.nsIChannelEventSync]),
+      QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor, Ci.nsIChannelEventSync]),
 
-      getInterface: XPCOMUtils.generateQI([Ci.nsIChannelEventSink]),
+      getInterface: ChromeUtils.generateQI([Ci.nsIChannelEventSink]),
 
       asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
         let responseURL = newChannel.URI.spec;

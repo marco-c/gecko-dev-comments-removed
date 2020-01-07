@@ -35,14 +35,14 @@ var gMockPrompter = {
     return true;
   },
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
 };
 
 
 
 var gWindowWatcher = {
   getNewPrompter: () => gMockPrompter,
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIWindowWatcher]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowWatcher]),
 };
 
 function run_test() {

@@ -38,7 +38,7 @@ nsDefaultCLH.prototype = {
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([nsICommandLineHandler]),
+  QueryInterface: ChromeUtils.generateQI([nsICommandLineHandler]),
 
   
 

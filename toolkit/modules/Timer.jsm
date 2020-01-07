@@ -19,7 +19,7 @@ var gNextId = 1;
 var gTimerTable = new Map(); 
 
 
-var setTimeout_timerCallbackQI = XPCOMUtils.generateQI([Ci.nsITimerCallback, Ci.nsINamed]);
+var setTimeout_timerCallbackQI = ChromeUtils.generateQI([Ci.nsITimerCallback, Ci.nsINamed]);
 
 function _setTimeoutOrIsInterval(aCallback, aMilliseconds, aIsInterval,
                                  aTarget, aArgs) {

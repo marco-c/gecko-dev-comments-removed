@@ -123,8 +123,8 @@ function BrowserElementChild() {
 
 BrowserElementChild.prototype = {
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
+                                          Ci.nsISupportsWeakReference]),
 
   _init: function() {
     debug("Starting up.");
@@ -1380,8 +1380,8 @@ BrowserElementChild.prototype = {
   
   
   _progressListener: {
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
-                                           Ci.nsISupportsWeakReference]),
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
+                                            Ci.nsISupportsWeakReference]),
     _seenLoadStart: false,
 
     onLocationChange: function(webProgress, request, location, flags) {

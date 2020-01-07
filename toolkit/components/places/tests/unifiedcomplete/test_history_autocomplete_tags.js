@@ -39,11 +39,11 @@ AutoCompleteInput.prototype = {
     invalidate() {},
 
     
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompletePopup])
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompletePopup])
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteInput])
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteInput])
 };
 
 

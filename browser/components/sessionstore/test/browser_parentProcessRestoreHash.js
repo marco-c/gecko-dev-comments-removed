@@ -12,7 +12,7 @@ const TESTURL = "about:testpageforsessionrestore#foo";
 
 
 let TestAboutPage = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAboutModule]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIAboutModule]),
   getURIFlags(aURI) {
     
     return Ci.nsIAboutModule.ALLOW_SCRIPT |

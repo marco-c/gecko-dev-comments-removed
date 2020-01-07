@@ -48,7 +48,7 @@ var gBookmarksObserver = {
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsINavBookmarkObserver]),
 };
 
 var gBookmarkSkipObserver = {
@@ -92,7 +92,7 @@ var gBookmarkSkipObserver = {
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsINavBookmarkObserver]),
 };
 
 

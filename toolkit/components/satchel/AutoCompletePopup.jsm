@@ -15,7 +15,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var AutoCompleteResultView = {
   
-  QueryInterface: XPCOMUtils.generateQI([
+  QueryInterface: ChromeUtils.generateQI([
     Ci.nsIAutoCompleteController,
     Ci.nsIAutoCompleteInput,
   ]),

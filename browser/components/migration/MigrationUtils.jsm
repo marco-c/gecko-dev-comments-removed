@@ -85,7 +85,7 @@ function getMigrationBundle() {
 
 
 var MigratorPrototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
 
   
 

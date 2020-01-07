@@ -39,10 +39,7 @@ var FullZoom = {
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
-                                         Ci.nsIContentPrefObserver,
-                                         Ci.nsISupportsWeakReference,
-                                         Ci.nsISupports]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver, Ci.nsIContentPrefObserver, Ci.nsISupportsWeakReference]),
 
   
 
@@ -208,21 +205,10 @@ var FullZoom = {
       return;
     }
 
+    
     if (aURI.spec == "about:blank") {
-      if (!browser.contentPrincipal || browser.contentPrincipal.isNullPrincipal) {
-        
-        
-        this._applyPrefToZoom(1, browser,
-                              this._notifyOnLocationChange.bind(this, browser));
-      } else {
-        
-        
-        
-        
-        
-        this._applyPrefToZoom(undefined, browser,
-                              this._notifyOnLocationChange.bind(this, browser));
-      }
+      this._applyPrefToZoom(undefined, browser,
+                            this._notifyOnLocationChange.bind(this, browser));
       return;
     }
 

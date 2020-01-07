@@ -286,10 +286,10 @@ nsBrowserContentHandler.prototype = {
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsICommandLineHandler,
-                                         Ci.nsIBrowserHandler,
-                                         Ci.nsIContentHandler,
-                                         Ci.nsICommandLineValidator]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsICommandLineHandler,
+                                          Ci.nsIBrowserHandler,
+                                          Ci.nsIContentHandler,
+                                          Ci.nsICommandLineValidator]),
 
   
   handle: function bch_handle(cmdLine) {

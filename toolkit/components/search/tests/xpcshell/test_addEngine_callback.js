@@ -11,11 +11,11 @@ ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 
 var promptService = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIPromptService]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
   confirmEx() {}
 };
 var prompt = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
   alert() {}
 };
 

@@ -71,7 +71,7 @@ const NormalUIService = {
                       "");                        
     paymentSrv.respondPayment(showResponse.QueryInterface(Ci.nsIPaymentActionResponse));
   },
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIPaymentUIService]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPaymentUIService]),
 };
 
 addMessageListener("set-normal-ui-service", function() {

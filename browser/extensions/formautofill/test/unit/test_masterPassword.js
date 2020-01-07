@@ -46,14 +46,14 @@ let gMockPrompter = {
     return true;
   },
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
 };
 
 
 
 let gWindowWatcher = {
   getNewPrompter: () => gMockPrompter,
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIWindowWatcher]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowWatcher]),
 };
 
 

@@ -54,7 +54,7 @@ const gfxFrameScript = {
   },
 
   
-  QueryInterface: XPCOMUtils.generateQI([
+  QueryInterface: ChromeUtils.generateQI([
     Ci.nsIWebProgressListener,
     Ci.nsISupportsWeakReference,
     Ci.nsIObserver,

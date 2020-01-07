@@ -36,7 +36,7 @@ nsTerminatorTelemetry.prototype = {
 
   
 
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 
   
 

@@ -127,7 +127,7 @@ add_task(async function test() {
 
 
 var bookmarksObserver = {
-  QueryInterface: XPCOMUtils.generateQI([
+  QueryInterface: ChromeUtils.generateQI([
     Ci.nsINavBookmarkObserver,
     Ci.nsIAnnotationObserver
   ]),
