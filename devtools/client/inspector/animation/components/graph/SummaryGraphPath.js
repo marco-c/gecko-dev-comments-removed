@@ -155,9 +155,11 @@ class SummaryGraphPath extends Component {
     } = props;
 
     let animatedPropertyMap = null;
+    let thisEl = null;
 
     try {
       animatedPropertyMap = await getAnimatedPropertyMap(animation);
+      thisEl = ReactDOM.findDOMNode(this);
     } catch (e) {
       
       
@@ -166,8 +168,6 @@ class SummaryGraphPath extends Component {
     }
 
     const keyframesList = this.getOffsetAndEasingOnlyKeyframes(animatedPropertyMap);
-
-    const thisEl = ReactDOM.findDOMNode(this);
     const totalDuration = timeScale.getDuration() * animation.state.playbackRate;
     const durationPerPixel = totalDuration / thisEl.parentNode.clientWidth;
 
