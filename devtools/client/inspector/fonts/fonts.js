@@ -10,6 +10,7 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 const { getColor } = require("devtools/client/shared/theme");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
+const { throttle } = require("devtools/shared/throttle");
 
 const FontsApp = createFactory(require("./components/FontsApp"));
 
@@ -41,13 +42,15 @@ class FontInspector {
     this.selectedRule = null;
     this.store = this.inspector.store;
 
-    this.update = this.update.bind(this);
+    this.syncChanges = throttle(this.syncChanges, 100, this);
     this.onAxisUpdate = this.onAxisUpdate.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
     this.onRuleSelected = this.onRuleSelected.bind(this);
     this.onRuleUnselected = this.onRuleUnselected.bind(this);
+    this.onRuleUpdated = this.onRuleUpdated.bind(this);
     this.onThemeChanged = this.onThemeChanged.bind(this);
+    this.update = this.update.bind(this);
 
     this.init();
   }
@@ -160,6 +163,49 @@ class FontInspector {
 
 
 
+  applyChanges() {
+    const fontEditor = this.store.getState().fontEditor;
+    
+    
+    
+    const name = "font-variation-settings";
+    const value = Object.keys(fontEditor.axes)
+      .map(tag => `"${tag}" ${fontEditor.axes[tag]}`)
+      .join(", ");
+
+    let textProperty = this.selectedRule.textProps.filter(prop => prop.name === name)[0];
+    if (!textProperty) {
+      textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
+    }
+
+    
+    this.ruleView.off("property-value-updated", this.onRuleUpdated);
+    
+    this.selectedRule.previewPropertyValue(textProperty, value, "");
+    
+    this.syncChanges(textProperty, value);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  syncChanges(textProperty, value) {
+    textProperty.updateValue(value);
+    this.ruleView.on("property-value-updated", this.onRuleUpdated);
+  }
+
+  
+
+
+
 
 
 
@@ -167,6 +213,7 @@ class FontInspector {
 
   onAxisUpdate(tag, value) {
     this.store.dispatch(updateAxis(tag, value));
+    this.applyChanges();
   }
 
   
@@ -205,7 +252,16 @@ class FontInspector {
 
       await this.refreshFontEditor();
       this.store.dispatch(toggleFontEditor(true, selector));
+      this.ruleView.on("property-value-updated", this.onRuleUpdated);
     }
+  }
+
+  
+
+
+
+  async onRuleUpdated() {
+    await this.refreshFontEditor();
   }
 
   
@@ -225,6 +281,7 @@ class FontInspector {
       this.selectedRule = null;
       this.store.dispatch(toggleFontEditor(false));
       this.store.dispatch(resetFontEditor());
+      this.ruleView.off("property-value-updated", this.onRuleUpdated);
     }
   }
 
