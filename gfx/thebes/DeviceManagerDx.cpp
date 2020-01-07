@@ -783,7 +783,9 @@ DeviceManagerDx::ResetDevices()
   
   if (PaintThread::Get()) {
     CompositorBridgeChild* cbc = CompositorBridgeChild::Get();
-    cbc->FlushAsyncPaints();
+    if (cbc) {
+      cbc->FlushAsyncPaints();
+    }
   }
 
   MutexAutoLock lock(mDeviceLock);

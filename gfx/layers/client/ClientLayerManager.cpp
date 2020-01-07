@@ -225,7 +225,7 @@ bool
 ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 {
   
-  GetCompositorBridgeChild()->FlushAsyncPaints();
+  FlushAsyncPaints();
 
   MOZ_ASSERT(mForwarder, "ClientLayerManager::BeginTransaction without forwarder");
   if (!mForwarder->IPCOpen()) {
@@ -414,7 +414,7 @@ ClientLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
   if (mTransactionIncomplete) {
     
     
-    GetCompositorBridgeChild()->FlushAsyncPaints();
+    FlushAsyncPaints();
   }
 
   if (mWidget) {
@@ -450,7 +450,7 @@ ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   if (mTransactionIncomplete) {
     
     
-    GetCompositorBridgeChild()->FlushAsyncPaints();
+    FlushAsyncPaints();
   }
 
   if (!EndTransactionInternal(nullptr, nullptr, aFlags)) {
@@ -487,6 +487,15 @@ ClientLayerManager::GetCompositorBridgeChild()
     return CompositorBridgeChild::Get();
   }
   return GetRemoteRenderer();
+}
+
+void
+ClientLayerManager::FlushAsyncPaints()
+{
+  CompositorBridgeChild* cbc = GetCompositorBridgeChild();
+  if (cbc) {
+    cbc->FlushAsyncPaints();
+  }
 }
 
 void
