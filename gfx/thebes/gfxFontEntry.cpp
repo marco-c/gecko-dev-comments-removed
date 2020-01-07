@@ -1082,25 +1082,42 @@ gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
 
     
     
-    float clampedWeight = Weight().Clamp(aStyle.weight).ToFloat();
+    
+    
+    
+    float weight = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoWeight))
+                   ? aStyle.weight.ToFloat()
+                   : Weight().Clamp(aStyle.weight).ToFloat();
     aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
-                                           clampedWeight});
+                                           weight});
 
-    float clampedStretch = Stretch().Clamp(aStyle.stretch).Percentage();
+    float stretch = (IsUserFont() && (mRangeFlags & RangeFlags::eAutoStretch))
+                    ? aStyle.stretch.Percentage()
+                    : Stretch().Clamp(aStyle.stretch).Percentage();
     aResult.AppendElement(gfxFontVariation{HB_TAG('w','d','t','h'),
-                                           clampedStretch});
+                                           stretch});
 
     if (SlantStyle().Min().IsOblique()) {
-        float clampedSlant =
-          aStyle.style.IsOblique()
-          ? SlantStyle().Clamp(aStyle.style).ObliqueAngle()
-          : aStyle.style.IsItalic()
-            ? SlantStyle().Clamp(FontSlantStyle::Oblique()).ObliqueAngle()
-            : SlantStyle().Clamp(FontSlantStyle::Oblique(0.0f)).ObliqueAngle();
+        
+        
+        float angle =
+            aStyle.style.IsNormal()
+                ? 0.0f
+                : aStyle.style.IsItalic()
+                    ? FontSlantStyle::Oblique().ObliqueAngle()
+                    : aStyle.style.ObliqueAngle();
+        
+        
+        if (!(IsUserFont() && (mRangeFlags & RangeFlags::eAutoSlantStyle))) {
+            angle = SlantStyle().Clamp(
+                FontSlantStyle::Oblique(angle)).ObliqueAngle();
+        }
         aResult.AppendElement(gfxFontVariation{HB_TAG('s','l','n','t'),
-                                               clampedSlant});
+                                               angle});
     }
 
+    
+    
     
     
 

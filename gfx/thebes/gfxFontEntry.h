@@ -423,6 +423,20 @@ public:
     StretchRange     mStretchRange = StretchRange(FontStretch::Normal());
     SlantStyleRange  mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
 
+    
+    
+    
+    
+    
+    
+    enum class RangeFlags : uint8_t {
+        eNoFlags        = 0,
+        eAutoWeight     = (1 << 0),
+        eAutoStretch    = (1 << 1),
+        eAutoSlantStyle = (1 << 2)
+    };
+    RangeFlags       mRangeFlags = RangeFlags::eNoFlags;
+
     bool             mFixedPitch  : 1;
     bool             mIsBadUnderlineFont : 1;
     bool             mIsUserFontContainer : 1; 
@@ -627,6 +641,7 @@ private:
     gfxFontEntry& operator=(const gfxFontEntry&);
 };
 
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
 
 
 struct GlobalFontMatch {
