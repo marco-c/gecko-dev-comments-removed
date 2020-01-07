@@ -224,33 +224,13 @@ TokenServerClient.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getTokenFromBrowserIDAssertion:
-    function getTokenFromBrowserIDAssertion(url, assertion, cb, addHeaders = {}) {
+  async getTokenFromBrowserIDAssertion(url, assertion, addHeaders = {}) {
     if (!url) {
       throw new TokenServerClientError("url argument is not valid.");
     }
 
     if (!assertion) {
       throw new TokenServerClientError("assertion argument is not valid.");
-    }
-
-    if (!cb) {
-      throw new TokenServerClientError("cb argument is not valid.");
     }
 
     this._log.debug("Beginning BID assertion exchange: " + url);
@@ -263,39 +243,25 @@ TokenServerClient.prototype = {
       req.setHeader(header, addHeaders[header]);
     }
 
-    let client = this;
-    req.get(function onResponse(error) {
-      if (error) {
-        cb(new TokenServerClientNetworkError(error), null);
-        return;
-      }
-
-      let self = this;
-      function callCallback(error, result) {
-        if (!cb) {
-          self._log.warn("Callback already called! Did it throw?");
-          return;
-        }
-
-        try {
-          cb(error, result);
-        } catch (ex) {
-          self._log.warn("Exception when calling user-supplied callback", ex);
-        }
-
-        cb = null;
-      }
-
-      try {
-        client._processTokenResponse(this.response, callCallback);
-      } catch (ex) {
-        this._log.warn("Error processing token server response", ex);
-
-        let error = new TokenServerClientError(ex);
-        error.response = this.response;
-        callCallback(error, null);
-      }
+    let response = await new Promise((resolve, reject) => {
+      req.get(function(err) {
+        
+        err ? reject(new TokenServerClientNetworkError(err)) :
+              resolve(this.response);
+      });
     });
+
+    try {
+      return this._processTokenResponse(response);
+    } catch (ex) {
+      if (ex instanceof TokenServerClientServerError) {
+        throw ex;
+      }
+      this._log.warn("Error processing token server response", ex);
+      let error = new TokenServerClientError(ex);
+      error.response = response;
+      throw error;
+    }
   },
 
   
@@ -304,9 +270,7 @@ TokenServerClient.prototype = {
 
 
 
-
-
-  _processTokenResponse: function processTokenResponse(response, cb) {
+  _processTokenResponse(response) {
     this._log.debug("Got token response: " + response.status);
 
     
@@ -320,8 +284,7 @@ TokenServerClient.prototype = {
       let error = new TokenServerClientServerError("Non-JSON response.",
                                                    "malformed-response");
       error.response = response;
-      cb(error, null);
-      return;
+      throw error;
     }
 
     let result;
@@ -332,8 +295,7 @@ TokenServerClient.prototype = {
       let error = new TokenServerClientServerError("Malformed JSON.",
                                                    "malformed-response");
       error.response = response;
-      cb(error, null);
-      return;
+      throw error;
     }
 
     
@@ -393,8 +355,7 @@ TokenServerClient.prototype = {
       
       this._maybeNotifyBackoff(response, "retry-after");
 
-      cb(error, null);
-      return;
+      throw error;
     }
 
     for (let k of ["id", "key", "api_endpoint", "uid", "duration"]) {
@@ -404,20 +365,19 @@ TokenServerClient.prototype = {
                                                      k);
         error.cause = "malformed-response";
         error.response = response;
-        cb(error, null);
-        return;
+        throw error;
       }
     }
 
     this._log.debug("Successful token response");
-    cb(null, {
+    return {
       id:             result.id,
       key:            result.key,
       endpoint:       result.api_endpoint,
       uid:            result.uid,
       duration:       result.duration,
       hashed_fxa_uid: result.hashed_fxa_uid,
-    });
+    };
   },
 
   
