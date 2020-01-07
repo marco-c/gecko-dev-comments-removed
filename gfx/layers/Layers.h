@@ -25,7 +25,6 @@
 #include "mozilla/Maybe.h"              
 #include "mozilla/Poison.h"
 #include "mozilla/RefPtr.h"             
-#include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/UniquePtr.h"          
 #include "mozilla/gfx/BaseMargin.h"     
@@ -65,7 +64,6 @@ namespace mozilla {
 
 class ComputedTimingFunction;
 class FrameLayerBuilder;
-class StyleAnimationValue;
 
 namespace gl {
 class GLContext;
@@ -1387,7 +1385,7 @@ public:
   bool HasTransformAnimation() const;
   bool HasOpacityAnimation() const;
 
-  AnimationValue GetBaseAnimationStyle() const
+  RawServoAnimationValue* GetBaseAnimationStyle() const
   {
     return mAnimationInfo.GetBaseAnimationStyle();
   }

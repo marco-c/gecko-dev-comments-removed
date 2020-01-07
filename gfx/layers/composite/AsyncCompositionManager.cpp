@@ -11,7 +11,7 @@
 #include "Layers.h"                     
 #include "gfxPoint.h"                   
 #include "gfxPrefs.h"                   
-#include "mozilla/StyleAnimationValue.h" 
+#include "mozilla/ServoBindings.h"      
 #include "mozilla/WidgetUtils.h"        
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/gfx/Point.h"          
@@ -580,9 +580,9 @@ ApplyAnimatedValue(Layer* aLayer,
                    CompositorAnimationStorage* aStorage,
                    nsCSSPropertyID aProperty,
                    const AnimationData& aAnimationData,
-                   const AnimationValue& aValue)
+                   const RefPtr<RawServoAnimationValue>& aValue)
 {
-  if (aValue.IsNull()) {
+  if (!aValue) {
     
     return;
   }
@@ -590,15 +590,16 @@ ApplyAnimatedValue(Layer* aLayer,
   HostLayer* layerCompositor = aLayer->AsHostLayer();
   switch (aProperty) {
     case eCSSProperty_opacity: {
-      layerCompositor->SetShadowOpacity(aValue.GetOpacity());
+      float opacity = Servo_AnimationValue_GetOpacity(aValue);
+      layerCompositor->SetShadowOpacity(opacity);
       layerCompositor->SetShadowOpacitySetByAnimation(true);
-      aStorage->SetAnimatedValue(aLayer->GetCompositorAnimationsId(),
-                                 aValue.GetOpacity());
+      aStorage->SetAnimatedValue(aLayer->GetCompositorAnimationsId(), opacity);
 
       break;
     }
     case eCSSProperty_transform: {
-      RefPtr<const nsCSSValueSharedList> list = aValue.GetTransformList();
+      RefPtr<nsCSSValueSharedList> list;
+      Servo_AnimationValue_GetTransform(aValue, &list);
       const TransformData& transformData = aAnimationData.get_TransformData();
       nsPoint origin = transformData.origin();
       
@@ -649,17 +650,21 @@ SampleAnimations(Layer* aLayer,
       aLayer,
       [&] (Layer* layer)
       {
-        bool hasInEffectAnimations = false;
-        AnimationValue animationValue = layer->GetBaseAnimationStyle();
-        if (AnimationHelper::SampleAnimationForEachNode(aTime,
-                                                        layer->GetAnimations(),
-                                                        layer->GetAnimationData(),
-                                                        animationValue,
-                                                        hasInEffectAnimations)) {
-          isAnimating = true;
+        AnimationArray& animations = layer->GetAnimations();
+        if (animations.IsEmpty()) {
+          return;
         }
+        isAnimating = true;
+        bool hasInEffectAnimations = false;
+        RefPtr<RawServoAnimationValue> animationValue =
+          layer->GetBaseAnimationStyle();
+        AnimationHelper::SampleAnimationForEachNode(aTime,
+                                                    animations,
+                                                    layer->GetAnimationData(),
+                                                    animationValue,
+                                                    hasInEffectAnimations);
         if (hasInEffectAnimations) {
-          Animation& animation = layer->GetAnimations().LastElement();
+          Animation& animation = animations.LastElement();
           ApplyAnimatedValue(layer,
                              aStorage,
                              animation.property(),
