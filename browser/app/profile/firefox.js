@@ -495,13 +495,6 @@ pref("browser.tabs.extraDragSpace", false);
 
 
 
-pref("browser.tabs.restorebutton", 0);
-
-
-
-
-
-
 pref("browser.tabs.selectOwnerOnClose", true);
 
 pref("browser.tabs.showAudioPlayingIcon", true);
