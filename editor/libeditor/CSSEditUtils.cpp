@@ -315,6 +315,8 @@ CSSEditUtils::~CSSEditUtils()
 
 
 
+
+
 bool
 CSSEditUtils::IsCSSEditableProperty(nsINode* aNode,
                                     nsAtom* aProperty,
@@ -489,6 +491,7 @@ CSSEditUtils::RemoveCSSProperty(Element& aElement,
   return htmlEditor->DoTransaction(transaction);
 }
 
+
 nsresult
 CSSEditUtils::GetSpecifiedProperty(nsINode& aNode,
                                    nsAtom& aProperty,
@@ -497,6 +500,7 @@ CSSEditUtils::GetSpecifiedProperty(nsINode& aNode,
   return GetCSSInlinePropertyBase(&aNode, &aProperty, aValue, eSpecified);
 }
 
+
 nsresult
 CSSEditUtils::GetComputedProperty(nsINode& aNode,
                                   nsAtom& aProperty,
@@ -504,6 +508,7 @@ CSSEditUtils::GetComputedProperty(nsINode& aNode,
 {
   return GetCSSInlinePropertyBase(&aNode, &aProperty, aValue, eComputed);
 }
+
 
 nsresult
 CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
@@ -544,6 +549,7 @@ CSSEditUtils::GetCSSInlinePropertyBase(nsINode* aNode,
 
   return NS_OK;
 }
+
 
 already_AddRefed<nsComputedDOMStyle>
 CSSEditUtils::GetComputedStyle(Element* aElement)
@@ -586,12 +592,16 @@ CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode,
 
 
 
+
+
 bool
 CSSEditUtils::IsCSSInvertible(nsAtom& aProperty,
                               nsAtom* aAttribute)
 {
   return nsGkAtoms::b == &aProperty;
 }
+
+
 
 
 void
@@ -621,6 +631,8 @@ CSSEditUtils::GetDefaultBackgroundColor(nsAString& aColor)
 }
 
 
+
+
 void
 CSSEditUtils::GetDefaultLengthUnit(nsAString& aLengthUnit)
 {
@@ -631,6 +643,8 @@ CSSEditUtils::GetDefaultLengthUnit(nsAString& aLengthUnit)
     aLengthUnit.AssignLiteral("px");
   }
 }
+
+
 
 
 
@@ -683,6 +697,7 @@ CSSEditUtils::ParseLength(const nsAString& aString,
   *aValue = value * sign;
   *aUnit = NS_Atomize(StringTail(aString, j-i)).take();
 }
+
 
 void
 CSSEditUtils::GetCSSPropertyAtom(nsCSSEditableProperty aProperty,
@@ -755,6 +770,8 @@ CSSEditUtils::GetCSSPropertyAtom(nsCSSEditableProperty aProperty,
 
 
 
+
+
 void
 CSSEditUtils::BuildCSSDeclarations(nsTArray<nsAtom*>& aPropertyArray,
                                    nsTArray<nsString>& aValueArray,
@@ -795,6 +812,8 @@ CSSEditUtils::BuildCSSDeclarations(nsTArray<nsAtom*>& aPropertyArray,
     cssProperty = aEquivTable[index].cssProperty;
   }
 }
+
+
 
 
 
@@ -950,6 +969,8 @@ CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(Element* aElement,
 
 
 
+
+
 nsresult
 CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
                                                    nsAtom* aHTMLProperty,
@@ -996,6 +1017,8 @@ CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
 
 
 
+
+
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
                                                   nsAtom* aProperty,
@@ -1008,6 +1031,7 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
   return IsCSSEquivalentToHTMLInlineStyleSet(aNode, aProperty, aAttribute,
                                              value, aStyleType);
 }
+
 
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
@@ -1022,6 +1046,7 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
                                              aProperty, attribute,
                                              aValue, aStyleType);
 }
+
 
 bool
 CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
@@ -1214,10 +1239,12 @@ CSSEditUtils::SetCSSEnabled(bool aIsCSSPrefChecked)
 }
 
 bool
-CSSEditUtils::IsCSSPrefChecked()
+CSSEditUtils::IsCSSPrefChecked() const
 {
   return mIsCSSPrefChecked ;
 }
+
+
 
 
 
@@ -1235,6 +1262,7 @@ CSSEditUtils::ElementsSameStyle(nsIDOMNode* aFirstNode,
 
   return ElementsSameStyle(firstElement, secondElement);
 }
+
 
 bool
 CSSEditUtils::ElementsSameStyle(Element* aFirstElement,
@@ -1312,6 +1340,7 @@ CSSEditUtils::ElementsSameStyle(Element* aFirstElement,
   return true;
 }
 
+
 nsresult
 CSSEditUtils::GetInlineStyles(Element* aElement,
                               nsICSSDeclaration** aCssDecl,
@@ -1329,6 +1358,7 @@ CSSEditUtils::GetInlineStyles(Element* aElement,
   *aLength = (*aCssDecl)->Length();
   return NS_OK;
 }
+
 
 Element*
 CSSEditUtils::GetElementContainerOrSelf(nsINode* aNode)
