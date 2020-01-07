@@ -115,7 +115,6 @@
 #include "nsFocusManager.h"
 
 
-#include "nsIDOMHTMLInputElement.h"
 #include "nsIRadioVisitor.h"
 #include "nsIFormControl.h"
 

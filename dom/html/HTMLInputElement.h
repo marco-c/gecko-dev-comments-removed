@@ -482,7 +482,7 @@ public:
     SetHTMLAttr(nsGkAtoms::alt, aValue, aRv);
   }
 
-  
+  void GetAutocomplete(nsAString& aValue);
   void SetAutocomplete(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::autocomplete, aValue, aRv);
@@ -514,7 +514,7 @@ public:
   {
     return mChecked;
   }
-  
+  void SetChecked(bool aChecked);
 
   bool Disabled() const
   {
@@ -526,12 +526,9 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::disabled, aValue, aRv);
   }
 
-  
-
   FileList* GetFiles();
   void SetFiles(FileList* aFiles);
 
-  
   void SetFormAction(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::formaction, aValue, aRv);
@@ -584,8 +581,7 @@ public:
   {
     return mIsDraggingRange;
   }
-
-  
+  void SetIndeterminate(bool aValue);
 
   void GetInputMode(nsAString& aValue);
   void SetInputMode(const nsAString& aValue, ErrorResult& aRv)
@@ -655,7 +651,10 @@ public:
     SetHTMLBoolAttr(nsGkAtoms::multiple, aValue, aRv);
   }
 
-  
+  void GetName(nsAString& aValue)
+  {
+    GetHTMLAttr(nsGkAtoms::name, aValue);
+  }
   void SetName(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::name, aValue, aRv);
@@ -860,6 +859,8 @@ public:
   }
 
   nsIControllers* GetControllers(ErrorResult& aRv);
+  
+  nsresult GetControllers(nsIControllers** aResult);
 
   int32_t InputTextLength(CallerType aCallerType);
 
