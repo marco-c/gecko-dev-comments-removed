@@ -133,7 +133,11 @@ public:
 
   void AddProcessChangeBlockingPromise(mozilla::dom::Promise& aPromise, mozilla::ErrorResult& aRv);
 
-  void Destroy(mozilla::ErrorResult& aRv);
+  
+
+
+
+  void Destroy();
 
   void ActivateRemoteFrame(mozilla::ErrorResult& aRv);
 
