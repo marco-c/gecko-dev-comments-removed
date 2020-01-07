@@ -1405,7 +1405,11 @@ MediaStreamGraphImpl::ForceShutDown(media::ShutdownTicket* aShutdownTicket)
   mForceShutdownTicket = aShutdownTicket;
   MonitorAutoLock lock(mMonitor);
   mForceShutDown = true;
-  if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
+  if (IsNonRealtime()) {
+    
+    
+    StartNonRealtimeProcessing(0);
+  } else if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
     
     
     
@@ -3782,12 +3786,6 @@ MediaStreamGraph::DestroyNonRealtimeInstance(MediaStreamGraph* aGraph)
   MOZ_ASSERT(aGraph->IsNonRealtime(), "Should not destroy the global graph here");
 
   MediaStreamGraphImpl* graph = static_cast<MediaStreamGraphImpl*>(aGraph);
-
-  if (!graph->mNonRealtimeProcessing) {
-    
-    graph->StartNonRealtimeProcessing(0);
-  }
-
   graph->ForceShutDown(nullptr);
 }
 
