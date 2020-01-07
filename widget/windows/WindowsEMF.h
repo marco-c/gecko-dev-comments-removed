@@ -49,6 +49,14 @@ public:
 
 
 
+  bool InitFromFileContents(PBYTE aBytes, UINT aSize);
+
+  
+
+
+
+
+
 
   HDC GetDC() const
   {
@@ -69,6 +77,18 @@ public:
 
 
   bool SaveToFile();
+
+  
+
+
+  UINT GetEMFContentSize();
+
+  
+
+
+
+
+  bool GetEMFContentBits(PBYTE aBytes);
 
 private:
 
