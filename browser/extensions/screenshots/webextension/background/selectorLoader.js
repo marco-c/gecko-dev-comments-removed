@@ -88,15 +88,17 @@ this.selectorLoader = (function() {
   
   
   function downloadOnlyCheck(tabId) {
-    return communication.sendToBootstrap("getHistoryPref").then((historyEnabled) => {
-      return browser.tabs.get(tabId).then(tab => {
-        let downloadOnly = !historyEnabled || tab.incognito;
-        return browser.tabs.executeScript(tabId, {
-          
-          
-          
-          code: `window.downloadOnly = ${downloadOnly}`,
-          runAt: "document_start"
+    return communication.sendToBootstrap("isHistoryEnabled").then((historyEnabled) => {
+      return communication.sendToBootstrap("isUploadDisabled").then((uploadDisabled) => {
+        return browser.tabs.get(tabId).then(tab => {
+          let downloadOnly = !historyEnabled || uploadDisabled || tab.incognito;
+          return browser.tabs.executeScript(tabId, {
+            
+            
+            
+            code: `window.downloadOnly = ${downloadOnly}`,
+            runAt: "document_start"
+          });
         });
       });
     });

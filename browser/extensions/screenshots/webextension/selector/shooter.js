@@ -60,11 +60,7 @@ this.shooter = (function() {
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
     ui.iframe.hide();
-    try {
-      ctx.drawWindow(window, selectedPos.left, selectedPos.top, width, height, "#fff");
-    } finally {
-      ui.iframe.unhide();
-    }
+    ctx.drawWindow(window, selectedPos.left, selectedPos.top, width, height, "#fff");
     let limit = buildSettings.pngToJpegCutoff;
     let dataUrl = canvas.toDataURL();
     if (limit && dataUrl.length > limit) {
@@ -152,6 +148,8 @@ this.shooter = (function() {
         
         
         deactivateAfterFinish = false;
+        
+        ui.iframe.unhide();
         return;
       }
       if (error.name != "BackgroundError") {
@@ -165,8 +163,8 @@ this.shooter = (function() {
     }));
   };
 
-  exports.downloadShot = function(selectedPos) {
-    let dataUrl = screenshotPage(selectedPos);
+  exports.downloadShot = function(selectedPos, previewDataUrl) {
+    let dataUrl = previewDataUrl || screenshotPage(selectedPos);
     let promise = Promise.resolve(dataUrl);
     if (!dataUrl) {
       promise = callBackground(
@@ -196,15 +194,41 @@ this.shooter = (function() {
     }));
   };
 
-  exports.copyShot = function(selectedPos) {
-    let dataUrl = screenshotPage(selectedPos);
+  let copyInProgress = null;
+  exports.copyShot = function(selectedPos, previewDataUrl) {
+    
+    
+    if (copyInProgress) {
+      return;
+    }
+    
+    copyInProgress = setTimeout(() => {
+      copyInProgress = null;
+    }, 5000);
+
+    let unsetCopyInProgress = () => {
+      if (copyInProgress) {
+        clearTimeout(copyInProgress);
+        copyInProgress = null;
+      }
+    }
+    let dataUrl = previewDataUrl || screenshotPage(selectedPos);
     let blob = blobConverters.dataUrlToBlob(dataUrl);
     catcher.watchPromise(callBackground("copyShotToClipboard", blob).then(() => {
       uicontrol.deactivate();
-    }));
+      unsetCopyInProgress();
+    }, unsetCopyInProgress));
   };
 
   exports.sendEvent = function(...args) {
+    let maybeOptions = args[args.length - 1];
+
+    if (typeof maybeOptions === "object") {
+      maybeOptions.incognito = browser.extension.inIncognitoContext;
+    } else {
+      args.push({incognito: browser.extension.inIncognitoContext});
+    }
+
     callBackground("sendEvent", ...args);
   };
 

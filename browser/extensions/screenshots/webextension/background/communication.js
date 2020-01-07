@@ -63,7 +63,6 @@ this.communication = (function() {
   };
 
   function isBootstrapMissingError(error) {
-    
     if (!error) {
       return false;
     }
