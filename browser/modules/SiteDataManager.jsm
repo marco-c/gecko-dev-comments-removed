@@ -54,7 +54,7 @@ var SiteDataManager = {
     Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
-  _getBaseDomainFromHost(host) {
+  getBaseDomainFromHost(host) {
     let result = host;
     try {
       result = Services.eTLD.getBaseDomainFromHost(host);
@@ -76,7 +76,7 @@ var SiteDataManager = {
     let site = this._sites.get(host);
     if (!site) {
       site = {
-        baseDomain: this._getBaseDomainFromHost(host),
+        baseDomain: this.getBaseDomainFromHost(host),
         cookies: [],
         persisted: false,
         quotaUsage: 0,
@@ -222,10 +222,28 @@ var SiteDataManager = {
     });
   },
 
-  getSites() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getSites(baseDomain) {
     return this._getQuotaUsagePromise.then(() => {
       let list = [];
       for (let [host, site] of this._sites) {
+        if (baseDomain && site.baseDomain != baseDomain) {
+          continue;
+        }
+
         let usage = site.quotaUsage;
         for (let cache of site.appCacheList) {
           usage += cache.usage;
@@ -321,7 +339,18 @@ var SiteDataManager = {
     return Promise.all(promises);
   },
 
-  remove(hosts) {
+  
+
+
+
+
+
+
+  async remove(hosts) {
+    
+    await this._getQuotaUsage();
+    this._updateAppCache();
+
     let unknownHost = "";
     let targetSites = new Map();
     for (let host of hosts) {
@@ -339,19 +368,19 @@ var SiteDataManager = {
     }
 
     if (targetSites.size > 0) {
-      this._removeServiceWorkersForSites(targetSites)
-          .then(() => {
-            let promises = [];
-            for (let [, site] of targetSites) {
-              promises.push(this._removeQuotaUsage(site));
-            }
-            return Promise.all(promises);
-          })
-          .then(() => this.updateSites());
+      await this._removeServiceWorkersForSites(targetSites);
+      let promises = [];
+      for (let [, site] of targetSites) {
+        promises.push(this._removeQuotaUsage(site));
+      }
+      await Promise.all(promises);
     }
+
     if (unknownHost) {
       throw `SiteDataManager: removing unknown site of ${unknownHost}`;
     }
+
+    return this.updateSites();
   },
 
   
@@ -362,7 +391,18 @@ var SiteDataManager = {
 
 
 
-  promptSiteDataRemoval(win) {
+
+  promptSiteDataRemoval(win, removals) {
+    if (removals) {
+      let args = {
+        hosts: removals,
+        allowed: false
+      };
+      let features = "centerscreen,chrome,modal,resizable=no";
+      win.openDialog("chrome://browser/content/preferences/siteDataRemoveSelected.xul", "", features, args);
+      return args.allowed;
+    }
+
     let brandName = gBrandBundle.GetStringFromName("brandShortName");
     let flags =
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +

@@ -229,22 +229,9 @@ let gSiteDataSettings = {
           SiteDataManager.removeAll();
         }
       } else {
-        let args = {
-          hosts: removals,
-          allowed: false
-        };
-        let features = "centerscreen,chrome,modal,resizable=no";
-        window.openDialog("chrome://browser/content/preferences/siteDataRemoveSelected.xul", "", features, args);
-        allowed = args.allowed;
+        allowed = SiteDataManager.promptSiteDataRemoval(window, removals);
         if (allowed) {
-          try {
-            SiteDataManager.remove(removals);
-          } catch (e) {
-            
-            
-            
-            Cu.reportError(e);
-          }
+          SiteDataManager.remove(removals).catch(Cu.reportError);
         }
       }
     }
