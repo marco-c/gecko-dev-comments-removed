@@ -271,6 +271,18 @@ function run_test() {
   }
 
   
+  let longArray0 = Array.from(Array(50), (v, i) => i);
+  let longArray1 = longArray0.concat([51]);
+  try {
+    assert.deepEqual(longArray0, longArray1);
+  } catch (e) {
+    let message = e.toString();
+    
+    assert.ok(message.includes(JSON.stringify(longArray0)));
+    assert.ok(message.includes(JSON.stringify(longArray1)));
+  }
+
+  
   ok(true, "OK, this went well");
   deepEqual(/a/g, /a/g, "deep equal should work on RegExp");
   deepEqual(/a/igm, /a/igm, "deep equal should work on RegExp");

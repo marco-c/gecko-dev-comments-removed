@@ -87,11 +87,13 @@ function getMessage(error, prefix = "") {
   }
   let message = prefix;
   if (error.operator) {
-    message += (prefix ? " - " : "") + truncate(actual) + " " + error.operator +
-               " " + truncate(expected);
+    let truncateLength = error.truncate ? kTruncateLength : Infinity;
+    message += (prefix ? " - " : "") + truncate(actual, truncateLength) + " " +
+               error.operator + " " + truncate(expected, truncateLength);
   }
   return message;
 }
+
 
 
 
@@ -114,7 +116,7 @@ Assert.AssertionError = function(options) {
   this.actual = options.actual;
   this.expected = options.expected;
   this.operator = options.operator;
-  this.message = getMessage(this, options.message);
+  this.message = getMessage(this, options.message, options.truncate);
   
   let stack = Components.stack;
   do {
@@ -189,12 +191,15 @@ proto.setReporter = function(reporterFunc) {
 
 
 
-proto.report = function(failed, actual, expected, message, operator) {
+
+
+proto.report = function(failed, actual, expected, message, operator, truncate = true) {
   let err = new Assert.AssertionError({
     message,
     actual,
     expected,
-    operator
+    operator,
+    truncate
   });
   if (!this._reporter) {
     
@@ -269,7 +274,7 @@ proto.notEqual = function notEqual(actual, expected, message) {
 
 
 proto.deepEqual = function deepEqual(actual, expected, message) {
-  this.report(!ObjectUtils.deepEqual(actual, expected), actual, expected, message, "deepEqual");
+  this.report(!ObjectUtils.deepEqual(actual, expected), actual, expected, message, "deepEqual", false);
 };
 
 
@@ -284,7 +289,7 @@ proto.deepEqual = function deepEqual(actual, expected, message) {
 
 
 proto.notDeepEqual = function notDeepEqual(actual, expected, message) {
-  this.report(ObjectUtils.deepEqual(actual, expected), actual, expected, message, "notDeepEqual");
+  this.report(ObjectUtils.deepEqual(actual, expected), actual, expected, message, "notDeepEqual", false);
 };
 
 
