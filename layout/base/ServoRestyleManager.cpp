@@ -1099,7 +1099,13 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
   nsPresContext* presContext = PresContext();
 
   MOZ_ASSERT(presContext->Document(), "No document?  Pshaw!");
-  MOZ_ASSERT(!presContext->HasPendingMediaQueryUpdates(),
+  
+  
+  
+  
+  
+  MOZ_ASSERT((aFlags & ServoTraversalFlags::FlushThrottledAnimations) ||
+             !presContext->HasPendingMediaQueryUpdates(),
              "Someone forgot to update media queries?");
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(), "Missing a script blocker!");
   MOZ_ASSERT(!mInStyleRefresh, "Reentrant call?");
