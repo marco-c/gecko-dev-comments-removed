@@ -195,13 +195,8 @@ var Authentication = {
 
   async signOut() {
     if (await Authentication.isLoggedIn()) {
-      let user = await Authentication.getSignedInUser();
-      if (!user) {
-        throw new Error("Failed to get signed in user!");
-      }
-      let { sessionToken } = user;
-      let fxc = new FxAccountsClient();
-      await fxc.signOut(sessionToken, { service: "sync" });
+      
+      await fxAccounts.signOut();
     }
   }
 };
