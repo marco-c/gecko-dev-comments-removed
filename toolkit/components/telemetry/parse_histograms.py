@@ -310,7 +310,12 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             ParserError('New histogram "%s" cannot have "default" %s value.' %
                         (name, field)).handle_later()
 
-        if expiration != "default" and not utils.validate_expiration_version(expiration):
+        
+        
+        
+        if expiration != "default" and \
+           not utils.validate_expiration_version(expiration) and \
+           self._strict_type_checks:
             ParserError(('Error for histogram {} - invalid {}: {}.'
                         '\nSee: {}#expires-in-version')
                         .format(name, field, expiration, HISTOGRAMS_DOC_URL)).handle_later()
