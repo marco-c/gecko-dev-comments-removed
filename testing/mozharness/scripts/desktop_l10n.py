@@ -53,8 +53,7 @@ configuration_tokens = ('branch',
 
 
 runtime_config_tokens = ('version', 'locale', 'abs_objdir', 'revision',
-                         'en_us_binary_url', 'en_us_installer_binary_url',
-                         'mar_tools_url')
+                         'en_us_installer_binary_url', 'mar_tools_url')
 
 
 
@@ -256,9 +255,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
         config = self.config
         replace_dict = self.query_abs_dirs()
 
-        replace_dict['en_us_binary_url'] = config.get('en_us_binary_url')
-        
-        
         bootstrap_env = self.query_env(partial_env=config.get("bootstrap_env"),
                                        replace_dict=replace_dict)
         for binary in self._mar_binaries():
