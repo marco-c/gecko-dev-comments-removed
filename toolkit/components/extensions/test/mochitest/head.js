@@ -37,11 +37,26 @@ if (remote) {
 }
 
 let Assert = {
-  rejects(promise, msg) {
+  
+  
+  rejects(promise, expected, msg) {
     return promise.then(() => {
       ok(false, msg);
-    }, () => {
-      ok(true, msg);
+    }, actual => {
+      let matched = false;
+      if (Object.prototype.toString.call(expected) == "[object RegExp]") {
+        if (expected.test(actual)) {
+          matched = true;
+        }
+      } else if (actual instanceof expected) {
+        matched = true;
+      }
+
+      if (matched) {
+        ok(true, msg);
+      } else {
+        ok(false, `Unexpected exception for "${msg}": ${actual}`);
+      }
     });
   },
 };
