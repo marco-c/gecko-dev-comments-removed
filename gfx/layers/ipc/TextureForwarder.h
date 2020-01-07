@@ -9,6 +9,7 @@
 
 #include <stdint.h>                     
 #include "gfxTypes.h"
+#include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/KnowsCompositor.h"
@@ -69,6 +70,7 @@ public:
 
   virtual PTextureChild* CreateTexture(
     const SurfaceDescriptor& aSharedData,
+    const ReadLockDescriptor& aReadLock,
     LayersBackend aLayersBackend,
     TextureFlags aFlags,
     uint64_t aSerial,

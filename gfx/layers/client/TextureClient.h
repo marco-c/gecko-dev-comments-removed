@@ -635,9 +635,6 @@ public:
 
   uint64_t GetLastFwdTransactionId() { return mFwdTransactionId; }
 
-  void EnableReadLock();
-  void EnableBlockingReadLock();
-
   TextureReadLock* GetReadLock() { return mReadLock; }
 
   bool IsReadLocked() const;
@@ -645,7 +642,7 @@ public:
   bool TryReadLock();
   void ReadUnlock();
 
-  bool SerializeReadLock(ReadLockDescriptor& aDescriptor);
+  bool OnForwardedToHost();
 
   
   
@@ -682,6 +679,9 @@ private:
                            LayersBackend aLayersBackend,
                            TextureFlags aTextureFlags,
                            TextureAllocationFlags flags = ALLOC_DEFAULT);
+
+  void EnableReadLock();
+  void EnableBlockingReadLock();
 
   
 

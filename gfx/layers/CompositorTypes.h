@@ -73,9 +73,13 @@ enum class TextureFlags : uint32_t {
   RGB_FROM_YCBCR     = 1 << 13,
   
   SNAPSHOT           = 1 << 14,
+  
+  NON_BLOCKING_READ_LOCK = 1 << 15,
+  
+  BLOCKING_READ_LOCK = 1 << 16,
 
   
-  ALL_BITS           = (1 << 15) - 1,
+  ALL_BITS           = (1 << 17) - 1,
   
   DEFAULT = NO_FLAGS
 };
