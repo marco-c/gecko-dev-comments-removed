@@ -205,7 +205,6 @@ protected:
   void AppendRulesToCssText(nsAString& aCssText) const;
 
   
-  
   nsresult GetCssRules(nsIDOMCSSRuleList* *aRuleList);
   nsresult InsertRule(const nsAString & aRule, uint32_t aIndex,
                       uint32_t* _retval);
