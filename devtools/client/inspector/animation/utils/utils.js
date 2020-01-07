@@ -51,13 +51,17 @@ function findOptimalTimeInterval(minTimeInterval) {
 
 
 
-function isAllTimingEffectEqual(animationsA, animationsB) {
+function isAllAnimationEqual(animationsA, animationsB) {
   if (animationsA.length !== animationsB.length) {
     return false;
   }
 
   for (let i = 0; i < animationsA.length; i++) {
-    if (!isTimingEffectEqual(animationsA[i].state, animationsB[i].state)) {
+    const animationA = animationsA[i];
+    const animationB = animationsB[i];
+
+    if (animationA.actorID !== animationB.actorID ||
+        !isTimingEffectEqual(animationsA[i].state, animationsB[i].state)) {
       return false;
     }
   }
@@ -84,5 +88,5 @@ function isTimingEffectEqual(stateA, stateB) {
 }
 
 exports.findOptimalTimeInterval = findOptimalTimeInterval;
-exports.isAllTimingEffectEqual = isAllTimingEffectEqual;
+exports.isAllAnimationEqual = isAllAnimationEqual;
 exports.isTimingEffectEqual = isTimingEffectEqual;
