@@ -486,6 +486,28 @@ const setClassAttribute = async function(animationInspector, selector, cls) {
 
 
 
+
+
+const setEffectTimingAndPlayback = async function(animationInspector,
+                                                  selector, effectTiming, playbackRate) {
+  const options = {
+    effectTiming,
+    playbackRate,
+    selector,
+  };
+  await executeInContent("Test:SetEffectTimingAndPlayback", options);
+  await waitForSummaryAndDetail(animationInspector);
+};
+
+
+
+
+
+
+
+
+
+
 const setSidebarWidth = async function(width, inspector) {
   const onUpdated = inspector.toolbox.once("inspector-sidebar-resized");
   inspector.splitBox.setState({ width });
@@ -510,6 +532,26 @@ const setStyle = async function(animationInspector,
     selector,
   };
   await executeInContent("devtools:test:setStyle", options);
+  await waitForSummaryAndDetail(animationInspector);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+const setStyles = async function(animationInspector, selector, properties) {
+  const options = {
+    properties,
+    selector,
+  };
+  await executeInContent("devtools:test:setMultipleStyles", options);
   await waitForSummaryAndDetail(animationInspector);
 };
 

@@ -161,6 +161,33 @@ addMessageListener("devtools:test:setStyle", function(msg) {
 
 
 
+
+
+
+
+addMessageListener("devtools:test:setMultipleStyles", function(msg) {
+  const {selector, properties} = msg.data;
+  const node = superQuerySelector(selector);
+  if (!node) {
+    return;
+  }
+
+  for (const propertyName in properties) {
+    const propertyValue = properties[propertyName];
+    node.style[propertyName] = propertyValue;
+  }
+
+  sendAsyncMessage("devtools:test:setMultipleStyles");
+});
+
+
+
+
+
+
+
+
+
 addMessageListener("devtools:test:setAttribute", function(msg) {
   const {selector, attributeName, attributeValue} = msg.data;
   const node = superQuerySelector(selector);
