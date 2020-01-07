@@ -96,6 +96,10 @@ class PayloadDispatcher {
             batchWhiteboard.clearSuccessRecordGuids();
         }
 
+        if (isCommit || !batchWhiteboard.getInBatchingMode()) {
+            uploader.sessionStoreDelegate.onBatchCommitted();
+        }
+
         
         
         if (isLastPayload) {

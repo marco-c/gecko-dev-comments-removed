@@ -5,11 +5,15 @@
 package org.mozilla.gecko.sync.synchronizer;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.mozilla.gecko.background.common.log.Logger;
 import org.mozilla.gecko.sync.SyncException;
+import org.mozilla.gecko.sync.synchronizer.StoreBatchTracker.Batch;
 import org.mozilla.gecko.sync.repositories.InactiveSessionException;
 import org.mozilla.gecko.sync.repositories.InvalidSessionTransitionException;
 import org.mozilla.gecko.sync.repositories.RepositorySession;
@@ -81,6 +85,9 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
   private final AtomicInteger numOutboundRecords = new AtomicInteger(-1);
   private final AtomicInteger numOutboundRecordsStored = new AtomicInteger(-1);
   private final AtomicInteger numOutboundRecordsFailed = new AtomicInteger(-1);
+  
+  
+  private final AtomicReference<List<Batch>> outboundBatches = new AtomicReference<>();
 
   private Exception fetchFailedCauseException;
   private Exception storeFailedCauseException;
@@ -185,6 +192,11 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
   }
 
   
+  public List<Batch> getOutboundBatches() {
+    return outboundBatches.get();
+  }
+
+  
 
 
 
@@ -228,6 +240,7 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
     numOutboundRecords.set(-1);
     numOutboundRecordsStored.set(-1);
     numOutboundRecordsFailed.set(-1);
+    outboundBatches.set(null);
 
     
     if (sessionA.shouldSkip() ||
@@ -320,6 +333,7 @@ public class SynchronizerSession implements RecordsChannelDelegate, RepositorySe
     numOutboundRecords.set(recordsChannel.getFetchCount());
     numOutboundRecordsStored.set(recordsChannel.getStoreAcceptedCount());
     numOutboundRecordsFailed.set(recordsChannel.getStoreFailureCount());
+    outboundBatches.set(recordsChannel.getStoreBatches());
     flowBToACompleted = true;
 
     

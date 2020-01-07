@@ -25,5 +25,7 @@ public interface RepositorySessionStoreDelegate {
   void onRecordStoreSucceeded(String guid);
   void onStoreCompleted();
   void onStoreFailed(Exception e);
+  
+  void onBatchCommitted();
   RepositorySessionStoreDelegate deferredStoreDelegate(ExecutorService executor);
 }

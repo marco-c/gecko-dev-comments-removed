@@ -9,10 +9,12 @@ package org.mozilla.gecko.telemetry.pingbuilders;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
+import org.mozilla.gecko.sync.synchronizer.StoreBatchTracker;
 import org.mozilla.gecko.sync.telemetry.TelemetryContract;
 import org.mozilla.gecko.sync.telemetry.TelemetryStageCollector;
 import org.mozilla.gecko.telemetry.TelemetryLocalPing;
@@ -20,6 +22,7 @@ import org.mozilla.gecko.telemetry.TelemetryLocalPing;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 
@@ -35,7 +38,8 @@ public class TelemetrySyncPingBuilder extends TelemetryLocalPingBuilder {
             final TelemetryStageCollector stage = stages.get(stageName);
 
             
-            if (stage.inbound == 0 && stage.outbound == 0 && stage.error == null && stage.validation == null) {
+            if (stage.inbound == 0 && (stage.outbound == null || stage.outbound.size() == 0) &&
+                    stage.error == null && stage.validation == null) {
                 continue;
             }
 
@@ -63,19 +67,10 @@ public class TelemetrySyncPingBuilder extends TelemetryLocalPingBuilder {
                 stageJSON.put("incoming", incomingJSON);
             }
 
-            if (stage.outbound > 0) {
-                final ExtendedJSONObject outgoingJSON = new ExtendedJSONObject();
-                
-                
-                
-                
-                
-                
-                outgoingJSON.put("sent", stage.outboundStored);
-                if (stage.outboundFailed > 0) {
-                    outgoingJSON.put("failed", stage.outboundFailed);
-                }
-                stageJSON.put("outgoing", outgoingJSON);
+            JSONArray outbound = buildOutgoing(stage.outbound);
+
+            if (outbound != null) {
+                stageJSON.put("outgoing", outbound);
             }
 
             
@@ -102,6 +97,26 @@ public class TelemetrySyncPingBuilder extends TelemetryLocalPingBuilder {
     public TelemetrySyncPingBuilder setDeviceID(@NonNull String deviceID) {
         payload.put("deviceID", deviceID);
         return this;
+    }
+
+    @Nullable
+    private static JSONArray buildOutgoing(List<StoreBatchTracker.Batch> batches) {
+        if (batches == null || batches.size() == 0) {
+            return null;
+        }
+        JSONArray arr = new JSONArray();
+        for (int i = 0; i < batches.size(); ++i) {
+            StoreBatchTracker.Batch batch = batches.get(i);
+            ExtendedJSONObject o = new ExtendedJSONObject();
+            if (batch.sent != 0) {
+                o.put("sent", (long) batch.sent);
+            }
+            if (batch.failed != 0) {
+                o.put("failed", (long) batch.failed);
+            }
+            addUnchecked(arr, o);
+        }
+        return arr.size() == 0 ? null : arr;
     }
 
     public TelemetrySyncPingBuilder setRestarted(boolean didRestart) {
