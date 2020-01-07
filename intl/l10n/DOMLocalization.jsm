@@ -611,7 +611,10 @@ class DOMLocalization extends Localization {
     if (this.pendingElements.size > 0) {
       if (this.pendingrAF === null) {
         this.pendingrAF = this.windowElement.requestAnimationFrame(() => {
-          this.translateElements(Array.from(this.pendingElements));
+          
+          
+          this.translateElements(Array.from(this.pendingElements)
+            .filter(elem => elem.hasAttribute("data-l10n-id")));
           this.pendingElements.clear();
           this.pendingrAF = null;
         });
@@ -685,7 +688,10 @@ class DOMLocalization extends Localization {
           }
           this.resumeObserving();
         })
-        .catch(() => this.resumeObserving());
+        .catch(e => {
+          this.resumeObserving();
+          throw e;
+        });
     }
     return this.translateElements(this.getTranslatables(frag));
   }
