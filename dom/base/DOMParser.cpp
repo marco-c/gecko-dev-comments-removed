@@ -28,7 +28,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-DOMParser::DOMParser(nsISupports* aOwner, nsIPrincipal* aDocPrincipal)
+DOMParser::DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal)
   : mOwner(aOwner)
   , mPrincipal(aDocPrincipal)
   , mAttemptedInit(false)
@@ -254,7 +254,6 @@ DOMParser::Init(nsIURI* documentURI, nsIURI* baseURI,
     }
   }
 
-  mScriptHandlingObject = do_GetWeakReference(aScriptObject);
   mBaseURI = baseURI;
 
   MOZ_ASSERT(mPrincipal, "Must have principal");
@@ -289,10 +288,9 @@ DOMParser::Constructor(const GlobalObject& aOwner,
     }
   }
 
-  RefPtr<DOMParser> domParser = new DOMParser(aOwner.GetAsSupports(),
-                                              docPrincipal);
-
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aOwner.GetAsSupports());
+  RefPtr<DOMParser> domParser = new DOMParser(global, docPrincipal);
+
   rv = domParser->Init(documentURI, baseURI, global);
   if (rv.Failed()) {
     return nullptr;
@@ -309,7 +307,7 @@ DOMParser::SetUpDocument(DocumentFlavor aFlavor, ErrorResult& aRv)
   
   
   nsCOMPtr<nsIScriptGlobalObject> scriptHandlingObject =
-    do_QueryReferent(mScriptHandlingObject);
+    do_QueryInterface(mOwner);
 
   
   NS_ASSERTION(mPrincipal, "Must have principal by now");
