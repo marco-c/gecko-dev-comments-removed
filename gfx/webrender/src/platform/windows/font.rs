@@ -3,10 +3,10 @@
 
 
 use api::{FontInstanceFlags, FontKey, FontRenderMode};
-use api::{ColorU, GlyphDimensions, GlyphKey, SubpixelDirection};
+use api::{ColorU, GlyphDimensions};
 use dwrote;
 use gamma_lut::ColorLut;
-use glyph_rasterizer::{FontInstance, FontTransform};
+use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey};
 use internal_types::{FastHashMap, ResourceCacheError};
 use std::collections::hash_map::Entry;
 use std::sync::Arc;
@@ -372,7 +372,7 @@ impl FontContext {
                 
                 font.color = ColorU::new(255, 255, 255, 255);
                 
-                font.subpx_dir = SubpixelDirection::None;
+                font.disable_subpixel_position();
             }
             FontRenderMode::Alpha => {
                 font.color = font.color.luminance_color().quantize();

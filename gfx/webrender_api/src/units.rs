@@ -93,6 +93,8 @@ pub type DevicePixelScale = TypedScale<f32, WorldPixel, DevicePixel>;
 
 pub type LayoutToWorldScale = TypedScale<f32, LayoutPixel, WorldPixel>;
 
+pub type LayoutToDeviceScale = TypedScale<f32, LayoutPixel, DevicePixel>;
+
 pub type LayoutTransform = TypedTransform3D<f32, LayoutPixel, LayoutPixel>;
 pub type LayoutToScrollTransform = TypedTransform3D<f32, LayoutPixel, ScrollLayerPixel>;
 pub type ScrollToLayoutTransform = TypedTransform3D<f32, ScrollLayerPixel, LayoutPixel>;

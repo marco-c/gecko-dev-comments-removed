@@ -503,8 +503,8 @@ impl YamlFrameWriter {
         scene.finish_display_list(self.pipeline_id.unwrap(), dl);
     }
 
-    fn update_resources(&mut self, updates: &ResourceUpdates) {
-        for update in &updates.updates {
+    fn update_resources(&mut self, updates: &[ResourceUpdate]) {
+        for update in updates {
             match *update {
                 ResourceUpdate::AddImage(ref img) => {
                     if let Some(ref data) = self.images.get(&img.key) {
@@ -545,6 +545,7 @@ impl YamlFrameWriter {
                             data.path = None;
                             data.bytes = Some((**bytes).clone());
                         } else {
+                            
                             
                             println!(
                                 "Wrench only supports updating buffer images ({}).",

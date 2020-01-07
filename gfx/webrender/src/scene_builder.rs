@@ -2,7 +2,7 @@
 
 
 
-use api::{DocumentId, PipelineId, ApiMsg, FrameMsg, ResourceUpdates};
+use api::{DocumentId, PipelineId, ApiMsg, FrameMsg, ResourceUpdate};
 use api::channel::MsgSender;
 use display_list_flattener::build_scene;
 use frame_builder::{FrameBuilderConfig, FrameBuilder};
@@ -19,7 +19,7 @@ pub enum SceneBuilderRequest {
     Transaction {
         document_id: DocumentId,
         scene: Option<SceneRequest>,
-        resource_updates: ResourceUpdates,
+        resource_updates: Vec<ResourceUpdate>,
         frame_ops: Vec<FrameMsg>,
         render: bool,
     },
@@ -33,7 +33,7 @@ pub enum SceneBuilderResult {
     Transaction {
         document_id: DocumentId,
         built_scene: Option<BuiltScene>,
-        resource_updates: ResourceUpdates,
+        resource_updates: Vec<ResourceUpdate>,
         frame_ops: Vec<FrameMsg>,
         render: bool,
         result_tx: Option<Sender<SceneSwapResult>>,
