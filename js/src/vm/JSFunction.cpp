@@ -792,7 +792,7 @@ JSFunction::trace(JSTracer* trc)
         
         
         
-        if (hasScript() && !hasUncompiledScript())
+        if (hasScript() && !hasUncompletedScript())
             TraceManuallyBarrieredEdge(trc, &u.scripted.s.script_, "script");
         else if (isInterpretedLazy() && u.scripted.s.lazy_)
             TraceManuallyBarrieredEdge(trc, &u.scripted.s.lazy_, "lazyScript");

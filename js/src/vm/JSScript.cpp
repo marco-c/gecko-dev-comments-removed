@@ -3655,7 +3655,7 @@ js::CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope, HandleFun
                             HandleScript src)
 {
     MOZ_ASSERT(fun->isInterpreted());
-    MOZ_ASSERT(!fun->hasScript() || fun->hasUncompiledScript());
+    MOZ_ASSERT(!fun->hasScript() || fun->hasUncompletedScript());
 
     RootedScript dst(cx, CreateEmptyScriptForClone(cx, src));
     if (!dst)
@@ -4375,7 +4375,7 @@ LazyScript::initRuntimeFields(uint64_t packedFields)
 }
 
 bool
-LazyScript::hasUncompiledEnclosingScript() const
+LazyScript::hasUncompletedEnclosingScript() const
 {
     
     
@@ -4389,7 +4389,7 @@ LazyScript::hasUncompiledEnclosingScript() const
         return false;
 
     JSFunction* fun = enclosingScope()->as<FunctionScope>().canonicalFunction();
-    return !fun->hasScript() || fun->hasUncompiledScript() || !fun->nonLazyScript()->code();
+    return !fun->hasScript() || fun->hasUncompletedScript() || !fun->nonLazyScript()->code();
 }
 
 void

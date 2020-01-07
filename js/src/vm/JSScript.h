@@ -2382,7 +2382,14 @@ class LazyScript : public gc::TenuredCell
         toStringEnd_ = toStringEnd;
     }
 
-    bool hasUncompiledEnclosingScript() const;
+    
+    
+    bool hasUncompletedEnclosingScript() const;
+
+    
+    bool isEnclosingScriptLazy() const {
+        return !sourceObject_;
+    }
 
     friend class GCMarker;
     void traceChildren(JSTracer* trc);

@@ -1113,7 +1113,7 @@ AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, A
 
         if (fun->isInterpretedLazy()) {
             LazyScript* lazy = fun->lazyScriptOrNull();
-            if (lazy && lazy->sourceObject() && !lazy->hasUncompiledEnclosingScript()) {
+            if (lazy && !lazy->isEnclosingScriptLazy() && !lazy->hasUncompletedEnclosingScript()) {
                 if (!lazyFunctions.append(fun))
                     return false;
             }
