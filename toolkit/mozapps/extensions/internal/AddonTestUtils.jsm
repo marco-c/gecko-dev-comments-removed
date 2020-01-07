@@ -73,6 +73,9 @@ const ZipWriter = Components.Constructor(
   "@mozilla.org/zipwriter;1",
   "nsIZipWriter", "open");
 
+function isRegExp(val) {
+  return val && typeof val === "object" && typeof val.test === "function";
+}
 
 
 var AMscope = ChromeUtils.import("resource://gre/modules/AddonManager.jsm", {});
@@ -367,6 +370,12 @@ var AddonTestUtils = {
         Cu.reportError(e);
       }
     });
+  },
+
+  info(msg) {
+    
+    let print = this.testScope.info || this.testScope.do_print;
+    print(msg);
   },
 
   cleanupTempXPIs() {
@@ -1254,6 +1263,72 @@ var AddonTestUtils = {
       return {messages, result};
     } finally {
       Services.console.unregisterListener(listener);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  checkMessages(messages, {expected = [], forbidden = [], forbidUnexpected = false}) {
+    function msgMatches(msg, expectedMsg) {
+      for (let [prop, pattern] of Object.entries(expectedMsg)) {
+        if (isRegExp(pattern) && typeof msg[prop] === "string") {
+          if (!pattern.test(msg[prop])) {
+            return false;
+          }
+        } else if (msg[prop] !== pattern) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    let i = 0;
+    for (let msg of messages) {
+      if (forbidden.some(pat => msgMatches(msg, pat))) {
+        this.testScope.ok(false, `Got forbidden console message: ${msg}`);
+        continue;
+      }
+
+      if (i < expected.length && msgMatches(msg, expected[i])) {
+        this.info(`Matched expected console message: ${msg}`);
+        i++;
+      } else if (forbidUnexpected) {
+        this.testScope.ok(false, `Got unexpected console message: ${msg}`);
+      }
+    }
+    for (let pat of expected.slice(i)) {
+      this.testScope.ok(false, `Did not get expected console message: ${uneval(pat)}`);
     }
   },
 
