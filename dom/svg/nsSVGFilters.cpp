@@ -457,15 +457,6 @@ nsSVGElement::StringInfo nsSVGFELightingElement::sStringInfo[2] =
 
 
 
-NS_IMPL_ADDREF_INHERITED(nsSVGFELightingElement,nsSVGFELightingElementBase)
-NS_IMPL_RELEASE_INHERITED(nsSVGFELightingElement,nsSVGFELightingElementBase)
-
-NS_INTERFACE_MAP_BEGIN(nsSVGFELightingElement)
-NS_INTERFACE_MAP_END_INHERITING(nsSVGFELightingElementBase)
-
-
-
-
 NS_IMETHODIMP_(bool)
 nsSVGFELightingElement::IsAttributeMapped(const nsAtom* name) const
 {
