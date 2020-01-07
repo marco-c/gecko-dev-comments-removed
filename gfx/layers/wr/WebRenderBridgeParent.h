@@ -251,6 +251,7 @@ private:
   std::unordered_set<uint64_t> mActiveAnimations;
   nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mAsyncCompositables;
   nsDataHashtable<nsUint64HashKey, RefPtr<WebRenderImageHost>> mExternalImageIds;
+  nsTHashtable<nsUint64HashKey> mSharedSurfaceIds;
 
   TimeStamp mPreviousFrameTimeStamp;
   
