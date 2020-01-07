@@ -1520,12 +1520,8 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
         }
 
         if (NS_SUCCEEDED(status)) {
-            if (rec->mTRRSuccess == 0) { 
-                rec->mTrrDuration = TimeStamp::Now() - rec->mTrrStart;
-            }
             rec->mTRRSuccess++;
         }
-
         if (TRROutstanding()) {
             if (NS_FAILED(status)) {
                 return LOOKUP_OK; 
@@ -1579,6 +1575,12 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
             }
             
         }
+
+        if (NS_SUCCEEDED(status) && (rec->mTRRSuccess == 1)) {
+            
+            rec->mTrrDuration = TimeStamp::Now() - rec->mTrrStart;
+        }
+
     } else { 
         if (rec->usingAnyThread) {
             mActiveAnyThreadCount--;
