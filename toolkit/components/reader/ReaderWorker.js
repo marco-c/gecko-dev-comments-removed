@@ -45,9 +45,8 @@ var Agent = {
 
 
 
-
-  parseDocument(uri, serializedDoc, options) {
+  parseDocument(uri, serializedDoc) {
     let doc = new JSDOMParser().parse(serializedDoc);
-    return new Readability(uri, doc, options).parse();
+    return new Readability(uri, doc).parse();
   },
 };

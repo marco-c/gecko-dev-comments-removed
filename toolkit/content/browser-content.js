@@ -678,6 +678,12 @@ var Printing = {
       containerElement.appendChild(contentElement);
 
       
+      let controlContentStyle = content.document.createElement("style");
+      controlContentStyle.setAttribute("scoped", "");
+      controlContentStyle.textContent = "@import url(\"chrome://global/skin/aboutReaderContent.css\");";
+      contentElement.appendChild(controlContentStyle);
+
+      
       let readerContent = content.document.createElement("div");
       readerContent.setAttribute("id", "moz-reader-content");
       contentElement.appendChild(readerContent);
