@@ -194,6 +194,10 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
     var testIndex = -1;
     var w = null;
 
+    
+    
+    var onlyOneSubtest = SpecialPowers.getCharPref("apz.subtest",  "");
+
     function advanceSubtestExecution() {
       var test = aSubtests[testIndex];
       if (w) {
@@ -226,6 +230,13 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
       }
 
       test = aSubtests[testIndex];
+
+      if (onlyOneSubtest && onlyOneSubtest != test.file) {
+        SimpleTest.ok(true, "Skipping " + test.file + " because only " + onlyOneSubtest + " is being run");
+        setTimeout(function() { advanceSubtestExecution(); }, 0);
+        return;
+      }
+
       if (typeof test.dp_suppression != 'undefined') {
         
         
