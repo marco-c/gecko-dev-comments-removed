@@ -1275,6 +1275,28 @@ nsNSSCertList::SegmentCertificateChain( nsCOMPtr<nsIX509Cert>& aRoot,
   return NS_OK;
 }
 
+nsresult
+nsNSSCertList::GetRootCertificate( nsCOMPtr<nsIX509Cert>& aRoot)
+{
+  if (aRoot) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  CERTCertListNode* rootNode = CERT_LIST_TAIL(mCertList);
+  if (!rootNode) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  if (CERT_LIST_END(rootNode, mCertList)) {
+    
+    return NS_OK;
+  }
+  
+  aRoot = nsNSSCertificate::Create(rootNode->cert);
+  if (!aRoot) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  return NS_OK;
+}
+
 NS_IMPL_ISUPPORTS(nsNSSCertListEnumerator, nsISimpleEnumerator)
 
 nsNSSCertListEnumerator::nsNSSCertListEnumerator(

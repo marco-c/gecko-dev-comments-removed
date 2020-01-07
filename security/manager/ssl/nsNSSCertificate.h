@@ -106,6 +106,11 @@ public:
                             nsCOMPtr<nsIX509CertList>& aIntermediates,
                             nsCOMPtr<nsIX509Cert>& aEndEntity);
 
+  
+  
+  
+  nsresult GetRootCertificate( nsCOMPtr<nsIX509Cert>& aRoot);
+
 private:
    virtual ~nsNSSCertList() {}
 
