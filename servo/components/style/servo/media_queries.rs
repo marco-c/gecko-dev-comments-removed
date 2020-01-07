@@ -24,7 +24,7 @@ use values::computed::font::FontSize;
 
 
 
-#[derive(MallocSizeOf)]
+#[derive(Debug, MallocSizeOf)]
 pub struct Device {
     
     media_type: MediaType,
