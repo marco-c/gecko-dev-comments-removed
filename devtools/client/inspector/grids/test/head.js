@@ -13,7 +13,7 @@ Services.scriptloader.loadSubScript(
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-redux-head.js",
+  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
   this);
 
 Services.prefs.setIntPref("devtools.toolbox.footer.height", 350);
