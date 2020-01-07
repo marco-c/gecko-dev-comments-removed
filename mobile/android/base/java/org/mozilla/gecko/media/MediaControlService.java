@@ -30,12 +30,9 @@ import org.mozilla.gecko.IntentHelper;
 import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
-import org.mozilla.gecko.Tabs;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import java.lang.ref.WeakReference;
-
-public class MediaControlService extends Service implements Tabs.OnTabsChangedListener {
+public class MediaControlService extends Service {
     private static final String LOGTAG = "MediaControlService";
 
     public static final String ACTION_INIT           = "action_init";
@@ -46,6 +43,10 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
     public static final String ACTION_PAUSE_BY_AUDIO_FOCUS  = "action_pause_audio_focus";
     public static final String ACTION_START_AUDIO_DUCK      = "action_start_audio_duck";
     public static final String ACTION_STOP_AUDIO_DUCK       = "action_stop_audio_duck";
+     static final String ACTION_TAB_STATE_PLAYING = "action_tab_state_playing";
+     static final String ACTION_TAB_STATE_STOPPED = "action_tab_state_stopped";
+     static final String ACTION_TAB_STATE_RESUMED = "action_tab_state_resumed";
+     static final String ACTION_TAB_STATE_FAVICON = "action_tab_state_favicon";
     private static final String MEDIA_CONTROL_PREF = "dom.audiochannel.mediaControl";
 
     
@@ -63,8 +64,6 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
 
     private boolean mInitialize = false;
     private boolean mIsMediaControlPrefOn = true;
-
-    private WeakReference<Tab> mTabReference = new WeakReference<>(null);
 
     private int minCoverSize;
     private int coverSize;
@@ -114,46 +113,6 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
         shutdown();
     }
 
-    @Override
-    public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
-        if (!mInitialize) {
-            return;
-        }
-
-        final Tab playingTab = mTabReference.get();
-        switch (msg) {
-            case MEDIA_PLAYING_CHANGE:
-                
-                
-                if (playingTab != tab && tab.isMediaPlaying()) {
-                    mTabReference = new WeakReference<>(tab);
-                    setState(State.PLAYING);
-                } else if (playingTab == tab) {
-                    mTabReference = new WeakReference<>(tab.isMediaPlaying() ? tab : null);
-                    setState(tab.isMediaPlaying() ? State.PLAYING : State.STOPPED);
-                }
-                break;
-            case MEDIA_PLAYING_RESUME:
-                
-                
-                if (playingTab == tab && !isMediaPlaying()) {
-                    setState(State.PLAYING);
-                }
-                break;
-            case CLOSED:
-                if (playingTab == null || playingTab == tab) {
-                    
-                    setState(State.STOPPED);
-                }
-                break;
-            case FAVICON:
-                if (playingTab == tab) {
-                    setState(isMediaPlaying() ? State.PLAYING : State.PAUSED);
-                }
-                break;
-        }
-    }
-
     private boolean isMediaPlaying() {
         return mMediaState.equals(State.PLAYING);
     }
@@ -175,7 +134,6 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
         coverSize = (int) getResources().getDimension(R.dimen.notification_media_cover);
         minCoverSize = getResources().getDimensionPixelSize(R.dimen.favicon_bg);
 
-        Tabs.registerOnTabsChangedListener(this);
         mInitialize = true;
     }
 
@@ -188,7 +146,6 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
         setState(State.STOPPED);
         PrefsHelper.removeObserver(mPrefsObserver);
 
-        Tabs.unregisterOnTabsChangedListener(this);
         mInitialize = false;
         stopSelf();
     }
@@ -229,6 +186,20 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
                 break;
             case ACTION_STOP_AUDIO_DUCK :
                 handleAudioDucking(AudioDucking.STOP);
+                break;
+            case ACTION_TAB_STATE_PLAYING :
+                setState(State.PLAYING);
+                break;
+            case ACTION_TAB_STATE_STOPPED :
+                setState(State.STOPPED);
+                break;
+            case ACTION_TAB_STATE_RESUMED :
+                if (!isMediaPlaying()) {
+                    setState(State.PLAYING);
+                }
+                break;
+            case ACTION_TAB_STATE_FAVICON :
+                setState(isMediaPlaying() ? State.PLAYING : State.PAUSED);
                 break;
         }
     }
@@ -337,14 +308,14 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
                 super.onStop();
                 setState(State.STOPPED);
                 notifyObservers("mediaControl", "mediaControlStopped");
-                mTabReference = new WeakReference<>(null);
+                AudioFocusAgent.getInstance().clearActiveMediaTab();
             }
         });
         return true;
     }
 
     private void setMediaStateForTab(boolean isTabPlaying) {
-        final Tab tab = mTabReference.get();
+        final Tab tab = AudioFocusAgent.getInstance().getActiveMediaTab();
         if (tab == null) {
             return;
         }
@@ -382,7 +353,7 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
             return;
         }
 
-        final Tab tab = mTabReference.get();
+        final Tab tab = AudioFocusAgent.getInstance().getActiveMediaTab();
 
         if (tab == null) {
             return;
