@@ -1158,6 +1158,7 @@ GetOrCreateDOMReflectorNoWrap(JSContext* cx, T* value,
 
 
 
+
 template <class T>
 inline bool
 WrapNewBindingNonWrapperCachedObject(JSContext* cx,
@@ -1200,6 +1201,8 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   rval.set(JS::ObjectValue(*obj));
   return MaybeWrapObjectValue(cx, rval);
 }
+
+
 
 
 

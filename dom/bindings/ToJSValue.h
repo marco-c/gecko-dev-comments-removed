@@ -9,12 +9,15 @@
 
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/TypedArray.h"
 #include "jsapi.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
+#include "nsAutoPtr.h"
 
 namespace mozilla {
 namespace dom {
@@ -150,6 +153,74 @@ ToJSValue(JSContext* aCx,
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
   return GetOrCreateDOMReflector(aCx, aArgument, aValue);
+}
+
+
+
+
+namespace binding_detail {
+template<class T>
+MOZ_MUST_USE
+typename EnableIf<IsBaseOf<NonRefcountedDOMObject, T>::value, bool>::Type
+ToJSValueFromPointerHelper(JSContext* aCx,
+                           T* aArgument,
+                           JS::MutableHandle<JS::Value> aValue)
+{
+  
+  MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
+
+  
+  
+  
+  if (!aArgument) {
+    aValue.setNull();
+    return true;
+  }
+
+  JS::Rooted<JSObject*> obj(aCx);
+  if (!aArgument->WrapObject(aCx, nullptr, &obj)) {
+    return false;
+  }
+
+  aValue.setObject(*obj);
+  return true;
+}
+} 
+
+
+
+template<class T>
+MOZ_MUST_USE
+typename EnableIf<IsBaseOf<NonRefcountedDOMObject, T>::value, bool>::Type
+ToJSValue(JSContext* aCx,
+          nsAutoPtr<T>&& aArgument,
+          JS::MutableHandle<JS::Value> aValue)
+{
+  if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(), aValue)) {
+    return false;
+  }
+
+  
+  aArgument.forget();
+  return true;
+}
+
+
+
+template<class T>
+MOZ_MUST_USE
+typename EnableIf<IsBaseOf<NonRefcountedDOMObject, T>::value, bool>::Type
+ToJSValue(JSContext* aCx,
+          UniquePtr<T>&& aArgument,
+          JS::MutableHandle<JS::Value> aValue)
+{
+  if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(), aValue)) {
+    return false;
+  }
+
+  
+  Unused << aArgument.release();
+  return true;
 }
 
 
