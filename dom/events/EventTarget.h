@@ -8,6 +8,7 @@
 #define mozilla_dom_EventTarget_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Nullable.h"
 #include "nsIDOMEventTarget.h"
 #include "nsWrapperCache.h"
 #include "nsAtom.h"
@@ -32,8 +33,6 @@ class EventListener;
 class EventListenerOptionsOrBoolean;
 class EventHandlerNonNull;
 class GlobalObject;
-
-template <class T> struct Nullable;
 
 
 #define NS_EVENTTARGET_IID \
@@ -111,6 +110,28 @@ public:
   void RemoveSystemEventListener(const nsAString& aType,
                                  nsIDOMEventListener* aListener,
                                  bool aUseCapture);
+
+  
+
+
+  nsresult AddSystemEventListener(const nsAString& aType,
+                                  nsIDOMEventListener* aListener,
+                                  bool aUseCapture)
+  {
+    return AddSystemEventListener(aType, aListener, aUseCapture, Nullable<bool>());
+  }
+
+  
+
+
+  nsresult AddSystemEventListener(const nsAString& aType,
+                                  nsIDOMEventListener* aListener,
+                                  bool aUseCapture,
+                                  bool aWantsUntrusted)
+  {
+    return AddSystemEventListener(aType, aListener, aUseCapture,
+                                  Nullable<bool>(aWantsUntrusted));
+  }
 
   
 
@@ -287,6 +308,27 @@ protected:
 
   bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted,
                              ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult AddSystemEventListener(const nsAString& aType,
+                                  nsIDOMEventListener* aListener,
+                                  bool aUseCapture,
+                                  const Nullable<bool>& aWantsUntrusted);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(EventTarget, NS_EVENTTARGET_IID)
