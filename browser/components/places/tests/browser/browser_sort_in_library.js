@@ -79,7 +79,7 @@ function checkSort(aTree, aSortingMode, aSortingAnno) {
   
   if ([Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_ASCENDING,
        Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_DESCENDING].
-      indexOf(aSortingMode) >= 0) {
+      includes(aSortingMode)) {
     is(res.sortingAnnotation, aSortingAnno,
        "column should now have sorting annotation " + aSortingAnno);
   }

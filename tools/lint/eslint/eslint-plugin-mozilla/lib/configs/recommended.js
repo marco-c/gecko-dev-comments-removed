@@ -12,15 +12,11 @@ module.exports = {
     "BrowserFeedWriter": false,
     "CSSPrimitiveValue": false,
     "CSSValueList": false,
-    "Cc": false,
     "CheckerboardReportService": false,
     
     "ChromeUtils": false,
     "ChromeWorker": false,
-    "Ci": false,
     "Components": false,
-    "Cr": false,
-    "Cu": false,
     "DOMRequest": false,
     "DedicatedWorkerGlobalScope": false,
     "IDBFileRequest": false,
@@ -175,6 +171,7 @@ module.exports = {
     "mozilla/no-useless-removeEventListener": "error",
     "mozilla/use-chromeutils-import": "error",
     "mozilla/use-default-preference-values": "error",
+    "mozilla/use-includes-instead-of-indexOf": "error",
     "mozilla/use-ownerGlobal": "error",
     "mozilla/use-services": "error",
 
