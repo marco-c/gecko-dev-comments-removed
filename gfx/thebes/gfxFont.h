@@ -142,6 +142,8 @@ struct gfxFontStyle {
     nscolor fontSmoothingBackgroundColor;
 
     
+
+    
     FontWeight weight;
 
     
@@ -151,10 +153,14 @@ struct gfxFontStyle {
     FontSlantStyle style;
 
     
-    uint8_t variantCaps;
+    
+    
 
     
-    uint8_t variantSubSuper;
+    uint8_t variantCaps : 4; 
+
+    
+    uint8_t variantSubSuper : 4; 
 
     
     
