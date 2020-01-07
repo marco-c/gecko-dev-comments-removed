@@ -147,12 +147,6 @@ def resolve_keyed_by(item, field, item_name, **extra_values):
 WHITELISTED_SCHEMA_IDENTIFIERS = [
     
     lambda path: "[u'upstream-artifacts']" in path,
-    
-    lambda path: path.endswith("[u'build_number']"),
-    lambda path: path.endswith("[u'tuxedo_server_url']"),
-    lambda path: path.endswith("[u'release_promotion']"),
-    lambda path: path.endswith("[u'generate_bz2_blob']"),
-    lambda path: path.endswith("[u'release_eta']"),
 ]
 
 

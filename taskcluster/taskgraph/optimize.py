@@ -322,22 +322,14 @@ class IndexSearch(OptimizationStrategy):
 
 class SETA(OptimizationStrategy):
     def should_remove_task(self, task, params, _):
-        bbb_task = False
-
-        
-        if task.task.get('provisionerId', '') == 'buildbot-bridge':
-            label = task.task.get('payload').get('buildername')
-            bbb_task = True
-        else:
-            label = task.label
+        label = task.label
 
         
         
         if is_low_value_task(label,
                              params.get('project'),
                              params.get('pushlog_id'),
-                             params.get('pushdate'),
-                             bbb_task):
+                             params.get('pushdate')):
             
             return True
         else:

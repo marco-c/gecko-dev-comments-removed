@@ -49,17 +49,13 @@ class SETA(object):
 
         return 'test-%s/%s-%s' % (task_tuple[0], task_tuple[1], task_tuple[2])
 
-    def query_low_value_tasks(self, project, bbb=False):
+    def query_low_value_tasks(self, project):
         
         
         low_value_tasks = []
 
-        if not bbb:
-            
-            url = SETA_ENDPOINT % (project, 'taskcluster')
-        else:
-            
-            url = SETA_ENDPOINT % (project, 'buildbot&priority=5')
+        
+        url = SETA_ENDPOINT % (project, 'taskcluster')
 
         
         
@@ -172,7 +168,7 @@ class SETA(object):
 
         return min_between_pushes
 
-    def is_low_value_task(self, label, project, pushlog_id, push_date, bbb_task=False):
+    def is_low_value_task(self, label, project, pushlog_id, push_date):
         
         if project not in SETA_PROJECTS:
             return False
@@ -190,17 +186,10 @@ class SETA(object):
                 int(push_date)) >= PROJECT_SCHEDULE_ALL_EVERY_MINUTES.get(project, 60):
             return False
 
-        if not bbb_task:
-            
-            if project not in self.low_value_tasks:
-                self.low_value_tasks[project] = self.query_low_value_tasks(project)
-            return label in self.low_value_tasks[project]
-
         
-        
-        if project not in self.low_value_bb_tasks:
-            self.low_value_bb_tasks[project] = self.query_low_value_tasks(project, bbb=True)
-        return label in self.low_value_bb_tasks[project]
+        if project not in self.low_value_tasks:
+            self.low_value_tasks[project] = self.query_low_value_tasks(project)
+        return label in self.low_value_tasks[project]
 
 
 
