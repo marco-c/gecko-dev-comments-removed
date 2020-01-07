@@ -331,6 +331,8 @@ MatchPattern::Init(JSContext* aCx, const nsAString& aPattern, bool aIgnorePath,
     
     
     mMatchSubdomain = true;
+    
+    aIgnorePath = false;
   } else {
     if (!StringHead(tail, 2).EqualsLiteral("//")) {
       aRv.Throw(NS_ERROR_INVALID_ARG);
