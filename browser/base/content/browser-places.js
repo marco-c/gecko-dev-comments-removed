@@ -32,7 +32,7 @@ var StarUI = {
     
     
     element.hidden = false;
-    element.addEventListener("keypress", this);
+    element.addEventListener("keypress", this, {mozSystemGroup: true});
     element.addEventListener("mousedown", this);
     element.addEventListener("mouseout", this);
     element.addEventListener("mousemove", this);
