@@ -102,9 +102,6 @@ void
 nsFrameManager::RemoveFrame(ChildListID     aListID,
                             nsIFrame*       aOldFrame)
 {
-  bool wasDestroyingFrames = mIsDestroyingFrames;
-  mIsDestroyingFrames = true;
-
   
   
   
@@ -128,8 +125,6 @@ nsFrameManager::RemoveFrame(ChildListID     aListID,
   } else {
     parentFrame->RemoveFrame(aListID, aOldFrame);
   }
-
-  mIsDestroyingFrames = wasDestroyingFrames;
 }
 
 

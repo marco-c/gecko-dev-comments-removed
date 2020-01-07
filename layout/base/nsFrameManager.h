@@ -37,13 +37,10 @@ public:
   explicit nsFrameManager(nsIPresShell* aPresShell)
     : mPresShell(aPresShell)
     , mRootFrame(nullptr)
-    , mIsDestroyingFrames(false)
   {
     MOZ_ASSERT(mPresShell, "need a pres shell");
   }
   ~nsFrameManager();
-
-  bool IsDestroyingFrames() const { return mIsDestroyingFrames; }
 
   
 
@@ -104,7 +101,6 @@ protected:
   
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell;
   nsIFrame* mRootFrame;
-  bool mIsDestroyingFrames;  
 };
 
 #endif
