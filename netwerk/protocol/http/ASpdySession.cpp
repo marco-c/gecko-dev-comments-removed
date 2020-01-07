@@ -25,13 +25,13 @@ namespace mozilla {
 namespace net {
 
 ASpdySession *
-ASpdySession::NewSpdySession(uint32_t version,
+ASpdySession::NewSpdySession(net::SpdyVersion version,
                              nsISocketTransport *aTransport,
                              bool attemptingEarlyData)
 {
   
   
-  MOZ_ASSERT(version == HTTP_VERSION_2,
+  MOZ_ASSERT(version == SpdyVersion::HTTP_2,
              "Unsupported spdy version");
 
   
@@ -39,7 +39,7 @@ ASpdySession::NewSpdySession(uint32_t version,
   
   
 
-  Telemetry::Accumulate(Telemetry::SPDY_VERSION2, version);
+  Telemetry::Accumulate(Telemetry::SPDY_VERSION2, static_cast<uint32_t>(version));
 
   return new Http2Session(aTransport, version, attemptingEarlyData);
 }
@@ -48,7 +48,7 @@ SpdyInformation::SpdyInformation()
 {
   
   
-  Version[0] = HTTP_VERSION_2;
+  Version[0] = SpdyVersion::HTTP_2;
   VersionString[0] = NS_LITERAL_CSTRING("h2");
   ALPNCallbacks[0] = Http2Session::ALPNCallback;
 }

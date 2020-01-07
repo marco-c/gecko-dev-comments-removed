@@ -98,7 +98,7 @@ public:
 
     bool IsKeepAlive()
     {
-        return mUsingSpdyVersion || (mKeepAliveMask && mKeepAlive);
+        return (mUsingSpdyVersion != SpdyVersion::NONE) || (mKeepAliveMask && mKeepAlive);
     }
     bool CanReuse();   
     bool CanDirectlyActivate();
@@ -160,7 +160,7 @@ public:
     MOZ_MUST_USE nsresult ResumeSend();
     MOZ_MUST_USE nsresult ResumeRecv();
     int64_t  MaxBytesRead() {return mMaxBytesRead;}
-    uint8_t GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
+    HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
 
     friend class HttpConnectionForceIO;
     MOZ_MUST_USE nsresult ForceSend();
@@ -177,8 +177,8 @@ public:
     void BeginIdleMonitoring();
     void EndIdleMonitoring();
 
-    bool UsingSpdy() { return !!mUsingSpdyVersion; }
-    uint8_t GetSpdyVersion() { return mUsingSpdyVersion; }
+    bool UsingSpdy() { return (mUsingSpdyVersion != SpdyVersion::NONE); }
+    SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
     bool EverUsedSpdy() { return mEverUsedSpdy; }
     PRIntervalTime Rtt() { return mRtt; }
 
@@ -231,7 +231,7 @@ public:
             !mFastOpen;
     }
     
-    virtual uint32_t Version();
+    virtual HttpVersion Version();
 
     bool TestJoinConnection(const nsACString &hostname, int32_t port);
     bool JoinConnection(const nsACString &hostname, int32_t port);
@@ -277,10 +277,10 @@ private:
     void     SetupSSL();
 
     
-    void     StartSpdy(nsISSLSocketControl *ssl, uint8_t versionLevel);
+    void     StartSpdy(nsISSLSocketControl *ssl, SpdyVersion versionLevel);
     
     
-    void     Start0RTTSpdy(uint8_t versionLevel);
+    void     Start0RTTSpdy(SpdyVersion versionLevel);
 
     
     nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &list);
@@ -370,7 +370,7 @@ private:
     bool                            mSetupSSLCalled;
 
     
-    uint8_t                         mUsingSpdyVersion;
+    SpdyVersion                     mUsingSpdyVersion;
 
     RefPtr<ASpdySession>            mSpdySession;
     int32_t                         mPriority;
@@ -380,7 +380,7 @@ private:
     bool                            mEverUsedSpdy;
 
     
-    uint8_t                         mLastHttpResponseVersion;
+    HttpVersion                     mLastHttpResponseVersion;
 
     
     uint32_t                        mTransactionCaps;

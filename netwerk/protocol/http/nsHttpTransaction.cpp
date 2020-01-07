@@ -101,7 +101,7 @@ nsHttpTransaction::nsHttpTransaction()
     , mPriority(0)
     , mRestartCount(0)
     , mCaps(0)
-    , mHttpVersion(NS_HTTP_VERSION_UNKNOWN)
+    , mHttpVersion(HttpVersion::UNKNOWN)
     , mHttpResponseCode(0)
     , mCurrentHttpResponseHeaderSize(0)
     , mThrottlingReadAllowance(THROTTLE_NO_LIMIT)
@@ -536,7 +536,7 @@ nsHttpTransaction::OnActivated()
         return;
     }
 
-    if (mConnection && mRequestHead) {
+    if (mConnection && mRequestHead && mConnection->Version() >= HttpVersion::v2_0) {
         
         
         
@@ -545,16 +545,7 @@ nsHttpTransaction::OnActivated()
         
         
         
-        
-        
-        
-        bool isOldHttp = (mConnection->Version() == NS_HTTP_VERSION_0_9 ||
-                          mConnection->Version() == NS_HTTP_VERSION_1_0 ||
-                          mConnection->Version() == NS_HTTP_VERSION_1_1 ||
-                          mConnection->Version() == NS_HTTP_VERSION_UNKNOWN);
-        if (!isOldHttp) {
-            Unused << mRequestHead->SetHeader(nsHttp::TE, NS_LITERAL_CSTRING("Trailers"));
-        }
+        Unused << mRequestHead->SetHeader(nsHttp::TE, NS_LITERAL_CSTRING("Trailers"));
     }
 
     mActivated = true;
@@ -1152,7 +1143,7 @@ nsHttpTransaction::Close(nsresult reason)
         NS_WARNING("Partial transfer, incomplete HTTP response received");
 
         if ((mHttpResponseCode / 100 == 2) &&
-            (mHttpVersion >= NS_HTTP_VERSION_1_1)) {
+            (mHttpVersion >= HttpVersion::v1_1)) {
             FrameCheckLevel clevel = gHttpHandler->GetEnforceH1Framing();
             if (clevel >= FRAMECHECK_BARELY) {
                 if ((clevel == FRAMECHECK_STRICT) ||
@@ -1184,7 +1175,7 @@ nsHttpTransaction::Close(nsresult reason)
             uint32_t unused;
             Unused << ParseHead(&data, 1, &unused);
 
-            if (mResponseHead->Version() == NS_HTTP_VERSION_0_9) {
+            if (mResponseHead->Version() == HttpVersion::v0_9) {
                 
                 LOG(("nsHttpTransaction::Close %p 0 Byte 0.9 Response", this));
                 reason = NS_ERROR_NET_RESET;
@@ -1403,7 +1394,7 @@ nsHttpTransaction::ParseLine(nsACString &line)
         mResponseHead->ParseStatusLine(line);
         mHaveStatusLine = true;
         
-        if (mResponseHead->Version() == NS_HTTP_VERSION_0_9)
+        if (mResponseHead->Version() == HttpVersion::v0_9)
             mHaveAllHeaders = true;
     }
     else {
@@ -1675,7 +1666,7 @@ nsHttpTransaction::HandleContentStart()
             if ((mEarlyDataDisposition == EARLY_425) && !mDoNotTryEarlyData) {
                 mDoNotTryEarlyData = true;
                 mForceRestart = true; 
-                if (mConnection->Version() == HTTP_VERSION_2) {
+                if (mConnection->Version() == HttpVersion::v2_0) {
                     mReuseOnRestart = true;
                 }
                 return NS_ERROR_NET_RESET;
@@ -1700,7 +1691,7 @@ nsHttpTransaction::HandleContentStart()
             
             
             
-            if (mResponseHead->Version() >= NS_HTTP_VERSION_1_0 &&
+            if (mResponseHead->Version() >= HttpVersion::v1_0 &&
                 mResponseHead->HasHeaderValue(nsHttp::Transfer_Encoding, "chunked")) {
                 
                 mChunkedDecoder = new nsHttpChunkedDecoder();
@@ -1759,7 +1750,7 @@ nsHttpTransaction::HandleContent(char *buf,
         
         
         if (mConnection->IsPersistent() || mPreserveStream ||
-            mHttpVersion >= NS_HTTP_VERSION_1_1) {
+            mHttpVersion >= HttpVersion::v1_1) {
             int64_t remaining = mContentLength - mContentRead;
             *contentRead = uint32_t(std::min<int64_t>(count, remaining));
             *contentRemaining = count - *contentRead;

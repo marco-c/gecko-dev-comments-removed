@@ -313,7 +313,7 @@ private:
     uint16_t                        mRestartCount;        
     uint32_t                        mCaps;
 
-    nsHttpVersion                   mHttpVersion;
+    HttpVersion                     mHttpVersion;
     uint16_t                        mHttpResponseCode;
 
     uint32_t                        mCurrentHttpResponseHeaderSize;
