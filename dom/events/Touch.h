@@ -82,6 +82,12 @@ public:
   nsCOMPtr<EventTarget> mTarget;
   LayoutDeviceIntPoint mRefPoint;
   bool mChanged;
+
+  
+  
+  
+  bool mIsTouchEventSuppressed;
+
   uint32_t mMessage;
   int32_t mIdentifier;
   CSSIntPoint mPagePoint;

@@ -35,6 +35,21 @@ public:
   
   static nsIFrame* SetupTarget(WidgetTouchEvent* aEvent, nsIFrame* aFrame);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  static nsIFrame* SuppressInvalidPointsAndGetTargetedFrame(
+    WidgetTouchEvent* aEvent);
+
   bool PreHandleEvent(mozilla::WidgetEvent* aEvent,
                       nsEventStatus* aStatus,
                       bool& aTouchIsNew,
