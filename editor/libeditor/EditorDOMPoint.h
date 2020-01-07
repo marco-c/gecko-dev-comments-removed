@@ -587,13 +587,15 @@ public:
     if (mIsChildInitialized && mOffset.isSome()) {
       
       
-      
+#ifdef DEBUG
       if (mChild) {
-        return RawRangeBoundary(mParent, mChild->GetPreviousSibling(),
-                                mOffset.value());
+        MOZ_ASSERT(mParent == mChild->GetParentNode());
+        MOZ_ASSERT(mParent->GetChildAt(mOffset.value()) == mChild);
+      } else {
+        MOZ_ASSERT(mParent->Length() == mOffset.value());
       }
-      return RawRangeBoundary(mParent, mParent->GetLastChild(),
-                              mOffset.value());
+#endif 
+      return RawRangeBoundary(mParent,  mOffset.value());
     }
     
     
