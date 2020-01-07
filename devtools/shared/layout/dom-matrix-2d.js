@@ -238,6 +238,7 @@ exports.getNodeTransformationMatrix = getNodeTransformationMatrix;
 
 
 
+
 function getWritingModeMatrix(size, style) {
   let currentMatrix = identity();
   let { width, height } = size;
