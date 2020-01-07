@@ -27,54 +27,6 @@ nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
 
 
 
-struct ComputedFlexItemInfo
-{
-  nsCOMPtr<nsINode> mNode;
-  
-
-
-
-
-
-  nscoord mMainBaseSize;
-  
-
-
-
-
-
-
-  nscoord mMainDeltaSize;
-  nscoord mMainMinSize;
-  nscoord mMainMaxSize;
-  nscoord mCrossMinSize;
-  nscoord mCrossMaxSize;
-};
-
-struct ComputedFlexLineInfo
-{
-  nsTArray<ComputedFlexItemInfo> mItems;
-  nscoord mCrossSize;
-  nscoord mFirstBaselineOffset;
-  nscoord mLastBaselineOffset;
-  enum GrowthState {
-    UNCHANGED,
-    SHRINKING,
-    GROWING,
-  } mGrowthState;
-};
-
-struct ComputedFlexContainerInfo
-{
-  nsTArray<ComputedFlexLineInfo> mLines;
-};
-
-
-
-
-
-
-
 
 
 
@@ -168,36 +120,12 @@ public:
 
 
 
+
   static void CalculatePackingSpace(uint32_t aNumThingsToPack,
                                     uint8_t aAlignVal,
                                     nscoord* aFirstSubjectOffset,
                                     uint32_t* aNumPackingSpacesRemaining,
                                     nscoord* aPackingSpaceRemaining);
-
-  
-
-
-
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(FlexContainerInfo, ComputedFlexContainerInfo)
-  
-
-
-
-
-  const ComputedFlexContainerInfo* GetFlexContainerInfo()
-  {
-    const ComputedFlexContainerInfo* info = GetProperty(FlexContainerInfo());
-    MOZ_ASSERT(info, "Property generation wasn't requested.");
-    return info;
-  }
-
-  
-
-
-
-
-
-  static nsFlexContainerFrame* GetFlexFrameWithComputedInfo(nsIFrame* aFrame);
 
 protected:
   
