@@ -1,6 +1,6 @@
 #include "gdb-tests.h"
-#include "jscntxt.h"
 
+#include "vm/JSContext.h"
 
 
 #include "vm/String.h"

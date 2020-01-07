@@ -10,10 +10,10 @@
 
 #include "mozilla/Assertions.h"
 
-#include "jscntxt.h"
 #include "jsfriendapi.h" 
 
 #include "js/Value.h"
+#include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/SelfHosting.h"
 #include "vm/Stack.h"

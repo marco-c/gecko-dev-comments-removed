@@ -5,9 +5,8 @@
 
 
 
-#include "jscntxt.h"
-
 #include "jsapi-tests/tests.h"
+#include "vm/JSContext.h"
 
 using namespace js;
 

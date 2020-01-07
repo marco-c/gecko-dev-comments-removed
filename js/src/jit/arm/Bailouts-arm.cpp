@@ -4,12 +4,11 @@
 
 
 
-#include "jscntxt.h"
-
 #include "jit/arm/Assembler-arm.h"
 #include "jit/Bailouts.h"
 #include "jit/JitCompartment.h"
 #include "vm/JSCompartment.h"
+#include "vm/JSContext.h"
 
 using namespace js;
 using namespace js::jit;

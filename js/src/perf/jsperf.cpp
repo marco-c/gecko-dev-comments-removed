@@ -5,9 +5,8 @@
 
 #include "perf/jsperf.h"
 
-#include "jscntxt.h" 
-
 #include "gc/FreeOp.h"
+#include "vm/JSContext.h" 
 #include "vm/JSObject.h" 
 
 using namespace js;

@@ -4,10 +4,10 @@
 
 
 
-#ifndef jscntxtinlines_h
-#define jscntxtinlines_h
+#ifndef vm_JSContext_inl_h
+#define vm_JSContext_inl_h
 
-#include "jscntxt.h"
+#include "vm/JSContext.h"
 
 #include "jsiter.h"
 

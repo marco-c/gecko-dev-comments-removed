@@ -6,8 +6,8 @@
 
 
 
-#ifndef jscntxt_h
-#define jscntxt_h
+#ifndef vm_JSContext_h
+#define vm_JSContext_h
 
 #include "mozilla/MemoryReporting.h"
 
