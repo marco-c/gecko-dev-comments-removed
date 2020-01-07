@@ -216,7 +216,10 @@ public:
   void SetCompatibilityMode(nsCompatibility aCompatMode)
   { mCompatMode = aCompatMode; }
   nsCompatibility GetCompatibilityMode() { return mCompatMode; }
-  nsresult SetPreferredSheet(const nsAString& aTitle);
+
+  
+  
+  void DocumentStyleSheetSetChanged();
 
   
 
@@ -628,7 +631,6 @@ private:
   uint32_t          mDatasToNotifyOn;
 
   nsCompatibility   mCompatMode;
-  nsString          mPreferredSheet;  
 
   bool              mEnabled; 
 

@@ -3751,16 +3751,7 @@ nsIDocument::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData)
   }
 
   if (aHeaderField == nsGkAtoms::headerDefaultStyle) {
-    
-    
-    if (DOMStringIsNull(mLastStyleSheetSet)) {
-      
-      
-      
-      
-      
-      EnableStyleSheetsForSetInternal(aData, true);
-    }
+    SetPreferredStyleSheetSet(aData);
   }
 
   if (aHeaderField == nsGkAtoms::refresh) {
@@ -6051,15 +6042,19 @@ nsIDocument::SetSelectedStyleSheetSet(const nsAString& aSheetSet)
 }
 
 void
-nsIDocument::GetLastStyleSheetSet(nsAString& aSheetSet)
+nsIDocument::SetPreferredStyleSheetSet(const nsAString& aSheetSet)
 {
-  aSheetSet = mLastStyleSheetSet;
-}
-
-void
-nsIDocument::GetPreferredStyleSheetSet(nsAString& aSheetSet)
-{
-  GetHeaderData(nsGkAtoms::headerDefaultStyle, aSheetSet);
+  mPreferredStyleSheetSet = aSheetSet;
+  
+  
+  if (DOMStringIsNull(mLastStyleSheetSet)) {
+    
+    
+    
+    
+    
+    EnableStyleSheetsForSetInternal(aSheetSet, true);
+  }
 }
 
 DOMStringList*
@@ -6086,7 +6081,7 @@ nsIDocument::EnableStyleSheetsForSet(const nsAString& aSheetSet)
 
 void
 nsIDocument::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
-                                            bool aUpdateCSSLoader)
+                                             bool aUpdateCSSLoader)
 {
   BeginUpdate(UPDATE_STYLE);
   size_t count = SheetCount();
@@ -6101,7 +6096,7 @@ nsIDocument::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
     }
   }
   if (aUpdateCSSLoader) {
-    CSSLoader()->SetPreferredSheet(aSheetSet);
+    CSSLoader()->DocumentStyleSheetSetChanged();
   }
   EndUpdate(UPDATE_STYLE);
 }

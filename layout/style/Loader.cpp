@@ -395,11 +395,6 @@ Loader::Loader(nsIDocument* aDocument)
 {
   mDocument = aDocument;
   MOZ_ASSERT(mDocument, "We should get a valid document from the caller!");
-
-  
-  
-  
-  mDocument->GetPreferredStyleSheetSet(mPreferredSheet);
 }
 
 Loader::~Loader()
@@ -425,47 +420,35 @@ Loader::DropDocumentReference(void)
   }
 }
 
-nsresult
-Loader::SetPreferredSheet(const nsAString& aTitle)
+void
+Loader::DocumentStyleSheetSetChanged()
 {
-#ifdef DEBUG
-  if (mDocument) {
-    nsAutoString currentPreferred;
-    mDocument->GetLastStyleSheetSet(currentPreferred);
-    if (DOMStringIsNull(currentPreferred)) {
-      mDocument->GetPreferredStyleSheetSet(currentPreferred);
-    }
-    NS_ASSERTION(currentPreferred.Equals(aTitle),
-                 "Unexpected argument to SetPreferredSheet");
-  }
-#endif
-
-  mPreferredSheet = aTitle;
+  MOZ_ASSERT(mDocument);
 
   
-  if (mSheets) {
-    LoadDataArray arr(mSheets->mPendingDatas.Count());
-    for (auto iter = mSheets->mPendingDatas.Iter(); !iter.Done(); iter.Next()) {
-      SheetLoadData* data = iter.Data();
-      MOZ_ASSERT(data, "Must have a data");
+  if (!mSheets) {
+    return;
+  }
 
-      
-      
-      auto isAlternate = data->mLoader->IsAlternateSheet(data->mTitle, true);
-      if (isAlternate == IsAlternate::No) {
-        arr.AppendElement(data);
-        iter.Remove();
-      }
-    }
+  LoadDataArray arr(mSheets->mPendingDatas.Count());
+  for (auto iter = mSheets->mPendingDatas.Iter(); !iter.Done(); iter.Next()) {
+    SheetLoadData* data = iter.Data();
+    MOZ_ASSERT(data, "Must have a data");
 
-    mDatasToNotifyOn += arr.Length();
-    for (uint32_t i = 0; i < arr.Length(); ++i) {
-      --mDatasToNotifyOn;
-      LoadSheet(arr[i], eSheetNeedsParser, false);
+    
+    
+    auto isAlternate = data->mLoader->IsAlternateSheet(data->mTitle, true);
+    if (isAlternate == IsAlternate::No) {
+      arr.AppendElement(data);
+      iter.Remove();
     }
   }
 
-  return NS_OK;
+  mDatasToNotifyOn += arr.Length();
+  for (uint32_t i = 0; i < arr.Length(); ++i) {
+    --mDatasToNotifyOn;
+    LoadSheet(arr[i], eSheetNeedsParser, false);
+  }
 }
 
 static const char kCharsetSym[] = "@charset \"";
@@ -852,16 +835,21 @@ Loader::IsAlternateSheet(const nsAString& aTitle, bool aHasAlternateRel)
     return IsAlternate::No;
   }
 
-  if (!aHasAlternateRel && mDocument && mPreferredSheet.IsEmpty()) {
-    
-    
-    mDocument->SetHeaderData(nsGkAtoms::headerDefaultStyle, aTitle);
-    
-    return IsAlternate::No;
-  }
+  if (mDocument) {
+    const nsString& currentSheetSet = mDocument->GetCurrentStyleSheetSet();
+    if (!aHasAlternateRel && currentSheetSet.IsEmpty()) {
+      
+      
+      
+      mDocument->SetPreferredStyleSheetSet(aTitle);
+      
+      
+      return IsAlternate::No;
+    }
 
-  if (aTitle.Equals(mPreferredSheet)) {
-    return IsAlternate::No;
+    if (aTitle.Equals(currentSheetSet)) {
+      return IsAlternate::No;
+    }
   }
 
   return IsAlternate::Yes;
@@ -2677,7 +2665,6 @@ Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   }
   n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  
   
   
   
