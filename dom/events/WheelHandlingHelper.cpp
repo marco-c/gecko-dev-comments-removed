@@ -16,7 +16,7 @@
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
-#include "nsIDocument.h"
+#include "nsIDocumentInlines.h"         
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
 #include "nsITextControlElement.h"
@@ -724,8 +724,32 @@ ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
   mScrollTargetFrame = aScrollFrame.GetScrollTargetFrame();
   MOZ_ASSERT(mScrollTargetFrame);
 
-  
-  nsIFrame* honouredFrame = &aScrollFrame;
+  nsIFrame* honouredFrame = nullptr;
+  if (aHonoursRoot) {
+    
+    
+    
+    nsIDocument* document = aScrollFrame.PresShell()->GetDocument();
+    if (document) {
+      Element* bodyElement = document->GetBodyElement();
+      if (bodyElement) {
+        honouredFrame = bodyElement->GetPrimaryFrame();
+      }
+    }
+
+    if (!honouredFrame) {
+      
+      honouredFrame = aScrollFrame.PresShell()->GetRootScrollFrame();
+    }
+
+    if (!honouredFrame) {
+      
+      
+      honouredFrame = &aScrollFrame;
+    }
+  } else {
+    honouredFrame = &aScrollFrame;
+  }
 
   WritingMode writingMode = honouredFrame->GetWritingMode();
   WritingMode::BlockDir blockDir = writingMode.GetBlockDir();
