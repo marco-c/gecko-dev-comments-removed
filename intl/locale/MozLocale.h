@@ -61,20 +61,31 @@ class Locale {
     const nsACString& GetRegion() const;
     const nsTArray<nsCString>& GetVariants() const;
 
-    bool IsValid();
-    const nsCString AsString();
+    bool IsValid() const {
+      return mIsValid;
+    }
+
+    const nsCString AsString() const;
 
     bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
     bool AddLikelySubtags();
     void ClearVariants();
     void ClearRegion();
 
+    
+    void Invalidate() {
+      mIsValid = false;
+    }
+
     bool operator== (const Locale& aOther) {
-      return mLanguage.Equals(aOther.mLanguage) &&
+      
+      
+      return IsValid() &&
+             aOther.IsValid() &&
+             mLanguage.Equals(aOther.mLanguage) &&
              mScript.Equals(aOther.mScript) &&
              mRegion.Equals(aOther.mRegion) &&
              mVariants == aOther.mVariants;
-
     }
 
   private:

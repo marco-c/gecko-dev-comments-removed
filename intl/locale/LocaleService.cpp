@@ -444,20 +444,11 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
   
   
   
+  
   AutoTArray<Locale, 100> availLocales;
   for (auto& avail : aAvailable) {
     availLocales.AppendElement(Locale(avail));
   }
-
-  
-  
-  
-  
-  auto eraseFromAvail = [&](nsTArray<Locale>::iterator aIter) {
-    nsTArray<Locale>::size_type index = aIter - availLocales.begin();
-    availLocales.RemoveElementAt(index);
-    return availLocales.begin() + index;
-  };
 
   for (auto& requested : aRequested) {
     if (requested.IsEmpty()) {
@@ -472,8 +463,8 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
     auto match = std::find_if(availLocales.begin(), availLocales.end(),
                               matchesExactly);
     if (match != availLocales.end()) {
-      aRetVal.AppendElement(match->AsString());
-      eraseFromAvail(match);
+      aRetVal.AppendElement(aAvailable[match - availLocales.begin()]);
+      match->Invalidate();
     }
 
     if (!aRetVal.IsEmpty()) {
@@ -489,8 +480,8 @@ LocaleService::FilterMatches(const nsTArray<nsCString>& aRequested,
       auto match = availLocales.begin();
       while ((match = std::find_if(match, availLocales.end(),
                                    matchesRange)) != availLocales.end()) {
-        aRetVal.AppendElement(match->AsString());
-        match = eraseFromAvail(match);
+        aRetVal.AppendElement(aAvailable[match - availLocales.begin()]);
+        match->Invalidate();
         foundMatch = true;
         if (aStrategy != LangNegStrategy::Filtering) {
           return true; 
