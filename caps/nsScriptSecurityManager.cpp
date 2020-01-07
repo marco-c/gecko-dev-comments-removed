@@ -1212,12 +1212,6 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
 {
 
 
-    uint32_t flags;
-    if (aClassInfo && NS_SUCCEEDED(aClassInfo->GetFlags(&flags)) &&
-        (flags & nsIClassInfo::DOM_OBJECT)) {
-        return NS_OK;
-    }
-
     
     JS::Rooted<JS::Realm*> contextRealm(cx, JS::GetCurrentRealmOrNull(cx));
     MOZ_RELEASE_ASSERT(contextRealm);
