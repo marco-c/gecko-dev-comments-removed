@@ -3880,11 +3880,7 @@ nsGlobalWindowOuter::DispatchResizeEvent(const CSSIntSize& aSize)
                                NS_LITERAL_STRING("DOMWindowResize"),
                                 true,
                                 true,
-                               detailValue,
-                               res);
-  if (res.Failed()) {
-    return false;
-  }
+                               detailValue);
 
   domEvent->SetTrusted(true);
   domEvent->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
@@ -4983,7 +4979,7 @@ nsGlobalWindowOuter::HomeOuter(nsIPrincipal& aSubjectPrincipal, ErrorResult& aEr
 #ifdef DEBUG_seth
     printf("all else failed.  using %s as the home page\n", DEFAULT_HOME_PAGE);
 #endif
-    homeURL = NS_LITERAL_STRING(DEFAULT_HOME_PAGE);
+    CopyASCIItoUTF16(DEFAULT_HOME_PAGE, homeURL);
   }
 
 #ifdef MOZ_PHOENIX

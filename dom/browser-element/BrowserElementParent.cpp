@@ -87,16 +87,12 @@ DispatchCustomDOMEvent(Element* aFrameElement, const nsAString& aEventName,
   RefPtr<CustomEvent> event =
     NS_NewDOMCustomEvent(aFrameElement, presContext, nullptr);
 
-  ErrorResult res;
   event->InitCustomEvent(cx,
                          aEventName,
                           true,
                           true,
-                         aDetailValue,
-                         res);
-  if (res.Failed()) {
-    return false;
-  }
+                         aDetailValue);
+
   event->SetTrusted(true);
   
   
