@@ -244,11 +244,17 @@ VARCACHE_PREF(
 )
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   "layout.css.font-variations.enabled",
    layout_css_font_variations_enabled,
-  bool, true
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
 VARCACHE_PREF(
