@@ -3163,11 +3163,15 @@ ScriptLoader::ParsingComplete(bool aTerminated)
 }
 
 void
-ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
+ScriptLoader::PreloadURI(nsIURI* aURI,
+                         const nsAString& aCharset,
                          const nsAString& aType,
                          const nsAString& aCrossOrigin,
                          const nsAString& aIntegrity,
-                         bool aScriptFromHead, bool aAsync, bool aDefer,
+                         bool aScriptFromHead,
+                         bool aAsync,
+                         bool aDefer,
+                         bool aNoModule,
                          const mozilla::net::ReferrerPolicy aReferrerPolicy)
 {
   NS_ENSURE_TRUE_VOID(mDocument);
@@ -3176,9 +3180,16 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
     return;
   }
 
-  
-  if (mDocument->ModuleScriptsEnabled() && aType.LowerCaseEqualsASCII("module")) {
-    return;
+  if (mDocument->ModuleScriptsEnabled()) {
+    
+    if (aNoModule) {
+      return;
+    }
+
+    
+    if (aType.LowerCaseEqualsASCII("module")) {
+      return;
+    }
   }
 
   SRIMetadata sriMetadata;

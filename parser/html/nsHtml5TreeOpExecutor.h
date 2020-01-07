@@ -56,11 +56,11 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
 
 
     bool                                 mSuppressEOF;
-    
+
     bool                                 mReadingFromStage;
     nsTArray<nsHtml5TreeOperation>       mOpQueue;
     nsHtml5StreamParser*                 mStreamParser;
-    
+
     
 
 
@@ -151,7 +151,7 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
 
 
     virtual nsISupports *GetTarget() override;
-  
+
     virtual void ContinueInterruptedParsingAsync() override;
 
     bool IsScriptExecuting() override
@@ -165,7 +165,7 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
     {
       mStreamParser = aStreamParser;
     }
-    
+
     void InitializeDocWriteParserState(nsAHtml5TreeBuilderState* aState, int32_t aLine);
 
     bool IsScriptEnabled();
@@ -175,9 +175,9 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
     void StartLayout(bool* aInterrupted);
 
     void PauseDocUpdate(bool* aInterrupted);
-    
+
     void FlushSpeculativeLoads();
-                  
+
     void RunFlushLoop();
 
     nsresult FlushDocumentWrite();
@@ -200,7 +200,7 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
     {
       return mStarted;
     }
-    
+
     bool IsFlushing()
     {
       return mFlushState >= eInFlush;
@@ -212,9 +212,9 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
       return mRunFlushLoopOnStack;
     }
 #endif
-    
+
     void RunScript(nsIContent* aScriptElement);
-    
+
     
 
 
@@ -231,14 +231,14 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
     {
       return &mStage;
     }
-    
+
     void StartReadingFromStage()
     {
       mReadingFromStage = true;
     }
 
     void StreamEnded();
-    
+
 #ifdef DEBUG
     void AssertStageEmpty()
     {
@@ -255,7 +255,8 @@ class nsHtml5TreeOpExecutor final : public nsHtml5DocumentBuilder,
                        const nsAString& aIntegrity,
                        bool aScriptFromHead,
                        bool aAsync,
-                       bool aDefer);
+                       bool aDefer,
+                       bool aNoModule);
 
     void PreloadStyle(const nsAString& aURL, const nsAString& aCharset,
                       const nsAString& aCrossOrigin,
