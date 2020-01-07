@@ -1887,5 +1887,12 @@ Navigator::Credentials()
   return mCredentials;
 }
 
+
+bool
+Navigator::Webdriver()
+{
+  return Preferences::GetBool("marionette.enabled", false);
+}
+
 } 
 } 
