@@ -151,28 +151,24 @@ DocumentNeedsRestyle(
     }
   }
 
-  if (styleSet->IsServo()) {
-    
-    
-    
-    ServoRestyleManager* restyleManager =
-      presContext->RestyleManager()->AsServo();
-    restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
+  
+  
+  
+  ServoRestyleManager* restyleManager =
+    presContext->RestyleManager()->AsServo();
+  restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
 
-    if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
-        !aDocument->GetServoRestyleRoot()) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    return restyleManager->HasPendingRestyleAncestor(aElement);
+  if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
+      !aDocument->GetServoRestyleRoot()) {
+    return false;
   }
 
-    MOZ_CRASH("old style system disabled");
+  
+  
+  
+  
+  
+  return restyleManager->HasPendingRestyleAncestor(aElement);
 }
 
 
@@ -425,7 +421,7 @@ nsComputedDOMStyle::Length()
   
   UpdateCurrentStyleSources(false);
   if (mComputedStyle) {
-    length += Servo_GetCustomPropertiesCount(mComputedStyle->AsServo());
+    length += Servo_GetCustomPropertiesCount(mComputedStyle);
   }
 
   ClearCurrentStyleSources();
@@ -511,16 +507,7 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
   if (!presShell) {
     inDocWithShell = false;
     presShell = aPresShell;
-    if (!presShell)
-      return nullptr;
-
-    
-    
-    
-    
-    
-    if (presShell->GetDocument()->GetStyleBackendType() !=
-        aElement->OwnerDoc()->GetStyleBackendType()) {
+    if (!presShell) {
       return nullptr;
     }
   }
@@ -565,21 +552,16 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
         
         
         if (aAnimationFlag == eWithoutAnimation) {
-          nsPresContext* presContext = presShell->GetPresContext();
-          MOZ_ASSERT(presContext, "Should have a prescontext if we have a frame");
-          if (presContext && presContext->StyleSet()->IsGecko()) {
-            MOZ_CRASH("old style system disabled");
-          } else {
-            Element* elementOrPseudoElement =
-              EffectCompositor::GetElementToRestyle(aElement, pseudoType);
-            if (!elementOrPseudoElement) {
-              return nullptr;
-            }
-            return presContext->StyleSet()->AsServo()->
-              GetBaseContextForElement(elementOrPseudoElement,
-                                       presContext,
-                                       result->AsServo());
+          nsPresContext* presContext = frame->PresContext();
+          Element* elementOrPseudoElement =
+            EffectCompositor::GetElementToRestyle(aElement, pseudoType);
+          if (!elementOrPseudoElement) {
+            return nullptr;
           }
+          return presContext->StyleSet()->AsServo()->
+            GetBaseContextForElement(elementOrPseudoElement,
+                                     presContext,
+                                     result);
         }
 
         RefPtr<ComputedStyle> ret = result;
@@ -592,8 +574,9 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
   
 
   nsPresContext* presContext = presShell->GetPresContext();
-  if (!presContext)
+  if (!presContext) {
     return nullptr;
+  }
 
   ServoStyleSet* styleSet = presShell->StyleSet()->AsServo();
 
@@ -990,17 +973,12 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
                  "should not have pseudo-element data");
   }
 
-  if (mAnimationFlag == eWithoutAnimation) {
-    MOZ_CRASH("old style system disabled");
-  }
-
   
   
   MOZ_ASSERT(!mExposeVisitedStyle || nsContentUtils::IsCallerChrome(),
              "mExposeVisitedStyle set incorrectly");
   if (mExposeVisitedStyle && mComputedStyle->RelevantLinkVisited()) {
-    ComputedStyle *styleIfVisited = mComputedStyle->GetStyleIfVisited();
-    if (styleIfVisited) {
+    if (ComputedStyle* styleIfVisited = mComputedStyle->GetStyleIfVisited()) {
       mComputedStyle = styleIfVisited;
     }
   }
@@ -1151,7 +1129,7 @@ nsComputedDOMStyle::IndexedGetter(uint32_t   aIndex,
   if (index < count) {
     aFound = true;
     nsString varName;
-    Servo_GetCustomPropertyNameAt(mComputedStyle->AsServo(), index, &varName);
+    Servo_GetCustomPropertyNameAt(mComputedStyle, index, &varName);
     aPropName.AssignLiteral("--");
     aPropName.Append(varName);
   } else {
@@ -7169,8 +7147,7 @@ nsComputedDOMStyle::DoGetCustomProperty(const nsAString& aPropertyName)
   const nsAString& name = Substring(aPropertyName,
                                     CSS_CUSTOM_NAME_PREFIX_LENGTH);
   bool present =
-    Servo_GetCustomPropertyValue(mComputedStyle->AsServo(), &name,
-                                 &variableValue);
+    Servo_GetCustomPropertyValue(mComputedStyle, &name, &variableValue);
   if (!present) {
     return nullptr;
   }
