@@ -34,6 +34,7 @@ use ipc_channel::router::ROUTER;
 use js::conversions::ConversionResult;
 use js::jsapi::{JSContext, JSObject};
 use js::jsval::{ObjectValue, UndefinedValue};
+use profile_traits::ipc as ProfiledIpc;
 use std::cell::Ref;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -613,7 +614,7 @@ impl PermissionAlgorithm for Bluetooth {
                 
                 
                 
-                let (sender, receiver) = ipc::channel().unwrap();
+                let (sender, receiver) = ProfiledIpc::channel(global.time_profiler_chan().clone()).unwrap();
                 status.get_bluetooth_thread()
                       .send(BluetoothRequest::MatchesFilter(device_id.clone(),
                                                             BluetoothScanfilterSequence::new(scan_filters),

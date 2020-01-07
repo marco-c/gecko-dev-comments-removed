@@ -29,9 +29,17 @@ impl ProfilerChan {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
+pub enum ProfilerData {
+    NoRecords,
+    Record(Vec<f64>),
+}
+
+#[derive(Clone, Deserialize, Serialize)]
 pub enum ProfilerMsg {
     
     Time((ProfilerCategory, Option<TimerMetadata>), (u64, u64), (u64, u64)),
+    
+    Get((ProfilerCategory, Option<TimerMetadata>), IpcSender<ProfilerData>),
     
     Print,
     
@@ -94,6 +102,7 @@ pub enum ProfilerCategory {
     TimeToFirstPaint = 0x80,
     TimeToFirstContentfulPaint = 0x81,
     TimeToInteractive = 0x82,
+    IpcReceiver = 0x83,
     ApplicationHeartbeat = 0x90,
 }
 
