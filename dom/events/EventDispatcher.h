@@ -115,7 +115,8 @@ public:
                        WidgetEvent* aEvent,
                        nsIDOMEvent* aDOMEvent,
                        nsEventStatus aEventStatus,
-                       bool aIsInAnon)
+                       bool aIsInAnon,
+                       dom::EventTarget* aTargetInKnownToBeHandledScope)
     : EventChainVisitor(aPresContext, aEvent, aDOMEvent, aEventStatus)
     , mCanHandle(true)
     , mAutomaticChromeDispatch(true)
@@ -128,8 +129,11 @@ public:
     , mRootOfClosedTree(false)
     , mParentIsSlotInClosedTree(false)
     , mParentIsChromeHandler(false)
+    , mRelatedTargetRetargetedInCurrentScope(false)
     , mParentTarget(nullptr)
     , mEventTargetAtParent(nullptr)
+    , mRetargetedRelatedTarget(nullptr)
+    , mTargetInKnownToBeHandledScope(aTargetInKnownToBeHandledScope)
   {
   }
 
@@ -146,8 +150,12 @@ public:
     mRootOfClosedTree = false;
     mParentIsSlotInClosedTree = false;
     mParentIsChromeHandler = false;
+    
+    
+    
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
+    mRetargetedRelatedTarget = nullptr;
   }
 
   dom::EventTarget* GetParentTarget()
@@ -161,6 +169,13 @@ public:
     if (mParentTarget) {
       mParentIsChromeHandler = aIsChromeHandler;
     }
+  }
+
+  void IgnoreCurrentTarget()
+  {
+    mCanHandle = false;
+    SetParentTarget(nullptr, false);
+    mEventTargetAtParent = nullptr;
   }
 
   
@@ -231,6 +246,12 @@ public:
 
   bool mParentIsChromeHandler;
 
+  
+
+
+
+
+  bool mRelatedTargetRetargetedInCurrentScope;
 private:
   
 
@@ -243,6 +264,19 @@ public:
 
 
   dom::EventTarget* mEventTargetAtParent;
+
+  
+
+
+
+  dom::EventTarget* mRetargetedRelatedTarget;
+
+  
+
+
+
+
+  dom::EventTarget* mTargetInKnownToBeHandledScope;
 };
 
 class EventChainPostVisitor : public mozilla::EventChainVisitor
