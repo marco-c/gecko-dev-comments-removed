@@ -32,6 +32,11 @@ XPCOMUtils.defineLazyGetter(this, "resetEnabled", () => {
   return Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).getBoolPref("reset.enabled");
 });
 
+
+XPCOMUtils.defineLazyGetter(this, "distroID", () => {
+  return Services.prefs.getDefaultBranch("distribution.").getCharPref("id", "");
+});
+
 const BinaryInputStream = Components.Constructor(
   "@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
@@ -363,16 +368,8 @@ function rescaleIcon(aByteArray, aContentType, aSize = 32) {
 }
 
 function isPartnerBuild() {
-  try {
-    let distroID = Services.prefs.getCharPref("distribution.id");
-
-    
-    if (distroID && !distroID.startsWith("mozilla")) {
-      return true;
-    }
-  } catch (e) {}
-
-  return false;
+  
+  return distroID && !distroID.startsWith("mozilla");
 }
 
 
@@ -2760,7 +2757,7 @@ SearchService.prototype = {
       
       
       
-      if (Services.prefs.getCharPref("distribution.id", "")) {
+      if (distroID) {
         let defaultPrefB = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
         let nsIPLS = Ci.nsIPrefLocalizedString;
 
@@ -3602,12 +3599,29 @@ SearchService.prototype = {
         addedEngines[this.originalDefaultEngine.name] = this.originalDefaultEngine;
       }
 
-      try {
-        var extras =
-          Services.prefs.getChildList(BROWSER_SEARCH_PREF + "order.extra.");
+      if (distroID) {
+        try {
+          var extras =
+            Services.prefs.getChildList(BROWSER_SEARCH_PREF + "order.extra.");
 
-        for (prefName of extras) {
-          engineName = Services.prefs.getCharPref(prefName);
+          for (prefName of extras) {
+            engineName = Services.prefs.getCharPref(prefName);
+
+            engine = this._engines[engineName];
+            if (!engine || engine.name in addedEngines)
+              continue;
+
+            this.__sortedEngines.push(engine);
+            addedEngines[engine.name] = engine;
+          }
+        } catch (e) { }
+
+        let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
+        while (true) {
+          prefName = prefNameBase + "." + (++i);
+          engineName = getLocalizedPref(prefName);
+          if (!engineName)
+            break;
 
           engine = this._engines[engineName];
           if (!engine || engine.name in addedEngines)
@@ -3616,21 +3630,6 @@ SearchService.prototype = {
           this.__sortedEngines.push(engine);
           addedEngines[engine.name] = engine;
         }
-      } catch (e) { }
-
-      let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
-      while (true) {
-        prefName = prefNameBase + "." + (++i);
-        engineName = getLocalizedPref(prefName);
-        if (!engineName)
-          break;
-
-        engine = this._engines[engineName];
-        if (!engine || engine.name in addedEngines)
-          continue;
-
-        this.__sortedEngines.push(engine);
-        addedEngines[engine.name] = engine;
       }
 
       for (let engineName of this._searchOrder) {
@@ -3750,30 +3749,32 @@ SearchService.prototype = {
     
     
 
-    
-    try {
-      var extras = Services.prefs.getChildList(BROWSER_SEARCH_PREF + "order.extra.");
+    if (distroID) {
+      
+      try {
+        var extras = Services.prefs.getChildList(BROWSER_SEARCH_PREF + "order.extra.");
 
-      for (var prefName of extras) {
-        engineName = Services.prefs.getCharPref(prefName);
+        for (var prefName of extras) {
+          engineName = Services.prefs.getCharPref(prefName);
+
+          if (!(engineName in engineOrder))
+            engineOrder[engineName] = i++;
+        }
+      } catch (e) {
+        LOG("Getting extra order prefs failed: " + e);
+      }
+
+      
+      let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
+      for (var j = 1; ; j++) {
+        let prefName = prefNameBase + "." + j;
+        engineName = getLocalizedPref(prefName);
+        if (!engineName)
+          break;
 
         if (!(engineName in engineOrder))
           engineOrder[engineName] = i++;
       }
-    } catch (e) {
-      LOG("Getting extra order prefs failed: " + e);
-    }
-
-    
-    let prefNameBase = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "order");
-    for (var j = 1; ; j++) {
-      let prefName = prefNameBase + "." + j;
-      engineName = getLocalizedPref(prefName);
-      if (!engineName)
-        break;
-
-      if (!(engineName in engineOrder))
-        engineOrder[engineName] = i++;
     }
 
     

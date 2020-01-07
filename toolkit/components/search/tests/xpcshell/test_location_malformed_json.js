@@ -19,14 +19,10 @@ function promiseTimezoneMessage() {
 
 function run_test() {
   
-  let promiseTzMessage = promiseTimezoneMessage();
-
-  
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code"');
   Services.search.init(() => {
     ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    
     
     Services.search.getEngines();
     ok(!Services.prefs.prefHasUserValue("browser.search.countryCode"), "should be no countryCode pref");
@@ -40,14 +36,8 @@ function run_test() {
       let snapshot = histogram.snapshot();
       deepEqual(snapshot.counts, [1, 0, 0]); 
     }
-
-    
-    promiseTzMessage.then(msg => {
-      print("Timezone message:", msg.message);
-      ok(msg.message.endsWith(isUSTimezone().toString()), "fell back to timezone and it matches our timezone");
-      do_test_finished();
-      run_next_test();
-    });
+    do_test_finished();
+    run_next_test();
   });
   do_test_pending();
 }

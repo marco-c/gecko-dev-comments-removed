@@ -10,22 +10,6 @@ function getCountryCodePref() {
 }
 
 
-function promiseTimezoneMessage() {
-  return new Promise(resolve => {
-    let listener = {
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
-      observe(msg) {
-        if (msg.message.startsWith("getIsUS() fell back to a timezone check with the result=")) {
-          Services.console.unregisterListener(listener);
-          resolve(msg);
-        }
-      }
-    };
-    Services.console.registerListener(listener);
-  });
-}
-
-
 
 add_task(async function test_simple() {
   deepEqual(getCountryCodePref(), undefined, "no countryCode pref");
@@ -36,10 +20,6 @@ add_task(async function test_simple() {
   ok(!Services.search.isInitialized);
 
   
-  let promiseTzMessage = promiseTimezoneMessage();
-
-  
-  
   Services.search.getEngines();
   ok(Services.search.isInitialized);
 
@@ -47,10 +27,6 @@ add_task(async function test_simple() {
   await new Promise(resolve => {
     do_timeout(500, resolve);
   });
-
-  let msg = await promiseTzMessage;
-  print("Timezone message:", msg.message);
-  ok(msg.message.endsWith(isUSTimezone().toString()), "fell back to timezone and it matches our timezone");
 
   deepEqual(getCountryCodePref(), undefined, "didn't do the geoip xhr");
   
