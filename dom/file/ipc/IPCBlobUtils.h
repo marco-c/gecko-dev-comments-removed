@@ -7,7 +7,9 @@
 #ifndef mozilla_dom_IPCBlobUtils_h
 #define mozilla_dom_IPCBlobUtils_h
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/ipc/IPDLParamTraits.h"
 
 
 
@@ -212,6 +214,7 @@
 namespace mozilla {
 
 namespace ipc {
+class IProtocol;
 class PBackgroundChild;
 class PBackgroundParent;
 }
@@ -223,6 +226,10 @@ class nsIContentChild;
 class nsIContentParent;
 
 namespace IPCBlobUtils {
+
+
+
+typedef RefPtr<BlobImpl> BlobImplPtr;
 
 already_AddRefed<BlobImpl>
 Deserialize(const IPCBlob& aIPCBlob);
@@ -243,7 +250,27 @@ nsresult
 Serialize(BlobImpl* aBlobImpl, mozilla::ipc::PBackgroundParent* aManager,
           IPCBlob& aIPCBlob);
 
+
+
+nsresult
+SerializeUntyped(BlobImpl* aBlobImpl, mozilla::ipc::IProtocol* aActor, IPCBlob& aIPCBlob);
+
 } 
+} 
+
+namespace ipc {
+
+
+
+
+template<>
+struct IPDLParamTraits<RefPtr<mozilla::dom::BlobImpl>>
+{
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    const RefPtr<mozilla::dom::BlobImpl>& aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, RefPtr<mozilla::dom::BlobImpl>* aResult);
+};
 } 
 } 
 
