@@ -87,6 +87,11 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
 
         
         
+        if job['run'].get('comm-checkout', False):
+            name += '-comm'
+
+        
+        
         if sparse:
             name += '-sparse'
 
