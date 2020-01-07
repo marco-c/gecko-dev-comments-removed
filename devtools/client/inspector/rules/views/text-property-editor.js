@@ -175,20 +175,6 @@ TextPropertyEditor.prototype = {
     this.valueSpan.textProperty = this.prop;
     this.nameSpan.textProperty = this.prop;
 
-    
-    
-    
-    
-    const outputParser = this.ruleView._outputParser;
-    const frag = outputParser.parseCssProperty(this.prop.name, this.prop.value);
-    const parsedValue = frag.textContent;
-
-    
-    
-    this.committed = { name: this.prop.name,
-                       value: parsedValue,
-                       priority: this.prop.priority };
-
     appendText(this.valueContainer, ";");
 
     this.warning = createChild(this.container, "div", {
@@ -421,6 +407,17 @@ TextPropertyEditor.prototype = {
       isVariableInUse: varName => this.rule.elementStyle.getVariable(varName),
     };
     const frag = outputParser.parseCssProperty(name, val, parserOptions);
+
+    
+    
+    if (!this.committed) {
+      this.committed = {
+        name,
+        value: frag.textContent,
+        priority: this.prop.priority,
+      };
+    }
+
     this.valueSpan.innerHTML = "";
     this.valueSpan.appendChild(frag);
 
