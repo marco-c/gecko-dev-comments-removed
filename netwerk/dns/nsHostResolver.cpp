@@ -20,9 +20,7 @@
 #include "nsISupportsUtils.h"
 #include "nsIThreadManager.h"
 #include "nsAutoPtr.h"
-#include "nsComponentManagerUtils.h"
 #include "nsPrintfCString.h"
-#include "nsXPCOMCIDInternal.h"
 #include "prthread.h"
 #include "prerror.h"
 #include "prtime.h"
@@ -283,21 +281,29 @@ nsHostRecord::ResolveComplete()
 
     if (mTRRUsed && mNativeUsed && mNativeSuccess && mTRRSuccess) { 
         static const TimeDuration k50ms = TimeDuration::FromMilliseconds(50);
+        static const TimeDuration k100ms = TimeDuration::FromMilliseconds(100);
         if (mTrrDuration <= mNativeDuration) {
-            AccumulateCategorical(((mNativeDuration - mTrrDuration) > k50ms) ?
-                                  Telemetry::LABELS_DNS_TRR_RACE::TRRFasterBy50 :
-                                  Telemetry::LABELS_DNS_TRR_RACE::TRRFaster);
+            if ((mNativeDuration - mTrrDuration) > k100ms) {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFasterBy100);
+            } else if ((mNativeDuration - mTrrDuration) > k50ms) {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFasterBy50);
+            } else {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::TRRFaster);
+            }
             LOG(("nsHostRecord::Complete %s Dns Race: TRR\n", host.get()));
         } else {
-            AccumulateCategorical(((mTrrDuration - mNativeDuration) > k50ms) ?
-                                  Telemetry::LABELS_DNS_TRR_RACE::NativeFasterBy50 :
-                                  Telemetry::LABELS_DNS_TRR_RACE::NativeFaster);
+            if ((mTrrDuration - mNativeDuration) > k100ms) {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::NativeFasterBy100);
+            } else if ((mTrrDuration - mNativeDuration) > k50ms) {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::NativeFasterBy50);
+            } else {
+                AccumulateCategorical(Telemetry::LABELS_DNS_TRR_RACE2::NativeFaster);
+            }
             LOG(("nsHostRecord::Complete %s Dns Race: NATIVE\n", host.get()));
         }
     }
 
-    if (mTRRUsed && mNativeUsed &&
-        ((mResolverMode == MODE_SHADOW) || (mResolverMode == MODE_PARALLEL))) {
+    if (mTRRUsed && mNativeUsed) {
         
         AccumulateCategorical(mNativeSuccess && mTRRSuccess?
                               Telemetry::LABELS_DNS_TRR_COMPARE::BothWorked :
@@ -510,7 +516,6 @@ nsHostRecord::RemoveOrRefresh()
 
 static const char kPrefGetTtl[] = "network.dns.get-ttl";
 static const char kPrefNativeIsLocalhost[] = "network.dns.native-is-localhost";
-static const char kPrefThreadIdleTime[] = "network.dns.resolver-thread-extra-idle-time-seconds";
 static bool sGetTtlEnabled = false;
 mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
@@ -540,11 +545,11 @@ nsHostResolver::nsHostResolver(uint32_t maxCacheEntries,
     , mDefaultCacheLifetime(defaultCacheEntryLifetime)
     , mDefaultGracePeriod(defaultGracePeriod)
     , mLock("nsHostResolver.mLock")
-    , mIdleTaskCV(mLock, "nsHostResolver.mIdleTaskCV")
+    , mIdleThreadCV(mLock, "nsHostResolver.mIdleThreadCV")
     , mEvictionQSize(0)
     , mShutdown(true)
-    , mNumIdleTasks(0)
-    , mActiveTaskCount(0)
+    , mNumIdleThreads(0)
+    , mThreadCount(0)
     , mActiveAnyThreadCount(0)
     , mPendingCount(0)
 {
@@ -595,27 +600,6 @@ nsHostResolver::Init()
         res_ninit(&_res);
     }
 #endif
-
-    
-    
-    int32_t poolTimeoutSecs = Preferences::GetInt(kPrefThreadIdleTime, 60);
-    uint32_t poolTimeoutMs;
-    if (poolTimeoutSecs < 0) {
-        
-        poolTimeoutMs = UINT32_MAX;
-    } else {
-        
-        poolTimeoutMs = mozilla::clamped<uint32_t>(poolTimeoutSecs * 1000,
-                                                   0, 3600 * 1000);
-    }
-
-    nsCOMPtr<nsIThreadPool> threadPool = do_CreateInstance(NS_THREADPOOL_CONTRACTID);
-    MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadLimit(MAX_RESOLVER_THREADS));
-    MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(MAX_RESOLVER_THREADS));
-    MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadTimeout(poolTimeoutMs));
-    MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize));
-    MOZ_ALWAYS_SUCCEEDS(threadPool->SetName(NS_LITERAL_CSTRING("DNS Resolver")));
-    mResolverThreads = threadPool.forget();
 
     return NS_OK;
 }
@@ -699,8 +683,8 @@ nsHostResolver::Shutdown()
         mEvictionQSize = 0;
         mPendingCount = 0;
 
-        if (mNumIdleTasks)
-            mIdleTaskCV.NotifyAll();
+        if (mNumIdleThreads)
+            mIdleThreadCV.NotifyAll();
 
         
         mRecordDB.Clear();
@@ -735,7 +719,7 @@ nsHostResolver::Shutdown()
 
     PRIntervalTime delay = PR_MillisecondsToInterval(25);
     PRIntervalTime stopTime = PR_IntervalNow() + PR_SecondsToInterval(20);
-    while (mActiveTaskCount && PR_IntervalNow() < stopTime)
+    while (mThreadCount && PR_IntervalNow() < stopTime)
         PR_Sleep(delay);
 #endif
 
@@ -744,8 +728,6 @@ nsHostResolver::Shutdown()
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "Failed to shutdown GetAddrInfo");
     }
-
-    mResolverThreads->Shutdown();
 }
 
 nsresult
@@ -1016,7 +998,7 @@ nsHostResolver::ResolveHost(const nsACString &aHost,
                         rec->remove();
                         mMediumQ.insertBack(rec);
                         rec->flags = flags;
-                        mIdleTaskCV.Notify();
+                        mIdleThreadCV.Notify();
                     }
                 }
             }
@@ -1078,20 +1060,31 @@ nsHostResolver::DetachCallback(const nsACString &host,
 nsresult
 nsHostResolver::ConditionallyCreateThread(nsHostRecord *rec)
 {
-    if (mNumIdleTasks) {
+    if (mNumIdleThreads) {
         
-        mIdleTaskCV.Notify();
+        mIdleThreadCV.Notify();
     }
-    else if ((mActiveTaskCount < HighThreadThreshold) ||
-             (IsHighPriority(rec->flags) && mActiveTaskCount < MAX_RESOLVER_THREADS)) {
+    else if ((mThreadCount < HighThreadThreshold) ||
+             (IsHighPriority(rec->flags) && mThreadCount < MAX_RESOLVER_THREADS)) {
+        static nsThreadPoolNaming naming;
+        nsCString name = naming.GetNextThreadName("DNS Resolver");
+
+        
+        nsCOMPtr<nsIThread> thread;
+        nsresult rv = NS_NewNamedThread(name, getter_AddRefs(thread), nullptr,
+                                        nsIThreadManager::kThreadPoolStackSize);
+        if (NS_WARN_IF(NS_FAILED(rv)) || !thread) {
+            return rv;
+        }
+
         nsCOMPtr<nsIRunnable> event =
             mozilla::NewRunnableMethod("nsHostResolver::ThreadFunc",
                                        this,
                                        &nsHostResolver::ThreadFunc);
-        mActiveTaskCount++;
-        nsresult rv = mResolverThreads->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+        mThreadCount++;
+        rv = thread->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
         if (NS_FAILED(rv)) {
-            mActiveTaskCount--;
+            mThreadCount--;
         }
     }
     else {
@@ -1242,9 +1235,9 @@ nsHostResolver::NativeLookup(nsHostRecord *aRec)
     nsresult rv = ConditionallyCreateThread(rec);
 
     LOG (("  DNS thread counters: total=%d any-live=%d idle=%d pending=%d\n",
-          static_cast<uint32_t>(mActiveTaskCount),
+          static_cast<uint32_t>(mThreadCount),
           static_cast<uint32_t>(mActiveAnyThreadCount),
-          static_cast<uint32_t>(mNumIdleTasks),
+          static_cast<uint32_t>(mNumIdleThreads),
           static_cast<uint32_t>(mPendingCount)));
 
     return rv;
@@ -1338,7 +1331,7 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
 
     MutexAutoLock lock(mLock);
 
-    timeout = (mNumIdleTasks >= HighThreadThreshold) ? mShortIdleTimeout : mLongIdleTimeout;
+    timeout = (mNumIdleThreads >= HighThreadThreshold) ? mShortIdleTimeout : mLongIdleTimeout;
     epoch = TimeStamp::Now();
 
     while (!mShutdown) {
@@ -1380,9 +1373,9 @@ nsHostResolver::GetHostToLookup(nsHostRecord **result)
         
         
 
-        mNumIdleTasks++;
-        mIdleTaskCV.Wait(timeout);
-        mNumIdleTasks--;
+        mNumIdleThreads++;
+        mIdleThreadCV.Wait(timeout);
+        mNumIdleThreads--;
 
         now = TimeStamp::Now();
 
@@ -1895,8 +1888,12 @@ nsHostResolver::ThreadFunc()
         }
     } while(true);
 
-    mActiveTaskCount--;
-    LOG(("DNS lookup thread - queue empty, task finished.\n"));
+    nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
+    NS_DispatchToMainThread(NS_NewRunnableFunction("nsHostResolver::ThreadFunc::AsyncShutdown", [thread]() {
+        thread->AsyncShutdown();
+    }));
+    mThreadCount--;
+    LOG(("DNS lookup thread - queue empty, thread finished.\n"));
 }
 
 void
