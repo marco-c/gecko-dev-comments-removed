@@ -228,6 +228,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
 
       
       tab.linkedBrowser.style.visibility = "";
+      debug("Exit swap start");
     },
 
     stop() {

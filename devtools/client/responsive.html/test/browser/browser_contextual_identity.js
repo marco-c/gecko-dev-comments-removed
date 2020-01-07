@@ -8,10 +8,8 @@ const TEST_URL = TEST_URI_ROOT + "contextual_identity.html";
 
 
 async function addTabInUserContext(uri, userContextId) {
-  const tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
-  gBrowser.selectedTab = tab;
-  const browser = gBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
+  const tab = await addTab(uri, { userContextId });
+  const browser = tab.linkedBrowser;
   return { tab, browser };
 }
 

@@ -374,9 +374,13 @@ MessageManagerTunnel.prototype = {
     "Forms:SelectDropDownItem",
     
     "SessionStore:flush",
+    "SessionStore:restoreHistory",
+    "SessionStore:restoreTabContent",
   ],
 
   INNER_TO_OUTER_MESSAGES: [
+    
+    "Browser:LoadURI",
     
     "Content:LoadURIResult",
     "Content:LocationChange",
