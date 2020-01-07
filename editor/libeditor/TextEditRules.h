@@ -353,6 +353,10 @@ protected:
     return mData->SelectionRef();
   }
 
+#ifdef DEBUG
+  bool IsEditorDataAvailable() const { return !!mData; }
+#endif 
+
   
   nsString mPasswordText;
   
