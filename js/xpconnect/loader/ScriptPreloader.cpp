@@ -1160,12 +1160,18 @@ ScriptPreloader::CachedScript::GetJSScript(JSContext* cx)
         return mScript;
     }
 
+    if (!HasRange()) {
+        
+        
+        
+        return nullptr;
+    }
+
     
     
     
     
     
-    MOZ_ASSERT(HasRange());
 
     auto start = TimeStamp::Now();
     LOG(Info, "Decoding script %s on main thread...\n", mURL.get());
