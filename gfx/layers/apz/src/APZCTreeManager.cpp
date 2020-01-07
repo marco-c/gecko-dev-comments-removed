@@ -843,7 +843,8 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
         (!parentHasPerspective && aLayer.GetClipRect())
           ? Some(ParentLayerIntRegion(*aLayer.GetClipRect()))
           : Nothing(),
-        GetEventRegionsOverride(aParent, aLayer));
+        GetEventRegionsOverride(aParent, aLayer),
+        aLayer.IsBackfaceHidden());
     node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
                            aLayer.GetScrollbarAnimationId(),
                            aLayer.GetScrollThumbData(),
@@ -867,8 +868,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
     apzc = insertResult.first->second;
     PrintAPZCInfo(aLayer, apzc);
   }
-  APZCTM_LOG("Found APZC %p for layer %p with identifiers %" PRIx64 " %" PRId64 "\n",
-      apzc, aLayer.GetLayer(), uint64_t(guid.mLayersId), guid.mScrollId);
+  APZCTM_LOG("Found APZC %p for layer %p with identifiers %" PRId64 " %" PRId64 "\n", apzc, aLayer.GetLayer(), guid.mLayersId, guid.mScrollId);
 
   
   
@@ -939,8 +939,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
       node->SetLastChild(nullptr);
     }
 
-    APZCTM_LOG("Using APZC %p for layer %p with identifiers %" PRIx64 " %" PRId64 "\n",
-        apzc, aLayer.GetLayer(), uint64_t(aLayersId), aMetrics.GetScrollId());
+    APZCTM_LOG("Using APZC %p for layer %p with identifiers %" PRId64 " %" PRId64 "\n", apzc, aLayer.GetLayer(), aLayersId, aMetrics.GetScrollId());
 
     apzc->NotifyLayersUpdated(aLayer.Metadata(), aState.mIsFirstPaint,
         aLayersId == aState.mOriginatingLayersId);
@@ -958,7 +957,8 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
         aLayer.GetVisibleRegion(),
         aLayer.GetTransformTyped(),
         clipRegion,
-        GetEventRegionsOverride(aParent, aLayer));
+        GetEventRegionsOverride(aParent, aLayer),
+        aLayer.IsBackfaceHidden());
     apzc->SetAncestorTransform(aAncestorTransform);
 
     PrintAPZCInfo(aLayer, apzc);
@@ -1057,7 +1057,8 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
         aLayer.GetVisibleRegion(),
         aLayer.GetTransformTyped(),
         clipRegion,
-        GetEventRegionsOverride(aParent, aLayer));
+        GetEventRegionsOverride(aParent, aLayer),
+        aLayer.IsBackfaceHidden());
   }
 
   
@@ -1089,7 +1090,7 @@ APZCTreeManager::FlushApzRepaints(LayersId aLayersId)
   
   
   
-  APZCTM_LOG("Flushing repaints for layers id 0x%" PRIx64 "\n", uint64_t(aLayersId));
+  APZCTM_LOG("Flushing repaints for layers id 0x%" PRIx64 "\n", aLayersId);
   RefPtr<GeckoContentController> controller = GetContentController(aLayersId);
   MOZ_ASSERT(controller);
   controller->DispatchToRepaintThread(

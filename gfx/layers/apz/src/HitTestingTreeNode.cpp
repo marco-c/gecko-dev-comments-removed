@@ -31,6 +31,7 @@ HitTestingTreeNode::HitTestingTreeNode(AsyncPanZoomController* aApzc,
   , mScrollViewId(FrameMetrics::NULL_SCROLL_ID)
   , mScrollbarAnimationId(0)
   , mFixedPosTarget(FrameMetrics::NULL_SCROLL_ID)
+  , mIsBackfaceHidden(false)
   , mOverride(EventRegionsOverride::NoOverride)
 {
 if (mIsPrimaryApzcHolder) {
@@ -263,13 +264,15 @@ HitTestingTreeNode::SetHitTestData(const EventRegions& aRegions,
                                    const LayerIntRegion& aVisibleRegion,
                                    const CSSTransformMatrix& aTransform,
                                    const Maybe<ParentLayerIntRegion>& aClipRegion,
-                                   const EventRegionsOverride& aOverride)
+                                   const EventRegionsOverride& aOverride,
+                                   bool aIsBackfaceHidden)
 {
   mEventRegions = aRegions;
   mVisibleRegion = aVisibleRegion;
   mTransform = aTransform;
   mClipRegion = aClipRegion;
   mOverride = aOverride;
+  mIsBackfaceHidden = aIsBackfaceHidden;
 }
 
 bool
@@ -300,6 +303,13 @@ HitTestingTreeNode::HitTest(const LayerPoint& aPoint) const
   }
 
   auto point = LayerIntPoint::Round(aPoint);
+
+  
+  
+  
+  if (mIsBackfaceHidden) {
+    return result;
+  }
 
   
   if (!mEventRegions.mHitRegion.Contains(point.x, point.y)) {

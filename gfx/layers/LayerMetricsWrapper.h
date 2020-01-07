@@ -446,6 +446,13 @@ public:
     return mLayer->GetFixedPositionScrollContainerId();
   }
 
+  bool IsBackfaceHidden() const
+  {
+    MOZ_ASSERT(IsValid());
+
+    return mLayer->IsBackfaceHidden();
+  }
+
   
   
   

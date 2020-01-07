@@ -89,7 +89,8 @@ public:
                       const LayerIntRegion& aVisibleRegion,
                       const CSSTransformMatrix& aTransform,
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
-                      const EventRegionsOverride& aOverride);
+                      const EventRegionsOverride& aOverride,
+                      bool aIsBackfaceHidden);
   bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
 
   
@@ -171,6 +172,14 @@ private:
   
 
   CSSTransformMatrix mTransform;
+
+  
+
+
+
+
+
+  bool mIsBackfaceHidden;
 
   
 
