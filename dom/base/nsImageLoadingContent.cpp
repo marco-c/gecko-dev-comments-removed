@@ -810,8 +810,7 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
 }
 
 void
-nsImageLoadingContent::ForceReload(const mozilla::dom::Optional<bool>& aNotify,
-                                   mozilla::ErrorResult& aError)
+nsImageLoadingContent::ForceReload(bool aNotify, ErrorResult& aError)
 {
   nsCOMPtr<nsIURI> currentURI;
   GetCurrentURI(getter_AddRefs(currentURI));
@@ -821,32 +820,15 @@ nsImageLoadingContent::ForceReload(const mozilla::dom::Optional<bool>& aNotify,
   }
 
   
-  bool notify = !aNotify.WasPassed() || aNotify.Value();
-
-  
   
   ImageLoadType loadType = \
     (mCurrentRequestFlags & REQUEST_IS_IMAGESET) ? eImageLoadType_Imageset
                                                  : eImageLoadType_Normal;
-  nsresult rv = LoadImage(currentURI, true, notify, loadType, true, nullptr,
+  nsresult rv = LoadImage(currentURI, true, aNotify, loadType, true, nullptr,
                           nsIRequest::VALIDATE_ALWAYS);
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
   }
-}
-
-NS_IMETHODIMP
-nsImageLoadingContent::ForceReload(bool aNotify ,
-                                   uint8_t aArgc)
-{
-  mozilla::dom::Optional<bool> notify;
-  if (aArgc >= 1) {
-    notify.Construct() = aNotify;
-  }
-
-  ErrorResult result;
-  ForceReload(notify, result);
-  return result.StealNSResult();
 }
 
 

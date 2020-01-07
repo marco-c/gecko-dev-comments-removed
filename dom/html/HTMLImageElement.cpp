@@ -495,7 +495,8 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
       
       
       
-      ForceReload(aNotify);
+      IgnoredErrorResult error;
+      ForceReload(aNotify, error);
     }
   }
 }
