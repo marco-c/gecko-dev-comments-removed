@@ -16,6 +16,8 @@
 
 namespace js {
 
+struct Class;
+
 typedef double (*UnaryFunType)(double);
 
 class MathCache
@@ -83,6 +85,8 @@ class MathCache
 
 
 
+
+extern const Class MathClass;
 
 extern JSObject*
 InitMathClass(JSContext* cx, HandleObject obj);

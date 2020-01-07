@@ -133,10 +133,6 @@ FOR_EACH_COMMON_PROPERTYNAME(CONST_CHAR_STR)
 #undef CONST_CHAR_STR
 
 
-const char js_getter_str[]          = "getter";
-const char js_setter_str[]          = "setter";
-
-
 
 static const uint32_t JS_STRING_HASH_COUNT = 64;
 
