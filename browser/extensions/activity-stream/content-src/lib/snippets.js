@@ -383,12 +383,13 @@ export function addSnippetsSubscriber(store) {
 
   store.subscribe(async () => {
     const state = store.getState();
+    const isASRouterEnabled = state.Prefs.values.asrouterExperimentEnabled && state.Prefs.values.asrouterOnboardingCohort > 0;
     
     
     
     if (state.Prefs.values["feeds.snippets"] &&
       
-      !state.Prefs.values.asrouterExperimentEnabled &&
+      !isASRouterEnabled &&
       !state.Prefs.values.disableSnippets &&
       state.Snippets.initialized &&
       !snippets.initialized &&
@@ -410,12 +411,12 @@ export function addSnippetsSubscriber(store) {
     
     
     if (
-      state.Prefs.values.asrouterExperimentEnabled &&
+      (state.Prefs.values.asrouterExperimentEnabled || state.Prefs.values.asrouterOnboardingCohort > 0) &&
       state.Prefs.values["feeds.snippets"] &&
       !asrouterContent.initialized) {
       asrouterContent.init();
     } else if (
-      (!state.Prefs.values.asrouterExperimentEnabled || !state.Prefs.values["feeds.snippets"]) &&
+      ((!state.Prefs.values.asrouterExperimentEnabled && state.Prefs.values.asrouterOnboardingCohort === 0) || !state.Prefs.values["feeds.snippets"]) &&
       asrouterContent.initialized
     ) {
       asrouterContent.uninit();

@@ -33,8 +33,6 @@ module.exports = {
     }
   }],
   "rules": {
-    "no-undef": 1, 
-
     "promise/catch-or-return": 2,
     "promise/param-names": 2,
 

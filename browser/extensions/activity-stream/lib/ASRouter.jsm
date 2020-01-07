@@ -226,27 +226,46 @@ class _ASRouter {
     this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: state});
   }
 
-  _getBundledMessages(originalMessage) {
-    let bundledMessages = [];
-    bundledMessages.push({content: originalMessage.content, id: originalMessage.id});
-    for (const msg of this.state.messages) {
-      if (msg.bundled && msg.template === originalMessage.template && msg.id !== originalMessage.id && !this.state.blockList.includes(msg.id)) {
-        
-        bundledMessages.push({content: msg.content, id: msg.id});
-      }
+  async _getBundledMessages(originalMessage, target, force = false) {
+    let result = [{content: originalMessage.content, id: originalMessage.id}];
 
+    
+    let bundledMessagesOfSameTemplate = this._getUnblockedMessages()
+                                          .filter(msg => msg.bundled && msg.template === originalMessage.template && msg.id !== originalMessage.id);
+
+    if (force) {
       
-      if (bundledMessages.length === originalMessage.bundled) {
-        break;
+      for (const message of bundledMessagesOfSameTemplate) {
+        result.push({content: message.content, id: message.id});
+        
+        if (result.length === originalMessage.bundled) {
+          break;
+        }
+      }
+    } else {
+      while (bundledMessagesOfSameTemplate.length) {
+        
+        const message = await ASRouterTargeting.findMatchingMessage(bundledMessagesOfSameTemplate, target);
+        if (!message) {
+           
+          break;
+        }
+        
+        
+        result.push({content: message.content, id: message.id});
+        bundledMessagesOfSameTemplate.splice(bundledMessagesOfSameTemplate.findIndex(msg => msg.id === message.id), 1);
+        
+        if (result.length === originalMessage.bundled) {
+          break;
+        }
       }
     }
 
     
-    if (bundledMessages.length < originalMessage.bundled) {
+    if (result.length < originalMessage.bundled) {
       return null;
     }
-
-    return {bundle: bundledMessages, provider: originalMessage.provider, template: originalMessage.template};
+    return {bundle: result, provider: originalMessage.provider, template: originalMessage.template};
   }
 
   _getUnblockedMessages() {
@@ -254,11 +273,11 @@ class _ASRouter {
     return state.messages.filter(item => !state.blockList.includes(item.id));
   }
 
-  _sendMessageToTarget(message, target) {
+  async _sendMessageToTarget(message, target, force = false) {
     let bundledMessages;
     
     if (message && message.bundled) {
-      bundledMessages = this._getBundledMessages(message);
+      bundledMessages = await this._getBundledMessages(message, target, force);
     }
     if (message && !message.bundled) {
       
@@ -273,17 +292,17 @@ class _ASRouter {
 
   async sendNextMessage(target) {
     const msgs = this._getUnblockedMessages();
-    let message = await ASRouterTargeting.findMatchingMessage(msgs);
+    let message = await ASRouterTargeting.findMatchingMessage(msgs, target);
     await this.setState({lastMessageId: message ? message.id : null});
 
-    this._sendMessageToTarget(message, target);
+    await this._sendMessageToTarget(message, target);
   }
 
-  async setMessageById(id) {
+  async setMessageById(id, target, force = true) {
     await this.setState({lastMessageId: id});
     const newMessage = this.getMessageById(id);
 
-    this._sendMessageToTarget(newMessage, this.messageChannel);
+    await this._sendMessageToTarget(newMessage, target, force);
   }
 
   async blockById(idOrIds) {
@@ -355,7 +374,7 @@ class _ASRouter {
         });
         break;
       case "OVERRIDE_MESSAGE":
-        await this.setMessageById(action.data.id);
+        await this.setMessageById(action.data.id, target);
         break;
       case "ADMIN_CONNECT_STATE":
         target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: this.state});
