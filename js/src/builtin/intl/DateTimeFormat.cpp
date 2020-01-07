@@ -247,7 +247,13 @@ DefaultCalendar(JSContext* cx, const JSAutoByteString& locale, MutableHandleValu
     }
 
     
-    JSString* str = JS_NewStringCopyZ(cx, uloc_toUnicodeLocaleType("ca", calendar));
+    calendar = uloc_toUnicodeLocaleType("ca", calendar);
+    if (!calendar) {
+        intl::ReportInternalError(cx);
+        return false;
+    }
+
+    JSString* str = NewStringCopyZ<CanGC>(cx, calendar);
     if (!str)
         return false;
 
@@ -314,8 +320,12 @@ js::intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp)
 
         
         calendar = uloc_toUnicodeLocaleType("ca", calendar);
+        if (!calendar) {
+            intl::ReportInternalError(cx);
+            return false;
+        }
 
-        JSString* jscalendar = JS_NewStringCopyZ(cx, calendar);
+        JSString* jscalendar = NewStringCopyZ<CanGC>(cx, calendar);
         if (!jscalendar)
             return false;
         element = StringValue(jscalendar);
@@ -325,7 +335,7 @@ js::intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp)
         
         for (const auto& calendarAlias : calendarAliases) {
             if (StringsAreEqual(calendar, calendarAlias.calendar)) {
-                JSString* jscalendar = JS_NewStringCopyZ(cx, calendarAlias.alias);
+                JSString* jscalendar = NewStringCopyZ<CanGC>(cx, calendarAlias.alias);
                 if (!jscalendar)
                     return false;
                 element = StringValue(jscalendar);
