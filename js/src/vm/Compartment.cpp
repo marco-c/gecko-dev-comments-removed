@@ -4,6 +4,8 @@
 
 
 
+#include "vm/Compartment-inl.h"
+
 #include "mozilla/MemoryReporting.h"
 
 #include <stddef.h>
@@ -29,7 +31,6 @@
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
-#include "vm/Realm-inl.h"
 #include "vm/UnboxedObject-inl.h"
 
 using namespace js;
