@@ -172,8 +172,6 @@ typedef struct {
 
 const layoutInfo kLayoutInfos[CUBEB_LAYOUT_MAX] = {
   { "undefined",      0, 0 },               
-  { "dual mono",      2, MASK_STEREO },     
-  { "dual mono lfe",  3, MASK_STEREO_LFE }, 
   { "mono",           1, MASK_MONO },       
   { "mono lfe",       2, MASK_MONO_LFE },   
   { "stereo",         2, MASK_STEREO },     
