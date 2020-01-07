@@ -415,7 +415,10 @@ private:
 
   uint64_t mOuterID;
   uint64_t mInnerID;
+
+  
   nsString mConsoleID;
+  nsString mPassedInnerID;
 
   enum {
     eUnknown,
