@@ -368,11 +368,6 @@ private:
   already_AddRefed<CSSValue> DoGetOutlineRadiusTopRight();
 
   
-  already_AddRefed<CSSValue> DoGetContent();
-  already_AddRefed<CSSValue> DoGetCounterIncrement();
-  already_AddRefed<CSSValue> DoGetCounterReset();
-
-  
   already_AddRefed<CSSValue> DoGetQuotes();
 
   
