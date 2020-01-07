@@ -227,14 +227,6 @@ var TrackingProtection = {
     
     
     
-    if (!this.enabled) {
-      this.openPreferences("identityPopup-TP-action");
-      return;
-    }
-
-    
-    
-    
     let baseURI = this._baseURIForChannelClassifier;
 
     if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
