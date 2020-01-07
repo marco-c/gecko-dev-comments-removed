@@ -207,6 +207,14 @@ const BOOTSTRAP_MONITOR_BOOTSTRAP_JS = `
 `;
 
 
+const EMPTY_BOOTSTRAP_JS = `
+  function startup() {}
+  function shutdown() {}
+  function install() {}
+  function uninstall() {}
+`;
+
+
 
 
 this.BootstrapMonitor = {
