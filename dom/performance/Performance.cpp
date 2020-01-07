@@ -254,6 +254,7 @@ Performance::ResolveTimestampFromName(const nsAString& aName,
                                       ErrorResult& aRv)
 {
   AutoTArray<RefPtr<PerformanceEntry>, 1> arr;
+  DOMHighResTimeStamp ts;
   Optional<nsAString> typeParam;
   nsAutoString str;
   str.AssignLiteral("mark");
@@ -268,7 +269,7 @@ Performance::ResolveTimestampFromName(const nsAString& aName,
     return 0;
   }
 
-  DOMHighResTimeStamp ts = GetPerformanceTimingFromString(aName);
+  ts = GetPerformanceTimingFromString(aName);
   if (!ts) {
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return 0;
@@ -290,6 +291,11 @@ Performance::Measure(const nsAString& aName,
 
   DOMHighResTimeStamp startTime;
   DOMHighResTimeStamp endTime;
+
+  if (IsPerformanceTimingAttribute(aName)) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return;
+  }
 
   if (aStartMark.WasPassed()) {
     startTime = ResolveTimestampFromName(aStartMark.Value(), aRv);
@@ -322,9 +328,22 @@ Performance::Measure(const nsAString& aName,
                                TimeDuration::FromMilliseconds(startTime);
     TimeStamp endTimeStamp = CreationTimeStamp() +
                              TimeDuration::FromMilliseconds(endTime);
+
+    
+    
+    Maybe<nsString> startMark;
+    if (aStartMark.WasPassed()) {
+      startMark.emplace(aStartMark.Value());
+    }
+    Maybe<nsString> endMark;
+    if (aEndMark.WasPassed()) {
+      endMark.emplace(aEndMark.Value());
+    }
+
     profiler_add_marker(
       "UserTiming",
-      MakeUnique<UserTimingMarkerPayload>(aName, startTimeStamp, endTimeStamp));
+      MakeUnique<UserTimingMarkerPayload>(aName, startMark, endMark,
+                                          startTimeStamp, endTimeStamp));
   }
 #endif
 }
