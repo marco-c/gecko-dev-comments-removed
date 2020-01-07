@@ -660,9 +660,6 @@ void Gecko_AddPropertyToSet(nsCSSPropertyIDSetBorrowedMut, nsCSSPropertyID);
 int32_t Gecko_RegisterNamespace(nsAtom* ns);
 
 
-bool Gecko_ShouldCreateStyleThreadPool();
-
-
 #define STYLE_STRUCT(name, checkdata_cb)                                       \
   void Gecko_Construct_Default_nsStyle##name(                                  \
     nsStyle##name* ptr,                                                        \
