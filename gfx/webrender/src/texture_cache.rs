@@ -2,8 +2,8 @@
 
 
 
-use api::{ColorF, DeviceUintPoint, DeviceUintRect, DeviceUintSize};
-use api::{ExternalImageType, ImageData, ImageFormat, PremultipliedColorF};
+use api::{DeviceUintPoint, DeviceUintRect, DeviceUintSize};
+use api::{ExternalImageType, ImageData, ImageFormat};
 use api::ImageDescriptor;
 use device::TextureFilter;
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
@@ -103,8 +103,6 @@ struct CacheEntry {
     filter: TextureFilter,
     
     texture_id: CacheTextureId,
-    
-    color: PremultipliedColorF,
 }
 
 impl CacheEntry {
@@ -126,7 +124,6 @@ impl CacheEntry {
             format,
             filter,
             uv_rect_handle: GpuCacheHandle::new(),
-            color: ColorF::new(1.0, 1.0, 1.0, 1.0).premultiplied(),
         }
     }
 
@@ -147,7 +144,6 @@ impl CacheEntry {
             let image_source = ImageSource {
                 p0: origin.to_f32(),
                 p1: (origin + self.size).to_f32(),
-                color: self.color,
                 texture_layer: layer_index,
                 user_data: self.user_data,
             };
@@ -1073,7 +1069,6 @@ impl TextureArray {
                 format: self.format,
                 filter: self.filter,
                 texture_id: self.texture_id.unwrap(),
-                color: ColorF::new(1.0, 1.0, 1.0, 1.0).premultiplied(),
             }
         })
     }

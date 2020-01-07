@@ -2,7 +2,7 @@
 
 
 
-use api::{DevicePoint, LayerToWorldTransform, PremultipliedColorF, WorldToLayerTransform};
+use api::{DevicePoint, LayerToWorldTransform, WorldToLayerTransform};
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use prim_store::EdgeAaSegmentMask;
 use render_task::RenderTaskAddress;
@@ -16,6 +16,15 @@ use render_task::RenderTaskAddress;
 pub enum RasterizationSpace {
     Local = 0,
     Screen = 1,
+}
+
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[repr(C)]
+pub enum BoxShadowStretchMode {
+    Stretch = 0,
+    Simple = 1,
 }
 
 #[repr(i32)]
@@ -254,7 +263,6 @@ pub struct ImageSource {
     pub p1: DevicePoint,
     pub texture_layer: f32,
     pub user_data: [f32; 3],
-    pub color: PremultipliedColorF,
 }
 
 impl ImageSource {
@@ -271,6 +279,5 @@ impl ImageSource {
             self.user_data[1],
             self.user_data[2],
         ]);
-        request.push(self.color);
     }
 }
