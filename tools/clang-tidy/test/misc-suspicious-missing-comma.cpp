@@ -1,0 +1,9 @@
+
+
+const char* software[] = {
+  "Firefox",
+  "Rust"   
+  "Thunderbird",
+  "kinto"
+};
+
