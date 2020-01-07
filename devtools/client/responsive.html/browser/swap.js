@@ -5,6 +5,7 @@
 "use strict";
 
 const { Ci } = require("chrome");
+const { E10SUtils } = require("resource://gre/modules/E10SUtils.jsm");
 const { tunnelToInnerBrowser } = require("./tunnel");
 
 function debug(msg) {
@@ -89,9 +90,32 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
     }
   };
 
+  
+  function loadURIWithNewFrameLoader(browser, uri, options) {
+    return new Promise(resolve => {
+      gBrowser.addEventListener("XULFrameLoaderCreated", resolve, { once: true });
+      browser.loadURI(uri, options);
+    });
+  }
+
   return {
 
     async start() {
+      
+      
+      
+      
+      let { newFrameloader } = E10SUtils.shouldLoadURIInBrowser(
+        tab.linkedBrowser,
+        "about:blank"
+      );
+      if (newFrameloader) {
+        debug(`Tab will force a new frameloader on navigation, load about:blank first`);
+        await loadURIWithNewFrameLoader(tab.linkedBrowser, "about:blank", {
+          flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
+        });
+      }
+
       tab.isResponsiveDesignMode = true;
 
       
