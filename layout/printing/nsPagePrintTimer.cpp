@@ -18,7 +18,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsPagePrintTimer, mozilla::Runnable, nsITimerCallbac
 nsPagePrintTimer::~nsPagePrintTimer()
 {
   
-  mDocViewerPrint->DecrementDestroyRefCount();
+  mDocViewerPrint->DecrementDestroyBlockedCount();
 }
 
 nsresult
