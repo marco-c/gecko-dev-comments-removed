@@ -6,6 +6,7 @@
 
 #include "hasht.h"
 #include "nsHTMLDocument.h"
+#include "nsIURIMutator.h"
 #include "nsThreadUtils.h"
 #include "WebAuthnCoseIdentifiers.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
@@ -124,11 +125,27 @@ RelaxSameOrigin(nsPIDOMWindowInner* aParent,
     return NS_ERROR_FAILURE;
   }
   nsHTMLDocument* html = document->AsHTMLDocument();
-  if (!html->IsRegistrableDomainSuffixOfOrEqualTo(aInputRpId, originHost)) {
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> inputRpIdURI;
+  nsresult rv = NS_MutateURI(uri)
+         .SetHost(NS_ConvertUTF16toUTF8(aInputRpId))
+         .Finalize(inputRpIdURI);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_DOM_SECURITY_ERR;
+  }
+  nsAutoCString inputRpId;
+  if (NS_FAILED(inputRpIdURI->GetAsciiHost(inputRpId))) {
+    return NS_ERROR_FAILURE;
+  }
+  if (!html->IsRegistrableDomainSuffixOfOrEqualTo(
+      NS_ConvertUTF8toUTF16(inputRpId), originHost)) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  aRelaxedRpId.Assign(NS_ConvertUTF16toUTF8(aInputRpId));
+  aRelaxedRpId.Assign(inputRpId);
   return NS_OK;
 }
 
