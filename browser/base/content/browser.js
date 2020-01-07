@@ -1956,13 +1956,21 @@ if (AppConstants.platform == "macosx") {
                          "viewToolbarsMenu", "viewSidebarMenuMenu", "Browser:Reload",
                          "viewFullZoomMenu", "pageStyleMenu", "charsetMenu", "View:PageSource", "View:FullScreen",
                          "viewHistorySidebar", "Browser:AddBookmarkAs", "Browser:BookmarkAllTabs",
-                         "View:PageInfo"];
+                         "View:PageInfo", "History:UndoCloseTab"];
     var element;
 
     for (let disabledItem of disabledItems) {
       element = document.getElementById(disabledItem);
       if (element)
         element.setAttribute("disabled", "true");
+    }
+
+    
+    let shownItems = ["menu_openLocation"];
+    for (let shownItem of shownItems) {
+      element = document.getElementById(shownItem);
+      if (element)
+        element.removeAttribute("hidden");
     }
 
     

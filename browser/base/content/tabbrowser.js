@@ -5,6 +5,17 @@
 
 
 
+
+
+
+
+const FAVICON_DEFAULTS = {
+  "about:newtab": "chrome://branding/content/icon32.png",
+  "about:home": "chrome://branding/content/icon32.png",
+  "about:welcome": "chrome://branding/content/icon32.png",
+  "about:privatebrowsing": "chrome://browser/skin/privatebrowsing/favicon.svg",
+};
+
 window._gBrowser = {
   init() {
     ChromeUtils.defineModuleGetter(this, "AsyncTabSwitcher",
@@ -2399,10 +2410,8 @@ window._gBrowser = {
 
     
     
-    if (aURI == "about:newtab" || aURI == "about:home" || aURI == "about:welcome") {
-      this.setIcon(t, "chrome://branding/content/icon32.png");
-    } else if (aURI == "about:privatebrowsing") {
-      this.setIcon(t, "chrome://browser/skin/privatebrowsing/favicon.svg");
+    if (aURI in FAVICON_DEFAULTS) {
+      this.setIcon(t, FAVICON_DEFAULTS[aURI]);
     }
 
     
@@ -3642,6 +3651,17 @@ window._gBrowser = {
     }
   },
 
+  set selectedTabs(tabs) {
+    this.clearMultiSelectedTabs(false);
+    this.selectedTab = tabs[0];
+    if (tabs.length > 1) {
+      for (let tab of tabs) {
+        this.addToMultiSelectedTabs(tab, true);
+      }
+    }
+    this.tabContainer._setPositionalAttributes();
+  },
+
   get selectedTabs() {
     let {selectedTab, _multiSelectedTabsSet} = this;
     let tabs = ChromeUtils.nondeterministicGetWeakSetKeys(_multiSelectedTabsSet)
@@ -4561,6 +4581,16 @@ class TabProgressListener {
       }
 
       
+      
+      
+      
+      
+      if (!this.mBrowser.mIconURL && !ignoreBlank &&
+          !(originalLocation.spec in FAVICON_DEFAULTS)) {
+        this.mTab.removeAttribute("image");
+      }
+
+      
       if (location.scheme == "keyword")
         this.mBrowser.userTypedValue = null;
 
@@ -4659,6 +4689,8 @@ class TabProgressListener {
       if (!this.mTab.hasAttribute("pending") &&
           aWebProgress.isLoadingDocument &&
           !isSameDocument) {
+        
+        
         this.mBrowser.mIconURL = null;
       }
 
