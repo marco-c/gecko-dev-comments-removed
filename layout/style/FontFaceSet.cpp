@@ -395,6 +395,14 @@ FontFaceSet::GetReady(ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  
+  
+  
+  if (mDocument) {
+    mDocument->FlushPendingNotifications(FlushType::Layout);
+  }
+
   if (!mReady) {
     nsCOMPtr<nsIGlobalObject> global = GetParentObject();
     mReady = Promise::Create(global, aRv);
@@ -408,7 +416,6 @@ FontFaceSet::GetReady(ErrorResult& aRv)
     }
   }
 
-  FlushUserFontSet();
   return mReady;
 }
 
