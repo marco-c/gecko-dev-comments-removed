@@ -15,7 +15,7 @@ var _getURL = require("./getURL");
 
 
 function createNodeInTree(part, path, tree, index) {
-  const node = (0, _utils.createNode)(part, path, []); 
+  const node = (0, _utils.createDirectoryNode)(part, path, []); 
 
   const contents = tree.contents.slice(0);
   contents.splice(index, 0, node);
@@ -46,7 +46,7 @@ function findOrCreateNode(parts, subTree, path, part, index, url, debuggeeHost) 
   const child = subTree.contents[childIndex];
   const childIsFile = !(0, _utils.nodeHasChildren)(child); 
 
-  if (childIsFile && !addedPartIsFile || !childIsFile && addedPartIsFile) {
+  if (child.type === "source" || !childIsFile && addedPartIsFile) {
     return createNodeInTree(part, path, subTree, childIndex);
   } 
 
@@ -60,7 +60,6 @@ function findOrCreateNode(parts, subTree, path, part, index, url, debuggeeHost) 
 
 
 function traverseTree(url, tree, debuggeeHost) {
-  url.path = decodeURIComponent(url.path);
   const parts = url.path.split("/").filter(p => p !== "");
   parts.unshift(url.group);
   let path = "";
@@ -76,10 +75,17 @@ function traverseTree(url, tree, debuggeeHost) {
 
 
 function addSourceToNode(node, url, source) {
-  const isFile = !(0, _utils.isDirectory)(url); 
+  const isFile = !(0, _utils.isPathDirectory)(url.path);
+
+  if (node.type == "source") {
+    throw new Error(`wtf ${node.name}`);
+  } 
   
 
+
   if (isFile) {
+    
+    node.type = "source";
     return source;
   }
 
@@ -94,12 +100,16 @@ function addSourceToNode(node, url, source) {
 
   if (childFound) {
     const existingNode = node.contents[childIndex];
-    existingNode.contents = source;
+
+    if (existingNode.type === "source") {
+      existingNode.contents = source;
+    }
+
     return node.contents;
   } 
 
 
-  const newNode = (0, _utils.createNode)(filename, source.get("url"), source);
+  const newNode = (0, _utils.createSourceNode)(filename, source.url, source);
   const contents = node.contents.slice(0);
   contents.splice(childIndex, 0, newNode);
   return contents;
@@ -118,6 +128,7 @@ function addToTree(tree, source, debuggeeUrl, projectRoot) {
     return;
   }
 
-  const finalNode = traverseTree(url, tree, debuggeeHost);
+  const finalNode = traverseTree(url, tree, debuggeeHost); 
+
   finalNode.contents = addSourceToNode(finalNode, url, source);
 }

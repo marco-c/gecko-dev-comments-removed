@@ -1,9 +1,9 @@
 
 
 
+
 function countSources(dbg) {
-  const sources = dbg.selectors.getSources(dbg.getState());
-  return sources.size;
+  return dbg.selectors.getSourceCount(dbg.getState());
 }
 
 const sources = [

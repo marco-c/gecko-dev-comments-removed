@@ -33,7 +33,7 @@ var _fetchScopes = require("./fetchScopes");
 
 
 async function getOriginalSourceForFrame(state, frame) {
-  return (0, _selectors.getSources)(state).get(frame.location.sourceId);
+  return (0, _selectors.getSources)(state)[frame.location.sourceId];
 }
 
 

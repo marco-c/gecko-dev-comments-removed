@@ -14,22 +14,38 @@ var _utils = require("./utils");
 
 
 
-function collapseTree(node, depth = 0) {
+function _collapseTree(node, depth) {
   
-  if (Array.isArray(node.contents)) {
-    
+  if (node.type === "directory") {
+    if (!Array.isArray(node.contents)) {
+      console.log(`WTF: ${node.path}`);
+    } 
+
+
     if (depth > 1 && node.contents.length === 1) {
       const next = node.contents[0]; 
 
-      if ((0, _utils.nodeHasChildren)(next)) {
-        return collapseTree((0, _utils.createNode)(`${node.name}/${next.name}`, next.path, next.contents), depth + 1);
+      if (next.type === "directory") {
+        if (!Array.isArray(next.contents)) {
+          console.log(`WTF: ${next.name} -- ${node.name} -- ${JSON.stringify(next.contents)}`);
+        }
+
+        const name = `${node.name}/${next.name}`;
+        const nextNode = (0, _utils.createDirectoryNode)(name, next.path, next.contents);
+        return _collapseTree(nextNode, depth + 1);
       }
     } 
 
 
-    return (0, _utils.createNode)(node.name, node.path, node.contents.map(next => collapseTree(next, depth + 1)));
+    return (0, _utils.createDirectoryNode)(node.name, node.path, node.contents.map(next => _collapseTree(next, depth + 1)));
   } 
 
 
   return node;
+}
+
+function collapseTree(node) {
+  const tree = _collapseTree(node, 0);
+
+  return tree;
 }

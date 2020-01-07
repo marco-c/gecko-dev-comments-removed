@@ -31,6 +31,5 @@ add_task(async function() {
   
   await waitForPaused(dbg);
   is(getCM(dbg).getValue(), "debugger");
-  const source = getSelectedSource(getState()).toJS();
   assertPausedLocation(dbg);
 });
