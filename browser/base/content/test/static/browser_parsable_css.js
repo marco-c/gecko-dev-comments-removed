@@ -362,16 +362,16 @@ add_task(async function checkAllTheCSS() {
   
   
   
-  let manifestPromises = [];
+  let manifestURIs = [];
   uris = uris.filter(uri => {
     if (uri.pathQueryRef.endsWith(".manifest")) {
-      manifestPromises.push(parseManifest(uri));
+      manifestURIs.push(uri);
       return false;
     }
     return true;
   });
   
-  await Promise.all(manifestPromises);
+  await throttledMapPromises(manifestURIs, parseManifest);
 
   
   let isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
@@ -415,8 +415,7 @@ add_task(async function checkAllTheCSS() {
   }
 
   
-  allPromises = allPromises.map(loadCSS);
-  await Promise.all(allPromises);
+  await throttledMapPromises(allPromises, loadCSS);
 
   
   for (let [image, references] of imageURIsToReferencesMap) {

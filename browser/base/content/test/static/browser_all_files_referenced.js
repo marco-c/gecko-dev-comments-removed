@@ -530,11 +530,11 @@ add_task(async function checkAllTheFiles() {
   
   
   
-  let manifestPromises = [];
+  let manifestURIs = [];
   uris = uris.filter(uri => {
     let path = uri.pathQueryRef;
     if (path.endsWith(".manifest")) {
-      manifestPromises.push(parseManifest(uri));
+      manifestURIs.push(uri);
       return false;
     }
 
@@ -542,7 +542,7 @@ add_task(async function checkAllTheFiles() {
   });
 
   
-  await Promise.all(manifestPromises);
+  await throttledMapPromises(manifestURIs, parseManifest);
 
   
   
@@ -551,13 +551,13 @@ add_task(async function checkAllTheFiles() {
   for (let uri of uris) {
     let path = uri.pathQueryRef;
     if (path.endsWith(".css"))
-      allPromises.push(parseCSSFile(uri));
+      allPromises.push([parseCSSFile, uri]);
     else if (kCodeExtensions.some(ext => path.endsWith(ext)))
-      allPromises.push(parseCodeFile(uri));
+      allPromises.push([parseCodeFile, uri]);
   }
 
   
-  await Promise.all(allPromises);
+  await throttledMapPromises(allPromises, ([task, uri]) => task(uri));
 
   
   
