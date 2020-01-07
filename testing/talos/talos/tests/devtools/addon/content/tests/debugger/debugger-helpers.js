@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { openToolboxAndLog, reloadPageAndLog } = require("chrome://damp/content/tests/head");
+const { openToolboxAndLog, reloadPageAndLog } = require("../head");
 
 
 

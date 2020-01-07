@@ -5,7 +5,7 @@
 "use strict";
 
 const { openToolbox, closeToolbox, logTestResult, testSetup,
-        testTeardown, SIMPLE_URL } = require("chrome://damp/content/tests/head");
+        testTeardown, SIMPLE_URL } = require("../head");
 
 
 

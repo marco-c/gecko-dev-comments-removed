@@ -5,7 +5,7 @@
 "use strict";
 
 const { EVENTS } = require("devtools/client/netmonitor/src/constants");
-const { getToolbox, runTest } = require("chrome://damp/content/tests/head");
+const { getToolbox, runTest } = require("../head");
 
 
 
