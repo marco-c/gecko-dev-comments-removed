@@ -793,6 +793,22 @@ element.isSelected = function(el) {
 
 
 
+element.isReadOnly = function(el) {
+  return element.isDOMElement(el) &&
+      ["input", "textarea"].includes(el.localName) && el.readOnly;
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
