@@ -79,6 +79,15 @@ public:
                                 const dom::AddEventListenerOptionsOrBoolean& aOptions,
                                 const dom::Nullable<bool>& aWantsUntrusted,
                                 ErrorResult& aRv) override;
+  virtual nsresult AddEventListener(const nsAString& aType,
+                                    nsIDOMEventListener* aListener,
+                                    bool aUseCapture,
+                                    const Nullable<bool>& aWantsUntrusted) override;
+  
+
+
+  bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted,
+                             ErrorResult& aRv);
 
   using EventTarget::DispatchEvent;
   bool DispatchEvent(dom::Event& aEvent, dom::CallerType aCallerType,

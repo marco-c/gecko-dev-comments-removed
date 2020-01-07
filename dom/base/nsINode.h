@@ -1029,12 +1029,20 @@ public:
   virtual mozilla::EventListenerManager*
     GetOrCreateListenerManager() override;
 
-  using nsIDOMEventTarget::AddEventListener;
+  using mozilla::dom::EventTarget::AddEventListener;
   virtual void AddEventListener(const nsAString& aType,
                                 mozilla::dom::EventListener* aListener,
                                 const mozilla::dom::AddEventListenerOptionsOrBoolean& aOptions,
                                 const mozilla::dom::Nullable<bool>& aWantsUntrusted,
                                 mozilla::ErrorResult& aRv) override;
+  virtual nsresult AddEventListener(const nsAString& aType,
+                                    nsIDOMEventListener* aListener,
+                                    bool aUseCapture,
+                                    const Nullable<bool>& aWantsUntrusted) override;
+  
+
+
+  bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted);
   using nsIDOMEventTarget::AddSystemEventListener;
 
   virtual bool IsApzAware() const override;

@@ -54,7 +54,6 @@ public:
   
   static already_AddRefed<EventTarget> Constructor(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
-  using nsIDOMEventTarget::AddEventListener;
   virtual void AddEventListener(const nsAString& aType,
                                 EventListener* aCallback,
                                 const AddEventListenerOptionsOrBoolean& aOptions,
@@ -64,6 +63,39 @@ public:
                            EventListener* aCallback,
                            const EventListenerOptionsOrBoolean& aOptions,
                            ErrorResult& aRv);
+
+protected:
+  
+
+
+
+
+
+  virtual nsresult AddEventListener(const nsAString& aType,
+                                    nsIDOMEventListener* aListener,
+                                    bool aUseCapture,
+                                    const Nullable<bool>& aWantsUntrusted) = 0;
+
+public:
+  
+
+
+
+  nsresult AddEventListener(const nsAString& aType,
+                            nsIDOMEventListener* aListener,
+                            bool aUseCapture)
+  {
+    return AddEventListener(aType, aListener, aUseCapture, Nullable<bool>());
+  }
+  nsresult AddEventListener(const nsAString& aType,
+                            nsIDOMEventListener* aListener,
+                            bool aUseCapture,
+                            bool aWantsUntrusted)
+  {
+    return AddEventListener(aType, aListener, aUseCapture,
+                            Nullable<bool>(aWantsUntrusted));
+  }
+  
   
 
 

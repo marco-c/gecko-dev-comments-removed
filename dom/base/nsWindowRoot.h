@@ -37,6 +37,14 @@ public:
                                 const mozilla::dom::AddEventListenerOptionsOrBoolean& aOptions,
                                 const mozilla::dom::Nullable<bool>& aWantsUntrusted,
                                 mozilla::ErrorResult& aRv) override;
+  virtual nsresult AddEventListener(const nsAString& aType,
+                                    nsIDOMEventListener* aListener,
+                                    bool aUseCapture,
+                                    const Nullable<bool>& aWantsUntrusted) override;
+  
+
+
+  bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted);
 
   bool DispatchEvent(mozilla::dom::Event& aEvent,
                      mozilla::dom::CallerType aCallerType,
