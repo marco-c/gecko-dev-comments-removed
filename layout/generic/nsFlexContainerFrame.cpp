@@ -258,6 +258,16 @@ PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
 
 
 
+static nscoord
+AddChecked(nscoord aFirst, nscoord aSecond)
+{
+  CheckedInt<nscoord> checkedResult = CheckedInt<nscoord>(aFirst) + aSecond;
+  return checkedResult.isValid() ? checkedResult.value() : nscoord_MAX;
+}
+
+
+
+
 
 
 
@@ -880,7 +890,7 @@ public:
   FlexLine()
   : mNumItems(0),
     mNumFrozenItems(0),
-    mTotalInnerHypotheticalMainSize(0),
+    mTotalItemMBP(0),
     mTotalOuterHypotheticalMainSize(0),
     mLineCrossSize(0),
     mFirstBaselineOffset(nscoord_MIN),
@@ -956,8 +966,24 @@ public:
     if (aItem->IsFrozen()) {
       mNumFrozenItems++;
     }
-    mTotalInnerHypotheticalMainSize += aItemInnerHypotheticalMainSize;
-    mTotalOuterHypotheticalMainSize += aItemOuterHypotheticalMainSize;
+
+    nscoord itemMBP =
+      aItemOuterHypotheticalMainSize - aItemInnerHypotheticalMainSize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mTotalItemMBP = AddChecked(mTotalItemMBP, itemMBP);
+
+    mTotalOuterHypotheticalMainSize =
+      AddChecked(mTotalOuterHypotheticalMainSize, aItemOuterHypotheticalMainSize);
   }
 
   
@@ -1035,8 +1061,14 @@ private:
   
   uint32_t mNumFrozenItems;
 
-  nscoord mTotalInnerHypotheticalMainSize;
+  
+  nscoord mTotalItemMBP;
+
+  
+  
+  
   nscoord mTotalOuterHypotheticalMainSize;
+
   nscoord mLineCrossSize;
   nscoord mFirstBaselineOffset;
   nscoord mLastBaselineOffset;
@@ -2530,11 +2562,8 @@ FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   
-  nscoord spaceReservedForMarginBorderPadding =
-    mTotalOuterHypotheticalMainSize - mTotalInnerHypotheticalMainSize;
-
   nscoord spaceAvailableForFlexItemsContentBoxes =
-    aFlexContainerMainSize - spaceReservedForMarginBorderPadding;
+    aFlexContainerMainSize - mTotalItemMBP;
 
   nscoord origAvailableFreeSpace;
   bool isOrigAvailFreeSpaceInitialized = false;
@@ -3842,11 +3871,21 @@ nsFlexContainerFrame::GenerateFlexLines(
     
     
     
-    if (wrapThreshold != NS_UNCONSTRAINEDSIZE &&
-        !curLine->IsEmpty() && 
-        wrapThreshold < (curLine->GetTotalOuterHypotheticalMainSize() +
-                         itemOuterHypotheticalMainSize)) {
-      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+    if (wrapThreshold != NS_UNCONSTRAINEDSIZE && 
+        !curLine->IsEmpty()) { 
+      
+      
+      
+      
+      
+      
+      
+      nscoord newOuterSize =
+        AddChecked(curLine->GetTotalOuterHypotheticalMainSize(),
+                   itemOuterHypotheticalMainSize);
+      if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
+        curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront);
+      }
     }
 
     
