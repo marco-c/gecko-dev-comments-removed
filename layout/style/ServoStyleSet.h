@@ -42,7 +42,6 @@ class ServoStyleRuleMap;
 class StyleSheet;
 } 
 class gfxFontFeatureValueSet;
-class nsCSSCounterStyleRule;
 class nsIContent;
 class nsIDocument;
 class nsPresContext;
@@ -360,7 +359,7 @@ public:
 
   bool AppendFontFaceRules(nsTArray<nsFontFaceRuleContainer>& aArray);
 
-  nsCSSCounterStyleRule* CounterStyleRuleForName(nsAtom* aName);
+  const RawServoCounterStyleRule* CounterStyleRuleForName(nsAtom* aName);
 
   
   already_AddRefed<gfxFontFeatureValueSet> BuildFontFeatureValueSet();
