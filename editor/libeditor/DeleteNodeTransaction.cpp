@@ -12,18 +12,25 @@
 
 namespace mozilla {
 
+
+already_AddRefed<DeleteNodeTransaction>
+DeleteNodeTransaction::MaybeCreate(EditorBase& aEditorBase,
+                              nsINode& aNodeToDelete)
+{
+  RefPtr<DeleteNodeTransaction> transaction =
+    new DeleteNodeTransaction(aEditorBase, aNodeToDelete);
+  if (NS_WARN_IF(!transaction->CanDoIt())) {
+    return nullptr;
+  }
+  return transaction.forget();
+}
+
 DeleteNodeTransaction::DeleteNodeTransaction(EditorBase& aEditorBase,
-                                             nsINode& aNodeToDelete,
-                                             RangeUpdater* aRangeUpdater)
+                                             nsINode& aNodeToDelete)
   : mEditorBase(&aEditorBase)
   , mNodeToDelete(&aNodeToDelete)
   , mParentNode(aNodeToDelete.GetParentNode())
-  , mRangeUpdater(aRangeUpdater)
 {
-  
-  if (!CanDoIt()) {
-    mRangeUpdater = nullptr;
-  }
 }
 
 DeleteNodeTransaction::~DeleteNodeTransaction()
@@ -65,9 +72,7 @@ DeleteNodeTransaction::DoTransaction()
   
   
   
-  if (mRangeUpdater) {
-    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete);
-  }
+  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(mNodeToDelete);
 
   ErrorResult error;
   mParentNode->RemoveChild(*mNodeToDelete, error);
@@ -95,9 +100,7 @@ DeleteNodeTransaction::RedoTransaction()
     return NS_OK;
   }
 
-  if (mRangeUpdater) {
-    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete);
-  }
+  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(mNodeToDelete);
 
   ErrorResult error;
   mParentNode->RemoveChild(*mNodeToDelete, error);

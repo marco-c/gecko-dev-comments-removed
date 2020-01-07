@@ -539,12 +539,6 @@ protected:
   
 
 
-  already_AddRefed<DeleteNodeTransaction>
-    CreateTxnForDeleteNode(nsINode* aNode);
-
-  
-
-
 
 
 

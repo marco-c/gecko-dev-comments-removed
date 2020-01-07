@@ -17,16 +17,25 @@
 namespace mozilla {
 
 class EditorBase;
-class RangeUpdater;
 
 
 
 
 class DeleteNodeTransaction final : public EditTransactionBase
 {
+protected:
+  DeleteNodeTransaction(EditorBase& aEditorBase, nsINode& aNodeToDelete);
+
 public:
-  DeleteNodeTransaction(EditorBase& aEditorBase, nsINode& aNodeToDelete,
-                        RangeUpdater* aRangeUpdater);
+  
+
+
+
+
+
+
+  static already_AddRefed<DeleteNodeTransaction>
+  MaybeCreate(EditorBase& aEditorBase, nsINode& aNodeToDelete);
 
   
 
@@ -56,9 +65,6 @@ protected:
 
   
   nsCOMPtr<nsIContent> mRefNode;
-
-  
-  RangeUpdater* mRangeUpdater;
 };
 
 } 

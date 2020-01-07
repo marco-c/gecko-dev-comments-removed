@@ -177,12 +177,12 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(
        child && child != aEnd.GetChildAtOffset();
        child = child->GetNextSibling()) {
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      new DeleteNodeTransaction(*mEditorBase, *child, mRangeUpdater);
+      DeleteNodeTransaction::MaybeCreate(*mEditorBase, *child);
     
     
     
     
-    if (deleteNodeTransaction->CanDoIt()) {
+    if (deleteNodeTransaction) {
       AppendChild(deleteNodeTransaction);
     }
   }
@@ -255,12 +255,12 @@ DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween(nsRange* aRangeToDelete)
     }
 
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      new DeleteNodeTransaction(*mEditorBase, *node, mRangeUpdater);
+      DeleteNodeTransaction::MaybeCreate(*mEditorBase, *node);
     
     
     
     
-    if (NS_WARN_IF(!deleteNodeTransaction->CanDoIt())) {
+    if (NS_WARN_IF(!deleteNodeTransaction)) {
       return NS_ERROR_FAILURE;
     }
     AppendChild(deleteNodeTransaction);
