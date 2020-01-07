@@ -4057,6 +4057,12 @@ ResolveFlexContainerMainSize(const ReflowInput& aReflowInput,
 
   
   
+  if (aReflowInput.mStyleDisplay->IsContainSize()) {
+    return aReflowInput.ComputedMinBSize();
+  }
+
+  
+  
   
   
   nscoord largestLineOuterSize = GetLargestLineMainSize(aFirstLine);
@@ -4111,6 +4117,12 @@ nsFlexContainerFrame::ComputeCrossSize(const ReflowInput& aReflowInput,
       return aAvailableBSizeForContent;
     }
     return std::min(effectiveComputedBSize, aSumLineCrossSizes);
+  }
+
+  
+  
+  if (aReflowInput.mStyleDisplay->IsContainSize()) {
+    return aReflowInput.ComputedMinBSize();
   }
 
   
@@ -4615,8 +4627,10 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                     aMainGapSize,
                     placeholderKids, lines);
 
-  if (lines.getFirst()->IsEmpty() &&
-      !lines.getFirst()->getNext()) {
+  if ((lines.getFirst()->IsEmpty() && !lines.getFirst()->getNext()) ||
+      aReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
     
     AddStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
   } else {
@@ -5291,8 +5305,9 @@ nsFlexContainerFrame::GetMinISize(gfxContext* aRenderingContext)
 {
   DISPLAY_MIN_WIDTH(this, mCachedMinISize);
   if (mCachedMinISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
-    mCachedMinISize = IntrinsicISize(aRenderingContext,
-                                     nsLayoutUtils::MIN_ISIZE);
+    mCachedMinISize = StyleDisplay()->IsContainSize()
+      ? 0
+      : IntrinsicISize(aRenderingContext, nsLayoutUtils::MIN_ISIZE);
   }
 
   return mCachedMinISize;
@@ -5303,8 +5318,9 @@ nsFlexContainerFrame::GetPrefISize(gfxContext* aRenderingContext)
 {
   DISPLAY_PREF_WIDTH(this, mCachedPrefISize);
   if (mCachedPrefISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
-    mCachedPrefISize = IntrinsicISize(aRenderingContext,
-                                      nsLayoutUtils::PREF_ISIZE);
+    mCachedPrefISize = StyleDisplay()->IsContainSize()
+      ? 0
+      : IntrinsicISize(aRenderingContext, nsLayoutUtils::PREF_ISIZE);
   }
 
   return mCachedPrefISize;
