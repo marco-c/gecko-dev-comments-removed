@@ -900,8 +900,6 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 
   
   JSContext* mJSContext;
-  RefPtr<WorkerCrossThreadDispatcher> mCrossThreadDispatcher;
-  nsTArray<nsCOMPtr<nsIRunnable>> mUndispatchedRunnablesForSyncLoop;
   RefPtr<WorkerThread> mThread;
   PRThread* mPRThread;
 
@@ -1247,9 +1245,6 @@ public:
 #else
   { }
 #endif
-
-  WorkerCrossThreadDispatcher*
-  GetCrossThreadDispatcher();
 
   
   void

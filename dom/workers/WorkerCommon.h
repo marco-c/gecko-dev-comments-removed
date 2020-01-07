@@ -183,58 +183,6 @@ void
 ResumeWorkersForWindow(nsPIDOMWindowInner* aWindow);
 
 
-
-class WorkerTask
-{
-protected:
-  WorkerTask()
-  { }
-
-  virtual ~WorkerTask()
-  { }
-
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerTask)
-
-  
-  
-  virtual bool
-  RunTask(JSContext* aCx) = 0;
-};
-
-class WorkerCrossThreadDispatcher
-{
-   friend class WorkerPrivate;
-
-  
-  
-  Mutex mMutex;
-  WorkerPrivate* mWorkerPrivate;
-
-private:
-  
-  explicit WorkerCrossThreadDispatcher(WorkerPrivate* aWorkerPrivate);
-
-  
-  void
-  Forget()
-  {
-    MutexAutoLock lock(mMutex);
-    mWorkerPrivate = nullptr;
-  }
-
-  ~WorkerCrossThreadDispatcher() {}
-
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerCrossThreadDispatcher)
-
-  
-  
-  bool
-  PostTask(WorkerTask* aTask);
-};
-
-
 const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
 
 bool

@@ -4956,15 +4956,6 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     }
   }
 
-  if (mCrossThreadDispatcher) {
-    
-    
-    
-    
-    mCrossThreadDispatcher->Forget();
-    mCrossThreadDispatcher = nullptr;
-  }
-
   MOZ_ASSERT(previousStatus != Pending);
 
   
@@ -5557,18 +5548,6 @@ WorkerPrivate::SetThread(WorkerThread* aThread)
       mThread.swap(doomedThread);
     }
   }
-}
-
-WorkerCrossThreadDispatcher*
-WorkerPrivate::GetCrossThreadDispatcher()
-{
-  MutexAutoLock lock(mMutex);
-
-  if (!mCrossThreadDispatcher && mStatus <= Running) {
-    mCrossThreadDispatcher = new WorkerCrossThreadDispatcher(this);
-  }
-
-  return mCrossThreadDispatcher;
 }
 
 void
