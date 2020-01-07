@@ -1160,6 +1160,13 @@ nsContainerFrame::ReflowOverflowContainerChildren(nsPresContext*           aPres
     if (frame->GetPrevInFlow()->GetParent() != GetPrevInFlow()) {
       
       
+      if (GetNextInFlow()) {
+        
+        
+        nsReflowStatus status;
+        status.SetOverflowIncomplete();
+        aStatus.MergeCompletionStatusFrom(status);
+      }
       continue;
     }
     
