@@ -6,7 +6,14 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PREF_BRANCH = "extensions.webcompat.";
-const PREF_DEFAULTS = {perform_ua_overrides: true};
+const PREF_DEFAULTS = {
+  perform_injections: true,
+  perform_ua_overrides: true
+};
+
+const INJECTIONS_ENABLE_PREF_NAME = "extensions.webcompat.perform_injections";
+
+const BROWSER_STARTUP_FINISHED_TOPIC = "browser-delayed-startup-finished";
 
 const UA_OVERRIDES_INIT_TOPIC = "useragentoverrides-initialized";
 const UA_ENABLE_PREF_NAME = "extensions.webcompat.perform_ua_overrides";
@@ -15,6 +22,15 @@ ChromeUtils.defineModuleGetter(this, "UAOverrider", "chrome://webcompat/content/
 ChromeUtils.defineModuleGetter(this, "UAOverrides", "chrome://webcompat/content/data/ua_overrides.jsm");
 
 let overrider;
+let webextensionPort;
+
+function InjectionsEnablePrefObserver() {
+  let isEnabled = Services.prefs.getBoolPref(INJECTIONS_ENABLE_PREF_NAME);
+  webextensionPort.postMessage({
+    type: "injection-pref-changed",
+    prefState: isEnabled
+  });
+}
 
 function UAEnablePrefObserver() {
   let isEnabled = Services.prefs.getBoolPref(UA_ENABLE_PREF_NAME);
@@ -57,6 +73,9 @@ this.startup = function({webExtension}) {
   
   
   
+  Services.prefs.clearUserPref(INJECTIONS_ENABLE_PREF_NAME);
+  Services.prefs.addObserver(INJECTIONS_ENABLE_PREF_NAME, InjectionsEnablePrefObserver);
+
   Services.prefs.clearUserPref(UA_ENABLE_PREF_NAME);
   Services.prefs.addObserver(UA_ENABLE_PREF_NAME, UAEnablePrefObserver);
 
@@ -64,7 +83,7 @@ this.startup = function({webExtension}) {
   
   
   
-  let startupWatcher = {
+  let uaStartupObserver = {
     observe(aSubject, aTopic, aData) {
       if (aTopic !== UA_OVERRIDES_INIT_TOPIC) {
         return;
@@ -75,9 +94,29 @@ this.startup = function({webExtension}) {
       overrider.init();
     }
   };
-  Services.obs.addObserver(startupWatcher, UA_OVERRIDES_INIT_TOPIC);
+  Services.obs.addObserver(uaStartupObserver, UA_OVERRIDES_INIT_TOPIC);
+
+  
+  
+  
+  let appStartupObserver = {
+    observe(aSubject, aTopic, aData) {
+      webExtension.startup().then((api) => {
+        api.browser.runtime.onConnect.addListener((port) => {
+          webextensionPort = port;
+        });
+
+        return Promise.resolve();
+      }).catch((ex) => {
+        console.error(ex);
+      });
+      Services.obs.removeObserver(this, BROWSER_STARTUP_FINISHED_TOPIC);
+    }
+  };
+  Services.obs.addObserver(appStartupObserver, BROWSER_STARTUP_FINISHED_TOPIC);
 };
 
 this.shutdown = function() {
+  Services.prefs.removeObserver(INJECTIONS_ENABLE_PREF_NAME, InjectionsEnablePrefObserver);
   Services.prefs.removeObserver(UA_ENABLE_PREF_NAME, UAEnablePrefObserver);
 };
