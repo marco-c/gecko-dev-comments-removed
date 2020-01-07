@@ -27,6 +27,7 @@
 #include "nsPropertyTable.h"             
 #include "nsStringFwd.h"
 #include "nsTHashtable.h"                
+#include "nsURIHashKey.h"
 #include "mozilla/net/ReferrerPolicy.h"  
 #include "nsWeakReference.h"
 #include "mozilla/UseCounter.h"
@@ -2652,15 +2653,33 @@ public:
 
 
 
-  virtual void PreloadPictureOpened() = 0;
+  void PreloadPictureOpened()
+  {
+    mPreloadPictureDepth++;
+  }
 
-  virtual void PreloadPictureClosed() = 0;
+  void PreloadPictureClosed();
 
-  virtual void PreloadPictureImageSource(const nsAString& aSrcsetAttr,
-                                         const nsAString& aSizesAttr,
-                                         const nsAString& aTypeAttr,
-                                         const nsAString& aMediaAttr) = 0;
+  void PreloadPictureImageSource(const nsAString& aSrcsetAttr,
+                                 const nsAString& aSizesAttr,
+                                 const nsAString& aTypeAttr,
+                                 const nsAString& aMediaAttr);
 
+  
+
+
+
+
+
+
+
+
+  already_AddRefed<nsIURI>
+  ResolvePreloadImage(nsIURI *aBaseURI,
+                      const nsAString& aSrcAttr,
+                      const nsAString& aSrcsetAttr,
+                      const nsAString& aSizesAttr,
+                      bool *aIsImgSet);
   
 
 
@@ -2669,31 +2688,16 @@ public:
 
 
 
-
-  virtual already_AddRefed<nsIURI>
-    ResolvePreloadImage(nsIURI *aBaseURI,
-                        const nsAString& aSrcAttr,
-                        const nsAString& aSrcsetAttr,
-                        const nsAString& aSizesAttr,
-                        bool *aIsImgSet) = 0;
-  
-
-
-
-
-
-
-
-  virtual void MaybePreLoadImage(nsIURI* uri,
-                                 const nsAString& aCrossOriginAttr,
-                                 ReferrerPolicyEnum aReferrerPolicy,
-                                 bool aIsImgSet) = 0;
+  void MaybePreLoadImage(nsIURI* uri,
+                         const nsAString& aCrossOriginAttr,
+                         ReferrerPolicyEnum aReferrerPolicy,
+                         bool aIsImgSet);
 
   
 
 
 
-  virtual void ForgetImagePreload(nsIURI* aURI) = 0;
+  void ForgetImagePreload(nsIURI* aURI);
 
   
 
@@ -2729,7 +2733,7 @@ public:
   
 
 
-  virtual void MaybePreconnect(nsIURI* uri, mozilla::CORSMode aCORSMode) = 0;
+  void MaybePreconnect(nsIURI* uri, mozilla::CORSMode aCORSMode);
 
   enum DocumentTheme {
     Doc_Theme_Uninitialized, 
@@ -3974,7 +3978,24 @@ protected:
   nsIPresShell* mPresShell;
 
   nsCOMArray<nsINode> mSubtreeModifiedTargets;
-  uint32_t            mSubtreeModifiedDepth;
+  uint32_t mSubtreeModifiedDepth;
+
+  
+  
+  
+  
+  nsRefPtrHashtable<nsURIHashKey, imgIRequest> mPreloadingImages;
+
+  
+  
+  
+  nsDataHashtable<nsURIHashKey, bool> mPreloadedPreconnects;
+
+  
+  uint32_t mPreloadPictureDepth;
+
+  
+  nsString mPreloadPictureFoundSource;
 
   
   

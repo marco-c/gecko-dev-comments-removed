@@ -30,7 +30,6 @@
 #include "nsRefPtrHashtable.h"
 #include "nsJSThingHashtable.h"
 #include "nsIScriptObjectPrincipal.h"
-#include "nsIURI.h"
 #include "nsIRadioGroupContainer.h"
 #include "nsILayoutHistoryState.h"
 #include "nsIRequest.h"
@@ -560,32 +559,6 @@ public:
 
   void MaybeEndOutermostXBLUpdate();
 
-  virtual void PreloadPictureOpened() override;
-  virtual void PreloadPictureClosed() override;
-
-  virtual void
-    PreloadPictureImageSource(const nsAString& aSrcsetAttr,
-                              const nsAString& aSizesAttr,
-                              const nsAString& aTypeAttr,
-                              const nsAString& aMediaAttr) override;
-
-  virtual already_AddRefed<nsIURI>
-    ResolvePreloadImage(nsIURI *aBaseURI,
-                        const nsAString& aSrcAttr,
-                        const nsAString& aSrcsetAttr,
-                        const nsAString& aSizesAttr,
-                        bool *aIsImgSet) override;
-
-  virtual void MaybePreLoadImage(nsIURI* uri,
-                                 const nsAString &aCrossOriginAttr,
-                                 ReferrerPolicy aReferrerPolicy,
-                                 bool aIsImgSet) override;
-
-  virtual void ForgetImagePreload(nsIURI* aURI) override;
-
-  virtual void MaybePreconnect(nsIURI* uri,
-                               mozilla::CORSMode aCORSMode) override;
-
   
   void AsyncBlockOnload();
 
@@ -767,23 +740,6 @@ private:
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
 
   nsExternalResourceMap mExternalResourceMap;
-
-  
-  
-  
-  
-  nsRefPtrHashtable<nsURIHashKey, imgIRequest> mPreloadingImages;
-
-  
-  
-  
-  nsDataHashtable<nsURIHashKey, bool> mPreloadedPreconnects;
-
-  
-  int32_t mPreloadPictureDepth;
-
-  
-  nsString mPreloadPictureFoundSource;
 
   
   
