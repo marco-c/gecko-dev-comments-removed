@@ -4946,9 +4946,6 @@ pref("extensions.webextensions.tabhide.enabled", true);
 pref("extensions.webextensions.background-delayed-startup", false);
 
 
-pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
-
-
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
 #if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
 pref("extensions.webcompat-reporter.enabled", true);

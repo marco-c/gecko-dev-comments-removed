@@ -137,18 +137,6 @@ var ExtensionStorage = {
 
 
 
-  clearCachedFile(extensionId) {
-    this.jsonFilePromises.delete(extensionId);
-  },
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -253,30 +241,20 @@ var ExtensionStorage = {
 
 
 
-
-
-
-
-  async clear(extensionId, {shouldNotifyListeners = true} = {}) {
+  async clear(extensionId) {
     let jsonFile = await this.getFile(extensionId);
 
     let changed = false;
     let changes = {};
 
     for (let [prop, oldValue] of jsonFile.data.entries()) {
-      if (shouldNotifyListeners) {
-        changes[prop] = {oldValue: serialize(oldValue)};
-      }
-
+      changes[prop] = {oldValue: serialize(oldValue)};
       jsonFile.data.delete(prop);
       changed = true;
     }
 
     if (changed) {
-      if (shouldNotifyListeners) {
-        this.notifyListeners(extensionId, changes);
-      }
-
+      this.notifyListeners(extensionId, changes);
       jsonFile.saveSoon();
     }
     return null;
@@ -366,62 +344,6 @@ var ExtensionStorage = {
       }
       this.jsonFilePromises.clear();
     }
-  },
-
-  
-  serialize,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  serializeForContext(context, items) {
-    if (items && typeof items === "object" && !Array.isArray(items)) {
-      let result = {};
-      for (let [key, value] of Object.entries(items)) {
-        try {
-          result[key] = new StructuredCloneHolder(value, context.cloneScope);
-        } catch (e) {
-          throw new ExtensionUtils.ExtensionError(String(e));
-        }
-      }
-      return result;
-    }
-    return items;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  deserializeForContext(context, items) {
-    let result = new context.cloneScope.Object();
-    for (let [key, value] of Object.entries(items)) {
-      if (value && typeof value === "object" &&
-          Cu.getClassName(value, true) === "StructuredCloneHolder") {
-        value = value.deserialize(context.cloneScope);
-      } else {
-        value = Cu.cloneInto(value, context.cloneScope);
-      }
-      result[key] = value;
-    }
-    return result;
   },
 };
 

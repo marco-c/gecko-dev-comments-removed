@@ -19,9 +19,10 @@ const COOKIE = {
   isHttpOnly: false,
   isSession: true,
   expiry: 2145934800,
+  originAttributes: { userContextId: 1 },
 };
 
-function createCookie(userContextId) {
+function createCookie() {
   Services.cookies.add(COOKIE.host,
                        COOKIE.path,
                        COOKIE.name,
@@ -30,15 +31,15 @@ function createCookie(userContextId) {
                        COOKIE.isHttpOnly,
                        COOKIE.isSession,
                        COOKIE.expiry,
-                       {userContextId});
+                       COOKIE.originAttributes);
 }
 
-function hasCookie(userContextId) {
+function hasCookie() {
   let found = false;
-  let enumerator = Services.cookies.getCookiesFromHost(BASE_URL, {userContextId});
+  let enumerator = Services.cookies.getCookiesFromHost(BASE_URL, COOKIE.originAttributes);
   while (enumerator.hasMoreElements()) {
     let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
-    if (cookie.originAttributes.userContextId == userContextId) {
+    if (cookie.originAttributes.userContextId == COOKIE.originAttributes.userContextId) {
       found = true;
       break;
     }
@@ -48,17 +49,8 @@ function hasCookie(userContextId) {
 
 
 add_task(async function corruptedFile() {
-  const thumbnailPrivateId = ContextualIdentityService._defaultIdentities.filter(
-    identity => identity.name === "userContextIdInternal.thumbnail").pop().userContextId;
-
-  
-  createCookie(1);
-
-  
-  createCookie(thumbnailPrivateId);
-
-  ok(hasCookie(1), "We have the new cookie in a public identity!");
-  ok(hasCookie(thumbnailPrivateId), "We have the new cookie in the thumbnail private identity!");
+  createCookie();
+  ok(hasCookie(), "We have the new cookie!");
 
   
   await OS.File.writeAtomic(TEST_STORE_FILE_PATH, "{ vers",
@@ -67,17 +59,8 @@ add_task(async function corruptedFile() {
   let cis = ContextualIdentityService.createNewInstanceForTesting(TEST_STORE_FILE_PATH);
   ok(!!cis, "We have our instance of ContextualIdentityService");
 
-  equal(cis.getPublicIdentities().length, 4, "We should have the default public identities");
-
-  const privThumbnailIdentity = cis.getPrivateIdentity("userContextIdInternal.thumbnail");
-  equal(privThumbnailIdentity && privThumbnailIdentity.userContextId, thumbnailPrivateId,
-        "We should have the default thumbnail private identity");
+  equal(cis.getPublicIdentities().length, 4, "We should have the default identities");
 
   
-  ok(!hasCookie(1), "We should not have the new cookie in the userContextId 1!");
-
-  
-  
-  ok(hasCookie(thumbnailPrivateId),
-     "We should have the new cookie in the thumbnail private userContextId!");
+  ok(!hasCookie(), "We should not have the new cookie!");
 });

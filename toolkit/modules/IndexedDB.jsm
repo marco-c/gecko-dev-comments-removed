@@ -123,51 +123,19 @@ function forwardMethods(cls, target, methods) {
 }
 
 class Cursor {
-  constructor(cursorRequest, source) {
-    this.cursorRequest = cursorRequest;
+  constructor(cursor, source) {
+    this.cursor = cursor;
     this.source = source;
-    this.cursor = null;
-  }
-
-  get done() {
-    return !this.cursor;
-  }
-
-  
-  
-  
-  
-  async awaitRequest() {
-    this.cursor = await wrapRequest(this.cursorRequest);
-    return this;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-function defineCursorUpdateMethods(cls, methods) {
-  for (let method of methods) {
-    cls.prototype[method] = async function(...args) {
-      const promise = this.awaitRequest();
-      this.cursor[method](...args);
-      await promise;
-    };
-  }
-}
-
-defineCursorUpdateMethods(Cursor, ["advance", "continue", "continuePrimaryKey"]);
 
 forwardGetters(Cursor, "cursor",
                ["direction", "key", "primaryKey"]);
+
 wrapMethods(Cursor, "cursor", ["delete", "update"]);
+
+forwardMethods(Cursor, "cursor",
+               ["advance", "continue", "continuePrimaryKey"]);
 
 class CursorWithValue extends Cursor {}
 
@@ -179,13 +147,15 @@ class Cursed {
   }
 
   openCursor(...args) {
-    const cursor = new CursorWithValue(this.cursed.openCursor(...args), this);
-    return cursor.awaitRequest();
+    return wrapRequest(this.cursed.openCursor(...args)).then(cursor => {
+      return new CursorWithValue(cursor, this);
+    });
   }
 
   openKeyCursor(...args) {
-    const cursor = new Cursor(this.cursed.openKeyCursor(...args), this);
-    return cursor.awaitRequest();
+    return wrapRequest(this.cursed.openKeyCursor(...args)).then(cursor => {
+      return new Cursor(cursor, this);
+    });
   }
 }
 
@@ -282,37 +252,7 @@ class IndexedDB {
 
   static open(dbName, options, onupgradeneeded = null) {
     let request = indexedDB.open(dbName, options);
-    return this._wrapOpenRequest(request, onupgradeneeded);
-  }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static openForPrincipal(principal, dbName, options, onupgradeneeded = null) {
-    const request = indexedDB.openForPrincipal(principal, dbName, options);
-    return this._wrapOpenRequest(request, onupgradeneeded);
-  }
-
-  static _wrapOpenRequest(request, onupgradeneeded = null) {
     request.onupgradeneeded = event => {
       let db = new this(request.result);
       if (onupgradeneeded) {
@@ -322,7 +262,7 @@ class IndexedDB {
       }
     };
 
-    return wrapRequest(request).then(db => new this(db));
+    return wrapRequest(request).then(db => new IndexedDB(db));
   }
 
   constructor(db) {
