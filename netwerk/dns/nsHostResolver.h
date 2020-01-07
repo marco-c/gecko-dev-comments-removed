@@ -277,7 +277,7 @@ public:
     };
 
     virtual LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) = 0;
-    virtual nsresult GetHostRecord(const char *host,
+    virtual nsresult GetHostRecord(const nsACString &host,
                                    uint16_t flags, uint16_t af, bool pb,
                                    const nsCString &originSuffix,
                                    nsHostRecord **result)
@@ -329,7 +329,7 @@ public:
 
 
 
-    nsresult ResolveHost(const char                      *hostname,
+    nsresult ResolveHost(const nsACString &hostname,
                          const mozilla::OriginAttributes &aOriginAttributes,
                          uint16_t                         flags,
                          uint16_t                         af,
@@ -341,7 +341,7 @@ public:
 
 
 
-    void DetachCallback(const char                      *hostname,
+    void DetachCallback(const nsACString &hostname,
                         const mozilla::OriginAttributes &aOriginAttributes,
                         uint16_t                         flags,
                         uint16_t                         af,
@@ -355,7 +355,7 @@ public:
 
 
 
-    void CancelAsyncRequest(const char                      *host,
+    void CancelAsyncRequest(const nsACString &host,
                             const mozilla::OriginAttributes &aOriginAttributes,
                             uint16_t                         flags,
                             uint16_t                         af,
@@ -390,7 +390,7 @@ public:
     void FlushCache();
 
     LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb) override;
-    nsresult GetHostRecord(const char *host,
+    nsresult GetHostRecord(const nsACString &host,
                            uint16_t flags, uint16_t af, bool pb,
                            const nsCString &originSuffix,
                            nsHostRecord **result) override;
@@ -425,7 +425,7 @@ private:
 
 
 
-    nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const char *host);
+    nsresult ConditionallyRefreshRecord(nsHostRecord *rec, const nsACString &host);
 
     static void ThreadFunc(void *);
 
