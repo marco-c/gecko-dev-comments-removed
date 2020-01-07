@@ -377,6 +377,18 @@ function setTimeout(callback, ms) {
   return timer;
 }
 
+const kProtocolsWithIcons = ["chrome:", "moz-extension:", "about:", "http:", "https:", "ftp:"];
+function iconHelper(url) {
+  if (typeof url == "string") {
+    return kProtocolsWithIcons.some(p => url.startsWith(p)) ?
+      "page-icon:" + url : PlacesUtils.favicons.defaultFavicon.spec;
+  }
+  if (url && url instanceof URL && kProtocolsWithIcons.includes(url.protocol)) {
+    return "page-icon:" + url.href;
+  }
+  return PlacesUtils.favicons.defaultFavicon.spec;
+}
+
 
 
 
@@ -1489,7 +1501,7 @@ Search.prototype = {
       comment,
       
       
-      icon: "page-icon:" + entry.url.href,
+      icon: iconHelper(entry.url),
       style,
       frecency: Infinity
     });
@@ -1652,7 +1664,7 @@ Search.prototype = {
       
       
       if (!icon) {
-        icon = "page-icon:" + url;
+        icon = iconHelper(url);
       } else {
         icon = PlacesUtils.favicons
                           .getFaviconLinkForIcon(Services.io.newURI(icon)).spec;
@@ -2054,7 +2066,7 @@ Search.prototype = {
       comment,
       frecency,
       style: ["autofill"].concat(extraStyles).join(" "),
-      icon: "page-icon:" + finalCompleteValue,
+      icon: iconHelper(finalCompleteValue),
     });
   },
 
@@ -2121,7 +2133,7 @@ Search.prototype = {
 
     match.value = url;
     match.comment = title;
-    match.icon = "page-icon:" + escapedURL;
+    match.icon = iconHelper(escapedURL);
     match.frecency = frecency;
 
     this._addMatch(match);
