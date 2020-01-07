@@ -1,0 +1,28 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+class AnimatedPropertyItem extends PureComponent {
+  static get propTypes() {
+    return {
+      property: PropTypes.string.isRequired,
+      values: PropTypes.array.isRequired,
+    };
+  }
+
+  render() {
+    return dom.li(
+      {
+        className: "animated-property-item"
+      }
+    );
+  }
+}
+
+module.exports = AnimatedPropertyItem;
