@@ -237,10 +237,33 @@ public:
 
   
   
-  static nsresult AddStrongObserver(nsIObserver* aObserver, const char* aPref);
-  static nsresult AddWeakObserver(nsIObserver* aObserver, const char* aPref);
-  static nsresult RemoveObserver(nsIObserver* aObserver, const char* aPref);
+  static nsresult AddStrongObserver(nsIObserver* aObserver,
+                                    const nsACString& aPref);
+  static nsresult AddWeakObserver(nsIObserver* aObserver,
+                                  const nsACString& aPref);
+  static nsresult RemoveObserver(nsIObserver* aObserver,
+                                 const nsACString& aPref);
 
+  template<int N>
+  static nsresult AddStrongObserver(nsIObserver* aObserver,
+                                    const char (&aPref)[N])
+  {
+    return AddStrongObserver(aObserver, nsLiteralCString(aPref));
+  }
+  template<int N>
+  static nsresult AddWeakObserver(nsIObserver* aObserver,
+                                  const char (&aPref)[N])
+  {
+    return AddWeakObserver(aObserver, nsLiteralCString(aPref));
+  }
+  template<int N>
+  static nsresult RemoveObserver(nsIObserver* aObserver, const char (&aPref)[N])
+  {
+    return RemoveObserver(aObserver, nsLiteralCString(aPref));
+  }
+
+  
+  
   
   
   static nsresult AddStrongObservers(nsIObserver* aObserver,

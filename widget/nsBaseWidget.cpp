@@ -3393,7 +3393,10 @@ debug_RegisterPrefCallbacks()
 
     if (obs) {
       
-      Preferences::AddStrongObserver(obs, debug_PrefValues[i].name);
+      nsCString name;
+      name.AssignLiteral(debug_PrefValues[i].name,
+                         strlen(debug_PrefValues[i].name));
+      Preferences::AddStrongObserver(obs, name);
     }
   }
 }
