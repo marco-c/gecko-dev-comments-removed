@@ -81,8 +81,8 @@ gfxFontEntry::gfxFontEntry() :
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
     mWeightRange(FontWeight(500)),
-    mStretch(FontStretch::Normal()),
-    mStyle(FontSlantStyle::Normal()),
+    mStretchRange(FontStretch::Normal()),
+    mStyleRange(FontSlantStyle::Normal()),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -120,8 +120,8 @@ gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
     mWeightRange(FontWeight(500)),
-    mStretch(FontStretch::Normal()),
-    mStyle(FontSlantStyle::Normal()),
+    mStretchRange(FontStretch::Normal()),
+    mStyleRange(FontSlantStyle::Normal()),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -1049,20 +1049,43 @@ gfxFontEntry::SetupVariationRanges()
             
             
             
-            if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0 &&
+            if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0f &&
                 
                 
                 
                 Weight().Min() <= FontWeight(axis.mMaxValue)) {
-                mStandardFace = FontWeight(axis.mDefaultValue) == Weight().Min();
+                if (FontWeight(axis.mDefaultValue) != Weight().Min()) {
+                    mStandardFace = false;
+                }
                 mWeightRange =
                     WeightRange(FontWeight(std::max(1.0f, axis.mMinValue)),
                                 FontWeight(axis.mMaxValue));
             }
             break;
-        
-        
-        
+
+        case HB_TAG('w','d','t','h'):
+            if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0f &&
+                Stretch().Min() <= FontStretch(axis.mMaxValue)) {
+                if (FontStretch(axis.mDefaultValue) != Stretch().Min()) {
+                    mStandardFace = false;
+                }
+                mStretchRange =
+                    StretchRange(FontStretch(axis.mMinValue),
+                                 FontStretch(axis.mMaxValue));
+            }
+            break;
+
+        case HB_TAG('s','l','n','t'):
+            if (axis.mMinValue >= -90.0f && axis.mMaxValue <= 90.0f) {
+                if (FontSlantStyle::Oblique(axis.mDefaultValue) != SlantStyle().Min()) {
+                    mStandardFace = false;
+                }
+                mStyleRange =
+                    SlantStyleRange(FontSlantStyle::Oblique(axis.mMinValue),
+                                    FontSlantStyle::Oblique(axis.mMaxValue));
+            }
+            break;
+
         
         default:
             continue;
@@ -1076,12 +1099,26 @@ gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
 {
     
     
-    if (!Weight().IsSingle()) {
-        float clampedWeight = Weight().Clamp(aStyle.weight).ToFloat();
-        aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
-                                               clampedWeight});
+    float clampedWeight = Weight().Clamp(aStyle.weight).ToFloat();
+    aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
+                                           clampedWeight});
+
+    float clampedStretch = Stretch().Clamp(aStyle.stretch).Percentage();
+    aResult.AppendElement(gfxFontVariation{HB_TAG('w','d','t','h'),
+                                           clampedStretch});
+
+    if (SlantStyle().Min().IsOblique()) {
+        float clampedSlant =
+          aStyle.style.IsOblique()
+          ? SlantStyle().Clamp(aStyle.style).ObliqueAngle()
+          : aStyle.style.IsItalic()
+            ? SlantStyle().Clamp(FontSlantStyle::Oblique()).ObliqueAngle()
+            : SlantStyle().Clamp(FontSlantStyle::Oblique(0.0f)).ObliqueAngle();
+        aResult.AppendElement(gfxFontVariation{HB_TAG('s','l','n','t'),
+                                               clampedSlant});
     }
 
+    
     
 
     auto replaceOrAppend = [&aResult](const gfxFontVariation& aSetting) {
@@ -1258,47 +1295,95 @@ gfxFontFamily::FindFontForStyle(const gfxFontStyle& aFontStyle,
     return nullptr;
 }
 
-#define STYLE_SHIFT 2 // number of bits to contain style distance
 
-
-static inline uint32_t
-StyleDistance(FontSlantStyle aFontStyle, FontSlantStyle aTargetStyle)
+static inline double
+StyleDistance(const gfxFontEntry* aFontEntry, FontSlantStyle aTargetStyle)
 {
-    if (aFontStyle == aTargetStyle) {
-        return 0; 
+    FontSlantStyle minStyle = aFontEntry->SlantStyle().Min();
+    if (aTargetStyle == minStyle) {
+        return 0.0; 
     }
-    if (aFontStyle == FontSlantStyle::Normal() ||
-        aTargetStyle == FontSlantStyle::Normal()) {
-        return 2; 
+
+    
+    
+    
+    
+    
+    
+
+    double extraDistance = 0.0;
+    const double kReverseDistance = 100.0;
+
+    double target;
+    if (aTargetStyle.IsNormal()) {
+        target = 0.0;
+        extraDistance = 300.0;
+    } else if (aTargetStyle.IsOblique()) {
+        target = aTargetStyle.ObliqueAngle();
+    } else {
+        target = FontSlantStyle::Oblique().ObliqueAngle();
+        extraDistance = 200.0;
     }
-    return 1; 
+
+    FontSlantStyle maxStyle = aFontEntry->SlantStyle().Max();
+
+    double minAngle, maxAngle;
+    
+    if (minStyle.IsNormal()) {
+        minAngle = maxAngle = 0.0;
+        extraDistance = 300.0;
+    } else if (minStyle.IsOblique()) {
+        MOZ_ASSERT(maxStyle.IsOblique());
+        minAngle = minStyle.ObliqueAngle();
+        maxAngle = maxStyle.ObliqueAngle();
+    } else {
+        minAngle = maxAngle = FontSlantStyle::Oblique().ObliqueAngle();
+        extraDistance = 200.0;
+    }
+
+    double distance = 0.0;
+    if (target < minAngle || target > maxAngle) {
+        if (target > 0.0) {
+            distance = minAngle - target;
+        } else {
+            distance = target - maxAngle;
+        }
+    }
+    if (distance < 0.0) {
+        distance = kReverseDistance - distance;
+    }
+
+    return distance + extraDistance;
 }
 
-#define REVERSE_STRETCH_DISTANCE 200.0f
 
-
-static inline uint32_t
-StretchDistance(FontStretch aFontStretch, FontStretch aTargetStretch)
+static inline double
+StretchDistance(const gfxFontEntry* aFontEntry, FontStretch aTargetStretch)
 {
-    float distance = 0.0f;
-    if (aTargetStretch != aFontStretch) {
+    const double kReverseDistance = 1000.0;
+    double distance = 0.0;
+
+    FontStretch minStretch = aFontEntry->Stretch().Min();
+    FontStretch maxStretch = aFontEntry->Stretch().Max();
+
+    if (aTargetStretch < minStretch || aTargetStretch > maxStretch) {
         
         
         
         if (aTargetStretch > FontStretch::Normal()) {
-            distance = (aFontStretch - aTargetStretch);
+            distance = (minStretch - aTargetStretch);
         } else {
-            distance = (aTargetStretch - aFontStretch);
+            distance = (aTargetStretch - maxStretch);
         }
         
         
         
         
         if (distance < 0.0f) {
-            distance = -distance + REVERSE_STRETCH_DISTANCE;
+            distance = kReverseDistance - distance;
         }
     }
-    return uint32_t(distance);
+    return distance;
 }
 
 
@@ -1313,19 +1398,12 @@ StretchDistance(FontStretch aFontStretch, FontStretch aTargetStretch)
 
 
 
-
-
-#define REVERSE_WEIGHT_DISTANCE 600
-#define WEIGHT_SHIFT             11 // number of bits to contain weight distance
-
-
-static inline uint32_t
+static inline double
 WeightDistance(const gfxFontEntry* aFontEntry, FontWeight aTargetWeight)
 {
-    
-    
+    const double kReverseDistance = 600.0;
 
-    float distance = 0.0f, addedDistance = 0.0f;
+    double distance = 0.0, addedDistance = 0.0;
     FontWeight minWeight = aFontEntry->Weight().Min();
     FontWeight maxWeight = aFontEntry->Weight().Max();
     if (aTargetWeight < minWeight || aTargetWeight > maxWeight) {
@@ -1349,35 +1427,37 @@ WeightDistance(const gfxFontEntry* aFontEntry, FontWeight aTargetWeight)
                 
                 
                 distance = aTargetWeight - maxWeight;
-                addedDistance = 100;
+                addedDistance = 100.0;
             }
         }
-        if (distance < 0.0f) {
-            distance = -distance + REVERSE_WEIGHT_DISTANCE;
+        if (distance < 0.0) {
+            distance = kReverseDistance - distance;
         }
         distance += addedDistance;
     }
-    return uint32_t(distance);
+    return distance;
 }
 
-#define MAX_DISTANCE 0xffffffff
+#define MAX_DISTANCE 1.0e20 // >> than any WeightStyleStretchDistance result
 
-static inline uint32_t
+static inline double
 WeightStyleStretchDistance(gfxFontEntry* aFontEntry,
                            const gfxFontStyle& aTargetStyle)
 {
+    double stretchDist = StretchDistance(aFontEntry, aTargetStyle.stretch);
+    double styleDist = StyleDistance(aFontEntry, aTargetStyle.style);
+    double weightDist = WeightDistance(aFontEntry, aTargetStyle.weight);
+
     
-    uint32_t stretchDist =
-        StretchDistance(aFontEntry->mStretch, aTargetStyle.stretch);
-    uint32_t styleDist = StyleDistance(aFontEntry->mStyle, aTargetStyle.style);
-    uint32_t weightDist = WeightDistance(aFontEntry, aTargetStyle.weight);
+    
+    MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
+    MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 500.0);
+    MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
-    NS_ASSERTION(weightDist < (1 << WEIGHT_SHIFT), "weight value out of bounds");
-    NS_ASSERTION(styleDist < (1 << STYLE_SHIFT), "slope value out of bounds");
-
-    return (stretchDist << (STYLE_SHIFT + WEIGHT_SHIFT)) |
-           (styleDist << WEIGHT_SHIFT) |
-           weightDist;
+    
+    
+    
+    return stretchDist * 1.0e8 + styleDist * 1.0e4 + weightDist;
 }
 
 void
@@ -1468,14 +1548,14 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     
     
 
-    uint32_t minDistance = MAX_DISTANCE;
+    double minDistance = MAX_DISTANCE;
     gfxFontEntry* matched = nullptr;
     
     
     for (uint32_t i = 0; i < count; i++) {
         fe = mAvailableFonts[i];
         
-        uint32_t distance = WeightStyleStretchDistance(fe, aFontStyle);
+        double distance = WeightStyleStretchDistance(fe, aFontStyle);
         if (distance < minDistance) {
             matched = fe;
             if (!aFontEntryList.IsEmpty()) {
@@ -1520,7 +1600,10 @@ gfxFontFamily::CheckForSimpleFamily()
         return;
     }
 
-    FontStretch firstStretch = mAvailableFonts[0]->Stretch();
+    StretchRange firstStretch = mAvailableFonts[0]->Stretch();
+    if (!firstStretch.IsSingle()) {
+        return; 
+    }
 
     gfxFontEntry *faces[4] = { 0 };
     for (uint8_t i = 0; i < count; ++i) {
@@ -1529,7 +1612,7 @@ gfxFontFamily::CheckForSimpleFamily()
             
             return;
         }
-        if (fe->Weight().Min() != fe->Weight().Max()) {
+        if (!fe->Weight().IsSingle() || !fe->SlantStyle().IsSingle()) {
             return; 
         }
         uint8_t faceIndex = (fe->IsItalic() ? kItalicMask : 0) |
