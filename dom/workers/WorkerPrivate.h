@@ -130,7 +130,6 @@ protected:
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;
 
 private:
-  WorkerPrivate* mParent;
   nsString mScriptURL;
   
   nsString mWorkerName;
@@ -297,12 +296,6 @@ public:
     mQueuedRunnables.AppendElement(aRunnable);
   }
 
-  WorkerPrivate*
-  GetParent() const
-  {
-    return mParent;
-  }
-
   bool
   IsParentWindowPaused() const
   {
@@ -466,6 +459,8 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
     IdleTimer,
     NoTimer
   };
+
+  WorkerPrivate* mParent;
 
   
   
@@ -1112,6 +1107,12 @@ public:
   IsChromeWorker() const
   {
     return mIsChromeWorker;
+  }
+
+  WorkerPrivate*
+  GetParent() const
+  {
+    return mParent;
   }
 
   bool
