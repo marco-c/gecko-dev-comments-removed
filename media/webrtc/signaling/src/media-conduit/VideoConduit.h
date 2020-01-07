@@ -78,13 +78,9 @@ public:
   
   static const unsigned int CODEC_PLNAME_SIZE;
 
-  
-
-
-  void
-  SetLocalRTPExtensions(bool aIsSend, const RtpExtList& extensions) override;
-
-  RtpExtList GetLocalRTPExtensions(bool aIsSend) const override;
+  MediaConduitErrorCode
+  SetLocalRTPExtensions(MediaSessionConduitLocalDirection aDirection,
+                        const RtpExtList& aExtensions) override;
 
   
 
