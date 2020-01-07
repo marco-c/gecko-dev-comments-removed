@@ -1434,7 +1434,7 @@ pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", false);
+pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
 
 #ifdef NIGHTLY_BUILD
