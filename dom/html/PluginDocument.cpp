@@ -146,7 +146,7 @@ PluginDocument::SetScriptGlobalObject(nsIScriptGlobalObject* aScriptGlobalObject
 
 
 bool
-PluginDocument::CanSavePresentation(nsIRequest *aNewRequest)
+PluginDocument::CanSavePresentation(nsIRequest* aNewRequest)
 {
   
   

@@ -2304,7 +2304,7 @@ public:
 
 
 
-  virtual bool CanSavePresentation(nsIRequest *aNewRequest) = 0;
+  virtual bool CanSavePresentation(nsIRequest* aNewRequest);
 
   
 
@@ -3619,6 +3619,10 @@ public:
   nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
 protected:
+
+  bool ContainsEMEContent();
+  bool ContainsMSEContent();
+
   void MaybeInitializeFinalizeFrameLoaders();
 
   
