@@ -84,7 +84,7 @@ window._gBrowser = {
 
   _tabFilters: new Map(),
 
-  mIsBusy: false,
+  _isBusy: false,
 
   _outerWindowIDBrowserMap: new Map(),
 
@@ -990,8 +990,8 @@ window._gBrowser = {
 
     
     
-    if (newTab.hasAttribute("busy") && !this.mIsBusy) {
-      this.mIsBusy = true;
+    if (newTab.hasAttribute("busy") && !this._isBusy) {
+      this._isBusy = true;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
                                    Ci.nsIWebProgressListener.STATE_START |
@@ -1001,8 +1001,8 @@ window._gBrowser = {
 
     
     
-    if (!newTab.hasAttribute("busy") && this.mIsBusy) {
-      this.mIsBusy = false;
+    if (!newTab.hasAttribute("busy") && this._isBusy) {
+      this._isBusy = false;
       this._callProgressListeners(null, "onStateChange",
                                   [webProgress, null,
                                    Ci.nsIWebProgressListener.STATE_STOP |
@@ -3066,7 +3066,7 @@ window._gBrowser = {
         aOurTab.setAttribute("busy", "true");
         modifiedAttrs.push("busy");
         if (aOurTab.selected)
-          this.mIsBusy = true;
+          this._isBusy = true;
       }
 
       this._swapBrowserDocShells(aOurTab, otherBrowser, Ci.nsIBrowser.SWAP_DEFAULT, stateFlags);
@@ -4352,7 +4352,7 @@ class TabProgressListener {
         }
 
         if (this.mTab.selected) {
-          gBrowser.mIsBusy = true;
+          gBrowser._isBusy = true;
         }
       }
     } else if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
@@ -4423,7 +4423,7 @@ class TabProgressListener {
         this.mBrowser.userTypedValue = null;
 
       if (this.mTab.selected)
-        gBrowser.mIsBusy = false;
+        gBrowser._isBusy = false;
     }
 
     if (ignoreBlank) {
