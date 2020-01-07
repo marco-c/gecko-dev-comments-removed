@@ -582,7 +582,7 @@ class TypedObject : public ShapedObject
     
     
     
-    static TypedObject* createZeroed(JSContext* cx, HandleTypeDescr typeObj, int32_t length,
+    static TypedObject* createZeroed(JSContext* cx, HandleTypeDescr typeObj,
                                      gc::InitialHeap heap = gc::DefaultHeap);
 
     
@@ -643,7 +643,6 @@ class OutlineTypedObject : public TypedObject
     static OutlineTypedObject* createUnattachedWithClass(JSContext* cx,
                                                          const Class* clasp,
                                                          HandleTypeDescr type,
-                                                         int32_t length,
                                                          gc::InitialHeap heap = gc::DefaultHeap);
 
     
@@ -653,9 +652,8 @@ class OutlineTypedObject : public TypedObject
     
     
     
-    
     static OutlineTypedObject* createUnattached(JSContext* cx, HandleTypeDescr type,
-                                                int32_t length, gc::InitialHeap heap = gc::DefaultHeap);
+                                                gc::InitialHeap heap = gc::DefaultHeap);
 
     
     
