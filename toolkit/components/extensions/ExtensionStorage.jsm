@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ExtensionStorage"];
@@ -351,7 +352,8 @@ this.ExtensionStorage = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(ExtensionStorage, "extensionDir",
+XPCOMUtils.defineLazyGetter(
+  ExtensionStorage, "extensionDir",
   () => OS.Path.join(OS.Constants.Path.profileDir, "browser-extension-data"));
 
 ExtensionStorage.init();

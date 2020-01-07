@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -126,7 +127,9 @@ class ExtensionBaseContextChild extends BaseContext {
       sender.frameId = WebNavigationFrames.getFrameId(contentWindow);
       sender.tabId = tabId;
       Object.defineProperty(this, "tabId",
-        {value: tabId, enumerable: true, configurable: true});
+                            {value: tabId,
+                             enumerable: true,
+                             configurable: true});
     }
     if (uri) {
       sender.url = uri.spec;

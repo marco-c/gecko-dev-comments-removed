@@ -962,7 +962,7 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
 
         let posts = server.getPosts();
         equal(posts.length, 1,
-             "new keyring should have been uploaded");
+              "new keyring should have been uploaded");
         const postedKeys = posts[0];
         
         equal(postedKeys.headers.Authorization, "Bearer some-access-token",

@@ -3,21 +3,22 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 this.EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
 
@@ -128,8 +129,9 @@ async function processSetting(id, name, action) {
     let setting = settingsMap.get(name);
     let expectedPrefs = expectedItem.initialValue
       || setting.setCallback(expectedItem.value);
-    if (Object.keys(expectedPrefs).some(
-        pref => expectedPrefs[pref] && Preferences.get(pref) != expectedPrefs[pref])) {
+    if (Object.keys(expectedPrefs)
+              .some(pref => (expectedPrefs[pref] &&
+                             Preferences.get(pref) != expectedPrefs[pref]))) {
       return false;
     }
     setPrefs(setting, item);

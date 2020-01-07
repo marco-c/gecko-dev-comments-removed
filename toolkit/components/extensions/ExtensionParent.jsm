@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -820,7 +822,8 @@ ParentAPIManager = {
         {
           lowPriority,
           recipient: {childId},
-        }).then(result => {
+        })
+        .then(result => {
           return result && result.deserialize(global);
         });
     }
@@ -1260,7 +1263,7 @@ let IconDetails = {
   
   
   normalize(details, extension, context = null) {
-    if (!details.imageData && details.path != null) {
+    if (!details.imageData && details.path) {
       
       
       let key = details.path;
@@ -1301,7 +1304,7 @@ let IconDetails = {
 
       let baseURI = context ? context.uri : extension.baseURI;
 
-      if (path != null) {
+      if (path) {
         if (typeof path != "object") {
           path = {"19": path};
         }

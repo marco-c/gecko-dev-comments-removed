@@ -3,12 +3,13 @@
 
 
 
-
-
-
-
-
 "use strict";
+
+
+
+
+
+
 
 this.EXPORTED_SYMBOLS = ["ExtensionChildDevToolsUtils"];
 

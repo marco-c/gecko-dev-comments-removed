@@ -97,8 +97,7 @@ function WebNavigationEventManager(context, eventName) {
   let name = `webNavigation.${eventName}`;
   let register = (fire, urlFilters) => {
     
-    let filters = urlFilters ?
-          new MatchURLFilters(urlFilters.url) : null;
+    let filters = urlFilters ? new MatchURLFilters(urlFilters.url) : null;
 
     let listener = data => {
       if (!data.browser) {

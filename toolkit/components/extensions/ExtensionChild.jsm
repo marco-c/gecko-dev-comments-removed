@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -25,7 +26,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "finalizationService",
-  "@mozilla.org/toolkit/finalizationwitness;1", "nsIFinalizationWitnessService");
+                                   "@mozilla.org/toolkit/finalizationwitness;1",
+                                   "nsIFinalizationWitnessService");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionContent: "resource://gre/modules/ExtensionContent.jsm",

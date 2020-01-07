@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ProxyScriptContext"];
@@ -140,12 +141,16 @@ const ProxyInfoData = {
     
     if (type === PROXY_TYPES.SOCKS || type === PROXY_TYPES.SOCKS4) {
       return ProxyService.newProxyInfoWithAuth(
-              type, host, port, username, password, proxyDNS ? TRANSPARENT_PROXY_RESOLVES_HOST : 0,
-              failoverTimeout ? failoverTimeout : PROXY_TIMEOUT_SEC, failoverProxy);
+        type, host, port, username, password,
+        proxyDNS ? TRANSPARENT_PROXY_RESOLVES_HOST : 0,
+        failoverTimeout ? failoverTimeout : PROXY_TIMEOUT_SEC,
+        failoverProxy);
     }
     return ProxyService.newProxyInfo(
-            type, host, port, proxyDNS ? TRANSPARENT_PROXY_RESOLVES_HOST : 0,
-            failoverTimeout ? failoverTimeout : PROXY_TIMEOUT_SEC, failoverProxy);
+      type, host, port,
+      proxyDNS ? TRANSPARENT_PROXY_RESOLVES_HOST : 0,
+      failoverTimeout ? failoverTimeout : PROXY_TIMEOUT_SEC,
+      failoverProxy);
   },
 
   
@@ -325,8 +330,8 @@ class ProxyScriptAPIManager extends SchemaAPIManager {
 
   lazyInit() {
     if (!this.initialized) {
-      for (let [, value] of XPCOMUtils.enumerateCategoryEntries(
-          CATEGORY_EXTENSION_SCRIPTS_CONTENT)) {
+      let entries = XPCOMUtils.enumerateCategoryEntries(CATEGORY_EXTENSION_SCRIPTS_CONTENT);
+      for (let [, value] of entries) {
         this.loadScript(value);
       }
       this.initialized = true;

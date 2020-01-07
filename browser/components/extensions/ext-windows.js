@@ -190,8 +190,8 @@ this.windows = class extends ExtensionAPI {
             if (allowScriptsToClose) {
               for (let {linkedBrowser} of window.gBrowser.tabs) {
                 onXULFrameLoaderCreated({target: linkedBrowser});
-                linkedBrowser.addEventListener( 
-                                               "XULFrameLoaderCreated", onXULFrameLoaderCreated);
+                
+                linkedBrowser.addEventListener("XULFrameLoaderCreated", onXULFrameLoaderCreated);
               }
             }
             if (createData.titlePreface !== null) {

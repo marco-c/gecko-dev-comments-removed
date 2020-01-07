@@ -2,7 +2,7 @@
 
 
 
- 
+
 
 "use strict";
 
@@ -170,8 +170,9 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
         
         
         await this.setDefault(engineName);
-      } else if (ExtensionSettingsStore.hasSetting(
-                extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME)) {
+      } else if (ExtensionSettingsStore.hasSetting(extension.id,
+                                                   DEFAULT_SEARCH_STORE_TYPE,
+                                                   DEFAULT_SEARCH_SETTING_NAME)) {
         
         chrome_settings_overrides.processDefaultSearchSetting("removeSetting", extension.id);
       }

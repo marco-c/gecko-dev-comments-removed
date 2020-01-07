@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const Ci = Components.interfaces;
@@ -1447,16 +1448,6 @@ class StringType extends Type {
   }
 }
 
-class NullType extends Type {
-  normalize(value, context) {
-    return this.normalizeBase("null", value, context);
-  }
-
-  checkBaseType(baseType) {
-    return baseType == "null";
-  }
-}
-
 let FunctionEntry;
 let Event;
 let SubModuleType;
@@ -2179,7 +2170,8 @@ FunctionEntry = class FunctionEntry extends CallEntry {
     }
 
     return new this(schema, path, schema.name,
-                    Schemas.parseSchema(schema, path,
+                    Schemas.parseSchema(
+                      schema, path,
                       ["name", "unsupported", "returns",
                        "permissions",
                        "allowAmbiguousOptionalArguments"]),
@@ -2371,7 +2363,6 @@ const TYPES = Object.freeze(Object.assign(Object.create(null), {
   boolean: BooleanType,
   function: FunctionType,
   integer: IntegerType,
-  null: NullType,
   number: NumberType,
   object: ObjectType,
   string: StringType,

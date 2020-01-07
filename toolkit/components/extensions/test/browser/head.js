@@ -41,6 +41,14 @@ function hexToRGB(hex) {
   return [hex >> 16, (hex & 0x00FF00) >> 8, (hex & 0x0000FF)];
 }
 
+function rgbToCSS(rgb) {
+  return `rgb(${rgb.join(", ")})`;
+}
+
+function hexToCSS(hex) {
+  return rgbToCSS(hexToRGB(hex));
+}
+
 function imageBufferFromDataURI(encodedImageData) {
   let decodedImageData = atob(encodedImageData);
   return Uint8Array.from(decodedImageData, byte => byte.charCodeAt(0)).buffer;

@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -982,10 +983,13 @@ this.MessageChannel = {
         }
 
         target.sendAsyncMessage(MESSAGE_RESPONSE, response);
-      }).then(cleanup, e => {
-        cleanup();
-        Cu.reportError(e);
-      });
+      })
+      .then(
+        cleanup,
+        e => {
+          cleanup();
+          Cu.reportError(e);
+        });
   },
 
   

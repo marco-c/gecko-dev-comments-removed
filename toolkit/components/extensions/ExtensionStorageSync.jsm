@@ -3,9 +3,10 @@
 
 
 
-
-
 "use strict";
+
+
+
 
 
 
@@ -276,7 +277,8 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
       let kB = CommonUtils.hexToBytes(user.kB);
 
       let keyMaterial = CryptoUtils.hkdf(kB, undefined,
-                                       "identity.mozilla.com/picl/v1/chrome.storage.sync", 2 * 32);
+                                         "identity.mozilla.com/picl/v1/chrome.storage.sync",
+                                         2 * 32);
       let bundle = new BulkKeyBundle();
       
       bundle.keyPair = [keyMaterial.slice(0, 32), keyMaterial.slice(32, 64)];

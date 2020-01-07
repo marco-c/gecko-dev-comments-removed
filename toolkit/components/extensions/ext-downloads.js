@@ -274,8 +274,7 @@ const downloadQuery = query => {
   
 
   const totalBytesGreater = query.totalBytesGreater || 0;
-  const totalBytesLess = (query.totalBytesLess != null)
-        ? query.totalBytesLess : Number.MAX_VALUE;
+  const totalBytesLess = query.totalBytesLess != null ? query.totalBytesLess : Number.MAX_VALUE;
 
   
   
@@ -362,9 +361,9 @@ const queryHelper = query => {
 
   let compareFn;
   if (query.orderBy != null) {
-    const fields = query.orderBy.map(field => field[0] == "-"
-                                     ? {reverse: true, name: field.slice(1)}
-                                     : {reverse: false, name: field});
+    const fields = query.orderBy.map(field => (field[0] == "-"
+                                               ? {reverse: true, name: field.slice(1)}
+                                               : {reverse: false, name: field}));
 
     for (let field of fields) {
       if (!DOWNLOAD_ITEM_FIELDS.includes(field.name)) {
