@@ -30,9 +30,11 @@
 
 
 
+
+
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 271204 2014-09-06 19:12:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 324615 2017-10-14 10:02:59Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -72,6 +74,10 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_LARGEST_INIT_ACCEPTED (65535 - 2048)
 
 
+#define SCTP_MAX_CHUNK_LENGTH 0xffff
+
+#define SCTP_MAX_CAUSE_LENGTH 0xffff
+
 #define SCTP_COUNT_LIMIT 40
 
 #define SCTP_ZERO_COPY_TICK_DELAY (((100 * hz) + 999) / 1000)
@@ -97,10 +103,6 @@ extern void getwintimeofday(struct timeval *tv);
 
 
 #define SCTP_DEFAULT_VRF_SIZE 4
-
-
-#define sctp_align_safe_nocopy 0
-#define sctp_align_unsafe_makecopy 1
 
 
 #define ALPHA_BASE	(1<<7)  /* 1.0 with shift << 7 */
@@ -346,6 +348,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_RTT_FROM_NON_DATA 0
 #define SCTP_RTT_FROM_DATA     1
 
+#define PR_SCTP_UNORDERED_FLAG 0x0001
 
 
 #define SCTP_FIRST_MBUF_RESV 68
@@ -387,8 +390,8 @@ extern void getwintimeofday(struct timeval *tv);
 
 #define SCTP_SIZE32(x)	((((x) + 3) >> 2) << 2)
 
-#define IS_SCTP_CONTROL(a) ((a)->chunk_type != SCTP_DATA)
-#define IS_SCTP_DATA(a) ((a)->chunk_type == SCTP_DATA)
+#define IS_SCTP_CONTROL(a) (((a)->chunk_type != SCTP_DATA) && ((a)->chunk_type != SCTP_IDATA))
+#define IS_SCTP_DATA(a) (((a)->chunk_type == SCTP_DATA) || ((a)->chunk_type == SCTP_IDATA))
 
 
 
@@ -558,11 +561,9 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_TIMER_TYPE_INPKILL         15
 #define SCTP_TIMER_TYPE_ASOCKILL        16
 #define SCTP_TIMER_TYPE_ADDR_WQ         17
-#define SCTP_TIMER_TYPE_ZERO_COPY       18
-#define SCTP_TIMER_TYPE_ZCOPY_SENDQ     19
-#define SCTP_TIMER_TYPE_PRIM_DELETED    20
+#define SCTP_TIMER_TYPE_PRIM_DELETED    18
 
-#define SCTP_TIMER_TYPE_LAST            21
+#define SCTP_TIMER_TYPE_LAST            19
 
 #define SCTP_IS_TIMER_TYPE_VALID(t)	(((t) > SCTP_TIMER_TYPE_NONE) && \
 					 ((t) < SCTP_TIMER_TYPE_LAST))
@@ -627,10 +628,6 @@ extern void getwintimeofday(struct timeval *tv);
 
 
 #define SCTP_HB_DEFAULT_MSEC	30000
-
-
-#define SCTP_DEF_MAX_SHUTDOWN_SEC 180
-
 
 
 
@@ -777,7 +774,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_DEFAULT_SPLIT_POINT_MIN 2904
 
 
-#define SCTP_DIAG_INFO_LEN 64
+#define SCTP_DIAG_INFO_LEN 128
 
 
 
@@ -785,18 +782,19 @@ extern void getwintimeofday(struct timeval *tv);
 
 
 
-#define SCTP_FROM_SCTP_INPUT   0x10000000
-#define SCTP_FROM_SCTP_PCB     0x20000000
-#define SCTP_FROM_SCTP_INDATA  0x30000000
-#define SCTP_FROM_SCTP_TIMER   0x40000000
-#define SCTP_FROM_SCTP_USRREQ  0x50000000
-#define SCTP_FROM_SCTPUTIL     0x60000000
-#define SCTP_FROM_SCTP6_USRREQ 0x70000000
-#define SCTP_FROM_SCTP_ASCONF  0x80000000
-#define SCTP_FROM_SCTP_OUTPUT  0x90000000
-#define SCTP_FROM_SCTP_PEELOFF 0xa0000000
-#define SCTP_FROM_SCTP_PANDA   0xb0000000
-#define SCTP_FROM_SCTP_SYSCTL  0xc0000000
+#define SCTP_FROM_SCTP_INPUT        0x10000000
+#define SCTP_FROM_SCTP_PCB          0x20000000
+#define SCTP_FROM_SCTP_INDATA       0x30000000
+#define SCTP_FROM_SCTP_TIMER        0x40000000
+#define SCTP_FROM_SCTP_USRREQ       0x50000000
+#define SCTP_FROM_SCTPUTIL          0x60000000
+#define SCTP_FROM_SCTP6_USRREQ      0x70000000
+#define SCTP_FROM_SCTP_ASCONF       0x80000000
+#define SCTP_FROM_SCTP_OUTPUT       0x90000000
+#define SCTP_FROM_SCTP_PEELOFF      0xa0000000
+#define SCTP_FROM_SCTP_PANDA        0xb0000000
+#define SCTP_FROM_SCTP_SYSCTL       0xc0000000
+#define SCTP_FROM_SCTP_CC_FUNCTIONS 0xd0000000
 
 
 #define SCTP_LOC_1  0x00000001
@@ -832,6 +830,8 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_LOC_31 0x0000001f
 #define SCTP_LOC_32 0x00000020
 #define SCTP_LOC_33 0x00000021
+#define SCTP_LOC_34 0x00000022
+#define SCTP_LOC_35 0x00000023
 
 
 
@@ -908,12 +908,20 @@ extern void getwintimeofday(struct timeval *tv);
 
 
 
-#define SCTP_SSN_GT(a, b) (((a < b) && ((uint16_t)(b - a) > (1U<<15))) || \
-                           ((a > b) && ((uint16_t)(a - b) < (1U<<15))))
-#define SCTP_SSN_GE(a, b) (SCTP_SSN_GT(a, b) || (a == b))
-#define SCTP_TSN_GT(a, b) (((a < b) && ((uint32_t)(b - a) > (1U<<31))) || \
-                           ((a > b) && ((uint32_t)(a - b) < (1U<<31))))
-#define SCTP_TSN_GE(a, b) (SCTP_TSN_GT(a, b) || (a == b))
+#define SCTP_UINT16_GT(a, b) (((a < b) && ((uint16_t)(b - a) > (1U<<15))) || \
+                              ((a > b) && ((uint16_t)(a - b) < (1U<<15))))
+#define SCTP_UINT16_GE(a, b) (SCTP_UINT16_GT(a, b) || (a == b))
+#define SCTP_UINT32_GT(a, b) (((a < b) && ((uint32_t)(b - a) > (1U<<31))) || \
+                              ((a > b) && ((uint32_t)(a - b) < (1U<<31))))
+#define SCTP_UINT32_GE(a, b) (SCTP_UINT32_GT(a, b) || (a == b))
+
+#define SCTP_SSN_GT(a, b) SCTP_UINT16_GT(a, b)
+#define SCTP_SSN_GE(a, b) SCTP_UINT16_GE(a, b)
+#define SCTP_TSN_GT(a, b) SCTP_UINT32_GT(a, b)
+#define SCTP_TSN_GE(a, b) SCTP_UINT32_GE(a, b)
+#define SCTP_MID_GT(i, a, b) (((i) == 1) ? SCTP_UINT32_GT(a, b) : SCTP_UINT16_GT((uint16_t)a, (uint16_t)b))
+#define SCTP_MID_GE(i, a, b) (((i) == 1) ? SCTP_UINT32_GE(a, b) : SCTP_UINT16_GE((uint16_t)a, (uint16_t)b))
+#define SCTP_MID_EQ(i, a, b) (((i) == 1) ? a == b : (uint16_t)a == (uint16_t)b)
 
 
 #define SCTP_IS_TSN_PRESENT(arry, gap) ((arry[(gap >> 3)] >> (gap & 0x07)) & 0x01)
@@ -984,9 +992,6 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_SO_NOT_LOCKED	0
 
 
-#define SCTP_HOLDS_LOCK 1
-#define SCTP_NOT_LOCKED 0
-
 
 
 
@@ -1002,10 +1007,7 @@ extern void getwintimeofday(struct timeval *tv);
      (((uint8_t *)&(a)->s_addr)[1] == 168)))
 
 #define IN4_ISLOOPBACK_ADDRESS(a) \
-    ((((uint8_t *)&(a)->s_addr)[0] == 127) && \
-     (((uint8_t *)&(a)->s_addr)[1] == 0) && \
-     (((uint8_t *)&(a)->s_addr)[2] == 0) && \
-     (((uint8_t *)&(a)->s_addr)[3] == 1))
+    (((uint8_t *)&(a)->s_addr)[0] == 127)
 
 #define IN4_ISLINKLOCAL_ADDRESS(a) \
     ((((uint8_t *)&(a)->s_addr)[0] == 169) && \
