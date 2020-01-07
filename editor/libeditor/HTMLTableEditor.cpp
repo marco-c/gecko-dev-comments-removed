@@ -2837,11 +2837,13 @@ HTMLEditor::GetCellContext(Selection** aSelection,
     
     NS_ENSURE_TRUE(cellParent, NS_ERROR_FAILURE);
 
-    cellParent.forget(aCellParent);
-
     if (aCellOffset) {
       *aCellOffset = GetChildOffset(cell, cellParent);
     }
+
+    
+    
+    cellParent.forget(aCellParent);
   }
 
   return NS_OK;
