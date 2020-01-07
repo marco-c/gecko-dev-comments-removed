@@ -4,11 +4,10 @@
 
 
 
-#ifndef mozilla_dom_WebAuthnTransactionChild_h
-#define mozilla_dom_WebAuthnTransactionChild_h
+#ifndef mozilla_dom_U2FTransactionChild_h
+#define mozilla_dom_U2FTransactionChild_h
 
 #include "mozilla/dom/WebAuthnTransactionChildBase.h"
-
 
 
 
@@ -19,9 +18,13 @@
 namespace mozilla {
 namespace dom {
 
-class WebAuthnTransactionChild final : public WebAuthnTransactionChildBase
+class U2FTransactionChild final : public WebAuthnTransactionChildBase
 {
 public:
+  explicit U2FTransactionChild(U2F* aU2F) : mU2F(aU2F) {
+    MOZ_ASSERT(mU2F);
+  }
+
   mozilla::ipc::IPCResult
   RecvConfirmRegister(const uint64_t& aTransactionId,
                       nsTArray<uint8_t>&& aRegBuffer) override;
@@ -35,6 +38,10 @@ public:
   RecvAbort(const uint64_t& aTransactionId, const nsresult& aError) override;
 
   void ActorDestroy(ActorDestroyReason why) override;
+
+private:
+  
+  U2F* mU2F;
 };
 
 }
