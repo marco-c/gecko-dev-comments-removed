@@ -274,7 +274,7 @@ Inspector.prototype = {
     
     
     
-    this.telemetry.logKeyedScalar(THREE_PANE_ENABLED_SCALAR, this.is3PaneModeEnabled, 1);
+    this.telemetry.keyedScalarAdd(THREE_PANE_ENABLED_SCALAR, this.is3PaneModeEnabled, 1);
 
     this.emit("ready");
     return this;
@@ -2137,7 +2137,7 @@ Inspector.prototype = {
       return;
     }
 
-    this.telemetry.logScalar("devtools.copy.unique.css.selector.opened", 1);
+    this.telemetry.scalarSet("devtools.copy.unique.css.selector.opened", 1);
     this.selection.nodeFront.getUniqueSelector().then(selector => {
       clipboardHelper.copyString(selector);
     }).catch(console.error);
@@ -2151,7 +2151,7 @@ Inspector.prototype = {
       return;
     }
 
-    this.telemetry.logScalar("devtools.copy.full.css.selector.opened", 1);
+    this.telemetry.scalarSet("devtools.copy.full.css.selector.opened", 1);
     this.selection.nodeFront.getCssPath().then(path => {
       clipboardHelper.copyString(path);
     }).catch(console.error);
@@ -2165,7 +2165,7 @@ Inspector.prototype = {
       return;
     }
 
-    this.telemetry.logScalar("devtools.copy.xpath.opened", 1);
+    this.telemetry.scalarSet("devtools.copy.xpath.opened", 1);
     this.selection.nodeFront.getXPath().then(path => {
       clipboardHelper.copyString(path);
     }).catch(console.error);

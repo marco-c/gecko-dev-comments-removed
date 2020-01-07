@@ -23,10 +23,11 @@ class Telemetry {
     
     this.toolOpened = this.toolOpened.bind(this);
     this.toolClosed = this.toolClosed.bind(this);
-    this.log = this.log.bind(this);
-    this.logScalar = this.logScalar.bind(this);
-    this.logCountScalar = this.logCountScalar.bind(this);
-    this.logKeyedScalar = this.logKeyedScalar.bind(this);
+    this.getHistogramById = this.getHistogramById.bind(this);
+    this.getKeyedHistogramById = this.getKeyedHistogramById.bind(this);
+    this.scalarSet = this.scalarSet.bind(this);
+    this.scalarAdd = this.scalarAdd.bind(this);
+    this.keyedScalarAdd = this.keyedScalarAdd.bind(this);
     this.logOncePerBrowserVersion = this.logOncePerBrowserVersion.bind(this);
     this.recordEvent = this.recordEvent.bind(this);
     this.setEventRecordingEnabled = this.setEventRecordingEnabled.bind(this);
@@ -206,16 +207,16 @@ class Telemetry {
     let charts = this.histograms[id] || this.histograms.custom;
 
     if (charts.histogram) {
-      this.log(charts.histogram, true);
+      this.getHistogramById(charts.histogram).add(true);
     }
     if (charts.timerHistogram) {
       this.startTimer(charts.timerHistogram);
     }
     if (charts.scalar) {
-      this.logScalar(charts.scalar, 1);
+      this.scalarSet(charts.scalar, 1);
     }
     if (charts.countScalar) {
-      this.logCountScalar(charts.countScalar, 1);
+      this.scalarAdd(charts.countScalar, 1);
     }
   }
 
@@ -261,9 +262,9 @@ class Telemetry {
     if (startTime) {
       let time = (new Date() - startTime) / 1000;
       if (!key) {
-        this.log(histogramId, time);
+        this.getHistogramById(histogramId).add(time);
       } else {
-        this.logKeyed(histogramId, key, time);
+        this.getKeyedHistogramById(histogramId).add(key, time);
       }
       this._timers.delete(histogramId);
     }
@@ -275,21 +276,45 @@ class Telemetry {
 
 
 
+  getHistogramById(histogramId) {
+    let histogram = null;
 
-
-  log(histogramId, value) {
-    if (!histogramId) {
-      return;
+    if (histogramId) {
+      try {
+        histogram = Services.telemetry.getHistogramById(histogramId);
+      } catch (e) {
+        dump(`Warning: An attempt was made to write to the ${histogramId} ` +
+            `histogram, which is not defined in Histograms.json\n` +
+            `CALLER: ${this.getCaller()}`);
+      }
     }
 
-    try {
-      let histogram = Services.telemetry.getHistogramById(histogramId);
-      histogram.add(value);
-    } catch (e) {
-      dump(`Warning: An attempt was made to write to the ${histogramId} ` +
-           `histogram, which is not defined in Histograms.json\n` +
-           `CALLER: ${this.getCaller()}`);
+    return histogram || {
+      add: () => {}
+    };
+  }
+
+  
+
+
+
+
+
+  getKeyedHistogramById(histogramId) {
+    let histogram = null;
+
+    if (histogramId) {
+      try {
+        histogram = Services.telemetry.getKeyedHistogramById(histogramId);
+      } catch (e) {
+        dump(`Warning: An attempt was made to write to the ${histogramId} ` +
+             `histogram, which is not defined in Histograms.json\n` +
+             `CALLER: ${this.getCaller()}`);
+      }
     }
+    return histogram || {
+      add: () => {}
+    };
   }
 
   
@@ -300,7 +325,7 @@ class Telemetry {
 
 
 
-  logScalar(scalarId, value) {
+  scalarSet(scalarId, value) {
     if (!scalarId) {
       return;
     }
@@ -330,7 +355,7 @@ class Telemetry {
 
 
 
-  logCountScalar(scalarId, value) {
+  scalarAdd(scalarId, value) {
     if (!scalarId) {
       return;
     }
@@ -362,7 +387,7 @@ class Telemetry {
 
 
 
-  logKeyedScalar(scalarId, key, value) {
+  keyedScalarAdd(scalarId, key, value) {
     if (!scalarId) {
       return;
     }
@@ -391,34 +416,6 @@ class Telemetry {
 
 
 
-
-
-
-  logKeyed(histogramId, key, value) {
-    if (histogramId) {
-      try {
-        let histogram = Services.telemetry.getKeyedHistogramById(histogramId);
-
-        if (typeof value === "undefined") {
-          histogram.add(key);
-        } else {
-          histogram.add(key, value);
-        }
-      } catch (e) {
-        dump(`Warning: An attempt was made to write to the ${histogramId} ` +
-             `histogram, which is not defined in Histograms.json\n` +
-             `CALLER: ${this.getCaller()}`);
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
   logOncePerBrowserVersion(perUserHistogram, value) {
     let currentVersion = Services.appinfo.version;
     let latest = Services.prefs.getCharPref(TOOLS_OPENED_PREF);
@@ -431,7 +428,7 @@ class Telemetry {
       latestObj[perUserHistogram] = currentVersion;
       latest = JSON.stringify(latestObj);
       Services.prefs.setCharPref(TOOLS_OPENED_PREF, latest);
-      this.log(perUserHistogram, value);
+      this.getHistogramById(perUserHistogram).add(value);
     }
   }
 
@@ -603,6 +600,33 @@ class Telemetry {
 
 
 
+  _sendPendingEvent(category, method, object, value) {
+    const sig = `${category},${method},${object},${value}`;
+    const { extra } = PENDING_EVENTS.get(sig);
+
+    PENDING_EVENTS.delete(sig);
+    PENDING_EVENT_PROPERTIES.delete(sig);
+    this.recordEvent(category, method, object, value, extra);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -625,33 +649,6 @@ class Telemetry {
       }
     }
     Services.telemetry.recordEvent(category, method, object, value, extra);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _sendPendingEvent(category, method, object, value) {
-    const sig = `${category},${method},${object},${value}`;
-    const { extra } = PENDING_EVENTS.get(sig);
-
-    PENDING_EVENTS.delete(sig);
-    PENDING_EVENT_PROPERTIES.delete(sig);
-    this.recordEvent(category, method, object, value, extra);
   }
 
   

@@ -144,7 +144,7 @@ class ToolboxTabsOrderManager {
       
       
       const toolId = this.dragTarget.dataset.extensionId || this.dragTarget.dataset.id;
-      this.telemetry.logKeyedScalar(TABS_REORDERED_SCALAR, toolId, 1);
+      this.telemetry.keyedScalarAdd(TABS_REORDERED_SCALAR, toolId, 1);
     }
 
     this.dragTarget.ownerDocument.removeEventListener("mousemove", this.onMouseMove);
