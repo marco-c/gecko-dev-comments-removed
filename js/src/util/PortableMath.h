@@ -4,8 +4,8 @@
 
 
 
-#ifndef jslibmath_h
-#define jslibmath_h
+#ifndef util_PortableMath_h
+#define util_PortableMath_h
 
 #include "mozilla/FloatingPoint.h"
 
