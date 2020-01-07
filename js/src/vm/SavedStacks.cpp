@@ -101,48 +101,59 @@ LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr, const jsbytecode* p
     MOZ_ASSERT(initialized());
     MOZ_ASSERT(framePtr.hasCachedSavedFrame());
 
-    if (frames->empty())
-        
+    
+    
+    if (frames->empty()) {
+        frame.set(nullptr);
         return;
+    }
+
+    
+    
+    if (frames->back().savedFrame->compartment() != cx->compartment()) {
+#ifdef DEBUG
+        
+        auto compartment = frames->back().savedFrame->compartment();
+        for (const auto& f : (*frames))
+            MOZ_ASSERT(compartment == f.savedFrame->compartment());
+#endif
+        frames->clear();
+        frame.set(nullptr);
+        return;
+    }
 
     Key key(framePtr);
+    while (key != frames->back().key) {
+        MOZ_ASSERT(frames->back().savedFrame->compartment() == cx->compartment());
 
-    auto *p = frames->begin();
-    for (; p < frames->end(); p++) {
-        if (key == p->key) {
-            frame.set(p->savedFrame);
-            break;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        frames->popBack();
+
+        
+        
+        
+        
+        MOZ_ASSERT(!frames->empty());
     }
 
     
     
     
     
-    MOZ_ASSERT(frame);
-
-    
-    
-    
-    if (frame->compartment() != cx->compartment()) {
+    if (pc != frames->back().pc) {
+        frames->popBack();
         frame.set(nullptr);
-        frames->clear();
         return;
     }
 
-    
-    
-    
-    
-    if (pc != p->pc) {
-        frame.set(nullptr);
-        p--;
-    }
-
-    
-    
-    p++;
-    frames->shrinkBy(frames->end() - p);
+    frame.set(frames->back().savedFrame);
 }
 
 struct SavedFrame::Lookup {
