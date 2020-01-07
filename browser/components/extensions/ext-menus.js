@@ -33,6 +33,9 @@ var gRootItems = new Map();
 var gShownMenuItems = new DefaultMap(() => []);
 
 
+var gOnShownSubscribers = new Set();
+
+
 var gNextMenuItemID = 0;
 
 
@@ -71,10 +74,10 @@ var gMenuBuilder = {
     const children = this.buildChildren(root, contextData);
     const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
 
-    if (visible.length) {
-      this.xulMenu = menu;
-      menu.addEventListener("popuphidden", this);
+    this.xulMenu = menu;
+    menu.addEventListener("popuphidden", this);
 
+    if (visible.length) {
       const separator = menu.ownerDocument.createElement("menuseparator");
       menu.insertBefore(separator, menu.firstChild);
       this.itemsToCleanUp.add(separator);
@@ -331,7 +334,6 @@ var gMenuBuilder = {
     let {contextData} = this;
     if (!contextData) {
       
-      
       return;
     }
 
@@ -380,16 +382,25 @@ var gMenuBuilder = {
   },
 
   afterBuildingMenu(contextData) {
-    
-    
-    
-    
-    if (gShownMenuItems.size === 0 || this.contextData) {
+    if (this.contextData) {
+      
+      
       return;
     }
 
-    for (let [extension, menuIds] of gShownMenuItems.entries()) {
+    function dispatchOnShownEvent(extension) {
+      
+      
+      
+      
+      let menuIds = gShownMenuItems.get(extension);
       extension.emit("webext-menu-shown", menuIds, contextData);
+    }
+
+    if (contextData.onBrowserAction || contextData.onPageAction) {
+      dispatchOnShownEvent(contextData.extension);
+    } else {
+      gOnShownSubscribers.forEach(dispatchOnShownEvent);
     }
 
     this.contextData = contextData;
@@ -402,6 +413,7 @@ var gMenuBuilder = {
 
     delete this.xulMenu;
     delete this.contextData;
+
     let target = event.target;
     target.removeEventListener("popuphidden", this);
     for (let item of this.itemsToCleanUp) {
@@ -788,6 +800,7 @@ this.menusInternal = class extends ExtensionAPI {
       gMenuMap.delete(extension);
       gRootItems.delete(extension);
       gShownMenuItems.delete(extension);
+      gOnShownSubscribers.delete(extension);
       if (!gMenuMap.size) {
         menuTracker.unregister();
       }
@@ -821,8 +834,10 @@ this.menusInternal = class extends ExtensionAPI {
           let tab = extension.tabManager.convert(contextData.tab);
           fire.sync(info, tab);
         };
+        gOnShownSubscribers.add(extension);
         extension.on("webext-menu-shown", listener);
         return () => {
+          gOnShownSubscribers.delete(extension);
           extension.off("webext-menu-shown", listener);
         };
       }).api(),
