@@ -7014,16 +7014,30 @@ nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
 
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    if (child->IsElement() && !child->AsElement()->HasServoData()) {
-      Element* parent = child->AsElement()->GetFlattenedTreeParentElement();
-      
-      
-      if (MOZ_LIKELY(parent) && parent->HasServoData()) {
-        MOZ_ASSERT(IsFlattenedTreeChild(parent, child),
-                   "GetFlattenedTreeParent and ChildIterator don't agree, fix this!");
-        styleSet->StyleNewSubtree(child->AsElement());
-      }
+    if (!child->IsElement()) {
+      continue;
     }
+
+    Element* childElement = child->AsElement();
+
+    
+    
+    MOZ_ASSERT(!childElement->HasServoData());
+
+#ifdef DEBUG
+    {
+      
+      
+      
+      Element* parent = childElement->GetFlattenedTreeParentElement();
+      MOZ_ASSERT(parent);
+      MOZ_ASSERT(parent->HasServoData());
+      MOZ_ASSERT(IsFlattenedTreeChild(parent, child),
+                 "GetFlattenedTreeParent and ChildIterator don't agree, fix this!");
+    }
+#endif
+
+    styleSet->StyleNewSubtree(childElement);
   }
 }
 
