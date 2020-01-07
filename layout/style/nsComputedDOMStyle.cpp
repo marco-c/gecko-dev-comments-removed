@@ -691,8 +691,7 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
   
-  nsIPresShell *presShell =
-    nsContentUtils::GetPresShellForContent(aElement);
+  nsIPresShell* presShell = nsContentUtils::GetPresShellForContent(aElement);
   bool inDocWithShell = true;
   if (!presShell) {
     inDocWithShell = false;
