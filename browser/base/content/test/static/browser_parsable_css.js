@@ -114,6 +114,8 @@ let propNameWhitelist = [
   
   
   
+  {propName: "--clickToPlay-width",
+   isFromDevTools: false},
   {propName: "--muteButton-width",
    isFromDevTools: false},
   {propName: "--closedCaptionButton-width",
