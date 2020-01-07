@@ -2837,6 +2837,8 @@ GCRuntime::updateZonePointersToRelocatedCells(Zone* zone)
     MOZ_ASSERT(!rt->isBeingDestroyed());
     MOZ_ASSERT(zone->isGCCompacting());
 
+    AutoTouchingGrayThings tgt;
+
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::COMPACT_UPDATE);
     MovingTracer trc(rt);
 
@@ -5107,6 +5109,8 @@ js::gc::DelayCrossCompartmentGrayMarking(JSObject* src)
 {
     MOZ_ASSERT(IsGrayListObject(src));
 
+    AutoTouchingGrayThings tgt;
+
     
     unsigned slot = ProxyObject::grayLinkReservedSlot(src);
     JSObject* dest = CrossCompartmentPointerReferent(src);
@@ -5182,6 +5186,8 @@ MarkIncomingCrossCompartmentPointers(JSRuntime* rt, MarkColor color)
 static bool
 RemoveFromGrayList(JSObject* wrapper)
 {
+    AutoTouchingGrayThings tgt;
+
     if (!IsGrayListObject(wrapper))
         return false;
 
@@ -9078,7 +9084,6 @@ js::gc::detail::CellIsNotGray(const Cell* cell)
 
     
     
-    MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCycleCollecting());
 
     if (!CanCheckGrayBits(cell))
