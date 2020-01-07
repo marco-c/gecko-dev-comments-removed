@@ -13,7 +13,7 @@ const DelaySign = createFactory(require("./DelaySign"));
 const EndDelaySign = createFactory(require("./EndDelaySign"));
 const SummaryGraphPath = createFactory(require("./SummaryGraphPath"));
 
-const { getFormatStr, getStr, numberWithDecimals } = require("../../utils/l10n");
+const { getFormattedTitle, getFormatStr, getStr, numberWithDecimals } = require("../../utils/l10n");
 
 class SummaryGraph extends PureComponent {
   static get propTypes() {
@@ -186,31 +186,6 @@ class SummaryGraph extends PureComponent {
       null
     );
   }
-}
-
-
-
-
-
-
-
-
-
-
-function getFormattedTitle(state) {
-  
-  
-  
-  if (!state.type) {
-    return state.name;
-  }
-
-  
-  if (state.type === "scriptanimation" && !state.name) {
-    return getStr("timeline.scriptanimation.unnamedLabel");
-  }
-
-  return getFormatStr(`timeline.${state.type}.nameLabel`, state.name);
 }
 
 module.exports = SummaryGraph;

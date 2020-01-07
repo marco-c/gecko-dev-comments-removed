@@ -222,6 +222,15 @@
 }
 
 
+.animation-detail-container {
+  width: 100%;
+}
+
+.animation-detail-header {
+  white-space: nowrap;
+}
+
+
 .animation-error-message {
   overflow: auto;
 }

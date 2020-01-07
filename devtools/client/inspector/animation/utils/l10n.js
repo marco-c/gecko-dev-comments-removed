@@ -8,8 +8,34 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N =
   new LocalizationHelper("devtools/client/locales/animationinspector.properties");
 
+
+
+
+
+
+
+
+
+
+function getFormattedTitle(state) {
+  
+  
+  
+  if (!state.type) {
+    return state.name;
+  }
+
+  
+  if (state.type === "scriptanimation" && !state.name) {
+    return L10N.getStr("timeline.scriptanimation.unnamedLabel");
+  }
+
+  return L10N.getFormatStr(`timeline.${state.type}.nameLabel`, state.name);
+}
+
 module.exports = {
   getFormatStr: (...args) => L10N.getFormatStr(...args),
+  getFormattedTitle,
   getStr: (...args) => L10N.getStr(...args),
   numberWithDecimals: (...args) => L10N.numberWithDecimals(...args),
 };

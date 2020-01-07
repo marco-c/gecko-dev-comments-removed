@@ -1,0 +1,32 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { getFormattedTitle } = require("../utils/l10n");
+
+class AnimationDetailHeader extends PureComponent {
+  static get propTypes() {
+    return {
+      animation: PropTypes.object.isRequired,
+    };
+  }
+
+  render() {
+    const { animation } = this.props;
+
+    return dom.div(
+      {
+        className: "animation-detail-header devtools-toolbar",
+      },
+      getFormattedTitle(animation.state)
+    );
+  }
+}
+
+module.exports = AnimationDetailHeader;
