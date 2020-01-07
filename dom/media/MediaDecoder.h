@@ -39,8 +39,8 @@ class FrameStatistics;
 class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
+struct MediaPlaybackEvent;
 
-enum class MediaEventType : int8_t;
 enum class Visibility : uint8_t;
 
 
@@ -424,7 +424,7 @@ protected:
     DurationChanged();
   }
 
-  virtual void OnPlaybackEvent(MediaEventType aEvent);
+  virtual void OnPlaybackEvent(MediaPlaybackEvent&& aEvent);
 
   
   
