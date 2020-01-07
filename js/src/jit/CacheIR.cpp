@@ -3477,13 +3477,13 @@ SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objI
 }
 
 static bool
-CanAttachAddElement(JSObject* obj, bool isInit)
+CanAttachAddElement(NativeObject* obj, bool isInit)
 {
     
     
     do {
         
-        if (obj->isNative() && obj->as<NativeObject>().isIndexed())
+        if (obj->isIndexed())
             return false;
 
         const Class* clasp = obj->getClass();
@@ -3522,7 +3522,7 @@ CanAttachAddElement(JSObject* obj, bool isInit)
         if (!nproto->isExtensible() && nproto->getDenseInitializedLength() > 0)
             return false;
 
-        obj = proto;
+        obj = nproto;
     } while (true);
 
     return true;
@@ -4393,7 +4393,7 @@ CallIRGenerator::tryAttachArrayPush()
         return false;
 
     
-    if (!CanAttachAddElement(thisobj,  false))
+    if (!CanAttachAddElement(thisarray,  false))
         return false;
 
     

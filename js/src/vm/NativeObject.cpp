@@ -529,6 +529,7 @@ NativeObject::sparsifyDenseElement(JSContext* cx, HandleNativeObject obj, uint32
 
     
     
+    
     Shape* shape = addDataPropertyInternal(cx, obj, id, SHAPE_INVALID_SLOT,
                                            obj->getElementsHeader()->elementAttributes(),
                                            table, entry, keep);
