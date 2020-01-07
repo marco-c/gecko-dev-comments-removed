@@ -121,3 +121,15 @@ async function setupLocalCrashReportServer() {
     env.set("MOZ_CRASHREPORTER_URL", serverUrl);
   });
 }
+
+
+
+
+
+function prepareNoDump() {
+  let originalGetDumpID = TabCrashHandler.getDumpID;
+  TabCrashHandler.getDumpID = function(browser) { return null; };
+  registerCleanupFunction(() => {
+    TabCrashHandler.getDumpID = originalGetDumpID;
+  });
+}

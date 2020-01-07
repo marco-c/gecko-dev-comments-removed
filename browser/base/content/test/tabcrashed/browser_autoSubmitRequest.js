@@ -21,7 +21,7 @@ add_task(async function test_show_form() {
     set: [[AUTOSUBMIT_PREF, false]],
   });
 
-  return BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
   }, async function(browser) {
@@ -69,7 +69,7 @@ add_task(async function test_show_form() {
     set: [[AUTOSUBMIT_PREF, true]],
   });
 
-  return BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
   }, async function(browser) {
@@ -96,4 +96,59 @@ add_task(async function test_show_form() {
     Assert.ok(Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
               "Autosubmission pref should have been set.");
   });
+});
+
+
+
+
+
+add_task(async function test_no_offer() {
+  
+  Assert.ok(TabCrashHandler.prefs.getBoolPref("sendReport"));
+
+  await SpecialPowers.pushPrefEnv({
+    set: [[AUTOSUBMIT_PREF, false]],
+  });
+
+  await BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: PAGE,
+  }, async function(browser) {
+    await TabStateFlusher.flush(browser);
+
+    
+    prepareNoDump();
+
+    
+    await BrowserTestUtils.crashBrowser(browser);
+
+    
+    let doc = browser.contentDocument;
+
+    
+    let requestRect = doc.getElementById("requestAutoSubmit")
+                         .getBoundingClientRect();
+    Assert.equal(0, requestRect.height,
+                 "Request for autosubmission has no height");
+    Assert.equal(0, requestRect.width,
+                 "Request for autosubmission has no width");
+
+    
+    
+    let autoSubmit = doc.getElementById("autoSubmit");
+    Assert.ok(!autoSubmit.checked,
+              "Checkbox for autosubmission is not checked.");
+
+    let restoreButton = doc.getElementById("restoreTab");
+    restoreButton.click();
+
+    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+
+    
+    Assert.ok(!Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
+              "Autosubmission pref should not have changed.");
+  });
+
+  
+  Assert.ok(TabCrashHandler.prefs.getBoolPref("sendReport"));
 });
