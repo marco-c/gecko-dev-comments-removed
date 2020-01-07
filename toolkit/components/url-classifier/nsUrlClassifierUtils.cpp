@@ -512,7 +512,7 @@ AddThreatSourceFromChannel(ThreatHit& aHit, nsIChannel *aChannel,
   matchingSource->set_type(aType);
 
   nsCOMPtr<nsIURI> uri;
-  rv = aChannel->GetURI(getter_AddRefs(uri));
+  rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCString spec;
