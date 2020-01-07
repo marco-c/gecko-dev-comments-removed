@@ -349,14 +349,10 @@ WebMDemuxer::ReadMetadata()
                                params.height - cropV);
 
       
-      if (pictureRect.width <= 0 ||
-          pictureRect.height <= 0 ||
-          pictureRect.x < 0 ||
-          pictureRect.y < 0) {
-        pictureRect.x = 0;
-        pictureRect.y = 0;
-        pictureRect.width = params.width;
-        pictureRect.height = params.height;
+      if (pictureRect.IsEmpty() ||
+          pictureRect.X() < 0 ||
+          pictureRect.Y() < 0) {
+        pictureRect.SetRect(0, 0, params.width, params.height);
       }
 
       
