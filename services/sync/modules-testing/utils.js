@@ -26,6 +26,7 @@ ChromeUtils.import("resource://services-common/utils.js");
 ChromeUtils.import("resource://services-crypto/utils.js");
 ChromeUtils.import("resource://services-sync/util.js");
 ChromeUtils.import("resource://services-sync/browserid_identity.js");
+ChromeUtils.import("resource://testing-common/Assert.jsm");
 ChromeUtils.import("resource://testing-common/services/common/logging.js");
 ChromeUtils.import("resource://testing-common/services/sync/fakeservices.js");
 ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
@@ -162,7 +163,7 @@ var makeFxAccountsInternalMock = function(config) {
       return accountState;
     },
     _getAssertion(audience) {
-      return Promise.resolve("assertion");
+      return Promise.resolve(config.fxaccount.user.assertion);
     },
   };
 };
@@ -192,6 +193,8 @@ var configureFxAccountIdentity = function(authService,
 
   let mockTSC = { 
     async getTokenFromBrowserIDAssertion(uri, assertion) {
+      Assert.equal(uri, Services.prefs.getStringPref("identity.sync.tokenserver.uri"));
+      Assert.equal(assertion, config.fxaccount.user.assertion);
       config.fxaccount.token.uid = config.username;
       return config.fxaccount.token;
     },
@@ -220,10 +223,12 @@ var configureIdentity = async function(identityOverrides, server) {
   }
 
   configureFxAccountIdentity(ns.Service.identity, config);
-  await ns.Service.identity.initializeWithCurrentIdentity();
+  
+  ns.Service.identity.username = config.username;
   
   
-  await ns.Service.identity.whenReadyToAuthenticate.promise;
+  await ns.Service.identity._ensureValidToken();
+
   
   
   if (config.fxaccount.token.endpoint) {

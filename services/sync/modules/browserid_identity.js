@@ -9,7 +9,6 @@ var EXPORTED_SYMBOLS = ["BrowserIDManager", "AuthenticationError"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
 ChromeUtils.import("resource://services-common/async.js");
 ChromeUtils.import("resource://services-common/utils.js");
@@ -43,6 +42,7 @@ ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommo
 
 const OBSERVER_TOPICS = [
   fxAccountsCommon.ONLOGIN_NOTIFICATION,
+  fxAccountsCommon.ONVERIFIED_NOTIFICATION,
   fxAccountsCommon.ONLOGOUT_NOTIFICATION,
   fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION,
 ];
@@ -158,11 +158,14 @@ function BrowserIDManager() {
   this._fxaService = fxAccounts;
   this._tokenServerClient = new TokenServerClient();
   this._tokenServerClient.observerPrefix = "weave:service";
-  
-  this.whenReadyToAuthenticate = null;
   this._log = log;
   XPCOMUtils.defineLazyPreferenceGetter(this, "_username", "services.sync.username");
-}
+
+  this.asyncObserver = Async.asyncObserver(this, log);
+  for (let topic of OBSERVER_TOPICS) {
+    Services.obs.addObserver(this.asyncObserver, topic);
+  }
+};
 
 this.BrowserIDManager.prototype = {
   _fxaService: null,
@@ -170,15 +173,6 @@ this.BrowserIDManager.prototype = {
   
   _token: null,
   _signedInUser: null, 
-
-  
-  
-  
-  _authFailureReason: null,
-
-  
-  
-  _shouldHaveSyncKeyBundle: false,
 
   hashedUID() {
     if (!this._hashedUID) {
@@ -196,125 +190,13 @@ this.BrowserIDManager.prototype = {
     return Utils.sha256(deviceID + uid);
   },
 
-  deviceID() {
-    return this._signedInUser && this._signedInUser.deviceId;
-  },
-
-  initialize() {
-    for (let topic of OBSERVER_TOPICS) {
-      Services.obs.addObserver(this, topic);
-    }
-  },
-
-  
-
-
-
-  ensureLoggedIn() {
-    if (!this._shouldHaveSyncKeyBundle && this.whenReadyToAuthenticate) {
-      
-      return this.whenReadyToAuthenticate.promise;
-    }
-
-    
-    if (this._syncKeyBundle) {
-      return Promise.resolve();
-    }
-
-    
-    
-    
-    if (Weave.Status.login == LOGIN_FAILED_LOGIN_REJECTED) {
-      return Promise.reject(new Error("User needs to re-authenticate"));
-    }
-
-    
-    
-    this.initializeWithCurrentIdentity();
-    return this.whenReadyToAuthenticate.promise;
-  },
-
   finalize() {
     
     for (let topic of OBSERVER_TOPICS) {
-      Services.obs.removeObserver(this, topic);
+      Services.obs.removeObserver(this.asyncObserver, topic);
     }
     this.resetCredentials();
     this._signedInUser = null;
-  },
-
-  async initializeWithCurrentIdentity(isInitialSync = false) {
-    
-    
-    
-    this._log.trace("initializeWithCurrentIdentity");
-
-    
-    this.whenReadyToAuthenticate = PromiseUtils.defer();
-    this.whenReadyToAuthenticate.promise.catch(err => {
-      this._log.error("Could not authenticate", err);
-    });
-
-    
-    
-    
-    
-    this.resetCredentials();
-    this._authFailureReason = null;
-
-    try {
-      let accountData = await this._fxaService.getSignedInUser();
-      if (!accountData) {
-        this._log.info("initializeWithCurrentIdentity has no user logged in");
-        
-        this._shouldHaveSyncKeyBundle = true;
-        this.whenReadyToAuthenticate.reject("no user is logged in");
-        return;
-      }
-
-      this.username = accountData.email;
-      this._updateSignedInUser(accountData);
-      
-      
-      
-      CommonUtils.nextTick(async () => {
-        try {
-          this._log.info("Waiting for user to be verified.");
-          if (!accountData.verified) {
-            telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.NOTVERIFIED);
-          }
-          accountData = await this._fxaService.whenVerified(accountData);
-          this._updateSignedInUser(accountData);
-
-          this._log.info("Starting fetch for key bundle.");
-          let token = await this._fetchTokenForUser();
-          this._token = token;
-          if (token) {
-            
-            
-            this._hashedUID = token.hashed_fxa_uid; 
-          }
-          this._shouldHaveSyncKeyBundle = true; 
-          this.whenReadyToAuthenticate.resolve();
-          this._log.info("Background fetch for key bundle done");
-          Weave.Status.login = LOGIN_SUCCEEDED;
-          if (isInitialSync) {
-            this._log.info("Doing initial sync actions");
-            Svc.Prefs.set("firstSync", "resetClient");
-            Services.obs.notifyObservers(null, "weave:service:setup-complete");
-            CommonUtils.nextTick(Weave.Service.sync, Weave.Service);
-          }
-        } catch (authErr) {
-          
-          this._log.error("Background fetch for key bundle failed", authErr);
-          this._shouldHaveSyncKeyBundle = true; 
-          this.whenReadyToAuthenticate.reject(authErr);
-        }
-        
-      });
-    } catch (err) {
-      this._log.error("Processing logged in account", err);
-    }
   },
 
   _updateSignedInUser(userData) {
@@ -322,7 +204,7 @@ this.BrowserIDManager.prototype = {
     
     
     
-    if (this._signedInUser && this._signedInUser.email != userData.email) {
+    if (this._signedInUser && this._signedInUser.uid != userData.uid) {
       throw new Error("Attempting to update to a different user.");
     }
     this._signedInUser = userData;
@@ -337,48 +219,55 @@ this.BrowserIDManager.prototype = {
     this._token = null;
   },
 
-  observe(subject, topic, data) {
+  async observe(subject, topic, data) {
     this._log.debug("observed " + topic);
     switch (topic) {
     case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
+      this._log.info("A user has logged in");
       
       
       if (Weave.Status.login == LOGIN_FAILED_LOGIN_REJECTED) {
         Weave.Status.login = LOGIN_SUCCEEDED;
       }
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      let firstLogin = !this.username;
-      this.initializeWithCurrentIdentity(firstLogin);
+      this.resetCredentials();
+      let accountData = await this._fxaService.getSignedInUser();
+      this._updateSignedInUser(accountData);
 
-      if (!firstLogin) {
+      if (!accountData.verified) {
         
-        
-        
-        
-        
-        this.whenReadyToAuthenticate.promise.then(() => {
-          Services.obs.notifyObservers(null, "weave:service:setup-complete");
-          return Async.promiseYield();
-        }).then(() => {
-          return Weave.Service.sync();
-        }).catch(e => {
-          this._log.warn("Failed to trigger setup complete notification", e);
-        });
+        this._log.info("The user is not verified");
+        break;
       }
-    } break;
+    }
+    
+    case fxAccountsCommon.ONVERIFIED_NOTIFICATION: {
+      this._log.info("The user became verified");
+
+      
+      let accountData = await this._fxaService.getSignedInUser();
+      this.username = accountData.email;
+
+      
+      
+      
+      let isFirstSync = !Svc.Prefs.get("client.syncID", null);
+      if (isFirstSync) {
+        this._log.info("Doing initial sync actions");
+        Svc.Prefs.set("firstSync", "resetClient");
+      }
+      Services.obs.notifyObservers(null, "weave:service:setup-complete");
+      
+      
+      Weave.Service.sync({why: "login"});
+      break;
+    }
 
     case fxAccountsCommon.ONLOGOUT_NOTIFICATION:
-      Async.promiseSpinningly(Weave.Service.startOver());
+      Weave.Service.startOver().then(() => {
+        this._log.trace("startOver completed");
+      }).catch(err => {
+        this._log.warn("Failed to reset sync", err);
+      });
       
       
       break;
@@ -386,8 +275,6 @@ this.BrowserIDManager.prototype = {
     case fxAccountsCommon.ON_ACCOUNT_STATE_CHANGE_NOTIFICATION:
       
       this.resetCredentials();
-      this._ensureValidToken().catch(err =>
-        this._log.error("Error while fetching a new token", err));
       break;
     }
   },
@@ -439,20 +326,12 @@ this.BrowserIDManager.prototype = {
 
 
   resetCredentials() {
-    this.resetSyncKeyBundle();
+    this._syncKeyBundle = null;
     this._token = null;
     this._hashedUID = null;
     
     
     Weave.Service.clusterURL = null;
-  },
-
-  
-
-
-  resetSyncKeyBundle() {
-    this._syncKeyBundle = null;
-    this._shouldHaveSyncKeyBundle = false;
   },
 
   
@@ -468,15 +347,8 @@ this.BrowserIDManager.prototype = {
   
 
 
-  _getSyncCredentialsHosts() {
-    return Utils.getSyncCredentialsHostsFxA();
-  },
-
-  
-
-
   deleteSyncCredentials() {
-    for (let host of this._getSyncCredentialsHosts()) {
+    for (let host of Utils.getSyncCredentialsHosts()) {
       let logins = Services.logins.findLogins({}, host, "", "");
       for (let login of logins) {
         Services.logins.removeLogin(login);
@@ -490,34 +362,23 @@ this.BrowserIDManager.prototype = {
 
 
 
-
-
-  get currentAuthState() {
-    if (this._authFailureReason) {
-      this._log.info("currentAuthState returning " + this._authFailureReason +
-                     " due to previous failure");
-      return this._authFailureReason;
-    }
-
-    
-    
-    
-    if (!this.username) {
+  async unlockAndVerifyAuthState() {
+    let data = await this._fxaService.getSignedInUser();
+    if (!data) {
+      log.debug("unlockAndVerifyAuthState has no user");
       return LOGIN_FAILED_NO_USERNAME;
     }
-
-    return STATUS_OK;
-  },
-
-  
-
-
-
-
-
-  async unlockAndVerifyAuthState() {
+    if (!data.verified) {
+      
+      
+      log.debug("unlockAndVerifyAuthState has an unverified user");
+      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.NOTVERIFIED);
+      return LOGIN_FAILED_LOGIN_REJECTED;
+    }
+    this._updateSignedInUser(data);
     if ((await this._fxaService.canGetKeys())) {
       log.debug("unlockAndVerifyAuthState already has (or can fetch) sync keys");
+      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       return STATUS_OK;
     }
     
@@ -528,15 +389,16 @@ this.BrowserIDManager.prototype = {
     }
     
     
-    const accountData = await this._fxaService.getSignedInUser();
-    this._updateSignedInUser(accountData);
+    this._updateSignedInUser(await this._fxaService.getSignedInUser());
     
     
     
     let result;
     if ((await this._fxaService.canGetKeys())) {
+      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       result = STATUS_OK;
     } else {
+      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.REJECTED);
       result = LOGIN_FAILED_LOGIN_REJECTED;
     }
     log.debug("unlockAndVerifyAuthState re-fetched credentials and is returning", result);
@@ -547,7 +409,7 @@ this.BrowserIDManager.prototype = {
 
 
 
-  hasValidToken() {
+  _hasValidToken() {
     
     
     if (IGNORE_CACHED_AUTH_CREDENTIALS) {
@@ -579,143 +441,142 @@ this.BrowserIDManager.prototype = {
 
   
   
-  
   async _fetchTokenForUser() {
     
-    let tokenServerURI = this._tokenServerUrl;
-    let log = this._log;
-    let client = this._tokenServerClient;
-    let fxa = this._fxaService;
-    let userData = this._signedInUser;
+    if (!this._signedInUser.verified) {
+      throw new Error("User is not verified");
+    }
 
     
     
     
     if (!(await this._fxaService.canGetKeys())) {
-      log.info("Unable to fetch keys (master-password locked?), so aborting token fetch");
-      return Promise.resolve(null);
+      this._log.info("Unable to fetch keys (master-password locked?), so aborting token fetch");
+      throw new Error("Can't fetch a token as we can't get keys");
     }
 
-    let maybeFetchKeys = () => {
-      log.info("Getting keys");
-      return this._fxaService.getKeys().then(
-        newUserData => {
-          userData = newUserData;
-          this._updateSignedInUser(userData); 
-        }
-      );
-    };
+    
+    let getToken = async () => {
+      this._log.info("Getting an assertion from", this._tokenServerUrl);
+      const audience = Services.io.newURI(this._tokenServerUrl).prePath;
+      const assertion = await this._fxaService.getAssertion(audience);
 
-    let getToken = async (assertion) => {
-      log.debug("Getting a token");
-      let headers = {"X-Client-State": userData.kXCS};
-      
-      const token = await client.getTokenFromBrowserIDAssertion(tokenServerURI, assertion, headers);
-      log.debug("Successfully got a sync token");
+      this._log.debug("Getting a token");
+      const headers = {"X-Client-State": this._signedInUser.kXCS};
+      const token = await this._tokenServerClient.getTokenFromBrowserIDAssertion(
+                            this._tokenServerUrl, assertion, headers);
+      this._log.trace("Successfully got a token");
       return token;
     };
 
-    let getAssertion = () => {
-      log.info("Getting an assertion from", tokenServerURI);
-      let audience = Services.io.newURI(tokenServerURI).prePath;
-      return fxa.getAssertion(audience);
-    };
+    let token;
+    try {
+      try {
+        this._log.info("Getting keys");
+        this._updateSignedInUser(await this._fxaService.getKeys()); 
 
-    
-    
-    return fxa.whenVerified(this._signedInUser)
-      .then(() => maybeFetchKeys())
-      .then(() => getAssertion())
-      .then(assertion => getToken(assertion))
-      .catch(err => {
+        token = await getToken();
+      } catch (err) {
         
         
         if (!err.response || err.response.status !== 401) {
-          return Promise.reject(err);
+          throw err;
         }
-        log.warn("Token server returned 401, refreshing certificate and retrying token fetch");
-        return fxa.invalidateCertificate()
-          .then(() => getAssertion())
-          .then(assertion => getToken(assertion));
-      })
-      .then(token => {
-        
-        
-        
-        token.expiration = this._now() + (token.duration * 1000) * 0.80;
-        if (!this._syncKeyBundle) {
-          this._syncKeyBundle = BulkKeyBundle.fromHexKey(userData.kSync);
-        }
-        telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
-        return token;
-      })
-      .catch(err => {
-        
-        
-        
-        if (err.response && err.response.status === 401) {
-          err = new AuthenticationError(err, "tokenserver");
-        
-        } else if (err.code && err.code === 401) {
-          err = new AuthenticationError(err, "hawkclient");
-        
-        } else if (err.message == fxAccountsCommon.ERROR_AUTH_ERROR) {
-          err = new AuthenticationError(err, "fxaccounts");
-        }
+        this._log.warn("Token server returned 401, refreshing certificate and retrying token fetch");
+        await this._fxaService.invalidateCertificate();
+        token = await getToken();
+      }
+      
+      
+      
+      
+      token.expiration = this._now() + (token.duration * 1000) * 0.80;
+      if (!this._syncKeyBundle) {
+        this._syncKeyBundle = BulkKeyBundle.fromHexKey(this._signedInUser.kSync);
+      }
+      telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
+      Weave.Status.login = LOGIN_SUCCEEDED;
+      this._token = token;
+      return token;
+    } catch (caughtErr) {
+      let err = caughtErr; 
+      
+      
+      
+      if (err.response && err.response.status === 401) {
+        err = new AuthenticationError(err, "tokenserver");
+      
+      } else if (err.code && err.code === 401) {
+        err = new AuthenticationError(err, "hawkclient");
+      
+      } else if (err.message == fxAccountsCommon.ERROR_AUTH_ERROR) {
+        err = new AuthenticationError(err, "fxaccounts");
+      }
 
+      
+      
+      
+      if (err instanceof AuthenticationError) {
+        this._log.error("Authentication error in _fetchTokenForUser", err);
+        
+        Weave.Status.login = LOGIN_FAILED_LOGIN_REJECTED;
+        telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.REJECTED);
+      } else {
+        this._log.error("Non-authentication error in _fetchTokenForUser", err);
         
         
-        
-        if (err instanceof AuthenticationError) {
-          this._log.error("Authentication error in _fetchTokenForUser", err);
-          
-          this._authFailureReason = LOGIN_FAILED_LOGIN_REJECTED;
-          telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.REJECTED);
-        } else {
-          this._log.error("Non-authentication error in _fetchTokenForUser", err);
-          
-          
-          this._authFailureReason = LOGIN_FAILED_NETWORK_ERROR;
-        }
-        
-        
-        
-        
-        this._shouldHaveSyncKeyBundle = true;
-        Weave.Status.login = this._authFailureReason;
-        throw err;
-      });
+        Weave.Status.login = LOGIN_FAILED_NETWORK_ERROR;
+      }
+      throw err;
+    }
   },
 
   
   
-  _ensureValidToken() {
-    if (this.hasValidToken()) {
-      this._log.debug("_ensureValidToken already has one");
-      return Promise.resolve();
+  
+  
+  
+  
+  async _ensureValidToken(forceNewToken = false) {
+    if (!this._signedInUser) {
+      throw new Error("no user is logged in");
     }
-    const notifyStateChanged =
-      () => Services.obs.notifyObservers(null, "weave:service:login:change");
+    if (!this._signedInUser.verified) {
+      throw new Error("user is not verified");
+    }
+
+    await this.asyncObserver.promiseObserversComplete();
+
+    if (!forceNewToken && this._hasValidToken()) {
+      this._log.trace("_ensureValidToken already has one");
+      return this._token;
+    }
+
+    
+    
+    if (!this._ensureValidTokenPromise) {
+      this._ensureValidTokenPromise = this.__ensureValidToken().finally(() => {
+        this._ensureValidTokenPromise = null;
+      });
+    }
+    return this._ensureValidTokenPromise;
+  },
+
+  async __ensureValidToken() {
     
     
     this._token = null;
-    return this._fetchTokenForUser().then(
-      token => {
-        this._token = token;
-        
-        
-        
-        if (token) {
-          
-          this._hashedUID = token.hashed_fxa_uid;
-        }
-        notifyStateChanged();
-      },
-      error => {
-        notifyStateChanged();
-        throw error;
-      }
-    );
+    try {
+      let token = await this._fetchTokenForUser();
+      this._token = token;
+      
+      
+      
+      this._hashedUID = token.hashed_fxa_uid;
+      return token;
+    } finally {
+      Services.obs.notifyObservers(null, "weave:service:login:change");
+    }
   },
 
   getResourceAuthenticator() {
@@ -758,35 +619,9 @@ this.BrowserIDManager.prototype = {
     return {headers: {authorization: headerValue.field}};
   },
 
-  createClusterManager(service) {
-    return new BrowserIDClusterManager(service);
-  },
-
   
-  
-  
-  
-  
-  
-  loginStatusFromVerification404() {
-    return LOGIN_FAILED_NETWORK_ERROR;
-  },
-};
 
 
-
-
-function BrowserIDClusterManager(service) {
-  this._log = log;
-  this.service = service;
-}
-
-BrowserIDClusterManager.prototype = {
-  get identity() {
-    return this.service.identity;
-  },
-
-  
 
 
   async setCluster() {
@@ -801,12 +636,12 @@ BrowserIDClusterManager.prototype = {
     
     cluster = cluster.toString();
     
-    if (cluster == this.service.clusterURL) {
+    if (cluster == Weave.Service.clusterURL) {
       return false;
     }
 
     this._log.debug("Setting cluster to " + cluster);
-    this.service.clusterURL = cluster;
+    Weave.Service.clusterURL = cluster;
 
     return true;
   },
@@ -814,39 +649,27 @@ BrowserIDClusterManager.prototype = {
   async _findCluster() {
     try {
       
-      await this.identity.whenReadyToAuthenticate.promise;
       
       
       
       
-      if (this.service.clusterURL) {
-        log.debug("_findCluster has a pre-existing clusterURL, so discarding the current token");
-        this.identity._token = null;
+      let forceNewToken = false;
+      if (Weave.Service.clusterURL) {
+        this._log.debug("_findCluster has a pre-existing clusterURL, so fetching a new token token");
+        forceNewToken = true;
       }
-      await this.identity._ensureValidToken();
-
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!this.identity._token) {
-        throw new Error("Can't get a cluster URL as we can't fetch keys.");
-      }
-      let endpoint = this.identity._token.endpoint;
+      let token = await this._ensureValidToken(forceNewToken);
+      let endpoint = token.endpoint;
       
       
       
       if (!endpoint.endsWith("/")) {
         endpoint += "/";
       }
-      log.debug("_findCluster returning " + endpoint);
+      this._log.debug("_findCluster returning " + endpoint);
       return endpoint;
     } catch (err) {
-      log.info("Failed to fetch the cluster URL", err);
+      this._log.info("Failed to fetch the cluster URL", err);
       
       
       
@@ -865,13 +688,4 @@ BrowserIDClusterManager.prototype = {
       throw err;
     }
   },
-
-  getUserBaseURL() {
-    
-    
-    
-    
-    
-    return this.service.clusterURL;
-  }
 };
