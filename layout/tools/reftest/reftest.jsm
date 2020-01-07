@@ -321,10 +321,10 @@ function InitAndStartRefTests()
 
     
     if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
-        g.browser.addEventListener("focus", StartTests, true);
+        g.browser.addEventListener("focus", ReadTests, true);
         g.browser.focus();
     } else {
-        StartTests();
+        ReadTests();
     }
 }
 
@@ -346,13 +346,46 @@ function Shuffle(array)
     }
 }
 
+function ReadTests() {
+    try {
+        if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
+            g.browser.removeEventListener("focus", ReadTests, true);
+        }
+
+        g.urls = [];
+        var prefs = Components.classes["@mozilla.org/preferences-service;1"].
+                    getService(Components.interfaces.nsIPrefBranch);
+
+        
+        try {
+            var manifests = JSON.parse(prefs.getCharPref("reftest.manifests"));
+            g.urlsFilterRegex = manifests[null];
+        } catch(e) {
+            logger.error("Unable to find reftest.manifests pref. Please ensure your profile is setup properly");
+            DoneTests();
+        }
+
+        var globalFilter = manifests.hasOwnProperty("") ? new RegExp(manifests[""]) : null;
+        var manifestURLs = Object.keys(manifests);
+
+        
+        
+        manifestURLs.sort(function(a,b) {return a.length - b.length})
+        manifestURLs.forEach(function(manifestURL) {
+            logger.info("Reading manifest " + manifestURL);
+            var filter = manifests[manifestURL] ? new RegExp(manifests[manifestURL]) : null;
+            ReadTopManifest(manifestURL, [globalFilter, filter, false]);
+        });
+
+        StartTests();
+    } catch(e) {
+        ++g.testResults.Exception;
+        logger.error("EXCEPTION: " + e);
+    }
+}
+
 function StartTests()
 {
-    if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
-        g.browser.removeEventListener("focus", StartTests, true);
-    }
-
-    var manifests;
     
     try {
         var prefs = Components.classes["@mozilla.org/preferences-service;1"].
@@ -388,28 +421,7 @@ function StartTests()
         g.noCanvasCache = true;
     }
 
-    g.urls = [];
-
     try {
-        var manifests = JSON.parse(prefs.getCharPref("reftest.manifests"));
-        g.urlsFilterRegex = manifests[null];
-    } catch(e) {
-        logger.error("Unable to find reftest.manifests pref.  Please ensure your profile is setup properly");
-        DoneTests();
-    }
-
-    try {
-        var globalFilter = manifests.hasOwnProperty("") ? new RegExp(manifests[""]) : null;
-        var manifestURLs = Object.keys(manifests);
-
-        
-        
-        manifestURLs.sort(function(a,b) {return a.length - b.length})
-        manifestURLs.forEach(function(manifestURL) {
-            logger.info("Reading manifest " + manifestURL);
-            var filter = manifests[manifestURL] ? new RegExp(manifests[manifestURL]) : null;
-            ReadTopManifest(manifestURL, [globalFilter, filter, false]);
-        });
         BuildUseCounts();
 
         
