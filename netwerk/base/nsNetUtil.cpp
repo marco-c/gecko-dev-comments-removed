@@ -1522,24 +1522,20 @@ namespace {
 
 #define BUFFER_SIZE 8192
 
-class BufferWriter final : public Runnable
-                         , public nsIInputStreamCallback
+class BufferWriter final : public nsIInputStreamCallback
 {
 public:
-    NS_DECL_ISUPPORTS_INHERITED
+    NS_DECL_THREADSAFE_ISUPPORTS
 
     BufferWriter(nsIInputStream* aInputStream,
                  void* aBuffer, int64_t aCount)
-        : Runnable("BufferWriterRunnable")
-        , mMonitor("BufferWriter.mMonitor")
+        : mMonitor("BufferWriter.mMonitor")
         , mInputStream(aInputStream)
         , mBuffer(aBuffer)
         , mCount(aCount)
         , mWrittenData(0)
         , mBufferType(aBuffer ? eExternal : eInternal)
-        , mAsyncResult(NS_OK)
         , mBufferSize(0)
-        , mCompleted(false)
     {
         MOZ_ASSERT(aInputStream);
         MOZ_ASSERT(aCount == -1 || aCount > 0);
@@ -1549,6 +1545,8 @@ public:
     nsresult
     Write()
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
+
         
         if (!NS_InputStreamIsBuffered(mInputStream)) {
             nsCOMPtr<nsIInputStream> bufferedStream;
@@ -1575,15 +1573,15 @@ public:
     uint64_t
     WrittenData() const
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
         return mWrittenData;
     }
 
     void*
     StealBuffer()
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
         MOZ_ASSERT(mBufferType == eInternal);
-
-        MonitorAutoLock lock(mMonitor);
 
         void* buffer = mBuffer;
 
@@ -1608,6 +1606,8 @@ private:
     nsresult
     WriteSync()
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
+
         uint64_t length = (uint64_t)mCount;
 
         if (mCount == -1) {
@@ -1640,6 +1640,8 @@ private:
     nsresult
     WriteAsync()
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
+
         if (mCount > 0 && mBufferType == eInternal) {
             mBuffer = malloc(mCount);
             if (NS_WARN_IF(!mBuffer)) {
@@ -1647,50 +1649,9 @@ private:
             }
         }
 
-        nsCOMPtr<nsIEventTarget> target =
-            do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
-        if (!target) {
-            return NS_ERROR_FAILURE;
-        }
-
-        mTaskQueue = new TaskQueue(target.forget());
-
-        MonitorAutoLock lock(mMonitor);
-
-        nsCOMPtr<nsIRunnable> runnable = this;
-        nsresult rv = mTaskQueue->Dispatch(runnable.forget());
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        lock.Wait();
-
-        mCompleted = true;
-        return mAsyncResult;
-    }
-
-    
-    
-    
-    NS_IMETHOD
-    Run() override
-    {
-        MOZ_ASSERT(mAsyncInputStream);
-        MOZ_ASSERT(!mInputStream);
-
-        MonitorAutoLock lock(mMonitor);
-
         while (true) {
-            if (mCompleted) {
-                return NS_OK;
-            }
-
-            if (mCount == 0) {
-                OperationCompleted(lock, NS_OK);
-                return NS_OK;
-            }
-
             if (mCount == -1 && !MaybeExpandBufferSize()) {
-                OperationCompleted(lock, NS_ERROR_OUT_OF_MEMORY);
-                return NS_OK;
+                return NS_ERROR_OUT_OF_MEMORY;
             }
 
             uint64_t offset = mWrittenData;
@@ -1704,7 +1665,6 @@ private:
 
             
             if (NS_SUCCEEDED(rv) && writtenData == 0) {
-                OperationCompleted(lock, NS_OK);
                 return NS_OK;
             }
 
@@ -1721,44 +1681,64 @@ private:
 
             
             if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+                rv = MaybeCreateTaskQueue();
+                if (NS_WARN_IF(NS_FAILED(rv))) {
+                    return rv;
+                }
+
+                MonitorAutoLock lock(mMonitor);
+
                 rv = mAsyncInputStream->AsyncWait(this, 0, length, mTaskQueue);
                 if (NS_WARN_IF(NS_FAILED(rv))) {
-                    OperationCompleted(lock, rv);
+                    return rv;
                 }
-                return NS_OK;
+
+                lock.Wait();
+                continue;
             }
 
             
-            OperationCompleted(lock, rv);
-            return NS_OK;
+            return rv;
         }
 
         MOZ_ASSERT_UNREACHABLE("We should not be here");
         return NS_ERROR_FAILURE;
     }
 
+    nsresult
+    MaybeCreateTaskQueue()
+    {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
+
+        if (!mTaskQueue) {
+            nsCOMPtr<nsIEventTarget> target =
+                do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+            if (!target) {
+                return NS_ERROR_FAILURE;
+            }
+
+            mTaskQueue = new TaskQueue(target.forget());
+        }
+
+        return NS_OK;
+    }
+
     NS_IMETHOD
     OnInputStreamReady(nsIAsyncInputStream* aStream) override
     {
-        MOZ_ASSERT(aStream == mAsyncInputStream);
-        
-        return Run();
-    }
-
-    
-    
-    void
-    OperationCompleted(MonitorAutoLock& aLock, nsresult aRv)
-    {
-        mAsyncResult = aRv;
+        MOZ_ASSERT(!NS_IsMainThread());
 
         
-        aLock.Notify();
+        MonitorAutoLock lock(mMonitor);
+        lock.Notify();
+        return NS_OK;
     }
 
     bool
     MaybeExpandBufferSize()
     {
+        NS_ASSERT_OWNINGTHREAD(BufferWriter);
+
         MOZ_ASSERT(mCount == -1);
 
         if (mBufferSize >= mWrittenData + BUFFER_SIZE) {
@@ -1788,6 +1768,8 @@ private:
         return true;
     }
 
+    
+    
     Monitor mMonitor;
 
     nsCOMPtr<nsIInputStream> mInputStream;
@@ -1809,12 +1791,10 @@ private:
     } mBufferType;
 
     
-    nsresult mAsyncResult;
     uint64_t mBufferSize;
-    Atomic<bool> mCompleted;
 };
 
-NS_IMPL_ISUPPORTS_INHERITED(BufferWriter, Runnable, nsIInputStreamCallback)
+NS_IMPL_ISUPPORTS(BufferWriter, nsIInputStreamCallback)
 
 } 
 
