@@ -143,6 +143,14 @@ class Pickle {
   
   
   
+  
+  bool HasBytesAvailable(const PickleIterator* iter, uint32_t len) const;
+
+
+  
+  
+  
+  
   bool WriteBool(bool value);
   bool WriteInt16(int16_t value);
   bool WriteUInt16(uint16_t value);

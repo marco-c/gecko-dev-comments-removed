@@ -107,12 +107,21 @@ struct IPDLParamTraits<nsTArray<T>>
 
     if (sUseWriteBytes) {
       auto pickledLength = CheckedInt<int>(length) * sizeof(T);
-      if (!pickledLength.isValid()) {
+      if (!pickledLength.isValid() || !aMsg->HasBytesAvailable(aIter, pickledLength.value())) {
         return false;
       }
 
       T* elements = aResult->AppendElements(length);
       return aMsg->ReadBytesInto(aIter, elements, pickledLength.value());
+    }
+
+    
+    
+    
+    
+    
+    if (!aMsg->HasBytesAvailable(aIter, length)) {
+      return false;
     }
 
     aResult->SetCapacity(length);
