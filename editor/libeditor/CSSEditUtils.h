@@ -466,20 +466,6 @@ private:
 
 
 
-
-  already_AddRefed<ChangeStyleTransaction>
-  CreateCSSPropertyTxn(dom::Element& aElement,
-                       nsAtom& aProperty, const nsAString& aValue,
-                       ChangeStyleTransaction::EChangeType aChangeType);
-
-  
-
-
-
-
-
-
-
   nsresult GetCSSInlinePropertyBase(nsINode* aNode, nsAtom* aProperty,
                                     nsAString& aValue, StyleType aStyleType);
 

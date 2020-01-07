@@ -25,7 +25,37 @@ class Element;
 
 class ChangeStyleTransaction final : public EditTransactionBase
 {
+protected:
+  ChangeStyleTransaction(dom::Element& aElement,
+                         nsAtom& aProperty,
+                         const nsAString& aValue,
+                         bool aRemove);
+
 public:
+  
+
+
+
+
+
+
+  static already_AddRefed<ChangeStyleTransaction>
+  Create(dom::Element& aElement,
+         nsAtom& aProperty,
+         const nsAString& aValue);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<ChangeStyleTransaction>
+  CreateToRemove(dom::Element& aElement,
+                 nsAtom& aProperty,
+                 const nsAString& aValue);
+
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction,
                                            EditTransactionBase)
 
@@ -34,19 +64,6 @@ public:
   NS_DECL_EDITTRANSACTIONBASE
 
   NS_IMETHOD RedoTransaction() override;
-
-  enum EChangeType { eSet, eRemove };
-
-  
-
-
-
-
-
-  ChangeStyleTransaction(dom::Element& aElement,
-                         nsAtom& aProperty,
-                         const nsAString& aValue,
-                         EChangeType aChangeType);
 
   
 
