@@ -367,6 +367,10 @@ WebConsoleOutputWrapper.prototype = {
     this.setTimeoutIfNeeded();
   },
 
+  dispatchClearHistory: function() {
+    store.dispatch(actions.clearHistory());
+  },
+
   
 
 

@@ -30,6 +30,10 @@ const actionTypes = {
   APPEND_NOTIFICATION: "APPEND_NOTIFICATION",
   REMOVE_NOTIFICATION: "REMOVE_NOTIFICATION",
   SPLIT_CONSOLE_CLOSE_BUTTON_TOGGLE: "SPLIT_CONSOLE_CLOSE_BUTTON_TOGGLE",
+  APPEND_TO_HISTORY: "APPEND_TO_HISTORY",
+  CLEAR_HISTORY: "CLEAR_HISTORY",
+  HISTORY_LOADED: "HISTORY_LOADED",
+  UPDATE_HISTORY_PLACEHOLDER: "UPDATE_HISTORY_PLACEHOLDER",
 };
 
 const prefs = {
@@ -52,6 +56,8 @@ const prefs = {
       FILTER_BAR: "ui.filterbar",
       
       PERSIST: "devtools.webconsole.persistlog",
+      
+      INPUT_HISTORY_COUNT: "devtools.webconsole.inputHistoryCount",
     },
     FEATURES: {
       
@@ -139,6 +145,12 @@ const jstermCommands = {
 };
 
 
+const historyCommands = {
+  HISTORY_BACK: -1,
+  HISTORY_FORWARD: 1,
+};
+
+
 module.exports = Object.assign({
   FILTERS,
   DEFAULT_FILTERS,
@@ -148,4 +160,5 @@ module.exports = Object.assign({
   chromeRDPEnums,
   jstermCommands,
   prefs,
+  historyCommands,
 );

@@ -24,6 +24,8 @@ const {
   PREFS,
   INITIALIZE,
   FILTER_TOGGLE,
+  APPEND_TO_HISTORY,
+  CLEAR_HISTORY,
 } = require("devtools/client/webconsole/constants");
 const { reducers } = require("./reducers/index");
 const {
@@ -35,6 +37,9 @@ const {
   getAllNetworkMessagesUpdateById,
 } = require("devtools/client/webconsole/selectors/messages");
 const {getPrefsService} = require("devtools/client/webconsole/utils/prefs");
+const historyActions = require("devtools/client/webconsole/actions/history");
+
+loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 
 
 
@@ -51,12 +56,14 @@ function configureStore(hud, options = {}) {
     || Math.max(getIntPref("devtools.hud.loglimit"), 1);
   const sidebarToggle = getBoolPref(PREFS.FEATURES.SIDEBAR_TOGGLE);
   const jstermCodeMirror = getBoolPref(PREFS.FEATURES.JSTERM_CODE_MIRROR);
+  const historyCount = getIntPref(PREFS.UI.INPUT_HISTORY_COUNT);
 
   const initialState = {
     prefs: PrefState({
       logLimit,
       sidebarToggle,
       jstermCodeMirror,
+      historyCount,
     }),
     filters: FilterState({
       error: getBoolPref(PREFS.FILTER.ERROR),
@@ -75,11 +82,17 @@ function configureStore(hud, options = {}) {
     })
   };
 
+  
+  let middleware = applyMiddleware(
+    thunk.bind(null, {prefsService}),
+    historyPersistenceMiddleware,
+  );
+
   return createStore(
     createRootReducer(),
     initialState,
     compose(
-      applyMiddleware(thunk.bind(null, {prefsService})),
+      middleware,
       enableActorReleaser(hud),
       enableBatching(),
       enableNetProvider(hud),
@@ -100,12 +113,17 @@ function thunk(options = {}, { dispatch, getState }) {
 function createRootReducer() {
   return function rootReducer(state, action) {
     
+    
+    
     const newState = [...Object.entries(reducers)].reduce((res, [key, reducer]) => {
-      if (key !== "messages") {
+      if (key !== "messages" && key !== "history") {
         res[key] = reducer(state[key], action);
       }
       return res;
     }, {});
+
+    
+    newState.history = reducers.history(state.history, action, newState.prefs);
 
     return Object.assign(newState, {
       
@@ -227,7 +245,7 @@ function enableNetProvider(hud) {
       
       
       
-      if (!dataProvider) {
+      if (!dataProvider && proxy.webConsoleClient) {
         dataProvider = new DataProvider({
           actions,
           webConsoleClient: proxy.webConsoleClient
@@ -321,6 +339,41 @@ function releaseActors(removedActors, proxy) {
   }
 
   removedActors.forEach(actor => proxy.releaseActor(actor));
+}
+
+
+
+
+
+function historyPersistenceMiddleware(store) {
+  let historyLoaded = false;
+  asyncStorage.getItem("webConsoleHistory").then(value => {
+    if (Array.isArray(value)) {
+      store.dispatch(historyActions.historyLoaded(value));
+    }
+    historyLoaded = true;
+  }, err => {
+    historyLoaded = true;
+    console.error(err);
+  });
+
+  return next => action => {
+    const res = next(action);
+
+    let triggerStoreActions = [
+      APPEND_TO_HISTORY,
+      CLEAR_HISTORY,
+    ];
+
+    
+    
+    if (historyLoaded && triggerStoreActions.includes(action.type)) {
+      const state = store.getState();
+      asyncStorage.setItem("webConsoleHistory", state.history.entries);
+    }
+
+    return res;
+  };
 }
 
 

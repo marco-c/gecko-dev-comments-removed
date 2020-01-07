@@ -70,7 +70,7 @@ async function openNewTabAndConsole(url, clearJstermHistory = true) {
 
   if (clearJstermHistory) {
     
-    await hud.jsterm.clearHistory();
+    await hud.ui.consoleOutput.dispatchClearHistory();
   }
 
   return hud;

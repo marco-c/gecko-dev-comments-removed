@@ -14,7 +14,6 @@ loader.lazyRequireGetter(this, "defer", "devtools/shared/defer");
 loader.lazyRequireGetter(this, "Debugger", "Debugger");
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "AutocompletePopup", "devtools/client/shared/autocomplete-popup");
-loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 loader.lazyRequireGetter(this, "PropTypes", "devtools/client/shared/vendor/react-prop-types");
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "KeyCodes", "devtools/client/shared/keycodes", true);
@@ -22,13 +21,7 @@ loader.lazyRequireGetter(this, "Editor", "devtools/client/sourceeditor/editor");
 
 const l10n = require("devtools/client/webconsole/webconsole-l10n");
 
-
-const HISTORY_BACK = -1;
-const HISTORY_FORWARD = 1;
-
 const HELP_URL = "https://developer.mozilla.org/docs/Tools/Web_Console/Helpers";
-
-const PREF_INPUT_HISTORY_COUNT = "devtools.webconsole.inputHistoryCount";
 const PREF_AUTO_MULTILINE = "devtools.webconsole.autoMultiline";
 
 function gSequenceId() {
@@ -36,8 +29,23 @@ function gSequenceId() {
 }
 gSequenceId.n = 0;
 
+
 const { Component } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+
+
+const {
+  getHistory,
+  getHistoryValue
+} = require("devtools/client/webconsole/selectors/history");
+const historyActions = require("devtools/client/webconsole/actions/history");
+
+
+const {
+  HISTORY_BACK,
+  HISTORY_FORWARD
+} = require("devtools/client/webconsole/constants");
 
 
 
@@ -51,10 +59,22 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 class JSTerm extends Component {
   static get propTypes() {
     return {
+      
+      appendToHistory: PropTypes.func.isRequired,
+      
+      clearHistory: PropTypes.func.isRequired,
+      
+      
+      getValueFromHistory: PropTypes.func.isRequired,
+      
+      history: PropTypes.object.isRequired,
+      
       hud: PropTypes.object.isRequired,
       
       onPaste: PropTypes.func,
       codeMirrorEnabled: PropTypes.bool,
+      
+      updatePlaceHolder: PropTypes.func.isRequired,
     };
   }
 
@@ -67,8 +87,6 @@ class JSTerm extends Component {
 
     this.hud = hud;
     this.hudId = this.hud.hudId;
-    this.inputHistoryCount = Services.prefs.getIntPref(PREF_INPUT_HISTORY_COUNT);
-    this._loadHistory();
 
     
 
@@ -128,11 +146,6 @@ class JSTerm extends Component {
 
     this._autocompletePopupNavigated = false;
 
-    
-
-
-
-    this.history = [];
     this.autocompletePopup = null;
     this.inputNode = null;
     this.completeNode = null;
@@ -214,60 +227,11 @@ class JSTerm extends Component {
     this.lastInputValue && this.setInputValue(this.lastInputValue);
   }
 
-  shouldComponentUpdate() {
+  shouldComponentUpdate(nextProps, nextState) {
     
     
     
     return false;
-  }
-
-  
-
-
-
-  _loadHistory() {
-    this.history = [];
-    this.historyIndex = this.historyPlaceHolder = 0;
-
-    this.historyLoaded = asyncStorage.getItem("webConsoleHistory")
-      .then(value => {
-        if (Array.isArray(value)) {
-          
-          
-          this.history = value.concat(this.history);
-
-          
-          
-          this.historyIndex = this.history.length;
-
-          
-          
-          
-          this.historyPlaceHolder = this.history.length;
-        }
-      }, console.error);
-  }
-
-  
-
-
-
-
-
-
-  clearHistory() {
-    this.history = [];
-    this.historyIndex = this.historyPlaceHolder = 0;
-    return this.storeHistory();
-  }
-
-  
-
-
-
-
-  storeHistory() {
-    return asyncStorage.setItem("webConsoleHistory", this.history);
   }
 
   
@@ -328,7 +292,7 @@ class JSTerm extends Component {
           this.clearOutput();
           break;
         case "clearHistory":
-          this.clearHistory();
+          this.props.clearHistory();
           break;
         case "inspectObject":
           this.inspectObjectActor(helperResult.object);
@@ -395,16 +359,8 @@ class JSTerm extends Component {
     }
 
     
-    
-    
-    this.history[this.historyIndex++] = executeString;
-    this.historyPlaceHolder = this.history.length;
+    this.props.appendToHistory(executeString);
 
-    if (this.history.length > this.inputHistoryCount) {
-      this.history.splice(0, this.history.length - this.inputHistoryCount);
-      this.historyIndex = this.historyPlaceHolder = this.history.length;
-    }
-    this.storeHistory();
     WebConsoleUtils.usageCount++;
     this.setInputValue("");
     this.clearCompletion();
@@ -892,39 +848,26 @@ class JSTerm extends Component {
 
 
   historyPeruse(direction) {
-    if (!this.history.length) {
+    let {
+      history,
+      updatePlaceHolder,
+      getValueFromHistory,
+    } = this.props;
+
+    if (!history.entries.length) {
       return false;
     }
 
-    
-    if (direction == HISTORY_BACK) {
-      if (this.historyPlaceHolder <= 0) {
-        return false;
-      }
-      let inputVal = this.history[--this.historyPlaceHolder];
+    let newInputValue = getValueFromHistory(direction);
+    let expression = this.getInputValue();
+    updatePlaceHolder(direction, expression);
 
-      
-      
-      
-      
-      if (this.historyPlaceHolder + 1 == this.historyIndex) {
-        this.history[this.historyIndex] = this.getInputValue() || "";
-      }
-
-      this.setInputValue(inputVal);
-    } else if (direction == HISTORY_FORWARD) {
-      
-      if (this.historyPlaceHolder >= (this.history.length - 1)) {
-        return false;
-      }
-
-      let inputVal = this.history[++this.historyPlaceHolder];
-      this.setInputValue(inputVal);
-    } else {
-      throw new Error("Invalid argument 0");
+    if (newInputValue != null) {
+      this.setInputValue(newInputValue);
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   
@@ -1404,4 +1347,22 @@ class JSTerm extends Component {
   }
 }
 
-module.exports = JSTerm;
+
+
+function mapStateToProps(state) {
+  return {
+    history: getHistory(state),
+    getValueFromHistory: (direction) => getHistoryValue(state, direction),
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    appendToHistory: (expr) => dispatch(historyActions.appendToHistory(expr)),
+    clearHistory: () => dispatch(historyActions.clearHistory()),
+    updatePlaceHolder: (direction, expression) =>
+      dispatch(historyActions.updatePlaceHolder(direction, expression)),
+  };
+}
+
+module.exports = connect(mapStateToProps, mapDispatchToProps)(JSTerm);
