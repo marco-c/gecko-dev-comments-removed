@@ -173,6 +173,16 @@ HTMLStyleElement::SetTextContentInternal(const nsAString& aTextContent,
                                          nsIPrincipal* aScriptedPrincipal,
                                          ErrorResult& aError)
 {
+  
+  
+  
+  if (aTextContent.IsEmpty() && !GetFirstChild()) {
+    nsIPrincipal* principal = mTriggeringPrincipal ? mTriggeringPrincipal.get() : NodePrincipal();
+    if (principal == aScriptedPrincipal) {
+      return;
+    }
+  }
+
   SetEnableUpdates(false);
 
   aError = nsContentUtils::SetNodeTextContent(this, aTextContent, true);
