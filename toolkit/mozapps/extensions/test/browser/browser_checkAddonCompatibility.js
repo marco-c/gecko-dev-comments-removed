@@ -18,7 +18,7 @@ async function test() {
   let allCompatible = true;
   for (let a of aAddons) {
     
-    if (a.type == "plugin")
+    if (a.type == "plugin" || a.id == "workerbootstrap-test@mozilla.org")
       continue;
 
     ok(a.isCompatible, a.type + " " + a.name + " " + a.version + " should be compatible");
