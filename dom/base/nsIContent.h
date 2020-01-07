@@ -334,11 +334,8 @@ public:
   {
     return IsMathMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
-  inline bool IsActiveChildrenElement() const
-  {
-    return mNodeInfo->Equals(nsGkAtoms::children, kNameSpaceID_XBL) &&
-           GetBindingParent();
-  }
+
+  inline bool IsActiveChildrenElement() const;
 
   bool IsGeneratedContentContainerForBefore() const
   {
@@ -812,6 +809,8 @@ protected:
     virtual void Unlink();
 
     
+
+
 
 
 
