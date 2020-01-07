@@ -161,7 +161,6 @@ var PerformanceController = {
 
 
   destroy: function() {
-    this._telemetry.destroy();
     this._prefs.off("pref-changed", this._onPrefChanged);
     this._prefs.unregisterObserver();
 
@@ -176,6 +175,8 @@ var PerformanceController = {
 
     this._prefObserver.off("devtools.theme", this._onThemeChanged);
     this._prefObserver.destroy();
+
+    this._telemetry.destroy();
   },
 
   

@@ -447,9 +447,9 @@ var AppManager = exports.AppManager = {
     
     deferred.then(() => {
       const timerId = "DEVTOOLS_WEBIDE_CONNECTION_TIME_SECONDS";
-      this._telemetry.startTimer(timerId);
+      this._telemetry.start(timerId, this);
       this.connection.once(Connection.Events.STATUS_CHANGED, () => {
-        this._telemetry.stopTimer(timerId);
+        this._telemetry.finish(timerId, this);
       });
     }).catch(() => {
       

@@ -11,6 +11,7 @@
 "use strict";
 
 const Services = require("Services");
+const { TelemetryStopwatch } = require("resource://gre/modules/TelemetryStopwatch.jsm");
 const { getNthPathExcluding } = require("devtools/shared/platform/stack");
 const TOOLS_OPENED_PREF = "devtools.telemetry.tools.opened.version";
 
@@ -33,9 +34,6 @@ class Telemetry {
     this.setEventRecordingEnabled = this.setEventRecordingEnabled.bind(this);
     this.preparePendingEvent = this.preparePendingEvent.bind(this);
     this.addEventProperty = this.addEventProperty.bind(this);
-    this.destroy = this.destroy.bind(this);
-
-    this._timers = new Map();
   }
 
   get histograms() {
@@ -210,7 +208,7 @@ class Telemetry {
       this.getHistogramById(charts.histogram).add(true);
     }
     if (charts.timerHistogram) {
-      this.startTimer(charts.timerHistogram);
+      this.start(charts.timerHistogram);
     }
     if (charts.scalar) {
       this.scalarSet(charts.scalar, 1);
@@ -236,17 +234,7 @@ class Telemetry {
       return;
     }
 
-    this.stopTimer(charts.timerHistogram);
-  }
-
-  
-
-
-
-
-
-  startTimer(histogramId) {
-    this._timers.set(histogramId, new Date());
+    this.finish(charts.timerHistogram);
   }
 
   
@@ -257,17 +245,92 @@ class Telemetry {
 
 
 
-  stopTimer(histogramId, key) {
-    let startTime = this._timers.get(histogramId);
-    if (startTime) {
-      let time = (new Date() - startTime) / 1000;
-      if (!key) {
-        this.getHistogramById(histogramId).add(time);
-      } else {
-        this.getKeyedHistogramById(histogramId).add(key, time);
-      }
-      this._timers.delete(histogramId);
-    }
+
+
+
+
+
+
+
+
+
+
+  start(histogramId, obj) {
+    return TelemetryStopwatch.start(histogramId, obj);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  startKeyed(histogramId, key, obj) {
+    return TelemetryStopwatch.startKeyed(histogramId, key, obj);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  finish(histogramId, obj, canceledOkay) {
+    return TelemetryStopwatch.finish(histogramId, obj, canceledOkay);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  finishKeyed(histogramId, key, obj, canceledOkay) {
+    return TelemetryStopwatch.finishKeyed(histogramId, key, obj, canceledOkay);
   }
 
   
@@ -658,12 +721,6 @@ class Telemetry {
 
   getCaller() {
     return getNthPathExcluding(0, "/telemetry.js");
-  }
-
-  destroy() {
-    for (let histogramId of this._timers.keys()) {
-      this.stopTimer(histogramId);
-    }
   }
 }
 
