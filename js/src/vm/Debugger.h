@@ -1104,7 +1104,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSObject* wrapSource(JSContext* cx, js::HandleScriptSource source);
+    JSObject* wrapSource(JSContext* cx, js::HandleScriptSourceObject source);
 
     
 
