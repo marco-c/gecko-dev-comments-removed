@@ -91,7 +91,7 @@ add_task(async function test_panelui_opened() {
 add_task(async function test_panelui_customize_to_toolbar() {
   await startCustomizing();
   let navbar = document.getElementById("nav-bar");
-  simulateItemDrag(document.getElementById("edit-controls"), navbar.customizationTarget);
+  simulateItemDrag(document.getElementById("edit-controls"), navbar.customizationTarget, "end");
   await endCustomizing();
 
   
@@ -125,7 +125,8 @@ add_task(async function test_panelui_customize_to_toolbar() {
   });
 
   window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
-  await waitForCondition(() => navbar.hasAttribute("overflowing"));
+  await waitForCondition(() =>
+    navbar.hasAttribute("overflowing") && !navbar.querySelector("edit-controls"));
 
   
   
