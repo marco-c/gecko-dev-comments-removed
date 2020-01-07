@@ -29,6 +29,16 @@ public:
 
   
   static bool PerformanceLoggingEnabled();
+
+  
+  
+  
+  static bool NotificationEnabled();
+
+  
+  static bool NotificationEnabledInServiceWorkers();
+  static bool NotificationEnabledInServiceWorkers(JSContext* aCx,
+                                                  JSObject* aObj);
 };
 
 } 
