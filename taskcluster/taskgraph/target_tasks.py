@@ -502,6 +502,7 @@ def target_tasks_promote_fennec(full_task_graph, parameters, graph_config):
 def target_tasks_ship_fennec(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to ship fennec.
     Previous build deps will be optimized out via action task."""
+    is_rc = (parameters.get('release_type') == 'rc')
     filtered_for_candidates = target_tasks_promote_fennec(
         full_task_graph, parameters, graph_config,
     )
@@ -510,9 +511,23 @@ def target_tasks_ship_fennec(full_task_graph, parameters, graph_config):
         
         if task.label in filtered_for_candidates:
             return True
-        if task.attributes.get('shipping_product') == 'fennec' and \
-                task.attributes.get('shipping_phase') in ('ship', 'push'):
-            return True
+        if task.attributes.get('shipping_product') != 'fennec' or \
+                task.attributes.get('shipping_phase') not in ('ship', 'push'):
+            return False
+        
+        if task.kind in (
+            'push-apk',
+            'push-apk-breakpoint',
+        ):
+                return True
+        
+        if task.kind in (
+            'release-secondary-notify-ship',
+        ):
+            return is_rc
+
+        
+        return not is_rc
 
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(full_task_graph[l])]
 
