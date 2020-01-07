@@ -1124,18 +1124,21 @@ XULDocument::GetElementsByAttributeNS(const nsAString& aNamespaceURI,
     return list.forget();
 }
 
-NS_IMETHODIMP
+void
 XULDocument::Persist(const nsAString& aID,
-                     const nsAString& aAttr)
+                     const nsAString& aAttr,
+                     ErrorResult& aRv)
 {
     
     
-    if (mApplyingPersistedAttrs)
-        return NS_OK;
+    if (mApplyingPersistedAttrs) {
+        return;
+    }
 
     Element* element = nsDocument::GetElementById(aID);
-    if (!element)
-        return NS_OK;
+    if (!element) {
+        return;
+    }
 
     RefPtr<nsAtom> tag;
     int32_t nameSpaceID;
@@ -1153,21 +1156,26 @@ XULDocument::Persist(const nsAString& aID,
 
         if (NS_FAILED(rv)) {
             
-            return NS_ERROR_INVALID_ARG;
+            aRv.Throw(NS_ERROR_INVALID_ARG);
+            return;
         }
 
         if (colon) {
             
-            return NS_ERROR_NOT_IMPLEMENTED;
+            aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+            return;
         }
 
         tag = NS_Atomize(aAttr);
-        NS_ENSURE_TRUE(tag, NS_ERROR_OUT_OF_MEMORY);
+        if (NS_WARN_IF(!tag)) {
+            aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+            return;
+        }
 
         nameSpaceID = kNameSpaceID_None;
     }
 
-    return Persist(element, nameSpaceID, tag);
+    aRv = Persist(element, nameSpaceID, tag);
 }
 
 nsresult
