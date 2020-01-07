@@ -537,11 +537,11 @@ const gStoragePressureObserver = {
     } else {
       
       
-      let descriptionStringID = "spaceAlert.over5GB.message";
+      let descriptionStringID = "spaceAlert.over5GB.message1";
       let prefButtonLabelStringID = "spaceAlert.over5GB.prefButton.label";
       let prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButton.accesskey";
       if (AppConstants.platform == "win") {
-        descriptionStringID = "spaceAlert.over5GB.messageWin";
+        descriptionStringID = "spaceAlert.over5GB.messageWin1";
         prefButtonLabelStringID = "spaceAlert.over5GB.prefButtonWin.label";
         prefButtonAccesskeyStringID = "spaceAlert.over5GB.prefButtonWin.accesskey";
       }
@@ -553,7 +553,7 @@ const gStoragePressureObserver = {
           
           
           let win = gBrowser.ownerGlobal;
-          win.openPreferences("panePrivacy", { origin: "storagePressure" });
+          win.openPreferences("privacy-sitedata", { origin: "storagePressure" });
         }
       });
     }
