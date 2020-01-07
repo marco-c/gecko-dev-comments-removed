@@ -458,6 +458,17 @@ this.DownloadHistoryList.prototype = {
 
 
 
+  removeView(aView) {
+    DownloadList.prototype.removeView.call(this, aView);
+
+    
+    this.result = null;
+  },
+
+  
+
+
+
   _firstSessionSlotIndex: 0,
 
   _insertSlot({ slot, index, slotsForUrl }) {
