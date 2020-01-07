@@ -339,14 +339,6 @@ public:
   virtual void StorePluginWidgetConfigurations(const nsTArray<nsIWidget::Configuration>& aConfigurations) {}
   bool IsSnappingEffectiveTransforms() { return mSnapEffectiveTransforms; }
 
-
-  
-
-
-
-
-  virtual bool ShouldAvoidComponentAlphaLayers() { return false; }
-
   
 
 

@@ -147,7 +147,7 @@ private:
 
 
   void BeginUpdate(layers::Layer* aLayer, LayerState aState,
-                    uint32_t aContainerLayerGeneration, nsDisplayItem* aItem = nullptr);
+                   nsDisplayItem* aItem = nullptr);
 
   
 
@@ -170,7 +170,6 @@ private:
   nsAutoPtr<nsDisplayItemGeometry> mGeometry;
   DisplayItemClip mClip;
   uint32_t        mDisplayItemKey;
-  uint32_t        mContainerLayerGeneration;
   LayerState      mLayerState;
 
   
@@ -649,7 +648,7 @@ protected:
 
 
   struct ClippedDisplayItem {
-    ClippedDisplayItem(nsDisplayItem* aItem, uint32_t aGeneration);
+    explicit ClippedDisplayItem(nsDisplayItem* aItem);
     ~ClippedDisplayItem();
 
     nsDisplayItem* mItem;
@@ -660,9 +659,6 @@ protected:
 
 
     RefPtr<LayerManager> mInactiveLayerManager;
-
-    uint32_t mContainerLayerGeneration;
-
   };
 
   static void RecomputeVisibilityForItems(nsTArray<ClippedDisplayItem>& aItems,
@@ -700,7 +696,6 @@ public:
     nsIntPoint mLastPaintOffset;
     uint32_t mLastCommonClipCount;
 
-    uint32_t mContainerLayerGeneration;
     bool mHasExplicitLastPaintOffset;
     
 
@@ -787,8 +782,6 @@ protected:
 
   bool                                mIsInactiveLayerManager;
 
-  uint32_t                            mContainerLayerGeneration;
-  uint32_t                            mMaxContainerLayerGeneration;
 };
 
 } 

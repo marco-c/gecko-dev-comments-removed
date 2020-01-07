@@ -2372,16 +2372,6 @@ public:
 
 
 
-  virtual void NotifyRenderingChanged() const {}
-
-  
-
-
-
-
-
-
-
 
 
   virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
@@ -3100,11 +3090,17 @@ public:
     PAINT_USE_WIDGET_LAYERS = 0x01,
     PAINT_EXISTING_TRANSACTION = 0x04,
     PAINT_NO_COMPOSITE = 0x08,
-    PAINT_COMPRESSED = 0x10
+    PAINT_COMPRESSED = 0x10,
+    PAINT_IDENTICAL_DISPLAY_LIST = 0x20
   };
   already_AddRefed<LayerManager> PaintRoot(nsDisplayListBuilder* aBuilder,
                                            gfxContext* aCtx,
                                            uint32_t aFlags);
+
+  mozilla::FrameLayerBuilder* BuildLayers(nsDisplayListBuilder* aBuilder,
+                                          LayerManager* aLayerManager,
+                                          uint32_t aFlags,
+                                          bool aIsWidgetTransaction);
   
 
 
@@ -3831,16 +3827,11 @@ public:
 
 
 
-  enum class LayerizeFixed : uint8_t {
-    ALWAYS_LAYERIZE_FIXED_BACKGROUND,
-    DO_NOT_LAYERIZE_FIXED_BACKGROUND_IF_AVOIDING_COMPONENT_ALPHA_LAYERS
-  };
   static InitData GetInitData(nsDisplayListBuilder* aBuilder,
                               nsIFrame* aFrame,
                               uint32_t aLayer,
                               const nsRect& aBackgroundRect,
-                              const nsStyleBackground* aBackgroundStyle,
-                              LayerizeFixed aLayerizeFixed);
+                              const nsStyleBackground* aBackgroundStyle);
 
   explicit nsDisplayBackgroundImage(const InitData& aInitData,
                                     nsIFrame* aFrameForBounds = nullptr);
@@ -4796,7 +4787,7 @@ private:
     }
   }
 
-  friend void MergeLayerEventRegions(nsDisplayItem*, nsDisplayItem*);
+  friend bool MergeLayerEventRegions(nsDisplayItem*, nsDisplayItem*);
 
   
   
