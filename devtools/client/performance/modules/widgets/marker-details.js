@@ -7,7 +7,7 @@
 
 
 
-const EventEmitter = require("devtools/shared/old-event-emitter");
+const EventEmitter = require("devtools/shared/event-emitter");
 const { MarkerDOMUtils } = require("devtools/client/performance/modules/marker-dom-utils");
 
 

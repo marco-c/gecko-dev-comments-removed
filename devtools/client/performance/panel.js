@@ -5,11 +5,9 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 const defer = require("devtools/shared/defer");
 
-loader.lazyRequireGetter(this, "EventEmitter",
-  "devtools/shared/old-event-emitter");
+loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 function PerformancePanel(iframeWindow, toolbox) {
   this.panelWin = iframeWindow;
@@ -28,7 +26,7 @@ PerformancePanel.prototype = {
 
 
 
-  open: Task.async(function* () {
+  async open() {
     if (this._opening) {
       return this._opening;
     }
@@ -43,7 +41,7 @@ PerformancePanel.prototype = {
     
     
     
-    let front = yield this.panelWin.gToolbox.initPerformance();
+    let front = await this.panelWin.gToolbox.initPerformance();
 
     
     
@@ -56,7 +54,7 @@ PerformancePanel.prototype = {
     let { PerformanceController, EVENTS } = this.panelWin;
     PerformanceController.on(EVENTS.RECORDING_ADDED, this._checkRecordingStatus);
     PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE, this._checkRecordingStatus);
-    yield this.panelWin.startupPerformance();
+    await this.panelWin.startupPerformance();
 
     
     
@@ -68,7 +66,7 @@ PerformancePanel.prototype = {
 
     deferred.resolve(this);
     return this._opening;
-  }),
+  },
 
   
 
@@ -76,7 +74,7 @@ PerformancePanel.prototype = {
     return this.toolbox.target;
   },
 
-  destroy: Task.async(function* () {
+  async destroy() {
     
     if (this._destroyed) {
       return;
@@ -85,12 +83,12 @@ PerformancePanel.prototype = {
     let { PerformanceController, EVENTS } = this.panelWin;
     PerformanceController.off(EVENTS.RECORDING_ADDED, this._checkRecordingStatus);
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._checkRecordingStatus);
-    yield this.panelWin.shutdownPerformance();
+    await this.panelWin.shutdownPerformance();
     this.emit("destroyed");
     this._destroyed = true;
-  }),
+  },
 
-  _checkRecordingStatus: function () {
+  _checkRecordingStatus: function() {
     if (this.panelWin.PerformanceController.isRecording()) {
       this.toolbox.highlightTool("performance");
     } else {

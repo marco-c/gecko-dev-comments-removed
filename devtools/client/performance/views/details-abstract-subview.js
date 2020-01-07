@@ -13,7 +13,7 @@ var DetailsSubview = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this._onRecordingStoppedOrSelected = this._onRecordingStoppedOrSelected.bind(this);
     this._onOverviewRangeChange = this._onOverviewRangeChange.bind(this);
     this._onDetailsViewSelected = this._onDetailsViewSelected.bind(this);
@@ -33,17 +33,17 @@ var DetailsSubview = {
       this._wasRendered = true;
     };
 
-    this.render = Task.async(function* (...args) {
-      let maybeRetval = yield originalRenderFn.apply(self, args);
+    this.render = async function(...args) {
+      let maybeRetval = await originalRenderFn.apply(self, args);
       afterRenderFn();
       return maybeRetval;
-    });
+    };
   },
 
   
 
 
-  destroy: function () {
+  destroy: function() {
     clearNamedTimeout("range-change-debounce");
 
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
@@ -111,7 +111,7 @@ var DetailsSubview = {
   
 
 
-  _onRecordingStoppedOrSelected: function (_, state, recording) {
+  _onRecordingStoppedOrSelected: function(state, recording) {
     if (typeof state !== "string") {
       recording = state;
     }
@@ -132,7 +132,7 @@ var DetailsSubview = {
   
 
 
-  _onOverviewRangeChange: function (_, interval) {
+  _onOverviewRangeChange: function(interval) {
     if (!this.requiresUpdateOnRangeChange) {
       return;
     }
@@ -155,7 +155,7 @@ var DetailsSubview = {
   
 
 
-  _onDetailsViewSelected: function () {
+  _onDetailsViewSelected: function() {
     if (DetailsView.isViewSelected(this) && this.shouldUpdateWhenShown) {
       this.render(OverviewView.getTimeInterval());
       this.shouldUpdateWhenShown = false;
@@ -165,7 +165,7 @@ var DetailsSubview = {
   
 
 
-  _onPrefChanged: function (_, prefName, prefValue) {
+  _onPrefChanged: function(prefName, prefValue) {
     if (~this.observedPrefs.indexOf(prefName) && this._onObservedPrefChange) {
       this._onObservedPrefChange(prefName);
     }

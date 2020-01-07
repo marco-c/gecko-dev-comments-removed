@@ -115,7 +115,7 @@ var PerformanceView = {
   
 
 
-  initialize: Task.async(function* () {
+  async initialize() {
     this._onRecordButtonClick = this._onRecordButtonClick.bind(this);
     this._onImportButtonClick = this._onImportButtonClick.bind(this);
     this._onClearButtonClick = this._onClearButtonClick.bind(this);
@@ -133,7 +133,7 @@ var PerformanceView = {
     PerformanceController.on(EVENTS.BACKEND_FAILED_AFTER_RECORDING_START,
                              this._onNewRecordingFailed);
 
-    if (yield PerformanceController.canCurrentlyRecord()) {
+    if (await PerformanceController.canCurrentlyRecord()) {
       this.setState("empty");
     } else {
       this.setState("unavailable");
@@ -141,10 +141,10 @@ var PerformanceView = {
 
     
     
-    yield ToolbarView.initialize();
-    yield RecordingsView.initialize();
-    yield OverviewView.initialize();
-    yield DetailsView.initialize();
+    await ToolbarView.initialize();
+    await RecordingsView.initialize();
+    await OverviewView.initialize();
+    await DetailsView.initialize();
 
     
     this._recordingControlsState = {
@@ -161,12 +161,12 @@ var PerformanceView = {
                                         .map(createHtmlMount);
 
     this._renderRecordingControls();
-  }),
+  },
 
   
 
 
-  _renderRecordingControls: function () {
+  _renderRecordingControls: function() {
     ReactDOM.render(RecordingControls(this._recordingControlsState),
                     this._recordingControlsMount);
     for (let button of this._recordingButtonsMounts) {
@@ -177,7 +177,7 @@ var PerformanceView = {
   
 
 
-  destroy: Task.async(function* () {
+  async destroy() {
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     PerformanceController.off(EVENTS.RECORDING_PROFILER_STATUS_UPDATE,
                               this._onProfilerStatusUpdated);
@@ -187,17 +187,17 @@ var PerformanceView = {
     PerformanceController.off(EVENTS.BACKEND_FAILED_AFTER_RECORDING_START,
                               this._onNewRecordingFailed);
 
-    yield ToolbarView.destroy();
-    yield RecordingsView.destroy();
-    yield OverviewView.destroy();
-    yield DetailsView.destroy();
-  }),
+    await ToolbarView.destroy();
+    await RecordingsView.destroy();
+    await OverviewView.destroy();
+    await DetailsView.destroy();
+  },
 
   
 
 
 
-  setState: function (state) {
+  setState: function(state) {
     
     
     const iframes = window.document.querySelectorAll("iframe");
@@ -239,14 +239,14 @@ var PerformanceView = {
   
 
 
-  getState: function () {
+  getState: function() {
     return this._state;
   },
 
   
 
 
-  updateBufferStatus: function () {
+  updateBufferStatus: function() {
     
     
     if (!this._bufferStatusSupported) {
@@ -284,7 +284,7 @@ var PerformanceView = {
 
 
 
-  _lockRecordButtons: function (lock) {
+  _lockRecordButtons: function(lock) {
     this._recordingControlsState.isLocked = lock;
     this._renderRecordingControls();
   },
@@ -295,7 +295,7 @@ var PerformanceView = {
 
 
 
-  _toggleRecordButtons: function (activate) {
+  _toggleRecordButtons: function(activate) {
     this._recordingControlsState.isRecording = activate;
     this._renderRecordingControls();
   },
@@ -303,7 +303,7 @@ var PerformanceView = {
   
 
 
-  _onRecordingStateChange: function () {
+  _onRecordingStateChange: function() {
     let currentRecording = PerformanceController.getCurrentRecording();
     let recordings = PerformanceController.getRecordings();
 
@@ -324,7 +324,7 @@ var PerformanceView = {
   
 
 
-  _onNewRecordingFailed: function (e) {
+  _onNewRecordingFailed: function() {
     this._lockRecordButtons(false);
     this._toggleRecordButtons(false);
   },
@@ -332,14 +332,14 @@ var PerformanceView = {
   
 
 
-  _onClearButtonClick: function (e) {
+  _onClearButtonClick: function(e) {
     this.emit(EVENTS.UI_CLEAR_RECORDINGS);
   },
 
   
 
 
-  _onRecordButtonClick: function (e) {
+  _onRecordButtonClick: function(e) {
     if (this._recordingControlsState.isRecording) {
       this.emit(EVENTS.UI_STOP_RECORDING);
     } else {
@@ -352,7 +352,7 @@ var PerformanceView = {
   
 
 
-  _onImportButtonClick: function (e) {
+  _onImportButtonClick: function(e) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, L10N.getStr("recordingsList.importDialogTitle"),
             Ci.nsIFilePicker.modeOpen);
@@ -369,7 +369,7 @@ var PerformanceView = {
   
 
 
-  _onRecordingSelected: function (_, recording) {
+  _onRecordingSelected: function(recording) {
     if (!recording) {
       this.setState("empty");
     } else if (recording.isRecording() && recording.isConsole()) {
@@ -385,7 +385,7 @@ var PerformanceView = {
 
 
 
-  _onProfilerStatusUpdated: function (_, profilerStatus) {
+  _onProfilerStatusUpdated: function(profilerStatus) {
     
     
     if (!profilerStatus || profilerStatus.position === void 0) {

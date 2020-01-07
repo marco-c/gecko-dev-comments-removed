@@ -145,14 +145,14 @@ var WaterfallView = extend(DetailsSubview, {
   
 
 
-  _onViewSource: function(_, data) {
+  _onViewSource: function(data) {
     gToolbox.viewSourceInDebugger(data.url, data.line);
   },
 
   
 
 
-  _onShowAllocations: function(_, data) {
+  _onShowAllocations: function(data) {
     let { endTime } = data;
     let startTime = 0;
     let recording = PerformanceController.getCurrentRecording();

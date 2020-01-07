@@ -40,7 +40,7 @@ var OverviewView = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this.graphs = new GraphsController({
       root: $("#overview-pane"),
       getFilter: () => PerformanceController.getPref("hidden-markers"),
@@ -77,7 +77,7 @@ var OverviewView = {
   
 
 
-  destroy: Task.async(function* () {
+  async destroy() {
     PerformanceController.off(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceController.off(EVENTS.THEME_CHANGED, this._onThemeChanged);
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
@@ -85,8 +85,8 @@ var OverviewView = {
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     this.graphs.off("selecting", this._onGraphSelecting);
     this.graphs.off("rendered", this._onGraphRendered);
-    yield this.graphs.destroy();
-  }),
+    await this.graphs.destroy();
+  },
 
   
 
@@ -104,7 +104,7 @@ var OverviewView = {
 
 
 
-  disable: function () {
+  disable: function() {
     this._disabled = true;
     this.graphs.disableAll();
   },
@@ -114,7 +114,7 @@ var OverviewView = {
 
 
 
-  isDisabled: function () {
+  isDisabled: function() {
     return this._disabled;
   },
 
@@ -124,7 +124,7 @@ var OverviewView = {
 
 
 
-  setTimeInterval: function (interval, options = {}) {
+  setTimeInterval: function(interval, options = {}) {
     let recording = PerformanceController.getCurrentRecording();
     if (recording == null) {
       throw new Error("A recording should be available in order to set the selection.");
@@ -146,7 +146,7 @@ var OverviewView = {
 
 
 
-  getTimeInterval: function () {
+  getTimeInterval: function() {
     let recording = PerformanceController.getCurrentRecording();
     if (recording == null) {
       throw new Error("A recording should be available in order to get the selection.");
@@ -173,32 +173,32 @@ var OverviewView = {
 
 
 
-  render: Task.async(function* (resolution) {
+  async render(resolution) {
     if (this.isDisabled()) {
       return;
     }
 
     let recording = PerformanceController.getCurrentRecording();
-    yield this.graphs.render(recording.getAllData(), resolution);
+    await this.graphs.render(recording.getAllData(), resolution);
 
     
     this.emit(EVENTS.UI_OVERVIEW_RENDERED, resolution);
-  }),
+  },
 
   
 
 
 
 
-  _onRecordingTick: Task.async(function* () {
-    yield this.render(FRAMERATE_GRAPH_LOW_RES_INTERVAL);
+  async _onRecordingTick() {
+    await this.render(FRAMERATE_GRAPH_LOW_RES_INTERVAL);
     this._prepareNextTick();
-  }),
+  },
 
   
 
 
-  _prepareNextTick: function () {
+  _prepareNextTick: function() {
     
     
     if (this.isRendering()) {
@@ -209,48 +209,47 @@ var OverviewView = {
   
 
 
-  _onRecordingStateChange: OverviewViewOnStateChange(Task.async(
-    function* (_, state, recording) {
-      if (state !== "recording-stopped") {
-        return;
-      }
-      
-      
-      
-      
-      
-      if (recording !== PerformanceController.getCurrentRecording()) {
-        return;
-      }
-      this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
-      yield this._checkSelection(recording);
-    })),
+  _onRecordingStateChange: OverviewViewOnStateChange(async function(state, recording) {
+    if (state !== "recording-stopped") {
+      return;
+    }
+    
+    
+    
+    
+    
+    if (recording !== PerformanceController.getCurrentRecording()) {
+      return;
+    }
+    this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
+    await this._checkSelection(recording);
+  }),
 
   
 
 
-  _onRecordingSelected: OverviewViewOnStateChange(Task.async(function* (_, recording) {
+  _onRecordingSelected: OverviewViewOnStateChange(async function(recording) {
     this._setGraphVisibilityFromRecordingFeatures(recording);
 
     
     if (recording.isCompleted()) {
-      yield this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
+      await this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
     }
-    yield this._checkSelection(recording);
+    await this._checkSelection(recording);
     this.graphs.dropSelection();
-  })),
+  }),
 
   
 
 
-  _startPolling: function () {
+  _startPolling: function() {
     this._timeoutId = setTimeout(this._onRecordingTick, this.OVERVIEW_UPDATE_INTERVAL);
   },
 
   
 
 
-  _stopPolling: function () {
+  _stopPolling: function() {
     clearTimeout(this._timeoutId);
     this._timeoutId = null;
   },
@@ -258,7 +257,7 @@ var OverviewView = {
   
 
 
-  isRendering: function () {
+  isRendering: function() {
     return !!this._timeoutId;
   },
 
@@ -266,16 +265,16 @@ var OverviewView = {
 
 
 
-  _checkSelection: Task.async(function* (recording) {
+  async _checkSelection(recording) {
     let isEnabled = recording ? recording.isCompleted() : false;
-    yield this.graphs.selectionEnabled(isEnabled);
-  }),
+    await this.graphs.selectionEnabled(isEnabled);
+  },
 
   
 
 
 
-  _onGraphSelecting: function () {
+  _onGraphSelecting: function() {
     if (this._stopSelectionChangeEventPropagation) {
       return;
     }
@@ -283,7 +282,7 @@ var OverviewView = {
     this.emit(EVENTS.UI_OVERVIEW_RANGE_SELECTED, this.getTimeInterval());
   },
 
-  _onGraphRendered: function (_, graphName) {
+  _onGraphRendered: function(graphName) {
     switch (graphName) {
       case "timeline":
         this.emit(EVENTS.UI_MARKERS_GRAPH_RENDERED);
@@ -303,10 +302,10 @@ var OverviewView = {
 
 
 
-  _onPrefChanged: Task.async(function* (_, prefName, prefValue) {
+  async _onPrefChanged(prefName, prefValue) {
     switch (prefName) {
       case "hidden-markers": {
-        let graph = yield this.graphs.isAvailable("timeline");
+        let graph = await this.graphs.isAvailable("timeline");
         if (graph) {
           let filter = PerformanceController.getPref("hidden-markers");
           graph.setFilter(filter);
@@ -315,9 +314,9 @@ var OverviewView = {
         break;
       }
     }
-  }),
+  },
 
-  _setGraphVisibilityFromRecordingFeatures: function (recording) {
+  _setGraphVisibilityFromRecordingFeatures: function(recording) {
     for (let [graphName, requirements] of Object.entries(GRAPH_REQUIREMENTS)) {
       this.graphs.enable(graphName,
                          PerformanceController.isFeatureSupported(requirements.features));
@@ -330,7 +329,7 @@ var OverviewView = {
 
 
 
-  isRealtimeRenderingEnabled: function () {
+  isRealtimeRenderingEnabled: function() {
     return this._multiprocessData.enabled;
   },
 
@@ -341,7 +340,7 @@ var OverviewView = {
 
 
 
-  _showGraphsPanel: function (recording) {
+  _showGraphsPanel: function(recording) {
     this._setGraphVisibilityFromRecordingFeatures(recording);
     $("#overview-pane").classList.remove("hidden");
   },
@@ -349,14 +348,14 @@ var OverviewView = {
   
 
 
-  _hideGraphsPanel: function () {
+  _hideGraphsPanel: function() {
     $("#overview-pane").classList.add("hidden");
   },
 
   
 
 
-  _onThemeChanged: function (_, theme) {
+  _onThemeChanged: function(theme) {
     this.graphs.setTheme({ theme, redraw: true });
   },
 
@@ -374,11 +373,11 @@ var OverviewView = {
 
 
 function OverviewViewOnStateChange(fn) {
-  return function _onRecordingStateChange(eventName, recording) {
+  return function _onRecordingStateChange(recording) {
     
     
     if (typeof recording === "string") {
-      recording = arguments[2];
+      recording = arguments[1];
     }
 
     let currentRecording = PerformanceController.getCurrentRecording();
