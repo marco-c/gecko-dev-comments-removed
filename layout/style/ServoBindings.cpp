@@ -844,11 +844,38 @@ Gecko_MatchLang(RawGeckoElementBorrowed aElement,
 {
   MOZ_ASSERT(!(aOverrideLang && !aHasOverrideLang),
              "aHasOverrideLang should only be set when aOverrideLang is null");
+  MOZ_ASSERT(aValue, "null lang parameter");
+  if (!aValue || !*aValue) {
+    return false;
+  }
 
-  return nsCSSPseudoClasses::LangPseudoMatches(
-      aElement,
-      aHasOverrideLang ? aOverrideLang : nullptr,
-      aHasOverrideLang, aValue, aElement->OwnerDoc());
+  
+  
+  
+  
+  if (auto* language = aHasOverrideLang ? aOverrideLang : aElement->GetLang()) {
+    return nsStyleUtil::DashMatchCompare(nsDependentAtomString(language),
+                                         nsDependentString(aValue),
+                                         nsASCIICaseInsensitiveStringComparator());
+  }
+
+  
+  
+  
+  
+  nsAutoString language;
+  aElement->OwnerDoc()->GetContentLanguage(language);
+
+  nsDependentString langString(aValue);
+  language.StripWhitespace();
+  for (auto const& lang : language.Split(char16_t(','))) {
+    if (nsStyleUtil::DashMatchCompare(lang,
+                                      langString,
+                                      nsASCIICaseInsensitiveStringComparator())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 nsAtom*

@@ -170,51 +170,6 @@ nsCSSPseudoClasses::IsUserActionPseudoClass(Type aType)
 }
 
  bool
-nsCSSPseudoClasses::LangPseudoMatches(const mozilla::dom::Element* aElement,
-                                      const nsAtom* aOverrideLang,
-                                      bool aHasOverrideLang,
-                                      const char16_t* aString,
-                                      const nsIDocument* aDocument)
-{
-  NS_ASSERTION(aString, "null lang parameter");
-  if (!aString || !*aString) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (auto* language = aHasOverrideLang ? aOverrideLang : aElement->GetLang()) {
-    return nsStyleUtil::DashMatchCompare(nsDependentAtomString(language),
-                                         nsDependentString(aString),
-                                         nsASCIICaseInsensitiveStringComparator());
-  }
-
-  if (!aDocument) {
-    return false;
-  }
-
-  
-  
-  
-  
-  nsAutoString language;
-  aDocument->GetContentLanguage(language);
-
-  nsDependentString langString(aString);
-  language.StripWhitespace();
-  for (auto const& lang : language.Split(char16_t(','))) {
-    if (nsStyleUtil::DashMatchCompare(lang,
-                                      langString,
-                                      nsASCIICaseInsensitiveStringComparator())) {
-      return true;
-    }
-  }
-  return false;
-}
-
- bool
 nsCSSPseudoClasses::StringPseudoMatches(const mozilla::dom::Element* aElement,
                                         CSSPseudoClassType aPseudo,
                                         const char16_t* aString,
@@ -279,12 +234,6 @@ nsCSSPseudoClasses::StringPseudoMatches(const mozilla::dom::Element* aElement,
         }
       }
       break;
-
-    case CSSPseudoClassType::lang:
-      if (LangPseudoMatches(aElement, nullptr, false, aString, aDocument)) {
-        break;
-      }
-      return false;
 
     default: MOZ_ASSERT_UNREACHABLE("Called StringPseudoMatches() with unknown string-like pseudo");
   }
