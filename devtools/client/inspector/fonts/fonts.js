@@ -63,7 +63,8 @@ class FontInspector {
     this.keywordValues = new Set(this.getFontPropertyValueKeywords());
     this.nodeComputedStyle = {};
     this.pageStyle = this.inspector.pageStyle;
-    this.ruleView = this.inspector.getPanel("ruleview").view;
+    this.ruleViewTool = this.inspector.getPanel("ruleview");
+    this.ruleView = this.ruleViewTool.view;
     this.selectedRule = null;
     this.store = this.inspector.store;
     
@@ -692,6 +693,14 @@ class FontInspector {
     
     
     this.writers.clear();
+
+    
+    
+    
+    if (!this.ruleViewTool.isSidebarActive()) {
+      await this.ruleView.selectElement(node, false);
+    }
+
     
     this.selectedRule =
       this.ruleView.rules.find(rule => rule.domRule.type === ELEMENT_STYLE);
