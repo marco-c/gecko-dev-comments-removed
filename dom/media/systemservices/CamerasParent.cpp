@@ -60,8 +60,7 @@ ResolutionFeasibilityDistance(int32_t candidate, int32_t requested)
 
   uint32_t distance =
     std::abs(candidate - requested) * 1000 / std::max(candidate, requested);
-  if (candidate > requested) {
-    
+  if (candidate >= requested) {
     
     return distance;
   }
