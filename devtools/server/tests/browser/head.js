@@ -89,8 +89,6 @@ async function initAccessibilityFrontForUrl(url) {
   let walker = await inspector.getWalker();
   let accessibility = AccessibilityFront(client, form);
 
-  await accessibility.bootstrap();
-
   return {inspector, walker, accessibility, client};
 }
 
@@ -310,23 +308,8 @@ function checkA11yFront(front, expected, expectedFront) {
   }
 
   for (let key in expected) {
-    if (["actions", "states", "attributes"].includes(key)) {
-      SimpleTest.isDeeply(front[key], expected[key],
-        `Accessible Front has correct ${key}`);
-    } else {
-      is(front[key], expected[key], `accessibility front has correct ${key}`);
-    }
+    is(front[key], expected[key], `accessibility front has correct ${key}`);
   }
-}
-
-function getA11yInitOrShutdownPromise() {
-  return new Promise(resolve => {
-    let observe = (subject, topic, data) => {
-      Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
-      resolve(data);
-    };
-    Services.obs.addObserver(observe, "a11y-init-or-shutdown");
-  });
 }
 
 
@@ -334,23 +317,15 @@ function getA11yInitOrShutdownPromise() {
 
 
 async function waitForA11yShutdown() {
-  if (!Services.appinfo.accessibilityEnabled) {
-    return;
-  }
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, () =>
+    new Promise(resolve => {
+      let observe = (subject, topic, data) => {
+        Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
 
-  await getA11yInitOrShutdownPromise().then(data =>
-    data === "0" ? Promise.resolve() : Promise.reject());
-}
-
-
-
-
-
-async function waitForA11yInit() {
-  if (Services.appinfo.accessibilityEnabled) {
-    return;
-  }
-
-  await getA11yInitOrShutdownPromise().then(data =>
-    data === "1" ? Promise.resolve() : Promise.reject());
+        if (data === "0") {
+          resolve();
+        }
+      };
+      Services.obs.addObserver(observe, "a11y-init-or-shutdown");
+    }));
 }
