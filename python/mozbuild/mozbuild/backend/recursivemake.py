@@ -541,10 +541,15 @@ class RecursiveMakeBackend(CommonBackend):
                     
                     
                     def srcpath(p):
-                        if '/locales/en-US' in p:
-                            e, f = p.split('/locales/en-US/', 1)
+                        if 'locales/en-US' in p:
+                            
+                            
+                            if not p.startswith('/'):
+                                p = '/' + mozpath.relpath(p.full_path, obj.topsrcdir)
+                            e, f = p.split('locales/en-US/', 1)
                             assert(f)
-                            return '$(call MERGE_RELATIVE_FILE,%s,/locales/%s)' % (f, e)
+                            return '$(call MERGE_RELATIVE_FILE,{},{}locales)'.format(
+                                f, e if not e.startswith('/') else e[len('/'):])
                         elif p.startswith('en-US/'):
                             e, f = p.split('en-US/', 1)
                             assert(not e)
