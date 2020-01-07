@@ -35,12 +35,18 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ServiceWorkerRegistration)
   NS_INTERFACE_MAP_ENTRY(ServiceWorkerRegistration)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
+namespace {
+const uint64_t kInvalidUpdateFoundId = 0;
+} 
+
 ServiceWorkerRegistration::ServiceWorkerRegistration(nsIGlobalObject* aGlobal,
                                                      const ServiceWorkerRegistrationDescriptor& aDescriptor,
                                                      ServiceWorkerRegistration::Inner* aInner)
   : DOMEventTargetHelper(aGlobal)
   , mDescriptor(aDescriptor)
   , mInner(aInner)
+  , mScheduledUpdateFoundId(kInvalidUpdateFoundId)
+  , mDispatchedUpdateFoundId(kInvalidUpdateFoundId)
 {
   MOZ_DIAGNOSTIC_ASSERT(mInner);
 
@@ -334,10 +340,66 @@ ServiceWorkerRegistration::Descriptor() const
 }
 
 void
+ServiceWorkerRegistration::MaybeScheduleUpdateFound(const Maybe<ServiceWorkerDescriptor>& aInstallingDescriptor)
+{
+  uint64_t newId = aInstallingDescriptor.isSome()
+                 ? aInstallingDescriptor.ref().Id()
+                 : kInvalidUpdateFoundId;
+
+  if (mScheduledUpdateFoundId != kInvalidUpdateFoundId) {
+    if (mScheduledUpdateFoundId == newId) {
+      return;
+    }
+    MaybeDispatchUpdateFound();
+    MOZ_DIAGNOSTIC_ASSERT(mScheduledUpdateFoundId == kInvalidUpdateFoundId);
+  }
+
+  bool updateFound = newId != kInvalidUpdateFoundId &&
+                     mDispatchedUpdateFoundId != newId;
+
+  if (!updateFound) {
+    return;
+  }
+
+  mScheduledUpdateFoundId = newId;
+
+  nsIGlobalObject* global = GetParentObject();
+  NS_ENSURE_TRUE_VOID(global);
+
+  nsCOMPtr<nsIRunnable> r = NewCancelableRunnableMethod(
+    "ServiceWorkerRegistration::MaybeDispatchUpdateFound",
+    this,
+    &ServiceWorkerRegistration::MaybeDispatchUpdateFound);
+
+  Unused << global->EventTargetFor(TaskCategory::Other)->Dispatch(
+    r.forget(), NS_DISPATCH_NORMAL);
+}
+
+void
+ServiceWorkerRegistration::MaybeDispatchUpdateFound()
+{
+  uint64_t scheduledId = mScheduledUpdateFoundId;
+  mScheduledUpdateFoundId = kInvalidUpdateFoundId;
+
+  if (scheduledId == kInvalidUpdateFoundId ||
+      scheduledId == mDispatchedUpdateFoundId) {
+    return;
+  }
+
+  mDispatchedUpdateFoundId = scheduledId;
+  DispatchTrustedEvent(NS_LITERAL_STRING("updatefound"));
+}
+
+void
 ServiceWorkerRegistration::UpdateStateInternal(const Maybe<ServiceWorkerDescriptor>& aInstalling,
                                                const Maybe<ServiceWorkerDescriptor>& aWaiting,
                                                const Maybe<ServiceWorkerDescriptor>& aActive)
 {
+  
+  
+  
+  MaybeScheduleUpdateFound(aInstalling);
+
   
   
   
