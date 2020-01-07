@@ -559,6 +559,9 @@ struct JSCompartment
   private:
     js::WrapperMap crossCompartmentWrappers;
 
+    using RealmVector = js::Vector<JS::Realm*, 1, js::SystemAllocPolicy>;
+    RealmVector realms_;
+
   public:
     
 
@@ -590,6 +593,10 @@ struct JSCompartment
     
     JSRuntime* runtimeFromAnyThread() const {
         return runtime_;
+    }
+
+    RealmVector& realms() {
+        return realms_;
     }
 
     void assertNoCrossCompartmentWrappers() {
