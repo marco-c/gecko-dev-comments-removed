@@ -1553,53 +1553,10 @@ Navigator::OnNavigation()
   }
 }
 
-bool
-Navigator::CheckPermission(const char* type)
-{
-  return CheckPermission(mWindow, type);
-}
-
-
-bool
-Navigator::CheckPermission(nsPIDOMWindowInner* aWindow, const char* aType)
-{
-  if (!aWindow) {
-    return false;
-  }
-
-  uint32_t permission = GetPermission(aWindow, aType);
-  return permission == nsIPermissionManager::ALLOW_ACTION;
-}
-
 JSObject*
 Navigator::WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto)
 {
   return NavigatorBinding::Wrap(cx, this, aGivenProto);
-}
-
-
-bool
-Navigator::HasWakeLockSupport(JSContext* , JSObject* )
-{
-  nsCOMPtr<nsIPowerManagerService> pmService =
-    do_GetService(POWERMANAGERSERVICE_CONTRACTID);
-  
-  return !!pmService;
-}
-
-
-bool
-Navigator::HasWifiManagerSupport(JSContext* ,
-                                 JSObject* aGlobal)
-{
-  
-  
-  
-
-  nsIPrincipal* principal = nsContentUtils::ObjectPrincipal(aGlobal);
-  uint32_t permission = GetPermission(principal, "wifi-manage");
-
-  return permission == nsIPermissionManager::ALLOW_ACTION;
 }
 
 

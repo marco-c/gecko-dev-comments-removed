@@ -213,9 +213,6 @@ public:
   static void GetAcceptLanguages(nsTArray<nsString>& aLanguages);
 
   
-  static bool HasWakeLockSupport(JSContext* , JSObject* );
-  static bool HasWifiManagerSupport(JSContext* ,
-                                  JSObject* aGlobal);
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
 
@@ -243,9 +240,6 @@ public:
 
 private:
   virtual ~Navigator();
-
-  bool CheckPermission(const char* type);
-  static bool CheckPermission(nsPIDOMWindowInner* aWindow, const char* aType);
 
   
   
