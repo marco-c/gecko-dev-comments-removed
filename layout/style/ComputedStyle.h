@@ -31,6 +31,7 @@ class ComputedStyle;
 extern "C" {
   void Servo_ComputedStyle_AddRef(const mozilla::ComputedStyle* aStyle);
   void Servo_ComputedStyle_Release(const mozilla::ComputedStyle* aStyle);
+  void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
 }
 
 MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoComputedValuesMallocEnclosingSizeOf)
@@ -252,7 +253,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_) \
+  #define STYLE_STRUCT(name_) \
     inline const nsStyle##name_ * Style##name_() MOZ_NONNULL_RETURN;
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -264,7 +265,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_) \
+  #define STYLE_STRUCT(name_) \
     inline const nsStyle##name_ * ThreadsafeStyle##name_();
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -277,7 +278,7 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_, checkdata_cb_)  \
+  #define STYLE_STRUCT(name_)  \
     inline const nsStyle##name_ * PeekStyle##name_();
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT
@@ -301,9 +302,7 @@ public:
 
 
   nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
-                                   uint32_t* aEqualStructs,
-                                   uint32_t* aSamePointerStructs,
-				   bool aIgnoreVariables = false);
+                                   uint32_t* aEqualStructs);
 
 public:
   
@@ -366,10 +365,12 @@ public:
     mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
   }
 
-  
-  ~ComputedStyle() = default;
-
 protected:
+  
+  
+  friend void ::Gecko_ComputedStyle_Destroy(ComputedStyle*);
+
+  ~ComputedStyle() = default;
 
   nsPresContext* mPresContext;
 
@@ -379,11 +380,11 @@ protected:
   CachedInheritingStyles mCachedInheritingStyles;
 
   
-  #define STYLE_STRUCT_INHERITED(name_, checkdata_cb_)                  \
-    template<bool aComputeData>                                         \
+  #define STYLE_STRUCT_INHERITED(name_)         \
+    template<bool aComputeData>                 \
     const nsStyle##name_ * DoGetStyle##name_();
-  #define STYLE_STRUCT_RESET(name_, checkdata_cb_)                      \
-    template<bool aComputeData>                                         \
+  #define STYLE_STRUCT_RESET(name_)             \
+    template<bool aComputeData>                 \
     const nsStyle##name_ * DoGetStyle##name_();
 
   #include "nsStyleStructList.h"
@@ -401,16 +402,6 @@ protected:
   
   
   uint64_t                mBits;
-
-#ifdef DEBUG
-  static bool DependencyAllowed(nsStyleStructID aOuterSID,
-                                nsStyleStructID aInnerSID)
-  {
-    return !!(sDependencyTable[aOuterSID] & GetBitForSID(aInnerSID));
-  }
-
-  static const uint32_t sDependencyTable[];
-#endif
 };
 
 } 

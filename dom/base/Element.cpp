@@ -1631,6 +1631,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   
 
+  MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
+
   
   if (aDocument) {
     
@@ -1650,14 +1652,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetIsInDocument();
 
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               
-               
-               
-               
-               
-               
-               ELEMENT_ALL_RESTYLE_FLAGS);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else if (IsInShadowTree()) {
     
     
@@ -1667,8 +1662,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               ELEMENT_ALL_RESTYLE_FLAGS);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else {
     
     
@@ -1891,10 +1885,9 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   if (HasServoData()) {
     MOZ_ASSERT(document);
     MOZ_ASSERT(IsInAnonymousSubtree());
-    MOZ_ASSERT(document && document->IsStyledByServo());
   }
 
-  if (document && document->IsStyledByServo()) {
+  if (document) {
     ClearServoData(document);
   }
 
@@ -2066,7 +2059,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     shadowRoot->SetIsComposedDocParticipant(false);
   }
 
-  MOZ_ASSERT_IF(IsStyledByServo(), !HasAnyOfFlags(kAllServoDescendantBits));
+  MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits));
   MOZ_ASSERT(!document || document->GetServoRestyleRoot() != this);
 }
 
@@ -3639,7 +3632,7 @@ Element::GetTransformToAncestor(Element& aAncestor)
       ancestorFrame, nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -3656,7 +3649,7 @@ Element::GetTransformToParent()
       parentFrame, nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -3671,7 +3664,7 @@ Element::GetTransformToViewport()
       nsLayoutUtils::GetDisplayRootFrame(primaryFrame), nsIFrame::IN_CSS_UNITS).GetMatrix();
   }
 
-  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform, IsStyledByServo());
+  DOMMatrixReadOnly* matrix = new DOMMatrix(this, transform);
   RefPtr<DOMMatrixReadOnly> result(matrix);
   return result.forget();
 }
@@ -4306,7 +4299,6 @@ Element::UpdateIntersectionObservation(DOMIntersectionObserver* aObserver, int32
 
 void
 Element::ClearServoData(nsIDocument* aDoc) {
-  MOZ_ASSERT(IsStyledByServo());
   MOZ_ASSERT(aDoc);
   if (HasServoData()) {
     Servo_Element_ClearData(this);
@@ -4498,7 +4490,6 @@ static void
 NoteDirtyElement(Element* aElement, uint32_t aBits)
 {
   MOZ_ASSERT(aElement->IsInComposedDoc());
-  MOZ_ASSERT(aElement->IsStyledByServo());
 
   
   
