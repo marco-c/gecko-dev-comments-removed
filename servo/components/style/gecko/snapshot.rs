@@ -5,6 +5,7 @@
 
 
 
+use WeakAtom;
 use dom::TElement;
 use element_state::ElementState;
 use gecko::snapshot_helpers;
@@ -80,17 +81,20 @@ impl GeckoElementSnapshot {
     }
 
     
-    pub fn attr_matches(&self,
-                        ns: &NamespaceConstraint<&Namespace>,
-                        local_name: &Atom,
-                        operation: &AttrSelectorOperation<&Atom>)
-                        -> bool {
+    pub fn attr_matches(
+        &self,
+        ns: &NamespaceConstraint<&Namespace>,
+        local_name: &Atom,
+        operation: &AttrSelectorOperation<&Atom>,
+    ) -> bool {
         unsafe {
             match *operation {
                 AttrSelectorOperation::Exists => {
-                    bindings:: Gecko_SnapshotHasAttr(self,
-                                                     ns.atom_or_null(),
-                                                     local_name.as_ptr())
+                    bindings:: Gecko_SnapshotHasAttr(
+                        self,
+                        ns.atom_or_null(),
+                        local_name.as_ptr(),
+                    )
                 }
                 AttrSelectorOperation::WithValue { operator, case_sensitivity, expected_value } => {
                     let ignore_case = match case_sensitivity {
@@ -163,7 +167,7 @@ impl ElementSnapshot for GeckoElementSnapshot {
     }
 
     #[inline]
-    fn id_attr(&self) -> Option<Atom> {
+    fn id_attr(&self) -> Option<&WeakAtom> {
         if !self.has_any(Flags::Id) {
             return None
         }
@@ -172,10 +176,11 @@ impl ElementSnapshot for GeckoElementSnapshot {
             bindings::Gecko_SnapshotAtomAttrValue(self, atom!("id").as_ptr())
         };
 
+        
         if ptr.is_null() {
             None
         } else {
-            Some(Atom::from(ptr))
+            Some(unsafe { WeakAtom::new(ptr) })
         }
     }
 

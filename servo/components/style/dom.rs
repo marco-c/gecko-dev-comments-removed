@@ -7,7 +7,7 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
-use {Atom, Namespace, LocalName};
+use {Atom, Namespace, LocalName, WeakAtom};
 use applicable_declarations::ApplicableDeclarationBlock;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 #[cfg(feature = "gecko")] use context::PostAnimationTasks;
@@ -17,9 +17,6 @@ use element_state::ElementState;
 use font_metrics::FontMetricsProvider;
 use media_queries::Device;
 use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
-#[cfg(feature = "gecko")] use properties::LonghandId;
-#[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
-use rule_tree::CascadeLevel;
 use selector_parser::{AttrValue, PseudoClassStringArg, PseudoElement, SelectorImpl};
 use selectors::Element as SelectorsElement;
 use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
@@ -27,7 +24,6 @@ use selectors::sink::Push;
 use servo_arc::{Arc, ArcBorrow};
 use shared_lock::Locked;
 use std::fmt;
-#[cfg(feature = "gecko")] use hash::FnvHashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
@@ -439,49 +435,39 @@ pub trait TElement
     }
 
     
-    fn get_smil_override(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>> {
+    fn smil_override(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
-    fn get_animation_rule_by_cascade(&self,
-                                     _cascade_level: CascadeLevel)
-                                     -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
-        None
-    }
-
     
-    fn get_animation_rules(&self) -> AnimationRules {
+    
+    fn animation_rules(&self) -> AnimationRules {
         if !self.may_have_animations() {
             return AnimationRules(None, None)
         }
 
-        AnimationRules(
-            self.get_animation_rule(),
-            self.get_transition_rule(),
-        )
+        AnimationRules(self.animation_rule(), self.transition_rule())
     }
 
     
-    fn get_animation_rule(&self)
-                          -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
+    fn animation_rule(&self) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
-    fn get_transition_rule(&self)
-                           -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
+    fn transition_rule(&self) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
         None
     }
 
     
-    fn get_state(&self) -> ElementState;
+    fn state(&self) -> ElementState;
 
     
     fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
 
     
-    fn get_id(&self) -> Option<Atom>;
+    fn id(&self) -> Option<&WeakAtom>;
 
     
     fn each_class<F>(&self, callback: F) where F: FnMut(&Atom);
@@ -780,12 +766,6 @@ pub trait TElement
     }
 
     
-    #[cfg(feature = "gecko")]
-    fn get_css_transitions_info(
-        &self,
-    ) -> FnvHashMap<LonghandId, Arc<AnimationValue>>;
-
-    
     
     
     
@@ -806,17 +786,6 @@ pub trait TElement
         &self,
         before_change_style: &ComputedValues,
         after_change_style: &ComputedValues
-    ) -> bool;
-
-    
-    #[cfg(feature = "gecko")]
-    fn needs_transitions_update_per_property(
-        &self,
-        property: &LonghandId,
-        combined_duration: f32,
-        before_change_style: &ComputedValues,
-        after_change_style: &ComputedValues,
-        existing_transitions: &FnvHashMap<LonghandId, Arc<AnimationValue>>
     ) -> bool;
 
     

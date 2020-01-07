@@ -282,6 +282,7 @@ pub struct ElementCascadeInputs {
 
 impl ElementCascadeInputs {
     
+    #[inline]
     pub fn new_from_element_data(data: &ElementData) -> Self {
         debug_assert!(data.has_styles());
         ElementCascadeInputs {
@@ -383,8 +384,9 @@ impl fmt::Display for TraversalStatistics {
 impl TraversalStatistics {
     
     pub fn finish<E, D>(&mut self, traversal: &D, parallel: bool, start: f64)
-        where E: TElement,
-              D: DomTraversal<E>,
+    where
+        E: TElement,
+        D: DomTraversal<E>,
     {
         let threshold = traversal.shared_context().options.style_statistics_threshold;
         let stylist = traversal.shared_context().stylist;
@@ -450,10 +452,12 @@ pub enum SequentialTask<E: TElement> {
     
     
     
+    
     #[cfg(feature = "gecko")]
     UpdateAnimations {
         
         el: SendElement<E>,
+        
         
         
         before_change_style: Option<Arc<ComputedValues>>,
@@ -461,6 +465,8 @@ pub enum SequentialTask<E: TElement> {
         tasks: UpdateAnimationsTasks
     },
 
+    
+    
     
     
     
@@ -494,14 +500,16 @@ impl<E: TElement> SequentialTask<E> {
     
     
     #[cfg(feature = "gecko")]
-    pub fn update_animations(el: E,
-                             before_change_style: Option<Arc<ComputedValues>>,
-                             tasks: UpdateAnimationsTasks) -> Self {
+    pub fn update_animations(
+        el: E,
+        before_change_style: Option<Arc<ComputedValues>>,
+        tasks: UpdateAnimationsTasks,
+    ) -> Self {
         use self::SequentialTask::*;
         UpdateAnimations {
             el: unsafe { SendElement::new(el) },
-            before_change_style: before_change_style,
-            tasks: tasks,
+            before_change_style,
+            tasks,
         }
     }
 
@@ -512,7 +520,7 @@ impl<E: TElement> SequentialTask<E> {
         use self::SequentialTask::*;
         PostAnimation {
             el: unsafe { SendElement::new(el) },
-            tasks: tasks,
+            tasks,
         }
     }
 }

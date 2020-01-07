@@ -1096,14 +1096,16 @@ impl StrongRuleNode {
     
     
     #[cfg(feature = "gecko")]
-    pub fn has_author_specified_rules<E>(&self,
-                                         mut element: E,
-                                         mut pseudo: Option<PseudoElement>,
-                                         guards: &StylesheetGuards,
-                                         rule_type_mask: u32,
-                                         author_colors_allowed: bool)
-        -> bool
-        where E: ::dom::TElement
+    pub fn has_author_specified_rules<E>(
+        &self,
+        mut element: E,
+        mut pseudo: Option<PseudoElement>,
+        guards: &StylesheetGuards,
+        rule_type_mask: u32,
+        author_colors_allowed: bool,
+    ) -> bool
+    where
+        E: ::dom::TElement
     {
         use gecko_bindings::structs::NS_AUTHOR_SPECIFIED_BACKGROUND;
         use gecko_bindings::structs::NS_AUTHOR_SPECIFIED_BORDER;
