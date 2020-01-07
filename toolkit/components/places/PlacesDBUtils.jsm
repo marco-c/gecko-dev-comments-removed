@@ -519,6 +519,18 @@ this.PlacesDBUtils = {
       
       
       
+      
+      { query:
+        `UPDATE moz_bookmarks SET syncChangeCounter = syncChangeCounter + 1
+         WHERE fk IN (SELECT b.fk FROM moz_bookmarks b
+                      JOIN moz_bookmarks p ON p.id = b.parent
+                      WHERE length(p.title) = 0 AND p.type = :folder_type AND
+                            p.parent = :tags_folder)`,
+        params: {
+          folder_type: PlacesUtils.bookmarks.TYPE_FOLDER,
+          tags_folder: PlacesUtils.tagsFolderId,
+        },
+      },
       { query:
         `UPDATE moz_bookmarks SET title = :empty_title
         WHERE length(title) = 0 AND type = :folder_type
