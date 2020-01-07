@@ -82,10 +82,7 @@ where
 }
 
 #[inline(always)]
-fn may_match<E>(hashes: &AncestorHashes, bf: &BloomFilter) -> bool
-where
-    E: Element,
-{
+fn may_match(hashes: &AncestorHashes, bf: &BloomFilter) -> bool {
     
     
     
@@ -304,7 +301,7 @@ where
     
     if let Some(hashes) = hashes {
         if let Some(filter) = context.bloom_filter {
-            if !may_match::<E>(hashes, filter) {
+            if !may_match(hashes, filter) {
                 return false;
             }
         }
