@@ -106,8 +106,8 @@ function checkOpenWindows(aWindowID) {
 
 
 
-var gCatMan = Components.classes["@mozilla.org/categorymanager;1"]
-                           .getService(Components.interfaces.nsICategoryManager);
+var gCatMan = Cc["@mozilla.org/categorymanager;1"]
+                           .getService(Ci.nsICategoryManager);
 
 
 var backgroundUpdateConfig = "@mozilla.org/addons/integration;1,getService,addon-background-update-timer,extensions.update.interval,86400";
@@ -619,11 +619,11 @@ CertOverrideListener.prototype = {
         aIID.equals(Ci.nsISupports))
       return this;
 
-    throw Components.Exception("No interface", Components.results.NS_ERROR_NO_INTERFACE);
+    throw Components.Exception("No interface", Cr.NS_ERROR_NO_INTERFACE);
   },
 
   notifyCertProblem(socketInfo, sslStatus, targetHost) {
-    var cert = sslStatus.QueryInterface(Components.interfaces.nsISSLStatus)
+    var cert = sslStatus.QueryInterface(Ci.nsISSLStatus)
                         .serverCert;
     var cos = Cc["@mozilla.org/security/certoverride;1"].
               getService(Ci.nsICertOverrideService);

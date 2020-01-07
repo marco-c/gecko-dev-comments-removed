@@ -96,8 +96,8 @@ function run_test() {
 
   
   
-  var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-                            .getService(Components.interfaces.nsIIOService);
+  var ioService = Cc["@mozilla.org/network/io-service;1"]
+                    .getService(Ci.nsIIOService);
 
   var uri = ioService.newURI("http://b\u00FCcher.co.uk");
   Assert.equal(tld.getBaseDomain(uri), "xn--bcher-kva.co.uk");

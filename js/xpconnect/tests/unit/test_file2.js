@@ -2,13 +2,13 @@
 
 
 
-Components.utils.importGlobalProperties(['File']);
+Cu.importGlobalProperties(['File']);
 
 add_task(async function() {
   
 
   
-  var file = Components.classes["@mozilla.org/file/directory_service;1"]
+  var file = Cc["@mozilla.org/file/directory_service;1"]
              .getService(Ci.nsIProperties)
              .get("CurWorkD", Ci.nsIFile);
   file.append("xpcshell.ini");
@@ -49,9 +49,9 @@ add_task(async function() {
   var threw = false
   try {
     
-    var dir = Components.classes["@mozilla.org/file/directory_service;1"]
-                        .getService(Ci.nsIProperties)
-                        .get("CurWorkD", Ci.nsIFile);
+    var dir = Cc["@mozilla.org/file/directory_service;1"]
+                .getService(Ci.nsIProperties)
+                .get("CurWorkD", Ci.nsIFile);
     var f7 = await File.createFromNsIFile(dir)
   } catch (e) {
     threw = true;

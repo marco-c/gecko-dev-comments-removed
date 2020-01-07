@@ -2,7 +2,7 @@
 
 
 
-Components.utils.importGlobalProperties(["NodeFilter"]);
+Cu.importGlobalProperties(["NodeFilter"]);
 
 const C_i = Components.interfaces;
 

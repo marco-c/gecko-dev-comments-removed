@@ -15,7 +15,7 @@ content.addEventListener(SERVICE_EVENT_TYPE, event => {
   
   
   
-  sendAsyncMessage(TEST_MSG, Components.utils.waiveXrays(event.detail));
+  sendAsyncMessage(TEST_MSG, Cu.waiveXrays(event.detail));
 });
 
 
@@ -64,7 +64,7 @@ function waitForLoadAndStopIt(expectedURL) {
           if ((flags & docStart) && webProg.isTopLevel && url == expectedURL) {
             webProgress.removeProgressListener(webProgressListener);
             webProgressListener = null;
-            req.cancel(Components.results.NS_ERROR_FAILURE);
+            req.cancel(Cr.NS_ERROR_FAILURE);
             resolve(url);
           }
         }

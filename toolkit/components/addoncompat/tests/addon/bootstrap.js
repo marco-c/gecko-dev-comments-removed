@@ -232,8 +232,8 @@ function testSandbox() {
 
 
 function testAddonContent() {
-  let chromeRegistry = Components.classes["@mozilla.org/chrome/chrome-registry;1"]
-    .getService(Components.interfaces.nsIChromeRegistry);
+  let chromeRegistry = Cc["@mozilla.org/chrome/chrome-registry;1"]
+    .getService(Ci.nsIChromeRegistry);
   let base = chromeRegistry.convertChromeURL(Services.io.newURI("chrome://addonshim1/content/"));
 
   let res = Services.io.getProtocolHandler("resource")
@@ -547,12 +547,12 @@ function testRootTreeItem() {
       let win = browser.contentWindow;
 
       
-      let root = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                    .getInterface(Components.interfaces.nsIWebNavigation)
-                    .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+      let root = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIWebNavigation)
+                    .QueryInterface(Ci.nsIDocShellTreeItem)
                     .rootTreeItem
-                    .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                    .getInterface(Components.interfaces.nsIDOMWindow);
+                    .QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindow);
       is(root, gWin, "got correct chrome window");
 
       removeTab(tab, resolve);

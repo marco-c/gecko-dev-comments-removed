@@ -14,8 +14,8 @@ function setup_crash() {
   
   
   
-  let terminator = Components.classes["@mozilla.org/toolkit/shutdown-terminator;1"].
-    createInstance(Components.interfaces.nsIObserver);
+  let terminator = Cc["@mozilla.org/toolkit/shutdown-terminator;1"].
+    createInstance(Ci.nsIObserver);
   terminator.observe(null, "profile-after-change", null);
 
   

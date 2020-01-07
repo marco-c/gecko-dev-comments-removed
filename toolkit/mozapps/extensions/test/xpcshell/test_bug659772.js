@@ -4,7 +4,7 @@
 
 
 
-Components.utils.importGlobalProperties(["File"]);
+Cu.importGlobalProperties(["File"]);
 
 var addon1 = {
   id: "addon1@tests.mozilla.org",

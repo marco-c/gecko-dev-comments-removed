@@ -89,7 +89,7 @@ function isSecurityState(browser, expectedState) {
     return;
   }
 
-  const wpl = Components.interfaces.nsIWebProgressListener;
+  const wpl = Ci.nsIWebProgressListener;
 
   
   let isSecure = ui.state & wpl.STATE_IS_SECURE;

@@ -5,8 +5,8 @@
 
 
 "use strict";
-let aboutNewTabService = Components.classes["@mozilla.org/browser/aboutnewtab-service;1"]
-                                   .getService(Components.interfaces.nsIAboutNewTabService);
+let aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
+                           .getService(Ci.nsIAboutNewTabService);
 
 function checkUrlbarFocus(win) {
   let urlbar = win.gURLBar;

@@ -839,7 +839,7 @@ nsHttpServer.prototype =
     
     
     
-    Components.utils.forceGC();
+    Cu.forceGC();
   },
 
   

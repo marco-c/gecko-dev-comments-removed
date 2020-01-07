@@ -4428,13 +4428,13 @@ Tab.prototype = {
       let uri = "";
       try {
         
-        this.originalURI = aRequest.QueryInterface(Components.interfaces.nsIChannel).originalURI;
+        this.originalURI = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
 
         if (this.originalURI != null)
           uri = this.originalURI.displaySpec;
       } catch (e) { }
       try {
-        success = aRequest.QueryInterface(Components.interfaces.nsIHttpChannel).requestSucceeded;
+        success = aRequest.QueryInterface(Ci.nsIHttpChannel).requestSucceeded;
       } catch (e) {
         
         
@@ -5551,7 +5551,7 @@ var IdentityHandler = {
 
   getIdentityData : function() {
     let result = {};
-    let status = this._lastStatus.QueryInterface(Components.interfaces.nsISSLStatus);
+    let status = this._lastStatus.QueryInterface(Ci.nsISSLStatus);
     let cert = status.serverCert;
 
     
@@ -5657,7 +5657,7 @@ var IdentityHandler = {
 
   checkIdentity: function checkIdentity(aState, aBrowser) {
     this._lastStatus = aBrowser.securityUI
-                               .QueryInterface(Components.interfaces.nsISSLStatusProvider)
+                               .QueryInterface(Ci.nsISSLStatusProvider)
                                .SSLStatus;
 
     

@@ -1,9 +1,9 @@
 function run_test() {
   
-  var isXrayWrapper = Components.utils.isXrayWrapper;
+  var isXrayWrapper = Cu.isXrayWrapper;
   Assert.ok(!isXrayWrapper({}), "Didn't throw");
 
   
   var isSuccessCode = Components.isSuccessCode;
-  try { isSuccessCode(Components.results.NS_OK); } catch (e) {};
+  try { isSuccessCode(Cr.NS_OK); } catch (e) {};
 }

@@ -6,7 +6,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 let resHandler = Services.io.getProtocolHandler("resource")
-                         .QueryInterface(Components.interfaces.nsISubstitutingProtocolHandler);
+                         .QueryInterface(Ci.nsISubstitutingProtocolHandler);
 let dataURI = NetUtil.newURI(do_get_file("."));
 resHandler.setSubstitution("ppapi.js", dataURI);
 

@@ -2,8 +2,8 @@
 
 
 function run_test() {
-  var nsIFile = Components.interfaces.nsIFile;
-  var root = Components.classes["@mozilla.org/file/local;1"].
+  var nsIFile = Ci.nsIFile;
+  var root = Cc["@mozilla.org/file/local;1"].
               createInstance(nsIFile);
 
   

@@ -3,7 +3,7 @@
 
 
 
-Components.utils.importGlobalProperties(["InspectorUtils"]);
+Cu.importGlobalProperties(["InspectorUtils"]);
 
 function test_lexer(cssText, tokenTypes) {
   let lexer = InspectorUtils.getCSSLexer(cssText);

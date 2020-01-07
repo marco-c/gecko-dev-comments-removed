@@ -18,7 +18,7 @@ var EXPORTED_SYMBOLS = [ "addDebuggerToGlobal" ];
 
 
 
-const init = Components.classes["@mozilla.org/jsdebugger;1"].createInstance(Components.interfaces.IJSDebugger);
+const init = Cc["@mozilla.org/jsdebugger;1"].createInstance(Ci.IJSDebugger);
 function addDebuggerToGlobal(global) {
   init.addClass(global);
   initPromiseDebugging(global);

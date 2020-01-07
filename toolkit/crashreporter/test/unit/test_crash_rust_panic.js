@@ -1,7 +1,7 @@
 function run_test() {
   
   do_crash(function() {
-             Components.classes["@mozilla.org/xpcom/debug;1"].getService(Components.interfaces.nsIDebug2).rustPanic("OH NO");
+             Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2).rustPanic("OH NO");
            },
            function(mdump, extra) {
              Assert.equal(extra.MozCrashReason, "OH NO");

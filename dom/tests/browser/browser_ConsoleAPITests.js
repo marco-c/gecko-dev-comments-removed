@@ -128,7 +128,7 @@ function testConsoleData(aMessageObject) {
       
       
       var arg = aMessageObject.arguments[i];
-      if (Components.utils.isXrayWrapper(arg))
+      if (Cu.isXrayWrapper(arg))
         arg = arg.wrappedJSObject;
       is(arg, a, "correct arg " + i);
     });

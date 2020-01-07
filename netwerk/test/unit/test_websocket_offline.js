@@ -34,7 +34,7 @@ function run_test() {
 
   try {
     chan = Cc["@mozilla.org/network/protocol;1?name=ws"].
-      createInstance(Components.interfaces.nsIWebSocketChannel);
+      createInstance(Ci.nsIWebSocketChannel);
     chan.initLoadInfo(null, 
                       Services.scriptSecurityManager.getSystemPrincipal(),
                       null, 

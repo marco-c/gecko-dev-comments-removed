@@ -133,8 +133,8 @@
 
       // application accessible
       if (WIN) {
-        var gfxInfo = Components.classes["@mozilla.org/gfx/info;1"].
-          getService(Components.interfaces.nsIGfxInfo);
+        var gfxInfo = Cc["@mozilla.org/gfx/info;1"].
+          getService(Ci.nsIGfxInfo);
         var attrs = {
           "D2D": (gfxInfo.D2DEnabled ? "true" : "false")
         };

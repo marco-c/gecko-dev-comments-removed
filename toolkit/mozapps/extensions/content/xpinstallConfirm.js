@@ -167,7 +167,7 @@ XPInstallConfirm.init = function() {
 
 XPInstallConfirm.onOK = function() {
   Services.telemetry.getHistogramById("SECURITY_UI")
-    .add(Components.interfaces.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH);
+    .add(Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH);
   
   XPInstallConfirm._installOK = true;
   return true;

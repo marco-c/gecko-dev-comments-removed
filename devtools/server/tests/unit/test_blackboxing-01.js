@@ -94,7 +94,7 @@ const testBlackBox = async function () {
 
 function evalCode() {
   
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function doStuff(k) { 
       var arg = 15;            
       k(arg);                  
@@ -105,7 +105,7 @@ function evalCode() {
     1
   );
 
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function runTest() { 
       doStuff(                
         function (n) {        

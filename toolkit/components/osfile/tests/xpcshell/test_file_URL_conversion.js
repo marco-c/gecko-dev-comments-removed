@@ -98,7 +98,7 @@ function run_test() {
 
   for (let uri of uris) {
     
-    let path = Services.io.newURI(uri).QueryInterface(Components.interfaces.nsIFileURL).file.path;
+    let path = Services.io.newURI(uri).QueryInterface(Ci.nsIFileURL).file.path;
     Assert.equal(path, OS.Path.fromFileURI(uri));
   }
 

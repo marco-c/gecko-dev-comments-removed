@@ -6,7 +6,7 @@
 
 
 
-const nsIWindowsRegKey = Components.interfaces.nsIWindowsRegKey;
+const nsIWindowsRegKey = Ci.nsIWindowsRegKey;
 const BASE_PATH = "SOFTWARE\\Mozilla\\Firefox";
 
 function idump(indent, str) {
@@ -44,7 +44,7 @@ function list_children(indent, key) {
 }
 
 
-var key = Components.classes["@mozilla.org/windows-registry-key;1"].
+var key = Cc["@mozilla.org/windows-registry-key;1"].
     createInstance(nsIWindowsRegKey);
 key.open(nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE, BASE_PATH,
          nsIWindowsRegKey.ACCESS_READ);

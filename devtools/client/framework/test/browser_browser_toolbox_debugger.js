@@ -54,8 +54,8 @@ add_task(function* runTest() {
 
   
   
-  let env = Components.classes["@mozilla.org/process/environment;1"]
-                      .getService(Components.interfaces.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"]
+              .getService(Ci.nsIEnvironment);
   
   
   let testHead = (function () {

@@ -109,7 +109,7 @@ function LinksStorage() {
   } catch (ex) {
     
     
-    Components.utils.reportError(
+    Cu.reportError(
       "Unable to migrate the newTab storage to the current version. " +
       "Restarting from scratch.\n" + ex);
     this.clear();

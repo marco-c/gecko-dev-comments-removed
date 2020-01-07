@@ -28,5 +28,5 @@ add_task(async function test_watching_non_existing() {
 
     
   });
-  Assert.equal(error, Components.results.NS_ERROR_FILE_NOT_FOUND);
+  Assert.equal(error, Cr.NS_ERROR_FILE_NOT_FOUND);
 });

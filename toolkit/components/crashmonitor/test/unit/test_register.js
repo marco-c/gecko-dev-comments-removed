@@ -7,8 +7,8 @@
 
 
 add_task(function test_register() {
-  let cm = Components.classes["@mozilla.org/toolkit/crashmonitor;1"]
-                             .createInstance(Components.interfaces.nsIObserver);
+  let cm = Cc["@mozilla.org/toolkit/crashmonitor;1"]
+             .createInstance(Ci.nsIObserver);
 
   
   cm.observe(null, "profile-after-change", null);

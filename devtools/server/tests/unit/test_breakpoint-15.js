@@ -60,7 +60,7 @@ const testSameBreakpoint = async function () {
 
 function evalCode() {
   
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function doStuff(k) { 
       let arg = 15;            
       k(arg);                  

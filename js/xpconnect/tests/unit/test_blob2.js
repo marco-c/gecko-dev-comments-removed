@@ -2,7 +2,7 @@
 
 
 
-Components.utils.importGlobalProperties(['Blob', 'File']);
+Cu.importGlobalProperties(['Blob', 'File']);
 
 function run_test() {
   

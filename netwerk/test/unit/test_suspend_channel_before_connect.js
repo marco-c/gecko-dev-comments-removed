@@ -11,7 +11,7 @@ var obs = Cc["@mozilla.org/observer-service;1"]
             .getService(Ci.nsIObserverService);
 
 var ios = Cc["@mozilla.org/network/io-service;1"]
-            .getService(Components.interfaces.nsIIOService);
+            .getService(Ci.nsIIOService);
 
 
 
@@ -41,7 +41,7 @@ var requestListenerObserver = {
     if (iid.equals(Ci.nsISupports) ||
         iid.equals(Ci.nsIObserver))
       return this;
-    throw Components.results.NS_ERROR_NO_INTERFACE;
+    throw Cr.NS_ERROR_NO_INTERFACE;
   },
 
   observe: function(subject, topic, data) {

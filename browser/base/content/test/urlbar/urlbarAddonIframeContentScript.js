@@ -3,7 +3,7 @@
 
 addMessageListener("TestMessage", msg => {
   content.dispatchEvent(new content.CustomEvent("TestEvent", {
-    detail: Components.utils.cloneInto(msg.data, content),
+    detail: Cu.cloneInto(msg.data, content),
   }));
 });
 
@@ -11,7 +11,7 @@ addMessageListener("TestMessage", msg => {
 addEventListener("TestEventAck", event => {
   
   
-  sendAsyncMessage("TestMessageAck", Components.utils.waiveXrays(event.detail));
+  sendAsyncMessage("TestMessageAck", Cu.waiveXrays(event.detail));
 }, true, true);
 
 

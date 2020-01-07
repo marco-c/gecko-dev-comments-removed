@@ -38,7 +38,7 @@ function run_test() {
 
 function evalCode(debuggee) {
   
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "doTest();\n" +
     function doTest() {
       var resolved = Promise.reject(new Error("uh oh"));

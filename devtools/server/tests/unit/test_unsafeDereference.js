@@ -30,17 +30,17 @@ Debugger.Object.prototype.getProperty = function (name) {
 
 function run_test() {
   
-  let contentBox = Components.utils.Sandbox("http://www.example.com");
-  let chromeBox = Components.utils.Sandbox(this);
+  let contentBox = Cu.Sandbox("http://www.example.com");
+  let chromeBox = Cu.Sandbox(this);
 
   
   
   
   let mainObj = { name: "mainObj" };
-  Components.utils.evalInSandbox('var contentObj = { name: "contentObj" };',
-                                 contentBox);
-  Components.utils.evalInSandbox('var chromeObj = { name: "chromeObj" };',
-                                 chromeBox);
+  Cu.evalInSandbox('var contentObj = { name: "contentObj" };',
+                   contentBox);
+  Cu.evalInSandbox('var chromeObj = { name: "chromeObj" };',
+                   chromeBox);
 
   
   contentBox.mainObj = chromeBox.mainObj = mainObj;
@@ -53,17 +53,17 @@ function run_test() {
 
   
   
-  Assert.ok(Components.utils.evalInSandbox("mainObj", contentBox)
+  Assert.ok(Cu.evalInSandbox("mainObj", contentBox)
             === contentBox.mainObj);
-  Assert.ok(Components.utils.evalInSandbox("contentObj", contentBox)
+  Assert.ok(Cu.evalInSandbox("contentObj", contentBox)
             === contentBox.contentObj);
-  Assert.ok(Components.utils.evalInSandbox("chromeObj", contentBox)
+  Assert.ok(Cu.evalInSandbox("chromeObj", contentBox)
             === contentBox.chromeObj);
-  Assert.ok(Components.utils.evalInSandbox("mainObj", chromeBox)
+  Assert.ok(Cu.evalInSandbox("mainObj", chromeBox)
             === chromeBox.mainObj);
-  Assert.ok(Components.utils.evalInSandbox("contentObj", chromeBox)
+  Assert.ok(Cu.evalInSandbox("contentObj", chromeBox)
             === chromeBox.contentObj);
-  Assert.ok(Components.utils.evalInSandbox("chromeObj", chromeBox)
+  Assert.ok(Cu.evalInSandbox("chromeObj", chromeBox)
             === chromeBox.chromeObj);
 
   
@@ -72,21 +72,21 @@ function run_test() {
   Assert.ok(contentBox.chromeObj.name === "chromeObj");
 
   
-  Assert.equal(Components.utils.evalInSandbox("mainObj.name", chromeBox),
+  Assert.equal(Cu.evalInSandbox("mainObj.name", chromeBox),
                "mainObj");
-  Assert.equal(Components.utils.evalInSandbox("contentObj.name", chromeBox),
+  Assert.equal(Cu.evalInSandbox("contentObj.name", chromeBox),
                "contentObj");
-  Assert.equal(Components.utils.evalInSandbox("chromeObj.name", chromeBox),
+  Assert.equal(Cu.evalInSandbox("chromeObj.name", chromeBox),
                "chromeObj");
 
   
   
   
-  Assert.equal(Components.utils.evalInSandbox("mainObj.name", contentBox),
+  Assert.equal(Cu.evalInSandbox("mainObj.name", contentBox),
                undefined);
-  Assert.equal(Components.utils.evalInSandbox("contentObj.name", contentBox),
+  Assert.equal(Cu.evalInSandbox("contentObj.name", contentBox),
                "contentObj");
-  Assert.equal(Components.utils.evalInSandbox("chromeObj.name", contentBox),
+  Assert.equal(Cu.evalInSandbox("chromeObj.name", contentBox),
                undefined);
 
   

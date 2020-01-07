@@ -25,7 +25,7 @@ add_task(async function test_failsafe_close_of_async_connection() {
   
   db = gDBConn = null;
   
-  Components.utils.forceGC();
+  Cu.forceGC();
 
   
   await callbackInvoked;

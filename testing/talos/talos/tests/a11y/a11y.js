@@ -4,17 +4,17 @@ gAccService = 0;
 
 
 netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-nsIAccessible = Components.interfaces.nsIAccessible;
-nsIDOMNode = Components.interfaces.nsIDOMNode;
+nsIAccessible = Ci.nsIAccessible;
+nsIDOMNode = Ci.nsIDOMNode;
 
 function initAccessibility() {
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   if (!gAccService) {
-    var service = Components.classes["@mozilla.org/accessibilityService;1"];
+    var service = Cc["@mozilla.org/accessibilityService;1"];
     if (service) { 
       gAccService =
-      Components.classes["@mozilla.org/accessibilityService;1"]
-                .getService(Components.interfaces.nsIAccessibilityService);
+      Cc["@mozilla.org/accessibilityService;1"]
+        .getService(Ci.nsIAccessibilityService);
     }
   }
   return gAccService;

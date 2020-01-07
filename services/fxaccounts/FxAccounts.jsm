@@ -346,8 +346,8 @@ var FxAccounts = function(mockInternal) {
     
     
     XPCOMUtils.defineLazyGetter(internal, "fxaPushService", function() {
-      return Components.classes["@mozilla.org/fxaccounts/push;1"]
-        .getService(Components.interfaces.nsISupports)
+      return Cc["@mozilla.org/fxaccounts/push;1"]
+        .getService(Ci.nsISupports)
         .wrappedJSObject;
     });
   }

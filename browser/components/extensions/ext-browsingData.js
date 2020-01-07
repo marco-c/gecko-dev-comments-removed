@@ -80,7 +80,7 @@ const clearIndexedDB = async function(options) {
 
   await new Promise(resolve => {
     quotaManagerService.getUsage(request => {
-      if (request.resultCode != Components.results.NS_OK) {
+      if (request.resultCode != Cr.NS_OK) {
         
         
         resolve();

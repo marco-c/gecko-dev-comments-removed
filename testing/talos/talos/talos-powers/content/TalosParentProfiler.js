@@ -34,9 +34,9 @@ var TalosParentProfiler;
   
   
   let TalosPowers =
-    Components.classes["@mozilla.org/talos/talos-powers-service;1"]
-              .getService(Components.interfaces.nsISupports)
-              .wrappedJSObject;
+    Cc["@mozilla.org/talos/talos-powers-service;1"]
+      .getService(Ci.nsISupports)
+      .wrappedJSObject;
 
   
 

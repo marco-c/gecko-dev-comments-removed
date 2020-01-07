@@ -1065,7 +1065,7 @@ Blocklist.prototype = {
               
               
               const e = new Error(`Unsupported device name ${childValue}`);
-              Components.utils.reportError(e);
+              Cu.reportError(e);
             } else {
               value.push(childValue);
             }

@@ -346,8 +346,8 @@ function finish() {
   
   
   if (typeof(gOrigMaxTotalViewers) != "undefined") {
-    var prefs = Components.classes["@mozilla.org/preferences-service;1"]
-                .getService(Components.interfaces.nsIPrefBranch);
+    var prefs = Cc["@mozilla.org/preferences-service;1"]
+                .getService(Ci.nsIPrefBranch);
     prefs.setIntPref("browser.sessionhistory.max_total_viewers",
       gOrigMaxTotalViewers);
   }
@@ -357,8 +357,8 @@ function finish() {
   let SimpleTest = opener.wrappedJSObject.SimpleTest;
 
   
-  let ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
-	             .getService(Components.interfaces.nsIWindowWatcher);
+  let ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
+	             .getService(Ci.nsIWindowWatcher);
   ww.registerNotification(function(subject, topic, data) {
     if (topic == "domwindowclosed") {
       ww.unregisterNotification(arguments.callee);
@@ -430,8 +430,8 @@ function waitForNextPaint(cb) {
 
 
 function enableBFCache(enable) {
-  var prefs = Components.classes["@mozilla.org/preferences-service;1"]
-              .getService(Components.interfaces.nsIPrefBranch);
+  var prefs = Cc["@mozilla.org/preferences-service;1"]
+              .getService(Ci.nsIPrefBranch);
   
   
   

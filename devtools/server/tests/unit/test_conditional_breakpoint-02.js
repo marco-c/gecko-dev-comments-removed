@@ -51,13 +51,13 @@ function test_simple_breakpoint() {
   });
 
   
-  Components.utils.evalInSandbox("debugger;\n" +   
-                                 "var a = 1;\n" +  
-                                 "var b = 2;\n" +  
-                                 "debugger;",      
-                                 gDebuggee,
-                                 "1.8",
-                                 "test.js",
-                                 1);
+  Cu.evalInSandbox("debugger;\n" +   
+                   "var a = 1;\n" +  
+                   "var b = 2;\n" +  
+                   "debugger;",      
+                   gDebuggee,
+                   "1.8",
+                   "test.js",
+                   1);
   
 }

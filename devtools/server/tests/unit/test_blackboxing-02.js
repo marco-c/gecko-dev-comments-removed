@@ -53,7 +53,7 @@ function test_black_box() {
   });
 
   
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function doStuff(k) { 
       let arg = 15;            
       k(arg);                  
@@ -64,7 +64,7 @@ function test_black_box() {
     1
   );
 
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function runTest() { 
       doStuff(                
         function (n) {        

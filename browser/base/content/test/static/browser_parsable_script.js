@@ -17,7 +17,7 @@ const kWhitelist = new Set([
 
 
 
-const init = Components.classes["@mozilla.org/jsreflect;1"].createInstance();
+const init = Cc["@mozilla.org/jsreflect;1"].createInstance();
 init();
 
 

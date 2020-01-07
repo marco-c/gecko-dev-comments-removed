@@ -3,7 +3,7 @@
 
 
 
-const nsICookie = Components.interfaces.nsICookie;
+const nsICookie = Ci.nsICookie;
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
@@ -85,7 +85,7 @@ var gCookiesWindow = {
     if (aTopic != "cookie-changed")
       return;
 
-    if (aCookie instanceof Components.interfaces.nsICookie) {
+    if (aCookie instanceof Ci.nsICookie) {
       if (this._isPrivateCookie(aCookie)) {
         return;
       }
@@ -478,7 +478,7 @@ var gCookiesWindow = {
     this._hostOrder = [];
     while (e.hasMoreElements()) {
       var cookie = e.getNext();
-      if (cookie && cookie instanceof Components.interfaces.nsICookie) {
+      if (cookie && cookie instanceof Ci.nsICookie) {
         if (this._isPrivateCookie(cookie)) {
           continue;
         }

@@ -285,8 +285,8 @@ var Harness = {
   
 
   onOpenWindow(window) {
-    var domwindow = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                          .getInterface(Components.interfaces.nsIDOMWindow);
+    var domwindow = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIDOMWindow);
     var self = this;
     waitForFocus(function() {
       self.windowReady(domwindow);

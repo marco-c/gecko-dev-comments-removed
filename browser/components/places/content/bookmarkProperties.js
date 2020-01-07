@@ -253,7 +253,7 @@ var BookmarkPropertiesPanel = {
     
     
     this._initDialog().catch(ex => {
-      Components.utils.reportError(`Failed to initialize dialog: ${ex}`);
+      Cu.reportError(`Failed to initialize dialog: ${ex}`);
     });
   },
 

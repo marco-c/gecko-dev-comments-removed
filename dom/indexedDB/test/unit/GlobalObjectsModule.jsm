@@ -3,7 +3,7 @@
 
 
 
-Components.utils.importGlobalProperties(["indexedDB"]);
+Cu.importGlobalProperties(["indexedDB"]);
 
 var EXPORTED_SYMBOLS = [
   "GlobalObjectsModule"

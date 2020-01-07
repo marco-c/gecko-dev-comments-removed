@@ -96,7 +96,7 @@ function run_test_1() {
     
     
     let testURI = a1.getResourceURI(TEST_UNPACKED ? "install.rdf" : "");
-    let testFile = testURI.QueryInterface(Components.interfaces.nsIFileURL).file;
+    let testFile = testURI.QueryInterface(Ci.nsIFileURL).file;
 
     Assert.ok(testFile.exists());
     let difference = testFile.lastModifiedTime - Date.now();

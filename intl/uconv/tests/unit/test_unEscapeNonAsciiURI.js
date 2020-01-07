@@ -1,6 +1,6 @@
 
 function run_test() {
-  const textToSubURI = Components.classes["@mozilla.org/intl/texttosuburi;1"].getService(Components.interfaces.nsITextToSubURI);
+  const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].getService(Ci.nsITextToSubURI);
 
   
   const testURI = "data:text/html,%FE%FF";
@@ -9,22 +9,22 @@ function run_test() {
   
   const tests = [{
     input: "http://example.com/?p=%E9",
-    throws: Components.results.NS_ERROR_ILLEGAL_INPUT,
+    throws: Cr.NS_ERROR_ILLEGAL_INPUT,
   }, {
     input: "http://example.com/?p=%E9%80",
-    throws: Components.results.NS_ERROR_ILLEGAL_INPUT,
+    throws: Cr.NS_ERROR_ILLEGAL_INPUT,
   }, {
     input: "http://example.com/?p=%E9%80%80",
     expected: "http://example.com/?p=\u9000",
   }, {
     input: "http://example.com/?p=%E9e",
-    throws: Components.results.NS_ERROR_ILLEGAL_INPUT,
+    throws: Cr.NS_ERROR_ILLEGAL_INPUT,
   }, {
     input: "http://example.com/?p=%E9%E9",
-    throws: Components.results.NS_ERROR_ILLEGAL_INPUT,
+    throws: Cr.NS_ERROR_ILLEGAL_INPUT,
   }, {
     input: "http://example.com/?name=M%FCller/",
-    throws: Components.results.NS_ERROR_ILLEGAL_INPUT,
+    throws: Cr.NS_ERROR_ILLEGAL_INPUT,
   }, {
     input: "http://example.com/?name=M%C3%BCller/",
     expected: "http://example.com/?name=Müller/",

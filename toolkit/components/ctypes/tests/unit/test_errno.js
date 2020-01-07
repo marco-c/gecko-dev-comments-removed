@@ -9,7 +9,7 @@ function run_test() {
   main_test();
 
   
-  Components.utils.unload("resource://gre/modules/ctypes.jsm");
+  Cu.unload("resource://gre/modules/ctypes.jsm");
   ChromeUtils.import("resource://gre/modules/ctypes.jsm", scope);
   ctypes = scope.ctypes;
   main_test();

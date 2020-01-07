@@ -33,11 +33,11 @@ function checkFile() {
 
   
   var fstream =
-    Components.classes["@mozilla.org/network/file-input-stream;1"]
-              .createInstance(Components.interfaces.nsIFileInputStream);
+    Cc["@mozilla.org/network/file-input-stream;1"]
+      .createInstance(Ci.nsIFileInputStream);
   var sstream =
-    Components.classes["@mozilla.org/scriptableinputstream;1"]
-              .createInstance(Components.interfaces.nsIScriptableInputStream);
+    Cc["@mozilla.org/scriptableinputstream;1"]
+      .createInstance(Ci.nsIScriptableInputStream);
   fstream.init(tempFile, -1, 0, 0);
   sstream.init(fstream);
 
@@ -70,13 +70,13 @@ function run_test() {
 
   
   var ioService =
-    Components.classes["@mozilla.org/network/io-service;1"]
-              .getService(Components.interfaces.nsIIOService);
+    Cc["@mozilla.org/network/io-service;1"]
+      .getService(Ci.nsIIOService);
 
   
   var localHandler =
-    Components.classes["@mozilla.org/uriloader/local-handler-app;1"]
-              .createInstance(Components.interfaces.nsILocalHandlerApp);
+    Cc["@mozilla.org/uriloader/local-handler-app;1"]
+      .createInstance(Ci.nsILocalHandlerApp);
   localHandler.name = "Test Local Handler App";
 
   
@@ -96,13 +96,13 @@ function run_test() {
 
   
   var envSvc =
-    Components.classes["@mozilla.org/process/environment;1"]
-              .getService(Components.interfaces.nsIEnvironment);
+    Cc["@mozilla.org/process/environment;1"]
+      .getService(Ci.nsIEnvironment);
 
   
   
   
-  var greDir = Services.dirsvc.get("GreD", Components.interfaces.nsIFile);
+  var greDir = Services.dirsvc.get("GreD", Ci.nsIFile);
 
   envSvc.set("DYLD_LIBRARY_PATH", greDir.path);
   

@@ -6,7 +6,7 @@
 
 "use strict";
 
-const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
+const nsIDialogParamBlock = Ci.nsIDialogParamBlock;
 
 var dialogParams;
 

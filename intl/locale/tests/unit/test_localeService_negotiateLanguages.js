@@ -3,8 +3,8 @@
 
 
 const localeService =
-  Components.classes["@mozilla.org/intl/localeservice;1"]
-  .getService(Components.interfaces.mozILocaleService);
+  Cc["@mozilla.org/intl/localeservice;1"]
+  .getService(Ci.mozILocaleService);
 
 const data = {
   "filtering": {

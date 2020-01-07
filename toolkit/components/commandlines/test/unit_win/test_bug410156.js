@@ -3,7 +3,7 @@
 
 
 function run_test() {
-  var clClass = Components.classes["@mozilla.org/toolkit/command-line;1"];
+  var clClass = Cc["@mozilla.org/toolkit/command-line;1"];
   var commandLine = clClass.createInstance();
   var urlFile = do_get_file("../unit/data/test_bug410156.url");
   var uri = commandLine.resolveURI(urlFile.path);

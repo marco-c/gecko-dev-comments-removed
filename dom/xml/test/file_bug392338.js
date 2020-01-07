@@ -7,10 +7,10 @@ var modifyObserver = {
       try {
         
         
-        var ir = subject.QueryInterface(Components.interfaces.nsIChannel).notificationCallbacks;
+        var ir = subject.QueryInterface(Ci.nsIChannel).notificationCallbacks;
 
         
-        testOk = ir.toString().includes(Components.interfaces.nsIInterfaceRequestor);
+        testOk = ir.toString().includes(Ci.nsIInterfaceRequestor);
       } catch (e) {
       }
       sendAsyncMessage('modify-request-completed', testOk);

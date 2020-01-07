@@ -611,7 +611,7 @@ var Printing = {
 
       return printSettings;
     } catch (e) {
-      Components.utils.reportError(e);
+      Cu.reportError(e);
     }
 
     return null;
@@ -753,7 +753,7 @@ var Printing = {
         } catch (error) {
           
           
-          Components.utils.reportError(error);
+          Cu.reportError(error);
           this.printPreviewInitializingInfo = null;
           sendAsyncMessage("Printing:Preview:Entered", { failed: true });
         }
@@ -772,7 +772,7 @@ var Printing = {
     } catch (error) {
       
       
-      Components.utils.reportError(error);
+      Cu.reportError(error);
       sendAsyncMessage("Printing:Preview:Entered", { failed: true });
     }
   },
@@ -1175,8 +1175,8 @@ addMessageListener("Browser:PurgeSessionHistory", function BrowserPurgeHistory()
   
   if (sessionHistory.index < sessionHistory.count - 1) {
     let indexEntry = sessionHistory.getEntryAtIndex(sessionHistory.index, false);
-    sessionHistory.QueryInterface(Components.interfaces.nsISHistoryInternal);
-    indexEntry.QueryInterface(Components.interfaces.nsISHEntry);
+    sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
+    indexEntry.QueryInterface(Ci.nsISHEntry);
     sessionHistory.addEntry(indexEntry, true);
   }
 

@@ -8,21 +8,21 @@ function run_test()
 {
   
   try {
-    var nullWeak = Components.utils.getWeakReference(null);
+    var nullWeak = Cu.getWeakReference(null);
     Assert.ok(nullWeak.get() === null);
   } catch (e) {
     Assert.ok(false);
   }
 
   var obj = { num: 5, str: 'foo' };
-  var weak = Components.utils.getWeakReference(obj);
+  var weak = Cu.getWeakReference(obj);
 
   Assert.ok(weak.get() === obj);
   Assert.ok(weak.get().num == 5);
   Assert.ok(weak.get().str == 'foo');
 
   
-  Components.utils.forceGC();
+  Cu.forceGC();
 
   
   Assert.ok(weak.get() === obj);
@@ -34,10 +34,10 @@ function run_test()
   
   
   obj = { num: 6, str: 'foo2' };
-  var weak2 = Components.utils.getWeakReference(obj);
+  var weak2 = Cu.getWeakReference(obj);
   Assert.ok(weak2.get() === obj);
 
-  Components.utils.forceGC();
+  Cu.forceGC();
 
   
   

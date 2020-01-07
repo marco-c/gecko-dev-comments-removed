@@ -39,7 +39,7 @@ function test_black_box() {
   gClient.addOneTimeListener("paused", test_black_box_exception);
 
   
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function doStuff(k) {                                   
       throw new Error("wu tang clan ain't nuthin' ta fuck wit"); 
       k(100);                                                    
@@ -50,7 +50,7 @@ function test_black_box() {
     1
   );
 
-  Components.utils.evalInSandbox(
+  Cu.evalInSandbox(
     "" + function runTest() {                   
       doStuff(                                  
         function (n) {                          

@@ -46,33 +46,33 @@ function get_test_plugintag(aName="Test Plug-in") {
 
 
 function do_get_profile_startup() {
-  let env = Components.classes["@mozilla.org/process/environment;1"]
-                      .getService(Components.interfaces.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"]
+              .getService(Ci.nsIEnvironment);
   
   let profd = env.get("XPCSHELL_TEST_PROFILE_DIR");
-  let file = Components.classes["@mozilla.org/file/local;1"]
-                       .createInstance(Components.interfaces.nsIFile);
+  let file = Cc["@mozilla.org/file/local;1"]
+               .createInstance(Ci.nsIFile);
   file.initWithPath(profd);
 
-  let dirSvc = Components.classes["@mozilla.org/file/directory_service;1"]
-                         .getService(Components.interfaces.nsIProperties);
+  let dirSvc = Cc["@mozilla.org/file/directory_service;1"]
+                 .getService(Ci.nsIProperties);
   let provider = {
     getFile: function(prop, persistent) {
       persistent.value = true;
       if (prop == "ProfDS") {
         return file.clone();
       }
-      throw Components.results.NS_ERROR_FAILURE;
+      throw Cr.NS_ERROR_FAILURE;
     },
     QueryInterface: function(iid) {
-      if (iid.equals(Components.interfaces.nsIDirectoryServiceProvider) ||
-          iid.equals(Components.interfaces.nsISupports)) {
+      if (iid.equals(Ci.nsIDirectoryServiceProvider) ||
+          iid.equals(Ci.nsISupports)) {
         return this;
       }
-      throw Components.results.NS_ERROR_NO_INTERFACE;
+      throw Cr.NS_ERROR_NO_INTERFACE;
     }
   };
-  dirSvc.QueryInterface(Components.interfaces.nsIDirectoryService)
+  dirSvc.QueryInterface(Ci.nsIDirectoryService)
         .registerProvider(provider);
   return file.clone();
 }

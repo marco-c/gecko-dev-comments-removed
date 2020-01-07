@@ -2,7 +2,7 @@
 
 
 
-const nsIBLS = Components.interfaces.nsIBlocklistService;
+const nsIBLS = Ci.nsIBlocklistService;
 
 var PLUGINS = [{
   
@@ -40,8 +40,8 @@ function run_test() {
   
   copyBlocklistToProfile(do_get_file("data/test_bug468528.xml"));
 
-  var blocklist = Components.classes["@mozilla.org/extensions/blocklist;1"]
-                            .getService(nsIBLS);
+  var blocklist = Cc["@mozilla.org/extensions/blocklist;1"]
+                    .getService(nsIBLS);
 
   
   Assert.ok(blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_BLOCKED);

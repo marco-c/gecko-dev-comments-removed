@@ -8,13 +8,13 @@ function get_test_program(prog) {
 }
 
 function set_process_running_environment() {
-  var envSvc = Components.classes["@mozilla.org/process/environment;1"].
-    getService(Components.interfaces.nsIEnvironment);
+  var envSvc = Cc["@mozilla.org/process/environment;1"].
+    getService(Ci.nsIEnvironment);
   
   
-  var dirSvc = Components.classes["@mozilla.org/file/directory_service;1"].
-    getService(Components.interfaces.nsIProperties);
-  var greBinDir = dirSvc.get("GreBinD", Components.interfaces.nsIFile);
+  var dirSvc = Cc["@mozilla.org/file/directory_service;1"].
+    getService(Ci.nsIProperties);
+  var greBinDir = dirSvc.get("GreBinD", Ci.nsIFile);
   envSvc.set("DYLD_LIBRARY_PATH", greBinDir.path);
   
   envSvc.set("LD_LIBRARY_PATH", greBinDir.path);

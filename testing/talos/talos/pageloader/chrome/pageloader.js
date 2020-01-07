@@ -136,8 +136,8 @@ function plInit() {
 
     
     
-    var env = Components.classes["@mozilla.org/process/environment;1"].
-              getService(Components.interfaces.nsIEnvironment);
+    var env = Cc["@mozilla.org/process/environment;1"].
+              getService(Ci.nsIEnvironment);
 
     if (env.exists("TPPROFILINGINFO")) {
       profilingInfo = env.get("TPPROFILINGINFO");
@@ -147,8 +147,8 @@ function plInit() {
     }
 
     if (forceCC &&
-        !window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-               .getInterface(Components.interfaces.nsIDOMWindowUtils)
+        !window.QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIDOMWindowUtils)
                .garbageCollect) {
       forceCC = false;
     }
@@ -414,8 +414,8 @@ var plNextPage = async function() {
   if (doNextPage) {
     if (forceCC) {
       var tccstart = new Date();
-      window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-            .getInterface(Components.interfaces.nsIDOMWindowUtils)
+      window.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
             .garbageCollect();
       var tccend = new Date();
       report.recordCCTime(tccend - tccstart);
@@ -528,8 +528,8 @@ function plLoadHandlerCapturing(evt) {
   };
 
   content.contentWindow.wrappedJSObject.plGarbageCollect = function() {
-    window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-          .getInterface(Components.interfaces.nsIDOMWindowUtils)
+    window.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIDOMWindowUtils)
           .garbageCollect();
   };
 
@@ -554,8 +554,8 @@ function plWaitForPaintingCapturing() {
   if (gPaintListener)
     return;
 
-  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
+  var utils = gPaintWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIDOMWindowUtils);
 
   if (utils.isMozAfterPaintPending && useMozAfterPaint) {
     if (!gPaintListener)
@@ -611,8 +611,8 @@ function plLoadHandler(evt) {
 
 function waitForPainted() {
 
-  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
+  var utils = gPaintWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                   .getInterface(Ci.nsIDOMWindowUtils);
 
   if (!utils.isMozAfterPaintPending || !useMozAfterPaint) {
     _loadHandler();

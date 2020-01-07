@@ -11,9 +11,9 @@ function run_test() {
 
       
       
-      Components.utils.forceGC();
+      Cu.forceGC();
 
-      Components.utils.getJSTestingFunctions().reportOutOfMemory();
+      Cu.getJSTestingFunctions().reportOutOfMemory();
     },
     function(mdump, extra) {
       Assert.equal(extra.TestingOOMCrash, "Yes");

@@ -3,7 +3,7 @@
 
 
 
-Components.utils.importGlobalProperties(["NodeFilter"]);
+Cu.importGlobalProperties(["NodeFilter"]);
 
 function run_test()
 {
