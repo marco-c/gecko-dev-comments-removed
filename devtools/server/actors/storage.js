@@ -1168,20 +1168,10 @@ function getObjectForLocalOrSessionStorage(type) {
       if (!storage) {
         return [];
       }
-
-      
-      
-      
-      
-      const storageArray = [];
-      for (let i = 0; i < storage.length; i++) {
-        const key = storage.key(i);
-        storageArray.push({
-          name: key,
-          value: storage.getItem(key)
-        });
-      }
-      return storageArray;
+      return Object.keys(storage).map(key => ({
+        name: key,
+        value: storage.getItem(key)
+      }));
     },
 
     populateStoresForHost(host, window) {
