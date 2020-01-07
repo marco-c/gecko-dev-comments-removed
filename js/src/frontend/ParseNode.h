@@ -13,27 +13,6 @@
 #include "frontend/TokenStream.h"
 #include "vm/Printer.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace js {
 namespace frontend {
 
@@ -621,7 +600,6 @@ class ParseNode
     appendOrCreateList(ParseNodeKind kind, ParseNode* left, ParseNode* right,
                        FullParseHandler* handler, ParseContext* pc);
 
-    
     inline PropertyName* name() const;
     inline JSAtom* atom() const;
 
@@ -755,12 +733,8 @@ class ParseNode
     }
 
     void append(ParseNode* pn) {
-        MOZ_ASSERT(pn->pn_pos.begin >= pn_pos.begin);
-        appendWithoutOrderAssumption(pn);
-    }
-
-    void appendWithoutOrderAssumption(ParseNode* pn) {
         MOZ_ASSERT(pn_arity == PN_LIST);
+        MOZ_ASSERT(pn->pn_pos.begin >= pn_pos.begin);
         pn_pos.end = pn->pn_pos.end;
         *pn_tail = pn;
         pn_tail = &pn->pn_next;

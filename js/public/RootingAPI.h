@@ -867,9 +867,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     enum {
         VALARRAY =     -2, 
         PARSER =       -3, 
-#if defined(JS_BUILD_BINAST)
-        BINPARSER =    -4, 
-#endif 
         VALVECTOR =   -10, 
         IDVECTOR =    -11, 
         OBJVECTOR =   -14, 
