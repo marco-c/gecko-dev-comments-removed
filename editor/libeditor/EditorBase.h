@@ -989,6 +989,12 @@ public:
 
 
 
+  nsresult PostCreate();
+
+  
+
+
+
   virtual nsresult StartOperation(EditAction opID,
                                   nsIEditor::EDirection aDirection);
 
