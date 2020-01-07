@@ -208,6 +208,14 @@ ClientSource::WorkerExecutionReady(WorkerPrivate* aWorkerPrivate)
 
   
   
+  
+  
+  if (mController.isSome()) {
+    MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate->IsStorageAllowed());
+  }
+
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(mOwner.is<Nothing>());
   mOwner = AsVariant(aWorkerPrivate);
 
@@ -233,6 +241,15 @@ ClientSource::WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow)
   nsIDocument* doc = aInnerWindow->GetExtantDoc();
   if (NS_WARN_IF(!doc)) {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  
+  
+  
+  if (mController.isSome()) {
+    MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::StorageAllowedForWindow(aInnerWindow) ==
+                          nsContentUtils::StorageAccess::eAllow);
   }
 
   
@@ -289,6 +306,10 @@ ClientSource::DocShellExecutionReady(nsIDocShell* aDocShell)
   if (NS_WARN_IF(!outer)) {
     return NS_ERROR_UNEXPECTED;
   }
+
+  
+  
+  
 
   
   FrameType frameType = FrameType::Top_level;
@@ -359,6 +380,16 @@ ClientSource::SetController(const ServiceWorkerDescriptor& aServiceWorker)
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mClientInfo.IsPrivateBrowsing());
+
+  
+  
+  
+  if (GetInnerWindow()) {
+    MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::StorageAllowedForWindow(GetInnerWindow()) ==
+                          nsContentUtils::StorageAccess::eAllow);
+  } else if (GetWorkerPrivate()) {
+    MOZ_DIAGNOSTIC_ASSERT(GetWorkerPrivate()->IsStorageAllowed());
+  }
 
   if (mController.isSome() && mController.ref() == aServiceWorker) {
     return;
