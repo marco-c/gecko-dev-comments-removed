@@ -360,7 +360,8 @@ var MigratorPrototype = {
       }
     };
 
-    if (MigrationUtils.isStartupMigration && !this.startupOnlyMigrator) {
+    if (MigrationUtils.isStartupMigration && !this.startupOnlyMigrator &&
+        Services.policies.isAllowed("defaultBookmarks")) {
       MigrationUtils.profileStartup.doStartup();
       
       
