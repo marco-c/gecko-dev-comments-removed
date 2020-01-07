@@ -1327,7 +1327,7 @@ function clearElement(el) {
 
 
 function switchToShadowRoot(el) {
-  if (!el) {
+  if (!element.isElement(el)) {
     
     
     if (curContainer.shadowRoot) {
