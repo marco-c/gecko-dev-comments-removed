@@ -32,7 +32,7 @@ const parseSym = data => {
       }
     };
   });
-  worker.postMessage(data);
+  worker.postMessage(data, data.textBuffer ? [data.textBuffer.buffer] : []);
   return promise;
 };
 
@@ -89,6 +89,18 @@ class CppFiltParser {
   }
 }
 
+const joinBuffers = function(buffers) {
+  const byteLengthSum =
+    buffers.reduce((accum, buffer) => accum + buffer.byteLength, 0);
+  const joinedBuffer = new Uint8Array(byteLengthSum);
+  let offset = 0;
+  for (const buffer of buffers) {
+    joinedBuffer.set(new Uint8Array(buffer), offset);
+    offset += buffer.byteLength;
+  }
+  return joinedBuffer;
+};
+
 const readAllData = async function(pipe, processData) {
   let data;
   while ((data = await pipe.read()) && data.byteLength) {
@@ -110,6 +122,18 @@ const spawnProcess = async function(name, cmdArgs, processData, stdin = null) {
   }
 
   await readAllData(proc.stdout, processData);
+};
+
+const runCommandAndGetOutputAsString = async function(command, cmdArgs) {
+  const opts = {
+    command,
+    arguments: cmdArgs,
+    stderr: "pipe",
+  };
+  const proc = await Subprocess.call(opts);
+  const chunks = [];
+  await readAllData(proc.stdout, data => chunks.push(data));
+  return (new TextDecoder()).decode(joinBuffers(chunks));
 };
 
 const getSymbolsFromNM = async function(path, arch) {
@@ -138,6 +162,83 @@ const getSymbolsFromNM = async function(path, arch) {
   await spawnProcess("c++filt", [], data => demangler.consume(data), symbolsJoined);
   const [newIndex, newBuffer] = await demangler.finish();
   return [addresses, newIndex, newBuffer];
+};
+
+const getEnvVarCaseInsensitive = function(env, name) {
+  for (const [varname, value] of Object.entries(env)) {
+    if (varname.toLowerCase() == name.toLowerCase()) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
+const findPotentialMSDIAPaths = async function(env) {
+  
+  
+  
+  
+  
+  
+  
+  
+  const programFilesX86Path =
+    getEnvVarCaseInsensitive(env, "ProgramFiles(x86)") ||
+    getEnvVarCaseInsensitive(env, "ProgramFiles");
+  if (programFilesX86Path) {
+    
+    
+    
+    const vswherePath = OS.Path.join(programFilesX86Path,
+                                     "Microsoft Visual Studio", "Installer",
+                                     "vswhere.exe");
+    const args = [
+      "-products", "*",
+      "-latest",
+      "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+      "-property", "installationPath",
+      "-format", "value",
+    ];
+    try {
+      const vsInstallationPath =
+        (await runCommandAndGetOutputAsString(vswherePath, args)).trim();
+      if (vsInstallationPath) {
+        const diaSDKPath = OS.Path.join(vsInstallationPath, "DIA SDK");
+        return [
+          OS.Path.join(diaSDKPath, "bin"),
+          OS.Path.join(diaSDKPath, "bin", "amd64"),
+        ];
+      }
+    } catch (e) {
+      
+      
+      
+    }
+  }
+  
+  
+  return [];
+};
+
+const getSymbolsUsingWindowsDumpSyms = async function(dumpSymsPath, debugPath) {
+  const env = Subprocess.getEnvironment();
+  const extraPaths = await findPotentialMSDIAPaths(env);
+  const existingPaths = env.PATH ? env.PATH.split(";") : [];
+  env.PATH = existingPaths.concat(extraPaths).join(";");
+  const opts = {
+    command: dumpSymsPath,
+    arguments: [debugPath],
+    environment: env,
+    stderr: "pipe",
+  };
+  const proc = await Subprocess.call(opts);
+  const chunks = [];
+  await readAllData(proc.stdout, data => chunks.push(data));
+  const textBuffer = joinBuffers(chunks);
+  if (textBuffer.byteLength === 0) {
+    throw new Error("did not receive any stdout from dump_syms.exe");
+  }
+  return parseSym({textBuffer});
 };
 
 const pathComponentsForSymbolFile = (debugName, breakpadId) => {
@@ -180,13 +281,25 @@ const filePathForSymFileInObjDir = (binaryPath, debugName, breakpadId) => {
                       ...pathComponentsForSymbolFile(debugName, breakpadId));
 };
 
+const dumpSymsPathInObjDir = binaryPath => {
+  
+  
+  const objDirDist = getContainingObjdirDist(binaryPath);
+  if (!objDirDist) {
+    return null;
+  }
+  return OS.Path.join(objDirDist, "host", "bin", "dump_syms.exe");
+};
+
 const symbolCache = new Map();
 
 const primeSymbolStore = libs => {
-  for (const {debugName, breakpadId, path, arch} of libs) {
-    symbolCache.set(urlForSymFile(debugName, breakpadId), {path, arch});
+  for (const {debugName, debugPath, breakpadId, path, arch} of libs) {
+    symbolCache.set(urlForSymFile(debugName, breakpadId), {path, debugPath, arch});
   }
 };
+
+let previouslySuccessfulDumpSymsPath = null;
 
 const isRunningObserver = {
   _observers: new Set(),
@@ -300,6 +413,8 @@ this.geckoProfiler = class extends ExtensionAPI {
           
           
           
+          
+          
           for (const rule of symbolRules.split(",")) {
             try {
               switch (rule) {
@@ -324,8 +439,30 @@ this.geckoProfiler = class extends ExtensionAPI {
                     return await getSymbolsFromNM(path, arch);
                   }
                   break;
+                case "dump_syms.exe":
+                  if (haveAbsolutePath) {
+                    const {path, debugPath} = cachedLibInfo;
+                    let dumpSymsPath = dumpSymsPathInObjDir(path);
+                    if (!dumpSymsPath && previouslySuccessfulDumpSymsPath) {
+                      
+                      
+                      
+                      
+                      dumpSymsPath = previouslySuccessfulDumpSymsPath;
+                    }
+                    if (dumpSymsPath) {
+                      const result =
+                        await getSymbolsUsingWindowsDumpSyms(dumpSymsPath, debugPath);
+                      previouslySuccessfulDumpSymsPath = dumpSymsPath;
+                      return result;
+                    }
+                  }
+                  break;
               }
             } catch (e) {
+              
+              
+              
               
               
               
