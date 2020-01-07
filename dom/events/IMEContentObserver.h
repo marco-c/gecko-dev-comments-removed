@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_IMEContentObserver_h_
-#define mozilla_IMEContentObserver_h_
+#ifndef mozilla_IMEContentObserver_h
+#define mozilla_IMEContentObserver_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EditorBase.h"
@@ -13,7 +13,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h" 
-#include "nsIEditorObserver.h"
 #include "nsIReflowObserver.h"
 #include "nsISelectionListener.h"
 #include "nsIScrollObserver.h"
@@ -40,11 +39,8 @@ class IMEContentObserver final : public nsISelectionListener
                                , public nsIReflowObserver
                                , public nsIScrollObserver
                                , public nsSupportsWeakReference
-                               , public nsIEditorObserver
 {
 public:
-  typedef ContentEventHandler::NodePosition NodePosition;
-  typedef ContentEventHandler::NodePositionBefore NodePositionBefore;
   typedef widget::IMENotification::SelectionChangeData SelectionChangeData;
   typedef widget::IMENotification::TextChangeData TextChangeData;
   typedef widget::IMENotification::TextChangeDataBase TextChangeDataBase;
@@ -56,7 +52,6 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(IMEContentObserver,
                                            nsISelectionListener)
-  NS_DECL_NSIEDITOROBSERVER
   NS_DECL_NSISELECTIONLISTENER
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATAWILLCHANGE
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
@@ -165,6 +160,16 @@ public:
 
 
   void MaybeNotifyCompositionEventHandled();
+
+  
+
+
+
+
+
+  void OnEditActionHandled();
+  void BeforeEditAction();
+  void CancelEditAction();
 
 private:
   ~IMEContentObserver() {}

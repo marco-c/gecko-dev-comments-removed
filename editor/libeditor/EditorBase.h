@@ -67,6 +67,7 @@ class EditAggregateTransaction;
 class EditTransactionBase;
 class ErrorResult;
 class HTMLEditor;
+class IMEContentObserver;
 class InsertNodeTransaction;
 class InsertTextTransaction;
 class JoinNodeTransaction;
@@ -258,6 +259,12 @@ public:
 
 
   void SetTextInputListener(TextInputListener* aTextInputListener);
+
+  
+
+
+
+  void SetIMEContentObserver(IMEContentObserver* aIMEContentObserver);
 
 public:
   virtual bool IsModifiableNode(nsINode* aNode);
@@ -1415,6 +1422,8 @@ protected:
   RefPtr<TextEditRules> mRules;
 
   RefPtr<TextInputListener> mTextInputListener;
+
+  RefPtr<IMEContentObserver> mIMEContentObserver;
 
   
   typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 5>
