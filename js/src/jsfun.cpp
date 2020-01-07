@@ -639,11 +639,7 @@ js::XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
     if (mode == XDR_DECODE) {
         RootedObject proto(cx);
         if (firstword & HasGeneratorProto) {
-            
-            
-            
-            JSContext* context = cx->helperThread() ? nullptr : cx;
-            proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(context, cx->global());
+            proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(cx, cx->global());
             if (!proto)
                 return false;
         }

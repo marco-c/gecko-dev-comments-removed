@@ -3391,11 +3391,7 @@ GeneralParser<ParseHandler, CharT>::functionDefinition(Node funcNode, uint32_t t
     if (generatorKind == GeneratorKind::Generator ||
         asyncKind == FunctionAsyncKind::AsyncFunction)
     {
-        
-        
-        
-        JSContext* cx = context->helperThread() ? nullptr : context;
-        proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(cx, context->global());
+        proto = GlobalObject::getOrCreateGeneratorFunctionPrototype(context, context->global());
         if (!proto)
             return null();
     }

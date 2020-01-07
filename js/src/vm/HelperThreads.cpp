@@ -476,6 +476,7 @@ ParseTask::trace(JSTracer* trc)
 {
     if (parseGlobal->runtimeFromAnyThread() != trc->runtime())
         return;
+
     Zone* zone = MaybeForwarded(parseGlobal)->zoneFromAnyThread();
     if (zone->usedByHelperThread()) {
         MOZ_ASSERT(!zone->isCollecting());
@@ -711,20 +712,22 @@ EnsureParserCreatedClasses(JSContext* cx, ParseTaskKind kind)
     return true;
 }
 
-class AutoClearUsedByHelperThread
+class MOZ_RAII AutoSetCreatedForHelperThread
 {
     ZoneGroup* group;
 
   public:
-    explicit AutoClearUsedByHelperThread(JSObject* global)
+    explicit AutoSetCreatedForHelperThread(JSObject* global)
       : group(global->zone()->group())
-    {}
+    {
+        group->setCreatedForHelperThread();
+    }
 
     void forget() {
         group = nullptr;
     }
 
-    ~AutoClearUsedByHelperThread() {
+    ~AutoSetCreatedForHelperThread() {
         if (group)
             group->clearUsedByHelperThread();
     }
@@ -732,7 +735,6 @@ class AutoClearUsedByHelperThread
 
 static JSObject*
 CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind,
-                              Maybe<AutoClearUsedByHelperThread>& clearUseGuard,
                               const gc::AutoSuppressGC& nogc)
 {
     JSCompartment* currentCompartment = cx->compartment();
@@ -749,30 +751,14 @@ CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind,
     
     creationOptions.setTrace(nullptr);
 
-    JSObject* global = JS_NewGlobalObject(cx, &parseTaskGlobalClass, nullptr,
-                                          JS::FireOnNewGlobalHook, compartmentOptions);
-    if (!global)
+    JSObject* obj = JS_NewGlobalObject(cx, &parseTaskGlobalClass, nullptr,
+                                       JS::DontFireOnNewGlobalHook, compartmentOptions);
+    if (!obj)
         return nullptr;
+
+    Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
 
     JS_SetCompartmentPrincipals(global->compartment(), currentCompartment->principals());
-
-    
-    
-    ZoneGroup* group = global->zone()->group();
-    group->setCreatedForHelperThread();
-    clearUseGuard.emplace(global);
-
-    
-    
-    
-    if (!EnsureParserCreatedClasses(cx, kind))
-        return nullptr;
-
-    {
-        AutoCompartment ac(cx, global);
-        if (!EnsureParserCreatedClasses(cx, kind))
-            return nullptr;
-    }
 
     return global;
 }
@@ -810,24 +796,27 @@ StartOffThreadParseTask(JSContext* cx, const ReadOnlyCompileOptions& options,
     gc::AutoAssertNoNurseryAlloc noNurseryAlloc;
     AutoSuppressAllocationMetadataBuilder suppressMetadata(cx);
 
-    Maybe<AutoClearUsedByHelperThread> clearUseGuard;
-    JSObject* global = CreateGlobalForOffThreadParse(cx, kind, clearUseGuard, nogc);
+    JSObject* global = CreateGlobalForOffThreadParse(cx, kind, nogc);
     if (!global)
         return false;
 
+    
+    
+    
+    
+    AutoSetCreatedForHelperThread createdForHelper(global);
+
     ScopedJSDeletePtr<ParseTask> task(taskFunctor(global));
-    if (!task)
+    if (!task || !task->init(cx, options))
         return false;
 
-    if (!task->init(cx, options) || !QueueOffThreadParseTask(cx, task))
+    if (!QueueOffThreadParseTask(cx, task))
         return false;
 
     task.forget();
-    clearUseGuard->forget();
-
+    createdForHelper.forget();
     return true;
 }
-
 
 bool
 js::StartOffThreadParseScript(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -1716,13 +1705,6 @@ GlobalHelperThreadState::cancelParseTask(JSRuntime* rt, ParseTaskKind kind, void
     LeaveParseTaskZone(rt, parseTask);
 }
 
-JSObject*
-GlobalObject::getGeneratorFunctionPrototype()
-{
-    const Value& v = getReservedSlot(GENERATOR_FUNCTION_PROTO);
-    return v.isObject() ? &v.toObject() : nullptr;
-}
-
 void
 GlobalHelperThreadState::mergeParseTaskCompartment(JSContext* cx, ParseTask* parseTask,
                                                    Handle<GlobalObject*> global,
@@ -1734,55 +1716,6 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSContext* cx, ParseTask* par
     JS::AutoAssertNoGC nogc(cx);
 
     LeaveParseTaskZone(cx->runtime(), parseTask);
-
-    {
-        AutoCompartment ac(cx, parseTask->parseGlobal);
-
-        
-        
-        
-        GlobalObject* parseGlobal = &parseTask->parseGlobal->as<GlobalObject>();
-        JSObject* parseTaskGenFunctionProto = parseGlobal->getGeneratorFunctionPrototype();
-
-        
-        JSObject* moduleProto = parseGlobal->maybeGetModulePrototype();
-        JSObject* importEntryProto = parseGlobal->maybeGetImportEntryPrototype();
-        JSObject* exportEntryProto = parseGlobal->maybeGetExportEntryPrototype();
-
-        
-        
-        
-        
-        Zone* parseZone = parseTask->parseGlobal->zone();
-        for (auto group = parseZone->cellIter<ObjectGroup>(); !group.done(); group.next()) {
-            TaggedProto proto(group->proto());
-            if (!proto.isObject())
-                continue;
-
-            JSObject* protoObj = proto.toObject();
-
-            JSObject* newProto;
-            JSProtoKey key = JS::IdentifyStandardPrototype(protoObj);
-            if (key != JSProto_Null) {
-                MOZ_ASSERT(key == JSProto_Object || key == JSProto_Array ||
-                           key == JSProto_Function || key == JSProto_RegExp);
-                newProto = global->maybeGetPrototype(key);
-                MOZ_ASSERT(newProto);
-            } else if (protoObj == parseTaskGenFunctionProto) {
-                newProto = global->getGeneratorFunctionPrototype();
-            } else if (protoObj == moduleProto) {
-                newProto = global->getModulePrototype();
-            } else if (protoObj == importEntryProto) {
-                newProto = global->getImportEntryPrototype();
-            } else if (protoObj == exportEntryProto) {
-                newProto = global->getExportEntryPrototype();
-            } else {
-                continue;
-            }
-
-            group->setProtoUnchecked(TaggedProto(newProto));
-        }
-    }
 
     
     gc::MergeCompartments(parseTask->parseGlobal->compartment(), dest);
