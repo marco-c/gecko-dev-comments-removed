@@ -17,7 +17,6 @@ var fs = require("fs");
 var path = require("path");
 var helpers = require("../helpers");
 var globals = require("../globals");
-var placesGlobals = require("./places-overlay").globals;
 
 const rootDir = helpers.rootDir;
 
@@ -30,12 +29,22 @@ const EXTRA_SCRIPTS = [
   "browser/components/downloads/content/downloads.js",
   "browser/components/downloads/content/indicator.js",
   
+  "toolkit/content/editMenuOverlay.js"
+];
+
+const extraDefinitions = [
   
-  "toolkit/content/globalOverlay.js",
   
-  "toolkit/content/editMenuOverlay.js",
   
-  "browser/base/content/utilityOverlay.js"
+  {name: "XPCOMUtils", writable: false},
+  {name: "Task", writable: false},
+  {name: "PlacesUtils", writable: false},
+  {name: "PlacesUIUtils", writable: false},
+  {name: "PlacesTransactions", writable: false},
+  {name: "PlacesTreeView", writable: false},
+  {name: "PlacesInsertionPoint", writable: false},
+  {name: "PlacesController", writable: false},
+  {name: "PlacesControllerDragHelper", writable: false}
 ];
 
 
@@ -103,13 +112,11 @@ function getScriptGlobals() {
     }
   }
 
-  return fileGlobals;
+  return fileGlobals.concat(extraDefinitions);
 }
 
 function mapGlobals(fileGlobals) {
-  
-  
-  let globalObjects = Object.assign({}, placesGlobals);
+  let globalObjects = {};
   for (let global of fileGlobals) {
     globalObjects[global.name] = global.writable;
   }

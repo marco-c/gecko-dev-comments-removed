@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
+let {ForgetAboutSite} = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm", {});
 
 const domains = [
   "mochi.test:8888",

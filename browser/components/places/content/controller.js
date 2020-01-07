@@ -23,6 +23,11 @@
 
 
 
+
+
+
+
+
 function PlacesInsertionPoint({ parentId, parentGuid,
                                 index = PlacesUtils.bookmarks.DEFAULT_INDEX,
                                 orientation = Ci.nsITreeView.DROP_ON,
@@ -224,6 +229,7 @@ PlacesController.prototype = {
         host = queries[0].domain;
       } else
         host = Services.io.newURI(this._view.selectedNode.uri).host;
+      let {ForgetAboutSite} = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm", {});
       ForgetAboutSite.removeDataFromDomain(host)
                      .catch(Cu.reportError);
       break;

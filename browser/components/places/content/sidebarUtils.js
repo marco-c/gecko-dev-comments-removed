@@ -2,6 +2,9 @@
 
 
 
+
+
+
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 let uidensity = window.top.document.documentElement.getAttribute("uidensity");

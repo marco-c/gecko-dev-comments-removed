@@ -7,6 +7,8 @@
 
 
 
+
+
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
@@ -406,7 +408,7 @@ var PlacesOrganizer = {
     let fpCallback = function fpCallback_done(aResult) {
       if (aResult != Ci.nsIFilePicker.returnCancel && fp.fileURL) {
         ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
-        BookmarkHTMLUtils.importFromURL(fp.fileURL.spec)
+        BookmarkHTMLUtils.importFromURL(fp.fileURL.spec, false)
                          .catch(Cu.reportError);
       }
     };
@@ -545,9 +547,7 @@ var PlacesOrganizer = {
 
     (async function() {
       try {
-        await BookmarkJSONUtils.importFromFile(aFilePath, {
-          replace: true,
-        });
+        await BookmarkJSONUtils.importFromFile(aFilePath, true);
       } catch (ex) {
         PlacesOrganizer._showErrorAlert(PlacesUIUtils.getString("bookmarksRestoreParseError"));
       }
