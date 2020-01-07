@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef nsPKCS12Blob_h
 #define nsPKCS12Blob_h
 
@@ -15,15 +17,11 @@ class nsIFile;
 class nsIX509Cert;
 
 
-
-
-
-
 class nsPKCS12Blob
 {
 public:
   nsPKCS12Blob();
-  virtual ~nsPKCS12Blob() {}
+  ~nsPKCS12Blob() {}
 
   
   nsresult ImportFromFile(nsIFile* file);
@@ -32,15 +30,18 @@ public:
   nsresult ExportToFile(nsIFile* file, nsIX509Cert** certs, int numCerts);
 
 private:
-  nsCOMPtr<nsIMutableArray> mCertArray;
   nsCOMPtr<nsIInterfaceRequestor> mUIContext;
 
   
-  nsresult getPKCS12FilePassword(SECItem*);
-  nsresult newPKCS12FilePassword(SECItem*);
-  nsresult inputToDecoder(SEC_PKCS12DecoderContext*, nsIFile*);
-  nsresult unicodeToItem(const nsString& uni, SECItem* item);
-  void handleError(int myerr = 0);
+  nsresult getPKCS12FilePassword(uint32_t& passwordBufferLength,
+                                 UniquePtr<uint8_t[]>& passwordBuffer);
+  nsresult newPKCS12FilePassword(uint32_t& passwordBufferLength,
+                                 UniquePtr<uint8_t[]>& passwordBuffer);
+  nsresult inputToDecoder(UniqueSEC_PKCS12DecoderContext& dcx, nsIFile* file,
+                          PRErrorCode& nssError);
+  UniquePtr<uint8_t[]> stringToBigEndianBytes(const nsString& uni,
+                                              uint32_t& bytesLength);
+  void handleError(int myerr, PRErrorCode prerr);
 
   
   
@@ -52,30 +53,28 @@ private:
   
   
   
-  
-  
+  enum class RetryReason
+  {
+    DoNotRetry,
+    BadPassword,
+    AutoRetryEmptyPassword,
+  };
+  enum class ImportMode
+  {
+    StandardPrompt,
+    TryZeroLengthSecitem
+  };
 
-  enum RetryReason
-  {
-    rr_do_not_retry,
-    rr_bad_password,
-    rr_auto_retry_empty_password_flavors
-  };
-  enum ImportMode
-  {
-    im_standard_prompt,
-    im_try_zero_length_secitem
-  };
+  void handleImportError(PRErrorCode nssError, RetryReason& retryReason,
+                         uint32_t passwordLengthInBytes);
 
   nsresult ImportFromFileHelper(nsIFile* file,
                                 ImportMode aImportMode,
                                 RetryReason& aWantRetry);
 
-  
-  PRFileDesc* mTmpFile;
-
-  static SECItem* nickname_collision(SECItem*, PRBool*, void*);
-  static void write_export_file(void* arg, const char* buf, unsigned long len);
+  static SECItem* nicknameCollision(SECItem* oldNick, PRBool* cancel,
+                                    void* wincx);
+  static void writeExportFile(void* arg, const char* buf, unsigned long len);
 };
 
 #endif 
