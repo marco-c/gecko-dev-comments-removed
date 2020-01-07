@@ -258,8 +258,8 @@ public:
   
   
   nsresult GetQueryResults(nsNavHistoryQueryResultNode *aResultNode,
-                           const nsCOMArray<nsNavHistoryQuery>& aQueries,
-                           nsNavHistoryQueryOptions *aOptions,
+                           const RefPtr<nsNavHistoryQuery>& aQuery,
+                           const RefPtr<nsNavHistoryQueryOptions>& aOptions,
                            nsCOMArray<nsNavHistoryResultNode>* aResults);
 
   
@@ -298,10 +298,10 @@ public:
   int32_t GetDaysOfHistory();
 
   
-  static uint32_t GetUpdateRequirements(const nsCOMArray<nsNavHistoryQuery>& aQueries,
+  static uint32_t GetUpdateRequirements(const RefPtr<nsNavHistoryQuery>& aQuery,
                                         nsNavHistoryQueryOptions* aOptions,
                                         bool* aHasSearchTerms);
-  bool EvaluateQueryForNode(const nsCOMArray<nsNavHistoryQuery>& aQueries,
+  bool EvaluateQueryForNode(const RefPtr<nsNavHistoryQuery>& aQuery,
                               nsNavHistoryQueryOptions* aOptions,
                               nsNavHistoryResultNode* aNode);
 
@@ -539,20 +539,18 @@ protected:
 
   static void expireNowTimerCallback(nsITimer* aTimer, void* aClosure);
 
-  nsresult ConstructQueryString(const nsCOMArray<nsNavHistoryQuery>& aQueries,
-                                nsNavHistoryQueryOptions* aOptions,
+  nsresult ConstructQueryString(const RefPtr<nsNavHistoryQuery>& aQuery,
+                                const RefPtr<nsNavHistoryQueryOptions>& aOptions,
                                 nsCString& queryString,
                                 bool& aParamsPresent,
                                 StringHash& aAddParams);
 
-  nsresult QueryToSelectClause(nsNavHistoryQuery* aQuery,
-                               nsNavHistoryQueryOptions* aOptions,
-                               int32_t aQueryIndex,
+  nsresult QueryToSelectClause(const RefPtr<nsNavHistoryQuery>& aQuery,
+                               const RefPtr<nsNavHistoryQueryOptions>& aOptions,
                                nsCString* aClause);
   nsresult BindQueryClauseParameters(mozIStorageBaseStatement* statement,
-                                     int32_t aQueryIndex,
-                                     nsNavHistoryQuery* aQuery,
-                                     nsNavHistoryQueryOptions* aOptions);
+                                     const RefPtr<nsNavHistoryQuery>& aQuery,
+                                     const RefPtr<nsNavHistoryQueryOptions>& aOptions);
 
   nsresult ResultsAsList(mozIStorageStatement* statement,
                          nsNavHistoryQueryOptions* aOptions,
@@ -563,7 +561,7 @@ protected:
   nsresult FilterResultSet(nsNavHistoryQueryResultNode *aParentNode,
                            const nsCOMArray<nsNavHistoryResultNode>& aSet,
                            nsCOMArray<nsNavHistoryResultNode>* aFiltered,
-                           const nsCOMArray<nsNavHistoryQuery>& aQueries,
+                           const RefPtr<nsNavHistoryQuery>& aQuery,
                            nsNavHistoryQueryOptions* aOptions);
 
   

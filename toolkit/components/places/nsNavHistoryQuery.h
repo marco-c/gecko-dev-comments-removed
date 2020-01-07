@@ -66,11 +66,15 @@ public:
     return NS_OK;
   }
 
+  nsresult Clone(nsNavHistoryQuery **_clone);
+
 private:
   ~nsNavHistoryQuery() {}
 
 protected:
 
+  
+  
   int32_t mMinVisits;
   int32_t mMaxVisits;
   PRTime mBeginTime;
@@ -100,18 +104,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsNavHistoryQuery, NS_NAVHISTORYQUERY_IID)
 class nsNavHistoryQueryOptions final : public nsINavHistoryQueryOptions
 {
 public:
-  nsNavHistoryQueryOptions()
-  : mSort(0)
-  , mResultType(0)
-  , mExcludeItems(false)
-  , mExcludeQueries(false)
-  , mExcludeReadOnlyFolders(false)
-  , mExpandQueries(true)
-  , mIncludeHidden(false)
-  , mMaxResults(0)
-  , mQueryType(nsINavHistoryQueryOptions::QUERY_TYPE_HISTORY)
-  , mAsyncEnabled(false)
-  { }
+  nsNavHistoryQueryOptions();
+  nsNavHistoryQueryOptions(const nsNavHistoryQueryOptions& other);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_NAVHISTORYQUERYOPTIONS_IID)
 
@@ -129,11 +123,10 @@ public:
   uint16_t QueryType() const { return mQueryType; }
   bool AsyncEnabled() const { return mAsyncEnabled; }
 
-  nsresult Clone(nsNavHistoryQueryOptions **aResult);
+  nsresult Clone(nsNavHistoryQueryOptions **_clone);
 
 private:
   ~nsNavHistoryQueryOptions() {}
-  nsNavHistoryQueryOptions(const nsNavHistoryQueryOptions& other) {} 
 
   
   
@@ -143,7 +136,6 @@ private:
   
   uint16_t mSort;
   nsCString mSortingAnnotation;
-  nsCString mParentAnnotationToExclude;
   uint16_t mResultType;
   bool mExcludeItems;
   bool mExcludeQueries;

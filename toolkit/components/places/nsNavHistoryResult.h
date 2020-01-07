@@ -101,13 +101,6 @@ class nsNavHistoryResult final : public nsSupportsWeakReference,
                                  public nsINavHistoryObserver
 {
 public:
-  static nsresult NewHistoryResult(nsCOMArray<nsNavHistoryQuery>& aQueries,
-                                   uint32_t aQueryCount,
-                                   nsNavHistoryQueryOptions* aOptions,
-                                   nsNavHistoryContainerResultNode* aRoot,
-                                   bool aBatchInProgress,
-                                   nsNavHistoryResult** result);
-
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_NAVHISTORYRESULT_IID)
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -133,16 +126,15 @@ public:
                    const nsAString& aLastKnownTitle);
 
 public:
-  
-  explicit nsNavHistoryResult(nsNavHistoryContainerResultNode* mRoot);
-  nsresult Init(nsCOMArray<nsNavHistoryQuery>& aQueries,
-                uint32_t aQueryCount,
-                nsNavHistoryQueryOptions *aOptions);
+  explicit nsNavHistoryResult(nsNavHistoryContainerResultNode* mRoot,
+                              const RefPtr<nsNavHistoryQuery>& aQuery,
+                              const RefPtr<nsNavHistoryQueryOptions>& aOptions,
+                              bool aBatchInProgress);
 
   RefPtr<nsNavHistoryContainerResultNode> mRootNode;
 
-  nsCOMArray<nsINavHistoryQuery> mQueries;
-  nsCOMPtr<nsNavHistoryQueryOptions> mOptions;
+  RefPtr<nsNavHistoryQuery> mQuery;
+  RefPtr<nsNavHistoryQueryOptions> mOptions;
 
   
   
@@ -488,8 +480,8 @@ public:
   
   
   
-  nsCOMPtr<nsNavHistoryQueryOptions> mOriginalOptions;
-  nsCOMPtr<nsNavHistoryQueryOptions> mOptions;
+  RefPtr<nsNavHistoryQueryOptions> mOriginalOptions;
+  RefPtr<nsNavHistoryQueryOptions> mOptions;
 
   void FillStats();
   
@@ -629,11 +621,11 @@ public:
   nsNavHistoryQueryResultNode(const nsACString& aTitle,
                               const nsACString& aQueryURI);
   nsNavHistoryQueryResultNode(const nsACString& aTitle,
-                              const nsCOMArray<nsNavHistoryQuery>& aQueries,
+                              const RefPtr<nsNavHistoryQuery>& aQuery,
                               nsNavHistoryQueryOptions* aOptions);
   nsNavHistoryQueryResultNode(const nsACString& aTitle,
                               PRTime aTime,
-                              const nsCOMArray<nsNavHistoryQuery>& aQueries,
+                              const RefPtr<nsNavHistoryQuery>& aQuery,
                               nsNavHistoryQueryOptions* aOptions);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -665,14 +657,14 @@ public:
 public:
   
   
-  nsresult VerifyQueriesSerialized();
+  nsresult VerifyQuerySerialized();
 
   
   
-  nsCOMArray<nsNavHistoryQuery> mQueries;
+  RefPtr<nsNavHistoryQuery> mQuery;
   uint32_t mLiveUpdate; 
   bool mHasSearchTerms;
-  nsresult VerifyQueriesParsed();
+  nsresult VerifyQueryParsed();
 
   
   nsNavHistoryQueryOptions* Options();
