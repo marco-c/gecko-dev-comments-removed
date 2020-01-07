@@ -10,6 +10,7 @@ add_task(async function () {
   const {front, client} = await initPerfFront();
 
   
+  
   const geckoProfiler = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
 
   is(await front.isActive(), false, "The profiler hasn't been started yet.");

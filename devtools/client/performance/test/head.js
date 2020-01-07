@@ -80,9 +80,7 @@ const key = (id, win = window) => {
     
     
     
-    let nsIProfilerModule = Cc["@mozilla.org/tools/profiler;1"]
-      .getService(Ci.nsIProfiler);
-    nsIProfilerModule.StopProfiler();
+    Services.profiler.StopProfiler();
 
     
     

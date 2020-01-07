@@ -43,7 +43,6 @@ module.exports = {
     
     
     "files": [
-      "devtools/**",
       "extensions/pref/**",
       "mobile/android/**",
       "testing/**",

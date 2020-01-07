@@ -480,6 +480,7 @@ var {
 
     let rpc = undefined;
 
+    
     let subScriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
                  .getService(Ci.mozIJSSubScriptLoader);
 
