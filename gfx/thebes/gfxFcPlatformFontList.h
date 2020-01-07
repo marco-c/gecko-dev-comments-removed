@@ -327,6 +327,10 @@ public:
         mGenericMappings.Clear();
     }
 
+    
+    void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr,
+                               bool aCheckEnvironment = true);
+
     static FT_Library GetFTLibrary();
 
 protected:
@@ -364,6 +368,10 @@ protected:
     GetDefaultFontForPlatform(const gfxFontStyle* aStyle) override;
 
     gfxFontFamily* CreateFontFamily(const nsAString& aName) const override;
+
+    
+    bool TryLangForGroup(const nsACString& aOSLang, nsAtom* aLangGroup,
+                         nsACString& aLang);
 
 #ifdef MOZ_BUNDLED_FONTS
     void ActivateBundledFonts();

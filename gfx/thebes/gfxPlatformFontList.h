@@ -298,10 +298,6 @@ public:
     GetDefaultGeneric(eFontPrefLang aLang);
 
     
-    void GetSampleLangForGroup(nsAtom* aLanguage, nsACString& aLangStr,
-                               bool aCheckEnvironment = true);
-
-    
     bool IsFontFamilyWhitelistActive();
 
     static void FontWhitelistPrefChanged(const char *aPref, void *aClosure);
@@ -491,10 +487,6 @@ protected:
 
     
     nsAtom* GetLangGroup(nsAtom* aLanguage);
-
-    
-    bool TryLangForGroup(const nsACString& aOSLang, nsAtom* aLangGroup,
-                         nsACString& aLang);
 
     static const char* GetGenericName(mozilla::FontFamilyType aGenericType);
 
