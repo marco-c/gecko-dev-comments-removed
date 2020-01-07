@@ -78,45 +78,6 @@ public:
     aScope = mScope;
   }
 
-  ServiceWorkerUpdateViaCache
-  GetUpdateViaCache(ErrorResult& aRv) const override
-  {
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    MOZ_ASSERT(swm);
-
-    nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
-    MOZ_ASSERT(window);
-
-    nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
-    MOZ_ASSERT(doc);
-
-    nsCOMPtr<nsIServiceWorkerRegistrationInfo> registration;
-    NS_ConvertUTF8toUTF16 scope(mDescriptor.Scope());
-    nsresult rv = swm->GetRegistrationByPrincipal(doc->NodePrincipal(), scope,
-                                                  getter_AddRefs(registration));
-
-    
-
-
-
-
-
-
-    if (NS_FAILED(rv) || !registration) {
-      aRv = NS_ERROR_DOM_INVALID_STATE_ERR;
-      return ServiceWorkerUpdateViaCache::None;
-    }
-
-    uint16_t updateViaCache;
-    rv = registration->GetUpdateViaCache(&updateViaCache);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-    
-    Unused << rv;
-
-    return static_cast<ServiceWorkerUpdateViaCache>(updateViaCache);
-  }
-
   bool
   MatchesDescriptor(const ServiceWorkerRegistrationDescriptor& aDescriptor) override;
 
@@ -167,19 +128,6 @@ public:
   already_AddRefed<Promise>
   GetNotifications(const GetNotificationOptions& aOptions,
                    ErrorResult& aRv) override;
-
-  void
-  GetScope(nsAString& aScope) const override
-  {
-    aScope = mScope;
-  }
-
-  ServiceWorkerUpdateViaCache
-  GetUpdateViaCache(ErrorResult& aRv) const override
-  {
-    
-    return ServiceWorkerUpdateViaCache::Imports;
-  }
 
   bool
   Notify(WorkerStatus aStatus) override;
