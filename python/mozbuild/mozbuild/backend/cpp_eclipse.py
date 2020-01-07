@@ -71,7 +71,7 @@ class CppEclipseBackend(CommonBackend):
         return os.path.join(srcdir_parent, workspace_dirname)
 
     def consume_object(self, obj):
-        reldir = getattr(obj, 'relativedir', None)
+        reldir = getattr(obj, 'relsrcdir', None)
 
         
         
