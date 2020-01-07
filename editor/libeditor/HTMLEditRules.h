@@ -518,7 +518,17 @@ protected:
   ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                   nsAtom& aBlockTag);
 
-  nsresult MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
   
 
