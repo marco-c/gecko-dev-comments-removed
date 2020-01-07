@@ -5492,6 +5492,8 @@ pref("network.trr.blacklist-duration", 259200);
 
 pref("network.trr.request-timeout", 3000);
 
+pref("network.trr.early-AAAA", false);
+
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
 pref("captivedetect.maxWaitingTime", 5000);
