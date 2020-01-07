@@ -2696,7 +2696,7 @@ async function inflateTree(tree, pseudoTree, parentGuid) {
 class BookmarkContent {
   constructor(title, urlHref, smartBookmarkName, position) {
     this.title = title;
-    this.url = urlHref ? new URL(urlHref) : null;
+    this.urlHref = urlHref;
     this.smartBookmarkName = smartBookmarkName;
     this.position = position;
   }
@@ -2708,11 +2708,46 @@ class BookmarkContent {
     let position = row.getResultByName("position");
     return new BookmarkContent(title, urlHref, smartBookmarkName, position);
   }
+}
 
-  hasSameURL(otherContent) {
-    return !!this.url == !!otherContent.url &&
-           this.url.href == otherContent.url.href;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeDupeKey(node, content) {
+  switch (node.kind) {
+    case SyncedBookmarksMirror.KIND.BOOKMARK:
+      
+      
+      return JSON.stringify([node.kind, content.title, content.urlHref]);
+
+    case SyncedBookmarksMirror.KIND.QUERY:
+      if (content.smartBookmarkName) {
+        return JSON.stringify([node.kind, content.smartBookmarkName]);
+      }
+      return JSON.stringify([node.kind, content.title, content.urlHref]);
+
+    case SyncedBookmarksMirror.KIND.FOLDER:
+    case SyncedBookmarksMirror.KIND.LIVEMARK:
+      return JSON.stringify([node.kind, content.title]);
+
+    case SyncedBookmarksMirror.KIND.SEPARATOR:
+      return JSON.stringify([node.kind, content.position]);
   }
+  return JSON.stringify([node.guid]);
 }
 
 
@@ -3246,6 +3281,7 @@ class BookmarkMerger {
     this.newLocalContents = newLocalContents;
     this.remoteTree = remoteTree;
     this.newRemoteContents = newRemoteContents;
+    this.matchingDupesByLocalParentNode = new Map();
     this.mergedGuids = new Set();
     this.deleteLocally = new Set();
     this.deleteRemotely = new Set();
@@ -3519,7 +3555,7 @@ class BookmarkMerger {
       
       
       MirrorLog.trace("Remote child ${remoteChildNode} doesn't exist " +
-                      "locally; looking for content match",
+                      "locally; looking for local content match",
                       { remoteChildNode });
 
       let localChildNodeByContent = await this.findLocalNodeMatchingRemoteNode(
@@ -3536,11 +3572,12 @@ class BookmarkMerger {
     let localParentNode = this.localTree.parentNodeFor(localChildNode);
     if (!localParentNode) {
       
+      
       MirrorLog.error("Remote child ${remoteChildNode} exists locally as " +
                       "${localChildNode} without local parent",
                       { remoteChildNode, localChildNode });
-      throw new SyncedBookmarksMirror.ConsistencyError(
-        "Local child node is orphan");
+      throw new TypeError(
+        "Can't merge existing remote child without local parent");
     }
 
     MirrorLog.trace("Remote child ${remoteChildNode} exists locally in " +
@@ -3660,6 +3697,25 @@ class BookmarkMerger {
     if (!remoteChildNode) {
       
       
+      MirrorLog.trace("Local child ${localChildNode} doesn't exist " +
+                      "remotely; looking for remote content match",
+                      { localChildNode });
+
+      let remoteChildNodeByContent = await this.findRemoteNodeMatchingLocalNode(
+        mergedNode, localChildNode);
+
+      if (remoteChildNodeByContent) {
+        
+        
+        let mergedChildNode = await this.mergeNode(
+          remoteChildNodeByContent.guid, localChildNode,
+          remoteChildNodeByContent);
+        mergedNode.mergedChildren.push(mergedChildNode);
+        return false;
+      }
+
+      
+      
       let mergedChildNode = await this.mergeNode(localChildNode.guid, localChildNode,
                                                   null);
       mergedNode.mergedChildren.push(mergedChildNode);
@@ -3671,11 +3727,12 @@ class BookmarkMerger {
     let remoteParentNode = this.remoteTree.parentNodeFor(remoteChildNode);
     if (!remoteParentNode) {
       
+      
       MirrorLog.error("Local child ${localChildNode} exists remotely as " +
                       "${remoteChildNode} without remote parent",
                       { localChildNode, remoteChildNode });
-      throw new SyncedBookmarksMirror.ConsistencyError(
-        "Remote child node is orphan");
+      throw new TypeError(
+        "Can't merge existing local child without remote parent");
     }
 
     MirrorLog.trace("Local child ${localChildNode} exists locally in " +
@@ -3901,8 +3958,9 @@ class BookmarkMerger {
       let localParentNode = this.localTree.parentNodeFor(localNode);
       if (!localParentNode) {
         
-        throw new SyncedBookmarksMirror.ConsistencyError(
-          "Can't check for structure changes of local orphan");
+        
+        throw new TypeError(
+          "Can't check for structure changes without local parent");
       }
       if (localParentNode.guid != remoteParentNode.guid) {
         return BookmarkMerger.STRUCTURE.MOVED;
@@ -3978,8 +4036,9 @@ class BookmarkMerger {
       let remoteParentNode = this.remoteTree.parentNodeFor(remoteNode);
       if (!remoteParentNode) {
         
-        throw new SyncedBookmarksMirror.ConsistencyError(
-          "Can't check for structure changes of remote orphan");
+        
+        throw new TypeError(
+          "Can't check for structure changes without remote parent");
       }
       if (remoteParentNode.guid != localParentNode.guid) {
         return BookmarkMerger.STRUCTURE.MOVED;
@@ -4122,54 +4181,182 @@ class BookmarkMerger {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async findAllMatchingDupesInFolders(localParentNode, remoteParentNode) {
+    let matches = new Map();
+    let dupeKeyToLocalNodes = new Map();
+
+    for await (let localChildNode of yieldingIterator(localParentNode.children)) {
+      let localChildContent = this.newLocalContents.get(localChildNode.guid);
+      if (!localChildContent) {
+        MirrorLog.trace("Not deduping local child ${localChildNode}; already " +
+                        "uploaded", { localChildNode });
+        continue;
+      }
+      let remoteChildNodeByGuid = this.remoteTree.nodeForGuid(
+        localChildNode.guid);
+      if (remoteChildNodeByGuid) {
+        MirrorLog.trace("Not deduping local child ${localChildNode}; already " +
+                        "exists remotely as ${remoteChildNodeByGuid}",
+                        { localChildNode, remoteChildNodeByGuid });
+        continue;
+      }
+      if (this.remoteTree.isDeleted(localChildNode.guid)) {
+        MirrorLog.trace("Not deduping local child ${localChildNode}; deleted " +
+                        "remotely", { localChildNode });
+        continue;
+      }
+      let dupeKey = makeDupeKey(localChildNode, localChildContent);
+      let localNodesForKey = dupeKeyToLocalNodes.get(dupeKey);
+      if (localNodesForKey) {
+        
+        
+        
+        localNodesForKey.push(localChildNode);
+      } else {
+        dupeKeyToLocalNodes.set(dupeKey, [localChildNode]);
+      }
+    }
+
+    for await (let remoteChildNode of yieldingIterator(remoteParentNode.children)) {
+      if (matches.has(remoteChildNode)) {
+        MirrorLog.trace("Not deduping remote child ${remoteChildNode}; " +
+                        "already deduped", { remoteChildNode });
+        continue;
+      }
+      let remoteChildContent = this.newRemoteContents.get(
+        remoteChildNode.guid);
+      if (!remoteChildContent) {
+        MirrorLog.trace("Not deduping remote child ${remoteChildNode}; " +
+                        "already merged", { remoteChildNode });
+        continue;
+      }
+      let dupeKey = makeDupeKey(remoteChildNode, remoteChildContent);
+      let localNodesForKey = dupeKeyToLocalNodes.get(dupeKey);
+      if (!localNodesForKey) {
+        MirrorLog.trace("Not deduping remote child ${remoteChildNode}; no " +
+                        "local content matches", { remoteChildNode });
+        continue;
+      }
+      let localChildNode = localNodesForKey.shift();
+      if (!localChildNode) {
+        MirrorLog.trace("Not deduping remote child ${remoteChildNode}; no " +
+                        "remaining local content matches", { remoteChildNode });
+        continue;
+      }
+      MirrorLog.trace("Deduping local child ${localChildNode} to remote " +
+                      "child ${remoteChildNode}", { localChildNode,
+                                                    remoteChildNode });
+      matches.set(localChildNode, remoteChildNode);
+      matches.set(remoteChildNode, localChildNode);
+    }
+    return matches;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async findRemoteNodeMatchingLocalNode(mergedNode, localChildNode) {
+    let remoteParentNode = mergedNode.remoteNode;
+    if (!remoteParentNode) {
+      MirrorLog.trace("Merged node ${mergedNode} doesn't exist remotely; no " +
+                      "potential dupes for local child ${localChildNode}",
+                      { mergedNode, localChildNode });
+      return null;
+    }
+    let localParentNode = mergedNode.localNode;
+    if (!localParentNode) {
+      
+      
+      throw new TypeError(
+        "Can't find remote content match without local parent");
+    }
+    let matches = this.matchingDupesByLocalParentNode.get(localParentNode);
+    if (!matches) {
+      MirrorLog.trace("First local child ${localChildNode} doesn't exist " +
+                      "remotely; finding all matching dupes in local " +
+                      "${localParentNode} and remote ${remoteParentNode}",
+                      { localChildNode, localParentNode, remoteParentNode });
+      matches = await this.findAllMatchingDupesInFolders(localParentNode,
+                                                         remoteParentNode);
+      this.matchingDupesByLocalParentNode.set(localParentNode, matches);
+    }
+    let newRemoteNode = matches.get(localChildNode);
+    if (!newRemoteNode) {
+      return null;
+    }
+    this.telemetryEvents.push({ value: "dupe" });
+    return newRemoteNode;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
   async findLocalNodeMatchingRemoteNode(mergedNode, remoteChildNode) {
     let localParentNode = mergedNode.localNode;
     if (!localParentNode) {
       MirrorLog.trace("Merged node ${mergedNode} doesn't exist locally; no " +
-                      "potential dupes for ${remoteChildNode}",
+                      "potential dupes for remote child ${remoteChildNode}",
                       { mergedNode, remoteChildNode });
       return null;
     }
-    let remoteChildContent = this.newRemoteContents.get(remoteChildNode.guid);
-    if (!remoteChildContent) {
+    let remoteParentNode = mergedNode.remoteNode;
+    if (!remoteParentNode) {
       
       
+      throw new TypeError(
+        "Can't find local content match without remote parent");
+    }
+    let matches = this.matchingDupesByLocalParentNode.get(localParentNode);
+    if (!matches) {
+      MirrorLog.trace("First remote child ${remoteChildNode} doesn't exist " +
+                      "locally; finding all matching dupes in local " +
+                      "${localParentNode} and remote ${remoteParentNode}",
+                      { remoteChildNode, localParentNode, remoteParentNode });
+      matches = await this.findAllMatchingDupesInFolders(localParentNode,
+                                                         remoteParentNode);
+      this.matchingDupesByLocalParentNode.set(localParentNode, matches);
+    }
+    let newLocalNode = matches.get(remoteChildNode);
+    if (!newLocalNode) {
       return null;
     }
-    let newLocalNode = null;
-    for await (let localChildNode of yieldingIterator(localParentNode.children)) {
-      if (this.mergedGuids.has(localChildNode.guid)) {
-        MirrorLog.trace("Not deduping ${localChildNode}; already seen in " +
-                        "another folder", { localChildNode });
-        continue;
-      }
-      if (!this.newLocalContents.has(localChildNode.guid)) {
-        MirrorLog.trace("Not deduping ${localChildNode}; already uploaded",
-                        { localChildNode });
-        continue;
-      }
-      let remoteCandidate = this.remoteTree.nodeForGuid(localChildNode.guid);
-      if (remoteCandidate) {
-        MirrorLog.trace("Not deduping ${localChildNode}; already exists " +
-                        "remotely", { localChildNode });
-        continue;
-      }
-      if (this.remoteTree.isDeleted(localChildNode.guid)) {
-        MirrorLog.trace("Not deduping ${localChildNode}; deleted on server",
-                        { localChildNode });
-        continue;
-      }
-      let localChildContent = this.newLocalContents.get(localChildNode.guid);
-      if (!contentsMatch(localChildNode, localChildContent, remoteChildNode,
-                         remoteChildContent)) {
-        MirrorLog.trace("${localChildNode} is not a dupe of ${remoteChildNode}",
-                        { localChildNode, remoteChildNode });
-        continue;
-      }
-      this.telemetryEvents.push({ value: "dupe" });
-      newLocalNode = localChildNode;
-      break;
-    }
+    this.telemetryEvents.push({ value: "dupe" });
     return newLocalNode;
   }
 
@@ -4202,49 +4389,6 @@ BookmarkMerger.STRUCTURE = {
   MOVED: 2,
   DELETED: 3,
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function contentsMatch(localNode, localContent, remoteNode, remoteContent) {
-  if (localNode.kind != remoteNode.kind) {
-    return false;
-  }
-  switch (localNode.kind) {
-    case SyncedBookmarksMirror.KIND.BOOKMARK:
-      return localContent.title == remoteContent.title &&
-             localContent.hasSameURL(remoteContent);
-
-    case SyncedBookmarksMirror.KIND.QUERY:
-      if (localContent.smartBookmarkName || remoteContent.smartBookmarkName) {
-        return localContent.smartBookmarkName ==
-               remoteContent.smartBookmarkName;
-      }
-      return localContent.title == remoteContent.title &&
-             localContent.hasSameURL(remoteContent);
-
-    case SyncedBookmarksMirror.KIND.FOLDER:
-    case SyncedBookmarksMirror.KIND.LIVEMARK:
-      return localContent.title == remoteContent.title;
-
-    case SyncedBookmarksMirror.KIND.SEPARATOR:
-      return localContent.position == remoteContent.position;
-  }
-  return false;
-}
 
 
 

@@ -1,8 +1,193 @@
 
 
 
-add_task(async function test_duping() {
-  let buf = await openMirror("duping");
+add_task(async function test_duping_local_newer() {
+  let buf = await openMirror("duping_local_newer");
+  let localModified = new Date();
+
+  info("Start with empty local and mirror with merged items");
+  await buf.store([{
+    id: "menu",
+    type: "folder",
+    children: ["bookmarkAAA5"],
+  }, {
+    id: "bookmarkAAA5",
+    type: "bookmark",
+    bmkUri: "http://example.com/a",
+    title: "A",
+  }], { needsMerge: false });
+  await PlacesTestUtils.markBookmarksAsSynced();
+
+  
+  
+  deepEqual(await buf.fetchInconsistencies(), {
+    missingLocal: ["bookmarkAAA5"],
+    missingRemote: [],
+    wrongSyncStatus: [],
+  }, "Mirror should be out of sync with Places before deduping");
+
+  info("Add newer local dupes");
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.menuGuid,
+    children: [{
+      guid: "bookmarkAAA1",
+      title: "A",
+      url: "http://example.com/a",
+      dateAdded: localModified,
+      lastModified: localModified,
+    }, {
+      guid: "bookmarkAAA2",
+      title: "A",
+      url: "http://example.com/a",
+      dateAdded: localModified,
+      lastModified: localModified,
+    }, {
+      guid: "bookmarkAAA3",
+      title: "A",
+      url: "http://example.com/a",
+      dateAdded: localModified,
+      lastModified: localModified,
+    }],
+  });
+
+  info("Add older remote dupes");
+  await buf.store([{
+    id: "menu",
+    type: "folder",
+    children: ["bookmarkAAAA", "bookmarkAAA4", "bookmarkAAA5"],
+    modified: localModified / 1000 - 5,
+  }, {
+    id: "bookmarkAAAA",
+    type: "bookmark",
+    bmkUri: "http://example.com/a",
+    title: "A",
+    keyword: "kw",
+    tags: ["remote", "tags"],
+    modified: localModified / 1000 - 5,
+  }, {
+    id: "bookmarkAAA4",
+    type: "bookmark",
+    bmkUri: "http://example.com/a",
+    title: "A",
+    modified: localModified / 1000 - 5,
+  }]);
+
+  info("Apply remote");
+  let changesToUpload = await buf.apply({
+    remoteTimeSeconds: localModified / 1000,
+  });
+  deepEqual(await buf.fetchUnmergedGuids(), [], "Should merge all items");
+
+  let menuInfo = await PlacesUtils.bookmarks.fetch(
+    PlacesUtils.bookmarks.menuGuid);
+  deepEqual(changesToUpload, {
+    menu: {
+      tombstone: false,
+      counter: 2,
+      synced: false,
+      cleartext: {
+        id: "menu",
+        type: "folder",
+        parentid: "places",
+        hasDupe: true,
+        parentName: "",
+        dateAdded: menuInfo.dateAdded.getTime(),
+        title: menuInfo.title,
+        children: ["bookmarkAAAA", "bookmarkAAA4", "bookmarkAAA3",
+                   "bookmarkAAA5"],
+      },
+    },
+    
+    
+    
+    bookmarkAAAA: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "bookmarkAAAA",
+        type: "bookmark",
+        parentid: "menu",
+        hasDupe: true,
+        parentName: menuInfo.title,
+        dateAdded: localModified.getTime(),
+        title: "A",
+        bmkUri: "http://example.com/a",
+      },
+    },
+    
+    bookmarkAAA4: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "bookmarkAAA4",
+        type: "bookmark",
+        parentid: "menu",
+        hasDupe: true,
+        parentName: menuInfo.title,
+        dateAdded: localModified.getTime(),
+        title: "A",
+        bmkUri: "http://example.com/a",
+      },
+    },
+    bookmarkAAA3: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "bookmarkAAA3",
+        type: "bookmark",
+        parentid: "menu",
+        hasDupe: true,
+        parentName: menuInfo.title,
+        dateAdded: localModified.getTime(),
+        title: "A",
+        bmkUri: "http://example.com/a",
+      },
+    },
+  }, "Should uploaded newer deduped local items");
+
+  await assertLocalTree(PlacesUtils.bookmarks.menuGuid, {
+    guid: PlacesUtils.bookmarks.menuGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    index: 0,
+    title: BookmarksMenuTitle,
+    children: [{
+      guid: "bookmarkAAAA",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 0,
+      title: "A",
+      url: "http://example.com/a",
+    }, {
+      guid: "bookmarkAAA4",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 1,
+      title: "A",
+      url: "http://example.com/a",
+    }, {
+      guid: "bookmarkAAA3",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 2,
+      title: "A",
+      url: "http://example.com/a",
+    }, {
+      guid: "bookmarkAAA5",
+      type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      index: 3,
+      title: "A",
+      url: "http://example.com/a",
+    }],
+  }, "Should dedupe local multiple bookmarks with similar contents");
+
+  await buf.finalize();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesSyncUtils.bookmarks.reset();
+});
+
+add_task(async function test_duping_remote_newer() {
+  let buf = await openMirror("duping_remote_new");
+  let localModified = new Date();
 
   info("Set up mirror");
   await PlacesUtils.bookmarks.insertTree({
@@ -45,30 +230,42 @@ add_task(async function test_duping() {
       guid: "folderBBBBBB",
       type: PlacesUtils.bookmarks.TYPE_FOLDER,
       title: "B",
+      dateAdded: localModified,
+      lastModified: localModified,
       children: [{
         
         guid: "bookmarkC111",
         url: "http://example.com/c",
         title: "C",
+        dateAdded: localModified,
+        lastModified: localModified,
       }, {
         
         guid: "separatorFFF",
         type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+        dateAdded: localModified,
+        lastModified: localModified,
       }],
     }, {
       
       guid: "separatorEEE",
       type: PlacesUtils.bookmarks.TYPE_SEPARATOR,
+      dateAdded: localModified,
+      lastModified: localModified,
     }, {
       
       guid: "bookmarkCCCC",
       url: "http://example.com/c",
       title: "C",
+      dateAdded: localModified,
+      lastModified: localModified,
     }, {
       
       guid: "queryDDDDDDD",
       url: "place:sort=8&maxResults=10",
       title: "Most Visited",
+      dateAdded: localModified,
+      lastModified: localModified,
       annos: [{
         name: PlacesSyncUtils.bookmarks.SMART_BOOKMARKS_ANNO,
         value: "MostVisited",
@@ -88,6 +285,8 @@ add_task(async function test_duping() {
     guid: "bookmarkHHHH",
     url: "http://example.com/h",
     title: "H",
+    dateAdded: localModified,
+    lastModified: localModified,
   });
 
   info("Make remote changes");
@@ -96,42 +295,60 @@ add_task(async function test_duping() {
     type: "folder",
     children: ["folderAAAAAA", "folderB11111", "folderA11111",
                "separatorE11", "queryD111111"],
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "folderB11111",
     type: "folder",
     title: "B",
     children: ["bookmarkC222", "separatorF11"],
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "bookmarkC222",
     type: "bookmark",
     bmkUri: "http://example.com/c",
     title: "C",
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "separatorF11",
     type: "separator",
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "folderA11111",
     type: "folder",
     title: "A",
     children: ["bookmarkG111"],
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "bookmarkG111",
     type: "bookmark",
     bmkUri: "http://example.com/g",
     title: "G",
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "separatorE11",
     type: "separator",
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }, {
     id: "queryD111111",
     type: "query",
     bmkUri: "place:maxResults=10&sort=8",
     title: "Most Visited",
     queryId: "MostVisited",
+    dateAdded: localModified.getTime(),
+    modified: localModified / 1000 + 5,
   }]));
 
   info("Apply remote");
-  let changesToUpload = await buf.apply();
+  let changesToUpload = await buf.apply({
+    remoteTimeSeconds: localModified / 1000,
+  });
   deepEqual(await buf.fetchUnmergedGuids(), [], "Should merge all items");
 
   let idsToUpload = inspectChangeRecords(changesToUpload);
@@ -250,6 +467,259 @@ add_task(async function test_duping() {
     "folderA11111", "bookmarkG111", "separatorE11", "queryD111111"))
     .every(info => info.syncStatus == PlacesUtils.bookmarks.SYNC_STATUS.NORMAL));
 
+  await buf.finalize();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesSyncUtils.bookmarks.reset();
+});
+
+add_task(async function test_duping_both() {
+  let buf = await openMirror("duping_both");
+  let now = Date.now();
+
+  info("Start with empty mirror");
+  await PlacesTestUtils.markBookmarksAsSynced();
+
+  info("Add local dupes");
+  await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.menuGuid,
+    children: [{
+      
+      
+      guid: "folderAAAAA1",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      title: "A",
+      dateAdded: new Date(now - 10000),
+      lastModified: new Date(now - 5000),
+      children: [{
+        
+        guid: "bookmarkBBB1",
+        title: "B",
+        url: "http://example.com/b",
+        dateAdded: new Date(now - 10000),
+        lastModified: new Date(now - 5000),
+      }, {
+        
+        
+        guid: "bookmarkCCCC",
+        title: "C",
+        url: "http://example.com/c",
+        dateAdded: new Date(now - 10000),
+        lastModified: new Date(now - 5000),
+      }],
+    }, {
+      
+      
+      guid: "folderDDDDD1",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      title: "D",
+      dateAdded: new Date(now - 10000),
+      lastModified: new Date(now + 5000),
+      children: [{
+        guid: "bookmarkEEE1",
+        title: "E",
+        url: "http://example.com/e",
+        dateAdded: new Date(now - 10000),
+        lastModified: new Date(now - 5000),
+      }],
+    }, {
+      
+      
+      guid: "folderFFFFF1",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      title: "F",
+      dateAdded: new Date(now - 10000),
+      lastModified: new Date(now - 5000),
+      children: [{
+        guid: "bookmarkGGG1",
+        title: "G",
+        url: "http://example.com/g",
+        dateAdded: new Date(now - 10000),
+        lastModified: new Date(now - 5000),
+      }],
+    }],
+  });
+
+  info("Add remote dupes");
+  await buf.store([{
+    id: "menu",
+    type: "folder",
+    children: ["folderAAAAAA", "folderDDDDDD", "folderFFFFFF"],
+  }, {
+    id: "folderAAAAAA",
+    type: "folder",
+    title: "A",
+    dateAdded: now - 10000,
+    modified: now / 1000 + 5,
+    children: ["bookmarkBBBB"],
+  }, {
+    id: "bookmarkBBBB",
+    type: "bookmark",
+    bmkUri: "http://example.com/b",
+    title: "B",
+    dateAdded: now - 10000,
+    modified: now / 1000 + 5,
+  }, {
+    id: "folderDDDDDD",
+    type: "folder",
+    title: "D",
+    dateAdded: now - 10000,
+    modified: now / 1000 - 5,
+    children: ["bookmarkEEEE"],
+  }, {
+    id: "bookmarkEEEE",
+    type: "bookmark",
+    bmkUri: "http://example.com/e",
+    title: "E",
+    dateAdded: now - 10000,
+    modified: now / 1000 + 5,
+  }, {
+    id: "folderFFFFFF",
+    type: "folder",
+    title: "F",
+    dateAdded: now - 10000,
+    modified: now / 1000 + 5,
+    children: ["bookmarkGGGG", "bookmarkHHHH"],
+  }, {
+    id: "bookmarkGGGG",
+    type: "bookmark",
+    bmkUri: "http://example.com/g",
+    title: "G",
+    dateAdded: now - 10000,
+    modified: now / 1000 - 5,
+  }, {
+    id: "bookmarkHHHH",
+    type: "bookmark",
+    bmkUri: "http://example.com/h",
+    title: "H",
+    dateAdded: now - 10000,
+    modified: now / 1000 + 5,
+  }]);
+
+  info("Apply remote");
+  let changesToUpload = await buf.apply({
+    remoteTimeSeconds: now / 1000,
+  });
+
+  let menuInfo = await PlacesUtils.bookmarks.fetch(
+    PlacesUtils.bookmarks.menuGuid);
+  deepEqual(changesToUpload, {
+    menu: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "menu",
+        type: "folder",
+        parentid: "places",
+        hasDupe: true,
+        parentName: "",
+        dateAdded: menuInfo.dateAdded.getTime(),
+        title: menuInfo.title,
+        children: ["folderAAAAAA", "folderDDDDDD", "folderFFFFFF"],
+      },
+    },
+    folderAAAAAA: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "folderAAAAAA",
+        type: "folder",
+        parentid: "menu",
+        hasDupe: true,
+        parentName: menuInfo.title,
+        dateAdded: now - 10000,
+        title: "A",
+        children: ["bookmarkBBBB", "bookmarkCCCC"],
+      },
+    },
+    bookmarkCCCC: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "bookmarkCCCC",
+        type: "bookmark",
+        parentid: "folderAAAAAA",
+        hasDupe: true,
+        parentName: "A",
+        dateAdded: now - 10000,
+        title: "C",
+        bmkUri: "http://example.com/c",
+      },
+    },
+    folderDDDDDD: {
+      tombstone: false,
+      counter: 1,
+      synced: false,
+      cleartext: {
+        id: "folderDDDDDD",
+        type: "folder",
+        parentid: "menu",
+        hasDupe: true,
+        parentName: menuInfo.title,
+        dateAdded: now - 10000,
+        title: "D",
+        children: ["bookmarkEEEE"],
+      },
+    },
+  }, "Should upload new and newer locally deduped items");
+
+  await assertLocalTree(PlacesUtils.bookmarks.menuGuid, {
+    guid: PlacesUtils.bookmarks.menuGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    index: 0,
+    title: BookmarksMenuTitle,
+    children: [{
+      guid: "folderAAAAAA",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      index: 0,
+      title: "A",
+      children: [{
+        guid: "bookmarkBBBB",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        index: 0,
+        title: "B",
+        url: "http://example.com/b",
+      }, {
+        guid: "bookmarkCCCC",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        index: 1,
+        title: "C",
+        url: "http://example.com/c",
+      }],
+    }, {
+      guid: "folderDDDDDD",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      index: 1,
+      title: "D",
+      children: [{
+        guid: "bookmarkEEEE",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        index: 0,
+        title: "E",
+        url: "http://example.com/e",
+      }],
+    }, {
+      guid: "folderFFFFFF",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      index: 2,
+      title: "F",
+      children: [{
+        guid: "bookmarkGGGG",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        index: 0,
+        title: "G",
+        url: "http://example.com/g",
+      }, {
+        guid: "bookmarkHHHH",
+        type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+        index: 1,
+        title: "H",
+        url: "http://example.com/h",
+      }],
+    }],
+  }, "Should change local GUIDs for mixed older and newer items");
 
   await buf.finalize();
   await PlacesUtils.bookmarks.eraseEverything();
