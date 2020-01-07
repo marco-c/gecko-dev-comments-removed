@@ -4360,13 +4360,13 @@ EditorBase::JoinNodeDeep(nsIContent& aLeftNode,
          AreNodesSameType(leftNodeToJoin, rightNodeToJoin)) {
     uint32_t length = leftNodeToJoin->Length();
 
-    ret.Set(rightNodeToJoin, length);
-
     
     nsresult rv = JoinNodes(*leftNodeToJoin, *rightNodeToJoin);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditorDOMPoint();
     }
+
+    ret.Set(rightNodeToJoin, length);
 
     if (parentNode->GetAsText()) {
       
