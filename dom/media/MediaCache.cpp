@@ -2405,7 +2405,7 @@ MediaCacheStream::CloseInternal(AutoLock& aLock)
 void
 MediaCacheStream::Pin()
 {
-  
+  MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   ++mPinCount;
   
@@ -2416,7 +2416,7 @@ MediaCacheStream::Pin()
 void
 MediaCacheStream::Unpin()
 {
-  
+  MOZ_ASSERT(!NS_IsMainThread());
   AutoLock lock(mMediaCache->Monitor());
   NS_ASSERTION(mPinCount > 0, "Unbalanced Unpin");
   --mPinCount;
