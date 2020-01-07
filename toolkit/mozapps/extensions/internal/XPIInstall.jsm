@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 var EXPORTED_SYMBOLS = [
   "UpdateChecker",
   "XPIInstall",
@@ -421,6 +423,7 @@ XPIPackage = class XPIPackage extends Package {
 
 
 
+
 function newVersionReason(oldVersion, newVersion) {
   return Services.vc.compare(oldVersion, newVersion) <= 0 ?
          BOOTSTRAP_REASONS.ADDON_UPGRADE :
@@ -456,6 +459,7 @@ function EM_R(aProperty) {
 
 
 
+
 function getRDFValue(aLiteral) {
   if (aLiteral instanceof Ci.nsIRDFLiteral)
     return aLiteral.Value;
@@ -465,6 +469,7 @@ function getRDFValue(aLiteral) {
     return aLiteral.Value;
   return null;
 }
+
 
 
 
@@ -633,6 +638,7 @@ async function loadManifestFromRDF(aUri, aData) {
   }
 
   
+
 
 
 
@@ -942,6 +948,21 @@ var loadManifest = async function(aPackage, aInstallLocation, aOldAddon) {
   return addon;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var loadManifestFromFile = async function(aFile, aInstallLocation, aOldAddon) {
   let pkg = Package.get(aFile);
   try {
@@ -976,6 +997,7 @@ function flushChromeCaches() {
 
 
 
+
 function getTemporaryFile() {
   let file = FileUtils.getDir(KEY_TEMPDIR, []);
   let random = Math.round(Math.random() * 36 ** 3).toString(36);
@@ -983,6 +1005,19 @@ function getTemporaryFile() {
   file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
   return file;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1054,6 +1089,7 @@ function shouldVerifySignedState(aAddon) {
 
 
 
+
 var verifyBundleSignedState = async function(aBundle, aAddon) {
   let pkg = Package.get(aBundle);
   try {
@@ -1063,6 +1099,7 @@ var verifyBundleSignedState = async function(aBundle, aAddon) {
     pkg.close();
   }
 };
+
 
 
 
@@ -1105,6 +1142,11 @@ function escapeAddonURI(aAddon, aUri, aUpdateType, aAppVersion) {
 
   return uri;
 }
+
+
+
+
+
 
 
 
@@ -1432,6 +1474,7 @@ SafeInstallOperation.prototype = {
 
 
 
+
 function getDirectoryEntries(aDir, aSortEntries) {
   let dirEnum;
   try {
@@ -1547,6 +1590,7 @@ class AddonInstall {
   }
 
   
+
 
 
 
@@ -1701,7 +1745,6 @@ class AddonInstall {
   }
 
   
-
 
 
 
@@ -2022,6 +2065,15 @@ class AddonInstall {
   
 
 
+
+
+
+
+
+
+
+
+
   async stageInstall(restartRequired, stagedAddon, isUpgrade) {
     
     if (this.addon.unpack) {
@@ -2056,12 +2108,15 @@ class AddonInstall {
   
 
 
-  async unstageInstall(stagedAddon) {
+
+
+
+  async unstageInstall(stagingDir) {
     XPIStates.getLocation(this.installLocation.name).unstageAddon(this.addon.id);
 
-    await removeAsync(getFile(this.addon.id, stagedAddon));
+    await removeAsync(getFile(this.addon.id, stagingDir));
 
-    await removeAsync(getFile(`${this.addon.id}.xpi`, stagedAddon));
+    await removeAsync(getFile(`${this.addon.id}.xpi`, stagingDir));
   }
 
   
@@ -2131,9 +2186,6 @@ class AddonInstall {
 
 var LocalAddonInstall = class extends AddonInstall {
   
-
-
-
 
 
   async init() {
@@ -2797,6 +2849,8 @@ UpdateChecker.prototype = {
 
 
 
+
+
   callListener(aMethod, ...aArgs) {
     if (!(aMethod in this.listener))
       return;
@@ -3082,6 +3136,9 @@ class MutableDirectoryInstallLocation extends DirectoryInstallLocation {
 
 
 
+
+
+
   installAddon({ id, source, existingAddonID, action = "move" }) {
     let trashDir = this.getTrashDir();
 
@@ -3251,6 +3308,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
 
 
 
+
   getStagingDir() {
     this._addonSet = SystemAddonInstallLocation._loadAddonSet();
     let dir = null;
@@ -3282,6 +3340,11 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   }
 
   
+
+
+
+
+
 
 
   isValid(aAddons) {
@@ -3499,6 +3562,9 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
  
 
 
+
+
+
   async resumeAddonSet(installs) {
     async function resumeAddon(install) {
       install.state = AddonManager.STATE_DOWNLOADED;
@@ -3542,6 +3608,7 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   }
 
   
+
 
 
 
@@ -3857,12 +3924,14 @@ var XPIInstall = {
 
 
 
+
   isInstallEnabled() {
     
     return Services.prefs.getBoolPref(PREF_XPI_ENABLED, true);
   },
 
   
+
 
 
 
@@ -3879,12 +3948,14 @@ var XPIInstall = {
 
 
 
+
   isFileRequestWhitelisted() {
     
     return Services.prefs.getBoolPref(PREF_XPI_FILE_WHITELISTED, true);
   },
 
   
+
 
 
 
@@ -3940,6 +4011,7 @@ var XPIInstall = {
 
 
 
+
   async getInstallForURL(aUrl, aHash, aName, aIcons, aVersion, aBrowser) {
     let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
     let url = Services.io.newURI(aUrl);
@@ -3968,12 +4040,14 @@ var XPIInstall = {
 
 
 
+
   async getInstallForFile(aFile) {
     let install = await createLocalInstall(aFile);
     return install ? install.wrapper : null;
   },
 
   
+
 
 
 
@@ -3996,12 +4070,14 @@ var XPIInstall = {
 
 
 
+
   async installAddonFromSources(aFile) {
     let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
     return this.installAddonFromLocation(aFile, location, "proxy");
   },
 
   
+
 
 
 
