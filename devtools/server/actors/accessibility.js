@@ -503,8 +503,15 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  children() {
-    return Promise.all([this.getDocument()]);
+  async children() {
+    if (this._childrenPromise) {
+      return this._childrenPromise;
+    }
+
+    this._childrenPromise = Promise.all([this.getDocument()]);
+    let children = await this._childrenPromise;
+    this._childrenPromise = null;
+    return children;
   },
 
   
