@@ -197,12 +197,14 @@ Declaration::GetPropertyIsImportant(const nsAString& aProperty) const
   return r;
 }
 
-void
+bool
 Declaration::RemoveProperty(const nsAString& aProperty)
 {
+  bool r = true;
   DispatchPropertyOperation(aProperty,
-    [&](nsCSSPropertyID propID) { RemovePropertyByID(propID); },
-    [&](const nsAString& name) { RemoveVariable(name); });
+    [&](nsCSSPropertyID propID) { r = RemovePropertyByID(propID); },
+    [&](const nsAString& name) { r = RemoveVariable(name); });
+  return r;
 }
 
 bool
@@ -1414,6 +1416,7 @@ Declaration::GetPropertyValueInternal(
       }
       MOZ_FALLTHROUGH;
     }
+    case eCSSProperty_overflow_clip_box:
     case eCSSProperty_grid_gap: {
       const nsCSSPropertyID* subprops =
         nsCSSProps::SubpropertyEntryFor(aProperty);
@@ -1910,7 +1913,7 @@ Declaration::AddVariable(const nsAString& aName,
   mOrder.AppendElement(propertyIndex);
 }
 
-void
+bool
 Declaration::RemoveVariable(const nsAString& aName)
 {
   if (mVariables) {
@@ -1922,7 +1925,9 @@ Declaration::RemoveVariable(const nsAString& aName)
   nsTArray<nsString>::index_type index = mVariableOrder.IndexOf(aName);
   if (index != nsTArray<nsString>::NoIndex) {
     mOrder.RemoveElement(index + eCSSProperty_COUNT);
+    return true;
   }
+  return false;
 }
 
 bool
