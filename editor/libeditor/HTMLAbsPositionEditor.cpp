@@ -146,16 +146,16 @@ HTMLEditor::AddZIndex(int32_t aChange)
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this,
                                       aChange < 0 ?
-                                        EditSubAction::decreaseZIndex :
-                                        EditSubAction::increaseZIndex,
+                                        EditSubAction::eDecreaseZIndex :
+                                        EditSubAction::eIncreaseZIndex,
                                       nsIEditor::eNext);
 
   
   
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  EditSubActionInfo subActionInfo(aChange < 0 ? EditSubAction::decreaseZIndex :
-                                                EditSubAction::increaseZIndex);
+  EditSubActionInfo subActionInfo(aChange < 0 ? EditSubAction::eDecreaseZIndex :
+                                                EditSubAction::eIncreaseZIndex);
   bool cancel, handled;
   
   RefPtr<TextEditRules> rules(mRules);

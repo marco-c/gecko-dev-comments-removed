@@ -114,8 +114,10 @@ enum class EditSubAction : int32_t
   eSetPositionToAbsolute,
   eSetPositionToStatic,
 
-  decreaseZIndex,
-  increaseZIndex,
+  
+  
+  eDecreaseZIndex,
+  eIncreaseZIndex,
 };
 
 } 
