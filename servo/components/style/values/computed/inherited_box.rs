@@ -4,8 +4,8 @@
 
 
 
-use std::fmt;
-use style_traits::ToCss;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
 use values::specified::Angle;
 
 
@@ -31,7 +31,10 @@ impl Orientation {
 }
 
 impl ToCss for Orientation {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
         
         match *self {
             Orientation::Angle0 => dest.write_str("0deg"),
@@ -60,7 +63,10 @@ impl ImageOrientation {
 }
 
 impl ToCss for ImageOrientation {
-    fn to_css<W: fmt::Write>(&self, dest: &mut W) -> fmt::Result {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
         match *self {
             ImageOrientation::FromImage => dest.write_str("from-image"),
             ImageOrientation::AngleWithFlipped(angle, flipped) => {

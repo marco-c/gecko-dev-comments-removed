@@ -78,7 +78,7 @@ pub mod values;
 #[macro_use]
 pub mod viewport;
 
-pub use values::{Comma, CommaWithSpace, OneOrMoreSeparated, Separator, Space, ToCss};
+pub use values::{Comma, CommaWithSpace, CssWriter, OneOrMoreSeparated, Separator, Space, ToCss};
 
 
 pub type ParseError<'i> = cssparser::ParseError<'i, StyleParseErrorKind<'i>>;

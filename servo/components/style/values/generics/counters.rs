@@ -5,7 +5,7 @@
 
 
 use std::fmt;
-use style_traits::ToCss;
+use style_traits::{CssWriter, ToCss};
 use values::CustomIdent;
 
 
@@ -27,7 +27,7 @@ where
     I: ToCss,
 {
     #[inline]
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
     {

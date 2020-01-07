@@ -9,7 +9,7 @@
 use cssparser::{Parser as CssParser, ParserInput};
 use selectors::parser::SelectorList;
 use std::fmt::{self, Debug, Write};
-use style_traits::{ParseError, ToCss};
+use style_traits::{CssWriter, ParseError, ToCss};
 use stylesheets::{Origin, Namespaces, UrlExtraData};
 
 
@@ -201,7 +201,7 @@ impl Direction {
 }
 
 impl ToCss for Direction {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: Write {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: Write {
         let dir_str = match *self {
             Direction::Rtl => "rtl",
             Direction::Ltr => "ltr",
