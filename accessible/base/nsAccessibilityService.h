@@ -51,7 +51,7 @@ SelectionManager* SelectionMgr();
 ApplicationAccessible* ApplicationAcc();
 xpcAccessibleApplication* XPCApplicationAcc();
 
-typedef Accessible* (New_Accessible)(nsIContent* aContent, Accessible* aContext);
+typedef Accessible* (New_Accessible)(Element* aElement, Accessible* aContext);
 
 struct MarkupAttrInfo {
   nsStaticAtom** name;
@@ -311,7 +311,7 @@ private:
   
 
 
-  void SetConsumers(uint32_t aConsumers);
+  void SetConsumers(uint32_t aConsumers, bool aNotify = true);
 
   
 
