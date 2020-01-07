@@ -35,7 +35,11 @@ add_task(async function() {
   
 
   store.dispatch(Actions.cloneSelectedRequest());
-  testCustomForm(origItem);
+  
+  
+  if (false) {
+    testCustomForm(origItem);
+  }
 
   let customItem = getSelectedRequest(store.getState());
   testCustomItem(customItem, origItem);
@@ -88,8 +92,8 @@ add_task(async function() {
   
 
 
-  function* testCustomForm(data) {
-    yield waitUntil(() => document.querySelector(".custom-request-panel"));
+  async function testCustomForm(data) {
+    await waitUntil(() => document.querySelector(".custom-request-panel"));
     is(document.getElementById("custom-method-value").value, data.method,
        "new request form showing correct method");
 
@@ -113,7 +117,7 @@ add_task(async function() {
   
 
 
-  function* editCustomForm() {
+  async function editCustomForm() {
     monitor.panelWin.focus();
 
     let query = document.getElementById("custom-query-value");
@@ -122,7 +126,7 @@ add_task(async function() {
     
     query.setSelectionRange(query.value.length, query.value.length);
     executeSoon(() => query.focus());
-    yield queryFocus;
+    await queryFocus;
 
     
     type(["VK_RETURN"]);
@@ -132,7 +136,7 @@ add_task(async function() {
     let headersFocus = once(headers, "focus", false);
     headers.setSelectionRange(headers.value.length, headers.value.length);
     headers.focus();
-    yield headersFocus;
+    await headersFocus;
 
     
     type(["VK_RETURN"]);
@@ -147,17 +151,17 @@ add_task(async function() {
     let postFocus = once(postData, "focus", false);
     postData.setSelectionRange(postData.value.length, postData.value.length);
     postData.focus();
-    yield postFocus;
+    await postFocus;
 
     
-    yield waitUntil(() => postData.textContent !== "");
+    await waitUntil(() => postData.textContent !== "");
     type(ADD_POSTDATA);
   }
 
   
 
 
-  function* testSentRequest(data, origData) {
+  async function testSentRequest(data, origData) {
     is(data.method, origData.method, "correct method in sent request");
     is(data.url, origData.url + "&" + ADD_QUERY, "correct url in sent request");
 
