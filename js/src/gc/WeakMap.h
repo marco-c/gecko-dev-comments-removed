@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsweakmap_h
-#define jsweakmap_h
+#ifndef gc_WeakMap_h
+#define gc_WeakMap_h
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Move.h"

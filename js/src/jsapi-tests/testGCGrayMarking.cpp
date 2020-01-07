@@ -5,11 +5,9 @@
 
 
 
-#include "jsweakmap.h"
-
 #include "gc/Heap.h"
+#include "gc/WeakMap.h"
 #include "gc/Zone.h"
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

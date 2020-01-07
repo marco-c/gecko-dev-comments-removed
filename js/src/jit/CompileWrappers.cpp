@@ -4,8 +4,9 @@
 
 
 
-#include "jsgc.h"
+#include "jit/CompileWrappers.h"
 
+#include "gc/GC.h"
 #include "jit/Ion.h"
 #include "jit/JitCompartment.h"
 

@@ -4,7 +4,7 @@
 
 
 
-#include "jsweakmap.h"
+#include "gc/WeakMap.h"
 
 #include <string.h>
 

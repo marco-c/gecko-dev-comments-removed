@@ -8,8 +8,8 @@
 
 
 
-#ifndef jsgc_h
-#define jsgc_h
+#ifndef gc_GC_h
+#define gc_GC_h
 
 #include "jsapi.h"
 

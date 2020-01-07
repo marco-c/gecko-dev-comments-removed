@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsgcinlines_h
-#define jsgcinlines_h
+#ifndef gc_GC_inl_h
+#define gc_GC_inl_h
 
-#include "jsgc.h"
+#include "gc/GC.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef jshashutil_h
-#define jshashutil_h
+#ifndef gc_HashUtil_h
+#define gc_HashUtil_h
 
 #include "gc/Zone.h"
 #include "vm/JSContext.h"
