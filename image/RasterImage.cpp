@@ -74,6 +74,7 @@ RasterImage::RasterImage(nsIURI* aURI ) :
   ImageResource(aURI), 
   mSize(0,0),
   mLockCount(0),
+  mDecoderType(DecoderType::UNKNOWN),
   mDecodeCount(0),
 #ifdef DEBUG
   mFramesNotified(0),

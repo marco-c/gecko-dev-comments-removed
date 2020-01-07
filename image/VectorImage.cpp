@@ -375,6 +375,7 @@ VectorImage::VectorImage(nsIURI* aURI ) :
   ImageResource(aURI), 
   mLockCount(0),
   mIsInitialized(false),
+  mDiscardable(false),
   mIsFullyLoaded(false),
   mIsDrawing(false),
   mHaveAnimations(false),
