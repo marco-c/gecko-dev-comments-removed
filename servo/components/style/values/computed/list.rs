@@ -4,7 +4,7 @@
 
 
 
-pub use values::specified::list::Quotes;
+pub use values::specified::list::{ListStyleImage, Quotes};
 
 impl Quotes {
     
