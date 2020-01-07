@@ -84,9 +84,10 @@ def main():
 
 
 if __name__ == '__main__':
-  if sys.platform == 'darwin':
+  if sys.platform == 'darwin' or os.environ.get('MOZ_AUTOMATION') != '1':
     print main()
   else:
+    
     
     
     print "."
