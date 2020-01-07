@@ -10,7 +10,27 @@
 
 #include "nsIClipboard.h"
 #include "nsIObserver.h"
+#include "nsIBinaryOutputStream.h"
 #include <gtk/gtk.h>
+
+
+#define GTK_DEFAULT_MIME_TEXT "UTF8_STRING"
+
+class nsRetrievalContext {
+public:
+    virtual guchar* WaitForClipboardContext(const char* aMimeType,
+                                            int32_t aWhichClipboard,
+                                            uint32_t* aContentLength) = 0;
+    virtual GdkAtom* GetTargets(int32_t aWhichClipboard,
+                                int* aTargetNum) = 0;
+
+    nsRetrievalContext() {};
+    virtual ~nsRetrievalContext() {};
+
+protected:
+    
+    static const int kClipboardTimeout;
+};
 
 class nsClipboard : public nsIClipboard,
                     public nsIObserver
@@ -19,9 +39,8 @@ public:
     nsClipboard();
     
     NS_DECL_ISUPPORTS
-    
-    NS_DECL_NSICLIPBOARD
     NS_DECL_NSIOBSERVER
+    NS_DECL_NSICLIPBOARD
 
     
     
@@ -36,10 +55,6 @@ private:
     virtual ~nsClipboard();
 
     
-    static GdkAtom               GetSelectionAtom (int32_t aWhichClipboard);
-    static GtkSelectionData     *GetTargets       (GdkAtom aWhichClipboard);
-
-    
     nsresult                     Store            (void);
 
     
@@ -48,11 +63,13 @@ private:
 
     
     
-    nsCOMPtr<nsIClipboardOwner>  mSelectionOwner;
-    nsCOMPtr<nsIClipboardOwner>  mGlobalOwner;
-    nsCOMPtr<nsITransferable>    mSelectionTransferable;
-    nsCOMPtr<nsITransferable>    mGlobalTransferable;
-
+    nsCOMPtr<nsIClipboardOwner>    mSelectionOwner;
+    nsCOMPtr<nsIClipboardOwner>    mGlobalOwner;
+    nsCOMPtr<nsITransferable>      mSelectionTransferable;
+    nsCOMPtr<nsITransferable>      mGlobalTransferable;
+    nsAutoPtr<nsRetrievalContext>  mContext;
 };
+
+GdkAtom GetSelectionAtom(int32_t aWhichClipboard);
 
 #endif 
