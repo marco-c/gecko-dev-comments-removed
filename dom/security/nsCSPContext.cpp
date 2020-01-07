@@ -843,36 +843,28 @@ StripURIForReporting(nsIURI* aURI,
   aURI->GetSpecIgnoringRef(outStrippedURI);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 nsresult
-nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
-                          nsIURI* aOriginalURI,
-                          nsAString& aViolatedDirective,
-                          uint32_t aViolatedPolicyIndex,
-                          nsAString& aSourceFile,
-                          nsAString& aScriptSample,
-                          uint32_t aLineNum)
+nsCSPContext::GatherSecurityPolicyViolationEventData(
+  nsISupports* aBlockedContentSource,
+  nsIURI* aOriginalURI,
+  nsAString& aViolatedDirective,
+  uint32_t aViolatedPolicyIndex,
+  nsAString& aSourceFile,
+  nsAString& aScriptSample,
+  uint32_t aLineNum,
+  mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit)
 {
   NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
 
-  dom::CSPReport report;
   nsresult rv;
+
+  
+  nsAutoCString reportDocumentURI;
+  StripURIForReporting(mSelfURI, mSelfURI, reportDocumentURI);
+  aViolationEventInit.mDocumentURI = NS_ConvertUTF8toUTF16(reportDocumentURI);
+
+  
+  aViolationEventInit.mReferrer = mReferrer;
 
   
   if (aBlockedContentSource) {
@@ -892,27 +884,20 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       
       NS_WARNING("No blocked URI (null aBlockedContentSource) for CSP violation report.");
     }
-    report.mCsp_report.mBlocked_uri = NS_ConvertUTF8toUTF16(reportBlockedURI);
+    aViolationEventInit.mBlockedURI = NS_ConvertUTF8toUTF16(reportBlockedURI);
   }
 
   
-  nsAutoCString reportDocumentURI;
-  StripURIForReporting(mSelfURI, mSelfURI, reportDocumentURI);
-  report.mCsp_report.mDocument_uri = NS_ConvertUTF8toUTF16(reportDocumentURI);
+  aViolationEventInit.mViolatedDirective = aViolatedDirective;
+
+  
+  aViolationEventInit.mEffectiveDirective = aViolatedDirective;
 
   
   nsAutoString originalPolicy;
   rv = this->GetPolicyString(aViolatedPolicyIndex, originalPolicy);
   NS_ENSURE_SUCCESS(rv, rv);
-  report.mCsp_report.mOriginal_policy = originalPolicy;
-
-  
-  if (!mReferrer.IsEmpty()) {
-    report.mCsp_report.mReferrer = mReferrer;
-  }
-
-  
-  report.mCsp_report.mViolated_directive = aViolatedDirective;
+  aViolationEventInit.mOriginalPolicy = originalPolicy;
 
   
   if (!aSourceFile.IsEmpty()) {
@@ -924,20 +909,87 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       sourceURI->GetSpecIgnoringRef(spec);
       aSourceFile = NS_ConvertUTF8toUTF16(spec);
     }
+    aViolationEventInit.mSourceFile = aSourceFile;
+  }
+
+  
+  aViolationEventInit.mSample = aScriptSample;
+
+  
+  aViolationEventInit.mDisposition = mPolicies[aViolatedPolicyIndex]->getReportOnlyFlag()
+    ? mozilla::dom::SecurityPolicyViolationEventDisposition::Report
+    : mozilla::dom::SecurityPolicyViolationEventDisposition::Enforce;
+
+  
+  uint16_t statusCode = 0;
+  {
+    nsCOMPtr<nsIDocument> doc = do_QueryReferent(mLoadingContext);
+    if (doc) {
+      nsCOMPtr<nsIHttpChannel> channel = do_QueryInterface(doc->GetChannel());
+      if (channel) {
+        uint32_t responseStatus = 0;
+        nsresult rv = channel->GetResponseStatus(&responseStatus);
+        if (NS_SUCCEEDED(rv) && (responseStatus <= UINT16_MAX)) {
+          statusCode = static_cast<uint16_t>(responseStatus);
+        }
+      }
+    }
+  }
+  aViolationEventInit.mStatusCode = statusCode;
+
+  
+  aViolationEventInit.mLineNumber = aLineNum;
+
+  
+  
+  aViolationEventInit.mColumnNumber = 0;
+
+  aViolationEventInit.mBubbles = true;
+  aViolationEventInit.mComposed = true;
+
+  return NS_OK;
+}
+
+nsresult
+nsCSPContext::SendReports(
+  const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
+  uint32_t aViolatedPolicyIndex)
+{
+  NS_ENSURE_ARG_MAX(aViolatedPolicyIndex, mPolicies.Length() - 1);
+
+  dom::CSPReport report;
+
+  
+  report.mCsp_report.mBlocked_uri = aViolationEventInit.mBlockedURI;
+
+  
+  report.mCsp_report.mDocument_uri = aViolationEventInit.mDocumentURI;
+
+  
+  report.mCsp_report.mOriginal_policy = aViolationEventInit.mOriginalPolicy;
+
+  
+  report.mCsp_report.mReferrer = aViolationEventInit.mReferrer;
+
+  
+  report.mCsp_report.mViolated_directive = aViolationEventInit.mViolatedDirective;
+
+  
+  if (!aViolationEventInit.mSourceFile.IsEmpty()) {
     report.mCsp_report.mSource_file.Construct();
-    report.mCsp_report.mSource_file.Value() = aSourceFile;
+    report.mCsp_report.mSource_file.Value() = aViolationEventInit.mSourceFile;
   }
 
   
-  if (!aScriptSample.IsEmpty()) {
+  if (!aViolationEventInit.mSample.IsEmpty()) {
     report.mCsp_report.mScript_sample.Construct();
-    report.mCsp_report.mScript_sample.Value() = aScriptSample;
+    report.mCsp_report.mScript_sample.Value() = aViolationEventInit.mSample;
   }
 
   
-  if (aLineNum != 0) {
+  if (aViolationEventInit.mLineNumber != 0) {
     report.mCsp_report.mLine_number.Construct();
-    report.mCsp_report.mLine_number.Value() = aLineNum;
+    report.mCsp_report.mLine_number.Value() = aViolationEventInit.mLineNumber;
   }
 
   nsString csp_report;
@@ -950,11 +1002,11 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
   nsTArray<nsString> reportURIs;
   mPolicies[aViolatedPolicyIndex]->getReportURIs(reportURIs);
 
-
   nsCOMPtr<nsIDocument> doc = do_QueryReferent(mLoadingContext);
   nsCOMPtr<nsIURI> reportURI;
   nsCOMPtr<nsIChannel> reportChannel;
 
+  nsresult rv;
   for (uint32_t r = 0; r < reportURIs.Length(); r++) {
     nsAutoCString reportURICstring = NS_ConvertUTF16toUTF8(reportURIs[r]);
     
@@ -964,7 +1016,8 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       CSPCONTEXTLOG(("Could not create nsIURI for report URI %s",
                      reportURICstring.get()));
       logToConsole("triedToSendReport", params, ArrayLength(params),
-                   aSourceFile, aScriptSample, aLineNum, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
+                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
       continue; 
     }
 
@@ -1005,7 +1058,8 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
     if (!isHttpScheme) {
       const char16_t* params[] = { reportURIs[r].get() };
       logToConsole("reportURInotHttpsOrHttp2", params, ArrayLength(params),
-                   aSourceFile, aScriptSample, aLineNum, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
+                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
       continue;
     }
 
@@ -1070,12 +1124,33 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       const char16_t* params[] = { reportURIs[r].get() };
       CSPCONTEXTLOG(("AsyncOpen failed for report URI %s", NS_ConvertUTF16toUTF8(params[0]).get()));
       logToConsole("triedToSendReport", params, ArrayLength(params),
-                   aSourceFile, aScriptSample, aLineNum, 0, nsIScriptError::errorFlag);
+                   aViolationEventInit.mSourceFile, aViolationEventInit.mSample,
+                   aViolationEventInit.mLineNumber, 0, nsIScriptError::errorFlag);
     } else {
       CSPCONTEXTLOG(("Sent violation report to URI %s", reportURICstring.get()));
     }
   }
   return NS_OK;
+}
+
+nsresult
+nsCSPContext::FireViolationEvent(
+  const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit)
+{
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mLoadingContext);
+  if (!doc) {
+    return NS_OK;
+  }
+
+  RefPtr<mozilla::dom::Event> event =
+    mozilla::dom::SecurityPolicyViolationEvent::Constructor(
+      doc,
+      NS_LITERAL_STRING("securitypolicyviolation"),
+      aViolationEventInit);
+  event->SetTrusted(true);
+
+  bool rv;
+  return doc->DispatchEvent(event, &rv);
 }
 
 
@@ -1125,6 +1200,14 @@ class CSPReportSenderRunnable final : public Runnable
       MOZ_ASSERT(NS_IsMainThread());
 
       
+      mozilla::dom::SecurityPolicyViolationEventInit init;
+      mCSPContext->GatherSecurityPolicyViolationEventData(
+        mBlockedContentSource, mOriginalURI,
+        mViolatedDirective, mViolatedPolicyIndex,
+        mSourceFile, mScriptSample, mLineNum,
+        init);
+
+      
       nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
       NS_ASSERTION(observerService, "needs observer service");
       nsresult rv = observerService->NotifyObservers(mObserverSubject,
@@ -1133,9 +1216,7 @@ class CSPReportSenderRunnable final : public Runnable
       NS_ENSURE_SUCCESS(rv, rv);
 
       
-      mCSPContext->SendReports(mBlockedContentSource, mOriginalURI,
-                               mViolatedDirective, mViolatedPolicyIndex,
-                               mSourceFile, mScriptSample, mLineNum);
+      mCSPContext->SendReports(init, mViolatedPolicyIndex);
 
       
       
@@ -1168,6 +1249,10 @@ class CSPReportSenderRunnable final : public Runnable
                                   params, ArrayLength(params), mSourceFile, mScriptSample,
                                   mLineNum, 0, nsIScriptError::errorFlag);
       }
+
+      
+      mCSPContext->FireViolationEvent(init);
+
       return NS_OK;
     }
 

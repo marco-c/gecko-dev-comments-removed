@@ -8,6 +8,7 @@
 #define nsCSPContext_h___
 
 #include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "nsDataHashtable.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
@@ -58,13 +59,43 @@ class nsCSPContext : public nsIContentSecurityPolicy
                       uint32_t aColumnNumber,
                       uint32_t aSeverityFlag);
 
-    nsresult SendReports(nsISupports* aBlockedContentSource,
-                         nsIURI* aOriginalURI,
-                         nsAString& aViolatedDirective,
-                         uint32_t aViolatedPolicyIndex,
-                         nsAString& aSourceFile,
-                         nsAString& aScriptSample,
-                         uint32_t aLineNum);
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    nsresult GatherSecurityPolicyViolationEventData(
+      nsISupports* aBlockedContentSource,
+      nsIURI* aOriginalURI,
+      nsAString& aViolatedDirective,
+      uint32_t aViolatedPolicyIndex,
+      nsAString& aSourceFile,
+      nsAString& aScriptSample,
+      uint32_t aLineNum,
+      mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
+
+    nsresult SendReports(
+      const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
+      uint32_t aViolatedPolicyIndex);
+
+    nsresult FireViolationEvent(
+      const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
 
     nsresult AsyncReportViolation(nsISupports* aBlockedContentSource,
                                   nsIURI* aOriginalURI,
