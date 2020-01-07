@@ -147,8 +147,7 @@ public:
 
 
   bool SetContentState(nsIContent* aContent, EventStates aState);
-  void ContentRemoved(nsIDocument* aDocument, nsIContent* aMaybeContainer,
-                      nsIContent* aContent);
+  void ContentRemoved(nsIDocument* aDocument, nsIContent* aContent);
 
   bool EventStatusOK(WidgetGUIEvent* aEvent);
 

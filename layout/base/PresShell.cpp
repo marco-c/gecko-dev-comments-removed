@@ -4546,8 +4546,7 @@ PresShell::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
   
   
 
-  mPresContext->EventStateManager()
-    ->ContentRemoved(mDocument, aChild->GetParent(), aChild);
+  mPresContext->EventStateManager()->ContentRemoved(mDocument, aChild);
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
