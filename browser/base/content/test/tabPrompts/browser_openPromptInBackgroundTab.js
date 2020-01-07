@@ -75,5 +75,11 @@ add_task(async function() {
   
   ok(openedTab.selected, "Ta-dah, the other tab should now be selected again!");
 
+  
+  
+  
+  
+  await TestUtils.waitForTick();
+
   await BrowserTestUtils.removeTab(openedTab);
 });
