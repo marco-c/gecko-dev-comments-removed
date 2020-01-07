@@ -99,13 +99,25 @@ private:
 
 
 
-  bool MaybeReassignElement(Element* aElement, const nsAttrValue* aOldValue);
+  void MaybeReassignElement(Element* aElement);
+
+  
+
+
+  struct SlotAssignment
+  {
+    HTMLSlotElement* mSlot = nullptr;
+    Maybe<uint32_t> mIndex;
+  };
 
   
 
 
 
-  const HTMLSlotElement* AssignSlotFor(nsIContent* aContent);
+
+
+
+  SlotAssignment SlotAssignmentFor(nsIContent* aContent);
 
   
 
@@ -114,8 +126,14 @@ private:
 
 
 
-  const HTMLSlotElement* UnassignSlotFor(nsIContent* aContent,
-                                         const nsAString& aSlotName);
+
+
+
+
+
+
+
+  void InvalidateStyleAndLayoutOnSubtree(Element*);
 
 public:
   void AddSlot(HTMLSlotElement* aSlot);
@@ -162,8 +180,6 @@ public:
 
 protected:
   virtual ~ShadowRoot();
-
-  void SyncServoStyles();
 
   const ShadowRootMode mMode;
 
