@@ -6219,8 +6219,6 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
 
   loadInfo->SetReferrer(mCurrentURI);
 
-  loadInfo->SetOriginalURI(mCurrentURI);
-
   
   
   nsCOMPtr<nsIPrincipal> principal = aPrincipal;
