@@ -86,12 +86,6 @@ let propNameWhitelist = [
   {propName: "--in-content-category-text-active",
    isFromDevTools: false},
   
-  {propName: "--chrome-nav-buttons-background",
-   isFromDevTools: false},
-  
-  {propName: "--chrome-nav-buttons-hover-background",
-   isFromDevTools: false},
-  
   {propName: "--theme-search-overlays-semitransparent",
    isFromDevTools: true},
   
