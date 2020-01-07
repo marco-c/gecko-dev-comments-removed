@@ -708,10 +708,14 @@ Inspector.prototype = {
 
     await this.addRuleView(defaultTab);
 
-    this.sidebar.addExistingTab(
-      "computedview",
-      INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
-      defaultTab == "computedview");
+    
+    
+    if (!Services.prefs.getBoolPref("devtools.inspector.split-sidebar-toggle")) {
+      this.sidebar.addExistingTab(
+        "computedview",
+        INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
+        defaultTab == "computedview");
+    }
 
     
     
@@ -736,6 +740,15 @@ Inspector.prototype = {
         }
       },
       defaultTab == layoutId);
+
+    
+    
+    if (Services.prefs.getBoolPref("devtools.inspector.split-sidebar-toggle")) {
+      this.sidebar.addExistingTab(
+        "computedview",
+        INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
+        defaultTab == "computedview");
+    }
 
     if (Services.prefs.getBoolPref("devtools.changesview.enabled")) {
       
