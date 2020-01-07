@@ -31,7 +31,10 @@ const PREF_GETADDONS_CACHE_ID_ENABLED    = "extensions.%ID%.getAddons.cache.enab
 const PREF_GETADDONS_BROWSEADDONS        = "extensions.getAddons.browseAddons";
 const PREF_GETADDONS_BYIDS               = "extensions.getAddons.get.url";
 const PREF_GETADDONS_BYIDS_PERFORMANCE   = "extensions.getAddons.getWithPerformance.url";
+const PREF_GETADDONS_BROWSERECOMMENDED   = "extensions.getAddons.recommended.browseURL";
+const PREF_GETADDONS_GETRECOMMENDED      = "extensions.getAddons.recommended.url";
 const PREF_GETADDONS_BROWSESEARCHRESULTS = "extensions.getAddons.search.browseURL";
+const PREF_GETADDONS_GETSEARCHRESULTS    = "extensions.getAddons.search.url";
 const PREF_GETADDONS_DB_SCHEMA           = "extensions.getAddons.databaseSchema";
 
 const PREF_METADATA_LASTUPDATE           = "extensions.getAddons.cache.lastUpdate";
@@ -208,7 +211,7 @@ AddonSearchResult.prototype = {
     return this.icons && this.icons[32];
   },
 
-   
+  
 
 
   icons: null,
@@ -694,6 +697,15 @@ this.AddonRepository = {
 
 
 
+  getRecommendedURL() {
+    let url = this._formatURLPref(PREF_GETADDONS_BROWSERECOMMENDED, {});
+    return (url != null) ? url : "about:blank";
+  },
+
+  
+
+
+
 
 
 
@@ -844,6 +856,70 @@ this.AddonRepository = {
 
   backgroundUpdateCheck() {
     return this._repopulateCacheInternal(true);
+  },
+
+  
+
+
+
+
+
+
+
+
+  retrieveRecommendedAddons(aMaxResults, aCallback) {
+    let url = this._formatURLPref(PREF_GETADDONS_GETRECOMMENDED, {
+      API_VERSION,
+
+      
+      MAX_RESULTS: 2 * aMaxResults
+    });
+
+    let handleResults = (aElements, aTotalResults) => {
+      this._getLocalAddonIds(aLocalAddonIds => {
+        
+        this._parseAddons(aElements, -1, aLocalAddonIds);
+      });
+    };
+
+    this._beginSearch(url, aMaxResults, aCallback, handleResults);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  searchAddons(aSearchTerms, aMaxResults, aCallback) {
+    let compatMode = "normal";
+    if (!AddonManager.checkCompatibility)
+      compatMode = "ignore";
+    else if (AddonManager.strictCompatibility)
+      compatMode = "strict";
+
+    let substitutions = {
+      API_VERSION,
+      TERMS: encodeURIComponent(aSearchTerms),
+      
+      MAX_RESULTS: 2 * aMaxResults,
+      COMPATIBILITY_MODE: compatMode,
+    };
+
+    let url = this._formatURLPref(PREF_GETADDONS_GETSEARCHRESULTS, substitutions);
+
+    let handleResults = (aElements, aTotalResults) => {
+      this._getLocalAddonIds(aLocalAddonIds => {
+        this._parseAddons(aElements, aTotalResults, aLocalAddonIds);
+      });
+    };
+
+    this._beginSearch(url, aMaxResults, aCallback, handleResults);
   },
 
   
@@ -1241,7 +1317,7 @@ this.AddonRepository = {
   _parseAddonCompatElement(aResultObj, aElement) {
     let guid = this._getDescendantTextContent(aElement, "guid");
     if (!guid) {
-        logger.debug("Compatibility override is missing guid.");
+      logger.debug("Compatibility override is missing guid.");
       return;
     }
 
@@ -1378,6 +1454,29 @@ this.AddonRepository = {
   },
 
   
+  
+  _getLocalAddonIds(aCallback) {
+    let localAddonIds = {ids: null, sourceURIs: null};
+
+    AddonManager.getAllAddons(function(aAddons) {
+      localAddonIds.ids = aAddons.map(a => a.id);
+      if (localAddonIds.sourceURIs)
+        aCallback(localAddonIds);
+    });
+
+    AddonManager.getAllInstalls(function(aInstalls) {
+      localAddonIds.sourceURIs = [];
+      for (let install of aInstalls) {
+        if (install.state != AddonManager.STATE_AVAILABLE)
+          localAddonIds.sourceURIs.push(install.sourceURI.spec);
+      }
+
+      if (localAddonIds.ids)
+        aCallback(localAddonIds);
+    });
+  },
+
+  
   _formatURLPref(aPreference, aSubstitutions) {
     let url = Services.prefs.getCharPref(aPreference, "");
     if (!url) {
@@ -1395,9 +1494,9 @@ this.AddonRepository = {
   
   
   findMatchingCompatOverride(aAddonVersion,
-                                                                     aCompatOverrides,
-                                                                     aAppVersion,
-                                                                     aPlatformVersion) {
+                             aCompatOverrides,
+                             aAppVersion,
+                             aPlatformVersion) {
     for (let override of aCompatOverrides) {
 
       let appVersion = null;
@@ -1434,7 +1533,7 @@ var AddonDatabase = {
 
   get jsonFile() {
     return OS.Path.join(OS.Constants.Path.profileDir, FILE_DATABASE);
- },
+  },
 
   
 
@@ -1443,55 +1542,55 @@ var AddonDatabase = {
 
   openConnection() {
     if (!this.connectionPromise) {
-     this.connectionPromise = (async () => {
-       this.DB = BLANK_DB();
+      this.connectionPromise = (async () => {
+        this.DB = BLANK_DB();
 
-       let inputDB, schema;
+        let inputDB, schema;
 
-       try {
-         let data = await OS.File.read(this.jsonFile, { encoding: "utf-8"});
-         inputDB = JSON.parse(data);
+        try {
+          let data = await OS.File.read(this.jsonFile, { encoding: "utf-8"});
+          inputDB = JSON.parse(data);
 
-         if (!inputDB.hasOwnProperty("addons") ||
+          if (!inputDB.hasOwnProperty("addons") ||
              !Array.isArray(inputDB.addons)) {
-           throw new Error("No addons array.");
-         }
+            throw new Error("No addons array.");
+          }
 
-         if (!inputDB.hasOwnProperty("schema")) {
-           throw new Error("No schema specified.");
-         }
+          if (!inputDB.hasOwnProperty("schema")) {
+            throw new Error("No schema specified.");
+          }
 
-         schema = parseInt(inputDB.schema, 10);
+          schema = parseInt(inputDB.schema, 10);
 
-         if (!Number.isInteger(schema) ||
+          if (!Number.isInteger(schema) ||
              schema < DB_MIN_JSON_SCHEMA) {
-           throw new Error("Invalid schema value.");
-         }
-       } catch (e) {
-         if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
-           logger.debug("No " + FILE_DATABASE + " found.");
-         } else {
-           logger.error(`Malformed ${FILE_DATABASE}: ${e} - resetting to empty`);
-         }
+            throw new Error("Invalid schema value.");
+          }
+        } catch (e) {
+          if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
+            logger.debug("No " + FILE_DATABASE + " found.");
+          } else {
+            logger.error(`Malformed ${FILE_DATABASE}: ${e} - resetting to empty`);
+          }
 
-         
-         this.save();
+          
+          this.save();
 
-         Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
-         return this.DB;
-       }
+          Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
+          return this.DB;
+        }
 
-       Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
+        Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
 
-       
-       
-       
-       for (let addon of inputDB.addons) {
-         this._insertAddon(addon);
-       }
+        
+        
+        
+        for (let addon of inputDB.addons) {
+          this._insertAddon(addon);
+        }
 
-       return this.DB;
-     })();
+        return this.DB;
+      })();
     }
 
     return this.connectionPromise;

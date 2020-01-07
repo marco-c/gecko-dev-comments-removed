@@ -36,6 +36,7 @@ const PREF_UI_LASTCATEGORY = "extensions.ui.lastCategory";
 const MANAGER_URI = "about:addons";
 const INSTALL_URI = "chrome://mozapps/content/xpinstall/xpinstallConfirm.xul";
 const PREF_LOGGING_ENABLED = "extensions.logging.enabled";
+const PREF_SEARCH_MAXRESULTS = "extensions.getAddons.maxResults";
 const PREF_STRICT_COMPAT = "extensions.strictCompatibility";
 
 var PREF_CHECK_COMPATIBILITY;
@@ -65,8 +66,11 @@ var gRestorePrefs = [{name: PREF_LOGGING_ENABLED},
                      {name: "extensions.update.autoUpdateDefault"},
                      {name: "extensions.getAddons.get.url"},
                      {name: "extensions.getAddons.getWithPerformance.url"},
+                     {name: "extensions.getAddons.search.browseURL"},
+                     {name: "extensions.getAddons.search.url"},
                      {name: "extensions.getAddons.cache.enabled"},
                      {name: "devtools.chrome.enabled"},
+                     {name: PREF_SEARCH_MAXRESULTS},
                      {name: PREF_STRICT_COMPAT},
                      {name: PREF_CHECK_COMPATIBILITY}];
 
@@ -279,7 +283,9 @@ function get_current_view(aManager) {
 function get_test_items_in_list(aManager) {
   var tests = "@tests.mozilla.org";
 
-  let item = aManager.document.getElementById("addon-list").firstChild;
+  let view = get_current_view(aManager);
+  let listid = view.id == "search-view" ? "search-list" : "addon-list";
+  let item = aManager.document.getElementById(listid).firstChild;
   let items = [];
 
   while (item) {
@@ -298,7 +304,9 @@ function get_test_items_in_list(aManager) {
 
 function check_all_in_list(aManager, aIds, aIgnoreExtras) {
   var doc = aManager.document;
-  var list = doc.getElementById("addon-list");
+  var view = get_current_view(aManager);
+  var listid = view.id == "search-view" ? "search-list" : "addon-list";
+  var list = doc.getElementById(listid);
 
   var inlist = [];
   var node = list.firstChild;
@@ -326,7 +334,9 @@ function get_addon_element(aManager, aId) {
   var doc = aManager.document;
   var view = get_current_view(aManager);
   var listid = "addon-list";
-  if (view.id == "updates-view")
+  if (view.id == "search-view")
+    listid = "search-list";
+  else if (view.id == "updates-view")
     listid = "updates-list";
   var list = doc.getElementById(listid);
 
@@ -996,7 +1006,7 @@ MockProvider.prototype = {
 
 
   getInstallForURL: function MP_getInstallForURL(aUrl, aHash, aName, aIconURL,
-                                                  aVersion, aLoadGroup, aCallback) {
+                                                 aVersion, aLoadGroup, aCallback) {
     
   },
 

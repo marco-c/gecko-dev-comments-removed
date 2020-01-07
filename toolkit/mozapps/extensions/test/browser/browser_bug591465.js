@@ -10,20 +10,24 @@ Components.utils.import("resource://gre/modules/LightweightThemeManager.jsm", te
 var LightweightThemeManager = tempScope.LightweightThemeManager;
 
 
+const PREF_GETADDONS_GETSEARCHRESULTS = "extensions.getAddons.search.url";
+const SEARCH_URL = TESTROOT + "browser_bug591465.xml";
+const SEARCH_QUERY = "SEARCH";
+
 var gManagerWindow;
 var gProvider;
 var gContextMenu;
 var gLWTheme = {
-                id: "4",
-                version: "1",
-                name: "Bling",
-                description: "SO MUCH BLING!",
-                author: "Pixel Pusher",
-                homepageURL: "http://mochi.test:8888/data/index.html",
-                headerURL: "http://mochi.test:8888/data/header.png",
-                previewURL: "http://mochi.test:8888/data/preview.png",
-                iconURL: "http://mochi.test:8888/data/icon.png"
-              };
+  id: "4",
+  version: "1",
+  name: "Bling",
+  description: "SO MUCH BLING!",
+  author: "Pixel Pusher",
+  homepageURL: "http://mochi.test:8888/data/index.html",
+  headerURL: "http://mochi.test:8888/data/header.png",
+  previewURL: "http://mochi.test:8888/data/preview.png",
+  iconURL: "http://mochi.test:8888/data/icon.png"
+};
 
 
 function test() {
@@ -51,7 +55,7 @@ function test() {
     version: "1.0",
     type: "theme",
     _userDisabled: true
-   }, {
+  }, {
     id: "theme3@tests.mozilla.org",
     name: "theme 3",
     version: "1.0",
@@ -76,28 +80,28 @@ function end_test() {
 function check_contextmenu(aIsTheme, aIsEnabled, aIsRemote, aIsDetails, aIsSingleItemCase) {
   if (aIsTheme || aIsEnabled || aIsRemote)
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_enableItem"),
-                       "'Enable' should be hidden");
+                      "'Enable' should be hidden");
   else
     is_element_visible(gManagerWindow.document.getElementById("menuitem_enableItem"),
                        "'Enable' should be visible");
 
   if (aIsTheme || !aIsEnabled || aIsRemote)
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_disableItem"),
-                       "'Disable' should be hidden");
+                      "'Disable' should be hidden");
   else
     is_element_visible(gManagerWindow.document.getElementById("menuitem_disableItem"),
                        "'Disable' should be visible");
 
   if (!aIsTheme || aIsEnabled || aIsRemote || aIsSingleItemCase)
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_enableTheme"),
-                       "'Wear Theme' should be hidden");
+                      "'Wear Theme' should be hidden");
   else
     is_element_visible(gManagerWindow.document.getElementById("menuitem_enableTheme"),
                        "'Wear Theme' should be visible");
 
   if (!aIsTheme || !aIsEnabled || aIsRemote || aIsSingleItemCase)
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_disableTheme"),
-                       "'Stop Wearing Theme' should be hidden");
+                      "'Stop Wearing Theme' should be hidden");
   else
     is_element_visible(gManagerWindow.document.getElementById("menuitem_disableTheme"),
                        "'Stop Wearing Theme' should be visible");
@@ -107,18 +111,18 @@ function check_contextmenu(aIsTheme, aIsEnabled, aIsRemote, aIsDetails, aIsSingl
                        "'Install' should be visible");
   else
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_installItem"),
-                       "'Install' should be hidden");
+                      "'Install' should be hidden");
 
   if (aIsDetails)
     is_element_hidden(gManagerWindow.document.getElementById("menuitem_showDetails"),
-                       "'Show More Information' should be hidden in details view");
+                      "'Show More Information' should be hidden in details view");
   else
     is_element_visible(gManagerWindow.document.getElementById("menuitem_showDetails"),
                        "'Show More Information' should be visible in list view");
 
   if (aIsSingleItemCase)
     is_element_hidden(gManagerWindow.document.getElementById("addonitem-menuseparator"),
-                       "Menu separator should be hidden with only one menu item");
+                      "Menu separator should be hidden with only one menu item");
   else
     is_element_visible(gManagerWindow.document.getElementById("addonitem-menuseparator"),
                        "Menu separator should be visible with multiple menu items");
@@ -404,6 +408,67 @@ add_test(function() {
     }, {once: true});
 
     info("Opening context menu with single menu item on enabled theme, in detail view");
+    var el = gManagerWindow.document.querySelector("#detail-view .detail-view-container");
+    EventUtils.synthesizeMouse(el, 4, 4, { }, gManagerWindow);
+    EventUtils.synthesizeMouse(el, 4, 4, { type: "contextmenu", button: 2 }, gManagerWindow);
+  });
+});
+
+add_test(function() {
+  info("Searching for remote addons");
+
+  Services.prefs.setCharPref(PREF_GETADDONS_GETSEARCHRESULTS, SEARCH_URL);
+  Services.prefs.setIntPref(PREF_SEARCH_MAXRESULTS, 15);
+
+  var searchBox = gManagerWindow.document.getElementById("header-search");
+  searchBox.value = SEARCH_QUERY;
+
+  EventUtils.synthesizeMouseAtCenter(searchBox, { }, gManagerWindow);
+  EventUtils.synthesizeKey("VK_RETURN", { }, gManagerWindow);
+
+  wait_for_view_load(gManagerWindow, function() {
+    var filter = gManagerWindow.document.getElementById("search-filter-remote");
+    EventUtils.synthesizeMouseAtCenter(filter, { }, gManagerWindow);
+    executeSoon(function() {
+
+      var el = get_addon_element(gManagerWindow, "remote1@tests.mozilla.org");
+
+      gContextMenu.addEventListener("popupshown", function() {
+        check_contextmenu(false, false, true, false, false);
+
+        gContextMenu.hidePopup();
+        run_next_test();
+      }, {once: true});
+
+      info("Opening context menu on remote extension item");
+      el.parentNode.ensureElementIsVisible(el);
+      EventUtils.synthesizeMouse(el, 4, 4, { }, gManagerWindow);
+      EventUtils.synthesizeMouse(el, 4, 4, { type: "contextmenu", button: 2 }, gManagerWindow);
+
+    });
+  });
+});
+
+
+add_test(function() {
+  gManagerWindow.loadView("addons://detail/remote1@tests.mozilla.org");
+  wait_for_view_load(gManagerWindow, function() {
+
+    gContextMenu.addEventListener("popupshown", function() {
+      check_contextmenu(false, false, true, true, false);
+
+      gContextMenu.hidePopup();
+
+      
+      AddonManager.getAllInstalls(function(aInstalls) {
+        is(aInstalls.length, 1, "Should be one available install");
+        aInstalls[0].cancel();
+
+        run_next_test();
+      });
+    }, {once: true});
+
+    info("Opening context menu on remote extension, in detail view");
     var el = gManagerWindow.document.querySelector("#detail-view .detail-view-container");
     EventUtils.synthesizeMouse(el, 4, 4, { }, gManagerWindow);
     EventUtils.synthesizeMouse(el, 4, 4, { type: "contextmenu", button: 2 }, gManagerWindow);

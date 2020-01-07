@@ -7,35 +7,37 @@ var Ci = Components.interfaces;
 
 const nsIBLS = Ci.nsIBlocklistService;
 
-var PLUGINS = [{
-  
-  name: "test_bug514327_1",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug514327_2",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug514327_3",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug514327_4",
-  version: "5",
-  disabled: false,
-  blocklisted: false,
-  outdated: false
-}];
+var PLUGINS = [
+  {
+    
+    name: "test_bug514327_1",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug514327_2",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug514327_3",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug514327_4",
+    version: "5",
+    disabled: false,
+    blocklisted: false,
+    outdated: false
+  },
+];
 
 
 function run_test() {

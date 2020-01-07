@@ -8,11 +8,15 @@ var gManagerWindow;
 var gCategoryUtilities;
 
 var gApp = document.getElementById("bundle_brand").getString("brandShortName");
+var gSearchCount = 0;
 
 function test() {
   requestLongerTimeout(2);
   waitForExplicitFinish();
 
+  
+  Services.prefs.setIntPref(PREF_SEARCH_MAXRESULTS, 15);
+  Services.prefs.setCharPref("extensions.getAddons.search.url", TESTROOT + "browser_install.xml");
   
   Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
@@ -41,13 +45,13 @@ function get_node(parent, anonid) {
 function installAddon(aCallback) {
   AddonManager.getInstallForURL(TESTROOT + "addons/browser_install1_2.xpi",
                                 function(aInstall) {
-    aInstall.addListener({
-      onInstallEnded() {
-        executeSoon(aCallback);
-      }
-    });
-    aInstall.install();
-  }, "application/x-xpinstall");
+                                  aInstall.addListener({
+                                    onInstallEnded() {
+                                      executeSoon(aCallback);
+                                    }
+                                  });
+                                  aInstall.install();
+                                }, "application/x-xpinstall");
 }
 
 function installUpgrade(aCallback) {
@@ -73,17 +77,44 @@ function installUpgrade(aCallback) {
 function cancelInstall(aCallback) {
   AddonManager.getInstallForURL(TESTROOT + "addons/browser_install1_2.xpi",
                                 function(aInstall) {
-    aInstall.addListener({
-      onDownloadEnded(aInstall) {
-        executeSoon(function() {
-          aInstall.cancel();
-          aCallback();
-        });
-        return false;
-      }
+                                  aInstall.addListener({
+                                    onDownloadEnded(aInstall) {
+                                      executeSoon(function() {
+                                        aInstall.cancel();
+                                        aCallback();
+                                      });
+                                      return false;
+                                    }
+                                  });
+                                  aInstall.install();
+                                }, "application/x-xpinstall");
+}
+
+function installSearchResult(aCallback) {
+  var searchBox = gManagerWindow.document.getElementById("header-search");
+  
+  searchBox.value = "foo" + gSearchCount;
+  gSearchCount++;
+
+  EventUtils.synthesizeMouseAtCenter(searchBox, { }, gManagerWindow);
+  EventUtils.synthesizeKey("VK_RETURN", { }, gManagerWindow);
+
+  wait_for_view_load(gManagerWindow, function() {
+    let remote = gManagerWindow.document.getElementById("search-filter-remote");
+    EventUtils.synthesizeMouseAtCenter(remote, { }, gManagerWindow);
+
+    let item = get_addon_element(gManagerWindow, "install1@tests.mozilla.org");
+    ok(!!item, "Should see the search result in the list");
+
+    let status = get_node(item, "install-status");
+    EventUtils.synthesizeMouseAtCenter(get_node(status, "install-remote-btn"), {}, gManagerWindow);
+
+    item.mInstall.addListener({
+      onInstallEnded() {
+        executeSoon(aCallback);
+      },
     });
-    aInstall.install();
-  }, "application/x-xpinstall");
+  });
 }
 
 function get_list_item_count() {
@@ -153,6 +184,40 @@ add_test(function() {
 
 
 add_test(function() {
+  installSearchResult(function() {
+    check_undo_install();
+    run_next_test();
+  });
+});
+
+
+
+add_test(function() {
+  installSearchResult(function() {
+    gCategoryUtilities.openType("extension", function() {
+      check_undo_install();
+      run_next_test();
+    });
+  });
+});
+
+
+
+add_test(function() {
+  installSearchResult(function() {
+    close_manager(gManagerWindow, function() {
+      open_manager("addons://list/extension", function(aWindow) {
+        gManagerWindow = aWindow;
+        gCategoryUtilities = new CategoryUtilities(gManagerWindow);
+        check_undo_install();
+        run_next_test();
+      });
+    });
+  });
+});
+
+
+add_test(function() {
   cancelInstall(function() {
     is(get_list_item_count(), 0, "Should be no items in the list");
 
@@ -179,11 +244,11 @@ add_test(function() {
 add_test(function() {
   AddonManager.getInstallForURL(TESTROOT + "addons/browser_install1_1.xpi",
                                 function(aInstall) {
-    aInstall.addListener({
-      onInstallEnded: run_next_test
-    });
-    aInstall.install();
-  }, "application/x-xpinstall");
+                                  aInstall.addListener({
+                                    onInstallEnded: run_next_test
+                                  });
+                                  aInstall.install();
+                                }, "application/x-xpinstall");
 });
 
 
