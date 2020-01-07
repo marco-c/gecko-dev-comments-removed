@@ -150,6 +150,15 @@ public:
                                      const nsAString& aProperty,
                                      ErrorResult& aRv);
 
+  
+  
+  
+  
+  static bool CssPropertySupportsType(GlobalObject& aGlobal,
+                                      const nsAString& aProperty,
+                                      uint32_t aType,
+                                      ErrorResult& aRv);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
