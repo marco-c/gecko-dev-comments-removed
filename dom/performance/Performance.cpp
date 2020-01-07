@@ -412,7 +412,6 @@ void
 Performance::InsertResourceEntry(PerformanceEntry* aEntry)
 {
   MOZ_ASSERT(aEntry);
-  MOZ_ASSERT(mResourceEntries.Length() <= mResourceTimingBufferSize);
 
   
   if (nsContentUtils::ShouldResistFingerprinting()) {
