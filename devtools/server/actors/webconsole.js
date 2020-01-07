@@ -570,7 +570,7 @@ WebConsoleActor.prototype =
 
 
 
-  onStartListeners: function(request) {
+  startListeners: function(request) {
     let startedListeners = [];
     let window = !this.parentActor.isRootActor ? this.window : null;
     let messageManager = null;
@@ -711,7 +711,7 @@ WebConsoleActor.prototype =
 
 
 
-  onStopListeners: function(request) {
+  stopListeners: function(request) {
     let stoppedListeners = [];
 
     
@@ -800,7 +800,7 @@ WebConsoleActor.prototype =
 
 
 
-  onGetCachedMessages: function(request) {
+  getCachedMessages: function(request) {
     let types = request.messageTypes;
     if (!types) {
       return {
@@ -882,7 +882,7 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJSAsync: function(request) {
+  evaluateJSAsync: function(request) {
     
     
 
@@ -894,7 +894,7 @@ WebConsoleActor.prototype =
     });
 
     
-    let response = this.onEvaluateJS(request);
+    let response = this.evaluateJS(request);
     response.resultID = resultID;
 
     
@@ -911,7 +911,7 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJS: function(request) {
+  evaluateJS: function(request) {
     let input = request.text;
     let timestamp = Date.now();
 
@@ -1042,7 +1042,7 @@ WebConsoleActor.prototype =
 
 
 
-  onAutocomplete: function(request) {
+  autocomplete: function(request) {
     let frameActorId = request.frameActor;
     let dbgObject = null;
     let environment = null;
@@ -1057,7 +1057,7 @@ WebConsoleActor.prototype =
         let frame = frameActor.frame;
         environment = frame.environment;
       } catch (e) {
-        DevToolsUtils.reportException("onAutocomplete",
+        DevToolsUtils.reportException("autocomplete",
           Error("The frame actor was not found: " + frameActorId));
       }
     } else {
@@ -1102,7 +1102,7 @@ WebConsoleActor.prototype =
   
 
 
-  onClearMessagesCache: function() {
+  clearMessagesCache: function() {
     
     let windowId = !this.parentActor.isRootActor ?
                    WebConsoleUtils.getInnerWindowId(this.window) : null;
@@ -1129,7 +1129,7 @@ WebConsoleActor.prototype =
 
 
 
-  onGetPreferences: function(request) {
+  getPreferences: function(request) {
     let prefs = Object.create(null);
     for (let key of request.preferences) {
       prefs[key] = this._prefs[key];
@@ -1143,7 +1143,7 @@ WebConsoleActor.prototype =
 
 
 
-  onSetPreferences: function(request) {
+  setPreferences: function(request) {
     for (let key in request.preferences) {
       this._prefs[key] = request.preferences[key];
 
@@ -1691,7 +1691,7 @@ WebConsoleActor.prototype =
 
 
 
-  onSendHTTPRequest(message) {
+  sendHTTPRequest(message) {
     let { url, method, headers, body } = message.request;
 
     
@@ -1879,11 +1879,11 @@ WebConsoleActor.prototype =
 
     
     
-    this.onStopListeners({listeners: listeners.slice()});
+    this.stopListeners({listeners: listeners.slice()});
 
     
     
-    this.onStartListeners({listeners: listeners});
+    this.startListeners({listeners: listeners});
 
     
     this._lastChromeWindow = null;
@@ -1892,16 +1892,16 @@ WebConsoleActor.prototype =
 
 WebConsoleActor.prototype.requestTypes =
 {
-  startListeners: WebConsoleActor.prototype.onStartListeners,
-  stopListeners: WebConsoleActor.prototype.onStopListeners,
-  getCachedMessages: WebConsoleActor.prototype.onGetCachedMessages,
-  evaluateJS: WebConsoleActor.prototype.onEvaluateJS,
-  evaluateJSAsync: WebConsoleActor.prototype.onEvaluateJSAsync,
-  autocomplete: WebConsoleActor.prototype.onAutocomplete,
-  clearMessagesCache: WebConsoleActor.prototype.onClearMessagesCache,
-  getPreferences: WebConsoleActor.prototype.onGetPreferences,
-  setPreferences: WebConsoleActor.prototype.onSetPreferences,
-  sendHTTPRequest: WebConsoleActor.prototype.onSendHTTPRequest
+  startListeners: WebConsoleActor.prototype.startListeners,
+  stopListeners: WebConsoleActor.prototype.stopListeners,
+  getCachedMessages: WebConsoleActor.prototype.getCachedMessages,
+  evaluateJS: WebConsoleActor.prototype.evaluateJS,
+  evaluateJSAsync: WebConsoleActor.prototype.evaluateJSAsync,
+  autocomplete: WebConsoleActor.prototype.autocomplete,
+  clearMessagesCache: WebConsoleActor.prototype.clearMessagesCache,
+  getPreferences: WebConsoleActor.prototype.getPreferences,
+  setPreferences: WebConsoleActor.prototype.setPreferences,
+  sendHTTPRequest: WebConsoleActor.prototype.sendHTTPRequest
 };
 
 exports.WebConsoleActor = WebConsoleActor;

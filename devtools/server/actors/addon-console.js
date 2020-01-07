@@ -9,6 +9,16 @@ var { update } = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(this, "WebConsoleActor", "devtools/server/actors/webconsole", true);
 
+const { extend } = require("devtools/shared/extend");
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
+
+
+
+
+
+
+const addonConsolePrototype = extend({}, WebConsoleActor.prototype);
 
 
 
@@ -21,16 +31,15 @@ loader.lazyRequireGetter(this, "WebConsoleActor", "devtools/server/actors/webcon
 
 
 
-function AddonConsoleActor(addon, connection, parentActor) {
+
+addonConsolePrototype.initialize = function(addon, connection, parentActor) {
   this.addon = addon;
+  Actor.prototype.initialize.call(this, connection);
   WebConsoleActor.call(this, connection, parentActor);
-}
+};
 
-AddonConsoleActor.prototype = Object.create(WebConsoleActor.prototype);
-
-update(AddonConsoleActor.prototype, {
-  constructor: AddonConsoleActor,
-
+update(addonConsolePrototype, {
+  
   actorPrefix: "addonConsole",
 
   
@@ -49,6 +58,7 @@ update(AddonConsoleActor.prototype, {
 
 
   destroy() {
+    Actor.prototype.destroy.call(this);
     WebConsoleActor.prototype.destroy.call(this);
     this.addon = null;
   },
@@ -61,7 +71,7 @@ update(AddonConsoleActor.prototype, {
 
 
 
-  onStartListeners: function ACAOnStartListeners(request) {
+  startListeners: function ACAOnStartListeners(request) {
     let startedListeners = [];
 
     while (request.listeners.length > 0) {
@@ -85,10 +95,7 @@ update(AddonConsoleActor.prototype, {
   },
 });
 
-AddonConsoleActor.prototype.requestTypes = Object.create(
-  WebConsoleActor.prototype.requestTypes
-);
-AddonConsoleActor.prototype.requestTypes.startListeners =
-  AddonConsoleActor.prototype.onStartListeners;
+exports.AddonConsoleActor = ActorClassWithSpec(webconsoleSpec, addonConsolePrototype);
 
-exports.AddonConsoleActor = AddonConsoleActor;
+
+exports.AddonConsoleActor.prototype.typeName = "addonConsole";
