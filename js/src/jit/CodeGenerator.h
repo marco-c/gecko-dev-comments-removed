@@ -616,10 +616,12 @@ class CodeGenerator final : public CodeGeneratorSpecific
     
     
     
-    uint32_t simdRefreshTemplatesDuringLink_;
+    uint32_t simdTemplatesToReadBarrier_;
 
-    void registerSimdTemplate(SimdType simdType);
-    void captureSimdTemplate(JSContext* cx);
+    
+    uint32_t compartmentStubsToReadBarrier_;
+
+    void addSimdTemplateToReadBarrier(SimdType simdType);
 };
 
 } 
