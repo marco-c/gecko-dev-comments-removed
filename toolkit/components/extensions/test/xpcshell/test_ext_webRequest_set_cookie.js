@@ -1,0 +1,243 @@
+"use strict";
+
+const HOSTS = new Set([
+  "example.com",
+]);
+
+const server = createHttpServer({hosts: HOSTS});
+
+server.registerDirectory("/data/", do_get_file("data"));
+
+server.registerPathHandler("/file_webrequestblocking_set_cookie.html", (request, response) => {
+  response.setStatusLine(request.httpVersion, 200, "OK");
+  response.setHeader("Content-Type", "text/html", false);
+  response.setHeader("Set-Cookie", "reqcookie=reqvalue", false);
+  response.write("<!DOCTYPE html><html></html>");
+});
+
+add_task(async function test_modifying_cookies_from_onHeadersReceived() {
+  async function background() {
+    
+
+
+
+
+
+
+
+
+
+    async function checkCookies(prefixes) {
+      const numPrefixes = prefixes.length;
+      const currentCookies = await browser.cookies.getAll({});
+      browser.test.assertEq(numPrefixes, currentCookies.length, `${numPrefixes} cookies were set`);
+
+      for (let cookiePrefix of prefixes) {
+        let cookieName = `${cookiePrefix}cookie`;
+        let expectedCookieValue = `${cookiePrefix}value`;
+        let fetchedCookie = await browser.cookies.getAll({name: cookieName});
+        browser.test.assertEq(1, fetchedCookie.length, `Found 1 cookie with name "${cookieName}"`);
+        browser.test.assertEq(expectedCookieValue, fetchedCookie[0] && fetchedCookie[0].value, `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`);
+      }
+    }
+
+    function awaitMessage(expectedMsg) {
+      return new Promise(resolve => {
+        browser.test.onMessage.addListener(function listener(msg) {
+          if (msg === expectedMsg) {
+            browser.test.onMessage.removeListener(listener);
+            resolve();
+          }
+        });
+      });
+    }
+
+    
+
+
+
+
+
+
+
+    function openContentPage(filename) {
+      let promise = awaitMessage("url-loaded");
+      browser.test.sendMessage("load-url", `http://example.com/${filename}?nocache=${Math.random()}`);
+      return promise;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    async function testCookiesWithFile(filename, prefixes, callback) {
+      await browser.browsingData.removeCookies({});
+      await openContentPage(filename);
+
+      if (prefixes !== undefined) {
+        await checkCookies(prefixes);
+      }
+
+      if (callback !== undefined) {
+        await callback();
+      }
+      let promise = awaitMessage("url-unloaded");
+      browser.test.sendMessage("unload-url");
+      await promise;
+    }
+
+    const filter = {
+      urls: ["<all_urls>"],
+      types: ["main_frame", "sub_frame"],
+    };
+
+    const headersReceivedInfoSpec = ["blocking", "responseHeaders"];
+
+    const onHeadersReceived = details => {
+      details.responseHeaders.push({
+        name: "Set-Cookie",
+        value: "extcookie=extvalue",
+      });
+
+      return {
+        responseHeaders: details.responseHeaders,
+      };
+    };
+    browser.webRequest.onHeadersReceived.addListener(onHeadersReceived, filter, headersReceivedInfoSpec);
+
+    
+    
+    
+    await testCookiesWithFile("data/file_sample.html", ["ext"]);
+
+    
+    
+    
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext", "req"]);
+
+    
+    
+    
+    const thirdOnHeadersRecievedListener = details => {
+      details.responseHeaders.push({
+        name: "Set-Cookie",
+        value: "thirdcookie=thirdvalue",
+      });
+
+      browser.test.log(JSON.stringify(details.responseHeaders));
+
+      return {
+        responseHeaders: details.responseHeaders,
+      };
+    };
+    browser.webRequest.onHeadersReceived.addListener(thirdOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext", "req", "third"]);
+    browser.webRequest.onHeadersReceived.removeListener(onHeadersReceived);
+    browser.webRequest.onHeadersReceived.removeListener(thirdOnHeadersRecievedListener);
+
+    
+    
+    
+    
+    
+    const fourthOnHeadersRecievedListener = details => {
+      
+      const newHeaders = details.responseHeaders.filter(cookie => cookie.name !== "set-cookie");
+
+      
+      newHeaders.push({
+        name: "Set-Cookie",
+        value: "extcookie=extvalue",
+      });
+
+      return {
+        responseHeaders: newHeaders,
+      };
+    };
+    browser.webRequest.onHeadersReceived.addListener(fourthOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", ["ext"]);
+    browser.webRequest.onHeadersReceived.removeListener(fourthOnHeadersRecievedListener);
+
+    
+    
+    
+    
+    
+    const fifthOnHeadersRecievedListener = details => {
+      
+      const newHeaders = details.responseHeaders.filter(cookie => cookie.name !== "set-cookie");
+
+      
+      newHeaders.push({
+        name: "Set-Cookie",
+        value: "reqcookie=changedvalue",
+      });
+
+      return {
+        responseHeaders: newHeaders,
+      };
+    };
+    browser.webRequest.onHeadersReceived.addListener(fifthOnHeadersRecievedListener, filter, headersReceivedInfoSpec);
+
+    await testCookiesWithFile("file_webrequestblocking_set_cookie.html", undefined, async () => {
+      const currentCookies = await browser.cookies.getAll({});
+      browser.test.assertEq(1, currentCookies.length, `1 cookie was set`);
+
+      const cookieName = "reqcookie";
+      const expectedCookieValue = "changedvalue";
+      const fetchedCookie = await browser.cookies.getAll({name: cookieName});
+
+      browser.test.assertEq(1, fetchedCookie.length, `Found 1 cookie with name "${cookieName}"`);
+      browser.test.assertEq(expectedCookieValue, fetchedCookie[0] && fetchedCookie[0].value, `Cookie "${cookieName}" has expected value of "${expectedCookieValue}"`);
+    });
+    browser.webRequest.onHeadersReceived.removeListener(fifthOnHeadersRecievedListener);
+
+    browser.test.notifyPass("cookie modifying extension");
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: [
+        "browsingData",
+        "cookies",
+        "webNavigation",
+        "webRequest",
+        "webRequestBlocking",
+        "<all_urls>",
+      ],
+    },
+    background,
+  });
+
+  let contentPage = null;
+  extension.onMessage("load-url", async url => {
+    ok(!contentPage, "Should have no content page to unload");
+    contentPage = await ExtensionTestUtils.loadContentPage(url, {remote: true});
+    extension.sendMessage("url-loaded");
+  });
+  extension.onMessage("unload-url", async () => {
+    await contentPage.close();
+    contentPage = null;
+    extension.sendMessage("url-unloaded");
+  });
+
+  await extension.startup();
+  await extension.awaitFinish("cookie modifying extension");
+  await extension.unload();
+});
