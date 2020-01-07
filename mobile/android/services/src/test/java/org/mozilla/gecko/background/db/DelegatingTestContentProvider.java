@@ -8,13 +8,19 @@ import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.OperationApplicationException;
+import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
 import org.mozilla.gecko.db.BrowserContract;
+import org.mozilla.gecko.db.BrowserProvider;
+import org.mozilla.gecko.db.TabsProvider;
+import org.robolectric.android.controller.ContentProviderController;
+import org.robolectric.util.ReflectionHelpers;
 
 import java.util.ArrayList;
 
@@ -22,15 +28,52 @@ import java.util.ArrayList;
 
 
 public class DelegatingTestContentProvider extends ContentProvider {
-    protected final ContentProvider mTargetProvider;
+    protected ContentProvider mTargetProvider;
 
     protected static Uri appendUriParam(Uri uri, String param, String value) {
         return uri.buildUpon().appendQueryParameter(param, value).build();
     }
 
+    
+
+
+
+
+
+
+    public static ContentProvider createDelegatingBrowserProvider() {
+        final ContentProviderController<DelegatingTestContentProvider> contentProviderController
+                = ContentProviderController.of(ReflectionHelpers.callConstructor(DelegatingTestContentProvider.class,
+                ReflectionHelpers.ClassParameter.from(ContentProvider.class, new BrowserProvider())));
+        return contentProviderController.create(BrowserContract.AUTHORITY).get();
+    }
+
+    
+
+
+
+
+
+
+    public static ContentProvider createDelegatingTabsProvider() {
+        final ContentProviderController<DelegatingTestContentProvider> contentProviderController
+                = ContentProviderController.of(ReflectionHelpers.callConstructor(DelegatingTestContentProvider.class,
+                ReflectionHelpers.ClassParameter.from(ContentProvider.class, new TabsProvider())));
+        return contentProviderController.create(BrowserContract.TABS_AUTHORITY).get();
+    }
+
     public DelegatingTestContentProvider(ContentProvider targetProvider) {
         super();
         mTargetProvider = targetProvider;
+    }
+
+    public void attachInfo(Context context, ProviderInfo info) {
+        
+        
+        
+        
+        mTargetProvider.attachInfo(context, null);
+        super.attachInfo(context, info);
     }
 
     private Uri appendTestParam(Uri uri) {
@@ -86,6 +129,10 @@ public class DelegatingTestContentProvider extends ContentProvider {
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
         return mTargetProvider.call(method, arg, extras);
+    }
+
+    public void shutdown() {
+        mTargetProvider.shutdown();
     }
 
     public ContentProvider getTargetProvider() {
