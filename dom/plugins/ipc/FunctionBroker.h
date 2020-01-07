@@ -1269,6 +1269,12 @@ protected:
     
     MOZ_ASSERT(bmhi && monitor && ok && winErr && r);
     *ok = bmhi->BrokerCallClient(*winErr, *r, *p...);
+    {
+      
+      
+      
+      MonitorAutoLock lock(*monitor);
+    }
     *ok &= NS_SUCCEEDED(monitor->Notify());
   };
 
