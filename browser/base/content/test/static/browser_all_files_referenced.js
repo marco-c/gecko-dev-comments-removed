@@ -125,11 +125,6 @@ var whitelist = [
   
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux"]},
   
-  {file: "chrome://global/skin/splitter/grip-bottom.gif", platforms: ["linux"]},
-  {file: "chrome://global/skin/splitter/grip-left.gif", platforms: ["linux"]},
-  {file: "chrome://global/skin/splitter/grip-right.gif", platforms: ["linux"]},
-  {file: "chrome://global/skin/splitter/grip-top.gif", platforms: ["linux"]},
-  
   {file: "chrome://global/skin/tree/sort-asc-classic.png", platforms: ["linux"]},
   {file: "chrome://global/skin/tree/sort-asc.png", platforms: ["linux"]},
   {file: "chrome://global/skin/tree/sort-dsc-classic.png", platforms: ["linux"]},
