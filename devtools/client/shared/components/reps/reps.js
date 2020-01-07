@@ -2587,6 +2587,10 @@ module.exports = {
 "use strict";
 
 
+const { getValue, nodeHasFullText } = __webpack_require__(3667); 
+
+
+
 async function enumIndexedProperties(objectClient, start, end) {
   try {
     const { iterator } = await objectClient.enumProperties({
@@ -2598,9 +2602,7 @@ async function enumIndexedProperties(objectClient, start, end) {
     console.error("Error in enumIndexedProperties", e);
     return {};
   }
-} 
-
-
+}
 
 async function enumNonIndexedProperties(objectClient, start, end) {
   try {
@@ -2645,8 +2647,14 @@ async function getPrototype(objectClient) {
   return objectClient.getPrototype();
 }
 
-async function getFullText(longStringClient, object) {
-  const { initial, length } = object;
+async function getFullText(longStringClient, item) {
+  const { initial, fullText, length } = getValue(item);
+
+  
+  
+  if (nodeHasFullText(item)) {
+    return Promise.resolve({ fullText });
+  }
 
   return new Promise((resolve, reject) => {
     longStringClient.substring(initial.length, length, response => {
@@ -2753,7 +2761,7 @@ function loadItemProperties(item, createObjectClient, createLongStringClient, lo
   }
 
   if (shouldLoadItemFullText(item, loadedProperties)) {
-    promises.push(getFullText(createLongStringClient(value), value));
+    promises.push(getFullText(createLongStringClient(value), item));
   }
 
   return Promise.all(promises).then(mergeResponses);
