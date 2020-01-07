@@ -61,11 +61,10 @@ function OptionsPanel(iframeWindow, toolbox) {
   this.toolbox = toolbox;
   this.isReady = false;
 
+  this.setupToolsList = this.setupToolsList.bind(this);
   this._prefChanged = this._prefChanged.bind(this);
   this._themeRegistered = this._themeRegistered.bind(this);
   this._themeUnregistered = this._themeUnregistered.bind(this);
-  this._webExtensionRegistered = this._webExtensionRegistered.bind(this);
-  this._webExtensionUnregistered = this._webExtensionUnregistered.bind(this);
   this._disableJSClicked = this._disableJSClicked.bind(this);
 
   this.disableJSNode = this.panelDoc.getElementById("devtools-disable-javascript");
@@ -106,8 +105,14 @@ OptionsPanel.prototype = {
     gDevTools.on("theme-registered", this._themeRegistered);
     gDevTools.on("theme-unregistered", this._themeUnregistered);
 
-    this.toolbox.on("webextension-registered", this._webExtensionRegistered);
-    this.toolbox.on("webextension-unregistered", this._webExtensionUnregistered);
+    
+    
+    this.toolbox.on("tool-registered", this.setupToolsList);
+    this.toolbox.on("webextension-registered", this.setupToolsList);
+    
+    
+    this.toolbox.on("tool-unregistered", this.setupToolsList);
+    this.toolbox.on("webextension-unregistered", this.setupToolsList);
   },
 
   _removeListeners: function() {
@@ -116,8 +121,10 @@ OptionsPanel.prototype = {
     Services.prefs.removeObserver("devtools.source-map.client-service.enabled",
                                   this._prefChanged);
 
-    this.toolbox.off("webextension-registered", this._webExtensionRegistered);
-    this.toolbox.off("webextension-unregistered", this._webExtensionUnregistered);
+    this.toolbox.off("tool-registered", this.setupToolsList);
+    this.toolbox.off("tool-unregistered", this.setupToolsList);
+    this.toolbox.off("webextension-registered", this.setupToolsList);
+    this.toolbox.off("webextension-unregistered", this.setupToolsList);
 
     gDevTools.off("theme-registered", this._themeRegistered);
     gDevTools.off("theme-unregistered", this._themeUnregistered);
@@ -146,18 +153,6 @@ OptionsPanel.prototype = {
     if (themeInput) {
       themeInput.parentNode.remove();
     }
-  },
-
-  _webExtensionRegistered: function(extensionUUID) {
-    
-    
-    this.setupToolsList();
-  },
-
-  _webExtensionUnregistered: function(extensionUUID) {
-    
-    
-    this.setupToolsList();
   },
 
   async setupToolbarButtonsList() {
@@ -372,6 +367,11 @@ OptionsPanel.prototype = {
     
     
     let prefDefinitions = [{
+      pref: "devtools.webconsole.new-frontend-enabled",
+      label: L10N.getStr("toolbox.options.enableNewConsole.label"),
+      id: "devtools-new-webconsole",
+      parentId: "webconsole-options"
+    }, {
       pref: "devtools.debugger.new-debugger-frontend",
       label: L10N.getStr("toolbox.options.enableNewDebugger.label"),
       id: "devtools-new-debugger",

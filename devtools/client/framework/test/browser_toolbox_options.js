@@ -332,11 +332,16 @@ async function testToggleWebExtensions() {
      "There should not be any checkbox for the unregistered WebExtensions");
 }
 
+function getToolNode(id) {
+  return panelWin.document.getElementById(id);
+}
+
 async function testToggleTools() {
   let toolNodes = panelWin.document.querySelectorAll(
     "#default-tools-box input[type=checkbox]:not([data-unsupported])," +
     "#additional-tools-box input[type=checkbox]:not([data-unsupported])");
-  let enabledTools = [...toolNodes].filter(node => node.checked);
+  let toolNodeIds = [...toolNodes].map(node => node.id);
+  let enabledToolIds = [...toolNodes].filter(node => node.checked).map(node => node.id);
 
   let toggleableTools = gDevTools.getDefaultTools()
                                  .filter(tool => {
@@ -358,38 +363,42 @@ async function testToggleTools() {
   }
 
   
-  for (let node of toolNodes) {
-    await toggleTool(node);
+  for (let id of toolNodeIds) {
+    await toggleTool(getToolNode(id));
   }
 
   
-  for (let node of toolNodes) {
-    await toggleTool(node);
-  }
-
-  
-  
-  for (let node of enabledTools) {
-    await toggleTool(node);
-  }
-  
-  for (let node of enabledTools) {
-    await toggleTool(node);
+  for (let id of toolNodeIds) {
+    await toggleTool(getToolNode(id));
   }
 
   
   
-  let firstTool = toolNodes[0];
-  let middleTool = toolNodes[(toolNodes.length / 2) | 0];
-  let lastTool = toolNodes[toolNodes.length - 1];
+  for (let id of enabledToolIds) {
+    await toggleTool(getToolNode(id));
+  }
+  
+  for (let id of enabledToolIds) {
+    await toggleTool(getToolNode(id));
+  }
 
-  await toggleTool(firstTool);
-  await toggleTool(firstTool);
-  await toggleTool(middleTool);
-  await toggleTool(middleTool);
-  await toggleTool(lastTool);
-  await toggleTool(lastTool);
+  
+  
+  let firstToolId = toolNodeIds[0];
+  let middleToolId = toolNodeIds[(toolNodeIds.length / 2) | 0];
+  let lastToolId = toolNodeIds[toolNodeIds.length - 1];
+
+  await toggleTool(getToolNode(firstToolId));
+  await toggleTool(getToolNode(firstToolId));
+  await toggleTool(getToolNode(middleToolId));
+  await toggleTool(getToolNode(middleToolId));
+  await toggleTool(getToolNode(lastToolId));
+  await toggleTool(getToolNode(lastToolId));
 }
+
+
+
+
 
 async function toggleTool(node) {
   let deferred = defer();
