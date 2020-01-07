@@ -119,6 +119,21 @@ const ALIGN_ALL_SHIFT: u32 = structs::NS_STYLE_ALIGN_ALL_SHIFT;
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct AlignJustifyContent(u16);
 
+
+
+
+
+
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum FallbackAllowed {
+    
+    Yes,
+    
+    No,
+}
+
+
 impl AlignJustifyContent {
     
     #[inline]
@@ -159,6 +174,38 @@ impl AlignJustifyContent {
     pub fn has_extra_flags(self) -> bool {
         self.primary().intersects(AlignFlags::FLAG_BITS) || self.fallback().intersects(AlignFlags::FLAG_BITS)
     }
+
+    
+    
+    pub fn parse_with_fallback<'i, 't>(
+        input: &mut Parser<'i, 't>,
+        fallback_allowed: FallbackAllowed,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        if let Ok(value) = input.try(|input| parse_normal_or_baseline(input)) {
+            return Ok(AlignJustifyContent::new(value))
+        }
+
+        
+        if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
+            if fallback_allowed == FallbackAllowed::Yes {
+                if let Ok(fallback) = input.try(|input| parse_overflow_content_position(input)) {
+                    return Ok(AlignJustifyContent::with_fallback(value, fallback))
+                }
+            }
+            return Ok(AlignJustifyContent::new(value))
+        }
+
+        
+        let fallback = parse_overflow_content_position(input)?;
+        if fallback_allowed == FallbackAllowed::Yes {
+            if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
+                return Ok(AlignJustifyContent::with_fallback(value, fallback))
+            }
+        }
+
+        Ok(AlignJustifyContent::new(fallback))
+    }
 }
 
 impl ToCss for AlignJustifyContent {
@@ -180,27 +227,7 @@ impl Parse for AlignJustifyContent {
     
     
     fn parse<'i, 't>(_: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
-        
-        if let Ok(value) = input.try(|input| parse_normal_or_baseline(input)) {
-            return Ok(AlignJustifyContent::new(value))
-        }
-
-        
-        if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
-            if let Ok(fallback) = input.try(|input| parse_overflow_content_position(input)) {
-                return Ok(AlignJustifyContent::with_fallback(value, fallback))
-            }
-            return Ok(AlignJustifyContent::new(value))
-        }
-
-        
-        if let Ok(fallback) = input.try(|input| parse_overflow_content_position(input)) {
-            if let Ok(value) = input.try(|input| parse_content_distribution(input)) {
-                return Ok(AlignJustifyContent::with_fallback(value, fallback))
-            }
-            return Ok(AlignJustifyContent::new(fallback))
-        }
-        Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        Self::parse_with_fallback(input, FallbackAllowed::Yes)
     }
 }
 
