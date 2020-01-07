@@ -472,6 +472,30 @@ double Strtod(Vector<const char> buffer, int exponent) {
   }
 }
 
+static float SanitizedDoubletof(double d) {
+  ASSERT(d >= 0.0);
+  
+  
+  
+  
+  
+  float max_finite = 3.4028234663852885981170418348451692544e+38;
+  
+  
+  
+  double half_max_finite_infinity =
+      3.40282356779733661637539395458142568448e+38;
+  if (d >= max_finite) {
+    if (d >= half_max_finite_infinity) {
+      return Single::Infinity();
+    } else {
+      return max_finite;
+    }
+  } else {
+    return static_cast<float>(d);
+  }
+}
+
 float Strtof(Vector<const char> buffer, int exponent) {
   char copy_buffer[kMaxSignificantDecimalDigits];
   Vector<const char> trimmed;
@@ -483,7 +507,7 @@ float Strtof(Vector<const char> buffer, int exponent) {
   double double_guess;
   bool is_correct = ComputeGuess(trimmed, exponent, &double_guess);
 
-  float float_guess = static_cast<float>(double_guess);
+  float float_guess = SanitizedDoubletof(double_guess);
   if (float_guess == double_guess) {
     
     return float_guess;
@@ -506,15 +530,15 @@ float Strtof(Vector<const char> buffer, int exponent) {
   double double_next = Double(double_guess).NextDouble();
   double double_previous = Double(double_guess).PreviousDouble();
 
-  float f1 = static_cast<float>(double_previous);
+  float f1 = SanitizedDoubletof(double_previous);
   float f2 = float_guess;
-  float f3 = static_cast<float>(double_next);
+  float f3 = SanitizedDoubletof(double_next);
   float f4;
   if (is_correct) {
     f4 = f3;
   } else {
     double double_next2 = Double(double_next).NextDouble();
-    f4 = static_cast<float>(double_next2);
+    f4 = SanitizedDoubletof(double_next2);
   }
   (void) f2;  
   ASSERT(f1 <= f2 && f2 <= f3 && f3 <= f4);
