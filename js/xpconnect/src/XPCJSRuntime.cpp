@@ -106,7 +106,8 @@ const char* const XPCJSRuntime::mStrings[] = {
     "columnNumber",         
     "stack",                
     "message",              
-    "lastIndex"             
+    "lastIndex",            
+    "then"                  
 };
 
 

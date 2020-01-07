@@ -190,8 +190,10 @@ AccessCheck::isCrossOriginAccessPermitted(JSContext* cx, HandleObject wrapper, H
     if (JSID_IS_STRING(id)) {
         if (IsPermitted(type, JSID_TO_FLAT_STRING(id), act == Wrapper::SET))
             return true;
-    } else if (type != CrossOriginOpaque &&
-               IsCrossOriginWhitelistedSymbol(cx, id)) {
+    }
+
+    if (type != CrossOriginOpaque &&
+        IsCrossOriginWhitelistedProp(cx, id)) {
         
         
         
