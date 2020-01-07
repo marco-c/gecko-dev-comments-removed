@@ -549,6 +549,9 @@ XPCWrappedNativeScope::SystemIsBeingShutDown()
             }
             i.Remove();
         }
+
+        CompartmentPrivate* priv = CompartmentPrivate::Get(cur->Compartment());
+        priv->SystemIsBeingShutDown();
     }
 
     

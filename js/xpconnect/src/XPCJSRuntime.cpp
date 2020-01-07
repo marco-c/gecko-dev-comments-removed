@@ -187,8 +187,13 @@ CompartmentPrivate::CompartmentPrivate(JSCompartment* c)
 CompartmentPrivate::~CompartmentPrivate()
 {
     MOZ_COUNT_DTOR(xpc::CompartmentPrivate);
-    mWrappedJSMap->ShutdownMarker();
     delete mWrappedJSMap;
+}
+
+void
+CompartmentPrivate::SystemIsBeingShutDown()
+{
+    mWrappedJSMap->ShutdownMarker();
 }
 
 RealmPrivate::RealmPrivate(JS::Realm* realm)
@@ -1018,6 +1023,14 @@ CompartmentPrivate::SizeOfIncludingThis(MallocSizeOf mallocSizeOf)
 
 
 void
+XPCJSRuntime::SystemIsBeingShutDown()
+{
+    
+    
+    mWrappedJSRoots = nullptr;
+}
+
+void
 XPCJSRuntime::Shutdown(JSContext* cx)
 {
     
@@ -1030,10 +1043,6 @@ XPCJSRuntime::Shutdown(JSContext* cx)
     xpc_DelocalizeRuntime(JS_GetRuntime(cx));
 
     JS::SetGCSliceCallback(cx, mPrevGCSliceCallback);
-
-    
-    
-    mWrappedJSRoots = nullptr;
 
     
     mWrappedJSMap->ShutdownMarker();

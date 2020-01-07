@@ -96,6 +96,7 @@ nsXPConnect::~nsXPConnect()
 
     mShuttingDown = true;
     XPCWrappedNativeScope::SystemIsBeingShutDown();
+    mRuntime->SystemIsBeingShutDown();
 
     
     
