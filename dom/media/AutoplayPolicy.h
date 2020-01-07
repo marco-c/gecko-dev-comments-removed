@@ -12,6 +12,9 @@
 class nsIDocument;
 
 namespace mozilla {
+
+class AutoplayRequest;
+
 namespace dom {
 
 class HTMLMediaElement;
@@ -32,10 +35,16 @@ class AudioContext;
 class AutoplayPolicy
 {
 public:
+  
   static bool IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement);
+
+  
   static bool IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext);
-private:
-  static bool IsDocumentAllowedToPlay(nsIDocument* aDoc);
+
+  
+  
+  static already_AddRefed<AutoplayRequest> RequestFor(
+    const nsIDocument& aDocument);
 };
 
 } 

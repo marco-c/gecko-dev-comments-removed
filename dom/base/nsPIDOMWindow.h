@@ -45,6 +45,7 @@ typedef uint32_t SuspendTypes;
 
 namespace mozilla {
 class ThrottledEventQueue;
+class AutoplayRequest;
 namespace dom {
 class AudioContext;
 class ClientInfo;
@@ -613,6 +614,10 @@ public:
   virtual nsISerialEventTarget*
   EventTargetFor(mozilla::TaskCategory aCategory) const = 0;
 
+  
+  
+  already_AddRefed<mozilla::AutoplayRequest> GetAutoplayRequest();
+
 protected:
   void CreatePerformanceObjectIfNeeded();
 
@@ -695,6 +700,11 @@ protected:
 
   
   uint32_t mNumOfOpenWebSockets;
+
+  
+  
+  
+  RefPtr<mozilla::AutoplayRequest> mAutoplayRequest;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)

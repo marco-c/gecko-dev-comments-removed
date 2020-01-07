@@ -9,14 +9,84 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/AudioContext.h"
+#include "mozilla/dom/AutoplayRequest.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
 #include "nsContentUtils.h"
 #include "nsIDocument.h"
 #include "MediaManager.h"
+#include "nsIDocShell.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla {
 namespace dom {
+
+static nsIDocument*
+ApproverDocOf(const nsIDocument& aDocument)
+{
+  nsCOMPtr<nsIDocShell> ds = aDocument.GetDocShell();
+  if (!ds) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
+  ds->GetSameTypeRootTreeItem(getter_AddRefs(rootTreeItem));
+  if (!rootTreeItem) {
+    return nullptr;
+  }
+
+  return rootTreeItem->GetDocument();
+}
+
+static bool
+IsAllowedToPlay(nsPIDOMWindowInner* aWindow)
+{
+  if (!aWindow) {
+    return false;
+  }
+
+  
+  
+  MediaManager* manager = MediaManager::GetIfExists();
+  if (manager &&
+      manager->IsActivelyCapturingOrHasAPermission(aWindow->WindowID())) {
+    return true;
+  }
+
+  if (!aWindow->GetExtantDoc()) {
+    return false;
+  }
+
+  nsIDocument* approver = ApproverDocOf(*aWindow->GetExtantDoc());
+  if (nsContentUtils::IsExactSitePermAllow(approver->NodePrincipal(),
+                                           "autoplay-media")) {
+    
+    return true;
+  }
+
+  if (approver->HasBeenUserGestureActivated()) {
+    
+    return true;
+  }
+
+  return false;
+}
+
+
+already_AddRefed<AutoplayRequest>
+AutoplayPolicy::RequestFor(const nsIDocument& aDocument)
+{
+  nsIDocument* document = ApproverDocOf(aDocument);
+  if (!document) {
+    return nullptr;
+  }
+  nsPIDOMWindowInner* window = document->GetInnerWindow();
+  if (!window) {
+    return nullptr;
+  }
+  return window->GetAutoplayRequest();
+}
 
  bool
 AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
@@ -34,28 +104,11 @@ AutoplayPolicy::IsMediaElementAllowedToPlay(NotNull<HTMLMediaElement*> aElement)
   }
 
   
-  
-  MediaManager* manager = MediaManager::GetIfExists();
-  if (manager) {
-    nsCOMPtr<nsPIDOMWindowInner> window = aElement->OwnerDoc()->GetInnerWindow();
-    if (window && manager->IsActivelyCapturingOrHasAPermission(window->WindowID())) {
-      return true;
-    }
-  }
-
-  
   if (aElement->Volume() == 0.0 || aElement->Muted()) {
     return true;
   }
 
-  
-  if (nsContentUtils::IsExactSitePermAllow(
-        aElement->NodePrincipal(), "autoplay-media")) {
-    return true;
-  }
-
-  
-  if (aElement->OwnerDoc()->HasBeenUserGestureActivated()) {
+  if (IsAllowedToPlay(aElement->OwnerDoc()->GetInnerWindow())) {
     return true;
   }
 
@@ -78,30 +131,7 @@ AutoplayPolicy::IsAudioContextAllowedToPlay(NotNull<AudioContext*> aContext)
     return true;
   }
 
-  nsPIDOMWindowInner* window = aContext->GetOwner();
-  if (!window) {
-    return false;
-  }
-
-  
-  
-  MediaManager* manager = MediaManager::GetIfExists();
-  if (manager) {
-    if (manager->IsActivelyCapturingOrHasAPermission(window->WindowID())) {
-      return true;
-    }
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = aContext->GetParentObject()->AsGlobal()->PrincipalOrNull();
-
-  
-  if (principal &&
-      nsContentUtils::IsExactSitePermAllow(principal, "autoplay-media")) {
-    return true;
-  }
-
-  
-  if (window->GetExtantDoc()->HasBeenUserGestureActivated()) {
+  if (IsAllowedToPlay(aContext->GetOwner())) {
     return true;
   }
 
