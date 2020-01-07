@@ -83,12 +83,6 @@ public:
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
   }
 
-  
-
-
-
-  void DistributeAllNodes();
-
 private:
 
   
@@ -113,18 +107,9 @@ private:
   const HTMLSlotElement* UnassignSlotFor(nsIContent* aContent,
                                          const nsAString& aSlotName);
 
-  
-
-
-  void DistributionChanged();
-
-  bool IsPooledNode(nsIContent* aChild) const;
-
 public:
   void AddSlot(HTMLSlotElement* aSlot);
   void RemoveSlot(HTMLSlotElement* aSlot);
-
-  void SetInsertionPointChanged() { mInsertionPointChanged = true; }
 
   void SetAssociatedBinding(nsXBLBinding* aBinding) { mAssociatedBinding = aBinding; }
 
@@ -141,7 +126,11 @@ public:
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
   void StyleSheetChanged();
 
-  bool IsComposedDocParticipant() { return mIsComposedDocParticipant; }
+  bool IsComposedDocParticipant() const
+  {
+    return mIsComposedDocParticipant;
+  }
+
   void SetIsComposedDocParticipant(bool aIsComposedDocParticipant)
   {
     mIsComposedDocParticipant = aIsComposedDocParticipant;
@@ -164,12 +153,6 @@ protected:
   
   
   RefPtr<nsXBLBinding> mAssociatedBinding;
-
-  
-  
-  
-  
-  bool mInsertionPointChanged;
 
   
   

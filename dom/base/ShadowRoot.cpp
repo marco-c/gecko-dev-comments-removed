@@ -57,7 +57,6 @@ ShadowRoot::ShadowRoot(Element* aElement, bool aClosed,
   : DocumentFragment(aNodeInfo)
   , DocumentOrShadowRoot(*this)
   , mProtoBinding(aProtoBinding)
-  , mInsertionPointChanged(false)
   , mIsComposedDocParticipant(false)
 {
   SetHost(aElement);
@@ -431,32 +430,6 @@ ShadowRoot::MaybeReassignElement(Element* aElement,
   }
 
   return false;
-}
-
-void
-ShadowRoot::DistributionChanged()
-{
-  
-  auto* host = GetHost();
-  if (!host || !host->IsInComposedDoc()) {
-    return;
-  }
-
-  auto* shell = OwnerDoc()->GetShell();
-  if (!shell) {
-    return;
-  }
-
-  shell->DestroyFramesForAndRestyle(host);
-}
-
-void
-ShadowRoot::DistributeAllNodes()
-{
-
-  
-
-  DistributionChanged();
 }
 
 Element*
