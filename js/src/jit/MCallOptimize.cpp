@@ -66,6 +66,13 @@ IonBuilder::inlineNativeCall(CallInfo& callInfo, JSFunction* target)
     }
 
     
+    
+    if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.fun()) {
+        trackOptimizationOutcome(TrackedOutcome::CantInlineUnexpectedNewTarget);
+        return InliningStatus_NotInlined;
+    }
+
+    
     trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadType);
 
     if (shouldAbortOnPreliminaryGroups(callInfo.thisArg()))
@@ -461,6 +468,13 @@ IonBuilder::inlineNonFunctionCall(CallInfo& callInfo, JSObject* target)
     
 
     MOZ_ASSERT(target->nonCCWRealm() == script()->realm());
+
+    
+    
+    if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.fun()) {
+        trackOptimizationOutcome(TrackedOutcome::CantInlineUnexpectedNewTarget);
+        return InliningStatus_NotInlined;
+    }
 
     if (callInfo.constructing() && target->constructHook() == TypedObject::construct)
         return inlineConstructTypedObject(callInfo, &target->as<TypeDescr>());
