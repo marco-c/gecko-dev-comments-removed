@@ -4278,10 +4278,27 @@ Element::SetCustomElementData(CustomElementData* aData)
   #if DEBUG
     nsAtom* name = NodeInfo()->NameAtom();
     nsAtom* type = aData->GetCustomElementType();
-    if (nsContentUtils::IsCustomElementName(name, NodeInfo()->NamespaceID())) {
-      MOZ_ASSERT(type == name);
-    } else {
-      MOZ_ASSERT(type != name);
+    if (NodeInfo()->NamespaceID() == kNameSpaceID_XHTML) {
+      if (nsContentUtils::IsCustomElementName(name, kNameSpaceID_XHTML)) {
+        MOZ_ASSERT(type == name);
+      } else {
+        MOZ_ASSERT(type != name);
+      }
+    } else { 
+      
+      if (nsContentUtils::IsNameWithDash(name)) {
+        
+        
+        MOZ_ASSERT(type == name);
+      } else {
+        
+        
+        if (type != name) {
+          
+          
+          MOZ_ASSERT(nsContentUtils::IsNameWithDash(type));
+        }
+      }
     }
   #endif
   slots->mCustomElementData = aData;

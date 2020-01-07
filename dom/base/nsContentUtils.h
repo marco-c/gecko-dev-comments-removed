@@ -706,6 +706,11 @@ public:
   
 
 
+  static bool IsNameWithDash(nsAtom* aName);
+
+  
+
+
 
   static bool IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID);
 

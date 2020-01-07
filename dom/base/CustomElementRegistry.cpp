@@ -767,21 +767,41 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   nsAutoString localName(aName);
   if (aOptions.mExtends.WasPassed()) {
     RefPtr<nsAtom> extendsAtom(NS_Atomize(aOptions.mExtends.Value()));
-    if (nsContentUtils::IsCustomElementName(extendsAtom, nameSpaceID)) {
+    if (nsContentUtils::IsCustomElementName(extendsAtom, kNameSpaceID_XHTML)) {
       aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
       return;
     }
 
-    
-    int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(extendsAtom);
-    if (tag == eHTMLTag_userdefined ||
-        tag == eHTMLTag_bgsound ||
-        tag == eHTMLTag_multicol) {
-      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-      return;
+    if (nameSpaceID == kNameSpaceID_XHTML) {
+      
+      int32_t tag = nsHTMLTags::CaseSensitiveAtomTagToId(extendsAtom);
+      if (tag == eHTMLTag_userdefined ||
+          tag == eHTMLTag_bgsound ||
+          tag == eHTMLTag_multicol) {
+        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+        return;
+      }
+    } else { 
+      
+      
+      if (!nsContentUtils::IsNameWithDash(nameAtom)) {
+        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+        return;
+      }
     }
 
     localName.Assign(aOptions.mExtends.Value());
