@@ -19,6 +19,7 @@ module.exports = {
     "once": false,
     "range": false,
     "runWithMSE": false,
+    "wait": false,
     "waitUntilTime": false
   },
   
