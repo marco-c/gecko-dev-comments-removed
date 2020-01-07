@@ -4,6 +4,7 @@
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "UserAgentOverrides", "resource://gre/modules/UserAgentOverrides.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "eTLDService", "@mozilla.org/network/effective-tld-service;1", "nsIEffectiveTLDService");
 
@@ -15,7 +16,26 @@ class UAOverrider {
   }
 
   initOverrides(overrides) {
+    
+    
+    
+    let currentApplication = "firefox";
+    try {
+      currentApplication = Services.appinfo.name.toLowerCase();
+    } catch (_) {}
+
     for (let override of overrides) {
+      
+      if (!override.applications) {
+        override.applications = ["firefox"];
+      }
+
+      
+      
+      if (!override.applications.includes(currentApplication)) {
+        continue;
+      }
+
       if (!this._overrides[override.baseDomain]) {
         this._overrides[override.baseDomain] = [];
       }
