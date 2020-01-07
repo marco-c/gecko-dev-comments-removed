@@ -33,5 +33,8 @@ pub use refptr::*;
 pub mod interfaces;
 
 
+pub mod services;
+
+
 #[doc(hidden)]
 pub mod reexports;
