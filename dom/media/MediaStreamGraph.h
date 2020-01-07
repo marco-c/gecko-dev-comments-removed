@@ -703,9 +703,13 @@ public:
 
 
 
+
+
+
+
   typedef MozPromise<bool, bool, true  > NotifyPullPromise;
-  nsTArray<RefPtr<NotifyPullPromise>> PullNewData(StreamTime aDesiredUpToTime,
-                                                  bool* aEnsureNextIteration);
+  bool PullNewData(StreamTime aDesiredUpToTime,
+                   nsTArray<RefPtr<NotifyPullPromise>>& aPromises);
 
   
 

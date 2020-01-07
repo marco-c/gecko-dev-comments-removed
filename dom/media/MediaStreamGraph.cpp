@@ -1150,13 +1150,10 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
   bool ensureNextIteration = false;
 
   
-  
-  
-  nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>> promises;
+  AutoTArray<RefPtr<SourceMediaStream::NotifyPullPromise>, 64> promises;
   for (MediaStream* stream : mStreams) {
     if (SourceMediaStream* is = stream->AsSourceStream()) {
-      promises.AppendElements(
-        is->PullNewData(aEndBlockingDecisions, &ensureNextIteration));
+      ensureNextIteration |= is->PullNewData(aEndBlockingDecisions, promises);
     }
   }
 
@@ -2712,15 +2709,14 @@ SourceMediaStream::SetPullEnabled(bool aEnabled)
   }
 }
 
-nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>>
-SourceMediaStream::PullNewData(StreamTime aDesiredUpToTime,
-                               bool* aEnsureNextIteration)
+bool
+SourceMediaStream::PullNewData(
+  StreamTime aDesiredUpToTime,
+  nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>>& aPromises)
 {
-  
-  nsTArray<RefPtr<SourceMediaStream::NotifyPullPromise>> promises(2);
   MutexAutoLock lock(mMutex);
   if (!mPullEnabled || mFinished) {
-    return promises;
+    return false;
   }
   
   
@@ -2732,9 +2728,8 @@ SourceMediaStream::PullNewData(StreamTime aDesiredUpToTime,
         GraphImpl()->MediaTimeToSeconds(t),
         GraphImpl()->MediaTimeToSeconds(current)));
   if (t <= current) {
-    return promises;
+    return false;
   }
-  *aEnsureNextIteration = true;
 #ifdef DEBUG
   if (mListeners.Length() == 0) {
     LOG(
@@ -2750,10 +2745,10 @@ SourceMediaStream::PullNewData(StreamTime aDesiredUpToTime,
     MediaStreamListener* l = mListeners[j];
     {
       MutexAutoUnlock unlock(mMutex);
-      promises.AppendElement(l->AsyncNotifyPull(GraphImpl(), t));
+      aPromises.AppendElement(l->AsyncNotifyPull(GraphImpl(), t));
     }
   }
-  return promises;
+  return true;
 }
 
 void
