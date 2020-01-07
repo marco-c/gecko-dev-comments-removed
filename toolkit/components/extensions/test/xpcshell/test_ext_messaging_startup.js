@@ -17,6 +17,8 @@ let {
 
 Services.prefs.setBoolPref("extensions.webextensions.background-delayed-startup", true);
 
+const PAGE_HTML = `<!DOCTYPE html><meta charset="utf-8"><script src="script.js"></script>`;
+
 function trackEvents(wrapper) {
   let events = new Map();
   for (let event of ["background-page-event", "start-background-page"]) {
@@ -42,7 +44,7 @@ async function test(what, background, script) {
     },
 
     files: {
-      "page.html": `<!DOCTYPE html><meta charset="utf-8"><script src="script.js"></script>`,
+      "page.html": PAGE_HTML,
       "script.js": script,
     },
 
@@ -121,8 +123,8 @@ async function test(what, background, script) {
   await page.close();
   await extension.unload();
 
-  ExtensionParent._resetStartupPromises();
   await promiseShutdownManager();
+  ExtensionParent._resetStartupPromises();
 }
 
 add_task(function test_onMessage() {
@@ -173,4 +175,56 @@ add_task(function test_onConnect() {
   }
 
   return test("onConnect", background, script);
+});
+
+
+
+
+add_task(async function test_other_startup() {
+  await promiseStartupManager();
+
+  let extension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "permanent",
+
+    async background() {
+      browser.runtime.onMessage.addListener(msg => {
+        browser.test.notifyPass("startup");
+      });
+
+      
+      
+      await browser.runtime.getBrowserInfo();
+      browser.test.sendMessage("bg-ran");
+    },
+
+    files: {
+      "page.html": PAGE_HTML,
+      "script.js"() {
+        browser.runtime.sendMessage("ping");
+      },
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("bg-ran");
+
+  await promiseRestartManager();
+  await extension.awaitStartup();
+
+  
+  Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+  await extension.awaitMessage("bg-ran");
+
+  
+  
+  let url = extension.extension.baseURI.resolve("page.html");
+  let page = await ExtensionTestUtils.loadContentPage(url, {extension});
+
+  await extension.awaitFinish("startup");
+
+  await page.close();
+  await extension.unload();
+
+  await promiseShutdownManager();
+  ExtensionParent._resetStartupPromises();
 });
