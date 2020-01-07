@@ -526,7 +526,6 @@ private:
 
   
   nsAutoPtr<AudioPacketizer<AudioDataValue, float>> mPacketizerInput;
-  ScopedCustomReleasePtr<webrtc::VoEExternalMedia> mVoERenderListener;
 
   
   
