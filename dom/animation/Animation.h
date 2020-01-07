@@ -432,7 +432,11 @@ protected:
   void UpdateFinishedState(SeekFlag aSeekFlag,
                            SyncNotifyFlag aSyncNotifyFlag);
   void UpdateEffect();
-  void FlushStyle() const;
+  
+
+
+
+  void FlushUnanimatedStyle() const;
   void PostUpdate();
   void ResetFinishedPromise();
   void MaybeResolveFinishedPromise();

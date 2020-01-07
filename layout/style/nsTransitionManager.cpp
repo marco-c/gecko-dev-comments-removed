@@ -146,7 +146,7 @@ CSSTransition::GetTransitionProperty(nsString& aRetVal) const
 AnimationPlayState
 CSSTransition::PlayStateFromJS() const
 {
-  FlushStyle();
+  FlushUnanimatedStyle();
   return Animation::PlayStateFromJS();
 }
 
@@ -158,7 +158,7 @@ CSSTransition::PendingFromJS() const
   
   
   if (Pending()) {
-    FlushStyle();
+    FlushUnanimatedStyle();
   }
   return Animation::PendingFromJS();
 }
@@ -166,7 +166,7 @@ CSSTransition::PendingFromJS() const
 void
 CSSTransition::PlayFromJS(ErrorResult& aRv)
 {
-  FlushStyle();
+  FlushUnanimatedStyle();
   Animation::PlayFromJS(aRv);
 }
 

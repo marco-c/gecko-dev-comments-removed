@@ -53,7 +53,7 @@ CSSAnimation::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 mozilla::dom::Promise*
 CSSAnimation::GetReady(ErrorResult& aRv)
 {
-  FlushStyle();
+  FlushUnanimatedStyle();
   return Animation::GetReady(aRv);
 }
 
@@ -76,7 +76,7 @@ CSSAnimation::PlayStateFromJS() const
 {
   
   
-  FlushStyle();
+  FlushUnanimatedStyle();
   return Animation::PlayStateFromJS();
 }
 
@@ -85,7 +85,7 @@ CSSAnimation::PendingFromJS() const
 {
   
   
-  FlushStyle();
+  FlushUnanimatedStyle();
   return Animation::PendingFromJS();
 }
 
@@ -94,7 +94,7 @@ CSSAnimation::PlayFromJS(ErrorResult& aRv)
 {
   
   
-  FlushStyle();
+  FlushUnanimatedStyle();
   Animation::PlayFromJS(aRv);
 }
 
