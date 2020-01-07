@@ -542,6 +542,14 @@ class JSObject : public js::gc::Cell
 #endif
 
     
+    static const size_t MAX_BYTE_SIZE = 4 * sizeof(void*) + 16 * sizeof(JS::Value);
+
+  protected:
+    
+    
+    
+    
+    friend class js::jit::MacroAssembler;
 
     static constexpr size_t offsetOfGroup() {
         return offsetof(JSObject, group_);
@@ -549,9 +557,6 @@ class JSObject : public js::gc::Cell
     static constexpr size_t offsetOfShapeOrExpando() {
         return offsetof(JSObject, shapeOrExpando_);
     }
-
-    
-    static const size_t MAX_BYTE_SIZE = 4 * sizeof(void*) + 16 * sizeof(JS::Value);
 
   private:
     JSObject() = delete;
