@@ -3765,7 +3765,7 @@ static void SetShutdownChecks() {
   
 
 #ifdef DEBUG
-#if defined(MOZ_CODE_COVERAGE) && defined(XP_WIN)
+#if defined(MOZ_CODE_COVERAGE)
   gShutdownChecks = SCM_NOTHING;
 #else
   gShutdownChecks = SCM_CRASH;
