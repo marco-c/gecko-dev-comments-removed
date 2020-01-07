@@ -225,7 +225,7 @@ template <typename T> struct HasFreeLSB { static const bool value = false; };
 
 
 template <typename T> struct HasFreeLSB<T*> {
-  static const bool value = (MOZ_ALIGNOF(T) & 1) == 0;
+  static const bool value = (alignof(T) & 1) == 0;
 };
 
 
