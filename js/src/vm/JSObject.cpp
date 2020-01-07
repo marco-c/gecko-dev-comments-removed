@@ -513,7 +513,7 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
         }
 
         MOZ_ASSERT(nobj->lastProperty()->slotSpan() == last->slotSpan());
-        JS_ALWAYS_TRUE(nobj->setLastProperty(cx, last));
+        MOZ_ALWAYS_TRUE(nobj->setLastProperty(cx, last));
 
         
         

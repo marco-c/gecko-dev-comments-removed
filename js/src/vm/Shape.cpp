@@ -1194,7 +1194,7 @@ NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj, jsid id_)
         }
 
         
-        JS_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));
+        MOZ_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));
 
         
         uint32_t size = table->capacity();
@@ -1230,7 +1230,7 @@ NativeObject::clear(JSContext* cx, HandleNativeObject obj)
     if (obj->inDictionaryMode())
         shape->listp = obj->shapePtr();
 
-    JS_ALWAYS_TRUE(obj->setLastProperty(cx, shape));
+    MOZ_ALWAYS_TRUE(obj->setLastProperty(cx, shape));
 
     obj->checkShapeConsistency();
 }

@@ -10036,7 +10036,7 @@ IonBuilder::freezePropertiesForCommonPrototype(TemporaryTypeSet* types, Property
 
         while (true) {
             HeapTypeSetKey property = key->property(NameToId(name));
-            JS_ALWAYS_TRUE(!property.isOwnProperty(constraints(), allowEmptyTypesforGlobal));
+            MOZ_ALWAYS_TRUE(!property.isOwnProperty(constraints(), allowEmptyTypesforGlobal));
 
             
             

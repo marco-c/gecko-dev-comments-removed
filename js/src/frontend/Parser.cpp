@@ -4051,7 +4051,7 @@ Parser<SyntaxParseHandler, CharT>::asmJS(Node list)
     
     
     
-    JS_ALWAYS_FALSE(abortIfSyntaxParser());
+    MOZ_ALWAYS_FALSE(abortIfSyntaxParser());
 
     
     

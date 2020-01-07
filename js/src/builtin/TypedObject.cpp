@@ -2184,7 +2184,7 @@ InlineTransparentTypedObject::getOrCreateBuffer(JSContext* cx)
     
     
     
-    JS_ALWAYS_TRUE(buffer->addView(cx, this));
+    MOZ_ALWAYS_TRUE(buffer->addView(cx, this));
 
     buffer->setForInlineTypedObject();
     buffer->setHasTypedObjectViews();
