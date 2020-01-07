@@ -6,12 +6,20 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
 function onInit(message) {
   
   if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-    let {init} = ChromeUtils.import("resource://devtools/server/content-server.jsm", {});
+    let {init} = ChromeUtils.import("resource://devtools/server/startup/content-process.jsm", {});
     init(message);
   }
 }

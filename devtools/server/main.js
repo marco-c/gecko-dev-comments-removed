@@ -52,8 +52,8 @@ if (isWorker) {
     Services.prefs.getBoolPref(VERBOSE_PREF);
 }
 
-const CONTENT_PROCESS_DBG_SERVER_SCRIPT =
-  "resource://devtools/server/content-process-debugger-server.js";
+const CONTENT_PROCESS_SERVER_STARTUP_SCRIPT =
+  "resource://devtools/server/startup/content-process.js";
 
 function loadSubScript(url) {
   try {
@@ -134,7 +134,7 @@ var DebuggerServer = {
   _listeners: [],
   _initialized: false,
   
-  _contentProcessScriptLoaded: false,
+  _contentProcessServerStartupScriptLoaded: false,
   
   globalActorFactories: {},
   
@@ -699,7 +699,11 @@ var DebuggerServer = {
     return this._onConnection(transport, prefix, true);
   },
 
-  connectToContent(connection, mm, onDestroy) {
+  
+
+
+
+  connectToContentProcess(connection, mm, onDestroy) {
     return new Promise(resolve => {
       let prefix = connection.allocID("content-process");
       let actor, childTransport;
@@ -719,7 +723,7 @@ var DebuggerServer = {
 
         connection.setForwarding(prefix, childTransport);
 
-        dumpn("establishing forwarding for process with prefix " + prefix);
+        dumpn(`Start forwarding for process with prefix ${prefix}`);
 
         actor = msg.json.actor;
 
@@ -727,10 +731,10 @@ var DebuggerServer = {
       });
 
       
-      if (!this._contentProcessScriptLoaded) {
+      if (!this._contentProcessServerStartupScriptLoaded) {
         
-        Services.ppmm.loadProcessScript(CONTENT_PROCESS_DBG_SERVER_SCRIPT, true);
-        this._contentProcessScriptLoaded = true;
+        Services.ppmm.loadProcessScript(CONTENT_PROCESS_SERVER_STARTUP_SCRIPT, true);
+        this._contentProcessServerStartupScriptLoaded = true;
       }
 
       
@@ -1351,7 +1355,7 @@ var DebuggerServer = {
 
 
   removeContentServerScript() {
-    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_DBG_SERVER_SCRIPT);
+    Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SERVER_STARTUP_SCRIPT);
     try {
       Services.ppmm.broadcastAsyncMessage("debug:close-content-server");
     } catch (e) {
