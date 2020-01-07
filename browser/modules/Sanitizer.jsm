@@ -275,6 +275,10 @@ var Sanitizer = {
     Ci.nsISupportsWeakReference
   ]),
 
+  
+  
+  
+
   items: {
     cache: {
       async clear(range) {
