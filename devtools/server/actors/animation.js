@@ -106,31 +106,13 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
   },
 
   get node() {
-    if (this._node) {
-      return this._node;
+    if (!this.isPseudoElement) {
+      return this.player.effect.target;
     }
 
-    let node = this.player.effect.target;
-
-    if (this.isPseudoElement) {
-      
-      
-      let treeWalker = this.walker.getDocumentWalker(node.parentElement);
-      while (treeWalker.nextNode()) {
-        let currentNode = treeWalker.currentNode;
-        if ((currentNode.nodeName === "_moz_generated_content_before" &&
-             node.type === "::before") ||
-            (currentNode.nodeName === "_moz_generated_content_after" &&
-             node.type === "::after")) {
-          this._node = currentNode;
-        }
-      }
-    } else {
-      
-      this._node = node;
-    }
-
-    return this._node;
+    const pseudo = this.player.effect.target;
+    const treeWalker = this.walker.getDocumentWalker(pseudo.parentElement);
+    return pseudo.type === "::before" ? treeWalker.firstChild() : treeWalker.lastChild();
   },
 
   get window() {
