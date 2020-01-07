@@ -1052,7 +1052,9 @@ gfxPlatform::ShutdownLayersIPC()
         
         layers::CompositorThreadHolder::Shutdown();
         gfx::VRListenerThreadHolder::Shutdown();
-        if (gfxVars::UseWebRender()) {
+        
+        
+        if (wr::RenderThread::Get()) {
           wr::RenderThread::ShutDown();
 
           Preferences::UnregisterCallback(WebRenderDebugPrefChangeCallback, WR_DEBUG_PREF);

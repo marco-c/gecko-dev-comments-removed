@@ -462,7 +462,9 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   dom::VideoDecoderManagerParent::ShutdownVideoBridge();
   CompositorThreadHolder::Shutdown();
   VRListenerThreadHolder::Shutdown();
-  if (gfxVars::UseWebRender()) {
+  
+  
+  if (wr::RenderThread::Get()) {
     wr::RenderThread::ShutDown();
 
     wr::WebRenderAPI::ShutdownExternalLogHandler();
