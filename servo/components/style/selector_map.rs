@@ -415,6 +415,25 @@ fn specific_bucket_for<'a>(
                 lower_name: &selector.lower_name,
             }
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Component::Slotted(ref selector) => find_bucket(selector.iter()),
         _ => Bucket::Universal
     }
 }
