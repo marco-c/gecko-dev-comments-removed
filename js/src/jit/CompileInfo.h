@@ -247,13 +247,14 @@ class CompileInfo
         
         
         needsBodyEnvironmentObject_ = script->needsBodyEnvironment();
+        funNeedsSomeEnvironmentObject_ = fun ? fun->needsSomeEnvironmentObject() : false;
     }
 
     explicit CompileInfo(unsigned nlocals)
       : script_(nullptr), fun_(nullptr), osrPc_(nullptr),
         analysisMode_(Analysis_None), scriptNeedsArgsObj_(false),
         mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr),
-        needsBodyEnvironmentObject_(false)
+        needsBodyEnvironmentObject_(false), funNeedsSomeEnvironmentObject_(false)
     {
         nimplicit_ = 0;
         nargs_ = 0;
@@ -484,7 +485,7 @@ class CompileInfo
         if (thisSlotForDerivedClassConstructor_ && *thisSlotForDerivedClassConstructor_ == slot)
             return true;
 
-        if (funMaybeLazy()->needsSomeEnvironmentObject() && slot == environmentChainSlot())
+        if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot())
             return true;
 
         
@@ -574,6 +575,7 @@ class CompileInfo
     
     
     bool needsBodyEnvironmentObject_;
+    bool funNeedsSomeEnvironmentObject_;
 };
 
 } 
