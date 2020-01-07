@@ -3500,13 +3500,15 @@ SearchService.prototype = {
     if (Services.prefs.prefHasUserValue("browser.search.region")) {
       searchRegion = Services.prefs.getCharPref("browser.search.region");
     }
-    if (!searchRegion || !(searchRegion in searchSettings)) {
-      searchRegion = "default";
-    }
 
     
     if (!engineNames || !engineNames.length) {
-      engineNames = searchSettings[searchRegion].visibleDefaultEngines;
+      if (searchRegion && searchRegion in searchSettings &&
+          "visibleDefaultEngines" in searchSettings[searchRegion]) {
+        engineNames = searchSettings[searchRegion].visibleDefaultEngines;
+      } else {
+        engineNames = searchSettings.default.visibleDefaultEngines;
+      }
     }
 
     
@@ -3530,7 +3532,8 @@ SearchService.prototype = {
     
     this._visibleDefaultEngines = engineNames;
 
-    if ("searchDefault" in searchSettings[searchRegion]) {
+    if (searchRegion && searchRegion in searchSettings &&
+        "searchDefault" in searchSettings[searchRegion]) {
       this._searchDefault = searchSettings[searchRegion].searchDefault;
     } else {
       this._searchDefault = searchSettings.default.searchDefault;
