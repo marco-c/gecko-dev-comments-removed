@@ -780,7 +780,9 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
         
         
         
-        if (!arr->isIndexed() && !MaybeInIteration(arr, cx)) {
+        
+        
+        if (!arr->isIndexed() && !MaybeInIteration(arr, cx) && !arr->denseElementsAreSealed()) {
             if (!arr->maybeCopyElementsForWrite(cx))
                 return false;
 
