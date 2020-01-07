@@ -14,6 +14,23 @@ function toMojoCentralState(state) {
 }
 
 
+function canonicalizeAndConvertToMojoUUID(uuids) {
+  let canonicalUUIDs = uuids.map(val => ({uuid: BluetoothUUID.getService(val)}));
+  return canonicalUUIDs;
+}
+
+
+
+function convertToMojoMap(record, keyFn) {
+  let map = new Map();
+  for (const [key, value] of Object.entries(record)) {
+    let buffer = ArrayBuffer.isView(value) ? value.buffer : value;
+    map.set(keyFn(key), Array.from(new Uint8Array(buffer)));
+  }
+  return map;
+}
+
+
 
 
 
@@ -43,7 +60,6 @@ function ArrayToMojoCharacteristicProperties(arr) {
 
   return struct;
 }
-
 
 class FakeBluetooth {
   constructor() {
@@ -110,20 +126,60 @@ class FakeCentral {
   async simulatePreconnectedPeripheral({
     address, name, knownServiceUUIDs = []}) {
 
-    
-    knownServiceUUIDs.forEach((val, i, arr) => {
-      knownServiceUUIDs[i] = {uuid: BluetoothUUID.getService(val)};
-    });
-
     await this.fake_central_ptr_.simulatePreconnectedPeripheral(
-      address, name, knownServiceUUIDs);
+      address, name, canonicalizeAndConvertToMojoUUID(knownServiceUUIDs));
 
+    return this.fetchOrCreatePeripheral_(address);
+  }
+
+  
+  
+  
+  async simulateAdvertisementReceived(scanResult) {
+    if ('uuids' in scanResult.scanRecord) {
+      scanResult.scanRecord.uuids =
+          canonicalizeAndConvertToMojoUUID(scanResult.scanRecord.uuids);
+    }
+
+    
+    
+    
+    
+    const has_appearance = 'appearance' in scanResult.scanRecord;
+    scanResult.scanRecord.appearance = {
+      hasValue: has_appearance,
+      value: (has_appearance ? scanResult.scanRecord.appearance : 0)
+    }
+
+    const has_tx_power = 'txPower' in scanResult.scanRecord;
+    scanResult.scanRecord.txPower = {
+      hasValue: has_tx_power,
+      value: (has_tx_power ? scanResult.scanRecord.txPower : 0)
+    }
+
+    
+    
+    if ('manufacturerData' in scanResult.scanRecord) {
+      scanResult.scanRecord.manufacturerData = convertToMojoMap(
+          scanResult.scanRecord.manufacturerData, Number);
+    }
+
+    
+    
+
+    await this.fake_central_ptr_.simulateAdvertisementReceived(
+        new bluetooth.mojom.ScanResult(scanResult));
+
+    return this.fetchOrCreatePeripheral_(scanResult.deviceAddress);
+  }
+
+  
+  fetchOrCreatePeripheral_(address) {
     let peripheral = this.peripherals_.get(address);
     if (peripheral === undefined) {
       peripheral = new FakePeripheral(address, this.fake_central_ptr_);
       this.peripherals_.set(address, peripheral);
     }
-
     return peripheral;
   }
 }
