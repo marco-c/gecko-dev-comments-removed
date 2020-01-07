@@ -264,7 +264,7 @@ public:
   
 
 
-  bool IsInChromeDocument() const;
+  inline bool IsInChromeDocument() const;
 
   
 
