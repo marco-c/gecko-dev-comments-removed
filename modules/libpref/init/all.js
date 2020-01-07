@@ -238,7 +238,7 @@ pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_i
 
 
 pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys",
-     "docs.google.com,mail.google.com");
+     "docs.google.com,mail.google.com,hangouts.google.com");
 #else
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
 #endif
