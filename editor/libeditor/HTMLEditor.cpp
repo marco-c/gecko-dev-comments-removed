@@ -871,7 +871,12 @@ HTMLEditor::IsVisibleBRElement(nsINode* aNode)
     return false;
   }
   
-  nsCOMPtr<nsINode> nextNode = GetNextEditableHTMLNodeInBlock(*aNode);
+  
+  
+  
+  
+  
+  nsCOMPtr<nsINode> nextNode = GetNextHTMLElementOrTextInBlock(*aNode);
   if (nextNode && TextEditUtils::IsBreak(nextNode)) {
     return true;
   }
@@ -890,7 +895,11 @@ HTMLEditor::IsVisibleBRElement(nsINode* aNode)
 
   
   
-  nsCOMPtr<nsINode> priorNode = GetPreviousEditableHTMLNodeInBlock(*aNode);
+  
+  
+  
+  
+  nsCOMPtr<nsINode> priorNode = GetPreviousHTMLElementOrTextInBlock(*aNode);
   if (priorNode && TextEditUtils::IsBreak(priorNode)) {
     return true;
   }
@@ -3704,6 +3713,29 @@ HTMLEditor::GetNextHTMLSibling(nsINode* aNode)
 }
 
 nsIContent*
+HTMLEditor::GetPreviousHTMLElementOrTextInternal(nsINode& aNode,
+                                                 bool aNoBlockCrossing)
+{
+  if (!GetActiveEditingHost()) {
+    return nullptr;
+  }
+  return aNoBlockCrossing ? GetPreviousElementOrTextInBlock(aNode) :
+                            GetPreviousElementOrText(aNode);
+}
+
+nsIContent*
+HTMLEditor::GetPreviousHTMLElementOrTextInternal(
+              const EditorRawDOMPoint& aPoint,
+              bool aNoBlockCrossing)
+{
+  if (!GetActiveEditingHost()) {
+    return nullptr;
+  }
+  return aNoBlockCrossing ? GetPreviousElementOrTextInBlock(aPoint) :
+                            GetPreviousElementOrText(aPoint);
+}
+
+nsIContent*
 HTMLEditor::GetPreviousEditableHTMLNodeInternal(nsINode& aNode,
                                                 bool aNoBlockCrossing)
 {
@@ -3723,6 +3755,28 @@ HTMLEditor::GetPreviousEditableHTMLNodeInternal(const EditorRawDOMPoint& aPoint,
   }
   return aNoBlockCrossing ? GetPreviousEditableNodeInBlock(aPoint) :
                             GetPreviousEditableNode(aPoint);
+}
+
+nsIContent*
+HTMLEditor::GetNextHTMLElementOrTextInternal(nsINode& aNode,
+                                             bool aNoBlockCrossing)
+{
+  if (!GetActiveEditingHost()) {
+    return nullptr;
+  }
+  return aNoBlockCrossing ? GetNextElementOrTextInBlock(aNode) :
+                            GetNextElementOrText(aNode);
+}
+
+nsIContent*
+HTMLEditor::GetNextHTMLElementOrTextInternal(const EditorRawDOMPoint& aPoint,
+                                             bool aNoBlockCrossing)
+{
+  if (!GetActiveEditingHost()) {
+    return nullptr;
+  }
+  return aNoBlockCrossing ? GetNextElementOrTextInBlock(aPoint) :
+                            GetNextElementOrText(aPoint);
 }
 
 nsIContent*

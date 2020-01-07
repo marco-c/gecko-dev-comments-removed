@@ -420,8 +420,26 @@ protected:
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
   nsresult RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   nsresult ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                            nsAtom& aBlockTag);
+
   nsresult MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
   

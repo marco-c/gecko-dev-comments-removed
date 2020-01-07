@@ -896,6 +896,39 @@ protected:
 
 
 
+  nsIContent* GetPreviousHTMLElementOrText(nsINode& aNode)
+  {
+    return GetPreviousHTMLElementOrTextInternal(aNode, false);
+  }
+  nsIContent* GetPreviousHTMLElementOrTextInBlock(nsINode& aNode)
+  {
+    return GetPreviousHTMLElementOrTextInternal(aNode, true);
+  }
+  nsIContent* GetPreviousHTMLElementOrText(const EditorRawDOMPoint& aPoint)
+  {
+    return GetPreviousHTMLElementOrTextInternal(aPoint, false);
+  }
+  nsIContent*
+  GetPreviousHTMLElementOrTextInBlock(const EditorRawDOMPoint& aPoint)
+  {
+    return GetPreviousHTMLElementOrTextInternal(aPoint, true);
+  }
+
+  
+
+
+
+  nsIContent* GetPreviousHTMLElementOrTextInternal(nsINode& aNode,
+                                                   bool aNoBlockCrossing);
+  nsIContent*
+  GetPreviousHTMLElementOrTextInternal(const EditorRawDOMPoint& aPoint,
+                                       bool aNoBlockCrossing);
+
+  
+
+
+
+
   nsIContent* GetPreviousEditableHTMLNode(nsINode& aNode)
   {
     return GetPreviousEditableHTMLNodeInternal(aNode, false);
@@ -923,6 +956,42 @@ protected:
   nsIContent* GetPreviousEditableHTMLNodeInternal(
                 const EditorRawDOMPoint& aPoint,
                 bool aNoBlockCrossing);
+
+  
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextHTMLElementOrText(nsINode& aNode)
+  {
+    return GetNextHTMLElementOrTextInternal(aNode, false);
+  }
+  nsIContent* GetNextHTMLElementOrTextInBlock(nsINode& aNode)
+  {
+    return GetNextHTMLElementOrTextInternal(aNode, true);
+  }
+  nsIContent* GetNextHTMLElementOrText(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextHTMLElementOrTextInternal(aPoint, false);
+  }
+  nsIContent* GetNextHTMLElementOrTextInBlock(const EditorRawDOMPoint& aPoint)
+  {
+    return GetNextHTMLElementOrTextInternal(aPoint, true);
+  }
+
+  
+
+
+
+  nsIContent* GetNextHTMLElementOrTextInternal(nsINode& aNode,
+                                               bool aNoBlockCrossing);
+  nsIContent* GetNextHTMLElementOrTextInternal(const EditorRawDOMPoint& aPoint,
+                                               bool aNoBlockCrossing);
 
   
 

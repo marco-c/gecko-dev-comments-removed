@@ -1752,6 +1752,14 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
       *aHandled = true;
       return NS_OK;
     }
+    
+    
+    
+    
+    
+    
+    
+    mNewBlock = blockParent;
   }
 
   
@@ -5923,6 +5931,18 @@ HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
       "Failed to advance offset to after the text node");
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   nsCOMPtr<nsIContent> nextNode =
