@@ -622,10 +622,12 @@ class AsyncTabSwitcher {
 
     this.maybeFinishTabSwitch();
 
-    if (numWarming > gTabWarmingMax || numBackgroundCached > 0) {
-      if (numWarming > gTabWarmingMax) {
-        this.logState("Hit tabWarmingMax");
-      }
+    if (numBackgroundCached > 0) {
+      this.deactivateCachedBackgroundTabs();
+    }
+
+    if (numWarming > gTabWarmingMax) {
+      this.logState("Hit tabWarmingMax");
       if (this.unloadTimer) {
         this.clearTimer(this.unloadTimer);
       }
@@ -650,14 +652,7 @@ class AsyncTabSwitcher {
     this.postActions();
   }
 
-  
-  
-  
-  
-  unloadNonRequiredTabs() {
-    this.warmingTabs = new WeakSet();
-    let numPending = 0;
-
+  deactivateCachedBackgroundTabs() {
     for (let tab of this.tabLayerCache) {
       if (tab !== this.requestedTab) {
         let browser = tab.linkedBrowser;
@@ -665,6 +660,15 @@ class AsyncTabSwitcher {
         browser.docShellIsActive = false;
       }
     }
+  }
+
+  
+  
+  
+  
+  unloadNonRequiredTabs() {
+    this.warmingTabs = new WeakSet();
+    let numPending = 0;
 
     
     for (let [tab, state] of this.tabState) {
