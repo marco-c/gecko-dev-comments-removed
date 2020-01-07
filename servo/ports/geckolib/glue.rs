@@ -3797,24 +3797,23 @@ struct PropertyAndIndex {
 }
 
 struct PrioritizedPropertyIter<'a> {
-    properties: &'a nsTArray<PropertyValuePair>,
+    properties: &'a [PropertyValuePair],
     sorted_property_indices: Vec<PropertyAndIndex>,
     curr: usize,
 }
 
 impl<'a> PrioritizedPropertyIter<'a> {
-    pub fn new(properties: &'a nsTArray<PropertyValuePair>) -> PrioritizedPropertyIter {
+    fn new(properties: &'a [PropertyValuePair]) -> PrioritizedPropertyIter {
         
         
-        let all = PropertyId::Shorthand(ShorthandId::All);
-
+        
         let mut sorted_property_indices: Vec<PropertyAndIndex> =
             properties.iter().enumerate().map(|(index, pair)| {
-                PropertyAndIndex {
-                    property: PropertyId::from_nscsspropertyid(pair.mProperty)
-                              .unwrap_or(all.clone()),
-                    index,
-                }
+                let property =
+                    PropertyId::from_nscsspropertyid(pair.mProperty)
+                        .unwrap_or(PropertyId::Shorthand(ShorthandId::All));
+
+                PropertyAndIndex { property, index }
             }).collect();
         sorted_property_indices.sort_by(|a, b| compare_property_priority(&a.property, &b.property));
 
