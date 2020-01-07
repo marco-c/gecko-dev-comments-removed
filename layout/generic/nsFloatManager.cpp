@@ -563,6 +563,7 @@ public:
     nscoord aShapeMargin,
     nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
+    const LogicalRect& aMarginRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
@@ -584,7 +585,10 @@ public:
 
   static UniquePtr<ShapeInfo> CreatePolygon(
     const UniquePtr<StyleBasicShape>& aBasicShape,
+    nscoord aShapeMargin,
+    nsIFrame* const aFrame,
     const LogicalRect& aShapeBoxRect,
+    const LogicalRect& aMarginRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
 
@@ -1221,6 +1225,10 @@ class nsFloatManager::PolygonShapeInfo final : public nsFloatManager::ShapeInfo
 {
 public:
   explicit PolygonShapeInfo(nsTArray<nsPoint>&& aVertices);
+  PolygonShapeInfo(nsTArray<nsPoint>&& aVertices,
+                   nscoord aShapeMargin,
+                   int32_t aAppUnitsPerDevPixel,
+                   const nsRect& aMarginRect);
 
   nscoord LineLeft(const nscoord aBStart,
                    const nscoord aBEnd) const override;
@@ -1233,6 +1241,10 @@ public:
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
 private:
+  
+  
+  void ComputeEmptinessAndExtent();
+
   
   nscoord ComputeLineIntercept(
     const nscoord aBStart,
@@ -1251,6 +1263,15 @@ private:
   nsTArray<nsPoint> mVertices;
 
   
+  
+  
+  
+  
+
+  
+  nsTArray<nsRect> mIntervals;
+
+  
   bool mEmpty = false;
 
   
@@ -1265,6 +1286,78 @@ private:
 
 nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(nsTArray<nsPoint>&& aVertices)
   : mVertices(aVertices)
+{
+  ComputeEmptinessAndExtent();
+}
+
+nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(
+  nsTArray<nsPoint>&& aVertices,
+  nscoord aShapeMargin,
+  int32_t aAppUnitsPerDevPixel,
+  const nsRect& aMarginRect)
+  : mVertices(aVertices)
+{
+  MOZ_ASSERT(aShapeMargin > 0, "This constructor should only be used for a "
+                               "polygon with a positive shape-margin.");
+
+  ComputeEmptinessAndExtent();
+
+  
+  
+  if (mEmpty) {
+    return;
+  }
+
+  
+  mBStart -= aShapeMargin;
+  mBEnd += aShapeMargin;
+
+  NS_ERROR("To be implemented for positive shape-margin.");
+}
+
+nscoord
+nsFloatManager::PolygonShapeInfo::LineLeft(const nscoord aBStart,
+                                           const nscoord aBEnd) const
+{
+  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
+
+  
+  if (!mIntervals.IsEmpty()) {
+    return LineEdge(mIntervals, aBStart, aBEnd, true);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return ComputeLineIntercept(aBStart, aBEnd, std::min<nscoord>, nscoord_MAX);
+}
+
+nscoord
+nsFloatManager::PolygonShapeInfo::LineRight(const nscoord aBStart,
+                                            const nscoord aBEnd) const
+{
+  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
+
+  
+  if (!mIntervals.IsEmpty()) {
+    return LineEdge(mIntervals, aBStart, aBEnd, false);
+  }
+
+  
+  
+  
+  
+  return ComputeLineIntercept(aBStart, aBEnd, std::max<nscoord>, nscoord_MIN);
+}
+
+void
+nsFloatManager::PolygonShapeInfo::ComputeEmptinessAndExtent()
 {
   
   
@@ -1309,37 +1402,6 @@ nsFloatManager::PolygonShapeInfo::PolygonShapeInfo(nsTArray<nsPoint>&& aVertices
     mBStart = std::min(mBStart, vertex.y);
     mBEnd = std::max(mBEnd, vertex.y);
   }
-}
-
-nscoord
-nsFloatManager::PolygonShapeInfo::LineLeft(const nscoord aBStart,
-                                           const nscoord aBEnd) const
-{
-  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return ComputeLineIntercept(aBStart, aBEnd, std::min<nscoord>, nscoord_MAX);
-}
-
-nscoord
-nsFloatManager::PolygonShapeInfo::LineRight(const nscoord aBStart,
-                                            const nscoord aBEnd) const
-{
-  MOZ_ASSERT(!mEmpty, "Shouldn't be called if the polygon encloses no area.");
-
-  
-  
-  
-  
-  return ComputeLineIntercept(aBStart, aBEnd, std::max<nscoord>, nscoord_MIN);
 }
 
 nscoord
@@ -1400,6 +1462,9 @@ nsFloatManager::PolygonShapeInfo::Translate(nscoord aLineLeft,
 {
   for (nsPoint& vertex : mVertices) {
     vertex.MoveBy(aLineLeft, aBlockStart);
+  }
+  for (nsRect& interval : mIntervals) {
+    interval.MoveBy(aLineLeft, aBlockStart);
   }
   mBStart += aBlockStart;
   mBEnd += aBlockStart;
@@ -1971,7 +2036,7 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       LogicalRect shapeBoxRect =
         ShapeInfo::ComputeShapeBoxRect(shapeOutside, mFrame, aMarginRect, aWM);
       mShapeInfo = ShapeInfo::CreateBasicShape(basicShape, shapeMargin, mFrame,
-                                               shapeBoxRect, aWM,
+                                               shapeBoxRect, aMarginRect, aWM,
                                                aContainerSize);
       break;
     }
@@ -2154,12 +2219,14 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
   nscoord aShapeMargin,
   nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
+  const LogicalRect& aMarginRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
 {
   switch (aBasicShape->GetShapeType()) {
     case StyleBasicShapeType::Polygon:
-      return CreatePolygon(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
+      return CreatePolygon(aBasicShape, aShapeMargin, aFrame, aShapeBoxRect,
+                           aMarginRect, aWM, aContainerSize);
     case StyleBasicShapeType::Circle:
     case StyleBasicShapeType::Ellipse:
       return CreateCircleOrEllipse(aBasicShape, aShapeMargin, aFrame,
@@ -2302,7 +2369,10 @@ nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreatePolygon(
   const UniquePtr<StyleBasicShape>& aBasicShape,
+  nscoord aShapeMargin,
+  nsIFrame* const aFrame,
   const LogicalRect& aShapeBoxRect,
+  const LogicalRect& aMarginRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
 {
@@ -2321,7 +2391,17 @@ nsFloatManager::ShapeInfo::CreatePolygon(
     vertex = ConvertToFloatLogical(vertex, aWM, aContainerSize);
   }
 
-  return MakeUnique<PolygonShapeInfo>(Move(vertices));
+  if (aShapeMargin == 0) {
+    return MakeUnique<PolygonShapeInfo>(Move(vertices));
+  }
+
+  nsRect marginRect = ConvertToFloatLogical(aMarginRect, aWM, aContainerSize);
+
+  
+  
+  int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
+  return MakeUnique<PolygonShapeInfo>(Move(vertices), aShapeMargin,
+                                      appUnitsPerDevPixel, marginRect);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
