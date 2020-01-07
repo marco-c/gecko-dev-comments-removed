@@ -5,7 +5,7 @@
 
 
 use properties::PropertyDeclarationBlock;
-use rule_tree::{CascadeLevel, StyleSource};
+use rule_tree::{CascadeLevel, ShadowCascadeOrder, StyleSource};
 use servo_arc::Arc;
 use shared_lock::Locked;
 use smallvec::SmallVec;
@@ -83,6 +83,8 @@ pub struct ApplicableDeclarationBlock {
     order_and_level: SourceOrderAndCascadeLevel,
     
     pub specificity: u32,
+    
+    pub shadow_cascade_order: ShadowCascadeOrder,
 }
 
 impl ApplicableDeclarationBlock {
@@ -97,16 +99,24 @@ impl ApplicableDeclarationBlock {
             source: StyleSource::Declarations(declarations),
             order_and_level: SourceOrderAndCascadeLevel::new(0, level),
             specificity: 0,
+            shadow_cascade_order: 0,
         }
     }
 
     
     #[inline]
-    pub fn new(source: StyleSource, order: u32, level: CascadeLevel, specificity: u32) -> Self {
+    pub fn new(
+        source: StyleSource,
+        order: u32,
+        level: CascadeLevel,
+        specificity: u32,
+        shadow_cascade_order: u32,
+    ) -> Self {
         ApplicableDeclarationBlock {
-            source: source,
+            source,
             order_and_level: SourceOrderAndCascadeLevel::new(order, level),
-            specificity: specificity,
+            specificity,
+            shadow_cascade_order,
         }
     }
 
@@ -125,8 +135,8 @@ impl ApplicableDeclarationBlock {
     
     
     #[inline]
-    pub fn order_and_level(self) -> (StyleSource, CascadeLevel) {
+    pub fn for_rule_tree(self) -> (StyleSource, CascadeLevel, ShadowCascadeOrder) {
         let level = self.level();
-        (self.source, level)
+        (self.source, level, self.shadow_cascade_order)
     }
 }
