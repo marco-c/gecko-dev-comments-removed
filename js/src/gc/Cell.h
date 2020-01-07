@@ -45,6 +45,7 @@ namespace gc {
 class Arena;
 enum class AllocKind : uint8_t;
 struct Chunk;
+class StoreBuffer;
 class TenuredCell;
 
 
