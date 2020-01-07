@@ -3596,6 +3596,7 @@ nsStyleDisplay::nsStyleDisplay(const nsPresContext* aContext)
   , mBackfaceVisibility(NS_STYLE_BACKFACE_VISIBILITY_VISIBLE)
   , mTransformStyle(NS_STYLE_TRANSFORM_STYLE_FLAT)
   , mTransformBox(StyleGeometryBox::BorderBox)
+  , mSpecifiedTransform(nullptr)
   , mTransformOrigin{ {0.5f, eStyleUnit_Percent}, 
                       {0.5f, eStyleUnit_Percent},
                       {0, nsStyleCoord::CoordConstructor} }
@@ -3664,10 +3665,6 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   , mTransformStyle(aSource.mTransformStyle)
   , mTransformBox(aSource.mTransformBox)
   , mSpecifiedTransform(aSource.mSpecifiedTransform)
-  , mSpecifiedRotate(aSource.mSpecifiedRotate)
-  , mSpecifiedTranslate(aSource.mSpecifiedTranslate)
-  , mSpecifiedScale(aSource.mSpecifiedScale)
-  , mCombinedTransform(aSource.mCombinedTransform)
   , mTransformOrigin{ aSource.mTransformOrigin[0],
                       aSource.mTransformOrigin[1],
                       aSource.mTransformOrigin[2] }
@@ -3695,16 +3692,13 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
-
-static
-void ReleaseSharedListOnMainThread(const char* aName,
-                                   RefPtr<nsCSSValueSharedList>& aList)
+nsStyleDisplay::~nsStyleDisplay()
 {
   
   
   
   
-  if (aList && ServoStyleSet::IsInServoTraversal()) {
+  if (mSpecifiedTransform && ServoStyleSet::IsInServoTraversal()) {
     
     
     
@@ -3717,22 +3711,10 @@ void ReleaseSharedListOnMainThread(const char* aName,
 #else
       false;
 #endif
-    NS_ReleaseOnMainThreadSystemGroup(aName, aList.forget(), alwaysProxy);
+    NS_ReleaseOnMainThreadSystemGroup(
+      "nsStyleDisplay::mSpecifiedTransform",
+      mSpecifiedTransform.forget(), alwaysProxy);
   }
-}
-
-nsStyleDisplay::~nsStyleDisplay()
-{
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedTransform",
-                                mSpecifiedTransform);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedRotate",
-                                mSpecifiedRotate);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedTranslate",
-                                mSpecifiedTranslate);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedScale",
-                                mSpecifiedScale);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mCombinedTransform",
-                                mCombinedTransform);
 
   MOZ_COUNT_DTOR(nsStyleDisplay);
 }
@@ -3749,25 +3731,6 @@ nsStyleDisplay::FinishStyle(nsPresContext* aPresContext)
       shapeImage->ResolveImage(aPresContext);
     }
   }
-
-  GenerateCombinedTransform();
-}
-
-static inline nsChangeHint
-CompareTransformValues(const RefPtr<nsCSSValueSharedList>& aList,
-                       const RefPtr<nsCSSValueSharedList>& aNewList)
-{
-  nsChangeHint result = nsChangeHint(0);
-  if (!aList != !aNewList || (aList && *aList != *aNewList)) {
-    result |= nsChangeHint_UpdateTransformLayer;
-    if (aList && aNewList) {
-      result |= nsChangeHint_UpdatePostTransformOverflow;
-    } else {
-      result |= nsChangeHint_UpdateOverflow;
-    }
-  }
-
-  return result;
 }
 
 nsChangeHint
@@ -3898,14 +3861,18 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
     nsChangeHint transformHint = nsChangeHint(0);
 
-    transformHint |= CompareTransformValues(mSpecifiedTransform,
-                                            aNewData.mSpecifiedTransform);
-    transformHint |= CompareTransformValues(mSpecifiedRotate, aNewData.
-                                            mSpecifiedRotate);
-    transformHint |= CompareTransformValues(mSpecifiedTranslate,
-                                            aNewData.mSpecifiedTranslate);
-    transformHint |= CompareTransformValues(mSpecifiedScale,
-                                            aNewData.mSpecifiedScale);
+    if (!mSpecifiedTransform != !aNewData.mSpecifiedTransform ||
+        (mSpecifiedTransform &&
+         *mSpecifiedTransform != *aNewData.mSpecifiedTransform)) {
+      transformHint |= nsChangeHint_UpdateTransformLayer;
+
+      if (mSpecifiedTransform &&
+          aNewData.mSpecifiedTransform) {
+        transformHint |= nsChangeHint_UpdatePostTransformOverflow;
+      } else {
+        transformHint |= nsChangeHint_UpdateOverflow;
+      }
+    }
 
     const nsChangeHint kUpdateOverflowAndRepaintHint =
       nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
@@ -4020,57 +3987,6 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
   return hint;
 }
 
-void
-nsStyleDisplay::GenerateCombinedTransform()
-{
-  mCombinedTransform = nullptr;
-
-  
-  
-  AutoTArray<nsCSSValueSharedList*, 4> shareLists;
-  if (mSpecifiedTranslate) {
-    shareLists.AppendElement(mSpecifiedTranslate.get());
-  }
-  if (mSpecifiedRotate) {
-    shareLists.AppendElement(mSpecifiedRotate.get());
-  }
-  if (mSpecifiedScale) {
-    shareLists.AppendElement(mSpecifiedScale.get());
-  }
-  if (mSpecifiedTransform) {
-    shareLists.AppendElement(mSpecifiedTransform.get());
-  }
-
-  if (shareLists.Length() == 0) {
-    return;
-  }
-
-  if (shareLists.Length() == 1) {
-    mCombinedTransform = shareLists[0];
-    return;
-  }
-
-  
-  
-  
-  
-  AutoTArray<nsCSSValueList*, 6> valueLists;
-  for (auto list: shareLists) {
-    if (list) {
-      valueLists.AppendElement(list->mHead->Clone());
-    }
-  }
-
-  
-  
-  MOZ_ASSERT(valueLists.Length());
-
-  for (uint32_t i = 0; i < valueLists.Length() - 1; i++) {
-    valueLists[i]->mNext = valueLists[i + 1];
-  }
-
-  mCombinedTransform = new nsCSSValueSharedList(valueLists[0]);
-}
 
 
 
@@ -4728,8 +4644,18 @@ nsStyleUIReset::~nsStyleUIReset()
 {
   MOZ_COUNT_DTOR(nsStyleUIReset);
 
-  ReleaseSharedListOnMainThread("nsStyleUIReset::mSpecifiedWindowTransform",
-                                mSpecifiedWindowTransform);
+  
+  if (mSpecifiedWindowTransform && ServoStyleSet::IsInServoTraversal()) {
+    bool alwaysProxy =
+#ifdef DEBUG
+      true;
+#else
+      false;
+#endif
+    NS_ReleaseOnMainThreadSystemGroup(
+      "nsStyleUIReset::mSpecifiedWindowTransform",
+      mSpecifiedWindowTransform.forget(), alwaysProxy);
+  }
 }
 
 nsChangeHint
