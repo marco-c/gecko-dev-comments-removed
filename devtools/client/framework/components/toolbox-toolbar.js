@@ -30,26 +30,26 @@ class ToolboxToolbar extends Component {
       
       highlightedTools: PropTypes.instanceOf(Set),
       
-      
-      areDockButtonsEnabled: PropTypes.bool,
-      
-      
-      canCloseToolbox: PropTypes.bool,
-      
       panelDefinitions: PropTypes.array,
+      
+      optionsPanel: PropTypes.object,
       
       hostTypes: PropTypes.arrayOf(PropTypes.shape({
         position: PropTypes.string.isRequired,
         switchHost: PropTypes.func.isRequired,
       })),
       
+      
+      areDockButtonsEnabled: PropTypes.bool,
+      
+      
+      canCloseToolbox: PropTypes.bool,
+      
       selectTool: PropTypes.func,
       
       closeToolbox: PropTypes.func,
       
       focusButton: PropTypes.func,
-      
-      optionsPanel: PropTypes.object,
       
       
       canRender: PropTypes.bool,
@@ -111,7 +111,7 @@ function renderToolboxButtonsEnd(props) {
 
 
 
-function renderToolboxButtons({toolboxButtons, focusedButton, focusButton}, isStart) {
+function renderToolboxButtons({focusedButton, toolboxButtons, focusButton}, isStart) {
   const visibleButtons = toolboxButtons.filter(command => {
     const {isVisible, isInStartContainer} = command;
     return isVisible && (isStart ? isInStartContainer : !isInStartContainer);
@@ -166,8 +166,15 @@ function renderToolboxButtons({toolboxButtons, focusedButton, focusButton}, isSt
 
 
 
-function renderOptions({optionsPanel, currentToolId, selectTool, focusedButton,
-                        focusButton, highlightedTools}) {
+
+
+
+
+
+
+
+function renderOptions({focusedButton, currentToolId, highlightedTools,
+                        optionsPanel, selectTool, focusButton}) {
   return div({id: "toolbox-option-container"}, ToolboxTab({
     panelDefinition: optionsPanel,
     currentToolId,
@@ -184,6 +191,14 @@ function renderOptions({optionsPanel, currentToolId, selectTool, focusedButton,
 function renderSeparator() {
   return div({className: "devtools-separator"});
 }
+
+
+
+
+
+
+
+
 
 
 
