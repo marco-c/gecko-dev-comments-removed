@@ -249,11 +249,13 @@ AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement)
 
     
     if (rc == SQLITE_BUSY) {
-      
-      SQLiteMutexAutoUnlock unlockedScope(mDBMutex);
-
-      
-      (void)::PR_Sleep(PR_INTERVAL_NO_WAIT);
+      {
+        
+        SQLiteMutexAutoUnlock unlockedScope(mDBMutex);
+        
+        (void)::PR_Sleep(PR_INTERVAL_NO_WAIT);
+      }
+      ::sqlite3_reset(aStatement);
       continue;
     }
 
