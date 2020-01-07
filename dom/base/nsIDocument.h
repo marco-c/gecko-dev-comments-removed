@@ -2215,6 +2215,16 @@ public:
     mIsBeingUsedAsImage = true;
   }
 
+  bool IsSVGGlyphsDocument() const
+  {
+    return mIsSVGGlyphsDocument;
+  }
+
+  void SetIsSVGGlyphsDocument()
+  {
+    mIsSVGGlyphsDocument = true;
+  }
+
   bool IsResourceDoc() const {
     return IsBeingUsedAsImage() || 
       mHasDisplayDocument;         
@@ -3541,6 +3551,9 @@ protected:
   
   
   bool mIsShadowDOMEnabled : 1;
+
+  
+  bool mIsSVGGlyphsDocument : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };
