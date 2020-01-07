@@ -508,24 +508,6 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
   let listenerWindow = Services.wm.getOuterWindowWithId(id);
 
   
-  if (this.curBrowser.frameManager.currentRemoteFrame !== null &&
-      (!listenerWindow || this.mm == this.curBrowser.frameManager
-          .currentRemoteFrame.messageManager.get())) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this.curBrowser.frameManager.currentRemoteFrame.targetFrameId = id;
-  }
-
-  
   
   
   
@@ -1834,15 +1816,7 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
 
   } else if (this.context == Context.Content) {
     cmd.commandID = cmd.id;
-
-    let res = await this.listener.switchToFrame(cmd.parameters);
-    if (res) {
-      let {win: winId, frame: frameId} = res;
-      this.mm = this.curBrowser.frameManager.getFrameMM(winId, frameId);
-
-      await this.registerPromise();
-      await this.listeningPromise();
-    }
+    await this.listener.switchToFrame(cmd.parameters);
   }
 };
 
@@ -3354,11 +3328,6 @@ GeckoDriver.prototype.receiveMessage = function(message) {
           this.currentFrameElement = null;
         }
       }
-      break;
-
-    case "Marionette:emitTouchEvent":
-      globalMessageManager.broadcastAsyncMessage(
-          "MarionetteMainListener:emitTouchEvent", message.json);
       break;
 
     case "Marionette:register":

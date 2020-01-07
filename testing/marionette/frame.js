@@ -13,26 +13,6 @@ this.EXPORTED_SYMBOLS = ["frame"];
 
 this.frame = {};
 
-const FRAME_SCRIPT = "chrome://marionette/content/listener.js";
-
-
-
-
-
-frame.RemoteFrame = function(windowId, frameId) {
-  
-  this.windowId = windowId;
-  
-  this.frameId = frameId;
-  
-  this.targetFrameId = this.frameId;
-  
-  this.remoteFrames = [];
-};
-
-
-
-
 
 
 
@@ -42,65 +22,7 @@ frame.RemoteFrame = function(windowId, frameId) {
 
 frame.Manager = class {
   constructor(driver) {
-    
-    
-
-    
-    
-    this.currentRemoteFrame = null;
-    
-    this.previousRemoteFrame = null;
     this.driver = driver;
-  }
-
-  getOopFrame(winId, frameId) {
-    
-    let outerWin = Services.wm.getOuterWindowWithId(winId);
-    
-    let f = outerWin.document.getElementsByTagName("iframe")[frameId];
-    return f;
-  }
-
-  getFrameMM(winId, frameId) {
-    let oopFrame = this.getOopFrame(winId, frameId);
-    let mm = oopFrame.frameLoader.messageManager;
-    return mm;
-  }
-
-  
-
-
-
-  switchToFrame(winId, frameId) {
-    let oopFrame = this.getOopFrame(winId, frameId);
-    let mm = this.getFrameMM(winId, frameId);
-
-    
-    
-    for (let i = 0; i < this.remoteFrames.length; i++) {
-      let f = this.remoteFrames[i];
-      let fmm = f.messageManager.get();
-
-      if (fmm == mm) {
-        this.currentRemoteFrame = f;
-        this.addMessageManagerListeners(mm);
-
-        return oopFrame.id;
-      }
-    }
-
-    
-    
-    
-    this.addMessageManagerListeners(mm);
-    let f = new frame.RemoteFrame(winId, frameId);
-    f.messageManager = Cu.getWeakReference(mm);
-    this.remoteFrames.push(f);
-    this.currentRemoteFrame = f;
-
-    mm.loadFrameScript(FRAME_SCRIPT, true, true);
-
-    return oopFrame.id;
   }
 
   
@@ -112,7 +34,6 @@ frame.Manager = class {
 
 
   addMessageManagerListeners(mm) {
-    mm.addWeakMessageListener("Marionette:emitTouchEvent", this.driver);
     mm.addWeakMessageListener("Marionette:switchedToFrame", this.driver);
     mm.addWeakMessageListener("Marionette:getVisibleCookies", this.driver);
     mm.addWeakMessageListener("Marionette:register", this.driver);

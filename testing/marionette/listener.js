@@ -1443,21 +1443,12 @@ function switchToParentFrame(msg) {
 function switchToFrame(msg) {
   let commandID = msg.json.commandID;
   let foundFrame = null;
-  let frames = [];
-  let parWindow = null;
 
   
+  let frames = [];
   try {
     frames = curContainer.frame.frames;
-    
-    
-    
-    parWindow = curContainer.frame.QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
   } catch (e) {
-    
-    
-    
     
     msg.json.id = null;
     msg.json.element = null;
@@ -1567,22 +1558,12 @@ function switchToFrame(msg) {
   let frameWebEl = seenEls.add(curContainer.frame.wrappedJSObject);
   sendSyncMessage("Marionette:switchedToFrame", {"frameValue": frameWebEl.uuid});
 
-  if (curContainer.frame.contentWindow === null) {
-    
-    
-    curContainer.frame = content;
-    let rv = {win: parWindow, frame: foundFrame};
-    sendResponse(rv, commandID);
-
-  } else {
-    curContainer.frame = curContainer.frame.contentWindow;
-
-    if (msg.json.focus) {
-      curContainer.frame.focus();
-    }
-
-    sendOk(commandID);
+  curContainer.frame = curContainer.frame.contentWindow;
+  if (msg.json.focus) {
+    curContainer.frame.focus();
   }
+
+  sendOk(commandID);
 }
 
 
