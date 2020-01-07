@@ -425,7 +425,15 @@ gfxMacFont::CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
 {
     
     
-    if (!nsCocoaFeatures::OnSierraOrLater()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!nsCocoaFeatures::OnSierraExactly()) {
         return CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aFontDesc);
     }
 

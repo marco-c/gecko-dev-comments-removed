@@ -79,7 +79,15 @@ CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
 {
     
     
-    if (!nsCocoaFeatures::OnSierraOrLater()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!nsCocoaFeatures::OnSierraExactly()) {
         return CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
     }
 

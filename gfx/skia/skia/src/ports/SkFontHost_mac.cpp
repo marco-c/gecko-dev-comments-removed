@@ -756,7 +756,7 @@ private:
 
 
 #ifdef MOZ_SKIA
-extern "C" bool Gecko_OnSierraOrLater();
+extern "C" bool Gecko_OnSierraExactly();
 #endif
 static UniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFloat textSize,
                                                        const CGAffineTransform* transform)
@@ -775,7 +775,15 @@ static UniqueCFRef<CTFontRef> ctfont_create_exact_copy(CTFontRef baseFont, CGFlo
 #ifdef MOZ_SKIA
     
     
-    if (Gecko_OnSierraOrLater())
+    
+    
+    
+    
+    
+    
+    
+    
+    if (Gecko_OnSierraExactly())
 #endif
     {
         

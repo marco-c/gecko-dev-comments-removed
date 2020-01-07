@@ -341,12 +341,22 @@ static CTFontRef
 CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
 {
     
+    extern bool Gecko_OnSierraExactly();
+
     
     
-    extern bool Gecko_OnSierraOrLater();
-    if (!Gecko_OnSierraOrLater()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!Gecko_OnSierraExactly()) {
         return CTFontCreateWithGraphicsFont(aCGFont, aSize, NULL, NULL);
     }
+
     CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
     CTFontRef ctFont;
     if (vars) {
