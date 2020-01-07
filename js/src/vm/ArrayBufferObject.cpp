@@ -859,7 +859,7 @@ js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
     }
 
 #ifndef WASM_HUGE_MEMORY
-    if (sizeof(void*) == 8 && maxSize && maxSize.value() == UINT32_MAX) {
+    if (sizeof(void*) == 8 && maxSize && maxSize.value() >= (UINT32_MAX - wasm::PageSize)) {
         
         
         
