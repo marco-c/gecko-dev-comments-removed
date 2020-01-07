@@ -180,79 +180,6 @@ let apiManager = new class extends SchemaAPIManager {
 
 
 
-
-class ExtensionPortProxy {
-  
-
-
-
-
-  constructor(portId, senderMM, receiverMM) {
-    this.portId = portId;
-    this.senderMM = senderMM;
-    this.receiverMM = receiverMM;
-  }
-
-  register() {
-    if (ProxyMessenger.portsById.has(this.portId)) {
-      throw new Error(`Extension port IDs may not be re-used: ${this.portId}`);
-    }
-    ProxyMessenger.portsById.set(this.portId, this);
-    ProxyMessenger.ports.get(this.senderMM).add(this);
-    ProxyMessenger.ports.get(this.receiverMM).add(this);
-  }
-
-  unregister() {
-    ProxyMessenger.portsById.delete(this.portId);
-    this._unregisterFromMessageManager(this.senderMM);
-    this._unregisterFromMessageManager(this.receiverMM);
-  }
-
-  _unregisterFromMessageManager(messageManager) {
-    let ports = ProxyMessenger.ports.get(messageManager);
-    ports.delete(this);
-    if (ports.size === 0) {
-      ProxyMessenger.ports.delete(messageManager);
-    }
-  }
-
-  
-
-
-
-
-
-  replaceMessageManager(messageManager, newMessageManager) {
-    if (this.senderMM === messageManager) {
-      this.senderMM = newMessageManager;
-    } else if (this.receiverMM === messageManager) {
-      this.receiverMM = newMessageManager;
-    } else {
-      throw new Error("This ExtensionPortProxy is not associated with the given message manager");
-    }
-
-    this._unregisterFromMessageManager(messageManager);
-
-    if (this.senderMM === this.receiverMM) {
-      this.unregister();
-    } else {
-      ProxyMessenger.ports.get(newMessageManager).add(this);
-    }
-  }
-
-  getOtherMessageManager(messageManager) {
-    if (this.senderMM === messageManager) {
-      return this.receiverMM;
-    } else if (this.receiverMM === messageManager) {
-      return this.senderMM;
-    }
-    throw new Error("This ExtensionPortProxy is not associated with the given message manager");
-  }
-}
-
-
-
-
 ProxyMessenger = {
   _initialized: false,
 
@@ -278,12 +205,7 @@ ProxyMessenger = {
 
     Services.obs.addObserver(this, "message-manager-disconnect");
 
-    
-    
-    
-    this.ports = new DefaultMap(() => new Set());
-    
-    this.portsById = new Map();
+    this.ports = new DefaultMap(() => new Map());
   },
 
   observe(subject, topic, data) {
@@ -291,17 +213,14 @@ ProxyMessenger = {
       if (this.ports.has(subject)) {
         let ports = this.ports.get(subject);
         this.ports.delete(subject);
-        for (let port of ports) {
-          MessageChannel.sendMessage(port.getOtherMessageManager(subject), "Extension:Port:Disconnect", null, {
-            
-            
-            
-            
-            sender: {},
-            recipient: {portId: port.portId},
+
+        for (let [portId, {sender, recipient, receiverMM}] of ports.entries()) {
+          recipient.portId = portId;
+          MessageChannel.sendMessage(receiverMM, "Extension:Port:Disconnect", null, {
+            sender,
+            recipient,
             responseType: MessageChannel.RESPONSE_TYPE_NONE,
           }).catch(() => {});
-          port.unregister();
         }
       }
     }
@@ -311,11 +230,7 @@ ProxyMessenger = {
     if (event.type === "SwapDocShells") {
       let {messageManager} = event.originalTarget;
       if (this.ports.has(messageManager)) {
-        let ports = this.ports.get(messageManager);
-        let newMessageManager = event.detail.messageManager;
-        for (let port of ports) {
-          port.replaceMessageManager(messageManager, newMessageManager);
-        }
+        this.ports.set(event.detail.messageManager, this.ports.get(messageManager));
         this.ports.delete(messageManager);
         event.detail.addEventListener("SwapDocShells", this, {once: true});
       }
@@ -345,10 +260,7 @@ ProxyMessenger = {
     };
 
     let extension = GlobalManager.extensionMap.get(sender.extensionId);
-    let {
-      messageManager: receiverMM,
-      xulBrowser: receiverBrowser,
-    } = this.getMessageManagerForRecipient(recipient);
+    let receiverMM = this.getMessageManagerForRecipient(recipient);
     if (!extension || !receiverMM) {
       return Promise.reject(noHandlerError);
     }
@@ -367,26 +279,15 @@ ProxyMessenger = {
     });
 
     if (messageName === "Extension:Connect") {
-      
-      
-      
-      if (target.messageManager !== receiverMM) {
-        
-        
-        target.addEventListener("SwapDocShells", this, {once: true});
-        if (receiverBrowser) {
-          receiverBrowser.addEventListener("SwapDocShells", this, {once: true});
-        }
-        let port = new ExtensionPortProxy(data.portId, target.messageManager, receiverMM);
-        port.register();
-        promise1.catch(() => {
-          port.unregister();
-        });
-      }
+      target.addEventListener("SwapDocShells", this, {once: true});
+
+      this.ports.get(target.messageManager).set(data.portId, {receiverMM, sender, recipient});
+      promise1.catch(() => {
+        this.ports.get(target.messageManager).delete(data.portId);
+      });
     } else if (messageName === "Extension:Port:Disconnect") {
-      let port = this.portsById.get(data.portId);
-      if (port) {
-        port.unregister();
+      if (target.messageManager) {
+        this.ports.get(target.messageManager).delete(data.portId);
       }
     }
 
@@ -437,8 +338,6 @@ ProxyMessenger = {
 
 
 
-
-
   getMessageManagerForRecipient(recipient) {
     
     if ("tabId" in recipient) {
@@ -446,14 +345,14 @@ ProxyMessenger = {
       
       let tab = apiManager.global.tabTracker.getTab(recipient.tabId, null);
       if (!tab) {
-        return {messageManager: null, xulBrowser: null};
+        return null;
       }
 
       
       
       let node = tab.browser || tab;
       if (node.getAttribute("pending") === "true") {
-        return {messageManager: null, xulBrowser: null};
+        return null;
       }
 
       let browser = tab.linkedBrowser || tab.browser;
@@ -470,17 +369,16 @@ ProxyMessenger = {
         }
       }
 
-      return {messageManager: browser.messageManager, xulBrowser: browser};
+      return browser.messageManager;
     }
 
     
     let extension = GlobalManager.extensionMap.get(recipient.extensionId);
     if (extension) {
-      
-      return {messageManager: extension.parentMessageManager, xulBrowser: null};
+      return extension.parentMessageManager;
     }
 
-    return {messageManager: null, xulBrowser: null};
+    return null;
   },
 };
 
