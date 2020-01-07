@@ -6,6 +6,7 @@ import android.util.Log;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
 import org.mozilla.gecko.tests.helpers.GeckoHelper;
+import org.mozilla.gecko.tests.helpers.NavigationHelper;
 
 
 
@@ -45,8 +46,7 @@ public class testSessionFilePreservation extends SessionTest {
 
         
         
-        Tab tab = Tabs.getInstance().addTab();
-        Tabs.getInstance().closeTab(tab);
+        NavigationHelper.reload();
 
         
         
