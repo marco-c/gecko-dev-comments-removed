@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_JSCompartment_h
-#define vm_JSCompartment_h
+#ifndef vm_Realm_h
+#define vm_Realm_h
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"

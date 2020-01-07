@@ -4,7 +4,7 @@
 
 
 
-#include "vm/JSCompartment-inl.h"
+#include "vm/Realm-inl.h"
 
 #include "mozilla/MemoryReporting.h"
 

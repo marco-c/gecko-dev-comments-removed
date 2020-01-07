@@ -4,10 +4,10 @@
 
 
 
-#ifndef vm_JSCompartment_inl_h
-#define vm_JSCompartment_inl_h
+#ifndef vm_Realm_inl_h
+#define vm_Realm_inl_h
 
-#include "vm/JSCompartment.h"
+#include "vm/Realm.h"
 
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
