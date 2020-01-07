@@ -1644,12 +1644,6 @@ FxAccountsInternal.prototype = {
   
   
   async _registerOrUpdateDevice(signedInUser) {
-    
-    
-    if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration", false)) {
-      return null;
-    }
-
     const {sessionToken, device: currentDevice} = signedInUser;
     if (!sessionToken) {
       throw new Error("_registerOrUpdateDevice called without a session token");

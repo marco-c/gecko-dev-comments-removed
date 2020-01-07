@@ -268,9 +268,6 @@ user_pref("identity.fxaccounts.auth.uri", "https://%(server)s/fxa-dummy/");
 user_pref("identity.fxaccounts.remote.root", "https://%(server)s/");
 
 
-user_pref("identity.fxaccounts.skipDeviceRegistration", true);
-
-
 
 
 
