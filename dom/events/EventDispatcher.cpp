@@ -680,6 +680,8 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
   
   
   MOZ_ASSERT(!nsContentUtils::IsInStableOrMetaStableState());
+  NS_ENSURE_TRUE(!nsContentUtils::IsInStableOrMetaStableState(),
+                 NS_ERROR_DOM_INVALID_STATE_ERR);
 
 #ifdef MOZ_TASK_TRACER
   if (MOZ_UNLIKELY(mozilla::tasktracer::IsStartLogging())) {
