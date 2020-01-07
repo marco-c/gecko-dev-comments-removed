@@ -3071,7 +3071,7 @@ public:
 
   gfxUserFontSet* GetUserFontSet(bool aFlushUserFontSet = true);
   void FlushUserFontSet();
-  void RebuildUserFontSet(); 
+  void MarkUserFontSetDirty();
   mozilla::dom::FontFaceSet* GetFonts() { return mFontFaceSet; }
 
   
@@ -3288,11 +3288,6 @@ protected:
   }
 
   mozilla::dom::XPathEvaluator* XPathEvaluator();
-
-  void HandleRebuildUserFontSet() {
-    mPostedFlushUserFontSet = false;
-    FlushUserFontSet();
-  }
 
   
   
@@ -3542,9 +3537,6 @@ protected:
 
   
   bool mGetUserFontSetCalled : 1;
-
-  
-  bool mPostedFlushUserFontSet : 1;
 
   
   

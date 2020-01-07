@@ -1478,7 +1478,6 @@ nsIDocument::nsIDocument()
     mHasDisplayDocument(false),
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
-    mPostedFlushUserFontSet(false),
     mDidFireDOMContentLoaded(true),
     mHasScrollLinkedEffect(false),
     mFrameRequestCallbacksScheduled(false),
@@ -3994,7 +3993,10 @@ nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
   UpdateFrameRequestCallbackSchedulingState();
 
   
-  RebuildUserFontSet();
+  
+  
+  
+  MarkUserFontSetDirty();
 
   return shell.forget();
 }
@@ -4091,7 +4093,9 @@ nsDocument::DeleteShell()
 
   
   
-  RebuildUserFontSet();
+  
+  
+  MarkUserFontSetDirty();
 
   nsIPresShell* oldShell = mPresShell;
   mPresShell = nullptr;
@@ -12705,42 +12709,44 @@ nsIDocument::FlushUserFontSet()
             
   }
 
-  if (mFontFaceSetDirty) {
-    if (gfxPlatform::GetPlatform()->DownloadableFontsEnabled()) {
-      nsTArray<nsFontFaceRuleContainer> rules;
-      nsIPresShell* shell = GetShell();
-      if (shell && !shell->StyleSet()->AppendFontFaceRules(rules)) {
-        return;
-      }
+  if (!mFontFaceSetDirty) {
+    return;
+  }
 
-      bool changed = false;
+  mFontFaceSetDirty = false;
 
-      if (!mFontFaceSet && !rules.IsEmpty()) {
-        nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
-        mFontFaceSet = new FontFaceSet(window, this);
-      }
-      if (mFontFaceSet) {
-        changed = mFontFaceSet->UpdateRules(rules);
-      }
-
-      
-      
-      
-      
-      if (changed && shell) {
-        nsPresContext* presContext = shell->GetPresContext();
-        if (presContext) {
-          presContext->UserFontSetUpdated();
-        }
-      }
+  if (gfxPlatform::GetPlatform()->DownloadableFontsEnabled()) {
+    nsTArray<nsFontFaceRuleContainer> rules;
+    nsIPresShell* shell = GetShell();
+    if (shell && !shell->StyleSet()->AppendFontFaceRules(rules)) {
+      return;
     }
 
-    mFontFaceSetDirty = false;
+
+    if (!mFontFaceSet && !rules.IsEmpty()) {
+      nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
+      mFontFaceSet = new FontFaceSet(window, this);
+    }
+
+    bool changed = false;
+    if (mFontFaceSet) {
+      changed = mFontFaceSet->UpdateRules(rules);
+    }
+
+    
+    
+    
+    
+    if (changed && shell) {
+      if (nsPresContext* presContext = shell->GetPresContext()) {
+        presContext->UserFontSetUpdated();
+      }
+    }
   }
 }
 
 void
-nsIDocument::RebuildUserFontSet()
+nsIDocument::MarkUserFontSetDirty()
 {
   if (!mGetUserFontSetCalled) {
     
@@ -12750,27 +12756,6 @@ nsIDocument::RebuildUserFontSet()
   }
 
   mFontFaceSetDirty = true;
-  if (nsIPresShell* shell = GetShell()) {
-    shell->SetNeedStyleFlush();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (!mPostedFlushUserFontSet) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod("nsIDocument::HandleRebuildUserFontSet",
-                        this,
-                        &nsIDocument::HandleRebuildUserFontSet);
-    if (NS_SUCCEEDED(Dispatch(TaskCategory::Other, ev.forget()))) {
-      mPostedFlushUserFontSet = true;
-    }
-  }
 }
 
 FontFaceSet*

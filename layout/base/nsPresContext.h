@@ -998,7 +998,7 @@ public:
   
   bool GetPaintFlashing() const;
 
-  bool             SuppressingResizeReflow() const { return mSuppressResizeReflow; }
+  bool SuppressingResizeReflow() const { return mSuppressResizeReflow; }
 
   gfxUserFontSet* GetUserFontSet(bool aFlushUserFontSet = true);
 
@@ -1011,10 +1011,13 @@ public:
   void NotifyMissingFonts();
 
   void FlushCounterStyles();
-  void RebuildCounterStyles(); 
+  void MarkCounterStylesDirty();
 
   void FlushFontFeatureValues();
-  void RebuildFontFeatureValues(); 
+  void MarkFontFeatureValuesDirty()
+  {
+    mFontFeatureValuesDirty = true;
+  }
 
   
   
@@ -1265,16 +1268,6 @@ protected:
 
   void AppUnitsPerDevPixelChanged();
 
-  void HandleRebuildCounterStyles() {
-    mPostedFlushCounterStyles = false;
-    FlushCounterStyles();
-  }
-
-  void HandleRebuildFontFeatureValues() {
-    mPostedFlushFontFeatureValues = false;
-    FlushFontFeatureValues();
-  }
-
   bool HavePendingInputEvent();
 
   
@@ -1478,13 +1471,9 @@ protected:
 
   
   unsigned              mCounterStylesDirty : 1;
-  
-  unsigned              mPostedFlushCounterStyles: 1;
 
   
   unsigned              mFontFeatureValuesDirty : 1;
-  
-  unsigned              mPostedFlushFontFeatureValues: 1;
 
   
   
