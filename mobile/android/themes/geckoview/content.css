@@ -117,7 +117,9 @@ textarea,
 }
 
 
-select option, select optgroup {
+select option, select optgroup,
+input[type="date"] div:-moz-native-anonymous.datetime-input-box-wrapper,
+input[type="time"] div:-moz-native-anonymous.datetime-input-box-wrapper {
   pointer-events: none;
 }
 
