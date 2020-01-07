@@ -54,7 +54,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 
                 "nightly_build": False,
                 'balrog_credentials_file': 'oauth.txt',
-                'periodic_clobber': 168,
                 
                 "tools_repo": "https://hg.mozilla.org/build/tools",
                 
@@ -77,7 +76,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 
                 'clone_with_purge': False,
                 'clone_by_revision': False,
-                'use_clobberer': True,
 
                 'virtualenv_modules': [
                     'requests==2.8.1',
@@ -207,7 +205,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
-        
         
 
     def set_extra_try_arguments(self, action, success=None):

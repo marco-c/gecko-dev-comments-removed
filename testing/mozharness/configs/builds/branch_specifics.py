@@ -41,23 +41,18 @@ config = {
         'platform_overrides': {
             'linux': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'linux64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'macosx64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'win32': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'win64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'linux-debug': {
                 'update_channel': 'default',
@@ -117,23 +112,18 @@ config = {
                 
                 
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'linux64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'macosx64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'win32': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'win64': {
                 'mozconfig_variant': 'release',
-                'force_clobber': True,
             },
             'linux-debug': {
                 'update_channel': 'default',
@@ -190,23 +180,18 @@ config = {
         'platform_overrides': {
             'linux': {
                 'mozconfig_variant': 'beta',
-                'force_clobber': True,
             },
             'linux64': {
                 'mozconfig_variant': 'beta',
-                'force_clobber': True,
             },
             'macosx64': {
                 'mozconfig_variant': 'beta',
-                'force_clobber': True,
             },
             'win32': {
                 'mozconfig_variant': 'beta',
-                'force_clobber': True,
             },
             'win64': {
                 'mozconfig_variant': 'beta',
-                'force_clobber': True,
             },
             'linux-devedition': {
                 "update_channel": "aurora",
@@ -278,7 +263,6 @@ config = {
     'try': {
         'repo_path': 'try',
         'branch_supports_uploadsymbols': False,
-        'use_clobberer': False,
     },
 
     
