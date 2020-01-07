@@ -768,6 +768,14 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
   if (IsPrimaryFrame()) {
     
     ActiveLayerTracker::TransferActivityToContent(this, mContent);
+
+    
+    
+    
+    
+    if (presContext->RestyleManager()->IsGecko()) {
+      MOZ_CRASH("old style system disabled");
+    }
   }
 
   if (HasCSSAnimations() || HasCSSTransitions() ||
@@ -4245,7 +4253,7 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
   
   
 
-  if (GetContent()->IsSelectionDescendant())
+  if (GetContent() && GetContent()->IsSelectionDescendant())
   {
     bool inSelection = false;
     UniquePtr<SelectionDetails> details
