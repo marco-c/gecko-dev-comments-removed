@@ -170,6 +170,10 @@ class Nursery
     void disable();
     bool isEnabled() const { return maxChunkCount() != 0; }
 
+    void enableStrings();
+    void disableStrings();
+    bool canAllocateStrings() const { return canAllocateStrings_; }
+
     
     bool isEmpty() const;
 
@@ -384,6 +388,9 @@ class Nursery
     
     mozilla::TimeDuration profileThreshold_;
     bool enableProfiling_;
+
+    
+    bool canAllocateStrings_;
 
     
     int64_t reportTenurings_;

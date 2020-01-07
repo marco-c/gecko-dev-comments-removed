@@ -494,6 +494,12 @@ GCThingIsMarkedGray(GCCellPtr thing)
 extern JS_PUBLIC_API(JS::TraceKind)
 GCThingTraceKind(void* thing);
 
+extern JS_PUBLIC_API(void)
+EnableNurseryStrings(JSContext* cx);
+
+extern JS_PUBLIC_API(void)
+DisableNurseryStrings(JSContext* cx);
+
 
 
 
