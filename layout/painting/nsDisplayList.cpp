@@ -610,8 +610,7 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
 static void
 AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
                          nsDisplayItem* aItem, nsCSSPropertyID aProperty,
-                         AnimationInfo& aAnimationInfo, bool aPending,
-                         bool aIsForWebRender)
+                         AnimationInfo& aAnimationInfo, bool aPending)
 {
   if (aPending) {
     aAnimationInfo.ClearAnimationsForNextTransaction();
@@ -668,11 +667,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     bool hasPerspectiveParent = false;
-    if (aIsForWebRender) {
-      
-      
-      
-    } else if (aItem) {
+    if (aItem) {
       
       
       origin = aItem->ToReferenceFrame();
@@ -850,7 +845,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
   bool pending = !aBuilder;
   AnimationInfo& animationInfo = aLayer->GetAnimationInfo();
   AddAnimationsForProperty(aFrame, aBuilder, aItem, aProperty,
-                           animationInfo, pending, false);
+                           animationInfo, pending);
   animationInfo.TransferMutatedFlagToLayer(aLayer);
 }
 
@@ -6673,7 +6668,7 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   AnimationInfo& animationInfo = animationData->GetAnimationInfo();
   AddAnimationsForProperty(Frame(), aDisplayListBuilder,
                            this, eCSSProperty_opacity,
-                           animationInfo, false, true);
+                           animationInfo, false);
   animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
 
   
@@ -6699,7 +6694,7 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
-  StackingContextHelper sc(aSc, aBuilder, filters, LayoutDeviceRect(), nullptr,
+  StackingContextHelper sc(aSc, aBuilder, filters, nullptr,
                            animationsId ? &prop : nullptr,
                            opacityForSC);
 
@@ -6753,9 +6748,8 @@ nsDisplayBlendMode::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                                             nsDisplayListBuilder* aDisplayListBuilder)
 {
   nsTArray<mozilla::wr::WrFilterOp> filters;
-  StackingContextHelper sc(aSc, aBuilder, filters, LayoutDeviceRect(), nullptr,
-                           0, nullptr, nullptr, nullptr,
-                           nsCSSRendering::GetGFXBlendMode(mBlendMode));
+  StackingContextHelper sc(aSc, aBuilder, filters, nullptr, 0, nullptr, nullptr,
+                           nullptr, nsCSSRendering::GetGFXBlendMode(mBlendMode));
 
   return nsDisplayWrapList::CreateWebRenderCommands(aBuilder,aResources, sc,
                                                     aManager, aDisplayListBuilder);
@@ -7007,7 +7001,7 @@ nsDisplayOwnLayer::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBui
   prop.effect_type = wr::WrAnimationType::Transform;
 
   StackingContextHelper sc(aSc, aBuilder, nsTArray<wr::WrFilterOp>(),
-                           LayoutDeviceRect(), nullptr, &prop);
+                           nullptr, &prop);
 
   nsDisplayWrapList::CreateWebRenderCommands(aBuilder, aResources, sc,
                                              aManager, aDisplayListBuilder);
@@ -8424,18 +8418,9 @@ nsDisplayTransform::GetTransform() const
 }
 
 Matrix4x4
-nsDisplayTransform::GetTransformForRendering(LayoutDevicePoint* aOutOrigin)
+nsDisplayTransform::GetTransformForRendering()
 {
   if (!mFrame->HasPerspective() || mTransformGetter || mIsTransformSeparator) {
-    if (!mTransformGetter && !mIsTransformSeparator && aOutOrigin) {
-      
-      
-      
-      
-      float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
-      *aOutOrigin = LayoutDevicePoint::FromAppUnits(ToReferenceFrame(), scale);
-      return GetResultingTransformMatrix(mFrame, nsPoint(0, 0), scale, INCLUDE_PERSPECTIVE);
-    }
     return GetTransform();
   }
   MOZ_ASSERT(!mTransformGetter);
@@ -8491,14 +8476,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                                             WebRenderLayerManager* aManager,
                                             nsDisplayListBuilder* aDisplayListBuilder)
 {
-  
-  
-  
-  
-  
-  LayoutDevicePoint position;
-  Matrix4x4 newTransformMatrix = GetTransformForRendering(&position);
-
+  Matrix4x4 newTransformMatrix = GetTransformForRendering();
   gfx::Matrix4x4* transformForSC = &newTransformMatrix;
   if (newTransformMatrix.IsIdentity()) {
     
@@ -8512,7 +8490,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   AnimationInfo& animationInfo = animationData->GetAnimationInfo();
   AddAnimationsForProperty(Frame(), aDisplayListBuilder,
                            this, eCSSProperty_transform,
-                           animationInfo, false, true);
+                           animationInfo, false);
   animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
 
   
@@ -8546,7 +8524,6 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   StackingContextHelper sc(aSc,
                            aBuilder,
                            filters,
-                           LayoutDeviceRect(position, LayoutDeviceSize()),
                            &newTransformMatrix,
                            animationsId ? &prop : nullptr,
                            nullptr,
@@ -9171,7 +9148,6 @@ nsDisplayPerspective::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& a
   StackingContextHelper sc(aSc,
                            aBuilder,
                            filters,
-                           LayoutDeviceRect(),
                            nullptr,
                            0,
                            nullptr,
@@ -9946,8 +9922,7 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
   }
 
   float opacity = mFrame->StyleEffects()->mOpacity;
-  StackingContextHelper sc(aSc, aBuilder, wrFilters, LayoutDeviceRect(), nullptr,
-                           0, opacity != 1.0f && mHandleOpacity ? &opacity : nullptr);
+  StackingContextHelper sc(aSc, aBuilder, wrFilters, nullptr, 0, opacity != 1.0f && mHandleOpacity ? &opacity : nullptr);
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, sc, aManager, aDisplayListBuilder);
   return true;
