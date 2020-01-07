@@ -512,12 +512,6 @@ SERVO_BINDING_FUNC(Servo_AnimationValue_Compute,
                    RawServoStyleSetBorrowed raw_data)
 
 
-
-SERVO_BINDING_FUNC(Servo_UnlockedDeclarationBlock_GetCssText, void,
-                   const RawServoUnlockedDeclarationBlock* declarations,
-                   nsAString* result)
-
-
 SERVO_BINDING_FUNC(Servo_ParseStyleAttribute, RawServoDeclarationBlockStrong,
                    const nsACString* data,
                    RawGeckoURLExtraData* extra_data,

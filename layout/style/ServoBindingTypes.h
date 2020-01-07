@@ -85,17 +85,10 @@ typedef mozilla::dom::StyleChildrenIterator RawGeckoStyleChildrenIterator;
 
 
 
-
-
-struct RawServoUnlockedDeclarationBlock;
-
-
-
 struct DeclarationBlockMutationClosure
 {
   
-  
-  void (*function)(const RawServoUnlockedDeclarationBlock*, void*) = nullptr;
+  void (*function)(void*) = nullptr;
   void* data = nullptr;
 };
 
