@@ -5,6 +5,10 @@ ChromeUtils.import("resource://services-sync/service.js");
 ChromeUtils.import("resource://services-sync/engines/history.js");
 ChromeUtils.import("resource://services-common/utils.js");
 
+
+XPCOMUtils.defineLazyServiceGetter(this, "asyncHistory",
+                                   "@mozilla.org/browser/history;1",
+                                   "mozIAsyncHistory");
 async function rawAddVisit(id, uri, visitPRTime, transitionType) {
   return new Promise((resolve, reject) => {
     let results = [];
@@ -19,7 +23,7 @@ async function rawAddVisit(id, uri, visitPRTime, transitionType) {
         resolve({ results, count });
       }
     };
-    PlacesUtils.asyncHistory.updatePlaces([{
+    asyncHistory.updatePlaces([{
       guid: id,
       uri: typeof uri == "string" ? CommonUtils.makeURI(uri) : uri,
       visits: [{ visitDate: visitPRTime, transitionType }]

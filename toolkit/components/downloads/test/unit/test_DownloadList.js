@@ -17,15 +17,14 @@
 
 
 
-function getExpirablePRTime() {
+function getExpirableDate() {
   let dateObj = new Date();
   
   dateObj.setHours(0);
   dateObj.setMinutes(0);
   dateObj.setSeconds(0);
   dateObj.setMilliseconds(0);
-  dateObj = new Date(dateObj.getTime() - 8 * 86400000);
-  return dateObj.getTime() * 1000;
+  return new Date(dateObj.getTime() - 8 * 86400000);
 }
 
 
@@ -39,26 +38,12 @@ function getExpirablePRTime() {
 
 
 function promiseExpirableDownloadVisit(aSourceUrl) {
-  return new Promise((resolve, reject) => {
-    PlacesUtils.asyncHistory.updatePlaces(
-      {
-        uri: NetUtil.newURI(aSourceUrl || httpUrl("source.txt")),
-        visits: [{
-          transitionType: Ci.nsINavHistoryService.TRANSITION_DOWNLOAD,
-          visitDate: getExpirablePRTime(),
-        }]
-      },
-      {
-        handleError: function handleError(aResultCode, aPlaceInfo) {
-          let ex = new Components.Exception("Unexpected error in adding visits.",
-                                            aResultCode);
-          reject(ex);
-        },
-        handleResult() {},
-        handleCompletion: function handleCompletion() {
-          resolve();
-        }
-      });
+  return PlacesUtils.history.insert({
+    url: aSourceUrl || httpUrl("source.txt"),
+    visits: [{
+      transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+      date: getExpirableDate(),
+    }]
   });
 }
 

@@ -4713,7 +4713,6 @@ nsNavHistoryResult::OnVisit(nsIURI* aURI, int64_t aVisitId, PRTime aTime,
   
   
   
-  
   if (!aLastKnownTitle.IsVoid() && aVisitCount == 1) {
     ENUMERATE_HISTORY_OBSERVERS(OnTitleChanged(aURI, aLastKnownTitle, aGUID));
   }
