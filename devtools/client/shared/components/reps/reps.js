@@ -3993,7 +3993,9 @@ class Tree extends Component {
       
       className: _propTypes2.default.string,
       
-      style: _propTypes2.default.object
+      style: _propTypes2.default.object,
+      
+      preventBlur: _propTypes2.default.bool
     };
   }
 
@@ -4244,7 +4246,9 @@ class Tree extends Component {
 
 
   _onBlur() {
-    this._focus(undefined);
+    if (!this.props.preventBlur) {
+      this._focus(undefined);
+    }
   }
 
   

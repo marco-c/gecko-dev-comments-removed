@@ -28,6 +28,11 @@ var _pause = require("./pause/index");
 
 function findExpressionMatch(state, codeMirror, tokenPos) {
   const source = (0, _selectors.getSelectedSource)(state);
+
+  if (!source) {
+    return;
+  }
+
   const symbols = (0, _selectors.getSymbols)(state, source);
   let match;
 

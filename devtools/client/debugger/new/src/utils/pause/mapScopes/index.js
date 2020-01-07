@@ -186,7 +186,6 @@ function generateClientScope(scopes, originalScopes) {
           variables = _objectWithoutProperties(_orig$generatedBindin, ["this"]);
 
     return _objectSpread({
-      
       parent: acc,
       actor: `originalActor${i}`,
       type: orig.type,
