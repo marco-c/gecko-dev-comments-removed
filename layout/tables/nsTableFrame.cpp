@@ -1533,7 +1533,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
     
     if (aFrame->StyleEffects()->mBoxShadow) {
       aLists.BorderBackground()->AppendToTop(
-        new (aBuilder) nsDisplayBoxShadowOuter(aBuilder, aFrame));
+        MakeDisplayItem<nsDisplayBoxShadowOuter>(aBuilder, aFrame));
     }
   }
 
@@ -1601,7 +1601,7 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
     
     if (aFrame->StyleEffects()->mBoxShadow) {
       aLists.BorderBackground()->AppendToTop(
-        new (aBuilder) nsDisplayBoxShadowInner(aBuilder, aFrame));
+        MakeDisplayItem<nsDisplayBoxShadowInner>(aBuilder, aFrame));
     }
   }
 
@@ -1616,13 +1616,13 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
       if (table->IsBorderCollapse()) {
         if (table->HasBCBorders()) {
           aLists.BorderBackground()->AppendToTop(
-            new (aBuilder) nsDisplayTableBorderCollapse(aBuilder, table));
+            MakeDisplayItem<nsDisplayTableBorderCollapse>(aBuilder, table));
         }
       } else {
         const nsStyleBorder* borderStyle = aFrame->StyleBorder();
         if (borderStyle->HasBorder()) {
           aLists.BorderBackground()->AppendToTop(
-            new (aBuilder) nsDisplayBorder(aBuilder, table));
+            MakeDisplayItem<nsDisplayBorder>(aBuilder, table));
         }
       }
     }
@@ -2078,7 +2078,16 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  bool fixupKidPositions = false;
+  
+  
+  
+  nscoord tentativeContainerWidth = 0;
+  bool mayAdjustXForAllChildren = false;
+
+  
+  
+  
+  
   if (NS_SUBTREE_DIRTY(this) ||
       aReflowInput.ShouldReflowAllKids() ||
       IsGeometryDirty() ||
@@ -2137,8 +2146,23 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
     
     
     
-    fixupKidPositions = wm.IsVerticalRL() &&
-      aReflowInput.ComputedWidth() == NS_UNCONSTRAINEDSIZE;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (wm.IsVerticalRL()) {
+      tentativeContainerWidth =
+        aReflowInput.ComputedSizeAsContainerIfConstrained().width;
+      mayAdjustXForAllChildren = true;
+    }
 
     
     if (HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
@@ -2182,12 +2206,17 @@ nsTableFrame::Reflow(nsPresContext*           aPresContext,
     ProcessRowInserted(aDesiredSize.BSize(wm));
   }
 
-  if (fixupKidPositions) {
-    
-    
-    for (nsIFrame* kid : mFrames) {
-      kid->MovePositionBy(nsPoint(aDesiredSize.Width(), 0));
-      RePositionViews(kid);
+  
+  
+  
+  if (mayAdjustXForAllChildren) {
+    nscoord xAdjustmentForAllKids =
+      aDesiredSize.Width() - tentativeContainerWidth;
+    if (0 != xAdjustmentForAllKids) {
+      for (nsIFrame* kid : mFrames) {
+        kid->MovePositionBy(nsPoint(xAdjustmentForAllKids, 0));
+        RePositionViews(kid);
+      }
     }
   }
 
