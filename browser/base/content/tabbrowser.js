@@ -113,13 +113,6 @@ window._gBrowser = {
 
   _tabForBrowser: new WeakMap(),
 
-  
-
-
-
-
-  _tabSwitchID: null,
-
   _preloadedBrowser: null,
 
   
@@ -905,29 +898,6 @@ window._gBrowser = {
       document.commandDispatcher.lock();
 
       TelemetryStopwatch.start("FX_TAB_SWITCH_UPDATE_MS");
-      if (!gMultiProcessBrowser) {
-        
-        
-        
-        
-        if (this._tabSwitchID) {
-          TelemetryStopwatch.cancel("FX_TAB_SWITCH_TOTAL_MS");
-        }
-
-        let tabSwitchID = Symbol();
-
-        TelemetryStopwatch.start("FX_TAB_SWITCH_TOTAL_MS");
-        this._tabSwitchID = tabSwitchID;
-
-        let onMozAfterPaint = () => {
-          if (this._tabSwitchID === tabSwitchID) {
-            TelemetryStopwatch.finish("FX_TAB_SWITCH_TOTAL_MS");
-            this._tabSwitchID = null;
-          }
-          window.removeEventListener("MozAfterPaint", onMozAfterPaint);
-        };
-        window.addEventListener("MozAfterPaint", onMozAfterPaint);
-      }
     }
 
     let oldTab = this.selectedTab;
