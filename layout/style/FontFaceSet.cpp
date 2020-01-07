@@ -125,13 +125,6 @@ FontFaceSet::FontFaceSet(nsPIDOMWindowInner* aWindow, nsIDocument* aDocument)
   
   
   
-  if (aWindow && PrefEnabled()) {
-    mResolveLazilyCreatedReadyPromise = true;
-  }
-
-  
-  
-  
   
   
   
@@ -1698,9 +1691,12 @@ FontFaceSet::DispatchLoadingEventAndReplaceReadyPromise()
         mReady = Promise::Create(GetParentObject(), rv);
       }
     }
-    if (!mReady) {
-      mResolveLazilyCreatedReadyPromise = false;
-    }
+
+    
+    
+    
+    
+    mResolveLazilyCreatedReadyPromise = false;
   }
 }
 
