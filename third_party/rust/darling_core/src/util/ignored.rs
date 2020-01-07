@@ -6,7 +6,7 @@ use {FromMetaItem, FromDeriveInput, FromField, FromVariant, Result};
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Ignored;
 
 impl FromMetaItem for Ignored {

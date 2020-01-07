@@ -150,10 +150,18 @@
 
 
 
+
+
+
+
+
+
+
 extern crate proc_macro;
 extern crate proc_macro2;
 #[macro_use]
 extern crate quote;
+#[macro_use]
 extern crate syn;
 extern crate unicode_xid;
 
@@ -167,7 +175,10 @@ use syn::{
 };
 use syn::visit::{self, Visit};
 
-use quote::{ToTokens, Tokens};
+
+
+#[doc(hidden)]
+pub use quote::*;
 
 use unicode_xid::UnicodeXID;
 
@@ -238,7 +249,40 @@ fn sanitize_ident(s: &str) -> Ident {
         if res.ends_with('_') && c == '_' { continue }
         res.push(c);
     }
-    Ident::new(&res, Span::def_site())
+    Ident::from(res)
+}
+
+
+fn merge_generics(into: &mut Generics, from: &Generics) {
+    
+    'outer: for p in &from.params {
+        for op in &into.params {
+            match (op, p) {
+                (&GenericParam::Type(ref otp), &GenericParam::Type(ref tp)) => {
+                    
+                    if otp.ident == tp.ident {
+                        panic!("Attempted to merge conflicting generic params: {} and {}", quote!{#op}, quote!{#p});
+                    }
+                }
+                (&GenericParam::Lifetime(ref olp), &GenericParam::Lifetime(ref lp)) => {
+                    
+                    if olp.lifetime == lp.lifetime {
+                        panic!("Attempted to merge conflicting generic params: {} and {}", quote!{#op}, quote!{#p});
+                    }
+                }
+                
+                _ => (),
+            }
+        }
+        into.params.push(p.clone());
+    }
+
+    
+    if let Some(ref from_clause) = from.where_clause {
+        into.make_where_clause()
+            .predicates
+            .extend(from_clause.predicates.iter().cloned());
+    }
 }
 
 
@@ -905,6 +949,7 @@ pub struct Structure<'a> {
     variants: Vec<VariantInfo<'a>>,
     omitted_variants: bool,
     ast: &'a DeriveInput,
+    extra_impl: Vec<GenericParam>,
 }
 
 impl<'a> Structure<'a> {
@@ -961,6 +1006,7 @@ impl<'a> Structure<'a> {
             variants: variants,
             omitted_variants: false,
             ast: ast,
+            extra_impl: vec![],
         }
     }
 
@@ -1404,6 +1450,54 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_impl_generic(&mut self, param: GenericParam) -> &mut Self {
+        self.extra_impl.push(param);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn add_trait_bounds(&self, bound: &TraitBound, where_clause: &mut Option<WhereClause>) {
         let mut seen = HashSet::new();
         let mut pred = |ty: Type| if !seen.contains(&ty) {
@@ -1450,6 +1544,8 @@ impl<'a> Structure<'a> {
         }
     }
 
+    
+    
     
     
     
@@ -1585,6 +1681,8 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
     pub fn unsafe_bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
         self.impl_internal(
             path.into_tokens(),
@@ -1594,6 +1692,8 @@ impl<'a> Structure<'a> {
         )
     }
 
+    
+    
     
     
     
@@ -1709,6 +1809,9 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
+    #[deprecated]
     pub fn unsafe_unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
         self.impl_internal(
             path.into_tokens(),
@@ -1726,7 +1829,10 @@ impl<'a> Structure<'a> {
         add_bounds: bool,
     ) -> Tokens {
         let name = &self.ast.ident;
-        let (impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+        let mut gen_clone = self.ast.generics.clone();
+        gen_clone.params.extend(self.extra_impl.clone().into_iter());
+        let (impl_generics, _, _) = gen_clone.split_for_impl();
+        let (_, ty_generics, where_clause) = self.ast.generics.split_for_impl();
 
         let bound = syn::parse2::<TraitBound>(path.into())
             .expect("`path` argument must be a valid rust trait bound");
@@ -1764,4 +1870,357 @@ impl<'a> Structure<'a> {
             };
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn gen_impl(&self, cfg: Tokens) -> Tokens {
+        use syn::buffer::{TokenBuffer, Cursor};
+        use syn::synom::PResult;
+        use proc_macro2::TokenStream;
+
+        
+        fn parse_gen_impl(
+            c: Cursor,
+        ) -> PResult<
+            (
+                Option<token::Unsafe>,
+                TraitBound,
+                TokenStream,
+                syn::Generics,
+            ),
+        > {
+            
+            let (id, c) = syn!(c, Ident)?;
+            if id.as_ref() != "gen" {
+                let ((), _) = reject!(c,)?;
+                unreachable!()
+            }
+
+            
+            let (unsafe_kw, c) = option!(c, keyword!(unsafe))?;
+            let (_, c) = syn!(c, token::Impl)?;
+
+            
+            
+
+            
+            let (mut generics, c) = syn!(c, Generics)
+                .expect("Expected an optional `<>` with generics after `gen impl`");
+
+            
+            let (bound, c) = syn!(c, TraitBound)
+                .expect("Expected a trait bound after `gen impl`");
+
+            
+            let (_, c) = keyword!(c, for)
+                .expect("Expected `for` after trait bound");
+            let (_, c) = do_parse!(c, syn!(Token![@]) >> keyword!(Self) >> (()))
+                .expect("Expected `@Self` after `for`");
+
+            
+            
+            
+            let c = if let Ok((where_clause, c)) = syn!(c, WhereClause) {
+                generics.where_clause = Some(where_clause);
+                c
+            } else { c };
+
+            let ((_, body), c) = braces!(c, syn!(TokenStream))
+                .expect("Expected an impl body after `@Self`");
+
+            Ok(((unsafe_kw, bound, body, generics), c))
+        }
+
+        let buf = TokenBuffer::new2(cfg.into());
+        let mut c = buf.begin();
+        let mut before = vec![];
+
+        
+        
+        let ((unsafe_kw, bound, body, mut generics), after) = {
+            let gen_impl;
+            let cursor;
+
+            loop {
+                if let Ok((gi, c2)) = parse_gen_impl(c) {
+                    gen_impl = gi;
+                    cursor = c2;
+                    break;
+                } else if let Some((tt, c2)) = c.token_tree() {
+                    c = c2;
+                    before.push(tt);
+                } else {
+                    panic!("Expected a gen impl block");
+                }
+            }
+
+            (gen_impl, cursor.token_stream())
+        };
+
+        
+        let name = &self.ast.ident;
+
+        
+        
+        merge_generics(&mut generics, &self.ast.generics);
+        self.add_trait_bounds(&bound, &mut generics.where_clause);
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        let (_, ty_generics, _) = self.ast.generics.split_for_impl();
+
+        let dummy_const: Ident = sanitize_ident(&format!(
+            "_DERIVE_{}_FOR_{}",
+            (&bound).into_tokens(),
+            name.into_tokens(),
+        ));
+
+        quote! {
+            #[allow(non_upper_case_globals)]
+            const #dummy_const: () = {
+                #(#before)*
+                #unsafe_kw impl #impl_generics #bound for #name #ty_generics #where_clause {
+                    #body
+                }
+                #after
+            };
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn unpretty_print<T: std::fmt::Display>(ts: T) -> String {
+    let mut res = String::new();
+
+    let raw_s = ts.to_string();
+    let mut s = &raw_s[..];
+    let mut indent = 0;
+    while let Some(i) = s.find(&['(', '{', '[', ')', '}', ']', ';'][..]) {
+        match &s[i..i + 1] {
+            "(" | "{" | "[" => indent += 1,
+            ")" | "}" | "]" => indent -= 1,
+            _ => {}
+        }
+        res.push_str(&s[..i + 1]);
+        res.push('\n');
+        for _ in 0..indent {
+            res.push_str("    ");
+        }
+        s = s[i + 1..].trim_left_matches(' ');
+    }
+    res.push_str(s);
+    res
 }
