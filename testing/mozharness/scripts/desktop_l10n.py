@@ -55,8 +55,6 @@ FAILURE_STR = "Failed"
 configuration_tokens = ('branch',
                         'platform',
                         'update_channel',
-                        'ssh_key_dir',
-                        'stage_product',
                         )
 
 
