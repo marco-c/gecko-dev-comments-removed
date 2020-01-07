@@ -623,7 +623,19 @@ protected:
 
 
   bool InDifferentTableElements(nsINode* aNode1, nsINode* aNode2);
-  nsresult RemoveEmptyNodes();
+
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult RemoveEmptyNodesInChangedRange();
+
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);
   nsresult UpdateDocChangeRange(nsRange* aRange);
 

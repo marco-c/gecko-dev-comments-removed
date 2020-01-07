@@ -524,7 +524,7 @@ HTMLEditRules::AfterEditInner(EditAction aAction,
     }
 
     
-    nsresult rv = RemoveEmptyNodes();
+    nsresult rv = RemoveEmptyNodesInChangedRange();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -9006,7 +9006,7 @@ HTMLEditRules::InDifferentTableElements(nsINode* aNode1,
 
 
 nsresult
-HTMLEditRules::RemoveEmptyNodes()
+HTMLEditRules::RemoveEmptyNodesInChangedRange()
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
@@ -9040,7 +9040,9 @@ HTMLEditRules::RemoveEmptyNodes()
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
 
   nsresult rv = iter->Init(mDocChangeRange);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   nsTArray<OwningNonNull<nsINode>> arrayOfEmptyNodes, arrayOfEmptyCites, skipList;
 
@@ -9058,45 +9060,47 @@ HTMLEditRules::RemoveEmptyNodes()
         skipList[idx] = parent;
       }
     } else {
-      bool bIsCandidate = false;
-      bool bIsEmptyNode = false;
-      bool bIsMailCite = false;
+      bool isCandidate = false;
+      bool isEmptyNode = false;
+      bool isMailCite = false;
 
       if (node->IsElement()) {
         if (node->IsHTMLElement(nsGkAtoms::body)) {
           
-        } else if ((bIsMailCite = HTMLEditUtils::IsMailCite(node)) ||
+        } else if ((isMailCite = HTMLEditUtils::IsMailCite(node)) ||
                    node->IsHTMLElement(nsGkAtoms::a) ||
                    HTMLEditUtils::IsInlineStyle(node) ||
                    HTMLEditUtils::IsList(node) ||
                    node->IsHTMLElement(nsGkAtoms::div)) {
           
-          bIsCandidate = true;
+          isCandidate = true;
         } else if (HTMLEditUtils::IsFormatNode(node) ||
                    HTMLEditUtils::IsListItem(node) ||
                    node->IsHTMLElement(nsGkAtoms::blockquote)) {
           
           
           
-          bool bIsSelInNode;
-          rv = SelectionEndpointInNode(node, &bIsSelInNode);
-          NS_ENSURE_SUCCESS(rv, rv);
-          if (!bIsSelInNode) {
-            bIsCandidate = true;
+          bool isSelectionEndInNode;
+          rv = SelectionEndpointInNode(node, &isSelectionEndInNode);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+          if (!isSelectionEndInNode) {
+            isCandidate = true;
           }
         }
       }
 
-      if (bIsCandidate) {
+      if (isCandidate) {
         
         
-        rv = HTMLEditorRef().IsEmptyNode(node, &bIsEmptyNode,
-                                         bIsMailCite, true);
+        rv = HTMLEditorRef().IsEmptyNode(node, &isEmptyNode,
+                                         isMailCite, true);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        if (bIsEmptyNode) {
-          if (bIsMailCite) {
+        if (isEmptyNode) {
+          if (isMailCite) {
             
             arrayOfEmptyCites.AppendElement(*node);
           } else {
@@ -9105,7 +9109,7 @@ HTMLEditRules::RemoveEmptyNodes()
         }
       }
 
-      if (!bIsEmptyNode && parent) {
+      if (!isEmptyNode && parent) {
         
         skipList.AppendElement(*parent);
       }
@@ -9118,6 +9122,9 @@ HTMLEditRules::RemoveEmptyNodes()
   for (OwningNonNull<nsINode>& delNode : arrayOfEmptyNodes) {
     if (HTMLEditorRef().IsModifiableNode(delNode)) {
       rv = HTMLEditorRef().DeleteNodeWithTransaction(*delNode);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -9127,22 +9134,28 @@ HTMLEditRules::RemoveEmptyNodes()
   
   
   for (OwningNonNull<nsINode>& delNode : arrayOfEmptyCites) {
-    bool bIsEmptyNode;
-    rv = HTMLEditorRef().IsEmptyNode(delNode, &bIsEmptyNode, false, true);
+    bool isEmptyNode;
+    rv = HTMLEditorRef().IsEmptyNode(delNode, &isEmptyNode, false, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    if (!bIsEmptyNode) {
+    if (!isEmptyNode) {
       
       
       RefPtr<Element> brElement =
         HTMLEditorRef().InsertBrElementWithTransaction(
                           SelectionRef(), EditorRawDOMPoint(delNode));
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
     }
     rv = HTMLEditorRef().DeleteNodeWithTransaction(*delNode);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
