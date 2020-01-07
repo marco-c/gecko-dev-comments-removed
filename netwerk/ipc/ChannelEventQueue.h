@@ -318,6 +318,11 @@ ChannelEventQueue::MaybeFlushQueue()
     MutexAutoLock lock(mMutex);
     flushQueue = !mForcedCount && !mFlushing && !mSuspended &&
                  !mEventQueue.IsEmpty();
+
+    
+    if (flushQueue) {
+      mFlushing = true;
+    }
   }
 
   if (flushQueue) {

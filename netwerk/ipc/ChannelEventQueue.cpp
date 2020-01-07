@@ -40,12 +40,12 @@ ChannelEventQueue::FlushQueue()
   nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
   mozilla::Unused << kungFuDeathGrip; 
 
-  
+#ifdef DEBUG
   {
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(!mFlushing);
-    mFlushing = true;
+    MOZ_ASSERT(mFlushing);
   }
+#endif 
 
   bool needResumeOnOtherThread = false;
 
@@ -137,7 +137,8 @@ ChannelEventQueue::ResumeInternal()
   }
 
   if (!--mSuspendCount) {
-    if (mEventQueue.IsEmpty()) {
+    if (mEventQueue.IsEmpty() || !!mForcedCount) {
+      
       
       mSuspended = false;
       return;
