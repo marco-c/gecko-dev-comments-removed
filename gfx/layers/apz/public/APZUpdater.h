@@ -60,7 +60,7 @@ public:
                                 wr::WrPipelineInfo* aInfo);
   static void ProcessPendingTasks(const wr::WrWindowId& aWindowId);
 
-  void ClearTree();
+  void ClearTree(LayersId aRootLayersId);
   void UpdateFocusState(LayersId aRootLayerTreeId,
                         LayersId aOriginatingLayersId,
                         const FocusTarget& aFocusTarget);
@@ -110,7 +110,11 @@ public:
 
 
 
-  void RunOnUpdaterThread(already_AddRefed<Runnable> aTask);
+
+
+
+
+  void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask);
 
   
 
@@ -125,7 +129,10 @@ public:
 
 
 
-  void RunOnControllerThread(already_AddRefed<Runnable> aTask);
+
+
+
+  void RunOnControllerThread(LayersId aLayersId, already_AddRefed<Runnable> aTask);
 
 protected:
   virtual ~APZUpdater();
@@ -133,7 +140,6 @@ protected:
   bool UsingWebRenderUpdaterThread() const;
   static already_AddRefed<APZUpdater> GetUpdater(const wr::WrWindowId& aWindowId);
 
-  bool IsQueueBlocked() const;
   void ProcessQueue();
 
 private:
@@ -167,12 +173,9 @@ private:
     
     
     
-    bool IsBlockingQueue() const;
+    bool IsBlocked() const;
   };
 
-  
-  
-  
   
   
   std::unordered_map<LayersId,
@@ -202,11 +205,22 @@ private:
 #endif
 
   
+  
+  
+  struct QueuedTask {
+    LayersId mLayersId;
+    RefPtr<Runnable> mRunnable;
+  };
+
+  
   Mutex mQueueLock;
   
   
   
-  std::deque<RefPtr<Runnable>> mUpdaterQueue;
+  
+  
+  
+  std::deque<QueuedTask> mUpdaterQueue;
 };
 
 } 
