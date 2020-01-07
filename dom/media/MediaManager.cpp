@@ -1702,20 +1702,22 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
     }
   }
 
+  bool hasVideo = aVideoType != MediaSourceEnum::Other;
+  bool hasAudio = aAudioType != MediaSourceEnum::Other;
+  bool fakeCams = aFake && aVideoType == MediaSourceEnum::Camera;
+  bool fakeMics = aFake && aAudioType == MediaSourceEnum::Microphone;
+  bool realDevicesRequested = (!fakeCams && hasVideo) || (!fakeMics && hasAudio);
+
   RefPtr<Runnable> task = NewTaskFrom([id, aWindowId, audioLoopDev,
                                        videoLoopDev, aVideoType,
-                                       aAudioType, aFake]() mutable {
+                                       aAudioType, hasVideo, hasAudio,
+                                       fakeCams, fakeMics, realDevicesRequested]() {
     
-    bool hasVideo = aVideoType != MediaSourceEnum::Other;
-    bool hasAudio = aAudioType != MediaSourceEnum::Other;
-    bool fakeCams = aFake && aVideoType == MediaSourceEnum::Camera;
-    bool fakeMics = aFake && aAudioType == MediaSourceEnum::Microphone;
-
     RefPtr<MediaEngine> fakeBackend, realBackend;
     if (fakeCams || fakeMics) {
       fakeBackend = new MediaEngineDefault();
     }
-    if ((!fakeCams && hasVideo) || (!fakeMics && hasAudio)) {
+    if (realDevicesRequested) {
       MediaManager* manager = MediaManager::GetIfExists();
       MOZ_RELEASE_ASSERT(manager); 
       realBackend = manager->GetBackend(aWindowId);
@@ -1758,9 +1760,7 @@ MediaManager::EnumerateRawDevices(uint64_t aWindowId,
     }));
   });
 
-  if (!aFake &&
-      (aVideoType == MediaSourceEnum::Camera ||
-       aAudioType == MediaSourceEnum::Microphone) &&
+  if (realDevicesRequested &&
       Preferences::GetBool("media.navigator.permission.device", false)) {
     
     
