@@ -208,16 +208,6 @@ impl InvalidationMap {
     }
 
     
-    
-    pub fn note_selector(
-        &mut self,
-        selector: &Selector<SelectorImpl>,
-        quirks_mode: QuirksMode,
-    ) -> Result<(), FailedAllocationError> {
-        self.collect_invalidations_for(selector, quirks_mode)
-    }
-
-    
     pub fn clear(&mut self) {
         self.class_to_selector.clear();
         self.id_to_selector.clear();
@@ -229,12 +219,13 @@ impl InvalidationMap {
     }
 
     
-    fn collect_invalidations_for(
+    
+    pub fn note_selector(
         &mut self,
         selector: &Selector<SelectorImpl>,
-        quirks_mode: QuirksMode
+        quirks_mode: QuirksMode,
     ) -> Result<(), FailedAllocationError> {
-        debug!("InvalidationMap::collect_invalidations_for({:?})", selector);
+        debug!("InvalidationMap::note_selector({:?})", selector);
 
         let mut iter = selector.iter();
         let mut combinator;

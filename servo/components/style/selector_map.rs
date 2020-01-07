@@ -457,6 +457,7 @@ fn specific_bucket_for<'a>(
         
         
         
+        Component::Host(Some(ref selector)) => find_bucket(selector.iter()),
         _ => Bucket::Universal
     }
 }

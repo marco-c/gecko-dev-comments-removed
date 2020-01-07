@@ -6,7 +6,7 @@
 
 
 use context::StackLimitChecker;
-use dom::{TElement, TNode};
+use dom::{TElement, TNode, TShadowRoot};
 use selector_parser::SelectorImpl;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::matching::matches_compound_selector_from;
@@ -542,9 +542,11 @@ where
         
         
         
-        
-        
-        
+        if let Some(root) = self.element.shadow_root() {
+            any_descendant |=
+                self.invalidate_dom_descendants_of(root.as_node(), invalidations);
+        }
+
         
         
         
