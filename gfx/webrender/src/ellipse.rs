@@ -2,21 +2,24 @@
 
 
 
-use api::{LayoutPoint, LayoutSize, LayoutVector2D};
+use api::{LayoutPoint, LayoutVector2D};
+use euclid::TypedSize2D;
 use std::f32::consts::FRAC_PI_2;
+#[cfg(test)]
+use api::LayoutSize;
 
 
 const STEP_COUNT: usize = 20;
 
 
 #[derive(Debug, Clone)]
-pub struct Ellipse {
-    pub radius: LayoutSize,
+pub struct Ellipse<U> {
+    pub radius: TypedSize2D<f32, U>,
     pub total_arc_length: f32,
 }
 
-impl Ellipse {
-    pub fn new(radius: LayoutSize) -> Ellipse {
+impl<U> Ellipse<U> {
+    pub fn new(radius: TypedSize2D<f32, U>) -> Ellipse<U> {
         
         let total_arc_length = get_simpson_length(FRAC_PI_2, radius.width, radius.height);
 

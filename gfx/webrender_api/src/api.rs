@@ -562,6 +562,10 @@ pub enum DebugCommand {
     
     EnableDualSourceBlending(bool),
     
+    EnableNewFrameIndicator(bool),
+    
+    EnableNewSceneIndicator(bool),
+    
     FetchDocuments,
     
     FetchPasses,

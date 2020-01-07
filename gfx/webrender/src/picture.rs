@@ -82,6 +82,10 @@ pub struct PictureCacheKey {
 
     
     
+    scene_id: u64,
+
+    
+    
     
     
     
@@ -374,6 +378,7 @@ impl PicturePrimitive {
                         RenderTaskCacheKey {
                             size: device_rect.size,
                             kind: RenderTaskCacheKeyKind::Picture(PictureCacheKey {
+                                scene_id: frame_context.scene_id,
                                 picture_id: self.id,
                                 unclipped_size: prim_screen_rect.unclipped.size,
                                 pic_relative_render_rect,
@@ -466,6 +471,14 @@ impl PicturePrimitive {
                 let render_task_id = frame_state.render_tasks.add(blur_render_task);
                 pic_state.tasks.push(render_task_id);
                 self.surface = Some(PictureSurface::RenderTask(render_task_id));
+
+                
+                
+                
+                
+                if pic_state.local_rect_changed {
+                    frame_state.gpu_cache.invalidate(&mut self.extra_gpu_data_handle);
+                }
 
                 if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
                     
