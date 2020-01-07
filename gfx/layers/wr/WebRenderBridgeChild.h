@@ -165,6 +165,8 @@ public:
   
   void DeallocResourceShmem(RefCountedShmem& aShm);
 
+  void Capture();
+
 private:
   friend class CompositorBridgeChild;
 
