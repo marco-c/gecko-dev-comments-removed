@@ -78,13 +78,19 @@ class StoreBuffer
         T last_;
 
         
-        const static size_t MaxEntries = 48 * 1024 / sizeof(T);
+
+
+
+
+
+
+        const static size_t MaxEntries = 8192;
 
         explicit MonoTypeBuffer() : last_(T()) {}
         ~MonoTypeBuffer() { stores_.finish(); }
 
         MOZ_MUST_USE bool init() {
-            if (!stores_.initialized() && !stores_.init())
+            if (!stores_.initialized() && !stores_.init(MaxEntries))
                 return false;
             clear();
             return true;
@@ -94,6 +100,7 @@ class StoreBuffer
             last_ = T();
             if (stores_.initialized())
                 stores_.clear();
+            MOZ_ASSERT(stores_.capacity() > MaxEntries);
         }
 
         
