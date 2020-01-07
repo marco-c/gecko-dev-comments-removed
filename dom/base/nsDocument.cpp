@@ -11881,6 +11881,10 @@ nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
     aSizes.mDOMEventListenersCount += elm->ListenerCount();
   }
 
+  if (mNodeInfoManager) {
+    mNodeInfoManager->AddSizeOfIncludingThis(aSizes);
+  }
+
   
   
   

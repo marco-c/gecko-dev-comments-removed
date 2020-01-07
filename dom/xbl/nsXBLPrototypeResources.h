@@ -7,6 +7,7 @@
 #ifndef nsXBLPrototypeResources_h__
 #define nsXBLPrototypeResources_h__
 
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/ServoStyleRuleMap.h"
 #include "nsICSSLoaderObserver.h"
@@ -88,6 +89,8 @@ public:
   
   
   void ComputeServoStyles(const mozilla::ServoStyleSet& aMasterStyleSet);
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
   

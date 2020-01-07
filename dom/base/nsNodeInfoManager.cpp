@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * A class for handing out nodeinfos and ensuring sharing of them as needed.
- */
+
+
+
+
+
+
+
+
 
 #include "nsNodeInfoManager.h"
 
@@ -29,6 +29,7 @@
 #include "nsCCUncollectableMarker.h"
 #include "nsNameSpaceManager.h"
 #include "nsDocument.h"
+#include "nsWindowSizes.h"
 #include "NullPrincipal.h"
 
 using namespace mozilla;
@@ -138,7 +139,7 @@ nsNodeInfoManager::~nsNodeInfoManager()
   if (mNodeInfoHash)
     PL_HashTableDestroy(mNodeInfoHash);
 
-  // Note: mPrincipal may be null here if we never got inited correctly
+  
   mPrincipal = nullptr;
 
   mBindingManager = nullptr;
@@ -206,7 +207,7 @@ nsNodeInfoManager::Init(nsIDocument *aDocument)
   return NS_OK;
 }
 
-// static
+
 int
 nsNodeInfoManager::DropNodeInfoDocument(PLHashEntry *he, int hashIndex, void *arg)
 {
@@ -221,7 +222,7 @@ nsNodeInfoManager::DropDocumentReference()
     mBindingManager->DropDocumentReference();
   }
 
-  // This is probably not needed anymore.
+  
   PL_HashTableEnumerateEntries(mNodeInfoHash, DropNodeInfoDocument, nullptr);
 
   NS_ASSERTION(!mNonDocumentNodeInfos, "Shouldn't have non-document nodeinfos!");
@@ -232,7 +233,7 @@ nsNodeInfoManager::DropDocumentReference()
 already_AddRefed<mozilla::dom::NodeInfo>
 nsNodeInfoManager::GetNodeInfo(nsAtom *aName, nsAtom *aPrefix,
                                int32_t aNamespaceID, uint16_t aNodeType,
-                               nsAtom* aExtraName /* = nullptr */)
+                               nsAtom* aExtraName )
 {
   CheckValidNodeInfo(aNodeType, aName, aNamespaceID, aExtraName);
 
@@ -262,8 +263,8 @@ nsNodeInfoManager::GetNodeInfo(nsAtom *aName, nsAtom *aPrefix,
     PL_HashTableAdd(mNodeInfoHash, &newNodeInfo->mInner, newNodeInfo);
   MOZ_ASSERT(he, "PL_HashTableAdd() failed");
 
-  // Have to do the swap thing, because already_AddRefed<nsNodeInfo>
-  // doesn't cast to already_AddRefed<mozilla::dom::NodeInfo>
+  
+  
   ++mNonDocumentNodeInfos;
   if (mNonDocumentNodeInfos == 1) {
     NS_IF_ADDREF(mDocument);
@@ -355,7 +356,7 @@ nsNodeInfoManager::GetTextNodeInfo()
   if (!mTextNodeInfo) {
     nodeInfo = GetNodeInfo(nsGkAtoms::textTagName, nullptr, kNameSpaceID_None,
                            nsINode::TEXT_NODE, nullptr);
-    // Hold a weak ref; the nodeinfo will let us know when it goes away
+    
     mTextNodeInfo = nodeInfo;
   } else {
     nodeInfo = mTextNodeInfo;
@@ -373,7 +374,7 @@ nsNodeInfoManager::GetCommentNodeInfo()
     nodeInfo = GetNodeInfo(nsGkAtoms::commentTagName, nullptr,
                            kNameSpaceID_None, nsINode::COMMENT_NODE,
                            nullptr);
-    // Hold a weak ref; the nodeinfo will let us know when it goes away
+    
     mCommentNodeInfo = nodeInfo;
   }
   else {
@@ -393,12 +394,12 @@ nsNodeInfoManager::GetDocumentNodeInfo()
     nodeInfo = GetNodeInfo(nsGkAtoms::documentNodeName, nullptr,
                            kNameSpaceID_None, nsINode::DOCUMENT_NODE,
                            nullptr);
-    // Hold a weak ref; the nodeinfo will let us know when it goes away
+    
     mDocumentNodeInfo = nodeInfo;
 
     --mNonDocumentNodeInfos;
     if (!mNonDocumentNodeInfos) {
-      mDocument->Release(); // Don't set mDocument to null!
+      mDocument->Release(); 
     }
   }
   else {
@@ -434,12 +435,12 @@ nsNodeInfoManager::RemoveNodeInfo(NodeInfo *aNodeInfo)
   } else {
     if (--mNonDocumentNodeInfos == 0) {
       if (mDocument) {
-        // Note, whoever calls this method should keep NodeInfoManager alive,
-        // even if mDocument gets deleted.
+        
+        
         mDocument->Release();
       }
     }
-    // Drop weak reference if needed
+    
     if (aNodeInfo == mTextNodeInfo) {
       mTextNodeInfo = nullptr;
     }
@@ -465,8 +466,8 @@ nsNodeInfoManager::RemoveNodeInfo(NodeInfo *aNodeInfo)
 bool
 nsNodeInfoManager::InternalSVGEnabled()
 {
-  // If the svg.disabled pref. is true, convert all SVG nodes into
-  // disabled SVG nodes by swapping the namespace.
+  
+  
   nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
   nsCOMPtr<nsILoadInfo> loadInfo;
   bool SVGEnabled = false;
@@ -475,7 +476,7 @@ nsNodeInfoManager::InternalSVGEnabled()
     SVGEnabled = true;
   } else {
     nsCOMPtr<nsIChannel> channel = mDocument->GetChannel();
-    // We don't have a channel for SVGs constructed inside a SVG script
+    
     if (channel) {
       loadInfo = channel->GetLoadInfo();
     }
@@ -496,11 +497,26 @@ nsNodeInfoManager::InternalSVGEnabled()
 bool
 nsNodeInfoManager::InternalMathMLEnabled()
 {
-  // If the mathml.disabled pref. is true, convert all MathML nodes into
-  // disabled MathML nodes by swapping the namespace.
+  
+  
   nsNameSpaceManager* nsmgr = nsNameSpaceManager::GetInstance();
   bool conclusion = ((nsmgr && !nsmgr->mMathMLDisabled) ||
                      nsContentUtils::IsSystemPrincipal(mPrincipal));
   mMathMLEnabled = conclusion ? eTriTrue : eTriFalse;
   return conclusion;
+}
+
+void
+nsNodeInfoManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const
+{
+  aSizes.mDOMOtherSize += aSizes.mState.mMallocSizeOf(this);
+
+  if (mBindingManager) {
+    aSizes.mBindingsSize +=
+      mBindingManager->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  }
+
+  
+  
+  
 }
