@@ -1007,7 +1007,7 @@ class Marionette(object):
         application.
 
         Duplicate entries in `shutdown_flags` are removed, and
-        `"eAttemptQuit"` is added if no other `*Quit` flags are given.
+        `"eForceQuit"` is added if no other `*Quit` flags are given.
         This provides backwards compatible behaviour with earlier
         Firefoxen.
 
@@ -1015,7 +1015,7 @@ class Marionette(object):
         Possible flag values are listed at http://mzl.la/1X0JZsC.
 
         :param shutdown_flags: Optional additional quit masks to include.
-            Duplicates are removed, and `"eAttemptQuit"` is added if no
+            Duplicates are removed, and `"eForceQuit"` is added if no
             flags ending with `"Quit"` are present.
 
         :throws InvalidArgumentException: If there are multiple
@@ -1033,7 +1033,7 @@ class Marionette(object):
 
         
         if not any(flag.endswith("Quit") for flag in flags):
-            flags = flags | set(("eAttemptQuit",))
+            flags = flags | set(("eForceQuit",))
 
         
         
