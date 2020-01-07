@@ -49,22 +49,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 const CHOOSE_HOW_MANY_SWITCHES_LO = 1;
 const CHOOSE_HOW_MANY_SWITCHES_HI = 2;
-
-const NUM_MULTIPLE_QUERIES        = 2;
 
 
 
@@ -659,8 +645,6 @@ function queryObjsEqual(aSwitches, aObj1, aObj2) {
 
 function runQuerySequences(aHowManyLo, aHowManyHi) {
   var allSwitches = querySwitches.concat(queryOptionSwitches);
-  var prevQueries = [];
-  var prevOpts = [];
 
   
   for (let howMany = aHowManyLo; howMany <= aHowManyHi; howMany++) {
@@ -696,21 +680,7 @@ function runQuerySequences(aHowManyLo, aHowManyHi) {
         for (let i = 0; i < runSet.length; i++) {
           runSet[i](query, opts);
         }
-        serializeDeserialize([query], opts);
-
-        
-        prevQueries.push(query);
-        prevOpts.push(opts);
-        if (prevQueries.length >= NUM_MULTIPLE_QUERIES) {
-          
-          
-          
-          for (let i = 0; i < prevOpts.length; i++) {
-            serializeDeserialize(prevQueries, prevOpts[i]);
-          }
-          prevQueries.shift();
-          prevOpts.shift();
-        }
+        serializeDeserialize(query, opts);
       });
     });
   }
@@ -728,37 +698,15 @@ function runQuerySequences(aHowManyLo, aHowManyHi) {
 
 
 
-function serializeDeserialize(aQueryArr, aQueryOptions) {
-  var queryStr = PlacesUtils.history.queriesToQueryString(aQueryArr,
-                                                        aQueryArr.length,
-                                                        aQueryOptions);
+function serializeDeserialize(aQuery, aQueryOptions) {
+  let queryStr = PlacesUtils.history.queryToQueryString(aQuery, aQueryOptions);
   print("  " + queryStr);
-  var queryArr2 = {};
-  var opts2 = {};
-  PlacesUtils.history.queryStringToQueries(queryStr, queryArr2, {}, opts2);
-  queryArr2 = queryArr2.value;
+  let query2 = {}, opts2 = {};
+  PlacesUtils.history.queryStringToQuery(queryStr, query2, opts2);
+  query2 = query2.value;
   opts2 = opts2.value;
 
-  
-  Assert.equal(aQueryArr.length, queryArr2.length);
-
-  
-  
-  
-  
-  
-  
-  
-  for (let i = 0; i < aQueryArr.length; i++) {
-    let j = 0;
-    for (; j < queryArr2.length; j++) {
-      if (queryObjsEqual(querySwitches, aQueryArr[i], queryArr2[j]))
-        break;
-    }
-    if (j < queryArr2.length)
-      queryArr2.splice(j, 1);
-  }
-  Assert.equal(queryArr2.length, 0);
+  Assert.ok(queryObjsEqual(querySwitches, aQuery, query2));
 
   
   Assert.ok(queryObjsEqual(queryOptionSwitches, aQueryOptions, opts2));

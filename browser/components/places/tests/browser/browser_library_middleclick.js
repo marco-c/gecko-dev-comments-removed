@@ -141,7 +141,7 @@ gTests.push({
     
     
     query.searchTerms = "about:";
-    var queryString = hs.queriesToQueryString([query], 1, options);
+    var queryString = hs.queryToQueryString(query, options);
     this._query = await PlacesUtils.bookmarks.insert({
       index: 0, 
       parentGuid: PlacesUtils.bookmarks.unfiledGuid,

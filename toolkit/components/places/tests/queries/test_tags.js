@@ -733,7 +733,7 @@ function queryResultsAre(aResultRoot, aExpectedURIs) {
 
 
 function queryURI(aQuery, aQueryOpts) {
-  return PlacesUtils.history.queriesToQueryString([aQuery], 1, aQueryOpts);
+  return PlacesUtils.history.queryToQueryString(aQuery, aQueryOpts);
 }
 
 

@@ -4,37 +4,25 @@
 
 
 
-
-
-try {
-  var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(Ci.nsINavHistoryService);
-} catch (ex) {
-  do_throw("Could not get history service\n");
-}
-
-
 function run_test() {
   
-  
 
-  const NHQO = Ci.nsINavHistoryQueryOptions;
   
-  var query = histsvc.getNewQuery();
+  let query = PlacesUtils.history.getNewQuery();
+  let options = PlacesUtils.history.getNewQueryOptions();
   query.setFolders([PlacesUtils.bookmarks.placesRoot], 1);
-  Assert.equal(histsvc.queriesToQueryString([query], 1, histsvc.getNewQueryOptions()),
+  Assert.equal(PlacesUtils.history.queryToQueryString(query, options),
                "place:folder=PLACES_ROOT");
 
   
-  var options = histsvc.getNewQueryOptions();
   options.sortingAnnotation = "test anno";
-  options.sortingMode = NHQO.SORT_BY_ANNOTATION_DESCENDING;
+  options.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_DESCENDING;
   var placeURI =
-    "place:folder=PLACES_ROOT&sort=" + NHQO.SORT_BY_ANNOTATION_DESCENDING +
+    "place:folder=PLACES_ROOT&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_DESCENDING +
     "&sortingAnnotation=test%20anno";
-  Assert.equal(histsvc.queriesToQueryString([query], 1, options),
-               placeURI);
+  Assert.equal(PlacesUtils.history.queryToQueryString(query, options), placeURI);
   options = {};
-  histsvc.queryStringToQueries(placeURI, { }, {}, options);
+  PlacesUtils.history.queryStringToQuery(placeURI, {}, options);
   Assert.equal(options.value.sortingAnnotation, "test anno");
-  Assert.equal(options.value.sortingMode, NHQO.SORT_BY_ANNOTATION_DESCENDING);
+  Assert.equal(options.value.sortingMode, Ci.nsINavHistoryQueryOptions.SORT_BY_ANNOTATION_DESCENDING);
 }
