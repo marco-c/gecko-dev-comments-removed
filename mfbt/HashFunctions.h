@@ -210,14 +210,27 @@ HashGeneric(Args... aArgs)
 namespace detail {
 
 template<typename T>
-constexpr uint32_t
+uint32_t
 HashUntilZero(const T* aStr)
 {
   uint32_t hash = 0;
-  for (; T c = *aStr; aStr++) {
+  for (T c; (c = *aStr); aStr++) {
     hash = AddToHash(hash, c);
   }
   return hash;
+}
+
+
+
+
+
+template<typename T>
+constexpr uint32_t
+ConstExprHashUntilZero(const T* aStr, uint32_t aHash)
+{
+  return !*aStr
+       ? aHash
+       : ConstExprHashUntilZero(aStr + 1, AddToHash(aHash, *aStr));
 }
 
 template<typename T>
@@ -258,13 +271,25 @@ HashString(const unsigned char* aStr, size_t aLength)
   return detail::HashKnownLength(aStr, aLength);
 }
 
+MOZ_MUST_USE inline uint32_t
+HashString(const char16_t* aStr)
+{
+  return detail::HashUntilZero(aStr);
+}
+
+
+
+
+
+
+
 
 
 
 MOZ_MUST_USE constexpr uint32_t
-HashString(const char16_t* aStr)
+ConstExprHashString(const char16_t* aStr)
 {
-  return detail::HashUntilZero(aStr);
+  return detail::ConstExprHashUntilZero(aStr, 0);
 }
 
 MOZ_MUST_USE inline uint32_t
