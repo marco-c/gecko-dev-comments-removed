@@ -101,6 +101,11 @@ add_task(async function test_tabs_showhide() {
   SessionStore.setBrowserState(JSON.stringify(sessData));
   await restored;
 
+  for (let win of BrowserWindowIterator()) {
+    let allTabsButton = win.document.getElementById("alltabs-button");
+    is(getComputedStyle(allTabsButton).visibility, "collapse", "The all tabs button is hidden");
+  }
+
   
   
   extension.sendMessage("hideall");
@@ -124,6 +129,9 @@ add_task(async function test_tabs_showhide() {
       is(id, extension.id, "tab hiddenBy value is correct");
       await TabStateFlusher.flush(tabs[i].linkedBrowser);
     }
+
+    let allTabsButton = win.document.getElementById("alltabs-button");
+    is(getComputedStyle(allTabsButton).visibility, "visible", "The all tabs button is visible");
   }
 
   
