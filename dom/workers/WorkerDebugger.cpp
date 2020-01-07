@@ -103,8 +103,8 @@ private:
 
     ErrorResult rv;
     JSAutoCompartment ac(aCx, global);
-    scriptloader::LoadMainScript(aWorkerPrivate, mScriptURL,
-                                 DebuggerScript, rv);
+    workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL,
+                                    DebuggerScript, rv);
     rv.WouldReportJSException();
     
     

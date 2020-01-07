@@ -23,19 +23,18 @@ class ErrorResult;
 
 namespace dom {
 
+namespace workers {
+class WorkerPrivate;
+}
+
 struct WorkerLoadInfo;
-
-} 
-} 
-
-BEGIN_WORKERS_NAMESPACE
 
 enum WorkerScriptType {
   WorkerScript,
   DebuggerScript
 };
 
-namespace scriptloader {
+namespace workerinternals {
 
 nsresult
 ChannelFromScriptURLMainThread(nsIPrincipal* aPrincipal,
@@ -50,25 +49,26 @@ ChannelFromScriptURLMainThread(nsIPrincipal* aPrincipal,
 
 nsresult
 ChannelFromScriptURLWorkerThread(JSContext* aCx,
-                                 WorkerPrivate* aParent,
+                                 workers::WorkerPrivate* aParent,
                                  const nsAString& aScriptURL,
                                  WorkerLoadInfo& aLoadInfo);
 
 void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
                      const nsAString& aScriptURL);
 
-void LoadMainScript(WorkerPrivate* aWorkerPrivate,
+void LoadMainScript(workers::WorkerPrivate* aWorkerPrivate,
                     const nsAString& aScriptURL,
                     WorkerScriptType aWorkerScriptType,
                     ErrorResult& aRv);
 
-void Load(WorkerPrivate* aWorkerPrivate,
+void Load(workers::WorkerPrivate* aWorkerPrivate,
           const nsTArray<nsString>& aScriptURLs,
           WorkerScriptType aWorkerScriptType,
-          mozilla::ErrorResult& aRv);
+          ErrorResult& aRv);
 
 } 
 
-END_WORKERS_NAMESPACE
+} 
+} 
 
 #endif 
