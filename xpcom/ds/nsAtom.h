@@ -38,12 +38,6 @@ public:
     return Equals(aString.BeginReading(), aString.Length());
   }
 
-  void SetKind(AtomKind aKind)
-  {
-    mKind = static_cast<uint32_t>(aKind);
-    MOZ_ASSERT(Kind() == aKind);
-  }
-
   AtomKind Kind() const { return static_cast<AtomKind>(mKind); }
 
   bool IsDynamicAtom() const { return Kind() == AtomKind::DynamicAtom; }
@@ -97,9 +91,9 @@ protected:
 
   ~nsAtom();
 
-  uint32_t mLength: 30;
-  uint32_t mKind: 2; 
-  uint32_t mHash;
+  const uint32_t mLength:30;
+  const uint32_t mKind:2; 
+  const uint32_t mHash;
   
   
   
