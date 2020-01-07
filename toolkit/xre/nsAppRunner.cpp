@@ -271,12 +271,7 @@ nsString gAbsoluteArgv0Path;
 #include <fontconfig/fontconfig.h>
 #endif
 #include "BinaryPath.h"
-#ifndef MOZ_BUILDID
-
-
-
 #include "buildid.h"
-#endif
 
 #ifdef MOZ_LINKER
 extern "C" MFBT_API bool IsSignalHandlingBroken();
