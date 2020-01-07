@@ -43,6 +43,7 @@
 #include "mozilla/dom/WakeLock.h"
 #include "mozilla/dom/power/PowerManagerService.h"
 #include "nsIDocShellTreeOwner.h"
+#include "nsIDocumentLoader.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIPermissionManager.h"
 #include "nsIScriptContext.h"
@@ -80,7 +81,6 @@
 #include "nsContentCID.h"
 #include "nsLayoutStatics.h"
 #include "nsCCUncollectableMarker.h"
-#include "mozilla/dom/workers/ServiceWorkerManager.h"
 #include "mozilla/dom/workers/Workers.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsJSPrincipals.h"
@@ -2351,20 +2351,7 @@ nsGlobalWindowInner::ShouldReportForServiceWorkerScope(const nsAString& aScope)
 
   topInner->ShouldReportForServiceWorkerScopeInternal(NS_ConvertUTF16toUTF8(aScope),
                                                       &result);
-  if (result) {
-    return true;
-  }
-
-  RefPtr<workers::ServiceWorkerManager> swm =
-    workers::ServiceWorkerManager::GetInstance();
-  NS_ENSURE_TRUE(swm, false);
-
-  bool aResult = false;
-  nsresult rv = swm->ShouldReportToWindow(topOuter,
-                                          NS_ConvertUTF16toUTF8(aScope), &aResult);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  return aResult;
+  return result;
 }
 
 nsGlobalWindowInner::CallState
@@ -2387,6 +2374,49 @@ nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(const nsACString&
   if (mClientSource && mClientSource->CalledRegisterForServiceWorkerScope(aScope)) {
     *aResultOut = true;
     return CallState::Stop;
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIDocumentLoader> loader(do_QueryInterface(GetDocShell()));
+  if (loader) {
+    nsCOMPtr<nsILoadGroup> loadgroup;
+    Unused << loader->GetLoadGroup(getter_AddRefs(loadgroup));
+    if (loadgroup) {
+      nsCOMPtr<nsISimpleEnumerator> iter;
+      Unused << loadgroup->GetRequests(getter_AddRefs(iter));
+      if (iter) {
+        nsCOMPtr<nsISupports> tmp;
+        bool hasMore = true;
+        
+        while (NS_SUCCEEDED(iter->HasMoreElements(&hasMore)) && hasMore) {
+          iter->GetNext(getter_AddRefs(tmp));
+          nsCOMPtr<nsIChannel> loadingChannel(do_QueryInterface(tmp));
+          
+          
+          
+          if (!loadingChannel ||
+              !nsContentUtils::IsNonSubresourceRequest(loadingChannel)) {
+            continue;
+          }
+          nsCOMPtr<nsIURI> loadingURL;
+          Unused << loadingChannel->GetURI(getter_AddRefs(loadingURL));
+          if (!loadingURL) {
+            continue;
+          }
+          nsAutoCString loadingSpec;
+          Unused << loadingURL->GetSpec(loadingSpec);
+          
+          
+          if (StringBeginsWith(loadingSpec, aScope)) {
+            *aResultOut = true;
+            return CallState::Stop;
+          }
+        }
+      }
+    }
   }
 
   
