@@ -736,6 +736,20 @@ class MOZ_STACK_CLASS MaybeAutoWritableJitCode
     }
 };
 
+
+
+
+void
+EnsureAsyncInterrupt(JSContext* cx);
+
+
+bool
+HaveAsyncInterrupt();
+
+
+extern void
+InterruptRunningCode(JSContext* cx);
+
 } 
 } 
 

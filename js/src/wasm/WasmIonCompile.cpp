@@ -251,8 +251,6 @@ class FunctionCompiler
                 return false;
         }
 
-        addInterruptCheck();
-
         return true;
     }
 
@@ -1036,7 +1034,6 @@ class FunctionCompiler
     void addInterruptCheck()
     {
         
-        MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
     }
 
     MDefinition* extractSimdElement(unsigned lane, MDefinition* base, MIRType type, SimdSign sign)

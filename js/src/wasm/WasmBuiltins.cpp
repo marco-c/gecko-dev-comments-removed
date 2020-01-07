@@ -69,28 +69,6 @@ CallingActivation()
     return act->asJit();
 }
 
-static void*
-WasmHandleExecutionInterrupt()
-{
-    JitActivation* activation = CallingActivation();
-    MOZ_ASSERT(activation->isWasmInterrupted());
-
-    if (!CheckForInterrupt(activation->cx())) {
-        
-        
-        
-        
-        
-        return nullptr;
-    }
-
-    
-    
-    void* resumePC = activation->wasmInterruptResumePC();
-    activation->finishWasmInterrupt();
-    return resumePC;
-}
-
 static bool
 WasmHandleDebugTrap()
 {
@@ -219,7 +197,6 @@ wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter)
         frame->leave(cx);
     }
 
-    MOZ_ASSERT(!cx->activation()->asJit()->isWasmInterrupted(), "unwinding clears the interrupt");
     MOZ_ASSERT(!cx->activation()->asJit()->isWasmTrapping(), "unwinding clears the trapping state");
 
     return iter.unwoundAddressOfReturnAddress();
@@ -287,7 +264,7 @@ WasmOldReportTrap(int32_t trapIndex)
 static void
 WasmReportTrap()
 {
-    Trap trap = TlsContext.get()->runtime()->wasmTrapData().trap;
+    Trap trap = TlsContext.get()->runtime()->wasmTrapData->trap;
     WasmOldReportTrap(int32_t(trap));
 }
 
@@ -511,9 +488,6 @@ void*
 wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType)
 {
     switch (imm) {
-      case SymbolicAddress::HandleExecutionInterrupt:
-        *abiType = Args_General0;
-        return FuncCast(WasmHandleExecutionInterrupt, *abiType);
       case SymbolicAddress::HandleDebugTrap:
         *abiType = Args_General0;
         return FuncCast(WasmHandleDebugTrap, *abiType);
@@ -692,7 +666,6 @@ wasm::NeedsBuiltinThunk(SymbolicAddress sym)
     
     
     switch (sym) {
-      case SymbolicAddress::HandleExecutionInterrupt: 
       case SymbolicAddress::HandleDebugTrap:          
       case SymbolicAddress::HandleThrow:              
       case SymbolicAddress::ReportTrap:               
