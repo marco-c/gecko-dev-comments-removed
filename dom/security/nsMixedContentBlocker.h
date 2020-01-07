@@ -69,45 +69,11 @@ public:
                              int16_t* aDecision);
   static void AccumulateMixedContentHSTS(nsIURI* aURI,
                                          bool aActive,
-                                         bool aHasHSTSPriming,
                                          const OriginAttributes& aOriginAttributes);
-  
-
-
-
-
-
-
-
-  static nsresult MarkLoadInfoForPriming(nsIURI* aURI,
-                                         nsISupports* aRequestingContext,
-                                         nsILoadInfo* aLoadInfo);
-
-  
-
-
-
-
-
-
-
-
-
-  static nsresult GetHSTSPrimingFromRequestingContext(nsIURI* aURI,
-                                                      nsISupports* aRequestingContext,
-                                                      bool* aSendPrimingRequest,
-                                                      bool* aMixedContentWouldBlock);
-
 
   static bool sBlockMixedScript;
   static bool sBlockMixedObjectSubrequest;
   static bool sBlockMixedDisplay;
-  
-  static bool sUseHSTS;
-  
-  static bool sSendHSTSPriming;
-  
-  static uint32_t sHSTSPrimingCacheTimeout;
 };
 
 #endif 

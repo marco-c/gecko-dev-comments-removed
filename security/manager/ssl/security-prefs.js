@@ -115,11 +115,7 @@ pref("security.pki.certificate_transparency.mode", 0);
 
 
 pref("security.webauth.u2f", false);
-#ifdef RELEASE_OR_BETA
 pref("security.webauth.webauthn", false);
-#else
-pref("security.webauth.webauthn", true);
-#endif
 
 
 pref("security.webauth.webauthn_enable_softtoken", false);
@@ -133,22 +129,3 @@ pref("security.ssl.errorReporting.automatic", false);
 
 
 pref("security.cert_pinning.max_max_age_seconds", 5184000);
-
-
-
-
-
-
-pref("security.mixed_content.send_hsts_priming", false);
-pref("security.mixed_content.use_hsts", false);
-#ifdef EARLY_BETA_OR_EARLIER
-
-
-pref("security.mixed_content.send_hsts_priming", true);
-pref("security.mixed_content.use_hsts", true);
-#endif
-
-pref ("security.mixed_content.hsts_priming_cache_timeout", 604800);
-
-
-pref ("security.mixed_content.hsts_priming_request_timeout", 2000);

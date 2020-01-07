@@ -450,10 +450,6 @@ with modules["NETWORK"]:
     
     errors["NS_ERROR_INTERCEPTION_FAILED"] = FAILURE(100)
 
-    
-    
-    errors["NS_ERROR_HSTS_PRIMING_TIMEOUT"] = FAILURE(110)
-
 
 
 

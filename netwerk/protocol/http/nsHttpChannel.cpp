@@ -104,7 +104,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "CacheControlParser.h"
 #include "nsMixedContentBlocker.h"
-#include "HSTSPrimerListener.h"
 #include "CacheStorageService.h"
 #include "HttpChannelParent.h"
 #include "InterceptedHttpChannel.h"
@@ -590,7 +589,7 @@ nsHttpChannel::ConnectOnTailUnblock()
             
             
             mWaitingForProxy = false;
-            return TryHSTSPriming();
+            return ContinueConnect();
         }
 
         return NS_OK;
@@ -628,70 +627,6 @@ nsHttpChannel::ConnectOnTailUnblock()
     }
 
     return TriggerNetwork();
-}
-
-nsresult
-nsHttpChannel::TryHSTSPriming()
-{
-    bool isHttpScheme;
-    nsresult rv = mURI->SchemeIs("http", &isHttpScheme);
-    NS_ENSURE_SUCCESS(rv, rv);
-    bool isHttpsScheme;
-    rv = mURI->SchemeIs("https", &isHttpsScheme);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if ((isHttpScheme || isHttpsScheme) && mLoadInfo) {
-        if (mLoadInfo->GetIsHSTSPriming()) {
-            
-            return ContinueConnect();
-        }
-
-        
-        bool requireHSTSPriming =
-            mLoadInfo->GetForceHSTSPriming();
-
-        if (requireHSTSPriming &&
-                nsMixedContentBlocker::sSendHSTSPriming) {
-            if (!isHttpsScheme) {
-                rv = HSTSPrimingListener::StartHSTSPriming(this, this);
-
-                if (NS_FAILED(rv)) {
-                    CloseCacheEntry(false);
-                    Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                                      HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_ERROR);
-                    return rv;
-                }
-
-                return NS_OK;
-            }
-
-            if (!mLoadInfo->GetIsHSTSPrimingUpgrade()) {
-                
-                
-                LOG(("HSTS Priming: request already upgraded"));
-                Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                              HSTSPrimingResult::eHSTS_PRIMING_ALREADY_UPGRADED);
-
-                
-                Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                              HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_ALREADY_UPGRADED);
-            }
-
-            mLoadInfo->ClearHSTSPriming();
-            return ContinueConnect();
-        }
-
-        if (!mLoadInfo->GetIsHSTSPrimingUpgrade()) {
-            
-            Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                                  HSTSPrimingRequest::eHSTS_PRIMING_NO_REQUEST);
-        }
-    } else {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                          HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_NO_LOAD_INFO);
-    }
-
-    return ContinueConnect();
 }
 
 
@@ -761,8 +696,6 @@ nsHttpChannel::ContinueConnect()
         return NS_OK;
     }
 
-    
-    
     
     
     if (!mIsCorsPreflightDone && mRequireCORSPreflight) {
@@ -1898,9 +1831,6 @@ nsHttpChannel::ProcessSingleSecurityHeader(uint32_t aType,
         NS_GetOriginAttributes(this, originAttributes);
         uint32_t failureResult;
         uint32_t headerSource = nsISiteSecurityService::SOURCE_ORGANIC_REQUEST;
-        if (mLoadInfo && mLoadInfo->GetIsHSTSPriming()) {
-            headerSource = nsISiteSecurityService::SOURCE_HSTS_PRIMING;
-        }
         rv = sss->ProcessHeader(aType, mURI, securityHeader, aSSLStatus,
                                 aFlags, headerSource, originAttributes,
                                 nullptr, nullptr, &failureResult);
@@ -2300,9 +2230,18 @@ nsHttpChannel::ProcessResponse()
                                                     lci, mIsTrackingResource);
     }
 
-    
-    if (mTransaction && mTransaction->ProxyConnectFailed() && httpStatus != 407) {
-        return ProcessFailedProxyConnect(httpStatus);
+    if (mTransaction && mTransaction->ProxyConnectFailed()) {
+        
+        if (httpStatus != 407) {
+            return ProcessFailedProxyConnect(httpStatus);
+        }
+        
+        
+    } else {
+        
+        
+        DebugOnly<nsresult> rv = ProcessSecurityHeaders();
+        MOZ_ASSERT(NS_SUCCEEDED(rv), "ProcessSTSHeader failed, continuing load.");
     }
 
     MOZ_ASSERT(!mCachedContentIsValid || mRaceCacheWithNetwork,
@@ -2358,12 +2297,6 @@ nsHttpChannel::ContinueProcessResponse1()
         if (NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
             SetCookie(cookie.get());
         }
-
-        
-        
-        DebugOnly<nsresult> rv = ProcessSecurityHeaders();
-        MOZ_ASSERT(NS_SUCCEEDED(rv), "ProcessSTSHeader failed, continuing load.");
-
         if ((httpStatus < 500) && (httpStatus != 421)) {
             ProcessAltService();
         }
@@ -5871,7 +5804,6 @@ NS_INTERFACE_MAP_BEGIN(nsHttpChannel)
     NS_INTERFACE_MAP_ENTRY(nsICorsPreflightCallback)
     NS_INTERFACE_MAP_ENTRY(nsIRaceCacheWithNetwork)
     NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
-    NS_INTERFACE_MAP_ENTRY(nsIHstsPrimingCallback)
     NS_INTERFACE_MAP_ENTRY(nsIChannelWithDivertableParentListener)
     NS_INTERFACE_MAP_ENTRY(nsIRequestTailUnblockCallback)
     
@@ -8664,131 +8596,6 @@ nsHttpChannel::OnPreflightFailed(nsresult aError)
 
 
 
-
-
-
-
-nsresult
-nsHttpChannel::OnHSTSPrimingSucceeded(bool aCached)
-{
-    
-    
-    
-    bool wouldBlock = mLoadInfo->GetMixedContentWouldBlock();
-    
-    
-    mLoadInfo->ClearHSTSPriming();
-
-    if (nsMixedContentBlocker::sUseHSTS) {
-        
-        
-        LOG(("HSTS Priming succeeded, redirecting to HTTPS [this=%p]", this));
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                (aCached) ? HSTSPrimingResult::eHSTS_PRIMING_CACHED_DO_UPGRADE :
-                            HSTSPrimingResult::eHSTS_PRIMING_SUCCEEDED);
-        
-        
-        Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 3);
-        Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 2);
-        mLoadInfo->SetIsHSTSPrimingUpgrade(true);
-        return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
-    }
-
-    
-    if (wouldBlock) {
-        LOG(("HSTS Priming succeeded, blocking for mixed-content [this=%p]",
-                    this));
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                              HSTSPrimingResult::eHSTS_PRIMING_SUCCEEDED_BLOCK);
-        CloseCacheEntry(false);
-        return AsyncAbort(NS_ERROR_CONTENT_BLOCKED);
-    }
-
-    LOG(("HSTS Priming succeeded, loading insecure: [this=%p]", this));
-    Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                          HSTSPrimingResult::eHSTS_PRIMING_SUCCEEDED_HTTP);
-
-    
-    Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
-
-    nsresult rv = ContinueConnect();
-    if (NS_FAILED(rv)) {
-        CloseCacheEntry(false);
-        return AsyncAbort(rv);
-    }
-
-    return NS_OK;
-}
-
-
-
-
-
-nsresult
-nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
-{
-    bool wouldBlock = mLoadInfo->GetMixedContentWouldBlock();
-    
-    
-    mLoadInfo->ClearHSTSPriming();
-
-    LOG(("HSTS Priming Failed [this=%p], %s the load", this,
-                (wouldBlock) ? "blocking" : "allowing"));
-    if (aError == NS_ERROR_HSTS_PRIMING_TIMEOUT) {
-        
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_TIMEOUT_BLOCK :
-                HSTSPrimingResult::eHSTS_PRIMING_TIMEOUT_ACCEPT);
-    } else if (aCached) {
-        
-        
-        
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_CACHED_BLOCK :
-                HSTSPrimingResult::eHSTS_PRIMING_CACHED_NO_UPGRADE);
-    } else {
-        
-        
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                (wouldBlock) ?  HSTSPrimingResult::eHSTS_PRIMING_FAILED_BLOCK :
-                HSTSPrimingResult::eHSTS_PRIMING_FAILED_ACCEPT);
-    }
-
-    
-    
-    nsISiteSecurityService* sss = gHttpHandler->GetSSService();
-    NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
-    OriginAttributes originAttributes;
-    NS_GetOriginAttributes(this, originAttributes);
-    nsresult rv = sss->CacheNegativeHSTSResult(mURI,
-            nsMixedContentBlocker::sHSTSPrimingCacheTimeout, originAttributes);
-    if (NS_FAILED(rv)) {
-        NS_ERROR("nsISiteSecurityService::CacheNegativeHSTSResult failed");
-    }
-
-    
-    if (wouldBlock) {
-        CloseCacheEntry(false);
-        return AsyncAbort(aError);
-    }
-
-    
-    Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
-
-    
-    rv = ContinueConnect();
-    if (NS_FAILED(rv)) {
-        CloseCacheEntry(false);
-        return AsyncAbort(rv);
-    }
-
-    return NS_OK;
-}
-
-
-
-
-
 NS_IMETHODIMP
 nsHttpChannel::MessageDiversionStarted(ADivertableParentChannel *aParentChannel)
 {
@@ -9298,7 +9105,7 @@ nsHttpChannel::TriggerNetwork()
     }
 
     LOG(("  triggering network\n"));
-    return TryHSTSPriming();
+    return ContinueConnect();
 }
 
 nsresult

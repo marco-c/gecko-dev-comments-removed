@@ -19,12 +19,12 @@
 #include "nsIPresShell.h"
 #include "nsIScriptGlobalObject.h"       
 #include "nsIServiceManager.h"
+#include "nsIURI.h"                      
 #include "nsIUUIDGenerator.h"
 #include "nsPIDOMWindow.h"               
 #include "nsPropertyTable.h"             
 #include "nsStringFwd.h"
-#include "nsDataHashtable.h"             
-#include "nsURIHashKey.h"                
+#include "nsTHashtable.h"                
 #include "mozilla/net/ReferrerPolicy.h"  
 #include "nsWeakReference.h"
 #include "mozilla/UseCounter.h"
@@ -192,13 +192,6 @@ enum DocumentFlavor {
   DocumentFlavorHTML, 
   DocumentFlavorSVG, 
   DocumentFlavorPlain, 
-};
-
-
-enum class HSTSPrimingState {
-  eNO_HSTS_PRIMING = 0,    
-  eHSTS_PRIMING_ALLOW = 1, 
-  eHSTS_PRIMING_BLOCK = 2  
 };
 
 
@@ -422,34 +415,6 @@ public:
 
   void SetReferrer(const nsACString& aReferrer) {
     mReferrer = aReferrer;
-  }
-
-  
-
-
-
-  HSTSPrimingState GetHSTSPrimingStateForLocation(nsIURI* aContentLocation) const
-  {
-    HSTSPrimingState state;
-    if (mHSTSPrimingURIList.Get(aContentLocation, &state)) {
-      return state;
-    }
-    return HSTSPrimingState::eNO_HSTS_PRIMING;
-  }
-
-  
-
-
-
-
-  void AddHSTSPrimingLocation(nsIURI* aContentLocation, HSTSPrimingState aState)
-  {
-    mHSTSPrimingURIList.Put(aContentLocation, aState);
-  }
-
-  void ClearHSTSPrimingLocation(nsIURI* aContentLocation)
-  {
-    mHSTSPrimingURIList.Remove(aContentLocation);
   }
 
   
@@ -3339,11 +3304,6 @@ protected:
   bool mUpgradeInsecureRequests;
   bool mUpgradeInsecurePreloads;
 
-  
-  
-  
-  nsDataHashtable<nsURIHashKey, HSTSPrimingState> mHSTSPrimingURIList;
-
   mozilla::WeakPtr<nsDocShell> mDocumentContainer;
 
   NotNull<const Encoding*> mCharacterSet;
@@ -3621,11 +3581,13 @@ protected:
 
   Tri mAllowXULXBL;
 
+#ifdef DEBUG
   
 
 
 
   bool mIsLinkUpdateRegistrationsForbidden;
+#endif
 
   
   

@@ -95,10 +95,6 @@ function testXhrWarn() {
 
   let lastRequest = yield waitForFinishedRequest(XHR_WARN_REQUEST_PREDICATE);
   if (lastRequest.request.method == "HEAD") {
-    
-    
-    is(Services.prefs.getBoolPref("security.mixed_content.send_hsts_priming"),
-        true, "Found HSTS Priming Request");
     lastRequest = yield waitForFinishedRequest(XHR_WARN_REQUEST_PREDICATE);
   }
 

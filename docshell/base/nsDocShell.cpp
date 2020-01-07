@@ -695,7 +695,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
   nsString target;
   nsAutoString srcdoc;
   bool forceAllowDataURI = false;
-  bool originalFrameSrc = false;
   nsCOMPtr<nsIDocShell> sourceDocShell;
   nsCOMPtr<nsIURI> baseURI;
 
@@ -733,7 +732,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
     aLoadInfo->GetSourceDocShell(getter_AddRefs(sourceDocShell));
     aLoadInfo->GetBaseURI(getter_AddRefs(baseURI));
     aLoadInfo->GetForceAllowDataURI(&forceAllowDataURI);
-    aLoadInfo->GetOriginalFrameSrc(&originalFrameSrc);
   }
 
   MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
@@ -999,10 +997,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
   if (forceAllowDataURI) {
     flags |= INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
-  }
-
-  if (originalFrameSrc) {
-    flags |= INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC;
   }
 
   return InternalLoad(aURI,
@@ -5574,7 +5568,8 @@ nsDocShell::GetDevicePixelsPerDesktopPixel(double* aScale)
 NS_IMETHODIMP
 nsDocShell::SetPosition(int32_t aX, int32_t aY)
 {
-  mBounds.MoveTo(aX, aY);
+  mBounds.x = aX;
+  mBounds.y = aY;
 
   if (mContentViewer) {
     NS_ENSURE_SUCCESS(mContentViewer->Move(aX, aY), NS_ERROR_FAILURE);
@@ -5621,7 +5616,10 @@ NS_IMETHODIMP
 nsDocShell::SetPositionAndSize(int32_t aX, int32_t aY, int32_t aWidth,
                                int32_t aHeight, uint32_t aFlags)
 {
-  mBounds.SetRect(aX, aY, aWidth, aHeight);
+  mBounds.x = aX;
+  mBounds.y = aY;
+  mBounds.width = aWidth;
+  mBounds.height = aHeight;
 
   
   nsCOMPtr<nsIContentViewer> viewer = mContentViewer;
@@ -5643,7 +5641,7 @@ nsDocShell::GetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aWidth,
   if (mParentWidget) {
     
     LayoutDeviceIntRect r = mParentWidget->GetClientBounds();
-    SetPositionAndSize(mBounds.X(), mBounds.Y(), r.Width(), r.Height(), 0);
+    SetPositionAndSize(mBounds.x, mBounds.y, r.width, r.height, 0);
   }
 
   
@@ -5666,16 +5664,16 @@ nsDocShell::DoGetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aWidth,
                                  int32_t* aHeight)
 {
   if (aX) {
-    *aX = mBounds.X();
+    *aX = mBounds.x;
   }
   if (aY) {
-    *aY = mBounds.Y();
+    *aY = mBounds.y;
   }
   if (aWidth) {
-    *aWidth = mBounds.Width();
+    *aWidth = mBounds.width;
   }
   if (aHeight) {
-    *aHeight = mBounds.Height();
+    *aHeight = mBounds.height;
   }
 }
 
@@ -9559,27 +9557,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
       return NS_ERROR_CONTENT_BLOCKED;
     }
-
-    
-    
-    
-    nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(requestingContext);
-    
-    
-    
-    if (docShell) {
-      nsIDocument* document = docShell->GetDocument();
-      NS_ENSURE_TRUE(document, NS_OK);
-
-      HSTSPrimingState state = document->GetHSTSPrimingStateForLocation(aURI);
-      if (state == HSTSPrimingState::eHSTS_PRIMING_BLOCK) {
-        
-        
-        
-        document->ClearHSTSPrimingLocation(aURI);
-        return NS_ERROR_CONTENT_BLOCKED;
-      }
-    }
   }
 
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;
@@ -10410,7 +10387,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   rv = DoURILoad(aURI, aOriginalURI, aResultPrincipalURI, aLoadReplace,
                  loadFromExternal,
                  (aFlags & INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI),
-                 (aFlags & INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC),
                  aReferrer,
                  !(aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER),
                  aReferrerPolicy,
@@ -10550,7 +10526,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                       bool aLoadReplace,
                       bool aLoadFromExternal,
                       bool aForceAllowDataURI,
-                      bool aOriginalFrameSrc,
                       nsIURI* aReferrerURI,
                       bool aSendReferrer,
                       uint32_t aReferrerPolicy,
@@ -10732,7 +10707,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   }
   loadInfo->SetLoadTriggeredFromExternal(aLoadFromExternal);
   loadInfo->SetForceAllowDataURI(aForceAllowDataURI);
-  loadInfo->SetOriginalFrameSrcLoad(aOriginalFrameSrc);
 
   
   
