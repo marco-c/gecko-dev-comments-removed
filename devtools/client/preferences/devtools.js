@@ -81,7 +81,6 @@ pref("devtools.gridinspector.gridOutlineMaxRows", 50);
 pref("devtools.gridinspector.showGridAreas", false);
 pref("devtools.gridinspector.showGridLineNumbers", false);
 pref("devtools.gridinspector.showInfiniteLines", false);
-pref("devtools.gridinspector.showNegativeLineNumbers", false);
 
 
 pref("devtools.computed.boxmodel.opened", true);
