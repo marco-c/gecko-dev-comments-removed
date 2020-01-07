@@ -12,7 +12,6 @@ import subprocess
 import tarfile
 import tempfile
 import which
-from subprocess import Popen, PIPE
 from io import BytesIO
 
 from taskgraph.util import docker
@@ -155,9 +154,11 @@ def load_image(url, imageName=None, imageTag=None):
         else:
             imageTag = 'latest'
 
-    docker = None
-    image, tag, layer = None, None, None
-    try:
+    info = {}
+
+    def download_and_modify_image():
+        
+        
         print("Downloading from {}".format(url))
         
         req = get_session().get(url, stream=True)
@@ -169,14 +170,10 @@ def load_image(url, imageName=None, imageTag=None):
             bufsize=zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
 
         
-        docker = Popen(['docker', 'load'], stdin=PIPE)
-        tarout = tarfile.open(mode='w|', fileobj=docker.stdin, format=tarfile.GNU_FORMAT)
-
-        
         for member in tarin:
             
             if not member.isfile():
-                tarout.addfile(member)
+                yield member.tobuf(tarfile.GNU_FORMAT)
                 continue
 
             
@@ -191,11 +188,11 @@ def load_image(url, imageName=None, imageTag=None):
                 
                 if len(repos.keys()) > 1:
                     raise Exception('file contains more than one image')
-                image = repos.keys()[0]
+                info['image'] = image = repos.keys()[0]
                 if len(repos[image].keys()) > 1:
                     raise Exception('file contains more than one tag')
-                tag = repos[image].keys()[0]
-                layer = repos[image][tag]
+                info['tag'] = tag = repos[image].keys()[0]
+                info['layer'] = layer = repos[image][tag]
 
                 
                 data = json.dumps({imageName or image: {imageTag or tag: layer}})
@@ -203,17 +200,25 @@ def load_image(url, imageName=None, imageTag=None):
                 member.size = len(data)
 
             
-            tarout.addfile(member, reader)
+            yield member.tobuf(tarfile.GNU_FORMAT)
+            
+            remaining = member.size
+            while remaining:
+                length = min(remaining, zstd.DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE)
+                buf = reader.read(length)
+                remaining -= len(buf)
+                yield buf
+            
+            remainder = member.size % 512
+            if remainder:
+                yield '\0' * (512 - remainder)
+
             reader.close()
-        tarout.close()
-    finally:
-        if docker:
-            docker.stdin.close()
-        if docker and docker.wait() != 0:
-            raise Exception('loading into docker failed')
+
+    docker.post_to_docker(download_and_modify_image(), '/images/load', quiet=0)
 
     
-    if not image or not tag or not layer:
+    if not info.get('image') or not info.get('tag') or not info.get('layer'):
         raise Exception('No repositories file found!')
 
-    return {'image': image, 'tag': tag, 'layer': layer}
+    return info
