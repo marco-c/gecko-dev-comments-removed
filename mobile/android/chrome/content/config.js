@@ -606,8 +606,7 @@ Pref.prototype = {
       this.li.setAttribute("contextmenu", "prefs-context-menu");
 
       
-      
-      this.li.innerHTML =
+      this.li.unsafeSetInnerHTML(
         "<div class='pref-name' " +
             "onclick='AboutConfig.selectOrToggleBoolPref(event);'>" +
             this.escapeHTML(this.name) +
@@ -631,7 +630,7 @@ Pref.prototype = {
           "<div class='pref-button down' " +
             "onclick='AboutConfig.incrOrDecrIntPref(event, -1);'>" +
           "</div>" +
-        "</div>";
+        "</div>");
 
       
       setTimeout(this._valueSetup.bind(this), INNERHTML_VALUE_DELAY);
