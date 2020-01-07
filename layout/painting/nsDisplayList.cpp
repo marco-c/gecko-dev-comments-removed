@@ -681,7 +681,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
   }
 
   MOZ_ASSERT(nsCSSProps::PropHasFlags(aProperty,
-                                      CSSPropFlags::CanAnimateOnCompositor),
+                                      CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
              "inconsistent property flags");
 
   
@@ -814,7 +814,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
                                                          nsCSSPropertyID aProperty)
 {
   MOZ_ASSERT(nsCSSProps::PropHasFlags(aProperty,
-                                      CSSPropFlags::CanAnimateOnCompositor),
+                                      CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
              "inconsistent property flags");
 
   

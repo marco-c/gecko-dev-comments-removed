@@ -34,6 +34,27 @@ using namespace mozilla;
 typedef nsCSSProps::KTableEntry KTableEntry;
 
 
+
+
+
+#define CSS_PROP(name_, id_, method_, flags_, pref_, ...) \
+  static_assert(!((flags_) & CSS_PROPERTY_ENABLED_MASK) || pref_[0], \
+                "Internal-only property '" #name_ "' should be wrapped in " \
+                "#ifndef CSS_PROP_LIST_EXCLUDE_INTERNAL");
+#define CSS_PROP_LIST_EXCLUDE_INTERNAL
+#include "nsCSSPropList.h"
+#undef CSS_PROP_LIST_EXCLUDE_INTERNAL
+#undef CSS_PROP
+
+#define CSS_PROP(name_, id_, method_, flags_, pref_, ...) \
+  static_assert(!((flags_) & CSS_PROPERTY_ENABLED_IN_CHROME) || \
+                ((flags_) & CSS_PROPERTY_ENABLED_IN_UA_SHEETS), \
+                "Property '" #name_ "' is enabled in chrome, so it should " \
+                "also be enabled in UA sheets");
+#include "nsCSSPropList.h"
+#undef CSS_PROP
+
+
 extern const char* const kCSSRawProperties[];
 
 
@@ -130,31 +151,32 @@ CheckServoCSSPropList()
 {
   struct PropData {
     nsCSSPropertyID mID;
+    uint32_t mFlags;
     const char* mPref;
   };
   const PropData sGeckoProps[eCSSProperty_COUNT_with_aliases] = {
-#define CSS_PROP(name_, id_, method_, pref_, ...) \
-    { eCSSProperty_##id_, pref_ },
+#define CSS_PROP(name_, id_, method_, flags_, pref_, ...) \
+    { eCSSProperty_##id_, flags_, pref_ },
 #include "nsCSSPropList.h"
 #undef CSS_PROP
 
-#define CSS_PROP_SHORTHAND(name_, id_, method_, pref_) \
-    { eCSSProperty_##id_, pref_ },
+#define CSS_PROP_SHORTHAND(name_, id_, method_, flags_, pref_) \
+    { eCSSProperty_##id_, flags_, pref_ },
 #include "nsCSSPropList.h"
 #undef CSS_PROP_SHORTHAND
 
 #define CSS_PROP_ALIAS(aliasname_, aliasid_, propid_, aliasmethod_, pref_) \
-    { eCSSPropertyAlias_##aliasid_, pref_ },
+    { eCSSPropertyAlias_##aliasid_, 0, pref_ },
 #include "nsCSSPropAliasList.h"
 #undef CSS_PROP_ALIAS
   };
   const PropData sServoProps[eCSSProperty_COUNT_with_aliases] = {
 #define CSS_PROP_LONGHAND(name_, id_, method_, flags_, pref_) \
-    { eCSSProperty_##id_, pref_ },
+    { eCSSProperty_##id_, flags_, pref_ },
 #define CSS_PROP_SHORTHAND(name_, id_, method_, flags_, pref_) \
-    { eCSSProperty_##id_, pref_ },
+    { eCSSProperty_##id_, flags_, pref_ },
 #define CSS_PROP_ALIAS(name_, aliasid_, id_, method_, pref_) \
-    { eCSSPropertyAlias_##aliasid_, pref_ },
+    { eCSSPropertyAlias_##aliasid_, 0, pref_ },
 #include "mozilla/ServoCSSPropList.h"
 #undef CSS_PROP_ALIAS
 #undef CSS_PROP_SHORTHAND
@@ -171,6 +193,10 @@ CheckServoCSSPropList()
                     name, nsCSSProps::GetStringValue(servoData.mID).get());
       mismatch = true;
       continue;
+    }
+    if (geckoData.mFlags != servoData.mFlags) {
+      printf_stderr("Flags of %s mismatch\n", name);
+      mismatch = true;
     }
     if (strcmp(geckoData.mPref, servoData.mPref) != 0) {
       printf_stderr("Pref of %s mismatches\n", name);
@@ -255,6 +281,71 @@ nsCSSProps::AddRefTable(void)
 
       #undef OBSERVE_PROP
     }
+
+#ifdef DEBUG
+    {
+      
+      
+      
+      static uint32_t flagsToCheck[] = {
+        CSS_PROPERTY_ENABLED_IN_UA_SHEETS,
+        CSS_PROPERTY_ENABLED_IN_CHROME
+      };
+      for (nsCSSPropertyID shorthand = eCSSProperty_COUNT_no_shorthands;
+           shorthand < eCSSProperty_COUNT;
+           shorthand = nsCSSPropertyID(shorthand + 1)) {
+        for (size_t i = 0; i < ArrayLength(flagsToCheck); i++) {
+          uint32_t flag = flagsToCheck[i];
+          if (!nsCSSProps::PropHasFlags(shorthand, flag)) {
+            continue;
+          }
+          for (const nsCSSPropertyID* p =
+                 nsCSSProps::SubpropertyEntryFor(shorthand);
+               *p != eCSSProperty_UNKNOWN;
+               ++p) {
+            MOZ_ASSERT(nsCSSProps::PropHasFlags(*p, flag),
+                       "all subproperties of a property with a "
+                       "CSS_PROPERTY_ENABLED_* flag must also have "
+                       "the flag");
+          }
+        }
+      }
+
+      
+      
+      
+      static nsCSSPropertyID nonInternalProperties[] = {
+        #define CSS_PROP(name_, id_, ...)           eCSSProperty_##id_,
+        #define CSS_PROP_SHORTHAND(name_, id_, ...) eCSSProperty_##id_,
+        #define CSS_PROP_LIST_EXCLUDE_INTERNAL
+        #include "nsCSSPropList.h"
+        #undef CSS_PROP_LIST_EXCLUDE_INTERNAL
+        #undef CSS_PROP_SHORTHAND
+        #undef CSS_PROP
+      };
+      MOZ_ASSERT(ArrayLength(nonInternalProperties) <= eCSSProperty_COUNT);
+
+      bool found[eCSSProperty_COUNT];
+      PodArrayZero(found);
+      for (nsCSSPropertyID p : nonInternalProperties) {
+        MOZ_ASSERT(!nsCSSProps::PropHasFlags(p, CSS_PROPERTY_INTERNAL),
+                   "properties defined outside of #ifndef "
+                   "CSS_PROP_LIST_EXCLUDE_INTERNAL sections must not have "
+                   "the CSS_PROPERTY_INTERNAL flag");
+        found[p] = true;
+      }
+
+      for (size_t i = 0; i < ArrayLength(found); ++i) {
+        if (!found[i]) {
+          auto p = static_cast<nsCSSPropertyID>(i);
+          MOZ_ASSERT(nsCSSProps::PropHasFlags(p, CSS_PROPERTY_INTERNAL),
+                     "properties defined in #ifndef "
+                     "CSS_PROP_LIST_EXCLUDE_INTERNAL sections must have "
+                     "the CSS_PROPERTY_INTERNAL flag");
+        }
+      }
+    }
+#endif
   }
 }
 
@@ -2214,7 +2305,7 @@ nsCSSProps::ValueToKeyword(int32_t aValue, const KTableEntry aTable[])
 
  const KTableEntry* const
 nsCSSProps::kKeywordTableTable[eCSSProperty_COUNT_no_shorthands] = {
-  #define CSS_PROP(name_, id_, method_, pref_, parsevariant_, \
+  #define CSS_PROP(name_, id_, method_, flags_, pref_, parsevariant_, \
                    kwtable_) kwtable_,
   #include "nsCSSPropList.h"
   #undef CSS_PROP
@@ -2258,7 +2349,7 @@ bool nsCSSProps::GetColorName(int32_t aPropValue, nsCString &aStr)
   return rv;
 }
 
-const CSSPropFlags nsCSSProps::kFlagsTable[eCSSProperty_COUNT] = {
+const uint32_t nsCSSProps::kFlagsTable[eCSSProperty_COUNT] = {
 #define CSS_PROP_LONGHAND(name_, id_, method_, flags_, ...) flags_,
 #define CSS_PROP_SHORTHAND(name_, id_, method_, flags_, ...) flags_,
 #include "mozilla/ServoCSSPropList.h"
@@ -2704,7 +2795,7 @@ nsCSSProps::kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shortha
 
 
 #define NSCSSPROPS_INNER_MACRO(method_) g##method_##SubpropTable,
-#define CSS_PROP_SHORTHAND(name_, id_, method_, pref_) \
+#define CSS_PROP_SHORTHAND(name_, id_, method_, flags_, pref_) \
   NSCSSPROPS_INNER_MACRO(method_)
 #include "nsCSSPropList.h"
 #undef CSS_PROP_SHORTHAND
@@ -2720,7 +2811,7 @@ nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
   
   
   #define IS_ENABLED_BY_DEFAULT(flags_) \
-    (!((flags_) & (CSSPropFlags::EnabledMask | CSSPropFlags::Inaccessible)))
+    (!((flags_) & (CSS_PROPERTY_ENABLED_MASK | CSS_PROPERTY_PARSE_INACCESSIBLE)))
 
   #define CSS_PROP_LONGHAND(name_, id_, method_, flags_, ...) \
     IS_ENABLED_BY_DEFAULT(flags_),
@@ -2754,7 +2845,7 @@ nsCSSProps::gPropertyUseCounter[eCSSProperty_COUNT_no_shorthands] = {
 
 const uint32_t
 nsCSSProps::kParserVariantTable[eCSSProperty_COUNT_no_shorthands] = {
-#define CSS_PROP(name_, id_, method_, pref_, parsevariant_, ...) \
+#define CSS_PROP(name_, id_, method_, flags_, pref_, parsevariant_, ...) \
   parsevariant_,
 #include "nsCSSPropList.h"
 #undef CSS_PROP
