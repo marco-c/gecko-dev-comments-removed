@@ -272,7 +272,7 @@ license file's hash.
         
         
         
-        results = [check_package(p) for p in os.listdir(vendor_dir)]
+        results = [check_package(p) for p in os.listdir(vendor_dir) if os.path.isdir(os.path.join(vendor_dir, p))]
         return all(results)
 
     def vendor(self, ignore_modified=False,
