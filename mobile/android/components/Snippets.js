@@ -265,7 +265,10 @@ function writeStat(snippetId, timestamp) {
       } finally {
         yield file.close();
       }
-    } catch (ex if ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
+    } catch (ex) {
+      if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+        throw ex;
+      }
       
       yield OS.File.writeAtomic(gStatsPath, data, { tmpPath: gStatsPath + ".tmp" });
     }

@@ -4477,14 +4477,20 @@ Tab.prototype = {
       let originHost = "";
       try {
         originHost = Services.io.newURI(appOrigin).host;
-      } catch (e if (e.result == Cr.NS_ERROR_FAILURE)) {
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_FAILURE) {
+          throw e;
+        }
         
         
       }
       let locationHost = "";
       try {
         locationHost = aLocationURI.host;
-      } catch (e if (e.result == Cr.NS_ERROR_FAILURE)) {
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_FAILURE) {
+          throw e;
+        }
         
       }
       if (originHost != locationHost || originHost == "") {
