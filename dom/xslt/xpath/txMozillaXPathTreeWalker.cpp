@@ -306,7 +306,7 @@ txXPathNodeUtils::getLocalName(const txXPathNode& aNode)
             return localName.forget();
         }
 
-        if (aNode.mNode->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+        if (aNode.mNode->IsProcessingInstruction()) {
             return NS_Atomize(aNode.mNode->NodeName());
         }
 
@@ -353,7 +353,7 @@ txXPathNodeUtils::getLocalName(const txXPathNode& aNode, nsAString& aLocalName)
             return;
         }
 
-        if (aNode.mNode->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+        if (aNode.mNode->IsProcessingInstruction()) {
             
             
             

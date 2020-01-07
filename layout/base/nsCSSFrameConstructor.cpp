@@ -5516,8 +5516,7 @@ nsCSSFrameConstructor::ShouldCreateItemsForChild(nsFrameConstructorState& aState
   }
 
   
-  if (aContent->IsComment() ||
-      aContent->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+  if (aContent->IsComment() || aContent->IsProcessingInstruction()) {
     return false;
   }
 
@@ -6380,8 +6379,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
     
     
     if (UNSET_DISPLAY == aDisplay) {
-      if (aContent->IsComment() ||
-          aContent->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+      if (aContent->IsComment() || aContent->IsProcessingInstruction()) {
         
         
         return false;
@@ -10137,8 +10135,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                "Should not be marked as needing frames");
     MOZ_ASSERT(!content->GetPrimaryFrame(),
                "Should have no existing frame");
-    MOZ_ASSERT(!content->IsComment() &&
-               !content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION),
+    MOZ_ASSERT(!content->IsComment() && !content->IsProcessingInstruction(),
                "Why is someone creating garbage anonymous content");
 
     
@@ -11484,8 +11481,7 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
       
       
       content->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-      if (content->IsComment() ||
-          content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+      if (content->IsComment() || content->IsProcessingInstruction()) {
         continue;
       }
 

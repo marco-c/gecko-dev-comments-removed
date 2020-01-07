@@ -415,8 +415,6 @@ public:
     
     eATTRIBUTE           = 1 << 2,
     
-    ePROCESSING_INSTRUCTION = 1 << 4,
-    
     eHTML_FORM_CONTROL   = 1 << 6,
     
     eANIMATION           = 1 << 10,
