@@ -6,6 +6,7 @@
 package org.mozilla.geckoview.test.rule;
 
 import org.mozilla.gecko.gfx.GeckoDisplay;
+import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoRuntimeSettings;
 import org.mozilla.geckoview.GeckoSession;
@@ -24,6 +25,7 @@ import org.junit.runners.model.Statement;
 import android.app.Instrumentation;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Handler;
@@ -74,7 +76,12 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
     private static final String LOGTAG = "GeckoSessionTestRule";
 
     private static final long DEFAULT_TIMEOUT_MILLIS = 10000;
-    private static final long DEFAULT_DEBUG_TIMEOUT_MILLIS = 86400000;
+    private static final long DEFAULT_ARM_DEVICE_TIMEOUT_MILLIS = 30000;
+    private static final long DEFAULT_ARM_EMULATOR_TIMEOUT_MILLIS = 120000;
+    private static final long DEFAULT_X86_DEVICE_TIMEOUT_MILLIS = 30000;
+    private static final long DEFAULT_X86_EMULATOR_TIMEOUT_MILLIS = 5000;
+    private static final long DEFAULT_IDE_DEBUG_TIMEOUT_MILLIS = 86400000;
+
     public static final String APK_URI_PREFIX = "resource://android/";
 
     private static final Method sOnLocationChange;
@@ -92,6 +99,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
     }
 
     
+
+
 
 
 
@@ -420,6 +429,18 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         public boolean isDebugging() {
             return Debug.isDebuggerConnected();
         }
+
+        public boolean isEmulator() {
+            return "generic".equals(Build.DEVICE) || Build.DEVICE.startsWith("generic_");
+        }
+
+        public boolean isDebugBuild() {
+            return BuildConfig.DEBUG_BUILD;
+        }
+
+        public String getCPUArch() {
+            return BuildConfig.ANDROID_CPU_ARCH;
+        }
     }
 
     protected class CallbackDelegates {
@@ -647,7 +668,10 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                                     final GeckoSessionSettings settings) {
         for (final Annotation annotation : annotations) {
             if (TimeoutMillis.class.equals(annotation.annotationType())) {
-                mTimeoutMillis = Math.max(((TimeoutMillis) annotation).value(), 100);
+                
+                final long value = ((TimeoutMillis) annotation).value();
+                final long timeout = value * getDefaultTimeoutMillis() / DEFAULT_TIMEOUT_MILLIS;
+                mTimeoutMillis = Math.max(timeout, 1000);
             } else if (Setting.class.equals(annotation.annotationType())) {
                 ((Setting) annotation).key().set(settings, ((Setting) annotation).value());
             } else if (Setting.List.class.equals(annotation.annotationType())) {
@@ -674,10 +698,19 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         return new RuntimeException(cause != null ? cause : e);
     }
 
+    private long getDefaultTimeoutMillis() {
+        if ("x86".equals(env.getCPUArch())) {
+            return env.isEmulator() ? DEFAULT_X86_EMULATOR_TIMEOUT_MILLIS
+                                    : DEFAULT_X86_DEVICE_TIMEOUT_MILLIS;
+        }
+        return env.isEmulator() ? DEFAULT_ARM_EMULATOR_TIMEOUT_MILLIS
+                                : DEFAULT_ARM_DEVICE_TIMEOUT_MILLIS;
+    }
+
     protected void prepareStatement(final Description description) throws Throwable {
         final GeckoSessionSettings settings = new GeckoSessionSettings(mDefaultSettings);
-        mTimeoutMillis = env.isDebugging() ? DEFAULT_DEBUG_TIMEOUT_MILLIS
-                                           : DEFAULT_TIMEOUT_MILLIS;
+        mTimeoutMillis = env.isDebugging() ? DEFAULT_IDE_DEBUG_TIMEOUT_MILLIS
+                                           : getDefaultTimeoutMillis();
         mClosedSession = false;
 
         applyAnnotations(Arrays.asList(description.getTestClass().getAnnotations()), settings);
@@ -809,7 +842,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             };
 
             do {
-                loopUntilIdle(DEFAULT_TIMEOUT_MILLIS);
+                loopUntilIdle(getDefaultTimeoutMillis());
             } while (mCallRecordHandler != null);
 
         } finally {
