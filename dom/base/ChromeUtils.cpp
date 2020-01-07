@@ -12,7 +12,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/PerformanceMetricsCollector.h"
+#include "mozilla/PerformanceUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/ContentParent.h"
@@ -655,27 +655,29 @@ ChromeUtils::ClearRecentJSDevError(GlobalObject&)
 }
 #endif 
 
-
-already_AddRefed<Promise>
-ChromeUtils::RequestPerformanceMetrics(GlobalObject& aGlobal,
-                                       ErrorResult& aRv)
+ void
+ChromeUtils::RequestPerformanceMetrics(GlobalObject&)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  MOZ_ASSERT(global);
-  RefPtr<Promise> domPromise = Promise::Create(global, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
+  nsTArray<ContentParent*> children;
+  ContentParent::GetAll(children);
+  for (uint32_t i = 0; i < children.Length(); i++) {
+    mozilla::Unused << children[i]->SendRequestPerformanceMetrics();
   }
-  MOZ_ASSERT(domPromise);
+
 
   
-  PerformanceMetricsCollector::RequestMetrics(domPromise);
+  nsTArray<PerformanceInfo> info;
+  CollectPerformanceInfo(info);
+  SystemGroup::Dispatch(TaskCategory::Performance,
+    NS_NewRunnableFunction(
+      "RequestPerformanceMetrics",
+      [info]() { mozilla::Unused << NS_WARN_IF(NS_FAILED(NotifyPerformanceInfo(info))); }
+    )
+  );
 
-  
-  return domPromise.forget();
 }
 
 constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
