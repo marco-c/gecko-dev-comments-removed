@@ -1093,11 +1093,16 @@ ServoRestyleManager::SnapshotFor(Element* aElement)
 void
 ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
 {
-  MOZ_ASSERT(PresContext()->Document(), "No document?  Pshaw!");
+  nsPresContext* presContext = PresContext();
+
+  MOZ_ASSERT(presContext->Document(), "No document?  Pshaw!");
+  MOZ_ASSERT(!presContext->HasPendingMediaQueryUpdates(),
+             "Someone forgot to update media queries?");
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(), "Missing a script blocker!");
   MOZ_ASSERT(!mInStyleRefresh, "Reentrant call?");
 
-  if (MOZ_UNLIKELY(!PresContext()->PresShell()->DidInitialize())) {
+
+  if (MOZ_UNLIKELY(!presContext->PresShell()->DidInitialize())) {
     
     
     
@@ -1112,11 +1117,11 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
   AnimationsWithDestroyedFrame animationsWithDestroyedFrame(this);
 
   ServoStyleSet* styleSet = StyleSet();
-  nsIDocument* doc = PresContext()->Document();
+  nsIDocument* doc = presContext->Document();
 
   
   
-  PresContext()->RefreshDriver()->MostRecentRefresh();
+  presContext->RefreshDriver()->MostRecentRefresh();
 
 
   
@@ -1140,7 +1145,7 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
     
     
     {
-      AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), false);
+      AutoRestyleTimelineMarker marker(presContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
       while (Element* root = iter.GetNextStyleRoot()) {
         nsTArray<nsIFrame*> wrappersToRestyle;
@@ -1159,7 +1164,7 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
     
     {
       AutoTimelineMarker marker(
-        mPresContext->GetDocShell(), "StylesApplyChanges");
+        presContext->GetDocShell(), "StylesApplyChanges");
       ReentrantChangeList newChanges;
       mReentrantChanges = &newChanges;
       while (!currentChanges.IsEmpty()) {
