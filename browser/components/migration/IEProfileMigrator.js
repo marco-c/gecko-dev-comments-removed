@@ -38,17 +38,17 @@ History.prototype = {
   },
 
   migrate: function H_migrate(aCallback) {
-    let places = [];
+    let pageInfos = [];
     let typedURLs = MSMigrationUtils.getTypedURLs("Software\\Microsoft\\Internet Explorer");
     let historyEnumerator = Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"].
                             createInstance(Ci.nsISimpleEnumerator);
     while (historyEnumerator.hasMoreElements()) {
       let entry = historyEnumerator.getNext().QueryInterface(Ci.nsIPropertyBag2);
-      let uri = entry.get("uri").QueryInterface(Ci.nsIURI);
+      let url = entry.get("uri").QueryInterface(Ci.nsIURI);
       
       
       
-      if (!["http", "https", "ftp", "file"].includes(uri.scheme)) {
+      if (!["http", "https", "ftp", "file"].includes(url.scheme)) {
         continue;
       }
 
@@ -59,37 +59,31 @@ History.prototype = {
       }
 
       
-      let transitionType = typedURLs.has(uri.spec) ?
-                             Ci.nsINavHistoryService.TRANSITION_TYPED :
-                             Ci.nsINavHistoryService.TRANSITION_LINK;
+      let transition = typedURLs.has(url.spec) ?
+        PlacesUtils.history.TRANSITIONS.LINK :
+        PlacesUtils.history.TRANSITIONS.TYPED;
       
-      
-      
-      
-      let lastVisitTime = entry.get("time") || (Date.now() * 1000);
+      let time = entry.get("time");
 
-      places.push(
-        { uri,
-          title,
-          visits: [{ transitionType,
-                     visitDate: lastVisitTime }],
-        }
-      );
+      pageInfos.push({
+        url,
+        title,
+        visits: [{
+          transition,
+          date: time ? PlacesUtils.toDate(entry.get("time")) : new Date(),
+        }],
+      });
     }
 
     
-    if (places.length == 0) {
+    if (pageInfos.length == 0) {
       aCallback(true);
       return;
     }
 
-    MigrationUtils.insertVisitsWrapper(places, {
-      ignoreErrors: true,
-      ignoreResults: true,
-      handleCompletion(updatedCount) {
-        aCallback(updatedCount > 0);
-      },
-    });
+    MigrationUtils.insertVisitsWrapper(pageInfos).then(
+      () => aCallback(true),
+      () => aCallback(false));
   },
 };
 
