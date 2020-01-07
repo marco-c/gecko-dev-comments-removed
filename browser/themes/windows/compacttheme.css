@@ -123,11 +123,9 @@
   }
 
   
-  #tabbrowser-tabs,
   #TabsToolbar,
-  #browser-panel,
-  #titlebar-content {
-    background: transparent;
+  #navigator-toolbox {
+    background-color: transparent;
   }
 
   
@@ -150,7 +148,7 @@
 
 
 
-#browser-panel {
+#navigator-toolbox {
   
   background-image: none !important;
   border-top: none !important;
