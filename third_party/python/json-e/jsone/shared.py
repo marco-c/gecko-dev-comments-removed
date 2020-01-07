@@ -28,6 +28,10 @@ class TemplateError(JSONTemplateError):
     pass
 
 
+class InterpreterError(JSONTemplateError):
+    pass
+
+
 
 
 FROMNOW_RE = re.compile(''.join([
@@ -109,7 +113,13 @@ def to_str(v):
 
 def stringDate(date):
     
-    string = date.isoformat()
+    try:
+        string = date.isoformat(timespec='microseconds')
+    
+    except TypeError as e:
+        string = date.isoformat()
+        if string.find('.') == -1:
+            string += '.000'
     string = datefmt_re.sub(r'\1Z', string)
     return string
 
