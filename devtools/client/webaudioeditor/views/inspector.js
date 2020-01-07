@@ -28,7 +28,7 @@ var InspectorView = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     
     this.el = $("#web-audio-inspector");
     this.splitter = $("#inspector-splitter");
@@ -56,7 +56,7 @@ var InspectorView = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this.unbindToggle();
     this.splitter.removeEventListener("mouseup", this._onResize);
 
@@ -76,7 +76,7 @@ var InspectorView = {
 
 
 
-  setCurrentAudioNode: Task.async(function* (node) {
+  async setCurrentAudioNode(node) {
     this._currentNode = node || null;
 
     
@@ -93,19 +93,19 @@ var InspectorView = {
       this._buildToolbar();
       window.emit(EVENTS.UI_INSPECTOR_NODE_SET, this._currentNode.id);
     }
-  }),
+  },
 
   
 
 
-  getCurrentAudioNode: function () {
+  getCurrentAudioNode: function() {
     return this._currentNode;
   },
 
   
 
 
-  resetUI: function () {
+  resetUI: function() {
     
     this.setCurrentAudioNode();
 
@@ -113,7 +113,7 @@ var InspectorView = {
     this.hideImmediately();
   },
 
-  _buildToolbar: function () {
+  _buildToolbar: function() {
     let node = this.getCurrentAudioNode();
 
     let bypassable = node.bypassable;
@@ -141,14 +141,14 @@ var InspectorView = {
 
 
 
-  _onNodeSelect: function (id) {
+  _onNodeSelect: function(id) {
     this.setCurrentAudioNode(gAudioNodes.get(id));
 
     
     this.show();
   },
 
-  _onResize: function () {
+  _onResize: function() {
     if (this.el.getAttribute("width") < MIN_INSPECTOR_WIDTH) {
       this.el.setAttribute("width", MIN_INSPECTOR_WIDTH);
     }
@@ -160,13 +160,13 @@ var InspectorView = {
 
 
 
-  _onDestroyNode: function (node) {
+  _onDestroyNode: function(node) {
     if (this._currentNode && this._currentNode.id === node.id) {
       this.setCurrentAudioNode(null);
     }
   },
 
-  _onCommandClick: function (e) {
+  _onCommandClick: function(e) {
     let node = this.getCurrentAudioNode();
     let button = e.target;
     let command = button.getAttribute("data-command");

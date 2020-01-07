@@ -7,13 +7,12 @@ const { Cu } = require("chrome");
 const { TargetFactory } = require("devtools/client/framework/target");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { Connection } = require("devtools/shared/client/connection-manager");
-const { Task } = require("devtools/shared/task");
 
 const _knownTabStores = new WeakMap();
 
 var TabStore;
 
-module.exports = TabStore = function (connection) {
+module.exports = TabStore = function(connection) {
   
   
   if (_knownTabStores.has(connection)) {
@@ -40,7 +39,7 @@ module.exports = TabStore = function (connection) {
 
 TabStore.prototype = {
 
-  destroy: function () {
+  destroy: function() {
     if (this._connection) {
       
       
@@ -52,14 +51,14 @@ TabStore.prototype = {
     }
   },
 
-  _resetStore: function () {
+  _resetStore: function() {
     this.response = null;
     this.tabs = [];
     this._selectedTab = null;
     this._selectedTabTargetPromise = null;
   },
 
-  _onStatusChanged: function () {
+  _onStatusChanged: function() {
     if (this._connection.status == Connection.Status.CONNECTED) {
       
       this._connection.client.addListener("tabListChanged",
@@ -78,12 +77,12 @@ TabStore.prototype = {
     }
   },
 
-  _onTabListChanged: function () {
+  _onTabListChanged: function() {
     this.listTabs().then(() => this.emit("tab-list"))
                    .catch(console.error);
   },
 
-  _onTabNavigated: function (e, { from, title, url }) {
+  _onTabNavigated: function(e, { from, title, url }) {
     if (!this._selectedTab || from !== this._selectedTab.actor) {
       return;
     }
@@ -92,7 +91,7 @@ TabStore.prototype = {
     this.emit("navigate");
   },
 
-  listTabs: function () {
+  listTabs: function() {
     if (!this._connection || !this._connection.client) {
       return Promise.reject(new Error("Can't listTabs, not connected."));
     }
@@ -136,7 +135,7 @@ TabStore.prototype = {
     }
   },
 
-  _checkSelectedTab: function () {
+  _checkSelectedTab: function() {
     if (!this._selectedTab) {
       return;
     }
@@ -150,23 +149,23 @@ TabStore.prototype = {
     }
   },
 
-  getTargetForTab: function () {
+  getTargetForTab: function() {
     if (this._selectedTabTargetPromise) {
       return this._selectedTabTargetPromise;
     }
     let store = this;
-    this._selectedTabTargetPromise = Task.spawn(function* () {
+    this._selectedTabTargetPromise = (async function() {
       
       
       
       
-      yield store.listTabs();
+      await store.listTabs();
       return TargetFactory.forRemoteTab({
         form: store._selectedTab,
         client: store._connection.client,
         chrome: false
       });
-    });
+    })();
     this._selectedTabTargetPromise.then(target => {
       target.once("close", () => {
         this._selectedTabTargetPromise = null;

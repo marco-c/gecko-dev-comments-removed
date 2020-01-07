@@ -20,7 +20,7 @@ function WebAudioEditorPanel(iframeWindow, toolbox) {
 exports.WebAudioEditorPanel = WebAudioEditorPanel;
 
 WebAudioEditorPanel.prototype = {
-  open: function () {
+  open: function() {
     let targetPromise;
 
     
@@ -55,7 +55,7 @@ WebAudioEditorPanel.prototype = {
     return this._toolbox.target;
   },
 
-  destroy: function () {
+  destroy: function() {
     
     if (this._destroyer) {
       return this._destroyer;

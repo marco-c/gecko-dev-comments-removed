@@ -12,7 +12,7 @@ var AutomationView = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this._buttons = $("#automation-param-toolbar-buttons");
     this.graph = new LineGraphWidget($("#automation-graph"), { avg: false });
     this.graph.selectionEnabled = false;
@@ -29,7 +29,7 @@ var AutomationView = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     this._buttons.removeEventListener("click", this._onButtonClick);
     window.off(EVENTS.UI_INSPECTOR_RESIZE, this._onResize);
     window.off(EVENTS.UI_INSPECTOR_NODE_SET, this._onNodeSet);
@@ -38,7 +38,7 @@ var AutomationView = {
   
 
 
-  resetUI: function () {
+  resetUI: function() {
     this._currentNode = null;
   },
 
@@ -46,24 +46,24 @@ var AutomationView = {
 
 
 
-  build: Task.async(function* () {
+  async build() {
     let node = this._currentNode;
 
-    let props = yield node.getParams();
+    let props = await node.getParams();
     let params = props.filter(({ flags }) => flags && flags.param);
 
     this._createParamButtons(params);
 
     this._selectedParamName = params[0] ? params[0].param : null;
     this.render();
-  }),
+  },
 
   
 
 
 
 
-  render: Task.async(function* () {
+  async render() {
     let node = this._currentNode;
     let paramName = this._selectedParamName;
     
@@ -73,17 +73,17 @@ var AutomationView = {
       return;
     }
 
-    let { values, events } = yield node.getAutomationData(paramName);
+    let { values, events } = await node.getAutomationData(paramName);
     this._setState(events.length ? "show" : "no-events");
-    yield this.graph.setDataWhenReady(values);
+    await this.graph.setDataWhenReady(values);
     window.emit(EVENTS.UI_AUTOMATION_TAB_RENDERED, node.id);
-  }),
+  },
 
   
 
 
 
-  _createParamButtons: function (params) {
+  _createParamButtons: function(params) {
     this._buttons.innerHTML = "";
     params.forEach((param, i) => {
       let button = document.createElement("toolbarbutton");
@@ -105,7 +105,7 @@ var AutomationView = {
 
 
 
-  _setAudioNode: function (node) {
+  _setAudioNode: function(node) {
     this._currentNode = node;
     if (this._currentNode) {
       this.build();
@@ -117,7 +117,7 @@ var AutomationView = {
 
 
 
-  _setState: function (state) {
+  _setState: function(state) {
     let contentView = $("#automation-content");
     let emptyView = $("#automation-empty");
 
@@ -135,7 +135,7 @@ var AutomationView = {
 
 
 
-  _onButtonClick: function (e) {
+  _onButtonClick: function(e) {
     Array.forEach($$(".automation-param-button"), $btn => $btn.removeAttribute("selected"));
     let paramName = e.target.getAttribute("data-param");
     e.target.setAttribute("selected", true);
@@ -146,14 +146,14 @@ var AutomationView = {
   
 
 
-  _onResize: function () {
+  _onResize: function() {
     this.graph.refresh();
   },
 
   
 
 
-  _onNodeSet: function (id) {
+  _onNodeSet: function(id) {
     this._setAudioNode(id != null ? gAudioNodes.get(id) : null);
   }
 };

@@ -8,7 +8,6 @@ const Services = require("Services");
 const {AppProjects} = require("devtools/client/webide/modules/app-projects");
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {Task} = require("devtools/shared/task");
 const utils = require("devtools/client/webide/modules/utils");
 const Telemetry = require("devtools/client/shared/telemetry");
 
@@ -16,7 +15,7 @@ const Strings = Services.strings.createBundle("chrome://devtools/locale/webide.p
 
 var ProjectList;
 
-module.exports = ProjectList = function (win, parentWindow) {
+module.exports = ProjectList = function(win, parentWindow) {
   EventEmitter.decorate(this);
   this._doc = win.document;
   this._UI = parentWindow.UI;
@@ -37,7 +36,7 @@ ProjectList.prototype = {
     return this._doc;
   },
 
-  appManagerUpdate: function (what, details) {
+  appManagerUpdate: function(what, details) {
     
     
     switch (what) {
@@ -53,7 +52,7 @@ ProjectList.prototype = {
     }
   },
 
-  onWebIDEUpdate: function (what, details) {
+  onWebIDEUpdate: function(what, details) {
     if (what == "busy" || what == "unbusy") {
       this.updateCommands();
     }
@@ -66,15 +65,16 @@ ProjectList.prototype = {
 
 
 
-  newApp: function (testOptions) {
+  newApp: function(testOptions) {
     let parentWindow = this._parentWindow;
     let self = this;
-    return this._UI.busyUntil(Task.spawn(function* () {
+    return this._UI.busyUntil((async function() {
       
       let ret = {location: null, testOptions: testOptions};
       parentWindow.openDialog("chrome://webide/content/newapp.xul", "newapp", "chrome,modal", ret);
-      if (!ret.location)
+      if (!ret.location) {
         return;
+      }
 
       
       let project = AppProjects.get(ret.location);
@@ -83,36 +83,36 @@ ProjectList.prototype = {
       AppManager.selectedProject = project;
 
       self._telemetry.actionOccurred("webideNewProject");
-    }), "creating new app");
+    })(), "creating new app");
   },
 
-  importPackagedApp: function (location) {
+  importPackagedApp: function(location) {
     let parentWindow = this._parentWindow;
     let UI = this._UI;
-    return UI.busyUntil(Task.spawn(function* () {
-      let directory = yield utils.getPackagedDirectory(parentWindow, location);
+    return UI.busyUntil((async function() {
+      let directory = await utils.getPackagedDirectory(parentWindow, location);
 
       if (!directory) {
         
         return;
       }
 
-      yield UI.importAndSelectApp(directory);
-    }), "importing packaged app");
+      await UI.importAndSelectApp(directory);
+    })(), "importing packaged app");
   },
 
-  importHostedApp: function (location) {
+  importHostedApp: function(location) {
     let parentWindow = this._parentWindow;
     let UI = this._UI;
-    return UI.busyUntil(Task.spawn(function* () {
+    return UI.busyUntil((async function() {
       let url = utils.getHostedURL(parentWindow, location);
 
       if (!url) {
         return;
       }
 
-      yield UI.importAndSelectApp(url);
-    }), "importing hosted app");
+      await UI.importAndSelectApp(url);
+    })(), "importing hosted app");
   },
 
   
@@ -122,7 +122,7 @@ ProjectList.prototype = {
 
 
 
-  _renderProjectItem: function (opts) {
+  _renderProjectItem: function(opts) {
     let span = opts.panel.querySelector("span") || this._doc.createElement("span");
     span.textContent = opts.name;
     let icon = opts.panel.querySelector("img") || this._doc.createElement("img");
@@ -133,7 +133,7 @@ ProjectList.prototype = {
     opts.panel.setAttribute("title", opts.name);
   },
 
-  refreshTabs: function () {
+  refreshTabs: function() {
     if (AppManager.connected) {
       return AppManager.listTabs().then(() => {
         this.updateTabs();
@@ -141,7 +141,7 @@ ProjectList.prototype = {
     }
   },
 
-  updateTabs: function () {
+  updateTabs: function() {
     let tabsHeaderNode = this._doc.querySelector("#panel-header-tabs");
     let tabsNode = this._doc.querySelector("#project-panel-tabs");
 
@@ -201,7 +201,7 @@ ProjectList.prototype = {
     return Promise.resolve();
   },
 
-  updateApps: function () {
+  updateApps: function() {
     let doc = this._doc;
     let runtimeappsHeaderNode = doc.querySelector("#panel-header-runtimeapps");
     let sortedApps = [];
@@ -264,7 +264,7 @@ ProjectList.prototype = {
     return Promise.resolve();
   },
 
-  updateCommands: function () {
+  updateCommands: function() {
     let doc = this._doc;
     let newAppCmd;
     let packagedAppCmd;
@@ -296,7 +296,7 @@ ProjectList.prototype = {
 
 
 
-  update: function (options) {
+  update: function(options) {
     if (options && options.type === "apps") {
       return this.updateApps();
     } else if (options && options.type === "tabs") {
@@ -360,7 +360,7 @@ ProjectList.prototype = {
     });
   },
 
-  destroy: function () {
+  destroy: function() {
     this._doc = null;
     AppManager.off("app-manager-update", this.appManagerUpdate);
     this._UI.off("webide-update", this.onWebIDEUpdate);

@@ -43,7 +43,7 @@ var ContextView = {
   
 
 
-  initialize: function () {
+  initialize: function() {
     this._onGraphClick = this._onGraphClick.bind(this);
     this._onThemeChange = this._onThemeChange.bind(this);
     this._onStartContext = this._onStartContext.bind(this);
@@ -60,7 +60,7 @@ var ContextView = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     
     
     if (this._zoomBinding) {
@@ -77,7 +77,7 @@ var ContextView = {
 
 
 
-  resetUI: function () {
+  resetUI: function() {
     this.clearGraph();
     this.resetGraphTransform();
   },
@@ -86,14 +86,14 @@ var ContextView = {
 
 
 
-  clearGraph: function () {
+  clearGraph: function() {
     $("#graph-target").innerHTML = "";
   },
 
   
 
 
-  resetGraphTransform: function () {
+  resetGraphTransform: function() {
     
     if (this._zoomBinding) {
       let { translate, scale } = GRAPH_DEFAULTS;
@@ -106,11 +106,11 @@ var ContextView = {
     }
   },
 
-  getCurrentScale: function () {
+  getCurrentScale: function() {
     return this._zoomBinding ? this._zoomBinding.scale() : null;
   },
 
-  getCurrentTranslation: function () {
+  getCurrentTranslation: function() {
     return this._zoomBinding ? this._zoomBinding.translate() : null;
   },
 
@@ -119,7 +119,7 @@ var ContextView = {
 
 
 
-  focusNode: function (actorID) {
+  focusNode: function(actorID) {
     
     Array.forEach($$(".nodes > g"), $node => $node.classList.remove("selected"));
     
@@ -131,7 +131,7 @@ var ContextView = {
   
 
 
-  _getNodeByID: function (actorID) {
+  _getNodeByID: function(actorID) {
     return $(".nodes > g[data-id='" + actorID + "']");
   },
 
@@ -139,7 +139,7 @@ var ContextView = {
 
 
 
-  _bypassNode: function (node, enabled) {
+  _bypassNode: function(node, enabled) {
     let el = this._getNodeByID(node.id);
     el.classList[enabled ? "add" : "remove"]("bypassed");
   },
@@ -149,7 +149,7 @@ var ContextView = {
 
 
 
-  draw: function () {
+  draw: function() {
     
     this.clearGraph();
 
@@ -159,9 +159,9 @@ var ContextView = {
 
     
     let oldDrawNodes = renderer.drawNodes();
-    renderer.drawNodes(function (graph, root) {
+    renderer.drawNodes(function(graph, root) {
       let svgNodes = oldDrawNodes(graph, root);
-      svgNodes.each(function (n) {
+      svgNodes.each(function(n) {
         let node = graph.node(n);
         let classString = "audionode type-" + node.type + (node.bypassed ? " bypassed" : "");
         this.setAttribute("class", classString);
@@ -175,9 +175,9 @@ var ContextView = {
     let oldDrawEdgePaths = renderer.drawEdgePaths();
     let defaultClasses = "edgePath enter";
 
-    renderer.drawEdgePaths(function (graph, root) {
+    renderer.drawEdgePaths(function(graph, root) {
       let svgEdges = oldDrawEdgePaths(graph, root);
-      svgEdges.each(function (e) {
+      svgEdges.each(function(e) {
         let edge = graph.edge(e);
 
         
@@ -242,7 +242,7 @@ var ContextView = {
     
     
     if (!this._zoomBinding) {
-      this._zoomBinding = d3.behavior.zoom().on("zoom", function () {
+      this._zoomBinding = d3.behavior.zoom().on("zoom", function() {
         var ev = d3.event;
         d3.select("#graph-target")
           .attr("transform", "translate(" + ev.translate + ") scale(" + ev.scale + ")");
@@ -263,7 +263,7 @@ var ContextView = {
 
 
 
-  _onStartContext: function () {
+  _onStartContext: function() {
     this.draw();
   },
 
@@ -271,7 +271,7 @@ var ContextView = {
 
 
 
-  _onEvent: function (eventName, ...args) {
+  _onEvent: function(eventName, ...args) {
     
     
     if (eventName === "bypass") {
@@ -285,7 +285,7 @@ var ContextView = {
   
 
 
-  _onThemeChange: function (theme) {
+  _onThemeChange: function(theme) {
     let markerColor = MARKER_STYLING[theme];
     let marker = $("#arrowhead");
     if (marker) {
@@ -299,12 +299,13 @@ var ContextView = {
 
 
 
-  _onGraphClick: function (e) {
+  _onGraphClick: function(e) {
     let node = findGraphNodeParent(e.target);
     
     
-    if (!node)
+    if (!node) {
       return;
+    }
 
     let id = node.getAttribute("data-id");
 

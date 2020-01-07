@@ -83,7 +83,7 @@ var WebAudioEditorController = {
   
 
 
-  destroy: function () {
+  destroy: function() {
     gTarget.off("will-navigate", this._onTabWillNavigate);
     gFront.off("start-context", this._onStartContext);
     gFront.off("create-node", this._onCreateNode);
@@ -100,7 +100,7 @@ var WebAudioEditorController = {
 
 
 
-  reset: function () {
+  reset: function() {
     $("#content").hidden = true;
     ContextView.resetUI();
     InspectorView.resetUI();
@@ -110,7 +110,7 @@ var WebAudioEditorController = {
   
   
   
-  getNode: async function (nodeActor) {
+  getNode: async function(nodeActor) {
     let id = nodeActor.actorID;
     let node = gAudioNodes.get(id);
 
@@ -132,7 +132,7 @@ var WebAudioEditorController = {
 
 
 
-  _onThemeChange: function () {
+  _onThemeChange: function() {
     let newValue = Services.prefs.getCharPref("devtools.theme");
     window.emit(EVENTS.THEME_CHANGE, newValue);
   },
@@ -167,7 +167,7 @@ var WebAudioEditorController = {
 
 
 
-  _onStartContext: function () {
+  _onStartContext: function() {
     $("#reload-notice").hidden = true;
     $("#waiting-notice").hidden = true;
     $("#content").hidden = false;
@@ -178,7 +178,7 @@ var WebAudioEditorController = {
 
 
 
-  _onCreateNode: function (nodeActor) {
+  _onCreateNode: function(nodeActor) {
     gAudioNodes.add(nodeActor);
   },
 
@@ -186,7 +186,7 @@ var WebAudioEditorController = {
 
 
 
-  _onDestroyNode: function (nodeActor) {
+  _onDestroyNode: function(nodeActor) {
     gAudioNodes.remove(gAudioNodes.get(nodeActor.actorID));
   },
 

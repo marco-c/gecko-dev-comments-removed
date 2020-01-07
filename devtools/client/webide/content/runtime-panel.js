@@ -4,7 +4,7 @@
 
 var RuntimePanel = {
   
-  toggleSidebar: function () {
+  toggleSidebar: function() {
     document.querySelector("#runtime-listing-panel").setAttribute("sidebar-displayed", true);
     document.querySelector("#runtime-listing-splitter").setAttribute("sidebar-displayed", true);
   }

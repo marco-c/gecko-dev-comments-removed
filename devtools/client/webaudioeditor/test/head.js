@@ -62,15 +62,15 @@ function initBackend(aUrl) {
   DebuggerServer.init();
   DebuggerServer.registerAllActors();
 
-  return Task.spawn(function* () {
-    let tab = yield addTab(aUrl);
+  return (async function() {
+    let tab = await addTab(aUrl);
     let target = TargetFactory.forTab(tab);
 
-    yield target.makeRemote();
+    await target.makeRemote();
 
     let front = new WebAudioFront(target.client, target.form);
     return { target, front };
-  });
+  })();
 }
 
 
@@ -81,17 +81,17 @@ function initBackend(aUrl) {
 function initWebAudioEditor(aUrl) {
   info("Initializing a web audio editor pane.");
 
-  return Task.spawn(function* () {
-    let tab = yield addTab(aUrl);
+  return (async function() {
+    let tab = await addTab(aUrl);
     let target = TargetFactory.forTab(tab);
 
-    yield target.makeRemote();
+    await target.makeRemote();
 
     Services.prefs.setBoolPref("devtools.webaudioeditor.enabled", true);
-    let toolbox = yield gDevTools.showToolbox(target, "webaudioeditor");
+    let toolbox = await gDevTools.showToolbox(target, "webaudioeditor");
     let panel = toolbox.getCurrentPanel();
     return { target, panel, toolbox };
-  });
+  })();
 }
 
 
@@ -133,13 +133,27 @@ function getN(front, eventName, count, spread) {
   });
 }
 
-function get(front, eventName) { return getN(front, eventName, 1); }
-function get2(front, eventName) { return getN(front, eventName, 2); }
-function get3(front, eventName) { return getN(front, eventName, 3); }
-function getSpread(front, eventName) { return getN(front, eventName, 1, true); }
-function get2Spread(front, eventName) { return getN(front, eventName, 2, true); }
-function get3Spread(front, eventName) { return getN(front, eventName, 3, true); }
-function getNSpread(front, eventName, count) { return getN(front, eventName, count, true); }
+function get(front, eventName) {
+  return getN(front, eventName, 1);
+}
+function get2(front, eventName) {
+  return getN(front, eventName, 2);
+}
+function get3(front, eventName) {
+  return getN(front, eventName, 3);
+}
+function getSpread(front, eventName) {
+  return getN(front, eventName, 1, true);
+}
+function get2Spread(front, eventName) {
+  return getN(front, eventName, 2, true);
+}
+function get3Spread(front, eventName) {
+  return getN(front, eventName, 3, true);
+}
+function getNSpread(front, eventName, count) {
+  return getN(front, eventName, count, true);
+}
 
 
 
@@ -188,13 +202,11 @@ function checkVariableView(view, index, hash, description = "") {
     
     try {
       value = JSON.parse(value);
-    }
-    catch (e) {}
+    } catch (e) {}
     if (typeof hash[variable] === "function") {
       ok(hash[variable](value),
         "Passing property value of " + value + " for " + variable + " " + description);
-    }
-    else {
+    } else {
       is(value, hash[variable],
         "Correct property value of " + hash[variable] + " for " + variable + " " + description);
     }
@@ -210,12 +222,12 @@ function modifyVariableView(win, view, index, prop, value) {
     const onParamSetSuccess = () => {
       win.off(win.EVENTS.UI_SET_PARAM_ERROR, onParamSetError);
       resolve();
-    }
+    };
 
     const onParamSetError = () => {
       win.off(win.EVENTS.UI_SET_PARAM, onParamSetSuccess);
       reject();
-    }
+    };
     win.once(win.EVENTS.UI_SET_PARAM, onParamSetSuccess);
     win.once(win.EVENTS.UI_SET_PARAM_ERROR, onParamSetError);
 
@@ -325,7 +337,7 @@ function countGraphObjects(win) {
 
 
 function forceNodeCollection() {
-  ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+  ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     
     content.wrappedJSObject.keepAlive = null;
 
@@ -384,7 +396,9 @@ function waitForInspectorRender(panelWin, EVENTS) {
 function nodeDefaultValues(nodeName) {
   let fn = NODE_CONSTRUCTORS[nodeName];
 
-  if (typeof fn === "undefined") return {};
+  if (typeof fn === "undefined") {
+    return {};
+  }
 
   let init = nodeName === "AudioDestinationNode" ? "destination" : `create${fn}()`;
 

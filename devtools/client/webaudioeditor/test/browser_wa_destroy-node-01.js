@@ -9,8 +9,8 @@
 
 
 
-add_task(function* () {
-  let { target, panel } = yield initWebAudioEditor(DESTROY_NODES_URL);
+add_task(async function() {
+  let { target, panel } = await initWebAudioEditor(DESTROY_NODES_URL);
   let { panelWin } = panel;
   let { gFront, $, $$, gAudioNodes } = panelWin;
 
@@ -21,14 +21,14 @@ add_task(function* () {
     waitForGraphRendered(panelWin, 13, 2)
   ]);
   reload(target);
-  let [created] = yield events;
+  let [created] = await events;
 
   
   
   let actorIDs = created.map(ev => ev[0].id);
 
   
-  yield clickGraphNode(panelWin, actorIDs[5]);
+  await clickGraphNode(panelWin, actorIDs[5]);
 
   let destroyed = getN(gAudioNodes, "remove", 10);
 
@@ -36,7 +36,7 @@ add_task(function* () {
   forceNodeCollection();
 
   
-  yield Promise.all([destroyed, waitForGraphRendered(panelWin, 3, 2)]);
+  await Promise.all([destroyed, waitForGraphRendered(panelWin, 3, 2)]);
 
   
   is(panelWin.gAudioNodes.length, 3, "All nodes should be GC'd except one gain, osc and dest node.");
@@ -55,5 +55,5 @@ add_task(function* () {
   ok(isVisible($("#web-audio-editor-details-pane-empty")),
     "InspectorView empty message should show if the currently selected node gets collected.");
 
-  yield teardown(target);
+  await teardown(target);
 });
