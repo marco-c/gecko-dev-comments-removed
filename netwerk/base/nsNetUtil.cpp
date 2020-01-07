@@ -1674,6 +1674,11 @@ private:
                 if (mCount != -1) {
                     MOZ_ASSERT(mCount >= writtenData);
                     mCount -= writtenData;
+
+                    
+                    if (mCount == 0) {
+                        break;
+                    }
                 }
 
                 continue;
