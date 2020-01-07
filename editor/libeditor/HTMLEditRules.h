@@ -219,8 +219,14 @@ protected:
   nsresult WillDeleteSelection(nsIEditor::EDirection aAction,
                                nsIEditor::EStripWrappers aStripWrappers,
                                bool* aCancel, bool* aHandled);
-  nsresult DidDeleteSelection(nsIEditor::EDirection aDir,
-                              nsresult aResult);
+
+  
+
+
+
+
+  MOZ_MUST_USE nsresult DidDeleteSelection();
+
   nsresult InsertBRIfNeeded();
 
   
