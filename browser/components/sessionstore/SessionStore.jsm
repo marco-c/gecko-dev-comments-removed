@@ -16,6 +16,8 @@ const TAB_STATE_RESTORING = 2;
 const TAB_STATE_WILL_RESTORE = 3;
 const TAB_STATE_FOR_BROWSER = new WeakMap();
 const WINDOW_RESTORE_IDS = new WeakMap();
+const WINDOW_RESTORE_ZINDICES = new WeakMap();
+const WINDOW_SHOWING_PROMISES = new Map();
 
 
 
@@ -692,13 +694,6 @@ var SessionStoreInternal = {
           this._updateSessionStartTime(state);
 
           
-          delete state.windows[0].hidden;
-          
-          delete state.windows[0].isPopup;
-          
-          if (state.windows[0].sizemode == "minimized")
-            state.windows[0].sizemode = "normal";
-          
           
           state.windows.forEach(function(aWindow) {
             delete aWindow.__lastSessionWindowID;
@@ -1192,15 +1187,13 @@ var SessionStoreInternal = {
       }
     
     } else if (!this._isWindowLoaded(aWindow)) {
-      let state = this._statesToRestore[WINDOW_RESTORE_IDS.get(aWindow)];
-      let options = {overwriteTabs: true, isFollowUp: state.windows.length == 1};
-      this.restoreWindow(aWindow, state.windows[0], options);
+      
+      
+      return;
     
     
     
-    } else if (this._deferredInitialState && !isPrivateWindow &&
-             aWindow.toolbar.visible) {
-
+    } else if (this._deferredInitialState && !isPrivateWindow && aWindow.toolbar.visible) {
       
       
       this._globalState.setFromState(this._deferredInitialState);
@@ -1210,8 +1203,7 @@ var SessionStoreInternal = {
       this.restoreWindows(aWindow, this._deferredInitialState, {firstWindow: true});
       this._deferredInitialState = null;
     } else if (this._restoreLastWindow && aWindow.toolbar.visible &&
-             this._closedWindows.length && !isPrivateWindow) {
-
+               this._closedWindows.length && !isPrivateWindow) {
       
       
       let closedWindowState = null;
@@ -1285,6 +1277,14 @@ var SessionStoreInternal = {
   onBeforeBrowserWindowShown(aWindow) {
     
     this.onLoad(aWindow);
+
+    
+    
+    let deferred = WINDOW_SHOWING_PROMISES.get(aWindow);
+    if (deferred) {
+      deferred.resolve(aWindow);
+      WINDOW_SHOWING_PROMISES.delete(aWindow);
+    }
 
     
     if (this._sessionInitialized) {
@@ -1361,7 +1361,7 @@ var SessionStoreInternal = {
       }
 
       let restoreID = WINDOW_RESTORE_IDS.get(aWindow);
-      this._windows[aWindow.__SSi] = this._statesToRestore[restoreID];
+      this._windows[aWindow.__SSi] = this._statesToRestore[restoreID].windows[0];
       delete this._statesToRestore[restoreID];
       WINDOW_RESTORE_IDS.delete(aWindow);
     }
@@ -1588,9 +1588,11 @@ var SessionStoreInternal = {
 
   onQuitApplicationGranted: function ssi_onQuitApplicationGranted(syncShutdown = false) {
     
-    this._forEachBrowserWindow((win) => {
-      this._collectWindowData(win);
-    });
+    let index = 0;
+    for (let window of this._browserWindows) {
+      this._collectWindowData(window);
+      this._windows[window.__SSi].zIndex = ++index;
+    }
 
     
     
@@ -1675,19 +1677,19 @@ var SessionStoreInternal = {
     
     
     
-    this._forEachBrowserWindow((win) => {
-      windowPromises.set(win, TabStateFlusher.flushWindow(win));
+    for (let window of this._browserWindows) {
+      windowPromises.set(window, TabStateFlusher.flushWindow(window));
 
       
       
       
-      let baseWin = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDocShell)
-                       .QueryInterface(Ci.nsIDocShellTreeItem)
-                       .treeOwner
-                       .QueryInterface(Ci.nsIBaseWindow);
+      let baseWin = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIDocShell)
+                          .QueryInterface(Ci.nsIDocShellTreeItem)
+                          .treeOwner
+                          .QueryInterface(Ci.nsIBaseWindow);
       baseWin.visibility = false;
-    });
+    }
 
     progress.total = windowPromises.size;
     progress.current = 0;
@@ -1761,7 +1763,9 @@ var SessionStoreInternal = {
 
     let openWindows = {};
     
-    this._forEachBrowserWindow(({__SSi: id}) => openWindows[id] = true);
+    for (let window of this._browserWindows) {
+      openWindows[window.__SSi] = true;
+    }
 
     
     for (let ix in this._windows) {
@@ -2285,12 +2289,12 @@ var SessionStoreInternal = {
     }
 
     
-    this._forEachBrowserWindow(function(aWindow) {
-      if (aWindow != window) {
-        aWindow.close();
-        this.onClose(aWindow);
+    for (let otherWin of this._browserWindows) {
+      if (otherWin != window) {
+        otherWin.close();
+        this.onClose(otherWin);
       }
-    });
+    }
 
     
     if (this._closedWindows.length) {
@@ -2549,6 +2553,8 @@ var SessionStoreInternal = {
 
     let window = this._openWindowWithState(state);
     this.windowToFocus = window;
+    WINDOW_SHOWING_PROMISES.get(window).promise.then(win =>
+      this.restoreWindows(win, state, {overwriteTabs: true}));
 
     
     this._notifyOfClosedObjectsChange();
@@ -2798,10 +2804,10 @@ var SessionStoreInternal = {
 
     
     let windows = {};
-    this._forEachBrowserWindow(function(aWindow) {
-      if (aWindow.__SS_lastSessionWindowID)
-        windows[aWindow.__SS_lastSessionWindowID] = aWindow;
-    });
+    for (let window of this._browserWindows) {
+      if (window.__SS_lastSessionWindowID)
+        windows[window.__SS_lastSessionWindowID] = window;
+    }
 
     let lastSessionState = LastSession.getState();
 
@@ -2826,6 +2832,9 @@ var SessionStoreInternal = {
     
     
     this._globalState.setFromState(lastSessionState);
+
+    let openWindows = [];
+    let windowsToOpen = [];
 
     
     SessionCookies.restore(lastSessionState.cookies || []);
@@ -2862,12 +2871,19 @@ var SessionStoreInternal = {
         
         
         
-        let options = {overwriteTabs: canOverwriteTabs, isFollowUp: true};
-        this.restoreWindow(windowToUse, winState, options);
+        this._updateWindowRestoreState(windowToUse, {
+          windows: [winState],
+          options: {overwriteTabs: canOverwriteTabs}
+        });
+        openWindows.push(windowToUse);
       } else {
-        this._openWindowWithState({ windows: [winState] });
+        windowsToOpen.push(winState);
       }
     }
+
+    
+    this._openWindows({windows: windowsToOpen}).then(openedWindows =>
+      this._restoreWindowsInReversedZOrder(openWindows.concat(openedWindows)));
 
     
     if (lastSessionState._closedWindows) {
@@ -3163,15 +3179,17 @@ var SessionStoreInternal = {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_COLLECT_ALL_WINDOWS_DATA_MS");
     if (RunState.isRunning) {
       
-      this._forEachBrowserWindow(function(aWindow) {
-        if (!this._isWindowLoaded(aWindow)) 
-          return;
-        if (aUpdateAll || DirtyWindows.has(aWindow) || aWindow == activeWindow) {
-          this._collectWindowData(aWindow);
+      let index = 0;
+      for (let window of this._browserWindows) {
+        if (!this._isWindowLoaded(window)) 
+          continue;
+        if (aUpdateAll || DirtyWindows.has(window) || window == activeWindow) {
+          this._collectWindowData(window);
         } else { 
-          this._updateWindowFeatures(aWindow);
+          this._updateWindowFeatures(window);
         }
-      });
+        this._windows[window.__SSi].zIndex = ++index;
+      }
       DirtyWindows.clear();
     }
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_COLLECT_ALL_WINDOWS_DATA_MS");
@@ -3332,6 +3350,21 @@ var SessionStoreInternal = {
 
 
 
+  _openWindows(root) {
+    for (let winData of root.windows) {
+      if (!winData || !winData.tabs || !winData.tabs[0])
+        continue;
+      this._openWindowWithState({ windows: [winData] });
+    }
+    return Promise.all([...WINDOW_SHOWING_PROMISES.values()].map(deferred => deferred.promise));
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -3340,12 +3373,7 @@ var SessionStoreInternal = {
 
   restoreWindow: function ssi_restoreWindow(aWindow, winData, aOptions = {}) {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
-    let isFollowUp = aOptions && aOptions.isFollowUp;
     let firstWindow = aOptions && aOptions.firstWindow;
-
-    if (isFollowUp) {
-      this.windowToFocus = aWindow;
-    }
 
     
     if (aWindow && (!aWindow.__SSi || !this._windows[aWindow.__SSi]))
@@ -3484,7 +3512,6 @@ var SessionStoreInternal = {
       aWindow.__SS_lastSessionWindowID = winData.__lastSessionWindowID;
 
     if (overwriteTabs) {
-      this.restoreWindowFeatures(aWindow, winData);
       delete this._windows[aWindow.__SSi].extData;
     }
 
@@ -3585,6 +3612,42 @@ var SessionStoreInternal = {
 
 
 
+  _restoreWindowsFeaturesAndTabs(windows) {
+    
+    
+    for (let window of windows) {
+      let state = this._statesToRestore[WINDOW_RESTORE_IDS.get(window)];
+      this.restoreWindowFeatures(window, state.windows[0]);
+    }
+
+    
+    for (let window of windows) {
+      let state = this._statesToRestore[WINDOW_RESTORE_IDS.get(window)];
+      this.restoreWindow(window, state.windows[0], state.options || {overwriteTabs: true});
+      WINDOW_RESTORE_ZINDICES.delete(window);
+    }
+  },
+
+  
+
+
+
+
+
+
+  _restoreWindowsInReversedZOrder(windows) {
+    windows.sort((a, b) =>
+      (WINDOW_RESTORE_ZINDICES.get(a) || 0) - (WINDOW_RESTORE_ZINDICES.get(b) || 0));
+
+    this.windowToFocus = windows[0];
+    this._restoreWindowsFeaturesAndTabs(windows);
+  },
+
+  
+
+
+
+
 
 
 
@@ -3594,12 +3657,6 @@ var SessionStoreInternal = {
 
 
   restoreWindows: function ssi_restoreWindows(aWindow, aState, aOptions = {}) {
-    let isFollowUp = aOptions && aOptions.isFollowUp;
-
-    if (isFollowUp) {
-      this.windowToFocus = aWindow;
-    }
-
     
     if (aWindow && (!aWindow.__SSi || !this._windows[aWindow.__SSi]))
       this.onLoad(aWindow);
@@ -3625,24 +3682,21 @@ var SessionStoreInternal = {
       return;
     }
 
-    if (!root.selectedWindow || root.selectedWindow > root.windows.length) {
-      root.selectedWindow = 0;
-    }
+    let firstWindowData = root.windows.splice(0, 1);
+    
+    
+    this._updateWindowRestoreState(aWindow, {windows: firstWindowData, options: aOptions});
 
     
     
-    let winData;
-    for (var w = 1; w < root.windows.length; w++) {
-      winData = root.windows[w];
-      if (winData && winData.tabs && winData.tabs[0]) {
-        var window = this._openWindowWithState({ windows: [winData] });
-        if (w == root.selectedWindow - 1) {
-          this.windowToFocus = window;
-        }
-      }
-    }
+    this._openWindows(root).then(windows => {
+      
+      
+      
+      windows.unshift(aWindow);
 
-    this.restoreWindow(aWindow, root.windows[0], aOptions);
+      this._restoreWindowsInReversedZOrder(windows);
+    });
 
     DevToolsShim.restoreDevToolsSession(aState);
   },
@@ -4228,15 +4282,11 @@ var SessionStoreInternal = {
 
 
 
-
-
-  _forEachBrowserWindow: function ssi_forEachBrowserWindow(aFunc) {
-    var windowsEnum = Services.wm.getEnumerator("navigator:browser");
-
-    while (windowsEnum.hasMoreElements()) {
-      var window = windowsEnum.getNext();
-      if (window.__SSi && !window.closed) {
-        aFunc.call(this, window);
+  _browserWindows: {
+    * [Symbol.iterator]() {
+      for (let window of BrowserWindowTracker.orderedWindows) {
+        if (window.__SSi && !window.closed)
+          yield window;
       }
     }
   },
@@ -4273,6 +4323,28 @@ var SessionStoreInternal = {
 
 
 
+
+
+
+
+  _updateWindowRestoreState(window, state) {
+    
+    if ("zIndex" in state.windows[0]) {
+      WINDOW_RESTORE_ZINDICES.set(window, state.windows[0].zIndex);
+    }
+    do {
+      var ID = "window" + Math.random();
+    } while (ID in this._statesToRestore);
+    WINDOW_RESTORE_IDS.set(window, ID);
+    this._statesToRestore[ID] = state;
+  },
+
+  
+
+
+
+
+
   _openWindowWithState: function ssi_openWindowWithState(aState) {
     var argString = Cc["@mozilla.org/supports-string;1"].
                     createInstance(Ci.nsISupportsString);
@@ -4295,11 +4367,8 @@ var SessionStoreInternal = {
       Services.ww.openWindow(null, this._prefBranch.getCharPref("chromeURL"),
                              "_blank", features, argString);
 
-    do {
-      var ID = "window" + Math.random();
-    } while (ID in this._statesToRestore);
-    WINDOW_RESTORE_IDS.set(window, ID);
-    this._statesToRestore[ID] = aState;
+    this._updateWindowRestoreState(window, aState);
+    WINDOW_SHOWING_PROMISES.set(window, PromiseUtils.defer());
 
     return window;
   },
