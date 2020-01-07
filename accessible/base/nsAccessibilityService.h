@@ -324,14 +324,6 @@ private:
 
   void UnsetConsumers(uint32_t aConsumers);
 
-#ifdef MOZ_XUL
-  
-
-
-  already_AddRefed<Accessible>
-    CreateAccessibleForXULTree(nsIContent* aContent, DocAccessible* aDoc);
-#endif
-
   
 
 
