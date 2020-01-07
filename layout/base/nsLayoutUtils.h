@@ -3063,6 +3063,14 @@ public:
 
   static uint32_t ParseFontLanguageOverride(const nsAString& aLangTag);
 
+  
+
+
+
+
+  static nscoord ResolveGapToLength(const nsStyleCoord& aGap,
+                                    nscoord aPercentageBasis);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
