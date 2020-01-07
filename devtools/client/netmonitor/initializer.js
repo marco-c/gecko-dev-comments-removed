@@ -34,6 +34,7 @@ function initialize(api) {
 
   
   window.Netmonitor = app;
+  window.api = api;
   window.store = app.api.store;
   window.connector = app.api.connector;
   window.actions = app.api.actions;
