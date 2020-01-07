@@ -32,8 +32,8 @@ function MapForEach(callbackfn, thisArg = undefined) {
     var M = this;
 
     
-    if (!IsObject(M) || !IsMapObject(M))
-        return callFunction(CallMapMethodIfWrapped, M, callbackfn, thisArg, "MapForEach");
+    if (!IsObject(M) || (M = GuardToMapObject(M)) === null)
+        return callFunction(CallMapMethodIfWrapped, this, callbackfn, thisArg, "MapForEach");
 
     
     if (!IsCallable(callbackfn))
