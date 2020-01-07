@@ -498,14 +498,15 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 
 function simulateLinkClick(element, clickEventProps) {
   
-  let oldOpenUILinkIn = window.openUILinkIn;
+  let oldOpenTrustedLinkIn = window.openTrustedLinkIn;
+  let oldOpenWebLinkIn = window.openWebLinkIn;
 
   const onOpenLink = new Promise((resolve) => {
-    window.openUILinkIn = function(link, where) {
-      window.openUILinkIn = oldOpenUILinkIn;
+    window.openWebLinkIn = window.openTrustedLinkIn = function(link, where) {
+      window.openTrustedLinkIn = oldOpenTrustedLinkIn;
+      window.openWebLinkIn = oldOpenWebLinkIn;
       resolve({link: link, where});
     };
-
     if (clickEventProps) {
       
       element.dispatchEvent(clickEventProps);
@@ -516,10 +517,12 @@ function simulateLinkClick(element, clickEventProps) {
   });
 
   
+  
   let timeoutId;
   const onTimeout = new Promise(function(resolve) {
     timeoutId = setTimeout(() => {
-      window.openUILinkIn = oldOpenUILinkIn;
+      window.openTrustedLinkIn = oldOpenTrustedLinkIn;
+      window.openWebLinkIn = oldOpenWebLinkIn;
       timeoutId = null;
       resolve({link: null, where: null});
     }, 1000);

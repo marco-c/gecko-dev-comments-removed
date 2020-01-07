@@ -1804,11 +1804,13 @@ function simulateMessageLinkClick(element, expectedLink) {
 
   
   
-  let oldOpenUILinkIn = window.openUILinkIn;
-  window.openUILinkIn = function (link) {
+  let oldOpenWebLinkIn = window.openWebLinkIn;
+  let oldOpenTrustedLinkIn = window.openTrustedLinkIn;
+  window.openTrustedLinkIn = window.openWebLinkIn = function (link) {
     if (link == expectedLink) {
       ok(true, "Clicking the message link opens the desired page");
-      window.openUILinkIn = oldOpenUILinkIn;
+      window.openWebLinkIn = oldOpenWebLinkIn;
+      window.openTrustedLinkIn = oldOpenTrustedLinkIn;
       deferred.resolve();
     }
   };
