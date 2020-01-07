@@ -502,19 +502,6 @@ public:
 
 
 
-  void ShowPopupWithAnchorAlign(nsIContent* aPopup,
-                                nsIContent* aAnchorContent,
-                                nsAString& aAnchor,
-                                nsAString& aAlign,
-                                int32_t aXPos, int32_t aYPos,
-                                bool aIsContextMenu);
-
-  
-
-
-
-
-
 
 
 
