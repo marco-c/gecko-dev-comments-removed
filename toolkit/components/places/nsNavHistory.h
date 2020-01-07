@@ -473,35 +473,6 @@ public:
   
 
 
-
-
-
-
-
-
-
-
-  void UpdateFrecencyStats(int64_t aPlaceId,
-                           int32_t aOldFrecency,
-                           int32_t aNewFrecency);
-
-  
-
-
-
-
-
-
-
-
-
-  void DispatchFrecencyStatsUpdate(int64_t aPlaceId,
-                                   int32_t aOldFrecency,
-                                   int32_t aNewFrecency) const;
-
-  
-
-
   static mozilla::Atomic<int64_t> sLastInsertedPlaceId;
   static mozilla::Atomic<int64_t> sLastInsertedVisitId;
 
@@ -660,12 +631,7 @@ protected:
   void DecayFrecencyCompleted(uint16_t reason);
   uint32_t mDecayFrecencyPendingCount;
 
-  uint64_t mFrecencyStatsCount;
-  uint64_t mFrecencyStatsSum;
-  uint64_t mFrecencyStatsSumOfSquares;
-  nsCOMPtr<nsITimer> mUpdateFrecencyStatsPrefsTimer;
-  static void UpdateFrecencyStatsPrefs(nsITimer *aTimer,
-                                       void *aClosure);
+  nsresult RecalculateFrecencyStatsInternal();
 
   
   nsresult TokensToQuery(const nsTArray<QueryKeyValuePair>& aTokens,

@@ -19,7 +19,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 48
+#define DATABASE_SCHEMA_VERSION 49
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -335,6 +335,7 @@ protected:
   nsresult MigrateV46Up();
   nsresult MigrateV47Up();
   nsresult MigrateV48Up();
+  nsresult MigrateV49Up();
 
   void MigrateV48Frecencies();
 

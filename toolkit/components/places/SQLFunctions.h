@@ -572,15 +572,7 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-class UpdateFrecencyStatsFunction final : public mozIStorageFunction
+class SqrtFunction final : public mozIStorageFunction
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -594,9 +586,8 @@ public:
 
   static nsresult create(mozIStorageConnection *aDBConn);
 private:
-  ~UpdateFrecencyStatsFunction() {}
+  ~SqrtFunction() {}
 };
-
 
 } 
 } 
