@@ -153,7 +153,7 @@ nssSlot_IsTokenPresent(
     
     PZ_Lock(slot->isPresentLock);
     while (slot->isPresentThread) {
-        PR_WaitCondVar(slot->isPresentCondition, 0);
+        PR_WaitCondVar(slot->isPresentCondition, PR_INTERVAL_NO_TIMEOUT);
     }
     
 
