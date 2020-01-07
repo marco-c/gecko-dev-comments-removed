@@ -375,6 +375,10 @@ const KTableEntry nsCSSProps::kAppearanceKTable[] = {
   { eCSSKeyword_checkbox_label,         NS_THEME_CHECKBOX_LABEL },
   { eCSSKeyword_radio_label,            NS_THEME_RADIO_LABEL },
   { eCSSKeyword_button_focus,           NS_THEME_BUTTON_FOCUS },
+  
+  
+  
+  
   { eCSSKeyword_window,                 NS_THEME_WINDOW },
   { eCSSKeyword_dialog,                 NS_THEME_DIALOG },
   { eCSSKeyword_menubar,                NS_THEME_MENUBAR },
