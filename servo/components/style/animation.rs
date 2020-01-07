@@ -3,7 +3,6 @@
 
 
 
-#![deny(missing_docs)]
 
 use Atom;
 use bezier::Bezier;
@@ -409,7 +408,6 @@ impl PropertyAnimation {
 
 
 
-#[cfg(feature = "servo")]
 pub fn start_transitions_if_applicable(
     new_animations_sender: &Sender<Animation>,
     opaque_node: OpaqueNode,
@@ -629,6 +627,7 @@ pub fn update_style_for_animation_frame(
 
     true
 }
+
 
 pub fn update_style_for_animation<E>(
     context: &SharedStyleContext,
