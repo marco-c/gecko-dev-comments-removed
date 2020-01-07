@@ -370,7 +370,7 @@ checkReportFlags(JSContext* cx, unsigned* flags)
 {
     if (JSREPORT_IS_STRICT(*flags)) {
         
-        if (!cx->compartment()->behaviors().extraWarnings(cx))
+        if (!cx->realm()->behaviors().extraWarnings(cx))
             return true;
     }
 

@@ -5732,7 +5732,7 @@ GetSharedArrayBuffer(JSContext* cx, unsigned argc, Value* vp)
 
             
             
-            MOZ_ASSERT(cx->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled());
+            MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
 
             newObj = SharedArrayBufferObject::New(cx, buf, mbx->length);
             if (!newObj) {

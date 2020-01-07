@@ -2174,7 +2174,7 @@ void
 Debugger::slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 {
     MOZ_ASSERT(!cx->runtime()->onNewGlobalObjectWatchers().isEmpty());
-    if (global->compartment()->creationOptions().invisibleToDebugger())
+    if (global->realm()->creationOptions().invisibleToDebugger())
         return;
 
     
@@ -3742,8 +3742,11 @@ Debugger::addAllGlobalsAsDebuggees(JSContext* cx, unsigned argc, Value* vp)
     THIS_DEBUGGER(cx, argc, vp, "addAllGlobalsAsDebuggees", args, dbg);
     for (ZonesIter zone(cx->runtime(), SkipAtoms); !zone.done(); zone.next()) {
         for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
-            if (c == dbg->object->compartment() || c->creationOptions().invisibleToDebugger())
+            if (c == dbg->object->compartment() ||
+                JS::GetRealmForCompartment(c)->creationOptions().invisibleToDebugger())
+            {
                 continue;
+            }
             c->scheduledForDestruction = false;
             GlobalObject* global = c->maybeGlobal();
             if (global) {
@@ -3963,8 +3966,8 @@ Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global)
     
     
     
-    JSCompartment* debuggeeCompartment = global->compartment();
-    if (debuggeeCompartment->creationOptions().invisibleToDebugger()) {
+    Realm* debuggeeRealm = global->realm();
+    if (debuggeeRealm->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_CANT_DEBUG_GLOBAL);
         return false;
     }
@@ -3980,7 +3983,7 @@ Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global)
         return false;
     for (size_t i = 0; i < visited.length(); i++) {
         JSCompartment* c = visited[i];
-        if (c == debuggeeCompartment) {
+        if (c == debuggeeRealm) {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_LOOP);
             return false;
         }
@@ -4072,12 +4075,12 @@ Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global)
     });
 
     
-    AutoRestoreCompartmentDebugMode debugModeGuard(debuggeeCompartment);
-    debuggeeCompartment->setIsDebuggee();
-    debuggeeCompartment->updateDebuggerObservesAsmJS();
-    debuggeeCompartment->updateDebuggerObservesBinarySource();
-    debuggeeCompartment->updateDebuggerObservesCoverage();
-    if (observesAllExecution() && !ensureExecutionObservabilityOfCompartment(cx, debuggeeCompartment))
+    AutoRestoreCompartmentDebugMode debugModeGuard(debuggeeRealm);
+    debuggeeRealm->setIsDebuggee();
+    debuggeeRealm->updateDebuggerObservesAsmJS();
+    debuggeeRealm->updateDebuggerObservesBinarySource();
+    debuggeeRealm->updateDebuggerObservesCoverage();
+    if (observesAllExecution() && !ensureExecutionObservabilityOfCompartment(cx, debuggeeRealm))
         return false;
 
     globalDebuggersGuard.release();
@@ -4959,7 +4962,7 @@ Debugger::findAllGlobals(JSContext* cx, unsigned argc, Value* vp)
         JS::AutoCheckCannotGC nogc;
 
         for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next()) {
-            if (c->creationOptions().invisibleToDebugger())
+            if (JS::GetRealmForCompartment(c)->creationOptions().invisibleToDebugger())
                 continue;
 
             c->scheduledForDestruction = false;
@@ -5012,8 +5015,7 @@ Debugger::makeGlobalObjectReference(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    JSCompartment* globalCompartment = global->compartment();
-    if (globalCompartment->creationOptions().invisibleToDebugger()) {
+    if (global->realm()->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
         return false;
@@ -10646,8 +10648,7 @@ DebuggerObject::unwrap(JSContext* cx, HandleDebuggerObject object,
     
     
     
-    JSCompartment* unwrappedCompartment = unwrapped->compartment();
-    if (unwrappedCompartment->creationOptions().invisibleToDebugger()) {
+    if (unwrapped->realm()->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
         return false;
     }

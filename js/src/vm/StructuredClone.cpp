@@ -2056,7 +2056,7 @@ JSStructuredCloneReader::readSharedArrayBuffer(MutableHandleValue vp)
     
     
 
-    if (!context()->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled()) {
+    if (!context()->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled()) {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_SAB_DISABLED);
         return false;
     }

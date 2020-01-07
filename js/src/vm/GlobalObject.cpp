@@ -112,7 +112,7 @@ GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key)
       
       case JSProto_Atomics:
       case JSProto_SharedArrayBuffer:
-        return !cx->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+        return !cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
       default:
         return false;
     }
