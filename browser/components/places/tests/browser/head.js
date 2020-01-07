@@ -150,18 +150,6 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 
- function promiseIsURIVisited(aURI) {
-   return PlacesUtils.history.hasVisits(aURI);
- }
-
-
-
-
-
-
-
-
-
 
 
 
