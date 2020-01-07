@@ -4,12 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const PTV_interfaces = [Ci.nsITreeView,
-                        Ci.nsINavHistoryResultObserver,
-                        Ci.nsISupportsWeakReference];
 
 
 
@@ -61,17 +56,11 @@ PlacesTreeView.prototype = {
     return this.__xulStore;
   },
 
-  QueryInterface: ChromeUtils.generateQI(PTV_interfaces),
-
-  
-  
-  
-  
-  
-  
-  
-  
-  classInfo: XPCOMUtils.generateCI({ interfaces: PTV_interfaces }),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsITreeView,
+    Ci.nsINavHistoryResultObserver,
+    Ci.nsISupportsWeakReference
+  ]),
 
   
 
