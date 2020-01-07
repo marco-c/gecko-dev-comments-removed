@@ -31,6 +31,8 @@ enum eHtml5SpeculativeLoad {
 };
 
 class nsHtml5SpeculativeLoad {
+    using Encoding = mozilla::Encoding;
+    template <typename T> using NotNull = mozilla::NotNull<T>;
   public:
     nsHtml5SpeculativeLoad();
     ~nsHtml5SpeculativeLoad();
@@ -190,13 +192,14 @@ class nsHtml5SpeculativeLoad {
 
 
 
-    inline void InitSetDocumentCharset(nsACString& aCharset,
+    inline void InitSetDocumentCharset(NotNull<const Encoding*> aEncoding,
                                        int32_t aCharsetSource)
     {
       NS_PRECONDITION(mOpCode == eSpeculativeLoadUninitialized,
                       "Trying to reinitialize a speculative load!");
       mOpCode = eSpeculativeLoadSetDocumentCharset;
-      CopyUTF8toUTF16(aCharset, mCharsetOrSrcset);
+      mCharsetOrSrcset.~nsString();
+      mEncoding = aEncoding;
       mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity.Assign((char16_t)aCharsetSource);
     }
 
@@ -257,7 +260,10 @@ class nsHtml5SpeculativeLoad {
 
 
 
-    nsString mCharsetOrSrcset;
+    union {
+      nsString mCharsetOrSrcset;
+      const Encoding* mEncoding;
+    };
     
 
 
