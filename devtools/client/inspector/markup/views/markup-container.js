@@ -718,8 +718,6 @@ MarkupContainer.prototype = {
       this.elt.classList.remove("pseudoclass-locked");
     }
 
-    this.updateIsDisplayed();
-
     if (this.editor.update) {
       this.editor.update();
     }
@@ -738,8 +736,7 @@ MarkupContainer.prototype = {
 
   _onToggle: function (event) {
     
-    
-    if (event.target.dataset.event || event.target.dataset.display) {
+    if (event.target.dataset.event) {
       event.stopPropagation();
       return;
     }

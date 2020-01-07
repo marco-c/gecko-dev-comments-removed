@@ -20,11 +20,6 @@ const {parseAttribute} =
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
 
 
-const {LocalizationHelper} = require("devtools/shared/l10n");
-const INSPECTOR_L10N =
-  new LocalizationHelper("devtools/client/locales/inspector.properties");
-
-
 const COLLAPSE_DATA_URL_REGEX = /^data.+base64/;
 const COLLAPSE_DATA_URL_LENGTH = 60;
 
@@ -32,19 +27,12 @@ const COLLAPSE_DATA_URL_LENGTH = 60;
 const HTML_VOID_ELEMENTS = [
   "area", "base", "br", "col", "command", "embed",
   "hr", "img", "input", "keygen", "link", "meta", "param", "source",
-  "track", "wbr"
-];
+  "track", "wbr" ];
 
 
-
-const DISPLAY_TYPES = {
-  "flex": INSPECTOR_L10N.getStr("markupView.display.flex.tooltiptext"),
-  "inline-flex": INSPECTOR_L10N.getStr("markupView.display.flex.tooltiptext"),
-  "grid": INSPECTOR_L10N.getStr("markupView.display.grid.tooltiptext"),
-  "inline-grid": INSPECTOR_L10N.getStr("markupView.display.inlineGrid.tooltiptext"),
-  "flow-root": INSPECTOR_L10N.getStr("markupView.display.flowRoot.tooltiptext"),
-  "contents": INSPECTOR_L10N.getStr("markupView.display.contents.tooltiptext"),
-};
+const {LocalizationHelper} = require("devtools/shared/l10n");
+const INSPECTOR_L10N =
+  new LocalizationHelper("devtools/client/locales/inspector.properties");
 
 
 
@@ -174,10 +162,6 @@ ElementEditor.prototype = {
     this.eventNode.textContent = "ev";
     this.eventNode.title = INSPECTOR_L10N.getStr("markupView.event.tooltiptext");
     this.elt.appendChild(this.eventNode);
-
-    this.displayNode = this.doc.createElement("div");
-    this.displayNode.classList.add("markupview-display");
-    this.elt.appendChild(this.displayNode);
   },
 
   set selected(value) {
@@ -269,14 +253,8 @@ ElementEditor.prototype = {
     }
 
     
-    this.eventNode.style.display = this.node.hasEventListeners ? "inline-block" : "none";
-
-    
-    let showDisplayNode = this.node.displayType in DISPLAY_TYPES;
-    this.displayNode.textContent = this.node.displayType;
-    this.displayNode.dataset.display = showDisplayNode ? this.node.displayType : "";
-    this.displayNode.style.display = showDisplayNode ? "inline-block" : "none";
-    this.displayNode.title = showDisplayNode ? DISPLAY_TYPES[this.node.displayType] : "";
+    this.eventNode.style.display = this.node.hasEventListeners ?
+      "inline-block" : "none";
 
     this.updateTextEditor();
   },
