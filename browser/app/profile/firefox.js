@@ -1259,7 +1259,6 @@ pref("prompts.tab_modal.enabled", true);
 pref("browser.newtab.preload", true);
 
 
-
 pref("browser.newtabpage.enabled", true);
 
 
