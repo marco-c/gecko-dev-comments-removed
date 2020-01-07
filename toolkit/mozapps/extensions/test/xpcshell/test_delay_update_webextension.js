@@ -39,7 +39,7 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 
 
 add_task(async function delay_updates_ignore() {
-  startupManager();
+  await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",
@@ -118,7 +118,7 @@ add_task(async function delay_updates_ignore() {
 
 
 add_task(async function delay_updates_complete() {
-  startupManager();
+  await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",
@@ -181,7 +181,7 @@ add_task(async function delay_updates_complete() {
 
 
 add_task(async function delay_updates_defer() {
-  startupManager();
+  await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",
@@ -277,7 +277,7 @@ add_task(async function delay_updates_defer() {
 
 
 add_task(async function runtime_reload() {
-  startupManager();
+  await promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "permanent",

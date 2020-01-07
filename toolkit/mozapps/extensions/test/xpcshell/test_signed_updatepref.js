@@ -41,22 +41,20 @@ function verifySignatures() {
   });
 }
 
-function run_test() {
+add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "4", "4");
 
   
   
-  startupManager();
-  shutdownManager();
-
-  run_next_test();
-}
+  await promiseStartupManager();
+  await promiseShutdownManager();
+});
 
 
 
 add_task(async function() {
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
-  startupManager();
+  await promiseStartupManager();
 
   
   await promiseInstallAllFiles([do_get_file(DATA + "unsigned_bootstrap_2.xpi")]);
@@ -71,7 +69,7 @@ add_task(async function() {
 
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
-  startupManager();
+  await promiseStartupManager();
 
   addon = await promiseAddonByID(ID);
   Assert.notEqual(addon, null);
@@ -107,7 +105,7 @@ add_task(async function() {
 
 add_task(async function() {
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, false);
-  startupManager();
+  await promiseStartupManager();
 
   
   await promiseInstallAllFiles([do_get_file(DATA + "unsigned_bootstrap_2.xpi")]);
@@ -122,7 +120,7 @@ add_task(async function() {
 
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
   gAppInfo.version = 5.0;
-  startupManager();
+  await promiseStartupManager();
 
   addon = await promiseAddonByID(ID);
   Assert.notEqual(addon, null);

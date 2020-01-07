@@ -69,7 +69,7 @@ add_task(async function() {
   let systemDir = systemParentDir.clone();
   systemDir.append(Services.appinfo.ID);
 
-  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), systemDir, ID);
+  let path = await manuallyInstall(do_get_addon("test_bootstrap1_1"), systemDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
@@ -97,7 +97,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
+  let path = await manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
@@ -118,7 +118,7 @@ add_task(async function() {
 
   
   manuallyUninstall(profileDir, ID);
-  manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
+  await manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
   setExtensionModifiedTime(path, Date.now());
 
   await promiseStartupManager();
@@ -135,7 +135,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
+  let path = await manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
@@ -175,7 +175,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
+  let path = await manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 
@@ -198,7 +198,7 @@ add_task(async function() {
 
   
   manuallyUninstall(profileDir, ID);
-  manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
+  await manuallyInstall(do_get_addon("test_bootstrap1_2"), profileDir, ID);
   setExtensionModifiedTime(path, Date.now());
 
   await promiseStartupManager();
@@ -215,7 +215,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  let path = manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
+  let path = await manuallyInstall(do_get_addon("test_bootstrap1_1"), profileDir, ID);
   
   setExtensionModifiedTime(path, Date.now() - 10000);
 

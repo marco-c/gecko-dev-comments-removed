@@ -209,7 +209,7 @@ add_task(async function test_bad_pointer() {
 
 
 add_task(async function test_bad_pointer_id() {
-  var dest = writeInstallRDFForExtension(addon1, sourceDir);
+  var dest = await promiseWriteInstallRDFForExtension(addon1, sourceDir);
   
   setExtensionModifiedTime(dest, dest.lastModifiedTime - 5000);
   await promiseWritePointer(addon1.id);
@@ -219,7 +219,7 @@ add_task(async function test_bad_pointer_id() {
   notEqual(addon, null);
   equal(addon.version, "1.0");
 
-  writeInstallRDFForExtension(addon2, sourceDir, addon1.id);
+  await promiseWriteInstallRDFForExtension(addon2, sourceDir, addon1.id);
 
   await promiseRestartManager();
 
@@ -240,7 +240,7 @@ add_task(async function test_bad_pointer_id() {
 
 
 add_task(async function test_remove_pointer() {
-  var dest = writeInstallRDFForExtension(addon1, sourceDir);
+  var dest = await promiseWriteInstallRDFForExtension(addon1, sourceDir);
   
   setExtensionModifiedTime(dest, dest.lastModifiedTime - 5000);
   await promiseWritePointer(addon1.id);
@@ -274,7 +274,7 @@ add_task(async function test_replace_pointer() {
   pointer.append(addon1.id);
   pointer.remove(false);
 
-  writeInstallRDFForExtension(addon1_2, profileDir);
+  await promiseWriteInstallRDFForExtension(addon1_2, profileDir);
 
   await promiseRestartManager();
 
@@ -295,7 +295,7 @@ add_task(async function test_change_pointer_sources() {
   notEqual(addon, null);
   equal(addon.version, "1.0");
 
-  writeInstallRDFForExtension(addon1_2, sourceDir);
+  await promiseWriteInstallRDFForExtension(addon1_2, sourceDir);
 
   await promiseRestartManager();
 
@@ -309,7 +309,7 @@ add_task(async function test_change_pointer_sources() {
 
 add_task(async function test_remove_pointer_target() {
   await promiseRestartManager();
-  var dest = writeInstallRDFForExtension(addon1, sourceDir);
+  var dest = await promiseWriteInstallRDFForExtension(addon1, sourceDir);
   await promiseWritePointer(addon1.id);
   await promiseRestartManager();
 
@@ -331,7 +331,7 @@ add_task(async function test_remove_pointer_target() {
 
 
 add_task(async function test_new_relative_pointer() {
-  writeInstallRDFForExtension(addon1, sourceDir);
+  await promiseWriteInstallRDFForExtension(addon1, sourceDir);
   await promiseWriteRelativePointer(addon1.id);
   await promiseRestartManager();
 

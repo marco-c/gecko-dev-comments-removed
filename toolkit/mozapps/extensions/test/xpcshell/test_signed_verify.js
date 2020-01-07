@@ -50,8 +50,8 @@ function verify_no_change([startFile, startState], [endFile, endState]) {
     info("A switch from " + startFile + " to " + endFile + " should cause no change.");
 
     
-    manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
-    startupManager();
+    await manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
+    await promiseStartupManager();
 
     let addon = await promiseAddonByID(ID);
     Assert.notEqual(addon, null);
@@ -62,7 +62,7 @@ function verify_no_change([startFile, startState], [endFile, endState]) {
 
     
     manuallyUninstall(profileDir, ID);
-    manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
+    await manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
 
     let events = {
       [ID]: []
@@ -95,8 +95,8 @@ function verify_enables([startFile, startState], [endFile, endState]) {
     info("A switch from " + startFile + " to " + endFile + " should enable the add-on.");
 
     
-    manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
-    startupManager();
+    await manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
+    await promiseStartupManager();
 
     let addon = await promiseAddonByID(ID);
     Assert.notEqual(addon, null);
@@ -106,7 +106,7 @@ function verify_enables([startFile, startState], [endFile, endState]) {
 
     
     manuallyUninstall(profileDir, ID);
-    manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
+    await manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
 
     let needsRestart = hasFlag(addon.operationsRequiringRestart, AddonManager.OP_NEEDS_RESTART_ENABLE);
     info(needsRestart);
@@ -157,8 +157,8 @@ function verify_disables([startFile, startState], [endFile, endState]) {
     info("A switch from " + startFile + " to " + endFile + " should disable the add-on.");
 
     
-    manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
-    startupManager();
+    await manuallyInstall(do_get_file(DATA + startFile), profileDir, ID);
+    await promiseStartupManager();
 
     let addon = await promiseAddonByID(ID);
     Assert.notEqual(addon, null);
@@ -170,7 +170,7 @@ function verify_disables([startFile, startState], [endFile, endState]) {
 
     
     manuallyUninstall(profileDir, ID);
-    manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
+    await manuallyInstall(do_get_file(DATA + endFile), profileDir, ID);
 
     let events = {};
     if (!needsRestart) {

@@ -12,7 +12,7 @@ BootstrapMonitor.init();
 
 add_task(async function() {
   let tempdir = gTmpD.clone();
-  writeInstallRDFToDir({
+  await promiseWriteInstallRDFToDir({
     id: ID,
     version: "1.0",
     bootstrap: true,
@@ -33,7 +33,7 @@ add_task(async function() {
   
   let extensionsDir = gProfD.clone();
   extensionsDir.append("extensions");
-  let proxyFile = writeProxyFileToDir(extensionsDir, unpackedAddon, ID);
+  let proxyFile = await promiseWriteProxyFileToDir(extensionsDir, unpackedAddon, ID);
 
   await promiseRestartManager();
 
@@ -66,7 +66,7 @@ add_task(async function() {
   let tempdir = gTmpD.clone();
 
   
-  writeInstallRDFToDir({
+  await promiseWriteInstallRDFToDir({
     id: "bad-proxy1@tests.mozilla.org",
     version: "1.0",
     bootstrap: true,
@@ -87,7 +87,7 @@ add_task(async function() {
   
   let extensionsDir = gProfD.clone();
   extensionsDir.append("extensions");
-  let proxyFile = writeProxyFileToDir(extensionsDir, unpackedAddon, ID);
+  let proxyFile = await promiseWriteProxyFileToDir(extensionsDir, unpackedAddon, ID);
 
   await promiseRestartManager();
 

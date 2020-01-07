@@ -75,7 +75,7 @@ function checkUpdates(aData) {
 add_task(async function test_default_values() {
   
 
-  startupManager();
+  await promiseStartupManager();
 
   let updates = await checkUpdates({
     id: "updatecheck-defaults@tests.mozilla.org",

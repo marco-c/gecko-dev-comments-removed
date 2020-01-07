@@ -61,7 +61,7 @@ function checkAddonsExist() {
   for (let addon of ADDONS) {
     let file = addon.directory.clone();
     file.append("install.rdf");
-    Assert.ok(file.exists());
+    Assert.ok(file.exists(), Components.stack.caller);
   }
 }
 
@@ -95,7 +95,7 @@ async function run_proxy_tests() {
 
     METADATA.id = addon.id;
     METADATA.name = addon.id;
-    writeInstallRDFToDir(METADATA, gTmpD);
+    await promiseWriteInstallRDFToDir(METADATA, gTmpD);
 
     if (addon.type == "proxy") {
       await promiseWriteFile(addon.proxyFile, addon.directory.path);
@@ -104,70 +104,69 @@ async function run_proxy_tests() {
     }
   }
 
-  startupManager();
+  await promiseStartupManager();
 
   
   
   checkAddonsExist();
 
-  return AddonManager.getAddonsByIDs(ADDONS.map(addon => addon.id)).then(addons => {
-    try {
-      for (let [i, addon] of addons.entries()) {
+  let addons = await AddonManager.getAddonsByIDs(ADDONS.map(addon => addon.id));
+  try {
+    for (let [i, addon] of addons.entries()) {
+      
+      
+      print(ADDONS[i].id,
+            ADDONS[i].dirId,
+            ADDONS[i].dirId != null,
+            ADDONS[i].type == "symlink");
+      Assert.equal(addon == null,
+                   ADDONS[i].dirId != null);
+
+      if (addon != null) {
+        let fixURL = url => {
+          if (AppConstants.platform == "macosx")
+            return url.replace(RegExp(`^file:///private/`), "file:///");
+          return url;
+        };
+
         
+        Assert.equal(addon.permissions & AddonManager.PERM_CAN_UPGRADE, 0);
+
         
-        print(ADDONS[i].id,
-              ADDONS[i].dirId,
-              ADDONS[i].dirId != null,
-              ADDONS[i].type == "symlink");
-        Assert.equal(addon == null,
-                     ADDONS[i].dirId != null);
+        Assert.equal(Services.io.newFileURI(ADDONS[i].directory).spec,
+                     fixURL(addon.getResourceURI().spec),
+                     `Base resource URL resolves as expected`);
 
-        if (addon != null) {
-          let fixURL = url => {
-            if (AppConstants.platform == "macosx")
-              return url.replace(RegExp(`^file:///private/`), "file:///");
-            return url;
-          };
+        let file = ADDONS[i].directory.clone();
+        file.append("install.rdf");
 
-          
-          Assert.equal(addon.permissions & AddonManager.PERM_CAN_UPGRADE, 0);
+        Assert.equal(Services.io.newFileURI(file).spec,
+                     fixURL(addon.getResourceURI("install.rdf").spec),
+                     `Resource URLs resolve as expected`);
 
-          
-          Assert.equal(Services.io.newFileURI(ADDONS[i].directory).spec,
-                       fixURL(addon.getResourceURI().spec),
-                       `Base resource URL resolves as expected`);
-
-          let file = ADDONS[i].directory.clone();
-          file.append("install.rdf");
-
-          Assert.equal(Services.io.newFileURI(file).spec,
-                       fixURL(addon.getResourceURI("install.rdf").spec),
-                       `Resource URLs resolve as expected`);
-
-          addon.uninstall();
-        }
+        addon.uninstall();
       }
-
-      
-      restartManager();
-      checkAddonsExist();
-
-      shutdownManager();
-
-      
-      
-      for (let addon of ADDONS) {
-        equal(addon.proxyFile.exists(), addon.dirId != null,
-              `Proxy file ${addon.proxyFile.path} should exist?`);
-        addon.directory.remove(true);
-        try {
-          addon.proxyFile.remove(false);
-        } catch (e) {}
-      }
-    } catch (e) {
-      do_throw(e);
     }
-  });
+
+    
+    await promiseRestartManager();
+    checkAddonsExist();
+
+    await promiseShutdownManager();
+
+    
+    
+    for (let addon of ADDONS) {
+      equal(addon.proxyFile.exists(), addon.dirId != null,
+            `Proxy file ${addon.proxyFile.path} should exist?`);
+      addon.directory.remove(true);
+      try {
+        addon.proxyFile.remove(false);
+      } catch (e) {}
+    }
+  } catch (e) {
+    do_throw(e);
+  }
 }
 
 async function run_symlink_tests() {
@@ -188,7 +187,7 @@ async function run_symlink_tests() {
   let addonDirectory = profileDir.clone();
   addonDirectory.append(METADATA.id);
 
-  writeInstallRDFToDir(METADATA, profileDir);
+  await promiseWriteInstallRDFToDir(METADATA, profileDir);
 
   let symlink = addonDirectory.clone();
   symlink.append(tempDirectory.leafName);
@@ -200,22 +199,21 @@ async function run_symlink_tests() {
   file.normalize();
   Assert.equal(file.path.replace(/^\/private\//, "/"), tempFile.path);
 
-  startupManager();
+  await promiseStartupManager();
 
-  return AddonManager.getAddonByID(METADATA.id).then(addon => {
-    Assert.notEqual(addon, null);
+  let addon = await AddonManager.getAddonByID(METADATA.id);
+  Assert.notEqual(addon, null);
 
-    addon.uninstall();
+  addon.uninstall();
 
-    restartManager();
-    shutdownManager();
+  await promiseRestartManager();
+  await promiseShutdownManager();
 
-    
-    Assert.ok(!addonDirectory.exists());
+  
+  Assert.ok(!addonDirectory.exists());
 
-    
-    Assert.ok(tempFile.exists());
+  
+  Assert.ok(tempFile.exists());
 
-    tempDirectory.remove(true);
-  });
+  tempDirectory.remove(true);
 }

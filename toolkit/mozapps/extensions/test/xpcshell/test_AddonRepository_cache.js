@@ -489,7 +489,7 @@ add_task(async function setup() {
   
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 
-  startupManager();
+  await promiseStartupManager();
 
   
   await promiseInstallAllFiles(ADDON_FILES);

@@ -35,7 +35,7 @@ function check_empty_state() {
 
 
 add_task(async function first_run() {
-  startupManager();
+  await promiseStartupManager();
   check_empty_state();
   await true;
 });
@@ -53,7 +53,7 @@ add_task(trigger_db_load);
 
 
 add_task(async function restart_and_recheck() {
-  restartManager();
+  await promiseRestartManager();
   check_empty_state();
   await true;
 });
@@ -63,11 +63,11 @@ add_task(trigger_db_load);
 
 
 
-add_task(function upgrade_schema_version() {
-  shutdownManager();
+add_task(async function upgrade_schema_version() {
+  await promiseShutdownManager();
   Services.prefs.setIntPref("extensions.databaseSchema", 1);
 
-  startupManager();
+  await promiseStartupManager();
   Assert.equal(Services.prefs.getIntPref("extensions.databaseSchema"), DB_SCHEMA);
   check_empty_state();
 });

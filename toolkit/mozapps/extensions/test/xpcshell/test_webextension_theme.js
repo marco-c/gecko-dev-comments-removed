@@ -39,7 +39,7 @@ add_task(async function setup_to_default_browserish_state() {
     }
   }, profileDir);
 
-  startupManager();
+  await promiseStartupManager();
 
   
   LightweightThemeManager.currentTheme = {
