@@ -17,6 +17,8 @@ ChromeUtils.defineModuleGetter(this, "SelectContentHelper",
   "resource://gre/modules/SelectContentHelper.jsm");
 ChromeUtils.defineModuleGetter(this, "FindContent",
   "resource://gre/modules/FindContent.jsm");
+ChromeUtils.defineModuleGetter(this, "RemoteFinder",
+  "resource://gre/modules/RemoteFinder.jsm");
 
 var global = this;
 
@@ -927,16 +929,37 @@ var FindBar = {
 
   _findMode: 0,
 
+  
+
+
+
+
+
+  _findKey: null,
+  _findModifiers: null,
+
   init() {
     addMessageListener("Findbar:UpdateState", this);
     Services.els.addSystemEventListener(global, "keypress", this, false);
     Services.els.addSystemEventListener(global, "mouseup", this, false);
+    this._initShortcutData();
   },
 
   receiveMessage(msg) {
     switch (msg.name) {
       case "Findbar:UpdateState":
         this._findMode = msg.data.findMode;
+        this._quickFindTimeout = msg.data.hasQuickFindTimeout;
+        if (msg.data.isOpenAndFocused) {
+          this._keepPassingUntilToldOtherwise = false;
+        }
+        break;
+      case "Findbar:ShortcutData":
+        
+        
+        Services.cpmm.initialProcessData.findBarShortcutData = msg.data;
+        Services.cpmm.removeMessageListener("Findbar:ShortcutData", this);
+        this._initShortcutData(msg.data);
         break;
     }
   },
@@ -950,6 +973,36 @@ var FindBar = {
         this._onMouseup(event);
         break;
     }
+  },
+
+  
+
+
+
+
+  _initShortcutData(data = Services.cpmm.initialProcessData.findBarShortcutData) {
+    if (data) {
+      this._findKey = data.key;
+      this._findModifiers = data.modifiers;
+    } else {
+      Services.cpmm.addMessageListener("Findbar:ShortcutData", this);
+    }
+  },
+
+  
+
+
+
+
+
+  _eventMatchesFindShortcut(aEvent) {
+    let modifiers = this._findModifiers;
+    if (!modifiers) {
+      return false;
+    }
+    return aEvent.ctrlKey == modifiers.ctrlKey && aEvent.altKey == modifiers.altKey &&
+      aEvent.shiftKey == modifiers.shiftKey && aEvent.metaKey == modifiers.metaKey &&
+      aEvent.key == this._findKey;
   },
 
   
@@ -970,9 +1023,14 @@ var FindBar = {
   },
 
   _onKeypress(event) {
+    const FAYT_LINKS_KEY = "'";
+    const FAYT_TEXT_KEY = "/";
+    if (this._eventMatchesFindShortcut(event)) {
+      this._keepPassingUntilToldOtherwise = true;
+    }
     
     if (event.ctrlKey || event.altKey || event.metaKey || event.defaultPrevented) {
-      return undefined;
+      return;
     }
 
     
@@ -980,9 +1038,39 @@ var FindBar = {
 
     
     if (!fastFind.can) {
-      return undefined;
+      return;
+    }
+    if (this._keepPassingUntilToldOtherwise) {
+      this._passKeyToParent(event);
+      return;
+    }
+    if (!fastFind.should) {
+      return;
     }
 
+    let charCode = event.charCode;
+    
+    if (this._findMode != this.FIND_NORMAL && this._quickFindTimeout) {
+      if (!charCode)
+        return;
+      this._passKeyToParent(event);
+    } else {
+      let key = charCode ? String.fromCharCode(charCode) : null;
+      let manualstartFAYT = (key == FAYT_LINKS_KEY || key == FAYT_TEXT_KEY);
+      let autostartFAYT = !manualstartFAYT && RemoteFinder._findAsYouType && key && key != " ";
+      if (manualstartFAYT || autostartFAYT) {
+        let mode = (key == FAYT_LINKS_KEY || (autostartFAYT && RemoteFinder._typeAheadLinksOnly)) ?
+          this.FIND_LINKS : this.FIND_TYPEAHEAD;
+        
+        
+        this._findMode = mode;
+        this._passKeyToParent(event);
+      }
+    }
+  },
+
+  _passKeyToParent(event) {
+    event.preventDefault();
     let fakeEvent = {};
     for (let k in event) {
       if (typeof event[k] != "object" && typeof event[k] != "function" &&
@@ -990,16 +1078,7 @@ var FindBar = {
         fakeEvent[k] = event[k];
       }
     }
-    
-    let rv = sendSyncMessage("Findbar:Keypress", {
-      fakeEvent,
-      shouldFastFind: fastFind.should
-    });
-    if (rv.includes(false)) {
-      event.preventDefault();
-      return false;
-    }
-    return undefined;
+    sendAsyncMessage("Findbar:Keypress", fakeEvent);
   },
 
   _onMouseup(event) {

@@ -54,9 +54,8 @@ window._gBrowser = {
 
     
     
-    this._findAsYouType = Services.prefs.getBoolPref("accessibility.typeaheadfind");
-    Services.prefs.addObserver("accessibility.typeaheadfind", this);
     messageManager.addMessageListener("Findbar:Keypress", this);
+    this._setFindbarData();
 
     XPCOMUtils.defineLazyPreferenceGetter(this, "animationsEnabled",
       "toolkit.cosmeticAnimations.enabled");
@@ -438,6 +437,27 @@ window._gBrowser = {
     return this.selectedBrowser.userTypedValue;
   },
 
+  _setFindbarData() {
+    
+    let initialProcessData = Services.ppmm.initialProcessData;
+    if (!initialProcessData.findBarShortcutData) {
+      let keyEl = document.getElementById("key_find");
+      let mods = keyEl.getAttribute("modifiers")
+        .replace(/accel/i, AppConstants.platform == "macosx" ? "meta" : "control");
+      initialProcessData.findBarShortcutData = {
+        key: keyEl.getAttribute("key"),
+        modifiers: {
+          shiftKey: mods.includes("shift"),
+          ctrlKey: mods.includes("control"),
+          altKey: mods.includes("alt"),
+          metaKey: mods.includes("meta"),
+        },
+      };
+      Services.ppmm.broadcastAsyncMessage("Findbar:ShortcutData",
+        initialProcessData.findBarShortcutData);
+    }
+  },
+
   isFindBarInitialized(aTab) {
     return (aTab || this.selectedTab)._findBar != undefined;
   },
@@ -471,25 +491,17 @@ window._gBrowser = {
 
 
 
-
-  async _createFindBar(aTab, aForce = false) {
+  async _createFindBar(aTab) {
     let findBar = document.createElementNS(this._XUL_NS, "findbar");
     let browser = this.getBrowserForTab(aTab);
     let browserContainer = this.getBrowserContainer(browser);
     browserContainer.appendChild(findBar);
 
-    if (aForce) {
-      
-      
-      findBar.clientTop;
-    } else {
-      await new Promise(r => requestAnimationFrame(r));
-      if (window.closed || aTab.closing) {
-        delete aTab._pendingFindBar;
-        return null;
-      }
-    }
+    await new Promise(r => requestAnimationFrame(r));
     delete aTab._pendingFindBar;
+    if (window.closed || aTab.closing) {
+      return null;
+    }
 
     findBar.browser = browser;
     findBar._findField.value = this._lastFindValue;
@@ -3787,30 +3799,11 @@ window._gBrowser = {
       case "Findbar:Keypress":
       {
         let tab = this.getTabForBrowser(browser);
-        
-        
-        
-        if (!this.isFindBarInitialized(tab) &&
-            data.shouldFastFind) {
-          let shouldFastFind = this._findAsYouType;
-          if (!shouldFastFind) {
-            
-            const FAYT_LINKS_KEY = "'";
-            const FAYT_TEXT_KEY = "/";
-            let charCode = data.fakeEvent.charCode;
-            let key = charCode ? String.fromCharCode(charCode) : null;
-            shouldFastFind = key == FAYT_LINKS_KEY || key == FAYT_TEXT_KEY;
-          }
-          if (shouldFastFind) {
-            
-            
-            
-
-            
-            this._createFindBar(tab, true);
-            
-            this.getCachedFindBar().receiveMessage(aMessage);
-          }
+        if (!this.isFindBarInitialized(tab)) {
+          let fakeEvent = data;
+          this.getFindBar(tab).then(findbar => {
+            findbar._onBrowserKeypress(fakeEvent);
+          });
         }
         break;
       }
@@ -3879,12 +3872,6 @@ window._gBrowser = {
         }
         break;
       }
-      case "nsPref:changed":
-      {
-        
-        this._findAsYouType = Services.prefs.getBoolPref("accessibility.typeaheadfind");
-        break;
-      }
     }
   },
 
@@ -3945,8 +3932,6 @@ window._gBrowser = {
         this._switcher.destroy();
       }
     }
-
-    Services.prefs.removeObserver("accessibility.typeaheadfind", this);
   },
 
   _setupEventListeners() {
