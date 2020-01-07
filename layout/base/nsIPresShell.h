@@ -295,22 +295,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void RestyleForCSSRuleChanges();
+  void ApplicableStylesChanged();
 
   
 

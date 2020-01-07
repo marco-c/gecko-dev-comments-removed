@@ -1441,7 +1441,7 @@ nsIPresShell::SetAuthorStyleDisabled(bool aStyleDisabled)
 {
   if (aStyleDisabled != mStyleSet->GetAuthorStyleDisabled()) {
     mStyleSet->SetAuthorStyleDisabled(aStyleDisabled);
-    RestyleForCSSRuleChanges();
+    ApplicableStylesChanged();
 
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
@@ -1541,7 +1541,7 @@ PresShell::AddUserSheet(StyleSheet* aSheet)
     mStyleSet->PrependStyleSheet(SheetType::User, sheet);
   }
 
-  RestyleForCSSRuleChanges();
+  ApplicableStylesChanged();
 }
 
 void
@@ -1550,7 +1550,7 @@ PresShell::AddAgentSheet(StyleSheet* aSheet)
   
   
   mStyleSet->AppendStyleSheet(SheetType::Agent, aSheet);
-  RestyleForCSSRuleChanges();
+  ApplicableStylesChanged();
 }
 
 void
@@ -1567,14 +1567,14 @@ PresShell::AddAuthorSheet(StyleSheet* aSheet)
     mStyleSet->AppendStyleSheet(SheetType::Doc, aSheet);
   }
 
-  RestyleForCSSRuleChanges();
+  ApplicableStylesChanged();
 }
 
 void
 PresShell::RemoveSheet(SheetType aType, StyleSheet* aSheet)
 {
   mStyleSet->RemoveStyleSheet(aType, aSheet);
-  RestyleForCSSRuleChanges();
+  ApplicableStylesChanged();
 }
 
 NS_IMETHODIMP
@@ -2518,16 +2518,6 @@ PresShell::GetCanvasFrame() const
 {
   nsIFrame* frame = mFrameConstructor->GetDocElementContainingBlock();
   return do_QueryFrame(frame);
-}
-
-void
-PresShell::EndUpdate(nsIDocument *aDocument, nsUpdateType aUpdateType)
-{
-  if (aUpdateType & UPDATE_STYLE) {
-    if (mStyleSet->StyleSheetsHaveChanged()) {
-      RestyleForCSSRuleChanges();
-    }
-  }
 }
 
 void
@@ -4590,7 +4580,7 @@ PresShell::ReconstructFrames()
 }
 
 void
-nsIPresShell::RestyleForCSSRuleChanges()
+nsIPresShell::ApplicableStylesChanged()
 {
   if (mIsDestroying) {
     
@@ -4603,14 +4593,8 @@ nsIPresShell::RestyleForCSSRuleChanges()
   if (mPresContext) {
     mPresContext->MarkCounterStylesDirty();
     mPresContext->MarkFontFeatureValuesDirty();
+    mPresContext->RestyleManager()->NextRestyleIsForCSSRuleChanges();
   }
-
-  if (!mDidInitialize) {
-    
-    return;
-  }
-
-  mStyleSet->InvalidateStyleForCSSRuleChanges();
 }
 
 nsresult
@@ -6161,6 +6145,7 @@ void
 nsIPresShell::RecordShadowStyleChange(ShadowRoot& aShadowRoot)
 {
   mStyleSet->RecordShadowStyleChange(aShadowRoot);
+  ApplicableStylesChanged();
 }
 
 void

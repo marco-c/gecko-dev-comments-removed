@@ -98,8 +98,6 @@ SVGDocument::EnsureNonSVGUserAgentStyleSheetsLoaded()
 
   mHasLoadedNonSVGUserAgentStyleSheets = true;
 
-  BeginUpdate(UPDATE_STYLE);
-
   if (IsBeingUsedAsImage()) {
     
     
@@ -167,8 +165,6 @@ SVGDocument::EnsureNonSVGUserAgentStyleSheetsLoaded()
     EnsureOnDemandBuiltInUASheet(cache->NoScriptSheet());
   }
   EnsureOnDemandBuiltInUASheet(cache->UASheet());
-
-  EndUpdate(UPDATE_STYLE);
 }
 
 } 

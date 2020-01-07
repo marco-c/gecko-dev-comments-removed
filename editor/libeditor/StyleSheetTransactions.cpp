@@ -14,29 +14,22 @@
 #include "nsDebug.h"                    
 #include "nsError.h"                    
 #include "nsIDocument.h"                
-#include "nsIDocumentObserver.h"        
 
 namespace mozilla {
 
 static void
 AddStyleSheet(EditorBase& aEditor, StyleSheet* aSheet)
 {
-  nsCOMPtr<nsIDocument> doc = aEditor.GetDocument();
-  if (doc) {
-    doc->BeginUpdate(UPDATE_STYLE);
+  if (nsCOMPtr<nsIDocument> doc = aEditor.GetDocument()) {
     doc->AddStyleSheet(aSheet);
-    doc->EndUpdate(UPDATE_STYLE);
   }
 }
 
 static void
 RemoveStyleSheet(EditorBase& aEditor, StyleSheet* aSheet)
 {
-  nsCOMPtr<nsIDocument> doc = aEditor.GetDocument();
-  if (doc) {
-    doc->BeginUpdate(UPDATE_STYLE);
+  if (nsCOMPtr<nsIDocument> doc = aEditor.GetDocument()) {
     doc->RemoveStyleSheet(aSheet);
-    doc->EndUpdate(UPDATE_STYLE);
   }
 }
 

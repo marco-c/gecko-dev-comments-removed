@@ -2985,8 +2985,7 @@ HTMLEditor::AddOverrideStyleSheet(const nsAString& aURL)
   
   
   ps->AddOverrideStyleSheet(sheet);
-
-  ps->RestyleForCSSRuleChanges();
+  ps->ApplicableStylesChanged();
 
   
   mLastOverrideStyleSheetURL = aURL;
@@ -3033,7 +3032,7 @@ HTMLEditor::RemoveOverrideStyleSheet(const nsAString& aURL)
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
   ps->RemoveOverrideStyleSheet(sheet);
-  ps->RestyleForCSSRuleChanges();
+  ps->ApplicableStylesChanged();
 
   
   return rv;
