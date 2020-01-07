@@ -105,6 +105,13 @@ TabClient.prototype = {
   
 
 
+  ensureCSSErrorReportingEnabled: DebuggerClient.requester({
+    type: "ensureCSSErrorReportingEnabled",
+  }, {}),
+
+  
+
+
 
 
 

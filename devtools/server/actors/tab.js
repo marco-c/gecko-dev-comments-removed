@@ -1010,6 +1010,19 @@ TabActor.prototype = {
   
 
 
+  ensureCSSErrorReportingEnabled(request) {
+    if (!this.docShell || this.docShell.cssErrorReportingEnabled) {
+      return {};
+    }
+
+    this.docShell.cssErrorReportingEnabled = true;
+    
+    return {};
+  },
+
+  
+
+
   _toggleDevToolsSettings(options) {
     
     
@@ -1430,6 +1443,7 @@ TabActor.prototype.requestTypes = {
   "reload": TabActor.prototype.onReload,
   "navigateTo": TabActor.prototype.onNavigateTo,
   "reconfigure": TabActor.prototype.onReconfigure,
+  "ensureCSSErrorReportingEnabled": TabActor.prototype.ensureCSSErrorReportingEnabled,
   "switchToFrame": TabActor.prototype.onSwitchToFrame,
   "listFrames": TabActor.prototype.onListFrames,
   "listWorkers": TabActor.prototype.onListWorkers,
