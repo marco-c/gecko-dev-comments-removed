@@ -76,6 +76,11 @@ public:
     if (mHandle) {
       ::MesHandleFree(mHandle);
     }
+    if (mBuffer) {
+      
+      
+      midl_user_free(mBuffer);
+    }
   }
 
   static unsigned long GetEmptySize()
