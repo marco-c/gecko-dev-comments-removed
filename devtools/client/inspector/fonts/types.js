@@ -50,9 +50,6 @@ const fontVariationInstance = exports.fontVariationInstance = {
 
 const font = exports.font = {
   
-  CSSFamilyName: PropTypes.string,
-
-  
   format: PropTypes.string,
 
   

@@ -139,15 +139,3 @@ function getOtherFontsEls(viewDoc) {
 function getName(fontEl) {
   return fontEl.querySelector(".font-name").textContent;
 }
-
-
-
-
-
-
-
-
-
-function getFamilyName(fontEl) {
-  return fontEl.querySelector(".font-family-name").textContent;
-}
