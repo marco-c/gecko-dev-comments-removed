@@ -473,6 +473,13 @@ public:
   
   
   static FrameType GetFrameType(const mozilla::MediaRawData* aSample);
+  
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> CreateExtraData(
+    uint8_t aProfile,
+    uint8_t aConstraints,
+    uint8_t aLevel,
+    const gfx::IntSize& aSize);
 
 private:
   friend class SPSNAL;
@@ -481,6 +488,8 @@ private:
 
 
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
+    const uint8_t* aNAL, size_t aLength);
+  static already_AddRefed<mozilla::MediaByteBuffer> EncodeNALUnit(
     const uint8_t* aNAL, size_t aLength);
   
   static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
