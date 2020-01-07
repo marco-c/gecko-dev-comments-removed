@@ -6,6 +6,7 @@
 
 use Atom;
 use cssparser::Parser;
+use custom_properties::Name as CustomPropertyName;
 use parser::{Parse, ParserContext};
 use properties::{LonghandId, ShorthandId, PropertyId, PropertyFlags, PropertyDeclarationId};
 use selectors::parser::SelectorParseErrorKind;
@@ -724,7 +725,7 @@ pub enum TransitionProperty {
     
     Longhand(LonghandId),
     
-    Custom(Atom),
+    Custom(CustomPropertyName),
     
     
     Unsupported(CustomIdent),
