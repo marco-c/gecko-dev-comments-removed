@@ -37,12 +37,13 @@ public final class Tab extends Actor {
         url = tab.optString("url", null);
         outerWindowID = tab.optLong("outerWindowID", -1);
         mTab = tab;
+        attach();
     }
 
     
 
 
-    public void attach() {
+    private void attach() {
         sendPacket("{\"type\":\"attach\"}", TAB_STATE_PARSER).get();
     }
 
