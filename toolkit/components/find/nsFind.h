@@ -52,7 +52,7 @@ protected:
   nsresult NextNode(State&,
                     nsRange* aSearchRange,
                     nsRange* aStartPoint,
-                    nsRange* aEndPoint);
+                    nsRange* aEndPoint) const;
 
   
   
@@ -60,14 +60,14 @@ protected:
   char16_t PeekNextChar(State&,
                         nsRange* aSearchRange,
                         nsRange* aStartPoint,
-                        nsRange* aEndPoint);
+                        nsRange* aEndPoint) const;
 
   
   nsresult InitIterator(State&,
                         nsINode* aStartNode,
                         int32_t aStartOffset,
                         nsINode* aEndNode,
-                        int32_t aEndOffset);
+                        int32_t aEndOffset) const;
 };
 
 #endif 
