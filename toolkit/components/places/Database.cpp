@@ -1214,6 +1214,11 @@ Database::InitSchema(bool* aDatabaseMigrated)
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 43) {
+        rv = MigrateV43Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -1547,8 +1552,6 @@ Database::UpdateBookmarkRootTitles()
 
 nsresult
 Database::MigrateV31Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "DROP TABLE IF EXISTS moz_bookmarks_roots"
   ));
@@ -1559,8 +1562,6 @@ Database::MigrateV31Up() {
 
 nsresult
 Database::MigrateV32Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   
   mozilla::Unused << Preferences::ClearUser("places.history.expiration.transient_optimal_database_size");
@@ -1656,8 +1657,6 @@ Database::MigrateV32Up() {
 
 nsresult
 Database::MigrateV33Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "DROP INDEX IF EXISTS moz_places_url_uniqueindex"
   ));
@@ -1689,8 +1688,6 @@ Database::MigrateV33Up() {
 
 nsresult
 Database::MigrateV34Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "DELETE FROM moz_keywords WHERE id IN ( "
       "SELECT id FROM moz_keywords k "
@@ -1704,8 +1701,6 @@ Database::MigrateV34Up() {
 
 nsresult
 Database::MigrateV35Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   int64_t mobileRootId = CreateMobileRoot();
   if (mobileRootId <= 0)  {
     
@@ -1775,8 +1770,6 @@ Database::MigrateV35Up() {
 
 nsresult
 Database::MigrateV36Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   nsCOMPtr<mozIStorageStatement> syncStatusStmt;
   nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
@@ -1821,8 +1814,6 @@ Database::MigrateV36Up() {
 
 nsresult
 Database::MigrateV37Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   
   
@@ -1898,8 +1889,6 @@ Database::MigrateV37Up() {
 nsresult
 Database::MigrateV38Up()
 {
-  MOZ_ASSERT(NS_IsMainThread());
-
   nsCOMPtr<mozIStorageStatement> stmt;
   nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT description, preview_image_url FROM moz_places"
@@ -1921,8 +1910,6 @@ Database::MigrateV38Up()
 
 nsresult
 Database::MigrateV39Up() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_BOOKMARKS_DATEADDED);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1932,7 +1919,6 @@ Database::MigrateV39Up() {
 
 nsresult
 Database::MigrateV40Up() {
-  MOZ_ASSERT(NS_IsMainThread());
   
   
   
@@ -1957,7 +1943,6 @@ Database::MigrateV40Up() {
 
 nsresult
 Database::MigrateV41Up() {
-  MOZ_ASSERT(NS_IsMainThread());
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "DROP INDEX IF EXISTS moz_places_faviconindex"));
@@ -1970,7 +1955,6 @@ Database::MigrateV41Up() {
 
 nsresult
 Database::MigrateV42Up() {
-  MOZ_ASSERT(NS_IsMainThread());
   
   int32_t vacuum = 0;
   {
@@ -1992,6 +1976,43 @@ Database::MigrateV42Up() {
     
     mShouldVacuumIcons = true;
   }
+  return NS_OK;
+}
+
+nsresult
+Database::MigrateV43Up() {
+  
+  
+
+  
+  
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_keywords "
+    "WHERE post_data ISNULL "
+      "AND id NOT IN ( "
+        "SELECT MAX(id) "
+        "FROM moz_keywords "
+        "WHERE post_data ISNULL "
+        "GROUP BY place_id "
+      ")"
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_places "
+    "SET foreign_count = (SELECT count(*) FROM moz_bookmarks WHERE fk = moz_places.id) + "
+                        "(SELECT count(*) FROM moz_keywords WHERE place_id = moz_places.id) "
+    "WHERE id IN (SELECT DISTINCT place_id FROM moz_keywords) "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_keywords "
+    "SET post_data = '' "
+    "WHERE post_data ISNULL "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return NS_OK;
 }
 

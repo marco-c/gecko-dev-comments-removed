@@ -1928,6 +1928,8 @@ XPCOMUtils.defineLazyGetter(this, "gAsyncDBWrapperPromised",
 
 
 
+
+
 var Keywords = {
   
 
@@ -2012,6 +2014,7 @@ var Keywords = {
 
 
 
+
   insert(keywordEntry) {
     if (!keywordEntry || typeof keywordEntry != "object")
       throw new Error("Input should be a valid object");
@@ -2020,7 +2023,7 @@ var Keywords = {
         typeof(keywordEntry.keyword) != "string")
       throw new Error("Invalid keyword");
     if (("postData" in keywordEntry) && keywordEntry.postData &&
-                                        typeof(keywordEntry.postData) != "string")
+        typeof(keywordEntry.postData) != "string")
       throw new Error("Invalid POST data");
     if (!("url" in keywordEntry))
       throw new Error("undefined is not a valid URL");
@@ -2030,17 +2033,17 @@ var Keywords = {
     }
     let { keyword, url, source } = keywordEntry;
     keyword = keyword.trim().toLowerCase();
-    let postData = keywordEntry.postData || null;
+    let postData = keywordEntry.postData || "";
     
     url = new URL(url);
 
-    return PlacesUtils.withConnectionWrapper("Keywords.insert", async function(db) {
+    return PlacesUtils.withConnectionWrapper("Keywords.insert", async db => {
         let cache = await gKeywordsCachePromise;
 
         
         let oldEntry = cache.get(keyword);
         if (oldEntry && oldEntry.url.href == url.href &&
-                        oldEntry.postData == keywordEntry.postData) {
+            (oldEntry.postData || "") == postData) {
           return;
         }
 
@@ -2060,7 +2063,7 @@ var Keywords = {
         } else {
           
           
-          await db.executeTransaction(async function() {
+          await db.executeTransaction(async () => {
             await db.executeCached(
               `INSERT OR IGNORE INTO moz_places (url, url_hash, rev_host, hidden, frecency, guid)
                VALUES (:url, hash(:url), :rev_host, 0, :frecency,
@@ -2069,6 +2072,23 @@ var Keywords = {
               `, { url: url.href, rev_host: PlacesUtils.getReversedHost(url),
                    frecency: url.protocol == "place:" ? 0 : -1 });
             await db.executeCached("DELETE FROM moz_updatehostsinsert_temp");
+
+            
+            
+            let oldKeywords = [];
+            for (let entry of cache.values()) {
+              if (entry.url.href == url.href && (entry.postData || "") == postData)
+                oldKeywords.push(entry.keyword);
+            }
+            if (oldKeywords.length) {
+              for (let oldKeyword of oldKeywords) {
+                await db.executeCached(
+                  `DELETE FROM moz_keywords WHERE keyword = :oldKeyword`,
+                  { oldKeyword });
+                cache.delete(oldKeyword);
+              }
+            }
+
             await db.executeCached(
               `INSERT INTO moz_keywords (keyword, place_id, post_data)
                VALUES (:keyword, (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url), :post_data)
@@ -2079,7 +2099,7 @@ var Keywords = {
         await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
           db, url, PlacesSyncUtils.bookmarks.determineSyncChangeDelta(source));
 
-        cache.set(keyword, { keyword, url, postData });
+        cache.set(keyword, { keyword, url, postData: postData || null });
 
         
         await notifyKeywordChange(url.href, keyword, source);
@@ -2236,7 +2256,7 @@ XPCOMUtils.defineLazyGetter(this, "gKeywordsCachePromise", () =>
         try {
           let entry = { keyword,
                         url: new URL(row.getResultByName("url")),
-                        postData: row.getResultByName("post_data") };
+                        postData: row.getResultByName("post_data") || null };
           cache.set(keyword, entry);
         } catch (ex) {
           

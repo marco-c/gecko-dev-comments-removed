@@ -2296,9 +2296,26 @@ nsNavBookmarks::SetKeywordForBookmark(int64_t aBookmarkId,
 
   int64_t syncChangeDelta = DetermineSyncChangeDelta(aSource);
 
-  if (keyword.IsEmpty()) {
-    mozStorageTransaction removeTxn(mDB->MainConn(), false);
+  mozStorageTransaction transaction(mDB->MainConn(), false);
 
+  
+  
+  
+  
+  for (uint32_t i = 0; i < oldKeywords.Length(); ++i) {
+    nsCOMPtr<mozIStorageStatement> stmt = mDB->GetStatement(
+      "DELETE FROM moz_keywords WHERE keyword = :old_keyword"
+    );
+    NS_ENSURE_STATE(stmt);
+    mozStorageStatementScoper scoper(stmt);
+    rv = stmt->BindStringByName(NS_LITERAL_CSTRING("old_keyword"),
+                                oldKeywords[i]);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  if (keyword.IsEmpty()) {
     
     for (uint32_t i = 0; i < oldKeywords.Length(); ++i) {
       nsCOMPtr<mozIStorageStatement> stmt = mDB->GetStatement(
@@ -2344,7 +2361,7 @@ nsNavBookmarks::SetKeywordForBookmark(int64_t aBookmarkId,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    rv = removeTxn.Commit();
+    rv = transaction.Commit();
     NS_ENSURE_SUCCESS(rv, rv);
 
     for (uint32_t i = 0; i < bookmarks.Length(); ++i) {
@@ -2395,8 +2412,6 @@ nsNavBookmarks::SetKeywordForBookmark(int64_t aBookmarkId,
   
   
   
-  mozStorageTransaction updateTxn(mDB->MainConn(), false);
-
   nsCOMPtr<mozIStorageStatement> stmt;
   if (oldUri) {
     
@@ -2426,8 +2441,8 @@ nsNavBookmarks::SetKeywordForBookmark(int64_t aBookmarkId,
   }
   else {
     stmt = mDB->GetStatement(
-      "INSERT INTO moz_keywords (keyword, place_id) "
-      "VALUES (:keyword, :place_id)"
+      "INSERT INTO moz_keywords (keyword, place_id, post_data) "
+      "VALUES (:keyword, :place_id, '')"
     );
   }
   NS_ENSURE_STATE(stmt);
@@ -2469,7 +2484,7 @@ nsNavBookmarks::SetKeywordForBookmark(int64_t aBookmarkId,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  rv = updateTxn.Commit();
+  rv = transaction.Commit();
   NS_ENSURE_SUCCESS(rv, rv);
 
   
