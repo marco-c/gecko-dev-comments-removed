@@ -735,14 +735,11 @@ nsPresContext::AppUnitsPerDevPixelChanged()
     mDeviceContext->FlushFontCache();
   }
 
-  if (HasCachedStyleData()) {
-    
-    MediaFeatureValuesChanged({
-      eRestyle_ForceDescendants,
-      NS_STYLE_HINT_REFLOW,
-      MediaFeatureChangeReason::ResolutionChange
-    });
-  }
+  MediaFeatureValuesChanged({
+    eRestyle_ForceDescendants,
+    NS_STYLE_HINT_REFLOW,
+    MediaFeatureChangeReason::ResolutionChange
+  });
 
   mCurAppUnitsPerDevPixel = AppUnitsPerDevPixel();
 }
@@ -1408,16 +1405,11 @@ nsPresContext::UpdateEffectiveTextZoom()
 
   
   
-  
-  if (mDocument->IsStyledByServo() || HasCachedStyleData()) {
-    
-    
-    MediaFeatureValuesChanged({
-      eRestyle_ForceDescendants,
-      NS_STYLE_HINT_REFLOW,
-      MediaFeatureChangeReason::ZoomChange
-    });
-  }
+  MediaFeatureValuesChanged({
+    eRestyle_ForceDescendants,
+    NS_STYLE_HINT_REFLOW,
+    MediaFeatureChangeReason::ZoomChange
+  });
 }
 
 float
@@ -1460,13 +1452,12 @@ nsPresContext::SetOverrideDPPX(float aDPPX)
   
   
   
-  if (aDPPX != mOverrideDPPX) {
-    mOverrideDPPX = aDPPX;
-
-    if (HasCachedStyleData()) {
-      MediaFeatureValuesChanged({ MediaFeatureChangeReason::ResolutionChange });
-    }
+  if (aDPPX == mOverrideDPPX) {
+    return;
   }
+
+  mOverrideDPPX = aDPPX;
+  MediaFeatureValuesChanged({ MediaFeatureChangeReason::ResolutionChange });
 }
 
 gfxSize
@@ -2210,10 +2201,6 @@ NotifyTabSizeModeChanged(TabParent* aTab, void* aArg)
 void
 nsPresContext::SizeModeChanged(nsSizeMode aSizeMode)
 {
-  if (!HasCachedStyleData()) {
-    return;
-  }
-
   nsContentUtils::CallOnAllRemoteChildren(mDocument->GetWindow(),
                                           NotifyTabSizeModeChanged,
                                           &aSizeMode);
@@ -2784,27 +2771,6 @@ nsPresContext::NotifyDidPaintForSubtree(uint64_t aTransactionId,
 
   NotifyDidPaintSubdocumentCallbackClosure closure = { aTransactionId, aTimeStamp };
   mDocument->EnumerateSubDocuments(nsPresContext::NotifyDidPaintSubdocumentCallback, &closure);
-}
-
-bool
-nsPresContext::HasCachedStyleData()
-{
-  if (!mShell) {
-    return false;
-  }
-
-  if (mShell->StyleSet()->IsGecko()) {
-#ifdef MOZ_OLD_STYLE
-    return mShell->StyleSet()->AsGecko()->HasCachedStyleData();
-#else
-    MOZ_CRASH("old style system disabled");
-#endif
-  }
-
-  
-  
-  
-  return mShell->DidInitialize();
 }
 
 already_AddRefed<nsITimer>
