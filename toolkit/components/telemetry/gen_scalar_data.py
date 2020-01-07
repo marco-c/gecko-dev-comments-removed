@@ -110,7 +110,7 @@ def generate_JSON_definitions(output, *filenames):
         scalar_definitions[category][scalar.name] = OrderedDict({
             'kind': scalar.nsITelemetry_kind,
             'keyed': scalar.keyed,
-            'record_on_release': True if scalar.dataset_short == 'opt-out' else False,
+            'record_on_release': True if scalar.dataset == 'opt-out' else False,
             
             
             'expired': False,
