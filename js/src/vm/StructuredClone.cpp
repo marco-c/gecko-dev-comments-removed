@@ -2376,11 +2376,13 @@ JSStructuredCloneReader::readHeader()
 
     if (tag != SCTAG_HEADER) {
         
-        
+        storedScope = JS::StructuredCloneScope::DifferentProcess;
         return true;
     }
 
     MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
+    storedScope = JS::StructuredCloneScope(data);
+
     if (data != uint32_t(JS::StructuredCloneScope::SameProcessSameThread) &&
         data != uint32_t(JS::StructuredCloneScope::SameProcessDifferentThread) &&
         data != uint32_t(JS::StructuredCloneScope::DifferentProcess))
@@ -2389,7 +2391,6 @@ JSStructuredCloneReader::readHeader()
                                   "invalid structured clone scope");
         return false;
     }
-    storedScope = JS::StructuredCloneScope(data);
     if (storedScope < allowedScope) {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
                                   "incompatible structured clone scope");
