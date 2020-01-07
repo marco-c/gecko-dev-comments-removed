@@ -165,12 +165,10 @@ ClientManager::StartOp(const ClientOpConstructorArgs& aArgs,
   
   
   RefPtr<ClientManager> kungFuGrip = this;
-  promise->Then(aSerialEventTarget, __func__,
-                [kungFuGrip] (const ClientOpResult&) { },
-                [kungFuGrip] (nsresult) { });
 
-  MaybeExecute([aArgs, promise] (ClientManagerChild* aActor) {
-    ClientManagerOpChild* actor = new ClientManagerOpChild(aArgs, promise);
+  MaybeExecute([aArgs, promise, kungFuGrip] (ClientManagerChild* aActor) {
+    ClientManagerOpChild* actor =
+      new ClientManagerOpChild(kungFuGrip, aArgs, promise);
     if (!aActor->SendPClientManagerOpConstructor(actor, aArgs)) {
       
       return;
