@@ -29,7 +29,12 @@
 #define HB_AAT_LAYOUT_TRAK_TABLE_HH
 
 #include "hb-aat-layout-common-private.hh"
+#include "hb-ot-layout-private.hh"
 #include "hb-open-type-private.hh"
+
+
+
+
 
 #define HB_AAT_TAG_trak HB_TAG('t','r','a','k')
 
@@ -39,12 +44,17 @@ namespace AAT {
 
 struct TrackTableEntry
 {
-  inline bool sanitize (hb_sanitize_context_t *c, const void *base, unsigned int size) const
+  friend struct TrackData;
+
+  inline bool sanitize (hb_sanitize_context_t *c, const void *base,
+			unsigned int size) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && (values.sanitize (c, base, size)));
+    return_trace (likely (c->check_struct (this) &&
+			  (valuesZ.sanitize (c, base, size))));
   }
 
+  private:
   inline float get_track_value () const
   {
     return track.to_float ();
@@ -52,14 +62,14 @@ struct TrackTableEntry
 
   inline int get_value (const void *base, unsigned int index) const
   {
-    return (base+values)[index];
+    return (base+valuesZ)[index];
   }
 
   protected:
-  Fixed			track;		
-  HBUINT16		trackNameID;	
+  Fixed		track;		
+  NameID	trackNameID;	
   OffsetTo<UnsizedArrayOf<FWORD> >
-			values;		
+		valuesZ;	
 
 
   public:
@@ -94,7 +104,7 @@ struct TrackData
     const TrackTableEntry *trackTableEntry = nullptr;
     for (unsigned int i = 0; i < sizes; ++i)
       
-      if (trackTable[i].get_track_value () == 0.)
+      if (trackTable[i].get_track_value () == 0.f)
         trackTableEntry = &trackTable[0];
 
     
@@ -117,17 +127,17 @@ struct TrackData
     float s0 = size_table[size_index - 1].to_float ();
     float s1 = size_table[size_index].to_float ();
     float t = (csspx - s0) / (s1 - s0);
-    return t * trackTableEntry->get_value (base, size_index) +
-      (1.0 - t) * trackTableEntry->get_value (base, size_index - 1);
+    return (float) t * trackTableEntry->get_value (base, size_index) +
+	   ((float) 1.0 - t) * trackTableEntry->get_value (base, size_index - 1);
   }
 
   protected:
-  HBUINT16		nTracks;	
-  HBUINT16		nSizes;		
-  LOffsetTo<UnsizedArrayOf<Fixed> >	
-			sizeTable;
+  HBUINT16	nTracks;	
+  HBUINT16	nSizes;		
+  LOffsetTo<UnsizedArrayOf<Fixed> >
+		sizeTable;	
   UnsizedArrayOf<TrackTableEntry>
-			trackTable;	
+		trackTable;	
 
   public:
   DEFINE_SIZE_ARRAY (8, trackTable);
@@ -141,9 +151,9 @@ struct trak
   {
     TRACE_SANITIZE (this);
 
-    return_trace (c->check_struct (this) &&
-		  horizData.sanitize (c, this, this) &&
-		  vertData.sanitize (c, this, this));
+    return_trace (unlikely (c->check_struct (this) &&
+			    horizData.sanitize (c, this, this) &&
+			    vertData.sanitize (c, this, this)));
   }
 
   inline bool apply (hb_aat_apply_context_t *c) const
@@ -151,7 +161,7 @@ struct trak
     TRACE_APPLY (this);
 
     const float ptem = c->font->ptem;
-    if (ptem <= 0.f)
+    if (unlikely (ptem <= 0.f))
       return_trace (false);
 
     hb_buffer_t *buffer = c->buffer;

@@ -49,6 +49,16 @@
 #  include <inttypes.h>
 #elif defined (_AIX)
 #  include <sys/inttypes.h>
+#elif defined (_MSC_VER) && _MSC_VER < 1600
+
+typedef __int8 int8_t;
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef unsigned __int16 uint16_t;
+typedef __int32 int32_t;
+typedef unsigned __int32 uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 #else
 #  include <stdint.h>
 #endif
@@ -314,6 +324,17 @@ typedef enum
   HB_SCRIPT_NUSHU			= HB_TAG ('N','s','h','u'),
   HB_SCRIPT_SOYOMBO			= HB_TAG ('S','o','y','o'),
   HB_SCRIPT_ZANABAZAR_SQUARE		= HB_TAG ('Z','a','n','b'),
+
+  
+
+
+  HB_SCRIPT_DOGRA			= HB_TAG ('D','o','g','r'),
+  HB_SCRIPT_GUNJALA_GONDI		= HB_TAG ('G','o','n','g'),
+  HB_SCRIPT_HANIFI_ROHINGYA		= HB_TAG ('R','o','h','g'),
+  HB_SCRIPT_MAKASAR			= HB_TAG ('M','a','k','a'),
+  HB_SCRIPT_MEDEFAIDRIN			= HB_TAG ('M','e','d','f'),
+  HB_SCRIPT_OLD_SOGDIAN			= HB_TAG ('S','o','g','o'),
+  HB_SCRIPT_SOGDIAN			= HB_TAG ('S','o','g','d'),
 
   
   HB_SCRIPT_INVALID				= HB_TAG_NONE,

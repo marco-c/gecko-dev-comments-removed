@@ -168,6 +168,10 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
   if (CFStringHasPrefix (cg_postscript_name, CFSTR (".SFNSText")) ||
       CFStringHasPrefix (cg_postscript_name, CFSTR (".SFNSDisplay")))
   {
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1080
+# define kCTFontUIFontSystem kCTFontSystemFontType
+# define kCTFontUIFontEmphasizedSystem kCTFontEmphasizedSystemFontType
+#endif
     CTFontUIFontType font_type = kCTFontUIFontSystem;
     if (CFStringHasSuffix (cg_postscript_name, CFSTR ("-Bold")))
       font_type = kCTFontUIFontEmphasizedSystem;
@@ -206,7 +210,18 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
       return ct_font;
   }
 
-  CFURLRef original_url = (CFURLRef)CTFontCopyAttribute(ct_font, kCTFontURLAttribute);
+  CFURLRef original_url = nullptr;
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
+  ATSFontRef atsFont;
+  FSRef fsref;
+  OSStatus status;
+  atsFont = CTFontGetPlatformFont (ct_font, NULL);
+  status = ATSFontGetFileReference (atsFont, &fsref);
+  if (status == noErr)
+    original_url = CFURLCreateFromFSRef (NULL, &fsref);
+#else
+  original_url = (CFURLRef) CTFontCopyAttribute (ct_font, kCTFontURLAttribute);
+#endif
 
   
 
@@ -225,7 +240,15 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
 
 
 
-      CFURLRef new_url = (CFURLRef) CTFontCopyAttribute (new_ct_font, kCTFontURLAttribute);
+      CFURLRef new_url = nullptr;
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
+      atsFont = CTFontGetPlatformFont (new_ct_font, NULL);
+      status = ATSFontGetFileReference (atsFont, &fsref);
+      if (status == noErr)
+        new_url = CFURLCreateFromFSRef (NULL, &fsref);
+#else
+      new_url = (CFURLRef) CTFontCopyAttribute (new_ct_font, kCTFontURLAttribute);
+#endif
       
       
       if (!original_url || !new_url || CFEqual (original_url, new_url)) {
@@ -618,8 +641,8 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
 	buffer->merge_clusters (i - 1, i + 1);
   }
 
-  hb_auto_array_t<feature_record_t> feature_records;
-  hb_auto_array_t<range_record_t> range_records;
+  hb_auto_t<hb_vector_t<feature_record_t> > feature_records;
+  hb_auto_t<hb_vector_t<range_record_t> > range_records;
 
   
 
@@ -628,7 +651,7 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
   if (num_features)
   {
     
-    hb_auto_array_t<feature_event_t> feature_events;
+    hb_auto_t<hb_vector_t<feature_event_t> > feature_events;
     for (unsigned int i = 0; i < num_features; i++)
     {
       const feature_mapping_t * mapping = (const feature_mapping_t *) bsearch (&features[i].tag,
@@ -647,15 +670,11 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
       feature_event_t *event;
 
       event = feature_events.push ();
-      if (unlikely (!event))
-	goto fail_features;
       event->index = features[i].start;
       event->start = true;
       event->feature = feature;
 
       event = feature_events.push ();
-      if (unlikely (!event))
-	goto fail_features;
       event->index = features[i].end;
       event->start = false;
       event->feature = feature;
@@ -669,15 +688,13 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
       feature.order = num_features + 1;
 
       feature_event_t *event = feature_events.push ();
-      if (unlikely (!event))
-	goto fail_features;
       event->index = 0; 
       event->start = false;
       event->feature = feature;
     }
 
     
-    hb_auto_array_t<active_feature_t> active_features;
+    hb_auto_t<hb_vector_t<active_feature_t> > active_features;
     unsigned int last_index = 0;
     for (unsigned int i = 0; i < feature_events.len; i++)
     {
@@ -687,8 +704,6 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
       {
         
 	range_record_t *range = range_records.push ();
-	if (unlikely (!range))
-	  goto fail_features;
 
 	if (active_features.len)
 	{
@@ -746,22 +761,15 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
 	last_index = event->index;
       }
 
-      if (event->start) {
-        active_feature_t *feature = active_features.push ();
-	if (unlikely (!feature))
-	  goto fail_features;
-	*feature = event->feature;
+      if (event->start)
+      {
+        active_features.push (event->feature);
       } else {
         active_feature_t *feature = active_features.find (&event->feature);
 	if (feature)
-	  active_features.remove (feature - active_features.array);
+	  active_features.remove (feature - active_features.arrayZ);
       }
     }
-  }
-  else
-  {
-  fail_features:
-    num_features = 0;
   }
 
   unsigned int scratch_size;
@@ -944,6 +952,9 @@ resize_and_retry:
 
       int level = HB_DIRECTION_IS_FORWARD (buffer->props.direction) ? 0 : 1;
       CFNumberRef level_number = CFNumberCreate (kCFAllocatorDefault, kCFNumberIntType, &level);
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
+      extern const CFStringRef kCTTypesetterOptionForcedEmbeddingLevel;
+#endif
       CFDictionaryRef options = CFDictionaryCreate (kCFAllocatorDefault,
 						    (const void **) &kCTTypesetterOptionForcedEmbeddingLevel,
 						    (const void **) &level_number,

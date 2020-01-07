@@ -240,7 +240,7 @@ struct hb_language_item_t {
     return *this;
   }
 
-  void finish (void) { free ((void *) lang); }
+  void fini (void) { free ((void *) lang); }
 };
 
 
@@ -252,11 +252,16 @@ static hb_language_item_t *langs;
 static void
 free_langs (void)
 {
-  while (langs) {
-    hb_language_item_t *next = langs->next;
-    langs->finish ();
-    free (langs);
-    langs = next;
+retry:
+  hb_language_item_t *first_lang = (hb_language_item_t *) hb_atomic_ptr_get (&langs);
+  if (!hb_atomic_ptr_cmpexch (&langs, first_lang, nullptr))
+    goto retry;
+
+  while (first_lang) {
+    hb_language_item_t *next = first_lang->next;
+    first_lang->fini ();
+    free (first_lang);
+    first_lang = next;
   }
 }
 #endif
@@ -284,7 +289,7 @@ retry:
   }
 
   if (!hb_atomic_ptr_cmpexch (&langs, first_lang, lang)) {
-    lang->finish ();
+    lang->fini ();
     free (lang);
     goto retry;
   }
@@ -530,7 +535,18 @@ hb_script_get_horizontal_direction (hb_script_t script)
     
     case HB_SCRIPT_ADLAM:
 
+    
+    case HB_SCRIPT_HANIFI_ROHINGYA:
+    case HB_SCRIPT_OLD_SOGDIAN:
+    case HB_SCRIPT_SOGDIAN:
+
       return HB_DIRECTION_RTL;
+
+
+    
+    case HB_SCRIPT_OLD_ITALIC:
+
+      return HB_DIRECTION_INVALID;
   }
 
   return HB_DIRECTION_LTR;
@@ -719,8 +735,14 @@ static HB_LOCALE_T C_locale;
 static void
 free_C_locale (void)
 {
-  if (C_locale)
-    HB_FREE_LOCALE (C_locale);
+retry:
+  HB_LOCALE_T locale = (HB_LOCALE_T) hb_atomic_ptr_get (&C_locale);
+
+  if (!hb_atomic_ptr_cmpexch (&C_locale, locale, nullptr))
+    goto retry;
+
+  if (locale)
+    HB_FREE_LOCALE (locale);
 }
 #endif
 

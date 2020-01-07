@@ -29,8 +29,13 @@
 
 #include "hb-open-type-private.hh"
 #include "hb-aat-layout-common-private.hh"
+#include "hb-ot-layout-common-private.hh"
 
-#define HB_AAT_TAG_MORX HB_TAG('m','o','r','x')
+
+
+
+
+#define HB_AAT_TAG_morx HB_TAG('m','o','r','x')
 
 
 namespace AAT {
@@ -302,9 +307,10 @@ struct ContextualSubtable
   }
 
   protected:
-  StateTable<EntryData>	machine;
-  OffsetTo<UnsizedOffsetListOf<Lookup<GlyphID>, HBUINT32>, HBUINT32>
-			substitutionTables;
+  StateTable<EntryData>
+		machine;
+  LOffsetTo<UnsizedOffsetListOf<Lookup<GlyphID>, HBUINT32> >
+		substitutionTables;
   public:
   DEFINE_SIZE_STATIC (20);
 };
@@ -461,12 +467,13 @@ struct LigatureSubtable
   }
 
   protected:
-  StateTable<EntryData>	machine;
-  OffsetTo<UnsizedArrayOf<HBUINT32>, HBUINT32>
+  StateTable<EntryData>
+		machine;
+  LOffsetTo<UnsizedArrayOf<HBUINT32> >
 		ligAction;	
-  OffsetTo<UnsizedArrayOf<HBUINT16>, HBUINT32>
+  LOffsetTo<UnsizedArrayOf<HBUINT16> >
 		component;	
-  OffsetTo<UnsizedArrayOf<GlyphID>, HBUINT32>
+  LOffsetTo<UnsizedArrayOf<GlyphID> >
 		ligature;	
   public:
   DEFINE_SIZE_STATIC (28);
@@ -663,8 +670,8 @@ struct Chain
   HBUINT32	subtableCount;	
 
   Feature	featureZ[VAR];	
-  ChainSubtable	subtableX[VAR];	
-  
+
+	
 
   public:
   DEFINE_SIZE_MIN (16);
@@ -677,12 +684,12 @@ struct Chain
 
 struct morx
 {
-  static const hb_tag_t tableTag = HB_AAT_TAG_MORX;
+  static const hb_tag_t tableTag = HB_AAT_TAG_morx;
 
   inline void apply (hb_aat_apply_context_t *c) const
   {
     c->set_lookup_index (0);
-    const Chain *chain = chains;
+    const Chain *chain = chainsZ;
     unsigned int count = chainCount;
     for (unsigned int i = 0; i < count; i++)
     {
@@ -699,7 +706,7 @@ struct morx
 	!chainCount.sanitize (c))
       return_trace (false);
 
-    const Chain *chain = chains;
+    const Chain *chain = chainsZ;
     unsigned int count = chainCount;
     for (unsigned int i = 0; i < count; i++)
     {
@@ -716,7 +723,7 @@ struct morx
 
   HBUINT32	chainCount;	
 
-  Chain		chains[VAR];	
+  Chain		chainsZ[VAR];	
 
   public:
   DEFINE_SIZE_MIN (8);

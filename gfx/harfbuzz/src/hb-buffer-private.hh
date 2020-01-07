@@ -101,7 +101,7 @@ struct hb_buffer_t {
   hb_buffer_content_type_t content_type;
   hb_segment_properties_t props; 
 
-  bool in_error; 
+  bool successful; 
   bool have_output; 
   bool have_positions; 
 

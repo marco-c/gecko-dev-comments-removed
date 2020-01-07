@@ -32,14 +32,14 @@
 #include "hb-open-type-private.hh"
 
 
-namespace OT {
-
-
-
 
 
 
 #define HB_OT_TAG_head HB_TAG('h','e','a','d')
+
+
+namespace OT {
+
 
 struct head
 {

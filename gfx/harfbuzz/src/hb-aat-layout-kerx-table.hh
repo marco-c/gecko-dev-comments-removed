@@ -30,8 +30,13 @@
 
 #include "hb-open-type-private.hh"
 #include "hb-aat-layout-common-private.hh"
+#include "hb-aat-layout-ankr-table.hh"
 
-#define HB_AAT_TAG_KERX HB_TAG('k','e','r','x')
+
+
+
+
+#define HB_AAT_TAG_kerx HB_TAG('k','e','r','x')
 
 
 namespace AAT {
@@ -44,7 +49,7 @@ struct KerxFormat0Records
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this));
+    return_trace (likely (c->check_struct (this)));
   }
 
   protected:
@@ -70,22 +75,23 @@ struct KerxSubTableFormat0
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-      c->check_array (records, records[0].static_size, nPairs));
+    return_trace (likely (c->check_struct (this) &&
+			  recordsZ.sanitize (c, nPairs)));
   }
 
   protected:
   
   
-  HBUINT32 nPairs;	
-  HBUINT32 searchRange; 
+  HBUINT32	nPairs;		
+  HBUINT32	searchRange;	
 
-  HBUINT32 entrySelector; 
+  HBUINT32	entrySelector;	
 
-  HBUINT32 rangeShift;	
-  KerxFormat0Records records[VAR]; 
+  HBUINT32	rangeShift;	
+  UnsizedArrayOf<KerxFormat0Records>
+		recordsZ;	
   public:
-  DEFINE_SIZE_ARRAY (16, records);
+  DEFINE_SIZE_ARRAY (16, recordsZ);
 };
 
 struct KerxSubTableFormat1
@@ -93,8 +99,8 @@ struct KerxSubTableFormat1
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-      stateHeader.sanitize (c));
+    return_trace (likely (c->check_struct (this) &&
+			  stateHeader.sanitize (c)));
   }
 
   protected:
@@ -112,7 +118,8 @@ struct KerxClassTable
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (firstGlyph.sanitize (c) && classes.sanitize (c));
+    return_trace (likely (firstGlyph.sanitize (c) &&
+			  classes.sanitize (c)));
   }
 
   protected:
@@ -141,11 +148,11 @@ struct KerxSubTableFormat2
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-      rowWidth.sanitize (c) &&
-		  leftClassTable.sanitize (c, this) &&
-		  rightClassTable.sanitize (c, this) &&
-		  array.sanitize (c, this));
+    return_trace (likely (c->check_struct (this) &&
+			  rowWidth.sanitize (c) &&
+			  leftClassTable.sanitize (c, this) &&
+			  rightClassTable.sanitize (c, this) &&
+			  array.sanitize (c, this)));
   }
 
   protected:
@@ -168,11 +175,11 @@ struct KerxSubTableFormat4
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-      rowWidth.sanitize (c) &&
-		  leftClassTable.sanitize (c, this) &&
-		  rightClassTable.sanitize (c, this) &&
-		  array.sanitize (c, this));
+    return_trace (likely (c->check_struct (this) &&
+			  rowWidth.sanitize (c) &&
+			  leftClassTable.sanitize (c, this) &&
+			  rightClassTable.sanitize (c, this) &&
+			  array.sanitize (c, this)));
   }
 
   protected:
@@ -195,11 +202,11 @@ struct KerxSubTableFormat6
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) &&
-      rowIndexTable.sanitize (c, this) &&
-      columnIndexTable.sanitize (c, this) &&
-      kerningArray.sanitize (c, this) &&
-      kerningVector.sanitize (c, this));
+    return_trace (likely (c->check_struct (this) &&
+			  rowIndexTable.sanitize (c, this) &&
+			  columnIndexTable.sanitize (c, this) &&
+			  kerningArray.sanitize (c, this) &&
+			  kerningVector.sanitize (c, this)));
   }
 
   protected:
@@ -236,7 +243,7 @@ struct KerxTable
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    if (!c->check_struct (this))
+    if (unlikely (!c->check_struct (this)))
       return_trace (false);
 
     switch (format) {
@@ -271,7 +278,7 @@ struct SubtableGlyphCoverageArray
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this));
+    return_trace (likely (c->check_struct (this)));
   }
 
   protected:
@@ -284,7 +291,7 @@ struct SubtableGlyphCoverageArray
 
 struct kerx
 {
-  static const hb_tag_t tableTag = HB_AAT_TAG_KERX;
+  static const hb_tag_t tableTag = HB_AAT_TAG_kerx;
 
   inline bool apply (hb_aat_apply_context_t *c, const AAT::ankr *ankr) const
   {
@@ -296,18 +303,18 @@ struct kerx
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    if (!(c->check_struct (this)))
+    if (unlikely (!(c->check_struct (this))))
      return_trace (false);
 
     
     const KerxTable *table = &StructAfter<KerxTable> (*this);
-    if (!(table->sanitize (c)))
+    if (unlikely (!(table->sanitize (c))))
       return_trace (false);
 
     for (unsigned int i = 0; i < nTables - 1; ++i)
     {
       table = &StructAfter<KerxTable> (*table);
-      if (!(table->sanitize (c)))
+      if (unlikely (!(table->sanitize (c))))
         return_trace (false);
     }
 

@@ -30,9 +30,6 @@
 #include "hb-open-type-private.hh"
 
 
-namespace OT {
-
-
 
 
 
@@ -40,6 +37,10 @@ namespace OT {
 
 #define HB_OT_TAG_hhea HB_TAG('h','h','e','a')
 #define HB_OT_TAG_vhea HB_TAG('v','h','e','a')
+
+
+namespace OT {
+
 
 template <typename T>
 struct _hea

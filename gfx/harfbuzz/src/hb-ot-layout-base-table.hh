@@ -39,6 +39,7 @@ namespace OT {
 
 
 
+
 struct BaseCoordFormat1
 {
   inline int get_coord (void) const { return coordinate; }

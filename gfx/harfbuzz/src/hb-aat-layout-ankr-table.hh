@@ -27,14 +27,14 @@
 
 #include "hb-aat-layout-common-private.hh"
 
+
+
+
+
 #define HB_AAT_TAG_ankr HB_TAG('a','n','k','r')
 
 
 namespace AAT {
-
-
-
-
 
 
 struct Anchor
@@ -58,17 +58,19 @@ struct ankr
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && version == 0 &&
-		  lookupTable.sanitize (c, this) &&
-		  anchors.sanitize (c, this));
+    return_trace (likely (c->check_struct (this) &&
+			  version == 0 &&
+			  lookupTable.sanitize (c, this) &&
+			  anchors.sanitize (c, this)));
   }
 
   protected:
-  HBUINT16			version; 	
-  HBUINT16			flags;		
-  LOffsetTo<Lookup<HBUINT16> >	lookupTable;	
-  LOffsetTo<ArrayOf<Anchor, HBUINT32> >
-				anchors;	
+  HBUINT16	version; 	
+  HBUINT16	flags;		
+  LOffsetTo<Lookup<HBUINT16> >
+		lookupTable;	
+  LOffsetTo<LArrayOf<Anchor> >
+		anchors;	
 
   public:
   DEFINE_SIZE_STATIC (12);

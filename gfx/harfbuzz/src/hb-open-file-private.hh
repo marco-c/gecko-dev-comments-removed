@@ -100,7 +100,7 @@ typedef struct OffsetTable
       else
         *table_count = MIN<unsigned int> (*table_count, tables.len - start_offset);
 
-      const TableRecord *sub_tables = tables.array + start_offset;
+      const TableRecord *sub_tables = tables.arrayZ + start_offset;
       unsigned int count = *table_count;
       for (unsigned int i = 0; i < count; i++)
 	table_tags[i] = sub_tables[i].tag;
@@ -148,7 +148,7 @@ typedef struct OffsetTable
     
     for (unsigned int i = 0; i < table_count; i++)
     {
-      TableRecord &rec = tables.array[i];
+      TableRecord &rec = tables.arrayZ[i];
       hb_blob_t *blob = blobs[i];
       rec.tag.set (tags[i]);
       rec.length.set (hb_blob_get_length (blob));
@@ -188,7 +188,7 @@ typedef struct OffsetTable
       checksum.set_for_data (this, dir_end - (const char *) this);
       for (unsigned int i = 0; i < table_count; i++)
       {
-	TableRecord &rec = tables.array[i];
+	TableRecord &rec = tables.arrayZ[i];
 	checksum.set (checksum + rec.checkSum);
       }
 
@@ -234,7 +234,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  ArrayOf<LOffsetTo<OffsetTable>, HBUINT32>
+  LArrayOf<LOffsetTo<OffsetTable> >
 		table;		
 
   public:
@@ -295,11 +295,13 @@ struct OpenTypeFontFile
 {
   static const hb_tag_t tableTag	= HB_TAG ('_','_','_','_'); 
 
-  static const hb_tag_t CFFTag		= HB_TAG ('O','T','T','O'); 
-  static const hb_tag_t TrueTypeTag	= HB_TAG ( 0 , 1 , 0 , 0 ); 
-  static const hb_tag_t TTCTag		= HB_TAG ('t','t','c','f'); 
-  static const hb_tag_t TrueTag		= HB_TAG ('t','r','u','e'); 
-  static const hb_tag_t Typ1Tag		= HB_TAG ('t','y','p','1'); 
+  enum {
+    CFFTag		= HB_TAG ('O','T','T','O'), 
+    TrueTypeTag	= HB_TAG ( 0 , 1 , 0 , 0 ), 
+    TTCTag		= HB_TAG ('t','t','c','f'), 
+    TrueTag		= HB_TAG ('t','r','u','e'), 
+    Typ1Tag		= HB_TAG ('t','y','p','1')  
+  };
 
   inline hb_tag_t get_tag (void) const { return u.tag; }
 

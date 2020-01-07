@@ -28,16 +28,17 @@
 #define HB_OT_CMAP_TABLE_HH
 
 #include "hb-open-type-private.hh"
+#include "hb-set-private.hh"
 #include "hb-subset-plan.hh"
-
-namespace OT {
-
 
 
 
 
 
 #define HB_OT_TAG_cmap HB_TAG('c','m','a','p')
+
+
+namespace OT {
 
 
 struct CmapSubtableFormat0
@@ -59,8 +60,8 @@ struct CmapSubtableFormat0
 
   protected:
   HBUINT16	format;		
-  HBUINT16	lengthZ;	
-  HBUINT16	languageZ;	
+  HBUINT16	length;		
+  HBUINT16	language;	
   HBUINT8	glyphIdArray[256];
 
   public:
@@ -69,6 +70,158 @@ struct CmapSubtableFormat0
 
 struct CmapSubtableFormat4
 {
+  struct segment_plan
+  {
+    HBUINT16 start_code;
+    HBUINT16 end_code;
+    bool use_delta;
+  };
+
+  bool serialize (hb_serialize_context_t *c,
+                  const hb_subset_plan_t *plan,
+                  const hb_vector_t<segment_plan> &segments)
+  {
+    TRACE_SERIALIZE (this);
+
+    if (unlikely (!c->extend_min (*this))) return_trace (false);
+
+    this->format.set (4);
+    this->length.set (get_sub_table_size (segments));
+
+    this->segCountX2.set (segments.len * 2);
+    this->entrySelector.set (MAX (1u, _hb_bit_storage (segments.len)) - 1);
+    this->searchRange.set (2 * (1u << this->entrySelector));
+    this->rangeShift.set (segments.len * 2 > this->searchRange
+                          ? 2 * segments.len - this->searchRange
+                          : 0);
+
+    HBUINT16 *end_count = c->allocate_size<HBUINT16> (HBUINT16::static_size * segments.len);
+    c->allocate_size<HBUINT16> (HBUINT16::static_size); 
+    HBUINT16 *start_count = c->allocate_size<HBUINT16> (HBUINT16::static_size * segments.len);
+    HBINT16 *id_delta = c->allocate_size<HBINT16> (HBUINT16::static_size * segments.len);
+    HBUINT16 *id_range_offset = c->allocate_size<HBUINT16> (HBUINT16::static_size * segments.len);
+
+    if (id_range_offset == nullptr)
+      return_trace (false);
+
+    for (unsigned int i = 0; i < segments.len; i++)
+    {
+      end_count[i].set (segments[i].end_code);
+      start_count[i].set (segments[i].start_code);
+      if (segments[i].use_delta)
+      {
+        hb_codepoint_t cp = segments[i].start_code;
+        hb_codepoint_t start_gid = 0;
+        if (unlikely (!plan->new_gid_for_codepoint (cp, &start_gid) && cp != 0xFFFF))
+          return_trace (false);
+        id_delta[i].set (start_gid - segments[i].start_code);
+      } else {
+        id_delta[i].set (0);
+        unsigned int num_codepoints = segments[i].end_code - segments[i].start_code + 1;
+        HBUINT16 *glyph_id_array = c->allocate_size<HBUINT16> (HBUINT16::static_size * num_codepoints);
+        if (glyph_id_array == nullptr)
+          return_trace (false);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        id_range_offset[i].set (2 * (
+            glyph_id_array - id_range_offset - i));
+        for (unsigned int j = 0; j < num_codepoints; j++)
+        {
+          hb_codepoint_t cp = segments[i].start_code + j;
+          hb_codepoint_t new_gid;
+          if (unlikely (!plan->new_gid_for_codepoint (cp, &new_gid)))
+            return_trace (false);
+          glyph_id_array[j].set (new_gid);
+        }
+      }
+    }
+
+    return_trace (true);
+  }
+
+  static inline size_t get_sub_table_size (const hb_vector_t<segment_plan> &segments)
+  {
+    size_t segment_size = 0;
+    for (unsigned int i = 0; i < segments.len; i++)
+    {
+      
+      segment_size +=
+            2  
+          + 2  
+          + 2  
+          + 2; 
+
+      if (!segments[i].use_delta)
+        
+        segment_size += (segments[i].end_code - segments[i].start_code + 1) * 2;
+    }
+
+    return min_size
+        + 2 
+        + segment_size;
+  }
+
+  static inline bool create_sub_table_plan (const hb_subset_plan_t *plan,
+                                            hb_vector_t<segment_plan> *segments)
+  {
+    segment_plan *segment = nullptr;
+    hb_codepoint_t last_gid = 0;
+
+    hb_codepoint_t cp = HB_SET_VALUE_INVALID;
+    while (plan->unicodes->next (&cp)) {
+      hb_codepoint_t new_gid;
+      if (unlikely (!plan->new_gid_for_codepoint (cp, &new_gid)))
+      {
+	DEBUG_MSG(SUBSET, nullptr, "Unable to find new gid for %04x", cp);
+	return false;
+      }
+
+      if (cp > 0xFFFF) {
+        
+        break;
+      }
+
+      if (!segment
+          || cp != segment->end_code + 1u)
+      {
+        segment = segments->push ();
+        segment->start_code.set (cp);
+        segment->end_code.set (cp);
+        segment->use_delta = true;
+      } else {
+        segment->end_code.set (cp);
+        if (last_gid + 1u != new_gid)
+          
+          
+          segment->use_delta = false;
+      }
+
+      last_gid = new_gid;
+    }
+
+    
+    if (segment == nullptr || segment->end_code != 0xFFFF)
+    {
+      segment = segments->push ();
+      segment->start_code.set (0xFFFF);
+      segment->end_code.set (0xFFFF);
+      segment->use_delta = true;
+    }
+
+    return true;
+  }
+
   struct accelerator_t
   {
     inline void init (const CmapSubtableFormat4 *subtable)
@@ -127,6 +280,17 @@ struct CmapSubtableFormat4
       return true;
     }
 
+    static inline void get_all_codepoints_func (const void *obj, hb_set_t *out)
+    {
+      const accelerator_t *thiz = (const accelerator_t *) obj;
+      for (unsigned int i = 0; i < thiz->segCount; i++)
+      {
+	if (thiz->startCount[i] != 0xFFFFu
+	    || thiz->endCount[i] != 0xFFFFu) 
+	  hb_set_add_range (out, thiz->startCount[i], thiz->endCount[i]);
+      }
+    }
+
     const HBUINT16 *endCount;
     const HBUINT16 *startCount;
     const HBUINT16 *idDelta;
@@ -164,15 +328,17 @@ struct CmapSubtableFormat4
     return_trace (16 + 4 * (unsigned int) segCountX2 <= length);
   }
 
+
+
   protected:
   HBUINT16	format;		
   HBUINT16	length;		
 
-  HBUINT16	languageZ;	
+  HBUINT16	language;	
   HBUINT16	segCountX2;	
-  HBUINT16	searchRangeZ;	
-  HBUINT16	entrySelectorZ;	
-  HBUINT16	rangeShiftZ;	
+  HBUINT16	searchRange;	
+  HBUINT16	entrySelector;	
+  HBUINT16	rangeShift;	
 
   HBUINT16	values[VAR];
 #if 0
@@ -193,6 +359,8 @@ struct CmapSubtableLongGroup
 {
   friend struct CmapSubtableFormat12;
   friend struct CmapSubtableFormat13;
+  template<typename U>
+  friend struct CmapSubtableLongSegmented;
   friend struct cmap;
 
   int cmp (hb_codepoint_t codepoint) const
@@ -238,8 +406,8 @@ struct CmapSubtableTrimmed
 
   protected:
   UINT		formatReserved;	
-  UINT		lengthZ;	
-  UINT		languageZ;	
+  UINT		length;		
+  UINT		language;	
   UINT		startCharCode;	
   ArrayOf<GlyphID, UINT>
 		glyphIdArray;	
@@ -265,6 +433,15 @@ struct CmapSubtableLongSegmented
     return true;
   }
 
+  inline void get_all_codepoints (hb_set_t *out) const
+  {
+    for (unsigned int i = 0; i < this->groups.len; i++) {
+      hb_set_add_range (out,
+			this->groups[i].startCharCode,
+			this->groups[i].endCharCode);
+    }
+  }
+
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -272,20 +449,20 @@ struct CmapSubtableLongSegmented
   }
 
   inline bool serialize (hb_serialize_context_t *c,
-                         hb_prealloced_array_t<CmapSubtableLongGroup> &group_data)
+                         const hb_vector_t<CmapSubtableLongGroup> &group_data)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!c->extend_min (*this))) return_trace (false);
-    Supplier<CmapSubtableLongGroup> supplier (group_data.array, group_data.len);
+    Supplier<CmapSubtableLongGroup> supplier (group_data.arrayZ, group_data.len);
     if (unlikely (!groups.serialize (c, supplier, group_data.len))) return_trace (false);
     return true;
   }
 
   protected:
   HBUINT16	format;		
-  HBUINT16	reservedZ;	
-  HBUINT32		lengthZ;	
-  HBUINT32		languageZ;	
+  HBUINT16	reserved;	
+  HBUINT32	length;		
+  HBUINT32	language;	
   SortedArrayOf<CmapSubtableLongGroup, HBUINT32>
 		groups;		
   public:
@@ -297,6 +474,69 @@ struct CmapSubtableFormat12 : CmapSubtableLongSegmented<CmapSubtableFormat12>
   static inline hb_codepoint_t group_get_glyph (const CmapSubtableLongGroup &group,
 						hb_codepoint_t u)
   { return group.glyphID + (u - group.startCharCode); }
+
+
+  bool serialize (hb_serialize_context_t *c,
+                  const hb_vector_t<CmapSubtableLongGroup> &groups)
+  {
+    if (unlikely (!c->extend_min (*this))) return false;
+
+    this->format.set (12);
+    this->reserved.set (0);
+    this->length.set (get_sub_table_size (groups));
+
+    return CmapSubtableLongSegmented<CmapSubtableFormat12>::serialize (c, groups);
+  }
+
+  static inline size_t get_sub_table_size (const hb_vector_t<CmapSubtableLongGroup> &groups)
+  {
+    return 16 + 12 * groups.len;
+  }
+
+  static inline bool create_sub_table_plan (const hb_subset_plan_t *plan,
+                                            hb_vector_t<CmapSubtableLongGroup> *groups)
+  {
+    CmapSubtableLongGroup *group = nullptr;
+
+    hb_codepoint_t cp = HB_SET_VALUE_INVALID;
+    while (plan->unicodes->next (&cp)) {
+      hb_codepoint_t new_gid;
+      if (unlikely (!plan->new_gid_for_codepoint (cp, &new_gid)))
+      {
+	DEBUG_MSG(SUBSET, nullptr, "Unable to find new gid for %04x", cp);
+	return false;
+      }
+
+      if (!group || !_is_gid_consecutive (group, cp, new_gid))
+      {
+        group = groups->push ();
+        group->startCharCode.set (cp);
+        group->endCharCode.set (cp);
+        group->glyphID.set (new_gid);
+      } else
+      {
+        group->endCharCode.set (cp);
+      }
+    }
+
+    DEBUG_MSG(SUBSET, nullptr, "cmap");
+    for (unsigned int i = 0; i < groups->len; i++) {
+      CmapSubtableLongGroup& group = (*groups)[i];
+      DEBUG_MSG(SUBSET, nullptr, "  %d: U+%04X-U+%04X, gid %d-%d", i, (uint32_t) group.startCharCode, (uint32_t) group.endCharCode, (uint32_t) group.glyphID, (uint32_t) group.glyphID + ((uint32_t) group.endCharCode - (uint32_t) group.startCharCode));
+    }
+
+    return true;
+  }
+
+ private:
+  static inline bool _is_gid_consecutive (CmapSubtableLongGroup *group,
+					  hb_codepoint_t cp,
+					  hb_codepoint_t new_gid)
+  {
+    return (cp - 1 == group->endCharCode) &&
+	new_gid == group->glyphID + (cp - group->startCharCode);
+  }
+
 };
 
 struct CmapSubtableFormat13 : CmapSubtableLongSegmented<CmapSubtableFormat13>
@@ -328,7 +568,7 @@ struct UnicodeValueRange
     return_trace (c->check_struct (this));
   }
 
-  UINT24	startUnicodeValue;	
+  HBUINT24	startUnicodeValue;	
   HBUINT8		additionalCount;	
 
   public:
@@ -350,7 +590,7 @@ struct UVSMapping
     return_trace (c->check_struct (this));
   }
 
-  UINT24	unicodeValue;	
+  HBUINT24	unicodeValue;	
   GlyphID	glyphID;	
   public:
   DEFINE_SIZE_STATIC (5);
@@ -392,7 +632,7 @@ struct VariationSelectorRecord
 		  nonDefaultUVS.sanitize (c, base));
   }
 
-  UINT24	varSelector;	
+  HBUINT24	varSelector;	
   LOffsetTo<DefaultUVS>
 		defaultUVS;	
   LOffsetTo<NonDefaultUVS>
@@ -419,7 +659,7 @@ struct CmapSubtableFormat14
 
   protected:
   HBUINT16	format;		
-  HBUINT32		lengthZ;	
+  HBUINT32	length;		
   SortedArrayOf<VariationSelectorRecord, HBUINT32>
 		record;		
 
@@ -509,6 +749,33 @@ struct cmap
 {
   static const hb_tag_t tableTag	= HB_OT_TAG_cmap;
 
+  struct subset_plan {
+    subset_plan(void)
+    {
+      format4_segments.init();
+      format12_groups.init();
+    }
+
+    ~subset_plan(void)
+    {
+      format4_segments.fini();
+      format12_groups.fini();
+    }
+
+    inline size_t final_size() const
+    {
+      return 4 
+          +  8 * 3 
+          +  CmapSubtableFormat4::get_sub_table_size (this->format4_segments)
+          +  CmapSubtableFormat12::get_sub_table_size (this->format12_groups);
+    }
+
+    
+    hb_vector_t<CmapSubtableFormat4::segment_plan> format4_segments;
+    
+    hb_vector_t<CmapSubtableLongGroup> format12_groups;
+  };
+
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -517,41 +784,17 @@ struct cmap
 		  encodingRecord.sanitize (c, this));
   }
 
-  inline bool populate_groups (hb_subset_plan_t *plan,
-			       hb_prealloced_array_t<CmapSubtableLongGroup> *groups) const
+  inline bool _create_plan (const hb_subset_plan_t *plan,
+                            subset_plan *cmap_plan) const
   {
-    CmapSubtableLongGroup *group = nullptr;
-    for (unsigned int i = 0; i < plan->codepoints.len; i++) {
+    if (unlikely( !CmapSubtableFormat4::create_sub_table_plan (plan, &cmap_plan->format4_segments)))
+      return false;
 
-      hb_codepoint_t cp = plan->codepoints[i];
-      if (!group || cp - 1 != group->endCharCode)
-      {
-        group = groups->push ();
-        group->startCharCode.set (cp);
-        group->endCharCode.set (cp);
-        hb_codepoint_t new_gid;
-        if (unlikely (!hb_subset_plan_new_gid_for_codepoint (plan, cp, &new_gid)))
-        {
-          DEBUG_MSG(SUBSET, nullptr, "Unable to find new gid for %04x", cp);
-          return false;
-        }
-        group->glyphID.set (new_gid);
-      } else
-      {
-        group->endCharCode.set (cp);
-      }
-    }
-
-    DEBUG_MSG(SUBSET, nullptr, "cmap");
-    for (unsigned int i = 0; i < groups->len; i++) {
-      CmapSubtableLongGroup& group = (*groups)[i];
-      DEBUG_MSG(SUBSET, nullptr, "  %d: U+%04X-U+%04X, gid %d-%d", i, (uint32_t) group.startCharCode, (uint32_t) group.endCharCode, (uint32_t) group.glyphID, (uint32_t) group.glyphID + ((uint32_t) group.endCharCode - (uint32_t) group.startCharCode));
-    }
-
-    return true;
+    return CmapSubtableFormat12::create_sub_table_plan (plan, &cmap_plan->format12_groups);
   }
 
-  inline bool _subset (hb_prealloced_array_t<CmapSubtableLongGroup> &groups,
+  inline bool _subset (const hb_subset_plan_t *plan,
+                       const subset_plan &cmap_subset_plan,
 		       size_t dest_sz,
 		       void *dest) const
   {
@@ -565,25 +808,46 @@ struct cmap
 
     cmap->version.set (0);
 
-    if (unlikely (!cmap->encodingRecord.serialize (&c,  1))) return false;
-
-    EncodingRecord &rec = cmap->encodingRecord[0];
-    rec.platformID.set (3); 
-    rec.encodingID.set (10); 
+    if (unlikely (!cmap->encodingRecord.serialize (&c,  3)))
+      return false;
 
     
-    CmapSubtable &subtable = rec.subtable.serialize (&c, cmap);
 
-    subtable.u.format.set (12);
+    
+    EncodingRecord &format4_plat0_rec = cmap->encodingRecord[0];
+    format4_plat0_rec.platformID.set (0); 
+    format4_plat0_rec.encodingID.set (3);
 
-    CmapSubtableFormat12 &format12 = subtable.u.format12;
-    if (unlikely (!c.extend_min (format12))) return false;
+    
+    EncodingRecord &format4_plat3_rec = cmap->encodingRecord[1];
+    format4_plat3_rec.platformID.set (3); 
+    format4_plat3_rec.encodingID.set (1); 
 
-    format12.format.set (12);
-    format12.reservedZ.set (0);
-    format12.lengthZ.set (16 + 12 * groups.len);
+    
+    EncodingRecord &format12_rec = cmap->encodingRecord[2];
+    format12_rec.platformID.set (3); 
+    format12_rec.encodingID.set (10); 
 
-    if (unlikely (!format12.serialize (&c, groups))) return false;
+    
+    {
+      CmapSubtable &subtable = format4_plat0_rec.subtable.serialize (&c, cmap);
+      format4_plat3_rec.subtable.set (format4_plat0_rec.subtable);
+      subtable.u.format.set (4);
+
+      CmapSubtableFormat4 &format4 = subtable.u.format4;
+      if (unlikely (!format4.serialize (&c, plan, cmap_subset_plan.format4_segments)))
+        return false;
+    }
+
+    
+    {
+      CmapSubtable &subtable = format12_rec.subtable.serialize (&c, cmap);
+      subtable.u.format.set (12);
+
+      CmapSubtableFormat12 &format12 = subtable.u.format12;
+      if (unlikely (!format12.serialize (&c, cmap_subset_plan.format12_groups)))
+        return false;
+    }
 
     c.end_serialize ();
 
@@ -592,24 +856,25 @@ struct cmap
 
   inline bool subset (hb_subset_plan_t *plan) const
   {
-    hb_auto_array_t<CmapSubtableLongGroup> groups;
+    subset_plan cmap_subset_plan;
 
-    if (unlikely (!populate_groups (plan, &groups))) return false;
+    if (unlikely (!_create_plan (plan, &cmap_subset_plan)))
+    {
+      DEBUG_MSG(SUBSET, nullptr, "Failed to generate a cmap subsetting plan.");
+      return false;
+    }
 
     
-    
-    size_t dest_sz = 4 
-                   + 8 
-                   + 16 
-                   + 12 * groups.len; 
+    size_t dest_sz = cmap_subset_plan.final_size();
     void *dest = malloc (dest_sz);
     if (unlikely (!dest)) {
       DEBUG_MSG(SUBSET, nullptr, "Unable to alloc %lu for cmap subset output", (unsigned long) dest_sz);
       return false;
     }
 
-    if (unlikely (!_subset (groups, dest_sz, dest)))
+    if (unlikely (!_subset (plan, cmap_subset_plan, dest_sz, dest)))
     {
+      DEBUG_MSG(SUBSET, nullptr, "Failed to perform subsetting of cmap.");
       free (dest);
       return false;
     }
@@ -620,7 +885,7 @@ struct cmap
                                             HB_MEMORY_MODE_READONLY,
                                             dest,
                                             free);
-    bool result =  hb_subset_plan_add_table (plan, HB_OT_TAG_cmap, cmap_prime);
+    bool result =  plan->add_table (HB_OT_TAG_cmap, cmap_prime);
     hb_blob_destroy (cmap_prime);
     return result;
   }
@@ -630,7 +895,7 @@ struct cmap
     inline void init (hb_face_t *face)
     {
       this->blob = OT::Sanitizer<OT::cmap>().sanitize (face->reference_table (HB_OT_TAG_cmap));
-      const OT::cmap *cmap = OT::Sanitizer<OT::cmap>::lock_instance (this->blob);
+      const OT::cmap *cmap = this->blob->as<OT::cmap> ();
       const OT::CmapSubtable *subtable = nullptr;
       const OT::CmapSubtableFormat14 *subtable_uvs = nullptr;
 
@@ -651,7 +916,7 @@ struct cmap
 	if (subtable) symbol = true;
       }
       
-      if (!subtable) subtable = &OT::Null(OT::CmapSubtable);
+      if (!subtable) subtable = &Null(OT::CmapSubtable);
 
       
       if (!subtable_uvs)
@@ -661,26 +926,36 @@ struct cmap
 	  subtable_uvs = &st->u.format14;
       }
       
-      if (!subtable_uvs) subtable_uvs = &OT::Null(OT::CmapSubtableFormat14);
+      if (!subtable_uvs) subtable_uvs = &Null(OT::CmapSubtableFormat14);
 
       this->uvs_table = subtable_uvs;
 
       this->get_glyph_data = subtable;
       if (unlikely (symbol))
+      {
 	this->get_glyph_func = get_glyph_from_symbol<OT::CmapSubtable>;
-      else
+	this->get_all_codepoints_func = null_get_all_codepoints_func;
+      } else {
 	switch (subtable->u.format) {
 	
-	default: this->get_glyph_func = get_glyph_from<OT::CmapSubtable>;		break;
-	case 12: this->get_glyph_func = get_glyph_from<OT::CmapSubtableFormat12>;	break;
+	default:
+	  this->get_glyph_func = get_glyph_from<OT::CmapSubtable>;
+	  this->get_all_codepoints_func = null_get_all_codepoints_func;
+	  break;
+	case 12:
+	  this->get_glyph_func = get_glyph_from<OT::CmapSubtableFormat12>;
+	  this->get_all_codepoints_func = get_all_codepoints_from<OT::CmapSubtableFormat12>;
+	  break;
 	case  4:
 	  {
 	    this->format4_accel.init (&subtable->u.format4);
 	    this->get_glyph_data = &this->format4_accel;
 	    this->get_glyph_func = this->format4_accel.get_glyph_func;
+	    this->get_all_codepoints_func = this->format4_accel.get_all_codepoints_func;
 	  }
 	  break;
 	}
+      }
     }
 
     inline void fini (void)
@@ -710,10 +985,22 @@ struct cmap
       return get_nominal_glyph (unicode, glyph);
     }
 
+    inline void get_all_codepoints (hb_set_t *out) const
+    {
+      this->get_all_codepoints_func (get_glyph_data, out);
+    }
+
     protected:
     typedef bool (*hb_cmap_get_glyph_func_t) (const void *obj,
 					      hb_codepoint_t codepoint,
 					      hb_codepoint_t *glyph);
+    typedef void (*hb_cmap_get_all_codepoints_func_t) (const void *obj,
+						       hb_set_t *out);
+
+    static inline void null_get_all_codepoints_func (const void *obj, hb_set_t *out)
+    {
+      
+    }
 
     template <typename Type>
     static inline bool get_glyph_from (const void *obj,
@@ -722,6 +1009,14 @@ struct cmap
     {
       const Type *typed_obj = (const Type *) obj;
       return typed_obj->get_glyph (codepoint, glyph);
+    }
+
+    template <typename Type>
+    static inline void get_all_codepoints_from (const void *obj,
+						hb_set_t *out)
+    {
+      const Type *typed_obj = (const Type *) obj;
+      typed_obj->get_all_codepoints (out);
     }
 
     template <typename Type>
@@ -749,6 +1044,8 @@ struct cmap
     private:
     hb_cmap_get_glyph_func_t get_glyph_func;
     const void *get_glyph_data;
+    hb_cmap_get_all_codepoints_func_t get_all_codepoints_func;
+
     OT::CmapSubtableFormat4::accelerator_t format4_accel;
 
     const OT::CmapSubtableFormat14 *uvs_table;

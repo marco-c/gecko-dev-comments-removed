@@ -82,8 +82,8 @@ typedef enum {
 
 
 
-
 #define HB_OT_TAG_CPAL HB_TAG('C','P','A','L')
+
 
 namespace OT {
 
@@ -92,35 +92,44 @@ struct CPALV1Tail
 {
   friend struct CPAL;
 
-  inline bool sanitize (hb_sanitize_context_t *c, unsigned int palettes) const
+  inline bool
+  sanitize (hb_sanitize_context_t *c, const void *base, unsigned int palettes) const
   {
     TRACE_SANITIZE (this);
-    return_trace (
-      c->check_struct (this) &&
-      c->check_array ((const void*) &paletteFlags, sizeof (HBUINT32), palettes) &&
-      c->check_array ((const void*) &paletteLabel, sizeof (HBUINT16), palettes) &&
-      c->check_array ((const void*) &paletteEntryLabel, sizeof (HBUINT16), palettes));
+    return_trace (c->check_struct (this) &&
+		  (base+paletteFlagsZ).sanitize (c, palettes) &&
+		  (base+paletteLabelZ).sanitize (c, palettes) &&
+		  (base+paletteEntryLabelZ).sanitize (c, palettes));
   }
 
   private:
   inline hb_ot_color_palette_flags_t
   get_palette_flags (const void *base, unsigned int palette) const
   {
-    const HBUINT32* flags = &paletteFlags (base);
-    return (hb_ot_color_palette_flags_t) (uint32_t) flags[palette];
+    
+    return (hb_ot_color_palette_flags_t) (uint32_t) (base+paletteFlagsZ)[palette];
   }
 
   inline unsigned int
   get_palette_name_id (const void *base, unsigned int palette) const
   {
-    const HBUINT16* name_ids = &paletteLabel (base);
-    return name_ids[palette];
+    
+    return (base+paletteLabelZ)[palette];
   }
 
   protected:
-  LOffsetTo<HBUINT32> paletteFlags;
-  LOffsetTo<HBUINT16> paletteLabel;
-  LOffsetTo<HBUINT16> paletteEntryLabel;
+  LOffsetTo<UnsizedArrayOf<HBUINT32> >
+		paletteFlagsZ;		
+
+
+  LOffsetTo<UnsizedArrayOf<HBUINT16> >
+		paletteLabelZ;		
+
+
+  LOffsetTo<UnsizedArrayOf<HBUINT16> >
+		paletteEntryLabelZ;	
+
+
   public:
   DEFINE_SIZE_STATIC (12);
 };
@@ -134,21 +143,22 @@ struct CPAL
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    if (!(c->check_struct (this) && 
-        c->check_array ((const void*) &colorRecordsZ, sizeof (BGRAColor), numColorRecords)))
+    if (unlikely (!(c->check_struct (this) &&	
+						
+		    (this+colorRecordsZ).sanitize (c, numColorRecords))))
       return_trace (false);
 
     
     for (unsigned int i = 0; i < numPalettes; ++i)
-      if (colorRecordIndicesX[i] + numPaletteEntries > numColorRecords)
-        return_trace (false);
+      if (unlikely (colorRecordIndicesZ[i] + numPaletteEntries > numColorRecords))
+	return_trace (false);
 
     
     if (version == 0)
       return_trace (true);
 
     const CPALV1Tail &v1 = StructAfter<CPALV1Tail> (*this);
-    return_trace (v1.sanitize (c, numPalettes));
+    return_trace (likely (v1.sanitize (c, this, numPalettes)));
   }
 
   inline unsigned int get_size (void) const
@@ -158,7 +168,7 @@ struct CPAL
 
   inline hb_ot_color_palette_flags_t get_palette_flags (unsigned int palette) const
   {
-    if (version == 0 || palette >= numPalettes)
+    if (unlikely (version == 0 || palette >= numPalettes))
       return HB_OT_COLOR_PALETTE_FLAG_DEFAULT;
 
     const CPALV1Tail& cpal1 = StructAfter<CPALV1Tail> (*this);
@@ -167,7 +177,7 @@ struct CPAL
 
   inline unsigned int get_palette_name_id (unsigned int palette) const
   {
-    if (version == 0 || palette >= numPalettes)
+    if (unlikely (version == 0 || palette >= numPalettes))
       return 0xFFFF;
 
     const CPALV1Tail& cpal1 = StructAfter<CPALV1Tail> (*this);
@@ -179,27 +189,33 @@ struct CPAL
     return numPalettes;
   }
 
-  inline hb_ot_color_t get_color_record_argb (unsigned int color_index, unsigned int palette) const
+  inline hb_ot_color_t
+  get_color_record_argb (unsigned int color_index, unsigned int palette) const
   {
-    if (color_index >= numPaletteEntries || palette >= numPalettes)
+    if (unlikely (color_index >= numPaletteEntries || palette >= numPalettes))
       return 0;
 
-    const BGRAColor* records = &colorRecordsZ(this);
     
-    return records[colorRecordIndicesX[palette] + color_index];
+    const UnsizedArrayOf<BGRAColor>& color_records = this+colorRecordsZ;
+    return color_records[colorRecordIndicesZ[palette] + color_index];
   }
 
   protected:
-  HBUINT16	version;
+  HBUINT16	version;		
   
-  HBUINT16	numPaletteEntries;
-  HBUINT16	numPalettes;
-  HBUINT16	numColorRecords;
-  LOffsetTo<HBUINT32>	colorRecordsZ;
-  HBUINT16	colorRecordIndicesX[VAR];  
+  HBUINT16	numPaletteEntries;	
+  HBUINT16	numPalettes;		
+  HBUINT16	numColorRecords;	
+
+  LOffsetTo<UnsizedArrayOf<BGRAColor> >
+		colorRecordsZ;		
+
+  UnsizedArrayOf<HBUINT16>
+		colorRecordIndicesZ;	
+
 
   public:
-  DEFINE_SIZE_ARRAY (12, colorRecordIndicesX);
+  DEFINE_SIZE_ARRAY (12, colorRecordIndicesZ);
 };
 
 } 

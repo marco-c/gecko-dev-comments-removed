@@ -205,6 +205,10 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_ADLAM:
 
+    
+    case HB_SCRIPT_HANIFI_ROHINGYA:
+    case HB_SCRIPT_SOGDIAN:
+
       
 
 
@@ -379,6 +383,11 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_MASARAM_GONDI:
     case HB_SCRIPT_SOYOMBO:
     case HB_SCRIPT_ZANABAZAR_SQUARE:
+
+    
+    case HB_SCRIPT_DOGRA:
+    case HB_SCRIPT_GUNJALA_GONDI:
+    case HB_SCRIPT_MAKASAR:
 
       
 

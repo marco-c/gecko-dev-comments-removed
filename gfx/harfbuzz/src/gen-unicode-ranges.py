@@ -4,6 +4,8 @@
 
 
 
+from __future__ import print_function, division, absolute_import
+
 import io
 import re
 import sys
@@ -11,7 +13,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-print (u"""static Range os2UnicodeRangesSorted[] =
+print ("""static Range os2UnicodeRangesSorted[] =
 {""")
 
 args = sys.argv[1:]
@@ -47,6 +49,6 @@ for ranges in all_ranges:
   end = ("0x%X" % ranges[1]).rjust(8)
   bit = ("%s" % ranges[2]).rjust(3)
 
-  print "  {%s, %s, %s}, // %s" % (start, end, bit, ranges[3])
+  print ("  {%s, %s, %s}, // %s" % (start, end, bit, ranges[3]))
 
-print (u"""};""");
+print ("""};""")

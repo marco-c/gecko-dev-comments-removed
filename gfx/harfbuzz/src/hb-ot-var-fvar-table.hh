@@ -29,6 +29,14 @@
 
 #include "hb-open-type-private.hh"
 
+
+
+
+
+
+#define HB_OT_TAG_fvar HB_TAG('f','v','a','r')
+
+
 namespace OT {
 
 
@@ -42,7 +50,7 @@ struct InstanceRecord
   }
 
   protected:
-  HBUINT16	subfamilyNameID;
+  NameID	subfamilyNameID;
 
   HBUINT16	reserved;	
   Fixed		coordinates[VAR];
@@ -68,19 +76,12 @@ struct AxisRecord
   Fixed		defaultValue;	
   Fixed		maxValue;	
   HBUINT16	reserved;	
-  HBUINT16	axisNameID;	
+  NameID	axisNameID;	
 
 
   public:
   DEFINE_SIZE_STATIC (20);
 };
-
-
-
-
-
-
-#define HB_OT_TAG_fvar HB_TAG('f','v','a','r')
 
 struct fvar
 {

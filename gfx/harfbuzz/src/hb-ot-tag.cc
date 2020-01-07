@@ -122,7 +122,6 @@ hb_ot_new_tag_to_script (hb_tag_t tag)
 
 
 
-
 void
 hb_ot_tags_from_script (hb_script_t  script,
 			hb_tag_t    *script_tag_1,
