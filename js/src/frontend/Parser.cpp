@@ -2361,9 +2361,8 @@ PerHandlerParser<ParseHandler>::newDotGeneratorName()
     return newInternalDotName(context->names().dotGenerator);
 }
 
-template <class ParseHandler, typename CharT>
 bool
-GeneralParser<ParseHandler, CharT>::declareDotGeneratorName()
+ParserBase::declareDotGeneratorName()
 {
     
     
