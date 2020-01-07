@@ -1235,11 +1235,6 @@ public:
   
 
 
-  static bool IsScriptType(const nsACString& aContentType);
-
-  
-
-
   static bool IsPlainTextType(const nsACString& aContentType);
 
   
