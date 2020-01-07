@@ -1,0 +1,153 @@
+"use strict";
+
+
+
+
+ChromeUtils.defineModuleGetter(this, "AddonManager",
+                               "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
+                               "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionParent",
+                               "resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(this, "DevToolsShim",
+                               "chrome://devtools-startup/content/DevToolsShim.jsm");
+
+this.runtime = class extends ExtensionAPI {
+  getAPI(context) {
+    let {extension} = context;
+    return {
+      runtime: {
+        onStartup: new EventManager(context, "runtime.onStartup", fire => {
+          if (context.incognito) {
+            
+            return () => {};
+          }
+          let listener = () => {
+            if (extension.startupReason === "APP_STARTUP") {
+              fire.sync();
+            }
+          };
+          extension.on("startup", listener);
+          return () => {
+            extension.off("startup", listener);
+          };
+        }).api(),
+
+        onInstalled: new EventManager(context, "runtime.onInstalled", fire => {
+          let temporary = !!extension.addonData.temporarilyInstalled;
+
+          let listener = () => {
+            switch (extension.startupReason) {
+              case "APP_STARTUP":
+                if (AddonManagerPrivate.browserUpdated) {
+                  fire.sync({reason: "browser_update", temporary});
+                }
+                break;
+              case "ADDON_INSTALL":
+                fire.sync({reason: "install", temporary});
+                break;
+              case "ADDON_UPGRADE":
+                fire.sync({
+                  reason: "update",
+                  previousVersion: extension.addonData.oldVersion,
+                  temporary,
+                });
+                break;
+            }
+          };
+          extension.on("startup", listener);
+          return () => {
+            extension.off("startup", listener);
+          };
+        }).api(),
+
+        onUpdateAvailable: new EventManager(context, "runtime.onUpdateAvailable", fire => {
+          let instanceID = extension.addonData.instanceID;
+          AddonManager.addUpgradeListener(instanceID, upgrade => {
+            extension.upgrade = upgrade;
+            let details = {
+              version: upgrade.version,
+            };
+            fire.sync(details);
+          });
+          return () => {
+            AddonManager.removeUpgradeListener(instanceID).catch(e => {
+              
+            });
+          };
+        }).api(),
+
+        reload: () => {
+          if (extension.upgrade) {
+            
+            extension.upgrade.install();
+          } else {
+            
+            AddonManager.getAddonByID(extension.id, addon => {
+              addon.reload();
+            });
+          }
+        },
+
+        get lastError() {
+          
+          
+          
+          return context.lastError;
+        },
+
+        getBrowserInfo: function() {
+          const {name, vendor, version, appBuildID} = Services.appinfo;
+          const info = {name, vendor, version, buildID: appBuildID};
+          return Promise.resolve(info);
+        },
+
+        getPlatformInfo: function() {
+          return Promise.resolve(ExtensionParent.PlatformInfo);
+        },
+
+        openOptionsPage: function() {
+          if (!extension.manifest.options_ui) {
+            return Promise.reject({message: "No `options_ui` declared"});
+          }
+
+          
+          
+          
+          return openOptionsPage(extension).then(() => {});
+        },
+
+        setUninstallURL: function(url) {
+          if (url.length == 0) {
+            return Promise.resolve();
+          }
+
+          let uri;
+          try {
+            uri = new URL(url);
+          } catch (e) {
+            return Promise.reject({message: `Invalid URL: ${JSON.stringify(url)}`});
+          }
+
+          if (uri.protocol != "http:" && uri.protocol != "https:") {
+            return Promise.reject({message: "url must have the scheme http or https"});
+          }
+
+          extension.uninstallURL = url;
+          return Promise.resolve();
+        },
+
+        
+        
+        
+        openBrowserConsole() {
+          if (AppConstants.platform !== "android") {
+            DevToolsShim.openBrowserConsole();
+          }
+        },
+      },
+    };
+  }
+};

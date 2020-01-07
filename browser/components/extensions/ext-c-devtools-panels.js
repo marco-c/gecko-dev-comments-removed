@@ -1,0 +1,299 @@
+
+
+"use strict";
+
+
+
+
+ChromeUtils.defineModuleGetter(this, "ExtensionChildDevToolsUtils",
+                               "resource://gre/modules/ExtensionChildDevToolsUtils.jsm");
+
+var {
+  promiseDocumentLoaded,
+} = ExtensionUtils;
+
+
+
+
+
+
+
+
+
+
+class ChildDevToolsPanel extends ExtensionUtils.EventEmitter {
+  constructor(context, {id}) {
+    super();
+
+    this.context = context;
+    this.context.callOnClose(this);
+
+    this.id = id;
+    this._panelContext = null;
+
+    this.mm = context.messageManager;
+    this.mm.addMessageListener("Extension:DevToolsPanelShown", this);
+    this.mm.addMessageListener("Extension:DevToolsPanelHidden", this);
+  }
+
+  get panelContext() {
+    if (this._panelContext) {
+      return this._panelContext;
+    }
+
+    for (let view of this.context.extension.devtoolsViews) {
+      if (view.viewType === "devtools_panel" &&
+          view.devtoolsToolboxInfo.toolboxPanelId === this.id) {
+        this._panelContext = view;
+
+        
+        view.callOnClose({
+          close: () => {
+            this._panelContext = null;
+          },
+        });
+        return view;
+      }
+    }
+
+    return null;
+  }
+
+  receiveMessage({name, data}) {
+    
+    
+    if (!data || data.toolboxPanelId !== this.id) {
+      return;
+    }
+
+    switch (name) {
+      case "Extension:DevToolsPanelShown":
+        
+        
+        if (!this.panelContext || !this.panelContext.contentWindow) {
+          return;
+        }
+        this.onParentPanelShown();
+        break;
+      case "Extension:DevToolsPanelHidden":
+        this.onParentPanelHidden();
+        break;
+    }
+  }
+
+  onParentPanelShown() {
+    const {document} = this.panelContext.contentWindow;
+
+    
+    
+    promiseDocumentLoaded(document).then(() => {
+      this.emit("shown", this.panelContext.contentWindow);
+    });
+  }
+
+  onParentPanelHidden() {
+    this.emit("hidden");
+  }
+
+  api() {
+    return {
+      onShown: new EventManager(
+        this.context, "devtoolsPanel.onShown", fire => {
+          const listener = (eventName, panelContentWindow) => {
+            fire.asyncWithoutClone(panelContentWindow);
+          };
+          this.on("shown", listener);
+          return () => {
+            this.off("shown", listener);
+          };
+        }).api(),
+
+      onHidden: new EventManager(
+        this.context, "devtoolsPanel.onHidden", fire => {
+          const listener = () => {
+            fire.async();
+          };
+          this.on("hidden", listener);
+          return () => {
+            this.off("hidden", listener);
+          };
+        }).api(),
+
+      
+    };
+  }
+
+  close() {
+    this.mm.removeMessageListener("Extension:DevToolsPanelShown", this);
+    this.mm.removeMessageListener("Extension:DevToolsPanelHidden", this);
+
+    this._panelContext = null;
+    this.context = null;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+class ChildDevToolsInspectorSidebar extends ExtensionUtils.EventEmitter {
+  constructor(context, {id}) {
+    super();
+
+    this.context = context;
+    this.context.callOnClose(this);
+
+    this.id = id;
+
+    this.mm = context.messageManager;
+    this.mm.addMessageListener("Extension:DevToolsInspectorSidebarShown", this);
+    this.mm.addMessageListener("Extension:DevToolsInspectorSidebarHidden", this);
+  }
+
+  close() {
+    this.mm.removeMessageListener("Extension:DevToolsInspectorSidebarShown", this);
+    this.mm.removeMessageListener("Extension:DevToolsInspectorSidebarHidden", this);
+
+    this.content = null;
+  }
+
+  receiveMessage({name, data}) {
+    
+    
+    if (!data || data.inspectorSidebarId !== this.id) {
+      return;
+    }
+
+    switch (name) {
+      case "Extension:DevToolsInspectorSidebarShown":
+        this.onParentSidebarShown();
+        break;
+      case "Extension:DevToolsInspectorSidebarHidden":
+        this.onParentSidebarHidden();
+        break;
+    }
+  }
+
+  onParentSidebarShown() {
+    
+    this.emit("shown");
+  }
+
+  onParentSidebarHidden() {
+    this.emit("hidden");
+  }
+
+  api() {
+    const {context, id} = this;
+
+    return {
+      onShown: new EventManager(
+        context, "devtoolsInspectorSidebar.onShown", fire => {
+          const listener = (eventName, panelContentWindow) => {
+            fire.asyncWithoutClone(panelContentWindow);
+          };
+          this.on("shown", listener);
+          return () => {
+            this.off("shown", listener);
+          };
+        }).api(),
+
+      onHidden: new EventManager(
+        context, "devtoolsInspectorSidebar.onHidden", fire => {
+          const listener = () => {
+            fire.async();
+          };
+          this.on("hidden", listener);
+          return () => {
+            this.off("hidden", listener);
+          };
+        }).api(),
+
+      setObject(jsonObject, rootTitle) {
+        return context.cloneScope.Promise.resolve().then(() => {
+          return context.childManager.callParentAsyncFunction(
+            "devtools.panels.elements.Sidebar.setObject",
+            [id, jsonObject, rootTitle]
+          );
+        });
+      },
+
+      setExpression(evalExpression, rootTitle) {
+        return context.cloneScope.Promise.resolve().then(() => {
+          return context.childManager.callParentAsyncFunction(
+            "devtools.panels.elements.Sidebar.setExpression",
+            [id, evalExpression, rootTitle]
+          );
+        });
+      },
+    };
+  }
+}
+
+this.devtools_panels = class extends ExtensionAPI {
+  getAPI(context) {
+    const themeChangeObserver = ExtensionChildDevToolsUtils.getThemeChangeObserver();
+
+    return {
+      devtools: {
+        panels: {
+          elements: {
+            createSidebarPane(title) {
+              
+              
+              
+              
+              return context.cloneScope.Promise.resolve().then(async () => {
+                const sidebarId = await context.childManager.callParentAsyncFunction(
+                  "devtools.panels.elements.createSidebarPane", [title]);
+
+                const sidebar = new ChildDevToolsInspectorSidebar(context, {id: sidebarId});
+
+                const sidebarAPI = Cu.cloneInto(sidebar.api(),
+                                                context.cloneScope,
+                                                {cloneFunctions: true});
+
+                return sidebarAPI;
+              });
+            },
+          },
+          create(title, icon, url) {
+            
+            
+            
+            
+            return context.cloneScope.Promise.resolve().then(async () => {
+              const panelId = await context.childManager.callParentAsyncFunction(
+                "devtools.panels.create", [title, icon, url]);
+
+              const devtoolsPanel = new ChildDevToolsPanel(context, {id: panelId});
+
+              const devtoolsPanelAPI = Cu.cloneInto(devtoolsPanel.api(),
+                                                    context.cloneScope,
+                                                    {cloneFunctions: true});
+              return devtoolsPanelAPI;
+            });
+          },
+          get themeName() {
+            return themeChangeObserver.themeName;
+          },
+          onThemeChanged: new EventManager(
+            context, "devtools.panels.onThemeChanged", fire => {
+              const listener = (eventName, themeName) => {
+                fire.async(themeName);
+              };
+              themeChangeObserver.on("themeChanged", listener);
+              return () => {
+                themeChangeObserver.off("themeChanged", listener);
+              };
+            }).api(),
+        },
+      },
+    };
+  }
+};

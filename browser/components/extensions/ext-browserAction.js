@@ -1,0 +1,708 @@
+
+
+"use strict";
+
+
+
+
+
+
+
+ChromeUtils.defineModuleGetter(this, "CustomizableUI",
+                               "resource:///modules/CustomizableUI.jsm");
+ChromeUtils.defineModuleGetter(this, "clearTimeout",
+                               "resource://gre/modules/Timer.jsm");
+ChromeUtils.defineModuleGetter(this, "setTimeout",
+                               "resource://gre/modules/Timer.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryStopwatch",
+                               "resource://gre/modules/TelemetryStopwatch.jsm");
+ChromeUtils.defineModuleGetter(this, "ViewPopup",
+                               "resource:///modules/ExtensionPopups.jsm");
+
+var {
+  DefaultWeakMap,
+} = ExtensionUtils;
+
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+
+var {
+  IconDetails,
+  StartupCache,
+} = ExtensionParent;
+
+var {
+  ExtensionError,
+} = ExtensionUtils;
+
+Cu.importGlobalProperties(["InspectorUtils"]);
+
+const POPUP_PRELOAD_TIMEOUT_MS = 200;
+const POPUP_OPEN_MS_HISTOGRAM = "WEBEXT_BROWSERACTION_POPUP_OPEN_MS";
+const POPUP_RESULT_HISTOGRAM = "WEBEXT_BROWSERACTION_POPUP_PRELOAD_RESULT_COUNT";
+
+var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+const isAncestorOrSelf = (target, node) => {
+  for (; node; node = node.parentNode) {
+    if (node === target) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+const browserActionMap = new WeakMap();
+
+XPCOMUtils.defineLazyGetter(this, "browserAreas", () => {
+  return {
+    "navbar": CustomizableUI.AREA_NAVBAR,
+    "menupanel": CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
+    "tabstrip": CustomizableUI.AREA_TABSTRIP,
+    "personaltoolbar": CustomizableUI.AREA_BOOKMARKS,
+  };
+});
+
+this.browserAction = class extends ExtensionAPI {
+  static for(extension) {
+    return browserActionMap.get(extension);
+  }
+
+  async onManifestEntry(entryName) {
+    let {extension} = this;
+
+    let options = extension.manifest.browser_action;
+
+    this.iconData = new DefaultWeakMap(icons => this.getIconData(icons));
+
+    let widgetId = makeWidgetId(extension.id);
+    this.id = `${widgetId}-browser-action`;
+    this.viewId = `PanelUI-webext-${widgetId}-browser-action-view`;
+    this.widget = null;
+
+    this.pendingPopup = null;
+    this.pendingPopupTimeout = null;
+    this.eventQueue = [];
+
+    this.tabManager = extension.tabManager;
+
+    this.defaults = {
+      enabled: true,
+      title: options.default_title || extension.name,
+      badgeText: "",
+      badgeBackgroundColor: null,
+      popup: options.default_popup || "",
+      area: browserAreas[options.default_area || "navbar"],
+    };
+    this.globals = Object.create(this.defaults);
+
+    this.browserStyle = options.browser_style || false;
+    if (options.browser_style === null) {
+      this.extension.logger.warn("Please specify whether you want browser_style " +
+                                 "or not in your browser_action options.");
+    }
+
+    browserActionMap.set(extension, this);
+
+    this.defaults.icon = await StartupCache.get(
+      extension, ["browserAction", "default_icon"],
+      () => IconDetails.normalize({
+        path: options.default_icon,
+        iconType: "browserAction",
+        themeIcons: options.theme_icons,
+      }, extension));
+
+    this.iconData.set(
+      this.defaults.icon,
+      await StartupCache.get(
+        extension, ["browserAction", "default_icon_data"],
+        () => this.getIconData(this.defaults.icon)));
+
+    this.tabContext = new TabContext(tab => Object.create(this.globals),
+                                     extension);
+
+    
+    this.tabContext.on("location-change", this.handleLocationChange.bind(this));
+
+    this.build();
+  }
+
+  handleLocationChange(eventType, tab, fromBrowse) {
+    if (fromBrowse) {
+      this.tabContext.clear(tab);
+      this.updateOnChange(tab);
+    }
+  }
+
+  onShutdown(reason) {
+    browserActionMap.delete(this.extension);
+
+    this.tabContext.shutdown();
+    CustomizableUI.destroyWidget(this.id);
+
+    this.clearPopup();
+  }
+
+  build() {
+    let widget = CustomizableUI.createWidget({
+      id: this.id,
+      viewId: this.viewId,
+      type: "view",
+      removable: true,
+      label: this.defaults.title || this.extension.name,
+      tooltiptext: this.defaults.title || "",
+      defaultArea: this.defaults.area,
+
+      
+      
+      localized: false,
+
+      onBeforeCreated: document => {
+        let view = document.createElementNS(XUL_NS, "panelview");
+        view.id = this.viewId;
+        view.setAttribute("flex", "1");
+        view.setAttribute("extension", true);
+
+        document.getElementById("appMenu-viewCache").appendChild(view);
+
+        if (this.extension.hasPermission("menus") ||
+            this.extension.hasPermission("contextMenus")) {
+          document.addEventListener("popupshowing", this);
+        }
+      },
+
+      onDestroyed: document => {
+        document.removeEventListener("popupshowing", this);
+
+        let view = document.getElementById(this.viewId);
+        if (view) {
+          this.clearPopup();
+          CustomizableUI.hidePanelForNode(view);
+          view.remove();
+        }
+      },
+
+      onCreated: node => {
+        node.classList.add("badged-button");
+        node.classList.add("webextension-browser-action");
+        node.setAttribute("constrain-size", "true");
+
+        node.onmousedown = event => this.handleEvent(event);
+        node.onmouseover = event => this.handleEvent(event);
+        node.onmouseout = event => this.handleEvent(event);
+
+        this.updateButton(node, this.globals, true);
+      },
+
+      onViewShowing: async event => {
+        TelemetryStopwatch.start(POPUP_OPEN_MS_HISTOGRAM, this);
+        let document = event.target.ownerDocument;
+        let tabbrowser = document.defaultView.gBrowser;
+
+        let tab = tabbrowser.selectedTab;
+        let popupURL = this.getProperty(tab, "popup");
+        this.tabManager.addActiveTabPermission(tab);
+
+        
+        
+        
+        if (popupURL) {
+          try {
+            let popup = this.getPopup(document.defaultView, popupURL);
+            let attachPromise = popup.attach(event.target);
+            event.detail.addBlocker(attachPromise);
+            await attachPromise;
+            TelemetryStopwatch.finish(POPUP_OPEN_MS_HISTOGRAM, this);
+            if (this.eventQueue.length) {
+              let histogram = Services.telemetry.getHistogramById(POPUP_RESULT_HISTOGRAM);
+              histogram.add("popupShown");
+              this.eventQueue = [];
+            }
+          } catch (e) {
+            TelemetryStopwatch.cancel(POPUP_OPEN_MS_HISTOGRAM, this);
+            Cu.reportError(e);
+            event.preventDefault();
+          }
+        } else {
+          TelemetryStopwatch.cancel(POPUP_OPEN_MS_HISTOGRAM, this);
+          
+          
+          event.preventDefault();
+          this.emit("click", tabbrowser.selectedBrowser);
+          
+          CustomizableUI.hidePanelForNode(event.target);
+        }
+      },
+    });
+
+    this.tabContext.on("tab-select", 
+                       (evt, tab) => { this.updateWindow(tab.ownerGlobal); });
+
+    this.widget = widget;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async triggerAction(window) {
+    let popup = ViewPopup.for(this.extension, window);
+    if (popup) {
+      popup.closePopup();
+      return;
+    }
+
+    let widget = this.widget.forWindow(window);
+    let tab = window.gBrowser.selectedTab;
+
+    if (!widget || !this.getProperty(tab, "enabled")) {
+      return;
+    }
+
+    
+    
+    
+    if (this.getProperty(tab, "popup")) {
+      if (this.widget.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+        await window.document.getElementById("nav-bar").overflowable.show();
+      }
+
+      let event = new window.CustomEvent("command", {bubbles: true, cancelable: true});
+      widget.node.dispatchEvent(event);
+    } else {
+      this.tabManager.addActiveTabPermission(tab);
+      this.emit("click");
+    }
+  }
+
+  handleEvent(event) {
+    let button = event.target;
+    let window = button.ownerGlobal;
+
+    switch (event.type) {
+      case "mousedown":
+        if (event.button == 0) {
+          
+          
+          let tab = window.gBrowser.selectedTab;
+          let popupURL = this.getProperty(tab, "popup");
+          let enabled = this.getProperty(tab, "enabled");
+
+          if (popupURL && enabled && (this.pendingPopup || !ViewPopup.for(this.extension, window))) {
+            this.eventQueue.push("Mousedown");
+            
+            
+            if (!this.tabManager.hasActiveTabPermission(tab)) {
+              this.tabManager.addActiveTabPermission(tab);
+              this.tabToRevokeDuringClearPopup = tab;
+            }
+
+            this.pendingPopup = this.getPopup(window, popupURL);
+            window.addEventListener("mouseup", this, true);
+          } else {
+            this.clearPopup();
+          }
+        }
+        break;
+
+      case "mouseup":
+        if (event.button == 0) {
+          this.clearPopupTimeout();
+          
+          
+          if (this.pendingPopup) {
+            let node = window.gBrowser && this.widget.forWindow(window).node;
+            if (isAncestorOrSelf(node, event.originalTarget)) {
+              this.pendingPopupTimeout = setTimeout(() => this.clearPopup(),
+                                                    POPUP_PRELOAD_TIMEOUT_MS);
+            } else {
+              this.clearPopup();
+            }
+          }
+        }
+        break;
+
+      case "mouseover": {
+        
+        
+        let tab = window.gBrowser.selectedTab;
+        let popupURL = this.getProperty(tab, "popup");
+        let enabled = this.getProperty(tab, "enabled");
+
+        if (popupURL && enabled && (this.pendingPopup || !ViewPopup.for(this.extension, window))) {
+          this.eventQueue.push("Hover");
+          this.pendingPopup = this.getPopup(window, popupURL, true);
+        }
+        break;
+      }
+
+      case "mouseout":
+        if (this.pendingPopup) {
+          if (this.eventQueue.length) {
+            let histogram = Services.telemetry.getHistogramById(POPUP_RESULT_HISTOGRAM);
+            histogram.add(`clearAfter${this.eventQueue.pop()}`);
+            this.eventQueue = [];
+          }
+          this.clearPopup();
+        }
+        break;
+
+
+      case "popupshowing":
+        const menu = event.target;
+        const trigger = menu.triggerNode;
+        const node = window.document.getElementById(this.id);
+        const contexts = ["toolbar-context-menu", "customizationPanelItemContextMenu"];
+
+        if (contexts.includes(menu.id) && node && isAncestorOrSelf(node, trigger)) {
+          global.actionContextMenu({
+            extension: this.extension,
+            onBrowserAction: true,
+            menu: menu,
+          });
+        }
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getPopup(window, popupURL, blockParser = false) {
+    this.clearPopupTimeout();
+    let {pendingPopup} = this;
+    this.pendingPopup = null;
+
+    if (pendingPopup) {
+      if (pendingPopup.window === window && pendingPopup.popupURL === popupURL) {
+        if (!blockParser) {
+          pendingPopup.unblockParser();
+        }
+
+        return pendingPopup;
+      }
+      pendingPopup.destroy();
+    }
+
+    let fixedWidth = this.widget.areaType == CustomizableUI.TYPE_MENU_PANEL;
+    return new ViewPopup(this.extension, window, popupURL, this.browserStyle, fixedWidth, blockParser);
+  }
+
+  
+
+
+  clearPopup() {
+    this.clearPopupTimeout();
+    if (this.pendingPopup) {
+      if (this.tabToRevokeDuringClearPopup) {
+        this.tabManager.revokeActiveTabPermission(this.tabToRevokeDuringClearPopup);
+      }
+      this.pendingPopup.destroy();
+      this.pendingPopup = null;
+    }
+    this.tabToRevokeDuringClearPopup = null;
+  }
+
+  
+
+
+  clearPopupTimeout() {
+    if (this.pendingPopup) {
+      this.pendingPopup.window.removeEventListener("mouseup", this, true);
+    }
+
+    if (this.pendingPopupTimeout) {
+      clearTimeout(this.pendingPopupTimeout);
+      this.pendingPopupTimeout = null;
+    }
+  }
+
+  
+  
+  updateButton(node, tabData, sync = false) {
+    let title = tabData.title || this.extension.name;
+    let callback = () => {
+      node.setAttribute("tooltiptext", title);
+      node.setAttribute("label", title);
+
+      if (tabData.badgeText) {
+        node.setAttribute("badge", tabData.badgeText);
+      } else {
+        node.removeAttribute("badge");
+      }
+
+      if (tabData.enabled) {
+        node.removeAttribute("disabled");
+      } else {
+        node.setAttribute("disabled", "true");
+      }
+
+      let color = tabData.badgeBackgroundColor;
+      if (color) {
+        color = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
+        node.setAttribute("badgeStyle", `background-color: ${color};`);
+      } else {
+        node.removeAttribute("badgeStyle");
+      }
+
+      let {style, legacy} = this.iconData.get(tabData.icon);
+      const LEGACY_CLASS = "toolbarbutton-legacy-addon";
+      if (legacy) {
+        node.classList.add(LEGACY_CLASS);
+      } else {
+        node.classList.remove(LEGACY_CLASS);
+      }
+
+      node.setAttribute("style", style);
+    };
+    if (sync) {
+      callback();
+    } else {
+      node.ownerGlobal.requestAnimationFrame(callback);
+    }
+  }
+
+  getIconData(icons) {
+    let baseSize = 16;
+    let {icon, size} = IconDetails.getPreferredIcon(icons, this.extension, baseSize);
+
+    let legacy = false;
+
+    
+    
+    if (size % 16 && typeof icon === "string" && !icon.endsWith(".svg")) {
+      let result = IconDetails.getPreferredIcon(icons, this.extension, 18);
+
+      if (result.size % 18 == 0) {
+        baseSize = 18;
+        icon = result.icon;
+        legacy = true;
+      }
+    }
+
+    let getIcon = (size, theme) => {
+      let {icon} = IconDetails.getPreferredIcon(icons, this.extension, size);
+      if (typeof icon === "object") {
+        return IconDetails.escapeUrl(icon[theme]);
+      }
+      return IconDetails.escapeUrl(icon);
+    };
+
+    let getStyle = (name, size) => {
+      return `
+        --webextension-${name}: url("${getIcon(size, "default")}");
+        --webextension-${name}-light: url("${getIcon(size, "light")}");
+        --webextension-${name}-dark: url("${getIcon(size, "dark")}");
+      `;
+    };
+
+    let style = `
+      ${getStyle("menupanel-image", 32)}
+      ${getStyle("menupanel-image-2x", 64)}
+      ${getStyle("toolbar-image", baseSize)}
+      ${getStyle("toolbar-image-2x", baseSize * 2)}
+    `;
+
+    return {style, legacy};
+  }
+
+  
+  updateWindow(window) {
+    let widget = this.widget.forWindow(window);
+    if (widget) {
+      let tab = window.gBrowser.selectedTab;
+      this.updateButton(widget.node, this.tabContext.get(tab));
+    }
+  }
+
+  
+  
+  
+  updateOnChange(tab) {
+    if (tab) {
+      if (tab.selected) {
+        this.updateWindow(tab.ownerGlobal);
+      }
+    } else {
+      for (let window of windowTracker.browserWindows()) {
+        this.updateWindow(window);
+      }
+    }
+  }
+
+  
+  
+  setProperty(tab, prop, value) {
+    let values;
+    if (tab == null) {
+      values = this.globals;
+    } else {
+      values = this.tabContext.get(tab);
+    }
+    if (value == null) {
+      delete values[prop];
+    } else {
+      values[prop] = value;
+    }
+
+    this.updateOnChange(tab);
+  }
+
+  
+  
+  getProperty(tab, prop) {
+    if (tab == null) {
+      return this.globals[prop];
+    }
+    return this.tabContext.get(tab)[prop];
+  }
+
+  getAPI(context) {
+    let {extension} = context;
+    let {tabManager} = extension;
+
+    let browserAction = this;
+
+    function getTab(tabId) {
+      if (tabId !== null) {
+        return tabTracker.getTab(tabId);
+      }
+      return null;
+    }
+
+    return {
+      browserAction: {
+        onClicked: new InputEventManager(context, "browserAction.onClicked", fire => {
+          let listener = (event, browser) => {
+            context.withPendingBrowser(browser, () =>
+              fire.sync(tabManager.convert(tabTracker.activeTab)));
+          };
+          browserAction.on("click", listener);
+          return () => {
+            browserAction.off("click", listener);
+          };
+        }).api(),
+
+        enable: function(tabId) {
+          let tab = getTab(tabId);
+          browserAction.setProperty(tab, "enabled", true);
+        },
+
+        disable: function(tabId) {
+          let tab = getTab(tabId);
+          browserAction.setProperty(tab, "enabled", false);
+        },
+
+        isEnabled: function(details) {
+          let tab = getTab(details.tabId);
+          return browserAction.getProperty(tab, "enabled");
+        },
+
+        setTitle: function(details) {
+          let tab = getTab(details.tabId);
+
+          browserAction.setProperty(tab, "title", details.title);
+        },
+
+        getTitle: function(details) {
+          let tab = getTab(details.tabId);
+
+          let title = browserAction.getProperty(tab, "title");
+          return Promise.resolve(title);
+        },
+
+        setIcon: function(details) {
+          let tab = getTab(details.tabId);
+
+          details.iconType = "browserAction";
+
+          let icon = IconDetails.normalize(details, extension, context);
+          if (!Object.keys(icon).length) {
+            icon = null;
+          }
+          browserAction.setProperty(tab, "icon", icon);
+        },
+
+        setBadgeText: function(details) {
+          let tab = getTab(details.tabId);
+
+          browserAction.setProperty(tab, "badgeText", details.text);
+        },
+
+        getBadgeText: function(details) {
+          let tab = getTab(details.tabId);
+
+          let text = browserAction.getProperty(tab, "badgeText");
+          return Promise.resolve(text);
+        },
+
+        setPopup: function(details) {
+          let tab = getTab(details.tabId);
+
+          
+          
+          
+          
+          
+          let url = details.popup && context.uri.resolve(details.popup);
+          if (url && !context.checkLoadURL(url)) {
+            return Promise.reject({message: `Access denied for URL ${url}`});
+          }
+          browserAction.setProperty(tab, "popup", url);
+        },
+
+        getPopup: function(details) {
+          let tab = getTab(details.tabId);
+
+          let popup = browserAction.getProperty(tab, "popup");
+          return Promise.resolve(popup);
+        },
+
+        setBadgeBackgroundColor: function(details) {
+          let tab = getTab(details.tabId);
+          let color = details.color;
+          if (typeof color == "string") {
+            let col = InspectorUtils.colorToRGBA(color);
+            if (!col) {
+              throw new ExtensionError(`Invalid badge background color: "${color}"`);
+            }
+            color = col && [col.r, col.g, col.b, Math.round(col.a * 255)];
+          }
+          browserAction.setProperty(tab, "badgeBackgroundColor", color);
+        },
+
+        getBadgeBackgroundColor: function(details, callback) {
+          let tab = getTab(details.tabId);
+
+          let color = browserAction.getProperty(tab, "badgeBackgroundColor");
+          return Promise.resolve(color || [0xd9, 0, 0, 255]);
+        },
+
+        openPopup: function() {
+          let window = windowTracker.topWindow;
+          browserAction.triggerAction(window);
+        },
+      },
+    };
+  }
+};
+
+global.browserActionFor = this.browserAction.for;

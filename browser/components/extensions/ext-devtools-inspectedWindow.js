@@ -1,0 +1,58 @@
+
+
+"use strict";
+
+
+
+
+
+var {
+  SpreadArgs,
+} = ExtensionCommon;
+
+this.devtools_inspectedWindow = class extends ExtensionAPI {
+  getAPI(context) {
+    
+    let waitForInspectedWindowFront;
+
+    
+    
+    
+    const callerInfo = {
+      addonId: context.extension.id,
+      url: context.extension.baseURI.spec,
+    };
+
+    return {
+      devtools: {
+        inspectedWindow: {
+          async eval(expression, options) {
+            if (!waitForInspectedWindowFront) {
+              waitForInspectedWindowFront = getInspectedWindowFront(context);
+            }
+
+            const front = await waitForInspectedWindowFront;
+
+            const evalOptions = Object.assign({}, options, getToolboxEvalOptions(context));
+
+            const evalResult = await front.eval(callerInfo, expression, evalOptions);
+
+            
+            
+            return new SpreadArgs([evalResult.value, evalResult.exceptionInfo]);
+          },
+          async reload(options) {
+            const {ignoreCache, userAgent, injectedScript} = options || {};
+
+            if (!waitForInspectedWindowFront) {
+              waitForInspectedWindowFront = getInspectedWindowFront(context);
+            }
+
+            const front = await waitForInspectedWindowFront;
+            front.reload(callerInfo, {ignoreCache, userAgent, injectedScript});
+          },
+        },
+      },
+    };
+  }
+};
