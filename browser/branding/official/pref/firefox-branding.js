@@ -11,10 +11,16 @@ pref("app.update.interval", 43200);
 pref("app.update.promptWaitTime", 691200);
 
 
+
+
+
+#if MOZ_UPDATE_CHANNEL == beta
+pref("app.update.url.manual", "https://www.mozilla.org/firefox/beta");
+pref("app.update.url.details", "https://www.mozilla.org/%LOCALE%/firefox/beta/notes");
+#else
 pref("app.update.url.manual", "https://www.mozilla.org/firefox/");
-
-
 pref("app.update.url.details", "https://www.mozilla.org/%LOCALE%/firefox/notes");
+#endif
 
 pref("app.releaseNotesURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=whatsnew");
 
