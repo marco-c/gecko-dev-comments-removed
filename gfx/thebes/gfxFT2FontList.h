@@ -59,18 +59,22 @@ public:
     
     
     
+    
     static FT2FontEntry* 
     CreateFontEntry(FT_Face aFace,
                     const char *aFilename, uint8_t aIndex,
                     const nsAString& aName,
-                    const uint8_t* aFontData = nullptr);
+                    const uint8_t* aFontData = nullptr,
+                    uint32_t aLength = 0);
 
     virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle,
                                         bool aNeedsBold) override;
 
     
     
-    cairo_font_face_t *CairoFontFace();
+    
+    
+    cairo_font_face_t *CairoFontFace(const gfxFontStyle *aStyle = nullptr);
 
     
     
