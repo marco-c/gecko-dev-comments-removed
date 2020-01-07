@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+module.exports = {
+  getItem: () => Promise.resolve(),
+  setItem: () => Promise.resolve(),
+  removeItem: () => Promise.resolve(),
+  clear: () => Promise.resolve(),
+  length: () => Promise.resolve(),
+  key: () => Promise.resolve(),
+};
