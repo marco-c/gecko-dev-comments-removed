@@ -3,6 +3,26 @@
 
 "use strict";
 
+const recordingState = {
+  
+  NOT_YET_KNOWN: "not-yet-known",
+  
+  AVAILABLE_TO_RECORD: "available-to-record",
+  
+  REQUEST_TO_START_RECORDING: "request-to-start-recording",
+  
+  REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
+    "request-to-get-profile-and-stop-profiler",
+  
+  REQUEST_TO_STOP_PROFILER: "request-to-stop-profiler",
+  
+  RECORDING: "recording",
+  
+  OTHER_IS_RECORDING: "other-is-recording",
+  
+  LOCKED_BY_PRIVATE_BROWSING: "locked-by-private-browsing",
+};
+
 const UNITS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
 
@@ -140,9 +160,9 @@ function calculateOverhead(interval, bufferSize, features) {
     0,
     0.1
   );
-  const overheadFromStackwalk = features.stackwalk ? 0.05 : 0;
-  const overheadFromJavaScrpt = features.js ? 0.05 : 0;
-  const overheadFromTaskTracer = features.tasktracer ? 0.05 : 0;
+  const overheadFromStackwalk = features.includes("stackwalk") ? 0.05 : 0;
+  const overheadFromJavaScrpt = features.includes("js") ? 0.05 : 0;
+  const overheadFromTaskTracer = features.includes("tasktracer") ? 0.05 : 0;
   return clamp(
     overheadFromSampling +
       overheadFromBuffersize +
@@ -158,5 +178,6 @@ module.exports = {
   formatFileSize,
   makeExponentialScale,
   scaleRangeWithClamping,
-  calculateOverhead
+  calculateOverhead,
+  recordingState
 };

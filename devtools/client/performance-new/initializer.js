@@ -13,8 +13,12 @@ const { require } = BrowserLoaderModule.BrowserLoader({
 });
 const Perf = require("devtools/client/performance-new/components/Perf");
 const Services = require("Services");
-const { render, unmountComponentAtNode } = require("devtools/client/shared/vendor/react-dom");
-const { createElement } = require("devtools/client/shared/vendor/react");
+const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+const React = require("devtools/client/shared/vendor/react");
+const createStore = require("devtools/client/shared/redux/create-store")();
+const reducers = require("devtools/client/performance-new/store/reducers");
+const actions = require("devtools/client/performance-new/store/actions");
+const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
 
 
@@ -23,9 +27,17 @@ const { createElement } = require("devtools/client/shared/vendor/react");
 
 
 function gInit(toolbox, perfFront) {
-  const props = {
+  const store = createStore(reducers);
+  store.dispatch(actions.initializeStore({
     toolbox,
     perfFront,
+    
+
+
+
+
+
+
     receiveProfile: profile => {
       
       let browser = top.gBrowser;
@@ -47,10 +59,18 @@ function gInit(toolbox, perfFront) {
       );
       mm.sendAsyncMessage("devtools:perf-html-transfer-profile", profile);
     }
-  };
-  render(createElement(Perf, props), document.querySelector("#root"));
+  }));
+
+  ReactDOM.render(
+    React.createElement(
+      Provider,
+      { store },
+      React.createElement(Perf)
+    ),
+    document.querySelector("#root")
+  );
 }
 
 function gDestroy() {
-  unmountComponentAtNode(document.querySelector("#root"));
+  ReactDOM.unmountComponentAtNode(document.querySelector("#root"));
 }

@@ -4,63 +4,60 @@
 "use strict";
 
 const { PureComponent, createFactory } = require("devtools/client/shared/vendor/react");
-const { div, button, p, span, img } = require("devtools/client/shared/vendor/react-dom-factories");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+const { div } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const PerfSettings = createFactory(require("devtools/client/performance-new/components/PerfSettings.js"));
-const { openLink } = require("devtools/client/shared/link");
+const RecordingButton = createFactory(require("devtools/client/performance-new/components/RecordingButton.js"));
+const Settings = createFactory(require("devtools/client/performance-new/components/Settings.js"));
+const Description = createFactory(require("devtools/client/performance-new/components/Description.js"));
+const actions = require("devtools/client/performance-new/store/actions");
+const { recordingState: {
+  NOT_YET_KNOWN,
+  AVAILABLE_TO_RECORD,
+  REQUEST_TO_START_RECORDING,
+  REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
+  REQUEST_TO_STOP_PROFILER,
+  RECORDING,
+  OTHER_IS_RECORDING,
+  LOCKED_BY_PRIVATE_BROWSING,
+}} = require("devtools/client/performance-new/utils");
+const selectors = require("devtools/client/performance-new/store/selectors");
 
 
 
 
 
 
-const NOT_YET_KNOWN = "not-yet-known";
 
-const AVAILABLE_TO_RECORD = "available-to-record";
 
-const REQUEST_TO_START_RECORDING = "request-to-start-recording";
 
-const REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER =
-  "request-to-get-profile-and-stop-profiler";
 
-const REQUEST_TO_STOP_PROFILER = "request-to-stop-profiler";
 
-const RECORDING = "recording";
-
-const OTHER_IS_RECORDING = "other-is-recording";
-
-const LOCKED_BY_PRIVATE_BROWSING = "locked-by-private-browsing";
 
 class Perf extends PureComponent {
   static get propTypes() {
     return {
-      toolbox: PropTypes.object.isRequired,
+      
       perfFront: PropTypes.object.isRequired,
-      receiveProfile: PropTypes.func.isRequired
+      recordingState: PropTypes.string.isRequired,
+      isSupportedPlatform: PropTypes.bool,
+
+      
+      changeRecordingState: PropTypes.func.isRequired,
+      reportProfilerReady: PropTypes.func.isRequired
     };
   }
 
   constructor(props) {
     super(props);
-    this.state = {
-      recordingState: NOT_YET_KNOWN,
-      recordingUnexpectedlyStopped: false,
-      
-      isSupportedPlatform: null
-    };
-    this.startRecording = this.startRecording.bind(this);
-    this.getProfileAndStopProfiler = this.getProfileAndStopProfiler.bind(this);
-    this.stopProfilerAndDiscardProfile = this.stopProfilerAndDiscardProfile.bind(this);
     this.handleProfilerStarting = this.handleProfilerStarting.bind(this);
     this.handleProfilerStopping = this.handleProfilerStopping.bind(this);
     this.handlePrivateBrowsingStarting = this.handlePrivateBrowsingStarting.bind(this);
     this.handlePrivateBrowsingEnding = this.handlePrivateBrowsingEnding.bind(this);
-    this.settingsComponentCreated = this.settingsComponentCreated.bind(this);
-    this.handleLinkClick = this.handleLinkClick.bind(this);
   }
 
   componentDidMount() {
-    const { perfFront } = this.props;
+    const { perfFront, reportProfilerReady } = this.props;
 
     
     Promise.all([
@@ -74,7 +71,7 @@ class Perf extends PureComponent {
         isLockedForPrivateBrowsing
       ] = results;
 
-      let recordingState = this.state.recordingState;
+      let recordingState = this.props.recordingState;
       
       
       if (recordingState === NOT_YET_KNOWN && isSupportedPlatform) {
@@ -86,7 +83,7 @@ class Perf extends PureComponent {
             : AVAILABLE_TO_RECORD;
         }
       }
-      this.setState({ isSupportedPlatform, recordingState });
+      reportProfilerReady(isSupportedPlatform, recordingState);
     });
 
     
@@ -99,7 +96,7 @@ class Perf extends PureComponent {
   }
 
   componentWillUnmount() {
-    switch (this.state.recordingState) {
+    switch (this.props.recordingState) {
       case NOT_YET_KNOWN:
       case AVAILABLE_TO_RECORD:
       case REQUEST_TO_STOP_PROFILER:
@@ -119,21 +116,9 @@ class Perf extends PureComponent {
     }
   }
 
-  
-
-
-
-
-  settingsComponentCreated(settings) {
-    this.settings = settings;
-  }
-
-  getRecordingStateForTesting() {
-    return this.state.recordingState;
-  }
-
   handleProfilerStarting() {
-    switch (this.state.recordingState) {
+    const { changeRecordingState, recordingState } = this.props;
+    switch (recordingState) {
       case NOT_YET_KNOWN:
         
         
@@ -146,18 +131,12 @@ class Perf extends PureComponent {
         
         
 
-        this.setState({
-          recordingState: OTHER_IS_RECORDING,
-          recordingUnexpectedlyStopped: false
-        });
+        changeRecordingState(OTHER_IS_RECORDING);
         break;
 
       case REQUEST_TO_START_RECORDING:
         
-        this.setState({
-          recordingState: RECORDING,
-          recordingUnexpectedlyStopped: false
-        });
+        changeRecordingState(RECORDING);
         break;
 
       case LOCKED_BY_PRIVATE_BROWSING:
@@ -167,22 +146,20 @@ class Perf extends PureComponent {
         
         throw new Error(
           "The profiler started recording, when it shouldn't have " +
-          `been able to. Current state: "${this.state.recordingState}"`);
+          `been able to. Current state: "${recordingState}"`);
       default:
         throw new Error("Unhandled recording state");
     }
   }
 
   handleProfilerStopping() {
-    switch (this.state.recordingState) {
+    const { changeRecordingState, recordingState } = this.props;
+    switch (recordingState) {
       case NOT_YET_KNOWN:
       case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
       case REQUEST_TO_STOP_PROFILER:
       case OTHER_IS_RECORDING:
-        this.setState({
-          recordingState: AVAILABLE_TO_RECORD,
-          recordingUnexpectedlyStopped: false
-        });
+        changeRecordingState(AVAILABLE_TO_RECORD);
         break;
 
       case REQUEST_TO_START_RECORDING:
@@ -193,10 +170,10 @@ class Perf extends PureComponent {
         break;
 
       case RECORDING:
-        this.setState({
-          recordingState: AVAILABLE_TO_RECORD,
-          recordingUnexpectedlyStopped: true
-        });
+        changeRecordingState(
+          AVAILABLE_TO_RECORD,
+          { didRecordingUnexpectedlyStopped: true }
+        );
         break;
 
       case AVAILABLE_TO_RECORD:
@@ -208,7 +185,9 @@ class Perf extends PureComponent {
   }
 
   handlePrivateBrowsingStarting() {
-    switch (this.state.recordingState) {
+    const { recordingState, changeRecordingState } = this.props;
+
+    switch (recordingState) {
       case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
         
         
@@ -216,18 +195,15 @@ class Perf extends PureComponent {
       case AVAILABLE_TO_RECORD:
       case OTHER_IS_RECORDING:
       case NOT_YET_KNOWN:
-        this.setState({
-          recordingState: LOCKED_BY_PRIVATE_BROWSING,
-          recordingUnexpectedlyStopped: false
-        });
+        changeRecordingState(LOCKED_BY_PRIVATE_BROWSING);
         break;
 
       case REQUEST_TO_START_RECORDING:
       case RECORDING:
-        this.setState({
-          recordingState: LOCKED_BY_PRIVATE_BROWSING,
-          recordingUnexpectedlyStopped: true
-        });
+        changeRecordingState(
+          LOCKED_BY_PRIVATE_BROWSING,
+          { didRecordingUnexpectedlyStopped: false }
+        );
         break;
 
       case LOCKED_BY_PRIVATE_BROWSING:
@@ -242,122 +218,11 @@ class Perf extends PureComponent {
   handlePrivateBrowsingEnding() {
     
     
-    this.setState({
-      recordingState: AVAILABLE_TO_RECORD,
-      recordingUnexpectedlyStopped: false
-    });
-  }
-
-  startRecording() {
-    const settings = this.settings;
-    if (!settings) {
-      console.error("Expected the PerfSettings panel to be rendered and available.");
-      return;
-    }
-    this.setState({
-      recordingState: REQUEST_TO_START_RECORDING,
-      
-      recordingUnexpectedlyStopped: false,
-    });
-    this.props.perfFront.startProfiler(
-      
-      
-      settings.getRecordingSettings()
-    );
-  }
-
-  async getProfileAndStopProfiler() {
-    this.setState({ recordingState: REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER });
-    const profile = await this.props.perfFront.getProfileAndStopProfiler();
-    this.setState({ recordingState: AVAILABLE_TO_RECORD });
-    console.log("getProfileAndStopProfiler");
-    this.props.receiveProfile(profile);
-  }
-
-  stopProfilerAndDiscardProfile() {
-    this.setState({ recordingState: REQUEST_TO_STOP_PROFILER });
-    this.props.perfFront.stopProfilerAndDiscardProfile();
-  }
-
-  renderButton() {
-    const { recordingState, isSupportedPlatform } = this.state;
-
-    if (!isSupportedPlatform) {
-      return renderButton({
-        label: "Start recording",
-        disabled: true,
-        additionalMessage: "Your platform is not supported. The Gecko Profiler only " +
-                           "supports Tier-1 platforms."
-      });
-    }
-
-    
-    switch (recordingState) {
-      case NOT_YET_KNOWN:
-        return null;
-
-      case AVAILABLE_TO_RECORD:
-        return renderButton({
-          onClick: this.startRecording,
-          label: span(
-            null,
-            img({
-              className: "perf-button-image",
-              src: "chrome://devtools/skin/images/tool-profiler.svg"
-            }),
-            "Start recording",
-          ),
-          additionalMessage: this.state.recordingUnexpectedlyStopped
-            ? div(null, "The recording was stopped by another tool.")
-            : null
-        });
-
-      case REQUEST_TO_STOP_PROFILER:
-        return renderButton({
-          label: "Stopping the recording",
-          disabled: true
-        });
-
-      case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
-        return renderButton({
-          label: "Stopping the recording, and capturing the profile",
-          disabled: true
-        });
-
-      case REQUEST_TO_START_RECORDING:
-      case RECORDING:
-        return renderButton({
-          label: "Stop and grab the recording",
-          onClick: this.getProfileAndStopProfiler,
-          disabled: this.state.recordingState === REQUEST_TO_START_RECORDING
-        });
-
-      case OTHER_IS_RECORDING:
-        return renderButton({
-          label: "Stop and discard the other recording",
-          onClick: this.stopProfilerAndDiscardProfile,
-          additionalMessage: "Another tool is currently recording."
-        });
-
-      case LOCKED_BY_PRIVATE_BROWSING:
-        return renderButton({
-          label: "Start recording",
-          disabled: true,
-          additionalMessage: `The profiler is disabled when Private Browsing is enabled.
-                              Close all Private Windows to re-enable the profiler`
-        });
-
-      default:
-        throw new Error("Unhandled recording state");
-    }
-  }
-
-  handleLinkClick(event) {
-    openLink(event.target.value, this.props.toolbox);
+    this.props.changeRecordingState(AVAILABLE_TO_RECORD);
   }
 
   render() {
-    const { isSupportedPlatform } = this.state;
+    const { isSupportedPlatform } = this.props;
 
     if (isSupportedPlatform === null) {
       
@@ -366,65 +231,24 @@ class Perf extends PureComponent {
 
     return div(
       { className: "perf" },
-      this.renderButton(),
-      PerfSettings({ ref: this.settingsComponentCreated }),
-      div(
-        { className: "perf-description" },
-        p(null,
-          "This new recording panel is a bit different from the existing " +
-            "performance panel. It records the entire browser, and then opens up " +
-            "and shares the profile with ",
-          button(
-            
-            
-            {
-              className: "perf-external-link",
-              value: "https://perf-html.io",
-              onClick: this.handleLinkClick
-            },
-            "perf-html.io"
-          ),
-          ", a Mozilla performance analysis tool."
-        ),
-        p(null,
-          "This is still a prototype. Join along or file bugs at: ",
-          button(
-            
-            
-            {
-              className: "perf-external-link",
-              value: "https://github.com/devtools-html/perf.html",
-              onClick: this.handleLinkClick
-            },
-            "github.com/devtools-html/perf.html"
-          ),
-          "."
-        )
-      ),
+      RecordingButton(),
+      Settings(),
+      Description(),
     );
   }
 }
 
-module.exports = Perf;
-
-function renderButton(props) {
-  const { disabled, label, onClick, additionalMessage } = props;
-  const nbsp = "\u00A0";
-
-  return div(
-    { className: "perf-button-container" },
-    div({ className: "perf-additional-message" }, additionalMessage || nbsp),
-    div(
-      null,
-      button(
-        {
-          className: "devtools-button perf-button",
-          "data-standalone": true,
-          disabled,
-          onClick
-        },
-        label
-      )
-    )
-  );
+function mapStateToProps(state) {
+  return {
+    perfFront: selectors.getPerfFront(state),
+    recordingState: selectors.getRecordingState(state),
+    isSupportedPlatform: selectors.getIsSupportedPlatform(state),
+  };
 }
+
+const mapDispatchToProps = {
+  changeRecordingState: actions.changeRecordingState,
+  reportProfilerReady: actions.reportProfilerReady,
+};
+
+module.exports = connect(mapStateToProps, mapDispatchToProps)(Perf);
