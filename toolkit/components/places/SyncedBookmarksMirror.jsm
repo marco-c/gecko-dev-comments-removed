@@ -334,14 +334,20 @@ class SyncedBookmarksMirror {
     
     MirrorLog.debug("Building remote tree from mirror");
     let remoteTree = await this.fetchRemoteTree(remoteTimeSeconds);
-    MirrorLog.trace("Built remote tree from mirror", remoteTree);
+    if (MirrorLog.level <= Log.Level.Trace) {
+      MirrorLog.trace("Built remote tree from mirror\n" +
+                      remoteTree.toASCIITreeString());
+    }
 
     let observersToNotify = new BookmarkObserverRecorder(this.db);
 
     let changeRecords = await this.db.executeTransaction(async () => {
       MirrorLog.debug("Building local tree from Places");
       let localTree = await this.fetchLocalTree(localTimeSeconds);
-      MirrorLog.trace("Built local tree from Places", localTree);
+      if (MirrorLog.level <= Log.Level.Trace) {
+        MirrorLog.trace("Built local tree from Places\n" +
+                        localTree.toASCIITreeString());
+      }
 
       MirrorLog.debug("Fetching content info for new mirror items");
       let newRemoteContents = await this.fetchNewRemoteContents();
@@ -358,8 +364,11 @@ class SyncedBookmarksMirror {
       }
 
       if (MirrorLog.level <= Log.Level.Trace) {
-        let newTreeRoot = mergedRoot.toBookmarkNode();
-        MirrorLog.trace("Built new merged tree", newTreeRoot);
+        MirrorLog.trace([
+          "Built new merged tree",
+          mergedRoot.toASCIITreeString(),
+          ...merger.deletionsToStrings(),
+        ].join("\n"));
       }
 
       
@@ -2562,6 +2571,46 @@ class BookmarkMergeState {
   value() {
     return this.type;
   }
+
+  
+
+
+
+
+
+
+
+  toString() {
+    return `(${this.valueToString()}; ${this.structureToString()})`;
+  }
+
+  valueToString() {
+    switch (this.value()) {
+      case BookmarkMergeState.TYPE.LOCAL:
+        return "V: L";
+      case BookmarkMergeState.TYPE.REMOTE:
+        return "V: R";
+    }
+    return "V: ?";
+  }
+
+  structureToString() {
+    switch (this.structure()) {
+      case BookmarkMergeState.TYPE.LOCAL:
+        return "S: L";
+      case BookmarkMergeState.TYPE.REMOTE:
+        return "S: R";
+      case BookmarkMergeState.TYPE.NEW:
+        
+        
+        return "S: +";
+    }
+    return "S: ?";
+  }
+
+  toJSON() {
+    return this.toString();
+  }
 }
 
 BookmarkMergeState.TYPE = {
@@ -2684,6 +2733,61 @@ class BookmarkNode {
       }
     }
   }
+
+  
+
+
+
+
+
+
+  toASCIITreeString(prefix = "") {
+    if (!this.isFolder()) {
+      return prefix + "- " + this.toString();
+    }
+    return prefix + "+ " + this.toString() + "\n" + this.children.map(childNode =>
+      childNode.toASCIITreeString(`${prefix}| `)
+    ).join("\n");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  toString() {
+    let info = `${this.kindToString()}; ${this.age.toFixed(3)}s`;
+    if (this.needsMerge) {
+      info += "; !";
+    }
+    return `${this.guid} (${info})`;
+  }
+
+  kindToString() {
+    switch (this.kind) {
+      case SyncedBookmarksMirror.KIND.BOOKMARK:
+        return "B";
+      case SyncedBookmarksMirror.KIND.QUERY:
+        return "Q";
+      case SyncedBookmarksMirror.KIND.FOLDER:
+        return "F";
+      case SyncedBookmarksMirror.KIND.LIVEMARK:
+        return "L";
+      case SyncedBookmarksMirror.KIND.SEPARATOR:
+        return "S";
+    }
+    return "?";
+  }
+
+  
+  toJSON() {
+    return this.toString();
+  }
 }
 
 
@@ -2768,9 +2872,16 @@ class BookmarkTree {
     }
   }
 
-  toJSON() {
-    let deleted = Array.from(this.deletedGuids);
-    return { root: this.root, deleted };
+  
+
+
+
+
+
+  toASCIITreeString() {
+    return this.root.toASCIITreeString() + "\n" + Array.from(this.deletedGuids,
+      guid => `~${guid}`
+    ).join(", ");
   }
 }
 
@@ -2875,6 +2986,38 @@ class MergedBookmarkNode {
     MirrorLog.error("Merged node ${guid} has unknown value state ${valueState}",
                     { guid: this.guid, valueState });
     throw new TypeError("Can't take unknown value state");
+  }
+
+  
+
+
+
+
+
+
+
+  toASCIITreeString(prefix = "") {
+    if (!this.mergedChildren.length) {
+      return prefix + "- " + this.toString();
+    }
+    return prefix + "+ " + this.toString() + "\n" + this.mergedChildren.map(
+      mergedChildNode => mergedChildNode.toASCIITreeString(`${prefix}| `)
+    ).join("\n");
+  }
+
+  
+
+
+
+
+
+
+  toString() {
+    return `${this.guid} ${this.mergeState.toString()}`;
+  }
+
+  toJSON() {
+    return this.toString();
   }
 }
 
@@ -3667,6 +3810,25 @@ class BookmarkMerger {
       break;
     }
     return newLocalNode;
+  }
+
+  
+
+
+
+
+
+  deletionsToStrings() {
+    let infos = [];
+    if (this.deleteLocally.size) {
+      infos.push("L: " + Array.from(this.deleteLocally,
+        guid => `~${guid}`).join(", "));
+    }
+    if (this.deleteRemotely.size) {
+      infos.push("R: " + Array.from(this.deleteRemotely,
+        guid => `~${guid}`).join(", "));
+    }
+    return infos;
   }
 }
 
