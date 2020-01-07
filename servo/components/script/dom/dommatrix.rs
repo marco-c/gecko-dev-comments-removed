@@ -12,7 +12,8 @@ use dom::dommatrixreadonly::{dommatrixinit_to_matrix, DOMMatrixReadOnly, entries
 use dom::globalscope::GlobalScope;
 use dom_struct::dom_struct;
 use euclid::Transform3D;
-
+use js::rust::CustomAutoRooterGuard;
+use js::typedarray::{Float32Array, Float64Array};
 
 #[dom_struct]
 pub struct DOMMatrix {
@@ -56,315 +57,333 @@ impl DOMMatrix {
     pub fn from_readonly(global: &GlobalScope, ro: &DOMMatrixReadOnly) -> DomRoot<Self> {
         Self::new(global, ro.is_2d(), ro.matrix().clone())
     }
+
+    
+    pub fn FromFloat32Array(
+        global: &GlobalScope,
+        mut array: CustomAutoRooterGuard<Float32Array>)
+        -> Fallible<DomRoot<DOMMatrix>> {
+        let vec: Vec<f64> = array.to_vec().iter().map(|&x| x as f64).collect();
+        DOMMatrix::Constructor_(global, vec)
+    }
+
+    
+    pub fn FromFloat64Array(
+        global: &GlobalScope,
+        mut array: CustomAutoRooterGuard<Float64Array>)
+        -> Fallible<DomRoot<DOMMatrix>> {
+            let vec: Vec<f64> = array.to_vec();
+            DOMMatrix::Constructor_(global, vec)
+        }
 }
 
 impl DOMMatrixMethods for DOMMatrix {
-        
-        fn M11(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M11()
-        }
+    
+    fn M11(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M11()
+    }
 
-        
-        fn SetM11(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m11(value);
-        }
+    
+    fn SetM11(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m11(value);
+    }
 
-        
-        fn M12(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M12()
-        }
+    
+    fn M12(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M12()
+    }
 
-        
-        fn SetM12(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m12(value);
-        }
+    
+    fn SetM12(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m12(value);
+    }
 
-        
-        fn M13(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M13()
-        }
+    
+    fn M13(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M13()
+    }
 
-        
-        fn SetM13(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m13(value);
-        }
+    
+    fn SetM13(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m13(value);
+    }
 
-        
-        fn M14(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M14()
-        }
+    
+    fn M14(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M14()
+    }
 
-        
-        fn SetM14(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m14(value);
-        }
+    
+    fn SetM14(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m14(value);
+    }
 
-        
-        fn M21(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M21()
-        }
+    
+    fn M21(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M21()
+    }
 
-        
-        fn SetM21(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m21(value);
-        }
+    
+    fn SetM21(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m21(value);
+    }
 
-        
-        fn M22(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M22()
-        }
+    
+    fn M22(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M22()
+    }
 
-        
-        fn SetM22(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m22(value);
-        }
+    
+    fn SetM22(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m22(value);
+    }
 
-        
-        fn M23(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M23()
-        }
+    
+    fn M23(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M23()
+    }
 
-        
-        fn SetM23(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m23(value);
-        }
+    
+    fn SetM23(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m23(value);
+    }
 
-        
-        fn M24(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M24()
-        }
+    
+    fn M24(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M24()
+    }
 
-        
-        fn SetM24(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m24(value);
-        }
+    
+    fn SetM24(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m24(value);
+    }
 
-        
-        fn M31(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M31()
-        }
+    
+    fn M31(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M31()
+    }
 
-        
-        fn SetM31(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m31(value);
-        }
+    
+    fn SetM31(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m31(value);
+    }
 
-        
-        fn M32(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M32()
-        }
+    
+    fn M32(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M32()
+    }
 
-        
-        fn SetM32(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m32(value);
-        }
+    
+    fn SetM32(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m32(value);
+    }
 
-        
-        fn M33(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M33()
-        }
+    
+    fn M33(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M33()
+    }
 
-        
-        fn SetM33(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m33(value);
-        }
+    
+    fn SetM33(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m33(value);
+    }
 
-        
-        fn M34(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M34()
-        }
+    
+    fn M34(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M34()
+    }
 
-        
-        fn SetM34(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m34(value);
-        }
+    
+    fn SetM34(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m34(value);
+    }
 
-        
-        fn M41(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M41()
-        }
+    
+    fn M41(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M41()
+    }
 
-        
-        fn SetM41(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m41(value);
-        }
+    
+    fn SetM41(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m41(value);
+    }
 
-        
-        fn M42(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M42()
-        }
+    
+    fn M42(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M42()
+    }
 
-        
-        fn SetM42(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m42(value);
-        }
+    
+    fn SetM42(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m42(value);
+    }
 
-        
-        fn M43(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M43()
-        }
+    
+    fn M43(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M43()
+    }
 
-        
-        fn SetM43(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m43(value);
-        }
+    
+    fn SetM43(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m43(value);
+    }
 
-        
-        fn M44(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().M44()
-        }
+    
+    fn M44(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().M44()
+    }
 
-        
-        fn SetM44(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m44(value);
-        }
+    
+    fn SetM44(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m44(value);
+    }
 
-        
-        fn A(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().A()
-        }
+    
+    fn A(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().A()
+    }
 
-        
-        fn SetA(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m11(value);
-        }
+    
+    fn SetA(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m11(value);
+    }
 
-        
-        fn B(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().B()
-        }
+    
+    fn B(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().B()
+    }
 
-        
-        fn SetB(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m12(value);
-        }
+    
+    fn SetB(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m12(value);
+    }
 
-        
-        fn C(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().C()
-        }
+    
+    fn C(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().C()
+    }
 
-        
-        fn SetC(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m21(value);
-        }
+    
+    fn SetC(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m21(value);
+    }
 
-        
-        fn D(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().D()
-        }
+    
+    fn D(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().D()
+    }
 
-        
-        fn SetD(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m22(value);
-        }
+    
+    fn SetD(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m22(value);
+    }
 
-        
-        fn E(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().E()
-        }
+    
+    fn E(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().E()
+    }
 
-        
-        fn SetE(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m41(value);
-        }
+    
+    fn SetE(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m41(value);
+    }
 
-        
-        fn F(&self) -> f64 {
-            self.upcast::<DOMMatrixReadOnly>().F()
-        }
+    
+    fn F(&self) -> f64 {
+        self.upcast::<DOMMatrixReadOnly>().F()
+    }
 
-        
-        fn SetF(&self, value: f64) {
-            self.upcast::<DOMMatrixReadOnly>().set_m42(value);
-        }
+    
+    fn SetF(&self, value: f64) {
+        self.upcast::<DOMMatrixReadOnly>().set_m42(value);
+    }
 
+    
+    fn MultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
         
-        fn MultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
+        self.upcast::<DOMMatrixReadOnly>().multiply_self(other)
             
-            self.upcast::<DOMMatrixReadOnly>().multiply_self(other)
-                
-                .and(Ok(DomRoot::from_ref(&self)))
-        }
+            .and(Ok(DomRoot::from_ref(&self)))
+    }
 
+    
+    fn PreMultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
         
-        fn PreMultiplySelf(&self, other:&DOMMatrixInit) -> Fallible<DomRoot<DOMMatrix>> {
+        self.upcast::<DOMMatrixReadOnly>().pre_multiply_self(other)
             
-            self.upcast::<DOMMatrixReadOnly>().pre_multiply_self(other)
-                
-                .and(Ok(DomRoot::from_ref(&self)))
-        }
+            .and(Ok(DomRoot::from_ref(&self)))
+    }
 
+    
+    fn TranslateSelf(&self, tx: f64, ty: f64, tz: f64) -> DomRoot<DOMMatrix> {
         
-        fn TranslateSelf(&self, tx: f64, ty: f64, tz: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().translate_self(tx, ty, tz);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().translate_self(tx, ty, tz);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn ScaleSelf(&self, scaleX: f64, scaleY: Option<f64>, scaleZ: f64,
+                 originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
         
-        fn ScaleSelf(&self, scaleX: f64, scaleY: Option<f64>, scaleZ: f64,
-                            originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().scale_self(scaleX, scaleY, scaleZ, originX, originY, originZ);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().scale_self(scaleX, scaleY, scaleZ, originX, originY, originZ);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn Scale3dSelf(&self, scale: f64, originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
         
-        fn Scale3dSelf(&self, scale: f64, originX: f64, originY: f64, originZ: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().scale_3d_self(scale, originX, originY, originZ);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().scale_3d_self(scale, originX, originY, originZ);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn RotateSelf(&self, rotX: f64, rotY: Option<f64>, rotZ: Option<f64>) -> DomRoot<DOMMatrix> {
         
-        fn RotateSelf(&self, rotX: f64, rotY: Option<f64>, rotZ: Option<f64>) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().rotate_self(rotX, rotY, rotZ);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().rotate_self(rotX, rotY, rotZ);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn RotateFromVectorSelf(&self, x: f64, y: f64) -> DomRoot<DOMMatrix> {
         
-        fn RotateFromVectorSelf(&self, x: f64, y: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().rotate_from_vector_self(x, y);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().rotate_from_vector_self(x, y);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn RotateAxisAngleSelf(&self, x: f64, y: f64, z: f64, angle: f64) -> DomRoot<DOMMatrix> {
         
-        fn RotateAxisAngleSelf(&self, x: f64, y: f64, z: f64, angle: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().rotate_axis_angle_self(x, y, z, angle);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().rotate_axis_angle_self(x, y, z, angle);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn SkewXSelf(&self, sx: f64) -> DomRoot<DOMMatrix> {
         
-        fn SkewXSelf(&self, sx: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().skew_x_self(sx);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().skew_x_self(sx);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn SkewYSelf(&self, sy: f64) -> DomRoot<DOMMatrix> {
         
-        fn SkewYSelf(&self, sy: f64) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().skew_y_self(sy);
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().skew_y_self(sy);
+        
+        DomRoot::from_ref(&self)
+    }
 
+    
+    fn InvertSelf(&self) -> DomRoot<DOMMatrix> {
         
-        fn InvertSelf(&self) -> DomRoot<DOMMatrix> {
-            
-            self.upcast::<DOMMatrixReadOnly>().invert_self();
-            
-            DomRoot::from_ref(&self)
-        }
+        self.upcast::<DOMMatrixReadOnly>().invert_self();
+        
+        DomRoot::from_ref(&self)
+    }
 }
