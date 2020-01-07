@@ -775,7 +775,20 @@ ErrorHandler.prototype = {
         break;
       case "weave:service:start-over:finish":
         
-        this.resetFileLog();
+        this.resetFileLog().then(() => {
+          
+          
+          if (!Svc.Prefs.get("log.keepLogsOnReset", false)) {
+            return this._logManager.removeAllLogs().then(() => {
+              Svc.Obs.notify("weave:service:remove-file-log");
+            });
+          }
+          return null;
+        }).catch(err => {
+          
+          
+          this._log.error("Failed to delete logs on reset", err);
+        });
         break;
     }
   },

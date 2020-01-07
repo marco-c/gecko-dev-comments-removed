@@ -287,14 +287,31 @@ LogManager.prototype = {
   
 
 
-  async cleanupLogs() {
+  cleanupLogs() {
+    let maxAge = this._prefs.get("log.appender.file.maxErrorAge", DEFAULT_MAX_ERROR_AGE);
+    let threshold = Date.now() - 1000 * maxAge;
+    this._log.debug("Log cleanup threshold time: " + threshold);
+
+    let shouldDelete = fileInfo => {
+      return fileInfo.lastModificationDate.getTime() < threshold;
+    };
+    return this._deleteLogFiles(shouldDelete);
+  },
+
+  
+
+
+  removeAllLogs() {
+    return this._deleteLogFiles(() => true);
+  },
+
+  
+  
+  async _deleteLogFiles(cbShouldDelete) {
     this._cleaningUpFileLogs = true;
     let logDir = FileUtils.getDir("ProfD", this._logFileSubDirectoryEntries);
     let iterator = new OS.File.DirectoryIterator(logDir.path);
-    let maxAge = this._prefs.get("log.appender.file.maxErrorAge", DEFAULT_MAX_ERROR_AGE);
-    let threshold = Date.now() - 1000 * maxAge;
 
-    this._log.debug("Log cleanup threshold time: " + threshold);
     await iterator.forEach(async (entry) => {
       
       
@@ -306,7 +323,7 @@ LogManager.prototype = {
       try {
         
         let info = await OS.File.stat(entry.path);
-        if (info.lastModificationDate.getTime() >= threshold) {
+        if (!cbShouldDelete(info)) {
           return;
         }
         this._log.trace(" > Cleanup removing " + entry.name +
