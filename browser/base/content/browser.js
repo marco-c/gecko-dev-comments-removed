@@ -7815,19 +7815,64 @@ var MousePosTracker = {
   _listeners: new Set(),
   _x: 0,
   _y: 0,
+  _mostRecentEvent: null,
+
   get _windowUtils() {
     delete this._windowUtils;
     return this._windowUtils = window.getInterface(Ci.nsIDOMWindowUtils);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   addListener(listener) {
-    if (this._listeners.has(listener))
+    if (this._listeners.has(listener)) {
       return;
+    }
 
     listener._hover = false;
     this._listeners.add(listener);
 
-    this._callListener(listener);
+    
+    
+    
+    window.promiseDocumentFlushed(() => {
+      if (this._listeners.has(listener)) {
+        this._callListeners([listener]);
+        window.requestAnimationFrame(() => {
+          if (this._listeners.has(listener) && listener.onTrackingStarted) {
+            listener.onTrackingStarted();
+          }
+        });
+      }
+    });
   },
 
   removeListener(listener) {
@@ -7835,38 +7880,73 @@ var MousePosTracker = {
   },
 
   handleEvent(event) {
-    var fullZoom = this._windowUtils.fullZoom;
-    this._x = event.screenX / fullZoom - window.mozInnerScreenX;
-    this._y = event.screenY / fullZoom - window.mozInnerScreenY;
+    let firstEvent = !this._mostRecentEvent;
+    this._mostRecentEvent = event;
 
-    this._listeners.forEach(function(listener) {
-      try {
-        this._callListener(listener);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }, this);
+    if (firstEvent) {
+      window.promiseDocumentFlushed(() => {
+        this.onDocumentFlushed();
+        this._mostRecentEvent = null;
+      });
+    }
   },
 
-  _callListener(listener) {
-    let rect = listener.getMouseTargetRect();
-    let hover = this._x >= rect.left &&
-                this._x <= rect.right &&
-                this._y >= rect.top &&
-                this._y <= rect.bottom;
+  onDocumentFlushed() {
+    let event = this._mostRecentEvent;
 
-    if (hover == listener._hover)
-      return;
+    if (event) {
+      let fullZoom = this._windowUtils.fullZoom;
+      this._x = event.screenX / fullZoom - window.mozInnerScreenX;
+      this._y = event.screenY / fullZoom - window.mozInnerScreenY;
 
-    listener._hover = hover;
-
-    if (hover) {
-      if (listener.onMouseEnter)
-        listener.onMouseEnter();
-    } else if (listener.onMouseLeave) {
-      listener.onMouseLeave();
+      this._callListeners(this._listeners);
     }
-  }
+  },
+
+  _callListeners(listeners) {
+    let functionsToCall = [];
+    for (let listener of listeners) {
+      let rect;
+      try {
+        rect = listener.getMouseTargetRect();
+      } catch (e) {
+        Cu.reportError(e);
+        continue;
+      }
+
+      let hover = this._x >= rect.left &&
+                  this._x <= rect.right &&
+                  this._y >= rect.top &&
+                  this._y <= rect.bottom;
+
+      if (hover == listener._hover) {
+        continue;
+      }
+
+      listener._hover = hover;
+      if (hover) {
+        if (listener.onMouseEnter) {
+          functionsToCall.push(listener.onMouseEnter.bind(listener));
+        }
+      } else if (listener.onMouseLeave) {
+        functionsToCall.push(listener.onMouseLeave.bind(listener));
+      }
+    }
+
+    
+    
+    
+    
+    window.requestAnimationFrame(() => {
+      for (let fn of functionsToCall) {
+        try {
+          fn();
+        } catch (e) {
+          Cu.reportError(e);
+        }
+      }
+    });
+  },
 };
 
 var ToolbarIconColor = {

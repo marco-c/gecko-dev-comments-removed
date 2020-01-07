@@ -4642,16 +4642,22 @@ var StatusPanel = {
     }
 
     if (val) {
-      this._labelElement.value = val;
-      this.panel.removeAttribute("inactive");
       this._mouseTargetRect = null;
+      this._labelElement.value = val;
       MousePosTracker.addListener(this);
+      
+      
+      
     } else {
       this.panel.setAttribute("inactive", "true");
       MousePosTracker.removeListener(this);
     }
 
     return val;
+  },
+
+  onTrackingStarted() {
+    this.panel.removeAttribute("inactive");
   },
 
   getMouseTargetRect() {
