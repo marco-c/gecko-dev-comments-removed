@@ -140,11 +140,9 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   , mExceptionHandling(aExceptionHandling)
   , mIsMainThread(NS_IsMainThread())
 {
-  if (mIsMainThread) {
-    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-    if (ccjs) {
-      ccjs->EnterMicroTask();
-    }
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  if (ccjs) {
+    ccjs->EnterMicroTask();
   }
 
   
@@ -351,11 +349,9 @@ CallbackObject::CallSetup::~CallSetup()
 
   
   
-  if (mIsMainThread) {
-    CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-    if (ccjs) {
-      ccjs->LeaveMicroTask();
-    }
+  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
+  if (ccjs) {
+    ccjs->LeaveMicroTask();
   }
 }
 

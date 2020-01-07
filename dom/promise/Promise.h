@@ -105,15 +105,6 @@ public:
                                            
 
   
-  
-  static bool PerformMicroTaskCheckpoint();
-
-  static void PerformWorkerMicroTaskCheckpoint();
-
-  static void PerformWorkerDebuggerMicroTaskCheckpoint();
-  static bool IsWorkerDebuggerMicroTaskEmpty();
-
-  
 
   nsIGlobalObject* GetParentObject() const
   {

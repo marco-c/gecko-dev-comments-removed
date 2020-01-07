@@ -6721,12 +6721,6 @@ nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout,
   
   
 
-  
-  
-  
-  
-  Promise::PerformMicroTaskCheckpoint();
-
   if (trackNestingLevel) {
     TimeoutManager::SetNestingLevel(nestingLevel);
   }
