@@ -186,6 +186,7 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   char* f1 = (char*) malloc(64);
+  UseItOrLoseIt(f1, aSeven);
   free(f1);
 
   
@@ -262,7 +263,9 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
 
   
   for (int i = 0; i < 100; i++) {
-    free(malloc(128));
+    void* v = malloc(128);
+    UseItOrLoseIt(v, aSeven);
+    free(v);
   }
 
   if (aNum == 2) {
