@@ -21,6 +21,7 @@ const PENDING_EVENT_PROPERTIES = new Map();
 class Telemetry {
   constructor() {
     
+    this.msSystemNow = this.msSystemNow.bind(this);
     this.getHistogramById = this.getHistogramById.bind(this);
     this.getKeyedHistogramById = this.getKeyedHistogramById.bind(this);
     this.scalarSet = this.scalarSet.bind(this);
@@ -32,6 +33,14 @@ class Telemetry {
     this.addEventProperty = this.addEventProperty.bind(this);
     this.toolOpened = this.toolOpened.bind(this);
     this.toolClosed = this.toolClosed.bind(this);
+  }
+
+  
+
+
+
+  msSystemNow() {
+    return Services.telemetry.msSystemNow();
   }
 
   
