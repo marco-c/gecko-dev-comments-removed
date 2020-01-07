@@ -317,7 +317,7 @@ checkbox:-moz-focusring {
 }
 
 
-.devtools-toolbarbutton[label]:not([type=menu-button]),
+.devtools-toolbarbutton[label],
 .devtools-toolbarbutton[standalone],
 .devtools-button[data-standalone],
 .devtools-button:not(:empty) {

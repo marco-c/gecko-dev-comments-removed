@@ -106,10 +106,7 @@ function testMenuFilterButton(category) {
      "checked after turning off its first menu item");
 
   
-  let subbutton = getMainButton(button);
-  ok(subbutton, "we have the subbutton for category " + category);
-
-  clickButton(subbutton);
+  shiftClickButton(button);
   ok(!isChecked(button), "the button for category " + category + " is " +
      "no longer checked after clicking its main part");
 
@@ -126,7 +123,7 @@ function testMenuFilterButton(category) {
   }
 
   
-  clickButton(subbutton);
+  shiftClickButton(button);
 
   ok(isChecked(button), "the button for category " + category + " is " +
      "checked after clicking its main part");
@@ -167,7 +164,7 @@ function testMenuFilterButton(category) {
      "unchecked after unchecking all its filters");
 
   
-  clickButton(subbutton);
+  shiftClickButton(button);
 }
 
 function testIsolateFilterButton(category) {
@@ -176,11 +173,7 @@ function testIsolateFilterButton(category) {
   ok(targetButton, "we have the \"" + category + "\" button");
 
   
-  let subbutton = getMainButton(targetButton);
-  ok(subbutton, "we have the subbutton for category " + category);
-
-  
-  altClickButton(subbutton);
+  altClickButton(targetButton);
   ok(isChecked(targetButton), "the button for category " + category +
      " is checked after isolating for filter");
 
@@ -223,8 +216,7 @@ function testIsolateFilterButton(category) {
       });
 
       
-      let mainButton = getMainButton(filterButton);
-      clickButton(mainButton);
+      shiftClickButton(targetButton);
     }
   });
 }
@@ -253,6 +245,10 @@ function clickButton(node) {
 
 function altClickButton(node) {
   EventUtils.sendMouseEvent({ type: "click", altKey: true }, node);
+}
+
+function shiftClickButton(node) {
+  EventUtils.sendMouseEvent({ type: "click", shiftKey: true }, node);
 }
 
 function chooseMenuItem(node) {

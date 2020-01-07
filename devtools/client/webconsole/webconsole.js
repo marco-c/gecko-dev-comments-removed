@@ -812,9 +812,8 @@ WebConsoleFrame.prototype = {
           break;
         }
 
-        if (!classes.contains("toolbarbutton-menubutton-button") &&
-            originalTarget.getAttribute("type") === "menu-button") {
-          
+        if (!event.getModifierState("Alt") &&
+            !event.getModifierState("Shift")) {
           
           
           break;
