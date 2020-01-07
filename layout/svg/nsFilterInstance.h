@@ -88,7 +88,8 @@ public:
                                  gfxContext* aCtx,
                                  nsSVGFilterPaintCallback *aPaintCallback,
                                  const nsRegion* aDirtyArea,
-                                 imgDrawingParams& aImgParams);
+                                 imgDrawingParams& aImgParams,
+                                 float aOpacity = 1.0f);
 
   
 
@@ -168,7 +169,7 @@ private:
 
 
 
-  void Render(gfxContext* aCtx, imgDrawingParams& aImgParams);
+  void Render(gfxContext* aCtx, imgDrawingParams& aImgParams, float aOpacity = 1.0f);
 
   const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages)
   {
