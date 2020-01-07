@@ -5,10 +5,12 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-console.html";
+                 "new-console-output/test/mochitest/test-console.html";
 
 add_task(async function () {
   const { jsterm } = await openNewTabAndConsole(TEST_URI);

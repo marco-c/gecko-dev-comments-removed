@@ -6,10 +6,12 @@
 
 
 
+
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-closures.html";
+                 "new-console-output/test/mochitest/test-closures.html";
 
 var gWebConsole, gJSTerm, gVariablesView;
 
