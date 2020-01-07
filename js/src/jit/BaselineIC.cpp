@@ -4923,6 +4923,7 @@ DoCacheIRBinaryArithFallback(JSContext* cx, BaselineFrame* frame, ICBinaryArith_
     
     switch(op) {
       case JSOP_ADD:
+      case JSOP_SUB:
         break;
       default:
         return false; 

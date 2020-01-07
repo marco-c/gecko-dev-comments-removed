@@ -3553,13 +3553,13 @@ IonBuilder::arithTrySharedStub(bool* emitted, JSOp op,
         stub = MUnaryCache::New(alloc(), right);
         break;
       case JSOP_ADD:
+      case JSOP_SUB:
         
         if (!JitOptions.disableCacheIRBinaryArith) {
             stub = MBinaryCache::New(alloc(), left, right);
             break;
         }
         MOZ_FALLTHROUGH;
-      case JSOP_SUB:
       case JSOP_MUL:
       case JSOP_DIV:
       case JSOP_MOD:
