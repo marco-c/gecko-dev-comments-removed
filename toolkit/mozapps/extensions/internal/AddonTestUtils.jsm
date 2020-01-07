@@ -987,6 +987,18 @@ var AddonTestUtils = {
 
 
 
+  promiseInstallXPI(files) {
+    return this.promiseInstallFile(this.createTempXPIFile(files));
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
