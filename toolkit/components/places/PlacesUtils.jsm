@@ -113,7 +113,11 @@ function serializeNode(aNode, aIsLivemark) {
   data.instanceId = PlacesUtils.instanceId;
 
   let guid = aNode.bookmarkGuid;
-  if (guid) {
+  
+  
+  if (guid && !PlacesUtils.bookmarks.isVirtualRootItem(guid)) {
+    
+    
     data.itemGuid = guid;
     if (aNode.parent)
       data.parent = aNode.parent.itemId;
@@ -155,6 +159,7 @@ function serializeNode(aNode, aIsLivemark) {
         data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
         data.uri = aNode.uri;
         data.concreteId = concreteId;
+        data.concreteGuid = PlacesUtils.getConcreteItemGuid(aNode);
       } else {
         
         data.type = PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER;
@@ -430,6 +435,18 @@ this.PlacesUtils = {
                 let bucket = v.split(":");
                 return [ bucket[0].trim().toLowerCase(), Number(bucket[1]) ];
               });
+  },
+
+  
+
+
+
+
+  isQueryGeneratedFolder(node) {
+    if (!node.parent) {
+      return false;
+    }
+    return this.nodeIsFolder(node) && this.nodeIsQuery(node.parent);
   },
 
   

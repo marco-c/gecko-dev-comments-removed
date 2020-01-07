@@ -106,6 +106,10 @@ using namespace mozilla::places;
 #define PREF_FREC_RELOAD_VISIT_BONUS_DEF        0
 
 
+
+#define MOBILE_BOOKMARKS_PREF "browser.bookmarks.showMobileBookmarks"
+
+
 #define PREF_FREC_DECAY_RATE     "places.frecency.decayRate"
 #define PREF_FREC_DECAY_RATE_DEF 0.975f
 
@@ -832,7 +836,9 @@ nsNavHistory::GetUpdateRequirements(const nsCOMArray<nsNavHistoryQuery>& aQuerie
   }
 
   if (aOptions->ResultType() ==
-      nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
+        nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY ||
+      aOptions->ResultType() ==
+        nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY)
     return QUERYUPDATE_COMPLEX_WITH_BOOKMARKS;
 
   
@@ -1415,6 +1421,7 @@ private:
   nsresult SelectAsDay();
   nsresult SelectAsSite();
   nsresult SelectAsTag();
+  nsresult SelectAsRoots();
 
   nsresult Where();
   nsresult GroupBy();
@@ -1513,6 +1520,11 @@ PlacesSQLQueryBuilder::Select()
 
     case nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY:
       rv = SelectAsTag();
+      NS_ENSURE_SUCCESS(rv, rv);
+      break;
+
+    case nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY:
+      rv = SelectAsRoots();
       NS_ENSURE_SUCCESS(rv, rv);
       break;
 
@@ -1921,6 +1933,49 @@ PlacesSQLQueryBuilder::SelectAsTag()
     history->GetTagsFolder()
   );
 
+  return NS_OK;
+}
+
+nsresult
+PlacesSQLQueryBuilder::SelectAsRoots()
+{
+  nsNavHistory *history = nsNavHistory::GetHistoryService();
+  NS_ENSURE_STATE(history);
+
+  nsAutoCString toolbarTitle;
+  nsAutoCString menuTitle;
+  nsAutoCString unfiledTitle;
+
+  history->GetStringFromName("BookmarksToolbarFolderTitle", toolbarTitle);
+  history->GetStringFromName("BookmarksMenuFolderTitle", menuTitle);
+  history->GetStringFromName("OtherBookmarksFolderTitle", unfiledTitle);
+
+  nsAutoCString mobileString;
+
+  if (Preferences::GetBool(MOBILE_BOOKMARKS_PREF, false)) {
+    nsAutoCString mobileTitle;
+    history->GetStringFromName("MobileBookmarksFolderTitle", mobileTitle);
+
+    mobileString = nsPrintfCString(","
+      "(null, 'place:folder=MOBILE_BOOKMARKS', '%s', null, null, null, "
+       "null, null, 0, 0, null, null, null, null, 'mobile____v', null) ",
+      mobileTitle.get());
+  }
+
+  mQueryString = nsPrintfCString(
+    "SELECT * FROM ("
+        "VALUES(null, 'place:folder=TOOLBAR', '%s', null, null, null, "
+               "null, null, 0, 0, null, null, null, null, 'toolbar____v', null), "
+              "(null, 'place:folder=BOOKMARKS_MENU', '%s', null, null, null, "
+               "null, null, 0, 0, null, null, null, null, 'menu_______v', null), "
+              "(null, 'place:folder=UNFILED_BOOKMARKS', '%s', null, null, null, "
+               "null, null, 0, 0, null, null, null, null, 'unfiled___v', null) "
+              " %s "
+    ")",
+    toolbarTitle.get(),
+    menuTitle.get(),
+    unfiledTitle.get(),
+    mobileString.get());
   return NS_OK;
 }
 
@@ -3570,7 +3625,7 @@ nsNavHistory::FilterResultSet(nsNavHistoryQueryResultNode* aQueryNode,
     
     if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAG_CONTENTS &&
         (!aSet[nodeIndex]->IsURI() ||
-         nodeIndex > 0 && aSet[nodeIndex]->mURI == aSet[nodeIndex-1]->mURI)) {
+         (nodeIndex > 0 && aSet[nodeIndex]->mURI == aSet[nodeIndex-1]->mURI))) {
       continue;
     }
 
@@ -3791,6 +3846,11 @@ nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
+    if (aOptions->ResultType() == nsNavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY) {
+      rv = aRow->GetUTF8String(kGetInfoIndex_Guid, guid);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
     RefPtr<nsNavHistoryResultNode> resultNode;
     rv = QueryRowToResult(itemId, guid, url, title, accessCount, time,
                           getter_AddRefs(resultNode));
@@ -3891,8 +3951,11 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
                                PRTime aTime,
                                nsNavHistoryResultNode** aNode)
 {
-  MOZ_ASSERT((itemId != -1 && !aBookmarkGuid.IsEmpty()) ||
-             (itemId == -1 && aBookmarkGuid.IsEmpty()));
+  
+  
+  if (itemId != -1) {
+    MOZ_ASSERT(!aBookmarkGuid.IsEmpty());
+  }
 
   nsCOMArray<nsNavHistoryQuery> queries;
   nsCOMPtr<nsNavHistoryQueryOptions> options;
