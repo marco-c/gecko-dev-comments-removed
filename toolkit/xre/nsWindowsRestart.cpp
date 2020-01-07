@@ -11,6 +11,7 @@
 #define nsWindowsRestart_cpp
 #endif
 
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "nsUTF8Utils.h"
 
 #include <shellapi.h>
@@ -18,135 +19,6 @@
 
 #include <userenv.h>
 #pragma comment(lib, "userenv.lib")
-
-
-
-
-
-
-static int ArgStrLen(const wchar_t *s)
-{
-  int backslashes = 0;
-  int i = wcslen(s);
-  BOOL hasDoubleQuote = wcschr(s, L'"') != nullptr;
-  
-  BOOL addDoubleQuotes = wcspbrk(s, L" \t") != nullptr;
-
-  if (addDoubleQuotes) {
-    i += 2; 
-  }
-
-  if (hasDoubleQuote) {
-    while (*s) {
-      if (*s == '\\') {
-        ++backslashes;
-      } else {
-        if (*s == '"') {
-          
-          i += backslashes + 1;
-        }
-
-        backslashes = 0;
-      }
-
-      ++s;
-    }
-  }
-
-  return i;
-}
-
-
-
-
-
-
-
-
-
-
-static wchar_t* ArgToString(wchar_t *d, const wchar_t *s)
-{
-  int backslashes = 0;
-  BOOL hasDoubleQuote = wcschr(s, L'"') != nullptr;
-  
-  BOOL addDoubleQuotes = wcspbrk(s, L" \t") != nullptr;
-
-  if (addDoubleQuotes) {
-    *d = '"'; 
-    ++d;
-  }
-
-  if (hasDoubleQuote) {
-    int i;
-    while (*s) {
-      if (*s == '\\') {
-        ++backslashes;
-      } else {
-        if (*s == '"') {
-          
-          for (i = 0; i <= backslashes; ++i) {
-            *d = '\\';
-            ++d;
-          }
-        }
-
-        backslashes = 0;
-      }
-
-      *d = *s;
-      ++d; ++s;
-    }
-  } else {
-    wcscpy(d, s);
-    d += wcslen(s);
-  }
-
-  if (addDoubleQuotes) {
-    *d = '"'; 
-    ++d;
-  }
-
-  return d;
-}
-
-
-
-
-
-
-
-wchar_t*
-MakeCommandLine(int argc, wchar_t **argv)
-{
-  int i;
-  int len = 0;
-
-  
-  for (i = 0; i < argc; ++i)
-    len += ArgStrLen(argv[i]) + 1;
-
-  
-  if (len == 0)
-    len = 1;
-
-  wchar_t *s = (wchar_t*) malloc(len * sizeof(wchar_t));
-  if (!s)
-    return nullptr;
-
-  wchar_t *c = s;
-  for (i = 0; i < argc; ++i) {
-    c = ArgToString(c, argv[i]);
-    if (i + 1 != argc) {
-      *c = ' ';
-      ++c;
-    }
-  }
-
-  *c = '\0';
-
-  return s;
-}
 
 
 
@@ -222,10 +94,9 @@ WinLaunchChild(const wchar_t *exePath,
                HANDLE userToken,
                HANDLE *hProcess)
 {
-  wchar_t *cl;
   BOOL ok;
 
-  cl = MakeCommandLine(argc, argv);
+  mozilla::UniquePtr<wchar_t[]> cl(mozilla::MakeCommandLine(argc, argv));
   if (!cl) {
     return FALSE;
   }
@@ -237,7 +108,7 @@ WinLaunchChild(const wchar_t *exePath,
 
   if (userToken == nullptr) {
     ok = CreateProcessW(exePath,
-                        cl,
+                        cl.get(),
                         nullptr,  
                         nullptr,  
                         FALSE, 
@@ -256,7 +127,7 @@ WinLaunchChild(const wchar_t *exePath,
 
     ok = CreateProcessAsUserW(userToken,
                               exePath,
-                              cl,
+                              cl.get(),
                               nullptr,  
                               nullptr,  
                               FALSE,    
@@ -293,8 +164,6 @@ WinLaunchChild(const wchar_t *exePath,
     if (lpMsgBuf)
       LocalFree(lpMsgBuf);
   }
-
-  free(cl);
 
   return ok;
 }
