@@ -57,12 +57,6 @@ public:
   }
 
   
-  nsINode& AsNode() final
-  {
-    return *this;
-  }
-
-  
   void AddToIdTable(Element* aElement, nsAtom* aId);
   void RemoveFromIdTable(Element* aElement, nsAtom* aId);
   void InsertSheet(StyleSheet* aSheet, nsIContent* aLinkingContent);
