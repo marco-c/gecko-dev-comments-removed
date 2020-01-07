@@ -1005,9 +1005,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
     var url = aURI.QueryInterface(Components.interfaces.nsIURL);
     if (url.fileName != "") {
       
-      var textToSubURI = Components.classes["@mozilla.org/intl/texttosuburi;1"]
-                                   .getService(Components.interfaces.nsITextToSubURI);
-      return validateFileName(textToSubURI.unEscapeURIForUI("UTF-8", url.fileName));
+      return validateFileName(Services.textToSubURI.unEscapeURIForUI("UTF-8", url.fileName));
     }
   } catch (e) {
     
