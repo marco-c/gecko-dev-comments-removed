@@ -207,6 +207,9 @@ public:
     }
 
     MOZ_MUST_USE nsresult OpenCacheEntry(bool usingSSL);
+    MOZ_MUST_USE nsresult OpenCacheEntryInternal(bool isHttps,
+                                                 nsIApplicationCache *applicationCache,
+                                                 bool noAppCache);
     MOZ_MUST_USE nsresult ContinueConnect();
 
     

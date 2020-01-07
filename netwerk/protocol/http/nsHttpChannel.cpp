@@ -3700,12 +3700,7 @@ nsresult
 nsHttpChannel::OpenCacheEntry(bool isHttps)
 {
     
-    AutoCacheWaitFlags waitFlags(this);
-
-    
     mConcurrentCacheAccess = 0;
-
-    nsresult rv;
 
     mLoadedFromApplicationCache = false;
     mHasQueryString = HasQueryString(mRequestHead.ParsedMethod(), mURI);
@@ -3714,9 +3709,6 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
 
     
     NS_PRECONDITION(!mCacheEntry, "cache entry already open");
-
-    nsAutoCString cacheKey;
-    nsAutoCString extension;
 
     if (mRequestHead.IsPost()) {
         
@@ -3730,6 +3722,29 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         return NS_OK;
     }
 
+    
+    
+    if (!mApplicationCache && mInheritApplicationCache) {
+        nsCOMPtr<nsIApplicationCacheContainer> appCacheContainer;
+        GetCallback(appCacheContainer);
+
+        if (appCacheContainer) {
+            appCacheContainer->GetApplicationCache(getter_AddRefs(mApplicationCache));
+        }
+    }
+
+    return OpenCacheEntryInternal(isHttps, mApplicationCache, true);
+}
+
+nsresult
+nsHttpChannel::OpenCacheEntryInternal(bool isHttps,
+                                      nsIApplicationCache *applicationCache,
+                                      bool allowApplicationCache)
+{
+    MOZ_ASSERT_IF(!allowApplicationCache, !applicationCache);
+
+    nsresult rv;
+
     if (mResuming) {
         
         
@@ -3738,20 +3753,15 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
 
     
     
-    if (IsSubRangeRequest(mRequestHead))
+    if (IsSubRangeRequest(mRequestHead)) {
         return NS_OK;
-
-    
-    
-    if (!mApplicationCache &&
-        mInheritApplicationCache) {
-        nsCOMPtr<nsIApplicationCacheContainer> appCacheContainer;
-        GetCallback(appCacheContainer);
-
-        if (appCacheContainer) {
-            appCacheContainer->GetApplicationCache(getter_AddRefs(mApplicationCache));
-        }
     }
+
+    
+    AutoCacheWaitFlags waitFlags(this);
+
+    nsAutoCString cacheKey;
+    nsAutoCString extension;
 
     nsCOMPtr<nsICacheStorageService> cacheStorageService(services::GetCacheStorageService());
     if (!cacheStorageService) {
@@ -3793,7 +3803,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         cacheEntryOpenFlags = nsICacheStorage::OPEN_READONLY;
         mCacheEntryIsReadOnly = true;
     }
-    else if (BYPASS_LOCAL_CACHE(mLoadFlags) && !mApplicationCache) {
+    else if (BYPASS_LOCAL_CACHE(mLoadFlags) && !applicationCache) {
         cacheEntryOpenFlags = nsICacheStorage::OPEN_TRUNCATE;
     }
     else {
@@ -3810,9 +3820,9 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         mRequestHead.HasHeader(nsHttp::If_Match) ||
         mRequestHead.HasHeader(nsHttp::If_Range);
 
-    if (!mPostID && mApplicationCache) {
+    if (!mPostID && applicationCache) {
         rv = cacheStorageService->AppCacheStorage(info,
-            mApplicationCache,
+            applicationCache,
             getter_AddRefs(cacheStorage));
     } else if (mLoadFlags & INHIBIT_PERSISTENT_CACHING) {
         rv = cacheStorageService->MemoryCacheStorage(info, 
@@ -3823,8 +3833,9 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
             getter_AddRefs(cacheStorage));
     }
     else {
-        bool lookupAppCache = !mPostID && (mChooseApplicationCache ||
-                              (mLoadFlags & LOAD_CHECK_OFFLINE_CACHE));
+        bool lookupAppCache = (mChooseApplicationCache || (mLoadFlags & LOAD_CHECK_OFFLINE_CACHE)) &&
+                              !mPostID &&
+                              MOZ_LIKELY(allowApplicationCache);
         
         
         maybeRCWN = !lookupAppCache;
@@ -3892,7 +3903,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
     waitFlags.Keep(WAIT_FOR_CACHE_ENTRY);
 
 bypassCacheEntryOpen:
-    if (!mApplicationCacheForWrite)
+    if (!mApplicationCacheForWrite || !allowApplicationCache)
         return NS_OK;
 
     
@@ -4551,6 +4562,24 @@ nsHttpChannel::OnOfflineCacheEntryAvailable(nsICacheEntry *aEntry,
 
             rv = namespaceEntry->GetData(mFallbackKey);
             NS_ENSURE_SUCCESS(rv, rv);
+        }
+
+        if (namespaceType &
+            nsIApplicationCacheNamespace::NAMESPACE_BYPASS) {
+
+            LOG(("nsHttpChannel::OnOfflineCacheEntryAvailable this=%p, URL matches NETWORK,"
+                 " looking for a regular cache entry", this));
+
+            bool isHttps = false;
+            rv = mURI->SchemeIs("https", &isHttps);
+            NS_ENSURE_SUCCESS(rv, rv);
+
+            rv = OpenCacheEntryInternal(isHttps, nullptr, false );
+            if (NS_FAILED(rv)) {
+                
+                
+                return NS_OK;
+            }
         }
     }
 
