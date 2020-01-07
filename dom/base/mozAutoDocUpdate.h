@@ -52,35 +52,4 @@ private:
   (doc,notify)
 
 
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS mozAutoDocConditionalContentUpdateBatch
-{
-public:
-  mozAutoDocConditionalContentUpdateBatch(nsIDocument* aDocument,
-                                          bool aNotify) :
-    mDocument(aNotify ? aDocument : nullptr)
-  {
-    if (mDocument) {
-      mDocument->BeginUpdate();
-    }
-  }
-
-  ~mozAutoDocConditionalContentUpdateBatch()
-  {
-    if (mDocument) {
-      mDocument->EndUpdate();
-    }
-  }
-
-private:
-  nsCOMPtr<nsIDocument> mDocument;
-};
-
 #endif
