@@ -65,6 +65,14 @@ var gA11yEventDumpFeature = "";
 
 
 
+function isHTMLElement(aNode) {
+  return aNode.nodeType == aNode.ELEMENT_NODE &&
+         aNode.namespaceURI == "http://www.w3.org/1999/xhtml";
+}
+
+
+
+
 
 
 
@@ -1059,11 +1067,19 @@ function synthClick(aNodeOrID, aCheckerOrEventSeq, aArgs) {
     }
 
     
-    targetNode.scrollIntoView(true);
+    if (isHTMLElement(targetNode)) {
+      targetNode.scrollIntoView(true);
+    } else if (targetNode instanceof nsIDOMXULElement) {
+      var targetAcc = getAccessible(targetNode);
+      targetAcc.scrollTo(SCROLL_TYPE_ANYWHERE);
+    }
 
     var x = 1, y = 1;
     if (aArgs && ("where" in aArgs) && aArgs.where == "right") {
-      x = targetNode.getBoundingClientRect().width - 1;
+      if (isHTMLElement(targetNode))
+        x = targetNode.offsetWidth - 1;
+      else if (targetNode instanceof nsIDOMXULElement)
+        x = targetNode.boxObject.width - 1;
     }
     synthesizeMouse(targetNode, x, y, aArgs ? aArgs : {});
   };
