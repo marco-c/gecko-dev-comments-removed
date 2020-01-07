@@ -37,4 +37,4 @@ add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
 
 
 add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+                    SEC_ERROR_UNKNOWN_ISSUER, null, null);

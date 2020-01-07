@@ -1240,7 +1240,7 @@ DetermineEVAndCTStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus,
 
 static nsresult
 IsCertificateDistrustImminent(nsIX509CertList* aCertList,
-                               bool& aResult) {
+                               bool& isDistrusted) {
   if (!aCertList) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -1264,42 +1264,30 @@ IsCertificateDistrustImminent(nsIX509CertList* aCertList,
   if (!nssEECert) {
     return NS_ERROR_FAILURE;
   }
-  aResult = CertDNIsInList(nssEECert.get(), TestImminentDistrustEndEntityDNs);
-  if (aResult) {
+  isDistrusted = CertDNIsInList(nssEECert.get(),
+                                TestImminentDistrustEndEntityDNs);
+  if (isDistrusted) {
     
     return NS_OK;
   }
 
-  
-  
-  
-
-  
   UniqueCERTCertificate nssRootCert(rootCert->GetCert());
-  
-  if (!CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
-    aResult = false;
-    return NS_OK;
+  if (!nssRootCert) {
+    return NS_ERROR_FAILURE;
   }
 
   
-  bool foundInWhitelist = false;
-  RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
-
-  intCertList->ForEachCertificateInChain(
-    [&foundInWhitelist] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
-                          bool& aContinue) {
-      
-      UniqueCERTCertificate nssCert(aCert->GetCert());
-      if (CertDNIsInList(nssCert.get(), RootAppleAndGoogleDNs)) {
-        foundInWhitelist = true;
-        aContinue = false;
-      }
-      return NS_OK;
-  });
-
   
-  aResult = !foundInWhitelist;
+  
+  if (CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
+    static const PRTime NULL_TIME = 0;
+
+    rv = CheckForSymantecDistrust(intCerts, eeCert, NULL_TIME,
+                                  RootAppleAndGoogleDNs, isDistrusted);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
   return NS_OK;
 }
 
