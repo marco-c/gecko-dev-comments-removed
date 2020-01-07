@@ -505,6 +505,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       
+      
 
       
       if (newLocation.originalUrl == null
@@ -513,9 +514,32 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
 
       
-      if (this !== startFrame
-          || startLocation.originalUrl !== newLocation.originalUrl
-          || startLocation.originalLine !== newLocation.originalLine) {
+      if (this !== startFrame || startLocation.originalUrl !== newLocation.originalUrl) {
+        return pauseAndRespond(this);
+      }
+
+      const pausePoints = newLocation.originalSourceActor.pausePoints;
+
+      if (!pausePoints) {
+        
+        if (startLocation.originalLine !== newLocation.originalLine) {
+          return pauseAndRespond(this);
+        }
+        return undefined;
+      }
+
+      
+      if (
+        startLocation.originalLine === newLocation.originalLine
+        && startLocation.originalColumn === newLocation.originalColumn
+      ) {
+        return undefined;
+      }
+
+      
+      
+      const pausePoint = findPausePointForLocation(pausePoints, newLocation);
+      if (pausePoint && pausePoint.types.stepOver) {
         return pauseAndRespond(this);
       }
 
@@ -1886,6 +1910,13 @@ function findEntryPointsForLine(scripts, line) {
     }
   }
   return entryPoints;
+}
+
+function findPausePointForLocation(pausePoints, location) {
+  return pausePoints.find(pausePoint =>
+    pausePoint.location.line === location.originalLine
+    && pausePoint.location.column === location.originalColumn
+  );
 }
 
 
