@@ -90,7 +90,20 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
-    typedef nsTHashtable<nsRefPtrHashKey<nsAtom>> AtomsTable;
+    class AtomsTable : public nsTHashtable<nsPtrHashKey<const nsStaticAtom>>
+    {
+    public:
+        explicit AtomsTable(uint32_t aLength)
+          : nsTHashtable<nsPtrHashKey<const nsStaticAtom>>(aLength)
+        {}
+
+        bool Contains(nsAtom* aAtom)
+        {
+            
+            
+            return aAtom->IsStatic() && GetEntry(aAtom->AsStatic());
+        }
+    };
 
     void SanitizeChildren(nsINode* aRoot);
 
@@ -122,7 +135,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    bool IsURL(nsStaticAtom* const* aURLs, nsAtom* aLocalName);
+    bool IsURL(const nsStaticAtom* const* aURLs, nsAtom* aLocalName);
 
     
 
@@ -140,7 +153,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
                             AtomsTable* aAllowed,
-                            nsStaticAtom* const* aURLs,
+                            const nsStaticAtom* const* aURLs,
                             bool aAllowXLink,
                             bool aAllowStyle,
                             bool aAllowDangerousSrc);
