@@ -783,6 +783,12 @@ nsStandardURL::BuildNormalizedSpec(const char *spec,
 
     
     
+    if (approxLen + 1 > (uint32_t) net_GetURLMaxLength()) {
+        return NS_ERROR_MALFORMED_URI;
+    }
+
+    
+    
     
     
     if (!mSpec.SetLength(approxLen+1, fallible)) 
@@ -931,6 +937,9 @@ nsStandardURL::BuildNormalizedSpec(const char *spec,
     }
     mSpec.SetLength(strlen(buf));
     NS_ASSERTION(mSpec.Length() <= approxLen, "We've overflowed the mSpec buffer!");
+    MOZ_ASSERT(mSpec.Length() <= (uint32_t) net_GetURLMaxLength(),
+               "The spec should never be this long, we missed a check.");
+
     return NS_OK;
 }
 
