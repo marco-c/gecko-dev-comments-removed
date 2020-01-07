@@ -1612,14 +1612,14 @@ ContentEventHandler::GetNodePositionHavingFlatText(nsINode* aNode,
 
   
   if (aNodeOffset < childCount) {
-    return NodePosition(aNode->GetChildAt(aNodeOffset), 0);
+    return NodePosition(aNode->GetChildAt_Deprecated(aNodeOffset), 0);
   }
 
   
   
   
   if (aNodeOffset == childCount) {
-    nsINode* node = aNode->GetChildAt(childCount - 1);
+    nsINode* node = aNode->GetChildAt_Deprecated(childCount - 1);
     return NodePosition(node,
       node->IsNodeOfType(nsINode::eTEXT)
         ? static_cast<int32_t>(node->AsContent()->TextLength())
@@ -1719,7 +1719,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
       nextNodeOfRangeEnd = endNode;
     }
   } else if (endOffset < endNode->GetChildCount()) {
-    nextNodeOfRangeEnd = endNode->GetChildAt(endOffset);
+    nextNodeOfRangeEnd = endNode->GetChildAt_Deprecated(endOffset);
   }
 
   for (iter->Last(); !iter->IsDone(); iter->Prev()) {
@@ -3058,7 +3058,7 @@ ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aRawRange)
                container->GetChildCount()) {
     
     
-    childNode = container->GetChildAt(offsetInParentNode - 1);
+    childNode = container->GetChildAt_Deprecated(offsetInParentNode - 1);
     offsetInChildNode = childNode->Length();
   }
 

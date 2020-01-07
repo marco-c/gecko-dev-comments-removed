@@ -242,7 +242,7 @@ HyperTextAccessible::DOMPointToOffset(nsINode* aNode, int32_t aNodeOffset,
     
     
 
-    findNode = aNode->GetChildAt(aNodeOffset);
+    findNode = aNode->GetChildAt_Deprecated(aNodeOffset);
     if (!findNode) {
       if (aNodeOffset == 0) {
         if (aNode == GetNode()) {

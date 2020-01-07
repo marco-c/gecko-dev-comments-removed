@@ -603,7 +603,7 @@ Selection::GetTableCellLocationFromRange(nsRange* aRange,
   if (!content)
     return NS_ERROR_FAILURE;
 
-  nsCOMPtr<nsIContent> child = content->GetChildAt(aRange->StartOffset());
+  nsCOMPtr<nsIContent> child = content->GetChildAt_Deprecated(aRange->StartOffset());
   if (!child)
     return NS_ERROR_FAILURE;
 
@@ -710,7 +710,7 @@ Selection::GetTableSelectionType(nsIDOMRange* aDOMRange,
   }
   else 
   {
-    nsIContent *child = startNode->GetChildAt(startOffset);
+    nsIContent *child = startNode->GetChildAt_Deprecated(startOffset);
     if (!child)
       return NS_ERROR_FAILURE;
 

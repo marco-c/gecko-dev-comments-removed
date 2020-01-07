@@ -226,7 +226,7 @@ nsCoreUtils::GetDOMNodeFromDOMPoint(nsINode *aNode, uint32_t aOffset)
     
     
     if (aOffset != childCount)
-      return aNode->GetChildAt(aOffset);
+      return aNode->GetChildAt_Deprecated(aOffset);
   }
 
   return aNode;

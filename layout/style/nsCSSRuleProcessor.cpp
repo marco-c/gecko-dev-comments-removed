@@ -1358,7 +1358,7 @@ checkGenericEmptyMatches(Element* aElement,
     aElement->SetFlags(NODE_HAS_EMPTY_SELECTOR);
 
   do {
-    child = aElement->GetChildAt(++index);
+    child = aElement->GetChildAt_Deprecated(++index);
     
     
   } while (child && !IsSignificantChild(child, true, isWhitespaceSignificant));
@@ -1632,7 +1632,7 @@ static bool SelectorMatches(Element* aElement,
 
           int32_t index = -1;
           do {
-            firstNode = parent->GetChildAt(++index);
+            firstNode = parent->GetChildAt_Deprecated(++index);
             
           } while (firstNode &&
                     !IsSignificantChild(firstNode, true, false));
@@ -1659,7 +1659,7 @@ static bool SelectorMatches(Element* aElement,
 
           uint32_t index = parent->GetChildCount();
           do {
-            lastNode = parent->GetChildAt(--index);
+            lastNode = parent->GetChildAt_Deprecated(--index);
             
           } while (lastNode &&
                     !IsSignificantChild(lastNode, true, false));

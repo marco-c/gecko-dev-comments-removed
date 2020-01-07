@@ -649,7 +649,7 @@ nsContentIterator::GetDeepLastChild(nsIContent* aRoot,
   int32_t numChildren = node->GetChildCount();
 
   while (numChildren) {
-    nsIContent* child = node->GetChildAt(--numChildren);
+    nsIContent* child = node->GetChildAt_Deprecated(--numChildren);
 
     if (aIndexes) {
       
@@ -691,7 +691,7 @@ nsContentIterator::GetNextSibling(nsINode* aNode,
   
   
   
-  nsIContent* sib = parent->GetChildAt(indx);
+  nsIContent* sib = parent->GetChildAt_Deprecated(indx);
   if (sib != aNode) {
     
     indx = parent->IndexOf(aNode);
@@ -699,7 +699,7 @@ nsContentIterator::GetNextSibling(nsINode* aNode,
   }
 
   
-  if ((sib = parent->GetChildAt(++indx))) {
+  if ((sib = parent->GetChildAt_Deprecated(++indx))) {
     
     if (aIndexes && !aIndexes->IsEmpty()) {
       aIndexes->ElementAt(aIndexes->Length()-1) = indx;
@@ -752,7 +752,7 @@ nsContentIterator::GetPrevSibling(nsINode* aNode,
 
   
   
-  nsIContent* sib = parent->GetChildAt(indx);
+  nsIContent* sib = parent->GetChildAt_Deprecated(indx);
   if (sib != aNode) {
     
     indx = parent->IndexOf(aNode);
@@ -760,7 +760,7 @@ nsContentIterator::GetPrevSibling(nsINode* aNode,
   }
 
   
-  if (indx > 0 && (sib = parent->GetChildAt(--indx))) {
+  if (indx > 0 && (sib = parent->GetChildAt_Deprecated(--indx))) {
     
     if (aIndexes && !aIndexes->IsEmpty()) {
       aIndexes->ElementAt(aIndexes->Length()-1) = indx;
@@ -829,7 +829,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
   
   
   if (indx >= 0) {
-    sibling = parent->GetChildAt(indx);
+    sibling = parent->GetChildAt_Deprecated(indx);
   }
   if (sibling != node) {
     
@@ -838,7 +838,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
   }
 
   
-  sibling = parent->GetChildAt(++indx);
+  sibling = parent->GetChildAt_Deprecated(++indx);
   if (sibling) {
     
     if (aIndexes && !aIndexes->IsEmpty()) {
@@ -898,8 +898,8 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
     
     
     if (indx >= 0) {
-      sibling = parent->GetChildAt(indx);
-      NS_WARNING_ASSERTION(sibling, "GetChildAt returned null");
+      sibling = parent->GetChildAt_Deprecated(indx);
+      NS_WARNING_ASSERTION(sibling, "GetChildAt_Deprecated returned null");
     }
 
     if (sibling != node) {
@@ -909,7 +909,7 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
     }
 
     
-    if (indx && (sibling = parent->GetChildAt(--indx))) {
+    if (indx && (sibling = parent->GetChildAt_Deprecated(--indx))) {
       
       if (aIndexes && !aIndexes->IsEmpty()) {
         
@@ -1395,7 +1395,7 @@ nsContentSubtreeIterator::InitWithRange()
     
     node = startContainer;
   } else {
-    nsIContent* child = startContainer->GetChildAt(offset);
+    nsIContent* child = startContainer->GetChildAt_Deprecated(offset);
     if (!child) {
       
       node = startContainer;
@@ -1444,7 +1444,7 @@ nsContentSubtreeIterator::InitWithRange()
   if (!offset || !numChildren) {
     node = endContainer;
   } else {
-    lastCandidate = endContainer->GetChildAt(--offset);
+    lastCandidate = endContainer->GetChildAt_Deprecated(--offset);
     NS_ASSERTION(lastCandidate,
                  "tree traversal trouble in nsContentSubtreeIterator::Init");
   }

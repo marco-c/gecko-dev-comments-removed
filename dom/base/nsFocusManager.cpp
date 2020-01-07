@@ -2555,7 +2555,7 @@ nsFocusManager::GetSelectionLocation(nsIDocument* aDocument,
 
       startContent = do_QueryInterface(startNode);
       if (startContent && startContent->IsElement()) {
-        childContent = startContent->GetChildAt(startOffset);
+        childContent = startContent->GetChildAt_Deprecated(startOffset);
         if (childContent) {
           startContent = childContent;
         }
@@ -2565,7 +2565,7 @@ nsFocusManager::GetSelectionLocation(nsIDocument* aDocument,
       if (endContent && endContent->IsElement()) {
         uint32_t endOffset = 0;
         domRange->GetEndOffset(&endOffset);
-        childContent = endContent->GetChildAt(endOffset);
+        childContent = endContent->GetChildAt_Deprecated(endOffset);
         if (childContent) {
           endContent = childContent;
         }
@@ -3383,8 +3383,9 @@ nsFocusManager::GetNextTabbableMapArea(bool aForward,
     }
 
     
+    
     nsCOMPtr<nsIContent> areaContent;
-    while ((areaContent = mapContent->GetChildAt(aForward ? ++index : --index)) != nullptr) {
+    while ((areaContent = mapContent->GetChildAt_Deprecated(aForward ? ++index : --index)) != nullptr) {
       if (areaContent->IsFocusable(&tabIndex) && tabIndex == aCurrentTabIndex) {
         return areaContent;
       }

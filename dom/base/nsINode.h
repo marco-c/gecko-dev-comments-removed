@@ -506,7 +506,10 @@ public:
 
 
 
-  virtual nsIContent* GetChildAt(uint32_t aIndex) const = 0;
+
+
+
+  virtual nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const = 0;
 
   
 
@@ -1304,7 +1307,7 @@ public:
   {
     uint32_t count = GetChildCount();
 
-    return count > 0 ? GetChildAt(count - 1) : nullptr;
+    return count > 0 ? GetChildAt_Deprecated(count - 1) : nullptr;
   }
 
   

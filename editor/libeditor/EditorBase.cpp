@@ -4280,7 +4280,7 @@ EditorBase::JoinNodeDeep(nsIContent& aLeftNode,
 
     
     parentNode = rightNodeToJoin;
-    rightNodeToJoin = parentNode->GetChildAt(length);
+    rightNodeToJoin = parentNode->GetChildAt_Deprecated(length);
     if (rightNodeToJoin) {
       leftNodeToJoin = rightNodeToJoin->GetPreviousSibling();
     } else {
