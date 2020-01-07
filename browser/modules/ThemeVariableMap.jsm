@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ThemeVariableMap", "ThemeContentPropertyList"];
+var EXPORTED_SYMBOLS = ["ThemeVariableMap"];
 
 const ThemeVariableMap = [
   ["--lwt-accent-color-inactive", {
@@ -79,9 +79,4 @@ const ThemeVariableMap = [
   ["--autocomplete-popup-highlight-color", {
     lwtProperty: "popup_highlight_text"
   }],
-];
-
-const ThemeContentPropertyList = [
-  "ntp_background",
-  "ntp_text",
 ];
