@@ -88,7 +88,6 @@ public:
 
   
   void DeleteExpiredStoredMarkers();
-  void Reset();
 
   
   ProfileBufferEntry& GetEntry(uint64_t aPosition) const
