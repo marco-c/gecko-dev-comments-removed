@@ -1413,18 +1413,18 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   Unused << chan->GetApplyConversion(&applyConversion);
   chan->SetApplyConversion(false);
 
+  nsresult channelStatus = NS_OK;
+  chan->GetStatus(&channelStatus);
+
   
   
   nsCOMPtr<nsISupports> cacheEntry;
-  nsresult channelStatus = NS_OK;
   uint32_t cacheKey = 0;
   nsAutoCString altDataType;
 
   if (httpChannelImpl) {
     httpChannelImpl->GetCacheToken(getter_AddRefs(cacheEntry));
     mCacheEntry = do_QueryInterface(cacheEntry);
-
-    httpChannelImpl->GetStatus(&channelStatus);
 
     httpChannelImpl->GetCacheKey(&cacheKey);
 
