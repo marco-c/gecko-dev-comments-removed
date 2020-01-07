@@ -7,10 +7,9 @@ const { Component, createFactory } = require("devtools/client/shared/vendor/reac
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {div, button} = dom;
-const {openDocLink} = require("devtools/client/shared/link");
 
-const Menu = require("devtools/client/framework/menu");
-const MenuItem = require("devtools/client/framework/menu-item");
+const MeatballMenu = createFactory(require("devtools/client/framework/components/MeatballMenu"));
+const MenuButton = createFactory(require("devtools/client/shared/components/menu/MenuButton"));
 const ToolboxTabs = createFactory(require("devtools/client/framework/components/ToolboxTabs"));
 
 
@@ -109,7 +108,7 @@ class ToolboxToolbar extends Component {
           startButtons,
           ToolboxTabs(this.props),
           endButtons,
-          renderToolboxControls(this.props)
+          renderToolboxControls(this.props, this.refs)
         )
       )
       : div({ className: classnames.join(" ") });
@@ -262,32 +261,46 @@ function renderSeparator() {
 
 
 
-function renderToolboxControls(props) {
+
+
+
+
+
+
+
+
+
+function renderToolboxControls(props, refs) {
   const {
     focusedButton,
+    canCloseToolbox,
     closeToolbox,
-    hostTypes,
     focusButton,
     L10N,
-    areDockOptionsEnabled,
-    canCloseToolbox,
+    toolbox,
   } = props;
 
   const meatballMenuButtonId = "toolbox-meatball-menu-button";
 
-  const meatballMenuButton = button({
-    id: meatballMenuButtonId,
-    onFocus: () => focusButton(meatballMenuButtonId),
-    className: "devtools-button",
-    title: L10N.getStr("toolbox.meatballMenu.button.tooltip"),
-    onClick: evt => {
-      showMeatballMenu(evt.target, {
-        ...props,
-        hostTypes: areDockOptionsEnabled ? hostTypes : [],
-      });
+  const meatballMenuButton = MenuButton(
+    {
+      id: meatballMenuButtonId,
+      menuId: meatballMenuButtonId + "-panel",
+      doc: toolbox.doc,
+      onFocus: () => focusButton(meatballMenuButtonId),
+      className: "devtools-button",
+      title: L10N.getStr("toolbox.meatballMenu.button.tooltip"),
+      tabIndex: focusedButton === meatballMenuButtonId ? "0" : "-1",
+      ref: "meatballMenuButton",
     },
-    tabIndex: focusedButton === meatballMenuButtonId ? "0" : "-1",
-  });
+    MeatballMenu({
+      ...props,
+      hostTypes: props.areDockOptionsEnabled ? props.hostTypes : [],
+      onResize: () => {
+        refs.meatballMenuButton.resizeContent();
+      },
+    })
+  );
 
   const closeButtonId = "toolbox-close";
 
@@ -308,150 +321,4 @@ function renderToolboxControls(props) {
     meatballMenuButton,
     closeButton
   );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function showMeatballMenu(
-  menuButton,
-  {
-    currentToolId,
-    hostTypes,
-    currentHostType,
-    isSplitConsoleActive,
-    disableAutohide,
-    toggleOptions,
-    toggleSplitConsole,
-    toggleNoAutohide,
-    L10N,
-    toolbox,
-  }
-) {
-  const menu = new Menu({ id: "toolbox-meatball-menu" });
-
-  
-  for (const hostType of hostTypes) {
-    const l10nkey =
-      hostType.position === "window"
-        ? "separateWindow"
-        : hostType.position;
-    menu.append(
-      new MenuItem({
-        id: `toolbox-meatball-menu-dock-${hostType.position}`,
-        label: L10N.getStr(`toolbox.meatballMenu.dock.${l10nkey}.label`),
-        click: () => hostType.switchHost(),
-        type: "checkbox",
-        checked: hostType.position === currentHostType,
-      })
-    );
-  }
-
-  if (menu.items.length) {
-    menu.append(new MenuItem({ type: "separator" }));
-  }
-
-  
-  if (currentToolId !== "webconsole") {
-    menu.append(new MenuItem({
-      id: "toolbox-meatball-menu-splitconsole",
-      label: L10N.getStr(
-        `toolbox.meatballMenu.${
-          isSplitConsoleActive ? "hideconsole" : "splitconsole"
-        }.label`
-      ),
-      accelerator: "Esc",
-      click: toggleSplitConsole,
-    }));
-  }
-
-  
-  
-  
-  
-  if (typeof disableAutohide !== "undefined") {
-    menu.append(new MenuItem({
-      id: "toolbox-meatball-menu-noautohide",
-      label: L10N.getStr("toolbox.meatballMenu.noautohide.label"),
-      type: "checkbox",
-      checked: disableAutohide,
-      click: toggleNoAutohide,
-    }));
-  }
-
-  
-  menu.append(new MenuItem({
-    id: "toolbox-meatball-menu-settings",
-    label: L10N.getStr("toolbox.meatballMenu.settings.label"),
-    accelerator: L10N.getStr("toolbox.help.key"),
-    click: () => toggleOptions(),
-  }));
-
-  if (menu.items.length) {
-    menu.append(new MenuItem({ type: "separator" }));
-  }
-
-  
-  menu.append(new MenuItem({
-    id: "toolbox-meatball-menu-documentation",
-    label: L10N.getStr("toolbox.meatballMenu.documentation.label"),
-    click: () => {
-      openDocLink(
-        "https://developer.mozilla.org/docs/Tools?utm_source=devtools&utm_medium=tabbar-menu");
-    },
-  }));
-
-  
-  menu.append(new MenuItem({
-    id: "toolbox-meatball-menu-community",
-    label: L10N.getStr("toolbox.meatballMenu.community.label"),
-    click: () => {
-      openDocLink(
-        "https://discourse.mozilla.org/c/devtools?utm_source=devtools&utm_medium=tabbar-menu");
-    },
-  }));
-
-  const rect = menuButton.getBoundingClientRect();
-  const screenX = menuButton.ownerDocument.defaultView.mozInnerScreenX;
-  const screenY = menuButton.ownerDocument.defaultView.mozInnerScreenY;
-
-  
-  menu.popupWithZoom(rect.left + screenX, rect.bottom + screenY, toolbox);
 }

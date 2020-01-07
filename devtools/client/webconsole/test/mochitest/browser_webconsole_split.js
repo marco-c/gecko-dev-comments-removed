@@ -104,9 +104,9 @@ add_task(async function() {
 
         
         let label;
-        if (menuItem) {
+        if (menuItem && menuItem.querySelector(".label")) {
           label =
-            menuItem.label ===
+            menuItem.querySelector(".label").textContent ===
             L10N.getStr("toolbox.meatballMenu.hideconsole.label")
               ? "hide"
               : "split";
