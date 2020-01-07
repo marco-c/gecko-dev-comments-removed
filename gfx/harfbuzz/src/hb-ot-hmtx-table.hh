@@ -53,7 +53,7 @@ struct LongMetric
   DEFINE_SIZE_STATIC (4);
 };
 
-template <typename T>
+template <typename T, typename H>
 struct hmtxvmtx
 {
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -64,17 +64,128 @@ struct hmtxvmtx
     return_trace (true);
   }
 
+
+  inline bool subset_update_header (hb_subset_plan_t *plan,
+                                    unsigned int num_hmetrics) const
+  {
+    hb_blob_t *src_blob = OT::Sanitizer<H> ().sanitize (plan->source->reference_table (H::tableTag));
+    hb_blob_t *dest_blob = hb_blob_copy_writable_or_fail(src_blob);
+    hb_blob_destroy (src_blob);
+
+    if (unlikely (!dest_blob)) {
+      return false;
+    }
+
+    unsigned int length;
+    H *table = (H *) hb_blob_get_data (dest_blob, &length);
+    table->numberOfLongMetrics.set (num_hmetrics);
+
+    bool result = hb_subset_plan_add_table (plan, H::tableTag, dest_blob);
+    hb_blob_destroy (dest_blob);
+
+    return result;
+  }
+
+  inline bool subset (hb_subset_plan_t *plan) const
+  {
+    typename T::accelerator_t _mtx;
+    _mtx.init (plan->source);
+
+    
+
+    hb_prealloced_array_t<hb_codepoint_t> &gids = plan->gids_to_retain_sorted;
+    unsigned int num_advances = gids.len;
+    unsigned int last_advance = _mtx.get_advance (gids[num_advances - 1]);
+    while (num_advances > 1
+        && last_advance == _mtx.get_advance (gids[num_advances - 2]))
+    {
+      num_advances--;
+    }
+
+    
+    size_t dest_sz = num_advances * 4
+                  + (gids.len - num_advances) * 2;
+    void *dest = (void *) malloc (dest_sz);
+    if (unlikely (!dest))
+    {
+      return false;
+    }
+    DEBUG_MSG(SUBSET, nullptr, "%c%c%c%c in src has %d advances, %d lsbs", HB_UNTAG(T::tableTag), _mtx.num_advances, _mtx.num_metrics - _mtx.num_advances);
+    DEBUG_MSG(SUBSET, nullptr, "%c%c%c%c in dest has %d advances, %d lsbs, %u bytes", HB_UNTAG(T::tableTag), num_advances, gids.len - num_advances, (unsigned int) dest_sz);
+
+    const char *source_table = hb_blob_get_data (_mtx.blob, nullptr);
+    
+    LongMetric * old_metrics = (LongMetric *) source_table;
+    FWORD *lsbs = (FWORD *) (old_metrics + _mtx.num_advances);
+    char * dest_pos = (char *) dest;
+    for (unsigned int i = 0; i < gids.len; i++)
+    {
+      
+      LongMetric *src_metric = old_metrics + MIN ((hb_codepoint_t) _mtx.num_advances - 1, gids[i]);
+      if (gids[i] < _mtx.num_advances)
+      {
+        
+        if (i < num_advances)
+        {
+          
+          *((LongMetric *) dest_pos) = *src_metric;
+        }
+        else
+        {
+          
+          *((FWORD *) dest_pos) = src_metric->lsb;
+        }
+      }
+      else
+      {
+        FWORD src_lsb = *(lsbs + gids[i] - _mtx.num_advances);
+        if (i < num_advances)
+        {
+          
+          LongMetric *metric = (LongMetric *)dest_pos;
+          metric->advance = src_metric->advance;
+          metric->lsb = src_lsb;
+        }
+        else
+        {
+          
+          *((FWORD *) dest_pos) = src_lsb;
+        }
+      }
+      dest_pos += (i < num_advances ? 4 : 2);
+    }
+    _mtx.fini ();
+
+    
+    if (unlikely (!subset_update_header (plan, num_advances)))
+    {
+      free (dest);
+      return false;
+    }
+
+    hb_blob_t *result = hb_blob_create ((const char *)dest,
+                                        dest_sz,
+                                        HB_MEMORY_MODE_READONLY,
+                                        dest,
+                                        free);
+    bool success = hb_subset_plan_add_table (plan, T::tableTag, result);
+    hb_blob_destroy (result);
+    return success;
+  }
+
   struct accelerator_t
   {
+    friend struct hmtxvmtx;
+
     inline void init (hb_face_t *face,
 		      unsigned int default_advance_ = 0)
     {
-      default_advance = default_advance_ ? default_advance_ : face->get_upem ();
+      default_advance = default_advance_ ? default_advance_ : hb_face_get_upem (face);
 
       bool got_font_extents = false;
       if (T::os2Tag)
       {
-	hb_blob_t *os2_blob = Sanitizer<os2>().sanitize (face->reference_table (T::os2Tag));
+	hb_blob_t *os2_blob = Sanitizer<os2> ().sanitize (face->reference_table (T::os2Tag));
 	const os2 *os2_table = Sanitizer<os2>::lock_instance (os2_blob);
 #define USE_TYPO_METRICS (1u<<7)
 	if (0 != (os2_table->fsSelection & USE_TYPO_METRICS))
@@ -87,8 +198,8 @@ struct hmtxvmtx
 	hb_blob_destroy (os2_blob);
       }
 
-      hb_blob_t *_hea_blob = Sanitizer<_hea>().sanitize (face->reference_table (T::headerTag));
-      const _hea *_hea_table = Sanitizer<_hea>::lock_instance (_hea_blob);
+      hb_blob_t *_hea_blob = Sanitizer<H> ().sanitize (face->reference_table (H::tableTag));
+      const H *_hea_table = Sanitizer<H>::lock_instance (_hea_blob);
       num_advances = _hea_table->numberOfLongMetrics;
       if (!got_font_extents)
       {
@@ -101,7 +212,7 @@ struct hmtxvmtx
 
       has_font_extents = got_font_extents;
 
-      blob = Sanitizer<hmtxvmtx>().sanitize (face->reference_table (T::tableTag));
+      blob = Sanitizer<hmtxvmtx> ().sanitize (face->reference_table (T::tableTag));
 
       
       unsigned int len = hb_blob_get_length (blob);
@@ -119,7 +230,7 @@ struct hmtxvmtx
       }
       table = Sanitizer<hmtxvmtx>::lock_instance (blob);
 
-      var_blob = Sanitizer<HVARVVAR>().sanitize (face->reference_table (T::variationsTag));
+      var_blob = Sanitizer<HVARVVAR> ().sanitize (face->reference_table (T::variationsTag));
       var_table = Sanitizer<HVARVVAR>::lock_instance (var_blob);
     }
 
@@ -129,22 +240,31 @@ struct hmtxvmtx
       hb_blob_destroy (var_blob);
     }
 
-    inline unsigned int get_advance (hb_codepoint_t  glyph,
-				     hb_font_t      *font) const
+    inline unsigned int get_advance (hb_codepoint_t  glyph) const
     {
       if (unlikely (glyph >= num_metrics))
       {
-	
+        
 
 
-	if (num_metrics)
-	  return 0;
-	else
-	  return default_advance;
+        if (num_metrics)
+          return 0;
+        else
+          return default_advance;
       }
 
-      return table->longMetric[MIN (glyph, (uint32_t) num_advances - 1)].advance
-	   + (font->num_coords ? var_table->get_advance_var (glyph, font->coords, font->num_coords) : 0); 
+      return table->longMetric[MIN (glyph, (uint32_t) num_advances - 1)].advance;
+    }
+
+    inline unsigned int get_advance (hb_codepoint_t  glyph,
+                                     hb_font_t      *font) const
+    {
+      unsigned int advance = get_advance (glyph);
+      if (likely(glyph < num_metrics))
+      {
+        advance += (font->num_coords ? var_table->get_advance_var (glyph, font->coords, font->num_coords) : 0); 
+      }
+      return advance;	        
     }
 
     public:
@@ -153,11 +273,12 @@ struct hmtxvmtx
     unsigned short descender;
     unsigned short line_gap;
 
-    private:
+    protected:
     unsigned int num_metrics;
     unsigned int num_advances;
     unsigned int default_advance;
 
+    private:
     const hmtxvmtx *table;
     hb_blob_t *blob;
     const HVARVVAR *var_table;
@@ -173,7 +294,7 @@ struct hmtxvmtx
 
 
 
-  FWORD		leadingBearingX[VAR];	
+	
 
 
 
@@ -187,18 +308,16 @@ struct hmtxvmtx
 
 
   public:
-  DEFINE_SIZE_ARRAY2 (0, longMetric, leadingBearingX);
+  DEFINE_SIZE_ARRAY (0, longMetric);
 };
 
-struct hmtx : hmtxvmtx<hmtx> {
+struct hmtx : hmtxvmtx<hmtx, hhea> {
   static const hb_tag_t tableTag	= HB_OT_TAG_hmtx;
-  static const hb_tag_t headerTag	= HB_OT_TAG_hhea;
   static const hb_tag_t variationsTag	= HB_OT_TAG_HVAR;
   static const hb_tag_t os2Tag		= HB_OT_TAG_os2;
 };
-struct vmtx : hmtxvmtx<vmtx> {
+struct vmtx : hmtxvmtx<vmtx, vhea> {
   static const hb_tag_t tableTag	= HB_OT_TAG_vmtx;
-  static const hb_tag_t headerTag	= HB_OT_TAG_vhea;
   static const hb_tag_t variationsTag	= HB_OT_TAG_VVAR;
   static const hb_tag_t os2Tag		= HB_TAG_NONE;
 };

@@ -99,7 +99,7 @@ struct ValueFormat : HBUINT16
 #endif
 
   inline unsigned int get_len (void) const
-  { return _hb_popcount32 ((unsigned int) *this); }
+  { return _hb_popcount ((unsigned int) *this); }
   inline unsigned int get_size (void) const
   { return get_len () * Value::static_size; }
 
@@ -248,8 +248,8 @@ struct AnchorFormat1
 
   protected:
   HBUINT16	format;			
-  HBINT16		xCoordinate;		
-  HBINT16		yCoordinate;		
+  FWORD		xCoordinate;		
+  FWORD		yCoordinate;		
   public:
   DEFINE_SIZE_STATIC (6);
 };
@@ -279,8 +279,8 @@ struct AnchorFormat2
 
   protected:
   HBUINT16	format;			
-  HBINT16		xCoordinate;		
-  HBINT16		yCoordinate;		
+  FWORD		xCoordinate;		
+  FWORD		yCoordinate;		
   HBUINT16	anchorPoint;		
   public:
   DEFINE_SIZE_STATIC (8);
@@ -309,8 +309,8 @@ struct AnchorFormat3
 
   protected:
   HBUINT16	format;			
-  HBINT16		xCoordinate;		
-  HBINT16		yCoordinate;		
+  FWORD		xCoordinate;		
+  FWORD		yCoordinate;		
   OffsetTo<Device>
 		xDeviceTable;		
 
@@ -1073,8 +1073,16 @@ struct MarkBasePosFormat1
     do {
       if (!skippy_iter.prev ()) return_trace (false);
       
+
+
       if (!_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx]) ||
-	  0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]))
+	  0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) ||
+	  (skippy_iter.idx == 0 ||
+	   _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx]) !=
+	   _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx - 1]) ||
+	   _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) !=
+	   _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx - 1]) + 1
+	   ))
 	break;
       skippy_iter.reject ();
     } while (1);

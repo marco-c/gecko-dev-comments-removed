@@ -110,7 +110,7 @@ struct CaretValueFormat1
 
   protected:
   HBUINT16	caretValueFormat;	
-  HBINT16		coordinate;		
+  FWORD		coordinate;		
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -161,7 +161,7 @@ struct CaretValueFormat3
 
   protected:
   HBUINT16	caretValueFormat;	
-  HBINT16		coordinate;		
+  FWORD		coordinate;		
   OffsetTo<Device>
 		deviceTable;		
 

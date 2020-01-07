@@ -51,6 +51,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#include <intrin.h>
+#endif
 
 #define HB_PASTE1(a,b) a##b
 #define HB_PASTE(a,b) HB_PASTE1(a,b)
@@ -120,10 +123,11 @@ extern "C" void  hb_free_impl(void *ptr);
 #endif
 
 #ifndef HB_INTERNAL
-# if !defined(__MINGW32__) && !defined(__CYGWIN__)
+# if !defined(HB_NO_VISIBILITY) && !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(_MSC_VER) && !defined(__SUNPRO_CC)
 #  define HB_INTERNAL __attribute__((__visibility__("hidden")))
 # else
 #  define HB_INTERNAL
+#  define HB_NO_VISIBILITY 1
 # endif
 #endif
 
@@ -133,6 +137,11 @@ extern "C" void  hb_free_impl(void *ptr);
 #define HB_FUNC __FUNCSIG__
 #else
 #define HB_FUNC __func__
+#endif
+
+#ifdef __SUNPRO_CC
+
+#define __restrict
 #endif
 
 
@@ -154,6 +163,9 @@ extern "C" void  hb_free_impl(void *ptr);
 #if defined(__clang__) && __cplusplus >= 201103L
    
 #  define HB_FALLTHROUGH [[clang::fallthrough]]
+#elif __GNUC__ >= 7
+   
+#  define HB_FALLTHROUGH __attribute__((fallthrough))
 #elif defined(_MSC_VER)
    
 
@@ -216,6 +228,12 @@ static int errno = 0;
 #    define HB_USE_ATEXIT 1
 #  elif defined(__ANDROID__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 
+
+
+
+
+#    define HB_USE_ATEXIT 1
+#  elif defined(__APPLE__)
 
 
 
@@ -305,69 +323,200 @@ typedef const struct _hb_void_t *hb_void_t;
 #define HB_VOID ((const _hb_void_t *) nullptr)
 
 
+template <typename T>
 static inline HB_CONST_FUNC unsigned int
-_hb_popcount32 (uint32_t mask)
+_hb_popcount (T v)
 {
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-  return __builtin_popcount (mask);
-#else
-  
-  uint32_t y;
-  y = (mask >> 1) &033333333333;
-  y = mask - y - ((y >>1) & 033333333333);
-  return (((y + (y >> 3)) & 030707070707) % 077);
-#endif
-}
-static inline HB_CONST_FUNC unsigned int
-_hb_popcount64 (uint64_t mask)
-{
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-  if (sizeof (long) >= sizeof (mask))
-    return __builtin_popcountl (mask);
-#endif
-  return _hb_popcount32 (mask & 0xFFFFFFFF) + _hb_popcount32 (mask >> 32);
-}
-template <typename T> static inline unsigned int _hb_popcount (T mask);
-template <> inline unsigned int _hb_popcount<uint32_t> (uint32_t mask) { return _hb_popcount32 (mask); }
-template <> inline unsigned int _hb_popcount<uint64_t> (uint64_t mask) { return _hb_popcount64 (mask); }
+#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)) && defined(__OPTIMIZE__)
+  if (sizeof (T) <= sizeof (unsigned int))
+    return __builtin_popcount (v);
 
+  if (sizeof (T) <= sizeof (unsigned long))
+    return __builtin_popcountl (v);
 
-static inline HB_CONST_FUNC unsigned int
-_hb_bit_storage (unsigned int number)
-{
-#if defined(__GNUC__) && (__GNUC__ >= 4) && defined(__OPTIMIZE__)
-  return likely (number) ? (sizeof (unsigned int) * 8 - __builtin_clz (number)) : 0;
-#else
-  unsigned int n_bits = 0;
-  while (number) {
-    n_bits++;
-    number >>= 1;
+  if (sizeof (T) <= sizeof (unsigned long long))
+    return __builtin_popcountll (v);
+#endif
+
+  if (sizeof (T) <= 4)
+  {
+    
+    uint32_t y;
+    y = (v >> 1) &033333333333;
+    y = v - y - ((y >>1) & 033333333333);
+    return (((y + (y >> 3)) & 030707070707) % 077);
   }
-  return n_bits;
-#endif
+
+  if (sizeof (T) == 8)
+  {
+    unsigned int shift = 32;
+    return _hb_popcount<uint32_t> ((uint32_t) v) + _hb_popcount ((uint32_t) (v >> shift));
+  }
+
+  if (sizeof (T) == 16)
+  {
+    unsigned int shift = 64;
+    return _hb_popcount<uint64_t> ((uint64_t) v) + _hb_popcount ((uint64_t) (v >> shift));
+  }
+
+  assert (0);
 }
 
 
+template <typename T>
 static inline HB_CONST_FUNC unsigned int
-_hb_ctz (unsigned int number)
+_hb_bit_storage (T v)
 {
+  if (unlikely (!v)) return 0;
+
 #if defined(__GNUC__) && (__GNUC__ >= 4) && defined(__OPTIMIZE__)
-  return likely (number) ? __builtin_ctz (number) : 0;
-#else
-  unsigned int n_bits = 0;
-  if (unlikely (!number)) return 0;
-  while (!(number & 1)) {
-    n_bits++;
-    number >>= 1;
-  }
-  return n_bits;
+  if (sizeof (T) <= sizeof (unsigned int))
+    return sizeof (unsigned int) * 8 - __builtin_clz (v);
+
+  if (sizeof (T) <= sizeof (unsigned long))
+    return sizeof (unsigned long) * 8 - __builtin_clzl (v);
+
+  if (sizeof (T) <= sizeof (unsigned long long))
+    return sizeof (unsigned long long) * 8 - __builtin_clzll (v);
 #endif
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  if (sizeof (T) <= sizeof (unsigned int))
+  {
+    unsigned long where;
+    _BitScanReverse (&where, v);
+    return 1 + where;
+  }
+# if _WIN64
+  if (sizeof (T) <= 8)
+  {
+    unsigned long where;
+    _BitScanReverse64 (&where, v);
+    return 1 + where;
+  }
+# endif
+#endif
+
+  if (sizeof (T) <= 4)
+  {
+    
+    const unsigned int b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000};
+    const unsigned int S[] = {1, 2, 4, 8, 16};
+    unsigned int r = 0;
+    for (int i = 4; i >= 0; i--)
+      if (v & b[i])
+      {
+	v >>= S[i];
+	r |= S[i];
+      }
+    return r + 1;
+  }
+  if (sizeof (T) <= 8)
+  {
+    
+    const uint64_t b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000, 0xFFFFFFFF00000000};
+    const unsigned int S[] = {1, 2, 4, 8, 16, 32};
+    unsigned int r = 0;
+    for (int i = 5; i >= 0; i--)
+      if (v & b[i])
+      {
+	v >>= S[i];
+	r |= S[i];
+      }
+    return r + 1;
+  }
+  if (sizeof (T) == 16)
+  {
+    unsigned int shift = 64;
+    return (v >> shift) ? _hb_bit_storage<uint64_t> ((uint64_t) v >> shift) + shift :
+			  _hb_bit_storage<uint64_t> ((uint64_t) v);
+  }
+
+  assert (0);
+}
+
+
+template <typename T>
+static inline HB_CONST_FUNC unsigned int
+_hb_ctz (T v)
+{
+  if (unlikely (!v)) return 0;
+
+#if defined(__GNUC__) && (__GNUC__ >= 4) && defined(__OPTIMIZE__)
+  if (sizeof (T) <= sizeof (unsigned int))
+    return __builtin_ctz (v);
+
+  if (sizeof (T) <= sizeof (unsigned long))
+    return __builtin_ctzl (v);
+
+  if (sizeof (T) <= sizeof (unsigned long long))
+    return __builtin_ctzll (v);
+#endif
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  if (sizeof (T) <= sizeof (unsigned int))
+  {
+    unsigned long where;
+    _BitScanForward (&where, v);
+    return where;
+  }
+# if _WIN64
+  if (sizeof (T) <= 8)
+  {
+    unsigned long where;
+    _BitScanForward64 (&where, v);
+    return where;
+  }
+# endif
+#endif
+
+  if (sizeof (T) <= 4)
+  {
+    
+    unsigned int c = 32;
+    v &= - (int32_t) v;
+    if (v) c--;
+    if (v & 0x0000FFFF) c -= 16;
+    if (v & 0x00FF00FF) c -= 8;
+    if (v & 0x0F0F0F0F) c -= 4;
+    if (v & 0x33333333) c -= 2;
+    if (v & 0x55555555) c -= 1;
+    return c;
+  }
+  if (sizeof (T) <= 8)
+  {
+    
+    unsigned int c = 64;
+    v &= - (int64_t) (v);
+    if (v) c--;
+    if (v & 0x00000000FFFFFFFF) c -= 32;
+    if (v & 0x0000FFFF0000FFFF) c -= 16;
+    if (v & 0x00FF00FF00FF00FF) c -= 8;
+    if (v & 0x0F0F0F0F0F0F0F0F) c -= 4;
+    if (v & 0x3333333333333333) c -= 2;
+    if (v & 0x5555555555555555) c -= 1;
+    return c;
+  }
+  if (sizeof (T) == 16)
+  {
+    unsigned int shift = 64;
+    return (uint64_t) v ? _hb_bit_storage<uint64_t> ((uint64_t) v) :
+			  _hb_bit_storage<uint64_t> ((uint64_t) v >> shift) + shift;
+  }
+
+  assert (0);
 }
 
 static inline bool
 _hb_unsigned_int_mul_overflows (unsigned int count, unsigned int size)
 {
   return (size > 0) && (count >= ((unsigned int) -1) / size);
+}
+
+static inline unsigned int
+_hb_ceil_to_4 (unsigned int v)
+{
+  return ((v - 1) | 3) + 1;
 }
 
 
@@ -402,35 +551,44 @@ struct hb_prealloced_array_t
     return &array[len - 1];
   }
 
+  
+  inline bool alloc(unsigned int size)
+  {
+    if (likely (size <= allocated))
+      return true;
+
+    
+
+    unsigned int new_allocated = allocated;
+    while (size >= new_allocated)
+      new_allocated += (new_allocated >> 1) + 8;
+
+    Type *new_array = nullptr;
+
+    if (array == static_array) {
+      new_array = (Type *) calloc (new_allocated, sizeof (Type));
+      if (new_array)
+        memcpy (new_array, array, len * sizeof (Type));
+          } else {
+      bool overflows = (new_allocated < allocated) || _hb_unsigned_int_mul_overflows (new_allocated, sizeof (Type));
+      if (likely (!overflows)) {
+        new_array = (Type *) realloc (array, new_allocated * sizeof (Type));
+      }
+    }
+
+    if (unlikely (!new_array))
+      return false;
+
+    array = new_array;
+    allocated = new_allocated;
+
+    return true;
+  }
+
   inline bool resize (unsigned int size)
   {
-    if (unlikely (size > allocated))
-    {
-      
-
-      unsigned int new_allocated = allocated;
-      while (size >= new_allocated)
-        new_allocated += (new_allocated >> 1) + 8;
-
-      Type *new_array = nullptr;
-
-      if (array == static_array) {
-	new_array = (Type *) calloc (new_allocated, sizeof (Type));
-	if (new_array)
-	  memcpy (new_array, array, len * sizeof (Type));
-      } else {
-	bool overflows = (new_allocated < allocated) || _hb_unsigned_int_mul_overflows (new_allocated, sizeof (Type));
-	if (likely (!overflows)) {
-	  new_array = (Type *) realloc (array, new_allocated * sizeof (Type));
-	}
-      }
-
-      if (unlikely (!new_array))
-	return false;
-
-      array = new_array;
-      allocated = new_allocated;
-    }
+    if (!alloc (size))
+      return false;
 
     len = size;
     return true;
@@ -472,6 +630,11 @@ struct hb_prealloced_array_t
     return nullptr;
   }
 
+  inline void qsort (int (*cmp)(const void*, const void*))
+  {
+    ::qsort (array, len, sizeof (Type), cmp);
+  }
+
   inline void qsort (void)
   {
     ::qsort (array, len, sizeof (Type), Type::cmp);
@@ -483,25 +646,34 @@ struct hb_prealloced_array_t
   }
 
   template <typename T>
-  inline Type *bsearch (T *x)
+  inline Type *lsearch (const T &x)
+  {
+    for (unsigned int i = 0; i < len; i++)
+      if (0 == this->array[i].cmp (&x))
+	return &array[i];
+    return nullptr;
+  }
+
+  template <typename T>
+  inline Type *bsearch (const T &x)
   {
     unsigned int i;
     return bfind (x, &i) ? &array[i] : nullptr;
   }
   template <typename T>
-  inline const Type *bsearch (T *x) const
+  inline const Type *bsearch (const T &x) const
   {
     unsigned int i;
     return bfind (x, &i) ? &array[i] : nullptr;
   }
   template <typename T>
-  inline bool bfind (T *x, unsigned int *i) const
+  inline bool bfind (const T &x, unsigned int *i) const
   {
     int min = 0, max = (int) this->len - 1;
     while (min <= max)
     {
       int mid = (min + max) / 2;
-      int c = this->array[mid].cmp (x);
+      int c = this->array[mid].cmp (&x);
       if (c < 0)
         max = mid - 1;
       else if (c > 0)
@@ -512,7 +684,7 @@ struct hb_prealloced_array_t
 	return true;
       }
     }
-    if (max < 0 || (max < (int) this->len && this->array[max].cmp (x) > 0))
+    if (max < 0 || (max < (int) this->len && this->array[max].cmp (&x) > 0))
       max++;
     *i = max;
     return false;

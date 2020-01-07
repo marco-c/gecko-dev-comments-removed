@@ -71,6 +71,24 @@ typedef struct hb_glyph_info_t {
   hb_var_int_t   var2;
 } hb_glyph_info_t;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum { 
   HB_GLYPH_FLAG_UNSAFE_TO_BREAK		= 0x00000001,
 

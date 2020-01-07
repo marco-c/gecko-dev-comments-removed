@@ -50,6 +50,13 @@ hb_set_create (void)
   return set;
 }
 
+static const hb_set_t _hb_set_nil = {
+  HB_OBJECT_HEADER_STATIC,
+  true, 
+
+  {0} 
+};
+
 
 
 
@@ -60,13 +67,6 @@ hb_set_create (void)
 hb_set_t *
 hb_set_get_empty (void)
 {
-  static const hb_set_t _hb_set_nil = {
-    HB_OBJECT_HEADER_STATIC,
-    true, 
-
-    {0} 
-  };
-
   return const_cast<hb_set_t *> (&_hb_set_nil);
 }
 
@@ -443,6 +443,8 @@ hb_set_get_max (const hb_set_t *set)
 
 
 
+
+
 hb_bool_t
 hb_set_next (const hb_set_t *set,
 	     hb_codepoint_t *codepoint)
@@ -464,9 +466,54 @@ hb_set_next (const hb_set_t *set,
 
 
 hb_bool_t
+hb_set_previous (const hb_set_t *set,
+		 hb_codepoint_t *codepoint)
+{
+  return set->previous (codepoint);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
 hb_set_next_range (const hb_set_t *set,
 		   hb_codepoint_t *first,
 		   hb_codepoint_t *last)
 {
   return set->next_range (first, last);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_set_previous_range (const hb_set_t *set,
+		       hb_codepoint_t *first,
+		       hb_codepoint_t *last)
+{
+  return set->previous_range (first, last);
 }
