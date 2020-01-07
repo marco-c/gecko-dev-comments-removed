@@ -122,6 +122,9 @@ public:
   
   static AutoTArray<RefPtr<DocGroup>, 2>* sPendingDocGroups;
 
+  
+  bool IsActive() const;
+
 private:
   DocGroup(TabGroup* aTabGroup, const nsACString& aKey);
   ~DocGroup();

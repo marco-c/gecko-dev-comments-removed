@@ -100,6 +100,10 @@ public:
     return mDocGroups.Iter();
   }
 
+  
+  
+  
+  uint32_t Count(bool aActiveOnly = false) const;
 
   
   

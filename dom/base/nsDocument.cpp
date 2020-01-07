@@ -8495,6 +8495,18 @@ static void ClearPendingFullscreenRequests(nsIDocument* aDoc);
 void
 nsIDocument::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget)
 {
+  if (mDocGroup && Telemetry::CanRecordExtended() &&
+      IsTopLevelContentDocument()) {
+    TabGroup* tabGroup = mDocGroup->GetTabGroup();
+
+    if (tabGroup) {
+      Telemetry::Accumulate(Telemetry::ACTIVE_DOCGROUPS_PER_TABGROUP,
+                            tabGroup->Count(true ));
+      Telemetry::Accumulate(Telemetry::TOTAL_DOCGROUPS_PER_TABGROUP,
+                            tabGroup->Count());
+    }
+  }
+
   
   
   Element* root = GetRootElement();
