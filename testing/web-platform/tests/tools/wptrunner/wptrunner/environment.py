@@ -222,7 +222,7 @@ class TestEnvironment(object):
 
     def ensure_started(self):
         
-        for _ in xrange(20):
+        for _ in xrange(60):
             failed = self.test_servers()
             if not failed:
                 return
