@@ -29,16 +29,6 @@ ServoNamespaceRule::List(FILE* out, int32_t aIndent) const
 }
 #endif
 
-already_AddRefed<css::Rule>
-ServoNamespaceRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoNamespaceRule");
-  return nullptr;
-}
-
 nsAtom*
 ServoNamespaceRule::GetPrefix() const
 {

@@ -32,17 +32,6 @@ NS_IMPL_RELEASE_INHERITED(ServoDocumentRule, CSSMozDocumentRule)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ServoDocumentRule)
 NS_INTERFACE_MAP_END_INHERITING(CSSMozDocumentRule)
 
- already_AddRefed<css::Rule>
-ServoDocumentRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoDocumentRule");
-  return nullptr;
-}
-
-
 #ifdef DEBUG
  void
 ServoDocumentRule::List(FILE* out, int32_t aIndent) const

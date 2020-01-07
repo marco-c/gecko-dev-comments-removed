@@ -197,16 +197,6 @@ ServoKeyframesRule::IsCCLeaf() const
   return Rule::IsCCLeaf() && !mKeyframeList;
 }
 
- already_AddRefed<css::Rule>
-ServoKeyframesRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoKeyframesRule");
-  return nullptr;
-}
-
 #ifdef DEBUG
  void
 ServoKeyframesRule::List(FILE* out, int32_t aIndent) const

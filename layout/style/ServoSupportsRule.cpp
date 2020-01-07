@@ -33,17 +33,6 @@ NS_IMPL_RELEASE_INHERITED(ServoSupportsRule, CSSSupportsRule)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ServoSupportsRule)
 NS_INTERFACE_MAP_END_INHERITING(CSSSupportsRule)
 
- already_AddRefed<css::Rule>
-ServoSupportsRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoSupportsRule");
-  return nullptr;
-}
-
-
 #ifdef DEBUG
  void
 ServoSupportsRule::List(FILE* out, int32_t aIndent) const

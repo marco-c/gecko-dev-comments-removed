@@ -89,11 +89,6 @@ public:
   uint32_t GetColumnNumber() const { return mColumnNumber; }
 
   
-
-
-  virtual already_AddRefed<Rule> Clone() const = 0;
-
-  
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const MOZ_MUST_OVERRIDE = 0;

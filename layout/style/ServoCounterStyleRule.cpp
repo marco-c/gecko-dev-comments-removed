@@ -13,13 +13,6 @@
 
 namespace mozilla {
 
- already_AddRefed<css::Rule>
-ServoCounterStyleRule::Clone() const
-{
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoCounterStyleRule");
-  return nullptr;
-}
-
 bool
 ServoCounterStyleRule::IsCCLeaf() const
 {

@@ -160,16 +160,6 @@ ServoPageRule::IsCCLeaf() const
   return !mDecls.PreservingWrapper();
 }
 
-already_AddRefed<css::Rule>
-ServoPageRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoPageRule");
-  return nullptr;
-}
-
 size_t
 ServoPageRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {

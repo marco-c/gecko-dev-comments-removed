@@ -26,16 +26,6 @@ ServoFontFeatureValuesRule::~ServoFontFeatureValuesRule()
 {
 }
 
-already_AddRefed<css::Rule>
-ServoFontFeatureValuesRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoFontFeatureValuesRule");
-  return nullptr;
-}
-
 size_t
 ServoFontFeatureValuesRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {

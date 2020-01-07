@@ -60,16 +60,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ServoImportRule)
   tmp->mRawRule = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(dom::CSSImportRule)
 
- already_AddRefed<css::Rule>
-ServoImportRule::Clone() const
-{
-  
-  
-  
-  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoImportRule");
-  return nullptr;
-}
-
 #ifdef DEBUG
  void
 ServoImportRule::List(FILE* out, int32_t aIndent) const
