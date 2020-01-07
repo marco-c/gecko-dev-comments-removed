@@ -9375,7 +9375,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                      FCDATA_IS_WRAPPER_ANON_BOX |
                      FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRow),
                      &nsCSSFrameConstructor::ConstructTableCell),
-    &nsCSSAnonBoxes::tableCell
+    nsCSSAnonBoxes::tableCell
   },
   { 
     FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
@@ -9383,7 +9383,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                      FCDATA_IS_WRAPPER_ANON_BOX |
                      FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRowGroup),
                      &nsCSSFrameConstructor::ConstructTableRowOrRowGroup),
-    &nsCSSAnonBoxes::tableRow
+    nsCSSAnonBoxes::tableRow
   },
   { 
     FULL_CTOR_FCDATA(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
@@ -9391,7 +9391,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                      FCDATA_IS_WRAPPER_ANON_BOX |
                      FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable),
                      &nsCSSFrameConstructor::ConstructTableRowOrRowGroup),
-    &nsCSSAnonBoxes::tableRowGroup
+    nsCSSAnonBoxes::tableRowGroup
   },
   { 
     FCDATA_DECL(FCDATA_IS_TABLE_PART | FCDATA_SKIP_FRAMESET |
@@ -9401,13 +9401,13 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeTable),
                 NS_NewTableColGroupFrame),
-    &nsCSSAnonBoxes::tableColGroup
+    nsCSSAnonBoxes::tableColGroup
   },
   { 
     FULL_CTOR_FCDATA(FCDATA_SKIP_FRAMESET | FCDATA_USE_CHILD_ITEMS |
                      FCDATA_IS_WRAPPER_ANON_BOX,
                      &nsCSSFrameConstructor::ConstructTable),
-    &nsCSSAnonBoxes::table
+    nsCSSAnonBoxes::table
   },
   { 
     FCDATA_DECL(FCDATA_IS_LINE_PARTICIPANT |
@@ -9415,7 +9415,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 FCDATA_IS_WRAPPER_ANON_BOX |
                 FCDATA_SKIP_FRAMESET,
                 NS_NewRubyFrame),
-    &nsCSSAnonBoxes::ruby
+    nsCSSAnonBoxes::ruby
   },
   { 
     FCDATA_DECL(FCDATA_USE_CHILD_ITEMS |
@@ -9424,7 +9424,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRubyBaseContainer) |
                 FCDATA_SKIP_FRAMESET,
                 NS_NewRubyBaseFrame),
-    &nsCSSAnonBoxes::rubyBase
+    nsCSSAnonBoxes::rubyBase
   },
   { 
     FCDATA_DECL(FCDATA_USE_CHILD_ITEMS |
@@ -9433,7 +9433,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRuby) |
                 FCDATA_SKIP_FRAMESET,
                 NS_NewRubyBaseContainerFrame),
-    &nsCSSAnonBoxes::rubyBaseContainer
+    nsCSSAnonBoxes::rubyBaseContainer
   },
   { 
     FCDATA_DECL(FCDATA_USE_CHILD_ITEMS |
@@ -9442,7 +9442,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRubyTextContainer) |
                 FCDATA_SKIP_FRAMESET,
                 NS_NewRubyTextFrame),
-    &nsCSSAnonBoxes::rubyText
+    nsCSSAnonBoxes::rubyText
   },
   { 
     FCDATA_DECL(FCDATA_USE_CHILD_ITEMS |
@@ -9450,7 +9450,7 @@ nsCSSFrameConstructor::sPseudoParentData[eParentTypeCount] = {
                 FCDATA_DESIRED_PARENT_TYPE_TO_BITS(eTypeRuby) |
                 FCDATA_SKIP_FRAMESET,
                 NS_NewRubyTextContainerFrame),
-    &nsCSSAnonBoxes::rubyTextContainer
+    nsCSSAnonBoxes::rubyTextContainer
   }
 };
 
@@ -10022,7 +10022,7 @@ nsCSSFrameConstructor::WrapItemsInPseudoParent(nsIContent* aParentContent,
                                                const FCItemIterator& aEndIter)
 {
   const PseudoParentData& pseudoData = sPseudoParentData[aWrapperType];
-  nsAtom* pseudoType = *pseudoData.mPseudoType;
+  nsICSSAnonBoxPseudo* pseudoType = pseudoData.mPseudoType;
   StyleDisplay parentDisplay = aParentStyle->StyleDisplay()->mDisplay;
 
   if (pseudoType == nsCSSAnonBoxes::table &&
@@ -10111,14 +10111,14 @@ nsCSSFrameConstructor::CreateNeededPseudoSiblings(
   const PseudoParentData& pseudoData =
     sPseudoParentData[eTypeRubyBaseContainer];
   already_AddRefed<ComputedStyle> pseudoStyle = mPresShell->StyleSet()->
-    ResolveInheritingAnonymousBoxStyle(*pseudoData.mPseudoType,
+    ResolveInheritingAnonymousBoxStyle(pseudoData.mPseudoType,
                                        aParentFrame->Style());
   FrameConstructionItem* newItem =
     new (this) FrameConstructionItem(&pseudoData.mFCData,
                                      
                                      aParentFrame->GetContent(),
                                      
-                                     *pseudoData.mPseudoType,
+                                     pseudoData.mPseudoType,
                                      
                                      iter.item().mNameSpaceID,
                                      
