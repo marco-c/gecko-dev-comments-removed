@@ -92,23 +92,6 @@ public:
 private:
   nsCSSGradientRenderer() {}
 
-  
-
-
-
-
-
-
-
-  bool TryPaintTilesWithExtendMode(gfxContext& aContext,
-                                   gfxPattern* aGradientPattern,
-                                   nscoord aXStart,
-                                   nscoord aYStart,
-                                   const gfxRect& aDirtyAreaToFill,
-                                   const nsRect& aDest,
-                                   const nsSize& aRepeatSize,
-                                   bool aForceRepeatToCoverTiles);
-
   nsPresContext* mPresContext;
   nsStyleGradient* mGradient;
   nsTArray<ColorStop> mStops;
