@@ -1439,7 +1439,7 @@ pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 pref("privacy.reduceTimerPrecision", true);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 1000);
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 100);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
@@ -2675,8 +2675,6 @@ pref("security.allow_chrome_frames_inside_content", false);
 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
-pref("services.settings.default_bucket", "main");
-pref("services.settings.default_signer", "");
 
 
 pref("extensions.blocklist.enabled", true);
@@ -5051,8 +5049,6 @@ pref("extensions.webextensions.protocol.remote", true);
 
 pref("extensions.webextensions.tabhide.enabled", false);
 
-pref("extensions.webextensions.background-delayed-startup", false);
-
 
 pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
 #if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
@@ -5767,9 +5763,6 @@ pref("memory.report_concurrency", 10);
 
 
 pref("media.useAudioChannelAPI", false);
-
-
-pref("dom.requestcontext.enabled", false);
 
 pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
