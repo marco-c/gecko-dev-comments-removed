@@ -1034,6 +1034,27 @@ TokenStreamCharsBase<char16_t>::atomizeChars(JSContext* cx, const char16_t* char
     return AtomizeChars(cx, chars, length);
 }
 
+
+class TokenStart
+{
+    uint32_t startOffset_;
+
+  public:
+    
+
+
+
+
+    template<class SourceUnits>
+    TokenStart(const SourceUnits& sourceUnits, ptrdiff_t adjust)
+      : startOffset_(sourceUnits.offset() + adjust)
+    {}
+
+    TokenStart(const TokenStart&) = default;
+
+    uint32_t offset() const { return startOffset_; }
+};
+
 template<typename CharT, class AnyCharsAccess>
 class GeneralTokenStreamChars
   : public TokenStreamCharsBase<CharT>
@@ -1070,7 +1091,7 @@ class GeneralTokenStreamChars
 
 
 
-    Token* newToken(ptrdiff_t adjust);
+    Token* newToken(TokenStart start);
 
     int32_t getCharIgnoreEOL();
 
