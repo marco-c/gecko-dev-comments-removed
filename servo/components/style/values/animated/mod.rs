@@ -77,9 +77,6 @@ pub trait ToAnimatedValue {
 }
 
 
-pub trait AnimatedValueAsComputed {}
-
-
 
 
 
@@ -243,30 +240,31 @@ where
     }
 }
 
-impl AnimatedValueAsComputed for Au {}
-impl AnimatedValueAsComputed for ComputedAngle {}
-impl AnimatedValueAsComputed for SpecifiedUrl {}
-#[cfg(feature = "servo")]
-impl AnimatedValueAsComputed for ComputedUrl {}
-impl AnimatedValueAsComputed for bool {}
-impl AnimatedValueAsComputed for f32 {}
+macro_rules! trivial_to_animated_value {
+    ($ty:ty) => {
+        impl $crate::values::animated::ToAnimatedValue for $ty {
+            type AnimatedValue = Self;
 
-impl<T> ToAnimatedValue for T
-where
-    T: AnimatedValueAsComputed,
-{
-    type AnimatedValue = Self;
+            #[inline]
+            fn to_animated_value(self) -> Self {
+                self
+            }
 
-    #[inline]
-    fn to_animated_value(self) -> Self {
-        self
-    }
-
-    #[inline]
-    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        animated
+            #[inline]
+            fn from_animated_value(animated: Self::AnimatedValue) -> Self {
+                animated
+            }
+        }
     }
 }
+
+trivial_to_animated_value!(Au);
+trivial_to_animated_value!(ComputedAngle);
+trivial_to_animated_value!(SpecifiedUrl);
+#[cfg(feature = "servo")]
+trivial_to_animated_value!(ComputedUrl);
+trivial_to_animated_value!(bool);
+trivial_to_animated_value!(f32);
 
 impl ToAnimatedValue for ComputedNonNegativeNumber {
     type AnimatedValue = Self;
