@@ -515,27 +515,13 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     let computedStyle = getComputedStyle(this.currentNode);
     let isColumn = computedStyle.getPropertyValue("flex-direction").startsWith("column");
 
-    
-    
-
-    
     for (let flexLine of flexLines) {
       let { crossStart, crossSize } = flexLine;
-
-      if (isColumn) {
-        this.drawJustifyContent(crossStart, 0, crossStart + crossSize, bounds.height);
-      } else {
-        this.drawJustifyContent(0, crossStart, bounds.width, crossStart + crossSize);
-      }
-    }
-
-    
-    for (let flexLine of flexLines) {
       let flexItems = flexLine.getItems();
+      let mainStart = 0;
 
       for (let flexItem of flexItems) {
         let { node } = flexItem;
-
         let quads = getAdjustedQuads(this.win, node, "margin");
 
         if (!quads.length) {
@@ -549,22 +535,24 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
         let right = Math.round(flexItemBounds.right - bounds.left);
         let bottom = Math.round(flexItemBounds.bottom - bounds.top);
 
-        
-        let { crossStart, crossSize } = flexLine;
-        crossSize = Math.round(crossSize);
-        crossStart = Math.round(crossStart);
-
         if (isColumn) {
-          clearRect(this.ctx, crossStart, top, crossSize + crossStart, bottom,
-            this.currentMatrix);
+          this.drawJustifyContent(crossStart, mainStart, crossStart + crossSize, top);
+          mainStart = bottom;
         } else {
-          clearRect(this.ctx, left, crossStart, right, crossSize + crossStart,
-            this.currentMatrix);
+          this.drawJustifyContent(mainStart, crossStart, left, crossStart + crossSize);
+          mainStart = right;
         }
       }
-    }
 
-    this.ctx.restore();
+      
+      if (isColumn) {
+        this.drawJustifyContent(crossStart, mainStart, crossStart + crossSize,
+          bounds.height);
+      } else {
+        this.drawJustifyContent(mainStart, crossStart, bounds.width,
+          crossStart + crossSize);
+      }
+    }
   }
 
   _update() {
