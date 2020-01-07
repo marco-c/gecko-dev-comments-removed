@@ -68,9 +68,9 @@ namespace intl {
 
 
 
-class LocaleService : public mozILocaleService,
-                      public nsIObserver,
-                      public nsSupportsWeakReference
+class LocaleService final : public mozILocaleService,
+                            public nsIObserver,
+                            public nsSupportsWeakReference
 {
 public:
   NS_DECL_ISUPPORTS
@@ -205,6 +205,9 @@ public:
 
 
 
+  void GetPackagedLocales(nsTArray<nsCString>& aRetVal);
+
+  
 
 
 
@@ -213,7 +216,10 @@ public:
 
 
 
-  void AvailableLocalesChanged();
+
+
+
+
   void RequestedLocalesChanged();
   void LocalesChanged();
 
@@ -261,12 +267,15 @@ private:
 
   void NegotiateAppLocales(nsTArray<nsCString>& aRetVal);
 
+  void InitPackagedLocales();
+
   virtual ~LocaleService();
 
   nsAutoCStringN<16>  mDefaultLocale;
   nsTArray<nsCString> mAppLocales;
   nsTArray<nsCString> mRequestedLocales;
   nsTArray<nsCString> mAvailableLocales;
+  nsTArray<nsCString> mPackagedLocales;
   const bool mIsServer;
 
   static StaticRefPtr<LocaleService> sInstance;

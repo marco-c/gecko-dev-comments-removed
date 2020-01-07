@@ -121,12 +121,8 @@ class L10nError extends Error {
 function defaultGenerateMessages(resourceIds) {
   const availableLocales = L10nRegistry.getAvailableLocales();
 
-  const requestedLocales = LocaleService.getRequestedLocales();
-  const defaultLocale = LocaleService.defaultLocale;
-  const locales = LocaleService.negotiateLanguages(
-    requestedLocales, availableLocales, defaultLocale,
-  );
-  return L10nRegistry.generateContexts(locales, resourceIds);
+  const appLocales = LocaleService.getAppLocalesAsLangTags();
+  return L10nRegistry.generateContexts(appLocales, resourceIds);
 }
 
 
@@ -258,16 +254,14 @@ class Localization {
 
 
   registerObservers() {
-    ObserverService.addObserver(this, 'l10n:available-locales-changed', true);
-    ObserverService.addObserver(this, 'intl:requested-locales-changed', true);
+    ObserverService.addObserver(this, 'intl:app-locales-changed', true);
   }
 
   
 
 
   unregisterObservers() {
-    ObserverService.removeObserver(this, 'l10n:available-locales-changed');
-    ObserverService.removeObserver(this, 'intl:requested-locales-changed');
+    ObserverService.removeObserver(this, 'intl:app-locales-changed');
   }
 
   
@@ -279,8 +273,7 @@ class Localization {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case 'l10n:available-locales-changed':
-      case 'intl:requested-locales-changed':
+      case 'intl:app-locales-changed':
         this.onLanguageChange();
         break;
       default:
