@@ -311,7 +311,7 @@ bool
 RenderCompositorANGLE::BeginFrame()
 {
   if (mDevice->GetDeviceRemovedReason() != S_OK) {
-    RenderThread::Get()->HandleDeviceReset("BeginFrame");
+    RenderThread::Get()->HandleDeviceReset("BeginFrame",  true);
     return false;
   }
 
@@ -329,7 +329,7 @@ RenderCompositorANGLE::BeginFrame()
   if (mSyncObject) {
     if (!mSyncObject->Synchronize()) {
       
-      RenderThread::Get()->HandleDeviceReset("SyncObject");
+      RenderThread::Get()->HandleDeviceReset("SyncObject",  true);
       return false;
     }
   }

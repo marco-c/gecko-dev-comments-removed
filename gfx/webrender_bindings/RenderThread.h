@@ -168,9 +168,11 @@ public:
   WebRenderProgramCache* ProgramCache();
 
   
-  void HandleDeviceReset(const char* aWhere);
+  void HandleDeviceReset(const char* aWhere, bool aNotify);
   
   bool IsHandlingDeviceReset();
+  
+  void SimulateDeviceReset();
 
   size_t RendererCount();
 
