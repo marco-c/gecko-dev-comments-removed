@@ -1275,6 +1275,12 @@ class SyncedBookmarksMirror {
 
 
 
+
+
+
+
+
+
   async rewriteRemoteTagQueries() {
     
     
@@ -1629,7 +1635,7 @@ class SyncedBookmarksMirror {
           tagFolderName = (SELECT b.title FROM moz_bookmarks b
                            WHERE b.id = :tagFolderId AND
                                  b.type = :folderType)
-        WHERE id = :id`);
+        WHERE id = :id`, tagFolderNameParams);
     }
 
     
@@ -1676,7 +1682,7 @@ class SyncedBookmarksMirror {
 
     let itemRows = await this.db.execute(`
       SELECT id, syncChangeCounter, guid, isDeleted, type, isQuery,
-             smartBookmarkName, IFNULL(tagFolderName, "") AS tagFolderName,
+             smartBookmarkName, tagFolderName,
              loadInSidebar, keyword, tags, url, IFNULL(title, "") AS title,
              description, feedURL, siteURL, position, parentGuid,
              IFNULL(parentTitle, "") AS parentTitle, dateAdded
@@ -1727,7 +1733,8 @@ class SyncedBookmarksMirror {
               bmkUri: row.getResultByName("url"),
               title: row.getResultByName("title"),
               queryId: row.getResultByName("smartBookmarkName"),
-              folderName: row.getResultByName("tagFolderName"),
+              
+              folderName: row.getResultByName("tagFolderName") || undefined,
             };
             let description = row.getResultByName("description");
             if (description) {

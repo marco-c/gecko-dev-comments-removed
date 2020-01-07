@@ -40,3 +40,22 @@ add_task(async function test_bookmark_record() {
   Assert.equal(bookmarkItem.getTypeObject(bookmarkItem.type), Bookmark);
   Assert.notEqual(payload, bookmarkItem.payload); 
 });
+
+add_task(async function test_query_foldername() {
+  
+  let checks = [
+    ["foo", "foo"],
+    ["", undefined]
+  ];
+  for (let [inVal, outVal] of checks) {
+    let bmk1 = new BookmarkQuery("bookmarks", Utils.makeGUID());
+    bmk1.fromSyncBookmark({url: Services.io.newURI("https://example.com"), folder: inVal});
+    Assert.strictEqual(bmk1.folderName, outVal);
+
+    
+    let bmk2 = new BookmarkQuery("bookmarks", Utils.makeGUID());
+    bmk2.folderName = inVal;
+    let record = bmk2.toSyncBookmark();
+    Assert.strictEqual(record.folder, outVal);
+  }
+});
