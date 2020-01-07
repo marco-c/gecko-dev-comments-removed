@@ -1690,11 +1690,7 @@ var BrowserApp = {
 
       case "FormHistory:Init": {
         
-        FormHistory.count({}, {
-          handleCompletion() {
-            GlobalEventDispatcher.sendRequest({ type: "FormHistory:Ready" });
-          },
-        });
+        FormHistory.count({});
         GlobalEventDispatcher.unregisterListener(this, event);
         break;
       }
@@ -2695,6 +2691,10 @@ var NativeWindow = {
       return this.defaultContext = Strings.browser.GetStringFromName("browser.menu.context.default");
     },
 
+    get nonLinkContext() {
+      return "";
+    },
+
     
 
 
@@ -2758,6 +2758,20 @@ var NativeWindow = {
     },
 
     
+    _shouldPreventDefault: function() {
+      for (let context in this.menus) {
+        if (context === this.nonLinkContext) {
+          continue;
+        }
+        let menu = this.menus[context];
+        if (menu.length > 0) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    
 
 
     _getContextType: function(element) {
@@ -2766,7 +2780,10 @@ var NativeWindow = {
         try {
           let uri = this.makeURI(this._getLinkURL(element));
           return Strings.browser.GetStringFromName("browser.menu.context." + uri.scheme);
-        } catch(ex) { }
+        } catch(ex) {
+          
+          return this.defaultContext;
+        }
       }
 
       
@@ -2774,8 +2791,7 @@ var NativeWindow = {
         return Strings.browser.GetStringFromName("browser.menu.context." + element.nodeName.toLowerCase());
       } catch(ex) { }
 
-      
-      return this.defaultContext;
+      return this.nonLinkContext;
     },
 
     
@@ -2823,8 +2839,10 @@ var NativeWindow = {
       if (this._shouldShow()) {
         BrowserEventHandler._cancelTapHighlight();
 
-        
-        event.preventDefault();
+        if (this._shouldPreventDefault()) {
+          
+          event.preventDefault();
+        }
         this._innerShow(this._target, event.clientX, event.clientY);
         this._target = null;
 
