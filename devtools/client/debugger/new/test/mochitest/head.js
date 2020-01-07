@@ -285,12 +285,12 @@ function assertNotPaused(dbg) {
 
 
 function assertPausedLocation(dbg) {
-  const { selectors: { getSelectedSource, getTopFrame }, getState } = dbg;
+  const { selectors: { getSelectedSource, getVisibleSelectedFrame }, getState } = dbg;
 
-  ok(isTopFrameSelected(dbg, getState()), "top frame's source is selected");
+  ok(isSelectedFrameSelected(dbg, getState()), "top frame's source is selected");
 
   
-  const frame = getTopFrame(getState());
+  const frame = getVisibleSelectedFrame(getState());
   const pauseLine = frame && frame.location.line;
   assertDebugLine(dbg, pauseLine);
 
@@ -454,8 +454,8 @@ async function waitForMappedScopes(dbg) {
   );
 }
 
-function isTopFrameSelected(dbg, state) {
-  const frame = dbg.selectors.getTopFrame(state);
+function isSelectedFrameSelected(dbg, state) {
+  const frame = dbg.selectors.getVisibleSelectedFrame(state);
 
   
   
