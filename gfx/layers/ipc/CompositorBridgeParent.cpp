@@ -357,10 +357,6 @@ CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
 
   mWidget = aWidget;
   mRootLayerTreeID = aLayerTreeId;
-  if (mOptions.UseAPZ()) {
-    mApzcTreeManager = new APZCTreeManager(mRootLayerTreeID);
-    mApzSampler = new APZSampler(mApzcTreeManager);
-  }
 
   Initialize();
 }
@@ -368,6 +364,8 @@ CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvInitialize(const uint64_t& aRootLayerTreeId)
 {
+  MOZ_ASSERT(XRE_IsGPUProcess());
+
   mRootLayerTreeID = aRootLayerTreeId;
 
   Initialize();
@@ -379,6 +377,13 @@ CompositorBridgeParent::Initialize()
 {
   MOZ_ASSERT(CompositorThread(),
              "The compositor thread must be Initialized before instanciating a CompositorBridgeParent.");
+
+  if (mOptions.UseAPZ()) {
+    MOZ_ASSERT(!mApzcTreeManager);
+    MOZ_ASSERT(!mApzSampler);
+    mApzcTreeManager = new APZCTreeManager(mRootLayerTreeID);
+    mApzSampler = new APZSampler(mApzcTreeManager);
+  }
 
   mCompositorBridgeID = 0;
   
@@ -1088,16 +1093,13 @@ PAPZCTreeManagerParent*
 CompositorBridgeParent::AllocPAPZCTreeManagerParent(const uint64_t& aLayersId)
 {
   
+  MOZ_ASSERT(XRE_IsGPUProcess());
+  
   MOZ_ASSERT(mOptions.UseAPZ());
-
+  
+  MOZ_ASSERT(mApzcTreeManager);
   
   MOZ_ASSERT(aLayersId == 0);
-
-  
-  MOZ_ASSERT(!mApzcTreeManager);
-
-  mApzcTreeManager = new APZCTreeManager(mRootLayerTreeID);
-  mApzSampler = new APZSampler(mApzcTreeManager);
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state = sIndirectLayerTrees[mRootLayerTreeID];
