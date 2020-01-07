@@ -250,12 +250,9 @@ URLMainThread::SetProtocol(const nsAString& aProtocol, ErrorResult& aRv)
   
   
   nsCOMPtr<nsIURI> clone;
-  nsresult rv = mURI->Clone(getter_AddRefs(clone));
-  if (NS_WARN_IF(NS_FAILED(rv)) || !clone) {
-    return;
-  }
-
-  rv = clone->SetScheme(NS_ConvertUTF16toUTF8(Substring(start, iter)));
+  nsresult rv = NS_MutateURI(mURI)
+                  .SetScheme(NS_ConvertUTF16toUTF8(Substring(start, iter)))
+                  .Finalize(clone);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }

@@ -521,30 +521,6 @@ function do_test_mutate_ref(aTest, aSuffix) {
 
 
 
-function do_test_immutable(aTest) {
-  Assert.ok(aTest.immutable);
-
-  var URI = NetUtil.newURI(aTest.spec);
-  
-  var propertiesToCheck = ["spec", "scheme"];
-
-  propertiesToCheck.forEach(function(aProperty) {
-    var threw = false;
-    try {
-      URI[aProperty] = "anothervalue";
-    } catch(e) {
-      threw = true;
-    }
-
-    do_info("testing that setting '" + aProperty +
-            "' on immutable URI '" + aTest.spec + "' will throw");
-    Assert.ok(threw);
-  });
-}
-
-
-
-
 function run_test()
 {
   
@@ -579,7 +555,7 @@ function run_test()
       
       
       if (aTest.immutable) {
-        do_test_immutable(aTest);
+        Assert.ok(aTest.immutable);
       }
     }
   });
