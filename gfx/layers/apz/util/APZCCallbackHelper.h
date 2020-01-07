@@ -11,6 +11,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
 #include "nsIDOMWindowUtils.h"
+#include "nsRefreshDriver.h"
 
 #include <functional>
 
@@ -27,6 +28,25 @@ namespace layers {
 
 typedef std::function<void(uint64_t, const nsTArray<TouchBehaviorFlags>&)>
         SetAllowedTouchBehaviorCallback;
+
+
+class DisplayportSetListener : public nsAPostRefreshObserver
+{
+public:
+  DisplayportSetListener(nsIWidget* aWidget,
+                         nsIPresShell* aPresShell,
+                         const uint64_t& aInputBlockId,
+                         const nsTArray<ScrollableLayerGuid>& aTargets);
+  virtual ~DisplayportSetListener();
+  bool Register();
+  void DidRefresh() override;
+
+private:
+  RefPtr<nsIWidget> mWidget;
+  RefPtr<nsIPresShell> mPresShell;
+  uint64_t mInputBlockId;
+  nsTArray<ScrollableLayerGuid> mTargets;
+};
 
 
 
@@ -145,11 +165,15 @@ public:
 
 
 
-    static bool SendSetTargetAPZCNotification(nsIWidget* aWidget,
-                                              nsIDocument* aDocument,
-                                              const WidgetGUIEvent& aEvent,
-                                              const ScrollableLayerGuid& aGuid,
-                                              uint64_t aInputBlockId);
+
+
+
+    static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
+            nsIWidget* aWidget,
+            nsIDocument* aDocument,
+            const WidgetGUIEvent& aEvent,
+            const ScrollableLayerGuid& aGuid,
+            uint64_t aInputBlockId);
 
     
 
