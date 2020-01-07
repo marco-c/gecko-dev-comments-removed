@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 @memoize
 def perfile_number_of_chunks(try_task_config, head_repository, head_rev, type):
-    
     tests_per_chunk = 10.0
+    if type.startswith('test-coverage'):
+        tests_per_chunk = 30.0
 
     if type.startswith('test-verify-wpt') or type.startswith('test-coverage-wpt'):
         file_patterns = ['testing/web-platform/tests/**',
