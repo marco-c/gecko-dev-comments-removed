@@ -18,14 +18,9 @@ let isRounded = (x, expectedPrecision) => {
 
   
   
-  
-  
-  
-  
-  
-  if (Math.abs(rounded - x + expectedPrecision) < .0005) {
+  if (Math.abs(rounded - x + expectedPrecision) < .0000001) {
     return true;
-  } else if (Math.abs(rounded - x) < .0005) {
+  } else if (Math.abs(rounded - x) < .0000001) {
     return true;
   }
 
