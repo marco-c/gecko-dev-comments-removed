@@ -207,13 +207,14 @@ BuildHandlerChain(nsIContent* aContent, nsXBLPrototypeHandler** aResult)
     
     
     nsAutoString valKey, valCharCode, valKeyCode;
-    bool attrExists =
-      keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::key, valKey) ||
+    
+    keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::key, valKey) ||
       keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::charcode, valCharCode) ||
       keyElement->GetAttr(kNameSpaceID_None, nsGkAtoms::keycode, valKeyCode);
-    if (attrExists &&
-        valKey.IsEmpty() && valCharCode.IsEmpty() && valKeyCode.IsEmpty())
+    
+    if (valKey.IsEmpty() && valCharCode.IsEmpty() && valKeyCode.IsEmpty()) {
       continue;
+    }
 
     
     XBLReservedKey reserved = XBLReservedKey_Unset;
