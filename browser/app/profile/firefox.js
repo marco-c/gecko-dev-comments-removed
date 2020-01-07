@@ -251,8 +251,7 @@ pref("browser.startup.firstrunSkipsHomepage", true);
 
 
 
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(EARLY_BETA_OR_EARLIER)
+#if !defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
 pref("browser.startup.blankWindow", true);
 #else
 pref("browser.startup.blankWindow", false);
