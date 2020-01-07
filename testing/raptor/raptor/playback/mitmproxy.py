@@ -19,7 +19,7 @@ from mozprocess import ProcessHandler
 from .base import Playback
 
 here = os.path.dirname(os.path.realpath(__file__))
-LOG = get_proxy_logger(component='mitmproxy')
+LOG = get_proxy_logger(component='raptor-mitmproxy')
 
 mozharness_dir = os.path.join(here, '../../../mozharness')
 sys.path.insert(0, mozharness_dir)
@@ -74,22 +74,18 @@ class Mitmproxy(Playback):
 
         
         
-        
         if self.config.get("obj_path", None) is not None:
-            self.bindir = self.config.get("obj_path")
+            self.raptor_dir = self.config.get("obj_path")
         else:
             
             
             
-            
-            
-            
-            self.bindir = os.path.normpath(os.path.join(self.config['binary'],
-                                                        '..', '..', '..', '..',
-                                                        '..', 'testing', 'raptor'))
+            self.raptor_dir = os.path.dirname(os.path.dirname(os.environ['MOZ_UPLOAD_DIR']))
 
-        self.recordings_path = self.bindir
-        LOG.info("bindir to be used for mitmproxy downloads and exe files: %s" % self.bindir)
+        
+        self.raptor_dir = os.path.join(self.raptor_dir, "testing", "raptor")
+        self.recordings_path = self.raptor_dir
+        LOG.info("raptor_dir used for mitmproxy downloads and exe files: %s" % self.raptor_dir)
 
         
         self.download()
@@ -104,7 +100,7 @@ class Mitmproxy(Playback):
 
         proc = ProcessHandler(
             command, processOutputLine=outputHandler, storeOutput=False,
-            cwd=self.bindir)
+            cwd=self.raptor_dir)
 
         proc.run()
 
@@ -117,8 +113,8 @@ class Mitmproxy(Playback):
     def download(self):
         
         
-        if not os.path.exists(self.bindir):
-            os.makedirs(self.bindir)
+        if not os.path.exists(self.raptor_dir):
+            os.makedirs(self.raptor_dir)
         LOG.info("downloading mitmproxy binary")
         _manifest = os.path.join(here, self.config['playback_binary_manifest'])
         self._tooltool_fetch(_manifest)
@@ -139,7 +135,7 @@ class Mitmproxy(Playback):
         return
 
     def start(self):
-        mitmdump_path = os.path.join(self.bindir, 'mitmdump')
+        mitmdump_path = os.path.join(self.raptor_dir, 'mitmdump')
         recordings_list = self.recordings.split()
         self.mitmproxy_proc = self.start_mitmproxy_playback(mitmdump_path,
                                                             self.recordings_path,

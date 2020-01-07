@@ -19,17 +19,17 @@
 var postStartupDelay = 30000;
 
 
-var pageloadDelay = 1000;
+var pageCycleDelay = 1000;
 
 var browserName;
 var ext;
 var testName = null;
 var settingsURL = null;
 var csPort = null;
+var benchmarkPort = null;
 var testType;
 var pageCycles = 0;
 var pageCycle = 0;
-var pageCycleDelay = 1000;
 var testURL;
 var testTabID = 0;
 var getHero = false;
@@ -63,6 +63,16 @@ function getTestSettings() {
         testType = settings.type;
         pageCycles = settings.page_cycles;
         testURL = settings.test_url;
+
+        
+        
+        
+        
+        if (testType == "benchmark") {
+          
+          testURL = testURL.replace("<port>", benchmarkPort);
+        }
+
         results.page = testURL;
         results.type = testType;
         results.name = testName;
@@ -143,7 +153,7 @@ function getBrowserInfo() {
 function testTabCreated(tab) {
   testTabID = tab.id;
   console.log("opened new empty tab " + testTabID);
-  setTimeout(nextCycle, pageloadDelay);
+  nextCycle();
 }
 
 async function testTabUpdated(tab) {
@@ -151,7 +161,7 @@ async function testTabUpdated(tab) {
   
   await waitForResult();
   
-  setTimeout(nextCycle, pageloadDelay);
+  nextCycle();
 }
 
 function waitForResult() {
@@ -356,6 +366,7 @@ function runner() {
   settingsURL = config.test_settings_url;
   csPort = config.cs_port;
   browserName = config.browser;
+  benchmarkPort = config.benchmark_port;
 
   getBrowserInfo().then(function() {
     getTestSettings().then(function() {
