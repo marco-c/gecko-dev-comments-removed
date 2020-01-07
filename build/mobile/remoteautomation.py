@@ -268,7 +268,7 @@ class RemoteAutomation(Automation):
 
             
             
-            self.timeout = 5400
+            self.timeout = 6600
 
             
             self.logBuffer = ""
