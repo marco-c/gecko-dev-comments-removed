@@ -395,10 +395,16 @@ public:
       }
 
       mDelayed = true;
+
       
       
       
-      worker->WorkerPrivate()->StoreISupports(timer);
+      if (!worker->WorkerPrivate()->MaybeStoreISupports(timer)) {
+        
+        
+        timer->Cancel();
+        return NS_OK;
+      }
 
       return NS_OK;
     }
