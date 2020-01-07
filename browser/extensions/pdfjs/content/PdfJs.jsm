@@ -337,6 +337,10 @@ var PdfJs = {
 
 
   get enabled() {
+    if (!Services.policies.isAllowed("PDF.js")) {
+      return false;
+    }
+
     if (!Services.prefs.getBoolPref(PREF_ENABLED_CACHE_INITIALIZED, false)) {
       
       
