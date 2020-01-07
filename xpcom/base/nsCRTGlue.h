@@ -104,34 +104,41 @@ NS_IsAscii(char16_t aChar)
   return (0x0080 > aChar);
 }
 
-bool NS_IsAscii(const char16_t* aString);
-bool NS_IsAscii(const char* aString);
-bool NS_IsAscii(const char* aString, uint32_t aLength);
-
-
-
-
-
 constexpr bool
-NS_ConstExprIsAscii(const char16_t* aString)
+NS_IsAscii(const char16_t* aString)
 {
-  return !*aString ? true :
-    !NS_IsAscii(*aString) ? false : NS_ConstExprIsAscii(aString + 1);
+  while (*aString) {
+    if (0x0080 <= *aString) {
+      return false;
+    }
+    aString++;
+  }
+  return true;
 }
 
 constexpr bool
-NS_ConstExprIsAscii(const char* aString)
+NS_IsAscii(const char* aString)
 {
-  return !*aString ? true :
-    !NS_IsAscii(*aString) ? false : NS_ConstExprIsAscii(aString + 1);
+  while (*aString) {
+    if (0x80 & *aString) {
+      return false;
+    }
+    aString++;
+  }
+  return true;
 }
 
 constexpr bool
-NS_ConstExprIsAscii(const char* aString, uint32_t aLength)
+NS_IsAscii(const char* aString, uint32_t aLength)
 {
-  return aLength == 0 ? true :
-    !NS_IsAscii(*aString) ? false :
-    NS_ConstExprIsAscii(aString + 1, aLength - 1);
+  const char* end = aString + aLength;
+  while (aString < end) {
+    if (0x80 & *aString) {
+      return false;
+    }
+    aString++;
+  }
+  return true;
 }
 
 constexpr bool
