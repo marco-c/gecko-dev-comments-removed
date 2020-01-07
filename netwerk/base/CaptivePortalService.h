@@ -33,15 +33,17 @@ public:
   NS_DECL_NSICAPTIVEPORTALCALLBACK
   NS_DECL_NSINAMED
 
-  CaptivePortalService();
   nsresult Initialize();
   nsresult Start();
   nsresult Stop();
+
+  static already_AddRefed<nsICaptivePortalService> GetSingleton();
 
   
   
   void SetStateInChild(int32_t aState);
 private:
+  CaptivePortalService();
   virtual ~CaptivePortalService();
   nsresult PerformCheck();
   nsresult RearmTimer();
