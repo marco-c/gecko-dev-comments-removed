@@ -542,18 +542,8 @@ def set_treeherder_machine_platform(config, tests):
         'android-api-16-gradle/opt': 'android-api-16-gradle/opt',
     }
     for test in tests:
-        
-        
-        
-        
-        
-        
-        
-        if '-qr' in test['test-platform']:
-            test['treeherder-machine-platform'] = test['test-platform']
-        else:
-            test['treeherder-machine-platform'] = translation.get(
-                test['build-platform'], test['test-platform'])
+        test['treeherder-machine-platform'] = translation.get(
+            test['build-platform'], test['test-platform'])
         yield test
 
 
