@@ -931,8 +931,7 @@ AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState)
 
   
   
-  if (mAudioContextState == AudioContextState::Suspended &&
-      aNewState == AudioContextState::Running) {
+  if (aNewState == AudioContextState::Running) {
     for (const auto& p : mPendingResumePromises) {
       p->MaybeResolveWithUndefined();
     }
