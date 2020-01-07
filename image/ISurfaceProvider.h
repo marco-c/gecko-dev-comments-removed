@@ -57,6 +57,12 @@ public:
   
   
   
+  virtual bool IsFullyDecoded() const { return IsFinished(); }
+
+  
+  
+  
+  
   virtual size_t LogicalSizeInBytes() const = 0;
 
   
@@ -75,6 +81,9 @@ public:
     ref->AddSizeOfExcludingThis(aMallocSizeOf, aHeapSizeOut,
                                 aNonHeapSizeOut, aExtHandlesOut);
   }
+
+  virtual void Reset() { }
+  virtual void Advance(size_t aFrame) { }
 
   
   
@@ -188,6 +197,36 @@ public:
     mDrawableRef = mProvider->DrawableRef(aFrame);
 
     return mDrawableRef ? NS_OK : NS_ERROR_FAILURE;
+  }
+
+  void Reset()
+  {
+    if (!mProvider) {
+      MOZ_ASSERT_UNREACHABLE("Trying to reset a static DrawableSurface?");
+      return;
+    }
+
+    mProvider->Reset();
+  }
+
+  void Advance(size_t aFrame)
+  {
+    if (!mProvider) {
+      MOZ_ASSERT_UNREACHABLE("Trying to advance a static DrawableSurface?");
+      return;
+    }
+
+    mProvider->Advance(aFrame);
+  }
+
+  bool IsFullyDecoded() const
+  {
+    if (!mProvider) {
+      MOZ_ASSERT_UNREACHABLE("Trying to check decoding state of a static DrawableSurface?");
+      return false;
+    }
+
+    return mProvider->IsFullyDecoded();
   }
 
   explicit operator bool() const { return mHaveSurface; }

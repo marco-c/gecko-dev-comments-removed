@@ -293,6 +293,12 @@ public:
 
 
 
+  void ResetAnimation(AnimationState& aState);
+
+  
+
+
+
 
 
 
