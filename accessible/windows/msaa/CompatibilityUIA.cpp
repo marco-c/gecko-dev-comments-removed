@@ -7,10 +7,13 @@
 #include "Compatibility.h"
 
 #include "mozilla/Telemetry.h"
+#include "mozilla/WindowsVersion.h"
 
+#include "nsDataHashtable.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
+#include "nsTHashtable.h"
 #include "nsUnicharUtils.h"
 #include "nsWinUtils.h"
 
@@ -31,32 +34,102 @@
 
 #endif 
 
-static bool
-GetLocalObjectHandle(DWORD aSrcPid, HANDLE aSrcHandle, nsAutoHandle& aProcess,
-                     nsAutoHandle& aLocal)
+struct ByteArrayDeleter
 {
-  aLocal.reset();
-
-  if (!aProcess) {
-    HANDLE rawProcess = ::OpenProcess(PROCESS_DUP_HANDLE, FALSE, aSrcPid);
-    if (!rawProcess) {
-      LOG_ERROR(OpenProcess);
-      return false;
-    }
-
-    aProcess.own(rawProcess);
+  void operator()(void* aBuf)
+  {
+    delete[] reinterpret_cast<char*>(aBuf);
   }
+};
 
-  HANDLE rawDuped;
-  if (!::DuplicateHandle(aProcess.get(), aSrcHandle, ::GetCurrentProcess(),
-                         &rawDuped, GENERIC_READ, FALSE, 0)) {
-    LOG_ERROR(DuplicateHandle);
+typedef UniquePtr<OBJECT_DIRECTORY_INFORMATION, ByteArrayDeleter> ObjDirInfoPtr;
+
+
+
+template <typename ComparatorFnT>
+static bool
+FindNamedObject(ComparatorFnT aComparator)
+{
+  
+  
+  
+  DWORD sessionId;
+  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &sessionId)) {
     return false;
   }
 
-  aLocal.own(rawDuped);
+  nsAutoString path;
+  path.AppendPrintf("\\Sessions\\%u\\BaseNamedObjects", sessionId);
 
-  return true;
+  UNICODE_STRING baseNamedObjectsName;
+  ::RtlInitUnicodeString(&baseNamedObjectsName, path.get());
+
+  OBJECT_ATTRIBUTES attributes;
+  InitializeObjectAttributes(&attributes, &baseNamedObjectsName, 0,
+                             nullptr, nullptr);
+
+  HANDLE rawBaseNamedObjects;
+  NTSTATUS ntStatus = ::NtOpenDirectoryObject(&rawBaseNamedObjects,
+                                              DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
+                                              &attributes);
+  if (!NT_SUCCESS(ntStatus)) {
+    return false;
+  }
+
+  nsAutoHandle baseNamedObjects(rawBaseNamedObjects);
+
+  ULONG context = 0, returnedLen;
+
+  ULONG objDirInfoBufLen = 1024 * sizeof(OBJECT_DIRECTORY_INFORMATION);
+  ObjDirInfoPtr objDirInfo(
+    reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(new char[objDirInfoBufLen]));
+
+  
+
+  BOOL firstCall = TRUE;
+
+  do {
+    ntStatus = ::NtQueryDirectoryObject(baseNamedObjects, objDirInfo.get(),
+                                        objDirInfoBufLen, FALSE, firstCall,
+                                        &context, &returnedLen);
+#if defined(HAVE_64BIT_BUILD)
+    if (!NT_SUCCESS(ntStatus)) {
+      return false;
+    }
+#else
+    if (ntStatus == STATUS_BUFFER_TOO_SMALL) {
+      
+      
+      objDirInfo.reset(reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(new char[returnedLen]));
+      objDirInfoBufLen = returnedLen;
+      continue;
+    } else if (!NT_SUCCESS(ntStatus)) {
+      return false;
+    }
+#endif
+
+    
+    
+    OBJECT_DIRECTORY_INFORMATION* curDir = objDirInfo.get();
+    while (curDir->mName.Length && curDir->mTypeName.Length) {
+      
+      
+      nsDependentSubstring objName(curDir->mName.Buffer,
+                                   curDir->mName.Length / sizeof(wchar_t));
+      nsDependentSubstring typeName(curDir->mTypeName.Buffer,
+                                    curDir->mTypeName.Length / sizeof(wchar_t));
+
+      if (!aComparator(objName, typeName)) {
+        return true;
+      }
+
+      ++curDir;
+    }
+
+    firstCall = FALSE;
+  } while (ntStatus == STATUS_MORE_ENTRIES);
+
+  return false;
 }
 
 namespace mozilla {
@@ -74,15 +147,6 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
 
   Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
 
-  static auto pNtQuerySystemInformation =
-    reinterpret_cast<decltype(&::NtQuerySystemInformation)>(
-      ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"),
-                       "NtQuerySystemInformation"));
-
-  static auto pNtQueryObject =
-    reinterpret_cast<decltype(&::NtQueryObject)>(
-      ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"), "NtQueryObject"));
-
   
   NS_NAMED_LITERAL_STRING(kStrHookShmem, "HOOK_SHMEM_");
 
@@ -90,7 +154,27 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
   
   nsAutoString partialSectionSuffix;
   partialSectionSuffix.AppendPrintf("_%08x_%08x_%08x", ::GetCurrentThreadId(),
-                                    aLParam, aWParam);
+                                    static_cast<DWORD>(aLParam), aWParam);
+
+  
+  
+  nsAutoHandle section;
+  auto comparator = [&](const nsDependentSubstring& aName,
+                        const nsDependentSubstring& aType) -> bool {
+    if (aType.Equals(NS_LITERAL_STRING("Section")) &&
+        FindInReadable(kStrHookShmem, aName) &&
+        StringEndsWith(aName, partialSectionSuffix)) {
+      section.own(::OpenFileMapping(GENERIC_READ, FALSE,
+                                    PromiseFlatString(aName).get()));
+      return false;
+    }
+
+    return true;
+  };
+
+  if (!FindNamedObject(comparator) || !section) {
+    return Nothing();
+  }
 
   NTSTATUS ntStatus;
 
@@ -105,7 +189,7 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
   while (true) {
     handleInfoBuf = MakeUnique<char[]>(handleInfoBufLen);
 
-    ntStatus = pNtQuerySystemInformation(
+    ntStatus = ::NtQuerySystemInformation(
                  (SYSTEM_INFORMATION_CLASS) SystemExtendedHandleInformation,
                  handleInfoBuf.get(), handleInfoBufLen, &handleInfoBufLen);
     if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
@@ -119,160 +203,98 @@ Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam)
     break;
   }
 
-  
-  
-
-  static Maybe<USHORT> sSectionObjTypeIndex;
-
   const DWORD ourPid = ::GetCurrentProcessId();
-
   Maybe<PVOID> kernelObject;
-
-  ULONG lastPid = 0;
-  nsAutoHandle process;
+  static Maybe<USHORT> sectionObjTypeIndex;
+  nsTHashtable<nsUint32HashKey> nonSectionObjTypes;
+  nsDataHashtable<nsVoidPtrHashKey, DWORD> objMap;
 
   auto handleInfo = reinterpret_cast<SYSTEM_HANDLE_INFORMATION_EX*>(handleInfoBuf.get());
 
   for (ULONG index = 0; index < handleInfo->mHandleCount; ++index) {
     SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX& curHandle = handleInfo->mHandles[index];
 
-    if (lastPid && lastPid == curHandle.mPid && !process) {
+    HANDLE handle = reinterpret_cast<HANDLE>(curHandle.mHandle);
+
+    
+    
+    
+    
+    if (sectionObjTypeIndex) {
+      
+      if (sectionObjTypeIndex.value() != curHandle.mObjectTypeIndex) {
+        
+        continue;
+      }
+    } else if (nonSectionObjTypes.Contains(static_cast<uint32_t>(
+                                             curHandle.mObjectTypeIndex))) {
       
       
       continue;
-    }
-
-    
-    
-    
-    if (lastPid != curHandle.mPid) {
-      process.reset();
-    }
-
-    nsAutoHandle handle;
-
-    if (kernelObject.isSome() && kernelObject.value() == curHandle.mObject) {
-      
-      
-      remotePid = Some(static_cast<DWORD>(curHandle.mPid));
-      break;
-    } else if (sSectionObjTypeIndex.isSome()) {
-      
-      
-      if (curHandle.mObjectTypeIndex != sSectionObjTypeIndex.value()) {
-        
-        continue;
-      }
-    } else {
-      
-      
-      
-      
-
-      lastPid = curHandle.mPid;
-
-      if (!GetLocalObjectHandle((DWORD) curHandle.mPid,
-                                (HANDLE) curHandle.mHandle,
-                                process, handle)) {
-        
-        continue;
-      }
-
-      
+    } else if (ourPid == curHandle.mPid) {
       
       
       ULONG objTypeBufLen;
-      ntStatus = pNtQueryObject(handle, ObjectTypeInformation, nullptr,
-                                0, &objTypeBufLen);
+      ntStatus = ::NtQueryObject(handle, ObjectTypeInformation,
+                                 nullptr, 0, &objTypeBufLen);
       if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
         continue;
       }
 
       auto objTypeBuf = MakeUnique<char[]>(objTypeBufLen);
-      ntStatus = pNtQueryObject(handle, ObjectTypeInformation, objTypeBuf.get(),
-                                objTypeBufLen, &objTypeBufLen);
+      ntStatus = ::NtQueryObject(handle, ObjectTypeInformation, objTypeBuf.get(),
+                                 objTypeBufLen, &objTypeBufLen);
       if (!NT_SUCCESS(ntStatus)) {
-        
         continue;
       }
 
       auto objType =
         reinterpret_cast<PUBLIC_OBJECT_TYPE_INFORMATION*>(objTypeBuf.get());
 
-      nsDependentString objTypeName(objType->TypeName.Buffer,
-                                    objType->TypeName.Length / sizeof(wchar_t));
+      
+      nsDependentSubstring objTypeName(objType->TypeName.Buffer,
+                                       objType->TypeName.Length / sizeof(wchar_t));
       if (!objTypeName.Equals(NS_LITERAL_STRING("Section"))) {
-        
+        nonSectionObjTypes.PutEntry(static_cast<uint32_t>(curHandle.mObjectTypeIndex));
         continue;
+      }
+
+      sectionObjTypeIndex = Some(curHandle.mObjectTypeIndex);
+    }
+
+    
+    
+
+    if (ourPid != curHandle.mPid) {
+      if (kernelObject && kernelObject.value() == curHandle.mObject) {
+        
+        remotePid = Some(curHandle.mPid);
+        break;
       }
 
       
       
-      sSectionObjTypeIndex = Some(curHandle.mObjectTypeIndex);
-    }
-
-    
-    
-    lastPid = curHandle.mPid;
-
-    if ((!process || !handle) &&
-        !GetLocalObjectHandle((DWORD) curHandle.mPid, (HANDLE) curHandle.mHandle,
-                              process, handle)) {
-      
-      continue;
-    }
-
-    
-    
-    ULONG objNameBufLen;
-    ntStatus = pNtQueryObject(handle,
-                              (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
-                              nullptr, 0, &objNameBufLen);
-    if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
-      continue;
-    }
-
-    auto objNameBuf = MakeUnique<char[]>(objNameBufLen);
-    ntStatus = pNtQueryObject(handle,
-                              (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
-                              objNameBuf.get(), objNameBufLen, &objNameBufLen);
-    if (!NT_SUCCESS(ntStatus)) {
-      continue;
-    }
-
-    auto objNameInfo = reinterpret_cast<OBJECT_NAME_INFORMATION*>(objNameBuf.get());
-    if (!objNameInfo->mName.Length) {
-      
-      continue;
-    }
-
-    nsDependentString objName(objNameInfo->mName.Buffer,
-                              objNameInfo->mName.Length / sizeof(wchar_t));
-
-    
-    if (!FindInReadable(kStrHookShmem, objName) ||
-        !StringEndsWith(objName, partialSectionSuffix)) {
-      
-      continue;
-    }
-
-    
-    
-
-    if (curHandle.mPid == ourPid) {
-      
-      
+      objMap.Put(curHandle.mObject, curHandle.mPid);
+    } else if (handle == section.get()) {
       
       
       kernelObject = Some(curHandle.mObject);
-      continue;
     }
-
-    
-    remotePid = Some(static_cast<DWORD>(curHandle.mPid));
-
-    break;
   }
+
+  if (!kernelObject) {
+    return Nothing();
+  }
+
+  if (!remotePid) {
+    
+    
+    DWORD pid;
+    if (objMap.Get(kernelObject.value(), &pid)) {
+      remotePid = Some(pid);
+    }
+  }
+
 
   if (!remotePid) {
     return Nothing();
