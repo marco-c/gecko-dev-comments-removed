@@ -5,8 +5,12 @@
 
 
 #include "FunctionBroker.h"
+#include "FunctionBrokerParent.h"
 #include "PluginQuirks.h"
+
+#if defined(XP_WIN)
 #include <commdlg.h>
+#endif 
 
 using namespace mozilla;
 using namespace mozilla::ipc;
@@ -23,6 +27,109 @@ static bool CheckQuirks(int aQuirks)
 
 void FreeDestructor(void* aObj) { free(aObj); }
 
+#if defined(XP_WIN)
+
+
+
+typedef FunctionBroker<ID_GetKeyState,
+                       decltype(GetKeyState)> GetKeyStateFB;
+
+template<>
+ShouldHookFunc* const
+GetKeyStateFB::BaseType::mShouldHook = &CheckQuirks<QUIRK_FLASH_HOOK_GETKEYSTATE>;
+
+
+
+typedef FunctionBroker<ID_SetCursorPos,
+                       decltype(SetCursorPos)> SetCursorPosFB;
+
+
+
+typedef FunctionBroker<ID_GetSaveFileNameW,
+                             decltype(GetSaveFileNameW)> GetSaveFileNameWFB;
+
+
+static void GrantFileAccess(base::ProcessId aClientId, LPOPENFILENAME& aLpofn,
+                            bool isSave)
+{
+#if defined(MOZ_SANDBOX)
+  if (aLpofn->Flags & OFN_ALLOWMULTISELECT) {
+    
+    
+    MOZ_ASSERT(aLpofn->Flags & OFN_EXPLORER);
+
+    
+    
+    
+    
+    
+    std::wstring path = std::wstring(aLpofn->lpstrFile);
+    MOZ_ASSERT(aLpofn->nFileOffset > 0);
+    
+    
+    if (aLpofn->lpstrFile[aLpofn->nFileOffset-1] != L'\0') {
+      FunctionBrokerParent::GetSandboxPermissions()->GrantFileAccess(aClientId, path.c_str(), isSave);
+    }
+    else {
+      
+      wchar_t* nextFile = aLpofn->lpstrFile + path.size() + 1;
+      while (*nextFile != L'\0') {
+        std::wstring nextFileStr(nextFile);
+        std::wstring fullPath =
+          path + std::wstring(L"\\") + nextFileStr;
+        FunctionBrokerParent::GetSandboxPermissions()->GrantFileAccess(aClientId, fullPath.c_str(), isSave);
+        nextFile += nextFileStr.size() + 1;
+      }
+    }
+  }
+  else {
+    FunctionBrokerParent::GetSandboxPermissions()->GrantFileAccess(aClientId, aLpofn->lpstrFile, isSave);
+  }
+#else
+  MOZ_ASSERT_UNREACHABLE("GetFileName IPC message is only available on "
+                         "Windows builds with sandbox.");
+#endif
+}
+
+template<> template<>
+BOOL GetSaveFileNameWFB::RunFunction(GetSaveFileNameWFB::FunctionType* aOrigFunction,
+                                    base::ProcessId aClientId,
+                                    LPOPENFILENAMEW& aLpofn) const
+{
+  BOOL result = aOrigFunction(aLpofn);
+  if (result) {
+    
+    GrantFileAccess(aClientId, aLpofn, true);
+  }
+  return result;
+}
+
+template<> template<>
+struct GetSaveFileNameWFB::Response::Info::ShouldMarshal<0> { static const bool value = true; };
+
+
+
+typedef FunctionBroker<ID_GetOpenFileNameW,
+                       decltype(GetOpenFileNameW)> GetOpenFileNameWFB;
+
+template<> template<>
+BOOL GetOpenFileNameWFB::RunFunction(GetOpenFileNameWFB::FunctionType* aOrigFunction,
+                                    base::ProcessId aClientId,
+                                    LPOPENFILENAMEW& aLpofn) const
+{
+  BOOL result = aOrigFunction(aLpofn);
+  if (result) {
+    
+    GrantFileAccess(aClientId, aLpofn, false);
+  }
+  return result;
+}
+
+template<> template<>
+struct GetOpenFileNameWFB::Response::Info::ShouldMarshal<0> { static const bool value = true; };
+
+#endif 
+
 
 
 #define FUN_HOOK(x) static_cast<FunctionHook*>(x)
@@ -30,6 +137,19 @@ void FreeDestructor(void* aObj) { free(aObj); }
 void
 AddBrokeredFunctionHooks(FunctionHookArray& aHooks)
 {
+  
+#if defined(XP_WIN)
+  aHooks[ID_GetKeyState] =
+    FUN_HOOK(new GetKeyStateFB("user32.dll", "GetKeyState", &GetKeyState));
+  aHooks[ID_SetCursorPos] =
+    FUN_HOOK(new SetCursorPosFB("user32.dll", "SetCursorPos", &SetCursorPos));
+  aHooks[ID_GetSaveFileNameW] =
+    FUN_HOOK(new GetSaveFileNameWFB("comdlg32.dll", "GetSaveFileNameW",
+                                    &GetSaveFileNameW));
+  aHooks[ID_GetOpenFileNameW] =
+    FUN_HOOK(new GetOpenFileNameWFB("comdlg32.dll", "GetOpenFileNameW",
+                                    &GetOpenFileNameW));
+#endif 
 }
 
 #undef FUN_HOOK
