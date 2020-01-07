@@ -777,89 +777,6 @@ nsNavHistory::NormalizeTime(uint32_t aRelative, PRTime aOffset)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-uint32_t
-nsNavHistory::GetUpdateRequirements(const RefPtr<nsNavHistoryQuery>& aQuery,
-                                    nsNavHistoryQueryOptions* aOptions,
-                                    bool* aHasSearchTerms)
-{
-  
-  bool hasSearchTerms = *aHasSearchTerms = !aQuery->SearchTerms().IsEmpty();
-
-  bool nonTimeBasedItems = false;
-  bool domainBasedItems = false;
-
-  if (aQuery->Folders().Length() > 0 ||
-      aQuery->OnlyBookmarked() ||
-      aQuery->Tags().Length() > 0 ||
-      (aOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_BOOKMARKS &&
-        hasSearchTerms)) {
-    return QUERYUPDATE_COMPLEX_WITH_BOOKMARKS;
-  }
-
-  
-  
-  if (hasSearchTerms ||
-      !aQuery->Domain().IsVoid() ||
-      aQuery->Uri() != nullptr)
-    nonTimeBasedItems = true;
-
-  if (!aQuery->Domain().IsVoid())
-    domainBasedItems = true;
-
-  if (aOptions->ResultType() ==
-        nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
-      return QUERYUPDATE_COMPLEX_WITH_BOOKMARKS;
-
-  if (aOptions->ResultType() ==
-        nsINavHistoryQueryOptions::RESULTS_AS_ROOTS_QUERY)
-      return QUERYUPDATE_MOBILEPREF;
-
-  if (aOptions->ResultType() ==
-        nsINavHistoryQueryOptions::RESULTS_AS_LEFT_PANE_QUERY)
-      return QUERYUPDATE_NONE;
-
-  
-  
-  
-  
-  if (aOptions->MaxResults() > 0)
-    return QUERYUPDATE_COMPLEX;
-
-  if (domainBasedItems)
-    return QUERYUPDATE_HOST;
-  if (!nonTimeBasedItems)
-    return QUERYUPDATE_TIME;
-
-  return QUERYUPDATE_SIMPLE;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool
 nsNavHistory::EvaluateQueryForNode(const RefPtr<nsNavHistoryQuery>& aQuery,
                                    nsNavHistoryQueryOptions* aOptions,
@@ -1258,7 +1175,10 @@ nsNavHistory::ExecuteQuery(nsINavHistoryQuery *aQuery,
   if (!rootNode) {
     
     
-    rootNode = new nsNavHistoryQueryResultNode(EmptyCString(),
+    nsAutoCString queryUri;
+    nsresult rv = QueryToQueryString(query, options, queryUri);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rootNode = new nsNavHistoryQueryResultNode(EmptyCString(), 0, queryUri,
                                                query, options);
   }
 
@@ -3892,7 +3812,7 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
     }
     else {
       
-      resultNode = new nsNavHistoryQueryResultNode(aTitle, aTime, queryObj, optionsObj);
+      resultNode = new nsNavHistoryQueryResultNode(aTitle, aTime, aURI, queryObj, optionsObj);
       resultNode->mItemId = itemId;
       resultNode->mBookmarkGuid = aBookmarkGuid;
     }
@@ -3903,7 +3823,7 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
     
     
     
-    resultNode = new nsNavHistoryQueryResultNode(aTitle, aURI);
+    resultNode = new nsNavHistoryQueryResultNode(aTitle, 0, aURI, queryObj, optionsObj);
     resultNode->mItemId = itemId;
     resultNode->mBookmarkGuid = aBookmarkGuid;
     

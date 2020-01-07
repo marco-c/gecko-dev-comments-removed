@@ -427,9 +427,6 @@ class nsNavHistoryContainerResultNode : public nsNavHistoryResultNode,
 public:
   nsNavHistoryContainerResultNode(
     const nsACString& aURI, const nsACString& aTitle,
-    uint32_t aContainerType, nsNavHistoryQueryOptions* aOptions);
-  nsNavHistoryContainerResultNode(
-    const nsACString& aURI, const nsACString& aTitle,
     PRTime aTime, uint32_t aContainerType, nsNavHistoryQueryOptions* aOptions);
 
   virtual nsresult Refresh();
@@ -619,14 +616,10 @@ class nsNavHistoryQueryResultNode final : public nsNavHistoryContainerResultNode
 {
 public:
   nsNavHistoryQueryResultNode(const nsACString& aTitle,
-                              const nsACString& aQueryURI);
-  nsNavHistoryQueryResultNode(const nsACString& aTitle,
-                              const RefPtr<nsNavHistoryQuery>& aQuery,
-                              nsNavHistoryQueryOptions* aOptions);
-  nsNavHistoryQueryResultNode(const nsACString& aTitle,
                               PRTime aTime,
+                              const nsACString& aQueryURI,
                               const RefPtr<nsNavHistoryQuery>& aQuery,
-                              nsNavHistoryQueryOptions* aOptions);
+                              const RefPtr<nsNavHistoryQueryOptions>& aOptions);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_FORWARD_COMMON_RESULTNODE_TO_BASE
@@ -655,16 +648,9 @@ public:
   virtual void OnRemoving() override;
 
 public:
-  
-  
-  nsresult VerifyQuerySerialized();
-
-  
-  
   RefPtr<nsNavHistoryQuery> mQuery;
   uint32_t mLiveUpdate; 
   bool mHasSearchTerms;
-  nsresult VerifyQueryParsed();
 
   
   nsNavHistoryQueryOptions* Options();

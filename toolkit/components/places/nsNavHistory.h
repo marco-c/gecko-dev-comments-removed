@@ -297,10 +297,6 @@ public:
 
   int32_t GetDaysOfHistory();
 
-  
-  static uint32_t GetUpdateRequirements(const RefPtr<nsNavHistoryQuery>& aQuery,
-                                        nsNavHistoryQueryOptions* aOptions,
-                                        bool* aHasSearchTerms);
   bool EvaluateQueryForNode(const RefPtr<nsNavHistoryQuery>& aQuery,
                               nsNavHistoryQueryOptions* aOptions,
                               nsNavHistoryResultNode* aNode);
