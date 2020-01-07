@@ -950,7 +950,9 @@ TextEditor::InsertTextAsAction(const nsAString& aStringToInsert)
 
   EditSubAction editSubAction = EditSubAction::eInsertText;
   if (ShouldHandleIMEComposition()) {
-    editSubAction = EditSubAction::insertIMEText;
+    
+    
+    editSubAction = EditSubAction::eInsertTextComingFromIME;
   }
 
   AutoPlaceholderBatch batch(this, nullptr);
