@@ -19,6 +19,7 @@
 #include "nsIDOMStorageManager.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
 #include "mozilla/dom/DOMPrefs.h"
+#include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/LocalStorage.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/IdleRequest.h"
@@ -1617,7 +1618,7 @@ nsGlobalWindowInner::IsBlackForCC(bool aTracingNeeded)
   return (nsCCUncollectableMarker::InGeneration(GetMarkedCCGeneration()) ||
           HasKnownLiveWrapper()) &&
          (!aTracingNeeded ||
-          HasNothingToTrace(static_cast<nsIDOMEventTarget*>(this)));
+          HasNothingToTrace(ToSupports(this)));
 }
 
 
@@ -2046,7 +2047,7 @@ nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor)
   
 
 
-  nsCOMPtr<nsIDOMEventTarget> kungFuDeathGrip1(mChromeEventHandler);
+  RefPtr<EventTarget> kungFuDeathGrip1(mChromeEventHandler);
   mozilla::Unused << kungFuDeathGrip1; 
   nsCOMPtr<nsIScriptContext> kungFuDeathGrip2(GetContextInternal());
   mozilla::Unused << kungFuDeathGrip2; 

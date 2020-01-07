@@ -291,7 +291,6 @@ public:
   void
   DisconnectFromOwner() override;
 
-  
   virtual void
   LastRelease() override;
 

@@ -461,7 +461,7 @@ private:
 inline nsISupports*
 ToSupports(mozilla::dom::WorkerGlobalScope* aScope)
 {
-  return static_cast<nsIDOMEventTarget*>(aScope);
+  return static_cast<mozilla::dom::EventTarget*>(aScope);
 }
 
 #endif

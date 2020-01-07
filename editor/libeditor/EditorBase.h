@@ -41,7 +41,6 @@ class nsAtom;
 class nsIContent;
 class nsIDOMDocument;
 class nsIDOMEvent;
-class nsIDOMEventTarget;
 class nsIDOMNode;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
@@ -1450,15 +1449,6 @@ public:
 
 
 
-  void SuppressDispatchingInputEvent(bool aSuppress)
-  {
-    mDispatchInputEvent = !aSuppress;
-  }
-
-  
-
-
-
   bool IsSuppressingDispatchingInputEvent() const
   {
     return !mDispatchInputEvent;
@@ -1525,14 +1515,14 @@ public:
 
 
 
-  nsresult InitializeSelection(nsIDOMEventTarget* aFocusEventTarget);
+  nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
 
   
 
 
 
 
-  void OnFocus(nsIDOMEventTarget* aFocusEventTarget);
+  void OnFocus(dom::EventTarget* aFocusEventTarget);
 
   
 

@@ -51,6 +51,7 @@
 #include "mozilla/TransactionManager.h" 
 #include "mozilla/dom/CharacterData.h"  
 #include "mozilla/dom/Element.h"        
+#include "mozilla/dom/EventTarget.h"    
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/Event.h"
@@ -76,7 +77,6 @@
 #include "nsIDOMElement.h"              
 #include "nsIDOMEvent.h"                
 #include "nsIDOMEventListener.h"        
-#include "nsIDOMEventTarget.h"          
 #include "nsIDOMNode.h"                 
 #include "nsIDocumentStateListener.h"   
 #include "nsIEditActionListener.h"      
@@ -350,10 +350,7 @@ EditorBase::PostCreate()
   
   nsCOMPtr<nsIContent> focusedContent = GetFocusedContent();
   if (focusedContent) {
-    nsCOMPtr<nsIDOMEventTarget> target = do_QueryInterface(focusedContent);
-    if (target) {
-      InitializeSelection(target);
-    }
+    InitializeSelection(focusedContent);
 
     
     
@@ -4940,7 +4937,7 @@ EditorBase::InitializeSelectionAncestorLimit(Selection& aSelection,
 }
 
 nsresult
-EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
+EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
 {
   nsCOMPtr<nsINode> targetNode = do_QueryInterface(aFocusEventTarget);
   NS_ENSURE_TRUE(targetNode, NS_ERROR_INVALID_ARG);
@@ -5218,7 +5215,7 @@ EditorBase::IsModifiableNode(nsINode* aNode)
 nsIContent*
 EditorBase::GetFocusedContent()
 {
-  nsIDOMEventTarget* piTarget = GetDOMEventTarget();
+  EventTarget* piTarget = GetDOMEventTarget();
   if (!piTarget) {
     return nullptr;
   }
@@ -5242,7 +5239,7 @@ EditorBase::GetFocusedContentForIME()
 bool
 EditorBase::IsActiveInDOMWindow()
 {
-  nsIDOMEventTarget* piTarget = GetDOMEventTarget();
+  EventTarget* piTarget = GetDOMEventTarget();
   if (!piTarget) {
     return false;
   }
@@ -5327,7 +5324,7 @@ EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
 }
 
 void
-EditorBase::OnFocus(nsIDOMEventTarget* aFocusEventTarget)
+EditorBase::OnFocus(EventTarget* aFocusEventTarget)
 {
   InitializeSelection(aFocusEventTarget);
   mSpellCheckerDictionaryUpdated = false;
