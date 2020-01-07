@@ -170,13 +170,13 @@ public:
   size_t Count() const { return mEffects.Count(); }
 
 
-  const TimeStamp& LastTransformSyncTime() const
+  const TimeStamp& LastOverflowAnimationSyncTime() const
   {
-    return mLastTransformSyncTime;
+    return mLastOverflowAnimationSyncTime;
   }
-  void UpdateLastTransformSyncTime(const TimeStamp& aRefreshTime)
+  void UpdateLastOverflowAnimationSyncTime(const TimeStamp& aRefreshTime)
   {
-    mLastTransformSyncTime = aRefreshTime;
+    mLastOverflowAnimationSyncTime = aRefreshTime;
   }
 
   bool CascadeNeedsUpdate() const { return mCascadeNeedsUpdate; }
@@ -209,9 +209,12 @@ private:
 
   
   
+
   
   
-  TimeStamp mLastTransformSyncTime;
+  
+  
+  TimeStamp mLastOverflowAnimationSyncTime;
 
   
   
