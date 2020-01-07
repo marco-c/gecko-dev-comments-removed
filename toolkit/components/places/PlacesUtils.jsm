@@ -339,7 +339,6 @@ var PlacesUtils = {
   TOPIC_BOOKMARKS_RESTORE_FAILED: "bookmarks-restore-failed",
 
   ACTION_SCHEME: "moz-action:",
-  observers: PlacesObservers,
 
   
 
