@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 var EXPORTED_SYMBOLS = ["XPIProvider", "XPIInternal"];
 
 
@@ -2814,6 +2818,7 @@ class DirectoryInstallLocation {
 
 
 
+
   _readDirectoryFromFile(aFile) {
     let linkedDirectory;
     if (aFile.isSymlink()) {
@@ -2937,6 +2942,8 @@ class DirectoryInstallLocation {
   }
 
   
+
+
 
 
 

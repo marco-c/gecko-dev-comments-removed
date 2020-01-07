@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 var EXPORTED_SYMBOLS = [
   "UpdateChecker",
   "XPIInstall",
@@ -1459,6 +1463,7 @@ SafeInstallOperation.prototype = {
       recursiveRemove(this._createdDirs.pop());
   }
 };
+
 
 
 
