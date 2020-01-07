@@ -23,12 +23,9 @@ XPCOMUtils.defineLazyGetter(this, "TargetFactory", function() {
 
 const webserver = Services.prefs.getCharPref("addon.test.damp.webserver");
 
-const PAGES_BASE_URL = webserver + "/tests/devtools/addon/content/pages/";
-const SIMPLE_URL = PAGES_BASE_URL + "simple.html";
+const SIMPLE_URL = webserver + "/tests/devtools/addon/content/pages/simple.html";
 const COMPLICATED_URL = webserver + "/tests/tp5n/bild.de/www.bild.de/index.html";
-const CUSTOM_URL = PAGES_BASE_URL + "custom/$TOOL/index.html";
-const PANELS_IN_BACKGROUND = PAGES_BASE_URL +
-  "custom/panels-in-background/panels-in-background.html";
+const CUSTOM_URL = webserver + "/tests/devtools/addon/content/pages/custom/$TOOL/index.html";
 
 
 
@@ -714,46 +711,25 @@ async _consoleOpenWithCachedMessagesTest() {
   },
 
   async _panelsInBackgroundReload() {
-    await this.testSetup(PANELS_IN_BACKGROUND);
-
-    
+    let url = "data:text/html;charset=UTF-8," + encodeURIComponent(`
+      <script>
+      // Log a significant amount of messages
+      for(let i = 0; i < 2000; i++) {
+        console.log("log in background", i);
+      }
+      </script>
+    `);
+    await this.testSetup(url);
     let toolbox = await this.openToolbox("webconsole");
-    let monitor = await toolbox.selectTool("netmonitor");
 
-    
     
     
     await toolbox.selectTool("options");
 
-    
-    
-    let payloadReady = this.waitForPayload(601, monitor.panelWin);
     await this.reloadPageAndLog("panelsInBackground", toolbox);
-    await payloadReady;
 
-    
     await this.closeToolbox();
     await this.testTeardown();
-  },
-
-  waitForPayload(count, panelWin) {
-    return new Promise(resolve => {
-      let payloadReady = 0;
-
-      function onPayloadReady(_, id) {
-        payloadReady++;
-        maybeResolve();
-      }
-
-      function maybeResolve() {
-        if (payloadReady >= count) {
-          panelWin.off(EVENTS.PAYLOAD_READY, onPayloadReady);
-          resolve();
-        }
-      }
-
-      panelWin.on(EVENTS.PAYLOAD_READY, onPayloadReady);
-    });
   },
 
   async reloadInspectorAndLog(label, toolbox) {
