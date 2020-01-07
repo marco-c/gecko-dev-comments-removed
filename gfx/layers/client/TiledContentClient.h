@@ -450,9 +450,7 @@ private:
   
   
   std::vector<gfx::Tile> mPaintTiles;
-  std::vector<RefPtr<TextureClient>> mPaintTilesTextureClients;
-  std::vector<CapturedTiledPaintState::Copy> mPaintCopies;
-  std::vector<CapturedTiledPaintState::Clear> mPaintClears;
+  std::vector<RefPtr<CapturedTiledPaintState>> mPaintStates;
 
   
 
