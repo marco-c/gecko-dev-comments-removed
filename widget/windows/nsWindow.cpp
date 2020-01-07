@@ -352,6 +352,9 @@ static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 static WindowsDllInterceptor sUser32Intercept;
 
 
+static mozilla::Maybe<bool> sHookedGetWindowInfo;
+
+
 
 
 static const int32_t kGlassMarginAdjustment = 2;
@@ -2496,11 +2499,15 @@ nsWindow::UpdateGetWindowInfoCaptionStatus(bool aActiveCaption)
   if (!mWnd)
     return;
 
-  if (!sGetWindowInfoPtrStub) {
+  if (sHookedGetWindowInfo.isNothing()) {
     sUser32Intercept.Init("user32.dll");
-    if (!sUser32Intercept.AddHook("GetWindowInfo", reinterpret_cast<intptr_t>(GetWindowInfoHook),
-                                  (void**) &sGetWindowInfoPtrStub))
+    sHookedGetWindowInfo =
+      Some(sUser32Intercept.AddHook("GetWindowInfo",
+                                    reinterpret_cast<intptr_t>(GetWindowInfoHook),
+                                    (void**) &sGetWindowInfoPtrStub));
+    if (!sHookedGetWindowInfo.value()) {
       return;
+    }
   }
   
   SetPropW(mWnd, kManageWindowInfoProperty, 
