@@ -336,12 +336,6 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
   mTile.Flip();
   UnlockTile(mTile);
 
-  if (backBuffer->HasIntermediateBuffer()) {
-    
-    
-    mTile.DiscardBackBuffer();
-  }
-
   mValidRegion = aNewValidRegion;
   mLastPaintSurfaceMode = mode;
   mLastPaintContentType = content;
