@@ -1586,6 +1586,7 @@ StartMacOSContentSandbox()
   info.appBinaryPath.assign(appBinaryPath.get());
   info.appDir.assign(appDir.get());
   info.appTempDir.assign(tempDirPath.get());
+  info.hasAudio = !Preferences::GetBool("media.cubeb.sandbox");
 
   
   
