@@ -2834,6 +2834,10 @@ ContentParent::Observe(nsISupports* aSubject,
   if (mSubprocess && (!strcmp(aTopic, "profile-before-change") ||
                       !strcmp(aTopic, "xpcom-shutdown"))) {
     
+    ProcessPriorityManager::SetProcessPriority(this,
+                                               PROCESS_PRIORITY_FOREGROUND);
+
+    
     ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
 
     
