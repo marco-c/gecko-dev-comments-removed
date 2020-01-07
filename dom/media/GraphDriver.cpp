@@ -539,6 +539,7 @@ AudioCallbackDriver::AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl)
   , mMicrophoneActive(false)
   , mShouldFallbackIfError(false)
   , mFromFallback(false)
+  , mProfilerRegistered(false)
 {
   LOG(LogLevel::Debug, ("AudioCallbackDriver ctor for graph %p", aGraphImpl));
 #if defined(XP_WIN)
@@ -897,6 +898,11 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   AutoInCallback aic(this);
 #endif
 
+  if (!mProfilerRegistered) {
+    mProfilerRegistered = true;
+    PROFILER_REGISTER_THREAD("AudioCallback");
+  }
+
   GraphTime stateComputedTime = StateComputedTime();
   if (stateComputedTime == 0) {
     MonitorAutoLock mon(mGraphImpl->GetMonitor());
@@ -1002,6 +1008,8 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     
     mGraphImpl->SignalMainThreadCleanup();
+
+    PROFILER_UNREGISTER_THREAD();
     return aFrames - 1;
   }
 
@@ -1024,6 +1032,7 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     NextDriver()->SetGraphTime(this, mIterationStart, mIterationEnd);
     mGraphImpl->SetCurrentDriver(NextDriver());
     NextDriver()->Start();
+    PROFILER_UNREGISTER_THREAD();
     
     
     return aFrames - 1;
@@ -1115,6 +1124,8 @@ AudioCallbackDriver::DeviceChangedCallback() {
 #ifdef XP_MACOSX
   PanOutputIfNeeded(mMicrophoneActive);
 #endif
+
+  mProfilerRegistered = false;
 }
 
 void
