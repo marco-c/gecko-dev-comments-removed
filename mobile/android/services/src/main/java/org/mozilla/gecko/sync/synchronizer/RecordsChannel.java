@@ -232,6 +232,13 @@ public class RecordsChannel implements
     toProcess = null;
 
     
+    
+    if (storeFailed.get()) {
+      Logger.info(LOG_TAG, "Store failed while processing records via sink.store(...); bailing out.");
+      return;
+    }
+
+    
     Logger.trace(LOG_TAG, "onFetchCompleted. Calling storeDone.");
     sink.storeDone();
   }

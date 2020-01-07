@@ -221,6 +221,13 @@ public class BatchingUploader {
     }
 
     public void noMoreRecordsToUpload() {
+        
+        
+        if (shouldIgnoreFurtherRecords()) {
+            Logger.debug(LOG_TAG, "Ignoring 'no more records to upload' signal due to previous failure.");
+            return;
+        }
+
         Logger.debug(LOG_TAG, "Received 'no more records to upload' signal.");
 
         
@@ -269,17 +276,12 @@ public class BatchingUploader {
         if (shouldFailBatchOnFailure) {
             
             Logger.debug(LOG_TAG, "Batch failed with exception: " + e.toString());
-            executor.execute(new PayloadDispatcher.NonPayloadContextRunnable() {
-                @Override
-                public void run() {
-                    sessionStoreDelegate.onRecordStoreFailed(e, record.guid);
-                    payloadDispatcher.doStoreFailed(e);
-                }
-            });
             
+            sessionStoreDelegate.onRecordStoreFailed(e, record.guid);
+            payloadDispatcher.doStoreFailed(e);
         } else if (!sizeOverflow) {
             
-            sessionStoreDelegate.deferredStoreDelegate(executor).onRecordStoreFailed(e, record.guid);
+            sessionStoreDelegate.onRecordStoreFailed(e, record.guid);
         }
         
     }
