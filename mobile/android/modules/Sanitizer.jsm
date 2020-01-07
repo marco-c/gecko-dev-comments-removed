@@ -67,7 +67,16 @@ Sanitizer.prototype = {
     }
   },
 
+  
+  
+  
+  
+  
+
+  
+  
   items: {
+    
     cache: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -94,6 +103,8 @@ Sanitizer.prototype = {
       }
     },
 
+    
+    
     cookies: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -120,6 +131,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     siteSettings: {
       clear: Task.async(function* () {
         let refObj = {};
@@ -159,6 +171,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     offlineApps: {
       async clear() {
         
@@ -204,6 +217,8 @@ Sanitizer.prototype = {
       }
     },
 
+    
+    
     history: {
       clear: function() {
         let refObj = {};
@@ -231,6 +246,8 @@ Sanitizer.prototype = {
       }
     },
 
+    
+    
     openTabs: {
       clear: function() {
         let refObj = {};
@@ -252,6 +269,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     searchHistory: {
       clear: function() {
         return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:ClearHistory", clearSearchHistory: true })
@@ -263,6 +281,8 @@ Sanitizer.prototype = {
       }
     },
 
+    
+    
     formdata: {
       clear: function({ startTime = 0 } = {}) {
         return new Promise(function(resolve, reject) {
@@ -294,6 +314,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     downloadFiles: {
       clear: Task.async(function* ({ startTime = 0, deleteFiles = true} = {}) {
         let refObj = {};
@@ -343,6 +364,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     passwords: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -357,6 +379,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     sessions: {
       clear: function() {
         return new Promise(function(resolve, reject) {
@@ -380,6 +403,7 @@ Sanitizer.prototype = {
       }
     },
 
+    
     syncedTabs: {
       clear: function() {
         return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:ClearSyncedTabs" })
