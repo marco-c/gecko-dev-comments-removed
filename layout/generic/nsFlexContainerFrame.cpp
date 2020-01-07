@@ -1345,18 +1345,23 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
 
 
 
+
 static bool
 IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
                     const FlexboxAxisTracker& aAxisTracker)
 {
   const nsStylePosition* pos = aItemReflowInput.mStylePosition;
-  if (aAxisTracker.IsCrossAxisHorizontal()) {
-    return pos->mWidth.GetUnit() != eStyleUnit_Auto;
+  const WritingMode containerWM = aAxisTracker.GetWritingMode();
+
+  if (aAxisTracker.IsColumnOriented()) {
+    
+    return pos->ISize(containerWM).GetUnit() != eStyleUnit_Auto;
   }
   
   
-  nscoord cbHeight = aItemReflowInput.mCBReflowInput->ComputedHeight();
-  return !nsLayoutUtils::IsAutoHeight(pos->mHeight, cbHeight);
+  
+  nscoord cbBSize = aItemReflowInput.mCBReflowInput->ComputedBSize();
+  return !nsLayoutUtils::IsAutoBSize(pos->BSize(containerWM), cbBSize);
 }
 
 
