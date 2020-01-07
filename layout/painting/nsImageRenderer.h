@@ -254,6 +254,14 @@ public:
                            const mozilla::Maybe<nsSize>& aSVGViewportSize,
                            const bool           aHasIntrinsicRatio);
 
+  
+
+
+
+  ImgDrawResult
+  DrawShapeImage(nsPresContext* aPresContext,
+                 gfxContext& aRenderingContext);
+
   bool IsRasterImage();
   bool IsAnimatedImage();
 
