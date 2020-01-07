@@ -356,6 +356,7 @@ pub mod platform {
     use super::find_binary;
     use std::path::PathBuf;
 
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         find_binary("firefox")
     }
@@ -371,6 +372,9 @@ pub mod platform {
     use std::env;
     use std::path::PathBuf;
 
+    
+    
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         if let Some(path) = find_binary("firefox-bin") {
             return Some(path);
@@ -409,6 +413,9 @@ pub mod platform {
     use winreg::RegKey;
     use winreg::enums::*;
 
+    
+    
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         let opt_path = firefox_registry_path().unwrap_or(None);
         if let Some(path) = opt_path {
@@ -459,6 +466,8 @@ pub mod platform {
 pub mod platform {
     use std::path::PathBuf;
 
+    
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         None
     }
