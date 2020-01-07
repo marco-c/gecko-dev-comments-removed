@@ -16,9 +16,6 @@ pref("devtools.theme", "light", sticky);
 #endif
 
 
-pref("devtools.toolbar.visible", false);
-
-
 
 
 

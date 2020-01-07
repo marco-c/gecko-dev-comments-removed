@@ -26,10 +26,6 @@ const kDebuggerPrefs = [
   "devtools.chrome.enabled"
 ];
 
-
-
-const TOOLBAR_VISIBLE_PREF = "devtools.toolbar.visible";
-
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
@@ -89,12 +85,6 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
       id: "toggleToolboxF12",
       shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolboxF12.commandkey"),
       modifiers: "" 
-    },
-    
-    {
-      id: "toggleToolbar",
-      shortcut: KeyShortcutsBundle.GetStringFromName("toggleToolbar.commandkey"),
-      modifiers: "shift"
     },
     
     {
@@ -288,12 +278,6 @@ DevToolsStartup.prototype = {
     }
 
     this.hookWindow(window);
-
-    if (Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false)) {
-      
-      
-      this.initDevTools("DeveloperToolbar");
-    }
 
     
     
@@ -557,8 +541,7 @@ DevToolsStartup.prototype = {
     
     let isDevToolsUser = isRegularExperiment && this.isDevToolsUser();
 
-    let hasToolbarPref = Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false);
-    if (hasDevToolsFlag || hasToolbarPref || isDevToolsUser) {
+    if (hasDevToolsFlag || isDevToolsUser) {
       Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
     }
   },
