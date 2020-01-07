@@ -470,6 +470,11 @@ function getAssignedLayerMap(contentRootElement) {
     return layerNameToElementsMap;
 }
 
+const FlushMode = {
+  ALL: 0,
+  IGNORE_THROTTLED_ANIMATIONS: 1
+};
+
 
 
 
@@ -488,7 +493,7 @@ const STATE_WAITING_FOR_APZ_FLUSH = 3;
 const STATE_WAITING_TO_FINISH = 4;
 const STATE_COMPLETED = 5;
 
-function FlushRendering() {
+function FlushRendering(aFlushMode) {
     var anyPendingPaintsGeneratedInDescendants = false;
 
     function flushWindow(win) {
@@ -499,8 +504,11 @@ function FlushRendering() {
         var root = win.document.documentElement;
         if (root && !root.classList.contains("reftest-no-flush")) {
             try {
-                
-                root.getBoundingClientRect();
+                if (aFlushMode === FlushMode.IGNORE_THROTTLED_ANIMATIONS) {
+                    utils.flushLayoutWithoutThrottledAnimations();
+                } else {
+                    root.getBoundingClientRect();
+                }
             } catch (e) {
                 LogWarning("flushWindow failed: " + e + "\n");
             }
@@ -585,7 +593,17 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
         
         
         if (state != STATE_WAITING_TO_FINISH) {
-          FlushRendering();
+          
+          
+          
+          
+          
+          
+          
+          flushMode = (state === STATE_WAITING_TO_FIRE_INVALIDATE_EVENT)
+                    ? FlushMode.IGNORE_THROTTLED_ANIMATIONS
+                    : FlushMode.ALL;
+          FlushRendering(flushMode);
         }
 
         switch (state) {
@@ -634,7 +652,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
             if (hasReftestWait && !shouldWaitForReftestWaitRemoval(contentRootElement)) {
                 
                 
-                FlushRendering();
+                FlushRendering(FlushMode.ALL);
                 if (!shouldWaitForPendingPaints() && !shouldWaitForExplicitPaintWaiters()) {
                     LogWarning("MozInvalidateEvent didn't invalidate");
                 }
@@ -834,7 +852,7 @@ function OnDocumentLoad(event)
           content.document ? content.document.documentElement : null;
 
         
-        FlushRendering();
+        FlushRendering(FlushMode.ALL);
 
         
         
