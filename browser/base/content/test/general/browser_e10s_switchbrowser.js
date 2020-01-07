@@ -77,7 +77,7 @@ var waitForLoad = async function(uri) {
 
 var waitForLoadWithFlags = async function(uri, flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE) {
   info("Loading " + uri + " flags = " + flags);
-  gBrowser.selectedBrowser.loadURIWithFlags(uri, flags, null, null, null);
+  gBrowser.selectedBrowser.loadURIWithFlags(uri, { flags });
 
   await BrowserTestUtils.browserStopped(gBrowser);
   if (!(flags & Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY)) {
