@@ -366,8 +366,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    explicit MacroAssembler(JSContext* cx, IonScript* ion = nullptr,
-                            JSScript* script = nullptr, jsbytecode* pc = nullptr);
+    explicit MacroAssembler(JSContext* cx);
 
     
     struct WasmToken {};
