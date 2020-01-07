@@ -6954,6 +6954,16 @@ CodeGenerator::emitGetNextEntryForIterator(LGetNextEntryForIterator* lir)
     Register range = ToRegister(lir->temp2());
     Register output = ToRegister(lir->output());
 
+#ifdef DEBUG
+    
+    
+    
+    Label success;
+    masm.branchTestObjClass(Assembler::Equal, iter, temp, &IteratorObject::class_, &success);
+    masm.assumeUnreachable("Iterator object should have the correct class.");
+    masm.bind(&success);
+#endif
+
     masm.loadPrivate(Address(iter, NativeObject::getFixedSlotOffset(IteratorObject::RangeSlot)),
                      range);
 
