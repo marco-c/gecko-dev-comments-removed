@@ -51,6 +51,7 @@ class MockPerfFront extends EventEmitter {
     super();
     this._isActive = false;
     this._asyncQueue = [];
+    this._startProfilerCalls = [];
 
     
     this.mockIsSupported = true;
@@ -83,7 +84,11 @@ class MockPerfFront extends EventEmitter {
     };
   }
 
-  flushAsyncQueue() {
+  
+
+
+
+  _flushAsyncQueue() {
     const pending = this._asyncQueue;
     this._asyncQueue = [];
     pending.forEach(fn => fn());
@@ -91,7 +96,8 @@ class MockPerfFront extends EventEmitter {
     return new Promise(resolve => setTimeout(resolve, 0));
   }
 
-  startProfiler() {
+  startProfiler(settings) {
+    this._startProfilerCalls.push(settings);
     this._isActive = true;
     this.emit("profiler-started");
   }
@@ -134,6 +140,24 @@ Object.getOwnPropertyNames(perfDescription.methods).forEach(methodName => {
 
 
 
+
+function setReactFriendlyInputValue(element, value) {
+  const valueSetter = Object.getOwnPropertyDescriptor(element, "value").set;
+  const prototype = Object.getPrototypeOf(element);
+  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, "value").set;
+
+  if (valueSetter && valueSetter !== prototypeValueSetter) {
+    prototypeValueSetter.call(element, value);
+  } else {
+    valueSetter.call(element, value);
+  }
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+
+
+
+
 function createPerfComponent() {
   const Perf = require("devtools/client/performance-new/components/Perf");
   const React = require("devtools/client/shared/vendor/react");
@@ -144,23 +168,28 @@ function createPerfComponent() {
   const actions = require("devtools/client/performance-new/store/actions");
   const selectors = require("devtools/client/performance-new/store/selectors");
 
-  const perfFront = new MockPerfFront();
+  const perfFrontMock = new MockPerfFront();
   const toolboxMock = {};
   const store = createStore(reducers);
   const container = document.querySelector("#container");
   const receiveProfileCalls = [];
+  const recordingPreferencesCalls = [];
 
   function receiveProfileMock(profile) {
     receiveProfileCalls.push(profile);
   }
 
-  const mountComponent = () => {
+  function recordingPreferencesMock(settings) {
+    recordingPreferencesCalls.push(settings);
+  }
+
+  function mountComponent() {
     store.dispatch(actions.initializeStore({
       toolbox: toolboxMock,
-      perfFront,
+      perfFront: perfFrontMock,
       receiveProfile: receiveProfileMock,
       recordingSettingsFromPreferences: selectors.getRecordingSettings(store.getState()),
-      setRecordingPreferences: () => {}
+      setRecordingPreferences: recordingPreferencesMock
     }));
 
     return ReactDOM.render(
@@ -171,13 +200,24 @@ function createPerfComponent() {
       ),
       container
     );
-  };
+  }
+
+  
+
+
+
+  async function mountAndInitializeComponent() {
+    mountComponent();
+    await perfFrontMock._flushAsyncQueue();
+  }
 
   
   return {
     receiveProfileCalls,
-    perfFront,
+    recordingPreferencesCalls,
+    perfFrontMock,
     mountComponent,
+    mountAndInitializeComponent,
     selectors,
     store,
     container,
