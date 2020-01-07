@@ -911,7 +911,7 @@ EditorEventListener::Drop(DragEvent* aDragEvent)
       
       
       
-      return aDragEvent->StopPropagation();
+      aDragEvent->StopPropagation();
     }
     return NS_OK;
   }
