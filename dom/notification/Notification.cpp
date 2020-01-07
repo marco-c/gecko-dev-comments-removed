@@ -424,6 +424,13 @@ public:
   {
     mNotification->ReleaseObject();
   }
+
+  nsresult
+  Cancel() override
+  {
+    mNotification->ReleaseObject();
+    return NS_OK;
+  }
 };
 
 
