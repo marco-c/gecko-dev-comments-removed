@@ -206,6 +206,7 @@ var Sanitizer = {
         d.setHours(0); 
         d.setMinutes(0);
         d.setSeconds(0);
+        d.setMilliseconds(0);
         startDate = d.valueOf() * 1000; 
         break;
       case Sanitizer.TIMESPAN_24HOURS :
