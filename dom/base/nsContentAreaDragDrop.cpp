@@ -78,8 +78,7 @@ private:
   void AddString(DataTransfer* aDataTransfer,
                  const nsAString& aFlavor,
                  const nsAString& aData,
-                 nsIPrincipal* aPrincipal,
-                 bool aHidden=false);
+                 nsIPrincipal* aPrincipal);
   nsresult AddStringsToDataTransfer(nsIContent* aDragNode,
                                     DataTransfer* aDataTransfer);
   static nsresult GetDraggableSelectionData(nsISelection* inSelection,
@@ -101,7 +100,6 @@ private:
   nsString mUrlString;
   nsString mImageSourceString;
   nsString mImageDestFileName;
-  nsString mImageRequestMime;
   nsString mTitleString;
   
   nsString mHtmlString;
@@ -141,16 +139,22 @@ NS_IMPL_ISUPPORTS(nsContentAreaDragDropDataProvider, nsIFlavorDataProvider)
 
 
 nsresult
-nsContentAreaDragDropDataProvider::SaveURIToFile(nsIURI* inSourceURI,
+nsContentAreaDragDropDataProvider::SaveURIToFile(nsAString& inSourceURIString,
                                                  nsIFile* inDestFile,
                                                  bool isPrivate)
 {
-  nsCOMPtr<nsIURL> sourceURL = do_QueryInterface(inSourceURI);
+  nsCOMPtr<nsIURI> sourceURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(sourceURI), inSourceURIString);
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIURL> sourceURL = do_QueryInterface(sourceURI);
   if (!sourceURL) {
     return NS_ERROR_NO_INTERFACE;
   }
 
-  nsresult rv = inDestFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
+  rv = inDestFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -163,54 +167,10 @@ nsContentAreaDragDropDataProvider::SaveURIToFile(nsIURI* inSourceURI,
   persist->SetPersistFlags(nsIWebBrowserPersist::PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION);
 
   
-  return persist->SavePrivacyAwareURI(inSourceURI, nullptr, nullptr,
+  return persist->SavePrivacyAwareURI(sourceURI, nullptr, nullptr,
                                       mozilla::net::RP_Unset,
                                       nullptr, nullptr,
                                       inDestFile, isPrivate);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult
-CheckAndGetExtensionForMime(const nsCString& aExtension,
-                            const nsCString& aMimeType,
-                            bool* aIsValidExtension,
-                            nsACString* aPrimaryExtension)
-{
-  nsresult rv;
-
-  nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
-  if (NS_WARN_IF(!mimeService)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIMIMEInfo> mimeInfo;
-  rv = mimeService->GetFromTypeAndExtension(aMimeType, EmptyCString(),
-                                            getter_AddRefs(mimeInfo));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = mimeInfo->GetPrimaryExtension(*aPrimaryExtension);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aExtension.IsEmpty()) {
-    *aIsValidExtension = false;
-    return NS_OK;
-  }
-
-  rv = mimeInfo->ExtensionExists(aExtension, aIsValidExtension);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
 }
 
 
@@ -268,84 +228,28 @@ nsContentAreaDragDropDataProvider::GetFlavorData(nsITransferable *aTransferable,
 
     
     
+    nsCOMPtr<nsISupports> dirPrimitive;
+    dataSize = 0;
+    aTransferable->GetTransferData(kFilePromiseDirectoryMime,
+                                   getter_AddRefs(dirPrimitive), &dataSize);
+    nsCOMPtr<nsIFile> destDirectory = do_QueryInterface(dirPrimitive);
+    if (!destDirectory)
+      return NS_ERROR_FAILURE;
+
+    nsCOMPtr<nsIFile> file;
+    rv = destDirectory->Clone(getter_AddRefs(file));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    file->Append(targetFilename);
+
+    bool isPrivate;
+    aTransferable->GetIsPrivateData(&isPrivate);
+
+    rv = SaveURIToFile(sourceURLString, file, isPrivate);
     
-    
-    
-    
-    if (XRE_IsParentProcess()) {
-      aTransferable->GetTransferData(kImageRequestMime,
-                                     getter_AddRefs(tmp), &dataSize);
-      supportsString = do_QueryInterface(tmp);
-      if (!supportsString)
-        return NS_ERROR_FAILURE;
-
-      nsAutoString imageRequestMime;
-      supportsString->GetData(imageRequestMime);
-
-      nsCOMPtr<nsIURI> sourceURI;
-      rv = NS_NewURI(getter_AddRefs(sourceURI), sourceURLString);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      if (!imageRequestMime.IsEmpty()) {
-        
-        nsCOMPtr<nsIURL> imageURL = do_QueryInterface(sourceURI, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        nsAutoCString extension;
-        rv = imageURL->GetFileExtension(extension);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        NS_ConvertUTF16toUTF8 mimeCString(imageRequestMime);
-        bool isValidExtension;
-        nsAutoCString primaryExtension;
-        rv = CheckAndGetExtensionForMime(extension,
-                                         mimeCString,
-                                         &isValidExtension,
-                                         &primaryExtension);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        if (!isValidExtension) {
-          
-          
-          
-          nsAutoCString newFileName;
-          rv = imageURL->GetFileBaseName(newFileName);
-          NS_ENSURE_SUCCESS(rv, rv);
-          newFileName.Append(".");
-          newFileName.Append(primaryExtension);
-          targetFilename = NS_ConvertUTF8toUTF16(newFileName);
-        }
-      }
-
-      targetFilename.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
-                                 '-');
-
-      
-      
-      nsCOMPtr<nsISupports> dirPrimitive;
-      dataSize = 0;
-      aTransferable->GetTransferData(kFilePromiseDirectoryMime,
-                                     getter_AddRefs(dirPrimitive), &dataSize);
-      nsCOMPtr<nsIFile> destDirectory = do_QueryInterface(dirPrimitive);
-      if (!destDirectory)
-        return NS_ERROR_FAILURE;
-
-      nsCOMPtr<nsIFile> file;
-      rv = destDirectory->Clone(getter_AddRefs(file));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      file->Append(targetFilename);
-
-      bool isPrivate;
-      aTransferable->GetIsPrivateData(&isPrivate);
-
-      rv = SaveURIToFile(sourceURI, file, isPrivate);
-      
-      if (NS_SUCCEEDED(rv)) {
-        CallQueryInterface(file, aData);
-        *aDataLen = sizeof(nsIFile*);
-      }
+    if (NS_SUCCEEDED(rv)) {
+      CallQueryInterface(file, aData);
+      *aDataLen = sizeof(nsIFile*);
     }
   }
 
@@ -661,39 +565,66 @@ DragDataProducer::Produce(DataTransfer* aDataTransfer,
         nsCOMPtr<imgIContainer> img =
           nsContentUtils::GetImageFromContent(image,
                                               getter_AddRefs(imgRequest));
-        if (imgRequest) {
+
+        nsCOMPtr<nsIMIMEService> mimeService =
+          do_GetService("@mozilla.org/mime;1");
+
+        
+        if (imgRequest && mimeService) {
           nsCOMPtr<nsIURI> imgUri;
           imgRequest->GetURI(getter_AddRefs(imgUri));
 
           nsCOMPtr<nsIURL> imgUrl(do_QueryInterface(imgUri));
+
           if (imgUrl) {
-            
-            
-            
+            nsAutoCString extension;
+            imgUrl->GetFileExtension(extension);
+
             nsCString mimeType;
             imgRequest->GetMimeType(getter_Copies(mimeType));
-            CopyUTF8toUTF16(mimeType, mImageRequestMime);
 
-            nsAutoCString spec;
-            rv = imgUrl->GetSpec(spec);
-            NS_ENSURE_SUCCESS(rv, rv);
+            nsCOMPtr<nsIMIMEInfo> mimeInfo;
+            mimeService->GetFromTypeAndExtension(mimeType, EmptyCString(),
+                                                 getter_AddRefs(mimeInfo));
 
-            
-            CopyUTF8toUTF16(spec, mImageSourceString);
+            if (mimeInfo) {
+              nsAutoCString spec;
+              rv = imgUrl->GetSpec(spec);
+              NS_ENSURE_SUCCESS(rv, rv);
 
-            nsAutoCString fileName;
-            imgUrl->GetFileName(fileName);
+              
+              CopyUTF8toUTF16(spec, mImageSourceString);
 
-            NS_UnescapeURL(fileName);
+              bool validExtension;
+              if (extension.IsEmpty() ||
+                  NS_FAILED(mimeInfo->ExtensionExists(extension,
+                                                      &validExtension)) ||
+                  !validExtension) {
+                
+                nsAutoCString primaryExtension;
+                mimeInfo->GetPrimaryExtension(primaryExtension);
 
-            
-            fileName.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
-                                 '-');
+                rv = NS_MutateURI(imgUrl)
+                       .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileExtension,
+                                               primaryExtension, nullptr))
+                       .Finalize(imgUrl);
+                NS_ENSURE_SUCCESS(rv, rv);
+              }
 
-            CopyUTF8toUTF16(fileName, mImageDestFileName);
+              nsAutoCString fileName;
+              imgUrl->GetFileName(fileName);
 
-            
-            mImage = img;
+              NS_UnescapeURL(fileName);
+
+              
+              fileName.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
+                                   '-');
+
+              CopyUTF8toUTF16(fileName, mImageDestFileName);
+
+              
+              mImage = img;
+            }
           }
         }
 
@@ -800,12 +731,11 @@ void
 DragDataProducer::AddString(DataTransfer* aDataTransfer,
                             const nsAString& aFlavor,
                             const nsAString& aData,
-                            nsIPrincipal* aPrincipal,
-                            bool aHidden)
+                            nsIPrincipal* aPrincipal)
 {
   RefPtr<nsVariantCC> variant = new nsVariantCC();
   variant->SetAsAString(aData);
-  aDataTransfer->SetDataWithPrincipal(aFlavor, variant, 0, aPrincipal, aHidden);
+  aDataTransfer->SetDataWithPrincipal(aFlavor, variant, 0, aPrincipal);
 }
 
 nsresult
@@ -881,8 +811,6 @@ DragDataProducer::AddStringsToDataTransfer(nsIContent* aDragNode,
               mImageSourceString, principal);
     AddString(aDataTransfer, NS_LITERAL_STRING(kFilePromiseDestFilename),
               mImageDestFileName, principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING(kImageRequestMime),
-              mImageRequestMime, principal,  true);
 
     
     if (!mIsAnchor) {
