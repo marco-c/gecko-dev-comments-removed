@@ -61,6 +61,14 @@ public:
 
   already_AddRefed<nsIScriptableRegion> SelectionRegion();
 
+  void EnsureCellIsVisible(int32_t row, nsTreeColumn* col, ErrorResult& aRv);
+
+  void ScrollToRow(int32_t aRow);
+
+  void ScrollByLines(int32_t aNumLines);
+
+  void ScrollByPages(int32_t aNumPages);
+
   int32_t GetFirstVisibleRow();
 
   int32_t GetLastVisibleRow();
@@ -98,10 +106,6 @@ public:
                             JS::Handle<JSObject*> heightOut,
                             ErrorResult& aRv);
 
-  
-  
-  
-  
   
   
   
