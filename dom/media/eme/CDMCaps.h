@@ -49,42 +49,29 @@ public:
     dom::MediaKeyStatus mStatus;
   };
 
+  bool IsKeyUsable(const CencKeyId& aKeyId);
+
   
   
-  class MOZ_STACK_CLASS AutoLock {
-  public:
-    explicit AutoLock(CDMCaps& aKeyCaps);
-    ~AutoLock();
+  bool SetKeyStatus(const CencKeyId& aKeyId,
+                    const nsString& aSessionId,
+                    const dom::Optional<dom::MediaKeyStatus>& aStatus);
 
-    bool IsKeyUsable(const CencKeyId& aKeyId);
+  void GetKeyStatusesForSession(const nsAString& aSessionId,
+                                nsTArray<KeyStatus>& aOutKeyStatuses);
 
-    
-    
-    bool SetKeyStatus(const CencKeyId& aKeyId,
-                      const nsString& aSessionId,
-                      const dom::Optional<dom::MediaKeyStatus>& aStatus);
+  void GetSessionIdsForKeyId(const CencKeyId& aKeyId,
+                             nsTArray<nsCString>& aOutSessionIds);
 
-    void GetKeyStatusesForSession(const nsAString& aSessionId,
-                                  nsTArray<KeyStatus>& aOutKeyStatuses);
+  
+  
+  bool RemoveKeysForSession(const nsString& aSessionId);
 
-    void GetSessionIdsForKeyId(const CencKeyId& aKeyId,
-                               nsTArray<nsCString>& aOutSessionIds);
-
-    
-    
-    bool RemoveKeysForSession(const nsString& aSessionId);
-
-    
-    void NotifyWhenKeyIdUsable(const CencKeyId& aKey,
-                               SamplesWaitingForKey* aSamplesWaiting);
-  private:
-    
-    CDMCaps& mData;
-  };
+  
+  void NotifyWhenKeyIdUsable(const CencKeyId& aKey,
+                             SamplesWaitingForKey* aSamplesWaiting);
 
 private:
-  void Lock();
-  void Unlock();
 
   struct WaitForKeys {
     WaitForKeys(const CencKeyId& aKeyId,
@@ -95,8 +82,6 @@ private:
     CencKeyId mKeyId;
     RefPtr<SamplesWaitingForKey> mListener;
   };
-
-  Monitor mMonitor;
 
   nsTArray<KeyStatus> mKeyStatuses;
 
