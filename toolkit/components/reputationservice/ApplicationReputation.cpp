@@ -426,6 +426,11 @@ static const char* const kBinaryFileExtensions[] = {
     ".bat", 
     
     
+    ".btapp", 
+    ".btinstall", 
+    ".btkey", 
+    ".btsearch", 
+    ".btskin", 
     ".bz", 
     ".bz2", 
     ".bzip2", 
@@ -448,6 +453,9 @@ static const char* const kBinaryFileExtensions[] = {
     ".dc42", 
     ".deb", 
     ".dex", 
+    ".dhtml", 
+    ".dhtm", 
+    ".dht", 
     ".diskcopy42", 
     ".dll", 
     ".dmg", 
@@ -619,6 +627,9 @@ static const char* const kBinaryFileExtensions[] = {
     ".shar", 
     ".shb", 
     ".shs", 
+    ".shtml", 
+    ".shtm", 
+    ".sht", 
     
     
     ".slp", 
@@ -638,7 +649,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".tcsh", 
     ".tgz", 
     
-    
+    ".torrent", 
     ".tpz", 
     ".txz", 
     ".tz", 
@@ -652,14 +663,23 @@ static const char* const kBinaryFileExtensions[] = {
     ".vbe", 
     ".vbs", 
     
+    ".vdx", 
     ".vhd", 
     ".vhdx", 
     ".vmdk", 
     ".vsd", 
+    ".vsdm", 
+    ".vsdx", 
     ".vsmacros", 
     ".vss", 
+    ".vssm", 
+    ".vssx", 
     ".vst", 
+    ".vstm", 
+    ".vstx", 
     ".vsw", 
+    ".vsx", 
+    ".vtx", 
     ".website",  
     ".wim", 
     
