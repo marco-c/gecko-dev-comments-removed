@@ -144,6 +144,9 @@ class DateTimeTestHelper {
     this.tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
     await BrowserTestUtils.synthesizeMouseAtCenter("input", {}, gBrowser.selectedBrowser);
     
+    
+    
+    
     if (!this.panel.dateTimePopupFrame) {
       await BrowserTestUtils.waitForEvent(this.panel, "DateTimePickerBindingReady");
     }
@@ -152,9 +155,19 @@ class DateTimeTestHelper {
   }
 
   async waitForPickerReady() {
-    await BrowserTestUtils.waitForEvent(this.frame, "load", true);
+    let readyPromise;
+    let loadPromise = new Promise(resolve => {
+      this.frame.addEventListener("load", () => {
+       
+        
+        readyPromise = BrowserTestUtils.waitForEvent(this.frame.contentDocument, "PickerReady");
+        resolve();
+      }, { capture: true, once: true });
+    });
+
+    await loadPromise;
     
-    await BrowserTestUtils.waitForEvent(this.frame.contentDocument, "PickerReady");
+    await readyPromise;
   }
 
   
