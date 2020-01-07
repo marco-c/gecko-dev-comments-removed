@@ -567,12 +567,6 @@ Event::WidgetEventPtr()
   return mEvent;
 }
 
-NS_IMETHODIMP_(Event*)
-Event::InternalDOMEvent()
-{
-  return this;
-}
-
 
 
 static bool

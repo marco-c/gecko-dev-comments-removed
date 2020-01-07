@@ -1348,7 +1348,7 @@ nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
         
         nsAutoString command;
         if (aVisitor.mDOMEvent &&
-            aVisitor.mDOMEvent->InternalDOMEvent()->AsXULCommandEvent() &&
+            aVisitor.mDOMEvent->AsXULCommandEvent() &&
             GetAttr(kNameSpaceID_None, nsGkAtoms::command, command) &&
             !command.IsEmpty()) {
             
