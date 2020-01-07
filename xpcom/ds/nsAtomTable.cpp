@@ -238,6 +238,12 @@ class nsAtomSubTable
   void GCLocked(GCKind aKind);
   size_t SizeOfExcludingThisLocked(MallocSizeOf aMallocSizeOf);
 
+  AtomTableEntry* Search(AtomTableKey& aKey)
+  {
+    mLock.AssertCurrentThreadOwns();
+    return static_cast<AtomTableEntry*>(mTable.Search(&aKey));
+  }
+
   AtomTableEntry* Add(AtomTableKey& aKey)
   {
     mLock.AssertCurrentThreadOwns();
@@ -256,6 +262,7 @@ public:
   already_AddRefed<nsAtom> Atomize(const nsAString& aUTF16String);
   already_AddRefed<nsAtom> Atomize(const nsACString& aUTF8String);
   already_AddRefed<nsAtom> AtomizeMainThread(const nsAString& aUTF16String);
+  nsStaticAtom* GetStaticAtom(const nsAString& aUTF16String);
   void RegisterStaticAtoms(const nsStaticAtomSetup* aSetup, uint32_t aCount);
 
   
@@ -571,49 +578,8 @@ nsAtom::Release()
 
 
 
-class StaticAtomEntry : public PLDHashEntryHdr
-{
-public:
-  typedef const nsAString& KeyType;
-  typedef const nsAString* KeyTypePointer;
 
-  explicit StaticAtomEntry(KeyTypePointer aKey) {}
-  StaticAtomEntry(const StaticAtomEntry& aOther) : mAtom(aOther.mAtom) {}
-
-  
-  
-  
-  ~StaticAtomEntry() {}
-
-  bool KeyEquals(KeyTypePointer aKey) const
-  {
-    return mAtom->Equals(*aKey);
-  }
-
-  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
-    return HashString(*aKey);
-  }
-
-  enum { ALLOW_MEMMOVE = true };
-
-  
-  
-  nsStaticAtom* MOZ_OWNING_REF mAtom;
-};
-
-
-
-
-
-typedef nsTHashtable<StaticAtomEntry> StaticAtomTable;
-static StaticAtomTable* gStaticAtomTable = nullptr;
-
-
-
-
-static bool gStaticAtomTableSealed = false;
+static bool gStaticAtomsDone = false;
 
 class DefaultAtoms
 {
@@ -649,8 +615,6 @@ NS_ShutdownAtomTable()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(gAtomTable);
-  delete gStaticAtomTable;
-  gStaticAtomTable = nullptr;
 
 #ifdef NS_FREE_PERMANENT_DATA
   
@@ -662,19 +626,12 @@ NS_ShutdownAtomTable()
   gAtomTable = nullptr;
 }
 
-void
-NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
-                                 size_t* aMain, size_t* aStatic)
+size_t
+NS_SizeOfAtomTableIncludingThis(MallocSizeOf aMallocSizeOf)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(gAtomTable);
-  *aMain = gAtomTable->SizeOfIncludingThis(aMallocSizeOf);
-
-  
-  
-  *aStatic = gStaticAtomTable
-           ? gStaticAtomTable->ShallowSizeOfIncludingThis(aMallocSizeOf)
-           : 0;
+  return gAtomTable->SizeOfIncludingThis(aMallocSizeOf);
 }
 
 size_t
@@ -694,15 +651,8 @@ void
 nsAtomTable::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
                                  uint32_t aCount)
 {
-  
-  
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(!gStaticAtomTableSealed,
-                     "Atom table has already been sealed!");
-
-  if (!gStaticAtomTable) {
-    gStaticAtomTable = new StaticAtomTable();
-  }
+  MOZ_RELEASE_ASSERT(!gStaticAtomsDone, "Static atom insertion is finished!");
 
   for (uint32_t i = 0; i < aCount; ++i) {
     const char16_t* string = aSetup[i].mString;
@@ -736,13 +686,6 @@ nsAtomTable::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
       he->mAtom = atom;
     }
     *atomp = atom;
-
-    if (!gStaticAtomTableSealed) {
-      StaticAtomEntry* entry =
-        gStaticAtomTable->PutEntry(nsDependentAtomString(atom));
-      MOZ_ASSERT(atom->IsStaticAtom());
-      entry->mAtom = atom;
-    }
   }
 }
 
@@ -890,15 +833,27 @@ NS_GetUnusedAtomCount(void)
 nsStaticAtom*
 NS_GetStaticAtom(const nsAString& aUTF16String)
 {
-  NS_PRECONDITION(gStaticAtomTable, "Static atom table not created yet.");
-  NS_PRECONDITION(gStaticAtomTableSealed, "Static atom table not sealed yet.");
-  StaticAtomEntry* entry = gStaticAtomTable->GetEntry(aUTF16String);
-  return entry ? entry->mAtom : nullptr;
+  MOZ_ASSERT(gStaticAtomsDone, "Static atom setup not yet done.");
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->GetStaticAtom(aUTF16String);
+}
+
+nsStaticAtom*
+nsAtomTable::GetStaticAtom(const nsAString& aUTF16String)
+{
+  uint32_t hash;
+  AtomTableKey key(aUTF16String.Data(), aUTF16String.Length(), &hash);
+  nsAtomSubTable& table = SelectSubTable(key);
+  MutexAutoLock lock(table.mLock);
+  AtomTableEntry* he = table.Search(key);
+  return he && he->mAtom->IsStaticAtom()
+       ? static_cast<nsStaticAtom*>(he->mAtom)
+       : nullptr;
 }
 
 void
-NS_SealStaticAtomTable()
+NS_SetStaticAtomsDone()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  gStaticAtomTableSealed = true;
+  gStaticAtomsDone = true;
 }

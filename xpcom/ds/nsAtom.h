@@ -166,7 +166,7 @@ nsrefcnt NS_GetNumberOfAtoms();
 nsStaticAtom* NS_GetStaticAtom(const nsAString& aUTF16String);
 
 
-void NS_SealStaticAtomTable();
+void NS_SetStaticAtomsDone();
 
 class nsAtomString : public nsString
 {
