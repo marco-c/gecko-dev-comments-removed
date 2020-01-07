@@ -447,7 +447,7 @@ ErrorCopier::~ErrorCopier()
 
     
     
-    if (JS::GetCompartmentForRealm(ar->origin()) != cx->compartment() &&
+    if (ar->origin()->compartment() != cx->compartment() &&
         cx->isExceptionPending() &&
         !cx->isThrowingDebuggeeWouldRun())
     {

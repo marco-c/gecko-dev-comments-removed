@@ -44,21 +44,33 @@ struct GCPolicy<Realm*> : public NonGCPointerPolicy<Realm*>
 extern JS_PUBLIC_API(Realm*)
 GetCurrentRealmOrNull(JSContext* cx);
 
+namespace shadow {
+
+class Realm
+{
+  protected:
+    JSCompartment* compartment_;
+
+    explicit Realm(JSCompartment* comp)
+      : compartment_(comp)
+    {}
+
+  public:
+    JSCompartment* compartment() {
+        return compartment_;
+    }
+    static shadow::Realm* get(JS::Realm* realm) {
+        return reinterpret_cast<shadow::Realm*>(realm);
+    }
+};
+
+}; 
+
 
 inline JSCompartment*
-GetCompartmentForRealm(Realm* realm) {
-    
-    
-    return reinterpret_cast<JSCompartment*>(realm);
-}
-
-
-
-
-
-inline Realm*
-GetRealmForCompartment(JSCompartment* compartment) {
-    return reinterpret_cast<Realm*>(compartment);
+GetCompartmentForRealm(Realm* realm)
+{
+    return shadow::Realm::get(realm)->compartment();
 }
 
 

@@ -145,7 +145,7 @@ struct JSContext : public JS::RootingContext,
 
     template <typename T>
     inline bool isInsideCurrentCompartment(T thing) const {
-        return thing->compartment() == GetCompartmentForRealm(realm_);
+        return thing->compartment() == compartment();
     }
 
     void* onOutOfMemory(js::AllocFunction allocFunc, size_t nbytes, void* reallocPtr = nullptr) {
@@ -244,8 +244,9 @@ struct JSContext : public JS::RootingContext,
 
     
     JSCompartment* compartment() const {
-        return JS::GetCompartmentForRealm(realm_);
+        return realm_ ? JS::GetCompartmentForRealm(realm_) : nullptr;
     }
+
     JS::Realm* realm() const {
         return realm_;
     }
