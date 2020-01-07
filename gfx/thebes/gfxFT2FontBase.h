@@ -45,7 +45,12 @@ public:
 private:
     uint32_t GetCharExtents(char aChar, cairo_text_extents_t* aExtents);
     uint32_t GetCharWidth(char aChar, gfxFloat* aWidth);
-    FT_Fixed GetFTGlyphAdvance(uint16_t aGID);
+
+    
+    
+    
+    bool GetFTGlyphAdvance(uint16_t aGID, int32_t* aWidth);
+
     void InitMetrics();
 
 protected:
