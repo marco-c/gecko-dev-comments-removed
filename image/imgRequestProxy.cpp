@@ -20,6 +20,7 @@
 
 using namespace mozilla;
 using namespace mozilla::image;
+using mozilla::Move;
 
 
 
@@ -352,7 +353,7 @@ imgRequestProxy::AddToOwner(nsIDocument* aLoadingDocument)
   
   
   if (aLoadingDocument) {
-    RefPtr<dom::DocGroup> docGroup = aLoadingDocument->GetDocGroup();
+    RefPtr<mozilla::dom::DocGroup> docGroup = aLoadingDocument->GetDocGroup();
     if (docGroup) {
       mTabGroup = docGroup->GetTabGroup();
       MOZ_ASSERT(mTabGroup);
