@@ -362,20 +362,35 @@ APZUpdater::RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aT
     
     
 
+    bool sendWakeMessage = true;
     { 
       MutexAutoLock lock(mQueueLock);
+      for (const auto& queuedTask : mUpdaterQueue) {
+        if (queuedTask.mLayersId == aLayersId) {
+          
+          
+          
+          
+          
+          
+          sendWakeMessage = false;
+          break;
+        }
+      }
       mUpdaterQueue.push_back(QueuedTask { aLayersId, task });
     }
-    RefPtr<wr::WebRenderAPI> api = mApz->GetWebRenderAPI();
-    if (api) {
-      api->WakeSceneBuilder();
-    } else {
-      
-      
-      
-      
-      
-      NS_WARNING("Possibly dropping task posted to updater thread");
+    if (sendWakeMessage) {
+      RefPtr<wr::WebRenderAPI> api = mApz->GetWebRenderAPI();
+      if (api) {
+        api->WakeSceneBuilder();
+      } else {
+        
+        
+        
+        
+        
+        NS_WARNING("Possibly dropping task posted to updater thread");
+      }
     }
     return;
   }
