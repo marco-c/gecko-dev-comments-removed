@@ -1636,6 +1636,13 @@ protected:
 
   virtual ~EditorBase();
 
+  
+
+
+
+
+  virtual nsresult SelectAllInternal();
+
   nsresult DetermineCurrentDirection();
   void FireInputEvent();
 
