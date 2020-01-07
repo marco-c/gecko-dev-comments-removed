@@ -13,20 +13,6 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "nsCOMPtr.h"
 
-
-
-
-
-enum nsDragDropEventStatus
-{  
-  
-  nsDragDropEventStatus_eDragEntered,
-  
-  nsDragDropEventStatus_eDragExited,
-  
-  nsDragDropEventStatus_eDrop
-};
-
 namespace mozilla {
 
 namespace dom {
