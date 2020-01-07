@@ -73,8 +73,6 @@ private:
 
   ~ServiceWorkerContainer();
 
-  void RemoveReadyPromise();
-
   
   
   RefPtr<ServiceWorker> mControllerWorker;
