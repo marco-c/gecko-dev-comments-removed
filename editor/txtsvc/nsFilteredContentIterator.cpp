@@ -193,10 +193,9 @@ nsFilteredContentIterator::First()
   }
 
   nsINode *currentNode = mCurrentIterator->GetCurrentNode();
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(currentNode));
 
   bool didCross;
-  CheckAdvNode(node, didCross, eForward);
+  CheckAdvNode(currentNode, didCross, eForward);
 }
 
 
@@ -224,10 +223,9 @@ nsFilteredContentIterator::Last()
   }
 
   nsINode *currentNode = mCurrentIterator->GetCurrentNode();
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(currentNode));
 
   bool didCross;
-  CheckAdvNode(node, didCross, eBackward);
+  CheckAdvNode(currentNode, didCross, eBackward);
 }
 
 
@@ -284,12 +282,13 @@ ContentIsInTraversalRange(nsIContent* aContent, bool aIsPreMode,
 }
 
 static bool
-ContentIsInTraversalRange(nsRange* aRange, nsIDOMNode* aNextNode, bool aIsPreMode)
+ContentIsInTraversalRange(nsRange* aRange, nsIContent* aNextContent, bool aIsPreMode)
 {
-  nsCOMPtr<nsIContent> content(do_QueryInterface(aNextNode));
-  NS_ENSURE_TRUE(content && aRange, false);
+  
+  
+  NS_ENSURE_TRUE(aNextContent && aRange, false);
 
-  return ContentIsInTraversalRange(content, aIsPreMode,
+  return ContentIsInTraversalRange(aNextContent, aIsPreMode,
                                    aRange->GetStartContainer(),
                                    static_cast<int32_t>(aRange->StartOffset()),
                                    aRange->GetEndContainer(),
@@ -299,19 +298,20 @@ ContentIsInTraversalRange(nsRange* aRange, nsIDOMNode* aNextNode, bool aIsPreMod
 
 
 nsresult
-nsFilteredContentIterator::AdvanceNode(nsIDOMNode* aNode, nsIDOMNode*& aNewNode, eDirectionType aDir)
+nsFilteredContentIterator::AdvanceNode(nsINode* aNode, nsINode*& aNewNode, eDirectionType aDir)
 {
-  nsCOMPtr<nsIDOMNode> nextNode;
+  nsCOMPtr<nsIContent> nextNode;
   if (aDir == eForward) {
-    aNode->GetNextSibling(getter_AddRefs(nextNode));
+    nextNode = aNode->GetNextSibling();
   } else {
-    aNode->GetPreviousSibling(getter_AddRefs(nextNode));
+    nextNode = aNode->GetPreviousSibling();
   }
 
   if (nextNode) {
     
     
-    bool intersects = ContentIsInTraversalRange(mRange, nextNode, aDir == eForward);
+    bool intersects = ContentIsInTraversalRange(mRange, nextNode,
+                                                aDir == eForward);
     if (intersects) {
       aNewNode = nextNode;
       NS_ADDREF(aNewNode);
@@ -319,10 +319,11 @@ nsFilteredContentIterator::AdvanceNode(nsIDOMNode* aNode, nsIDOMNode*& aNewNode,
     }
   } else {
     
-    nsCOMPtr<nsIDOMNode> parent;
-    aNode->GetParentNode(getter_AddRefs(parent));
+    nsCOMPtr<nsINode> parent = aNode->GetParentNode();
     NS_ASSERTION(parent, "parent can't be nullptr");
 
+    
+    
     
     bool intersects = ContentIsInTraversalRange(mRange, nextNode, aDir == eForward);
     if (intersects) {
@@ -344,21 +345,21 @@ nsFilteredContentIterator::AdvanceNode(nsIDOMNode* aNode, nsIDOMNode*& aNewNode,
 
 
 void
-nsFilteredContentIterator::CheckAdvNode(nsIDOMNode* aNode, bool& aDidSkip, eDirectionType aDir)
+nsFilteredContentIterator::CheckAdvNode(nsINode* aNode, bool& aDidSkip, eDirectionType aDir)
 {
   aDidSkip      = false;
   mIsOutOfRange = false;
 
   if (aNode && mFilter) {
-    nsCOMPtr<nsIDOMNode> currentNode = aNode;
+    nsCOMPtr<nsINode> currentNode = aNode;
     bool skipIt;
     while (1) {
-      nsresult rv = mFilter->Skip(aNode, &skipIt);
+      nsresult rv = mFilter->Skip(aNode->AsDOMNode(), &skipIt);
       if (NS_SUCCEEDED(rv) && skipIt) {
         aDidSkip = true;
         
         
-        nsCOMPtr<nsIDOMNode> advNode;
+        nsCOMPtr<nsINode> advNode;
         rv = AdvanceNode(aNode, *getter_AddRefs(advNode), aDir);
         if (NS_SUCCEEDED(rv) && advNode) {
           aNode = advNode;
@@ -404,8 +405,7 @@ nsFilteredContentIterator::Next()
   
   nsINode *currentNode = mCurrentIterator->GetCurrentNode();
 
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(currentNode));
-  CheckAdvNode(node, mDidSkip, eForward);
+  CheckAdvNode(currentNode, mDidSkip, eForward);
 }
 
 void
@@ -436,8 +436,7 @@ nsFilteredContentIterator::Prev()
   
   nsINode *currentNode = mCurrentIterator->GetCurrentNode();
 
-  nsCOMPtr<nsIDOMNode> node(do_QueryInterface(currentNode));
-  CheckAdvNode(node, mDidSkip, eBackward);
+  CheckAdvNode(currentNode, mDidSkip, eBackward);
 }
 
 nsINode *

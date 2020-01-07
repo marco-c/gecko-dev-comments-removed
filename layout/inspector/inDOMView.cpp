@@ -807,8 +807,8 @@ inDOMView::ContentInserted(nsIDocument *aDocument, nsIContent* aContainer,
   }
 
   
-  nsCOMPtr<nsIDOMNode> previous;
-  GetRealPreviousSibling(childDOMNode, parent, getter_AddRefs(previous));
+  
+  nsCOMPtr<nsIDOMNode> previous = do_QueryInterface(aChild->GetPreviousSibling());
   inDOMViewNode* previousNode = nullptr;
 
   int32_t row = 0;
@@ -1188,15 +1188,6 @@ inDOMView::GetChildNodesFor(nsIDOMNode* aNode, nsCOMArray<nsIDOMNode>& aResult)
     }
   }
 
-  return NS_OK;
-}
-
-nsresult
-inDOMView::GetRealPreviousSibling(nsIDOMNode* aNode, nsIDOMNode* aRealParent, nsIDOMNode** aSibling)
-{
-  
-  
-  aNode->GetPreviousSibling(aSibling);
   return NS_OK;
 }
 

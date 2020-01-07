@@ -738,7 +738,6 @@ nsXHTMLContentSerializer::SerializeLIValueAttribute(nsIContent* aElement,
   
   
   bool found = false;
-  nsCOMPtr<nsIDOMNode> currNode = do_QueryInterface(aElement);
   nsAutoString valueStr;
 
   olState state (0, false);
@@ -756,26 +755,20 @@ nsXHTMLContentSerializer::SerializeLIValueAttribute(nsIContent* aElement,
 
   
   
+  nsIContent* currNode = aElement;
   while (currNode && !found) {
-    nsCOMPtr<nsIDOMElement> currElement = do_QueryInterface(currNode);
-    
-    if (currElement) {
-      nsAutoString tagName;
-      currElement->GetTagName(tagName);
-      if (tagName.LowerCaseEqualsLiteral("li")) {
-        currElement->GetAttribute(NS_LITERAL_STRING("value"), valueStr);
-        if (valueStr.IsEmpty())
-          offset++;
-        else {
-          found = true;
-          nsresult rv = NS_OK;
-          startVal = valueStr.ToInteger(&rv);
-        }
+    if (currNode->IsHTMLElement(nsGkAtoms::li)) {
+      currNode->AsElement()->GetAttr(kNameSpaceID_None,
+                                     nsGkAtoms::value, valueStr);
+      if (valueStr.IsEmpty()) {
+        offset++;
+      } else {
+        found = true;
+        nsresult rv = NS_OK;
+        startVal = valueStr.ToInteger(&rv);
       }
     }
-    nsCOMPtr<nsIDOMNode> tmp;
-    currNode->GetPreviousSibling(getter_AddRefs(tmp));
-    currNode.swap(tmp);
+    currNode = currNode->GetPreviousSibling();
   }
   
   
