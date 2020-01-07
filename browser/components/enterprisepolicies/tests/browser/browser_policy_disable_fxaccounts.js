@@ -13,11 +13,4 @@ add_task(async function test_policy_disable_fxaccounts() {
   });
 
   is(gSync.SYNC_ENABLED, false, "Sync is disabled after setting the policy.");
-
-  
-  
-  
-  
-  Services.prefs.unlockPref("identity.fxaccounts.enabled");
-  Services.prefs.getDefaultBranch("").setBoolPref("identity.fxaccounts.enabled", true);
 });

@@ -11,9 +11,9 @@ ChromeUtils.import("resource://testing-common/Assert.jsm");
 ChromeUtils.defineModuleGetter(this, "FileTestUtils",
                                "resource://testing-common/FileTestUtils.jsm");
 
-this.EXPORTED_SYMBOLS = ["EnterprisePolicyTesting"];
+var EXPORTED_SYMBOLS = ["EnterprisePolicyTesting", "PoliciesPrefTracker"];
 
-this.EnterprisePolicyTesting = {
+var EnterprisePolicyTesting = {
   
   
   setupPolicyEngineWithJson: async function setupPolicyEngineWithJson(json, customSchema) {
@@ -70,5 +70,80 @@ this.EnterprisePolicyTesting = {
           Services.prefs.clearUserPref(key);
       }
     }
+  },
+};
+
+
+
+
+
+
+
+
+var PoliciesPrefTracker = {
+  _originalFunc: null,
+  _originalValues: new Map(),
+
+  start() {
+    let PoliciesBackstage = ChromeUtils.import("resource:///modules/policies/Policies.jsm", {});
+    this._originalFunc = PoliciesBackstage.setDefaultPref;
+    PoliciesBackstage.setDefaultPref = this.hoistedSetDefaultPref.bind(this);
+  },
+
+  stop() {
+    this.restoreDefaultValues();
+
+    let PoliciesBackstage = ChromeUtils.import("resource:///modules/policies/Policies.jsm", {});
+    PoliciesBackstage.setDefaultPref = this._originalFunc;
+    this._originalFunc = null;
+  },
+
+  hoistedSetDefaultPref(prefName, prefValue) {
+    
+    
+    if (!this._originalValues.has(prefName)) {
+      let defaults = new Preferences({defaultBranch: true});
+      let stored = {};
+
+      if (defaults.has(prefName)) {
+        stored.originalDefaultValue = defaults.get(prefName);
+      }
+
+      if (Preferences.isSet(prefName) &&
+          Preferences.get(prefName) == prefValue) {
+        
+        
+        
+        
+        stored.originalUserValue = Preferences.get(prefName);
+      }
+
+      this._originalValues.set(prefName, stored);
+    }
+
+    
+    
+    this._originalFunc(prefName, prefValue);
+  },
+
+  restoreDefaultValues() {
+    let defaults = new Preferences({defaultBranch: true});
+
+    for (let [prefName, stored] of this._originalValues) {
+      
+      
+      
+      Preferences.unlock(prefName);
+
+      if (stored.originalDefaultValue) {
+        defaults.set(prefName, stored.originalDefaultValue);
+      }
+
+      if (stored.originalUserValue) {
+        Preferences.set(prefName, stored.originalUserValue);
+      }
+    }
+
+    this._originalValues.clear();
   },
 };

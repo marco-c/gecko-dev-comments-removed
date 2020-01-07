@@ -24,8 +24,4 @@ add_task(async function test_default_browser_check() {
   ShellService.shouldCheckDefaultBrowser = true;
 
   is(ShellService.shouldCheckDefaultBrowser, false, "Policy is enforced");
-
-  
-  
-  Services.prefs.unlockPref("browser.shell.checkDefaultBrowser");
 });

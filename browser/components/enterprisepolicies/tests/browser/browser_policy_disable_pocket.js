@@ -24,13 +24,5 @@ add_task(async function test_disable_firefox_screenshots() {
     });
 
     await checkPocket(false);
-
-    
-    
-    
-    
-    await setupPolicyEngineWithJson("");
-    Services.prefs.unlockPref(PREF_POCKET);
-    Services.prefs.getDefaultBranch("").setBoolPref(PREF_POCKET, true);
   });
 });
