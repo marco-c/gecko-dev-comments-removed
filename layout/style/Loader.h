@@ -578,6 +578,27 @@ private:
 
   
   
+  
+  
+  
+
+
+#ifdef MOZ_OLD_STYLE
+  nsresult DoParseSheetGecko(CSSStyleSheet* aSheet,
+                             const nsAString& aUTF16,
+                             Span<const uint8_t> aUTF8,
+                             SheetLoadData* aLoadData,
+                             bool& aCompleted);
+#endif
+
+  nsresult DoParseSheetServo(ServoStyleSheet* aSheet,
+                             const nsAString& aUTF16,
+                             Span<const uint8_t> aUTF8,
+                             SheetLoadData* aLoadData,
+                             bool& aCompleted);
+
+  
+  
   void SheetComplete(SheetLoadData* aLoadData, nsresult aStatus);
 
   
