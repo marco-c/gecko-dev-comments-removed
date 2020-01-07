@@ -245,7 +245,7 @@ struct AudioChunk {
     return static_cast<T*>(const_cast<void*>(mChannelData[aChannel]));
   }
 
-  PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
+  const PrincipalHandle& GetPrincipalHandle() const { return mPrincipalHandle; }
 
   StreamTime mDuration = 0; 
   RefPtr<ThreadSharedObject> mBuffer; 
