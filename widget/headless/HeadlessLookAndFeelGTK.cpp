@@ -5,6 +5,7 @@
 
 
 #include "HeadlessLookAndFeel.h"
+#include "mozilla/FontPropertyTypes.h"
 #include "nsIContent.h"
 
 using mozilla::LookAndFeel;
@@ -337,7 +338,7 @@ HeadlessLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
 {
   
   aFontStyle.style      = NS_FONT_STYLE_NORMAL;
-  aFontStyle.weight     = NS_FONT_WEIGHT_NORMAL;
+  aFontStyle.weight     = FontWeight::Normal();
   aFontStyle.stretch    = NS_FONT_STRETCH_NORMAL;
   aFontStyle.size       = 14 * aDevPixPerCSSPixel;
   aFontStyle.systemFont = true;

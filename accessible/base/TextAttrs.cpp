@@ -592,7 +592,7 @@ TextAttrsMgr::FontStyleTextAttr::
 
 TextAttrsMgr::FontWeightTextAttr::
   FontWeightTextAttr(nsIFrame* aRootFrame, nsIFrame* aFrame) :
-  TTextAttr<int32_t>(!aFrame)
+  TTextAttr<FontWeight>(!aFrame)
 {
   mRootNativeValue = GetFontWeight(aRootFrame);
   mIsRootDefined = true;
@@ -605,7 +605,7 @@ TextAttrsMgr::FontWeightTextAttr::
 
 bool
 TextAttrsMgr::FontWeightTextAttr::
-  GetValueFor(Accessible* aAccessible, int32_t* aValue)
+  GetValueFor(Accessible* aAccessible, FontWeight* aValue)
 {
   nsIContent* elm = nsCoreUtils::GetDOMElementFor(aAccessible->GetContent());
   if (elm) {
@@ -620,15 +620,16 @@ TextAttrsMgr::FontWeightTextAttr::
 
 void
 TextAttrsMgr::FontWeightTextAttr::
-  ExposeValue(nsIPersistentProperties* aAttributes, const int32_t& aValue)
+  ExposeValue(nsIPersistentProperties* aAttributes,
+              const FontWeight& aValue)
 {
   nsAutoString formattedValue;
-  formattedValue.AppendInt(aValue);
+  formattedValue.AppendFloat(aValue.ToFloat());
 
   nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::fontWeight, formattedValue);
 }
 
-int32_t
+FontWeight
 TextAttrsMgr::FontWeightTextAttr::
   GetFontWeight(nsIFrame* aFrame)
 {
@@ -645,8 +646,9 @@ TextAttrsMgr::FontWeightTextAttr::
   
   
   
-  if (font->IsSyntheticBold())
-    return 700;
+  if (font->IsSyntheticBold()) {
+    return FontWeight::Bold();
+  }
 
   
   

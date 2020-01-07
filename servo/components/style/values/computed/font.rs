@@ -75,10 +75,12 @@ impl FontWeight {
     }
 
     
-    pub fn from_gecko_weight(weight: u16) -> Self {
+    #[cfg(feature = "gecko")]
+    pub fn from_gecko_weight(weight: structs::FontWeight) -> Self {
         
         
-        FontWeight(weight)
+        let weight = unsafe { bindings::Gecko_FontWeight_ToFloat(weight) };
+        FontWeight(weight as u16)
     }
 
     

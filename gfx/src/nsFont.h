@@ -13,6 +13,7 @@
 #include "gfxFontConstants.h"           
 #include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
+#include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RefPtr.h"             
 #include "nsColor.h"                    
 #include "nsCoord.h"                    
@@ -44,6 +45,7 @@ const uint8_t kGenericFont_fantasy      = 0x20;
 
 
 struct nsFont {
+  typedef mozilla::FontWeight FontWeight;
 
   
   mozilla::FontFamilyList fontlist;
@@ -79,7 +81,7 @@ struct nsFont {
   nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
 
   
-  uint16_t weight = NS_FONT_WEIGHT_NORMAL;
+  FontWeight weight = FontWeight::Normal();
 
   
   

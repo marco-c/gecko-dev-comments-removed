@@ -445,20 +445,20 @@ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize)
 {
     GDIFontEntry *fe = static_cast<GDIFontEntry*>(GetFontEntry());
 
-    uint16_t weight;
+    FontWeight weight;
     if (fe->IsUserFont()) {
         if (fe->IsLocalUserFont()) {
             
             
             
-            weight = 0;
+            weight = FontWeight(0);
         } else {
             
             
-            weight = mNeedsBold ? 700 : 200;
+            weight = mNeedsBold ? FontWeight(700) : FontWeight(200);
         }
     } else {
-        weight = mNeedsBold ? 700 : fe->Weight();
+        weight = mNeedsBold ? FontWeight(700) : fe->Weight();
     }
 
     fe->FillLogFont(&aLogFont, weight, aSize);
