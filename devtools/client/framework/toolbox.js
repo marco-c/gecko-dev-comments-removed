@@ -104,6 +104,10 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._win = contentWindow;
   this.frameId = frameId;
 
+  
+  
+  this._webExtensions = new Map();
+
   this._toolPanels = new Map();
   this._inspectorExtensionSidebars = new Map();
   this._telemetry = new Telemetry();
@@ -3078,5 +3082,62 @@ Toolbox.prototype = {
     }
 
     return netPanel.panelWin.Netmonitor.fetchResponseContent(requestId);
-  }
+  },
+
+  
+
+  
+
+
+
+
+
+  listWebExtensions: function() {
+    
+    
+    
+    return Array.from(this._webExtensions).map(([uuid, {name, pref}]) => {
+      return {uuid, name, pref};
+    });
+  },
+
+  
+
+
+
+
+
+
+  registerWebExtension: function(extensionUUID, {name, pref}) {
+    
+    
+    
+    this._webExtensions.set(extensionUUID, {name, pref});
+    this.emit("webextension-registered", extensionUUID);
+  },
+
+  
+
+
+
+
+
+
+  unregisterWebExtension: function(extensionUUID) {
+    
+    
+    this._webExtensions.delete(extensionUUID);
+    this.emit("webextension-unregistered", extensionUUID);
+  },
+
+  
+
+
+
+
+
+  isWebExtensionEnabled: function(extensionUUID) {
+    let extInfo = this._webExtensions.get(extensionUUID);
+    return extInfo && Services.prefs.getBoolPref(extInfo.pref, false);
+  },
 };

@@ -64,6 +64,8 @@ function OptionsPanel(iframeWindow, toolbox) {
   this._prefChanged = this._prefChanged.bind(this);
   this._themeRegistered = this._themeRegistered.bind(this);
   this._themeUnregistered = this._themeUnregistered.bind(this);
+  this._webExtensionRegistered = this._webExtensionRegistered.bind(this);
+  this._webExtensionUnregistered = this._webExtensionUnregistered.bind(this);
   this._disableJSClicked = this._disableJSClicked.bind(this);
 
   this.disableJSNode = this.panelDoc.getElementById("devtools-disable-javascript");
@@ -103,6 +105,9 @@ OptionsPanel.prototype = {
                                this._prefChanged);
     gDevTools.on("theme-registered", this._themeRegistered);
     gDevTools.on("theme-unregistered", this._themeUnregistered);
+
+    this.toolbox.on("webextension-registered", this._webExtensionRegistered);
+    this.toolbox.on("webextension-unregistered", this._webExtensionUnregistered);
   },
 
   _removeListeners: function() {
@@ -110,6 +115,10 @@ OptionsPanel.prototype = {
     Services.prefs.removeObserver("devtools.theme", this._prefChanged);
     Services.prefs.removeObserver("devtools.source-map.client-service.enabled",
                                   this._prefChanged);
+
+    this.toolbox.off("webextension-registered", this._webExtensionRegistered);
+    this.toolbox.off("webextension-unregistered", this._webExtensionUnregistered);
+
     gDevTools.off("theme-registered", this._themeRegistered);
     gDevTools.off("theme-unregistered", this._themeUnregistered);
   },
@@ -137,6 +146,18 @@ OptionsPanel.prototype = {
     if (themeInput) {
       themeInput.parentNode.remove();
     }
+  },
+
+  _webExtensionRegistered: function(extensionUUID) {
+    
+    
+    this.setupToolsList();
+  },
+
+  _webExtensionUnregistered: function(extensionUUID) {
+    
+    
+    this.setupToolsList();
   },
 
   async setupToolbarButtonsList() {
@@ -200,14 +221,17 @@ OptionsPanel.prototype = {
 
     
     
-    let onCheckboxClick = function(id) {
-      let toolDefinition = gDevTools._tools.get(id) || toolbox.getToolDefinition(id);
+    
+    let onCheckboxClick = function(tool) {
       
-      Services.prefs.setBoolPref(toolDefinition.visibilityswitch, this.checked);
-      gDevTools.emit(this.checked ? "tool-registered" : "tool-unregistered", id);
+      Services.prefs.setBoolPref(tool.visibilityswitch, this.checked);
+
+      if (!tool.isWebExtension) {
+        gDevTools.emit(this.checked ? "tool-registered" : "tool-unregistered", tool.id);
+      }
     };
 
-    let createToolCheckbox = tool => {
+    let createToolCheckbox = (tool) => {
       let checkboxLabel = this.panelDoc.createElement("label");
       let checkboxInput = this.panelDoc.createElement("input");
       checkboxInput.setAttribute("type", "checkbox");
@@ -229,13 +253,17 @@ OptionsPanel.prototype = {
         checkboxInput.setAttribute("checked", "true");
       }
 
-      checkboxInput.addEventListener("change",
-        onCheckboxClick.bind(checkboxInput, tool.id));
+      checkboxInput.addEventListener("change", onCheckboxClick.bind(checkboxInput, tool));
 
       checkboxLabel.appendChild(checkboxInput);
       checkboxLabel.appendChild(checkboxSpanLabel);
       return checkboxLabel;
     };
+
+    
+    for (let label of defaultToolsBox.querySelectorAll("label")) {
+      label.remove();
+    }
 
     
     let toggleableTools = gDevTools.getDefaultTools().filter(tool => {
@@ -247,6 +275,11 @@ OptionsPanel.prototype = {
     }
 
     
+    for (let label of additionalToolsBox.querySelectorAll("label")) {
+      label.remove();
+    }
+
+    
     let atleastOneAddon = false;
     for (let tool of gDevTools.getAdditionalTools()) {
       atleastOneAddon = true;
@@ -254,18 +287,39 @@ OptionsPanel.prototype = {
     }
 
     
-    
-    for (let tool of this.toolbox.getAdditionalTools()) {
+    for (let {uuid, name, pref} of toolbox.listWebExtensions()) {
       atleastOneAddon = true;
-      additionalToolsBox.appendChild(createToolCheckbox(tool));
+
+      additionalToolsBox.appendChild(createToolCheckbox({
+        isWebExtension: true,
+
+        
+        id: `webext-${uuid}`,
+        tooltip: name,
+        label: name,
+        
+        
+        
+        
+        
+        
+        visibilityswitch: pref,
+
+        
+        isTargetSupported: target => target.isLocalTab,
+      }));
     }
 
     if (!atleastOneAddon) {
       additionalToolsBox.style.display = "none";
+    } else {
+      additionalToolsBox.style.display = "";
     }
 
     if (!atleastOneToolNotSupported) {
       toolsNotSupportedLabel.style.display = "none";
+    } else {
+      toolsNotSupportedLabel.style.display = "";
     }
 
     this.panelWin.focus();

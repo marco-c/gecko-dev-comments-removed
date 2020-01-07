@@ -699,6 +699,16 @@ DevTools.prototype = {
   
 
 
+
+
+
+  getToolboxes() {
+    return Array.from(this._toolboxes.values());
+  },
+
+  
+
+
   * [Symbol.iterator ]() {
     for (let toolbox of this._toolboxes) {
       yield toolbox;
