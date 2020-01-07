@@ -5539,36 +5539,23 @@ nsComputedDOMStyle::DoGetMaxWidth()
   return val.forget();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool
 nsComputedDOMStyle::ShouldHonorMinSizeAutoInAxis(PhysicalAxis aAxis)
 {
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  if (mOuterFrame) {
-    nsIFrame* containerFrame = mOuterFrame->GetParent();
-    if (containerFrame &&
-        StyleDisplay()->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
-      if (containerFrame->IsFlexContainerFrame() &&
-          (static_cast<nsFlexContainerFrame*>(containerFrame)->IsHorizontal() ==
-           (aAxis == eAxisHorizontal))) {
-        return true;
-      }
-      if (containerFrame->IsGridContainerFrame()) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return mOuterFrame && mOuterFrame->IsFlexOrGridItem();
 }
 
 already_AddRefed<CSSValue>
