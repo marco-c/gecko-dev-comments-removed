@@ -1062,10 +1062,6 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
   LayoutDeviceSize tileSpacing = tileRepeat - firstTileBounds.Size();
 
   
-  wr::LayoutRect wrClipBounds = aSc.ToRelativeLayoutRect(clipBounds);
-  wr::LayoutRect wrGradientBounds = aSc.ToRelativeLayoutRect(gradientBounds);
-
-  
   LayoutDeviceRect srcTransform = LayoutDeviceRect(mPresContext->CSSPixelsToAppUnits(aSrc.x),
                                                    mPresContext->CSSPixelsToAppUnits(aSrc.y),
                                                    aDest.width / ((float)mPresContext->CSSPixelsToAppUnits(aSrc.width)),
@@ -1079,8 +1075,8 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
     lineEnd.y = (lineEnd.y - srcTransform.y) * srcTransform.height;
 
     aBuilder.PushLinearGradient(
-      wrGradientBounds,
-      wrClipBounds,
+      mozilla::wr::ToLayoutRect(gradientBounds),
+      mozilla::wr::ToLayoutRect(clipBounds),
       aIsBackfaceVisible,
       mozilla::wr::ToLayoutPoint(lineStart),
       mozilla::wr::ToLayoutPoint(lineEnd),
@@ -1093,8 +1089,8 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
     gradientRadius.height *= srcTransform.height;
 
     aBuilder.PushRadialGradient(
-      wrGradientBounds,
-      wrClipBounds,
+      mozilla::wr::ToLayoutRect(gradientBounds),
+      mozilla::wr::ToLayoutRect(clipBounds),
       aIsBackfaceVisible,
       mozilla::wr::ToLayoutPoint(lineStart),
       mozilla::wr::ToLayoutSize(gradientRadius),
