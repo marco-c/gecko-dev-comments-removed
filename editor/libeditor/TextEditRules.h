@@ -224,11 +224,21 @@ protected:
 
 
 
-
-  nsresult CreateBR(nsINode& aParent, int32_t aOffset,
-                    Element** aOutBRNode = nullptr)
+  already_AddRefed<Element> CreateBR(const EditorRawDOMPoint& aPointToInsert)
   {
-    return CreateBRInternal(aParent, aOffset, false, aOutBRNode);
+    return CreateBRInternal(aPointToInsert, false);
+  }
+
+  
+
+
+
+
+
+
+  already_AddRefed<Element> CreateMozBR(const EditorRawDOMPoint& aPointToInsert)
+  {
+    return CreateBRInternal(aPointToInsert, true);
   }
 
   
@@ -239,11 +249,11 @@ protected:
 
 
 
-  nsresult CreateMozBR(nsINode& aParent, int32_t aOffset,
-                       Element** aOutBRNode = nullptr)
-  {
-    return CreateBRInternal(aParent, aOffset, true, aOutBRNode);
-  }
+
+
+  already_AddRefed<Element>
+  CreateBRInternal(const EditorRawDOMPoint& aPointToInsert,
+                   bool aCreateMozBR);
 
   void UndefineCaretBidiLevel(Selection* aSelection);
 
@@ -268,23 +278,6 @@ protected:
 private:
   
   TextEditor* mTextEditor;
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult CreateBRInternal(nsINode& aParent,
-                            int32_t aOffset,
-                            bool aMozBR,
-                            Element** aOutBRNode = nullptr);
-
 
 protected:
   

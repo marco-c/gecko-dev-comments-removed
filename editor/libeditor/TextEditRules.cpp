@@ -1376,7 +1376,13 @@ TextEditRules::CreateTrailingBRIfNeeded()
 
   if (!lastChild->IsHTMLElement(nsGkAtoms::br)) {
     AutoTransactionsConserveSelection dontChangeMySelection(mTextEditor);
-    return CreateMozBR(*body, body->Length());
+    EditorRawDOMPoint endOfBody;
+    endOfBody.SetToEndOf(body);
+    RefPtr<Element> brElement = CreateMozBR(endOfBody);
+    if (NS_WARN_IF(!brElement)) {
+      return NS_ERROR_FAILURE;
+    }
+    return NS_OK;
   }
 
   
@@ -1638,34 +1644,37 @@ TextEditRules::FillBufWithPWChars(nsAString* aOutString,
   }
 }
 
-nsresult
-TextEditRules::CreateBRInternal(nsINode& inParent,
-                                int32_t inOffset,
-                                bool aMozBR,
-                                Element** aOutBRElement)
+already_AddRefed<Element>
+TextEditRules::CreateBRInternal(const EditorRawDOMPoint& aPointToInsert,
+                                bool aCreateMozBR)
 {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return nullptr;
+  }
+
   if (NS_WARN_IF(!mTextEditor)) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return nullptr;
   }
   RefPtr<TextEditor> textEditor = mTextEditor;
 
-  RefPtr<Element> brElem =
-    textEditor->CreateBR(EditorRawDOMPoint(&inParent, inOffset));
-  if (NS_WARN_IF(!brElem)) {
-    return NS_ERROR_FAILURE;
+  RefPtr<Element> brElement = textEditor->CreateBR(aPointToInsert);
+  if (NS_WARN_IF(!brElement)) {
+    return nullptr;
   }
 
   
-  if (aMozBR) {
-    nsresult rv = textEditor->SetAttribute(brElem, nsGkAtoms::type,
+  if (aCreateMozBR) {
+    
+    nsresult rv = textEditor->SetAttribute(brElement, nsGkAtoms::type,
                                            NS_LITERAL_STRING("_moz"));
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      return nullptr;
+    }
   }
 
-  if (aOutBRElement) {
-    brElem.forget(aOutBRElement);
-  }
-  return NS_OK;
+  return brElement.forget();
 }
 
 NS_IMETHODIMP
