@@ -690,6 +690,7 @@ class JSLinearString : public JSString
 {
     friend class JSString;
     friend class js::AutoStableStringChars;
+    friend class js::TenuringTracer;
 
     
     JSLinearString* ensureLinear(JSContext* cx) = delete;
