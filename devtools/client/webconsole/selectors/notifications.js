@@ -1,0 +1,14 @@
+
+
+
+
+
+"use strict";
+
+function getAllNotifications(state) {
+  return state.notifications.notifications;
+}
+
+module.exports = {
+  getAllNotifications,
+};

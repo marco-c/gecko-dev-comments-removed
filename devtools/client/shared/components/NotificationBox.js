@@ -34,9 +34,16 @@ const PriorityLevels = {
 
 
 
+
+
+
+
 class NotificationBox extends Component {
   static get propTypes() {
     return {
+      
+      id: PropTypes.string,
+
       
       notifications: PropTypes.arrayOf(PropTypes.shape({
         
@@ -109,43 +116,16 @@ class NotificationBox extends Component {
 
 
   appendNotification(label, value, image, priority, buttons = [], eventCallback) {
-    
-    
-    if (priority < PriorityLevels.PRIORITY_INFO_LOW ||
-      priority > PriorityLevels.PRIORITY_CRITICAL_BLOCK) {
-      throw new Error("Invalid notification priority " + priority);
-    }
-
-    
-    if (image) {
-      throw new Error("Custom image URL is not supported yet");
-    }
-
-    let type = "warning";
-    if (priority >= PriorityLevels.PRIORITY_CRITICAL_LOW) {
-      type = "critical";
-    } else if (priority <= PriorityLevels.PRIORITY_INFO_HIGH) {
-      type = "info";
-    }
-
-    let notifications = this.state.notifications.set(value, {
-      label: label,
-      value: value,
-      image: image,
-      priority: priority,
-      type: type,
-      buttons: Array.isArray(buttons) ? buttons : [],
-      eventCallback: eventCallback,
+    const newState = appendNotification(this.state, {
+      label,
+      value,
+      image,
+      priority,
+      buttons,
+      eventCallback,
     });
 
-    
-    notifications = notifications.sortBy((val, key) => {
-      return -val.priority;
-    });
-
-    this.setState({
-      notifications: notifications
-    });
+    this.setState(newState);
   }
 
   
@@ -190,6 +170,10 @@ class NotificationBox extends Component {
 
     if (notification.eventCallback) {
       notification.eventCallback("removed");
+    }
+
+    if (!this.state.notifications.get(notification.value)) {
+      return;
     }
 
     this.setState({
@@ -260,16 +244,92 @@ class NotificationBox extends Component {
 
 
   render() {
-    let notification = this.state.notifications.first();
-    let content = notification ?
+    const notifications = this.props.notifications || this.state.notifications;
+    const notification = notifications ? notifications.first() : null;
+    const content = notification ?
       this.renderNotification(notification) :
       null;
 
-    return div({className: "notificationbox"},
+    return div({
+      className: "notificationbox",
+      id: this.props.id},
       content
     );
   }
 }
 
+
+
+
+
+
+
+
+function appendNotification(state, props) {
+  const {
+    label,
+    value,
+    image,
+    priority,
+    buttons,
+    eventCallback
+  } = props;
+
+  
+  
+  if (priority < PriorityLevels.PRIORITY_INFO_LOW ||
+    priority > PriorityLevels.PRIORITY_CRITICAL_BLOCK) {
+    throw new Error("Invalid notification priority " + priority);
+  }
+
+  
+  if (image) {
+    throw new Error("Custom image URL is not supported yet");
+  }
+
+  let type = "warning";
+  if (priority >= PriorityLevels.PRIORITY_CRITICAL_LOW) {
+    type = "critical";
+  } else if (priority <= PriorityLevels.PRIORITY_INFO_HIGH) {
+    type = "info";
+  }
+
+  if (!state.notifications) {
+    state.notifications = new Immutable.OrderedMap();
+  }
+
+  let notifications = state.notifications.set(value, {
+    label: label,
+    value: value,
+    image: image,
+    priority: priority,
+    type: type,
+    buttons: Array.isArray(buttons) ? buttons : [],
+    eventCallback: eventCallback,
+  });
+
+  
+  notifications = notifications.sortBy((val, key) => {
+    return -val.priority;
+  });
+
+  return {
+    notifications: notifications
+  };
+}
+
+function getNotificationWithValue(notifications, value) {
+  return notifications ? notifications.get(value) : null;
+}
+
+function removeNotificationWithValue(notifications, value) {
+  return {
+    notifications: notifications.remove(value)
+  };
+}
+
 module.exports.NotificationBox = NotificationBox;
 module.exports.PriorityLevels = PriorityLevels;
+module.exports.appendNotification = appendNotification;
+module.exports.getNotificationWithValue = getNotificationWithValue;
+module.exports.removeNotificationWithValue = removeNotificationWithValue;
