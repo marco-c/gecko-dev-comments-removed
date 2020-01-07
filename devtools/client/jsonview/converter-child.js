@@ -83,6 +83,15 @@ Converter.prototype = {
     request.contentType = "text/html";
 
     
+    try {
+      request.QueryInterface(Ci.nsIHttpChannel);
+      request.setResponseHeader("Content-Security-Policy",
+        "default-src 'none' ; script-src resource:; ", false);
+    } catch (ex) {
+      
+    }
+
+    
     request.contentCharset = "UTF-8";
     this.decoder = new TextDecoder("UTF-8");
 
@@ -93,10 +102,6 @@ Converter.prototype = {
     
     
     request.loadInfo.resetPrincipalToInheritToNullPrincipal();
-
-    
-    
-    request.loadInfo.allowDocumentToBeAgnosticToCSP = true;
 
     
     this.listener.onStartRequest(request, context);
