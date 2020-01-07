@@ -9305,6 +9305,34 @@ nsHttpChannel::GetWarningReporter()
     return mWarningReporter.get();
 }
 
+namespace {
+
+class CopyNonDefaultHeaderVisitor final : public nsIHttpHeaderVisitor
+{
+  nsCOMPtr<nsIHttpChannel> mTarget;
+
+  ~CopyNonDefaultHeaderVisitor() = default;
+
+  NS_IMETHOD
+  VisitHeader(const nsACString& aHeader, const nsACString& aValue) override
+  {
+    return mTarget->SetRequestHeader(aHeader, aValue, false );
+  }
+
+public:
+  explicit CopyNonDefaultHeaderVisitor(nsIHttpChannel* aTarget)
+    : mTarget(aTarget)
+  {
+    MOZ_DIAGNOSTIC_ASSERT(mTarget);
+  }
+
+  NS_DECL_ISUPPORTS
+};
+
+NS_IMPL_ISUPPORTS(CopyNonDefaultHeaderVisitor, nsIHttpHeaderVisitor)
+
+} 
+
 nsresult
 nsHttpChannel::RedirectToInterceptedChannel()
 {
@@ -9327,6 +9355,23 @@ nsHttpChannel::RedirectToInterceptedChannel()
     rv = SetupReplacementChannel(mURI, intercepted, true,
                                  nsIChannelEventSink::REDIRECT_INTERNAL);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ServiceWorkerParentInterceptEnabled()) {
+      nsCOMPtr<nsIHttpHeaderVisitor> visitor =
+        new CopyNonDefaultHeaderVisitor(intercepted);
+      rv = VisitNonDefaultRequestHeaders(visitor);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
     mRedirectChannel = intercepted;
 
