@@ -156,6 +156,7 @@ class ChromeMapBackend(CommonBackend):
         
         
         
+        
         outputfile = os.path.join(self.environment.topobjdir, 'chrome-map.json')
         with self._write_file(outputfile) as fh:
             chrome_mapping = self.manifest_handler.chrome_mapping
@@ -164,4 +165,10 @@ class ChromeMapBackend(CommonBackend):
                 {k: list(v) for k, v in chrome_mapping.iteritems()},
                 overrides,
                 self._install_mapping,
+                {
+                    'topobjdir': mozpath.normpath(self.environment.topobjdir),
+                    'MOZ_APP_NAME': self.environment.substs.get('MOZ_APP_NAME'),
+                    'OMNIJAR_NAME': self.environment.substs.get('OMNIJAR_NAME'),
+                    'MOZ_MACBUNDLE_NAME': self.environment.substs.get('MOZ_MACBUNDLE_NAME'),
+                }
             ], fh, sort_keys=True, indent=2)
