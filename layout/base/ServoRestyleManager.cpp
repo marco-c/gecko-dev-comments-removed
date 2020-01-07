@@ -970,14 +970,17 @@ ServoRestyleManager::ProcessPostTraversal(
   
   
   if (styleFrame) {
-    
-    childrenRestyleState.ProcessWrapperRestyles(styleFrame);
-
     if (wasRestyled) {
       
       
       
       styleFrame->UpdateStyleOfOwnedAnonBoxes(childrenRestyleState);
+    }
+    
+    
+    
+    childrenRestyleState.ProcessWrapperRestyles(styleFrame);
+    if (wasRestyled) {
       UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
     } else if (traverseElementChildren &&
                styleFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
