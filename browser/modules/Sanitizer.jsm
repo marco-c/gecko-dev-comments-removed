@@ -27,6 +27,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "nsIQuotaManagerService");
 
 
+var gPendingSanitizationSerial = 0;
+
+
 
 
 
@@ -44,15 +47,13 @@ var Sanitizer = {
 
 
 
-  PREF_SANITIZE_IN_PROGRESS: "privacy.sanitize.sanitizeInProgress",
+  PREF_PENDING_SANITIZATIONS: "privacy.sanitize.pending",
 
   
 
 
-
-
-
-  PREF_SANITIZE_DID_SHUTDOWN: "privacy.sanitize.didShutdownSanitize",
+  PREF_CPD_BRANCH: "privacy.cpd.",
+  PREF_SHUTDOWN_BRANCH: "privacy.clearOnShutdown.",
 
   
 
@@ -78,6 +79,14 @@ var Sanitizer = {
 
 
 
+  shouldSanitizeOnShutdown: false,
+
+  
+
+
+
+
+
   showUI(parentWindow) {
     let win = AppConstants.platform == "macosx" ?
       null : 
@@ -96,17 +105,22 @@ var Sanitizer = {
 
   async onStartup() {
     
-    let shutdownSanitizationWasInterrupted =
-      Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false) &&
-      Services.prefs.getPrefType(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN) == Ci.nsIPrefBranch.PREF_INVALID;
+    
+    let pendingSanitizations = getAndClearPendingSanitizations();
 
-    if (Services.prefs.prefHasUserValue(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN)) {
-      
-      
-      
-      Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN);
-      Services.prefs.savePrefFile(null);
+    
+    this.shouldSanitizeOnShutdown =
+      Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false);
+    Services.prefs.addObserver(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, this, true);
+    
+    if (this.shouldSanitizeOnShutdown) {
+      let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
+      addPendingSanitization("shutdown", itemsToClear, {});
     }
+    
+    
+    
+    Services.prefs.addObserver(Sanitizer.PREF_SHUTDOWN_BRANCH, this, true);
 
     
     let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
@@ -117,23 +131,18 @@ var Sanitizer = {
     
     let progress = { isShutdown: true };
     shutdownClient.addBlocker("sanitize.js: Sanitize on shutdown",
-      () => sanitizeOnShutdown({ progress }),
-      {
-        fetchState: () => ({ progress })
-      }
+      () => sanitizeOnShutdown(progress),
+      {fetchState: () => ({ progress })}
     );
 
     
-    let lastInterruptedSanitization = Services.prefs.getStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
-    if (lastInterruptedSanitization) {
-      
-      let {itemsToClear, options} = JSON.parse(lastInterruptedSanitization);
-      await this.sanitize(itemsToClear, options);
-    } else if (shutdownSanitizationWasInterrupted) {
-      
-      
-      
-      await sanitizeOnShutdown();
+    
+    for (let {itemsToClear, options} of pendingSanitizations) {
+      try {
+        await this.sanitize(itemsToClear, options);
+      } catch (ex) {
+        Cu.reportError("A previously pending sanitization failed: " + itemsToClear + "\n" + ex);
+      }
     }
   },
 
@@ -209,10 +218,10 @@ var Sanitizer = {
 
 
 
-
-
   async sanitize(itemsToClear = null, options = {}) {
     let progress = options.progress || {};
+    if (!itemsToClear)
+      itemsToClear = getItemsToClearFromPrefBranch(this.PREF_CPD_BRANCH);
     let promise = sanitizeInternal(this.items, itemsToClear, progress, options);
 
     
@@ -239,6 +248,31 @@ var Sanitizer = {
       Services.obs.notifyObservers(null, "sanitizer-sanitization-complete");
     }
   },
+
+  observe(subject, topic, data) {
+    if (topic == "nsPref:changed") {
+      if (data.startsWith(this.PREF_SHUTDOWN_BRANCH) &&
+          this.shouldSanitizeOnShutdown) {
+        
+        removePendingSanitization("shutdown");
+        let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
+        addPendingSanitization("shutdown", itemsToClear, {});
+      } else if (data == this.PREF_SANITIZE_ON_SHUTDOWN) {
+        this.shouldSanitizeOnShutdown =
+          Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, false);
+        removePendingSanitization("shutdown");
+        if (this.shouldSanitizeOnShutdown) {
+          let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
+          addPendingSanitization("shutdown", itemsToClear, {});
+        }
+      }
+    }
+  },
+
+  QueryInterface: XPCOMUtils.generateQI([
+    Ci.nsiObserver,
+    Ci.nsISupportsWeakReference
+  ]),
 
   items: {
     cache: {
@@ -742,28 +776,19 @@ var Sanitizer = {
 };
 
 async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
-  let { prefDomain = "privacy.cpd.", ignoreTimespan = true, range } = options;
+  let { ignoreTimespan = true, range } = options;
   let seenError = false;
-  let itemsToClear;
-  if (Array.isArray(aItemsToClear)) {
-    
-    
-    itemsToClear = [...aItemsToClear];
-  } else {
-    let branch = Services.prefs.getBranch(prefDomain);
-    itemsToClear = Object.keys(items).filter(itemName => {
-      try {
-        return branch.getBoolPref(itemName);
-      } catch (ex) {
-        return false;
-      }
-    });
-  }
+  
+  if (!Array.isArray(aItemsToClear))
+    throw new Error("Must pass an array of items to clear.");
+  let itemsToClear = [...aItemsToClear];
 
   
   
-  Services.prefs.setStringPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
-                               JSON.stringify({itemsToClear, options}));
+  let uid = gPendingSanitizationSerial++;
+  
+  if (!progress.isShutdown)
+    addPendingSanitization(uid, itemsToClear, options);
 
   
   for (let k of itemsToClear) {
@@ -826,9 +851,8 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
 
   
   TelemetryStopwatch.finish("FX_SANITIZE_TOTAL", refObj);
-  
-  
-  Services.prefs.clearUserPref(Sanitizer.PREF_SANITIZE_IN_PROGRESS);
+  if (!progress.isShutdown)
+    removePendingSanitization(uid);
   progress = {};
   if (seenError) {
     throw new Error("Error sanitizing");
@@ -899,15 +923,68 @@ async function clearPluginData(range) {
   }
 }
 
-async function sanitizeOnShutdown(options = {}) {
-  if (!Services.prefs.getBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN)) {
+async function sanitizeOnShutdown(progress) {
+  if (!Sanitizer.shouldSanitizeOnShutdown) {
     return;
   }
   
-  options.prefDomain = "privacy.clearOnShutdown.";
-  await Sanitizer.sanitize(null, options);
+  let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
+  await Sanitizer.sanitize(itemsToClear, { progress });
   
   
-  Services.prefs.setBoolPref(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
+  removePendingSanitization("shutdown");
   Services.prefs.savePrefFile(null);
+}
+
+
+
+
+
+
+function getItemsToClearFromPrefBranch(branch) {
+  branch = Services.prefs.getBranch(branch);
+  return Object.keys(Sanitizer.items).filter(itemName => {
+    try {
+      return branch.getBoolPref(itemName);
+    } catch (ex) {
+      return false;
+    }
+  });
+}
+
+
+
+
+
+
+
+
+function addPendingSanitization(id, itemsToClear, options) {
+  let pendingSanitizations = safeGetPendingSanitizations();
+  pendingSanitizations.push({id, itemsToClear, options});
+  Services.prefs.setStringPref(Sanitizer.PREF_PENDING_SANITIZATIONS,
+                               JSON.stringify(pendingSanitizations));
+}
+function removePendingSanitization(id) {
+  let pendingSanitizations = safeGetPendingSanitizations();
+  let i = pendingSanitizations.findIndex(s => s.id == id);
+  let [s] = pendingSanitizations.splice(i, 1);
+  Services.prefs.setStringPref(Sanitizer.PREF_PENDING_SANITIZATIONS,
+    JSON.stringify(pendingSanitizations));
+  return s;
+}
+function getAndClearPendingSanitizations() {
+  let pendingSanitizations = safeGetPendingSanitizations();
+  if (pendingSanitizations.length)
+    Services.prefs.clearUserPref(Sanitizer.PREF_PENDING_SANITIZATIONS);
+  return pendingSanitizations;
+}
+function safeGetPendingSanitizations() {
+  try {
+    return JSON.parse(
+      Services.prefs.getStringPref(Sanitizer.PREF_PENDING_SANITIZATIONS, "[]"));
+  } catch (ex) {
+    Cu.reportError("Invalid JSON value for pending sanitizations: " + ex);
+    return [];
+  }
 }
