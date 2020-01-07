@@ -117,6 +117,8 @@ protected:
 
     nsresult SetPathQueryRefEscaped(const nsACString &aPath, bool aNeedsEscape);
 
+    bool Deserialize(const mozilla::ipc::URIParams&);
+
     nsCString mScheme;
     nsCString mPath; 
     nsCString mRef;  
