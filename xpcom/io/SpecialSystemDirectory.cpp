@@ -84,6 +84,9 @@ GetWindowsFolder(int aFolder, nsIFile** aFile)
 
   
   int len = wcslen(path);
+  if (len == 0) {
+    return NS_ERROR_FILE_UNRECOGNIZED_PATH;
+  }
   if (len > 1 && path[len - 1] != L'\\') {
     path[len]   = L'\\';
     path[++len] = L'\0';
