@@ -1249,25 +1249,34 @@ PT.NewLivemark.prototype = Object.seal({
 
 
 
-PT.Move = DefineTransaction(["guid", "newParentGuid"], ["newIndex"]);
+PT.Move = DefineTransaction(["guids", "newParentGuid"], ["newIndex"]);
 PT.Move.prototype = Object.seal({
-  async execute({ guid, newParentGuid, newIndex }) {
-    let originalInfo = await PlacesUtils.bookmarks.fetch(guid);
-    if (!originalInfo)
-      throw new Error("Cannot move a non-existent item");
-    let updateInfo = { guid, parentGuid: newParentGuid, index: newIndex };
-    updateInfo = await PlacesUtils.bookmarks.update(updateInfo);
+  async execute({ guids, newParentGuid, newIndex }) {
+    let originalInfos = [];
+    let index = newIndex;
 
-    
-    
-    if (newParentGuid == originalInfo.parentGuid &&
-        originalInfo.index > updateInfo.index) {
-      originalInfo.index++;
+    for (let guid of guids) {
+      
+      let originalInfo = await PlacesUtils.bookmarks.fetch(guid);
+      if (!originalInfo)
+        throw new Error("Cannot move a non-existent item");
+
+      originalInfos.push(originalInfo);
     }
 
-    this.undo = PlacesUtils.bookmarks.update.bind(PlacesUtils.bookmarks, originalInfo);
-    this.redo = PlacesUtils.bookmarks.update.bind(PlacesUtils.bookmarks, updateInfo);
-    return guid;
+    await PlacesUtils.bookmarks.moveToFolder(guids, newParentGuid, index);
+
+    this.undo = async function() {
+      
+      
+      
+      
+      for (let info of originalInfos) {
+        await PlacesUtils.bookmarks.update(info);
+      }
+    };
+    this.redo = PlacesUtils.bookmarks.moveToFolder.bind(PlacesUtils.bookmarks, guids, newParentGuid, index);
+    return guids;
   }
 });
 

@@ -932,10 +932,8 @@ var PlacesUIUtils = {
       
       batchingItem = async () => {
         for (let transaction of transactions) {
-          let guid = await transaction.transact();
-          if (guid) {
-            guidsToSelect.push(guid);
-          }
+          let result = await transaction.transact();
+          guidsToSelect = guidsToSelect.concat(result);
         }
       };
     }
@@ -1158,57 +1156,17 @@ async function getTransactionsForTransferItems(items, insertionIndex,
     doMove = false;
   }
 
-  return doMove ? getTransactionsForMove(items, insertionIndex, insertionParentGuid) :
-                  getTransactionsForCopy(items, insertionIndex, insertionParentGuid);
-}
-
-
-
-
-
-
-
-
-
-
-async function getTransactionsForMove(items, insertionIndex,
-                                      insertionParentGuid) {
-  let transactions = [];
-  let index = insertionIndex;
-
-  for (let item of items) {
-    if (index != -1 && item.itemGuid) {
-      
-      
-      
-      let existingBookmark = await PlacesUtils.bookmarks.fetch(item.itemGuid);
-
-      
-      
-      if (existingBookmark && insertionParentGuid == existingBookmark.parentGuid) {
-        if (index > existingBookmark.index) {
-          
-          
-          
-          index--;
-        } else if (index == existingBookmark.index) {
-          
-          continue;
-        }
-      }
-    }
-
-    transactions.push(PlacesTransactions.Move({
-      guid: item.itemGuid,
-      newIndex: index,
+  if (doMove) {
+    
+    
+    return [PlacesTransactions.Move({
+      guids: items.map(item => item.itemGuid),
       newParentGuid: insertionParentGuid,
-    }));
-
-    if (index != -1 && item.itemGuid) {
-      index++;
-    }
+      newIndex: insertionIndex,
+    })];
   }
-  return transactions;
+
+  return getTransactionsForCopy(items, insertionIndex, insertionParentGuid);
 }
 
 
