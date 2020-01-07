@@ -148,8 +148,6 @@ public:
 
     uint32_t       ThrottlingReadLimit() { return mThrottleVersion == 1 ? 0 : mThrottleReadLimit; }
 
-    bool           AllowPlaintextServerTiming() { return mAllowPlaintextServerTiming; }
-
     
 
     
@@ -667,8 +665,6 @@ private:
 
     
     bool mActiveTabPriority;
-
-    bool mAllowPlaintextServerTiming;
 
 private:
     
