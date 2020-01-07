@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Collision(aircraft, position) {
+    this.aircraft = aircraft;
+    this.position = position;
+}
+
+Collision.prototype.toString = function() {
+    return "Collision(" + this.aircraft + " at " + this.position + ")";
+};
+
