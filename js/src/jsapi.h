@@ -500,13 +500,6 @@ static const unsigned JSFUN_FLAGS_MASK =      0x400;
 
 
 
-static const unsigned JSPROP_REDEFINE_NONCONFIGURABLE = 0x1000;
-
-
-
-
-
-
 
 
 
@@ -2112,7 +2105,6 @@ class WrappedPtrOperations<JS::PropertyDescriptor, Wrapper>
                                      JSPROP_IGNORE_VALUE |
                                      JSPROP_GETTER |
                                      JSPROP_SETTER |
-                                     JSPROP_REDEFINE_NONCONFIGURABLE |
                                      JSPROP_RESOLVING |
                                      SHADOWABLE)) == 0);
         MOZ_ASSERT(!hasAll(JSPROP_IGNORE_ENUMERATE | JSPROP_ENUMERATE));
@@ -2134,7 +2126,6 @@ class WrappedPtrOperations<JS::PropertyDescriptor, Wrapper>
         MOZ_ASSERT_IF(has(JSPROP_RESOLVING), !has(JSPROP_IGNORE_PERMANENT));
         MOZ_ASSERT_IF(has(JSPROP_RESOLVING), !has(JSPROP_IGNORE_READONLY));
         MOZ_ASSERT_IF(has(JSPROP_RESOLVING), !has(JSPROP_IGNORE_VALUE));
-        MOZ_ASSERT_IF(has(JSPROP_RESOLVING), !has(JSPROP_REDEFINE_NONCONFIGURABLE));
 #endif
     }
 
@@ -2146,7 +2137,6 @@ class WrappedPtrOperations<JS::PropertyDescriptor, Wrapper>
                                      JSPROP_READONLY |
                                      JSPROP_GETTER |
                                      JSPROP_SETTER |
-                                     JSPROP_REDEFINE_NONCONFIGURABLE |
                                      JSPROP_RESOLVING |
                                      SHADOWABLE)) == 0);
         MOZ_ASSERT_IF(isAccessorDescriptor(), has(JSPROP_GETTER) && has(JSPROP_SETTER));

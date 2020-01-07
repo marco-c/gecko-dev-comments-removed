@@ -1708,17 +1708,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     }
 
     
-    
-    
-    
-    
-    
-    bool skipRedefineChecks = (desc.attributes() & JSPROP_REDEFINE_NONCONFIGURABLE) &&
-                              obj->is<GlobalObject>() &&
-                              !obj->getClass()->isDOMClass();
-
-    
-    if (!IsConfigurable(shapeAttrs) && !skipRedefineChecks) {
+    if (!IsConfigurable(shapeAttrs)) {
         if (desc.hasConfigurable() && desc.configurable())
             return result.fail(JSMSG_CANT_REDEFINE_PROP);
         if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs))
@@ -1753,7 +1743,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         }
     } else if (desc.isDataDescriptor() != IsDataDescriptor(shapeAttrs)) {
         
-        if (!IsConfigurable(shapeAttrs) && !skipRedefineChecks)
+        if (!IsConfigurable(shapeAttrs))
             return result.fail(JSMSG_CANT_REDEFINE_PROP);
 
         
@@ -1763,7 +1753,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         bool frozen = !IsConfigurable(shapeAttrs) && !IsWritable(shapeAttrs);
 
         
-        if (frozen && desc.hasWritable() && desc.writable() && !skipRedefineChecks)
+        if (frozen && desc.hasWritable() && desc.writable())
             return result.fail(JSMSG_CANT_REDEFINE_PROP);
 
         if (frozen || !desc.hasValue()) {
@@ -1780,13 +1770,13 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                 MOZ_ASSERT(!cx->helperThread());
                 if (!SameValue(cx, desc.value(), currentValue, &same))
                     return false;
-                if (!same && !skipRedefineChecks)
+                if (!same)
                     return result.fail(JSMSG_CANT_REDEFINE_PROP);
             }
         }
 
         
-        if (frozen && !skipRedefineChecks)
+        if (frozen)
             return result.succeed();
 
         
@@ -1802,8 +1792,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         if (desc.hasSetterObject()) {
             
             if (!IsConfigurable(shapeAttrs) &&
-                desc.setterObject() != prop.shape()->setterObject() &&
-                !skipRedefineChecks)
+                desc.setterObject() != prop.shape()->setterObject())
             {
                 return result.fail(JSMSG_CANT_REDEFINE_PROP);
             }
@@ -1814,8 +1803,7 @@ js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
         if (desc.hasGetterObject()) {
             
             if (!IsConfigurable(shapeAttrs) &&
-                desc.getterObject() != prop.shape()->getterObject() &&
-                !skipRedefineChecks)
+                desc.getterObject() != prop.shape()->getterObject())
             {
                 return result.fail(JSMSG_CANT_REDEFINE_PROP);
             }
