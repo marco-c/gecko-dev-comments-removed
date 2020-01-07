@@ -2126,15 +2126,11 @@ DefineAccessorPropertyById(JSContext* cx, HandleObject obj, HandleId id,
                            unsigned attrs)
 {
     
-    
-    
-    
 
-    
-    
+    MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
+
     RootedFunction getter(cx);
-    RootedFunction setter(cx);
-    if (get.op && !(attrs & JSPROP_GETTER)) {
+    if (get.op) {
         RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Get));
         if (!atom)
             return false;
@@ -2147,7 +2143,9 @@ DefineAccessorPropertyById(JSContext* cx, HandleObject obj, HandleId id,
 
         attrs |= JSPROP_GETTER;
     }
-    if (set.op && !(attrs & JSPROP_SETTER)) {
+
+    RootedFunction setter(cx);
+    if (set.op) {
         RootedAtom atom(cx, IdToFunctionName(cx, id, FunctionPrefixKind::Set));
         if (!atom)
             return false;
