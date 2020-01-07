@@ -153,24 +153,6 @@ class BrowserErrorReporter {
       "0.0",
       this.handleSampleRatePrefChanged.bind(this),
     );
-
-    
-    this.manglePrefixes = options.manglePrefixes || {
-      greDir: Services.dirsvc.get("GreD", Ci.nsIFile),
-      profileDir: Services.dirsvc.get("ProfD", Ci.nsIFile),
-    };
-    
-    
-    for (const [name, prefixFile] of Object.entries(this.manglePrefixes)) {
-      let filePath = Services.io.newFileURI(prefixFile).filePath;
-
-      
-      if (!filePath.endsWith("/")) {
-        filePath += "/";
-      }
-
-      this.manglePrefixes[name] = filePath;
-    }
   }
 
   
@@ -294,7 +276,6 @@ class BrowserErrorReporter {
       addStacktrace,
       addModule,
       mangleExtensionUrls,
-      this.mangleFilePaths.bind(this),
       tagExtensionErrors,
     ];
     for (const transform of transforms) {
@@ -318,47 +299,11 @@ class BrowserErrorReporter {
         body: JSON.stringify(requestBody)
       });
       Services.telemetry.scalarAdd(TELEMETRY_ERROR_REPORTED, 1);
-      this.logger.debug(`Sent error "${message.errorMessage}" successfully.`);
+      this.logger.debug("Sent error successfully.");
     } catch (error) {
       Services.telemetry.scalarAdd(TELEMETRY_ERROR_REPORTED_FAIL, 1);
-      this.logger.warn(`Failed to send error "${message.errorMessage}": ${error}`);
+      this.logger.warn(`Failed to send error: ${error}`);
     }
-  }
-
-  
-
-
-
-
-
-
-
-  mangleFilePaths(message, exceptionValue) {
-    exceptionValue.module = this._transformFilePath(exceptionValue.module);
-    for (const frame of exceptionValue.stacktrace.frames) {
-      frame.module = this._transformFilePath(frame.module);
-    }
-  }
-
-  _transformFilePath(path) {
-    try {
-      const uri = Services.io.newURI(path);
-      if (uri.schemeIs("jar")) {
-        return uri.filePath;
-      }
-      if (uri.schemeIs("file")) {
-        for (const [name, prefix] of Object.entries(this.manglePrefixes)) {
-          console.log(`Evaluating prefix: ${name}: ${prefix} against ${uri.filePath}`);
-          if (uri.filePath.startsWith(prefix)) {
-            return uri.filePath.replace(prefix, `[${name}]/`);
-          }
-        }
-
-        return "[UNKNOWN_LOCAL_FILEPATH]";
-      }
-    } catch (err) {}
-
-    return path;
   }
 }
 
@@ -450,9 +395,10 @@ function mangleExtensionUrls(message, exceptionValue) {
       return string;
     }
 
-    const re = new RegExp(`${anchored ? "^" : ""}moz-extension://([^/]+)/`, "g");
+    let re = new RegExp(`${anchored ? "^" : ""}moz-extension://([^/]+)/`, "g");
+
     return string.replace(re, (m0, m1) => {
-      const id = extensions.has(m1) ? extensions.get(m1).id : m1;
+      let id = extensions.has(m1) ? extensions.get(m1).id : m1;
       return `moz-extension://${id}/`;
     });
   }
