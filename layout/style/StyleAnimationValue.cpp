@@ -229,9 +229,9 @@ AnimationValue::FromString(nsCSSPropertyID aProperty,
 
   
   
-  RefPtr<ComputedStyle> styleContext =
+  RefPtr<ComputedStyle> computedStyle =
     nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
-  MOZ_ASSERT(styleContext);
+  MOZ_ASSERT(computedStyle);
 
   RefPtr<RawServoDeclarationBlock> declarations =
     ServoCSSParser::ParseProperty(aProperty, aValue,
@@ -244,7 +244,7 @@ AnimationValue::FromString(nsCSSPropertyID aProperty,
   result.mServo =
     shell->StyleSet()->AsServo()->ComputeAnimationValue(aElement,
                                                         declarations,
-                                                        styleContext);
+                                                        computedStyle);
   return result;
 }
 

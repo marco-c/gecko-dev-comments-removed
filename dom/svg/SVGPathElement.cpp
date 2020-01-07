@@ -298,17 +298,18 @@ SVGPathElement::BuildPath(PathBuilder* aBuilder)
   uint8_t strokeLineCap = NS_STYLE_STROKE_LINECAP_BUTT;
   Float strokeWidth = 0;
 
-  RefPtr<ComputedStyle> styleContext =
+  RefPtr<ComputedStyle> computedStyle =
     nsComputedDOMStyle::GetComputedStyleNoFlush(this, nullptr);
-  if (styleContext) {
-    const nsStyleSVG* style = styleContext->StyleSVG();
+  if (computedStyle) {
+    const nsStyleSVG* style = computedStyle->StyleSVG();
     
     
     
     
     if (style->mStrokeLinecap != NS_STYLE_STROKE_LINECAP_BUTT) {
       strokeLineCap = style->mStrokeLinecap;
-      strokeWidth = SVGContentUtils::GetStrokeWidth(this, styleContext, nullptr);
+      strokeWidth =
+        SVGContentUtils::GetStrokeWidth(this, computedStyle, nullptr);
     }
   }
 

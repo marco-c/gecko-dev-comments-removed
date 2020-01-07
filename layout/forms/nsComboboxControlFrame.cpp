@@ -1387,8 +1387,8 @@ nsComboboxControlFrame::CreateFrameForDisplayNode()
   StyleSetHandle styleSet = shell->StyleSet();
 
   
-  RefPtr<ComputedStyle> styleContext;
-  styleContext = styleSet->
+  RefPtr<ComputedStyle> computedStyle;
+  computedStyle = styleSet->
     ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::mozDisplayComboboxControlFrame,
                                        mComputedStyle);
 
@@ -1397,7 +1397,7 @@ nsComboboxControlFrame::CreateFrameForDisplayNode()
     styleSet->ResolveStyleForText(mDisplayContent, mComputedStyle);
 
   
-  mDisplayFrame = new (shell) nsComboboxDisplayFrame(styleContext, this);
+  mDisplayFrame = new (shell) nsComboboxDisplayFrame(computedStyle, this);
   mDisplayFrame->Init(mContent, this, nullptr);
 
   
