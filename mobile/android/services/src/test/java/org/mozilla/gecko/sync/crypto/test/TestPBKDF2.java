@@ -5,9 +5,9 @@ package org.mozilla.gecko.sync.crypto.test;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mozilla.gecko.background.testhelpers.TestRunner;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.crypto.PBKDF2;
+import org.robolectric.RobolectricTestRunner;
 
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 
 
 
-@RunWith(TestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class TestPBKDF2 {
 
   @Test

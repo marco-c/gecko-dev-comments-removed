@@ -14,8 +14,8 @@ import ch.boye.httpclientandroidlib.message.BasicHeader;
 import ch.boye.httpclientandroidlib.protocol.BasicHttpContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mozilla.gecko.background.testhelpers.TestRunner;
 import org.mozilla.gecko.sync.net.HawkAuthHeaderProvider;
+import org.robolectric.RobolectricTestRunner;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 
 
 
-@RunWith(TestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 public class TestHawkAuthHeaderProvider {
   
   protected static class LeakyHawkAuthHeaderProvider extends HawkAuthHeaderProvider {
