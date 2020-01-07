@@ -264,7 +264,8 @@ public final class GeckoRuntimeSettings implements Parcelable {
      Pref<Integer> mCookieLifetimeDays = new Pref<Integer>(
         "network.cookie.lifetime.days", 90);
      Pref<String> mTrackingProtection = new Pref<String>(
-        "urlclassifier.trackingTable", "");
+        "urlclassifier.trackingTable",
+        TrackingProtection.buildPrefValue(TrackingProtectionDelegate.CATEGORY_ALL));
 
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
