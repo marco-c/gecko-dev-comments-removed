@@ -9,7 +9,6 @@ module.exports = {
     
     
     "consistent-return": "off",
-    "object-shorthand": "off",
     "no-unexpected-multiline": "off",
     "no-unsafe-finally": "off",
     "no-useless-call": "off",
