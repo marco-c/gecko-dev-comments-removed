@@ -5325,7 +5325,12 @@ pref("network.trr.uri", "");
 
 pref("network.trr.credentials", "");
 
+#if defined(ANDROID)
+
+pref("network.trr.wait-for-portal", false);
+#else
 pref("network.trr.wait-for-portal", true);
+#endif
 
 pref("network.trr.allow-rfc1918", false);
 
