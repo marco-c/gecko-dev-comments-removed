@@ -689,10 +689,9 @@ function String_toLocaleUpperCase() {
 }
 
 
-function String_static_raw(callSite, ...substitutions) {
+
+function String_static_raw(callSite) {
     
-    
-    var numberOfSubstitutions = substitutions.length;
 
     
     var cooked = ToObject(callSite);
@@ -704,41 +703,38 @@ function String_static_raw(callSite, ...substitutions) {
     var literalSegments = ToLength(raw.length);
 
     
-    if (literalSegments <= 0)
+    if (literalSegments === 0)
         return "";
 
     
-    var resultString = "";
+    
+    if (literalSegments === 1)
+        return ToString(raw[0]);
 
     
-    var nextIndex = 0;
+    
+    
+    
+    
+    
+    
+    
 
     
-    while (true) {
+    var resultString = ToString(raw[0]);
+
+    
+    for (var nextIndex = 1; nextIndex < literalSegments; nextIndex++) {
         
-        var nextSeg = ToString(raw[nextIndex]);
+        if (nextIndex < arguments.length)
+            resultString += ToString(arguments[nextIndex]);
 
         
-        resultString = resultString + nextSeg;
-
-        
-        if (nextIndex + 1 === literalSegments)
-            
-            return resultString;
-
-        
-        var nextSub;
-        if (nextIndex < numberOfSubstitutions)
-            nextSub = ToString(substitutions[nextIndex]);
-        else
-            nextSub = "";
-
-        
-        resultString = resultString + nextSub;
-
-        
-        nextIndex++;
+        resultString += ToString(raw[nextIndex]);
     }
+
+    
+    return resultString;
 }
 
 
