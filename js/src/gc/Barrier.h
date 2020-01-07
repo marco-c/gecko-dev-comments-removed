@@ -283,18 +283,18 @@ struct InternalBarrierMethods<Value>
 
         
         js::gc::StoreBuffer* sb;
-        if (next.isObject() && (sb = reinterpret_cast<gc::Cell*>(&next.toObject())->storeBuffer())) {
+        if ((next.isObject() || next.isString()) && (sb = next.toGCThing()->storeBuffer())) {
             
             
             
             
-            if (prev.isObject() && reinterpret_cast<gc::Cell*>(&prev.toObject())->storeBuffer())
+            if ((prev.isObject() || prev.isString()) && prev.toGCThing()->storeBuffer())
                 return;
             sb->putValue(vp);
             return;
         }
         
-        if (prev.isObject() && (sb = reinterpret_cast<gc::Cell*>(&prev.toObject())->storeBuffer()))
+        if ((prev.isObject() || prev.isString()) && (sb = prev.toGCThing()->storeBuffer()))
             sb->unputValue(vp);
     }
 
@@ -681,8 +681,8 @@ class HeapSlot : public WriteBarrieredBase<Value>
 #ifdef DEBUG
         assertPreconditionForWriteBarrierPost(owner, kind, slot, target);
 #endif
-        if (this->value.isObject()) {
-            gc::Cell* cell = reinterpret_cast<gc::Cell*>(&this->value.toObject());
+        if (this->value.isObject() || this->value.isString()) {
+            gc::Cell* cell = this->value.toGCThing();
             if (cell->storeBuffer())
                 cell->storeBuffer()->putSlot(owner, kind, slot, 1);
         }
