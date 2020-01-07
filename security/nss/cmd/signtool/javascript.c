@@ -1300,7 +1300,6 @@ extract_js(char *filename)
 
 
     for (curitem = head; curitem; curitem = curitem->next) {
-        TagItem *tagp = NULL;
         AVPair *pairp = NULL;
         char *src = NULL, *id = NULL, *codebase = NULL;
         PRBool hasEventHandler = PR_FALSE;
@@ -1669,11 +1668,14 @@ loser:
 
 
 static PRStatus
-ensureExists(char *base, char *path)
+ensureExists(char *basepath, char *path)
 {
     char fn[FNSIZE];
     PRDir *dir;
-    sprintf(fn, "%s/%s", base, path);
+    int c = snprintf(fn, sizeof(fn), "%s/%s", basepath, path);
+    if (c >= sizeof(fn)) {
+        return PR_FAILURE;
+    }
 
     
 

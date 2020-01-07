@@ -3034,7 +3034,6 @@ ssl3_SendChangeCipherSpecsInt(sslSocket *ss)
             return SECFailure; 
         }
     } else {
-        SECStatus rv;
         rv = dtls_QueueMessage(ss, content_change_cipher_spec, &change, 1);
         if (rv != SECSuccess) {
             return SECFailure;
@@ -11708,7 +11707,7 @@ ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize)
     }
 
     for (i = 0; i < toCheck; i++) {
-        unsigned int t = paddingLength - i;
+        t = paddingLength - i;
         
 
         unsigned char mask = DUPLICATE_MSB_TO_ALL(~t);
