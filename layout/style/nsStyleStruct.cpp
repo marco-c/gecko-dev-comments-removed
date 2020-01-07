@@ -3692,13 +3692,16 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
-nsStyleDisplay::~nsStyleDisplay()
+
+static
+void ReleaseSharedListOnMainThread(const char* aName,
+                                   RefPtr<nsCSSValueSharedList>& aList)
 {
   
   
   
   
-  if (mSpecifiedTransform && ServoStyleSet::IsInServoTraversal()) {
+  if (aList && ServoStyleSet::IsInServoTraversal()) {
     
     
     
@@ -3711,10 +3714,14 @@ nsStyleDisplay::~nsStyleDisplay()
 #else
       false;
 #endif
-    NS_ReleaseOnMainThreadSystemGroup(
-      "nsStyleDisplay::mSpecifiedTransform",
-      mSpecifiedTransform.forget(), alwaysProxy);
+    NS_ReleaseOnMainThreadSystemGroup(aName, aList.forget(), alwaysProxy);
   }
+}
+
+nsStyleDisplay::~nsStyleDisplay()
+{
+  ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedTransform",
+                                mSpecifiedTransform);
 
   MOZ_COUNT_DTOR(nsStyleDisplay);
 }
@@ -4644,18 +4651,8 @@ nsStyleUIReset::~nsStyleUIReset()
 {
   MOZ_COUNT_DTOR(nsStyleUIReset);
 
-  
-  if (mSpecifiedWindowTransform && ServoStyleSet::IsInServoTraversal()) {
-    bool alwaysProxy =
-#ifdef DEBUG
-      true;
-#else
-      false;
-#endif
-    NS_ReleaseOnMainThreadSystemGroup(
-      "nsStyleUIReset::mSpecifiedWindowTransform",
-      mSpecifiedWindowTransform.forget(), alwaysProxy);
-  }
+  ReleaseSharedListOnMainThread("nsStyleUIReset::mSpecifiedWindowTransform",
+                                mSpecifiedWindowTransform);
 }
 
 nsChangeHint
