@@ -88,18 +88,25 @@ impl StateMachine {
 
             
             
-            if key_handles.iter().any(|key_handle| {
+            
+            let excluded = key_handles.iter().any(|key_handle| {
                 is_valid_transport(key_handle.transports)
                     && u2f_is_keyhandle_valid(dev, &challenge, &application, &key_handle.credential)
                         .unwrap_or(false) 
-            }) {
-                return;
-            }
+            });
 
             while alive() {
-                if let Ok(bytes) = u2f_register(dev, &challenge, &application) {
-                    callback.call(Ok(bytes));
-                    break;
+                if excluded {
+                    let blank = vec![0u8; PARAMETER_SIZE];
+                    if let Ok(_) = u2f_register(dev, &blank, &blank) {
+                        callback.call(Err(io_err("duplicate registration")));
+                        break;
+                    }
+                } else {
+                    if let Ok(bytes) = u2f_register(dev, &challenge, &application) {
+                        callback.call(Ok(bytes));
+                        break;
+                    }
                 }
 
                 
