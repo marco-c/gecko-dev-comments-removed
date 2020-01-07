@@ -3590,7 +3590,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  bool isSVG = (child->GetStateBits() & NS_FRAME_SVG_LAYOUT);
+  const bool isSVG = child->GetStateBits() & NS_FRAME_SVG_LAYOUT;
 
   
   
@@ -3600,15 +3600,15 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   bool pseudoStackingContext =
     (aFlags & DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT) != 0;
-  awayFromCommonPath |= pseudoStackingContext;
-  if (!isSVG &&
+
+  if (!pseudoStackingContext &&
+      !isSVG &&
       (aFlags & DISPLAY_CHILD_INLINE) &&
       !child->IsFrameOfType(eLineParticipant)) {
     
     
     
     pseudoStackingContext = true;
-    awayFromCommonPath = true;
   }
 
   nsDisplayListBuilder::OutOfFlowDisplayData* savedOutOfFlowData = nullptr;
@@ -3647,8 +3647,8 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       visible.SetEmpty();
       dirty.SetEmpty();
     }
+
     pseudoStackingContext = true;
-    awayFromCommonPath = true;
   }
 
   const nsStyleDisplay* disp = child->StyleDisplay();
@@ -3667,11 +3667,9 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  if (aBuilder->GetIncludeAllOutOfFlows() &&
-      (child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+  if (aBuilder->GetIncludeAllOutOfFlows() && isPlaceholder) {
     visible = child->GetVisualOverflowRect();
     dirty = child->GetVisualOverflowRect();
-    awayFromCommonPath = true;
   } else if (!DescendIntoChild(aBuilder, child, visible, dirty)) {
     return;
   }
@@ -3700,20 +3698,25 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   EffectSet* effectSet = EffectSet::GetEffectSet(child);
   const nsStyleEffects* effects = child->StyleEffects();
   const nsStylePosition* pos = child->StylePosition();
-  bool isVisuallyAtomic = child->IsVisuallyAtomic(effectSet, disp, effects);
-  bool isPositioned = disp->IsAbsPosContainingBlock(child);
-  bool isStackingContext = child->IsStackingContext(disp, pos, isPositioned, isVisuallyAtomic) ||
-                           (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
 
-  if (isVisuallyAtomic || isPositioned || (!isSVG && disp->IsFloating(child)) ||
-      ((effects->mClipFlags & NS_STYLE_CLIP_RECT) &&
-       IsSVGContentWithCSSClip(child)) ||
-       disp->mIsolation != NS_STYLE_ISOLATION_AUTO ||
-       (disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_STACKING_CONTEXT) ||
-      (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT)) {
+  const bool isVisuallyAtomic =
+    child->IsVisuallyAtomic(effectSet, disp, effects);
+
+  const bool isPositioned =
+    disp->IsAbsPosContainingBlock(child);
+
+  const bool isStackingContext =
+    child->IsStackingContext(disp, pos, isPositioned, isVisuallyAtomic) ||
+    (aFlags & DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
+
+  if (pseudoStackingContext || isStackingContext || isPositioned ||
+      (!isSVG && disp->IsFloating(child)) ||
+      (isSVG && (effects->mClipFlags & NS_STYLE_CLIP_RECT) &&
+       IsSVGContentWithCSSClip(child))) {
     pseudoStackingContext = true;
     awayFromCommonPath = true;
   }
+
   NS_ASSERTION(!isStackingContext || pseudoStackingContext,
                "Stacking contexts must also be pseudo-stacking-contexts");
 
@@ -3744,7 +3747,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     clipState.SetClipChainForContainingBlockDescendants(nullptr);
-    awayFromCommonPath = true;
   }
 
   
