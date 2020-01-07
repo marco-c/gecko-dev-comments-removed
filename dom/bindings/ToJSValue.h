@@ -148,8 +148,6 @@ ToJSValue(JSContext* aCx,
 {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
-  
-  MOZ_ASSERT(aArgument.IsDOMBinding());
 
   return GetOrCreateDOMReflector(aCx, aArgument, aValue);
 }

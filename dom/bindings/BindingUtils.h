@@ -872,18 +872,6 @@ CheckWrapperCacheCast<T, true>
 };
 #endif
 
-MOZ_ALWAYS_INLINE bool
-CouldBeDOMBinding(void*)
-{
-  return true;
-}
-
-MOZ_ALWAYS_INLINE bool
-CouldBeDOMBinding(nsWrapperCache* aCache)
-{
-  return aCache->IsDOMBinding();
-}
-
 inline bool
 TryToOuterize(JS::MutableHandle<JS::Value> rval)
 {
@@ -1073,9 +1061,6 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
 {
   MOZ_ASSERT(value);
   MOZ_ASSERT_IF(givenProto, js::IsObjectInContextCompartment(givenProto, cx));
-  
-  
-  bool couldBeDOMBinding = CouldBeDOMBinding(value);
   JSObject* obj = value->GetWrapper();
   if (obj) {
 #ifdef DEBUG
@@ -1085,11 +1070,6 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
     obj = value->GetWrapper();
 #endif
   } else {
-    
-    if (!couldBeDOMBinding) {
-      return false;
-    }
-
     obj = value->WrapObject(cx, givenProto);
     if (!obj) {
       
@@ -1123,9 +1103,7 @@ DoGetOrCreateDOMReflector(JSContext* cx, T* value,
 
   rval.set(JS::ObjectValue(*obj));
 
-  bool sameCompartment =
-    js::GetObjectCompartment(obj) == js::GetContextCompartment(cx);
-  if (sameCompartment && couldBeDOMBinding) {
+  if (js::GetObjectCompartment(obj) == js::GetContextCompartment(cx)) {
     return TypeNeedsOuterization<T>::value ? TryToOuterize(rval) : true;
   }
 
@@ -1302,65 +1280,6 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx, JS::Handle<JSObject*> scope,
 {
   return WrapNewBindingNonWrapperCachedObject(cx, scope, &value, rval,
                                               givenProto);
-}
-
-
-
-bool
-NativeInterface2JSObjectAndThrowIfFailed(JSContext* aCx,
-                                         JS::Handle<JSObject*> aScope,
-                                         JS::MutableHandle<JS::Value> aRetval,
-                                         xpcObjectHelper& aHelper,
-                                         const nsIID* aIID,
-                                         bool aAllowNativeWrapper);
-
-
-
-
-
-template <class T>
-MOZ_ALWAYS_INLINE bool
-HandleNewBindingWrappingFailure(JSContext* cx, JS::Handle<JSObject*> scope,
-                                T* value, JS::MutableHandle<JS::Value> rval)
-{
-  if (JS_IsExceptionPending(cx)) {
-    return false;
-  }
-
-  xpcObjectHelper helper(value, GetWrapperCache(value));
-  return NativeInterface2JSObjectAndThrowIfFailed(cx, scope, rval,
-                                                  helper, nullptr, true);
-}
-
-
-
-
-template <class T, bool isSmartPtr=IsSmartPtr<T>::value>
-struct HandleNewBindingWrappingFailureHelper
-{
-  static inline bool Wrap(JSContext* cx, JS::Handle<JSObject*> scope,
-                          const T& value, JS::MutableHandle<JS::Value> rval)
-  {
-    return HandleNewBindingWrappingFailure(cx, scope, value.get(), rval);
-  }
-};
-
-template <class T>
-struct HandleNewBindingWrappingFailureHelper<T, false>
-{
-  static inline bool Wrap(JSContext* cx, JS::Handle<JSObject*> scope, T& value,
-                          JS::MutableHandle<JS::Value> rval)
-  {
-    return HandleNewBindingWrappingFailure(cx, scope, &value, rval);
-  }
-};
-
-template<class T>
-inline bool
-HandleNewBindingWrappingFailure(JSContext* cx, JS::Handle<JSObject*> scope,
-                                T& value, JS::MutableHandle<JS::Value> rval)
-{
-  return HandleNewBindingWrappingFailureHelper<T>::Wrap(cx, scope, value, rval);
 }
 
 template<bool Fatal>
@@ -1671,28 +1590,6 @@ WrapNativeISupports(JSContext* cx, T* p, nsWrapperCache* cache)
 
 
 
-template<typename T, bool isISupports=IsBaseOf<nsISupports, T>::value>
-struct WrapNativeFallback
-{
-  static inline JSObject* Wrap(JSContext* cx, T* parent, nsWrapperCache* cache)
-  {
-    return nullptr;
-  }
-};
-
-
-
-template<typename T >
-struct WrapNativeFallback<T, true >
-{
-  static inline JSObject* Wrap(JSContext* cx, T* parent, nsWrapperCache* cache)
-  {
-    return WrapNativeISupports(cx, parent, cache);
-  }
-};
-
-
-
 template<typename T, bool hasWrapObject=NativeHasMember<T>::WrapObject>
 struct WrapNativeHelper
 {
@@ -1708,15 +1605,8 @@ struct WrapNativeHelper
     }
 
     
-    if (!CouldBeDOMBinding(parent)) {
-      
-      obj = WrapNativeFallback<T>::Wrap(cx, parent, cache);
-      MOZ_ASSERT(JS::ObjectIsNotGray(obj));
-    } else {
-      
-      obj = parent->WrapObject(cx, nullptr);
-      MOZ_ASSERT(JS::ObjectIsNotGray(obj));
-    }
+    obj = parent->WrapObject(cx, nullptr);
+    MOZ_ASSERT(JS::ObjectIsNotGray(obj));
 
     return obj;
   }
