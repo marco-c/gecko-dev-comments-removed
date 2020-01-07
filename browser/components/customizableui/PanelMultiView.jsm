@@ -1323,6 +1323,10 @@ var PanelView = class extends AssociatedToNode {
       collectItems();
     } else {
       await this.window.promiseDocumentFlushed(collectItems);
+      
+      if (!this.node.panelMultiView) {
+        return;
+      }
     }
 
     
@@ -1342,6 +1346,10 @@ var PanelView = class extends AssociatedToNode {
       measureItems();
     } else {
       await this.window.promiseDocumentFlushed(measureItems);
+      
+      if (!this.node.panelMultiView) {
+        return;
+      }
     }
 
     
