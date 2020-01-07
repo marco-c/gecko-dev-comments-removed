@@ -19,11 +19,6 @@ module.exports = {
     "debug": false,
     "dump": false,
     
-    "Cc": false,
-    "Ci": false,
-    "Cr": false,
-    "Cu": false,
-    
     
     "AbortController": false,
     "AbortSignal": false,
