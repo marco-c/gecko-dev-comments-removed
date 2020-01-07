@@ -18,7 +18,6 @@
 #include "nsIDOMWindow.h"               
 #include "nsIDocShell.h"                
 #include "nsIInterfaceRequestorUtils.h"  
-#include "nsISelection.h"               
 #include "nsITransactionManager.h"      
 #include "nsLiteralString.h"            
 #include "nsPICommandUpdater.h"         

@@ -774,7 +774,7 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint)
   }
 
   
-  nsISelection *caretSelection = caret->GetSelection();
+  Selection* caretSelection = caret->GetSelection();
   const bool isFocusedRightNow = ourSel == caretSelection;
   if (!isFocusedRightNow) {
     

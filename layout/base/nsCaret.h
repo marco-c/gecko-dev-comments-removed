@@ -75,7 +75,7 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    bool IsVisible(nsISelection* aSelection = nullptr)
+    bool IsVisible(mozilla::dom::Selection* aSelection = nullptr)
     {
       if (!mVisible || mHideCount) {
         return false;
@@ -84,7 +84,7 @@ class nsCaret final : public nsISelectionListener
       if (!mShowDuringSelection) {
         mozilla::dom::Selection* selection;
         if (aSelection) {
-          selection = static_cast<mozilla::dom::Selection*>(aSelection);
+          selection = aSelection;
         } else {
           selection = GetSelection();
         }
