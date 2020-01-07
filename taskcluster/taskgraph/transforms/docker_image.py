@@ -41,6 +41,9 @@ docker_image_schema = Schema({
     
     
     Optional('definition'): basestring,
+
+    
+    Optional('packages'): [basestring],
 })
 
 
@@ -54,11 +57,34 @@ def validate(config, tasks):
 
 @transforms.add
 def fill_template(config, tasks):
+    available_packages = {}
+    for task in config.kind_dependencies_tasks:
+        if task.kind != 'packages':
+            continue
+        name = task.label.replace('packages-', '')
+        for route in task.task.get('routes', []):
+            if route.startswith('index.') and '.hash.' in route:
+                available_packages[name] = route
+                break
     for task in tasks:
         image_name = task.pop('name')
         job_symbol = task.pop('symbol')
         args = task.pop('args', {})
         definition = task.pop('definition', image_name)
+        packages = task.pop('packages', [])
+
+        for p in packages:
+            if p not in available_packages:
+                raise Exception('Missing package job for {}-{}: {}'.format(
+                    config.kind, image_name, p))
+
+        
+        
+        
+        
+        
+        args['DOCKER_IMAGE_PACKAGES'] = ' '.join('<{}>'.format(p)
+                                                 for p in packages)
 
         context_path = os.path.join('taskcluster', 'docker', definition)
         context_hash = generate_context_hash(
@@ -131,13 +157,25 @@ def fill_template(config, tasks):
         }
 
         for k, v in args.items():
-            taskdesc['worker']['env'][k] = v
+            if k == 'DOCKER_IMAGE_PACKAGES':
+                taskdesc['worker']['env'][k] = {'task-reference': v}
+            else:
+                taskdesc['worker']['env'][k] = v
 
+        if packages:
+            deps = taskdesc.setdefault('dependencies', {})
+            digest_data = [context_hash]
+            for p in sorted(packages):
+                deps[p] = 'packages-{}'.format(p)
+                digest_data.append(available_packages[p])
+            kwargs = {'digest_data': digest_data}
+        else:
+            kwargs = {'digest': context_hash}
         add_optimization(
             config, taskdesc,
             cache_type="docker-images.v1",
             cache_name=image_name,
-            digest=context_hash,
+            **kwargs
         )
 
         yield taskdesc
