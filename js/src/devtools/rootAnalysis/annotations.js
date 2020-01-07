@@ -206,11 +206,6 @@ var ignoreFunctions = {
     
     
     
-    "nsGlobalNameStruct* nsScriptNameSpaceManager::LookupName(nsAString*, uint16**)": true,
-
-    
-    
-    
     
     
     

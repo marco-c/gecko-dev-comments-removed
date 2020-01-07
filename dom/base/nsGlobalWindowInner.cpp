@@ -51,7 +51,6 @@
 #include "nsIScriptTimeoutHandler.h"
 #include "nsITimeoutHandler.h"
 #include "nsIController.h"
-#include "nsScriptNameSpaceManager.h"
 #include "nsISlowScriptDebug.h"
 #include "nsWindowMemoryReporter.h"
 #include "nsWindowSizes.h"
@@ -2939,20 +2938,7 @@ nsGlobalWindowInner::MayResolve(jsid aId)
     return true;
   }
 
-  if (WebIDLGlobalNameHash::MayResolve(aId)) {
-    return true;
-  }
-
-  nsScriptNameSpaceManager *nameSpaceManager = PeekNameSpaceManager();
-  if (!nameSpaceManager) {
-    
-    return true;
-  }
-
-  nsAutoString name;
-  AssignJSFlatString(name, JSID_TO_FLAT_STRING(aId));
-
-  return nameSpaceManager->LookupName(name);
+  return WebIDLGlobalNameHash::MayResolve(aId);
 }
 
 void
@@ -2974,40 +2960,24 @@ nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aName
   
   
 
-  nsScriptNameSpaceManager* nameSpaceManager = GetNameSpaceManager();
-  if (nameSpaceManager) {
-    JS::Rooted<JSObject*> wrapper(aCx, GetWrapper());
+  JS::Rooted<JSObject*> wrapper(aCx, GetWrapper());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    WebIDLGlobalNameHash::NameType nameType =
-      js::IsObjectInContextCompartment(wrapper, aCx) ?
-        WebIDLGlobalNameHash::UnresolvedNamesOnly :
-        WebIDLGlobalNameHash::AllNames;
-    if (!WebIDLGlobalNameHash::GetNames(aCx, wrapper, nameType, aNames)) {
-      aRv.NoteJSContextException(aCx);
-    }
-
-    for (auto i = nameSpaceManager->GlobalNameIter(); !i.Done(); i.Next()) {
-      const GlobalNameMapEntry* entry = i.Get();
-      
-      
-      JSString* str = JS_AtomizeUCStringN(aCx,
-                                          entry->mKey.BeginReading(),
-                                          entry->mKey.Length());
-      if (!str || !aNames.append(NON_INTEGER_ATOM_TO_JSID(str))) {
-        aRv.NoteJSContextException(aCx);
-        return;
-      }
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  WebIDLGlobalNameHash::NameType nameType =
+    js::IsObjectInContextCompartment(wrapper, aCx) ?
+      WebIDLGlobalNameHash::UnresolvedNamesOnly :
+      WebIDLGlobalNameHash::AllNames;
+  if (!WebIDLGlobalNameHash::GetNames(aCx, wrapper, nameType, aNames)) {
+    aRv.NoteJSContextException(aCx);
   }
 }
 

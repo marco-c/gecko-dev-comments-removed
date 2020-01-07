@@ -20,7 +20,6 @@
 #include "xpcpublic.h"
 
 class nsICycleCollectorListener;
-class nsScriptNameSpaceManager;
 class nsIDocShell;
 
 namespace mozilla {
@@ -167,12 +166,6 @@ namespace dom {
 
 void StartupJSEnvironment();
 void ShutdownJSEnvironment();
-
-
-nsScriptNameSpaceManager* GetNameSpaceManager();
-
-
-nsScriptNameSpaceManager* PeekNameSpaceManager();
 
 
 class AsyncErrorReporter final : public mozilla::Runnable
