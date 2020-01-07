@@ -7275,21 +7275,54 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         }
       }
     }
+
+    if (!frame) {
+      NS_WARNING("Nothing to handle this event!");
+      return NS_OK;
+    }
+
+    nsCOMPtr<nsIContent> targetElement;
+    frame->GetContentForEvent(aEvent, getter_AddRefs(targetElement));
+
+    
+    
+    
+    if (targetElement) {
+      
+      
+      
+      
+      
+      
+      
+      
+      while (targetElement && !targetElement->IsElement()) {
+        targetElement = targetElement->GetFlattenedTreeParent();
+      }
+
+      
+      if (!targetElement) {
+        return NS_OK;
+      }
+    }
+
     
     
     nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
     nsresult rv;
     AutoPointerEventTargetUpdater updater(shell, aEvent, frame, aTargetContent);
-    if (shell != this) {
-      
-      
-      
-      
-      
-      rv = shell->HandlePositionedEvent(frame, aEvent, aEventStatus);
-    } else {
-      rv = HandlePositionedEvent(frame, aEvent, aEventStatus);
-    }
+
+    
+    
+    
+    
+    
+    shell->PushCurrentEventInfo(frame, targetElement);
+    rv = shell->HandleEventInternal(aEvent, aEventStatus, true);
+#ifdef DEBUG
+    shell->ShowEventTargetDebug();
+#endif
+    shell->PopCurrentEventInfo();
     return rv;
   }
 
@@ -7437,59 +7470,6 @@ PresShell::ShowEventTargetDebug()
   }
 }
 #endif
-
-nsresult
-PresShell::HandlePositionedEvent(nsIFrame* aTargetFrame,
-                                 WidgetGUIEvent* aEvent,
-                                 nsEventStatus* aEventStatus)
-{
-  nsresult rv = NS_OK;
-
-  PushCurrentEventInfo(nullptr, nullptr);
-
-  mCurrentEventFrame = aTargetFrame;
-
-  if (mCurrentEventFrame) {
-    nsCOMPtr<nsIContent> targetElement;
-    mCurrentEventFrame->GetContentForEvent(aEvent,
-                                           getter_AddRefs(targetElement));
-
-    
-    
-    
-    if (targetElement) {
-      
-      
-      
-      
-      
-      
-      
-      
-      while (targetElement && !targetElement->IsElement()) {
-        targetElement = targetElement->GetFlattenedTreeParent();
-      }
-
-      
-      if (!targetElement) {
-        mCurrentEventContent = nullptr;
-        mCurrentEventFrame = nullptr;
-      } else if (targetElement != mCurrentEventContent) {
-        mCurrentEventContent = targetElement;
-      }
-    }
-  }
-
-  if (GetCurrentEventFrame()) {
-    rv = HandleEventInternal(aEvent, aEventStatus, true);
-  }
-
-#ifdef DEBUG
-  ShowEventTargetDebug();
-#endif
-  PopCurrentEventInfo();
-  return rv;
-}
 
 nsresult
 PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
