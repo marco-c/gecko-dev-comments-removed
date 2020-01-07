@@ -741,7 +741,7 @@ CreateGlobalForOffThreadParse(JSContext* cx, const gc::AutoSuppressGC& nogc)
 
     creationOptions.setInvisibleToDebugger(true)
                    .setMergeable(true)
-                   .setNewZone();
+                   .setNewCompartmentAndZone();
 
     
     creationOptions.setTrace(nullptr);

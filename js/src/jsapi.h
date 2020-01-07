@@ -1717,16 +1717,19 @@ JS_GetConstructor(JSContext* cx, JS::Handle<JSObject*> proto);
 namespace JS {
 
 
-enum ZoneSpecifier {
+enum class CompartmentSpecifier {
     
     
-    SystemZone,
+    NewCompartmentInSystemZone,
 
     
-    ExistingZone,
+    NewCompartmentInExistingZone,
 
     
-    NewZone
+    NewCompartmentAndZone,
+
+    
+    ExistingCompartment,
 };
 
 
@@ -1742,8 +1745,8 @@ class JS_PUBLIC_API(RealmCreationOptions)
   public:
     RealmCreationOptions()
       : traceGlobal_(nullptr),
-        zoneSpec_(NewZone),
-        zone_(nullptr),
+        compSpec_(CompartmentSpecifier::NewCompartmentAndZone),
+        comp_(nullptr),
         invisibleToDebugger_(false),
         mergeable_(false),
         preserveJitCode_(false),
@@ -1761,13 +1764,21 @@ class JS_PUBLIC_API(RealmCreationOptions)
         return *this;
     }
 
-    JS::Zone* zone() const { return zone_; }
-    ZoneSpecifier zoneSpecifier() const { return zoneSpec_; }
+    JS::Zone* zone() const {
+        MOZ_ASSERT(compSpec_ == CompartmentSpecifier::NewCompartmentInExistingZone);
+        return zone_;
+    }
+    JSCompartment* compartment() const {
+        MOZ_ASSERT(compSpec_ == CompartmentSpecifier::ExistingCompartment);
+        return comp_;
+    }
+    CompartmentSpecifier compartmentSpecifier() const { return compSpec_; }
 
     
-    RealmCreationOptions& setSystemZone();
-    RealmCreationOptions& setExistingZone(JSObject* obj);
-    RealmCreationOptions& setNewZone();
+    RealmCreationOptions& setNewCompartmentInSystemZone();
+    RealmCreationOptions& setNewCompartmentInExistingZone(JSObject* obj);
+    RealmCreationOptions& setNewCompartmentAndZone();
+    RealmCreationOptions& setExistingCompartment(JSObject* obj);
 
     
     
@@ -1824,8 +1835,11 @@ class JS_PUBLIC_API(RealmCreationOptions)
 
   private:
     JSTraceOp traceGlobal_;
-    ZoneSpecifier zoneSpec_;
-    JS::Zone* zone_;
+    CompartmentSpecifier compSpec_;
+    union {
+        JSCompartment* comp_;
+        JS::Zone* zone_;
+    };
     bool invisibleToDebugger_;
     bool mergeable_;
     bool preserveJitCode_;

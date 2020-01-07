@@ -115,7 +115,7 @@ SimpleGlobalObject::Create(GlobalType globalType, JS::Handle<JS::Value> proto)
            
            
            
-           .setSystemZone();
+           .setNewCompartmentInSystemZone();
 
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIPrincipal> principal = NullPrincipal::CreateWithoutOriginAttributes();

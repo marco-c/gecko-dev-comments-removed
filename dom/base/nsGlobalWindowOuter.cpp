@@ -1564,11 +1564,11 @@ SelectZone(nsGlobalWindowInner* aNewInner,
 
     
     if (top && top->GetGlobalJSObject()) {
-      return aOptions.setExistingZone(top->GetGlobalJSObject());
+      return aOptions.setNewCompartmentInExistingZone(top->GetGlobalJSObject());
     }
   }
 
-  return aOptions.setNewZone();
+  return aOptions.setNewCompartmentAndZone();
 }
 
 
