@@ -106,7 +106,7 @@ add_task(async function test_untrusted_http_origin() {
   ok(true, "The untrusted HTTP page was not able to use the API.");
 
   
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.perms.remove(testHttpUri, HC_PERMISSION);
   Services.mm.removeMessageListener(messageName, makeTestFail);
   Services.telemetry.setEventRecordingEnabled("telemetry.test", false);
@@ -148,7 +148,7 @@ add_task(async function test_secure_non_whitelisted_origin() {
   ok(true, "The HTTPS page without permission was not able to use the API.");
 
   
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.mm.removeMessageListener(messageName, makeTestFail);
   Services.telemetry.setEventRecordingEnabled("telemetry.test", false);
 });
@@ -197,7 +197,7 @@ add_task(async function test_trusted_disabled_hybrid_telemetry() {
 
   
   await SpecialPowers.popPrefEnv();
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.perms.remove(testHttpsUri, HC_PERMISSION);
   Services.mm.removeMessageListener(messageName, makeTestFail);
   Services.telemetry.setEventRecordingEnabled("telemetry.test", false);
@@ -254,7 +254,7 @@ add_task(async function test_hybrid_content_with_iframe() {
   ok(true, "There were no unintended hybrid content API usages from the iframe.");
 
   
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.mm.removeMessageListener(messageName, makeTestFail);
   Services.perms.remove(testHttpsUri, HC_PERMISSION);
   Services.telemetry.setEventRecordingEnabled("telemetry.test", false);
@@ -332,7 +332,7 @@ add_task(async function test_hybrid_content_recording() {
   }
 
   
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.perms.remove(testHttpsUri, HC_PERMISSION);
 });
 
@@ -365,6 +365,6 @@ add_task(async function test_can_upload() {
   });
 
   
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
   Services.perms.remove(testHttpsUri, HC_PERMISSION);
 });

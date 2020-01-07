@@ -158,7 +158,7 @@ add_task(async function test() {
   validateHistogramEntryCount("WEBAUTHN_CREATE_CREDENTIAL_MS", 1);
   validateHistogramEntryCount("WEBAUTHN_GET_ASSERTION_MS", 1);
 
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 
   
   

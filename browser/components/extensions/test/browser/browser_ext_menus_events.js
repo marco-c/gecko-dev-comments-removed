@@ -120,7 +120,7 @@ async function testShowHideEvent({menuCreateParams, doOpenMenu, doCloseMenu,
   }
 
   await extension.unload();
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 }
 
 

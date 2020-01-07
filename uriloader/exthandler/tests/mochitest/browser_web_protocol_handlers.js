@@ -48,7 +48,7 @@ add_task(async function() {
   gBrowser.selectedTab = tab;
   is(gURLBar.value, expectedURL,
      "the expected URL is displayed in the location bar");
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 
   
   let newWindowPromise = BrowserTestUtils.waitForNewWindow();

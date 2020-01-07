@@ -33,8 +33,8 @@ add_task(async function test_CtoPtoC_big() {
 
   ok(status, "CtoPtoC-big: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });
 
 
@@ -65,8 +65,8 @@ add_task(async function test_CtoPtoC_small() {
 
   ok(status, "CtoPtoC-small: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });
 
 
@@ -101,8 +101,8 @@ add_task(async function test_CtoPtoC_bc_big() {
 
   ok(status, "CtoPtoC-broadcastChannel-big: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });
 
 
@@ -137,8 +137,8 @@ add_task(async function test_CtoPtoC_bc_small() {
 
   ok(status, "CtoPtoC-broadcastChannel-small: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });
 
 
@@ -167,8 +167,8 @@ add_task(async function test_CtoPtoC_bc_small() {
 
   ok(status, "CtoPtoC-blobURL: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });
 
 
@@ -200,6 +200,6 @@ add_task(async function test_CtoPtoC_multipart() {
 
   ok(status, "CtoPtoC-multipart: Data match!");
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });

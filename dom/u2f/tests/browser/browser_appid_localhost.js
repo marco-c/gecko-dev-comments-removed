@@ -69,7 +69,7 @@ add_task(async function () {
   });
 
   
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 
   
   Services.prefs.clearUserPref("security.webauth.u2f");

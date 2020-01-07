@@ -116,7 +116,7 @@ add_task(async function test_sessions_restore() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:robots");
   await TabStateFlusher.flush(tab.linkedBrowser);
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
   await assertNotificationCount(6);
 
   
@@ -130,7 +130,7 @@ add_task(async function test_sessions_restore() {
 
   
   let realTab = tabTracker.getTab(tab.id);
-  await BrowserTestUtils.removeTab(realTab);
+  BrowserTestUtils.removeTab(realTab);
   await assertNotificationCount(8);
 
   
@@ -146,7 +146,7 @@ add_task(async function test_sessions_restore() {
 
   
   realTab = tabTracker.getTab(tab.id);
-  await BrowserTestUtils.removeTab(realTab);
+  BrowserTestUtils.removeTab(realTab);
   await assertNotificationCount(10);
 
   

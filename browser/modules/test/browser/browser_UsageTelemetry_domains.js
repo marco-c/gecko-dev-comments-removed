@@ -71,7 +71,7 @@ add_task(async function test_URIAndDomainCounts() {
   let secondTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
   await BrowserTestUtils.switchTab(gBrowser, firstTab);
   checkCounts({totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 1});
-  await BrowserTestUtils.removeTab(secondTab);
+  BrowserTestUtils.removeTab(secondTab);
 
   
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
@@ -127,6 +127,6 @@ add_task(async function test_URIAndDomainCounts() {
   checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 6});
 
   
-  await BrowserTestUtils.removeTab(firstTab);
+  BrowserTestUtils.removeTab(firstTab);
   await BrowserTestUtils.closeWindow(newWin);
 });

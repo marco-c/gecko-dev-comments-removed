@@ -69,8 +69,8 @@ add_task(async function(){
   is(ppmm.childCount, originalChildCount + 2,
      "Navigating away from the preloaded browser (child side) should create a new content process.")
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 
   
   gBrowser.removePreloadedBrowser();
@@ -102,7 +102,7 @@ add_task(async function preloaded_state_attribute() {
   ok(!navigatedTabHasState, "Correctly removed the preloadState attribute when navigating away");
 
   
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   gBrowser.removePreloadedBrowser();
 });
 

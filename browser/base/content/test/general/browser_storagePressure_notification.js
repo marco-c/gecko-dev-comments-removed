@@ -67,8 +67,8 @@ add_task(async function() {
   let prefDoc = gBrowser.selectedBrowser.contentDocument;
   let siteDataGroup = prefDoc.getElementById("siteDataGroup");
   is_element_visible(siteDataGroup, "Should open to the siteDataGroup section in about:preferences");
-  await BrowserTestUtils.removeTab(aboutPrefTab);
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(aboutPrefTab);
+  BrowserTestUtils.removeTab(tab);
 });
 
 

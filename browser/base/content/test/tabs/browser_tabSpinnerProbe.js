@@ -77,7 +77,7 @@ async function testProbe(aProbe) {
 
   
   let snapshot = histogram.snapshot();
-  await BrowserTestUtils.removeTab(hangTab);
+  BrowserTestUtils.removeTab(hangTab);
   ok(sum(snapshot.counts) > 0,
    `Spinner probe should now have a value in some bucket`);
 }

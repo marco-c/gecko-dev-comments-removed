@@ -76,5 +76,5 @@ add_task(async function() {
   
   
   findBar._findField.value = "";
-  await BrowserTestUtils.removeTab(aTab);
+  BrowserTestUtils.removeTab(aTab);
 });

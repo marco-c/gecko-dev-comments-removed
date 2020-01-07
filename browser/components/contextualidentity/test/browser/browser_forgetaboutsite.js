@@ -131,7 +131,7 @@ async function test_cookie_cleared() {
     tabs[userContextId] = await openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
 
     
-    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -199,7 +199,7 @@ async function test_image_cache_cleared() {
     
     tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
                                                       userContextId);
-    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   let expectedHits = USER_CONTEXTS.length;
@@ -218,7 +218,7 @@ async function test_image_cache_cleared() {
     
     tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
                                                       userContextId);
-    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   
@@ -266,7 +266,7 @@ async function test_storage_cleared() {
     });
 
     
-    await BrowserTestUtils.removeTab(tabInfo.tab);
+    BrowserTestUtils.removeTab(tabInfo.tab);
   }
 
   
@@ -303,7 +303,7 @@ async function test_storage_cleared() {
     });
 
     
-    await BrowserTestUtils.removeTab(tabInfo.tab);
+    BrowserTestUtils.removeTab(tabInfo.tab);
   }
 }
 

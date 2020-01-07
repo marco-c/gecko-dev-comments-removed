@@ -135,7 +135,7 @@ add_task(async function() {
     testDefaultToolbars(toolbars);
 
     
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
 
     
     let winPromise = BrowserTestUtils.waitForNewWindow();

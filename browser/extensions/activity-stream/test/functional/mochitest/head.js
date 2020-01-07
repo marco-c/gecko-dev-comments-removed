@@ -154,7 +154,7 @@ function test_newtab(testInfo) {
     } finally {
       
       await scopedPopPrefs();
-      await BrowserTestUtils.removeTab(tab);
+      BrowserTestUtils.removeTab(tab);
     }
   };
 

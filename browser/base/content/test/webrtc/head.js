@@ -572,5 +572,5 @@ async function runTests(tests, options = {}) {
   }
 
   
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }

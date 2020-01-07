@@ -81,5 +81,5 @@ add_task(async function() {
   
   await TestUtils.waitForTick();
 
-  await BrowserTestUtils.removeTab(openedTab);
+  BrowserTestUtils.removeTab(openedTab);
 });

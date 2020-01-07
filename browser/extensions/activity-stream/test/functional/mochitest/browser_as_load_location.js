@@ -20,7 +20,7 @@ async function checkNewtabLoads(selector, message) {
   ok(found, message);
 
   
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }
 
 

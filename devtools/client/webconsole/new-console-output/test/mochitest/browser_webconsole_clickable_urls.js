@@ -32,5 +32,5 @@ add_task(async function() {
   
   
   ok(newTab, "The expected tab was opened.");
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
 });

@@ -196,7 +196,7 @@ add_task(async function test_EME_forgetThisSite() {
     emeSessionIds[userContextId] = await setupEMEKey(tabs[userContextId].browser);
 
     
-    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   
@@ -213,6 +213,6 @@ add_task(async function test_EME_forgetThisSite() {
     await checkEMEKey(tabs[userContextId].browser, emeSessionIds[userContextId]);
 
     
-    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 });

@@ -91,8 +91,8 @@ add_task(async function test_abort() {
   await waitForStatus(tab_get, "aborted");
 
   
-  await BrowserTestUtils.removeTab(tab_create);
-  await BrowserTestUtils.removeTab(tab_get);
+  BrowserTestUtils.removeTab(tab_create);
+  BrowserTestUtils.removeTab(tab_get);
 
   
   Services.prefs.clearUserPref("security.webauth.u2f");

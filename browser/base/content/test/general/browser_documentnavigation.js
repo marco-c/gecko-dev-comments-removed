@@ -125,7 +125,7 @@ add_task(async function() {
   await expectFocusOnF6(false, "html2", "html2",
                                 true, "basic focus content page with second tab");
 
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
@@ -217,7 +217,7 @@ add_task(async function() {
   await expectFocusOnF6(false, "main-window", gURLBar.inputField,
                                 false, "back focus with contenteditable body urlbar");
 
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
@@ -248,7 +248,7 @@ add_task(async function() {
   await expectFocusOnF6(true, "main-window", gURLBar.inputField,
                                false, "back focus on frameset frame urlbar");
 
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 

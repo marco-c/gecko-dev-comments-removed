@@ -54,7 +54,7 @@ add_task(async function() {
   
   is(charEncodingButton.getAttribute("disabled"), "true", "We should disable the encoding menu");
 
-  await BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(newTab);
 });
 
 add_task(async function asyncCleanup() {

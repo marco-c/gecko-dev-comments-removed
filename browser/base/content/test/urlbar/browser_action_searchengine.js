@@ -14,7 +14,7 @@ add_task(async function() {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engine);
     try {
-      await BrowserTestUtils.removeTab(tab);
+      BrowserTestUtils.removeTab(tab);
     } catch (ex) {  }
     await PlacesUtils.history.clear();
   });

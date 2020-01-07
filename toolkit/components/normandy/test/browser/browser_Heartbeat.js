@@ -121,7 +121,7 @@ add_task(async function() {
   
   await closeAllNotifications(targetWindow, notificationBox);
   await telemetrySentPromise;
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 });
 
 
@@ -164,7 +164,7 @@ add_task(async function() {
   
   await closeAllNotifications(targetWindow, notificationBox);
   await telemetrySentPromise;
-  await BrowserTestUtils.removeTab(tab);
+  BrowserTestUtils.removeTab(tab);
 });
 
 

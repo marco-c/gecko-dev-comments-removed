@@ -18,7 +18,7 @@ add_task(async function() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, uriString);
   registerCleanupFunction(async function() {
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
   });
 
   
@@ -29,7 +29,7 @@ add_task(async function() {
 
   let openedTab = await promiseTabOpened;
   registerCleanupFunction(async function() {
-    await BrowserTestUtils.removeTab(openedTab);
+    BrowserTestUtils.removeTab(openedTab);
   });
 
   let openedBrowser = openedTab.linkedBrowser;

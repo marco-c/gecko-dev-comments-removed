@@ -33,5 +33,5 @@ add_task(async function() {
   
   is_element_visible(generalPane, "Should be in generalPane");
 
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

@@ -89,8 +89,8 @@ add_task(async function test() {
 
   
   
-  await BrowserTestUtils.removeTab(containerTab1);
-  await BrowserTestUtils.removeTab(containerTab2);
+  BrowserTestUtils.removeTab(containerTab1);
+  BrowserTestUtils.removeTab(containerTab2);
 
   
   containerTab1 = BrowserTestUtils.addTab(gBrowser, SCOPE, { userContextId: 1 });
@@ -105,7 +105,7 @@ add_task(async function test() {
   await checkControlled(containerBrowser2);
 
   
-  await BrowserTestUtils.removeTab(containerTab1);
+  BrowserTestUtils.removeTab(containerTab1);
 
   
   
@@ -118,7 +118,7 @@ add_task(async function test() {
   await checkControlled(containerBrowser2);
 
   
-  await BrowserTestUtils.removeTab(containerTab2);
+  BrowserTestUtils.removeTab(containerTab2);
 
   
   
@@ -131,6 +131,6 @@ add_task(async function test() {
   await checkUncontrolled(containerBrowser2);
 
   
-  await BrowserTestUtils.removeTab(containerTab1);
-  await BrowserTestUtils.removeTab(containerTab2);
+  BrowserTestUtils.removeTab(containerTab1);
+  BrowserTestUtils.removeTab(containerTab2);
 });

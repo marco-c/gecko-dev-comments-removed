@@ -174,8 +174,8 @@ add_task(async function test() {
   });
 
   
-  await BrowserTestUtils.removeTab(defaultContainer.tab);
+  BrowserTestUtils.removeTab(defaultContainer.tab);
 
   
-  await BrowserTestUtils.removeTab(personalContainer.tab);
+  BrowserTestUtils.removeTab(personalContainer.tab);
 });

@@ -56,7 +56,7 @@ let testcases = [
     testPortalTabSelectedAndButtonNotVisible();
 
     
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
     ensureNoPortalTab(win);
     testShowLoginPageButtonVisibility(notification, "visible");
 
@@ -73,12 +73,12 @@ let testcases = [
 
     
     
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
     win.gBrowser.selectedTab = anotherTab;
     testShowLoginPageButtonVisibility(notification, "visible");
     tab = await clickButtonAndExpectNewPortalTab();
 
-    await BrowserTestUtils.removeTab(anotherTab);
+    BrowserTestUtils.removeTab(anotherTab);
     await freePortal(true);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);

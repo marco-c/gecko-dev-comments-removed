@@ -80,14 +80,14 @@ add_task(async function test_tabsAndWindows() {
   expectedMaxTabs += 4;
 
   
-  await BrowserTestUtils.removeTab(openedTabs.pop());
+  BrowserTestUtils.removeTab(openedTabs.pop());
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
                 totalUnfilteredURIs: 0});
 
   
   for (let tab of openedTabs) {
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
   }
   await BrowserTestUtils.closeWindow(win);
 
@@ -115,7 +115,7 @@ add_task(async function test_subsessionSplit() {
                 totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 2});
 
   
-  await BrowserTestUtils.removeTab(openedTabs.pop());
+  BrowserTestUtils.removeTab(openedTabs.pop());
 
   
   
@@ -131,7 +131,7 @@ add_task(async function test_subsessionSplit() {
 
   
   for (let tab of openedTabs) {
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
   }
   await BrowserTestUtils.closeWindow(win);
 });
@@ -213,7 +213,7 @@ add_task(async function test_tabsHistogram() {
 
   
   for (let openTab of openedTabs) {
-    await BrowserTestUtils.removeTab(openTab);
+    BrowserTestUtils.removeTab(openTab);
   }
   await BrowserTestUtils.closeWindow(win);
 });

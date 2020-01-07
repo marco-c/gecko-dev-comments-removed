@@ -35,7 +35,7 @@ add_task(async function() {
     ok(true, "Loaded page " + url);
     
     await new Promise(resolve => setTimeout(resolve, 0));
-    await BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.removeTab(tab);
     ok(true, "Closed page " + url + " without timeout");
   }
 });

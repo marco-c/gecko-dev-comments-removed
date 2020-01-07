@@ -11,7 +11,7 @@ async function testClearData(clearSiteData, clearCache) {
 
   
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_OFFLINE_URL);
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   
   
@@ -20,7 +20,7 @@ async function testClearData(clearSiteData, clearCache) {
   BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_QUOTA_USAGE_URL, false);
   await BrowserTestUtils.waitForContentEvent(
     gBrowser.selectedBrowser, "test-indexedDB-done", false, null, true);
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   
   await loadServiceWorkerTestPage(TEST_SERVICE_WORKER_URL);
@@ -146,7 +146,7 @@ async function testClearData(clearSiteData, clearCache) {
   let permission = SitePermissions.get(quotaURI, "persistent-storage");
   is(permission.state, desiredPermissionState, "Should have the correct permission state.");
 
-  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await SiteDataManager.removeAll();
 }
 
