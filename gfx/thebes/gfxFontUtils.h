@@ -6,6 +6,7 @@
 #ifndef GFX_FONT_UTILS_H
 #define GFX_FONT_UTILS_H
 
+#include "gfxFontVariations.h"
 #include "gfxPlatform.h"
 #include "nsComponentManagerUtils.h"
 #include "nsTArray.h"
@@ -25,8 +26,6 @@
 #endif
 
 typedef struct hb_blob_t hb_blob_t;
-
-struct gfxFontVariationInstance;
 
 class gfxSparseBitSet {
 private:
@@ -1010,6 +1009,22 @@ public:
     static void
     GetVariationInstances(gfxFontEntry* aFontEntry,
                           nsTArray<gfxFontVariationInstance>& aInstances);
+
+    
+    
+    
+    static void
+    MergeVariations(const nsTArray<gfxFontVariation>& aEntrySettings,
+                    const nsTArray<gfxFontVariation>& aStyleSettings,
+                    nsTArray<gfxFontVariation>* aMerged);
+
+    
+    
+    struct VariationTagComparator {
+        bool Equals(const gfxFontVariation& aVariation, uint32_t aTag) const {
+            return aVariation.mTag == aTag;
+        }
+    };
 
 protected:
     friend struct MacCharsetMappingComparator;
