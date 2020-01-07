@@ -4,7 +4,7 @@ local path implementation.
 from __future__ import with_statement
 
 from contextlib import contextmanager
-import sys, os, re, atexit, io
+import sys, os, re, atexit, io, uuid
 import py
 from py._path import common
 from py._path.common import iswin32, fspath
@@ -206,7 +206,9 @@ class LocalPath(FSBase):
                 
                 if iswin32:
                     self.chmod(0o700, rec=1)
-                py.error.checked_call(py.std.shutil.rmtree, self.strpath,
+                import shutil
+                py.error.checked_call(
+                    shutil.rmtree, self.strpath,
                     ignore_errors=ignore_errors)
             else:
                 py.error.checked_call(os.rmdir, self.strpath)
@@ -333,13 +335,16 @@ class LocalPath(FSBase):
                     strargs = newargs
                     break
                 newargs.insert(0, arg)
+        
+        actual_sep = "" if strpath.endswith(sep) else sep
         for arg in strargs:
             arg = arg.strip(sep)
             if iswin32:
                 
                 arg = arg.strip('/')
                 arg = arg.replace('/', sep)
-            strpath = strpath + sep + arg
+            strpath = strpath + actual_sep + arg
+            actual_sep = sep
         obj = object.__new__(self.__class__)
         obj.strpath = normpath(strpath)
         return obj
@@ -448,8 +453,9 @@ class LocalPath(FSBase):
     def dump(self, obj, bin=1):
         """ pickle object into path location"""
         f = self.open('wb')
+        import pickle
         try:
-            py.error.checked_call(py.std.pickle.dump, obj, f, bin)
+            py.error.checked_call(pickle.dump, obj, f, bin)
         finally:
             f.close()
 
@@ -684,7 +690,8 @@ class LocalPath(FSBase):
                 return sys.modules[modname]
             except KeyError:
                 
-                mod = py.std.types.ModuleType(modname)
+                import types
+                mod = types.ModuleType(modname)
                 mod.__file__ = str(self)
                 sys.modules[modname] = mod
                 try:
@@ -729,7 +736,7 @@ class LocalPath(FSBase):
         else:
             if paths is None:
                 if iswin32:
-                    paths = py.std.os.environ['Path'].split(';')
+                    paths = os.environ['Path'].split(';')
                     if '' not in paths and '.' not in paths:
                         paths.append('.')
                     try:
@@ -737,10 +744,10 @@ class LocalPath(FSBase):
                     except KeyError:
                         pass
                     else:
-                        paths = [re.sub('%SystemRoot%', systemroot, path)
+                        paths = [path.replace('%SystemRoot%', systemroot)
                                  for path in paths]
                 else:
-                    paths = py.std.os.environ['PATH'].split(':')
+                    paths = os.environ['PATH'].split(':')
             tryadd = []
             if iswin32:
                 tryadd += os.environ['PATHEXT'].split(os.pathsep)
@@ -774,13 +781,15 @@ class LocalPath(FSBase):
     
     
     
+    @classmethod
     def get_temproot(cls):
         """ return the system's temporary directory
             (where tempfiles are usually created in)
         """
-        return py.path.local(py.std.tempfile.gettempdir())
-    get_temproot = classmethod(get_temproot)
+        import tempfile
+        return py.path.local(tempfile.gettempdir())
 
+    @classmethod
     def mkdtemp(cls, rootdir=None):
         """ return a Path object pointing to a fresh new temporary directory
             (which we created ourself).
@@ -789,14 +798,14 @@ class LocalPath(FSBase):
         if rootdir is None:
             rootdir = cls.get_temproot()
         return cls(py.error.checked_call(tempfile.mkdtemp, dir=str(rootdir)))
-    mkdtemp = classmethod(mkdtemp)
 
     def make_numbered_dir(cls, prefix='session-', rootdir=None, keep=3,
                           lock_timeout = 172800):   
         """ return unique directory with a number greater than the current
             maximum one.  The number is assumed to start directly after prefix.
             if keep is true directories with a number less than (maxnum-keep)
-            will be removed.
+            will be removed. If .lock files are used (lock_timeout non-zero),
+            algorithm is multi-process safe.
         """
         if rootdir is None:
             rootdir = cls.get_temproot()
@@ -811,37 +820,21 @@ class LocalPath(FSBase):
                 except ValueError:
                     pass
 
-        
-        
-        lastmax = None
-        while True:
-            maxnum = -1
-            for path in rootdir.listdir():
-                num = parse_num(path)
-                if num is not None:
-                    maxnum = max(maxnum, num)
-
-            
-            try:
-                udir = rootdir.mkdir(prefix + str(maxnum+1))
-            except py.error.EEXIST:
-                
-                
-                if lastmax == maxnum:
-                    raise
-                lastmax = maxnum
-                continue
-            break
-
-        
-        
-        if lock_timeout:
-            lockfile = udir.join('.lock')
+        def create_lockfile(path):
+            """ exclusively create lockfile. Throws when failed """
             mypid = os.getpid()
+            lockfile = path.join('.lock')
             if hasattr(lockfile, 'mksymlinkto'):
                 lockfile.mksymlinkto(str(mypid))
             else:
-                lockfile.write(str(mypid))
+                fd = py.error.checked_call(os.open, str(lockfile), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+                with os.fdopen(fd, 'w') as f:
+                    f.write(str(mypid))
+            return lockfile
+
+        def atexit_remove_lockfile(lockfile):
+            """ ensure lockfile is removed at process exit """
+            mypid = os.getpid()
             def try_remove_lockfile():
                 
                 
@@ -857,18 +850,81 @@ class LocalPath(FSBase):
             atexit.register(try_remove_lockfile)
 
         
-        if keep:
+        lastmax = None
+        while True:
+            maxnum = -1
+            for path in rootdir.listdir():
+                num = parse_num(path)
+                if num is not None:
+                    maxnum = max(maxnum, num)
+
+            
+            try:
+                udir = rootdir.mkdir(prefix + str(maxnum+1))
+                if lock_timeout:
+                    lockfile = create_lockfile(udir)
+                    atexit_remove_lockfile(lockfile)
+            except (py.error.EEXIST, py.error.ENOENT, py.error.EBUSY):
+                
+                
+                
+                
+                
+                
+                
+                
+                if lastmax == maxnum:
+                    raise
+                lastmax = maxnum
+                continue
+            break
+
+        def get_mtime(path):
+            """ read file modification time """
+            try:
+                return path.lstat().mtime
+            except py.error.Error:
+                pass
+
+        garbage_prefix = prefix + 'garbage-'
+
+        def is_garbage(path):
+            """ check if path denotes directory scheduled for removal """
+            bn = path.basename
+            return bn.startswith(garbage_prefix)
+
+        
+        udir_time = get_mtime(udir)
+        if keep and udir_time:
             for path in rootdir.listdir():
                 num = parse_num(path)
                 if num is not None and num <= (maxnum - keep):
-                    lf = path.join('.lock')
                     try:
-                        t1 = lf.lstat().mtime
-                        t2 = lockfile.lstat().mtime
-                        if not lock_timeout or abs(t2-t1) < lock_timeout:
-                            continue   
-                    except py.error.Error:
-                        pass   
+                        
+                        if lock_timeout:
+                            create_lockfile(path)
+                    except (py.error.EEXIST, py.error.ENOENT, py.error.EBUSY):
+                        path_time = get_mtime(path)
+                        if not path_time:
+                            
+                            continue
+                        if abs(udir_time - path_time) < lock_timeout:
+                            
+                            
+                            continue
+
+                    
+                    
+                    
+                    garbage_path = rootdir.join(garbage_prefix + str(uuid.uuid4()))
+                    try:
+                        path.rename(garbage_path)
+                        garbage_path.remove(rec=1)
+                    except KeyboardInterrupt:
+                        raise
+                    except: 
+                        pass
+                if is_garbage(path):
                     try:
                         path.remove(rec=1)
                     except KeyboardInterrupt:
@@ -902,14 +958,19 @@ class LocalPath(FSBase):
 
 def copymode(src, dest):
     """ copy permission from src to dst. """
-    py.std.shutil.copymode(src, dest)
+    import shutil
+    shutil.copymode(src, dest)
+
 
 def copystat(src, dest):
-    """ copy permission,  last modification time, last access time, and flags from src to dst."""
-    py.std.shutil.copystat(str(src), str(dest))
+    """ copy permission,  last modification time,
+    last access time, and flags from src to dst."""
+    import shutil
+    shutil.copystat(str(src), str(dest))
+
 
 def copychunked(src, dest):
-    chunksize = 524288 
+    chunksize = 524288  
     fsrc = src.open('rb')
     try:
         fdest = dest.open('wb')
@@ -923,6 +984,7 @@ def copychunked(src, dest):
             fdest.close()
     finally:
         fsrc.close()
+
 
 def isimportable(name):
     if name and (name[0].isalpha() or name[0] == '_'):
