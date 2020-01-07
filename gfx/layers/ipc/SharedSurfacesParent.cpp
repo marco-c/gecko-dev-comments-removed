@@ -5,6 +5,7 @@
 
 
 #include "SharedSurfacesParent.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/webrender/RenderSharedSurfaceTextureHost.h"
@@ -23,6 +24,12 @@ SharedSurfacesParent::SharedSurfacesParent()
 
 SharedSurfacesParent::~SharedSurfacesParent()
 {
+  for (auto i = mSurfaces.Iter(); !i.Done(); i.Next()) {
+    
+    
+    
+    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(i.Key());
+  }
 }
 
  void
@@ -37,7 +44,9 @@ SharedSurfacesParent::Initialize()
  void
 SharedSurfacesParent::Shutdown()
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
   sInstance = nullptr;
 }
 

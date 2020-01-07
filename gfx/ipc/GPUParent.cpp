@@ -32,7 +32,6 @@
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/MemoryReportingMLGPU.h"
-#include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/HangDetails.h"
@@ -262,7 +261,6 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
     wr::WebRenderAPI::InitExternalLogHandler();
 
     wr::RenderThread::Start();
-    SharedSurfacesParent::Initialize();
   }
 
   VRManager::ManagerInit();
@@ -494,7 +492,6 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   
   
   if (wr::RenderThread::Get()) {
-    SharedSurfacesParent::Shutdown();
     wr::RenderThread::ShutDown();
 
     wr::WebRenderAPI::ShutdownExternalLogHandler();
