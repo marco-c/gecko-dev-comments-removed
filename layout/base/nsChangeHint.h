@@ -13,8 +13,6 @@
 #include "nsDebug.h"
 #include "nsTArray.h"
 
-struct nsCSSSelector;
-
 
 
 enum nsChangeHint : uint32_t {
@@ -663,20 +661,5 @@ inline nsRestyleHint operator^=(nsRestyleHint& aLeft, nsRestyleHint aRight)
 {
   return aLeft = aLeft ^ aRight;
 }
-
-namespace mozilla {
-
-
-
-
-
-struct RestyleHintData
-{
-  
-  
-  nsTArray<nsCSSSelector*> mSelectorsForDescendants;
-};
-
-} 
 
 #endif 
