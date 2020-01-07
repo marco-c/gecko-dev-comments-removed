@@ -222,6 +222,15 @@ function get(instance, name) {
     if (instance.isError())
         return instance;
 
+    
+    
+    
+    
+    
+
+    if (typeof WebAssembly.Global === "function")
+	return ValueResult(Number(instance.value.exports[name]));
+
     return ValueResult(instance.value.exports[name]);
 }
 
