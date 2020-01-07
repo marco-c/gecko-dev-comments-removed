@@ -400,11 +400,9 @@ this.geckoProfiler = class extends ExtensionAPI {
 
           const cachedLibInfo = symbolCache.get(urlForSymFile(debugName, breakpadId));
 
-          const symbolRules = Services.prefs.getCharPref(PREF_GET_SYMBOL_RULES, "localBreakpad,remoteBreakpad");
+          const symbolRules = Services.prefs.getCharPref(PREF_GET_SYMBOL_RULES, "localBreakpad");
           const haveAbsolutePath = cachedLibInfo && OS.Path.split(cachedLibInfo.path).absolute;
 
-          
-          
           
           
           
@@ -427,9 +425,6 @@ this.geckoProfiler = class extends ExtensionAPI {
                     }
                   }
                   break;
-                case "remoteBreakpad":
-                  const url = urlForSymFile(debugName, breakpadId);
-                  return await parseSym({url});
                 case "nm":
                   if (haveAbsolutePath) {
                     const {path, arch} = cachedLibInfo;
@@ -457,8 +452,6 @@ this.geckoProfiler = class extends ExtensionAPI {
                   break;
               }
             } catch (e) {
-              
-              
               
               
               
