@@ -481,6 +481,9 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     mozilla::Atomic<size_t> numActiveHelperThreadZones;
 
+    
+    mozilla::Atomic<JS::HeapState> heapState_;
+
     friend class js::AutoLockForExclusiveAccess;
     friend class js::AutoLockScriptData;
 
@@ -507,6 +510,10 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
         return scriptDataLock.ownedByCurrentThread();
     }
 #endif
+
+    JS::HeapState heapState() const {
+        return heapState_;
+    }
 
     
     

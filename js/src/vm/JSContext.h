@@ -445,9 +445,6 @@ struct JSContext : public JS::RootingContext,
     js::ThreadData<DtoaState*> dtoaState;
 
     
-    js::ThreadData<JS::HeapState> heapState;
-
-    
 
 
 
