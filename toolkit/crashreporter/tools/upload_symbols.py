@@ -92,10 +92,6 @@ def main():
     
     if 'SOCORRO_SYMBOL_UPLOAD_URL' in os.environ:
         url = os.environ['SOCORRO_SYMBOL_UPLOAD_URL']
-    elif os.environ.get('MOZ_SCM_LEVEL', '1') == '1':
-        
-        
-        url = 'https://symbols.stage.mozaws.net/upload/'
     else:
         url = DEFAULT_URL
 
