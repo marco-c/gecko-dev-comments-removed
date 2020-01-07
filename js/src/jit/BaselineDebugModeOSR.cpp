@@ -735,6 +735,21 @@ CloneOldBaselineStub(JSContext* cx, DebugModeOSREntryVector& entries, size_t ent
     
     
     
+    
+    ICStub* firstMonitorStub;
+    if (fallbackStub->isMonitoredFallback()) {
+        ICMonitoredFallbackStub* monitored = fallbackStub->toMonitoredFallbackStub();
+        ICTypeMonitor_Fallback* fallback = monitored->getFallbackMonitorStub(cx, entry.script);
+        if (!fallback)
+            return false;
+        firstMonitorStub = fallback->firstMonitorStub();
+    } else {
+        firstMonitorStub = nullptr;
+    }
+
+    
+    
+    
     if (oldStub->isFallback()) {
         MOZ_ASSERT(oldStub->jitCode() == fallbackStub->jitCode());
         entry.newStub = fallbackStub;
@@ -752,18 +767,6 @@ CloneOldBaselineStub(JSContext* cx, DebugModeOSREntryVector& entries, size_t ent
         }
     }
 
-    
-    
-    ICStub* firstMonitorStub;
-    if (fallbackStub->isMonitoredFallback()) {
-        ICMonitoredFallbackStub* monitored = fallbackStub->toMonitoredFallbackStub();
-        ICTypeMonitor_Fallback* fallback = monitored->getFallbackMonitorStub(cx, entry.script);
-        if (!fallback)
-            return false;
-        firstMonitorStub = fallback->firstMonitorStub();
-    } else {
-        firstMonitorStub = nullptr;
-    }
     ICStubSpace* stubSpace = ICStubCompiler::StubSpaceForStub(oldStub->makesGCCalls(), entry.script,
                                                               ICStubCompiler::Engine::Baseline);
 
