@@ -2141,7 +2141,9 @@ class MOZ_STACK_CLASS IfThenElseEmitter
 
         
         bce_->stackDepth = thenDepth_;
+#ifdef DEBUG
         state_ = State::Else;
+#endif
         return true;
     }
 
