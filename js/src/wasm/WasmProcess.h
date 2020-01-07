@@ -24,18 +24,19 @@
 namespace js {
 namespace wasm {
 
-class CodeSegment;
 class Code;
+class CodeRange;
+class CodeSegment;
 
 
 
 
 
 const CodeSegment*
-LookupCodeSegment(const void* pc);
+LookupCodeSegment(const void* pc, const CodeRange** codeRange = nullptr);
 
 const Code*
-LookupCode(const void* pc);
+LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
 
 
 
