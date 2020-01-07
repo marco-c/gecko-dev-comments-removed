@@ -271,8 +271,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
                                      HandleObject proto = nullptr,
                                      NewObjectKind newKind = GenericObject);
     static ArrayBufferObject* create(JSContext* cx, uint32_t nbytes,
-                                     HandleObject proto = nullptr,
-                                     NewObjectKind newKind = GenericObject);
+                                     HandleObject proto = nullptr);
 
     
     

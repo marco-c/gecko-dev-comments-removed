@@ -1762,7 +1762,7 @@ ObjectGroupCompartment::PlainObjectTableSweepPolicy::needsSweep(PlainObjectKey* 
 }
 
 void
-ObjectGroupCompartment::sweep(FreeOp* fop)
+ObjectGroupCompartment::sweep()
 {
     
 

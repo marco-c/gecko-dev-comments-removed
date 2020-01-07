@@ -96,7 +96,7 @@ js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx, HandleArrayObject array, bo
 
     } else if (!disabled_ && !isArrayStateStillSane()) {
         
-        reset(cx);
+        reset();
 
         if (!initialize(cx))
             return false;
@@ -175,7 +175,7 @@ js::ForOfPIC::Chain::isArrayStateStillSane()
 }
 
 void
-js::ForOfPIC::Chain::reset(JSContext* cx)
+js::ForOfPIC::Chain::reset()
 {
     
     MOZ_ASSERT(!disabled_);

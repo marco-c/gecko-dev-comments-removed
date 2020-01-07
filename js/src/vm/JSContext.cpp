@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS execution context.
- */
+
+
+
+
+
+
+
+
 
 #include "vm/JSContext-inl.h"
 
@@ -23,10 +23,10 @@
 # include <android/log.h>
 # include <fstream>
 # include <string>
-#endif // ANDROID
+#endif 
 #ifdef XP_WIN
 # include <processthreadsapi.h>
-#endif // XP_WIN
+#endif 
 
 #include "jsexn.h"
 #include "jspubtd.h"
@@ -91,7 +91,7 @@ js::AutoCycleDetector::~AutoCycleDetector()
         if (vec.length() > 1) {
             vec.popBack();
         } else {
-            // Avoid holding on to unused heap allocations.
+            
             vec.clearAndFree();
         }
     }
@@ -100,9 +100,9 @@ js::AutoCycleDetector::~AutoCycleDetector()
 bool
 JSContext::init(ContextKind kind)
 {
-    // Skip most of the initialization if this thread will not be running JS.
+    
     if (kind == ContextKind::Cooperative) {
-        // Get a platform-native handle for this thread, used by js::InterruptRunningJitCode.
+        
 #ifdef XP_WIN
         size_t openFlags = THREAD_GET_CONTEXT | THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME |
                            THREAD_QUERY_INFORMATION;
@@ -132,8 +132,8 @@ JSContext::init(ContextKind kind)
             return false;
     }
 
-    // Set the ContextKind last, so that ProtectedData checks will allow us to
-    // initialize this context before it becomes the runtime's active context.
+    
+    
     kind_ = kind;
 
     return true;
@@ -235,20 +235,20 @@ js::DestroyContext(JSContext* cx)
 
     cx->checkNoGCRooters();
 
-    // Cancel all off thread Ion compiles before destroying a cooperative
-    // context. Completed Ion compiles may try to interrupt arbitrary
-    // cooperative contexts which they have read off the owner context of a
-    // zone group. See HelperThread::handleIonWorkload.
+    
+    
+    
+    
     CancelOffThreadIonCompile(cx->runtime());
 
     FreeJobQueueHandling(cx);
 
     if (cx->runtime()->cooperatingContexts().length() == 1) {
-        // Flush promise tasks executing in helper threads early, before any parts
-        // of the JSRuntime that might be visible to helper threads are torn down.
+        
+        
         cx->runtime()->offThreadPromiseState.ref().shutdown(cx);
 
-        // Destroy the runtime along with its last context.
+        
         cx->runtime()->destroyRuntime();
         js_delete(cx->runtime());
         js_delete_poison(cx);
@@ -293,12 +293,12 @@ static void
 ReportError(JSContext* cx, JSErrorReport* reportp, JSErrorCallback callback,
             void* userRef)
 {
-    /*
-     * Check the error report, and set a JavaScript-catchable exception
-     * if the error is defined to have an associated exception.  If an
-     * exception is thrown, then the JSREPORT_EXCEPTION flag will be set
-     * on the error report, and exception-aware hosts should ignore it.
-     */
+    
+
+
+
+
+
     MOZ_ASSERT(reportp);
     if ((!callback || callback == GetErrorMessage) &&
         reportp->errorNumber == JSMSG_UNCAUGHT_EXCEPTION)
@@ -314,10 +314,10 @@ ReportError(JSContext* cx, JSErrorReport* reportp, JSErrorCallback callback,
     ErrorToException(cx, reportp, callback, userRef);
 }
 
-/*
- * The given JSErrorReport object have been zeroed and must not outlive
- * cx->fp() (otherwise owned fields may become invalid).
- */
+
+
+
+
 static void
 PopulateReportBlame(JSContext* cx, JSErrorReport* report)
 {
@@ -325,41 +325,41 @@ PopulateReportBlame(JSContext* cx, JSErrorReport* report)
     if (!compartment)
         return;
 
-    /*
-     * Walk stack until we find a frame that is associated with a non-builtin
-     * rather than a builtin frame and which we're allowed to know about.
-     */
+    
+
+
+
     NonBuiltinFrameIter iter(cx, compartment->principals());
     if (iter.done())
         return;
 
     report->filename = iter.filename();
     report->lineno = iter.computeLine(&report->column);
-    // XXX: Make the column 1-based as in other browsers, instead of 0-based
-    // which is how SpiderMonkey stores it internally. This will be
-    // unnecessary once bug 1144340 is fixed.
+    
+    
+    
     report->column++;
     report->isMuted = iter.mutedErrors();
 }
 
-/*
- * Since memory has been exhausted, avoid the normal error-handling path which
- * allocates an error object, report and callstack. If code is running, simply
- * throw the static atom "out of memory". If code is not running, call the
- * error reporter directly.
- *
- * Furthermore, callers of ReportOutOfMemory (viz., malloc) assume a GC does
- * not occur, so GC must be avoided or suppressed.
- */
+
+
+
+
+
+
+
+
+
 JS_FRIEND_API(void)
 js::ReportOutOfMemory(JSContext* cx)
 {
 #ifdef JS_MORE_DETERMINISTIC
-    /*
-     * OOMs are non-deterministic, especially across different execution modes
-     * (e.g. interpreter vs JIT). In more-deterministic builds, print to stderr
-     * so that the fuzzers can detect this.
-     */
+    
+
+
+
+
     fprintf(stderr, "ReportOutOfMemory called\n");
 #endif
 
@@ -369,7 +369,7 @@ js::ReportOutOfMemory(JSContext* cx)
     cx->runtime()->hadOutOfMemory = true;
     AutoSuppressGC suppressGC(cx);
 
-    /* Report the oom. */
+    
     if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback)
         oomCallback(cx, cx->runtime()->oomCallbackData);
 
@@ -387,14 +387,14 @@ void
 js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber)
 {
 #ifdef JS_MORE_DETERMINISTIC
-    /*
-     * We cannot make stack depth deterministic across different
-     * implementations (e.g. JIT vs. interpreter will differ in
-     * their maximum stack depth).
-     * However, we can detect externally when we hit the maximum
-     * stack depth which is useful for external testing programs
-     * like fuzzers.
-     */
+    
+
+
+
+
+
+
+
     fprintf(stderr, "ReportOverRecursed called\n");
 #endif
     if (maybecx) {
@@ -426,22 +426,22 @@ js::ReportAllocationOverflow(JSContext* cx)
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ALLOC_OVERFLOW);
 }
 
-/*
- * Given flags and the state of cx, decide whether we should report an
- * error, a warning, or just continue execution normally.  Return
- * true if we should continue normally, without reporting anything;
- * otherwise, adjust *flags as appropriate and return false.
- */
+
+
+
+
+
+
 static bool
 checkReportFlags(JSContext* cx, unsigned* flags)
 {
     if (JSREPORT_IS_STRICT(*flags)) {
-        /* Warning/error only when JSOPTION_STRICT is set. */
+        
         if (!cx->compartment()->behaviors().extraWarnings(cx))
             return true;
     }
 
-    /* Warnings become errors when JSOPTION_WERROR is set. */
+    
     if (JSREPORT_IS_WARNING(*flags) && cx->options().werror())
         *flags &= ~JSREPORT_WARNING;
 
@@ -485,7 +485,7 @@ js::ReportErrorVA(JSContext* cx, unsigned flags, const char* format,
     return warning;
 }
 
-/* |callee| requires a usage string provided by JS_DefineFunctionsWithHelp. */
+
 void
 js::ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg)
 {
@@ -512,7 +512,7 @@ enum class PrintErrorKind {
 };
 
 static void
-PrintErrorLine(JSContext* cx, FILE* file, const char* prefix, JSErrorReport* report)
+PrintErrorLine(FILE* file, const char* prefix, JSErrorReport* report)
 {
     if (const char16_t* linebuf = report->linebuf()) {
         size_t n = report->linebufLength();
@@ -524,7 +524,7 @@ PrintErrorLine(JSContext* cx, FILE* file, const char* prefix, JSErrorReport* rep
         for (size_t i = 0; i < n; i++)
             fputc(static_cast<char>(linebuf[i]), file);
 
-        // linebuf usually ends with a newline. If not, add one here.
+        
         if (n == 0 || linebuf[n-1] != '\n')
             fputc('\n', file);
 
@@ -546,7 +546,7 @@ PrintErrorLine(JSContext* cx, FILE* file, const char* prefix, JSErrorReport* rep
 }
 
 static void
-PrintErrorLine(JSContext* cx, FILE* file, const char* prefix, JSErrorNotes::Note* note)
+PrintErrorLine(FILE* file, const char* prefix, JSErrorNotes::Note* note)
 {
 }
 
@@ -585,7 +585,7 @@ PrintSingleError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
 
     const char* message = toStringResult ? toStringResult.c_str() : report->message().c_str();
 
-    /* embedded newlines -- argh! */
+    
     const char* ctmp;
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
@@ -595,12 +595,12 @@ PrintSingleError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
         message = ctmp;
     }
 
-    /* If there were no filename or lineno, the prefix might be empty */
+    
     if (prefix)
         fputs(prefix.get(), file);
     fputs(message, file);
 
-    PrintErrorLine(cx, file, prefix.get(), report);
+    PrintErrorLine(file, prefix.get(), report);
     fputc('\n', file);
 
     fflush(file);
@@ -613,7 +613,7 @@ js::PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
 {
     MOZ_ASSERT(report);
 
-    /* Conditionally ignore reported warnings. */
+    
     if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
         return false;
 
@@ -637,7 +637,7 @@ js::PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
 class MOZ_RAII AutoMessageArgs
 {
     size_t totalLength_;
-    /* only {0} thru {9} supported */
+    
     mozilla::Array<const char*, JS::MaxNumErrorArguments> args_;
     mozilla::Array<size_t, JS::MaxNumErrorArguments> lengths_;
     uint16_t count_;
@@ -652,7 +652,7 @@ class MOZ_RAII AutoMessageArgs
 
     ~AutoMessageArgs()
     {
-        /* free the arguments only if we allocated them */
+        
         if (allocatedElements_) {
             uint16_t i = 0;
             while (i < count_) {
@@ -681,7 +681,7 @@ class MOZ_RAII AutoMessageArgs
         return count_;
     }
 
-    /* Gather the arguments into an array, and accumulate their sizes. */
+    
     bool init(JSContext* cx, const char16_t** argsArg, uint16_t countArg,
               ErrorArgumentsType typeArg, va_list ap) {
         MOZ_ASSERT(countArg > 0);
@@ -741,20 +741,20 @@ SetExnType(JSErrorReport* reportp, int16_t exnType)
 static void
 SetExnType(JSErrorNotes::Note* notep, int16_t exnType)
 {
-    // Do nothing for JSErrorNotes::Note.
+    
 }
 
-/*
- * The arguments from ap need to be packaged up into an array and stored
- * into the report struct.
- *
- * The format string addressed by the error number may contain operands
- * identified by the format {N}, where N is a decimal digit. Each of these
- * is to be replaced by the Nth argument from the va_list. The complete
- * message is placed into reportp->message_.
- *
- * Returns true if the expansion succeeds (can fail if out of memory).
- */
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 bool
 ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
@@ -781,10 +781,10 @@ ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
         uint16_t argCount = efs->argCount;
         MOZ_RELEASE_ASSERT(argCount <= JS::MaxNumErrorArguments);
         if (argCount > 0) {
-            /*
-             * Parse the error format, substituting the argument X
-             * for {X} in the format.
-             */
+            
+
+
+
             if (efs->format) {
                 const char* fmt;
                 char* out;
@@ -799,13 +799,13 @@ ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
                     return false;
 
                 expandedLength = len
-                                 - (3 * args.count()) /* exclude the {n} */
+                                 - (3 * args.count()) 
                                  + args.totalLength();
 
-                /*
-                * Note - the above calculation assumes that each argument
-                * is used once and only once in the expansion !!!
-                */
+                
+
+
+
                 char* utf8 = out = cx->pod_malloc<char>(expandedLength + 1);
                 if (!out)
                     return false;
@@ -833,18 +833,18 @@ ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
                 reportp->initOwnedMessage(utf8);
             }
         } else {
-            /* Non-null messageArgs should have at least one non-null arg. */
+            
             MOZ_ASSERT(!messageArgs);
-            /*
-             * Zero arguments: the format string (if it exists) is the
-             * entire message.
-             */
+            
+
+
+
             if (efs->format)
                 reportp->initBorrowedMessage(efs->format);
         }
     }
     if (!reportp->message()) {
-        /* where's the right place for this ??? */
+        
         const char* defaultErrorMessage
             = "No error message available for error number %d";
         size_t nbytes = strlen(defaultErrorMessage) + 16;
@@ -1097,7 +1097,7 @@ void
 JSContext::recoverFromOutOfMemory()
 {
     if (helperThread()) {
-        // Keep in sync with addPendingOutOfMemory.
+        
         if (ParseTask* task = helperThread()->parseTask())
             task->outOfMemory = false;
     } else {
@@ -1135,13 +1135,13 @@ class MOZ_STACK_CLASS ReportExceptionClosure : public ScriptEnvironmentPreparer:
   private:
     HandleValue exn_;
 };
-} // anonymous namespace
+} 
 
 JS_FRIEND_API(bool)
 js::UseInternalJobQueues(JSContext* cx, bool cooperative)
 {
-    // Internal job queue handling must be set up very early. Self-hosting
-    // initialization is as good a marker for that as any.
+    
+    
     MOZ_RELEASE_ASSERT(cooperative || !cx->runtime()->hasInitializedSelfHosting(),
                        "js::UseInternalJobQueues must be called early during runtime startup.");
     MOZ_ASSERT(!cx->jobQueue);
@@ -1178,31 +1178,31 @@ js::RunJobs(JSContext* cx)
     while (true) {
         cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
 
-        // It doesn't make sense for job queue draining to be reentrant. At the
-        // same time we don't want to assert against it, because that'd make
-        // drainJobQueue unsafe for fuzzers. We do want fuzzers to test this,
-        // so we simply ignore nested calls of drainJobQueue.
+        
+        
+        
+        
         cx->drainingJobQueue = true;
 
         RootedObject job(cx);
         JS::HandleValueArray args(JS::HandleValueArray::empty());
         RootedValue rval(cx);
 
-        // Execute jobs in a loop until we've reached the end of the queue.
-        // Since executing a job can trigger enqueuing of additional jobs,
-        // it's crucial to re-check the queue length during each iteration.
+        
+        
+        
         for (size_t i = 0; i < cx->jobQueue->length(); i++) {
-            // A previous job might have set this flag. E.g., the js shell
-            // sets it if the `quit` builtin function is called.
+            
+            
             if (cx->stopDrainingJobQueue)
                 break;
 
             job = cx->jobQueue->get()[i];
 
-            // It's possible that queue draining was interrupted prematurely,
-            // leaving the queue partly processed. In that case, slots for
-            // already-executed entries will contain nullptrs, which we should
-            // just skip.
+            
+            
+            
+            
             if (!job)
                 continue;
 
@@ -1210,16 +1210,16 @@ js::RunJobs(JSContext* cx)
             AutoCompartment ac(cx, job);
             {
                 if (!JS::Call(cx, UndefinedHandleValue, job, args, &rval)) {
-                    // Nothing we can do about uncatchable exceptions.
+                    
                     if (!cx->isExceptionPending())
                         continue;
                     RootedValue exn(cx);
                     if (cx->getPendingException(&exn)) {
-                        /*
-                         * Clear the exception, because
-                         * PrepareScriptEnvironmentAndInvoke will assert that we don't
-                         * have one.
-                         */
+                        
+
+
+
+
                         cx->clearPendingException();
                         ReportExceptionClosure reportExn(exn);
                         PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
@@ -1237,7 +1237,7 @@ js::RunJobs(JSContext* cx)
 
         cx->jobQueue->clear();
 
-        // It's possible a job added a new off-thread promise task.
+        
         if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending())
             break;
     }
@@ -1251,7 +1251,7 @@ JSContext::alreadyReportedOOM()
 {
 #ifdef DEBUG
     if (helperThread()) {
-        // Keep in sync with addPendingOutOfMemory.
+        
         if (ParseTask* task = helperThread()->parseTask())
             MOZ_ASSERT(task->outOfMemory);
     } else {
@@ -1371,8 +1371,8 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
 
 JSContext::~JSContext()
 {
-    // Clear the ContextKind first, so that ProtectedData checks will allow us to
-    // destroy this context even if the runtime is already gone.
+    
+    
     kind_ = ContextKind::Background;
 
 #ifdef XP_WIN
@@ -1380,7 +1380,7 @@ JSContext::~JSContext()
         CloseHandle((HANDLE)threadNative_.ref());
 #endif
 
-    /* Free the stuff hanging off of cx. */
+    
     MOZ_ASSERT(!resolvingList);
 
     js_delete(ionPcScriptCache.ref());
@@ -1459,38 +1459,38 @@ ComputeIsJITBroken()
 {
 #if !defined(ANDROID)
     return false;
-#else  // ANDROID
+#else  
     if (getenv("JS_IGNORE_JIT_BROKENNESS")) {
         return false;
     }
 
     std::string line;
 
-    // Check for the known-bad kernel version (2.6.29).
+    
     std::ifstream osrelease("/proc/sys/kernel/osrelease");
     std::getline(osrelease, line);
     __android_log_print(ANDROID_LOG_INFO, "Gecko", "Detected osrelease `%s'",
                         line.c_str());
 
     if (line.npos == line.find("2.6.29")) {
-        // We're using something other than 2.6.29, so the JITs should work.
+        
         __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are not broken");
         return false;
     }
 
-    // We're using 2.6.29, and this causes trouble with the JITs on i9000.
+    
     line = "";
     bool broken = false;
     std::ifstream cpuinfo("/proc/cpuinfo");
     do {
         if (0 == line.find("Hardware")) {
             static const char* const blacklist[] = {
-                "SCH-I400",     // Samsung Continuum
-                "SGH-T959",     // Samsung i9000, Vibrant device
-                "SGH-I897",     // Samsung i9000, Captivate device
-                "SCH-I500",     // Samsung i9000, Fascinate device
-                "SPH-D700",     // Samsung i9000, Epic device
-                "GT-I9000",     // Samsung i9000, UK/Europe device
+                "SCH-I400",     
+                "SGH-T959",     
+                "SGH-I897",     
+                "SCH-I500",     
+                "SPH-D700",     
+                "GT-I9000",     
                 nullptr
             };
             for (const char* const* hw = &blacklist[0]; *hw; ++hw) {
@@ -1510,7 +1510,7 @@ ComputeIsJITBroken()
                         broken ? "" : "not ");
 
     return broken;
-#endif  // ifndef ANDROID
+#endif  
 }
 
 static bool
@@ -1534,11 +1534,11 @@ JSContext::updateJITEnabled()
 size_t
 JSContext::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
 {
-    /*
-     * There are other JSContext members that could be measured; the following
-     * ones have been found by DMD to be worth measuring.  More stuff may be
-     * added later.
-     */
+    
+
+
+
+
     return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf);
 }
 
@@ -1575,9 +1575,9 @@ JSContext::stackLimitForJitCode(JS::StackKind kind)
 void
 JSContext::resetJitStackLimit()
 {
-    // Note that, for now, we use the untrusted limit for ion. This is fine,
-    // because it's the most conservative limit, and if we hit it, we'll bail
-    // out of ion into the interpreter, which will do a proper recursion check.
+    
+    
+    
 #ifdef JS_SIMULATOR
     jitStackLimit = jit::Simulator::StackLimit();
 #else

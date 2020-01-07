@@ -1816,7 +1816,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
 
 
 
-    static bool isMagicMissingArgumentsValue(JSContext* cx, EnvironmentObject& env, HandleValue v)
+    static bool isMagicMissingArgumentsValue(EnvironmentObject& env, HandleValue v)
     {
         bool isMagic = v.isMagic() && v.whyMagic() == JS_OPTIMIZED_ARGUMENTS;
 
@@ -2010,7 +2010,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
 
         switch (access) {
           case ACCESS_UNALIASED:
-            if (isMagicMissingArgumentsValue(cx, *env, v))
+            if (isMagicMissingArgumentsValue(*env, v))
                 return getMissingArgumentsPropertyDescriptor(cx, debugEnv, *env, desc);
             desc.object().set(debugEnv);
             desc.setAttributes(JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT);
@@ -2079,7 +2079,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
 
         switch (access) {
           case ACCESS_UNALIASED:
-            if (isMagicMissingArgumentsValue(cx, *env, vp))
+            if (isMagicMissingArgumentsValue(*env, vp))
                 return getMissingArguments(cx, *env, vp);
             if (isMaybeUninitializedThisValue(cx, id, vp))
                 return getMissingThis(cx, *env, vp);
@@ -2139,7 +2139,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
 
         switch (access) {
           case ACCESS_UNALIASED:
-            if (isMagicMissingArgumentsValue(cx, *env, vp))
+            if (isMagicMissingArgumentsValue(*env, vp))
                 return getMissingArgumentsMaybeSentinelValue(cx, *env, vp);
             if (isMaybeUninitializedThisValue(cx, id, vp))
                 return getMissingThisMaybeSentinelValue(cx, *env, vp);
@@ -2481,7 +2481,7 @@ DebugEnvironments::finish()
 
 #ifdef JSGC_HASH_TABLE_CHECKS
 void
-DebugEnvironments::checkHashTablesAfterMovingGC(JSRuntime* runtime)
+DebugEnvironments::checkHashTablesAfterMovingGC()
 {
     
 

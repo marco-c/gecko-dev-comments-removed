@@ -987,7 +987,7 @@ class DebugEnvironments
     void sweep();
     void finish();
 #ifdef JS_GC_ZEAL
-    void checkHashTablesAfterMovingGC(JSRuntime* rt);
+    void checkHashTablesAfterMovingGC();
 #endif
 
     
