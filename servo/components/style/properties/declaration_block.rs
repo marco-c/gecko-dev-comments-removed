@@ -284,6 +284,12 @@ impl PropertyDeclarationBlock {
     }
 
     
+    #[inline]
+    pub fn contains_any_reset(&self) -> bool {
+        self.longhands.contains_any_reset()
+    }
+
+    
     
     
     pub fn get(&self, property: PropertyDeclarationId) -> Option<(&PropertyDeclaration, Importance)> {
