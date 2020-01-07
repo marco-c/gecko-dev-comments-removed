@@ -1803,17 +1803,19 @@ ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
 
   
   
-  
-  
-  MOZ_ASSERT_IF(aWhy == FetchEvent, aLoadGroup);
-
-  
-  
   if (aNewWorkerCreated) {
     *aNewWorkerCreated = false;
   }
 
   if (mWorkerPrivate) {
+    
+    
+    
+    
+    
+    
+    
+    
     mWorkerPrivate->UpdateOverridenLoadGroup(aLoadGroup);
     RenewKeepAliveToken(aWhy);
 
