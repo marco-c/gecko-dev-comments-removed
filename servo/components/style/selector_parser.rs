@@ -183,7 +183,21 @@ pub enum Direction {
     
     Rtl,
     
+    
+    
     Other(Box<str>),
+}
+
+impl Direction {
+    
+    pub fn parse<'i, 't>(parser: &mut CssParser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        let ident = parser.expect_ident()?;
+        Ok(match_ignore_ascii_case! { &ident,
+            "rtl" => Direction::Rtl,
+            "ltr" => Direction::Ltr,
+            _ => Direction::Other(Box::from(ident.as_ref())),
+        })
+    }
 }
 
 impl ToCss for Direction {
