@@ -946,7 +946,15 @@ protected:
   bool IsAtEndOfNode(nsINode& aNode, int32_t aOffset);
   bool IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute);
 
-  nsresult RemoveBlockContainer(nsIContent& aNode);
+  
+
+
+
+
+
+
+
+  nsresult RemoveBlockContainerWithTransaction(Element& aElement);
 
   nsIContent* GetPriorHTMLSibling(nsINode* aNode);
 

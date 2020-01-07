@@ -427,7 +427,14 @@ public:
 
   void CloneAttributes(Element* aDest, Element* aSource);
 
-  nsresult RemoveContainer(nsIContent* aNode);
+  
+
+
+
+
+
+  nsresult RemoveContainerWithTransaction(Element& aElement);
+
   already_AddRefed<Element> InsertContainerAbove(nsIContent* aNode,
                                                  nsAtom* aNodeType,
                                                  nsAtom* aAttribute = nullptr,

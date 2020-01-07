@@ -689,7 +689,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
                               nsAtom* aAttribute,
                               const bool aChildrenOnly )
 {
-  if (aNode.GetAsText()) {
+  if (!aNode.IsElement()) {
     return NS_OK;
   }
 
@@ -717,10 +717,8 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
     
     if (!aAttribute) {
       bool hasStyleAttr =
-        aNode.IsElement() &&
         aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::style);
       bool hasClassAttr =
-        aNode.IsElement() &&
         aNode.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::_class);
       if (aProperty && (hasStyleAttr || hasClassAttr)) {
         
@@ -744,7 +742,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
           return rv;
         }
       }
-      nsresult rv = RemoveContainer(&aNode);
+      nsresult rv = RemoveContainerWithTransaction(*aNode.AsElement());
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (aNode.IsElement()) {
       
@@ -752,7 +750,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
         
         
         if (IsOnlyAttribute(aNode.AsElement(), aAttribute)) {
-          nsresult rv = RemoveContainer(&aNode);
+          nsresult rv = RemoveContainerWithTransaction(*aNode.AsElement());
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -802,7 +800,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
        aNode.IsHTMLElement(nsGkAtoms::small)) &&
       aAttribute == nsGkAtoms::size) {
     
-    return RemoveContainer(&aNode);
+    return RemoveContainerWithTransaction(*aNode.AsElement());
   }
   return NS_OK;
 }
@@ -1600,7 +1598,7 @@ HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     nsresult rv = RelativeFontChangeHelper(aSizeChange, aNode);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    return RemoveContainer(aNode);
+    return RemoveContainerWithTransaction(*aNode->AsElement());
   }
 
   
@@ -1763,7 +1761,7 @@ HTMLEditor::RemoveElementIfNoStyleOrIdOrClass(Element& aElement)
     return NS_OK;
   }
 
-  return RemoveContainer(&aElement);
+  return RemoveContainerWithTransaction(aElement);
 }
 
 } 

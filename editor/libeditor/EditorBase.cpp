@@ -1728,29 +1728,23 @@ EditorBase::ReplaceContainerWithTransactionInternal(
   return newContainer.forget();
 }
 
-
-
-
-
 nsresult
-EditorBase::RemoveContainer(nsIContent* aNode)
+EditorBase::RemoveContainerWithTransaction(Element& aElement)
 {
-  MOZ_ASSERT(aNode);
-
-  EditorDOMPoint pointToInsertChildren(aNode);
+  EditorDOMPoint pointToInsertChildren(&aElement);
   if (NS_WARN_IF(!pointToInsertChildren.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  AutoRemoveContainerSelNotify selNotify(mRangeUpdater, aNode,
+  AutoRemoveContainerSelNotify selNotify(mRangeUpdater, &aElement,
                                          pointToInsertChildren.GetContainer(),
                                          pointToInsertChildren.Offset(),
-                                         aNode->GetChildCount());
+                                         aElement.GetChildCount());
 
   
-  while (aNode->HasChildren()) {
-    nsCOMPtr<nsIContent> child = aNode->GetLastChild();
+  while (aElement.HasChildren()) {
+    nsCOMPtr<nsIContent> child = aElement.GetLastChild();
     if (NS_WARN_IF(!child)) {
       return NS_ERROR_FAILURE;
     }
@@ -1771,7 +1765,7 @@ EditorBase::RemoveContainer(nsIContent* aNode)
     }
   }
 
-  nsresult rv = DeleteNodeWithTransaction(*aNode);
+  nsresult rv = DeleteNodeWithTransaction(aElement);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
