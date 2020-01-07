@@ -1,0 +1,19 @@
+
+
+
+
+
+
+package org.mozilla.geckoview;
+
+
+
+
+public interface GeckoResponse<T> {
+    
+
+
+
+
+    void respond(T value);
+}
