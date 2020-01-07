@@ -5455,9 +5455,10 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
           aContainerFrame, eCSSProperty_transform)) {
       nsSize displaySize = ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
       
-      
+      nsSize scaledVisibleSize = nsSize(aVisibleRect.Width() * aIncomingScale.mXScale,
+                                        aVisibleRect.Height() * aIncomingScale.mYScale);
       scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
-                aContainerFrame, aVisibleRect.Size(),
+                aContainerFrame, scaledVisibleSize,
                 displaySize);
       
       
