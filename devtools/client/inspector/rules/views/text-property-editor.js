@@ -572,6 +572,10 @@ TextPropertyEditor.prototype = {
       this.enable.removeAttribute("checked");
     }
 
+    this.warning.title = !this.isNameValid()
+      ? l10n("rule.warningName.title")
+      : l10n("rule.warning.title");
+
     this.warning.hidden = this.editing || this.isValid();
     this.filterProperty.hidden = this.editing ||
                                  !this.isValid() ||
@@ -1012,6 +1016,14 @@ TextPropertyEditor.prototype = {
 
   isValid: function() {
     return this.prop.isValid();
+  },
+
+  
+
+
+
+  isNameValid: function() {
+    return this.prop.isNameValid();
   },
 
   

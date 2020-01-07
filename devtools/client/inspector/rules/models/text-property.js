@@ -190,14 +190,6 @@ TextProperty.prototype = {
 
 
   isValid: function() {
-    
-    
-    
-    
-    if (!this.rule.domRule.declarations) {
-      return this.cssProperties.isValidOnClient(this.name, this.value, this.panelDoc);
-    }
-
     let selfIndex = this.rule.textProps.indexOf(this);
 
     
@@ -209,6 +201,30 @@ TextProperty.prototype = {
     }
 
     return this.rule.domRule.declarations[selfIndex].isValid;
+  },
+
+  
+
+
+
+
+  isNameValid: function() {
+    let selfIndex = this.rule.textProps.indexOf(this);
+
+    
+    
+    
+    
+    if (!this.rule.domRule.declarations[selfIndex]) {
+      return true;
+    }
+
+    
+    
+    
+    return (this.rule.domRule.declarations[selfIndex].isNameValid !== undefined)
+      ? this.rule.domRule.declarations[selfIndex].isNameValid
+      : true;
   }
 };
 

@@ -1129,6 +1129,8 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         decl.isValid = CSS.supports(`${decl.name}:${decl.value}`);
+        
+        decl.isNameValid = CSS.supports(decl.name, "initial");
         return decl;
       });
     }
