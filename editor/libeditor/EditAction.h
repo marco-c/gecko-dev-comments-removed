@@ -59,6 +59,9 @@ enum class EditSubAction : int32_t
   eRemoveTextProperty,
 
   
+  eRemoveAllTextProperties,
+
+  
   
   eComputeTextToOutput,
 
@@ -106,7 +109,6 @@ enum class EditSubAction : int32_t
   
   eInsertHTMLSource,
 
-  resetTextProperties,
   setAbsolutePosition,
   removeAbsolutePosition,
   decreaseZIndex,
