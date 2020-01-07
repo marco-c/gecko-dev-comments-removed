@@ -27,7 +27,29 @@
 namespace mozilla {
 namespace layers {
 
-class GenericFlingAnimation: public AsyncPanZoomAnimation {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename FlingPhysics>
+class GenericFlingAnimation: public AsyncPanZoomAnimation, public FlingPhysics {
 public:
   GenericFlingAnimation(AsyncPanZoomController& aApzc,
                         const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
@@ -84,6 +106,8 @@ public:
 
     mApzc.mLastFlingTime = now;
     mApzc.mLastFlingVelocity = velocity;
+
+    FlingPhysics::Init(mApzc.GetVelocityVector());
   }
 
   
@@ -95,18 +119,9 @@ public:
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) override
   {
-    float friction = gfxPrefs::APZFlingFriction();
-    float threshold = gfxPrefs::APZFlingStoppedThreshold();
-
-    
-    
-    
-    
-    ParentLayerPoint velocity(
-        ApplyFrictionOrCancel(mApzc.mX.GetVelocity(), aDelta, friction, threshold),
-        ApplyFrictionOrCancel(mApzc.mY.GetVelocity(), aDelta, friction, threshold));
-    FLING_LOG("%p reduced velocity to %s due to friction\n",
-      &mApzc, ToString(mApzc.GetVelocityVector()).c_str());
+    ParentLayerPoint velocity;
+    ParentLayerPoint offset;
+    FlingPhysics::Sample(aDelta, &velocity, &offset);
 
     mApzc.SetVelocityVector(velocity);
 
@@ -127,8 +142,6 @@ public:
         &mApzc));
       return false;
     }
-
-    ParentLayerPoint offset = velocity * aDelta.ToMilliseconds();
 
     
     
@@ -200,29 +213,6 @@ private:
   {
     return (aBase * gfxPrefs::APZFlingAccelBaseMultiplier())
          + (aSupplemental * gfxPrefs::APZFlingAccelSupplementalMultiplier());
-  }
-
-  
-
-
-
-
-
-
-
-
-  static float ApplyFrictionOrCancel(float aVelocity, const TimeDuration& aDelta,
-                                     float aFriction, float aThreshold)
-  {
-    if (fabsf(aVelocity) <= aThreshold) {
-      
-      
-      
-      return 0.0f;
-    }
-
-    aVelocity *= pow(1.0f - aFriction, float(aDelta.ToMilliseconds()));
-    return aVelocity;
   }
 
   AsyncPanZoomController& mApzc;
