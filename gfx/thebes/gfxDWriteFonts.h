@@ -105,6 +105,10 @@ protected:
     bool mUseSubpixelPositions;
     bool mAllowManualShowGlyphs;
 
+    
+    
+    bool mAzureScaledFontUsedClearType;
+
     static bool sUseClearType;
 };
 
