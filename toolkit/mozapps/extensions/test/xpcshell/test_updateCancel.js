@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Promise.jsm");
 
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
@@ -29,7 +29,7 @@ profileDir.append("extensions");
 
 
 function makeCancelListener() {
-  let updated = PromiseUtils.defer();
+  let updated = Promise.defer();
   return {
     onUpdateAvailable(addon, install) {
       updated.reject("Should not have seen onUpdateAvailable notification");
@@ -44,7 +44,7 @@ function makeCancelListener() {
 }
 
 
-var httpReceived = PromiseUtils.defer();
+var httpReceived = Promise.defer();
 function dataHandler(aRequest, aResponse) {
   aResponse.processAsync();
   httpReceived.resolve([aRequest, aResponse]);
@@ -91,7 +91,7 @@ add_task(async function cancel_during_check() {
   let file = do_get_cwd();
   file.append("data");
   file.append("test_update.json");
-  let data = new TextDecoder().decode(await OS.File.read(file.path));
+  let data = loadFile(file);
   response.write(data);
   response.finish();
 
@@ -105,7 +105,7 @@ add_task(async function cancel_during_check() {
 
 add_task(async function shutdown_during_check() {
   
-  httpReceived = PromiseUtils.defer();
+  httpReceived = Promise.defer();
 
   let a1 = await promiseAddonByID("addon1@tests.mozilla.org");
   Assert.notEqual(a1, null);
@@ -125,9 +125,9 @@ add_task(async function shutdown_during_check() {
   let file = do_get_cwd();
   file.append("data");
   file.append("test_update.json");
-  let data = await loadFile(file.path);
+  let data = loadFile(file);
   response.write(data);
   response.finish();
 
-  await testserver.stop();
+  await testserver.stop(Promise.defer().resolve);
 });

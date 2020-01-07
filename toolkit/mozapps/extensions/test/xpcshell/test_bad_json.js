@@ -20,7 +20,7 @@ var addon1 = {
 const profileDir = gProfD.clone();
 profileDir.append("extensions");
 
-async function run_test() {
+function run_test() {
   do_test_pending("Bad JSON");
 
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
@@ -34,20 +34,20 @@ async function run_test() {
 
   
   
-  await saveJSON({not: "what we expect to find"}, gExtensionsJSON.path);
+  saveJSON({not: "what we expect to find"}, gExtensionsJSON);
 
   startupManager(false);
   
   AddonManager.getAddonsByIDs([addon1.id], callback_soon(after_db_rebuild));
 }
 
-async function after_db_rebuild([a1]) {
+function after_db_rebuild([a1]) {
   Assert.equal(a1.id, addon1.id);
 
   shutdownManager();
 
   
-  let data = await loadJSON(gExtensionsJSON.path);
+  let data = loadJSON(gExtensionsJSON);
   Assert.ok("schemaVersion" in data);
   Assert.equal(data.addons[0].id, addon1.id);
 

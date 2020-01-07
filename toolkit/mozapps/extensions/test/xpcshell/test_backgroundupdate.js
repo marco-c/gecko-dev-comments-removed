@@ -7,15 +7,20 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-var testserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
+ChromeUtils.import("resource://testing-common/httpd.js");
+var testserver = new HttpServer();
+testserver.start(-1);
+gPort = testserver.identity.primaryPort;
 const profileDir = gProfD.clone();
 profileDir.append("extensions");
+
+
+mapFile("/data/test_backgroundupdate.json", testserver);
 
 function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   testserver.registerDirectory("/addons/", do_get_file("addons"));
-  testserver.registerDirectory("/data/", do_get_file("data"));
 
   startupManager();
 
@@ -24,7 +29,7 @@ function run_test() {
 }
 
 function end_test() {
-  do_test_finished();
+  testserver.stop(do_test_finished);
 }
 
 
@@ -50,7 +55,7 @@ function run_test_2() {
   writeInstallRDFForExtension({
     id: "addon1@tests.mozilla.org",
     version: "1.0",
-    updateURL: "http://example.com/data/test_backgroundupdate.json",
+    updateURL: "http://localhost:" + gPort + "/data/test_backgroundupdate.json",
     bootstrap: true,
     targetApplications: [{
       id: "xpcshell@tests.mozilla.org",
@@ -63,7 +68,7 @@ function run_test_2() {
   writeInstallRDFForExtension({
     id: "addon2@tests.mozilla.org",
     version: "1.0",
-    updateURL: "http://example.com/data/test_backgroundupdate.json",
+    updateURL: "http://localhost:" + gPort + "/data/test_backgroundupdate.json",
     bootstrap: true,
     targetApplications: [{
       id: "xpcshell@tests.mozilla.org",
@@ -90,7 +95,7 @@ function run_test_2() {
 
   
   Services.prefs.setCharPref("extensions.update.background.url",
-                             "http://example.com/data/test_backgroundupdate.json");
+                             "http://localhost:" + gPort + "/data/test_backgroundupdate.json");
 
   restartManager();
 
