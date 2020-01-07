@@ -1003,9 +1003,6 @@ protected:
 
   void InitializeShowFocusRings();
 
-public:
-  
-  nsDOMWindowList* GetWindowList();
 protected:
   
   already_AddRefed<nsICSSDeclaration>
