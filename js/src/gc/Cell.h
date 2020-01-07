@@ -83,12 +83,16 @@ struct Cell
 
     template<class T>
     inline T* as() {
+        
+        
         MOZ_ASSERT(this->is<T>());
         return static_cast<T*>(this);
     }
 
     template <class T>
     inline const T* as() const {
+        
+        
         MOZ_ASSERT(this->is<T>());
         return static_cast<const T*>(this);
     }
@@ -147,13 +151,17 @@ class TenuredCell : public Cell
 
     template<class T>
     inline T* as() {
-        MOZ_ASSERT(is<T>());
+        
+        
+        MOZ_ASSERT(this->is<T>());
         return static_cast<T*>(this);
     }
 
     template <class T>
     inline const T* as() const {
-        MOZ_ASSERT(is<T>());
+        
+        
+        MOZ_ASSERT(this->is<T>());
         return static_cast<const T*>(this);
     }
 
