@@ -11,6 +11,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "nsEscape.h"
 #include "nsIDocShell.h"
+#include "nsIObserver.h"
 #include "nsISubstitutingProtocolHandler.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
@@ -33,6 +34,9 @@ static const char kBackgroundPageHTMLScript[] = "\n\
 static const char kBackgroundPageHTMLEnd[] = "\n\
   <body>\n\
 </html>";
+
+static const char kRestrictedDomainPref[] =
+  "extensions.webextensions.restrictedDomains";
 
 static inline ExtensionPolicyService&
 EPS()
@@ -265,6 +269,106 @@ WebExtensionPolicy::IsExtensionProcess(GlobalObject& aGlobal)
   return EPS().IsExtensionProcess();
 }
 
+namespace {
+  
+
+
+
+  class AtomSetPref : public nsIObserver
+                    , public nsSupportsWeakReference
+  {
+  public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
+
+    static already_AddRefed<AtomSetPref>
+    Create(const char* aPref)
+    {
+      RefPtr<AtomSetPref> self = new AtomSetPref(aPref);
+      Preferences::AddWeakObserver(self, aPref);
+      return self.forget();
+    }
+
+    const AtomSet& Get() const;
+
+    bool Contains(const nsAtom* aAtom) const
+    {
+      return Get().Contains(aAtom);
+    }
+
+  protected:
+    virtual ~AtomSetPref() = default;
+
+    AtomSetPref(const char* aPref) : mPref(aPref)
+    {}
+
+  private:
+    mutable Maybe<AtomSet> mAtomSet;
+    const char* mPref;
+  };
+
+  const AtomSet&
+  AtomSetPref::Get() const
+  {
+    if (mAtomSet.isNothing()) {
+      nsAutoCString eltsString;
+      Unused << Preferences::GetCString(mPref, eltsString);
+
+      AutoTArray<nsString, 32> elts;
+      for (const nsACString& elt : eltsString.Split(',')) {
+        elts.AppendElement(NS_ConvertUTF8toUTF16(elt));
+        elts.LastElement().StripWhitespace();
+      }
+      mAtomSet.emplace(elts);
+    }
+
+    return mAtomSet.ref();
+  }
+
+  NS_IMETHODIMP
+  AtomSetPref::Observe(nsISupports *aSubject, const char *aTopic,
+                       const char16_t *aData)
+  {
+    mAtomSet.reset();
+    return NS_OK;
+  }
+
+  NS_IMPL_ISUPPORTS(AtomSetPref, nsIObserver, nsISupportsWeakReference)
+};
+
+ bool
+WebExtensionPolicy::IsRestrictedDoc(const DocInfo& aDoc)
+{
+  
+  
+  
+  if (aDoc.Principal() && !aDoc.Principal()->GetIsCodebasePrincipal()) {
+    return true;
+  }
+
+  return IsRestrictedURI(aDoc.PrincipalURL());
+}
+
+ bool
+WebExtensionPolicy::IsRestrictedURI(const URLInfo &aURI)
+{
+  static RefPtr<AtomSetPref> domains;
+  if (!domains) {
+    domains = AtomSetPref::Create(kRestrictedDomainPref);
+    ClearOnShutdown(&domains);
+  }
+
+  if (domains->Contains(aURI.HostAtom())) {
+    return true;
+  }
+
+  if (AddonManagerWebAPI::IsValidSite(aURI.URI())) {
+    return true;
+  }
+
+  return false;
+}
+
 nsCString
 WebExtensionPolicy::BackgroundPageHTML() const
 {
@@ -363,7 +467,6 @@ WebExtensionContentScript::WebExtensionContentScript(WebExtensionPolicy& aExtens
   }
 }
 
-
 bool
 WebExtensionContentScript::Matches(const DocInfo& aDoc) const
 {
@@ -390,20 +493,11 @@ WebExtensionContentScript::Matches(const DocInfo& aDoc) const
     return true;
   }
 
-  
-  
-  
-  if (aDoc.Principal() && !aDoc.Principal()->GetIsCodebasePrincipal()) {
+  if (mExtension->IsRestrictedDoc(aDoc)) {
     return false;
   }
 
-  
-  
-  if (AddonManagerWebAPI::IsValidSite(aDoc.PrincipalURL().URI())) {
-    return false;
-  }
-
-  URLInfo urlinfo(aDoc.PrincipalURL());
+  auto& urlinfo = aDoc.PrincipalURL();
   if (mHasActiveTabPermission && aDoc.ShouldMatchActiveTabPermission() &&
       MatchPattern::MatchesAllURLs(urlinfo)) {
     return true;
@@ -431,7 +525,7 @@ WebExtensionContentScript::MatchesURI(const URLInfo& aURL) const
     return false;
   }
 
-  if (AddonManagerWebAPI::IsValidSite(aURL.URI())) {
+  if (mExtension->IsRestrictedURI(aURL)) {
     return false;
   }
 
