@@ -537,7 +537,7 @@ class TestFunctional(HelperMixin, unittest.TestCase):
         check_hg_path(file_lines, 'nsBrowserApp.cpp')
         
         
-        check_hg_path(file_lines, 'mfbt/Assertions.h')
+        check_hg_path(file_lines, 'mfbt/Sprintf.h')
 
 
 if __name__ == '__main__':
