@@ -3095,6 +3095,11 @@ public:
   already_AddRefed<LayerManager> PaintRoot(nsDisplayListBuilder* aBuilder,
                                            gfxContext* aCtx,
                                            uint32_t aFlags);
+
+  mozilla::FrameLayerBuilder* BuildLayers(nsDisplayListBuilder* aBuilder,
+                                          LayerManager* aLayerManager,
+                                          uint32_t aFlags,
+                                          bool aIsWidgetTransaction);
   
 
 
