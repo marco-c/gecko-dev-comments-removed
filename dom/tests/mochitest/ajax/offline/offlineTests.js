@@ -323,16 +323,8 @@ getActiveCache: function(overload)
   
   var serv = Cc["@mozilla.org/network/application-cache-service;1"]
              .getService(Ci.nsIApplicationCacheService);
-
   var groupID = serv.buildGroupIDForInfo(this.manifestURL(overload), this.loadContextInfo());
-  var cache;
-  
-  try {
-    cache = serv.getActiveCache(groupID);
-  } catch (e) {
-    cache = false;
-  }
-  return cache;
+  return serv.getActiveCache(groupID);
 },
 
 getActiveStorage: function()

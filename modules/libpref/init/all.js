@@ -89,15 +89,6 @@ pref("browser.cache.max_shutdown_io_lag", 2);
 
 pref("browser.cache.offline.enable",           true);
 
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("browser.cache.offline.insecure.enable",  false);
-#else
-pref("browser.cache.offline.insecure.enable",  true);
-#endif
-
-
 pref("offline-apps.allow_by_default",          true);
 
 
