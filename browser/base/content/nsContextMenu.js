@@ -1275,8 +1275,10 @@ nsContextMenu.prototype = {
     
     
     try {
-      addresses = Services.textToSubURI.unEscapeURIForUI(gContextMenuContentData.charSet,
-                                                         addresses);
+      const textToSubURI = Cc["@mozilla.org/intl/texttosuburi;1"].
+                           getService(Ci.nsITextToSubURI);
+      addresses = textToSubURI.unEscapeURIForUI(gContextMenuContentData.charSet,
+                                                addresses);
     } catch (ex) {
       
     }

@@ -324,6 +324,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(this, "textURIService",
+                                   "@mozilla.org/intl/texttosuburi;1",
+                                   "nsITextToSubURI");
+
 XPCOMUtils.defineLazyPreferenceGetter(this, "syncUsernamePref",
                                       "services.sync.username");
 
@@ -796,7 +800,7 @@ function Search(searchString, searchParam, autocompleteListener,
   let strippedOriginalSearchString =
     stripPrefix(this._trimmedOriginalSearchString.toLowerCase());
   this._searchString =
-    Services.textToSubURI.unEscapeURIForUI("UTF-8", strippedOriginalSearchString);
+    textURIService.unEscapeURIForUI("UTF-8", strippedOriginalSearchString);
 
   
   
@@ -1749,7 +1753,7 @@ Search.prototype = {
     
     
     let escapedURL = uri.displaySpec;
-    let displayURL = Services.textToSubURI.unEscapeURIForUI("UTF-8", escapedURL);
+    let displayURL = textURIService.unEscapeURIForUI("UTF-8", uri.displaySpec);
 
     let value = PlacesUtils.mozActionURI("visiturl", {
       url: escapedURL,
