@@ -1189,9 +1189,6 @@ class MOZ_STACK_CLASS CallMethodHelper
 
     MOZ_ALWAYS_INLINE void CleanupParam(nsXPTCMiniVariant& param, const nsXPTType& type);
 
-    MOZ_ALWAYS_INLINE bool AllocateStringClass(nsXPTCVariant* dp,
-                                               const nsXPTParamInfo& paramInfo);
-
     MOZ_ALWAYS_INLINE nsresult Invoke();
 
 public:
@@ -1363,7 +1360,6 @@ CallMethodHelper::GetOutParamSource(uint8_t paramIndex, MutableHandleValue srcp)
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(paramIndex);
     bool isRetval = &paramInfo == mMethodInfo->GetRetval();
 
-    MOZ_ASSERT(!paramInfo.IsDipper(), "Dipper params are handled separately");
     if (paramInfo.IsOut() && !isRetval) {
         MOZ_ASSERT(paramIndex < mArgc || paramInfo.IsOptional(),
                    "Expected either enough arguments or an optional argument");
@@ -1393,7 +1389,7 @@ CallMethodHelper::GatherAndConvertResults()
     uint8_t paramCount = mMethodInfo->GetParamCount();
     for (uint8_t i = 0; i < paramCount; i++) {
         const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
-        if (!paramInfo.IsOut() && !paramInfo.IsDipper())
+        if (!paramInfo.IsOut())
             continue;
 
         const nsXPTType& type = paramInfo.GetType();
@@ -1588,32 +1584,9 @@ CallMethodHelper::ConvertIndependentParam(uint8_t i)
 {
     const nsXPTParamInfo& paramInfo = mMethodInfo->GetParam(i);
     const nsXPTType& type = paramInfo.GetType();
-    uint8_t type_tag = type.TagPart();
     nsXPTCVariant* dp = GetDispatchParam(i);
     dp->type = type;
     MOZ_ASSERT(!paramInfo.IsShared(), "[shared] implies [noscript]!");
-
-    
-    
-    
-    
-    
-    
-    if (paramInfo.IsStringClass()) {
-        if (!AllocateStringClass(dp, paramInfo))
-            return false;
-        if (paramInfo.IsDipper()) {
-            
-            
-            
-            
-            if (i < mArgc && !mArgv[i].isObject()) {
-                ThrowBadParam(NS_ERROR_XPC_NEED_OUT_OBJECT, i, mCallContext);
-                return false;
-            }
-            return true;
-        }
-    }
 
     
     if (paramInfo.IsIndirect())
@@ -1621,15 +1594,30 @@ CallMethodHelper::ConvertIndependentParam(uint8_t i)
 
     
     
-    if (type_tag == nsXPTType::T_JSVAL) {
+    
+    switch (type.Tag()) {
         
-        new (&dp->val.j) JS::Value();
-        MOZ_ASSERT(dp->val.j.isUndefined());
-        if (!js::AddRawValueRoot(mCallContext, &dp->val.j,
-                                 "XPCWrappedNative::CallMethod param"))
-        {
-            return false;
-        }
+        
+        case nsXPTType::T_JSVAL:
+            new (&dp->Ext().jsval) JS::Value();
+            MOZ_ASSERT(dp->Ext().jsval.isUndefined());
+            if (!js::AddRawValueRoot(mCallContext, &dp->Ext().jsval,
+                                    "XPCWrappedNative::CallMethod param"))
+            {
+                return false;
+            }
+            break;
+
+        
+        
+        case nsXPTType::T_ASTRING:
+        case nsXPTType::T_DOMSTRING:
+            new (&dp->Ext().nsstr) nsString();
+            break;
+        case nsXPTType::T_CSTRING:
+        case nsXPTType::T_UTF8STRING:
+            new (&dp->Ext().nscstr) nsCString();
+            break;
     }
 
     
@@ -1660,7 +1648,7 @@ CallMethodHelper::ConvertIndependentParam(uint8_t i)
                    "Expected either enough arguments or an optional argument");
         if (i < mArgc)
             src = mArgv[i];
-        else if (type_tag == nsXPTType::T_JSVAL)
+        else if (type.Tag() == nsXPTType::T_JSVAL)
             src.setUndefined();
         else
             src.setNull();
@@ -1680,7 +1668,7 @@ CallMethodHelper::ConvertIndependentParam(uint8_t i)
     
     if (src.isObject() &&
         jsipc::IsWrappedCPOW(&src.toObject()) &&
-        type_tag == nsXPTType::T_INTERFACE &&
+        type.Tag() == nsXPTType::T_INTERFACE &&
         !param_iid.Equals(NS_GET_IID(nsISupports)))
     {
         
@@ -1806,19 +1794,6 @@ CallMethodHelper::CleanupParam(nsXPTCMiniVariant& param, const nsXPTType& type)
     uint32_t arraylen = 0;
     switch (type.Tag()) {
         
-        
-        case nsXPTType::T_ASTRING:
-        case nsXPTType::T_DOMSTRING:
-            mCallContext.GetContext()->mScratchStrings
-                .Destroy((nsString*)param.val.p);
-            return;
-        case nsXPTType::T_CSTRING:
-        case nsXPTType::T_UTF8STRING:
-            mCallContext.GetContext()->mScratchCStrings
-                .Destroy((nsCString*)param.val.p);
-            return;
-
-        
         case nsXPTType::T_JSVAL:
             js::RemoveRawValueRoot(mCallContext, (Value*)&param.val);
             return;
@@ -1829,39 +1804,6 @@ CallMethodHelper::CleanupParam(nsXPTCMiniVariant& param, const nsXPTType& type)
             return;
     }
 
-}
-
-bool
-CallMethodHelper::AllocateStringClass(nsXPTCVariant* dp,
-                                      const nsXPTParamInfo& paramInfo)
-{
-    
-    uint8_t type_tag = paramInfo.GetType().TagPart();
-
-    
-    MOZ_ASSERT(type_tag == nsXPTType::T_ASTRING ||
-               type_tag == nsXPTType::T_DOMSTRING ||
-               type_tag == nsXPTType::T_UTF8STRING ||
-               type_tag == nsXPTType::T_CSTRING,
-               "Unexpected string class type!");
-
-    
-    
-    if (type_tag == nsXPTType::T_ASTRING || type_tag == nsXPTType::T_DOMSTRING)
-        dp->val.p = mCallContext.GetContext()->mScratchStrings.Create();
-    else
-        dp->val.p = mCallContext.GetContext()->mScratchCStrings.Create();
-
-    
-    if (!dp->val.p) {
-        JS_ReportOutOfMemory(mCallContext);
-        return false;
-    }
-
-    
-    dp->SetValNeedsCleanup();
-
-    return true;
 }
 
 nsresult

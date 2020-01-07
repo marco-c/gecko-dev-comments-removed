@@ -332,52 +332,6 @@ MOZ_DEFINE_ENUM(WatchdogTimestampCategory, (
 
 class AsyncFreeSnowWhite;
 
-template <class StringType>
-class ShortLivedStringBuffer
-{
-public:
-    StringType* Create()
-    {
-        for (uint32_t i = 0; i < ArrayLength(mStrings); ++i) {
-            if (!mStrings[i]) {
-                mStrings[i].emplace();
-                return mStrings[i].ptr();
-            }
-        }
-
-        
-        return new StringType();
-    }
-
-    void Destroy(StringType* string)
-    {
-        for (uint32_t i = 0; i < ArrayLength(mStrings); ++i) {
-            if (mStrings[i] && mStrings[i].ptr() == string) {
-                
-                
-                mStrings[i].reset();
-                return;
-            }
-        }
-
-        
-        
-        delete string;
-    }
-
-    ~ShortLivedStringBuffer()
-    {
-#ifdef DEBUG
-        for (uint32_t i = 0; i < ArrayLength(mStrings); ++i) {
-            MOZ_ASSERT(!mStrings[i], "Short lived string still in use");
-        }
-#endif
-    }
-
-private:
-    mozilla::Maybe<StringType> mStrings[2];
-};
-
 class XPCJSContext final : public mozilla::CycleCollectedJSContext
                          , public mozilla::LinkedListElement<XPCJSContext>
 {
@@ -469,9 +423,6 @@ public:
 
     inline JS::HandleId GetStringID(unsigned index) const;
     inline const char* GetStringName(unsigned index) const;
-
-    ShortLivedStringBuffer<nsString> mScratchStrings;
-    ShortLivedStringBuffer<nsCString> mScratchCStrings;
 
 private:
     XPCJSContext();

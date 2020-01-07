@@ -247,11 +247,6 @@ public:
            Tag() == TD_PSTRING_SIZE_IS || Tag() == TD_PWSTRING_SIZE_IS;
   }
 
-  bool IsStringClass() const {
-    return Tag() == TD_DOMSTRING || Tag() == TD_ASTRING ||
-           Tag() == TD_CSTRING || Tag() == TD_UTF8STRING;
-  }
-
   
   const nsXPTType& InnermostType() const {
     if (Tag() == TD_ARRAY) {
@@ -340,7 +335,7 @@ static_assert(sizeof(nsXPTType) == 3, "wrong size");
 struct nsXPTParamInfo
 {
   bool IsIn() const { return mType.mInParam; }
-  bool IsOut() const { return mType.mOutParam && !IsDipper(); }
+  bool IsOut() const { return mType.mOutParam; }
   bool IsOptional() const { return mType.mOptionalParam; }
   bool IsShared() const { return false; } 
 
@@ -351,27 +346,14 @@ struct nsXPTParamInfo
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool IsDipper() const { return mType.mOutParam && IsStringClass(); }
-
-  
-  
-  
-  bool IsIndirect() const { return IsOut() || mType.Tag() == TD_JSVAL; }
-
-  bool IsStringClass() const { return mType.IsStringClass(); }
+  bool IsIndirect() const {
+    return IsOut() ||
+      mType.Tag() == TD_JSVAL ||
+      mType.Tag() == TD_ASTRING ||
+      mType.Tag() == TD_DOMSTRING ||
+      mType.Tag() == TD_CSTRING ||
+      mType.Tag() == TD_UTF8STRING;
+  }
 
   
   
