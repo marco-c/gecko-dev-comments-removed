@@ -40,7 +40,18 @@ enum MemoryPressureState
 
 
 
-  MemPressure_Ongoing
+  MemPressure_Ongoing,
+
+  
+
+
+
+
+
+
+
+
+  MemPressure_Stopping
 };
 
 

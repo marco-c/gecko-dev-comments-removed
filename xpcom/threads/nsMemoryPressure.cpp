@@ -39,8 +39,9 @@ NS_DispatchEventualMemoryPressure(MemoryPressureState aState)
       sMemoryPressurePending = MemPressure_New;
       break;
     case MemPressure_Ongoing:
+    case MemPressure_Stopping:
       sMemoryPressurePending.compareExchange(MemPressure_None,
-                                             MemPressure_Ongoing);
+                                             aState);
       break;
   }
 }
