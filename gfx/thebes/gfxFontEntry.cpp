@@ -80,8 +80,7 @@ gfxFontEntry::gfxFontEntry() :
     mHasCmapTable(false),
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
-    mWeightRange(FontWeight(500)),
-    mStretch(NS_FONT_STRETCH_NORMAL),
+    mWeight(500), mStretch(NS_FONT_STRETCH_NORMAL),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -118,8 +117,7 @@ gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
     mHasCmapTable(false),
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
-    mWeightRange(FontWeight(500)),
-    mStretch(NS_FONT_STRETCH_NORMAL),
+    mWeight(500), mStretch(NS_FONT_STRETCH_NORMAL),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -1030,86 +1028,6 @@ gfxFontEntry::GetColorLayersInfo(uint32_t aGlyphId,
                                              aLayerColors);
 }
 
-void
-gfxFontEntry::SetupVariationRanges()
-{
-    if (!HasVariations() || IsUserFont()) {
-        return;
-    }
-    AutoTArray<gfxFontVariationAxis,4> axes;
-    GetVariationAxes(axes);
-    for (const auto& axis : axes) {
-        switch (axis.mTag) {
-        case HB_TAG('w','g','h','t'):
-            
-            
-            
-            
-            
-            
-            if (axis.mMinValue >= 0.0f && axis.mMaxValue <= 1000.0 &&
-                
-                
-                
-                Weight().Min() <= FontWeight(axis.mMaxValue)) {
-                mStandardFace = FontWeight(axis.mDefaultValue) == Weight().Min();
-                mWeightRange =
-                    WeightRange(FontWeight(std::max(1.0f, axis.mMinValue)),
-                                FontWeight(axis.mMaxValue));
-            }
-            break;
-        
-        
-        
-        
-        default:
-            continue;
-        }
-    }
-}
-
-void
-gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
-                                    const gfxFontStyle& aStyle)
-{
-    
-    
-    if (!Weight().IsSingle()) {
-        float clampedWeight = Weight().Clamp(aStyle.weight).ToFloat();
-        aResult.AppendElement(gfxFontVariation{HB_TAG('w','g','h','t'),
-                                               clampedWeight});
-    }
-
-    
-
-    auto replaceOrAppend = [&aResult](const gfxFontVariation& aSetting) {
-        struct TagEquals {
-            bool Equals(const gfxFontVariation& aIter, uint32_t aTag) const {
-                return aIter.mTag == aTag;
-            }
-        };
-        auto index = aResult.IndexOf(aSetting.mTag, 0, TagEquals());
-        if (index == aResult.NoIndex) {
-            aResult.AppendElement(aSetting);
-        } else {
-            aResult[index].mValue = aSetting.mValue;
-        }
-    };
-
-    
-    
-    
-    for (const auto& v : mVariationSettings) {
-        replaceOrAppend(v);
-    }
-
-    
-    
-    for (const auto& v : aStyle.variationSettings) {
-        replaceOrAppend(v);
-    }
-}
-
 size_t
 gfxFontEntry::FontTableHashEntry::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
@@ -1318,35 +1236,33 @@ StretchDistance(int32_t aFontStretch, int32_t aTargetStretch)
 
 
 static inline uint32_t
-WeightDistance(const gfxFontEntry* aFontEntry, FontWeight aTargetWeight)
+WeightDistance(FontWeight aFontWeight, FontWeight aTargetWeight)
 {
     
     
 
     float distance = 0.0f, addedDistance = 0.0f;
-    FontWeight minWeight = aFontEntry->Weight().Min();
-    FontWeight maxWeight = aFontEntry->Weight().Max();
-    if (aTargetWeight < minWeight || aTargetWeight > maxWeight) {
+    if (aTargetWeight != aFontWeight) {
         if (aTargetWeight > FontWeight(500)) {
-            distance = minWeight - aTargetWeight;
+            distance = aFontWeight - aTargetWeight;
         } else if (aTargetWeight < FontWeight(400)) {
-            distance = aTargetWeight - maxWeight;
+            distance = aTargetWeight - aFontWeight;
         } else {
             
 
             
-            if (maxWeight >= FontWeight(400) &&
-                minWeight <= FontWeight(500)) {
-                if (maxWeight < aTargetWeight) {
-                    distance = FontWeight(500) - maxWeight;
+            if (aFontWeight >= FontWeight(400) &&
+                aFontWeight <= FontWeight(500)) {
+                if (aFontWeight < aTargetWeight) {
+                    distance = FontWeight(500) - aFontWeight;
                 } else {
-                    distance = minWeight - aTargetWeight;
+                    distance = aFontWeight - aTargetWeight;
                 }
             } else {
                 
                 
                 
-                distance = aTargetWeight - maxWeight;
+                distance = aTargetWeight - aFontWeight;
                 addedDistance = 100;
             }
         }
@@ -1368,7 +1284,8 @@ WeightStyleStretchDistance(gfxFontEntry* aFontEntry,
     uint32_t stretchDist =
         StretchDistance(aFontEntry->mStretch, aTargetStyle.stretch);
     uint32_t styleDist = StyleDistance(aFontEntry->mStyle, aTargetStyle.style);
-    uint32_t weightDist = WeightDistance(aFontEntry, aTargetStyle.weight);
+    uint32_t weightDist =
+        WeightDistance(aFontEntry->Weight(), aTargetStyle.weight);
 
     NS_ASSERTION(weightDist < (1 << WEIGHT_SHIFT), "weight value out of bounds");
     NS_ASSERTION(styleDist < (1 << STYLE_SHIFT), "slope value out of bounds");
@@ -1527,11 +1444,8 @@ gfxFontFamily::CheckForSimpleFamily()
             
             return;
         }
-        if (fe->Weight().Min() != fe->Weight().Max()) {
-            return; 
-        }
         uint8_t faceIndex = (fe->IsItalic() ? kItalicMask : 0) |
-                            (fe->IsBold() ? kBoldMask : 0);
+                            (fe->Weight() >= FontWeight(600) ? kBoldMask : 0);
         if (faces[faceIndex]) {
             return; 
         }
@@ -1578,41 +1492,33 @@ void gfxFontFamily::LocalizedName(nsAString& aLocalizedName)
 }
 
 
-static float
+static int32_t
 CalcStyleMatch(gfxFontEntry *aFontEntry, const gfxFontStyle *aStyle)
 {
-    float rank = 0;
+    int32_t rank = 0;
     if (aStyle) {
-        
+         
+         bool wantUpright = (aStyle->style == NS_FONT_STYLE_NORMAL);
+         if (aFontEntry->IsUpright() == wantUpright) {
+             rank += 10;
+         }
 
         
-        bool wantUpright = (aStyle->style == NS_FONT_STYLE_NORMAL);
-        if (aFontEntry->IsUpright() == wantUpright) {
-            rank += 5000.0f;
-        }
-
-        
-        if (aFontEntry->Weight().Min() > aStyle->weight) {
-            rank += aFontEntry->Weight().Min() - aStyle->weight;
-        } else if (aFontEntry->Weight().Max() < aStyle->weight) {
-            rank += aStyle->weight - aFontEntry->Weight().Max();
-        } else {
-            rank += 2000.0f; 
-        }
+        rank += 9 - Abs((aFontEntry->Weight() - aStyle->weight) / 100.0f);
     } else {
         
         if (aFontEntry->IsUpright()) {
-            rank += 2000.0f;
+            rank += 3;
         }
         if (!aFontEntry->IsBold()) {
-            rank += 1000.0f;
+            rank += 2;
         }
     }
 
     return rank;
 }
 
-#define RANK_MATCHED_CMAP   10000.0f
+#define RANK_MATCHED_CMAP   20
 
 void
 gfxFontFamily::FindFontForChar(GlobalFontMatch *aMatchData)
@@ -1630,7 +1536,7 @@ gfxFontFamily::FindFontForChar(GlobalFontMatch *aMatchData)
                          needsBold, true);
 
     if (fe && !fe->SkipDuringSystemFallback()) {
-        float rank = 0;
+        int32_t rank = 0;
 
         if (fe->HasCharacter(aMatchData->mCh)) {
             rank += RANK_MATCHED_CMAP;
@@ -1690,7 +1596,7 @@ gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch *aMatchData)
     for (i = 0; i < numFonts; i++) {
         gfxFontEntry *fe = mAvailableFonts[i];
         if (fe && fe->HasCharacter(aMatchData->mCh)) {
-            float rank = RANK_MATCHED_CMAP;
+            int32_t rank = RANK_MATCHED_CMAP;
             rank += CalcStyleMatch(fe, aMatchData->mStyle);
             if (rank > aMatchData->mMatchRank
                 || (rank == aMatchData->mMatchRank &&

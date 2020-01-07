@@ -126,7 +126,7 @@ GDIFontEntry::GDIFontEntry(const nsAString& aFaceName,
 {
     mUserFontData.reset(aUserFontData);
     mStyle = aStyle;
-    mWeightRange = WeightRange(aWeight);
+    mWeight = aWeight;
     mStretch = aStretch;
     if (IsType1())
         mForceGDI = true;
@@ -139,9 +139,7 @@ gfxFontEntry*
 GDIFontEntry::Clone() const
 {
     MOZ_ASSERT(!IsUserFont(), "we can only clone installed fonts!");
-    
-    
-    return new GDIFontEntry(Name(), mFontType, mStyle, Weight().Min(), mStretch,
+    return new GDIFontEntry(Name(), mFontType, mStyle, mWeight, mStretch,
                             nullptr);
 }
 
@@ -307,7 +305,7 @@ GDIFontEntry::TestCharacterMap(uint32_t aCh)
         if (!IsUpright()) {
             fakeStyle.style = NS_FONT_STYLE_ITALIC;
         }
-        fakeStyle.weight = Weight().Min();
+        fakeStyle.weight = mWeight;
 
         RefPtr<gfxFont> tempFont = FindOrMakeFont(&fakeStyle, false);
         if (!tempFont || !tempFont->Valid())
@@ -386,7 +384,7 @@ GDIFontEntry::InitLogFont(const nsAString& aName,
     
     
     mLogFont.lfItalic         = !IsUpright();
-    mLogFont.lfWeight         = Weight().Min().ToIntRounded();
+    mLogFont.lfWeight         = int(mWeight.ToFloat());
 
     int len = std::min<int>(aName.Length(), LF_FACESIZE - 1);
     memcpy(&mLogFont.lfFaceName, aName.BeginReading(), len * sizeof(char16_t));
@@ -469,7 +467,7 @@ GDIFontFamily::FamilyAddStylesProc(const ENUMLOGFONTEXW *lpelfe,
     for (uint32_t i = 0; i < ff->mAvailableFonts.Length(); ++i) {
         fe = static_cast<GDIFontEntry*>(ff->mAvailableFonts[i].get());
         
-        if (fe->Weight().Min() == FontWeight(int32_t(logFont.lfWeight)) &&
+        if (fe->mWeight == FontWeight(int32_t(logFont.lfWeight)) &&
             fe->IsItalic() == (logFont.lfItalic == 0xFF)) {
             
             
@@ -731,7 +729,7 @@ gfxGDIFontList::LookupLocalFont(const nsAString& aFontName,
     
     GDIFontEntry *fe = GDIFontEntry::CreateFontEntry(lookup->Name(), 
         gfxWindowsFontType(isCFF ? GFX_FONT_TYPE_PS_OPENTYPE : GFX_FONT_TYPE_TRUETYPE) , 
-        lookup->mStyle, lookup->Weight().Min(), aStretch, nullptr);
+        lookup->mStyle, lookup->mWeight, aStretch, nullptr);
 
     if (!fe)
         return nullptr;
@@ -739,7 +737,7 @@ gfxGDIFontList::LookupLocalFont(const nsAString& aFontName,
     fe->mIsLocalUserFont = true;
 
     
-    fe->mWeightRange = WeightRange(aWeight);
+    fe->mWeight = aWeight;
     fe->mStyle = aStyle;
 
     return fe;
