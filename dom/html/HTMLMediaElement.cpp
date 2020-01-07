@@ -1808,6 +1808,7 @@ void HTMLMediaElement::AbortExistingLoads()
   mPendingEncryptedInitData.Reset();
   mWaitingForKey = NOT_WAITING_FOR_KEY;
   mSourcePointer = nullptr;
+  mAttemptPlayUponLoadedMetadata = false;
 
   mTags = nullptr;
 
@@ -3956,7 +3957,7 @@ HTMLMediaElement::NotifyXPCOMShutdown()
 already_AddRefed<Promise>
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
-  LOG(LogLevel::Debug, ("%p Play() called by JS", this));
+  LOG(LogLevel::Debug, ("%p Play() called by JS readyState=%d", this, mReadyState));
 
   if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
     MaybeDoLoad();
@@ -3995,7 +3996,12 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
   
   
   
-  if (!IsAllowedToPlay()) {
+  
+  
+  
+  
+  
+  if (mReadyState >= HAVE_METADATA && !IsAllowedToPlay()) {
     
     LOG(LogLevel::Debug,
         ("%p Play() promise rejected because not allowed to play.", this));
@@ -4053,21 +4059,30 @@ HTMLMediaElement::PlayInternal(ErrorResult& aRv)
       SetCurrentTime(0);
     }
     if (!mPausedForInactiveDocumentOrChannel) {
-      nsresult rv = mDecoder->Play();
-      if (NS_FAILED(rv)) {
+      if (mReadyState < HAVE_METADATA) {
         
         
         
-        
-        
-        
-        LOG(LogLevel::Debug,
-            ("%p Play() promise rejected because failed to play MediaDecoder.",
-             this));
-        aRv.Throw(rv);
-        return nullptr;
+        mAttemptPlayUponLoadedMetadata = true;
+      } else {
+        nsresult rv = mDecoder->Play();
+        if (NS_FAILED(rv)) {
+          
+          
+          
+          
+          
+          
+          LOG(LogLevel::Debug,
+              ("%p Play() promise rejected because failed to play MediaDecoder.",
+              this));
+          aRv.Throw(rv);
+          return nullptr;
+        }
       }
     }
+  } else if (mReadyState < HAVE_METADATA) {
+    mAttemptPlayUponLoadedMetadata = true;
   }
 
   if (mCurrentPlayRangeStart == -1.0) {
@@ -4926,7 +4941,7 @@ HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder)
   }
 
   nsresult rv = NS_OK;
-  if (!mPaused) {
+  if (!mPaused && !mAttemptPlayUponLoadedMetadata) {
     SetPlayedOrSeeked(true);
     if (!mPausedForInactiveDocumentOrChannel) {
       rv = mDecoder->Play();
@@ -5930,6 +5945,15 @@ HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
       mReadyState >= HAVE_FUTURE_DATA) {
     DispatchAsyncEvent(NS_LITERAL_STRING("canplay"));
     if (!mPaused) {
+      if (mAttemptPlayUponLoadedMetadata && mDecoder) {
+        mAttemptPlayUponLoadedMetadata = false;
+        if (IsAllowedToPlay()) {
+          mDecoder->Play();
+        } else {
+          AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR);
+          mPaused = true;
+        }
+      }
       NotifyAboutPlaying();
     }
   }
@@ -6050,6 +6074,7 @@ void HTMLMediaElement::CheckAutoplayDataReady()
     if (mCurrentPlayRangeStart == -1.0) {
       mCurrentPlayRangeStart = CurrentTime();
     }
+    MOZ_ASSERT(!mAttemptPlayUponLoadedMetadata);
     mDecoder->Play();
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
@@ -6387,6 +6412,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement, bool aSuspendE
       if (mDecoder) {
         mDecoder->Resume();
         if (!mPaused && !mDecoder->IsEnded()) {
+          MOZ_ASSERT(!mAttemptPlayUponLoadedMetadata);
           mDecoder->Play();
         }
       }

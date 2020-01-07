@@ -1821,6 +1821,13 @@ private:
 
   
   
+  
+  
+  
+  bool mAttemptPlayUponLoadedMetadata = false;
+
+  
+  
   bool mMediaTracksConstructed = false;
 
   Visibility mVisibilityState = Visibility::UNTRACKED;
