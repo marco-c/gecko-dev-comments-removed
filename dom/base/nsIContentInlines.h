@@ -176,6 +176,8 @@ nsIContent::IsActiveChildrenElement() const
     return false;
   }
 
+  
+  
   return !bindingParent->GetShadowRoot();
 }
 
@@ -197,6 +199,8 @@ nsIContent::IsInAnonymousSubtree() const
     return false;
   }
 
+  
+  
   return !bindingParent->GetShadowRoot();
 }
 
