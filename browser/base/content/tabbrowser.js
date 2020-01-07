@@ -3704,6 +3704,30 @@ window._gBrowser = {
     this._lastMultiSelectedTabRef = Cu.getWeakReference(aTab);
   },
 
+  toggleMuteAudioOnMultiSelectedTabs(aTab) {
+    const selectedTabs = ChromeUtils.nondeterministicGetWeakSetKeys(this._multiSelectedTabsSet)
+                                    .filter(tab => tab.isConnected);
+    let tabsToToggle;
+
+    if (aTab.activeMediaBlocked) {
+      tabsToToggle = selectedTabs.filter(tab =>
+        tab.activeMediaBlocked || tab.linkedBrowser.audioMuted
+      );
+    } else {
+      let tabMuted = aTab.linkedBrowser.audioMuted;
+      tabsToToggle = selectedTabs.filter(tab =>
+        
+        
+        
+        tab.linkedBrowser.audioMuted == tabMuted && !tab.activeMediaBlocked ||
+        tab.activeMediaBlocked && tabMuted
+      );
+    }
+    for (let tab of tabsToToggle) {
+      tab.toggleMuteAudio();
+    }
+  },
+
   activateBrowserForPrintPreview(aBrowser) {
     this._printPreviewBrowsers.add(aBrowser);
     if (this._switcher) {

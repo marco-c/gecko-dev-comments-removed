@@ -7893,13 +7893,15 @@ var MenuTouchModeObserver = {
 
 var TabContextMenu = {
   contextTab: null,
-  _updateToggleMuteMenuItem(aTab, aConditionFn) {
+  _updateToggleMuteMenuItems(aTab, aConditionFn) {
     ["muted", "soundplaying"].forEach(attr => {
       if (!aConditionFn || aConditionFn(attr)) {
         if (aTab.hasAttribute(attr)) {
           aTab.toggleMuteMenuItem.setAttribute(attr, "true");
+          aTab.toggleMultiSelectMuteMenuItem.setAttribute(attr, "true");
         } else {
           aTab.toggleMuteMenuItem.removeAttribute(attr);
+          aTab.toggleMultiSelectMuteMenuItem.removeAttribute(attr);
         }
       }
     });
@@ -7908,6 +7910,7 @@ var TabContextMenu = {
     this.contextTab = aPopupMenu.triggerNode.localName == "tab" ?
                       aPopupMenu.triggerNode : gBrowser.selectedTab;
     let disabled = gBrowser.tabs.length == 1;
+    let multiselectionContext = this.contextTab.multiselected;
 
     var menuItems = aPopupMenu.getElementsByAttribute("tbattr", "tabbrowser-multiple");
     for (let menuItem of menuItems)
@@ -7942,9 +7945,8 @@ var TabContextMenu = {
     document.getElementById("context_closeOtherTabs").disabled = unpinnedTabsToClose < 1;
 
     
-    let hasMultiSelectedTabs = !!gBrowser.multiSelectedTabsCount;
-    document.getElementById("context_closeTab").hidden = hasMultiSelectedTabs;
-    document.getElementById("context_closeSelectedTabs").hidden = !hasMultiSelectedTabs;
+    document.getElementById("context_closeTab").hidden = multiselectionContext;
+    document.getElementById("context_closeSelectedTabs").hidden = !multiselectionContext;
 
     
     let bookmarkAllTabs = document.getElementById("context_bookmarkAllTabs");
@@ -7952,8 +7954,14 @@ var TabContextMenu = {
     if (!bookmarkAllTabs.hidden)
       PlacesCommandHook.updateBookmarkAllTabsCommand();
 
-    
     let toggleMute = document.getElementById("context_toggleMuteTab");
+    let toggleMultiSelectMute = document.getElementById("context_toggleMuteSelectedTabs");
+
+    
+    toggleMute.hidden = multiselectionContext;
+    toggleMultiSelectMute.hidden = !multiselectionContext;
+
+    
     if (this.contextTab.hasAttribute("activemedia-blocked")) {
       toggleMute.label = gNavigatorBundle.getString("playTab.label");
       toggleMute.accessKey = gNavigatorBundle.getString("playTab.accesskey");
@@ -7965,8 +7973,21 @@ var TabContextMenu = {
       toggleMute.accessKey = gNavigatorBundle.getString("muteTab.accesskey");
     }
 
+    
+    if (this.contextTab.hasAttribute("activemedia-blocked")) {
+      toggleMultiSelectMute.label = gNavigatorBundle.getString("playTabs.label");
+      toggleMultiSelectMute.accessKey = gNavigatorBundle.getString("playTabs.accesskey");
+    } else if (this.contextTab.hasAttribute("muted")) {
+      toggleMultiSelectMute.label = gNavigatorBundle.getString("unmuteSelectedTabs.label");
+      toggleMultiSelectMute.accessKey = gNavigatorBundle.getString("unmuteSelectedTabs.accesskey");
+    } else {
+      toggleMultiSelectMute.label = gNavigatorBundle.getString("muteSelectedTabs.label");
+      toggleMultiSelectMute.accessKey = gNavigatorBundle.getString("muteSelectedTabs.accesskey");
+    }
+
     this.contextTab.toggleMuteMenuItem = toggleMute;
-    this._updateToggleMuteMenuItem(this.contextTab);
+    this.contextTab.toggleMultiSelectMuteMenuItem = toggleMultiSelectMute;
+    this._updateToggleMuteMenuItems(this.contextTab);
 
     this.contextTab.addEventListener("TabAttrModified", this);
     aPopupMenu.addEventListener("popuphiding", this);
@@ -7983,7 +8004,7 @@ var TabContextMenu = {
         break;
       case "TabAttrModified":
         let tab = aEvent.target;
-        this._updateToggleMuteMenuItem(tab,
+        this._updateToggleMuteMenuItems(tab,
           attr => aEvent.detail.changed.includes(attr));
         break;
     }
