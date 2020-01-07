@@ -309,6 +309,13 @@ this.TopSitesFeed = class TopSitesFeed {
       await this._pinSiteAt(site, index);
       this._broadcastPinnedSitesUpdated();
     } else {
+      
+      
+      
+      if (index === -1) {
+        NewTabUtils.blockedLinks.unblock({url: site.url});
+        this.frecentCache.expire();
+      }
       this.insert(action);
     }
   }
@@ -395,6 +402,7 @@ this.TopSitesFeed = class TopSitesFeed {
       
       case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
+      case at.PLACES_LINK_DELETED:
         this.frecentCache.expire();
         this.refresh({broadcast: true});
         break;
