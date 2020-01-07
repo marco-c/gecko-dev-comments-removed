@@ -1798,6 +1798,9 @@ public:
 
 
 
+
+
+
   bool MayResample();
 
   RenderTargetRect TransformRectToRenderTarget(const LayerIntRect& aRect);
