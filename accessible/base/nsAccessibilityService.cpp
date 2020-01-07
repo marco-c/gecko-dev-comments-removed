@@ -1054,6 +1054,20 @@ nsAccessibilityService::CreateAccessible(nsINode* aNode,
   
   
   if (!frame || !frame->StyleVisibility()->IsVisible()) {
+    
+    
+    if (content->IsElement() && content->AsElement()->IsDisplayContents()) {
+      const HTMLMarkupMapInfo* markupMap =
+        mHTMLMarkupMap.Get(content->NodeInfo()->NameAtom());
+      if (markupMap && markupMap->new_func) {
+        RefPtr<Accessible> newAcc =
+          markupMap->new_func(content->AsElement(), aContext);
+        document->BindToDocument(newAcc, aria::GetRoleMap(content->AsElement()));
+        return newAcc;
+      }
+      return nullptr;
+    }
+
     if (aIsSubtreeHidden && !frame)
       *aIsSubtreeHidden = true;
 
