@@ -34,26 +34,6 @@ ServoStyleContext::ServoStyleContext(
 }
 
 ServoStyleContext*
-ServoStyleContext::GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
-{
-  MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
-
-  
-  
-  if (IsInheritingAnonBox()) {
-    return nullptr;
-  }
-
-  auto* current = mNextInheritingAnonBoxStyle.get();
-
-  while (current && current->GetPseudo() != aAnonBox) {
-    current = current->mNextInheritingAnonBoxStyle.get();
-  }
-
-  return current;
-}
-
-ServoStyleContext*
 ServoStyleContext::GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const
 {
   MOZ_ASSERT(aPseudo != CSSPseudoElementType::NotPseudo &&

@@ -12,6 +12,8 @@
 #include "nsWindowSizes.h"
 #include <algorithm>
 
+#include "mozilla/CachedAnonBoxStyles.h"
+
 namespace mozilla {
 
 namespace dom {
@@ -45,26 +47,29 @@ public:
            !nsCSSPseudoElements::IsEagerlyCascadedInServo(GetPseudoType());
   }
 
-  ServoStyleContext* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const;
+  ServoStyleContext* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
+  {
+    MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
+
+    
+    if (IsInheritingAnonBox()) {
+      return nullptr;
+    }
+
+    return mInheritingAnonBoxStyles.Lookup(aAnonBox);
+  }
 
   void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox,
                                       ServoStyleContext* aStyle)
   {
     MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
-    MOZ_ASSERT(!aStyle->mNextInheritingAnonBoxStyle);
 
-    
-    
-    
-    
-    
     
     if (IsInheritingAnonBox()) {
       return;
     }
 
-    mNextInheritingAnonBoxStyle.swap(aStyle->mNextInheritingAnonBoxStyle);
-    mNextInheritingAnonBoxStyle = aStyle;
+    mInheritingAnonBoxStyles.Insert(aStyle);
   }
 
   ServoStyleContext* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
@@ -111,11 +116,7 @@ public:
     
     *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
     mSource.AddSizeOfExcludingThis(aSizes);
-
-    if (mNextInheritingAnonBoxStyle &&
-        !aSizes.mState.HaveSeenPtr(mNextInheritingAnonBoxStyle)) {
-      mNextInheritingAnonBoxStyle->AddSizeOfIncludingThis(aSizes, aCVsSize);
-    }
+    mInheritingAnonBoxStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
 
     if (mNextLazyPseudoStyle &&
         !aSizes.mState.HaveSeenPtr(mNextLazyPseudoStyle)) {
@@ -129,10 +130,7 @@ private:
 
   
   
-  
-  
-  
-  RefPtr<ServoStyleContext> mNextInheritingAnonBoxStyle;
+  CachedAnonBoxStyles mInheritingAnonBoxStyles;
 
   
   
