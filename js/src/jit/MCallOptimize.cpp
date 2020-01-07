@@ -252,6 +252,8 @@ IonBuilder::inlineNativeCall(CallInfo& callInfo, JSFunction* target)
         return inlineObject(callInfo);
       case InlinableNative::ObjectCreate:
         return inlineObjectCreate(callInfo);
+      case InlinableNative::ObjectIs:
+        return inlineObjectIs(callInfo);
       case InlinableNative::ObjectToString:
         return inlineObjectToString(callInfo);
 
@@ -2378,6 +2380,68 @@ IonBuilder::inlineObjectCreate(CallInfo& callInfo)
     MOZ_TRY(newObjectTryTemplateObject(&emitted, templateObject));
 
     MOZ_ASSERT(emitted);
+    return InliningStatus_Inlined;
+}
+
+IonBuilder::InliningResult
+IonBuilder::inlineObjectIs(CallInfo& callInfo)
+{
+    if (callInfo.argc() < 2 || callInfo.constructing())
+        return InliningStatus_NotInlined;
+
+    if (getInlineReturnType() != MIRType::Boolean)
+        return InliningStatus_NotInlined;
+
+    MDefinition* left = callInfo.getArg(0);
+    MDefinition* right = callInfo.getArg(1);
+    MIRType leftType = left->type();
+    MIRType rightType = right->type();
+
+    bool strictEq;
+    bool incompatibleTypes = false;
+    if (leftType == rightType) {
+        
+        
+        
+        strictEq = !(IsFloatingPointType(leftType) || leftType == MIRType::Value);
+    } else if (leftType == MIRType::Value) {
+        
+        strictEq = !IsNumberType(rightType);
+    } else if (rightType == MIRType::Value) {
+        
+        strictEq = !IsNumberType(leftType);
+    } else if (IsNumberType(leftType) && IsNumberType(rightType)) {
+        
+        
+        
+        strictEq = false;
+    } else {
+        incompatibleTypes = true;
+    }
+
+    if (incompatibleTypes) {
+        
+        pushConstant(BooleanValue(false));
+    } else {
+        bool emitted = false;
+        if (strictEq) {
+            
+            MOZ_TRY(compareTrySpecialized(&emitted, JSOP_STRICTEQ, left, right, false));
+        }
+
+        if (!emitted) {
+            MSameValue* ins = MSameValue::New(alloc(), left, right);
+
+            
+            if (IsNumberType(leftType) && rightType == MIRType::Value)
+                ins->swapOperands();
+
+            current->add(ins);
+            current->push(ins);
+        }
+    }
+
+    callInfo.setImplicitlyUsedUnchecked();
     return InliningStatus_Inlined;
 }
 
