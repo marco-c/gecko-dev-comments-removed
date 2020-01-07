@@ -2704,6 +2704,13 @@ ContentChild::RecvInitBlobURLs(nsTArray<BlobURLRegistrationData>&& aRegistration
     nsHostObjectProtocolHandler::AddDataEntry(registration.url(),
                                               registration.principal(),
                                               blobImpl);
+    
+    
+    
+    if (registration.revoked()) {
+      nsHostObjectProtocolHandler::RemoveDataEntry(registration.url(),
+                                                   false);
+    }
   }
 
   return IPC_OK();
