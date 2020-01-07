@@ -52,8 +52,6 @@ class CodeGeneratorMIPS64 : public CodeGeneratorMIPSShared
 
     
     void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag);
-
-    void setReturnDoubleRegs(LiveRegisterSet* regs);
 };
 
 typedef CodeGeneratorMIPS64 CodeGeneratorSpecific;
