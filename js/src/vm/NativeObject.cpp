@@ -292,6 +292,24 @@ js::NativeObject::lookupPure(jsid id)
     return Shape::searchNoHashify(lastProperty(), id);
 }
 
+uint32_t
+js::NativeObject::numFixedSlotsForCompilation() const
+{
+    
+    
+    
+    
+
+    
+    MOZ_ASSERT(!IsInsideNursery(this));
+
+    if (this->is<ArrayObject>())
+        return 0;
+
+    gc::AllocKind kind = asTenured().getAllocKind();
+    return gc::GetGCKindSlots(kind, getClass());
+}
+
 void
 NativeObject::setLastPropertyShrinkFixedSlots(Shape* shape)
 {
