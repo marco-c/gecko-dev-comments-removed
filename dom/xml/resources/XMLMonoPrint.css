@@ -3,8 +3,9 @@
 
 
 
-#tree,
-.expandable-opening::-moz-list-bullet {
+@import url("chrome://global/content/xml/XMLPrettyPrint.css");
+
+#top > .expander-open {
   font-family: monospace;
   white-space: pre;
 }
