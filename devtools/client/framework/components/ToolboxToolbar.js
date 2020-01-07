@@ -57,6 +57,8 @@ class ToolboxToolbar extends Component {
       
       selectTool: PropTypes.func,
       
+      toggleOptions: PropTypes.func.isRequired,
+      
       toggleSplitConsole: PropTypes.func,
       
       toggleNoAutohide: PropTypes.func,
@@ -245,6 +247,8 @@ function renderSeparator() {
 
 
 
+
+
 function renderToolboxControls(props) {
   const {
     focusedButton,
@@ -331,6 +335,8 @@ function renderToolboxControls(props) {
 
 
 
+
+
 function showMeatballMenu(
   menuButton,
   {
@@ -339,7 +345,7 @@ function showMeatballMenu(
     currentHostType,
     isSplitConsoleActive,
     disableAutohide,
-    selectTool,
+    toggleOptions,
     toggleSplitConsole,
     toggleNoAutohide,
     L10N,
@@ -402,7 +408,7 @@ function showMeatballMenu(
     id: "toolbox-meatball-menu-settings",
     label: L10N.getStr("toolbox.meatballMenu.settings.label"),
     accelerator: L10N.getStr("toolbox.help.key"),
-    click: () => selectTool("options"),
+    click: () => toggleOptions(),
   }));
 
   if (menu.items.length) {
