@@ -527,13 +527,7 @@ nsRFPService::ReduceTimePrecisionImpl(
 
   long long midpoint = 0,
             clampedAndJittered = clamped;
-  
-  
-  
-  
-  
-  
-  if (sJitter && NSS_IsInitialized()) {
+  if (sJitter) {
     if(!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, aContextMixin, &midpoint)) &&
        timeAsInt >= clamped + midpoint) {
       clampedAndJittered += resolutionAsInt;
