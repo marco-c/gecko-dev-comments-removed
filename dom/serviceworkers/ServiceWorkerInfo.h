@@ -26,6 +26,7 @@ class ServiceWorkerPrivate;
 
 
 class ServiceWorkerInfo final : public nsIServiceWorkerInfo
+                              , public ServiceWorker::Inner
 {
 private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
