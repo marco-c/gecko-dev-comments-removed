@@ -31,11 +31,11 @@ const POLICIES_TESTS = [
 
    
   {
-    policies: { "OfferToSaveLogins": false },
+    policies: { "RememberPasswords": false },
     lockedPrefs: { "signon.rememberSignons": false },
   },
   {
-    policies: { "OfferToSaveLogins": true },
+    policies: { "RememberPasswords": true },
     lockedPrefs: { "signon.rememberSignons": true },
   },
 
@@ -122,7 +122,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "InstallAddonsPermission": {
+      "InstallAddons": {
         "Default": false,
       }
     },
