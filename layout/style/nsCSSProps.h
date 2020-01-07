@@ -19,6 +19,7 @@
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
 #include "mozilla/CSSEnabledState.h"
+#include "mozilla/CSSPropFlags.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/Preferences.h"
@@ -122,49 +123,10 @@
 #define VARIANT_IMAGE   (VARIANT_URL | VARIANT_NONE | VARIANT_GRADIENT | \
                         VARIANT_IMAGE_RECT | VARIANT_ELEMENT)
 
-
-
-#define CSS_PROPERTY_PARSE_INACCESSIBLE           (1<<9)
-
-
-
-
-
-#define CSS_PROPERTY_GETCS_NEEDS_LAYOUT_FLUSH     (1<<20)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define CSS_PROPERTY_ENABLED_MASK                 (3<<22)
-#define CSS_PROPERTY_ENABLED_IN_UA_SHEETS         (1<<22)
-#define CSS_PROPERTY_ENABLED_IN_CHROME            (1<<23)
-#define CSS_PROPERTY_ENABLED_IN_UA_SHEETS_AND_CHROME \
-  (CSS_PROPERTY_ENABLED_IN_UA_SHEETS | CSS_PROPERTY_ENABLED_IN_CHROME)
-
-
-#define CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR    (1<<27)
-
-
-
-
-#define CSS_PROPERTY_INTERNAL                     (1<<28)
-
 class nsCSSProps {
 public:
   typedef mozilla::CSSEnabledState EnabledState;
+  typedef mozilla::CSSPropFlags Flags;
 
   struct KTableEntry
   {
@@ -278,10 +240,10 @@ public:
   static const KTableEntry* const kKeywordTableTable[eCSSProperty_COUNT_no_shorthands];
 
 private:
-  static const uint32_t        kFlagsTable[eCSSProperty_COUNT];
+  static const Flags kFlagsTable[eCSSProperty_COUNT];
 
 public:
-  static inline bool PropHasFlags(nsCSSPropertyID aProperty, uint32_t aFlags)
+  static inline bool PropHasFlags(nsCSSPropertyID aProperty, Flags aFlags)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -386,12 +348,12 @@ public:
       return true;
     }
     if ((aEnabled & EnabledState::eInUASheets) &&
-        PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_UA_SHEETS))
+        PropHasFlags(aProperty, Flags::EnabledInUASheets))
     {
       return true;
     }
     if ((aEnabled & EnabledState::eInChrome) &&
-        PropHasFlags(aProperty, CSS_PROPERTY_ENABLED_IN_CHROME))
+        PropHasFlags(aProperty, Flags::EnabledInChrome))
     {
       return true;
     }
