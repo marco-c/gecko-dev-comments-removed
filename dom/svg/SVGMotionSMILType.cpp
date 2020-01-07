@@ -64,7 +64,10 @@ struct MotionSegment
   
   
   MotionSegment()
-    : mSegmentType(eSegmentType_Translation)
+    : mRotateType(eRotateType_Auto),
+      mRotateAngle(0.0),
+      mSegmentType(eSegmentType_Translation),
+      mU{}
   { }
 
   

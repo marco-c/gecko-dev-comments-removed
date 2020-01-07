@@ -230,7 +230,10 @@ private:
 
 
   struct ItemProxy {
-    ItemProxy(){}
+    ItemProxy()
+      : mItem(nullptr)
+      , mInternalDataIndex(0)
+    {}
     ItemProxy(DOMSVGPathSeg *aItem, uint32_t aInternalDataIndex)
       : mItem(aItem)
       , mInternalDataIndex(aInternalDataIndex)
