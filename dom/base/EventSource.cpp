@@ -15,6 +15,7 @@
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -143,8 +144,8 @@ public:
   void AddRefObject();
   void ReleaseObject();
 
-  bool RegisterWorkerHolder();
-  void UnregisterWorkerHolder();
+  bool CreateWorkerRef(WorkerPrivate* aWorkerPrivate);
+  void ReleaseWorkerRef();
 
   void AssertIsOnTargetThread() const
   {
@@ -283,10 +284,7 @@ public:
 
   
   
-  
-  WorkerPrivate* mWorkerPrivate;
-  
-  nsAutoPtr<WorkerHolder> mWorkerHolder;
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
   
   
   mozilla::Mutex mMutex;
@@ -353,8 +351,6 @@ EventSourceImpl::EventSourceImpl(EventSource* aEventSource)
 {
   MOZ_ASSERT(mEventSource);
   if (!mIsMainThread) {
-    mWorkerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(mWorkerPrivate);
     mEventSource->mIsMainThread = false;
   }
   SetReadyState(CONNECTING);
@@ -364,11 +360,11 @@ class CleanupRunnable final : public WorkerMainThreadRunnable
 {
 public:
   explicit CleanupRunnable(EventSourceImpl* aEventSourceImpl)
-    : WorkerMainThreadRunnable(aEventSourceImpl->mWorkerPrivate,
+    : WorkerMainThreadRunnable(GetCurrentThreadWorkerPrivate(),
                                NS_LITERAL_CSTRING("EventSource :: Cleanup"))
     , mImpl(aEventSourceImpl)
   {
-    mImpl->mWorkerPrivate->AssertIsOnWorkerThread();
+    mWorkerPrivate->AssertIsOnWorkerThread();
   }
 
   bool MainThreadRun() override
@@ -413,7 +409,7 @@ EventSourceImpl::CloseInternal()
     RefPtr<CleanupRunnable> runnable = new CleanupRunnable(this);
     runnable->Dispatch(Killing, rv);
     MOZ_ASSERT(!rv.Failed());
-    UnregisterWorkerHolder();
+    ReleaseWorkerRef();
   }
 
   while (mMessagesToDispatch.GetSize() != 0) {
@@ -452,20 +448,22 @@ void EventSourceImpl::CleanupOnMainThread()
 class InitRunnable final : public WorkerMainThreadRunnable
 {
 public:
-  explicit InitRunnable(EventSourceImpl* aEventSourceImpl,
-                        const nsAString& aURL)
-    : WorkerMainThreadRunnable(aEventSourceImpl->mWorkerPrivate,
+  InitRunnable(WorkerPrivate* aWorkerPrivate,
+               EventSourceImpl* aEventSourceImpl,
+               const nsAString& aURL)
+    : WorkerMainThreadRunnable(aWorkerPrivate,
                                NS_LITERAL_CSTRING("EventSource :: Init"))
     , mImpl(aEventSourceImpl)
     , mURL(aURL)
   {
-    mImpl->mWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
   }
 
   bool MainThreadRun() override
   {
     
-    WorkerPrivate* wp = mImpl->mWorkerPrivate;
+    WorkerPrivate* wp = mWorkerPrivate;
     while (wp->GetParent()) {
       wp = wp->GetParent();
     }
@@ -485,11 +483,34 @@ public:
 
   nsresult ErrorCode() const { return mRv; }
 
-protected:
+private:
   
   EventSourceImpl* mImpl;
   const nsAString& mURL;
   nsresult mRv;
+};
+
+class ConnectRunnable final : public WorkerMainThreadRunnable
+{
+public:
+  explicit ConnectRunnable(WorkerPrivate* aWorkerPrivate,
+                           EventSourceImpl* aEventSourceImpl)
+    : WorkerMainThreadRunnable(aWorkerPrivate,
+                               NS_LITERAL_CSTRING("EventSource :: Connect"))
+    , mImpl(aEventSourceImpl)
+  {
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
+  }
+
+  bool MainThreadRun() override
+  {
+    mImpl->InitChannelAndRequestEventSource();
+    return true;
+  }
+
+private:
+  RefPtr<EventSourceImpl> mImpl;
 };
 
 nsresult
@@ -585,11 +606,6 @@ EventSourceImpl::Init(nsIPrincipal* aPrincipal,
                         DEFAULT_RECONNECTION_TIME_VALUE);
 
   mUnicodeDecoder = UTF_8_ENCODING->NewDecoderWithBOMRemoval();
-
-  
-  
-  
-  InitChannelAndRequestEventSource();
 }
 
 
@@ -1131,11 +1147,11 @@ class CallRestartConnection final : public WorkerMainThreadRunnable
 public:
   explicit CallRestartConnection(EventSourceImpl* aEventSourceImpl)
     : WorkerMainThreadRunnable(
-        aEventSourceImpl->mWorkerPrivate,
+        aEventSourceImpl->mWorkerRef->Private(),
         NS_LITERAL_CSTRING("EventSource :: RestartConnection"))
     , mImpl(aEventSourceImpl)
   {
-    mImpl->mWorkerPrivate->AssertIsOnWorkerThread();
+    mWorkerPrivate->AssertIsOnWorkerThread();
   }
 
   bool MainThreadRun() override
@@ -1476,8 +1492,8 @@ EventSourceImpl::DispatchAllMessageEvents()
       return;
     }
   } else {
-    MOZ_ASSERT(mWorkerPrivate);
-    if (NS_WARN_IF(!jsapi.Init(mWorkerPrivate->GlobalScope()))) {
+    MOZ_ASSERT(mWorkerRef);
+    if (NS_WARN_IF(!jsapi.Init(mWorkerRef->Private()->GlobalScope()))) {
       return;
     }
   }
@@ -1777,28 +1793,6 @@ EventSourceImpl::ReleaseObject()
 }
 
 namespace {
-class EventSourceWorkerHolder final : public WorkerHolder
-{
-public:
-  explicit EventSourceWorkerHolder(EventSourceImpl* aEventSourceImpl)
-    : WorkerHolder("EventSourceWorkerHolder")
-    , mEventSourceImpl(aEventSourceImpl)
-  {
-  }
-
-  bool Notify(WorkerStatus aStatus) override
-  {
-    MOZ_ASSERT(aStatus > Running);
-    if (aStatus >= Canceling) {
-      mEventSourceImpl->Close();
-    }
-    return true;
-  }
-
-private:
-  
-  EventSourceImpl* mEventSourceImpl;
-};
 
 class WorkerRunnableDispatcher final : public WorkerRunnable
 {
@@ -1849,30 +1843,32 @@ private:
 
 } 
 
-bool EventSourceImpl::RegisterWorkerHolder()
+bool EventSourceImpl::CreateWorkerRef(WorkerPrivate* aWorkerPrivate)
 {
   MOZ_ASSERT(!IsShutDown());
-  MOZ_ASSERT(mWorkerPrivate);
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(!mWorkerHolder);
-  mWorkerHolder = new EventSourceWorkerHolder(this);
-  if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate, Canceling))) {
-    mWorkerHolder = nullptr;
+  MOZ_ASSERT(!mWorkerRef);
+  MOZ_ASSERT(aWorkerPrivate);
+  aWorkerPrivate->AssertIsOnWorkerThread();
+
+  RefPtr<EventSourceImpl> self = this;
+  RefPtr<StrongWorkerRef> workerRef =
+    StrongWorkerRef::Create(aWorkerPrivate, "EventSource", [self]() {
+      self->Close();
+    });
+
+  if (NS_WARN_IF(!workerRef)) {
     return false;
   }
+
+  mWorkerRef = new ThreadSafeWorkerRef(workerRef);
   return true;
 }
 
-void EventSourceImpl::UnregisterWorkerHolder()
+void EventSourceImpl::ReleaseWorkerRef()
 {
-  
-  
   MOZ_ASSERT(IsClosed());
-  MOZ_ASSERT(mWorkerPrivate);
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  
-  mWorkerHolder = nullptr;
-  mWorkerPrivate = nullptr;
+  MOZ_ASSERT(IsCurrentThreadRunningWorker());
+  mWorkerRef = nullptr;
 }
 
 
@@ -1896,11 +1892,11 @@ EventSourceImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
   if (IsShutDown()) {
     return NS_OK;
   }
-  MOZ_ASSERT(mWorkerPrivate);
+
   
   
   RefPtr<WorkerRunnableDispatcher> event =
-    new WorkerRunnableDispatcher(this, mWorkerPrivate, event_ref.forget());
+    new WorkerRunnableDispatcher(this, mWorkerRef->Private(), event_ref.forget());
 
   if (!event->Dispatch()) {
     return NS_ERROR_FAILURE;
@@ -1982,23 +1978,53 @@ EventSource::Constructor(const GlobalObject& aGlobal, const nsAString& aURL,
       return nullptr;
     }
     eventSourceImp->Init(principal, aURL, aRv);
-  } else {
-    
-    
-    if (!eventSourceImp->RegisterWorkerHolder()) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-    RefPtr<InitRunnable> runnable = new InitRunnable(eventSourceImp, aURL);
-    runnable->Dispatch(Terminating, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
-    aRv = runnable->ErrorCode();
+
+    eventSourceImp->InitChannelAndRequestEventSource();
+    return eventSource.forget();
   }
+
+  
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(workerPrivate);
+
+  RefPtr<InitRunnable> initRunnable =
+    new InitRunnable(workerPrivate, eventSourceImp, aURL);
+  initRunnable->Dispatch(Terminating, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
+
+  aRv = initRunnable->ErrorCode();
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  
+  
+  if (!eventSourceImp->CreateWorkerRef(workerPrivate)) {
+    
+    
+    eventSource->Close();
+
+    
+    
+    eventSourceImp = nullptr;
+
+    eventSource->mReadyState = EventSourceImpl::CONNECTING;
+    return eventSource.forget();
+  }
+
+  
+  RefPtr<ConnectRunnable> connectRunnable =
+    new ConnectRunnable(workerPrivate, eventSourceImp);
+  connectRunnable->Dispatch(Terminating, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
   return eventSource.forget();
 }
 
