@@ -175,6 +175,18 @@ js::ToBigInt(JSContext* cx, HandleValue val)
     return nullptr;
 }
 
+
+double
+BigInt::numberValue(BigInt* x)
+{
+    
+    
+    
+    signed long int exp;
+    double d = mpz_get_d_2exp(&exp, x->num_);
+    return ldexp(d, exp);
+}
+
 JSLinearString*
 BigInt::toString(JSContext* cx, BigInt* x, uint8_t radix)
 {
