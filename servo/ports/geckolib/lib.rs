@@ -2,7 +2,6 @@
 
 
 
-#![deny(warnings)]
 
 extern crate cssparser;
 extern crate env_logger;

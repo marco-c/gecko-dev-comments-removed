@@ -23,7 +23,6 @@
 
 
 
-#![deny(warnings)]
 #![deny(missing_docs)]
 
 #![recursion_limit = "500"]  
