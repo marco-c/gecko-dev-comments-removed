@@ -224,9 +224,19 @@ protected:
 
   MOZ_MUST_USE nsresult SplitMailCites(bool* aHandled);
 
-  nsresult WillDeleteSelection(nsIEditor::EDirection aAction,
-                               nsIEditor::EStripWrappers aStripWrappers,
-                               bool* aCancel, bool* aHandled);
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillDeleteSelection(nsIEditor::EDirection aAction,
+                      nsIEditor::EStripWrappers aStripWrappers,
+                      bool* aCancel, bool* aHandled);
 
   
 
