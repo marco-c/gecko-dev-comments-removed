@@ -92,22 +92,12 @@ _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
 
 
 _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_MULTI = [
-    "target.common.tests.zip",
-    "target.cppunittest.tests.zip",
     "target.json",
-    "target.mochitest.tests.zip",
     "target.mozinfo.json",
-    "target.reftest.tests.zip",
-    "target.talos.tests.zip",
-    "target.awsy.tests.zip",
     "target.test_packages.json",
     "target.txt",
-    "target.web-platform.tests.tar.gz",
-    "target.xpcshell.tests.zip",
     "target_info.txt",
-    "mozharness.zip",
     "robocop.apk",
-    "target.jsshell.zip",
 ]
 
 
