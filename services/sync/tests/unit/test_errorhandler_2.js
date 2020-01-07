@@ -131,39 +131,35 @@ add_task(async function test_crypto_keys_login_server_maintenance_error() {
   await promiseStopServer(server);
 });
 
-add_task(async function test_lastSync_not_updated_on_complete_failure() {
+add_task(async function test_sync_prolonged_server_maintenance_error() {
   enableValidationPrefs();
 
   
   let server = await EHTestsCommon.sync_httpd_setup();
   await EHTestsCommon.setUp(server);
 
-  await configureIdentity({username: "johndoe"}, server);
+  const BACKOFF = 42;
+  engine.enabled = true;
+  engine.exception = {status: 503,
+                      headers: {"retry-after": BACKOFF}};
 
-  
-  await sync_and_validate_telem(false);
+  let promiseObserved = promiseOneObserver("weave:ui:sync:error");
 
   Assert.equal(Status.service, STATUS_OK);
-  Assert.equal(Status.sync, SYNC_SUCCEEDED);
 
-  let lastSync = Svc.Prefs.get("lastSync");
+  setLastSync(PROLONGED_ERROR_DURATION);
+  let ping = await sync_and_validate_telem(true);
+  deepEqual(ping.status.sync, PROLONGED_SYNC_FAILURE);
+  deepEqual(ping.engines.find(e => e.failureReason).failureReason,
+            { name: "httperror", code: 503 });
+  await promiseObserved;
 
-  Assert.ok(lastSync);
-
-  
-  server.registerPathHandler("/1.1/johndoe/info/collections",
-                             EHTestsCommon.service_unavailable);
-
-  await sync_and_validate_telem(true);
-
-  Assert.equal(Status.sync, SERVER_MAINTENANCE);
   Assert.equal(Status.service, SYNC_FAILED);
+  Assert.equal(Status.sync, PROLONGED_SYNC_FAILURE);
+  Assert.ok(errorHandler.didReportProlongedError);
 
-  
-  Assert.equal(lastSync, Svc.Prefs.get("lastSync"));
-
-  await clean();
   await promiseStopServer(server);
+  await clean();
 });
 
 add_task(async function test_info_collections_login_prolonged_server_maintenance_error() {
@@ -799,7 +795,7 @@ add_task(async function test_sync_engine_generic_fail() {
   engine.sync = async function sync() {
     Svc.Obs.notify("weave:engine:sync:error", ENGINE_UNKNOWN_FAIL, "catapult");
   };
-  let lastSync = Svc.Prefs.get("lastSync");
+
   let log = Log.repository.getLogger("Sync.ErrorHandler");
   Svc.Prefs.set("log.appender.file.logOnError", true);
 
@@ -827,9 +823,6 @@ add_task(async function test_sync_engine_generic_fail() {
   _("Status.engines: " + JSON.stringify(Status.engines));
   Assert.equal(Status.engines.catapult, ENGINE_UNKNOWN_FAIL);
   Assert.equal(Status.service, SYNC_FAILED_PARTIAL);
-
-  
-  Assert.notEqual(lastSync, Svc.Prefs.get("lastSync"));
 
   
   let logFiles = getLogFiles();

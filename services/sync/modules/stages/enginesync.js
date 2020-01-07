@@ -186,14 +186,8 @@ EngineSynchronizer.prototype = {
 
       
       if (this.service.status.service != SYNC_FAILED_PARTIAL) {
-        this.service.status.sync = SYNC_SUCCEEDED;
-      }
-
-      
-      
-      if (this.service.status.service == SYNC_FAILED_PARTIAL ||
-          this.service.status.service == STATUS_OK) {
         Svc.Prefs.set("lastSync", new Date().toString());
+        this.service.status.sync = SYNC_SUCCEEDED;
       }
     } finally {
       Svc.Prefs.reset("firstSync");
