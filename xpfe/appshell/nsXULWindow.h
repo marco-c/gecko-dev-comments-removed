@@ -180,6 +180,7 @@ protected:
    
    
    bool                    mDestroying;
+   bool                    mSyncingAttributesToWidget = false;
    bool                    mRegistered;
    uint32_t                mPersistentAttributesDirty; 
    uint32_t                mPersistentAttributesMask;
