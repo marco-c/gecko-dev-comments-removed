@@ -84,6 +84,11 @@ enum class ContextKind
     Background
 };
 
+#ifdef DEBUG
+bool
+CurrentThreadIsParseThread();
+#endif
+
 } 
 
 
@@ -1193,6 +1198,7 @@ class MOZ_RAII AutoLockForExclusiveAccess
     JSRuntime* runtime;
 
     void init(JSRuntime* rt) {
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt) || CurrentThreadIsParseThread());
         runtime = rt;
         if (runtime->hasHelperThreadZones()) {
             runtime->exclusiveAccessLock.lock();
@@ -1234,6 +1240,7 @@ class MOZ_RAII AutoLockScriptData
   public:
     explicit AutoLockScriptData(JSRuntime* rt MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt) || CurrentThreadIsParseThread());
         runtime = rt;
         if (runtime->hasHelperThreadZones()) {
             runtime->scriptDataLock.lock();
