@@ -327,7 +327,15 @@ protected:
                         bool* aCancel, bool* aHandled,
                         const nsAString* aItemType = nullptr);
   nsresult WillRemoveList(bool aOrdered, bool* aCancel, bool* aHandled);
-  nsresult WillIndent(bool* aCancel, bool* aHandled);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillIndent(bool* aCancel, bool* aHandled);
 
   
 
