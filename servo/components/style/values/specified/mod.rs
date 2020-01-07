@@ -6,9 +6,9 @@
 
 
 
-use Prefix;
+use {Atom, Namespace, Prefix};
 use context::QuirksMode;
-use cssparser::{Parser, Token, serialize_identifier};
+use cssparser::{Parser, Token};
 use num_traits::One;
 use parser::{ParserContext, Parse};
 use std::f32;
@@ -685,24 +685,15 @@ impl AllowQuirks {
     }
 }
 
-#[cfg(feature = "gecko")]
-
-pub type NamespaceId = i32;
-
-
-#[cfg(feature = "servo")]
-
-pub type NamespaceId = ();
-
 
 
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue)]
 pub struct Attr {
     
-    pub namespace: Option<(Prefix, NamespaceId)>,
+    pub namespace: Option<(Prefix, Namespace)>,
     
-    pub attribute: String,
+    pub attribute: Atom,
 }
 
 impl Parse for Attr {
@@ -713,8 +704,8 @@ impl Parse for Attr {
 }
 
 
-fn get_id_for_namespace(prefix: &Prefix, context: &ParserContext) -> Option<NamespaceId> {
-    Some(context.namespaces.as_ref()?.prefixes.get(prefix)?.1)
+fn get_namespace_for_prefix(prefix: &Prefix, context: &ParserContext) -> Option<Namespace> {
+    context.namespaces.as_ref()?.prefixes.get(prefix).map(|x| x.clone())
 }
 
 impl Attr {
@@ -737,21 +728,21 @@ impl Attr {
                         ref t => return Err(location.new_unexpected_token_error(t.clone())),
                     };
 
-                    let ns_with_id = if let Some(ns) = first {
-                        let ns = Prefix::from(ns.as_ref());
-                        let id = match get_id_for_namespace(&ns, context) {
-                            Some(id) => id,
+                    let prefix_and_ns = if let Some(ns) = first {
+                        let prefix = Prefix::from(ns.as_ref());
+                        let ns = match get_namespace_for_prefix(&prefix, context) {
+                            Some(ns) => ns,
                             None => return Err(location.new_custom_error(
                                 StyleParseErrorKind::UnspecifiedError
                             )),
                         };
-                        Some((ns, id))
+                        Some((prefix, ns))
                     } else {
                         None
                     };
                     return Ok(Attr {
-                        namespace: ns_with_id,
-                        attribute: second_token.as_ref().to_owned(),
+                        namespace: prefix_and_ns,
+                        attribute: Atom::from(second_token.as_ref()),
                     })
                 }
                 
@@ -764,7 +755,7 @@ impl Attr {
         if let Some(first) = first {
             Ok(Attr {
                 namespace: None,
-                attribute: first.as_ref().to_owned(),
+                attribute: Atom::from(first.as_ref()),
             })
         } else {
             Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
@@ -778,11 +769,11 @@ impl ToCss for Attr {
         W: Write,
     {
         dest.write_str("attr(")?;
-        if let Some((ref prefix, _id)) = self.namespace {
+        if let Some((ref prefix, ref _url)) = self.namespace {
             serialize_atom_identifier(prefix, dest)?;
             dest.write_str("|")?;
         }
-        serialize_identifier(&self.attribute, dest)?;
+        serialize_atom_identifier(&self.attribute, dest)?;
         dest.write_str(")")
     }
 }
