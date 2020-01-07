@@ -2146,7 +2146,13 @@ nsNSSComponent::ShutdownNSS()
   
   
   
-  Unused << BlockUntilLoadableRootsLoaded();
+  
+  
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("evaporating psm resources"));
+  if (NS_FAILED(nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown())) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to evaporate resources"));
+    return;
+  }
 
   
   
@@ -2179,10 +2185,14 @@ nsNSSComponent::ShutdownNSS()
 
   
   
+  
   mDefaultCertVerifier = nullptr;
-  
-  
-  
+
+  if (NSS_Shutdown() != SECSuccess) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("NSS SHUTDOWN FAILURE"));
+  } else {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS shutdown =====>> OK <<====="));
+  }
 }
 
 nsresult

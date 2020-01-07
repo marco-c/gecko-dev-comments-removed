@@ -103,7 +103,6 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "nsMemoryInfoDumper.h"
 #include "nsSecurityConsoleMessage.h"
 #include "nsMessageLoop.h"
-#include "nss.h"
 
 #include <locale.h>
 #include "mozilla/Services.h"
@@ -1004,22 +1003,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
     
     JS_ShutDown();
     sInitializedJS = false;
-  }
-
-  
-  
-  
-  if (NSS_IsInitialized()) {
-    
-    
-    
-    
-    
-    
-    if (NSS_Shutdown() != SECSuccess) {
-      NS_WARNING("NSS_Shutdown failed - some NSS resources are still in use "
-                 "(see bugs 1417680 and 1230312)");
-    }
   }
 
   
