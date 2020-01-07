@@ -24,10 +24,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
                                    "@mozilla.org/content/style-sheet-service;1",
                                    "nsIStyleSheetService");
 
-
-XPCOMUtils.defineLazyGetter(this, "idleTimeout",
-                            () => Services.appinfo.name === "XPCShell" ? 500 : undefined);
-
 const DocumentEncoder = Components.Constructor(
   "@mozilla.org/layout/documentEncoder;1?type=text/plain",
   "nsIDocumentEncoder", "init");
@@ -44,6 +40,7 @@ const {
   defineLazyGetter,
   getInnerWindowID,
   getWinUtils,
+  promiseDocumentIdle,
   promiseDocumentLoaded,
   promiseDocumentReady,
   runSafeSyncWithoutClone,
@@ -97,19 +94,12 @@ const scriptCaches = new WeakSet();
 const sheetCacheDocuments = new DefaultWeakMap(() => new WeakSet());
 
 class CacheMap extends DefaultMap {
-  constructor(timeout, getter, extension) {
+  constructor(timeout, getter) {
     super(getter);
 
     this.expiryTimeout = timeout;
 
     scriptCaches.add(this);
-
-    
-    
-    
-    extension.once("shutdown", () => {
-      this.clear(-1);
-    });
   }
 
   get(url) {
@@ -137,10 +127,7 @@ class CacheMap extends DefaultMap {
   clear(timeout = SCRIPT_CLEAR_TIMEOUT_MS) {
     let now = Date.now();
     for (let [url, promise] of this.entries()) {
-      
-      
-      
-      if (timeout === -1 || (now - promise.lastUsed >= timeout)) {
+      if (now - promise.lastUsed >= timeout) {
         this.delete(url);
       }
     }
@@ -148,8 +135,8 @@ class CacheMap extends DefaultMap {
 }
 
 class ScriptCache extends CacheMap {
-  constructor(options, extension) {
-    super(SCRIPT_EXPIRY_TIMEOUT_MS, null, extension);
+  constructor(options) {
+    super(SCRIPT_EXPIRY_TIMEOUT_MS);
     this.options = options;
   }
 
@@ -168,10 +155,6 @@ class ScriptCache extends CacheMap {
 
 
 class BaseCSSCache extends CacheMap {
-  constructor(expiryTimeout, defaultConstructor, extension) {
-    super(expiryTimeout, defaultConstructor, extension);
-  }
-
   addDocument(key, document) {
     sheetCacheDocuments.get(this.get(key)).add(document);
   }
@@ -202,13 +185,13 @@ class BaseCSSCache extends CacheMap {
 
 
 class CSSCache extends BaseCSSCache {
-  constructor(sheetType, extension) {
+  constructor(sheetType) {
     super(CSS_EXPIRY_TIMEOUT_MS, url => {
       let uri = Services.io.newURI(url);
       return styleSheetService.preloadSheetAsync(uri, sheetType).then(sheet => {
         return {url, sheet};
       });
-    }, extension);
+    });
   }
 }
 
@@ -226,7 +209,7 @@ class CSSCodeCache extends BaseCSSCache {
       }
 
       return super.get(hash);
-    }, extension);
+    });
 
     
     
@@ -247,20 +230,20 @@ class CSSCodeCache extends BaseCSSCache {
   }
 }
 
-defineLazyGetter(BrowserExtensionContent.prototype, "staticScripts", function() {
-  return new ScriptCache({hasReturnValue: false}, this);
+defineLazyGetter(BrowserExtensionContent.prototype, "staticScripts", () => {
+  return new ScriptCache({hasReturnValue: false});
 });
 
-defineLazyGetter(BrowserExtensionContent.prototype, "dynamicScripts", function() {
-  return new ScriptCache({hasReturnValue: true}, this);
+defineLazyGetter(BrowserExtensionContent.prototype, "dynamicScripts", () => {
+  return new ScriptCache({hasReturnValue: true});
 });
 
-defineLazyGetter(BrowserExtensionContent.prototype, "userCSS", function() {
-  return new CSSCache(Ci.nsIStyleSheetService.USER_SHEET, this);
+defineLazyGetter(BrowserExtensionContent.prototype, "userCSS", () => {
+  return new CSSCache(Ci.nsIStyleSheetService.USER_SHEET);
 });
 
-defineLazyGetter(BrowserExtensionContent.prototype, "authorCSS", function() {
-  return new CSSCache(Ci.nsIStyleSheetService.AUTHOR_SHEET, this);
+defineLazyGetter(BrowserExtensionContent.prototype, "authorCSS", () => {
+  return new CSSCache(Ci.nsIStyleSheetService.AUTHOR_SHEET);
 });
 
 
@@ -333,7 +316,7 @@ class Script {
     this.compileScripts();
   }
 
-  cleanup(window) {
+  cleanup(window, forceCacheClear = false) {
     if (this.requiresCleanup) {
       if (window) {
         let winUtils = getWinUtils(window);
@@ -357,8 +340,8 @@ class Script {
 
       
       
-      this.cssCodeCache.clear(CSSCODE_EXPIRY_TIMEOUT_MS);
-      this.cssCache.clear(CSS_EXPIRY_TIMEOUT_MS);
+      this.cssCodeCache.clear(forceCacheClear ? 0 : CSSCODE_EXPIRY_TIMEOUT_MS);
+      this.cssCache.clear(forceCacheClear ? 0 : CSS_EXPIRY_TIMEOUT_MS);
     }
   }
 
@@ -372,13 +355,8 @@ class Script {
       if (this.runAt === "document_end") {
         await promiseDocumentReady(window.document);
       } else if (this.runAt === "document_idle") {
-        let readyThenIdle = promiseDocumentReady(window.document).then(() => {
-          return new Promise(resolve =>
-            window.requestIdleCallback(resolve, {timeout: idleTimeout}));
-        });
-
         await Promise.race([
-          readyThenIdle,
+          promiseDocumentIdle(window),
           promiseDocumentLoaded(window.document),
         ]);
       }
@@ -622,13 +600,19 @@ class ContentScriptContextChild extends BaseContext {
     }
   }
 
+  cleanupScripts(forceCacheClear = false) {
+    
+    
+    for (let script of this.scripts) {
+      script.cleanup(this.contentWindow, forceCacheClear);
+    }
+  }
+
   close() {
     super.unload();
 
     
-    for (let script of this.scripts) {
-      script.cleanup(this.contentWindow);
-    }
+    this.cleanupScripts();
 
     if (this.contentWindow) {
       
@@ -724,6 +708,10 @@ DocumentManager = {
     for (let extensions of this.contexts.values()) {
       let context = extensions.get(extension);
       if (context) {
+        
+        
+        context.cleanupScripts(true);
+
         context.close();
         extensions.delete(extension);
       }

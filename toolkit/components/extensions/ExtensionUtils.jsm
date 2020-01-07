@@ -32,6 +32,10 @@ XPCOMUtils.defineLazyGetter(this, "utf8Decoder", () => {
 });
 
 
+XPCOMUtils.defineLazyGetter(this, "idleTimeout",
+                            () => Services.appinfo.name === "XPCShell" ? 500 : undefined);
+
+
 
 
 
@@ -304,6 +308,22 @@ function promiseDocumentReady(doc) {
         resolve(doc);
       }
     }, true);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+function promiseDocumentIdle(window) {
+  return window.document.documentReadyForIdle.then(() => {
+    return new Promise(resolve =>
+      window.requestIdleCallback(resolve, {timeout: idleTimeout}));
   });
 }
 
@@ -668,6 +688,7 @@ this.ExtensionUtils = {
   getWinUtils,
   instanceOf,
   normalizeTime,
+  promiseDocumentIdle,
   promiseDocumentLoaded,
   promiseDocumentReady,
   promiseEvent,
