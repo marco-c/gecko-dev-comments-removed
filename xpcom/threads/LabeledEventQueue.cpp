@@ -174,8 +174,8 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   
   
   
-  if (TabChild::HasActiveTabs() && mAvoidActiveTabCount <= 0) {
-    for (auto iter = TabChild::GetActiveTabs().ConstIter();
+  if (TabChild::HasVisibleTabs() && mAvoidVisibleTabCount <= 0) {
+    for (auto iter = TabChild::GetVisibleTabs().ConstIter();
          !iter.Done(); iter.Next()) {
       SchedulerGroup* group = iter.Get()->GetKey()->TabGroup();
       if (!group->isInList() || group == sCurrentSchedulerGroup) {
@@ -185,7 +185,7 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
       
       
       
-      mAvoidActiveTabCount += 2;
+      mAvoidVisibleTabCount += 2;
 
       
       
@@ -200,7 +200,7 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   SchedulerGroup* firstGroup = sCurrentSchedulerGroup;
   SchedulerGroup* group = firstGroup;
   do {
-    mAvoidActiveTabCount--;
+    mAvoidVisibleTabCount--;
 
     RunnableEpochQueue& queue = group->GetQueue(mPriority);
 
