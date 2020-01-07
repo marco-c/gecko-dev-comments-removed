@@ -7,6 +7,7 @@
 #include "SharedSurfacesChild.h"
 #include "SharedSurfacesParent.h"
 #include "CompositorManagerChild.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -192,7 +193,7 @@ SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   MOZ_ASSERT(aUserData);
 
   CompositorManagerChild* manager = CompositorManagerChild::GetInstance();
-  if (NS_WARN_IF(!manager || !manager->CanSend())) {
+  if (NS_WARN_IF(!manager || !manager->CanSend() || !gfxVars::UseWebRender())) {
     
     
     
@@ -392,8 +393,12 @@ SharedSurfacesChild::Unshare(const wr::ExternalImageId& aId,
   if (manager->OtherPid() == base::GetCurrentProcId()) {
     
     
-    MOZ_ASSERT(manager->OwnsExternalImageId(aId));
-    SharedSurfacesParent::RemoveSameProcess(aId);
+    
+    
+    
+    if (manager->OwnsExternalImageId(aId)) {
+      SharedSurfacesParent::RemoveSameProcess(aId);
+    }
   } else if (manager->OwnsExternalImageId(aId)) {
     
     
