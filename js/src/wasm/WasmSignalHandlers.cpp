@@ -718,37 +718,43 @@ ComputeAccessAddress(CONTEXT* context, const Disassembler::ComplexAddress& addre
 
     return reinterpret_cast<uint8_t*>(result);
 }
+#endif 
 
-MOZ_COLD static void
-HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
-                   uint8_t** ppc)
+MOZ_COLD static MOZ_MUST_USE bool
+HandleOutOfBounds(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                  const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
+                  uint8_t** ppc)
 {
-    MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
+    MOZ_RELEASE_ASSERT(segment->code().containsCodePC(pc));
 
-    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
-    if (!memoryAccess) {
+    Trap trap;
+    BytecodeOffset bytecode;
+    if (!segment->code().lookupTrap(pc, &trap, &bytecode)) {
         
         
         
         
-        activation->startWasmTrap(wasm::Trap::OutOfBounds, 0, ToRegisterState(context));
+        activation->startWasmTrap(Trap::OutOfBounds, 0, ToRegisterState(context));
         *ppc = segment->outOfBoundsCode();
-        return;
+        return true;
     }
 
-    MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - segment->base()));
+    if (trap != Trap::OutOfBounds)
+        return false;
 
-    
-    
-    
-    
-
-    if (memoryAccess->hasTrapOutOfLineCode()) {
-        *ppc = memoryAccess->trapOutOfLineCode(segment->base());
-        return;
+    if (bytecode.isValid()) {
+        activation->startWasmTrap(Trap::OutOfBounds, bytecode.offset(), ToRegisterState(context));
+        *ppc = segment->trapCode();
+        return true;
     }
 
+#ifndef WASM_HUGE_MEMORY
+    return false;
+#else
+    
+    
+    
+    
     MOZ_RELEASE_ASSERT(instance.isAsmJS());
 
     
@@ -757,7 +763,6 @@ HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
     
     
     
-
     uint32_t memoryLength = instance.memory()->buffer().byteLength();
 
     
@@ -871,30 +876,9 @@ HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
     }
 
     *ppc = end;
-}
-
-#else 
-
-MOZ_COLD static void
-HandleMemoryAccess(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
-                   uint8_t** ppc)
-{
-    MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
-
-    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
-    if (!memoryAccess) {
-        
-        activation->startWasmTrap(wasm::Trap::OutOfBounds, 0, ToRegisterState(context));
-        *ppc = segment->outOfBoundsCode();
-        return;
-    }
-
-    MOZ_RELEASE_ASSERT(memoryAccess->hasTrapOutOfLineCode());
-    *ppc = memoryAccess->trapOutOfLineCode(segment->base());
-}
-
+    return true;
 #endif 
+}
 
 MOZ_COLD static bool
 IsHeapAccessAddress(const Instance &instance, uint8_t* faultingAddress)
@@ -942,7 +926,7 @@ HandleFault(PEXCEPTION_POINTERS exception)
         if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
-        activation->startWasmTrap(trap, bytecode.offset, ToRegisterState(context));
+        activation->startWasmTrap(trap, bytecode.offset(), ToRegisterState(context));
         *ppc = moduleSegment->trapCode();
         return true;
     }
@@ -961,8 +945,7 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
     MOZ_ASSERT(activation->compartment() == instance->compartment());
 
-    HandleMemoryAccess(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
-    return true;
+    return HandleOutOfBounds(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
 }
 
 static LONG WINAPI
@@ -1075,7 +1058,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
         if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
-        activation->startWasmTrap(trap, bytecode.offset, ToRegisterState(&context));
+        activation->startWasmTrap(trap, bytecode.offset(), ToRegisterState(&context));
         *ppc = moduleSegment->trapCode();
     } else {
         MOZ_RELEASE_ASSERT(&instance->code() == &moduleSegment->code());
@@ -1091,7 +1074,8 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
         if (!IsHeapAccessAddress(*instance, faultingAddress))
             return false;
 
-        HandleMemoryAccess(&context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
+        if (!HandleOutOfBounds(&context, pc, faultingAddress, moduleSegment, *instance, activation, ppc))
+            return false;
     }
 
     
@@ -1301,7 +1285,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
-        activation->startWasmTrap(trap, bytecode.offset, ToRegisterState(context));
+        activation->startWasmTrap(trap, bytecode.offset(), ToRegisterState(context));
         *ppc = moduleSegment->trapCode();
         return true;
     }
@@ -1341,8 +1325,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     }
 #endif
 
-    HandleMemoryAccess(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
-    return true;
+    return HandleOutOfBounds(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
 }
 
 static struct sigaction sPrevSEGVHandler;

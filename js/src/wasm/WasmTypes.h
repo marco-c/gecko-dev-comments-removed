@@ -991,15 +991,17 @@ enum class Trap
 
 
 
-struct BytecodeOffset
+class BytecodeOffset
 {
     static const uint32_t INVALID = -1;
-    uint32_t offset;
+    uint32_t offset_;
 
-    BytecodeOffset() : offset(INVALID) {}
-    explicit BytecodeOffset(uint32_t offset) : offset(offset) {}
+  public:
+    BytecodeOffset() : offset_(INVALID) {}
+    explicit BytecodeOffset(uint32_t offset) : offset_(offset) {}
 
-    bool isValid() const { return offset != INVALID; }
+    bool isValid() const { return offset_ != INVALID; }
+    uint32_t offset() const { MOZ_ASSERT(isValid()); return offset_; }
 };
 
 
@@ -1868,46 +1870,6 @@ extern size_t
 ComputeMappedSize(uint32_t maxSize);
 
 #endif 
-
-
-
-
-
-
-
-
-
-class MemoryAccess
-{
-    uint32_t insnOffset_;
-    uint32_t trapOutOfLineOffset_;
-
-  public:
-    MemoryAccess() = default;
-    explicit MemoryAccess(uint32_t insnOffset, uint32_t trapOutOfLineOffset = UINT32_MAX)
-      : insnOffset_(insnOffset),
-        trapOutOfLineOffset_(trapOutOfLineOffset)
-    {}
-
-    uint32_t insnOffset() const {
-        return insnOffset_;
-    }
-    bool hasTrapOutOfLineCode() const {
-        return trapOutOfLineOffset_ != UINT32_MAX;
-    }
-    uint8_t* trapOutOfLineCode(uint8_t* code) const {
-        MOZ_ASSERT(hasTrapOutOfLineCode());
-        return code + trapOutOfLineOffset_;
-    }
-
-    void offsetBy(uint32_t delta) {
-        insnOffset_ += delta;
-        if (hasTrapOutOfLineCode())
-            trapOutOfLineOffset_ += delta;
-    }
-};
-
-WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
 
 
 

@@ -1054,8 +1054,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void branchFloat32NotInInt64Range(Address src, Register temp, Label* fail);
     inline void branchFloat32NotInUInt64Range(Address src, Register temp, Label* fail);
 
-    template <typename T, typename L>
-    inline void branchAdd32(Condition cond, T src, Register dest, L label) PER_SHARED_ARCH;
+    template <typename T>
+    inline void branchAdd32(Condition cond, T src, Register dest, Label* label) PER_SHARED_ARCH;
     template <typename T>
     inline void branchSub32(Condition cond, T src, Register dest, Label* label) PER_SHARED_ARCH;
 
@@ -1465,17 +1465,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    template <class L>
-    inline void wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, L label)
+    void wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, Label* label)
         DEFINED_ON(arm, arm64, mips32, mips64, x86);
 
-    template <class L>
-    inline void wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, L label)
+    void wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, Label* label)
         DEFINED_ON(arm, arm64, mips32, mips64, x86);
 
-    
-    
-    
     
     void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr, AnyRegister out) DEFINED_ON(x86, x64);
     void wasmLoadI64(const wasm::MemoryAccessDesc& access, Operand srcAddr, Register64 out) DEFINED_ON(x86, x64);
@@ -1590,11 +1585,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc, const ABIArg& instanceArg,
                                        wasm::SymbolicAddress builtin);
-
-    
-    
-    
-    void wasmEmitOldTrapOutOfLineCode();
 
     
     

@@ -1001,25 +1001,6 @@ MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src, Register 
 
 
 
-template <class L>
-void
-MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, L label)
-{
-     ma_b(index, boundsCheckLimit, label, cond);
-}
-
-template <class L>
-void
-MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, L label)
-{
-    SecondScratchRegisterScope scratch2(*this);
-    load32(boundsCheckLimit,SecondScratchReg);
-    ma_b(index, SecondScratchReg, label, cond);
-}
-
-
-
-
 void
 MacroAssemblerMIPSCompat::incrementInt32Value(const Address& addr)
 {

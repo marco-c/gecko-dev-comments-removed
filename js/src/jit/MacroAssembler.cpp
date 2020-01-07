@@ -3203,7 +3203,7 @@ MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode, wasm::SymbolicAddress
     
     loadWasmTlsRegFromFrame();
 
-    call(wasm::CallSiteDesc(bytecode.offset, wasm::CallSite::Symbolic), imm);
+    call(wasm::CallSiteDesc(bytecode.offset(), wasm::CallSite::Symbolic), imm);
     callWithABIPost(stackAdjust, result,  true);
 
     Pop(WasmTlsReg);
@@ -3538,8 +3538,10 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     if (needsBoundsCheck) {
         loadWasmGlobalPtr(callee.tableLengthGlobalDataOffset(), scratch);
 
-        wasm::OldTrapDesc oobTrap(trapOffset, wasm::Trap::OutOfBounds, framePushed());
-        branch32(Assembler::Condition::AboveOrEqual, index, scratch, oobTrap);
+        Label ok;
+        branch32(Assembler::Condition::Below, index, scratch, &ok);
+        wasmTrap(wasm::Trap::OutOfBounds, trapOffset);
+        bind(&ok);
     }
 
     
@@ -3576,70 +3578,6 @@ MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::Cal
     }
 
     call(desc, scratch);
-}
-
-void
-MacroAssembler::wasmEmitOldTrapOutOfLineCode()
-{
-    for (const wasm::OldTrapSite& site : oldTrapSites()) {
-        
-        
-        
-        
-        switch (site.kind) {
-          case wasm::OldTrapSite::Jump: {
-            RepatchLabel jump;
-            jump.use(site.codeOffset);
-            bind(&jump);
-            break;
-          }
-          case wasm::OldTrapSite::MemoryAccess: {
-            append(wasm::MemoryAccess(site.codeOffset, currentOffset()));
-            break;
-          }
-        }
-
-        MOZ_ASSERT(site.trap != wasm::Trap::IndirectCallBadSig);
-
-        
-        
-        setFramePushed(site.framePushed);
-
-        
-        size_t alreadyPushed = sizeof(wasm::Frame) + framePushed();
-        size_t toPush = ABIArgGenerator().stackBytesConsumedSoFar();
-        if (size_t dec = StackDecrementForCall(ABIStackAlignment, alreadyPushed, toPush))
-            reserveStack(dec);
-
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        wasm::CallSiteDesc desc(site.offset, wasm::CallSiteDesc::OldTrapExit);
-        call(desc, site.trap);
-
-#ifdef DEBUG
-        
-        breakpoint();
-#endif
-    }
-
-    
-    
-    
-    breakpoint();
-
-    oldTrapSites().clear();
 }
 
 void
