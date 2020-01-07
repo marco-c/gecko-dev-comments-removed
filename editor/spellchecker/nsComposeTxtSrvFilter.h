@@ -30,6 +30,12 @@ public:
   
   void Init(bool aIsForMail) { mIsForMail = aIsForMail; }
 
+  
+
+
+
+  bool Skip(nsINode* aNode) const;
+
 private:
   ~nsComposeTxtSrvFilter() {}
 
