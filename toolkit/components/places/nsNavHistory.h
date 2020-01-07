@@ -656,7 +656,6 @@ protected:
 
   
   bool mCanNotify;
-  nsCategoryCache<nsINavHistoryObserver> mCacheObservers;
 
   
   

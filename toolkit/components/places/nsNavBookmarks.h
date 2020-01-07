@@ -460,7 +460,6 @@ private:
 
   
   bool mCanNotify;
-  nsCategoryCache<nsINavBookmarkObserver> mCacheObservers;
 
   
   

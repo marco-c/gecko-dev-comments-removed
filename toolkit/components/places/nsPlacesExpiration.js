@@ -503,6 +503,12 @@ nsPlacesExpiration.prototype = {
       this._expireWithActionAndLimit(ACTION.IDLE_DAILY, LIMIT.LARGE);
     } else if (aTopic == TOPIC_TESTING_MODE) {
       this._testingMode = true;
+    } else if (aTopic == PlacesUtils.TOPIC_INIT_COMPLETE) {
+      
+      
+      
+      
+      PlacesUtils.history.addObserver(this, true);
     }
   },
 
