@@ -7,8 +7,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
-
 class EditAutofillForm {
   constructor(elements, record) {
     this._elements = elements;
@@ -171,8 +169,16 @@ class EditAddress extends EditAutofillForm {
 }
 
 class EditCreditCard extends EditAutofillForm {
-  constructor(elements, record) {
+  
+
+
+
+
+
+  constructor(elements, record, config) {
     super(elements, record);
+
+    Object.assign(this, config);
     Object.assign(this._elements, {
       ccNumber: this._elements.form.querySelector("#cc-number"),
       year: this._elements.form.querySelector("#cc-exp-year"),
@@ -202,10 +208,30 @@ class EditCreditCard extends EditAutofillForm {
     }
   }
 
+  attachEventListeners() {
+    this._elements.ccNumber.addEventListener("change", this);
+    super.attachEventListeners();
+  }
+
+  handleChange(event) {
+    super.handleChange(event);
+
+    if (event.target != this._elements.ccNumber) {
+      return;
+    }
+
+    let ccNumberField = this._elements.ccNumber;
+
+    
+    if (!this.isCCNumber(ccNumberField.value)) {
+      ccNumberField.setCustomValidity(true);
+    }
+  }
+
   handleInput(event) {
     
     if (event.target == this._elements.ccNumber &&
-        FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)) {
+        this.isCCNumber(this._elements.ccNumber.value)) {
       this._elements.ccNumber.setCustomValidity("");
     }
     super.handleInput(event);
