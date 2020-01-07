@@ -58,6 +58,22 @@ public:
 
 
   static already_AddRefed<nsAtom> ParseCounterStyleName(const nsAString& aValue);
+
+  
+
+
+
+
+
+
+
+
+
+  static bool
+  ParseCounterStyleDescriptor(nsCSSCounterDesc aDescriptor,
+                              const nsAString& aValue,
+                              URLExtraData* aURLExtraData,
+                              nsCSSValue& aResult);
 };
 
 } 
