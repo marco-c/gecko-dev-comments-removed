@@ -100,6 +100,7 @@ public:
 
 
 
+
   static nsresult
   CreateAnimationDecoder(DecoderType aType,
                          NotNull<RasterImage*> aImage,
@@ -107,7 +108,17 @@ public:
                          const gfx::IntSize& aIntrinsicSize,
                          DecoderFlags aDecoderFlags,
                          SurfaceFlags aSurfaceFlags,
+                         size_t aCurrentFrame,
                          IDecodingTask** aOutTask);
+
+  
+
+
+
+
+
+  static already_AddRefed<Decoder>
+  CloneAnimationDecoder(Decoder* aDecoder);
 
   
 
