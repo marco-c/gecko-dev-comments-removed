@@ -5067,6 +5067,15 @@ pref("geo.wifi.xhr.timeout", 60000);
 
 
 pref("device.sensors.enabled", true);
+pref("device.sensors.orientation.enabled", true);
+pref("device.sensors.motion.enabled", true);
+#ifdef EARLY_BETA_OR_EARLIER
+pref("device.sensors.proximity.enabled", false);
+pref("device.sensors.ambientLight.enabled", false);
+#else
+pref("device.sensors.proximity.enabled", true);
+pref("device.sensors.ambientLight.enabled", true);
+#endif
 
 
 pref("device.storage.enabled", false);
