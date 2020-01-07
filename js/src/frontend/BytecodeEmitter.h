@@ -165,8 +165,15 @@ struct JumpList {
     void patchAll(jsbytecode* code, JumpTarget target);
 };
 
+
 enum class ValueUsage {
+    
+    
     WantValue,
+
+    
+    
+    
     IgnoreValue
 };
 

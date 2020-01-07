@@ -7685,10 +7685,8 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
     MOZ_ASSERT_IF(fun->isInterpretedLazy(), fun->lazyScript());
 
     
-
-
-
-
+    
+    
     if (funbox->wasEmitted) {
         
         
@@ -7736,11 +7734,9 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
     funbox->wasEmitted = true;
 
     
-
-
-
-
-
+    
+    
+    
     if (fun->isInterpreted()) {
         bool singleton = checkRunOnceContext();
         if (!JSFunction::setTypeForScriptedFunction(cx, fun, singleton))
