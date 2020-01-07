@@ -103,10 +103,6 @@ private:
 
   ServiceWorkerDescriptor mDescriptor;
 
-  
-  
-  
-  
   RefPtr<Inner> mInner;
 };
 

@@ -59,11 +59,7 @@ private:
   
   
   
-  
-  
-  
-  
-  AutoTArray<RefPtr<ServiceWorker>, 1> mInstances;
+  AutoTArray<ServiceWorker*, 1> mInstances;
 
   RefPtr<ServiceWorkerPrivate> mServiceWorkerPrivate;
   bool mSkipWaitingFlag;

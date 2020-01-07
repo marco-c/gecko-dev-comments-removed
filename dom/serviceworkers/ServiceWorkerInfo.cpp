@@ -118,7 +118,7 @@ namespace {
 class ChangeStateUpdater final : public Runnable
 {
 public:
-  ChangeStateUpdater(const nsTArray<RefPtr<ServiceWorker>>& aInstances,
+  ChangeStateUpdater(const nsTArray<ServiceWorker*>& aInstances,
                      ServiceWorkerState aState)
     : Runnable("dom::ChangeStateUpdater")
     , mState(aState)
@@ -176,11 +176,6 @@ ServiceWorkerInfo::UpdateState(ServiceWorkerState aState)
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(r.forget()));
   if (State() == ServiceWorkerState::Redundant) {
     serviceWorkerScriptCache::PurgeCache(mPrincipal, mCacheName);
-
-    
-    
-    
-    mInstances.Clear();
   }
 }
 
@@ -256,11 +251,8 @@ ServiceWorkerInfo::RemoveServiceWorker(ServiceWorker* aWorker)
     workerURL.Equals(NS_ConvertUTF8toUTF16(mDescriptor.ScriptURL())));
 #endif
 
-  
-  
-  
-  
-  mInstances.RemoveElement(aWorker);
+  DebugOnly<bool> removed = mInstances.RemoveElement(aWorker);
+  MOZ_ASSERT(removed);
 }
 
 void
