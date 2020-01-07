@@ -1,49 +1,21 @@
 function run_test() {
   var sb1 = Cu.Sandbox("http://www.blah.com");
-  var sb2 = Cu.Sandbox("http://www.blah.com");
-  var sb3 = Cu.Sandbox(this);
-  var sb4 = Cu.Sandbox("http://www.other.com");
+  var sb2 = Cu.Sandbox(this);
   var rv;
 
   
-  
-  
-  [sb1, sb2, sb4].forEach(function(x) { x.Components = Cu.getComponentsForScope(x); });
-
-  
   sb1.C = Components;
+  checkThrows("C.interfaces", sb1);
   checkThrows("C.utils", sb1);
   checkThrows("C.classes", sb1);
 
   
-  Assert.equal(Cu.evalInSandbox("typeof Components.interfaces", sb1), 'object');
-  Assert.equal(Cu.evalInSandbox("typeof Components.utils", sb1), 'undefined');
-  Assert.equal(Cu.evalInSandbox("typeof Components.classes", sb1), 'undefined');
+  Assert.equal(Cu.evalInSandbox("typeof Components", sb1), 'undefined');
 
   
-  var C2 = Cu.evalInSandbox("Components", sb2);
-  var whitelist = ['interfaces', 'interfacesByID', 'results', 'isSuccessCode', 'QueryInterface'];
-  for (var prop in Components) {
-    info("Checking " + prop);
-    Assert.equal((prop in C2), whitelist.includes(prop));
-  }
-
-  
-  sb1.C2 = C2;
-  Assert.equal(Cu.evalInSandbox("typeof C2.interfaces", sb1), 'object');
-  Assert.equal(Cu.evalInSandbox("typeof C2.utils", sb1), 'undefined');
-  Assert.equal(Cu.evalInSandbox("typeof C2.classes", sb1), 'undefined');
-
-  
-  sb3.C = Components;
-  rv = Cu.evalInSandbox("C.utils", sb3);
+  sb2.C = Components;
+  rv = Cu.evalInSandbox("C.utils", sb2);
   Assert.equal(rv, Cu);
-
-  
-  sb4.C2 = C2;
-  checkThrows("C2.interfaces", sb4);
-  checkThrows("C2.utils", sb4);
-  checkThrows("C2.classes", sb4);
 }
 
 function checkThrows(expression, sb) {
