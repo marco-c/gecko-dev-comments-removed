@@ -653,6 +653,7 @@ a.learn-more-link.webconsole-learn-more-link {
 }
 
 
+
 .devtools-toolbarbutton[type=menu-button] > .toolbarbutton-menubutton-button {
   -moz-appearance: none;
   color: inherit;
@@ -1103,10 +1104,7 @@ a.learn-more-link.webconsole-learn-more-link {
 
 
 .webconsole-output-wrapper .open-inspector {
-  background: unset;
-  padding-left: unset;
-  margin-left: unset;
-  cursor: unset;
+  background-image: unset;
 }
 
 
@@ -1220,14 +1218,12 @@ body #output-container {
 
 
 
-.webconsole-output-wrapper .object-inspector.tree .tree-node .arrow svg {
-  width: 8px;
-  fill: #AFA8AB;
-  margin-inline-start: 1px;
+.webconsole-output-wrapper .object-inspector.tree .tree-node .arrow {
+  background-color: #AFA8AB;
 }
 
-.theme-dark .webconsole-output-wrapper .object-inspector.tree .tree-node .arrow svg {
-  fill: #7F7E81;
+.theme-dark .webconsole-output-wrapper .object-inspector.tree .tree-node .arrow {
+  background-color: #7F7E81;
 }
 
 
