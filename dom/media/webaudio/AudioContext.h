@@ -116,6 +116,7 @@ private:
 };
 
 enum class AudioContextOperation { Suspend, Resume, Close };
+struct AudioContextOptions;
 
 class AudioContext final : public DOMEventTargetHelper,
                            public nsIMemoryReporter,
@@ -153,7 +154,9 @@ public:
 
   
   static already_AddRefed<AudioContext>
-  Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
+  Constructor(const GlobalObject& aGlobal,
+              const AudioContextOptions& aOptions,
+              ErrorResult& aRv);
 
   
   static already_AddRefed<AudioContext>
