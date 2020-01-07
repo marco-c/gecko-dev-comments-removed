@@ -17,53 +17,189 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(XHR_PREF);
 });
 
+let tabs = [{
+  id: "headers",
+  testEmpty: testEmptyHeaders,
+  testContent: testHeaders,
+}, {
+  id: "cookies",
+  testEmpty: testEmptyCookies,
+  testContent: testCookies,
+}, {
+  id: "params",
+  testEmpty: testEmptyParams,
+  testContent: testParams,
+}, {
+  id: "response",
+  testEmpty: testEmptyResponse,
+  testContent: testResponse,
+}, {
+  id: "timings",
+  testEmpty: testEmptyTimings,
+  testContent: testTimings,
+}, {
+  id: "stack-trace",
+  testEmpty: testEmptyStackTrace,
+  testContent: testStackTrace,
+}];
+
+
+
+
 add_task(async function task() {
   const hud = await openNewTabAndConsole(TEST_URI);
-
   const currentTab = gBrowser.selectedTab;
   let target = TargetFactory.forTab(currentTab);
-  let toolbox = gDevTools.getToolbox(target);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
-    content.wrappedJSObject.testXhrPost();
+  
+  
+  await openRequestAfterUpdates(target, hud);
+
+  
+  
+  
+  
+  
+  
+  
+  for (let tab of tabs) {
+    await openRequestBeforeUpdates(target, hud, tab);
+  }
+});
+
+async function openRequestAfterUpdates(target, hud) {
+  let toolbox = gDevTools.getToolbox(target);
+
+  let xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
+  let message = waitForMessage(hud, xhrUrl);
+
+  
+  ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
+    content.wrappedJSObject.testXhrPostSlowResponse();
   });
 
-  info("XHR executed");
+  let { node: messageNode } = await message;
+
+  info("Network message found.");
 
   await waitForRequestUpdates(toolbox);
 
-  let xhrUrl = TEST_PATH + "test-data.json";
-  let messageNode = await waitFor(() => findMessage(hud, xhrUrl));
-  let urlNode = messageNode.querySelector(".url");
-  info("Network message found.");
-
-  let updates = waitForPayloadReady(toolbox);
+  let payload = waitForPayloadReady(toolbox);
 
   
+  let urlNode = messageNode.querySelector(".url");
   urlNode.click();
 
-  await updates;
-  await testNetworkMessage(messageNode);
-});
+  await payload;
+  await testNetworkMessage(toolbox, messageNode);
+}
 
-async function testNetworkMessage(messageNode) {
-  let headersTab = messageNode.querySelector("#headers-tab");
-  let cookiesTab = messageNode.querySelector("#cookies-tab");
-  let paramsTab = messageNode.querySelector("#params-tab");
-  let responseTab = messageNode.querySelector("#response-tab");
-  let timingsTab = messageNode.querySelector("#timings-tab");
+async function openRequestBeforeUpdates(target, hud, tab) {
+  let toolbox = gDevTools.getToolbox(target);
 
-  ok(headersTab, "Headers tab is available");
-  ok(cookiesTab, "Cookies tab is available");
-  ok(paramsTab, "Params tab is available");
-  ok(responseTab, "Response tab is available");
-  ok(timingsTab, "Timings tab is available");
+  hud.jsterm.clearOutput(true);
+
+  let xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
+  let message = waitForMessage(hud, xhrUrl);
 
   
-  let headersContent = messageNode.querySelector(
-    "#headers-panel .headers-overview");
-  ok(headersContent, "Headers content is available");
+  ContentTask.spawn(gBrowser.selectedBrowser, null, function () {
+    content.wrappedJSObject.testXhrPostSlowResponse();
+  });
+
+  let { node: messageNode } = await message;
+
+  info("Network message found.");
+
+  let updates = waitForRequestUpdates(toolbox);
+  let payload = waitForPayloadReady(toolbox);
+
+  
+  const state = hud.ui.newConsoleOutput.getStore().getState();
+  state.ui.networkMessageActiveTabId = tab.id;
+
+  
+  let urlNode = messageNode.querySelector(".url");
+  urlNode.click();
+
+  
+  let currentTab = messageNode.querySelector(`#${tab.id}-tab`);
+  is(currentTab.getAttribute("aria-selected"), "true",
+    "The correct tab is selected");
+
+  
+  tab.testEmpty(messageNode);
+
+  
+  await updates;
+  await payload;
+
+  
+  await tab.testContent(messageNode);
+
+  
+  await testNetworkMessage(toolbox, messageNode);
+}
+
+
+
+async function testNetworkMessage(toolbox, messageNode) {
+  await testHeaders(messageNode);
+  await testCookies(messageNode);
+  await testParams(messageNode);
+  await testResponse(messageNode);
+  await testTimings(messageNode);
+  await testStackTrace(messageNode);
+  await waitForLazyRequests(toolbox);
+}
+
+
+
+function testEmptyHeaders(messageNode) {
+  let emptyNotice = messageNode.querySelector("#headers-panel .empty-notice");
+  ok(emptyNotice, "Headers tab is empty");
+}
+
+async function testHeaders(messageNode) {
+  let headersTab = messageNode.querySelector("#headers-tab");
+  ok(headersTab, "Headers tab is available");
+
+  
+  headersTab.click();
+  await waitUntil(() => {
+    return !!messageNode.querySelector("#headers-panel .headers-overview");
+  });
+}
+
+
+
+function testEmptyCookies(messageNode) {
+  let emptyNotice = messageNode.querySelector("#cookies-panel .empty-notice");
+  ok(emptyNotice, "Cookies tab is empty");
+}
+
+async function testCookies(messageNode) {
+  let cookiesTab = messageNode.querySelector("#cookies-tab");
+  ok(cookiesTab, "Cookies tab is available");
+
+  
+  cookiesTab.click();
+  await waitUntil(() => {
+    return !!messageNode.querySelector("#cookies-panel .treeValueCell");
+  });
+}
+
+
+
+function testEmptyParams(messageNode) {
+  let emptyNotice = messageNode.querySelector("#params-panel .empty-notice");
+  ok(emptyNotice, "Params tab is empty");
+}
+
+async function testParams(messageNode) {
+  let paramsTab = messageNode.querySelector("#params-tab");
+  ok(paramsTab, "Params tab is available");
 
   
   
@@ -74,6 +210,18 @@ async function testNetworkMessage(messageNode) {
     "#params-panel .panel-container .CodeMirror");
   ok(paramsContent, "Params content is available");
   ok(paramsContent.textContent.includes("Hello world!"), "Post body is correct");
+}
+
+
+
+function testEmptyResponse(messageNode) {
+  let panel = messageNode.querySelector("#response-panel .tab-panel");
+  is(panel.textContent, "", "Cookies tab is empty");
+}
+
+async function testResponse(messageNode) {
+  let responseTab = messageNode.querySelector("#response-tab");
+  ok(responseTab, "Response tab is available");
 
   
   
@@ -84,6 +232,18 @@ async function testNetworkMessage(messageNode) {
     "#response-panel .editor-row-container .CodeMirror");
   ok(responseContent, "Response content is available");
   ok(responseContent.textContent, "Response text is available");
+}
+
+
+
+function testEmptyTimings(messageNode) {
+  let panel = messageNode.querySelector("#timings-panel .tab-panel");
+  is(panel.textContent, "", "Timings tab is empty");
+}
+
+async function testTimings(messageNode) {
+  let timingsTab = messageNode.querySelector("#timings-tab");
+  ok(timingsTab, "Timings tab is available");
 
   
   timingsTab.click();
@@ -92,6 +252,26 @@ async function testNetworkMessage(messageNode) {
   ok(timingsContent, "Timings content is available");
   ok(timingsContent.textContent, "Timings text is available");
 }
+
+
+
+function testEmptyStackTrace(messageNode) {
+  let panel = messageNode.querySelector("#stack-trace-panel .stack-trace");
+  is(panel.textContent, "", "StackTrace tab is empty");
+}
+
+async function testStackTrace(messageNode) {
+  let stackTraceTab = messageNode.querySelector("#stack-trace-tab");
+  ok(stackTraceTab, "StackTrace tab is available");
+
+  
+  stackTraceTab.click();
+  await waitUntil(() => {
+    return !!messageNode.querySelector("#stack-trace-panel .frame-link");
+  });
+}
+
+
 
 async function waitForPayloadReady(toolbox) {
   let {ui} = toolbox.getCurrentPanel().hud;
@@ -116,5 +296,13 @@ async function waitForRequestUpdates(toolbox) {
       info("network-message-updated received");
       resolve();
     });
+  });
+}
+
+async function waitForLazyRequests(toolbox) {
+  let {ui} = toolbox.getCurrentPanel().hud;
+  let proxy = ui.jsterm.hud.proxy;
+  return waitUntil(() => {
+    return !proxy.networkDataProvider.lazyRequestData.size;
   });
 }
