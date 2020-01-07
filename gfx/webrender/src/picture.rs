@@ -490,10 +490,16 @@ impl PicturePrimitive {
                     
                     request.push(color.premultiplied());
                     request.push(PremultipliedColorF::WHITE);
+                    request.push([
+                        prim_metadata.local_rect.size.width,
+                        prim_metadata.local_rect.size.height,
+                        0.0,
+                        0.0,
+                    ]);
 
                     
                     request.push(shadow_rect);
-                    request.push([1.0, 1.0, 0.0, 0.0]);
+                    request.push([0.0, 0.0, 0.0, 0.0]);
                 }
             }
             Some(PictureCompositeMode::MixBlend(..)) => {

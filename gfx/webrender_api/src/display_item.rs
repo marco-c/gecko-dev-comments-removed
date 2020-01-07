@@ -89,7 +89,7 @@ impl LayoutPrimitiveInfo {
 
 pub type LayoutPrimitiveInfo = PrimitiveInfo<LayoutPixel>;
 
-#[repr(u8)]
+#[repr(u64)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum SpecificDisplayItem {
     Clip(ClipDisplayItem),
@@ -472,7 +472,7 @@ pub enum TransformStyle {
 
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-#[repr(C, u8)]
+#[repr(u32)]
 pub enum GlyphRasterSpace {
     
     

@@ -224,6 +224,10 @@ impl FontInstance {
         platform_options: Option<FontInstancePlatformOptions>,
         variations: Vec<FontVariation>,
     ) -> Self {
+        
+        
+        debug_assert!(bg_color.a == 0 || bg_color.a == 255);
+
         FontInstance {
             font_key,
             size,
