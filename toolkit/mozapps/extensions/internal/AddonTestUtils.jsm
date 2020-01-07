@@ -690,13 +690,19 @@ var AddonTestUtils = {
 
     Services.obs.notifyObservers(null, "quit-application-granted");
     return MockAsyncShutdown.hook()
-      .then(() => {
+      .then(async () => {
         this.emit("addon-manager-shutdown");
 
         this.addonIntegrationService = null;
 
         
-        this.loadAddonsList();
+        await this.loadAddonsList();
+
+        
+        
+        for (let file of this.addonsList.bootstrapped.values()) {
+          Services.obs.notifyObservers(file, "flush-cache-entry");
+        }
 
         
         this.appInfo.annotations = {};
@@ -1051,7 +1057,8 @@ var AddonTestUtils = {
         try {
           zip.extract(entry, target);
         } catch (e) {
-          if (e.result != Cr.NS_ERROR_FILE_DIR_NOT_EMPTY) {
+          if (e.result != Cr.NS_ERROR_FILE_DIR_NOT_EMPTY &&
+              !(target.exists() && target.isDirectory())) {
             throw e;
           }
         }
