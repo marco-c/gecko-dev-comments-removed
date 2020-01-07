@@ -5941,22 +5941,11 @@ void
 MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input, Register output, MIRType fromType,
                                        bool isUnsigned, bool isSaturating, Label* oolEntry)
 {
-    
-    if (!isSaturating) {
-        if (fromType == MIRType::Double)
-            asMasm().compareDouble(input, input);
-        else if (fromType == MIRType::Float32)
-            asMasm().compareFloat(input, input);
-        else
-            MOZ_CRASH("unexpected type in visitWasmTruncateToInt32");
-
-        ma_b(oolEntry, Assembler::VFP_Unordered);
-    }
-
     ScratchDoubleScope scratchScope(asMasm());
     ScratchRegisterScope scratchReg(asMasm());
     FloatRegister scratch = scratchScope.uintOverlay();
 
+    
     
     
     
@@ -5978,6 +5967,18 @@ MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input, Register output, MIR
         }
 
         return;
+    }
+
+    
+    if (!isSaturating) {
+        if (fromType == MIRType::Double)
+            asMasm().compareDouble(input, input);
+        else if (fromType == MIRType::Float32)
+            asMasm().compareFloat(input, input);
+        else
+            MOZ_CRASH("unexpected type in visitWasmTruncateToInt32");
+
+        ma_b(oolEntry, Assembler::VFP_Unordered);
     }
 
     scratch = scratchScope.sintOverlay();
