@@ -206,13 +206,6 @@ class Simulator {
     template <typename T>
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
 
-    void trigger_wasm_interrupt() {
-        
-        
-        
-        wasm_interrupt_ = true;
-    }
-
     void enable_single_stepping(SingleStepCallback cb, void* arg);
     void disable_single_stepping();
 
@@ -319,8 +312,6 @@ class Simulator {
     void increaseStopCounter(uint32_t code);
     void printStopInfo(uint32_t code);
 
-    
-    void handleWasmInterrupt();
     JS::ProfilingFrameIterator::RegisterState registerState();
 
     
@@ -377,9 +368,6 @@ class Simulator {
     bool pc_modified_;
     int64_t icount_;
     int64_t break_count_;
-
-    
-    bool wasm_interrupt_;
 
     
     char* lastDebuggerInput_;

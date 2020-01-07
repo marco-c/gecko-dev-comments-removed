@@ -202,13 +202,6 @@ class Simulator {
     template <typename T>
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
 
-    void trigger_wasm_interrupt() {
-        
-        
-        
-        wasm_interrupt_ = true;
-    }
-
     
     uintptr_t stackLimit() const;
     bool overRecursed(uintptr_t newsp = 0) const;
@@ -304,8 +297,6 @@ class Simulator {
     void increaseStopCounter(uint32_t code);
     void printStopInfo(uint32_t code);
 
-    
-    void handleWasmInterrupt();
     JS::ProfilingFrameIterator::RegisterState registerState();
 
     
@@ -364,9 +355,6 @@ class Simulator {
     bool pc_modified_;
     int icount_;
     int break_count_;
-
-    
-    bool wasm_interrupt_;
 
     
     char* lastDebuggerInput_;

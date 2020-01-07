@@ -66,27 +66,6 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     
     
     
-    
-    
-
-    if (activation->isWasmInterrupted()) {
-        code_ = &fp_->tls->instance->code();
-        MOZ_ASSERT(code_ == LookupCode(activation->wasmInterruptUnwindPC()));
-
-        codeRange_ = code_->lookupFuncRange(activation->wasmInterruptUnwindPC());
-        MOZ_ASSERT(codeRange_);
-
-        lineOrBytecode_ = codeRange_->funcLineOrBytecode();
-
-        MOZ_ASSERT(!done());
-        return;
-    }
-
-    
-    
-    
-    
-    
 
     popFrame();
     MOZ_ASSERT(!done() || unwoundIonCallerFP_);
@@ -116,9 +95,7 @@ WasmFrameIter::operator++()
     
 
     if (unwind_ == Unwind::True) {
-        if (activation_->isWasmInterrupted())
-            activation_->finishWasmInterrupt();
-        else if (activation_->isWasmTrapping())
+        if (activation_->isWasmTrapping())
             activation_->finishWasmTrap();
         activation_->setWasmExitFP(fp_);
     }
@@ -734,8 +711,6 @@ ProfilingFrameIterator::initFromExitFP(const Frame* fp)
     
     
     
-    
-    
     switch (codeRange_->kind()) {
       case CodeRange::InterpEntry:
         callerPC_ = nullptr;
@@ -763,7 +738,6 @@ ProfilingFrameIterator::initFromExitFP(const Frame* fp)
       case CodeRange::OutOfBoundsExit:
       case CodeRange::UnalignedExit:
       case CodeRange::Throw:
-      case CodeRange::Interrupt:
       case CodeRange::FarJumpIsland:
         MOZ_CRASH("Unexpected CodeRange kind");
     }
@@ -961,11 +935,6 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
         
         
         return false;
-      case CodeRange::Interrupt:
-        
-        
-        
-        return false;
     }
 
     unwindState->code = code;
@@ -1091,7 +1060,6 @@ ProfilingFrameIterator::operator++()
         MOZ_CRASH("should have had null caller fp");
       case CodeRange::JitEntry:
         MOZ_CRASH("should have been guarded above");
-      case CodeRange::Interrupt:
       case CodeRange::Throw:
         MOZ_CRASH("code range doesn't have frame");
     }
@@ -1104,7 +1072,6 @@ ThunkedNativeToDescription(SymbolicAddress func)
 {
     MOZ_ASSERT(NeedsBuiltinThunk(func));
     switch (func) {
-      case SymbolicAddress::HandleExecutionInterrupt:
       case SymbolicAddress::HandleDebugTrap:
       case SymbolicAddress::HandleThrow:
       case SymbolicAddress::ReportTrap:
@@ -1260,8 +1227,7 @@ ProfilingFrameIterator::label() const
       case CodeRange::OutOfBoundsExit:   return "out-of-bounds stub (in wasm)";
       case CodeRange::UnalignedExit:     return "unaligned trap stub (in wasm)";
       case CodeRange::FarJumpIsland:     return "interstitial (in wasm)";
-      case CodeRange::Throw:             MOZ_FALLTHROUGH;
-      case CodeRange::Interrupt:         MOZ_CRASH("does not have a frame");
+      case CodeRange::Throw:             MOZ_CRASH("does not have a frame");
     }
 
     MOZ_CRASH("bad code range kind");

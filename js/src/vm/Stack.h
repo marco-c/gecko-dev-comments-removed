@@ -1710,17 +1710,6 @@ class JitActivation : public Activation
         return offsetof(JitActivation, encodedWasmExitReason_);
     }
 
-    
-    
-    
-
-    
-    bool startWasmInterrupt(const wasm::RegisterState& state);
-    void finishWasmInterrupt();
-    bool isWasmInterrupted() const;
-    void* wasmInterruptUnwindPC() const;
-    void* wasmInterruptResumePC() const;
-
     void startWasmTrap(wasm::Trap trap, uint32_t bytecodeOffset, const wasm::RegisterState& state);
     void finishWasmTrap();
     bool isWasmTrapping() const;
