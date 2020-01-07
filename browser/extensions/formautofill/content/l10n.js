@@ -10,11 +10,15 @@
 
 
 
+
+
 ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
+
+const CONTENT_WIN = typeof(window) != "undefined" ? window : content.window;
 
 const L10N_ATTRIBUTES = ["data-localization", "data-localization-region"];
 
-let mutationObserver = new MutationObserver(function onMutation(mutations) {
+let mutationObserver = new CONTENT_WIN.MutationObserver(function onMutation(mutations) {
   for (let mutation of mutations) {
     if (!mutation.target.hasAttribute(mutation.attributeName)) {
       
@@ -24,9 +28,9 @@ let mutationObserver = new MutationObserver(function onMutation(mutations) {
   }
 });
 
-document.addEventListener("DOMContentLoaded", function onDCL() {
-  FormAutofillUtils.localizeMarkup(document);
-  mutationObserver.observe(document, {
+CONTENT_WIN.document.addEventListener("DOMContentLoaded", function onDCL() {
+  FormAutofillUtils.localizeMarkup(CONTENT_WIN.document);
+  mutationObserver.observe(CONTENT_WIN.document, {
     attributes: true,
     attributeFilter: L10N_ATTRIBUTES,
     subtree: true,
