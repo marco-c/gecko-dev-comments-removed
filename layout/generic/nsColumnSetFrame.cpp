@@ -167,9 +167,7 @@ nsColumnSetFrame::ForEachColumn(const std::function<void(const nsRect& lineRect)
   bool isVertical = wm.IsVertical();
   bool isRTL = !wm.IsBidiLTR();
 
-  
-  
-  nsRect contentRect = GetContentRect() - GetRect().TopLeft() + aPt;
+  nsRect contentRect = GetContentRectRelativeToSelf() + aPt;
   nsSize ruleSize = isVertical ? nsSize(contentRect.width, ruleWidth)
                                : nsSize(ruleWidth, contentRect.height);
 
