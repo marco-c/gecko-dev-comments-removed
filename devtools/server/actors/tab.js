@@ -1541,6 +1541,12 @@ DebuggerProgressListener.prototype = {
       return;
     }
 
+    
+    
+    if (evt.inFrameSwap) {
+      return;
+    }
+
     let window = evt.target.defaultView;
     let innerID = getWindowID(window);
 
@@ -1562,6 +1568,12 @@ DebuggerProgressListener.prototype = {
 
   onWindowHidden: DevToolsUtils.makeInfallible(function (evt) {
     if (!this._tabActor.attached) {
+      return;
+    }
+
+    
+    
+    if (evt.inFrameSwap) {
       return;
     }
 
