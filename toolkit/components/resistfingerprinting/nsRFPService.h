@@ -181,6 +181,10 @@ public:
     TimerPrecisionType aType = TimerPrecisionType::All);
 
   
+  static double ReduceTimePrecisionAsUSecsWrapper(
+    double aTime);
+
+  
   static double ReduceTimePrecisionImpl(
     double aTime,
     TimeScale aTimeScale,

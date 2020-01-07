@@ -478,6 +478,13 @@ nsRFPService::ReduceTimePrecisionAsUSecs(double aTime, TimerPrecisionType aType 
 
 
 double
+nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime)
+{
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds, TimerResolution(), TimerPrecisionType::All);
+}
+
+
+double
 nsRFPService::ReduceTimePrecisionAsMSecs(double aTime, TimerPrecisionType aType )
 {
   return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds, TimerResolution(), aType);
@@ -671,6 +678,7 @@ nsRFPService::UpdateTimers() {
 
   if (sPrivacyResistFingerprinting || sPrivacyTimerPrecisionReduction) {
     JS::SetTimeResolutionUsec(TimerResolution(), sJitter);
+    JS::SetReduceMicrosecondTimePrecisionCallback(nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
   } else if (sInitialized) {
     JS::SetTimeResolutionUsec(0, false);
   }
