@@ -2675,11 +2675,7 @@ pref("mousewheel.min_line_scroll_amount", 5);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-pref("mousewheel.autodir.enabled", true);
-#else
 pref("mousewheel.autodir.enabled", false);
-#endif
 
 
 
