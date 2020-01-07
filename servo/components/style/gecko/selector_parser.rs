@@ -332,7 +332,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
         
         
         
-        unsafe { structs::nsContentUtils_sIsWebComponentsEnabled }
+        unsafe { structs::nsContentUtils_sIsShadowDOMEnabled }
     }
 
     fn pseudo_element_allows_single_colon(name: &str) -> bool {
