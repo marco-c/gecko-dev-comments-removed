@@ -75,6 +75,16 @@ function isAllAnimationEqual(animationsA, animationsB) {
 
 
 
+function hasPlayingAnimation(animations) {
+  return animations.some(({state}) => state.playState === "running");
+}
+
+
+
+
+
+
+
 
 function isTimingEffectEqual(stateA, stateB) {
   return stateA.delay === stateB.delay &&
@@ -88,5 +98,6 @@ function isTimingEffectEqual(stateA, stateB) {
 }
 
 exports.findOptimalTimeInterval = findOptimalTimeInterval;
+exports.hasPlayingAnimation = hasPlayingAnimation;
 exports.isAllAnimationEqual = isAllAnimationEqual;
 exports.isTimingEffectEqual = isTimingEffectEqual;
