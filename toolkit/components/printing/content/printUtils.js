@@ -391,6 +391,11 @@ var PrintUtils = {
   {
     observe(aSubject, aTopic, aData) {
       
+      if (aTopic) {
+        return;
+      }
+
+      
       setTimeout(function() { PrintUtils.enterPrintPreview(); }, 0);
     },
 

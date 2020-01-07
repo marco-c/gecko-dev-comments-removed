@@ -180,6 +180,14 @@ NS_IMETHODIMP nsPrintProgress::DoneIniting()
 
 NS_IMETHODIMP nsPrintProgress::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t aStateFlags, nsresult aStatus)
 {
+  if (XRE_IsE10sParentProcess() &&
+      aStateFlags & nsIWebProgressListener::STATE_STOP) {
+    
+    
+    
+    m_observer->Observe(nullptr, "completed", nullptr);
+  }
+
   m_pendingStateFlags = aStateFlags;
   m_pendingStateValue = aStatus;
 
@@ -196,6 +204,14 @@ NS_IMETHODIMP nsPrintProgress::OnStateChange(nsIWebProgress *aWebProgress, nsIRe
 
 NS_IMETHODIMP nsPrintProgress::OnProgressChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, int32_t aCurSelfProgress, int32_t aMaxSelfProgress, int32_t aCurTotalProgress, int32_t aMaxTotalProgress)
 {
+  if (XRE_IsE10sParentProcess() && aCurSelfProgress &&
+      aCurSelfProgress >= aMaxSelfProgress) {
+    
+    
+    
+    m_observer->Observe(nullptr, "completed", nullptr);
+  }
+
   uint32_t count = m_listenerList.Count();
   for (uint32_t i = count - 1; i < count; i --)
   {
