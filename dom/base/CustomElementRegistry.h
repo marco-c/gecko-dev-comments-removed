@@ -376,7 +376,7 @@ public:
 
 
   CustomElementDefinition* LookupCustomElementDefinition(
-    const nsAString& aLocalName, nsAtom* aTypeAtom) const;
+    nsAtom* aNameAtom, nsAtom* aTypeAtom) const;
 
   CustomElementDefinition* LookupCustomElementDefinition(
     JSContext* aCx, JSObject *aConstructor) const;

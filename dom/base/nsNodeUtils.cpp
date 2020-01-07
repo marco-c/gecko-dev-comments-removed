@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsNodeUtils.h"
 #include "nsContentUtils.h"
@@ -55,8 +55,8 @@ enum class IsRemoveNotification
 #define COMPOSED_DOC_DECL
 #endif
 
-// This macro expects the ownerDocument of content_ to be in scope as
-// |nsIDocument* doc|
+
+
 #define IMPL_MUTATION_NOTIFICATION(func_, content_, params_, remove_)       \
   PR_BEGIN_MACRO                                                            \
   bool needsEnterLeave = doc->MayHaveDOMMutationObservers();                \
@@ -272,10 +272,10 @@ nsNodeUtils::AnimationMutated(Animation* aAnimation,
     return;
   }
 
-  // A pseudo element and its parent element use the same owner doc.
+  
   nsIDocument* doc = target->mElement->OwnerDoc();
   if (doc->MayHaveAnimationObservers()) {
-    // we use the its parent element as the subject in DOM Mutation Observer.
+    
     Element* elem = target->mElement;
     switch (aMutatedType) {
       case AnimationMutationType::Added:
@@ -326,27 +326,27 @@ nsNodeUtils::LastRelease(nsINode* aNode)
     aNode->mSlots = nullptr;
   }
 
-  // Kill properties first since that may run external code, so we want to
-  // be in as complete state as possible at that time.
+  
+  
   if (aNode->IsNodeOfType(nsINode::eDOCUMENT)) {
-    // Delete all properties before tearing down the document. Some of the
-    // properties are bound to nsINode objects and the destructor functions of
-    // the properties may want to use the owner document of the nsINode.
+    
+    
+    
     static_cast<nsIDocument*>(aNode)->DeleteAllProperties();
   }
   else {
     if (aNode->HasProperties()) {
-      // Strong reference to the document so that deleting properties can't
-      // delete the document.
+      
+      
       nsCOMPtr<nsIDocument> document = aNode->OwnerDoc();
       document->DeleteAllPropertiesFor(aNode);
     }
 
-    // I wonder whether it's faster to do the HasFlag check first....
+    
     if (aNode->IsNodeOfType(nsINode::eHTML_FORM_CONTROL) &&
         aNode->HasFlag(ADDED_TO_FORM)) {
-      // Tell the form (if any) this node is going away.  Don't
-      // notify, since we're being destroyed in any case.
+      
+      
       static_cast<nsGenericHTMLFormElement*>(aNode)->ClearForm(true, true);
     }
 
@@ -384,8 +384,8 @@ nsNodeUtils::LastRelease(nsINode* aNode)
                  !elem->GetXBLBinding(),
                  "Non-forced node has binding on destruction");
 
-    // if NODE_FORCE_XBL_BINDINGS is set, the node might still have a binding
-    // attached
+    
+    
     if (aNode->HasFlag(NODE_FORCE_XBL_BINDINGS) &&
         ownerDoc->BindingManager()) {
       ownerDoc->BindingManager()->RemovedFromDocument(elem, ownerDoc,
@@ -407,7 +407,7 @@ NoteUserData(void *aObject, nsAtom *aKey, void *aXPCOMChild, void *aData)
   cb->NoteXPCOMChild(static_cast<nsISupports*>(aXPCOMChild));
 }
 
-/* static */
+
 void
 nsNodeUtils::TraverseUserData(nsINode* aNode,
                               nsCycleCollectionTraversalCallback &aCb)
@@ -416,14 +416,14 @@ nsNodeUtils::TraverseUserData(nsINode* aNode,
   ownerDoc->PropertyTable(DOM_USER_DATA)->Enumerate(aNode, NoteUserData, &aCb);
 }
 
-/* static */
+
 already_AddRefed<nsINode>
 nsNodeUtils::CloneNodeImpl(nsINode *aNode, bool aDeep, ErrorResult& aError)
 {
   return Clone(aNode, aDeep, nullptr, nullptr, aError);
 }
 
-/* static */
+
 already_AddRefed<nsINode>
 nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
                            nsNodeInfoManager *aNewNodeInfoManager,
@@ -437,21 +437,21 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
   NS_PRECONDITION(!aParent || aNode->IsContent(),
                   "Can't insert document or attribute nodes into a parent");
 
-  // First deal with aNode and walk its attributes (and their children). Then,
-  // if aDeep is true, deal with aNode's children (and recurse into their
-  // attributes and children).
+  
+  
+  
 
   nsAutoScriptBlocker scriptBlocker;
 
   nsNodeInfoManager *nodeInfoManager = aNewNodeInfoManager;
 
-  // aNode.
+  
   NodeInfo *nodeInfo = aNode->mNodeInfo;
   RefPtr<NodeInfo> newNodeInfo;
   if (nodeInfoManager) {
 
-    // Don't allow importing/adopting nodes from non-privileged "scriptable"
-    // documents to "non-scriptable" documents.
+    
+    
     nsIDocument* newDoc = nodeInfoManager->GetDocument();
     if (NS_WARN_IF(!newDoc)) {
       aError.Throw(NS_ERROR_UNEXPECTED);
@@ -490,14 +490,14 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
 
     if (CustomElementRegistry::IsCustomElementEnabled() &&
         (clone->IsHTMLElement() || clone->IsXULElement())) {
-      // The cloned node may be a custom element that may require
-      // enqueing upgrade reaction.
+      
+      
       Element* cloneElem = clone->AsElement();
       RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
       CustomElementData* data = elem->GetCustomElementData();
 
-      // Check if node may be custom element by type extension.
-      // ex. <button is="x-button">
+      
+      
       nsAutoString extension;
       if (!data || data->GetCustomElementType() != tagAtom) {
         cloneElem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension);
@@ -505,16 +505,18 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
 
       if ((data && data->GetCustomElementType() == tagAtom) ||
           !extension.IsEmpty()) {
-        // The typeAtom can be determined by extension, because we only need to
-        // consider two cases: 1) Original node is a autonomous custom element
-        // which has CustomElementData. 2) Original node is a built-in custom
-        // element or normal element, but it has `is` attribute when it is being
-        // cloned.
+        
+        
+        
+        
+        
         RefPtr<nsAtom> typeAtom = extension.IsEmpty() ? tagAtom : NS_Atomize(extension);
         cloneElem->SetCustomElementData(new CustomElementData(typeAtom));
+
+        MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
         CustomElementDefinition* definition =
           nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
-                                                        nodeInfo->LocalName(),
+                                                        nodeInfo->NameAtom(),
                                                         nodeInfo->NamespaceID(),
                                                         typeAtom);
         if (definition) {
@@ -524,8 +526,8 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
     }
 
     if (aParent) {
-      // If we're cloning we need to insert the cloned children into the cloned
-      // parent.
+      
+      
       rv = aParent->AppendChildTo(static_cast<nsIContent*>(clone.get()),
                                   false);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -534,9 +536,9 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       }
     }
     else if (aDeep && clone->IsNodeOfType(nsINode::eDOCUMENT)) {
-      // After cloning the document itself, we want to clone the children into
-      // the cloned document (somewhat like cloning and importing them into the
-      // cloned document).
+      
+      
+      
       nodeInfoManager = clone->mNodeInfo->NodeInfoManager();
     }
   }
@@ -557,8 +559,8 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
     nsIDocument* newDoc = aNode->OwnerDoc();
     if (newDoc) {
       if (CustomElementRegistry::IsCustomElementEnabled()) {
-        // Adopted callback must be enqueued whenever a node’s
-        // shadow-including inclusive descendants that is custom.
+        
+        
         Element* element = aNode->IsElement() ? aNode->AsElement() : nullptr;
         if (element) {
           CustomElementData* data = element->GetCustomElementData();
@@ -573,8 +575,8 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
         }
       }
 
-      // XXX what if oldDoc is null, we don't know if this should be
-      // registered or not! Can that really happen?
+      
+      
       if (wasRegistered) {
         newDoc->RegisterActivityObserver(aNode->AsElement());
       }
@@ -661,7 +663,7 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
   }
 
   if (aDeep && (!aClone || !aNode->IsNodeOfType(nsINode::eATTRIBUTE))) {
-    // aNode's children.
+    
     for (nsIContent* cloneChild = aNode->GetFirstChild();
          cloneChild;
          cloneChild = cloneChild->GetNextSibling()) {
@@ -687,15 +689,15 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
     }
   }
 
-  // Cloning template element.
+  
   if (aDeep && aClone && IsTemplateElement(aNode)) {
     DocumentFragment* origContent =
       static_cast<HTMLTemplateElement*>(aNode)->Content();
     DocumentFragment* cloneContent =
       static_cast<HTMLTemplateElement*>(clone.get())->Content();
 
-    // Clone the children into the clone's template content owner
-    // document's nodeinfo manager.
+    
+    
     nsNodeInfoManager* ownerNodeInfoManager =
       cloneContent->mNodeInfo->NodeInfoManager();
 
@@ -712,17 +714,17 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
     }
   }
 
-  // XXX setting document on some nodes not in a document so XBL will bind
-  // and chrome won't break. Make XBL bind to document-less nodes!
-  // XXXbz Once this is fixed, fix up the asserts in all implementations of
-  // BindToTree to assert what they would like to assert, and fix the
-  // ChangeDocumentFor() call in nsXULElement::BindToTree as well.  Also,
-  // remove the UnbindFromTree call in ~nsXULElement, and add back in the
-  // precondition in nsXULElement::UnbindFromTree and remove the line in
-  // nsXULElement.h that makes nsNodeUtils a friend of nsXULElement.
-  // Note: Make sure to do this witchery _after_ we've done any deep
-  // cloning, so kids of the new node aren't confused about whether they're
-  // in a document.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #ifdef MOZ_XUL
   if (aClone && !aParent && aNode->IsXULElement()) {
     if (!aNode->OwnerDoc()->IsLoadedAsInteractiveData()) {
@@ -735,14 +737,14 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
 }
 
 
-/* static */
+
 void
 nsNodeUtils::UnlinkUserData(nsINode *aNode)
 {
   NS_ASSERTION(aNode->HasProperties(), "Call to UnlinkUserData not needed.");
 
-  // Strong reference to the document so that deleting properties can't
-  // delete the document.
+  
+  
   nsCOMPtr<nsIDocument> document = aNode->OwnerDoc();
   document->PropertyTable(DOM_USER_DATA)->DeleteAllPropertiesFor(aNode);
 }
