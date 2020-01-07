@@ -5,7 +5,6 @@
 
 package org.mozilla.geckoview;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -582,11 +581,7 @@ import java.lang.reflect.Proxy;
         return config.keyboard != Configuration.KEYBOARD_NOKEYS;
     }
 
-    
-    
-    
-    
-    @SuppressLint("Override")
+    @Override 
     public Handler getHandler() {
         final Handler handler;
         if (isPhysicalKeyboardPresent()) {
@@ -606,8 +601,8 @@ import java.lang.reflect.Proxy;
         return getHandler();
     }
 
-    
-    @SuppressLint("Override")
+
+    @Override 
     public void closeConnection() {
         
     }
