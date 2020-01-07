@@ -121,7 +121,7 @@ struct PrefableDisablers {
     
     
     if (nonExposedGlobals &&
-        IsNonExposedGlobal(cx, js::GetGlobalForObjectCrossCompartment(obj),
+        IsNonExposedGlobal(cx, JS::GetNonCCWObjectGlobal(obj),
                            nonExposedGlobals)) {
       return false;
     }
@@ -131,8 +131,7 @@ struct PrefableDisablers {
     if (secureContext && !IsSecureContextOrObjectIsFromSecureContext(cx, obj)) {
       return false;
     }
-    if (enabledFunc &&
-        !enabledFunc(cx, js::GetGlobalForObjectCrossCompartment(obj))) {
+    if (enabledFunc && !enabledFunc(cx, JS::GetNonCCWObjectGlobal(obj))) {
       return false;
     }
     return true;
