@@ -12,6 +12,9 @@ registerCleanupFunction(async function cleanup() {
 let originalEngine;
 add_task(async function test_setup() {
   
+  requestLongerTimeout(2);
+
+  
   Services.search.addEngineWithDetails("MozSearch", "", "", "", "GET",
                                        "http://example.com/?q={searchTerms}");
   let engine = Services.search.getEngineByName("MozSearch");
