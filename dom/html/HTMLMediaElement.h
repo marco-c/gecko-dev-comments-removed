@@ -839,26 +839,7 @@ protected:
 
   void SetDecoder(MediaDecoder* aDecoder);
 
-  class WakeLockBoolWrapper {
-  public:
-    WakeLockBoolWrapper(bool aVal, HTMLMediaElement& aOuter)
-      : mValue(aVal)
-      , mOuter(aOuter)
-    {}
-
-    ~WakeLockBoolWrapper() {};
-
-    MOZ_IMPLICIT operator bool() const { return mValue; }
-
-    WakeLockBoolWrapper& operator=(bool val);
-
-    bool operator !() const { return !mValue; }
-
-    void UpdateWakeLock();
-  private:
-    bool mValue;
-    HTMLMediaElement& mOuter;
-  };
+  void UpdateWakeLock();
 
   
   
@@ -1373,6 +1354,8 @@ protected:
 
   void PauseIfShouldNotBePlaying();
 
+  WatchManager<HTMLMediaElement> mWatchManager;
+
   
   
   RefPtr<MediaDecoder> mDecoder;
@@ -1600,7 +1583,7 @@ protected:
 
   
   
-  WakeLockBoolWrapper mPaused;
+  Watchable<bool> mPaused;
 
   
   
