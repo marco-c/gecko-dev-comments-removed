@@ -729,51 +729,35 @@ nsresult
 nsFind::NextNode(State& aState,
                  nsRange* aSearchRange,
                  nsRange* aStartPoint,
-                 nsRange* aEndPoint,
-                 bool aContinueOk)
+                 nsRange* aEndPoint)
 {
   nsresult rv;
 
   nsCOMPtr<nsIContent> content;
 
-  if (!aState.mIterator || aContinueOk) {
+  if (!aState.mIterator) {
     
     
     
     nsCOMPtr<nsINode> startNode;
     nsCOMPtr<nsINode> endNode;
     uint32_t startOffset, endOffset;
-    if (aContinueOk) {
-      DEBUG_FIND_PRINTF("Match in progress: continuing past endpoint\n");
-      if (mFindBackward) {
-        startNode = aSearchRange->GetStartContainer();
-        startOffset = aSearchRange->StartOffset();
-        endNode = aEndPoint->GetStartContainer();
-        endOffset = aEndPoint->StartOffset();
-      } else { 
-        startNode = aEndPoint->GetEndContainer();
-        startOffset = aEndPoint->EndOffset();
-        endNode = aSearchRange->GetEndContainer();
-        endOffset = aSearchRange->EndOffset();
-      }
+    if (mFindBackward) {
+      startNode = aSearchRange->GetStartContainer();
+      startOffset = aSearchRange->StartOffset();
+      endNode = aStartPoint->GetEndContainer();
+      endOffset = aStartPoint->EndOffset();
+      
+      
+      
+      
+      
+      
     } else { 
-      if (mFindBackward) {
-        startNode = aSearchRange->GetStartContainer();
-        startOffset = aSearchRange->StartOffset();
-        endNode = aStartPoint->GetEndContainer();
-        endOffset = aStartPoint->EndOffset();
-        
-        
-        
-        
-        
-        
-      } else { 
-        startNode = aStartPoint->GetStartContainer();
-        startOffset = aStartPoint->StartOffset();
-        endNode = aEndPoint->GetEndContainer();
-        endOffset = aEndPoint->EndOffset();
-      }
+      startNode = aStartPoint->GetStartContainer();
+      startOffset = aStartPoint->StartOffset();
+      endNode = aEndPoint->GetEndContainer();
+      endOffset = aEndPoint->EndOffset();
     }
 
     rv = InitIterator(aState,
@@ -876,7 +860,7 @@ nsFind::PeekNextChar(State& aState,
 
   
   do {
-    NextNode(aState, aSearchRange, aStartPoint, aEndPoint, false);
+    NextNode(aState, aSearchRange, aStartPoint, aEndPoint);
 
     
     nsCOMPtr<nsIContent> tc = do_QueryInterface(aState.mIterNode);
@@ -1011,15 +995,8 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
     if (!frag) {
 
       tc = nullptr;
-      NextNode(state, aSearchRange, aStartPoint, aEndPoint, false);
+      NextNode(state, aSearchRange, aStartPoint, aEndPoint);
       if (!state.mIterNode) { 
-        
-        
-        
-        
-        if (matchAnchorNode) {
-          NextNode(state, aSearchRange, aStartPoint, aEndPoint, true);
-        }
         return NS_OK;
       }
 
