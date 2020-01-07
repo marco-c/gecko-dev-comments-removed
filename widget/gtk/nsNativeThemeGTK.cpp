@@ -37,6 +37,7 @@
 #include "mozilla/gfx/BorrowedContext.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/Preferences.h"
 
 #ifdef MOZ_X11
 #  ifdef CAIRO_HAS_XLIB_SURFACE
@@ -58,6 +59,29 @@ NS_IMPL_ISUPPORTS_INHERITED(nsNativeThemeGTK, nsNativeTheme, nsITheme,
                                                              nsIObserver)
 
 static int gLastGdkError;
+
+
+
+static inline gint
+GetMonitorScaleFactor(nsIFrame* aFrame)
+{
+  
+  
+  double scale = nsIWidget::DefaultScaleOverride();
+  if (scale <= 0) {
+    nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
+    if (rootWidget) {
+        
+        
+        
+        
+        
+        return rootWidget->GetDefaultScale().scale / gfxPlatformGtk::GetFontScaleFactor();
+    }
+  }
+  
+  return (scale < 1) ? 1 : int(round(scale));
+}
 
 nsNativeThemeGTK::nsNativeThemeGTK()
 {
@@ -1045,7 +1069,7 @@ nsNativeThemeGTK::GetExtraSizeForWidget(nsIFrame* aFrame, uint8_t aWidgetType,
   default:
     return false;
   }
-  gint scale = ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  gint scale = GetMonitorScaleFactor(aFrame);
   aExtra->top *= scale;
   aExtra->right *= scale;
   aExtra->bottom *= scale;
@@ -1073,7 +1097,7 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext,
 
   gfxRect rect = presContext->AppUnitsToGfxUnits(aRect);
   gfxRect dirtyRect = presContext->AppUnitsToGfxUnits(aDirtyRect);
-  gint scaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  gint scaleFactor = GetMonitorScaleFactor(aFrame);
 
   
   
@@ -1319,7 +1343,7 @@ nsNativeThemeGTK::GetWidgetBorder(nsDeviceContext* aContext, nsIFrame* aFrame,
     }
   }
 
-  gint scale = ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  gint scale = GetMonitorScaleFactor(aFrame);
   aResult->top *= scale;
   aResult->right *= scale;
   aResult->bottom *= scale;
@@ -1377,7 +1401,7 @@ nsNativeThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
         aResult->left += horizontal_padding;
         aResult->right += horizontal_padding;
 
-        gint scale = ScreenHelperGTK::GetGTKMonitorScaleFactor();
+        gint scale = GetMonitorScaleFactor(aFrame);
         aResult->top *= scale;
         aResult->right *= scale;
         aResult->bottom *= scale;
@@ -1626,8 +1650,7 @@ nsNativeThemeGTK::GetMinimumWidgetSize(nsPresContext* aPresContext,
       
 
       nsIntMargin border;
-      nsNativeThemeGTK::GetWidgetBorder(aFrame->PresContext()->DeviceContext(),
-                                        aFrame, aWidgetType, &border);
+      GetCachedWidgetBorder(aFrame, aWidgetType, GetTextDirection(aFrame), &border);
       aResult->width += border.left + border.right;
       aResult->height += border.top + border.bottom;
     }
@@ -1679,7 +1702,7 @@ nsNativeThemeGTK::GetMinimumWidgetSize(nsPresContext* aPresContext,
     break;
   }
 
-  *aResult = *aResult * ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  *aResult = *aResult * GetMonitorScaleFactor(aFrame);
 
   return NS_OK;
 }
