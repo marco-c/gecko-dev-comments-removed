@@ -2572,8 +2572,6 @@ if test -n "$MOZ_WEBRTC"; then
     if test -n "$MOZ_X11"; then
       MOZ_WEBRTC_X11_LIBS="-lXext -lXdamage -lXfixes -lXcomposite"
     fi
-else
-    MOZ_SYNTH_PICO=
 fi
 
 dnl ========================================================
@@ -3966,18 +3964,6 @@ fi
 AC_SUBST(MOZ_DISABLE_STARTUPCACHE)
 
 dnl ========================================================
-dnl = Enable Pico Speech Synthesis
-dnl ========================================================
-MOZ_ARG_ENABLE_BOOL(synth-pico,
-[  --enable-synth-pico  Set compile flags necessary for compiling Pico Web Speech API ],
-    MOZ_SYNTH_PICO=1,
-    MOZ_SYNTH_PICO= )
-if test -n "$MOZ_SYNTH_PICO"; then
-    AC_DEFINE(MOZ_SYNTH_PICO)
-fi
-AC_SUBST(MOZ_SYNTH_PICO)
-
-dnl ========================================================
 dnl = Enable Support for Time Manager API
 dnl ========================================================
 if test -n "$MOZ_TIME_MANAGER"; then
@@ -4539,11 +4525,11 @@ MOZ_ARG_WITH_STRING(macbundlename-prefix,
 
 MOZ_MACBUNDLE_NAME=$MOZ_APP_DISPLAYNAME
 if test "$MOZ_MACBUNDLE_NAME_PREFIX"; then
-  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME_PREFIX}${MOZ_MACBUNDLE_NAME}"
+  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME_PREFIX} ${MOZ_MACBUNDLE_NAME}"
 fi
 
 if test "$MOZ_DEBUG"; then
-  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME}Debug.app"
+  MOZ_MACBUNDLE_NAME="${MOZ_MACBUNDLE_NAME} Debug.app"
 else
   MOZ_MACBUNDLE_NAME=${MOZ_MACBUNDLE_NAME}.app
 fi
