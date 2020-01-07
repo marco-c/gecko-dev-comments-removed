@@ -554,6 +554,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   typedef enum  T1_EncodingType_
   {
     T1_ENCODING_TYPE_NONE = 0,
@@ -565,6 +568,9 @@ FT_BEGIN_HEADER
   } T1_EncodingType;
 
 
+  
+  
+  
   
   
   
@@ -682,6 +688,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 

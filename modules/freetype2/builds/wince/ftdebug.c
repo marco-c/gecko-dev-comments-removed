@@ -79,7 +79,7 @@
 
 
     va_start( ap, fmt );
-    vprintf( fmt, ap );
+    vfprintf( stderr, fmt, ap );
     
     vsprintf( buf, fmt, ap );
     OutputDebugStringEx( buf );

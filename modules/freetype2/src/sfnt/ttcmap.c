@@ -518,7 +518,11 @@
 
 
         if ( offset == 0 )
+        {
+          if ( charcode == 0x100 )
+            goto Exit; 
           goto Next_SubHeader;
+        }
 
         if ( char_lo < start )
         {
@@ -548,8 +552,18 @@
       }
 
       
+      
+      
+      
+      
+      
     Next_SubHeader:
-      charcode = FT_PAD_FLOOR( charcode, 256 ) + 256;
+      if ( charcode <= 0xFF )
+        charcode++;
+      else if ( charcode == 0x100 )
+        ;
+      else
+        charcode = FT_PAD_FLOOR( charcode, 0x100 ) + 0x100;
     }
 
   Exit:

@@ -425,7 +425,7 @@ FT_BEGIN_HEADER
   
   
   
-  typedef void  (*FT_Generic_Finalizer)(void*  object);
+  typedef void  (*FT_Generic_Finalizer)( void*  object );
 
 
   

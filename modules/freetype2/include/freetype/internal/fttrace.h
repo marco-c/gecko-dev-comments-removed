@@ -39,6 +39,7 @@ FT_TRACE_DEF( mm )
 FT_TRACE_DEF( raccess )   
 FT_TRACE_DEF( synth )     
 FT_TRACE_DEF( bitmap )    
+FT_TRACE_DEF( psprops )   
 
   
 FT_TRACE_DEF( cache )     
@@ -66,20 +67,19 @@ FT_TRACE_DEF( ttgxvar )
 FT_TRACE_DEF( t1afm )
 FT_TRACE_DEF( t1driver )
 FT_TRACE_DEF( t1gload )
-FT_TRACE_DEF( t1hint )
 FT_TRACE_DEF( t1load )
 FT_TRACE_DEF( t1objs )
 FT_TRACE_DEF( t1parse )
 
   
 FT_TRACE_DEF( t1decode )
+FT_TRACE_DEF( cffdecode )
 FT_TRACE_DEF( psobjs )
 FT_TRACE_DEF( psconv )
 
   
 FT_TRACE_DEF( pshrec )
-FT_TRACE_DEF( pshalgo1 )
-FT_TRACE_DEF( pshalgo2 )
+FT_TRACE_DEF( pshalgo )
 
   
 FT_TRACE_DEF( cffdriver )
@@ -96,7 +96,6 @@ FT_TRACE_DEF( cf2interp )
 FT_TRACE_DEF( t42 )
 
   
-FT_TRACE_DEF( cidafm )
 FT_TRACE_DEF( ciddriver )
 FT_TRACE_DEF( cidgload )
 FT_TRACE_DEF( cidload )

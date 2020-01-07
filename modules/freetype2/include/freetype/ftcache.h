@@ -541,13 +541,6 @@ FT_BEGIN_HEADER
 
 
   
-  
-  
-  
-  
-  
-
-  
 
 
 
@@ -621,14 +614,6 @@ FT_BEGIN_HEADER
                         FTC_FaceID     face_id,
                         FT_Int         cmap_index,
                         FT_UInt32      char_code );
-
-
-  
-  
-  
-  
-  
-  
 
 
   

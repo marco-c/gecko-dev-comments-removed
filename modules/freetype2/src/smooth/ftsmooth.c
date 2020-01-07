@@ -97,74 +97,17 @@
                             const FT_Vector*  origin,
                             FT_Render_Mode    required_mode )
   {
-    FT_Error     error;
+    FT_Error     error   = FT_Err_Ok;
     FT_Outline*  outline = &slot->outline;
     FT_Bitmap*   bitmap  = &slot->bitmap;
     FT_Memory    memory  = render->root.memory;
-    FT_BBox      cbox;
     FT_Pos       x_shift = 0;
     FT_Pos       y_shift = 0;
-    FT_Pos       x_left, y_top;
-    FT_Pos       width, height, pitch;
     FT_Int       hmul    = ( mode == FT_RENDER_MODE_LCD );
     FT_Int       vmul    = ( mode == FT_RENDER_MODE_LCD_V );
 
     FT_Raster_Params  params;
 
-    FT_Bool  have_outline_shifted = FALSE;
-    FT_Bool  have_buffer          = FALSE;
-
-#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-
-    FT_LcdFiveTapFilter      lcd_weights        = { 0 };
-    FT_Bool                  have_custom_weight = FALSE;
-    FT_Bitmap_LcdFilterFunc  lcd_filter_func    = NULL;
-
-
-    if ( slot->face )
-    {
-      FT_Char  i;
-
-
-      for ( i = 0; i < FT_LCD_FILTER_FIVE_TAPS; i++ )
-        if ( slot->face->internal->lcd_weights[i] != 0 )
-        {
-          have_custom_weight = TRUE;
-          break;
-        }
-    }
-
-    
-
-
-
-
-    if ( have_custom_weight )
-    {
-      
-
-
-
-      ft_memcpy( lcd_weights,
-                 slot->face->internal->lcd_weights,
-                 FT_LCD_FILTER_FIVE_TAPS );
-      lcd_filter_func = ft_lcd_filter_fir;
-    }
-    else
-    {
-      
-
-
-
-
-
-      ft_memcpy( lcd_weights,
-                 slot->library->lcd_weights,
-                 FT_LCD_FILTER_FIVE_TAPS );
-      lcd_filter_func = slot->library->lcd_filter_func;
-    }
-
-#endif 
 
     
     if ( slot->format != render->glyph_format )
@@ -180,100 +123,6 @@
       goto Exit;
     }
 
-    if ( origin )
-    {
-      x_shift = origin->x;
-      y_shift = origin->y;
-    }
-
-    
-    
-    FT_Outline_Get_CBox( outline, &cbox );
-
-#ifndef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-
-    
-    if ( hmul )
-    {
-      cbox.xMax += 21;
-      cbox.xMin -= 21;
-    }
-
-    if ( vmul )
-    {
-      cbox.yMax += 21;
-      cbox.yMin -= 21;
-    }
-
-#else 
-
-    
-    if ( lcd_filter_func )
-    {
-      if ( hmul )
-      {
-        cbox.xMax += lcd_weights[4] ? 43
-                                    : lcd_weights[3] ? 22 : 0;
-        cbox.xMin -= lcd_weights[0] ? 43
-                                    : lcd_weights[1] ? 22 : 0;
-      }
-
-      if ( vmul )
-      {
-        cbox.yMax += lcd_weights[4] ? 43
-                                    : lcd_weights[3] ? 22 : 0;
-        cbox.yMin -= lcd_weights[0] ? 43
-                                    : lcd_weights[1] ? 22 : 0;
-      }
-    }
-
-#endif 
-
-    cbox.xMin = FT_PIX_FLOOR( cbox.xMin + x_shift );
-    cbox.yMin = FT_PIX_FLOOR( cbox.yMin + y_shift );
-    cbox.xMax = FT_PIX_CEIL( cbox.xMax + x_shift );
-    cbox.yMax = FT_PIX_CEIL( cbox.yMax + y_shift );
-
-    x_shift -= cbox.xMin;
-    y_shift -= cbox.yMin;
-
-    x_left  = cbox.xMin >> 6;
-    y_top   = cbox.yMax >> 6;
-
-    width  = (FT_ULong)( cbox.xMax - cbox.xMin ) >> 6;
-    height = (FT_ULong)( cbox.yMax - cbox.yMin ) >> 6;
-
-    pitch = width;
-    if ( hmul )
-    {
-      width *= 3;
-      pitch  = FT_PAD_CEIL( width, 4 );
-    }
-
-    if ( vmul )
-      height *= 3;
-
-    
-
-
-
-    if ( x_left > FT_INT_MAX || y_top > FT_INT_MAX ||
-         x_left < FT_INT_MIN || y_top < FT_INT_MIN )
-    {
-      error = FT_THROW( Invalid_Pixel_Size );
-      goto Exit;
-    }
-
-    
-    
-    if ( width > 0x7FFF || height > 0x7FFF )
-    {
-      FT_ERROR(( "ft_smooth_render_generic: glyph too large: %u x %u\n",
-                 width, height ));
-      error = FT_THROW( Raster_Overflow );
-      goto Exit;
-    }
-
     
     if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
     {
@@ -281,30 +130,30 @@
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
 
+    ft_glyphslot_preset_bitmap( slot, mode, origin );
+
     
-    if ( FT_ALLOC( bitmap->buffer, (FT_ULong)( pitch * height ) ) )
+    if ( FT_ALLOC_MULT( bitmap->buffer, bitmap->rows, bitmap->pitch ) )
       goto Exit;
-    else
-      have_buffer = TRUE;
 
     slot->internal->flags |= FT_GLYPH_OWN_BITMAP;
 
-    slot->format      = FT_GLYPH_FORMAT_BITMAP;
-    slot->bitmap_left = (FT_Int)x_left;
-    slot->bitmap_top  = (FT_Int)y_top;
+    x_shift = 64 * -slot->bitmap_left;
+    y_shift = 64 * -slot->bitmap_top;
+    if ( bitmap->pixel_mode == FT_PIXEL_MODE_LCD_V )
+      y_shift += 64 * (FT_Int)bitmap->rows / 3;
+    else
+      y_shift += 64 * (FT_Int)bitmap->rows;
 
-    bitmap->pixel_mode = FT_PIXEL_MODE_GRAY;
-    bitmap->num_grays  = 256;
-    bitmap->width      = (unsigned int)width;
-    bitmap->rows       = (unsigned int)height;
-    bitmap->pitch      = pitch;
+    if ( origin )
+    {
+      x_shift += origin->x;
+      y_shift += origin->y;
+    }
 
     
     if ( x_shift || y_shift )
-    {
       FT_Outline_Translate( outline, x_shift, y_shift );
-      have_outline_shifted = TRUE;
-    }
 
     
     params.target = bitmap;
@@ -351,29 +200,46 @@
     if ( error )
       goto Exit;
 
-    if ( lcd_filter_func )
-      lcd_filter_func( bitmap, mode, lcd_weights );
+    
+    if ( hmul || vmul )
+    {
+      FT_Byte*                 lcd_weights;
+      FT_Bitmap_LcdFilterFunc  lcd_filter_func;
+
+
+      
+      if ( slot->face && slot->face->internal->lcd_filter_func )
+      {
+        lcd_weights     = slot->face->internal->lcd_weights;
+        lcd_filter_func = slot->face->internal->lcd_filter_func;
+      }
+      else
+      {
+        lcd_weights     = slot->library->lcd_weights;
+        lcd_filter_func = slot->library->lcd_filter_func;
+      }
+
+      if ( lcd_filter_func )
+        lcd_filter_func( bitmap, mode, lcd_weights );
+    }
 
 #else 
 
     if ( hmul )  
     {
       FT_Byte*  line;
-      FT_Byte*  temp;
-      FT_Int    i, j;
+      FT_Byte*  temp = NULL;
+      FT_UInt   i, j;
+
+      unsigned int  height = bitmap->rows;
+      unsigned int  width  = bitmap->width;
+      int           pitch  = bitmap->pitch;
 
 
       
       
       width /= 3;
 
-      FT_Outline_Translate( outline,  21, 0 );
-
-      error = render->raster_render( render->raster, &params );
-      if ( error )
-        goto Exit;
-
-      FT_Outline_Translate( outline, -21, 0 );
       bitmap->buffer += width;
 
       error = render->raster_render( render->raster, &params );
@@ -381,14 +247,20 @@
         goto Exit;
 
       FT_Outline_Translate( outline, -21, 0 );
+      x_shift        -= 21;
       bitmap->buffer += width;
 
       error = render->raster_render( render->raster, &params );
       if ( error )
         goto Exit;
 
-      FT_Outline_Translate( outline,  21, 0 );
+      FT_Outline_Translate( outline,  42, 0 );
+      x_shift        += 42;
       bitmap->buffer -= 2 * width;
+
+      error = render->raster_render( render->raster, &params );
+      if ( error )
+        goto Exit;
 
       
       
@@ -398,7 +270,7 @@
 
       for ( i = 0; i < height; i++ )
       {
-        line = bitmap->buffer + i * pitch;
+        line = bitmap->buffer + i * (FT_ULong)pitch;
         for ( j = 0; j < width; j++ )
         {
           temp[3 * j    ] = line[j];
@@ -412,59 +284,58 @@
     }
     else if ( vmul )  
     {
+      int  pitch  = bitmap->pitch;
+
+
       
       
       bitmap->pitch *= 3;
       bitmap->rows  /= 3;
 
-      FT_Outline_Translate( outline, 0,  21 );
-      bitmap->buffer += 2 * pitch;
-
-      error = render->raster_render( render->raster, &params );
-      if ( error )
-        goto Exit;
-
-      FT_Outline_Translate( outline, 0, -21 );
-      bitmap->buffer -= pitch;
-
-      error = render->raster_render( render->raster, &params );
-      if ( error )
-        goto Exit;
-
-      FT_Outline_Translate( outline, 0, -21 );
-      bitmap->buffer -= pitch;
+      bitmap->buffer += pitch;
 
       error = render->raster_render( render->raster, &params );
       if ( error )
         goto Exit;
 
       FT_Outline_Translate( outline, 0,  21 );
+      y_shift        += 21;
+      bitmap->buffer += pitch;
+
+      error = render->raster_render( render->raster, &params );
+      if ( error )
+        goto Exit;
+
+      FT_Outline_Translate( outline, 0, -42 );
+      y_shift        -= 42;
+      bitmap->buffer -= 2 * pitch;
+
+      error = render->raster_render( render->raster, &params );
+      if ( error )
+        goto Exit;
 
       bitmap->pitch /= 3;
       bitmap->rows  *= 3;
     }
     else  
-    {
       error = render->raster_render( render->raster, &params );
-      if ( error )
-        goto Exit;
-    }
 
 #endif 
 
-    
-    have_buffer = FALSE;
-
-    error = FT_Err_Ok;
-
   Exit:
-    if ( have_outline_shifted )
-      FT_Outline_Translate( outline, -x_shift, -y_shift );
-    if ( have_buffer )
+    if ( !error )
+    {
+      
+      slot->format = FT_GLYPH_FORMAT_BITMAP;
+    }
+    else if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
     {
       FT_FREE( bitmap->buffer );
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
+
+    if ( x_shift || y_shift )
+      FT_Outline_Translate( outline, -x_shift, -y_shift );
 
     return error;
   }
@@ -492,14 +363,8 @@
                         FT_Render_Mode    mode,
                         const FT_Vector*  origin )
   {
-    FT_Error  error;
-
-    error = ft_smooth_render_generic( render, slot, mode, origin,
-                                      FT_RENDER_MODE_LCD );
-    if ( !error )
-      slot->bitmap.pixel_mode = FT_PIXEL_MODE_LCD;
-
-    return error;
+    return ft_smooth_render_generic( render, slot, mode, origin,
+                                     FT_RENDER_MODE_LCD );
   }
 
 
@@ -510,14 +375,8 @@
                           FT_Render_Mode    mode,
                           const FT_Vector*  origin )
   {
-    FT_Error  error;
-
-    error = ft_smooth_render_generic( render, slot, mode, origin,
-                                      FT_RENDER_MODE_LCD_V );
-    if ( !error )
-      slot->bitmap.pixel_mode = FT_PIXEL_MODE_LCD_V;
-
-    return error;
+    return ft_smooth_render_generic( render, slot, mode, origin,
+                                     FT_RENDER_MODE_LCD_V );
   }
 
 

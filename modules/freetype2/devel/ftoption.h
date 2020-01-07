@@ -290,48 +290,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 #define FT_CONFIG_OPTION_POSTSCRIPT_NAMES
 
 
@@ -793,19 +751,29 @@ FT_BEGIN_HEADER
   
   
   
+#define T1_CONFIG_OPTION_OLD_ENGINE
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define CFF_CONFIG_OPTION_DARKENING_PARAMETER_X1   500
 #define CFF_CONFIG_OPTION_DARKENING_PARAMETER_Y1   400
 

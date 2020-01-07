@@ -366,7 +366,6 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_EXPORT( FT_Error )
   FT_Property_Set( FT_Library        library,
                    const FT_String*  module_name,
@@ -430,7 +429,6 @@ FT_BEGIN_HEADER
 
 
 
-
   FT_EXPORT( FT_Error )
   FT_Property_Get( FT_Library        library,
                    const FT_String*  module_name,
@@ -438,6 +436,9 @@ FT_BEGIN_HEADER
                    void*             value );
 
 
+  
+  
+  
   
   
   

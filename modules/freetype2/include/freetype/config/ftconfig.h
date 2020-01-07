@@ -73,11 +73,11 @@ FT_BEGIN_HEADER
 
   
 #if                                 FT_UINT_MAX == 0xFFFFUL
-#define FT_SIZEOF_INT  (16 / FT_CHAR_BIT)
+#define FT_SIZEOF_INT  ( 16 / FT_CHAR_BIT )
 #elif                               FT_UINT_MAX == 0xFFFFFFFFUL
-#define FT_SIZEOF_INT  (32 / FT_CHAR_BIT)
+#define FT_SIZEOF_INT  ( 32 / FT_CHAR_BIT )
 #elif FT_UINT_MAX > 0xFFFFFFFFUL && FT_UINT_MAX == 0xFFFFFFFFFFFFFFFFUL
-#define FT_SIZEOF_INT  (64 / FT_CHAR_BIT)
+#define FT_SIZEOF_INT  ( 64 / FT_CHAR_BIT )
 #else
 #error "Unsupported size of `int' type!"
 #endif
@@ -85,11 +85,11 @@ FT_BEGIN_HEADER
   
   
 #if                                  FT_ULONG_MAX == 0xFFFFFFFFUL
-#define FT_SIZEOF_LONG  (32 / FT_CHAR_BIT)
+#define FT_SIZEOF_LONG  ( 32 / FT_CHAR_BIT )
 #elif FT_ULONG_MAX > 0xFFFFFFFFUL && FT_ULONG_MAX == 0xFFFFFFFFFFUL
-#define FT_SIZEOF_LONG  (32 / FT_CHAR_BIT)
+#define FT_SIZEOF_LONG  ( 32 / FT_CHAR_BIT )
 #elif FT_ULONG_MAX > 0xFFFFFFFFUL && FT_ULONG_MAX == 0xFFFFFFFFFFFFFFFFUL
-#define FT_SIZEOF_LONG  (64 / FT_CHAR_BIT)
+#define FT_SIZEOF_LONG  ( 64 / FT_CHAR_BIT )
 #else
 #error "Unsupported size of `long' type!"
 #endif
@@ -236,12 +236,12 @@ FT_BEGIN_HEADER
 
 #endif
 
-#if FT_SIZEOF_INT == (32 / FT_CHAR_BIT)
+#if FT_SIZEOF_INT == ( 32 / FT_CHAR_BIT )
 
   typedef signed int      FT_Int32;
   typedef unsigned int    FT_UInt32;
 
-#elif FT_SIZEOF_LONG == (32 / FT_CHAR_BIT)
+#elif FT_SIZEOF_LONG == ( 32 / FT_CHAR_BIT )
 
   typedef signed long     FT_Int32;
   typedef unsigned long   FT_UInt32;
@@ -252,12 +252,12 @@ FT_BEGIN_HEADER
 
 
   
-#if FT_SIZEOF_INT >= (32 / FT_CHAR_BIT)
+#if FT_SIZEOF_INT >= ( 32 / FT_CHAR_BIT )
 
   typedef int            FT_Fast;
   typedef unsigned int   FT_UFast;
 
-#elif FT_SIZEOF_LONG >= (32 / FT_CHAR_BIT)
+#elif FT_SIZEOF_LONG >= ( 32 / FT_CHAR_BIT )
 
   typedef long           FT_Fast;
   typedef unsigned long  FT_UFast;
@@ -267,7 +267,7 @@ FT_BEGIN_HEADER
 
   
   
-#if FT_SIZEOF_LONG == (64 / FT_CHAR_BIT)
+#if FT_SIZEOF_LONG == ( 64 / FT_CHAR_BIT )
 
   
 #define FT_LONG64
@@ -365,6 +365,14 @@ FT_BEGIN_HEADER
 #endif
 
 
+  
+  
+  
+  
+  
+  
+  
+  
 #ifdef FT_MAKE_OPTION_SINGLE_OBJECT
 
 #define FT_LOCAL( x )      static  x
@@ -386,6 +394,12 @@ FT_BEGIN_HEADER
 #define FT_LOCAL_ARRAY_DEF( x )  const  x
 
 
+  
+  
+  
+  
+  
+  
 #ifndef FT_BASE
 
 #ifdef __cplusplus
@@ -408,12 +422,52 @@ FT_BEGIN_HEADER
 #endif 
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #ifndef FT_EXPORT
 
 #ifdef __cplusplus
 #define FT_EXPORT( x )  extern "C"  x
 #else
 #define FT_EXPORT( x )  extern  x
+#endif
+
+#ifdef _MSC_VER
+#undef FT_EXPORT
+#ifdef _DLL
+#define FT_EXPORT( x )  __declspec( dllexport )  x
+#else
+#define FT_EXPORT( x )  __declspec( dllimport )  x
+#endif
 #endif
 
 #endif 
@@ -440,10 +494,17 @@ FT_BEGIN_HEADER
 
 #endif 
 
+
   
   
   
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -468,6 +529,16 @@ FT_BEGIN_HEADER
 #define FT_CALLBACK_DEF( x )  extern "C"  x
 #else
 #define FT_CALLBACK_DEF( x )  static  x
+#endif
+#endif 
+
+#ifndef FT_BASE_CALLBACK
+#ifdef __cplusplus
+#define FT_BASE_CALLBACK( x )      extern "C"  x
+#define FT_BASE_CALLBACK_DEF( x )  extern "C"  x
+#else
+#define FT_BASE_CALLBACK( x )      extern  x
+#define FT_BASE_CALLBACK_DEF( x )  x
 #endif
 #endif 
 

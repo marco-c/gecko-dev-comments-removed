@@ -27,6 +27,8 @@
 FT_BEGIN_HEADER
 
 
+#ifdef FT_CONFIG_OPTION_MAC_FONTS
+
   
   
 #define FT_MAC_RFORK_MAX_LEN  0x00FFFFFFUL
@@ -64,6 +66,8 @@ FT_BEGIN_HEADER
   FT_LOCAL( FT_Bool )
   ft_raccess_rule_by_darwin_vfs( FT_Library library, FT_UInt  rule_index );
 #endif
+
+#endif 
 
 
 FT_END_HEADER

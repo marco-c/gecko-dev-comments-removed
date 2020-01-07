@@ -97,12 +97,12 @@
                      FT_Render_Mode    mode,
                      const FT_Vector*  origin )
   {
-    FT_Error     error;
-    FT_Outline*  outline;
-    FT_BBox      cbox, cbox0;
-    FT_UInt      width, height, pitch;
-    FT_Bitmap*   bitmap;
-    FT_Memory    memory;
+    FT_Error     error   = FT_Err_Ok;
+    FT_Outline*  outline = &slot->outline;
+    FT_Bitmap*   bitmap  = &slot->bitmap;
+    FT_Memory    memory  = render->root.memory;
+    FT_Pos       x_shift = 0;
+    FT_Pos       y_shift = 0;
 
     FT_Raster_Params  params;
 
@@ -121,60 +121,6 @@
       return FT_THROW( Cannot_Render_Glyph );
     }
 
-    outline = &slot->outline;
-
-    
-    if ( origin )
-      FT_Outline_Translate( outline, origin->x, origin->y );
-
-    
-    FT_Outline_Get_CBox( outline, &cbox0 );
-
-    
-#if 1
-    cbox.xMin = FT_PIX_ROUND( cbox0.xMin );
-    cbox.yMin = FT_PIX_ROUND( cbox0.yMin );
-    cbox.xMax = FT_PIX_ROUND( cbox0.xMax );
-    cbox.yMax = FT_PIX_ROUND( cbox0.yMax );
-#else
-    cbox.xMin = FT_PIX_FLOOR( cbox.xMin );
-    cbox.yMin = FT_PIX_FLOOR( cbox.yMin );
-    cbox.xMax = FT_PIX_CEIL( cbox.xMax );
-    cbox.yMax = FT_PIX_CEIL( cbox.yMax );
-#endif
-
-    
-    
-    
-    
-    
-    width  = (FT_UInt)( ( cbox.xMax - cbox.xMin ) >> 6 );
-    if ( width == 0 )
-    {
-      cbox.xMin = FT_PIX_FLOOR( cbox0.xMin );
-      cbox.xMax = FT_PIX_CEIL( cbox0.xMax );
-
-      width = (FT_UInt)( ( cbox.xMax - cbox.xMin ) >> 6 );
-    }
-
-    height = (FT_UInt)( ( cbox.yMax - cbox.yMin ) >> 6 );
-    if ( height == 0 )
-    {
-      cbox.yMin = FT_PIX_FLOOR( cbox0.yMin );
-      cbox.yMax = FT_PIX_CEIL( cbox0.yMax );
-
-      height = (FT_UInt)( ( cbox.yMax - cbox.yMin ) >> 6 );
-    }
-
-    if ( width > FT_USHORT_MAX || height > FT_USHORT_MAX )
-    {
-      error = FT_THROW( Invalid_Argument );
-      goto Exit;
-    }
-
-    bitmap = &slot->bitmap;
-    memory = render->root.memory;
-
     
     if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
     {
@@ -182,39 +128,48 @@
       slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
     }
 
-    pitch              = ( ( width + 15 ) >> 4 ) << 1;
-    bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
+    ft_glyphslot_preset_bitmap( slot, mode, origin );
 
-    bitmap->width = width;
-    bitmap->rows  = height;
-    bitmap->pitch = (int)pitch;
-
-    if ( FT_ALLOC_MULT( bitmap->buffer, height, pitch ) )
+    
+    if ( FT_ALLOC_MULT( bitmap->buffer, bitmap->rows, bitmap->pitch ) )
       goto Exit;
 
     slot->internal->flags |= FT_GLYPH_OWN_BITMAP;
 
+    x_shift = -slot->bitmap_left * 64;
+    y_shift = ( (FT_Int)bitmap->rows - slot->bitmap_top ) * 64;
+
+    if ( origin )
+    {
+      x_shift += origin->x;
+      y_shift += origin->y;
+    }
+
     
-    FT_Outline_Translate( outline, -cbox.xMin, -cbox.yMin );
+    if ( x_shift || y_shift )
+      FT_Outline_Translate( outline, x_shift, y_shift );
 
     
     params.target = bitmap;
     params.source = outline;
-    params.flags  = 0;
+    params.flags  = FT_RASTER_FLAG_DEFAULT;
 
     
     error = render->raster_render( render->raster, &params );
 
-    FT_Outline_Translate( outline, cbox.xMin, cbox.yMin );
-
-    if ( error )
-      goto Exit;
-
-    slot->format      = FT_GLYPH_FORMAT_BITMAP;
-    slot->bitmap_left = (FT_Int)( cbox.xMin >> 6 );
-    slot->bitmap_top  = (FT_Int)( cbox.yMax >> 6 );
-
   Exit:
+    if ( !error )
+      
+      slot->format = FT_GLYPH_FORMAT_BITMAP;
+    else if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
+    {
+      FT_FREE( bitmap->buffer );
+      slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
+    }
+
+    if ( x_shift || y_shift )
+      FT_Outline_Translate( outline, -x_shift, -y_shift );
+
     return error;
   }
 

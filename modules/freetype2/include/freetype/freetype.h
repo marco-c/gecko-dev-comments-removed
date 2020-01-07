@@ -258,6 +258,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
 
 
   
@@ -1052,6 +1055,16 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   typedef struct  FT_FaceRec_
   {
     FT_Long           num_faces;
@@ -1215,6 +1228,13 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
 #define FT_FACE_FLAG_SCALABLE          ( 1L <<  0 )
 #define FT_FACE_FLAG_FIXED_SIZES       ( 1L <<  1 )
 #define FT_FACE_FLAG_FIXED_WIDTH       ( 1L <<  2 )
@@ -1230,6 +1250,7 @@ FT_BEGIN_HEADER
 #define FT_FACE_FLAG_CID_KEYED         ( 1L << 12 )
 #define FT_FACE_FLAG_TRICKY            ( 1L << 13 )
 #define FT_FACE_FLAG_COLOR             ( 1L << 14 )
+#define FT_FACE_FLAG_VARIATION         ( 1L << 15 )
 
 
   
@@ -1392,8 +1413,34 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
 #define FT_IS_NAMED_INSTANCE( face ) \
           ( (face)->face_index & 0x7FFF0000L )
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define FT_IS_VARIATION( face ) \
+          ( (face)->face_flags & FT_FACE_FLAG_VARIATION )
 
 
   
@@ -1429,6 +1476,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 
@@ -1480,6 +1530,43 @@ FT_BEGIN_HEADER
   typedef struct FT_Size_InternalRec_*  FT_Size_Internal;
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1624,8 +1711,6 @@ FT_BEGIN_HEADER
   typedef struct FT_Slot_InternalRec_*  FT_Slot_Internal;
 
 
-  
-  
   
   
   
@@ -3473,6 +3558,13 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
   FT_EXPORT( const char* )
   FT_Get_Postscript_Name( FT_Face  face );
 
@@ -3687,6 +3779,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 
@@ -4456,8 +4551,8 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  8
-#define FREETYPE_PATCH  1
+#define FREETYPE_MINOR  9
+#define FREETYPE_PATCH  0
 
 
   

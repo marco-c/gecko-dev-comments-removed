@@ -25,6 +25,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_PARAMETER_TAGS_H
 
 #ifdef FREETYPE_H
 #error "freetype.h of FreeType 1 has been loaded!"
@@ -189,6 +190,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   typedef struct  FT_SfntLangTag_
   {
     FT_Byte*  string;      
@@ -229,52 +233,14 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Sfnt_LangTag( FT_Face          face,
                        FT_UInt          langID,
                        FT_SfntLangTag  *alangTag );
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_FAMILY \
-          FT_MAKE_TAG( 'i', 'g', 'p', 'f' )
-
-
-  
-#define FT_PARAM_TAG_IGNORE_PREFERRED_FAMILY \
-          FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_FAMILY
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_SUBFAMILY \
-          FT_MAKE_TAG( 'i', 'g', 'p', 's' )
-
-
-  
-#define FT_PARAM_TAG_IGNORE_PREFERRED_SUBFAMILY \
-          FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_SUBFAMILY
 
   
 

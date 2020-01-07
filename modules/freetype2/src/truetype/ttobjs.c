@@ -21,7 +21,7 @@
 #include FT_INTERNAL_STREAM_H
 #include FT_TRUETYPE_TAGS_H
 #include FT_INTERNAL_SFNT_H
-#include FT_TRUETYPE_DRIVER_H
+#include FT_DRIVER_H
 
 #include "ttgload.h"
 #include "ttpload.h"
@@ -147,7 +147,7 @@
   {
 
 #define TRICK_NAMES_MAX_CHARACTERS  19
-#define TRICK_NAMES_COUNT           18
+#define TRICK_NAMES_COUNT           23
 
     static const char trick_names[TRICK_NAMES_COUNT]
                                  [TRICK_NAMES_MAX_CHARACTERS + 1] =
@@ -165,6 +165,11 @@
 
       "cpop",               
       "DFGirl-W6-WIN-BF",   
+      "DFGothic-EB",        
+      "DFGyoSho-Lt",        
+      "DFHSGothic-W5",      
+      "DFHSMincho-W3",      
+      "DFHSMincho-W7",      
       "DFKaiSho-SB",        
       "DFKaiShu",
       "DFKai-SB",           
@@ -265,7 +270,7 @@
   tt_check_trickyness_sfnt_ids( TT_Face  face )
   {
 #define TRICK_SFNT_IDS_PER_FACE   3
-#define TRICK_SFNT_IDS_NUM_FACES  19
+#define TRICK_SFNT_IDS_NUM_FACES  26
 
     static const tt_sfnt_id_rec sfnt_id[TRICK_SFNT_IDS_NUM_FACES]
                                        [TRICK_SFNT_IDS_PER_FACE] = {
@@ -285,6 +290,31 @@
         { 0xA344A1EBUL, 0x000001E1UL }  
       },
       { 
+        { 0x12C3EBB2UL, 0x00000350UL }, 
+        { 0xB680EE64UL, 0x000087A7UL }, 
+        { 0xCE939563UL, 0x00000758UL }  
+      },
+      { 
+        { 0x11E5EAD4UL, 0x00000350UL }, 
+        { 0xCE5956E9UL, 0x0000BC85UL }, 
+        { 0x8272F416UL, 0x00000045UL }  
+      },
+      { 
+        { 0x1262EB4EUL, 0x00000350UL }, 
+        { 0xE86A5D64UL, 0x00007940UL }, 
+        { 0x7850F729UL, 0x000005FFUL }  
+      },
+      { 
+        { 0x122DEB0AUL, 0x00000350UL }, 
+        { 0x3D16328AUL, 0x0000859BUL }, 
+        { 0xA93FC33BUL, 0x000002CBUL }  
+      },
+      { 
+        { 0x125FEB26UL, 0x00000350UL }, 
+        { 0xA5ACC982UL, 0x00007EE1UL }, 
+        { 0x90999196UL, 0x0000041FUL }  
+      },
+      { 
         { 0x11E5EAD4UL, 0x00000350UL }, 
         { 0x5A30CA3BUL, 0x00009063UL }, 
         { 0x13A42602UL, 0x0000007EUL }  
@@ -293,6 +323,16 @@
         { 0x11E5EAD4UL, 0x00000350UL }, 
         { 0xA6E78C01UL, 0x00008998UL }, 
         { 0x13A42602UL, 0x0000007EUL }  
+      },
+      { 
+        { 0x07DCF546UL, 0x00000308UL }, 
+        { 0x40FE7C90UL, 0x00008E2AUL }, 
+        { 0x608174B5UL, 0x0000007AUL }  
+      },
+      { 
+        { 0xEB891238UL, 0x00000308UL }, 
+        { 0xD2E4DCD4UL, 0x0000676FUL }, 
+        { 0x8EA5F293UL, 0x000003B8UL }  
       },
       { 
         { 0xFFFBFFFCUL, 0x00000008UL }, 
@@ -657,46 +697,17 @@
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 
     {
-      FT_Int  instance_index = face_index >> 16;
+      FT_UInt  instance_index = (FT_UInt)face_index >> 16;
 
 
       if ( FT_HAS_MULTIPLE_MASTERS( ttface ) &&
            instance_index > 0                )
       {
-        error = TT_Get_MM_Var( face, NULL );
+        error = TT_Set_Named_Instance( face, instance_index );
         if ( error )
           goto Exit;
 
-        if ( face->blend->mmvar->namedstyle )
-        {
-          FT_Memory  memory = ttface->memory;
-
-          FT_Var_Named_Style*  named_style;
-          FT_String*           style_name;
-
-
-          
-          named_style = face->blend->mmvar->namedstyle + instance_index - 1;
-          error = sfnt->get_name( face,
-                                  (FT_UShort)named_style->strid,
-                                  &style_name );
-          if ( error )
-            goto Exit;
-
-          
-          if ( face->root.style_name )
-            FT_FREE( face->root.style_name );
-          face->root.style_name = style_name;
-
-          
-          error = TT_Set_Var_Design( face,
-                                     face->blend->mmvar->num_axis,
-                                     named_style->coords );
-          if ( error )
-            goto Exit;
-
-          tt_apply_mvar( face );
-        }
+        tt_apply_mvar( face );
       }
     }
 

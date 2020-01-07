@@ -22,6 +22,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_PARAMETER_TAGS_H
 
 #ifdef FREETYPE_H
 #error "freetype.h of FreeType 1 has been loaded!"
@@ -284,20 +285,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_LCD_FILTER_WEIGHTS \
-          FT_MAKE_TAG( 'l', 'c', 'd', 'f' )
-
-
-  
 
 
 

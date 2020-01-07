@@ -1388,10 +1388,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
   typedef struct  TT_FaceRec_
   {
     FT_FaceRec            root;
@@ -1444,6 +1440,9 @@ FT_BEGIN_HEADER
     
     void*                 var;
 #endif
+
+    
+    void*                 psaux;
 
 
     
@@ -1509,7 +1508,6 @@ FT_BEGIN_HEADER
     FT_Bool               doblend;
     GX_Blend              blend;
 
-    FT_Bool               is_default_instance;   
     FT_UInt32             variation_support;     
 
     const char*           var_postscript_prefix;     

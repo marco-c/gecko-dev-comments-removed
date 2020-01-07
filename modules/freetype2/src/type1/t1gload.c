@@ -23,6 +23,8 @@
 #include FT_INTERNAL_STREAM_H
 #include FT_OUTLINE_H
 #include FT_INTERNAL_POSTSCRIPT_AUX_H
+#include FT_INTERNAL_CFF_TYPES_H
+#include FT_DRIVER_H
 
 #include "t1errors.h"
 
@@ -37,37 +39,28 @@
 #define FT_COMPONENT  trace_t1gload
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
   static FT_Error
   T1_Parse_Glyph_And_Get_Char_String( T1_Decoder  decoder,
                                       FT_UInt     glyph_index,
-                                      FT_Data*    char_string )
+                                      FT_Data*    char_string,
+                                      FT_Bool*    force_scaling )
   {
     T1_Face   face  = (T1_Face)decoder->builder.face;
     T1_Font   type1 = &face->type1;
     FT_Error  error = FT_Err_Ok;
+
+    PSAux_Service           psaux         = (PSAux_Service)face->psaux;
+    const T1_Decoder_Funcs  decoder_funcs = psaux->t1_decoder_funcs;
+    PS_Decoder              psdecoder;
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
     FT_Incremental_InterfaceRec *inc =
                       face->root.internal->incremental_interface;
 #endif
 
+#ifdef T1_CONFIG_OPTION_OLD_ENGINE
+    PS_Driver  driver = (PS_Driver)FT_FACE_DRIVER( face );
+#endif
 
     decoder->font_matrix = type1->font_matrix;
     decoder->font_offset = type1->font_offset;
@@ -90,9 +83,56 @@
     }
 
     if ( !error )
-      error = decoder->funcs.parse_charstrings(
-                decoder, (FT_Byte*)char_string->pointer,
-                (FT_UInt)char_string->length );
+    {
+      
+#ifdef T1_CONFIG_OPTION_OLD_ENGINE
+      if ( driver->hinting_engine == FT_HINTING_FREETYPE ||
+           decoder->builder.metrics_only                 )
+        error = decoder_funcs->parse_charstrings_old(
+                  decoder,
+                  (FT_Byte*)char_string->pointer,
+                  (FT_UInt)char_string->length );
+#else
+      if ( decoder->builder.metrics_only )
+        error = decoder_funcs->parse_metrics(
+                  decoder,
+                  (FT_Byte*)char_string->pointer,
+                  (FT_UInt)char_string->length );
+#endif
+      else
+      {
+        CFF_SubFontRec  subfont;
+
+
+        psaux->ps_decoder_init( &psdecoder, decoder, TRUE );
+
+        psaux->t1_make_subfont( FT_FACE( face ),
+                                &face->type1.private_dict, &subfont );
+        psdecoder.current_subfont = &subfont;
+
+        error = decoder_funcs->parse_charstrings(
+                  &psdecoder,
+                  (FT_Byte*)char_string->pointer,
+                  (FT_ULong)char_string->length );
+
+        
+        
+        if ( FT_ERR_EQ( error, Glyph_Too_Big ) )
+        {
+          
+          
+          
+          ((T1_GlyphSlot)decoder->builder.glyph)->hint = FALSE;
+
+          *force_scaling = TRUE;
+
+          error = decoder_funcs->parse_charstrings(
+                    &psdecoder,
+                    (FT_Byte*)char_string->pointer,
+                    (FT_ULong)char_string->length );
+        }
+      }
+    }
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
 
@@ -126,8 +166,10 @@
                   FT_UInt     glyph_index )
   {
     FT_Data   glyph_data;
-    FT_Error  error = T1_Parse_Glyph_And_Get_Char_String(
-                        decoder, glyph_index, &glyph_data );
+    FT_Bool   force_scaling = FALSE;
+    FT_Error  error         = T1_Parse_Glyph_And_Get_Char_String(
+                                decoder, glyph_index, &glyph_data,
+                                &force_scaling );
 
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
@@ -147,6 +189,23 @@
 
     return error;
   }
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
   FT_LOCAL_DEF( FT_Error )
@@ -278,6 +337,8 @@
     T1_DecoderRec           decoder;
     T1_Face                 face = (T1_Face)t1glyph->face;
     FT_Bool                 hinting;
+    FT_Bool                 scaled;
+    FT_Bool                 force_scaling = FALSE;
     T1_Font                 type1         = &face->type1;
     PSAux_Service           psaux         = (PSAux_Service)face->psaux;
     const T1_Decoder_Funcs  decoder_funcs = psaux->t1_decoder_funcs;
@@ -325,7 +386,10 @@
 
     hinting = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 &&
                        ( load_flags & FT_LOAD_NO_HINTING ) == 0 );
+    scaled  = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 );
 
+    glyph->hint     = hinting;
+    glyph->scaled   = scaled;
     t1glyph->format = FT_GLYPH_FORMAT_OUTLINE;
 
     error = decoder_funcs->init( &decoder,
@@ -355,13 +419,15 @@
 
     
     error = T1_Parse_Glyph_And_Get_Char_String( &decoder, glyph_index,
-                                                &glyph_data );
+                                                &glyph_data,
+                                                &force_scaling );
     if ( error )
       goto Exit;
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
     glyph_data_loaded = 1;
 #endif
 
+    hinting     = glyph->hint;
     font_matrix = decoder.font_matrix;
     font_offset = decoder.font_offset;
 
@@ -451,7 +517,7 @@
         }
 #endif
 
-        if ( ( load_flags & FT_LOAD_NO_SCALE ) == 0 )
+        if ( ( load_flags & FT_LOAD_NO_SCALE ) == 0 || force_scaling )
         {
           
           FT_Int       n;

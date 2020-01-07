@@ -27,6 +27,8 @@
 FT_BEGIN_HEADER
 
 
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+
   
   
   
@@ -402,6 +404,10 @@ FT_BEGIN_HEADER
                      FT_Fixed*  coords );
 
   FT_LOCAL( FT_Error )
+  TT_Set_Named_Instance( TT_Face  face,
+                         FT_UInt  instance_index );
+
+  FT_LOCAL( FT_Error )
   tt_face_vary_cvt( TT_Face    face,
                     FT_Stream  stream );
 
@@ -434,6 +440,8 @@ FT_BEGIN_HEADER
 
   FT_LOCAL( void )
   tt_done_blend( TT_Face  face );
+
+#endif 
 
 
 FT_END_HEADER

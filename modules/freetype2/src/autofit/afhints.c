@@ -314,8 +314,12 @@
     AF_DUMP(( "Table of points:\n" ));
 
     if ( hints->num_points )
+    {
       AF_DUMP(( "  index  hedge  hseg  vedge  vseg  flags "
+             
                 "  xorg  yorg  xscale  yscale   xfit    yfit" ));
+             
+    }
     else
       AF_DUMP(( "  (none)\n" ));
 
@@ -420,9 +424,14 @@
                 dimension == AF_DIMENSION_HORZ ? "vertical"
                                                : "horizontal" ));
       if ( axis->num_segments )
+      {
         AF_DUMP(( "  index   pos   delta   dir   from   to "
+               
                   "  link  serif  edge"
+               
                   "  height  extra     flags\n" ));
+               
+      }
       else
         AF_DUMP(( "  (none)\n" ));
 
@@ -564,8 +573,12 @@
                   10.0 * hints->y_scale / 65536.0 / 64.0 ));
 
       if ( axis->num_edges )
+      {
         AF_DUMP(( "  index    pos     dir   link  serif"
+               
                   "  blue    opos     pos       flags\n" ));
+               
+      }
       else
         AF_DUMP(( "  (none)\n" ));
 

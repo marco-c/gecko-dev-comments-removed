@@ -130,6 +130,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   FT_EXPORT( FT_Error )
   FT_Gzip_Uncompress( FT_Memory       memory,
                       FT_Byte*        output,

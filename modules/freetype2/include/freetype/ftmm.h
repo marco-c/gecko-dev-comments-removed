@@ -311,6 +311,30 @@ FT_BEGIN_HEADER
   
   
   
+  FT_EXPORT( FT_Error )
+  FT_Done_MM_Var( FT_Library   library,
+                  FT_MM_Var   *amaster );
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -333,6 +357,12 @@ FT_BEGIN_HEADER
                                 FT_Long*  coords );
 
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -392,12 +422,21 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Var_Design_Coordinates( FT_Face    face,
                                  FT_UInt    num_coords,
                                  FT_Fixed*  coords );
 
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -462,6 +501,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_MM_Blend_Coordinates( FT_Face    face,
                                FT_UInt    num_coords,
@@ -490,12 +532,18 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Var_Blend_Coordinates( FT_Face    face,
                                 FT_UInt    num_coords,
                                 FT_Fixed*  coords );
 
 
+  
+  
+  
   
   
   
@@ -534,10 +582,50 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Var_Axis_Flags( FT_MM_Var*  master,
                          FT_UInt     axis_index,
                          FT_UInt*    flags );
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FT_EXPORT( FT_Error )
+  FT_Set_Named_Instance( FT_Face  face,
+                         FT_UInt  instance_index );
 
   
 

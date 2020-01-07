@@ -101,7 +101,6 @@ FT_BEGIN_HEADER
   
   
   
-  
 #define FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
 
 
@@ -214,6 +213,14 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+  
+  
+  
+  
   
   
   
@@ -252,15 +259,6 @@ FT_BEGIN_HEADER
   
   
   
-
-
-
-  
-  
-  
-  
-  
-  
   
   
   
@@ -282,31 +280,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 
 
 
@@ -793,6 +766,16 @@ FT_BEGIN_HEADER
   
   
 #undef T1_CONFIG_OPTION_NO_MM_SUPPORT
+
+
+  
+  
+  
+  
+  
+  
+  
+
 
 
   

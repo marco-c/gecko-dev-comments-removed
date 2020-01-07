@@ -190,9 +190,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
   FT_EXPORT( FT_Error )
   FT_Outline_Done( FT_Library   library,
                    FT_Outline*  outline );

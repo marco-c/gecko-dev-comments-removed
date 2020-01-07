@@ -325,7 +325,7 @@
 
 
 
-#define FT_AUTOHINTER_H  <freetype/ftautoh.h>
+#define FT_DRIVER_H  <freetype/ftdriver.h>
 
 
   
@@ -338,7 +338,9 @@
 
 
 
-#define FT_CFF_DRIVER_H  <freetype/ftcffdrv.h>
+
+
+#define FT_AUTOHINTER_H  FT_DRIVER_H
 
 
   
@@ -351,7 +353,9 @@
 
 
 
-#define FT_TRUETYPE_DRIVER_H  <freetype/ftttdrv.h>
+
+
+#define FT_CFF_DRIVER_H  FT_DRIVER_H
 
 
   
@@ -364,7 +368,24 @@
 
 
 
-#define FT_PCF_DRIVER_H  <freetype/ftpcfdrv.h>
+
+
+#define FT_TRUETYPE_DRIVER_H  FT_DRIVER_H
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+#define FT_PCF_DRIVER_H  FT_DRIVER_H
 
 
   
@@ -568,63 +589,6 @@
 
 
 
-
-
-
-#define FT_CACHE_IMAGE_H  FT_CACHE_H
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define FT_CACHE_SMALL_BITMAPS_H  FT_CACHE_H
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-#define FT_CACHE_CHARMAP_H  FT_CACHE_H
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define FT_MAC_H  <freetype/ftmac.h>
 
 
@@ -768,17 +732,6 @@
 
 
 
-#define FT_UNPATENTED_HINTING_H  <freetype/ttunpat.h>
-
-
-  
-
-
-
-
-
-
-
 
 #define FT_INCREMENTAL_H  <freetype/ftincrem.h>
 
@@ -809,25 +762,30 @@
 
   
 
+  
 #define FT_ERROR_DEFINITIONS_H  <freetype/fterrdef.h>
+#define FT_PARAMETER_TAGS_H     <freetype/ftparams.h>
 
+  
+#define FT_UNPATENTED_HINTING_H   <freetype/ftparams.h>
+#define FT_TRUETYPE_UNPATENTED_H  <freetype/ftparams.h>
+
+  
+#define FT_CACHE_IMAGE_H          FT_CACHE_H
+#define FT_CACHE_SMALL_BITMAPS_H  FT_CACHE_H
+#define FT_CACHE_CHARMAP_H        FT_CACHE_H
 
   
   
   
   
-#define FT_CACHE_MANAGER_H           <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_MRU_H      <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_MANAGER_H  <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_CACHE_H    <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_GLYPH_H    <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_IMAGE_H    <freetype/ftcache.h>
-#define FT_CACHE_INTERNAL_SBITS_H    <freetype/ftcache.h>
-
-
-#define FT_INCREMENTAL_H          <freetype/ftincrem.h>
-
-#define FT_TRUETYPE_UNPATENTED_H  <freetype/ttunpat.h>
+#define FT_CACHE_MANAGER_H           FT_CACHE_H
+#define FT_CACHE_INTERNAL_MRU_H      FT_CACHE_H
+#define FT_CACHE_INTERNAL_MANAGER_H  FT_CACHE_H
+#define FT_CACHE_INTERNAL_CACHE_H    FT_CACHE_H
+#define FT_CACHE_INTERNAL_GLYPH_H    FT_CACHE_H
+#define FT_CACHE_INTERNAL_IMAGE_H    FT_CACHE_H
+#define FT_CACHE_INTERNAL_SBITS_H    FT_CACHE_H
 
 
   
