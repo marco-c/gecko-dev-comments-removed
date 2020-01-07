@@ -125,47 +125,68 @@ function(anchorRect, viewportRect, height, pos, offset) {
 
 
 
-const calculateHorizontalPosition =
-function(anchorRect, viewportRect, width, type, offset, isRtl) {
+
+const calculateHorizontalPosition = (
+  anchorRect,
+  viewportRect,
+  width,
+  type,
+  offset,
+  isRtl
+) => {
+  
+  const hangDirection = isRtl ? "left" : "right";
   const anchorWidth = anchorRect.width;
-  let anchorStart = isRtl ? anchorRect.right : anchorRect.left;
 
   
-  anchorStart -= viewportRect.left;
+  const anchorStart =
+    hangDirection === "right"
+      ? anchorRect.left - viewportRect.left
+      : viewportRect.right - anchorRect.right;
 
   
-  width = Math.min(width, viewportRect.width);
+  const tooltipWidth = Math.min(width, viewportRect.width);
 
   
-  
-  
-  let left = anchorStart + offset - (isRtl ? width : 0);
-  left = Math.min(left, viewportRect.width - width);
-  left = Math.max(0, left);
+  let tooltipStart = anchorStart + offset;
+  tooltipStart = Math.min(tooltipStart, viewportRect.width - tooltipWidth);
+  tooltipStart = Math.max(0, tooltipStart);
 
   
-  let arrowLeft;
+  const arrowWidth = type === TYPE.ARROW ? ARROW_WIDTH : 0;
+  let arrowStart;
   
   if (type === TYPE.ARROW) {
-    const arrowCenter = left + ARROW_OFFSET + ARROW_WIDTH / 2;
+    
+    const arrowCenter = tooltipStart + ARROW_OFFSET + arrowWidth / 2;
+
+    
     const anchorCenter = anchorStart + anchorWidth / 2;
+
     
     if (arrowCenter > anchorCenter) {
-      left = Math.max(0, left - (arrowCenter - anchorCenter));
+      tooltipStart = Math.max(0, tooltipStart - (arrowCenter - anchorCenter));
     }
     
-    arrowLeft = Math.min(ARROW_OFFSET, (anchorWidth - ARROW_WIDTH) / 2) | 0;
+    arrowStart = Math.min(ARROW_OFFSET, (anchorWidth - arrowWidth) / 2) | 0;
     
-    arrowLeft += anchorStart - left;
+    arrowStart += anchorStart - tooltipStart;
     
-    arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
-    arrowLeft = Math.max(arrowLeft, 0);
+    arrowStart = Math.min(arrowStart, tooltipWidth - arrowWidth);
+    arrowStart = Math.max(arrowStart, 0);
   }
 
   
-  left += viewportRect.left;
+  const left =
+    hangDirection === "right"
+      ? viewportRect.left + tooltipStart
+      : viewportRect.right - tooltipStart - tooltipWidth;
+  const arrowLeft =
+    hangDirection === "right"
+      ? arrowStart
+      : tooltipWidth - arrowWidth - arrowStart;
 
-  return {left, width, arrowLeft};
+  return { left, width: tooltipWidth, arrowLeft };
 };
 
 
