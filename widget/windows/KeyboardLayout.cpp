@@ -1526,6 +1526,20 @@ NativeKey::InitWithKeyOrChar()
 
   keyboardLayout->InitNativeKey(*this);
 
+  
+  
+  
+  
+  
+  
+  
+  if (MaybeEmulatingAltGraph() &&
+      (mCommittedCharsAndModifiers.IsProducingCharsWithAltGr() ||
+       mKeyNameIndex == KEY_NAME_INDEX_Dead)) {
+    mModKeyState.Unset(MODIFIER_CONTROL | MODIFIER_ALT);
+    mModKeyState.Set(MODIFIER_ALTGRAPH);
+  }
+
   mIsDeadKey =
     (IsFollowedByDeadCharMessage() ||
      keyboardLayout->IsDeadKey(mOriginalVirtualKeyCode, mModKeyState));
@@ -1563,6 +1577,9 @@ NativeKey::InitCommittedCharsAndModifiersWithFollowingCharMessages()
   Modifiers modifiers = mModKeyState.GetModifiers();
   if (IsFollowedByPrintableCharMessage()) {
     modifiers &= ~(MODIFIER_ALT | MODIFIER_CONTROL);
+    if (MaybeEmulatingAltGraph()) {
+      modifiers |= MODIFIER_ALTGRAPH;
+    }
   }
   
   
@@ -1695,6 +1712,12 @@ NativeKey::InitWithAppCommand()
     ::GetKeyboardState(kbdState);
     mIsSkippableInRemoteProcess = mIsRepeat = !!kbdState[mVirtualKeyCode];
   }
+}
+
+bool
+NativeKey::MaybeEmulatingAltGraph() const
+{
+  return IsControl() && IsAlt() && KeyboardLayout::GetInstance()->HasAltGr();
 }
 
 
