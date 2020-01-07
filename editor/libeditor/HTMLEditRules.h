@@ -597,7 +597,15 @@ protected:
   nsresult AdjustWhitespace();
   nsresult PinSelectionToNewBlock();
   void CheckInterlinePosition();
-  nsresult AdjustSelection(nsIEditor::EDirection aAction);
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult AdjustSelection(nsIEditor::EDirection aAction);
 
   
 
