@@ -589,26 +589,6 @@ TokenStreamChars<char16_t, AnyCharsAccess>::getNonAsciiCodePoint(char16_t lead, 
     return true;
 }
 
-
-
-
-
-
-
-
-
-
-template<typename CharT, class AnyCharsAccess>
-int32_t
-GeneralTokenStreamChars<CharT, AnyCharsAccess>::getCodeUnit()
-{
-    if (MOZ_LIKELY(!sourceUnits.atEnd()))
-        return sourceUnits.getCodeUnit();
-
-    anyCharsAccess().flags.isEOF = true;
-    return EOF;
-}
-
 template<typename CharT, class AnyCharsAccess>
 void
 GeneralTokenStreamChars<CharT, AnyCharsAccess>::ungetChar(int32_t c)
@@ -629,16 +609,6 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::ungetChar(int32_t c)
     } else {
         MOZ_ASSERT(sourceUnits.peekCodeUnit() == c);
     }
-}
-
-template<typename CharT>
-void
-TokenStreamCharsBase<CharT>::ungetCodeUnit(int32_t c)
-{
-    if (c == EOF)
-        return;
-
-    sourceUnits.ungetCodeUnit();
 }
 
 template<class AnyCharsAccess>

@@ -1050,7 +1050,12 @@ template<typename CharT>
 class TokenStreamCharsBase
 {
   protected:
-    void ungetCodeUnit(int32_t c);
+    void ungetCodeUnit(int32_t c) {
+        if (c == EOF)
+            return;
+
+        sourceUnits.ungetCodeUnit();
+    }
 
   public:
     using CharBuffer = Vector<CharT, 32>;
@@ -1254,7 +1259,23 @@ class GeneralTokenStreamChars
 
     MOZ_COLD bool badToken();
 
-    int32_t getCodeUnit();
+    
+
+
+
+
+
+
+
+
+
+    int32_t getCodeUnit() {
+        if (MOZ_LIKELY(!sourceUnits.atEnd()))
+            return sourceUnits.getCodeUnit();
+
+        anyCharsAccess().flags.isEOF = true;
+        return EOF;
+    }
 
     void ungetCodeUnit(int32_t c) {
         MOZ_ASSERT_IF(c == EOF, anyCharsAccess().flags.isEOF);
