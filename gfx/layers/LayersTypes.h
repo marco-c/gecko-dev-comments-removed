@@ -100,12 +100,23 @@ struct EventRegions {
   nsIntRegion mHorizontalPanRegion;
   nsIntRegion mVerticalPanRegion;
 
+  
+  
+  
+  
+  
+  
+  
+  bool mDTCRequiresTargetConfirmation;
+
   EventRegions()
+    : mDTCRequiresTargetConfirmation(false)
   {
   }
 
   explicit EventRegions(nsIntRegion aHitRegion)
     : mHitRegion(aHitRegion)
+    , mDTCRequiresTargetConfirmation(false)
   {
   }
 
@@ -117,7 +128,8 @@ struct EventRegions {
                const nsIntRegion& aDispatchToContentRegion,
                const nsIntRegion& aNoActionRegion,
                const nsIntRegion& aHorizontalPanRegion,
-               const nsIntRegion& aVerticalPanRegion);
+               const nsIntRegion& aVerticalPanRegion,
+               bool aDTCRequiresTargetConfirmation);
 
   bool operator==(const EventRegions& aRegions) const
   {
@@ -125,7 +137,8 @@ struct EventRegions {
            mDispatchToContentHitRegion == aRegions.mDispatchToContentHitRegion &&
            mNoActionRegion == aRegions.mNoActionRegion &&
            mHorizontalPanRegion == aRegions.mHorizontalPanRegion &&
-           mVerticalPanRegion == aRegions.mVerticalPanRegion;
+           mVerticalPanRegion == aRegions.mVerticalPanRegion &&
+           mDTCRequiresTargetConfirmation == aRegions.mDTCRequiresTargetConfirmation;
   }
   bool operator!=(const EventRegions& aRegions) const
   {
@@ -174,6 +187,7 @@ struct EventRegions {
       combinedActionRegions.OrWith(mNoActionRegion);
       mDispatchToContentHitRegion.OrWith(combinedActionRegions);
     }
+    mDTCRequiresTargetConfirmation |= aOther.mDTCRequiresTargetConfirmation;
   }
 
   bool IsEmpty() const

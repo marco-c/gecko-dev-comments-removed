@@ -449,6 +449,7 @@ public:
     mDisableFlattening(false),
     mBackfaceHidden(false),
     mShouldPaintOnContentSide(false),
+    mDTCRequiresTargetConfirmation(false),
     mImage(nullptr),
     mCommonClipCount(-1),
     mNewChildLayersIndex(-1)
@@ -641,6 +642,13 @@ public:
 
 
   bool mShouldPaintOnContentSide;
+  
+
+
+
+
+
+  bool mDTCRequiresTargetConfirmation;
   
 
 
@@ -3340,6 +3348,9 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       }
       containingPaintedLayerData->mDispatchToContentHitRegion.Or(
         containingPaintedLayerData->mDispatchToContentHitRegion, rect);
+      if (data->mDTCRequiresTargetConfirmation) {
+        containingPaintedLayerData->mDTCRequiresTargetConfirmation = true;
+      }
     }
     if (!data->mMaybeHitRegion.GetBounds().IsEmpty()) {
       nsRect rect = nsLayoutUtils::TransformFrameRectToAncestor(
@@ -3403,7 +3414,8 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
         ScaleRegionToOutsidePixels(data->mDispatchToContentHitRegion),
         ScaleRegionToOutsidePixels(data->mNoActionRegion),
         ScaleRegionToOutsidePixels(data->mHorizontalPanRegion),
-        ScaleRegionToOutsidePixels(data->mVerticalPanRegion));
+        ScaleRegionToOutsidePixels(data->mVerticalPanRegion),
+        data->mDTCRequiresTargetConfirmation);
 
     Matrix mat = layer->GetTransform().As2D();
     mat.Invert();
@@ -3659,6 +3671,10 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
 
   if (aItem->HitTestInfo() & CompositorHitTestInfo::eDispatchToContent) {
     mDispatchToContentHitRegion.OrWith(area);
+
+    if (aItem->HitTestInfo() & CompositorHitTestInfo::eRequiresTargetConfirmation) {
+      mDTCRequiresTargetConfirmation = true;
+    }
   }
 
   auto touchFlags = hitTestInfo & CompositorHitTestInfo::eTouchActionMask;
