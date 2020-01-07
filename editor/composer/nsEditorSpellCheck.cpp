@@ -7,11 +7,12 @@
 #include <stdlib.h>                     
 
 #include "mozilla/Attributes.h"         
-#include "mozilla/Preferences.h"        
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/Selection.h"
 #include "mozilla/intl/LocaleService.h" 
 #include "mozilla/mozalloc.h"           
+#include "mozilla/Preferences.h"        
+#include "mozilla/TextServicesDocument.h" 
 #include "nsAString.h"                  
 #include "nsComponentManagerUtils.h"    
 #include "nsDebug.h"                    
@@ -377,16 +378,12 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
   nsresult rv;
 
   
-  nsCOMPtr<nsITextServicesDocument>tsDoc =
-     do_CreateInstance("@mozilla.org/textservices/textservicesdocument;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  NS_ENSURE_TRUE(tsDoc, NS_ERROR_NULL_POINTER);
-
-  tsDoc->SetFilter(mTxtSrvFilter);
+  RefPtr<TextServicesDocument> textServicesDocument =
+    new TextServicesDocument();
+  textServicesDocument->SetFilter(mTxtSrvFilter);
 
   
-  rv = tsDoc->InitWithEditor(aEditor);
+  rv = textServicesDocument->InitWithEditor(aEditor);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aEnableSelectionChecking) {
@@ -412,13 +409,13 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
 
         
 
-        rv = tsDoc->ExpandRangeToWordBoundaries(rangeBounds);
+        rv = textServicesDocument->ExpandRangeToWordBoundaries(rangeBounds);
         NS_ENSURE_SUCCESS(rv, rv);
 
         
         
 
-        rv = tsDoc->SetExtent(rangeBounds);
+        rv = textServicesDocument->SetExtent(rangeBounds);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -429,7 +426,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
 
   NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NULL_POINTER);
 
-  rv = mSpellChecker->SetDocument(tsDoc, true);
+  rv = mSpellChecker->SetDocument(textServicesDocument, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

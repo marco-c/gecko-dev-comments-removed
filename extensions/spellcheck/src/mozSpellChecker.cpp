@@ -10,14 +10,16 @@
 #include "nsICategoryManager.h"
 #include "nsISupportsPrimitives.h"
 #include "nsISimpleEnumerator.h"
-#include "mozilla/PRemoteSpellcheckEngineChild.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/PRemoteSpellcheckEngineChild.h"
+#include "mozilla/TextServicesDocument.h"
 #include "nsXULAppAPI.h"
 
 using mozilla::dom::ContentChild;
 using mozilla::GenericPromise;
 using mozilla::PRemoteSpellcheckEngineChild;
 using mozilla::RemoteSpellcheckEngineChild;
+using mozilla::TextServicesDocument;
 
 #define DEFAULT_SPELL_CHECKER "@mozilla.org/spellchecker/engine;1"
 
@@ -31,7 +33,7 @@ NS_INTERFACE_MAP_BEGIN(mozSpellChecker)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(mozSpellChecker,
-                         mTsDoc,
+                         mTextServicesDocument,
                          mPersonalDictionary)
 
 mozSpellChecker::mozSpellChecker()
@@ -72,9 +74,10 @@ mozSpellChecker::Init()
 }
 
 NS_IMETHODIMP
-mozSpellChecker::SetDocument(nsITextServicesDocument *aDoc, bool aFromStartofDoc)
+mozSpellChecker::SetDocument(TextServicesDocument* aTextServicesDocument,
+                             bool aFromStartofDoc)
 {
-  mTsDoc = aDoc;
+  mTextServicesDocument = aTextServicesDocument;
   mFromStart = aFromStartofDoc;
   return NS_OK;
 }
@@ -94,33 +97,34 @@ mozSpellChecker::NextMisspelledWord(nsAString &aWord, nsTArray<nsString> *aSugge
   if (NS_FAILED(result))
     return result;
 
-  while( NS_SUCCEEDED(mTsDoc->IsDone(&done)) && !done )
-    {
-      nsString str;
-      result = mTsDoc->GetCurrentTextBlock(&str);
+  while (NS_SUCCEEDED(mTextServicesDocument->IsDone(&done)) && !done) {
+    nsString str;
+    result = mTextServicesDocument->GetCurrentTextBlock(&str);
 
-      if (NS_FAILED(result))
-        return result;
-      do{
-        result = mConverter->FindNextWord(str.get(),str.Length(),selOffset,&begin,&end);
-        if(NS_SUCCEEDED(result)&&(begin != -1)){
-          const nsAString &currWord = Substring(str, begin, end - begin);
-          result = CheckWord(currWord, &isMisspelled, aSuggestions);
-          if(isMisspelled){
-            aWord = currWord;
-            mTsDoc->SetSelection(begin, end-begin);
-            
-            
-            
-            mTsDoc->ScrollSelectionIntoView();
-            return NS_OK;
-          }
-        }
-        selOffset = end;
-      }while(end != -1);
-      mTsDoc->NextBlock();
-      selOffset=0;
+    if (NS_FAILED(result)) {
+      return result;
     }
+    do {
+      result = mConverter->FindNextWord(str.get(), str.Length(),
+                                        selOffset, &begin, &end);
+      if (NS_SUCCEEDED(result) && begin != -1) {
+        const nsAString &currWord = Substring(str, begin, end - begin);
+        result = CheckWord(currWord, &isMisspelled, aSuggestions);
+        if (isMisspelled) {
+          aWord = currWord;
+          mTextServicesDocument->SetSelection(begin, end - begin);
+          
+          
+          
+          mTextServicesDocument->ScrollSelectionIntoView();
+          return NS_OK;
+        }
+      }
+      selOffset = end;
+    } while(end != -1);
+    mTextServicesDocument->NextBlock();
+    selOffset=0;
+  }
   return NS_OK;
 }
 
@@ -187,46 +191,48 @@ mozSpellChecker::Replace(const nsAString &aOldWord, const nsAString &aNewWord, b
     result = SetupDoc(&selOffset);
     if(NS_FAILED(result))
       return result;
-    result = GetCurrentBlockIndex(mTsDoc,&startBlock);
+    result = GetCurrentBlockIndex(mTextServicesDocument,&startBlock);
     if(NS_FAILED(result))
       return result;
 
     
-    result = mTsDoc->FirstBlock();
+    result = mTextServicesDocument->FirstBlock();
     currOffset=0;
     currentBlock = 0;
-    while( NS_SUCCEEDED(mTsDoc->IsDone(&done)) && !done )
-      {
-        result = mTsDoc->GetCurrentTextBlock(&str);
-        do{
-          result = mConverter->FindNextWord(str.get(),str.Length(),currOffset,&begin,&end);
-          if(NS_SUCCEEDED(result)&&(begin != -1)){
-            if (aOldWord.Equals(Substring(str, begin, end-begin))) {
-              
-              
-              if((currentBlock == startBlock)&&(begin < selOffset)){
-                selOffset +=
-                  int32_t(aNewWord.Length()) - int32_t(aOldWord.Length());
-                if(selOffset < begin) selOffset=begin;
+    while (NS_SUCCEEDED(mTextServicesDocument->IsDone(&done)) && !done) {
+      result = mTextServicesDocument->GetCurrentTextBlock(&str);
+      do {
+        result = mConverter->FindNextWord(str.get(),str.Length(),currOffset,&begin,&end);
+        if (NS_SUCCEEDED(result) && (begin != -1)) {
+          if (aOldWord.Equals(Substring(str, begin, end-begin))) {
+            
+            
+            if (currentBlock == startBlock && begin < selOffset) {
+              selOffset +=
+                int32_t(aNewWord.Length()) - int32_t(aOldWord.Length());
+              if (selOffset < begin) {
+                selOffset=begin;
               }
-              mTsDoc->SetSelection(begin, end-begin);
-              mTsDoc->InsertText(&newWord);
-              mTsDoc->GetCurrentTextBlock(&str);
-              end += (aNewWord.Length() - aOldWord.Length());  
             }
+            mTextServicesDocument->SetSelection(begin, end-begin);
+            mTextServicesDocument->InsertText(&newWord);
+            mTextServicesDocument->GetCurrentTextBlock(&str);
+            end += (aNewWord.Length() - aOldWord.Length());  
           }
-          currOffset = end;
-        }while(currOffset != -1);
-        mTsDoc->NextBlock();
-        currentBlock++;
-        currOffset=0;
-      }
+        }
+        currOffset = end;
+      } while(currOffset != -1);
+      mTextServicesDocument->NextBlock();
+      currentBlock++;
+      currOffset=0;
+    }
 
     
-    result = mTsDoc->FirstBlock();
+    result = mTextServicesDocument->FirstBlock();
     currentBlock = 0;
-    while(( NS_SUCCEEDED(mTsDoc->IsDone(&done)) && !done ) &&(currentBlock < startBlock)){
-      mTsDoc->NextBlock();
+    while(NS_SUCCEEDED(mTextServicesDocument->IsDone(&done)) && !done &&
+          currentBlock < startBlock) {
+      mTextServicesDocument->NextBlock();
     }
 
 
@@ -236,24 +242,22 @@ mozSpellChecker::Replace(const nsAString &aOldWord, const nsAString &aNewWord, b
 
 
 
-    if( NS_SUCCEEDED(mTsDoc->IsDone(&done)) && !done ){
+    if (NS_SUCCEEDED(mTextServicesDocument->IsDone(&done)) && !done){
       nsString str;
-      result = mTsDoc->GetCurrentTextBlock(&str);
+      result = mTextServicesDocument->GetCurrentTextBlock(&str);
       result = mConverter->FindNextWord(str.get(),str.Length(),selOffset,&begin,&end);
-            if(end == -1)
-             {
-                mTsDoc->NextBlock();
-                selOffset=0;
-                result = mTsDoc->GetCurrentTextBlock(&str);
-                result = mConverter->FindNextWord(str.get(),str.Length(),selOffset,&begin,&end);
-                mTsDoc->SetSelection(begin, 0);
-             }
-         else
-                mTsDoc->SetSelection(begin, 0);
+      if (end == -1) {
+        mTextServicesDocument->NextBlock();
+        selOffset=0;
+        result = mTextServicesDocument->GetCurrentTextBlock(&str);
+        result = mConverter->FindNextWord(str.get(),str.Length(),selOffset,&begin,&end);
+        mTextServicesDocument->SetSelection(begin, 0);
+      } else {
+        mTextServicesDocument->SetSelection(begin, 0);
+      }
     }
- }
-  else{
-    mTsDoc->InsertText(&newWord);
+  } else {
+    mTextServicesDocument->InsertText(&newWord);
   }
   return NS_OK;
 }
@@ -460,9 +464,9 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
   int32_t selLength;
   *outBlockOffset = 0;
 
-  if (!mFromStart)
-  {
-    rv = mTsDoc->LastSelectedBlock(&blockStatus, &selOffset, &selLength);
+  if (!mFromStart) {
+    rv = mTextServicesDocument->LastSelectedBlock(&blockStatus, &selOffset,
+                                                  &selLength);
     if (NS_SUCCEEDED(rv) && (blockStatus != nsITextServicesDocument::eBlockNotFound))
     {
       switch (blockStatus)
@@ -475,7 +479,7 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
 
         case nsITextServicesDocument::eBlockInside:  
           
-          rv = mTsDoc->NextBlock();
+          rv = mTextServicesDocument->NextBlock();
           *outBlockOffset = 0;
           break;
 
@@ -488,16 +492,16 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
           NS_NOTREACHED("Shouldn't ever get this status");
       }
     }
-    else  
-    {
-      rv = mTsDoc->FirstBlock();
+    
+    else {
+      rv = mTextServicesDocument->FirstBlock();
       *outBlockOffset = 0;
     }
 
   }
-  else 
-  {
-    rv = mTsDoc->FirstBlock();
+  
+  else {
+    rv = mTextServicesDocument->FirstBlock();
     mFromStart = false;
   }
   return rv;
@@ -508,24 +512,23 @@ mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
 
 
 nsresult
-mozSpellChecker::GetCurrentBlockIndex(nsITextServicesDocument *aDoc, int32_t *outBlockIndex)
+mozSpellChecker::GetCurrentBlockIndex(
+                   TextServicesDocument* aTextServicesDocument,
+                   int32_t* aOutBlockIndex)
 {
   int32_t  blockIndex = 0;
   bool     isDone = false;
   nsresult result = NS_OK;
 
-  do
-  {
-    aDoc->PrevBlock();
-
-    result = aDoc->IsDone(&isDone);
-
-    if (!isDone)
-      blockIndex ++;
-
+  do {
+    aTextServicesDocument->PrevBlock();
+    result = aTextServicesDocument->IsDone(&isDone);
+    if (!isDone) {
+      blockIndex++;
+    }
   } while (NS_SUCCEEDED(result) && !isDone);
 
-  *outBlockIndex = blockIndex;
+  *aOutBlockIndex = blockIndex;
 
   return result;
 }

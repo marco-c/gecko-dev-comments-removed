@@ -18,7 +18,9 @@
 0x27bff957, 0xb486, 0x40ae, \
   { 0x9f, 0x5d, 0xaf, 0x0c, 0xdd, 0x21, 0x18, 0x68 } }
 
-class nsITextServicesDocument;
+namespace mozilla {
+class TextServicesDocument;
+} 
 
 
 
@@ -34,7 +36,8 @@ public:
 
 
 
-  NS_IMETHOD SetDocument(nsITextServicesDocument *aDoc, bool aFromStartofDoc) = 0;
+  NS_IMETHOD SetDocument(mozilla::TextServicesDocument* aDoc,
+                         bool aFromStartofDoc) = 0;
 
   
 
