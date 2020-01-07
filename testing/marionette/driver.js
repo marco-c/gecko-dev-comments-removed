@@ -678,6 +678,10 @@ GeckoDriver.prototype.listeningPromise = function() {
 
 
 
+
+
+
+
 GeckoDriver.prototype.newSession = async function(cmd) {
   if (this.sessionID) {
     throw new SessionNotCreatedError("Maximum number of active sessions");

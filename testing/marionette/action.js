@@ -339,6 +339,9 @@ action.PointerOrigin = {
 };
 
 
+action.specCompatPointerOrigin = true;
+
+
 
 
 
@@ -973,7 +976,14 @@ action.Mouse = class {
 
 
 
-action.dispatch = function(chain, window) {
+
+
+
+
+
+action.dispatch = function(chain, window, specCompatPointerOrigin = true) {
+  action.specCompatPointerOrigin = specCompatPointerOrigin;
+
   let chainEvents = (async () => {
     for (let tickActions of chain) {
       await action.dispatchTickActions(
@@ -1006,8 +1016,7 @@ action.dispatch = function(chain, window) {
 
 
 
-action.dispatchTickActions = function(
-    tickActions, tickDuration, window) {
+action.dispatchTickActions = function(tickActions, tickDuration, window) {
   let pendingEvents = tickActions.map(toEvents(tickDuration, window));
   return Promise.all(pendingEvents);
 };
@@ -1427,7 +1436,10 @@ function inViewPort(x, y, win) {
 
 function getElementCenter(el, window) {
   if (element.isDOMElement(el)) {
-    return element.getInViewCentrePoint(el.getClientRects()[0], window);
+    if (action.specCompatPointerOrigin) {
+      return element.getInViewCentrePoint(el.getClientRects()[0], window);
+    }
+    return element.coordinates(el);
   }
   return {};
 }
