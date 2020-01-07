@@ -513,7 +513,7 @@ EnvironmentAddonBuilder.prototype = {
     this._pendingTask = (async () => {
       try {
         
-        await this._updateAddons();
+        await this._updateAddons(true);
 
         if (!this._environment._addonsAreFull) {
           
@@ -632,7 +632,11 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  async _updateAddons() {
+
+
+
+
+  async _updateAddons(atStartup) {
     this._environment._log.trace("_updateAddons");
     let personaId = null;
     let theme = LightweightThemeManager.currentTheme;
@@ -643,8 +647,8 @@ EnvironmentAddonBuilder.prototype = {
     let addons = {
       activeAddons: await this._getActiveAddons(),
       theme: await this._getActiveTheme(),
-      activePlugins: this._getActivePlugins(),
-      activeGMPlugins: await this._getActiveGMPlugins(),
+      activePlugins: this._getActivePlugins(atStartup),
+      activeGMPlugins: await this._getActiveGMPlugins(atStartup),
       activeExperiment: {},
       persona: personaId,
     };
@@ -754,10 +758,15 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  _getActivePlugins() {
+
+
+
+
+
+  _getActivePlugins(atStartup) {
     
     
-    if (!Services.blocklist.isLoaded) {
+    if (atStartup || !Services.blocklist.isLoaded) {
       if (!this._blocklistObserverAdded) {
         Services.obs.addObserver(this, BLOCKLIST_LOADED_TOPIC);
         this._blocklistObserverAdded = true;
@@ -809,10 +818,15 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  async _getActiveGMPlugins() {
+
+
+
+
+
+  async _getActiveGMPlugins(atStartup) {
     
     
-    if (!Services.blocklist.isLoaded) {
+    if (atStartup || !Services.blocklist.isLoaded) {
       if (!this._blocklistObserverAdded) {
         Services.obs.addObserver(this, BLOCKLIST_LOADED_TOPIC);
         this._blocklistObserverAdded = true;
