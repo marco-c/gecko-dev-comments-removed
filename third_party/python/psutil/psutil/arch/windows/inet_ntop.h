@@ -1,12 +1,7 @@
-
-
-
-
-
-
 #include <ws2tcpip.h>
 
-PCSTR WSAAPI
+PCSTR
+WSAAPI
 inet_ntop(
     __in                                INT             Family,
     __in                                PVOID           pAddr,
