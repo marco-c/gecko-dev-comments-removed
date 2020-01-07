@@ -1155,8 +1155,8 @@ WebRenderBridgeParent::RecvClearCachedResources()
   
   ScheduleGenerateFrame();
   
-  for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
-    mAnimStorage->ClearById(*iter);
+  for (const auto& id : mActiveAnimations) {
+    mAnimStorage->ClearById(id);
   }
   mActiveAnimations.clear();
   std::queue<CompositorAnimationIdsForEpoch>().swap(mCompositorAnimationsToDelete); 
@@ -1680,8 +1680,8 @@ WebRenderBridgeParent::ClearResources()
 
   mApi->SendTransaction(txn);
 
-  for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
-    mAnimStorage->ClearById(*iter);
+  for (const auto& id : mActiveAnimations) {
+    mAnimStorage->ClearById(id);
   }
   mActiveAnimations.clear();
   std::queue<CompositorAnimationIdsForEpoch>().swap(mCompositorAnimationsToDelete); 
