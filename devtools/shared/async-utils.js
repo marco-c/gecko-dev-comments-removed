@@ -25,28 +25,6 @@ var {Task} = require("devtools/shared/task");
 
 
 
-exports.asyncOnce = function asyncOnce(func) {
-  const promises = new WeakMap();
-  return function (...args) {
-    let promise = promises.get(this);
-    if (!promise) {
-      promise = Task.spawn(func.apply(this, args));
-      promises.set(this, promise);
-    }
-    return promise;
-  };
-};
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -58,49 +36,4 @@ exports.listenOnce = function listenOnce(element, event, useCapture) {
     };
     element.addEventListener(event, onEvent, useCapture);
   });
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function promisify(obj, func, args) {
-  return new Promise(resolve => {
-    args.push((...results) => {
-      resolve(results.length > 1 ? results : results[0]);
-    });
-    func.apply(obj, args);
-  });
-}
-
-
-
-
-
-
-
-exports.promiseInvoke = function promiseInvoke(obj, func, ...args) {
-  return promisify(obj, func, args);
-};
-
-
-
-
-
-
-exports.promiseCall = function promiseCall(func, ...args) {
-  return promisify(undefined, func, args);
 };
