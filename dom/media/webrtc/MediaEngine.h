@@ -44,7 +44,8 @@ public:
 
 
 
-  virtual void EnumerateDevices(dom::MediaSourceEnum,
+  virtual void EnumerateDevices(uint64_t aWindowId,
+                                dom::MediaSourceEnum,
                                 nsTArray<RefPtr<MediaEngineSource>>*) = 0;
 
   virtual void Shutdown() = 0;

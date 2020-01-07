@@ -548,7 +548,8 @@ MediaEngineDefaultAudioSource::Pull(const RefPtr<const AllocationHandle>& aHandl
 }
 
 void
-MediaEngineDefault::EnumerateDevices(dom::MediaSourceEnum aMediaSource,
+MediaEngineDefault::EnumerateDevices(uint64_t aWindowId,
+                                     dom::MediaSourceEnum aMediaSource,
                                      nsTArray<RefPtr<MediaEngineSource>>* aSources)
 {
   AssertIsOnOwningThread();
@@ -560,7 +561,6 @@ MediaEngineDefault::EnumerateDevices(dom::MediaSourceEnum aMediaSource,
       
       
       
-
       auto newSource = MakeRefPtr<MediaEngineDefaultVideoSource>();
       mVSources.AppendElement(newSource);
       aSources->AppendElement(newSource);
