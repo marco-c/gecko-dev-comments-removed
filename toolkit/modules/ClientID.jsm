@@ -56,7 +56,7 @@ var ClientID = Object.freeze({
     return ClientIDImpl.getClientID();
   },
 
-
+  
 
 
 
@@ -65,6 +65,31 @@ var ClientID = Object.freeze({
 
   getCachedClientID() {
     return ClientIDImpl.getCachedClientID();
+  },
+
+  
+
+
+
+
+
+
+
+
+  setClientID(id) {
+    return ClientIDImpl.setClientID(id);
+  },
+
+  
+
+
+
+
+
+
+
+  resetClientID() {
+    return ClientIDImpl.resetClientID();
   },
 
   
@@ -80,6 +105,7 @@ var ClientIDImpl = {
   _clientID: null,
   _loadClientIdTask: null,
   _saveClientIdTask: null,
+  _removeClientIdTask: null,
   _logger: null,
 
   _loadClientID() {
@@ -98,6 +124,9 @@ var ClientIDImpl = {
 
 
   async _doLoadClientID() {
+    
+    await this._removeClientIdTask;
+
     
     try {
       let state = await CommonUtils.readJSON(gStateFilePath);
@@ -190,6 +219,40 @@ var ClientIDImpl = {
     await this._loadClientIdTask;
     await this._saveClientIdTask;
     this._clientID = null;
+  },
+
+  async setClientID(id) {
+    if (!this.updateClientID(id)) {
+      throw ("Invalid client ID: " + id);
+    }
+
+    this._saveClientIdTask = this._saveClientID();
+    await this._saveClientIdTask;
+    return this._clientID;
+  },
+
+  async _doRemoveClientID() {
+    
+    this._clientID = null;
+
+    
+    Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
+
+    
+    await OS.File.remove(gStateFilePath, {ignoreAbsent: true});
+  },
+
+  async resetClientID() {
+    
+    
+    this._removeClientIdTask = this._doRemoveClientID();
+    let clear = () => this._removeClientIdTask = null;
+    this._removeClientIdTask.then(clear, clear);
+
+    await this._removeClientIdTask;
+
+    
+    return this.getClientID();
   },
 
   
