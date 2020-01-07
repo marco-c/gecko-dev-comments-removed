@@ -1171,6 +1171,10 @@ nsCSPParser::directive()
     return;
   }
 
+  if (CSP_IsEmptyDirective(mCurValue, mCurToken)) {
+    return;
+  }
+
   
   nsCSPDirective* cspDir = directiveName();
   if (!cspDir) {
