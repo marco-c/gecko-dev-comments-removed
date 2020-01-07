@@ -1473,6 +1473,13 @@ KeyframeEffectReadOnly::CanThrottle() const
       
       
       if (HasTransformThatMightAffectOverflow()) {
+        
+        
+        
+        if (HasFiniteActiveDuration()) {
+          return false;
+        }
+
         return isVisibilityHidden
           ? CanThrottleTransformChangesInScrollable(*frame)
           : CanThrottleTransformChanges(*frame);
