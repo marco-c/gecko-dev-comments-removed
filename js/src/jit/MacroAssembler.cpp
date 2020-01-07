@@ -80,8 +80,14 @@ EmitTypeCheck(MacroAssembler& masm, Assembler::Condition cond, const T& src, Typ
 
 template <typename Source> void
 MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
-                             Register scratch, Label* miss)
+                             Register unboxScratch, Register objScratch, Label* miss)
 {
+    
+    
+    
+    
+    
+
     MOZ_ASSERT(kind == BarrierKind::TypeTagOnly || kind == BarrierKind::TypeSet);
     MOZ_ASSERT(!types->unknown());
 
@@ -119,7 +125,7 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
         return;
     }
 
-    Register tag = extractTag(address, scratch);
+    Register tag = extractTag(address, unboxScratch);
 
     
     for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
@@ -140,26 +146,24 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
     }
 
     
-    MOZ_ASSERT(scratch != InvalidReg);
+    MOZ_ASSERT(objScratch != InvalidReg);
+    MOZ_ASSERT(objScratch != unboxScratch);
 
     MOZ_ASSERT(numBranches == 1);
     branchTestObject(NotEqual, tag, miss);
 
     if (kind != BarrierKind::TypeTagOnly) {
-        Register obj = extractObject(address, scratch);
-        guardObjectType(obj, types, scratch, miss);
+        Register obj = extractObject(address, unboxScratch);
+        guardObjectType(obj, types, objScratch, miss);
     } else {
 #ifdef DEBUG
         Label fail;
-        Register obj = extractObject(address, scratch);
-        guardObjectType(obj, types, scratch, &fail);
+        Register obj = extractObject(address, unboxScratch);
+        guardObjectType(obj, types, objScratch, &fail);
         jump(&matched);
+
         bind(&fail);
-
-        if (obj == scratch)
-            extractObject(address, scratch);
-        guardTypeSetMightBeIncomplete(types, obj, scratch, &matched);
-
+        guardTypeSetMightBeIncomplete(types, obj, objScratch, &matched);
         assumeUnreachable("Unexpected object type");
 #endif
     }
@@ -209,6 +213,7 @@ void
 MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
                                 Register scratch, Label* miss)
 {
+    MOZ_ASSERT(obj != scratch);
     MOZ_ASSERT(!types->unknown());
     MOZ_ASSERT(!types->hasType(TypeSet::AnyObjectType()));
     MOZ_ASSERT_IF(types->getObjectCount() > 0, scratch != InvalidReg);
@@ -257,8 +262,6 @@ MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
     if (hasObjectGroups) {
         comment("has object groups");
 
-        
-        
         loadPtr(Address(obj, JSObject::offsetOfGroup()), scratch);
 
         for (unsigned i = 0; i < count; i++) {
@@ -279,11 +282,14 @@ MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
 }
 
 template void MacroAssembler::guardTypeSet(const Address& address, const TypeSet* types,
-                                           BarrierKind kind, Register scratch, Label* miss);
+                                           BarrierKind kind, Register unboxScratch,
+                                           Register objScratch, Label* miss);
 template void MacroAssembler::guardTypeSet(const ValueOperand& value, const TypeSet* types,
-                                           BarrierKind kind, Register scratch, Label* miss);
+                                           BarrierKind kind, Register unboxScratch,
+                                           Register objScratch, Label* miss);
 template void MacroAssembler::guardTypeSet(const TypedOrValueRegister& value, const TypeSet* types,
-                                           BarrierKind kind, Register scratch, Label* miss);
+                                           BarrierKind kind, Register unboxScratch,
+                                           Register objScratch, Label* miss);
 
 template<typename S, typename T>
 static void

@@ -1933,7 +1933,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     template <typename Source>
-    void guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind, Register scratch, Label* miss);
+    void guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
+                      Register unboxScratch, Register objScratch, Label* miss);
 
     void guardObjectType(Register obj, const TypeSet* types, Register scratch, Label* miss);
 
