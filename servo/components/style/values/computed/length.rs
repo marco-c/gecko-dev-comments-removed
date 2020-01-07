@@ -15,7 +15,6 @@ use style_traits::values::specified::AllowedNumericType;
 use super::{Number, ToComputedValue, Context, Percentage};
 use values::{Auto, CSSFloat, Either, Normal, specified};
 use values::animated::{Animate, Procedure, ToAnimatedValue, ToAnimatedZero};
-use values::computed::NonNegativeNumber;
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 use values::generics::NonNegative;
 use values::specified::length::{AbsoluteLength, FontBaseSize, FontRelativeLength};
@@ -897,9 +896,6 @@ pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
 
 
 pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
-
-
-pub type NonNegativeLengthOrNumber = Either<NonNegativeNumber, NonNegativeLength>;
 
 
 

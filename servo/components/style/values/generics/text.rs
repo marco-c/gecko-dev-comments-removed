@@ -133,3 +133,13 @@ impl<N, L> LineHeight<N, L> {
         LineHeight::Normal
     }
 }
+
+
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
+#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+pub enum MozTabSize<Number, Length> {
+    
+    Number(Number),
+    
+    Length(Length),
+}
