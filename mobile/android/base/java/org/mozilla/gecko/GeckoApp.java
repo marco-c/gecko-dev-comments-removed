@@ -115,7 +115,7 @@ public abstract class GeckoApp extends GeckoActivity
                                           BundleEventListener,
                                           GeckoMenu.Callback,
                                           GeckoMenu.MenuPresenter,
-                                          GeckoSession.ContentDelegate,
+                                          GeckoSession.ContentListener,
                                           ScreenOrientationDelegate,
                                           Tabs.OnTabsChangedListener,
                                           ViewTreeObserver.OnGlobalLayoutListener {
@@ -1066,7 +1066,7 @@ public abstract class GeckoApp extends GeckoActivity
 
         session.getSettings().setString(GeckoSessionSettings.CHROME_URI,
                                         "chrome://browser/content/browser.xul");
-        session.setContentDelegate(this);
+        session.setContentListener(this);
 
         GeckoAccessibility.setDelegate(mLayerView);
 

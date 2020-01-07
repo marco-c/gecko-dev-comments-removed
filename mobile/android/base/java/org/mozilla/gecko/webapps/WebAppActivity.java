@@ -53,8 +53,8 @@ import org.mozilla.geckoview.GeckoView;
 
 public class WebAppActivity extends AppCompatActivity
                             implements ActionModePresenter,
-                                       GeckoSession.ContentDelegate,
-                                       GeckoSession.NavigationDelegate {
+                                       GeckoSession.ContentListener,
+                                       GeckoSession.NavigationListener {
     private static final String LOGTAG = "WebAppActivity";
 
     public static final String MANIFEST_PATH = "MANIFEST_PATH";
@@ -103,9 +103,9 @@ public class WebAppActivity extends AppCompatActivity
         mGeckoSession = new GeckoSession();
         mGeckoView.setSession(mGeckoSession);
 
-        mGeckoSession.setNavigationDelegate(this);
-        mGeckoSession.setContentDelegate(this);
-        mGeckoSession.setProgressDelegate(new GeckoSession.ProgressDelegate() {
+        mGeckoSession.setNavigationListener(this);
+        mGeckoSession.setContentListener(this);
+        mGeckoSession.setProgressListener(new GeckoSession.ProgressListener() {
             @Override
             public void onPageStart(GeckoSession session, String url) {
 
