@@ -483,7 +483,14 @@ class TestBuildReader(unittest.TestCase):
 
     def test_schedules(self):
         reader = self.reader('schedules')
-        info = reader.files_info(['somefile', 'foo.win', 'foo.osx', 'subd/aa.py', 'subd/yaml.py'])
+        info = reader.files_info([
+            'somefile',
+            'foo.win',
+            'foo.osx',
+            'subd/aa.py',
+            'subd/yaml.py',
+            'subd/win.js',
+        ])
         
         self.assertEqual(info['somefile']['SCHEDULES'].inclusive, [])
         self.assertEqual(info['somefile']['SCHEDULES'].exclusive, schedules.EXCLUSIVE_COMPONENTS)
@@ -497,11 +504,23 @@ class TestBuildReader(unittest.TestCase):
         self.assertEqual(info['subd/aa.py']['SCHEDULES'].inclusive, ['py-lint'])
         self.assertEqual(info['subd/aa.py']['SCHEDULES'].exclusive, schedules.EXCLUSIVE_COMPONENTS)
         
-        self.assertEqual(info['subd/yaml.py']['SCHEDULES'].inclusive, ['yaml-lint'])
+        self.assertEqual(info['subd/yaml.py']['SCHEDULES'].inclusive, ['py-lint', 'yaml-lint'])
         self.assertEqual(info['subd/yaml.py']['SCHEDULES'].exclusive, schedules.EXCLUSIVE_COMPONENTS)
+        
+        self.assertEqual(info['subd/win.js']['SCHEDULES'].inclusive, ['js-lint'])
+        self.assertEqual(info['subd/win.js']['SCHEDULES'].exclusive, ['windows'])
 
         self.assertEqual(set(info['subd/yaml.py']['SCHEDULES'].components),
-                         set(schedules.EXCLUSIVE_COMPONENTS + ['yaml-lint']))
+                         set(schedules.EXCLUSIVE_COMPONENTS + ['py-lint', 'yaml-lint']))
+        self.fail()
+
+    def test_schedules_conflicting_excludes(self):
+        reader = self.reader('schedules')
+
+        
+        
+        with self.assertRaisesRegexp(ValueError, r"Two Files sections"):
+            reader.files_info(['bad.osx'])
 
 if __name__ == '__main__':
     main()
