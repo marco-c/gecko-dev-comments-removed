@@ -87,6 +87,9 @@ public:
   
   static bool FetchObserverEnabled();
   static bool FetchObserverEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool ResistFingerprintingEnabled();
 };
 
 } 

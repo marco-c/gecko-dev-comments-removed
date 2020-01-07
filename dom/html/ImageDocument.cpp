@@ -5,6 +5,7 @@
 
 
 #include "ImageDocument.h"
+#include "mozilla/dom/DOMPreferences.h"
 #include "mozilla/dom/ImageDocumentBinding.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "nsRect.h"
@@ -49,7 +50,7 @@
 
 static bool IsSiteSpecific()
 {
-  return !mozilla::Preferences::GetBool("privacy.resistFingerprinting", false) &&
+  return !mozilla::dom::DOMPreferences::ResistFingerprintingEnabled() &&
          mozilla::Preferences::GetBool("browser.zoom.siteSpecific", false);
 }
 

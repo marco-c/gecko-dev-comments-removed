@@ -21,7 +21,6 @@
 
 
 
-WORKER_SIMPLE_PREF("privacy.resistFingerprinting", ResistFingerprintingEnabled, RESISTFINGERPRINTING_ENABLED)
 WORKER_SIMPLE_PREF("devtools.enabled", DevToolsEnabled, DEVTOOLS_ENABLED)
 WORKER_PREF("intl.accept_languages", PrefLanguagesChanged)
 WORKER_PREF("general.appname.override", AppNameOverrideChanged)
