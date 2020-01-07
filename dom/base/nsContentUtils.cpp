@@ -8912,25 +8912,6 @@ nsContentUtils::GetReferrerPolicyFromHeader(const nsAString& aHeader)
 
 
 bool
-nsContentUtils::StreamsEnabled(JSContext* aCx, JSObject* aObj)
-{
-  if (NS_IsMainThread()) {
-    return Preferences::GetBool("dom.streams.enabled", false);
-  }
-
-  using namespace workers;
-
-  
-  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
-  if (!workerPrivate) {
-    return false;
-  }
-
-  return workerPrivate->StreamsEnabled();
-}
-
-
-bool
 nsContentUtils::IsNonSubresourceRequest(nsIChannel* aChannel)
 {
   nsLoadFlags loadFlags = 0;
