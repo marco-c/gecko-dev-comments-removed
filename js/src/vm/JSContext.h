@@ -1279,19 +1279,19 @@ struct MOZ_RAII AutoSetThreadIsSweeping
 {
 #ifdef DEBUG
     AutoSetThreadIsSweeping()
-      : cx(TlsContext.get())
+      : cx(TlsContext.get()),
+        prevState(cx->gcSweeping)
     {
-        MOZ_ASSERT(!cx->gcSweeping);
         cx->gcSweeping = true;
     }
 
     ~AutoSetThreadIsSweeping() {
-        MOZ_ASSERT(cx->gcSweeping);
-        cx->gcSweeping = false;
+        cx->gcSweeping = prevState;
     }
 
   private:
     JSContext* cx;
+    bool prevState;
 #else
     AutoSetThreadIsSweeping() {}
 #endif

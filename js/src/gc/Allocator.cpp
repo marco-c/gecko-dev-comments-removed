@@ -649,7 +649,7 @@ BackgroundAllocTask::BackgroundAllocTask(JSRuntime* rt, ChunkPool& pool)
 {
 }
 
- void
+void
 BackgroundAllocTask::run()
 {
     TraceLoggerThread* logger = TraceLoggerForCurrentThread();

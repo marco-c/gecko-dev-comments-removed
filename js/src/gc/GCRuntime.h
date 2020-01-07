@@ -13,7 +13,6 @@
 
 #include "gc/ArenaList.h"
 #include "gc/AtomMarking.h"
-#include "gc/GCHelperState.h"
 #include "gc/GCMarker.h"
 #include "gc/GCParallelTask.h"
 #include "gc/Nursery.h"
@@ -104,6 +103,24 @@ class ChunkPool
       private:
         Chunk* current_;
     };
+};
+
+class BackgroundSweepTask : public GCParallelTaskHelper<BackgroundSweepTask>
+{
+    using Base = GCParallelTaskHelper<BackgroundSweepTask>;
+
+    HelperThreadLockData<bool> done;
+
+  public:
+    explicit BackgroundSweepTask(JSRuntime* rt);
+
+    bool isRunning() const;
+    bool isRunningWithLockHeld(const AutoLockHelperThreadState& lock) const;
+
+    void startIfIdle(AutoLockHelperThreadState& lock);
+    void runFromMainThread(JSRuntime* rt);
+
+    void run();
 };
 
 
@@ -314,16 +331,14 @@ class GCRuntime
     State state() const { return incrementalState; }
     bool isHeapCompacting() const { return state() == State::Compact; }
     bool isForegroundSweeping() const { return state() == State::Sweep; }
-    bool isBackgroundSweeping() { return helperState.isBackgroundSweeping(); }
-    void waitBackgroundSweepEnd() { helperState.waitBackgroundSweepEnd(); }
+    bool isBackgroundSweeping() {
+        return sweepTask.isRunning();
+    }
+    void waitBackgroundSweepEnd();
     void waitBackgroundSweepOrAllocEnd() {
-        helperState.waitBackgroundSweepEnd();
+        waitBackgroundSweepEnd();
         allocTask.cancelAndWait();
     }
-
-#ifdef DEBUG
-    bool onBackgroundThread() { return helperState.onBackgroundThread(); }
-#endif 
 
     void lockGC() {
         lock.lock();
@@ -613,6 +628,7 @@ class GCRuntime
     void decommitAllWithoutUnlocking(const AutoLockGC& lock);
     void startDecommit();
     void queueZonesForBackgroundSweep(ZoneList& zones);
+    void maybeStartBackgroundSweep(AutoLockHelperThreadState& lock);
     void sweepBackgroundThings(ZoneList& zones, LifoAlloc& freeBlocks);
     void assertBackgroundSweepingFinished();
     bool shouldCompact();
@@ -818,15 +834,14 @@ class GCRuntime
     MainThreadData<bool> releaseObservedTypes;
 
     
-    MainThreadOrGCTaskData<ZoneList> backgroundSweepZones;
+    HelperThreadLockData<ZoneList> backgroundSweepZones;
 
     
 
 
 
-    MainThreadOrGCTaskData<LifoAlloc> blocksToFreeAfterSweeping;
+    HelperThreadLockData<LifoAlloc> blocksToFreeAfterSweeping;
 
-  private:
     
     MainThreadData<unsigned> sweepGroupIndex;
 
@@ -951,10 +966,11 @@ class GCRuntime
     friend class js::AutoLockGCBgAlloc;
     js::Mutex lock;
 
-    BackgroundAllocTask allocTask;
-    BackgroundDecommitTask decommitTask;
+    friend class BackgroundSweepTask;
 
-    js::GCHelperState helperState;
+    BackgroundAllocTask allocTask;
+    BackgroundSweepTask sweepTask;
+    BackgroundDecommitTask decommitTask;
 
     
 
@@ -990,7 +1006,6 @@ class GCRuntime
     }
     void freeAllLifoBlocksAfterMinorGC(LifoAlloc* lifo);
 
-    friend class js::GCHelperState;
     friend class MarkingValidator;
     friend class AutoEnterIteration;
 };

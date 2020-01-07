@@ -96,7 +96,6 @@ class GlobalHelperThreadState
     typedef Vector<ParseTask*, 0, SystemAllocPolicy> ParseTaskVector;
     typedef mozilla::LinkedList<ParseTask> ParseTaskList;
     typedef Vector<UniquePtr<SourceCompressionTask>, 0, SystemAllocPolicy> SourceCompressionTaskVector;
-    typedef Vector<GCHelperState*, 0, SystemAllocPolicy> GCHelperStateVector;
     typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
     typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy> PromiseHelperTaskVector;
 
@@ -142,9 +141,6 @@ class GlobalHelperThreadState
     SourceCompressionTaskVector compressionFinishedList_;
 
     
-    GCHelperStateVector gcHelperWorklist_;
-
-    
     GCParallelTaskVector gcParallelWorklist_;
 
     ParseTask* removeFinishedParseTask(ParseTaskKind kind, JS::OffThreadToken* token);
@@ -160,7 +156,6 @@ class GlobalHelperThreadState
     size_t maxPromiseHelperThreads() const;
     size_t maxParseThreads() const;
     size_t maxCompressionThreads() const;
-    size_t maxGCHelperThreads() const;
     size_t maxGCParallelThreads() const;
 
     GlobalHelperThreadState();
@@ -263,10 +258,6 @@ class GlobalHelperThreadState
         return compressionFinishedList_;
     }
 
-    GCHelperStateVector& gcHelperWorklist(const AutoLockHelperThreadState&) {
-        return gcHelperWorklist_;
-    }
-
     GCParallelTaskVector& gcParallelWorklist(const AutoLockHelperThreadState&) {
         return gcParallelWorklist_;
     }
@@ -281,7 +272,6 @@ class GlobalHelperThreadState
     bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
     bool canStartParseTask(const AutoLockHelperThreadState& lock);
     bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
-    bool canStartGCHelperTask(const AutoLockHelperThreadState& lock);
     bool canStartGCParallelTask(const AutoLockHelperThreadState& lock);
 
     
@@ -364,7 +354,6 @@ typedef mozilla::Variant<jit::IonBuilder*,
                          PromiseHelperTask*,
                          ParseTask*,
                          SourceCompressionTask*,
-                         GCHelperState*,
                          GCParallelTask*> HelperTaskUnion;
 
 
@@ -416,11 +405,6 @@ struct HelperThread
     }
 
     
-    GCHelperState* gcHelperTask() {
-        return maybeCurrentTaskAs<GCHelperState*>();
-    }
-
-    
     GCParallelTask* gcParallelTask() {
         return maybeCurrentTaskAs<GCParallelTask*>();
     }
@@ -466,7 +450,6 @@ struct HelperThread
     void handleIonFreeWorkload(AutoLockHelperThreadState& locked);
     void handleParseWorkload(AutoLockHelperThreadState& locked);
     void handleCompressionWorkload(AutoLockHelperThreadState& locked);
-    void handleGCHelperWorkload(AutoLockHelperThreadState& locked);
     void handleGCParallelWorkload(AutoLockHelperThreadState& locked);
 };
 
