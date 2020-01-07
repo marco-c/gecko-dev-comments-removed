@@ -8,6 +8,8 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnManager.h"
 #include "nsContentUtils.h"
+#include "nsFocusManager.h"
+#include "nsIDocShell.h"
 
 namespace mozilla {
 namespace dom {
@@ -40,7 +42,50 @@ CreateAndReject(nsPIDOMWindowInner* aParent, ErrorResult& aRv)
   return promise.forget();
 }
 
-bool
+static bool
+IsInActiveTab(nsPIDOMWindowInner* aParent)
+{
+  
+  
+  MOZ_ASSERT(aParent);
+
+  nsCOMPtr<nsIDocument> doc(aParent->GetExtantDoc());
+  if (NS_WARN_IF(!doc)) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDocShell> docShell = doc->GetDocShell();
+  if (!docShell) {
+    return false;
+  }
+
+  bool isActive = false;
+  docShell->GetIsActive(&isActive);
+  if (!isActive) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDocShellTreeItem> rootItem;
+  docShell->GetRootTreeItem(getter_AddRefs(rootItem));
+  if (!rootItem) {
+    return false;
+  }
+  nsCOMPtr<nsPIDOMWindowOuter> rootWin = rootItem->GetWindow();
+  if (!rootWin) {
+    return false;
+  }
+
+  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (!fm) {
+    return false;
+  }
+
+  nsCOMPtr<mozIDOMWindowProxy> activeWindow;
+  fm->GetActiveWindow(getter_AddRefs(activeWindow));
+  return activeWindow == rootWin;
+}
+
+static bool
 IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent)
 {
   
@@ -106,11 +151,9 @@ already_AddRefed<Promise>
 CredentialsContainer::Get(const CredentialRequestOptions& aOptions,
                           ErrorResult& aRv)
 {
-  if (!IsSameOriginWithAncestors(mParent)) {
+  if (!IsSameOriginWithAncestors(mParent) || !IsInActiveTab(mParent)) {
     return CreateAndReject(mParent, aRv);
   }
-
-  
 
   EnsureWebAuthnManager();
   return mManager->GetAssertion(aOptions.mPublicKey, aOptions.mSignal);
@@ -120,11 +163,9 @@ already_AddRefed<Promise>
 CredentialsContainer::Create(const CredentialCreationOptions& aOptions,
                              ErrorResult& aRv)
 {
-  if (!IsSameOriginWithAncestors(mParent)) {
+  if (!IsSameOriginWithAncestors(mParent) || !IsInActiveTab(mParent)) {
     return CreateAndReject(mParent, aRv);
   }
-
-  
 
   EnsureWebAuthnManager();
   return mManager->MakeCredential(aOptions.mPublicKey, aOptions.mSignal);
@@ -133,11 +174,9 @@ CredentialsContainer::Create(const CredentialCreationOptions& aOptions,
 already_AddRefed<Promise>
 CredentialsContainer::Store(const Credential& aCredential, ErrorResult& aRv)
 {
-  if (!IsSameOriginWithAncestors(mParent)) {
+  if (!IsSameOriginWithAncestors(mParent) || !IsInActiveTab(mParent)) {
     return CreateAndReject(mParent, aRv);
   }
-
-  
 
   EnsureWebAuthnManager();
   return mManager->Store(aCredential);
