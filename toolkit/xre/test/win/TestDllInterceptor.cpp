@@ -519,8 +519,11 @@ int main()
       TestHook(TestNtWriteFile, "ntdll.dll", "NtWriteFile") &&
       TestHook(TestNtWriteFileGather, "ntdll.dll", "NtWriteFileGather") &&
       TestHook(TestNtQueryFullAttributesFile, "ntdll.dll", "NtQueryFullAttributesFile") &&
+#ifndef MOZ_ASAN
+      
       
       TestHook(TestSetUnhandledExceptionFilter, "kernel32.dll", "SetUnhandledExceptionFilter") &&
+#endif
 #ifdef _M_IX86
       
       TestHook(TestVirtualAlloc, "kernel32.dll", "VirtualAlloc") &&
