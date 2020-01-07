@@ -183,7 +183,7 @@ public:
 };
 
 NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent)
-  : PrioritizableRunnable(std::move(aEvent), nsIRunnablePriority::PRIORITY_INPUT)
+  : PrioritizableRunnable(Move(aEvent), nsIRunnablePriority::PRIORITY_INPUT)
 {
 }
 
@@ -191,7 +191,7 @@ NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent)
 NativeInputRunnable::Create(already_AddRefed<nsIRunnable>&& aEvent)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsIRunnable> event(new NativeInputRunnable(std::move(aEvent)));
+  nsCOMPtr<nsIRunnable> event(new NativeInputRunnable(Move(aEvent)));
   return event.forget();
 }
 
@@ -1239,7 +1239,7 @@ nsDOMWindowUtils::GetWidgetForElement(Element* aElement)
 NS_IMETHODIMP
 nsDOMWindowUtils::GarbageCollect(nsICycleCollectorListener *aListener)
 {
-  AUTO_PROFILER_LABEL("nsDOMWindowUtils::GarbageCollect", GC);
+  AUTO_PROFILER_LABEL("nsDOMWindowUtils::GarbageCollect", GCCC);
 
   nsJSContext::GarbageCollectNow(JS::gcreason::DOM_UTILS);
   nsJSContext::CycleCollectNow(aListener);
