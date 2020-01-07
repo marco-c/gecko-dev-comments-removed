@@ -864,8 +864,18 @@ var TPS = {
 
   
   
+  pingValidator(ping) {
+    Logger.logInfo("Not validating ping -- disabled by pref");
+    return true;
+  },
+
+  
+  
   
   _tryLoadPingSchema(testFile) {
+    if (Services.prefs.getBoolPref("testing.tps.skipPingValidation", false)) {
+      return;
+    }
     try {
       let schemaFile = this._getFileRelativeToSourceRoot(testFile,
         "services/sync/tests/unit/sync_ping_schema.json");
