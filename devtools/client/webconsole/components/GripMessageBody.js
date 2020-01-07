@@ -13,9 +13,10 @@ const {
   JSTERM_COMMANDS,
 } = require("../constants");
 const { getObjectInspector } = require("devtools/client/webconsole/utils/object-inspector");
+const actions = require("devtools/client/webconsole/actions/index");
 
 const reps = require("devtools/client/shared/components/reps/reps");
-const { MODE } = reps;
+const { MODE, ObjectInspectorUtils } = reps;
 
 GripMessageBody.displayName = "GripMessageBody";
 
@@ -49,6 +50,7 @@ function GripMessageBody(props) {
     useQuotes,
     escapeWhitespace,
     mode = MODE.LONG,
+    dispatch,
   } = props;
 
   let styleObject;
@@ -63,6 +65,12 @@ function GripMessageBody(props) {
     
     
     focusable: false,
+    onCmdCtrlClick: (node, { depth, event, focused, expanded }) => {
+      const value = ObjectInspectorUtils.node.getValue(node);
+      if (value) {
+        dispatch(actions.showObjectInSidebar(value));
+      }
+    }
   };
 
   if (typeof grip === "string" || (grip && grip.type === "longString")) {
