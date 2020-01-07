@@ -52,11 +52,11 @@ add_task(async function() {
 
   
   let unlinkFxaAccount = weavePrefsDeck.childNodes[1].querySelector("#unverifiedUnlinkFxaAccount");
-  is(unlinkFxaAccount.label, "Forget this email", "The Forget this email button should exist");
+  is(unlinkFxaAccount.label, "Cancel Setup", "The Cancel Setup button should exist");
 
   
   searchInput.focus();
-  query = "Forget this Email";
+  query = "Cancel Setup";
   searchCompletedPromise = BrowserTestUtils.waitForEvent(
       gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
