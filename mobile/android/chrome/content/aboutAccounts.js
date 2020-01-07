@@ -24,12 +24,10 @@
 
 "use strict";
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components; 
-
-ChromeUtils.import("resource://gre/modules/Accounts.jsm"); 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm"); 
-ChromeUtils.import("resource://gre/modules/Services.jsm"); 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
+ChromeUtils.import("resource://gre/modules/Accounts.jsm");
+ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const ACTION_URL_PARAM = "action";
 
