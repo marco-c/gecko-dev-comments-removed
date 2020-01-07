@@ -82,7 +82,8 @@ payment-dialog > footer {
   border: none;
 }
 
-payment-dialog[changes-prevented][completion-state="processing"] #pay {
+payment-dialog[changes-prevented][completion-state="processing"] #pay,
+payment-dialog[changes-prevented][completion-state="success"] #pay {
   
   position: relative;
   z-index: 1;
