@@ -379,7 +379,8 @@ public:
 
 
 
-  RefPtr<HitTestingTreeNode> FindScrollThumbNode(const AsyncDragMetrics& aDragMetrics);
+  void FindScrollThumbNode(const AsyncDragMetrics& aDragMetrics,
+                           HitTestingTreeNodeAutoLock& aOutThumbNode);
 
   
 
