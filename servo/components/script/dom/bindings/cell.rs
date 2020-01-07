@@ -31,18 +31,6 @@ impl<T> DomRefCell<T> {
 
     
     
-    
-    
-    #[allow(unsafe_code)]
-    pub unsafe fn borrow_for_gc_trace(&self) -> &T {
-        
-        
-        
-        &*self.value.as_ptr()
-    }
-
-    
-    
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_script_deallocation(&self) -> &mut T {
         debug_assert!(thread_state::get().contains(ThreadState::SCRIPT));
