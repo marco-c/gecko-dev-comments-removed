@@ -142,24 +142,30 @@ EvalStringMightBeJSON(const mozilla::Range<const CharT> chars)
     
     
     size_t length = chars.length();
-    if (length < 2)
-        return false;
+    if (length > 2 &&
+        ((chars[0] == '[' && chars[length - 1] == ']') ||
+         (chars[0] == '(' && chars[length - 1] == ')')))
+    {
+        
+        
+        
+        
+        
+        
+        if (sizeof(CharT) > 1) {
+            for (RangedPtr<const CharT> cp = chars.begin() + 1, end = chars.end() - 1;
+                 cp < end;
+                 cp++)
+            {
+                char16_t c = *cp;
+                if (c == 0x2028 || c == 0x2029)
+                    return false;
+            }
+        }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    CharT first = chars[0], last = chars[length - 1];
-    return (first == '[' && last == ']') ||
-           (first == '{' && last == '}');
+        return true;
+    }
+    return false;
 }
 
 template <typename CharT>

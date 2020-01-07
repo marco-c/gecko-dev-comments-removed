@@ -58,10 +58,9 @@ struct NativeIterator
     
     struct Flags
     {
-        static constexpr uint32_t Initialized = 0x1;
-        static constexpr uint32_t Active = 0x2;
-        static constexpr uint32_t HasUnvisitedPropertyDeletion = 0x4;
-        static constexpr uint32_t NotReusable = Active | HasUnvisitedPropertyDeletion;
+        static constexpr uint32_t Active = 0x1;
+        static constexpr uint32_t NotReusable = 0x2;
+        static constexpr uint32_t All = Active | NotReusable;
     };
 
   private:
@@ -132,15 +131,6 @@ struct NativeIterator
                       "HeapReceiverGuards are present, with no padding space "
                       "required for correct alignment");
 
-        
-        
-        
-        
-        MOZ_ASSERT(isInitialized(),
-                   "NativeIterator must be initialized, or else |guardsEnd_| "
-                   "isn't necessarily the start of properties and instead "
-                   "|propertyCursor_| instead is");
-
         return reinterpret_cast<GCPtrFlatString*>(guardsEnd_);
     }
 
@@ -164,20 +154,12 @@ struct NativeIterator
     }
 
     void resetPropertyCursorForReuse() {
-        MOZ_ASSERT(isInitialized());
-
-        
-        
-        
-        
-
         
         
         propertyCursor_ = propertiesBegin();
     }
 
     bool previousPropertyWas(JS::Handle<JSFlatString*> str) {
-        MOZ_ASSERT(isInitialized());
         return propertyCursor_ > propertiesBegin() && propertyCursor_[-1] == str;
     }
 
@@ -186,8 +168,6 @@ struct NativeIterator
     }
 
     void trimLastProperty() {
-        MOZ_ASSERT(isInitialized());
-
         propertiesEnd_--;
 
         
@@ -209,7 +189,6 @@ struct NativeIterator
     }
 
     void incCursor() {
-        MOZ_ASSERT(isInitialized());
         propertyCursor_++;
     }
 
@@ -217,52 +196,29 @@ struct NativeIterator
         return guardKey_;
     }
 
-    bool isInitialized() const {
-        return flags_ & Flags::Initialized;
-    }
-
-  private:
-    void markInitialized() {
-        MOZ_ASSERT(flags_ == 0);
-        flags_ = Flags::Initialized;
-    }
-
-  public:
     bool isActive() const {
-        MOZ_ASSERT(isInitialized());
-
         return flags_ & Flags::Active;
     }
 
     void markActive() {
-        MOZ_ASSERT(isInitialized());
-
         flags_ |= Flags::Active;
     }
 
     void markInactive() {
-        MOZ_ASSERT(isInitialized());
-
         flags_ &= ~Flags::Active;
     }
 
     bool isReusable() const {
-        MOZ_ASSERT(isInitialized());
-        return flags_ == Flags::Initialized;
+        
+        
+        return flags_ == 0;
     }
 
-    void markHasUnvisitedPropertyDeletion() {
-        MOZ_ASSERT(isInitialized());
-
-        flags_ |= Flags::HasUnvisitedPropertyDeletion;
+    void markNotReusable() {
+        flags_ |= Flags::NotReusable;
     }
 
     void link(NativeIterator* other) {
-        
-        
-        
-        MOZ_ASSERT(isInitialized());
-
         
         MOZ_ASSERT(!next_ && !prev_);
 
@@ -272,8 +228,6 @@ struct NativeIterator
         other->prev_ = this;
     }
     void unlink() {
-        MOZ_ASSERT(isInitialized());
-
         next_->prev_ = prev_;
         prev_->next_ = next_;
         next_ = nullptr;

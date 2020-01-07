@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(eval("'\u2028'"), "\u2028");
 
 reportCompare(0, 0);

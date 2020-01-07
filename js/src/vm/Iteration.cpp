@@ -9,7 +9,6 @@
 #include "vm/Iteration.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
@@ -70,14 +69,9 @@ NativeIterator::trace(JSTracer* trc)
                       guard.trace(trc);
                   });
 
-    GCPtrFlatString* begin = MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
-    std::for_each(begin, propertiesEnd(),
+    std::for_each(propertiesBegin(), propertiesEnd(),
                   [trc](GCPtrFlatString& prop) {
-                      
-                      
-                      
-                      
-                      TraceEdge(trc, &prop, "prop");
+                      TraceNullableEdge(trc, &prop, "prop");
                   });
 }
 
@@ -740,8 +734,6 @@ NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> pr
     }
 
     MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
-    markInitialized();
-
     MOZ_ASSERT(!*hadError);
 }
 
@@ -1307,7 +1299,9 @@ SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
                 ni->trimLastProperty();
             }
 
-            ni->markHasUnvisitedPropertyDeletion();
+            
+            
+            ni->markNotReusable();
             return true;
         }
 
