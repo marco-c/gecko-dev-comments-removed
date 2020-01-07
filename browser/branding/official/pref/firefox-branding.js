@@ -3,7 +3,7 @@
 
 
 pref("startup.homepage_override_url", "");
-pref("startup.homepage_welcome_url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/firstrun/");
+pref("startup.homepage_welcome_url", "about:welcome");
 pref("startup.homepage_welcome_url.additional", "");
 
 pref("app.update.interval", 43200); 
