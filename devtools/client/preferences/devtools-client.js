@@ -46,6 +46,8 @@ pref("devtools.inspector.show-three-pane-tooltip", false);
 pref("devtools.inspector.three-pane-enabled", true);
 
 
+pref("devtools.inspector.three-pane-first-run", true);
+
 pref("devtools.inspector.show_pseudo_elements", false);
 
 pref("devtools.inspector.imagePreviewTooltipSize", 300);
