@@ -1147,6 +1147,54 @@ WasmCall(JSContext* cx, unsigned argc, Value* vp)
     return instance.callExport(cx, funcIndex, args);
 }
 
+static bool
+EnsureLazyEntryStub(const Instance& instance, size_t funcExportIndex, const FuncExport& fe)
+{
+    if (fe.hasEagerStubs())
+        return true;
+
+    MOZ_ASSERT(!instance.isAsmJS(), "only wasm can lazily export functions");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    Tier prevTier = instance.code().bestTier();
+
+    auto stubs = instance.code(prevTier).lazyStubs().lock();
+    if (stubs->hasStub(fe.funcIndex()))
+        return true;
+
+    
+    Tier tier = instance.code().bestTier();
+    const CodeTier& codeTier = instance.code(tier);
+    if (tier == prevTier)
+        return stubs->createOne(funcExportIndex, codeTier);
+
+    MOZ_ASSERT(prevTier == Tier::Baseline && tier == Tier::Ion);
+
+    auto stubs2 = instance.code(tier).lazyStubs().lock();
+
+    
+    
+    MOZ_ASSERT(!stubs2->hasStub(fe.funcIndex()));
+
+    return stubs2->createOne(funcExportIndex, codeTier);
+}
+
  bool
 WasmInstanceObject::getExportedFunction(JSContext* cx, HandleWasmInstanceObject instanceObj,
                                         uint32_t funcIndex, MutableHandleFunction fun)
@@ -1157,8 +1205,15 @@ WasmInstanceObject::getExportedFunction(JSContext* cx, HandleWasmInstanceObject 
     }
 
     const Instance& instance = instanceObj->instance();
-    auto tier = instance.code().stableTier();
-    const Sig& sig = instance.metadata(tier).lookupFuncExport(funcIndex).sig();
+    const MetadataTier& metadata = instance.metadata(instance.code().bestTier());
+
+    size_t funcExportIndex;
+    const FuncExport& funcExport = metadata.lookupFuncExport(funcIndex, &funcExportIndex);
+
+    if (!EnsureLazyEntryStub(instance, funcExportIndex, funcExport))
+        return false;
+
+    const Sig& sig = funcExport.sig();
     unsigned numArgs = sig.args().length();
 
     if (instance.isAsmJS()) {
@@ -1202,7 +1257,7 @@ WasmInstanceObject::getExportedFunctionCodeRange(HandleFunction fun, Tier tier)
     uint32_t funcIndex = ExportedFunctionToFuncIndex(fun);
     MOZ_ASSERT(exports().lookup(funcIndex)->value() == fun);
     const FuncExport& funcExport = instance().metadata(tier).lookupFuncExport(funcIndex);
-    return instance().metadata(tier).codeRanges[funcExport.codeRangeIndex()];
+    return instance().metadata(tier).codeRanges[funcExport.interpCodeRangeIndex()];
 }
 
  WasmInstanceScope*
@@ -1869,8 +1924,9 @@ WasmTableObject::setImpl(JSContext* cx, const CallArgs& args)
 
         Instance& instance = instanceObj->instance();
         Tier tier = instance.code().bestTier();
-        const FuncExport& funcExport = instance.metadata(tier).lookupFuncExport(funcIndex);
-        const CodeRange& codeRange = instance.metadata(tier).codeRanges[funcExport.codeRangeIndex()];
+        const MetadataTier& metadata = instance.metadata(tier);
+        const FuncExport& funcExport = metadata.lookupFuncExport(funcIndex);
+        const CodeRange& codeRange = metadata.codeRanges[funcExport.interpCodeRangeIndex()];
         void* code = instance.codeBase(tier) + codeRange.funcTableEntry();
         table.set(index, code, instance);
     } else {

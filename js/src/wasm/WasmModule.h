@@ -213,7 +213,7 @@ class Module : public JS::WasmModule
     
 
     void startTier2(const CompileArgs& args);
-    void finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2, ModuleEnvironment* env2);
+    bool finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2, ModuleEnvironment* env2);
     void blockOnTier2Complete() const;
 
     

@@ -242,27 +242,66 @@ Module::notifyCompilationListeners()
         listener->onCompilationComplete();
 }
 
-void
+bool
 Module::finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2, ModuleEnvironment* env2)
 {
-    
+    MOZ_ASSERT(code().bestTier() == Tier::Baseline && tier2->tier() == Tier::Ion);
 
-    MOZ_ASSERT(!code().hasTier2());
-    linkData().setTier2(Move(linkData2));
-    code().setTier2(Move(tier2));
-    for (uint32_t i = 0; i < elemSegments_.length(); i++)
-        elemSegments_[i].setTier2(Move(env2->elemSegments[i].elemCodeRangeIndices(Tier::Ion)));
+    {
+        
+        
+        
 
-    
-    
+        const MetadataTier& metadataTier1 = metadata(Tier::Baseline);
 
-    code().commitTier2();
+        auto stubs1 = code().codeTier(Tier::Baseline).lazyStubs().lock();
+        auto stubs2 = tier2->lazyStubs().lock();
+
+        MOZ_ASSERT(stubs2->empty());
+
+        Uint32Vector funcExportIndices;
+        for (size_t i = 0; i < metadataTier1.funcExports.length(); i++) {
+            const FuncExport& fe = metadataTier1.funcExports[i];
+            if (fe.hasEagerStubs())
+                continue;
+            MOZ_ASSERT(!env2->isAsmJS(), "only wasm functions are lazily exported");
+            if (!stubs1->hasStub(fe.funcIndex()))
+                continue;
+            if (!funcExportIndices.emplaceBack(i))
+                return false;
+        }
+
+        Maybe<size_t> stub2Index;
+        if (!stubs2->createTier2(funcExportIndices, *tier2, &stub2Index))
+            return false;
+
+        
+        
+
+        MOZ_ASSERT(!code().hasTier2());
+        linkData().setTier2(Move(linkData2));
+        code().setTier2(Move(tier2));
+        for (uint32_t i = 0; i < elemSegments_.length(); i++)
+            elemSegments_[i].setTier2(Move(env2->elemSegments[i].elemCodeRangeIndices(Tier::Ion)));
+
+        
+        
+
+        code().commitTier2();
+
+        
+        
+        
+        
+
+        stubs2->setJitEntries(stub2Index, code());
+    }
     notifyCompilationListeners();
 
     
 
     uint8_t* base = code().segment(Tier::Ion).base();
-    for (auto cr : metadata(Tier::Ion).codeRanges) {
+    for (const CodeRange& cr : metadata(Tier::Ion).codeRanges) {
         
         
         
@@ -272,6 +311,8 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2, ModuleEn
         else if (cr.isJitEntry())
             code().setJitEntry(cr.funcIndex(), base + cr.begin());
     }
+
+    return true;
 }
 
 void

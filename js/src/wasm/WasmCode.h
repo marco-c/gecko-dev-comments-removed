@@ -21,6 +21,7 @@
 
 #include "js/HashTable.h"
 #include "threading/ExclusiveData.h"
+#include "vm/MutexIDs.h"
 #include "wasm/WasmTypes.h"
 
 namespace js {
@@ -66,6 +67,7 @@ using UniqueCodeBytes = UniquePtr<uint8_t, FreeCode>;
 class Code;
 class CodeTier;
 class ModuleSegment;
+class LazyStubSegment;
 
 
 
@@ -79,10 +81,11 @@ class CodeSegment
   protected:
     static UniqueCodeBytes AllocateCodeBytes(uint32_t codeLength);
 
-    
-    const CodeTier* codeTier_;
     UniqueCodeBytes bytes_;
     uint32_t length_;
+
+    
+    const CodeTier* codeTier_;
 
     enum class Kind {
         LazyStubs,
@@ -95,10 +98,10 @@ class CodeSegment
     bool registered_;
 
   public:
-    CodeSegment()
-      : codeTier_(nullptr),
-        length_(0),
-        kind_(Kind::Module),
+    explicit CodeSegment(Kind kind = Kind::Module)
+      : length_(UINT32_MAX),
+        codeTier_(nullptr),
+        kind_(kind),
         registered_(false)
     {}
 
@@ -106,10 +109,17 @@ class CodeSegment
 
     bool isLazyStubs() const { return kind_ == Kind::LazyStubs; }
     bool isModule() const { return kind_ == Kind::Module; }
-    const ModuleSegment* asModule() const { MOZ_ASSERT(isModule()); return (ModuleSegment*) this; }
+    const ModuleSegment* asModule() const {
+        MOZ_ASSERT(isModule());
+        return (ModuleSegment*) this;
+    }
+    const LazyStubSegment* asLazyStub() const {
+        MOZ_ASSERT(isLazyStubs());
+        return (LazyStubSegment*) this;
+    }
 
     uint8_t* base() const { return bytes_.get(); }
-    uint32_t length() const { return length_; }
+    uint32_t length() const { MOZ_ASSERT(length_ != UINT32_MAX); return length_; }
 
     bool containsCodePC(const void* pc) const {
         return pc >= base() && pc < (base() + length_);
@@ -121,6 +131,8 @@ class CodeSegment
     }
     const CodeTier& codeTier() const { return *codeTier_; }
     const Code& code() const;
+
+    void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code) const;
 };
 
 
@@ -196,6 +208,8 @@ class ModuleSegment : public CodeSegment
                                const LinkDataTier& linkDataTier, const Metadata& metadata,
                                const CodeRangeVector& codeRanges);
 
+    const CodeRange* lookupRange(const void* pc) const;
+
     void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code, size_t* data) const;
 };
 
@@ -211,41 +225,48 @@ class FuncExport
     Sig sig_;
     MOZ_INIT_OUTSIDE_CTOR struct CacheablePod {
         uint32_t funcIndex_;
-        uint32_t codeRangeIndex_;
-        uint32_t interpEntryOffset_; 
+        uint32_t interpCodeRangeIndex_;
+        uint32_t eagerInterpEntryOffset_; 
+        bool     hasEagerStubs_;
     } pod;
 
   public:
     FuncExport() = default;
-    explicit FuncExport(Sig&& sig, uint32_t funcIndex)
+    explicit FuncExport(Sig&& sig, uint32_t funcIndex, bool hasEagerStubs)
       : sig_(Move(sig))
     {
         pod.funcIndex_ = funcIndex;
-        pod.codeRangeIndex_ = UINT32_MAX;
-        pod.interpEntryOffset_ = UINT32_MAX;
+        pod.interpCodeRangeIndex_ = UINT32_MAX;
+        pod.eagerInterpEntryOffset_ = UINT32_MAX;
+        pod.hasEagerStubs_ = hasEagerStubs;
     }
-    void initInterpEntryOffset(uint32_t entryOffset) {
-        MOZ_ASSERT(pod.interpEntryOffset_ == UINT32_MAX);
-        pod.interpEntryOffset_ = entryOffset;
+    void initEagerInterpEntryOffset(uint32_t entryOffset) {
+        MOZ_ASSERT(pod.eagerInterpEntryOffset_ == UINT32_MAX);
+        MOZ_ASSERT(hasEagerStubs());
+        pod.eagerInterpEntryOffset_ = entryOffset;
     }
-    void initCodeRangeIndex(uint32_t codeRangeIndex) {
-        MOZ_ASSERT(pod.codeRangeIndex_ == UINT32_MAX);
-        pod.codeRangeIndex_ = codeRangeIndex;
+    void initInterpCodeRangeIndex(uint32_t codeRangeIndex) {
+        MOZ_ASSERT(pod.interpCodeRangeIndex_ == UINT32_MAX);
+        pod.interpCodeRangeIndex_ = codeRangeIndex;
     }
 
+    bool hasEagerStubs() const {
+        return pod.hasEagerStubs_;
+    }
     const Sig& sig() const {
         return sig_;
     }
     uint32_t funcIndex() const {
         return pod.funcIndex_;
     }
-    uint32_t codeRangeIndex() const {
-        MOZ_ASSERT(pod.codeRangeIndex_ != UINT32_MAX);
-        return pod.codeRangeIndex_;
+    uint32_t interpCodeRangeIndex() const {
+        MOZ_ASSERT(pod.interpCodeRangeIndex_ != UINT32_MAX);
+        return pod.interpCodeRangeIndex_;
     }
-    uint32_t interpEntryOffset() const {
-        MOZ_ASSERT(pod.interpEntryOffset_ != UINT32_MAX);
-        return pod.interpEntryOffset_;
+    uint32_t eagerInterpEntryOffset() const {
+        MOZ_ASSERT(pod.eagerInterpEntryOffset_ != UINT32_MAX);
+        MOZ_ASSERT(hasEagerStubs());
+        return pod.eagerInterpEntryOffset_;
     }
 
     bool clone(const FuncExport& src) {
@@ -473,8 +494,8 @@ struct MetadataTier
     Uint32Vector          debugTrapFarJumpOffsets;
     Uint32Vector          debugFuncToCodeRange;
 
-    FuncExport& lookupFuncExport(uint32_t funcIndex);
-    const FuncExport& lookupFuncExport(uint32_t funcIndex) const;
+    FuncExport& lookupFuncExport(uint32_t funcIndex, size_t* funcExportIndex = nullptr);
+    const FuncExport& lookupFuncExport(uint32_t funcIndex, size_t* funcExportIndex = nullptr) const;
 
     bool clone(const MetadataTier& src);
 
@@ -486,16 +507,128 @@ using UniqueMetadataTier = UniquePtr<MetadataTier>;
 
 
 
+
+
+
+
+class LazyStubSegment : public CodeSegment
+{
+    CodeRangeVector codeRanges_;
+    size_t usedBytes_;
+
+    static constexpr size_t MPROTECT_PAGE_SIZE = 4 * 1024;
+
+    bool initialize(UniqueCodeBytes codeBytes, size_t length);
+
+  public:
+    explicit LazyStubSegment(const CodeTier& codeTier)
+      : CodeSegment(CodeSegment::Kind::LazyStubs),
+        usedBytes_(0)
+    {
+        initCodeTier(&codeTier);
+    }
+
+    static UniquePtr<LazyStubSegment> create(const CodeTier& codeTier, size_t length);
+    static size_t AlignBytesNeeded(size_t bytes) { return AlignBytes(bytes, MPROTECT_PAGE_SIZE); }
+
+    bool hasSpace(size_t bytes) const;
+    bool addStubs(size_t codeLength, const Uint32Vector& funcExportIndices,
+                  const FuncExportVector& funcExports, const CodeRangeVector& codeRanges,
+                  uint8_t** codePtr, size_t* indexFirstInsertedCodeRange);
+
+    const CodeRangeVector& codeRanges() const { return codeRanges_; }
+    const CodeRange* lookupRange(const void* pc) const;
+
+    void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code, size_t* data) const;
+};
+
+using UniqueLazyStubSegment = UniquePtr<LazyStubSegment>;
+using LazyStubSegmentVector = Vector<UniqueLazyStubSegment, 0, SystemAllocPolicy>;
+
+
+
+
+
+struct LazyFuncExport
+{
+    size_t funcIndex;
+    size_t lazyStubSegmentIndex;
+    size_t interpCodeRangeIndex;
+    LazyFuncExport(size_t funcIndex, size_t lazyStubSegmentIndex, size_t interpCodeRangeIndex)
+      : funcIndex(funcIndex),
+        lazyStubSegmentIndex(lazyStubSegmentIndex),
+        interpCodeRangeIndex(interpCodeRangeIndex)
+    {}
+};
+
+using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+
+
+class LazyStubTier
+{
+    LazyStubSegmentVector stubSegments_;
+    LazyFuncExportVector exports_;
+    size_t lastStubSegmentIndex_;
+
+    bool createMany(const Uint32Vector& funcExportIndices, const CodeTier& codeTier,
+                    size_t* stubSegmentIndex);
+
+  public:
+    LazyStubTier() : lastStubSegmentIndex_(0) {}
+
+    bool empty() const { return stubSegments_.empty(); }
+    bool hasStub(uint32_t funcIndex) const;
+
+    
+    
+    void* lookupInterpEntry(uint32_t funcIndex) const;
+
+    
+    
+    bool createOne(uint32_t funcExportIndex, const CodeTier& codeTier);
+
+    
+    
+    
+    
+    bool createTier2(const Uint32Vector& funcExportIndices, const CodeTier& codeTier,
+                     Maybe<size_t>* stubSegmentIndex);
+    void setJitEntries(const Maybe<size_t>& stubSegmentIndex, const Code& code);
+
+    void addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code, size_t* data) const;
+};
+
+
+
+
 class CodeTier
 {
-    const Tier               tier_;
-    const Code*              code_;
-    UniqueMetadataTier       metadata_;
-    UniqueConstModuleSegment segment_;
+    const Tier                  tier_;
+    const Code*                 code_;
+
+    
+    UniqueMetadataTier          metadata_;
+    UniqueConstModuleSegment    segment_;
+
+    
+    ExclusiveData<LazyStubTier> lazyStubs_;
 
     UniqueConstModuleSegment takeOwnership(UniqueModuleSegment segment) const {
         segment->initCodeTier(this);
         return UniqueConstModuleSegment(segment.release());
+    }
+
+    static const MutexId& mutexForTier(Tier tier) {
+        if (tier == Tier::Baseline)
+            return mutexid::WasmLazyStubsTier1;
+        MOZ_ASSERT(tier == Tier::Ion);
+        return mutexid::WasmLazyStubsTier2;
     }
 
   public:
@@ -503,14 +636,16 @@ class CodeTier
       : tier_(tier),
         code_(nullptr),
         metadata_(nullptr),
-        segment_(nullptr)
+        segment_(nullptr),
+        lazyStubs_(mutexForTier(tier))
     {}
 
     CodeTier(Tier tier, UniqueMetadataTier metadata, UniqueModuleSegment segment)
       : tier_(tier),
         code_(nullptr),
         metadata_(Move(metadata)),
-        segment_(takeOwnership(Move(segment)))
+        segment_(takeOwnership(Move(segment))),
+        lazyStubs_(mutexForTier(tier))
     {}
 
     void initCode(const Code* code) {
@@ -519,6 +654,7 @@ class CodeTier
     }
 
     Tier tier() const { return tier_; }
+    const ExclusiveData<LazyStubTier>& lazyStubs() const { return lazyStubs_; }
     const MetadataTier& metadata() const { return *metadata_.get(); }
     const ModuleSegment& segment() const { return *segment_.get(); }
     const Code& code() const { return *code_; }

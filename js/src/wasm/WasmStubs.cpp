@@ -247,12 +247,23 @@ static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * 
 #endif
 static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + sizeof(void*);
 
+static void
+CallFuncExport(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr)
+{
+    MOZ_ASSERT(fe.hasEagerStubs() == !funcPtr);
+    if (funcPtr)
+        masm.call(*funcPtr);
+    else
+        masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
+}
+
 
 
 
 
 static bool
-GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, Offsets* offsets)
+GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, const Maybe<ImmPtr>& funcPtr,
+                    Offsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -326,7 +337,7 @@ GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe, Offsets* offsets
     
     
     masm.assertStackAlignment(WasmStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
+    CallFuncExport(masm, fe, funcPtr);
     masm.assertStackAlignment(WasmStackAlignment);
 
     
@@ -377,6 +388,16 @@ static const ValueOperand ScratchValIonEntry = ValueOperand(ABINonArgReg0, ABINo
 #endif
 static const Register ScratchIonEntry = ABINonArgReg2;
 
+static void
+CallSymbolicAddress(MacroAssembler& masm, bool isAbsolute, SymbolicAddress sym)
+{
+    ABIFunctionType _;
+    if (isAbsolute)
+        masm.call(ImmPtr(AddressOf(sym, &_), ImmPtr::NoCheckToken()));
+    else
+        masm.call(sym);
+}
+
 
 static void
 GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize)
@@ -418,7 +439,7 @@ GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize)
 
 static bool
 GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
-                 Offsets* offsets)
+                 const Maybe<ImmPtr>& funcPtr, Offsets* offsets)
 {
     RegisterOrSP sp = masm.getStackPointer();
 
@@ -449,7 +470,7 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     GenerateJitEntryLoadTls(masm, frameSize);
 
     if (fe.sig().hasI64ArgOrRet()) {
-        masm.call(SymbolicAddress::ReportInt64JSCall);
+        CallSymbolicAddress(masm, !fe.hasEagerStubs(), SymbolicAddress::ReportInt64JSCall);
         GenerateJitEntryThrow(masm, frameSize);
         return FinishOffsets(masm, offsets);
     }
@@ -617,7 +638,7 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
     
     
     masm.assertStackAlignment(WasmStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
+    CallFuncExport(masm, fe, funcPtr);
     masm.assertStackAlignment(WasmStackAlignment);
 
     
@@ -695,7 +716,7 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
         MOZ_ASSERT(argsIter.done());
 
         masm.assertStackAlignment(ABIStackAlignment);
-        masm.call(SymbolicAddress::CoerceInPlace_JitEntry);
+        CallSymbolicAddress(masm, !fe.hasEagerStubs(), SymbolicAddress::CoerceInPlace_JitEntry);
         masm.assertStackAlignment(ABIStackAlignment);
 
         masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg, &rejoinBeforeCall);
@@ -1700,6 +1721,30 @@ GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel, CallableOffsets* 
 }
 
 bool
+wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex, const FuncExport& fe,
+                         const Maybe<ImmPtr>& callee, bool isAsmJS, CodeRangeVector* codeRanges)
+{
+    MOZ_ASSERT(!callee == fe.hasEagerStubs());
+    MOZ_ASSERT_IF(isAsmJS, fe.hasEagerStubs());
+
+    Offsets offsets;
+    if (!GenerateInterpEntry(masm, fe, callee, &offsets))
+        return false;
+    if (!codeRanges->emplaceBack(CodeRange::InterpEntry, fe.funcIndex(), offsets))
+        return false;
+
+    if (isAsmJS)
+        return true;
+
+    if (!GenerateJitEntry(masm, funcExportIndex, fe, callee, &offsets))
+        return false;
+    if (!codeRanges->emplaceBack(CodeRange::JitEntry, fe.funcIndex(), offsets))
+        return false;
+
+    return true;
+}
+
+bool
 wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& imports,
                     const FuncExportVector& exports, CompiledCode* code)
 {
@@ -1733,20 +1778,12 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
 
     JitSpew(JitSpew_Codegen, "# Emitting wasm export stubs");
 
+    Maybe<ImmPtr> noAbsolute;
     for (size_t i = 0; i < exports.length(); i++) {
         const FuncExport& fe = exports[i];
-
-        Offsets offsets;
-        if (!GenerateInterpEntry(masm, fe, &offsets))
-            return false;
-        if (!code->codeRanges.emplaceBack(CodeRange::InterpEntry, fe.funcIndex(), offsets))
-            return false;
-
-        if (env.isAsmJS())
+        if (!fe.hasEagerStubs())
             continue;
-        if (!GenerateJitEntry(masm, i, fe, &offsets))
-            return false;
-        if (!code->codeRanges.emplaceBack(CodeRange::JitEntry, fe.funcIndex(), offsets))
+        if (!GenerateEntryStubs(masm, i, fe, noAbsolute, env.isAsmJS(), &code->codeRanges))
             return false;
     }
 
