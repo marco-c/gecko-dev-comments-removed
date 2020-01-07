@@ -18,7 +18,7 @@ const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://gre/modules/Services.jsm");
 const { Services } = jsmScope;
 
-const { ChromeUtils, HeapSnapshot,
+const { ChromeUtils, HeapSnapshot, XMLHttpRequest
         atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -231,11 +231,7 @@ exports.globals = {
     id: null
   },
 
-  
-  XMLHttpRequest: function () {
-    return Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-           .createInstance(Ci.nsIXMLHttpRequest);
-  },
+  XMLHttpRequest: XMLHttpRequest,
 
   Node: Ci.nsIDOMNode,
   Element: Ci.nsIDOMElement,
