@@ -973,7 +973,8 @@ this.MessageChannel = {
           
           
           for (let key of ["fileName", "filename", "lineNumber",
-                           "columnNumber", "message", "stack", "result"]) {
+                           "columnNumber", "message", "stack", "result",
+                           "mozWebExtLocation"]) {
             if (key in error) {
               response.error[key] = error[key];
             }
