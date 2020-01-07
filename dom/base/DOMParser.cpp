@@ -295,54 +295,34 @@ DOMParser::Constructor(const GlobalObject& aOwner,
   RefPtr<DOMParser> domParser = new DOMParser(aOwner.GetAsSupports());
 
   nsCOMPtr<nsIPrincipal> docPrincipal = aOwner.GetSubjectPrincipal();
+  nsIURI* documentURI = nullptr;
+  nsIURI* baseURI = nullptr;
   if (nsContentUtils::IsSystemPrincipal(docPrincipal)) {
     docPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
-    
-    
-    nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aOwner.GetAsSupports());
-    rv = domParser->Init(docPrincipal, nullptr, nullptr, global);
   } else {
-    rv = domParser->InitInternal(aOwner.GetAsSupports(), docPrincipal,
-                                 nullptr, nullptr);
-  }
-  if (rv.Failed()) {
-    return nullptr;
-  }
-  return domParser.forget();
-}
-
-nsresult
-DOMParser::InitInternal(nsISupports* aOwner, nsIPrincipal* prin,
-                        nsIURI* documentURI, nsIURI* baseURI)
-{
-  AttemptedInitMarker marker(&mAttemptedInit);
-  if (!documentURI) {
+    AttemptedInitMarker marker(&domParser->mAttemptedInit);
     
     
-
-    
-    
-    
-    
-
-    
-    
-    
-
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aOwner);
+    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aOwner.GetAsSupports());
     if (!window) {
-      return NS_ERROR_UNEXPECTED;
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
     }
 
     baseURI = window->GetDocBaseURI();
     documentURI = window->GetDocumentURI();
     if (!documentURI) {
-      return NS_ERROR_UNEXPECTED;
+      rv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
     }
   }
 
-  nsCOMPtr<nsIGlobalObject> scriptglobal = do_QueryInterface(aOwner);
-  return Init(prin, documentURI, baseURI, scriptglobal);
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aOwner.GetAsSupports());
+  rv = domParser->Init(docPrincipal, documentURI, baseURI, global);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+  return domParser.forget();
 }
 
 already_AddRefed<nsIDocument>
