@@ -619,7 +619,7 @@ previewers.Object = [
           }
         }
       }
-    } else if (rawObj instanceof Ci.nsIDOMElement) {
+    } else if (Element.isInstance(rawObj)) {
       
       
       
