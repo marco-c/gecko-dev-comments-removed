@@ -6412,8 +6412,16 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
   loadInfo->SetReferrer(mCurrentURI);
 
   
-
-
+  
+  nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  if (!principal) {
+    nsCOMPtr<nsIDocument> doc = GetDocument();
+    if (!doc) {
+      return NS_ERROR_FAILURE;
+    }
+    principal = doc->NodePrincipal();
+  }
+  loadInfo->SetTriggeringPrincipal(principal);
   loadInfo->SetPrincipalIsExplicit(true);
 
   
@@ -6439,13 +6447,6 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDel
     }
   } else {
     loadInfo->SetLoadType(nsIDocShellLoadInfo::loadRefresh);
-  }
-
-  
-  
-  
-  if (aPrincipal) {
-    loadInfo->SetTriggeringPrincipal(aPrincipal);
   }
 
   
