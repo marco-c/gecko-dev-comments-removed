@@ -97,25 +97,20 @@ ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
 
     
     if ((fwfToModify->mFlags & REQUEST_HAS_BLOCKED_ONLOAD) == 0) {
+      fwfToModify->mFlags |= REQUEST_HAS_BLOCKED_ONLOAD;
+
+      
+      
+      mDocument->BlockOnload();
+
+      
+      
       
       
       uint32_t status = 0;
-      if (NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
-          !(status & imgIRequest::STATUS_ERROR)) {
-        
-        fwfToModify->mFlags |= REQUEST_HAS_BLOCKED_ONLOAD;
-
-        
-        
-        mDocument->BlockOnload();
-
-        
-        
-        
-        
-        if(status & imgIRequest::STATUS_FRAME_COMPLETE) {
-          RequestReflowOnFrame(fwfToModify, aRequest);
-        }
+      if(NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
+         status & imgIRequest::STATUS_FRAME_COMPLETE) {
+        RequestReflowOnFrame(fwfToModify, aRequest);
       }
     }
   }
@@ -496,6 +491,10 @@ ImageLoader::RequestReflowIfNeeded(FrameSet* aFrameSet, imgIRequest* aRequest)
 void
 ImageLoader::RequestReflowOnFrame(FrameWithFlags* aFwf, imgIRequest* aRequest)
 {
+  
+  
+  aFwf->mFlags |= REQUEST_HAS_REQUESTED_REFLOW;
+
   nsIFrame* frame = aFwf->mFrame;
 
   
@@ -672,15 +671,15 @@ ImageLoader::OnLoadComplete(imgIRequest* aRequest)
   
   
   
-  uint32_t status = 0;
-  if(NS_SUCCEEDED(aRequest->GetImageStatus(&status)) &&
-     status & imgIRequest::STATUS_ERROR) {
-    for (FrameWithFlags& fwf : *frameSet) {
-      if (fwf.mFlags & REQUEST_HAS_BLOCKED_ONLOAD) {
-        
-        mDocument->UnblockOnload(false);
-        fwf.mFlags &= ~REQUEST_HAS_BLOCKED_ONLOAD;
-      }
+  
+  FrameFlags flagsToCheck(REQUEST_HAS_BLOCKED_ONLOAD |
+                          REQUEST_HAS_REQUESTED_REFLOW);
+  for (FrameWithFlags& fwf : *frameSet) {
+    if ((fwf.mFlags & flagsToCheck) == REQUEST_HAS_BLOCKED_ONLOAD) {
+      
+      
+      mDocument->UnblockOnload(false);
+      fwf.mFlags &= ~REQUEST_HAS_BLOCKED_ONLOAD;
     }
   }
 
