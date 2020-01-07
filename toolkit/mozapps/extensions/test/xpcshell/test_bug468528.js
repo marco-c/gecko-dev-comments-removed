@@ -4,34 +4,36 @@
 
 const nsIBLS = Components.interfaces.nsIBlocklistService;
 
-var PLUGINS = [{
-  
-  name: "test_bug468528_1",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug468528_2",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug468528_3",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-},
-{
-  
-  name: "test_bug468528_4",
-  version: "5",
-  disabled: false,
-  blocklisted: false
-}];
+var PLUGINS = [
+  {
+    
+    name: "test_bug468528_1",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug468528_2",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug468528_3",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+  {
+    
+    name: "test_bug468528_4",
+    version: "5",
+    disabled: false,
+    blocklisted: false
+  },
+];
 
 
 function run_test() {

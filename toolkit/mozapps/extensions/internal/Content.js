@@ -8,27 +8,27 @@
 
 (function() {
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+  var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-var {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
+  var {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
-const MSG_JAR_FLUSH = "AddonJarFlush";
-const MSG_MESSAGE_MANAGER_CACHES_FLUSH = "AddonMessageManagerCachesFlush";
+  const MSG_JAR_FLUSH = "AddonJarFlush";
+  const MSG_MESSAGE_MANAGER_CACHES_FLUSH = "AddonMessageManagerCachesFlush";
 
 
-try {
-  if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
+  try {
+    if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
     
-    addMessageListener(MSG_JAR_FLUSH, function(message) {
-      Services.obs.notifyObservers(null, "flush-cache-entry", message.data);
-    });
-    
-    addMessageListener(MSG_MESSAGE_MANAGER_CACHES_FLUSH, function() {
-      Services.obs.notifyObservers(null, "message-manager-flush-caches");
-    });
+      addMessageListener(MSG_JAR_FLUSH, function(message) {
+        Services.obs.notifyObservers(null, "flush-cache-entry", message.data);
+      });
+      
+      addMessageListener(MSG_MESSAGE_MANAGER_CACHES_FLUSH, function() {
+        Services.obs.notifyObservers(null, "message-manager-flush-caches");
+      });
+    }
+  } catch (e) {
+    Cu.reportError(e);
   }
-} catch (e) {
-  Cu.reportError(e);
-}
 
 })();
