@@ -2460,7 +2460,7 @@ CodeGenerator::visitGetFirstDollarIndex(LGetFirstDollarIndex* ins)
     OutOfLineCode* ool = oolCallVM(GetFirstDollarIndexRawInfo, ins, ArgList(str),
                                    StoreRegisterTo(output));
 
-    masm.branchIfRope(str, ool->entry());
+    masm.branchIfRope(str, temp0, ool->entry());
     masm.loadStringLength(str, len);
 
     Label isLatin1, done;
@@ -7651,8 +7651,8 @@ ConcatInlineString(MacroAssembler& masm, Register lhs, Register rhs, Register ou
     
 
     
-    masm.branchIfRope(lhs, failure);
-    masm.branchIfRope(rhs, failure);
+    masm.branchIfRope(lhs, temp1, failure);
+    masm.branchIfRope(rhs, temp1, failure);
 
     
     size_t maxThinInlineLength;
@@ -7890,8 +7890,10 @@ JitCompartment::generateStringConcatStub(JSContext* cx)
     
     
     
-    static_assert(JSString::ROPE_FLAGS == 0, "Rope flags must be 0");
+    
+    static_assert(JSString::ROPE_FLAGS == JSString::NON_ATOM_BIT, "Rope flags must be NON_ATOM_BIT only");
     masm.and32(Imm32(JSString::LATIN1_CHARS_BIT), temp1);
+    masm.or32(Imm32(JSString::NON_ATOM_BIT), temp1);
     masm.store32(temp1, Address(output, JSString::offsetOfFlags()));
     masm.store32(temp2, Address(output, JSString::offsetOfLength()));
 
@@ -8115,7 +8117,7 @@ CodeGenerator::visitCharCodeAt(LCharCodeAt* lir)
     Register output = ToRegister(lir->output());
 
     OutOfLineCode* ool = oolCallVM(CharCodeAtInfo, lir, ArgList(str, index), StoreRegisterTo(output));
-    masm.loadStringChar(str, index, output, ool->entry());
+    masm.loadStringChar(str, index, ToRegister(lir->temp()), output, ool->entry());
     masm.bind(ool->rejoin());
 }
 

@@ -612,10 +612,11 @@ struct Function {
 
 struct String
 {
-    static const uint32_t INLINE_CHARS_BIT = JS_BIT(2);
+    static const uint32_t NON_ATOM_BIT     = JS_BIT(0);
+    static const uint32_t INLINE_CHARS_BIT = JS_BIT(3);
     static const uint32_t LATIN1_CHARS_BIT = JS_BIT(6);
-    static const uint32_t ROPE_FLAGS       = 0;
-    static const uint32_t EXTERNAL_FLAGS   = JS_BIT(5);
+    static const uint32_t ROPE_FLAGS       = NON_ATOM_BIT;
+    static const uint32_t EXTERNAL_FLAGS   = NON_ATOM_BIT | JS_BIT(5);
     static const uint32_t TYPE_FLAGS_MASK  = JS_BIT(6) - 1;
     uint32_t flags;
     uint32_t length;
@@ -626,6 +627,11 @@ struct String
         char16_t inlineStorageTwoByte[1];
     };
     const JSStringFinalizer* externalFinalizer;
+
+    static bool nurseryCellIsString(const js::gc::Cell* cell) {
+        MOZ_ASSERT(IsInsideNursery(cell));
+        return reinterpret_cast<const String*>(cell)->flags & NON_ATOM_BIT;
+    }
 };
 
 } 
@@ -1057,7 +1063,7 @@ CheckRecursionLimit(JSContext* cx, uintptr_t limit)
 }
 
 MOZ_ALWAYS_INLINE bool
-CheckRecursionLimitDontReport(uintptr_t limit)
+CheckRecursionLimitDontReport(JSContext* cx, uintptr_t limit)
 {
     int stackDummy;
 
@@ -1076,7 +1082,7 @@ CheckRecursionLimit(JSContext* cx)
     
     
     uintptr_t untrustedLimit = GetNativeStackLimit(cx, JS::StackForUntrustedScript);
-    if (MOZ_LIKELY(CheckRecursionLimitDontReport(untrustedLimit)))
+    if (MOZ_LIKELY(CheckRecursionLimitDontReport(cx, untrustedLimit)))
         return true;
     return CheckRecursionLimit(cx, GetNativeStackLimit(cx));
 }
@@ -1084,7 +1090,7 @@ CheckRecursionLimit(JSContext* cx)
 MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitDontReport(JSContext* cx)
 {
-    return CheckRecursionLimitDontReport(GetNativeStackLimit(cx));
+    return CheckRecursionLimitDontReport(cx, GetNativeStackLimit(cx));
 }
 
 MOZ_ALWAYS_INLINE bool
@@ -1123,8 +1129,8 @@ CheckRecursionLimitConservative(JSContext* cx)
 MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitConservativeDontReport(JSContext* cx)
 {
-    return CheckRecursionLimitDontReport(GetNativeStackLimit(cx, JS::StackForUntrustedScript,
-                                                             -1024 * int(sizeof(size_t))));
+    return CheckRecursionLimitDontReport(cx, GetNativeStackLimit(cx, JS::StackForUntrustedScript,
+                                                                 -1024 * int(sizeof(size_t))));
 }
 
 JS_FRIEND_API(void)
