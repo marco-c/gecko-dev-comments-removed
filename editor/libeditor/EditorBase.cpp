@@ -1449,10 +1449,10 @@ EditorBase::CreateNode(nsAtom* aTag,
     
     
     
-    pointToInsert.Set(ret);
+    pointToInsert.Set(ret, offset);
   }
 
-  mRangeUpdater.SelAdjCreateNode(pointToInsert.GetContainer(), offset);
+  mRangeUpdater.SelAdjCreateNode(pointToInsert.AsRaw());
 
   {
     AutoActionListenerArray listeners(mActionListeners);
@@ -1508,8 +1508,7 @@ EditorBase::InsertNode(nsIContent& aContentToInsert,
     InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
 
-  mRangeUpdater.SelAdjInsertNode(aPointToInsert.GetContainer(),
-                                 aPointToInsert.Offset());
+  mRangeUpdater.SelAdjInsertNode(aPointToInsert.AsRaw());
 
   {
     AutoActionListenerArray listeners(mActionListeners);

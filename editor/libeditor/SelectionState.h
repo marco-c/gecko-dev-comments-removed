@@ -109,8 +109,8 @@ public:
   
   
   
-  nsresult SelAdjCreateNode(nsINode* aParent, int32_t aPosition);
-  nsresult SelAdjInsertNode(nsINode* aParent, int32_t aPosition);
+  nsresult SelAdjCreateNode(const EditorRawDOMPoint& aPoint);
+  nsresult SelAdjInsertNode(const EditorRawDOMPoint& aPoint);
   void SelAdjDeleteNode(nsINode* aNode);
   nsresult SelAdjSplitNode(nsIContent& aRightNode, nsIContent* aNewLeftNode);
   nsresult SelAdjJoinNodes(nsINode& aLeftNode,
