@@ -1091,7 +1091,15 @@ InsertPlaintextCommand::DoCommand(const char* aCommandName,
   }
   TextEditor* textEditor = editor->AsTextEditor();
   MOZ_ASSERT(textEditor);
-  return textEditor->InsertText(EmptyString());
+  
+  
+  
+  
+  
+  
+  DebugOnly<nsresult> rv = textEditor->InsertTextAsAction(EmptyString());
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert empty string");
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1117,7 +1125,15 @@ InsertPlaintextCommand::DoCommandParams(const char* aCommandName,
 
   TextEditor* textEditor = editor->AsTextEditor();
   MOZ_ASSERT(textEditor);
-  return textEditor->InsertText(text);
+  
+  
+  
+  
+  
+  
+  rv = textEditor->InsertTextAsAction(text);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the text");
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1169,7 +1185,9 @@ InsertParagraphCommand::DoCommand(const char* aCommandName,
 
   TextEditor* textEditor = editor->AsTextEditor();
   MOZ_ASSERT(textEditor);
-  return textEditor->TypedText(EmptyString(), TextEditor::eTypedBreak);
+  
+  
+  return textEditor->OnInputParagraphSeparator();
 }
 
 NS_IMETHODIMP
@@ -1227,9 +1245,13 @@ InsertLineBreakCommand::DoCommand(const char* aCommandName,
     return NS_ERROR_FAILURE;
   }
 
-  TextEditor* textEditor = editor->AsTextEditor();
-  MOZ_ASSERT(textEditor);
-  return textEditor->TypedText(EmptyString(), TextEditor::eTypedBR);
+  HTMLEditor* htmlEditor = editor->AsHTMLEditor();
+  if (!htmlEditor) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  return htmlEditor->OnInputLineBreak();
 }
 
 NS_IMETHODIMP

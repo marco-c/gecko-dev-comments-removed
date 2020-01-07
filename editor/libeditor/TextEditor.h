@@ -44,13 +44,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextEditor, EditorBase)
 
-  enum ETypingAction
-  {
-    eTypedText,  
-    eTypedBR,    
-    eTypedBreak  
-  };
-
   TextEditor();
 
   
@@ -164,7 +157,35 @@ public:
                                  EStripWrappers aStripWrappers);
 
   
-  NS_IMETHOD TypedText(const nsAString& aString, ETypingAction aAction);
+
+
+
+
+  nsresult OnInputText(const nsAString& aStringToInsert);
+
+  
+
+
+
+  nsresult OnInputParagraphSeparator();
+
+  
+
+
+
+
+
+
+  nsresult InsertTextAsAction(const nsAString& aStringToInsert);
+
+  
+
+
+
+
+
+
+  nsresult InsertParagraphSeparatorAsAction();
 
   nsresult InsertTextAt(const nsAString& aStringToInsert,
                         nsINode* aDestinationNode,

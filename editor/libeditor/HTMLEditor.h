@@ -437,8 +437,10 @@ public:
                               bool aWasAlternate, nsresult aStatus) override;
 
   
-  NS_IMETHOD TypedText(const nsAString& aString,
-                       ETypingAction aAction) override;
+
+
+
+  nsresult OnInputLineBreak();
 
   
 
@@ -657,7 +659,8 @@ protected:
 
 
 
-  nsresult InsertBR();
+
+  nsresult InsertBrElementAtSelectionWithTransaction();
 
   
 

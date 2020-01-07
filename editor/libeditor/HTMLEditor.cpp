@@ -773,7 +773,7 @@ HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
         return NS_OK; 
       }
       aKeyboardEvent->PreventDefault();
-      return TypedText(NS_LITERAL_STRING("\t"), eTypedText);
+      return OnInputText(NS_LITERAL_STRING("\t"));
     }
     case NS_VK_RETURN:
       if (!aKeyboardEvent->IsInputtingLineBreak()) {
@@ -782,10 +782,10 @@ HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
       aKeyboardEvent->PreventDefault(); 
       if (aKeyboardEvent->IsShift()) {
         
-        return TypedText(EmptyString(), eTypedBR);
+        return OnInputLineBreak();
       }
       
-      return TypedText(EmptyString(), eTypedBreak);
+      return OnInputParagraphSeparator();
   }
 
   if (!aKeyboardEvent->IsInputtingText()) {
@@ -794,7 +794,7 @@ HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
   }
   aKeyboardEvent->PreventDefault();
   nsAutoString str(aKeyboardEvent->mCharCode);
-  return TypedText(str, eTypedText);
+  return OnInputText(str);
 }
 
 
@@ -1037,27 +1037,15 @@ HTMLEditor::UpdateBaseURL()
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-NS_IMETHODIMP
-HTMLEditor::TypedText(const nsAString& aString,
-                      ETypingAction aAction)
+nsresult
+HTMLEditor::OnInputLineBreak()
 {
-  MOZ_ASSERT(!aString.IsEmpty() || aAction != eTypedText);
-
   AutoPlaceholderBatch batch(this, nsGkAtoms::TypingTxnName);
-
-  if (aAction == eTypedBR) {
-    
-    return InsertBR();
+  nsresult rv = InsertBrElementAtSelectionWithTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
-
-  return TextEditor::TypedText(aString, aAction);
+  return NS_OK;
 }
 
 nsresult
@@ -1136,7 +1124,7 @@ HTMLEditor::TabInTable(bool inIsShift,
 }
 
 nsresult
-HTMLEditor::InsertBR()
+HTMLEditor::InsertBrElementAtSelectionWithTransaction()
 {
   
   AutoRules beginRulesSniffing(this, EditAction::insertText, nsIEditor::eNext);
@@ -2323,13 +2311,20 @@ HTMLEditor::Indent(const nsAString& aIndent)
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
-    rv = InsertText(NS_LITERAL_STRING(" "));
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = InsertTextAsAction(NS_LITERAL_STRING(" "));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     
-    NS_ENSURE_STATE(selection->GetRangeAt(0));
-    rv = selection->Collapse(selection->GetRangeAt(0)->GetStartContainer(),
-                             0);
-    NS_ENSURE_SUCCESS(rv, rv);
+    firstRange = selection->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
+    selection->Collapse(RawRangeBoundary(firstRange->GetStartContainer(), 0),
+                        error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
   }
   return rules->DidDoAction(selection, &ruleInfo, rv);
 }

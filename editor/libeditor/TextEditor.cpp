@@ -398,14 +398,14 @@ TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
 
       
       aKeyboardEvent->PreventDefault();
-      return TypedText(NS_LITERAL_STRING("\t"), eTypedText);
+      return OnInputText(NS_LITERAL_STRING("\t"));
     }
     case NS_VK_RETURN:
       if (IsSingleLineEditor() || !aKeyboardEvent->IsInputtingLineBreak()) {
         return NS_OK;
       }
       aKeyboardEvent->PreventDefault();
-      return TypedText(EmptyString(), eTypedBreak);
+      return OnInputParagraphSeparator();
   }
 
   if (!aKeyboardEvent->IsInputtingText()) {
@@ -414,29 +414,29 @@ TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
   }
   aKeyboardEvent->PreventDefault();
   nsAutoString str(aKeyboardEvent->mCharCode);
-  return TypedText(str, eTypedText);
+  return OnInputText(str);
 }
 
-
-
-
-
-
-
-NS_IMETHODIMP
-TextEditor::TypedText(const nsAString& aString, ETypingAction aAction)
+nsresult
+TextEditor::OnInputText(const nsAString& aStringToInsert)
 {
   AutoPlaceholderBatch batch(this, nsGkAtoms::TypingTxnName);
-
-  switch (aAction) {
-    case eTypedText:
-      return InsertText(aString);
-    case eTypedBreak:
-      return InsertLineBreak();
-    default:
-      
-      return NS_ERROR_FAILURE;
+  nsresult rv = InsertTextAsAction(aStringToInsert);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
+  return NS_OK;
+}
+
+nsresult
+TextEditor::OnInputParagraphSeparator()
+{
+  AutoPlaceholderBatch batch(this, nsGkAtoms::TypingTxnName);
+  nsresult rv = InsertParagraphSeparatorAsAction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 template<typename PT, typename CT>
@@ -922,6 +922,16 @@ TextEditor::DeleteSelectionAndPrepareToCreateNode()
 NS_IMETHODIMP
 TextEditor::InsertText(const nsAString& aStringToInsert)
 {
+  nsresult rv = InsertTextAsAction(aStringToInsert);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TextEditor::InsertTextAsAction(const nsAString& aStringToInsert)
+{
   if (!mRules) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -933,12 +943,15 @@ TextEditor::InsertText(const nsAString& aStringToInsert)
   if (ShouldHandleIMEComposition()) {
     opID = EditAction::insertIMEText;
   }
+
   AutoPlaceholderBatch batch(this, nullptr);
   AutoRules beginRulesSniffing(this, opID, nsIEditor::eNext);
 
-  
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
   nsAutoString resultString;
   
   
@@ -950,7 +963,9 @@ TextEditor::InsertText(const nsAString& aStringToInsert)
 
   bool cancel, handled;
   nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (!cancel && !handled) {
     
   }
@@ -958,11 +973,17 @@ TextEditor::InsertText(const nsAString& aStringToInsert)
     return NS_OK;
   }
   
-  return rules->DidDoAction(selection, &ruleInfo, rv);
+  return rules->DidDoAction(selection, &ruleInfo, NS_OK);
 }
 
 NS_IMETHODIMP
 TextEditor::InsertLineBreak()
+{
+  return InsertParagraphSeparatorAsAction();
+}
+
+nsresult
+TextEditor::InsertParagraphSeparatorAsAction()
 {
   if (!mRules) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -974,19 +995,23 @@ TextEditor::InsertLineBreak()
   AutoPlaceholderBatch beginBatching(this);
   AutoRules beginRulesSniffing(this, EditAction::insertBreak, nsIEditor::eNext);
 
-  
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   RulesInfo ruleInfo(EditAction::insertBreak);
   ruleInfo.maxLength = mMaxTextLength;
   bool cancel, handled;
-  
-  
-  
-  
   nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    
+    
+    return rv;
+  }
+
   if (!cancel && !handled) {
     
     nsRange* firstRange = selection->GetRangeAt(0);
@@ -1009,7 +1034,9 @@ TextEditor::InsertLineBreak()
 
     
     nsCOMPtr<nsIDocument> doc = GetDocument();
-    NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
+    if (NS_WARN_IF(!doc)) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
 
     
     AutoTransactionsConserveSelection dontChangeMySelection(this);
@@ -1099,7 +1126,8 @@ TextEditor::SetText(const nsAString& aString)
         rv = DeleteSelectionAsAction(eNone, eStrip);
         NS_WARNING_ASSERTION(NS_FAILED(rv), "Failed to remove all text");
       } else {
-        rv = InsertText(aString);
+        rv = InsertTextAsAction(aString);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert the new text");
       }
     }
   }
@@ -1166,7 +1194,9 @@ TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
 
     MOZ_ASSERT(mIsInEditAction,
       "AutoPlaceholderBatch should've notified the observes of before-edit");
-    rv = InsertText(aCompsitionChangeEvent->mData);
+    rv = InsertTextAsAction(aCompsitionChangeEvent->mData);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to insert new composition string");
 
     if (caretP) {
       caretP->SetSelection(selection);
@@ -1716,7 +1746,11 @@ TextEditor::OutputToStream(nsIOutputStream* aOutputStream,
 NS_IMETHODIMP
 TextEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
 {
-  return InsertText(aStringToInsert);
+  nsresult rv = InsertTextAsAction(aStringToInsert);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1795,7 +1829,8 @@ TextEditor::InsertAsQuotation(const nsAString& aQuotedText,
     return NS_OK; 
   }
   if (!handled) {
-    rv = InsertText(quotedStuff);
+    rv = InsertTextAsAction(quotedStuff);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert quoted text");
 
     
     if (aNodeInserted && NS_SUCCEEDED(rv)) {
@@ -1889,7 +1924,11 @@ TextEditor::StripCites()
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  return InsertText(stripped);
+  rv = InsertTextAsAction(stripped);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
