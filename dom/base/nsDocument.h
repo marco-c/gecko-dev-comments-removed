@@ -350,12 +350,8 @@ public:
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
-  virtual void UnblockDOMContentLoaded() override;
-
 protected:
   friend class nsNodeUtils;
-
-  void DispatchContentLoadedEvents();
 
   void RetrieveRelevantHeaders(nsIChannel *aChannel);
 
@@ -400,8 +396,6 @@ public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
 
   nsClassHashtable<nsStringHashKey, nsRadioGroupStruct> mRadioGroups;
-
-  bool mSynchronousDOMContentLoaded:1;
 
   
   
@@ -464,10 +458,6 @@ private:
   mozilla::CSSToLayoutDeviceScale mPixelRatio;
   bool mAutoSize, mAllowZoom, mAllowDoubleTapZoom, mValidScaleFloat, mValidMaxScale, mScaleStrEmpty, mWidthStrEmpty;
   mozilla::CSSSize mViewportSize;
-
-  
-  
-  bool mMaybeServiceWorkerControlled;
 
 #ifdef DEBUG
 public:
