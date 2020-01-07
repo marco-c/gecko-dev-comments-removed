@@ -2544,6 +2544,10 @@ var updateFrecency = async function(db, urls, collapseNotifications = false) {
          frecency = ${frecencyClause}
      WHERE url_hash IN ( ${urlQuery} )
     `);
+
+  
+  await db.executeCached(`DELETE FROM moz_updateoriginsupdate_temp`);
+
   if (collapseNotifications) {
     let observers = PlacesUtils.history.getObservers();
     notify(observers, "onManyFrecenciesChanged");

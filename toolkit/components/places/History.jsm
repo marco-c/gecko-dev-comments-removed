@@ -765,6 +765,8 @@ var invalidateFrecencies = async function(db, idList) {
      WHERE id in (${ ids })
      AND frecency <> 0`
   );
+  
+  await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
 };
 
 
@@ -824,6 +826,9 @@ var clear = async function(db) {
   notify(observers, "onClearHistory");
   
   notify(observers, "onManyFrecenciesChanged");
+
+  
+  await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
 };
 
 

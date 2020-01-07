@@ -4,83 +4,600 @@
 
 
 
-add_task(async function parsing() {
-  let prefixes = [
-    "http://",
-    "https://",
-    "ftp://",
-    "foo://",
-    "bar:",
-  ];
+"use strict";
 
-  let userinfos = [
-    "",
-    "user:pass@",
-    "user:pass:word@",
-    "user:@",
-  ];
 
-  let ports = [
-    "",
-    ":8888",
-  ];
+add_task(async function visit() {
+  await checkDB([]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/");
+  await checkDB([]);
+  await cleanUp();
+});
 
-  let paths = [
-    "",
 
-    "/",
-    "/1",
-    "/1/2",
 
-    "?",
-    "?1",
-    "#",
-    "#1",
 
-    "/?",
-    "/1?",
-    "/?1",
-    "/1?2",
+add_task(async function visitRepeatedly() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+    { uri: "http://example.com/" },
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/");
+  await checkDB([]);
+  await cleanUp();
+});
 
-    "/#",
-    "/1#",
-    "/#1",
-    "/1#2",
 
-    "/?#",
-    "/1?#",
-    "/?1#",
-    "/?#1",
-    "/1?2#",
-    "/1?#2",
-    "/?1#2",
-  ];
 
-  for (let userinfo of userinfos) {
-    for (let port of ports) {
-      for (let path of paths) {
-        info(`Testing userinfo='${userinfo}' port='${port}' path='${path}'`);
-        let prefixAndHostPorts = prefixes.map(prefix =>
-          [prefix, "example.com" + port]
-        );
-        let uris = prefixAndHostPorts.map(([prefix, hostPort]) =>
-          prefix + userinfo + hostPort + path
-        );
+add_task(async function visitRepeatedlySequential() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/");
+  await checkDB([]);
+  await cleanUp();
+});
 
-        await PlacesTestUtils.addVisits(uris.map(uri => ({ uri })));
-        await checkDB(prefixAndHostPorts);
 
-        
-        
-        for (let i = 0; i < uris.length; i++) {
-          await PlacesUtils.history.remove(uris[i]);
-          await checkDB(prefixAndHostPorts.slice(i + 1,
-                                                 prefixAndHostPorts.length));
-        }
-        await cleanUp();
-      }
-    }
-  }
+
+
+add_task(async function vistAfterDelete() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await PlacesUtils.history.remove("http://example.com/");
+  await checkDB([]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", ["http://example.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+
+add_task(async function visitDifferentURLsSameOrigin() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/1" },
+    { uri: "http://example.com/2" },
+    { uri: "http://example.com/3" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/1",
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/1");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/2");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/3");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+add_task(async function visitDifferentURLsSameOriginSequential() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/1",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/2" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/1",
+      "http://example.com/2",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/3" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/1",
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/1");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/2");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/3");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+
+
+add_task(async function visitDifferentURLsSameOriginRepeatedly() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/1" },
+    { uri: "http://example.com/1" },
+    { uri: "http://example.com/1" },
+    { uri: "http://example.com/2" },
+    { uri: "http://example.com/2" },
+    { uri: "http://example.com/3" },
+  ]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/1",
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/1");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/2",
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/2");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/3",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example.com/3");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+add_task(async function visitDifferentOrigins() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/" },
+    { uri: "http://example2.com/" },
+    { uri: "http://example3.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", ["http://example1.com/"]],
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/");
+  await checkDB([
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/");
+  await checkDB([
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+add_task(async function visitDifferentOriginsSequential() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", ["http://example1.com/"]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example2.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", ["http://example1.com/"]],
+    ["http://", "example2.com", ["http://example2.com/"]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example3.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", ["http://example1.com/"]],
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/");
+  await checkDB([
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/");
+  await checkDB([
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+
+add_task(async function visitDifferentOriginsRepeatedly() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/" },
+    { uri: "http://example1.com/" },
+    { uri: "http://example1.com/" },
+    { uri: "http://example2.com/" },
+    { uri: "http://example2.com/" },
+    { uri: "http://example3.com/" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", ["http://example1.com/"]],
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/");
+  await checkDB([
+    ["http://", "example2.com", ["http://example2.com/"]],
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/");
+  await checkDB([
+    ["http://", "example3.com", ["http://example3.com/"]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/");
+  await checkDB([]);
+  await cleanUp();
+});
+
+
+
+
+add_task(async function visitDifferentOriginsDifferentURLs() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/1" },
+    { uri: "http://example1.com/2" },
+    { uri: "http://example1.com/3" },
+    { uri: "http://example2.com/1" },
+    { uri: "http://example2.com/2" },
+    { uri: "http://example3.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/1");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/2");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/3");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/1");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/2");
+  await checkDB([
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/1");
+  await checkDB([]);
+});
+
+
+
+add_task(async function visitDifferentOriginsDifferentURLsSequential() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/2" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/3" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example2.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example2.com/2" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+  ]);
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example3.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/1");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/2");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/3");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/1");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/2");
+  await checkDB([
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/1");
+  await checkDB([]);
+});
+
+
+
+
+add_task(async function visitDifferentOriginsDifferentURLsRepeatedly() {
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example1.com/1" },
+    { uri: "http://example1.com/1" },
+    { uri: "http://example1.com/1" },
+    { uri: "http://example1.com/2" },
+    { uri: "http://example1.com/2" },
+    { uri: "http://example1.com/3" },
+    { uri: "http://example2.com/1" },
+    { uri: "http://example2.com/1" },
+    { uri: "http://example2.com/1" },
+    { uri: "http://example2.com/2" },
+    { uri: "http://example2.com/2" },
+    { uri: "http://example3.com/1" },
+    { uri: "http://example3.com/1" },
+  ]);
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/1",
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/1");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/2",
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/2");
+  await checkDB([
+    ["http://", "example1.com", [
+      "http://example1.com/3",
+    ]],
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example1.com/3");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/1",
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/1");
+  await checkDB([
+    ["http://", "example2.com", [
+      "http://example2.com/2",
+    ]],
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example2.com/2");
+  await checkDB([
+    ["http://", "example3.com", [
+      "http://example3.com/1",
+    ]],
+  ]);
+  await PlacesUtils.history.remove("http://example3.com/1");
+  await checkDB([]);
 });
 
 
@@ -93,18 +610,18 @@ add_task(async function www1() {
     { uri: "http://www.www.example.com/" },
   ]);
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
+    ["http://", "www.www.example.com", ["http://www.www.example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com/");
   await checkDB([
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
+    ["http://", "www.www.example.com", ["http://www.www.example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://www.example.com/");
   await checkDB([
-    ["http://", "www.www.example.com"],
+    ["http://", "www.www.example.com", ["http://www.www.example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://www.www.example.com/");
   await checkDB([
@@ -121,18 +638,18 @@ add_task(async function www2() {
     { uri: "http://www.www.example.com/" },
   ]);
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
+    ["http://", "www.www.example.com", ["http://www.www.example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://www.www.example.com/");
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://www.example.com/");
   await checkDB([
-    ["http://", "example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com/");
   await checkDB([
@@ -149,12 +666,12 @@ add_task(async function ports1() {
     { uri: "http://example.com:8888/" },
   ]);
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "example.com:8888", ["http://example.com:8888/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com/");
   await checkDB([
-    ["http://", "example.com:8888"],
+    ["http://", "example.com:8888", ["http://example.com:8888/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com:8888/");
   await checkDB([
@@ -171,12 +688,12 @@ add_task(async function ports2() {
     { uri: "http://example.com:8888/" },
   ]);
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "example.com:8888", ["http://example.com:8888/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com:8888/");
   await checkDB([
-    ["http://", "example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
   ]);
   await PlacesUtils.history.remove("http://example.com/");
   await checkDB([
@@ -207,131 +724,339 @@ add_task(async function duplicates() {
     { uri: "http://example.com:8888/dupe" },
   ]);
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "example.com", [
+      "http://example.com/",
+      "http://example.com/dupe",
+    ]],
+    ["http://", "www.example.com", [
+      "http://www.example.com/",
+      "http://www.example.com/dupe",
+    ]],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/",
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("http://example.com/");
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "example.com", [
+      "http://example.com/dupe",
+    ]],
+    ["http://", "www.example.com", [
+      "http://www.example.com/",
+      "http://www.example.com/dupe",
+    ]],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/",
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("http://example.com/dupe");
   await checkDB([
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "www.example.com", [
+      "http://www.example.com/",
+      "http://www.example.com/dupe",
+    ]],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/",
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("http://www.example.com/");
   await checkDB([
-    ["http://", "www.example.com"],
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "www.example.com", [
+      "http://www.example.com/dupe",
+    ]],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/",
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("http://www.example.com/dupe");
   await checkDB([
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/",
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("http://www.www.example.com/");
   await checkDB([
-    ["http://", "www.www.example.com"],
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["http://", "www.www.example.com", [
+      "http://www.www.example.com/dupe",
+    ]],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("http://www.www.example.com/dupe");
   await checkDB([
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["https://", "example.com", [
+      "https://example.com/",
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("https://example.com/");
   await checkDB([
-    ["https://", "example.com"],
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["https://", "example.com", [
+      "https://example.com/dupe",
+    ]],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("https://example.com/dupe");
   await checkDB([
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["ftp://", "example.com", [
+      "ftp://example.com/",
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("ftp://example.com/");
   await checkDB([
-    ["ftp://", "example.com"],
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["ftp://", "example.com", [
+      "ftp://example.com/dupe",
+    ]],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("ftp://example.com/dupe");
   await checkDB([
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["foo://", "example.com", [
+      "foo://example.com/",
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("foo://example.com/");
   await checkDB([
-    ["foo://", "example.com"],
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["foo://", "example.com", [
+      "foo://example.com/dupe",
+    ]],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("foo://example.com/dupe");
   await checkDB([
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["bar:", "example.com", [
+      "bar:example.com/",
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("bar:example.com/");
   await checkDB([
-    ["bar:", "example.com"],
-    ["http://", "example.com:8888"],
+    ["bar:", "example.com", [
+      "bar:example.com/dupe",
+    ]],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("bar:example.com/dupe");
   await checkDB([
-    ["http://", "example.com:8888"],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/",
+      "http://example.com:8888/dupe",
+    ]],
   ]);
 
   await PlacesUtils.history.remove("http://example.com:8888/");
   await checkDB([
-    ["http://", "example.com:8888"],
+    ["http://", "example.com:8888", [
+      "http://example.com:8888/dupe",
+    ]],
   ]);
   await PlacesUtils.history.remove("http://example.com:8888/dupe");
   await checkDB([
@@ -355,13 +1080,13 @@ add_task(async function addRemoveBookmarks() {
     }));
   }
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
   ]);
   await PlacesUtils.bookmarks.remove(bookmarks[0]);
   await PlacesUtils.history.clear();
   await checkDB([
-    ["http://", "www.example.com"],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
   ]);
   await PlacesUtils.bookmarks.remove(bookmarks[1]);
   await PlacesUtils.history.clear();
@@ -385,8 +1110,8 @@ add_task(async function changeBookmarks() {
     }));
   }
   await checkDB([
-    ["http://", "example.com"],
-    ["http://", "www.example.com"],
+    ["http://", "example.com", ["http://example.com/"]],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
   ]);
   await PlacesUtils.bookmarks.update({
     url: "http://www.example.com/",
@@ -394,21 +1119,198 @@ add_task(async function changeBookmarks() {
   });
   await PlacesUtils.history.clear();
   await checkDB([
-    ["http://", "www.example.com"],
+    ["http://", "www.example.com", ["http://www.example.com/"]],
   ]);
   await cleanUp();
 });
 
 
+
+
+add_task(async function moreOriginFrecencyStats() {
+  await checkDB([]);
+
+  
+  await PlacesTestUtils.addVisits([{ uri: "http://example.com/0" }]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+    ]],
+  ]);
+
+  
+  await PlacesTestUtils.addVisits([{ uri: "http://example.com/1" }]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+    ]],
+  ]);
+
+  
+  await PlacesTestUtils.addVisits([{ uri: "http://example.com/2" }]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+      "http://example.com/2",
+    ]],
+  ]);
+
+  
+  await PlacesTestUtils.addVisits([{ uri: "http://example.com/2" }]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+      "http://example.com/2",
+    ]],
+  ]);
+
+  
+  await PlacesUtils.history.remove(["http://example.com/2"]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+    ]],
+  ]);
+
+  
+  let parentGuid =
+    await PlacesUtils.promiseItemGuid(PlacesUtils.unfiledBookmarksFolderId);
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid,
+    title: "A bookmark",
+    url: NetUtil.newURI("http://example.com/1"),
+  });
+  await PlacesUtils.promiseItemId(bookmark.guid);
+
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+    ]],
+  ]);
+
+  
+  await PlacesUtils.history.remove(["http://example.com/1"]);
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+      "http://example.com/1",
+    ]],
+  ]);
+
+  
+  
+  
+  await PlacesUtils.bookmarks.remove(bookmark);
+  await PlacesUtils.history.remove("http://example.com/1");
+  await checkDB([
+    ["http://", "example.com", [
+      "http://example.com/0",
+    ]],
+  ]);
+
+  
+  await PlacesUtils.history.remove(["http://example.com/0"]);
+  await checkDB([
+  ]);
+
+  await cleanUp();
+});
+
+
+
+
+
+
+
+
+
+
+function expectedOriginFrecency(urls) {
+  return urls.reduce((sum, url) => sum + Math.max(frecencyForUrl(url), 0), 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 async function checkDB(expectedOrigins) {
   let db = await PlacesUtils.promiseDBConnection();
   let rows = await db.execute(`
-    SELECT prefix, host
+    SELECT prefix, host, frecency
     FROM moz_origins
     ORDER BY id ASC
   `);
-  let actual = rows.map(r => [r.getString(0), r.getString(1)]);
-  Assert.deepEqual(actual, expectedOrigins);
+  let checkFrecencies = !expectedOrigins.length || expectedOrigins[0][2] !== undefined;
+  let actualOrigins = rows.map(row => {
+    let o = [];
+    for (let c = 0; c < (checkFrecencies ? 3 : 2); c++) {
+      o.push(row.getResultByIndex(c));
+    }
+    return o;
+  });
+  expectedOrigins = expectedOrigins.map(o => {
+    return o.slice(0, 2).concat(
+      checkFrecencies ? expectedOriginFrecency(o[2]) : []
+    );
+  });
+  Assert.deepEqual(actualOrigins, expectedOrigins);
+  if (checkFrecencies) {
+    await checkStats(expectedOrigins.map(o => o[2]).filter(o => o > 0));
+  }
+}
+
+
+
+
+
+
+
+async function checkStats(expectedOriginFrecencies) {
+  let stats = await promiseStats();
+  Assert.equal(
+    stats.count,
+    expectedOriginFrecencies.length
+  );
+  Assert.equal(
+    stats.sum,
+    expectedOriginFrecencies.reduce((sum, f) => sum + f, 0)
+  );
+  Assert.equal(
+    stats.squares,
+    expectedOriginFrecencies.reduce((squares, f) => squares + (f * f), 0)
+  );
+}
+
+
+
+
+
+
+async function promiseStats() {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_count"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum_of_squares"), 0)
+  `);
+  return {
+    count: rows[0].getResultByIndex(0),
+    sum: rows[0].getResultByIndex(1),
+    squares: rows[0].getResultByIndex(2),
+  };
 }
 
 async function cleanUp() {

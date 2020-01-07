@@ -77,7 +77,7 @@
 
 #define PREF_HISTORY_MAXURLLEN_DEFAULT 2000
 
-#define PREF_MIGRATE_V48_FRECENCIES "places.database.migrateV48Frecencies"
+#define PREF_MIGRATE_V52_ORIGIN_FRECENCIES "places.database.migrateV52OriginFrecencies"
 
 
 
@@ -1151,7 +1151,7 @@ Database::InitSchema(bool* aDatabaseMigrated)
       mShouldConvertIconPayloads = false;
       nsFaviconService::ConvertUnsupportedPayloads(mMainConn);
     }
-    MigrateV48Frecencies();
+    MigrateV52OriginFrecencies();
   });
 
   
@@ -1308,6 +1308,13 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       if (currentSchemaVersion < 51) {
         rv = MigrateV51Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
+      if (currentSchemaVersion < 52) {
+        rv = MigrateV52Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
@@ -1623,6 +1630,10 @@ Database::InitTempEntities()
   rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEORIGINSDELETE_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERDELETE_TRIGGER);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEORIGINSUPDATE_TEMP);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEORIGINSUPDATE_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERUPDATE_FRECENCY_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2378,13 +2389,6 @@ Database::MigrateV48Up() {
   
   
   
-  
-  
-  Unused << Preferences::SetBool(PREF_MIGRATE_V48_FRECENCIES, true);
-
-  
-  
-  
   rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "DELETE FROM moz_hosts; "
   ));
@@ -2393,102 +2397,14 @@ Database::MigrateV48Up() {
   return NS_OK;
 }
 
-namespace {
-
-class MigrateV48FrecenciesRunnable final : public Runnable
-{
-public:
-  NS_DECL_NSIRUNNABLE
-  explicit MigrateV48FrecenciesRunnable(mozIStorageConnection* aDBConn);
-private:
-  nsCOMPtr<mozIStorageConnection> mDBConn;
-};
-
-MigrateV48FrecenciesRunnable::MigrateV48FrecenciesRunnable(mozIStorageConnection* aDBConn)
-  : Runnable("places::MigrateV48FrecenciesRunnable")
-  , mDBConn(aDBConn)
-{
-}
-
-NS_IMETHODIMP
-MigrateV48FrecenciesRunnable::Run()
-{
-  if (NS_IsMainThread()) {
-    
-    Unused << Preferences::ClearUser(PREF_MIGRATE_V48_FRECENCIES);
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<mozIStorageStatement> updateStmt;
-  nsresult rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-    "UPDATE moz_origins "
-    "SET frecency = ( "
-      "SELECT MAX(frecency) "
-      "FROM moz_places "
-      "WHERE moz_places.origin_id = moz_origins.id "
-    ") "
-    "WHERE rowid IN ( "
-      "SELECT rowid "
-      "FROM moz_origins "
-      "WHERE frecency = -1 "
-      "LIMIT 400 "
-    ") "
-  ));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<mozIStorageStatement> selectStmt;
-  rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
-    "SELECT id FROM moz_origins WHERE frecency = -1 "
-  ), getter_AddRefs(selectStmt));
-  NS_ENSURE_SUCCESS(rv, rv);
-  bool hasResult = false;
-  rv = selectStmt->ExecuteStep(&hasResult);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (hasResult) {
-    
-    
-    return NS_DispatchToCurrentThread(this);
-  }
-
-  
-  return NS_DispatchToMainThread(this);
-}
-
-} 
-
-void
-Database::MigrateV48Frecencies()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!Preferences::GetBool(PREF_MIGRATE_V48_FRECENCIES)) {
-    return;
-  }
-
-  RefPtr<MigrateV48FrecenciesRunnable> runnable =
-    new MigrateV48FrecenciesRunnable(mMainConn);
-  nsCOMPtr<nsIEventTarget> target = do_GetInterface(mMainConn);
-  MOZ_ASSERT(target);
-  Unused << target->Dispatch(runnable, NS_DISPATCH_NORMAL);
-}
-
 nsresult
 Database::MigrateV49Up() {
-  
-  
-  nsNavHistory *navHistory = nsNavHistory::GetHistoryService();
-  NS_ENSURE_STATE(navHistory);
-  nsresult rv = navHistory->RecalculateFrecencyStats(nullptr);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   
   
   Unused << Preferences::ClearUser("places.frecency.stats.count");
   Unused << Preferences::ClearUser("places.frecency.stats.sum");
   Unused << Preferences::ClearUser("places.frecency.stats.sumOfSquares");
-
   return NS_OK;
 }
 
@@ -2649,6 +2565,131 @@ Database::MigrateV51Up()
   rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("anno_name"),  LAST_USED_ANNO);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->Execute();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+namespace {
+
+class MigrateV52OriginFrecenciesRunnable final : public Runnable
+{
+public:
+  NS_DECL_NSIRUNNABLE
+  explicit MigrateV52OriginFrecenciesRunnable(mozIStorageConnection* aDBConn);
+private:
+  nsCOMPtr<mozIStorageConnection> mDBConn;
+};
+
+MigrateV52OriginFrecenciesRunnable::MigrateV52OriginFrecenciesRunnable(mozIStorageConnection* aDBConn)
+  : Runnable("places::MigrateV52OriginFrecenciesRunnable")
+  , mDBConn(aDBConn)
+{
+}
+
+NS_IMETHODIMP
+MigrateV52OriginFrecenciesRunnable::Run()
+{
+  if (NS_IsMainThread()) {
+    
+    Unused << Preferences::ClearUser(PREF_MIGRATE_V52_ORIGIN_FRECENCIES);
+
+    
+    
+    nsNavHistory *navHistory = nsNavHistory::GetHistoryService();
+    NS_ENSURE_STATE(navHistory);
+    nsresult rv = navHistory->RecalculateOriginFrecencyStats(nullptr);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return NS_OK;
+  }
+
+  
+  nsresult rv = mDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_origins "
+    "SET frecency = ( "
+      "SELECT CAST(TOTAL(frecency) AS INTEGER) "
+      "FROM moz_places "
+      "WHERE frecency > 0 AND moz_places.origin_id = moz_origins.id "
+    ") "
+    "WHERE id IN ( "
+      "SELECT id "
+      "FROM moz_origins "
+      "WHERE frecency < 0 "
+      "LIMIT 400 "
+    ") "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<mozIStorageStatement> selectStmt;
+  rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT 1 "
+    "FROM moz_origins "
+    "WHERE frecency < 0 "
+    "LIMIT 1 "
+  ), getter_AddRefs(selectStmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  bool hasResult = false;
+  rv = selectStmt->ExecuteStep(&hasResult);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (hasResult) {
+    
+    
+    return NS_DispatchToCurrentThread(this);
+  }
+
+  
+  return NS_DispatchToMainThread(this);
+}
+
+} 
+
+void
+Database::MigrateV52OriginFrecencies()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!Preferences::GetBool(PREF_MIGRATE_V52_ORIGIN_FRECENCIES)) {
+    
+    return;
+  }
+
+  RefPtr<MigrateV52OriginFrecenciesRunnable> runnable(
+    new MigrateV52OriginFrecenciesRunnable(mMainConn));
+  nsCOMPtr<nsIEventTarget> target(do_GetInterface(mMainConn));
+  MOZ_ASSERT(target);
+  Unused << target->Dispatch(runnable, NS_DISPATCH_NORMAL);
+}
+
+nsresult
+Database::MigrateV52Up()
+{
+  
+  
+  
+  
+  
+  
+  
+  Unused << Preferences::SetBool(PREF_MIGRATE_V52_ORIGIN_FRECENCIES, true);
+
+  
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_origins SET frecency = -1 "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_meta "
+    "WHERE key IN ( "
+      "'frecency_count', "
+      "'frecency_sum', "
+      "'frecency_sum_of_squares' "
+    ") "
+  ));
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;

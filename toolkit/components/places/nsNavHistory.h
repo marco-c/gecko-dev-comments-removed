@@ -637,7 +637,7 @@ protected:
   void DecayFrecencyCompleted(uint16_t reason);
   uint32_t mDecayFrecencyPendingCount;
 
-  nsresult RecalculateFrecencyStatsInternal();
+  nsresult RecalculateOriginFrecencyStatsInternal();
 
   
   nsresult TokensToQuery(const nsTArray<mozilla::places::QueryKeyValuePair>& aTokens,
