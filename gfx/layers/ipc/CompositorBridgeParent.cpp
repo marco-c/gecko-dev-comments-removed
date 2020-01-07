@@ -745,7 +745,7 @@ CompositorBridgeParent::ResumeComposition()
   mPaused = false;
 
   Invalidate();
-  mCompositorScheduler->ResumeComposition();
+  mCompositorScheduler->ForceComposeToTarget(nullptr, nullptr);
 
   
   lock.NotifyAll();
