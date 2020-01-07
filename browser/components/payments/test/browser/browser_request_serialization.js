@@ -29,7 +29,7 @@ add_task(async function test_serializeRequest_displayItems() {
 });
 
 add_task(async function test_serializeRequest_shippingOptions() {
-  const testTask = ({methodData, details}) => {
+  const testTask = ({methodData, details, options}) => {
     let contentWin = Cu.waiveXrays(content);
     let store = contentWin.document.querySelector("payment-dialog").requestStore;
     let state = store && store.getState();
@@ -39,23 +39,35 @@ add_task(async function test_serializeRequest_shippingOptions() {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    let cond_is = options && options.requestShipping ? is : todo_is;
+
+    let expected = details;
+    let actual = state.request.paymentDetails;
+    if (expected.shippingOptions) {
+      cond_is(actual.shippingOptions.length, expected.shippingOptions.length,
+              "shippingOptions have same length");
+      for (let i = 0; i < actual.shippingOptions.length; i++) {
+        let item = actual.shippingOptions[i], expectedItem = expected.shippingOptions[i];
+        cond_is(item.label, expectedItem.label, "shippingOption label matches");
+        cond_is(item.amount.value, expectedItem.amount.value, "shippingOption label matches");
+        cond_is(item.amount.currency, expectedItem.amount.currency, "shippingOption label matches");
+      }
+    } else {
+      cond_is(actual.shippingOptions, null, "falsey input shippingOptions is serialized to null");
+    }
   };
 
-  const args = {
+  const argsTestCases = [{
     methodData: [PTU.MethodData.basicCard],
     details: PTU.Details.twoShippingOptions,
-  };
-  await spawnInDialogForMerchantTask(PTU.ContentTasks.createAndShowRequest, testTask, args);
+  }, {
+    methodData: [PTU.MethodData.basicCard],
+    details: PTU.Details.twoShippingOptions,
+    options: PTU.Options.requestShippingOption,
+  }];
+  for (let args of argsTestCases) {
+    await spawnInDialogForMerchantTask(PTU.ContentTasks.createAndShowRequest, testTask, args);
+  }
 });
 
 add_task(async function test_serializeRequest_paymentMethods() {
