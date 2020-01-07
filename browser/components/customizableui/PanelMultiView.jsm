@@ -633,35 +633,47 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
-    if (!(await this._openView(nextPanelView))) {
-      if (prevPanelView.isOpenIn(this)) {
-        
-        
-        
-        
-        
-        
-        prevPanelView.active = true;
-      }
-      return;
-    }
-
-    prevPanelView.captureKnownSize();
-
-    
-    
-    nextPanelView.mainview = false;
-    
-    nextPanelView.headerText = viewNode.getAttribute("title") ||
-                               (anchor && anchor.getAttribute("label"));
-    
-    nextPanelView.minMaxWidth = prevPanelView.knownWidth;
-
     if (anchor) {
-      viewNode.classList.add("PanelUI-subView");
+      anchor.setAttribute("open", "true");
+    }
+    try {
+      
+      
+      if (!(await this._openView(nextPanelView))) {
+        if (prevPanelView.isOpenIn(this)) {
+          
+          
+          
+          
+          
+          
+          prevPanelView.active = true;
+        }
+        return;
+      }
+
+      prevPanelView.captureKnownSize();
+
+      
+      
+      nextPanelView.mainview = false;
+      
+      nextPanelView.headerText = viewNode.getAttribute("title") ||
+                                 (anchor && anchor.getAttribute("label"));
+      
+      nextPanelView.minMaxWidth = prevPanelView.knownWidth;
+
+      if (anchor) {
+        viewNode.classList.add("PanelUI-subView");
+      }
+
+      await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
+    } finally {
+      if (anchor) {
+        anchor.removeAttribute("open");
+      }
     }
 
-    await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
     this._activateView(nextPanelView);
   }
 
@@ -829,9 +841,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
-
-
-  async _transitionViews(previousViewNode, viewNode, reverse, anchor) {
+  async _transitionViews(previousViewNode, viewNode, reverse) {
     
     this._cleanupTransitionPhase();
 
@@ -845,11 +855,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     let details = this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
-      anchor
     };
-
-    if (anchor)
-      anchor.setAttribute("open", "true");
 
     
     
@@ -994,14 +1000,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
     if (!details || !this.node)
       return;
 
-    let {phase, resolve, listener, cancelListener, anchor} = details;
+    let {phase, resolve, listener, cancelListener} = details;
     if (details == this._transitionDetails)
       this._transitionDetails = null;
-
-    
-    
-    if (anchor)
-      anchor.removeAttribute("open");
 
     if (phase >= TRANSITION_PHASES.START) {
       this._panel.removeAttribute("width");
