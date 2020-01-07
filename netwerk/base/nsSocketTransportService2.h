@@ -168,7 +168,13 @@ private:
     {
         PRFileDesc       *mFD;
         nsASocketHandler *mHandler;
-        uint16_t          mElapsedTime;  
+        PRIntervalTime    mPollStartEpoch;  
+
+    public:
+        bool IsTimedOut(PRIntervalTime now) const;
+        void StartTimeout();
+        void StopTimeout();
+        PRIntervalTime TimeoutIn(PRIntervalTime now) const;
     };
 
     SocketContext *mActiveList;                   
@@ -204,11 +210,10 @@ private:
 
     PRPollDesc *mPollList;                        
 
-    PRIntervalTime PollTimeout();            
+    PRIntervalTime PollTimeout(PRIntervalTime now); 
     nsresult       DoPollIteration(TimeDuration *pollDuration);
                                              
-    int32_t        Poll(uint32_t *interval,
-                        TimeDuration *pollDuration);
+    int32_t        Poll(TimeDuration *pollDuration);
                                              
                                              
                                              
