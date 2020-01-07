@@ -107,6 +107,7 @@ fn set_metric<U: ProgressiveWebMetric>(
 
 
 
+
 #[derive(MallocSizeOf)]
 pub struct InteractiveMetrics {
     
@@ -258,6 +259,7 @@ impl ProgressiveWebMetric for InteractiveMetrics {
         &self.url
     }
 }
+
 
 pub struct PaintTimeMetrics {
     pending_metrics: RefCell<HashMap<Epoch, (Option<TimerMetadata>, bool)>>,
