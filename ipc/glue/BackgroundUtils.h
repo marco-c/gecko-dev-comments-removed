@@ -49,6 +49,7 @@ struct ParamTraits<mozilla::OriginAttributes>
 
 namespace mozilla {
 namespace net {
+class ChildLoadInfoForwarderArgs;
 class OptionalLoadInfoArgs;
 class ParentLoadInfoForwarderArgs;
 class RedirectHistoryEntryInfo;
@@ -126,6 +127,22 @@ LoadInfoToParentLoadInfoForwarder(nsILoadInfo *aLoadInfo,
 nsresult
 MergeParentLoadInfoForwarder(mozilla::net::ParentLoadInfoForwarderArgs const& aForwarderArgs,
                              nsILoadInfo *aLoadInfo);
+
+
+
+
+
+void
+LoadInfoToChildLoadInfoForwarder(nsILoadInfo* aLoadInfo,
+                                 mozilla::net::ChildLoadInfoForwarderArgs* aForwarderArgsOut);
+
+
+
+
+
+nsresult
+MergeChildLoadInfoForwarder(const mozilla::net::ChildLoadInfoForwarderArgs& aForwardArgs,
+                            nsILoadInfo* aLoadInfo);
 
 } 
 } 
