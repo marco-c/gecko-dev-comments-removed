@@ -147,7 +147,7 @@ protected:
   nsTArray<CallbackHelper*> mCallbacks;
 
   
-  mozilla::ShmemPool mShmemPool;
+  ShmemPool mShmemPool;
 
   
   nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
@@ -163,7 +163,7 @@ protected:
   bool mDestroyed;
   
   
-  mozilla::Atomic<bool> mWebRTCAlive;
+  Atomic<bool> mWebRTCAlive;
   RefPtr<InputObserver> mCameraObserver;
   std::map<nsCString, std::map<uint32_t, webrtc::VideoCaptureCapability>>
     mAllCandidateCapabilities;
