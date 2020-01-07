@@ -223,7 +223,11 @@ pref("dom.keyboardevent.dispatch_during_composition", false);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", true);
+#else
 pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_in_content", false);
+#endif
 
 
 pref("dom.webmidi.enabled", false);
