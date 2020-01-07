@@ -1,6 +1,8 @@
 "use strict";
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
+
+
+const {XMLHttpRequest} = Cu.Sandbox(window, {wantGlobalProperties: ["XMLHttpRequest"]});
 
 var {WebRequest} = ChromeUtils.import("resource://gre/modules/WebRequest.jsm", {});
 var {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", {});

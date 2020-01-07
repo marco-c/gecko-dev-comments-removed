@@ -1,6 +1,6 @@
 "use strict";
 
-Cu.importGlobalProperties(["InspectorUtils"]);
+
 
 
 
