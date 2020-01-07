@@ -16,7 +16,7 @@ ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "Log",
                                "resource://gre/modules/Log.jsm");
-ChromeUtils.defineModuleGetter(this, "formAutofillStorage",
+ChromeUtils.defineModuleGetter(this, "profileStorage",
                                "resource://formautofill/FormAutofillStorage.jsm");
 
 
@@ -84,7 +84,7 @@ FormAutofillStore.prototype = {
 
   get storage() {
     if (!this._storage) {
-      this._storage = formAutofillStorage[this._subStorageName];
+      this._storage = profileStorage[this._subStorageName];
     }
     return this._storage;
   },
@@ -291,7 +291,7 @@ FormAutofillEngine.prototype = {
   
   
   async _syncStartup() {
-    await formAutofillStorage.initialize();
+    await profileStorage.initialize();
     await SyncEngine.prototype._syncStartup.call(this);
   },
 
@@ -329,7 +329,7 @@ FormAutofillEngine.prototype = {
   },
 
   async _resetClient() {
-    await formAutofillStorage.initialize();
+    await profileStorage.initialize();
     this._store.storage.resetSync();
   },
 };

@@ -57,16 +57,16 @@ const {
 function FormAutofillParent() {
   
   
-  XPCOMUtils.defineLazyGetter(this, "formAutofillStorage", () => {
-    let {formAutofillStorage} = ChromeUtils.import("resource://formautofill/FormAutofillStorage.jsm", {});
-    log.debug("Loading formAutofillStorage");
+  XPCOMUtils.defineLazyGetter(this, "profileStorage", () => {
+    let {profileStorage} = ChromeUtils.import("resource://formautofill/FormAutofillStorage.jsm", {});
+    log.debug("Loading profileStorage");
 
-    formAutofillStorage.initialize().then(() => {
+    profileStorage.initialize().then(() => {
       
       this._updateSavedFieldNames();
     });
 
-    return formAutofillStorage;
+    return profileStorage;
   });
 }
 
@@ -205,7 +205,7 @@ FormAutofillParent.prototype = {
   async receiveMessage({name, data, target}) {
     switch (name) {
       case "FormAutofill:InitStorage": {
-        this.formAutofillStorage.initialize();
+        this.profileStorage.initialize();
         break;
       }
       case "FormAutofill:GetRecords": {
@@ -214,9 +214,9 @@ FormAutofillParent.prototype = {
       }
       case "FormAutofill:SaveAddress": {
         if (data.guid) {
-          this.formAutofillStorage.addresses.update(data.guid, data.address);
+          this.profileStorage.addresses.update(data.guid, data.address);
         } else {
-          this.formAutofillStorage.addresses.add(data.address);
+          this.profileStorage.addresses.add(data.address);
         }
         break;
       }
@@ -227,15 +227,15 @@ FormAutofillParent.prototype = {
           log.warn("User canceled master password entry");
           return;
         }
-        this.formAutofillStorage.creditCards.add(data.creditcard);
+        this.profileStorage.creditCards.add(data.creditcard);
         break;
       }
       case "FormAutofill:RemoveAddresses": {
-        data.guids.forEach(guid => this.formAutofillStorage.addresses.remove(guid));
+        data.guids.forEach(guid => this.profileStorage.addresses.remove(guid));
         break;
       }
       case "FormAutofill:RemoveCreditCards": {
-        data.guids.forEach(guid => this.formAutofillStorage.creditCards.remove(guid));
+        data.guids.forEach(guid => this.profileStorage.creditCards.remove(guid));
         break;
       }
       case "FormAutofill:OnFormSubmit": {
@@ -270,7 +270,7 @@ FormAutofillParent.prototype = {
 
 
   _uninit() {
-    this.formAutofillStorage._saveImmediately();
+    this.profileStorage._saveImmediately();
 
     Services.ppmm.removeMessageListener("FormAutofill:InitStorage", this);
     Services.ppmm.removeMessageListener("FormAutofill:GetRecords", this);
@@ -303,7 +303,7 @@ FormAutofillParent.prototype = {
 
 
   async _getRecords({collectionName, searchString, info}, target) {
-    let collection = this.formAutofillStorage[collectionName];
+    let collection = this.profileStorage[collectionName];
     if (!collection) {
       target.sendAsyncMessage("FormAutofill:Records", []);
       return;
@@ -360,7 +360,7 @@ FormAutofillParent.prototype = {
     }
 
     ["addresses", "creditCards"].forEach(c => {
-      this.formAutofillStorage[c].getAll().forEach((record) => {
+      this.profileStorage[c].getAll().forEach((record) => {
         Object.keys(record).forEach((fieldName) => {
           if (!record[fieldName]) {
             return;
@@ -371,7 +371,7 @@ FormAutofillParent.prototype = {
     });
 
     
-    this.formAutofillStorage.INTERNAL_FIELDS.forEach((fieldName) => {
+    this.profileStorage.INTERNAL_FIELDS.forEach((fieldName) => {
       Services.ppmm.initialProcessData.autofillSavedFieldNames.delete(fieldName);
     });
 
@@ -384,51 +384,51 @@ FormAutofillParent.prototype = {
     let showDoorhanger = null;
     if (address.guid) {
       
-      let originalAddress = this.formAutofillStorage.addresses.get(address.guid);
+      let originalAddress = this.profileStorage.addresses.get(address.guid);
       for (let field in address.record) {
         if (address.untouchedFields.includes(field) && originalAddress[field]) {
           address.record[field] = originalAddress[field];
         }
       }
 
-      if (!this.formAutofillStorage.addresses.mergeIfPossible(address.guid, address.record, true)) {
+      if (!this.profileStorage.addresses.mergeIfPossible(address.guid, address.record, true)) {
         this._recordFormFillingTime("address", "autofill-update", timeStartedFillingMS);
 
         showDoorhanger = async () => {
           const description = FormAutofillUtils.getAddressLabel(address.record);
           const state = await FormAutofillDoorhanger.show(target, "updateAddress", description);
-          let changedGUIDs = this.formAutofillStorage.addresses.mergeToStorage(address.record, true);
+          let changedGUIDs = this.profileStorage.addresses.mergeToStorage(address.record, true);
           switch (state) {
             case "create":
               if (!changedGUIDs.length) {
-                changedGUIDs.push(this.formAutofillStorage.addresses.add(address.record));
+                changedGUIDs.push(this.profileStorage.addresses.add(address.record));
               }
               break;
             case "update":
               if (!changedGUIDs.length) {
-                this.formAutofillStorage.addresses.update(address.guid, address.record, true);
+                this.profileStorage.addresses.update(address.guid, address.record, true);
                 changedGUIDs.push(address.guid);
               } else {
-                this.formAutofillStorage.addresses.remove(address.guid);
+                this.profileStorage.addresses.remove(address.guid);
               }
               break;
           }
-          changedGUIDs.forEach(guid => this.formAutofillStorage.addresses.notifyUsed(guid));
+          changedGUIDs.forEach(guid => this.profileStorage.addresses.notifyUsed(guid));
         };
         
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill_update", 1);
       } else {
         this._recordFormFillingTime("address", "autofill", timeStartedFillingMS);
-        this.formAutofillStorage.addresses.notifyUsed(address.guid);
+        this.profileStorage.addresses.notifyUsed(address.guid);
         
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill", 1);
       }
     } else {
-      let changedGUIDs = this.formAutofillStorage.addresses.mergeToStorage(address.record);
+      let changedGUIDs = this.profileStorage.addresses.mergeToStorage(address.record);
       if (!changedGUIDs.length) {
-        changedGUIDs.push(this.formAutofillStorage.addresses.add(address.record));
+        changedGUIDs.push(this.profileStorage.addresses.add(address.record));
       }
-      changedGUIDs.forEach(guid => this.formAutofillStorage.addresses.notifyUsed(guid));
+      changedGUIDs.forEach(guid => this.profileStorage.addresses.notifyUsed(guid));
       this._recordFormFillingTime("address", "manual", timeStartedFillingMS);
 
       
@@ -468,7 +468,7 @@ FormAutofillParent.prototype = {
       
       setUsedStatus(3);
 
-      let originalCCData = this.formAutofillStorage.creditCards.get(creditCard.guid);
+      let originalCCData = this.profileStorage.creditCards.get(creditCard.guid);
       let recordUnchanged = true;
       for (let field in creditCard.record) {
         if (creditCard.record[field] === "" && !originalCCData[field]) {
@@ -485,7 +485,7 @@ FormAutofillParent.prototype = {
       }
 
       if (recordUnchanged) {
-        this.formAutofillStorage.creditCards.notifyUsed(creditCard.guid);
+        this.profileStorage.creditCards.notifyUsed(creditCard.guid);
         
         Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
         this._recordFormFillingTime("creditCard", "autofill", timeStartedFillingMS);
@@ -506,9 +506,9 @@ FormAutofillParent.prototype = {
     }
 
     
-    let dupGuid = this.formAutofillStorage.creditCards.getDuplicateGuid(creditCard.record);
+    let dupGuid = this.profileStorage.creditCards.getDuplicateGuid(creditCard.record);
     if (dupGuid) {
-      this.formAutofillStorage.creditCards.notifyUsed(dupGuid);
+      this.profileStorage.creditCards.notifyUsed(dupGuid);
       return false;
     }
 
@@ -544,18 +544,18 @@ FormAutofillParent.prototype = {
       let changedGUIDs = [];
       if (creditCard.guid) {
         if (state == "update") {
-          this.formAutofillStorage.creditCards.update(creditCard.guid, creditCard.record, true);
+          this.profileStorage.creditCards.update(creditCard.guid, creditCard.record, true);
           changedGUIDs.push(creditCard.guid);
         } else if ("create") {
-          changedGUIDs.push(this.formAutofillStorage.creditCards.add(creditCard.record));
+          changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
         }
       } else {
-        changedGUIDs.push(...this.formAutofillStorage.creditCards.mergeToStorage(creditCard.record));
+        changedGUIDs.push(...this.profileStorage.creditCards.mergeToStorage(creditCard.record));
         if (!changedGUIDs.length) {
-          changedGUIDs.push(this.formAutofillStorage.creditCards.add(creditCard.record));
+          changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
         }
       }
-      changedGUIDs.forEach(guid => this.formAutofillStorage.creditCards.notifyUsed(guid));
+      changedGUIDs.forEach(guid => this.profileStorage.creditCards.notifyUsed(guid));
     };
   },
 
