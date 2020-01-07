@@ -368,6 +368,14 @@ public:
   nsIContent* GetAncestorLimiter() const;
   void SetAncestorLimiter(nsIContent* aLimiter);
 
+  
+
+
+
+
+
+  void SetCanCacheFrameOffset(bool aCanCacheFrameOffset);
+
 private:
   friend class ::nsAutoScrollTimer;
 
