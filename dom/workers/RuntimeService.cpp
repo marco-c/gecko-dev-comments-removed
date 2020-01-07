@@ -2166,8 +2166,8 @@ RuntimeService::CrashIfHanging()
   nsCString msg;
 
   
-  msg.AppendPrintf("Workers Hanging - A:%d|S:%d|Q:%d", activeWorkers,
-                   activeServiceWorkers, inactiveWorkers);
+  msg.AppendPrintf("Workers Hanging - %d|A:%d|S:%d|Q:%d", mShuttingDown ? 1 : 0,
+                   activeWorkers, activeServiceWorkers, inactiveWorkers);
 
   
   for (uint32_t i = 0; i < workers.Length(); ++i) {
