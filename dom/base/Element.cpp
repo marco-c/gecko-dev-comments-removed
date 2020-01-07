@@ -1264,6 +1264,17 @@ Element::AttachShadowWithoutNameChecks(ShadowRootMode aMode)
   SetShadowRoot(shadowRoot);
 
   
+  {
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(this,
+                               NS_LITERAL_STRING("shadowrootattached"),
+                               CanBubble::eYes,
+                               ChromeOnlyDispatch::eYes,
+                               Composed::eYes);
+    dispatcher->PostDOMEvent();
+  }
+
+  
 
 
   return shadowRoot.forget();
