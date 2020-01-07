@@ -98,10 +98,20 @@ public:
     float friction = gfxPrefs::APZFlingFriction();
     float threshold = gfxPrefs::APZFlingStoppedThreshold();
 
-    bool shouldContinueFlingX = mApzc.mX.FlingApplyFrictionOrCancel(aDelta, friction, threshold),
-         shouldContinueFlingY = mApzc.mY.FlingApplyFrictionOrCancel(aDelta, friction, threshold);
     
-    if (!shouldContinueFlingX && !shouldContinueFlingY) {
+    
+    
+    
+    ParentLayerPoint velocity(
+        ApplyFrictionOrCancel(mApzc.mX.GetVelocity(), aDelta, friction, threshold),
+        ApplyFrictionOrCancel(mApzc.mY.GetVelocity(), aDelta, friction, threshold));
+    FLING_LOG("%p reduced velocity to %s due to friction\n",
+      &mApzc, ToString(mApzc.GetVelocityVector()).c_str());
+
+    mApzc.SetVelocityVector(velocity);
+
+    
+    if (IsZero(velocity)) {
       FLING_LOG("%p ending fling animation. overscrolled=%d\n", &mApzc, mApzc.IsOverscrolled());
       
       
@@ -117,12 +127,6 @@ public:
         &mApzc));
       return false;
     }
-
-    
-    
-    
-    
-    ParentLayerPoint velocity = mApzc.GetVelocityVector();
 
     ParentLayerPoint offset = velocity * aDelta.ToMilliseconds();
 
@@ -196,6 +200,29 @@ private:
   {
     return (aBase * gfxPrefs::APZFlingAccelBaseMultiplier())
          + (aSupplemental * gfxPrefs::APZFlingAccelSupplementalMultiplier());
+  }
+
+  
+
+
+
+
+
+
+
+
+  static float ApplyFrictionOrCancel(float aVelocity, const TimeDuration& aDelta,
+                                     float aFriction, float aThreshold)
+  {
+    if (fabsf(aVelocity) <= aThreshold) {
+      
+      
+      
+      return 0.0f;
+    }
+
+    aVelocity *= pow(1.0f - aFriction, float(aDelta.ToMilliseconds()));
+    return aVelocity;
   }
 
   AsyncPanZoomController& mApzc;

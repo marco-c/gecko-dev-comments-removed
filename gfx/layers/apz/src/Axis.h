@@ -158,19 +158,6 @@ public:
   
 
 
-
-
-
-
-
-
-  bool FlingApplyFrictionOrCancel(const TimeDuration& aDelta,
-                                  float aFriction,
-                                  float aThreshold);
-
-  
-
-
   bool CanScroll() const;
 
   
