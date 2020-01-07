@@ -669,6 +669,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
+
   setPausePoints: function(pausePoints) {
     this.pausePoints = pausePoints;
   },

@@ -521,27 +521,33 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
 
       const pausePoints = newLocation.originalSourceActor.pausePoints;
+      const lineChanged = startLocation.originalLine !== newLocation.originalLine;
+      const columnChanged = startLocation.originalColumn !== newLocation.originalColumn;
 
       if (!pausePoints) {
         
-        if (startLocation.originalLine !== newLocation.originalLine) {
+        if (lineChanged) {
           return pauseAndRespond(this);
         }
+
         return undefined;
       }
 
       
-      if (
-        startLocation.originalLine === newLocation.originalLine
-        && startLocation.originalColumn === newLocation.originalColumn
-      ) {
+      if (!lineChanged && !columnChanged) {
         return undefined;
       }
 
       
       
       const pausePoint = findPausePointForLocation(pausePoints, newLocation);
-      if (pausePoint && pausePoint.types.stepOver) {
+      if (pausePoint) {
+        if (pausePoint.step) {
+          return pauseAndRespond(this);
+        }
+      } else if (lineChanged) {
+        
+        
         return pauseAndRespond(this);
       }
 
@@ -1928,10 +1934,8 @@ function findEntryPointsForLine(scripts, line) {
 }
 
 function findPausePointForLocation(pausePoints, location) {
-  return pausePoints.find(pausePoint =>
-    pausePoint.location.line === location.originalLine
-    && pausePoint.location.column === location.originalColumn
-  );
+  const { originalLine: line, originalColumn: column } = location;
+  return pausePoints[line] && pausePoints[line][column];
 }
 
 
