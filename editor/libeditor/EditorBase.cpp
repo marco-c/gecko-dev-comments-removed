@@ -1430,14 +1430,6 @@ EditorBase::CreateNode(nsAtom* aTag,
 
   AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
 
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      listener->WillCreateNode(nsDependentAtomString(aTag),
-                               GetAsDOMNode(pointToInsert.GetChild()));
-    }
-  }
-
   nsCOMPtr<Element> ret;
 
   RefPtr<CreateElementTransaction> transaction =
@@ -1500,15 +1492,6 @@ EditorBase::InsertNode(nsIContent& aContentToInsert,
 
   AutoRules beginRulesSniffing(this, EditAction::insertNode, nsIEditor::eNext);
 
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      listener->WillInsertNode(
-                  aContentToInsert.AsDOMNode(),
-                  GetAsDOMNode(aPointToInsert.GetNextSiblingOfChild()));
-    }
-  }
-
   RefPtr<InsertNodeTransaction> transaction =
     InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
@@ -1568,21 +1551,7 @@ EditorBase::SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
   
   
   
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      
-      
-      
-      listener->WillSplitNode(aStartOfRightNode.GetContainerAsDOMNode(),
-                              aStartOfRightNode.Offset());
-    }
-  } else {
-    
-    
-    
-    Unused << aStartOfRightNode.Offset();
-  }
+  Unused << aStartOfRightNode.Offset();
 
   RefPtr<SplitNodeTransaction> transaction =
     SplitNodeTransaction::Create(*this, aStartOfRightNode);
@@ -1648,14 +1617,6 @@ EditorBase::JoinNodes(nsINode& aLeftNode,
     htmlEditRules->WillJoinNodes(aLeftNode, aRightNode);
   }
 
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      listener->WillJoinNodes(aLeftNode.AsDOMNode(), aRightNode.AsDOMNode(),
-                              parent->AsDOMNode());
-    }
-  }
-
   nsresult rv = NS_OK;
   RefPtr<JoinNodeTransaction> transaction =
     JoinNodeTransaction::MaybeCreate(*this, aLeftNode, aRightNode);
@@ -1705,14 +1666,6 @@ EditorBase::DeleteNode(nsINode* aNode)
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
     htmlEditRules->WillDeleteNode(aNode);
-  }
-
-  
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      listener->WillDeleteNode(aNode->AsDOMNode());
-    }
   }
 
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
@@ -2846,16 +2799,6 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   }
 
   
-  if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
-    for (auto& listener : listeners) {
-      listener->WillInsertText(
-        static_cast<nsIDOMCharacterData*>(insertedTextNode->AsDOMNode()),
-        insertedOffset, aStringToInsert);
-    }
-  }
-
-  
   
   BeginUpdateViewBatch();
   nsresult rv = DoTransaction(transaction);
@@ -2996,19 +2939,11 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
                                nsIEditor::eNext);
 
   
-  if (!mActionListeners.IsEmpty()) {
+  if (!mActionListeners.IsEmpty() && length) {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      if (length) {
-        listener->WillDeleteText(
-          static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0,
-          length);
-      }
-      if (!aString.IsEmpty()) {
-        listener->WillInsertText(
-          static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0,
-          aString);
-      }
+      listener->WillDeleteText(
+        static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0, length);
     }
   }
 
@@ -4436,18 +4371,15 @@ EditorBase::DeleteSelectionImpl(EDirection aAction,
 
   
   if (!mActionListeners.IsEmpty()) {
-    AutoActionListenerArray listeners(mActionListeners);
     if (!deleteNode) {
+      AutoActionListenerArray listeners(mActionListeners);
       for (auto& listener : listeners) {
         listener->WillDeleteSelection(selection);
       }
     } else if (deleteCharData) {
+      AutoActionListenerArray listeners(mActionListeners);
       for (auto& listener : listeners) {
         listener->WillDeleteText(deleteCharData, deleteCharOffset, 1);
-      }
-    } else {
-      for (auto& listener : listeners) {
-        listener->WillDeleteNode(deleteNode->AsDOMNode());
       }
     }
   }
