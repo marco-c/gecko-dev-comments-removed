@@ -30,7 +30,6 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/CSSLexer.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/InspectorUtilsBinding.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -302,12 +301,6 @@ InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule)
 InspectorUtils::HasRulesModifiedByCSSOM(GlobalObject& aGlobal, StyleSheet& aSheet)
 {
   return aSheet.HasModifiedRules();
-}
-
- CSSLexer*
-InspectorUtils::GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText)
-{
-  return new CSSLexer(aText);
 }
 
  uint32_t

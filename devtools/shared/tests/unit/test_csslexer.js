@@ -3,79 +3,12 @@
 
 
 
-
-
-
-
 "use strict";
 
 const jsLexer = require("devtools/shared/css/lexer");
-const InspectorUtils = require("InspectorUtils");
-
-
-
-function DoubleLexer(input) {
-  info("DoubleLexer input: " + input);
-  this.domLexer = InspectorUtils.getCSSLexer(input);
-  this.jsLexer = jsLexer.getCSSLexer(input);
-}
-
-DoubleLexer.prototype = {
-  checkState: function() {
-    equal(this.domLexer.lineNumber, this.jsLexer.lineNumber,
-          "check line number");
-    equal(this.domLexer.columnNumber, this.jsLexer.columnNumber,
-         "check column number");
-  },
-
-  get lineNumber() {
-    return this.domLexer.lineNumber;
-  },
-
-  get columnNumber() {
-    return this.domLexer.columnNumber;
-  },
-
-  performEOFFixup: function(inputString, preserveBackslash) {
-    const d = this.domLexer.performEOFFixup(inputString, preserveBackslash);
-    const j = this.jsLexer.performEOFFixup(inputString, preserveBackslash);
-
-    equal(d, j);
-    return d;
-  },
-
-  mungeNumber: function(token) {
-    if (token && (token.tokenType === "number" ||
-                  token.tokenType === "percentage") &&
-        !token.isInteger) {
-      
-      
-      
-      
-      token.number = parseFloat(token.number.toPrecision(8));
-    }
-  },
-
-  nextToken: function() {
-    
-    this.checkState();
-
-    const d = this.domLexer.nextToken();
-    const j = this.jsLexer.nextToken();
-
-    this.mungeNumber(d);
-    this.mungeNumber(j);
-
-    deepEqual(d, j);
-
-    this.checkState();
-
-    return d;
-  }
-};
 
 function test_lexer(cssText, tokenTypes) {
-  const lexer = new DoubleLexer(cssText);
+  const lexer = jsLexer.getCSSLexer(cssText);
   let reconstructed = "";
   let lastTokenEnd = 0;
   let i = 0;
@@ -149,7 +82,7 @@ var LEX_TESTS = [
 ];
 
 function test_lexer_linecol(cssText, locations) {
-  const lexer = new DoubleLexer(cssText);
+  const lexer = jsLexer.getCSSLexer(cssText);
   let i = 0;
   while (true) {
     const token = lexer.nextToken();
@@ -176,7 +109,7 @@ function test_lexer_linecol(cssText, locations) {
 
 function test_lexer_eofchar(cssText, argText, expectedAppend,
                             expectedNoAppend) {
-  const lexer = new DoubleLexer(cssText);
+  const lexer = jsLexer.getCSSLexer(cssText);
   while (lexer.nextToken()) {
     
   }

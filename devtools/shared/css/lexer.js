@@ -376,6 +376,7 @@ Scanner.prototype = {
   
 
 
+
   get lineNumber() {
     return this.mTokenLineNumber - 1;
   },
@@ -383,11 +384,43 @@ Scanner.prototype = {
   
 
 
+
   get columnNumber() {
     return this.mTokenOffset - this.mTokenLineOffset;
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   performEOFFixup: function(aInputString, aPreserveBackslash) {
@@ -416,6 +449,51 @@ Scanner.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   nextToken: function() {
@@ -1243,7 +1321,6 @@ Scanner.prototype = {
     return true;
   },
 };
-
 
 
 

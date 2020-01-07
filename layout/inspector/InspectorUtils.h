@@ -72,8 +72,6 @@ public:
 
   static bool HasRulesModifiedByCSSOM(GlobalObject& aGlobal, StyleSheet& aSheet);
 
-  static CSSLexer* GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText);
-
   
   
   
