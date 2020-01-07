@@ -166,7 +166,9 @@ class FontInspector {
 
     if (!fonts || !fonts.length) {
       
-      this.store.dispatch(updateFonts(fonts));
+      if (this.store) {
+        this.store.dispatch(updateFonts(fonts));
+      }
       return;
     }
 

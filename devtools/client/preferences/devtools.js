@@ -49,6 +49,10 @@ pref("devtools.inspector.enabled", true);
 pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
+pref("devtools.inspector.split-sidebar-toggle", false);
+
+pref("devtools.inspector.split-rule-enabled", false);
+
 pref("devtools.inspector.show_pseudo_elements", false);
 
 pref("devtools.inspector.imagePreviewTooltipSize", 300);
@@ -68,7 +72,6 @@ pref("devtools.changesview.enabled", false);
 pref("devtools.eventsview.enabled", false);
 
 pref("devtools.flexboxinspector.enabled", false);
-
 
 pref("devtools.new-animationinspector.enabled", false);
 

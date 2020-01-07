@@ -32,10 +32,6 @@ const NODES = [
 ];
 
 add_task(function* () {
-  
-  yield pushPref("devtools.toolsidebar-width.inspector", 350);
-  yield pushPref("devtools.toolsidebar-height.inspector", 150);
-
   let { inspector, toolbox } = yield openInspectorForURL(TEST_URI);
 
   
