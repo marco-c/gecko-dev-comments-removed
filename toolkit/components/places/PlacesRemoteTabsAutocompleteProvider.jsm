@@ -69,6 +69,11 @@ const PREF_SHOW_REMOTE_ICONS = "services.sync.syncedTabs.showRemoteIcons";
 let showRemoteIcons;
 
 
+
+const PREF_SHOW_REMOTE_TABS = "services.sync.syncedTabs.showRemoteTabs";
+let showRemoteTabs;
+
+
 function observe(subject, topic, data) {
   switch (topic) {
     case "weave:engine:sync:finish":
@@ -88,6 +93,8 @@ function observe(subject, topic, data) {
     case "nsPref:changed":
       if (data == PREF_SHOW_REMOTE_ICONS) {
         showRemoteIcons = Services.prefs.getBoolPref(PREF_SHOW_REMOTE_ICONS, true);
+      } else if (data == PREF_SHOW_REMOTE_TABS) {
+        showRemoteTabs = Services.prefs.getBoolPref(PREF_SHOW_REMOTE_TABS, true);
       }
       break;
 
@@ -100,8 +107,12 @@ Services.obs.addObserver(observe, "weave:engine:sync:finish");
 Services.obs.addObserver(observe, "weave:service:start-over");
 
 
+
 Services.prefs.addObserver(PREF_SHOW_REMOTE_ICONS, observe);
+Services.prefs.addObserver(PREF_SHOW_REMOTE_TABS, observe);
 observe(null, "nsPref:changed", PREF_SHOW_REMOTE_ICONS);
+observe(null, "nsPref:changed", PREF_SHOW_REMOTE_TABS);
+
 
 
 var PlacesRemoteTabsAutocompleteProvider = {
@@ -109,6 +120,10 @@ var PlacesRemoteTabsAutocompleteProvider = {
   async getMatches(searchString) {
     
     if (!weaveXPCService || !weaveXPCService.ready || !weaveXPCService.enabled) {
+      return [];
+    }
+
+    if (!showRemoteTabs) {
       return [];
     }
 
