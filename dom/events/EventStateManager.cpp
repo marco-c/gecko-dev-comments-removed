@@ -4350,15 +4350,15 @@ EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
                                        aMouseEvent,
                                        isPointer ? ePointerEnter : eMouseEnter);
 
+  if (!isPointer) {
+    SetContentState(aContent, NS_EVENT_STATE_HOVER);
+  }
+
   NotifyMouseOut(aMouseEvent, aContent);
 
   
   
   wrapper->mFirstOverEventElement = aContent;
-
-  if (!isPointer) {
-    SetContentState(aContent, NS_EVENT_STATE_HOVER);
-  }
 
   
   wrapper->mLastOverFrame =
