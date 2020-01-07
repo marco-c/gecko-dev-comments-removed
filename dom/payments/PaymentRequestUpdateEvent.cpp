@@ -64,7 +64,7 @@ PaymentRequestUpdateEvent::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value
   
   PaymentDetailsUpdate details;
   if (!details.Init(aCx, aValue)) {
-    mRequest->AbortUpdate(NS_ERROR_TYPE_ERR);
+    mRequest->AbortUpdate(NS_ERROR_TYPE_ERR, false);
     JS_ClearPendingException(aCx);
     return;
   }
@@ -76,13 +76,13 @@ PaymentRequestUpdateEvent::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value
   
   nsresult rv = mRequest->IsValidDetailsUpdate(details, true);
   if (NS_FAILED(rv)) {
-    mRequest->AbortUpdate(rv);
+    mRequest->AbortUpdate(rv, false);
     return;
   }
 
   
-  if (NS_FAILED(mRequest->UpdatePayment(aCx, details))) {
-    mRequest->AbortUpdate(NS_ERROR_DOM_ABORT_ERR);
+  if (NS_FAILED(mRequest->UpdatePayment(aCx, details, false))) {
+    mRequest->AbortUpdate(NS_ERROR_DOM_ABORT_ERR, false);
     return;
   }
   mWaitForUpdate = false;
@@ -94,7 +94,7 @@ PaymentRequestUpdateEvent::RejectedCallback(JSContext* aCx, JS::Handle<JS::Value
 {
   MOZ_ASSERT(mRequest);
 
-  mRequest->AbortUpdate(NS_ERROR_DOM_ABORT_ERR);
+  mRequest->AbortUpdate(NS_ERROR_DOM_ABORT_ERR, false);
   mWaitForUpdate = false;
   mRequest->SetUpdating(false);
 }
