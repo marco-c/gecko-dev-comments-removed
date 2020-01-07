@@ -405,7 +405,21 @@ protected:
                                bool* aCancel, bool* aHandled);
   nsresult WillMakeBasicBlock(const nsAString& aBlockType,
                               bool* aCancel, bool* aHandled);
-  nsresult MakeBasicBlock(nsAtom& aBlockType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult MakeBasicBlock(nsAtom& aBlockType);
 
   
 
