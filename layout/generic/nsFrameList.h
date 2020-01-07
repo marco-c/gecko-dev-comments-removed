@@ -53,6 +53,9 @@ namespace layout {
   
   
   struct PostFrameDestroyData {
+    PostFrameDestroyData(const PostFrameDestroyData&) = delete;
+    PostFrameDestroyData() = default;
+
     AutoTArray<RefPtr<nsIContent>, 50> mAnonymousContent;
     AutoTArray<RefPtr<nsIContent>, 50> mGeneratedContent;
     void AddAnonymousContent(already_AddRefed<nsIContent>&& aContent) {
