@@ -11,14 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
 pref("preferences.allow.omt-write", true);
 
 pref("keyword.enabled", false);
