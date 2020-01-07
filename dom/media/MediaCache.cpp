@@ -2874,13 +2874,6 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
 
   
   mMediaCache = aOriginal->mMediaCache;
-  
-  mClientSuspended = true;
-  
-  
-  mCacheSuspended = true;
-  mChannelEnded = true;
-
   OwnerThread()->Dispatch(
     NS_NewRunnableFunction("MediaCacheStream::InitAsClone", [
       this,
@@ -2894,27 +2887,19 @@ void
 MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
 {
   MOZ_ASSERT(OwnerThread()->IsOnCurrentThread());
-  AutoLock lock(aOriginal->mMediaCache->Monitor());
-
-  mResourceID = aOriginal->mResourceID;
+  AutoLock lock(mMediaCache->Monitor());
 
   
+  
+
+  
+  mResourceID = aOriginal->mResourceID;
   mStreamLength = aOriginal->mStreamLength;
   mIsTransportSeekable = aOriginal->mIsTransportSeekable;
   mDownloadStatistics = aOriginal->mDownloadStatistics;
   mDownloadStatistics.Stop();
 
   
-  
-  mClient->CacheClientNotifyDataReceived();
-
-  if (aOriginal->mDidNotifyDataEnded &&
-      NS_SUCCEEDED(aOriginal->mNotifyDataEndedStatus)) {
-    mNotifyDataEndedStatus = aOriginal->mNotifyDataEndedStatus;
-    mDidNotifyDataEnded = true;
-    mClient->CacheClientNotifyDataEnded(mNotifyDataEndedStatus);
-  }
-
   for (uint32_t i = 0; i < aOriginal->mBlocks.Length(); ++i) {
     int32_t cacheBlockIndex = aOriginal->mBlocks[i];
     if (cacheBlockIndex < 0)
@@ -2934,8 +2919,26 @@ MediaCacheStream::InitAsCloneInternal(MediaCacheStream* aOriginal)
          aOriginal->mPartialBlockBuffer.get(),
          BLOCK_SIZE);
 
-  mMediaCache->OpenStream(lock, this, true );
+  
+  
+  mClient->CacheClientNotifyDataReceived();
 
+  
+  if (aOriginal->mDidNotifyDataEnded &&
+      NS_SUCCEEDED(aOriginal->mNotifyDataEndedStatus)) {
+    mNotifyDataEndedStatus = aOriginal->mNotifyDataEndedStatus;
+    mDidNotifyDataEnded = true;
+    mClient->CacheClientNotifyDataEnded(mNotifyDataEndedStatus);
+  }
+
+  
+  mClientSuspended = true;
+  mCacheSuspended = true;
+  mChannelEnded = true;
+  mClient->CacheClientSuspend();
+
+  
+  mMediaCache->OpenStream(lock, this, true );
   
   lock.NotifyAll();
 }
