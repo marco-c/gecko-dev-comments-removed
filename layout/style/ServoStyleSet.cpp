@@ -133,6 +133,10 @@ ServoStyleSet::CreateXBLServoStyleSet(
   set->ReplaceSheets(SheetType::Doc, aNewSheets);
 
   
+  
+  
+  
+  
   set->UpdateStylist();
 
   
@@ -162,8 +166,6 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
 {
   mDocument = aPresContext->Document();
   MOZ_ASSERT(GetPresContext() == aPresContext);
-
-  mLastPresContextUsesXBLStyleSet = aPresContext;
 
   mRawSet.reset(Servo_StyleSet_Init(aPresContext));
 
@@ -209,24 +211,6 @@ ServoStyleSet::InvalidateStyleForCSSRuleChanges()
   }
 }
 
-bool
-ServoStyleSet::SetPresContext(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(IsForXBL(), "Only XBL styleset can set PresContext!");
-
-  mLastPresContextUsesXBLStyleSet = aPresContext;
-
-  const OriginFlags rulesChanged = static_cast<OriginFlags>(
-    Servo_StyleSet_SetDevice(mRawSet.get(), aPresContext));
-
-  if (rulesChanged != OriginFlags(0)) {
-    MarkOriginsDirty(rulesChanged);
-    return true;
-  }
-
-  return false;
-}
-
 void
 ServoStyleSet::InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged)
 {
@@ -264,33 +248,6 @@ ServoStyleSet::InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged
     root, &styleSets, aStatesChanged.ServoValue());
 }
 
-nsRestyleHint
-ServoStyleSet::MediumFeaturesChanged(MediaFeatureChangeReason aReason)
-{
-  bool viewportUnitsUsed = false;
-  bool rulesChanged = MediumFeaturesChangedRules(&viewportUnitsUsed, aReason);
-
-  if (nsPresContext* pc = GetPresContext()) {
-    if (mDocument->BindingManager()->MediumFeaturesChanged(pc, aReason)) {
-      
-      SetStylistXBLStyleSheetsDirty();
-      rulesChanged = true;
-    }
-  }
-
-  if (rulesChanged) {
-    return eRestyle_Subtree;
-  }
-
-  const bool viewportChanged =
-    bool(aReason & MediaFeatureChangeReason::ViewportChange);
-  if (viewportUnitsUsed && viewportChanged) {
-    return eRestyle_ForceDescendants;
-  }
-
-  return nsRestyleHint(0);
-}
-
 static const MediaFeatureChangeReason kMediaFeaturesAffectingDefaultStyle =
   
   MediaFeatureChangeReason::ZoomChange |
@@ -303,26 +260,51 @@ static const MediaFeatureChangeReason kMediaFeaturesAffectingDefaultStyle =
   
   MediaFeatureChangeReason::ResolutionChange;
 
-bool
-ServoStyleSet::MediumFeaturesChangedRules(
-  bool* aViewportUnitsUsed,
-  MediaFeatureChangeReason aReason)
+nsRestyleHint
+ServoStyleSet::MediumFeaturesChanged(MediaFeatureChangeReason aReason)
 {
-  MOZ_ASSERT(aViewportUnitsUsed);
+  AutoTArray<ServoStyleSet*, 20> nonDocumentStyleSets;
+  
+  
+  
+  
+  mDocument->BindingManager()->EnumerateBoundContentBindings(
+    [&](nsXBLBinding* aBinding) {
+      if (ServoStyleSet* set = aBinding->PrototypeBinding()->GetServoStyleSet()) {
+        nonDocumentStyleSets.AppendElement(set);
+      }
+      return true;
+    });
 
   bool mayAffectDefaultStyle =
     bool(aReason & kMediaFeaturesAffectingDefaultStyle);
 
-  const OriginFlags rulesChanged = static_cast<OriginFlags>(
+  const MediumFeaturesChangedResult result =
     Servo_StyleSet_MediumFeaturesChanged(
-      mRawSet.get(), aViewportUnitsUsed, mayAffectDefaultStyle));
+      mRawSet.get(), &nonDocumentStyleSets, mayAffectDefaultStyle);
 
-  if (rulesChanged != OriginFlags(0)) {
-    MarkOriginsDirty(rulesChanged);
-    return true;
+  const bool rulesChanged =
+    result.mAffectsDocumentRules || result.mAffectsNonDocumentRules;
+
+  if (result.mAffectsDocumentRules) {
+    SetStylistStyleSheetsDirty();
   }
 
-  return false;
+  if (result.mAffectsNonDocumentRules) {
+    SetStylistXBLStyleSheetsDirty();
+  }
+
+  if (rulesChanged) {
+    return eRestyle_Subtree;
+  }
+
+  const bool viewportChanged =
+    bool(aReason & MediaFeatureChangeReason::ViewportChange);
+  if (result.mUsesViewportUnits && viewportChanged) {
+    return eRestyle_ForceDescendants;
+  }
+
+  return nsRestyleHint(0);
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(ServoStyleSetMallocSizeOf)
@@ -1125,6 +1107,10 @@ ServoStyleSet::MarkOriginsDirty(OriginFlags aChangedOrigins)
 void
 ServoStyleSet::SetStylistStyleSheetsDirty()
 {
+  
+  
+  
+  
   mStylistState |= StylistState::StyleSheetsDirty;
 
   
@@ -1468,6 +1454,9 @@ ServoStyleSet::UpdateStylist()
   if (MOZ_UNLIKELY(mStylistState & StylistState::XBLStyleSheetsDirty)) {
     MOZ_ASSERT(IsMaster(), "Only master styleset can mark XBL stylesets dirty!");
     MOZ_ASSERT(GetPresContext(), "How did they get dirty?");
+    
+    
+    
     mDocument->BindingManager()->UpdateBoundContentBindingsForServo(GetPresContext());
   }
 

@@ -160,9 +160,6 @@ public:
     return Servo_SourceSizeList_Evaluate(mRawSet.get(), aSourceSizeList);
   }
 
-  
-  bool MediumFeaturesChangedRules(bool* aViewportUnitsUsed, MediaFeatureChangeReason);
-
   void InvalidateStyleForCSSRuleChanges();
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
@@ -449,15 +446,6 @@ public:
   ServoStyleRuleMap* StyleRuleMap();
 
   
-  bool IsPresContextChanged(nsPresContext* aPresContext) const {
-    return aPresContext != mLastPresContextUsesXBLStyleSet;
-  }
-
-  
-  
-  bool SetPresContext(nsPresContext* aPresContext);
-
-  
 
 
 
@@ -607,13 +595,6 @@ private:
 
 
   nsPresContext* GetPresContext();
-
-  
-  
-  
-  
-  
-  void* MOZ_NON_OWNING_REF mLastPresContextUsesXBLStyleSet = nullptr;
 
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
