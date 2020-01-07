@@ -384,22 +384,25 @@ nsImageFrame::GetSourceToDestTransform(nsTransform2D& aTransform)
   
   
   
-  aTransform.SetToTranslate(float(destRect.x), float(destRect.y));
+  aTransform.SetToTranslate(float(destRect.x),
+                            float(destRect.y));
 
+  
+  if (mIntrinsicSize.width.GetUnit() == eStyleUnit_Coord &&
+      mIntrinsicSize.width.GetCoordValue() != 0 &&
+      mIntrinsicSize.height.GetUnit() == eStyleUnit_Coord &&
+      mIntrinsicSize.height.GetCoordValue() != 0 &&
+      mIntrinsicSize.width.GetCoordValue() != destRect.width &&
+      mIntrinsicSize.height.GetCoordValue() != destRect.height) {
 
-  
-  
-  
-  nsSize intrinsicSize;
-  if (!mImage ||
-      !NS_SUCCEEDED(mImage->GetIntrinsicSize(&intrinsicSize)) ||
-      intrinsicSize.IsEmpty()) {
-    return false;
+    aTransform.SetScale(float(destRect.width)  /
+                        float(mIntrinsicSize.width.GetCoordValue()),
+                        float(destRect.height) /
+                        float(mIntrinsicSize.height.GetCoordValue()));
+    return true;
   }
 
-  aTransform.SetScale(float(destRect.width)  / float(intrinsicSize.width),
-                      float(destRect.height) / float(intrinsicSize.height));
-  return true;
+  return false;
 }
 
 
@@ -572,8 +575,7 @@ nsImageFrame::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
 
 
 
-  nsPresContext *presContext = PresContext();
-  aImage->SetAnimationMode(presContext->ImageAnimationMode());
+  aImage->SetAnimationMode(PresContext()->ImageAnimationMode());
 
   if (IsPendingLoad(aRequest)) {
     
@@ -1866,8 +1868,7 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 bool
 nsImageFrame::ShouldDisplaySelection()
 {
-  nsPresContext* presContext = PresContext();
-  int16_t displaySelection = presContext->PresShell()->GetSelectionFlags();
+  int16_t displaySelection = PresShell()->GetSelectionFlags();
   if (!(displaySelection & nsISelectionDisplay::DISPLAY_IMAGES))
     return false;
 
