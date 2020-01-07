@@ -10,10 +10,10 @@ function pushPrefs(...prefs) {
   return SpecialPowers.pushPrefEnv({set: prefs});
 }
 
-async function setDefaultTopSites() {
+async function setDefaultTopSites() { 
   
   await pushPrefs(["browser.newtabpage.activity-stream.default.sites",
-  "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/"]);
+    "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/"]);
   
   await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", false]);
   await pushPrefs(["browser.newtabpage.activity-stream.feeds.topsites", true]);

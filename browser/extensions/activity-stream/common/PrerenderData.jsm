@@ -46,7 +46,7 @@ class _PrerenderData {
   }
 }
 
-var PrerenderData = new _PrerenderData({
+this.PrerenderData = new _PrerenderData({
   initialPrefs: {
     "migrationExpired": true,
     "showTopSites": true,
@@ -56,7 +56,8 @@ var PrerenderData = new _PrerenderData({
     "section.highlights.collapsed": false,
     "section.topstories.collapsed": false,
     "feeds.section.topstories": true,
-    "feeds.section.highlights": true
+    "feeds.section.highlights": true,
+    "enableWideLayout": true
   },
   
   
@@ -71,6 +72,7 @@ var PrerenderData = new _PrerenderData({
     "collapseTopSites",
     "section.highlights.collapsed",
     "section.topstories.collapsed",
+    "enableWideLayout",
     
     
     {oneOf: ["feeds.section.topstories", "feeds.section.highlights"]}
@@ -94,4 +96,4 @@ var PrerenderData = new _PrerenderData({
 });
 
 this._PrerenderData = _PrerenderData;
-var EXPORTED_SYMBOLS = ["PrerenderData", "_PrerenderData"];
+this.EXPORTED_SYMBOLS = ["PrerenderData", "_PrerenderData"];

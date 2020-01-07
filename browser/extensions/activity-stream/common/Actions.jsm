@@ -3,11 +3,11 @@
 
 "use strict";
 
-var MAIN_MESSAGE_TYPE = "ActivityStream:Main";
-var CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
-var PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
-var UI_CODE = 1;
-var BACKGROUND_PROCESS = 2;
+this.MAIN_MESSAGE_TYPE = "ActivityStream:Main";
+this.CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+this.PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
+this.UI_CODE = 1;
+this.BACKGROUND_PROCESS = 2;
 
 
 
@@ -25,9 +25,11 @@ this.globalImportContext = globalImportContext;
 
 const actionTypes = {};
 for (const type of [
+  "ARCHIVE_FROM_POCKET",
   "BLOCK_URL",
   "BOOKMARK_URL",
   "DELETE_BOOKMARK_BY_ID",
+  "DELETE_FROM_POCKET",
   "DELETE_HISTORY_URL",
   "DELETE_HISTORY_URL_CONFIRM",
   "DIALOG_CANCEL",
@@ -53,6 +55,7 @@ for (const type of [
   "PLACES_HISTORY_CLEARED",
   "PLACES_LINKS_DELETED",
   "PLACES_LINK_BLOCKED",
+  "PLACES_SAVED_TO_POCKET",
   "PREFS_INITIAL_VALUES",
   "PREF_CHANGED",
   "RICH_ICON_MISSING",
@@ -274,7 +277,7 @@ function WebExtEvent(type, data, importContext = globalImportContext) {
 
 this.actionTypes = actionTypes;
 
-var actionCreators = {
+this.actionCreators = {
   BroadcastToContent,
   UserEvent,
   UndesiredEvent,
@@ -290,7 +293,7 @@ var actionCreators = {
 };
 
 
-var actionUtils = {
+this.actionUtils = {
   isSendToMain(action) {
     if (!action.meta) {
       return false;
@@ -335,7 +338,7 @@ var actionUtils = {
   _RouteMessage
 };
 
-var EXPORTED_SYMBOLS = [
+this.EXPORTED_SYMBOLS = [
   "actionTypes",
   "actionCreators",
   "actionUtils",

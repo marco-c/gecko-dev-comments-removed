@@ -27,7 +27,7 @@ const HIGHLIGHTS_MAX_LENGTH = 9;
 const MANY_EXTRA_LENGTH = HIGHLIGHTS_MAX_LENGTH * 5 + TOP_SITES_DEFAULT_ROWS * TOP_SITES_MAX_SITES_PER_ROW;
 const SECTION_ID = "highlights";
 
-var HighlightsFeed = class HighlightsFeed {
+this.HighlightsFeed = class HighlightsFeed {
   constructor() {
     this.dedupe = new Dedupe(this._dedupeKey);
     this.linksCache = new LinksCache(NewTabUtils.activityStreamLinks,
@@ -37,7 +37,7 @@ var HighlightsFeed = class HighlightsFeed {
 
   _dedupeKey(site) {
     
-    return site && (site.type === "bookmark" ? {} : site.url);
+    return site && ((site.pocket_id || site.type === "bookmark") ? {} : site.url);
   }
 
   init() {
@@ -86,8 +86,10 @@ var HighlightsFeed = class HighlightsFeed {
 
     
     
-    
-    const manyPages = await this.linksCache.request({numItems: MANY_EXTRA_LENGTH, excludePocket: true});
+    const manyPages = await this.linksCache.request({
+      numItems: MANY_EXTRA_LENGTH,
+      excludePocket: !this.store.getState().Prefs.values["section.highlights.includePocket"]
+    });
 
     
     const checkedAdult = this.store.getState().Prefs.values.filterAdult ?
@@ -113,10 +115,16 @@ var HighlightsFeed = class HighlightsFeed {
       }
 
       
+      if (page.type === "history" && page.bookmarkGuid) {
+        page.type = "bookmark";
+      }
+
+      
       Object.assign(page, {
         hasImage: true, 
         hostname,
-        type: page.bookmarkGuid ? "bookmark" : page.type
+        type: page.type,
+        pocket_id: page.pocket_id
       });
 
       
@@ -152,6 +160,34 @@ var HighlightsFeed = class HighlightsFeed {
     });
   }
 
+  
+
+
+
+
+  async deleteFromPocket(itemID) {
+    try {
+      await NewTabUtils.activityStreamLinks.deletePocketEntry(itemID);
+      this.fetchHighlights({broadcast: true});
+    } catch (err) {
+      Cu.reportError(err);
+    }
+  }
+
+  
+
+
+
+
+  async archiveFromPocket(itemID) {
+    try {
+      await NewTabUtils.activityStreamLinks.archivePocketEntry(itemID);
+      this.fetchHighlights({broadcast: true});
+    } catch (err) {
+      Cu.reportError(err);
+    }
+  }
+
   onAction(action) {
     switch (action.type) {
       case at.INIT:
@@ -166,8 +202,15 @@ var HighlightsFeed = class HighlightsFeed {
       case at.PLACES_LINK_BLOCKED:
         this.fetchHighlights({broadcast: true});
         break;
+      case at.DELETE_FROM_POCKET:
+        this.deleteFromPocket(action.data.pocket_id);
+        break;
+      case at.ARCHIVE_FROM_POCKET:
+        this.archiveFromPocket(action.data.pocket_id);
+        break;
       case at.PLACES_BOOKMARK_ADDED:
       case at.PLACES_BOOKMARK_REMOVED:
+      case at.PLACES_SAVED_TO_POCKET:
         this.linksCache.expire();
         this.fetchHighlights({broadcast: false});
         break;
@@ -181,4 +224,4 @@ var HighlightsFeed = class HighlightsFeed {
   }
 };
 
-var EXPORTED_SYMBOLS = ["HighlightsFeed", "SECTION_ID"];
+this.EXPORTED_SYMBOLS = ["HighlightsFeed", "SECTION_ID", "MANY_EXTRA_LENGTH"];
