@@ -16,7 +16,7 @@ ChromeUtils.defineModuleGetter(this, "StartupPerformance",
   "resource:///modules/sessionstore/StartupPerformance.jsm");
 
 
-const WINDOW_READY_TOPIC = "browser-delayed-startup-finished";
+const WINDOW_READY_TOPIC = "browser-idle-startup-tasks-finished";
 
 
 const MSG_REQUEST = "session-restore-test?duration";
@@ -73,7 +73,7 @@ const sessionRestoreTest = {
     
     
     let win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (!win || !win.gBrowserInit || !win.gBrowserInit.delayedStartupFinished) {
+    if (!win || !win.gBrowserInit || !win.gBrowserInit.idleTasksFinished) {
       
       
       Services.obs.addObserver(this, WINDOW_READY_TOPIC);
