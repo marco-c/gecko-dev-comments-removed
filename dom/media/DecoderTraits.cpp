@@ -57,6 +57,15 @@ DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType)
 }
 
  bool
+DecoderTraits::IsMatroskaType(const MediaContainerType& aType)
+{
+  const auto& mimeType = aType.Type();
+  
+  return mimeType == MEDIAMIMETYPE("audio/x-matroska") ||
+         mimeType == MEDIAMIMETYPE("video/x-matroska");
+}
+
+ bool
 DecoderTraits::IsMP4SupportedType(const MediaContainerType& aType,
                                   DecoderDoctorDiagnostics* aDiagnostics)
 {
@@ -141,6 +150,8 @@ CanHandleMediaType(const MediaContainerType& aType,
 
   if (DecoderTraits::IsHttpLiveStreamingType(aType)) {
     Telemetry::Accumulate(Telemetry::MEDIA_HLS_CANPLAY_REQUESTED, true);
+  } else if (DecoderTraits::IsMatroskaType(aType)) {
+    Telemetry::Accumulate(Telemetry::MEDIA_MKV_CANPLAY_REQUESTED, true);
   }
 
   if (aType.ExtendedType().HaveCodecs()) {
