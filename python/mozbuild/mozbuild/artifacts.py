@@ -930,7 +930,16 @@ class Artifacts(object):
 
         with self._pushhead_cache as pushhead_cache:
             found_pushids = {}
-            for tree in CANDIDATE_TREES:
+
+            search_trees = list(CANDIDATE_TREES)
+            
+            
+            
+            
+            if os.environ.get('MOZ_AUTOMATION'):
+                search_trees += ['integration/autoland']
+
+            for tree in search_trees:
                 self.log(logging.INFO, 'artifact',
                          {'tree': tree,
                           'rev': rev},
