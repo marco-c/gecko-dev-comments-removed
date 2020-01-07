@@ -10,5 +10,5 @@ for (var i = 0; i < 9; ++i) {
 }
 
 oomTest(function() {
-  newGlobal();
+  newGlobal({sameZoneAs: this});
 })
