@@ -11,7 +11,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const windowTracker = {
@@ -34,12 +33,6 @@ const windowTracker = {
     }
   },
 };
-
-function readSync(uri) {
-  let channel = NetUtil.newChannel({uri, loadUsingSystemPrincipal: true});
-  let buffer = NetUtil.readInputStream(channel.open2());
-  return new TextDecoder().decode(buffer);
-}
 
 function startup(data, reason) {
   Services.scriptloader.loadSubScript(data.resourceURI.resolve("content/initialize_browser.js"));

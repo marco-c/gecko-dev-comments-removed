@@ -17,7 +17,9 @@
 
 
 
-window.DAMP_TESTS = [
+
+
+module.exports = [
   {
     name: "inspector.cold-open",
     path: "inspector/cold-open.js",
