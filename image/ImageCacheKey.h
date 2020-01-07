@@ -21,8 +21,6 @@ class nsIURI;
 namespace mozilla {
 namespace image {
 
-class ImageURL;
-
 
 
 
@@ -36,8 +34,6 @@ class ImageCacheKey final
 public:
   ImageCacheKey(nsIURI* aURI, const OriginAttributes& aAttrs,
                 nsIDocument* aDocument, nsresult& aRv);
-  ImageCacheKey(ImageURL* aURI, const OriginAttributes& aAttrs,
-                nsIDocument* aDocument);
 
   ImageCacheKey(const ImageCacheKey& aOther);
   ImageCacheKey(ImageCacheKey&& aOther);
@@ -46,7 +42,7 @@ public:
   PLDHashNumber Hash() const { return mHash; }
 
   
-  const char* Spec() const;
+  nsIURI* URI() const { return mURI; }
 
   
   bool IsChrome() const { return mIsChrome; }
@@ -56,14 +52,12 @@ public:
   void* ControlledDocument() const { return mControlledDocument; }
 
 private:
-  static PLDHashNumber ComputeHash(ImageURL* aURI,
-                                   const Maybe<uint64_t>& aBlobSerial,
-                                   const OriginAttributes& aAttrs,
-                                   void* aControlledDocument);
+  bool SchemeIs(const char* aScheme);
   static void* GetControlledDocumentToken(nsIDocument* aDocument);
 
-  RefPtr<ImageURL> mURI;
+  nsCOMPtr<nsIURI> mURI;
   Maybe<uint64_t> mBlobSerial;
+  nsCString mBlobRef;
   OriginAttributes mOriginAttributes;
   void* mControlledDocument;
   PLDHashNumber mHash;
