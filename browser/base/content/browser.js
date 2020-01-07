@@ -3258,6 +3258,8 @@ function getDefaultHomePage() {
   
   var prefs = Services.prefs.getDefaultBranch(null);
   var url = BROWSER_NEW_TAB_URL;
+  if (PrivateBrowsingUtils.isWindowPrivate(window))
+    return url;
   try {
     url = prefs.getComplexValue("browser.startup.homepage",
                                 Ci.nsIPrefLocalizedString).data;
