@@ -1255,7 +1255,6 @@ js::math_atanh(JSContext* cx, unsigned argc, Value* vp)
     return math_function<math_atanh_impl>(cx, argc, vp);
 }
 
-
 double
 js::ecmaHypot(double x, double y)
 {
@@ -1282,8 +1281,6 @@ js::hypot4(double x, double y, double z, double w)
     AutoUnsafeCallWithABI unsafe;
 
     
-
-
     if (mozilla::IsInfinite(x) || mozilla::IsInfinite(y) ||
             mozilla::IsInfinite(z) || mozilla::IsInfinite(w))
         return mozilla::PositiveInfinity<double>();
