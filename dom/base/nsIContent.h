@@ -654,20 +654,6 @@ public:
 
 
 
-  virtual nsTArray<nsIContent*> &DestInsertionPoints() = 0;
-
-  
-
-
-
-
-  virtual nsTArray<nsIContent*> *GetExistingDestInsertionPoints() const = 0;
-
-  
-
-
-
-
   virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const = 0;
 
   

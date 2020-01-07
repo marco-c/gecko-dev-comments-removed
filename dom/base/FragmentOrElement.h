@@ -153,8 +153,6 @@ public:
   virtual void SetXBLBinding(nsXBLBinding* aBinding,
                              nsBindingManager* aOldBindingManager = nullptr) override;
   virtual ShadowRoot *GetContainingShadow() const override;
-  virtual nsTArray<nsIContent*> &DestInsertionPoints() override;
-  virtual nsTArray<nsIContent*> *GetExistingDestInsertionPoints() const override;
   virtual void SetShadowRoot(ShadowRoot* aBinding) override;
   virtual mozilla::dom::HTMLSlotElement* GetAssignedSlot() const override;
   virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) override;
@@ -291,12 +289,6 @@ public:
 
 
     RefPtr<ShadowRoot> mContainingShadow;
-
-    
-
-
-
-    nsTArray<nsIContent*> mDestInsertionPoints;
 
     
 
