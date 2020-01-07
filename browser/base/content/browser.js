@@ -1267,8 +1267,6 @@ var gBrowserInit = {
       remoteType, sameProcessAsFrameLoader
     });
 
-    BrowserSearch.initPlaceHolder();
-
     
     
     this._callWithURIToLoad(uriToLoad => {
@@ -1464,7 +1462,6 @@ var gBrowserInit = {
     UpdateUrlbarSearchSplitterState();
 
     BookmarkingUI.init();
-    BrowserSearch.delayedStartupInit();
     AutoShowBookmarksToolbar.init();
 
     Services.prefs.addObserver(gHomeButton.prefDomain, gHomeButton);
@@ -3770,23 +3767,8 @@ const DOMEventHandler = {
 };
 
 const BrowserSearch = {
-  _searchInitComplete: false,
-
   init() {
     Services.obs.addObserver(this, "browser-search-engine-modified");
-  },
-
-  delayedStartupInit() {
-    
-    
-    Services.search.init(rv => {
-      if (Components.isSuccessCode(rv)) {
-        
-        
-        this._updateURLBarPlaceholder(Services.search.currentEngine, true);
-        this._searchInitComplete = true;
-      }
-    });
   },
 
   uninit() {
@@ -3814,11 +3796,6 @@ const BrowserSearch = {
       
       
       this._removeMaybeOfferedEngine(engineName);
-      break;
-    case "engine-current":
-      if (this._searchInitComplete) {
-        this._updateURLBarPlaceholder(engine);
-      }
       break;
     }
   },
@@ -3865,88 +3842,6 @@ const BrowserSearch = {
     if (selectedBrowserOffersEngine) {
       this.updateOpenSearchBadge();
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  initPlaceHolder() {
-    let engineName = Services.prefs.getStringPref("browser.urlbar.placeholderName", "");
-    if (engineName) {
-      
-      this._setURLBarPlaceholder(engineName);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _updateURLBarPlaceholder(engine, delayUpdate = false) {
-    if (!engine) {
-      throw new Error("Expected an engine to be specified");
-    }
-
-    let engineName = "";
-    if (Services.search.getDefaultEngines().includes(engine)) {
-      engineName = engine.name;
-      Services.prefs.setStringPref("browser.urlbar.placeholderName", engineName);
-    } else {
-      Services.prefs.clearUserPref("browser.urlbar.placeholderName");
-    }
-
-    
-    
-    if (delayUpdate && !gURLBar.value) {
-      
-      
-      
-      let placeholderUpdateListener = () => {
-        if (gURLBar.value) {
-          this._setURLBarPlaceholder(engineName);
-          gURLBar.removeEventListener("input", placeholderUpdateListener);
-          gBrowser.tabContainer.removeEventListener("TabSelect", placeholderUpdateListener);
-        }
-      };
-
-      gURLBar.addEventListener("input", placeholderUpdateListener);
-      gBrowser.tabContainer.addEventListener("TabSelect", placeholderUpdateListener);
-    } else {
-      this._setURLBarPlaceholder(engineName);
-    }
-  },
-
-  
-
-
-
-
-
-
-  _setURLBarPlaceholder(name) {
-    let placeholder;
-    if (name) {
-      placeholder = gBrowserBundle.formatStringFromName("urlbar.placeholder",
-        [name], 1);
-    } else {
-      placeholder = gURLBar.getAttribute("defaultPlaceholder");
-    }
-    gURLBar.setAttribute("placeholder", placeholder);
   },
 
   addEngine(browser, engine, uri) {
