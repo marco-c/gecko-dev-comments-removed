@@ -88,6 +88,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AutoCompletePopup: "resource://gre/modules/AutoCompletePopup.jsm",
   BookmarkHTMLUtils: "resource://gre/modules/BookmarkHTMLUtils.jsm",
   BookmarkJSONUtils: "resource://gre/modules/BookmarkJSONUtils.jsm",
+  BrowserErrorReporter: "resource:///modules/BrowserErrorReporter.jsm",
   BrowserUITelemetry: "resource:///modules/BrowserUITelemetry.jsm",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
   ContentClick: "resource:///modules/ContentClick.jsm",
@@ -353,6 +354,16 @@ BrowserGlue.prototype = {
       value: new PingCentre({ topic: MAIN_TOPIC_ID })
     });
     return this.pingCentre;
+  },
+
+  
+
+
+  get browserErrorReporter() {
+    Object.defineProperty(this, "browserErrorReporter", {
+      value: new BrowserErrorReporter(),
+    });
+    return this.browserErrorReporter;
   },
 
   _sendMainPingCentrePing() {
@@ -1055,6 +1066,11 @@ BrowserGlue.prototype = {
     NewTabUtils.uninit();
     AutoCompletePopup.uninit();
     DateTimePickerHelper.uninit();
+
+    
+    if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_DATA_REPORTING) {
+      this.browserErrorReporter.uninit();
+    }
   },
 
   
@@ -1063,6 +1079,11 @@ BrowserGlue.prototype = {
       return;
     }
     this._windowsWereRestored = true;
+
+    
+    if (AppConstants.NIGHTLY_BUILD && AppConstants.MOZ_DATA_REPORTING) {
+      this.browserErrorReporter.init();
+    }
 
     BrowserUsageTelemetry.init();
     BrowserUITelemetry.init();
