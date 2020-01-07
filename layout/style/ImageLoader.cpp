@@ -115,6 +115,29 @@ ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
         
         if(status & imgIRequest::STATUS_FRAME_COMPLETE) {
           RequestReflowOnFrame(fwfToModify, aRequest);
+        } else {
+          
+          
+          
+
+          
+          
+          
+          
+          
+          
+          
+          
+          nsCOMPtr<imgIContainer> imgContainer;
+          aRequest->GetImage(getter_AddRefs(imgContainer));
+          if (imgContainer) {
+            imgContainer->RequestDecodeForSize(gfx::IntSize(0, 0),
+              imgIContainer::DECODE_FLAGS_DEFAULT);
+          } else {
+            
+            
+            aRequest->StartDecoding(imgIContainer::FLAG_NONE);
+          }
         }
       }
     }
