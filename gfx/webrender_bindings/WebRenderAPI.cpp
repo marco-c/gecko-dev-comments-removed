@@ -311,7 +311,18 @@ WebRenderAPI::~WebRenderAPI()
 
   
   
-  ClearBlobImageResources(GetNamespace());
+  
+  
+  
+#ifdef MOZ_BUILD_WEBRENDER
+  wr::WrIdNamespace ns = GetNamespace();
+#else
+  wr::WrIdNamespace ns{0};
+#endif
+
+  
+  
+  ClearBlobImageResources(ns);
 
   wr_api_delete(mDocHandle);
 }
