@@ -2216,8 +2216,8 @@ void
 RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          nsRestyleHint aRestyleHint)
 {
-   
-   
+  
+  
   PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
 }
 
