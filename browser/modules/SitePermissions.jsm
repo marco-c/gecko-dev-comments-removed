@@ -631,6 +631,10 @@ var gPermissionObject = {
   "shortcuts": {
     states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
   },
+
+  "canvas/extractData": {
+    labelID: "canvas"
+  },
 };
 
 
