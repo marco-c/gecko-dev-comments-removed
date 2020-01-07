@@ -680,7 +680,7 @@ NS_IMPL_ISUPPORTS(nsStringBundleService,
 nsStringBundleService::~nsStringBundleService()
 {
   UnregisterWeakMemoryReporter(this);
-  flushBundleCache();
+  flushBundleCache( false);
 }
 
 nsresult
@@ -715,38 +715,41 @@ nsStringBundleService::Observe(nsISupports* aSubject,
                                const char* aTopic,
                                const char16_t* aSomeData)
 {
-  if (strcmp("memory-pressure", aTopic) == 0 ||
-      strcmp("profile-do-change", aTopic) == 0 ||
+  if (strcmp("profile-do-change", aTopic) == 0 ||
       strcmp("chrome-flush-caches", aTopic) == 0 ||
       strcmp("intl:app-locales-changed", aTopic) == 0)
   {
-    flushBundleCache();
+    flushBundleCache( false);
+  } else if (strcmp("memory-pressure", aTopic) == 0) {
+    flushBundleCache( true);
   }
 
   return NS_OK;
 }
 
 void
-nsStringBundleService::flushBundleCache()
+nsStringBundleService::flushBundleCache(bool ignoreShared)
 {
-  
-  mBundleMap.Clear();
+  LinkedList<bundleCacheEntry_t> newList;
 
   while (!mBundleCache.isEmpty()) {
-    delete mBundleCache.popFirst();
+    UniquePtr<bundleCacheEntry_t> entry(mBundleCache.popFirst());
+    auto* bundle = nsStringBundleBase::Cast(entry->mBundle);
+
+    if (ignoreShared && bundle->IsShared()) {
+      newList.insertBack(entry.release());
+    } else {
+      mBundleMap.Remove(entry->mHashKey);
+    }
   }
 
-  
-  
-  for (auto* entry : mSharedBundles) {
-    mBundleMap.Put(entry->mHashKey, entry);
-  }
+  mBundleCache = std::move(newList);
 }
 
 NS_IMETHODIMP
 nsStringBundleService::FlushBundles()
 {
-  flushBundleCache();
+  flushBundleCache( false);
   return NS_OK;
 }
 
@@ -807,13 +810,10 @@ nsStringBundleService::getStringBundle(const char *aURLSpec,
 
   if (cacheEntry) {
     
-    
-    
     cacheEntry->remove();
 
     shared = do_QueryObject(cacheEntry->mBundle);
   } else {
-    
     nsCOMPtr<nsIStringBundle> bundle;
     bool isContent = IsContentBundle(key);
     if (!isContent || !XRE_IsParentProcess()) {
@@ -848,10 +848,7 @@ nsStringBundleService::getStringBundle(const char *aURLSpec,
   if (shared) {
     mSharedBundles.insertBack(cacheEntry);
   } else {
-    
-    
-    
-    mBundleCache.insertFront(cacheEntry);
+    mBundleCache.insertBack(cacheEntry);
   }
 
   
@@ -859,37 +856,40 @@ nsStringBundleService::getStringBundle(const char *aURLSpec,
   NS_ADDREF(*aResult);
 }
 
-bundleCacheEntry_t *
+UniquePtr<bundleCacheEntry_t>
+nsStringBundleService::evictOneEntry()
+{
+  for (auto* entry : mBundleCache) {
+    auto* bundle = nsStringBundleBase::Cast(entry->mBundle);
+    if (!bundle->IsShared()) {
+      entry->remove();
+      mBundleMap.Remove(entry->mHashKey);
+      return UniquePtr<bundleCacheEntry_t>(entry);
+    }
+  }
+  return nullptr;
+}
+
+bundleCacheEntry_t*
 nsStringBundleService::insertIntoCache(already_AddRefed<nsIStringBundle> aBundle,
                                        const nsACString& aHashKey)
 {
-  bundleCacheEntry_t *cacheEntry;
+  UniquePtr<bundleCacheEntry_t> cacheEntry;
 
-  if (mBundleMap.Count() < MAX_CACHED_BUNDLES ||
-      mBundleCache.isEmpty()) {
-    
-    cacheEntry = new bundleCacheEntry_t();
-  } else {
-    
-    
-    cacheEntry = mBundleCache.getLast();
-
-    
-    NS_ASSERTION(mBundleMap.Contains(cacheEntry->mHashKey),
-                 "Element will not be removed!");
-    mBundleMap.Remove(cacheEntry->mHashKey);
-    cacheEntry->remove();
+  if (mBundleMap.Count() >= MAX_CACHED_BUNDLES) {
+    cacheEntry = evictOneEntry();
   }
 
-  
-  
+  if (!cacheEntry) {
+    cacheEntry.reset(new bundleCacheEntry_t());
+  }
+
   cacheEntry->mHashKey = aHashKey;
   cacheEntry->mBundle = aBundle;
 
-  
-  mBundleMap.Put(cacheEntry->mHashKey, cacheEntry);
+  mBundleMap.Put(cacheEntry->mHashKey, cacheEntry.get());
 
-  return cacheEntry;
+  return cacheEntry.release();
 }
 
 NS_IMETHODIMP

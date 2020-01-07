@@ -28,6 +28,15 @@ public:
 
     const nsCString& BundleURL() const { return mPropertiesURL; }
 
+    
+    
+    bool IsShared() const { return mRefCnt > 1; }
+
+    static nsStringBundleBase* Cast(nsIStringBundle* aBundle)
+    {
+      return static_cast<nsStringBundleBase*>(aBundle);
+    }
+
 protected:
     virtual ~nsStringBundleBase();
 
