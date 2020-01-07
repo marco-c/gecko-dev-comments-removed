@@ -1158,6 +1158,10 @@ with modules["GENERAL"]:
     
     errors["NS_OK_NO_NAME_CLAUSE_HANDLED"] = SUCCESS(34)
 
+    
+    
+    errors["NS_ERROR_BLOCKED_BY_POLICY"] = FAILURE(3)
+
 
 
 
