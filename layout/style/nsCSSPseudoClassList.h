@@ -90,9 +90,6 @@ CSS_PSEUDO_CLASS(nthLastOfType, ":nth-last-of-type", 0, "")
 CSS_PSEUDO_CLASS(mozIsHTML, ":-moz-is-html", 0, "")
 
 
- CSS_STATE_PSEUDO_CLASS(unresolved, ":unresolved", 0, "", NS_EVENT_STATE_UNRESOLVED)
-
-
 
 
 CSS_PSEUDO_CLASS(mozNativeAnonymous, ":-moz-native-anonymous",

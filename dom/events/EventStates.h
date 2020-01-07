@@ -152,7 +152,6 @@ public:
 
   
   
-  
   InternalType GetInternalValue() const {
     return mStates;
   }
@@ -244,7 +243,6 @@ private:
 
 #define NS_EVENT_STATE_OPTIONAL      NS_DEFINE_EVENT_STATE_MACRO(22)
 
-#define NS_EVENT_STATE_UNRESOLVED NS_DEFINE_EVENT_STATE_MACRO(23)
 
 #define NS_EVENT_STATE_VISITED       NS_DEFINE_EVENT_STATE_MACRO(24)
 
@@ -361,7 +359,6 @@ private:
   NS_EVENT_STATE_FOCUS_WITHIN |               \
   NS_EVENT_STATE_FULL_SCREEN |                \
   NS_EVENT_STATE_HOVER |                      \
-  NS_EVENT_STATE_UNRESOLVED |                 \
   NS_EVENT_STATE_URLTARGET                    \
 )
 
