@@ -43,7 +43,9 @@
 
   SimpleTest.waitForExplicitFinish();
   SpecialPowers.pushPrefEnv(
-    {"set": [["dom.webnotifications.workers.enabled", true]]}, runTest);
+    {"set": [["dom.webnotifications.workers.enabled", true]]},
+    runTest
+  );
 </script>
 </body>
 </html>

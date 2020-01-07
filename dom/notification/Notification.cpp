@@ -424,12 +424,6 @@ public:
   {
     mNotification->ReleaseObject();
   }
-
-  void
-  Cancel() override
-  {
-    mNotification->ReleaseObject();
-  }
 };
 
 
