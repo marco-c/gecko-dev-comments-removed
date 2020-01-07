@@ -247,6 +247,8 @@ private:
     int32_t     mKeepaliveProbeCount;
     
     bool        mKeepaliveEnabledPref;
+    
+    TimeDuration mPollableEventTimeout;
 
     Atomic<bool>                    mServingPendingQueue;
     Atomic<int32_t, Relaxed>        mMaxTimePerPollIter;
@@ -285,6 +287,8 @@ private:
     void StartPolling();
     void EndPolling();
 #endif
+
+    void TryRepairPollableEvent();
 };
 
 extern nsSocketTransportService *gSocketTransportService;

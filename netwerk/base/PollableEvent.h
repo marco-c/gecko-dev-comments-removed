@@ -8,6 +8,7 @@
 #define PollableEvent_h__
 
 #include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
 
 namespace mozilla {
 namespace net {
@@ -21,8 +22,25 @@ public:
 
   
   bool Signal();
+  
   bool Clear();
   bool Valid() { return mWriteFD && mReadFD; }
+
+  
+  
+  
+  
+  
+  void MarkFirstSignalTimestamp();
+  
+  
+  
+  void AdjustFirstSignalTimestamp();
+  
+  
+  
+  
+  bool IsSignallingAlive(TimeDuration const& timeout);
 
   PRFileDesc *PollableFD() { return mReadFD; }
 
@@ -30,6 +48,16 @@ private:
   PRFileDesc *mWriteFD;
   PRFileDesc *mReadFD;
   bool        mSignaled;
+  
+  bool        mWriteFailed;
+  
+  
+  
+  
+  bool        mSignalTimestampAdjusted;
+  
+  
+  TimeStamp   mFirstSignalAfterClear;
 };
 
 } 

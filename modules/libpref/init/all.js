@@ -873,7 +873,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 #endif
 
 pref("gfx.webrender.highlight-painted-layers", false);
-pref("gfx.webrender.async-scene-build", true);
+pref("gfx.webrender.async-scene-build", 2);
 pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
 pref("gfx.webrender.hit-test", true);
@@ -1775,6 +1775,7 @@ pref("network.http.active_tab_priority", true);
 
 
 
+
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
 pref("network.ftp.enabled", true);
@@ -1786,6 +1787,11 @@ pref("network.sts.max_time_for_events_between_two_polls", 100);
 
 pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 
+
+
+
+
+pref("network.sts.pollable_event_timeout", 6);
 
 
 pref("network.websocket.max-message-size", 2147483647);
