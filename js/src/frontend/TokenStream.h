@@ -335,23 +335,43 @@ struct Token
     
     
 
-    TokenKind           type;           
-    TokenPos            pos;            
+    
+    TokenKind type;
+
+    
+    TokenPos pos;
+
     union {
       private:
         friend struct Token;
-        PropertyName*   name;          
-        JSAtom*         atom;          
+
+        
+        PropertyName* name;
+
+        
+        JSAtom* atom;
+
         struct {
-            double      value;          
-            DecimalPoint decimalPoint;  
+            
+            double value;
+
+            
+            DecimalPoint decimalPoint;
         } number;
-        RegExpFlag      reflags;        
-                                        
+
+        
+        RegExpFlag reflags;
     } u;
+
 #ifdef DEBUG
-    Modifier modifier;                  
-    ModifierException modifierException; 
+    
+    Modifier modifier;
+
+    
+
+
+
+    ModifierException modifierException;
 #endif
 
     
@@ -1051,8 +1071,38 @@ class SourceUnits
     const CharT* ptr;
 };
 
+class TokenStreamCharsShared
+{
+    
+    
+    
+    using CharBuffer = Vector<char16_t, 32>;
+
+  protected:
+    
+
+
+
+
+    CharBuffer charBuffer;
+
+  protected:
+    explicit TokenStreamCharsShared(JSContext* cx)
+      : charBuffer(cx)
+    {}
+
+    MOZ_MUST_USE bool appendCodePointToCharBuffer(uint32_t codePoint);
+
+    MOZ_MUST_USE bool copyCharBufferTo(JSContext* cx,
+                                       UniquePtr<char16_t[], JS::FreePolicy>* destination);
+
+  public:
+    CharBuffer& getCharBuffer() { return charBuffer; }
+};
+
 template<typename CharT>
 class TokenStreamCharsBase
+  : public TokenStreamCharsShared
 {
   protected:
     void ungetCodeUnit(int32_t c) {
@@ -1063,21 +1113,12 @@ class TokenStreamCharsBase
     }
 
   public:
-    using CharBuffer = Vector<CharT, 32>;
-
     TokenStreamCharsBase(JSContext* cx, const CharT* chars, size_t length, size_t startOffset);
 
     static MOZ_ALWAYS_INLINE JSAtom*
     atomizeChars(JSContext* cx, const CharT* chars, size_t length);
 
-    const CharBuffer& getTokenbuf() const { return tokenbuf; }
-
-    MOZ_MUST_USE bool copyTokenbufTo(JSContext* cx,
-                                     UniquePtr<char16_t[], JS::FreePolicy>* destination);
-
     using SourceUnits = frontend::SourceUnits<CharT>;
-
-    MOZ_MUST_USE bool appendCodePointToTokenbuf(uint32_t codePoint);
 
     
     bool matchCodeUnit(int32_t expect) {
@@ -1102,7 +1143,7 @@ class TokenStreamCharsBase
     }
 
     MOZ_MUST_USE bool
-    fillWithTemplateStringContents(CharBuffer& charbuf, const CharT* cur, const CharT* end) {
+    fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end) {
         while (cur < end) {
             
             
@@ -1115,7 +1156,7 @@ class TokenStreamCharsBase
                     cur++;
             }
 
-            if (!charbuf.append(ch))
+            if (!charBuffer.append(ch))
                 return false;
 
             cur++;
@@ -1136,9 +1177,6 @@ class TokenStreamCharsBase
   protected:
     
     SourceUnits sourceUnits;
-
-    
-    CharBuffer tokenbuf;
 };
 
 template<>
@@ -1173,7 +1211,7 @@ template<typename CharT, class AnyCharsAccess>
 class GeneralTokenStreamChars
   : public TokenStreamCharsBase<CharT>
 {
-    using CharsSharedBase = TokenStreamCharsBase<CharT>;
+    using CharsBase = TokenStreamCharsBase<CharT>;
 
     Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
 
@@ -1201,12 +1239,12 @@ class GeneralTokenStreamChars
     uint32_t matchExtendedUnicodeEscape(uint32_t* codePoint);
 
   protected:
-    using typename CharsSharedBase::SourceUnits;
+    using typename CharsBase::SourceUnits;
 
-    using CharsSharedBase::sourceUnits;
+    using CharsBase::sourceUnits;
 
-  public:
-    using CharsSharedBase::CharsSharedBase;
+  protected:
+    using CharsBase::CharsBase;
 
     TokenStreamAnyChars& anyCharsAccess() {
         return AnyCharsAccess::anyChars(this);
@@ -1285,7 +1323,7 @@ class GeneralTokenStreamChars
     void ungetCodeUnit(int32_t c) {
         MOZ_ASSERT_IF(c == EOF, anyCharsAccess().flags.isEOF);
 
-        CharsSharedBase::ungetCodeUnit(c);
+        CharsBase::ungetCodeUnit(c);
     }
 
     void ungetChar(int32_t c);
@@ -1300,7 +1338,6 @@ class GeneralTokenStreamChars
         return anyCharsAccess().internalUpdateLineInfoForEOL(sourceUnits.offset());
     }
 
-  protected:
     uint32_t matchUnicodeEscapeIdStart(uint32_t* codePoint);
     bool matchUnicodeEscapeIdent(uint32_t* codePoint);
 };
@@ -1312,9 +1349,9 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
   : public GeneralTokenStreamChars<char16_t, AnyCharsAccess>
 {
   private:
-    using Self = TokenStreamChars<char16_t, AnyCharsAccess>;
+    using CharsBase = TokenStreamCharsBase<char16_t>;
     using GeneralCharsBase = GeneralTokenStreamChars<char16_t, AnyCharsAccess>;
-    using CharsSharedBase = TokenStreamCharsBase<char16_t>;
+    using Self = TokenStreamChars<char16_t, AnyCharsAccess>;
 
     using GeneralCharsBase::asSpecific;
 
@@ -1323,13 +1360,14 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
   protected:
     using GeneralCharsBase::anyCharsAccess;
     using GeneralCharsBase::getCodeUnit;
-    using CharsSharedBase::isAsciiCodePoint;
-    using GeneralCharsBase::sourceUnits;
-    using CharsSharedBase::ungetCodeUnit;
+    using CharsBase::isAsciiCodePoint;
+    using CharsBase::sourceUnits;
+    using GeneralCharsBase::ungetCodeUnit;
     using GeneralCharsBase::updateLineInfoForEOL;
 
     using typename GeneralCharsBase::SourceUnits;
 
+  protected:
     using GeneralCharsBase::GeneralCharsBase;
 
     
@@ -1477,9 +1515,9 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     public ErrorReporter
 {
   public:
-    using CharsBase = TokenStreamChars<CharT, AnyCharsAccess>;
+    using CharsBase = TokenStreamCharsBase<CharT>;
     using GeneralCharsBase = GeneralTokenStreamChars<CharT, AnyCharsAccess>;
-    using CharsSharedBase = TokenStreamCharsBase<CharT>;
+    using SpecializedCharsBase = TokenStreamChars<CharT, AnyCharsAccess>;
 
     using Position = TokenStreamPosition<CharT>;
 
@@ -1496,27 +1534,26 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     
   public:
     using GeneralCharsBase::anyCharsAccess;
-    using CharsSharedBase::getTokenbuf;
 
   private:
-    using typename CharsSharedBase::CharBuffer;
-    using typename CharsSharedBase::SourceUnits;
+    using typename CharsBase::SourceUnits;
 
   private:
-    using CharsSharedBase::appendCodePointToTokenbuf;
-    using CharsSharedBase::atomizeChars;
+    using TokenStreamCharsShared::appendCodePointToCharBuffer;
+    using CharsBase::atomizeChars;
     using GeneralCharsBase::badToken;
-    using CharsSharedBase::consumeKnownCodeUnit;
+    using TokenStreamCharsShared::charBuffer;
+    using CharsBase::consumeKnownCodeUnit;
     using GeneralCharsBase::consumeRestOfSingleLineComment;
-    using CharsSharedBase::copyTokenbufTo;
-    using CharsSharedBase::fillWithTemplateStringContents;
-    using CharsBase::getChar;
-    using CharsBase::getCodePoint;
+    using TokenStreamCharsShared::copyCharBufferTo;
+    using CharsBase::fillCharBufferWithTemplateStringContents;
+    using SpecializedCharsBase::getChar;
+    using SpecializedCharsBase::getCodePoint;
     using GeneralCharsBase::getCodeUnit;
-    using CharsBase::getFullAsciiCodePoint;
-    using CharsBase::getNonAsciiCodePoint;
-    using CharsSharedBase::isAsciiCodePoint;
-    using CharsSharedBase::matchCodeUnit;
+    using SpecializedCharsBase::getFullAsciiCodePoint;
+    using SpecializedCharsBase::getNonAsciiCodePoint;
+    using CharsBase::isAsciiCodePoint;
+    using CharsBase::matchCodeUnit;
     using GeneralCharsBase::matchUnicodeEscapeIdent;
     using GeneralCharsBase::matchUnicodeEscapeIdStart;
     using GeneralCharsBase::newAtomToken;
@@ -1524,13 +1561,12 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::newNumberToken;
     using GeneralCharsBase::newRegExpToken;
     using GeneralCharsBase::newSimpleToken;
-    using CharsSharedBase::peekCodeUnit;
-    using CharsSharedBase::sourceUnits;
-    using CharsSharedBase::tokenbuf;
+    using CharsBase::peekCodeUnit;
+    using CharsBase::sourceUnits;
     using GeneralCharsBase::ungetChar;
-    using CharsBase::ungetCodePointIgnoreEOL;
-    using CharsSharedBase::ungetCodeUnit;
-    using CharsBase::ungetNonAsciiNormalizedCodePoint;
+    using SpecializedCharsBase::ungetCodePointIgnoreEOL;
+    using GeneralCharsBase::ungetCodeUnit;
+    using SpecializedCharsBase::ungetNonAsciiNormalizedCodePoint;
     using GeneralCharsBase::updateLineInfoForEOL;
 
     template<typename CharU> friend class TokenStreamPosition;
@@ -1633,11 +1669,10 @@ class MOZ_STACK_CLASS TokenStreamSpecific
             end = sourceUnits.codeUnitPtrAt(anyChars.currentToken().pos.end - 1);
         }
 
-        CharBuffer charbuf(anyChars.cx);
-        if (!fillWithTemplateStringContents(charbuf, cur, end))
+        if (!fillCharBufferWithTemplateStringContents(cur, end))
             return nullptr;
 
-        return atomizeChars(anyChars.cx, charbuf.begin(), charbuf.length());
+        return atomizeChars(anyChars.cx, charBuffer.begin(), charBuffer.length());
     }
 
   private:
@@ -1665,7 +1700,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         }
     }
 
-    MOZ_MUST_USE bool putIdentInTokenbuf(const CharT* identStart);
+    MOZ_MUST_USE bool putIdentInCharBuffer(const CharT* identStart);
 
     
 
