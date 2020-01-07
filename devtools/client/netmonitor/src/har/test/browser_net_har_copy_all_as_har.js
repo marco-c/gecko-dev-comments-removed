@@ -10,30 +10,12 @@ add_task(async function() {
   
   
   
-  Services.prefs.setBoolPref("network.tcp.tcp_fastopen_enable", false);
+  await pushPref("network.tcp.tcp_fastopen_enable", false);
   let { tab, monitor } = await initNetMonitor(SIMPLE_URL);
 
   info("Starting test... ");
 
-  let { connector, store, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
-  let RequestListContextMenu = windowRequire(
-    "devtools/client/netmonitor/src/widgets/RequestListContextMenu");
-  let { getSortedRequests } = windowRequire(
-    "devtools/client/netmonitor/src/selectors/index");
-
-  store.dispatch(Actions.batchEnable(false));
-
-  let wait = waitForNetworkEvents(monitor, 1);
-  tab.linkedBrowser.reload();
-  await wait;
-
-  let contextMenu = new RequestListContextMenu({ connector });
-
-  await contextMenu.copyAllAsHar(getSortedRequests(store.getState()));
-
-  let jsonString = SpecialPowers.getClipboardData("text/unicode");
-  let har = JSON.parse(jsonString);
+  let har = await reloadAndCopyAllAsHar(tab, monitor);
 
   
   isnot(har.log, null, "The HAR log must exist");
@@ -60,5 +42,44 @@ add_task(async function() {
     "Check response body");
   isnot(entry.timings, undefined, "Check timings");
 
+  
+  await pushPref("devtools.netmonitor.responseBodyLimit", 10);
+  har = await reloadAndCopyAllAsHar(tab, monitor);
+  entry = har.log.entries[0];
+  is(entry.response.content.text.length, 10, 
+    "Response body must be truncated");
+
+  
+  await pushPref("devtools.netmonitor.responseBodyLimit", 0);
+  har = await reloadAndCopyAllAsHar(tab, monitor);
+  entry = har.log.entries[0];
+  is(entry.response.content.text.length, 465, 
+    "Response body must not be truncated");
+
   return teardown(monitor);
 });
+
+
+
+
+async function reloadAndCopyAllAsHar(tab, monitor) {
+  let { connector, store, windowRequire } = monitor.panelWin;
+  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  let RequestListContextMenu = windowRequire(
+    "devtools/client/netmonitor/src/widgets/RequestListContextMenu");
+  let { getSortedRequests } = windowRequire(
+    "devtools/client/netmonitor/src/selectors/index");
+
+  store.dispatch(Actions.batchEnable(false));
+
+  let wait = waitForNetworkEvents(monitor, 1);
+  tab.linkedBrowser.reload();
+  await wait;
+
+  let contextMenu = new RequestListContextMenu({ connector });
+
+  await contextMenu.copyAllAsHar(getSortedRequests(store.getState()));
+
+  let jsonString = SpecialPowers.getClipboardData("text/unicode");
+  return JSON.parse(jsonString);
+}
