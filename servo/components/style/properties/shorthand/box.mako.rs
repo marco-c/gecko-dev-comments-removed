@@ -18,20 +18,20 @@
                 try_match_ident_ignore_ascii_case! { input,
                     "-moz-scrollbars-horizontal" => {
                         Ok(expanded! {
-                            overflow_x: SpecifiedValue::scroll,
-                            overflow_y: SpecifiedValue::hidden,
+                            overflow_x: SpecifiedValue::Scroll,
+                            overflow_y: SpecifiedValue::Hidden,
                         })
                     }
                     "-moz-scrollbars-vertical" => {
                         Ok(expanded! {
-                            overflow_x: SpecifiedValue::hidden,
-                            overflow_y: SpecifiedValue::scroll,
+                            overflow_x: SpecifiedValue::Hidden,
+                            overflow_y: SpecifiedValue::Scroll,
                         })
                     }
                     "-moz-scrollbars-none" => {
                         Ok(expanded! {
-                            overflow_x: SpecifiedValue::hidden,
-                            overflow_y: SpecifiedValue::hidden,
+                            overflow_x: SpecifiedValue::Hidden,
+                            overflow_y: SpecifiedValue::Hidden,
                         })
                     }
                 }
@@ -58,19 +58,49 @@
     }
 </%helpers:shorthand>
 
-macro_rules! try_parse_one {
-    ($input: expr, $var: ident, $prop_module: ident) => {
-        if $var.is_none() {
-            if let Ok(value) = $input.try($prop_module::SingleSpecifiedValue::parse) {
-                $var = Some(value);
-                continue;
+<%helpers:shorthand
+    name="overflow-clip-box"
+    sub_properties="overflow-clip-box-block overflow-clip-box-inline"
+    enabled_in="ua"
+    gecko_pref="layout.css.overflow-clip-box.enabled"
+    spec="Internal, may be standardized in the future "
+         "(https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-clip-box)"
+    products="gecko"
+>
+    use values::specified::OverflowClipBox;
+    pub fn parse_value<'i, 't>(
+        _: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Longhands, ParseError<'i>> {
+        let block_value = OverflowClipBox::parse(input)?;
+        let inline_value =
+            input.try(|input| OverflowClipBox::parse(input)).unwrap_or(block_value);
+
+        Ok(expanded! {
+          overflow_clip_box_block: block_value,
+          overflow_clip_box_inline: inline_value,
+        })
+    }
+
+    impl<'a> ToCss for LonghandsToSerialize<'a>  {
+        fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+            self.overflow_clip_box_block.to_css(dest)?;
+
+            if self.overflow_clip_box_block != self.overflow_clip_box_inline {
+                dest.write_str(" ")?;
+                self.overflow_clip_box_inline.to_css(dest)?;
             }
+
+            Ok(())
         }
-    };
+    }
+</%helpers:shorthand>
+
+macro_rules! try_parse_one {
     ($context: expr, $input: expr, $var: ident, $prop_module: ident) => {
         if $var.is_none() {
             if let Ok(value) = $input.try(|i| {
-                $prop_module::SingleSpecifiedValue::parse($context, i)
+                $prop_module::single_value::parse($context, i)
             }) {
                 $var = Some(value);
                 continue;
@@ -84,7 +114,6 @@ macro_rules! try_parse_one {
                                     transition-timing-function
                                     transition-delay"
                     spec="https://drafts.csswg.org/css-transitions/#propdef-transition">
-    use parser::Parse;
     % for prop in "delay duration property timing_function".split():
     use properties::longhands::transition_${prop};
     % endfor
@@ -227,7 +256,6 @@ macro_rules! try_parse_one {
         props = "name duration timing_function delay iteration_count \
                  direction fill_mode play_state".split()
     %>
-    use parser::Parse;
     % for prop in props:
     use properties::longhands::animation_${prop};
     % endfor
@@ -258,9 +286,9 @@ macro_rules! try_parse_one {
                 try_parse_one!(context, input, timing_function, animation_timing_function);
                 try_parse_one!(context, input, delay, animation_delay);
                 try_parse_one!(context, input, iteration_count, animation_iteration_count);
-                try_parse_one!(input, direction, animation_direction);
-                try_parse_one!(input, fill_mode, animation_fill_mode);
-                try_parse_one!(input, play_state, animation_play_state);
+                try_parse_one!(context, input, direction, animation_direction);
+                try_parse_one!(context, input, fill_mode, animation_fill_mode);
+                try_parse_one!(context, input, play_state, animation_play_state);
                 try_parse_one!(context, input, name, animation_name);
 
                 parsed -= 1;
