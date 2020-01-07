@@ -899,14 +899,12 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, BuildbotMixin,
         
         config = self.config
         platform = config["platform"]
-        hashType = config['hashType']
         appName = config['appName']
         branch = config['branch']
         
         self.set_buildbot_property("branch", branch)
         self.set_buildbot_property("appName", appName)
         
-        self.set_buildbot_property("hashType", hashType)
         self.set_buildbot_property("platform", platform)
         
         self.set_buildbot_property("buildid", self._query_buildid())
