@@ -470,10 +470,12 @@ nsMIMEHeaderParamImpl::DoParameterInternal(const char *aHeaderValue,
     if (!*str) {
       break;
     }
-    if (*str++ != '=') {
+    if (*str != '=') {
       
       goto increment_str;
     }
+    
+    str++;
     while (nsCRT::IsAsciiSpace(*str)) ++str;
 
     if (*str != '"') {

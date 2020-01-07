@@ -432,6 +432,14 @@ var tests = [
   
   ['attachment; filename="\\b\\a\\', 
    "attachment", "ba\\"], 
+
+  
+  ['attachment; ; filename=foo',
+   "attachment", "foo"],
+
+  
+  ['attachment; badparameter; filename=foo',
+   "attachment", "foo"],
 ];
 
 var rfc5987paramtests = [
