@@ -61,8 +61,8 @@ impl DOMMatrix {
     
     pub fn FromFloat32Array(
         global: &GlobalScope,
-        mut array: CustomAutoRooterGuard<Float32Array>)
-        -> Fallible<DomRoot<DOMMatrix>> {
+        array: CustomAutoRooterGuard<Float32Array>,
+    ) -> Fallible<DomRoot<DOMMatrix>> {
         let vec: Vec<f64> = array.to_vec().iter().map(|&x| x as f64).collect();
         DOMMatrix::Constructor_(global, vec)
     }
@@ -70,11 +70,11 @@ impl DOMMatrix {
     
     pub fn FromFloat64Array(
         global: &GlobalScope,
-        mut array: CustomAutoRooterGuard<Float64Array>)
-        -> Fallible<DomRoot<DOMMatrix>> {
-            let vec: Vec<f64> = array.to_vec();
-            DOMMatrix::Constructor_(global, vec)
-        }
+        array: CustomAutoRooterGuard<Float64Array>,
+    ) -> Fallible<DomRoot<DOMMatrix>> {
+        let vec: Vec<f64> = array.to_vec();
+        DOMMatrix::Constructor_(global, vec)
+    }
 }
 
 impl DOMMatrixMethods for DOMMatrix {
