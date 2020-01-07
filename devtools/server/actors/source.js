@@ -212,6 +212,13 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     return this.threadActor.prettyPrintWorker;
   },
 
+  get isCacheEnabled() {
+    if (this.threadActor._parent._getCacheDisabled) {
+      return !this.threadActor._parent._getCacheDisabled();
+    }
+    return true;
+  },
+
   form: function () {
     let source = this.source || this.generatedSource;
     
@@ -376,7 +383,10 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
       
       
       
-      let loadFromCache = this.isInlineSource;
+      
+      
+      
+      let loadFromCache = this.isInlineSource && this.isCacheEnabled;
 
       
       let win = this.threadActor._parent.window;
