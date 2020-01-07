@@ -3803,6 +3803,25 @@ nsWindow::Create(nsIWidget* aParent,
               cairo_region_destroy(region);
             }
         }
+
+#ifdef MOZ_X11
+        
+        
+        
+        
+        
+        if (mIsX11Display) {
+            gulong value = 2; 
+            GdkAtom cardinal_atom = gdk_x11_xatom_to_atom(XA_CARDINAL);
+            gdk_property_change(gtk_widget_get_window(mShell),
+                                gdk_atom_intern("_NET_WM_BYPASS_COMPOSITOR", FALSE),
+                                cardinal_atom,
+                                32, 
+                                GDK_PROP_MODE_REPLACE,
+                                (guchar*)&value,
+                                1);
+        }
+#endif
     }
         break;
 
