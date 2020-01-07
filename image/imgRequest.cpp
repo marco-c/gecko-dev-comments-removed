@@ -39,6 +39,7 @@
 #include "imgIRequest.h"
 
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Telemetry.h"
 
 using namespace mozilla;
 using namespace mozilla::image;
@@ -940,6 +941,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest,
 struct mimetype_closure
 {
   nsACString* newType;
+  uint32_t segmentSize;
 };
 
 
@@ -986,11 +988,49 @@ PrepareForNewPart(nsIRequest* aRequest, nsIInputStream* aInStr, uint32_t aCount,
   if (aInStr) {
     mimetype_closure closure;
     closure.newType = &result.mContentType;
+    closure.segmentSize = 0;
 
     
     
     uint32_t out;
     aInStr->ReadSegments(sniff_mimetype_callback, &closure, aCount, &out);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool webp = result.mContentType.EqualsLiteral(IMAGE_WEBP);
+    bool webpProbe = false;
+    if (webp) {
+      
+      
+      const uint32_t kMaxProbeSize = 100;
+      if (closure.segmentSize < kMaxProbeSize &&
+          NS_FAILED(aURI->SchemeIs("data", &webpProbe))) {
+        webpProbe = false;
+      }
+
+      if (webpProbe) {
+        Telemetry::ScalarSet(Telemetry::ScalarID::IMAGES_WEBP_PROBE_OBSERVED,
+                             true);
+      } else {
+        Telemetry::ScalarSet(Telemetry::ScalarID::IMAGES_WEBP_CONTENT_OBSERVED,
+                             true);
+      }
+    }
+
+    if (!webpProbe) {
+      Telemetry::ScalarAdd(Telemetry::ScalarID::IMAGES_WEBP_CONTENT_FREQUENCY,
+                           webp ? NS_LITERAL_STRING("webp") :
+                                  NS_LITERAL_STRING("other"), 1);
+    }
   }
 
   nsCOMPtr<nsIChannel> chan(do_QueryInterface(aRequest));
@@ -1241,6 +1281,7 @@ sniff_mimetype_callback(nsIInputStream* in,
 
   NS_ASSERTION(closure, "closure is null!");
 
+  closure->segmentSize = count;
   if (count > 0) {
     imgLoader::GetMimeTypeFromContent(fromRawSegment, count, *closure->newType);
   }
