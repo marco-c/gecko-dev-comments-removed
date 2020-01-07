@@ -113,19 +113,6 @@ struct ParamTraits<mozilla::layers::CompositableHandle>
   }
 };
 
-template<>
-struct ParamTraits<mozilla::layers::ReadLockHandle>
-{
-  typedef mozilla::layers::ReadLockHandle paramType;
-
-  static void Write(Message* msg, const paramType& param) {
-    WriteParam(msg, param.mHandle);
-  }
-  static bool Read(const Message* msg, PickleIterator* iter, paramType* result) {
-    return ReadParam(msg, iter, &result->mHandle);
-  }
-};
-
 
 
 template <typename ParamType>
