@@ -220,6 +220,12 @@ HTMLSlotElement::EnqueueSlotChangeEvent()
     return;
   }
 
+  
+  
+  if (gXPCOMThreadsShutDown) {
+    return;
+  }
+
   DocGroup* docGroup = OwnerDoc()->GetDocGroup();
   if (!docGroup) {
     return;
