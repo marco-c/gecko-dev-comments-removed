@@ -39,10 +39,6 @@ class Benchmark(object):
         else:
             self.bench_dir = os.path.join(self.bench_dir, 'tests', 'webkit', 'PerformanceTests')
 
-        LOG.info("bench_dir to be used for benchmark source: %s" % self.bench_dir)
-        if not os.path.exists(self.bench_dir):
-            os.makedirs(self.bench_dir)
-
         
         if self.config.get('run_local', False):
             self.get_webkit_source()
@@ -56,21 +52,19 @@ class Benchmark(object):
     def get_webkit_source(self):
         
         
-        if 'speedometer' in self.test['name']:
-            
-            dest = os.path.join(self.bench_dir, 'Speedometer')
-            src = os.path.join(os.environ['MOZ_DEVELOPER_REPO_DIR'], 'third_party',
-                               'webkit', 'PerformanceTests', 'Speedometer')
-        else:
-            
-            dest = self.bench_dir
-            
-            src = os.path.join(os.environ['MOZ_DEVELOPER_REPO_DIR'], 'third_party',
-                               'webkit', 'PerformanceTests')
+        
+        dest = self.bench_dir
+        
+        src = os.path.join(os.environ['MOZ_DEVELOPER_REPO_DIR'], 'third_party',
+                            'webkit', 'PerformanceTests')
 
         if os.path.exists(dest):
             LOG.info("benchmark source already exists at: %s" % dest)
             return
+        else:
+            
+            LOG.info("bench_dir to be used for benchmark source: %s" % self.bench_dir)
+            os.makedirs(os.path.dirname(self.bench_dir))
 
         LOG.info("copying webkit benchmarks from %s to %s" % (src, dest))
         try:
