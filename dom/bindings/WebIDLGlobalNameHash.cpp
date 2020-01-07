@@ -111,7 +111,7 @@ struct WebIDLNameTableEntry : public PLDHashEntryHdr
   constructors::id::ID mConstructorId;
   WebIDLGlobalNameHash::DefineGlobalName mDefine;
   
-  WebIDLGlobalNameHash::ConstructorEnabled* mEnabled;
+  WebIDLGlobalNameHash::ConstructorEnabled mEnabled;
 };
 
 static nsTHashtable<WebIDLNameTableEntry>* sWebIDLGlobalNames;
@@ -163,7 +163,7 @@ WebIDLGlobalNameHash::Shutdown()
 void
 WebIDLGlobalNameHash::Register(uint16_t aNameOffset, uint16_t aNameLength,
                                DefineGlobalName aDefine,
-                               ConstructorEnabled* aEnabled,
+                               ConstructorEnabled aEnabled,
                                constructors::id::ID aConstructorId)
 {
   const char* name = sNames + aNameOffset;
@@ -211,7 +211,7 @@ WebIDLGlobalNameHash::DefineIfEnabled(JSContext* aCx,
 
   *aFound = true;
 
-  ConstructorEnabled* checkEnabledForScope = entry->mEnabled;
+  ConstructorEnabled checkEnabledForScope = entry->mEnabled;
   
   
   
