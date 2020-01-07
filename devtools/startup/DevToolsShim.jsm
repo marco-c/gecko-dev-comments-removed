@@ -170,6 +170,7 @@ this.DevToolsShim = {
 
 
 
+
   inspectNode: function(tab, selectors) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {

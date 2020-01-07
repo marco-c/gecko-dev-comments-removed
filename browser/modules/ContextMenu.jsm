@@ -472,10 +472,15 @@ class ContextMenu {
 
 
 
+
+
+
+
+
   _getNodeSelectors(aNode) {
     let selectors = [];
     while (aNode) {
-      selectors.push(findCssSelector(aNode));
+      selectors.unshift(findCssSelector(aNode));
       aNode = aNode.ownerGlobal.frameElement;
     }
 

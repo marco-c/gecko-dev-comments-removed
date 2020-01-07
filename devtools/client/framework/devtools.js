@@ -618,6 +618,7 @@ DevTools.prototype = {
 
 
 
+
   async inspectNode(tab, nodeSelectors, startTime) {
     let target = TargetFactory.forTab(tab);
 
@@ -630,7 +631,7 @@ DevTools.prototype = {
 
     
     async function querySelectors(nodeFront) {
-      let selector = nodeSelectors.pop();
+      let selector = nodeSelectors.shift();
       if (!selector) {
         return nodeFront;
       }
