@@ -38,6 +38,21 @@ async function zoomNewTab(changeZoom, message) {
   const level = tab.linkedBrowser.fullZoom;
   BrowserTestUtils.removeTab(tab);
 
+  
+  
+  let cps2 = Cc["@mozilla.org/content-pref/service;1"].
+      getService(Ci.nsIContentPrefService2);
+  await BrowserTestUtils.waitForCondition(() => {
+    return new Promise(resolve => {
+      cps2.getByDomainAndName("about:newtab", "browser.content.full-zoom", null, {
+        handleResult(pref) {
+          resolve(level == pref.value);
+        },
+        handleCompletion() {},
+      });
+    });
+  });
+
   await checkPreloadedZoom(level, `${message}: ${level}`);
 }
 
