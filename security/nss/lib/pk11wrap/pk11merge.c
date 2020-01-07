@@ -88,6 +88,7 @@ pk11_copyAttributes(PLArenaPool *arena,
     }
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
+        PORT_Free(newTemplate);
         return SECFailure;
     }
     if (targetID == CK_INVALID_HANDLE) {
@@ -100,7 +101,7 @@ pk11_copyAttributes(PLArenaPool *arena,
                                 copyTemplate, copyTemplateCount);
     }
     if (newTemplate) {
-        free(newTemplate);
+        PORT_Free(newTemplate);
     }
     return rv;
 }

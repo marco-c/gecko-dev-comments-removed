@@ -243,32 +243,10 @@ ssl_AlpnTagAllowed(const sslSocket *ss, const SECItem *tag)
 }
 
 
-SECStatus
-ssl3_ServerHandleNextProtoNegoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
-                                  SECItem *data)
-{
-    PORT_Assert(ss->version < SSL_LIBRARY_VERSION_TLS_1_3);
-
-    if (ss->firstHsDone || data->len != 0) {
-        
-        PORT_SetError(SSL_ERROR_NEXT_PROTOCOL_DATA_INVALID);
-        return SECFailure;
-    }
-
-    xtnData->negotiated[xtnData->numNegotiated++] = ssl_next_proto_nego_xtn;
-
-    
-
-
-
-    return SECSuccess;
-}
-
-
 
 
 SECStatus
-ssl3_ValidateNextProtoNego(const unsigned char *data, unsigned int length)
+ssl3_ValidateAppProtocol(const unsigned char *data, unsigned int length)
 {
     unsigned int offset = 0;
 
@@ -295,7 +273,7 @@ ssl3_SelectAppProtocol(const sslSocket *ss, TLSExtensionData *xtnData,
     unsigned char resultBuffer[255];
     SECItem result = { siBuffer, resultBuffer, 0 };
 
-    rv = ssl3_ValidateNextProtoNego(data->data, data->len);
+    rv = ssl3_ValidateAppProtocol(data->data, data->len);
     if (rv != SECSuccess) {
         ssl3_ExtSendAlert(ss, alert_fatal, decode_error);
         PORT_SetError(SSL_ERROR_NEXT_PROTOCOL_DATA_INVALID);
@@ -308,6 +286,8 @@ ssl3_SelectAppProtocol(const sslSocket *ss, TLSExtensionData *xtnData,
     PORT_Assert((ss->ssl3.hs.preliminaryInfo &
                  ssl_preinfo_all & ~ssl_preinfo_cipher_suite) ==
                 (ssl_preinfo_all & ~ssl_preinfo_cipher_suite));
+    
+
     rv = ss->nextProtoCallback(ss->nextProtoArg, ss->fd, data->data, data->len,
                                result.data, &result.len, sizeof(resultBuffer));
     if (rv != SECSuccess) {
@@ -320,21 +300,20 @@ ssl3_SelectAppProtocol(const sslSocket *ss, TLSExtensionData *xtnData,
 
     if (result.len > sizeof(resultBuffer)) {
         PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-        
+        PORT_Assert(PR_FALSE);
         return SECFailure;
     }
 
     SECITEM_FreeItem(&xtnData->nextProto, PR_FALSE);
 
-    if (extension == ssl_app_layer_protocol_xtn &&
-        xtnData->nextProtoState != SSL_NEXT_PROTO_NEGOTIATED) {
+    if (result.len < 1 || !result.data) {
         
-
         ssl3_ExtSendAlert(ss, alert_fatal, no_application_protocol);
         PORT_SetError(SSL_ERROR_NEXT_PROTOCOL_NO_PROTOCOL);
         return SECFailure;
     }
 
+    xtnData->nextProtoState = SSL_NEXT_PROTO_NEGOTIATED;
     xtnData->negotiated[xtnData->numNegotiated++] = extension;
     return SECITEM_CopyItem(NULL, &xtnData->nextProto, &result);
 }
@@ -386,39 +365,6 @@ ssl3_ServerHandleAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         }
     }
     return SECSuccess;
-}
-
-SECStatus
-ssl3_ClientHandleNextProtoNegoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
-                                  SECItem *data)
-{
-    PORT_Assert(ss->version < SSL_LIBRARY_VERSION_TLS_1_3);
-    PORT_Assert(!ss->firstHsDone);
-
-    if (ssl3_ExtensionNegotiated(ss, ssl_app_layer_protocol_xtn)) {
-        
-
-
-
-
-
-        ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
-        PORT_SetError(SSL_ERROR_BAD_SERVER);
-        return SECFailure;
-    }
-
-    
-
-
-
-    if (!ss->nextProtoCallback) {
-        PORT_Assert(0);
-        ssl3_ExtSendAlert(ss, alert_fatal, internal_error);
-        PORT_SetError(SSL_ERROR_NEXT_PROTOCOL_NO_CALLBACK);
-        return SECFailure;
-    }
-
-    return ssl3_SelectAppProtocol(ss, xtnData, ssl_next_proto_nego_xtn, data);
 }
 
 SECStatus
@@ -475,19 +421,6 @@ ssl3_ClientHandleAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 }
 
 SECStatus
-ssl3_ClientSendNextProtoNegoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
-                                sslBuffer *buf, PRBool *added)
-{
-    
-    if (!ss->opt.enableNPN || !ss->nextProtoCallback || ss->firstHsDone) {
-        return SECSuccess;
-    }
-
-    *added = PR_TRUE;
-    return SECSuccess;
-}
-
-SECStatus
 ssl3_ClientSendAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                            sslBuffer *buf, PRBool *added)
 {
@@ -499,35 +432,15 @@ ssl3_ClientSendAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         return SECSuccess;
     }
 
-    
-
-
-
     if (len > 0) {
         
-        unsigned int i;
-
         rv = sslBuffer_AppendNumber(buf, len, 2);
         if (rv != SECSuccess) {
             return SECFailure;
         }
-
-        i = ss->opt.nextProtoNego.data[0] + 1;
-        if (i <= len) {
-            rv = sslBuffer_Append(buf, &ss->opt.nextProtoNego.data[i], len - i);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            rv = sslBuffer_Append(buf, ss->opt.nextProtoNego.data, i);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-        } else {
-            
-            rv = sslBuffer_Append(buf, ss->opt.nextProtoNego.data, len);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
+        rv = sslBuffer_Append(buf, ss->opt.nextProtoNego.data, len);
+        if (rv != SECSuccess) {
+            return SECFailure;
         }
     }
 

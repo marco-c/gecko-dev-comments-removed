@@ -7336,10 +7336,6 @@ ssl3_SendClientSecondRound(sslSocket *ss)
 
 
 
-
-
-
-
     if (ss->ssl3.hs.restartTarget) {
         PR_NOT_REACHED("unexpected ss->ssl3.hs.restartTarget");
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
@@ -7398,14 +7394,6 @@ ssl3_SendClientSecondRound(sslSocket *ss)
     ss->enoughFirstHsDone = PR_TRUE;
 
     if (!ss->firstHsDone) {
-        
-
-
-        rv = ssl3_SendNextProto(ss);
-        if (rv != SECSuccess) {
-            goto loser; 
-        }
-
         if (ss->opt.enableFalseStart) {
             if (!ss->ssl3.hs.authCertificatePending) {
                 

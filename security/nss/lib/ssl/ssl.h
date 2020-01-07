@@ -160,11 +160,6 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 
 
-
-
-
-
-
 #define SSL_ENABLE_NPN 25
 
 
@@ -307,9 +302,6 @@ typedef SECStatus(PR_CALLBACK *SSLNextProtoCallback)(
 SSL_IMPORT SECStatus SSL_SetNextProtoCallback(PRFileDesc *fd,
                                               SSLNextProtoCallback callback,
                                               void *arg);
-
-
-
 
 
 

@@ -51,7 +51,7 @@ function parseOptions(opts) {
   }
 
   
-  let allTools = ["clang-format", "scan-build", "hacl", "saw", "abi"];
+  let allTools = ["clang-format", "scan-build", "hacl", "saw", "abi", "coverage"];
   let tools = intersect(opts.tools.split(/\s*,\s*/), allTools);
 
   
