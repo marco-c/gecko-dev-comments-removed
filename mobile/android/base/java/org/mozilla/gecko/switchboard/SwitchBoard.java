@@ -142,34 +142,25 @@ public class SwitchBoard {
         }
 
         try {
-            
             final JSONArray experiments = new JSONObject(config).getJSONArray(KEY_DATA);
-            JSONObject experiment = null;
 
+            
             for (int i = 0; i < experiments.length(); i++) {
                 JSONObject entry = experiments.getJSONObject(i);
                 final String name = entry.getString(KEY_NAME);
-                if (name.equals(experimentName)) {
-                    experiment = entry;
-                    break;
+                final boolean isTarget = name.equals(experimentName);
+                if (isTarget) {
+                    final boolean isMatch = isMatch(c, entry.optJSONObject(KEY_MATCH));
+                    final JSONObject buckets = entry.getJSONObject(KEY_BUCKETS);
+                    final boolean isInBucket = isInBucket(c, buckets.getInt(KEY_MIN), buckets.getInt(KEY_MAX));
+                    if (isMatch && isInBucket) {
+                        return true;
+                    }
                 }
             }
 
-            if (experiment == null) {
-                return false;
-            }
+            return false;
 
-            if (!isMatch(c, experiment.optJSONObject(KEY_MATCH))) {
-                return false;
-            }
-
-            final JSONObject buckets = experiment.getJSONObject(KEY_BUCKETS);
-            final boolean inExperiment = isInBucket(c, buckets.getInt(KEY_MIN), buckets.getInt(KEY_MAX));
-
-            if (DEBUG) {
-                Log.d(TAG, experimentName + " = " + inExperiment);
-            }
-            return inExperiment;
         } catch (JSONException e) {
             
             
