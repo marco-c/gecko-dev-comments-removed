@@ -993,6 +993,12 @@ protected:
                                   int32_t aRow, int32_t aCol,
                                   int32_t aDirection, bool aSelected);
 
+  
+
+
+
+  already_AddRefed<dom::Element> GetSelectedElement(const nsAString& aTagName);
+
 protected:
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
