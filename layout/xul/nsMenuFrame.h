@@ -99,10 +99,6 @@ public:
                     nsContainerFrame* aParent,
                     nsIFrame*         aPrevInFlow) override;
 
-#ifdef DEBUG_LAYOUT
-  virtual nsresult SetXULDebug(nsBoxLayoutState& aState, bool aDebug) override;
-#endif
-
   
   
   
@@ -274,9 +270,6 @@ protected:
   void PassMenuCommandEventToPopupManager();
 
 protected:
-#ifdef DEBUG_LAYOUT
-  nsresult SetXULDebug(nsBoxLayoutState& aState, nsIFrame* aList, bool aDebug);
-#endif
   nsresult Notify(nsITimer* aTimer);
 
   bool mIsMenu; 

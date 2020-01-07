@@ -769,43 +769,6 @@ nsMenuFrame::DoXULLayout(nsBoxLayoutState& aState)
   return rv;
 }
 
-#ifdef DEBUG_LAYOUT
-nsresult
-nsMenuFrame::SetXULDebug(nsBoxLayoutState& aState, bool aDebug)
-{
-  
-  bool debugSet = mState & NS_STATE_CURRENTLY_IN_DEBUG;
-  bool debugChanged = (!aDebug && debugSet) || (aDebug && !debugSet);
-
-  
-  if (debugChanged)
-  {
-      nsBoxFrame::SetXULDebug(aState, aDebug);
-      nsMenuPopupFrame* popupFrame = GetPopup();
-      if (popupFrame)
-        SetXULDebug(aState, popupFrame, aDebug);
-  }
-
-  return NS_OK;
-}
-
-nsresult
-nsMenuFrame::SetXULDebug(nsBoxLayoutState& aState, nsIFrame* aList, bool aDebug)
-{
-      if (!aList)
-          return NS_OK;
-
-      while (aList) {
-        if (aList->IsXULBoxFrame())
-          aList->SetXULDebug(aState, aDebug);
-
-        aList = aList->GetNextSibling();
-      }
-
-      return NS_OK;
-}
-#endif
-
 
 
 
@@ -1334,11 +1297,6 @@ nsMenuFrame::InsertFrames(ChildListID     aListID,
   if (!HasPopup() && (aListID == kPrincipalList || aListID == kPopupList)) {
     SetPopupFrame(aFrameList);
     if (HasPopup()) {
-#ifdef DEBUG_LAYOUT
-      nsBoxLayoutState state(PresContext());
-      SetXULDebug(state, aFrameList, mState & NS_STATE_CURRENTLY_IN_DEBUG);
-#endif
-
       PresShell()->
         FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                          NS_FRAME_HAS_DIRTY_CHILDREN);
@@ -1362,11 +1320,6 @@ nsMenuFrame::AppendFrames(ChildListID     aListID,
   if (!HasPopup() && (aListID == kPrincipalList || aListID == kPopupList)) {
     SetPopupFrame(aFrameList);
     if (HasPopup()) {
-
-#ifdef DEBUG_LAYOUT
-      nsBoxLayoutState state(PresContext());
-      SetXULDebug(state, aFrameList, mState & NS_STATE_CURRENTLY_IN_DEBUG);
-#endif
       PresShell()->
         FrameNeedsReflow(this, nsIPresShell::eTreeChange,
                          NS_FRAME_HAS_DIRTY_CHILDREN);
