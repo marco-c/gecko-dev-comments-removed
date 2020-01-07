@@ -287,6 +287,12 @@ public:
   already_AddRefed<Element>
   GetElementOrParentByTagName(const nsAString& aTagName, nsINode* aNode);
 
+  
+
+
+
+  Element* GetActiveEditingHost();
+
 protected: 
   
 
