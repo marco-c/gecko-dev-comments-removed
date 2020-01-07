@@ -15,6 +15,7 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/webrender/RendererOGL.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/widget/CompositorWidget.h"
@@ -413,7 +414,7 @@ RenderThread::SetDestroyed(wr::WindowId aWindowId)
 }
 
 void
-RenderThread::IncPendingFrameCount(wr::WindowId aWindowId)
+RenderThread::IncPendingFrameCount(wr::WindowId aWindowId, const TimeStamp& aStartTime)
 {
   MutexAutoLock lock(mFrameCountMapLock);
   auto it = mWindowInfos.find(AsUint64(aWindowId));
@@ -422,6 +423,7 @@ RenderThread::IncPendingFrameCount(wr::WindowId aWindowId)
     return;
   }
   it->second->mPendingCount++;
+  it->second->mStartTimes.push(aStartTime);
 }
 
 void
@@ -439,6 +441,14 @@ RenderThread::DecPendingFrameCount(wr::WindowId aWindowId)
     return;
   }
   info->mPendingCount--;
+  
+  
+  
+  
+  
+  mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME,
+                                          info->mStartTimes.front());
+  info->mStartTimes.pop();
 }
 
 void
@@ -470,6 +480,12 @@ RenderThread::FrameRenderingComplete(wr::WindowId aWindowId)
   }
   info->mPendingCount--;
   info->mRenderingCount--;
+  
+  
+  
+  mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME,
+                                          info->mStartTimes.front());
+  info->mStartTimes.pop();
 }
 
 void
