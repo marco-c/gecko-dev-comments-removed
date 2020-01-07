@@ -1178,7 +1178,9 @@ internal_JSHistogram_CoerceValue(JSContext* aCx, JS::Handle<JS::Value> aElement,
     
     
     aValue = UINT32_MAX;
+#ifdef DEBUG
     LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Clamped large numeric value"));
+#endif
   } else if (!JS::ToUint32(aCx, aElement, &aValue)) {
     LogToBrowserConsole(nsIScriptError::errorFlag, NS_LITERAL_STRING("Failed to convert element to UInt32"));
     return false;
