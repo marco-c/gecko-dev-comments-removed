@@ -42,6 +42,9 @@ var PaymentDialogUtils = {
         {fieldId: "address-level1"},
         {fieldId: "postal-code"},
       ],
+      
+      
+      "postalCodePattern": country == "US" ? "(\\d{5})(?:[ \\-](\\d{4}))?" : "[ABCEGHJKLMNPRSTVXY]\\d[ABCEGHJ-NPRSTV-Z] ?\\d[ABCEGHJ-NPRSTV-Z]\\d",
     };
   },
 };
