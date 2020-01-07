@@ -328,7 +328,7 @@ MARKUPMAP(
   table,
   [](Element* aElement, Accessible* aContext) -> Accessible* {
      if (aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableType) {
-       return new ARIAGridAccessible(aElement, aContext->Document());
+       return new ARIAGridAccessibleWrap(aElement, aContext->Document());
      }
      return nullptr;
   },
@@ -350,7 +350,7 @@ MARKUPMAP(
        
        
        if (!aContext->IsHTMLTableRow()) {
-         return new ARIAGridCellAccessible(aElement, aContext->Document());
+         return new ARIAGridCellAccessibleWrap(aElement, aContext->Document());
        }
        if (aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::scope)) {
          return new HTMLTableHeaderCellAccessibleWrap(aElement, aContext->Document());
@@ -366,7 +366,7 @@ MARKUPMAP(
   [](Element* aElement, Accessible* aContext) -> Accessible* {
      if (aContext->IsTableRow() && aContext->GetContent() == aElement->GetParent()) {
        if (!aContext->IsHTMLTableRow()) {
-         return new ARIAGridCellAccessible(aElement, aContext->Document());
+         return new ARIAGridCellAccessibleWrap(aElement, aContext->Document());
        }
        return new HTMLTableHeaderCellAccessibleWrap(aElement, aContext->Document());
      }
