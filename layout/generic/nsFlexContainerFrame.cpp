@@ -1765,8 +1765,7 @@ nsFlexContainerFrame::
     childRIForMeasuringBSize(aPresContext, aParentReflowInput,
                              aFlexItem.Frame(), availSize,
                              nullptr, ReflowInput::CALLER_WILL_INIT);
-  
-  childRIForMeasuringBSize.mFlags.mIsFlexContainerMeasuringHeight = true;
+  childRIForMeasuringBSize.mFlags.mIsFlexContainerMeasuringBSize = true;
   childRIForMeasuringBSize.Init(aPresContext);
 
   if (aFlexItem.IsStretched()) {

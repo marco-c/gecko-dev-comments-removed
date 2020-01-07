@@ -205,9 +205,9 @@ public:
     bool mHeightDependsOnAncestorCell : 1;     
                                                
     bool mIsColumnBalancing : 1;     
-    bool mIsFlexContainerMeasuringHeight : 1;   
-                                                
-                                                
+    bool mIsFlexContainerMeasuringBSize : 1;   
+                                               
+                                               
     bool mDummyParentReflowInput : 1;   
                                         
                                         
