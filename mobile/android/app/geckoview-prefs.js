@@ -18,6 +18,3 @@ pref("toolkit.telemetry.eventping.enabled", false);
 
 pref("geckoview.console.enabled", false);
 
-
-pref("dom.push.enabled", false);
-
