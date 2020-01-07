@@ -434,6 +434,8 @@ struct TokenStreamFlags
     {}
 };
 
+template<typename CharT>
+class TokenStreamPosition;
 
 
 
@@ -447,6 +449,8 @@ class TokenStreamShared
                                          
 
     static constexpr unsigned ntokensMask = ntokens - 1;
+
+    template<typename CharT> friend class TokenStreamPosition;
 
   public:
     static constexpr unsigned maxLookahead = 2;
@@ -496,6 +500,40 @@ static_assert(mozilla::IsEmpty<TokenStreamShared>::value,
 template<typename CharT, class AnyCharsAccess>
 class TokenStreamSpecific;
 
+template<typename CharT>
+class MOZ_STACK_CLASS TokenStreamPosition final
+{
+  public:
+    
+    
+    
+    
+    
+    
+    
+    template<class AnyCharsAccess>
+    inline TokenStreamPosition(AutoKeepAtoms& keepAtoms,
+                               TokenStreamSpecific<CharT, AnyCharsAccess>& tokenStream);
+
+  private:
+    TokenStreamPosition(const TokenStreamPosition&) = delete;
+
+    
+    
+    
+    
+    template<typename Char, class AnyCharsAccess> friend class TokenStreamSpecific;
+
+    const CharT* buf;
+    TokenStreamFlags flags;
+    unsigned lineno;
+    size_t linebase;
+    size_t prevLinebase;
+    Token currentToken;
+    unsigned lookahead;
+    Token lookaheadTokens[TokenStreamShared::maxLookahead];
+} JS_HAZ_ROOTED;
+
 class TokenStreamAnyChars
   : public TokenStreamShared,
     public ErrorReporter
@@ -506,6 +544,8 @@ class TokenStreamAnyChars
 
     template<typename CharT, class AnyCharsAccess> friend class GeneralTokenStreamChars;
     template<typename CharT, class AnyCharsAccess> friend class TokenStreamSpecific;
+
+    template<typename CharT> friend class TokenStreamPosition;
 
     
     const Token& currentToken() const { return tokens[cursor]; }
@@ -950,36 +990,6 @@ class TokenStreamCharsBase
 
     MOZ_MUST_USE bool appendCodePointToTokenbuf(uint32_t codePoint);
 
-    class MOZ_STACK_CLASS Position
-    {
-      public:
-        
-        
-        
-        
-        
-        
-        
-        explicit Position(AutoKeepAtoms&) { }
-
-      private:
-        Position(const Position&) = delete;
-
-        
-        
-        
-        template<typename, class> friend class TokenStreamSpecific;
-
-        const CharT* buf;
-        TokenStreamFlags flags;
-        unsigned lineno;
-        size_t linebase;
-        size_t prevLinebase;
-        Token currentToken;
-        unsigned lookahead;
-        Token lookaheadTokens[TokenStreamShared::maxLookahead];
-    } JS_HAZ_ROOTED;
-
   protected:
     
     TokenBuf userbuf;
@@ -1135,20 +1145,19 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase = GeneralTokenStreamChars<CharT, AnyCharsAccess>;
     using CharsSharedBase = TokenStreamCharsBase<CharT>;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  public:
-    using typename CharsSharedBase::Position;
+    using Position = TokenStreamPosition<CharT>;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   public:
     using GeneralCharsBase::anyCharsAccess;
     using CharsSharedBase::getTokenbuf;
@@ -1168,6 +1177,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsSharedBase::ungetCharIgnoreEOL;
     using CharsBase::ungetCodePointIgnoreEOL;
     using CharsSharedBase::userbuf;
+
+    template<typename CharU> friend class TokenStreamPosition;
 
   public:
     TokenStreamSpecific(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -1423,7 +1434,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     MOZ_MUST_USE bool advance(size_t position);
 
-    void tell(Position*);
     void seek(const Position& pos);
     MOZ_MUST_USE bool seek(const Position& pos, const TokenStreamAnyChars& other);
 
@@ -1496,6 +1506,33 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
     MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL();
 };
+
+
+
+
+
+
+
+template<typename CharT>
+template<class AnyCharsAccess>
+inline
+TokenStreamPosition<CharT>::TokenStreamPosition(AutoKeepAtoms& keepAtoms,
+                                                TokenStreamSpecific<CharT, AnyCharsAccess>& tokenStream)
+{
+    TokenStreamAnyChars& anyChars = tokenStream.anyCharsAccess();
+
+    buf = tokenStream.userbuf.addressOfNextRawChar( true);
+    flags = anyChars.flags;
+    lineno = anyChars.lineno;
+    linebase = anyChars.linebase;
+    prevLinebase = anyChars.prevLinebase;
+    lookahead = anyChars.lookahead;
+    currentToken = anyChars.currentToken();
+    for (unsigned i = 0; i < anyChars.lookahead; i++) {
+        lookaheadTokens[i] =
+            anyChars.tokens[(anyChars.cursor + 1 + i) & TokenStreamShared::ntokensMask];
+    }
+}
 
 class TokenStreamAnyCharsAccess
 {
