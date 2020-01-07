@@ -1608,6 +1608,34 @@ js::ToNumberSlow(JSContext* cx, HandleValue v_, double* out)
 }
 
 
+bool
+js::ToNumericSlow(JSContext* cx, MutableHandleValue vp)
+{
+    MOZ_ASSERT(!vp.isNumber());
+#ifdef ENABLE_BIGINT
+    MOZ_ASSERT(!vp.isBigInt());
+#endif
+
+    
+    if (!vp.isPrimitive()) {
+        if (cx->helperThread())
+            return false;
+        if (!ToPrimitive(cx, JSTYPE_NUMBER, vp))
+            return false;
+    }
+
+    
+#ifdef ENABLE_BIGINT
+    if (vp.isBigInt()) {
+        return true;
+    }
+#endif
+
+    
+    return ToNumber(cx, vp);
+}
+
+
 
 
 
