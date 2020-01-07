@@ -124,6 +124,7 @@ void
 FlattenedChildIterator::Init(bool aIgnoreXBL)
 {
   if (aIgnoreXBL) {
+    mXBLInvolved = Some(false);
     return;
   }
 
@@ -132,7 +133,7 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
   if (mParent->IsElement()) {
     if (ShadowRoot* shadow = mParent->AsElement()->GetShadowRoot()) {
       mParent = shadow;
-      mXBLInvolved = true;
+      mXBLInvolved = Some(true);
       return;
     }
   }
@@ -143,25 +144,31 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
   if (binding) {
     MOZ_ASSERT(binding->GetAnonymousContent());
     mParent = binding->GetAnonymousContent();
-    mXBLInvolved = true;
+    mXBLInvolved = Some(true);
+  }
+}
+
+bool
+FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const
+{
+  MOZ_ASSERT(mXBLInvolved.isNothing());
+  
+  
+  
+  if (!mParent->GetBindingParent()) {
+    return false;
   }
 
-  
-  
-  
-  
-  
-  if (!mXBLInvolved && mParent->GetBindingParent()) {
-    for (nsIContent* child = mParent->GetFirstChild();
-         child;
-         child = child->GetNextSibling()) {
-      if (child->NodeInfo()->Equals(nsGkAtoms::children, kNameSpaceID_XBL)) {
-        MOZ_ASSERT(child->GetBindingParent());
-        mXBLInvolved = true;
-        break;
-      }
+  for (nsIContent* child = mParent->GetFirstChild();
+       child;
+       child = child->GetNextSibling()) {
+    if (child->NodeInfo()->Equals(nsGkAtoms::children, kNameSpaceID_XBL)) {
+      MOZ_ASSERT(child->GetBindingParent());
+      return true;
     }
   }
+
+  return false;
 }
 
 bool
