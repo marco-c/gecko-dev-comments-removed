@@ -154,11 +154,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameLoader)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  if (aIID.Equals(NS_GET_IID(nsFrameLoader))) {
-      
-      
-      foundInterface = reinterpret_cast<nsISupports*>(this);
-  } else
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(nsFrameLoader)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
