@@ -35,7 +35,6 @@ config = {
     ),
 
     
-    "mozilla_dir": "alder",
     "repos": [{
         "vcs": "hg",
         "repo": "https://hg.mozilla.org/build/tools",

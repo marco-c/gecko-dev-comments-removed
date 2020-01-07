@@ -17,7 +17,6 @@ config = {
     ),
 
     
-    "mozilla_dir": "jamun",
     "repos": [{
         "vcs": "hg",
         "repo": "https://hg.mozilla.org/build/tools",
