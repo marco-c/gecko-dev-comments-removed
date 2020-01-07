@@ -2376,6 +2376,12 @@ public:
 
 
 
+  virtual void InvalidateCachedChildInfo() {}
+
+  
+
+
+
 
 
 
@@ -5122,10 +5128,10 @@ public:
     : nsDisplayWrapList(aBuilder, aOther)
     , mOpacity(aOther.mOpacity)
     , mForEventsAndPluginsOnly(aOther.mForEventsAndPluginsOnly)
-    , mOpacityAppliedToChildren(false)
+    , mChildOpacityState(ChildOpacityState::Unknown)
   {
     
-    MOZ_ASSERT(!aOther.mOpacityAppliedToChildren);
+    MOZ_ASSERT(aOther.mChildOpacityState != ChildOpacityState::Applied);
   }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -5136,7 +5142,6 @@ public:
   {
     nsDisplayItem::RestoreState();
     mOpacity = mState.mOpacity;
-    mOpacityAppliedToChildren = false;
   }
 
   virtual nsDisplayWrapList* Clone(nsDisplayListBuilder* aBuilder) const override
@@ -5144,6 +5149,8 @@ public:
     MOZ_COUNT_CTOR(nsDisplayOpacity);
     return MakeDisplayItem<nsDisplayOpacity>(aBuilder, *this);
   }
+
+  virtual void InvalidateCachedChildInfo() override { mChildOpacityState = ChildOpacityState::Unknown; }
 
   virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                    bool* aSnap) const override;
@@ -5189,7 +5196,7 @@ public:
   
 
 
-  bool OpacityAppliedToChildren() const { return mOpacityAppliedToChildren; }
+  bool OpacityAppliedToChildren() const { return mChildOpacityState == ChildOpacityState::Applied; }
 
   static bool NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
   NS_DISPLAY_DECL_NAME("Opacity", TYPE_OPACITY)
@@ -5209,8 +5216,20 @@ private:
   bool ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder);
 
   float mOpacity;
-  bool mForEventsAndPluginsOnly;
-  bool mOpacityAppliedToChildren;
+  bool mForEventsAndPluginsOnly : 1;
+  enum class ChildOpacityState : uint8_t {
+    
+    Unknown,
+    
+    Deferred,
+    
+    Applied
+  };
+#ifndef __GNUC__
+  ChildOpacityState mChildOpacityState : 2;
+#else
+  ChildOpacityState mChildOpacityState;
+#endif
 
   struct {
     float mOpacity;
