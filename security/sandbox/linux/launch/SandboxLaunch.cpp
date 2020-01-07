@@ -32,6 +32,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
+#include "nsDebug.h"
 #include "nsIGfxInfo.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -86,6 +87,9 @@ IsDisplayLocal()
       return false;
     }
     MOZ_RELEASE_ASSERT(static_cast<size_t>(optlen) == sizeof(domain));
+    if (domain != AF_LOCAL) {
+      return false;
+    }
     
     
     
@@ -93,7 +97,20 @@ IsDisplayLocal()
     
     
     
-    return domain == AF_LOCAL;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (access("/tmp/.X11-unix", X_OK) != 0) {
+      NS_ERROR("/tmp/.X11-unix is inaccessible; can't isolate network"
+               " namespace in content processes");
+      return false;
+    }
   }
 #endif
 
