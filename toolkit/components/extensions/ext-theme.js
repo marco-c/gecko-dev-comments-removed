@@ -85,8 +85,7 @@ class Theme {
     }
 
     
-    if (this.lwtStyles.headerURL &&
-        this.lwtStyles.accentcolor &&
+    if (this.lwtStyles.accentcolor &&
         this.lwtStyles.textcolor) {
       if (this.windowId) {
         windowOverrides.set(this.windowId, this);
