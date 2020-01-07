@@ -432,7 +432,8 @@ private:
 
   
   void BeginNonIPCRedirect(nsIURI* responseURI,
-                           const nsHttpResponseHead* responseHead);
+                           const nsHttpResponseHead* responseHead,
+                           bool responseRedirected);
 
   
   void OverrideSecurityInfoForNonIPCRedirect(nsISupports* securityInfo);

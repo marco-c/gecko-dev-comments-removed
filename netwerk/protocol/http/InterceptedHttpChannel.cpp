@@ -229,8 +229,10 @@ InterceptedHttpChannel::FollowSyntheticRedirect()
 }
 
 nsresult
-InterceptedHttpChannel::RedirectForOpaqueResponse(nsIURI* aResponseURI)
+InterceptedHttpChannel::RedirectForResponseURL(nsIURI* aResponseURI,
+                                               bool aResponseRedirected)
 {
+  
   
   
   
@@ -253,7 +255,11 @@ InterceptedHttpChannel::RedirectForOpaqueResponse(nsIURI* aResponseURI)
                         static_cast<nsProxyInfo*>(mProxyInfo.get()),
                         mProxyResolveFlags, mProxyURI, mChannelId);
 
-  uint32_t flags = nsIChannelEventSink::REDIRECT_INTERNAL;
+  
+  
+  
+  uint32_t flags = aResponseRedirected ? nsIChannelEventSink::REDIRECT_TEMPORARY
+                                       : nsIChannelEventSink::REDIRECT_INTERNAL;
 
   nsCOMPtr<nsILoadInfo> redirectLoadInfo =
     CloneLoadInfoForRedirect(aResponseURI, flags);
@@ -717,7 +723,8 @@ InterceptedHttpChannel::SynthesizeHeader(const nsACString& aName,
 NS_IMETHODIMP
 InterceptedHttpChannel::StartSynthesizedResponse(nsIInputStream* aBody,
                                                  nsIInterceptedBodyCallback* aBodyCallback,
-                                                 const nsACString& aFinalURLSpec)
+                                                 const nsACString& aFinalURLSpec,
+                                                 bool aResponseRedirected)
 {
   nsresult rv = NS_OK;
 
@@ -783,7 +790,7 @@ InterceptedHttpChannel::StartSynthesizedResponse(nsIInputStream* aBody,
   bool equal = false;
   Unused << mURI->Equals(responseURI, &equal);
   if (!equal) {
-    rv = RedirectForOpaqueResponse(responseURI);
+    rv = RedirectForResponseURL(responseURI, aResponseRedirected);
     NS_ENSURE_SUCCESS(rv, rv);
 
     return NS_OK;

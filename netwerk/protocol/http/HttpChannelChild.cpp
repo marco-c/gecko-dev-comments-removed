@@ -1728,14 +1728,23 @@ HttpChannelChild::Redirect1Begin(const uint32_t& registrarId,
 
 void
 HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
-                                      const nsHttpResponseHead* responseHead)
+                                      const nsHttpResponseHead* responseHead,
+                                      bool aResponseRedirected)
 {
   LOG(("HttpChannelChild::BeginNonIPCRedirect [this=%p]\n", this));
+
+  
+  
+  
+  const uint32_t redirectFlag =
+    aResponseRedirected ? nsIChannelEventSink::REDIRECT_TEMPORARY
+                        : nsIChannelEventSink::REDIRECT_INTERNAL;
+
 
   nsCOMPtr<nsIChannel> newChannel;
   nsresult rv = SetupRedirect(responseURI,
                               responseHead,
-                              nsIChannelEventSink::REDIRECT_INTERNAL,
+                              redirectFlag,
                               getter_AddRefs(newChannel));
 
   if (NS_SUCCEEDED(rv)) {
@@ -1754,7 +1763,7 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
 
     rv = gHttpHandler->AsyncOnChannelRedirect(this,
                                               newChannel,
-                                              nsIChannelEventSink::REDIRECT_INTERNAL,
+                                              redirectFlag,
                                               target);
   }
 

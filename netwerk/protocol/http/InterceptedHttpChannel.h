@@ -113,8 +113,12 @@ private:
   nsresult
   FollowSyntheticRedirect();
 
+  
+  
+  
+  
   nsresult
-  RedirectForOpaqueResponse(nsIURI* aResponseURI);
+  RedirectForResponseURL(nsIURI* aResponseURI, bool aResponseRedirected);
 
   nsresult
   StartPump();

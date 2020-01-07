@@ -342,8 +342,8 @@ public:
     RefPtr<BodyCopyHandle> copyHandle;
     copyHandle = new BodyCopyHandle(Move(mClosure));
 
-    rv = mChannel->StartSynthesizedResponse(body, copyHandle,
-                                            mResponseURLSpec);
+    rv = mChannel->StartSynthesizedResponse(body, copyHandle, mResponseURLSpec,
+                                            mInternalResponse->IsRedirected());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
       return NS_OK;
@@ -658,15 +658,14 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
   if (NS_WARN_IF(!ir)) {
     return;
   }
+
   
   
-  
-  nsCString responseURL;
-  if (response->Type() == ResponseType::Opaque) {
-    responseURL = ir->GetUnfilteredURL();
-    if (NS_WARN_IF(responseURL.IsEmpty())) {
-      return;
-    }
+  if (NS_WARN_IF((response->Type() == ResponseType::Opaque ||
+                  response->Type() == ResponseType::Cors) &&
+                 ir->GetUnfilteredURL().IsEmpty())) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "Cors or opaque Response without a URL");
+    return;
   }
 
   Telemetry::ScalarAdd(Telemetry::ScalarID::SW_SYNTHESIZED_RES_COUNT, 1);
@@ -674,6 +673,16 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
   if (mRequestMode == RequestMode::Same_origin &&
       response->Type() == ResponseType::Cors) {
     Telemetry::ScalarAdd(Telemetry::ScalarID::SW_CORS_RES_FOR_SO_REQ_COUNT, 1);
+
+    
+  }
+
+  
+  
+  
+  nsCString responseURL;
+  if (mRequestMode != RequestMode::Navigate) {
+    responseURL = ir->GetUnfilteredURL();
   }
 
   UniquePtr<RespondWithClosure> closure(new RespondWithClosure(mInterceptedChannel,
