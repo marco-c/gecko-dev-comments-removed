@@ -157,6 +157,19 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     }
   }
 
+  
+
+
+  onTooltipHidden() {
+    
+    
+    if (this.eyedropperOpen) {
+      return;
+    }
+
+    super.onTooltipHidden();
+  }
+
   _openEyeDropper() {
     let {inspector, toolbox, telemetry} = this.inspector;
     telemetry.toolOpened("pickereyedropper");

@@ -109,26 +109,30 @@ class SwatchBasedEditorTooltip {
 
     if (tooltipAnchor) {
       let onShown = this.tooltip.once("shown");
+
       this.tooltip.show(tooltipAnchor, "topcenter bottomleft");
-
-      
-      
-      this.tooltip.once("hidden", () => {
-        if (!this._reverted && !this.eyedropperOpen) {
-          this.commit();
-        }
-        this._reverted = false;
-
-        
-        if (!this.eyedropperOpen) {
-          this.activeSwatch = null;
-        }
-      });
+      this.tooltip.once("hidden", () => this.onTooltipHidden());
 
       return onShown;
     }
 
     return Promise.resolve();
+  }
+
+  
+
+
+
+  onTooltipHidden() {
+    
+    
+    if (!this._reverted) {
+      this.commit();
+    }
+    this._reverted = false;
+
+    
+    this.activeSwatch = null;
   }
 
   hide() {
