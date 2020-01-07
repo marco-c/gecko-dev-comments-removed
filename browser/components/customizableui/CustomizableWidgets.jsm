@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -104,19 +104,19 @@ const CustomizableWidgets = [
       let document = panelview.ownerDocument;
       let window = document.defaultView;
 
-      
+      // We restrict the amount of results to 42. Not 50, but 42. Why? Because 42.
       let query = "place:queryType=" + Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY +
         "&sort=" + Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING +
         "&maxResults=42&excludeQueries=1";
 
       this._panelMenuView = new window.PlacesPanelview(document.getElementById("appMenu_historyMenu"),
         panelview, query);
-      
-      
+      // When either of these sub-subviews show, populate them with recently closed
+      // objects data.
       document.getElementById(this.recentlyClosedTabsPanel).addEventListener("ViewShowing", this);
       document.getElementById(this.recentlyClosedWindowsPanel).addEventListener("ViewShowing", this);
-      
-      
+      // When the popup is hidden (thus the panelmultiview node as well), make
+      // sure to stop listening to PlacesDatabase updates.
       panelview.panelMultiView.addEventListener("PanelMultiViewHidden", this);
     },
     onViewHiding(event) {
@@ -201,7 +201,7 @@ const CustomizableWidgets = [
       win.SidebarUI.toggle();
     },
     onCreated(aNode) {
-      
+      // Add an observer so the button is checked while the sidebar is open
       let doc = aNode.ownerDocument;
       let obChecked = doc.createElementNS(kNSXUL, "observes");
       obChecked.setAttribute("element", "sidebar-box");
@@ -255,7 +255,7 @@ const CustomizableWidgets = [
       node.setAttribute("id", "zoom-controls");
       node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
       node.setAttribute("title", CustomizableUI.getLocalizedProperty(this, "tooltiptext"));
-      
+      // Set this as an attribute in addition to the property to make sure we can style correctly.
       node.setAttribute("removable", "true");
       node.classList.add("chromeclass-toolbar-additional");
       node.classList.add("toolbaritem-combined-buttons");
@@ -301,7 +301,7 @@ const CustomizableWidgets = [
       node.setAttribute("id", "edit-controls");
       node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
       node.setAttribute("title", CustomizableUI.getLocalizedProperty(this, "tooltiptext"));
-      
+      // Set this as an attribute in addition to the property to make sure we can style correctly.
       node.setAttribute("removable", "true");
       node.classList.add("chromeclass-toolbar-additional");
       node.classList.add("toolbaritem-combined-buttons");
@@ -345,8 +345,8 @@ const CustomizableWidgets = [
       let win = aEvent.target.ownerGlobal;
       let feeds = win.gBrowser.selectedBrowser.feeds;
 
-      
-      
+      // Here, we only care about the case where we have exactly 1 feed and the
+      // user clicked...
       let isClick = (aEvent.button == 0 || aEvent.button == 1);
       if (feeds && feeds.length == 1 && isClick) {
         aEvent.preventDefault();
@@ -360,7 +360,7 @@ const CustomizableWidgets = [
       let container = doc.getElementById("PanelUI-feeds");
       let gotView = doc.defaultView.FeedHandler.buildFeedList(container, true);
 
-      
+      // For no feeds or only a single one, don't show the panel.
       if (!gotView) {
         aEvent.preventDefault();
         aEvent.stopPropagation();
@@ -474,18 +474,18 @@ const CustomizableWidgets = [
       let section = node.section;
       let value = node.value;
 
-      
-      
+      // The behavior as implemented here is directly based off of the
+      // `MultiplexHandler()` method in browser.js.
       if (section != "detectors") {
         window.BrowserSetForcedCharacterSet(value);
       } else {
-        
+        // Set the detector pref.
         try {
           Services.prefs.setStringPref("intl.charset.detector", value);
         } catch (e) {
           Cu.reportError("Failed to set the intl.charset.detector preference.");
         }
-        
+        // Prepare a browser page reload with a changed charset.
         window.BrowserCharsetReload();
       }
     },
@@ -564,27 +564,8 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
       DECKINDEX_NOCLIENTS: 3,
     },
     TABS_PER_PAGE: 25,
-    NEXT_PAGE_MIN_TABS: 5, 
-    onCreated(aNode) {
-      this._initialize(aNode);
-    },
-    _initialize(aNode) {
-      if (this._initialized) {
-        return;
-      }
-      
-      
-      
-      
-      let doc = aNode.ownerDocument;
-      let obnode = doc.createElementNS(kNSXUL, "observes");
-      obnode.setAttribute("element", "sync-status");
-      obnode.setAttribute("attribute", "syncstatus");
-      aNode.appendChild(obnode);
-      this._initialized = true;
-    },
+    NEXT_PAGE_MIN_TABS: 5, // Minimum number of tabs displayed when we click "Show All"
     onViewShowing(aEvent) {
-      this._initialize(aEvent.target);
       let doc = aEvent.target.ownerDocument;
       this._tabsList = doc.getElementById("PanelUI-remotetabs-tabslist");
       Services.obs.addObserver(this, SyncedTabs.TOPIC_TABS_CHANGED);
@@ -593,17 +574,17 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         if (SyncedTabs.hasSyncedThisSession) {
           this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
         } else {
-          
+          // Sync hasn't synced tabs yet, so show the "fetching" panel.
           this.setDeckIndex(this.deckIndices.DECKINDEX_FETCHING);
         }
-        
+        // force a background sync.
         SyncedTabs.syncTabs().catch(ex => {
           Cu.reportError(ex);
         });
-        
+        // show the current list - it will be updated by our observer.
         this._showTabs();
       } else {
-        
+        // not configured to sync tabs, so no point updating the list.
         this.setDeckIndex(this.deckIndices.DECKINDEX_TABSDISABLED);
       }
     },
@@ -623,14 +604,14 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     },
     setDeckIndex(index) {
       let deck = this._tabsList.ownerDocument.getElementById("PanelUI-remotetabs-deck");
-      
-      
-      
+      // We call setAttribute instead of relying on the XBL property setter due
+      // to things going wrong when we try and set the index before the XBL
+      // binding has been created - see bug 1241851 for the gory details.
       deck.setAttribute("selectedIndex", index);
     },
 
     _showTabsPromise: Promise.resolve(),
-    
+    // Update the tab list after any existing in-flight updates are complete.
     _showTabs(paginationInfo) {
       this._showTabsPromise = this._showTabsPromise.then(() => {
         return this.__showTabs(paginationInfo);
@@ -638,22 +619,22 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         Cu.reportError(e);
       });
     },
-    
+    // Return a new promise to update the tab list.
     __showTabs(paginationInfo) {
       if (!this._tabsList) {
-        
-        
+        // Closed between the previous `this._showTabsPromise`
+        // resolving and now.
         return undefined;
       }
       let doc = this._tabsList.ownerDocument;
       return SyncedTabs.getTabClients().then(clients => {
-        
+        // The view may have been hidden while the promise was resolving.
         if (!this._tabsList) {
           return;
         }
         if (clients.length === 0 && !SyncedTabs.hasSyncedThisSession) {
-          
-          
+          // the "fetching tabs" deck is being shown - let's leave it there.
+          // When that first sync completes we'll be notified and update.
           return;
         }
 
@@ -668,7 +649,7 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         let fragment = doc.createDocumentFragment();
 
         for (let client of clients) {
-          
+          // add a menu separator for all clients other than the first.
           if (fragment.lastChild) {
             let separator = doc.createElementNS(kNSXUL, "menuseparator");
             fragment.appendChild(separator);
@@ -685,7 +666,7 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
       }).catch(err => {
         Cu.reportError(err);
       }).then(() => {
-        
+        // an observer for tests.
         Services.obs.notifyObservers(null, "synced-tabs-menu:test:tabs-updated");
       });
     },
@@ -711,7 +692,7 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     },
     _appendClient(client, attachFragment, maxTabs = this.TABS_PER_PAGE) {
       let doc = attachFragment.ownerDocument;
-      
+      // Create the element for the remote client.
       let clientItem = doc.createElementNS(kNSXUL, "label");
       clientItem.setAttribute("itemtype", "client");
       let window = doc.defaultView;
@@ -725,14 +706,14 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         let label = this._appendMessageLabel("notabsforclientlabel", attachFragment);
         label.setAttribute("class", "PanelUI-remotetabs-notabsforclient-label");
       } else {
-        
-        
-        
+        // If this page will display all tabs, show no additional buttons.
+        // If the next page will display all the remaining tabs, show a "Show All" button
+        // Otherwise, show a "Shore More" button
         let hasNextPage = client.tabs.length > maxTabs;
         let nextPageIsLastPage = hasNextPage && maxTabs + this.TABS_PER_PAGE >= client.tabs.length;
         if (nextPageIsLastPage) {
-          
-          
+          // When the user clicks "Show All", try to have at least NEXT_PAGE_MIN_TABS more tabs
+          // to display in order to avoid user frustration
           maxTabs = Math.min(client.tabs.length - this.NEXT_PAGE_MIN_TABS, maxTabs);
         }
         if (hasNextPage) {
@@ -760,8 +741,8 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
       item.setAttribute("label", tabInfo.title != "" ? tabInfo.title : tabInfo.url);
       item.setAttribute("image", tabInfo.icon);
       item.setAttribute("tooltiptext", tooltipText);
-      
-      
+      // We need to use "click" instead of "command" here so openUILink
+      // respects different buttons (eg, to open in a new tab).
       item.addEventListener("click", e => {
         doc.defaultView.openUILink(tabInfo.url, e);
         if (doc.defaultView.whereToOpenLink(e) != "current") {

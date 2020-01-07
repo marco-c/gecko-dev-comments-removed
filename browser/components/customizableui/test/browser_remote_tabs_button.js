@@ -70,6 +70,7 @@ function mockFunctions() {
   
   UIState.get = () => ({
     status: UIState.STATUS_SIGNED_IN,
+    lastSync: new Date(),
     email: "user@mozilla.com"
   });
 
