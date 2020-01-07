@@ -2462,6 +2462,12 @@ function BrowserCloseTabOrWindow(event) {
   }
 
   
+  if (gBrowser.multiSelectedTabsCount) {
+    gBrowser.removeMultiSelectedTabs();
+    return;
+  }
+
+  
   
   if (event &&
       (event.ctrlKey || event.metaKey || event.altKey) &&
