@@ -246,17 +246,6 @@ nsFeedSniffer::GetMIMETypeFromContent(nsIRequest* request,
   bool noSniff = contentType.EqualsLiteral(TYPE_RSS) ||
                    contentType.EqualsLiteral(TYPE_ATOM);
 
-  
-  
-  
-  if (!noSniff) {
-    nsAutoCString sniffHeader;
-    nsresult foundHeader =
-      channel->GetRequestHeader(NS_LITERAL_CSTRING("X-Moz-Is-Feed"),
-                                sniffHeader);
-    noSniff = NS_SUCCEEDED(foundHeader);
-  }
-
   if (noSniff) {
     
     if(HasAttachmentDisposition(channel)) {

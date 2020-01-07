@@ -13,6 +13,11 @@
     <link rel="feed" title="3" href="/3.xml" />
 
     
+    <link rel="alternate" type="application/atom+xml" title="Bogus non file protocol" href="file://path/1.rss" />
+    <link rel="alternate" type="application/atom+xml" title="Bogus non feed:http protocol" href="feed:http://path/1.rss" />
+    <link rel="alternate" type="application/atom+xml" title="Bogus non pcast protocol" href="pcast://path/1.rss" />
+
+    
     <link rel=" alternate " type="application/atom+xml" title="4" href="/4.atom" />
     <link rel="foo alternate" type="application/atom+xml" title="5" href="/5.atom" />
     <link rel="alternate foo" type="application/atom+xml" title="6" href="/6.atom" />
