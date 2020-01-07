@@ -11,6 +11,8 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
                                "resource://gre/modules/PlacesUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Downloads",
                                "resource://gre/modules/Downloads.jsm");
+ChromeUtils.defineModuleGetter(this, "ServiceWorkerCleanUp",
+                               "resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 var EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
@@ -141,6 +143,10 @@ var ForgetAboutSite = {
         }
       }));
     }
+
+    
+    await ServiceWorkerCleanUp.removeFromHost("http://" + aDomain);
+    await ServiceWorkerCleanUp.removeFromHost("https://" + aDomain);
 
     
     promises.push((async function() {

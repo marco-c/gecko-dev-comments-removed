@@ -16,11 +16,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadsCommon: "resource:///modules/DownloadsCommon.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
+  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "serviceWorkerManager",
-                                   "@mozilla.org/serviceworkers/manager;1",
-                                   "nsIServiceWorkerManager");
 XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "@mozilla.org/dom/quota-manager-service;1",
                                    "nsIQuotaManagerService");
@@ -373,28 +371,10 @@ var Sanitizer = {
         Services.obs.notifyObservers(null, "extension:purge-localStorage");
 
         
-        let promises = [];
-        let serviceWorkers = serviceWorkerManager.getAllRegistrations();
-        for (let i = 0; i < serviceWorkers.length; i++) {
-          let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-
-          promises.push(new Promise(resolve => {
-            let unregisterCallback = {
-              unregisterSucceeded: () => { resolve(true); },
-              
-              unregisterFailed: () => { resolve(true); },
-              QueryInterface: XPCOMUtils.generateQI(
-                [Ci.nsIServiceWorkerUnregisterCallback])
-            };
-
-            serviceWorkerManager.propagateUnregister(sw.principal, unregisterCallback, sw.scope);
-          }));
-        }
-
-        await Promise.all(promises);
+        await ServiceWorkerCleanUp.removeAll();
 
         
-        promises = [];
+        let promises = [];
         await new Promise(resolve => {
           quotaManagerService.getUsage(request => {
             if (request.resultCode != Cr.NS_OK) {
