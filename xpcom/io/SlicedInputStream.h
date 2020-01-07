@@ -8,6 +8,7 @@
 #define SlicedInputStream_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICloneableInputStream.h"
@@ -57,7 +58,7 @@ private:
   SetSourceStream(already_AddRefed<nsIInputStream> aInputStream);
 
   nsresult
-  RunAsyncWaitCallback();
+  RunAsyncWaitCallback(const MutexAutoLock& aProofOfLock);
 
   nsCOMPtr<nsIInputStream> mInputStream;
 
@@ -74,10 +75,13 @@ private:
   bool mClosed;
 
   
+  
   nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
   nsCOMPtr<nsIEventTarget> mAsyncWaitEventTarget;
   uint32_t mAsyncWaitFlags;
   uint32_t mAsyncWaitRequestedCount;
+
+  Mutex mMutex;
 };
 
 } 

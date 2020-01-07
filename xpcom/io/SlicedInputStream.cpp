@@ -43,6 +43,7 @@ SlicedInputStream::SlicedInputStream(already_AddRefed<nsIInputStream> aInputStre
   , mClosed(false)
   , mAsyncWaitFlags(0)
   , mAsyncWaitRequestedCount(0)
+  , mMutex("SlicedInputStream::mMutex")
 {
   nsCOMPtr<nsIInputStream> inputStream = mozilla::Move(aInputStream);
   SetSourceStream(inputStream.forget());
@@ -59,6 +60,7 @@ SlicedInputStream::SlicedInputStream()
   , mClosed(false)
   , mAsyncWaitFlags(0)
   , mAsyncWaitRequestedCount(0)
+  , mMutex("SlicedInputStream::mMutex")
 {}
 
 SlicedInputStream::~SlicedInputStream()
@@ -270,15 +272,15 @@ SlicedInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
   NS_ENSURE_STATE(mInputStream);
   NS_ENSURE_STATE(mWeakAsyncInputStream);
 
+  nsCOMPtr<nsIInputStreamCallback> callback = aCallback ? this : nullptr;
+
+  MutexAutoLock lock(mMutex);
+
   if (mAsyncWaitCallback && aCallback) {
     return NS_ERROR_FAILURE;
   }
 
   mAsyncWaitCallback = aCallback;
-
-  if (!mAsyncWaitCallback) {
-    return NS_OK;
-  }
 
   
   
@@ -298,11 +300,14 @@ SlicedInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
 
   
   if (mCurPos < mStart) {
-    return mWeakAsyncInputStream->AsyncWait(this, 0, mStart - mCurPos,
-                                            aEventTarget);
+    uint64_t diff = mStart - mCurPos;
+
+    MutexAutoUnlock unlock(mMutex);
+    return mWeakAsyncInputStream->AsyncWait(callback, 0, diff, aEventTarget);
   }
 
-  return mWeakAsyncInputStream->AsyncWait(this, aFlags, aRequestedCount,
+  MutexAutoUnlock unlock(mMutex);
+  return mWeakAsyncInputStream->AsyncWait(callback, aFlags, aRequestedCount,
                                           aEventTarget);
 }
 
@@ -314,6 +319,8 @@ SlicedInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream)
   MOZ_ASSERT(mInputStream);
   MOZ_ASSERT(mWeakAsyncInputStream);
   MOZ_ASSERT(mWeakAsyncInputStream == aStream);
+
+  MutexAutoLock lock(mMutex);
 
   
   if (!mAsyncWaitCallback) {
@@ -328,38 +335,47 @@ SlicedInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream)
       nsresult rv = mInputStream->Read(buf, bufCount, &bytesRead);
       if (NS_SUCCEEDED(rv) && bytesRead == 0) {
         mClosed = true;
-        return RunAsyncWaitCallback();
+        return RunAsyncWaitCallback(lock);
       }
 
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
-        return mWeakAsyncInputStream->AsyncWait(this, 0, mStart - mCurPos,
+        uint64_t diff = mStart - mCurPos;
+        MutexAutoUnlock unlock(mMutex);
+        return mWeakAsyncInputStream->AsyncWait(this, 0, diff,
                                                 mAsyncWaitEventTarget);
       }
 
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return RunAsyncWaitCallback();
+        return RunAsyncWaitCallback(lock);
       }
 
       mCurPos += bytesRead;
     }
 
+    uint32_t asyncWaitFlags = mAsyncWaitFlags;
+    uint32_t asyncWaitRequestedCount = mAsyncWaitRequestedCount;
+    nsCOMPtr<nsIEventTarget> asyncWaitEventTarget = mAsyncWaitEventTarget;
+
+    MutexAutoUnlock unlock(mMutex);
+
     
-    return mWeakAsyncInputStream->AsyncWait(this, mAsyncWaitFlags,
-                                            mAsyncWaitRequestedCount,
-                                            mAsyncWaitEventTarget);
+    return mWeakAsyncInputStream->AsyncWait(this, asyncWaitFlags,
+                                            asyncWaitRequestedCount,
+                                            asyncWaitEventTarget);
   }
 
-  return RunAsyncWaitCallback();
+  return RunAsyncWaitCallback(lock);
 }
 
 nsresult
-SlicedInputStream::RunAsyncWaitCallback()
+SlicedInputStream::RunAsyncWaitCallback(const MutexAutoLock& aProofOfLock)
 {
   nsCOMPtr<nsIInputStreamCallback> callback = mAsyncWaitCallback;
 
   mAsyncWaitCallback = nullptr;
   mAsyncWaitEventTarget = nullptr;
 
+  MutexAutoUnlock unlock(mMutex);
   return callback->OnInputStreamReady(this);
 }
 
