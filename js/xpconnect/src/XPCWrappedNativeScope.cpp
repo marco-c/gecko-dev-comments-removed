@@ -249,7 +249,7 @@ XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx)
     
     SandboxOptions options;
     options.wantXrays = false;
-    options.wantComponents = true;
+    options.wantComponents = false;
     options.proto = global;
     options.sameZoneAs = global;
     options.isContentXBLScope = true;
