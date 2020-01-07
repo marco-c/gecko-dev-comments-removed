@@ -298,9 +298,6 @@ private:
   
   mozilla::TimeStamp mStopTime;
 
-  
-  bool mHaveJavaC2PJSObjectQuirk;
-
   static uint32_t gInUnsafePluginCalls;
 
   
