@@ -318,7 +318,7 @@ WebrtcVideoConduit::~WebrtcVideoConduit()
 
   
   SyncTo(nullptr);
-  Destroy();
+  MOZ_ASSERT(!mSendStream && !mRecvStream, "Call DeleteStreams prior to ~WebrtcVideoConduit.");
 }
 
 void
@@ -1193,7 +1193,7 @@ WebrtcVideoConduit::Init()
 }
 
 void
-WebrtcVideoConduit::Destroy()
+WebrtcVideoConduit::DeleteStreams()
 {
   
   
