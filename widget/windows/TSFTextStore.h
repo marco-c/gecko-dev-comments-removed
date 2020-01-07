@@ -799,6 +799,7 @@ protected:
         mLastCompositionString.Truncate();
       }
       mMinTextModifiedOffset = NOT_MODIFIED;
+      mLatestCompositionStartOffset = mLatestCompositionEndOffset = LONG_MAX;
       mInitialized = true;
     }
 
@@ -850,6 +851,18 @@ protected:
       MOZ_ASSERT(mInitialized);
       return mMinTextModifiedOffset;
     }
+    LONG LatestCompositionStartOffset() const
+    {
+      MOZ_ASSERT(mInitialized);
+      MOZ_ASSERT(HasOrHadComposition());
+      return mLatestCompositionStartOffset;
+    }
+    LONG LatestCompositionEndOffset() const
+    {
+      MOZ_ASSERT(mInitialized);
+      MOZ_ASSERT(HasOrHadComposition());
+      return mLatestCompositionEndOffset;
+    }
 
     
     
@@ -869,6 +882,13 @@ protected:
       return mInitialized ? mMinTextModifiedOffset : NOT_MODIFIED;
     }
 
+    bool HasOrHadComposition() const
+    {
+      return mInitialized &&
+             mLatestCompositionStartOffset != LONG_MAX &&
+             mLatestCompositionEndOffset != LONG_MAX;
+    }
+
     TSFTextStore::Composition& Composition() { return mComposition; }
     TSFTextStore::Selection& Selection() { return mSelection; }
 
@@ -879,6 +899,11 @@ protected:
     nsString mLastCompositionString;
     TSFTextStore::Composition& mComposition;
     TSFTextStore::Selection& mSelection;
+
+    
+    
+    LONG mLatestCompositionStartOffset;
+    LONG mLatestCompositionEndOffset;
 
     
     enum : uint32_t
