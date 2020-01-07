@@ -156,7 +156,6 @@ private:
   uint32_t mParentWindowPausedDepth;
   bool mParentFrozen;
   bool mIsChromeWorker;
-  bool mMainThreadObjectsForgotten;
   
   
   
@@ -171,22 +170,6 @@ private:
   DOMHighResTimeStamp mCreationTimeHighRes;
 
 protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<Worker> mParentEventTargetRef;
-  RefPtr<WorkerPrivate> mSelfRef;
-
   WorkerPrivateParent(WorkerPrivate* aParent,
                       const nsAString& aScriptURL, bool aIsChromeWorker,
                       WorkerType aWorkerType,
@@ -216,22 +199,10 @@ public:
   NS_INLINE_DECL_REFCOUNTING(WorkerPrivateParent)
 
   void
-  Traverse(nsCycleCollectionTraversalCallback& aCb);
-
-  void
   EnableDebugger();
 
   void
   DisableDebugger();
-
-  void
-  ClearSelfAndParentEventTargetRef()
-  {
-    AssertIsOnParentThread();
-    MOZ_ASSERT(mSelfRef);
-    mParentEventTargetRef = nullptr;
-    mSelfRef = nullptr;
-  }
 
   nsresult
   Dispatch(already_AddRefed<WorkerRunnable> aRunnable);
@@ -847,6 +818,22 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
     NoTimer
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Worker> mParentEventTargetRef;
+  RefPtr<WorkerPrivate> mSelfRef;
+
   bool mDebuggerRegistered;
   WorkerDebugger* mDebugger;
 
@@ -917,6 +904,7 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   bool mWorkerScriptExecutedSuccessfully;
   bool mFetchHandlerWasAdded;
   bool mOnLine;
+  bool mMainThreadObjectsForgotten;
 
   
   
@@ -944,6 +932,18 @@ public:
               const nsAString& aScriptURL, bool aIsChromeWorker,
               LoadGroupBehavior aLoadGroupBehavior, WorkerType aWorkerType,
               WorkerLoadInfo* aLoadInfo);
+
+  void
+  Traverse(nsCycleCollectionTraversalCallback& aCb);
+
+  void
+  ClearSelfAndParentEventTargetRef()
+  {
+    AssertIsOnParentThread();
+    MOZ_ASSERT(mSelfRef);
+    mParentEventTargetRef = nullptr;
+    mSelfRef = nullptr;
+  }
 
   
   
