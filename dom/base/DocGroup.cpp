@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/TabGroup.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"
 #include "nsIDocShell.h"
 #include "nsDOMMutationObserver.h"
@@ -52,8 +52,8 @@ DocGroup::DocGroup(TabGroup* aTabGroup, const nsACString& aKey)
   : mKey(aKey), mTabGroup(aTabGroup)
 {
   
-  if (mozilla::dom::DOMPrefs::SchedulerLoggingEnabled()) {
-    mPerformanceCounter = new mozilla::PerformanceCounter(aKey);
+  if (mozilla::StaticPrefs::dom_performance_enable_scheduler_timing()) {
+    mPerformanceCounter = new mozilla::PerformanceCounter(NS_LITERAL_CSTRING("DocGroup:") + aKey);
   }
 }
 

@@ -176,7 +176,6 @@ protected:
   
   bool mCanInvokeJS;
 
-  bool GetSchedulerLoggingEnabled();
   mozilla::TimeStamp mNextIdleDeadline;
   
   nsCOMPtr<nsIRunnable> mCurrentEvent;
