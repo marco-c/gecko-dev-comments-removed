@@ -198,13 +198,17 @@ union PrefValue {
   {
     if (aType == PrefType::String) {
       free(const_cast<char*>(mStringVal));
-      mStringVal = nullptr;
     }
+
+    
+    mStringVal = nullptr;
   }
 
-  void Replace(PrefType aOldType, PrefType aNewType, PrefValue aNewValue)
+  void Replace(bool aHasValue, PrefType aOldType, PrefType aNewType, PrefValue aNewValue)
   {
-    Clear(aOldType);
+    if (aHasValue) {
+      Clear(aOldType);
+    }
     Init(aNewType, aNewValue);
   }
 
@@ -597,7 +601,7 @@ public:
       PrefType type = value.FromDomPrefValue(defaultValue.get_PrefValue());
       if (!ValueMatches(PrefValueKind::Default, type, value)) {
         
-        mDefaultValue.Replace(Type(), type, value);
+        mDefaultValue.Replace(mHasDefaultValue, Type(), type, value);
         SetType(type);
         mHasDefaultValue = true;
         defaultValueChanged = true;
@@ -612,7 +616,7 @@ public:
       PrefType type = value.FromDomPrefValue(userValue.get_PrefValue());
       if (!ValueMatches(PrefValueKind::User, type, value)) {
         
-        mUserValue.Replace(Type(), type, value);
+        mUserValue.Replace(mHasUserValue, Type(), type, value);
         SetType(type);
         mHasUserValue = true;
         userValueChanged = true;
@@ -691,7 +695,7 @@ public:
         SetIsLocked(true);
       }
       if (!ValueMatches(PrefValueKind::Default, aType, aValue)) {
-        mDefaultValue.Replace(Type(), aType, aValue);
+        mDefaultValue.Replace(mHasDefaultValue, Type(), aType, aValue);
         mHasDefaultValue = true;
         if (!aFromInit) {
           mHasChangedSinceInit = true;
@@ -735,7 +739,7 @@ public:
       
       
     } else if (!ValueMatches(PrefValueKind::User, aType, aValue)) {
-      mUserValue.Replace(Type(), aType, aValue);
+      mUserValue.Replace(mHasUserValue, Type(), aType, aValue);
       SetType(aType); 
       mHasUserValue = true;
       if (!aFromInit) {
