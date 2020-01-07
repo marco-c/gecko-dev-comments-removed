@@ -17,46 +17,54 @@ add_task(async function test_correct_errors_are_thrown() {
   ExtensionSearchHandler.registerKeyword(keyword, { emit: () => {} });
 
   
-  Assert.throws(() => ExtensionSearchHandler.registerKeyword(keyword, { emit: () => {} }));
+  Assert.throws(() => ExtensionSearchHandler.registerKeyword(keyword, { emit: () => {} }),
+    /The keyword provided is already registered/);
 
   
   ExtensionSearchHandler.registerKeyword(anotherKeyword, { emit: () => {} });
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(unregisteredKeyword, `${unregisteredKeyword} `, () => {}));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(unregisteredKeyword, `${unregisteredKeyword} `, () => {}),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(unregisteredKeyword, `${unregisteredKeyword} `));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(unregisteredKeyword, `${unregisteredKeyword} `),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.getDescription(unregisteredKeyword));
+  Assert.throws(() => ExtensionSearchHandler.getDescription(unregisteredKeyword),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.getExtensionName(unregisteredKeyword));
+  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(unregisteredKeyword, "suggestion"),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(unregisteredKeyword, "suggestion"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputCancelled(),
+    /There is no active input session/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputCancelled());
-
-  
-  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "tab"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "tab"),
+    /There is no active input session/);
 
   
   ExtensionSearchHandler.handleSearch(keyword, `${keyword} test`, () => {});
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 0, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 0, []),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(anotherKeyword, 0, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(anotherKeyword, 0, []),
+    /The keyword provided is not apart of an active input session/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword} `, () => {}));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword} `, () => {}),
+    /A different input session is already ongoing/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 0, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 0, []),
+    /The callback is no longer active for the keyword provided/);
 
   
   ExtensionSearchHandler.addSuggestions(keyword, 1, []);
@@ -65,73 +73,89 @@ add_task(async function test_correct_errors_are_thrown() {
   ExtensionSearchHandler.addSuggestions(keyword, 1, []);
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 2, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 2, []),
+    /The callback is no longer active for the keyword provided/);
 
   
   ExtensionSearchHandler.handleInputCancelled();
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputCancelled());
+  Assert.throws(() => ExtensionSearchHandler.handleInputCancelled(),
+    /There is no active input sessio/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword}`, () => {}));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword}`, () => {}),
+    /The text provided must start with/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${keyword} test`, () => {}));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(anotherKeyword, `${keyword} test`, () => {}),
+    /The text provided must start with/);
 
   
   ExtensionSearchHandler.handleSearch(anotherKeyword, `${anotherKeyword} test`, () => {});
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 1, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 1, []),
+    /The keyword provided is not apart of an active input session/);
 
   
   ExtensionSearchHandler.addSuggestions(anotherKeyword, 2, []);
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 2, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(keyword, 2, []),
+    /The keyword provided is not apart of an active input session/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 2, []));
+  Assert.throws(() => ExtensionSearchHandler.addSuggestions(unregisteredKeyword, 2, []),
+    /The keyword provided is not registered/);
 
   
   ExtensionSearchHandler.setDefaultSuggestion(anotherKeyword, {description: "test result"});
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(keyword, `${keyword} test`, "tab"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(keyword, `${keyword} test`, "tab"),
+    /A different input session is already ongoing/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, ` test`, "tab"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, ` test`, "tab"),
+    /The text provided must start with/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "invalid"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "invalid"),
+    /Invalid "where" argument/);
 
   
   ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "tab");
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "tab"));
+  Assert.throws(() => ExtensionSearchHandler.handleInputEntered(anotherKeyword, `${anotherKeyword} test`, "tab"),
+    /There is no active input session/);
 
   
   ExtensionSearchHandler.unregisterKeyword(keyword);
 
   
-  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(keyword, {description: "test"}));
+  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(keyword, {description: "test"}),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.handleSearch(keyword, `${keyword} test`, () => {}));
+  Assert.throws(() => ExtensionSearchHandler.handleSearch(keyword, `${keyword} test`, () => {}),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.unregisterKeyword(keyword));
+  Assert.throws(() => ExtensionSearchHandler.unregisterKeyword(keyword),
+    /The keyword provided is not registered/);
 
   
   ExtensionSearchHandler.unregisterKeyword(anotherKeyword);
 
   
-  Assert.throws(() => ExtensionSearchHandler.unregisterKeyword(unregisteredKeyword));
+  Assert.throws(() => ExtensionSearchHandler.unregisterKeyword(unregisteredKeyword),
+    /The keyword provided is not registered/);
 
   
-  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(unregisteredKeyword, {description: "test"}));
+  Assert.throws(() => ExtensionSearchHandler.setDefaultSuggestion(unregisteredKeyword, {description: "test"}),
+    /The keyword provided is not registered/);
 
   await cleanup();
 });

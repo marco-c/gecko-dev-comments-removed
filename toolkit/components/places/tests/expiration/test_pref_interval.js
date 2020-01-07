@@ -41,7 +41,8 @@ var tests = [
 
 add_task(async function test() {
   
-  Assert.throws(() => getInterval());
+  Assert.throws(() => getInterval(),
+    /NS_ERROR_UNEXPECTED/);
 
   
   force_expiration_start();
