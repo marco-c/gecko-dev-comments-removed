@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_no_changes() {
   let buf = await openMirror("nochanges");
 

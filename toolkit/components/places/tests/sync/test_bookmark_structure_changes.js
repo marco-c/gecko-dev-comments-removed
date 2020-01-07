@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_value_structure_conflict() {
   let buf = await openMirror("value_structure_conflict");
 

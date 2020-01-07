@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_value_combo() {
   let buf = await openMirror("value_combo");
 

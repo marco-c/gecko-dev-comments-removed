@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_missing_children() {
   let buf = await openMirror("missing_childen");
 

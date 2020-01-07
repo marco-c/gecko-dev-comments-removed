@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_duping() {
   let buf = await openMirror("duping");
 

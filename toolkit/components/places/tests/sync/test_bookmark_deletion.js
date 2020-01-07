@@ -1,3 +1,6 @@
+
+
+
 add_task(async function test_complex_orphaning() {
   let buf = await openMirror("complex_orphaning");
 
