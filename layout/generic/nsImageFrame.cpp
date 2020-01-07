@@ -384,25 +384,22 @@ nsImageFrame::GetSourceToDestTransform(nsTransform2D& aTransform)
   
   
   
-  aTransform.SetToTranslate(float(destRect.x),
-                            float(destRect.y));
+  aTransform.SetToTranslate(float(destRect.x), float(destRect.y));
+
 
   
-  if (mIntrinsicSize.width.GetUnit() == eStyleUnit_Coord &&
-      mIntrinsicSize.width.GetCoordValue() != 0 &&
-      mIntrinsicSize.height.GetUnit() == eStyleUnit_Coord &&
-      mIntrinsicSize.height.GetCoordValue() != 0 &&
-      mIntrinsicSize.width.GetCoordValue() != destRect.width &&
-      mIntrinsicSize.height.GetCoordValue() != destRect.height) {
-
-    aTransform.SetScale(float(destRect.width)  /
-                        float(mIntrinsicSize.width.GetCoordValue()),
-                        float(destRect.height) /
-                        float(mIntrinsicSize.height.GetCoordValue()));
-    return true;
+  
+  
+  nsSize intrinsicSize;
+  if (!mImage ||
+      !NS_SUCCEEDED(mImage->GetIntrinsicSize(&intrinsicSize)) ||
+      intrinsicSize.IsEmpty()) {
+    return false;
   }
 
-  return false;
+  aTransform.SetScale(float(destRect.width)  / float(intrinsicSize.width),
+                      float(destRect.height) / float(intrinsicSize.height));
+  return true;
 }
 
 
