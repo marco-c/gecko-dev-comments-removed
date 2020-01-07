@@ -521,7 +521,6 @@ GeckoDriver.prototype.getVisibleText = function(el, lines) {
 
 
 GeckoDriver.prototype.registerBrowser = function(id, be) {
-  let nullPrevious = this.curBrowser.curFrameId === null;
   let listenerWindow = Services.wm.getOuterWindowWithId(id);
 
   
@@ -536,10 +535,6 @@ GeckoDriver.prototype.registerBrowser = function(id, be) {
   }
 
   this.wins.set(id, listenerWindow);
-  if (nullPrevious && (this.curBrowser.curFrameId !== null)) {
-    this.sendAsync("newSession");
-  }
-
   return id;
 };
 
@@ -547,10 +542,9 @@ GeckoDriver.prototype.registerPromise = function() {
   const li = "Marionette:Register";
 
   return new Promise(resolve => {
-    let cb = msg => {
-      let wid = msg.json.value;
-      let be = msg.target;
-      let outerWindowID = this.registerBrowser(wid, be);
+    let cb = ({json, target}) => {
+      let {outerWindowID} = json;
+      this.registerBrowser(outerWindowID, target);
 
       if (this.curBrowser.frameRegsPending > 0) {
         this.curBrowser.frameRegsPending--;
@@ -561,8 +555,7 @@ GeckoDriver.prototype.registerPromise = function() {
         resolve();
       }
 
-      
-      return outerWindowID;
+      return {outerWindowID};
     };
     this.mm.addMessageListener(li, cb);
   });
@@ -2778,7 +2771,7 @@ GeckoDriver.prototype.deleteSession = function() {
     for (let win in this.browsers) {
       let browser = this.browsers[win];
       browser.knownFrames.forEach(() => {
-        globalMessageManager.broadcastAsyncMessage("Marionette:deleteSession");
+        globalMessageManager.broadcastAsyncMessage("Marionette:Deregister");
       });
     }
 
@@ -3332,9 +3325,8 @@ GeckoDriver.prototype.receiveMessage = function(message) {
       break;
 
     case "Marionette:Register":
-      let wid = message.json.value;
-      let be = message.target;
-      let outerWindowID = this.registerBrowser(wid, be);
+      let {outerWindowID} = message.json;
+      this.registerBrowser(outerWindowID, message.target);
       return {outerWindowID};
 
     case "Marionette:ListenersAttached":
