@@ -150,8 +150,8 @@ var PromiseTestUtils = {
       
       
       
-      stack = "" + (PromiseDebugging.getRejectionStack(promise) ||
-                    (reason && reason.stack) ||
+      stack = "" + ((reason && reason.stack) ||
+                    PromiseDebugging.getRejectionStack(promise) ||
                     "(No stack available.)");
     } catch (ex) {}
 
