@@ -122,6 +122,7 @@ static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
 
 static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
+
 enum class PrefType : uint8_t
 {
   None = 0, 
@@ -129,6 +130,7 @@ enum class PrefType : uint8_t
   Int = 2,
   Bool = 3,
 };
+
 
 union PrefValue {
   const char* mStringVal;
@@ -929,633 +931,126 @@ struct TelemetryLoadData
 
 static nsDataHashtable<nsCStringHashKey, TelemetryLoadData>* gTelemetryLoadData;
 
+extern "C" {
+
+
+typedef void (*PrefsParserPrefFn)(const char* aPrefName,
+                                  PrefType aType,
+                                  PrefValueKind aKind,
+                                  PrefValue aValue,
+                                  bool aIsSticky);
+
+
+
+
+
+typedef void (*PrefsParserErrorFn)(const char* aMsg);
+
+
+bool
+prefs_parser_parse(const char* aPath,
+                   const char* aBuf,
+                   size_t aLen,
+                   PrefsParserPrefFn aPrefFn,
+                   PrefsParserErrorFn aErrorFn);
+}
+
 class Parser
 {
 public:
-  Parser()
-    : mState()
-    , mNextState()
-    , mStrMatch()
-    , mStrIndex()
-    , mUtf16()
-    , mEscLen()
-    , mEscTmp()
-    , mQuoteChar()
-    , mLb()
-    , mLbCur()
-    , mLbEnd()
-    , mVb()
-    , mVtype()
-    , mIsDefault()
-    , mIsSticky()
-  {
-  }
-
-  ~Parser() { free(mLb); }
+  Parser() = default;
+  ~Parser() = default;
 
   bool Parse(const nsCString& aName,
+             const char* aPath,
              const TimeStamp& aStartTime,
-             const char* aBuf,
-             size_t aBufLen);
+             const nsCString& aBuf)
+  {
+    sNumPrefs = 0;
+    bool ok = prefs_parser_parse(
+      aPath, aBuf.get(), aBuf.Length(), HandlePref, HandleError);
+    if (!ok) {
+      return false;
+    }
 
-  bool GrowBuf();
+    uint32_t loadTime_us = (TimeStamp::Now() - aStartTime).ToMicroseconds();
 
-  void HandleValue(const char* aPrefName,
-                   PrefType aType,
-                   PrefValue aValue,
-                   bool aIsDefault,
-                   bool aIsSticky);
+    
+    
+    TelemetryLoadData loadData = { uint32_t(aBuf.Length()),
+                                   sNumPrefs,
+                                   loadTime_us };
+    gTelemetryLoadData->Put(aName, loadData);
 
-  void ReportProblem(const char* aMessage, int aLine, bool aError);
+    return true;
+  }
 
 private:
-  
-  enum class State
+  static void HandlePref(const char* aPrefName,
+                         PrefType aType,
+                         PrefValueKind aKind,
+                         PrefValue aValue,
+                         bool aIsSticky)
   {
-    eInit,
-    eMatchString,
-    eUntilName,
-    eQuotedString,
-    eUntilComma,
-    eUntilValue,
-    eIntValue,
-    eCommentMaybeStart,
-    eCommentBlock,
-    eCommentBlockMaybeEnd,
-    eEscapeSequence,
-    eHexEscape,
-    eUTF16LowSurrogate,
-    eUntilOpenParen,
-    eUntilCloseParen,
-    eUntilSemicolon,
-    eUntilEOL
-  };
+    sNumPrefs++;
+    pref_SetPref(
+      aPrefName, aType, aKind, aValue, aIsSticky,  true);
+  }
 
-  static const int kUTF16EscapeNumDigits = 4;
-  static const int kHexEscapeNumDigits = 2;
-  static const int KBitsPerHexDigit = 4;
+  static void HandleError(const char* aMsg)
+  {
+    nsresult rv;
+    nsCOMPtr<nsIConsoleService> console =
+      do_GetService("@mozilla.org/consoleservice;1", &rv);
+    if (NS_SUCCEEDED(rv)) {
+      console->LogStringMessage(NS_ConvertUTF8toUTF16(aMsg).get());
+    } else {
+      printf_stderr("%s\n", aMsg);
+    }
+    NS_WARNING(aMsg);
+  }
 
-  static constexpr const char* kUserPref = "user_pref";
-  static constexpr const char* kPref = "pref";
-  static constexpr const char* kStickyPref = "sticky_pref";
-  static constexpr const char* kTrue = "true";
-  static constexpr const char* kFalse = "false";
-
-  State mState;           
-  State mNextState;       
-  const char* mStrMatch;  
-  int mStrIndex;          
-                          
-  char16_t mUtf16[2];     
-  int mEscLen;            
-  char mEscTmp[6];        
-  char mQuoteChar;        
-  char* mLb;              
-  char* mLbCur;           
-  char* mLbEnd;           
-  char* mVb;              
-  Maybe<PrefType> mVtype; 
-  bool mIsDefault;        
-  bool mIsSticky;         
+  
+  
+  static uint32_t sNumPrefs;
 };
 
+uint32_t Parser::sNumPrefs = 0;
 
 
 
-
-
-
-
-
-
-
-
-
-bool
-Parser::GrowBuf()
+static void
+TestParseErrorHandlePref(const char* aPrefName,
+                         PrefType aType,
+                         PrefValueKind aKind,
+                         PrefValue aValue,
+                         bool aIsSticky)
 {
-  int bufLen, curPos, valPos;
-
-  bufLen = mLbEnd - mLb;
-  curPos = mLbCur - mLb;
-  valPos = mVb - mLb;
-
-  if (bufLen == 0) {
-    bufLen = 128; 
-  } else {
-    bufLen <<= 1; 
-  }
-
-  mLb = (char*)realloc(mLb, bufLen);
-  if (!mLb) {
-    return false;
-  }
-
-  mLbCur = mLb + curPos;
-  mLbEnd = mLb + bufLen;
-  mVb = mLb + valPos;
-
-  return true;
 }
 
-void
-Parser::HandleValue(const char* aPrefName,
-                    PrefType aType,
-                    PrefValue aValue,
-                    bool aIsDefault,
-                    bool aIsSticky)
+static char* gTestParseErrorMsg;
+
+static void
+TestParseErrorHandleError(const char* aMsg)
 {
-  PrefValueKind kind =
-    aIsDefault ? PrefValueKind::Default : PrefValueKind::User;
-  pref_SetPref(aPrefName, aType, kind, aValue, aIsSticky,  true);
+  
+  gTestParseErrorMsg = moz_xstrdup(aMsg);
 }
 
 
 void
-Parser::ReportProblem(const char* aMessage, int aLine, bool aError)
+TestParseError(const char* aText, nsCString& aErrorMsg)
 {
-  nsPrintfCString message("** Preference parsing %s (line %d) = %s **\n",
-                          (aError ? "error" : "warning"),
-                          aLine,
-                          aMessage);
-  nsresult rv;
-  nsCOMPtr<nsIConsoleService> console =
-    do_GetService("@mozilla.org/consoleservice;1", &rv);
-  if (NS_SUCCEEDED(rv)) {
-    console->LogStringMessage(NS_ConvertUTF8toUTF16(message).get());
-  } else {
-    printf_stderr("%s", message.get());
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-Parser::Parse(const nsCString& aName,
-              const TimeStamp& aStartTime,
-              const char* aBuf,
-              size_t aBufLen)
-{
-  
-  int lineNum = 0;
-
-  uint32_t numPrefs = 0;
-
-  State state = mState;
-  for (const char* end = aBuf + aBufLen; aBuf != end; ++aBuf) {
-    char c = *aBuf;
-    if (c == '\r' || c == '\n' || c == 0x1A) {
-      lineNum++;
-    }
-
-    switch (state) {
-      
-      case State::eInit:
-        if (mLbCur != mLb) { 
-          mLbCur = mLb;
-          mVb = nullptr;
-          mVtype = Nothing();
-          mIsDefault = false;
-          mIsSticky = false;
-        }
-        switch (c) {
-          case '/': 
-            state = State::eCommentMaybeStart;
-            break;
-          case '#': 
-            state = State::eUntilEOL;
-            break;
-          case 'u': 
-          case 's': 
-          case 'p': 
-            if (c == 'u') {
-              mStrMatch = kUserPref;
-            } else if (c == 's') {
-              mStrMatch = kStickyPref;
-            } else {
-              mStrMatch = kPref;
-            }
-            mStrIndex = 1;
-            mNextState = State::eUntilOpenParen;
-            state = State::eMatchString;
-            break;
-            
-        }
-        break;
-
-      
-      case State::eMatchString:
-        if (c == mStrMatch[mStrIndex++]) {
-          
-          if (mStrMatch[mStrIndex] == '\0') {
-            state = mNextState;
-            mNextState = State::eInit; 
-          }
-          
-        } else {
-          ReportProblem("non-matching string", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      
-      case State::eQuotedString:
-        
-        if (mLbCur == mLbEnd && !GrowBuf()) {
-          return false; 
-        }
-        if (c == '\\') {
-          state = State::eEscapeSequence;
-        } else if (c == mQuoteChar) {
-          *mLbCur++ = '\0';
-          state = mNextState;
-          mNextState = State::eInit; 
-        } else {
-          *mLbCur++ = c;
-        }
-        break;
-
-      
-      case State::eUntilName:
-        if (c == '\"' || c == '\'') {
-          mIsDefault = (mStrMatch == kPref || mStrMatch == kStickyPref);
-          mIsSticky = (mStrMatch == kStickyPref);
-          mQuoteChar = c;
-          mNextState = State::eUntilComma; 
-          state = State::eQuotedString;
-        } else if (c == '/') { 
-          mNextState = state;  
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem("need space, comment or quote", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      
-      case State::eUntilComma:
-        if (c == ',') {
-          mVb = mLbCur;
-          state = State::eUntilValue;
-        } else if (c == '/') { 
-          mNextState = state;  
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem("need space, comment or comma", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      
-      case State::eUntilValue:
-        
-        
-        if (c == '\"' || c == '\'') {
-          mVtype = Some(PrefType::String);
-          mQuoteChar = c;
-          mNextState = State::eUntilCloseParen;
-          state = State::eQuotedString;
-        } else if (c == 't' || c == 'f') {
-          mVb = (char*)(c == 't' ? kTrue : kFalse);
-          mVtype = Some(PrefType::Bool);
-          mStrMatch = mVb;
-          mStrIndex = 1;
-          mNextState = State::eUntilCloseParen;
-          state = State::eMatchString;
-        } else if (isdigit(c) || (c == '-') || (c == '+')) {
-          mVtype = Some(PrefType::Int);
-          
-          if (mLbCur == mLbEnd && !GrowBuf()) {
-            return false; 
-          }
-          *mLbCur++ = c;
-          state = State::eIntValue;
-        } else if (c == '/') { 
-          mNextState = state;  
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem("need value, comment or space", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      case State::eIntValue:
-        
-        if (mLbCur == mLbEnd && !GrowBuf()) {
-          return false; 
-        }
-        if (isdigit(c)) {
-          *mLbCur++ = c;
-        } else {
-          *mLbCur++ = '\0'; 
-          if (c == ')') {
-            state = State::eUntilSemicolon;
-          } else if (c == '/') { 
-            mNextState = State::eUntilCloseParen;
-            state = State::eCommentMaybeStart;
-          } else if (isspace(c)) {
-            state = State::eUntilCloseParen;
-          } else {
-            ReportProblem("while parsing integer", lineNum, true);
-            NS_WARNING("malformed pref file");
-            return false;
-          }
-        }
-        break;
-
-      
-      case State::eCommentMaybeStart:
-        switch (c) {
-          case '*': 
-            state = State::eCommentBlock;
-            break;
-          case '/': 
-            state = State::eUntilEOL;
-            break;
-          default:
-            
-            ReportProblem("while parsing comment", lineNum, true);
-            NS_WARNING("malformed pref file");
-            return false;
-        }
-        break;
-
-      case State::eCommentBlock:
-        if (c == '*') {
-          state = State::eCommentBlockMaybeEnd;
-        }
-        break;
-
-      case State::eCommentBlockMaybeEnd:
-        switch (c) {
-          case '/':
-            state = mNextState;
-            mNextState = State::eInit;
-            break;
-          case '*': 
-            break;
-          default:
-            state = State::eCommentBlock;
-            break;
-        }
-        break;
-
-      
-      case State::eEscapeSequence:
-        
-        
-        
-        switch (c) {
-          case '\"':
-          case '\'':
-          case '\\':
-            break;
-          case 'r':
-            c = '\r';
-            break;
-          case 'n':
-            c = '\n';
-            break;
-          case 'x': 
-          case 'u': 
-            mEscTmp[0] = c;
-            mEscLen = 1;
-            mUtf16[0] = mUtf16[1] = 0;
-            mStrIndex =
-              (c == 'x') ? kHexEscapeNumDigits : kUTF16EscapeNumDigits;
-            state = State::eHexEscape;
-            continue;
-          default:
-            ReportProblem(
-              "preserving unexpected JS escape sequence", lineNum, false);
-            NS_WARNING("preserving unexpected JS escape sequence");
-            
-            
-            if ((mLbCur + 1) == mLbEnd && !GrowBuf()) {
-              return false; 
-            }
-            *mLbCur++ = '\\'; 
-            break;
-        }
-        *mLbCur++ = c;
-        state = State::eQuotedString;
-        break;
-
-      
-      case State::eHexEscape: {
-        char udigit;
-        if (c >= '0' && c <= '9') {
-          udigit = (c - '0');
-        } else if (c >= 'A' && c <= 'F') {
-          udigit = (c - 'A') + 10;
-        } else if (c >= 'a' && c <= 'f') {
-          udigit = (c - 'a') + 10;
-        } else {
-          
-          ReportProblem(
-            "preserving invalid or incomplete hex escape", lineNum, false);
-          NS_WARNING("preserving invalid or incomplete hex escape");
-          *mLbCur++ = '\\'; 
-          if ((mLbCur + mEscLen) >= mLbEnd && !GrowBuf()) {
-            return false;
-          }
-          for (int i = 0; i < mEscLen; ++i) {
-            *mLbCur++ = mEscTmp[i];
-          }
-
-          
-          
-          --aBuf;
-          state = State::eQuotedString;
-          continue;
-        }
-
-        
-        mEscTmp[mEscLen++] = c; 
-        mUtf16[1] <<= KBitsPerHexDigit;
-        mUtf16[1] |= udigit;
-        mStrIndex--;
-        if (mStrIndex == 0) {
-          
-          int utf16len = 0;
-          if (mUtf16[0]) {
-            
-            utf16len = 2;
-          } else if (0xD800 == (0xFC00 & mUtf16[1])) {
-            
-            mUtf16[0] = mUtf16[1];
-            mUtf16[1] = 0;
-            state = State::eUTF16LowSurrogate;
-            break;
-          } else {
-            
-            mUtf16[0] = mUtf16[1];
-            utf16len = 1;
-          }
-
-          
-          
-          
-          if (mLbCur + 6 >= mLbEnd && !GrowBuf()) {
-            return false;
-          }
-
-          ConvertUTF16toUTF8 converter(mLbCur);
-          converter.write(mUtf16, utf16len);
-          mLbCur += converter.Size();
-          state = State::eQuotedString;
-        }
-        break;
-      }
-
-      
-      case State::eUTF16LowSurrogate:
-        if (mStrIndex == 0 && c == '\\') {
-          ++mStrIndex;
-        } else if (mStrIndex == 1 && c == 'u') {
-          
-          mStrIndex = kUTF16EscapeNumDigits;
-          mEscTmp[0] = 'u';
-          mEscLen = 1;
-          state = State::eHexEscape;
-        } else {
-          
-          
-          
-          --aBuf;
-          if (mStrIndex == 1) {
-            state = State::eEscapeSequence;
-          } else {
-            state = State::eQuotedString;
-          }
-          continue;
-        }
-        break;
-
-      
-      case State::eUntilOpenParen:
-        
-        if (c == '(') {
-          state = State::eUntilName;
-        } else if (c == '/') {
-          mNextState = state; 
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem(
-            "need space, comment or open parentheses", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      case State::eUntilCloseParen:
-        
-        if (c == ')') {
-          state = State::eUntilSemicolon;
-        } else if (c == '/') {
-          mNextState = state; 
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem(
-            "need space, comment or closing parentheses", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      
-      case State::eUntilSemicolon:
-        
-        if (c == ';') {
-
-          PrefValue value;
-
-          switch (*mVtype) {
-            case PrefType::String:
-              value.mStringVal = mVb;
-              break;
-
-            case PrefType::Int:
-              if ((mVb[0] == '-' || mVb[0] == '+') && mVb[1] == '\0') {
-                ReportProblem("invalid integer value", 0, true);
-                NS_WARNING("malformed integer value");
-                return false;
-              }
-              value.mIntVal = atoi(mVb);
-              break;
-
-            case PrefType::Bool:
-              value.mBoolVal = (mVb == kTrue);
-              break;
-
-            default:
-              MOZ_CRASH();
-          }
-
-          
-          HandleValue(mLb, *mVtype, value, mIsDefault, mIsSticky);
-          numPrefs++;
-
-          state = State::eInit;
-        } else if (c == '/') {
-          mNextState = state; 
-          state = State::eCommentMaybeStart;
-        } else if (!isspace(c)) {
-          ReportProblem("need space, comment or semicolon", lineNum, true);
-          NS_WARNING("malformed pref file");
-          return false;
-        }
-        break;
-
-      
-      case State::eUntilEOL:
-        
-        
-        if (c == '\r' || c == '\n' || c == 0x1A) {
-          state = mNextState;
-          mNextState = State::eInit; 
-        }
-        break;
-    }
-  }
-  mState = state;
-
-  uint32_t loadTime_us = (TimeStamp::Now() - aStartTime).ToMicroseconds();
+  prefs_parser_parse("test",
+                     aText,
+                     strlen(aText),
+                     TestParseErrorHandlePref,
+                     TestParseErrorHandleError);
 
   
-  
-  TelemetryLoadData loadData = { uint32_t(aBufLen), numPrefs, loadTime_us };
-  gTelemetryLoadData->Put(aName, loadData);
-
-  return true;
+  aErrorMsg.Assign(gTestParseErrorMsg);
+  free(gTestParseErrorMsg);
+  gTestParseErrorMsg = nullptr;
 }
 
 void
@@ -4001,8 +3496,12 @@ openPrefFile(nsIFile* aFile)
   aFile->GetLeafName(filenameUtf16);
   NS_ConvertUTF16toUTF8 filename(filenameUtf16);
 
+  nsAutoString path;
+  aFile->GetPath(path);
+
   Parser parser;
-  if (!parser.Parse(filename, startTime, data.get(), data.Length())) {
+  if (!parser.Parse(
+        filename, NS_ConvertUTF16toUTF8(path).get(), startTime, data)) {
     return NS_ERROR_FILE_CORRUPTED;
   }
 
@@ -4135,9 +3634,8 @@ pref_ReadPrefFromJar(nsZipArchive* aJarReader, const char* aName)
   MOZ_TRY_VAR(manifest,
               URLPreloader::ReadZip(aJarReader, nsDependentCString(aName)));
 
-  nsDependentCString name(aName);
   Parser parser;
-  if (!parser.Parse(name, startTime, manifest.get(), manifest.Length())) {
+  if (!parser.Parse(nsDependentCString(aName), aName, startTime, manifest)) {
     return NS_ERROR_FILE_CORRUPTED;
   }
 
