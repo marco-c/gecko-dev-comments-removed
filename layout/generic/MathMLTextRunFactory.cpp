@@ -670,7 +670,7 @@ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
         
         
         
-        uint8_t matchType;
+        gfxTextRange::MatchType matchType;
         RefPtr<gfxFont> mathFont = fontGroup->
           FindFontForChar(ch2, 0, 0, unicode::Script::COMMON, nullptr, &matchType);
         if (mathFont) {

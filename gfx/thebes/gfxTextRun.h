@@ -469,7 +469,7 @@ public:
         RefPtr<gfxFont> mFont; 
         uint32_t        mCharacterOffset; 
         mozilla::gfx::ShapedTextFlags mOrientation; 
-        uint8_t         mMatchType;
+        gfxTextRange::MatchType mMatchType;
     };
 
     class MOZ_STACK_CLASS GlyphRunIterator {
@@ -527,7 +527,7 @@ public:
 
 
 
-    nsresult AddGlyphRun(gfxFont *aFont, uint8_t aMatchType,
+    nsresult AddGlyphRun(gfxFont *aFont, gfxTextRange::MatchType aMatchType,
                          uint32_t aStartCharIndex, bool aForceNewRun,
                          mozilla::gfx::ShapedTextFlags aOrientation);
     void ResetGlyphRuns()
@@ -957,7 +957,7 @@ public:
 
     gfxFont* FindFontForChar(uint32_t ch, uint32_t prevCh, uint32_t aNextCh,
                              Script aRunScript, gfxFont *aPrevMatchedFont,
-                             uint8_t *aMatchType);
+                             gfxTextRange::MatchType *aMatchType);
 
     gfxUserFontSet* GetUserFontSet();
 
