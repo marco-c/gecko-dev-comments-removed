@@ -235,6 +235,12 @@ nsChromeRegistry::Canonify(nsIURL* aChromeURL)
     
     const char* pos = path.BeginReading();
     const char* end = path.EndReading();
+    
+    if (!('a' <= *pos && *pos <= 'z') &&
+        !('A' <= *pos && *pos <= 'Z') &&
+        !('0' <= *pos && *pos <= '9')) {
+      return NS_ERROR_DOM_BAD_URI;
+    }
     while (pos < end) {
       switch (*pos) {
         case ':':
