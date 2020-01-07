@@ -111,6 +111,7 @@ var WebProgressListener = {
 
     return {
       contentWindow: content,
+      contentDocument: content.document,
       
       DOMWindow: domWindow,
       webProgress: aWebProgress,
