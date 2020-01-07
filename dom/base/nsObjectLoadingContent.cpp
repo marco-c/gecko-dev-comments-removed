@@ -3584,7 +3584,7 @@ nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
   JS::Rooted<JSObject*> pi_obj(aCx); 
   JS::Rooted<JSObject*> pi_proto(aCx); 
 
-  rv = GetPluginJSObject(aCx, aObject, pi, &pi_obj, &pi_proto);
+  rv = GetPluginJSObject(aCx, pi, &pi_obj, &pi_proto);
   if (NS_FAILED(rv)) {
     return;
   }
@@ -3668,15 +3668,10 @@ nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
 
 nsresult
 nsObjectLoadingContent::GetPluginJSObject(JSContext *cx,
-                                          JS::Handle<JSObject*> obj,
                                           nsNPAPIPluginInstance *plugin_inst,
                                           JS::MutableHandle<JSObject*> plugin_obj,
                                           JS::MutableHandle<JSObject*> plugin_proto)
 {
-  
-  
-  JSAutoRealm ar(cx, obj);
-
   if (plugin_inst) {
     plugin_inst->GetJSObject(cx, plugin_obj.address());
     if (plugin_obj) {
