@@ -11,15 +11,22 @@
 #include "nsTArray.h"
 
 namespace mozilla {
+
+class ErrorResult;
+
 namespace dom {
 
 class ServiceWorkerRegistrationData;
 class ServiceWorkerRegistrationDescriptor;
 
-typedef MozPromise<ServiceWorkerRegistrationDescriptor, nsresult, false>
+
+
+
+
+typedef MozPromise<ServiceWorkerRegistrationDescriptor, ErrorResult, true>
         ServiceWorkerRegistrationPromise;
 
-typedef MozPromise<nsTArray<ServiceWorkerRegistrationDescriptor>, nsresult, false>
+typedef MozPromise<nsTArray<ServiceWorkerRegistrationDescriptor>, ErrorResult, true>
         ServiceWorkerRegistrationListPromise;
 
 bool
