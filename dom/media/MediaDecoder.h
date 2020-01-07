@@ -652,12 +652,6 @@ protected:
   
   bool mIsBackgroundVideoDecodingAllowed;
 
-  
-  
-  
-  
-  int64_t mDecoderPosition = 0;
-
 public:
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
   AbstractCanonical<bool>* CanonicalPreservesPitch()
