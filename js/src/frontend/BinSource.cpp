@@ -335,7 +335,7 @@ BinASTParser::parseBlockStatementAux(const BinKind kind, const BinFields& fields
 
     
     if (!body)
-        body = factory_.newStatementList(tokenizer_->pos());
+        TRY_VAR(body, factory_.newStatementList(tokenizer_->pos()));
 
     MOZ_TRY_VAR(body, appendDirectivesToBody(body, directives));
 
@@ -804,8 +804,7 @@ BinASTParser::parseStatementAux(const BinKind kind, const BinFields& fields)
         if (!body)
             return raiseMissingField("ForInStatement", BinField::Body);
 
-        TRY_DECL(forHead, factory_.newForInOrOfHead(ParseNodeKind::PNK_FORIN, left, right,
-                                                    tokenizer_->pos(start)));
+        TRY_DECL(forHead, factory_.newForInOrOfHead(PNK_FORIN, left, right, tokenizer_->pos(start)));
         TRY_VAR(result, factory_.newForStatement(start, forHead, body,  0));
 
         if (!scope.isEmpty()) {
@@ -837,7 +836,7 @@ BinASTParser::parseBreakOrContinueStatementAux(const BinKind kind, const BinFiel
           case BinField::Label:
             MOZ_TRY_VAR(label, parsePattern());
 
-            if (label && !label->isKind(ParseNodeKind::PNK_NAME))
+            if (label && !label->isKind(PNK_NAME))
                 return raiseError("ContinueStatement | BreakStatement - Label MUST be an identifier"); 
 
             break;
@@ -1033,7 +1032,7 @@ BinASTParser::parseFunctionAux(const BinKind kind, const BinFields& fields)
 
     
     if (!params)
-        TRY_VAR(params, new_<ListNode>(ParseNodeKind::PNK_PARAMSBODY, tokenizer_->pos()));
+        TRY_VAR(params, new_<ListNode>(PNK_PARAMSBODY, tokenizer_->pos()));
 
     if (!body)
         TRY_VAR(body, factory_.newStatementList(tokenizer_->pos()));
@@ -1052,11 +1051,9 @@ BinASTParser::parseFunctionAux(const BinKind kind, const BinFields& fields)
 
     MOZ_ASSERT(params->isArity(PN_LIST));
 
-    if (!(body->isKind(ParseNodeKind::PNK_LEXICALSCOPE) &&
-          body->pn_u.scope.body->isKind(ParseNodeKind::PNK_STATEMENTLIST)))
-    {
+    if (!(body->isKind(PNK_LEXICALSCOPE) && body->pn_u.scope.body->isKind(PNK_STATEMENTLIST))) {
         
-        if (!body->isKind(ParseNodeKind::PNK_STATEMENTLIST)) {
+        if (!body->isKind(PNK_STATEMENTLIST)) {
             TRY_DECL(list, factory_.newStatementList(tokenizer_->pos(start)));
 
             list->initList(body);
@@ -1066,7 +1063,7 @@ BinASTParser::parseFunctionAux(const BinKind kind, const BinFields& fields)
         
         TRY_VAR(body, factory_.newLexicalScope(nullptr, body));
     }
-    MOZ_ASSERT(body->isKind(ParseNodeKind::PNK_LEXICALSCOPE));
+    MOZ_ASSERT(body->isKind(PNK_LEXICALSCOPE));
 
     MOZ_TRY_VAR(body, appendDirectivesToBody(body, directives));
 
@@ -1164,7 +1161,7 @@ BinASTParser::parseVariableDeclarationAux(const BinKind kind, const BinFields& f
       default:
         return raiseInvalidKind("VariableDeclaration", kind);
       case BinKind::VariableDeclaration:
-        ParseNodeKind pnk = ParseNodeKind::PNK_LIMIT;
+        ParseNodeKind pnk = PNK_LIMIT;
 
         for (auto field : fields) {
             switch (field) {
@@ -1173,11 +1170,11 @@ BinASTParser::parseVariableDeclarationAux(const BinKind kind, const BinFields& f
                 MOZ_TRY(readString(kindName));
 
                 if (*kindName == "let")
-                    pnk = ParseNodeKind::PNK_LET;
+                    pnk = PNK_LET;
                 else if (*kindName == "var")
-                    pnk = ParseNodeKind::PNK_VAR;
+                    pnk = PNK_VAR;
                 else if (*kindName == "const")
-                    pnk = ParseNodeKind::PNK_CONST;
+                    pnk = PNK_CONST;
                 else
                     return raiseInvalidEnum("VariableDeclaration", *kindName);
 
@@ -1188,8 +1185,7 @@ BinASTParser::parseVariableDeclarationAux(const BinKind kind, const BinFields& f
                 AutoList guard(*tokenizer_);
 
                 TRY(tokenizer_->enterList(length, guard));
-                TRY_VAR(result, factory_.newDeclarationList(ParseNodeKind::PNK_CONST ,
-                                                            tokenizer_->pos(start)));
+                TRY_VAR(result, factory_.newDeclarationList(PNK_CONST , tokenizer_->pos(start)));
 
                 for (uint32_t i = 0; i < length; ++i) {
                     ParseNode* current;
@@ -1207,12 +1203,12 @@ BinASTParser::parseVariableDeclarationAux(const BinKind kind, const BinFields& f
             }
         }
 
-        if (!result || pnk == ParseNodeKind::PNK_LIMIT)
+        if (!result || pnk == PNK_LIMIT)
             return raiseMissingField("VariableDeclaration", BinField::Declarations);
 
         result->setKind(pnk);
 
-        MOZ_ASSERT(!result->isKind(ParseNodeKind::PNK_NOP));
+        MOZ_ASSERT(!result->isKind(PNK_NOP));
     }
 
     return result;
@@ -1280,7 +1276,7 @@ BinASTParser::parseVariableDeclarator()
     ParseNode* result(nullptr);
 
     
-    if (id->isKind(ParseNodeKind::PNK_NAME)) {
+    if (id->isKind(PNK_NAME)) {
         
         TRY_VAR(result, factory_.newName(id->pn_atom->asPropertyName(), tokenizer_->pos(start), cx_));
 
@@ -1294,7 +1290,7 @@ BinASTParser::parseVariableDeclarator()
             return raiseMissingField("VariableDeclarator (with non-trivial pattern)", BinField::Init);
         }
 
-        TRY_VAR(result, factory_.newAssignment(ParseNodeKind::PNK_ASSIGN, id, init));
+        TRY_VAR(result, factory_.newAssignment(PNK_ASSIGN, id, init));
     }
 
     return result;
@@ -1556,55 +1552,55 @@ BinASTParser::parseExpressionAux(const BinKind kind, const BinFields& fields)
         if (prefix.isNothing())
             prefix.emplace(false);
 
-        ParseNodeKind pnk = ParseNodeKind::PNK_LIMIT;
+        ParseNodeKind pnk = PNK_LIMIT;
         if (kind == BinKind::UnaryExpression) {
             if (*operation == "-") {
-                pnk = ParseNodeKind::PNK_NEG;
+                pnk = PNK_NEG;
             } else if (*operation == "+") {
-                pnk = ParseNodeKind::PNK_POS;
+                pnk = PNK_POS;
             } else if (*operation == "!") {
-                pnk = ParseNodeKind::PNK_NOT;
+                pnk = PNK_NOT;
             } else if (*operation == "~") {
-                pnk = ParseNodeKind::PNK_BITNOT;
+                pnk = PNK_BITNOT;
             } else if (*operation == "typeof") {
-                if (expr->isKind(ParseNodeKind::PNK_NAME))
-                    pnk = ParseNodeKind::PNK_TYPEOFNAME;
+                if (expr->isKind(PNK_NAME))
+                    pnk = PNK_TYPEOFNAME;
                 else
-                    pnk = ParseNodeKind::PNK_TYPEOFEXPR;
+                    pnk = PNK_TYPEOFEXPR;
             } else if (*operation == "void") {
-                pnk = ParseNodeKind::PNK_VOID;
+                pnk = PNK_VOID;
             } else if (*operation == "delete") {
                 switch (expr->getKind()) {
-                  case ParseNodeKind::PNK_NAME:
+                  case PNK_NAME:
                     expr->setOp(JSOP_DELNAME);
-                    pnk = ParseNodeKind::PNK_DELETENAME;
+                    pnk = PNK_DELETENAME;
                     break;
-                  case ParseNodeKind::PNK_DOT:
-                    pnk = ParseNodeKind::PNK_DELETEPROP;
+                  case PNK_DOT:
+                    pnk = PNK_DELETEPROP;
                     break;
-                  case ParseNodeKind::PNK_ELEM:
-                    pnk = ParseNodeKind::PNK_DELETEELEM;
+                  case PNK_ELEM:
+                    pnk = PNK_DELETEELEM;
                     break;
                   default:
-                    pnk = ParseNodeKind::PNK_DELETEEXPR;
+                    pnk = PNK_DELETEEXPR;
                 }
             } else {
                 return raiseInvalidEnum("UnaryOperator", *operation);
             }
         } else if (kind == BinKind::UpdateExpression) {
-            if (!expr->isKind(ParseNodeKind::PNK_NAME) && !factory_.isPropertyAccess(expr))
+            if (!expr->isKind(PNK_NAME) && !factory_.isPropertyAccess(expr))
                 return raiseError("Invalid increment/decrement operand"); 
 
             if (*operation == "++") {
                 if (*prefix)
-                    pnk = ParseNodeKind::PNK_PREINCREMENT;
+                    pnk = PNK_PREINCREMENT;
                 else
-                    pnk = ParseNodeKind::PNK_POSTINCREMENT;
+                    pnk = PNK_POSTINCREMENT;
             } else if (*operation == "--") {
                 if (*prefix)
-                    pnk = ParseNodeKind::PNK_PREDECREMENT;
+                    pnk = PNK_PREDECREMENT;
                 else
-                    pnk = ParseNodeKind::PNK_POSTDECREMENT;
+                    pnk = PNK_POSTDECREMENT;
             } else {
                 return raiseInvalidEnum("UpdateOperator", *operation);
             }
@@ -1644,61 +1640,59 @@ BinASTParser::parseExpressionAux(const BinKind kind, const BinFields& fields)
 
         
         
-        ParseNodeKind pnk = ParseNodeKind::PNK_LIMIT;
+        ParseNodeKind pnk = PNK_LIMIT;
         if (*operation == "==")
-            pnk = ParseNodeKind::PNK_EQ;
+            pnk = PNK_EQ;
         else if (*operation == "!=")
-            pnk = ParseNodeKind::PNK_NE;
+            pnk = PNK_NE;
         else if (*operation == "===")
-            pnk = ParseNodeKind::PNK_STRICTEQ;
+            pnk = PNK_STRICTEQ;
         else if (*operation == "!==")
-            pnk = ParseNodeKind::PNK_STRICTNE;
+            pnk = PNK_STRICTNE;
         else if (*operation == "<")
-            pnk = ParseNodeKind::PNK_LT;
+            pnk = PNK_LT;
         else if (*operation == "<=")
-            pnk = ParseNodeKind::PNK_LE;
+            pnk = PNK_LE;
         else if (*operation == ">")
-            pnk = ParseNodeKind::PNK_GT;
+            pnk = PNK_GT;
         else if (*operation == ">=")
-            pnk = ParseNodeKind::PNK_GE;
+            pnk = PNK_GE;
         else if (*operation == "<<")
-            pnk = ParseNodeKind::PNK_LSH;
+            pnk = PNK_LSH;
         else if (*operation == ">>")
-            pnk = ParseNodeKind::PNK_RSH;
+            pnk = PNK_RSH;
         else if (*operation == ">>>")
-            pnk = ParseNodeKind::PNK_URSH;
+            pnk = PNK_URSH;
         else if (*operation == "+")
-            pnk = ParseNodeKind::PNK_ADD;
+            pnk = PNK_ADD;
         else if (*operation == "-")
-            pnk = ParseNodeKind::PNK_SUB;
+            pnk = PNK_SUB;
         else if (*operation == "*")
-            pnk = ParseNodeKind::PNK_STAR;
+            pnk = PNK_STAR;
         else if (*operation == "/")
-            pnk = ParseNodeKind::PNK_DIV;
+            pnk = PNK_DIV;
         else if (*operation == "%")
-            pnk = ParseNodeKind::PNK_MOD;
+            pnk = PNK_MOD;
         else if (*operation == "|")
-            pnk = ParseNodeKind::PNK_BITOR;
+            pnk = PNK_BITOR;
         else if (*operation == "^")
-            pnk = ParseNodeKind::PNK_BITXOR;
+            pnk = PNK_BITXOR;
         else if (*operation == "&")
-            pnk = ParseNodeKind::PNK_BITAND;
+            pnk = PNK_BITAND;
         else if (*operation == "in")
-            pnk = ParseNodeKind::PNK_IN;
+            pnk = PNK_IN;
         else if (*operation == "instanceof")
-            pnk = ParseNodeKind::PNK_INSTANCEOF;
+            pnk = PNK_INSTANCEOF;
         else if (*operation == "||")
-            pnk = ParseNodeKind::PNK_OR;
+            pnk = PNK_OR;
         else if (*operation == "&&")
-            pnk = ParseNodeKind::PNK_AND;
+            pnk = PNK_AND;
         else if (*operation == "**")
-            pnk = ParseNodeKind::PNK_POW;
+            pnk = PNK_POW;
         else
             return raiseInvalidEnum("BinaryOperator | LogicalOperator", *operation);
 
-        if (left->isKind(pnk) &&
-            pnk != ParseNodeKind::PNK_POW )
-        {
+        if (left->isKind(pnk) && pnk != PNK_POW ) {
             
             left->appendWithoutOrderAssumption(right);
             result = left;
@@ -1742,31 +1736,31 @@ BinASTParser::parseExpressionAux(const BinKind kind, const BinFields& fields)
         
         
         
-        ParseNodeKind pnk = ParseNodeKind::PNK_LIMIT;
+        ParseNodeKind pnk = PNK_LIMIT;
         if (*operation == "=")
-            pnk = ParseNodeKind::PNK_ASSIGN;
+            pnk = PNK_ASSIGN;
         else if (*operation == "+=")
-            pnk = ParseNodeKind::PNK_ADDASSIGN;
+            pnk = PNK_ADDASSIGN;
         else if (*operation == "-=")
-            pnk = ParseNodeKind::PNK_SUBASSIGN;
+            pnk = PNK_SUBASSIGN;
         else if (*operation == "*=")
-            pnk = ParseNodeKind::PNK_MULASSIGN;
+            pnk = PNK_MULASSIGN;
         else if (*operation == "/=")
-            pnk = ParseNodeKind::PNK_DIVASSIGN;
+            pnk = PNK_DIVASSIGN;
         else if (*operation == "%=")
-            pnk = ParseNodeKind::PNK_MODASSIGN;
+            pnk = PNK_MODASSIGN;
         else if (*operation == "<<=")
-            pnk = ParseNodeKind::PNK_LSHASSIGN;
+            pnk = PNK_LSHASSIGN;
         else if (*operation == ">>=")
-            pnk = ParseNodeKind::PNK_RSHASSIGN;
+            pnk = PNK_RSHASSIGN;
         else if (*operation == ">>>=")
-            pnk = ParseNodeKind::PNK_URSHASSIGN;
+            pnk = PNK_URSHASSIGN;
         else if (*operation == "|=")
-            pnk = ParseNodeKind::PNK_BITORASSIGN;
+            pnk = PNK_BITORASSIGN;
         else if (*operation == "^=")
-            pnk = ParseNodeKind::PNK_BITXORASSIGN;
+            pnk = PNK_BITXORASSIGN;
         else if (*operation == "&=")
-            pnk = ParseNodeKind::PNK_BITANDASSIGN;
+            pnk = PNK_BITANDASSIGN;
         else
             return raiseInvalidEnum("AssignmentOperator", *operation);
 
@@ -1838,8 +1832,8 @@ BinASTParser::parseExpressionAux(const BinKind kind, const BinFields& fields)
 
         ParseNodeKind pnk =
             kind == BinKind::CallExpression
-            ? ParseNodeKind::PNK_CALL
-            : ParseNodeKind::PNK_NEW;
+            ? PNK_CALL
+            : PNK_NEW;
         result->setKind(pnk);
         result->prepend(callee);
 
@@ -1859,7 +1853,7 @@ BinASTParser::parseExpressionAux(const BinKind kind, const BinFields& fields)
         if (!result)
             return raiseMissingField("SequenceExpression", BinField::Expression);
 
-        result->setKind(ParseNodeKind::PNK_COMMA);
+        result->setKind(PNK_COMMA);
         break;
       }
       default:
@@ -1937,7 +1931,7 @@ BinASTParser::parseArrayExpressionAux(const BinKind kind, const BinFields& field
     if (!result)
         TRY_VAR(result, factory_.newArrayLiteral(tokenizer_->offset()));
 
-    MOZ_ASSERT(result->isKind(ParseNodeKind::PNK_ARRAY));
+    MOZ_ASSERT(result->isKind(PNK_ARRAY));
     return result;
 }
 
@@ -1962,12 +1956,12 @@ BinASTParser::parseObjectExpressionAux(const BinKind kind, const BinFields& fiel
         TRY_VAR(result, factory_.newObjectLiteral(tokenizer_->offset()));
 
     MOZ_ASSERT(result->isArity(PN_LIST));
-    MOZ_ASSERT(result->isKind(ParseNodeKind::PNK_OBJECT));
+    MOZ_ASSERT(result->isKind(PNK_OBJECT));
 
 #if defined(DEBUG)
     
     for (ParseNode* iter = result->pn_head; iter != nullptr; iter = iter->pn_next) {
-        MOZ_ASSERT(iter->isKind(ParseNodeKind::PNK_COLON));
+        MOZ_ASSERT(iter->isKind(PNK_COLON));
         MOZ_ASSERT(iter->pn_left != nullptr);
         MOZ_ASSERT(iter->pn_right != nullptr);
     }
@@ -2008,7 +2002,7 @@ BinASTParser::parseMemberExpressionAux(const BinKind kind, const BinFields& fiel
 
     ParseNode* result(nullptr);
     if (kind == BinKind::DotExpression) {
-        MOZ_ASSERT(property->isKind(ParseNodeKind::PNK_NAME));
+        MOZ_ASSERT(property->isKind(PNK_NAME));
         PropertyName* name = property->pn_atom->asPropertyName();
         TRY_VAR(result, factory_.newPropertyAccess(object, name, tokenizer_->offset()));
     } else {
@@ -2074,7 +2068,7 @@ BinASTParser::parseSwitchCase()
     if (!statements)
         return raiseMissingField("SwitchCase", BinField::Consequent);
 
-    MOZ_ASSERT(statements->isKind(ParseNodeKind::PNK_STATEMENTLIST));
+    MOZ_ASSERT(statements->isKind(PNK_STATEMENTLIST));
 
     TRY_DECL(result, factory_.newCaseOrDefault(start, test, statements));
 
@@ -2140,7 +2134,7 @@ BinASTParser::parseArgumentList()
     AutoList guard(*tokenizer_);
 
     TRY(tokenizer_->enterList(length, guard));
-    ParseNode* result = new_<ListNode>(ParseNodeKind::PNK_PARAMSBODY, tokenizer_->pos());
+    ParseNode* result = new_<ListNode>(PNK_PARAMSBODY, tokenizer_->pos());
 
     for (uint32_t i = 0; i < length; ++i) {
         ParseNode* pattern;
@@ -2282,7 +2276,7 @@ BinASTParser::parseObjectMember()
         if (!result)
             return raiseEmpty("ObjectMethod");
 
-        MOZ_ASSERT(result->isKind(ParseNodeKind::PNK_COLON));
+        MOZ_ASSERT(result->isKind(PNK_COLON));
         break;
       default:
         return raiseInvalidKind("ObjectMember", kind);
