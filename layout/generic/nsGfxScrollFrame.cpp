@@ -3024,21 +3024,15 @@ AppendToTop(nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists,
   nsDisplayWrapList* newItem;
   const ActiveScrolledRoot* asr = aBuilder->CurrentActiveScrolledRoot();
   if (aFlags & APPEND_OWN_LAYER) {
-    nsDisplayOwnLayerFlags flags = aBuilder->GetCurrentScrollbarFlags();
-    
-    MOZ_ASSERT(flags == nsDisplayOwnLayerFlags::eNone ||
-               flags == nsDisplayOwnLayerFlags::eVerticalScrollbar ||
-               flags == nsDisplayOwnLayerFlags::eHorizontalScrollbar);
-
     ScrollbarData scrollbarData;
     if (aFlags & APPEND_SCROLLBAR_CONTAINER) {
-      scrollbarData.mTargetViewId = aBuilder->GetCurrentScrollbarTarget();
+      scrollbarData = ScrollbarData::CreateForScrollbarContainer(aBuilder->GetCurrentScrollbarDirection(),
+                                                                 aBuilder->GetCurrentScrollbarTarget());
       
-      MOZ_ASSERT(flags != nsDisplayOwnLayerFlags::eNone);
-      flags |= nsDisplayOwnLayerFlags::eScrollbarContainer;
+      MOZ_ASSERT(scrollbarData.mDirection.isSome());
     }
 
-    newItem = MakeDisplayItem<nsDisplayOwnLayer>(aBuilder, aSourceFrame, aSource, asr, flags, scrollbarData);
+    newItem = MakeDisplayItem<nsDisplayOwnLayer>(aBuilder, aSourceFrame, aSource, asr, nsDisplayOwnLayerFlags::eNone, scrollbarData);
   } else {
     
     
@@ -3088,7 +3082,7 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
                                        bool                    aCreateLayer,
                                        bool                    aPositioned)
 {
-  bool overlayScrollbars =
+  const bool overlayScrollbars =
     LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0;
 
   AutoTArray<nsIFrame*, 3> scrollParts;
@@ -3107,7 +3101,7 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
   
   
   
-  mozilla::layers::FrameMetrics::ViewID scrollTargetId = IsMaybeScrollingActive()
+  const mozilla::layers::FrameMetrics::ViewID scrollTargetId = IsMaybeScrollingActive()
     ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
     : mozilla::layers::FrameMetrics::NULL_SCROLL_ID;
 
@@ -3123,14 +3117,15 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
   }
 
   for (uint32_t i = 0; i < scrollParts.Length(); ++i) {
-    nsDisplayOwnLayerFlags flags = nsDisplayOwnLayerFlags::eNone;
+    Maybe<ScrollDirection> scrollDirection;
     uint32_t appendToTopFlags = 0;
     if (scrollParts[i] == mVScrollbarBox) {
-      flags |= nsDisplayOwnLayerFlags::eVerticalScrollbar;
+      scrollDirection.emplace(ScrollDirection::eVertical);
       appendToTopFlags |= APPEND_SCROLLBAR_CONTAINER;
     }
     if (scrollParts[i] == mHScrollbarBox) {
-      flags |= nsDisplayOwnLayerFlags::eHorizontalScrollbar;
+      MOZ_ASSERT(!scrollDirection.isSome());
+      scrollDirection.emplace(ScrollDirection::eHorizontal);
       appendToTopFlags |= APPEND_SCROLLBAR_CONTAINER;
     }
     if (scrollParts[i] == mResizerBox &&
@@ -3142,20 +3137,20 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
     
     
     
-    nsRect visible = mIsRoot && mOuter->PresContext()->IsRootContentDocument()
+    const nsRect visible = mIsRoot && mOuter->PresContext()->IsRootContentDocument()
                      ? scrollParts[i]->GetVisualOverflowRectRelativeToParent()
                      : aBuilder->GetVisibleRect();
     if (visible.IsEmpty()) {
       continue;
     }
-    nsRect dirty = mIsRoot && mOuter->PresContext()->IsRootContentDocument()
+    const nsRect dirty = mIsRoot && mOuter->PresContext()->IsRootContentDocument()
                      ? scrollParts[i]->GetVisualOverflowRectRelativeToParent()
                      : aBuilder->GetDirtyRect();
 
     
     
-    bool isOverlayScrollbar = (flags != nsDisplayOwnLayerFlags::eNone) && overlayScrollbars;
-    bool createLayer = aCreateLayer || isOverlayScrollbar ||
+    const bool isOverlayScrollbar = scrollDirection.isSome() && overlayScrollbars;
+    const bool createLayer = aCreateLayer || isOverlayScrollbar ||
                        gfxPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
 
     nsDisplayListCollection partList(aBuilder);
@@ -3165,7 +3160,7 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
                          visible, dirty, true);
 
       nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter
-        infoSetter(aBuilder, scrollTargetId, flags, createLayer);
+        infoSetter(aBuilder, scrollTargetId, scrollDirection, createLayer);
       mOuter->BuildDisplayListForChild(
         aBuilder, scrollParts[i], partList,
         nsIFrame::DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
@@ -3194,7 +3189,7 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
                          visible + mOuter->GetOffsetTo(scrollParts[i]),
                          dirty + mOuter->GetOffsetTo(scrollParts[i]), true);
       nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter
-        infoSetter(aBuilder, scrollTargetId, flags, createLayer);
+        infoSetter(aBuilder, scrollTargetId, scrollDirection, createLayer);
       
       
       ::AppendToTop(aBuilder, aLists,
