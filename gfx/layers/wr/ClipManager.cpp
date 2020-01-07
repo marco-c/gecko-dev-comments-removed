@@ -59,7 +59,7 @@ ClipManager::BeginList(const StackingContextHelper& aStackingContext)
   if (aStackingContext.AffectsClipPositioning()) {
     PushOverrideForASR(
         mItemClipStack.empty() ? nullptr : mItemClipStack.top().mASR,
-        Nothing());
+        aStackingContext.ReferenceFrameId());
   }
 
   ItemClips clips(nullptr, nullptr);
@@ -217,7 +217,7 @@ ClipManager::BeginItem(nsDisplayItem* aItem,
     Maybe<wr::WrClipId> scrollId =
         mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
     MOZ_ASSERT(scrollId.isSome());
-    clips.mScrollId = scrollId;
+    clips.mScrollId = ClipIdAfterOverride(scrollId);
   } else {
     
     
