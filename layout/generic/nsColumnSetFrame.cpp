@@ -747,7 +747,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
         kidReflowInput.mFlags.mNextInFlowUntouched = true;
       }
 
-      ReflowOutput kidDesiredSize(wm, aDesiredSize.mFlags);
+      ReflowOutput kidDesiredSize(wm);
 
       
       

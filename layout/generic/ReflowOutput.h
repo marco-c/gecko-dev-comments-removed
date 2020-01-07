@@ -200,21 +200,15 @@ namespace mozilla {
 
 class ReflowOutput {
 public:
-  
-  
-  
-  
-  
-  
-  explicit ReflowOutput(mozilla::WritingMode aWritingMode, uint32_t aFlags = 0)
+  explicit ReflowOutput(mozilla::WritingMode aWritingMode)
     : mISize(0)
     , mBSize(0)
     , mBlockStartAscent(ASK_FOR_BASELINE)
-    , mFlags(aFlags)
     , mWritingMode(aWritingMode)
-  {}
+  {
+  }
 
-  explicit ReflowOutput(const ReflowInput& aState, uint32_t aFlags = 0);
+  explicit ReflowOutput(const ReflowInput& aReflowInput);
 
   
   
@@ -328,11 +322,6 @@ public:
 private:
   nscoord mISize, mBSize; 
   nscoord mBlockStartAscent; 
-
-public:
-  uint32_t mFlags;
-
-private:
   mozilla::WritingMode mWritingMode;
 };
 

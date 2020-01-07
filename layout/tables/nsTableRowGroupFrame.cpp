@@ -391,10 +391,7 @@ nsTableRowGroupFrame::ReflowChildren(nsPresContext*         aPresContext,
       LogicalRect oldKidRect = kidFrame->GetLogicalRect(wm, containerSize);
       nsRect oldKidVisualOverflow = kidFrame->GetVisualOverflowRect();
 
-      
-      
-      ReflowOutput desiredSize(aReflowInput.reflowInput,
-                                      aDesiredSize.mFlags);
+      ReflowOutput desiredSize(aReflowInput.reflowInput);
       desiredSize.ClearSize();
 
       

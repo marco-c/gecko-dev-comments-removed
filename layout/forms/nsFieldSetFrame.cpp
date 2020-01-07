@@ -490,8 +490,7 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
         std::max(0, aReflowInput.ComputedMaxBSize() - mLegendSpace);
     }
 
-    ReflowOutput kidDesiredSize(kidReflowInput,
-                                       aDesiredSize.mFlags);
+    ReflowOutput kidDesiredSize(kidReflowInput);
     
     NS_ASSERTION(kidReflowInput.ComputedPhysicalMargin() == nsMargin(0,0,0,0),
                  "Margins on anonymous fieldset child not supported!");
