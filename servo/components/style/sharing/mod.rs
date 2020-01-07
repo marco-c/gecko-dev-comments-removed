@@ -668,7 +668,6 @@ impl<E: TElement> StyleSharingCache<E> {
 
         
         
-        
         if target.element.state() != candidate.state() {
             trace!("Miss: User and Author State");
             return None;

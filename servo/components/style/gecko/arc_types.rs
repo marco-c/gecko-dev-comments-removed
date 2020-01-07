@@ -123,12 +123,12 @@ pub unsafe extern "C" fn Servo_RuleNode_Release(obj: &RawServoRuleNode) {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_StyleContext_AddRef(obj: &ComputedValues) {
+pub unsafe extern "C" fn Servo_ComputedStyle_AddRef(obj: &ComputedValues) {
     mem::forget(ArcBorrow::from_ref(obj).clone_arc());
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_StyleContext_Release(obj: &ComputedValues) {
+pub unsafe extern "C" fn Servo_ComputedStyle_Release(obj: &ComputedValues) {
     ArcBorrow::from_ref(obj).with_arc(|a: &Arc<ComputedValues>| {
         let _: Arc<ComputedValues> = ptr::read(a);
     });
