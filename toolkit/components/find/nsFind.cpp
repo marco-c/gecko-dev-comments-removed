@@ -922,9 +922,9 @@ nsFind::ResetAll()
 
 
 NS_IMETHODIMP
-nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
-             nsIDOMRange* aStartPoint, nsIDOMRange* aEndPoint,
-             nsIDOMRange** aRangeRet)
+nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
+             nsRange* aStartPoint, nsRange* aEndPoint,
+             nsRange** aRangeRet)
 {
 #ifdef DEBUG_FIND
   printf("============== nsFind::Find('%s'%s, %p, %p, %p)\n",
@@ -938,11 +938,6 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
   NS_ENSURE_ARG(aEndPoint);
   NS_ENSURE_ARG_POINTER(aRangeRet);
   *aRangeRet = 0;
-
-  
-  nsRange* searchRange = static_cast<nsRange*>(aSearchRange);
-  nsRange* startPoint = static_cast<nsRange*>(aStartPoint);
-  nsRange* endPoint = static_cast<nsRange*>(aEndPoint);
 
   if (!aPatText) {
     return NS_ERROR_NULL_POINTER;
@@ -990,8 +985,8 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
   int32_t matchAnchorOffset = 0;
 
   
-  nsCOMPtr<nsINode> endNode = endPoint->GetEndContainer();;
-  uint32_t endOffset = endPoint->EndOffset();
+  nsCOMPtr<nsINode> endNode = aEndPoint->GetEndContainer();;
+  uint32_t endOffset = aEndPoint->EndOffset();
 
   char16_t c = 0;
   char16_t patc = 0;
@@ -1006,11 +1001,11 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
     if (!frag) {
 
       tc = nullptr;
-      NextNode(searchRange, startPoint, endPoint, false);
+      NextNode(aSearchRange, aStartPoint, aEndPoint, false);
       if (!mIterNode) { 
         
         if (matchAnchorNode) {
-          NextNode(searchRange, startPoint, endPoint, true);
+          NextNode(aSearchRange, aStartPoint, aEndPoint, true);
         }
 
         
@@ -1258,7 +1253,7 @@ nsFind::Find(const char16_t* aPatText, nsIDOMRange* aSearchRange,
             nextChar = (t2b ? t2b[nextfindex] : CHAR_TO_UNICHAR(t1b[nextfindex]));
           
           else
-            nextChar = PeekNextChar(searchRange, startPoint, endPoint);
+            nextChar = PeekNextChar(aSearchRange, aStartPoint, aEndPoint);
 
           if (nextChar == NBSP_CHARCODE)
             nextChar = CHAR_TO_UNICHAR(' ');

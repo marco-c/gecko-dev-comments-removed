@@ -722,7 +722,7 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
   RefPtr<nsRange> endPt = new nsRange(theDoc);
   NS_ENSURE_ARG_POINTER(endPt);
 
-  nsCOMPtr<nsIDOMRange> foundRange;
+  RefPtr<nsRange> foundRange;
 
   
   if (!aWrapping)
@@ -743,7 +743,7 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
     sel->RemoveAllRanges(IgnoreErrors());
     
     
-    SetSelectionAndScroll(aWindow, static_cast<nsRange*>(foundRange.get()));
+    SetSelectionAndScroll(aWindow, foundRange);
   }
 
   return rv;
