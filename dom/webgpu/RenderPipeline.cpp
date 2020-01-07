@@ -1,0 +1,19 @@
+
+
+
+
+
+#include "RenderPipeline.h"
+
+#include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
+
+namespace mozilla {
+namespace webgpu {
+
+RenderPipeline::~RenderPipeline() = default;
+
+WEBGPU_IMPL_GOOP_0(RenderPipeline)
+
+} 
+} 

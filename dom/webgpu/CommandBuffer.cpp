@@ -1,0 +1,19 @@
+
+
+
+
+
+#include "CommandBuffer.h"
+
+#include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
+
+namespace mozilla {
+namespace webgpu {
+
+CommandBuffer::~CommandBuffer() = default;
+
+WEBGPU_IMPL_GOOP_0(CommandBuffer)
+
+} 
+} 

@@ -1,0 +1,19 @@
+
+
+
+
+
+#include "BlendState.h"
+
+#include "Device.h"
+#include "mozilla/dom/WebGPUBinding.h"
+
+namespace mozilla {
+namespace webgpu {
+
+BlendState::~BlendState() = default;
+
+WEBGPU_IMPL_GOOP_0(BlendState)
+
+} 
+} 

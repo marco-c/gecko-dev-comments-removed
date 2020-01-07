@@ -1,0 +1,31 @@
+
+
+
+
+
+#ifndef WEBGPU_CommandBuffer_H_
+#define WEBGPU_CommandBuffer_H_
+
+#include "nsWrapperCache.h"
+#include "ObjectModel.h"
+
+namespace mozilla {
+namespace webgpu {
+
+class Device;
+
+class CommandBuffer final
+    : public ChildOf<Device>
+{
+public:
+    WEBGPU_DECL_GOOP(CommandBuffer)
+
+private:
+    CommandBuffer() = delete;
+    virtual ~CommandBuffer();
+};
+
+} 
+} 
+
+#endif 
