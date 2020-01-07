@@ -5345,6 +5345,8 @@ pref("dom.vr.autoactivate.enabled", false);
 
 pref("dom.vr.controller_trigger_threshold", "0.1");
 
+pref("dom.vr.external.enabled", false);
+
 
 
 

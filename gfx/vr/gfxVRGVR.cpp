@@ -213,7 +213,7 @@ VRDisplayGVR::VRDisplayGVR()
   MOZ_ASSERT(!sContextObserver); 
   sContextObserver = this;
 
-  mDisplayInfo.mDisplayName.AssignLiteral("GVR HMD");
+  strncpy(mDisplayInfo.mDisplayName, "GVR HMD", kVRDisplayNameMaxLen);
   mDisplayInfo.mIsConnected = true;
   mDisplayInfo.mIsMounted = true;
   mDisplayInfo.mCapabilityFlags = VRDisplayCapabilityFlags::Cap_None |
@@ -409,7 +409,7 @@ VRDisplayGVR::GetSensorState()
   result.linearVelocity[2] = 0.0f;
 
   UpdateHeadToEye(context);
-  result.CalcViewMatrices(mHeadToEyes);
+  CalcViewMatrices(&result, mHeadToEyes);
 
   return result;
 }
@@ -596,12 +596,15 @@ VRControllerGVR::VRControllerGVR(dom::GamepadHand aHand, uint32_t aDisplayID)
   : VRControllerHost(VRDeviceType::GVR, aHand, aDisplayID)
 {
   MOZ_COUNT_CTOR_INHERITED(VRControllerGVR, VRControllerHost);
-  mControllerInfo.mControllerName.AssignLiteral("Daydream Controller");
+
+  VRControlerState& state = mControllerInfo.mControllerState;
+  strncpy(state.mControllerName, "Daydream Controller", kVRControllerNameMaxLen);
+
   
   
-  mControllerInfo.mNumButtons = GVR_CONTROLLER_BUTTON_COUNT - 1; 
-  mControllerInfo.mNumAxes = 2;
-  mControllerInfo.mNumHaptics = 0;
+  state.mNumButtons = GVR_CONTROLLER_BUTTON_COUNT - 1; 
+  state.mNumAxes = 2;
+  state.mNumHaptics = 0;
 }
 
 VRControllerGVR::~VRControllerGVR()
