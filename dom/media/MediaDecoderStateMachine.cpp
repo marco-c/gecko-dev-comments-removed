@@ -291,7 +291,6 @@ protected:
     auto copiedArgs = MakeTuple(Forward<Ts>(aArgs)...);
 
     
-    
     auto master = mMaster;
 
     auto* s = new S(master);
@@ -302,6 +301,14 @@ protected:
     SLOG("change state to: %s", ToStateStr(s->GetState()));
 
     Exit();
+
+    
+    
+    master->OwnerThread()->DispatchDirectTask(
+      NS_NewRunnableFunction("MDSM::StateObject::DeleteOldState",
+                             [toDelete = Move(master->mStateObj)](){}));
+    
+    mMaster = nullptr;
 
     master->mStateObj.reset(s);
     return CallEnterMemberFunction(s, copiedArgs,
