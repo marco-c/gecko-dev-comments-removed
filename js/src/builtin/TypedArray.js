@@ -1566,7 +1566,19 @@ _SetCanonicalName(TypedArrayToStringTag, "get [Symbol.toStringTag]");
 
 function IterableToList(items, method) {
     
-    var iterator = GetIterator(items, method);
+
+    
+    assert(IsCallable(method), "method argument is a function");
+
+    
+    var iterator = callContentFunction(method, items);
+
+    
+    if (!IsObject(iterator))
+        ThrowTypeError(JSMSG_GET_ITER_RETURNED_PRIMITIVE);
+
+    
+    var nextMethod = iterator.next;
 
     
     var values = [];
@@ -1575,7 +1587,7 @@ function IterableToList(items, method) {
     var i = 0;
     while (true) {
         
-        var next = callContentFunction(iterator.next, iterator);
+        var next = callContentFunction(nextMethod, iterator);
         if (!IsObject(next))
             ThrowTypeError(JSMSG_ITER_METHOD_RETURNED_PRIMITIVE, "next");
 
