@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+function messageListener(event) {
+  postMessage("pong");
+}
+
+addEventListener("message", { handleEvent: messageListener });

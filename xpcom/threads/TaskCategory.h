@@ -36,6 +36,9 @@ enum class TaskCategory {
   
   Other,
 
+  
+  Performance,
+
   Count
 };
 

@@ -502,12 +502,16 @@ WorkerDebugger::ReportPerformanceInfo()
   uint16_t count =  perf->GetTotalDispatchCount();
   uint64_t duration = perf->GetExecutionDuration();
   RefPtr<nsIURI> uri = mWorkerPrivate->GetResolvedScriptURI();
-  CategoryDispatch item = CategoryDispatch(DispatchCategory::Worker.GetValue(), count);
+
+  
+  
+  
   FallibleTArray<CategoryDispatch> items;
+  CategoryDispatch item = CategoryDispatch(DispatchCategory::Worker.GetValue(), count);
   if (!items.AppendElement(item, fallible)) {
     NS_ERROR("Could not complete the operation");
     return PerformanceInfo(uri->GetSpecOrDefault(), pid, wid, pwid, duration,
-                           true, items);
+                            true, items);
   }
   perf->ResetPerformanceCounters();
   return PerformanceInfo(uri->GetSpecOrDefault(), pid, wid, pwid, duration,

@@ -427,7 +427,11 @@ private:
     
     
     
+    
     aWorkerPrivate->EnsurePerformanceStorage();
+#ifndef RELEASE_OR_BETA
+    aWorkerPrivate->EnsurePerformanceCounter();
+#endif
 
     ErrorResult rv;
     workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL, WorkerScript, rv);
@@ -5210,15 +5214,19 @@ WorkerPrivate::DumpCrashInformation(nsACString& aString)
 }
 
 #ifndef RELEASE_OR_BETA
-PerformanceCounter*
-WorkerPrivate::GetPerformanceCounter()
+void
+WorkerPrivate::EnsurePerformanceCounter()
 {
   AssertIsOnWorkerThread();
-
   if (!mPerformanceCounter) {
     mPerformanceCounter = new PerformanceCounter(NS_ConvertUTF16toUTF8(mWorkerName));
   }
+}
 
+PerformanceCounter*
+WorkerPrivate::GetPerformanceCounter()
+{
+  MOZ_ASSERT(mPerformanceCounter);
   return mPerformanceCounter;
 }
 #endif
