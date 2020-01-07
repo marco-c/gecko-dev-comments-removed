@@ -454,13 +454,7 @@ fn specific_bucket_for<'a>(component: &'a Component<SelectorImpl>) -> Bucket<'a>
         
         
         
-        
-        
-        
-        
-        
-        
-        
+        Component::Slotted(ref selector) => find_bucket(selector.iter()),
         Component::Host(Some(ref selector)) => find_bucket(selector.iter()),
         _ => Bucket::Universal,
     }
