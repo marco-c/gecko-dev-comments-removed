@@ -37,6 +37,8 @@ loader.lazyRequireGetter(this, "CommandUtils", "devtools/client/shared/developer
 loader.lazyRequireGetter(this, "clipboardHelper", "devtools/shared/platform/clipboard");
 loader.lazyRequireGetter(this, "openContentLink", "devtools/client/shared/link", true);
 
+loader.lazyImporter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
+
 const {LocalizationHelper, localizeMarkup} = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
@@ -46,6 +48,9 @@ loader.lazyGetter(this, "TOOLBOX_L10N", function() {
 
 
 const INITIAL_SIDEBAR_SIZE = 350;
+
+
+const LAZY_RESIZE_INTERVAL_MS = 200;
 
 
 
@@ -582,18 +587,26 @@ Inspector.prototype = {
     this.sidebar.off("destroy", this.onSidebarHidden);
   },
 
+  _onLazyPanelResize: async function() {
+    
+    
+    const useLandscapeMode = await window.top.promiseDocumentFlushed(() => {
+      return this.useLandscapeMode();
+    });
+    this.splitBox.setState({ vert: useLandscapeMode });
+    this.emit("inspector-resize");
+  },
+
   
 
 
 
   onPanelWindowResize: function() {
-    window.cancelIdleCallback(this._resizeTimerId);
-    this._resizeTimerId = window.requestIdleCallback(() => {
-      this.splitBox.setState({
-        vert: this.useLandscapeMode(),
-      });
-      this.emit("inspector-resize");
-    });
+    if (!this._lazyResizeHandler) {
+      this._lazyResizeHandler = new DeferredTask(this._onLazyPanelResize.bind(this),
+                                                 LAZY_RESIZE_INTERVAL_MS, 0);
+    }
+    this._lazyResizeHandler.arm();
   },
 
   getSidebarSize: function() {
