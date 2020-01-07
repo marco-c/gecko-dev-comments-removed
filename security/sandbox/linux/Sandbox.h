@@ -17,6 +17,10 @@
 
 namespace mozilla {
 
+namespace dom {
+class MaybeFileDesc;
+} 
+
 
 
 MOZ_EXPORT void SandboxEarlyInit();
@@ -25,11 +29,29 @@ MOZ_EXPORT void SandboxEarlyInit();
 
 
 
+struct ContentProcessSandboxParams {
+  
+  
+  
+  int mLevel = 0;
+  
+  
+  
+  int mBrokerFd = -1;
+  
+  
+  bool mFileProcess = false;
+  
+  
+  std::vector<int> mSyscallWhitelist;
+
+  static ContentProcessSandboxParams ForThisProcess(const dom::MaybeFileDesc& aBroker);
+};
 
 
-MOZ_EXPORT bool SetContentProcessSandbox(int aBrokerFd,
-                                         bool aFileProcess,
-                                         std::vector<int>& aSyscallWhitelist);
+
+
+MOZ_EXPORT bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX
