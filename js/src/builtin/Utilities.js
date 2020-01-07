@@ -221,22 +221,26 @@ function NullFunction() {}
 
 
 
-function CopyDataProperties(target, source, excluded) {
+function CopyDataProperties(target, source, excludedItems) {
     
     assert(IsObject(target), "target is an object");
 
     
-    assert(IsObject(excluded), "excluded is an object");
+    assert(IsObject(excludedItems), "excludedItems is an object");
 
     
     if (source === undefined || source === null)
         return;
 
     
-    source = ToObject(source);
+    var from = ToObject(source);
 
     
-    var keys = OwnPropertyKeys(source);
+    var keys = CopyDataPropertiesOrGetOwnKeys(target, from, excludedItems);
+
+    
+    if (keys === null)
+        return;
 
     
     for (var index = 0; index < keys.length; index++) {
@@ -244,8 +248,11 @@ function CopyDataProperties(target, source, excluded) {
 
         
         
-        if (!hasOwn(key, excluded) && callFunction(std_Object_propertyIsEnumerable, source, key))
-            _DefineDataProperty(target, key, source[key]);
+        if (!hasOwn(key, excludedItems) &&
+            callFunction(std_Object_propertyIsEnumerable, from, key))
+        {
+            _DefineDataProperty(target, key, from[key]);
+        }
     }
 
     
@@ -264,10 +271,14 @@ function CopyDataPropertiesUnfiltered(target, source) {
         return;
 
     
-    source = ToObject(source);
+    var from = ToObject(source);
 
     
-    var keys = OwnPropertyKeys(source);
+    var keys = CopyDataPropertiesOrGetOwnKeys(target, from, null);
+
+    
+    if (keys === null)
+        return;
 
     
     for (var index = 0; index < keys.length; index++) {
@@ -275,8 +286,8 @@ function CopyDataPropertiesUnfiltered(target, source) {
 
         
         
-        if (callFunction(std_Object_propertyIsEnumerable, source, key))
-            _DefineDataProperty(target, key, source[key]);
+        if (callFunction(std_Object_propertyIsEnumerable, from, key))
+            _DefineDataProperty(target, key, from[key]);
     }
 
     

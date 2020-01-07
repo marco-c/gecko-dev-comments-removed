@@ -9,17 +9,20 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/DebugOnly.h"
 
 #include "gc/Marking.h"
 #include "js/Value.h"
 #include "vm/Debugger.h"
 #include "vm/TypedArrayObject.h"
+#include "vm/UnboxedObject.h"
 
 #include "gc/Nursery-inl.h"
 #include "vm/ArrayObject-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Shape-inl.h"
+#include "vm/UnboxedObject-inl.h"
 
 using namespace js;
 
@@ -1518,6 +1521,24 @@ AddDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue 
     return CallAddPropertyHook(cx, obj, id, v);
 }
 
+static MOZ_ALWAYS_INLINE bool
+AddDataPropertyNonDelegate(JSContext* cx, HandlePlainObject obj, HandleId id, HandleValue v)
+{
+    MOZ_ASSERT(!JSID_IS_INT(id));
+    MOZ_ASSERT(!obj->isDelegate());
+
+    
+    
+    Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
+    if (!shape)
+        return false;
+
+    UpdateShapeTypeAndValueForWritableDataProp(cx, obj, shape, id, v);
+
+    MOZ_ASSERT(!obj->getClass()->getAddProperty());
+    return true;
+}
+
 static bool IsConfigurable(unsigned attrs) { return (attrs & JSPROP_PERMANENT) == 0; }
 static bool IsEnumerable(unsigned attrs) { return (attrs & JSPROP_ENUMERATE) != 0; }
 static bool IsWritable(unsigned attrs) { return (attrs & JSPROP_READONLY) == 0; }
@@ -2894,4 +2915,144 @@ js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     }
 
     return SuppressDeletedProperty(cx, obj, id);
+}
+
+bool
+js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target, HandleNativeObject from,
+                             HandlePlainObject excludedItems, bool* optimized)
+{
+    MOZ_ASSERT(!target->isDelegate(),
+               "CopyDataPropertiesNative should only be called during object literal construction"
+               "which precludes that |target| is the prototype of any other object");
+
+    *optimized = false;
+
+    
+    
+    if (from->getDenseInitializedLength() > 0 ||
+        from->isIndexed() ||
+        from->is<TypedArrayObject>() ||
+        from->getClass()->getNewEnumerate() ||
+        from->getClass()->getEnumerate())
+    {
+        return true;
+    }
+
+    
+    using ShapeVector = GCVector<Shape*, 8>;
+    Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+
+    RootedShape fromShape(cx, from->lastProperty());
+    for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
+        Shape* shape = &r.front();
+        jsid id = shape->propid();
+        MOZ_ASSERT(!JSID_IS_INT(id));
+
+        if (!shape->enumerable())
+            continue;
+        if (excludedItems && excludedItems->contains(cx, id))
+            continue;
+
+        
+        
+        
+        
+        
+        if (!shape->isDataProperty())
+            return true;
+
+        if (!shapes.append(shape))
+            return false;
+    }
+
+    *optimized = true;
+
+    
+    
+    const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
+
+    RootedId key(cx);
+    RootedValue value(cx);
+    for (size_t i = shapes.length(); i > 0; i--) {
+        Shape* shape = shapes[i - 1];
+        MOZ_ASSERT(shape->isDataProperty());
+        MOZ_ASSERT(shape->enumerable());
+
+        key = shape->propid();
+        MOZ_ASSERT(!JSID_IS_INT(key));
+
+        MOZ_ASSERT(from->isNative());
+        MOZ_ASSERT(from->lastProperty() == fromShape);
+
+        value = from->getSlot(shape->slot());
+        if (targetHadNoOwnProperties) {
+            MOZ_ASSERT(!target->contains(cx, key),
+                       "didn't expect to find an existing property");
+
+            if (!AddDataPropertyNonDelegate(cx, target, key, value))
+                return false;
+        } else {
+            if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+bool
+js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
+                             Handle<UnboxedPlainObject*> from, HandlePlainObject excludedItems,
+                             bool* optimized)
+{
+    MOZ_ASSERT(!target->isDelegate(),
+               "CopyDataPropertiesNative should only be called during object literal construction"
+               "which precludes that |target| is the prototype of any other object");
+
+    *optimized = false;
+
+    
+    if (from->maybeExpando())
+        return true;
+
+    *optimized = true;
+
+    
+    
+    const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
+
+#ifdef DEBUG
+    RootedObjectGroup fromGroup(cx, from->group());
+#endif
+
+    RootedId key(cx);
+    RootedValue value(cx);
+    const UnboxedLayout& layout = from->layout();
+    for (size_t i = 0; i < layout.properties().length(); i++) {
+        const UnboxedLayout::Property& property = layout.properties()[i];
+        key = NameToId(property.name);
+        MOZ_ASSERT(!JSID_IS_INT(key));
+
+        if (excludedItems && excludedItems->contains(cx, key))
+            continue;
+
+        
+        MOZ_ASSERT(from->group() == fromGroup);
+
+        
+        value = from->getValue(property);
+
+        if (targetHadNoOwnProperties) {
+            MOZ_ASSERT(!target->contains(cx, key),
+                       "didn't expect to find an existing property");
+
+            if (!AddDataPropertyNonDelegate(cx, target, key, value))
+                return false;
+        } else {
+            if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE))
+                return false;
+        }
+    }
+
+    return true;
 }
