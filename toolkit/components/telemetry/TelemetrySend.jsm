@@ -1116,7 +1116,8 @@ var TelemetrySendImpl = {
 
     const url = this._buildSubmissionURL(ping);
 
-    let request = new ServiceRequest();
+    
+    let request = new ServiceRequest({mozAnon: true});
     request.mozBackgroundRequest = true;
     request.timeout = Policy.pingSubmissionTimeout();
 
