@@ -347,30 +347,21 @@ using UniqueProfilerBacktrace =
 
 UniqueProfilerBacktrace profiler_get_backtrace();
 
-
-
-
-void profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
-                                     uint32_t* aEntries,
-                                     uint32_t* aGeneration);
-
-
-
-
-
-
-
-
-static inline void profiler_get_buffer_info(uint32_t* aCurrentPosition,
-                                            uint32_t* aEntries,
-                                            uint32_t* aGeneration)
+struct ProfilerBufferInfo
 {
-  *aCurrentPosition = 0;
-  *aEntries = 0;
-  *aGeneration = 0;
+  uint32_t mWritePosition;
+  uint32_t mReadPosition;
+  uint32_t mGeneration;
+  uint32_t mEntryCount;
+};
 
-  profiler_get_buffer_info_helper(aCurrentPosition, aEntries, aGeneration);
-}
+
+
+
+
+
+
+mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 PseudoStack* profiler_get_pseudo_stack();

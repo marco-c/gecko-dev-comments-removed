@@ -193,9 +193,8 @@ TEST(GeckoProfiler, EnsureStarted)
     
     PR_Sleep(PR_MillisecondsToInterval(500));
 
-    uint32_t currPos1, entries1, generation1;
-    profiler_get_buffer_info(&currPos1, &entries1, &generation1);
-    ASSERT_TRUE(generation1 > 0 || currPos1 > 0);
+    Maybe<ProfilerBufferInfo> info1 = profiler_get_buffer_info();
+    ASSERT_TRUE(info1->mGeneration > 0 || info1->mWritePosition > 0);
 
     
     
@@ -207,17 +206,16 @@ TEST(GeckoProfiler, EnsureStarted)
 
     
     
-    uint32_t currPos2, entries2, generation2;
-    profiler_get_buffer_info(&currPos2, &entries2, &generation2);
-    ASSERT_TRUE(generation2 >= generation1);
-    ASSERT_TRUE(generation2 > generation1 || currPos2 >= currPos1);
+    Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
+    ASSERT_TRUE(info2->mGeneration >= info1->mGeneration);
+    ASSERT_TRUE(info2->mGeneration > info1->mGeneration ||
+                info2->mWritePosition >= info1->mWritePosition);
   }
 
   {
     
 
-    uint32_t currPos1, entries1, generation1;
-    profiler_get_buffer_info(&currPos1, &entries1, &generation1);
+    Maybe<ProfilerBufferInfo> info1 = profiler_get_buffer_info();
 
     
     
@@ -230,10 +228,10 @@ TEST(GeckoProfiler, EnsureStarted)
     ActiveParamsCheck(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
                       differentFeatures, filters, MOZ_ARRAY_LENGTH(filters));
 
-    uint32_t currPos2, entries2, generation2;
-    profiler_get_buffer_info(&currPos2, &entries2, &generation2);
-    ASSERT_TRUE(generation2 <= generation1);
-    ASSERT_TRUE(generation2 < generation1 || currPos2 < currPos1);
+    Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
+    ASSERT_TRUE(info2->mGeneration <= info1->mGeneration);
+    ASSERT_TRUE(info2->mGeneration < info1->mGeneration ||
+                info2->mWritePosition < info1->mWritePosition);
   }
 
   {
@@ -382,24 +380,21 @@ TEST(GeckoProfiler, Pause)
 
   ASSERT_TRUE(!profiler_is_paused());
 
-  uint32_t currPos1, entries1, generation1;
-  uint32_t currPos2, entries2, generation2;
-
   
-  profiler_get_buffer_info(&currPos1, &entries1, &generation1);
+  Maybe<ProfilerBufferInfo> info1 = profiler_get_buffer_info();
   PR_Sleep(PR_MillisecondsToInterval(500));
-  profiler_get_buffer_info(&currPos2, &entries2, &generation2);
-  ASSERT_TRUE(currPos1 != currPos2);
+  Maybe<ProfilerBufferInfo> info2 = profiler_get_buffer_info();
+  ASSERT_TRUE(info1->mWritePosition != info2->mWritePosition);
 
   profiler_pause();
 
   ASSERT_TRUE(profiler_is_paused());
 
   
-  profiler_get_buffer_info(&currPos1, &entries1, &generation1);
+  info1 = profiler_get_buffer_info();
   PR_Sleep(PR_MillisecondsToInterval(500));
-  profiler_get_buffer_info(&currPos2, &entries2, &generation2);
-  ASSERT_TRUE(currPos1 == currPos2);
+  info2 = profiler_get_buffer_info();
+  ASSERT_TRUE(info1->mWritePosition == info2->mWritePosition);
 
   profiler_resume();
 
