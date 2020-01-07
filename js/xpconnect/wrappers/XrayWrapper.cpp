@@ -127,7 +127,7 @@ XrayAwareCalleeGlobal(JSObject* fun)
 
   if (!js::FunctionHasNativeReserved(fun)) {
       
-      return js::GetGlobalForObjectCrossCompartment(fun);
+      return JS::GetNonCCWObjectGlobal(fun);
   }
 
   
