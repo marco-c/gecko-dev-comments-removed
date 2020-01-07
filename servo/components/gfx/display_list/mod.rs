@@ -775,8 +775,6 @@ pub struct NormalBorder {
     pub style: SideOffsets2D<border_style::T>,
 
     
-    
-    
     pub radius: BorderRadii<Au>,
 }
 
@@ -843,8 +841,6 @@ pub struct BorderDisplayItem {
     
     pub details: BorderDetails,
 }
-
-
 
 
 #[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
