@@ -15,9 +15,7 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
-struct JSRuntime;
 class JSTracer;
-
 class PseudoStack;
 
 

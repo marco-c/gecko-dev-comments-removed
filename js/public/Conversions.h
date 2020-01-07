@@ -21,8 +21,6 @@
 #include "js/RootingAPI.h"
 #include "js/Value.h"
 
-struct JSContext;
-
 namespace js {
 
 

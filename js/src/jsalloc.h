@@ -19,10 +19,6 @@
 
 extern JS_PUBLIC_API(void) JS_ReportOutOfMemory(JSContext* cx);
 
-namespace JS {
-struct Zone;
-} 
-
 namespace js {
 
 enum class AllocFunction {

@@ -16,8 +16,6 @@
 #include "js/UniquePtr.h" 
 #include "js/Utility.h" 
 
-struct JSContext;
-
 namespace js {
 
 

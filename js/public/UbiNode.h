@@ -163,8 +163,6 @@
 
 
 
-class JSAtom;
-
 namespace JS {
 namespace ubi {
 

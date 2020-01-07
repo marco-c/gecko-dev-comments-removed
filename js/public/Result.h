@@ -118,8 +118,6 @@
 
 #include "mozilla/Result.h"
 
-struct JSContext;
-
 
 
 

@@ -190,14 +190,8 @@
 
 
 
-class JSAtom;
-struct JSCompartment;
 class JSFlatString;
 class JSLinearString;
-
-namespace JS {
-class Symbol;
-} 
 
 namespace js {
 

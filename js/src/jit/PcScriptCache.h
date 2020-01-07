@@ -7,10 +7,11 @@
 #ifndef jit_PcScriptCache_h
 #define jit_PcScriptCache_h
 
+#include "mozilla/Array.h"
+#include "js/TypeDecls.h"
 
 
 
-struct JSRuntime;
 
 namespace js {
 namespace jit {
