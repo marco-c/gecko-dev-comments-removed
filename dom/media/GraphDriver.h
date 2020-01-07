@@ -566,12 +566,6 @@ private:
   
 
   bool mFromFallback;
-  
-
-
-
-
-  Atomic<bool> mProfilerRegistered;
 };
 
 class AsyncCubebTask : public Runnable
