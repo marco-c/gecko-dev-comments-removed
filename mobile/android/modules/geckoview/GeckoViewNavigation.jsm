@@ -9,6 +9,9 @@ var EXPORTED_SYMBOLS = ["GeckoViewNavigation"];
 ChromeUtils.import("resource://gre/modules/GeckoViewModule.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+                               "resource://gre/modules/BrowserUtils.jsm");
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   LoadURIDelegate: "resource://gre/modules/LoadURIDelegate.jsm",
@@ -30,16 +33,9 @@ function debug(aMsg) {
 
 
 class GeckoViewNavigation extends GeckoViewModule {
-  onInitBrowser() {
+  init() {
     this.window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow = this;
 
-    
-    
-    
-    Services.obs.notifyObservers(this.window, "geckoview-window-created");
-  }
-
-  onInit() {
     this.registerListener([
       "GeckoView:GoBack",
       "GeckoView:GoForward",
@@ -252,11 +248,11 @@ class GeckoViewNavigation extends GeckoViewModule {
   
   canClose() {
     debug("canClose");
-    return false;
+    return true;
   }
 
-  onEnable() {
-    debug("onEnable");
+  register() {
+    debug("register");
 
     this.registerContent(
       "chrome://geckoview/content/GeckoViewNavigationContent.js");
@@ -269,8 +265,8 @@ class GeckoViewNavigation extends GeckoViewModule {
     this.browser.addProgressListener(this.progressFilter, flags);
   }
 
-  onDisable() {
-    debug("onDisable");
+  unregister() {
+    debug("unregister");
 
     if (!this.progressFilter) {
       return;
