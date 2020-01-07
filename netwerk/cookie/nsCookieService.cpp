@@ -3469,17 +3469,6 @@ nsCookieService::CanSetCookie(nsIURI*             aHostURI,
     return newCookie;
   }
 
-  
-  
-  if (aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET &&
-      aThirdPartyUtil) {
-    bool isThirdParty = true;
-    aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
-    if (isThirdParty) {
-      return newCookie;
-    }
-  }
-
   aSetCookie = true;
   return newCookie;
 }
