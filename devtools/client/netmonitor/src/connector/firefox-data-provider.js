@@ -22,7 +22,6 @@ class FirefoxDataProvider {
     
     this.webConsoleClient = webConsoleClient;
     this.actions = actions;
-    this.actionsEnabled = true;
 
     
     this.payloadQueue = new Map();
@@ -44,15 +43,6 @@ class FirefoxDataProvider {
 
 
 
-  enableActions(enable) {
-    this.actionsEnabled = enable;
-  }
-
-  
-
-
-
-
 
   async addRequest(id, data) {
     let {
@@ -65,7 +55,7 @@ class FirefoxDataProvider {
       fromServiceWorker,
     } = data;
 
-    if (this.actionsEnabled && this.actions.addRequest) {
+    if (this.actions.addRequest) {
       await this.actions.addRequest(id, {
         
         startedMillis: Date.parse(startedDateTime),
@@ -130,7 +120,7 @@ class FirefoxDataProvider {
       responseCookiesObj
     );
 
-    if (this.actionsEnabled && this.actions.updateRequest) {
+    if (this.actions.updateRequest) {
       await this.actions.updateRequest(id, payload, true);
     }
 
@@ -387,7 +377,7 @@ class FirefoxDataProvider {
 
     this.payloadQueue.delete(actor);
 
-    if (this.actionsEnabled && this.actions.updateRequest) {
+    if (this.actions.updateRequest) {
       await this.actions.updateRequest(actor, payload, true);
     }
 
@@ -424,7 +414,7 @@ class FirefoxDataProvider {
       
       this.lazyRequestData.delete(key);
 
-      if (this.actionsEnabled && this.actions.updateRequest) {
+      if (this.actions.updateRequest) {
         await this.actions.updateRequest(actor, {
           ...payload,
           

@@ -186,34 +186,10 @@ const HarExporter = {
 
 
 
-  buildHarData: async function (options) {
-    let { connector } = options;
-    let {
-      getTabTarget,
-    } = connector;
-    let {
-      form: { title, url }
-    } = getTabTarget();
-
-    
-    connector.enableActions(false);
-
-    options = {
-      ...options,
-      title: title || url,
-      getString: connector.getLongString,
-      getTimingMarker: connector.getTimingMarker,
-      requestData: connector.requestData,
-    };
-
+  buildHarData: function (options) {
     
     let builder = new HarBuilder(options);
-    let result = await builder.build();
-
-    
-    connector.enableActions(true);
-
-    return result;
+    return builder.build();
   },
 
   

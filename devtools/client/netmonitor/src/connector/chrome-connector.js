@@ -43,10 +43,6 @@ class ChromeConnector {
     this.setup();
   }
 
-  enableActions(enable) {
-    
-  }
-
   
 
 
