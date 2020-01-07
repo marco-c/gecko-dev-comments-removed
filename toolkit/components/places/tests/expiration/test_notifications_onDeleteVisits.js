@@ -22,6 +22,7 @@ var tests = [
     addBookmarks: 1,
     limitExpiration: -1,
     expectedNotifications: 1, 
+    expectedIsPartialRemoval: true,
   },
 
   { desc: "Add 2 pages, 1 bookmarked.",
@@ -30,6 +31,7 @@ var tests = [
     addBookmarks: 1,
     limitExpiration: -1,
     expectedNotifications: 1, 
+    expectedIsPartialRemoval: true,
   },
 
   { desc: "Add 10 pages, none bookmarked.",
@@ -38,6 +40,7 @@ var tests = [
     addBookmarks: 0,
     limitExpiration: -1,
     expectedNotifications: 0, 
+    expectedIsPartialRemoval: false,
   },
 
   { desc: "Add 10 pages, all bookmarked.",
@@ -46,6 +49,7 @@ var tests = [
     addBookmarks: 10,
     limitExpiration: -1,
     expectedNotifications: 10, 
+    expectedIsPartialRemoval: true,
   },
 
   { desc: "Add 10 pages with lot of visits, none bookmarked.",
@@ -54,7 +58,9 @@ var tests = [
     addBookmarks: 0,
     limitExpiration: 10,
     expectedNotifications: 10, 
-  },                           
+                               
+    expectedIsPartialRemoval: true,
+  },
 
 ];
 
@@ -110,9 +116,11 @@ add_task(async function test_notifications_onDeleteVisits() {
         Assert.equal(aReason, Ci.nsINavHistoryObserver.REASON_EXPIRED);
       },
       onPageChanged() {},
-      onDeleteVisits(aURI, aTime, aGUID, aReason) {
+      onDeleteVisits(aURI, aPartialRemoval, aGUID, aReason) {
         currentTest.receivedNotifications++;
         do_check_guid_for_uri(aURI, aGUID);
+        Assert.equal(aPartialRemoval, currentTest.expectedIsPartialRemoval,
+          "Should have the correct flag setting for partial removal");
         Assert.equal(aReason, Ci.nsINavHistoryObserver.REASON_EXPIRED);
       },
     };

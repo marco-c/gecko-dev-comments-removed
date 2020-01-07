@@ -920,7 +920,7 @@ var notifyCleanup = async function(db, pages) {
       
       
       notify(observers, "onDeleteVisits",
-        [uri, 0, guid, reason, -1]);
+        [uri, false, guid, reason, -1]);
     } else {
       
       notify(observers, "onDeleteURI",

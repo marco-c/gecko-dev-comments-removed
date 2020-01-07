@@ -2182,14 +2182,14 @@ nsNavBookmarks::OnPageChanged(nsIURI* aURI,
 
 
 NS_IMETHODIMP
-nsNavBookmarks::OnDeleteVisits(nsIURI* aURI, PRTime aVisitTime,
+nsNavBookmarks::OnDeleteVisits(nsIURI* aURI, bool aPartialRemoval,
                                const nsACString& aGUID,
                                uint16_t aReason, uint32_t aTransitionType)
 {
   NS_ENSURE_ARG(aURI);
 
   
-  if (!aVisitTime) {
+  if (!aPartialRemoval) {
     
     ItemChangeData changeData;
     nsresult rv = aURI->GetSpec(changeData.bookmark.url);
