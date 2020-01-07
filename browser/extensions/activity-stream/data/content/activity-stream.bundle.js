@@ -60,7 +60,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 19);
+ 	return __webpack_require__(__webpack_require__.s = 23);
  })
 
  ([
@@ -419,6 +419,24 @@ module.exports = g;
  (function(module, exports) {
 
 module.exports = ReactRedux;
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+ __webpack_exports__["a"] = safeURI;
+function safeURI(url) {
+  if (!url) {
+    return "";
+  }
+  const { protocol } = new URL(url);
+  const isAllowed = ["http:", "https:", "data:", "resource:", "chrome:"].includes(protocol);
+  if (!isAllowed) {
+    console.warn(`The protocol ${protocol} is not allowed for template URLs.`); 
+  }
+  return isAllowed ? url : "";
+}
 
  }),
 
@@ -886,15 +904,21 @@ var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections, Theme };
 
 "use strict";
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__ = __webpack_require__(8);
- var __WEBPACK_IMPORTED_MODULE_2__components_ImpressionsWrapper_ImpressionsWrapper__ = __webpack_require__(22);
- var __WEBPACK_IMPORTED_MODULE_3__templates_OnboardingMessage_OnboardingMessage__ = __webpack_require__(23);
- var __WEBPACK_IMPORTED_MODULE_4_react__ = __webpack_require__(0);
- var __WEBPACK_IMPORTED_MODULE_4_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react__);
- var __WEBPACK_IMPORTED_MODULE_5_react_dom__ = __webpack_require__(9);
- var __WEBPACK_IMPORTED_MODULE_5_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_dom__);
- var __WEBPACK_IMPORTED_MODULE_6__templates_SimpleSnippet_SimpleSnippet__ = __webpack_require__(24);
+ var __WEBPACK_IMPORTED_MODULE_1_fluent_react__ = __webpack_require__(25);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_lib_init_store__ = __webpack_require__(11);
+ var __WEBPACK_IMPORTED_MODULE_3__components_ImpressionsWrapper_ImpressionsWrapper__ = __webpack_require__(27);
+ var __WEBPACK_IMPORTED_MODULE_4_fluent__ = __webpack_require__(10);
+ var __WEBPACK_IMPORTED_MODULE_5__templates_OnboardingMessage_OnboardingMessage__ = __webpack_require__(28);
+ var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
+ var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
+ var __WEBPACK_IMPORTED_MODULE_7_react_dom__ = __webpack_require__(12);
+ var __WEBPACK_IMPORTED_MODULE_7_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7_react_dom__);
+ var __WEBPACK_IMPORTED_MODULE_8__template_utils__ = __webpack_require__(5);
+ var __WEBPACK_IMPORTED_MODULE_9__templates_SimpleSnippet_SimpleSnippet__ = __webpack_require__(29);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
 
 
 
@@ -942,7 +966,7 @@ const ASRouterUtils = {
   },
   sendTelemetry(ping) {
     const payload = __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ASRouterUserEvent(ping);
-    global.sendAsyncMessage(__WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__["a" ], payload);
+    global.sendAsyncMessage(__WEBPACK_IMPORTED_MODULE_2_content_src_lib_init_store__["a" ], payload);
   }
 };
  __webpack_exports__["b"] = ASRouterUtils;
@@ -953,7 +977,53 @@ function shouldSendImpressionOnUpdate(nextProps, prevProps) {
   return nextProps.message.id && (!prevProps.message || prevProps.message.id !== nextProps.message.id);
 }
 
-class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponent {
+function generateMessages(content) {
+  const cx = new __WEBPACK_IMPORTED_MODULE_4_fluent__["b" ]("en-US");
+  cx.addMessages(`RichTextSnippet = ${content}`);
+  return [cx];
+}
+
+
+const ALLOWED_TAGS = {
+  b: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("b", null),
+  i: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("i", null),
+  u: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("u", null),
+  strong: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("strong", null),
+  em: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("em", null),
+  br: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("br", null)
+};
+
+
+
+
+
+function convertLinks(links) {
+  if (links) {
+    return Object.keys(links).reduce((acc, linkTag) => {
+      acc[linkTag] = __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("a", { href: Object(__WEBPACK_IMPORTED_MODULE_8__template_utils__["a" ])(links[linkTag].url) });
+      return acc;
+    }, {});
+  }
+
+  return null;
+}
+
+
+
+
+function RichText(props) {
+  return __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
+    __WEBPACK_IMPORTED_MODULE_1_fluent_react__["b" ],
+    _extends({ id: "RichTextSnippet" }, ALLOWED_TAGS, convertLinks(props.links)),
+    __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
+      "span",
+      null,
+      props.text
+    )
+  );
+}
+
+class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onMessageFromParent = this.onMessageFromParent.bind(this);
@@ -1020,8 +1090,8 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.Pu
   }
 
   renderSnippets() {
-    return __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(
-      __WEBPACK_IMPORTED_MODULE_2__components_ImpressionsWrapper_ImpressionsWrapper__["a" ],
+    return __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
+      __WEBPACK_IMPORTED_MODULE_3__components_ImpressionsWrapper_ImpressionsWrapper__["a" ],
       {
         id: "NEWTAB_FOOTER_BAR",
         message: this.state.message,
@@ -1029,16 +1099,21 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.Pu
         shouldSendImpressionOnUpdate: shouldSendImpressionOnUpdate
         
         , document: this.props.document },
-      __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_6__templates_SimpleSnippet_SimpleSnippet__["a" ], _extends({}, this.state.message, {
-        UISurface: "NEWTAB_FOOTER_BAR",
-        getNextMessage: ASRouterUtils.getNextMessage,
-        onBlock: this.onBlockById(this.state.message.id),
-        sendUserActionTelemetry: this.sendUserActionTelemetry }))
+      __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
+        __WEBPACK_IMPORTED_MODULE_1_fluent_react__["a" ],
+        { messages: generateMessages(this.state.message.content.text) },
+        __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_9__templates_SimpleSnippet_SimpleSnippet__["a" ], _extends({}, this.state.message, {
+          richText: __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(RichText, { text: this.state.message.content.text, links: this.state.message.content.links }),
+          UISurface: "NEWTAB_FOOTER_BAR",
+          getNextMessage: ASRouterUtils.getNextMessage,
+          onBlock: this.onBlockById(this.state.message.id),
+          sendUserActionTelemetry: this.sendUserActionTelemetry }))
+      )
     );
   }
 
   renderOnboarding() {
-    return __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3__templates_OnboardingMessage_OnboardingMessage__["a" ], _extends({}, this.state.bundle, {
+    return __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_5__templates_OnboardingMessage_OnboardingMessage__["a" ], _extends({}, this.state.bundle, {
       UISurface: "NEWTAB_OVERLAY",
       onAction: ASRouterUtils.executeAction,
       onDoneButton: this.clearBundle(this.state.bundle.bundle),
@@ -1070,11 +1145,11 @@ class ASRouterContent {
 
   _mount() {
     this.containerElement = global.document.getElementById("snippets-container");
-    __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(ASRouterUISurface, null), this.containerElement);
+    __WEBPACK_IMPORTED_MODULE_7_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(ASRouterUISurface, null), this.containerElement);
   }
 
   _unmount() {
-    __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.unmountComponentAtNode(this.containerElement);
+    __WEBPACK_IMPORTED_MODULE_7_react_dom___default.a.unmountComponentAtNode(this.containerElement);
   }
 
   init() {
@@ -1095,12 +1170,2125 @@ class ASRouterContent {
 
  }),
 
+ (function(module, exports) {
+
+module.exports = PropTypes;
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+
+
+
+
+const MAX_PLACEABLES = 100;
+
+const entryIdentifierRe = /-?[a-zA-Z][a-zA-Z0-9_-]*/y;
+const identifierRe = /[a-zA-Z][a-zA-Z0-9_-]*/y;
+const functionIdentifierRe = /^[A-Z][A-Z_?-]*$/;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RuntimeParser {
+  
+
+
+
+
+
+
+
+
+  getResource(string) {
+    this._source = string;
+    this._index = 0;
+    this._length = string.length;
+    this.entries = {};
+
+    const errors = [];
+
+    this.skipWS();
+    while (this._index < this._length) {
+      try {
+        this.getEntry();
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          errors.push(e);
+
+          this.skipToNextEntryStart();
+        } else {
+          throw e;
+        }
+      }
+      this.skipWS();
+    }
+
+    return [this.entries, errors];
+  }
+
+  
+
+
+
+
+
+  getEntry() {
+    
+    
+    if (this._index !== 0 && this._source[this._index - 1] !== "\n") {
+      throw this.error(`Expected an entry to start
+        at the beginning of the file or on a new line.`);
+    }
+
+    const ch = this._source[this._index];
+
+    
+    if (ch === "/" || ch === "#" && [" ", "#", "\n"].includes(this._source[this._index + 1])) {
+      this.skipComment();
+      return;
+    }
+
+    if (ch === "[") {
+      this.skipSection();
+      return;
+    }
+
+    this.getMessage();
+  }
+
+  
+
+
+
+
+  skipSection() {
+    this._index += 1;
+    if (this._source[this._index] !== "[") {
+      throw this.error('Expected "[[" to open a section');
+    }
+
+    this._index += 1;
+
+    this.skipInlineWS();
+    this.getVariantName();
+    this.skipInlineWS();
+
+    if (this._source[this._index] !== "]" || this._source[this._index + 1] !== "]") {
+      throw this.error('Expected "]]" to close a section');
+    }
+
+    this._index += 2;
+  }
+
+  
+
+
+
+
+
+  getMessage() {
+    const id = this.getEntryIdentifier();
+
+    this.skipInlineWS();
+
+    if (this._source[this._index] === "=") {
+      this._index++;
+    }
+
+    this.skipInlineWS();
+
+    const val = this.getPattern();
+
+    if (id.startsWith("-") && val === null) {
+      throw this.error("Expected term to have a value");
+    }
+
+    let attrs = null;
+
+    if (this._source[this._index] === " ") {
+      const lineStart = this._index;
+      this.skipInlineWS();
+
+      if (this._source[this._index] === ".") {
+        this._index = lineStart;
+        attrs = this.getAttributes();
+      }
+    }
+
+    if (attrs === null && typeof val === "string") {
+      this.entries[id] = val;
+    } else {
+      if (val === null && attrs === null) {
+        throw this.error("Expected message to have a value or attributes");
+      }
+
+      this.entries[id] = {};
+
+      if (val !== null) {
+        this.entries[id].val = val;
+      }
+
+      if (attrs !== null) {
+        this.entries[id].attrs = attrs;
+      }
+    }
+  }
+
+  
+
+
+
+
+  skipWS() {
+    let ch = this._source[this._index];
+    while (ch === " " || ch === "\n" || ch === "\t" || ch === "\r") {
+      ch = this._source[++this._index];
+    }
+  }
+
+  
+
+
+
+
+  skipInlineWS() {
+    let ch = this._source[this._index];
+    while (ch === " " || ch === "\t") {
+      ch = this._source[++this._index];
+    }
+  }
+
+  
+
+
+
+
+  skipBlankLines() {
+    while (true) {
+      const ptr = this._index;
+
+      this.skipInlineWS();
+
+      if (this._source[this._index] === "\n") {
+        this._index += 1;
+      } else {
+        this._index = ptr;
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  getIdentifier(re = identifierRe) {
+    re.lastIndex = this._index;
+    const result = re.exec(this._source);
+
+    if (result === null) {
+      this._index += 1;
+      throw this.error(`Expected an identifier [${re.toString()}]`);
+    }
+
+    this._index = re.lastIndex;
+    return result[0];
+  }
+
+  
+
+
+
+
+
+  getEntryIdentifier() {
+    return this.getIdentifier(entryIdentifierRe);
+  }
+
+  
+
+
+
+
+
+  getVariantName() {
+    let name = "";
+
+    const start = this._index;
+    let cc = this._source.charCodeAt(this._index);
+
+    if (cc >= 97 && cc <= 122 || 
+    cc >= 65 && cc <= 90 || 
+    cc === 95 || cc === 32) {
+      
+      cc = this._source.charCodeAt(++this._index);
+    } else {
+      throw this.error("Expected a keyword (starting with [a-zA-Z_])");
+    }
+
+    while (cc >= 97 && cc <= 122 || 
+    cc >= 65 && cc <= 90 || 
+    cc >= 48 && cc <= 57 || 
+    cc === 95 || cc === 45 || cc === 32) {
+      
+      cc = this._source.charCodeAt(++this._index);
+    }
+
+    
+    
+    
+    
+    while (this._source.charCodeAt(this._index - 1) === 32) {
+      this._index--;
+    }
+
+    name += this._source.slice(start, this._index);
+
+    return { type: "varname", name };
+  }
+
+  
+
+
+
+
+
+  getString() {
+    const start = this._index + 1;
+
+    while (++this._index < this._length) {
+      const ch = this._source[this._index];
+
+      if (ch === '"') {
+        break;
+      }
+
+      if (ch === "\n") {
+        throw this.error("Unterminated string expression");
+      }
+    }
+
+    return this._source.substring(start, this._index++);
+  }
+
+  
+
+
+
+
+
+
+
+  getPattern() {
+    
+    
+    
+    
+    
+    const start = this._index;
+    let eol = this._source.indexOf("\n", this._index);
+
+    if (eol === -1) {
+      eol = this._length;
+    }
+
+    const firstLineContent = start !== eol ? this._source.slice(start, eol) : null;
+
+    if (firstLineContent && firstLineContent.includes("{")) {
+      return this.getComplexPattern();
+    }
+
+    this._index = eol + 1;
+
+    this.skipBlankLines();
+
+    if (this._source[this._index] !== " ") {
+      
+      
+      
+      return firstLineContent;
+    }
+
+    const lineStart = this._index;
+
+    this.skipInlineWS();
+
+    if (this._source[this._index] === ".") {
+      
+      
+      this._index = lineStart;
+      return firstLineContent;
+    }
+
+    if (firstLineContent) {
+      
+      
+      this._index = start;
+    }
+
+    return this.getComplexPattern();
+  }
+
+  
+
+
+
+
+
+
+
+
+  
+  getComplexPattern() {
+    let buffer = "";
+    const content = [];
+    let placeables = 0;
+
+    let ch = this._source[this._index];
+
+    while (this._index < this._length) {
+      
+      
+      if (ch === "\n") {
+        this._index++;
+
+        
+        
+        
+        
+        const blankLinesStart = this._index;
+        this.skipBlankLines();
+        const blankLinesEnd = this._index;
+
+        if (this._source[this._index] !== " ") {
+          break;
+        }
+        this.skipInlineWS();
+
+        if (this._source[this._index] === "}" || this._source[this._index] === "[" || this._source[this._index] === "*" || this._source[this._index] === ".") {
+          this._index = blankLinesEnd;
+          break;
+        }
+
+        buffer += this._source.substring(blankLinesStart, blankLinesEnd);
+
+        if (buffer.length || content.length) {
+          buffer += "\n";
+        }
+        ch = this._source[this._index];
+        continue;
+      } else if (ch === "\\") {
+        const ch2 = this._source[this._index + 1];
+        if (ch2 === '"' || ch2 === "{" || ch2 === "\\") {
+          ch = ch2;
+          this._index++;
+        }
+      } else if (ch === "{") {
+        
+        if (buffer.length) {
+          content.push(buffer);
+        }
+        if (placeables > MAX_PLACEABLES - 1) {
+          throw this.error(`Too many placeables, maximum allowed is ${MAX_PLACEABLES}`);
+        }
+        buffer = "";
+        content.push(this.getPlaceable());
+
+        this._index++;
+
+        ch = this._source[this._index];
+        placeables++;
+        continue;
+      }
+
+      if (ch) {
+        buffer += ch;
+      }
+      this._index++;
+      ch = this._source[this._index];
+    }
+
+    if (content.length === 0) {
+      return buffer.length ? buffer : null;
+    }
+
+    if (buffer.length) {
+      content.push(buffer);
+    }
+
+    return content;
+  }
+  
+
+  
+
+
+
+
+
+
+  getPlaceable() {
+    const start = ++this._index;
+
+    this.skipWS();
+
+    if (this._source[this._index] === "*" || this._source[this._index] === "[" && this._source[this._index + 1] !== "]") {
+      const variants = this.getVariants();
+
+      return {
+        type: "sel",
+        exp: null,
+        vars: variants[0],
+        def: variants[1]
+      };
+    }
+
+    
+    this._index = start;
+    this.skipInlineWS();
+
+    const selector = this.getSelectorExpression();
+
+    this.skipWS();
+
+    const ch = this._source[this._index];
+
+    if (ch === "}") {
+      if (selector.type === "attr" && selector.id.name.startsWith("-")) {
+        throw this.error("Attributes of private messages cannot be interpolated.");
+      }
+
+      return selector;
+    }
+
+    if (ch !== "-" || this._source[this._index + 1] !== ">") {
+      throw this.error('Expected "}" or "->"');
+    }
+
+    if (selector.type === "ref") {
+      throw this.error("Message references cannot be used as selectors.");
+    }
+
+    if (selector.type === "var") {
+      throw this.error("Variants cannot be used as selectors.");
+    }
+
+    if (selector.type === "attr" && !selector.id.name.startsWith("-")) {
+      throw this.error("Attributes of public messages cannot be used as selectors.");
+    }
+
+    this._index += 2; 
+
+    this.skipInlineWS();
+
+    if (this._source[this._index] !== "\n") {
+      throw this.error("Variants should be listed in a new line");
+    }
+
+    this.skipWS();
+
+    const variants = this.getVariants();
+
+    if (variants[0].length === 0) {
+      throw this.error("Expected members for the select expression");
+    }
+
+    return {
+      type: "sel",
+      exp: selector,
+      vars: variants[0],
+      def: variants[1]
+    };
+  }
+
+  
+
+
+
+
+
+  getSelectorExpression() {
+    const literal = this.getLiteral();
+
+    if (literal.type !== "ref") {
+      return literal;
+    }
+
+    if (this._source[this._index] === ".") {
+      this._index++;
+
+      const name = this.getIdentifier();
+      this._index++;
+      return {
+        type: "attr",
+        id: literal,
+        name
+      };
+    }
+
+    if (this._source[this._index] === "[") {
+      this._index++;
+
+      const key = this.getVariantKey();
+      this._index++;
+      return {
+        type: "var",
+        id: literal,
+        key
+      };
+    }
+
+    if (this._source[this._index] === "(") {
+      this._index++;
+      const args = this.getCallArgs();
+
+      if (!functionIdentifierRe.test(literal.name)) {
+        throw this.error("Function names must be all upper-case");
+      }
+
+      this._index++;
+
+      literal.type = "fun";
+
+      return {
+        type: "call",
+        fun: literal,
+        args
+      };
+    }
+
+    return literal;
+  }
+
+  
+
+
+
+
+
+  getCallArgs() {
+    const args = [];
+
+    while (this._index < this._length) {
+      this.skipInlineWS();
+
+      if (this._source[this._index] === ")") {
+        return args;
+      }
+
+      const exp = this.getSelectorExpression();
+
+      
+      
+      if (exp.type !== "ref") {
+        args.push(exp);
+      } else {
+        this.skipInlineWS();
+
+        if (this._source[this._index] === ":") {
+          this._index++;
+          this.skipInlineWS();
+
+          const val = this.getSelectorExpression();
+
+          
+          
+          
+          
+          
+          if (typeof val === "string" || Array.isArray(val) || val.type === "num") {
+            args.push({
+              type: "narg",
+              name: exp.name,
+              val
+            });
+          } else {
+            this._index = this._source.lastIndexOf(":", this._index) + 1;
+            throw this.error("Expected string in quotes, number.");
+          }
+        } else {
+          args.push(exp);
+        }
+      }
+
+      this.skipInlineWS();
+
+      if (this._source[this._index] === ")") {
+        break;
+      } else if (this._source[this._index] === ",") {
+        this._index++;
+      } else {
+        throw this.error('Expected "," or ")"');
+      }
+    }
+
+    return args;
+  }
+
+  
+
+
+
+
+
+  getNumber() {
+    let num = "";
+    let cc = this._source.charCodeAt(this._index);
+
+    
+    if (cc === 45) {
+      num += "-";
+      cc = this._source.charCodeAt(++this._index);
+    }
+
+    
+    if (cc < 48 || cc > 57) {
+      throw this.error(`Unknown literal "${num}"`);
+    }
+
+    
+    while (cc >= 48 && cc <= 57) {
+      num += this._source[this._index++];
+      cc = this._source.charCodeAt(this._index);
+    }
+
+    
+    if (cc === 46) {
+      num += this._source[this._index++];
+      cc = this._source.charCodeAt(this._index);
+
+      
+      if (cc < 48 || cc > 57) {
+        throw this.error(`Unknown literal "${num}"`);
+      }
+
+      
+      while (cc >= 48 && cc <= 57) {
+        num += this._source[this._index++];
+        cc = this._source.charCodeAt(this._index);
+      }
+    }
+
+    return {
+      type: "num",
+      val: num
+    };
+  }
+
+  
+
+
+
+
+
+  getAttributes() {
+    const attrs = {};
+
+    while (this._index < this._length) {
+      if (this._source[this._index] !== " ") {
+        break;
+      }
+      this.skipInlineWS();
+
+      if (this._source[this._index] !== ".") {
+        break;
+      }
+      this._index++;
+
+      const key = this.getIdentifier();
+
+      this.skipInlineWS();
+
+      if (this._source[this._index] !== "=") {
+        throw this.error('Expected "="');
+      }
+      this._index++;
+
+      this.skipInlineWS();
+
+      const val = this.getPattern();
+
+      if (val === null) {
+        throw this.error("Expected attribute to have a value");
+      }
+
+      if (typeof val === "string") {
+        attrs[key] = val;
+      } else {
+        attrs[key] = {
+          val
+        };
+      }
+
+      this.skipBlankLines();
+    }
+
+    return attrs;
+  }
+
+  
+
+
+
+
+
+  getVariants() {
+    const variants = [];
+    let index = 0;
+    let defaultIndex;
+
+    while (this._index < this._length) {
+      const ch = this._source[this._index];
+
+      if ((ch !== "[" || this._source[this._index + 1] === "[") && ch !== "*") {
+        break;
+      }
+      if (ch === "*") {
+        this._index++;
+        defaultIndex = index;
+      }
+
+      if (this._source[this._index] !== "[") {
+        throw this.error('Expected "["');
+      }
+
+      this._index++;
+
+      const key = this.getVariantKey();
+
+      this.skipInlineWS();
+
+      const val = this.getPattern();
+
+      if (val === null) {
+        throw this.error("Expected variant to have a value");
+      }
+
+      variants[index++] = { key, val };
+
+      this.skipWS();
+    }
+
+    return [variants, defaultIndex];
+  }
+
+  
+
+
+
+
+
+  getVariantKey() {
+    
+
+    const cc = this._source.charCodeAt(this._index);
+    let literal;
+
+    if (cc >= 48 && cc <= 57 || cc === 45) {
+      literal = this.getNumber();
+    } else {
+      literal = this.getVariantName();
+    }
+
+    if (this._source[this._index] !== "]") {
+      throw this.error('Expected "]"');
+    }
+
+    this._index++;
+    return literal;
+  }
+
+  
+
+
+
+
+
+  getLiteral() {
+    const cc0 = this._source.charCodeAt(this._index);
+
+    if (cc0 === 36) {
+      
+      this._index++;
+      return {
+        type: "ext",
+        name: this.getIdentifier()
+      };
+    }
+
+    const cc1 = cc0 === 45 
+    
+    ? this._source.charCodeAt(this._index + 1)
+    
+    : cc0;
+
+    if (cc1 >= 97 && cc1 <= 122 || 
+    cc1 >= 65 && cc1 <= 90) {
+      
+      return {
+        type: "ref",
+        name: this.getEntryIdentifier()
+      };
+    }
+
+    if (cc1 >= 48 && cc1 <= 57) {
+      
+      return this.getNumber();
+    }
+
+    if (cc0 === 34) {
+      
+      return this.getString();
+    }
+
+    throw this.error("Expected literal");
+  }
+
+  
+
+
+
+
+  skipComment() {
+    
+    
+    let eol = this._source.indexOf("\n", this._index);
+
+    while (eol !== -1 && (this._source[eol + 1] === "/" && this._source[eol + 2] === "/" || this._source[eol + 1] === "#" && [" ", "#"].includes(this._source[eol + 2]))) {
+      this._index = eol + 3;
+
+      eol = this._source.indexOf("\n", this._index);
+
+      if (eol === -1) {
+        break;
+      }
+    }
+
+    if (eol === -1) {
+      this._index = this._length;
+    } else {
+      this._index = eol + 1;
+    }
+  }
+
+  
+
+
+
+
+
+
+  error(message) {
+    return new SyntaxError(message);
+  }
+
+  
+
+
+
+
+
+
+  skipToNextEntryStart() {
+    let start = this._index;
+
+    while (true) {
+      if (start === 0 || this._source[start - 1] === "\n") {
+        const cc = this._source.charCodeAt(start);
+
+        if (cc >= 97 && cc <= 122 || 
+        cc >= 65 && cc <= 90 || 
+        cc === 47 || cc === 91) {
+          
+          this._index = start;
+          return;
+        }
+      }
+
+      start = this._source.indexOf("\n", start);
+
+      if (start === -1) {
+        this._index = this._length;
+        return;
+      }
+      start++;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+function parse(string) {
+  const parser = new RuntimeParser();
+  return parser.getResource(string);
+}
+
+
+
+
+
+
+
+
+
+
+class FluentType {
+
+  
+
+
+
+
+
+
+  constructor(value, opts) {
+    this.value = value;
+    this.opts = opts;
+  }
+
+  
+
+
+
+
+  valueOf() {
+    return this.value;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  toString() {
+    throw new Error("Subclasses of FluentType must implement toString.");
+  }
+}
+
+class FluentNone extends FluentType {
+  toString() {
+    return this.value || "???";
+  }
+}
+
+class FluentNumber extends FluentType {
+  constructor(value, opts) {
+    super(parseFloat(value), opts);
+  }
+
+  toString(ctx) {
+    try {
+      const nf = ctx._memoizeIntlObject(Intl.NumberFormat, this.opts);
+      return nf.format(this.value);
+    } catch (e) {
+      
+      return this.value;
+    }
+  }
+
+  
+
+
+
+
+
+
+  match(ctx, other) {
+    if (other instanceof FluentNumber) {
+      return this.value === other.value;
+    }
+    return false;
+  }
+}
+
+class FluentDateTime extends FluentType {
+  constructor(value, opts) {
+    super(new Date(value), opts);
+  }
+
+  toString(ctx) {
+    try {
+      const dtf = ctx._memoizeIntlObject(Intl.DateTimeFormat, this.opts);
+      return dtf.format(this.value);
+    } catch (e) {
+      
+      return this.value;
+    }
+  }
+}
+
+class FluentSymbol extends FluentType {
+  toString() {
+    return this.value;
+  }
+
+  
+
+
+
+
+
+
+  match(ctx, other) {
+    if (other instanceof FluentSymbol) {
+      return this.value === other.value;
+    } else if (typeof other === "string") {
+      return this.value === other;
+    } else if (other instanceof FluentNumber) {
+      const pr = ctx._memoizeIntlObject(Intl.PluralRules, other.opts);
+      return this.value === pr.select(other.value);
+    }
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ var builtins = ({
+  "NUMBER": ([arg], opts) => new FluentNumber(arg.valueOf(), merge(arg.opts, opts)),
+  "DATETIME": ([arg], opts) => new FluentDateTime(arg.valueOf(), merge(arg.opts, opts))
+});
+
+function merge(argopts, opts) {
+  return Object.assign({}, argopts, values(opts));
+}
+
+function values(opts) {
+  const unwrapped = {};
+  for (const [name, opt] of Object.entries(opts)) {
+    unwrapped[name] = opt.valueOf();
+  }
+  return unwrapped;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const MAX_PLACEABLE_LENGTH = 2500;
+
+
+const FSI = "\u2068";
+const PDI = "\u2069";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function DefaultMember(env, members, def) {
+  if (members[def]) {
+    return members[def];
+  }
+
+  const { errors } = env;
+  errors.push(new RangeError("No default"));
+  return new FluentNone();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MessageReference(env, { name }) {
+  const { ctx, errors } = env;
+  const message = name.startsWith("-") ? ctx._terms.get(name) : ctx._messages.get(name);
+
+  if (!message) {
+    const err = name.startsWith("-") ? new ReferenceError(`Unknown term: ${name}`) : new ReferenceError(`Unknown message: ${name}`);
+    errors.push(err);
+    return new FluentNone(name);
+  }
+
+  return message;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function VariantExpression(env, { id, key }) {
+  const message = MessageReference(env, id);
+  if (message instanceof FluentNone) {
+    return message;
+  }
+
+  const { ctx, errors } = env;
+  const keyword = Type(env, key);
+
+  function isVariantList(node) {
+    return Array.isArray(node) && node[0].type === "sel" && node[0].exp === null;
+  }
+
+  if (isVariantList(message.val)) {
+    
+    for (const variant of message.val[0].vars) {
+      const variantKey = Type(env, variant.key);
+      if (keyword.match(ctx, variantKey)) {
+        return variant;
+      }
+    }
+  }
+
+  errors.push(new ReferenceError(`Unknown variant: ${keyword.toString(ctx)}`));
+  return Type(env, message);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function AttributeExpression(env, { id, name }) {
+  const message = MessageReference(env, id);
+  if (message instanceof FluentNone) {
+    return message;
+  }
+
+  if (message.attrs) {
+    
+    for (const attrName in message.attrs) {
+      if (name === attrName) {
+        return message.attrs[name];
+      }
+    }
+  }
+
+  const { errors } = env;
+  errors.push(new ReferenceError(`Unknown attribute: ${name}`));
+  return Type(env, message);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SelectExpression(env, { exp, vars, def }) {
+  if (exp === null) {
+    return DefaultMember(env, vars, def);
+  }
+
+  const selector = Type(env, exp);
+  if (selector instanceof FluentNone) {
+    return DefaultMember(env, vars, def);
+  }
+
+  
+  for (const variant of vars) {
+    const key = Type(env, variant.key);
+    const keyCanMatch = key instanceof FluentNumber || key instanceof FluentSymbol;
+
+    if (!keyCanMatch) {
+      continue;
+    }
+
+    const { ctx } = env;
+
+    if (key.match(ctx, selector)) {
+      return variant;
+    }
+  }
+
+  return DefaultMember(env, vars, def);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Type(env, expr) {
+  
+  
+  if (typeof expr === "string" || expr instanceof FluentNone) {
+    return expr;
+  }
+
+  
+  
+  if (Array.isArray(expr)) {
+    return Pattern(env, expr);
+  }
+
+  switch (expr.type) {
+    case "varname":
+      return new FluentSymbol(expr.name);
+    case "num":
+      return new FluentNumber(expr.val);
+    case "ext":
+      return ExternalArgument(env, expr);
+    case "fun":
+      return FunctionReference(env, expr);
+    case "call":
+      return CallExpression(env, expr);
+    case "ref":
+      {
+        const message = MessageReference(env, expr);
+        return Type(env, message);
+      }
+    case "attr":
+      {
+        const attr = AttributeExpression(env, expr);
+        return Type(env, attr);
+      }
+    case "var":
+      {
+        const variant = VariantExpression(env, expr);
+        return Type(env, variant);
+      }
+    case "sel":
+      {
+        const member = SelectExpression(env, expr);
+        return Type(env, member);
+      }
+    case undefined:
+      {
+        
+        if (expr.val !== null && expr.val !== undefined) {
+          return Type(env, expr.val);
+        }
+
+        const { errors } = env;
+        errors.push(new RangeError("No value"));
+        return new FluentNone();
+      }
+    default:
+      return new FluentNone();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ExternalArgument(env, { name }) {
+  const { args, errors } = env;
+
+  if (!args || !args.hasOwnProperty(name)) {
+    errors.push(new ReferenceError(`Unknown external: ${name}`));
+    return new FluentNone(name);
+  }
+
+  const arg = args[name];
+
+  
+  if (arg instanceof FluentType) {
+    return arg;
+  }
+
+  
+  switch (typeof arg) {
+    case "string":
+      return arg;
+    case "number":
+      return new FluentNumber(arg);
+    case "object":
+      if (arg instanceof Date) {
+        return new FluentDateTime(arg);
+      }
+    default:
+      errors.push(new TypeError(`Unsupported external type: ${name}, ${typeof arg}`));
+      return new FluentNone(name);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function FunctionReference(env, { name }) {
+  
+  
+  const { ctx: { _functions }, errors } = env;
+  const func = _functions[name] || builtins[name];
+
+  if (!func) {
+    errors.push(new ReferenceError(`Unknown function: ${name}()`));
+    return new FluentNone(`${name}()`);
+  }
+
+  if (typeof func !== "function") {
+    errors.push(new TypeError(`Function ${name}() is not callable`));
+    return new FluentNone(`${name}()`);
+  }
+
+  return func;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CallExpression(env, { fun, args }) {
+  const callee = FunctionReference(env, fun);
+
+  if (callee instanceof FluentNone) {
+    return callee;
+  }
+
+  const posargs = [];
+  const keyargs = {};
+
+  for (const arg of args) {
+    if (arg.type === "narg") {
+      keyargs[arg.name] = Type(env, arg.val);
+    } else {
+      posargs.push(Type(env, arg));
+    }
+  }
+
+  try {
+    return callee(posargs, keyargs);
+  } catch (e) {
+    
+    return new FluentNone();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function Pattern(env, ptn) {
+  const { ctx, dirty, errors } = env;
+
+  if (dirty.has(ptn)) {
+    errors.push(new RangeError("Cyclic reference"));
+    return new FluentNone();
+  }
+
+  
+  dirty.add(ptn);
+  const result = [];
+
+  
+  
+  const useIsolating = ctx._useIsolating && ptn.length > 1;
+
+  for (const elem of ptn) {
+    if (typeof elem === "string") {
+      result.push(elem);
+      continue;
+    }
+
+    const part = Type(env, elem).toString(ctx);
+
+    if (useIsolating) {
+      result.push(FSI);
+    }
+
+    if (part.length > MAX_PLACEABLE_LENGTH) {
+      errors.push(new RangeError("Too many characters in placeable " + `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`));
+      result.push(part.slice(MAX_PLACEABLE_LENGTH));
+    } else {
+      result.push(part);
+    }
+
+    if (useIsolating) {
+      result.push(PDI);
+    }
+  }
+
+  dirty.delete(ptn);
+  return result.join("");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function resolve(ctx, args, message, errors = []) {
+  const env = {
+    ctx, args, errors, dirty: new WeakSet()
+  };
+  return Type(env, message).toString(ctx);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class context_MessageContext {
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(locales, { functions = {}, useIsolating = true } = {}) {
+    this.locales = Array.isArray(locales) ? locales : [locales];
+
+    this._terms = new Map();
+    this._messages = new Map();
+    this._functions = functions;
+    this._useIsolating = useIsolating;
+    this._intls = new WeakMap();
+  }
+
+  
+
+
+
+
+  get messages() {
+    return this._messages[Symbol.iterator]();
+  }
+
+  
+
+
+
+
+
+  hasMessage(id) {
+    return this._messages.has(id);
+  }
+
+  
+
+
+
+
+
+
+
+
+  getMessage(id) {
+    return this._messages.get(id);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addMessages(source) {
+    const [entries, errors] = parse(source);
+    for (const id in entries) {
+      if (id.startsWith("-")) {
+        
+        
+        if (this._terms.has(id)) {
+          errors.push(`Attempt to override an existing term: "${id}"`);
+          continue;
+        }
+        this._terms.set(id, entries[id]);
+      } else {
+        if (this._messages.has(id)) {
+          errors.push(`Attempt to override an existing message: "${id}"`);
+          continue;
+        }
+        this._messages.set(id, entries[id]);
+      }
+    }
+
+    return errors;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  format(message, args, errors) {
+    
+    if (typeof message === "string") {
+      return message;
+    }
+
+    
+    if (typeof message.val === "string") {
+      return message.val;
+    }
+
+    
+    if (message.val === undefined) {
+      return null;
+    }
+
+    return resolve(this, args, message, errors);
+  }
+
+  _memoizeIntlObject(ctor, opts) {
+    const cache = this._intls.get(ctor) || {};
+    const id = JSON.stringify(opts);
+
+    if (!cache[id]) {
+      cache[id] = new ctor(this.locales, opts);
+      this._intls.set(ctor, cache);
+    }
+
+    return cache[id];
+  }
+}
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+
+
+
+
+
+
+class CachedIterable {
+  
+
+
+
+
+
+  constructor(iterable) {
+    if (Symbol.asyncIterator in Object(iterable)) {
+      this.iterator = iterable[Symbol.asyncIterator]();
+    } else if (Symbol.iterator in Object(iterable)) {
+      this.iterator = iterable[Symbol.iterator]();
+    } else {
+      throw new TypeError("Argument must implement the iteration protocol.");
+    }
+
+    this.seen = [];
+  }
+
+  [Symbol.iterator]() {
+    const { seen, iterator } = this;
+    let cur = 0;
+
+    return {
+      next() {
+        if (seen.length <= cur) {
+          seen.push(iterator.next());
+        }
+        return seen[cur++];
+      }
+    };
+  }
+
+  [Symbol.asyncIterator]() {
+    const { seen, iterator } = this;
+    let cur = 0;
+
+    return {
+      next() {
+        return _asyncToGenerator(function* () {
+          if (seen.length <= cur) {
+            seen.push((yield iterator.next()));
+          }
+          return seen[cur++];
+        })();
+      }
+    };
+  }
+
+  
+
+
+
+  touchNext() {
+    const { seen, iterator } = this;
+    if (seen.length === 0 || seen[seen.length - 1].done === false) {
+      seen.push(iterator.next());
+    }
+  }
+}
+
+function _asyncIterator(iterable) { if (typeof Symbol === "function") { if (Symbol.asyncIterator) { var method = iterable[Symbol.asyncIterator]; if (method != null) return method.call(iterable); } if (Symbol.iterator) { return iterable[Symbol.iterator](); } } throw new TypeError("Object is not async iterable"); }
+
+function fallback__asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mapContextSync(iterable, ids) {
+  if (!Array.isArray(ids)) {
+    return getContextForId(iterable, ids);
+  }
+
+  return ids.map(id => getContextForId(iterable, id));
+}
+
+
+
+
+function getContextForId(iterable, id) {
+  for (const context of iterable) {
+    if (context.hasMessage(id)) {
+      return context;
+    }
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+let mapContextAsync = (() => {
+  var _ref = fallback__asyncToGenerator(function* (iterable, ids) {
+    if (!Array.isArray(ids)) {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = _asyncIterator(iterable), _step, _value; _step = yield _iterator.next(), _iteratorNormalCompletion = _step.done, _value = yield _step.value, !_iteratorNormalCompletion; _iteratorNormalCompletion = true) {
+          const context = _value;
+
+          if (context.hasMessage(ids)) {
+            return context;
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            yield _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    }
+
+    let remainingCount = ids.length;
+    const foundContexts = new Array(remainingCount).fill(null);
+
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = _asyncIterator(iterable), _step2, _value2; _step2 = yield _iterator2.next(), _iteratorNormalCompletion2 = _step2.done, _value2 = yield _step2.value, !_iteratorNormalCompletion2; _iteratorNormalCompletion2 = true) {
+        const context = _value2;
+
+        
+        
+        for (let index = 0; index < ids.length; index++) {
+          const id = ids[index];
+          if (!foundContexts[index] && context.hasMessage(id)) {
+            foundContexts[index] = context;
+            remainingCount--;
+          }
+
+          
+          if (remainingCount === 0) {
+            return foundContexts;
+          }
+        }
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          yield _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+
+    return foundContexts;
+  });
+
+  return function mapContextAsync(_x, _x2) {
+    return _ref.apply(this, arguments);
+  };
+})();
+
+function nonBlank(line) {
+  return !/^\s*$/.test(line);
+}
+
+function countIndent(line) {
+  const [indent] = line.match(/^\s*/);
+  return indent.length;
+}
+
+
+
+
+
+
+
+
+function ftl(strings) {
+  const [code] = strings;
+  const lines = code.split("\n").filter(nonBlank);
+  const indents = lines.map(countIndent);
+  const common = Math.min(...indents);
+  const indent = new RegExp(`^\\s{${common}}`);
+
+  return lines.map(line => line.replace(indent, "")).join("\n");
+}
+
+
+__webpack_require__.d(__webpack_exports__, false, function() { return parse; });
+__webpack_require__.d(__webpack_exports__, "b", function() { return context_MessageContext; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return FluentType; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return FluentNumber; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return FluentDateTime; });
+__webpack_require__.d(__webpack_exports__, "a", function() { return CachedIterable; });
+__webpack_require__.d(__webpack_exports__, "c", function() { return mapContextSync; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return mapContextAsync; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return ftl; });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ }),
+
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 (function(global) { __webpack_exports__["b"] = initStore;
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_redux__ = __webpack_require__(21);
+ var __WEBPACK_IMPORTED_MODULE_1_redux__ = __webpack_require__(26);
  var __WEBPACK_IMPORTED_MODULE_1_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_redux__);
 
 
@@ -1576,10 +3764,10 @@ const LinkMenuOptions = {
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_1_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_redux__);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ContextMenu_ContextMenu__ = __webpack_require__(13);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ContextMenu_ContextMenu__ = __webpack_require__(16);
  var __WEBPACK_IMPORTED_MODULE_3_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_3_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react_intl__);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_link_menu_options__ = __webpack_require__(11);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_link_menu_options__ = __webpack_require__(14);
  var __WEBPACK_IMPORTED_MODULE_5_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_5_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react__);
 
@@ -1748,14 +3936,71 @@ class ContextMenuItem extends __WEBPACK_IMPORTED_MODULE_0_react___default.a.Pure
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+(function(global) {
+
+
+
+
+
+
+
+
+
+
+
+const ScreenshotUtils = {
+  isBlob(isLocal, image) {
+    return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
+  },
+
+  
+  createLocalImageObject(remoteImage) {
+    if (!remoteImage) {
+      return null;
+    }
+    if (this.isBlob(false, remoteImage)) {
+      return { url: global.URL.createObjectURL(remoteImage.data), path: remoteImage.path };
+    }
+    return { url: remoteImage };
+  },
+
+  
+  
+  maybeRevokeBlobObjectURL(localImage) {
+    if (this.isBlob(true, localImage)) {
+      global.URL.revokeObjectURL(localImage.url);
+    }
+  },
+
+  
+  isRemoteImageLocal(localImage, remoteImage) {
+    
+    if (remoteImage && localImage) {
+      return this.isBlob(false, remoteImage) ? localImage.path === remoteImage.path : localImage.url === remoteImage;
+    }
+
+    
+    
+    return !remoteImage && !localImage;
+  }
+};
+ __webpack_exports__["a"] = ScreenshotUtils;
+
+}.call(__webpack_exports__, __webpack_require__(3)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_0_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react_intl__);
  var __WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(10);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(13);
  var __WEBPACK_IMPORTED_MODULE_3_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_3_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react__);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_components_SectionMenu_SectionMenu__ = __webpack_require__(35);
- var __WEBPACK_IMPORTED_MODULE_5_content_src_lib_section_menu_options__ = __webpack_require__(15);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_components_SectionMenu_SectionMenu__ = __webpack_require__(39);
+ var __WEBPACK_IMPORTED_MODULE_5_content_src_lib_section_menu_options__ = __webpack_require__(19);
 
 
 
@@ -2094,7 +4339,7 @@ const SectionMenuOptions = {
 
 "use strict";
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_common_PerfService_jsm__ = __webpack_require__(17);
+ var __WEBPACK_IMPORTED_MODULE_1_common_PerfService_jsm__ = __webpack_require__(21);
  var __WEBPACK_IMPORTED_MODULE_2_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_2_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react__);
 
@@ -2404,12 +4649,14 @@ var perfService = new _PerfService();
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_intl__);
- var __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__ = __webpack_require__(5);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_components_LinkMenu_LinkMenu__ = __webpack_require__(12);
+ var __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__ = __webpack_require__(6);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_components_LinkMenu_LinkMenu__ = __webpack_require__(15);
  var __WEBPACK_IMPORTED_MODULE_4_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_4_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react__);
- var __WEBPACK_IMPORTED_MODULE_5_common_Reducers_jsm__ = __webpack_require__(6);
+ var __WEBPACK_IMPORTED_MODULE_5_content_src_lib_screenshot_utils__ = __webpack_require__(17);
+ var __WEBPACK_IMPORTED_MODULE_6_common_Reducers_jsm__ = __webpack_require__(7);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -2421,6 +4668,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 class TopSiteLink extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponent {
   constructor(props) {
     super(props);
+    this.state = { screenshotImage: null };
     this.onDragEvent = this.onDragEvent.bind(this);
   }
 
@@ -2465,6 +4713,54 @@ class TopSiteLink extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComp
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  static getNextStateFromProps(nextProps, prevState) {
+    const { screenshot } = nextProps.link;
+    const imageInState = __WEBPACK_IMPORTED_MODULE_5_content_src_lib_screenshot_utils__["a" ].isRemoteImageLocal(prevState.screenshotImage, screenshot);
+    if (imageInState) {
+      return null;
+    }
+
+    
+    __WEBPACK_IMPORTED_MODULE_5_content_src_lib_screenshot_utils__["a" ].maybeRevokeBlobObjectURL(prevState.screenshotImage);
+
+    return { screenshotImage: __WEBPACK_IMPORTED_MODULE_5_content_src_lib_screenshot_utils__["a" ].createLocalImageObject(screenshot) };
+  }
+
+  
+  
+  
+  componentWillMount() {
+    const nextState = TopSiteLink.getNextStateFromProps(this.props, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  
+  
+  
+  componentWillReceiveProps(nextProps) {
+    const nextState = TopSiteLink.getNextStateFromProps(nextProps, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  componentWillUnmount() {
+    __WEBPACK_IMPORTED_MODULE_5_content_src_lib_screenshot_utils__["a" ].maybeRevokeBlobObjectURL(this.state.screenshotImage);
+  }
+
   render() {
     const { children, className, defaultStyle, isDraggable, link, onClick, title } = this.props;
     const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}`;
@@ -2475,6 +4771,7 @@ class TopSiteLink extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComp
     let showSmallFavicon = false;
     let smallFaviconStyle;
     let smallFaviconFallback;
+    let hasScreenshotImage = this.state.screenshotImage && this.state.screenshotImage.url;
     if (defaultStyle) {
       
       smallFaviconFallback = false;
@@ -2483,7 +4780,7 @@ class TopSiteLink extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComp
       imageClassName = "top-site-icon rich-icon";
       imageStyle = {
         backgroundColor: link.backgroundColor,
-        backgroundImage: `url(${link.screenshot})`
+        backgroundImage: hasScreenshotImage ? `url(${this.state.screenshotImage.url})` : "none"
       };
     } else if (tippyTopIcon || faviconSize >= __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__["b" ]) {
       
@@ -2494,14 +4791,14 @@ class TopSiteLink extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComp
       };
     } else {
       
-      imageClassName = `screenshot${link.screenshot ? " active" : ""}`;
-      imageStyle = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+      imageClassName = `screenshot${hasScreenshotImage ? " active" : ""}`;
+      imageStyle = { backgroundImage: hasScreenshotImage ? `url(${this.state.screenshotImage.url})` : "none" };
 
       
       if (faviconSize >= __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__["a" ]) {
         showSmallFavicon = true;
         smallFaviconStyle = { backgroundImage: `url(${link.favicon})` };
-      } else if (link.screenshot) {
+      } else if (hasScreenshotImage) {
         
         
         showSmallFavicon = true;
@@ -2759,7 +5056,7 @@ class _TopSiteList extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureCom
   _getTopSites() {
     
     let topSites = this.props.TopSites.rows.slice();
-    topSites.length = this.props.TopSitesRows * __WEBPACK_IMPORTED_MODULE_5_common_Reducers_jsm__["a" ];
+    topSites.length = this.props.TopSitesRows * __WEBPACK_IMPORTED_MODULE_6_common_Reducers_jsm__["a" ];
     return topSites;
   }
 
@@ -2864,17 +5161,17 @@ const TopSiteList = Object(__WEBPACK_IMPORTED_MODULE_1_react_intl__["injectIntl"
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_snippets__ = __webpack_require__(20);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_Base_Base__ = __webpack_require__(25);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__ = __webpack_require__(40);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_init_store__ = __webpack_require__(8);
+ var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_snippets__ = __webpack_require__(24);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_Base_Base__ = __webpack_require__(30);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__ = __webpack_require__(44);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_init_store__ = __webpack_require__(11);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_redux__);
  var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
- var __WEBPACK_IMPORTED_MODULE_7_react_dom__ = __webpack_require__(9);
+ var __WEBPACK_IMPORTED_MODULE_7_react_dom__ = __webpack_require__(12);
  var __WEBPACK_IMPORTED_MODULE_7_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7_react_dom__);
- var __WEBPACK_IMPORTED_MODULE_8_common_Reducers_jsm__ = __webpack_require__(6);
+ var __WEBPACK_IMPORTED_MODULE_8_common_Reducers_jsm__ = __webpack_require__(7);
 
 
 
@@ -2916,7 +5213,9 @@ Object(__WEBPACK_IMPORTED_MODULE_1_content_src_lib_snippets__["a" ])(store);
 "use strict";
 (function(global) { __webpack_exports__["a"] = addSnippetsSubscriber;
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_content_src_asrouter_asrouter_content__ = __webpack_require__(7);
+ var __WEBPACK_IMPORTED_MODULE_1_content_src_asrouter_asrouter_content__ = __webpack_require__(8);
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
 const DATABASE_NAME = "snippets_db";
 const DATABASE_VERSION = 1;
 const SNIPPETS_OBJECTSTORE_NAME = "snippets";
@@ -2972,16 +5271,20 @@ class SnippetsMap extends Map {
 
 
 
-  async blockSnippetById(id) {
-    if (!id) {
-      return;
-    }
-    const { blockList } = this;
-    if (!blockList.includes(id)) {
-      blockList.push(id);
-      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SNIPPETS_BLOCKLIST_UPDATED, data: id }));
-      await this.set("blockList", blockList);
-    }
+  blockSnippetById(id) {
+    var _this = this;
+
+    return _asyncToGenerator(function* () {
+      if (!id) {
+        return;
+      }
+      const { blockList } = _this;
+      if (!blockList.includes(id)) {
+        blockList.push(id);
+        _this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SNIPPETS_BLOCKLIST_UPDATED, data: id }));
+        yield _this.set("blockList", blockList);
+      }
+    })();
   }
 
   disableOnboarding() {
@@ -3023,15 +5326,19 @@ class SnippetsMap extends Map {
 
 
 
-  async connect() {
-    
-    const db = await this._openDB();
+  connect() {
+    var _this2 = this;
 
-    
-    await this._restoreFromDb(db);
+    return _asyncToGenerator(function* () {
+      
+      const db = yield _this2._openDB();
 
-    
-    this._db = db;
+      
+      yield _this2._restoreFromDb(db);
+
+      
+      _this2._db = db;
+    })();
   }
 
   
@@ -3139,33 +5446,37 @@ class SnippetsProvider {
     return global.gSnippetsMap;
   }
 
-  async _refreshSnippets() {
-    
-    
-    const cachedVersion = this.snippetsMap.get("snippets-cached-version");
+  _refreshSnippets() {
+    var _this3 = this;
 
-    if (cachedVersion !== this.appData.version) {
-      this.snippetsMap.clear();
-    }
+    return _asyncToGenerator(function* () {
+      
+      
+      const cachedVersion = _this3.snippetsMap.get("snippets-cached-version");
 
-    
-    const lastUpdate = this.snippetsMap.get("snippets-last-update");
-    const needsUpdate = !(lastUpdate >= 0) || Date.now() - lastUpdate > SNIPPETS_UPDATE_INTERVAL_MS;
-
-    if (needsUpdate && this.appData.snippetsURL) {
-      this.snippetsMap.set("snippets-last-update", Date.now());
-      try {
-        const response = await fetch(this.appData.snippetsURL);
-        if (response.status === 200) {
-          const payload = await response.text();
-
-          this.snippetsMap.set("snippets", payload);
-          this.snippetsMap.set("snippets-cached-version", this.appData.version);
-        }
-      } catch (e) {
-        console.error(e); 
+      if (cachedVersion !== _this3.appData.version) {
+        _this3.snippetsMap.clear();
       }
-    }
+
+      
+      const lastUpdate = _this3.snippetsMap.get("snippets-last-update");
+      const needsUpdate = !(lastUpdate >= 0) || Date.now() - lastUpdate > SNIPPETS_UPDATE_INTERVAL_MS;
+
+      if (needsUpdate && _this3.appData.snippetsURL) {
+        _this3.snippetsMap.set("snippets-last-update", Date.now());
+        try {
+          const response = yield fetch(_this3.appData.snippetsURL);
+          if (response.status === 200) {
+            const payload = yield response.text();
+
+            _this3.snippetsMap.set("snippets", payload);
+            _this3.snippetsMap.set("snippets-cached-version", _this3.appData.version);
+          }
+        } catch (e) {
+          console.error(e); 
+        }
+      }
+    })();
   }
 
   _noSnippetFallback() {
@@ -3228,51 +5539,55 @@ class SnippetsProvider {
 
 
 
-  async init(options) {
-    Object.assign(this, {
-      appData: {},
-      elementId: "snippets",
-      connect: true
-    }, options);
+  init(options) {
+    var _this4 = this;
 
-    
-    if (global.addMessageListener) {
-      global.addMessageListener("ActivityStream:MainToContent", this._onAction);
-    }
+    return _asyncToGenerator(function* () {
+      Object.assign(_this4, {
+        appData: {},
+        elementId: "snippets",
+        connect: true
+      }, options);
 
-    
-    
-    if (this.connect) {
+      
+      if (global.addMessageListener) {
+        global.addMessageListener("ActivityStream:MainToContent", _this4._onAction);
+      }
+
+      
+      
+      if (_this4.connect) {
+        try {
+          yield _this4.snippetsMap.connect();
+        } catch (e) {
+          console.error(e); 
+        }
+      }
+
+      
+      for (const key of Object.keys(_this4.appData)) {
+        if (key === "blockList") {
+          _this4.snippetsMap.set("blockList", _this4.appData[key]);
+        } else {
+          _this4.snippetsMap.set(`appData.${key}`, _this4.appData[key]);
+        }
+      }
+
+      
+      yield _this4._refreshSnippets();
+
+      
       try {
-        await this.snippetsMap.connect();
+        _this4._showRemoteSnippets();
       } catch (e) {
-        console.error(e); 
+        _this4._noSnippetFallback(e);
       }
-    }
 
-    
-    for (const key of Object.keys(this.appData)) {
-      if (key === "blockList") {
-        this.snippetsMap.set("blockList", this.appData[key]);
-      } else {
-        this.snippetsMap.set(`appData.${key}`, this.appData[key]);
-      }
-    }
+      window.dispatchEvent(new Event(SNIPPETS_ENABLED_EVENT));
 
-    
-    await this._refreshSnippets();
-
-    
-    try {
-      this._showRemoteSnippets();
-    } catch (e) {
-      this._noSnippetFallback(e);
-    }
-
-    window.dispatchEvent(new Event(SNIPPETS_ENABLED_EVENT));
-
-    this._forceOnboardingVisibility(true);
-    this.initialized = true;
+      _this4._forceOnboardingVisibility(true);
+      _this4.initialized = true;
+    })();
   }
 
   uninit() {
@@ -3301,7 +5616,7 @@ function addSnippetsSubscriber(store) {
 
   let initializing = false;
 
-  store.subscribe(async () => {
+  store.subscribe(_asyncToGenerator(function* () {
     const state = store.getState();
     
     
@@ -3312,7 +5627,7 @@ function addSnippetsSubscriber(store) {
     
     !initializing && location.href !== "about:welcome") {
       initializing = true;
-      await snippets.init({ appData: state.Snippets });
+      yield snippets.init({ appData: state.Snippets });
       initializing = false;
     } else if ((state.Prefs.values["feeds.snippets"] === false || state.Prefs.values.disableSnippets === true) && snippets.initialized) {
       snippets.uninit();
@@ -3325,12 +5640,531 @@ function addSnippetsSubscriber(store) {
     } else if ((!state.Prefs.values.asrouterExperimentEnabled || !state.Prefs.values["feeds.snippets"]) && asrouterContent.initialized) {
       asrouterContent.uninit();
     }
-  });
+  }));
 
   
   return { snippets, asrouterContent };
 }
 }.call(__webpack_exports__, __webpack_require__(3)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+
+
+var external__React_ = __webpack_require__(0);
+var external__React__default = __webpack_require__.n(external__React_);
+
+
+var external__PropTypes_ = __webpack_require__(9);
+var external__PropTypes__default = __webpack_require__.n(external__PropTypes_);
+
+
+var src = __webpack_require__(10);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class localization_ReactLocalization {
+  constructor(messages) {
+    this.contexts = new src["a" ](messages);
+    this.subs = new Set();
+  }
+
+  
+
+
+  subscribe(comp) {
+    this.subs.add(comp);
+  }
+
+  
+
+
+  unsubscribe(comp) {
+    this.subs.delete(comp);
+  }
+
+  
+
+
+  setMessages(messages) {
+    this.contexts = new src["a" ](messages);
+
+    
+    this.subs.forEach(comp => comp.relocalize());
+  }
+
+  getMessageContext(id) {
+    return Object(src["c" ])(this.contexts, id);
+  }
+
+  formatCompound(mcx, msg, args) {
+    const value = mcx.format(msg, args);
+
+    if (msg.attrs) {
+      var attrs = {};
+      for (const name of Object.keys(msg.attrs)) {
+        attrs[name] = mcx.format(msg.attrs[name], args);
+      }
+    }
+
+    return { value, attrs };
+  }
+
+  
+
+
+  getString(id, args, fallback) {
+    const mcx = this.getMessageContext(id);
+
+    if (mcx === null) {
+      return fallback || id;
+    }
+
+    const msg = mcx.getMessage(id);
+    return mcx.format(msg, args);
+  }
+}
+
+function isReactLocalization(props, propName) {
+  const prop = props[propName];
+
+  if (prop instanceof localization_ReactLocalization) {
+    return null;
+  }
+
+  return new Error(`The ${propName} context field must be an instance of ReactLocalization.`);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class provider_LocalizationProvider extends external__React_["Component"] {
+  constructor(props) {
+    super(props);
+    const { messages } = props;
+
+    if (messages === undefined) {
+      throw new Error("LocalizationProvider must receive the messages prop.");
+    }
+
+    if (!messages[Symbol.iterator]) {
+      throw new Error("The messages prop must be an iterable.");
+    }
+
+    this.l10n = new localization_ReactLocalization(messages);
+  }
+
+  getChildContext() {
+    return {
+      l10n: this.l10n
+    };
+  }
+
+  componentWillReceiveProps(next) {
+    const { messages } = next;
+
+    if (messages !== this.props.messages) {
+      this.l10n.setMessages(messages);
+    }
+  }
+
+  render() {
+    return external__React_["Children"].only(this.props.children);
+  }
+}
+
+provider_LocalizationProvider.childContextTypes = {
+  l10n: isReactLocalization
+};
+
+provider_LocalizationProvider.propTypes = {
+  children: external__PropTypes__default.a.element.isRequired,
+  messages: isIterable
+};
+
+function isIterable(props, propName, componentName) {
+  const prop = props[propName];
+
+  if (Symbol.iterator in Object(prop)) {
+    return null;
+  }
+
+  return new Error(`The ${propName} prop supplied to ${componentName} must be an iterable.`);
+}
+
+
+
+
+
+function withLocalization(Inner) {
+  class WithLocalization extends external__React_["Component"] {
+    componentDidMount() {
+      const { l10n } = this.context;
+
+      if (l10n) {
+        l10n.subscribe(this);
+      }
+    }
+
+    componentWillUnmount() {
+      const { l10n } = this.context;
+
+      if (l10n) {
+        l10n.unsubscribe(this);
+      }
+    }
+
+    
+
+
+    relocalize() {
+      
+      
+      this.forceUpdate();
+    }
+
+    
+
+
+    getString(id, args, fallback) {
+      const { l10n } = this.context;
+
+      if (!l10n) {
+        return fallback || id;
+      }
+
+      return l10n.getString(id, args, fallback);
+    }
+
+    render() {
+      return Object(external__React_["createElement"])(Inner, Object.assign(
+      
+      { getString: (...args) => this.getString(...args) }, this.props));
+    }
+  }
+
+  WithLocalization.displayName = `WithLocalization(${displayName(Inner)})`;
+
+  WithLocalization.contextTypes = {
+    l10n: isReactLocalization
+  };
+
+  return WithLocalization;
+}
+
+function displayName(component) {
+  return component.displayName || component.name || "Component";
+}
+
+
+
+const TEMPLATE = document.createElement("template");
+
+function parseMarkup(str) {
+  TEMPLATE.innerHTML = str;
+  return TEMPLATE.content;
+}
+
+
+
+
+
+
+
+
+
+
+
+var omittedCloseTags = {
+  area: true,
+  base: true,
+  br: true,
+  col: true,
+  embed: true,
+  hr: true,
+  img: true,
+  input: true,
+  keygen: true,
+  link: true,
+  meta: true,
+  param: true,
+  source: true,
+  track: true,
+  wbr: true
+  
+};
+
+ var vendor_omittedCloseTags = (omittedCloseTags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+var voidElementTags = Object.assign({
+  menuitem: true
+}, vendor_omittedCloseTags);
+
+ var vendor_voidElementTags = (voidElementTags);
+
+
+
+
+
+
+
+
+
+
+const reMarkup = /<|&#?\w+;/;
+
+
+
+
+function toArguments(props) {
+  const args = {};
+  const elems = {};
+
+  for (const [propname, propval] of Object.entries(props)) {
+    if (propname.startsWith("$")) {
+      const name = propname.substr(1);
+      args[name] = propval;
+    } else if (Object(external__React_["isValidElement"])(propval)) {
+      
+      
+      const name = propname.toLowerCase();
+      elems[name] = propval;
+    }
+  }
+
+  return [args, elems];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class localized_Localized extends external__React_["Component"] {
+  componentDidMount() {
+    const { l10n } = this.context;
+
+    if (l10n) {
+      l10n.subscribe(this);
+    }
+  }
+
+  componentWillUnmount() {
+    const { l10n } = this.context;
+
+    if (l10n) {
+      l10n.unsubscribe(this);
+    }
+  }
+
+  
+
+
+  relocalize() {
+    
+    
+    this.forceUpdate();
+  }
+
+  render() {
+    const { l10n } = this.context;
+    const { id, attrs, children } = this.props;
+    const elem = external__React_["Children"].only(children);
+
+    if (!l10n) {
+      
+      return elem;
+    }
+
+    const mcx = l10n.getMessageContext(id);
+
+    if (mcx === null) {
+      
+      return elem;
+    }
+
+    const msg = mcx.getMessage(id);
+    const [args, elems] = toArguments(this.props);
+    const {
+      value: messageValue,
+      attrs: messageAttrs
+    } = l10n.formatCompound(mcx, msg, args);
+
+    
+    
+    
+    if (attrs && messageAttrs) {
+      var localizedProps = {};
+
+      for (const [name, value] of Object.entries(messageAttrs)) {
+        if (attrs[name]) {
+          localizedProps[name] = value;
+        }
+      }
+    }
+
+    
+    
+    
+    
+    if (elem.type in vendor_voidElementTags) {
+      return Object(external__React_["cloneElement"])(elem, localizedProps);
+    }
+
+    
+    
+    
+    if (messageValue === null) {
+      return Object(external__React_["cloneElement"])(elem, localizedProps);
+    }
+
+    
+    
+    if (!reMarkup.test(messageValue)) {
+      return Object(external__React_["cloneElement"])(elem, localizedProps, messageValue);
+    }
+
+    
+    
+    const translationNodes = Array.from(parseMarkup(messageValue).childNodes);
+    const translatedChildren = translationNodes.map(childNode => {
+      if (childNode.nodeType === childNode.TEXT_NODE) {
+        return childNode.textContent;
+      }
+
+      
+      if (!elems.hasOwnProperty(childNode.localName)) {
+        return childNode.textContent;
+      }
+
+      const sourceChild = elems[childNode.localName];
+
+      
+      
+      
+      
+      if (sourceChild.type in vendor_voidElementTags) {
+        return sourceChild;
+      }
+
+      
+      
+      
+      
+      return Object(external__React_["cloneElement"])(sourceChild, null, childNode.textContent);
+    });
+
+    return Object(external__React_["cloneElement"])(elem, localizedProps, ...translatedChildren);
+  }
+}
+
+localized_Localized.contextTypes = {
+  l10n: isReactLocalization
+};
+
+localized_Localized.propTypes = {
+  children: external__PropTypes__default.a.element.isRequired
+};
+
+__webpack_require__.d(__webpack_exports__, "a", function() { return provider_LocalizationProvider; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return withLocalization; });
+__webpack_require__.d(__webpack_exports__, "b", function() { return localized_Localized; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return localization_ReactLocalization; });
+
+__webpack_require__.d(__webpack_exports__, false, function() { return isReactLocalization; });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  }),
 
@@ -3563,17 +6397,8 @@ var external__React_ = __webpack_require__(0);
 var external__React__default = __webpack_require__.n(external__React_);
 
 
-function safeURI(url) {
-  if (!url) {
-    return "";
-  }
-  const { protocol } = new URL(url);
-  const isAllowed = ["http:", "https:", "data:", "resource:", "chrome:"].includes(protocol);
-  if (!isAllowed) {
-    console.warn(`The protocol ${protocol} is not allowed for template URLs.`); 
-  }
-  return isAllowed ? url : "";
-}
+var template_utils = __webpack_require__(5);
+
 
 
 
@@ -3596,7 +6421,7 @@ const Button = props => {
 
   return external__React__default.a.createElement(
     "a",
-    { href: safeURI(props.url),
+    { href: Object(template_utils["a" ])(props.url),
       onClick: props.onClick,
       className: props.className || "ASRouterButton",
       style: style },
@@ -3664,7 +6489,7 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
   }
 
   renderTitleIcon() {
-    const titleIcon = safeURI(this.props.content.title_icon);
+    const titleIcon = Object(template_utils["a" ])(this.props.content.title_icon);
     return titleIcon ? external__React__default.a.createElement("span", { className: "titleIcon", style: { backgroundImage: `url("${titleIcon}")` } }) : null;
   }
 
@@ -3690,7 +6515,7 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
     return external__React__default.a.createElement(
       SnippetBase_SnippetBase,
       _extends({}, props, { className: className }),
-      external__React__default.a.createElement("img", { src: safeURI(props.content.icon) || DEFAULT_ICON_PATH, className: "icon" }),
+      external__React__default.a.createElement("img", { src: Object(template_utils["a" ])(props.content.icon) || DEFAULT_ICON_PATH, className: "icon" }),
       external__React__default.a.createElement(
         "div",
         null,
@@ -3701,7 +6526,7 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
         external__React__default.a.createElement(
           "p",
           { className: "body" },
-          props.content.text
+          props.richText || props.content.text
         ),
         " ",
         hasLink ? this.renderButton("ASRouterAnchor") : null
@@ -3725,18 +6550,18 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_intl__);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ASRouterAdmin_ASRouterAdmin__ = __webpack_require__(26);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__ = __webpack_require__(27);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ASRouterAdmin_ASRouterAdmin__ = __webpack_require__(31);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__ = __webpack_require__(32);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react_redux__);
- var __WEBPACK_IMPORTED_MODULE_5_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(10);
- var __WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__ = __webpack_require__(28);
- var __WEBPACK_IMPORTED_MODULE_7_common_PrerenderData_jsm__ = __webpack_require__(29);
+ var __WEBPACK_IMPORTED_MODULE_5_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(13);
+ var __WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__ = __webpack_require__(33);
+ var __WEBPACK_IMPORTED_MODULE_7_common_PrerenderData_jsm__ = __webpack_require__(34);
  var __WEBPACK_IMPORTED_MODULE_8_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_8_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_8_react__);
- var __WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__ = __webpack_require__(30);
- var __WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__ = __webpack_require__(32);
- var __WEBPACK_IMPORTED_MODULE_11_content_src_components_StartupOverlay_StartupOverlay__ = __webpack_require__(39);
+ var __WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__ = __webpack_require__(35);
+ var __WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__ = __webpack_require__(37);
+ var __WEBPACK_IMPORTED_MODULE_11_content_src_components_StartupOverlay_StartupOverlay__ = __webpack_require__(43);
 
 
 
@@ -3904,7 +6729,7 @@ const Base = Object(__WEBPACK_IMPORTED_MODULE_4_react_redux__["connect"])(state 
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
- var __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__ = __webpack_require__(7);
+ var __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__ = __webpack_require__(8);
  var __WEBPACK_IMPORTED_MODULE_1_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_1_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react__);
 
@@ -4386,7 +7211,7 @@ var PrerenderData = new _PrerenderData({
  var __WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_2_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_2_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react_redux__);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_constants__ = __webpack_require__(31);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_constants__ = __webpack_require__(36);
  var __WEBPACK_IMPORTED_MODULE_4_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_4_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react__);
 
@@ -4510,18 +7335,18 @@ const Search = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect"])()(Ob
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-(function(global) { var __WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__ = __webpack_require__(33);
+(function(global) { var __WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__ = __webpack_require__(38);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_intl__);
  var __WEBPACK_IMPORTED_MODULE_2_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_components_CollapsibleSection_CollapsibleSection__ = __webpack_require__(14);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_components_ComponentPerfTimer_ComponentPerfTimer__ = __webpack_require__(16);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_components_CollapsibleSection_CollapsibleSection__ = __webpack_require__(18);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_components_ComponentPerfTimer_ComponentPerfTimer__ = __webpack_require__(20);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_redux__);
  var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
- var __WEBPACK_IMPORTED_MODULE_7_content_src_components_Topics_Topics__ = __webpack_require__(36);
- var __WEBPACK_IMPORTED_MODULE_8_content_src_components_TopSites_TopSites__ = __webpack_require__(37);
+ var __WEBPACK_IMPORTED_MODULE_7_content_src_components_Topics_Topics__ = __webpack_require__(40);
+ var __WEBPACK_IMPORTED_MODULE_8_content_src_components_TopSites_TopSites__ = __webpack_require__(41);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4798,366 +7623,11 @@ const Sections = Object(__WEBPACK_IMPORTED_MODULE_5_react_redux__["connect"])(st
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-(function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1__types__ = __webpack_require__(34);
- var __WEBPACK_IMPORTED_MODULE_2_react_redux__ = __webpack_require__(4);
- var __WEBPACK_IMPORTED_MODULE_2_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react_redux__);
- var __WEBPACK_IMPORTED_MODULE_3_react_intl__ = __webpack_require__(2);
- var __WEBPACK_IMPORTED_MODULE_3_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react_intl__);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_link_menu_options__ = __webpack_require__(11);
- var __WEBPACK_IMPORTED_MODULE_5_content_src_components_LinkMenu_LinkMenu__ = __webpack_require__(12);
- var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
- var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
 
 
+var Actions = __webpack_require__(1);
 
 
-
-
-
-
-
-const gImageLoading = new Map();
-
-
-
-
-
-
-
-
-
-
-class _Card extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      activeCard: null,
-      imageLoaded: false,
-      showContextMenu: false,
-      cardImage: null
-    };
-    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  
-
-
-  async maybeLoadImage() {
-    
-    const { cardImage } = this.state;
-    if (!cardImage) {
-      return;
-    }
-
-    const imageUrl = cardImage.url;
-    if (!this.state.imageLoaded) {
-      
-      if (!gImageLoading.has(imageUrl)) {
-        const loaderPromise = new Promise((resolve, reject) => {
-          const loader = new Image();
-          loader.addEventListener("load", resolve);
-          loader.addEventListener("error", reject);
-          loader.src = imageUrl;
-        });
-
-        
-        gImageLoading.set(imageUrl, loaderPromise);
-        loaderPromise.catch(ex => ex).then(() => gImageLoading.delete(imageUrl)).catch();
-      }
-
-      
-      await gImageLoading.get(imageUrl);
-
-      
-      if (_Card.isImageInState(this.state, this.props.link.image) && !this.state.imageLoaded) {
-        this.setState({ imageLoaded: true });
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-  static isLocalImageObject(image) {
-    return image && image.data && image.path;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  static getNextStateFromProps(nextProps, prevState) {
-    const { image } = nextProps.link;
-    const imageInState = _Card.isImageInState(prevState, image);
-    let nextState = null;
-
-    
-    if (!imageInState && nextProps.link) {
-      nextState = { imageLoaded: false };
-    }
-
-    if (imageInState) {
-      return nextState;
-    }
-
-    nextState = nextState || {};
-
-    
-    _Card.maybeRevokeImageBlob(prevState);
-
-    if (!image) {
-      nextState.cardImage = null;
-    } else if (_Card.isLocalImageObject(image)) {
-      nextState.cardImage = { url: global.URL.createObjectURL(image.data), path: image.path };
-    } else {
-      nextState.cardImage = { url: image };
-    }
-
-    return nextState;
-  }
-
-  
-
-
-  static maybeRevokeImageBlob(prevState) {
-    if (prevState.cardImage && prevState.cardImage.path) {
-      global.URL.revokeObjectURL(prevState.cardImage.url);
-    }
-  }
-
-  
-
-
-  static isImageInState(state, image) {
-    const { cardImage } = state;
-
-    
-    if (image && cardImage) {
-      return _Card.isLocalImageObject(image) ? cardImage.path === image.path : cardImage.url === image;
-    }
-
-    
-    
-    return !image && !cardImage;
-  }
-
-  onMenuButtonClick(event) {
-    event.preventDefault();
-    this.setState({
-      activeCard: this.props.index,
-      showContextMenu: true
-    });
-  }
-
-  
-
-
-  _getTelemetryInfo() {
-    
-    if (this.props.link.type !== "history") {
-      return { value: { card_type: this.props.link.type } };
-    }
-
-    return null;
-  }
-
-  onLinkClick(event) {
-    event.preventDefault();
-    if (this.props.link.type === "download") {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
-        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SHOW_DOWNLOAD_FILE,
-        data: this.props.link
-      }));
-    } else {
-      const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
-        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_LINK,
-        data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
-      }));
-    }
-    if (this.props.isWebExtension) {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].WebExtEvent(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].WEBEXT_CLICK, {
-        source: this.props.eventSource,
-        url: this.props.link.url,
-        action_position: this.props.index
-      }));
-    } else {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent(Object.assign({
-        event: "CLICK",
-        source: this.props.eventSource,
-        action_position: this.props.index
-      }, this._getTelemetryInfo())));
-
-      if (this.props.shouldSendImpressionStats) {
-        this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ImpressionStats({
-          source: this.props.eventSource,
-          click: 0,
-          tiles: [{ id: this.props.link.guid, pos: this.props.index }]
-        }));
-      }
-    }
-  }
-
-  onMenuUpdate(showContextMenu) {
-    this.setState({ showContextMenu });
-  }
-
-  componentDidMount() {
-    this.maybeLoadImage();
-  }
-
-  componentDidUpdate() {
-    this.maybeLoadImage();
-  }
-
-  
-  
-  
-  componentWillMount() {
-    const nextState = _Card.getNextStateFromProps(this.props, this.state);
-    if (nextState) {
-      this.setState(nextState);
-    }
-  }
-
-  
-  
-  
-  componentWillReceiveProps(nextProps) {
-    const nextState = _Card.getNextStateFromProps(nextProps, this.state);
-    if (nextState) {
-      this.setState(nextState);
-    }
-  }
-
-  componentWillUnmount() {
-    _Card.maybeRevokeImageBlob(this.state);
-  }
-
-  render() {
-    const { index, className, link, dispatch, contextMenuOptions, eventSource, shouldSendImpressionStats } = this.props;
-    const { props } = this;
-    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
-    
-    const { icon, intlID } = __WEBPACK_IMPORTED_MODULE_1__types__["a" ][link.type === "now" ? "trending" : link.type] || {};
-    const hasImage = this.state.cardImage || link.hasImage;
-    const imageStyle = { backgroundImage: this.state.cardImage ? `url(${this.state.cardImage.url})` : "none" };
-    const outerClassName = ["card-outer", className, isContextMenuOpen && "active", props.placeholder && "placeholder"].filter(v => v).join(" ");
-
-    return __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-      "li",
-      { className: outerClassName },
-      __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-        "a",
-        { href: link.type === "pocket" ? link.open_url : link.url, onClick: !props.placeholder ? this.onLinkClick : undefined },
-        __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-          "div",
-          { className: "card" },
-          __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-            "div",
-            { className: "card-preview-image-outer" },
-            hasImage && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("div", { className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`, style: imageStyle })
-          ),
-          __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-            "div",
-            { className: "card-details" },
-            link.type === "download" && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-              "div",
-              { className: "card-host-name alternate" },
-              __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3_react_intl__["FormattedMessage"], { id: Object(__WEBPACK_IMPORTED_MODULE_4_content_src_lib_link_menu_options__["a" ])(this.props.platform) })
-            ),
-            link.hostname && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-              "div",
-              { className: "card-host-name" },
-              link.hostname.slice(0, 100),
-              link.type === "download" && `  \u2014 ${link.description}`
-            ),
-            __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-              "div",
-              { className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name"].join(" ") },
-              __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-                "h4",
-                { className: "card-title", dir: "auto" },
-                link.title
-              ),
-              __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-                "p",
-                { className: "card-description", dir: "auto" },
-                link.description
-              )
-            ),
-            __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-              "div",
-              { className: "card-context" },
-              icon && !link.context && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("span", { className: `card-context-icon icon icon-${icon}` }),
-              link.icon && link.context && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement("span", { className: "card-context-icon icon", style: { backgroundImage: `url('${link.icon}')` } }),
-              intlID && !link.context && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-                "div",
-                { className: "card-context-label" },
-                __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3_react_intl__["FormattedMessage"], { id: intlID, defaultMessage: "Visited" })
-              ),
-              link.context && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-                "div",
-                { className: "card-context-label" },
-                link.context
-              )
-            )
-          )
-        )
-      ),
-      !props.placeholder && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-        "button",
-        { className: "context-menu-button icon",
-          onClick: this.onMenuButtonClick },
-        __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
-          "span",
-          { className: "sr-only" },
-          `Open context menu for ${link.title}`
-        )
-      ),
-      isContextMenuOpen && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_5_content_src_components_LinkMenu_LinkMenu__["a" ], {
-        dispatch: dispatch,
-        index: index,
-        source: eventSource,
-        onUpdate: this.onMenuUpdate,
-        options: link.contextMenuOptions || contextMenuOptions,
-        site: link,
-        siteInfo: this._getTelemetryInfo(),
-        shouldSendImpressionStats: shouldSendImpressionStats })
-    );
-  }
-}
-
-
-_Card.defaultProps = { link: {} };
-const Card = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect"])(state => ({ platform: state.Prefs.values.platform }))(_Card);
- __webpack_exports__["a"] = Card;
-
-const PlaceholderCard = props => __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(Card, { placeholder: true, className: props.className });
- __webpack_exports__["b"] = PlaceholderCard;
-
-}.call(__webpack_exports__, __webpack_require__(3)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
 const cardContextTypes = {
   history: {
     intlID: "type_label_visited",
@@ -5184,7 +7654,337 @@ const cardContextTypes = {
     icon: "download"
   }
 };
- __webpack_exports__["a"] = cardContextTypes;
+
+var external__ReactRedux_ = __webpack_require__(4);
+var external__ReactRedux__default = __webpack_require__.n(external__ReactRedux_);
+
+
+var external__ReactIntl_ = __webpack_require__(2);
+var external__ReactIntl__default = __webpack_require__.n(external__ReactIntl_);
+
+
+var link_menu_options = __webpack_require__(14);
+
+
+var LinkMenu = __webpack_require__(15);
+
+
+var external__React_ = __webpack_require__(0);
+var external__React__default = __webpack_require__.n(external__React_);
+
+
+var screenshot_utils = __webpack_require__(17);
+
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+
+
+
+
+
+
+
+
+
+
+const gImageLoading = new Map();
+
+
+
+
+
+
+
+
+
+
+class Card__Card extends external__React__default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeCard: null,
+      imageLoaded: false,
+      showContextMenu: false,
+      cardImage: null
+    };
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onLinkClick = this.onLinkClick.bind(this);
+  }
+
+  
+
+
+  maybeLoadImage() {
+    var _this = this;
+
+    return _asyncToGenerator(function* () {
+      
+      const { cardImage } = _this.state;
+      if (!cardImage) {
+        return;
+      }
+
+      const imageUrl = cardImage.url;
+      if (!_this.state.imageLoaded) {
+        
+        if (!gImageLoading.has(imageUrl)) {
+          const loaderPromise = new Promise(function (resolve, reject) {
+            const loader = new Image();
+            loader.addEventListener("load", resolve);
+            loader.addEventListener("error", reject);
+            loader.src = imageUrl;
+          });
+
+          
+          gImageLoading.set(imageUrl, loaderPromise);
+          loaderPromise.catch(function (ex) {
+            return ex;
+          }).then(function () {
+            return gImageLoading.delete(imageUrl);
+          }).catch();
+        }
+
+        
+        yield gImageLoading.get(imageUrl);
+
+        
+        if (screenshot_utils["a" ].isRemoteImageLocal(_this.state.cardImage, _this.props.link.image) && !_this.state.imageLoaded) {
+          _this.setState({ imageLoaded: true });
+        }
+      }
+    })();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static getNextStateFromProps(nextProps, prevState) {
+    const { image } = nextProps.link;
+    const imageInState = screenshot_utils["a" ].isRemoteImageLocal(prevState.cardImage, image);
+    let nextState = null;
+
+    
+    if (!imageInState && nextProps.link) {
+      nextState = { imageLoaded: false };
+    }
+
+    if (imageInState) {
+      return nextState;
+    }
+
+    
+    screenshot_utils["a" ].maybeRevokeBlobObjectURL(prevState.cardImage);
+
+    nextState = nextState || {};
+    nextState.cardImage = screenshot_utils["a" ].createLocalImageObject(image);
+
+    return nextState;
+  }
+
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    this.setState({
+      activeCard: this.props.index,
+      showContextMenu: true
+    });
+  }
+
+  
+
+
+  _getTelemetryInfo() {
+    
+    if (this.props.link.type !== "history") {
+      return { value: { card_type: this.props.link.type } };
+    }
+
+    return null;
+  }
+
+  onLinkClick(event) {
+    event.preventDefault();
+    if (this.props.link.type === "download") {
+      this.props.dispatch(Actions["b" ].OnlyToMain({
+        type: Actions["c" ].SHOW_DOWNLOAD_FILE,
+        data: this.props.link
+      }));
+    } else {
+      const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
+      this.props.dispatch(Actions["b" ].OnlyToMain({
+        type: Actions["c" ].OPEN_LINK,
+        data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
+      }));
+    }
+    if (this.props.isWebExtension) {
+      this.props.dispatch(Actions["b" ].WebExtEvent(Actions["c" ].WEBEXT_CLICK, {
+        source: this.props.eventSource,
+        url: this.props.link.url,
+        action_position: this.props.index
+      }));
+    } else {
+      this.props.dispatch(Actions["b" ].UserEvent(Object.assign({
+        event: "CLICK",
+        source: this.props.eventSource,
+        action_position: this.props.index
+      }, this._getTelemetryInfo())));
+
+      if (this.props.shouldSendImpressionStats) {
+        this.props.dispatch(Actions["b" ].ImpressionStats({
+          source: this.props.eventSource,
+          click: 0,
+          tiles: [{ id: this.props.link.guid, pos: this.props.index }]
+        }));
+      }
+    }
+  }
+
+  onMenuUpdate(showContextMenu) {
+    this.setState({ showContextMenu });
+  }
+
+  componentDidMount() {
+    this.maybeLoadImage();
+  }
+
+  componentDidUpdate() {
+    this.maybeLoadImage();
+  }
+
+  
+  
+  
+  componentWillMount() {
+    const nextState = Card__Card.getNextStateFromProps(this.props, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  
+  
+  
+  componentWillReceiveProps(nextProps) {
+    const nextState = Card__Card.getNextStateFromProps(nextProps, this.state);
+    if (nextState) {
+      this.setState(nextState);
+    }
+  }
+
+  componentWillUnmount() {
+    screenshot_utils["a" ].maybeRevokeBlobObjectURL(this.state.cardImage);
+  }
+
+  render() {
+    const { index, className, link, dispatch, contextMenuOptions, eventSource, shouldSendImpressionStats } = this.props;
+    const { props } = this;
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
+    
+    const { icon, intlID } = cardContextTypes[link.type === "now" ? "trending" : link.type] || {};
+    const hasImage = this.state.cardImage || link.hasImage;
+    const imageStyle = { backgroundImage: this.state.cardImage ? `url(${this.state.cardImage.url})` : "none" };
+    const outerClassName = ["card-outer", className, isContextMenuOpen && "active", props.placeholder && "placeholder"].filter(v => v).join(" ");
+
+    return external__React__default.a.createElement(
+      "li",
+      { className: outerClassName },
+      external__React__default.a.createElement(
+        "a",
+        { href: link.type === "pocket" ? link.open_url : link.url, onClick: !props.placeholder ? this.onLinkClick : undefined },
+        external__React__default.a.createElement(
+          "div",
+          { className: "card" },
+          external__React__default.a.createElement(
+            "div",
+            { className: "card-preview-image-outer" },
+            hasImage && external__React__default.a.createElement("div", { className: `card-preview-image${this.state.imageLoaded ? " loaded" : ""}`, style: imageStyle })
+          ),
+          external__React__default.a.createElement(
+            "div",
+            { className: "card-details" },
+            link.type === "download" && external__React__default.a.createElement(
+              "div",
+              { className: "card-host-name alternate" },
+              external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: Object(link_menu_options["a" ])(this.props.platform) })
+            ),
+            link.hostname && external__React__default.a.createElement(
+              "div",
+              { className: "card-host-name" },
+              link.hostname.slice(0, 100),
+              link.type === "download" && `  \u2014 ${link.description}`
+            ),
+            external__React__default.a.createElement(
+              "div",
+              { className: ["card-text", icon ? "" : "no-context", link.description ? "" : "no-description", link.hostname ? "" : "no-host-name"].join(" ") },
+              external__React__default.a.createElement(
+                "h4",
+                { className: "card-title", dir: "auto" },
+                link.title
+              ),
+              external__React__default.a.createElement(
+                "p",
+                { className: "card-description", dir: "auto" },
+                link.description
+              )
+            ),
+            external__React__default.a.createElement(
+              "div",
+              { className: "card-context" },
+              icon && !link.context && external__React__default.a.createElement("span", { className: `card-context-icon icon icon-${icon}` }),
+              link.icon && link.context && external__React__default.a.createElement("span", { className: "card-context-icon icon", style: { backgroundImage: `url('${link.icon}')` } }),
+              intlID && !link.context && external__React__default.a.createElement(
+                "div",
+                { className: "card-context-label" },
+                external__React__default.a.createElement(external__ReactIntl_["FormattedMessage"], { id: intlID, defaultMessage: "Visited" })
+              ),
+              link.context && external__React__default.a.createElement(
+                "div",
+                { className: "card-context-label" },
+                link.context
+              )
+            )
+          )
+        )
+      ),
+      !props.placeholder && external__React__default.a.createElement(
+        "button",
+        { className: "context-menu-button icon",
+          onClick: this.onMenuButtonClick },
+        external__React__default.a.createElement(
+          "span",
+          { className: "sr-only" },
+          `Open context menu for ${link.title}`
+        )
+      ),
+      isContextMenuOpen && external__React__default.a.createElement(LinkMenu["a" ], {
+        dispatch: dispatch,
+        index: index,
+        source: eventSource,
+        onUpdate: this.onMenuUpdate,
+        options: link.contextMenuOptions || contextMenuOptions,
+        site: link,
+        siteInfo: this._getTelemetryInfo(),
+        shouldSendImpressionStats: shouldSendImpressionStats })
+    );
+  }
+}
+
+
+Card__Card.defaultProps = { link: {} };
+const Card = Object(external__ReactRedux_["connect"])(state => ({ platform: state.Prefs.values.platform }))(Card__Card);
+ __webpack_exports__["a"] = Card;
+
+const PlaceholderCard = props => external__React__default.a.createElement(Card, { placeholder: true, className: props.className });
+ __webpack_exports__["b"] = PlaceholderCard;
 
 
  }),
@@ -5193,12 +7993,12 @@ const cardContextTypes = {
 
 "use strict";
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_content_src_components_ContextMenu_ContextMenu__ = __webpack_require__(13);
+ var __WEBPACK_IMPORTED_MODULE_1_content_src_components_ContextMenu_ContextMenu__ = __webpack_require__(16);
  var __WEBPACK_IMPORTED_MODULE_2_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_2_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react_intl__);
  var __WEBPACK_IMPORTED_MODULE_3_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_3_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react__);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_section_menu_options__ = __webpack_require__(15);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_section_menu_options__ = __webpack_require__(19);
 
 
 
@@ -5322,18 +8122,18 @@ class Topics extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureComponent
 
 "use strict";
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1__TopSitesConstants__ = __webpack_require__(5);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_CollapsibleSection_CollapsibleSection__ = __webpack_require__(14);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ComponentPerfTimer_ComponentPerfTimer__ = __webpack_require__(16);
+ var __WEBPACK_IMPORTED_MODULE_1__TopSitesConstants__ = __webpack_require__(6);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_CollapsibleSection_CollapsibleSection__ = __webpack_require__(18);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ComponentPerfTimer_ComponentPerfTimer__ = __webpack_require__(20);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react_redux__);
  var __WEBPACK_IMPORTED_MODULE_5_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_5_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_intl__);
  var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
- var __WEBPACK_IMPORTED_MODULE_7_common_Reducers_jsm__ = __webpack_require__(6);
- var __WEBPACK_IMPORTED_MODULE_8__TopSiteForm__ = __webpack_require__(38);
- var __WEBPACK_IMPORTED_MODULE_9__TopSite__ = __webpack_require__(18);
+ var __WEBPACK_IMPORTED_MODULE_7_common_Reducers_jsm__ = __webpack_require__(7);
+ var __WEBPACK_IMPORTED_MODULE_8__TopSiteForm__ = __webpack_require__(42);
+ var __WEBPACK_IMPORTED_MODULE_9__TopSite__ = __webpack_require__(22);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -5511,7 +8311,7 @@ var external__React_ = __webpack_require__(0);
 var external__React__default = __webpack_require__.n(external__React_);
 
 
-var TopSitesConstants = __webpack_require__(5);
+var TopSitesConstants = __webpack_require__(6);
 
 
 
@@ -5589,7 +8389,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(18);
+var TopSite = __webpack_require__(22);
 
 
 
@@ -6024,7 +8824,7 @@ const StartupOverlay = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect
 
 "use strict";
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
- var __WEBPACK_IMPORTED_MODULE_1_common_PerfService_jsm__ = __webpack_require__(17);
+ var __WEBPACK_IMPORTED_MODULE_1_common_PerfService_jsm__ = __webpack_require__(21);
 
 
 

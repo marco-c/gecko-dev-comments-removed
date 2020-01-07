@@ -24,6 +24,10 @@ module.exports = Object.assign({}, webpackConfig, {
     "react-dom": "commonjs react-dom"
   },
   plugins: [
-    new webpack.BannerPlugin(banner)
+    new webpack.BannerPlugin(banner),
+    
+    
+    
+    new webpack.DefinePlugin({document: {createElement: () => {}}})
   ]
 });
