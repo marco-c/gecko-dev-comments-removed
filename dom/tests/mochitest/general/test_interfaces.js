@@ -271,8 +271,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "CustomEvent", insecureContext: true},
 
-    {name: "DataChannel", insecureContext: true},
-
     {name: "DataTransfer", insecureContext: true},
 
     {name: "DataTransferItem", insecureContext: true},
@@ -804,6 +802,8 @@ var interfaceNamesInGlobalScope =
     {name: "RGBColor", insecureContext: true},
 
     {name: "RTCCertificate", insecureContext: true},
+
+    {name: "RTCDataChannel", insecureContext: true},
 
     {name: "RTCDataChannelEvent", insecureContext: true},
 
