@@ -1,183 +1,50 @@
+use std::io::{Read, Write};
+use serde;
 
+use config::{Options, OptionsExt};
+use de::read::BincodeRead;
+use {ErrorKind, Result};
 
-
-
-use std::io::{self, Write, Read};
-use std::{error, fmt, result};
-use std::str::Utf8Error;
-use ::{CountSize, SizeLimit};
-use byteorder::{ByteOrder};
-use std::error::Error as StdError;
-
-pub use super::de::{
-    Deserializer,
-};
-
-pub use super::ser::{
-    Serializer,
-};
-
-use super::ser::SizeChecker;
-
-use serde_crate as serde;
-
-
-pub type Result<T> = result::Result<T, Error>;
-
-
-pub type Error = Box<ErrorKind>;
-
-
-#[derive(Debug)]
-pub enum ErrorKind {
-    
-    
-    Io(io::Error),
-    
-    InvalidUtf8Encoding(Utf8Error),
-    
-    
-    InvalidBoolEncoding(u8),
-    
-    InvalidCharEncoding,
-    
-    
-    InvalidTagEncoding(usize),
-    
-    
-    DeserializeAnyNotSupported,
-    
-    
-    SizeLimit,
-    
-    SequenceMustHaveLength,
-    
-    Custom(String)
+#[derive(Clone)]
+struct CountSize<L: SizeLimit> {
+    total: u64,
+    other_limit: L,
 }
 
-impl StdError for ErrorKind {
-    fn description(&self) -> &str {
-        match *self {
-            ErrorKind::Io(ref err) => error::Error::description(err),
-            ErrorKind::InvalidUtf8Encoding(_) => "string is not valid utf8",
-            ErrorKind::InvalidBoolEncoding(_) => "invalid u8 while decoding bool",
-            ErrorKind::InvalidCharEncoding => "char is not valid",
-            ErrorKind::InvalidTagEncoding(_) => "tag for enum is not valid",
-            ErrorKind::SequenceMustHaveLength => "bincode can't encode infinite sequences",
-            ErrorKind::DeserializeAnyNotSupported => "bincode doesn't support serde::Deserializer::deserialize_any",
-            ErrorKind::SizeLimit => "the size limit for decoding has been reached",
-            ErrorKind::Custom(ref msg) => msg,
-
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            ErrorKind::Io(ref err) => Some(err),
-            ErrorKind::InvalidUtf8Encoding(_) => None,
-            ErrorKind::InvalidBoolEncoding(_) => None,
-            ErrorKind::InvalidCharEncoding => None,
-            ErrorKind::InvalidTagEncoding(_) => None,
-            ErrorKind::SequenceMustHaveLength => None,
-            ErrorKind::DeserializeAnyNotSupported => None,
-            ErrorKind::SizeLimit => None,
-            ErrorKind::Custom(_) => None,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        ErrorKind::Io(err).into()
-    }
-}
-
-impl fmt::Display for ErrorKind {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ErrorKind::Io(ref ioerr) =>
-                write!(fmt, "io error: {}", ioerr),
-            ErrorKind::InvalidUtf8Encoding(ref e) =>
-                write!(fmt, "{}: {}", self.description(), e),
-            ErrorKind::InvalidBoolEncoding(b) =>
-                write!(fmt, "{}, expected 0 or 1, found {}", self.description(), b),
-            ErrorKind::InvalidCharEncoding =>
-                write!(fmt, "{}", self.description()),
-            ErrorKind::InvalidTagEncoding(tag) =>
-                write!(fmt, "{}, found {}", self.description(), tag),
-            ErrorKind::SequenceMustHaveLength =>
-                write!(fmt, "bincode can only encode sequences and maps that have a knowable size ahead of time."),
-            ErrorKind::SizeLimit =>
-                write!(fmt, "size limit was exceeded"),
-            ErrorKind::DeserializeAnyNotSupported=>
-                write!(fmt, "bincode does not support the serde::Deserializer::deserialize_any method"),
-            ErrorKind::Custom(ref s) =>
-                s.fmt(fmt),
-        }
-    }
-}
-
-impl serde::de::Error for Error {
-    fn custom<T: fmt::Display>(desc: T) -> Error {
-        ErrorKind::Custom(desc.to_string()).into()
-    }
-}
-
-impl serde::ser::Error for Error {
-    fn custom<T: fmt::Display>(msg: T) -> Self {
-        ErrorKind::Custom(msg.to_string()).into()
-    }
-}
-
-
-
-
-
-
-
-
-
-pub fn serialize_into<W, T: ?Sized, S, E>(writer: W, value: &T, size_limit: S) -> Result<()>
-    where W: Write, T: serde::Serialize, S: SizeLimit, E: ByteOrder
+pub(crate) fn serialize_into<W, T: ?Sized, O>(writer: W, value: &T, mut options: O) -> Result<()>
+where
+    W: Write,
+    T: serde::Serialize,
+    O: Options,
 {
-    if let Some(limit) = size_limit.limit() {
-        try!(serialized_size_bounded(value, limit).ok_or(ErrorKind::SizeLimit));
+    if options.limit().limit().is_some() {
+        
+        
+        serialized_size(value, &mut options)?;
     }
 
-    let mut serializer = Serializer::<_, E>::new(writer);
+    let mut serializer = ::ser::Serializer::<_, O>::new(writer, options);
     serde::Serialize::serialize(value, &mut serializer)
 }
 
-
-
-
-
-pub fn serialize<T: ?Sized, S, E>(value: &T, size_limit: S) -> Result<Vec<u8>>
-    where T: serde::Serialize, S: SizeLimit, E: ByteOrder
+pub(crate) fn serialize<T: ?Sized, O>(value: &T, mut options: O) -> Result<Vec<u8>>
+where
+    T: serde::Serialize,
+    O: Options,
 {
-    let mut writer = match size_limit.limit() {
-        Some(size_limit) => {
-            let actual_size = try!(serialized_size_bounded(value, size_limit).ok_or(ErrorKind::SizeLimit));
-            Vec::with_capacity(actual_size as usize)
-        }
-        None => {
-            let size = serialized_size(value) as usize;
-            Vec::with_capacity(size)
-        }
+    let mut writer = {
+        let actual_size = serialized_size(value, &mut options)?;
+        Vec::with_capacity(actual_size as usize)
     };
 
-    try!(serialize_into::<_, _, _, E>(&mut writer, value, super::Infinite));
+    serialize_into(&mut writer, value, options.with_no_limit())?;
     Ok(writer)
 }
 
-impl SizeLimit for CountSize {
+impl<L: SizeLimit> SizeLimit for CountSize<L> {
     fn add(&mut self, c: u64) -> Result<()> {
+        self.other_limit.add(c)?;
         self.total += c;
-        if let Some(limit) = self.limit {
-            if self.total > limit {
-                return Err(Box::new(ErrorKind::SizeLimit))
-            }
-        }
         Ok(())
     }
 
@@ -186,64 +53,112 @@ impl SizeLimit for CountSize {
     }
 }
 
-
-
-
-
-pub fn serialized_size<T: ?Sized>(value: &T) -> u64
-    where T: serde::Serialize
+pub(crate) fn serialized_size<T: ?Sized, O: Options>(value: &T, mut options: O) -> Result<u64>
+where
+    T: serde::Serialize,
 {
-    let mut size_counter = SizeChecker {
-        size_limit: CountSize { total: 0, limit: None }
+    let old_limiter = options.limit().clone();
+    let mut size_counter = ::ser::SizeChecker {
+        options: ::config::WithOtherLimit::new(
+            options,
+            CountSize {
+                total: 0,
+                other_limit: old_limiter,
+            },
+        ),
     };
 
-    value.serialize(&mut size_counter).ok();
-    size_counter.size_limit.total
+    let result = value.serialize(&mut size_counter);
+    result.map(|_| size_counter.options.new_limit.total)
+}
+
+pub(crate) fn deserialize_from<R, T, O>(reader: R, options: O) -> Result<T>
+where
+    R: Read,
+    T: serde::de::DeserializeOwned,
+    O: Options,
+{
+    let reader = ::de::read::IoReader::new(reader);
+    let mut deserializer = ::de::Deserializer::<_, O>::new(reader, options);
+    serde::Deserialize::deserialize(&mut deserializer)
+}
+
+pub(crate) fn deserialize_from_custom<'a, R, T, O>(reader: R, options: O) -> Result<T>
+where
+    R: BincodeRead<'a>,
+    T: serde::de::DeserializeOwned,
+    O: Options,
+{
+    let mut deserializer = ::de::Deserializer::<_, O>::new(reader, options);
+    serde::Deserialize::deserialize(&mut deserializer)
+}
+
+pub(crate) fn deserialize_in_place<'a, R, T, O>(reader: R, options: O, place: &mut T) -> Result<()>
+where
+    R: BincodeRead<'a>,
+    T: serde::de::Deserialize<'a>,
+    O: Options,
+{
+    let mut deserializer = ::de::Deserializer::<_, _>::new(reader, options);
+    serde::Deserialize::deserialize_in_place(&mut deserializer, place)
+}
+
+pub(crate) fn deserialize<'a, T, O>(bytes: &'a [u8], options: O) -> Result<T>
+where
+    T: serde::de::Deserialize<'a>,
+    O: Options,
+{
+    let reader = ::de::read::SliceReader::new(bytes);
+    let options = ::config::WithOtherLimit::new(options, Infinite);
+    let mut deserializer = ::de::Deserializer::new(reader, options);
+    serde::Deserialize::deserialize(&mut deserializer)
+}
+
+
+pub(crate) trait SizeLimit: Clone {
+    
+    
+    fn add(&mut self, n: u64) -> Result<()>;
+    
+    fn limit(&self) -> Option<u64>;
 }
 
 
 
 
+#[derive(Copy, Clone)]
+pub struct Bounded(pub u64);
 
 
-pub fn serialized_size_bounded<T: ?Sized>(value: &T, max: u64) -> Option<u64>
-    where T: serde::Serialize
-{
-    let mut size_counter = SizeChecker {
-        size_limit: CountSize { total: 0, limit: Some(max) }
-    };
 
-    match value.serialize(&mut size_counter) {
-        Ok(_) => Some(size_counter.size_limit.total),
-        Err(_) => None,
+#[derive(Copy, Clone)]
+pub struct Infinite;
+
+impl SizeLimit for Bounded {
+    #[inline(always)]
+    fn add(&mut self, n: u64) -> Result<()> {
+        if self.0 >= n {
+            self.0 -= n;
+            Ok(())
+        } else {
+            Err(Box::new(ErrorKind::SizeLimit))
+        }
+    }
+
+    #[inline(always)]
+    fn limit(&self) -> Option<u64> {
+        Some(self.0)
     }
 }
 
+impl SizeLimit for Infinite {
+    #[inline(always)]
+    fn add(&mut self, _: u64) -> Result<()> {
+        Ok(())
+    }
 
-
-
-
-
-
-
-
-
-pub fn deserialize_from<R, T, S, E>(reader: R, size_limit: S) -> Result<T>
-    where R: Read, T: serde::de::DeserializeOwned, S: SizeLimit, E: ByteOrder
-{
-    let reader = ::de::read::IoReader::new(reader);
-    let mut deserializer = Deserializer::<_, S, E>::new(reader, size_limit);
-    serde::Deserialize::deserialize(&mut deserializer)
-}
-
-
-
-
-
-pub fn deserialize<'a, T, E: ByteOrder>(bytes: &'a [u8]) -> Result<T>
-    where T: serde::de::Deserialize<'a>,
-{
-    let reader = ::de::read::SliceReader::new(bytes);
-    let mut deserializer = Deserializer::<_, _, E>::new(reader, super::Infinite);
-    serde::Deserialize::deserialize(&mut deserializer)
+    #[inline(always)]
+    fn limit(&self) -> Option<u64> {
+        None
+    }
 }

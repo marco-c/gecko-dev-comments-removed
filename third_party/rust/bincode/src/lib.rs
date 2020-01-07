@@ -20,162 +20,146 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
 extern crate byteorder;
-extern crate serde as serde_crate;
+extern crate serde;
 
+mod config;
 mod ser;
+mod error;
 mod de;
-pub mod internal;
+mod internal;
 
-pub mod read_types {
+pub use error::{Error, ErrorKind, Result};
+pub use config::Config;
+pub use de::read::{BincodeRead, IoReader, SliceReader};
+
+
+
+
+
+#[doc(hidden)]
+pub trait DeserializerAcceptor<'a> {
     
-    pub use ::de::read::{SliceReader, BincodeRead, IoReader};
-}
-
-use std::io::{Read, Write};
-
-pub use internal::{ErrorKind, Error, Result, serialized_size, serialized_size_bounded};
-
-
-pub type Deserializer<W, S> = internal::Deserializer<W, S, byteorder::LittleEndian>;
-
-pub type Serializer<W> = internal::Serializer<W, byteorder::LittleEndian>;
-
-
-
-
-
-pub fn deserialize<'a, T>(bytes: &'a [u8]) -> internal::Result<T>
-    where T: serde_crate::de::Deserialize<'a>,
-{
-    internal::deserialize::<_, byteorder::LittleEndian>(bytes)
-}
-
-
-
-
-
-
-
-
-
-
-pub fn deserialize_from<R: ?Sized, T, S>(reader: &mut R, size_limit: S) -> internal::Result<T>
-    where R: Read, T: serde_crate::de::DeserializeOwned, S: SizeLimit
-{
-    internal::deserialize_from::<_, _, _, byteorder::LittleEndian>(reader, size_limit)
-}
-
-
-
-
-
-
-
-
-
-pub fn serialize_into<W: ?Sized, T: ?Sized, S>(writer: &mut W, value: &T, size_limit: S) -> internal::Result<()>
-    where W: Write, T: serde_crate::Serialize, S: SizeLimit
-{
-    internal::serialize_into::<_, _, _, byteorder::LittleEndian>(writer, value, size_limit)
-}
-
-
-
-
-
-pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> internal::Result<Vec<u8>>
-    where T: serde_crate::Serialize, S: SizeLimit
-{
-    internal::serialize::<_, _, byteorder::LittleEndian>(value, size_limit)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait SizeLimit: private::Sealed {
+    type Output;
     
+    fn accept<T: serde::Deserializer<'a>>(self, T) -> Self::Output;
+}
+
+
+
+
+
+#[doc(hidden)]
+pub trait SerializerAcceptor {
     
-    fn add(&mut self, n: u64) -> Result<()>;
+    type Output;
     
-    fn limit(&self) -> Option<u64>;
+    fn accept<T: serde::Serializer>(self, T) -> Self::Output;
 }
 
 
 
-#[derive(Copy, Clone)]
-pub struct Bounded(pub u64);
 
 
 
-#[derive(Copy, Clone)]
-pub struct Infinite;
 
-struct CountSize {
-    total: u64,
-    limit: Option<u64>,
+
+pub fn config() -> Config {
+    Config::new()
 }
 
-impl SizeLimit for Bounded {
-    #[inline(always)]
-    fn add(&mut self, n: u64) -> Result<()> {
-        if self.0 >= n {
-            self.0 -= n;
-            Ok(())
-        } else {
-            Err(Box::new(ErrorKind::SizeLimit))
-        }
-    }
 
-    #[inline(always)]
-    fn limit(&self) -> Option<u64> { Some(self.0) }
+
+
+
+pub fn serialize_into<W, T: ?Sized>(writer: W, value: &T) -> Result<()>
+where
+    W: std::io::Write,
+    T: serde::Serialize,
+{
+    config().serialize_into(writer, value)
 }
 
-impl SizeLimit for Infinite {
-    #[inline(always)]
-    fn add(&mut self, _: u64) -> Result<()> { Ok (()) }
 
-    #[inline(always)]
-    fn limit(&self) -> Option<u64> { None }
+pub fn serialize<T: ?Sized>(value: &T) -> Result<Vec<u8>>
+where
+    T: serde::Serialize,
+{
+    config().serialize(value)
 }
 
-mod private {
-    pub trait Sealed {}
 
-    impl<'a> Sealed for super::de::read::SliceReader<'a> {}
-    impl<R> Sealed for super::de::read::IoReader<R> {}
-    impl Sealed for super::Infinite {}
-    impl Sealed for super::Bounded {}
-    impl Sealed for super::CountSize {}
+
+
+pub fn deserialize_from<R, T>(reader: R) -> Result<T>
+where
+    R: std::io::Read,
+    T: serde::de::DeserializeOwned,
+{
+    config().deserialize_from(reader)
+}
+
+
+
+
+
+
+pub fn deserialize_from_custom<'a, R, T>(reader: R) -> Result<T>
+where
+    R: de::read::BincodeRead<'a>,
+    T: serde::de::DeserializeOwned,
+{
+    config().deserialize_from_custom(reader)
+}
+
+
+
+
+#[doc(hidden)]
+pub fn deserialize_in_place<'a, R, T>(reader: R, place: &mut T) -> Result<()>
+where
+    T: serde::de::Deserialize<'a>,
+    R: BincodeRead<'a>
+{
+    config().deserialize_in_place(reader, place)
+}
+
+
+pub fn deserialize<'a, T>(bytes: &'a [u8]) -> Result<T>
+where
+    T: serde::de::Deserialize<'a>,
+{
+    config().deserialize(bytes)
+}
+
+
+pub fn serialized_size<T: ?Sized>(value: &T) -> Result<u64>
+where
+    T: serde::Serialize,
+{
+    config().serialized_size(value)
+}
+
+
+
+#[doc(hidden)]
+pub fn with_deserializer<'a, A,  R>(reader: R, acceptor: A) -> A::Output
+where A: DeserializerAcceptor<'a>,
+        R: BincodeRead<'a>
+{
+    config().with_deserializer(reader, acceptor)
+}
+
+
+
+#[doc(hidden)]
+pub fn with_serializer<A, W>(writer: W, acceptor: A) -> A::Output
+where A: SerializerAcceptor,
+    W: std::io::Write
+{
+    config().with_serializer(writer, acceptor)
 }
