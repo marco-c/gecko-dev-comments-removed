@@ -258,36 +258,8 @@ PUSH_APK_SCOPES = {
 }
 
 
-PUSH_APK_GOOGLE_PLAY_TRACT = {
-    'central': 'beta',
-    'beta': 'rollout',
-    'release': 'rollout',
-    'default': 'invalid',
-}
 
-PUSH_APK_BREAKPOINT_WORKER_TYPE = {
-    'central': 'aws-provisioner-v1/taskcluster-generic',
-    'beta': 'null-provisioner/human-breakpoint',
-    'release': 'null-provisioner/human-breakpoint',
-    'maple': 'aws-provisioner-v1/taskcluster-generic',
-    'default': 'invalid/invalid',
-}
 
-PUSH_APK_COMMIT_OPTION = {
-    'central': True,
-    'beta': True,
-    'maple': False,
-    'release': True,
-    'default': False,
-}
-
-PUSH_APK_ROLLOUT_PERCENTAGE = {
-    
-    
-    'release': 10,
-    'beta': 10,
-    'default': None,
-}
 
 
 
@@ -404,30 +376,6 @@ get_push_apk_scope = functools.partial(
     get_scope_from_project,
     PUSH_APK_SCOPE_ALIAS_TO_PROJECT,
     PUSH_APK_SCOPES
-)
-
-get_push_apk_track = functools.partial(
-    get_scope_from_project,
-    PUSH_APK_SCOPE_ALIAS_TO_PROJECT,
-    PUSH_APK_GOOGLE_PLAY_TRACT
-)
-
-get_push_apk_breakpoint_worker_type = functools.partial(
-    get_scope_from_project,
-    PUSH_APK_SCOPE_ALIAS_TO_PROJECT,
-    PUSH_APK_BREAKPOINT_WORKER_TYPE
-)
-
-get_push_apk_commit_option = functools.partial(
-    get_scope_from_project,
-    PUSH_APK_SCOPE_ALIAS_TO_PROJECT,
-    PUSH_APK_COMMIT_OPTION
-)
-
-get_push_apk_rollout_percentage = functools.partial(
-    get_scope_from_project,
-    PUSH_APK_SCOPE_ALIAS_TO_PROJECT,
-    PUSH_APK_ROLLOUT_PERCENTAGE
 )
 
 
