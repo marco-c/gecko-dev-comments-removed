@@ -65,12 +65,12 @@ class WebAuthnTransaction
 public:
   WebAuthnTransaction(nsPIDOMWindowInner* aParent,
                       const RefPtr<Promise>& aPromise,
-                      const WebAuthnTransactionInfo&& aInfo,
-                      const nsAutoCString&& aClientData,
+                      const nsTArray<uint8_t>& aRpIdHash,
+                      const nsCString& aClientData,
                       AbortSignal* aSignal)
     : mParent(aParent)
     , mPromise(aPromise)
-    , mInfo(aInfo)
+    , mRpIdHash(aRpIdHash)
     , mClientData(aClientData)
     , mSignal(aSignal)
     , mId(NextId())
@@ -85,8 +85,7 @@ public:
   RefPtr<Promise> mPromise;
 
   
-  
-  WebAuthnTransactionInfo mInfo;
+  nsTArray<uint8_t> mRpIdHash;
 
   
   nsCString mClientData;

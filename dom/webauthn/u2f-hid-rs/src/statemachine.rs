@@ -22,6 +22,7 @@ impl StateMachine {
 
     pub fn register(
         &mut self,
+        flags: ::RegisterFlags,
         timeout: u64,
         challenge: Vec<u8>,
         application: Vec<u8>,
@@ -42,6 +43,17 @@ impl StateMachine {
 
             
             if !dev.is_u2f() || !u2f_init_device(dev) {
+                return;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            if !flags.is_empty() {
                 return;
             }
 

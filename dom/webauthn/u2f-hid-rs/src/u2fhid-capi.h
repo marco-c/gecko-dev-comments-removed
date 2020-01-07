@@ -15,6 +15,10 @@ const uint8_t U2F_RESBUF_ID_REGISTRATION = 0;
 const uint8_t U2F_RESBUF_ID_KEYHANDLE = 1;
 const uint8_t U2F_RESBUF_ID_SIGNATURE = 2;
 
+const uint64_t U2F_FLAG_REQUIRE_RESIDENT_KEY = 1;
+const uint64_t U2F_FLAG_REQUIRE_USER_VERIFICATION = 2;
+const uint64_t U2F_FLAG_REQUIRE_PLATFORM_ATTACHMENT = 4;
+
 
 
 
@@ -42,6 +46,7 @@ rust_u2f_manager* rust_u2f_mgr_new();
  void rust_u2f_mgr_free(rust_u2f_manager* mgr);
 
 uint64_t rust_u2f_mgr_register(rust_u2f_manager* mgr,
+                               uint64_t flags,
                                uint64_t timeout,
                                rust_u2f_callback,
                                const uint8_t* challenge_ptr,
