@@ -90,10 +90,10 @@ var SOURCE_MAP_TEST_MODULE =
 	  
 	  assert.throws(function () {
 	    node.add({});
-	  }, /TypeError: Expected a SourceNode, string, or an array of SourceNodes and strings/);
+	  });
 	  assert.throws(function () {
 	    node.add(function () {});
-	  }, /TypeError: Expected a SourceNode, string, or an array of SourceNodes and strings/);
+	  });
 	};
 	
 	exports['test .prepend()'] = function (assert) {
@@ -125,10 +125,10 @@ var SOURCE_MAP_TEST_MODULE =
 	  
 	  assert.throws(function () {
 	    node.prepend({});
-	  }, /TypeError: Expected a SourceNode, string, or an array of SourceNodes and strings/);
+	  });
 	  assert.throws(function () {
 	    node.prepend(function () {});
-	  }, /TypeError: Expected a SourceNode, string, or an array of SourceNodes and strings/);
+	  });
 	};
 	
 	exports['test .toString()'] = function (assert) {

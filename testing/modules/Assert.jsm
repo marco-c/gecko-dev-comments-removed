@@ -327,19 +327,6 @@ proto.notStrictEqual = function notStrictEqual(actual, expected, message) {
   this.report(actual === expected, actual, expected, message, "!==");
 };
 
-function checkExpectedArgument(instance, funcName, expected) {
-  if (!expected) {
-    instance.ok(false, `Error: The 'expected' argument was not supplied to Assert.${funcName}()`);
-  }
-
-  if (!instanceOf(expected, "RegExp") &&
-      typeof expected !== "function" &&
-      typeof expected !== "object") {
-    instance.ok(false,
-      `Error: The 'expected' argument to Assert.${funcName}() must be a RegExp, function or an object`);
-  }
-}
-
 function expectedException(actual, expected) {
   if (!actual || !expected) {
     return false;
@@ -380,10 +367,16 @@ function expectedException(actual, expected) {
 
 
 
-proto.throws = function(block, expected, message) {
-  checkExpectedArgument(this, "throws", expected);
 
+
+
+proto.throws = function(block, expected, message) {
   let actual;
+
+  if (typeof expected === "string") {
+    message = expected;
+    expected = null;
+  }
 
   try {
     block();
@@ -391,14 +384,14 @@ proto.throws = function(block, expected, message) {
     actual = e;
   }
 
-  message = (expected.name ? " (" + expected.name + ")." : ".") +
+  message = (expected && expected.name ? " (" + expected.name + ")." : ".") +
             (message ? " " + message : ".");
 
   if (!actual) {
     this.report(true, actual, expected, "Missing expected exception" + message);
   }
 
-  if ((actual && !expectedException(actual, expected))) {
+  if ((actual && expected && !expectedException(actual, expected))) {
     throw actual;
   }
 
@@ -417,12 +410,15 @@ proto.throws = function(block, expected, message) {
 
 
 proto.rejects = function(promise, expected, message) {
-  checkExpectedArgument(this, "rejects", expected);
   return new Promise((resolve, reject) => {
+    if (typeof expected === "string") {
+      message = expected;
+      expected = null;
+    }
     return promise.then(
       () => this.report(true, null, expected, "Missing expected exception " + message),
       err => {
-        if (!expectedException(err, expected)) {
+        if (expected && !expectedException(err, expected)) {
           reject(err);
           return;
         }
