@@ -752,12 +752,8 @@ gfxShapedText::AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
 }
 
 float
-gfxFont::SkewForSyntheticOblique() const
+gfxFont::AngleForSyntheticOblique() const
 {
-    
-    
-    const float kTan14deg = 0.249328f;
-
     
     
     if (mStyle.style == FontSlantStyle::Normal() ||
@@ -769,12 +765,29 @@ gfxFont::SkewForSyntheticOblique() const
     
     
     if (mStyle.style.IsItalic()) {
-        return mFontEntry->SupportsItalic() ? 0.0f : kTan14deg;
+        return mFontEntry->SupportsItalic() ? 0.0f : FontSlantStyle::kDefaultAngle;
     }
 
     
-    return mStyle.style == FontSlantStyle::Oblique()
-           ? kTan14deg : tan(mStyle.style.ObliqueAngle() * (M_PI / 180.0));
+    return mStyle.style.ObliqueAngle();
+}
+
+float
+gfxFont::SkewForSyntheticOblique() const
+{
+    
+    
+    static const float kTanDefaultAngle =
+        tan(FontSlantStyle::kDefaultAngle * (M_PI / 180.0));
+
+    float angle = AngleForSyntheticOblique();
+    if (angle == 0.0f) {
+        return 0.0f;
+    } else if (angle == FontSlantStyle::kDefaultAngle) {
+        return kTanDefaultAngle;
+    } else {
+        return tan(angle * (M_PI / 180.0));
+    }
 }
 
 void
@@ -1627,6 +1640,19 @@ gfxFont::HasFeatureSet(uint32_t aFeature, bool& aFeatureOn)
     return featureSet;
 }
 
+void
+gfxFont::InitializeScaledFont()
+{
+    if (!mAzureScaledFont) {
+        return;
+    }
+
+    float angle = AngleForSyntheticOblique();
+    if (angle != 0.0f) {
+        mAzureScaledFont->SetSyntheticObliqueAngle(angle);
+    }
+}
+
 
 
 
@@ -2304,27 +2330,21 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
         }
     }
 
-    if (fontParams.obliqueSkew != 0.0f) {
-        if (textDrawer) {
-            glyphFlagsRestore.Save(textDrawer);
-            textDrawer->SetWRGlyphFlags(textDrawer->GetWRGlyphFlags() |
-                                        wr::FontInstanceFlags::SYNTHETIC_ITALICS);
-        } else if (!fontParams.isVerticalFont) {
-            
-            
-            
-            if (!matrixRestore.HasMatrix()) {
-                matrixRestore.SetContext(aRunParams.context);
-            }
-            gfx::Point p(aPt->x * aRunParams.devPerApp,
-                         aPt->y * aRunParams.devPerApp);
-            gfx::Matrix mat =
-                aRunParams.context->CurrentMatrix().
-                PreTranslate(p).
-                PreMultiply(gfx::Matrix(1, 0, -fontParams.obliqueSkew, 1, 0, 0)).
-                PreTranslate(-p);
-            aRunParams.context->SetMatrix(mat);
+    if (fontParams.obliqueSkew != 0.0f && !fontParams.isVerticalFont && !textDrawer) {
+        
+        
+        
+        if (!matrixRestore.HasMatrix()) {
+            matrixRestore.SetContext(aRunParams.context);
         }
+        gfx::Point p(aPt->x * aRunParams.devPerApp,
+                     aPt->y * aRunParams.devPerApp);
+        gfx::Matrix mat =
+            aRunParams.context->CurrentMatrix().
+            PreTranslate(p).
+            PreMultiply(gfx::Matrix(1, 0, -fontParams.obliqueSkew, 1, 0, 0)).
+            PreTranslate(-p);
+        aRunParams.context->SetMatrix(mat);
     }
 
     RefPtr<SVGContextPaint> contextPaint;

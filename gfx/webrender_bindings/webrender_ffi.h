@@ -67,7 +67,6 @@ struct FontInstanceFlags {
   }
 
   enum : uint32_t {
-    SYNTHETIC_ITALICS = 1 << 0,
     SYNTHETIC_BOLD    = 1 << 1,
     EMBEDDED_BITMAPS  = 1 << 2,
     SUBPIXEL_BGR      = 1 << 3,
@@ -126,11 +125,5 @@ void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 
 #undef WR_FUNC
 #undef WR_DESTRUCTOR_SAFE_FUNC
-
-
-
-extern "C" {
-void record_telemetry_time(mozilla::wr::TelemetryProbe aProbe, uint64_t aTimeNs);
-}
 
 #endif 

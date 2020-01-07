@@ -152,14 +152,6 @@ enum class RepeatMode : uint32_t {
   Sentinel 
 };
 
-enum class TelemetryProbe {
-  SceneBuildTime = 0,
-  SceneSwapTime = 1,
-  RenderTime = 2,
-
-  Sentinel 
-};
-
 enum class TransformStyle : uint32_t {
   Flat = 0,
   Preserve3D = 1,
@@ -583,18 +575,6 @@ struct BorderSide {
   }
 };
 
-using LayoutPoint = TypedPoint2D<float, LayoutPixel>;
-
-struct GradientStop {
-  float offset;
-  ColorF color;
-
-  bool operator==(const GradientStop& aOther) const {
-    return offset == aOther.offset &&
-           color == aOther.color;
-  }
-};
-
 template<typename T, typename U>
 struct TypedSideOffsets2D {
   T top;
@@ -613,6 +593,18 @@ struct TypedSideOffsets2D {
 
 template<typename T>
 using SideOffsets2D = TypedSideOffsets2D<T, UnknownUnit>;
+
+using LayoutPoint = TypedPoint2D<float, LayoutPixel>;
+
+struct GradientStop {
+  float offset;
+  ColorF color;
+
+  bool operator==(const GradientStop& aOther) const {
+    return offset == aOther.offset &&
+           color == aOther.color;
+  }
+};
 
 struct Shadow {
   LayoutVector2D offset;
@@ -888,6 +880,14 @@ struct ColorU {
   }
 };
 
+struct SyntheticItalics {
+  int16_t angle;
+
+  bool operator==(const SyntheticItalics& aOther) const {
+    return angle == aOther.angle;
+  }
+};
+
 struct FontInstanceOptions {
   FontRenderMode render_mode;
   FontInstanceFlags flags;
@@ -895,11 +895,13 @@ struct FontInstanceOptions {
   
   
   ColorU bg_color;
+  SyntheticItalics synthetic_italics;
 
   bool operator==(const FontInstanceOptions& aOther) const {
     return render_mode == aOther.render_mode &&
            flags == aOther.flags &&
-           bg_color == aOther.bg_color;
+           bg_color == aOther.bg_color &&
+           synthetic_italics == aOther.synthetic_italics;
   }
 };
 
@@ -1012,9 +1014,6 @@ extern bool is_in_compositor_thread();
 extern bool is_in_main_thread();
 
 extern bool is_in_render_thread();
-
-extern void record_telemetry_time(TelemetryProbe aProbe,
-                                  uint64_t aTimeNs);
 
 WR_INLINE
 bool remove_program_binary_disk_cache(const nsAString *aProfPath)
