@@ -72,15 +72,9 @@ class Daemon(object):
         defines = dict(self.config_environment.acdefines)
         
         
-        
-        
         defines.update({
             'AB_CD': 'en-US',
             'BUILD_FASTER': '1',
-        })
-        defines.update({
-            'BOOKMARKS_INCLUDE_DIR': mozpath.join(self.config_environment.topsrcdir,
-                                                  'browser', 'locales', 'en-US', 'profile'),
         })
         return defines
 

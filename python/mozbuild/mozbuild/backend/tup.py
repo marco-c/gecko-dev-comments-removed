@@ -590,10 +590,6 @@ class TupBackend(CommonBackend):
 
             
             
-            acdefines_flags += ' -DBOOKMARKS_INCLUDE_DIR=%s/browser/locales/en-US/profile' % self.environment.topsrcdir
-
-            
-            
             acdefines_flags += ' -DBUILD_FASTER=1'
 
             fh.write('MOZ_OBJ_ROOT = $(TUP_CWD)\n')
