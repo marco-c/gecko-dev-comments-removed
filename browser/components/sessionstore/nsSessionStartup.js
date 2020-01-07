@@ -316,15 +316,14 @@ SessionStartup.prototype = {
 
 
 
-
-  get willOverrideHomepage() {
+  get willOverrideHomepagePromise() {
     
     
     
     
     
     if (!this._initialState && !this._resumeSessionEnabled) {
-      return false;
+      return Promise.resolve(false);
     }
 
     return new Promise(resolve => {

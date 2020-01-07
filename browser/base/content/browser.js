@@ -1358,7 +1358,7 @@ var gBrowserInit = {
 
     
     
-    this._callWithURIToLoad(uriToLoad => {
+    this._uriToLoadPromise.then(uriToLoad => {
       if (uriToLoad == "about:home") {
         gBrowser.setIcon(gBrowser.selectedTab, "chrome://branding/content/icon32.png");
       } else if (uriToLoad == "about:privatebrowsing") {
@@ -1592,7 +1592,7 @@ var gBrowserInit = {
       initialBrowser.removeAttribute("blank");
     });
 
-    this._callWithURIToLoad(uriToLoad => {
+    this._uriToLoadPromise.then(uriToLoad => {
       if ((isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") &&
           focusAndSelectUrlBar()) {
         return;
@@ -1617,7 +1617,7 @@ var gBrowserInit = {
   },
 
   _handleURIToLoad() {
-    this._callWithURIToLoad(uriToLoad => {
+    this._uriToLoadPromise.then(uriToLoad => {
       if (!uriToLoad || uriToLoad == "about:blank") {
         return;
       }
@@ -1737,17 +1737,17 @@ var gBrowserInit = {
   },
 
   
-  
   get _uriToLoadPromise() {
     delete this._uriToLoadPromise;
-    return this._uriToLoadPromise = function() {
+    return this._uriToLoadPromise = new Promise(resolve => {
       
       
       
       
       
       if (!window.arguments || !window.arguments[0]) {
-        return null;
+        resolve(null);
+        return;
       }
 
       let uri = window.arguments[0];
@@ -1757,28 +1757,16 @@ var gBrowserInit = {
 
       
       if (uri != defaultArgs) {
-        return uri;
+        resolve(uri);
+        return;
       }
 
       
       
-      let willOverride = SessionStartup.willOverrideHomepage;
-      if (!(willOverride instanceof Promise)) {
-        return willOverride ? null : uri;
-      }
-      return willOverride.then(willOverrideHomepage =>
-                                 willOverrideHomepage ? null : uri);
-    }();
-  },
-
-  
-  
-  _callWithURIToLoad(callback) {
-    let uriToLoad = this._uriToLoadPromise;
-    if (uriToLoad instanceof Promise)
-      uriToLoad.then(callback);
-    else
-      callback(uriToLoad);
+      SessionStartup.willOverrideHomepagePromise.then(willOverrideHomepage => {
+        resolve(willOverrideHomepage ? null : uri);
+      });
+    });
   },
 
   onUnload() {

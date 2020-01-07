@@ -47,19 +47,15 @@ add_task(async function() {
                          
                          inRange(r.x1, width * .75, width * .9)
         },
-      ];
 
-      if (AppConstants.platform == "linux") {
-        exceptions.push(
-          {name: "bug 1403648 - urlbar should be focused at first paint",
-           condition: r => inRange(r.y2, 60, 80) && 
-                           
-                           inRange(r.w, width * .5, width * .75) &&
-                           
-                           inRange(r.x1, width * .15, width * .25)
-          },
-        );
-      }
+        {name: "bug 1403648 - urlbar should be focused at first paint",
+         condition: r => inRange(r.y2, 60, 80) && 
+                         
+                         inRange(r.w, width * .5, width * .75) &&
+                         
+                         inRange(r.x1, width * .15, width * .25)
+        },
+      ];
 
       let rectText = `${rect.toSource()}, window width: ${width}`;
       for (let e of exceptions) {
