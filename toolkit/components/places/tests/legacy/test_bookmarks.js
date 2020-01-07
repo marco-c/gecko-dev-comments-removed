@@ -114,9 +114,6 @@ add_task(async function test_bookmarks() {
   let testStartIndex = 0;
 
   
-  Assert.equal(bs.getItemIndex(testRoot), bmStartIndex);
-
-  
   
   let beforeInsert = Date.now() * 1000;
   Assert.ok(beforeInsert > 0);
@@ -170,9 +167,6 @@ add_task(async function test_bookmarks() {
   
   let folderId = bs.getFolderIdForItem(newId);
   Assert.equal(folderId, testRoot);
-
-  
-  Assert.equal(bs.getItemIndex(newId), testStartIndex);
 
   
   let workFolder = bs.createFolder(testRoot, "Work", 0);
@@ -262,7 +256,6 @@ add_task(async function test_bookmarks() {
   Assert.equal(bookmarksObserver._itemMovedNewIndex, 1);
 
   
-  Assert.equal(bs.getItemIndex(workFolder), 1);
   Assert.equal(bs.getFolderIdForItem(workFolder), homeFolder);
 
   
@@ -278,7 +271,6 @@ add_task(async function test_bookmarks() {
 
   
   let tmpFolder = bs.createFolder(testRoot, "tmp", 2);
-  Assert.equal(bs.getItemIndex(tmpFolder), 2);
 
   
   let kwTestItemId = bs.insertBookmark(testRoot, uri("http://keywordtest.com"),
@@ -403,11 +395,6 @@ add_task(async function test_bookmarks() {
   } catch (ex) {}
 
   
-  let newId12 = bs.insertBookmark(testRoot, uri("http://foo10.com/"), 1, "");
-  let bmIndex = bs.getItemIndex(newId12);
-  Assert.equal(1, bmIndex);
-
-  
   
   
   
@@ -415,7 +402,7 @@ add_task(async function test_bookmarks() {
                                   bs.DEFAULT_INDEX, "");
   Assert.equal(bookmarksObserver._itemAddedId, newId13);
   Assert.equal(bookmarksObserver._itemAddedParent, testRoot);
-  Assert.equal(bookmarksObserver._itemAddedIndex, 11);
+  Assert.equal(bookmarksObserver._itemAddedIndex, 10);
 
   
   bs.setItemTitle(newId13, "ZZZXXXYYY");
