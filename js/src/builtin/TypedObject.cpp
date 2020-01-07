@@ -1524,7 +1524,7 @@ OutlineTypedObject::createDerived(JSContext* cx, HandleTypeDescr type,
 TypedObject::createZeroed(JSContext* cx, HandleTypeDescr descr, gc::InitialHeap heap)
 {
     
-    if (descr->size() <= InlineTypedObject::MaximumSize) {
+    if (InlineTypedObject::canAccommodateType(descr)) {
         AutoSetNewObjectMetadata metadata(cx);
 
         InlineTypedObject* obj = InlineTypedObject::create(cx, descr, heap);
@@ -2893,7 +2893,7 @@ CreateTraceList(JSContext* cx, HandleTypeDescr descr)
     
     
     
-    if (descr->size() > InlineTypedObject::MaximumSize || descr->transparent())
+    if (!InlineTypedObject::canAccommodateType(descr) || descr->transparent())
         return true;
 
     TraceListVisitor visitor;
