@@ -2545,6 +2545,12 @@ bool
 RegExpCompiler::CheckOverRecursed()
 {
     if (!CheckRecursionLimitDontReport(cx())) {
+#ifdef JS_MORE_DETERMINISTIC
+        
+        
+        
+        fprintf(stderr, "ReportOverRecursed called\n");
+#endif
         SetRegExpTooBig();
         return false;
     }
