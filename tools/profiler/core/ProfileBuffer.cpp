@@ -110,17 +110,6 @@ ProfileBuffer::DeleteExpiredStoredMarkers()
   }
 }
 
-void
-ProfileBuffer::Reset()
-{
-  
-  
-  
-  
-  
-  mRangeStart = mRangeEnd = mRangeEnd + 2 * mEntrySize;
-}
-
 size_t
 ProfileBuffer::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
