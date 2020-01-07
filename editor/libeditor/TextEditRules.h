@@ -130,12 +130,25 @@ protected:
   void InitFields();
 
   
-  nsresult WillInsertText(EditAction aAction,
-                          bool* aCancel,
-                          bool* aHandled,
-                          const nsAString* inString,
-                          nsAString* outString,
-                          int32_t aMaxLength);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  WillInsertText(EditAction aAction, bool* aCancel, bool* aHandled,
+                 const nsAString* inString, nsAString* outString,
+                 int32_t aMaxLength);
 
   nsresult WillInsertBreak(bool* aCancel, bool* aHandled, int32_t aMaxLength);
 
