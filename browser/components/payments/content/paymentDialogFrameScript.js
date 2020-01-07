@@ -62,12 +62,6 @@ let PaymentFrameScript = {
     }
   },
 
-  setupL10n() {
-    
-    
-    Services.scriptloader.loadSubScript("chrome://formautofill/content/l10n.js");
-  },
-
   
 
 
@@ -99,7 +93,6 @@ let PaymentFrameScript = {
     let {messageType} = detail;
     if (messageType == "initializeRequest") {
       this.setupContentConsole();
-      this.setupL10n();
       this.exposeUtilityFunctions();
     }
     this.log.debug("sendToChrome:", messageType, detail);
