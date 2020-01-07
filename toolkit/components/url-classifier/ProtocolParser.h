@@ -58,7 +58,8 @@ public:
   
   
   virtual const nsTArray<ForwardedUpdate> &Forwards() const { return mForwards; }
-  virtual bool ResetRequested() { return false; }
+  bool ResetRequested() const { return !mTablesToReset.IsEmpty(); }
+  const nsTArray<nsCString>& TablesToReset() const { return mTablesToReset; }
 
 protected:
   virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const = 0;
@@ -73,6 +74,9 @@ protected:
 
   
   nsTArray<nsCString> mRequestedTables;
+
+  
+  nsTArray<nsCString> mTablesToReset;
 
   
   uint32_t mUpdateWaitSec;
@@ -95,7 +99,6 @@ public:
 
   
   virtual const nsTArray<ForwardedUpdate> &Forwards() const override { return mForwards; }
-  virtual bool ResetRequested() override { return mResetRequested; }
 
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
   
@@ -156,8 +159,6 @@ private:
   };
   ChunkState mChunkState;
 
-  bool mResetRequested;
-
   
   TableUpdateV2 *mTableUpdate;
 
@@ -185,7 +186,8 @@ private:
   virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
 
   
-  nsresult ProcessOneResponse(const ListUpdateResponse& aResponse);
+  nsresult ProcessOneResponse(const ListUpdateResponse& aResponse,
+                              nsACString& aListName);
 
   nsresult ProcessAdditionOrRemoval(TableUpdateV4& aTableUpdate,
                                     const ThreatEntrySetList& aUpdate,
