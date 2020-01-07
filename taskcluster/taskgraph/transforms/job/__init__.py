@@ -152,7 +152,9 @@ def make_task_description(config, jobs):
         if os:
             worker['os'] = os
 
-        job['run'].setdefault('workdir', '/builds/worker')
+        
+        if job['run']['using'] != 'always-optimized':
+            job['run'].setdefault('workdir', '/builds/worker')
 
         taskdesc = copy.deepcopy(job)
 
