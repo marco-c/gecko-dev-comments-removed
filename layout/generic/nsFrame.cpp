@@ -3091,11 +3091,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
         aBuilder->IsRetainingDisplayList()) {
       SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
+      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
 
       
       
       if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
-        aBuilder->MarkCurrentFrameModifiedDuringBuilding();
+        aBuilder->SetDirtyRect(aBuilder->GetVisibleRect());
         set.DeleteAll(aBuilder);
 
         if (eventRegions) {
