@@ -4,6 +4,7 @@
 
 
 
+#include "EmptyBlobImpl.h"
 #include "MutableBlobStorage.h"
 #include "MemoryBlobImpl.h"
 #include "mozilla/CheckedInt.h"

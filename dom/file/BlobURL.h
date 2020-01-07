@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsHostObjectURI_h
-#define nsHostObjectURI_h
+#ifndef mozilla_dom_BlobURL_h
+#define mozilla_dom_BlobURL_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/File.h"
@@ -18,23 +18,26 @@
 #include "nsIIPCSerializableURI.h"
 #include "nsProxyRelease.h"
 
+namespace mozilla {
+namespace dom {
 
 
 
 
-class nsHostObjectURI final
+
+class BlobURL final
   : public mozilla::net::nsSimpleURI
   , public nsIURIWithPrincipal
 {
 private:
-  explicit nsHostObjectURI(nsIPrincipal* aPrincipal)
+  explicit BlobURL(nsIPrincipal* aPrincipal)
     : mozilla::net::nsSimpleURI()
   {
     mPrincipal = new nsMainThreadPtrHolder<nsIPrincipal>("nsIPrincipal", aPrincipal, false);
   }
 
   
-  explicit nsHostObjectURI()
+  explicit BlobURL()
     : mozilla::net::nsSimpleURI()
   {}
 
@@ -57,7 +60,7 @@ public:
   virtual mozilla::net::nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode,
                                                 const nsACString& newRef) override
   {
-    nsHostObjectURI* url = new nsHostObjectURI();
+    BlobURL* url = new BlobURL();
     SetRefOnClone(url, refHandlingMode, newRef);
     return url;
   }
@@ -66,8 +69,8 @@ public:
 
   nsMainThreadPtrHandle<nsIPrincipal> mPrincipal;
 
-protected:
-  virtual ~nsHostObjectURI() {}
+private:
+  virtual ~BlobURL() = default;
 
   nsresult SetScheme(const nsACString &aProtocol) override;
   bool Deserialize(const mozilla::ipc::URIParams&);
@@ -76,7 +79,7 @@ protected:
 public:
   class Mutator final
     : public nsIURIMutator
-    , public BaseURIMutator<nsHostObjectURI>
+    , public BaseURIMutator<BlobURL>
     , public nsIPrincipalURIMutator
     , public nsISerializable
   {
@@ -107,14 +110,15 @@ public:
         return NS_OK;
     }
 
-    explicit Mutator() { }
-  private:
-    virtual ~Mutator() { }
+    Mutator() = default;
 
-    friend class nsHostObjectURI;
+  private:
+    ~Mutator() = default;
+
+    friend class BlobURL;
   };
 
-  friend BaseURIMutator<nsHostObjectURI>;
+  friend BaseURIMutator<BlobURL>;
 };
 
 #define NS_HOSTOBJECTURI_CID \
@@ -124,5 +128,8 @@ public:
 #define NS_HOSTOBJECTURIMUTATOR_CID \
 { 0xbbe50ef2, 0x80eb, 0x469d, \
   { 0xb7, 0x0d, 0x02, 0x85, 0x82, 0x75, 0x38, 0x9f } }
+
+} 
+} 
 
 #endif 
