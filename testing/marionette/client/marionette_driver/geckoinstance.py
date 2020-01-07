@@ -22,6 +22,14 @@ from six import reraise
 from . import errors
 
 
+
+
+
+
+
+
+
+
 class GeckoInstance(object):
     required_prefs = {
         
