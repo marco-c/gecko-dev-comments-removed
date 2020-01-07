@@ -37,8 +37,11 @@ DestroyDtoaState(DtoaState* state);
 
 
 
+
+
+#define JS_DTOA_ENOMEM 2
 double
-js_strtod_harder(DtoaState* state, const char* s00, char** se);
+js_strtod_harder(DtoaState* state, const char* s00, char** se, int* err);
 
 
 

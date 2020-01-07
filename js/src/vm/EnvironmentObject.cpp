@@ -2440,7 +2440,7 @@ DebugEnvironments::trace(JSTracer* trc)
 }
 
 void
-DebugEnvironments::sweep()
+DebugEnvironments::sweep(JSRuntime* rt)
 {
     
 

@@ -68,7 +68,7 @@ class RegExpStatics
     inline void clear();
 
     
-    void reset(JSString* newInput) {
+    void reset(JSContext* cx, JSString* newInput) {
         clear();
         pendingInput = newInput;
         checkInvariants();
