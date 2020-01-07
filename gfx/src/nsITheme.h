@@ -24,6 +24,7 @@ class nsAtom;
 class nsIWidget;
 
 namespace mozilla {
+class ComputedStyle;
 namespace layers {
 class StackingContextHelper;
 class WebRenderLayerManager;
@@ -71,6 +72,14 @@ public:
                                   uint8_t aWidgetType,
                                   const nsRect& aRect,
                                   const nsRect& aDirtyRect) = 0;
+
+  
+
+
+
+  virtual nscolor GetWidgetAutoColor(mozilla::ComputedStyle* aStyle,
+                                     uint8_t aWidgetType)
+  { return NS_RGB(0, 0, 0); }
 
   
 

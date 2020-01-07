@@ -2893,7 +2893,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
   nsTArray<nsCursorImage> mCursorImages;      
   mozilla::StyleComplexColor mCaretColor;     
 
+  mozilla::StyleComplexColor mScrollbarFaceColor;   
+  mozilla::StyleComplexColor mScrollbarTrackColor;  
+
   inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
+
+  bool HasCustomScrollbars() const
+  {
+    return !mScrollbarFaceColor.mIsAuto || !mScrollbarTrackColor.mIsAuto;
+  }
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
