@@ -975,14 +975,14 @@ HandleFault(PEXCEPTION_POINTERS exception)
     EXCEPTION_RECORD* record = exception->ExceptionRecord;
     CONTEXT* context = exception->ContextRecord;
 
-    if (record->ExceptionCode != EXCEPTION_ACCESS_VIOLATION)
+    if (record->ExceptionCode != EXCEPTION_ACCESS_VIOLATION &&
+        record->ExceptionCode != EXCEPTION_ILLEGAL_INSTRUCTION)
+    {
         return false;
+    }
 
     uint8_t** ppc = ContextToPC(context);
     uint8_t* pc = *ppc;
-
-    if (record->NumberParameters < 2)
-        return false;
 
     const CodeSegment* codeSegment = LookupCodeSegment(pc);
     if (!codeSegment)
@@ -1004,8 +1004,35 @@ HandleFault(PEXCEPTION_POINTERS exception)
         
         return activation->isWasmInterrupted() &&
                pc == codeSegment->interruptCode() &&
-               codeSegment->containsCodePC(activation->wasmResumePC());
+               codeSegment->containsCodePC(activation->wasmInterruptResumePC());
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (activation->isWasmInterrupted()) {
+        MOZ_ASSERT(activation->wasmInterruptResumePC() == pc);
+        activation->finishWasmInterrupt();
+    }
+
+    if (record->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION) {
+        Trap trap;
+        BytecodeOffset bytecode;
+        if (!codeSegment->code().lookupTrap(pc, &trap, &bytecode))
+            return false;
+
+        activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(context));
+        *ppc = codeSegment->trapCode();
+        return true;
+    }
+
+    if (record->NumberParameters < 2)
+        return false;
 
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(record->ExceptionInformation[1]);
 
@@ -1015,18 +1042,6 @@ HandleFault(PEXCEPTION_POINTERS exception)
         return false;
 
     MOZ_ASSERT(activation->compartment() == instance->compartment());
-
-    
-    
-    
-    
-    
-    
-    
-    if (activation->isWasmInterrupted()) {
-        MOZ_ASSERT(activation->wasmResumePC() == pc);
-        activation->finishWasmInterrupt();
-    }
 
     HandleMemoryAccess(context, pc, faultingAddress, codeSegment, *instance, activation, ppc);
     return true;
@@ -1113,8 +1128,11 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     uint8_t** ppc = ContextToPC(&context);
     uint8_t* pc = *ppc;
 
-    if (request.body.exception != EXC_BAD_ACCESS || request.body.codeCnt != 2)
+    if (request.body.exception != EXC_BAD_ACCESS &&
+        request.body.exception != EXC_BAD_INSTRUCTION)
+    {
         return false;
+    }
 
     
     
@@ -1128,17 +1146,31 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     if (!instance)
         return false;
 
-    uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
-
-    
-    
-    if (!IsHeapAccessAddress(*instance, faultingAddress))
-        return false;
-
     JitActivation* activation = cx->activation()->asJit();
     MOZ_ASSERT(activation->compartment() == instance->compartment());
 
-    HandleMemoryAccess(&context, pc, faultingAddress, codeSegment, *instance, activation, ppc);
+    if (request.body.exception == EXC_BAD_INSTRUCTION) {
+        Trap trap;
+        BytecodeOffset bytecode;
+        if (!codeSegment->code().lookupTrap(pc, &trap, &bytecode))
+            return false;
+
+        activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(&context));
+        *ppc = codeSegment->trapCode();
+    } else {
+        MOZ_ASSERT(request.body.exception == EXC_BAD_ACCESS);
+        if (request.body.codeCnt != 2)
+            return false;
+
+        uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
+
+        
+        
+        if (!IsHeapAccessAddress(*instance, faultingAddress))
+            return false;
+
+        HandleMemoryAccess(&context, pc, faultingAddress, codeSegment, *instance, activation, ppc);
+    }
 
     
     kret = thread_set_state(cxThread, float_state, (thread_state_t)&context.float_, float_state_count);
@@ -1311,7 +1343,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
     AutoSignalHandler ash;
 
-    MOZ_RELEASE_ASSERT(signum == SIGSEGV || signum == SIGBUS);
+    MOZ_RELEASE_ASSERT(signum == SIGSEGV || signum == SIGBUS || signum == SIGILL);
 
     CONTEXT* context = (CONTEXT*)ctx;
     uint8_t** ppc = ContextToPC(context);
@@ -1324,6 +1356,20 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     const Instance* instance = LookupFaultingInstance(*segment, pc, ContextToFP(context));
     if (!instance)
         return false;
+
+    JitActivation* activation = TlsContext.get()->activation()->asJit();
+    MOZ_ASSERT(activation->compartment() == instance->compartment());
+
+    if (signum == SIGILL) {
+        Trap trap;
+        BytecodeOffset bytecode;
+        if (!segment->code().lookupTrap(pc, &trap, &bytecode))
+            return false;
+
+        activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(context));
+        *ppc = segment->trapCode();
+        return true;
+    }
 
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(info->si_addr);
 
@@ -1346,9 +1392,6 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
             return false;
     }
 
-    JitActivation* activation = TlsContext.get()->activation()->asJit();
-    MOZ_ASSERT(activation->compartment() == instance->compartment());
-
 #ifdef JS_CODEGEN_ARM
     if (signum == SIGBUS) {
         
@@ -1367,6 +1410,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 
 static struct sigaction sPrevSEGVHandler;
 static struct sigaction sPrevSIGBUSHandler;
+static struct sigaction sPrevSIGILLHandler;
 
 static void
 WasmFaultHandler(int signum, siginfo_t* info, void* context)
@@ -1374,9 +1418,13 @@ WasmFaultHandler(int signum, siginfo_t* info, void* context)
     if (HandleFault(signum, info, context))
         return;
 
-    struct sigaction* previousSignal = signum == SIGSEGV
-                                       ? &sPrevSEGVHandler
-                                       : &sPrevSIGBUSHandler;
+    struct sigaction* previousSignal = nullptr;
+    switch (signum) {
+      case SIGSEGV: previousSignal = &sPrevSEGVHandler; break;
+      case SIGBUS: previousSignal = &sPrevSIGBUSHandler; break;
+      case SIGILL: previousSignal = &sPrevSIGILLHandler; break;
+    }
+    MOZ_ASSERT(previousSignal);
 
     
     
@@ -1617,6 +1665,15 @@ ProcessHasSignalHandlers()
     if (sigaction(SIGBUS, &busHandler, &sPrevSIGBUSHandler))
         MOZ_CRASH("unable to install sigbus handler");
 #  endif
+
+    
+    
+    struct sigaction illegalHandler;
+    illegalHandler.sa_flags = SA_SIGINFO | SA_NODEFER | SA_ONSTACK;
+    illegalHandler.sa_sigaction = WasmFaultHandler;
+    sigemptyset(&illegalHandler.sa_mask);
+    if (sigaction(SIGILL, &illegalHandler, &sPrevSIGILLHandler))
+        MOZ_CRASH("unable to install segv handler");
 # endif
 
     sHaveSignalHandlers = true;

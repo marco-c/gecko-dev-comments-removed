@@ -25,6 +25,7 @@
 # include <mach/mach.h>
 #endif
 #include "threading/Thread.h"
+#include "wasm/WasmTypes.h"
 
 struct JSContext;
 struct JSRuntime;
@@ -78,6 +79,35 @@ class MachExceptionHandler
     bool install(JSContext* cx);
 };
 #endif
+
+
+
+
+
+struct InterruptData
+{
+    
+    
+    void* unwindPC;
+
+    
+    void* resumePC;
+
+    InterruptData(void* unwindPC, void* resumePC)
+      : unwindPC(unwindPC), resumePC(resumePC)
+    {}
+};
+
+struct TrapData
+{
+    void* pc;
+    Trap trap;
+    uint32_t bytecodeOffset;
+
+    TrapData(void* pc, Trap trap, uint32_t bytecodeOffset)
+      : pc(pc), trap(trap), bytecodeOffset(bytecodeOffset)
+    {}
+};
 
 } 
 } 

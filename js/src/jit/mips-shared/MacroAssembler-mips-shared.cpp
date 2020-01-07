@@ -1864,6 +1864,14 @@ MacroAssembler::comment(const char* msg)
 }
 
 
+
+
+CodeOffset
+MacroAssembler::illegalInstruction()
+{
+    MOZ_CRASH("NYI");
+}
+
 void
 MacroAssembler::wasmTruncateDoubleToInt32(FloatRegister input, Register output, Label* oolEntry)
 {

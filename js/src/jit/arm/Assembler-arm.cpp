@@ -3005,6 +3005,14 @@ Assembler::as_bkpt()
     hit++;
 }
 
+BufferOffset
+Assembler::as_illegal_trap()
+{
+    
+    
+    return writeInst(0xe7f000f0);
+}
+
 void
 Assembler::flushBuffer()
 {
