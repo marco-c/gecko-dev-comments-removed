@@ -99,6 +99,14 @@ private:
     gfxCharacterMap& operator=(const gfxCharacterMap&);
 };
 
+
+
+struct gfxFontFeatureInfo {
+    uint32_t mTag;
+    uint32_t mScript;
+    uint32_t mLangSys;
+};
+
 class gfxFontEntry {
 public:
     typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -357,6 +365,9 @@ public:
     virtual void GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances)
     {
     }
+
+    
+    void GetFeatureInfo(nsTArray<gfxFontFeatureInfo>& aFeatureInfo);
 
     nsString         mName;
     nsString         mFamilyName;
