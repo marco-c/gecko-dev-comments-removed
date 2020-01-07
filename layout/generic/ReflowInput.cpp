@@ -485,6 +485,13 @@ ReflowInput::Init(nsPresContext*     aPresContext,
     }
   }
 
+  if (mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    AvailableBSize() = NS_UNCONSTRAINEDSIZE;
+  }
+
   LAYOUT_WARN_IF_FALSE((mFrameType == NS_CSS_FRAME_TYPE_INLINE &&
                         !mFrame->IsFrameOfType(nsIFrame::eReplaced)) ||
                        type == LayoutFrameType::Text ||
