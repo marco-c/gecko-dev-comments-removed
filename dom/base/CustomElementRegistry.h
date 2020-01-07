@@ -152,7 +152,7 @@ struct CustomElementDefinition
                           nsAtom* aLocalName,
                           Function* aConstructor,
                           nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-                          mozilla::dom::LifecycleCallbacks* aCallbacks);
+                          UniquePtr<LifecycleCallbacks>&& aCallbacks);
 
   
   
@@ -168,7 +168,7 @@ struct CustomElementDefinition
   nsTArray<RefPtr<nsAtom>> mObservedAttributes;
 
   
-  UniquePtr<mozilla::dom::LifecycleCallbacks> mCallbacks;
+  UniquePtr<LifecycleCallbacks> mCallbacks;
 
   
   nsTArray<RefPtr<Element>> mConstructionStack;
