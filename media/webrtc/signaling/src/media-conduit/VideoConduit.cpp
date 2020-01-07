@@ -581,20 +581,7 @@ std::vector<webrtc::VideoStream>
 WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int height,
                                                              const webrtc::VideoEncoderConfig& config)
 {
-  size_t streamCount = config.number_of_streams;
-
-  
-  
-  
-  streamCount = std::min(streamCount,
-                         1UL + std::min(CountTrailingZeroes32(width),
-                                        CountTrailingZeroes32(height)));
-
-  
-  if (mConduit->mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
-    streamCount = 1;
-  }
-
+  auto streamCount = config.number_of_streams;
   std::vector<webrtc::VideoStream> streams;
   streams.reserve(streamCount);
   MOZ_ASSERT(mConduit);
