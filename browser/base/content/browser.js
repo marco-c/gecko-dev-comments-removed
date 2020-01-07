@@ -1190,7 +1190,14 @@ function RedirectLoad({ target: browser, data }) {
 }
 
 if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-  addEventListener("DOMContentLoaded", function() {
+  window.addEventListener("MozBeforeInitialXULLayout", () => {
+    gBrowserInit.onBeforeInitialXULLayout();
+  }, { once: true });
+  
+  
+  
+  
+  window.addEventListener("DOMContentLoaded", () => {
     gBrowserInit.onDOMContentLoaded();
   }, { once: true });
 }
@@ -1202,6 +1209,29 @@ var delayedStartupPromise = new Promise(resolve => {
 
 var gBrowserInit = {
   delayedStartupFinished: false,
+
+  onBeforeInitialXULLayout() {
+    
+    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
+      
+      
+      document.documentElement.setAttribute("sizemode", "normal");
+    } else if (!document.documentElement.hasAttribute("width")) {
+      const TARGET_WIDTH = 1280;
+      const TARGET_HEIGHT = 1040;
+      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
+      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
+
+      document.documentElement.setAttribute("width", width);
+      document.documentElement.setAttribute("height", height);
+
+      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
+        document.documentElement.setAttribute("sizemode", "maximized");
+      }
+    }
+
+    TabsInTitlebar.init();
+  },
 
   onDOMContentLoaded() {
     gBrowser = window._gBrowser;
@@ -1246,25 +1276,6 @@ var gBrowserInit = {
       initBrowser.removeAttribute("blank");
     }
 
-    
-    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
-      
-      
-      document.documentElement.setAttribute("sizemode", "normal");
-    } else if (!document.documentElement.hasAttribute("width")) {
-      const TARGET_WIDTH = 1280;
-      const TARGET_HEIGHT = 1040;
-      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
-      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
-
-      document.documentElement.setAttribute("width", width);
-      document.documentElement.setAttribute("height", height);
-
-      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
-        document.documentElement.setAttribute("sizemode", "maximized");
-      }
-    }
-
     gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
       remoteType, sameProcessAsFrameLoader
     });
@@ -1286,6 +1297,9 @@ var gBrowserInit = {
     });
 
     this._setInitialFocus();
+
+    gBrowser.tabContainer.updateVisibility();
+    TabsInTitlebar.onDOMContentLoaded();
   },
 
   onLoad() {
