@@ -295,12 +295,6 @@ private:
 
 
   already_AddRefed<Accessible>
-    CreateAccessibleByType(nsIContent* aContent, DocAccessible* aDoc);
-
-  
-
-
-  already_AddRefed<Accessible>
     CreateAccessibleByFrameType(nsIFrame* aFrame, nsIContent* aContent,
                                 Accessible* aContext);
 

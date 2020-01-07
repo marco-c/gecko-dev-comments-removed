@@ -1247,12 +1247,6 @@ nsAccessibilityService::CreateAccessible(nsINode* aNode,
 
     
     
-    if (!newAcc) {
-      newAcc = CreateAccessibleByType(content, document);
-    }
-
-    
-    
     if (!newAcc && aContext->IsXULTabpanels() &&
         content->GetParent() == aContext->GetContent()) {
       LayoutFrameType frameType = frame->Type();
@@ -1464,30 +1458,6 @@ nsAccessibilityService::Shutdown()
     static const char16_t kShutdownIndicator[] = { '0', 0 };
     observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown", kShutdownIndicator);
   }
-}
-
-already_AddRefed<Accessible>
-nsAccessibilityService::CreateAccessibleByType(nsIContent* aContent,
-                                               DocAccessible* aDoc)
-{
-  nsAutoString role;
-  nsCoreUtils::XBLBindingRole(aContent, role);
-  if (role.IsEmpty())
-    return nullptr;
-
-  RefPtr<Accessible> accessible;
-#ifdef MOZ_XUL
-  
-  if (role.EqualsLiteral("xul:colorpicker")) {
-    accessible = new XULColorPickerAccessible(aContent, aDoc);
-
-  } else if (role.EqualsLiteral("xul:colorpickertile")) {
-    accessible = new XULColorPickerTileAccessible(aContent, aDoc);
-
-  }
-#endif 
-
-  return accessible.forget();
 }
 
 already_AddRefed<Accessible>

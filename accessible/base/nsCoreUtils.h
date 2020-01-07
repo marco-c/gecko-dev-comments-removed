@@ -321,11 +321,6 @@ public:
 
 
   static void DispatchAccEvent(RefPtr<nsIAccessibleEvent> aEvent);
-
-  
-
-
-  static void XBLBindingRole(const nsIContent* aEl, nsAString& aRole);
 };
 
 #endif
