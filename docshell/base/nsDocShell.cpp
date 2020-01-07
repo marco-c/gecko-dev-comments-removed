@@ -8749,6 +8749,11 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
     aOpenedChannel->GetURI(getter_AddRefs(mLoadingURI));
   }
   FirePageHideNotification(!mSavingOldViewer);
+  if (mIsBeingDestroyed) {
+    
+    viewer->Stop();
+    return NS_ERROR_DOCSHELL_DYING;
+  }
   mLoadingURI = nullptr;
 
   
