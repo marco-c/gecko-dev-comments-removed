@@ -14,7 +14,7 @@
 
 
 
-var label = parent;
+var label = "parent";
 
 function passBasicPromise() {
   var p1 = Promise.resolve();
