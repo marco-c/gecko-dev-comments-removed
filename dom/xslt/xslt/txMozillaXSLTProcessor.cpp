@@ -735,8 +735,7 @@ txMozillaXSLTProcessor::TransformToFragment(nsIDOMNode *aSource,
 
     
 
-    rv = aOutput->CreateDocumentFragment(aResult);
-    NS_ENSURE_SUCCESS(rv, rv);
+    *aResult = doc->CreateDocumentFragment().take();
     txToFragmentHandlerFactory handlerFactory(*aResult);
     es.mOutputHandlerFactory = &handlerFactory;
 
