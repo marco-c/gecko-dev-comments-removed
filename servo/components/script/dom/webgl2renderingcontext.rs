@@ -115,6 +115,12 @@ impl WebGL2RenderingContextMethods for WebGL2RenderingContext {
         self.base.GetParameter(cx, parameter)
     }
 
+    #[allow(unsafe_code)]
+    
+    unsafe fn GetTexParameter(&self, cx: *mut JSContext, target: u32, pname: u32) -> JSVal {
+        self.base.GetTexParameter(cx, target, pname)
+    }
+
     
     fn GetError(&self) -> u32 {
         self.base.GetError()
