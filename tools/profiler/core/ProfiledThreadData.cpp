@@ -35,20 +35,22 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
                                SpliceableJSONWriter& aWriter,
                                const TimeStamp& aProcessStartTime, double aSinceTime)
 {
-  UniquePtr<PartialThreadProfile> partialProfile = Move(mPartialProfile);
-
-  UniquePtr<UniqueStacks> uniqueStacks = partialProfile
-    ? Move(partialProfile->mUniqueStacks)
-    : MakeUnique<UniqueStacks>();
-
-  uniqueStacks->AdvanceStreamingGeneration();
-
-  UniquePtr<char[]> partialSamplesJSON;
-  UniquePtr<char[]> partialMarkersJSON;
-  if (partialProfile) {
-    partialSamplesJSON = Move(partialProfile->mSamplesJSON);
-    partialMarkersJSON = Move(partialProfile->mMarkersJSON);
+  if (mJITFrameInfoForPreviousJSContexts &&
+      mJITFrameInfoForPreviousJSContexts->HasExpired(aBuffer.mRangeStart)) {
+    mJITFrameInfoForPreviousJSContexts = nullptr;
   }
+
+  
+  
+  JITFrameInfo jitFrameInfo = mJITFrameInfoForPreviousJSContexts
+    ? JITFrameInfo(*mJITFrameInfoForPreviousJSContexts) : JITFrameInfo();
+
+  if (aCx && mBufferPositionWhenReceivedJSContext) {
+    aBuffer.AddJITInfoForRange(*mBufferPositionWhenReceivedJSContext,
+      mThreadInfo->ThreadId(), aCx, jitFrameInfo);
+  }
+
+  UniqueStacks uniqueStacks(Move(jitFrameInfo));
 
   aWriter.Start();
   {
@@ -57,9 +59,9 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
                             aProcessStartTime,
                             mThreadInfo->RegisterTime(), mUnregisterTime,
                             aSinceTime, aCx,
-                            Move(partialSamplesJSON),
-                            Move(partialMarkersJSON),
-                            *uniqueStacks);
+                            nullptr,
+                            nullptr,
+                            uniqueStacks);
 
     aWriter.StartObjectProperty("stackTable");
     {
@@ -71,7 +73,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
       aWriter.StartArrayProperty("data");
       {
-        uniqueStacks->SpliceStackTableElements(aWriter);
+        uniqueStacks.SpliceStackTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -90,7 +92,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
       aWriter.StartArrayProperty("data");
       {
-        uniqueStacks->SpliceFrameTableElements(aWriter);
+        uniqueStacks.SpliceFrameTableElements(aWriter);
       }
       aWriter.EndArray();
     }
@@ -98,7 +100,7 @@ ProfiledThreadData::StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
 
     aWriter.StartArrayProperty("stringTable");
     {
-      uniqueStacks->mUniqueStrings->SpliceStringTableElements(aWriter);
+      uniqueStacks.mUniqueStrings->SpliceStringTableElements(aWriter);
     }
     aWriter.EndArray();
   }
@@ -192,96 +194,27 @@ StreamSamplesAndMarkers(const char* aName,
 }
 
 void
-ProfiledThreadData::NotifyAboutToLoseJSContext(JSContext* aCx,
+ProfiledThreadData::NotifyAboutToLoseJSContext(JSContext* aContext,
                                                const TimeStamp& aProcessStartTime,
                                                ProfileBuffer& aBuffer)
 {
-  
-  
-  MOZ_ASSERT(aCx);
-
-  
-  
-  
-  
-  
-  
-  
-  UniquePtr<UniqueStacks> uniqueStacks = mPartialProfile
-    ? Move(mPartialProfile->mUniqueStacks)
-    : MakeUnique<UniqueStacks>();
-
-  uniqueStacks->AdvanceStreamingGeneration();
-
-  UniquePtr<char[]> samplesJSON;
-  UniquePtr<char[]> markersJSON;
-
-  {
-    SpliceableChunkedJSONWriter b;
-    b.StartBareList();
-    bool haveSamples = false;
-    {
-      if (mPartialProfile && mPartialProfile->mSamplesJSON) {
-        b.Splice(mPartialProfile->mSamplesJSON.get());
-        haveSamples = true;
-      }
-
-      
-      
-      
-      bool streamedNewSamples =
-        aBuffer.StreamSamplesToJSON(b, mThreadInfo->ThreadId(),
-                                     0,
-                                    aCx, *uniqueStacks);
-      haveSamples = haveSamples || streamedNewSamples;
-    }
-    b.EndBareList();
-
-    
-    
-    
-    
-    if (haveSamples) {
-      samplesJSON = b.WriteFunc()->CopyData();
-    }
+  if (!mBufferPositionWhenReceivedJSContext) {
+    return;
   }
 
-  {
-    SpliceableChunkedJSONWriter b;
-    b.StartBareList();
-    bool haveMarkers = false;
-    {
-      if (mPartialProfile && mPartialProfile->mMarkersJSON) {
-        b.Splice(mPartialProfile->mMarkersJSON.get());
-        haveMarkers = true;
-      }
+  MOZ_RELEASE_ASSERT(aContext);
 
-      
-      
-      
-      bool streamedNewMarkers =
-        aBuffer.StreamMarkersToJSON(b, mThreadInfo->ThreadId(),
-                                    aProcessStartTime,
-                                     0, *uniqueStacks);
-      haveMarkers = haveMarkers || streamedNewMarkers;
-    }
-    b.EndBareList();
-
-    
-    
-    
-    
-    if (haveMarkers) {
-      markersJSON = b.WriteFunc()->CopyData();
-    }
+  if (mJITFrameInfoForPreviousJSContexts &&
+      mJITFrameInfoForPreviousJSContexts->HasExpired(aBuffer.mRangeStart)) {
+    mJITFrameInfoForPreviousJSContexts = nullptr;
   }
 
-  mPartialProfile = MakeUnique<PartialThreadProfile>(
-    Move(samplesJSON), Move(markersJSON), Move(uniqueStacks));
+  UniquePtr<JITFrameInfo> jitFrameInfo = mJITFrameInfoForPreviousJSContexts
+    ? Move(mJITFrameInfoForPreviousJSContexts) : MakeUnique<JITFrameInfo>();
 
+  aBuffer.AddJITInfoForRange(*mBufferPositionWhenReceivedJSContext,
+     mThreadInfo->ThreadId(), aContext, *jitFrameInfo);
+
+  mJITFrameInfoForPreviousJSContexts = Move(jitFrameInfo);
   mBufferPositionWhenReceivedJSContext = Nothing();
-
-  
-  
-  aBuffer.Reset();
 }

@@ -18,23 +18,6 @@
 
 
 
-struct PartialThreadProfile final
-{
-  PartialThreadProfile(mozilla::UniquePtr<char[]>&& aSamplesJSON,
-                       mozilla::UniquePtr<char[]>&& aMarkersJSON,
-                       mozilla::UniquePtr<UniqueStacks>&& aUniqueStacks)
-    : mSamplesJSON(mozilla::Move(aSamplesJSON))
-    , mMarkersJSON(mozilla::Move(aMarkersJSON))
-    , mUniqueStacks(mozilla::Move(aUniqueStacks))
-  {}
-
-  mozilla::UniquePtr<char[]> mSamplesJSON;
-  mozilla::UniquePtr<char[]> mMarkersJSON;
-  mozilla::UniquePtr<UniqueStacks> mUniqueStacks;
-};
-
-
-
 
 
 
@@ -113,7 +96,7 @@ private:
   
   
   
-  UniquePtr<PartialThreadProfile> mPartialProfile;
+  UniquePtr<JITFrameInfo> mJITFrameInfoForPreviousJSContexts;
 
   
   
