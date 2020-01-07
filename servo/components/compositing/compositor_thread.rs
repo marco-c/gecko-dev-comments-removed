@@ -122,13 +122,6 @@ pub enum EmbedderMsg {
     
     ResizeTo(TopLevelBrowsingContextId, DeviceUintSize),
     
-    GetClientWindow(TopLevelBrowsingContextId,
-                    IpcSender<(DeviceUintSize, DeviceIntPoint)>),
-    
-    GetScreenSize(TopLevelBrowsingContextId, IpcSender<(DeviceUintSize)>),
-    
-    GetScreenAvailSize(TopLevelBrowsingContextId, IpcSender<(DeviceUintSize)>),
-    
     AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
     
     KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
@@ -148,6 +141,8 @@ pub enum EmbedderMsg {
     LoadComplete(TopLevelBrowsingContextId),
     
     Panic(TopLevelBrowsingContextId, String, Option<String>),
+    
+    Shutdown,
 }
 
 
@@ -196,6 +191,12 @@ pub enum Msg {
     
     LoadComplete(TopLevelBrowsingContextId),
 
+    
+    GetClientWindow(IpcSender<(DeviceUintSize, DeviceIntPoint)>),
+    
+    GetScreenSize(IpcSender<DeviceUintSize>),
+    
+    GetScreenAvailSize(IpcSender<DeviceUintSize>),
 }
 
 impl Debug for Msg {
@@ -216,6 +217,9 @@ impl Debug for Msg {
             Msg::Dispatch(..) => write!(f, "Dispatch"),
             Msg::PendingPaintMetric(..) => write!(f, "PendingPaintMetric"),
             Msg::LoadComplete(..) => write!(f, "LoadComplete"),
+            Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
+            Msg::GetScreenSize(..) => write!(f, "GetScreenSize"),
+            Msg::GetScreenAvailSize(..) => write!(f, "GetScreenAvailSize"),
         }
     }
 }
@@ -227,9 +231,6 @@ impl Debug for EmbedderMsg {
             EmbedderMsg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             EmbedderMsg::MoveTo(..) => write!(f, "MoveTo"),
             EmbedderMsg::ResizeTo(..) => write!(f, "ResizeTo"),
-            EmbedderMsg::GetClientWindow(..) => write!(f, "GetClientWindow"),
-            EmbedderMsg::GetScreenSize(..) => write!(f, "GetScreenSize"),
-            EmbedderMsg::GetScreenAvailSize(..) => write!(f, "GetScreenAvailSize"),
             EmbedderMsg::AllowNavigation(..) => write!(f, "AllowNavigation"),
             EmbedderMsg::KeyEvent(..) => write!(f, "KeyEvent"),
             EmbedderMsg::SetCursor(..) => write!(f, "SetCursor"),
@@ -240,6 +241,7 @@ impl Debug for EmbedderMsg {
             EmbedderMsg::LoadStart(..) => write!(f, "LoadStart"),
             EmbedderMsg::LoadComplete(..) => write!(f, "LoadComplete"),
             EmbedderMsg::Panic(..) => write!(f, "Panic"),
+            EmbedderMsg::Shutdown => write!(f, "Shutdown"),
         }
     }
 }

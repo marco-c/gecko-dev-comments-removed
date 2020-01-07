@@ -4,6 +4,7 @@
 
 
 
+pub mod keyutils;
 pub mod window;
 
 use servo_config::opts;

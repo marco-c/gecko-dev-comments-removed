@@ -137,8 +137,6 @@ pub enum ScriptMsg {
     
     SendKeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
-    GetClientWindow(IpcSender<(DeviceUintSize, DeviceIntPoint)>),
-    
     MoveTo(DeviceIntPoint),
     
     ResizeTo(DeviceUintSize),
@@ -155,6 +153,8 @@ pub enum ScriptMsg {
     RegisterServiceWorker(ScopeThings, ServoUrl),
     
     SetFullscreenState(bool),
+    
+    GetClientWindow(IpcSender<(DeviceUintSize, DeviceIntPoint)>),
     
     GetScreenSize(IpcSender<(DeviceUintSize)>),
     

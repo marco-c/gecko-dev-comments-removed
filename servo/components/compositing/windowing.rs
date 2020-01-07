@@ -9,14 +9,12 @@ use euclid::TypedScale;
 use gleam::gl;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, TopLevelBrowsingContextId, TraversalDirection};
-use net_traits::net_error_list::NetError;
-use script_traits::{LoadData, MouseButton, TouchEventType, TouchId};
+use script_traits::{MouseButton, TouchEventType, TouchId};
 use servo_geometry::{DeviceIndependentPixel, DeviceUintLength};
 use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use std::rc::Rc;
 use style_traits::DevicePixel;
-use style_traits::cursor::CursorKind;
 use webrender_api::{DeviceIntPoint, DevicePoint, DeviceUintSize, DeviceUintRect, ScrollLocation};
 
 #[derive(Clone)]
@@ -122,74 +120,38 @@ pub enum AnimationState {
 
 pub trait WindowMethods {
     
-    fn framebuffer_size(&self) -> DeviceUintSize;
-    
-    fn window_rect(&self) -> DeviceUintRect;
-    
     fn present(&self);
-
-    
-    fn client_window(&self, ctx: TopLevelBrowsingContextId) -> (DeviceUintSize, DeviceIntPoint);
-    
-    fn screen_size(&self, ctx: TopLevelBrowsingContextId) -> DeviceUintSize;
-    
-    fn screen_avail_size(&self, ctx: TopLevelBrowsingContextId) -> DeviceUintSize;
-    
-    fn set_inner_size(&self, ctx: TopLevelBrowsingContextId, size: DeviceUintSize);
-    
-    fn set_position(&self, ctx: TopLevelBrowsingContextId, point: DeviceIntPoint);
-    
-    fn set_fullscreen_state(&self, ctx: TopLevelBrowsingContextId, state: bool);
-
-    
-    fn set_page_title(&self, ctx: TopLevelBrowsingContextId, title: Option<String>);
-    
-    fn status(&self, ctx: TopLevelBrowsingContextId, Option<String>);
-    
-    fn load_start(&self, ctx: TopLevelBrowsingContextId);
-    
-    fn load_end(&self, ctx: TopLevelBrowsingContextId);
-    
-    fn load_error(&self, ctx: TopLevelBrowsingContextId, code: NetError, url: String);
-    
-    fn allow_navigation(&self, ctx: TopLevelBrowsingContextId, url: ServoUrl, IpcSender<bool>);
-    
-    fn head_parsed(&self, ctx: TopLevelBrowsingContextId);
-    
-    fn history_changed(&self, ctx: TopLevelBrowsingContextId, Vec<LoadData>, usize);
-
-    
-    fn hidpi_factor(&self) -> TypedScale<f32, DeviceIndependentPixel, DevicePixel>;
-
-    
-    fn create_event_loop_waker(&self) -> Box<EventLoopWaker>;
-
     
     
     
     fn prepare_for_composite(&self, width: DeviceUintLength, height: DeviceUintLength) -> bool;
-
-    
-    fn set_cursor(&self, cursor: CursorKind);
-
-    
-    fn handle_key(&self, ctx: Option<TopLevelBrowsingContextId>, ch: Option<char>, key: Key, mods: KeyModifiers);
-
-    
-    fn supports_clipboard(&self) -> bool;
-
-    
-    fn set_favicon(&self, ctx: TopLevelBrowsingContextId, url: ServoUrl);
-
     
     fn gl(&self) -> Rc<gl::Gl>;
+    
+    fn create_event_loop_waker(&self) -> Box<EventLoopWaker>;
+    
+    fn get_coordinates(&self) -> EmbedderCoordinates;
+    
+    fn supports_clipboard(&self) -> bool;
+    
+    
+    
+    
+    fn set_animation_state(&self, _state: AnimationState);
+}
 
+#[derive(Clone, Copy, Debug)]
+pub struct EmbedderCoordinates {
     
+    pub hidpi_factor: TypedScale<f32, DeviceIndependentPixel, DevicePixel>,
     
+    pub screen: DeviceUintSize,
     
+    pub screen_avail: DeviceUintSize,
     
-    fn set_animation_state(&self, _state: AnimationState) {}
-
+    pub window: (DeviceUintSize, DeviceIntPoint),
     
-    fn handle_panic(&self, browser_id: TopLevelBrowsingContextId, reason: String, backtrace: Option<String>);
+    pub framebuffer: DeviceUintSize,
+    
+    pub viewport: DeviceUintRect,
 }
