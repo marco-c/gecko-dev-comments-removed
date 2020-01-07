@@ -751,17 +751,6 @@ public:
   {
     return &mIsAudioDataAudible;
   }
-
-#ifdef XP_WIN
-  
-  
-  
-  
-  bool mHiResTimersRequested = false;
-  
-  
-  const bool mShouldUseHiResTimers;
-#endif
 };
 
 } 

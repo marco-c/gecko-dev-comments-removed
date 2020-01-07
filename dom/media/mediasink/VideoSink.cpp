@@ -4,6 +4,12 @@
 
 
 
+#ifdef XP_WIN
+
+#include "windows.h"
+#include "mmsystem.h"
+#endif
+
 #include "MediaQueue.h"
 #include "VideoSink.h"
 #include "MediaPrefs.h"
@@ -45,12 +51,19 @@ VideoSink::VideoSink(AbstractThread* aThread,
   , mUpdateScheduler(aThread)
   , mVideoQueueSendToCompositorSize(aVQueueSentToCompositerSize)
   , mMinVideoQueueSize(MediaPrefs::RuinAvSync() ? 1 : 0)
+#ifdef XP_WIN
+  , mHiResTimersRequested(false)
+#endif
+
 {
   MOZ_ASSERT(mAudioSink, "AudioSink should exist.");
 }
 
 VideoSink::~VideoSink()
 {
+#ifdef XP_WIN
+  MOZ_ASSERT(!mHiResTimersRequested);
+#endif
 }
 
 const MediaSink::PlaybackParams&
@@ -138,6 +151,30 @@ VideoSink::SetPreservesPitch(bool aPreservesPitch)
 }
 
 void
+VideoSink::EnsureHighResTimersOnOnlyIfPlaying()
+{
+#ifdef XP_WIN
+  const bool needed = IsPlaying();
+  if (needed == mHiResTimersRequested) {
+    return;
+  }
+  if (needed) {
+    
+    
+    
+    
+    
+    
+    
+    timeBeginPeriod(1);
+  } else {
+    timeEndPeriod(1);
+  }
+  mHiResTimersRequested = needed;
+#endif
+}
+
+void
 VideoSink::SetPlaying(bool aPlaying)
 {
   AssertOwnerThread();
@@ -161,6 +198,8 @@ VideoSink::SetPlaying(bool aPlaying)
     
     TryUpdateRenderedVideoFrames();
   }
+
+  EnsureHighResTimersOnOnlyIfPlaying();
 }
 
 void
@@ -224,6 +263,8 @@ VideoSink::Stop()
     mEndPromise = nullptr;
   }
   mVideoFrameEndTime = TimeUnit::Zero();
+
+  EnsureHighResTimersOnOnlyIfPlaying();
 }
 
 bool
