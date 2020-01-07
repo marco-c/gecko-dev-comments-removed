@@ -828,9 +828,10 @@ this.menusInternal = class extends ExtensionAPI {
             
             
             
+            let contextUrl = contextData.inFrame ? contextData.frameUrl : contextData.pageUrl;
             let includeSensitiveData =
               (nativeTab && extension.tabManager.hasActiveTabPermission(nativeTab)) ||
-              extension.whiteListedHosts.matches(contextData.inFrame ? contextData.frameUrl : contextData.pageUrl);
+              (contextUrl && extension.whiteListedHosts.matches(contextUrl));
 
             addMenuEventInfo(info, contextData, includeSensitiveData);
 
