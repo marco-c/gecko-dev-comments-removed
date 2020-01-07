@@ -412,6 +412,11 @@ add_task(async function testExtensionTag() {
 });
 
 add_task(async function testScalars() {
+  
+  if (SCALARS_EXPIRED) {
+    return;
+  }
+
   const fetchStub = sinon.stub();
   const reporter = new BrowserErrorReporter({
     fetch: fetchStub,

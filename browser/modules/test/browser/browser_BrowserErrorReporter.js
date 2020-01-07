@@ -76,6 +76,11 @@ add_task(async function testEnabledPrefWatcher() {
 });
 
 add_task(async function testScalars() {
+  
+  if (SCALARS_EXPIRED) {
+    return;
+  }
+
   const fetchStub = sinon.stub();
   const reporter = new BrowserErrorReporter({
     fetch: fetchStub,
@@ -138,6 +143,11 @@ add_task(async function testScalars() {
 });
 
 add_task(async function testCollectedFilenameScalar() {
+  
+  if (SCALARS_EXPIRED) {
+    return;
+  }
+
   const fetchStub = sinon.stub();
   const reporter = new BrowserErrorReporter({
     fetch: fetchStub,
