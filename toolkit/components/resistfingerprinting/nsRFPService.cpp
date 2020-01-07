@@ -286,9 +286,18 @@ static StaticRefPtr<LRUCache> sCache;
 
 
 
+
+
+
+
+
+
+
+
 nsresult
 nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
                              long long aResolutionUSec,
+                             int64_t aContextMixin,
                              long long* aMidpointOut,
                              uint8_t * aSecretSeed )
 {
@@ -441,11 +450,13 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
+
 double
 nsRFPService::ReduceTimePrecisionImpl(
   double aTime,
   TimeScale aTimeScale,
   double aResolutionUSec,
+  int64_t aContextMixin,
   TimerPrecisionType aType)
  {
    if (!IsTimerPrecisionReductionEnabled(aType) || aResolutionUSec <= 0) {
@@ -460,6 +471,23 @@ nsRFPService::ReduceTimePrecisionImpl(
   double timeScaled = aTime * (1000000 / aTimeScale);
   
   long long timeAsInt = timeScaled;
+
+  
+  
+  
+  
+  
+  
+  
+  if (aContextMixin == 0 && aType == TimerPrecisionType::All && timeAsInt < 1204233985000) {
+    MOZ_LOG(gResistFingerprintingLog, LogLevel::Error,
+      ("About to assert. aTime=%lli<1204233985000 aContextMixin=%" PRId64 " aType=%s",
+        timeAsInt, aContextMixin, (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
+    MOZ_ASSERT(false, "ReduceTimePrecisionImpl was given a relative time "
+                      "with an empty context mix-in (or your clock is 10+ years off.) "
+                      "Run this with MOZ_LOG=nsResistFingerprinting:1 to get more details.");
+}
+
   
   long long resolutionAsInt = aResolutionUSec;
   
@@ -485,7 +513,7 @@ nsRFPService::ReduceTimePrecisionImpl(
   
   
   if (sJitter && NSS_IsInitialized()) {
-    if(!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, &midpoint)) &&
+    if(!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, aContextMixin, &midpoint)) &&
        timeAsInt >= clamped + midpoint) {
       clampedAndJittered += resolutionAsInt;
     }
@@ -497,39 +525,70 @@ nsRFPService::ReduceTimePrecisionImpl(
   bool tmp_jitter = sJitter;
   MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
     ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, Originally %.*f), "
-     "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Midpoint: %lli) Final: (%lli Converted: %.*f)",
+    "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Context: %" PRId64 " Midpoint: %lli) "
+    "Final: (%lli Converted: %.*f)",
      DBL_DIG-1, aTime, DBL_DIG-1, timeScaled, timeAsInt, resolutionAsInt, DBL_DIG-1, aResolutionUSec,
-     (long long)floor(double(timeAsInt) / resolutionAsInt), clamped, tmp_jitter, midpoint, clampedAndJittered, DBL_DIG-1, ret));
+    (long long)floor(double(timeAsInt) / resolutionAsInt), clamped, tmp_jitter, aContextMixin, midpoint,
+    clampedAndJittered, DBL_DIG-1, ret));
 
   return ret;
 }
 
 
 double
-nsRFPService::ReduceTimePrecisionAsUSecs(double aTime, TimerPrecisionType aType )
+nsRFPService::ReduceTimePrecisionAsUSecs(
+  double aTime,
+  int64_t aContextMixin,
+  TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds, TimerResolution(), aType);
+  return nsRFPService::ReduceTimePrecisionImpl(
+    aTime,
+    MicroSeconds,
+    TimerResolution(),
+    aContextMixin,
+    aType);
 }
 
 
 double
 nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime)
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MicroSeconds, TimerResolution(), TimerPrecisionType::All);
+  return nsRFPService::ReduceTimePrecisionImpl(
+    aTime,
+    MicroSeconds,
+    TimerResolution(),
+    0,
+    TimerPrecisionType::All);
 }
 
 
 double
-nsRFPService::ReduceTimePrecisionAsMSecs(double aTime, TimerPrecisionType aType )
+nsRFPService::ReduceTimePrecisionAsMSecs(
+  double aTime,
+  int64_t aContextMixin,
+  TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds, TimerResolution(), aType);
+  return nsRFPService::ReduceTimePrecisionImpl(
+    aTime,
+    MilliSeconds,
+    TimerResolution(),
+    aContextMixin,
+    aType);
 }
 
 
 double
-nsRFPService::ReduceTimePrecisionAsSecs(double aTime, TimerPrecisionType aType )
+nsRFPService::ReduceTimePrecisionAsSecs(
+  double aTime,
+  int64_t aContextMixin,
+  TimerPrecisionType aType )
 {
-  return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds, TimerResolution(), aType);
+  return nsRFPService::ReduceTimePrecisionImpl(
+    aTime,
+    Seconds,
+    TimerResolution(),
+    aContextMixin,
+    aType);
 }
 
 
@@ -543,7 +602,8 @@ nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality)
 uint32_t
 nsRFPService::GetSpoofedTotalFrames(double aTime)
 {
-  double time = ReduceTimePrecisionAsSecs(aTime);
+  double precision = TimerResolution() / 1000 / 1000;
+  double time = floor(aTime / precision) * precision;
 
   return NSToIntFloor(time * sVideoFramesPerSec);
 }
@@ -560,7 +620,8 @@ nsRFPService::GetSpoofedDroppedFrames(double aTime, uint32_t aWidth, uint32_t aH
     return 0;
   }
 
-  double time = ReduceTimePrecisionAsSecs(aTime);
+  double precision = TimerResolution() / 1000 / 1000;
+  double time = floor(aTime / precision) * precision;
   
   uint32_t boundedDroppedRatio = min(sVideoDroppedRatio, 100u);
 
@@ -579,7 +640,8 @@ nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t 
     return GetSpoofedTotalFrames(aTime);
   }
 
-  double time = ReduceTimePrecisionAsSecs(aTime);
+  double precision = TimerResolution() / 1000 / 1000;
+  double time = floor(aTime / precision) * precision;
   
   uint32_t boundedDroppedRatio = min(sVideoDroppedRatio, 100u);
 

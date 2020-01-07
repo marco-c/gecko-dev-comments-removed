@@ -172,12 +172,15 @@ public:
   
   static double ReduceTimePrecisionAsUSecs(
     double aTime,
+    int64_t aContextMixin,
     TimerPrecisionType aType = TimerPrecisionType::All);
   static double ReduceTimePrecisionAsMSecs(
     double aTime,
+    int64_t aContextMixin,
     TimerPrecisionType aType = TimerPrecisionType::All);
   static double ReduceTimePrecisionAsSecs(
     double aTime,
+    int64_t aContextMixin,
     TimerPrecisionType aType = TimerPrecisionType::All);
 
   
@@ -189,9 +192,11 @@ public:
     double aTime,
     TimeScale aTimeScale,
     double aResolutionUSec,
+    int64_t aContextMixin,
     TimerPrecisionType aType);
   static nsresult RandomMidpoint(long long aClampedTimeUSec,
                                  long long aResolutionUSec,
+                                 int64_t aContextMixin,
                                  long long* aMidpointOut,
                                  uint8_t * aSecretSeed = nullptr);
 

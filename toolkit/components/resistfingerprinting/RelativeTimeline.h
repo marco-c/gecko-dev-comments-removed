@@ -1,0 +1,25 @@
+
+
+
+
+
+#ifndef __RelativeTimeline_h__
+#define __RelativeTimeline_h__
+
+namespace mozilla {
+
+class RelativeTimeline
+{
+public:
+  RelativeTimeline()
+    : mRandomTimelineSeed(0) { }
+
+  int64_t GetRandomTimelineSeed();
+private:
+  uint64_t mRandomTimelineSeed;
+
+};
+
+} 
+
+#endif 
