@@ -196,6 +196,13 @@ CollectScriptTelemetry(nsIIncrementalStreamLoader* aLoader,
   }
 
   
+  if (aRequest->IsModuleRequest()) {
+    AccumulateCategorical(LABELS_DOM_SCRIPT_KIND::ModuleScript);
+  } else {
+    AccumulateCategorical(LABELS_DOM_SCRIPT_KIND::ClassicScript);
+  }
+
+  
   if (aRequest->IsLoadingSource()) {
     if (aRequest->mIsInline) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::Inline);
