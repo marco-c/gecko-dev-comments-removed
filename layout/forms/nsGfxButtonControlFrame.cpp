@@ -190,10 +190,7 @@ nsGfxButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
   
   
 
-  
-  const nsStyleUserInterface* uiStyle = StyleUserInterface();
-  if (uiStyle->mUserInput == StyleUserInput::None ||
-      uiStyle->mUserInput == StyleUserInput::Disabled) {
+  if (IsContentDisabled()) {
     return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
   }
   return NS_OK;

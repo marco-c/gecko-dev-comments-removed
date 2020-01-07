@@ -2788,6 +2788,11 @@ public:
   
 
 
+  bool IsContentDisabled() const;
+
+  
+
+
 
 
   mozilla::LayoutFrameType Type() const {

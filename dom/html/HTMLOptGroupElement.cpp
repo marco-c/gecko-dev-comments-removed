@@ -46,15 +46,14 @@ HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   aVisitor.mCanHandle = false;
   
   
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) {
+  if (IsDisabled()) {
     return NS_OK;
   }
 
-  nsIFrame* frame = GetPrimaryFrame();
-  if (frame) {
-    const nsStyleUserInterface* uiStyle = frame->StyleUserInterface();
-    if (uiStyle->mUserInput == StyleUserInput::None ||
-        uiStyle->mUserInput == StyleUserInput::Disabled) {
+  if (nsIFrame* frame = GetPrimaryFrame()) {
+    
+    
+    if (frame->StyleUserInterface()->mUserInput == StyleUserInput::None) {
       return NS_OK;
     }
   }

@@ -2221,14 +2221,14 @@ nsGenericHTMLFormElement::IsElementDisabledForEvents(EventMessage aMessage,
       break;
   }
 
-  bool disabled = IsDisabled();
-  if (!disabled && aFrame) {
-    const nsStyleUserInterface* uiStyle = aFrame->StyleUserInterface();
-    disabled = uiStyle->mUserInput == StyleUserInput::None ||
-               uiStyle->mUserInput == StyleUserInput::Disabled;
-
+  
+  
+  if (aFrame &&
+      aFrame->StyleUserInterface()->mUserInput == StyleUserInput::None) {
+    return true;
   }
-  return disabled;
+
+  return IsDisabled();
 }
 
 void

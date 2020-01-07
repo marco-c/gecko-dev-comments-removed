@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsImageFrame.h"
 #include "nsIFormControlFrame.h"
@@ -52,7 +52,7 @@ public:
 
   virtual nsresult GetCursor(const nsPoint&    aPoint,
                              nsIFrame::Cursor& aCursor) override;
-  // nsIFormContromFrame
+  
   virtual void SetFocus(bool aOn, bool aRepaint) override;
   virtual nsresult SetFormProperty(nsAtom* aName,
                                    const nsAString& aValue) override;
@@ -138,34 +138,26 @@ nsImageControlFrame::HandleEvent(nsPresContext* aPresContext,
 {
   NS_ENSURE_ARG_POINTER(aEventStatus);
 
-  // Don't do anything if the event has already been handled by someone
+  
   if (nsEventStatus_eConsumeNoDefault == *aEventStatus) {
     return NS_OK;
   }
 
-  // do we have user-input style?
-  const nsStyleUserInterface* uiStyle = StyleUserInterface();
-  if (uiStyle->mUserInput == StyleUserInput::None ||
-      uiStyle->mUserInput == StyleUserInput::Disabled) {
+  if (IsContentDisabled()) {
     return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
-  }
-
-  if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::disabled)) {
-    // XXX cache disabled
-    return NS_OK;
   }
 
   *aEventStatus = nsEventStatus_eIgnore;
 
   if (aEvent->mMessage == eMouseUp &&
       aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
-    // Store click point for HTMLInputElement::SubmitNamesValues
-    // Do this on MouseUp because the specs don't say and that's what IE does
+    
+    
     nsIntPoint* lastClickPoint =
       static_cast<nsIntPoint*>
                  (mContent->GetProperty(nsGkAtoms::imageClickedPoint));
     if (lastClickPoint) {
-      // normally lastClickedPoint is not null, as it's allocated in Init()
+      
       nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, this);
       TranslateEventCoords(pt, *lastClickPoint);
     }
@@ -182,8 +174,8 @@ nsresult
 nsImageControlFrame::GetCursor(const nsPoint&    aPoint,
                                nsIFrame::Cursor& aCursor)
 {
-  // Use style defined cursor if one is provided, otherwise when
-  // the cursor style is "auto" we use the pointer cursor.
+  
+  
   FillCursorInformationFromStyle(StyleUserInterface(), aCursor);
 
   if (NS_STYLE_CURSOR_AUTO == aCursor.mCursor) {

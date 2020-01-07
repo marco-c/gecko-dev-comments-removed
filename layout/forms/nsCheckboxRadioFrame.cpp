@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsCheckboxRadioFrame.h"
 
@@ -17,7 +17,7 @@
 
 using namespace mozilla;
 
-//#define FCF_NOISY
+
 
 nsCheckboxRadioFrame*
 NS_NewCheckboxRadioFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
@@ -37,7 +37,7 @@ nsCheckboxRadioFrame::~nsCheckboxRadioFrame()
 void
 nsCheckboxRadioFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
 {
-  // Unregister the access key registered in reflow
+  
   nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
   nsAtomicContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
@@ -48,7 +48,7 @@ NS_QUERYFRAME_HEAD(nsCheckboxRadioFrame)
   NS_QUERYFRAME_ENTRY(nsIFormControlFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsAtomicContainerFrame)
 
-/* virtual */ nscoord
+ nscoord
 nsCheckboxRadioFrame::GetMinISize(gfxContext *aRenderingContext)
 {
   nscoord result;
@@ -57,7 +57,7 @@ nsCheckboxRadioFrame::GetMinISize(gfxContext *aRenderingContext)
   return result;
 }
 
-/* virtual */ nscoord
+ nscoord
 nsCheckboxRadioFrame::GetPrefISize(gfxContext* aRenderingContext)
 {
   nscoord result;
@@ -66,7 +66,7 @@ nsCheckboxRadioFrame::GetPrefISize(gfxContext* aRenderingContext)
   return result;
 }
 
-/* virtual */
+
 LogicalSize
 nsCheckboxRadioFrame::ComputeAutoSize(gfxContext*         aRC,
                                       WritingMode         aWM,
@@ -82,7 +82,7 @@ nsCheckboxRadioFrame::ComputeAutoSize(gfxContext*         aRC,
     return size;
   }
 
-  // Note: this call always set the BSize to NS_UNCONSTRAINEDSIZE.
+  
   size = nsAtomicContainerFrame::ComputeAutoSize(aRC, aWM, aCBSize,
                                                  aAvailableISize, aMargin,
                                                  aBorder, aPadding, aFlags);
@@ -96,18 +96,18 @@ nsCheckboxRadioFrame::GetLogicalBaseline(WritingMode aWritingMode) const
   NS_ASSERTION(!NS_SUBTREE_DIRTY(this),
                "frame must not be dirty");
 
-  // For appearance:none we use a standard CSS baseline, i.e. synthesized from
-  // our margin-box.
+  
+  
   if (StyleDisplay()->mAppearance == NS_THEME_NONE) {
     return nsAtomicContainerFrame::GetLogicalBaseline(aWritingMode);
   }
 
-  // This is for compatibility with Chrome, Safari and Edge (Dec 2016).
-  // Treat radio buttons and checkboxes as having an intrinsic baseline
-  // at the block-end of the control (use the block-end content edge rather
-  // than the margin edge).
-  // For "inverted" lines (typically in writing-mode:vertical-lr), use the
-  // block-start end instead.
+  
+  
+  
+  
+  
+  
   return aWritingMode.IsLineInverted()
     ? GetLogicalUsedBorderAndPadding(aWritingMode).BStart(aWritingMode)
     : BSize(aWritingMode) -
@@ -185,10 +185,8 @@ nsCheckboxRadioFrame::HandleEvent(nsPresContext* aPresContext,
                                   WidgetGUIEvent* aEvent,
                                   nsEventStatus* aEventStatus)
 {
-  // Check for user-input:none style
-  const nsStyleUserInterface* uiStyle = StyleUserInterface();
-  if (uiStyle->mUserInput == StyleUserInput::None ||
-      uiStyle->mUserInput == StyleUserInput::Disabled) {
+  
+  if (IsContentDisabled()) {
     return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
   }
   return NS_OK;
@@ -209,7 +207,7 @@ nsCheckboxRadioFrame::SetFormProperty(nsAtom* aName, const nsAString& aValue)
   return NS_OK;
 }
 
-// static
+
 nsRect
 nsCheckboxRadioFrame::GetUsableScreenRect(nsPresContext* aPresContext)
 {
