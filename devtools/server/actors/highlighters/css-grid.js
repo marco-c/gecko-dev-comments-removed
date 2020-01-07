@@ -1302,30 +1302,25 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     
     
     
-    
     switch (boxEdge) {
       case "left":
         if (x < minOffsetFromEdge) {
-          boxEdge = reflectEdge(boxEdge);
-          x += 2 * padding;
+          x += 2 * boxWidth;
         }
         break;
       case "right":
         if ((width - x) < minOffsetFromEdge) {
-          boxEdge = reflectEdge(boxEdge);
-          x -= 2 * padding;
+          x -= 2 * boxWidth;
         }
         break;
       case "top":
         if (y < minOffsetFromEdge) {
-          boxEdge = reflectEdge(boxEdge);
-          y += 2 * padding;
+          y += 2 * boxHeight;
         }
         break;
       case "bottom":
         if ((height - y) < minOffsetFromEdge) {
-          boxEdge = reflectEdge(boxEdge);
-          y -= 2 * padding;
+          y -= 2 * boxHeight;
         }
         break;
     }
