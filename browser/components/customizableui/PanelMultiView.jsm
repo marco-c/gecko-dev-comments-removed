@@ -495,8 +495,8 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         
         
         if (!this.connected) {
-          await BrowserUtils.promiseLayoutFlushed(this.document, "layout",
-                                                  () => {});
+          await this.window.promiseDocumentFlushed(() => {});
+
           
           
           if (!this.connected) {
@@ -788,7 +788,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       return;
     }
 
-    const {window, document} = this;
+    const { window } = this;
 
     let nextPanelView = PanelView.forNode(viewNode);
     let prevPanelView = PanelView.forNode(previousViewNode);
@@ -847,7 +847,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       nextPanelView.descriptionHeightWorkaround();
 
-      viewRect = await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
+      viewRect = await window.promiseDocumentFlushed(() => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
       });
 
@@ -894,7 +894,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     
     viewNode.style.width = viewRect.width + "px";
 
-    await BrowserUtils.promiseLayoutFlushed(document, "layout", () => {});
+    await window.promiseDocumentFlushed(() => {});
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
@@ -1000,7 +1000,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       
       
       previousViewNode.style.display = "none";
-      await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {});
+      await this.window.promiseDocumentFlushed(() => {});
       previousViewNode.style.removeProperty("display");
     }
   }

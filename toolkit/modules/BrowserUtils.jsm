@@ -14,48 +14,6 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
 
 Cu.importGlobalProperties(["URL"]);
 
-let reflowObservers = new WeakMap();
-
-function ReflowObserver(doc) {
-  this._doc = doc;
-
-  doc.docShell.addWeakReflowObserver(this);
-  reflowObservers.set(this._doc, this);
-
-  this.callbacks = [];
-}
-
-ReflowObserver.prototype = {
-  QueryInterface: XPCOMUtils.generateQI(["nsIReflowObserver", "nsISupportsWeakReference"]),
-
-  _onReflow() {
-    reflowObservers.delete(this._doc);
-    this._doc.docShell.removeWeakReflowObserver(this);
-
-    for (let callback of this.callbacks) {
-      try {
-        callback();
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-  },
-
-  reflow() {
-    this._onReflow();
-  },
-
-  reflowInterruptible() {
-    this._onReflow();
-  },
-};
-
-const FLUSH_TYPES = {
-  "style": Ci.nsIDOMWindowUtils.FLUSH_STYLE,
-  "layout": Ci.nsIDOMWindowUtils.FLUSH_LAYOUT,
-  "display": Ci.nsIDOMWindowUtils.FLUSH_DISPLAY,
-};
-
 this.BrowserUtils = {
 
   
@@ -428,8 +386,7 @@ this.BrowserUtils = {
     }
     let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
     if (!bounds.height) {
-      let document = element.ownerDocument;
-      await BrowserUtils.promiseLayoutFlushed(document, "layout", () => {
+      await window.promiseDocumentFlushed(() => {
         bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
       });
     }
@@ -685,65 +642,6 @@ this.BrowserUtils = {
                                 .replace(/%S/g, param);
     }
     return [url, postData];
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  promiseReflowed(doc, callback) {
-    let observer = reflowObservers.get(doc);
-    if (!observer) {
-      observer = new ReflowObserver(doc);
-      reflowObservers.set(doc, observer);
-    }
-
-    return new Promise((resolve, reject) => {
-      observer.callbacks.push(() => {
-        try {
-          resolve(callback());
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async promiseLayoutFlushed(doc, flushType, callback) {
-    let utils = doc.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils);
-
-    if (!utils.needsFlush(FLUSH_TYPES[flushType])) {
-      return callback();
-    }
-
-    return this.promiseReflowed(doc, callback);
   },
 
   
