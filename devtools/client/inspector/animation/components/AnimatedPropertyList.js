@@ -54,11 +54,21 @@ class AnimatedPropertyList extends PureComponent {
       getAnimatedPropertyMap,
       emitEventForTest,
     } = this.props;
-    const animatedPropertyMap = await getAnimatedPropertyMap(animation);
-    const animationTypes = await animation.getAnimationTypes(animatedPropertyMap.keys());
+
+    let animatedPropertyMap = null;
+    let animationTypes = null;
+
+    try {
+      animatedPropertyMap = await getAnimatedPropertyMap(animation);
+      animationTypes = await animation.getAnimationTypes(animatedPropertyMap.keys());
+    } catch (e) {
+      
+      
+      console.error(e);
+      return;
+    }
 
     this.setState({ animatedPropertyMap, animationTypes });
-
     emitEventForTest("animation-keyframes-rendered");
   }
 
