@@ -85,8 +85,11 @@ RenderCompositorANGLE::Initialize()
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    desc.BufferCount = 2;
-    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    
+    
+    
+    desc.BufferCount = 1;
+    desc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
     desc.Scaling = DXGI_SCALING_NONE;
     desc.Flags = 0;
 
