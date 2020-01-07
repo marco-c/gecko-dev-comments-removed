@@ -152,6 +152,13 @@ const gTestSyntaxExamples = {
       }
     ],
   },
+  '<url>': {
+    description: 'a URL',
+    examples: [
+      
+      
+    ],
+  },
   '<transform>': {
     description: 'a transform',
     examples: [
