@@ -3,4 +3,4 @@
 
 
 
-gcparam("maxBytes", 22000);
+gcparam("maxBytes", -1);
