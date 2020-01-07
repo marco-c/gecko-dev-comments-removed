@@ -105,7 +105,7 @@ ServoMediaRule::SetConditionText(const nsAString& aConditionText,
 }
 
  void
-ServoMediaRule::GetCssTextImpl(nsAString& aCssText) const
+ServoMediaRule::GetCssText(nsAString& aCssText) const
 {
   Servo_MediaRule_GetCssText(mRawRule, &aCssText);
 }

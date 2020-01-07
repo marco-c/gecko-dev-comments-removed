@@ -63,6 +63,8 @@ protected:
   mozilla::CSSFontFaceDescriptors mDescriptors;
 
   
+  
+  
   void GetCssTextImpl(nsAString& aCssText) const;
 
 private:
@@ -102,7 +104,7 @@ public:
 
   
   uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  void GetCssText(nsAString& aCssText) const override;
   nsICSSDeclaration* Style();
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
