@@ -8,6 +8,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  EventDispatcher: "resource://gre/modules/Messaging.jsm",
   Services: "resource://gre/modules/Services.jsm",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
 });
@@ -16,7 +17,39 @@ GeckoViewUtils.initLogging("GeckoView.TelemetryController", this);
 
 var EXPORTED_SYMBOLS = ["GeckoViewTelemetryController"];
 
-let GeckoViewTelemetryController = {
+
+
+
+
+
+const TelemetrySnapshots = [
+  {
+    type: "histograms",
+    flag: (1 << 0),
+    get: (dataset, clear) => Services.telemetry.snapshotHistograms(
+                               dataset, false, clear)
+  },
+  {
+    type: "keyedHistograms",
+    flag: (1 << 1),
+    get: (dataset, clear) => Services.telemetry.snapshotKeyedHistograms(
+                               dataset, false, clear)
+  },
+  {
+    type: "scalars",
+    flag: (1 << 2),
+    get: (dataset, clear) => Services.telemetry.snapshotScalars(
+                               dataset, clear)
+  },
+  {
+    type: "keyedScalars",
+    flag: (1 << 3),
+    get: (dataset, clear) => Services.telemetry.snapshotKeyedScalars(
+                               dataset, clear)
+  },
+];
+
+const GeckoViewTelemetryController = {
   
 
 
@@ -28,5 +61,51 @@ let GeckoViewTelemetryController = {
 
     debug `setup - canRecordPrereleaseData ${Services.telemetry.canRecordPrereleaseData
           }, canRecordReleaseData ${Services.telemetry.canRecordReleaseData}`;
+
+    if (GeckoViewUtils.IS_PARENT_PROCESS) {
+      try {
+        EventDispatcher.instance.registerListener(this, [
+          "GeckoView:TelemetrySnapshots",
+        ]);
+      } catch (e) {
+        warn `Failed registering GeckoView:TelemetrySnapshots listener: ${e}`;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  onEvent(aEvent, aData, aCallback) {
+    debug `onEvent: aEvent=${aEvent}, aData=${aData}`;
+
+    if (aEvent !== "GeckoView:TelemetrySnapshots") {
+      warn `Received unexpected event ${aEvent}`;
+      return;
+    }
+
+    const { clear, types, dataset } = aData;
+    let snapshots = {};
+
+    
+    for (const tel of TelemetrySnapshots) {
+      if ((tel.flag & types) == 0) {
+        
+        continue;
+      }
+      const snapshot = tel.get(dataset, clear);
+      if (!snapshot) {
+        aCallback.onError(`Failed retrieving ${tel.type} snapshot!`);
+        return;
+      }
+      snapshots[tel.type] = snapshot;
+    }
+
+    aCallback.onSuccess(snapshots);
   },
 };
