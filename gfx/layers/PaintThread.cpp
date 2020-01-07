@@ -165,7 +165,10 @@ PaintThread::Init()
   }
   sThread = thread;
 
-  if (gfxPlatform::GetPlatform()->UsesTiling()) {
+  
+  
+  if (gfxPlatform::GetPlatform()->UsesTiling() ||
+      gfxPrefs::LayersTilesEnabledIfSkiaPOMTP()) {
     int32_t paintWorkerCount = PaintThread::CalculatePaintWorkerCount();
     mPaintWorkers = SharedThreadPool::Get(NS_LITERAL_CSTRING("PaintWorker"), paintWorkerCount);
   }
