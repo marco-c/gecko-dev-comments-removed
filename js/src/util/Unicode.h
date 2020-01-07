@@ -4,11 +4,12 @@
 
 
 
-#ifndef vm_Unicode_h
-#define vm_Unicode_h
+#ifndef util_Unicode_h
+#define util_Unicode_h
 
 #include "jspubtd.h"
-#include "vm/UnicodeNonBMP.h"
+
+#include "util/UnicodeNonBMP.h"
 
 namespace js {
 namespace unicode {

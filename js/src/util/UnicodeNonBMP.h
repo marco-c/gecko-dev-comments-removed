@@ -7,8 +7,8 @@
 
 
 
-#ifndef vm_UnicodeNonBMP_h
-#define vm_UnicodeNonBMP_h
+#ifndef util_UnicodeNonBMP_h
+#define util_UnicodeNonBMP_h
 
 
 

@@ -4,11 +4,11 @@
 
 
 
-#ifndef builtin_SymbolObject_h
-#define builtin_SymbolObject_h
+#ifndef builtin_Symbol_h
+#define builtin_Symbol_h
 
 #include "vm/NativeObject.h"
-#include "vm/Symbol.h"
+#include "vm/SymbolType.h"
 
 namespace js {
 

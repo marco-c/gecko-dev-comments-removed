@@ -5,7 +5,7 @@
 
 
 #include "jsfriendapi.h"
-#include "jsstr.h"
+#include "builtin/String.h"
 
 #include "builtin/TestingFunctions.h"
 #include "jsapi-tests/tests.h"

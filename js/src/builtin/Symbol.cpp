@@ -4,10 +4,10 @@
 
 
 
-#include "builtin/SymbolObject.h"
+#include "builtin/Symbol.h"
 
-#include "vm/StringBuffer.h"
-#include "vm/Symbol.h"
+#include "util/StringBuffer.h"
+#include "vm/SymbolType.h"
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
