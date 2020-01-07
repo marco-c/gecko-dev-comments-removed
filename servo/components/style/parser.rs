@@ -114,6 +114,12 @@ impl<'a> ParserContext<'a> {
     }
 
     
+    #[inline]
+    pub fn in_page_rule(&self) -> bool {
+        self.rule_type.map_or(false, |rule_type| rule_type == CssRuleType::Page)
+    }
+
+    
     pub fn rule_type(&self) -> CssRuleType {
         self.rule_type.expect("Rule type expected, but none was found.")
     }
