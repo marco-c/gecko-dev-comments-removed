@@ -6,20 +6,16 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
-ChromeUtils.defineModuleGetter(this, "HeadlessShell",
-                               "resource:///modules/HeadlessShell.jsm");
-ChromeUtils.defineModuleGetter(this, "LaterRun",
-                               "resource:///modules/LaterRun.jsm");
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "RecentWindow",
-                               "resource:///modules/RecentWindow.jsm");
-ChromeUtils.defineModuleGetter(this, "ShellService",
-                               "resource:///modules/ShellService.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  HeadlessShell: "resource:///modules/HeadlessShell.jsm",
+  LaterRun: "resource:///modules/LaterRun.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  ShellService: "resource:///modules/ShellService.jsm",
+  UpdatePing: "resource://gre/modules/UpdatePing.jsm"
+});
 XPCOMUtils.defineLazyServiceGetter(this, "WindowsUIUtils",
-                                   "@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils");
-ChromeUtils.defineModuleGetter(this, "UpdatePing",
-                               "resource://gre/modules/UpdatePing.jsm");
+  "@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils");
 
 function shouldLoadURI(aURI) {
   if (aURI && !aURI.schemeIs("chrome"))
@@ -677,7 +673,7 @@ function handURIToExistingBrowser(uri, location, cmdLine, forcePrivate, triggeri
   
   
   var allowPrivate = forcePrivate || PrivateBrowsingUtils.permanentPrivateBrowsing;
-  var navWin = RecentWindow.getMostRecentBrowserWindow({private: allowPrivate});
+  var navWin = BrowserWindowTracker.getMostRecentBrowserWindow({private: allowPrivate});
   if (!navWin) {
     
     openBrowserWindow(cmdLine, uri.spec, null, forcePrivate);
@@ -789,7 +785,7 @@ nsDefaultCommandLineHandler.prototype = {
           cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
           WindowsUIUtils.inTabletMode) {
         
-        let win = RecentWindow.getMostRecentBrowserWindow();
+        let win = BrowserWindowTracker.getMostRecentBrowserWindow();
         if (win) {
           win.focus();
           return;

@@ -1,4 +1,4 @@
-ChromeUtils.import("resource:///modules/RecentWindow.jsm");
+ChromeUtils.import("resource:///modules/BrowserWindowTracker.jsm");
 
 ChromeUtils.defineModuleGetter(this, "CaptivePortalWatcher",
   "resource:///modules/CaptivePortalWatcher.jsm");
@@ -23,9 +23,9 @@ async function setupPrefsAndRecentWindowBehavior() {
   
   
   window.CaptivePortalWatcher.uninit();
-  let getMostRecentBrowserWindowCopy = RecentWindow.getMostRecentBrowserWindow;
+  let getMostRecentBrowserWindowCopy = BrowserWindowTracker.getMostRecentBrowserWindow;
   let defaultWindow = window;
-  RecentWindow.getMostRecentBrowserWindow = () => {
+  BrowserWindowTracker.getMostRecentBrowserWindow = () => {
     let win = getMostRecentBrowserWindowCopy();
     if (win == defaultWindow) {
       return null;
@@ -34,7 +34,7 @@ async function setupPrefsAndRecentWindowBehavior() {
   };
 
   registerCleanupFunction(function cleanUp() {
-    RecentWindow.getMostRecentBrowserWindow = getMostRecentBrowserWindowCopy;
+    BrowserWindowTracker.getMostRecentBrowserWindow = getMostRecentBrowserWindowCopy;
     window.CaptivePortalWatcher.init();
   });
 }

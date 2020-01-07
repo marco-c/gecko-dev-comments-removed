@@ -9,8 +9,8 @@ const EXPORTED_SYMBOLS = ["WebNavigation"];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "RecentWindow",
-                               "resource:///modules/RecentWindow.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
+                               "resource:///modules/BrowserWindowTracker.jsm");
 
 
 
@@ -216,7 +216,7 @@ var Manager = {
 
 
   setRecentTabTransitionData(tabTransitionData) {
-    let window = RecentWindow.getMostRecentBrowserWindow();
+    let window = BrowserWindowTracker.getMostRecentBrowserWindow();
     if (window && window.gBrowser && window.gBrowser.selectedTab &&
         window.gBrowser.selectedTab.linkedBrowser) {
       let browser = window.gBrowser.selectedTab.linkedBrowser;

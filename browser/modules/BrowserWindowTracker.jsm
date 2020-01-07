@@ -7,7 +7,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["trackBrowserWindow"];
+var EXPORTED_SYMBOLS = ["BrowserWindowTracker"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -16,6 +16,10 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "_focusManager",
                                    "@mozilla.org/focus-manager;1",
                                    "nsIFocusManager");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm"
+});
 
 
 const TAB_EVENTS = ["TabBrowserInserted", "TabSelect"];
@@ -25,11 +29,6 @@ const DEBUG = false;
 
 var _lastFocusedWindow = null;
 var _lastTopLevelWindowID = 0;
-
-
-function trackBrowserWindow(aWindow) {
-  WindowHelper.addWindow(aWindow);
-}
 
 
 function debug(s) {
@@ -135,4 +134,65 @@ var WindowHelper = {
     
     _lastFocusedWindow = aWindow;
   },
+
+  getMostRecentBrowserWindow: function RW_getMostRecentBrowserWindow(aOptions) {
+    let checkPrivacy = typeof aOptions == "object" &&
+                       "private" in aOptions;
+
+    let allowPopups = typeof aOptions == "object" && !!aOptions.allowPopups;
+
+    function isSuitableBrowserWindow(win) {
+      return (!win.closed &&
+              (allowPopups || win.toolbar.visible) &&
+              (!checkPrivacy ||
+               PrivateBrowsingUtils.permanentPrivateBrowsing ||
+               PrivateBrowsingUtils.isWindowPrivate(win) == aOptions.private));
+    }
+
+    let broken_wm_z_order =
+      AppConstants.platform != "macosx" && AppConstants.platform != "win";
+
+    if (broken_wm_z_order) {
+      let win = Services.wm.getMostRecentWindow("navigator:browser");
+
+      
+      if (win && !isSuitableBrowserWindow(win)) {
+        win = null;
+        let windowList = Services.wm.getEnumerator("navigator:browser");
+        
+        while (windowList.hasMoreElements()) {
+          let nextWin = windowList.getNext();
+          if (isSuitableBrowserWindow(nextWin))
+            win = nextWin;
+        }
+      }
+      return win;
+    }
+    let windowList = Services.wm.getZOrderDOMWindowEnumerator("navigator:browser", true);
+    while (windowList.hasMoreElements()) {
+      let win = windowList.getNext();
+      if (isSuitableBrowserWindow(win))
+        return win;
+    }
+    return null;
+  }
+};
+
+this.BrowserWindowTracker = {
+  
+
+
+
+
+
+
+
+
+  getMostRecentBrowserWindow(options) {
+    return WindowHelper.getMostRecentBrowserWindow(options);
+  },
+
+  track(window) {
+    return WindowHelper.addWindow(window);
+  }
 };

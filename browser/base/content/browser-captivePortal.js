@@ -112,7 +112,7 @@ var CaptivePortalWatcher = {
       return;
     }
 
-    let win = RecentWindow.getMostRecentBrowserWindow();
+    let win = BrowserWindowTracker.getMostRecentBrowserWindow();
     
     
     
@@ -135,7 +135,7 @@ var CaptivePortalWatcher = {
       return;
     }
 
-    let win = RecentWindow.getMostRecentBrowserWindow();
+    let win = BrowserWindowTracker.getMostRecentBrowserWindow();
     if (win != Services.ww.activeWindow) {
       
       return;
