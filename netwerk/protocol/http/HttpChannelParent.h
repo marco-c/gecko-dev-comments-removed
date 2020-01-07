@@ -266,7 +266,7 @@ private:
   RefPtr<HttpBaseChannel>       mChannel;
   nsCOMPtr<nsICacheEntry>       mCacheEntry;
   nsCOMPtr<nsIAssociatedContentSecurity>  mAssociatedContentSecurity;
-  bool mIPCClosed;                
+  Atomic<bool> mIPCClosed; 
 
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
