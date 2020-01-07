@@ -44,7 +44,8 @@ class ObjectBox;
 
 #define FOR_EACH_PARSE_NODE_KIND(F) \
     F(Nop) \
-    F(Semi) \
+    F(EmptyStatement) \
+    F(ExpressionStatement) \
     F(Comma) \
     F(Conditional) \
     F(Colon) \
@@ -220,6 +221,7 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return ParseNodeKind::TypeOfName <= kind && kind <= ParseNodeKind::TypeOfExpr;
 }
+
 
 
 
@@ -683,10 +685,10 @@ class ParseNode
 
 
     JSAtom* isStringExprStatement() const {
-        if (getKind() == ParseNodeKind::Semi) {
+        if (getKind() == ParseNodeKind::ExpressionStatement) {
             MOZ_ASSERT(pn_arity == PN_UNARY);
             ParseNode* kid = pn_kid;
-            if (kid && kid->getKind() == ParseNodeKind::String && !kid->pn_parens)
+            if (kid->getKind() == ParseNodeKind::String && !kid->pn_parens)
                 return kid->pn_atom;
         }
         return nullptr;

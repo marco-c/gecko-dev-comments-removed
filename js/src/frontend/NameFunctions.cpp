@@ -389,6 +389,7 @@ class NameResolver
           
           
           case ParseNodeKind::Nop:
+          case ParseNodeKind::EmptyStatement:
           case ParseNodeKind::String:
           case ParseNodeKind::TemplateString:
           case ParseNodeKind::RegExp:
@@ -422,6 +423,7 @@ class NameResolver
             break;
 
           
+          case ParseNodeKind::ExpressionStatement:
           case ParseNodeKind::TypeOfExpr:
           case ParseNodeKind::Void:
           case ParseNodeKind::Not:
@@ -447,7 +449,6 @@ class NameResolver
             break;
 
           
-          case ParseNodeKind::Semi:
           case ParseNodeKind::This:
             MOZ_ASSERT(cur->isArity(PN_UNARY));
             if (ParseNode* expr = cur->pn_kid) {

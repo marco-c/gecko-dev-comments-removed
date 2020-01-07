@@ -184,6 +184,7 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       
       
       case ParseNodeKind::Nop:
+      case ParseNodeKind::EmptyStatement:
       case ParseNodeKind::String:
       case ParseNodeKind::TemplateString:
       case ParseNodeKind::RegExp:
@@ -204,6 +205,7 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
         return PushResult::Recyclable;
 
       
+      case ParseNodeKind::ExpressionStatement:
       case ParseNodeKind::TypeOfName:
       case ParseNodeKind::TypeOfExpr:
       case ParseNodeKind::Void:
@@ -228,8 +230,7 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
         return PushUnaryNodeChild(pn, stack);
 
       
-      case ParseNodeKind::This:
-      case ParseNodeKind::Semi: {
+      case ParseNodeKind::This: {
         MOZ_ASSERT(pn->isArity(PN_UNARY));
         if (pn->pn_kid)
             stack->push(pn->pn_kid);
