@@ -365,12 +365,20 @@ ImageDocument::ShrinkToFit()
     return;
   }
 
+  uint32_t newWidth = std::max(1, NSToCoordFloor(GetRatio() * mImageWidth));
+  uint32_t newHeight = std::max(1, NSToCoordFloor(GetRatio() * mImageHeight));
+
   
   RefPtr<HTMLImageElement> image = HTMLImageElement::FromContent(mImageContent);
-  image->SetWidth(std::max(1, NSToCoordFloor(GetRatio() * mImageWidth)),
-                  IgnoreErrors());
-  image->SetHeight(std::max(1, NSToCoordFloor(GetRatio() * mImageHeight)),
-                   IgnoreErrors());
+
+  if (mImageIsResized &&
+      newWidth == image->Width() && newHeight == image->Height()) {
+    
+    return;
+  }
+
+  image->SetWidth(newWidth, IgnoreErrors());
+  image->SetHeight(newHeight, IgnoreErrors());
 
   
   
