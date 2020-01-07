@@ -267,6 +267,7 @@ static const struct {
   
   { "test-phish-proto",    SOCIAL_ENGINEERING_PUBLIC}, 
   { "test-unwanted-proto", UNWANTED_SOFTWARE},         
+  { "test-passwordwhite-proto", CSD_WHITELIST},        
 };
 
 NS_IMETHODIMP
