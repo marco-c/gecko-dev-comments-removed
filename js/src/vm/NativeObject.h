@@ -1216,24 +1216,6 @@ class NativeObject : public ShapedObject
     
     inline void elementsRangeWriteBarrierPost(uint32_t start, uint32_t count);
 
-    
-    void setDenseInitializedLengthUnchecked(uint32_t length) {
-        MOZ_ASSERT(length <= getDenseCapacity());
-        MOZ_ASSERT(!denseElementsAreCopyOnWrite());
-        prepareElementRangeForOverwrite(length, getElementsHeader()->initializedLength);
-        getElementsHeader()->initializedLength = length;
-    }
-
-    
-    
-    
-    void setDenseElementUnchecked(uint32_t index, const Value& val) {
-        MOZ_ASSERT(index < getDenseInitializedLength());
-        MOZ_ASSERT(!denseElementsAreCopyOnWrite());
-        checkStoredValue(val);
-        elements_[index].set(this, HeapSlot::Element, unshiftedIndex(index), val);
-    }
-
   public:
     
     
@@ -1256,16 +1238,22 @@ class NativeObject : public ShapedObject
     }
 
     void setDenseInitializedLength(uint32_t length) {
+        MOZ_ASSERT(length <= getDenseCapacity());
+        MOZ_ASSERT(!denseElementsAreCopyOnWrite());
         MOZ_ASSERT(!denseElementsAreFrozen());
-        setDenseInitializedLengthUnchecked(length);
+        prepareElementRangeForOverwrite(length, getElementsHeader()->initializedLength);
+        getElementsHeader()->initializedLength = length;
     }
 
     inline void ensureDenseInitializedLength(JSContext* cx,
                                              uint32_t index, uint32_t extra);
 
     void setDenseElement(uint32_t index, const Value& val) {
+        MOZ_ASSERT(index < getDenseInitializedLength());
+        MOZ_ASSERT(!denseElementsAreCopyOnWrite());
         MOZ_ASSERT(!denseElementsAreFrozen());
-        setDenseElementUnchecked(index, val);
+        checkStoredValue(val);
+        elements_[index].set(this, HeapSlot::Element, unshiftedIndex(index), val);
     }
 
     void initDenseElement(uint32_t index, const Value& val) {
@@ -1288,8 +1276,7 @@ class NativeObject : public ShapedObject
     inline void initDenseElementWithType(JSContext* cx, uint32_t index,
                                          const Value& val);
     inline void setDenseElementHole(JSContext* cx, uint32_t index);
-    static inline void removeDenseElementForSparseIndex(JSContext* cx,
-                                                        HandleNativeObject obj, uint32_t index);
+    inline void removeDenseElementForSparseIndex(JSContext* cx, uint32_t index);
 
     inline Value getDenseOrTypedArrayElement(uint32_t idx);
 
@@ -1336,10 +1323,6 @@ class NativeObject : public ShapedObject
 
     inline DenseElementResult extendDenseElements(JSContext* cx,
                                                   uint32_t requiredCapacity, uint32_t extra);
-
-    
-    static bool sparsifyDenseElement(JSContext* cx,
-                                     HandleNativeObject obj, uint32_t index);
 
     
     static const uint32_t MIN_SPARSE_INDEX = 1000;
