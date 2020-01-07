@@ -103,8 +103,6 @@ var interfaceNamesInGlobalScope =
 
     "Directory",
 
-    "DOMCursor",
-
     "DOMError",
 
     "DOMException",

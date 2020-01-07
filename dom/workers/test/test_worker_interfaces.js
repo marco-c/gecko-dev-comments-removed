@@ -107,8 +107,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "Directory", insecureContext: true},
 
-    {name: "DOMCursor", insecureContext: true},
-
     {name: "DOMError", insecureContext: true},
 
     {name: "DOMException", insecureContext: true},
