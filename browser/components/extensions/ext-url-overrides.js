@@ -25,6 +25,24 @@ function userWasNotified(extensionId) {
   return setting && setting.value;
 }
 
+function replaceUrlInTab(gBrowser, tab, url) {
+  let loaded = new Promise(resolve => {
+    windowTracker.addListener("progress", {
+      onLocationChange(browser, webProgress, request, locationURI, flags) {
+        if (webProgress.isTopLevel
+            && browser.ownerGlobal.gBrowser.getTabForBrowser(browser) == tab
+            && locationURI.spec == url) {
+          windowTracker.removeListener(this);
+          resolve();
+        }
+      },
+    });
+  });
+  gBrowser.loadURIWithFlags(
+    url, {flags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY});
+  return loaded;
+}
+
 async function handleNewTabOpened() {
   
   
@@ -49,8 +67,23 @@ async function handleNewTabOpened() {
         item.id, NEW_TAB_CONFIRMED_TYPE, item.id, true, () => false);
     } else {
       
+      
+      
+      
+      
       ExtensionSettingsStore.removeSetting(NEW_TAB_CONFIRMED_TYPE, item.id);
       let addon = await AddonManager.getAddonByID(item.id);
+      let gBrowser = win.gBrowser;
+      let tab = gBrowser.selectedTab;
+      await replaceUrlInTab(gBrowser, tab, "about:blank");
+      Services.obs.addObserver({
+        async observe() {
+          await replaceUrlInTab(gBrowser, tab, aboutNewTabService.newTabURL);
+          handleNewTabOpened();
+          Services.obs.removeObserver(this, "newtab-url-changed");
+        },
+      }, "newtab-url-changed");
+
       addon.userDisabled = true;
     }
     panel.hidePopup();
@@ -100,12 +133,12 @@ function addNewTabObserver(extensionId) {
 }
 
 function setNewTabURL(extensionId, url) {
-  aboutNewTabService.newTabURL = url;
-  if (aboutNewTabService.overridden) {
+  if (extensionId) {
     addNewTabObserver(extensionId);
   } else {
     removeNewTabObserver();
   }
+  aboutNewTabService.newTabURL = url;
 }
 
 this.urlOverrides = class extends ExtensionAPI {
@@ -164,7 +197,7 @@ this.urlOverrides = class extends ExtensionAPI {
 
       
       if (item) {
-        setNewTabURL(extension.id, item.value || item.initialValue);
+        setNewTabURL(item.id, item.value || item.initialValue);
       }
     }
   }
