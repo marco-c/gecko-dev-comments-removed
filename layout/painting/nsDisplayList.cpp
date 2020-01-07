@@ -4944,7 +4944,8 @@ nsDisplayEventReceiver::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder&
 nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuilder* aBuilder,
                                                                nsIFrame* aFrame,
                                                                mozilla::gfx::CompositorHitTestInfo aHitTestInfo,
-                                                               uint32_t aIndex)
+                                                               uint32_t aIndex,
+                                                               const mozilla::Maybe<nsRect>& aArea)
   : nsDisplayEventReceiver(aBuilder, aFrame)
   , mHitTestInfo(aHitTestInfo)
   , mIndex(aIndex)
@@ -4962,12 +4963,29 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     MOZ_ASSERT(mHitTestInfo & CompositorHitTestInfo::eScrollbar);
     mScrollTarget = Some(aBuilder->GetCurrentScrollbarTarget());
   }
-}
 
-void
-nsDisplayCompositorHitTestInfo::SetArea(const nsRect& aArea)
-{
-  mArea = Some(aArea);
+  if (aArea.isSome()) {
+    mArea = *aArea;
+  } else {
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
+    if (scrollFrame) {
+      
+      
+      
+      
+      
+      mArea = mFrame->GetScrollableOverflowRect();
+    } else {
+      mArea = nsRect(nsPoint(0, 0), mFrame->GetSize());
+    }
+
+    
+    
+    
+    
+    
+    mArea += aBuilder->ToReferenceFrame(mFrame);
+  }
 }
 
 bool
@@ -4977,31 +4995,13 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
                                                         mozilla::layers::WebRenderLayerManager* aManager,
                                                         nsDisplayListBuilder* aDisplayListBuilder)
 {
-  if (mArea.isNothing()) {
-    nsRect borderBox;
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
-    if (scrollFrame) {
-      
-      
-      
-      
-      
-      borderBox = mFrame->GetScrollableOverflowRect();
-    } else {
-      borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
-    }
-
-    if (borderBox.IsEmpty()) {
-      return true;
-    }
-
-    mArea = Some(borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame));
+  if (mArea.IsEmpty()) {
+    return true;
   }
 
-  MOZ_ASSERT(mArea.isSome());
   wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
       LayoutDeviceRect::FromAppUnits(
-          *mArea,
+          mArea,
           mFrame->PresContext()->AppUnitsPerDevPixel()));
 
   
