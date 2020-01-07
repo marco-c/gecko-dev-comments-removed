@@ -952,6 +952,11 @@ JSStructuredCloneData::discardTransferables()
     if (ownTransferables_ != OwnTransferablePolicy::OwnsTransferablesIfAny)
         return;
 
+    
+    
+    if (scope_ == JS::StructuredCloneScope::DifferentProcess)
+        return;
+
     FreeTransferStructuredCloneOp freeTransfer = nullptr;
     if (callbacks_)
         freeTransfer = callbacks_->freeTransfer;
