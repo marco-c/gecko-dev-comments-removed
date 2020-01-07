@@ -766,8 +766,9 @@ CSSStyleSheet::InsertRuleInternal(const nsAString& aRule,
 
   
   
-  if (type != css::Rule::IMPORT_RULE || !RuleHasPendingChildSheet(rule)) {
-    RuleAdded(*rule);
+  if ((type != css::Rule::IMPORT_RULE || !RuleHasPendingChildSheet(rule)) &&
+      mDocument) {
+    mDocument->StyleRuleAdded(this, rule);
   }
 
   return aIndex;
@@ -794,7 +795,11 @@ CSSStyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv)
   if (rule) {
     Inner()->mOrderedRules.RemoveObjectAt(aIndex);
     rule->SetStyleSheet(nullptr);
-    RuleRemoved(*rule);
+    DidDirty();
+
+    if (mDocument) {
+      mDocument->StyleRuleRemoved(this, rule);
+    }
   }
 }
 
@@ -860,9 +865,12 @@ CSSStyleSheet::StyleSheetLoaded(StyleSheet* aSheet,
   NS_ASSERTION(this == sheet->GetParentSheet(),
                "We are being notified of a sheet load for a sheet that is not our child!");
 
-  if (NS_SUCCEEDED(aStatus)) {
+  if (mDocument && NS_SUCCEEDED(aStatus)) {
     mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
-    RuleAdded(*sheet->GetOwnerRule());
+
+    
+    
+    mDocument->StyleRuleAdded(this, sheet->GetOwnerRule());
   }
 
   return NS_OK;
@@ -909,7 +917,9 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
         reusableSheets.AddReusableSheet(cssSheet);
       }
     }
-    RuleRemoved(*rule);
+    if (mDocument) {
+      mDocument->StyleRuleRemoved(this, rule);
+    }
   }
 
   
@@ -939,13 +949,15 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  for (int32_t index = 0; index < Inner()->mOrderedRules.Count(); ++index) {
-    RefPtr<css::Rule> rule = Inner()->mOrderedRules.ObjectAt(index);
-    if (rule->GetType() == css::Rule::IMPORT_RULE &&
-        RuleHasPendingChildSheet(rule)) {
-      continue; 
+  if (mDocument) {
+    for (int32_t index = 0; index < Inner()->mOrderedRules.Count(); ++index) {
+      RefPtr<css::Rule> rule = Inner()->mOrderedRules.ObjectAt(index);
+      if (rule->GetType() == css::Rule::IMPORT_RULE &&
+          RuleHasPendingChildSheet(rule)) {
+        continue; 
+      }
+      mDocument->StyleRuleAdded(this, rule);
     }
-    RuleAdded(*rule);
   }
   return NS_OK;
 }

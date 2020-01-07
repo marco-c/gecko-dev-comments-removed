@@ -252,7 +252,10 @@ ServoKeyframesRule::UpdateRule(Func aCallback)
   aCallback();
 
   if (StyleSheet* sheet = GetStyleSheet()) {
-    sheet->RuleChanged(this);
+    
+    if (doc) {
+      doc->StyleRuleChanged(sheet, this);
+    }
   }
 }
 

@@ -172,13 +172,25 @@ ServoStyleSet::Init(nsPresContext* aPresContext, nsBindingManager* aBindingManag
 }
 
 void
+ServoStyleSet::BeginShutdown()
+{
+  nsIDocument* doc = mPresContext->Document();
+
+  
+  if (mStyleRuleMap) {
+    doc->RemoveObserver(mStyleRuleMap);
+    doc->CSSLoader()->RemoveObserver(mStyleRuleMap);
+    mStyleRuleMap = nullptr;
+  }
+}
+
+void
 ServoStyleSet::Shutdown()
 {
   
   
   ClearNonInheritingStyleContexts();
   mRawSet = nullptr;
-  mStyleRuleMap = nullptr;
 }
 
 void
@@ -673,10 +685,6 @@ ServoStyleSet::AppendStyleSheet(SheetType aType,
     SetStylistStyleSheetsDirty();
   }
 
-  if (mStyleRuleMap) {
-    mStyleRuleMap->SheetAdded(*aSheet);
-  }
-
   return NS_OK;
 }
 
@@ -701,10 +709,6 @@ ServoStyleSet::PrependStyleSheet(SheetType aType,
     SetStylistStyleSheetsDirty();
   }
 
-  if (mStyleRuleMap) {
-    mStyleRuleMap->SheetAdded(*aSheet);
-  }
-
   return NS_OK;
 }
 
@@ -720,10 +724,6 @@ ServoStyleSet::RemoveStyleSheet(SheetType aType,
     
     Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), aSheet);
     SetStylistStyleSheetsDirty();
-  }
-
-  if (mStyleRuleMap) {
-    mStyleRuleMap->SheetRemoved(*aSheet);
   }
 
   return NS_OK;
@@ -758,9 +758,6 @@ ServoStyleSet::ReplaceSheets(SheetType aType,
     }
   }
 
-  
-  
-  mStyleRuleMap = nullptr;
   return NS_OK;
 }
 
@@ -786,10 +783,6 @@ ServoStyleSet::InsertStyleSheetBefore(SheetType aType,
     Servo_StyleSet_InsertStyleSheetBefore(
         mRawSet.get(), aNewSheet, aReferenceSheet);
     SetStylistStyleSheetsDirty();
-  }
-
-  if (mStyleRuleMap) {
-    mStyleRuleMap->SheetAdded(*aNewSheet);
   }
 
   return NS_OK;
@@ -856,10 +849,6 @@ ServoStyleSet::AddDocStyleSheet(ServoStyleSheet* aSheet,
       Servo_StyleSet_AppendStyleSheet(mRawSet.get(), aSheet);
       SetStylistStyleSheetsDirty();
     }
-  }
-
-  if (mStyleRuleMap) {
-    mStyleRuleMap->SheetAdded(*aSheet);
   }
 
   return NS_OK;
@@ -1037,32 +1026,24 @@ ServoStyleSet::MarkOriginsDirty(OriginFlags aChangedOrigins)
 }
 
 void
-ServoStyleSet::RuleAdded(ServoStyleSheet& aSheet, css::Rule& aRule)
+ServoStyleSet::RecordStyleSheetChange(
+    ServoStyleSheet* aSheet,
+    StyleSheet::ChangeType aChangeType)
 {
-  if (mStyleRuleMap) {
-    mStyleRuleMap->RuleAdded(aSheet, aRule);
+  switch (aChangeType) {
+    case StyleSheet::ChangeType::RuleAdded:
+    case StyleSheet::ChangeType::RuleRemoved:
+    case StyleSheet::ChangeType::RuleChanged:
+    case StyleSheet::ChangeType::ReparsedFromInspector:
+      
+      return MarkOriginsDirty(aSheet->GetOrigin());
+    case StyleSheet::ChangeType::ApplicableStateChanged:
+    case StyleSheet::ChangeType::Added:
+    case StyleSheet::ChangeType::Removed:
+      
+      
+      return;
   }
-
-  
-  MarkOriginsDirty(aSheet.GetOrigin());
-}
-
-void
-ServoStyleSet::RuleRemoved(ServoStyleSheet& aSheet, css::Rule& aRule)
-{
-  if (mStyleRuleMap) {
-    mStyleRuleMap->RuleRemoved(aSheet, aRule);
-  }
-
-  
-  MarkOriginsDirty(aSheet.GetOrigin());
-}
-
-void
-ServoStyleSet::RuleChanged(ServoStyleSheet& aSheet, css::Rule* aRule)
-{
-  
-  MarkOriginsDirty(aSheet.GetOrigin());
 }
 
 #ifdef DEBUG
@@ -1450,9 +1431,14 @@ ServoStyleRuleMap*
 ServoStyleSet::StyleRuleMap()
 {
   if (!mStyleRuleMap) {
-    mStyleRuleMap = MakeUnique<ServoStyleRuleMap>(this);
+    mStyleRuleMap = new ServoStyleRuleMap(this);
+    if (mPresContext) {
+      nsIDocument* doc = mPresContext->Document();
+      doc->AddObserver(mStyleRuleMap);
+      doc->CSSLoader()->AddObserver(mStyleRuleMap);
+    }
   }
-  return mStyleRuleMap.get();
+  return mStyleRuleMap;
 }
 
 bool

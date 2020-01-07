@@ -77,6 +77,7 @@ public:
     RuleAdded,
     RuleRemoved,
     RuleChanged,
+    ReparsedFromInspector,
   };
 
   void SetOwningNode(nsINode* aOwningNode)
@@ -261,12 +262,6 @@ public:
   void WillDirty();
   virtual void DidDirty() {}
 
-  
-  
-  
-  
-  void RuleChanged(css::Rule*);
-
   void AddStyleSet(const StyleSetHandle& aStyleSet);
   void DropStyleSet(const StyleSetHandle& aStyleSet);
 
@@ -298,15 +293,6 @@ private:
                          ErrorResult& aRv);
 
 protected:
-  
-  void RuleAdded(css::Rule&);
-
-  
-  void RuleRemoved(css::Rule&);
-
-  
-  void EnabledStateChanged();
-
   struct ChildSheetListBuilder {
     RefPtr<StyleSheet>* sheetSlot;
     StyleSheet* parent;
@@ -330,6 +316,9 @@ protected:
 
   
   void DropMedia();
+
+  
+  void EnabledStateChanged();
 
   
   virtual void UnlinkInner();

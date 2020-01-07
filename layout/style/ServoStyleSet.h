@@ -133,20 +133,12 @@ public:
                          const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
 
   void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
-  void BeginShutdown() {}
+  void BeginShutdown();
   void Shutdown();
 
-  
-  
-  void RuleAdded(ServoStyleSheet&, css::Rule&);
-  void RuleRemoved(ServoStyleSheet&, css::Rule&);
-  void RuleChanged(ServoStyleSheet& aSheet, css::Rule* aRule);
+  void RecordStyleSheetChange(mozilla::ServoStyleSheet*, StyleSheet::ChangeType);
 
-  
-  
-  void RecordStyleSheetChange(ServoStyleSheet*, StyleSheet::ChangeType) {}
-
-  void RecordShadowStyleChange(dom::ShadowRoot* aShadowRoot) {
+  void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot) {
     
     
     MarkOriginsDirty(OriginFlags::All);
@@ -294,7 +286,7 @@ public:
   
   already_AddRefed<ServoStyleContext>
   ProbePseudoElementStyle(dom::Element* aOriginatingElement,
-                          CSSPseudoElementType aType,
+                          mozilla::CSSPseudoElementType aType,
                           ServoStyleContext* aParentContext);
 
   
@@ -450,6 +442,7 @@ public:
   
   
   void SetNeedsRestyleAfterEnsureUniqueInner() {
+    MOZ_ASSERT(!IsForXBL(), "Should not be cloning things for XBL stylesheet");
     mNeedsRestyleAfterEnsureUniqueInner = true;
   }
 
@@ -638,7 +631,7 @@ private:
 
   
   
-  UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
+  RefPtr<ServoStyleRuleMap> mStyleRuleMap;
 
   
   RefPtr<nsBindingManager> mBindingManager;

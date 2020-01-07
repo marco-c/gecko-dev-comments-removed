@@ -454,12 +454,6 @@ StyleSheet::EnsureUniqueInner()
     
     return;
   }
-
-  
-  
-  
-  
-  
   
   
   
@@ -609,51 +603,14 @@ StyleSheet::DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex)
   NS_ENSURE_SUCCESS(result, result);
 
   rule->SetStyleSheet(nullptr);
-  RuleRemoved(*rule);
+
+  DidDirty();
+
+  if (mDocument) {
+    mDocument->StyleRuleRemoved(this, rule);
+  }
+
   return NS_OK;
-}
-
-#define NOTIFY_STYLE_SETS(function_, args_) do {          \
-  StyleSheet* current = this;                             \
-  do {                                                    \
-    for (StyleSetHandle handle : current->mStyleSets) {   \
-      handle->function_ args_;                            \
-    }                                                     \
-    current = current->mParent;                           \
-  } while (current);                                      \
-} while (0)
-
-void
-StyleSheet::RuleAdded(css::Rule& aRule)
-{
-  DidDirty();
-  NOTIFY_STYLE_SETS(RuleAdded, (*this, aRule));
-
-  if (mDocument) {
-    mDocument->StyleRuleAdded(this, &aRule);
-  }
-}
-
-void
-StyleSheet::RuleRemoved(css::Rule& aRule)
-{
-  DidDirty();
-  NOTIFY_STYLE_SETS(RuleRemoved, (*this, aRule));
-
-  if (mDocument) {
-    mDocument->StyleRuleRemoved(this, &aRule);
-  }
-}
-
-void
-StyleSheet::RuleChanged(css::Rule* aRule)
-{
-  DidDirty();
-  NOTIFY_STYLE_SETS(RuleChanged, (*this, aRule));
-
-  if (mDocument) {
-    mDocument->StyleRuleChanged(this, aRule);
-  }
 }
 
 nsresult
@@ -679,7 +636,12 @@ StyleSheet::InsertRuleIntoGroup(const nsAString& aRule,
     result = AsServo()->InsertRuleIntoGroupInternal(aRule, aGroup, aIndex);
   }
   NS_ENSURE_SUCCESS(result, result);
-  RuleAdded(*aGroup->GetStyleRuleAt(aIndex));
+
+  DidDirty();
+
+  if (mDocument) {
+    mDocument->StyleRuleAdded(this, aGroup->GetStyleRuleAt(aIndex));
+  }
 
   return NS_OK;
 }
