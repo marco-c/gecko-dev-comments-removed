@@ -114,6 +114,20 @@ var PermissionPromptPrototype = {
 
 
 
+  get principalName() {
+    if (this.principal.addonPolicy) {
+      return this.principal.addonPolicy.name;
+    }
+
+    return this.principal.URI.hostPort;
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -427,7 +441,7 @@ GeolocationPermissionPrompt.prototype = {
     let options = {
       learnMoreURL: Services.urlFormatter.formatURLPref(pref),
       displayURI: false,
-      name: this.principal.URI.hostPort,
+      name: this.principalName,
     };
 
     if (this.principal.URI.schemeIs("file")) {
@@ -460,7 +474,7 @@ GeolocationPermissionPrompt.prototype = {
     }
 
     return gBrowserBundle.formatStringFromName("geolocation.shareWithSite3",
-                                                  ["<>"], 1);
+                                               ["<>"], 1);
   },
 
   get promptActions() {
@@ -535,7 +549,7 @@ DesktopNotificationPermissionPrompt.prototype = {
     return {
       learnMoreURL,
       displayURI: false,
-      name: this.principal.URI.hostPort,
+      name: this.principalName,
     };
   },
 
@@ -617,7 +631,7 @@ PersistentStoragePermissionPrompt.prototype = {
       checkbox,
       learnMoreURL,
       displayURI: false,
-      name: this.principal.URI.hostPort,
+      name: this.principalName,
     };
   },
 
@@ -684,7 +698,7 @@ MIDIPermissionPrompt.prototype = {
     
     let options = {
       displayURI: false,
-      name: this.principal.URI.hostPort,
+      name: this.principalName,
     };
 
     if (this.principal.URI.schemeIs("file")) {
