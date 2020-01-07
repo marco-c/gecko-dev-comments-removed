@@ -2342,6 +2342,11 @@ public:
   
 
 
+  static bool AreRetainedDisplayListsEnabled();
+
+  
+
+
 
 
 

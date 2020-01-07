@@ -3127,6 +3127,7 @@ pref("layout.display-list.retain", true);
 #else
 pref("layout.display-list.retain", false);
 #endif
+pref("layout.display-list.retain.chrome", false);
 
 
 
