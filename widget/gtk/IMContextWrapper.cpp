@@ -772,7 +772,7 @@ IMContextWrapper::SetInputContext(nsWindow* aCaller,
     mInputContext = *aContext;
 
     if (changingEnabledState) {
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
         static bool sInputPurposeSupported = !gtk_check_version(3, 6, 0);
         if (sInputPurposeSupported && mInputContext.mIMEState.MaybeEditable()) {
             GtkIMContext* currentContext = GetCurrentContext();

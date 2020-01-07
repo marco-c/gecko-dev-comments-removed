@@ -67,7 +67,7 @@ nsRetrievalContextX11::nsRetrievalContextX11()
 {
     
     
-#if (MOZ_WIDGET_GTK == 3) && defined(MOZ_X11)
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
     if (gtk_check_version(3, 11, 3))
         gdk_window_add_filter(nullptr, selection_request_filter, nullptr);
 #endif

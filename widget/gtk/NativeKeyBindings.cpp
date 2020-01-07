@@ -71,7 +71,7 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
 
   bool forward = count > 0;
 
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
   
   
   if (del_type == GTK_DELETE_PARAGRAPH_ENDS && forward && GTK_IS_ENTRY(w) &&

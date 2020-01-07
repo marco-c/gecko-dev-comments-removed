@@ -262,7 +262,7 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(nsWindowType aType)
   LayoutDeviceIntRect newBounds =
     LayoutDeviceIntRect::FromUnknownRect(viewBounds.ToNearestPixels(p2a));
 
-#if defined(XP_MACOSX) || (MOZ_WIDGET_GTK == 3)
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
   
   
   

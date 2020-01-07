@@ -171,7 +171,7 @@ nsFilePicker::nsFilePicker()
   : mSelectedType(0)
   , mRunning(false)
   , mAllowURLs(false)
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
   , mFileChooserDelegate(nullptr)
 #endif
 {
@@ -448,7 +448,7 @@ nsFilePicker::Open(nsIFilePickerShownCallback *aCallback)
       nsAutoCString directory;
       defaultPath->GetNativePath(directory);
 
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
       
       
       
@@ -585,7 +585,7 @@ nsFilePicker::Done(GtkWidget* file_chooser, gint response)
   
   gtk_widget_destroy(file_chooser);
 
-#if (MOZ_WIDGET_GTK == 3)
+#ifdef MOZ_WIDGET_GTK
       if (mFileChooserDelegate) {
         
         
