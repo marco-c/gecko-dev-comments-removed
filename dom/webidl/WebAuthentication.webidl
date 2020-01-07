@@ -44,7 +44,7 @@ dictionary PublicKeyCredentialParameters {
     required COSEAlgorithmIdentifier  alg;
 };
 
-dictionary MakePublicKeyCredentialOptions {
+dictionary PublicKeyCredentialCreationOptions {
     required PublicKeyCredentialRpEntity   rp;
     required PublicKeyCredentialUserEntity user;
 
@@ -55,7 +55,8 @@ dictionary MakePublicKeyCredentialOptions {
     sequence<PublicKeyCredentialDescriptor>      excludeCredentials = [];
     AuthenticatorSelectionCriteria               authenticatorSelection;
     AttestationConveyancePreference              attestation = "none";
-    AuthenticationExtensionsClientInputs         extensions;
+    // Extensions are not supported yet.
+    // AuthenticationExtensions                  extensions; // Add in Bug 1406458
 };
 
 dictionary PublicKeyCredentialEntity {
@@ -101,16 +102,11 @@ dictionary PublicKeyCredentialRequestOptions {
     USVString                            rpId;
     sequence<PublicKeyCredentialDescriptor> allowCredentials = [];
     UserVerificationRequirement          userVerification = "preferred";
-    AuthenticationExtensionsClientInputs extensions;
+    // Extensions are not supported yet.
+    // AuthenticationExtensions             extensions; // Add in Bug 1406458
 };
 
-dictionary AuthenticationExtensionsClientInputs {
-};
-
-dictionary AuthenticationExtensionsClientOutputs {
-};
-
-typedef record<DOMString, DOMString> AuthenticationExtensionsAuthenticatorInputs;
+typedef record<DOMString, any>       AuthenticationExtensions;
 
 dictionary CollectedClientData {
     required DOMString           type;
@@ -118,8 +114,9 @@ dictionary CollectedClientData {
     required DOMString           origin;
     required DOMString           hashAlgorithm;
     DOMString                    tokenBindingId;
-    AuthenticationExtensionsClientInputs clientExtensions;
-    AuthenticationExtensionsAuthenticatorInputs authenticatorExtensions;
+    // Extensions are not supported yet.
+    // AuthenticationExtensions     clientExtensions; // Add in Bug 1406458
+    // AuthenticationExtensions     authenticatorExtensions; // Add in Bug 1406458
 };
 
 enum PublicKeyCredentialType {
