@@ -293,8 +293,6 @@ class RefTest(object):
             prefs['reftest.repeat'] = options.repeat
         if options.runUntilFailure:
             prefs['reftest.runUntilFailure'] = True
-        if options.verify:
-            prefs['reftest.verify'] = True
         if options.cleanupCrashes:
             prefs['reftest.cleanupPendingCrashes'] = True
         prefs['reftest.focusFilterMode'] = options.focusFilterMode
@@ -715,6 +713,7 @@ class RefTest(object):
                      interactive=interactive,
                      outputTimeout=timeout)
         proc = runner.process_handler
+        outputHandler.proc_name = 'GECKO({})'.format(proc.pid)
 
         
         marionette_exception = None
@@ -751,6 +750,7 @@ class RefTest(object):
 
         status = runner.wait()
         runner.process_handler = None
+        outputHandler.proc_name = None
 
         if status:
             msg = "TEST-UNEXPECTED-FAIL | %s | application terminated with exit code %s" % \
