@@ -3,11 +3,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "ForgetAboutSite",
-                               "resource://gre/modules/ForgetAboutSite.jsm");
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
-
 
 
 
