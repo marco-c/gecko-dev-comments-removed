@@ -238,8 +238,8 @@ public:
   {
     
   }
-  
-  
+  void CaptureEvents();
+  void ReleaseEvents();
   
   already_AddRefed<mozilla::dom::Location> GetLocation() const
   {
