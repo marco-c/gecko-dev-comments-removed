@@ -147,39 +147,42 @@ class NonAllocatingMap {
     if (!key)
       return NULL;
 
-    const Entry* entry = GetConstEntryForKey(key);
-    if (!entry)
+    size_t index = GetEntryIndexForKey(key);
+    if (index == num_entries)
       return NULL;
 
-    return entry->value;
+    return entries_[index].value;
   }
 
   
   
   
   
-  void SetKeyValue(const char* key, const char* value) {
+  
+  
+  size_t SetKeyValue(const char* key, const char* value) {
     if (!value) {
       RemoveKey(key);
-      return;
+      return num_entries;
     }
 
     assert(key);
     if (!key)
-      return;
+      return num_entries;
 
     
     assert(key[0] != '\0');
     if (key[0] == '\0')
-      return;
+      return num_entries;
 
-    Entry* entry = GetEntryForKey(key);
+    size_t entry_index = GetEntryIndexForKey(key);
 
     
-    if (!entry) {
+    if (entry_index == num_entries) {
       for (size_t i = 0; i < num_entries; ++i) {
         if (!entries_[i].is_active()) {
-          entry = &entries_[i];
+          entry_index = i;
+          Entry* entry = &entries_[i];
 
           strncpy(entry->key, key, key_size);
           entry->key[key_size - 1] = '\0';
@@ -190,8 +193,8 @@ class NonAllocatingMap {
     }
 
     
-    if (!entry)
-      return;
+    if (entry_index == num_entries)
+      return num_entries;
 
 #ifndef NDEBUG
     
@@ -203,26 +206,46 @@ class NonAllocatingMap {
     assert(count == 1);
 #endif
 
+    strncpy(entries_[entry_index].value, value, value_size);
+    entries_[entry_index].value[value_size - 1] = '\0';
+
+    return entry_index;
+  }
+
+  
+  
+  void SetValueAtIndex(size_t index, const char* value) {
+    assert(index < num_entries);
+    if (index >= num_entries)
+      return;
+
+    Entry* entry = &entries_[index];
+    assert(entry->key[0] != '\0');
+
     strncpy(entry->value, value, value_size);
     entry->value[value_size - 1] = '\0';
   }
 
   
   
-  void RemoveKey(const char* key) {
+  
+  bool RemoveKey(const char* key) {
     assert(key);
     if (!key)
-      return;
+      return false;
 
-    Entry* entry = GetEntryForKey(key);
-    if (entry) {
-      entry->key[0] = '\0';
-      entry->value[0] = '\0';
-    }
+    return RemoveAtIndex(GetEntryIndexForKey(key));
+  }
 
-#ifndef NDEBUG
-    assert(GetEntryForKey(key) == NULL);
-#endif
+  
+  
+  bool RemoveAtIndex(size_t index) {
+    if (index >= num_entries)
+      return false;
+
+    entries_[index].key[0] = '\0';
+    entries_[index].value[0] = '\0';
+    return true;
   }
 
   
@@ -235,17 +258,13 @@ class NonAllocatingMap {
   }
 
  private:
-  const Entry* GetConstEntryForKey(const char* key) const {
+  size_t GetEntryIndexForKey(const char* key) const {
     for (size_t i = 0; i < num_entries; ++i) {
       if (strncmp(key, entries_[i].key, key_size) == 0) {
-        return &entries_[i];
+        return i;
       }
     }
-    return NULL;
-  }
-
-  Entry* GetEntryForKey(const char* key) {
-    return const_cast<Entry*>(GetConstEntryForKey(key));
+    return num_entries;
   }
 
   Entry entries_[NumEntries];

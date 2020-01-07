@@ -968,9 +968,20 @@ bool CrashGenerationServer::GenerateDump(const ClientInfo& client,
     dump_generator.SetCallback(&callback);
   }
 
- if (!dump_generator.GenerateDumpFile(dump_path)) {
+  if (!dump_generator.GenerateDumpFile(dump_path)) {
     return false;
   }
+
+  
+  
+  
+  if (client.dump_type() & MiniDumpWithFullMemory) {
+    std::wstring full_dump_path;
+    if (!dump_generator.GenerateFullDumpFile(&full_dump_path)) {
+      return false;
+    }
+  }
+
   return dump_generator.WriteMinidump();
 }
 

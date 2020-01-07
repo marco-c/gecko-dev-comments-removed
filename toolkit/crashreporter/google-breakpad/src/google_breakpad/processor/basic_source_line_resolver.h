@@ -100,7 +100,9 @@ class SymbolParseHelper {
   
   
   
+  
   static bool ParseFunction(char *function_line,     
+                            bool *is_multiple,       
                             uint64_t *address,       
                             uint64_t *size,          
                             long *stack_param_size,  
@@ -124,7 +126,9 @@ class SymbolParseHelper {
   
   
   
+  
   static bool ParsePublicSymbol(char *public_line,       
+                                bool *is_multiple,       
                                 uint64_t *address,       
                                 long *stack_param_size,  
                                 char **name);            

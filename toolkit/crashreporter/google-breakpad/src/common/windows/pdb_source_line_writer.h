@@ -142,7 +142,8 @@ class PDBSourceLineWriter {
   
   
   
-  bool PrintFunction(IDiaSymbol *function, IDiaSymbol *block);
+  bool PrintFunction(IDiaSymbol *function, IDiaSymbol *block,
+                     bool has_multiple_symbols);
 
   
   bool PrintFunctions();
@@ -168,7 +169,9 @@ class PDBSourceLineWriter {
   
   
   
-  bool PrintCodePublicSymbol(IDiaSymbol *symbol);
+  
+  
+  bool PrintCodePublicSymbol(IDiaSymbol *symbol, bool has_multiple_symbols);
 
   
   

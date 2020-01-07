@@ -27,6 +27,7 @@
 
 
 
+#include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <signal.h>
@@ -257,6 +258,66 @@ TEST(ExceptionHandlerTest, ChildCrashWithFD) {
   ASSERT_NO_FATAL_FAILURE(ChildCrash(true));
 }
 
+#if !defined(__ANDROID_API__) || __ANDROID_API__ >= __ANDROID_API_N__
+static void* SleepFunction(void* unused) {
+  while (true) usleep(1000000);
+  return NULL;
+}
+
+static void* CrashFunction(void* b_ptr) {
+  pthread_barrier_t* b = reinterpret_cast<pthread_barrier_t*>(b_ptr);
+  pthread_barrier_wait(b);
+  DoNullPointerDereference();
+  return NULL;
+}
+
+
+
+TEST(ExceptionHandlerTest, ParallelChildCrashesDontHang) {
+  AutoTempDir temp_dir;
+  const pid_t child = fork();
+  if (child == 0) {
+    google_breakpad::scoped_ptr<ExceptionHandler> handler(
+      new ExceptionHandler(MinidumpDescriptor(temp_dir.path()), NULL, NULL,
+                            NULL, true, -1));
+
+    
+    
+    int num_sleep_threads = 100;
+    google_breakpad::scoped_array<pthread_t> sleep_threads(
+        new pthread_t[num_sleep_threads]);
+    for (int i = 0; i < num_sleep_threads; ++i) {
+      ASSERT_EQ(0, pthread_create(&sleep_threads[i], NULL, SleepFunction,
+                                  NULL));
+    }
+
+    int num_crash_threads = 2;
+    google_breakpad::scoped_array<pthread_t> crash_threads(
+        new pthread_t[num_crash_threads]);
+    
+    pthread_barrier_t b;
+    ASSERT_EQ(0, pthread_barrier_init(&b, NULL, num_crash_threads + 1));
+    for (int i = 0; i < num_crash_threads; ++i) {
+      ASSERT_EQ(0, pthread_create(&crash_threads[i], NULL, CrashFunction, &b));
+    }
+    pthread_barrier_wait(&b);
+    for (int i = 0; i < num_crash_threads; ++i) {
+      ASSERT_EQ(0, pthread_join(crash_threads[i], NULL));
+    }
+  }
+
+  
+  usleep(1000000);
+  
+  kill(child, SIGKILL);
+
+  
+  
+  
+  ASSERT_NO_FATAL_FAILURE(WaitForProcessToTerminate(child, SIGSEGV));
+}
+#endif  
+
 static bool DoneCallbackReturnFalse(const MinidumpDescriptor& descriptor,
                                     void* context,
                                     bool succeeded) {
@@ -463,6 +524,29 @@ TEST(ExceptionHandlerTest, StackedHandlersUnhandledToBottom) {
     CrashWithCallbacks(NULL, DoneCallbackReturnFalse, temp_dir.path());
   }
   ASSERT_NO_FATAL_FAILURE(WaitForProcessToTerminate(child, SIGKILL));
+}
+
+namespace {
+const int kSimpleFirstChanceReturnStatus = 42;
+bool SimpleFirstChanceHandler(int, void*, void*) {
+  _exit(kSimpleFirstChanceReturnStatus);
+}
+}
+
+TEST(ExceptionHandlerTest, FirstChanceHandlerRuns) {
+  AutoTempDir temp_dir;
+
+  const pid_t child = fork();
+  if (child == 0) {
+    ExceptionHandler handler(
+        MinidumpDescriptor(temp_dir.path()), NULL, NULL, NULL, true, -1);
+    google_breakpad::SetFirstChanceExceptionHandler(SimpleFirstChanceHandler);
+    DoNullPointerDereference();
+  }
+  int status;
+  ASSERT_NE(HANDLE_EINTR(waitpid(child, &status, 0)), -1);
+  ASSERT_TRUE(WIFEXITED(status));
+  ASSERT_EQ(kSimpleFirstChanceReturnStatus, WEXITSTATUS(status));
 }
 
 #endif  

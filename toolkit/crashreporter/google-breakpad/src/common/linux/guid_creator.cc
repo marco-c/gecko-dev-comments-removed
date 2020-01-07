@@ -1,49 +1,60 @@
-// Copyright (c) 2006, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "common/linux/eintr_wrapper.h"
 #include "common/linux/guid_creator.h"
 
 #include <assert.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
-//
-// GUIDGenerator
-//
-// This class is used to generate random GUID.
-// Currently use random number to generate a GUID since Linux has
-// no native GUID generator. This should be OK since we don't expect
-// crash to happen very offen.
-//
+#if defined(HAVE_SYS_RANDOM_H)
+#include <sys/random.h>
+#endif
+
+
+
+
+
+
+
+
+
 class GUIDGenerator {
  public:
   static uint32_t BytesToUInt32(const uint8_t bytes[]) {
@@ -61,36 +72,109 @@ class GUIDGenerator {
   }
 
   static bool CreateGUID(GUID *guid) {
-    InitOnce();
-    guid->data1 = random();
-    guid->data2 = (uint16_t)(random());
-    guid->data3 = (uint16_t)(random());
-    UInt32ToBytes(&guid->data4[0], random());
-    UInt32ToBytes(&guid->data4[4], random());
+#if defined(HAVE_ARC4RANDOM) 
+    CreateGuidFromArc4Random(guid);
+#else 
+    bool success = false;
+
+#if defined(HAVE_SYS_RANDOM_H) && defined(HAVE_GETRANDOM)
+    success = CreateGUIDFromGetrandom(guid);
+#endif 
+    if (!success) {
+      success = CreateGUIDFromDevUrandom(guid);
+    }
+
+    if (!success) {
+      CreateGUIDFromRand(guid);
+      success = true;
+    }
+#endif
+
+    
+    guid->data3 &= 0x0fff;
+    guid->data3 |= 0x4000;
+
+    
+    guid->data4[0] &= 0x3f;
+    guid->data4[0] |= 0x80;
+
     return true;
   }
 
  private:
+#ifdef HAVE_ARC4RANDOM
+  static void CreateGuidFromArc4Random(GUID *guid) {
+    char *buf = reinterpret_cast<char *>(guid);
+
+    for (size_t i = 0; i < sizeof(GUID); i += sizeof(uint32_t)) {
+      uint32_t random_data = arc4random();
+
+      memcpy(buf + i, &random_data, sizeof(uint32_t));
+    }
+  }
+#else
   static void InitOnce() {
     pthread_once(&once_control, &InitOnceImpl);
   }
 
   static void InitOnceImpl() {
-    srandom(time(NULL));
+    
+    
+    
+    srand(time(NULL) | ((uintptr_t)&once_control >> 4));
   }
 
   static pthread_once_t once_control;
+
+#if defined(HAVE_SYS_RANDOM_H) && defined(HAVE_GETRANDOM)
+  static bool CreateGUIDFromGetrandom(GUID *guid) {
+    char *buf = reinterpret_cast<char *>(guid);
+    int read_bytes = getrandom(buf, sizeof(GUID), GRND_NONBLOCK);
+
+    return (read_bytes == static_cast<int>(sizeof(GUID)));
+  }
+#endif 
+
+  
+  
+  static bool CreateGUIDFromDevUrandom(GUID *guid) {
+    char *buf = reinterpret_cast<char *>(guid);
+    int fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
+
+    if (fd == -1) {
+      return false;
+    }
+
+    ssize_t read_bytes = HANDLE_EINTR(read(fd, buf, sizeof(GUID)));
+    close(fd);
+
+    return (read_bytes == static_cast<ssize_t>(sizeof(GUID)));
+  }
+
+  
+  static void CreateGUIDFromRand(GUID *guid) {
+    char *buf = reinterpret_cast<char *>(guid);
+
+    InitOnce();
+
+    for (size_t i = 0; i < sizeof(GUID); i++) {
+      buf[i] = rand();
+    }
+  }
+#endif
 };
 
+#ifndef HAVE_ARC4RANDOM
 pthread_once_t GUIDGenerator::once_control = PTHREAD_ONCE_INIT;
+#endif
 
 bool CreateGUID(GUID *guid) {
   return GUIDGenerator::CreateGUID(guid);
 }
 
-// Parse guid to string.
+
 bool GUIDToString(const GUID *guid, char *buf, int buf_len) {
-  // Should allow more space the the max length of GUID.
+  
   assert(buf_len > kGUIDStringLength);
   int num = snprintf(buf, buf_len, kGUIDFormatString,
                      guid->data1, guid->data2, guid->data3,

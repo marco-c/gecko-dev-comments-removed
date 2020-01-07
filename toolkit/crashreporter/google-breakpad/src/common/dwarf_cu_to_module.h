@@ -202,7 +202,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
     virtual void UnnamedFunction(uint64 offset);
 
     
-    virtual void DemangleError(const string &input, int error);
+    virtual void DemangleError(const string &input);
 
     
     

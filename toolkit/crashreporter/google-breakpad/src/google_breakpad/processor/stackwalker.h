@@ -89,7 +89,9 @@ class Stackwalker {
      DumpContext* context,
      MemoryRegion* memory,
      const CodeModules* modules,
+     const CodeModules* unloaded_modules,
      StackFrameSymbolizer* resolver_helper);
+
 
   static void set_max_frames(uint32_t max_frames) {
     max_frames_ = max_frames;
@@ -124,7 +126,15 @@ class Stackwalker {
   
   
   
-  bool InstructionAddressSeemsValid(uint64_t address);
+  bool InstructionAddressSeemsValid(uint64_t address) const;
+
+  
+  
+  
+  bool TerminateWalk(uint64_t caller_ip,
+                     uint64_t caller_sp,
+                     uint64_t callee_sp,
+                     bool first_unwind) const;
 
   
   
@@ -189,6 +199,11 @@ class Stackwalker {
   
   const CodeModules* modules_;
 
+  
+  
+  
+  const CodeModules* unloaded_modules_;
+
  protected:
   
   StackFrameSymbolizer* frame_symbolizer_;
@@ -200,6 +215,13 @@ class Stackwalker {
   
   virtual StackFrame* GetContextFrame() = 0;
 
+  
+  
+  
+  
+  
+  
+  
   
   
   

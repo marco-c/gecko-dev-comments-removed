@@ -262,7 +262,7 @@ class ExceptionHandler {
   
   
   
-  int fdes[2];
+  int fdes[2] = {-1, -1};
 
   
   
@@ -272,6 +272,10 @@ class ExceptionHandler {
   
   AppMemoryList app_memory_list_;
 };
+
+
+typedef bool (*FirstChanceHandler)(int, void*, void*);
+void SetFirstChanceExceptionHandler(FirstChanceHandler callback);
 
 }  
 

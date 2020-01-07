@@ -85,9 +85,10 @@ struct SourceLineResolverBase::Function {
   Function(const string &function_name,
            MemAddr function_address,
            MemAddr code_size,
-           int set_parameter_size)
+           int set_parameter_size,
+           bool is_multiple)
       : name(function_name), address(function_address), size(code_size),
-        parameter_size(set_parameter_size) { }
+        parameter_size(set_parameter_size), is_multiple(is_multiple) { }
 
   string name;
   MemAddr address;
@@ -95,16 +96,21 @@ struct SourceLineResolverBase::Function {
 
   
   int32_t parameter_size;
+
+  
+  bool is_multiple;
 };
 
 struct SourceLineResolverBase::PublicSymbol {
   PublicSymbol() { }
   PublicSymbol(const string& set_name,
                MemAddr set_address,
-               int set_parameter_size)
+               int set_parameter_size,
+               bool is_multiple)
       : name(set_name),
         address(set_address),
-        parameter_size(set_parameter_size) {}
+        parameter_size(set_parameter_size),
+        is_multiple(is_multiple) {}
 
   string name;
   MemAddr address;
@@ -113,6 +119,9 @@ struct SourceLineResolverBase::PublicSymbol {
   
   
   int32_t parameter_size;
+
+  
+  bool is_multiple;
 };
 
 class SourceLineResolverBase::Module {

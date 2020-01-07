@@ -39,9 +39,6 @@
 #include "common/dwarf_cu_to_module.h"
 
 #include <assert.h>
-#if !defined(__ANDROID__)
-#include <cxxabi.h>
-#endif
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -354,22 +351,23 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeString(
     case dwarf2reader::DW_AT_name:
       name_attribute_ = AddStringToPool(data);
       break;
-    case dwarf2reader::DW_AT_linkage_name:
-    case dwarf2reader::DW_AT_MIPS_linkage_name: {
-      char* demangled = NULL;
-      int status = -1;
-#if !defined(__ANDROID__)  
-      demangled = abi::__cxa_demangle(data.c_str(), NULL, NULL, &status);
-#endif
-      if (status != 0) {
-        cu_context_->reporter->DemangleError(data, status);
-        demangled_name_ = "";
-        raw_name_ = AddStringToPool(data);
-        break;
-      }
-      if (demangled) {
-        demangled_name_ = AddStringToPool(demangled);
-        free(reinterpret_cast<void*>(demangled));
+    case dwarf2reader::DW_AT_MIPS_linkage_name:
+    case dwarf2reader::DW_AT_linkage_name: {
+      string demangled;
+      Language::DemangleResult result =
+          cu_context_->language->DemangleName(data, &demangled);
+      switch (result) {
+        case Language::kDemangleSuccess:
+          demangled_name_ = AddStringToPool(demangled);
+          break;
+
+        case Language::kDemangleFailure:
+          cu_context_->reporter->DemangleError(data);
+          
+        case Language::kDontDemangle:
+          demangled_name_.clear();
+          raw_name_ = AddStringToPool(data);
+          break;
       }
       break;
     }
@@ -684,11 +682,10 @@ void DwarfCUToModule::WarningReporter::UnnamedFunction(uint64 offset) {
           filename_.c_str(), offset);
 }
 
-void DwarfCUToModule::WarningReporter::DemangleError(
-    const string &input, int error) {
+void DwarfCUToModule::WarningReporter::DemangleError(const string &input) {
   CUHeading();
-  fprintf(stderr, "%s: warning: failed to demangle %s with error %d\n",
-          filename_.c_str(), input.c_str(), error);
+  fprintf(stderr, "%s: warning: failed to demangle %s\n",
+          filename_.c_str(), input.c_str());
 }
 
 void DwarfCUToModule::WarningReporter::UnhandledInterCUReference(
@@ -769,6 +766,7 @@ dwarf2reader::DIEHandler *DwarfCUToModule::FindChildHandler(
     case dwarf2reader::DW_TAG_class_type:
     case dwarf2reader::DW_TAG_structure_type:
     case dwarf2reader::DW_TAG_union_type:
+    case dwarf2reader::DW_TAG_module:
       return new NamedScopeHandler(cu_context_.get(), child_context_.get(),
                                    offset);
     default:
@@ -780,6 +778,14 @@ void DwarfCUToModule::SetLanguage(DwarfLanguage language) {
   switch (language) {
     case dwarf2reader::DW_LANG_Java:
       cu_context_->language = Language::Java;
+      break;
+
+    case dwarf2reader::DW_LANG_Swift:
+      cu_context_->language = Language::Swift;
+      break;
+
+    case dwarf2reader::DW_LANG_Rust:
+      cu_context_->language = Language::Rust;
       break;
 
     

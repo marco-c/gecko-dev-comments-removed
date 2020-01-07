@@ -346,7 +346,11 @@ typedef enum {
   MD_LINUX_ENVIRON               = 0x47670007,  
   MD_LINUX_AUXV                  = 0x47670008,  
   MD_LINUX_MAPS                  = 0x47670009,  
-  MD_LINUX_DSO_DEBUG             = 0x4767000A   
+  MD_LINUX_DSO_DEBUG             = 0x4767000A,  
+
+  
+
+  MD_CRASHPAD_INFO_STREAM        = 0x43500001,  
 } MDStreamType;  
 
 
@@ -675,6 +679,20 @@ typedef enum {
   MD_OS_PS3           = 0x8204,  
   MD_OS_NACL          = 0x8205   
 } MDOSPlatform;
+
+typedef struct {
+  uint64_t base_of_image;
+  uint32_t size_of_image;
+  uint32_t checksum;
+  uint32_t time_date_stamp;
+  MDRVA module_name_rva;
+} MDRawUnloadedModule;
+
+typedef struct {
+  uint32_t size_of_header;
+  uint32_t size_of_entry;
+  uint32_t number_of_entries;
+} MDRawUnloadedModuleList;  
 
 typedef struct {
   uint16_t year;
@@ -1036,6 +1054,42 @@ typedef struct {
   uint64_t  ldbase;
   uint64_t  dynamic;
 } MDRawDebug64;
+
+
+
+typedef struct {
+  MDRVA key;
+  MDRVA value;
+} MDRawSimpleStringDictionaryEntry;
+
+typedef struct {
+  uint32_t count;
+  MDRawSimpleStringDictionaryEntry entries[0];
+} MDRawSimpleStringDictionary;
+
+typedef struct {
+  uint32_t version;
+  MDLocationDescriptor list_annotations;
+  MDLocationDescriptor simple_annotations;  
+} MDRawModuleCrashpadInfo;
+
+typedef struct {
+  uint32_t minidump_module_list_index;
+  MDLocationDescriptor location;  
+} MDRawModuleCrashpadInfoLink;
+
+typedef struct {
+  uint32_t count;
+  MDLocationDescriptor modules[0];  
+} MDRawModuleCrashpadInfoList;
+
+typedef struct {
+  uint32_t version;
+  MDGUID report_id;
+  MDGUID client_id;
+  MDLocationDescriptor simple_annotations;  
+  MDLocationDescriptor module_list;  
+} MDRawCrashpadInfo;
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
