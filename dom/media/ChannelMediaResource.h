@@ -231,7 +231,11 @@ protected:
   nsresult ParseContentRangeHeader(nsIHttpChannel * aHttpChan,
                                    int64_t& aRangeStart,
                                    int64_t& aRangeEnd,
-                                   int64_t& aRangeTotal);
+                                   int64_t& aRangeTotal) const;
+
+  
+  
+  int64_t CalculateStreamLength() const;
 
   struct Closure
   {
