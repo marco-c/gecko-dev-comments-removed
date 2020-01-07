@@ -3223,11 +3223,35 @@ class PinnedStringId
   }
 };
 
-bool
-GenericBindingGetter(JSContext* cx, unsigned argc, JS::Value* vp);
+namespace binding_detail {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename ThisPolicy, typename ExceptionPolicy>
 bool
-GenericPromiseReturningBindingGetter(JSContext* cx, unsigned argc, JS::Value* vp);
+GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp);
+
+
+struct NormalThisPolicy;
+
+
+struct ThrowExceptions;
+
+
+struct ConvertExceptionsToPromises;
+} 
 
 bool
 GenericBindingSetter(JSContext* cx, unsigned argc, JS::Value* vp);
