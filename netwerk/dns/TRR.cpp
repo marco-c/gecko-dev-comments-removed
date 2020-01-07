@@ -824,7 +824,7 @@ nsresult
 TRR::ReturnData()
 {
   
-  nsAutoPtr<AddrInfo> ai(new AddrInfo(mHost.get(), mType));
+  nsAutoPtr<AddrInfo> ai(new AddrInfo(mHost, mType));
   DOHaddr *item;
   uint32_t ttl = AddrInfo::NO_TTL_DATA;
   while ((item = static_cast<DOHaddr*>(mDNS.mAddresses.popFirst()))) {
@@ -857,7 +857,7 @@ TRR::FailData()
   }
   
   
-  AddrInfo *ai = new AddrInfo(mHost.get(), mType);
+  AddrInfo *ai = new AddrInfo(mHost, mType);
 
   (void)mHostResolver->CompleteLookup(mRec, NS_ERROR_FAILURE, ai, mPB);
   mHostResolver = nullptr;
