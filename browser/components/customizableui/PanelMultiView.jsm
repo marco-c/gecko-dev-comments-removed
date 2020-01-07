@@ -703,6 +703,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 
+
+
+
   async _openView(panelView) {
     if (panelView.node.parentNode != this._viewStack) {
       this._viewStack.appendChild(panelView.node);
@@ -729,6 +732,13 @@ var PanelMultiView = class extends this.AssociatedToNode {
       return false;
     }
 
+    
+    
+    
+    let { style } = panelView.node;
+    style.removeProperty("outline");
+    style.removeProperty("width");
+
     return true;
   }
 
@@ -754,6 +764,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     panelView.clearNavigation();
     panelView.dispatchCustomEvent("ViewHiding");
     panelView.node.panelMultiView = null;
+    
     
     
     panelView.visible = false;
@@ -805,7 +816,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     let details = this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
-      previousViewNode, viewNode, reverse, anchor
+      anchor
     };
 
     if (anchor)
@@ -936,17 +947,17 @@ var PanelMultiView = class extends this.AssociatedToNode {
     });
 
     
-    if (nextPanelView.isOpenIn(this)) {
-      prevPanelView.visible = false;
+    if (!nextPanelView.isOpenIn(this)) {
+      return;
     }
+    prevPanelView.visible = false;
 
     
+    nextPanelView.node.style.removeProperty("width");
+    deepestNode.style.removeProperty("outline");
     this._cleanupTransitionPhase(details);
 
-    
-    if (nextPanelView.isOpenIn(this)) {
-      nextPanelView.focusSelectedElement();
-    }
+    nextPanelView.focusSelectedElement();
   }
 
   
@@ -962,7 +973,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     if (!details || !this.node)
       return;
 
-    let {phase, previousViewNode, viewNode, reverse, resolve, listener, cancelListener, anchor} = details;
+    let {phase, resolve, listener, cancelListener, anchor} = details;
     if (details == this._transitionDetails)
       this._transitionDetails = null;
 
@@ -987,15 +998,11 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
     if (phase >= TRANSITION_PHASES.PREPARE) {
       this._transitioning = false;
-      if (reverse)
-        this._viewStack.style.removeProperty("margin-inline-start");
-      let deepestNode = reverse ? previousViewNode : viewNode;
-      deepestNode.style.removeProperty("outline");
+      this._viewStack.style.removeProperty("margin-inline-start");
       this._viewStack.style.removeProperty("transition");
     }
     if (phase >= TRANSITION_PHASES.TRANSITION) {
       this._viewStack.style.removeProperty("transform");
-      viewNode.style.removeProperty("width");
       if (listener)
         this._viewContainer.removeEventListener("transitionend", listener);
       if (cancelListener)
