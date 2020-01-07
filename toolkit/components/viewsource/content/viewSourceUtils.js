@@ -217,42 +217,27 @@ var gViewSourceUtils = {
           this.viewSourceProgressListener.resolve = resolve;
           this.viewSourceProgressListener.reject = reject;
           this.viewSourceProgressListener.data = data;
-          if (!data.pageDescriptor) {
-            
-            var file = this.getTemporaryFile(uri, data.doc, contentType);
-            this.viewSourceProgressListener.file = file;
 
-            var webBrowserPersist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-              .createInstance(this.mnsIWebBrowserPersist);
-            
-            webBrowserPersist.persistFlags = this.mnsIWebBrowserPersist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
-            webBrowserPersist.progressListener = this.viewSourceProgressListener;
-            let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER;
-            webBrowserPersist.savePrivacyAwareURI(uri, null, null, referrerPolicy, null, null, file, data.isPrivate);
+          
+          var file = this.getTemporaryFile(uri, data.doc, contentType);
+          this.viewSourceProgressListener.file = file;
 
-            let helperService = Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
-              .getService(Ci.nsPIExternalAppLauncher);
-            if (data.isPrivate) {
-              
-              helperService.deleteTemporaryPrivateFileWhenPossible(file);
-            } else {
-              
-              helperService.deleteTemporaryFileOnExit(file);
-            }
+          var webBrowserPersist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+            .createInstance(this.mnsIWebBrowserPersist);
+          
+          webBrowserPersist.persistFlags = this.mnsIWebBrowserPersist.PERSIST_FLAGS_REPLACE_EXISTING_FILES;
+          webBrowserPersist.progressListener = this.viewSourceProgressListener;
+          let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER;
+          webBrowserPersist.savePrivacyAwareURI(uri, null, null, referrerPolicy, null, null, file, data.isPrivate);
+
+          let helperService = Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
+            .getService(Ci.nsPIExternalAppLauncher);
+          if (data.isPrivate) {
+            
+            helperService.deleteTemporaryPrivateFileWhenPossible(file);
           } else {
             
-            
-            
-            
-            
-            var webShell = Cc["@mozilla.org/docshell;1"].createInstance();
-            webShell.QueryInterface(Ci.nsIBaseWindow).create();
-            this.viewSourceProgressListener.webShell = webShell;
-            var progress = webShell.QueryInterface(this.mnsIWebProgress);
-            progress.addProgressListener(this.viewSourceProgressListener,
-              this.mnsIWebProgress.NOTIFY_STATE_DOCUMENT);
-            var pageLoader = webShell.QueryInterface(this.mnsIWebPageDescriptor);
-            pageLoader.loadPage(data.pageDescriptor, this.mnsIWebPageDescriptor.DISPLAY_AS_SOURCE);
+            helperService.deleteTemporaryFileOnExit(file);
           }
         }
       } catch (ex) {
