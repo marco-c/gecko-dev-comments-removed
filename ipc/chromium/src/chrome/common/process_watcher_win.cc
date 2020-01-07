@@ -8,6 +8,7 @@
 
 #include "base/message_loop.h"
 #include "base/object_watcher.h"
+#include "base/sys_info.h"
 
 
 static const int kWaitInterval = 2000;

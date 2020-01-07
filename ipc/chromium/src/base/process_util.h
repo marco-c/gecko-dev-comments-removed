@@ -168,6 +168,15 @@ bool LaunchApp(const CommandLine& cl,
                ProcessHandle* process_handle);
 
 
+class ProcessFilter {
+ public:
+  
+  
+  virtual bool Includes(ProcessId pid, ProcessId parent_pid) const = 0;
+  virtual ~ProcessFilter() { }
+};
+
+
 
 
 
@@ -181,6 +190,40 @@ bool KillProcess(ProcessHandle process, int exit_code, bool wait);
 
 
 bool DidProcessCrash(bool* child_exited, ProcessHandle handle);
+
+
+
+
+
+class ProcessMetrics {
+ public:
+  
+  
+  static ProcessMetrics* CreateProcessMetrics(ProcessHandle process);
+
+  ~ProcessMetrics();
+
+  
+  
+  
+  
+  
+  
+  int GetCPUUsage();
+
+ private:
+  explicit ProcessMetrics(ProcessHandle process);
+
+  ProcessHandle process_;
+
+  int processor_count_;
+
+  
+  int64_t last_time_;
+  int64_t last_system_time_;
+
+  DISALLOW_EVIL_CONSTRUCTORS(ProcessMetrics);
+};
 
 }  
 

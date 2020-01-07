@@ -45,6 +45,7 @@
 #include "base/basictypes.h"
 #include "base/lock.h"
 #include "base/logging.h"
+#include "base/cpu.h"
 #include "base/singleton.h"
 #include "mozilla/Casting.h"
 
@@ -255,6 +256,105 @@ class NowSingleton {
   DISALLOW_COPY_AND_ASSIGN(NowSingleton);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class HighResNowSingleton {
+ public:
+  HighResNowSingleton()
+    : ticks_per_microsecond_(0.0),
+      skew_(0) {
+    InitializeClock();
+
+    
+    
+    base::CPU cpu;
+    if (cpu.vendor_name() == "AuthenticAMD" && cpu.family() == 15)
+      DisableHighResClock();
+  }
+
+  bool IsUsingHighResClock() {
+    return ticks_per_microsecond_ != 0.0;
+  }
+
+  void DisableHighResClock() {
+    ticks_per_microsecond_ = 0.0;
+  }
+
+  TimeDelta Now() {
+    
+    const int kMaxTimeDrift = 50 * Time::kMicrosecondsPerMillisecond;
+
+    if (IsUsingHighResClock()) {
+      int64_t now = UnreliableNow();
+
+      
+      DCHECK(now - ReliableNow() - skew_ < kMaxTimeDrift);
+
+      return TimeDelta::FromMicroseconds(now);
+    }
+
+    
+    return Singleton<NowSingleton>::get()->Now();
+  }
+
+ private:
+  
+  void InitializeClock() {
+    LARGE_INTEGER ticks_per_sec = {{0}};
+    if (!QueryPerformanceFrequency(&ticks_per_sec))
+      return;  
+    ticks_per_microsecond_ = static_cast<float>(ticks_per_sec.QuadPart) /
+      static_cast<float>(Time::kMicrosecondsPerSecond);
+
+    skew_ = UnreliableNow() - ReliableNow();
+  }
+
+  
+  int64_t UnreliableNow() {
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+    return static_cast<int64_t>(now.QuadPart / ticks_per_microsecond_);
+  }
+
+  
+  int64_t ReliableNow() {
+    return Singleton<NowSingleton>::get()->Now().InMicroseconds();
+  }
+
+  
+  
+  float ticks_per_microsecond_;  
+  int64_t skew_;  
+
+  DISALLOW_COPY_AND_ASSIGN(HighResNowSingleton);
+};
+
 }  
 
 
@@ -268,4 +368,9 @@ TimeTicks::TickFunctionType TimeTicks::SetMockTickFunction(
 
 TimeTicks TimeTicks::Now() {
   return TimeTicks() + Singleton<NowSingleton>::get()->Now();
+}
+
+
+TimeTicks TimeTicks::HighResNow() {
+  return TimeTicks() + Singleton<HighResNowSingleton>::get()->Now();
 }
