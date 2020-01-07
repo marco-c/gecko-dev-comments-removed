@@ -55,6 +55,10 @@ public:
     layers::AutoCompleteTask complete(mTask);
 
     UniquePtr<RenderCompositor> compositor = RenderCompositor::Create(Move(mCompositorWidget));
+    if (!compositor) {
+      
+      return;
+    }
 
     *mUseANGLE = compositor->UseANGLE();
 
