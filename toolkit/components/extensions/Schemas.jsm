@@ -726,11 +726,15 @@ class InjectionEntry {
 
 
 class InjectionContext extends Context {
-  constructor(params) {
+  constructor(params, schemaRoot) {
     super(params, CONTEXT_FOR_INJECTION);
+
+    this.schemaRoot = schemaRoot;
 
     this.pendingEntries = new Set();
     this.children = new DefaultWeakMap(() => new Map());
+
+    this.injectedRoots = new Set();
 
     if (params.setPermissionsChangedCallback) {
       params.setPermissionsChangedCallback(
@@ -2633,7 +2637,8 @@ class Namespace extends Map {
   getDescriptor(path, context) {
     let obj = Cu.createObjectIn(context.cloneScope);
 
-    this.injectInto(obj, context);
+    let ns = context.schemaRoot.getNamespace(this.path.join("."));
+    ns.injectInto(obj, context);
 
     
     if (Object.keys(obj).length) {
@@ -2721,6 +2726,76 @@ class Namespace extends Map {
 
 
 
+class Namespaces extends Namespace {
+  constructor(root, name, path, namespaces) {
+    super(root, name, path);
+
+    this.namespaces = namespaces;
+  }
+
+  injectInto(obj, context) {
+    for (let ns of this.namespaces) {
+      ns.injectInto(obj, context);
+    }
+  }
+}
+
+
+
+
+
+class SchemaRoots extends Namespaces {
+  constructor(root, bases) {
+    bases = bases.map(base => base.rootSchema || base);
+
+    super(null, "", [], bases);
+
+    this.root = root;
+    this.bases = bases;
+    this._namespaces = new Map();
+  }
+
+  _getNamespace(name, create) {
+    let results = [];
+    for (let root of this.bases) {
+      let ns = root.getNamespace(name, create);
+      if (ns) {
+        results.push(ns);
+      }
+    }
+
+    if (results.length == 1) {
+      return results[0];
+    }
+
+    if (results.length > 0) {
+      return new Namespaces(this.root, name, name.split("."), results);
+    }
+    return null;
+  }
+
+  getNamespace(name, create) {
+    let ns = this._namespaces.get(name);
+    if (!ns) {
+      ns = this._getNamespace(name, create);
+      if (ns) {
+        this._namespaces.set(name, ns);
+      }
+    }
+    return ns;
+  }
+
+  * getNamespaces(name) {
+    for (let root of this.bases) {
+      yield* root.getNamespaces(name);
+    }
+  }
+}
+
+
+
+
+
 
 
 
@@ -2732,9 +2807,26 @@ class SchemaRoot extends Namespace {
   constructor(base, schemaJSON) {
     super(null, "", []);
 
+    if (Array.isArray(base)) {
+      base = new SchemaRoots(this, base);
+    }
+
     this.root = this;
     this.base = base;
     this.schemaJSON = schemaJSON;
+  }
+
+  * getNamespaces(path) {
+    let name = path.join(".");
+
+    let ns = this.getNamespace(name, false);
+    if (ns) {
+      yield ns;
+    }
+
+    if (this.base) {
+      yield* this.base.getNamespaces(name);
+    }
   }
 
   
@@ -2750,11 +2842,16 @@ class SchemaRoot extends Namespace {
 
 
   getNamespace(name, create = true) {
-    let res = this.base && this.base.getNamespace(name, false);
-    if (res) {
-      return res;
+    let ns = super.getNamespace(name, false);
+    if (ns) {
+      return ns;
     }
-    return super.getNamespace(name, create);
+
+    ns = this.base && this.base.getNamespace(name, false);
+    if (ns) {
+      return ns;
+    }
+    return create && super.getNamespace(name, create);
   }
 
   
@@ -2854,12 +2951,22 @@ class SchemaRoot extends Namespace {
 
 
   inject(dest, wrapperFuncs) {
-    let context = new InjectionContext(wrapperFuncs);
+    let context = new InjectionContext(wrapperFuncs, this);
 
-    if (this.base) {
-      this.base.injectInto(dest, context);
-    }
     this.injectInto(dest, context);
+  }
+
+  injectInto(dest, context) {
+    
+    
+
+    if (!context.injectedRoots.has(this)) {
+      context.injectedRoots.add(this);
+      if (this.base) {
+        this.base.injectInto(dest, context);
+      }
+      super.injectInto(dest, context);
+    }
   }
 
   
