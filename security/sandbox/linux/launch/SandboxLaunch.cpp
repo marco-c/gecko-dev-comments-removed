@@ -34,7 +34,69 @@
 #include "prenv.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 
+#ifdef MOZ_X11
+#ifndef MOZ_WIDGET_GTK
+#error "Unknown toolkit"
+#endif
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+#include "X11UndefineNone.h"
+#include "gfxPlatform.h"
+#endif
+
 namespace mozilla {
+
+
+
+
+
+
+
+
+
+static bool
+IsDisplayLocal()
+{
+  
+  
+  
+  
+#ifdef MOZ_X11
+  
+  Unused << gfxPlatform::GetPlatform();
+
+  const auto display = gdk_display_get_default();
+  if (NS_WARN_IF(display == nullptr)) {
+    return false;
+  }
+  if (GDK_IS_X11_DISPLAY(display)) {
+    const int xSocketFd = ConnectionNumber(GDK_DISPLAY_XDISPLAY(display));
+    if (NS_WARN_IF(xSocketFd < 0)) {
+      return false;
+    }
+
+    int domain;
+    socklen_t optlen = static_cast<socklen_t>(sizeof(domain));
+    int rv = getsockopt(xSocketFd, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+    if (NS_WARN_IF(rv != 0)) {
+      return false;
+    }
+    MOZ_RELEASE_ASSERT(static_cast<size_t>(optlen) == sizeof(domain));
+    
+    
+    
+    
+    
+    
+    
+    return domain == AF_LOCAL;
+  }
+#endif
+
+  
+  
+  return true;
+}
 
 static void
 PreloadSandboxLib(base::environment_map* aEnv)
@@ -157,15 +219,18 @@ SandboxLaunchPrepare(GeckoProcessType aType,
     
     
 
+    if (level >= 4) {
+      
+      
+      
+      static const bool isDisplayLocal = IsDisplayLocal();
+      if (isDisplayLocal) {
+        flags |= CLONE_NEWNET;
+      }
+    }
     
     
-    if (Preferences::GetBool("security.sandbox.content.force-namespace",
-#ifdef NIGHTLY_BUILD
-                             true
-#else
-                             false
-#endif
-          )) {
+    if (Preferences::GetBool("security.sandbox.content.force-namespace", false)) {
       flags |= CLONE_NEWUSER;
     }
     break;
