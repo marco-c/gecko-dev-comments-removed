@@ -850,9 +850,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     let nextPanelView = PanelView.forNode(viewNode);
     let prevPanelView = PanelView.forNode(previousViewNode);
 
-    if (this._autoResizeWorkaroundTimer)
-      window.clearTimeout(this._autoResizeWorkaroundTimer);
-
     let details = this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
     };
@@ -1007,16 +1004,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
     if (phase >= TRANSITION_PHASES.START) {
       this._panel.removeAttribute("width");
       this._panel.removeAttribute("height");
-      
-      
-      
-      
-      this._autoResizeWorkaroundTimer = this.window.setTimeout(() => {
-        if (!this._viewContainer)
-          return;
-        this._viewContainer.style.removeProperty("height");
-        this._viewContainer.style.removeProperty("width");
-      }, 500);
+      this._viewContainer.style.removeProperty("height");
+      this._viewContainer.style.removeProperty("width");
     }
     if (phase >= TRANSITION_PHASES.PREPARE) {
       this._transitioning = false;
