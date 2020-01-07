@@ -11,24 +11,31 @@
 #pragma comment(lib, "wintrust.lib")
 #pragma comment(lib, "crypt32.lib")
 
-#ifdef UNICODE
-
-#ifndef _T
-#define __T(x)   L ## x
-#define _T(x)    __T(x)
-#define _TEXT(x) __T(x)
+#ifndef UNICODE
+#error "This file only supports building in Unicode mode"
 #endif
-
-#else
-
-#ifndef _T
-#define _T(x)    x
-#define _TEXT(x) x
-#endif
-
-#endif 
 
 static const int ENCODING = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
+
+
+
+enum NSPIM
+{
+  NSPIM_UNLOAD,
+  NSPIM_GUIUNLOAD,
+};
+
+typedef UINT_PTR(*NSISPLUGINCALLBACK)(enum NSPIM);
+
+struct extra_parameters
+{
+  
+  
+  void* exec_flags;
+  int (__stdcall *ExecuteCodeSegment)(int, HWND);
+  void (__stdcall *validate_filename)(TCHAR*);
+  int (__stdcall *RegisterPluginCallback)(HMODULE, NSISPLUGINCALLBACK);
+};
 
 typedef struct _stack_t {
   struct _stack_t *next;
@@ -40,9 +47,35 @@ void pushstring(stack_t **stacktop, LPCTSTR str, int len);
 
 struct CertificateCheckInfo
 {
-  LPCWSTR name;
-  LPCWSTR issuer;
+  wchar_t filePath[MAX_PATH];
+  wchar_t name[MAX_PATH];
+  wchar_t issuer[MAX_PATH];
 };
+
+static HINSTANCE gHInst;
+static HANDLE gCheckThread;
+static HANDLE gCheckEvent;
+static bool gCheckTrustPassed;
+static bool gCheckAttributesPassed;
+
+
+
+
+UINT_PTR __cdecl
+NSISPluginCallback(NSPIM event)
+{
+  if (event == NSPIM_UNLOAD){
+    if (gCheckThread != NULL &&
+        WaitForSingleObject(gCheckThread, 0) != WAIT_OBJECT_0) {
+      TerminateThread(gCheckThread, ERROR_OPERATION_ABORTED);
+    }
+    CloseHandle(gCheckThread);
+    gCheckThread = NULL;
+    CloseHandle(gCheckEvent);
+    gCheckEvent = NULL;
+  }
+  return NULL;
+}
 
 
 
@@ -54,7 +87,7 @@ struct CertificateCheckInfo
 
 BOOL
 DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
-                             CertificateCheckInfo &infoToMatch)
+                             CertificateCheckInfo* infoToMatch)
 {
   DWORD dwData;
   LPTSTR szName = NULL;
@@ -83,8 +116,8 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
   }
 
   
-  if (!infoToMatch.issuer ||
-      wcscmp(szName, infoToMatch.issuer)) {
+  if (!infoToMatch->issuer ||
+      wcscmp(szName, infoToMatch->issuer)) {
     LocalFree(szName);
     return FALSE;
   }
@@ -113,8 +146,8 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
   }
 
   
-  if (!infoToMatch.name ||
-      wcscmp(szName, infoToMatch.name)) {
+  if (!infoToMatch->name ||
+      wcscmp(szName, infoToMatch->name)) {
     LocalFree(szName);
     return FALSE;
   }
@@ -134,10 +167,8 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
 
 
 
-
 DWORD
-CheckCertificateForPEFile(LPCWSTR filePath,
-                          CertificateCheckInfo &infoToMatch)
+CheckCertificateInfoForPEFile(CertificateCheckInfo* info)
 {
   HCERTSTORE certStore = NULL;
   HCRYPTMSG cryptMsg = NULL;
@@ -148,7 +179,7 @@ CheckCertificateForPEFile(LPCWSTR filePath,
   
   DWORD encoding, contentType, formatType;
   BOOL result = CryptQueryObject(CERT_QUERY_OBJECT_FILE,
-                                 filePath,
+                                 info->filePath,
                                  CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
                                  CERT_QUERY_CONTENT_FLAG_ALL,
                                  0, &encoding, &contentType,
@@ -195,7 +226,7 @@ CheckCertificateForPEFile(LPCWSTR filePath,
     goto cleanup;
   }
 
-  if (!DoCertificateAttributesMatch(certContext, infoToMatch)) {
+  if (!DoCertificateAttributesMatch(certContext, info)) {
     lastError = ERROR_NOT_FOUND;
     goto cleanup;
   }
@@ -222,56 +253,6 @@ cleanup:
 
 
 
-
-
-
-
-
-
-extern "C" void __declspec(dllexport)
-VerifyCertNameIssuer(HWND hwndParent, int string_size,
-               TCHAR *variables, stack_t **stacktop, void *extra)
-{
-  TCHAR tmp1[MAX_PATH + 1] = { _T('\0') };
-  TCHAR tmp2[MAX_PATH + 1] = { _T('\0') };
-  TCHAR tmp3[MAX_PATH + 1] = { _T('\0') };
-  WCHAR filePath[MAX_PATH + 1] = { L'\0' };
-  WCHAR certName[MAX_PATH + 1] = { L'\0' };
-  WCHAR certIssuer[MAX_PATH + 1] = { L'\0' };
-
-  popstring(stacktop, tmp1, MAX_PATH);
-  popstring(stacktop, tmp2, MAX_PATH);
-  popstring(stacktop, tmp3, MAX_PATH);
-
-#if !defined(UNICODE)
-    MultiByteToWideChar(CP_ACP, 0, tmp1, -1, filePath, MAX_PATH);
-    MultiByteToWideChar(CP_ACP, 0, tmp2, -1, certName, MAX_PATH);
-    MultiByteToWideChar(CP_ACP, 0, tmp3, -1, certIssuer, MAX_PATH);
-#else
-    wcsncpy(filePath, tmp1, MAX_PATH);
-    wcsncpy(certName, tmp2, MAX_PATH);
-    wcsncpy(certIssuer, tmp3, MAX_PATH);
-#endif
-
-  CertificateCheckInfo allowedCertificate = {
-    certName,
-    certIssuer,
-  };
-
-  LONG retCode = CheckCertificateForPEFile(filePath, allowedCertificate);
-  if (retCode == ERROR_SUCCESS) {
-    pushstring(stacktop, TEXT("1"), 2);
-  } else {
-    pushstring(stacktop, TEXT("0"), 2);
-  }
-}
-
-
-
-
-
-
-
 DWORD
 VerifyCertificateTrustForFile(LPCWSTR filePath)
 {
@@ -283,18 +264,12 @@ VerifyCertificateTrustForFile(LPCWSTR filePath)
 
   
   WINTRUST_DATA trustData;
-  ZeroMemory(&trustData, sizeof(trustData));
-  trustData.cbStruct = sizeof(trustData);
-  trustData.pPolicyCallbackData = NULL;
-  trustData.pSIPClientData = NULL;
-  trustData.dwUIChoice = WTD_UI_NONE;
-  trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
-  trustData.dwUnionChoice = WTD_CHOICE_FILE;
-  trustData.dwStateAction = 0;
-  trustData.hWVTStateData = NULL;
-  trustData.pwszURLReference = NULL;
   
-  trustData.dwUIContext = 0;
+  
+  SecureZeroMemory(&trustData, sizeof(trustData));
+  trustData.cbStruct = sizeof(trustData);
+  trustData.dwUIChoice = WTD_UI_NONE;
+  trustData.dwUnionChoice = WTD_CHOICE_FILE;
   trustData.pFile = &fileToCheck;
 
   GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
@@ -307,36 +282,87 @@ VerifyCertificateTrustForFile(LPCWSTR filePath)
 
 
 
+DWORD WINAPI
+VerifyCertThreadProc(void* info)
+{
+  CertificateCheckInfo* certInfo = (CertificateCheckInfo*)info;
+
+  if (VerifyCertificateTrustForFile(certInfo->filePath) == ERROR_SUCCESS) {
+    gCheckTrustPassed = true;
+  }
+
+  if (CheckCertificateInfoForPEFile(certInfo) == ERROR_SUCCESS) {
+    gCheckAttributesPassed = true;
+  }
+
+  LocalFree(info);
+  SetEvent(gCheckEvent);
+  return 0;
+}
+
+
+
+
+
+
+
+
 
 
 
 
 extern "C" void __declspec(dllexport)
-VerifyCertTrust(HWND hwndParent, int string_size,
-                TCHAR *variables, stack_t **stacktop, void *extra)
+CheckPETrustAndInfoAsync(HWND, int, TCHAR*, stack_t **stacktop, extra_parameters* pX)
 {
-  TCHAR tmp[MAX_PATH + 1] = { _T('\0') };
-  WCHAR filePath[MAX_PATH + 1] = { L'\0' };
+  pX->RegisterPluginCallback(gHInst, NSISPluginCallback);
 
-  popstring(stacktop, tmp, MAX_PATH);
+  gCheckTrustPassed = false;
+  gCheckAttributesPassed = false;
+  gCheckThread = nullptr;
 
-#if !defined(UNICODE)
-    MultiByteToWideChar(CP_ACP, 0, tmp, -1, filePath, MAX_PATH);
-#else
-    wcsncpy(filePath, tmp, MAX_PATH);
-#endif
+  CertificateCheckInfo* certInfo =
+    (CertificateCheckInfo*)LocalAlloc(0, sizeof(CertificateCheckInfo));
+  if (certInfo) {
+    popstring(stacktop, certInfo->filePath, MAX_PATH);
+    popstring(stacktop, certInfo->name, MAX_PATH);
+    popstring(stacktop, certInfo->issuer, MAX_PATH);
 
-  LONG retCode = VerifyCertificateTrustForFile(filePath);
-  if (retCode == ERROR_SUCCESS) {
-    pushstring(stacktop, TEXT("1"), 2);
+    gCheckThread = CreateThread(nullptr, 0, VerifyCertThreadProc,
+                                (void*)certInfo, 0, nullptr);
+  }
+  if (!gCheckThread) {
+    LocalFree(certInfo);
+    SetEvent(gCheckEvent);
+  }
+}
+
+
+
+
+
+
+
+
+
+extern "C" void __declspec(dllexport)
+GetStatus(HWND, int, TCHAR*, stack_t **stacktop, void*)
+{
+  if (WaitForSingleObject(gCheckEvent, 0) == WAIT_OBJECT_0) {
+    pushstring(stacktop, gCheckAttributesPassed ? L"1" : L"0", 2);
+    pushstring(stacktop, gCheckTrustPassed ? L"1" : L"0", 2);
+    pushstring(stacktop, L"1", 2);
   } else {
-    pushstring(stacktop, TEXT("0"), 2);
+    pushstring(stacktop, L"0", 2);
   }
 }
 
 BOOL WINAPI
-DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
+DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID)
 {
+  if (fdwReason == DLL_PROCESS_ATTACH) {
+    gHInst = hInst;
+    gCheckEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  }
   return TRUE;
 }
 
@@ -348,7 +374,7 @@ DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 
 
 
-int popstring(stack_t **stacktop, TCHAR *str, int len)
+int popstring(stack_t **stacktop, LPTSTR str, int len)
 {
   
   stack_t *th;
@@ -371,7 +397,7 @@ int popstring(stack_t **stacktop, TCHAR *str, int len)
 
 
 
-void pushstring(stack_t **stacktop, const TCHAR *str, int len)
+void pushstring(stack_t **stacktop, LPCTSTR str, int len)
 {
   stack_t *th;
   if (!stacktop) { 
