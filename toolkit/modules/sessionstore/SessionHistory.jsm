@@ -214,25 +214,11 @@ var SessionHistoryInternal = {
 
     
     if (shEntry.principalToInherit) {
-      try {
-        let principalToInherit = Utils.serializePrincipal(shEntry.principalToInherit);
-        if (principalToInherit) {
-          entry.principalToInherit_base64 = principalToInherit;
-        }
-      } catch (e) {
-        debug(e);
-      }
+      entry.principalToInherit_base64 = Utils.serializePrincipal(shEntry.principalToInherit);
     }
 
     if (shEntry.triggeringPrincipal) {
-      try {
-        let triggeringPrincipal = Utils.serializePrincipal(shEntry.triggeringPrincipal);
-        if (triggeringPrincipal) {
-          entry.triggeringPrincipal_base64 = triggeringPrincipal;
-        }
-      } catch (e) {
-        debug(e);
-      }
+      entry.triggeringPrincipal_base64 = Utils.serializePrincipal(shEntry.triggeringPrincipal);
     }
 
     entry.docIdentifier = shEntry.BFCacheEntry.ID;
@@ -460,6 +446,12 @@ var SessionHistoryInternal = {
 
     if (entry.triggeringPrincipal_base64) {
       shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_base64);
+    }
+    
+    
+    if (!shEntry.triggeringPrincipal) {
+      debug("Couldn't deserialize the triggeringPrincipal, falling back to NullPrincipal");
+      shEntry.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
     }
     if (entry.principalToInherit_base64) {
       shEntry.principalToInherit = Utils.deserializePrincipal(entry.principalToInherit_base64);
