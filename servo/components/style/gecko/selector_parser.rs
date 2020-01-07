@@ -179,7 +179,7 @@ impl NonTSPseudoClass {
             
             
             NonTSPseudoClass::Fullscreen =>
-                unsafe { mozilla::StylePrefs_sUnprefixedFullscreenApiEnabled },
+                unsafe { mozilla::StaticPrefs_sVarCache_full_screen_api_unprefix_enabled },
             
             
             _ => !self.has_any_flag(NonTSPseudoClassFlag::PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
