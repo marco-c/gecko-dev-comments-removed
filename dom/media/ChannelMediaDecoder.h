@@ -141,7 +141,9 @@ private:
   
   
   
-  MediaStatistics GetStatistics(const PlaybackRateInfo& aInfo);
+  static MediaStatistics GetStatistics(const PlaybackRateInfo& aInfo,
+                                       BaseMediaResource* aRes,
+                                       int64_t aPlaybackPosition);
 
   bool ShouldThrottleDownload(const MediaStatistics& aStats);
 
@@ -159,6 +161,8 @@ private:
   
   
   int64_t mPlaybackPosition = 0;
+
+  bool mCanPlayThrough = false;
 };
 
 } 
