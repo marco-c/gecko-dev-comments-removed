@@ -11,6 +11,18 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+
 namespace wr {
 
 class RenderCompositorOGL : public RenderCompositor
@@ -30,7 +42,7 @@ public:
 
   gl::GLContext* gl() const override { return mGL; }
 
-  bool UseANGLE() const override { return false; }
+  bool UseANGLE() const override;
 
   LayoutDeviceIntSize GetClientSize() override;
 
