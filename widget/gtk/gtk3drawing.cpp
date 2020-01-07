@@ -25,6 +25,7 @@ static gboolean notebook_has_tab_gap;
 static ScrollbarGTKMetrics sScrollbarMetrics[2];
 static ToggleGTKMetrics sCheckboxMetrics;
 static ToggleGTKMetrics sRadioMetrics;
+static ToolbarButtonGTKMetrics sToolbarButtonMetrics;
 
 #define ARROW_UP      0
 #define ARROW_DOWN    G_PI
@@ -179,6 +180,7 @@ moz_gtk_refresh()
     sScrollbarMetrics[GTK_ORIENTATION_VERTICAL].initialized = false;
     sCheckboxMetrics.initialized = false;
     sRadioMetrics.initialized = false;
+    sToolbarButtonMetrics.initialized = false;
 }
 
 gint
@@ -300,6 +302,53 @@ moz_gtk_splitter_get_metrics(gint orientation, gint* size)
     }
     gtk_style_context_get_style(style, "handle_size", size, NULL);
     return MOZ_GTK_SUCCESS;
+}
+
+const ToolbarButtonGTKMetrics*
+GetToolbarButtonMetrics()
+{
+    if (!sToolbarButtonMetrics.initialized) {
+        GtkStyleContext* style = GetStyleContext(MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
+
+        gint iconWidth, iconHeight;
+        if (!gtk_icon_size_lookup(GTK_ICON_SIZE_MENU, &iconWidth, &iconHeight)) {
+            NS_WARNING("Failed to get Gtk+ icon size for titlebar button!");
+
+            
+            iconWidth = 16;
+            iconHeight = 16;
+        }
+
+        gint width = 0, height = 0;
+        if (gtk_check_version(3, 20, 0) == nullptr) {
+            gtk_style_context_get(style,  gtk_style_context_get_state(style),
+                                  "min-width", &width,
+                                  "min-height", &height, NULL);
+        }
+
+        
+        
+        if (width < iconWidth)
+            width = iconWidth;
+        if (height < iconHeight)
+            height = iconHeight;
+
+        gint left = 0, top = 0, right = 0, bottom = 0;
+        moz_gtk_add_margin_border_padding(style, &left, &top, &right, &bottom);
+
+        width += left + right;
+        height += top + bottom;
+        sToolbarButtonMetrics.minSizeWithBorderMargin.width = width;
+        sToolbarButtonMetrics.minSizeWithBorderMargin.height = height;
+
+        
+        
+        sToolbarButtonMetrics.iconXPosition = (width - iconWidth) / 2;
+        sToolbarButtonMetrics.iconYPosition = (height - iconHeight) / 2;
+        sToolbarButtonMetrics.initialized = true;
+    }
+
+    return &sToolbarButtonMetrics;
 }
 
 static gint
