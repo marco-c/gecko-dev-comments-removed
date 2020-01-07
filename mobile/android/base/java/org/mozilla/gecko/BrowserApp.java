@@ -81,7 +81,6 @@ import org.mozilla.gecko.bookmarks.BookmarkEditFragment;
 import org.mozilla.gecko.bookmarks.BookmarkUtils;
 import org.mozilla.gecko.bookmarks.EditBookmarkTask;
 import org.mozilla.gecko.cleanup.FileCleanupController;
-import org.mozilla.gecko.dawn.DawnHelper;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.SuggestedSites;
@@ -1138,8 +1137,6 @@ public class BrowserApp extends GeckoApp
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
             
             checkFirstrun(this, intent);
-
-            DawnHelper.conditionallyNotifyDawn(this);
         }
     }
 
