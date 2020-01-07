@@ -7,6 +7,8 @@
 #ifndef vm_BigIntType_h
 #define vm_BigIntType_h
 
+#include <gmp.h>
+
 #include "gc/Barrier.h"
 #include "gc/GC.h"
 #include "gc/Heap.h"
@@ -23,7 +25,10 @@ class BigInt final : public js::gc::TenuredCell
   private:
     
     
-    uint8_t unused_[js::gc::MinCellSize];
+    union {
+        mpz_t num_;
+        uint8_t unused_[js::gc::MinCellSize];
+    };
 
   public:
     
@@ -41,6 +46,8 @@ class BigInt final : public js::gc::TenuredCell
 
     static JSLinearString* toString(JSContext* cx, BigInt* x);
     bool toBoolean();
+
+    static void init();
 
     static BigInt* copy(JSContext* cx, Handle<BigInt*> x);
 };
