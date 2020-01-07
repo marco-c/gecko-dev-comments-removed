@@ -543,6 +543,12 @@ import android.view.inputmethod.InputMethodManager;
         return getHandler();
     }
 
+    
+    @SuppressLint("Override")
+    public void closeConnection() {
+        
+    }
+
     @Override 
     public synchronized InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         
