@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 import os
-import sys
 from mozbuild.util import FileAvoidWrite
 
 header_template = '''#pragma GCC system_header

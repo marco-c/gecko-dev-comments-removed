@@ -59,7 +59,7 @@ class ZipFile(zipfile.ZipFile):
         
 
         doSeek = False  
-        if self.NameToInfo.has_key(zinfo.filename):
+        if zinfo.filename in self.NameToInfo:
             
             
             i = len(self.filelist)

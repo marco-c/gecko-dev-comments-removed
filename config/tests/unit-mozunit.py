@@ -2,7 +2,6 @@
 
 
 
-import sys
 import os
 from mozunit import main, MockedOpen
 import unittest

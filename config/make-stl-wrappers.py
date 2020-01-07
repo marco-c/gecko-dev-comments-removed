@@ -3,9 +3,7 @@
 
 from __future__ import print_function
 import os
-import re
 import string
-import sys
 from mozbuild.util import FileAvoidWrite
 
 

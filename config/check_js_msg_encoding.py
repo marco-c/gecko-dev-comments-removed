@@ -41,7 +41,7 @@ def check_single_file(filename):
         data = f.read()
         try:
             data.decode(expected_encoding)
-        except:
+        except Exception:
             log_fail(filename, 'not in {} encoding'.format(expected_encoding))
 
     log_pass(filename, 'ok')
