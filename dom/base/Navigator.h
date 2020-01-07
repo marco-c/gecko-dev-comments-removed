@@ -76,6 +76,7 @@ class LegacyMozTCPSocket;
 class VRDisplay;
 class VRServiceTest;
 class StorageManager;
+class MediaCapabilities;
 
 class Navigator final : public nsISupports
                       , public nsWrapperCache
@@ -215,6 +216,8 @@ public:
 
   static void GetAcceptLanguages(nsTArray<nsString>& aLanguages);
 
+  dom::MediaCapabilities* MediaCapabilities();
+
   
   static bool HasUserMediaSupport(JSContext* ,
                                   JSObject* );
@@ -274,6 +277,7 @@ private:
   RefPtr<VRServiceTest> mVRServiceTest;
   nsTArray<uint32_t> mRequestedVibrationPattern;
   RefPtr<StorageManager> mStorageManager;
+  RefPtr<dom::MediaCapabilities> mMediaCapabilities;
 };
 
 } 
