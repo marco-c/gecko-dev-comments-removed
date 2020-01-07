@@ -1653,52 +1653,47 @@ EditorBase::DeleteNodeWithTransaction(nsINode& aNode)
   return NS_OK;
 }
 
-
-
-
-
-
 already_AddRefed<Element>
-EditorBase::ReplaceContainer(Element* aOldContainer,
-                             nsAtom* aNodeType,
-                             nsAtom* aAttribute,
-                             const nsAString* aValue,
-                             ECloneAttributes aCloneAttributes)
+EditorBase::ReplaceContainerWithTransactionInternal(
+              Element& aOldContainer,
+              nsAtom& aTagName,
+              nsAtom& aAttribute,
+              const nsAString& aAttributeValue,
+              bool aCloneAllAttributes)
 {
-  MOZ_ASSERT(aOldContainer && aNodeType);
-
-  EditorDOMPoint atOldContainer(aOldContainer);
+  EditorDOMPoint atOldContainer(&aOldContainer);
   if (NS_WARN_IF(!atOldContainer.IsSet())) {
     return nullptr;
   }
 
-  RefPtr<Element> newContainer = CreateHTMLContent(aNodeType);
+  RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
   if (NS_WARN_IF(!newContainer)) {
     return nullptr;
   }
 
   
-  if (aAttribute && aValue && aAttribute != nsGkAtoms::_empty) {
+  if (aCloneAllAttributes) {
+    MOZ_ASSERT(&aAttribute == nsGkAtoms::_empty);
+    CloneAttributes(newContainer, &aOldContainer);
+  } else if (&aAttribute != nsGkAtoms::_empty) {
     nsresult rv =
-      newContainer->SetAttr(kNameSpaceID_None, aAttribute, *aValue, true);
+      newContainer->SetAttr(kNameSpaceID_None, &aAttribute, aAttributeValue,
+                            true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
-  }
-  if (aCloneAttributes == eCloneAttributes) {
-    CloneAttributes(newContainer, aOldContainer);
   }
 
   
   
   
-  AutoReplaceContainerSelNotify selStateNotify(mRangeUpdater, aOldContainer,
+  AutoReplaceContainerSelNotify selStateNotify(mRangeUpdater, &aOldContainer,
                                                newContainer);
   {
     AutoTransactionsConserveSelection conserveSelection(this);
     
-    while (aOldContainer->HasChildren()) {
-      nsCOMPtr<nsIContent> child = aOldContainer->GetFirstChild();
+    while (aOldContainer.HasChildren()) {
+      nsCOMPtr<nsIContent> child = aOldContainer.GetFirstChild();
       if (NS_WARN_IF(!child)) {
         return nullptr;
       }
@@ -1725,7 +1720,7 @@ EditorBase::ReplaceContainer(Element* aOldContainer,
   }
 
   
-  rv = DeleteNodeWithTransaction(*aOldContainer);
+  rv = DeleteNodeWithTransaction(aOldContainer);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }

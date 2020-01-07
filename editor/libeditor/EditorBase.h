@@ -365,13 +365,66 @@ public:
   InsertNodeWithTransaction(nsIContent& aContentToInsert,
                             const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
-  enum ECloneAttributes { eDontCloneAttributes, eCloneAttributes };
-  already_AddRefed<Element> ReplaceContainer(Element* aOldContainer,
-                                             nsAtom* aNodeType,
-                                             nsAtom* aAttribute = nullptr,
-                                             const nsAString* aValue = nullptr,
-                                             ECloneAttributes aCloneAttributes
-                                             = eDontCloneAttributes);
+  
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  ReplaceContainerWithTransaction(Element& aOldContainer,
+                                  nsAtom& aTagName)
+  {
+    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
+                                                   *nsGkAtoms::_empty,
+                                                   EmptyString(), false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
+                                                    nsAtom& aTagName)
+  {
+    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
+                                                   *nsGkAtoms::_empty,
+                                                   EmptyString(), true);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  ReplaceContainerWithTransaction(Element& aOldContainer,
+                                  nsAtom& aTagName,
+                                  nsAtom& aAttribute,
+                                  const nsAString& aAttributeValue)
+  {
+    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
+                                                   aAttribute,
+                                                   aAttributeValue, false);
+  }
+
   void CloneAttributes(Element* aDest, Element* aSource);
 
   nsresult RemoveContainer(nsIContent* aNode);
@@ -628,6 +681,29 @@ protected:
 
   nsresult DeleteTextWithTransaction(dom::CharacterData& aCharacterData,
                                      uint32_t aOffset, uint32_t aLength);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<Element>
+  ReplaceContainerWithTransactionInternal(Element& aElement,
+                                          nsAtom& aTagName,
+                                          nsAtom& aAttribute,
+                                          const nsAString& aAttributeValue,
+                                          bool aCloneAllAttributes);
 
   
 
