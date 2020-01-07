@@ -184,7 +184,7 @@ protected:
   
 
 
-  nsresult CreateTrailingBRIfNeeded();
+  MOZ_MUST_USE nsresult CreateTrailingBRIfNeeded();
 
   
 
