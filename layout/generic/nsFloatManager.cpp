@@ -567,6 +567,8 @@ public:
 
   static UniquePtr<ShapeInfo> CreateInset(
     const UniquePtr<StyleBasicShape>& aBasicShape,
+    nscoord aShapeMargin,
+    nsIFrame* aFrame,
     const LogicalRect& aShapeBoxRect,
     WritingMode aWM,
     const nsSize& aContainerSize);
@@ -1014,7 +1016,13 @@ public:
                       UniquePtr<nscoord[]> aRadii)
     : mRect(aRect)
     , mRadii(Move(aRadii))
+    , mShapeMargin(0)
   {}
+
+  RoundedBoxShapeInfo(const nsRect& aRect,
+                      UniquePtr<nscoord[]> aRadii,
+                      nscoord aShapeMargin,
+                      int32_t aAppUnitsPerDevPixel);
 
   nscoord LineLeft(const nscoord aBStart,
                    const nscoord aBEnd) const override;
@@ -1022,7 +1030,7 @@ public:
                     const nscoord aBEnd) const override;
   nscoord BStart() const override { return mRect.y; }
   nscoord BEnd() const override { return mRect.YMost(); }
-  bool IsEmpty() const override { return mRect.IsEmpty(); };
+  bool IsEmpty() const override { return mRect.IsEmpty(); }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override
   {
@@ -1036,8 +1044,22 @@ private:
   
   
   
-  UniquePtr<nscoord[]> mRadii;
+  const UniquePtr<nscoord[]> mRadii;
+
+  
+  const nscoord mShapeMargin;
 };
+
+nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(const nsRect& aRect,
+  UniquePtr<nscoord[]> aRadii,
+  nscoord aShapeMargin,
+  int32_t aAppUnitsPerDevPixel)
+  : mRect(aRect)
+  , mRadii(Move(aRadii))
+  , mShapeMargin(aShapeMargin)
+{
+
+}
 
 nscoord
 nsFloatManager::RoundedBoxShapeInfo::LineLeft(const nscoord aBStart,
@@ -2063,7 +2085,8 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
                                    aShapeBoxRect, aWM,
                                    aContainerSize);
     case StyleBasicShapeType::Inset:
-      return CreateInset(aBasicShape, aShapeBoxRect, aWM, aContainerSize);
+      return CreateInset(aBasicShape, aShapeMargin, aFrame, aShapeBoxRect,
+                         aWM, aContainerSize);
   }
   return nullptr;
 }
@@ -2071,6 +2094,8 @@ nsFloatManager::ShapeInfo::CreateBasicShape(
  UniquePtr<nsFloatManager::ShapeInfo>
 nsFloatManager::ShapeInfo::CreateInset(
   const UniquePtr<StyleBasicShape>& aBasicShape,
+  nscoord aShapeMargin,
+  nsIFrame* aFrame,
   const LogicalRect& aShapeBoxRect,
   WritingMode aWM,
   const nsSize& aContainerSize)
@@ -2090,14 +2115,55 @@ nsFloatManager::ShapeInfo::CreateInset(
   bool hasRadii =
     ShapeUtils::ComputeInsetRadii(aBasicShape, insetRect, physicalShapeBoxRect,
                                   physicalRadii);
-  if (!hasRadii) {
+
+  
+  if (aShapeMargin == 0) {
+    if (!hasRadii) {
+      return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
+                                             UniquePtr<nscoord[]>());
+    }
     return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           UniquePtr<nscoord[]>());
+                                           ConvertToFloatLogical(physicalRadii,
+                                                                 aWM));
   }
 
+  
+  
+  
+  
+  if (!hasRadii) {
+    logicalInsetRect.Inflate(aShapeMargin);
+    auto logicalRadii = MakeUnique<nscoord[]>(8);
+    for (int32_t i = 0; i < 8; ++i) {
+      logicalRadii[i] = aShapeMargin;
+    }
+    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
+                                           Move(logicalRadii));
+  }
+
+  
+  
+  if (physicalRadii[0] == physicalRadii[1] &&
+      physicalRadii[2] == physicalRadii[3] &&
+      physicalRadii[4] == physicalRadii[5] &&
+      physicalRadii[6] == physicalRadii[7]) {
+    logicalInsetRect.Inflate(aShapeMargin);
+    for (nscoord& r : physicalRadii) {
+      r += aShapeMargin;
+    }
+    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
+                                           ConvertToFloatLogical(physicalRadii,
+                                                                 aWM));
+  }
+
+  
+  
+  nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
+  int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
   return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
                                          ConvertToFloatLogical(physicalRadii,
-                                                               aWM));
+                                                               aWM),
+                                         aShapeMargin, appUnitsPerDevPixel);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
