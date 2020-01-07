@@ -73,7 +73,7 @@ RenderDXGITextureHostOGL::EnsureLockable()
   
   
   if (!egl->IsExtensionSupported(gl::GLLibraryEGL::NV_stream_consumer_gltexture_yuv) ||
-      !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture_nv12)) {
+      !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture)) {
     return false;
   }
 
@@ -111,7 +111,7 @@ RenderDXGITextureHostOGL::EnsureLockable()
     mGL->fTexParameteri(LOCAL_GL_TEXTURE_EXTERNAL_OES, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
 
     MOZ_ALWAYS_TRUE(egl->fStreamConsumerGLTextureExternalAttribsNV(egl->Display(), mStream, nullptr));
-    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureNV12ANGLE(egl->Display(), mStream, nullptr));
+    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureANGLE(egl->Display(), mStream, nullptr));
   } else {
     
 
@@ -135,11 +135,11 @@ RenderDXGITextureHostOGL::EnsureLockable()
     mGL->fBindTexture(LOCAL_GL_TEXTURE_EXTERNAL_OES, mTextureHandle[1]);
     mGL->fTexParameteri(LOCAL_GL_TEXTURE_EXTERNAL_OES, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
     MOZ_ALWAYS_TRUE(egl->fStreamConsumerGLTextureExternalAttribsNV(egl->Display(), mStream, consumerAttributes));
-    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureNV12ANGLE(egl->Display(), mStream, nullptr));
+    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureANGLE(egl->Display(), mStream, nullptr));
   }
 
   
-  MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureNV12ANGLE(egl->Display(), mStream, (void*)mTexture.get(), nullptr));
+  MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureANGLE(egl->Display(), mStream, (void*)mTexture.get(), nullptr));
 
   
   egl->fStreamConsumerAcquireKHR(egl->Display(), mStream);
@@ -277,7 +277,7 @@ RenderDXGIYCbCrTextureHostOGL::EnsureLockable()
   
 
   if (!egl->IsExtensionSupported(gl::GLLibraryEGL::NV_stream_consumer_gltexture_yuv) ||
-      !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture_nv12))
+      !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture))
   {
       return false;
   }
@@ -318,10 +318,10 @@ RenderDXGIYCbCrTextureHostOGL::EnsureLockable()
     MOZ_ASSERT(mStreams[i]);
 
     MOZ_ALWAYS_TRUE(egl->fStreamConsumerGLTextureExternalAttribsNV(egl->Display(), mStreams[i], nullptr));
-    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureNV12ANGLE(egl->Display(), mStreams[i], nullptr));
+    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureANGLE(egl->Display(), mStreams[i], nullptr));
 
     
-    MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureNV12ANGLE(egl->Display(), mStreams[i], (void*)mTextures[i].get(), nullptr));
+    MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureANGLE(egl->Display(), mStreams[i], (void*)mTextures[i].get(), nullptr));
 
     
     egl->fStreamConsumerAcquireKHR(egl->Display(), mStreams[i]);
