@@ -417,8 +417,9 @@ class Descriptor(DescriptorProvider):
             'NamedDeleter': None,
             'Stringifier': None,
             'LegacyCaller': None,
-            'Jsonifier': None
             }
+
+        self.hasDefaultToJSON = False
 
         
         
@@ -436,8 +437,8 @@ class Descriptor(DescriptorProvider):
             for m in self.interface.members:
                 if m.isMethod() and m.isStringifier():
                     addOperation('Stringifier', m)
-                if m.isMethod() and m.isJsonifier():
-                    addOperation('Jsonifier', m)
+                if m.isMethod() and m.isDefaultToJSON():
+                    self.hasDefaultToJSON = True
 
         if self.concrete:
             self.proxy = False
