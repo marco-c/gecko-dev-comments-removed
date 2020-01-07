@@ -89,6 +89,7 @@ const TEST_CONDITIONS = {
 
 
 add_task(async function test_addon_update() {
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_ENABLED, true);
   await setupSystemAddonConditions(TEST_CONDITIONS.blank, distroDir);
 
   await updateAllSystemAddons(await buildSystemAddonUpdates([
