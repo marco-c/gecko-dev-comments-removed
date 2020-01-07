@@ -179,7 +179,7 @@ protected:
   
 
 
-  nsresult RemoveRedundantTrailingBR();
+  MOZ_MUST_USE nsresult RemoveRedundantTrailingBR();
 
   
 

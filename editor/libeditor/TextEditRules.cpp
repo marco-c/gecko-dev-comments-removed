@@ -1357,6 +1357,9 @@ TextEditRules::RemoveRedundantTrailingBR()
   
   
   childElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::type, true);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
 
   
   mBogusNode = childElement;
