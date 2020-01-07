@@ -8,6 +8,7 @@
 
 use Atom;
 use cssparser::{Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType};
+use hash::map::Entry;
 use precomputed_hash::PrecomputedHash;
 use properties::{CSSWideKeyword, DeclaredValue};
 use selector_map::{PrecomputedHashSet, PrecomputedHashMap};
@@ -105,11 +106,21 @@ where
     }
 
     
+    
+    
+    
+    #[allow(unused_mut)]
     pub fn insert(&mut self, key: K, value: V) {
-        if !self.values.contains_key(&key) {
-            self.index.push(key.clone());
+        let OrderedMap { ref mut index, ref mut values } = *self;
+        match values.entry(key) {
+            Entry::Vacant(mut entry) => {
+                index.push(entry.key().clone());
+                entry.insert(value);
+            }
+            Entry::Occupied(mut entry) => {
+                entry.insert(value);
+            }
         }
-        self.values.insert(key, value);
     }
 
     
@@ -248,9 +259,7 @@ impl VariableValue {
         debug_assert!(variable.references.is_empty());
         self.push(&variable.css, variable.first_token_type, variable.last_token_type)
     }
-}
 
-impl VariableValue {
     
     pub fn parse<'i, 't>(
         input: &mut Parser<'i, 't>,
@@ -666,12 +675,10 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
     
     
     fn traverse<'a>(name: Name, context: &mut Context<'a>) -> Option<usize> {
-        use hash::map::Entry;
-
         
         let (name, value) = if let Some(value) = context.map.get(&name) {
             
-            if value.references.is_empty()  || context.invalid.contains(&name) {
+            if value.references.is_empty() || context.invalid.contains(&name) {
                 return None;
             }
             
@@ -694,7 +701,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
         
         let index = context.count;
         context.count += 1;
-        debug_assert!(index == context.var_info.len());
+        debug_assert_eq!(index, context.var_info.len());
         context.var_info.push(VarInfo {
             name: Some(name),
             lowlink: index,
