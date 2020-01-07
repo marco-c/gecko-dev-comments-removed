@@ -433,8 +433,8 @@ ImageLoader::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
 
   aImage->SetAnimationMode(presContext->ImageAnimationMode());
 
-  FrameSet* frameSet = nullptr;
-  if (!mRequestToFrameMap.Get(aRequest, &frameSet)) {
+  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
+  if (!frameSet) {
     return NS_OK;
   }
 
@@ -454,8 +454,8 @@ ImageLoader::OnImageIsAnimated(imgIRequest* aRequest)
     return NS_OK;
   }
 
-  FrameSet* frameSet = nullptr;
-  if (!mRequestToFrameMap.Get(aRequest, &frameSet)) {
+  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
+  if (!frameSet) {
     return NS_OK;
   }
 
@@ -478,12 +478,10 @@ ImageLoader::OnFrameComplete(imgIRequest* aRequest)
     return NS_OK;
   }
 
-  FrameSet* frameSet = nullptr;
-  if (!mRequestToFrameMap.Get(aRequest, &frameSet)) {
+  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
+  if (!frameSet) {
     return NS_OK;
   }
-
-  NS_ASSERTION(frameSet, "This should never be null!");
 
   
   
@@ -500,12 +498,10 @@ ImageLoader::OnFrameUpdate(imgIRequest* aRequest)
     return NS_OK;
   }
 
-  FrameSet* frameSet = nullptr;
-  if (!mRequestToFrameMap.Get(aRequest, &frameSet)) {
+  FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
+  if (!frameSet) {
     return NS_OK;
   }
-
-  NS_ASSERTION(frameSet, "This should never be null!");
 
   DoRedraw(frameSet,  false);
 
