@@ -7,10 +7,10 @@
 #include "TelemetryScrollProbe.h"
 
 #include "nsIDOMDocument.h"     
-#include "nsIDOMEvent.h"        
 #include "nsIURI.h"             
 #include "TabChild.h"           
 #include "mozilla/Telemetry.h"  
+#include "mozilla/dom/Event.h"  
 
 namespace mozilla {
 namespace dom {
@@ -67,7 +67,7 @@ TelemetryScrollProbe::ShouldIgnore(nsIDOMEvent* aEvent) const
 NS_IMPL_ISUPPORTS(TelemetryScrollProbe, nsIDOMEventListener)
 
 NS_IMETHODIMP
-TelemetryScrollProbe::HandleEvent(nsIDOMEvent* aEvent)
+TelemetryScrollProbe::HandleEvent(Event* aEvent)
 {
   RefPtr<nsIPresShell> presShell = GetPresShell();
 

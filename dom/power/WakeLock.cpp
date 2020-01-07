@@ -12,7 +12,6 @@
 #include "nsError.h"
 #include "nsIDocument.h"
 #include "nsIDOMWindow.h"
-#include "nsIDOMEvent.h"
 #include "nsPIDOMWindow.h"
 #include "nsIPropertyBag2.h"
 
@@ -224,7 +223,7 @@ WakeLock::GetTopic(nsAString &aTopic)
 }
 
 NS_IMETHODIMP
-WakeLock::HandleEvent(nsIDOMEvent *aEvent)
+WakeLock::HandleEvent(Event *aEvent)
 {
   nsAutoString type;
   aEvent->GetType(type);

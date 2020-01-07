@@ -26,6 +26,10 @@ struct nsPoint;
 
 namespace mozilla {
 
+namespace dom {
+class Event;
+} 
+
 
 
 
@@ -203,7 +207,7 @@ protected:
   {
   public:
     NS_DECL_ISUPPORTS
-    NS_IMETHOD HandleEvent(nsIDOMEvent* aEvent) override
+    NS_IMETHOD HandleEvent(mozilla::dom::Event* aEvent) override
     {
       return NS_OK;
     }

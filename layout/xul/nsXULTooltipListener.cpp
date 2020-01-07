@@ -224,7 +224,7 @@ nsXULTooltipListener::MouseMove(nsIDOMEvent* aEvent)
 }
 
 NS_IMETHODIMP
-nsXULTooltipListener::HandleEvent(nsIDOMEvent* aEvent)
+nsXULTooltipListener::HandleEvent(Event* aEvent)
 {
   nsAutoString type;
   aEvent->GetType(type);

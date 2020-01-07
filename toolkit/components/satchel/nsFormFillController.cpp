@@ -867,7 +867,7 @@ nsFormFillController::OnSearchCompletion(nsIAutoCompleteResult *aResult)
 
 
 NS_IMETHODIMP
-nsFormFillController::HandleEvent(nsIDOMEvent* aEvent)
+nsFormFillController::HandleEvent(Event* aEvent)
 {
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
   NS_ENSURE_STATE(internalEvent);

@@ -702,7 +702,7 @@ MayVibrate(nsIDocument* doc) {
 }
 
 NS_IMETHODIMP
-VibrateWindowListener::HandleEvent(nsIDOMEvent* aEvent)
+VibrateWindowListener::HandleEvent(Event* aEvent)
 {
   nsCOMPtr<nsIDocument> doc =
     do_QueryInterface(aEvent->InternalDOMEvent()->GetTarget());

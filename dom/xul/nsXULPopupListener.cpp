@@ -93,7 +93,7 @@ NS_INTERFACE_MAP_END
 
 
 nsresult
-nsXULPopupListener::HandleEvent(nsIDOMEvent* aEvent)
+nsXULPopupListener::HandleEvent(Event* aEvent)
 {
   nsAutoString eventType;
   aEvent->GetType(eventType);

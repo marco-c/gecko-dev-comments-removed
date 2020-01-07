@@ -32,7 +32,6 @@
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DragEvent.h"
-#include "nsIDOMEvent.h"                
 #include "nsIDOMEventTarget.h"          
 #include "nsIDocument.h"                
 #include "nsIFocusManager.h"            
@@ -366,7 +365,7 @@ EditorEventListener::EnsureCommitCompoisition()
 }
 
 NS_IMETHODIMP
-EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
+EditorEventListener::HandleEvent(Event* aEvent)
 {
   
   

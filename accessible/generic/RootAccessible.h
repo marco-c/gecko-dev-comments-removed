@@ -25,7 +25,7 @@ public:
   RootAccessible(nsIDocument* aDocument, nsIPresShell* aPresShell);
 
   
-  NS_IMETHOD HandleEvent(nsIDOMEvent* aEvent) override;
+  NS_DECL_NSIDOMEVENTLISTENER
 
   
   virtual void Shutdown() override;

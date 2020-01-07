@@ -157,7 +157,7 @@ GetActionForEvent(nsIDOMEvent* aEvent)
 }
 
 NS_IMETHODIMP
-nsPrintPreviewListener::HandleEvent(nsIDOMEvent* aEvent)
+nsPrintPreviewListener::HandleEvent(Event* aEvent)
 {
   nsCOMPtr<nsIContent> content = do_QueryInterface(
     aEvent ? aEvent->InternalDOMEvent()->GetOriginalTarget() : nullptr);

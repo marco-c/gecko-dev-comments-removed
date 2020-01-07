@@ -354,7 +354,7 @@ DocManager::OnSecurityChange(nsIWebProgress* aWebProgress,
 
 
 NS_IMETHODIMP
-DocManager::HandleEvent(nsIDOMEvent* aEvent)
+DocManager::HandleEvent(Event* aEvent)
 {
   nsAutoString type;
   aEvent->GetType(type);

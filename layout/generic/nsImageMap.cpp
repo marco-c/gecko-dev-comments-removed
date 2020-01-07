@@ -977,7 +977,7 @@ nsImageMap::ParentChainChanged(nsIContent* aContent)
 }
 
 nsresult
-nsImageMap::HandleEvent(nsIDOMEvent* aEvent)
+nsImageMap::HandleEvent(Event* aEvent)
 {
   nsAutoString eventType;
   aEvent->GetType(eventType);

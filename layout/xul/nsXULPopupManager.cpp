@@ -12,7 +12,6 @@
 #include "nsMenuBarListener.h"
 #include "nsContentUtils.h"
 #include "nsIDOMDocument.h"
-#include "nsIDOMEvent.h"
 #include "nsXULElement.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULCommandDispatcher.h"
@@ -1113,7 +1112,7 @@ public:
   {
   }
 
-  NS_IMETHOD HandleEvent(nsIDOMEvent* aEvent) override
+  NS_IMETHOD HandleEvent(Event* aEvent) override
   {
     mContent->RemoveSystemEventListener(NS_LITERAL_STRING("transitionend"), this, false);
 
@@ -2612,7 +2611,7 @@ nsXULPopupManager::IsValidMenuItem(nsIContent* aContent, bool aOnPopup)
 }
 
 nsresult
-nsXULPopupManager::HandleEvent(nsIDOMEvent* aEvent)
+nsXULPopupManager::HandleEvent(Event* aEvent)
 {
   RefPtr<KeyboardEvent> keyEvent =
     aEvent->InternalDOMEvent()->AsKeyboardEvent();
