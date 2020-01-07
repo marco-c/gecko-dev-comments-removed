@@ -733,6 +733,19 @@ protected:
   void BeginPlaceholderTransaction(nsAtom* aTransactionName);
   void EndPlaceholderTransaction();
 
+  
+
+
+
+
+
+
+
+
+
+  virtual void InitializeSelectionAncestorLimit(Selection& aSelection,
+                                                nsIContent& aAncestorLimit);
+
 public:
   
 

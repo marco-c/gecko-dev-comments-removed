@@ -327,6 +327,10 @@ protected:
   using EditorBase::IsBlockNode;
   virtual bool IsBlockNode(nsINode *aNode) override;
 
+  virtual void
+  InitializeSelectionAncestorLimit(Selection& aSelection,
+                                   nsIContent& aAncestorLimit) override;
+
 public:
   
   NS_IMETHOD SetFlags(uint32_t aFlags) override;
@@ -539,6 +543,32 @@ public:
 
 
   nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  MaybeCollapseSelectionAtFirstEditableNode(
+    bool aIgnoreIfSelectionInEditingHost);
 
 protected:
   class BlobReader final : public nsIEditorBlobListener

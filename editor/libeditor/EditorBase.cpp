@@ -454,7 +454,7 @@ EditorBase::GetDesiredSpellCheckState()
     
     
     
-    nsCOMPtr<nsIHTMLDocument> doc = do_QueryInterface(content->GetComposedDoc());
+    nsCOMPtr<nsIHTMLDocument> doc = do_QueryInterface(content->GetUncomposedDoc());
     return doc && doc->IsEditingOn();
   }
 
@@ -5089,6 +5089,13 @@ EditorBase::FindSelectionRoot(nsINode* aNode)
   return rootContent.forget();
 }
 
+void
+EditorBase::InitializeSelectionAncestorLimit(Selection& aSelection,
+                                             nsIContent& aAncestorLimit)
+{
+  aSelection.SetAncestorLimiter(&aAncestorLimit);
+}
+
 nsresult
 EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
 {
@@ -5098,10 +5105,6 @@ EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
   if (!selectionRootContent) {
     return NS_OK;
   }
-
-  bool isTargetDoc =
-    targetNode->NodeType() == nsINode::DOCUMENT_NODE &&
-    targetNode->HasFlag(NODE_IS_EDITABLE);
 
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_STATE(selection);
@@ -5130,22 +5133,16 @@ EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
                          nsISelectionDisplay::DISPLAY_ALL);
   selectionController->RepaintSelection(
                          nsISelectionController::SELECTION_NORMAL);
+
   
   
   
   
   
   if (selectionRootContent->GetParent()) {
-    selection->SetAncestorLimiter(selectionRootContent);
+    InitializeSelectionAncestorLimit(*selection, *selectionRootContent);
   } else {
     selection->SetAncestorLimiter(nullptr);
-  }
-
-  
-  if (isTargetDoc) {
-    if (!selection->RangeCount()) {
-      BeginningOfDocument();
-    }
   }
 
   

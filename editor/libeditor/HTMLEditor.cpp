@@ -381,14 +381,13 @@ HTMLEditor::FindSelectionRoot(nsINode* aNode)
                   aNode->IsContent(),
                   "aNode must be content or document node");
 
-  nsCOMPtr<nsIDocument> doc = aNode->GetComposedDoc();
+  nsCOMPtr<nsIDocument> doc = aNode->GetUncomposedDoc();
   if (!doc) {
     return nullptr;
   }
 
   nsCOMPtr<nsIContent> content;
-  if (aNode->IsInUncomposedDoc() &&
-      (doc->HasFlag(NODE_IS_EDITABLE) || !aNode->IsContent())) {
+  if (doc->HasFlag(NODE_IS_EDITABLE) || !aNode->IsContent()) {
     content = doc->GetRootElement();
     return content.forget();
   }
@@ -508,80 +507,172 @@ HTMLEditor::InitRules()
 NS_IMETHODIMP
 HTMLEditor::BeginningOfDocument()
 {
+  return MaybeCollapseSelectionAtFirstEditableNode(false);
+}
+
+void
+HTMLEditor::InitializeSelectionAncestorLimit(Selection& aSelection,
+                                             nsIContent& aAncestorLimit)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  bool tryToCollapseSelectionAtFirstEditableNode = true;
+  if (aSelection.RangeCount() == 1 && aSelection.IsCollapsed()) {
+    Element* editingHost = GetActiveEditingHost();
+    nsRange* range = aSelection.GetRangeAt(0);
+    if (range->GetStartContainer() == editingHost &&
+        !range->StartOffset()) {
+      
+      
+      
+      tryToCollapseSelectionAtFirstEditableNode = false;
+    }
+  }
+
+  EditorBase::InitializeSelectionAncestorLimit(aSelection, aAncestorLimit);
+
+  
+  
+  
+  if (tryToCollapseSelectionAtFirstEditableNode) {
+    MaybeCollapseSelectionAtFirstEditableNode(true);
+  }
+}
+
+nsresult
+HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
+              bool aIgnoreIfSelectionInEditingHost)
+{
   
   if (!IsInitialized()) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
 
   
-  nsCOMPtr<Element> rootElement = GetRoot();
-  if (!rootElement) {
-    NS_WARNING("GetRoot() returned a null pointer (mRootElement is null)");
+  
+  
+  RefPtr<Element> editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
     return NS_OK;
   }
 
   
-  bool done = false;
-  nsCOMPtr<nsINode> curNode = rootElement.get(), selNode;
-  int32_t curOffset = 0, selOffset = 0;
-  while (!done) {
-    WSRunObject wsObj(this, curNode, curOffset);
+  
+  
+  if (aIgnoreIfSelectionInEditingHost && selection->RangeCount() == 1) {
+    nsRange* range = selection->GetRangeAt(0);
+    if (!range->Collapsed() ||
+        range->GetStartContainer() != editingHost.get() ||
+        range->StartOffset()) {
+      return NS_OK;
+    }
+  }
+
+  
+  EditorRawDOMPoint pointToPutCaret(editingHost, 0);
+  for (;;) {
+    WSRunObject wsObj(this, pointToPutCaret.GetContainer(),
+                      pointToPutCaret.Offset());
     int32_t visOffset = 0;
     WSType visType;
     nsCOMPtr<nsINode> visNode;
-    wsObj.NextVisibleNode(curNode, curOffset, address_of(visNode), &visOffset,
-                          &visType);
-    if (visType == WSType::normalWS || visType == WSType::text) {
-      selNode = visNode;
-      selOffset = visOffset;
-      done = true;
-    } else if (visType == WSType::br || visType == WSType::special) {
-      selNode = visNode->GetParentNode();
-      selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
-      done = true;
-    } else if (visType == WSType::otherBlock) {
-      
-      
-      
-      
-      
-      
-      
+    wsObj.NextVisibleNode(pointToPutCaret.GetContainer(),
+                          pointToPutCaret.Offset(),
+                          address_of(visNode), &visOffset, &visType);
 
-      if (!IsContainer(visNode)) {
-        
-        
-        
-        
-        selNode = visNode->GetParentNode();
-        selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
-        done = true;
-      } else {
-        bool isEmptyBlock;
-        if (NS_SUCCEEDED(IsEmptyNode(visNode, &isEmptyBlock)) &&
-            isEmptyBlock) {
-          
-          curNode = visNode->GetParentNode();
-          curOffset = curNode ? curNode->ComputeIndexOf(visNode) : -1;
-          curOffset++;
-        } else {
-          curNode = visNode;
-          curOffset = 0;
-        }
-        
-      }
-    } else {
+    
+    
+    
+    if (visNode && !visNode->IsEditable()) {
+      pointToPutCaret.Set(editingHost, 0);
+      break;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (visType == WSType::special && visNode &&
+        TagCanContainTag(*visNode->NodeInfo()->NameAtom(),
+                         *nsGkAtoms::textTagName)) {
+      pointToPutCaret.Set(visNode);
+      DebugOnly<bool> advanced = pointToPutCaret.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+        "Failed to advance offset from found empty inline container element");
+      continue;
+    }
+
+    
+    if (visType == WSType::normalWS || visType == WSType::text) {
+      pointToPutCaret.Set(visNode, visOffset);
+      break;
+    }
+
+    
+    
+    if (visType == WSType::br || visType == WSType::special) {
+      pointToPutCaret.Set(visNode);
+      break;
+    }
+
+    
+    
+    
+    
+    
+    if (visType != WSType::otherBlock) {
+      pointToPutCaret.Set(editingHost, 0);
+      break;
+    }
+
+    
+    
+    
+
+    
+    
+    
+    
+    if (!IsContainer(visNode)) {
+      pointToPutCaret.Set(visNode);
+      break;
+    }
+
+    
+    
+    bool isEmptyBlock;
+    if (NS_SUCCEEDED(IsEmptyNode(visNode, &isEmptyBlock)) && isEmptyBlock) {
       
-      selNode = curNode;
-      selOffset = curOffset;
-      done = true;
+      pointToPutCaret.Set(visNode);
+      DebugOnly<bool> advanced = pointToPutCaret.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+        "Failed to advance offset from the found empty block node");
+    } else {
+      pointToPutCaret.Set(visNode, 0);
     }
   }
-  return selection->Collapse(selNode, selOffset);
+  return selection->Collapse(pointToPutCaret);
 }
 
 nsresult
@@ -4800,11 +4891,7 @@ HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
     return true;
   }
 
-  nsCOMPtr<nsIDOMEventTarget> target = aGUIEvent->GetOriginalDOMEventTarget();
-  nsCOMPtr<nsIContent> content = do_QueryInterface(target);
-  if (content) {
-    target = content->FindFirstNonChromeOnlyAccessContent();
-  }
+  nsCOMPtr<nsIDOMEventTarget> target = aGUIEvent->GetDOMEventTarget();
   NS_ENSURE_TRUE(target, false);
 
   nsCOMPtr<nsIDocument> document = GetDocument();
