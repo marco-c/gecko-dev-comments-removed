@@ -4595,6 +4595,11 @@ class JS_PUBLIC_API(StreamConsumer)
     
     enum CloseReason { EndOfFile, Error };
     virtual void streamClosed(CloseReason reason) = 0;
+
+    
+    
+    
+    virtual void noteResponseURLs(const char* maybeUrl, const char* maybeSourceMapUrl) = 0;
 };
 
 enum class MimeType { Wasm };

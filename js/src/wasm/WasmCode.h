@@ -409,6 +409,8 @@ class Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod
     NameInBytecodeVector  funcNames;
     CustomSectionVector   customSections;
     CacheableChars        filename;
+    CacheableChars        baseURL;
+    CacheableChars        sourceMapURL;
 
     
     bool                  debugEnabled;

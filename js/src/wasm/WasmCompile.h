@@ -33,12 +33,19 @@ struct ScriptedCaller
     unsigned column;
 };
 
+struct ResponseURLs
+{
+    UniqueChars baseURL;
+    UniqueChars sourceMapURL;
+};
+
 
 
 struct CompileArgs : ShareableBase<CompileArgs>
 {
     Assumptions assumptions;
     ScriptedCaller scriptedCaller;
+    ResponseURLs responseURLs;
     bool baselineEnabled;
     bool debugEnabled;
     bool ionEnabled;
