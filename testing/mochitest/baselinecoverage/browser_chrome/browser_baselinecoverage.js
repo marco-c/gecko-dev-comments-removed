@@ -1,0 +1,8 @@
+
+
+
+"use strict";
+
+add_task(async function() {
+  ok(true, "Collecting baseline coverage for javascript (.js) file types.");
+});
