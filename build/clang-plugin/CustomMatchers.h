@@ -110,7 +110,8 @@ AST_MATCHER(QualType, isFloat) { return Node->isRealFloatingType(); }
 
 
 
-AST_MATCHER(BinaryOperator, isInSystemHeader) {
+AST_POLYMORPHIC_MATCHER(isInSystemHeader,                                      \
+                        AST_POLYMORPHIC_SUPPORTED_TYPES(Decl, Stmt)) {
   return ASTIsInSystemHeader(Finder->getASTContext(), Node);
 }
 
