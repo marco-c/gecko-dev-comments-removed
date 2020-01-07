@@ -218,7 +218,7 @@ nsXMLContentSink::MaybePrettyPrint()
 static void
 CheckXSLTParamPI(ProcessingInstruction* aPi,
                  nsIDocumentTransformer* aProcessor,
-                 nsIDocument* aDocument)
+                 nsINode* aSource)
 {
   nsAutoString target, data;
   aPi->GetTarget(target);
@@ -251,8 +251,7 @@ CheckXSLTParamPI(ProcessingInstruction* aPi,
       value.SetIsVoid(true);
     }
     if (!name.IsEmpty()) {
-      nsCOMPtr<nsIDOMNode> doc = do_QueryInterface(aDocument);
-      aProcessor->AddXSLTParam(name, namespaceAttr, select, value, doc);
+      aProcessor->AddXSLTParam(name, namespaceAttr, select, value, aSource);
     }
   }
 }
@@ -276,12 +275,22 @@ nsXMLContentSink::DidBuildModel(bool aTerminated)
     mDocument->RemoveObserver(this);
     mIsDocumentObserver = false;
 
+    ErrorResult rv;
+    RefPtr<DocumentFragment> source = mDocument->CreateDocumentFragment();
+    for (nsIContent* child : mDocumentChildren) {
+        
+        if (child->NodeType() != nsINode::DOCUMENT_TYPE_NODE) {
+            source->AppendChild(*child, rv);
+            if (rv.Failed()) {
+                return rv.StealNSResult();
+            }
+        }
+    }
+
     
-    for (nsIContent* child = mDocument->GetFirstChild();
-         child;
-         child = child->GetNextSibling()) {
+    for (nsIContent* child : mDocumentChildren) {
       if (auto pi = ProcessingInstruction::FromNode(child)) {
-        CheckXSLTParamPI(pi, mXSLTProcessor, mDocument);
+        CheckXSLTParamPI(pi, mXSLTProcessor, source);
       }
       else if (child->IsElement()) {
         
@@ -289,7 +298,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated)
       }
     }
 
-    mXSLTProcessor->SetSourceContentModel(mDocument, mDocumentChildren);
+    mXSLTProcessor->SetSourceContentModel(source);
     
     
     mXSLTProcessor = nullptr;
