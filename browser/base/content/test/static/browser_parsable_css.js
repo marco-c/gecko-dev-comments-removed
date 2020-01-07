@@ -130,9 +130,6 @@ let propNameWhitelist = [
   {propName: "--theme-codemirror-gutter-background",
    isFromDevTools: true},
   
-  {propName: "--arrow-width",
-   isFromDevTools: true},
-  
   {propName: "--in-content-category-background",
    isFromDevTools: false},
 
