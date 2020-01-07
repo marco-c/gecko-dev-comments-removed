@@ -82,6 +82,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public StackNode<T>[] getStack() {
         return stack;
     }
@@ -89,6 +90,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public int[] getTemplateModeStack() {
         return templateModeStack;
     }
@@ -96,6 +98,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public StackNode<T>[] getListOfActiveFormattingElements() {
         return listOfActiveFormattingElements;
     }
@@ -103,6 +106,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public T getFormPointer() {
         return formPointer;
     }
@@ -112,6 +116,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public T getHeadPointer() {
         return headPointer;
     }
@@ -121,6 +126,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public T getDeepTreeSurrogateParent() {
         return deepTreeSurrogateParent;
     }
@@ -130,6 +136,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public int getMode() {
         return mode;
     }
@@ -139,6 +146,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public int getOriginalMode() {
         return originalMode;
     }
@@ -148,6 +156,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public boolean isFramesetOk() {
         return framesetOk;
     }
@@ -157,6 +166,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public boolean isNeedToDropLF() {
         return needToDropLF;
     }
@@ -166,6 +176,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
+    @Override
     public boolean isQuirks() {
         return quirks;
     }
@@ -173,6 +184,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public int getListOfActiveFormattingElementsLength() {
         return listOfActiveFormattingElements.length;
     }
@@ -180,6 +192,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public int getStackLength() {
         return stack.length;
     }
@@ -187,6 +200,7 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
     
 
 
+    @Override
     public int getTemplateModeStackLength() {
         return templateModeStack.length;
     }
