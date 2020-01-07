@@ -59,8 +59,7 @@ private:
   static PLDHashNumber ComputeHash(ImageURL* aURI,
                                    const Maybe<uint64_t>& aBlobSerial,
                                    const OriginAttributes& aAttrs,
-                                   void* aControlledDocument,
-                                   bool aIsStyloEnabled);
+                                   void* aControlledDocument);
   static void* GetControlledDocumentToken(nsIDocument* aDocument);
 
   RefPtr<ImageURL> mURI;
@@ -69,10 +68,6 @@ private:
   void* mControlledDocument;
   PLDHashNumber mHash;
   bool mIsChrome;
-  
-  
-  
-  bool mIsStyloEnabled;
 };
 
 } 
