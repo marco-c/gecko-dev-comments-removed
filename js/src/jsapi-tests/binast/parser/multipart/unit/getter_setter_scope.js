@@ -1,0 +1,10 @@
+function foo(e) {
+    var obj = {
+        get x() {
+            var e; 
+        },
+        set x(y) {
+            var e; 
+        }
+    };
+}

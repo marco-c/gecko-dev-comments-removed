@@ -1,0 +1,4 @@
+
+eval("foo");
+
+var eval = function() {}

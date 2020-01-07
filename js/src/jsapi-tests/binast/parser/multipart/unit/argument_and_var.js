@@ -1,0 +1,6 @@
+
+({
+    foo: function k(j) {
+        var j
+    }
+});
