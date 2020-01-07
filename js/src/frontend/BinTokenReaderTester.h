@@ -10,7 +10,7 @@
 #include "mozilla/Maybe.h"
 
 #include "frontend/BinToken.h"
-#include "frontend/BinTokenReaderBase.h"
+#include "frontend/TokenStream.h"
 
 #include "js/TypeDecls.h"
 
@@ -49,7 +49,7 @@ using namespace JS;
 
 
 
-class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
+class MOZ_STACK_CLASS BinTokenReaderTester
 {
   public:
     
@@ -80,11 +80,6 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     BinTokenReaderTester(JSContext* cx, const Vector<uint8_t>& chars);
 
     
-
-
-    MOZ_MUST_USE JS::Result<Ok> readHeader();
-
-    
     
     
     
@@ -97,23 +92,14 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     
 
 
-    MOZ_MUST_USE JS::Result<bool> readBool();
-
-    
-
-
-
-
-    MOZ_MUST_USE JS::Result<double> readDouble();
-
-    
 
 
 
 
 
 
-    MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom();
+    MOZ_MUST_USE bool readMaybeBool(Maybe<bool>& out);
+    MOZ_MUST_USE bool readBool(bool& out);
 
     
 
@@ -122,21 +108,25 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
 
-    MOZ_MUST_USE JS::Result<JSAtom*> readAtom();
-
-
-    
 
 
 
-
-    MOZ_MUST_USE JS::Result<Ok> readChars(Chars&);
+    MOZ_MUST_USE bool readMaybeDouble(Maybe<double>& out);
+    MOZ_MUST_USE bool readDouble(double& out);
 
     
 
 
-    MOZ_MUST_USE JS::Result<Maybe<BinVariant>> readMaybeVariant();
-    MOZ_MUST_USE JS::Result<BinVariant> readVariant();
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool readMaybeChars(Maybe<Chars>& out);
+    MOZ_MUST_USE bool readChars(Chars& out);
 
     
     
@@ -160,7 +150,7 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
 
-    MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, AutoList& guard);
+    MOZ_MUST_USE bool enterList(uint32_t& length, AutoList& guard);
 
     
 
@@ -177,7 +167,7 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
 
-    MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinKind& tag, BinTokenReaderTester::BinFields& fields, AutoTaggedTuple& guard);
+    MOZ_MUST_USE bool enterTaggedTuple(BinKind& tag, BinTokenReaderTester::BinFields& fields, AutoTaggedTuple& guard);
 
     
 
@@ -192,12 +182,98 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
 
-    MOZ_MUST_USE JS::Result<Ok> enterUntaggedTuple(AutoTuple& guard);
+    MOZ_MUST_USE bool enterUntaggedTuple(AutoTuple& guard);
 
     
 
 
-    MOZ_MUST_USE JS::Result<uint32_t> readInternalUint32();
+    TokenPos pos();
+    TokenPos pos(size_t startOffset);
+    size_t offset() const;
+
+    
+
+
+
+
+    MOZ_MUST_USE bool raiseError(const char* description);
+
+     
+
+
+    void poison();
+
+  private:
+    
+
+
+    MOZ_MUST_USE bool readByte(uint8_t* byte);
+
+    
+
+
+
+
+
+    MOZ_MUST_USE bool readBuf(uint8_t* bytes, uint32_t len);
+
+    
+
+
+    MOZ_MUST_USE bool readInternalUint32(uint32_t*);
+
+    
+
+
+
+
+
+
+     template <size_t N>
+     MOZ_MUST_USE bool readConst(const char (&value)[N]);
+
+     
+
+
+
+
+
+
+
+
+
+    template <size_t N>
+    MOZ_MUST_USE bool matchConst(const char (&value)[N]);
+
+    
+
+
+
+    void updateLatestKnownGood();
+
+  private:
+    JSContext* cx_;
+
+    
+    
+    bool poisoned_;
+
+    
+    const uint8_t* start_;
+
+    
+    const uint8_t* current_;
+
+    
+    const uint8_t* stop_;
+
+
+    
+    size_t latestKnownGoodPos_;
+
+    BinTokenReaderTester(const BinTokenReaderTester&) = delete;
+    BinTokenReaderTester(BinTokenReaderTester&&) = delete;
+    BinTokenReaderTester& operator=(BinTokenReaderTester&) = delete;
 
   public:
     
@@ -220,7 +296,7 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
         ~AutoBase();
 
         
-        MOZ_MUST_USE JS::Result<Ok> checkPosition(const uint8_t* expectedPosition);
+        MOZ_MUST_USE bool checkPosition(const uint8_t* expectedPosition);
 
         friend BinTokenReaderTester;
         void init();
@@ -238,10 +314,12 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
         explicit AutoList(BinTokenReaderTester& reader);
 
         
-        MOZ_MUST_USE JS::Result<Ok> done();
+        MOZ_MUST_USE bool done();
       protected:
         friend BinTokenReaderTester;
-        void init();
+        void init(const uint8_t* expectedEnd);
+      private:
+        const uint8_t* expectedEnd_;
     };
 
     
@@ -251,7 +329,7 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
         explicit AutoTaggedTuple(BinTokenReaderTester& reader);
 
         
-        MOZ_MUST_USE JS::Result<Ok> done();
+        MOZ_MUST_USE bool done();
     };
 
     
@@ -261,7 +339,7 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
         explicit AutoTuple(BinTokenReaderTester& reader);
 
         
-        MOZ_MUST_USE JS::Result<Ok> done();
+        MOZ_MUST_USE bool done();
     };
 
     
@@ -276,31 +354,6 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
           return false;
 
         return true;
-    }
-
-    
-    template<size_t N>
-    JS::Result<Ok, JS::Error&> checkFields(const BinKind kind, const BinFields& actual,
-                                                  const BinField (&expected)[N])
-    {
-        if (actual.length() != N)
-            return raiseInvalidNumberOfFields(kind, N, actual.length());
-
-        for (size_t i = 0; i < N; ++i) {
-            if (actual[i] != expected[i])
-                return raiseInvalidField(describeBinKind(kind), actual[i]);
-        }
-
-        return Ok();
-    }
-
-    
-    JS::Result<Ok, JS::Error&> checkFields0(const BinKind kind, const BinFields& actual)
-    {
-        if (actual.length() != 0)
-            return raiseInvalidNumberOfFields(kind, 0, actual.length());
-
-        return Ok();
     }
 };
 
