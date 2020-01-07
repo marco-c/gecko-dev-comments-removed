@@ -1181,21 +1181,21 @@ var interfaceNamesInGlobalScope =
 
     "VideoStreamTrack",
 
-    {name: "VRDisplay", releaseNonWindowsAndMac: false},
+    {name: "VRDisplay", releaseNonWindows: false},
 
-    {name: "VRDisplayCapabilities", releaseNonWindowsAndMac: false},
+    {name: "VRDisplayCapabilities", releaseNonWindows: false},
 
-    {name: "VRDisplayEvent", releaseNonWindowsAndMac: false},
+    {name: "VRDisplayEvent", releaseNonWindows: false},
 
-    {name: "VREyeParameters", releaseNonWindowsAndMac: false},
+    {name: "VREyeParameters", releaseNonWindows: false},
 
-    {name: "VRFieldOfView", releaseNonWindowsAndMac: false},
+    {name: "VRFieldOfView", releaseNonWindows: false},
 
-    {name: "VRFrameData", releaseNonWindowsAndMac: false},
+    {name: "VRFrameData", releaseNonWindows: false},
 
-    {name: "VRPose", releaseNonWindowsAndMac: false},
+    {name: "VRPose", releaseNonWindows: false},
 
-    {name: "VRStageParameters", releaseNonWindowsAndMac: false},
+    {name: "VRStageParameters", releaseNonWindows: false},
 
     "VTTCue",
 
@@ -1319,7 +1319,7 @@ function createInterfaceMap(isXBLScope) {
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.release === !isRelease) ||
-            (entry.releaseNonWindowsAndMac === !(isRelease && !isWindows && !isMac)) ||
+            (entry.releaseNonWindows === !(isRelease && !isWindows)) ||
             (entry.isSecureContext === !isSecureContext) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
