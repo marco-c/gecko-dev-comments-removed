@@ -1031,7 +1031,11 @@ PlacesToolbar.prototype = {
   _openedMenuButton: null,
   _allowPopupShowing: true,
 
-  _rebuild: function PT__rebuild() {
+  get _isAlive() {
+    return this._resultNode && this._rootElt;
+  },
+
+  async _rebuild() {
     
     
     if (this._overFolder.elt)
@@ -1042,7 +1046,6 @@ PlacesToolbar.prototype = {
       this._rootElt.firstChild.remove();
     }
 
-    let fragment = document.createDocumentFragment();
     let cc = this._resultNode.childCount;
     if (cc > 0) {
       
@@ -1050,23 +1053,44 @@ PlacesToolbar.prototype = {
       
       
       
-      let button = this._insertNewItem(this._resultNode.getChild(0),
-                                       this._rootElt);
-      requestAnimationFrame(() => {
-        
-        if (!this._resultNode || !this._rootElt)
-          return;
-        
-        
-        
-        let size = button.clientHeight;
-        let limit = Math.min(cc, parseInt((window.screen.width * 1.5) / size));
-        for (let i = 1; i < limit; ++i) {
-          this._insertNewItem(this._resultNode.getChild(i), fragment);
-        }
-        this._rootElt.appendChild(fragment);
+      let startIndex = 0;
+      let limit = await new Promise(resolve => window.requestAnimationFrame(() => {
+        if (!this._isAlive)
+          return resolve(cc);
 
-        this.updateNodesVisibility();
+        
+        let elt;
+        while (startIndex < cc) {
+          elt = this._insertNewItem(this._resultNode.getChild(startIndex),
+                                    this._rootElt);
+          ++startIndex;
+          if (elt.localName != "toolbarseparator")
+            break;
+        }
+        if (!elt)
+          return resolve(cc);
+
+        return window.promiseDocumentFlushed(() => {
+          
+          
+          
+          let size = elt.clientHeight || 1; 
+          resolve(Math.min(cc, parseInt((window.screen.width * 1.5) / size)));
+        });
+      }));
+
+      if (!this._isAlive)
+        return;
+
+      let fragment = document.createDocumentFragment();
+      for (let i = startIndex; i < limit; ++i) {
+        this._insertNewItem(this._resultNode.getChild(i), fragment);
+      }
+      window.requestAnimationFrame(() => {
+        if (this._isAlive) {
+          this._rootElt.appendChild(fragment);
+          this.updateNodesVisibility();
+        }
       });
     }
 
@@ -1477,7 +1501,7 @@ PlacesToolbar.prototype = {
 
     if (elt == this._rootElt) {
       
-      this._rebuild();
+      this._rebuild().catch(Cu.reportError);
       return;
     }
 
