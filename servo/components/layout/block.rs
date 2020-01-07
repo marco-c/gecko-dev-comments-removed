@@ -3109,11 +3109,3 @@ impl ISizeAndMarginsComputer for InlineFlexItem {
                                      fragment.margin.inline_end)
     }
 }
-
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum BlockStackingContextType {
-    NonstackingContext,
-    PseudoStackingContext,
-    StackingContext,
-}
