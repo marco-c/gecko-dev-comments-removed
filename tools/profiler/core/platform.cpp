@@ -1454,7 +1454,7 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 
 static void
 StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
-                         const TimeStamp& aShutdownTime)
+                         bool aIsShuttingDown)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
@@ -1470,7 +1470,7 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter,
   
   
   
-  if (aShutdownTime) {
+  if (aIsShuttingDown) {
     aWriter.DoubleProperty("shutdownTime", profiler_time());
   } else {
     aWriter.NullProperty("shutdownTime");
@@ -1661,8 +1661,7 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
   
   aWriter.StartObjectProperty("meta");
   {
-    StreamMetaJSCustomObject(aLock, aWriter,
-                             aIsShuttingDown ? TimeStamp::Now() : TimeStamp());
+    StreamMetaJSCustomObject(aLock, aWriter, aIsShuttingDown);
   }
   aWriter.EndObject();
 

@@ -585,7 +585,7 @@ nsProfiler::StartGathering(double aSinceTime)
   
   mWriter->Start();
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
-                                              true,
+                                              false,
                                              &thisProcessFirstSampleTime)) {
     
     
