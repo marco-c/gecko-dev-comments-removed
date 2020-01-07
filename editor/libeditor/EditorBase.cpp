@@ -4011,19 +4011,18 @@ EditorBase::SplitNodeDeepWithTransaction(
   while (true) {
     
     
+    
+    
+    if (NS_WARN_IF(!atStartOfRightNode.GetContainerAsContent())) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
+    }
+    
+    
     if (NS_WARN_IF(atStartOfRightNode.GetContainer() != &aMostAncestorToSplit &&
                    !atStartOfRightNode.GetContainer()->GetParent())) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
 
-    
-    
-    
-    
-
-    if (NS_WARN_IF(!atStartOfRightNode.GetContainerAsContent())) {
-      return SplitNodeResult(NS_ERROR_FAILURE);
-    }
     nsIContent* currentRightNode = atStartOfRightNode.GetContainerAsContent();
 
     
