@@ -401,19 +401,22 @@ function* waitForServiceWorkerActivation(swUrl, document) {
 
 
 
-function enableServiceWorkerDebugging() {
-  return new Promise(done => {
-    let options = { "set": [
-      
-      ["dom.serviceWorkers.enabled", true],
-      
-      ["dom.serviceWorkers.testing.enabled", true],
-      
-      ["dom.ipc.processCount", 1],
-    ]};
+function* enableServiceWorkerDebugging() {
+  let options = { "set": [
+    
+    ["dom.serviceWorkers.enabled", true],
+    
+    ["dom.serviceWorkers.testing.enabled", true],
+    
+    ["dom.ipc.processCount", 1],
+  ]};
+
+  
+  yield new Promise(done => {
     SpecialPowers.pushPrefEnv(options, done);
-    Services.ppmm.releaseCachedProcesses();
   });
+
+  Services.ppmm.releaseCachedProcesses();
 }
 
 
