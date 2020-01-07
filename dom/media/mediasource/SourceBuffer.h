@@ -88,6 +88,11 @@ public:
   void AppendBuffer(const ArrayBuffer& aData, ErrorResult& aRv);
   void AppendBuffer(const ArrayBufferView& aData, ErrorResult& aRv);
 
+  already_AddRefed<Promise> AppendBufferAsync(const ArrayBuffer& aData,
+                                              ErrorResult& aRv);
+  already_AddRefed<Promise> AppendBufferAsync(const ArrayBufferView& aData,
+                                              ErrorResult& aRv);
+
   void Abort(ErrorResult& aRv);
   void AbortBufferAppend();
 
@@ -157,6 +162,8 @@ private:
 
   
   void AppendData(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
+  
+  already_AddRefed<Promise> AppendDataAsync(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
 
   
   
@@ -190,6 +197,11 @@ private:
   RefPtr<TimeRanges> mBuffered;
 
   MozPromiseRequestHolder<MediaSource::ActiveCompletionPromise> mCompletionPromise;
+
+  
+  
+  
+  RefPtr<Promise> mDOMPromise;
 };
 
 } 
