@@ -806,14 +806,10 @@ protected:
                            const FlexboxAxisTracker& aAxisTracker);
 
   
-  nsIFrame* const mFrame;
-
-  
+  nsIFrame* const mFrame; 
   const float mFlexGrow;
   const float mFlexShrink;
-
   const nsSize mIntrinsicRatio;
-
   const nsMargin mBorderPadding;
   nsMargin mMargin; 
 
@@ -841,6 +837,8 @@ protected:
   
   
   float mShareOfWeightSoFar;
+
+  const WritingMode mWM; 
   bool mIsFrozen;
   bool mHadMinViolation;
   bool mHadMaxViolation;
@@ -855,7 +853,6 @@ protected:
   
   bool mNeedsMinSizeAutoResolution;
 
-  const WritingMode mWM; 
   uint8_t mAlignSelf; 
                       
                       
@@ -1798,14 +1795,14 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
     mCrossPosn(0),
     mAscent(0),
     mShareOfWeightSoFar(0.0f),
+    mWM(aFlexItemReflowInput.GetWritingMode()),
     mIsFrozen(false),
     mHadMinViolation(false),
     mHadMaxViolation(false),
     mHadMeasuringReflow(false),
     mIsStretched(false),
-    mIsStrut(false),
+    mIsStrut(false)
     
-    mWM(aFlexItemReflowInput.GetWritingMode())
     
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
@@ -1893,6 +1890,9 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     mCrossPosn(0),
     mAscent(0),
     mShareOfWeightSoFar(0.0f),
+    
+    
+    mWM(aContainerWM),
     mIsFrozen(true),
     mHadMinViolation(false),
     mHadMaxViolation(false),
@@ -1900,7 +1900,6 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     mIsStretched(false),
     mIsStrut(true), 
     mNeedsMinSizeAutoResolution(false),
-    mWM(aContainerWM),
     mAlignSelf(NS_STYLE_ALIGN_FLEX_START)
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
