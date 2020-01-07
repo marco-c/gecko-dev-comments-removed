@@ -1281,7 +1281,7 @@ var gBrowserInit = {
 
     this._setInitialFocus();
 
-    gBrowser.tabContainer.updateVisibility();
+    window.TabBarVisibility.update();
     TabsInTitlebar.onDOMContentLoaded();
   },
 
@@ -3033,7 +3033,6 @@ var BrowserOnClick = {
   onCertError(browser, elementId, isTopFrame, location, securityInfoAsString, frameId) {
     let secHistogram = Services.telemetry.getHistogramById("SECURITY_UI");
     let securityInfo;
-    let sslStatus;
 
     switch (elementId) {
       case "exceptionDialogButton":
@@ -3042,8 +3041,8 @@ var BrowserOnClick = {
         }
 
         securityInfo = getSecurityInfo(securityInfoAsString);
-        sslStatus = securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
-                                .SSLStatus;
+        let sslStatus = securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
+                                    .SSLStatus;
         let params = { exceptionAdded: false,
                        sslStatus };
 
@@ -3080,28 +3079,12 @@ var BrowserOnClick = {
         }
 
         securityInfo = getSecurityInfo(securityInfoAsString);
-        sslStatus = securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
-                                .SSLStatus;
         let errorInfo = getDetailedCertErrorInfo(location,
                                                  securityInfo);
-        let validityInfo = {
-          notAfter: sslStatus.serverCert.validity.notAfter,
-          notBefore: sslStatus.serverCert.validity.notBefore,
-          notAfterLocalTime: sslStatus.serverCert.validity.notAfterLocalTime,
-          notBeforeLocalTime: sslStatus.serverCert.validity.notBeforeLocalTime,
-        };
         browser.messageManager.sendAsyncMessage("CertErrorDetails", {
             code: securityInfo.errorCode,
             info: errorInfo,
-            codeString: securityInfo.errorCodeString,
-            certIsUntrusted: sslStatus.isUntrusted,
-            certIsSelfSigned: sslStatus.serverCert.isSelfSigned,
-            certSubjectAltNames: sslStatus.serverCert.subjectAltNames,
-            validity: validityInfo,
-            url: location,
-            isDomainMismatch: sslStatus.isDomainMismatch,
-            isNotValidAtThisTime: sslStatus.isNotValidAtThisTime,
-            frameId
+            frameId,
         });
         break;
 
