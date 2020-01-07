@@ -636,7 +636,32 @@ protected:
   
   static size_t MinIntervalIndexContainingY(const nsTArray<nsRect>& aIntervals,
                                             const nscoord aTargetY);
+
+  
+  
+  
+  
+  
+  typedef uint16_t dfType;
+  static const dfType MAX_CHAMFER_VALUE;
+  static const dfType MAX_MARGIN;
+  static const dfType MAX_MARGIN_5X;
+
+  
+  
+  static dfType CalcUsedShapeMargin5X(nscoord aShapeMargin,
+                                      int32_t aAppUnitsPerDevPixel);
 };
+
+const nsFloatManager::ShapeInfo::dfType
+nsFloatManager::ShapeInfo::MAX_CHAMFER_VALUE = 11;
+
+const nsFloatManager::ShapeInfo::dfType
+nsFloatManager::ShapeInfo::MAX_MARGIN = (std::numeric_limits<dfType>::max() -
+                                         MAX_CHAMFER_VALUE) / 5;
+
+const nsFloatManager::ShapeInfo::dfType
+nsFloatManager::ShapeInfo::MAX_MARGIN_5X = MAX_MARGIN * 5;
 
 
 
@@ -783,29 +808,8 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   
   
   
-
-  
-  
-  
-  
-  
-  
-  typedef uint16_t dfType;
-  const dfType MAX_CHAMFER_VALUE = 11;
-  const dfType MAX_MARGIN = (std::numeric_limits<dfType>::max() -
-                             MAX_CHAMFER_VALUE) / 5;
-  const dfType MAX_MARGIN_5X = MAX_MARGIN * 5;
-
-  
-  
-  float shapeMarginDevPixels =
-    NSAppUnitsToFloatPixels(aShapeMargin, aAppUnitsPerDevPixel);
-  int32_t shapeMarginDevPixelsInt5X =
-    NSToIntRound(5.0f * shapeMarginDevPixels);
-  NS_WARNING_ASSERTION(shapeMarginDevPixelsInt5X <= MAX_MARGIN_5X,
-                       "shape-margin is too large and is being clamped.");
-  dfType usedMargin5X = (dfType)std::min((int32_t)MAX_MARGIN_5X,
-                                         shapeMarginDevPixelsInt5X);
+  dfType usedMargin5X = CalcUsedShapeMargin5X(aShapeMargin,
+                                              aAppUnitsPerDevPixel);
 
   const LayoutDeviceIntSize bounds =
     LayoutDevicePixel::FromAppUnitsRounded(mRadii,
@@ -822,8 +826,13 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   
   static const int32_t iExpand = 2;
   static const int32_t bExpand = 2;
-  const int32_t iSize = bounds.width + iExpand;
-  const int32_t bSize = bounds.height + bExpand;
+
+  
+  
+  static const int32_t DF_SIDE_MAX =
+    floor(sqrt((double)(std::numeric_limits<int32_t>::max())));
+  const int32_t iSize = std::min(bounds.width + iExpand, DF_SIDE_MAX);
+  const int32_t bSize = std::min(bounds.height + bExpand, DF_SIDE_MAX);
   auto df = MakeUniqueFallible<dfType[]>(iSize * bSize);
   if (!df) {
     
@@ -1557,29 +1566,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-
-    
-    
-    
-    
-    
-    
-    typedef uint16_t dfType;
-    const dfType MAX_CHAMFER_VALUE = 11;
-    const dfType MAX_MARGIN = (std::numeric_limits<dfType>::max() -
-                               MAX_CHAMFER_VALUE) / 5;
-    const dfType MAX_MARGIN_5X = MAX_MARGIN * 5;
-
-    
-    
-    float shapeMarginDevPixels =
-      NSAppUnitsToFloatPixels(aShapeMargin, aAppUnitsPerDevPixel);
-    int32_t shapeMarginDevPixelsInt5X =
-      NSToIntRound(5.0f * shapeMarginDevPixels);
-    NS_WARNING_ASSERTION(shapeMarginDevPixelsInt5X <= MAX_MARGIN_5X,
-                         "shape-margin is too large and is being clamped.");
-    dfType usedMargin5X = (dfType)std::min((int32_t)MAX_MARGIN_5X,
-                                           shapeMarginDevPixelsInt5X);
+    dfType usedMargin5X = CalcUsedShapeMargin5X(aShapeMargin,
+                                                aAppUnitsPerDevPixel);
 
     
     
@@ -1600,7 +1588,6 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     static int32_t kExpansionPerSide = 2;
-
     
     
     
@@ -1614,8 +1601,14 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     const LayoutDeviceIntSize marginRectDevPixels =
       LayoutDevicePixel::FromAppUnitsRounded(aMarginRect.Size(),
                                              aAppUnitsPerDevPixel);
-    const int32_t wEx = marginRectDevPixels.width + (kExpansionPerSide * 2);
-    const int32_t hEx = marginRectDevPixels.height + (kExpansionPerSide * 2);
+    
+    
+    static const int32_t DF_SIDE_MAX =
+      floor(sqrt((double)(std::numeric_limits<int32_t>::max())));
+    const int32_t wEx = std::min(marginRectDevPixels.width +
+                                 (kExpansionPerSide * 2), DF_SIDE_MAX);
+    const int32_t hEx = std::min(marginRectDevPixels.height +
+                                 (kExpansionPerSide * 2), DF_SIDE_MAX);
 
     
     
@@ -2555,6 +2548,34 @@ nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
   }
 
   return endIdx;
+}
+
+ nsFloatManager::ShapeInfo::dfType
+nsFloatManager::ShapeInfo::CalcUsedShapeMargin5X(
+  nscoord aShapeMargin,
+  int32_t aAppUnitsPerDevPixel)
+{
+  
+  
+  
+  
+  
+  
+  static const float MAX_MARGIN_5X_FLOAT = (float)MAX_MARGIN_5X;
+
+  
+  
+  float shapeMarginDevPixels5X = 5.0f *
+    NSAppUnitsToFloatPixels(aShapeMargin, aAppUnitsPerDevPixel);
+  NS_WARNING_ASSERTION(shapeMarginDevPixels5X <= MAX_MARGIN_5X_FLOAT,
+                       "shape-margin is too large and is being clamped.");
+
+  
+  
+  
+  float usedMargin5XFloat = std::min(shapeMarginDevPixels5X,
+                                     MAX_MARGIN_5X_FLOAT);
+  return (dfType)NSToIntRound(usedMargin5XFloat);
 }
 
  UniquePtr<nscoord[]>
