@@ -4,14 +4,13 @@
 
 
 
-#ifndef mozilla_mscom_DynamicallyLinkedFunctionPtr_h
-#define mozilla_mscom_DynamicallyLinkedFunctionPtr_h
+#ifndef mozilla_DynamicallyLinkedFunctionPtr_h
+#define mozilla_DynamicallyLinkedFunctionPtr_h
 
 #include "mozilla/Move.h"
 #include <windows.h>
 
 namespace mozilla {
-namespace mscom {
 
 template <typename T>
 class DynamicallyLinkedFunctionPtr;
@@ -68,7 +67,6 @@ private:
   FunctionPtrT  mFunction;
 };
 
-} 
 } 
 
 #endif 
