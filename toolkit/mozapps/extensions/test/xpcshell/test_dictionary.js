@@ -8,6 +8,9 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 Cu.importGlobalProperties(["XMLHttpRequest"]);
 
 
+PromiseTestUtils.whitelistRejectionsGlobally(/spellCheck is undefined/);
+
+
 Services.prefs.setIntPref("extensions.enabledScopes",
                           AddonManager.SCOPE_PROFILE + AddonManager.SCOPE_USER);
 

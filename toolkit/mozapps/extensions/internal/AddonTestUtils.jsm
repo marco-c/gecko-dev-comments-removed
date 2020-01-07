@@ -806,6 +806,10 @@ var AddonTestUtils = {
     Cu.unload("resource://gre/modules/addons/XPIDatabase.jsm");
     Cu.unload("resource://gre/modules/addons/XPIInstall.jsm");
 
+    let ExtensionScope = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+    ChromeUtils.defineModuleGetter(ExtensionScope, "XPIProvider",
+                                   "resource://gre/modules/addons/XPIProvider.jsm");
+
     if (shutdownError)
       throw shutdownError;
 
@@ -1571,13 +1575,22 @@ var AddonTestUtils = {
 
 
 
+  initializeURLPreloader() {
+    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+    aomStartup.initializeURLPreloader();
+  },
+
+  
+
+
+
+
 
   async overrideBuiltIns(data) {
     
     
     let prevPrefVal = Services.prefs.getBoolPref(PREF_DISABLE_SECURITY, false);
-    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
-    aomStartup.initializeURLPreloader();
+    this.initializeURLPreloader();
 
     let file = this.tempDir.clone();
     file.append("override.txt");
