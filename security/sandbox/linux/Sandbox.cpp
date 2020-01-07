@@ -78,7 +78,7 @@ __sanitizer_sandbox_on_notify(__sanitizer_sandbox_arguments *args);
 #endif 
 
 
-int gSeccompTsyncBroadcastSignum = 0;
+mozilla::Atomic<int> gSeccompTsyncBroadcastSignum(0);
 
 namespace mozilla {
 
@@ -336,6 +336,7 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
   
   
   bool sandboxProgress;
+  const int tsyncSignum = gSeccompTsyncBroadcastSignum;
   do {
     sandboxProgress = false;
     
@@ -352,11 +353,11 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
         continue;
       }
 
-      MOZ_RELEASE_ASSERT(gSeccompTsyncBroadcastSignum != 0);
+      MOZ_RELEASE_ASSERT(tsyncSignum != 0);
 
       
       gSetSandboxDone = 0;
-      if (syscall(__NR_tgkill, pid, tid, gSeccompTsyncBroadcastSignum) != 0) {
+      if (syscall(__NR_tgkill, pid, tid, tsyncSignum) != 0) {
         if (errno == ESRCH) {
           SANDBOX_LOG_ERROR("Thread %d unexpectedly exited.", tid);
           
@@ -428,14 +429,14 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
   } while (sandboxProgress);
 
   void (*oldHandler)(int);
-  oldHandler = signal(gSeccompTsyncBroadcastSignum, SIG_DFL);
-  gSeccompTsyncBroadcastSignum = 0;
+  oldHandler = signal(tsyncSignum, SIG_DFL);
   if (oldHandler != SetThreadSandboxHandler) {
     
     SANDBOX_LOG_ERROR("handler for signal %d was changed to %p!",
-                      gSeccompTsyncBroadcastSignum, oldHandler);
+                      tsyncSignum, oldHandler);
     MOZ_CRASH();
   }
+  gSeccompTsyncBroadcastSignum = 0;
   Unused << closedir(taskdp);
   
   SetThreadSandbox();
@@ -585,18 +586,19 @@ SandboxEarlyInit(GeckoProcessType aType)
   
   
   if (!info.Test(SandboxInfo::kHasSeccompTSync)) {
-    gSeccompTsyncBroadcastSignum = FindFreeSignalNumber();
-    if (gSeccompTsyncBroadcastSignum == 0) {
+    const int tsyncSignum = FindFreeSignalNumber();
+    if (tsyncSignum == 0) {
       SANDBOX_LOG_ERROR("No available signal numbers!");
       MOZ_CRASH();
     }
+    gSeccompTsyncBroadcastSignum = tsyncSignum;
 
     void (*oldHandler)(int);
-    oldHandler = signal(gSeccompTsyncBroadcastSignum, SetThreadSandboxHandler);
+    oldHandler = signal(tsyncSignum, SetThreadSandboxHandler);
     if (oldHandler != SIG_DFL) {
       
       SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n",
-        gSeccompTsyncBroadcastSignum, oldHandler);
+                        tsyncSignum, oldHandler);
       MOZ_CRASH();
     }
   }
