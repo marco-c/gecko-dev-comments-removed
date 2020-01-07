@@ -1775,7 +1775,6 @@ window._gBrowser = {
 
     browser.loadURI(BROWSER_NEW_TAB_URL);
     browser.docShellIsActive = false;
-    browser.renderLayers = true;
     browser._urlbarFocused = true;
 
     
