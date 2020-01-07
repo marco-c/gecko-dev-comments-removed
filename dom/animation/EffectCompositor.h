@@ -22,12 +22,12 @@ class nsCSSPropertyIDSet;
 class nsAtom;
 class nsIFrame;
 class nsPresContext;
-class nsStyleContext;
 struct RawServoAnimationValueMap;
 typedef RawServoAnimationValueMap* RawServoAnimationValueMapBorrowedMut;
 
 namespace mozilla {
 
+class ComputedStyle;
 class EffectSet;
 class RestyleTracker;
 class StyleAnimationValue;
@@ -166,7 +166,7 @@ public:
   MaybeUpdateCascadeResults(StyleBackendType aBackendType,
                             dom::Element* aElement,
                             CSSPseudoElementType aPseudoType,
-                            nsStyleContext* aStyleContext);
+                            ComputedStyle* aComputedStyle);
 
   
   
@@ -189,7 +189,7 @@ public:
                        EffectSet& aEffectSet,
                        dom::Element* aElement,
                        CSSPseudoElementType aPseudoType,
-                       nsStyleContext* aStyleContext);
+                       ComputedStyle* aComputedStyle);
 
   
   
@@ -254,7 +254,7 @@ private:
                           EffectSet& aEffectSet,
                           dom::Element* aElement,
                           CSSPseudoElementType aPseudoType,
-                          nsStyleContext* aStyleContext);
+                          ComputedStyle* aComputedStyle);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 

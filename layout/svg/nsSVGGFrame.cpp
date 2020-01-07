@@ -21,9 +21,9 @@ using namespace mozilla::dom;
 
 
 nsIFrame*
-NS_NewSVGGFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewSVGGFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsSVGGFrame(aContext);
+  return new (aPresShell) nsSVGGFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsSVGGFrame)

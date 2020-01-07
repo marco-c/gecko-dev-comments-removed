@@ -127,7 +127,7 @@ public:
 
 
   friend nsIFrame* NS_NewEmptyFrame(nsIPresShell* aShell,
-                                    nsStyleContext* aContext);
+                                    ComputedStyle* aStyle);
 
 private:
   
@@ -161,9 +161,9 @@ public:
             nsContainerFrame* aParent,
             nsIFrame*         aPrevInFlow) override;
   void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
-  nsStyleContext* GetAdditionalStyleContext(int32_t aIndex) const override;
-  void SetAdditionalStyleContext(int32_t aIndex,
-                                 nsStyleContext* aStyleContext) override;
+  ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const override;
+  void SetAdditionalComputedStyle(int32_t aIndex,
+                                  ComputedStyle* aComputedStyle) override;
   nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const override;
   const nsFrameList& GetChildList(ChildListID aListID) const override;
   void GetChildLists(nsTArray<ChildList>* aLists) const override;
@@ -245,8 +245,8 @@ public:
   mozilla::a11y::AccType AccessibleType() override;
 #endif
 
-  nsStyleContext* GetParentStyleContext(nsIFrame** aProviderFrame) const override {
-    return DoGetParentStyleContext(aProviderFrame);
+  ComputedStyle* GetParentComputedStyle(nsIFrame** aProviderFrame) const override {
+    return DoGetParentComputedStyle(aProviderFrame);
   }
 
   
@@ -262,7 +262,7 @@ public:
 
 
 
-  nsStyleContext* DoGetParentStyleContext(nsIFrame** aProviderFrame) const;
+  ComputedStyle* DoGetParentComputedStyle(nsIFrame** aProviderFrame) const;
 
   bool IsEmpty() override;
   bool IsSelfEmpty() override;
@@ -569,9 +569,9 @@ public:
 
 protected:
   
-  nsFrame(nsStyleContext* aContext, ClassID aID);
-  explicit nsFrame(nsStyleContext* aContext)
-    : nsFrame(aContext, ClassID::nsFrame_id) {}
+  nsFrame(ComputedStyle* aStyle, ClassID aID);
+  explicit nsFrame(ComputedStyle* aStyle)
+    : nsFrame(aStyle, ClassID::nsFrame_id) {}
   virtual ~nsFrame();
 
   
@@ -586,7 +586,7 @@ protected:
   int16_t DisplaySelection(nsPresContext* aPresContext, bool isOkToTurnOn = false);
 
   
-  void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
 public:
   

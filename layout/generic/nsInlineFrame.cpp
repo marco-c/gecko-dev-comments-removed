@@ -13,7 +13,6 @@
 #include "nsBlockFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsGkAtoms.h"
-#include "nsStyleContext.h"
 #include "nsPresContext.h"
 #include "nsCSSAnonBoxes.h"
 #include "mozilla/RestyleManager.h"
@@ -22,6 +21,7 @@
 #include "mozilla/Likely.h"
 #include "SVGTextFrame.h"
 #include "nsStyleChangeList.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/ServoStyleSet.h"
@@ -39,9 +39,9 @@ using namespace mozilla::layout;
 
 
 nsInlineFrame*
-NS_NewInlineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewInlineFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsInlineFrame(aContext);
+  return new (aPresShell) nsInlineFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsInlineFrame)
@@ -289,7 +289,7 @@ nsRect
 nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const
 {
   
-  if (StyleContext()->HasTextDecorationLines()) {
+  if (Style()->HasTextDecorationLines()) {
     return GetVisualOverflowRect();
   }
   return ComputeSimpleTightBounds(aDrawTarget);
@@ -304,7 +304,7 @@ ReparentChildListStyle(nsPresContext* aPresContext,
 
   for (nsFrameList::Enumerator e(aFrames); !e.AtEnd(); e.Next()) {
     NS_ASSERTION(e.get()->GetParent() == aParentFrame, "Bogus parentage");
-    restyleManager->ReparentStyleContext(e.get());
+    restyleManager->ReparentComputedStyle(e.get());
     nsLayoutUtils::MarkDescendantsDirty(e.get());
   }
 }
@@ -453,7 +453,7 @@ nsInlineFrame::DrainSelfOverflowListInternal(DrainFlags aFlags)
       for (nsIFrame* f = firstChild; f; f = f->GetNextSibling()) {
         f->SetParent(this);
         if (doReparentSC) {
-          restyleManager->ReparentStyleContext(f);
+          restyleManager->ReparentComputedStyle(f);
           nsLayoutUtils::MarkDescendantsDirty(f);
         }
       }
@@ -551,7 +551,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
       do {
         child->SetParent(this);
         if (inFirstLine) {
-          restyleManager->ReparentStyleContext(child);
+          restyleManager->ReparentComputedStyle(child);
           nsLayoutUtils::MarkDescendantsDirty(child);
         }
         
@@ -584,7 +584,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
             if (mFrames.ContainsFrame(nextInFlow)) {
               nextInFlow->SetParent(this);
               if (inFirstLine) {
-                restyleManager->ReparentStyleContext(nextInFlow);
+                restyleManager->ReparentComputedStyle(nextInFlow);
                 nsLayoutUtils::MarkDescendantsDirty(nextInFlow);
               }
             }
@@ -957,11 +957,11 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   MOZ_ASSERT(blockFrame, "Why did we have an IB split?");
 
   
-  ServoStyleContext* ourStyle = StyleContext()->AsServo();
+  ComputedStyle* ourStyle = Style()->AsServo();
 
   
   
-  RefPtr<ServoStyleContext> newContext =
+  RefPtr<ComputedStyle> newContext =
     aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
       nsCSSAnonBoxes::mozBlockInsideInlineWrapper, ourStyle);
 
@@ -975,7 +975,7 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     MOZ_ASSERT(!blockFrame->GetPrevContinuation(),
                "Must be first continuation");
 
-    MOZ_ASSERT(blockFrame->StyleContext()->GetPseudo() ==
+    MOZ_ASSERT(blockFrame->Style()->GetPseudo() ==
                nsCSSAnonBoxes::mozBlockInsideInlineWrapper,
                "Unexpected kind of style context");
 
@@ -983,7 +983,7 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     
     
     for (nsIFrame* cont = blockFrame; cont; cont = cont->GetNextContinuation()) {
-      cont->SetStyleContext(newContext);
+      cont->SetComputedStyle(newContext);
     }
 
     nsIFrame* nextInline = blockFrame->GetProperty(nsIFrame::IBSplitSibling());
@@ -997,7 +997,7 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     MOZ_ASSERT(nextInline, "There is always a trailing inline in an IB split");
 
     for (nsIFrame* cont = nextInline; cont; cont = cont->GetNextContinuation()) {
-      cont->SetStyleContext(ourStyle);
+      cont->SetComputedStyle(ourStyle);
     }
     blockFrame = nextInline->GetProperty(nsIFrame::IBSplitSibling());
   }
@@ -1008,9 +1008,9 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
 
 nsFirstLineFrame*
-NS_NewFirstLineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewFirstLineFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsFirstLineFrame(aContext);
+  return new (aPresShell) nsFirstLineFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFirstLineFrame)
@@ -1022,26 +1022,26 @@ nsFirstLineFrame::Init(nsIContent*       aContent,
 {
   nsInlineFrame::Init(aContent, aParent, aPrevInFlow);
   if (!aPrevInFlow) {
-    MOZ_ASSERT(StyleContext()->GetPseudo() == nsCSSPseudoElements::firstLine);
+    MOZ_ASSERT(Style()->GetPseudo() == nsCSSPseudoElements::firstLine);
     return;
   }
 
   
   
-  if (aPrevInFlow->StyleContext()->GetPseudo() == nsCSSPseudoElements::firstLine) {
+  if (aPrevInFlow->Style()->GetPseudo() == nsCSSPseudoElements::firstLine) {
     MOZ_ASSERT(FirstInFlow() == aPrevInFlow);
     
     
     
     
-    nsStyleContext* parentContext = aParent->StyleContext();
-    RefPtr<nsStyleContext> newSC = PresContext()->StyleSet()->
+    ComputedStyle* parentContext = aParent->Style();
+    RefPtr<ComputedStyle> newSC = PresContext()->StyleSet()->
       ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::mozLineFrame,
                                          parentContext);
-    SetStyleContext(newSC);
+    SetComputedStyle(newSC);
   } else {
     MOZ_ASSERT(FirstInFlow() != aPrevInFlow);
-    MOZ_ASSERT(aPrevInFlow->StyleContext()->GetPseudo() ==
+    MOZ_ASSERT(aPrevInFlow->Style()->GetPseudo() ==
                  nsCSSAnonBoxes::mozLineFrame);
   }
 }
@@ -1063,7 +1063,7 @@ nsFirstLineFrame::PullOneFrame(nsPresContext* aPresContext, InlineReflowInput& i
     
     
     NS_ASSERTION(frame->GetParent() == this, "Incorrect parent?");
-    aPresContext->RestyleManager()->ReparentStyleContext(frame);
+    aPresContext->RestyleManager()->ReparentComputedStyle(frame);
     nsLayoutUtils::MarkDescendantsDirty(frame);
   }
   return frame;

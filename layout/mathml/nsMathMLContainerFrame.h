@@ -33,8 +33,8 @@ class nsMathMLContainerFrame : public nsContainerFrame,
 {
   friend class nsMathMLmfencedFrame;
 public:
-  nsMathMLContainerFrame(nsStyleContext* aContext, ClassID aID)
-    : nsContainerFrame(aContext, aID)
+  nsMathMLContainerFrame(ComputedStyle* aStyle, ClassID aID)
+    : nsContainerFrame(aStyle, aID)
     , mIntrinsicWidth(NS_INTRINSIC_WIDTH_UNKNOWN)
     , mBlockStartAscent(0)
   {}
@@ -405,7 +405,7 @@ public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathBlockFrame)
 
   friend nsContainerFrame* NS_NewMathMLmathBlockFrame(nsIPresShell* aPresShell,
-          nsStyleContext* aContext);
+          ComputedStyle* aStyle);
 
   
   
@@ -468,8 +468,8 @@ public:
   }
 
 protected:
-  explicit nsMathMLmathBlockFrame(nsStyleContext* aContext)
-    : nsBlockFrame(aContext, kClassID)
+  explicit nsMathMLmathBlockFrame(ComputedStyle* aStyle)
+    : nsBlockFrame(aStyle, kClassID)
   {
     
     
@@ -488,7 +488,7 @@ public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathInlineFrame)
 
   friend nsContainerFrame* NS_NewMathMLmathInlineFrame(nsIPresShell* aPresShell,
-                                                       nsStyleContext* aContext);
+                                                       ComputedStyle* aStyle);
 
   virtual void
   SetInitialChildList(ChildListID     aListID,
@@ -546,8 +546,8 @@ public:
   }
 
 protected:
-  explicit nsMathMLmathInlineFrame(nsStyleContext* aContext)
-    : nsInlineFrame(aContext, kClassID)
+  explicit nsMathMLmathInlineFrame(ComputedStyle* aStyle)
+    : nsInlineFrame(aStyle, kClassID)
   {}
 
   virtual ~nsMathMLmathInlineFrame() {}

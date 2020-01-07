@@ -8,11 +8,11 @@
 
 #include "mozilla/AutoRestyleTimelineMarker.h"
 #include "mozilla/AutoTimelineMarker.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/ServoStyleContext.h"
-#include "mozilla/ServoStyleContextInlines.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/ChildIterator.h"
@@ -40,7 +40,7 @@ namespace mozilla {
 static bool
 IsAnonBox(const nsIFrame& aFrame)
 {
-  return aFrame.StyleContext()->IsAnonBox();
+  return aFrame.Style()->IsAnonBox();
 }
 
 static const nsIFrame*
@@ -105,7 +105,7 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
   
   
   while (parent && (IsAnonBox(*parent) || parent->IsLineFrame())) {
-    auto* pseudo = parent->StyleContext()->GetPseudo();
+    auto* pseudo = parent->Style()->GetPseudo();
     if (pseudo == nsCSSAnonBoxes::tableWrapper) {
       const nsIFrame* tableFrame = parent->PrincipalChildList().FirstChild();
       MOZ_ASSERT(tableFrame->IsTableFrame());
@@ -167,16 +167,16 @@ ServoRestyleState::ChangesHandledFor(const nsIFrame& aFrame) const
 void
 ServoRestyleState::AddPendingWrapperRestyle(nsIFrame* aWrapperFrame)
 {
-  MOZ_ASSERT(aWrapperFrame->StyleContext()->IsWrapperAnonBox(),
+  MOZ_ASSERT(aWrapperFrame->Style()->IsWrapperAnonBox(),
              "All our wrappers are anon boxes, and why would we restyle "
              "non-inheriting ones?");
-  MOZ_ASSERT(aWrapperFrame->StyleContext()->IsInheritingAnonBox(),
+  MOZ_ASSERT(aWrapperFrame->Style()->IsInheritingAnonBox(),
              "All our wrappers are anon boxes, and why would we restyle "
              "non-inheriting ones?");
-  MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() !=
+  MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() !=
              nsCSSAnonBoxes::cellContent,
              "Someone should be using TableAwareParentFor");
-  MOZ_ASSERT(aWrapperFrame->StyleContext()->GetPseudo() !=
+  MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() !=
              nsCSSAnonBoxes::tableWrapper,
              "Someone should be using TableAwareParentFor");
   
@@ -221,7 +221,7 @@ ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
   MOZ_ASSERT(aIndex < mPendingWrapperRestyles.Length());
 
   nsIFrame* cur = mPendingWrapperRestyles[aIndex];
-  MOZ_ASSERT(cur->StyleContext()->IsWrapperAnonBox());
+  MOZ_ASSERT(cur->Style()->IsWrapperAnonBox());
 
   
   
@@ -245,7 +245,7 @@ ServoRestyleState::ProcessMaybeNestedWrapperRestyle(nsIFrame* aParent,
     parent = parent->GetParent();
   }
   MOZ_ASSERT(FirstContinuationOrPartOfIBSplit(parent) == aParent ||
-             (parent->StyleContext()->IsInheritingAnonBox() &&
+             (parent->Style()->IsInheritingAnonBox() &&
               parent->GetContent() == aParent->GetContent()));
 
   
@@ -305,7 +305,7 @@ ServoRestyleState::TableAwareParentFor(const nsIFrame* aChild)
 
   nsIFrame* parent = aChild->GetParent();
   
-  if (parent->StyleContext()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
+  if (parent->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
     parent = parent->GetParent();
   } else if (parent->IsTableWrapperFrame()) {
     
@@ -481,7 +481,7 @@ struct ServoRestyleManager::TextPostTraversalState
 {
 public:
   TextPostTraversalState(Element& aParentElement,
-                         ServoStyleContext* aParentContext,
+                         ComputedStyle* aParentContext,
                          bool aDisplayContentsParentStyleChanged,
                          ServoRestyleState& aParentRestyleState)
     : mParentElement(aParentElement)
@@ -495,7 +495,7 @@ public:
 
   nsStyleChangeList& ChangeList() { return mParentRestyleState.ChangeList(); }
 
-  nsStyleContext& ComputeStyle(nsIContent* aTextNode)
+  ComputedStyle& ComputeStyle(nsIContent* aTextNode)
   {
     if (!mStyle) {
       mStyle = mParentRestyleState.StyleSet().ResolveStyleForText(
@@ -507,7 +507,7 @@ public:
 
   void ComputeHintIfNeeded(nsIContent* aContent,
                            nsIFrame* aTextFrame,
-                           nsStyleContext& aNewContext)
+                           ComputedStyle& aNewContext)
   {
     MOZ_ASSERT(aTextFrame);
     MOZ_ASSERT(aNewContext.GetPseudo() == nsCSSAnonBoxes::mozText);
@@ -516,7 +516,7 @@ public:
       return;
     }
 
-    ServoStyleContext* oldContext = aTextFrame->StyleContext()->AsServo();
+    ComputedStyle* oldContext = aTextFrame->Style()->AsServo();
     MOZ_ASSERT(oldContext->GetPseudo() == nsCSSAnonBoxes::mozText);
 
     
@@ -542,7 +542,7 @@ public:
   }
 
 private:
-  ServoStyleContext& ParentStyle() {
+  ComputedStyle& ParentStyle() {
     if (!mParentContext) {
       mLazilyResolvedParentContext =
         mParentRestyleState.StyleSet().ResolveServoStyle(&mParentElement);
@@ -552,10 +552,10 @@ private:
   }
 
   Element& mParentElement;
-  ServoStyleContext* mParentContext;
-  RefPtr<ServoStyleContext> mLazilyResolvedParentContext;
+  ComputedStyle* mParentContext;
+  RefPtr<ComputedStyle> mLazilyResolvedParentContext;
   ServoRestyleState& mParentRestyleState;
-  RefPtr<nsStyleContext> mStyle;
+  RefPtr<ComputedStyle> mStyle;
   bool mShouldPostHints;
   bool mShouldComputeHints;
   nsChangeHint mComputedHint;
@@ -566,7 +566,7 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
                        ServoStyleSet& aStyleSet,
                        nsStyleChangeList& aChangeList)
 {
-  const nsStyleDisplay* display = aFrame->StyleContext()->StyleDisplay();
+  const nsStyleDisplay* display = aFrame->Style()->StyleDisplay();
   if (display->mTopLayer != NS_STYLE_TOP_LAYER_TOP) {
     return;
   }
@@ -585,13 +585,13 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
   nsIFrame* backdropFrame =
     nsPlaceholderFrame::GetRealFrameForPlaceholder(backdropPlaceholder);
   MOZ_ASSERT(backdropFrame->IsBackdropFrame());
-  MOZ_ASSERT(backdropFrame->StyleContext()->GetPseudoType() ==
+  MOZ_ASSERT(backdropFrame->Style()->GetPseudoType() ==
              CSSPseudoElementType::backdrop);
 
-  RefPtr<nsStyleContext> newContext =
+  RefPtr<ComputedStyle> newContext =
     aStyleSet.ResolvePseudoElementStyle(aFrame->GetContent()->AsElement(),
                                         CSSPseudoElementType::backdrop,
-                                        aFrame->StyleContext()->AsServo(),
+                                        aFrame->Style()->AsServo(),
                                          nullptr);
 
   
@@ -626,9 +626,9 @@ UpdateFirstLetterIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
 }
 
 static void
-UpdateOneAdditionalStyleContext(nsIFrame* aFrame,
+UpdateOneAdditionalComputedStyle(nsIFrame* aFrame,
                                 uint32_t aIndex,
-                                ServoStyleContext& aOldContext,
+                                ComputedStyle& aOldContext,
                                 ServoRestyleState& aRestyleState)
 {
   auto pseudoType = aOldContext.GetPseudoType();
@@ -636,11 +636,11 @@ UpdateOneAdditionalStyleContext(nsIFrame* aFrame,
   MOZ_ASSERT(
       !nsCSSPseudoElements::PseudoElementSupportsUserActionState(pseudoType));
 
-  RefPtr<ServoStyleContext> newContext =
+  RefPtr<ComputedStyle> newContext =
     aRestyleState.StyleSet().ResolvePseudoElementStyle(
         aFrame->GetContent()->AsElement(),
         pseudoType,
-        aFrame->StyleContext()->AsServo(),
+        aFrame->Style()->AsServo(),
          nullptr);
 
   uint32_t equalStructs, samePointerStructs; 
@@ -663,11 +663,11 @@ UpdateOneAdditionalStyleContext(nsIFrame* aFrame,
         aFrame, aFrame->GetContent(), childHint);
   }
 
-  aFrame->SetAdditionalStyleContext(aIndex, newContext);
+  aFrame->SetAdditionalComputedStyle(aIndex, newContext);
 }
 
 static void
-UpdateAdditionalStyleContexts(nsIFrame* aFrame,
+UpdateAdditionalComputedStyles(nsIFrame* aFrame,
                               ServoRestyleState& aRestyleState)
 {
   MOZ_ASSERT(aFrame);
@@ -676,8 +676,8 @@ UpdateAdditionalStyleContexts(nsIFrame* aFrame,
   
   
   uint32_t index = 0;
-  while (auto* oldContext = aFrame->GetAdditionalStyleContext(index)) {
-    UpdateOneAdditionalStyleContext(
+  while (auto* oldContext = aFrame->GetAdditionalComputedStyle(index)) {
+    UpdateOneAdditionalComputedStyle(
         aFrame, index++, *oldContext->AsServo(), aRestyleState);
   }
 }
@@ -715,8 +715,8 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoPostTraversalFlags)
 static ServoPostTraversalFlags
 SendA11yNotifications(nsPresContext* aPresContext,
                       Element* aElement,
-                      nsStyleContext* aOldStyleContext,
-                      nsStyleContext* aNewStyleContext,
+                      ComputedStyle* aOldComputedStyle,
+                      ComputedStyle* aNewComputedStyle,
                       ServoPostTraversalFlags aFlags)
 {
   using Flags = ServoPostTraversalFlags;
@@ -737,7 +737,7 @@ SendA11yNotifications(nsPresContext* aPresContext,
   }
 
   bool needsNotify = false;
-  bool isVisible = aNewStyleContext->StyleVisibility()->IsVisible();
+  bool isVisible = aNewComputedStyle->StyleVisibility()->IsVisible();
   if (aFlags & Flags::SendA11yNotificationsIfShown) {
     if (!isVisible) {
       
@@ -750,7 +750,7 @@ SendA11yNotifications(nsPresContext* aPresContext,
   } else {
     
     
-    bool wasVisible = aOldStyleContext->StyleVisibility()->IsVisible();
+    bool wasVisible = aOldComputedStyle->StyleVisibility()->IsVisible();
     needsNotify = wasVisible != isVisible;
   }
 
@@ -776,7 +776,7 @@ SendA11yNotifications(nsPresContext* aPresContext,
 bool
 ServoRestyleManager::ProcessPostTraversal(
   Element* aElement,
-  ServoStyleContext* aParentContext,
+  ComputedStyle* aParentContext,
   ServoRestyleState& aRestyleState,
   ServoPostTraversalFlags aFlags)
 {
@@ -853,17 +853,17 @@ ServoRestyleManager::ProcessPostTraversal(
   
   
   
-  RefPtr<ServoStyleContext> oldStyleContext =
-    styleFrame ? styleFrame->StyleContext()->AsServo() : nullptr;
+  RefPtr<ComputedStyle> oldComputedStyle =
+    styleFrame ? styleFrame->Style()->AsServo() : nullptr;
 
-  nsStyleContext* displayContentsStyle = nullptr;
+  ComputedStyle* displayContentsStyle = nullptr;
   
   
-  if (!oldStyleContext) {
+  if (!oldComputedStyle) {
     displayContentsStyle =
       PresContext()->FrameConstructor()->GetDisplayContentsStyleFor(aElement);
     if (displayContentsStyle) {
-      oldStyleContext = displayContentsStyle->AsServo();
+      oldComputedStyle = displayContentsStyle->AsServo();
     }
   }
 
@@ -881,20 +881,20 @@ ServoRestyleManager::ProcessPostTraversal(
   ServoRestyleState& childrenRestyleState =
     thisFrameRestyleState ? *thisFrameRestyleState : aRestyleState;
 
-  RefPtr<ServoStyleContext> upToDateContext =
+  RefPtr<ComputedStyle> upToDateContext =
     wasRestyled
       ? aRestyleState.StyleSet().ResolveServoStyle(aElement)
-      : oldStyleContext;
+      : oldComputedStyle;
 
   ServoPostTraversalFlags childrenFlags =
     wasRestyled ? ServoPostTraversalFlags::ParentWasRestyled
                 : ServoPostTraversalFlags::Empty;
 
-  if (wasRestyled && oldStyleContext) {
+  if (wasRestyled && oldComputedStyle) {
     MOZ_ASSERT(styleFrame || displayContentsStyle);
-    MOZ_ASSERT(oldStyleContext->ComputedData() != upToDateContext->ComputedData());
+    MOZ_ASSERT(oldComputedStyle->ComputedData() != upToDateContext->ComputedData());
 
-    upToDateContext->ResolveSameStructsAs(oldStyleContext);
+    upToDateContext->ResolveSameStructsAs(oldComputedStyle);
 
     
     
@@ -907,8 +907,8 @@ ServoRestyleManager::ProcessPostTraversal(
     
     
     for (nsIFrame* f = styleFrame; f; f = f->GetNextContinuation()) {
-      MOZ_ASSERT_IF(f != styleFrame, !f->GetAdditionalStyleContext(0));
-      f->SetStyleContext(upToDateContext);
+      MOZ_ASSERT_IF(f != styleFrame, !f->GetAdditionalComputedStyle(0));
+      f->SetComputedStyle(upToDateContext);
     }
 
     if (MOZ_UNLIKELY(displayContentsStyle)) {
@@ -918,7 +918,7 @@ ServoRestyleManager::ProcessPostTraversal(
     }
 
     if (styleFrame) {
-      UpdateAdditionalStyleContexts(styleFrame, aRestyleState);
+      UpdateAdditionalComputedStyles(styleFrame, aRestyleState);
     }
 
     if (!aElement->GetParent()) {
@@ -944,7 +944,7 @@ ServoRestyleManager::ProcessPostTraversal(
       styleFrame, aElement, aRestyleState.ChangeList());
 
     childrenFlags |= SendA11yNotifications(mPresContext, aElement,
-                                           oldStyleContext,
+                                           oldComputedStyle,
                                            upToDateContext, aFlags);
   }
 
@@ -1007,7 +1007,7 @@ ServoRestyleManager::ProcessPostTraversal(
         static_cast<nsBlockFrame*>(styleFrame)->GetFirstLineFrame();
       if (firstLineFrame) {
         for (nsIFrame* kid : firstLineFrame->PrincipalChildList()) {
-          ReparentStyleContext(kid);
+          ReparentComputedStyle(kid);
         }
       }
     }
@@ -1045,7 +1045,7 @@ ServoRestyleManager::ProcessPostTraversalForText(
       ServoRestyleState::TableAwareParentFor(primaryFrame));
   }
 
-  nsStyleContext& newContext = aPostTraversalState.ComputeStyle(aTextNode);
+  ComputedStyle& newContext = aPostTraversalState.ComputeStyle(aTextNode);
   aPostTraversalState.ComputeHintIfNeeded(aTextNode, primaryFrame, newContext);
 
   
@@ -1060,7 +1060,7 @@ ServoRestyleManager::ProcessPostTraversalForText(
   
   
   for (nsIFrame* f = primaryFrame; f; f = f->GetNextContinuation()) {
-    f->SetStyleContext(&newContext);
+    f->SetComputedStyle(&newContext);
   }
 
   return true;
@@ -1525,7 +1525,7 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 }
 
 nsresult
-ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
+ServoRestyleManager::ReparentComputedStyle(nsIFrame* aFrame)
 {
   
   
@@ -1545,13 +1545,13 @@ ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   }
 #endif
 
-  DoReparentStyleContext(aFrame, *StyleSet());
+  DoReparentComputedStyle(aFrame, *StyleSet());
 
   return NS_OK;
 }
 
 void
-ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
+ServoRestyleManager::DoReparentComputedStyle(nsIFrame* aFrame,
                                             ServoStyleSet& aStyleSet)
 {
   if (aFrame->IsBackdropFrame()) {
@@ -1586,22 +1586,22 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
       nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
     MOZ_ASSERT(outOfFlow, "no out-of-flow frame");
     for (; outOfFlow; outOfFlow = outOfFlow->GetNextContinuation()) {
-      DoReparentStyleContext(outOfFlow, aStyleSet);
+      DoReparentComputedStyle(outOfFlow, aStyleSet);
     }
   }
 
   nsIFrame* providerFrame;
-  nsStyleContext* newParentContext =
-    aFrame->GetParentStyleContext(&providerFrame);
+  ComputedStyle* newParentContext =
+    aFrame->GetParentComputedStyle(&providerFrame);
   
   
   bool isChild = providerFrame && providerFrame->GetParent() == aFrame;
   nsIFrame* providerChild = nullptr;
   if (isChild) {
-    DoReparentStyleContext(providerFrame, aStyleSet);
+    DoReparentComputedStyle(providerFrame, aStyleSet);
     
     
-    newParentContext = providerFrame->StyleContext();
+    newParentContext = providerFrame->Style();
     providerChild = providerFrame;
     MOZ_ASSERT(!providerFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Out of flow provider?");
@@ -1612,7 +1612,7 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
     
     
     
-    MOZ_ASSERT(aFrame->StyleContext()->IsNonInheritingAnonBox(),
+    MOZ_ASSERT(aFrame->Style()->IsNonInheritingAnonBox(),
                "Why did this frame not end up with a parent context?");
     ReparentFrameDescendants(aFrame, providerChild, aStyleSet);
     return;
@@ -1629,15 +1629,15 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
   
   
   
-  ServoStyleContext* oldContext = aFrame->StyleContext()->AsServo();
+  ComputedStyle* oldContext = aFrame->Style()->AsServo();
   Element* ourElement =
     oldContext->GetPseudoType() == CSSPseudoElementType::NotPseudo &&
     isElement ?
       aFrame->GetContent()->AsElement() :
       nullptr;
-  ServoStyleContext* newParent = newParentContext->AsServo();
+  ComputedStyle* newParent = newParentContext->AsServo();
 
-  ServoStyleContext* newParentIgnoringFirstLine;
+  ComputedStyle* newParentIgnoringFirstLine;
   if (newParent->GetPseudoType() == CSSPseudoElementType::firstLine) {
     MOZ_ASSERT(providerFrame && providerFrame->GetParent()->
                IsFrameOfType(nsIFrame::eBlockFrame),
@@ -1649,7 +1649,7 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
     nsIFrame* blockFrame = providerFrame->GetParent();
     nsIFrame* correctedFrame =
       nsFrame::CorrectStyleParentFrame(blockFrame, oldContext->GetPseudo());
-    newParentIgnoringFirstLine = correctedFrame->StyleContext()->AsServo();
+    newParentIgnoringFirstLine = correctedFrame->Style()->AsServo();
   } else {
     newParentIgnoringFirstLine = newParent;
   }
@@ -1666,15 +1666,15 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
                                                        oldContext->GetPseudo());
     }
   }
-  ServoStyleContext* layoutParent = providerFrame->StyleContext()->AsServo();
+  ComputedStyle* layoutParent = providerFrame->Style()->AsServo();
 
-  RefPtr<ServoStyleContext> newContext =
-    aStyleSet.ReparentStyleContext(oldContext,
+  RefPtr<ComputedStyle> newContext =
+    aStyleSet.ReparentComputedStyle(oldContext,
                                    newParent,
                                    newParentIgnoringFirstLine,
                                    layoutParent,
                                    ourElement);
-  aFrame->SetStyleContext(newContext);
+  aFrame->SetComputedStyle(newContext);
 
   
   
@@ -1683,15 +1683,15 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
     
     
     uint32_t index = 0;
-    while (nsStyleContext* oldAdditionalContext =
-             aFrame->GetAdditionalStyleContext(index)) {
-      RefPtr<ServoStyleContext> newAdditionalContext =
-        aStyleSet.ReparentStyleContext(oldAdditionalContext->AsServo(),
+    while (ComputedStyle* oldAdditionalContext =
+             aFrame->GetAdditionalComputedStyle(index)) {
+      RefPtr<ComputedStyle> newAdditionalContext =
+        aStyleSet.ReparentComputedStyle(oldAdditionalContext->AsServo(),
                                        newContext,
                                        newContext,
                                        newContext,
                                        nullptr);
-      aFrame->SetAdditionalStyleContext(index, newAdditionalContext);
+      aFrame->SetAdditionalComputedStyle(index, newAdditionalContext);
       ++index;
     }
   }
@@ -1724,7 +1724,7 @@ ServoRestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
       
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
           child != aProviderChild) {
-        DoReparentStyleContext(child, aStyleSet);
+        DoReparentComputedStyle(child, aStyleSet);
       }
     }
   }

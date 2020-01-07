@@ -32,7 +32,7 @@ public:
 
 
   friend nsTableColFrame* NS_NewTableColFrame(nsIPresShell* aPresShell,
-                                              nsStyleContext*  aContext);
+                                              ComputedStyle*  aContext);
 
   
   virtual void Init(nsIContent*       aContent,
@@ -46,7 +46,7 @@ public:
   }
 
   
-  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
+  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
@@ -283,7 +283,7 @@ public:
 
 protected:
 
-  explicit nsTableColFrame(nsStyleContext* aContext);
+  explicit nsTableColFrame(ComputedStyle* aStyle);
   ~nsTableColFrame();
 
   nscoord mMinCoord;

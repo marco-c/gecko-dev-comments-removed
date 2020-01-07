@@ -5,6 +5,7 @@
 
 
 #include "ImageDocument.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ImageDocumentBinding.h"
@@ -26,7 +27,6 @@
 #include "imgINotificationObserver.h"
 #include "nsIPresShell.h"
 #include "nsPresContext.h"
-#include "nsStyleContext.h"
 #include "nsIChannel.h"
 #include "nsIContentPolicy.h"
 #include "nsContentPolicyUtils.h"

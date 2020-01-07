@@ -36,7 +36,8 @@ namespace mozilla {
 class ServoRestyleState
 {
 public:
-  ServoRestyleState(ServoStyleSet& aStyleSet, nsStyleChangeList& aChangeList,
+  ServoRestyleState(ServoStyleSet& aStyleSet,
+                    nsStyleChangeList& aChangeList,
                     nsTArray<nsIFrame*>& aPendingWrapperRestyles)
     : mStyleSet(aStyleSet)
     , mChangeList(aChangeList)
@@ -229,7 +230,7 @@ public:
   
   
   
-  nsresult ReparentStyleContext(nsIFrame* aFrame);
+  nsresult ReparentComputedStyle(nsIFrame* aFrame);
 
 private:
   
@@ -292,7 +293,7 @@ private:
 
 
   bool ProcessPostTraversal(Element* aElement,
-                            ServoStyleContext* aParentContext,
+                            ComputedStyle* aParentContext,
                             ServoRestyleState& aRestyleState,
                             ServoPostTraversalFlags aFlags);
 
@@ -321,8 +322,7 @@ private:
 
   
   
-  void DoReparentStyleContext(nsIFrame* aFrame,
-                              ServoStyleSet& aStyleSet);
+  void DoReparentComputedStyle(nsIFrame* aFrame, ServoStyleSet& aStyleSet);
 
   
   

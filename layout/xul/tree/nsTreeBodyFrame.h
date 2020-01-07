@@ -56,7 +56,7 @@ class nsTreeBodyFrame final
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
 
 public:
-  explicit nsTreeBodyFrame(nsStyleContext* aContext);
+  explicit nsTreeBodyFrame(ComputedStyle* aStyle);
   ~nsTreeBodyFrame();
 
   NS_DECL_QUERYFRAME
@@ -176,7 +176,7 @@ public:
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  virtual void DidSetStyleContext(nsStyleContext* aOldStyleContext) override;
+  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   friend nsIFrame* NS_NewTreeBodyFrame(nsIPresShell* aPresShell);
   friend class nsTreeColumn;
@@ -286,11 +286,11 @@ protected:
 
   
   
-  ImgDrawResult PaintBackgroundLayer(nsStyleContext*      aStyleContext,
-                                  nsPresContext*       aPresContext,
-                                  gfxContext&          aRenderingContext,
-                                  const nsRect&        aRect,
-                                  const nsRect&        aDirtyRect);
+  ImgDrawResult PaintBackgroundLayer(ComputedStyle*      aComputedStyle,
+                                     nsPresContext*       aPresContext,
+                                     gfxContext&          aRenderingContext,
+                                     const nsRect&        aRect,
+                                     const nsRect&        aDirtyRect);
 
 
   
@@ -325,21 +325,21 @@ protected:
                           nsRect& aImageRect,
                           nsRect& aTwistyRect,
                           nsPresContext* aPresContext,
-                          nsStyleContext* aTwistyContext);
+                          ComputedStyle* aTwistyContext);
 
   
   nsresult GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
-                    nsStyleContext* aStyleContext, bool& aAllowImageRegions, imgIContainer** aResult);
+                    ComputedStyle* aComputedStyle, bool& aAllowImageRegions, imgIContainer** aResult);
 
   
   
-  nsRect GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext, nsStyleContext* aStyleContext);
+  nsRect GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext, ComputedStyle* aComputedStyle);
 
   
-  nsSize GetImageDestSize(nsStyleContext* aStyleContext, bool useImageRegion, imgIContainer* image);
+  nsSize GetImageDestSize(ComputedStyle* aComputedStyle, bool useImageRegion, imgIContainer* image);
 
   
-  nsRect GetImageSourceRect(nsStyleContext* aStyleContext, bool useImageRegion, imgIContainer* image);
+  nsRect GetImageSourceRect(ComputedStyle* aComputedStyle, bool useImageRegion, imgIContainer* image);
 
   
   int32_t GetRowHeight();
@@ -355,7 +355,7 @@ protected:
 
   
   
-  nsStyleContext* GetPseudoStyleContext(nsICSSAnonBoxPseudo* aPseudoElement);
+  ComputedStyle* GetPseudoComputedStyle(nsICSSAnonBoxPseudo* aPseudoElement);
 
   
   

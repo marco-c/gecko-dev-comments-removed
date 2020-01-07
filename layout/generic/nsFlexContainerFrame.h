@@ -18,7 +18,7 @@ class LogicalPoint;
 } 
 
 nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
-                                           nsStyleContext* aContext);
+                                           mozilla::ComputedStyle* aStyle);
 
 
 
@@ -97,7 +97,7 @@ public:
 
   
   friend nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
-                                                    nsStyleContext* aContext);
+                                                    ComputedStyle* aStyle);
 
   
   class FlexItem;
@@ -199,8 +199,8 @@ public:
 
 protected:
   
-  explicit nsFlexContainerFrame(nsStyleContext* aContext)
-    : nsContainerFrame(aContext, kClassID)
+  explicit nsFlexContainerFrame(ComputedStyle* aStyle)
+    : nsContainerFrame(aStyle, kClassID)
     , mBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN)
     , mLastBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN)
   {}

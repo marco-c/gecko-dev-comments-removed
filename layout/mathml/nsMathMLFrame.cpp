@@ -97,17 +97,17 @@ nsMathMLFrame::UpdatePresentationData(uint32_t        aFlagsValues,
  void
 nsMathMLFrame::ResolveMathMLCharStyle(nsPresContext*  aPresContext,
                                       nsIContent*      aContent,
-                                      nsStyleContext*  aParentStyleContext,
+                                      ComputedStyle*  aParentComputedStyle,
                                       nsMathMLChar*    aMathMLChar)
 {
   CSSPseudoElementType pseudoType =
     CSSPseudoElementType::mozMathAnonymous; 
-  RefPtr<nsStyleContext> newStyleContext;
-  newStyleContext = aPresContext->StyleSet()->
+  RefPtr<ComputedStyle> newComputedStyle;
+  newComputedStyle = aPresContext->StyleSet()->
     ResolvePseudoElementStyle(aContent->AsElement(), pseudoType,
-                              aParentStyleContext, nullptr);
+                              aParentComputedStyle, nullptr);
 
-  aMathMLChar->SetStyleContext(newStyleContext);
+  aMathMLChar->SetComputedStyle(newComputedStyle);
 }
 
  void
@@ -213,7 +213,7 @@ nsMathMLFrame::GetAxisHeight(DrawTarget*    aDrawTarget,
 
  nscoord
 nsMathMLFrame::CalcLength(nsPresContext*   aPresContext,
-                          nsStyleContext*   aStyleContext,
+                          ComputedStyle*   aComputedStyle,
                           const nsCSSValue& aCSSValue,
                           float             aFontSizeInflation)
 {
@@ -226,13 +226,13 @@ nsMathMLFrame::CalcLength(nsPresContext*   aPresContext,
   nsCSSUnit unit = aCSSValue.GetUnit();
 
   if (eCSSUnit_EM == unit) {
-    const nsStyleFont* font = aStyleContext->StyleFont();
+    const nsStyleFont* font = aComputedStyle->StyleFont();
     return NSToCoordRound(aCSSValue.GetFloatValue() * (float)font->mFont.size);
   }
   else if (eCSSUnit_XHeight == unit) {
     aPresContext->SetUsesExChUnits(true);
     RefPtr<nsFontMetrics> fm = nsLayoutUtils::
-      GetFontMetricsForStyleContext(aStyleContext, aFontSizeInflation);
+      GetFontMetricsForComputedStyle(aComputedStyle, aFontSizeInflation);
     nscoord xHeight = fm->XHeight();
     return NSToCoordRound(aCSSValue.GetFloatValue() * (float)xHeight);
   }
@@ -247,7 +247,7 @@ nsMathMLFrame::ParseNumericValue(const nsString&   aString,
                                  nscoord*          aLengthValue,
                                  uint32_t          aFlags,
                                  nsPresContext*    aPresContext,
-                                 nsStyleContext*   aStyleContext,
+                                 ComputedStyle*   aComputedStyle,
                                  float             aFontSizeInflation)
 {
   nsCSSValue cssValue;
@@ -270,7 +270,7 @@ nsMathMLFrame::ParseNumericValue(const nsString&   aString,
   }
 
   
-  *aLengthValue = CalcLength(aPresContext, aStyleContext, cssValue,
+  *aLengthValue = CalcLength(aPresContext, aComputedStyle, cssValue,
                              aFontSizeInflation);
 }
 

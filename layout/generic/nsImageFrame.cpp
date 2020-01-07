@@ -11,6 +11,7 @@
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxUtils.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EventStates.h"
@@ -32,7 +33,6 @@
 #include "nsIDocument.h"
 #include "nsContentUtils.h"
 #include "nsCSSAnonBoxes.h"
-#include "nsStyleContext.h"
 #include "nsStyleConsts.h"
 #include "nsStyleCoord.h"
 #include "nsStyleUtil.h"
@@ -127,15 +127,15 @@ inline bool HaveFixedSize(const ReflowInput& aReflowInput)
 }
 
 nsIFrame*
-NS_NewImageFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewImageFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) nsImageFrame(aContext);
+  return new (aPresShell) nsImageFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsImageFrame)
 
-nsImageFrame::nsImageFrame(nsStyleContext* aContext, ClassID aID)
-  : nsAtomicContainerFrame(aContext, aID)
+nsImageFrame::nsImageFrame(ComputedStyle* aStyle, ClassID aID)
+  : nsAtomicContainerFrame(aStyle, aID)
   , mComputedSize(0, 0)
   , mIntrinsicRatio(0, 0)
   , mDisplayingIcon(false)
@@ -226,9 +226,9 @@ nsImageFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroy
 }
 
 void
-nsImageFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
+nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {
-  nsAtomicContainerFrame::DidSetStyleContext(aOldStyleContext);
+  nsAtomicContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
   if (!mImage) {
     
@@ -241,8 +241,8 @@ nsImageFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
   
   
   bool shouldUpdateOrientation =
-    !aOldStyleContext ||
-    aOldStyleContext->StyleVisibility()->mImageOrientation != newOrientation;
+    !aOldComputedStyle ||
+    aOldComputedStyle->StyleVisibility()->mImageOrientation != newOrientation;
 
   if (shouldUpdateOrientation) {
     nsCOMPtr<imgIContainer> image(mImage->Unwrap());
@@ -451,11 +451,11 @@ nsImageFrame::SourceRectToDest(const nsIntRect& aRect)
 
 bool
 nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
-                                        nsStyleContext* aStyleContext)
+                                        ComputedStyle* aComputedStyle)
 {
   EventStates state = aElement->State();
   if (IMAGE_OK(state,
-               HaveSpecifiedSize(aStyleContext->StylePosition()))) {
+               HaveSpecifiedSize(aComputedStyle->StylePosition()))) {
     
     return true;
   }
@@ -473,7 +473,7 @@ nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
   
   bool useSizedBox;
 
-  if (aStyleContext->StyleUIReset()->mForceBrokenImageIcon) {
+  if (aComputedStyle->StyleUIReset()->mForceBrokenImageIcon) {
     useSizedBox = true;
   }
   else if (gIconLoad && gIconLoad->mPrefForceInlineAltText) {
@@ -488,13 +488,13 @@ nsImageFrame::ShouldCreateImageFrameFor(Element* aElement,
     
     useSizedBox = true;
   }
-  else if (aStyleContext->PresContext()->CompatibilityMode() !=
+  else if (aComputedStyle->PresContext()->CompatibilityMode() !=
            eCompatibility_NavQuirks) {
     useSizedBox = false;
   }
   else {
     
-    useSizedBox = HaveSpecifiedSize(aStyleContext->StylePosition());
+    useSizedBox = HaveSpecifiedSize(aComputedStyle->StylePosition());
   }
 
   return useSizedBox;
@@ -1394,7 +1394,7 @@ nsImageFrame::DisplayAltFeedback(gfxContext& aRenderingContext,
     Unused <<
       nsCSSRendering::PaintBorderWithStyleBorder(PresContext(), aRenderingContext,
                                                  this, inner, inner,
-                                                 recessedBorder, mStyleContext,
+                                                 recessedBorder, mComputedStyle,
                                                  PaintBorderFlags::SYNC_DECODE_IMAGES);
   }
 
@@ -2112,9 +2112,9 @@ nsImageFrame::GetCursor(const nsPoint& aPoint,
       
       
       
-      RefPtr<nsStyleContext> areaStyle =
+      RefPtr<ComputedStyle> areaStyle =
         PresShell()->StyleSet()->
-          ResolveStyleFor(area->AsElement(), StyleContext(),
+          ResolveStyleFor(area->AsElement(), Style(),
                           LazyComputeBehavior::Allow);
       FillCursorInformationFromStyle(areaStyle->StyleUserInterface(),
                                      aCursor);
@@ -2477,7 +2477,7 @@ IsInAutoWidthTableCellForQuirk(nsIFrame *aFrame)
     return false;
   
   nsBlockFrame *ancestor = nsLayoutUtils::FindNearestBlockAncestor(aFrame);
-  if (ancestor->StyleContext()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
+  if (ancestor->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
     
     nsFrame *grandAncestor = static_cast<nsFrame*>(ancestor->GetParent());
     return grandAncestor &&

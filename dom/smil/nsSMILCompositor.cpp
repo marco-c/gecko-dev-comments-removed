@@ -57,16 +57,16 @@ nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates)
 
   
   
-  RefPtr<nsStyleContext> baseStyleContext;
+  RefPtr<ComputedStyle> baseComputedStyle;
   if (MightNeedBaseStyle()) {
-    baseStyleContext =
-      nsComputedDOMStyle::GetUnanimatedStyleContextNoFlush(mKey.mElement,
-                                                           nullptr);
+    baseComputedStyle =
+      nsComputedDOMStyle::GetUnanimatedComputedStyleNoFlush(mKey.mElement,
+                                                            nullptr);
   }
 
   
   
-  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(baseStyleContext);
+  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(baseComputedStyle);
   if (!smilAttr) {
     
     return;
@@ -134,13 +134,13 @@ nsSMILCompositor::ClearAnimationEffects()
 
 
 UniquePtr<nsISMILAttr>
-nsSMILCompositor::CreateSMILAttr(nsStyleContext* aBaseStyleContext)
+nsSMILCompositor::CreateSMILAttr(ComputedStyle* aBaseComputedStyle)
 {
   nsCSSPropertyID propID = GetCSSPropertyToAnimate();
 
   if (propID != eCSSProperty_UNKNOWN) {
     return MakeUnique<nsSMILCSSProperty>(propID, mKey.mElement.get(),
-                                         aBaseStyleContext);
+                                         aBaseComputedStyle);
   }
 
   return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,

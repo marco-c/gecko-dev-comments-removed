@@ -119,9 +119,9 @@ NS_IMPL_ISUPPORTS(nsComboButtonListener,
 nsComboboxControlFrame* nsComboboxControlFrame::sFocused = nullptr;
 
 nsComboboxControlFrame*
-NS_NewComboboxControlFrame(nsIPresShell* aPresShell, nsStyleContext* aContext, nsFrameState aStateFlags)
+NS_NewComboboxControlFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle, nsFrameState aStateFlags)
 {
-  nsComboboxControlFrame* it = new (aPresShell) nsComboboxControlFrame(aContext);
+  nsComboboxControlFrame* it = new (aPresShell) nsComboboxControlFrame(aStyle);
 
   if (it) {
     
@@ -224,8 +224,8 @@ static int32_t gReflowInx = -1;
 
 
 
-nsComboboxControlFrame::nsComboboxControlFrame(nsStyleContext* aContext)
-  : nsBlockFrame(aContext, kClassID)
+nsComboboxControlFrame::nsComboboxControlFrame(ComputedStyle* aStyle)
+  : nsBlockFrame(aStyle, kClassID)
   , mDisplayFrame(nullptr)
   , mButtonFrame(nullptr)
   , mDropdownFrame(nullptr)
@@ -1303,9 +1303,9 @@ class nsComboboxDisplayFrame : public nsBlockFrame {
 public:
   NS_DECL_FRAMEARENA_HELPERS(nsComboboxDisplayFrame)
 
-  nsComboboxDisplayFrame(nsStyleContext* aContext,
+  nsComboboxDisplayFrame(ComputedStyle* aStyle,
                          nsComboboxControlFrame* aComboBox)
-    : nsBlockFrame(aContext, kClassID)
+    : nsBlockFrame(aStyle, kClassID)
     , mComboBox(aComboBox)
   {}
 
@@ -1387,21 +1387,21 @@ nsComboboxControlFrame::CreateFrameForDisplayNode()
   StyleSetHandle styleSet = shell->StyleSet();
 
   
-  RefPtr<nsStyleContext> styleContext;
+  RefPtr<ComputedStyle> styleContext;
   styleContext = styleSet->
     ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::mozDisplayComboboxControlFrame,
-                                       mStyleContext);
+                                       mComputedStyle);
 
-  RefPtr<nsStyleContext> textStyleContext;
-  textStyleContext =
-    styleSet->ResolveStyleForText(mDisplayContent, mStyleContext);
+  RefPtr<ComputedStyle> textComputedStyle;
+  textComputedStyle =
+    styleSet->ResolveStyleForText(mDisplayContent, mComputedStyle);
 
   
   mDisplayFrame = new (shell) nsComboboxDisplayFrame(styleContext, this);
   mDisplayFrame->Init(mContent, this, nullptr);
 
   
-  nsIFrame* textFrame = NS_NewTextFrame(shell, textStyleContext);
+  nsIFrame* textFrame = NS_NewTextFrame(shell, textComputedStyle);
 
   
   textFrame->Init(mDisplayContent, mDisplayFrame, nullptr);
