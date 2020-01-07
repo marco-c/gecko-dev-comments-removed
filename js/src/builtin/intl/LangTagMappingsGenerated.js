@@ -61,13 +61,7 @@ var langTagMappings = {
 
 
 
-var langSubtagMappings = {
-    "BU": "MM",
-    "DD": "DE",
-    "FX": "FR",
-    "TP": "TL",
-    "YD": "YE",
-    "ZR": "CD",
+var languageMappings = {
     "aam": "aas",
     "adp": "dz",
     "aue": "ktz",
@@ -145,6 +139,18 @@ var langSubtagMappings = {
     "ymt": "mtm",
     "yos": "zom",
     "yuu": "yug",
+};
+
+
+
+
+var regionMappings = {
+    "BU": "MM",
+    "DD": "DE",
+    "FX": "FR",
+    "TP": "TL",
+    "YD": "YE",
+    "ZR": "CD",
 };
 
 

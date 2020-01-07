@@ -540,14 +540,21 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
 
     
     
-    
-    
-    if (hasOwn(language, langSubtagMappings))
-        language = langSubtagMappings[language];
+    if (hasOwn(language, languageMappings))
+        language = languageMappings[language];
 
     var canonical = language;
 
     if (extlang1) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -562,17 +569,15 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
             canonical += "-" + extlang1;
     }
 
-    if (extlang2) {
-        assert(!(hasOwn(extlang2, extlangMappings) && extlangMappings[extlang2] === canonical),
-               "unexpected extlang2 replacement");
+    
+    
+    if (extlang2)
         canonical += "-" + extlang2;
-    }
 
-    if (extlang3) {
-        assert(!(hasOwn(extlang3, extlangMappings) && extlangMappings[extlang3] === canonical),
-               "unexpected extlang3 replacement");
+    
+    
+    if (extlang3)
         canonical += "-" + extlang3;
-    }
 
     if (script) {
         
@@ -580,8 +585,7 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
         script = callFunction(std_String_toUpperCase, script[0]) +
                  Substring(script, 1, script.length - 1);
 
-        assert(!hasOwn(script, langSubtagMappings), "unexpected script replacement");
-
+        
         canonical += "-" + script;
     }
 
@@ -591,23 +595,15 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
 
         
         
-        
-        
-        
-        
-        if (hasOwn(region, langSubtagMappings))
-            region = langSubtagMappings[region];
+        if (hasOwn(region, regionMappings))
+            region = regionMappings[region];
 
         canonical += "-" + region;
     }
 
-    if (variants.length > 0) {
-#ifdef DEBUG
-        for (var i = 0; i < variants.length; i++)
-            assert(!hasOwn(variants[i], langSubtagMappings), "unexpected variant replacement");
-#endif
+    
+    if (variants.length > 0)
         canonical += "-" + callFunction(std_Array_join, variants, "-");
-    }
 
     if (extensions.length > 0) {
         
@@ -691,8 +687,8 @@ function ValidateAndCanonicalizeLanguageTag(locale) {
         assert(!hasOwn(locale, langTagMappings), "langTagMappings contains no 2*3ALPHA mappings");
 
         
-        locale = hasOwn(locale, langSubtagMappings)
-                 ? langSubtagMappings[locale]
+        locale = hasOwn(locale, languageMappings)
+                 ? languageMappings[locale]
                  : locale;
         assert(locale === CanonicalizeLanguageTag(locale), "expected same canonicalization");
 
