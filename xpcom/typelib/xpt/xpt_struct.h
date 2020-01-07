@@ -91,23 +91,23 @@ struct XPTInterfaceDescriptor {
   static const uint8_t kBuiltinClassMask =              0x20;
   static const uint8_t kMainProcessScriptableOnlyMask = 0x10;
 
-  bool IsScriptable() const { return !!(flags & kScriptableMask); }
-  bool IsFunction() const { return !!(flags & kFunctionMask); }
-  bool IsBuiltinClass() const { return !!(flags & kBuiltinClassMask); }
-  bool IsMainProcessScriptableOnly() const { return !!(flags & kMainProcessScriptableOnlyMask); }
+  bool IsScriptable() const { return !!(mFlags & kScriptableMask); }
+  bool IsFunction() const { return !!(mFlags & kFunctionMask); }
+  bool IsBuiltinClass() const { return !!(mFlags & kBuiltinClassMask); }
+  bool IsMainProcessScriptableOnly() const { return !!(mFlags & kMainProcessScriptableOnlyMask); }
 
   
 
 
 
 
-  const XPTMethodDescriptor* method_descriptors;
-  const XPTConstDescriptor* const_descriptors;
-  const XPTTypeDescriptor* additional_types;
-  uint16_t parent_interface;
-  uint16_t num_methods;
-  uint16_t num_constants;
-  uint8_t flags;
+  const XPTMethodDescriptor* mMethodDescriptors;
+  const XPTConstDescriptor* mConstDescriptors;
+  const XPTTypeDescriptor* mAdditionalTypes;
+  uint16_t mParentInterface;
+  uint16_t mNumMethods;
+  uint16_t mNumConstants;
+  uint8_t mFlags;
 
   
 
@@ -125,7 +125,7 @@ struct XPTInterfaceDescriptor {
 
 
 
-  uint8_t num_additional_types;
+  uint8_t mNumAdditionalTypes;
 };
 
 
