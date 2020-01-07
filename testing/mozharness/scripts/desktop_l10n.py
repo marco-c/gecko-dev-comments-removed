@@ -157,7 +157,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, AutomationMixin,
         
         buildscript_kwargs = {
             'all_actions': [
-                "clobber",
                 "clone-locales",
                 "list-locales",
                 "setup",
