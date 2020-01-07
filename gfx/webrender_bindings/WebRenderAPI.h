@@ -392,7 +392,8 @@ public:
 
   void PushIFrame(const wr::LayoutRect& aBounds,
                   bool aIsBackfaceVisible,
-                  wr::PipelineId aPipeline);
+                  wr::PipelineId aPipeline,
+                  bool aIgnoreMissingPipeline);
 
   
   

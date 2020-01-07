@@ -173,7 +173,7 @@ public:
         
 
         wr::LayoutRect r = wr::ToRoundedLayoutRect(bounds);
-        aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref());
+        aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref(),  false);
 
         gfx::Matrix4x4 scTransform;
         gfxRect destGFXRect = mFrame->PresContext()->AppUnitsToGfxUnits(dest);
