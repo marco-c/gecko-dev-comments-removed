@@ -69,7 +69,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
 
   
   
-  let shortcuts = [
+  return [
     
     
 
@@ -169,18 +169,6 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
       modifiers
     },
   ];
-
-  if (isMac) {
-    
-    
-    shortcuts.push({
-      toolId: "inspector",
-      shortcut: KeyShortcutsBundle.GetStringFromName("inspector.commandkey"),
-      modifiers: "accel,shift"
-    });
-  }
-
-  return shortcuts;
 });
 
 function DevToolsStartup() {
