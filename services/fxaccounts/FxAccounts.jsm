@@ -289,6 +289,10 @@ function getScopeKey(scopeArray) {
   return normalizedScopes.sort().join("|");
 }
 
+function getPropertyDescriptor(obj, prop) {
+  return Object.getOwnPropertyDescriptor(obj, prop) ||
+         getPropertyDescriptor(Object.getPrototypeOf(obj), prop);
+}
 
 
 
@@ -302,27 +306,21 @@ function getScopeKey(scopeArray) {
 
 
 
-
-
-
-
-function copyObjectProperties(from, to, opts = {}) {
-  let keys = (opts && opts.keys) || Object.keys(from);
-  let thisArg = (opts && opts.bind) || to;
-
+function copyObjectProperties(from, to, thisObj, keys) {
   for (let prop of keys) {
-    let desc = Object.getOwnPropertyDescriptor(from, prop);
+    
+    let desc = getPropertyDescriptor(from, prop);
 
     if (typeof(desc.value) == "function") {
-      desc.value = desc.value.bind(thisArg);
+      desc.value = desc.value.bind(thisObj);
     }
 
     if (desc.get) {
-      desc.get = desc.get.bind(thisArg);
+      desc.get = desc.get.bind(thisObj);
     }
 
     if (desc.set) {
-      desc.set = desc.set.bind(thisArg);
+      desc.set = desc.set.bind(thisObj);
     }
 
     Object.defineProperty(to, prop, desc);
@@ -337,20 +335,15 @@ function urlsafeBase64Encode(key) {
 
 
 this.FxAccounts = function(mockInternal) {
-  let internal = new FxAccountsInternal();
   let external = {};
+  let internal;
 
-  
-  let prototype = FxAccountsInternal.prototype;
-  let options = {keys: publicProperties, bind: internal};
-  copyObjectProperties(prototype, external, options);
-
-  
-  if (mockInternal && !mockInternal.onlySetInternal) {
-    copyObjectProperties(mockInternal, internal);
-  }
-
-  if (mockInternal) {
+  if (!mockInternal) {
+    internal = new FxAccountsInternal();
+    copyObjectProperties(FxAccountsInternal.prototype, external, internal, publicProperties);
+  } else {
+    internal = Object.create(FxAccountsInternal.prototype, Object.getOwnPropertyDescriptors(mockInternal));
+    copyObjectProperties(internal, external, internal, publicProperties);
     
     external.internal = internal;
   }
