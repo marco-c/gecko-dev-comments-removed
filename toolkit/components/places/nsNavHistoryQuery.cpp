@@ -1294,9 +1294,10 @@ nsNavHistoryQueryOptions::SetResultType(uint16_t aType)
     return NS_ERROR_INVALID_ARG;
   
   
-  if (aType == RESULTS_AS_TAG_QUERY || aType == RESULTS_AS_TAG_CONTENTS ||
-      aType == RESULTS_AS_ROOTS_QUERY || aType == RESULTS_AS_LEFT_PANE_QUERY)
+  if (aType == RESULTS_AS_TAG_QUERY || aType == RESULTS_AS_ROOTS_QUERY ||
+      aType == RESULTS_AS_LEFT_PANE_QUERY) {
     mQueryType = QUERY_TYPE_BOOKMARKS;
+  }
   mResultType = aType;
   return NS_OK;
 }
@@ -1397,8 +1398,7 @@ nsNavHistoryQueryOptions::SetQueryType(uint16_t aQueryType)
 {
   
   
-  if (mResultType == RESULTS_AS_TAG_CONTENTS ||
-      mResultType == RESULTS_AS_TAG_QUERY ||
+  if (mResultType == RESULTS_AS_TAG_QUERY ||
       mResultType == RESULTS_AS_LEFT_PANE_QUERY ||
       mResultType == RESULTS_AS_ROOTS_QUERY)
    return NS_OK;

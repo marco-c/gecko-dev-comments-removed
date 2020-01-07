@@ -798,17 +798,7 @@ PlacesController.prototype = {
         let tag = node.parent.title || "";
         if (!tag) {
           
-          
-          if (node.parent.queryOptions.resultType ==
-                Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
-            
-            let tagItemId = PlacesUtils.getConcreteItemId(node.parent);
-            let tagGuid = await PlacesUtils.promiseItemGuid(tagItemId);
-            tag = (await PlacesUtils.bookmarks.fetch(tagGuid)).title;
-          } else {
-            
-            tag = node.parent.query.tags[0];
-          }
+          tag = node.parent.query.tags[0];
         }
         transactions.push(PlacesTransactions.Untag({ urls: [node.uri], tag }));
       } else if (PlacesUtils.nodeIsTagQuery(node) &&
