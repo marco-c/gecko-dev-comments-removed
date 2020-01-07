@@ -55,14 +55,13 @@ ContentProcessForward.prototype = {
         let consoleMsg = subject.wrappedJSObject;
 
         let msgData = {
-          level: consoleMsg.level,
+          ...consoleMsg,
+          arguments: [],
           filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-          lineNumber: consoleMsg.lineNumber,
           functionName: consoleMsg.functionName &&
             consoleMsg.functionName.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-          timeStamp: consoleMsg.timeStamp,
-          addonId: consoleMsg.addonId,
-          arguments: [],
+          
+          wrappedJSObject: null,
         };
 
         
