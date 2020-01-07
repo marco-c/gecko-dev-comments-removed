@@ -1077,7 +1077,7 @@ class ICStubCompiler
     
     
     void enterStubFrame(MacroAssembler& masm, Register scratch);
-    void assumeStubFrame(MacroAssembler& masm);
+    void assumeStubFrame();
     void leaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false);
 
     

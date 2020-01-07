@@ -867,7 +867,7 @@ ValueNumberer::visitDefinition(MDefinition* def)
 
 
 bool
-ValueNumberer::visitControlInstruction(MBasicBlock* block, const MBasicBlock* dominatorRoot)
+ValueNumberer::visitControlInstruction(MBasicBlock* block)
 {
     
     MControlInstruction* control = block->lastIns();
@@ -970,7 +970,7 @@ ValueNumberer::visitUnreachableBlock(MBasicBlock* block)
 
 
 bool
-ValueNumberer::visitBlock(MBasicBlock* block, const MBasicBlock* dominatorRoot)
+ValueNumberer::visitBlock(MBasicBlock* block)
 {
     MOZ_ASSERT(!block->isMarked(), "Blocks marked unreachable during GVN");
     MOZ_ASSERT(!block->isDead(), "Block to visit is already dead");
@@ -1002,7 +1002,7 @@ ValueNumberer::visitBlock(MBasicBlock* block, const MBasicBlock* dominatorRoot)
     if (!graph_.alloc().ensureBallast())
         return false;
 
-    return visitControlInstruction(block, dominatorRoot);
+    return visitControlInstruction(block);
 }
 
 
@@ -1042,7 +1042,7 @@ ValueNumberer::visitDominatorTree(MBasicBlock* dominatorRoot)
             ++numDiscarded;
         } else {
             
-            if (!visitBlock(block, dominatorRoot))
+            if (!visitBlock(block))
                 return false;
             ++numVisited;
         }

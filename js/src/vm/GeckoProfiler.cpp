@@ -109,7 +109,7 @@ GeckoProfilerRuntime::enable(bool enabled)
     
     
     if (rt->hasJitRuntime() && rt->jitRuntime()->hasJitcodeGlobalTable())
-        rt->jitRuntime()->getJitcodeGlobalTable()->setAllEntriesAsExpired(rt);
+        rt->jitRuntime()->getJitcodeGlobalTable()->setAllEntriesAsExpired();
     rt->setProfilerSampleBufferRangeStart(0);
 
     

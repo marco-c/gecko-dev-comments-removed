@@ -502,7 +502,7 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx, void* pc
 
     
     JitcodeGlobalTable* table = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
-    if (tryInitWithTable(table, pc, cx->runtime(),  false))
+    if (tryInitWithTable(table, pc,  false))
         return;
 
     
@@ -512,7 +512,7 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx, void* pc
             return;
 
         
-        if (tryInitWithTable(table, lastCallSite, cx->runtime(),  true))
+        if (tryInitWithTable(table, lastCallSite,  true))
             return;
     }
 
@@ -560,7 +560,7 @@ JSJitProfilingFrameIterator::tryInitWithPC(void* pc)
 }
 
 bool
-JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc, JSRuntime* rt,
+JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc,
                                             bool forLastCallSite)
 {
     if (!pc)

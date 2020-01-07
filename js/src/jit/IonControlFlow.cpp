@@ -1409,7 +1409,7 @@ ControlFlowGenerator::maybeLoop(JSOp op, jssrcnote* sn)
         if (sn) {
             
             if (SN_TYPE(sn) == SRC_WHILE)
-                return processDoWhileLoop(op, sn);
+                return processDoWhileLoop(sn);
             
             
 
@@ -1523,7 +1523,7 @@ ControlFlowGenerator::processForLoop(JSOp op, jssrcnote* sn)
 }
 
 ControlFlowGenerator::ControlStatus
-ControlFlowGenerator::processDoWhileLoop(JSOp op, jssrcnote* sn)
+ControlFlowGenerator::processDoWhileLoop(jssrcnote* sn)
 {
     
     

@@ -2033,7 +2033,7 @@ CASE(JSOP_LOOPENTRY)
     COUNT_COVERAGE();
     
     if (jit::IsBaselineEnabled(cx)) {
-        jit::MethodStatus status = jit::CanEnterBaselineAtBranch(cx, REGS.fp(), false);
+        jit::MethodStatus status = jit::CanEnterBaselineAtBranch(cx, REGS.fp());
         if (status == jit::Method_Error)
             goto error;
         if (status == jit::Method_Compiled) {

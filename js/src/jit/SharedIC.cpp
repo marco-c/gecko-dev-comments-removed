@@ -585,7 +585,7 @@ ICStubCompiler::enterStubFrame(MacroAssembler& masm, Register scratch)
 }
 
 void
-ICStubCompiler::assumeStubFrame(MacroAssembler& masm)
+ICStubCompiler::assumeStubFrame()
 {
     MOZ_ASSERT(!inStubFrame_);
     inStubFrame_ = true;
@@ -2148,7 +2148,7 @@ ICGetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     
     
     
-    assumeStubFrame(masm);
+    assumeStubFrame();
     bailoutReturnOffset_.bind(masm.currentOffset());
 
     leaveStubFrame(masm, true);

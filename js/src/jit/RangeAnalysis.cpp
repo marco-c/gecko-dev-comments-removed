@@ -1983,7 +1983,7 @@ RangeAnalysis::analyzeLoop(MBasicBlock* header)
     
 
     for (MPhiIterator iter(header->phisBegin()); iter != header->phisEnd(); iter++)
-        analyzeLoopPhi(header, iterationBound, *iter);
+        analyzeLoopPhi(iterationBound, *iter);
 
     if (!mir->compilingWasm()) {
         
@@ -2158,7 +2158,7 @@ RangeAnalysis::analyzeLoopIterationCount(MBasicBlock* header,
 }
 
 void
-RangeAnalysis::analyzeLoopPhi(MBasicBlock* header, LoopIterationBound* loopBound, MPhi* phi)
+RangeAnalysis::analyzeLoopPhi(LoopIterationBound* loopBound, MPhi* phi)
 {
     
     
