@@ -195,8 +195,10 @@ ClearUndoCommand::DoCommand(const char* aCommandName,
   }
   TextEditor* textEditor = editor->AsTextEditor();
   MOZ_ASSERT(textEditor);
-  textEditor->EnableUndo(false); 
-  textEditor->EnableUndo(true);  
+  
+  DebugOnly<bool> clearedUndoRedo = textEditor->ClearUndoRedo();
+  NS_WARNING_ASSERTION(clearedUndoRedo,
+    "Failed to clear undo/redo transactions");
   return NS_OK;
 }
 

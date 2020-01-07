@@ -212,8 +212,8 @@ TextEditor::EndEditorInit()
   }
   
   
-  EnableUndo(false);
-  EnableUndo(true);
+  ClearUndoRedo();
+  EnableUndoRedo();
   return NS_OK;
 }
 

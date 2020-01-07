@@ -526,7 +526,9 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   
   
   if (mTransactionManager) {
-    mTransactionManager->Clear();
+    DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
+    NS_WARNING_ASSERTION(disabledUndoRedo,
+      "Failed to disable undo/redo transactions");
     mTransactionManager = nullptr;
   }
 
@@ -811,17 +813,17 @@ EditorBase::DoTransaction(Selection* aSelection, nsITransaction* aTxn)
 NS_IMETHODIMP
 EditorBase::EnableUndo(bool aEnable)
 {
+  
+  
   if (aEnable) {
-    if (!mTransactionManager) {
-      mTransactionManager = new TransactionManager();
-    }
-    mTransactionManager->SetMaxTransactionCount(-1);
-  } else if (mTransactionManager) {
-    
-    mTransactionManager->Clear();
-    mTransactionManager->SetMaxTransactionCount(0);
+    DebugOnly<bool> enabledUndoRedo = EnableUndoRedo();
+    NS_WARNING_ASSERTION(enabledUndoRedo,
+      "Failed to enable undo/redo transactions");
+    return NS_OK;
   }
-
+  DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
+  NS_WARNING_ASSERTION(disabledUndoRedo,
+    "Failed to disable undo/redo transactions");
   return NS_OK;
 }
 

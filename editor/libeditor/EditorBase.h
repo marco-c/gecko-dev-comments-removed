@@ -1134,6 +1134,34 @@ public:
   
 
 
+
+  bool EnableUndoRedo(int32_t aMaxTransactionCount = -1)
+  {
+    if (!mTransactionManager) {
+      mTransactionManager = new TransactionManager();
+    }
+    return mTransactionManager->EnableUndoRedo(aMaxTransactionCount);
+  }
+  bool DisableUndoRedo()
+  {
+    if (!mTransactionManager) {
+      return true;
+    }
+    
+    
+    return mTransactionManager->DisableUndoRedo();
+  }
+  bool ClearUndoRedo()
+  {
+    if (!mTransactionManager) {
+      return true;
+    }
+    return mTransactionManager->ClearUndoRedo();
+  }
+
+  
+
+
   static nsAtom* GetTag(nsIDOMNode* aNode);
 
   bool NodesSameType(nsIDOMNode* aNode1, nsIDOMNode* aNode2);

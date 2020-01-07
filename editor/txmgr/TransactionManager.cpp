@@ -191,11 +191,7 @@ TransactionManager::Redo()
 NS_IMETHODIMP
 TransactionManager::Clear()
 {
-  nsresult rv = ClearRedoStack();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  return ClearUndoStack();
+  return ClearUndoRedo() ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
@@ -295,55 +291,73 @@ TransactionManager::GetMaxTransactionCount(int32_t* aMaxCount)
 NS_IMETHODIMP
 TransactionManager::SetMaxTransactionCount(int32_t aMaxCount)
 {
+  return EnableUndoRedo(aMaxCount) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+bool
+TransactionManager::EnableUndoRedo(int32_t aMaxTransactionCount)
+{
   
   
   
   
+  if (NS_WARN_IF(!mDoStack.IsEmpty())) {
+    return false;
+  }
+
   
-  if (!mDoStack.IsEmpty()) {
-    return NS_ERROR_FAILURE;
+  if (!aMaxTransactionCount) {
+    mUndoStack.Clear();
+    mRedoStack.Clear();
+    mMaxTransactionCount = 0;
+    return true;
   }
 
   
   
-  if (aMaxCount < 0) {
+  if (aMaxTransactionCount < 0) {
     mMaxTransactionCount = -1;
-    return NS_OK;
+    return true;
+  }
+
+  
+  
+  if (mMaxTransactionCount >= 0 &&
+      mMaxTransactionCount <= aMaxTransactionCount) {
+    mMaxTransactionCount = aMaxTransactionCount;
+    return true;
   }
 
   
   
   
-  int32_t numUndoItems = mUndoStack.GetSize();
-  int32_t numRedoItems = mRedoStack.GetSize();
-  int32_t total = numUndoItems + numRedoItems;
-  if (aMaxCount > total) {
-    mMaxTransactionCount = aMaxCount;
-    return NS_OK;
+  size_t numUndoItems = NumberOfUndoItems();
+  size_t numRedoItems = NumberOfRedoItems();
+  size_t total = numUndoItems + numRedoItems;
+  size_t newMaxTransactionCount = static_cast<size_t>(aMaxTransactionCount);
+  if (newMaxTransactionCount > total) {
+    mMaxTransactionCount = aMaxTransactionCount;
+    return true;
   }
 
   
   
-  while (numUndoItems > 0 && (numRedoItems + numUndoItems) > aMaxCount) {
+  for (; numUndoItems && (numRedoItems + numUndoItems) > newMaxTransactionCount;
+       numUndoItems--) {
     RefPtr<TransactionItem> transactionItem = mUndoStack.PopBottom();
-    if (!transactionItem) {
-      return NS_ERROR_FAILURE;
-    }
-    --numUndoItems;
+    MOZ_ASSERT(transactionItem);
   }
 
   
   
-  while (numRedoItems > 0 && (numRedoItems + numUndoItems) > aMaxCount) {
+  for (; numRedoItems && (numRedoItems + numUndoItems) > newMaxTransactionCount;
+       numRedoItems--) {
     RefPtr<TransactionItem> transactionItem = mRedoStack.PopBottom();
-    if (!transactionItem) {
-      return NS_ERROR_FAILURE;
-    }
-    --numRedoItems;
+    MOZ_ASSERT(transactionItem);
   }
 
-  mMaxTransactionCount = aMaxCount;
-  return NS_OK;
+  mMaxTransactionCount = aMaxTransactionCount;
+  return true;
 }
 
 NS_IMETHODIMP
@@ -435,6 +449,9 @@ TransactionManager::RemoveListener(nsITransactionListener* aListener)
 NS_IMETHODIMP
 TransactionManager::ClearUndoStack()
 {
+  if (NS_WARN_IF(!mDoStack.IsEmpty())) {
+    return NS_ERROR_FAILURE;
+  }
   mUndoStack.Clear();
   return NS_OK;
 }
@@ -442,6 +459,9 @@ TransactionManager::ClearUndoStack()
 NS_IMETHODIMP
 TransactionManager::ClearRedoStack()
 {
+  if (NS_WARN_IF(!mDoStack.IsEmpty())) {
+    return NS_ERROR_FAILURE;
+  }
   mRedoStack.Clear();
   return NS_OK;
 }
@@ -700,10 +720,7 @@ TransactionManager::EndTransaction(bool aAllowEmpty)
   }
 
   
-  rv = ClearRedoStack();
-  if (NS_FAILED(rv)) {
-    
-  }
+  mRedoStack.Clear();
 
   
   
