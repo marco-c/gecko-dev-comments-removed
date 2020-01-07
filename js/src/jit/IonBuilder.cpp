@@ -13717,3 +13717,18 @@ IonBuilder::trace(JSTracer* trc)
     MOZ_ASSERT(rootList_);
     rootList_->trace(trc);
 }
+
+size_t
+IonBuilder::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
+{
+    
+    
+    
+
+    size_t result = alloc_->lifoAlloc()->sizeOfIncludingThis(mallocSizeOf);
+
+    if (backgroundCodegen_)
+        result += mallocSizeOf(backgroundCodegen_);
+
+    return result;
+}

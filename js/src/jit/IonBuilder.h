@@ -1186,6 +1186,14 @@ class IonBuilder
     void trackOptimizationOutcomeUnchecked(JS::TrackedOutcome outcome);
     void trackOptimizationSuccessUnchecked();
     void trackInlineSuccessUnchecked(InliningStatus status);
+
+  public:
+
+    
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+        return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+    }
 };
 
 class CallInfo
