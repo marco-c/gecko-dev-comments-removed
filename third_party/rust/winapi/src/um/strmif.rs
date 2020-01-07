@@ -1,0 +1,8 @@
+
+
+
+
+
+
+use um::winnt::LONGLONG;
+pub type REFERENCE_TIME = LONGLONG;

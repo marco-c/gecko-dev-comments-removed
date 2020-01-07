@@ -1,0 +1,9 @@
+
+
+
+
+
+
+use ctypes::c_char;
+pub type uintptr_t = usize;
+pub type va_list = *mut c_char;

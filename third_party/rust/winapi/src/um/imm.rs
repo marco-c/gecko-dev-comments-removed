@@ -1,0 +1,8 @@
+
+
+
+
+
+
+use ctypes::c_uint;
+pub type LPUINT = *mut c_uint;

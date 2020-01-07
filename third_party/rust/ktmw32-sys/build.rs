@@ -1,6 +1,0 @@
-
-
-extern crate build;
-fn main() {
-    build::link("ktmw32", true)
-}

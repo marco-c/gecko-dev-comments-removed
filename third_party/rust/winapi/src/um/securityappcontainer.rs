@@ -1,0 +1,17 @@
+
+
+
+
+
+
+use shared::minwindef::{BOOL, PULONG, ULONG};
+use um::winnt::{HANDLE, LPWSTR, PSID};
+extern "system" {
+    pub fn GetAppContainerNamedObjectPath(
+        Token: HANDLE,
+        AppContainerSid: PSID,
+        ObjectPathLength: ULONG,
+        ObjectPath: LPWSTR,
+        ReturnLength: PULONG,
+    ) -> BOOL;
+}

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+use shared::minwindef::ULONG;
+pub type SERVICETYPE = ULONG;
+STRUCT!{struct FLOWSPEC {
+    TokenRate: ULONG,
+    TokenBucketSize: ULONG,
+    PeakBandwidth: ULONG,
+    Latency: ULONG,
+    DelayVariation: ULONG,
+    ServiceType: SERVICETYPE,
+    MaxSduSize: ULONG,
+    MinimumPolicedSize: ULONG,
+}}
+pub type PFLOWSPEC = *mut FLOWSPEC;
+pub type LPFLOWSPEC = *mut FLOWSPEC;
