@@ -8,6 +8,7 @@
 
 #include "jsfriendapi.h"
 #include "mozilla/FlushType.h"           
+#include "nsAttrAndChildArray.h"
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
 #include "nsCompatibility.h"             
@@ -335,6 +336,36 @@ public:
 
   virtual void SetSuppressParserErrorConsoleMessages(bool aSuppress) {}
   virtual bool SuppressParserErrorConsoleMessages() { return false; }
+
+  
+  bool IsNodeOfType(uint32_t aFlags) const final;
+  nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const final
+  {
+    return mChildren.GetSafeChildAt(aIndex);
+  }
+
+  int32_t ComputeIndexOf(const nsINode* aPossibleChild) const final
+  {
+    return mChildren.IndexOfChild(aPossibleChild);
+  }
+
+  uint32_t GetChildCount() const final
+  {
+    return mChildren.ChildCount();
+  }
+
+  nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
+                             bool aNotify) override;
+  nsresult InsertChildAt_Deprecated(nsIContent* aKid, uint32_t aIndex,
+                                    bool aNotify) override;
+  void RemoveChildAt_Deprecated(uint32_t aIndex, bool aNotify) final;
+  void RemoveChildNode(nsIContent* aKid, bool aNotify) final;
+  nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo,
+                 nsINode **aResult,
+                 bool aPreallocateChildren) const override
+  {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   
 
@@ -1180,7 +1211,11 @@ public:
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
 protected:
-  virtual Element* GetRootElementInternal() const = 0;
+  
+  
+  void DestroyElementMaps();
+
+  Element* GetRootElementInternal() const;
   void DoNotifyPossibleTitleChange();
 
   void SetPageUnloadingEventTimeStamp()
@@ -4074,6 +4109,9 @@ protected:
 
   
   nsTHashtable<nsPtrHashKey<mozilla::dom::HTMLImageElement>> mResponsiveContent;
+
+  
+  nsAttrAndChildArray mChildren;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
