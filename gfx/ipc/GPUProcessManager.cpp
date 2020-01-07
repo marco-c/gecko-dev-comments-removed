@@ -205,8 +205,17 @@ GPUProcessManager::EnsureGPUReady()
     }
   }
 
-  if (mGPUChild && mGPUChild->EnsureGPUReady()) {
-    return true;
+  if (mGPUChild) {
+    if (mGPUChild->EnsureGPUReady()) {
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    DisableGPUProcess("Failed to initialize GPU process");
   }
 
   return false;
