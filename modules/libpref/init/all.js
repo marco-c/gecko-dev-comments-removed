@@ -1411,7 +1411,7 @@ pref("dom.event.clipboardevents.enabled",   true);
 pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
-pref("dom.webcomponents.shadowdom.enabled", false);
+pref("dom.webcomponents.enabled",           false);
 #ifdef NIGHTLY_BUILD
 pref("dom.webcomponents.customelements.enabled", true);
 #else
@@ -2919,6 +2919,9 @@ pref("layout.css.dpi", -1);
 
 
 pref("layout.css.devPixelsPerPx", "-1.0");
+
+
+pref("layout.css.individual-transform.enabled", false);
 
 
 pref("layout.css.initial-letter.enabled", false);
