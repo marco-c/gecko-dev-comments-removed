@@ -730,7 +730,10 @@ CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
   
   
   rv = NS_NewChannel(getter_AddRefs(mChannel), uri, aPrincipal, secFlags,
-                     contentPolicyType, loadGroup, nullptr ,
+                     contentPolicyType,
+                     nullptr, 
+                     loadGroup,
+                     nullptr ,
                      mLoadFlags);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

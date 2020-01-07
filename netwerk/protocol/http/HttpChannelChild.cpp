@@ -1719,6 +1719,7 @@ HttpChannelChild::SetupRedirect(nsIURI* uri,
                              redirectLoadInfo,
                              nullptr, 
                              nullptr, 
+                             nullptr, 
                              nsIRequest::LOAD_NORMAL,
                              ioService);
   NS_ENSURE_SUCCESS(rv, rv);

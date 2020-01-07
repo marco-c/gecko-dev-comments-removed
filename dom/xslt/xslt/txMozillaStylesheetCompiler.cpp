@@ -455,6 +455,7 @@ txCompileObserver::startLoad(nsIURI* aUri, txStylesheetCompiler* aCompiler,
                     aReferrerPrincipal, 
                     nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
                     nsIContentPolicy::TYPE_XSLT,
+                    nullptr, 
                     loadGroup);
 
     NS_ENSURE_SUCCESS(rv, rv);

@@ -240,6 +240,7 @@ class MOZ_STACK_CLASS ComponentLoaderInfo {
                              nsIContentPolicy::TYPE_SCRIPT,
                              nullptr, 
                              nullptr, 
+                             nullptr, 
                              nsIRequest::LOAD_NORMAL,
                              mIOService);
     }

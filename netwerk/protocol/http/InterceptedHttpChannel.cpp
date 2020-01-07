@@ -214,6 +214,7 @@ InterceptedHttpChannel::FollowSyntheticRedirect()
                              redirectLoadInfo,
                              nullptr, 
                              nullptr, 
+                             nullptr, 
                              mLoadFlags,
                              ioService);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -665,6 +666,7 @@ InterceptedHttpChannel::ResetInterception(void)
   nsresult rv = NS_NewChannelInternal(getter_AddRefs(newChannel),
                                       mURI,
                                       redirectLoadInfo,
+                                      nullptr, 
                                       nullptr, 
                                       nullptr, 
                                       mLoadFlags);

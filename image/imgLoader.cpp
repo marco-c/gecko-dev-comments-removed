@@ -807,6 +807,7 @@ NewImageChannel(nsIChannel** aResult,
                                               securityFlags,
                                               aPolicyType,
                                               nullptr,   
+                                              nullptr,   
                                               callbacks,
                                               aLoadFlags);
 
@@ -837,6 +838,7 @@ NewImageChannel(nsIChannel** aResult,
                        nsContentUtils::GetSystemPrincipal(),
                        securityFlags,
                        aPolicyType,
+                       nullptr,   
                        nullptr,   
                        callbacks,
                        aLoadFlags);

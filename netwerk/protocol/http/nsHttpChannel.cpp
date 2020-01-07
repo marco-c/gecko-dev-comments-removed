@@ -2841,6 +2841,7 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
                                redirectLoadInfo,
                                nullptr, 
                                nullptr, 
+                               nullptr, 
                                nsIRequest::LOAD_NORMAL,
                                ioService);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -5592,6 +5593,7 @@ nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv)
     rv = NS_NewChannelInternal(getter_AddRefs(newChannel),
                                mRedirectURI,
                                redirectLoadInfo,
+                               nullptr, 
                                nullptr, 
                                nullptr, 
                                nsIRequest::LOAD_NORMAL,
@@ -8507,6 +8509,7 @@ nsHttpChannel::OnPush(const nsACString &url, Http2PushedStream *pushedStream)
     rv = NS_NewChannelInternal(getter_AddRefs(pushChannel),
                                pushResource,
                                mLoadInfo,
+                               nullptr, 
                                nullptr, 
                                nullptr, 
                                nsIRequest::LOAD_NORMAL,

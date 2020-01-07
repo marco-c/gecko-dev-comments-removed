@@ -2508,6 +2508,7 @@ XMLHttpRequestMainThread::CreateChannel()
                        responsibleDocument,
                        secFlags,
                        nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       nullptr, 
                        loadGroup,
                        nullptr,   
                        loadFlags);
@@ -2519,6 +2520,7 @@ XMLHttpRequestMainThread::CreateChannel()
                        mController,
                        secFlags,
                        nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       mPerformanceStorage, 
                        loadGroup,
                        nullptr,   
                        loadFlags);
@@ -2529,6 +2531,7 @@ XMLHttpRequestMainThread::CreateChannel()
                        mPrincipal,
                        secFlags,
                        nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                       mPerformanceStorage, 
                        loadGroup,
                        nullptr,   
                        loadFlags);
