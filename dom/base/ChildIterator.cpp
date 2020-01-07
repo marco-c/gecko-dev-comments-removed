@@ -155,8 +155,13 @@ FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const
   
   
   
+  
   if (!mParent->GetBindingParent()) {
     return false;
+  }
+
+  if (mParentAsSlot) {
+    return true;
   }
 
   for (nsIContent* child = mParent->GetFirstChild();
