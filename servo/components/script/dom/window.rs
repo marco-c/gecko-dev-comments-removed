@@ -1025,6 +1025,16 @@ impl WindowMethods for Window {
     fn TestRunner(&self) -> DomRoot<TestRunner> {
         self.test_runner.or_init(|| TestRunner::new(self.upcast()))
     }
+
+    
+    fn SetName(&self, name: DOMString) {
+        self.window_proxy().set_name(name);
+    }
+
+    
+    fn Name(&self) -> DOMString {
+        self.window_proxy().get_name()
+    }
 }
 
 impl Window {
