@@ -16,6 +16,18 @@
 const BASE_URL = "http://mochi.test:8888/browser/dom/base/test/";
 
 add_task(async function() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.remote.warmup.unloadDelayMs", 50]],
+  });
   await testLinkClick(false, false);
   await testLinkClick(false, true);
   await testLinkClick(true, false);
