@@ -25,13 +25,22 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 class ShieldStudySavantClass {
   constructor() {
     this.SHIELD_STUDY_SAVANT_PREF = "shield.savant.enabled";
+    this.STUDY_TELEMETRY_CATEGORY = "savant";
   }
 
   init() {
+    this.TelemetryEvents = new TelemetryEvents(this.STUDY_TELEMETRY_CATEGORY);
+
+    
+    const isEligible = true;
+    if (!isEligible) {
+      this.endStudy("ineligible");
+      return;
+    }
     
     this.shouldCollect = Services.prefs.getBoolPref(this.SHIELD_STUDY_SAVANT_PREF);
     if (this.shouldCollect) {
-      this.enableCollection();
+      this.TelemetryEvents.enableCollection();
     }
     Services.prefs.addObserver(this.SHIELD_STUDY_SAVANT_PREF, this);
   }
@@ -41,7 +50,7 @@ class ShieldStudySavantClass {
       
       this.shouldCollect = !this.shouldCollect;
       if (this.shouldCollect) {
-        this.enableCollection();
+        this.TelemetryEvents.enableCollection();
       } else {
         
         this.endStudy("expired");
@@ -49,27 +58,49 @@ class ShieldStudySavantClass {
     }
   }
 
-  enableCollection() {
-    log.debug("Study has been enabled; turning on data collection.");
-    
+  sendEvent(method, object, value, extra) {
+    this.TelemetryEvents.sendEvent(method, object, value, extra);
   }
 
   endStudy(reason) {
-    this.disableCollection();
+    this.TelemetryEvents.disableCollection();
     
     this.uninit();
   }
 
-  disableCollection() {
-    log.debug("Study has been disabled; turning off data collection.");
-    
-  }
-
+  
   uninit() {
+    
+    
+    
+    
     Services.prefs.removeObserver(this.SHIELD_STUDY_SAVANT_PREF, this);
     Services.prefs.clearUserPref(this.SHIELD_STUDY_SAVANT_PREF);
     Services.prefs.clearUserPref(PREF_LOG_LEVEL);
   }
-};
+}
 
 const ShieldStudySavant = new ShieldStudySavantClass();
+
+
+
+
+class TelemetryEvents {
+  constructor(studyCategory) {
+    this.STUDY_TELEMETRY_CATEGORY = studyCategory;
+  }
+
+  sendEvent(method, object, value, extra) {
+    Services.telemetry.recordEvent(this.STUDY_TELEMETRY_CATEGORY, method, object, value, extra);
+  }
+
+  enableCollection() {
+    log.debug("Study has been enabled; turning ON data collection.");
+    
+  }
+
+  disableCollection() {
+    log.debug("Study has been disabled; turning OFF data collection.");
+    
+  }
+}
