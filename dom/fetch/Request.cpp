@@ -77,25 +77,6 @@ Request::~Request()
 {
 }
 
-
-bool
-Request::RequestContextEnabled(JSContext* aCx, JSObject* aObj)
-{
-  if (NS_IsMainThread()) {
-    return Preferences::GetBool("dom.requestcontext.enabled", false);
-  }
-
-  using namespace workers;
-
-  
-  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
-  if (!workerPrivate) {
-    return false;
-  }
-
-  return workerPrivate->RequestContextEnabled();
-}
-
 already_AddRefed<InternalRequest>
 Request::GetInternalRequest()
 {
