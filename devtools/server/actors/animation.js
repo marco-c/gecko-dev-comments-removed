@@ -391,13 +391,15 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       if (hasCurrentAnimation(changedAnimations)) {
         
         
+        
         let newState = this.getState();
         let oldState = this.currentState;
         hasChanged = newState.delay !== oldState.delay ||
                      newState.iterationCount !== oldState.iterationCount ||
                      newState.iterationStart !== oldState.iterationStart ||
                      newState.duration !== oldState.duration ||
-                     newState.endDelay !== oldState.endDelay;
+                     newState.endDelay !== oldState.endDelay ||
+                     newState.playbackRate !== oldState.playbackRate;
         break;
       }
     }
@@ -464,7 +466,8 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
   setPlaybackRate: function (playbackRate) {
-    this.player.playbackRate = playbackRate;
+    this.player.updatePlaybackRate(playbackRate);
+    return this.player.ready;
   },
 
   
@@ -870,8 +873,8 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
   setPlaybackRates: function (players, rate) {
-    for (let player of players) {
-      player.setPlaybackRate(rate);
-    }
+    return promise.all(
+      players.map(player => player.setPlaybackRate(rate))
+    );
   }
 });
