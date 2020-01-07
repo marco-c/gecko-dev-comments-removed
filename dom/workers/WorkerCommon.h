@@ -18,13 +18,6 @@
 
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 
-#define BEGIN_WORKERS_NAMESPACE \
-  namespace mozilla { namespace dom { namespace workers {
-#define END_WORKERS_NAMESPACE \
-  } /* namespace workers */ } /* namespace dom */ } /* namespace mozilla */
-#define USING_WORKERS_NAMESPACE \
-  using namespace mozilla::dom::workers;
-
 class nsIGlobalObject;
 class nsPIDOMWindowInner;
 
@@ -42,22 +35,10 @@ enum WorkerType
 
 class WorkerPrivate;
 
-} 
-} 
-
-BEGIN_WORKERS_NAMESPACE
+namespace workers {
 
 struct PrivatizableBase
 { };
-
-#ifdef DEBUG
-void
-AssertIsOnMainThread();
-#else
-inline void
-AssertIsOnMainThread()
-{ }
-#endif
 
 struct JSSettings
 {
@@ -167,6 +148,30 @@ struct JSSettings
 
 
 
+#ifdef DEBUG
+void
+AssertIsOnMainThread();
+#else
+inline void
+AssertIsOnMainThread()
+{ }
+#endif
+
+WorkerPrivate*
+GetWorkerPrivateFromContext(JSContext* aCx);
+
+WorkerPrivate*
+GetCurrentThreadWorkerPrivate();
+
+bool
+IsCurrentThreadRunningChromeWorker();
+
+JSContext*
+GetCurrentThreadJSContext();
+
+JSObject*
+GetCurrentThreadWorkerGlobal();
+
 void
 CancelWorkersForWindow(nsPIDOMWindowInner* aWindow);
 
@@ -183,7 +188,6 @@ void
 ResumeWorkersForWindow(nsPIDOMWindowInner* aWindow);
 
 
-const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
 
 bool
 IsWorkerGlobal(JSObject* global);
@@ -194,6 +198,11 @@ IsDebuggerGlobal(JSObject* global);
 bool
 IsDebuggerSandbox(JSObject* object);
 
-END_WORKERS_NAMESPACE
+
+const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
+
+} 
+} 
+} 
 
 #endif 
