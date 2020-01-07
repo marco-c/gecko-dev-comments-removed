@@ -89,10 +89,12 @@ public:
     MOZ_ASSERT(!aHandle);
     return NS_OK;
   }
-  nsresult Start(SourceMediaStream* aStream,
-                 TrackID aTrackID,
-                 const PrincipalHandle& aPrincipalHandle) override;
-  nsresult Stop(SourceMediaStream* aStream, TrackID aTrackID) override;
+  nsresult SetTrack(const RefPtr<const AllocationHandle>& aHandle,
+                    const RefPtr<SourceMediaStream>& aStream,
+                    TrackID aTrackID,
+                    const PrincipalHandle& aPrincipal) override;
+  nsresult Start(const RefPtr<const AllocationHandle>& aHandle) override;
+  nsresult Stop(const RefPtr<const AllocationHandle>& aHandle) override;
   nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
                        const dom::MediaTrackConstraints& aConstraints,
                        const MediaEnginePrefs& aPrefs,
@@ -104,17 +106,7 @@ public:
             TrackID aTrackID,
             StreamTime aDesiredTime,
             const PrincipalHandle& aPrincipalHandle) override
-  {
-    
-    
-    
-    StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
-    if (delta > 0) {
-      AudioSegment segment;
-      segment.AppendNullData(delta);
-      aStream->AppendToTrack(aTrackID, &segment);
-    }
-  }
+  {}
 
   dom::MediaSourceEnum GetMediaSource() const override
   {
@@ -423,10 +415,12 @@ public:
                     AllocationHandle** aOutHandle,
                     const char** aOutBadConstraint) override;
   nsresult Deallocate(const RefPtr<const AllocationHandle>& aHandle) override;
-  nsresult Start(SourceMediaStream* aStream,
-                 TrackID aTrackID,
-                 const PrincipalHandle& aPrincipalHandle) override;
-  nsresult Stop(SourceMediaStream* aStream, TrackID aTrackID) override;
+  nsresult SetTrack(const RefPtr<const AllocationHandle>& aHandle,
+                    const RefPtr<SourceMediaStream>& aStream,
+                    TrackID aTrackID,
+                    const PrincipalHandle& aPrincipal) override;
+  nsresult Start(const RefPtr<const AllocationHandle>& aHandle) override;
+  nsresult Stop(const RefPtr<const AllocationHandle>& aHandle) override;
   nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
                        const dom::MediaTrackConstraints& aConstraints,
                        const MediaEnginePrefs& aPrefs,
@@ -481,6 +475,7 @@ private:
     RefPtr<SourceMediaStream> mStream;
     TrackID mTrackID = TRACK_NONE;
     PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
+    bool mEnabled = false;
   };
 
   
@@ -531,6 +526,8 @@ private:
   bool AllocChannel();
   void FreeChannel();
 
+  bool HasEnabledTrack() const;
+
   template<typename T>
   void InsertInGraph(const T* aBuffer,
                      size_t aFrames,
@@ -551,12 +548,13 @@ private:
   
   void SetPassThrough(bool aPassThrough);
 
-  RefPtr<mozilla::AudioInput> mAudioInput;
+  
   RefPtr<WebRTCAudioDataListener> mListener;
 
   
   static int sChannelsOpen;
 
+  const RefPtr<mozilla::AudioInput> mAudioInput;
   const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
 
   

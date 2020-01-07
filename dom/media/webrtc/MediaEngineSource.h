@@ -141,7 +141,20 @@ public:
 
 
 
-  virtual nsresult Start(SourceMediaStream*, TrackID, const PrincipalHandle&) = 0;
+
+  virtual nsresult SetTrack(const RefPtr<const AllocationHandle>& aHandle,
+                            const RefPtr<SourceMediaStream>& aStream,
+                            TrackID aTrackID,
+                            const PrincipalHandle& aPrincipal) = 0;
+
+  
+
+
+
+
+
+
+  virtual nsresult Start(const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
 
@@ -160,7 +173,11 @@ public:
   
 
 
-  virtual nsresult Stop(SourceMediaStream *aSource, TrackID aID) = 0;
+
+
+
+
+  virtual nsresult Stop(const RefPtr<const AllocationHandle>& aHandle) = 0;
 
   
 

@@ -210,9 +210,10 @@ MediaEngineTabVideoSource::Deallocate(const RefPtr<const AllocationHandle>& aHan
 }
 
 nsresult
-MediaEngineTabVideoSource::Start(SourceMediaStream* aStream,
-                                 TrackID aTrackID,
-                                 const PrincipalHandle& aPrincipalHandle)
+MediaEngineTabVideoSource::SetTrack(const RefPtr<const AllocationHandle>& aHandle,
+                                    const RefPtr<SourceMediaStream>& aStream,
+                                    TrackID aTrackID,
+                                    const mozilla::PrincipalHandle& aPrincipal)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == kAllocated);
@@ -221,6 +222,17 @@ MediaEngineTabVideoSource::Start(SourceMediaStream* aStream,
   MOZ_ASSERT(mTrackID == TRACK_NONE);
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(IsTrackIDExplicit(aTrackID));
+  mStream = aStream;
+  mTrackID = aTrackID;
+  mStream->AddTrack(mTrackID, 0, new VideoSegment());
+  return NS_OK;
+}
+
+nsresult
+MediaEngineTabVideoSource::Start(const RefPtr<const AllocationHandle>& aHandle)
+{
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == kAllocated);
 
   nsCOMPtr<nsIRunnable> runnable;
   if (!mWindow) {
@@ -229,9 +241,6 @@ MediaEngineTabVideoSource::Start(SourceMediaStream* aStream,
     runnable = new StartRunnable(this);
   }
   NS_DispatchToMainThread(runnable);
-  mStream = aStream;
-  mTrackID = aTrackID;
-  mStream->AddTrack(mTrackID, 0, new VideoSegment());
 
   {
     MutexAutoLock lock(mMutex);
@@ -250,6 +259,7 @@ MediaEngineTabVideoSource::Pull(const RefPtr<const AllocationHandle>& aHandle,
 {
   VideoSegment segment;
   RefPtr<layers::Image> image;
+  gfx::IntSize imageSize;
 
   {
     MutexAutoLock lock(mMutex);
@@ -257,19 +267,19 @@ MediaEngineTabVideoSource::Pull(const RefPtr<const AllocationHandle>& aHandle,
       
       return;
     }
-    image = mImage;
+    if (mState == kStarted) {
+      image = mImage;
+      imageSize = mImageSize;
+    }
   }
 
-  
   StreamTime delta = aDesiredTime - aStream->GetEndOfAppendedData(aTrackID);
   if (delta <= 0) {
     return;
   }
 
   
-  gfx::IntSize size = image ? image->GetSize() : IntSize(0, 0);
-  segment.AppendFrame(image.forget(), delta, size,
-                      aPrincipalHandle);
+  segment.AppendFrame(image.forget(), delta, imageSize, aPrincipalHandle);
   
   
   aStream->AppendToTrack(aTrackID, &(segment));
@@ -383,16 +393,14 @@ MediaEngineTabVideoSource::Draw() {
 
   MutexAutoLock lock(mMutex);
   mImage = image;
+  mImageSize = size;
 }
 
 nsresult
-MediaEngineTabVideoSource::Stop(SourceMediaStream* aStream,
-                                TrackID aTrackID)
+MediaEngineTabVideoSource::Stop(const RefPtr<const AllocationHandle>& aHandle)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == kStarted);
-  MOZ_ASSERT(mStream == aStream);
-  MOZ_ASSERT(mTrackID == aTrackID);
 
   
   
@@ -405,9 +413,6 @@ MediaEngineTabVideoSource::Stop(SourceMediaStream* aStream,
   {
     MutexAutoLock lock(mMutex);
     mState = kStopped;
-    mStream->EndTrack(mTrackID);
-    mStream = nullptr;
-    mTrackID = TRACK_NONE;
   }
   return NS_OK;
 }
