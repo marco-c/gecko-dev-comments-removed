@@ -184,12 +184,13 @@ def test_tests_affected(capsys, manifest_dir):
     
     
     
-    commit = "9047ac1d9f51b1e9faa4f9fad9c47d109609ab09"
+    
+    commit = "3a055e818218f548db240c316654f3cc1aeeb733"
     with pytest.raises(SystemExit) as excinfo:
         wpt.main(argv=["tests-affected", "--metadata", manifest_dir, "%s~..%s" % (commit, commit)])
     assert excinfo.value.code == 0
     out, err = capsys.readouterr()
-    assert "html/browsers/offline/appcache/workers/appcache-worker.html" in out
+    assert "infrastructure/reftest-wait.html" in out
 
 
 @pytest.mark.slow
