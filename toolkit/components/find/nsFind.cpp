@@ -856,17 +856,6 @@ nsFind::IsVisibleNode(nsINode* aNode)
 bool
 nsFind::SkipNode(nsIContent* aContent)
 {
-#ifdef HAVE_BIDI_ITERATOR
-  
-  
-  return aContent->IsComment() ||
-         aContent->IsAnyOfHTMLElements(sScriptAtom, sNoframesAtom, sSelectAtom);
-
-#else 
-  
-  
-  
-
   nsIContent* content = aContent;
   while (content) {
     if (!IsVisibleNode(content) ||
@@ -892,7 +881,6 @@ nsFind::SkipNode(nsIContent* aContent)
   }
 
   return false;
-#endif 
 }
 
 nsresult
