@@ -1425,7 +1425,7 @@ class XPIStateLocation extends Map {
 
 
   addFile(addonId, file) {
-    let xpiState = this._addState(addonId, {enabled: true, file: file.clone()});
+    let xpiState = this._addState(addonId, {enabled: false, file: file.clone()});
     xpiState.getModTime(xpiState.file, addonId);
     return xpiState;
   }
@@ -1575,7 +1575,7 @@ this.XPIStates = {
 
       
       let loc = this.getLocation(location.name, location.path || null,
-                                 oldState[location.name]);
+                                 oldState[location.name] || undefined);
       changed = changed || loc.changed;
 
       
