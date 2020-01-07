@@ -1072,8 +1072,6 @@ pref("toolkit.telemetry.server", "https://incoming.telemetry.mozilla.org");
 
 pref("toolkit.telemetry.server_owner", "Mozilla");
 
-pref("toolkit.telemetry.infoURL", "https://www.mozilla.org/legal/privacy/firefox.html#telemetry");
-
 
 pref("toolkit.telemetry.debugSlowSql", false);
 

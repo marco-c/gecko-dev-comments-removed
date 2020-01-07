@@ -73,8 +73,6 @@ user_pref("font.size.inflation.minTwips", 0);
 user_pref("ui.caretBlinkTime", -1);
 
 
-user_pref("experiments.supported", true);
-
 
 user_pref("experiments.manifest.uri", "http://%(server)s/experiments-dummy/manifest");
 

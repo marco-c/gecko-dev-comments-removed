@@ -1515,8 +1515,6 @@ pref("experiments.enabled", true);
 pref("experiments.manifest.fetchIntervalSeconds", 86400);
 pref("experiments.manifest.uri", "https://telemetry-experiment.cdn.mozilla.net/manifest/v1/firefox/%VERSION%/%CHANNEL%");
 
-pref("experiments.supported", true);
-
 
 pref("browser.ping-centre.telemetry", true);
 pref("browser.ping-centre.log", false);

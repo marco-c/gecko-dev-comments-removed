@@ -6432,17 +6432,4 @@ var addonTypes = [
                                     AddonManager.TYPE_UI_HIDE_EMPTY | AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL),
 ];
 
-
-
-
-
-if (Services.prefs.getBoolPref("experiments.supported", false)) {
-  addonTypes.push(
-    new AddonManagerPrivate.AddonType("experiment",
-                                      URI_EXTENSION_STRINGS,
-                                      "type.experiment.name",
-                                      AddonManager.VIEW_TYPE_LIST, 11000,
-                                      AddonManager.TYPE_UI_HIDE_EMPTY | AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL));
-}
-
 AddonManagerPrivate.registerProvider(XPIProvider, addonTypes);
