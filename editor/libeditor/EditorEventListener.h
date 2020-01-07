@@ -76,8 +76,8 @@ protected:
 
   bool CanDrop(nsIDOMDragEvent* aEvent);
   void CleanupDragDropCaret();
-  already_AddRefed<nsIPresShell> GetPresShell();
-  nsPresContext* GetPresContext();
+  nsIPresShell* GetPresShell() const;
+  nsPresContext* GetPresContext() const;
   nsIContent* GetFocusedRootContent();
   
   bool NotifyIMEOfMouseButtonEvent(WidgetMouseEvent* aMouseEvent);

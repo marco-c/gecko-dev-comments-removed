@@ -430,8 +430,8 @@ mozInlineSpellStatus::FillNoCheckRangeFromAnchor(
 
 
 
-already_AddRefed<nsIDocument>
-mozInlineSpellStatus::GetDocument()
+nsIDocument*
+mozInlineSpellStatus::GetDocument() const
 {
   if (!mSpellChecker->mTextEditor) {
     return nullptr;
