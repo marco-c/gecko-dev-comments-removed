@@ -510,10 +510,10 @@ public:
 
 
 
-  void AddPaintedDisplayItem(PaintedLayerData* aLayerData,
+  void AddPaintedDisplayItem(PaintedLayerData* aLayer,
                              AssignedDisplayItem& aAssignedDisplayItem,
                              ContainerState& aContainerState,
-                             Layer* aLayer);
+                             const nsPoint& aTopLeft);
 
   
 
@@ -589,6 +589,14 @@ public:
 
 
   static gfxSize GetPaintedLayerScaleForFrame(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+  void StoreOptimizedLayerForFrame(nsDisplayItem* aItem, Layer* aLayer);
 
   static void RemoveFrameFromLayerManager(const nsIFrame* aFrame,
                                           SmallPointerArray<DisplayItemData>& aArray);
@@ -666,7 +674,8 @@ protected:
                   nsDisplayListBuilder* aBuilder,
                   nsPresContext* aPresContext,
                   const nsIntPoint& aOffset,
-                  float aXScale, float aYScale);
+                  float aXScale, float aYScale,
+                  int32_t aCommonClipCount);
 
   
 
