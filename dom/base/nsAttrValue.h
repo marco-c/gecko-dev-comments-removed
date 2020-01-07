@@ -30,19 +30,13 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/EnumTypeTraits.h"
 
-
-#undef LoadImage
-
 class nsIDocument;
+class nsIURI;
 class nsStyledElement;
 struct MiscContainer;
 
 namespace mozilla {
 class DeclarationBlock;
-namespace css {
-struct URLValue;
-struct ImageValue;
-} 
 } 
 
 #define NS_ATTRVALUE_MAX_STRINGLENGTH_ATOM 12
@@ -150,7 +144,7 @@ public:
   void SetTo(double aValue, const nsAString* aSerialized);
   void SetTo(already_AddRefed<mozilla::DeclarationBlock> aValue,
              const nsAString* aSerialized);
-  void SetTo(mozilla::css::URLValue* aValue, const nsAString* aSerialized);
+  void SetTo(nsIURI* aValue, const nsAString* aSerialized);
   void SetTo(const nsIntMargin& aValue);
   void SetTo(const nsSVGAngle& aValue, const nsAString* aSerialized);
   void SetTo(const nsSVGIntegerPair& aValue, const nsAString* aSerialized);
@@ -201,8 +195,7 @@ public:
   inline float GetPercentValue() const;
   inline mozilla::AtomArray* GetAtomArrayValue() const;
   inline mozilla::DeclarationBlock* GetCSSDeclarationValue() const;
-  inline mozilla::css::URLValue* GetURLValue() const;
-  inline mozilla::css::ImageValue* GetImageValue() const;
+  inline nsIURI* GetURLValue() const;
   inline double GetDoubleValue() const;
   bool GetIntMarginValue(nsIntMargin& aMargin) const;
 
@@ -420,13 +413,6 @@ public:
 
 
   bool ParseIntMarginValue(const nsAString& aString);
-
-  
-
-
-
-
-  void LoadImage(nsIDocument* aDocument);
 
   
 

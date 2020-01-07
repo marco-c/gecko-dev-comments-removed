@@ -65,6 +65,9 @@ class nsDOMStringMap;
 namespace mozilla {
 class DeclarationBlock;
 class TextEditor;
+namespace css {
+  struct URLValue;
+} 
 namespace dom {
   struct AnimationFilter;
   struct ScrollIntoViewOptions;
