@@ -11,7 +11,6 @@
 #include "mozilla/dom/Event.h" 
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
-#include "nsIDOMElement.h"
 #include "nsIDocument.h"
 #include "nsIDocShell.h"
 #include "nsPresContext.h"

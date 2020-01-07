@@ -6216,7 +6216,7 @@ nsGlobalWindowOuter::GetRealFrameElementOuter()
 
 
 
-already_AddRefed<nsIDOMElement>
+Element*
 nsGlobalWindowOuter::GetFrameElement()
 {
   FORWARD_TO_INNER(GetFrameElement, (), nullptr);

@@ -4300,14 +4300,10 @@ nsGlobalWindowInner::GetRealFrameElement(ErrorResult& aError)
 
 
 
-already_AddRefed<nsIDOMElement>
+Element*
 nsGlobalWindowInner::GetFrameElement()
 {
-  ErrorResult dummy;
-  nsCOMPtr<nsIDOMElement> frameElement =
-    do_QueryInterface(GetRealFrameElement(dummy));
-  dummy.SuppressException();
-  return frameElement.forget();
+  return GetRealFrameElement(IgnoreErrors());
 }
 
  bool
