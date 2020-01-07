@@ -298,7 +298,7 @@ MessagePort::Initialize(const nsID& aUUID,
                               [self]() { self->CloseForced(); });
     if (NS_WARN_IF(!strongWorkerRef)) {
       
-      mState = eStateDisentangledForClose;
+      aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
