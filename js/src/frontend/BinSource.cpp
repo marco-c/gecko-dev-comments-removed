@@ -154,11 +154,10 @@ template<typename Tok> JS::Result<ParseNode*>
 BinASTParser<Tok>::buildFunction(const size_t start, const BinKind kind, ParseNode* name,
                                  ParseNode* params, ParseNode* body, FunctionBox* funbox)
 {
-    
-    MOZ_TRY(checkFunctionClosedVars());
-
     TokenPos pos = tokenizer_->pos(start);
 
+    
+    
     funbox->function()->setArgCount(params ? uint16_t(params->pn_count) : 0);
 
     
@@ -186,7 +185,12 @@ BinASTParser<Tok>::buildFunction(const size_t start, const BinKind kind, ParseNo
         BINJS_TRY(funScope.addDeclaredName(parseContext_, p, dotThis, DeclarationKind::Var,
                                      DeclaredNameInfo::npos));
         funbox->setHasThisBinding();
+
+        
     }
+
+    
+    MOZ_TRY(checkFunctionClosedVars());
 
     BINJS_TRY_DECL(bindings,
              NewFunctionScopeData(cx_, parseContext_->functionScope(),
