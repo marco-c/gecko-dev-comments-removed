@@ -23,10 +23,12 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
 var { TabSources } = require("./utils/TabSources");
 var makeDebugger = require("./utils/make-debugger");
-const EventEmitter = require("devtools/shared/event-emitter");
 const InspectorUtils = require("InspectorUtils");
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
+
+const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
+const { tabSpec } = require("devtools/shared/specs/tab");
 
 loader.lazyRequireGetter(this, "ThreadActor", "devtools/server/actors/thread", true);
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/thread", true);
@@ -84,162 +86,160 @@ function getInnerId(window) {
                .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function TabActor(connection) {
-  
-  
-  EventEmitter.decorate(this);
-
-  this.conn = connection;
-  this._tabActorPool = null;
-  
-  this._extraActors = {};
-  this._exited = false;
-  this._sources = null;
+const tabPrototype = {
 
   
-  this._styleSheetActors = new Map();
 
-  this._shouldAddNewGlobalAsDebuggee =
-    this._shouldAddNewGlobalAsDebuggee.bind(this);
 
-  this.makeDebugger = makeDebugger.bind(null, {
-    findDebuggees: () => {
-      return this.windows.concat(this.webextensionsContentScriptGlobals);
-    },
-    shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee
-  });
 
-  
-  
-  this.listenForNewDocShells = false;
 
-  this.traits = {
-    reconfigure: true,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  initialize: function(connection) {
+    Actor.prototype.initialize.call(this, connection);
+
+    this._tabActorPool = null;
+    
+    this._extraActors = {};
+    this._exited = false;
+    this._sources = null;
+
+    
+    this._styleSheetActors = new Map();
+
+    this._shouldAddNewGlobalAsDebuggee =
+      this._shouldAddNewGlobalAsDebuggee.bind(this);
+
+    this.makeDebugger = makeDebugger.bind(null, {
+      findDebuggees: () => {
+        return this.windows.concat(this.webextensionsContentScriptGlobals);
+      },
+      shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee
+    });
+
     
     
-    frames: true,
-    
-    
-    noTabReconfigureOnClose: true,
-    
-    logInPage: true,
-  };
+    this.listenForNewDocShells = false;
 
-  this._workerActorList = null;
-  this._workerActorPool = null;
-  this._onWorkerActorListChanged = this._onWorkerActorListChanged.bind(this);
-}
+    this.traits = {
+      reconfigure: true,
+      
+      
+      frames: true,
+      
+      
+      noTabReconfigureOnClose: true,
+      
+      logInPage: true,
+    };
 
-TabActor.prototype = {
+    this._workerActorList = null;
+    this._workerActorPool = null;
+    this._onWorkerActorListChanged = this._onWorkerActorListChanged.bind(this);
+  },
+
   traits: null,
 
   
@@ -492,6 +492,7 @@ TabActor.prototype = {
 
 
   destroy() {
+    Actor.prototype.destroy.call(this);
     this.exit();
   },
 
@@ -1463,24 +1464,8 @@ TabActor.prototype = {
   },
 };
 
-
-
-
-TabActor.prototype.requestTypes = {
-  "attach": TabActor.prototype.attach,
-  "detach": TabActor.prototype.detach,
-  "focus": TabActor.prototype.focus,
-  "reload": TabActor.prototype.reload,
-  "navigateTo": TabActor.prototype.navigateTo,
-  "reconfigure": TabActor.prototype.reconfigure,
-  "ensureCSSErrorReportingEnabled": TabActor.prototype.ensureCSSErrorReportingEnabled,
-  "switchToFrame": TabActor.prototype.switchToFrame,
-  "listFrames": TabActor.prototype.listFrames,
-  "listWorkers": TabActor.prototype.listWorkers,
-  "logInPage": TabActor.prototype.logInPage,
-};
-
-exports.TabActor = TabActor;
+exports.tabPrototype = tabPrototype;
+exports.TabActor = ActorClassWithSpec(tabSpec, tabPrototype);
 
 
 
