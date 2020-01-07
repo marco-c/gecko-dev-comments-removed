@@ -522,7 +522,7 @@ impl PropertyDeclarationBlock {
                 
                 if important && !importance.important() &&
                     matches!(source, DeclarationSource::Parsing) {
-                    return true;
+                    return false;
                 }
 
                 if matches!(source, DeclarationSource::Parsing) {
