@@ -34,10 +34,13 @@ public:
 
 
 
+
+
   static bool ComputeColor(ServoStyleSet* aStyleSet,
                            nscolor aCurrentColor,
                            const nsAString& aValue,
-                           nscolor* aResultColor);
+                           nscolor* aResultColor,
+                           bool* aWasCurrentColor = nullptr);
 
   
 
