@@ -2476,7 +2476,7 @@ pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,studies");
+pref("csp.content_privileged_about_uris_without_csp", "blank,credits,home,logo,newtab,printpreview,srcdoc,studies");
 #endif
 
 #ifdef NIGHTLY_BUILD
@@ -4935,7 +4935,7 @@ pref("extensions.webextensions.remote", false);
 pref("extensions.webextensions.protocol.remote", true);
 
 
-pref("extensions.webextensions.tabhide.enabled", false);
+pref("extensions.webextensions.tabhide.enabled", true);
 
 pref("extensions.webextensions.background-delayed-startup", false);
 
