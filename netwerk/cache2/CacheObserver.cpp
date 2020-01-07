@@ -23,10 +23,7 @@ namespace net {
 
 CacheObserver* CacheObserver::sSelf = nullptr;
 
-static int32_t const kDefaultHalfLifeExperiment = -1; 
-int32_t CacheObserver::sHalfLifeExperiment = kDefaultHalfLifeExperiment;
-
-static float const kDefaultHalfLifeHours = 1.0F; 
+static float const kDefaultHalfLifeHours = 24.0F; 
 float CacheObserver::sHalfLifeHours = kDefaultHalfLifeHours;
 
 static bool const kDefaultUseDiskCache = true;
@@ -183,52 +180,8 @@ CacheObserver::AttachToPreferences()
     "browser.cache.disk.parent_directory", NS_GET_IID(nsIFile),
     getter_AddRefs(mCacheParentDirectoryOverride));
 
-  
-  
-  
-  sHalfLifeExperiment = mozilla::Preferences::GetInt(
-    "browser.cache.frecency_experiment", kDefaultHalfLifeExperiment,
-    PrefValueKind::Default);
-
-  if (sHalfLifeExperiment == 0) {
-    
-    
-    sHalfLifeExperiment = mozilla::Preferences::GetInt(
-      "browser.cache.frecency_experiment", sHalfLifeExperiment);
-  }
-
-  if (sHalfLifeExperiment == 0) {
-    
-    
-    srand(time(NULL));
-    sHalfLifeExperiment = (rand() % 4) + 1;
-    
-    
-    mozilla::Preferences::SetInt(
-      "browser.cache.frecency_experiment", sHalfLifeExperiment);
-  }
-
-  switch (sHalfLifeExperiment) {
-  case 1: 
-    sHalfLifeHours = 0.083F; 
-    break;
-  case 2:
-    sHalfLifeHours = 0.25F; 
-    break;
-  case 3:
-    sHalfLifeHours = 1.0F;
-    break;
-  case 4:
-    sHalfLifeHours = 6.0F;
-    break;
-
-  case -1:
-  default: 
-    sHalfLifeExperiment = -1;
-    sHalfLifeHours = std::max(0.01F, std::min(1440.0F, mozilla::Preferences::GetFloat(
-      "browser.cache.frecency_half_life_hours", kDefaultHalfLifeHours)));
-    break;
-  }
+  sHalfLifeHours = std::max(0.01F, std::min(1440.0F, mozilla::Preferences::GetFloat(
+    "browser.cache.frecency_half_life_hours", kDefaultHalfLifeHours)));
 
   mozilla::Preferences::AddBoolVarCache(
     &sSanitizeOnShutdown, "privacy.sanitize.sanitizeOnShutdown", kDefaultSanitizeOnShutdown);
