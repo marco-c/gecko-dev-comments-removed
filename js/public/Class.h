@@ -132,15 +132,23 @@ class ObjectOpResult
         Uninitialized = uintptr_t(-1)
     };
 
+    static const uintptr_t SoftFailBit = uintptr_t(1) << (sizeof(uintptr_t) * 8 - 1);
+
     ObjectOpResult() : code_(Uninitialized) {}
 
     
     bool ok() const {
         MOZ_ASSERT(code_ != Uninitialized);
-        return code_ == OkCode;
+        return code_ == OkCode || (code_ & SoftFailBit);
     }
 
     explicit operator bool() const { return ok(); }
+
+    
+    bool reallyOk() const {
+        MOZ_ASSERT(code_ != Uninitialized);
+        return code_ == OkCode;
+    }
 
     
     bool succeed() {
@@ -161,7 +169,23 @@ class ObjectOpResult
 
     bool fail(uint32_t msg) {
         MOZ_ASSERT(msg != OkCode);
+        MOZ_ASSERT((msg & SoftFailBit) == 0);
         code_ = msg;
+        return true;
+    }
+
+    
+
+
+
+
+
+
+
+
+    bool failSoft(uint32_t msg) {
+        
+        code_ = msg | SoftFailBit;
         return true;
     }
 
