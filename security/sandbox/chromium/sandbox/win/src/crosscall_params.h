@@ -60,6 +60,7 @@ union MultiType {
 
 
 
+
 const int kMaxIpcParams = 9;
 
 
@@ -276,6 +277,8 @@ class ActualCallParams : public CrossCallParams {
   char parameters_[BLOCK_SIZE - sizeof(CrossCallParams)
                    - sizeof(ParamInfo) * (NUMBER_PARAMS + 1)];
   DISALLOW_COPY_AND_ASSIGN(ActualCallParams);
+
+  friend uint32_t GetMinDeclaredActualCallParamsSize(uint32_t param_count);
 };
 
 static_assert(sizeof(ActualCallParams<1, 1024>) == 1024, "bad size buffer");
