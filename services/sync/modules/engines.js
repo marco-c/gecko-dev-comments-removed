@@ -842,6 +842,9 @@ SyncEngine.prototype = {
     if (!json.ids) {
       json.ids = [];
     }
+    
+    
+    json.ids = new SerializableSet(json.ids);
     return json;
   },
 
@@ -911,6 +914,9 @@ SyncEngine.prototype = {
   },
 
   set toFetch(ids) {
+    if (ids.constructor.name != "SerializableSet") {
+      throw new Error("Bug: Attempted to set toFetch to something that isn't a SerializableSet");
+    }
     this._toFetchStorage.data = { ids };
     this._toFetchStorage.saveSoon();
   },
@@ -919,7 +925,12 @@ SyncEngine.prototype = {
     this._previousFailedStorage.ensureDataReady();
     return this._previousFailedStorage.data.ids;
   },
+
   set previousFailed(ids) {
+    if (ids.constructor.name != "SerializableSet") {
+      throw new Error(
+        "Bug: Attempted to set previousFailed to something that isn't a SerializableSet");
+    }
     this._previousFailedStorage.data = { ids };
     this._previousFailedStorage.saveSoon();
   },
@@ -1100,7 +1111,7 @@ SyncEngine.prototype = {
     
     let count = {applied: 0, failed: 0, newFailed: 0, reconciled: 0};
     let recordsToApply = [];
-    let failedInCurrentSync = [];
+    let failedInCurrentSync = new SerializableSet();
 
     let oldestModified = this.lastModified;
     let downloadedIDs = new Set();
@@ -1124,7 +1135,7 @@ SyncEngine.prototype = {
 
         let { shouldApply, error } = await this._maybeReconcile(record);
         if (error) {
-          failedInCurrentSync.push(record.id);
+          failedInCurrentSync.add(record.id);
           count.failed++;
           continue;
         }
@@ -1136,7 +1147,7 @@ SyncEngine.prototype = {
       }
 
       let failedToApply = await this._applyRecords(recordsToApply);
-      failedInCurrentSync.push(...failedToApply);
+      Utils.setAddAll(failedInCurrentSync, failedToApply);
 
       
       
@@ -1165,7 +1176,7 @@ SyncEngine.prototype = {
       
       let remainingIDs = guids.obj.filter(id => !downloadedIDs.has(id));
       if (remainingIDs.length > 0) {
-        this.toFetch = Utils.arrayUnion(this.toFetch, remainingIDs);
+        this.toFetch = Utils.setAddAll(this.toFetch, remainingIDs);
       }
     }
 
@@ -1180,8 +1191,9 @@ SyncEngine.prototype = {
     
     
     let failedInPreviousSync = this.previousFailed;
-    let idsToBackfill = Utils.arrayUnion(this.toFetch.slice(0, downloadLimit),
-      failedInPreviousSync);
+    let idsToBackfill = Array.from(
+      Utils.setAddAll(Utils.subsetOfSize(this.toFetch, downloadLimit),
+                      failedInPreviousSync));
 
     
     
@@ -1230,20 +1242,21 @@ SyncEngine.prototype = {
       count.failed += failedToApply.length;
       count.applied += backfilledRecordsToApply.length;
 
-      this.toFetch = Utils.arraySub(this.toFetch, ids);
-      this.previousFailed = Utils.arrayUnion(this.previousFailed, failedInBackfill);
+      this.toFetch = Utils.setDeleteAll(this.toFetch, ids);
+      this.previousFailed = Utils.setAddAll(this.previousFailed, failedInBackfill);
 
       if (this.lastSync < this.lastModified) {
         this.lastSync = this.lastModified;
       }
     }
 
-    count.newFailed = this.previousFailed.reduce((count, engine) => {
-      if (failedInPreviousSync.indexOf(engine) == -1) {
-        count++;
+    count.newFailed = 0;
+    for (let item of this.previousFailed) {
+      if (!failedInPreviousSync.has(item)) {
+        ++count.newFailed;
       }
-      return count;
-    }, 0);
+    }
+
     count.succeeded = Math.max(0, count.applied - count.failed);
     this._log.info(["Records:",
                     count.applied, "applied,",
@@ -1811,8 +1824,8 @@ SyncEngine.prototype = {
 
   async _resetClient() {
     this.resetLastSync();
-    this.previousFailed = [];
-    this.toFetch = [];
+    this.previousFailed = new SerializableSet();
+    this.toFetch = new SerializableSet();
     this._needWeakUpload.clear();
   },
 

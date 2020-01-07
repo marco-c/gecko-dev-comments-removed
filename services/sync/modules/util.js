@@ -2,7 +2,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Utils", "Svc"];
+this.EXPORTED_SYMBOLS = ["Utils", "Svc", "SerializableSet"];
 
 var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
@@ -524,6 +524,47 @@ this.Utils = {
     return foo.concat(Utils.arraySub(bar, foo));
   },
 
+  
+
+
+
+
+  setAddAll(set, items) {
+    for (let item of items) {
+      set.add(item);
+    }
+    return set;
+  },
+
+  
+
+
+
+
+  setDeleteAll(set, items) {
+    for (let item of items) {
+      set.delete(item);
+    }
+    return set;
+  },
+
+  
+
+
+
+
+  subsetOfSize(items, size) {
+    let result = new Set();
+    let count = 0;
+    for (let item of items) {
+      if (count++ == size) {
+        return result;
+      }
+      result.add(item);
+    }
+    return result;
+  },
+
   bind2: function Async_bind2(object, method) {
     return function innerBind() { return method.apply(object, arguments); };
   },
@@ -702,6 +743,15 @@ this.Utils = {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 };
+
+
+
+
+class SerializableSet extends Set {
+  toJSON() {
+    return Array.from(this);
+  }
+}
 
 XPCOMUtils.defineLazyGetter(Utils, "_utf8Converter", function() {
   let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]

@@ -170,7 +170,7 @@ add_task(async function test_processIncoming_error_orderChildren() {
     
     bogus_record.modified = Date.now() / 1000 - 60 * 10;
     engine.lastSync = Date.now() / 1000 - 60;
-    engine.toFetch = [BOGUS_GUID];
+    engine.toFetch = new SerializableSet([BOGUS_GUID]);
 
     let error;
     try {
