@@ -12,6 +12,12 @@
 #include "mozilla/ServoBindings.h"
 
 namespace mozilla {
+namespace css {
+class Loader;
+} 
+} 
+
+namespace mozilla {
 
 class ServoCSSParser
 {
@@ -36,11 +42,15 @@ public:
 
 
 
+
+
+
   static bool ComputeColor(ServoStyleSet* aStyleSet,
                            nscolor aCurrentColor,
                            const nsAString& aValue,
                            nscolor* aResultColor,
-                           bool* aWasCurrentColor = nullptr);
+                           bool* aWasCurrentColor = nullptr,
+                           css::Loader* aLoader = nullptr);
 
   
 
