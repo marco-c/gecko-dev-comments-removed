@@ -10,6 +10,7 @@
 
 html {
   background: -moz-Dialog;
+  color: -moz-DialogText;
   font: message-box;
 }
 
@@ -31,6 +32,7 @@ div.section {
   border: 1px solid ThreeDShadow;
   border-radius: 10px;
   background: -moz-Field;
+  color: -moz-FieldText;
 }
 
 div.opsRow {
@@ -40,6 +42,7 @@ div.opsRow {
   border: 1px solid ThreeDShadow;
   border-radius: 10px;
   background: -moz-Field;
+  color: -moz-FieldText;
   display: inline-block;
 }
 
@@ -66,7 +69,6 @@ h1 {
 }
 
 h2 {
-  background: #ddd;
   padding-left: .1em;
 }
 
@@ -80,35 +82,47 @@ a.upDownArrow {
   -moz-user-select: none;  
 }
 
+.accuracyWarning, .badInputWarning, .invalid {
+  
+
+
+
+
+  color: -moz-activehyperlinktext;
+}
+
+
+
+
+
 .accuracyWarning {
-  color: #d22;
+  filter: hue-rotate(30);
 }
 
 .badInputWarning {
-  color: #f00;
+  filter: hue-rotate(-30);
 }
 
 .treeline {
-  color: #888;
+  color: -moz-FieldText;
+  opacity: 50%;
+}
+
+
+
+
+
+.mrValue, .mrName, .mrNote {
 }
 
 .mrValue {
   font-weight: bold;
-  color: #400;
 }
 
 .mrPerc {
 }
 
 .mrSep {
-}
-
-.mrName {
-  color: #004;
-}
-
-.mrNote {
-  color: #604;
 }
 
 .hasKids {
@@ -139,11 +153,6 @@ a.upDownArrow {
 
 .hidden {
   display: none;
-}
-
-.invalid {
-  color: #fff;
-  background-color: #f00;
 }
 
 
