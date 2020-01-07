@@ -120,7 +120,6 @@ ToIntegerCommon(const nsTString<T>& aSrc,
   using char_type = typename nsTString<T>::char_type;
 
   auto cp = aSrc.BeginReading();
-  int32_t theRadix = 10; 
   int_type result = 0;
   bool negate = false;
   char_type theChar = 0;
@@ -135,11 +134,19 @@ ToIntegerCommon(const nsTString<T>& aSrc,
     auto endcp=aSrc.EndReading();
     bool done=false;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     while((cp<endcp) && (!done)){
       switch(*cp++) {
         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-          theRadix=16;
           done=true;
           break;
         case '0': case '1': case '2': case '3': case '4':
@@ -149,23 +156,19 @@ ToIntegerCommon(const nsTString<T>& aSrc,
         case '-':
           negate=true; 
           break;
-        case 'X': case 'x':
-          theRadix=16;
-          break;
         default:
           break;
       } 
     }
 
     if (done) {
+      
+      cp--;
 
       
       *aErrorCode = NS_OK;
 
-      if (aRadix!=kAutoDetect) theRadix = aRadix; 
-
       
-      auto first=--cp;  
       bool haveValue = false;
 
       while(cp<endcp){
@@ -173,51 +176,35 @@ ToIntegerCommon(const nsTString<T>& aSrc,
 
         theChar=*cp++;
         if(('0'<=theChar) && (theChar<='9')){
-          result = (theRadix * result) + (theChar-'0');
+          result = (aRadix * result) + (theChar-'0');
           haveValue = true;
         }
         else if((theChar>='A') && (theChar<='F')) {
-          if(10==theRadix) {
-            if(kAutoDetect==aRadix){
-              theRadix=16;
-              cp=first; 
-              result=0;
-              haveValue = false;
-            }
-            else {
-              *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-              result=0;
-              break;
-            }
+          if(10==aRadix) {
+            *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
+            result=0;
+            break;
           }
           else {
-            result = (theRadix * result) + ((theChar-'A')+10);
+            result = (aRadix * result) + ((theChar-'A')+10);
             haveValue = true;
           }
         }
         else if((theChar>='a') && (theChar<='f')) {
-          if(10==theRadix) {
-            if(kAutoDetect==aRadix){
-              theRadix=16;
-              cp=first; 
-              result=0;
-              haveValue = false;
-            }
-            else {
-              *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-              result=0;
-              break;
-            }
+          if(10==aRadix) {
+            *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
+            result=0;
+            break;
           }
           else {
-            result = (theRadix * result) + ((theChar-'a')+10);
+            result = (aRadix * result) + ((theChar-'a')+10);
             haveValue = true;
           }
         }
         else if((('X'==theChar) || ('x'==theChar)) && (!haveValue || result == 0)) {
-          continue;
-        }
-        else if((('#'==theChar) || ('+'==theChar)) && !haveValue) {
+          
+          
+          
           continue;
         }
         else {
