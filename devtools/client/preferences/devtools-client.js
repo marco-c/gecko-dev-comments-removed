@@ -70,10 +70,6 @@ pref("devtools.inspector.flexboxHighlighter.enabled", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
-pref("devtools.changesview.enabled", false);
-
-pref("devtools.eventsview.enabled", false);
-
 pref("devtools.flexboxinspector.enabled", false);
 
 #if defined(NIGHTLY_BUILD)
@@ -289,7 +285,11 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.sidebarToggle", true);
+#else
 pref("devtools.webconsole.sidebarToggle", false);
+#endif
 
 
 pref("devtools.performance.new-panel-enabled", false);
