@@ -101,6 +101,7 @@
 #include "nsICookieService.h"
 #include "nsIConsoleReportCollector.h"
 #include "nsObjectLoadingContent.h"
+#include "nsStringStream.h"
 
 
 
@@ -622,8 +623,8 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   NS_NAMED_LITERAL_CSTRING(uploadData, "PING");
 
   nsCOMPtr<nsIInputStream> uploadStream;
-  NS_NewPostDataStream(getter_AddRefs(uploadStream), false, uploadData);
-  if (!uploadStream) {
+  rv = NS_NewCStringInputStream(getter_AddRefs(uploadStream), uploadData);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
 

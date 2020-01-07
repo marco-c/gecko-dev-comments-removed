@@ -511,11 +511,6 @@ nsresult NS_NewBufferedOutputStream(nsIOutputStream** aResult,
                                     uint32_t aBufferSize);
 
 
-nsresult NS_NewPostDataStream(nsIInputStream  **result,
-                              bool              isFile,
-                              const nsACString &data);
-
-
 
 
 
