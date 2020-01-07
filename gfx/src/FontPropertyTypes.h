@@ -348,7 +348,8 @@ public:
       }
       
       
-      return Normal();
+      
+      return aString[0] == '0' ? Normal() : Italic();
     }
   }
 

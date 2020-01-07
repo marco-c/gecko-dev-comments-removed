@@ -1060,7 +1060,11 @@ AppendToFaceList(nsCString& aFaceList,
     aFaceList.Append(',');
     aFaceList.AppendInt(aFontEntry->mFTFontIndex);
     aFaceList.Append(',');
-    aFaceList.Append(aFontEntry->IsItalic() ? '1' : '0');
+    
+    
+    aFontEntry->SlantStyle().Min().ToString(aFaceList);
+    aFaceList.Append(':');
+    aFontEntry->SlantStyle().Max().ToString(aFaceList);
     aFaceList.Append(',');
     aFaceList.AppendFloat(aFontEntry->Weight().Min().ToFloat());
     aFaceList.Append(':');
