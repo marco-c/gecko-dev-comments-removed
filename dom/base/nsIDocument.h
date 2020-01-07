@@ -1180,11 +1180,10 @@ public:
 
 
 
-  virtual already_AddRefed<nsIPresShell> CreateShell(
-      nsPresContext* aContext,
-      nsViewManager* aViewManager,
-      mozilla::StyleSetHandle aStyleSet) = 0;
-  virtual void DeleteShell() = 0;
+  already_AddRefed<nsIPresShell> CreateShell(nsPresContext* aContext,
+                                             nsViewManager* aViewManager,
+                                             mozilla::StyleSetHandle aStyleSet);
+  void DeleteShell();
 
   nsIPresShell* GetShell() const
   {
