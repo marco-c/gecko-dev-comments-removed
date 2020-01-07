@@ -211,7 +211,9 @@ this.BrowserWindowTracker = {
 
   orderedWindows: {
     * [Symbol.iterator]() {
-      for (let window of _trackedWindows)
+      
+      
+      for (let window of [..._trackedWindows])
         yield window;
     }
   },
