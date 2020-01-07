@@ -142,6 +142,11 @@ public:
   bool OverridesCSP(nsIPrincipal* aDocumentPrincipal)
   {
     
+    if (mKind == eSystemPrincipal) {
+      return true;
+    }
+
+    
     
     if (mKind == eExpandedPrincipal) {
       return FastSubsumes(aDocumentPrincipal);
