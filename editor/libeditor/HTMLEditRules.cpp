@@ -7784,8 +7784,7 @@ HTMLEditRules::JoinNodesSmart(nsIContent& aNodeLeft,
     }
   }
 
-  EditorDOMPoint ret;
-  ret.SetToEndOf(&aNodeRight);
+  EditorDOMPoint ret(&aNodeRight, aNodeLeft.Length());
 
   
   if (HTMLEditUtils::IsList(&aNodeLeft) || aNodeLeft.GetAsText()) {
