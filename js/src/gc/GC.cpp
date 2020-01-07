@@ -406,7 +406,7 @@ FOR_EACH_ALLOCKIND(EXPAND_THING_SIZE)
 #undef EXPAND_THING_SIZE
 };
 
-FreeSpan ArenaLists::emptySentinel;
+FreeSpan FreeLists::emptySentinel;
 
 #undef CHECK_THING_SIZE_INNER
 #undef CHECK_THING_SIZE
@@ -2116,16 +2116,6 @@ GCMarker::delayMarkingChildren(const void* thing)
     delayMarkingArena(cell->arena());
 }
 
-inline void
-ArenaLists::unmarkPreMarkedFreeCells()
-{
-    for (auto i : AllAllocKinds()) {
-        FreeSpan* freeSpan = freeList(i);
-        if (!freeSpan->isEmpty())
-            freeSpan->getArena()->unmarkPreMarkedFreeCells();
-    }
-}
-
 
 
 bool
@@ -2298,22 +2288,6 @@ PtrIsInRange(const void* ptr, const void* start, size_t length)
 }
 #endif
 
-static TenuredCell*
-AllocRelocatedCell(Zone* zone, AllocKind thingKind, size_t thingSize)
-{
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    void* dstAlloc = zone->arenas.allocateFromFreeList(thingKind, thingSize);
-    if (!dstAlloc)
-        dstAlloc = GCRuntime::refillFreeListInGC(zone, thingKind);
-    if (!dstAlloc) {
-        
-        
-        
-        oomUnsafe.crash("Could not allocate new arena while compacting");
-    }
-    return TenuredCell::fromPointer(dstAlloc);
-}
-
 static void
 RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind, size_t thingSize)
 {
@@ -2321,7 +2295,7 @@ RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind, size_t thingSize
 
     
     MOZ_ASSERT(zone == src->zone());
-    TenuredCell* dst = AllocRelocatedCell(zone, thingKind, thingSize);
+    TenuredCell* dst = AllocateCellInGC(zone, thingKind);
 
     
     memcpy(dst, src, thingSize);
@@ -2455,20 +2429,20 @@ ShouldRelocateZone(size_t arenaCount, size_t relocCount, JS::gcreason::Reason re
 }
 
 bool
-ArenaLists::relocateArenas(Zone* zone, Arena*& relocatedListOut, JS::gcreason::Reason reason,
+ArenaLists::relocateArenas(Arena*& relocatedListOut, JS::gcreason::Reason reason,
                            SliceBudget& sliceBudget, gcstats::Statistics& stats)
 {
     
     
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-    MOZ_ASSERT(runtime_->gc.isHeapCompacting());
-    MOZ_ASSERT(!runtime_->gc.isBackgroundSweeping());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
+    MOZ_ASSERT(runtime()->gc.isHeapCompacting());
+    MOZ_ASSERT(!runtime()->gc.isBackgroundSweeping());
 
     
     clearFreeLists();
 
     if (ShouldRelocateAllArenas(reason)) {
-        zone->prepareForCompacting();
+        zone_->prepareForCompacting();
         for (auto kind : AllocKindsToRelocate) {
             ArenaList& al = arenaLists(kind);
             Arena* allArenas = al.head();
@@ -2486,7 +2460,7 @@ ArenaLists::relocateArenas(Zone* zone, Arena*& relocatedListOut, JS::gcreason::R
         if (!ShouldRelocateZone(arenaCount, relocCount, reason))
             return false;
 
-        zone->prepareForCompacting();
+        zone_->prepareForCompacting();
         for (auto kind : AllocKindsToRelocate) {
             if (toRelocate[kind]) {
                 ArenaList& al = arenaLists(kind);
@@ -2510,7 +2484,7 @@ GCRuntime::relocateArenas(Zone* zone, JS::gcreason::Reason reason, Arena*& reloc
 
     js::CancelOffThreadIonCompile(rt, JS::Zone::Compact);
 
-    if (!zone->arenas.relocateArenas(zone, relocatedListOut, reason, sliceBudget, stats()))
+    if (!zone->arenas.relocateArenas(relocatedListOut, reason, sliceBudget, stats()))
         return false;
 
 #ifdef DEBUG
@@ -3095,8 +3069,14 @@ GCRuntime::releaseHeldRelocatedArenasWithoutUnlocking(const AutoLockGC& lock)
 #endif
 }
 
-ArenaLists::ArenaLists(JSRuntime* rt, Zone* zone)
-  : runtime_(rt),
+FreeLists::FreeLists()
+{
+    for (auto i : AllAllocKinds())
+        freeLists_[i] = &emptySentinel;
+}
+
+ArenaLists::ArenaLists(Zone* zone)
+  : zone_(zone),
     freeLists_(zone),
     arenaLists_(zone),
     backgroundFinalizeState_(),
@@ -3110,7 +3090,6 @@ ArenaLists::ArenaLists(JSRuntime* rt, Zone* zone)
     savedEmptyArenas(zone, nullptr)
 {
     for (auto i : AllAllocKinds()) {
-        freeLists()[i] = &emptySentinel;
         backgroundFinalizeState(i) = BFS_DONE;
         arenaListsToSweep(i) = nullptr;
     }
@@ -3128,7 +3107,7 @@ ReleaseArenaList(JSRuntime* rt, Arena* arena, const AutoLockGC& lock)
 
 ArenaLists::~ArenaLists()
 {
-    AutoLockGC lock(runtime_);
+    AutoLockGC lock(runtime());
 
     for (auto i : AllAllocKinds()) {
         
@@ -3136,11 +3115,11 @@ ArenaLists::~ArenaLists()
 
 
         MOZ_ASSERT(backgroundFinalizeState(i) == BFS_DONE);
-        ReleaseArenaList(runtime_, arenaLists(i).head(), lock);
+        ReleaseArenaList(runtime(), arenaLists(i).head(), lock);
     }
-    ReleaseArenaList(runtime_, incrementalSweptArenas.ref().head(), lock);
+    ReleaseArenaList(runtime(), incrementalSweptArenas.ref().head(), lock);
 
-    ReleaseArenaList(runtime_, savedEmptyArenas, lock);
+    ReleaseArenaList(runtime(), savedEmptyArenas, lock);
 }
 
 void
@@ -3222,7 +3201,7 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
     
     
     {
-        AutoLockGC lock(lists->runtime_);
+        AutoLockGC lock(lists->runtimeFromAnyThread());
         MOZ_ASSERT(lists->backgroundFinalizeState(thingKind) == BFS_RUN);
 
         
@@ -3237,8 +3216,8 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
 void
 ArenaLists::releaseForegroundSweptEmptyArenas()
 {
-    AutoLockGC lock(runtime_);
-    ReleaseArenaList(runtime_, savedEmptyArenas, lock);
+    AutoLockGC lock(runtime());
+    ReleaseArenaList(runtime(), savedEmptyArenas, lock);
     savedEmptyArenas = nullptr;
 }
 
@@ -8197,7 +8176,7 @@ GCRuntime::mergeRealms(Realm* source, Realm* target)
         MOZ_ASSERT(r.get() == source);
 
     
-    target->zone()->arenas.adoptArenas(rt, &source->zone()->arenas, targetZoneIsCollecting);
+    target->zone()->arenas.adoptArenas(&source->zone()->arenas, targetZoneIsCollecting);
     target->zone()->usage.adopt(source->zone()->usage);
     target->zone()->adoptUniqueIds(source->zone());
     target->zone()->adoptMallocBytes(source->zone());
@@ -8366,10 +8345,10 @@ js::ReleaseAllJITCode(FreeOp* fop)
 }
 
 void
-ArenaLists::adoptArenas(JSRuntime* rt, ArenaLists* fromArenaLists, bool targetZoneIsCollecting)
+ArenaLists::adoptArenas(ArenaLists* fromArenaLists, bool targetZoneIsCollecting)
 {
     
-    AutoLockGC lock(rt);
+    AutoLockGC lock(runtime());
 
     fromArenaLists->clearFreeLists();
 
@@ -8400,19 +8379,6 @@ ArenaLists::adoptArenas(JSRuntime* rt, ArenaLists* fromArenaLists, bool targetZo
         toList->check();
     }
 }
-
-bool
-ArenaLists::containsArena(JSRuntime* rt, Arena* needle)
-{
-    AutoLockGC lock(rt);
-    ArenaList& list = arenaLists(needle->getAllocKind());
-    for (Arena* arena = list.head(); arena; arena = arena->next) {
-        if (arena == needle)
-            return true;
-    }
-    return false;
-}
-
 
 AutoSuppressGC::AutoSuppressGC(JSContext* cx)
   : suppressGC_(cx->suppressGC.ref())

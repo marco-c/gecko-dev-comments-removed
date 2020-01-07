@@ -237,7 +237,7 @@ template <typename T, AllowGC allowGC>
 GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind, size_t thingSize)
 {
     
-    T* t = reinterpret_cast<T*>(cx->arenas()->allocateFromFreeList(kind, thingSize));
+    T* t = reinterpret_cast<T*>(cx->freeLists().allocate(kind));
     if (MOZ_UNLIKELY(!t)) {
         
         
@@ -347,6 +347,19 @@ GCRuntime::checkIncrementalZoneState(JSContext* cx, T* t)
 #endif
 }
 
+TenuredCell*
+js::gc::AllocateCellInGC(Zone* zone, AllocKind thingKind)
+{
+    void* cell = zone->arenas.allocateFromFreeList(thingKind);
+    if (!cell) {
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        cell = GCRuntime::refillFreeListInGC(zone, thingKind);
+        if (!cell)
+            oomUnsafe.crash(ChunkSize, "Failed not allocate new chunk during GC");
+    }
+    return TenuredCell::fromPointer(cell);
+}
+
 
 
 
@@ -366,7 +379,7 @@ GCRuntime::startBackgroundAllocTaskIfIdle()
  TenuredCell*
 GCRuntime::refillFreeListFromAnyThread(JSContext* cx, AllocKind thingKind)
 {
-    cx->arenas()->checkEmptyFreeList(thingKind);
+    MOZ_ASSERT(cx->freeLists().isEmpty(thingKind));
 
     if (!cx->helperThread())
         return refillFreeListFromMainThread(cx, thingKind);
@@ -379,10 +392,10 @@ GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind)
 {
     
     
-    Zone *zone = cx->zone();
     MOZ_ASSERT(!JS::RuntimeHeapIsBusy(), "allocating while under GC");
 
-    return cx->arenas()->allocateFromArena(zone, thingKind, ShouldCheckThresholds::CheckThresholds);
+    return cx->zone()->arenas.refillFreeListAndAllocate(cx->freeLists(), thingKind,
+                                                        ShouldCheckThresholds::CheckThresholds);
 }
 
  TenuredCell*
@@ -390,32 +403,32 @@ GCRuntime::refillFreeListFromHelperThread(JSContext* cx, AllocKind thingKind)
 {
     
     
-    Zone* zone = cx->zone();
+    Zone *zone = cx->zone();
     MOZ_ASSERT(!zone->wasGCStarted());
 
-    return cx->arenas()->allocateFromArena(zone, thingKind, ShouldCheckThresholds::CheckThresholds);
+    return zone->arenas.refillFreeListAndAllocate(cx->freeLists(), thingKind,
+                                                  ShouldCheckThresholds::CheckThresholds);
 }
 
  TenuredCell*
 GCRuntime::refillFreeListInGC(Zone* zone, AllocKind thingKind)
 {
     
-
-
-
-    zone->arenas.checkEmptyFreeList(thingKind);
-    mozilla::DebugOnly<JSRuntime*> rt = zone->runtimeFromMainThread();
     MOZ_ASSERT(JS::RuntimeHeapIsCollecting());
-    MOZ_ASSERT_IF(!JS::RuntimeHeapIsMinorCollecting(), !rt->gc.isBackgroundSweeping());
+    MOZ_ASSERT_IF(!JS::RuntimeHeapIsMinorCollecting(),
+                  !zone->runtimeFromMainThread()->gc.isBackgroundSweeping());
 
-    return zone->arenas.allocateFromArena(zone, thingKind, ShouldCheckThresholds::DontCheckThresholds);
+    return zone->arenas.refillFreeListAndAllocate(zone->arenas.freeLists(), thingKind,
+                                                  ShouldCheckThresholds::DontCheckThresholds);
 }
 
 TenuredCell*
-ArenaLists::allocateFromArena(JS::Zone* zone, AllocKind thingKind,
-                              ShouldCheckThresholds checkThresholds)
+ArenaLists::refillFreeListAndAllocate(FreeLists& freeLists, AllocKind thingKind,
+                                      ShouldCheckThresholds checkThresholds)
 {
-    JSRuntime* rt = zone->runtimeFromAnyThread();
+    MOZ_ASSERT(freeLists.isEmpty(thingKind));
+
+    JSRuntime* rt = runtimeFromAnyThread();
 
     mozilla::Maybe<AutoLockGCBgAlloc> maybeLock;
 
@@ -429,7 +442,7 @@ ArenaLists::allocateFromArena(JS::Zone* zone, AllocKind thingKind,
         
         MOZ_ASSERT(!arena->isEmpty());
 
-        return allocateFromArenaInner(zone, arena, thingKind);
+        return freeLists.setArenaAndAllocate(arena, thingKind);
     }
 
     
@@ -443,40 +456,46 @@ ArenaLists::allocateFromArena(JS::Zone* zone, AllocKind thingKind,
 
     
     
-    arena = rt->gc.allocateArena(chunk, zone, thingKind, checkThresholds, maybeLock.ref());
+    arena = rt->gc.allocateArena(chunk, zone_, thingKind, checkThresholds, maybeLock.ref());
     if (!arena)
         return nullptr;
 
     MOZ_ASSERT(al.isCursorAtEnd());
     al.insertBeforeCursor(arena);
 
-    return allocateFromArenaInner(zone, arena, thingKind);
+    return freeLists.setArenaAndAllocate(arena, thingKind);
 }
 
 inline TenuredCell*
-ArenaLists::allocateFromArenaInner(JS::Zone* zone, Arena* arena, AllocKind kind)
+FreeLists::setArenaAndAllocate(Arena* arena, AllocKind kind)
 {
-    size_t thingSize = Arena::thingSize(kind);
+#ifdef DEBUG
+    auto old = freeLists_[kind];
+    if (!old->isEmpty())
+        old->getArena()->checkNoMarkedFreeCells();
+#endif
 
-    setFreeList(kind, arena->getFirstFreeSpan());
+    FreeSpan* span = arena->getFirstFreeSpan();
+    freeLists_[kind] = span;
 
-    if (MOZ_UNLIKELY(zone->wasGCStarted()))
-        zone->runtimeFromAnyThread()->gc.arenaAllocatedDuringGC(zone, arena);
-    TenuredCell* thing = freeList(kind)->allocate(thingSize);
+    if (MOZ_UNLIKELY(arena->zone->wasGCStarted()))
+        arena->arenaAllocatedDuringGC();
 
+    TenuredCell* thing = span->allocate(Arena::thingSize(kind));
     MOZ_ASSERT(thing); 
+
     return thing;
 }
 
 void
-GCRuntime::arenaAllocatedDuringGC(JS::Zone* zone, Arena* arena)
+Arena::arenaAllocatedDuringGC()
 {
     
     
     
 
     if (zone->needsIncrementalBarrier() || zone->isGCSweeping()) {
-        for (ArenaFreeCellIter iter(arena); !iter.done(); iter.next()) {
+        for (ArenaFreeCellIter iter(this); !iter.done(); iter.next()) {
             TenuredCell* cell = iter.getCell();
             MOZ_ASSERT(!cell->isMarkedAny());
             cell->markBlack();

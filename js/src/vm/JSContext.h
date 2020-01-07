@@ -128,7 +128,8 @@ struct JSContext : public JS::RootingContext,
 
     js::ThreadData<JS::ContextOptions> options_;
 
-    js::ThreadData<js::gc::ArenaLists*> arenas_;
+    
+    js::ThreadData<js::gc::FreeLists*> freeLists_;
 
   public:
     
@@ -137,7 +138,10 @@ struct JSContext : public JS::RootingContext,
 
     bool isMainThreadContext() const { return kind_ == js::ContextKind::MainThread; }
 
-    inline js::gc::ArenaLists* arenas() const { return arenas_; }
+    js::gc::FreeLists& freeLists() {
+        MOZ_ASSERT(freeLists_);
+        return *freeLists_;
+    }
 
     template <typename T>
     bool isInsideCurrentZone(T thing) const {
