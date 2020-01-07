@@ -324,9 +324,9 @@ nsXMLContentSink::DidBuildModel(bool aTerminated)
     mIsDocumentObserver = false;
 
     mDocument->EndLoad();
-  }
 
-  DropParserAndPerfHint();
+    DropParserAndPerfHint();
+  }
 
   return NS_OK;
 }
@@ -368,6 +368,13 @@ nsXMLContentSink::OnTransformDone(nsresult aResult,
   }
 
   nsCOMPtr<nsIDocument> originalDocument = mDocument;
+  bool blockingOnload = mIsBlockingOnload;
+  if (!mRunsToCompletion) {
+    
+    
+    aResultDocument->BlockOnload();
+    mIsBlockingOnload = true;
+  }
   
   mDocument = aResultDocument;
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
@@ -394,6 +401,13 @@ nsXMLContentSink::OnTransformDone(nsresult aResult,
   ScrollToRef();
 
   originalDocument->EndLoad();
+  if (blockingOnload) {
+    
+    
+    originalDocument->UnblockOnload(true);
+  }
+
+  DropParserAndPerfHint();
 
   return NS_OK;
 }
