@@ -512,6 +512,20 @@ function _execute_test() {
   }
 
   try {
+    ChromeUtils.import("resource://testing-common/PerTestCoverageUtils.jsm");
+  } catch (e) {
+    
+    
+    if (e.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
+      throw e;
+    }
+  }
+
+  if (PerTestCoverageUtils) {
+    PerTestCoverageUtils.beforeTest();
+  }
+
+  try {
     do_test_pending("MAIN run_test");
     
     
@@ -528,6 +542,10 @@ function _execute_test() {
 
     if (coverageCollector != null) {
       coverageCollector.recordTestCoverage(_TEST_FILE[0]);
+    }
+
+    if (PerTestCoverageUtils) {
+      PerTestCoverageUtils.afterTest();
     }
   } catch (e) {
     _passed = false;
