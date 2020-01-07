@@ -1769,7 +1769,7 @@ nsSHistory::Stop(uint32_t aStopFlags)
 }
 
 NS_IMETHODIMP
-nsSHistory::GetDocument(nsIDOMDocument** aDocument)
+nsSHistory::GetDocument(nsIDocument** aDocument)
 {
   
   return NS_OK;

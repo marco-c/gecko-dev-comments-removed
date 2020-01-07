@@ -69,7 +69,6 @@ class nsIContentPolicy;
 class nsIContentSecurityPolicy;
 class nsIDocShellTreeItem;
 class nsIDocumentLoaderFactory;
-class nsIDOMDocument;
 class nsIDOMNode;
 class nsIDragSession;
 class nsIEventTarget;

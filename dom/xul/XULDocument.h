@@ -116,19 +116,6 @@ public:
                            bool aPreallocateChildren) const override;
 
     
-    using nsDocument::CreateElement;
-    using nsDocument::CreateElementNS;
-    NS_FORWARD_NSIDOMDOCUMENT(XMLDocument::)
-    
-    using mozilla::dom::DocumentOrShadowRoot::GetElementById;
-    using nsDocument::GetImplementation;
-    using nsDocument::GetTitle;
-    using nsDocument::SetTitle;
-    using nsDocument::GetLastStyleSheetSet;
-    using nsDocument::MozSetImageElement;
-    using nsIDocument::GetLocation;
-
-    
     NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus) override;

@@ -1179,7 +1179,7 @@ nsHTMLDocument::Open(JSContext* ,
                      bool aReplace,
                      ErrorResult& rv)
 {
-  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMDocument*>(this)),
+  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMNode*>(this)),
              "XOW should have caught this!");
 
   nsCOMPtr<nsPIDOMWindowInner> window = GetInnerWindow();
@@ -1209,7 +1209,7 @@ nsHTMLDocument::Open(JSContext* cx,
   
   
 
-  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMDocument*>(this)),
+  MOZ_ASSERT(nsContentUtils::CanCallerAccess(static_cast<nsIDOMNode*>(this)),
              "XOW should have caught this!");
   if (!IsHTMLDocument() || mDisableDocWrite) {
     

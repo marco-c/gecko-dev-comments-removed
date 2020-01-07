@@ -77,18 +77,6 @@ public:
     return mForms;
   }
 
-  
-  using nsDocument::CreateElement;
-  using nsDocument::CreateElementNS;
-  NS_FORWARD_NSIDOMDOCUMENT(nsDocument::)
-
-  
-  using nsDocument::GetImplementation;
-  using nsDocument::GetTitle;
-  using nsDocument::SetTitle;
-  using nsDocument::GetLastStyleSheetSet;
-  using nsDocument::MozSetImageElement;
-
   mozilla::dom::HTMLAllCollection* All();
 
   nsISupports* ResolveName(const nsAString& aName, nsWrapperCache **aCache);
