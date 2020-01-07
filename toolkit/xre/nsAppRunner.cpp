@@ -258,6 +258,9 @@ static nsIProfileLock* gProfileLock;
 int    gRestartArgc;
 char **gRestartArgv;
 
+
+bool gRestartedByOS = false;
+
 bool gIsGtest = false;
 
 nsString gAbsoluteArgv0Path;
@@ -1029,6 +1032,13 @@ nsXULAppInfo::GetWindowsDLLBlocklistStatus(bool* aResult)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsXULAppInfo::GetRestartedByOS(bool* aResult)
+{
+  *aResult = gRestartedByOS;
+  return NS_OK;
+}
+
 #ifdef XP_WIN
 
 
@@ -1753,7 +1763,44 @@ XRE_GetBinaryPath(nsIFile* *aResult)
 #include <shellapi.h>
 
 typedef BOOL (WINAPI* SetProcessDEPPolicyFunc)(DWORD dwFlags);
-#endif
+
+static void
+RegisterApplicationRestartChanged(const char* aPref, void* aData) {
+  DWORD cchCmdLine = 0;
+  HRESULT rc =
+    ::GetApplicationRestartSettings(::GetCurrentProcess(), nullptr, &cchCmdLine, nullptr);
+  bool wasRegistered = false;
+  if (rc == S_OK) {
+    wasRegistered = true;
+  }
+
+  if (Preferences::GetBool(PREF_WIN_REGISTER_APPLICATION_RESTART, false) && !wasRegistered) {
+    
+    
+    
+    char* exeName = gRestartArgv[0];
+    gRestartArgv[0] = "-os-restarted";
+    wchar_t** restartArgvConverted =
+      AllocConvertUTF8toUTF16Strings(gRestartArgc, gRestartArgv);
+    gRestartArgv[0] = exeName;
+
+    mozilla::UniquePtr<wchar_t[]> restartCommandLine;
+    if (restartArgvConverted) {
+      restartCommandLine = mozilla::MakeCommandLine(gRestartArgc, restartArgvConverted);
+      FreeAllocStrings(gRestartArgc, restartArgvConverted);
+    }
+
+    if (restartCommandLine) {
+      
+      
+      ::RegisterApplicationRestart(restartCommandLine.get(), RESTART_NO_CRASH |
+                                                             RESTART_NO_HANG);
+    }
+  } else if (wasRegistered) {
+    ::UnregisterApplicationRestart();
+  }
+}
+#endif 
 
 
 
@@ -3444,6 +3491,12 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 
   SaveToEnv("MOZ_LAUNCHED_CHILD=");
 
+  
+  
+  if (CheckArg("os-restarted", nullptr, CheckArgFlag::RemoveArg) == ARG_FOUND) {
+    gRestartedByOS = true;
+  }
+
   gRestartArgc = gArgc;
   gRestartArgv = (char**) malloc(sizeof(char*) * (gArgc + 1 + (override ? 2 : 0)));
   if (!gRestartArgv) {
@@ -4569,6 +4622,11 @@ XREMain::XRE_mainRun()
   if (!mShuttingDown) {
     rv = appStartup->CreateHiddenWindow();
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+#ifdef XP_WIN
+    Preferences::RegisterCallbackAndCall(RegisterApplicationRestartChanged,
+                                         PREF_WIN_REGISTER_APPLICATION_RESTART);
+#endif
 
 #if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
     nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
