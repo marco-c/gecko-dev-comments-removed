@@ -445,11 +445,7 @@ VRControllerOpenVR::VRControllerOpenVR(dom::GamepadHand aHand, uint32_t aDisplay
 
 VRControllerOpenVR::~VRControllerOpenVR()
 {
-  if (mVibrateThread) {
-    mVibrateThread->Shutdown();
-    mVibrateThread = nullptr;
-  }
-
+  ShutdownVibrateHapticThread();
   MOZ_COUNT_DTOR_INHERITED(VRControllerOpenVR, VRControllerHost);
 }
 
@@ -583,6 +579,16 @@ void
 VRControllerOpenVR::StopVibrateHaptic()
 {
   mIsVibrateStopped = true;
+}
+
+void
+VRControllerOpenVR::ShutdownVibrateHapticThread()
+{
+  StopVibrateHaptic();
+  if (mVibrateThread) {
+    mVibrateThread->Shutdown();
+    mVibrateThread = nullptr;
+  }
 }
 
 VRSystemManagerOpenVR::VRSystemManagerOpenVR()
@@ -1194,6 +1200,7 @@ VRSystemManagerOpenVR::RemoveControllers()
 {
   
   for (uint32_t i = 0; i < mOpenVRController.Length(); ++i) {
+    mOpenVRController[i]->ShutdownVibrateHapticThread();
     RemoveGamepad(i);
   }
   mOpenVRController.Clear();

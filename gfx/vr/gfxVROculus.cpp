@@ -1374,6 +1374,7 @@ VRControllerOculus::SetHandTrigger(float aValue)
 
 VRControllerOculus::~VRControllerOculus()
 {
+  ShutdownVibrateHapticThread();
   MOZ_COUNT_DTOR_INHERITED(VRControllerOculus, VRControllerHost);
 }
 
@@ -1514,6 +1515,16 @@ void
 VRControllerOculus::StopVibrateHaptic()
 {
   mIsVibrateStopped = true;
+}
+
+void
+VRControllerOculus::ShutdownVibrateHapticThread()
+{
+  StopVibrateHaptic();
+  if (mVibrateThread) {
+    mVibrateThread->Shutdown();
+    mVibrateThread = nullptr;
+  }
 }
 
  already_AddRefed<VRSystemManagerOculus>
@@ -1983,6 +1994,7 @@ VRSystemManagerOculus::RemoveControllers()
 {
   
   for (uint32_t i = 0; i < mOculusController.Length(); ++i) {
+    mOculusController[i]->ShutdownVibrateHapticThread();
     RemoveGamepad(i);
   }
 
