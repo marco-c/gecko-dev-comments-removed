@@ -63,14 +63,11 @@ public:
     LayoutDeviceRect layoutBoundsRect = LayoutDeviceRect::FromAppUnits(
         aBounds, appUnitsPerDevPixel);
     LayoutDeviceRect layoutClipRect = layoutBoundsRect;
-
-    auto clip = aItem->GetClip();
-    if (clip.HasClip()) {
-      layoutClipRect = LayoutDeviceRect::FromAppUnits(
-                  clip.GetClipRect(), appUnitsPerDevPixel);
-    }
-
     mBoundsRect = aSc.ToRelativeLayoutRect(layoutBoundsRect);
+
+    
+    
+    layoutClipRect.Inflate(1);
     mClipRect = aSc.ToRelativeLayoutRect(layoutClipRect);
 
     mBackfaceVisible = !aItem->BackfaceIsHidden();
