@@ -1253,6 +1253,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
+
     public @NonNull CallInfo getCurrentCall() {
         assertThat("Should be in a method call", mCurrentMethodCall, notNullValue());
         return mCurrentMethodCall.getInfo();
@@ -1392,5 +1393,23 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
     public GeckoSession createClosedSession(final GeckoSessionSettings settings) {
         return createSession(settings,  false);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public <T> T forEachCall(T... values) {
+        assertThat("Should be in a method call", mCurrentMethodCall, notNullValue());
+        return values[Math.min(mCurrentMethodCall.getCurrentCount(), values.length) - 1];
     }
 }
