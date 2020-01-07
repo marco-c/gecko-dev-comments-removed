@@ -9,11 +9,10 @@
 
 
 use std::fmt;
+use std::iter::repeat;
 
-use syntax;
 
-
-#[derive(Debug)]
+#[derive(Clone, PartialEq)]
 pub enum Error {
     
     Syntax(String),
@@ -56,8 +55,30 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<syntax::Error> for Error {
-    fn from(err: syntax::Error) -> Error {
-        Error::Syntax(err.to_string())
+
+
+
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::Syntax(ref err) => {
+                let hr: String = repeat('~').take(79).collect();
+                writeln!(f, "Syntax(")?;
+                writeln!(f, "{}", hr)?;
+                writeln!(f, "{}", err)?;
+                writeln!(f, "{}", hr)?;
+                write!(f, ")")?;
+                Ok(())
+            }
+            Error::CompiledTooBig(limit) => {
+                f.debug_tuple("CompiledTooBig")
+                    .field(&limit)
+                    .finish()
+            }
+            Error::__Nonexhaustive => {
+                f.debug_tuple("__Nonexhaustive").finish()
+            }
+        }
     }
 }

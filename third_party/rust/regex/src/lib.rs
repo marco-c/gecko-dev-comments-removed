@@ -487,28 +487,64 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_docs)]
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(feature = "pattern", feature(pattern))]
-#![cfg_attr(feature = "simd-accel", feature(cfg_target_feature))]
 
 extern crate aho_corasick;
 extern crate memchr;
 extern crate thread_local;
-#[cfg(test)] extern crate quickcheck;
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
 extern crate regex_syntax as syntax;
-#[cfg(feature = "simd-accel")] extern crate simd;
 extern crate utf8_ranges;
 
+#[cfg(feature = "use_std")]
 pub use error::Error;
+#[cfg(feature = "use_std")]
 pub use re_builder::unicode::*;
+#[cfg(feature = "use_std")]
 pub use re_builder::set_unicode::*;
+#[cfg(feature = "use_std")]
 pub use re_set::unicode::*;
+#[cfg(feature = "use_std")]
 pub use re_trait::Locations;
+#[cfg(feature = "use_std")]
 pub use re_unicode::{
     Regex, Match, Captures,
     CaptureNames, Matches, CaptureMatches, SubCaptureMatches,
-    Replacer, NoExpand, Split, SplitN,
+    Replacer, ReplacerRef, NoExpand, Split, SplitN,
     escape,
 };
 
@@ -598,6 +634,8 @@ pub use re_unicode::{
 
 
 
+
+#[cfg(feature = "use_std")]
 pub mod bytes {
     pub use re_builder::bytes::*;
     pub use re_builder::set_bytes::*;
@@ -615,34 +653,29 @@ mod exec;
 mod expand;
 mod freqs;
 mod input;
-mod literals;
+mod literal;
 #[cfg(feature = "pattern")]
 mod pattern;
 mod pikevm;
 mod prog;
 mod re_builder;
 mod re_bytes;
-mod re_plugin;
 mod re_set;
 mod re_trait;
 mod re_unicode;
-#[cfg(feature = "simd-accel")]
-mod simd_accel;
-#[cfg(not(feature = "simd-accel"))]
-#[path = "simd_fallback/mod.rs"]
-mod simd_accel;
 mod sparse;
+#[cfg(feature = "unstable")]
+mod vector;
 
 
 
 
 #[doc(hidden)]
+#[cfg(feature = "use_std")]
 pub mod internal {
     pub use compile::Compiler;
     pub use exec::{Exec, ExecBuilder};
     pub use input::{Char, Input, CharInput, InputAt};
-    pub use literals::LiteralSearcher;
+    pub use literal::LiteralSearcher;
     pub use prog::{Program, Inst, EmptyLook, InstRanges};
-    pub use re_plugin::Plugin;
-    pub use re_unicode::_Regex;
 }

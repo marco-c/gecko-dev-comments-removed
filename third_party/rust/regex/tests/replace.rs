@@ -36,3 +36,9 @@ replace!(no_expand2, replace,
 
 
 replace!(match_at_start_replace_with_empty, replace_all, r"foo", "foobar", t!(""), "bar");
+
+
+replace!(single_empty_match, replace, r"^", "bar", t!("foo"), "foobar");
+
+
+replace!(capture_longest_possible_name, replace_all, r"(.)", "b", t!("${1}a $1a"), "ba ");

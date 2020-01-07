@@ -150,7 +150,7 @@ fn find_cap_ref<T: ?Sized + AsRef<[u8]>>(
     
     
     let cap = str::from_utf8(&rep[i..cap_end])
-                  .ok().expect("valid UTF-8 capture name");
+                  .expect("valid UTF-8 capture name");
     if brace {
         if !rep.get(cap_end).map_or(false, |&b| b == b'}') {
             return None;

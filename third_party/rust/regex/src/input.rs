@@ -16,7 +16,7 @@ use std::u32;
 
 use syntax;
 
-use literals::LiteralSearcher;
+use literal::LiteralSearcher;
 use prog::InstEmptyLook;
 use utf8::{decode_utf8, decode_last_utf8};
 
@@ -59,6 +59,12 @@ impl InputAt {
     }
 
     
+    
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    
     pub fn pos(&self) -> usize {
         self.pos
     }
@@ -97,6 +103,9 @@ pub trait Input {
 
     
     fn len(&self) -> usize;
+
+    
+    fn is_empty(&self) -> bool { self.len() == 0 }
 
     
     fn as_bytes(&self) -> &[u8];
@@ -214,10 +223,6 @@ impl<'t> Input for CharInput<'t> {
 }
 
 
-
-
-
-
 #[derive(Clone, Copy, Debug)]
 pub struct ByteInput<'t> {
     text: &'t [u8],
@@ -247,7 +252,7 @@ impl<'t> Input for ByteInput<'t> {
         InputAt {
             pos: i,
             c: None.into(),
-            byte: self.get(i).map(|&b| b),
+            byte: self.get(i).cloned(),
             len: 1,
         }
     }
@@ -325,7 +330,7 @@ impl<'t> Input for ByteInput<'t> {
     }
 
     fn as_bytes(&self) -> &[u8] {
-        &self.text
+        self.text
     }
 }
 
@@ -366,7 +371,7 @@ impl Char {
     
     
     pub fn is_word_char(self) -> bool {
-        char::from_u32(self.0).map_or(false, syntax::is_word_char)
+        char::from_u32(self.0).map_or(false, syntax::is_word_character)
     }
 
     
@@ -374,19 +379,9 @@ impl Char {
     
     pub fn is_word_byte(self) -> bool {
         match char::from_u32(self.0) {
-            None => false,
             Some(c) if c <= '\u{7F}' => syntax::is_word_byte(c as u8),
-            Some(_) => false,
+            None | Some(_) => false,
         }
-    }
-
-    
-    
-    
-    pub fn as_char(self) -> Option<char> {
-        
-        
-        char::from_u32(self.0)
     }
 }
 

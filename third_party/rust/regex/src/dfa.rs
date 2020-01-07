@@ -71,7 +71,7 @@ pub fn can_exec(insts: &Program) -> bool {
     
     
     
-    if insts.len() > ::std::i32::MAX as usize {
+    if insts.dfa_size_limit == 0 || insts.len() > ::std::i32::MAX as usize {
         return false;
     }
     for inst in insts {
@@ -364,6 +364,8 @@ impl State {
 
 
 
+
+
 type StatePtr = u32;
 
 
@@ -462,7 +464,7 @@ impl<'a> Fsm<'a> {
         at: usize,
     ) -> Result<usize> {
         let mut cache = cache.borrow_mut();
-        let mut cache = &mut cache.dfa;
+        let cache = &mut cache.dfa;
         let mut dfa = Fsm {
             prog: prog,
             start: 0, 
@@ -495,7 +497,7 @@ impl<'a> Fsm<'a> {
         at: usize,
     ) -> Result<usize> {
         let mut cache = cache.borrow_mut();
-        let mut cache = &mut cache.dfa_reverse;
+        let cache = &mut cache.dfa_reverse;
         let mut dfa = Fsm {
             prog: prog,
             start: 0, 
@@ -529,7 +531,7 @@ impl<'a> Fsm<'a> {
     ) -> Result<usize> {
         debug_assert!(matches.len() == prog.matches.len());
         let mut cache = cache.borrow_mut();
-        let mut cache = &mut cache.dfa;
+        let cache = &mut cache.dfa;
         let mut dfa = Fsm {
             prog: prog,
             start: 0, 
@@ -998,16 +1000,20 @@ impl<'a> Fsm<'a> {
                 }
             }
         }
-        let mut cache = true;
-        if b.is_eof() && self.prog.matches.len() > 1 {
-            
-            
-            
-            
-            mem::swap(qcur, qnext);
-            
-            cache = false;
-        }
+
+        let cache =
+            if b.is_eof() && self.prog.matches.len() > 1 {
+                
+                
+                
+                
+                mem::swap(qcur, qnext);
+                
+                false
+            } else {
+                true
+            };
+
         
         
         
@@ -1030,7 +1036,7 @@ impl<'a> Fsm<'a> {
             next = self.start_ptr(next);
         }
         if next <= STATE_MAX && self.state(next).flags().is_match() {
-            next = STATE_MATCH | next;
+            next |= STATE_MATCH;
         }
         debug_assert!(next != STATE_UNKNOWN);
         
@@ -1076,52 +1082,62 @@ impl<'a> Fsm<'a> {
         
         
         self.cache.stack.push(ip);
-        while let Some(ip) = self.cache.stack.pop() {
+        while let Some(mut ip) = self.cache.stack.pop() {
             
-            if q.contains(ip as usize) {
-                continue;
-            }
-            q.insert(ip as usize);
-            match self.prog[ip as usize] {
-                Char(_) | Ranges(_) => unreachable!(),
-                Match(_) | Bytes(_) => {}
-                EmptyLook(ref inst) => {
-                    
-                    
-                    match inst.look {
-                        StartLine if flags.start_line => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        EndLine if flags.end_line => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        StartText if flags.start => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        EndText if flags.end => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        WordBoundaryAscii if flags.word_boundary => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        NotWordBoundaryAscii if flags.not_word_boundary => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        WordBoundary if flags.word_boundary => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        NotWordBoundary if flags.not_word_boundary => {
-                            self.cache.stack.push(inst.goto as InstPtr);
-                        }
-                        StartLine | EndLine | StartText | EndText => {}
-                        WordBoundaryAscii | NotWordBoundaryAscii => {}
-                        WordBoundary | NotWordBoundary => {}
-                    }
+            
+            loop {
+                
+                if q.contains(ip as usize) {
+                    break;
                 }
-                Save(ref inst) => self.cache.stack.push(inst.goto as InstPtr),
-                Split(ref inst) => {
-                    self.cache.stack.push(inst.goto2 as InstPtr);
-                    self.cache.stack.push(inst.goto1 as InstPtr);
+                q.insert(ip as usize);
+                match self.prog[ip as usize] {
+                    Char(_) | Ranges(_) => unreachable!(),
+                    Match(_) | Bytes(_) => {
+                        break;
+                    }
+                    EmptyLook(ref inst) => {
+                        
+                        
+                        match inst.look {
+                            StartLine if flags.start_line => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            EndLine if flags.end_line => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            StartText if flags.start => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            EndText if flags.end => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            WordBoundaryAscii if flags.word_boundary => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            NotWordBoundaryAscii if flags.not_word_boundary => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            WordBoundary if flags.word_boundary => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            NotWordBoundary if flags.not_word_boundary => {
+                                ip = inst.goto as InstPtr;
+                            }
+                            StartLine | EndLine | StartText | EndText
+                            | WordBoundaryAscii | NotWordBoundaryAscii
+                            | WordBoundary | NotWordBoundary => {
+                                break;
+                            }
+                        }
+                    }
+                    Save(ref inst) => {
+                        ip = inst.goto as InstPtr;
+                    }
+                    Split(ref inst) => {
+                        self.cache.stack.push(inst.goto2 as InstPtr);
+                        ip = inst.goto1 as InstPtr;
+                    }
                 }
             }
         }
@@ -1167,12 +1183,12 @@ impl<'a> Fsm<'a> {
             return Some(si);
         }
         
-        if self.approximate_size() > self.prog.dfa_size_limit {
-            if !self.clear_cache_and_save(current_state) {
+        if self.approximate_size() > self.prog.dfa_size_limit
+            && !self.clear_cache_and_save(current_state)
+            {
                 
                 return None;
             }
-        }
         
         self.add_state(key)
     }
@@ -1210,8 +1226,7 @@ impl<'a> Fsm<'a> {
             let ip = usize_to_u32(ip);
             match self.prog[ip as usize] {
                 Char(_) | Ranges(_) => unreachable!(),
-                Save(_) => {}
-                Split(_) => {}
+                Save(_) | Split(_) => {}
                 Bytes(_) => push_inst_ptr(&mut insts, &mut prev, ip),
                 EmptyLook(_) => {
                     state_flags.set_empty();
@@ -1301,7 +1316,7 @@ impl<'a> Fsm<'a> {
         self.cache.trans.clear();
         self.cache.states.clear();
         self.cache.compiled.clear();
-        for s in self.cache.start_states.iter_mut() {
+        for s in &mut self.cache.start_states {
             *s = STATE_UNKNOWN;
         }
         
@@ -1411,9 +1426,9 @@ impl<'a> Fsm<'a> {
         let mut empty_flags = EmptyFlags::default();
         let mut state_flags = StateFlags::default();
         empty_flags.start = at == 0;
-        empty_flags.end = text.len() == 0;
+        empty_flags.end = text.is_empty();
         empty_flags.start_line = at == 0 || text[at - 1] == b'\n';
-        empty_flags.end_line = text.len() == 0;
+        empty_flags.end_line = text.is_empty();
 
         let is_word_last = at > 0 && Byte::byte(text[at - 1]).is_ascii_word();
         let is_word = at < text.len() && Byte::byte(text[at]).is_ascii_word();
@@ -1440,9 +1455,9 @@ impl<'a> Fsm<'a> {
         let mut empty_flags = EmptyFlags::default();
         let mut state_flags = StateFlags::default();
         empty_flags.start = at == text.len();
-        empty_flags.end = text.len() == 0;
+        empty_flags.end = text.is_empty();
         empty_flags.start_line = at == text.len() || text[at] == b'\n';
-        empty_flags.end_line = text.len() == 0;
+        empty_flags.end_line = text.is_empty();
 
         let is_word_last =
             at < text.len() && Byte::byte(text[at]).is_ascii_word();

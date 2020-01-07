@@ -37,7 +37,7 @@ impl Locations {
     
     
     pub fn iter(&self) -> SubCapturesPosIter {
-        SubCapturesPosIter { idx: 0, locs: &self }
+        SubCapturesPosIter { idx: 0, locs: self }
     }
 
     
@@ -148,10 +148,10 @@ pub trait RegularExpression: Sized {
 
     
     
-    fn find_iter<'t>(
+    fn find_iter (
         self,
-        text: &'t Self::Text,
-    ) -> Matches<'t, Self> {
+        text: &Self::Text,
+    ) -> Matches<Self> {
         Matches {
             re: self,
             text: text,
@@ -162,10 +162,10 @@ pub trait RegularExpression: Sized {
 
     
     
-    fn captures_iter<'t>(
+    fn captures_iter(
         self,
-        text: &'t Self::Text,
-    ) -> CaptureMatches<'t, Self> {
+        text: &Self::Text,
+    ) -> CaptureMatches<Self> {
         CaptureMatches(self.find_iter(text))
     }
 }
@@ -206,7 +206,7 @@ impl<'t, R> Iterator for Matches<'t, R>
             
             
             
-            self.last_end = self.re.next_after_empty(&self.text, e);
+            self.last_end = self.re.next_after_empty(self.text, e);
             
             
             if Some(e) == self.last_match {
@@ -255,7 +255,7 @@ impl<'t, R> Iterator for CaptureMatches<'t, R>
             Some((s, e)) => (s, e),
         };
         if s == e {
-            self.0.last_end = self.0.re.next_after_empty(&self.0.text, e);
+            self.0.last_end = self.0.re.next_after_empty(self.0.text, e);
             if Some(e) == self.0.last_match {
                 return self.next();
             }
