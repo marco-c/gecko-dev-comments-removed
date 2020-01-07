@@ -18,9 +18,15 @@ add_task(async function test_alpha_accentcolor() {
     },
   });
 
+  
+  let docEl = window.document.documentElement;
+  let transitionPromise = waitForTransition(docEl, "background-color");
+
   await extension.startup();
 
-  let docEl = window.document.documentElement;
+  
+  await transitionPromise;
+
   let style = window.getComputedStyle(docEl);
 
   Assert.equal(style.backgroundColor, "rgb(230, 128, 0)",
