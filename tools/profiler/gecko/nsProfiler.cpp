@@ -539,12 +539,6 @@ nsProfiler::GatheredOOPProfile(const nsACString& aProfile)
   }
 }
 
-
-
-
-
-static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
-
 void
 nsProfiler::ReceiveShutdownProfile(const nsCString& aProfile)
 {
@@ -558,14 +552,12 @@ nsProfiler::ReceiveShutdownProfile(const nsCString& aProfile)
 
   
   
-  
-  
-  
-  if (mExitProfiles.Length() >= MAX_SUBPROCESS_EXIT_PROFILES) {
-    mExitProfiles.RemoveElementAt(0);
-  }
   uint64_t bufferPosition = bufferInfo->mRangeEnd;
   mExitProfiles.AppendElement(ExitProfile{ aProfile, bufferPosition });
+
+  
+  
+  ClearExpiredExitProfiles();
 }
 
 RefPtr<nsProfiler::GatheringPromise>
@@ -592,8 +584,6 @@ nsProfiler::StartGathering(double aSinceTime)
 
   mWriter.emplace();
 
-  Maybe<ProfilerBufferInfo> bufferInfo = profiler_get_buffer_info();
-
   
   mWriter->Start();
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
@@ -607,20 +597,14 @@ nsProfiler::StartGathering(double aSinceTime)
 
   mWriter->StartArrayProperty("processes");
 
-  
+  ClearExpiredExitProfiles();
+
   
   for (auto& exitProfile : mExitProfiles) {
-    if (bufferInfo &&
-        exitProfile.mBufferPositionAtGatherTime < bufferInfo->mRangeStart) {
-      
-      
-      continue;
-    }
     if (!exitProfile.mJSON.IsEmpty()) {
       mWriter->Splice(exitProfile.mJSON.get());
     }
   }
-  mExitProfiles.Clear();
 
   mPromiseHolder.emplace();
   RefPtr<GatheringPromise> promise = mPromiseHolder->Ensure(__func__);
@@ -675,4 +659,16 @@ nsProfiler::ResetGathering()
   mPendingProfiles = 0;
   mGathering = false;
   mWriter.reset();
+}
+
+void
+nsProfiler::ClearExpiredExitProfiles()
+{
+  Maybe<ProfilerBufferInfo> bufferInfo = profiler_get_buffer_info();
+  MOZ_RELEASE_ASSERT(bufferInfo, "the profiler should be running at the moment");
+  uint64_t bufferRangeStart = bufferInfo->mRangeStart;
+  
+  mExitProfiles.RemoveElementsBy([bufferRangeStart](ExitProfile& aExitProfile){
+    return aExitProfile.mBufferPositionAtGatherTime < bufferRangeStart;
+  });
 }
