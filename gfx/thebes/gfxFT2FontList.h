@@ -87,6 +87,8 @@ public:
     virtual nsresult CopyFontTable(uint32_t aTableTag,
                                    nsTArray<uint8_t>& aBuffer) override;
 
+    bool HasVariations() override;
+
     
     
     void CheckForBrokenFont(gfxFontFamily *aFamily);
@@ -103,6 +105,9 @@ public:
     uint8_t   mFTFontIndex;
 
     mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
+
+    bool mHasVariations = false;
+    bool mHasVariationsInitialized = false;
 };
 
 class FT2FontFamily : public gfxFontFamily

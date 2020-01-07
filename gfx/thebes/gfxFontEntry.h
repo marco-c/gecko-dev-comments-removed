@@ -366,11 +366,7 @@ public:
     bool SupportsScriptInGSUB(const hb_tag_t* aScriptTags);
 
     
-    
-    virtual bool HasVariations()
-    {
-        return false;
-    }
+    virtual bool HasVariations() = 0;
     virtual void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes)
     {
     }
