@@ -44,7 +44,6 @@
 #include "nsPresArena.h"
 #include "nsAutoLayoutPhase.h"
 #include "nsDisplayItemTypes.h"
-#include "RetainedDisplayListHelpers.h"
 
 #include <stdint.h>
 #include "nsTHashtable.h"
@@ -1097,11 +1096,11 @@ public:
         aBuilder->mCurrentAGR = aBuilder->FindAnimatedGeometryRootFor(aForChild);
       }
       MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(aBuilder->RootReferenceFrame(), *aBuilder->mCurrentAGR));
-      aBuilder->mInInvalidSubtree = aBuilder->mInInvalidSubtree || aForChild->IsFrameModified();
       aBuilder->mCurrentFrame = aForChild;
       aBuilder->mVisibleRect = aVisibleRect;
-      aBuilder->mDirtyRect = aBuilder->mInInvalidSubtree ? aVisibleRect : aDirtyRect;
+      aBuilder->mDirtyRect = aDirtyRect;
       aBuilder->mIsAtRootOfPseudoStackingContext = aIsRoot;
+      aBuilder->mInInvalidSubtree = aBuilder->mInInvalidSubtree || aForChild->IsFrameModified();
     }
     void SetReferenceFrameAndCurrentOffset(const nsIFrame* aFrame, const nsPoint& aOffset) {
       mBuilder->mCurrentReferenceFrame = aFrame;
@@ -1741,7 +1740,6 @@ public:
   {
     if (MarkFrameModifiedDuringBuilding(const_cast<nsIFrame*>(mCurrentFrame))) {
       mInInvalidSubtree = true;
-      mDirtyRect = mVisibleRect;
       return true;
     }
     return false;
@@ -2018,7 +2016,6 @@ private:
 
 class nsDisplayItem;
 class nsDisplayList;
-class RetainedDisplayList;
 
 
 
@@ -2658,7 +2655,7 @@ public:
 
 
 
-  virtual RetainedDisplayList* GetChildren() const { return nullptr; }
+  virtual nsDisplayList* GetChildren() const { return nullptr; }
 
   
 
@@ -3329,59 +3326,6 @@ private:
   nsDisplayList mLists[6];
 };
 
-
-
-
-
-
-
-
-
-
-class RetainedDisplayList : public nsDisplayList {
-public:
-  RetainedDisplayList() {}
-  RetainedDisplayList(RetainedDisplayList&& aOther)
-  {
-    AppendToTop(&aOther);
-    mDAG = mozilla::Move(aOther.mDAG);
-    mKeyLookup.SwapElements(aOther.mKeyLookup);
-  }
-  ~RetainedDisplayList()
-  {
-    MOZ_ASSERT(mOldItems.IsEmpty(), "Must empty list before destroying");
-  }
-
-  RetainedDisplayList& operator=(RetainedDisplayList&& aOther)
-  {
-    MOZ_ASSERT(!Count(), "Can only move into an empty list!");
-    MOZ_ASSERT(mOldItems.IsEmpty(), "Can only move into an empty list!");
-    AppendToTop(&aOther);
-    mDAG = mozilla::Move(aOther.mDAG);
-    mKeyLookup.SwapElements(aOther.mKeyLookup);
-    return *this;
-  }
-
-  void DeleteAll(nsDisplayListBuilder* aBuilder)
-  {
-    for (OldItemInfo& i : mOldItems) {
-      if (i.mItem) {
-        i.mItem->Destroy(aBuilder);
-      }
-    }
-    mOldItems.Clear();
-    nsDisplayList::DeleteAll(aBuilder);
-  }
-
-  void ClearDAG();
-
-  DirectedAcyclicGraph<MergedListUnits> mDAG;
-  nsDataHashtable<DisplayItemHashEntry, size_t> mKeyLookup;
-
-  
-  
-  nsTArray<OldItemInfo> mOldItems;
-};
 
 class nsDisplayImageContainer : public nsDisplayItem {
 public:
@@ -5061,7 +5005,7 @@ public:
     return mListPtr;
   }
 
-  virtual RetainedDisplayList* GetChildren() const override { return mListPtr; }
+  virtual nsDisplayList* GetChildren() const override { return mListPtr; }
 
   virtual int32_t ZIndex() const override
   {
@@ -5107,8 +5051,8 @@ protected:
     mMergedFrames.AppendElements(aOther->mMergedFrames);
   }
 
-  RetainedDisplayList mList;
-  RetainedDisplayList* mListPtr;
+  nsDisplayList mList;
+  nsDisplayList* mListPtr;
   
   
   RefPtr<const ActiveScrolledRoot> mFrameActiveScrolledRoot;
@@ -6242,7 +6186,7 @@ public:
     return GetBounds(aBuilder, &snap);
   }
 
-  virtual RetainedDisplayList* GetChildren() const override
+  virtual nsDisplayList* GetChildren() const override
   {
     return mStoredList.GetChildren();
   }
@@ -6642,7 +6586,7 @@ public:
     return mList.GetChildren();
   }
 
-  virtual RetainedDisplayList* GetChildren() const override
+  virtual nsDisplayList* GetChildren() const override
   {
     return mList.GetChildren();
   }
