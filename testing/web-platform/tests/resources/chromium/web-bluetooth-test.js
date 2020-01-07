@@ -395,6 +395,30 @@ class FakeRemoteGATTCharacteristic {
 
   
   
+  
+  
+  
+  async setNextUnsubscribeFromNotificationsResponse(gatt_code) {
+    let {success} =
+      await this.fake_central_ptr_.setNextUnsubscribeFromNotificationsResponse(
+        gatt_code, ...this.ids_);
+
+    if (!success) throw 'setNextUnsubscribeToNotificationsResponse failed';
+  }
+
+  
+  
+  async isNotifying() {
+    let {success, isNotifying} =
+        await this.fake_central_ptr_.isNotifying(...this.ids_);
+
+    if (!success) throw 'isNotifying failed';
+
+    return isNotifying;
+  }
+
+  
+  
   async getLastWrittenValue() {
     let {success, value} =
       await this.fake_central_ptr_.getLastWrittenCharacteristicValue(
