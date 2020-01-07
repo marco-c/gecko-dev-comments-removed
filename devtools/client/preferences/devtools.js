@@ -49,7 +49,11 @@ pref("devtools.inspector.enabled", true);
 pref("devtools.inspector.activeSidebar", "ruleview");
 pref("devtools.inspector.remote", false);
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.inspector.three-pane-toggle", true);
+#else
 pref("devtools.inspector.three-pane-toggle", false);
+#endif
 
 pref("devtools.inspector.three-pane-enabled", false);
 
