@@ -59,9 +59,6 @@ class GeckoRuntimeRunner(BaseRunner):
 
         
         command[1:1] = self.cmdargs
-
-        if hasattr(self.app_ctx, 'wrap_command'):
-            command = self.app_ctx.wrap_command(command)
         return command
 
     def start(self, *args, **kwargs):
