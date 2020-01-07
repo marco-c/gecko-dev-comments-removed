@@ -1,6 +1,9 @@
 this.shot = (function () {let exports={}; 
 
 
+const isNode = typeof process !== "undefined" && Object.prototype.toString.call(process) === "[object process]";
+const URL = (isNode && require("url").URL) || window.URL;
+
 
 
 function assert(condition, ...args) {
@@ -13,23 +16,17 @@ function assert(condition, ...args) {
 
 
 function isUrl(url) {
-  
-  if ((/^about:.{1,8000}$/i).test(url)) {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol === "view-source:") {
+      return isUrl(url.substr("view-source:".length));
+    }
+
     return true;
+  } catch (e) {
+    return false;
   }
-  if ((/^file:\/.{0,8000}$/i).test(url)) {
-    return true;
-  }
-  if ((/^data:.*$/i).test(url)) {
-    return true;
-  }
-  if ((/^chrome:.{0,8000}/i).test(url)) {
-    return true;
-  }
-  if ((/^view-source:/i).test(url)) {
-    return isUrl(url.substr("view-source:".length));
-  }
-  return (/^https?:\/\/[a-z0-9._-]{1,8000}[a-z0-9](:[0-9]{1,8000})?\/?/i).test(url);
 }
 
 function isValidClipImageUrl(url) {
@@ -48,7 +45,7 @@ function assertUrl(url) {
 }
 
 function isSecureWebUri(url) {
-  return (/^https?:\/\/[a-z0-9._-]{1,8000}[a-z0-9](:[0-9]{1,8000})?\/?/i).test(url);
+  return isUrl(url) && url.toLowerCase().startsWith("https");
 }
 
 function assertOrigin(url) {
@@ -113,39 +110,6 @@ function jsonify(obj, required, optional) {
     }
   }
   return result;
-}
-
-
-function resolveUrl(base, url) {
-  
-  
-  if (url.search(/^https?:/) !== -1) {
-    
-    return url;
-  }
-  if (url.indexOf("//") === 0) {
-    
-    return (/^https?:/i).exec(base)[0] + url;
-  }
-  if (url.indexOf("/") === 0) {
-    
-    return (/^https?:\/\/[a-z0-9._-]{1,4000}/i).exec(base)[0] + url;
-  }
-  
-  while (url.indexOf("./") === 0) {
-    url = url.substr(2);
-  }
-  if (!base) {
-    
-    
-    return null;
-  }
-  let match = (/.*\//).exec(base)[0];
-  if (match.search(/^https?:\/$/i) === 0) {
-    
-    match = match + "/";
-  }
-  return match + url;
 }
 
 
@@ -275,8 +239,8 @@ class AbstractShot {
       }
       if (typeof json[attr] === "object" && typeof this[attr] === "object" && this[attr] !== null) {
         let val = this[attr];
-        if (val.asJson) {
-          val = val.asJson();
+        if (val.toJSON) {
+          val = val.toJSON();
         }
         if (!deepEqual(json[attr], val)) {
           this[attr] = json[attr];
@@ -292,7 +256,7 @@ class AbstractShot {
           this.delClip(clipId);
         } else if (!this.getClip(clipId)) {
           this.setClip(clipId, json.clips[clipId]);
-        } else if (!deepEqual(this.getClip(clipId).asJson(), json.clips[clipId])) {
+        } else if (!deepEqual(this.getClip(clipId).toJSON(), json.clips[clipId])) {
           this.setClip(clipId, json.clips[clipId]);
         }
       }
@@ -301,18 +265,18 @@ class AbstractShot {
   }
 
   
-  asJson() {
+  toJSON() {
     const result = {};
     for (const attr of this.REGULAR_ATTRS) {
       let val = this[attr];
-      if (val && val.asJson) {
-        val = val.asJson();
+      if (val && val.toJSON) {
+        val = val.toJSON();
       }
       result[attr] = val;
     }
     result.clips = {};
     for (const attr in this._clips) {
-      result.clips[attr] = this._clips[attr].asJson();
+      result.clips[attr] = this._clips[attr].toJSON();
     }
     return result;
   }
@@ -322,13 +286,13 @@ class AbstractShot {
     const result = {clips: {}};
     for (const attr of this.RECALL_ATTRS) {
       let val = this[attr];
-      if (val && val.asJson) {
-        val = val.asJson();
+      if (val && val.toJSON) {
+        val = val.toJSON();
       }
       result[attr] = val;
     }
     for (const name of this.clipNames()) {
-      result.clips[name] = this.getClip(name).asJson();
+      result.clips[name] = this.getClip(name).toJSON();
     }
     return result;
   }
@@ -374,7 +338,8 @@ class AbstractShot {
     
     filenameTitle = filenameTitle.replace(/[:\\<>/!@&?"*.|\x00-\x1F]/g, " ");
     filenameTitle = filenameTitle.replace(/\s{1,4000}/g, " ");
-    let clipFilename = `Screenshot-${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${filenameTitle}`;
+    const filenameDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000).toISOString().substring(0, 10);
+    let clipFilename = `Screenshot_${filenameDate} ${filenameTitle}`;
     const clipFilenameBytesSize = clipFilename.length * 2; 
     if (clipFilenameBytesSize > 251) { 
       const excedingchars = (clipFilenameBytesSize - 246) / 2; 
@@ -499,12 +464,6 @@ class AbstractShot {
   set favicon(val) {
     
     val = val || null;
-    if (!isUrl(val)) {
-      val = null;
-    }
-    if (val) {
-      val = resolveUrl(this.url, val);
-    }
     this._favicon = val;
   }
 
@@ -658,7 +617,7 @@ class _Image {
     this.alt = json.alt;
   }
 
-  asJson() {
+  toJSON() {
     return jsonify(this, ["url"], ["dimensions"]);
   }
 }
@@ -689,7 +648,7 @@ class _Clip {
     return `[Shot Clip id=${this.id} sortOrder=${this.sortOrder} image ${this.image.dimensions.x}x${this.image.dimensions.y}]`;
   }
 
-  asJson() {
+  toJSON() {
     return jsonify(this, ["createdDate"], ["sortOrder", "image"]);
   }
 

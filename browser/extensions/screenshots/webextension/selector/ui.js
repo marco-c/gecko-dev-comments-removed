@@ -173,7 +173,7 @@ this.ui = (function() {
 
     unhide() {
       this.updateElementSize();
-      this.element.style.display = "";
+      this.element.style.display = "block";
       catcher.watchPromise(callBackground("sendEvent", "internal", "unhide-selection-frame"));
       if (highContrastCheck(this.element.contentWindow)) {
         this.element.contentDocument.body.classList.add("hcm");
@@ -222,7 +222,7 @@ this.ui = (function() {
         }
       }
       if (force && visible) {
-        this.element.style.display = "";
+        this.element.style.display = "block";
       }
     },
 
@@ -344,7 +344,7 @@ this.ui = (function() {
     unhide() {
       window.addEventListener("scroll", watchFunction(assertIsTrusted(this.onScroll)));
       window.addEventListener("resize", this.onResize, true);
-      this.element.style.display = "";
+      this.element.style.display = "block";
       catcher.watchPromise(callBackground("sendEvent", "internal", "unhide-preselection-frame"));
       if (highContrastCheck(this.element.contentWindow)) {
         this.element.contentDocument.body.classList.add("hcm");
@@ -458,7 +458,7 @@ this.ui = (function() {
     },
 
     unhide() {
-      this.element.style.display = "";
+      this.element.style.display = "block";
       catcher.watchPromise(callBackground("sendEvent", "internal", "unhide-preview-frame"));
       this.element.focus();
     },
@@ -635,7 +635,7 @@ this.ui = (function() {
       this.bgRight.style.top = `${pos.top}px`;
       this.bgRight.style.height = `${pos.bottom - pos.top}px`;
       this.bgRight.style.left = `${pos.right}px`;
-      this.bgRight.style.width = "100%";
+      this.bgRight.style.width = `${document.body.scrollWidth - pos.right}px`;
       
       
       
