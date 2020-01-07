@@ -241,7 +241,12 @@ PathBuildingStep::Check(Input potentialIssuerDER,
                                      validityDuration, stapledOCSPResponse,
                                      subject.GetAuthorityInfoAccess());
     if (rv != Success) {
-      return RecordResult(rv, keepGoing);
+      
+      
+      
+      Result savedRv = RecordResult(rv, keepGoing);
+      keepGoing = false;
+      return savedRv;
     }
 
     if (subject.endEntityOrCA == EndEntityOrCA::MustBeEndEntity) {
@@ -251,7 +256,11 @@ PathBuildingStep::Check(Input potentialIssuerDER,
         rv = ExtractSignedCertificateTimestampListFromExtension(*sctExtension,
                                                                 sctList);
         if (rv != Success) {
-          return RecordResult(rv, keepGoing);
+          
+          
+          Result savedRv = RecordResult(rv, keepGoing);
+          keepGoing = false;
+          return savedRv;
         }
         trustDomain.NoteAuxiliaryExtension(AuxiliaryExtension::EmbeddedSCTList,
                                            sctList);
