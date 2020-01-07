@@ -152,6 +152,9 @@ var whitelist = [
   {file: "resource://gre/modules/PerformanceWatcher.jsm"},
   
   {file: "resource://gre/modules/Promise.jsm"},
+
+  
+  {file: "resource://gre/modules/ZipUtils.jsm"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
