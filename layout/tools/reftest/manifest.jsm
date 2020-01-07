@@ -490,8 +490,7 @@ function BuildConditionSandbox(aURL) {
     
     sandbox.Android = xr.OS == "Android";
     sandbox.cocoaWidget = xr.widgetToolkit == "cocoa";
-    sandbox.gtkWidget = xr.widgetToolkit == "gtk2"
-                        || xr.widgetToolkit == "gtk3";
+    sandbox.gtkWidget = xr.widgetToolkit == "gtk3";
     sandbox.qtWidget = xr.widgetToolkit == "qt";
     sandbox.winWidget = xr.widgetToolkit == "windows";
 
