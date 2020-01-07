@@ -627,12 +627,6 @@ public:
     }
 
     
-    
-    if (aDisp->IsContainPaint()) {
-      return true;
-    }
-
-    
     if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN &&
         aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN) {
       
