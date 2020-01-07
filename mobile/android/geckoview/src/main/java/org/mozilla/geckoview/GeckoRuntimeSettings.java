@@ -6,9 +6,13 @@
 
 package org.mozilla.geckoview;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -152,6 +156,47 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mDebugPause = enabled;
             return this;
         }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder cookieBehavior(@CookieBehavior int behavior) {
+            mSettings.mCookieBehavior.set(behavior);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+        public @NonNull Builder cookieLifetime(@CookieLifetime int lifetime) {
+            mSettings.mCookieLifetime.set(lifetime);
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder cookieLifetimeDays(int days) {
+            if (mSettings.mCookieLifetime.get() != COOKIE_LIFETIME_DAYS) {
+                throw new IllegalStateException(
+                    "Setting expiration days for incompatible cookie lifetime");
+            }
+            mSettings.mCookieLifetimeDays.set(days);
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -195,12 +240,20 @@ public final class GeckoRuntimeSettings implements Parcelable {
         "devtools.debugger.remote-enabled", false);
      Pref<Boolean> mWebFonts = new Pref<Boolean>(
         "browser.display.use_document_fonts", true);
+     Pref<Integer> mCookieBehavior = new Pref<Integer>(
+        "network.cookie.cookieBehavior", COOKIE_ACCEPT_ALL);
+     Pref<Integer> mCookieLifetime = new Pref<Integer>(
+        "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
+     Pref<Integer> mCookieLifetimeDays = new Pref<Integer>(
+        "network.cookie.lifetime.days", 90);
+
      boolean mNativeCrashReporting;
      boolean mJavaCrashReporting;
      boolean mDebugPause;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mJavaScript, mRemoteDebugging, mWebFonts
+        mJavaScript, mRemoteDebugging, mWebFonts,
+        mCookieBehavior, mCookieLifetime, mCookieLifetimeDays
     };
 
      GeckoRuntimeSettings() {
@@ -351,6 +404,121 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
     public boolean getPauseForDebuggerEnabled() { return mDebugPause; }
+
+    
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ COOKIE_ACCEPT_ALL, COOKIE_ACCEPT_FIRST_PARTY,
+              COOKIE_ACCEPT_NONE, COOKIE_ACCEPT_VISITED })
+    public @interface CookieBehavior {}
+    
+
+
+    public static final int COOKIE_ACCEPT_ALL = 0;
+    
+
+
+
+    public static final int COOKIE_ACCEPT_FIRST_PARTY = 1;
+    
+
+
+    public static final int COOKIE_ACCEPT_NONE = 2;
+    
+
+
+
+    public static final int COOKIE_ACCEPT_VISITED = 3;
+
+    
+
+
+
+
+    public @CookieBehavior int getCookieBehavior() {
+        return mCookieBehavior.get();
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setCookieBehavior(
+            @CookieBehavior int behavior) {
+        mCookieBehavior.set(behavior);
+        return this;
+    }
+
+    
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ COOKIE_LIFETIME_NORMAL, COOKIE_LIFETIME_RUNTIME,
+              COOKIE_LIFETIME_DAYS })
+    public @interface CookieLifetime {}
+    
+
+
+    public static final int COOKIE_LIFETIME_NORMAL = 0;
+    
+
+
+    public static final int COOKIE_LIFETIME_RUNTIME = 2;
+    
+
+
+
+    public static final int COOKIE_LIFETIME_DAYS = 3;
+
+    
+
+
+
+
+    public @CookieBehavior int getCookieLifetime() {
+        return mCookieLifetime.get();
+    }
+
+    
+
+
+
+
+
+
+    public int getCookieLifetimeDays() {
+        return mCookieLifetimeDays.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setCookieLifetime(
+            @CookieLifetime int lifetime) {
+        mCookieLifetime.set(lifetime);
+        return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setCookieLifetimeDays(int days) {
+        if (mCookieLifetime.get() != COOKIE_LIFETIME_DAYS) {
+            throw new IllegalStateException(
+                "Setting expiration days for incompatible cookie lifetime");
+        }
+        mCookieLifetimeDays.set(days);
+        return this;
+    }
 
     @Override 
     public int describeContents() {
