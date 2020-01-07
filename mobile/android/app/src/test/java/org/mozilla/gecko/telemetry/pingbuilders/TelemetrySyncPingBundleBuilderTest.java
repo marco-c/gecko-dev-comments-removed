@@ -105,6 +105,8 @@ public class TelemetrySyncPingBundleBuilderTest {
     public void testGeneralShape() throws Exception {
         builder.setSyncStore(syncPings);
         builder.setSyncEventStore(eventPings);
+        builder.setDeviceID("device-id-1");
+        builder.setUID("uid-1");
 
         TelemetryOutgoingPing outgoingPing = builder.build();
 
@@ -131,10 +133,13 @@ public class TelemetrySyncPingBundleBuilderTest {
         
         
         
+        
         ExtendedJSONObject payload = outgoingPing.getPayload().getObject("payload");
-        assertEquals(4, payload.keySet().size());
+        assertEquals(6, payload.keySet().size());
         assertEquals("schedule", payload.getString("why"));
         assertEquals(Integer.valueOf(1), payload.getIntegerSafely("version"));
+        assertEquals(payload.getString("uid"), "uid-1");
+        assertEquals(payload.getString("deviceID"), "device-id-1");
         assertEquals(0, payload.getArray("syncs").size());
         
         ExtendedJSONObject os = payload.getObject("os");
@@ -151,10 +156,8 @@ public class TelemetrySyncPingBundleBuilderTest {
     public void testBundlingOfMultiplePings() throws Exception {
         
         syncPings.storePing(new TelemetrySyncPingBuilder()
-                .setDeviceID("test-device-id")
                 .setRestarted(true)
                 .setTook(123L)
-                .setUID("test-uid")
                 .build()
         );
         builder.setSyncStore(syncPings);
@@ -166,14 +169,12 @@ public class TelemetrySyncPingBundleBuilderTest {
         assertEquals("schedule", payload.getString("why"));
         JSONArray syncs = payload.getArray("syncs");
         assertEquals(1, syncs.size());
-        assertSync((ExtendedJSONObject) syncs.get(0), "test-uid", 123L, "test-device-id", true);
+        assertSync((ExtendedJSONObject) syncs.get(0), 123L, true);
 
         
         syncPings.storePing(new TelemetrySyncPingBuilder()
-                .setDeviceID("test-device-id")
                 .setRestarted(false)
                 .setTook(321L)
-                .setUID("test-uid")
                 .build()
         );
         builder.setSyncStore(syncPings);
@@ -184,14 +185,12 @@ public class TelemetrySyncPingBundleBuilderTest {
                 .getObject("payload")
                 .getArray("syncs");
         assertEquals(2, syncs.size());
-        assertSync((ExtendedJSONObject) syncs.get(0), "test-uid", 123L, "test-device-id", true);
-        assertSync((ExtendedJSONObject) syncs.get(1), "test-uid", 321L, "test-device-id", false);
+        assertSync((ExtendedJSONObject) syncs.get(0), 123L, true);
+        assertSync((ExtendedJSONObject) syncs.get(1), 321L, false);
     }
 
-    private void assertSync(ExtendedJSONObject sync, String uid, long took, String deviceID, boolean restarted) throws JSONException {
-        assertEquals(uid, sync.getString("uid"));
+    private void assertSync(ExtendedJSONObject sync, long took, boolean restarted) throws JSONException {
         assertEquals(Long.valueOf(took), sync.getLong("took"));
-        assertEquals(deviceID, sync.getString("deviceID"));
 
         
         final long now = System.currentTimeMillis();
