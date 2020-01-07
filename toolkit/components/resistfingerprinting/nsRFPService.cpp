@@ -376,12 +376,12 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
     
     if(MOZ_UNLIKELY(!sSecretMidpointSeed)) {
+      nsCOMPtr<nsIRandomGenerator> randomGenerator =
+        do_GetService("@mozilla.org/security/random-generator;1", &rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
       StaticMutexAutoLock lock(sLock);
       if(MOZ_LIKELY(!sSecretMidpointSeed)) {
-        nsCOMPtr<nsIRandomGenerator> randomGenerator =
-            do_GetService("@mozilla.org/security/random-generator;1", &rv);
-        if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
         rv = randomGenerator->GenerateRandomBytes(kSeedSize, &sSecretMidpointSeed);
         if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
       }
