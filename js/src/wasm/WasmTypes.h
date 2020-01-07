@@ -807,6 +807,10 @@ class GlobalDesc
     
     
     
+    
+    
+    
+    
     bool isIndirect() const { return isMutable() && isWasm() && (isImport() || isExport()); }
 
     ValType type() const {
