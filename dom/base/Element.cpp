@@ -4401,16 +4401,21 @@ AssertNoBitsPropagatedFrom(nsINode* aRoot)
 
 
 
+
 static inline Element*
-PropagateBits(Element* aElement, uint32_t aBits, nsINode* aStopAt)
+PropagateBits(Element* aElement, uint32_t aBits, nsINode* aStopAt, uint32_t aBitsToStopAt)
 {
   Element* curr = aElement;
-  while (curr && !curr->HasAllFlags(aBits)) {
+  while (curr && !curr->HasAllFlags(aBitsToStopAt)) {
     curr->SetFlags(aBits);
     if (curr == aStopAt) {
       break;
     }
     curr = curr->GetFlattenedTreeParentElementForStyle();
+  }
+
+  if (aBitsToStopAt != aBits && curr) {
+    curr->SetFlags(aBits);
   }
 
   return curr;
@@ -4523,7 +4528,7 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
   
   const bool reachedDocRoot =
     !parent->IsElement() ||
-    !PropagateBits(parent->AsElement(), aBits, existingRoot);
+    !PropagateBits(parent->AsElement(), aBits, existingRoot, aBits);
 
   uint32_t existingBits = doc->GetServoRestyleRootDirtyBits();
   if (!reachedDocRoot || existingRoot == doc) {
@@ -4535,7 +4540,9 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     
     
     Element* rootParent = existingRoot->GetFlattenedTreeParentElementForStyle();
-    if (Element* commonAncestor = PropagateBits(rootParent, existingBits, aElement)) {
+    
+    
+    if (Element* commonAncestor = PropagateBits(rootParent, existingBits, aElement, aBits)) {
       MOZ_ASSERT(commonAncestor == aElement ||
                  commonAncestor == nsContentUtils::GetCommonFlattenedTreeAncestorForStyle(aElement, rootParent));
 
@@ -4547,6 +4554,7 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
         MOZ_ASSERT(curr->HasAllFlags(aBits));
         curr->UnsetFlags(aBits);
       }
+      AssertNoBitsPropagatedFrom(commonAncestor);
     } else {
       
       
@@ -4585,7 +4593,8 @@ Element::NoteDirtySubtreeForServo()
         existingRoot->AsElement(), this)) {
     PropagateBits(existingRoot->AsElement()->GetFlattenedTreeParentElementForStyle(),
                   existingBits,
-                  this);
+                  this,
+                  existingBits);
 
     doc->ClearServoRestyleRoot();
   }
