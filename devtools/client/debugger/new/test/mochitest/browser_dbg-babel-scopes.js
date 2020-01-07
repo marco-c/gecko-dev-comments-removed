@@ -2,6 +2,9 @@
 
 
 
+requestLongerTimeout(4);
+
+
 
 async function breakpointScopes(dbg, fixture, { line, column }, scopes) {
   const { selectors: { getBreakpoint, getBreakpoints }, getState } = dbg;
@@ -86,8 +89,6 @@ async function assertScopes(dbg, items) {
 }
 
 add_task(async function() {
-  requestLongerTimeout(3);
-
   await pushPref("devtools.debugger.features.map-scopes", true);
 
   const dbg = await initDebugger("doc-babel.html");
