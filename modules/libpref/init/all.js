@@ -1776,7 +1776,7 @@ pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", true);
 
 
-pref("security.tls.enable_0rtt_data", false);
+pref("security.tls.enable_0rtt_data", true);
 
 
 pref("network.http.originextension", true);
