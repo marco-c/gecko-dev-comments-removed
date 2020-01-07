@@ -149,7 +149,7 @@ add_task(async function test_execute() {
 
   
   
-  var db = histsvc.QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
+  var db = histsvc.DBConnection;
   var q = "SELECT id FROM moz_bookmarks";
   var statement;
   try {

@@ -242,43 +242,6 @@ function promiseOpenAndLoadWindow(aOptions, aWaitForDelayedStartup = false) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForAsyncUpdates(aCallback, aScope, aArguments) {
-  let scope = aScope || this;
-  let args = aArguments || [];
-  let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                              .DBConnection;
-  let begin = db.createAsyncStatement("BEGIN EXCLUSIVE");
-  begin.executeAsync();
-  begin.finalize();
-
-  let commit = db.createAsyncStatement("COMMIT");
-  commit.executeAsync({
-    handleResult() {},
-    handleError() {},
-    handleCompletion(aReason) {
-      aCallback.apply(scope, args);
-    }
-  });
-  commit.finalize();
-}
-
 function whenNewTabLoaded(aWindow, aCallback) {
   aWindow.BrowserOpenTab();
 

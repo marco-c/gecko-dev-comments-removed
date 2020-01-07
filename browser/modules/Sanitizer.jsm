@@ -240,10 +240,7 @@ var Sanitizer = {
     
     
     if (!progress.isShutdown) {
-      let shutdownClient = Cc["@mozilla.org/browser/nav-history-service;1"]
-                             .getService(Ci.nsPIPlacesDatabase)
-                             .shutdownClient
-                             .jsclient;
+      let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
       shutdownClient.addBlocker("sanitize.js: Sanitize",
         promise,
         {
