@@ -2,205 +2,210 @@
 
 
 
-function run_test() {
-  runAsyncTests(tests);
-}
+add_task(async function resetBeforeTests() {
+  await reset();
+});
 
-var tests = [
+add_task(async function get_nonexistent() {
+  await getOK(["a.com", "foo"], undefined);
+  await getGlobalOK(["foo"], undefined);
+  await reset();
+});
 
-  function* get_nonexistent() {
-    yield getOK(["a.com", "foo"], undefined);
-    yield getGlobalOK(["foo"], undefined);
-  },
+add_task(async function isomorphicDomains() {
+  await set("a.com", "foo", 1);
+  await dbOK([
+    ["a.com", "foo", 1],
+  ]);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["http://a.com/huh", "foo"], 1, "a.com");
 
-  function* isomorphicDomains() {
-    yield set("a.com", "foo", 1);
-    yield dbOK([
-      ["a.com", "foo", 1],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["http://a.com/huh", "foo"], 1, "a.com");
+  await set("http://a.com/huh", "foo", 2);
+  await dbOK([
+    ["a.com", "foo", 2],
+  ]);
+  await getOK(["a.com", "foo"], 2);
+  await getOK(["http://a.com/yeah", "foo"], 2, "a.com");
+  await reset();
+});
 
-    yield set("http://a.com/huh", "foo", 2);
-    yield dbOK([
-      ["a.com", "foo", 2],
-    ]);
-    yield getOK(["a.com", "foo"], 2);
-    yield getOK(["http://a.com/yeah", "foo"], 2, "a.com");
-  },
+add_task(async function names() {
+  await set("a.com", "foo", 1);
+  await dbOK([
+    ["a.com", "foo", 1],
+  ]);
+  await getOK(["a.com", "foo"], 1);
 
-  function* names() {
-    yield set("a.com", "foo", 1);
-    yield dbOK([
-      ["a.com", "foo", 1],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
+  await set("a.com", "bar", 2);
+  await dbOK([
+    ["a.com", "foo", 1],
+    ["a.com", "bar", 2],
+  ]);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["a.com", "bar"], 2);
 
-    yield set("a.com", "bar", 2);
-    yield dbOK([
-      ["a.com", "foo", 1],
-      ["a.com", "bar", 2],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["a.com", "bar"], 2);
+  await setGlobal("foo", 3);
+  await dbOK([
+    ["a.com", "foo", 1],
+    ["a.com", "bar", 2],
+    [null, "foo", 3],
+  ]);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["a.com", "bar"], 2);
+  await getGlobalOK(["foo"], 3);
 
-    yield setGlobal("foo", 3);
-    yield dbOK([
-      ["a.com", "foo", 1],
-      ["a.com", "bar", 2],
-      [null, "foo", 3],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["a.com", "bar"], 2);
-    yield getGlobalOK(["foo"], 3);
+  await setGlobal("bar", 4);
+  await dbOK([
+    ["a.com", "foo", 1],
+    ["a.com", "bar", 2],
+    [null, "foo", 3],
+    [null, "bar", 4],
+  ]);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["a.com", "bar"], 2);
+  await getGlobalOK(["foo"], 3);
+  await getGlobalOK(["bar"], 4);
+  await reset();
+});
 
-    yield setGlobal("bar", 4);
-    yield dbOK([
-      ["a.com", "foo", 1],
-      ["a.com", "bar", 2],
-      [null, "foo", 3],
-      [null, "bar", 4],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["a.com", "bar"], 2);
-    yield getGlobalOK(["foo"], 3);
-    yield getGlobalOK(["bar"], 4);
-  },
+add_task(async function subdomains() {
+  await set("a.com", "foo", 1);
+  await set("b.a.com", "foo", 2);
+  await dbOK([
+    ["a.com", "foo", 1],
+    ["b.a.com", "foo", 2],
+  ]);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["b.a.com", "foo"], 2);
+  await reset();
+});
 
-  function* subdomains() {
-    yield set("a.com", "foo", 1);
-    yield set("b.a.com", "foo", 2);
-    yield dbOK([
-      ["a.com", "foo", 1],
-      ["b.a.com", "foo", 2],
-    ]);
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["b.a.com", "foo"], 2);
-  },
+add_task(async function privateBrowsing() {
+  await set("a.com", "foo", 1);
+  await set("a.com", "bar", 2);
+  await setGlobal("foo", 3);
+  await setGlobal("bar", 4);
+  await set("b.com", "foo", 5);
 
-  function* privateBrowsing() {
-    yield set("a.com", "foo", 1);
-    yield set("a.com", "bar", 2);
-    yield setGlobal("foo", 3);
-    yield setGlobal("bar", 4);
-    yield set("b.com", "foo", 5);
+  let context = privateLoadContext;
+  await set("a.com", "foo", 6, context);
+  await setGlobal("foo", 7, context);
+  await dbOK([
+    ["a.com", "foo", 1],
+    ["a.com", "bar", 2],
+    [null, "foo", 3],
+    [null, "bar", 4],
+    ["b.com", "foo", 5],
+  ]);
+  await getOK(["a.com", "foo", context], 6, "a.com");
+  await getOK(["a.com", "bar", context], 2);
+  await getGlobalOK(["foo", context], 7);
+  await getGlobalOK(["bar", context], 4);
+  await getOK(["b.com", "foo", context], 5);
 
-    let context = privateLoadContext;
-    yield set("a.com", "foo", 6, context);
-    yield setGlobal("foo", 7, context);
-    yield dbOK([
-      ["a.com", "foo", 1],
-      ["a.com", "bar", 2],
-      [null, "foo", 3],
-      [null, "bar", 4],
-      ["b.com", "foo", 5],
-    ]);
-    yield getOK(["a.com", "foo", context], 6, "a.com");
-    yield getOK(["a.com", "bar", context], 2);
-    yield getGlobalOK(["foo", context], 7);
-    yield getGlobalOK(["bar", context], 4);
-    yield getOK(["b.com", "foo", context], 5);
+  await getOK(["a.com", "foo"], 1);
+  await getOK(["a.com", "bar"], 2);
+  await getGlobalOK(["foo"], 3);
+  await getGlobalOK(["bar"], 4);
+  await getOK(["b.com", "foo"], 5);
+  await reset();
+});
 
-    yield getOK(["a.com", "foo"], 1);
-    yield getOK(["a.com", "bar"], 2);
-    yield getGlobalOK(["foo"], 3);
-    yield getGlobalOK(["bar"], 4);
-    yield getOK(["b.com", "foo"], 5);
-  },
+add_task(async function set_erroneous() {
+  do_check_throws(() => cps.set(null, "foo", 1, null));
+  do_check_throws(() => cps.set("", "foo", 1, null));
+  do_check_throws(() => cps.set("a.com", "", 1, null));
+  do_check_throws(() => cps.set("a.com", null, 1, null));
+  do_check_throws(() => cps.set("a.com", "foo", undefined, null));
+  do_check_throws(() => cps.set("a.com", "foo", 1, null, "bogus"));
+  do_check_throws(() => cps.setGlobal("", 1, null));
+  do_check_throws(() => cps.setGlobal(null, 1, null));
+  do_check_throws(() => cps.setGlobal("foo", undefined, null));
+  do_check_throws(() => cps.setGlobal("foo", 1, null, "bogus"));
+  await reset();
+});
 
-  function* set_erroneous() {
-    do_check_throws(() => cps.set(null, "foo", 1, null));
-    do_check_throws(() => cps.set("", "foo", 1, null));
-    do_check_throws(() => cps.set("a.com", "", 1, null));
-    do_check_throws(() => cps.set("a.com", null, 1, null));
-    do_check_throws(() => cps.set("a.com", "foo", undefined, null));
-    do_check_throws(() => cps.set("a.com", "foo", 1, null, "bogus"));
-    do_check_throws(() => cps.setGlobal("", 1, null));
-    do_check_throws(() => cps.setGlobal(null, 1, null));
-    do_check_throws(() => cps.setGlobal("foo", undefined, null));
-    do_check_throws(() => cps.setGlobal("foo", 1, null, "bogus"));
-    yield true;
-  },
+add_task(async function get_erroneous() {
+  do_check_throws(() => cps.getByDomainAndName(null, "foo", null, {}));
+  do_check_throws(() => cps.getByDomainAndName("", "foo", null, {}));
+  do_check_throws(() => cps.getByDomainAndName("a.com", "", null, {}));
+  do_check_throws(() => cps.getByDomainAndName("a.com", null, null, {}));
+  do_check_throws(() => cps.getByDomainAndName("a.com", "foo", null, null));
+  do_check_throws(() => cps.getGlobal("", null, {}));
+  do_check_throws(() => cps.getGlobal(null, null, {}));
+  do_check_throws(() => cps.getGlobal("foo", null, null));
+  await reset();
+});
 
-  function* get_erroneous() {
-    do_check_throws(() => cps.getByDomainAndName(null, "foo", null, {}));
-    do_check_throws(() => cps.getByDomainAndName("", "foo", null, {}));
-    do_check_throws(() => cps.getByDomainAndName("a.com", "", null, {}));
-    do_check_throws(() => cps.getByDomainAndName("a.com", null, null, {}));
-    do_check_throws(() => cps.getByDomainAndName("a.com", "foo", null, null));
-    do_check_throws(() => cps.getGlobal("", null, {}));
-    do_check_throws(() => cps.getGlobal(null, null, {}));
-    do_check_throws(() => cps.getGlobal("foo", null, null));
-    yield true;
-  },
+add_task(async function set_invalidateCache() {
+  
+  await set("a.com", "foo", 1);
 
-  function* set_invalidateCache() {
-    
-    yield set("a.com", "foo", 1);
+  
+  getCachedOK(["a.com", "foo"], true, 1);
 
-    
-    getCachedOK(["a.com", "foo"], true, 1);
+  
+  cps.set("a.com", "foo", 2, null, {
+    handleCompletion() {
+      
+      getCachedOK(["a.com", "foo"], true, 2);
+    },
+  });
 
-    
-    cps.set("a.com", "foo", 2, null, {
-      handleCompletion() {
-        
-        getCachedOK(["a.com", "foo"], true, 2);
-      },
-    });
+  
+  getCachedOK(["a.com", "foo"], false);
 
-    
-    getCachedOK(["a.com", "foo"], false);
+  
+  let fetchedPref;
+  let getPromise = new Promise(resolve => cps.getByDomainAndName("a.com", "foo", null, {
+    handleResult(pref) {
+      fetchedPref = pref;
+    },
+    handleCompletion() {
+      
+      Assert.ok(!!fetchedPref);
+      Assert.equal(fetchedPref.value, 2);
+      resolve();
+    },
+  }));
 
-    
-    var fetchedPref;
-    cps.getByDomainAndName("a.com", "foo", null, {
-      handleResult(pref) {
-        fetchedPref = pref;
-      },
-      handleCompletion() {
-        
-        Assert.ok(!!fetchedPref);
-        Assert.equal(fetchedPref.value, 2);
-        next();
-      },
-    });
+  await getPromise;
+  await reset();
+});
 
-    yield;
-  },
+add_task(async function get_nameOnly() {
+  await set("a.com", "foo", 1);
+  await set("a.com", "bar", 2);
+  await set("b.com", "foo", 3);
+  await setGlobal("foo", 4);
 
-  function* get_nameOnly() {
-    yield set("a.com", "foo", 1);
-    yield set("a.com", "bar", 2);
-    yield set("b.com", "foo", 3);
-    yield setGlobal("foo", 4);
+  await getOKEx("getByName", ["foo", undefined], [
+    {"domain": "a.com", "name": "foo", "value": 1},
+    {"domain": "b.com", "name": "foo", "value": 3},
+    {"domain": null, "name": "foo", "value": 4}
+  ]);
 
-    yield getOKEx("getByName", ["foo", undefined], [
-      {"domain": "a.com", "name": "foo", "value": 1},
-      {"domain": "b.com", "name": "foo", "value": 3},
-      {"domain": null, "name": "foo", "value": 4}
-    ]);
+  let context = privateLoadContext;
+  await set("b.com", "foo", 5, context);
 
-    let context = privateLoadContext;
-    yield set("b.com", "foo", 5, context);
+  await getOKEx("getByName", ["foo", context], [
+    {"domain": "a.com", "name": "foo", "value": 1},
+    {"domain": null, "name": "foo", "value": 4},
+    {"domain": "b.com", "name": "foo", "value": 5}
+  ]);
+  await reset();
+});
 
-    yield getOKEx("getByName", ["foo", context], [
-      {"domain": "a.com", "name": "foo", "value": 1},
-      {"domain": null, "name": "foo", "value": 4},
-      {"domain": "b.com", "name": "foo", "value": 5}
-    ]);
-  },
-
-  function* setSetsCurrentDate() {
-    
-    
-    const MINUTE = 60 * 1000;
-    let now = Date.now();
-    let start = now - MINUTE;
-    let end = now + MINUTE;
-    yield set("a.com", "foo", 1);
-    let timestamp = yield getDate("a.com", "foo");
-    ok(start <= timestamp, "Timestamp is not too early (" + start + "<=" + timestamp + ").");
-    ok(timestamp <= end, "Timestamp is not too late (" + timestamp + "<=" + end + ").");
-  },
-];
+add_task(async function setSetsCurrentDate() {
+  
+  
+  const MINUTE = 60 * 1000;
+  let now = Date.now();
+  let start = now - MINUTE;
+  let end = now + MINUTE;
+  await set("a.com", "foo", 1);
+  let timestamp = await getDate("a.com", "foo");
+  ok(start <= timestamp, "Timestamp is not too early (" + start + "<=" + timestamp + ").");
+  ok(timestamp <= end, "Timestamp is not too late (" + timestamp + "<=" + end + ").");
+  await reset();
+});

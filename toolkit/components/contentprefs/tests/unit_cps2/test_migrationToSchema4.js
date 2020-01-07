@@ -40,38 +40,35 @@ function prepareVersion3Schema(callback) {
   dbConnection.close();
 }
 
-function run_test() {
+add_task(async function resetBeforeTests() {
   prepareVersion3Schema();
-  runAsyncTests(tests, true);
-}
+});
 
 
 
 
+add_task(async function testMigration() {
+  
+  await schemaVersionIs(4);
+  let dbExpectedState = [
+    [null, "zoom-setting", 0.1],
+    ["bar.com", "zoom-setting", 0.3],
+    ["foo.com", "zoom-setting", 0.5],
+    ["foo.com", "dir-setting", "/download/dir"],
+  ];
+  await dbOK(dbExpectedState);
 
-var tests = [
-  function* testMigration() {
-    
-    schemaVersionIs(4);
-    let dbExpectedState = [
-      [null, "zoom-setting", 0.1],
-      ["bar.com", "zoom-setting", 0.3],
-      ["foo.com", "zoom-setting", 0.5],
-      ["foo.com", "dir-setting", "/download/dir"],
-    ];
-    yield dbOK(dbExpectedState);
+  
+  await new Promise(resolve => cps.removeAllDomainsSince(1000, null, makeCallback(resolve)));
+  await dbOK(dbExpectedState);
 
-    
-    yield cps.removeAllDomainsSince(1000, null, makeCallback());
-    yield dbOK(dbExpectedState);
+  await new Promise(resolve => cps.removeAllDomainsSince(0, null, makeCallback(resolve)));
+  await dbOK([[null, "zoom-setting", 0.1]]);
 
-    yield cps.removeAllDomainsSince(0, null, makeCallback());
-    yield dbOK([[null, "zoom-setting", 0.1]]);
-
-    
-    const timestamp = 1234;
-    yield setWithDate("a.com", "pref-name", "val", timestamp);
-    let actualTimestamp = yield getDate("a.com", "pref-name");
-    equal(actualTimestamp, timestamp);
-  }
-];
+  
+  const timestamp = 1234;
+  await setWithDate("a.com", "pref-name", "val", timestamp);
+  let actualTimestamp = await getDate("a.com", "pref-name");
+  equal(actualTimestamp, timestamp);
+  await reset();
+});
