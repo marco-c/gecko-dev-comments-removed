@@ -200,6 +200,26 @@ union PrefValue {
         MOZ_CRASH();
     }
   }
+
+  PrefType FromDomPrefValue(const dom::PrefValue& aDomValue)
+  {
+    switch (aDomValue.type()) {
+      case dom::PrefValue::TnsCString:
+        mStringVal = aDomValue.get_nsCString().get();
+        return PrefType::String;
+
+      case dom::PrefValue::Tint32_t:
+        mIntVal = aDomValue.get_int32_t();
+        return PrefType::Int;
+
+      case dom::PrefValue::Tbool:
+        mBoolVal = aDomValue.get_bool();
+        return PrefType::Bool;
+
+      default:
+        MOZ_CRASH();
+    }
+  }
 };
 
 #ifdef DEBUG
@@ -424,6 +444,47 @@ public:
                aDomPref->userValue().type() == dom::MaybePrefValue::Tnull_t ||
                (aDomPref->defaultValue().get_PrefValue().type() ==
                 aDomPref->userValue().get_PrefValue().type()));
+  }
+
+  void FromDomPref(const dom::Pref& aDomPref, bool* aValueChanged)
+  {
+    MOZ_ASSERT(strcmp(mName, aDomPref.name().get()) == 0);
+
+    const dom::MaybePrefValue& defaultValue = aDomPref.defaultValue();
+    bool defaultValueChanged = false;
+    if (defaultValue.type() == dom::MaybePrefValue::TPrefValue) {
+      PrefValue value;
+      PrefType type = value.FromDomPrefValue(defaultValue.get_PrefValue());
+      if (!ValueMatches(PrefValueKind::Default, type, value)) {
+        
+        mDefaultValue.Replace(Type(), type, value);
+        SetType(type);
+        mHasDefaultValue = true;
+        defaultValueChanged = true;
+      }
+    }
+    
+
+    const dom::MaybePrefValue& userValue = aDomPref.userValue();
+    bool userValueChanged = false;
+    if (userValue.type() == dom::MaybePrefValue::TPrefValue) {
+      PrefValue value;
+      PrefType type = value.FromDomPrefValue(userValue.get_PrefValue());
+      if (!ValueMatches(PrefValueKind::User, type, value)) {
+        
+        mUserValue.Replace(Type(), type, value);
+        SetType(type);
+        mHasUserValue = true;
+        userValueChanged = true;
+      }
+    } else if (mHasUserValue) {
+      ClearUserValue();
+      userValueChanged = true;
+    }
+
+    if (userValueChanged || (defaultValueChanged && !mHasUserValue)) {
+      *aValueChanged = true;
+    }
   }
 
   bool HasAdvisablySizedValues()
@@ -3574,55 +3635,50 @@ Preferences::SavePrefFile(nsIFile* aFile)
   return SavePrefFileInternal(aFile, SaveMethod::Asynchronous);
 }
 
- nsresult
-Preferences::SetValueFromDom(const char* aPrefName,
-                             const dom::PrefValue& aValue,
-                             PrefValueKind aKind)
-{
-  switch (aValue.type()) {
-    case dom::PrefValue::TnsCString:
-      return Preferences::SetCStringInAnyProcess(
-        aPrefName, aValue.get_nsCString(), aKind);
-
-    case dom::PrefValue::Tint32_t:
-      return Preferences::SetIntInAnyProcess(
-        aPrefName, aValue.get_int32_t(), aKind);
-
-    case dom::PrefValue::Tbool:
-      return Preferences::SetBoolInAnyProcess(
-        aPrefName, aValue.get_bool(), aKind);
-
-    default:
-      MOZ_CRASH();
-  }
-}
-
-void
+ void
 Preferences::SetPreference(const dom::Pref& aDomPref)
 {
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  NS_ENSURE_TRUE(InitStaticMembers(), (void)0);
+
   const char* prefName = aDomPref.name().get();
-  const dom::MaybePrefValue& defaultValue = aDomPref.defaultValue();
-  const dom::MaybePrefValue& userValue = aDomPref.userValue();
 
-  if (defaultValue.type() == dom::MaybePrefValue::TPrefValue) {
-    nsresult rv = SetValueFromDom(
-      prefName, defaultValue.get_PrefValue(), PrefValueKind::Default);
-    if (NS_FAILED(rv)) {
-      return;
-    }
+  auto pref = static_cast<Pref*>(gHashTable->Add(prefName, fallible));
+  if (!pref) {
+    return;
   }
 
-  if (userValue.type() == dom::MaybePrefValue::TPrefValue) {
-    SetValueFromDom(prefName, userValue.get_PrefValue(), PrefValueKind::User);
-  } else {
-    Preferences::ClearUserInAnyProcess(prefName);
+  if (!pref->Name()) {
+    
+    new (pref) Pref(prefName);
+  }
+
+  bool valueChanged = false;
+  pref->FromDomPref(aDomPref, &valueChanged);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!pref->HasDefaultValue() && !pref->HasUserValue()) {
+    gHashTable->RemoveEntry(pref);
   }
 
   
   
+
+  if (valueChanged) {
+    NotifyCallbacks(prefName);
+  }
 }
 
-void
+ void
 Preferences::GetPreference(dom::Pref* aDomPref)
 {
   Pref* pref = pref_HashTableLookup(aDomPref->name().get());

@@ -406,10 +406,6 @@ public:
 private:
   static mozilla::Result<mozilla::Ok, const char*> InitInitialObjects();
 
-  static nsresult SetValueFromDom(const char* aPrefName,
-                                  const dom::PrefValue& aValue,
-                                  PrefValueKind aKind);
-
   
   
   
