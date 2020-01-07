@@ -42,7 +42,8 @@ class APZSampler {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZSampler)
 
 public:
-  explicit APZSampler(const RefPtr<APZCTreeManager>& aApz);
+  APZSampler(const RefPtr<APZCTreeManager>& aApz,
+             bool aIsUsingWebRender);
 
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
 
@@ -103,11 +104,11 @@ public:
 protected:
   virtual ~APZSampler();
 
-  bool UsingWebRenderSamplerThread() const;
   static already_AddRefed<APZSampler> GetSampler(const wr::WrWindowId& aWindowId);
 
 private:
   RefPtr<APZCTreeManager> mApz;
+  bool mIsUsingWebRender;
 
   
   
@@ -120,17 +121,11 @@ private:
   Maybe<wr::WrWindowId> mWindowId;
 
   
-  
-  
+  mutable Mutex mThreadIdLock;
   
   
   
   Maybe<PlatformThreadId> mSamplerThreadId;
-#ifdef DEBUG
-  
-  
-  mutable bool mSamplerThreadQueried;
-#endif
 
   Mutex mSampleTimeLock;
   

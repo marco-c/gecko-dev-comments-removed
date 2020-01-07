@@ -22,11 +22,11 @@ StaticMutex APZSampler::sWindowIdLock;
 StaticAutoPtr<std::unordered_map<uint64_t, APZSampler*>> APZSampler::sWindowIdMap;
 
 
-APZSampler::APZSampler(const RefPtr<APZCTreeManager>& aApz)
+APZSampler::APZSampler(const RefPtr<APZCTreeManager>& aApz,
+                       bool aIsUsingWebRender)
   : mApz(aApz)
-#ifdef DEBUG
-  , mSamplerThreadQueried(false)
-#endif
+  , mIsUsingWebRender(aIsUsingWebRender)
+  , mThreadIdLock("APZSampler::mThreadIdLock")
   , mSampleTimeLock("APZSampler::mSampleTimeLock")
 {
   MOZ_ASSERT(aApz);
@@ -60,8 +60,7 @@ APZSampler::SetWebRenderWindowId(const wr::WindowId& aWindowId)
 APZSampler::SetSamplerThread(const wr::WrWindowId& aWindowId)
 {
   if (RefPtr<APZSampler> sampler = GetSampler(aWindowId)) {
-    
-    MOZ_ASSERT(!sampler->mSamplerThreadQueried);
+    MutexAutoLock lock(sampler->mThreadIdLock);
     sampler->mSamplerThreadId = Some(PlatformThread::CurrentId());
   }
 }
@@ -218,27 +217,15 @@ APZSampler::AssertOnSamplerThread() const
 bool
 APZSampler::IsSamplerThread() const
 {
-  if (UsingWebRenderSamplerThread()) {
-    return PlatformThread::CurrentId() == *mSamplerThreadId;
+  if (mIsUsingWebRender) {
+    
+    
+    
+    
+    MutexAutoLock lock(mThreadIdLock);
+    return mSamplerThreadId && PlatformThread::CurrentId() == *mSamplerThreadId;
   }
   return CompositorThreadHolder::IsInCompositorThread();
-}
-
-bool
-APZSampler::UsingWebRenderSamplerThread() const
-{
-  
-  
-  
-  
-  
-  
-  
-  
-#ifdef DEBUG
-  mSamplerThreadQueried = true;
-#endif
-  return mSamplerThreadId.isSome();
 }
 
  already_AddRefed<APZSampler>
