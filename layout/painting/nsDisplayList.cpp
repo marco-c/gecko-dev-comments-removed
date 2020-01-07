@@ -20,6 +20,7 @@
 #include "gfxUtils.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/KeyframeEffectReadOnly.h"
+#include "mozilla/dom/Selection.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/PLayerTransaction.h"
 #include "nsCSSRendering.h"
@@ -79,7 +80,6 @@
 #include "FrameLayerBuilder.h"
 #include "mozilla/EventStateManager.h"
 #include "nsCaret.h"
-#include "nsISelection.h"
 #include "nsDOMTokenList.h"
 #include "nsCSSProps.h"
 #include "nsSVGMaskFrame.h"
@@ -1021,8 +1021,8 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
   if (pc->IsRenderingOnlySelection()) {
     nsCOMPtr<nsISelectionController> selcon(do_QueryInterface(shell));
     if (selcon) {
-      selcon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                           getter_AddRefs(mBoundingSelection));
+      mBoundingSelection =
+        selcon->GetSelection(nsISelectionController::SELECTION_NORMAL);
     }
   }
 
@@ -5606,9 +5606,10 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
                                !BackfaceIsHidden(),
                                wr::ToBorderWidths(widths[0], widths[1], widths[2], widths[3]),
                                key.value(),
-                               (float)(mBorderImageRenderer->mImageSize.width) / appUnitsPerDevPixel,
-                               (float)(mBorderImageRenderer->mImageSize.height) / appUnitsPerDevPixel,
-                               wr::ToSideOffsets2D_u32(slice[0], slice[1], slice[2], slice[3]),
+                               wr::ToNinePatchDescriptor(
+                                 (float)(mBorderImageRenderer->mImageSize.width) / appUnitsPerDevPixel,
+                                 (float)(mBorderImageRenderer->mImageSize.height) / appUnitsPerDevPixel,
+                                 wr::ToSideOffsets2D_u32(slice[0], slice[1], slice[2], slice[3])),
                                wr::ToSideOffsets2D_f32(outset[0], outset[1], outset[2], outset[3]),
                                wr::ToRepeatMode(mBorderImageRenderer->mRepeatModeHorizontal),
                                wr::ToRepeatMode(mBorderImageRenderer->mRepeatModeVertical));
@@ -7647,21 +7648,19 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       NSAppUnitsToFloatPixels(appliedOffset.x, auPerDevPixel),
       NSAppUnitsToFloatPixels(appliedOffset.y, auPerDevPixel)
     };
-    wr::WrClipId id = aBuilder.DefineStickyFrame(wr::ToRoundedLayoutRect(bounds),
+    wr::WrStickyId id = aBuilder.DefineStickyFrame(wr::ToRoundedLayoutRect(bounds),
         topMargin.ptrOr(nullptr), rightMargin.ptrOr(nullptr),
         bottomMargin.ptrOr(nullptr), leftMargin.ptrOr(nullptr),
         vBounds, hBounds, applied);
 
-    aBuilder.PushClip(id);
-    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Some(id));
+    aBuilder.PushStickyFrame(id, GetClipChain());
   }
 
   nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, aSc,
       aManager, aDisplayListBuilder);
 
   if (stickyScrollContainer) {
-    aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
-    aBuilder.PopClip();
+    aBuilder.PopStickyFrame(GetClipChain());
   }
 
   return true;
@@ -9705,7 +9704,7 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
   const StackingContextHelper* sc = &aSc;
   if (mask) {
     auto layoutBounds = wr::ToRoundedLayoutRect(bounds);
-    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(),
+    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(), Nothing(),
         layoutBounds, nullptr, mask.ptr());
 
     
@@ -9729,14 +9728,9 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                    Nothing(),
                    &clipId);
     sc = layer.ptr();
-    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Some(clipId));
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, *sc, aManager, aDisplayListBuilder);
-
-  if (mask) {
-    aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
-  }
 
   return true;
 }

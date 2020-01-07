@@ -26,7 +26,6 @@
 #include "nsIDocument.h"                
 #include "nsIEditor.h"                  
 #include "nsILoadContext.h"
-#include "nsISelection.h"               
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
 #include "nsITextServicesFilter.h"      
@@ -405,12 +404,11 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
     
     
 
-    nsCOMPtr<nsISelection> domSelection;
-    aEditor->GetSelection(getter_AddRefs(domSelection));
-    if (NS_WARN_IF(!domSelection)) {
+    RefPtr<Selection> selection;
+    aEditor->GetSelection(getter_AddRefs(selection));
+    if (NS_WARN_IF(!selection)) {
       return NS_ERROR_FAILURE;
     }
-    RefPtr<Selection> selection = domSelection->AsSelection();
 
     if (selection->RangeCount()) {
       RefPtr<nsRange> range = selection->GetRangeAt(0);

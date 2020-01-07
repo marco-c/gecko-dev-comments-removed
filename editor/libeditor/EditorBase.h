@@ -937,7 +937,7 @@ protected:
   }
 
   nsresult GetSelection(SelectionType aSelectionType,
-                        nsISelection** aSelection);
+                        Selection** aSelection);
 
   
 
@@ -1438,7 +1438,7 @@ public:
     if (!sc) {
       return nullptr;
     }
-    Selection* selection = sc->GetDOMSelection(ToRawSelectionType(aSelectionType));
+    Selection* selection = sc->GetSelection(ToRawSelectionType(aSelectionType));
     return selection;
   }
 
