@@ -6021,7 +6021,8 @@ HTMLEditRules::CreateStyleForInsertText(nsIDocument& aDocument)
   }
 
   
-  UniquePtr<PropItem> item = HTMLEditorRef().mTypeInState->TakeClearProperty();
+  UniquePtr<PropItem> item =
+    std::move(HTMLEditorRef().mTypeInState->TakeClearProperty());
 
   {
     
@@ -6039,14 +6040,14 @@ HTMLEditRules::CreateStyleForInsertText(nsIDocument& aDocument)
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      item = HTMLEditorRef().mTypeInState->TakeClearProperty();
+      item = std::move(HTMLEditorRef().mTypeInState->TakeClearProperty());
       weDidSomething = true;
     }
   }
 
   
   int32_t relFontSize = HTMLEditorRef().mTypeInState->TakeRelativeFontSize();
-  item = HTMLEditorRef().mTypeInState->TakeSetProperty();
+  item = std::move(HTMLEditorRef().mTypeInState->TakeSetProperty());
 
   if (item || relFontSize) {
     

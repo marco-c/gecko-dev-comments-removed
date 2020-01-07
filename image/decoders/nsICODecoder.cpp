@@ -203,7 +203,7 @@ nsICODecoder::IterateUnsizedDirEntry()
     
     
     
-    mReturnIterator = mLexer.Clone(*mIterator, SIZE_MAX);
+    mReturnIterator = std::move(mLexer.Clone(*mIterator, SIZE_MAX));
     if (mReturnIterator.isNothing()) {
       
       
@@ -223,7 +223,7 @@ nsICODecoder::IterateUnsizedDirEntry()
 
     
     
-    mIterator = mLexer.Clone(*mReturnIterator, SIZE_MAX);
+    mIterator = std::move(mLexer.Clone(*mReturnIterator, SIZE_MAX));
     if (mIterator.isNothing()) {
       MOZ_ASSERT_UNREACHABLE("Cannot re-clone return iterator");
       return Transition::TerminateFailure();

@@ -2554,7 +2554,7 @@ gfxFont::Measure(const gfxTextRun *aTextRun,
     if (aBoundingBoxType == TIGHT_HINTED_OUTLINE_EXTENTS &&
         mAntialiasOption != kAntialiasNone) {
         if (!mNonAAFont) {
-            mNonAAFont = CopyWithAntialiasOption(kAntialiasNone);
+            mNonAAFont = std::move(CopyWithAntialiasOption(kAntialiasNone));
         }
         
         
