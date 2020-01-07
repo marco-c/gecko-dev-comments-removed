@@ -828,9 +828,6 @@ struct JSCompartment
 
   public:
     
-    unsigned                     gcIndex;
-
-    
 
 
 

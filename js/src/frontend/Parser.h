@@ -164,7 +164,7 @@ class ParserBase : public StrictModeGetter
 
     ParserBase(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
                const char16_t* chars, size_t length, bool foldConstants,
-               UsedNameTracker& usedNames, LazyScript* lazyOuterFunction);
+               UsedNameTracker& usedNames);
     ~ParserBase();
 
     const char* getFilename() const { return tokenStream.getFilename(); }
@@ -558,9 +558,9 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     
     
-    bool innerFunction(Node pn, ParseContext* outerpc, FunctionBox* funbox, uint32_t toStringStart,
+    bool innerFunction(Node pn, ParseContext* outerpc, FunctionBox* funbox,
                        InHandling inHandling, YieldHandling yieldHandling, FunctionSyntaxKind kind,
-                       Directives inheritedDirectives, Directives* newDirectives);
+                       Directives* newDirectives);
 
     
     
@@ -608,7 +608,6 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     Node forStatement(YieldHandling yieldHandling);
     bool forHeadStart(YieldHandling yieldHandling,
-                      IteratorKind iterKind,
                       ParseNodeKind* forHeadKind,
                       Node* forInitialPart,
                       mozilla::Maybe<ParseContext::Scope>& forLetImpliedScope,
@@ -698,10 +697,10 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     
     
     
-    Node declarationPattern(Node decl, DeclarationKind declKind, TokenKind tt,
+    Node declarationPattern(DeclarationKind declKind, TokenKind tt,
                             bool initialDeclaration, YieldHandling yieldHandling,
                             ParseNodeKind* forHeadKind, Node* forInOrOfExpression);
-    Node declarationName(Node decl, DeclarationKind declKind, TokenKind tt,
+    Node declarationName(DeclarationKind declKind, TokenKind tt,
                          bool initialDeclaration, YieldHandling yieldHandling,
                          ParseNodeKind* forHeadKind, Node* forInOrOfExpression);
 
@@ -710,7 +709,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     
     
     
-    bool initializerInNameDeclaration(Node decl, Node binding, Handle<PropertyName*> name,
+    bool initializerInNameDeclaration(Node binding,
                                       DeclarationKind declKind, bool initialDeclaration,
                                       YieldHandling yieldHandling, ParseNodeKind* forHeadKind,
                                       Node* forInOrOfExpression);

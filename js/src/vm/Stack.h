@@ -398,7 +398,7 @@ class InterpreterFrame
 
 
     
-    void initCallFrame(JSContext* cx, InterpreterFrame* prev, jsbytecode* prevpc, Value* prevsp,
+    void initCallFrame(InterpreterFrame* prev, jsbytecode* prevpc, Value* prevsp,
                        JSFunction& callee, JSScript* script, Value* argv, uint32_t nactual,
                        MaybeConstruct constructing);
 
