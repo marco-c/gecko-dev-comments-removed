@@ -16,7 +16,7 @@ V1_CUTOFF = 20150801000000
 def android_version_code_v0(buildid, cpu_arch=None, min_sdk=0, max_sdk=0):
     base = int(str(buildid)[:10])
     
-    if not cpu_arch or cpu_arch in ['armeabi', 'armeabi-v7a']:
+    if not cpu_arch or cpu_arch == 'armeabi-v7a':
         
         
         return base + min_sdk + 0
@@ -114,7 +114,7 @@ def android_version_code_v1(buildid, cpu_arch=None, min_sdk=0, max_sdk=0):
     version |= base << 3
 
     
-    if not cpu_arch or cpu_arch in ['armeabi', 'armeabi-v7a']:
+    if not cpu_arch or cpu_arch == 'armeabi-v7a':
         
         if not min_sdk or min_sdk == 9:
             pass
