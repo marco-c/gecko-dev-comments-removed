@@ -1034,7 +1034,7 @@ async function sanitizeSessionPrincipals() {
     principals.push(sw.principal);
   }
 
-  return maybeSanitizeSessionPrincipals(principals);
+  await maybeSanitizeSessionPrincipals(principals);
 }
 
 
