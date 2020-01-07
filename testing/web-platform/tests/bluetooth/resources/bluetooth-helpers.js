@@ -471,6 +471,15 @@ function generateRequestDeviceArgsWithServices(services = ['heart_rate']) {
 
 
 
+function simulateGATTDisconnectionAndWait(device, fake_peripheral) {
+  return Promise.all([
+    eventPromise(device, 'gattserverdisconnected'),
+    fake_peripheral.simulateGATTDisconnection(),
+  ]);
+}
+
+
+
 function setUpPreconnectedDevice({
   address = '00:00:00:00:00:00', name = 'LE Device', knownServiceUUIDs = []}) {
   return navigator.bluetooth.test.simulateCentral({state: 'powered-on'})
