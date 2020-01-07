@@ -260,6 +260,16 @@ add_test(function fetchAndCacheProfile_alreadyCached() {
 
 
 add_task(async function fetchAndCacheProfileAfterThreshold() {
+  
+
+
+
+  Services.prefs.setBoolPref("privacy.reduceTimerPrecision", false);
+
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("privacy.reduceTimerPrecision");
+  });
+
   let numFetches = 0;
   let client = mockClient(mockFxa());
   client.fetchProfile = async function() {

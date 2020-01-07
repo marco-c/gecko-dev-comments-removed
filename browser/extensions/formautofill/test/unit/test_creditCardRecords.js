@@ -5,6 +5,8 @@
 "use strict";
 
 const {FormAutofillStorage} = ChromeUtils.import("resource://formautofill/FormAutofillStorage.jsm", {});
+ChromeUtils.defineModuleGetter(this, "Preferences",
+                               "resource://gre/modules/Preferences.jsm");
 
 const TEST_STORE_FILE_NAME = "test-credit-card.json";
 const COLLECTION_NAME = "creditCards";
@@ -290,6 +292,16 @@ add_task(async function test_add() {
 });
 
 add_task(async function test_update() {
+  
+  
+  
+  let timerPrecision = Preferences.get("privacy.reduceTimerPrecision");
+  Preferences.set("privacy.reduceTimerPrecision", false);
+
+  registerCleanupFunction(function() {
+    Preferences.set("privacy.reduceTimerPrecision", timerPrecision);
+  });
+
   let path = getTempFile(TEST_STORE_FILE_NAME).path;
   await prepareTestCreditCards(path);
 

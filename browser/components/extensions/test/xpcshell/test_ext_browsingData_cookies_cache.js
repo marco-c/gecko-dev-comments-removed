@@ -83,6 +83,20 @@ add_task(async function testCache() {
 });
 
 add_task(async function testCookies() {
+  
+  
+  
+  
+  
+  
+  Services.prefs.setBoolPref("privacy.reduceTimerPrecision", true);
+  Services.prefs.setIntPref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
+
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref("privacy.reduceTimerPrecision");
+    Services.prefs.clearUserPref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds");
+  });
+
   function background() {
     browser.test.onMessage.addListener(async (msg, options) => {
       if (msg == "removeCookies") {

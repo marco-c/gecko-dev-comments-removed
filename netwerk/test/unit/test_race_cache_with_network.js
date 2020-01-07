@@ -81,6 +81,21 @@ function run_test() {
 let testGenerator = testSteps();
 function *testSteps() {
   
+
+
+
+
+
+
+  Services.prefs.setBoolPref("privacy.reduceTimerPrecision", true);
+  Services.prefs.setIntPref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 20000);
+
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref("privacy.reduceTimerPrecision");
+    Services.prefs.clearUserPref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds");
+  });
+
+  
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.asyncOpen2(new ChannelListener(checkContent, null));
   yield undefined;

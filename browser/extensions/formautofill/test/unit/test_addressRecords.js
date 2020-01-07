@@ -254,6 +254,9 @@ const MERGE_TESTCASES = [
   },
 ];
 
+ChromeUtils.defineModuleGetter(this, "Preferences",
+                               "resource://gre/modules/Preferences.jsm");
+
 let do_check_record_matches = (recordWithMeta, record) => {
   for (let key in record) {
     Assert.equal(recordWithMeta[key], record[key]);
@@ -369,6 +372,16 @@ add_task(async function test_add() {
 });
 
 add_task(async function test_update() {
+  
+  
+  
+  let timerPrecision = Preferences.get("privacy.reduceTimerPrecision");
+  Preferences.set("privacy.reduceTimerPrecision", false);
+
+  registerCleanupFunction(function() {
+    Preferences.set("privacy.reduceTimerPrecision", timerPrecision);
+  });
+
   let profileStorage = await initProfileStorage(TEST_STORE_FILE_NAME,
                                                 [TEST_ADDRESS_1, TEST_ADDRESS_2]);
 
