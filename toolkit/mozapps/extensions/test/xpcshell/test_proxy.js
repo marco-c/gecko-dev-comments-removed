@@ -5,12 +5,13 @@
 const ID = "proxy1@tests.mozilla.org";
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
-startupManager();
 
 BootstrapMonitor.init();
 
 
 add_task(async function() {
+  await promiseStartupManager();
+
   let tempdir = gTmpD.clone();
   await promiseWriteInstallRDFToDir({
     id: ID,

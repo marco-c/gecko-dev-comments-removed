@@ -4,7 +4,6 @@
 
 const ID = "bootstrap1@tests.mozilla.org";
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
-startupManager();
 
 BootstrapMonitor.init();
 
@@ -18,6 +17,8 @@ const BOOTSTRAP_REASONS = {
 
 
 add_task(async function() {
+  await promiseStartupManager();
+
   let extInstallCalled = false;
   AddonManager.addInstallListener({
     onExternalInstall: (aInstall) => {

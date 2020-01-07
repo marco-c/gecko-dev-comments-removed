@@ -72,7 +72,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "amIAddonManagerStartup");
 
 const {
-  awaitPromise,
   createAppInfo,
   createHttpServer,
   createInstallRDF,
@@ -667,31 +666,6 @@ function do_check_icons(aActual, aExpected) {
   }
 }
 
-function startupManager() {
-  
-  
-  
-  
-  
-  promiseStartupManager();
-}
-
-
-
-
-
-
-
-
-
-function restartManager(aNewVersion) {
-  awaitPromise(promiseRestartManager(aNewVersion));
-}
-
-function shutdownManager() {
-  awaitPromise(promiseShutdownManager());
-}
-
 function isThemeInAddonsList(aDir, aId) {
   return AddonTestUtils.addonsList.hasTheme(aDir, aId);
 }
@@ -731,9 +705,6 @@ function check_startup_changes(aType, aIds) {
 
 
 
-function writeInstallRDFToDir(aData, aDir, aId = aData.id, aExtraFile = null) {
-  return awaitPromise(promiseWriteInstallRDFToDir(aData, aDir, aId, aExtraFile));
-}
 async function promiseWriteInstallRDFToDir(aData, aDir, aId = aData.id, aExtraFile = null) {
   let files = {
     "install.rdf": AddonTestUtils.createInstallRDF(aData),
@@ -767,7 +738,7 @@ async function promiseWriteInstallRDFToDir(aData, aDir, aId = aData.id, aExtraFi
 
 
 
-function writeInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
+async function promiseWriteInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
   let files = {
     "install.rdf": AddonTestUtils.createInstallRDF(aData),
   };
@@ -787,9 +758,6 @@ function writeInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
 
   return file;
 }
-async function promiseWriteInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
-  return writeInstallRDFToXPI(aData, aDir, aId, aExtraFile);
-}
 
 
 
@@ -807,13 +775,6 @@ async function promiseWriteInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFi
 
 
 
-
-function writeInstallRDFForExtension(aData, aDir, aId, aExtraFile) {
-  if (TEST_UNPACKED) {
-    return writeInstallRDFToDir(aData, aDir, aId, aExtraFile);
-  }
-  return writeInstallRDFToXPI(aData, aDir, aId, aExtraFile);
-}
 
 function promiseWriteInstallRDFForExtension(aData, aDir, aId, aExtraFile) {
   if (TEST_UNPACKED) {
@@ -1271,14 +1232,6 @@ function callback_soon(aFunction) {
   };
 }
 
-function writeProxyFileToDir(aDir, aAddon, aId) {
-  awaitPromise(promiseWriteProxyFileToDir(aDir, aAddon, aId));
-
-  let file = aDir.clone();
-  file.append(aId);
-  return file;
-}
-
 async function serveSystemUpdate(xml, perform_update, testserver) {
   testserver.registerPathHandler("/data/update.xml", (request, response) => {
     response.write(xml);
@@ -1505,7 +1458,7 @@ async function setupSystemAddonConditions(setup, distroDir) {
   distroDir.leafName = "empty";
 
   let updateList = [];
-  awaitPromise(overrideBuiltIns({ "system": updateList }));
+  await overrideBuiltIns({ "system": updateList });
   await promiseStartupManager();
   await promiseShutdownManager();
 
@@ -1519,7 +1472,7 @@ async function setupSystemAddonConditions(setup, distroDir) {
       updateList = ["system2@tests.mozilla.org", "system3@tests.mozilla.org"];
     }
   }
-  awaitPromise(overrideBuiltIns({ "system": updateList }));
+  await overrideBuiltIns({ "system": updateList });
   await promiseStartupManager();
 
   
@@ -1576,7 +1529,7 @@ async function verifySystemAddonState(initialState, finalState = undefined, alre
       updateList = ["system2@tests.mozilla.org", "system3@tests.mozilla.org"];
     }
   }
-  awaitPromise(overrideBuiltIns({ "system": updateList }));
+  await overrideBuiltIns({ "system": updateList });
   await promiseStartupManager();
   await checkInstalledSystemAddons(finalState, distroDir);
 }

@@ -84,8 +84,6 @@ user_pref("extensions.autoDisableScopes", 0);
 user_pref("extensions.getAddons.cache.enabled", false);
 
 user_pref("extensions.installDistroAddons", false);
-
-user_pref("extensions.defaultProviders.enabled", true);
 user_pref("xpinstall.signatures.required", false);
 user_pref("extensions.legacy.enabled", true);
 

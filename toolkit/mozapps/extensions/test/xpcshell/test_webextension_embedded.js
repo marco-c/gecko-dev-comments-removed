@@ -8,7 +8,6 @@ const profileDir = gProfD.clone();
 profileDir.append("extensions");
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "49");
-startupManager();
 
 
 
@@ -52,6 +51,7 @@ const EMBEDDED_WEBEXT_MANIFEST = JSON.stringify({
 
 
 add_task(async function has_embedded_webextension_persisted() {
+  await promiseStartupManager();
   const ID = "embedded-webextension-addon-persist@tests.mozilla.org";
 
   const xpiFile = createTempXPIFile({

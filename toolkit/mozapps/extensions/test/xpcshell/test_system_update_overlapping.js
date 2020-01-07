@@ -142,7 +142,7 @@ const TESTS = {
 
 add_task(async function setup() {
   
-  awaitPromise(overrideBuiltIns({ "system": [] }));
+  await overrideBuiltIns({ "system": [] });
   await promiseStartupManager();
   await promiseShutdownManager();
 });
