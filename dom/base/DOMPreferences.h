@@ -71,6 +71,10 @@ public:
   
   static bool StreamsEnabled();
   static bool StreamsEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool RequestContextEnabled();
+  static bool RequestContextEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
