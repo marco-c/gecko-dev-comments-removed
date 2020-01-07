@@ -50,52 +50,32 @@ namespace mozilla {
 using namespace dom;
 
 
-static int32_t GetCSSFloatValue(nsComputedDOMStyle* aComputedStyle,
-                                const nsAString& aProperty)
+
+
+
+
+
+
+static int32_t
+GetCSSFloatValue(nsComputedDOMStyle* aComputedStyle,
+                 const nsAString& aProperty)
 {
   MOZ_ASSERT(aComputedStyle);
 
   
-  ErrorResult rv;
-  RefPtr<CSSValue> value = aComputedStyle->GetPropertyCSSValue(aProperty, rv);
-  if (rv.Failed() || !value) {
+  nsAutoString value;
+  nsresult rv = aComputedStyle->GetPropertyValue(aProperty, value);
+  if (NS_FAILED(rv)) {
     return 0;
   }
 
-  
-  
-  RefPtr<nsROCSSPrimitiveValue> val = value->AsPrimitiveValue();
-  uint16_t type = val->PrimitiveType();
+  MOZ_ASSERT(value.Length() > 2, "Should always have a `px` suffix");
 
-  float f = 0;
-  switch (type) {
-    case CSSPrimitiveValueBinding::CSS_PX:
-      
-      f = val->GetFloatValue(CSSPrimitiveValueBinding::CSS_PX, rv);
-      if (rv.Failed()) {
-        return 0;
-      }
-      break;
-    case CSSPrimitiveValueBinding::CSS_IDENT: {
-      
-      
-      nsAutoString str;
-      val->GetStringValue(str, rv);
-      if (rv.Failed()) {
-        return 0;
-      }
-      if (str.EqualsLiteral("thin")) {
-        f = 1;
-      } else if (str.EqualsLiteral("medium")) {
-        f = 3;
-      } else if (str.EqualsLiteral("thick")) {
-        f = 5;
-      }
-      break;
-    }
-  }
+  int32_t val = value.ToInteger(&rv);
+  MOZ_ASSERT(NS_SUCCEEDED(rv),
+             "These properties should only get resolved values");
 
-  return (int32_t) f;
+  return val;
 }
 
 class ElementDeletionObserver final : public nsStubMutationObserver
