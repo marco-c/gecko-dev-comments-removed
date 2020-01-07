@@ -12,7 +12,6 @@
 
 
 
-
 const nsIX509Cert = Ci.nsIX509Cert;
 const nsX509CertDB = "@mozilla.org/security/x509certdb;1";
 const nsIX509CertDB = Ci.nsIX509CertDB;
