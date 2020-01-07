@@ -557,7 +557,7 @@ public:
 
 
 
-  nsIDocument *OwnerDoc() const
+  nsIDocument* OwnerDoc() const
   {
     return mNodeInfo->GetDocument();
   }
@@ -566,7 +566,7 @@ public:
 
 
 
-  nsINode *OwnerDocAsNode() const;
+  inline nsINode* OwnerDocAsNode() const;
 
   
 

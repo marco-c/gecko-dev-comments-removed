@@ -624,16 +624,6 @@ public:
 
 
 
-  nsINode* GetFlattenedTreeParentForDocumentElementNAC() const;
-
-  
-
-
-
-
-
-
-
 
 
 
