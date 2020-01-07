@@ -1512,6 +1512,17 @@ XPCConvert::JSArray2Native(void** d, HandleValue s,
     AutoJSContext cx;
 
     
+    
+    
+    
+    
+    
+    if (count == 0) {
+        *d = nullptr;
+        return true;
+    }
+
+    
 
     
 
@@ -1522,14 +1533,9 @@ XPCConvert::JSArray2Native(void** d, HandleValue s,
         return false;
 
     if (s.isNullOrUndefined()) {
-        if (0 != count) {
-            if (pErr)
-                *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
-            return false;
-        }
-
-        *d = nullptr;
-        return true;
+        if (pErr)
+            *pErr = NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY;
+        return false;
     }
 
     if (!s.isObject()) {
