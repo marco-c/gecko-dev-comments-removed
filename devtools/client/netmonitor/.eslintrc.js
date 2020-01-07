@@ -5,13 +5,6 @@
 "use strict";
 
 module.exports = {
-  "env": {
-    "browser": true,
-  },
-
-  
-  "extends": "../../.eslintrc.js",
-
   "rules": {
     
     
@@ -19,11 +12,5 @@ module.exports = {
     
     
     "mozilla/reject-some-requires": ["error", "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm|devtools/shared/platform/(chome|content)/.*)$"],
-  },
-
-  "parserOptions": {
-    "ecmaFeatures": {
-      experimentalObjectRestSpread: true,
-    },
   },
 };
