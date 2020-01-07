@@ -41,7 +41,7 @@ class FloatRegisters : public FloatRegistersMIPSShared
     static Encoding FromName(const char* name);
 
     static const uint32_t Total = 32 * NumTypes;
-    static const uint32_t Allocatable = 60;
+    static const uint32_t Allocatable = 62;
     
     static const uint32_t TotalPhys = 32;
 
@@ -79,10 +79,7 @@ class FloatRegisters : public FloatRegistersMIPSShared
     static const SetType WrapperMask = VolatileMask;
 
     static const SetType NonAllocatableMask =
-        ( 
-          (1U << FloatRegisters::f21) |
-          (1U << FloatRegisters::f23)
-        ) * Spread;
+        (1U << FloatRegisters::f23) * Spread;
 
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };

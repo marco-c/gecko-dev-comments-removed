@@ -58,20 +58,8 @@ MacroAssemblerMIPS64Compat::convertInt32ToDouble(const BaseIndex& src, FloatRegi
 void
 MacroAssemblerMIPS64Compat::convertUInt32ToDouble(Register src, FloatRegister dest)
 {
-    
-    
-    MOZ_ASSERT(dest != SecondScratchDoubleReg);
-
-    
-    ma_subu(ScratchRegister, src, Imm32(INT32_MIN));
-
-    
-    as_mtc1(ScratchRegister, dest);
-    as_cvtdw(dest, dest);
-
-    
-    ma_lid(SecondScratchDoubleReg, 2147483648.0);
-    as_addd(dest, dest, SecondScratchDoubleReg);
+    ma_dext(ScratchRegister, src, Imm32(0), Imm32(32));
+    asMasm().convertInt64ToDouble(Register64(ScratchRegister), dest);
 }
 
 void
@@ -101,19 +89,8 @@ MacroAssemblerMIPS64Compat::convertUInt64ToDouble(Register src, FloatRegister de
 void
 MacroAssemblerMIPS64Compat::convertUInt32ToFloat32(Register src, FloatRegister dest)
 {
-    Label positive, done;
-    ma_b(src, src, &positive, NotSigned, ShortJump);
-
-    
-    
-    convertUInt32ToDouble(src, dest);
-    convertDoubleToFloat32(dest, dest);
-    ma_b(&done, ShortJump);
-
-    bind(&positive);
-    convertInt32ToFloat32(src, dest);
-
-    bind(&done);
+    ma_dext(ScratchRegister, src, Imm32(0), Imm32(32));
+    asMasm().convertInt64ToFloat32(Register64(ScratchRegister), dest);
 }
 
 void

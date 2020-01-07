@@ -62,20 +62,26 @@ MacroAssemblerMIPSCompat::convertInt32ToDouble(const BaseIndex& src, FloatRegist
 void
 MacroAssemblerMIPSCompat::convertUInt32ToDouble(Register src, FloatRegister dest)
 {
-    
-    
-    MOZ_ASSERT(dest != SecondScratchDoubleReg);
+    Label positive, done;
+    ma_b(src, src, &positive, NotSigned, ShortJump);
 
-    
-    ma_subu(ScratchRegister, src, Imm32(INT32_MIN));
+    const uint32_t kExponentShift = mozilla::FloatingPoint<double>::kExponentShift - 32;
+    const uint32_t kExponent = (31 + mozilla::FloatingPoint<double>::kExponentBias);
 
-    
-    as_mtc1(ScratchRegister, dest);
-    as_cvtdw(dest, dest);
+    ma_ext(SecondScratchReg, src, 31 - kExponentShift, kExponentShift);
+    ma_li(ScratchRegister, Imm32(kExponent << kExponentShift));
+    ma_or(SecondScratchReg, ScratchRegister);
+    ma_sll(ScratchRegister, src, Imm32(kExponentShift + 1));
+    moveToDoubleHi(SecondScratchReg, dest);
+    moveToDoubleLo(ScratchRegister, dest);
 
-    
-    ma_lid(SecondScratchDoubleReg, 2147483648.0);
-    as_addd(dest, dest, SecondScratchDoubleReg);
+    ma_b(&done, ShortJump);
+
+    bind(&positive);
+    convertInt32ToDouble(src, dest);
+
+    bind(&done);
+
 }
 
 void
@@ -84,10 +90,19 @@ MacroAssemblerMIPSCompat::convertUInt32ToFloat32(Register src, FloatRegister des
     Label positive, done;
     ma_b(src, src, &positive, NotSigned, ShortJump);
 
-    
-    
-    convertUInt32ToDouble(src, dest);
-    convertDoubleToFloat32(dest, dest);
+    const uint32_t kExponentShift = mozilla::FloatingPoint<double>::kExponentShift - 32;
+    const uint32_t kExponent = (31 + mozilla::FloatingPoint<double>::kExponentBias);
+
+    ma_ext(SecondScratchReg, src, 31 - kExponentShift, kExponentShift);
+    ma_li(ScratchRegister, Imm32(kExponent << kExponentShift));
+    ma_or(SecondScratchReg, ScratchRegister);
+    ma_sll(ScratchRegister, src, Imm32(kExponentShift + 1));
+    FloatRegister destDouble = dest.asDouble();
+    moveToDoubleHi(SecondScratchReg, destDouble);
+    moveToDoubleLo(ScratchRegister, destDouble);
+
+    convertDoubleToFloat32(destDouble, dest);
+
     ma_b(&done, ShortJump);
 
     bind(&positive);
