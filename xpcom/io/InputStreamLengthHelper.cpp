@@ -6,6 +6,7 @@
 
 #include "InputStreamLengthHelper.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "nsIAsyncInputStream.h"
 #include "nsIInputStream.h"
 #include "nsIStreamTransportService.h"
 
@@ -103,6 +104,12 @@ InputStreamLengthHelper::GetSyncLength(nsIInputStream* aStream,
   }
 
   
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aStream);
+  if (asyncStream) {
+    return false;
+  }
+
+  
   
   if (NS_IsMainThread()) {
     bool nonBlocking = false;
@@ -148,6 +155,11 @@ InputStreamLengthHelper::GetAsyncLength(nsIInputStream* aStream,
     nsCOMPtr<nsIAsyncInputStreamLength> asyncStreamLength =
       do_QueryInterface(aStream);
     if (!streamLength && !asyncStreamLength) {
+      
+      
+      nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aStream);
+      MOZ_DIAGNOSTIC_ASSERT(!asyncStream);
+
       bool nonBlocking = false;
       if (NS_SUCCEEDED(aStream->IsNonBlocking(&nonBlocking)) && !nonBlocking) {
         nsCOMPtr<nsIEventTarget> target =
