@@ -508,7 +508,10 @@ class TypeSet
 
     
     TemporaryTypeSet* clone(LifoAlloc* alloc) const;
-    bool clone(LifoAlloc* alloc, TemporaryTypeSet* result) const;
+
+    
+    
+    bool cloneIntoUninitialized(LifoAlloc* alloc, TemporaryTypeSet* result) const;
 
     
     TemporaryTypeSet* filter(LifoAlloc* alloc, bool filterUndefined, bool filterNull) const;
