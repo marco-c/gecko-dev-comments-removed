@@ -10,24 +10,22 @@ var visit_count = 0;
 
 async function task_add_visit(aURI, aVisitType) {
   
-  let deferUpdatePlaces = new Promise((resolve, reject) => {
-    PlacesUtils.asyncHistory.updatePlaces({
-      uri: aURI,
-      visits: [{ transitionType: aVisitType, visitDate: Date.now() * 1000 }]
-    }, {
-      handleError: function TAV_handleError() {
-        reject(new Error("Unexpected error in adding visit."));
-      },
-      handleResult(aPlaceInfo) {
-        this.visitId = aPlaceInfo.visits[0].visitId;
-      },
-      handleCompletion: function TAV_handleCompletion() {
-        resolve(this.visitId);
-      }
-    });
-  });
+  let visitId;
+  let visitsPromise = PlacesTestUtils.waitForNotification("onVisits", visits => {
+    visitId = visits[0].visitId;
+    let {uri} = visits[0];
+    return uri.equals(aURI);
+  }, "history");
 
-  let visitId = await deferUpdatePlaces;
+  
+  await PlacesTestUtils.addVisits([{
+    uri: aURI,
+    transition: aVisitType
+  }]);
+
+  if (aVisitType != TRANSITION_EMBED) {
+    await visitsPromise;
+  }
 
   
   if (aVisitType != 0 &&
