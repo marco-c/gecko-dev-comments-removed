@@ -1197,12 +1197,10 @@ KeyframeEffectReadOnly::CanThrottle() const
                                                    mTarget->mPseudoType);
     MOZ_ASSERT(effectSet, "CanThrottle should be called on an effect "
                           "associated with a target element");
-    layers::Layer* layer =
-      FrameLayerBuilder::GetDedicatedLayer(frame, record.mLayerType);
+    Maybe<uint64_t> generation = layers::AnimationInfo::GetGenerationFromFrame(
+        frame, record.mLayerType);
     
-    if (!layer ||
-        effectSet->GetAnimationGeneration() !=
-          layer->GetAnimationGeneration()) {
+    if (!generation || effectSet->GetAnimationGeneration() != *generation) {
       return false;
     }
 
