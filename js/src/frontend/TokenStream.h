@@ -172,6 +172,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Unused.h"
+#include "mozilla/Utf8.h"
 
 #include <algorithm>
 #include <stdarg.h>
@@ -921,6 +922,12 @@ CodeUnitValue(char16_t unit)
     return unit;
 }
 
+constexpr uint8_t
+CodeUnitValue(mozilla::Utf8Unit unit)
+{
+    return unit.toUint8();
+}
+
 
 
 
@@ -1218,6 +1225,14 @@ TokenStreamCharsBase<char16_t>::toCharT(int32_t codeUnitValue)
 {
     MOZ_ASSERT(codeUnitValue != EOF, "EOF is not a CharT");
     return mozilla::AssertedCast<char16_t>(codeUnitValue);
+}
+
+template<>
+inline mozilla::Utf8Unit
+TokenStreamCharsBase<mozilla::Utf8Unit>::toCharT(int32_t value)
+{
+    MOZ_ASSERT(value != EOF, "EOF is not a CharT");
+    return mozilla::Utf8Unit(static_cast<unsigned char>(value));
 }
 
 template<>
