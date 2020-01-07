@@ -43,15 +43,6 @@ module.exports = {
     
     
     "files": [
-      "devtools/**"
-    ],
-    "rules": {
-      "mozilla/no-define-cc-etc": "off",
-    }
-  }, {
-    
-    
-    "files": [
       "services/fxaccounts/**",
       "toolkit/components/**",
     ],
