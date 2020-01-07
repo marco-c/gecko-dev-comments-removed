@@ -436,7 +436,6 @@ optgroup:disabled,
 select:disabled:disabled 
 
 {
-  -moz-user-input: disabled;
   color: GrayText;
   background-color: ThreeDLightShadow;
   cursor: inherit;
