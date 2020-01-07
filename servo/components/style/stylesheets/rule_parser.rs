@@ -19,7 +19,7 @@ use servo_arc::Arc;
 use shared_lock::{Locked, SharedRwLock};
 use str::starts_with_ignore_ascii_case;
 use style_traits::{ParseError, StyleParseErrorKind};
-use stylesheets::{CssRule, CssRuleType, CssRules, Origin, RulesMutateError, StylesheetLoader};
+use stylesheets::{CssRule, CssRuleType, CssRules, Origin, StylesheetLoader};
 use stylesheets::{DocumentRule, FontFeatureValuesRule, KeyframesRule, MediaRule};
 use stylesheets::{NamespaceRule, PageRule, StyleRule, SupportsRule, ViewportRule};
 use stylesheets::document_rule::DocumentCondition;
@@ -30,14 +30,6 @@ use stylesheets::supports_rule::SupportsCondition;
 use stylesheets::viewport_rule;
 use values::{CssUrl, CustomIdent, KeyframesName};
 use values::computed::font::FamilyName;
-
-
-pub struct InsertRuleContext<'a> {
-    
-    pub rule_list: &'a [CssRule],
-    
-    pub index: usize,
-}
 
 
 pub struct TopLevelRuleParser<'a, R: 'a> {
@@ -57,13 +49,13 @@ pub struct TopLevelRuleParser<'a, R: 'a> {
     
     pub state: State,
     
-    pub dom_error: Option<RulesMutateError>,
+    
+    
+    pub had_hierarchy_error: bool,
     
     
     
     pub namespaces: &'a mut Namespaces,
-    
-    pub insert_rule_context: Option<InsertRuleContext<'a>>,
 }
 
 impl<'b, R> TopLevelRuleParser<'b, R> {
@@ -86,39 +78,10 @@ impl<'b, R> TopLevelRuleParser<'b, R> {
     
     
     
-    
-    fn check_state(&mut self, new_state: State) -> bool {
-        if self.state > new_state {
-            self.dom_error = Some(RulesMutateError::HierarchyRequest);
-            return false;
-        }
-
-        let ctx = match self.insert_rule_context {
-            Some(ref ctx) => ctx,
-            None => return true,
-        };
-
-        let next_rule_state = match ctx.rule_list.get(ctx.index) {
-            None => return true,
-            Some(rule) => rule.rule_state(),
-        };
-
-        if new_state > next_rule_state {
-            self.dom_error = Some(RulesMutateError::InvalidState);
-            return false;
-        }
-
-        
-        
-        
-        if new_state == State::Namespaces &&
-            ctx.rule_list[ctx.index..].iter().any(|r| !matches!(*r, CssRule::Namespace(..)))
-        {
-            self.dom_error = Some(RulesMutateError::InvalidState);
-            return false;
-        }
-
-        true
+    pub fn take_had_hierarchy_error(&mut self) -> bool {
+        let had_hierarchy_error = self.had_hierarchy_error;
+        self.had_hierarchy_error = false;
+        had_hierarchy_error
     }
 }
 
@@ -188,7 +151,9 @@ impl<'a, 'i, R: ParseErrorReporter> AtRuleParser<'i> for TopLevelRuleParser<'a, 
         let location = input.current_source_location();
         match_ignore_ascii_case! { &*name,
             "import" => {
-                if !self.check_state(State::Imports) {
+                if self.state > State::Imports {
+                    // "@import must be before any rule but @charset"
+                    self.had_hierarchy_error = true;
                     return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedImportRule))
                 }
 
@@ -203,7 +168,9 @@ impl<'a, 'i, R: ParseErrorReporter> AtRuleParser<'i> for TopLevelRuleParser<'a, 
                 return Ok(AtRuleType::WithoutBlock(prelude));
             },
             "namespace" => {
-                if !self.check_state(State::Namespaces) {
+                if self.state > State::Namespaces {
+                    // "@namespace must be before any rule but @charset and @import"
+                    self.had_hierarchy_error = true;
                     return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedNamespaceRule))
                 }
 
@@ -223,7 +190,7 @@ impl<'a, 'i, R: ParseErrorReporter> AtRuleParser<'i> for TopLevelRuleParser<'a, 
             // @charset is removed by rust-cssparser if it’s the first rule in the stylesheet
             // anything left is invalid.
             "charset" => {
-                self.dom_error = Some(RulesMutateError::HierarchyRequest);
+                self.had_hierarchy_error = true;
                 return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedCharsetRule))
             }
             _ => {}

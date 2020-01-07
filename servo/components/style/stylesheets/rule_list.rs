@@ -13,7 +13,7 @@ use std::fmt::{self, Write};
 use str::CssStringWriter;
 use stylesheets::{CssRule, RulesMutateError};
 use stylesheets::loader::StylesheetLoader;
-use stylesheets::rule_parser::{InsertRuleContext, State};
+use stylesheets::rule_parser::State;
 use stylesheets::stylesheet::StylesheetContents;
 
 
@@ -141,7 +141,7 @@ impl CssRulesHelpers for RawOffsetArc<Locked<CssRules>> {
         nested: bool,
         loader: Option<&StylesheetLoader>,
     ) -> Result<CssRule, RulesMutateError> {
-        let new_rule = {
+        let state = {
             let read_guard = lock.read();
             let rules = self.read_with(&read_guard);
 
@@ -151,33 +151,39 @@ impl CssRulesHelpers for RawOffsetArc<Locked<CssRules>> {
             }
 
             
-            let state = if nested {
-                State::Body
+            if nested {
+                None
             } else if index == 0 {
-                State::Start
+                Some(State::Start)
             } else {
-                rules.0.get(index - 1).map(CssRule::rule_state).unwrap_or(State::Body)
-            };
-
-            let insert_rule_context = InsertRuleContext {
-                rule_list: &rules.0,
-                index,
-            };
-
-            
-            CssRule::parse(
-                &rule,
-                insert_rule_context,
-                parent_stylesheet_contents,
-                lock,
-                state,
-                loader,
-            )?
+                rules.0.get(index - 1).map(CssRule::rule_state)
+            }
         };
+
+        
+        
+        let (new_rule, new_state) =
+            CssRule::parse(&rule, parent_stylesheet_contents, lock, state, loader)?;
 
         {
             let mut write_guard = lock.write();
             let rules = self.write_with(&mut write_guard);
+            
+            
+            let rev_state = rules.0.get(index).map_or(State::Body, CssRule::rule_state);
+            if new_state > rev_state {
+                
+                
+                return Err(RulesMutateError::HierarchyRequest);
+            }
+
+            
+            if let CssRule::Namespace(..) = new_rule {
+                if !rules.only_ns_or_import() {
+                    return Err(RulesMutateError::InvalidState);
+                }
+            }
+
             rules.0.insert(index, new_rule.clone());
         }
 
