@@ -27,6 +27,14 @@ if (!window.assert_times_equal) {
 
 
 
+if (!window.assert_time_equals_literal) {
+  window.assert_time_equals_literal = (actual, expected, description) => {
+    assert_approx_equals(actual, expected, TIME_PRECISION, description);
+  }
+}
+
+
+
 function createDiv(test, doc) {
   return createElement(test, 'div', doc);
 }

@@ -32,6 +32,13 @@ function assert_times_equal(actual, expected, description) {
 
 
 
+function assert_time_equals_literal(actual, expected, description) {
+  assert_approx_equals(actual, expected, TIME_PRECISION, description);
+}
+
+
+
+
 
 
 function assert_matrix_equals(actual, expected, description) {
