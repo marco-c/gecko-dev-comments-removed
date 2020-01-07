@@ -5,7 +5,6 @@ config = {
         'clobber',
         'clone-tools',
         'checkout-sources',
-
         'build',
         'upload-files',
 

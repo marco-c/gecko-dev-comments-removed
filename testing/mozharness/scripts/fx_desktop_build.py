@@ -37,7 +37,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
                 'clobber',
                 'clone-tools',
                 'checkout-sources',
-                'setup-mock',
                 'build',
                 'upload-files',  
                 'sendchange',
@@ -238,9 +237,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
-        
-        
-        
         
         
         
