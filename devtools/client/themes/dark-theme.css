@@ -27,7 +27,8 @@ body {
   color: var(--theme-selection-color);
 }
 
-:root[platform="win"] {
+:root[platform="win"],
+:root[platform="mac"] {
   
   
   scrollbar-face-color: var(--theme-body-color-inactive);

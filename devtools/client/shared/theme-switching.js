@@ -89,7 +89,7 @@
       loadEvents.push(loadPromise);
     }
 
-    if (os !== "win") {
+    if (os !== "win" && os !== "mac") {
       
       
       try {
