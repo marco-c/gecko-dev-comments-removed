@@ -14,7 +14,6 @@ const {
   getRect, getAdjustedQuads, getWindowDimensions
 } = require("devtools/shared/layout/utils");
 const defer = require("devtools/shared/defer");
-const {Task} = require("devtools/shared/task");
 const {
   isContentStylesheet,
   getCSSStyleRules
@@ -294,7 +293,7 @@ var testSpec = protocol.generateActorSpec({
 });
 
 var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
-  initialize: function (conn, tabActor, options) {
+  initialize: function(conn, tabActor, options) {
     this.conn = conn;
     this.tabActor = tabActor;
   },
@@ -310,7 +309,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  _querySelector: function (selector) {
+  _querySelector: function(selector) {
     let document = this.content.document;
     if (Array.isArray(selector)) {
       let fullSelector = selector.join(" >> ");
@@ -339,7 +338,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getNumberOfElementMatches: function (selector, root = this.content.document) {
+  getNumberOfElementMatches: function(selector, root = this.content.document) {
     return root.querySelectorAll(selector).length;
   },
 
@@ -352,7 +351,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getHighlighterAttribute: function (nodeID, name, actorID) {
+  getHighlighterAttribute: function(nodeID, name, actorID) {
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
       return helper.getAttributeForElement(nodeID, name);
@@ -367,7 +366,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getHighlighterNodeTextContent: function (nodeID, actorID) {
+  getHighlighterNodeTextContent: function(nodeID, actorID) {
     let value;
     let helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
     if (helper) {
@@ -382,7 +381,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getSelectorHighlighterBoxNb: function (actorID) {
+  getSelectorHighlighterBoxNb: function(actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
     if (!h || !h._highlighters) {
@@ -399,7 +398,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  changeHighlightedNodeWaitForUpdate: function (name, value, actorID) {
+  changeHighlightedNodeWaitForUpdate: function(name, value, actorID) {
     return new Promise(resolve => {
       let highlighter = this.conn.getActor(actorID);
       let {_highlighter: h} = highlighter;
@@ -415,7 +414,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  waitForHighlighterEvent: function (event, actorID) {
+  waitForHighlighterEvent: function(event, actorID) {
     let highlighter = this.conn.getActor(actorID);
     let {_highlighter: h} = highlighter;
 
@@ -428,10 +427,10 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  waitForEventOnNode: function (eventName, selector) {
+  waitForEventOnNode: function(eventName, selector) {
     return new Promise(resolve => {
       let node = selector ? this._querySelector(selector) : this.content;
-      node.addEventListener(eventName, function () {
+      node.addEventListener(eventName, function() {
         resolve();
       }, {once: true});
     });
@@ -444,7 +443,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  changeZoomLevel: function (level, actorID) {
+  changeZoomLevel: function(level, actorID) {
     dumpn("Zooming page to " + level);
     return new Promise(resolve => {
       if (actorID) {
@@ -468,7 +467,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getAllAdjustedQuads: function (selector) {
+  getAllAdjustedQuads: function(selector) {
     let regions = {};
     let node = this._querySelector(selector);
     for (let boxType of ["content", "padding", "border", "margin"]) {
@@ -490,7 +489,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  synthesizeMouse: function ({ selector, x, y, center, options }) {
+  synthesizeMouse: function({ selector, x, y, center, options }) {
     let node = this._querySelector(selector);
     node.scrollIntoView();
     if (center) {
@@ -505,7 +504,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  synthesizeKey: function ({key, options, content}) {
+  synthesizeKey: function({key, options, content}) {
     EventUtils.synthesizeKey(key, options, this.content);
   },
 
@@ -513,7 +512,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  scrollIntoView: function (selector) {
+  scrollIntoView: function(selector) {
     let node = this._querySelector(selector);
     node.scrollIntoView();
   },
@@ -524,12 +523,12 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  hasPseudoClassLock: function (selector, pseudo) {
+  hasPseudoClassLock: function(selector, pseudo) {
     let node = this._querySelector(selector);
     return InspectorUtils.hasPseudoClassLock(node, pseudo);
   },
 
-  loadAndWaitForCustomEvent: function (url) {
+  loadAndWaitForCustomEvent: function(url) {
     return new Promise(resolve => {
       
       
@@ -543,7 +542,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
     });
   },
 
-  hasNode: function (selector) {
+  hasNode: function(selector) {
     try {
       
       this._querySelector(selector);
@@ -558,7 +557,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getBoundingClientRect: function (selector) {
+  getBoundingClientRect: function(selector) {
     let node = this._querySelector(selector);
     let rect = node.getBoundingClientRect();
     
@@ -580,7 +579,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  setProperty: function (selector, property, value) {
+  setProperty: function(selector, property, value) {
     let node = this._querySelector(selector);
     node[property] = value;
   },
@@ -591,7 +590,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getProperty: function (selector, property) {
+  getProperty: function(selector, property) {
     let node = this._querySelector(selector);
     return node[property];
   },
@@ -602,7 +601,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getAttribute: function (selector, attribute) {
+  getAttribute: function(selector, attribute) {
     let node = this._querySelector(selector);
     return node.getAttribute(attribute);
   },
@@ -613,7 +612,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  setAttribute: function (selector, attribute, value) {
+  setAttribute: function(selector, attribute, value) {
     let node = this._querySelector(selector);
     node.setAttribute(attribute, value);
   },
@@ -623,7 +622,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  removeAttribute: function (selector, attribute) {
+  removeAttribute: function(selector, attribute) {
     let node = this._querySelector(selector);
     node.removeAttribute(attribute);
   },
@@ -631,7 +630,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   
 
 
-  reload: function () {
+  reload: function() {
     this.content.location.reload();
   },
 
@@ -639,12 +638,12 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  reloadFrame: function (selector) {
+  reloadFrame: function(selector) {
     let node = this._querySelector(selector);
 
     let deferred = defer();
 
-    let onLoad = function () {
+    let onLoad = function() {
       node.removeEventListener("load", onLoad);
       deferred.resolve();
     };
@@ -659,7 +658,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  eval: function (js) {
+  eval: function(js) {
     
     let sb = Cu.Sandbox(this.content, { sandboxPrototype: this.content });
     return Cu.evalInSandbox(js, sb);
@@ -676,13 +675,13 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  scrollWindow: function (x, y, relative) {
+  scrollWindow: function(x, y, relative) {
     if (isNaN(x) || isNaN(y)) {
       return {};
     }
 
     let deferred = defer();
-    this.content.addEventListener("scroll", function (event) {
+    this.content.addEventListener("scroll", function(event) {
       let data = {x: this.content.scrollX, y: this.content.scrollY};
       deferred.resolve(data);
     }, {once: true});
@@ -695,7 +694,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   
 
 
-  reflow: function () {
+  reflow: function() {
     let deferred = defer();
     this.content.document.documentElement.offsetWidth;
     this.content.requestAnimationFrame(deferred.resolve);
@@ -703,16 +702,16 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
     return deferred.promise;
   },
 
-  getNodeRect: Task.async(function* (selector) {
+  async getNodeRect(selector) {
     let node = this._querySelector(selector);
     return getRect(this.content, node, this.content);
-  }),
+  },
 
-  getTextNodeRect: Task.async(function* (parentSelector, childNodeIndex) {
+  async getTextNodeRect(parentSelector, childNodeIndex) {
     let parentNode = this._querySelector(parentSelector);
     let node = parentNode.childNodes[childNodeIndex];
     return getAdjustedQuads(this.content, node)[0].bounds;
-  }),
+  },
 
   
 
@@ -727,7 +726,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getNodeInfo: function (selector) {
+  getNodeInfo: function(selector) {
     let node = this._querySelector(selector);
     let info = null;
 
@@ -758,7 +757,7 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getStyleSheetsInfoForNode: function (selector) {
+  getStyleSheetsInfoForNode: function(selector) {
     let node = this._querySelector(selector);
     let domRules = getCSSStyleRules(node);
 
@@ -781,13 +780,13 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  getWindowDimensions: function () {
+  getWindowDimensions: function() {
     return getWindowDimensions(this.content);
   }
 });
 
 var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSpec, {
-  initialize: function (client, { testActor }, toolbox) {
+  initialize: function(client, { testActor }, toolbox) {
     protocol.Front.prototype.initialize.call(this, client, { actor: testActor });
     this.manage(this);
     this.toolbox = toolbox;
@@ -800,12 +799,12 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  zoomPageTo: function (level, actorID = this.toolbox.highlighter.actorID) {
+  zoomPageTo: function(level, actorID = this.toolbox.highlighter.actorID) {
     return this.changeZoomLevel(level, actorID);
   },
 
   
-  changeHighlightedNodeWaitForUpdate: protocol.custom(function (name, value, highlighter) {
+  changeHighlightedNodeWaitForUpdate: protocol.custom(function(name, value, highlighter) {
     
     return this._changeHighlightedNodeWaitForUpdate(
       name, value, (highlighter || this.toolbox.highlighter).actorID
@@ -821,13 +820,13 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  getHighlighterNodeAttribute: function (nodeID, name, highlighter) {
+  getHighlighterNodeAttribute: function(nodeID, name, highlighter) {
     return this.getHighlighterAttribute(
       nodeID, name, (highlighter || this.toolbox.highlighter).actorID
     );
   },
 
-  getHighlighterNodeTextContent: protocol.custom(function (nodeID, highlighter) {
+  getHighlighterNodeTextContent: protocol.custom(function(nodeID, highlighter) {
     return this._getHighlighterNodeTextContent(
       nodeID, (highlighter || this.toolbox.highlighter).actorID
     );
@@ -838,7 +837,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
   
 
 
-  isHighlighting: function () {
+  isHighlighting: function() {
     return this.getHighlighterNodeAttribute("box-model-elements", "hidden")
       .then(value => value === null);
   },
@@ -851,11 +850,11 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  isNodeCorrectlyHighlighted: Task.async(function* (selector, is, prefix = "") {
+  async isNodeCorrectlyHighlighted(selector, is, prefix = "") {
     prefix += (prefix ? " " : "") + selector + " ";
 
-    let boxModel = yield this._getBoxModelStatus();
-    let regions = yield this.getAllAdjustedQuads(selector);
+    let boxModel = await this._getBoxModelStatus();
+    let regions = await this.getAllAdjustedQuads(selector);
 
     for (let boxType of ["content", "padding", "border", "margin"]) {
       let [quad] = regions[boxType];
@@ -866,13 +865,13 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
           prefix + boxType + " point " + point + " y coordinate is correct");
       }
     }
-  }),
+  },
 
   
 
 
-  getSimpleBorderRect: Task.async(function* (toolbox) {
-    let {border} = yield this._getBoxModelStatus(toolbox);
+  async getSimpleBorderRect(toolbox) {
+    let {border} = await this._getBoxModelStatus(toolbox);
     let {p1, p2, p4} = border.points;
 
     return {
@@ -881,32 +880,32 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       width: p2.x - p1.x,
       height: p4.y - p1.y
     };
-  }),
+  },
 
   
 
 
 
-  _getBoxModelStatus: Task.async(function* () {
-    let isVisible = yield this.isHighlighting();
+  async _getBoxModelStatus() {
+    let isVisible = await this.isHighlighting();
 
     let ret = {
       visible: isVisible
     };
 
     for (let region of ["margin", "border", "padding", "content"]) {
-      let points = yield this._getPointsForRegion(region);
-      let visible = yield this._isRegionHidden(region);
+      let points = await this._getPointsForRegion(region);
+      let visible = await this._isRegionHidden(region);
       ret[region] = {points, visible};
     }
 
     ret.guides = {};
     for (let guide of ["top", "right", "bottom", "left"]) {
-      ret.guides[guide] = yield this._getGuideStatus(guide);
+      ret.guides[guide] = await this._getGuideStatus(guide);
     }
 
     return ret;
-  }),
+  },
 
   
 
@@ -914,10 +913,10 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  assertHighlightedNode: Task.async(function* (selector) {
-    let rect = yield this.getNodeRect(selector);
-    return yield this.isNodeRectHighlighted(rect);
-  }),
+  async assertHighlightedNode(selector) {
+    let rect = await this.getNodeRect(selector);
+    return this.isNodeRectHighlighted(rect);
+  },
 
   
 
@@ -927,18 +926,18 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  assertHighlightedTextNode: Task.async(function* (parentSelector, childNodeIndex) {
-    let rect = yield this.getTextNodeRect(parentSelector, childNodeIndex);
-    return yield this.isNodeRectHighlighted(rect);
-  }),
+  async assertHighlightedTextNode(parentSelector, childNodeIndex) {
+    let rect = await this.getTextNodeRect(parentSelector, childNodeIndex);
+    return this.isNodeRectHighlighted(rect);
+  },
 
   
 
 
 
 
-  isNodeRectHighlighted: Task.async(function* ({ left, top, width, height }) {
-    let {visible, border} = yield this._getBoxModelStatus();
+  async isNodeRectHighlighted({ left, top, width, height }) {
+    let {visible, border} = await this._getBoxModelStatus();
     let points = border.points;
     if (!visible) {
       return false;
@@ -961,14 +960,14 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
            isInside([right, top], points) &&
            isInside([right, bottom], points) &&
            isInside([left, bottom], points);
-  }),
+  },
 
   
 
 
 
-  _getPointsForRegion: Task.async(function* (region) {
-    let d = yield this.getHighlighterNodeAttribute("box-model-" + region, "d");
+  async _getPointsForRegion(region) {
+    let d = await this.getHighlighterNodeAttribute("box-model-" + region, "d");
 
     let polygons = d.match(/M[^M]+/g);
     if (!polygons) {
@@ -997,25 +996,25 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
         y: parseFloat(points[3][1])
       }
     };
-  }),
+  },
 
   
 
 
 
-  _isRegionHidden: Task.async(function* (region) {
-    let value = yield this.getHighlighterNodeAttribute("box-model-" + region, "hidden");
+  async _isRegionHidden(region) {
+    let value = await this.getHighlighterNodeAttribute("box-model-" + region, "hidden");
     return value !== null;
-  }),
+  },
 
-  _getGuideStatus: Task.async(function* (location) {
+  async _getGuideStatus(location) {
     let id = "box-model-guide-" + location;
 
-    let hidden = yield this.getHighlighterNodeAttribute(id, "hidden");
-    let x1 = yield this.getHighlighterNodeAttribute(id, "x1");
-    let y1 = yield this.getHighlighterNodeAttribute(id, "y1");
-    let x2 = yield this.getHighlighterNodeAttribute(id, "x2");
-    let y2 = yield this.getHighlighterNodeAttribute(id, "y2");
+    let hidden = await this.getHighlighterNodeAttribute(id, "hidden");
+    let x1 = await this.getHighlighterNodeAttribute(id, "x1");
+    let y1 = await this.getHighlighterNodeAttribute(id, "y1");
+    let x2 = await this.getHighlighterNodeAttribute(id, "x2");
+    let y2 = await this.getHighlighterNodeAttribute(id, "y2");
 
     return {
       visible: !hidden,
@@ -1024,7 +1023,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       x2: x2,
       y2: y2
     };
-  }),
+  },
 
   
 
@@ -1032,11 +1031,11 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  getGuidesRectangle: Task.async(function* () {
-    let tGuide = yield this._getGuideStatus("top");
-    let rGuide = yield this._getGuideStatus("right");
-    let bGuide = yield this._getGuideStatus("bottom");
-    let lGuide = yield this._getGuideStatus("left");
+  async getGuidesRectangle() {
+    let tGuide = await this._getGuideStatus("top");
+    let rGuide = await this._getGuideStatus("right");
+    let bGuide = await this._getGuideStatus("bottom");
+    let lGuide = await this._getGuideStatus("left");
 
     if (!tGuide.visible || !rGuide.visible || !bGuide.visible || !lGuide.visible) {
       return null;
@@ -1048,9 +1047,9 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
       p3: {x: +rGuide.x1 + 1, y: +bGuide.y1 + 1},
       p4: {x: lGuide.x1, y: +bGuide.y1 + 1}
     };
-  }),
+  },
 
-  waitForHighlighterEvent: protocol.custom(function (event) {
+  waitForHighlighterEvent: protocol.custom(function(event) {
     return this._waitForHighlighterEvent(event, this.toolbox.highlighter.actorID);
   }, {
     impl: "_waitForHighlighterEvent"
@@ -1066,8 +1065,8 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
 
 
 
-  getHighlighterRegionPath: Task.async(function* (region, highlighter) {
-    let d = yield this.getHighlighterNodeAttribute(
+  async getHighlighterRegionPath(region, highlighter) {
+    let d = await this.getHighlighterNodeAttribute(
       `box-model-${region}`, "d", highlighter
     );
     if (!d) {
@@ -1087,7 +1086,7 @@ var TestActorFront = exports.TestActorFront = protocol.FrontClassWithSpec(testSp
     }
 
     return {d, points};
-  })
+  }
 });
 
 
@@ -1102,6 +1101,11 @@ function isInside(point, polygon) {
   if (polygon.length === 0) {
     return false;
   }
+
+  
+  
+  point = point.map(n => n.toFixed(2));
+  polygon = polygon.map(p => p.map(n => n.toFixed(2)));
 
   const n = polygon.length;
   const newPoints = polygon.slice(0);
