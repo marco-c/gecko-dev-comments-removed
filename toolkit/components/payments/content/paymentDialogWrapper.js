@@ -246,16 +246,85 @@ var paymentDialogWrapper = {
     });
   },
 
-  initializeFrame() {
-    let requestSerialized = JSON.parse(JSON.stringify(this.request));
+  
 
+
+
+
+
+
+
+  _serializeRequest(value, name = null) {
     
-    let displayHost = this.request.topLevelPrincipal.URI.displayHost;
-    requestSerialized.topLevelPrincipal = {
-      URI: {
-        displayHost,
-      },
-    };
+    let type = typeof value;
+    if (value === null ||
+        type == "string" ||
+        type == "number" ||
+        type == "boolean") {
+      return value;
+    }
+    if (name == "topLevelPrincipal") {
+      
+      let displayHost = value.URI.displayHost;
+      return {
+        URI: {
+          displayHost,
+        },
+      };
+    }
+    if (type == "function" || type == "undefined") {
+      return undefined;
+    }
+    
+    if (value instanceof Ci.nsIArray) {
+      let iface;
+      let items = [];
+      switch (name) {
+        case "displayItems": 
+        case "additionalDisplayItems":
+          iface = Ci.nsIPaymentItem;
+          break;
+        case "shippingOptions":
+          iface = Ci.nsIPaymentShippingOption;
+          break;
+        case "paymentMethods":
+          iface = Ci.nsIPaymentMethodData;
+          break;
+        case "modifiers":
+          iface = Ci.nsIPaymentDetailsModifier;
+          break;
+      }
+      if (!iface) {
+        throw new Error(`No interface associated with the members of the ${name} nsIArray`);
+      }
+      for (let i = 0; i < value.length; i++) {
+        let item = value.queryElementAt(i, iface);
+        let result = this._serializeRequest(item, i);
+        if (result !== undefined) {
+          items.push(result);
+        }
+      }
+      return items;
+    }
+    
+    if (Array.isArray(value)) {
+      let items = value.map(item => { this._serializeRequest(item); })
+                       .filter(item => item !== undefined);
+      return items;
+    }
+    
+    let obj = {};
+    for (let [key, item] of Object.entries(value)) {
+      let result = this._serializeRequest(item, key);
+      if (result !== undefined) {
+        obj[key] = result;
+      }
+    }
+    return obj;
+  },
+
+  initializeFrame() {
+    let requestSerialized = this._serializeRequest(this.request);
 
     this.mm.sendAsyncMessage("paymentChromeToContent", {
       messageType: "showPaymentRequest",
