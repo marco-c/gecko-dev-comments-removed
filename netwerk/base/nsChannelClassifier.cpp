@@ -1024,6 +1024,12 @@ TrackingURICallback::OnTrackerFound(nsresult aErrorCode)
   } else {
     MOZ_ASSERT(mChannelClassifier->ShouldEnableTrackingAnnotation());
 
+    
+    
+    
+    
+    mChannelClassifier->NotifyTrackingProtectionDisabled(channel);
+
     SetIsTrackingResourceHelper(channel);
     if (CachedPrefs::GetInstance()->IsLowerNetworkPriority()) {
       LowerPriorityHelper(channel);
