@@ -628,7 +628,43 @@ function dbClose(aShutdown) {
 
 
 
-async function updateFormHistoryWrite(aChanges, aCallbacks) {
+
+
+
+
+
+
+
+
+
+
+
+
+function prepareInsertQuery(change, now) {
+  let updatedChange = Object.assign({}, change);
+  let query = "INSERT INTO moz_formhistory " +
+              "(fieldname, value, timesUsed, firstUsed, lastUsed, guid) " +
+              "VALUES (:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)";
+  updatedChange.timesUsed = updatedChange.timesUsed || 1;
+  updatedChange.firstUsed = updatedChange.firstUsed || now;
+  updatedChange.lastUsed = updatedChange.lastUsed || now;
+
+  return {
+    updatedChange,
+    query,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
   log("updateFormHistoryWrite  " + aChanges.length);
 
   
@@ -638,51 +674,65 @@ async function updateFormHistoryWrite(aChanges, aCallbacks) {
   
   
   
-  let stmts = [];
+  let queries = [];
   let notifications = [];
-  let bindingArrays = new Map();
+  let conn = await FormHistory.db;
 
   for (let change of aChanges) {
     let operation = change.op;
     delete change.op;
-    let stmt;
     switch (operation) {
-      case "remove":
+      case "remove": {
         log("Remove from form history  " + change);
-        let delStmt = makeMoveToDeletedStatement(change.guid, now, change, bindingArrays);
-        if (delStmt && !stmts.includes(delStmt)) {
-          stmts.push(delStmt);
-        }
-        if ("timeDeleted" in change) {
-          delete change.timeDeleted;
-        }
-        stmt = makeRemoveStatement(change, bindingArrays);
+        let queryTerms = makeQueryPredicates(change);
 
         
         try {
-          await new Promise((res, rej) => {
-            let selectStmt = makeSearchStatement(change, ["guid"]);
-            let selectHandlers = {
-              handleCompletion() {
-                res();
-              },
-              handleError() {
-                log("remove select guids failure");
-              },
-              handleResult(aResultSet) {
-                for (let row = aResultSet.getNextRow(); row; row = aResultSet.getNextRow()) {
-                  notifications.push(["formhistory-remove", row.getResultByName("guid")]);
-                }
-              },
-            };
-            dbConnection.executeAsync([selectStmt], 1, selectHandlers);
+          let query = "SELECT guid FROM moz_formhistory";
+          if (queryTerms) {
+            query += " WHERE " + queryTerms;
+          }
+
+          await conn.executeCached(query, change, row => {
+            notifications.push(["formhistory-remove", row.getResultByName("guid")]);
           });
         } catch (e) {
-          log("Error in select statement: " + e);
+          log("Error getting guids from moz_formhistory: " + e);
         }
 
+        if (supportsDeletedTable) {
+          log("Moving to deleted table " + change);
+          let query = "INSERT INTO moz_deleted_formhistory (guid, timeDeleted)";
+
+          
+          
+          if (change.guid || queryTerms) {
+            query +=
+              change.guid ? " VALUES (:guid, :timeDeleted)"
+                          : " SELECT guid, :timeDeleted FROM moz_formhistory WHERE " + queryTerms;
+            change.timeDeleted = now;
+            queries.push({ query, params: Object.assign({}, change) });
+          }
+
+          if ("timeDeleted" in change) {
+            delete change.timeDeleted;
+          }
+        }
+
+        let query = "DELETE FROM moz_formhistory";
+        if (queryTerms) {
+          log("removeEntries");
+          query += " WHERE " + queryTerms;
+        } else {
+          log("removeAllEntries");
+          
+          
+        }
+
+        queries.push({ query, params: change });
         break;
-      case "update":
+      }
+      case "update": {
         log("Update form history " + change);
         let guid = change.guid;
         delete change.guid;
@@ -692,70 +742,90 @@ async function updateFormHistoryWrite(aChanges, aCallbacks) {
           change.guid = change.newGuid;
           delete change.newGuid;
         }
-        stmt = makeUpdateStatement(guid, change, bindingArrays);
+
+        let query = "UPDATE moz_formhistory SET ";
+        let queryTerms = makeQueryPredicates(change, ", ");
+        if (!queryTerms) {
+          throw Components.Exception("Update query must define fields to modify.",
+                                     Cr.NS_ERROR_ILLEGAL_VALUE);
+        }
+        query += queryTerms + " WHERE guid = :existing_guid";
+        change.existing_guid = guid;
+        queries.push({ query, params: change });
         notifications.push(["formhistory-update", guid]);
         break;
-      case "bump":
+      }
+      case "bump": {
         log("Bump form history " + change);
         if (change.guid) {
-          stmt = makeBumpStatement(change.guid, now, bindingArrays);
+          let query = "UPDATE moz_formhistory " +
+                      "SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE guid = :guid";
+          let queryParams = {
+            lastUsed: now,
+            guid: change.guid,
+          };
+
+          queries.push({ query, params: queryParams });
           notifications.push(["formhistory-update", change.guid]);
         } else {
           change.guid = generateGUID();
-          stmt = makeAddStatement(change, now, bindingArrays);
-          notifications.push(["formhistory-add", change.guid]);
+          let { query, updatedChange } = prepareInsertQuery(change, now);
+          queries.push({ query, params: updatedChange });
+          notifications.push(["formhistory-add", updatedChange.guid]);
         }
         break;
-      case "add":
+      }
+      case "add": {
         log("Add to form history " + change);
         if (!change.guid) {
           change.guid = generateGUID();
         }
-        stmt = makeAddStatement(change, now, bindingArrays);
-        notifications.push(["formhistory-add", change.guid]);
+
+        let { query, updatedChange } = prepareInsertQuery(change, now);
+        queries.push({ query, params: updatedChange });
+        notifications.push(["formhistory-add", updatedChange.guid]);
         break;
-      default:
+      }
+      default: {
         
         throw Components.Exception("Invalid operation " + operation,
                                    Cr.NS_ERROR_ILLEGAL_VALUE);
+      }
     }
+  }
 
+  try {
+    await runUpdateQueries(conn, queries);
+  } catch (e) {
+    aPreparedHandlers.handleError(e);
+    aPreparedHandlers.handleCompletion(1);
+    return;
+  }
+
+  for (let [notification, param] of notifications) {
     
-    if (stmt && !stmts.includes(stmt)) {
-      stmts.push(stmt);
+    sendNotification(notification, param);
+  }
+
+  aPreparedHandlers.handleCompletion(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+async function runUpdateQueries(conn, queries) {
+  await conn.executeTransaction(async () => {
+    for (let { query, params } of queries) {
+      await conn.executeCached(query, params);
     }
-  }
-
-  for (let stmt of stmts) {
-    stmt.bindParameters(bindingArrays.get(stmt));
-  }
-
-  let handlers = {
-    handleCompletion(aReason) {
-      if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-        for (let [notification, param] of notifications) {
-          
-          sendNotification(notification, param);
-        }
-      }
-
-      if (aCallbacks && aCallbacks.handleCompletion) {
-        aCallbacks.handleCompletion(
-          aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED ?
-            0 :
-            1
-        );
-      }
-    },
-    handleError(aError) {
-      if (aCallbacks && aCallbacks.handleError) {
-        aCallbacks.handleError(aError);
-      }
-    },
-    handleResult: NOOP,
-  };
-
-  dbConnection.executeAsync(stmts, stmts.length, handlers);
+  });
 }
 
 
@@ -1170,7 +1240,7 @@ this.FormHistory = {
     });
   },
 
-  update(aChanges, aCallbacks) {
+  update(aChanges, aHandlers) {
     
     
     let numSearches = 0;
@@ -1187,17 +1257,15 @@ this.FormHistory = {
       aChanges = [aChanges];
     }
 
+    let handlers = this._prepareHandlers(aHandlers);
+
     let isRemoveOperation = aChanges.every(change => change && change.op && change.op == "remove");
     if (!Prefs.enabled && !isRemoveOperation) {
-      if (aCallbacks && aCallbacks.handleError) {
-        aCallbacks.handleError({
-          message: "Form history is disabled, only remove operations are allowed",
-          result: Ci.mozIStorageError.MISUSE,
-        });
-      }
-      if (aCallbacks && aCallbacks.handleCompletion) {
-        aCallbacks.handleCompletion(1);
-      }
+      handlers.handleError({
+        message: "Form history is disabled, only remove operations are allowed",
+        result: Ci.mozIStorageError.MISUSE,
+      });
+      handlers.handleCompletion(1);
       return;
     }
 
@@ -1257,13 +1325,11 @@ this.FormHistory = {
           handleResult(aResult) {
             if (this.foundResult) {
               log("Database contains multiple entries with the same fieldname/value pair.");
-              if (aCallbacks && aCallbacks.handleError) {
-                aCallbacks.handleError({
-                  message:
-                    "Database contains multiple entries with the same fieldname/value pair.",
-                  result: 19, 
-                });
-              }
+              handlers.handleError({
+                message:
+                  "Database contains multiple entries with the same fieldname/value pair.",
+                result: 19, 
+              });
 
               searchFailed = true;
               return;
@@ -1274,18 +1340,16 @@ this.FormHistory = {
           },
 
           handleError(aError) {
-            if (aCallbacks && aCallbacks.handleError) {
-              aCallbacks.handleError(aError);
-            }
+            handlers.handleError(aError);
           },
 
           handleCompletion(aReason) {
             completedSearches++;
             if (completedSearches == numSearches) {
               if (!aReason && !searchFailed) {
-                updateFormHistoryWrite(aChanges, aCallbacks);
-              } else if (aCallbacks && aCallbacks.handleCompletion) {
-                aCallbacks.handleCompletion(1);
+                updateFormHistoryWrite(aChanges, handlers);
+              } else {
+                handlers.handleCompletion(1);
               }
             }
           },
@@ -1294,7 +1358,7 @@ this.FormHistory = {
 
     if (numSearches == 0) {
       
-      updateFormHistoryWrite(aChanges, aCallbacks);
+      updateFormHistoryWrite(aChanges, handlers);
     }
   },
 
