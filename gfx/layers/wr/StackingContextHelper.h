@@ -60,12 +60,6 @@ public:
   
   
   wr::LayoutRect ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const;
-  
-  wr::LayoutPoint ToRelativeLayoutPoint(const LayoutDevicePoint& aPoint) const
-  {
-    return wr::ToLayoutPoint(aPoint);
-  }
-
 
   
   gfx::Size GetInheritedScale() const { return mScale; }
