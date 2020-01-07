@@ -138,19 +138,6 @@ this.CommonUtils = {
 
 
 
-
-
-  laterTickResolvingPromise(value) {
-    return new Promise(resolve => {
-      this.nextTick(() => resolve(value));
-    });
-  },
-
-  
-
-
-
-
   namedTimer: function namedTimer(callback, wait, thisObj, name) {
     if (!thisObj || !name) {
       throw new Error(

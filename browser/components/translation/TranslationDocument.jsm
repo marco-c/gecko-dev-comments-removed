@@ -8,7 +8,7 @@ this.EXPORTED_SYMBOLS = [ "TranslationDocument" ];
 
 const TEXT_NODE = Ci.nsIDOMNode.TEXT_NODE;
 
-ChromeUtils.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-common/async.js");
 
 
 
@@ -208,14 +208,10 @@ this.TranslationDocument.prototype = {
       
       
       const YIELD_INTERVAL = 100;
-      let count = YIELD_INTERVAL;
-
+      let maybeYield = Async.jankYielder(YIELD_INTERVAL);
       for (let root of this.roots) {
         root.swapText(target);
-        if (count-- == 0) {
-          count = YIELD_INTERVAL;
-          await CommonUtils.laterTickResolvingPromise();
-        }
+        await maybeYield();
       }
     })();
   }
