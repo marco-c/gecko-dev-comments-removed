@@ -1933,7 +1933,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
     }
 
     nsAutoCString orphan;
-    if (!tmp->IsInUncomposedDoc() &&
+    if (!tmp->IsInComposedDoc() &&
         
         
         !tmp->NodeInfo()->Equals(nsGkAtoms::content, kNameSpaceID_XBL)) {
