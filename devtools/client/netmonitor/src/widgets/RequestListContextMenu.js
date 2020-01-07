@@ -26,7 +26,7 @@ class RequestListContextMenu {
     this.props = props;
   }
 
-  open(event, selectedRequest, sortedRequests) {
+  open(event, selectedRequest, requests) {
     let {
       id,
       isCustom,
@@ -143,8 +143,8 @@ class RequestListContextMenu {
       id: "request-list-context-copy-all-as-har",
       label: L10N.getStr("netmonitor.context.copyAllAsHar"),
       accesskey: L10N.getStr("netmonitor.context.copyAllAsHar.accesskey"),
-      visible: sortedRequests.size > 0,
-      click: () => this.copyAllAsHar(sortedRequests),
+      visible: requests.size > 0,
+      click: () => this.copyAllAsHar(requests),
     });
 
     menu.push({
@@ -158,8 +158,8 @@ class RequestListContextMenu {
       id: "request-list-context-save-all-as-har",
       label: L10N.getStr("netmonitor.context.saveAllAsHar"),
       accesskey: L10N.getStr("netmonitor.context.saveAllAsHar.accesskey"),
-      visible: sortedRequests.size > 0,
-      click: () => this.saveAllAsHar(sortedRequests),
+      visible: requests.size > 0,
+      click: () => this.saveAllAsHar(requests),
     });
 
     menu.push({
@@ -219,7 +219,7 @@ class RequestListContextMenu {
       id: "request-list-context-perf",
       label: L10N.getStr("netmonitor.context.perfTools"),
       accesskey: L10N.getStr("netmonitor.context.perfTools.accesskey"),
-      visible: sortedRequests.size > 0,
+      visible: requests.size > 0,
       click: () => openStatistics(true),
     });
 
@@ -393,25 +393,25 @@ class RequestListContextMenu {
   
 
 
-  copyAllAsHar(sortedRequests) {
-    return HarExporter.copy(this.getDefaultHarOptions(sortedRequests));
+  copyAllAsHar(requests) {
+    return HarExporter.copy(this.getDefaultHarOptions(requests));
   }
 
   
 
 
-  saveAllAsHar(sortedRequests) {
+  saveAllAsHar(requests) {
     
     
     
     
-    return HarExporter.save(this.getDefaultHarOptions(sortedRequests));
+    return HarExporter.save(this.getDefaultHarOptions(requests));
   }
 
-  getDefaultHarOptions(sortedRequests) {
+  getDefaultHarOptions(requests) {
     return {
       connector: this.props.connector,
-      items: sortedRequests,
+      items: requests,
     };
   }
 }
