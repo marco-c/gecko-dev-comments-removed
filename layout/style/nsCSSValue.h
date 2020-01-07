@@ -501,7 +501,6 @@ enum nsCSSUnit {
   eCSSUnit_URL          = 40,     
   eCSSUnit_Image        = 41,     
   eCSSUnit_Gradient     = 42,     
-  eCSSUnit_TokenStream  = 43,     
   eCSSUnit_GridTemplateAreas   = 44,   
                                        
 
@@ -590,7 +589,6 @@ enum nsCSSUnit {
 struct nsCSSValueGradient;
 struct nsCSSValuePair;
 struct nsCSSValuePair_heap;
-struct nsCSSValueTokenStream;
 struct nsCSSRect;
 struct nsCSSRect_heap;
 struct nsCSSValueList;
@@ -625,7 +623,6 @@ public:
   explicit nsCSSValue(mozilla::css::URLValue* aValue);
   explicit nsCSSValue(mozilla::css::ImageValue* aValue);
   explicit nsCSSValue(nsCSSValueGradient* aValue);
-  explicit nsCSSValue(nsCSSValueTokenStream* aValue);
   explicit nsCSSValue(mozilla::css::GridTemplateAreasValue* aValue);
   explicit nsCSSValue(mozilla::SharedFontList* aValue);
   nsCSSValue(const nsCSSValue& aCopy);
@@ -814,12 +811,6 @@ public:
     return mValue.mGradient;
   }
 
-  nsCSSValueTokenStream* GetTokenStreamValue() const
-  {
-    MOZ_ASSERT(mUnit == eCSSUnit_TokenStream, "not a token stream value");
-    return mValue.mTokenStream;
-  }
-
   nsCSSValueSharedList* GetSharedListValue() const
   {
     MOZ_ASSERT(mUnit == eCSSUnit_SharedList, "not a shared list value");
@@ -942,7 +933,6 @@ public:
   void SetURLValue(mozilla::css::URLValue* aURI);
   void SetImageValue(mozilla::css::ImageValue* aImage);
   void SetGradientValue(nsCSSValueGradient* aGradient);
-  void SetTokenStreamValue(nsCSSValueTokenStream* aTokenStream);
   void SetGridTemplateAreas(mozilla::css::GridTemplateAreasValue* aValue);
   void SetFontFamilyListValue(already_AddRefed<mozilla::SharedFontList> aFontListValue);
   void SetPairValue(const nsCSSValuePair* aPair);
@@ -1019,7 +1009,6 @@ protected:
     mozilla::css::ImageValue* MOZ_OWNING_REF mImage;
     mozilla::css::GridTemplateAreasValue* MOZ_OWNING_REF mGridTemplateAreas;
     nsCSSValueGradient* MOZ_OWNING_REF mGradient;
-    nsCSSValueTokenStream* MOZ_OWNING_REF mTokenStream;
     nsCSSValuePair_heap* MOZ_OWNING_REF mPair;
     nsCSSRect_heap* MOZ_OWNING_REF mRect;
     nsCSSValueTriplet_heap* MOZ_OWNING_REF mTriplet;
@@ -1711,94 +1700,6 @@ private:
 
   nsCSSValueGradient(const nsCSSValueGradient& aOther) = delete;
   nsCSSValueGradient& operator=(const nsCSSValueGradient& aOther) = delete;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct nsCSSValueTokenStream final {
-  nsCSSValueTokenStream();
-
-private:
-  
-  ~nsCSSValueTokenStream();
-
-public:
-  bool operator==(const nsCSSValueTokenStream& aOther) const
-  {
-    
-    MOZ_ASSERT(NS_IsMainThread());
-
-    bool eq;
-    return mPropertyID == aOther.mPropertyID &&
-           mShorthandPropertyID == aOther.mShorthandPropertyID &&
-           mTokenStream.Equals(aOther.mTokenStream) &&
-           mLevel == aOther.mLevel &&
-           (mBaseURI == aOther.mBaseURI ||
-            (mBaseURI && aOther.mBaseURI &&
-             NS_SUCCEEDED(mBaseURI->Equals(aOther.mBaseURI, &eq)) &&
-             eq)) &&
-           (mSheetURI == aOther.mSheetURI ||
-            (mSheetURI && aOther.mSheetURI &&
-             NS_SUCCEEDED(mSheetURI->Equals(aOther.mSheetURI, &eq)) &&
-             eq)) &&
-           (mSheetPrincipal == aOther.mSheetPrincipal ||
-            (mSheetPrincipal && aOther.mSheetPrincipal &&
-             NS_SUCCEEDED(mSheetPrincipal->Equals(aOther.mSheetPrincipal,
-                                                  &eq)) &&
-             eq));
-  }
-
-  bool operator!=(const nsCSSValueTokenStream& aOther) const
-  {
-    return !(*this == aOther);
-  }
-
-  NS_INLINE_DECL_REFCOUNTING(nsCSSValueTokenStream)
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-  
-  
-  
-  
-  nsCSSPropertyID mPropertyID;
-
-  
-  
-  
-  nsCSSPropertyID mShorthandPropertyID;
-
-  
-  
-  
-  
-  nsString mTokenStream;
-
-  nsCOMPtr<nsIURI> mBaseURI;
-  nsCOMPtr<nsIURI> mSheetURI;
-  nsCOMPtr<nsIPrincipal> mSheetPrincipal;
-  
-  
-  uint32_t mLineNumber;
-  uint32_t mLineOffset;
-  mozilla::SheetType mLevel;
-
-private:
-  nsCSSValueTokenStream(const nsCSSValueTokenStream& aOther) = delete;
-  nsCSSValueTokenStream& operator=(const nsCSSValueTokenStream& aOther) = delete;
 };
 
 class nsCSSValueFloatColor final {
