@@ -1265,7 +1265,6 @@ nsContentSink::StartLayout(bool aIgnorePendingSheets)
   
   
   if (shell && !shell->DidInitialize()) {
-    nsCOMPtr<nsIPresShell> shellGrip = shell;
     nsresult rv = shell->Initialize();
     if (NS_FAILED(rv)) {
       return;
