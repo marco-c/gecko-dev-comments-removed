@@ -180,23 +180,29 @@ class EditCreditCard extends EditAutofillForm {
 
 
 
-  constructor(elements, record, config) {
+
+  constructor(elements, record, addresses, config) {
     super(elements);
 
+    this._addresses = addresses;
     Object.assign(this, config);
     Object.assign(this._elements, {
       ccNumber: this._elements.form.querySelector("#cc-number"),
       year: this._elements.form.querySelector("#cc-exp-year"),
+      billingAddress: this._elements.form.querySelector("#billingAddressGUID"),
+      billingAddressRow: this._elements.form.querySelector(".billingAddressRow"),
     });
 
-    this.loadRecord(record);
+    this.loadRecord(record, addresses);
     this.attachEventListeners();
   }
 
-  loadRecord(record) {
+  loadRecord(record, addresses) {
     
     this._record = record;
+    this._addresses = addresses;
     this.generateYears();
+    this.generateBillingAddressOptions();
     super.loadRecord(record);
   }
 
@@ -221,6 +227,24 @@ class EditCreditCard extends EditAutofillForm {
     if (ccExpYear && ccExpYear > currentYear + count) {
       this._elements.year.appendChild(new Option(ccExpYear));
     }
+  }
+
+  generateBillingAddressOptions() {
+    let billingAddressGUID = this._record && this._record.billingAddressGUID;
+
+    this._elements.billingAddress.textContent = "";
+
+    this._elements.billingAddress.appendChild(new Option("", ""));
+
+    let hasAddresses = false;
+    for (let [guid, address] of Object.entries(this._addresses)) {
+      hasAddresses = true;
+      let selected = guid == billingAddressGUID;
+      let option = new Option(this.getAddressLabel(address), guid, selected, selected);
+      this._elements.billingAddress.appendChild(option);
+    }
+
+    this._elements.billingAddressRow.hidden = !hasAddresses;
   }
 
   attachEventListeners() {
