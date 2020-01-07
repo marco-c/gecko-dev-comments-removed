@@ -1,5 +1,6 @@
 const { Services } = Components.utils.import("resource://gre/modules/Services.jsm", {});
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const gMgr = Cc["@mozilla.org/memory-reporter-manager;1"].getService(Ci.nsIMemoryReporterManager);
 
 XPCOMUtils.defineLazyGetter(this, "require", function() {
   let { require } =
@@ -34,6 +35,26 @@ function getMostRecentBrowserWindow() {
 
 function getActiveTab(window) {
   return window.gBrowser.selectedTab;
+}
+
+async function garbageCollect() {
+  dump("Garbage collect\n");
+
+  
+  
+  
+  
+
+  
+  
+  for (let i = 0; i < 3; i++) {
+    
+    
+    Cu.forceGC();
+    Cu.forceCC();
+    Cu.forceGC();
+    await new Promise(done => setTimeout(done, 0));
+  }
 }
 
 
@@ -464,6 +485,11 @@ async _consoleOpenWithCachedMessagesTest() {
     let test = this.runTest(name + ".open.DAMP");
     let toolbox = await this.openToolbox(tool, onLoad);
     test.done();
+
+    
+    
+    await garbageCollect();
+
     return toolbox;
   },
 
@@ -656,6 +682,10 @@ async _consoleOpenWithCachedMessagesTest() {
 
   async testTeardown(url) {
     this.closeCurrentTab();
+
+    
+    await garbageCollect();
+
     this._nextCommand();
   },
 
@@ -861,6 +891,10 @@ async _consoleOpenWithCachedMessagesTest() {
       }
     }
 
-    this._doSequence(sequenceArray, this._doneInternal);
+    
+    
+    garbageCollect().then(() => {
+      this._doSequence(sequenceArray, this._doneInternal);
+    });
   }
 };
