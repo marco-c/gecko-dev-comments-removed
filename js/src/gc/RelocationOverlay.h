@@ -34,7 +34,6 @@ class RelocationOverlay
     
     static const uint32_t Relocated = js::gc::Relocated;
 
-#if MOZ_LITTLE_ENDIAN
     
 
 
@@ -43,10 +42,6 @@ class RelocationOverlay
 
     
     uint32_t magic_;
-#else
-    uint32_t magic_;
-    uint32_t preserve_;
-#endif
 
     
     Cell* newLocation_;
