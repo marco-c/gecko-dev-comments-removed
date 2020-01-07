@@ -2,7 +2,7 @@
 
 
 
-use WindowWrapper;
+use {WindowWrapper, NotifierEvent};
 use image::png::PNGEncoder;
 use image::{self, ColorType, GenericImage};
 use std::fs::File;
@@ -77,7 +77,7 @@ pub fn png(
     surface: ReadSurface,
     window: &mut WindowWrapper,
     mut reader: YamlFrameReader,
-    rx: Receiver<()>,
+    rx: Receiver<NotifierEvent>,
 ) {
     reader.do_frame(wrench);
 

@@ -4,16 +4,16 @@
 
 #[cfg(test)]
 use api::{IdNamespace, LayoutPoint};
-use api::{ColorF, ColorU, DevicePoint, DeviceUintSize};
+use api::{ColorF, ColorU};
 use api::{FontInstanceFlags, FontInstancePlatformOptions};
 use api::{FontKey, FontRenderMode, FontTemplate, FontVariation};
 use api::{GlyphDimensions, GlyphKey, SubpixelDirection};
 use api::{ImageData, ImageDescriptor, ImageFormat, LayerToWorldTransform};
 use app_units::Au;
 use device::TextureFilter;
-use glyph_cache::{CachedGlyphInfo, GlyphCache};
+use glyph_cache::{GlyphCache, GlyphCacheEntry, CachedGlyphInfo};
 use gpu_cache::GpuCache;
-use internal_types::{FastHashSet, ResourceCacheError};
+use internal_types::ResourceCacheError;
 use platform::font::FontContext;
 use profiler::TextureCacheProfileCounters;
 use rayon::ThreadPool;
@@ -309,11 +309,11 @@ pub struct GlyphRasterizer {
     
     
     
-    pending_glyphs: FastHashSet<GlyphRequest>,
+    pending_glyphs: usize,
 
     
-    glyph_rx: Receiver<Vec<GlyphRasterJob>>,
-    glyph_tx: Sender<Vec<GlyphRasterJob>>,
+    glyph_rx: Receiver<GlyphRasterJobs>,
+    glyph_tx: Sender<GlyphRasterJobs>,
 
     
     
@@ -341,7 +341,7 @@ impl GlyphRasterizer {
                 shared_context: Mutex::new(shared_context),
                 workers: Arc::clone(&workers),
             }),
-            pending_glyphs: FastHashSet::default(),
+            pending_glyphs: 0,
             glyph_rx,
             glyph_tx,
             workers,
@@ -391,7 +391,7 @@ impl GlyphRasterizer {
                 .lock_shared_context()
                 .has_font(&font.font_key)
         );
-        let mut glyphs = Vec::new();
+        let mut new_glyphs = Vec::new();
 
         let glyph_key_cache = glyph_cache.get_glyph_key_cache_for_font_mut(font.clone());
 
@@ -399,58 +399,51 @@ impl GlyphRasterizer {
         for key in glyph_keys {
             match glyph_key_cache.entry(key.clone()) {
                 Entry::Occupied(mut entry) => {
-                    if let Ok(Some(ref mut glyph_info)) = *entry.get_mut() {
-                        if texture_cache.request(&mut glyph_info.texture_cache_handle, gpu_cache) {
+                    let value = entry.into_mut();
+                    match *value {
+                        GlyphCacheEntry::Cached(ref glyph) => {
                             
-                            
-                            
-                            
-                            texture_cache.update(
-                                &mut glyph_info.texture_cache_handle,
-                                ImageDescriptor {
-                                    width: glyph_info.size.width,
-                                    height: glyph_info.size.height,
-                                    stride: None,
-                                    format: ImageFormat::BGRA8,
-                                    is_opaque: false,
-                                    offset: 0,
-                                },
-                                TextureFilter::Linear,
-                                Some(ImageData::Raw(glyph_info.glyph_bytes.clone())),
-                                [glyph_info.offset.x, glyph_info.offset.y, glyph_info.scale],
-                                None,
-                                gpu_cache,
-                            );
+                            if !texture_cache.request(&glyph.texture_cache_handle, gpu_cache) {
+                                continue;
+                            }
                         }
+                        
+                        GlyphCacheEntry::Blank |
+                        GlyphCacheEntry::Pending => continue,
                     }
+                    
+                    
+                    
+                    *value = GlyphCacheEntry::Pending;
                 }
-                Entry::Vacant(..) => {
-                    let request = GlyphRequest::new(&font, key);
-                    if self.pending_glyphs.insert(request.clone()) {
-                        glyphs.push(request);
-                    }
+                Entry::Vacant(entry) => {
+                    
+                    entry.insert(GlyphCacheEntry::Pending);
                 }
             }
+
+            new_glyphs.push(key.clone());
         }
 
-        if glyphs.is_empty() {
+        if new_glyphs.is_empty() {
             return;
         }
 
+        self.pending_glyphs += 1;
         let font_contexts = Arc::clone(&self.font_contexts);
         let glyph_tx = self.glyph_tx.clone();
         
         
         
         self.workers.spawn(move || {
-            let jobs = glyphs
+            let jobs = new_glyphs
                 .par_iter()
-                .map(|request: &GlyphRequest| {
+                .map(|key: &GlyphKey| {
                     profile_scope!("glyph-raster");
                     let mut context = font_contexts.lock_current_context();
                     let job = GlyphRasterJob {
-                        request: request.clone(),
-                        result: context.rasterize_glyph(&request.font, &request.key),
+                        key: key.clone(),
+                        result: context.rasterize_glyph(&font, key),
                     };
 
                     
@@ -466,7 +459,7 @@ impl GlyphRasterizer {
                 })
                 .collect();
 
-            glyph_tx.send(jobs).unwrap();
+            glyph_tx.send(GlyphRasterJobs { font, jobs }).unwrap();
         });
     }
 
@@ -493,72 +486,60 @@ impl GlyphRasterizer {
         gpu_cache: &mut GpuCache,
         _texture_cache_profile: &mut TextureCacheProfileCounters,
     ) {
-        let mut rasterized_glyphs = Vec::with_capacity(self.pending_glyphs.len());
-
         
+        while self.pending_glyphs > 0 {
+            self.pending_glyphs -= 1;
 
-        while !self.pending_glyphs.is_empty() {
             
             
             
             
-            let raster_jobs = self.glyph_rx
+            let GlyphRasterJobs { font, mut jobs } = self.glyph_rx
                 .recv()
                 .expect("BUG: Should be glyphs pending!");
-            for job in raster_jobs {
-                debug_assert!(self.pending_glyphs.contains(&job.request));
-                self.pending_glyphs.remove(&job.request);
 
-                rasterized_glyphs.push(job);
-            }
-        }
+            
+            
+            
+            
+            
+            jobs.sort_by(|a, b| a.key.cmp(&b.key));
 
-        
-        
-        
-        
-        
-        rasterized_glyphs.sort_by(|a, b| a.request.cmp(&b.request));
+            let glyph_key_cache = glyph_cache.get_glyph_key_cache_for_font_mut(font);
 
-        
-        for job in rasterized_glyphs {
-            let glyph_info = job.result
-                .and_then(|glyph| if glyph.width > 0 && glyph.height > 0 {
-                    assert_eq!((glyph.left.fract(), glyph.top.fract()), (0.0, 0.0));
-                    let glyph_bytes = Arc::new(glyph.bytes);
-                    let mut texture_cache_handle = TextureCacheHandle::new();
-                    texture_cache.request(&mut texture_cache_handle, gpu_cache);
-                    texture_cache.update(
-                        &mut texture_cache_handle,
-                        ImageDescriptor {
-                            width: glyph.width,
-                            height: glyph.height,
-                            stride: None,
-                            format: ImageFormat::BGRA8,
-                            is_opaque: false,
-                            offset: 0,
-                        },
-                        TextureFilter::Linear,
-                        Some(ImageData::Raw(glyph_bytes.clone())),
-                        [glyph.left, -glyph.top, glyph.scale],
-                        None,
-                        gpu_cache,
-                    );
-                    Some(CachedGlyphInfo {
-                        texture_cache_handle,
-                        glyph_bytes,
-                        size: DeviceUintSize::new(glyph.width, glyph.height),
-                        offset: DevicePoint::new(glyph.left, -glyph.top),
-                        scale: glyph.scale,
-                        format: glyph.format,
-                    })
-                } else {
-                    None
+            for GlyphRasterJob { key, result } in jobs {
+                let glyph_info = result.map_or(GlyphCacheEntry::Blank, |glyph| {
+                    if glyph.width > 0 && glyph.height > 0 {
+                        assert_eq!((glyph.left.fract(), glyph.top.fract()), (0.0, 0.0));
+                        let mut texture_cache_handle = TextureCacheHandle::new();
+                        texture_cache.request(&mut texture_cache_handle, gpu_cache);
+                        texture_cache.update(
+                            &mut texture_cache_handle,
+                            ImageDescriptor {
+                                width: glyph.width,
+                                height: glyph.height,
+                                stride: None,
+                                format: ImageFormat::BGRA8,
+                                is_opaque: false,
+                                offset: 0,
+                            },
+                            TextureFilter::Linear,
+                            Some(ImageData::Raw(Arc::new(glyph.bytes))),
+                            [glyph.left, -glyph.top, glyph.scale],
+                            None,
+                            gpu_cache,
+                            Some(glyph_key_cache.eviction_notice()),
+                        );
+                        GlyphCacheEntry::Cached(CachedGlyphInfo {
+                            texture_cache_handle,
+                            format: glyph.format,
+                        })
+                    } else {
+                        GlyphCacheEntry::Blank
+                    }
                 });
-
-            let glyph_key_cache = glyph_cache.get_glyph_key_cache_for_font_mut(job.request.font);
-
-            glyph_key_cache.insert(job.request.key, Ok(glyph_info));
+                glyph_key_cache.insert(key, glyph_info);
+            }
         }
 
         
@@ -583,7 +564,7 @@ impl GlyphRasterizer {
     #[cfg(feature = "replay")]
     pub fn reset(&mut self) {
         
-        self.pending_glyphs.clear();
+        self.pending_glyphs = 0;
         self.fonts_to_remove.clear();
     }
 }
@@ -619,8 +600,13 @@ impl GlyphRequest {
 }
 
 struct GlyphRasterJob {
-    request: GlyphRequest,
+    key: GlyphKey,
     result: Option<RasterizedGlyph>,
+}
+
+struct GlyphRasterJobs {
+    font: FontInstance,
+    jobs: Vec<GlyphRasterJob>,
 }
 
 #[test]

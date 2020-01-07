@@ -2,38 +2,43 @@
 
 
 
-use api::{DevicePoint, DeviceUintSize, GlyphKey};
+use api::GlyphKey;
 use glyph_rasterizer::{FontInstance, GlyphFormat};
 use internal_types::FastHashMap;
 use resource_cache::ResourceClassCache;
-use std::sync::Arc;
-use texture_cache::TextureCacheHandle;
+use texture_cache::{TextureCache, TextureCacheHandle, EvictionNotice};
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct GenericCachedGlyphInfo<D> {
+pub struct CachedGlyphInfo {
     pub texture_cache_handle: TextureCacheHandle,
-    pub glyph_bytes: D,
-    pub size: DeviceUintSize,
-    pub offset: DevicePoint,
-    pub scale: f32,
     pub format: GlyphFormat,
 }
 
-pub type CachedGlyphInfo = GenericCachedGlyphInfo<Arc<Vec<u8>>>;
-pub type GlyphKeyCache = ResourceClassCache<GlyphKey, Option<CachedGlyphInfo>>;
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum GlyphCacheEntry {
+    
+    Cached(CachedGlyphInfo),
+    
+    Blank,
+    
+    
+    Pending,
+}
 
-#[cfg(any(feature = "capture", feature = "replay"))]
-pub type PlainCachedGlyphInfo = GenericCachedGlyphInfo<String>;
-#[cfg(any(feature = "capture", feature = "replay"))]
-pub type PlainGlyphKeyCache = ResourceClassCache<GlyphKey, Option<PlainCachedGlyphInfo>>;
-#[cfg(feature = "capture")]
-pub type PlainGlyphCacheRef<'a> = FastHashMap<&'a FontInstance, PlainGlyphKeyCache>;
-#[cfg(feature = "replay")]
-pub type PlainGlyphCacheOwn = FastHashMap<FontInstance, PlainGlyphKeyCache>;
+pub type GlyphKeyCache = ResourceClassCache<GlyphKey, GlyphCacheEntry, EvictionNotice>;
 
+impl GlyphKeyCache {
+    pub fn eviction_notice(&self) -> &EvictionNotice {
+        &self.user_data
+    }
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GlyphCache {
-    pub glyph_key_caches: FastHashMap<FontInstance, GlyphKeyCache>,
+    glyph_key_caches: FastHashMap<FontInstance, GlyphKeyCache>,
 }
 
 impl GlyphCache {
@@ -46,7 +51,7 @@ impl GlyphCache {
     pub fn get_glyph_key_cache_for_font_mut(&mut self, font: FontInstance) -> &mut GlyphKeyCache {
         self.glyph_key_caches
             .entry(font)
-            .or_insert(ResourceClassCache::new())
+            .or_insert_with(|| GlyphKeyCache::new())
     }
 
     pub fn get_glyph_key_cache_for_font(&self, font: &FontInstance) -> &GlyphKeyCache {
@@ -77,5 +82,37 @@ impl GlyphCache {
             let mut cache = self.glyph_key_caches.remove(&key).unwrap();
             cache.clear();
         }
+    }
+
+    
+    
+    fn clear_evicted(&mut self, texture_cache: &TextureCache) {
+        self.glyph_key_caches.retain(|_, cache| {
+            
+            if cache.eviction_notice().check() {
+                
+                
+                let mut keep_cache = false;
+                cache.retain(|_, entry| {
+                    let keep_glyph = match *entry {
+                        GlyphCacheEntry::Cached(ref glyph) =>
+                            texture_cache.is_allocated(&glyph.texture_cache_handle),
+                        GlyphCacheEntry::Pending => true,
+                        
+                        GlyphCacheEntry::Blank => false,
+                    };
+                    keep_cache |= keep_glyph;
+                    keep_glyph
+                });
+                
+                keep_cache
+            } else {
+                true
+            }
+        });
+    }
+
+    pub fn begin_frame(&mut self, texture_cache: &TextureCache) {
+        self.clear_evicted(texture_cache);
     }
 }
