@@ -17,7 +17,7 @@ add_task(async function() {
   await withSidebarTree("bookmarks", async function(tree) {
     
     tree.selectItems([newBookmark.guid]);
-    ok(tree.controller.isCommandEnabled("placesCmd_new:folder"),
+    Assert.ok(tree.controller.isCommandEnabled("placesCmd_new:folder"),
        "'placesCmd_new:folder' on current selected node is enabled");
 
     
