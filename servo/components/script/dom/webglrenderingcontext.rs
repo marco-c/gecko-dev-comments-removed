@@ -1237,21 +1237,41 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
 
     #[allow(unsafe_code)]
     
-    unsafe fn GetBufferParameter(&self, _cx: *mut JSContext, target: u32, parameter: u32) -> JSVal {
-        let parameter_matches = match parameter {
-            constants::BUFFER_SIZE |
-            constants::BUFFER_USAGE => true,
-            _ => false,
+    unsafe fn GetBufferParameter(
+        &self,
+        _cx: *mut JSContext,
+        target: u32,
+        parameter: u32,
+    ) -> JSVal {
+        let buffer = match target {
+            constants::ARRAY_BUFFER => self.bound_buffer_array.get(),
+            constants::ELEMENT_ARRAY_BUFFER => self.bound_buffer_element_array.get(),
+            _ => {
+                self.webgl_error(InvalidEnum);
+                return NullValue();
+            }
+        };
+        match parameter {
+            constants::BUFFER_SIZE | constants::BUFFER_USAGE => {},
+            _ => {
+                self.webgl_error(InvalidEnum);
+                return NullValue();
+            }
+        }
+        let buffer = match buffer {
+            Some(buffer) => buffer,
+            None => {
+                self.webgl_error(InvalidOperation);
+                return NullValue();
+            }
         };
 
-        if !parameter_matches {
-            self.webgl_error(InvalidEnum);
-            return NullValue();
+        if parameter == constants::BUFFER_SIZE {
+            return Int32Value(buffer.capacity() as i32);
         }
 
         let (sender, receiver) = webgl_channel().unwrap();
         self.send_command(WebGLCommand::GetBufferParameter(target, parameter, sender));
-
         Int32Value(receiver.recv().unwrap())
     }
 
@@ -1946,7 +1966,10 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
 
     
     fn CompileShader(&self, shader: &WebGLShader) {
-        shader.compile(self.webgl_version, self.glsl_version, &self.extension_manager)
+        handle_potential_webgl_error!(
+            self,
+            shader.compile(self.webgl_version, self.glsl_version, &self.extension_manager)
+        )
     }
 
     
@@ -3577,6 +3600,14 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             Some(fb) => handle_potential_webgl_error!(self, fb.texture2d(attachment, textarget, texture, level)),
             None => self.webgl_error(InvalidOperation),
         };
+    }
+
+    
+    fn GetAttachedShaders(
+        &self,
+        program: &WebGLProgram,
+    ) -> Option<Vec<DomRoot<WebGLShader>>> {
+        handle_potential_webgl_error!(self, program.attached_shaders().map(Some), None)
     }
 }
 

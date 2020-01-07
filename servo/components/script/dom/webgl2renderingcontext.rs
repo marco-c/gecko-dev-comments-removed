@@ -974,6 +974,14 @@ impl WebGL2RenderingContextMethods for WebGL2RenderingContext {
                             level: i32) {
         self.base.FramebufferTexture2D(target, attachment, textarget, texture, level)
     }
+
+    
+    fn GetAttachedShaders(
+        &self,
+        program: &WebGLProgram,
+    ) -> Option<Vec<DomRoot<WebGLShader>>> {
+        self.base.GetAttachedShaders(program)
+    }
 }
 
 
