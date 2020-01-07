@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 
@@ -17,11 +16,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor-registry.js",
-  this);
 
 
 Services.scriptloader.loadSubScript(

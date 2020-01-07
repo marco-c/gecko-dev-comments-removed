@@ -48,12 +48,12 @@ AccessibilityView.prototype = {
 
 
 
-  async initialize(accessibility, walker, isOldVersion) {
+  async initialize(accessibility, walker, supportsLatestAccessibility) {
     
     await this.store.dispatch(reset(accessibility));
     const container = document.getElementById("content");
 
-    if (isOldVersion) {
+    if (!supportsLatestAccessibility) {
       ReactDOM.render(OldVersionDescription(), container);
       return;
     }
