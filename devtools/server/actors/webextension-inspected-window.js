@@ -501,6 +501,30 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
       if (evalResult) {
         try {
+          
+          
+          if (options.evalResultAsGrip) {
+            if (!options.toolboxConsoleActorID) {
+              return {
+                exceptionInfo: {
+                  isError: true,
+                  code: "E_PROTOCOLERROR",
+                  description: "Inspector protocol error: %s - %s",
+                  details: [
+                    "Unexpected invalid sidebar panel expression request",
+                    "missing toolboxConsoleActorID",
+                  ],
+                },
+              };
+            }
+
+            let consoleActor = DebuggerServer.searchAllConnectionsForActor(
+              options.toolboxConsoleActorID
+            );
+
+            return {valueGrip: consoleActor.createValueGrip(evalResult)};
+          }
+
           if (evalResult && typeof evalResult === "object") {
             evalResult = evalResult.unsafeDereference();
           }

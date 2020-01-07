@@ -39,6 +39,10 @@ types.addDictType("webExtensionEvalOptions", {
 
   
   
+  evalResultAsGrip: "nullable:boolean",
+
+  
+  
   toolboxSelectedNodeActorID: "nullable:string",
 
   
@@ -73,6 +77,7 @@ types.addDictType("webExtensionEvalResult", {
   
   
   value: "nullable:json",
+  valueGrip: "nullable:json",
   
   
   exceptionInfo: "nullable:webExtensionEvalExceptionInfo",
