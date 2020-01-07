@@ -673,7 +673,7 @@ function handURIToExistingBrowser(uri, location, cmdLine, forcePrivate, triggeri
   
   
   var allowPrivate = forcePrivate || PrivateBrowsingUtils.permanentPrivateBrowsing;
-  var navWin = BrowserWindowTracker.getMostRecentBrowserWindow({private: allowPrivate});
+  var navWin = BrowserWindowTracker.getTopWindow({private: allowPrivate});
   if (!navWin) {
     
     openBrowserWindow(cmdLine, uri.spec, null, forcePrivate);
@@ -785,7 +785,7 @@ nsDefaultCommandLineHandler.prototype = {
           cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
           WindowsUIUtils.inTabletMode) {
         
-        let win = BrowserWindowTracker.getMostRecentBrowserWindow();
+        let win = BrowserWindowTracker.getTopWindow();
         if (win) {
           win.focus();
           return;

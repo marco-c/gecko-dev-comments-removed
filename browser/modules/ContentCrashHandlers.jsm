@@ -832,7 +832,7 @@ var UnsubmittedCrashHandler = {
 
 
   show({ notificationID, message, reportIDs, onAction }) {
-    let chromeWin = BrowserWindowTracker.getMostRecentBrowserWindow();
+    let chromeWin = BrowserWindowTracker.getTopWindow();
     if (!chromeWin) {
       
       

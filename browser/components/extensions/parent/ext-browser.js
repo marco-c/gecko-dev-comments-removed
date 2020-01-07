@@ -188,7 +188,7 @@ class WindowTracker extends WindowTrackerBase {
 
 
   get topNormalWindow() {
-    return BrowserWindowTracker.getMostRecentBrowserWindow({allowPopups: false});
+    return BrowserWindowTracker.getTopWindow({allowPopups: false});
   }
 }
 

@@ -2674,7 +2674,7 @@ async function BrowserViewSourceOfDocument(aArgsOrDocument) {
   
   if (!tabBrowser || !window.toolbar.visible) {
     
-    let browserWindow = BrowserWindowTracker.getMostRecentBrowserWindow();
+    let browserWindow = BrowserWindowTracker.getTopWindow();
     tabBrowser = browserWindow.gBrowser;
   }
 
@@ -5300,7 +5300,7 @@ nsBrowserAccess.prototype = {
     if (window.toolbar.visible)
       win = window;
     else {
-      win = BrowserWindowTracker.getMostRecentBrowserWindow({private: aIsPrivate});
+      win = BrowserWindowTracker.getTopWindow({private: aIsPrivate});
       needToFocusWin = true;
     }
 

@@ -1693,7 +1693,7 @@ var SessionStoreInternal = {
 
     
     
-    var activeWindow = this._getMostRecentBrowserWindow();
+    var activeWindow = this._getTopWindow();
     if (activeWindow)
       this.activeWindowSSiCache = activeWindow.__SSi || "";
     DirtyWindows.clear();
@@ -1771,7 +1771,7 @@ var SessionStoreInternal = {
       this._closedObjectsChanged = true;
     }
     
-    var win = this._getMostRecentBrowserWindow();
+    var win = this._getTopWindow();
     if (win) {
       win.setTimeout(() => SessionSaver.run(), 0);
     } else if (RunState.isRunning) {
@@ -2270,7 +2270,7 @@ var SessionStoreInternal = {
     
     this._resetRestoringState();
 
-    var window = this._getMostRecentBrowserWindow();
+    var window = this._getTopWindow();
     if (!window) {
       this._restoreCount = 1;
       this._openWindowWithState(state);
@@ -2804,7 +2804,7 @@ var SessionStoreInternal = {
     
     
     
-    let lastWindow = this._getMostRecentBrowserWindow();
+    let lastWindow = this._getTopWindow();
     let canUseLastWindow = lastWindow &&
                            !lastWindow.__SS_lastSessionWindowID;
 
@@ -3143,7 +3143,7 @@ var SessionStoreInternal = {
       this._notifyOfClosedObjectsChange();
     });
 
-    var activeWindow = this._getMostRecentBrowserWindow();
+    var activeWindow = this._getTopWindow();
 
     TelemetryStopwatch.start("FX_SESSION_RESTORE_COLLECT_ALL_WINDOWS_DATA_MS");
     if (RunState.isRunning) {
@@ -4229,8 +4229,8 @@ var SessionStoreInternal = {
 
 
 
-  _getMostRecentBrowserWindow: function ssi_getMostRecentBrowserWindow() {
-    return BrowserWindowTracker.getMostRecentBrowserWindow({ allowPopups: true });
+  _getTopWindow: function ssi_getTopWindow() {
+    return BrowserWindowTracker.getTopWindow({ allowPopups: true });
   },
 
   

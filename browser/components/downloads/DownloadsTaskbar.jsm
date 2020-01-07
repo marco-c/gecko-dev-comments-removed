@@ -138,7 +138,7 @@ var DownloadsTaskbar = {
 
     aWindow.addEventListener("unload", () => {
       
-      let browserWindow = BrowserWindowTracker.getMostRecentBrowserWindow();
+      let browserWindow = BrowserWindowTracker.getTopWindow();
       if (browserWindow) {
         
         this._attachIndicator(browserWindow);
@@ -167,7 +167,7 @@ var DownloadsTaskbar = {
 
     aWindow.addEventListener("unload", () => {
       
-      let browserWindow = BrowserWindowTracker.getMostRecentBrowserWindow();
+      let browserWindow = BrowserWindowTracker.getTopWindow();
       if (browserWindow) {
         
         this._attachGtkTaskbarProgress(browserWindow);

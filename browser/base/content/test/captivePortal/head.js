@@ -23,10 +23,10 @@ async function setupPrefsAndRecentWindowBehavior() {
   
   
   window.CaptivePortalWatcher.uninit();
-  let getMostRecentBrowserWindowCopy = BrowserWindowTracker.getMostRecentBrowserWindow;
+  let getTopWindowCopy = BrowserWindowTracker.getTopWindow;
   let defaultWindow = window;
-  BrowserWindowTracker.getMostRecentBrowserWindow = () => {
-    let win = getMostRecentBrowserWindowCopy();
+  BrowserWindowTracker.getTopWindow = () => {
+    let win = getTopWindowCopy();
     if (win == defaultWindow) {
       return null;
     }
@@ -34,7 +34,7 @@ async function setupPrefsAndRecentWindowBehavior() {
   };
 
   registerCleanupFunction(function cleanUp() {
-    BrowserWindowTracker.getMostRecentBrowserWindow = getMostRecentBrowserWindowCopy;
+    BrowserWindowTracker.getTopWindow = getTopWindowCopy;
     window.CaptivePortalWatcher.init();
   });
 }

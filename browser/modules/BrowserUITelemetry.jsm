@@ -264,7 +264,7 @@ var BrowserUITelemetry = {
     
     
     Services.search.init(rv => {
-      let win = BrowserWindowTracker.getMostRecentBrowserWindow({
+      let win = BrowserWindowTracker.getTopWindow({
         private: false,
         allowPopups: false,
       });
