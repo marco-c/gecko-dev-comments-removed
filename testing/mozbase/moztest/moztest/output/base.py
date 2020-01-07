@@ -11,7 +11,6 @@ try:
     from abc import abstractmethod
 except ImportError:
     
-    
     def abstractmethod(method):
         line = method.func_code.co_firstlineno
         filename = method.func_code.co_filename
