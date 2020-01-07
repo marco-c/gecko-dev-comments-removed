@@ -95,9 +95,6 @@ var gViewSourceUtils = {
 
 
   viewSourceInBrowser(aArgs) {
-    Services.telemetry
-            .getHistogramById("VIEW_SOURCE_IN_BROWSER_OPENED_BOOLEAN")
-            .add(true);
     let viewSourceBrowser = new ViewSourceBrowser(aArgs.viewSourceBrowser);
     viewSourceBrowser.loadViewSource(aArgs);
   },
@@ -262,9 +259,6 @@ var gViewSourceUtils = {
 
   
   handleCallBack(aCallBack, result, data) {
-    Services.telemetry
-            .getHistogramById("VIEW_SOURCE_EXTERNAL_RESULT_BOOLEAN")
-            .add(result);
     aCallBack(result, data);
   },
 
