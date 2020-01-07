@@ -232,6 +232,10 @@ WebGLContext::DestroyResourcesAndContext()
 
     mIndexedUniformBufferBindings.clear();
 
+    if (mAvailabilityRunnable) {
+        mAvailabilityRunnable->Run();
+    }
+
     
 
     ClearLinkedList(mBuffers);
@@ -2449,6 +2453,54 @@ WebGLContext::UpdateMaxDrawBuffers()
     
     
     mGLMaxDrawBuffers = std::min(mGLMaxDrawBuffers, mGLMaxColorAttachments);
+}
+
+
+
+webgl::AvailabilityRunnable*
+WebGLContext::EnsureAvailabilityRunnable()
+{
+    if (!mAvailabilityRunnable) {
+        RefPtr<webgl::AvailabilityRunnable> runnable = new webgl::AvailabilityRunnable(this);
+
+        nsIDocument* document = GetOwnerDoc();
+        if (document) {
+            document->Dispatch(TaskCategory::Other, runnable.forget());
+        } else {
+            NS_DispatchToCurrentThread(runnable.forget());
+        }
+    }
+    return mAvailabilityRunnable;
+}
+
+webgl::AvailabilityRunnable::AvailabilityRunnable(WebGLContext* const webgl)
+    : Runnable("webgl::AvailabilityRunnable")
+    , mWebGL(webgl)
+{
+    mWebGL->mAvailabilityRunnable = this;
+}
+
+webgl::AvailabilityRunnable::~AvailabilityRunnable()
+{
+    MOZ_ASSERT(mQueries.empty());
+    MOZ_ASSERT(mSyncs.empty());
+}
+
+nsresult
+webgl::AvailabilityRunnable::Run()
+{
+    for (const auto& cur : mQueries) {
+        cur->mCanBeAvailable = true;
+    }
+    mQueries.clear();
+
+    for (const auto& cur : mSyncs) {
+        cur->mCanBeAvailable = true;
+    }
+    mSyncs.clear();
+
+    mWebGL->mAvailabilityRunnable = nullptr;
+    return NS_OK;
 }
 
 
