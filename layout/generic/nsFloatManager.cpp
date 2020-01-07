@@ -1163,8 +1163,13 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-    dfOffset.x += 2;
-    dfOffset.y += 2;
+    static int32_t kExpansionPerSide = 2;
+
+    
+    
+    
+    dfOffset.x += kExpansionPerSide;
+    dfOffset.y += kExpansionPerSide;
 
     
     
@@ -1173,8 +1178,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     const LayoutDeviceIntSize marginRectDevPixels =
       LayoutDevicePixel::FromAppUnitsRounded(aMarginRect.Size(),
                                              aAppUnitsPerDevPixel);
-    const int32_t wEx = marginRectDevPixels.width + 4;
-    const int32_t hEx = marginRectDevPixels.height + 4;
+    const int32_t wEx = marginRectDevPixels.width + (kExpansionPerSide * 2);
+    const int32_t hEx = marginRectDevPixels.height + (kExpansionPerSide * 2);
 
     
     
@@ -1204,12 +1209,14 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
         const int32_t col = aWM.IsVertical() ? b : i;
         const int32_t row = aWM.IsVertical() ? i : b;
         const int32_t index = col + row * wEx;
+        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
+                   "Our distance field index should be in-bounds.");
 
         
-        if (col < 2 ||
-            col >= wEx - 2 ||
-            row < 2 ||
-            row >= hEx - 2) {
+        if (col < kExpansionPerSide ||
+            col >= wEx - kExpansionPerSide ||
+            row < kExpansionPerSide ||
+            row >= hEx - kExpansionPerSide) {
           
           df[index] = MAX_MARGIN_5X;
         } else if (col >= dfOffset.x &&
@@ -1219,6 +1226,11 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
                    aAlphaPixels[col - dfOffset.x +
                                 (row - dfOffset.y) * aStride] > threshold) {
           
+          DebugOnly<int32_t> alphaIndex = col - dfOffset.x +
+                                          (row - dfOffset.y) * aStride;
+          MOZ_ASSERT(alphaIndex >= 0 && alphaIndex < (aStride * h),
+            "Our aAlphaPixels index should be in-bounds.");
+
           df[index] = 0;
         } else {
           
@@ -1237,6 +1249,11 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           
           
           
+          MOZ_ASSERT(index - (wEx * 2) - 1 >= 0 &&
+                     index - wEx - 2 >= 0,
+                     "Our distance field most extreme indices should be "
+                     "in-bounds.");
+
           df[index] = std::min<dfType>(MAX_MARGIN_5X,
                       std::min<dfType>(df[index - (wEx * 2) - 1] + 11,
                       std::min<dfType>(df[index - (wEx * 2) + 1] + 11,
@@ -1268,17 +1285,24 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
     
     
     
-    for (int32_t b = bSize - 3; b >= 2; --b) {
+    
+    for (int32_t b = bSize - kExpansionPerSide - 1;
+         b >= kExpansionPerSide; --b) {
       
       
       
       int32_t iMin = iSize;
       int32_t iMax = -1;
 
-      for (int32_t i = iSize - 3; i >= 2; --i) {
+      
+      
+      for (int32_t i = iSize - kExpansionPerSide - 1;
+           i >= kExpansionPerSide; --i) {
         const int32_t col = aWM.IsVertical() ? b : i;
         const int32_t row = aWM.IsVertical() ? i : b;
         const int32_t index = col + row * wEx;
+        MOZ_ASSERT(index >= 0 && index < (wEx * hEx),
+                   "Our distance field index should be in-bounds.");
 
         
         
@@ -1297,6 +1321,11 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
           
           
           
+          MOZ_ASSERT(index + (wEx * 2) + 1 < (wEx * hEx) &&
+                     index + wEx + 2 < (wEx * hEx),
+                     "Our distance field most extreme indices should be "
+                     "in-bounds.");
+
           df[index] = std::min<dfType>(df[index],
                       std::min<dfType>(df[index + (wEx * 2) + 1] + 11,
                       std::min<dfType>(df[index + (wEx * 2) - 1] + 11,
@@ -1327,7 +1356,8 @@ nsFloatManager::ImageShapeInfo::ImageShapeInfo(
         
         
         
-        CreateInterval(iMin - 2, iMax - 2, b - 2, aAppUnitsPerDevPixel,
+        CreateInterval(iMin - kExpansionPerSide, iMax - kExpansionPerSide,
+                       b - kExpansionPerSide, aAppUnitsPerDevPixel,
                        aMarginRect.TopLeft(), aWM, aContainerSize);
       }
     }
