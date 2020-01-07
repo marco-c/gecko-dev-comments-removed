@@ -76,9 +76,9 @@ public:
                                                  const nsAString& element,
                                                  ErrorResult& aRv);
 
-  bool IsCellCropped(int32_t row, nsITreeColumn* col, ErrorResult& aRv);
+  bool IsCellCropped(int32_t row, nsTreeColumn* col, ErrorResult& aRv);
 
-  void RemoveImageCacheEntry(int32_t row, nsITreeColumn& col, ErrorResult& aRv);
+  void RemoveImageCacheEntry(int32_t row, nsTreeColumn& col, ErrorResult& aRv);
 
   
   void GetCellAt(JSContext* cx,

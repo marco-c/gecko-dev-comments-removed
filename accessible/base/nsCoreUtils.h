@@ -17,6 +17,7 @@
 #include "nsTArray.h"
 
 class nsRange;
+class nsTreeColumn;
 class nsIBoxObject;
 class nsIFrame;
 class nsIDocShell;
@@ -51,7 +52,7 @@ public:
 
 
   static void DispatchClickEvent(nsITreeBoxObject *aTreeBoxObj,
-                                 int32_t aRowIndex, nsITreeColumn *aColumn,
+                                 int32_t aRowIndex, nsTreeColumn *aColumn,
                                  const nsAString& aPseudoElt = EmptyString());
 
   
@@ -249,7 +250,7 @@ public:
   
 
 
-  static already_AddRefed<nsITreeColumn>
+  static already_AddRefed<nsTreeColumn>
     GetFirstSensibleColumn(nsITreeBoxObject *aTree);
 
   
@@ -260,19 +261,19 @@ public:
   
 
 
-  static already_AddRefed<nsITreeColumn>
+  static already_AddRefed<nsTreeColumn>
     GetSensibleColumnAt(nsITreeBoxObject *aTree, uint32_t aIndex);
 
   
 
 
-  static already_AddRefed<nsITreeColumn>
+  static already_AddRefed<nsTreeColumn>
     GetNextSensibleColumn(nsITreeColumn *aColumn);
 
   
 
 
-  static already_AddRefed<nsITreeColumn>
+  static already_AddRefed<nsTreeColumn>
     GetPreviousSensibleColumn(nsITreeColumn *aColumn);
 
   

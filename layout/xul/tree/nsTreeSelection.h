@@ -13,7 +13,7 @@
 #include "mozilla/Attributes.h"
 
 class nsITreeBoxObject;
-class nsITreeColumn;
+class nsTreeColumn;
 struct nsTreeRange;
 
 class nsTreeSelection final : public nsINativeTreeSelection
@@ -45,7 +45,7 @@ protected:
 
   bool mSuppressed; 
   int32_t mCurrentIndex; 
-  nsCOMPtr<nsITreeColumn> mCurrentColumn;
+  RefPtr<nsTreeColumn> mCurrentColumn;
   int32_t mShiftSelectPivot; 
 
   nsTreeRange* mFirstRange; 
