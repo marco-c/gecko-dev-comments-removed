@@ -95,18 +95,13 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
   startSearch(searchString, searchParam, previousResult, listener) {
-    this.log.debug("startSearch: for", searchString, "with input", formFillController.focusedInput);
-
+    let {activeInput, activeSection, activeFieldDetail, savedFieldNames} = FormAutofillContent;
     this.forceStop = false;
 
-    let savedFieldNames = FormAutofillContent.savedFieldNames;
+    this.log.debug("startSearch: for", searchString, "with input", activeInput);
 
-    let focusedInput = formFillController.focusedInput;
-    let info = FormAutofillContent.getInputDetails(focusedInput);
-    let isAddressField = FormAutofillUtils.isAddressField(info.fieldName);
-    let isInputAutofilled = info.state == FIELD_STATES.AUTO_FILLED;
-    let handler = FormAutofillContent.getFormHandler(focusedInput);
-    let activeSection = handler.activeSection;
+    let isAddressField = FormAutofillUtils.isAddressField(activeFieldDetail.fieldName);
+    let isInputAutofilled = activeFieldDetail.state == FIELD_STATES.AUTO_FILLED;
     let allFieldNames = activeSection.allFieldNames;
     let filledRecordGUID = activeSection.getFilledRecordGUID();
     let searchPermitted = isAddressField ?
@@ -114,16 +109,16 @@ AutofillProfileAutoCompleteSearch.prototype = {
                           FormAutofillUtils.isAutofillCreditCardsEnabled;
     let AutocompleteResult = isAddressField ? AddressResult : CreditCardResult;
 
-    ProfileAutocomplete.lastProfileAutoCompleteFocusedInput = focusedInput;
+    ProfileAutocomplete.lastProfileAutoCompleteFocusedInput = activeInput;
     
     
     
     
     
-    if (!searchPermitted || !savedFieldNames.has(info.fieldName) ||
+    if (!searchPermitted || !savedFieldNames.has(activeFieldDetail.fieldName) ||
         (!isInputAutofilled && filledRecordGUID) || (isAddressField &&
         allFieldNames.filter(field => savedFieldNames.has(field)).length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD)) {
-      if (focusedInput.autocomplete == "off") {
+      if (activeInput.autocomplete == "off") {
         
         let result = new AutocompleteResult("", "", [], [], {});
         listener.onSearchResult(this, result);
@@ -147,7 +142,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
       return;
     }
 
-    let infoWithoutElement = Object.assign({}, info);
+    let infoWithoutElement = Object.assign({}, activeFieldDetail);
     delete infoWithoutElement.elementWeakRef;
 
     let data = {
@@ -165,10 +160,11 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
       let adaptedRecords = activeSection.getAdaptedProfiles(records);
       let result = null;
+      let handler = FormAutofillContent.activeHandler;
       let isSecure = InsecurePasswordUtils.isFormSecure(handler.form);
 
       result = new AutocompleteResult(searchString,
-                                      info.fieldName,
+                                      activeFieldDetail.fieldName,
                                       allFieldNames,
                                       adaptedRecords,
                                       {isSecure, isInputAutofilled});
@@ -254,11 +250,11 @@ let ProfileAutocomplete = {
   observe(subject, topic, data) {
     switch (topic) {
       case "autocomplete-will-enter-text": {
-        if (!formFillController.focusedInput) {
+        if (!FormAutofillContent.activeInput) {
           
           break;
         }
-        this._fillFromAutocompleteRow(formFillController.focusedInput);
+        this._fillFromAutocompleteRow(FormAutofillContent.activeInput);
         break;
       }
     }
@@ -283,7 +279,7 @@ let ProfileAutocomplete = {
 
   _fillFromAutocompleteRow(focusedInput) {
     this.log.debug("_fillFromAutocompleteRow:", focusedInput);
-    let formDetails = FormAutofillContent.getFormDetails(focusedInput);
+    let formDetails = FormAutofillContent.activeFormDetails;
     if (!formDetails) {
       
       return;
@@ -297,28 +293,23 @@ let ProfileAutocomplete = {
     }
 
     let profile = JSON.parse(this.lastProfileAutoCompleteResult.getCommentAt(selectedIndex));
-    let {fieldName} = FormAutofillContent.getInputDetails(focusedInput);
-    let formHandler = FormAutofillContent.getFormHandler(focusedInput);
+    let {fieldName} = FormAutofillContent.activeFieldDetail;
 
-    formHandler.autofillFormFields(profile).then(() => {
+    FormAutofillContent.activeHandler.autofillFormFields(profile).then(() => {
       autocompleteController.searchString = profile[fieldName];
     });
   },
 
   _clearProfilePreview() {
-    let focusedInput = formFillController.focusedInput || this.lastProfileAutoCompleteFocusedInput;
-    if (!focusedInput || !FormAutofillContent.getFormDetails(focusedInput)) {
+    if (!this.lastProfileAutoCompleteFocusedInput || !FormAutofillContent.activeSection) {
       return;
     }
 
-    let formHandler = FormAutofillContent.getFormHandler(focusedInput);
-
-    formHandler.activeSection.clearPreviewedFormFields();
+    FormAutofillContent.activeSection.clearPreviewedFormFields();
   },
 
   _previewSelectedProfile(selectedIndex) {
-    let focusedInput = formFillController.focusedInput;
-    if (!focusedInput || !FormAutofillContent.getFormDetails(focusedInput)) {
+    if (!FormAutofillContent.activeInput || !FormAutofillContent.activeFormDetails) {
       
       return;
     }
@@ -329,9 +320,7 @@ let ProfileAutocomplete = {
     }
 
     let profile = JSON.parse(this.lastProfileAutoCompleteResult.getCommentAt(selectedIndex));
-    let formHandler = FormAutofillContent.getFormHandler(focusedInput);
-
-    formHandler.activeSection.previewFormFields(profile);
+    FormAutofillContent.activeSection.previewFormFields(profile);
   },
 };
 
@@ -351,6 +340,12 @@ var FormAutofillContent = {
 
 
   savedFieldNames: null,
+
+  
+
+
+
+  _activeItems: {},
 
   init() {
     FormAutofillUtils.defineLazyLogGetter(this, "FormAutofillContent");
@@ -449,27 +444,8 @@ var FormAutofillContent = {
 
 
 
-  getInputDetails(element) {
-    let formDetails = this.getFormDetails(element);
-    for (let detail of formDetails) {
-      let detailElement = detail.elementWeakRef.get();
-      if (detailElement && element == detailElement) {
-        return detail;
-      }
-    }
-    return null;
-  },
 
-  
-
-
-
-
-
-
-
-
-  getFormHandler(element) {
+  _getFormHandler(element) {
     let rootElement = FormLikeFactory.findRootForField(element);
     return this._formsDetails.get(rootElement);
   },
@@ -483,14 +459,68 @@ var FormAutofillContent = {
 
 
 
-  getFormDetails(element) {
-    let formHandler = this.getFormHandler(element);
+  get activeFormDetails() {
+    let formHandler = this.activeHandler;
     return formHandler ? formHandler.fieldDetails : null;
   },
 
-  getAllFieldNames(element) {
-    let formHandler = this.getFormHandler(element);
-    return formHandler ? formHandler.activeSection.allFieldNames : null;
+  
+
+
+
+
+
+
+
+  updateActiveInput(element) {
+    element = element || formFillController.focusedInput;
+    let handler = this._getFormHandler(element);
+    if (handler) {
+      handler.focusedInput = element;
+    }
+    this._activeItems = {
+      handler,
+      element,
+      section: handler ? handler.activeSection : null,
+      fieldDetail: null,
+    };
+  },
+
+  get activeInput() {
+    return this._activeItems.element;
+  },
+
+  get activeHandler() {
+    return this._activeItems.handler;
+  },
+
+  get activeSection() {
+    return this._activeItems.section;
+  },
+
+  
+
+
+
+
+
+
+
+  get activeFieldDetail() {
+    if (!this._activeItems.fieldDetail) {
+      let formDetails = this.activeFormDetails;
+      if (!formDetails) {
+        return null;
+      }
+      for (let detail of formDetails) {
+        let detailElement = detail.elementWeakRef.get();
+        if (detailElement && this.activeInput == detailElement) {
+          this._activeItems.fieldDetail = detail;
+          break;
+        }
+      }
+    }
+    return this._activeItems.fieldDetail;
   },
 
   identifyAutofillFields(element) {
@@ -501,12 +531,11 @@ var FormAutofillContent = {
       Services.cpmm.sendAsyncMessage("FormAutofill:InitStorage");
     }
 
-    let formHandler = this.getFormHandler(element);
+    let formHandler = this._getFormHandler(element);
     if (!formHandler) {
       let formLike = FormLikeFactory.createFromField(element);
       formHandler = new FormAutofillHandler(formLike);
     } else if (!formHandler.updateFormIfNeeded(element)) {
-      formHandler.focusedInput = element;
       this.log.debug("No control is removed or inserted since last collection.");
       return;
     }
@@ -519,17 +548,15 @@ var FormAutofillContent = {
     validDetails.forEach(detail =>
       this._markAsAutofillField(detail.elementWeakRef.get())
     );
-    formHandler.focusedInput = element;
   },
 
   clearForm() {
-    let focusedInput = formFillController.focusedInput || ProfileAutocomplete._lastAutoCompleteFocusedInput;
+    let focusedInput = this.activeInput || ProfileAutocomplete._lastAutoCompleteFocusedInput;
     if (!focusedInput) {
       return;
     }
 
-    let formHandler = this.getFormHandler(focusedInput);
-    formHandler.activeSection.clearPopulatedForm();
+    this.activeSection.clearPopulatedForm();
     autocompleteController.searchString = "";
   },
 
@@ -537,7 +564,7 @@ var FormAutofillContent = {
     let docWin = doc.ownerGlobal;
     let selectedIndex = ProfileAutocomplete._getSelectedIndex(docWin);
     let lastAutoCompleteResult = ProfileAutocomplete.lastProfileAutoCompleteResult;
-    let focusedInput = formFillController.focusedInput;
+    let focusedInput = this.activeInput;
     let mm = this._messageManagerFromWindow(docWin);
 
     if (selectedIndex === -1 ||
@@ -548,9 +575,9 @@ var FormAutofillContent = {
 
       ProfileAutocomplete._clearProfilePreview();
     } else {
-      let focusedInputDetails = this.getInputDetails(focusedInput);
+      let focusedInputDetails = this.activeFieldDetail;
       let profile = JSON.parse(lastAutoCompleteResult.getCommentAt(selectedIndex));
-      let allFieldNames = FormAutofillContent.getAllFieldNames(focusedInput);
+      let allFieldNames = FormAutofillContent.activeSection.allFieldNames;
       let profileFields = allFieldNames.filter(fieldName => !!profile[fieldName]);
 
       let focusedCategory = FormAutofillUtils.getCategoryFromFieldName(focusedInputDetails.fieldName);
@@ -588,7 +615,7 @@ var FormAutofillContent = {
 
   _onKeyDown(e) {
     let lastAutoCompleteResult = ProfileAutocomplete.lastProfileAutoCompleteResult;
-    let focusedInput = formFillController.focusedInput;
+    let focusedInput = FormAutofillContent.activeInput;
 
     if (e.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_RETURN || !lastAutoCompleteResult ||
         !focusedInput || focusedInput != ProfileAutocomplete.lastProfileAutoCompleteFocusedInput) {

@@ -39,6 +39,7 @@ var FormAutofillFrameScript = {
       
       
       sendAsyncMessage("FormAutofill:FieldsIdentified");
+      FormAutofillContent.updateActiveInput();
     });
   },
 
@@ -54,6 +55,7 @@ var FormAutofillFrameScript = {
     if (!evt.isTrusted || !FormAutofillUtils.isAutofillEnabled) {
       return;
     }
+    FormAutofillContent.updateActiveInput();
 
     let element = evt.target;
     if (!FormAutofillUtils.isFieldEligibleForAutofill(element)) {
