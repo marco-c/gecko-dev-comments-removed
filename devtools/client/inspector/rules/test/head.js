@@ -262,16 +262,34 @@ var openCubicBezierAndChangeCoords = async function(view, ruleIndex,
 
 
 
-
-
 var addProperty = async function(view, ruleIndex, name, value,
-                                        commitValueWith = "VK_RETURN",
-                                        blurNewProperty = true) {
+                                 commitValueWith = "VK_RETURN",
+                                 blurNewProperty = true) {
   info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
 
   let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
   let editor = await focusNewRuleViewProperty(ruleEditor);
   let numOfProps = ruleEditor.rule.textProps.length;
+
+  let onMutations = new Promise(r => {
+    
+    
+    if (ruleIndex !== 0) {
+      r();
+    }
+
+    
+    
+    
+    let receivedMutations = 0;
+    view.inspector.walker.on("mutations", function onWalkerMutations(mutations) {
+      receivedMutations += mutations.length;
+      if (receivedMutations >= 2) {
+        view.inspector.walker.off("mutations", onWalkerMutations);
+        r();
+      }
+    });
+  });
 
   info("Adding name " + name);
   editor.input.value = name;
@@ -300,6 +318,9 @@ var addProperty = async function(view, ruleIndex, name, value,
   let onValueAdded = view.once("ruleview-changed");
   EventUtils.synthesizeKey(commitValueWith, {}, view.styleWindow);
   await onValueAdded;
+
+  info("Waiting for DOM mutations in case the property was added to the element style");
+  await onMutations;
 
   if (blurNewProperty) {
     view.styleDocument.activeElement.blur();
