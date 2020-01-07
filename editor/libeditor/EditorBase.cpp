@@ -130,8 +130,6 @@ EditorBase::EditorBase()
   , mUpdateCount(0)
   , mPlaceholderBatch(0)
   , mAction(EditAction::none)
-  , mIMETextOffset(0)
-  , mIMETextLength(0)
   , mDirection(eNone)
   , mDocDirtyState(-1)
   , mSpellcheckCheckboxState(eTriUnset)
@@ -168,7 +166,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInlineSpellChecker)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTxnMgr)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mIMETextNode)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorObservers)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
@@ -191,7 +188,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInlineSpellChecker)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTxnMgr)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIMETextNode)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorObservers)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocStateListeners)
@@ -261,9 +257,10 @@ EditorBase::Init(nsIDOMDocument* aDOMDocument,
   
   
   
-  
-  if (mIMETextNode && !mIMETextNode->IsInComposedDoc()) {
-    mIMETextNode = nullptr;
+  if (mComposition &&
+      mComposition->GetContainerTextNode() &&
+      !mComposition->GetContainerTextNode()->IsInComposedDoc()) {
+    mComposition->OnTextNodeRemoved();
   }
 
   
@@ -2363,9 +2360,8 @@ EditorBase::EndIMEComposition()
   HideCaret(false);
 
   
-  mIMETextNode = nullptr;
-  mIMETextOffset = 0;
-  mIMETextLength = 0;
+  
+  
   mComposition->EndHandlingComposition(this);
   mComposition = nullptr;
 
@@ -2788,18 +2784,16 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
   
   if (ShouldHandleIMEComposition() && !aSuppressIME) {
-    if (!mIMETextNode) {
-      mIMETextNode = &aTextNode;
-      mIMETextOffset = aOffset;
-    }
+    
+    mComposition->WillCreateCompositionTransaction(&aTextNode, aOffset);
     transaction = CreateTxnForComposition(aStringToInsert);
+    mComposition->DidCreateCompositionTransaction(aStringToInsert);
     isIMETransaction = true;
     
     
     
-    insertedTextNode = mIMETextNode;
-    insertedOffset = mIMETextOffset;
-    mIMETextLength = aStringToInsert.Length();
+    insertedTextNode = mComposition->GetContainerTextNode();
+    insertedOffset = mComposition->XPOffsetInTextNode();
   } else {
     transaction = CreateTxnForInsertText(aStringToInsert, aTextNode, aOffset);
   }
@@ -2840,11 +2834,11 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
 
   
-  if (isIMETransaction && mIMETextNode) {
-    uint32_t len = mIMETextNode->Length();
-    if (!len) {
-      DeleteNode(mIMETextNode);
-      mIMETextNode = nullptr;
+  if (isIMETransaction && mComposition) {
+    Text* textNode = mComposition->GetContainerTextNode();
+    if (textNode && !textNode->Length()) {
+      DeleteNode(textNode);
+      mComposition->OnTextNodeRemoved();
       static_cast<CompositionTransaction*>(transaction.get())->MarkFixed();
     }
   }
@@ -4694,14 +4688,19 @@ EditorBase::CreateTxnForDeleteNode(nsINode* aNode)
 already_AddRefed<CompositionTransaction>
 EditorBase::CreateTxnForComposition(const nsAString& aStringToInsert)
 {
-  MOZ_ASSERT(mIMETextNode);
+  MOZ_ASSERT(mComposition);
+  MOZ_ASSERT(mComposition->GetContainerTextNode());
   
   
   
   RefPtr<CompositionTransaction> transaction =
-    new CompositionTransaction(*mIMETextNode, mIMETextOffset, mIMETextLength,
-                               mComposition->GetRanges(), aStringToInsert,
-                               *this, &mRangeUpdater);
+    new CompositionTransaction(*mComposition->GetContainerTextNode(),
+                               mComposition->XPOffsetInTextNode(),
+                               mComposition->XPLengthInTextNode(),
+                               mComposition->GetRanges(),
+                               aStringToInsert,
+                               *this,
+                               &mRangeUpdater);
   return transaction.forget();
 }
 
@@ -5241,23 +5240,27 @@ EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
   
   
   
-  if (mComposition && !mIMETextNode && mIMETextLength) {
+  if (mComposition && mComposition->IsMovingToNewTextNode()) {
     
     
     nsRange* firstRange = selection->GetRangeAt(0);
-    NS_ENSURE_TRUE(firstRange, NS_ERROR_FAILURE);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
     EditorRawDOMPoint atStartOfFirstRange(firstRange->StartRef());
     EditorRawDOMPoint betterInsertionPoint =
       FindBetterInsertionPoint(atStartOfFirstRange);
     Text* textNode = betterInsertionPoint.GetContainerAsText();
     MOZ_ASSERT(textNode,
-               "There must be text node if mIMETextLength is larger than 0");
+               "There must be text node if composition string is not empty");
     if (textNode) {
-      MOZ_ASSERT(textNode->Length() >= mIMETextOffset + mIMETextLength,
-                 "The text node must be different from the old mIMETextNode");
-      CompositionTransaction::SetIMESelection(*this, textNode, mIMETextOffset,
-                                              mIMETextLength,
-                                              mComposition->GetRanges());
+      MOZ_ASSERT(textNode->Length() >= mComposition->XPEndOffsetInTextNode(),
+                 "The text node must be different from the old text node");
+      CompositionTransaction::SetIMESelection(
+                                *this, textNode,
+                                mComposition->XPOffsetInTextNode(),
+                                mComposition->XPLengthInTextNode(),
+                                mComposition->GetRanges());
     }
   }
 

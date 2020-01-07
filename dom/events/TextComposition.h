@@ -18,6 +18,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/Text.h"
 
 namespace mozilla {
 
@@ -39,6 +40,7 @@ class TextComposition final
 
 public:
   typedef dom::TabParent TabParent;
+  typedef dom::Text Text;
 
   static bool IsHandlingSelectionEvent() { return sHandlingSelectionEvent; }
 
@@ -50,6 +52,8 @@ public:
   bool Destroyed() const { return !mPresContext; }
   nsPresContext* GetPresContext() const { return mPresContext; }
   nsINode* GetEventTargetNode() const { return mNode; }
+  
+  Text* GetContainerTextNode() const { return mContainerTextNode; }
   
   
   const nsString& LastData() const { return mLastData; }
@@ -135,6 +139,37 @@ public:
 
 
 
+  uint32_t XPOffsetInTextNode() const
+  {
+    return mCompositionStartOffsetInTextNode;
+  }
+
+  
+
+
+
+  uint32_t XPLengthInTextNode() const
+  {
+    return mCompositionLengthInTextNode;
+  }
+
+  
+
+
+
+  uint32_t XPEndOffsetInTextNode() const
+  {
+    if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
+        mCompositionLengthInTextNode == UINT32_MAX) {
+      return UINT32_MAX;
+    }
+    return mCompositionStartOffsetInTextNode + mCompositionLengthInTextNode;
+  }
+
+  
+
+
+
   bool IsComposing() const { return mIsComposing; }
 
   
@@ -144,6 +179,17 @@ public:
   bool IsEditorHandlingEvent() const
   {
     return mIsEditorHandlingEvent;
+  }
+
+  
+
+
+
+
+  bool IsMovingToNewTextNode() const
+  {
+    return !mContainerTextNode && mCompositionLengthInTextNode &&
+           mCompositionLengthInTextNode != UINT32_MAX;
   }
 
   
@@ -189,6 +235,66 @@ public:
       const CompositionChangeEventHandlingMarker& aOther);
   };
 
+  
+
+
+
+
+
+
+  void WillCreateCompositionTransaction(Text* aTextNode,
+                                        uint32_t aOffset)
+  {
+    if (!mContainerTextNode) {
+      mContainerTextNode = aTextNode;
+      mCompositionStartOffsetInTextNode = aOffset;
+      NS_WARNING_ASSERTION(mCompositionStartOffsetInTextNode != UINT32_MAX,
+        "The text node is really too long.");
+    }
+#ifdef DEBUG
+    else {
+      NS_WARNING_ASSERTION(aTextNode == mContainerTextNode,
+        "The editor tries to insert composition string into different node");
+      NS_WARNING_ASSERTION(aOffset == mCompositionStartOffsetInTextNode,
+        "The editor tries to insert composition string into different offset");
+    }
+#endif 
+    if (mCompositionLengthInTextNode == UINT32_MAX) {
+      mCompositionLengthInTextNode = 0;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  void DidCreateCompositionTransaction(const nsAString& aStringToInsert)
+  {
+    MOZ_ASSERT(mCompositionStartOffsetInTextNode != UINT32_MAX);
+    mCompositionLengthInTextNode = aStringToInsert.Length();
+    NS_WARNING_ASSERTION(mCompositionLengthInTextNode != UINT32_MAX,
+      "The string to insert is really too long.");
+  }
+
+  
+
+
+
+
+  void OnTextNodeRemoved()
+  {
+    mContainerTextNode = nullptr;
+    
+    
+    
+  }
+
 private:
   
   ~TextComposition()
@@ -207,6 +313,9 @@ private:
   nsPresContext* mPresContext;
   nsCOMPtr<nsINode> mNode;
   RefPtr<TabParent> mTabParent;
+
+  
+  RefPtr<Text> mContainerTextNode;
 
   
   
@@ -236,6 +345,18 @@ private:
   
   
   uint32_t mTargetClauseOffsetInComposition;
+  
+  
+  
+  uint32_t mCompositionStartOffsetInTextNode;
+  
+  
+  
+  
+  
+  
+  
+  uint32_t mCompositionLengthInTextNode;
 
   
   bool mIsSynthesizedForTests;
@@ -286,6 +407,8 @@ private:
     , mNativeContext(nullptr)
     , mCompositionStartOffset(0)
     , mTargetClauseOffsetInComposition(0)
+    , mCompositionStartOffsetInTextNode(UINT32_MAX)
+    , mCompositionLengthInTextNode(UINT32_MAX)
     , mIsSynthesizedForTests(false)
     , mIsComposing(false)
     , mIsEditorHandlingEvent(false)

@@ -1554,8 +1554,6 @@ protected:
   
   nsCOMPtr<Element> mRootElement;
   
-  RefPtr<Text> mIMETextNode;
-  
   nsCOMPtr<dom::EventTarget> mEventTarget;
   nsCOMPtr<nsIDOMEventListener> mEventListener;
   
@@ -1597,12 +1595,6 @@ protected:
   int32_t mPlaceholderBatch;
   
   EditAction mAction;
-
-  
-  uint32_t mIMETextOffset;
-  
-  
-  uint32_t mIMETextLength;
 
   
   EDirection mDirection;
