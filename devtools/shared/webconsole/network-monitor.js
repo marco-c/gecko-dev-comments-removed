@@ -523,6 +523,11 @@ NetworkResponseListener.prototype = {
 
 
   onStopRequest: function () {
+    
+    
+    if (!this.httpActivity) {
+      return;
+    }
     this._findOpenResponse();
     this.sink.outputStream.close();
   },
