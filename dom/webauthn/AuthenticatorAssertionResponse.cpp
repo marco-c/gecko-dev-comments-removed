@@ -99,10 +99,16 @@ void
 AuthenticatorAssertionResponse::GetUserHandle(JSContext* aCx,
                                               JS::MutableHandle<JSObject*> aRetVal)
 {
-  if (!mUserHandleCachedObj) {
-    mUserHandleCachedObj = mUserHandle.ToArrayBuffer(aCx);
+  
+  
+  if (mUserHandle.IsEmpty()) {
+    aRetVal.set(nullptr);
+  } else {
+    if (!mUserHandleCachedObj) {
+      mUserHandleCachedObj = mUserHandle.ToArrayBuffer(aCx);
+    }
+    aRetVal.set(mUserHandleCachedObj);
   }
-  aRetVal.set(mUserHandleCachedObj);
 }
 
 nsresult
