@@ -8,6 +8,7 @@
 #endif
 #include "GPUParent.h"
 #include "gfxConfig.h"
+#include "gfxCrashReporterUtils.h"
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "GPUProcessHost.h"
@@ -200,6 +201,14 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
   gfxConfig::Inherit(Feature::OPENGL_COMPOSITING, devicePrefs.oglCompositing());
   gfxConfig::Inherit(Feature::ADVANCED_LAYERS, devicePrefs.advancedLayers());
   gfxConfig::Inherit(Feature::DIRECT2D, devicePrefs.useD2D1());
+
+  { 
+    
+    ScopedGfxFeatureReporter reporter("WR", gfxPlatform::WebRenderPrefEnabled());
+    if (gfxVars::UseWebRender()) {
+      reporter.SetSuccessful();
+    }
+  }
 
   for (const LayerTreeIdMapping& map : aMappings) {
     LayerTreeOwnerTracker::Get()->Map(map.layersId(), map.ownerId());
