@@ -50,8 +50,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
                                    "amIAddonManagerStartup");
 
-Cu.importGlobalProperties(["URL"]);
-
 const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile",
                                        "initWithPath");
 
@@ -163,10 +161,6 @@ const TYPE_ALIASES = {
   "webextension-langpack": "locale",
   "webextension-theme": "theme",
 };
-
-const CHROME_TYPES = new Set([
-  "extension",
-]);
 
 const SIGNED_TYPES = new Set([
   "extension",
@@ -1253,6 +1247,396 @@ var XPIStates = {
   },
 };
 
+
+
+
+
+
+
+
+
+class BootstrapScope {
+  constructor(addon) {
+    if (!addon.id || !addon.version || !addon.type) {
+      throw new Error("Addon must include an id, version, and type");
+    }
+
+    this.addon = addon;
+    this.instanceID = null;
+    this.scope = null;
+    this.started = false;
+  }
+
+  
+
+
+
+
+
+
+
+
+  static get(addon) {
+    let scope = XPIProvider.activeAddons.get(addon.id);
+    if (!scope) {
+      scope = new this(addon);
+    }
+    return scope;
+  }
+
+  get file() {
+    return this.addon.file || this.addon._sourceBundle;
+  }
+
+  get runInSafeMode() {
+    return "runInSafeMode" in this.addon ? this.addon.runInSafeMode : canRunInSafeMode(this.addon);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  callBootstrapMethod(aMethod, aReason, aExtraParams = {}) {
+    let {addon, runInSafeMode} = this;
+    if (Services.appinfo.inSafeMode && !runInSafeMode)
+      return;
+
+    let timeStart = new Date();
+    if (addon.type == "extension" && aMethod == "startup") {
+      logger.debug(`Registering manifest for ${this.file.path}`);
+      Components.manager.addBootstrappedManifestLocation(this.file);
+    }
+
+    try {
+      if (!this.scope) {
+        this.loadBootstrapScope(aReason);
+      }
+
+      if (aMethod == "startup" || aMethod == "shutdown") {
+        aExtraParams.instanceID = this.instanceID;
+      }
+
+      let method = undefined;
+      let {scope} = this;
+      try {
+        method = scope[aMethod] || Cu.evalInSandbox(`${aMethod};`, scope);
+      } catch (e) {
+        
+        
+      }
+
+      if (aMethod == "startup") {
+        this.started = true;
+      } else if (aMethod == "shutdown") {
+        this.started = false;
+
+        
+        if (aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
+          this._pendingDisable = true;
+          for (let addon of XPIProvider.getDependentAddons(this.addon)) {
+            if (addon.active)
+              XPIDatabase.updateAddonDisabledState(addon);
+          }
+        }
+      }
+
+      let installLocation = addon._installLocation || null;
+      let params = {
+        id: addon.id,
+        version: addon.version,
+        installPath: this.file.clone(),
+        resourceURI: getURIForResourceInFile(this.file, ""),
+        signedState: addon.signedState,
+        temporarilyInstalled: installLocation == TemporaryInstallLocation,
+        builtIn: installLocation instanceof BuiltInInstallLocation,
+      };
+
+      if (aMethod == "startup" && addon.startupData) {
+        params.startupData = addon.startupData;
+      }
+
+      Object.assign(params, aExtraParams);
+
+      if (addon.hasEmbeddedWebExtension) {
+        let reason = Object.keys(BOOTSTRAP_REASONS).find(
+          key => BOOTSTRAP_REASONS[key] == aReason
+        );
+
+        if (aMethod == "startup") {
+          const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor(params);
+          params.webExtension = {
+            startup: () => webExtension.startup(reason),
+          };
+        } else if (aMethod == "shutdown") {
+          LegacyExtensionsUtils.getEmbeddedExtensionFor(params).shutdown(reason);
+        }
+      }
+
+      if (!method) {
+        logger.warn(`Add-on ${addon.id} is missing bootstrap method ${aMethod}`);
+      } else {
+        logger.debug(`Calling bootstrap method ${aMethod} on ${addon.id} version ${addon.version}`);
+
+        let result;
+        try {
+          result = method.call(scope, params, aReason);
+        } catch (e) {
+          logger.warn(`Exception running bootstrap method ${aMethod} on ${addon.id}`, e);
+        }
+
+        if (aMethod == "startup") {
+          this.startupPromise = Promise.resolve(result);
+          this.startupPromise.catch(Cu.reportError);
+        }
+      }
+    } finally {
+      
+      if (aMethod == "startup" && aReason != BOOTSTRAP_REASONS.APP_STARTUP) {
+        for (let addon of XPIProvider.getDependentAddons(this.addon)) {
+          XPIDatabase.updateAddonDisabledState(addon);
+        }
+      }
+
+      if (addon.type == "extension" && aMethod == "shutdown" &&
+          aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
+        logger.debug(`Removing manifest for ${this.file.path}`);
+        Components.manager.removeBootstrappedManifestLocation(this.file);
+      }
+      XPIProvider.setTelemetry(addon.id, `${aMethod}_MS`, new Date() - timeStart);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  loadBootstrapScope(aReason) {
+    this.instanceID = Symbol(this.addon.id);
+    this._pendingDisable = false;
+
+    XPIProvider.activeAddons.set(this.addon.id, this);
+
+    
+    
+    
+    if (aReason !== BOOTSTRAP_REASONS.APP_STARTUP) {
+      XPIProvider.addAddonsToCrashReporter();
+    }
+
+    logger.debug(`Loading bootstrap scope from ${this.file.path}`);
+
+    let principal = Services.scriptSecurityManager.getSystemPrincipal();
+
+    if (!this.file.exists()) {
+      this.scope =
+        new Cu.Sandbox(principal, { sandboxName: this.file.path,
+                                    addonId: this.addon.id,
+                                    wantGlobalProperties: ["ChromeUtils"],
+                                    metadata: { addonID: this.addon.id } });
+      logger.error(`Attempted to load bootstrap scope from missing directory ${this.file.path}`);
+      return;
+    }
+
+    if (isWebExtension(this.addon.type)) {
+      this.scope = Extension.getBootstrapScope(this.addon.id, this.file);
+    } else if (this.addon.type === "webextension-langpack") {
+      this.scope = Langpack.getBootstrapScope(this.addon.id, this.file);
+    } else if (this.addon.type === "webextension-dictionary") {
+      this.scope = Dictionary.getBootstrapScope(this.addon.id, this.file);
+    } else {
+      let uri = getURIForResourceInFile(this.file, "bootstrap.js").spec;
+
+      this.scope =
+        new Cu.Sandbox(principal, { sandboxName: uri,
+                                    addonId: this.addon.id,
+                                    wantGlobalProperties: ["ChromeUtils"],
+                                    metadata: { addonID: this.addon.id, URI: uri } });
+
+      try {
+        
+        for (let name in BOOTSTRAP_REASONS)
+          this.scope[name] = BOOTSTRAP_REASONS[name];
+
+        
+        Object.assign(this.scope, {Worker, ChromeWorker});
+
+        
+        XPCOMUtils.defineLazyGetter(
+          this.scope, "console",
+          () => new ConsoleAPI({ consoleID: `addon/${this.addon.id}` }));
+
+        this.scope.__SCRIPT_URI_SPEC__ = uri;
+        Services.scriptloader.loadSubScript(uri, this.scope);
+      } catch (e) {
+        logger.warn(`Error loading bootstrap.js for ${this.addon.id}`, e);
+      }
+    }
+
+    
+    let wrappedJSObject = { id: this.addon.id, options: { global: this.scope }};
+    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
+  }
+
+  
+
+
+
+  unloadBootstrapScope() {
+    XPIProvider.activeAddons.delete(this.addon.id);
+    XPIProvider.addAddonsToCrashReporter();
+
+    this.scope = null;
+    this.startupPromise = null;
+    this.instanceID = null;
+
+    
+    let wrappedJSObject = { id: this.addon.id, options: { global: null }};
+    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
+  }
+
+  
+
+
+
+
+
+
+
+
+  startup(reason, aExtraParams) {
+    this.callBootstrapMethod("startup", reason, aExtraParams);
+  }
+
+  
+
+
+
+
+
+
+
+
+  shutdown(reason, aExtraParams) {
+    this.callBootstrapMethod("shutdown", reason, aExtraParams);
+  }
+
+  
+
+
+
+
+
+
+
+
+  disable() {
+    if (this.started) {
+      this.shutdown(BOOTSTRAP_REASONS.ADDON_DISABLE);
+      this.unloadBootstrapScope();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  install(reason = BOOTSTRAP_REASONS.ADDON_INSTALL, startup, extraArgs) {
+    this._install(reason, false, startup, extraArgs);
+  }
+
+  _install(reason, callUpdate, startup, extraArgs) {
+    if (callUpdate) {
+      this.callBootstrapMethod("update", reason, extraArgs);
+    } else {
+      this.callBootstrapMethod("install", reason, extraArgs);
+    }
+
+    if (startup && this.addon.active) {
+      this.startup(reason, extraArgs);
+    } else if (this.addon.disabled) {
+      this.unloadBootstrapScope();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  uninstall(reason = BOOTSTRAP_REASONS.ADDON_UNINSTALL, extraArgs) {
+    this._uninstall(reason, false, extraArgs);
+  }
+
+  _uninstall(reason, callUpdate, extraArgs) {
+    if (this.started) {
+      this.shutdown(reason, extraArgs);
+    }
+    if (!callUpdate) {
+      this.callBootstrapMethod("uninstall", reason, extraArgs);
+    }
+    this.unloadBootstrapScope();
+    XPIInstall.flushChromeCaches();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  update(newAddon, startup = false, updateCallback) {
+    let reason = XPIInstall.newVersionReason(this.addon.version, newAddon.version);
+    let extraArgs = {oldVersion: this.addon.version, newVersion: newAddon.version};
+
+    let callUpdate = isWebExtension(this.addon.type) && isWebExtension(newAddon.type);
+
+    this._uninstall(reason, callUpdate, extraArgs);
+
+    if (updateCallback) {
+      updateCallback();
+    }
+
+    this.addon = newAddon;
+    this._install(reason, callUpdate, startup, extraArgs);
+  }
+}
+
 var XPIProvider = {
   get name() {
     return "XPIProvider";
@@ -1562,7 +1946,7 @@ var XPIProvider = {
             if (AddonManager.getStartupChanges(AddonManager.STARTUP_CHANGE_INSTALLED)
                             .includes(addon.id))
               reason = BOOTSTRAP_REASONS.ADDON_INSTALL;
-            this.callBootstrapMethod(addon, addon.file, "startup", reason);
+            BootstrapScope.get(addon).startup(reason);
           } catch (e) {
             logger.error("Failed to load bootstrap addon " + addon.id + " from " +
                          addon.descriptor, e);
@@ -1576,46 +1960,41 @@ var XPIProvider = {
 
       
       
-      Services.obs.addObserver({
-        observe(aSubject, aTopic, aData) {
-          XPIProvider.cleanupTemporaryAddons();
-          XPIProvider._closing = true;
-          for (let addon of XPIProvider.sortBootstrappedAddons().reverse()) {
-            
-            
-            
-            let activeAddon = XPIProvider.activeAddons.get(addon.id);
-            if (!activeAddon || !activeAddon.started) {
-              continue;
-            }
-
-            
-            
-            let reason = BOOTSTRAP_REASONS.APP_SHUTDOWN;
-            if (addon.disable) {
-              reason = BOOTSTRAP_REASONS.ADDON_DISABLE;
-            } else if (addon.location.name == KEY_APP_TEMPORARY) {
-              reason = BOOTSTRAP_REASONS.ADDON_UNINSTALL;
-              let existing = XPIStates.findAddon(addon.id, loc =>
-                loc.name != TemporaryInstallLocation.name);
-              if (existing) {
-                reason = XPIInstall.newVersionReason(addon.version, existing.version);
-              }
-            }
-            XPIProvider.callBootstrapMethod(addon, addon.file,
-                                            "shutdown", reason);
+      Services.obs.addObserver(function observer() {
+        XPIProvider.cleanupTemporaryAddons();
+        XPIProvider._closing = true;
+        for (let addon of XPIProvider.sortBootstrappedAddons().reverse()) {
+          
+          
+          
+          let activeAddon = XPIProvider.activeAddons.get(addon.id);
+          if (!activeAddon || !activeAddon.started) {
+            continue;
           }
-          Services.obs.removeObserver(this, "quit-application-granted");
+
+          
+          
+          let reason = BOOTSTRAP_REASONS.APP_SHUTDOWN;
+          if (addon._pendingDisable) {
+            reason = BOOTSTRAP_REASONS.ADDON_DISABLE;
+          } else if (addon.location.name == KEY_APP_TEMPORARY) {
+            reason = BOOTSTRAP_REASONS.ADDON_UNINSTALL;
+            let existing = XPIStates.findAddon(addon.id, loc =>
+              loc.name != TemporaryInstallLocation.name);
+            if (existing) {
+              reason = XPIInstall.newVersionReason(addon.version, existing.version);
+            }
+          }
+          BootstrapScope.get(addon).shutdown(reason);
         }
+        Services.obs.removeObserver(observer, "quit-application-granted");
       }, "quit-application-granted");
 
       
-      Services.obs.addObserver({
-        observe(aSubject, aTopic, aData) {
-          AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
-          XPIProvider.runPhase = XPI_AFTER_UI_STARTUP;
-          Services.obs.removeObserver(this, "final-ui-startup");
-        }
+      Services.obs.addObserver(function observer() {
+        AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
+        XPIProvider.runPhase = XPI_AFTER_UI_STARTUP;
+        Services.obs.removeObserver(observer, "final-ui-startup");
       }, "final-ui-startup");
 
       
@@ -1633,22 +2012,20 @@ var XPIProvider = {
       
       if (!this.isDBLoaded) {
         const EVENTS = [ "sessionstore-windows-restored", "xul-window-visible", "test-load-xpi-database" ];
-        let observer = {
-          observe(subject, topic, data) {
-            if (topic == "xul-window-visible" &&
-                !Services.wm.getMostRecentWindow("devtools:toolbox")) {
-              return;
-            }
+        let observer = (subject, topic, data) => {
+          if (topic == "xul-window-visible" &&
+              !Services.wm.getMostRecentWindow("devtools:toolbox")) {
+            return;
+          }
 
-            for (let event of EVENTS) {
-              Services.obs.removeObserver(observer, event);
-            }
+          for (let event of EVENTS) {
+            Services.obs.removeObserver(observer, event);
+          }
 
-            
-            
-            
-            XPIDatabase.asyncLoadDB();
-          },
+          
+          
+          
+          XPIDatabase.asyncLoadDB();
         };
         for (let event of EVENTS) {
           Services.obs.addObserver(observer, event);
@@ -1723,31 +2100,22 @@ var XPIProvider = {
       for (let [id, addon] of tempLocation.entries()) {
         tempLocation.delete(id);
 
-        let reason = BOOTSTRAP_REASONS.ADDON_UNINSTALL;
-
+        let bootstrap = BootstrapScope.get(addon);
         let existing = XPIStates.findAddon(id, loc => loc != tempLocation);
-        let callUpdate = false;
-        if (existing) {
-          reason = XPIInstall.newVersionReason(addon.version, existing.version);
-          callUpdate = (isWebExtension(addon.type) && isWebExtension(existing.type));
-        }
 
-        this.callBootstrapMethod(addon, addon.file, "shutdown", reason);
-        if (!callUpdate) {
-          this.callBootstrapMethod(addon, addon.file, "uninstall", reason);
-        }
-        this.unloadBootstrapScope(id);
-        TemporaryInstallLocation.uninstallAddon(id);
-        XPIStates.removeAddon(TemporaryInstallLocation.name, id);
+        let cleanup = () => {
+          TemporaryInstallLocation.uninstallAddon(id);
+          XPIStates.removeAddon(TemporaryInstallLocation.name, id);
+        };
 
         if (existing) {
-          let newAddon = XPIDatabase.makeAddonLocationVisible(id, existing.location.name);
-
-          let file = new nsIFile(newAddon.path);
-
-          let data = {oldVersion: addon.version};
-          let method = callUpdate ? "update" : "install";
-          this.callBootstrapMethod(newAddon, file, method, reason, data);
+          bootstrap.update(existing, false, () => {
+            cleanup();
+            XPIDatabase.makeAddonLocationVisible(id, existing.location.name);
+          });
+        } else {
+          bootstrap.uninstall();
+          cleanup();
         }
       }
     }
@@ -2402,7 +2770,7 @@ var XPIProvider = {
 
     for (let [id, val] of this.activeAddons) {
       connection.setAddonOptions(
-        id, { global: val.bootstrapScope });
+        id, { global: val.scope });
     }
   },
 
@@ -2440,261 +2808,6 @@ var XPIProvider = {
         this.updateAddonAppDisabledStates();
         break;
       }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  loadBootstrapScope(aId, aFile, aVersion, aType, aRunInSafeMode, aDependencies,
-                     hasEmbeddedWebExtension, aReason) {
-    this.activeAddons.set(aId, {
-      bootstrapScope: null,
-      
-      instanceID: Symbol(aId),
-      started: false,
-    });
-
-    
-    
-    
-    if (aReason !== BOOTSTRAP_REASONS.APP_STARTUP) {
-      this.addAddonsToCrashReporter();
-    }
-
-    let activeAddon = this.activeAddons.get(aId);
-
-    logger.debug("Loading bootstrap scope from " + aFile.path);
-
-    let principal = Cc["@mozilla.org/systemprincipal;1"].
-                    createInstance(Ci.nsIPrincipal);
-
-    if (!aFile.exists()) {
-      activeAddon.bootstrapScope =
-        new Cu.Sandbox(principal, { sandboxName: aFile.path,
-                                    addonId: aId,
-                                    wantGlobalProperties: ["ChromeUtils"],
-                                    metadata: { addonID: aId } });
-      logger.error("Attempted to load bootstrap scope from missing directory " + aFile.path);
-      return;
-    }
-
-    if (isWebExtension(aType)) {
-      activeAddon.bootstrapScope = Extension.getBootstrapScope(aId, aFile);
-    } else if (aType === "webextension-langpack") {
-      activeAddon.bootstrapScope = Langpack.getBootstrapScope(aId, aFile);
-    } else if (aType === "webextension-dictionary") {
-      activeAddon.bootstrapScope = Dictionary.getBootstrapScope(aId, aFile);
-    } else {
-      let uri = getURIForResourceInFile(aFile, "bootstrap.js").spec;
-
-      activeAddon.bootstrapScope =
-        new Cu.Sandbox(principal, { sandboxName: uri,
-                                    addonId: aId,
-                                    wantGlobalProperties: ["ChromeUtils"],
-                                    metadata: { addonID: aId, URI: uri } });
-
-      try {
-        
-        for (let name in BOOTSTRAP_REASONS)
-          activeAddon.bootstrapScope[name] = BOOTSTRAP_REASONS[name];
-
-        
-        Object.assign(activeAddon.bootstrapScope, {Worker, ChromeWorker});
-
-        
-        XPCOMUtils.defineLazyGetter(
-          activeAddon.bootstrapScope, "console",
-          () => new ConsoleAPI({ consoleID: "addon/" + aId }));
-
-        activeAddon.bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
-        Services.scriptloader.loadSubScript(uri, activeAddon.bootstrapScope);
-      } catch (e) {
-        logger.warn("Error loading bootstrap.js for " + aId, e);
-      }
-    }
-
-    
-    let wrappedJSObject = { id: aId, options: { global: activeAddon.bootstrapScope }};
-    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
-  },
-
-  
-
-
-
-
-
-
-  unloadBootstrapScope(aId) {
-    this.activeAddons.delete(aId);
-    this.addAddonsToCrashReporter();
-
-    
-    let wrappedJSObject = { id: aId, options: { global: null }};
-    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  callBootstrapMethod(aAddon, aFile, aMethod, aReason, aExtraParams) {
-    if (!aAddon.id || !aAddon.version || !aAddon.type) {
-      throw new Error("aAddon must include an id, version, and type");
-    }
-
-    
-    let runInSafeMode = "runInSafeMode" in aAddon ? aAddon.runInSafeMode : canRunInSafeMode(aAddon);
-    if (Services.appinfo.inSafeMode && !runInSafeMode)
-      return;
-
-    let timeStart = new Date();
-    if (CHROME_TYPES.has(aAddon.type) && aMethod == "startup") {
-      logger.debug("Registering manifest for " + aFile.path);
-      Components.manager.addBootstrappedManifestLocation(aFile);
-    }
-
-    try {
-      
-      let activeAddon = this.activeAddons.get(aAddon.id);
-      if (!activeAddon) {
-        this.loadBootstrapScope(aAddon.id, aFile, aAddon.version, aAddon.type,
-                                runInSafeMode, aAddon.dependencies,
-                                aAddon.hasEmbeddedWebExtension || false,
-                                aReason);
-        activeAddon = this.activeAddons.get(aAddon.id);
-      }
-
-      if (aMethod == "startup" || aMethod == "shutdown") {
-        if (!aExtraParams) {
-          aExtraParams = {};
-        }
-        aExtraParams.instanceID = this.activeAddons.get(aAddon.id).instanceID;
-      }
-
-      let method = undefined;
-      let scope = activeAddon.bootstrapScope;
-      try {
-        method = scope[aMethod] || Cu.evalInSandbox(`${aMethod};`, scope);
-      } catch (e) {
-        
-        
-      }
-
-      if (aMethod == "startup") {
-        activeAddon.started = true;
-      } else if (aMethod == "shutdown") {
-        activeAddon.started = false;
-
-        
-        if (aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
-          activeAddon.disable = true;
-          for (let addon of this.getDependentAddons(aAddon)) {
-            if (addon.active)
-              XPIDatabase.updateAddonDisabledState(addon);
-          }
-        }
-      }
-
-      let installLocation = aAddon._installLocation || null;
-      let params = {
-        id: aAddon.id,
-        version: aAddon.version,
-        installPath: aFile.clone(),
-        resourceURI: getURIForResourceInFile(aFile, ""),
-        signedState: aAddon.signedState,
-        temporarilyInstalled: installLocation == TemporaryInstallLocation,
-        builtIn: installLocation instanceof BuiltInInstallLocation,
-      };
-
-      if (aMethod == "startup" && aAddon.startupData) {
-        params.startupData = aAddon.startupData;
-      }
-
-      if (aExtraParams) {
-        for (let key in aExtraParams) {
-          params[key] = aExtraParams[key];
-        }
-      }
-
-      if (aAddon.hasEmbeddedWebExtension) {
-        let reason = Object.keys(BOOTSTRAP_REASONS).find(
-          key => BOOTSTRAP_REASONS[key] == aReason
-        );
-
-        if (aMethod == "startup") {
-          const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor(params);
-          params.webExtension = {
-            startup: () => webExtension.startup(reason),
-          };
-        } else if (aMethod == "shutdown") {
-          LegacyExtensionsUtils.getEmbeddedExtensionFor(params).shutdown(reason);
-        }
-      }
-
-      if (!method) {
-        logger.warn("Add-on " + aAddon.id + " is missing bootstrap method " + aMethod);
-      } else {
-        logger.debug("Calling bootstrap method " + aMethod + " on " + aAddon.id + " version " +
-                     aAddon.version);
-
-        let result;
-        try {
-          result = method.call(scope, params, aReason);
-        } catch (e) {
-          logger.warn("Exception running bootstrap method " + aMethod + " on " + aAddon.id, e);
-        }
-
-        if (aMethod == "startup") {
-          activeAddon.startupPromise = Promise.resolve(result);
-          activeAddon.startupPromise.catch(Cu.reportError);
-        }
-      }
-    } finally {
-      
-      if (aMethod == "startup" && aReason != BOOTSTRAP_REASONS.APP_STARTUP) {
-        for (let addon of this.getDependentAddons(aAddon))
-          XPIDatabase.updateAddonDisabledState(addon);
-      }
-
-      if (CHROME_TYPES.has(aAddon.type) && aMethod == "shutdown" && aReason != BOOTSTRAP_REASONS.APP_SHUTDOWN) {
-        logger.debug("Removing manifest for " + aFile.path);
-        Components.manager.removeBootstrappedManifestLocation(aFile);
-      }
-      this.setTelemetry(aAddon.id, aMethod + "_MS", new Date() - timeStart);
     }
   },
 };
@@ -3217,6 +3330,7 @@ class WinRegInstallLocation extends DirectoryInstallLocation {
 
 var XPIInternal = {
   BOOTSTRAP_REASONS,
+  BootstrapScope,
   DB_SCHEMA,
   KEY_APP_SYSTEM_ADDONS,
   KEY_APP_SYSTEM_DEFAULTS,
