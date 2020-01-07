@@ -701,7 +701,13 @@ impl RenderTask {
             }
         };
 
-        let (target_rect, target_index) = self.get_target_rect();
+        let (mut target_rect, target_index) = self.get_target_rect();
+        
+        
+        
+        if let RenderTaskLocation::Fixed(_) = self.location {
+            target_rect.origin = DeviceIntPoint::origin();
+        };
 
         RenderTaskData {
             data: [

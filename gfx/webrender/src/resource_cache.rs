@@ -662,6 +662,7 @@ impl ResourceCache {
                         if let Some(dirty) = dirty_rect {
                             if intersect_for_tile(dirty, actual_size, tile_size, tile_offset).is_none() {
                                 
+                                self.pending_image_requests.remove(&request);
                                 return
                             }
                         }

@@ -8,10 +8,10 @@ use api::{ClipId, ColorF, ComplexClipRegion, DeviceIntPoint, DeviceIntRect, Devi
 use api::{DevicePixelScale, DeviceUintRect, DisplayItemRef, Epoch, ExtendMode, ExternalScrollId};
 use api::{FilterOp, FontInstanceKey, GlyphInstance, GlyphOptions, GlyphRasterSpace, GradientStop};
 use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, LayoutPoint};
-use api::{LayoutPrimitiveInfo, LayoutRect, LayoutVector2D, LayoutSize, LayoutTransform};
+use api::{LayoutPrimitiveInfo, LayoutRect, LayoutSize, LayoutTransform, LayoutVector2D};
 use api::{LineOrientation, LineStyle, LocalClip, NinePatchBorderSource, PipelineId};
-use api::{PropertyBinding, RepeatMode, ScrollFrameDisplayItem, ScrollSensitivity, Shadow};
-use api::{SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, TexelRect};
+use api::{PropertyBinding, ReferenceFrame, RepeatMode, ScrollFrameDisplayItem, ScrollSensitivity};
+use api::{Shadow, SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, TexelRect};
 use api::{TransformStyle, YuvColorSpace, YuvData};
 use app_units::Au;
 use clip::{ClipRegion, ClipSource, ClipSources, ClipStore};
@@ -159,10 +159,6 @@ pub struct DisplayListFlattener<'a> {
 
     
     
-    replacements: Vec<(ClipId, ClipId)>,
-
-    
-    
     id_to_index_mapper: ClipIdToIndexMapper,
 
     
@@ -225,7 +221,6 @@ impl<'a> DisplayListFlattener<'a> {
             font_instances,
             config: *frame_builder_config,
             pipeline_epochs: Vec::new(),
-            replacements: Vec::new(),
             output_pipelines,
             id_to_index_mapper: ClipIdToIndexMapper::default(),
             hit_testing_runs: recycle_vec(old_builder.hit_testing_runs),
@@ -263,17 +258,6 @@ impl<'a> DisplayListFlattener<'a> {
         )
     }
 
-    
-    
-    
-    
-    fn apply_scroll_frame_id_replacement(&self, index: ClipId) -> ClipId {
-        match self.replacements.last() {
-            Some(&(to_replace, replacement)) if to_replace == index => replacement,
-            _ => index,
-        }
-    }
-
     fn get_complex_clips(
         &self,
         pipeline_id: PipelineId,
@@ -282,14 +266,7 @@ impl<'a> DisplayListFlattener<'a> {
         if complex_clips.is_empty() {
             return vec![];
         }
-
-        self.scene
-            .pipelines
-            .get(&pipeline_id)
-            .expect("No display list?")
-            .display_list
-            .get(complex_clips)
-            .collect()
+        self.scene.get_display_list_for_pipeline(pipeline_id).get(complex_clips).collect()
     }
 
     fn get_clip_chain_items(
@@ -300,14 +277,7 @@ impl<'a> DisplayListFlattener<'a> {
         if items.is_empty() {
             return vec![];
         }
-
-        self.scene
-            .pipelines
-            .get(&pipeline_id)
-            .expect("No display list?")
-            .display_list
-            .get(items)
-            .collect()
+        self.scene.get_display_list_for_pipeline(pipeline_id).get(items).collect()
     }
 
     fn flatten_root(&mut self, pipeline: &'a ScenePipeline, frame_size: &LayoutSize) {
@@ -378,6 +348,10 @@ impl<'a> DisplayListFlattener<'a> {
                     Some(item) => item,
                     None => break,
                 };
+
+                if SpecificDisplayItem::PopReferenceFrame == *item.item() {
+                    return;
+                }
 
                 if SpecificDisplayItem::PopStackingContext == *item.item() {
                     return;
@@ -462,15 +436,37 @@ impl<'a> DisplayListFlattener<'a> {
         );
     }
 
+    fn flatten_reference_frame(
+        &mut self,
+        traversal: &mut BuiltDisplayListIter<'a>,
+        pipeline_id: PipelineId,
+        item: &DisplayItemRef,
+        reference_frame: &ReferenceFrame,
+        scroll_node_id: ClipId,
+        reference_frame_relative_offset: LayoutVector2D,
+    ) {
+        self.push_reference_frame(
+            reference_frame.id,
+            Some(scroll_node_id),
+            pipeline_id,
+            reference_frame.transform,
+            reference_frame.perspective,
+            reference_frame_relative_offset + item.rect().origin.to_vector(),
+        );
+
+        self.flatten_items(traversal, pipeline_id, LayoutVector2D::zero());
+
+        self.pop_reference_frame();
+    }
+
     fn flatten_stacking_context(
         &mut self,
         traversal: &mut BuiltDisplayListIter<'a>,
         pipeline_id: PipelineId,
         item: &DisplayItemRef,
         stacking_context: &StackingContext,
-        unreplaced_scroll_id: ClipId,
         scroll_node_id: ClipId,
-        mut reference_frame_relative_offset: LayoutVector2D,
+        reference_frame_relative_offset: LayoutVector2D,
         is_backface_visible: bool,
     ) {
         
@@ -481,52 +477,20 @@ impl<'a> DisplayListFlattener<'a> {
 
         let composition_operations = {
             
-            let display_list = &self
-                .scene
-                .pipelines
-                .get(&pipeline_id)
-                .expect("No display list?!")
-                .display_list;
+            let display_list = self.scene.get_display_list_for_pipeline(pipeline_id);
             CompositeOps::new(
                 stacking_context.filter_ops_for_compositing(display_list, item.filters()),
                 stacking_context.mix_blend_mode_for_compositing(),
             )
         };
 
-        let bounds = item.rect();
-        reference_frame_relative_offset += bounds.origin.to_vector();
-
-        
-        
-        
-        if let Some(reference_frame_id) = stacking_context.reference_frame_id {
-            debug_assert!(
-                stacking_context.transform.is_some() ||
-                stacking_context.perspective.is_some()
-            );
-
-            self.push_reference_frame(
-                reference_frame_id,
-                Some(scroll_node_id),
-                pipeline_id,
-                stacking_context.transform,
-                stacking_context.perspective,
-                reference_frame_relative_offset,
-            );
-            self.replacements.push((unreplaced_scroll_id, reference_frame_id));
-            reference_frame_relative_offset = LayoutVector2D::zero();
-        }
-
-        
-        
-        let final_scroll_node = self.apply_scroll_frame_id_replacement(unreplaced_scroll_id);
         self.push_stacking_context(
             pipeline_id,
             composition_operations,
             stacking_context.transform_style,
             is_backface_visible,
             false,
-            final_scroll_node,
+            scroll_node_id,
             stacking_context.clip_node_id,
             stacking_context.glyph_raster_space,
         );
@@ -534,13 +498,8 @@ impl<'a> DisplayListFlattener<'a> {
         self.flatten_items(
             traversal,
             pipeline_id,
-            reference_frame_relative_offset,
+            reference_frame_relative_offset + item.rect().origin.to_vector(),
         );
-
-        if stacking_context.reference_frame_id.is_some() {
-            self.replacements.pop();
-            self.pop_reference_frame();
-        }
 
         self.pop_stacking_context();
     }
@@ -608,10 +567,7 @@ impl<'a> DisplayListFlattener<'a> {
         pipeline_id: PipelineId,
         reference_frame_relative_offset: LayoutVector2D,
     ) -> Option<BuiltDisplayListIter<'a>> {
-        let mut clip_and_scroll_ids = item.clip_and_scroll();
-        let unreplaced_scroll_id = clip_and_scroll_ids.scroll_node_id;
-        clip_and_scroll_ids.scroll_node_id =
-            self.apply_scroll_frame_id_replacement(clip_and_scroll_ids.scroll_node_id);
+        let clip_and_scroll_ids = item.clip_and_scroll();
         let clip_and_scroll = self.id_to_index_mapper.map_clip_and_scroll(&clip_and_scroll_ids);
 
         let prim_info = item.get_layout_primitive_info(&reference_frame_relative_offset);
@@ -733,12 +689,24 @@ impl<'a> DisplayListFlattener<'a> {
                     pipeline_id,
                     &item,
                     &info.stacking_context,
-                    unreplaced_scroll_id,
                     clip_and_scroll_ids.scroll_node_id,
                     reference_frame_relative_offset,
                     prim_info.is_backface_visible,
                 );
                 return Some(subtraversal);
+            }
+            SpecificDisplayItem::PushReferenceFrame(ref info) => {
+                let mut subtraversal = item.sub_iter();
+                self.flatten_reference_frame(
+                    &mut subtraversal,
+                    pipeline_id,
+                    &item,
+                    &info.reference_frame,
+                    clip_and_scroll_ids.scroll_node_id,
+                    reference_frame_relative_offset,
+                );
+                return Some(subtraversal);
+
             }
             SpecificDisplayItem::Iframe(ref info) => {
                 self.flatten_iframe(
@@ -792,7 +760,7 @@ impl<'a> DisplayListFlattener<'a> {
             
             SpecificDisplayItem::SetGradientStops => {}
 
-            SpecificDisplayItem::PopStackingContext => {
+            SpecificDisplayItem::PopStackingContext | SpecificDisplayItem::PopReferenceFrame => {
                 unreachable!("Should have returned in parent method.")
             }
             SpecificDisplayItem::PushShadow(shadow) => {
