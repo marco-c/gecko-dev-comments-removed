@@ -4,7 +4,7 @@
 
 
 
-#include "json.h"
+#include "builtin/JSON.h"
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"

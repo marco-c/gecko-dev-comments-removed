@@ -4,8 +4,8 @@
 
 
 
-#ifndef json_h
-#define json_h
+#ifndef builtin_JSON_h
+#define builtin_JSON_h
 
 #include "mozilla/Range.h"
 
