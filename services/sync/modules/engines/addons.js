@@ -162,7 +162,8 @@ AddonsEngine.prototype = {
       changes[id] = modified;
     }
 
-    let lastSyncDate = new Date(this.lastSync * 1000);
+    let lastSync = await this.getLastSync();
+    let lastSyncDate = new Date(lastSync * 1000);
 
     
     
@@ -221,7 +222,8 @@ AddonsEngine.prototype = {
 
 
   async _syncCleanup() {
-    let ms = 1000 * this.lastSync - PRUNE_ADDON_CHANGES_THRESHOLD;
+    let lastSync = await this.getLastSync();
+    let ms = 1000 * lastSync - PRUNE_ADDON_CHANGES_THRESHOLD;
     this._reconciler.pruneChangesBeforeDate(new Date(ms));
     return SyncEngine.prototype._syncCleanup.call(this);
   },

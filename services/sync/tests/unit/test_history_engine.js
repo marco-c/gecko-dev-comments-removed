@@ -58,7 +58,7 @@ add_task(async function test_history_download_limit() {
 
   
   
-  engine.lastSync = lastSync;
+  await engine.setLastSync(lastSync);
   engine.downloadBatchSize = 4;
   engine.downloadLimit = 5;
 
@@ -75,7 +75,7 @@ add_task(async function test_history_download_limit() {
     "place0000006", "place0000007", "place0000008", "place0000009"]);
 
   
-  equal(engine.lastSync, lastSync + 15);
+  equal(await engine.getLastSync(), lastSync + 15);
 
   engine.lastModified = collection.modified;
   ping = await sync_engine_and_validate_telem(engine, false);
@@ -108,7 +108,7 @@ add_task(async function test_history_download_limit() {
   let backlogAfterThirdSync = Array.from(engine.toFetch).sort();
   deepEqual(backlogAfterSecondSync, backlogAfterThirdSync);
 
-  equal(engine.lastSync, lastSync + 20);
+  equal(await engine.getLastSync(), lastSync + 20);
 
   
   
@@ -176,7 +176,7 @@ add_task(async function test_history_visit_roundtrip() {
   }, Date.now() / 1000 + 10);
 
   
-  engine.lastSync = Date.now() / 1000 - 30;
+  await engine.setLastSync(Date.now() / 1000 - 30);
   await sync_engine_and_validate_telem(engine, false);
 
   
@@ -240,7 +240,7 @@ add_task(async function test_history_visit_dedupe_old() {
     );
   }, Date.now() / 1000 + 10);
 
-  engine.lastSync = Date.now() / 1000 - 30;
+  await engine.setLastSync(Date.now() / 1000 - 30);
   await sync_engine_and_validate_telem(engine, false);
 
   allVisits = (await PlacesUtils.history.fetch("https://www.example.com", {

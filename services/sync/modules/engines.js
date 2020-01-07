@@ -657,21 +657,19 @@ function SyncEngine(name, service) {
     dataPostProcessor: json => this._metadataPostProcessor(json),
     beforeSave: () => this._beforeSaveMetadata(),
   });
-  Utils.defineLazyIDProperty(this, "syncID", `services.sync.${this.name}.syncID`);
 
   XPCOMUtils.defineLazyPreferenceGetter(this, "_enabled",
     `services.sync.engine.${this.prefName}`, false,
     (data, previous, latest) =>
       
       this._tracker.onEngineEnabledChanged(latest));
+  XPCOMUtils.defineLazyPreferenceGetter(this, "_syncID",
+                                        `services.sync.${this.name}.syncID`,
+                                        "");
   XPCOMUtils.defineLazyPreferenceGetter(this, "_lastSync",
                                         `services.sync.${this.name}.lastSync`,
                                         "0", null,
                                         v => parseFloat(v));
-  XPCOMUtils.defineLazyPreferenceGetter(this, "_lastSyncLocal",
-                                        `services.sync.${this.name}.lastSyncLocal`,
-                                        "0", null,
-                                        v => parseInt(v, 10));
   
 
   
@@ -849,23 +847,83 @@ SyncEngine.prototype = {
   
 
 
+
+
+
+  async getSyncID() {
+    return this._syncID;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async ensureCurrentSyncID(newSyncID) {
+    let existingSyncID = this._syncID;
+    if (existingSyncID == newSyncID) {
+      return existingSyncID;
+    }
+    this._log.debug("Engine syncIDs: " + [newSyncID, existingSyncID]);
+    this.setSyncIDPref(newSyncID);
+    return newSyncID;
+  },
+
+  
+
+
+
+
+
+  async resetSyncID() {
+    let newSyncID = await this.resetLocalSyncID();
+    await this.wipeServer();
+    return newSyncID;
+  },
+
+  
+
+
+
+
+
+  async resetLocalSyncID() {
+    return this.setSyncIDPref(Utils.makeGUID());
+  },
+
+  setSyncIDPref(syncID) {
+    Svc.Prefs.set(this.name + ".syncID", syncID);
+    Svc.Prefs.set(this.name + ".lastSync", "0");
+    return syncID;
+  },
+
+  
+
+
   async getLastSync() {
-    return this.lastSync;
-  },
-  async setLastSync(lastSync) {
-    this.lastSync = lastSync;
-  },
-  get lastSync() {
     return this._lastSync;
   },
-  set lastSync(value) {
+  async setLastSync(lastSync) {
     
-    Svc.Prefs.set(this.name + ".lastSync", value.toString());
+    Svc.Prefs.set(this.name + ".lastSync", lastSync.toString());
   },
-  resetLastSync() {
+  async resetLastSync() {
     this._log.debug("Resetting " + this.name + " last sync time");
-    Svc.Prefs.set(this.name + ".lastSync", "0");
-    this.lastSyncLocal = 0;
+    await this.setLastSync(0);
   },
 
   get toFetch() {
@@ -893,17 +951,6 @@ SyncEngine.prototype = {
     }
     this._previousFailedStorage.data = { ids };
     this._previousFailedStorage.saveSoon();
-  },
-
-  
-
-
-  get lastSyncLocal() {
-    return this._lastSyncLocal;
-  },
-  set lastSyncLocal(value) {
-    
-    Svc.Prefs.set(this.name + ".lastSyncLocal", value.toString());
   },
 
   
@@ -942,19 +989,17 @@ SyncEngine.prototype = {
     let engines = metaGlobal.payload.engines || {};
     let engineData = engines[this.name] || {};
 
-    let needsWipe = false;
-
     
     if ((engineData.version || 0) < this.version) {
       this._log.debug("Old engine data: " + [engineData.version, this.version]);
 
       
-      needsWipe = true;
-      this.syncID = "";
+      
+      let newSyncID = await this.resetSyncID();
 
       
       engineData.version = this.version;
-      engineData.syncID = this.syncID;
+      engineData.syncID = newSyncID;
 
       
       engines[this.name] = engineData;
@@ -968,26 +1013,20 @@ SyncEngine.prototype = {
       let error = new String("New data: " + [engineData.version, this.version]);
       error.failureCode = VERSION_OUT_OF_DATE;
       throw error;
-    } else if (engineData.syncID != this.syncID) {
+    } else {
       
-      this._log.debug("Engine syncIDs: " + [engineData.syncID, this.syncID]);
-      this.syncID = engineData.syncID;
-      await this._resetClient();
+      let assignedSyncID = await this.ensureCurrentSyncID(engineData.syncID);
+      if (assignedSyncID != engineData.syncID) {
+        engineData.syncID = assignedSyncID;
+        metaGlobal.changed = true;
+      }
     }
 
     
     
-    if (needsWipe) {
-      await this.wipeServer();
-    }
-
     
     
     
-    
-    
-    
-    this.lastSyncLocal = Date.now();
     let initialChanges = await this.pullChanges();
     this._modified.replace(initialChanges);
     
@@ -1792,19 +1831,27 @@ SyncEngine.prototype = {
     return canDecrypt;
   },
 
-  async _resetClient() {
-    this.resetLastSync();
-    this.previousFailed = new SerializableSet();
-    this.toFetch = new SerializableSet();
-    this._needWeakUpload.clear();
-  },
+  
+
+
+
 
   async wipeServer() {
+    await this._deleteServerCollection();
+    await this._resetClient();
+  },
+
+  
+
+
+
+
+
+  async _deleteServerCollection() {
     let response = await this.service.resource(this.engineURL).delete();
     if (response.status != 200 && response.status != 404) {
       throw response;
     }
-    await this._resetClient();
   },
 
   async removeClientData() {
@@ -1880,13 +1927,20 @@ SyncEngine.prototype = {
   
 
 
-  async resetClient() {
-    if (!this._resetClient) {
-      throw new Error("engine does not implement _resetClient method");
-    }
 
+  async resetClient() {
     return this._notify("reset-client", this.name, this._resetClient)();
   },
+
+  async _resetClient() {
+    await this.resetLastSync();
+    this.previousFailed = new SerializableSet();
+    this.toFetch = new SerializableSet();
+    this._needWeakUpload.clear();
+  },
+
+  
+
 
   async wipeClient() {
     return this._notify("wipe-client", this.name, this._wipeClient)();

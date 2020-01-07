@@ -203,14 +203,13 @@ add_task(async function test_momentary_401_engine() {
   let john   = server.user("johndoe");
 
   _("Enabling the Rotary engine.");
-  let { engine, tracker } = await registerRotaryEngine();
+  let { engine, syncID, tracker } = await registerRotaryEngine();
 
   
   
   let global = {syncID: Service.syncID,
                 storageVersion: STORAGE_VERSION,
-                rotary: {version: engine.version,
-                         syncID:  engine.syncID}};
+                rotary: {version: engine.version, syncID}};
   john.createCollection("meta").insert("global", global);
 
   _("First sync to prepare server contents.");

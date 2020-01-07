@@ -523,7 +523,8 @@ BookmarksEngine.prototype = {
 
     try {
       
-      if (this.lastSync == 0) {
+      let lastSync = await this.getLastSync();
+      if (!lastSync) {
         this._log.debug("Bookmarks backup starting.");
         await PlacesBackups.create(null, true);
         this._log.debug("Bookmarks backup done.");
@@ -707,7 +708,7 @@ BufferedBookmarksEngine.prototype = {
     await mirror.setCollectionLastModified(lastSync);
     
     
-    super.lastSync = lastSync;
+    await super.setLastSync(lastSync);
   },
 
   get lastSync() {

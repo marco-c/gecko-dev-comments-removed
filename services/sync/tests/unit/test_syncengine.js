@@ -74,43 +74,42 @@ add_task(async function test_syncID() {
   try {
     
     Assert.equal(Svc.Prefs.get("steam.syncID"), undefined);
+    Assert.equal(await engine.getSyncID(), "");
 
     
-    Assert.equal(engine.syncID, "fake-guid-00");
+    Assert.equal(await engine.resetLocalSyncID(), "fake-guid-00");
     Assert.equal(Svc.Prefs.get("steam.syncID"), "fake-guid-00");
 
     Svc.Prefs.set("steam.syncID", Utils.makeGUID());
     Assert.equal(Svc.Prefs.get("steam.syncID"), "fake-guid-01");
-    Assert.equal(engine.syncID, "fake-guid-01");
+    Assert.equal(await engine.getSyncID(), "fake-guid-01");
   } finally {
     Svc.Prefs.resetBranch("");
   }
 });
 
 add_task(async function test_lastSync() {
-  _("SyncEngine.lastSync and SyncEngine.lastSyncLocal correspond to preferences");
+  _("SyncEngine.lastSync corresponds to preferences");
   await SyncTestingInfrastructure(server);
   let engine = await makeSteamEngine();
   try {
     
     Assert.equal(Svc.Prefs.get("steam.lastSync"), undefined);
-    Assert.equal(engine.lastSync, 0);
-    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
-    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(await engine.getLastSync(), 0);
 
     
-    engine.lastSync = 123.45;
-    Assert.equal(engine.lastSync, 123.45);
+    await engine.setLastSync(123.45);
+    Assert.equal(await engine.getLastSync(), 123.45);
     Assert.equal(Svc.Prefs.get("steam.lastSync"), "123.45");
 
     
-    engine.lastSyncLocal = 67890;
-    Assert.equal(engine.lastSyncLocal, 67890);
-    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), "67890");
+    await engine.setLastSync(67890);
+    Assert.equal(await engine.getLastSync(), 67890);
+    Assert.equal(Svc.Prefs.get("steam.lastSync"), "67890");
 
     
-    engine.resetLastSync();
-    Assert.equal(engine.lastSync, 0);
+    await engine.resetLastSync();
+    Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(Svc.Prefs.get("steam.lastSync"), "0");
   } finally {
     Svc.Prefs.resetBranch("");
@@ -229,17 +228,14 @@ add_task(async function test_resetClient() {
   try {
     
     Assert.equal(Svc.Prefs.get("steam.lastSync"), undefined);
-    Assert.equal(Svc.Prefs.get("steam.lastSyncLocal"), undefined);
     Assert.equal(engine.toFetch.size, 0);
 
-    engine.lastSync = 123.45;
-    engine.lastSyncLocal = 67890;
+    await engine.setLastSync(123.45);
     engine.toFetch = guidSetOfSize(4);
     engine.previousFailed = guidSetOfSize(3);
 
     await engine.resetClient();
-    Assert.equal(engine.lastSync, 0);
-    Assert.equal(engine.lastSyncLocal, 0);
+    Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(engine.toFetch.size, 0);
     Assert.equal(engine.previousFailed.size, 0);
   } finally {
@@ -261,13 +257,13 @@ add_task(async function test_wipeServer() {
 
   try {
     
-    engine.lastSync = 123.45;
+    await engine.setLastSync(123.45);
     engine.toFetch = guidSetOfSize(3),
 
     _("Wipe server data and reset client.");
     await engine.wipeServer();
     Assert.equal(steamCollection.payload, undefined);
-    Assert.equal(engine.lastSync, 0);
+    Assert.equal(await engine.getLastSync(), 0);
     Assert.equal(engine.toFetch.size, 0);
 
   } finally {

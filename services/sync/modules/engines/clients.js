@@ -85,8 +85,6 @@ Utils.deferGetSet(ClientsRec,
 function ClientEngine(service) {
   SyncEngine.call(this, "Clients", service);
 
-  
-  this.resetLastSync();
   this.fxAccounts = fxAccounts;
   this.addClientCommandQueue = Promise.resolve();
   Utils.defineLazyIDProperty(this, "localID", "services.sync.client.GUID");
@@ -99,6 +97,11 @@ ClientEngine.prototype = {
   allowSkippedRecord: false,
   _knownStaleFxADeviceIds: null,
   _lastDeviceCounts: null,
+
+  async initialize() {
+    
+    await this.resetLastSync();
+  },
 
   
   
@@ -371,7 +374,7 @@ ClientEngine.prototype = {
 
   async _processIncoming() {
     
-    this.lastSync = 0;
+    await this.setLastSync(0);
     this._incomingClients = {};
     try {
       await SyncEngine.prototype._processIncoming.call(this);
@@ -448,9 +451,10 @@ ClientEngine.prototype = {
     let updatedIDs = this._modified.ids();
     await SyncEngine.prototype._uploadOutgoing.call(this);
     
+    let lastSync = await this.getLastSync();
     for (let id of updatedIDs) {
       if (id != this.localID) {
-        this._store._remoteClients[id].serverLastModified = this.lastSync;
+        this._store._remoteClients[id].serverLastModified = lastSync;
       }
     }
   },

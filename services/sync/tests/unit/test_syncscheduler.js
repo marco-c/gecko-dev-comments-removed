@@ -26,12 +26,13 @@ CatapultEngine.prototype = {
 var scheduler = new SyncScheduler(Service);
 let clientsEngine;
 
-function sync_httpd_setup() {
+async function sync_httpd_setup() {
+  let clientsSyncID = await clientsEngine.resetLocalSyncID();
   let global = new ServerWBO("global", {
     syncID: Service.syncID,
     storageVersion: STORAGE_VERSION,
     engines: {clients: {version: clientsEngine.version,
-                        syncID: clientsEngine.syncID}}
+                        syncID: clientsSyncID}}
   });
   let clientsColl = new ServerCollection({}, true);
 
@@ -213,7 +214,7 @@ add_task(async function test_masterpassword_locked_retry_interval() {
     return false;
   };
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   await Service.sync();
@@ -255,7 +256,7 @@ add_task(async function test_scheduleNextSync_nowOrPast() {
 
   let promiseObserved = promiseOneObserver("weave:service:sync:finish");
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -370,7 +371,7 @@ add_task(async function test_scheduleNextSync_future_backoff() {
 add_task(async function test_handleSyncError() {
   enableValidationPrefs();
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -435,7 +436,7 @@ add_task(async function test_handleSyncError() {
 add_task(async function test_client_sync_finish_updateClientMode() {
   enableValidationPrefs();
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -479,7 +480,7 @@ add_task(async function test_autoconnect_nextSync_past() {
   let promiseObserved = promiseOneObserver("weave:service:sync:finish");
   
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   scheduler.delayedAutoConnect(0);
@@ -514,7 +515,7 @@ add_task(async function test_autoconnect_nextSync_future() {
 });
 
 add_task(async function test_autoconnect_mp_locked() {
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -556,7 +557,7 @@ add_task(async function test_autoconnect_mp_locked() {
 });
 
 add_task(async function test_no_autoconnect_during_wizard() {
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -575,7 +576,7 @@ add_task(async function test_no_autoconnect_during_wizard() {
 });
 
 add_task(async function test_no_autoconnect_status_not_ok() {
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   Status.__authManager = Service.identity = new BrowserIDManager();
 
   
@@ -601,7 +602,7 @@ add_task(async function test_autoconnectDelay_pref() {
 
   Svc.Prefs.set("autoconnectDelay", 1);
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   Svc.Obs.notify("weave:service:ready");
@@ -716,7 +717,7 @@ add_task(async function test_no_sync_node() {
 
   
   
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   let oldfc = Service.identity._findCluster;
@@ -738,7 +739,7 @@ add_task(async function test_sync_failed_partial_500s() {
 
   _("Test a 5xx status calls handleSyncError.");
   scheduler._syncErrors = MAX_ERROR_COUNT_BEFORE_BACKOFF;
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
 
   let engine = Service.engineManager.get("catapult");
   engine.enabled = true;
@@ -764,7 +765,7 @@ add_task(async function test_sync_failed_partial_500s() {
 
 add_task(async function test_sync_failed_partial_noresync() {
   enableValidationPrefs();
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
 
   let engine = Service.engineManager.get("catapult");
   engine.enabled = true;
@@ -798,7 +799,7 @@ add_task(async function test_sync_failed_partial_400s() {
 
   _("Test a non-5xx status doesn't call handleSyncError.");
   scheduler._syncErrors = MAX_ERROR_COUNT_BEFORE_BACKOFF;
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
 
   let engine = Service.engineManager.get("catapult");
   engine.enabled = true;
@@ -830,7 +831,7 @@ add_task(async function test_sync_failed_partial_400s() {
 add_task(async function test_sync_X_Weave_Backoff() {
   enableValidationPrefs();
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
@@ -889,7 +890,7 @@ add_task(async function test_sync_X_Weave_Backoff() {
 add_task(async function test_sync_503_Retry_After() {
   enableValidationPrefs();
 
-  let server = sync_httpd_setup();
+  let server = await sync_httpd_setup();
   await setUp(server);
 
   
