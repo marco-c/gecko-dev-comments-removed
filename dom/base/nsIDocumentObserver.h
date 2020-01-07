@@ -83,43 +83,6 @@ public:
 
   virtual void DocumentStatesChanged(nsIDocument* aDocument,
                                      mozilla::EventStates aStateMask) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-  virtual void StyleSheetAdded(mozilla::StyleSheet* aStyleSheet,
-                               bool aDocumentSheet) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-  virtual void StyleSheetRemoved(mozilla::StyleSheet* aStyleSheet,
-                                 bool aDocumentSheet) = 0;
-
-  
-
-
-
-
-
-
-
-
-  virtual void StyleSheetApplicableStateChanged(mozilla::StyleSheet* aStyleSheet) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
@@ -146,18 +109,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
     virtual void DocumentStatesChanged(nsIDocument* aDocument,               \
                                        mozilla::EventStates aStateMask) override;
 
-#define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETADDED                          \
-    virtual void StyleSheetAdded(mozilla::StyleSheet* aStyleSheet,           \
-                                 bool aDocumentSheet) override;
-
-#define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETREMOVED                        \
-    virtual void StyleSheetRemoved(mozilla::StyleSheet* aStyleSheet,         \
-                                   bool aDocumentSheet) override;
-
-#define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETAPPLICABLESTATECHANGED         \
-    virtual void StyleSheetApplicableStateChanged(                           \
-        mozilla::StyleSheet* aStyleSheet) override;
-
 #define NS_DECL_NSIDOCUMENTOBSERVER                                          \
     NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE                                  \
     NS_DECL_NSIDOCUMENTOBSERVER_ENDUPDATE                                    \
@@ -165,9 +116,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
     NS_DECL_NSIDOCUMENTOBSERVER_ENDLOAD                                      \
     NS_DECL_NSIDOCUMENTOBSERVER_CONTENTSTATECHANGED                          \
     NS_DECL_NSIDOCUMENTOBSERVER_DOCUMENTSTATESCHANGED                        \
-    NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETADDED                              \
-    NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETREMOVED                            \
-    NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETAPPLICABLESTATECHANGED             \
     NS_DECL_NSIMUTATIONOBSERVER
 
 
@@ -208,21 +156,5 @@ _class::DocumentStatesChanged(nsIDocument* aDocument,                     \
 
 #define NS_IMPL_NSIDOCUMENTOBSERVER_CONTENT(_class)                       \
 NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(_class)
-
-#define NS_IMPL_NSIDOCUMENTOBSERVER_STYLE_STUB(_class)                    \
-void                                                                      \
-_class::StyleSheetAdded(mozilla::StyleSheet* aStyleSheet,                 \
-                        bool aDocumentSheet)                              \
-{                                                                         \
-}                                                                         \
-void                                                                      \
-_class::StyleSheetRemoved(mozilla::StyleSheet* aStyleSheet,               \
-                          bool aDocumentSheet)                            \
-{                                                                         \
-}                                                                         \
-void                                                                      \
-_class::StyleSheetApplicableStateChanged(mozilla::StyleSheet* aStyleSheet)\
-{                                                                         \
-}                                                                         \
 
 #endif 
