@@ -754,10 +754,21 @@ static inline wr::WrFilterOpType ToWrFilterOpType(uint32_t type) {
 
 
 
+
 struct WrClipId {
   uint64_t id;
 
   bool operator==(const WrClipId& other) const {
+    return id == other.id;
+  }
+};
+
+
+
+struct WrScrollId {
+  uint64_t id;
+
+  bool operator==(const WrScrollId& other) const {
     return id == other.id;
   }
 };
@@ -772,7 +783,7 @@ struct WrStickyId {
   }
 };
 
-typedef Variant<layers::FrameMetrics::ViewID, WrClipId> ScrollOrClipId;
+typedef Variant<WrScrollId, WrClipId> ScrollOrClipId;
 
 enum class WebRenderError : int8_t {
   INITIALIZE = 0,

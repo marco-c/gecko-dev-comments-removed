@@ -254,7 +254,7 @@ public:
                            bool aIsBackfaceVisible);
   void PopStackingContext();
 
-  wr::WrClipId DefineClip(const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
+  wr::WrClipId DefineClip(const Maybe<wr::WrScrollId>& aAncestorScrollId,
                           const Maybe<wr::WrClipId>& aAncestorClipId,
                           const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
@@ -275,16 +275,16 @@ public:
                        const DisplayItemClipChain* aParent);
   void PopStickyFrame(const DisplayItemClipChain* aParent);
 
-  bool IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const;
-  void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
-                         const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
-                         const Maybe<wr::WrClipId>& aAncestorClipId,
-                         const wr::LayoutRect& aContentRect, 
-                         const wr::LayoutRect& aClipRect);
-  void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId);
+  Maybe<wr::WrScrollId> GetScrollIdForDefinedScrollLayer(layers::FrameMetrics::ViewID aViewId) const;
+  wr::WrScrollId DefineScrollLayer(const layers::FrameMetrics::ViewID& aViewId,
+                                   const Maybe<wr::WrScrollId>& aAncestorScrollId,
+                                   const Maybe<wr::WrClipId>& aAncestorClipId,
+                                   const wr::LayoutRect& aContentRect, 
+                                   const wr::LayoutRect& aClipRect);
+  void PushScrollLayer(const wr::WrScrollId& aScrollId);
   void PopScrollLayer();
 
-  void PushClipAndScrollInfo(const layers::FrameMetrics::ViewID& aScrollId,
+  void PushClipAndScrollInfo(const wr::WrScrollId& aScrollId,
                              const wr::WrClipId* aClipId);
   void PopClipAndScrollInfo();
 
@@ -435,7 +435,7 @@ public:
   
   Maybe<wr::WrClipId> TopmostClipId();
   
-  layers::FrameMetrics::ViewID TopmostScrollId();
+  Maybe<wr::WrScrollId> TopmostScrollId();
   
   bool TopmostIsClip();
 
@@ -467,7 +467,7 @@ protected:
   
   
   
-  std::unordered_set<layers::FrameMetrics::ViewID> mScrollIdsDefined;
+  std::unordered_map<layers::FrameMetrics::ViewID, wr::WrScrollId> mScrollIds;
 
   
   

@@ -124,10 +124,14 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   
 
-  FrameMetrics::ViewID leafmostId = ids.first.valueOr(FrameMetrics::NULL_SCROLL_ID);
-  FrameMetrics::ViewID scrollId = aItem->GetActiveScrolledRoot()
+  Maybe<wr::WrScrollId> leafmostId = ids.first;
+  FrameMetrics::ViewID viewId = aItem->GetActiveScrolledRoot()
       ? aItem->GetActiveScrolledRoot()->GetViewId()
       : FrameMetrics::NULL_SCROLL_ID;
+  Maybe<wr::WrScrollId> scrollId =
+      mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
+  MOZ_ASSERT(scrollId.isSome());
+
   
   
   
@@ -142,7 +146,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
       mBuilder->TopmostScrollId() == scrollId &&
       !mBuilder->TopmostIsClip()) {
     if (auto cs = EnclosingClipAndScroll()) {
-      MOZ_ASSERT(cs->first == scrollId);
+      MOZ_ASSERT(cs->first == *scrollId);
       needClipAndScroll = true;
     }
   }
@@ -151,7 +155,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
     MOZ_ASSERT(leafmostId == scrollId); 
-    clips.mScrollId = Some(scrollId);
+    clips.mScrollId = scrollId;
   }
   
   
@@ -169,7 +173,8 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
     if (!clipId) {
       clipId = mBuilder->TopmostClipId();
     }
-    clips.mClipAndScroll = Some(std::make_pair(scrollId, clipId));
+
+    clips.mClipAndScroll = Some(std::make_pair(*scrollId, clipId));
   }
 
   clips.Apply(mBuilder);
@@ -178,7 +183,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   SLH_LOG("done setup for %p\n", aItem);
 }
 
-std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>>
+std::pair<Maybe<wr::WrScrollId>, Maybe<wr::WrClipId>>
 ScrollingLayersHelper::DefineClipChain(nsDisplayItem* aItem,
                                        const ActiveScrolledRoot* aAsr,
                                        const DisplayItemClipChain* aChain,
@@ -227,7 +232,7 @@ ScrollingLayersHelper::DefineClipChain(nsDisplayItem* aItem,
   return std::make_pair(Nothing(), Nothing());
 }
 
-std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>>
+std::pair<Maybe<wr::WrScrollId>, Maybe<wr::WrClipId>>
 ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
                                             const ActiveScrolledRoot* aAsr,
                                             const DisplayItemClipChain* aChain,
@@ -237,7 +242,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   MOZ_ASSERT(aChain);
 
   
-  std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>> ids;
+  std::pair<Maybe<wr::WrScrollId>, Maybe<wr::WrClipId>> ids;
 
   if (mBuilder->HasExtraClip()) {
     
@@ -255,9 +260,8 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   if (ids.second) {
     
     if (aAsr) {
-      FrameMetrics::ViewID scrollId = aAsr->GetViewId();
-      MOZ_ASSERT(mBuilder->IsScrollLayerDefined(scrollId));
-      ids.first = Some(scrollId);
+      ids.first = mBuilder->GetScrollIdForDefinedScrollLayer(aAsr->GetViewId());
+      MOZ_ASSERT(ids.first);
     }
     return ids;
   }
@@ -294,7 +298,8 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
     }
   } else {
     MOZ_ASSERT(!ancestorIds.second);
-    FrameMetrics::ViewID scrollId = aChain->mASR ? aChain->mASR->GetViewId() : FrameMetrics::NULL_SCROLL_ID;
+    FrameMetrics::ViewID viewId = aChain->mASR ? aChain->mASR->GetViewId() : FrameMetrics::NULL_SCROLL_ID;
+    auto scrollId = mBuilder->GetScrollIdForDefinedScrollLayer(viewId);
     if (mBuilder->TopmostScrollId() == scrollId) {
       if (mBuilder->TopmostIsClip()) {
         
@@ -323,7 +328,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
         
         
         
-        MOZ_ASSERT(cs->first == scrollId);
+        MOZ_ASSERT(Some(cs->first) == scrollId);
         ancestorIds.first = Nothing();
         ancestorIds.second = cs->second;
       }
@@ -350,7 +355,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
   return ids;
 }
 
-std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>>
+std::pair<Maybe<wr::WrScrollId>, Maybe<wr::WrClipId>>
 ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
                                            const ActiveScrolledRoot* aAsr,
                                            const DisplayItemClipChain* aChain,
@@ -360,12 +365,12 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   MOZ_ASSERT(aAsr);
 
   
-  std::pair<Maybe<FrameMetrics::ViewID>, Maybe<wr::WrClipId>> ids;
+  std::pair<Maybe<wr::WrScrollId>, Maybe<wr::WrClipId>> ids;
 
-  FrameMetrics::ViewID scrollId = aAsr->GetViewId();
-  if (mBuilder->IsScrollLayerDefined(scrollId)) {
+  FrameMetrics::ViewID viewId = aAsr->GetViewId();
+  if (auto scrollId = mBuilder->GetScrollIdForDefinedScrollLayer(viewId)) {
     
-    ids.first = Some(scrollId);
+    ids.first = scrollId;
     if (aChain) {
       if (mBuilder->HasExtraClip()) {
         ids.second = mBuilder->GetCacheOverride(aChain);
@@ -445,7 +450,9 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   
   contentRect.MoveTo(clipBounds.TopLeft());
 
-  mBuilder->DefineScrollLayer(scrollId, ancestorIds.first, ancestorIds.second,
+  auto scrollId = mBuilder->DefineScrollLayer(viewId,
+      ancestorIds.first,
+      ancestorIds.second,
       aSc.ToRelativeLayoutRect(contentRect),
       aSc.ToRelativeLayoutRect(clipBounds));
 
