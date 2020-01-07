@@ -173,7 +173,7 @@ public:
 
   bool SelectSendResolution(unsigned short width,
                             unsigned short height,
-                            webrtc::VideoFrame* frame);
+                            const webrtc::VideoFrame* frame);
 
   
 
@@ -183,7 +183,7 @@ public:
 
   nsresult ReconfigureSendCodec(unsigned short width,
                                 unsigned short height,
-                                webrtc::VideoFrame* frame);
+                                const webrtc::VideoFrame* frame);
 
   
 
@@ -207,15 +207,16 @@ public:
 
 
 
-  virtual MediaConduitErrorCode SendVideoFrame(unsigned char* video_frame,
+  virtual MediaConduitErrorCode SendVideoFrame(const unsigned char* video_frame,
                                                unsigned int video_frame_length,
                                                unsigned short width,
                                                unsigned short height,
                                                VideoType video_type,
                                                uint64_t capture_time) override;
-  virtual MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame& frame) override;
+  virtual MediaConduitErrorCode SendVideoFrame(
+    const webrtc::VideoFrame& frame) override;
 
- 
+  
 
 
 
