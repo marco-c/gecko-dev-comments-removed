@@ -3920,6 +3920,8 @@ nsContentUtils::GetEventArgNames(int32_t aNameSpaceID,
   }
 }
 
+
+
 static const char gPropertiesFiles[nsContentUtils::PropertiesFile_COUNT][56] = {
   
   "chrome://global/locale/css.properties",
