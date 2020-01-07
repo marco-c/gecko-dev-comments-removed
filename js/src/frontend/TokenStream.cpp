@@ -1396,7 +1396,6 @@ enum FirstCharKind {
 #define T_RB        size_t(TokenKind::Rb)
 #define T_LC        size_t(TokenKind::Lc)
 #define T_RC        size_t(TokenKind::Rc)
-#define Templat     String
 #define _______     Other
 static const uint8_t firstCharKinds[] = {
 
@@ -1404,12 +1403,12 @@ static const uint8_t firstCharKinds[] = {
      EOL,   Space,   Space,     EOL, _______, _______, _______, _______, _______, _______,
  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
  _______, _______,   Space, _______,  String, _______,   Ident, _______, _______,  String,
-    T_LP,    T_RP, _______, _______, T_COMMA,_______,  _______, _______,BasePrefix,  Dec,
-     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,    Dec,  T_COLON,  T_SEMI,
+    T_LP,    T_RP, _______, _______, T_COMMA, _______, _______, _______,BasePrefix,   Dec,
+     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec,     Dec, T_COLON,  T_SEMI,
  _______, _______, _______,  T_HOOK, _______,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
-   Ident,    T_LB, _______,    T_RB, _______,   Ident, Templat,   Ident,   Ident,   Ident,
+   Ident,    T_LB, _______,    T_RB, _______,   Ident,  String,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,    T_LC, _______,    T_RC,T_BITNOT, _______
@@ -1425,7 +1424,6 @@ static const uint8_t firstCharKinds[] = {
 #undef T_RB
 #undef T_LC
 #undef T_RC
-#undef Templat
 #undef _______
 
 static_assert(LastCharKind < (1 << (sizeof(firstCharKinds[0]) * 8)),
