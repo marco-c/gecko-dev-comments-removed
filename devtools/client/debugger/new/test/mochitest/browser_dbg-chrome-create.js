@@ -44,6 +44,7 @@ registerCleanupFunction(function() {
 add_task(async function() {
   
   requestLongerTimeout(5);
+  await pushPref("devtools.chrome.enabled", true);
   await pushPref("devtools.debugger.remote-enabled", true);
 
   gProcess = await initChromeDebugger();

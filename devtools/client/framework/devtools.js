@@ -17,6 +17,7 @@ loader.lazyRequireGetter(this, "ToolboxHostManager", "devtools/client/framework/
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
 loader.lazyRequireGetter(this, "HUDService", "devtools/client/webconsole/hudservice", true);
 loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scratchpad/scratchpad-manager.jsm");
+loader.lazyImporter(this, "BrowserToolboxProcess", "resource://devtools/client/framework/ToolboxProcess.jsm");
 
 loader.lazyRequireGetter(this, "WebExtensionInspectedWindowFront",
       "devtools/shared/fronts/webextension-inspected-window", true);
@@ -397,6 +398,7 @@ DevTools.prototype = {
 
   saveDevToolsSession: function (state) {
     state.browserConsole = HUDService.getBrowserConsoleSessionState();
+    state.browserToolbox = BrowserToolboxProcess.getBrowserToolboxSessionState();
 
     
     state.scratchpads = [];
@@ -408,9 +410,13 @@ DevTools.prototype = {
   
 
 
-  restoreDevToolsSession: function ({scratchpads, browserConsole}) {
+  restoreDevToolsSession: function ({scratchpads, browserConsole, browserToolbox}) {
     if (scratchpads) {
       ScratchpadManager.restoreSession(scratchpads);
+    }
+
+    if (browserToolbox) {
+      BrowserToolboxProcess.init();
     }
 
     if (browserConsole && !HUDService.getBrowserConsole()) {

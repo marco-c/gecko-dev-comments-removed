@@ -91,7 +91,26 @@ EventEmitter.decorate(BrowserToolboxProcess);
 
 
 BrowserToolboxProcess.init = function (onClose, onRun, options) {
+  if (!Services.prefs.getBoolPref("devtools.chrome.enabled") ||
+      !Services.prefs.getBoolPref("devtools.debugger.remote-enabled")) {
+    console.error("Could not start Browser Toolbox, you need to enable it.");
+    return null;
+  }
   return new BrowserToolboxProcess(onClose, onRun, options);
+};
+
+
+
+
+
+BrowserToolboxProcess.getBrowserToolboxSessionState = function () {
+  for (let process of processes.values()) {
+    
+    if (!process._options || !process._options.addonID) {
+      return true;
+    }
+  }
+  return false;
 };
 
 
