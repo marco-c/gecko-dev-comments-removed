@@ -540,7 +540,10 @@ struct DIGroup
       }
     }
 
+    
     LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(mGroupBounds, aGrouper->mAppUnitsPerDevPixel);
+    bounds = LayoutDeviceRect(RoundedToInt(bounds));
+
     IntSize size = mGroupBounds.Size().ScaleToNearestPixels(mScale.width, mScale.height, aGrouper->mAppUnitsPerDevPixel);
 
     if (mInvalidRect.IsEmpty()) {
