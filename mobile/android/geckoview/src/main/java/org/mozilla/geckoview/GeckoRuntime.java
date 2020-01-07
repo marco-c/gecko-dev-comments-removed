@@ -121,6 +121,9 @@ public final class GeckoRuntime implements Parcelable {
 
         mSettings.runtime = this;
         mSettings.flush();
+
+        
+        GeckoAppShell.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
         return true;
     }
 
