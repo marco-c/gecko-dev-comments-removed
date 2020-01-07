@@ -114,6 +114,7 @@ public:
   already_AddRefed<layers::Image>
   TransferAsImage();
 
+  
   UniquePtr<ImageBitmapCloneData>
   ToCloneData() const;
 

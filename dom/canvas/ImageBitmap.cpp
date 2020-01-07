@@ -792,6 +792,11 @@ ImageBitmap::TransferAsImage()
 UniquePtr<ImageBitmapCloneData>
 ImageBitmap::ToCloneData() const
 {
+  if (!mData) {
+    
+    return nullptr;
+  }
+
   UniquePtr<ImageBitmapCloneData> result(new ImageBitmapCloneData());
   result->mPictureRect = mPictureRect;
   result->mAlphaType = mAlphaType;
