@@ -146,6 +146,7 @@ class ProfilingStackFrame
     mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> lineOrPcOffset;
 
     
+    
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> kindAndCategory_;
 
     static int32_t pcToOffset(JSScript* aScript, jsbytecode* aPc);
@@ -184,27 +185,29 @@ class ProfilingStackFrame
         
         JS_OSR = 3,
 
-        KIND_BITCOUNT = 2,
-        KIND_MASK = (1 << KIND_BITCOUNT) - 1
+        KIND_MASK = 0x3,
     };
 
     
     enum class Category : uint32_t {
-        IDLE,
-        OTHER,
-        LAYOUT,
-        JS,
-        GCCC,
-        NETWORK,
-        GRAPHICS,
-        DOM,
+        OTHER    = 1u << 4,
+        CSS      = 1u << 5,
+        JS       = 1u << 6,
+        GC       = 1u << 7,
+        CC       = 1u << 8,
+        NETWORK  = 1u << 9,
+        GRAPHICS = 1u << 10,
+        STORAGE  = 1u << 11,
+        EVENTS   = 1u << 12,
 
         FIRST    = OTHER,
-        LAST     = DOM,
+        LAST     = EVENTS,
+
+        CATEGORY_MASK = ~uint32_t(Kind::KIND_MASK),
     };
 
-    static_assert(uint32_t(Category::LAST) <= (UINT32_MAX >> uint32_t(Kind::KIND_BITCOUNT)),
-                  "Too many categories to fit into u32 with two bits reserved for the kind");
+    static_assert((uint32_t(Category::FIRST) & uint32_t(Kind::KIND_MASK)) == 0,
+                  "Category overlaps with Kind");
 
     bool isLabelFrame() const
     {
@@ -234,7 +237,7 @@ class ProfilingStackFrame
         dynamicString_ = aDynamicString;
         spOrScript = sp;
         lineOrPcOffset = static_cast<int32_t>(aLine);
-        kindAndCategory_ = uint32_t(Kind::LABEL) | (uint32_t(aCategory) << uint32_t(Kind::KIND_BITCOUNT));
+        kindAndCategory_ = uint32_t(Kind::LABEL) | uint32_t(aCategory);
         MOZ_ASSERT(isLabelFrame());
     }
 
@@ -244,7 +247,7 @@ class ProfilingStackFrame
         dynamicString_ = nullptr;
         spOrScript = sp;
         lineOrPcOffset = 0;
-        kindAndCategory_ = uint32_t(Kind::SP_MARKER) | (uint32_t(Category::OTHER) << uint32_t(Kind::KIND_BITCOUNT));
+        kindAndCategory_ = uint32_t(Kind::SP_MARKER) | uint32_t(ProfilingStackFrame::Category::OTHER);
         MOZ_ASSERT(isSpMarkerFrame());
     }
 
@@ -255,12 +258,12 @@ class ProfilingStackFrame
         dynamicString_ = aDynamicString;
         spOrScript = aScript;
         lineOrPcOffset = pcToOffset(aScript, aPc);
-        kindAndCategory_ = uint32_t(Kind::JS_NORMAL) | (uint32_t(Category::JS) << uint32_t(Kind::KIND_BITCOUNT));
+        kindAndCategory_ = uint32_t(Kind::JS_NORMAL) | uint32_t(Category::JS);
         MOZ_ASSERT(isJsFrame());
     }
 
     void setKind(Kind aKind) {
-        kindAndCategory_ = uint32_t(aKind) | (uint32_t(category()) << uint32_t(Kind::KIND_BITCOUNT));
+        kindAndCategory_ = uint32_t(aKind) | uint32_t(category());
     }
 
     Kind kind() const {
@@ -268,7 +271,7 @@ class ProfilingStackFrame
     }
 
     Category category() const {
-        return Category(kindAndCategory_ >> uint32_t(Kind::KIND_BITCOUNT));
+        return Category(kindAndCategory_ & uint32_t(Category::CATEGORY_MASK));
     }
 
     void* stackAddress() const {

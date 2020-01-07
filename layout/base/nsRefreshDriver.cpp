@@ -1763,7 +1763,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
     return;
   }
 
-  AUTO_PROFILER_LABEL("nsRefreshDriver::Tick", LAYOUT);
+  AUTO_PROFILER_LABEL("nsRefreshDriver::Tick", GRAPHICS);
 
   
   
