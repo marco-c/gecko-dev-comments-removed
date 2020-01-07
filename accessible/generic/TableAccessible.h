@@ -35,7 +35,7 @@ public:
   
 
 
-  virtual uint32_t ColCount() { return 0; }
+  virtual uint32_t ColCount() const { return 0; }
 
   
 

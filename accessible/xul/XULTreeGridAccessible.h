@@ -30,7 +30,7 @@ public:
     { mGenericTypes |= eTable; }
 
   
-  virtual uint32_t ColCount() override;
+  virtual uint32_t ColCount() const override;
   virtual uint32_t RowCount() override;
   virtual Accessible* CellAt(uint32_t aRowIndex, uint32_t aColumnIndex) override;
   virtual void ColDescription(uint32_t aColIdx, nsString& aDescription) override;
