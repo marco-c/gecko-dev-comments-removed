@@ -157,7 +157,12 @@ protected:
                           const nsAString* inString,
                           nsAString* outString,
                           int32_t aMaxLength);
-  nsresult WillLoadHTML(bool* aCancel);
+
+  
+
+
+
+  MOZ_MUST_USE nsresult WillLoadHTML();
 
   
 
