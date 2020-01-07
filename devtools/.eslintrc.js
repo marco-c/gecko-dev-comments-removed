@@ -369,6 +369,8 @@ module.exports = {
     
     "padded-blocks": ["error", "never"],
     
+    "prefer-const": ["error", { "destructuring": "all" }],
+    
     "quote-props": "off",
     
     "radix": "error",
