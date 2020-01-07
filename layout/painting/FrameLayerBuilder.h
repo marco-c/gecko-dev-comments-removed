@@ -43,6 +43,7 @@ class FrameLayerBuilder;
 class LayerManagerData;
 class PaintedLayerData;
 class ContainerState;
+class PaintedDisplayItemLayerUserData;
 
 
 
@@ -594,12 +595,6 @@ public:
 
 
 
-  void SavePreviousDataForLayer(PaintedLayer* aLayer, uint32_t aClipCount);
-  
-
-
-
-
   nsIntPoint GetLastPaintOffset(PaintedLayer* aLayer);
 
   
@@ -704,37 +699,11 @@ protected:
 
 
 public:
-  class PaintedLayerItemsEntry : public nsPtrHashKey<PaintedLayer> {
-  public:
-    explicit PaintedLayerItemsEntry(const PaintedLayer *key);
-    PaintedLayerItemsEntry(const PaintedLayerItemsEntry&);
-    ~PaintedLayerItemsEntry();
-
-    nsTArray<AssignedDisplayItem> mItems;
-    nsIFrame* mContainerLayerFrame;
-    
-    
-    nsIntPoint mLastPaintOffset;
-    uint32_t mLastCommonClipCount;
-
-    bool mHasExplicitLastPaintOffset;
-    
-
-
-
-    uint32_t mCommonClipCount;
-
-    enum { ALLOW_MEMMOVE = true };
-  };
-
   
 
 
 
-  PaintedLayerItemsEntry* AddPaintedLayerItemsEntry(PaintedLayer* aLayer)
-  {
-    return mPaintedLayerItems.PutEntry(aLayer);
-  }
+  void AddPaintedLayerItemsEntry(PaintedDisplayItemLayerUserData* aData);
 
   PaintedLayerData* GetContainingPaintedLayerData()
   {
@@ -779,7 +748,9 @@ protected:
 
 
 
-  nsTHashtable<PaintedLayerItemsEntry> mPaintedLayerItems;
+
+
+  AutoTArray<RefPtr<PaintedDisplayItemLayerUserData>, 5> mPaintedLayerItems;
 
   
 
