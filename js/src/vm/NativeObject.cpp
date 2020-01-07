@@ -268,14 +268,25 @@ js::NativeObject::copySlotRange(uint32_t start, const Value* vector, uint32_t le
 }
 
 #ifdef DEBUG
+
 bool
 js::NativeObject::slotInRange(uint32_t slot, SentinelAllowed sentinel) const
 {
+    MOZ_ASSERT(!gc::IsForwarded(lastProperty()));
     uint32_t capacity = numFixedSlots() + numDynamicSlots();
     if (sentinel == SENTINEL_ALLOWED)
         return slot <= capacity;
     return slot < capacity;
 }
+
+bool
+js::NativeObject::slotIsFixed(uint32_t slot) const
+{
+    
+    
+    return slot < numFixedSlotsMaybeForwarded();
+}
+
 #endif 
 
 Shape*

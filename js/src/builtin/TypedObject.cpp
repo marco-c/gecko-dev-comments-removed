@@ -1621,7 +1621,6 @@ OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object)
     
     
     
-    MakeAccessibleAfterMovingGC(owner);
     MOZ_ASSERT_IF(owner->is<ArrayBufferObject>(),
                   !owner->as<ArrayBufferObject>().forInlineTypedObject());
     if (owner != oldOwner &&
