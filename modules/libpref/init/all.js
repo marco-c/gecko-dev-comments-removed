@@ -1416,6 +1416,12 @@ pref("privacy.resistFingerprinting", false);
 
 
 
+
+
+pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
+
+
+
 pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
@@ -5181,6 +5187,7 @@ pref("dom.streams.enabled", false);
 
 
 pref("dom.push.enabled", false);
+pref("dom.push.alwaysConnect", false);
 
 pref("dom.push.loglevel", "error");
 
