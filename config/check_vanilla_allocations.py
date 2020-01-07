@@ -143,6 +143,11 @@ def main():
         if "Fuzzer" in filename:
             continue
 
+        
+        
+        if "ProfilingStack" in filename:
+            continue
+
         fn = m.group(2)
         if filename == 'jsutil.o':
             jsutil_cpp.add(fn)
