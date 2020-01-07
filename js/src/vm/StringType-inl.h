@@ -4,10 +4,10 @@
 
 
 
-#ifndef vm_String_inl_h
-#define vm_String_inl_h
+#ifndef vm_StringType_inl_h
+#define vm_StringType_inl_h
 
-#include "vm/String.h"
+#include "vm/StringType.h"
 
 #include "mozilla/PodOperations.h"
 #include "mozilla/Range.h"

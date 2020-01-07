@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_String_h
-#define vm_String_h
+#ifndef vm_StringType_h
+#define vm_StringType_h
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
@@ -13,8 +13,8 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "jsstr.h"
 
+#include "builtin/String.h"
 #include "gc/Barrier.h"
 #include "gc/Cell.h"
 #include "gc/Heap.h"

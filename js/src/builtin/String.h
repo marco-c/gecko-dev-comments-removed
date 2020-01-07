@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsstr_h
-#define jsstr_h
+#ifndef builtin_String_h
+#define builtin_String_h
 
 #include "mozilla/HashFunctions.h"
 #include "mozilla/PodOperations.h"
@@ -19,8 +19,8 @@
 #include "gc/Rooting.h"
 #include "js/RootingAPI.h"
 #include "js/UniquePtr.h"
+#include "util/Unicode.h"
 #include "vm/Printer.h"
-#include "vm/Unicode.h"
 
 class JSAutoByteString;
 class JSLinearString;

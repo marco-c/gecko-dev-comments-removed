@@ -4,12 +4,12 @@
 
 
 
-#include "vm/StringBuffer.h"
+#include "util/StringBuffer.h"
 
 #include "mozilla/Range.h"
 
 #include "vm/JSObject-inl.h"
-#include "vm/String-inl.h"
+#include "vm/StringType-inl.h"
 
 using namespace js;
 

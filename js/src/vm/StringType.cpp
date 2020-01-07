@@ -4,7 +4,7 @@
 
 
 
-#include "vm/String-inl.h"
+#include "vm/StringType-inl.h"
 
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
