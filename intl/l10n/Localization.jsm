@@ -249,13 +249,6 @@ class Localization {
   
 
 
-  unregisterObservers() {
-    Services.obs.removeObserver(this, "intl:app-locales-changed");
-  }
-
-  
-
-
 
 
 
