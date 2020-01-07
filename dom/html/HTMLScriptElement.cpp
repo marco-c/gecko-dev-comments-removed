@@ -190,11 +190,19 @@ HTMLScriptElement::GetScriptCharset(nsAString& charset)
 }
 
 void
-HTMLScriptElement::FreezeUriAsyncDefer()
+HTMLScriptElement::FreezeExecutionAttrs(nsIDocument* aOwnerDoc)
 {
   if (mFrozen) {
     return;
   }
+
+  MOZ_ASSERT(!mIsModule && !mAsync && !mDefer && !mExternal);
+
+  
+  nsAutoString type;
+  GetScriptType(type);
+  mIsModule = aOwnerDoc->ModuleScriptsEnabled() &&
+              !type.IsEmpty() && type.LowerCaseEqualsASCII("module");
 
   
   
@@ -228,13 +236,13 @@ HTMLScriptElement::FreezeUriAsyncDefer()
 
     
     mExternal = true;
-
-    bool async = Async();
-    bool defer = Defer();
-
-    mDefer = !async && defer;
-    mAsync = async;
   }
+
+  bool async = (mExternal || mIsModule) && Async();
+  bool defer = mExternal && Defer();
+
+  mDefer = !async && defer;
+  mAsync = async;
 
   mFrozen = true;
 }

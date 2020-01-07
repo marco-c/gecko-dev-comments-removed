@@ -38,6 +38,7 @@ public:
       mForceAsync(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
                   aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
       mFrozen(false),
+      mIsModule(false),
       mDefer(false),
       mAsync(false),
       mExternal(false),
@@ -84,7 +85,20 @@ public:
 
 
 
-  virtual void FreezeUriAsyncDefer() = 0;
+
+
+
+
+  virtual void FreezeExecutionAttrs(nsIDocument* aOwnerDoc) = 0;
+
+  
+
+
+  bool GetScriptIsModule()
+  {
+    NS_PRECONDITION(mFrozen, "Not ready for this call yet!");
+    return mIsModule;
+  }
 
   
 
@@ -301,6 +315,11 @@ protected:
 
 
   bool mFrozen;
+
+  
+
+
+  bool mIsModule;
 
   
 
