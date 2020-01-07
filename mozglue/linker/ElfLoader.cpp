@@ -911,11 +911,21 @@ public:
 
     page = firstPage;
     int ret = mprotect(page, length, prot | PROT_WRITE);
-    success = ret == 0;
+    if (ret != 0) {
+      success = false;
+      WARN("mprotect(%p, %zu, %o) = %d (errno=%d; %s)",
+           page, length, prot | PROT_WRITE, ret, errno, strerror(errno));
+      return;
+    }
+
+    
+    
+    
+    int newProt = getProt(start, &end);
+    success = (newProt != -1) && (newProt & PROT_WRITE);
     if (!success) {
-      ERROR("mprotect(%p, %zu, %d) = %d (errno=%d; %s)",
-            page, length, prot | PROT_WRITE, ret,
-            errno, strerror(errno));
+      WARN("mprotect(%p, %zu, %o) returned 0 but page is not writable: %o",
+           page, length, prot | PROT_WRITE, newProt);
     }
   }
 
