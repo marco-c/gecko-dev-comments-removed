@@ -41,7 +41,6 @@ function Readability(uri, doc, options) {
   this._articleTitle = null;
   this._articleByline = null;
   this._articleDir = null;
-  this._attempts = [];
 
   
   this._debug = !!options.debug;
@@ -276,20 +275,34 @@ Readability.prototype = {
 
 
   _fixRelativeUris: function(articleContent) {
-    var baseURI = this._doc.baseURI;
-    var documentURI = this._doc.documentURI;
+    var scheme = this._uri.scheme;
+    var prePath = this._uri.prePath;
+    var pathBase = this._uri.pathBase;
+
     function toAbsoluteURI(uri) {
       
-      if (baseURI == documentURI && uri.charAt(0) == "#") {
+      if (/^[a-zA-Z][a-zA-Z0-9\+\-\.]*:/.test(uri))
         return uri;
-      }
+
       
-      try {
-        return new URL(uri, baseURI).href;
-      } catch (ex) {
-        
-      }
-      return uri;
+      if (uri.substr(0, 2) == "//")
+        return scheme + "://" + uri.substr(2);
+
+      
+      if (uri[0] == "/")
+        return prePath + uri;
+
+      
+      if (uri.indexOf("./") === 0)
+        return pathBase + uri.slice(2);
+
+      
+      if (uri[0] == "#")
+        return uri;
+
+      
+      
+      return pathBase + uri;
     }
 
     var links = articleContent.getElementsByTagName("a");
@@ -522,7 +535,6 @@ Readability.prototype = {
     this._clean(articleContent, "embed");
     this._clean(articleContent, "h1");
     this._clean(articleContent, "footer");
-    this._clean(articleContent, "link");
 
     
     
@@ -1077,45 +1089,24 @@ Readability.prototype = {
       if (this._debug)
         this.log("Article content after paging: " + articleContent.innerHTML);
 
-      var parseSuccessful = true;
-
       
       
       
       
       
-      var textLength = this._getInnerText(articleContent, true).length;
-      if (textLength < this._wordThreshold) {
-        parseSuccessful = false;
+      if (this._getInnerText(articleContent, true).length < this._wordThreshold) {
         page.innerHTML = pageCacheHtml;
 
         if (this._flagIsActive(this.FLAG_STRIP_UNLIKELYS)) {
           this._removeFlag(this.FLAG_STRIP_UNLIKELYS);
-          this._attempts.push({articleContent: articleContent, textLength: textLength});
         } else if (this._flagIsActive(this.FLAG_WEIGHT_CLASSES)) {
           this._removeFlag(this.FLAG_WEIGHT_CLASSES);
-          this._attempts.push({articleContent: articleContent, textLength: textLength});
         } else if (this._flagIsActive(this.FLAG_CLEAN_CONDITIONALLY)) {
           this._removeFlag(this.FLAG_CLEAN_CONDITIONALLY);
-          this._attempts.push({articleContent: articleContent, textLength: textLength});
         } else {
-          this._attempts.push({articleContent: articleContent, textLength: textLength});
-          
-          this._attempts.sort(function (a, b) {
-            return a.textLength < b.textLength;
-          });
-
-          
-          if (!this._attempts[0].textLength) {
-            return null;
-          }
-
-          articleContent = this._attempts[0].articleContent;
-          parseSuccessful = true;
+          return null;
         }
-      }
-
-      if (parseSuccessful) {
+      } else {
         
         var ancestors = [parentOfTopCandidate, topCandidate].concat(this._getNodeAncestors(parentOfTopCandidate));
         this._someNode(ancestors, function(ancestor) {
