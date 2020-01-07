@@ -130,7 +130,12 @@ public:
   
   
   
-  virtual void SetIsOpaque(bool isOpaque) = 0;
+  
+  virtual void SetOpaqueValueFromOpaqueAttr(bool aOpaqueAttrValue) = 0;
+
+  
+  
+  
   virtual bool GetIsOpaque() = 0;
 
   

@@ -460,7 +460,7 @@ public:
     return mTarget->Snapshot();
   }
 
-  virtual void SetIsOpaque(bool aIsOpaque) override;
+  virtual void SetOpaqueValueFromOpaqueAttr(bool aOpaqueAttrValue) override;
   bool GetIsOpaque() override { return mOpaque; }
   NS_IMETHOD Reset() override;
   already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* aBuilder,
@@ -619,6 +619,9 @@ protected:
   
   bool SetFontInternal(const nsAString& aFont, mozilla::ErrorResult& aError);
 
+  
+  
+  void UpdateIsOpaque();
 
   
 
@@ -764,6 +767,17 @@ protected:
   
   bool mZero;
 
+  
+  
+  
+  
+  
+  
+  bool mOpaqueAttrValue;
+  bool mContextAttributesHasAlpha;
+
+  
+  
   bool mOpaque;
 
   
