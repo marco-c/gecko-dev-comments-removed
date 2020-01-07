@@ -528,7 +528,7 @@ GlobalObject::initAsyncGenerators(JSContext* cx, Handle<GlobalObject*> global)
 
     
     RootedObject asyncFromSyncIterProto(
-        cx, GlobalObject::createBlankPrototypeInheriting(cx, global, &PlainObject::class_,
+        cx, GlobalObject::createBlankPrototypeInheriting(cx, &PlainObject::class_,
                                                          asyncIterProto));
     if (!asyncFromSyncIterProto)
         return false;
@@ -541,7 +541,7 @@ GlobalObject::initAsyncGenerators(JSContext* cx, Handle<GlobalObject*> global)
 
     
     RootedObject asyncGenProto(
-        cx, GlobalObject::createBlankPrototypeInheriting(cx, global, &PlainObject::class_,
+        cx, GlobalObject::createBlankPrototypeInheriting(cx, &PlainObject::class_,
                                                          asyncIterProto));
     if (!asyncGenProto)
         return false;
