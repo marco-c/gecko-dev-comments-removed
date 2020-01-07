@@ -168,14 +168,6 @@ panelview[mainview] > .panel-header {
   visibility: hidden;
 }
 
-.tab-close-button,
-.tabbrowser-tab::after,
-.tab-background {
-  
-
-  visibility: visible;
-}
-
 .tab-close-button[fadein],
 .tabbrowser-tab[fadein]::after,
 .tab-background[fadein] {
