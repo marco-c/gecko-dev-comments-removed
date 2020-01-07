@@ -1791,7 +1791,7 @@ public:
     return mStyleAttrStyleSheet;
   }
 
-  virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject) = 0;
+  virtual void SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject);
 
   
 
