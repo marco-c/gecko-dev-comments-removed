@@ -262,7 +262,7 @@ PRMJ_InvalidParameterHandler(const wchar_t* expression,
 
 size_t
 PRMJ_FormatTime(char* buf, int buflen, const char* fmt, const PRMJTime* prtm,
-                int equivalentYear, int offsetInSeconds)
+                int timeZoneYear, int offsetInSeconds)
 {
     size_t result = 0;
 #if defined(XP_UNIX) || defined(XP_WIN)
@@ -297,6 +297,7 @@ PRMJ_FormatTime(char* buf, int buflen, const char* fmt, const PRMJTime* prtm,
 
 
 
+
         struct tm td;
         memset(&td, 0, sizeof(td));
         td.tm_sec = prtm->tm_sec;
@@ -305,18 +306,11 @@ PRMJ_FormatTime(char* buf, int buflen, const char* fmt, const PRMJTime* prtm,
         td.tm_mday = prtm->tm_mday;
         td.tm_mon = prtm->tm_mon;
         td.tm_wday = prtm->tm_wday;
-        td.tm_year = prtm->tm_year - 1900;
+        td.tm_year = timeZoneYear - 1900;
         td.tm_yday = prtm->tm_yday;
         td.tm_isdst = prtm->tm_isdst;
 
         time_t t = mktime(&td);
-
-        
-        
-        if (t == static_cast<time_t>(-1)) {
-            td.tm_year = equivalentYear - 1900;
-            t = mktime(&td);
-        }
 
         
         
