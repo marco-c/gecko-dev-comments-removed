@@ -21,12 +21,10 @@
 
 #define INTL_SYSTEM_LOCALES_CHANGED "intl:system-locales-changed"
 
-#define MATCH_OS_LOCALE_PREF "intl.locale.matchOS"
-#define SELECTED_LOCALE_PREF "general.useragent.locale"
+#define REQUESTED_LOCALES_PREF "intl.locale.requested"
 
 static const char* kObservedPrefs[] = {
-  MATCH_OS_LOCALE_PREF,
-  SELECTED_LOCALE_PREF,
+  REQUESTED_LOCALES_PREF,
   nullptr
 };
 
@@ -47,8 +45,8 @@ mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
 
 
-static void
-SanitizeForBCP47(nsACString& aLocale)
+static bool
+SanitizeForBCP47(nsACString& aLocale, bool strict)
 {
   
   
@@ -56,50 +54,65 @@ SanitizeForBCP47(nsACString& aLocale)
   const int32_t LANG_TAG_CAPACITY = 128;
   char langTag[LANG_TAG_CAPACITY];
   nsAutoCString locale(aLocale);
+  locale.Trim(" ");
   UErrorCode err = U_ZERO_ERROR;
   
   
   int32_t len = uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY,
-                                   false, &err);
+                                   strict, &err);
   if (U_SUCCESS(err) && len > 0) {
     aLocale.Assign(langTag, len);
   }
+  return U_SUCCESS(err);
 }
 
 static bool
 ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
 {
-  nsAutoCString locale;
+  nsAutoCString str;
+  nsresult rv = Preferences::GetCString(REQUESTED_LOCALES_PREF, str);
 
   
-  bool matchOSLocale = Preferences::GetBool(MATCH_OS_LOCALE_PREF);
-
-  if (matchOSLocale) {
-    
-    if (OSPreferences::GetInstance()->GetSystemLocales(aRetVal)) {
+  
+  
+  
+  
+  if (NS_SUCCEEDED(rv)) {
+    if (str.Length() > 0) {
+      for (const nsACString& part : str.Split(',')) {
+        nsAutoCString locale(part);
+        if (SanitizeForBCP47(locale, true)) {
+          
+          
+          
+          
+          if (locale.EqualsLiteral("ja-JP-x-lvariant-mac")) {
+            locale.Assign("ja-JP-mac");
+          }
+          if (!aRetVal.Contains(locale)) {
+            aRetVal.AppendElement(locale);
+          }
+        }
+      }
+    } else {
       
-      return true;
+      
+      OSPreferences::GetInstance()->GetSystemLocales(aRetVal);
     }
+  } else {
+    nsAutoCString defaultLocale;
+    LocaleService::GetInstance()->GetDefaultLocale(defaultLocale);
+    aRetVal.AppendElement(defaultLocale);
   }
 
   
-  if (!NS_SUCCEEDED(Preferences::GetCString(SELECTED_LOCALE_PREF, locale))) {
-    return false;
-  }
-
-  
-  
-  aRetVal.AppendElement(locale);
-
   
   
   
   
-  
-  
-  LocaleService::GetInstance()->GetLastFallbackLocale(locale);
-  if (!aRetVal.Contains(locale)) {
-    aRetVal.AppendElement(locale);
+  LocaleService::GetInstance()->GetLastFallbackLocale(str);
+  if (!aRetVal.Contains(str)) {
+    aRetVal.AppendElement(str);
   }
   return true;
 }
@@ -223,7 +236,7 @@ LocaleService::GetAppLocalesAsBCP47(nsTArray<nsCString>& aRetVal)
   }
   for (uint32_t i = 0; i < mAppLocales.Length(); i++) {
     nsAutoCString locale(mAppLocales[i]);
-    SanitizeForBCP47(locale);
+    SanitizeForBCP47(locale, false);
     aRetVal.AppendElement(locale);
   }
 }
@@ -298,7 +311,6 @@ LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
 {
   if (mRequestedLocales.IsEmpty()) {
     ReadRequestedLocales(mRequestedLocales);
-
   }
 
   aRetVal = mRequestedLocales;
@@ -572,8 +584,7 @@ LocaleService::Observe(nsISupports *aSubject, const char *aTopic,
     NS_ConvertUTF16toUTF8 pref(aData);
     
     
-    if (pref.EqualsLiteral(MATCH_OS_LOCALE_PREF) ||
-        pref.EqualsLiteral(SELECTED_LOCALE_PREF)) {
+    if (pref.EqualsLiteral(REQUESTED_LOCALES_PREF)) {
       RequestedLocalesChanged();
     }
   }
@@ -693,7 +704,7 @@ LocaleService::GetAppLocaleAsBCP47(nsACString& aRetVal)
   }
   aRetVal = mAppLocales[0];
 
-  SanitizeForBCP47(aRetVal);
+  SanitizeForBCP47(aRetVal, false);
   return NS_OK;
 }
 
@@ -977,19 +988,26 @@ NS_IMETHODIMP
 LocaleService::SetRequestedLocales(const char** aRequested,
                                    uint32_t aRequestedCount)
 {
-  nsAutoCString lastFallbackLocale;
-  GetLastFallbackLocale(lastFallbackLocale);
-  MOZ_ASSERT(aRequestedCount < 2 ||
-             (aRequestedCount == 2 && lastFallbackLocale.Equals(aRequested[1])),
-      "We can only handle one requested locale (optionally with last fallback)");
+  nsAutoCString str;
 
-  if (aRequestedCount == 0) {
-    Preferences::ClearUser(SELECTED_LOCALE_PREF);
-  } else {
-    Preferences::SetCString(SELECTED_LOCALE_PREF, aRequested[0]);
+  for (uint32_t i = 0; i < aRequestedCount; i++) {
+    nsAutoCString locale(aRequested[i]);
+    if (!SanitizeForBCP47(locale, true)) {
+      NS_ERROR("Invalid language tag provided to SetRequestedLocales!");
+      return NS_ERROR_INVALID_ARG;
+    }
+    if (locale.EqualsLiteral("ja-JP-x-lvariant-mac")) {
+      
+      locale.Assign("ja-JP-mac");
+    }
+
+    if (i > 0) {
+      str.AppendLiteral(",");
+    }
+    str.Append(locale);
   }
+  Preferences::SetCString(REQUESTED_LOCALES_PREF, str);
 
-  Preferences::SetBool(MATCH_OS_LOCALE_PREF, aRequestedCount == 0);
   return NS_OK;
 }
 

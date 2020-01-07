@@ -3,4 +3,4 @@
 
 
 
-pref("intl.locale.matchOS", true);
+pref("intl.locale.requested", "");
