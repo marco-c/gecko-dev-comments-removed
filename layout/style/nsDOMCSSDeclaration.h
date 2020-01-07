@@ -47,6 +47,13 @@ public:
   using nsICSSDeclaration::GetLength;
 
   
+
+
+
+  virtual nsresult GetPropertyValue(const nsCSSPropertyID aPropID,
+                                    nsAString& aValue);
+
+  
   
   NS_IMETHOD GetCssText(nsAString & aCssText) override;
   NS_IMETHOD SetCssText(const nsAString & aCssText,

@@ -52,13 +52,6 @@ public:
 
 
 
-  NS_IMETHOD GetPropertyValue(const nsCSSPropertyID aPropID,
-                              nsAString& aValue) = 0;
-
-  
-
-
-
 
   NS_IMETHOD SetPropertyValue(const nsCSSPropertyID aPropID,
                               const nsAString& aValue,
@@ -137,8 +130,6 @@ public:
 NS_DEFINE_STATIC_IID_ACCESSOR(nsICSSDeclaration, NS_ICSSDECLARATION_IID)
 
 #define NS_DECL_NSICSSDECLARATION                                   \
-  NS_IMETHOD GetPropertyValue(const nsCSSPropertyID aPropID,        \
-                              nsAString& aValue) override;          \
   NS_IMETHOD SetPropertyValue(const nsCSSPropertyID aPropID,        \
                               const nsAString& aValue,              \
                               nsIPrincipal* aSubjectPrincipal = nullptr) override;
