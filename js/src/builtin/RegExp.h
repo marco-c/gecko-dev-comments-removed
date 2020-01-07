@@ -21,10 +21,6 @@ InitRegExpClass(JSContext* cx, HandleObject obj);
 
 
 
-enum RegExpStaticsUpdate { UpdateRegExpStatics, DontUpdateRegExpStatics };
-
-
-
 
 
 
@@ -70,22 +66,6 @@ intrinsic_GetStringDataProperty(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-regexp_exec_no_statics(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-regexp_test_no_statics(JSContext* cx, unsigned argc, Value* vp);
 
 
 
