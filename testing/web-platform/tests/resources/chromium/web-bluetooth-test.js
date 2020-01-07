@@ -166,6 +166,10 @@ class FakeCentral {
 
     
     
+    if ('serviceData' in scanResult.scanRecord) {
+      scanResult.scanRecord.serviceData.serviceData = convertToMojoMap(
+          scanResult.scanRecord.serviceData, BluetoothUUID.getService);
+    }
 
     await this.fake_central_ptr_.simulateAdvertisementReceived(
         new bluetooth.mojom.ScanResult(scanResult));
