@@ -7324,36 +7324,27 @@ nsCSSFrameConstructor::CreateNeededFrames()
 void
 nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
                                                     nsIContent* aStartChild,
-                                                    nsIContent* aEndChild,
-                                                    InsertionKind aInsertionKind)
+                                                    nsIContent* aEndChild)
 {
   for (nsIContent* child = aStartChild;
        child != aEndChild;
        child = child->GetNextSibling()) {
-    if ((child->GetPrimaryFrame() || GetDisplayNoneStyleFor(child) ||
-         GetDisplayContentsStyleFor(child))
-#ifdef MOZ_XUL
-        
-        
-        && !MaybeGetListBoxBodyFrame(aContainer, child)
-#endif
-        ) {
-      
-      
-      
-      continue;
-    }
+    
+    MOZ_ASSERT(MaybeGetListBoxBodyFrame(aContainer, child) ||
+               (!child->GetPrimaryFrame() &&
+                !GetDisplayNoneStyleFor(child) &&
+                !GetDisplayContentsStyleFor(child)));
+
     
     ContentRangeInserted(aContainer, child, child->GetNextSibling(),
-                         mTempFrameTreeState, aInsertionKind, nullptr);
+                         mTempFrameTreeState, InsertionKind::Sync, nullptr);
   }
 }
 
 nsCSSFrameConstructor::InsertionPoint
 nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
                                               nsIContent* aStartChild,
-                                              nsIContent* aEndChild,
-                                              InsertionKind aInsertionKind)
+                                              nsIContent* aEndChild)
 {
   
   
@@ -7372,8 +7363,7 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
       
       
       
-      IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                   aInsertionKind);
+      IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
       insertionPoint.mParentFrame = nullptr;
     }
   }
@@ -7534,8 +7524,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   LAYOUT_PHASE_TEMP_EXIT();
   InsertionPoint insertion =
-    GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr,
-                           aInsertionKind);
+    GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr);
   nsContainerFrame*& parentFrame = insertion.mParentFrame;
   LAYOUT_PHASE_TEMP_REENTER();
   if (!parentFrame) {
@@ -7558,7 +7547,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   if (parentFrame->IsFrameOfType(nsIFrame::eMathML)) {
     LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(parentFrame->GetContent(), aInsertionKind);
+    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7929,8 +7918,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       
       LAYOUT_PHASE_TEMP_EXIT();
-      IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                   aInsertionKind);
+      IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
       LAYOUT_PHASE_TEMP_REENTER();
       return;
     }
@@ -8026,8 +8014,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     
     LAYOUT_PHASE_TEMP_EXIT();
-    insertion = GetRangeInsertionPoint(aContainer, aStartChild, aEndChild,
-                                       aInsertionKind);
+    insertion = GetRangeInsertionPoint(aContainer, aStartChild, aEndChild);
     LAYOUT_PHASE_TEMP_REENTER();
   }
 
@@ -8043,8 +8030,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   if (!isSingleInsert && !isRangeInsertSafe) {
     
     LAYOUT_PHASE_TEMP_EXIT();
-    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                 aInsertionKind);
+    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8071,7 +8057,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             aInsertionKind);
+                             InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8086,7 +8072,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             aInsertionKind);
+                             InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8098,10 +8084,12 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
+  
+  
   if (insertion.mParentFrame->IsFrameOfType(nsIFrame::eMathML)) {
     LAYOUT_PHASE_TEMP_EXIT();
     RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             aInsertionKind);
+                             InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -8182,8 +8170,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
         
         LAYOUT_PHASE_TEMP_EXIT();
-        IssueSingleInsertNofications(aContainer, aStartChild, aEndChild,
-                                     aInsertionKind);
+        IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
         LAYOUT_PHASE_TEMP_REENTER();
         return;
       }
