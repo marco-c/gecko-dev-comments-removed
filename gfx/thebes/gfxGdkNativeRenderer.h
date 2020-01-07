@@ -35,11 +35,6 @@ public:
 
 
 
-#if (MOZ_WIDGET_GTK == 2)
-    virtual nsresult DrawWithGDK(GdkDrawable * drawable, gint offsetX, 
-            gint offsetY, GdkRectangle * clipRects, uint32_t numClipRects) = 0;
-#endif
-
     enum {
         
         
@@ -67,10 +62,6 @@ public:
 
 
 
-#if (MOZ_WIDGET_GTK == 2)
-    void Draw(gfxContext* ctx, mozilla::gfx::IntSize size,
-              uint32_t flags, GdkColormap* colormap);
-#endif
 
 private:
 #ifdef MOZ_X11
@@ -79,9 +70,6 @@ private:
                                   nsIntPoint offset,
                                   mozilla::gfx::IntRect* clipRects, uint32_t numClipRects) override;
 
-#if (MOZ_WIDGET_GTK == 2)
-    GdkColormap *mColormap;
-#endif
 #endif
 };
 

@@ -57,17 +57,6 @@ X11Error(Display *display, XErrorEvent *event) {
         XFreeExtensionList(extNames);
       }
       XCloseDisplay(tmpDisplay);
-
-#if (MOZ_WIDGET_GTK == 2)
-      
-      
-      
-      
-      if (message.EqualsLiteral("XInputExtension.4") &&
-          event->error_code == first_error + 0) {
-        return 0;
-      }
-#endif
     }
   }
 

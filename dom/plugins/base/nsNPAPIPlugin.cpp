@@ -57,9 +57,6 @@
 #if (MOZ_WIDGET_GTK)
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
-#if (MOZ_WIDGET_GTK == 2)
-#include "gtk2xtbin.h"
-#endif
 #endif
 
 #include "nsJSUtils.h"
@@ -1341,19 +1338,6 @@ _getvalue(NPP npp, NPNVariable variable, void *result)
         return NPERR_NO_ERROR;
       }
     }
-#if (MOZ_WIDGET_GTK == 2)
-    
-    
-    
-    static GtkWidget *gtkXtBinHolder = 0;
-    if (!gtkXtBinHolder) {
-      gtkXtBinHolder = gtk_xtbin_new(gdk_get_default_root_window(),0);
-      
-      
-    }
-    (*(Display **)result) =  GTK_XTBIN(gtkXtBinHolder)->xtdisplay;
-    return NPERR_NO_ERROR;
-#endif
 #endif
     return NPERR_GENERIC_ERROR;
   }

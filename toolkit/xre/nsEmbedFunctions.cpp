@@ -515,9 +515,6 @@ XRE_InitChildProcess(int aArgc,
 #ifdef MOZ_X11
   XInitThreads();
 #endif
-#if MOZ_WIDGET_GTK == 2
-  XRE_GlibInit();
-#endif
 #ifdef MOZ_WIDGET_GTK
   
   g_set_prgname(aArgv[0]);

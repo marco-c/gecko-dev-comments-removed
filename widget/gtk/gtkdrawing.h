@@ -19,12 +19,6 @@
 #include <gtk/gtk.h>
 #include <algorithm>
 
-#if (MOZ_WIDGET_GTK == 2)
-#ifdef __cplusplus
-extern "C" {
-#endif
-#endif
-
 
 typedef struct {
   guint8 active;
@@ -335,15 +329,6 @@ void moz_gtk_refresh();
 
 gint moz_gtk_shutdown();
 
-#if (MOZ_WIDGET_GTK == 2)
-
-
-
-GdkColormap* moz_gtk_widget_get_colormap();
-#endif
-
-
-#if (MOZ_WIDGET_GTK == 2)
 
 
 
@@ -355,18 +340,11 @@ GdkColormap* moz_gtk_widget_get_colormap();
 
 
 
-gint
-moz_gtk_widget_paint(WidgetNodeType widget, GdkDrawable* drawable,
-                     GdkRectangle* rect, GdkRectangle* cliprect,
-                     GtkWidgetState* state, gint flags,
-                     GtkTextDirection direction);
-#else
 gint
 moz_gtk_widget_paint(WidgetNodeType widget, cairo_t *cr,
                      GdkRectangle* rect,
                      GtkWidgetState* state, gint flags,
                      GtkTextDirection direction);
-#endif
 
 
 
@@ -573,11 +551,5 @@ gint moz_gtk_splitter_get_metrics(gint orientation, gint* size);
 
 gint
 moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
-
-#if (MOZ_WIDGET_GTK == 2)
-#ifdef __cplusplus
-}
-#endif 
-#endif
 
 #endif

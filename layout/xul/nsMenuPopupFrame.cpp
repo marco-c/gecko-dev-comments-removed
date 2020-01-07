@@ -2300,14 +2300,6 @@ nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
   if (aAttribute == nsGkAtoms::left || aAttribute == nsGkAtoms::top)
     MoveToAttributePosition();
 
-#ifndef MOZ_GTK2
-  if (aAttribute == nsGkAtoms::noautohide) {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm)
-      pm->EnableRollup(mContent, !IsNoAutoHide());
-  }
-#endif
-
   if (aAttribute == nsGkAtoms::remote) {
     
     
