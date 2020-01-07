@@ -278,11 +278,7 @@ nsImageFrame::Init(nsIContent*       aContent,
   imageLoader->FrameCreated(this);
 
   
-  nsCOMPtr<imgIRequest> currentRequest;
-  imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                          getter_AddRefs(currentRequest));
-
-  if (currentRequest) {
+  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
     uint32_t categoryToBoostPriority = imgIRequest::CATEGORY_FRAME_INIT;
 
     
@@ -853,26 +849,22 @@ nsImageFrame::EnsureIntrinsicSizeAndRatio()
       
       if (!(GetStateBits() & NS_FRAME_GENERATED_CONTENT)) {
         bool imageInvalid = false;
+
         
         
-        nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
-        if (imageLoader) {
-          nsCOMPtr<imgIRequest> currentRequest;
-          imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                                  getter_AddRefs(currentRequest));
-          if (currentRequest) {
-            uint32_t imageStatus;
-            imageInvalid =
-              NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
-              (imageStatus & imgIRequest::STATUS_ERROR);
-          } else {
-            
-            
-            int16_t imageBlockingStatus;
-            imageLoader->GetImageBlockingStatus(&imageBlockingStatus);
-            imageInvalid = imageBlockingStatus != nsIContentPolicy::ACCEPT;
-          }
+        if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
+          uint32_t imageStatus;
+          imageInvalid =
+            NS_SUCCEEDED(currentRequest->GetImageStatus(&imageStatus)) &&
+            (imageStatus & imgIRequest::STATUS_ERROR);
+        } else if (nsCOMPtr<nsIImageLoadingContent> loader = do_QueryInterface(mContent)) {
+          
+          
+          int16_t imageBlockingStatus;
+          loader->GetImageBlockingStatus(&imageBlockingStatus);
+          imageInvalid = imageBlockingStatus != nsIContentPolicy::ACCEPT;
         }
+
         
         if (imageInvalid) {
           nscoord edgeLengthToUse =
@@ -1024,16 +1016,10 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
   
   
   uint32_t loadStatus = imgIRequest::STATUS_NONE;
-  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
-  NS_ASSERTION(imageLoader, "No content node??");
-  if (imageLoader) {
-    nsCOMPtr<imgIRequest> currentRequest;
-    imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                            getter_AddRefs(currentRequest));
-    if (currentRequest) {
-      currentRequest->GetImageStatus(&loadStatus);
-    }
+  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
+    currentRequest->GetImageStatus(&loadStatus);
   }
+
   if (aPresContext->IsPaginated() &&
       ((loadStatus & imgIRequest::STATUS_SIZE_AVAILABLE) || (mState & IMAGE_SIZECONSTRAINED)) &&
       NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() &&
@@ -1812,6 +1798,20 @@ nsImageFrame::PaintImage(gfxContext& aRenderingContext, nsPoint aPt,
   return result;
 }
 
+already_AddRefed<imgIRequest>
+nsImageFrame::GetCurrentRequest() const
+{
+  nsCOMPtr<imgIRequest> request;
+
+  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
+  MOZ_ASSERT(imageLoader);
+
+  imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
+                          getter_AddRefs(request));
+
+  return request.forget();
+}
+
 void
 nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                const nsDisplayListSet& aLists)
@@ -1829,17 +1829,10 @@ nsImageFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     clip(aBuilder, this, clipFlags);
 
   if (mComputedSize.width != 0 && mComputedSize.height != 0) {
-    nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
-    NS_ASSERTION(imageLoader, "Not an image loading content?");
-
-    nsCOMPtr<imgIRequest> currentRequest;
-    if (imageLoader) {
-      imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                              getter_AddRefs(currentRequest));
-    }
-
     EventStates contentState = mContent->AsElement()->State();
     bool imageOK = IMAGE_OK(contentState, true);
+
+    nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
 
     
     
@@ -2177,18 +2170,12 @@ nsImageFrame::List(FILE* out, const char* aPrefix, uint32_t aFlags) const
   ListGeneric(str, aPrefix, aFlags);
 
   
-  nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
-  if (imageLoader) {
-    nsCOMPtr<imgIRequest> currentRequest;
-    imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                            getter_AddRefs(currentRequest));
-    if (currentRequest) {
-      nsCOMPtr<nsIURI> uri;
-      currentRequest->GetURI(getter_AddRefs(uri));
-      nsAutoCString uristr;
-      uri->GetAsciiSpec(uristr);
-      str += nsPrintfCString(" [src=%s]", uristr.get());
-    }
+  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
+    nsCOMPtr<nsIURI> uri;
+    currentRequest->GetURI(getter_AddRefs(uri));
+    nsAutoCString uristr;
+    uri->GetAsciiSpec(uristr);
+    str += nsPrintfCString(" [src=%s]", uristr.get());
   }
   fprintf_stderr(out, "%s\n", str.get());
 }
