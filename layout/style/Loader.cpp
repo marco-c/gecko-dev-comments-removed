@@ -930,10 +930,7 @@ Loader::CreateSheet(nsIURI* aURI,
                     ReferrerPolicy aReferrerPolicy,
                     const nsAString& aIntegrity,
                     bool aSyncLoad,
-                    bool aHasAlternateRel,
-                    const nsAString& aTitle,
                     StyleSheetState& aSheetState,
-                    IsAlternate* aIsAlternate,
                     RefPtr<StyleSheet>* aSheet)
 {
   LOG(("css::Loader::CreateSheet"));
@@ -945,10 +942,6 @@ Loader::CreateSheet(nsIURI* aURI,
 
   *aSheet = nullptr;
   aSheetState = eSheetStateUnknown;
-
-  
-  
-  *aIsAlternate = IsAlternateSheet(aTitle, aHasAlternateRel);
 
   if (aURI) {
     aSheetState = eSheetComplete;
@@ -1908,15 +1901,16 @@ Loader::LoadInlineStyle(const StyleSheetInfo& aInfo,
   
   
 
+  
+  auto isAlternate = IsAlternateSheet(aInfo.mTitle, aInfo.mHasAlternateRel);
+
   StyleSheetState state;
   RefPtr<StyleSheet> sheet;
-  IsAlternate isAlternate;
   nsresult rv = CreateSheet(aInfo,
                             nullptr,
                             eAuthorSheetFeatures,
                             false,
                             state,
-                            &isAlternate,
                             &sheet);
   if (NS_FAILED(rv)) {
     return Err(rv);
@@ -2033,13 +2027,12 @@ Loader::LoadStyleLink(const StyleSheetInfo& aInfo,
 
   StyleSheetState state;
   RefPtr<StyleSheet> sheet;
-  IsAlternate isAlternate;
+  auto isAlternate = IsAlternateSheet(aInfo.mTitle, aInfo.mHasAlternateRel);
   rv = CreateSheet(aInfo,
                    principal,
                    eAuthorSheetFeatures,
                    false,
                    state,
-                   &isAlternate,
                    &sheet);
   if (NS_FAILED(rv)) {
     return Err(rv);
@@ -2229,18 +2222,21 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
   if (aReusableSheets && aReusableSheets->FindReusableStyleSheet(aURL, sheet)) {
     state = eSheetComplete;
   } else {
-    IsAlternate isAlternate;
     const nsAString& empty = EmptyString();
     
-    rv = CreateSheet(aURL, nullptr, principal,
+    rv = CreateSheet(aURL,
+                     nullptr,
+                     principal,
                      aParentSheet->ParsingMode(),
-                     CORS_NONE, aParentSheet->GetReferrerPolicy(),
+                     CORS_NONE,
+                     aParentSheet->GetReferrerPolicy(),
                      EmptyString(), 
                      aParentData ? aParentData->mSyncLoad : false,
-                     false, empty, state, &isAlternate, &sheet);
+                     state,
+                     &sheet);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    PrepareSheet(sheet, empty, empty, aMedia, isAlternate);
+    PrepareSheet(sheet, empty, empty, aMedia, IsAlternate::No);
   }
 
   rv = InsertChildSheet(sheet, aParentSheet);
@@ -2388,14 +2384,12 @@ Loader::InternalLoadNonDocumentSheet(nsIURI* aURL,
   RefPtr<StyleSheet> sheet;
   bool syncLoad = (aObserver == nullptr);
   const nsAString& empty = EmptyString();
-  IsAlternate isAlternate;
-
   rv = CreateSheet(aURL, nullptr, aOriginPrincipal, aParsingMode,
                    aCORSMode, aReferrerPolicy, aIntegrity, syncLoad,
-                   false, empty, state, &isAlternate, &sheet);
+                   state, &sheet);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  PrepareSheet(sheet, empty, empty, nullptr, isAlternate);
+  PrepareSheet(sheet, empty, empty, nullptr, IsAlternate::No);
 
   if (state == eSheetComplete) {
     LOG(("  Sheet already complete"));

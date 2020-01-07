@@ -468,7 +468,6 @@ private:
                        css::SheetParsingMode aParsingMode,
                        bool aSyncLoad,
                        StyleSheetState& aSheetState,
-                       IsAlternate* aIsAlternate,
                        RefPtr<StyleSheet>* aSheet)
   {
     return CreateSheet(aInfo.mURI,
@@ -479,14 +478,10 @@ private:
                        aInfo.mReferrerPolicy,
                        aInfo.mIntegrity,
                        aSyncLoad,
-                       aInfo.mHasAlternateRel,
-                       aInfo.mTitle,
                        aSheetState,
-                       aIsAlternate,
                        aSheet);
   }
 
-  
   
   
   
@@ -498,10 +493,7 @@ private:
                        ReferrerPolicy aReferrerPolicy,
                        const nsAString& aIntegrity,
                        bool aSyncLoad,
-                       bool aHasAlternateRel,
-                       const nsAString& aTitle,
                        StyleSheetState& aSheetState,
-                       IsAlternate* aIsAlternate,
                        RefPtr<StyleSheet>* aSheet);
 
   
