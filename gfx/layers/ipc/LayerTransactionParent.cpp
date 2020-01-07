@@ -700,7 +700,8 @@ LayerTransactionParent::RecvGetAnimationOpacity(const uint64_t& aCompositorAnima
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mCompositorBridge->ApplyAsyncProperties(this);
+  mCompositorBridge->ApplyAsyncProperties(
+    this, CompositorBridgeParentBase::TransformsToSkip::APZ);
 
   if (!mAnimStorage) {
     return IPC_FAIL_NO_REASON(this);
@@ -726,7 +727,8 @@ LayerTransactionParent::RecvGetAnimationTransform(const uint64_t& aCompositorAni
   
   
   
-  mCompositorBridge->ApplyAsyncProperties(this);
+  mCompositorBridge->ApplyAsyncProperties(
+    this, CompositorBridgeParentBase::TransformsToSkip::APZ);
 
   if (!mAnimStorage) {
     return IPC_FAIL_NO_REASON(this);

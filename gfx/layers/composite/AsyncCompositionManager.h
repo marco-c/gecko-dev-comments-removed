@@ -19,6 +19,7 @@
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/RefPtr.h"                   
 #include "nsISupportsImpl.h"            
+#include "CompositorBridgeParent.h"     
 
 namespace mozilla {
 namespace layers {
@@ -83,10 +84,11 @@ public:
 
   
   
-  enum class TransformsToSkip : uint8_t { NoneOfThem = 0, APZ = 1 };
-  bool TransformShadowTree(TimeStamp aCurrentFrame,
-                           TimeDuration aVsyncRate,
-                           TransformsToSkip aSkip = TransformsToSkip::NoneOfThem);
+  bool TransformShadowTree(
+    TimeStamp aCurrentFrame,
+    TimeDuration aVsyncRate,
+    CompositorBridgeParentBase::TransformsToSkip aSkip =
+      CompositorBridgeParentBase::TransformsToSkip::NoneOfThem);
 
   
   
@@ -235,8 +237,6 @@ private:
   ScreenMargin mFixedLayerMargins;
 #endif
 };
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
 
 class MOZ_STACK_CLASS AutoResolveRefLayers {
 public:
