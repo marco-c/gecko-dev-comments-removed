@@ -2,6 +2,13 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef SANDBOX_SRC_SIDESTEP_RESOLVER_H__
 #define SANDBOX_SRC_SIDESTEP_RESOLVER_H__
 
@@ -11,8 +18,9 @@
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/resolver.h"
 
-namespace sandbox {
+#include "mozilla/Assertions.h"
 
+namespace sandbox {
 
 class SidestepResolverThunk : public ResolverThunk {
  public:
@@ -27,45 +35,20 @@ class SidestepResolverThunk : public ResolverThunk {
                  const void* interceptor_entry_point,
                  void* thunk_storage,
                  size_t storage_bytes,
-                 size_t* storage_used) override;
+                 size_t* storage_used) override { MOZ_CRASH(); }
 
-  
-  size_t GetThunkSize() const override;
+  size_t GetThunkSize() const override { MOZ_CRASH(); }
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SidestepResolverThunk);
 };
-
-
-
-
 
 class SmartSidestepResolverThunk : public SidestepResolverThunk {
  public:
   SmartSidestepResolverThunk() {}
   ~SmartSidestepResolverThunk() override {}
 
-  
-  NTSTATUS Setup(const void* target_module,
-                 const void* interceptor_module,
-                 const char* target_name,
-                 const char* interceptor_name,
-                 const void* interceptor_entry_point,
-                 void* thunk_storage,
-                 size_t storage_bytes,
-                 size_t* storage_used) override;
-
-  
-  size_t GetThunkSize() const override;
-
  private:
-  
-  
-  static void SmartStub();
-
-  
-  static bool IsInternalCall(const void* base, void* return_address);
-
   DISALLOW_COPY_AND_ASSIGN(SmartSidestepResolverThunk);
 };
 
