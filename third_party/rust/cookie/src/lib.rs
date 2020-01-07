@@ -58,7 +58,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/cookie/0.9")]
+#![doc(html_root_url = "https://docs.rs/cookie/0.10")]
 #![deny(missing_docs)]
 
 #[cfg(feature = "percent-encode")] extern crate url;
