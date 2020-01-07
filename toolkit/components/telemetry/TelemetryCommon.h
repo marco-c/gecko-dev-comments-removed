@@ -108,6 +108,17 @@ bool
 IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
                         const bool aAllowInfixPeriod, const bool aAllowInfixUnderscore);
 
+
+
+
+
+
+
+
+
+JSString*
+ToJSString(JSContext* cx, const nsACString& aStr);
+
 } 
 } 
 } 
