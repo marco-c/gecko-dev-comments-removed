@@ -7,7 +7,6 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 const PTV_interfaces = [Ci.nsITreeView,
                         Ci.nsINavHistoryResultObserver,
-                        Ci.nsINavHistoryResultTreeViewer,
                         Ci.nsISupportsWeakReference];
 
 
@@ -1193,20 +1192,36 @@ PlacesTreeView.prototype = {
     return val;
   },
 
-  nodeForTreeIndex: function PTV_nodeForTreeIndex(aIndex) {
+  
+
+
+
+
+
+
+
+
+  nodeForTreeIndex(aIndex) {
     if (aIndex > this._rows.length)
       throw Cr.NS_ERROR_INVALID_ARG;
 
     return this._getNodeForRow(aIndex);
   },
 
-  treeIndexForNode: function PTV_treeNodeForIndex(aNode) {
+  
+
+
+
+
+
+
+  treeIndexForNode(aNode) {
     
     try {
       return this._getRowForNode(aNode, true);
     } catch (ex) { }
 
-    return Ci.nsINavHistoryResultTreeViewer.INDEX_INVISIBLE;
+    return -1;
   },
 
   
