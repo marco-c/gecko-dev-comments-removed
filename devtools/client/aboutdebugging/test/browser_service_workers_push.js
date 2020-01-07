@@ -22,7 +22,7 @@ add_task(function* () {
   let serviceWorkersElement = getServiceWorkerList(document);
 
   
-  let swTab = yield addTab(TAB_URL);
+  let swTab = yield addTab(TAB_URL, { background: true });
 
   info("Make the test page notify us when the service worker sends a message.");
 
