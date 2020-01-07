@@ -38,5 +38,5 @@ function* runTests() {
 
   
   NewTabUtils.pinnedLinks.unpin(pinnedSite);
-  yield PlacesTestUtils.clearHistory();
+  yield PlacesUtils.history.clear();
 }

@@ -51,7 +51,7 @@ add_task(async function test_historyClear() {
   }
 
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 
   ["expire_session",
    "expire"].forEach(function(aAnno) {

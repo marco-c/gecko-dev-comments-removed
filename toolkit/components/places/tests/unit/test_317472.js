@@ -41,7 +41,7 @@ add_task(async function test_execute() {
   
   Assert.equal((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 
   
   Assert.notEqual((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);

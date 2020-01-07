@@ -14,7 +14,7 @@ add_task(async function prepare() {
 
     
     
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
 
     
     gURLBar.blur();

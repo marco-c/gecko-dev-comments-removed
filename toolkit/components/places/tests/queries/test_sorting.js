@@ -1254,6 +1254,6 @@ add_task(async function test_sorting() {
     test.check_reverse();
     
     await PlacesUtils.bookmarks.eraseEverything();
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
   }
 });

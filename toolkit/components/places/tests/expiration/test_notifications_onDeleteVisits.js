@@ -129,10 +129,10 @@ add_task(async function test_notifications_onDeleteVisits() {
 
     
     await PlacesUtils.bookmarks.eraseEverything();
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
   }
 
   clearMaxPages();
   await PlacesUtils.bookmarks.eraseEverything();
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 });

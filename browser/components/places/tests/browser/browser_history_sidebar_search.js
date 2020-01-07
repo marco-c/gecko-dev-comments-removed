@@ -12,7 +12,7 @@ add_task(async function test() {
   
   const FILTERED_COUNT = 1;
 
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 
   
   let time = Date.now();
@@ -43,7 +43,7 @@ add_task(async function test() {
     check_tree_order(tree, pages);
   });
 
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 });
 
 function check_tree_order(tree, pages, aNumberOfRowsDelta = 0) {

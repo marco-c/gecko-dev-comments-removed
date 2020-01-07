@@ -15,7 +15,7 @@ add_task(async function test() {
     
     cm.removeAll();
     
-    return PlacesTestUtils.clearHistory();
+    return PlacesUtils.history.clear();
   }
 
   await cleanup();

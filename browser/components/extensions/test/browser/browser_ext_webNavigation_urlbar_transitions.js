@@ -77,7 +77,7 @@ async function prepareSearchEngine() {
 
     
     
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
   });
 }
 

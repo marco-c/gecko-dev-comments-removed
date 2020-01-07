@@ -139,19 +139,6 @@ this.PlacesTestUtils = Object.freeze({
 
 
 
-  clearHistory() {
-    return PlacesUtils.history.clear();
-  },
-
-  
-
-
-
-
-
-
-
-
 
 
 

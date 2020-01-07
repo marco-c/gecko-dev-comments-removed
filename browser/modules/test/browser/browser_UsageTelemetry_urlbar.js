@@ -98,7 +98,7 @@ add_task(async function setup() {
 
   
   
-  await PlacesTestUtils.clearHistory();
+  await PlacesUtils.history.clear();
 
   
   
@@ -114,7 +114,7 @@ add_task(async function setup() {
     Services.search.removeEngine(engine);
     Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, suggestionsEnabled);
     Services.prefs.clearUserPref(ONEOFF_URLBAR_PREF);
-    await PlacesTestUtils.clearHistory();
+    await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
