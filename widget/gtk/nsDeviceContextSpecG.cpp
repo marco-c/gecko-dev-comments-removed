@@ -33,6 +33,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
+#include "nsIGIOService.h"
+
 using namespace mozilla;
 
 using mozilla::gfx::IntSize;
@@ -355,6 +358,20 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
     
     
     destFile->SetPermissions(0666 & ~(mask));
+
+    
+    nsCOMPtr<nsIGIOService> giovfs =
+      do_GetService(NS_GIOSERVICE_CONTRACTID);
+    bool shouldUsePortal;
+    if (giovfs) {
+      giovfs->ShouldUseFlatpakPortal(&shouldUsePortal);
+      if (shouldUsePortal) {
+        
+        nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+        
+        os->NotifyObservers(nullptr, "print-to-file-finished", targetPath.get());
+      }
+    }
   }
   return NS_OK;
 }
