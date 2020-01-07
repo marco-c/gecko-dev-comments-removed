@@ -16,10 +16,14 @@ var isParent = Services.appinfo.processType === Ci.nsIXULRuntime.PROCESS_TYPE_DE
 
 
 XPCOMUtils.defineLazyGetter(this, "PushService", function() {
-  const {PushService} = ChromeUtils.import("resource://gre/modules/PushService.jsm",
-                                           {});
-  PushService.init();
-  return PushService;
+  if (Services.prefs.getBoolPref("dom.push.enabled")) {
+    const {PushService} = ChromeUtils.import("resource://gre/modules/PushService.jsm",
+                                            {});
+    PushService.init();
+    return PushService;
+  }
+
+  throw Cr.NS_ERROR_NOT_AVAILABLE;
 });
 
 
@@ -251,7 +255,7 @@ Object.assign(PushServiceParent.prototype, {
     return data;
   },
 
-  _handleRequest(name, principal, data) {
+  async _handleRequest(name, principal, data) {
     if (name == "Push:Clear") {
       return this.service.clear(data);
     }
