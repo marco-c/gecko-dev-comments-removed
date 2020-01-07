@@ -550,7 +550,7 @@ class WeakMapBase;
 
 struct JSCompartment
 {
-  private:
+  protected:
     JS::Zone*                    zone_;
     JSRuntime*                   runtime_;
 
@@ -618,7 +618,6 @@ struct JSCompartment
   private:
     friend struct JSRuntime;
     friend struct JSContext;
-    js::ReadBarrieredGlobalObject global_;
 
     unsigned                     enterCompartmentDepth;
 
@@ -649,38 +648,24 @@ struct JSCompartment
         return runtime_;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-    inline js::GlobalObject* maybeGlobal() const;
-
-    
-    inline js::GlobalObject* unsafeUnbarrieredMaybeGlobal() const;
-
-    
-    inline bool globalIsAboutToBeFinalized();
-
-    inline void initGlobal(js::GlobalObject& global);
-
   public:
     void*                        data;
     void*                        realmData;
 
-  private:
+  protected:
     const js::AllocationMetadataBuilder *allocationMetadataBuilder;
 
     js::SavedStacks              savedStacks_;
 
+  private:
     js::WrapperMap               crossCompartmentWrappers;
 
+  public:
+    void assertNoCrossCompartmentWrappers() {
+        MOZ_ASSERT(crossCompartmentWrappers.empty());
+    }
+
+  protected:
     
     
     
@@ -716,7 +701,7 @@ struct JSCompartment
     
     int32_t                      detachedTypedObjects;
 
-  private:
+  protected:
     friend class js::AutoSetNewObjectMetadata;
     js::NewObjectMetadataState objectMetadataState;
 
@@ -786,7 +771,7 @@ struct JSCompartment
     
     js::wasm::Compartment wasm;
 
-  private:
+  protected:
     
     
     
@@ -892,20 +877,6 @@ struct JSCompartment
 
 
 
-    void traceGlobal(JSTracer* trc);
-    
-
-
-
-    void traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime traceOrMark);
-    
-
-
-    void finishRoots();
-    
-
-
-
 
 
     void traceOutgoingCrossCompartmentWrappers(JSTracer* trc);
@@ -916,7 +887,6 @@ struct JSCompartment
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
-    void sweepGlobalObject();
     void sweepSelfHostingScriptSource();
     void sweepJitCompartment();
     void sweepRegExps();
@@ -926,11 +896,9 @@ struct JSCompartment
     void sweepVarNames();
 
     void purge();
-    void clearTables();
 
     static void fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
     void fixupAfterMovingGC();
-    void fixupGlobal();
     void fixupScriptMapsAfterMovingGC();
 
     bool hasAllocationMetadataBuilder() const { return allocationMetadataBuilder; }
@@ -1143,7 +1111,7 @@ struct JSCompartment
     bool scheduledForDestruction;
     bool maybeAlive;
 
-  private:
+  protected:
     js::jit::JitCompartment* jitCompartment_;
 
     js::ReadBarriered<js::ArgumentsObject*> mappedArgumentsTemplate_;
@@ -1199,6 +1167,7 @@ class JS::Realm : public JSCompartment
     Realm(JS::Zone* zone, const JS::RealmOptions& options);
 
     void destroy(js::FreeOp* fop);
+    void clearTables();
 
     const JS::RealmCreationOptions& creationOptions() const { return creationOptions_; }
     JS::RealmBehaviors& behaviors() { return behaviors_; }
@@ -1216,6 +1185,48 @@ class JS::Realm : public JSCompartment
     void setIsAtomsRealm() {
         isAtomsRealm_ = true;
     }
+
+  private:
+    friend struct ::JSContext;
+    js::ReadBarrieredGlobalObject global_;
+  public:
+    
+
+
+
+
+
+
+
+
+    inline js::GlobalObject* maybeGlobal() const;
+
+    
+    inline js::GlobalObject* unsafeUnbarrieredMaybeGlobal() const;
+
+    
+    inline bool globalIsAboutToBeFinalized();
+
+    inline void initGlobal(js::GlobalObject& global);
+
+    
+
+
+
+    void traceGlobal(JSTracer* trc);
+
+    void sweepGlobalObject();
+    void fixupGlobal();
+
+    
+
+
+
+    void traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime traceOrMark);
+    
+
+
+    void finishRoots();
 };
 
 namespace js {
@@ -1241,8 +1252,7 @@ JSContext::global() const
 
 
     MOZ_ASSERT(realm_, "Caller needs to enter a realm first");
-    JSCompartment* comp = GetCompartmentForRealm(realm_);
-    return js::Handle<js::GlobalObject*>::fromMarkedLocation(comp->global_.unsafeGet());
+    return js::Handle<js::GlobalObject*>::fromMarkedLocation(realm_->global_.unsafeGet());
 }
 
 namespace js {

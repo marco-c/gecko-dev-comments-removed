@@ -141,7 +141,7 @@ JSScript::global() const
 
 
 
-    return *compartment()->maybeGlobal();
+    return *realm()->maybeGlobal();
 }
 
 inline js::LexicalScope*

@@ -272,7 +272,7 @@ CompileCompartment::maybeGlobal()
     
     
     
-    return compartment()->unsafeUnbarrieredMaybeGlobal();
+    return JS::GetRealmForCompartment(compartment())->unsafeUnbarrieredMaybeGlobal();
 }
 
 bool

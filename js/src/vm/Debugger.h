@@ -355,7 +355,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     
     
-    bool isDebuggeeUnbarriered(const JSCompartment* compartment) const;
+    bool isDebuggeeUnbarriered(const Realm* realm) const;
 
     
     

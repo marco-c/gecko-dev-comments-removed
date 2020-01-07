@@ -2570,17 +2570,17 @@ GCRuntime::sweepZoneAfterCompacting(Zone* zone)
     if (jit::JitZone* jitZone = zone->jitZone())
         jitZone->sweep();
 
-    for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
-        c->objectGroups.sweep();
-        c->sweepRegExps();
-        c->sweepSavedStacks();
-        c->sweepVarNames();
-        c->sweepGlobalObject();
-        c->sweepSelfHostingScriptSource();
-        c->sweepDebugEnvironments();
-        c->sweepJitCompartment();
-        c->sweepNativeIterators();
-        c->sweepTemplateObjects();
+    for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+        r->objectGroups.sweep();
+        r->sweepRegExps();
+        r->sweepSavedStacks();
+        r->sweepVarNames();
+        r->sweepGlobalObject();
+        r->sweepSelfHostingScriptSource();
+        r->sweepDebugEnvironments();
+        r->sweepJitCompartment();
+        r->sweepNativeIterators();
+        r->sweepTemplateObjects();
     }
 }
 
@@ -5426,13 +5426,13 @@ static void
 SweepMisc(GCParallelTask* task)
 {
     JSRuntime* runtime = task->runtime();
-    for (SweepGroupCompartmentsIter c(runtime); !c.done(); c.next()) {
-        c->sweepGlobalObject();
-        c->sweepTemplateObjects();
-        c->sweepSavedStacks();
-        c->sweepSelfHostingScriptSource();
-        c->sweepNativeIterators();
-        c->sweepRegExps();
+    for (SweepGroupRealmsIter r(runtime); !r.done(); r.next()) {
+        r->sweepGlobalObject();
+        r->sweepTemplateObjects();
+        r->sweepSavedStacks();
+        r->sweepSelfHostingScriptSource();
+        r->sweepNativeIterators();
+        r->sweepRegExps();
     }
 }
 
@@ -7535,23 +7535,22 @@ GCRuntime::scanZonesBeforeGC()
 
 
 
-
 void
 GCRuntime::maybeDoCycleCollection()
 {
-    const static double ExcessiveGrayCompartments = 0.8;
-    const static size_t LimitGrayCompartments = 200;
+    const static double ExcessiveGrayRealms = 0.8;
+    const static size_t LimitGrayRealms = 200;
 
-    size_t compartmentsTotal = 0;
-    size_t compartmentsGray = 0;
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
-        ++compartmentsTotal;
-        GlobalObject* global = c->unsafeUnbarrieredMaybeGlobal();
+    size_t realmsTotal = 0;
+    size_t realmsGray = 0;
+    for (RealmsIter realm(rt, SkipAtoms); !realm.done(); realm.next()) {
+        ++realmsTotal;
+        GlobalObject* global = realm->unsafeUnbarrieredMaybeGlobal();
         if (global && global->isMarkedGray())
-            ++compartmentsGray;
+            ++realmsGray;
     }
-    double grayFraction = double(compartmentsGray) / double(compartmentsTotal);
-    if (grayFraction > ExcessiveGrayCompartments || compartmentsGray > LimitGrayCompartments)
+    double grayFraction = double(realmsGray) / double(realmsTotal);
+    if (grayFraction > ExcessiveGrayRealms || realmsGray > LimitGrayRealms)
         callDoCycleCollectionCallback(rt->mainContextFromOwnThread());
 }
 
@@ -7996,7 +7995,8 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
 {
     
     
-    mozilla::DebugOnly<Realm*> sourceRealm = JS::GetRealmForCompartment(source);
+    Realm* sourceRealm = JS::GetRealmForCompartment(source);
+    Realm* targetRealm = JS::GetRealmForCompartment(target);
     MOZ_ASSERT(sourceRealm->creationOptions().mergeable());
     MOZ_ASSERT(sourceRealm->creationOptions().invisibleToDebugger());
 
@@ -8013,7 +8013,7 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
     
     
 
-    source->clearTables();
+    sourceRealm->clearTables();
     source->zone()->clearTables();
     source->unsetIsDebuggee();
 
@@ -8036,7 +8036,7 @@ GCRuntime::mergeCompartments(JSCompartment* source, JSCompartment* target)
         script->setTypesGeneration(target->zone()->types.generation);
     }
 
-    GlobalObject* global = target->maybeGlobal();
+    GlobalObject* global = targetRealm->maybeGlobal();
     MOZ_ASSERT(global);
 
     for (auto group = source->zone()->cellIter<ObjectGroup>(); !group.done(); group.next()) {

@@ -357,8 +357,8 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
 
     
     
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-        c->traceRoots(trc, traceOrMark);
+    for (RealmsIter r(rt, SkipAtoms); !r.done(); r.next())
+        r->traceRoots(trc, traceOrMark);
 
     
     HelperThreadState().trace(trc, session);
@@ -415,8 +415,8 @@ js::gc::GCRuntime::finishRoots()
 
     rt->finishSelfHosting();
 
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-        c->finishRoots();
+    for (RealmsIter r(rt, SkipAtoms); !r.done(); r.next())
+        r->finishRoots();
 
 #ifdef DEBUG
     

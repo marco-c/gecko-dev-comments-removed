@@ -398,13 +398,13 @@ JSObject::global() const
 
 
 
-    return *compartment()->unsafeUnbarrieredMaybeGlobal();
+    return *realm()->unsafeUnbarrieredMaybeGlobal();
 }
 
 inline js::GlobalObject*
 JSObject::globalForTracing(JSTracer*) const
 {
-    return compartment()->unsafeUnbarrieredMaybeGlobal();
+    return realm()->unsafeUnbarrieredMaybeGlobal();
 }
 
 inline bool

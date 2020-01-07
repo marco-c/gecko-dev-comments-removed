@@ -1953,7 +1953,7 @@ JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global)
 
     
     
-    global->compartment()->traceGlobal(trc);
+    global->realm()->traceGlobal(trc);
 
     if (JSTraceOp trace = global->realm()->creationOptions().getTrace())
         trace(trc, global);
@@ -7586,7 +7586,7 @@ GetScriptedCallerGlobal(JSContext* cx)
     if (activation->scriptedCallerIsHidden())
         return nullptr;
 
-    GlobalObject* global = activation->compartment()->maybeGlobal();
+    GlobalObject* global = JS::GetRealmForCompartment(activation->compartment())->maybeGlobal();
 
     
     

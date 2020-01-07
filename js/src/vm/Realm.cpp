@@ -24,25 +24,25 @@ gc::TraceRealm(JSTracer* trc, JS::Realm* realm, const char* name)
     
     
     
-    JS::GetCompartmentForRealm(realm)->traceGlobal(trc);
+    realm->traceGlobal(trc);
 }
 
 JS_PUBLIC_API(bool)
 gc::RealmNeedsSweep(JS::Realm* realm)
 {
-    return JS::GetCompartmentForRealm(realm)->globalIsAboutToBeFinalized();
+    return realm->globalIsAboutToBeFinalized();
 }
 
 JS_PUBLIC_API(JS::Realm*)
 JS::GetCurrentRealmOrNull(JSContext* cx)
 {
-    return JS::GetRealmForCompartment(cx->compartment());
+    return cx->realm();
 }
 
 JS_PUBLIC_API(JS::Realm*)
 JS::GetObjectRealmOrNull(JSObject* obj)
 {
-    return IsCrossCompartmentWrapper(obj) ? nullptr : GetRealmForCompartment(obj->compartment());
+    return IsCrossCompartmentWrapper(obj) ? nullptr : obj->realm();
 }
 
 JS_PUBLIC_API(void*)
@@ -72,7 +72,7 @@ JS::SetRealmNameCallback(JSContext* cx, JS::RealmNameCallback callback)
 JS_PUBLIC_API(JSObject*)
 JS::GetRealmGlobalOrNull(Handle<JS::Realm*> realm)
 {
-    return GetCompartmentForRealm(realm)->maybeGlobal();
+    return realm->maybeGlobal();
 }
 
 JS_PUBLIC_API(JSObject*)
