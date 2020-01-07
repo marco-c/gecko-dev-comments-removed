@@ -3414,9 +3414,6 @@ pref("svg.display-lists.hit-testing.enabled", true);
 pref("svg.display-lists.painting.enabled", true);
 
 
-pref("svg.paint-order.enabled", true);
-
-
 pref("svg.marker-improvements.enabled", true);
 
 
