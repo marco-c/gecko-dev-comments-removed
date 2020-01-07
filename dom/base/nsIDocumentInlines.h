@@ -62,9 +62,6 @@ inline void
 nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
 {
   MOZ_ASSERT(aRoot);
-  MOZ_ASSERT(aDirtyBits);
-  MOZ_ASSERT((aDirtyBits & ~Element::kAllServoDescendantBits) == 0);
-  MOZ_ASSERT((aDirtyBits & mServoRestyleRootDirtyBits) == mServoRestyleRootDirtyBits);
 
   
   
@@ -90,7 +87,21 @@ nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
              nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(mServoRestyleRoot, aRoot));
   MOZ_ASSERT(aRoot == aRoot->OwnerDocAsNode() || aRoot->IsElement());
   mServoRestyleRoot = aRoot;
+  SetServoRestyleRootDirtyBits(aDirtyBits);
+}
+
+
+
+
+inline void
+nsIDocument::SetServoRestyleRootDirtyBits(uint32_t aDirtyBits)
+{
+  MOZ_ASSERT(aDirtyBits);
+  MOZ_ASSERT((aDirtyBits & ~Element::kAllServoDescendantBits) == 0);
+  MOZ_ASSERT((aDirtyBits & mServoRestyleRootDirtyBits) == mServoRestyleRootDirtyBits);
+  MOZ_ASSERT(mServoRestyleRoot);
   mServoRestyleRootDirtyBits = aDirtyBits;
 }
+
 
 #endif 
