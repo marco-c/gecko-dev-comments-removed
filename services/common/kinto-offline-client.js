@@ -62,12 +62,20 @@ var _KintoBase = require("../src/KintoBase");
 
 var _KintoBase2 = _interopRequireDefault(_KintoBase);
 
+var _base = require("../src/adapters/base");
+
+var _base2 = _interopRequireDefault(_base);
+
+var _IDB = require("../src/adapters/IDB");
+
+var _IDB2 = _interopRequireDefault(_IDB);
+
 var _utils = require("../src/utils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
-Cu.importGlobalProperties(["fetch"]);
+Cu.importGlobalProperties(["fetch", "indexedDB"]);
 const { EventEmitter } = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
 const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
@@ -75,11 +83,19 @@ const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUU
 const { KintoHttpClient } = ChromeUtils.import("resource://services-common/kinto-http-client.js");
 
 class Kinto extends _KintoBase2.default {
+  static get adapters() {
+    return {
+      BaseAdapter: _base2.default,
+      IDB: _IDB2.default
+    };
+  }
+
   constructor(options = {}) {
     const events = {};
     EventEmitter.decorate(events);
 
     const defaults = {
+      adapter: _IDB2.default,
       events,
       ApiClass: KintoHttpClient
     };
@@ -104,7 +120,7 @@ if (typeof module === "object") {
   module.exports = Kinto;
 }
 
-},{"../src/KintoBase":3,"../src/utils":7}],2:[function(require,module,exports){
+},{"../src/KintoBase":3,"../src/adapters/IDB":4,"../src/adapters/base":5,"../src/utils":7}],2:[function(require,module,exports){
 
 },{}],3:[function(require,module,exports){
 "use strict";
@@ -1399,6 +1415,19 @@ class Collection {
 
 
 
+  async deleteAll() {
+    const { data } = await this.list({}, { includeDeleted: false });
+    const recordIds = data.map(record => record.id);
+    return this.execute(transaction => {
+      return transaction.deleteAll(recordIds);
+    }, { preloadIds: recordIds });
+  }
+
+  
+
+
+
+
 
 
   deleteAny(id) {
@@ -1679,6 +1708,8 @@ class Collection {
       since: options.lastModified ? `${options.lastModified}` : undefined,
       headers: options.headers,
       retry: options.retry,
+      
+      pages: Infinity,
       filters
     });
     
@@ -2122,6 +2153,23 @@ class CollectionTransaction {
 
 
 
+  deleteAll(ids) {
+    const existingRecords = [];
+    ids.forEach(id => {
+      existingRecords.push(this.adapterTransaction.get(id));
+      this.delete(id);
+    });
+
+    this._queueEvent("deleteAll", { data: existingRecords });
+    return { data: existingRecords, permissions: {} };
+  }
+
+  
+
+
+
+
+
 
   deleteAny(id) {
     const existing = this.adapterTransaction.get(id);
@@ -2378,7 +2426,7 @@ function deepEqual(a, b) {
   if (Object.keys(a).length !== Object.keys(b).length) {
     return false;
   }
-  for (let k in a) {
+  for (const k in a) {
     if (!deepEqual(a[k], b[k])) {
       return false;
     }
