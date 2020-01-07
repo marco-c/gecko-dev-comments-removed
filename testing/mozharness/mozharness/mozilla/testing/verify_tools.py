@@ -175,8 +175,8 @@ class VerifyToolsMixin(object):
         mozinfo.update({"e10s": e10s})
         headless = self.config.get('headless', False)
         mozinfo.update({"headless": headless})
-        stylo = self.config.get('enable_stylo', False)
-        mozinfo.update({'stylo': stylo})
+        
+        mozinfo.update({'stylo': True})
         mozinfo.update({'verify': True})
         self.info("Verification using mozinfo: %s" % str(mozinfo.info))
 
