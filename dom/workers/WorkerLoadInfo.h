@@ -56,12 +56,6 @@ struct WorkerLoadInfo
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> mLoadFailedAsyncRunnable;
-
   class InterfaceRequestor final : public nsIInterfaceRequestor
   {
     NS_DECL_ISUPPORTS

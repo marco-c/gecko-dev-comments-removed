@@ -93,8 +93,7 @@ public:
 
   nsresult
   SendLifeCycleEvent(const nsAString& aEventType,
-                     LifeCycleEventCallback* aCallback,
-                     nsIRunnable* aLoadFailure);
+                     LifeCycleEventCallback* aCallback);
 
   nsresult
   SendPushEvent(const nsAString& aMessageId,
@@ -190,11 +189,8 @@ private:
   void
   ReleaseToken();
 
-  
-  
   nsresult
   SpawnWorkerIfNeeded(WakeUpReason aWhy,
-                      nsIRunnable* aLoadFailedRunnable,
                       bool* aNewWorkerCreated = nullptr,
                       nsILoadGroup* aLoadGroup = nullptr);
 

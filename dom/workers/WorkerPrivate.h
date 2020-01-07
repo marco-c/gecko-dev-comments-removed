@@ -527,9 +527,6 @@ public:
     return mWorkerScriptExecutedSuccessfully;
   }
 
-  void
-  MaybeDispatchLoadFailedRunnable();
-
   
   
   
@@ -1054,12 +1051,6 @@ public:
   ServiceWorkersTestingInWindow() const
   {
     return mLoadInfo.mServiceWorkersTestingInWindow;
-  }
-
-  already_AddRefed<nsIRunnable>
-  StealLoadFailedAsyncRunnable()
-  {
-    return mLoadInfo.mLoadFailedAsyncRunnable.forget();
   }
 
   
