@@ -1743,10 +1743,15 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
   }
 
-  
-  
-  
-  MOZ_ASSERT((oldApzSampler != nullptr) == (mApzSampler != nullptr));
+  if (oldApzSampler) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mApzSampler);
+  }
   if (mApzSampler) {
     if (parent) {
       MOZ_ASSERT(mApzcTreeManager);

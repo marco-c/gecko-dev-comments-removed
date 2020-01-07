@@ -254,14 +254,15 @@ APZCTreeManager::NotifyLayerTreeAdopted(uint64_t aLayersId,
 {
   APZThreadUtils::AssertOnSamplerThread();
 
-  MOZ_ASSERT(aOldApzcTreeManager);
-  aOldApzcTreeManager->mFocusState.RemoveFocusTarget(aLayersId);
-  
-  
-  
+  if (aOldApzcTreeManager) {
+    aOldApzcTreeManager->mFocusState.RemoveFocusTarget(aLayersId);
+    
+    
+    
+  }
 
   UniquePtr<APZTestData> adoptedData;
-  { 
+  if (aOldApzcTreeManager) {
     MutexAutoLock lock(aOldApzcTreeManager->mTestDataLock);
     auto it = aOldApzcTreeManager->mTestData.find(aLayersId);
     if (it != aOldApzcTreeManager->mTestData.end()) {
