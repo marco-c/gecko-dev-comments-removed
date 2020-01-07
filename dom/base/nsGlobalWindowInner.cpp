@@ -182,6 +182,10 @@
 #include "nsNetCID.h"
 #include "nsIArray.h"
 
+
+#include "nsIDOMXULDocument.h"
+#include "nsIDOMXULCommandDispatcher.h"
+
 #include "nsBindingManager.h"
 #include "nsXBLService.h"
 

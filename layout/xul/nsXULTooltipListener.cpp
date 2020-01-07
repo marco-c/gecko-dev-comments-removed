@@ -7,6 +7,7 @@
 #include "nsXULTooltipListener.h"
 
 #include "nsIDOMMouseEvent.h"
+#include "nsIDOMXULDocument.h"
 #include "nsXULElement.h"
 #include "nsIDocument.h"
 #include "nsGkAtoms.h"
@@ -102,12 +103,12 @@ nsXULTooltipListener::MouseOut(nsIDOMEvent* aEvent)
   
   if (currentTooltip) {
     
-    nsCOMPtr<nsINode> targetNode = do_QueryInterface(
+    nsCOMPtr<nsIDOMNode> targetNode = do_QueryInterface(
       aEvent->InternalDOMEvent()->GetTarget());
 
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
     if (pm) {
-      nsCOMPtr<nsINode> tooltipNode =
+      nsCOMPtr<nsIDOMNode> tooltipNode =
         pm->GetLastTriggerTooltipNode(currentTooltip->GetUncomposedDoc());
       if (tooltipNode == targetNode) {
         
@@ -403,8 +404,9 @@ nsXULTooltipListener::ShowTooltip()
     return NS_ERROR_FAILURE; 
 
   
-  if (tooltipNode->GetComposedDoc() &&
-      tooltipNode->GetComposedDoc()->IsXULDocument()) {
+  nsCOMPtr<nsIDOMXULDocument> xulDoc =
+    do_QueryInterface(tooltipNode->GetComposedDoc());
+  if (xulDoc) {
     
     
     if (sourceNode->IsInComposedDoc()) {

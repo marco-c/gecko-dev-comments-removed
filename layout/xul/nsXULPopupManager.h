@@ -424,8 +424,7 @@ public:
   
   
   
-  nsINode* GetMouseLocationParent();
-  int32_t MouseLocationOffset();
+  void GetMouseLocation(nsIDOMNode** aNode, int32_t* aOffset);
 
   
 
@@ -597,12 +596,12 @@ public:
 
 
 
-  already_AddRefed<nsINode> GetLastTriggerPopupNode(nsIDocument* aDocument)
+  already_AddRefed<nsIDOMNode> GetLastTriggerPopupNode(nsIDocument* aDocument)
   {
     return GetLastTriggerNode(aDocument, false);
   }
 
-  already_AddRefed<nsINode> GetLastTriggerTooltipNode(nsIDocument* aDocument)
+  already_AddRefed<nsIDOMNode> GetLastTriggerTooltipNode(nsIDocument* aDocument)
   {
     return GetLastTriggerNode(aDocument, true);
   }
@@ -799,7 +798,7 @@ private:
 
 protected:
 
-  already_AddRefed<nsINode> GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip);
+  already_AddRefed<nsIDOMNode> GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip);
 
   
 
@@ -833,7 +832,7 @@ protected:
   nsCOMPtr<nsIWidget> mWidget;
 
   
-  nsCOMPtr<nsINode> mRangeParent;
+  nsCOMPtr<nsIDOMNode> mRangeParent;
   int32_t mRangeOffset;
   
   

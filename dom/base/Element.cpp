@@ -117,6 +117,10 @@
 #include "nsRuleProcessorData.h"
 #include "nsTextNode.h"
 
+#ifdef MOZ_XUL
+#include "nsIXULDocument.h"
+#endif 
+
 #include "nsCycleCollectionParticipant.h"
 #include "nsCCUncollectableMarker.h"
 

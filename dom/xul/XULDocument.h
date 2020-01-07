@@ -9,6 +9,7 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsXULPrototypeDocument.h"
+#include "nsXULPrototypeCache.h"
 #include "nsTArray.h"
 
 #include "mozilla/dom/XMLDocument.h"
@@ -16,8 +17,10 @@
 #include "nsForwardReference.h"
 #include "nsIContent.h"
 #include "nsIDOMXULCommandDispatcher.h"
+#include "nsIDOMXULDocument.h"
 #include "nsCOMArray.h"
 #include "nsIURI.h"
+#include "nsIXULDocument.h"
 #include "nsIStreamListener.h"
 #include "nsIStreamLoader.h"
 #include "nsICSSLoaderObserver.h"
@@ -32,7 +35,6 @@
 class nsIRDFResource;
 class nsIRDFService;
 class nsPIWindowRoot;
-class nsXULPrototypeElement;
 #if 0 
 class nsIObjectInputStream;
 class nsIObjectOutputStream;
@@ -48,13 +50,12 @@ class nsIObjectOutputStream;
 
 
 
-
-nsresult NS_NewXULDocument(nsIDocument** result);
-
 namespace mozilla {
 namespace dom {
 
 class XULDocument final : public XMLDocument,
+                          public nsIXULDocument,
+                          public nsIDOMXULDocument,
                           public nsIStreamLoaderObserver,
                           public nsICSSLoaderObserver,
                           public nsIOffThreadScriptReceiver
@@ -83,10 +84,6 @@ public:
 
     virtual void EndLoad() override;
 
-    virtual XULDocument* AsXULDocument() override {
-        return this;
-    }
-
     
     NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
     NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
@@ -94,28 +91,10 @@ public:
     NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
 
     
-
-
-    nsresult AddSubtreeToDocument(nsIContent* aContent);
-    
-
-
-    nsresult RemoveSubtreeFromDocument(nsIContent* aContent);
-    
-
-
-
-
-
-
-
-
-
-    nsresult OnPrototypeLoadDone(bool aResumeWalk);
-    
-
-
-    bool OnDocumentParserError();
+    NS_IMETHOD AddSubtreeToDocument(nsIContent* aContent) override;
+    NS_IMETHOD RemoveSubtreeFromDocument(nsIContent* aContent) override;
+    NS_IMETHOD OnPrototypeLoadDone(bool aResumeWalk) override;
+    bool OnDocumentParserError() override;
 
     
     virtual nsresult Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
@@ -135,6 +114,9 @@ public:
     using nsIDocument::GetLocation;
 
     
+    NS_DECL_NSIDOMXULDOCUMENT
+
+    
     NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus) override;
@@ -143,15 +125,12 @@ public:
 
     virtual bool IsDocumentRightToLeft() override;
 
-    
-
-
-    void ResetDocumentDirection();
+    virtual void ResetDocumentDirection() override;
 
     virtual nsIDocument::DocumentTheme GetDocumentLWTheme() override;
     virtual nsIDocument::DocumentTheme ThreadSafeGetDocumentLWTheme() const override;
 
-    void ResetDocumentLWTheme() { mDocLWTheme = Doc_Theme_Uninitialized; }
+    virtual void ResetDocumentLWTheme() override { mDocLWTheme = Doc_Theme_Uninitialized; }
 
     NS_IMETHOD OnScriptCompileComplete(JSScript* aScript, nsresult aStatus) override;
 
@@ -168,7 +147,7 @@ public:
     
     already_AddRefed<nsINode> GetPopupNode();
     void SetPopupNode(nsINode* aNode);
-    nsINode* GetPopupRangeParent(ErrorResult& aRv);
+    already_AddRefed<nsINode> GetPopupRangeParent(ErrorResult& aRv);
     int32_t GetPopupRangeOffset(ErrorResult& aRv);
     already_AddRefed<nsINode> GetTooltipNode();
     void SetTooltipNode(nsINode* aNode) {  }
@@ -190,18 +169,23 @@ public:
                                  const nsAString& aAttr, ErrorResult& aRv);
     void RemoveBroadcastListenerFor(Element& aBroadcaster, Element& aListener,
                                     const nsAString& aAttr);
-    void Persist(const nsAString& aId, const nsAString& aAttr,
-                 ErrorResult& aRv);
+    void Persist(const nsAString& aId, const nsAString& aAttr, ErrorResult& aRv)
+    {
+        aRv = Persist(aId, aAttr);
+    }
     using nsDocument::GetBoxObjectFor;
     void LoadOverlay(const nsAString& aURL, nsIObserver* aObserver,
-                     ErrorResult& aRv);
+                     ErrorResult& aRv)
+    {
+        aRv = LoadOverlay(aURL, aObserver);
+    }
 
 protected:
     virtual ~XULDocument();
 
     
     friend nsresult
-    (::NS_NewXULDocument(nsIDocument** aResult));
+    (::NS_NewXULDocument(nsIXULDocument** aResult));
 
     nsresult Init(void) override;
     nsresult StartLayout(void);
