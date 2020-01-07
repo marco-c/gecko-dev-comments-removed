@@ -12,12 +12,16 @@
   
 #include "mozilla/dom/CSSPseudoElement.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
+#ifdef MOZ_OLD_STYLE
 #include "mozilla/AnimValuesStyleRule.h"
+#endif
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/FloatingPoint.h" 
+#ifdef MOZ_OLD_STYLE
 #include "mozilla/GeckoStyleContext.h"
+#endif
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"

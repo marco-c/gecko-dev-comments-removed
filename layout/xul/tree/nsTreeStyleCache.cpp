@@ -5,7 +5,9 @@
 
 
 #include "nsTreeStyleCache.h"
+#ifdef MOZ_OLD_STYLE
 #include "nsStyleSet.h"
+#endif
 #include "mozilla/dom/Element.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
