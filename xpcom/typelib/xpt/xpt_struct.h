@@ -16,7 +16,6 @@
 #include <stdint.h>
 #include "mozilla/Assertions.h"
 
-struct XPTInterfaceDirectoryEntry;
 struct XPTInterfaceDescriptor;
 struct XPTConstDescriptor;
 struct XPTMethodDescriptor;
@@ -26,7 +25,6 @@ struct XPTTypeDescriptorPrefix;
 
 struct XPTHeader {
   static const uint16_t kNumInterfaces;
-  static const XPTInterfaceDirectoryEntry kInterfaceDirectory[];
   static const XPTInterfaceDescriptor kInterfaces[];
   static const XPTTypeDescriptor kTypes[];
   static const XPTParamDescriptor kParams[];
@@ -36,22 +34,6 @@ struct XPTHeader {
   
   
   static const char kStrings[];
-};
-
-
-
-
-
-
-struct XPTInterfaceDirectoryEntry {
-  inline const XPTInterfaceDescriptor* InterfaceDescriptor() const;
-  inline const char* Name() const;
-
-  nsID mIID;
-  uint32_t mName; 
-  
-  
-  uint32_t mInterfaceDescriptor;
 };
 
 
@@ -69,12 +51,15 @@ struct XPTInterfaceDescriptor {
   bool IsBuiltinClass() const { return !!(mFlags & kBuiltinClassMask); }
   bool IsMainProcessScriptableOnly() const { return !!(mFlags & kMainProcessScriptableOnlyMask); }
 
+  inline const char* Name() const;
   inline const XPTMethodDescriptor& Method(size_t aIndex) const;
   inline const XPTConstDescriptor& Const(size_t aIndex) const;
 
   
 
 
+  nsID mIID;
+  uint32_t mName; 
   uint16_t mMethodDescriptors; 
   uint16_t mConstDescriptors; 
   uint16_t mParentInterface;
@@ -232,16 +217,8 @@ struct XPTMethodDescriptor {
 };
 
 const char*
-XPTInterfaceDirectoryEntry::Name() const {
+XPTInterfaceDescriptor::Name() const {
   return &XPTHeader::kStrings[mName];
-}
-
-const XPTInterfaceDescriptor*
-XPTInterfaceDirectoryEntry::InterfaceDescriptor() const {
-  if (mInterfaceDescriptor == 0) {
-    return nullptr;
-  }
-  return &XPTHeader::kInterfaces[mInterfaceDescriptor - 1];
 }
 
 const XPTMethodDescriptor&
