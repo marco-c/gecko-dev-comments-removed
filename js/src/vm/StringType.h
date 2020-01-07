@@ -1601,6 +1601,12 @@ ValueToPrintableLatin1(JSContext* cx, const Value&, JSAutoByteString* bytes,
 
 
 
+extern const char*
+ValueToPrintableUTF8(JSContext* cx, const Value&, JSAutoByteString* bytes, bool asSource = false);
+
+
+
+
 
 template <AllowGC allowGC>
 extern JSString*
