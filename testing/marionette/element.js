@@ -34,15 +34,6 @@ const {
 const ELEMENT_NODE = 1;
 const DOCUMENT_NODE = 9;
 
-const UNEDITABLE_INPUTS = new Set([
-  "checkbox",
-  "radio",
-  "hidden",
-  "submit",
-  "button",
-  "image",
-]);
-
 const XBLNS = "http://www.mozilla.org/xbl";
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -854,6 +845,60 @@ element.isDisabled = function(el) {
 
 
 
+
+
+
+
+element.isMutableFormControl = function(el) {
+  if (!element.isDOMElement(el)) {
+    return false;
+  }
+  if (element.isReadOnly(el) || element.isDisabled(el)) {
+    return false;
+  }
+
+  if (el.localName == "textarea") {
+    return true;
+  }
+
+  if (el.localName != "input") {
+    return false;
+  }
+
+  switch (el.type) {
+    case "color":
+    case "date":
+    case "datetime-local":
+    case "email":
+    case "file":
+    case "month":
+    case "number":
+    case "password":
+    case "range":
+    case "search":
+    case "tel":
+    case "text":
+    case "time":
+    case "url":
+    case "week":
+      return true;
+
+    default:
+      return false;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 element.isEditingHost = function(el) {
   return element.isDOMElement(el) &&
       (el.isContentEditable || el.ownerDocument.designMode == "on");
@@ -892,9 +937,7 @@ element.isEditable = function(el) {
     return false;
   }
 
-  return (el.localName == "input" && !UNEDITABLE_INPUTS.has(el.type)) ||
-      el.localName == "textarea" ||
-      element.isEditingHost(el);
+  return element.isMutableFormControl(el) || element.isEditingHost(el);
 };
 
 
