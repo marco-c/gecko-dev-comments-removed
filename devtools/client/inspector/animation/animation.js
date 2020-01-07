@@ -429,8 +429,22 @@ class AnimationInspector {
   }
 
   async setAnimationsPlayState(doPlay) {
+    if (typeof this.hasPausePlaySome === "undefined") {
+      this.hasPausePlaySome =
+        await this.inspector.target.actorHasMethod("animations", "pauseSome");
+    }
+
     try {
-      if (doPlay) {
+      
+      
+      
+      if (this.hasPausePlaySome) {
+        if (doPlay) {
+          await this.animationsFront.playSome(this.state.animations);
+        } else {
+          await this.animationsFront.pauseSome(this.state.animations);
+        }
+      } else if (doPlay) {
         await this.animationsFront.playAll();
       } else {
         await this.animationsFront.pauseAll();

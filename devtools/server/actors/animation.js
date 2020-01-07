@@ -816,16 +816,13 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
 
 
   pauseAll: function() {
-    let readyPromises = [];
     
     
     for (let player of
          this.getAllAnimations(this.tabActor.window.document, true)) {
-      player.pause();
-      readyPromises.push(player.ready);
+      this.pauseSync(player);
     }
     this.allAnimationsPaused = true;
-    return Promise.all(readyPromises);
   },
 
   
@@ -837,19 +834,17 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     
     for (let player of
       this.getAllAnimations(this.tabActor.window.document, true)) {
-      
-      
-      player.startTime =
-        player.timeline.currentTime - player.currentTime / player.playbackRate;
+      this.playSync(player);
     }
     this.allAnimationsPaused = false;
   },
 
   toggleAll: function() {
     if (this.allAnimationsPaused) {
-      return this.playAll();
+      this.playAll();
+    } else {
+      this.pauseAll();
     }
-    return this.pauseAll();
   },
 
   
@@ -862,6 +857,28 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     return Promise.all(players.map(player => {
       return shouldPause ? player.pause() : player.play();
     }));
+  },
+
+  
+
+
+
+
+  pauseSome: function(actors) {
+    for (const { player } of actors) {
+      this.pauseSync(player);
+    }
+  },
+
+  
+
+
+
+
+  playSome: function(actors) {
+    for (const { player } of actors) {
+      this.playSync(player);
+    }
   },
 
   
@@ -904,5 +921,37 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     return Promise.all(
       players.map(player => player.setPlaybackRate(rate))
     );
-  }
+  },
+
+  
+
+
+
+
+  pauseSync(player) {
+    
+    
+    
+    
+    
+    
+    this.playSync(player);
+    player.startTime = null;
+  },
+
+  
+
+
+
+
+  playSync(player) {
+    if (!player.playbackRate) {
+      
+      return;
+    }
+
+    
+    const currentTime = player.currentTime || 0;
+    player.startTime = player.timeline.currentTime - currentTime / player.playbackRate;
+  },
 });
