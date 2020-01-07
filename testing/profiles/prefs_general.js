@@ -211,10 +211,6 @@ user_pref("browser.pagethumbnails.capturing_disabled", true);
 user_pref("browser.download.panel.shown", true);
 
 
-
-user_pref("browser.newtabpage.introShown", true);
-
-
 user_pref("browser.webapps.testing", true);
 
 

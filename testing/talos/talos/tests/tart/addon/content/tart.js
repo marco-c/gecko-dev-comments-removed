@@ -434,7 +434,6 @@ Tart.prototype = {
   _startTest() {
 
     
-    var origNewtabEnabled = Services.prefs.getBoolPref("browser.newtabpage.enabled");
     var origPreload =       Services.prefs.getBoolPref("browser.newtab.preload");
     var origDpi =           Services.prefs.getCharPref("layout.css.devPixelsPerPx");
     var origPinned =        this._tartTab.pinned;
@@ -490,7 +489,6 @@ Tart.prototype = {
     var subtests = {
       init: [ 
         function() {
-          Services.prefs.setBoolPref("browser.newtabpage.enabled", true);
           Services.prefs.setBoolPref("browser.newtab.preload", false);
           self.pinTart();
           self.makeNewTabURLChangePromise("about:blank").then(next);
@@ -500,7 +498,6 @@ Tart.prototype = {
       restore: [
         
         function() {
-          Services.prefs.setBoolPref("browser.newtabpage.enabled", origNewtabEnabled);
           Services.prefs.setBoolPref("browser.newtab.preload", origPreload);
           Services.prefs.setCharPref("layout.css.devPixelsPerPx", origDpi);
           if (origPinned) self.pinTart(); else self.unpinTart();

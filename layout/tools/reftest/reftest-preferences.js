@@ -117,8 +117,6 @@ user_pref("general.useragent.updates.enabled", false);
 
 user_pref("browser.webapps.checkForUpdates", 0);
 
-user_pref("browser.newtabpage.directory.source", "data:application/json,{\"reftest\":1}");
-
 
 user_pref("extensions.enabledScopes", 5);
 user_pref("extensions.autoDisableScopes", 0);
