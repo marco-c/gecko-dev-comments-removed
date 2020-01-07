@@ -11,8 +11,9 @@ import logging
 
 from slugid import nice as slugid
 
-from .util import (create_task_from_def, fetch_graph_and_labels, fix_task_dependencies)
+from .util import (create_task_from_def, fetch_graph_and_labels)
 from .registry import register_callback_action
+from taskgraph.util.parameterization import resolve_task_references
 
 TASKCLUSTER_QUEUE_URL = "https://queue.taskcluster.net/v1/task"
 
@@ -83,7 +84,13 @@ def mochitest_retrigger_action(parameters, graph_config, input, task_group_id, t
         parameters, graph_config)
 
     pre_task = full_task_graph.tasks[task['metadata']['name']]
-    new_task_definition = fix_task_dependencies(pre_task, label_to_taskid)
+
+    
+    
+    dependencies = {name: label_to_taskid[label]
+                    for name, label in pre_task.dependencies.iteritems()}
+    new_task_definition = resolve_task_references(pre_task.label, pre_task.task, dependencies)
+    new_task_definition.setdefault('dependencies', []).extend(dependencies.itervalues())
 
     
     new_task_definition['payload']['command'] += ['--no-run-tests']
