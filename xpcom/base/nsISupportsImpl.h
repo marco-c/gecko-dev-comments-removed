@@ -649,17 +649,26 @@ public:
 
 
 
-#define NS_IMPL_ADDREF(_class)                                                \
+
+#define NS_IMPL_NAMED_ADDREF(_class, _name)                                   \
 NS_IMETHODIMP_(MozExternalRefCountType) _class::AddRef(void)                  \
 {                                                                             \
   MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                                  \
   MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");                        \
+  MOZ_ASSERT(_name != nullptr, "Must specify a name");                        \
   if (!mRefCnt.isThreadSafe)                                                  \
     NS_ASSERT_OWNINGTHREAD(_class);                                           \
   nsrefcnt count = ++mRefCnt;                                                 \
-  NS_LOG_ADDREF(this, count, #_class, sizeof(*this));                         \
+  NS_LOG_ADDREF(this, count, _name, sizeof(*this));                           \
   return count;                                                               \
 }
+
+
+
+
+
+#define NS_IMPL_ADDREF(_class)                                                \
+  NS_IMPL_NAMED_ADDREF(_class, #_class)
 
 
 
@@ -695,14 +704,16 @@ NS_IMETHODIMP_(MozExternalRefCountType) _class::AddRef(void)                  \
 
 
 
-#define NS_IMPL_RELEASE_WITH_DESTROY(_class, _destroy)                        \
+
+#define NS_IMPL_NAMED_RELEASE_WITH_DESTROY(_class, _name, _destroy)           \
 NS_IMETHODIMP_(MozExternalRefCountType) _class::Release(void)                 \
 {                                                                             \
   MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                            \
+  MOZ_ASSERT(_name != nullptr, "Must specify a name");                        \
   if (!mRefCnt.isThreadSafe)                                                  \
     NS_ASSERT_OWNINGTHREAD(_class);                                           \
   nsrefcnt count = --mRefCnt;                                                 \
-  NS_LOG_RELEASE(this, count, #_class);                                       \
+  NS_LOG_RELEASE(this, count, _name);                                         \
   if (count == 0) {                                                           \
     mRefCnt = 1; /* stabilize */                                              \
     _destroy;                                                                 \
@@ -710,6 +721,9 @@ NS_IMETHODIMP_(MozExternalRefCountType) _class::Release(void)                 \
   }                                                                           \
   return count;                                                               \
 }
+
+#define NS_IMPL_RELEASE_WITH_DESTROY(_class, _destroy)                        \
+  NS_IMPL_NAMED_RELEASE_WITH_DESTROY(_class, #_class, _destroy)
 
 
 
@@ -726,6 +740,9 @@ NS_IMETHODIMP_(MozExternalRefCountType) _class::Release(void)                 \
 
 #define NS_IMPL_RELEASE(_class) \
   NS_IMPL_RELEASE_WITH_DESTROY(_class, delete (this))
+
+#define NS_IMPL_NAMED_RELEASE(_class, _name)                                  \
+  NS_IMPL_NAMED_RELEASE_WITH_DESTROY(_class, _name, delete (this))
 
 
 
@@ -1090,12 +1107,20 @@ public:                                                                       \
 
 
 
+
+
+namespace mozilla {
+class Runnable;
+} 
+
 #define NS_IMPL_ADDREF_INHERITED(Class, Super)                                \
 NS_IMETHODIMP_(MozExternalRefCountType) Class::AddRef(void)                   \
 {                                                                             \
   MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(Class)                                   \
   nsrefcnt r = Super::AddRef();                                               \
-  NS_LOG_ADDREF(this, r, #Class, sizeof(*this));                              \
+  if (!mozilla::IsConvertible<Class*, mozilla::Runnable*>::value) {           \
+    NS_LOG_ADDREF(this, r, #Class, sizeof(*this));                            \
+  }                                                                           \
   return r;                                                                   \
 }
 
@@ -1103,7 +1128,9 @@ NS_IMETHODIMP_(MozExternalRefCountType) Class::AddRef(void)                   \
 NS_IMETHODIMP_(MozExternalRefCountType) Class::Release(void)                  \
 {                                                                             \
   nsrefcnt r = Super::Release();                                              \
-  NS_LOG_RELEASE(this, r, #Class);                                            \
+  if (!mozilla::IsConvertible<Class*, mozilla::Runnable*>::value) {           \
+    NS_LOG_RELEASE(this, r, #Class);                                          \
+  }                                                                           \
   return r;                                                                   \
 }
 
