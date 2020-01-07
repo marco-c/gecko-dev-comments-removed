@@ -87,11 +87,55 @@ class Output(object):
                     subtests.append(new_subtest)
 
             elif test.type == "benchmark":
-                if 'speedometer' in test.measurements:
-                    subtests, vals = self.parseSpeedometerOutput(test)
-                elif 'motionmark' in test.measurements:
-                    subtests, vals = self.parseMotionmarkOutput(test)
-                suite['subtests'] = subtests
+                
+                
+
+                
+                
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                for page_cycle in test.measurements['speedometer']:
+                    page_cycle_results = page_cycle[0]
+
+                    for sub, replicates in page_cycle_results.iteritems():
+                        
+                        
+                        existing = False
+                        for existing_sub in subtests:
+                            if existing_sub['name'] == sub:
+                                
+                                existing_sub['replicates'].extend(replicates)
+                                
+                                existing_sub['value'] = filter.median(existing_sub['replicates'])
+                                
+                                for existing_val in vals:
+                                    if existing_val[1] == sub:
+                                        existing_val[0] = existing_sub['value']
+                                        break
+                                existing = True
+                                break
+
+                        if not existing:
+                            
+                            new_subtest = {}
+                            new_subtest['name'] = sub
+                            new_subtest['replicates'] = replicates
+                            new_subtest['lowerIsBetter'] = test.lower_is_better
+                            new_subtest['alertThreshold'] = float(test.alert_threshold)
+                            new_subtest['value'] = filter.median(replicates)
+                            new_subtest['unit'] = test.unit
+                            subtests.append(new_subtest)
+                            vals.append([new_subtest['value'], sub])
             else:
                 LOG.error("output.summarize received unsupported test results type")
                 return
@@ -101,121 +145,6 @@ class Output(object):
             suite['value'] = self.construct_results(vals, testname=test.name)
 
         self.summarized_results = test_results
-
-    def parseSpeedometerOutput(self, test):
-        
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        subtests = []
-        vals = []
-        data = test.measurements['speedometer']
-        for page_cycle in data:
-            page_cycle_results = page_cycle[0]
-
-            for sub, replicates in page_cycle_results.iteritems():
-                
-                
-                existing = False
-                for existing_sub in subtests:
-                    if existing_sub['name'] == sub:
-                        
-                        existing_sub['replicates'].extend(replicates)
-                        
-                        existing_sub['value'] = filter.median(existing_sub['replicates'])
-                        
-                        for existing_val in vals:
-                            if existing_val[1] == sub:
-                                existing_val[0] = existing_sub['value']
-                                break
-                        existing = True
-                        break
-
-                if not existing:
-                    
-                    new_subtest = {}
-                    new_subtest['name'] = sub
-                    new_subtest['replicates'] = replicates
-                    new_subtest['lowerIsBetter'] = test.lower_is_better
-                    new_subtest['alertThreshold'] = float(test.alert_threshold)
-                    new_subtest['value'] = filter.median(replicates)
-                    new_subtest['unit'] = test.unit
-                    subtests.append(new_subtest)
-                    vals.append([new_subtest['value'], sub])
-        return subtests, vals
-
-    def parseMotionmarkOutput(self, test):
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        subtests = {}
-        vals = []
-        data = test.measurements['motionmark']
-        for page_cycle in data:
-            page_cycle_results = page_cycle[0]
-
-            
-            suite = page_cycle_results.keys()[0]
-            for sub in page_cycle_results[suite].keys():
-                replicate = round(page_cycle_results[suite][sub]['frameLength']['average'], 3)
-
-                
-                if sub in subtests.keys():
-                    subtests[sub]['replicates'].append(replicate)
-                    subtests[sub]['value'] = filter.median(subtests[sub]['replicates'])
-                    continue
-
-                
-                new_subtest = {}
-                new_subtest['name'] = sub
-                new_subtest['replicates'] = [replicate]
-                new_subtest['lowerIsBetter'] = test.lower_is_better
-                new_subtest['alertThreshold'] = float(test.alert_threshold)
-                new_subtest['unit'] = test.unit
-                subtests[sub] = new_subtest
-
-        retVal = []
-        subtest_names = subtests.keys()
-        subtest_names.sort(reverse=True)
-        for name in subtest_names:
-            subtests[name]['value'] = filter.median(subtests[name]['replicates'])
-            vals.append([subtests[name]['value'], name])
-            retVal.append(subtests[name])
-
-        return retVal, vals
 
     def output(self):
         """output to file and perfherder data json """

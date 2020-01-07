@@ -189,7 +189,7 @@ def main(args=sys.argv[1:]):
 
     
     
-    raptor_test_list = get_raptor_test_list(args, mozinfo.os)
+    raptor_test_list = get_raptor_test_list(args)
 
     
     if len(raptor_test_list) == 0:
