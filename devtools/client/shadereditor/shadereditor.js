@@ -3,8 +3,11 @@
 
 "use strict";
 
+
+
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
-const {SideMenuWidget} = require("devtools/client/shared/widgets/SideMenuWidget.jsm");
+const {SideMenuWidget} = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const {Task} = require("devtools/shared/task");
@@ -15,6 +18,11 @@ const {LocalizationHelper} = require("devtools/shared/l10n");
 const {extend} = require("devtools/shared/extend");
 const {WidgetMethods, setNamedTimeout} =
   require("devtools/client/shared/widgets/view-helpers");
+
+
+
+
+const Promise = require("Promise");
 
 
 const EVENTS = {
@@ -34,7 +42,7 @@ const EVENTS = {
   
   EDITOR_ERROR_MARKERS_REMOVED: "ShaderEditor:EditorCleaned"
 };
-exports.EVENTS = EVENTS;
+XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 
 const STRINGS_URI = "devtools/client/locales/shadereditor.properties";
 const HIGHLIGHT_TINT = [1, 0, 0.25, 1]; 
@@ -51,67 +59,86 @@ const DEFAULT_EDITOR_CONFIG = {
 
 
 
-class EventsHandler {
+var gToolbox, gTarget, gFront;
+
+
+
+
+function startupShaderEditor() {
+  return promise.all([
+    EventsHandler.initialize(),
+    ShadersListView.initialize(),
+    ShadersEditorsView.initialize()
+  ]);
+}
+
+
+
+
+function shutdownShaderEditor() {
+  return promise.all([
+    EventsHandler.destroy(),
+    ShadersListView.destroy(),
+    ShadersEditorsView.destroy()
+  ]);
+}
+
+
+
+
+var EventsHandler = {
   
 
 
-  initialize(panel, toolbox, target, front, shadersListView) {
-    this.panel = panel;
-    this.toolbox = toolbox;
-    this.target = target;
-    this.front = front;
-    this.shadersListView = shadersListView;
-
+  initialize: function() {
     this._onHostChanged = this._onHostChanged.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onTabWillNavigate = this._onTabWillNavigate.bind(this);
     this._onProgramLinked = this._onProgramLinked.bind(this);
     this._onProgramsAdded = this._onProgramsAdded.bind(this);
-
-    this.toolbox.on("host-changed", this._onHostChanged);
-    this.target.on("will-navigate", this._onTabWillNavigate);
-    this.target.on("navigate", this._onTabNavigated);
-    this.front.on("program-linked", this._onProgramLinked);
+    gToolbox.on("host-changed", this._onHostChanged);
+    gTarget.on("will-navigate", this._onTabWillNavigate);
+    gTarget.on("navigate", this._onTabNavigated);
+    gFront.on("program-linked", this._onProgramLinked);
     this.reloadButton = $("#requests-menu-reload-notice-button");
-    this._onReloadCommand = this._onReloadCommand.bind(this);
     this.reloadButton.addEventListener("command", this._onReloadCommand);
-  }
+  },
 
   
 
 
-  destroy() {
-    this.toolbox.off("host-changed", this._onHostChanged);
-    this.target.off("will-navigate", this._onTabWillNavigate);
-    this.target.off("navigate", this._onTabNavigated);
-    this.front.off("program-linked", this._onProgramLinked);
+  destroy: function() {
+    gToolbox.off("host-changed", this._onHostChanged);
+    gTarget.off("will-navigate", this._onTabWillNavigate);
+    gTarget.off("navigate", this._onTabNavigated);
+    gFront.off("program-linked", this._onProgramLinked);
     this.reloadButton.removeEventListener("command", this._onReloadCommand);
-  }
+  },
 
   
 
 
   _onReloadCommand() {
-    this.front.setup({ reload: true });
-  }
+    gFront.setup({ reload: true });
+  },
 
   
 
 
-  _onHostChanged() {
-    if (this.toolbox.hostType == "right" || this.toolbox.hostType == "left") {
+  _onHostChanged: function() {
+    if (gToolbox.hostType == "right" || gToolbox.hostType == "left") {
       $("#shaders-pane").removeAttribute("height");
     }
-  }
+  },
 
-  _onTabWillNavigate({isFrameSwitching}) {
+  _onTabWillNavigate: function({isFrameSwitching}) {
     
     if (!isFrameSwitching) {
-      this.front.setup({ reload: false });
+      gFront.setup({ reload: false });
     }
 
     
-    this.shadersListView.empty();
+    ShadersListView.empty();
     
     
     if (isFrameSwitching) {
@@ -123,61 +150,55 @@ class EventsHandler {
     }
 
     $("#content").hidden = true;
-    this.panel.emit(EVENTS.UI_RESET);
-  }
+    window.emit(EVENTS.UI_RESET);
+  },
 
   
 
 
-  _onTabNavigated() {
+  _onTabNavigated: function() {
     
     
     
     
-    this.front.getPrograms().then(this._onProgramsAdded);
-  }
+    gFront.getPrograms().then(this._onProgramsAdded);
+  },
 
   
 
 
-  _onProgramLinked(programActor) {
+  _onProgramLinked: function(programActor) {
     this._addProgram(programActor);
-    this.panel.emit(EVENTS.NEW_PROGRAM);
-  }
+    window.emit(EVENTS.NEW_PROGRAM);
+  },
 
   
 
 
-  _onProgramsAdded(programActors) {
-    programActors.forEach(this._addProgram.bind(this));
-    this.panel.emit(EVENTS.PROGRAMS_ADDED);
-  }
+  _onProgramsAdded: function(programActors) {
+    programActors.forEach(this._addProgram);
+    window.emit(EVENTS.PROGRAMS_ADDED);
+  },
 
   
 
 
-  _addProgram(programActor) {
+  _addProgram: function(programActor) {
     $("#waiting-notice").hidden = true;
     $("#reload-notice").hidden = true;
     $("#content").hidden = false;
-    this.shadersListView.addProgram(programActor);
+    ShadersListView.addProgram(programActor);
   }
-}
-exports.EventsHandler = EventsHandler;
+};
 
 
 
 
-function WidgetMethodsClass() {
-}
-WidgetMethodsClass.prototype = WidgetMethods;
-class ShadersListView extends WidgetMethodsClass {
+var ShadersListView = extend(WidgetMethods, {
   
 
 
-  initialize(toolbox, shadersEditorsView) {
-    this.toolbox = toolbox;
-    this.shadersEditorsView = shadersEditorsView;
+  initialize: function() {
     this.widget = new SideMenuWidget(this._pane = $("#shaders-pane"), {
       showArrows: true,
       showItemCheckboxes: true
@@ -192,17 +213,17 @@ class ShadersListView extends WidgetMethodsClass {
     this.widget.addEventListener("check", this._onProgramCheck);
     this.widget.addEventListener("mouseover", this._onProgramMouseOver, true);
     this.widget.addEventListener("mouseout", this._onProgramMouseOut, true);
-  }
+  },
 
   
 
 
-  destroy() {
+  destroy: function() {
     this.widget.removeEventListener("select", this._onProgramSelect);
     this.widget.removeEventListener("check", this._onProgramCheck);
     this.widget.removeEventListener("mouseover", this._onProgramMouseOver, true);
     this.widget.removeEventListener("mouseout", this._onProgramMouseOut, true);
-  }
+  },
 
   
 
@@ -210,7 +231,7 @@ class ShadersListView extends WidgetMethodsClass {
 
 
 
-  addProgram(programActor) {
+  addProgram: function(programActor) {
     if (this.hasProgram(programActor)) {
       return;
     }
@@ -244,11 +265,11 @@ class ShadersListView extends WidgetMethodsClass {
 
     
     
-    if ((this.toolbox.hostType == "left" || this.toolbox.hostType == "right") &&
+    if ((gToolbox.hostType == "left" || gToolbox.hostType == "right") &&
         this.itemCount == SHADERS_AUTOGROW_ITEMS) {
       this._pane.setAttribute("height", this._pane.getBoundingClientRect().height);
     }
-  }
+  },
 
   
 
@@ -258,14 +279,14 @@ class ShadersListView extends WidgetMethodsClass {
 
 
 
-  hasProgram(programActor) {
+  hasProgram: function(programActor) {
     return !!this.attachments.filter(e => e.programActor == programActor).length;
-  }
+  },
 
   
 
 
-  _onProgramSelect({ detail: sourceItem }) {
+  _onProgramSelect: function({ detail: sourceItem }) {
     if (!sourceItem) {
       return;
     }
@@ -284,33 +305,33 @@ class ShadersListView extends WidgetMethodsClass {
         fragmentShaderActor.getText()
       ]);
     }
-    const showSources = ([vertexShaderText, fragmentShaderText]) => {
-      return this.shadersEditorsView.setText({
+    function showSources([vertexShaderText, fragmentShaderText]) {
+      return ShadersEditorsView.setText({
         vs: vertexShaderText,
         fs: fragmentShaderText
       });
-    };
+    }
 
     getShaders()
       .then(getSources)
       .then(showSources)
       .catch(console.error);
-  }
+  },
 
   
 
 
-  _onProgramCheck({ detail: { checked }, target }) {
+  _onProgramCheck: function({ detail: { checked }, target }) {
     const sourceItem = this.getItemForElement(target);
     const attachment = sourceItem.attachment;
     attachment.isBlackBoxed = !checked;
     attachment.programActor[checked ? "unblackbox" : "blackbox"]();
-  }
+  },
 
   
 
 
-  _onProgramMouseOver(e) {
+  _onProgramMouseOver: function(e) {
     const sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.highlight(HIGHLIGHT_TINT);
@@ -320,12 +341,12 @@ class ShadersListView extends WidgetMethodsClass {
         e.stopPropagation();
       }
     }
-  }
+  },
 
   
 
 
-  _onProgramMouseOut(e) {
+  _onProgramMouseOut: function(e) {
     const sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.unhighlight();
@@ -336,42 +357,34 @@ class ShadersListView extends WidgetMethodsClass {
       }
     }
   }
-}
-exports.ShadersListView = ShadersListView;
+});
 
 
 
 
-class ShadersEditorsView {
+var ShadersEditorsView = {
   
 
 
-  initialize(panel, shadersListView) {
-    this.panel = panel;
-    this.shadersListView = shadersListView;
+  initialize: function() {
     XPCOMUtils.defineLazyGetter(this, "_editorPromises", () => new Map());
     this._vsFocused = this._onFocused.bind(this, "vs", "fs");
     this._fsFocused = this._onFocused.bind(this, "fs", "vs");
     this._vsChanged = this._onChanged.bind(this, "vs");
     this._fsChanged = this._onChanged.bind(this, "fs");
-
-    this._errors = {
-      vs: [],
-      fs: []
-    };
-  }
+  },
 
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     this._destroyed = true;
-    await this._toggleListeners("off");
+    yield this._toggleListeners("off");
     for (const p of this._editorPromises.values()) {
-      const editor = await p;
+      const editor = yield p;
       editor.destroy();
     }
-  }
+  }),
 
   
 
@@ -383,7 +396,7 @@ class ShadersEditorsView {
 
 
 
-  setText(sources) {
+  setText: function(sources) {
     const view = this;
     function setTextAndClearHistory(editor, text) {
       editor.setText(text);
@@ -397,8 +410,8 @@ class ShadersEditorsView {
         view._getEditor("fs").then(e => setTextAndClearHistory(e, sources.fs))
       ]);
       await view._toggleListeners("on");
-    })().then(() => this.panel.emit(EVENTS.SOURCES_SHOWN, sources));
-  }
+    })().then(() => window.emit(EVENTS.SOURCES_SHOWN, sources));
+  },
 
   
 
@@ -409,7 +422,7 @@ class ShadersEditorsView {
 
 
 
-  _getEditor(type) {
+  _getEditor: function(type) {
     if (this._editorPromises.has(type)) {
       return this._editorPromises.get(type);
     }
@@ -430,7 +443,7 @@ class ShadersEditorsView {
     }
 
     return deferred.promise;
-  }
+  },
 
   
 
@@ -440,14 +453,14 @@ class ShadersEditorsView {
 
 
 
-  _toggleListeners(flag) {
+  _toggleListeners: function(flag) {
     return promise.all(["vs", "fs"].map(type => {
       return this._getEditor(type).then(editor => {
         editor[flag]("focus", this["_" + type + "Focused"]);
         editor[flag]("change", this["_" + type + "Changed"]);
       });
     }));
-  }
+  },
 
   
 
@@ -457,10 +470,10 @@ class ShadersEditorsView {
 
 
 
-  _onFocused(focused, unfocused) {
+  _onFocused: function(focused, unfocused) {
     $("#" + focused + "-editor-label").setAttribute("selected", "");
     $("#" + unfocused + "-editor-label").removeAttribute("selected");
-  }
+  },
 
   
 
@@ -468,12 +481,12 @@ class ShadersEditorsView {
 
 
 
-  _onChanged(type) {
+  _onChanged: function(type) {
     setNamedTimeout("gl-typed", TYPING_MAX_DELAY, () => this._doCompile(type));
 
     
     this._cleanEditor(type);
-  }
+  },
 
   
 
@@ -482,10 +495,10 @@ class ShadersEditorsView {
 
 
 
-  _doCompile(type) {
+  _doCompile: function(type) {
     (async function() {
       const editor = await this._getEditor(type);
-      const shaderActor = await this.shadersListView.selectedAttachment[type];
+      const shaderActor = await ShadersListView.selectedAttachment[type];
 
       try {
         await shaderActor.compile(editor.getText());
@@ -494,20 +507,20 @@ class ShadersEditorsView {
         this._onFailedCompilation(type, editor, e);
       }
     }.bind(this))();
-  }
+  },
 
   
 
 
-  _onSuccessfulCompilation() {
+  _onSuccessfulCompilation: function() {
     
-    this.panel.emit(EVENTS.SHADER_COMPILED, null);
-  }
+    window.emit(EVENTS.SHADER_COMPILED, null);
+  },
 
   
 
 
-  _onFailedCompilation(type, editor, errors) {
+  _onFailedCompilation: function(type, editor, errors) {
     const lineCount = editor.lineCount();
     const currentLine = editor.getCursor().line;
     const listeners = { mouseover: this._onMarkerMouseOver };
@@ -568,13 +581,13 @@ class ShadersEditorsView {
       .forEach(displayErrors);
 
     
-    this.panel.emit(EVENTS.SHADER_COMPILED, errors);
-  }
+    window.emit(EVENTS.SHADER_COMPILED, errors);
+  },
 
   
 
 
-  _onMarkerMouseOver(line, node, messages) {
+  _onMarkerMouseOver: function(line, node, messages) {
     if (node._markerErrorsTooltip) {
       return;
     }
@@ -585,30 +598,37 @@ class ShadersEditorsView {
     tooltip.startTogglingOnHover(node, () => true, {
       toggleDelay: GUTTER_ERROR_PANEL_DELAY
     });
-  }
+  },
 
   
 
 
-  _cleanEditor(type) {
+  _cleanEditor: function(type) {
     this._getEditor(type).then(editor => {
       editor.removeAllMarkers("errors");
       this._errors[type].forEach(e => editor.removeLineClass(e.line));
       this._errors[type].length = 0;
-      this.panel.emit(EVENTS.EDITOR_ERROR_MARKERS_REMOVED);
+      window.emit(EVENTS.EDITOR_ERROR_MARKERS_REMOVED);
     });
+  },
+
+  _errors: {
+    vs: [],
+    fs: []
   }
-}
-exports.ShadersEditorsView = ShadersEditorsView;
+};
 
 
 
 
 var L10N = new LocalizationHelper(STRINGS_URI);
-exports.L10N = L10N;
+
+
+
+
+EventEmitter.decorate(this);
 
 
 
 
 var $ = (selector, target = document) => target.querySelector(selector);
-exports.$ = $;
