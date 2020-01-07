@@ -2578,8 +2578,7 @@ public:
 
 
   virtual void DidReflow(nsPresContext*           aPresContext,
-                         const ReflowInput* aReflowInput,
-                         nsDidReflowStatus        aStatus) = 0;
+                         const ReflowInput* aReflowInput) = 0;
 
   
 
