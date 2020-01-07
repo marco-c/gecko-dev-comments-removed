@@ -10,7 +10,9 @@
 #define nsROCSSPrimitiveValue_h___
 
 #include "nsIDOMCSSValue.h"
-#include "nsIDOMCSSPrimitiveValue.h"
+#include "mozilla/dom/CSSPrimitiveValueBinding.h"
+#include "mozilla/dom/CSSValueBinding.h"
+
 #include "nsCSSKeywords.h"
 #include "CSSValue.h"
 #include "nsCOMPtr.h"
@@ -24,26 +26,12 @@ class nsDOMCSSRGBColor;
 
 
 
-
-#define CSS_TURN 30U
-
-
-#define CSS_NUMBER_INT32 31U
-#define CSS_NUMBER_UINT32 32U
-
-
-
-
-
 class nsROCSSPrimitiveValue final : public mozilla::dom::CSSValue,
-                                    public nsIDOMCSSPrimitiveValue
+                                    public nsIDOMCSSValue
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsROCSSPrimitiveValue, mozilla::dom::CSSValue)
-
-  
-  NS_DECL_NSIDOMCSSPRIMITIVEVALUE
 
   
   NS_DECL_NSIDOMCSSVALUE
@@ -54,18 +42,7 @@ public:
   virtual uint16_t CssValueType() const override final;
 
   
-  uint16_t PrimitiveType()
-  {
-    
-    
-    if (mType > CSS_RGBCOLOR) {
-      if (mType == CSS_NUMBER_INT32 || mType == CSS_NUMBER_UINT32) {
-        return CSS_NUMBER;
-      }
-      return CSS_UNKNOWN;
-    }
-    return mType;
-  }
+  uint16_t PrimitiveType();
   void SetFloatValue(uint16_t aUnitType, float aValue,
                      mozilla::ErrorResult& aRv);
   float GetFloatValue(uint16_t aUnitType, mozilla::ErrorResult& aRv);
@@ -91,9 +68,13 @@ public:
   void SetAppUnits(float aValue);
   void SetIdent(nsCSSKeyword aKeyword);
   
-  void SetString(const nsACString& aString, uint16_t aType = CSS_STRING);
+  void SetString(
+      const nsACString& aString,
+      uint16_t aType = mozilla::dom::CSSPrimitiveValueBinding::CSS_STRING);
   
-  void SetString(const nsAString& aString, uint16_t aType = CSS_STRING);
+  void SetString(
+      const nsAString& aString,
+      uint16_t aType = mozilla::dom::CSSPrimitiveValueBinding::CSS_STRING);
   void SetURI(nsIURI *aURI);
   void SetColor(nsDOMCSSRGBColor* aColor);
   void SetRect(nsDOMCSSRect* aRect);
@@ -126,11 +107,11 @@ private:
   } mValue;
 };
 
-inline nsROCSSPrimitiveValue *mozilla::dom::CSSValue::AsPrimitiveValue()
+inline nsROCSSPrimitiveValue*
+mozilla::dom::CSSValue::AsPrimitiveValue()
 {
-  return CssValueType() == nsIDOMCSSValue::CSS_PRIMITIVE_VALUE ?
+  return CssValueType() == CSSValueBinding::CSS_PRIMITIVE_VALUE ?
     static_cast<nsROCSSPrimitiveValue*>(this) : nullptr;
 }
 
 #endif 
-

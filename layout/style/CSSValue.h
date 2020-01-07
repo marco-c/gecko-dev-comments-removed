@@ -38,7 +38,9 @@ public:
 
 
 
-  nsROCSSPrimitiveValue *AsPrimitiveValue();
+
+
+  inline nsROCSSPrimitiveValue* AsPrimitiveValue();
 };
 
 } 
