@@ -68,18 +68,6 @@ public:
     return nsGkAtoms::d;
   }
 
-  enum PathLengthScaleForType {
-    eForTextPath,
-    eForStroking
-  };
-
-  
-
-
-
-
-  float GetPathLengthScale(PathLengthScaleForType aFor);
-
   
   uint32_t GetPathSegAtLength(float distance);
   already_AddRefed<DOMSVGPathSegClosePath> CreateSVGPathSegClosePath();

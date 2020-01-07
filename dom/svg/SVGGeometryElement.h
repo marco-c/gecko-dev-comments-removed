@@ -56,6 +56,7 @@ public:
                                 const nsAttrValue* aOldValue,
                                 nsIPrincipal* aSubjectPrincipal,
                                 bool aNotify) override;
+  bool IsNodeOfType(uint32_t aFlags) const override;
 
   
 
@@ -206,6 +207,18 @@ public:
 
 
   FillRule GetFillRule();
+
+  enum PathLengthScaleForType {
+    eForTextPath,
+    eForStroking
+  };
+
+  
+
+
+
+
+  float GetPathLengthScale(PathLengthScaleForType aFor);
 
   
   already_AddRefed<SVGAnimatedNumber> PathLength();

@@ -128,46 +128,13 @@ enum {
   NODE_IS_NATIVE_ANONYMOUS_ROOT =         NODE_FLAG_BIT(4),
 
   
-  NODE_MAY_BE_IN_BINDING_MNGR =           NODE_FLAG_BIT(5),
-
-  NODE_IS_EDITABLE =                      NODE_FLAG_BIT(6),
-
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  NODE_IS_NATIVE_ANONYMOUS =              NODE_FLAG_BIT(7),
+  NODE_FORCE_XBL_BINDINGS =               NODE_FLAG_BIT(5),
 
   
-  NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(8),
+  NODE_MAY_BE_IN_BINDING_MNGR =           NODE_FLAG_BIT(6),
 
-  
-  NODE_HAS_EMPTY_SELECTOR =               NODE_FLAG_BIT(9),
-
-  
-  
-  NODE_HAS_SLOW_SELECTOR =                NODE_FLAG_BIT(10),
-
-  
-  
-  NODE_HAS_EDGE_CHILD_SELECTOR =          NODE_FLAG_BIT(11),
+  NODE_IS_EDITABLE =                      NODE_FLAG_BIT(7),
 
   
   
@@ -176,7 +143,44 @@ enum {
   
   
   
-  NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS = NODE_FLAG_BIT(12),
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NODE_IS_NATIVE_ANONYMOUS =              NODE_FLAG_BIT(8),
+
+  
+  NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(9),
+
+  
+  NODE_HAS_EMPTY_SELECTOR =               NODE_FLAG_BIT(10),
+
+  
+  
+  NODE_HAS_SLOW_SELECTOR =                NODE_FLAG_BIT(11),
+
+  
+  
+  NODE_HAS_EDGE_CHILD_SELECTOR =          NODE_FLAG_BIT(12),
+
+  
+  
+  
+  
+  
+  
+  
+  NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS = NODE_FLAG_BIT(13),
 
   NODE_ALL_SELECTOR_FLAGS =               NODE_HAS_EMPTY_SELECTOR |
                                           NODE_HAS_SLOW_SELECTOR |
@@ -185,31 +189,31 @@ enum {
 
   
   
-  NODE_NEEDS_FRAME =                      NODE_FLAG_BIT(13),
+  NODE_NEEDS_FRAME =                      NODE_FLAG_BIT(14),
 
   
   
   
-  NODE_DESCENDANTS_NEED_FRAMES =          NODE_FLAG_BIT(14),
+  NODE_DESCENDANTS_NEED_FRAMES =          NODE_FLAG_BIT(15),
 
   
-  NODE_HAS_ACCESSKEY =                    NODE_FLAG_BIT(15),
+  NODE_HAS_ACCESSKEY =                    NODE_FLAG_BIT(16),
 
   
-  NODE_HAS_DIRECTION_RTL =                NODE_FLAG_BIT(16),
+  NODE_HAS_DIRECTION_RTL =                NODE_FLAG_BIT(17),
 
   
-  NODE_HAS_DIRECTION_LTR =                NODE_FLAG_BIT(17),
+  NODE_HAS_DIRECTION_LTR =                NODE_FLAG_BIT(18),
 
   NODE_ALL_DIRECTION_FLAGS =              NODE_HAS_DIRECTION_LTR |
                                           NODE_HAS_DIRECTION_RTL,
 
-  NODE_CHROME_ONLY_ACCESS =               NODE_FLAG_BIT(18),
+  NODE_CHROME_ONLY_ACCESS =               NODE_FLAG_BIT(19),
 
-  NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS =    NODE_FLAG_BIT(19),
+  NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS =    NODE_FLAG_BIT(20),
 
   
-  NODE_TYPE_SPECIFIC_BITS_OFFSET =        20
+  NODE_TYPE_SPECIFIC_BITS_OFFSET =        21
 };
 
 
@@ -418,7 +422,9 @@ public:
     
     eANIMATION           = 1 << 10,
     
-    eFILTER              = 1 << 11
+    eFILTER              = 1 << 11,
+    
+    eSHAPE               = 1 << 12
   };
 
   

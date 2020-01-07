@@ -34,7 +34,7 @@ class TextRenderedRunIterator;
 
 namespace dom {
 class SVGIRect;
-class SVGPathElement;
+class SVGGeometryElement;
 } 
 
 
@@ -538,8 +538,8 @@ private:
   bool ShouldRenderAsPath(nsTextFrame* aFrame, bool& aShouldPaintSVGGlyphs);
 
   
-  mozilla::dom::SVGPathElement*
-  GetTextPathPathElement(nsIFrame* aTextPathFrame);
+  mozilla::dom::SVGGeometryElement*
+  GetTextPathGeometryElement(nsIFrame* aTextPathFrame);
   already_AddRefed<Path> GetTextPath(nsIFrame* aTextPathFrame);
   gfxFloat GetOffsetScale(nsIFrame* aTextPathFrame);
   gfxFloat GetStartOffset(nsIFrame* aTextPathFrame);
