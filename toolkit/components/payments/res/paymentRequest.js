@@ -73,6 +73,10 @@ let PaymentRequest = {
         this.onShowPaymentRequest(detail);
         break;
       }
+      case "updateState": {
+        document.querySelector("payment-dialog").setStateFromParent(detail);
+        break;
+      }
     }
   },
 
@@ -85,7 +89,7 @@ let PaymentRequest = {
     
     await this.domReadyPromise;
 
-    document.querySelector("payment-dialog").setLoadingState({
+    document.querySelector("payment-dialog").setStateFromParent({
       request: detail.request,
       savedAddresses: detail.savedAddresses,
       savedBasicCards: detail.savedBasicCards,

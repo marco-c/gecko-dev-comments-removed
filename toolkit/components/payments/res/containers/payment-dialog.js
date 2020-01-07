@@ -54,7 +54,14 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
     });
   }
 
-  setLoadingState(state) {
+  
+
+
+
+
+
+
+  setStateFromParent(state) {
     this.requestStore.setState(state);
   }
 

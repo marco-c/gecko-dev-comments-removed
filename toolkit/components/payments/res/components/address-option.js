@@ -18,21 +18,20 @@
 
 
 
+
+
 class AddressOption extends ObservedPropertiesMixin(RichOption) {
   static get observedAttributes() {
     return RichOption.observedAttributes.concat([
-      "addressLine",
-      "city",
+      "address-level1",
+      "address-level2",
       "country",
-      "dependentLocality",
       "email",
-      "languageCode",
-      "organization",
-      "phone",
-      "postalCode",
-      "recipient",
-      "region",
-      "sortingCode",
+      "guid",
+      "name",
+      "postal-code",
+      "street-address",
+      "tel",
     ]);
   }
 
@@ -42,10 +41,10 @@ class AddressOption extends ObservedPropertiesMixin(RichOption) {
     }
 
     let fragment = document.createDocumentFragment();
-    RichOption._createElement(fragment, "recipient");
-    RichOption._createElement(fragment, "addressLine");
+    RichOption._createElement(fragment, "name");
+    RichOption._createElement(fragment, "street-address");
     RichOption._createElement(fragment, "email");
-    RichOption._createElement(fragment, "phone");
+    RichOption._createElement(fragment, "tel");
     this.appendChild(fragment);
 
     super.connectedCallback();
@@ -56,13 +55,12 @@ class AddressOption extends ObservedPropertiesMixin(RichOption) {
       return;
     }
 
-    this.querySelector(".recipient").textContent = this.recipient;
-    this.querySelector(".addressLine").textContent =
-      `${this.addressLine} ${this.city} ${this.region} ${this.postalCode} ${this.country}`;
+    this.querySelector(".name").textContent = this.name;
+    this.querySelector(".street-address").textContent = `${this.streetAddress} ` +
+      `${this.addressLevel2} ${this.addressLevel1} ${this.postalCode} ${this.country}`;
     this.querySelector(".email").textContent = this.email;
-    this.querySelector(".phone").textContent = this.phone;
+    this.querySelector(".tel").textContent = this.tel;
   }
 }
 
 customElements.define("address-option", AddressOption);
-
