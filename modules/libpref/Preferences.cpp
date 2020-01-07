@@ -3217,9 +3217,7 @@ CheckTelemetryPref()
   DebugOnly<bool> value;
   MOZ_ASSERT(NS_SUCCEEDED(Preferences::GetBool(kTelemetryPref, &value)) &&
              value == TelemetryPrefValue());
-  
-  
-  
+  MOZ_ASSERT(Preferences::IsLocked(kTelemetryPref));
 }
 
 #endif 
