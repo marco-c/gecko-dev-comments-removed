@@ -11,9 +11,6 @@
 
 
 
-
-
-
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
@@ -42,23 +39,12 @@ def print_error(r):
         body=r.text
         ))
 
-def get_taskcluster_secret(secret_name):
-    import redo
-    import requests
-
-    secrets_url = 'http://taskcluster/secrets/v1/secret/{}'.format(secret_name)
-    log.info(
-        'Using symbol upload token from the secrets service: "{}"'.format(secrets_url))
-    res = requests.get(secrets_url)
-    res.raise_for_status()
-    secret = res.json()
-    auth_token = secret['secret']['token']
-
-    return auth_token
-
 def main():
     config = MozbuildObject.from_environment()
     config._activate_virtualenv()
+
+    import redo
+    import requests
 
     logging.basicConfig()
     parser = argparse.ArgumentParser(
@@ -73,23 +59,18 @@ def main():
         return 1
 
     secret_name = os.environ.get('SYMBOL_SECRET')
-    if secret_name is not None:
-        auth_token = get_taskcluster_secret(secret_name)
-    elif 'SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE' not in os.environ:
-        token_file = os.environ['SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE']
-
-        if not os.path.isfile(token_file):
-            log.error('SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE "{0}" does not exist!'.format(token_file), file=sys.stderr)
-            return 1
-        auth_token = open(token_file, 'r').read().strip()
-    else:
-        log.error('You must set the SYMBOL_SECRET or SOCORRO_SYMBOL_UPLOAD_TOKEN_FILE environment variables!')
+    if secret_name is None:
+        log.error('You must set the SYMBOL_SECRET environment variable!')
         return 1
+    secrets_url = 'http://taskcluster/secrets/v1/secret/{}'.format(secret_name)
+    log.info(
+        'Using symbol upload token from the secrets service: "{}"'.format(secrets_url))
+    res = requests.get(secrets_url)
+    res.raise_for_status()
+    secret = res.json()
+    auth_token = secret['secret']['token']
 
-    
-    if 'SOCORRO_SYMBOL_UPLOAD_URL' in os.environ:
-        url = os.environ['SOCORRO_SYMBOL_UPLOAD_URL']
-    elif os.environ.get('MOZ_SCM_LEVEL', '1') == '1':
+    if os.environ.get('MOZ_SCM_LEVEL', '1') == '1':
         
         
         url = 'https://symbols.stage.mozaws.net/upload/'
