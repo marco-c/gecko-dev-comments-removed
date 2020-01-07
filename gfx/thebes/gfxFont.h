@@ -1481,7 +1481,7 @@ public:
     int32_t GetRefCount() { return mRefCnt; }
 
     
-    typedef enum {
+    typedef enum : uint8_t {
         kAntialiasDefault,
         kAntialiasNone,
         kAntialiasGrayscale,
@@ -2245,32 +2245,9 @@ protected:
 
     static const uint32_t  kShapedWordCacheMaxAge = 3;
 
-    bool                       mIsValid;
-
-    
-    
-    bool                       mApplySyntheticBold;
-
-    bool                       mKerningSet;     
-    bool                       mKerningEnabled; 
-
-    bool                       mMathInitialized; 
-
-    nsExpirationState          mExpirationState;
-    gfxFontStyle               mStyle;
     nsTArray<mozilla::UniquePtr<gfxGlyphExtents>> mGlyphExtentsArray;
     mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<GlyphChangeObserver>>>
                                mGlyphChangeObservers;
-
-    gfxFloat                   mAdjustedSize;
-
-    
-    
-    
-    float                      mFUnitsConvFactor;
-
-    
-    AntialiasOption            mAntialiasOption;
 
     
     
@@ -2294,6 +2271,30 @@ protected:
 
     
     mozilla::UniquePtr<gfxMathTable> mMathTable;
+
+    gfxFontStyle               mStyle;
+    gfxFloat                   mAdjustedSize;
+
+    
+    
+    
+    float                      mFUnitsConvFactor;
+
+    nsExpirationState          mExpirationState;
+
+    
+    AntialiasOption            mAntialiasOption;
+
+    bool                       mIsValid;
+
+    
+    
+    bool                       mApplySyntheticBold;
+
+    bool                       mKerningSet;     
+    bool                       mKerningEnabled; 
+
+    bool                       mMathInitialized; 
 
     
     
