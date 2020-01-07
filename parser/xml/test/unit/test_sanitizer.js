@@ -1,7 +1,4 @@
 function run_test() {
-  var Ci = Components.interfaces;
-  var Cc = Components.classes;
-
   
   load("results.js");   
 

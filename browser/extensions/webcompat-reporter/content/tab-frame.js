@@ -4,8 +4,6 @@
 
 
 
-let { utils: Cu } = Components;
-
 const TABDATA_MESSAGE = "WebCompat:SendTabData";
 
 let getScreenshot = function(win) {

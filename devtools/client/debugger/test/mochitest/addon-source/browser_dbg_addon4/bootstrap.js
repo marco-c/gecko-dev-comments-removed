@@ -3,8 +3,6 @@
 
 "use strict";
 
-var { interfaces: Ci, utils: Cu } = Components;
-
 function notify() {
   
   console.log({ msg: "Hello again" });

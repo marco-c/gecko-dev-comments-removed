@@ -2,12 +2,6 @@
 
 
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cu = Components.utils;
-const Cr = Components.results;
-
-
 const CLASS_MIMEINFO        = "mimetype";
 const CLASS_PROTOCOLINFO    = "scheme";
 

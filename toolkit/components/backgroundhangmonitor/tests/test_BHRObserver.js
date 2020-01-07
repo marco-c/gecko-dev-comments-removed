@@ -1,8 +1,6 @@
 
 
 
-let { classes: Cc, utils: Cu, interfaces: Ci, results: Cr } = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TelemetryUtils } = ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", {});
 

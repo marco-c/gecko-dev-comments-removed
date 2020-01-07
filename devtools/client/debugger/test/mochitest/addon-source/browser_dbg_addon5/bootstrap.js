@@ -1,8 +1,6 @@
 
 
 
-var { interfaces: Ci, classes: Cc } = Components;
-
 function startup(aParams, aReason) {
   ChromeUtils.import("resource://gre/modules/Services.jsm");
   let res = Services.io.getProtocolHandler("resource")

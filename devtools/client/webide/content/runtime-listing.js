@@ -2,7 +2,6 @@
 
 
 
-var Cu = Components.utils;
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const RuntimeList = require("devtools/client/webide/modules/runtime-list");
 

@@ -1,8 +1,6 @@
 
 
 
-var { utils: Cu, interfaces: Ci, classes: Cc } = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 function promiseContentResponse(browser, name, message) {

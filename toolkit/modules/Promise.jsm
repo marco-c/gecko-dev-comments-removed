@@ -89,9 +89,6 @@ var EXPORTED_SYMBOLS = [
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 
 Cc["@mozilla.org/moz/jssubscript-loader;1"]
     .getService(Ci.mozIJSSubScriptLoader)

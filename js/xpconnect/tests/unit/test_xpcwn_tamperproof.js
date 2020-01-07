@@ -1,9 +1,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 function check_throws(f) {
   try {
     f();

@@ -8,8 +8,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
-
 const MS_PER_DAY = 86400000; 
 
 

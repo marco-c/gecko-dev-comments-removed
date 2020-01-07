@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
 const nsIPKCS11Slot = Components.interfaces.nsIPKCS11Slot;

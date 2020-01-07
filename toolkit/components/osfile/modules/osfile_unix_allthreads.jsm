@@ -23,7 +23,6 @@
 
 var SharedAll;
 if (typeof Components != "undefined") {
-  let Cu = Components.utils;
   
   ChromeUtils.import("resource://gre/modules/ctypes.jsm", this);
 

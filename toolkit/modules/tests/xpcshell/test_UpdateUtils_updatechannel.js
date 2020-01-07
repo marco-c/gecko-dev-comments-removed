@@ -3,8 +3,6 @@
 
 
 
-var { utils: Cu } = Components;
-
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm");
 

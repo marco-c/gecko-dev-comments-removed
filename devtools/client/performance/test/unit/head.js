@@ -3,8 +3,6 @@
 "use strict";
 
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var Services = require("Services");
 var { console } = require("resource://gre/modules/Console.jsm");

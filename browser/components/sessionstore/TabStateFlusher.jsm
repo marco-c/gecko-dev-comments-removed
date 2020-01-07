@@ -6,9 +6,6 @@
 
 this.EXPORTED_SYMBOLS = ["TabStateFlusher"];
 
-const Cu = Components.utils;
-
-
 
 
 

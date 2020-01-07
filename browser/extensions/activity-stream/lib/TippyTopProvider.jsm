@@ -2,8 +2,6 @@
 
 
 
-const {utils: Cu} = Components;
-
 Cu.importGlobalProperties(["fetch", "URL"]);
 
 const TIPPYTOP_JSON_PATH = "resource://activity-stream/data/content/tippytop/top_sites.json";

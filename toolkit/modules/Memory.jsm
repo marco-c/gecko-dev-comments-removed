@@ -4,7 +4,6 @@
 
 this.EXPORTED_SYMBOLS = ["Memory"];
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const TIMEOUT_INTERVAL = 2000;
 

@@ -7,8 +7,6 @@
 
 this.EXPORTED_SYMBOLS = ["PerformanceStats"];
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
 
 
 

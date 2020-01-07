@@ -2,7 +2,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
+var Cm = Components.manager;
 const URL_HOST = "http://localhost";
 
 var GMPScope = ChromeUtils.import("resource://gre/modules/GMPInstallManager.jsm", {});

@@ -5,8 +5,6 @@
 
 "use strict";
 
-const { interfaces: Ci, utils: Cu } = Components;
-
 const { require, loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");

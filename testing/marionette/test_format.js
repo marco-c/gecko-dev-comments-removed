@@ -2,8 +2,6 @@
 
 
 
-const {utils: Cu} = Components;
-
 const {pprint, truncate} = ChromeUtils.import("chrome://marionette/content/format.js", {});
 
 const MAX_STRING_LENGTH = 250;

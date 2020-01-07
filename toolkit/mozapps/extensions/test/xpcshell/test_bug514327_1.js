@@ -2,9 +2,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 const nsIBLS = Ci.nsIBlocklistService;
 
 var PLUGINS = [{

@@ -2,7 +2,6 @@
 
 
 
-var Cu = Components.utils;
 ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 
 const gDecimalSymbol = Number(5.4).toLocaleString().match(/\D/);

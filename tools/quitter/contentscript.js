@@ -4,10 +4,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cu = Components.utils;
-
 function Quitter() {
 }
 

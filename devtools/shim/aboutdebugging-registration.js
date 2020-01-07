@@ -8,9 +8,6 @@
 
 
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 

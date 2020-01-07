@@ -2,9 +2,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 function run_test() {
   var file = do_get_file("bug451678_subscript.js");
   var ios = Cc["@mozilla.org/network/io-service;1"]

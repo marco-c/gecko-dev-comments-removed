@@ -5,8 +5,6 @@
 
 "use strict";
 
-const { utils: Cu } = Components;
-
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 var {VariablesView} = require("resource://devtools/client/shared/widgets/VariablesView.jsm");

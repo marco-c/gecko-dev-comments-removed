@@ -2,8 +2,6 @@
 
 
 
-const {utils: Cu} = Components;
-
 const {
   ElementClickInterceptedError,
   ElementNotAccessibleError,

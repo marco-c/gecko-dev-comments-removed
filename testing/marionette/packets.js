@@ -24,7 +24,6 @@
 
 
 
-const {classes: Cc, interfaces: Ci} = Components;
 const {StreamUtils} =
     ChromeUtils.import("chrome://marionette/content/stream-utils.js", {});
 

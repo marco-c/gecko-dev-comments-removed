@@ -2,8 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cu = Components.utils;
 const PREF_DEPRECATION_WARNINGS = "devtools.errorconsole.deprecation_warnings";
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);

@@ -5,11 +5,6 @@
  
  
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cc = Components.classes;
-var Cu = Components.utils;
-
 var gArgs, listBox;
 
 function dialogOnLoad() {

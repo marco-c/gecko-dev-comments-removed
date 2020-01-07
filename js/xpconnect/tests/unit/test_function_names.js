@@ -1,10 +1,6 @@
 
 
 
-var Cu = Components.utils;
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 function callback() {}
 
 let sandbox = Cu.Sandbox(this);

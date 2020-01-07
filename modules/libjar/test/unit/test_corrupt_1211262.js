@@ -5,9 +5,6 @@
 
 
 function run_test() {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
-
   var file = do_get_file("data/test_corrupt3.zip");
 
   var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].

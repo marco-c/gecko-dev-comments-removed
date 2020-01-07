@@ -1,8 +1,6 @@
 
 
 
-let { classes: Cc, utils: Cu, interfaces: Ci, results: Cr } = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function ensureProfilerInitialized() {

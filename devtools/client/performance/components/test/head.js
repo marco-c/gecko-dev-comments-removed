@@ -6,8 +6,6 @@
 
 
 
-let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 let { Assert } = require("resource://testing-common/Assert.jsm");
 let { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-loader.js", {});

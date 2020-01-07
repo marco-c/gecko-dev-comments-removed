@@ -1,8 +1,6 @@
 
 
 
-const {utils: Cu, results: Cr} = Components;
-
 Cu.importGlobalProperties(['fetch']);
 ChromeUtils.import("resource://testing-common/httpd.js");
 

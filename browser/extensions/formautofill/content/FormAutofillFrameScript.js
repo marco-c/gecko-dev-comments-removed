@@ -10,8 +10,6 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
 ChromeUtils.import("resource://formautofill/FormAutofillContent.jsm");
 ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
 

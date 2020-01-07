@@ -36,8 +36,6 @@
 
 "use strict";
 
-const Cu = Components.utils;
-
 this.EXPORTED_SYMBOLS = ["GestureSettings", "GestureTracker"]; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

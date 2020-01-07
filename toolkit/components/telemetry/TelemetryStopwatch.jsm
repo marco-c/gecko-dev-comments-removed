@@ -2,10 +2,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 this.EXPORTED_SYMBOLS = ["TelemetryStopwatch"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

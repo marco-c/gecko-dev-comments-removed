@@ -1,7 +1,5 @@
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
 const path = "data/test_bug379841.zip";
 
 const MAX_TIME_DIFF = 2000000;

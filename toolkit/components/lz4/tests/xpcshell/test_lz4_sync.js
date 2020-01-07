@@ -1,7 +1,6 @@
 
 
 
-const Cu = Components.utils;
 ChromeUtils.import("resource://gre/modules/lz4.js");
 ChromeUtils.import("resource://gre/modules/osfile.jsm");
 

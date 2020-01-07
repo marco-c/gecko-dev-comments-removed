@@ -13,9 +13,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 function downloadRoots() {
   let req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
               .createInstance(Ci.nsIXMLHttpRequest);

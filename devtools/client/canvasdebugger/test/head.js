@@ -2,8 +2,6 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 var { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 

@@ -2,8 +2,6 @@
 
 
 
-const Cu = Components.utils;
-
 function run_test() {
   var sb = new Cu.Sandbox('http://www.example.com', { wantComponents: true } );
   Assert.ok(!Cu.evalInSandbox('"Components" in this', sb));

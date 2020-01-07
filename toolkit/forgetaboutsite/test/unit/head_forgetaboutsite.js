@@ -4,10 +4,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var profileDir = do_get_profile();

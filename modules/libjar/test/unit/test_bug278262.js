@@ -1,7 +1,5 @@
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
 const path = "data/test_bug333423.zip";
 
 function test_relative_sub() {

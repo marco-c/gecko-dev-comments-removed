@@ -9,8 +9,6 @@
 
 
 
-const { utils: Cu } = Components;
-
 let mm = pluginElement.frameLoader.messageManager;
 let containerWindow = pluginElement.ownerGlobal;
 

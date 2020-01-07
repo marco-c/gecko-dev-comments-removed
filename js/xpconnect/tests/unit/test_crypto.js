@@ -2,7 +2,6 @@
 
 
 function run_test() {
-  let Cu = Components.utils;
   let sb = new Cu.Sandbox('https://www.example.com',
                           { wantGlobalProperties:
                             ["crypto", "TextEncoder", "TextDecoder"]

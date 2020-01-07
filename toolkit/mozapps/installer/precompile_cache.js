@@ -6,10 +6,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const rph = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);

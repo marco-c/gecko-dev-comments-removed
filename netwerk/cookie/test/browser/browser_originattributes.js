@@ -1,8 +1,6 @@
 
 
 
-let { classes: Cc, interfaces: Ci } = Components;
-
 const USER_CONTEXTS = ["default", "personal", "work"];
 
 const COOKIE_NAMES = ["cookie0", "cookie1", "cookie2"];

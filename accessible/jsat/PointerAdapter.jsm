@@ -6,9 +6,6 @@
 
 "use strict";
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 this.EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

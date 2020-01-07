@@ -8,7 +8,6 @@
 
 
 
-var { utils: Cu } = Components;
 var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 var { Loader, Require, resolveURI, unload } =
   Cu.import("resource://devtools/shared/base-loader.js", {});

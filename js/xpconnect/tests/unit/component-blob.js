@@ -5,10 +5,6 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.importGlobalProperties(['Blob', 'File']);
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 const Assert = {
   ok(cond, text) {
     

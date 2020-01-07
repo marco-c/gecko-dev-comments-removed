@@ -5,9 +5,6 @@
 
 "use strict";
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 const DBG_STRINGS_URI = "devtools/client/locales/debugger.properties";
 const LAZY_EMPTY_DELAY = 150; 
 const SCROLL_PAGE_SIZE_DEFAULT = 0;

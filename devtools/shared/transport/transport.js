@@ -17,7 +17,6 @@
     factory.call(this, require, this);
   } else {
     
-    const Cu = Components.utils;
     const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     factory.call(this, require, this);
   }

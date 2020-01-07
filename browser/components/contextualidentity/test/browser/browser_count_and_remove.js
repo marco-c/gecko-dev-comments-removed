@@ -1,8 +1,6 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
 ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
 
 function openTabInUserContext(userContextId) {

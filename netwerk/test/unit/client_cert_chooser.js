@@ -3,7 +3,6 @@
 
 
 
-var { utils: Cu, interfaces: Ci } = Components;
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 var Prompter = {

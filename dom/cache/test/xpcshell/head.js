@@ -6,10 +6,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-
 
 var ss = Cc['@mozilla.org/storage/service;1']
          .createInstance(Ci.mozIStorageService);

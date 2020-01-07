@@ -5,8 +5,6 @@
 
 
 
-var Ci = Components.interfaces;
-
 function run_test() {
   let tmpd = do_get_tempdir();
   Assert.ok(tmpd.exists());

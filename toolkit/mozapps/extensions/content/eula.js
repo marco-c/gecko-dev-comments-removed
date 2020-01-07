@@ -8,7 +8,6 @@
 
 
 
-var Cu = Components.utils;
 ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 function Startup() {

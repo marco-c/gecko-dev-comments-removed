@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Cu = Components.utils;
 
 
 var { DER } = ChromeUtils.import("resource://testing-common/psm/DER.jsm", {});

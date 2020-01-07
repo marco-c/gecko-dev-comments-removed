@@ -2,11 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cr = Components.results;
-var Cu = Components.utils;
-
 const FRECENCY_DEFAULT = 10000;
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");

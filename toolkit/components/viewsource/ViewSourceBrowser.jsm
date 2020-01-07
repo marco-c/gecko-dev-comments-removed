@@ -4,8 +4,6 @@
 
 
 
-const { utils: Cu, interfaces: Ci, classes: Cc } = Components;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "Services",

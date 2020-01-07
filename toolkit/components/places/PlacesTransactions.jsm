@@ -174,8 +174,6 @@ this.EXPORTED_SYMBOLS = ["PlacesTransactions"];
 
 
 
-const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
-
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

@@ -5,9 +5,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 function test_basics()
 {
   var item = Cc["@mozilla.org/windows-jumplistitem;1"].

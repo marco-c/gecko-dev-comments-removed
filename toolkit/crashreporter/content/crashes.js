@@ -2,8 +2,6 @@
 
 
 
-var { classes: Cc, utils: Cu, interfaces: Ci } = Components;
-
 var reportURL;
 
 ChromeUtils.import("resource://gre/modules/CrashReports.jsm");

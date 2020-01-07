@@ -4,7 +4,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const BYTES_PER_MEBIBYTE = 1048576;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

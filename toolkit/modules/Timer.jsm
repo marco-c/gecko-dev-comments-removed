@@ -11,11 +11,6 @@
 this.EXPORTED_SYMBOLS = ["setTimeout", "setTimeoutWithTarget", "clearTimeout",
                          "setInterval", "setIntervalWithTarget", "clearInterval"];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 

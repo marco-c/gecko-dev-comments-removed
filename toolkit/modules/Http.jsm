@@ -4,8 +4,6 @@
 
 const EXPORTED_SYMBOLS = ["httpRequest", "percentEncode"];
 
-const {classes: Cc, interfaces: Ci} = Components;
-
 
 
 

@@ -5,8 +5,6 @@
 
 "use strict";
 
-const Cu = Components.utils;
-
 const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { console } = require("resource://gre/modules/Console.jsm");

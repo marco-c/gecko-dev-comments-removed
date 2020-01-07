@@ -4,11 +4,6 @@
 
 "use strict";
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cr = Components.results;
-
 
 
 

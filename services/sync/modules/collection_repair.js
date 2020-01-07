@@ -3,8 +3,6 @@
 
 "use strict";
 
-const Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-sync/main.js");
 

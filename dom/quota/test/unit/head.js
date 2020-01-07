@@ -3,8 +3,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 const NS_OK = Cr.NS_OK;
 const NS_ERROR_FAILURE = Cr.NS_ERROR_FAILURE;
 const NS_ERROR_UNEXPECTED = Cr.NS_ERROR_UNEXPECTED;

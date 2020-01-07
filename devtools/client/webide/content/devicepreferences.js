@@ -2,7 +2,6 @@
 
 
 
-var Cu = Components.utils;
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 const {Connection} = require("devtools/shared/client/connection-manager");

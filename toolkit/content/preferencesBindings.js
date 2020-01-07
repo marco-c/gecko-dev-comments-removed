@@ -7,8 +7,6 @@
 
 
 const Preferences = window.Preferences = (function() {
-  const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
-
   ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
   ChromeUtils.import("resource://gre/modules/Services.jsm");
   ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

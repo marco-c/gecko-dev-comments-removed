@@ -4,7 +4,7 @@
 
 
 
-const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
+const CC = Components.Constructor;
 
 const TEST_SITE = "http://mochi.test:8888";
 const TEST_CACHE_SITE = "http://www.example.com";

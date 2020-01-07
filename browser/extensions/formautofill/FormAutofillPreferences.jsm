@@ -10,7 +10,6 @@
 
 this.EXPORTED_SYMBOLS = ["FormAutofillPreferences"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 const BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";

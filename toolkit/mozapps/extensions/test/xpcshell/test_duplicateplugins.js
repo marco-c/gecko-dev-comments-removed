@@ -4,8 +4,6 @@
 
 ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
-var Ci = Components.interfaces;
-
 
 
 

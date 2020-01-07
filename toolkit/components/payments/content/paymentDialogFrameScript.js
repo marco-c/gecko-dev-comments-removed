@@ -19,7 +19,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 let PaymentFrameScript = {

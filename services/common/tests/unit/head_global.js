@@ -1,7 +1,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
+var Cm = Components.manager;
 
 var gSyncProfile = do_get_profile();
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

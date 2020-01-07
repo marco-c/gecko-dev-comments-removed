@@ -1,8 +1,6 @@
 
 
 
-var { classes: Cc, utils: Cu, interfaces: Ci, results: Cr } = Components;
-
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);

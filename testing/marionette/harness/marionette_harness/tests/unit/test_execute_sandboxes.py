@@ -24,7 +24,6 @@ class TestExecuteSandboxes(MarionetteTestCase):
         
         
         result = self.marionette.execute_async_script("""
-            const Ci = Components.interfaces;
             let result = Ci.nsIPermissionManager.ALLOW_ACTION;
             marionetteScriptFinished(result);""",
             sandbox="system")

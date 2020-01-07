@@ -31,9 +31,6 @@ this.EXPORTED_SYMBOLS = [ "PluralForm" ];
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 const kIntlProperties = "chrome://global/locale/intl.properties";
 
 

@@ -2,7 +2,7 @@
 
 
 
-const {classes: Cc, utils: Cu, interfaces: Ci, manager: Cm} = Components;
+const Cm = Components.manager;
 Cm.QueryInterface(Ci.nsIServiceManager);
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

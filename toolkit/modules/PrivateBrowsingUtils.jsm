@@ -12,9 +12,6 @@ const kAutoStartPref = "browser.privatebrowsing.autostart";
 
 var gTemporaryAutoStartMode = false;
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 this.PrivateBrowsingUtils = {
   
   

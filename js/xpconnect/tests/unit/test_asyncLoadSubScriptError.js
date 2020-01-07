@@ -2,9 +2,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 var srvScope = {};
 
 function success(result) {

@@ -2,7 +2,6 @@
 
 
 
-const Cu = Components.utils;
 function run_test() {
   let sb = new Cu.Sandbox(this);
   var called = false;

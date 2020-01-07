@@ -8,7 +8,6 @@
 
 
 
-const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
 
 

@@ -2,10 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const bundle = Services.strings.createBundle(

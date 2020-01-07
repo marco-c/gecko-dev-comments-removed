@@ -5,9 +5,6 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 
 function DummyObserver() {
   Services.obs.notifyObservers(null, "dummy-observer-created");

@@ -6,8 +6,6 @@
 
 this.EXPORTED_SYMBOLS = ["FormLikeFactory"];
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
-
 
 
 

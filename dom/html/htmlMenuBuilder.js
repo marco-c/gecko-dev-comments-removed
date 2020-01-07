@@ -6,9 +6,6 @@
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
 
 
 var gGeneratedId = 1;

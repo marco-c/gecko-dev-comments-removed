@@ -2,8 +2,6 @@
 
 
 
-const {utils: Cu} = Components;
-
 Cu.importGlobalProperties(["URL"]);
 
 ChromeUtils.import("chrome://marionette/content/navigate.js");

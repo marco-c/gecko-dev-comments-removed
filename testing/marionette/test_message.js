@@ -2,8 +2,6 @@
 
 
 
-const {utils: Cu} = Components;
-
 ChromeUtils.import("chrome://marionette/content/error.js");
 ChromeUtils.import("chrome://marionette/content/message.js");
 

@@ -1,8 +1,5 @@
 
 
-var Ci = Components.interfaces;
-var Cc = Components.classes;
-
 
 function generateContent(size) {
   var content = "";

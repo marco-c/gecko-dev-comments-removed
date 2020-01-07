@@ -1,8 +1,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr } = Components;
-
 const SECURE_CONTAINER_URL = "https://example.com/browser/browser/components/safebrowsing/content/test/empty_file.html";
 
 add_task(async function testNormalBrowsing() {

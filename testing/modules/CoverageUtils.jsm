@@ -8,10 +8,6 @@ this.EXPORTED_SYMBOLS = [
   "CoverageCollector",
 ];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 
 const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm",
                                                  {});

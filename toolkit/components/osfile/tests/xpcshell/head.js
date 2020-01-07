@@ -3,8 +3,6 @@
 
 "use strict";
 
-var {utils: Cu, interfaces: Ci} = Components;
-
 var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 

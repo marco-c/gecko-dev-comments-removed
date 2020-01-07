@@ -4,8 +4,6 @@
 
 
 
-const Cu = Components.utils;
-
 
 
 

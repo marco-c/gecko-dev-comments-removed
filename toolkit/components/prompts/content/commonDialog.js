@@ -2,11 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cc = Components.classes;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/CommonDialog.jsm");
 

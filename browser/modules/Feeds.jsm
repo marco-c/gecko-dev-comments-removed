@@ -14,8 +14,6 @@ ChromeUtils.defineModuleGetter(this, "BrowserUtils",
 ChromeUtils.defineModuleGetter(this, "RecentWindow",
                                "resource:///modules/RecentWindow.jsm");
 
-const { interfaces: Ci, classes: Cc } = Components;
-
 this.Feeds = {
   
   receiveMessage(aMessage) {

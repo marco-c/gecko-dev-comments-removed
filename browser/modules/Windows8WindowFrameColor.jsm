@@ -3,7 +3,6 @@
 
 
 "use strict";
-const {interfaces: Ci, utils: Cu} = Components;
 
 this.EXPORTED_SYMBOLS = ["Windows8WindowFrameColor"];
 

@@ -1,9 +1,6 @@
 
 
 
-var Cu = Components.utils;
-var Cc = Components.classes;
-var Ci = Components.interfaces;
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);

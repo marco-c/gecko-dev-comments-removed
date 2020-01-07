@@ -13,8 +13,6 @@ let url = new window.URL(href);
 
 
 if (url.search.length > 1) {
-  const Cu = Components.utils;
-  const Ci = Components.interfaces;
   const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
   const { gDevTools } = require("devtools/client/framework/devtools");
   const { targetFromURL } = require("devtools/client/framework/target-from-url");

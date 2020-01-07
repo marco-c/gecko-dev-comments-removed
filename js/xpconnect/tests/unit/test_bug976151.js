@@ -2,7 +2,6 @@
 
 
 
-const Cu = Components.utils;
 function run_test() {
   let unprivilegedSb = new Cu.Sandbox('http://www.example.com');
   function checkOpaqueWrapper(val) {

@@ -4,8 +4,6 @@
 
  
 
-let { utils: Cu } = Components;
-
 const SCREENSHOT_MESSAGE = "WebCompat:SendScreenshot";
 
 addMessageListener(SCREENSHOT_MESSAGE, function handleMessage(message) {

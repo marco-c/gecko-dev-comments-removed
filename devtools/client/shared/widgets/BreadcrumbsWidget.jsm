@@ -5,8 +5,6 @@
 
 "use strict";
 
-const Cu = Components.utils;
-
 const ENSURE_SELECTION_VISIBLE_DELAY = 50; 
 
 const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});

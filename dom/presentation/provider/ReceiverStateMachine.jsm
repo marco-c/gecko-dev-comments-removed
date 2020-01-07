@@ -10,8 +10,6 @@
 
 this.EXPORTED_SYMBOLS = ["ReceiverStateMachine"]; 
 
-const { utils: Cu } = Components;
-
 
 ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
 

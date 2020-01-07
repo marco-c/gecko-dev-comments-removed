@@ -3,8 +3,6 @@
 
 
 
-const { interfaces: Ci, classes: Cc, utils: Cu, results: Cr } = Components;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "Services",

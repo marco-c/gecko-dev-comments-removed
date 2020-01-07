@@ -1,7 +1,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci } = Components;
 const URIs = [
   "about:about",
   "http://example.com/browser/dom/base/test/empty.html"

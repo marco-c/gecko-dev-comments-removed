@@ -2,11 +2,6 @@
 
 
 
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-const Cr = Components.results;
-const Cu = Components.utils;
-
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

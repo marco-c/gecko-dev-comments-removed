@@ -10,8 +10,6 @@
 
 
 
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var ZoomManager = {

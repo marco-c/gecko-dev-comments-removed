@@ -1,8 +1,5 @@
 "use strict";
 
-const Cu = Components.utils;
-const Ci = Components.interfaces;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 

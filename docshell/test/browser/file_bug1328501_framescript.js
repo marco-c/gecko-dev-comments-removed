@@ -1,5 +1,3 @@
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 
 addEventListener("frames-loaded",
   e => sendAsyncMessage("test:frames-loaded"), true, true);

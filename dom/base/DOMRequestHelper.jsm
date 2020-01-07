@@ -16,11 +16,6 @@
 
 
 
-const Cu = Components.utils;
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-
 this.EXPORTED_SYMBOLS = ["DOMRequestIpcHelper"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

@@ -2,8 +2,6 @@
 
 
 
-var {classes: Cc, interfaces: Ci} = Components;
-
 function check_profile_dir(profd) {
   Assert.ok(profd.exists());
   Assert.ok(profd.isDirectory());

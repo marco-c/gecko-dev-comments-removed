@@ -6,8 +6,6 @@
 
 this.EXPORTED_SYMBOLS = ["ScrollPosition"];
 
-const Ci = Components.interfaces;
-
 
 
 

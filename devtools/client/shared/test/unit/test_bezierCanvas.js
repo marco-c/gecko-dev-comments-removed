@@ -7,7 +7,6 @@
 
 
 
-var Cu = Components.utils;
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {CubicBezier, BezierCanvas} = require("devtools/client/shared/widgets/CubicBezierWidget");
 

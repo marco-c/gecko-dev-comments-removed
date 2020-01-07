@@ -1,7 +1,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
 
 var browser = Services.wm.getMostRecentWindow('navigator:browser');

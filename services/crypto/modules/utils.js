@@ -2,8 +2,6 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
-
 this.EXPORTED_SYMBOLS = ["CryptoUtils"];
 
 ChromeUtils.import("resource://services-common/observers.js");

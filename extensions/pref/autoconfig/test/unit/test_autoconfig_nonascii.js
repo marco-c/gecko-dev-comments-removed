@@ -1,8 +1,6 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr} = Components;
-
 
 
 

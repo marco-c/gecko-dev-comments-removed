@@ -49,7 +49,7 @@ add_task(async function() {
   
   mm.loadFrameScript("data:text/javascript,(" + function() {
     
-    const {classes: Cc, interfaces: Ci, manager: Cm, utils: Cu} = Components;
+    const Cm = Components.manager;
     Cm.QueryInterface(Ci.nsIServiceManager);
     ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
     let collectStacks = AppConstants.NIGHTLY_BUILD || AppConstants.DEBUG;

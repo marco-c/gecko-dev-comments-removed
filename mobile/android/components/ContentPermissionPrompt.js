@@ -2,11 +2,6 @@
 
 
 
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-const Cc = Components.classes;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

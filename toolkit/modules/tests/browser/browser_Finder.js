@@ -2,8 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-
 add_task(async function() {
   const url = "data:text/html;base64," +
               btoa("<body><iframe srcdoc=\"content\"/></iframe>" +

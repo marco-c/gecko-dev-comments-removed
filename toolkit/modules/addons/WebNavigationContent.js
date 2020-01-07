@@ -2,8 +2,6 @@
 
 
 
-var Ci = Components.interfaces;
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 

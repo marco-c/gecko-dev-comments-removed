@@ -4,8 +4,6 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
 const global = this;
 
 function run_test()

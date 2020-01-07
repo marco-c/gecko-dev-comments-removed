@@ -2,8 +2,6 @@
 
 "use strict";
 
-let { classes: Cc, interfaces: Ci } = Components;
-
 function run_test() {
   let gfxInfo = Cc["@mozilla.org/gfx/info;1"].
                 getService(Ci.nsIGfxInfo);

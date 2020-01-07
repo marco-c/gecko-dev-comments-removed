@@ -4,11 +4,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
-
 do_get_profile();
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");

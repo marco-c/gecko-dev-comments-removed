@@ -2,7 +2,7 @@
 
 
 
-const {interfaces: Ci, classes: Cc, utils: Cu, manager: Cm, results: Cr} = Components;
+const Cm = Components.manager;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

@@ -2,7 +2,7 @@
 
 
 
-const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
+const CC = Components.Constructor;
 
 const TEST_DOMAIN = "http://example.net/";
 

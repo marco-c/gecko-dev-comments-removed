@@ -28,11 +28,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://gre/modules/SharedPromptUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 

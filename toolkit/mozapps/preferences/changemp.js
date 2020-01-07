@@ -4,8 +4,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const nsPK11TokenDB = "@mozilla.org/security/pk11tokendb;1";

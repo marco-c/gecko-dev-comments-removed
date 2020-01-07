@@ -2,10 +2,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-
 function run_test() {
   registerAppManifest(do_get_file('../components/js/xpctest.manifest'));
 

@@ -1,6 +1,5 @@
 
 
-var Cr = Components.results;
 var Cm = Components.manager;
 
 

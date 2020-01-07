@@ -15,7 +15,6 @@
 
 
 
-const { utils: Cu } = Components;
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

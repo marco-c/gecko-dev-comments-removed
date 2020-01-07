@@ -2,9 +2,6 @@
 
 
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
-
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const {gDevTools} = require("devtools/client/framework/devtools");
 const {gDevToolsBrowser} = require("devtools/client/framework/devtools-browser");

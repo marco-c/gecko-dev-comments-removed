@@ -3,7 +3,6 @@
 
 "use strict";
 
-let Cu = Components.utils;
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 

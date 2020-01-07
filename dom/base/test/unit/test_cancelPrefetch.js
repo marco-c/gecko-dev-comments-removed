@@ -1,6 +1,4 @@
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
 var prefetch = Cc["@mozilla.org/prefetch-service;1"].
                getService(Ci.nsIPrefetchService);
 var ios = Cc["@mozilla.org/network/io-service;1"].

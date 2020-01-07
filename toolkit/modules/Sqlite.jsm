@@ -8,8 +8,6 @@ this.EXPORTED_SYMBOLS = [
   "Sqlite",
 ];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
 
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 

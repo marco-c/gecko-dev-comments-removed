@@ -15,9 +15,6 @@ function wrapInputStream(input)
 
 
 function run_test() {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
-
   
   
   let file = do_get_file("data/test_crx_dummy.crx");

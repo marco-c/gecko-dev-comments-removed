@@ -1,11 +1,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cr = Components.results;
-var Cu = Components.utils;
-
 ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
 updateAppInfo({
   name: "Url Formatter Test",

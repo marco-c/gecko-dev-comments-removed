@@ -10,7 +10,6 @@
 
 
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 const {console} = Cu.import("resource://gre/modules/Console.jsm", {});
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});

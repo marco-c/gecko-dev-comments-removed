@@ -12,7 +12,6 @@
   <script type="application/javascript">
 
   /** Test for Bug 1074863 **/
-  const Cu = Components.utils;
   var sb = new Cu.Sandbox('http://www.example.com');
   sb.namedCtor = Image;
   ok(true, "Didn't assert");

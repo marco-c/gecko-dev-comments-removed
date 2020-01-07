@@ -7,8 +7,6 @@
 
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
 ChromeUtils.import("resource:///modules/ShellService.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 

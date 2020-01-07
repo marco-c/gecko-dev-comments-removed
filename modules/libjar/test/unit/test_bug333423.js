@@ -7,9 +7,6 @@
 
 
 function run_test() {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
-
   
   var file = do_get_file("data/test_bug333423.zip");
 

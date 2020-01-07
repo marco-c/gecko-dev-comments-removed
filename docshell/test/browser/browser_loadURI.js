@@ -1,9 +1,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 const gPostData = "postdata=true";
 
 function test() {

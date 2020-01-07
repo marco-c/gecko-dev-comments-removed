@@ -3,7 +3,6 @@
 
 
 const PROMPT_URL = "chrome://global/content/commonDialog.xul";
-var { interfaces: Ci } = Components;
 
 add_task(async function test() {
   await new Promise(resolve => {

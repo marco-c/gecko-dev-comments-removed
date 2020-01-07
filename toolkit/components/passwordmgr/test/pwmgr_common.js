@@ -347,7 +347,6 @@ function runChecksAfterCommonInit(aFunction = null) {
 
 
 if (this.addMessageListener) {
-  const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
   var SpecialPowers = { Cc, Ci, Cr, Cu, };
   var ok, is;
   
@@ -427,7 +426,6 @@ if (this.addMessageListener) {
   SimpleTest.registerCleanupFunction(() => {
     SpecialPowers.popPrefEnv();
     runInParent(function cleanupParent() {
-      const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
       ChromeUtils.import("resource://gre/modules/Services.jsm");
       ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm");
 

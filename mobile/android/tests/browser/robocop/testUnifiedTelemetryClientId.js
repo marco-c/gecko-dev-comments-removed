@@ -1,7 +1,5 @@
 
 
-var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
 Cu.import("resource://gre/modules/ClientID.jsm");
 
 var java = new JavaBridge(this);

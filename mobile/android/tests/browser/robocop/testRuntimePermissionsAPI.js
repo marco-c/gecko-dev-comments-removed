@@ -5,8 +5,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "RuntimePermissions", "resource://gre/modules/RuntimePermissions.jsm");

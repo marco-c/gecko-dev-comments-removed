@@ -6,8 +6,6 @@
 
 'use strict';
 
-const { utils: Cu, results: Cr } = Components;
-
 
 ChromeUtils.import('resource://gre/modules/presentation/ControllerStateMachine.jsm');
 

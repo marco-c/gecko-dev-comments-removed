@@ -4,8 +4,6 @@
 
 
 
-const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
-
 
 const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
 

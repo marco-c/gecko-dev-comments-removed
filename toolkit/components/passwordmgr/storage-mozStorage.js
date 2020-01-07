@@ -2,7 +2,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 const DB_VERSION = 6; 
 const PERMISSION_SAVE_LOGINS = "login-saving";
 

@@ -3,8 +3,6 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const gIsWindows = mozinfo.os == "win";
@@ -34,9 +32,6 @@ function get_test_plugin(secondplugin=false) {
 
 
 function get_test_plugintag(aName="Test Plug-in") {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
-
   var name = aName || "Test Plug-in";
   var host = Cc["@mozilla.org/plugin/host;1"].
              getService(Ci.nsIPluginHost);

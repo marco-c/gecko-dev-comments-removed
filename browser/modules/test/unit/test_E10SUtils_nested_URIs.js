@@ -1,8 +1,6 @@
 
 
 
-const {utils: Cu, interfaces: Ci} = Components;
-
 ChromeUtils.import("resource://gre/modules/E10SUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 

@@ -3,8 +3,6 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
 Cu.importGlobalProperties(["fetch"]);
 
 const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});

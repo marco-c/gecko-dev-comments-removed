@@ -1,7 +1,7 @@
 
 
 
-var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu, manager: Cm} = Components;
+var Cm = Components.manager;
 
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 

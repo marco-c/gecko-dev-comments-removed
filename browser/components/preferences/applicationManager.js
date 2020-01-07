@@ -4,9 +4,6 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-
 var gAppManagerDialog = {
   _removed: [],
 

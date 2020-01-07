@@ -13,7 +13,6 @@ let extensionHandlers = new WeakSet();
 
 function frameScript() {
   
-  const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
   ChromeUtils.import("resource://gre/modules/MessageChannel.jsm");
 
   let handle;
