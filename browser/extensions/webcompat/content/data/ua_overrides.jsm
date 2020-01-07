@@ -8,6 +8,36 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const UAOverrides = [
 
   
@@ -19,8 +49,7 @@ const UAOverrides = [
 
   {
     baseDomain: "schub.io",
-    applications: ["firefox", "fennec"],
-    uriMatcher: (uri) => uri.includes("webcompat-addon-testcases.schub.io"),
+    uriMatcher: (uri) => uri.includes("webcompat-ua-dummy.schub.io"),
     uaTransformer: (originalUA) => {
       let prefix = originalUA.substr(0, originalUA.indexOf(")") + 1);
       return `${prefix} AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36`;
