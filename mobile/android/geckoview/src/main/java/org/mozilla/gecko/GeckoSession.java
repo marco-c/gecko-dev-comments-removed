@@ -1808,6 +1808,7 @@ public class GeckoSession extends LayerSession
 
 
 
+
         void requestAndroidPermissions(GeckoSession session, String[] permissions,
                                        Callback callback);
 
