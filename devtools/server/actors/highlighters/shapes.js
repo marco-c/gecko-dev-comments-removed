@@ -81,6 +81,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.fillRule = "";
     this.numInsetPoints = 0;
     this.transformMode = false;
+    this.viewport = {};
 
     this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
       this._buildMarkup.bind(this));
@@ -433,6 +434,26 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       `${style}pointer-events:${pointerEvents};cursor:${cursorType};`);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  setViewport(padding = 0) {
+    const { pageXOffset, pageYOffset, innerWidth, innerHeight } = this.win;
+    const left = pageXOffset + padding;
+    const right = innerWidth + pageXOffset - padding;
+    const top = pageYOffset + padding;
+    const bottom = innerHeight + pageYOffset - padding;
+    this.viewport = { left, right, top, bottom, padding };
+  }
+
   handleEvent(event, id) {
     
     if (this.areShapesHidden()) {
@@ -481,6 +502,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         }
         event.stopPropagation();
         event.preventDefault();
+
+        
+        
+        this.setViewport(BASE_MARKER_SIZE);
         break;
       case "mouseup":
         if (this[_dragging]) {
@@ -495,6 +520,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         }
         event.stopPropagation();
         event.preventDefault();
+
+        
+        const { left, right, top, bottom } = this.viewport;
+        pageX = Math.min(Math.max(left, pageX), right);
+        pageY = Math.min(Math.max(top, pageY), bottom);
 
         let { point } = this[_dragging];
         if (this.transformMode) {
