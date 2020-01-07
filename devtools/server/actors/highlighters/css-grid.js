@@ -73,7 +73,12 @@ const GRID_GAP_ALPHA = 0.5;
 
 
 
-const OFFSET_FROM_EDGE = 25;
+
+const OFFSET_FROM_EDGE = 32;
+
+
+
+const FLIP_ARROW_INSIDE_FACTOR = 2.5;
 
 
 
@@ -1187,39 +1192,13 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     if (dimensionType === COLUMNS) {
       x = linePos + breadth / 2;
-      y = startPos;
-
-      if (lineNumber > 0) {
-        y -= offsetFromEdge;
-      } else {
-        y += offsetFromEdge;
-      }
+      y = lineNumber > 0 ? startPos - offsetFromEdge : startPos + offsetFromEdge;
     } else if (dimensionType === ROWS) {
-      x = startPos;
       y = linePos + breadth / 2;
-
-      if (lineNumber > 0) {
-        x -= offsetFromEdge;
-      } else {
-        x += offsetFromEdge;
-      }
+      x = lineNumber > 0 ? startPos - offsetFromEdge : startPos + offsetFromEdge;
     }
 
     [x, y] = apply(this.currentMatrix, [x, y]);
-
-    if (isStackedLine) {
-      
-      const xOffset = boxWidth / 4;
-      const yOffset = boxHeight / 4;
-
-      if (lineNumber > 0) {
-        x -= xOffset;
-        y -= yOffset;
-      } else {
-        x += xOffset;
-        y += yOffset;
-      }
-    }
 
     
     
@@ -1238,20 +1217,142 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     boxHeight = Math.max(boxHeight, minBoxSize);
 
     
-    let boxEdge;
-    if (dimensionType === COLUMNS) {
+    const boxEdge = this.getBoxEdge(dimensionType, lineNumber);
+
+    let { width, height } = this._winDimensions;
+    width *= displayPixelRatio;
+    height *= displayPixelRatio;
+
+    
+    if ((dimensionType === ROWS && (y < 0 || y > height)) ||
+        (dimensionType === COLUMNS && (x < 0 || x > width))) {
+      this.ctx.restore();
+      return;
+    }
+
+    
+    
+    const minOffsetFromEdge = OFFSET_FROM_EDGE * displayPixelRatio;
+    switch (boxEdge) {
+      case "left":
+        if (x < minOffsetFromEdge) {
+          x += FLIP_ARROW_INSIDE_FACTOR * boxWidth;
+        }
+        break;
+      case "right":
+        if ((width - x) < minOffsetFromEdge) {
+          x -= FLIP_ARROW_INSIDE_FACTOR * boxWidth;
+        }
+        break;
+      case "top":
+        if (y < minOffsetFromEdge) {
+          y += FLIP_ARROW_INSIDE_FACTOR * boxHeight;
+        }
+        break;
+      case "bottom":
+        if ((height - y) < minOffsetFromEdge) {
+          y -= FLIP_ARROW_INSIDE_FACTOR * boxHeight;
+        }
+        break;
+    }
+
+    
+    
+    if (isStackedLine) {
+      const xOffset = boxWidth / 4;
+      const yOffset = boxHeight / 4;
+
       if (lineNumber > 0) {
-        boxEdge = "top";
+        x -= xOffset;
+        y -= yOffset;
       } else {
-        boxEdge = "bottom";
+        x += xOffset;
+        y += yOffset;
       }
     }
-    if (dimensionType === ROWS) {
-      if (lineNumber > 0) {
-        boxEdge = "left";
-      } else {
-        boxEdge = "right";
+
+    
+    
+    
+    
+    
+    let grewBox = false;
+    const boxWidthBeforeGrowth = boxWidth;
+    const boxHeightBeforeGrowth = boxHeight;
+
+    if (dimensionType === ROWS && y <= boxHeight / 2) {
+      grewBox = true;
+      boxHeight = 2 * (boxHeight - y);
+    } else if (dimensionType === ROWS && y >= height - boxHeight / 2) {
+      grewBox = true;
+      boxHeight = 2 * (y - height + boxHeight);
+    } else if (dimensionType === COLUMNS && x <= boxWidth / 2) {
+      grewBox = true;
+      boxWidth = 2 * (boxWidth - x);
+    } else if (dimensionType === COLUMNS && x >= width - boxWidth / 2) {
+      grewBox = true;
+      boxWidth = 2 * (x - width + boxWidth);
+    }
+
+    
+    drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
+                   boxEdge);
+
+    
+    switch (boxEdge) {
+      case "left":
+        x -= (boxWidth + arrowSize + radius) - boxWidth / 2;
+        break;
+      case "right":
+        x += (boxWidth + arrowSize + radius) - boxWidth / 2;
+        break;
+      case "top":
+        y -= (boxHeight + arrowSize + radius) - boxHeight / 2;
+        break;
+      case "bottom":
+        y += (boxHeight + arrowSize + radius) - boxHeight / 2;
+        break;
+    }
+
+    
+    
+    if (grewBox) {
+      if (dimensionType === ROWS && y <= boxHeightBeforeGrowth / 2) {
+        y = boxHeightBeforeGrowth / 2;
+      } else if (dimensionType === ROWS && y >= height - boxHeightBeforeGrowth / 2) {
+        y = height - boxHeightBeforeGrowth / 2;
+      } else if (dimensionType === COLUMNS && x <= boxWidthBeforeGrowth / 2) {
+        x = boxWidthBeforeGrowth / 2;
+      } else if (dimensionType === COLUMNS && x >= width - boxWidthBeforeGrowth / 2) {
+        x = width - boxWidthBeforeGrowth / 2;
       }
+    }
+
+    
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+    this.ctx.fillStyle = "black";
+    const numberText = isStackedLine ? "" : lineNumber;
+    this.ctx.fillText(numberText, x, y);
+    this.ctx.restore();
+  }
+
+  
+
+
+
+
+
+
+
+
+  getBoxEdge(dimensionType, lineNumber) {
+    let boxEdge;
+
+    if (dimensionType === COLUMNS) {
+      boxEdge = lineNumber > 0 ? "top" : "bottom";
+    } else if (dimensionType === ROWS) {
+      boxEdge = lineNumber > 0 ? "left" : "right";
     }
 
     
@@ -1294,65 +1395,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
         console.error(`Unexpected direction: ${direction}`);
     }
 
-    
-    const minOffsetFromEdge = OFFSET_FROM_EDGE * displayPixelRatio;
-    let { width, height } = this._winDimensions;
-    width *= displayPixelRatio;
-    height *= displayPixelRatio;
-
-    
-    
-    
-    switch (boxEdge) {
-      case "left":
-        if (x < minOffsetFromEdge) {
-          x += 2 * boxWidth;
-        }
-        break;
-      case "right":
-        if ((width - x) < minOffsetFromEdge) {
-          x -= 2 * boxWidth;
-        }
-        break;
-      case "top":
-        if (y < minOffsetFromEdge) {
-          y += 2 * boxHeight;
-        }
-        break;
-      case "bottom":
-        if ((height - y) < minOffsetFromEdge) {
-          y -= 2 * boxHeight;
-        }
-        break;
-    }
-
-    
-    drawBubbleRect(this.ctx, x, y, boxWidth, boxHeight, radius, margin, arrowSize,
-                   boxEdge);
-
-    
-    switch (boxEdge) {
-      case "left":
-        x -= (boxWidth + arrowSize + radius) - boxWidth / 2;
-        break;
-      case "right":
-        x += (boxWidth + arrowSize + radius) - boxWidth / 2;
-        break;
-      case "top":
-        y -= (boxHeight + arrowSize + radius) - boxHeight / 2;
-        break;
-      case "bottom":
-        y += (boxHeight + arrowSize + radius) - boxHeight / 2;
-        break;
-    }
-
-    
-    this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";
-    this.ctx.fillStyle = "black";
-    const numberText = isStackedLine ? "" : lineNumber;
-    this.ctx.fillText(numberText, x, y);
-    this.ctx.restore();
+    return boxEdge;
   }
 
   

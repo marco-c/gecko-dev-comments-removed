@@ -106,17 +106,25 @@ function drawBubbleRect(ctx, x, y, width, height, radius, margin, arrowSize, ali
   ctx.translate(-originX, -originY);
   ctx.translate(-width / 2, -height - arrowSize - margin);
 
+  
+  
+  
   ctx.beginPath();
+  
   ctx.moveTo(x, y + radius);
-  ctx.lineTo(x, y + height - radius);
-  ctx.arcTo(x, y + height, x + radius, y + height, radius);
-  ctx.lineTo(x + width / 2 - arrowSize, y + height);
+  
+  ctx.lineTo(x, y + height);
+  
   ctx.lineTo(x + width / 2, y + height + arrowSize);
-  ctx.lineTo(x + width / 2 + arrowSize, y + height);
-  ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+  
+  ctx.lineTo(x + width, y + height);
+  
   ctx.lineTo(x + width, y + radius);
+  
   ctx.arcTo(x + width, y, x + width - radius, y, radius);
+  
   ctx.lineTo(x + radius, y);
+  
   ctx.arcTo(x, y, x, y + radius, radius);
 
   ctx.stroke();
