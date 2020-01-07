@@ -266,6 +266,13 @@ FetchStream::CancelCallback(JSContext* aCx, JS::HandleObject aStream,
     stream->mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
 
+  
+  
+  if (stream->mOriginalInputStream) {
+    MOZ_ASSERT(!stream->mInputStream);
+    stream->mOriginalInputStream->Close();
+  }
+
   stream->ReleaseObjects();
   return JS::UndefinedValue();
 }
