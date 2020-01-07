@@ -610,7 +610,8 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
 static void
 AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
                          nsDisplayItem* aItem, nsCSSPropertyID aProperty,
-                         AnimationInfo& aAnimationInfo, bool aPending)
+                         AnimationInfo& aAnimationInfo, bool aPending,
+                         bool aIsForWebRender)
 {
   if (aPending) {
     aAnimationInfo.ClearAnimationsForNextTransaction();
@@ -667,7 +668,11 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     bool hasPerspectiveParent = false;
-    if (aItem) {
+    if (aIsForWebRender) {
+      
+      
+      
+    } else if (aItem) {
       
       
       origin = aItem->ToReferenceFrame();
@@ -845,7 +850,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
   bool pending = !aBuilder;
   AnimationInfo& animationInfo = aLayer->GetAnimationInfo();
   AddAnimationsForProperty(aFrame, aBuilder, aItem, aProperty,
-                           animationInfo, pending);
+                           animationInfo, pending, false);
   animationInfo.TransferMutatedFlagToLayer(aLayer);
 }
 
@@ -6671,7 +6676,7 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   AnimationInfo& animationInfo = animationData->GetAnimationInfo();
   AddAnimationsForProperty(Frame(), aDisplayListBuilder,
                            this, eCSSProperty_opacity,
-                           animationInfo, false);
+                           animationInfo, false, true);
   animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
 
   
@@ -8422,9 +8427,18 @@ nsDisplayTransform::GetTransform() const
 }
 
 Matrix4x4
-nsDisplayTransform::GetTransformForRendering()
+nsDisplayTransform::GetTransformForRendering(LayoutDevicePoint* aOutOrigin)
 {
   if (!mFrame->HasPerspective() || mTransformGetter || mIsTransformSeparator) {
+    if (!mTransformGetter && !mIsTransformSeparator && aOutOrigin) {
+      
+      
+      
+      
+      float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
+      *aOutOrigin = LayoutDevicePoint::FromAppUnits(ToReferenceFrame(), scale);
+      return GetResultingTransformMatrix(mFrame, nsPoint(0, 0), scale, INCLUDE_PERSPECTIVE);
+    }
     return GetTransform();
   }
   MOZ_ASSERT(!mTransformGetter);
@@ -8480,7 +8494,14 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                                             WebRenderLayerManager* aManager,
                                             nsDisplayListBuilder* aDisplayListBuilder)
 {
-  Matrix4x4 newTransformMatrix = GetTransformForRendering();
+  
+  
+  
+  
+  
+  LayoutDevicePoint position;
+  Matrix4x4 newTransformMatrix = GetTransformForRendering(&position);
+
   gfx::Matrix4x4* transformForSC = &newTransformMatrix;
   if (newTransformMatrix.IsIdentity()) {
     
@@ -8494,7 +8515,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   AnimationInfo& animationInfo = animationData->GetAnimationInfo();
   AddAnimationsForProperty(Frame(), aDisplayListBuilder,
                            this, eCSSProperty_transform,
-                           animationInfo, false);
+                           animationInfo, false, true);
   animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
 
   
@@ -8528,7 +8549,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   StackingContextHelper sc(aSc,
                            aBuilder,
                            filters,
-                           LayoutDeviceRect(),
+                           LayoutDeviceRect(position, LayoutDeviceSize()),
                            &newTransformMatrix,
                            animationsId ? &prop : nullptr,
                            nullptr,
