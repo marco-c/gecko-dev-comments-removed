@@ -180,6 +180,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         PLAIN               = 0, 
         WASM                = 1,
         MAPPED              = 2,
+        EXTERNAL            = 3,
 
         KIND_MASK           = 0x3
     };
@@ -225,11 +226,22 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     class BufferContents {
         uint8_t* data_;
         BufferKind kind_;
+        JS::BufferContentsRefFunc ref_;
+        JS::BufferContentsRefFunc unref_;
+        void* refUserData_;
 
         friend class ArrayBufferObject;
 
-        BufferContents(uint8_t* data, BufferKind kind) : data_(data), kind_(kind) {
+        BufferContents(uint8_t* data, BufferKind kind, JS::BufferContentsRefFunc ref = nullptr,
+                       JS::BufferContentsRefFunc unref = nullptr, void* refUserData = nullptr)
+        : data_(data), kind_(kind), ref_(ref), unref_(unref), refUserData_(refUserData)
+        {
             MOZ_ASSERT((kind_ & ~KIND_MASK) == 0);
+            MOZ_ASSERT_IF(ref_ || unref_ || refUserData_, kind_ == EXTERNAL);
+
+            
+            
+            
         }
 
       public:
@@ -245,8 +257,18 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
             return BufferContents(static_cast<uint8_t*>(data), PLAIN);
         }
 
+        static BufferContents createExternal(void *data, JS::BufferContentsRefFunc ref,
+                                             JS::BufferContentsRefFunc unref,
+                                             void* refUserData = nullptr)
+        {
+            return BufferContents(static_cast<uint8_t*>(data), EXTERNAL, ref, unref, refUserData);
+        }
+
         uint8_t* data() const { return data_; }
         BufferKind kind() const { return kind_; }
+        JS::BufferContentsRefFunc refFunc() const { return ref_; }
+        JS::BufferContentsRefFunc unrefFunc() const { return unref_; }
+        void* refUserData() const { return refUserData_; }
 
         explicit operator bool() const { return data_ != nullptr; }
         WasmArrayRawBuffer* wasmBuffer() const;
@@ -329,12 +351,23 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     uint8_t* inlineDataPointer() const;
 
+    struct RefcountInfo {
+        JS::BufferContentsRefFunc ref;
+        JS::BufferContentsRefFunc unref;
+        void* refUserData;
+    };
+    RefcountInfo* refcountInfo() const;
+
   public:
     uint8_t* dataPointer() const;
     SharedMem<uint8_t*> dataPointerShared() const;
     uint32_t byteLength() const;
 
     BufferContents contents() const {
+        if (isExternal()) {
+            return BufferContents(dataPointer(), EXTERNAL, refcountInfo()->ref,
+                                  refcountInfo()->unref, refcountInfo()->refUserData);
+        }
         return BufferContents(dataPointer(), bufferKind());
     }
     bool hasInlineData() const {
@@ -355,6 +388,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool isPlain() const { return bufferKind() == PLAIN; }
     bool isWasm() const { return bufferKind() == WASM; }
     bool isMapped() const { return bufferKind() == MAPPED; }
+    bool isExternal() const { return bufferKind() == EXTERNAL; }
     bool isDetached() const { return flags() & DETACHED; }
     bool isPreparedForAsmJS() const { return flags() & FOR_ASMJS; }
 

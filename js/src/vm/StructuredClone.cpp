@@ -1113,6 +1113,12 @@ JSStructuredCloneWriter::parseTransferable()
             return reportDataCloneError(JS_SCERR_SHMEM_TRANSFERABLE);
 
         
+        
+
+        if (tObj->is<ArrayBufferObject>() && tObj->as<ArrayBufferObject>().isExternal())
+            return reportDataCloneError(JS_SCERR_TRANSFERABLE);
+
+        
         auto p = transferableObjects.lookupForAdd(tObj);
         if (p)
             return reportDataCloneError(JS_SCERR_DUP_TRANSFERABLE);
