@@ -5,7 +5,6 @@
 
 
 
-use Atom;
 use app_units::Au;
 use dom::TElement;
 use properties::{self, CascadeFlags, ComputedValues, StyleBuilder};
@@ -52,6 +51,8 @@ fn is_effective_display_none_for_display_contents<E>(element: E) -> bool
 where
     E: TElement,
 {
+    use Atom;
+
     
     lazy_static! {
         static ref SPECIAL_HTML_ELEMENTS: [Atom; 16] = [
