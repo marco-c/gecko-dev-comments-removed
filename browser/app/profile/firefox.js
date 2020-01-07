@@ -1770,3 +1770,16 @@ pref("browser.chrome.errorReporter.logLevel", "Error");
 
 pref("browser.chrome.errorReporter.infoURL",
      "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/nightly-error-collection");
+
+
+pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
+pref("app.normandy.dev_mode", false);
+pref("app.normandy.enabled", true);
+pref("app.normandy.logging.level", 50); 
+pref("app.normandy.run_interval_seconds", 86400); 
+pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
+#ifdef MOZ_DATA_REPORTING
+pref("app.shield.optoutstudies.enabled", true);
+#else
+pref("app.shield.optoutstudies.enabled", false);
+#endif

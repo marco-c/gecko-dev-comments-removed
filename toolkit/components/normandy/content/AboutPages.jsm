@@ -19,7 +19,7 @@ ChromeUtils.defineModuleGetter(
 
 var EXPORTED_SYMBOLS = ["AboutPages"];
 
-const SHIELD_LEARN_MORE_URL_PREF = "extensions.shield-recipe-client.shieldLearnMoreUrl";
+const SHIELD_LEARN_MORE_URL_PREF = "app.normandy.shieldLearnMoreUrl";
 
 
 
