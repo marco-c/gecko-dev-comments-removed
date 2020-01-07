@@ -6078,9 +6078,8 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
     
     
     
-    uint32_t dropEffect;
-    initialDataTransfer->GetDropEffectInt(&dropEffect);
-    aDragEvent->mDataTransfer->SetDropEffectInt(dropEffect);
+    aDragEvent->mDataTransfer->SetDropEffectInt(
+      initialDataTransfer->DropEffectInt());
   }
 
   return NS_OK;

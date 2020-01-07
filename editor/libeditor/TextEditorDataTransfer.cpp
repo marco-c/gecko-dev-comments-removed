@@ -260,8 +260,7 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
       
       if (srcdomdoc == destdomdoc) {
         
-        uint32_t dropEffect;
-        dataTransfer->GetDropEffectInt(&dropEffect);
+        uint32_t dropEffect = dataTransfer->DropEffectInt();
         deleteSelection = !(dropEffect & nsIDragService::DRAGDROP_ACTION_COPY);
       } else {
         

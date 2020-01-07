@@ -1339,7 +1339,7 @@ EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
       dragSession->GetTriggeringPrincipalURISpec(principalURISpec);
       RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
       if (initialDataTransfer) {
-        initialDataTransfer->GetDropEffectInt(&dropEffect);
+        dropEffect = initialDataTransfer->DropEffectInt();
       }
     }
 
@@ -2102,9 +2102,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
                        false, getter_AddRefs(dataTransfer));
 
   
-  uint32_t dropEffect;
-  aDataTransfer->GetDropEffectInt(&dropEffect);
-  dataTransfer->SetDropEffectInt(dropEffect);
+  dataTransfer->SetDropEffectInt(aDataTransfer->DropEffectInt());
 
   
   
@@ -3532,7 +3530,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
       
       
-      nsCOMPtr<nsIDOMDataTransfer> dataTransfer;
+      RefPtr<DataTransfer> dataTransfer;
       RefPtr<DataTransfer> initialDataTransfer = dragSession->GetDataTransfer();
 
       WidgetDragEvent *dragEvent = aEvent->AsDragEvent();
@@ -3556,8 +3554,8 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         if (dragEvent->mDataTransfer) {
           
-          dataTransfer = do_QueryInterface(dragEvent->mDataTransfer);
-          dataTransfer->GetDropEffectInt(&dropEffect);
+          dataTransfer = dragEvent->mDataTransfer;
+          dropEffect = dataTransfer->DropEffectInt();
         }
         else {
           
