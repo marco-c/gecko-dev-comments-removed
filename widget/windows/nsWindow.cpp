@@ -1577,6 +1577,11 @@ nsWindow::Show(bool bState)
         
         
         syncInvalidate = true;
+
+        
+        
+        SetCursor(eCursor_standard);
+
         switch (mSizeMode) {
           case nsSizeMode_Fullscreen:
             ::ShowWindow(mWnd, SW_SHOW);
