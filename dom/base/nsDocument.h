@@ -713,9 +713,6 @@ public:
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
   
-  virtual mozilla::dom::DOMImplementation*
-    GetImplementation(mozilla::ErrorResult& rv) override;
-
   virtual already_AddRefed<Element> CreateElement(const nsAString& aTagName,
                                                   const mozilla::dom::ElementCreationOptionsOrString& aOptions,
                                                   ErrorResult& rv) override;
@@ -889,8 +886,6 @@ private:
 
   
   nsString mPreloadPictureFoundSource;
-
-  RefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
 
   RefPtr<nsContentList> mImageMaps;
 
