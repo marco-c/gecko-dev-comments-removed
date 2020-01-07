@@ -95,8 +95,17 @@ class FontInspector {
     
     gDevTools.on("theme-switched", this.onThemeChanged);
 
-    this.store.dispatch(updatePreviewText(""));
-    this.update(false, "");
+    
+    
+    
+    
+    const selectedRule = this.ruleView.getSelectedRules(FONT_EDITOR_ID)[0];
+    if (selectedRule) {
+      this.onRuleSelected({ editorId: FONT_EDITOR_ID, rule: selectedRule });
+    } else {
+      this.store.dispatch(updatePreviewText(""));
+      this.update();
+    }
   }
 
   
