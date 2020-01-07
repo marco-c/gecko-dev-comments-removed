@@ -4133,14 +4133,10 @@ WorkerPrivate::RunCurrentSyncLoop()
 }
 
 bool
-WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex, nsIThreadInternal* aThread)
+WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex)
 {
   MOZ_ASSERT(!mSyncLoopStack.IsEmpty());
   MOZ_ASSERT(mSyncLoopStack.Length() - 1 == aLoopIndex);
-
-  if (!aThread) {
-    aThread = mThread;
-  }
 
   
   SyncLoopInfo* loopInfo = mSyncLoopStack[aLoopIndex];
