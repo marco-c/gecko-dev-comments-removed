@@ -348,9 +348,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   },
 
   get isDisplayed() {
-    
-    
-    return "isDisplayed" in this._form ? this._form.isDisplayed : true;
+    return this._form.isDisplayed;
   },
 
   get isTreeDisplayed() {

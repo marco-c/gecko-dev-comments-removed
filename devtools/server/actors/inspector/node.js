@@ -250,25 +250,29 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return null;
     }
 
-    return style.display;
+    let display = null;
+    try {
+      display = style.display;
+    } catch (e) {
+      
+    }
+    return display;
   },
 
   
 
 
   get isDisplayed() {
+    let type = this.displayType;
+
     
-    if (InspectorActorUtils.isNodeDead(this) ||
-        this.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE) {
+    if (!type) {
       return true;
     }
 
-    let style = this.computedStyle;
-    if (!style) {
-      return true;
-    }
-
-    return style.display !== "none";
+    
+    
+    return type !== "none";
   },
 
   
