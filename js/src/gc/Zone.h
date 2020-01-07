@@ -698,6 +698,13 @@ struct Zone : public JS::shadow::Zone,
         return p;
     }
 
+    
+    
+    
+    
+    
+    uint32_t detachedTypedObjects = 0;
+
   private:
     js::ZoneData<js::jit::JitZone*> jitZone_;
 

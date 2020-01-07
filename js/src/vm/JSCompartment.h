@@ -599,10 +599,6 @@ struct JSCompartment
 
     
     
-    int32_t                      detachedTypedObjects;
-
-    
-    
     
     
     void chooseAllocationSamplingProbability() { savedStacks_.chooseSamplingProbability(this); }

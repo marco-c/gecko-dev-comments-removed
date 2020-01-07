@@ -1651,7 +1651,7 @@ CacheIRCompiler::emitGuardNoDetachedTypedObjects()
     
     
     
-    int32_t* address = &cx_->compartment()->detachedTypedObjects;
+    uint32_t* address = &cx_->zone()->detachedTypedObjects;
     masm.branch32(Assembler::NotEqual, AbsoluteAddress(address), Imm32(0), failure->label());
     return true;
 }
