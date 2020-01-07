@@ -2022,6 +2022,12 @@ pref("network.ftp.idleConnectionTimeout", 300);
 
 
 
+
+
+pref("network.dir.format", 2);
+
+
+
 pref("network.prefetch-next", true);
 
 pref("network.preload", false);
