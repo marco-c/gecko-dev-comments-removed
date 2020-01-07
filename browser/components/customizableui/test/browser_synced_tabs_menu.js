@@ -87,7 +87,7 @@ async function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   ok(!subpanel.hidden, "sync setup element is visible");
 
   
-  let setupButton = subpanel.querySelector(".PanelUI-remotetabs-prefs-button");
+  let setupButton = subpanel.querySelector(".PanelUI-remotetabs-button");
   setupButton.click();
 
   await new Promise(resolve => {
@@ -147,57 +147,36 @@ add_task(async function() {
 
 
 add_task(async function() {
-  
-  Services.prefs.setCharPref("identity.mobilepromo.android", "http://example.com/?os=android&tail=");
-  Services.prefs.setCharPref("identity.mobilepromo.ios", "http://example.com/?os=ios&tail=");
+  Services.prefs.setCharPref("identity.fxaccounts.remote.connectdevice.uri", "http://example.com/connectdevice");
 
   gSync.updateAllUI({ status: UIState.STATUS_SIGNED_IN, email: "foo@bar.com" });
 
-  let syncPanel = document.getElementById("PanelUI-remotetabs");
-  let links = syncPanel.querySelectorAll(".remotetabs-promo-link");
+  let button = document.getElementById("PanelUI-remotetabs-connect-device-button");
+  ok(button, "found the button");
 
-  is(links.length, 2, "found 2 links as expected");
-
-  
-  for (let link of links) {
-    for (let button = 0; button < 2; button++) {
-      await document.getElementById("nav-bar").overflowable.show();
-      EventUtils.sendMouseEvent({ type: "click", button }, link, window);
-      
-      ok(!isOverflowOpen(), "click closed the panel");
-      
-      is(gBrowser.tabs.length, 2, "there's a new tab");
-      await new Promise(resolve => {
-        if (gBrowser.selectedBrowser.currentURI.spec == "about:blank") {
-          gBrowser.selectedBrowser.addEventListener("load", function(e) {
-            resolve();
-          }, {capture: true, once: true});
-          return;
-        }
-        
-        
-        resolve();
-      });
-
-      let os = link.getAttribute("mobile-promo-os");
-      let expectedUrl = `http://example.com/?os=${os}&tail=synced-tabs`;
-      is(gBrowser.selectedBrowser.currentURI.spec, expectedUrl, "correct URL");
-      gBrowser.removeTab(gBrowser.selectedTab);
-    }
-  }
-
-  
   await document.getElementById("nav-bar").overflowable.show();
-  for (let link of links) {
-    EventUtils.sendMouseEvent({ type: "click", button: 2 }, link, window);
+  button.click();
+  
+  ok(!isOverflowOpen(), "click closed the panel");
+  
+  is(gBrowser.tabs.length, 2, "there's a new tab");
+  await new Promise(resolve => {
+    if (gBrowser.selectedBrowser.currentURI.spec == "about:blank") {
+      gBrowser.selectedBrowser.addEventListener("load", function(e) {
+        resolve();
+      }, {capture: true, once: true});
+      return;
+    }
     
-    ok(isOverflowOpen(), "panel remains open after right-click");
-    is(gBrowser.tabs.length, 1, "no new tab was opened");
-  }
-  await hideOverflow();
+    
+    resolve();
+  });
 
-  Services.prefs.clearUserPref("identity.mobilepromo.android");
-  Services.prefs.clearUserPref("identity.mobilepromo.ios");
+  let expectedUrl = `http://example.com/connectdevice?entrypoint=synced-tabs`;
+  is(gBrowser.selectedBrowser.currentURI.spec, expectedUrl, "correct URL");
+  gBrowser.removeTab(gBrowser.selectedTab);
+
+  Services.prefs.clearUserPref("identity.fxaccounts.remote.connectdevice.uri");
 });
 
 
