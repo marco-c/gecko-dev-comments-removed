@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.jsm",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   OfflineAppCacheHelper: "resource://gre/modules/offlineAppCache.jsm",
+  ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(this, "sas",
@@ -75,6 +76,12 @@ var Sanitizer = {
 
 
 
+  PREF_NEWTAB_SEGREGATION: "privacy.usercontext.about_newtab_segregation.enabled",
+
+  
+
+
+
   TIMESPAN_EVERYTHING: 0,
   TIMESPAN_HOUR:       1,
   TIMESPAN_2HOURS:     2,
@@ -90,6 +97,11 @@ var Sanitizer = {
 
 
   shouldSanitizeOnShutdown: false,
+
+  
+
+
+  shouldSanitizeNewTabContainer: false,
 
   
 
@@ -144,6 +156,17 @@ var Sanitizer = {
       () => sanitizeOnShutdown(progress),
       {fetchState: () => ({ progress })}
     );
+
+    this.shouldSanitizeNewTabContainer = Services.prefs.getBoolPref(this.PREF_NEWTAB_SEGREGATION, false);
+    if (this.shouldSanitizeNewTabContainer) {
+      addPendingSanitization("newtab-container", [], {});
+    }
+
+    let i = pendingSanitizations.findIndex(s => s.id == "newtab-container");
+    if (i != -1) {
+      pendingSanitizations.splice(i, 1);
+      sanitizeNewTabSegregation();
+    }
 
     
     
@@ -271,6 +294,12 @@ var Sanitizer = {
         if (this.shouldSanitizeOnShutdown) {
           let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
           addPendingSanitization("shutdown", itemsToClear, {});
+        }
+      } else if (data == this.PREF_NEWTAB_SEGREGATION) {
+        this.shouldSanitizeNewTabContainer = Services.prefs.getBoolPref(this.PREF_NEWTAB_SEGREGATION, false);
+        removePendingSanitization("newtab-container");
+        if (this.shouldSanitizeNewTabContainer) {
+          addPendingSanitization("newtab-container", [], {});
         }
       }
     }
@@ -990,6 +1019,11 @@ async function sanitizeOnShutdown(progress) {
     }
   }
 
+  if (Sanitizer.shouldSanitizeNewTabContainer) {
+    sanitizeNewTabSegregation();
+    removePendingSanitization("newtab-container");
+  }
+
   if (Sanitizer.shouldSanitizeOnShutdown) {
     
     
@@ -1059,6 +1093,14 @@ async function sanitizeSessionPrincipal(principal) {
     }).catch(() => {}),
     ServiceWorkerCleanUp.removeFromPrincipal(principal).catch(() => {}),
   ]);
+}
+
+function sanitizeNewTabSegregation() {
+  let identity = ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
+  if (identity) {
+    Services.obs.notifyObservers(null, "clear-origin-attributes-data",
+                                 JSON.stringify({ userContextId: identity.userContextId }));
+  }
 }
 
 
