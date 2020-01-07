@@ -18,7 +18,7 @@ const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://gre/modules/Services.jsm");
 const { Services } = jsmScope;
 
-const { PromiseDebugging, ChromeUtils, HeapSnapshot,
+const { ChromeUtils, HeapSnapshot,
         atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -178,7 +178,6 @@ exports.modules = {
   
   
   Promise,
-  PromiseDebugging,
   ChromeUtils,
   HeapSnapshot,
   InspectorUtils,
