@@ -1966,6 +1966,14 @@ if (AppConstants.platform == "macosx") {
     }
 
     
+    let shownItems = ["menu_openLocation"];
+    for (let shownItem of shownItems) {
+      element = document.getElementById(shownItem);
+      if (element)
+        element.removeAttribute("hidden");
+    }
+
+    
     
     if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
       var hiddenWindowDisabledItems = ["cmd_close", "minimizeWindow", "zoomWindow"];
