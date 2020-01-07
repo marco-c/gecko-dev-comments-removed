@@ -464,45 +464,53 @@ nsTransitionManager::DoUpdateTransitions(
   
   
   bool startedAny = false;
-  nsCSSPropertyIDSet whichStarted;
-  for (uint32_t i = aDisp.mTransitionPropertyCount; i-- != 0; ) {
+  nsCSSPropertyIDSet propertiesChecked;
+  for (uint32_t i = aDisp.mTransitionPropertyCount; i--; ) {
+    
+    
+    if (i == 0 && aDisp.GetTransitionCombinedDuration(i) <= 0.0f) {
+      continue;
+    }
+
+    nsCSSPropertyID property = aDisp.GetTransitionProperty(i);
+    if (property == eCSSPropertyExtra_no_properties ||
+        property == eCSSPropertyExtra_variable ||
+        property == eCSSProperty_UNKNOWN) {
+      
+      continue;
+    }
     
     
     
-    if (aDisp.GetTransitionCombinedDuration(i) > 0.0f) {
-      
-      
-      
-      
-      nsCSSPropertyID property = aDisp.GetTransitionProperty(i);
-      if (property == eCSSPropertyExtra_no_properties ||
-          property == eCSSPropertyExtra_variable ||
-          property == eCSSProperty_UNKNOWN) {
-        
-      } else if (property == eCSSPropertyExtra_all_properties) {
-        for (nsCSSPropertyID p = nsCSSPropertyID(0);
-             p < eCSSProperty_COUNT_no_shorthands;
-             p = nsCSSPropertyID(p + 1)) {
+    
+    
+    
+    if (property == eCSSPropertyExtra_all_properties) {
+      for (nsCSSPropertyID p = nsCSSPropertyID(0);
+           p < eCSSProperty_COUNT_no_shorthands;
+           p = nsCSSPropertyID(p + 1)) {
+        startedAny |=
           ConsiderInitiatingTransition(p, aDisp, i, aElement, aPseudoType,
                                        aElementTransitions,
                                        aOldStyle, aNewStyle,
-                                       &startedAny, &whichStarted);
-        }
-      } else if (nsCSSProps::IsShorthand(property)) {
-        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, property,
-                                             CSSEnabledState::eForAllContent)
-        {
+                                       propertiesChecked);
+      }
+    } else if (nsCSSProps::IsShorthand(property)) {
+      CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, property,
+                                           CSSEnabledState::eForAllContent)
+      {
+        startedAny |=
           ConsiderInitiatingTransition(*subprop, aDisp, i, aElement, aPseudoType,
                                        aElementTransitions,
                                        aOldStyle, aNewStyle,
-                                       &startedAny, &whichStarted);
-        }
-      } else {
+                                       propertiesChecked);
+      }
+    } else {
+      startedAny |=
         ConsiderInitiatingTransition(property, aDisp, i, aElement, aPseudoType,
                                      aElementTransitions,
                                      aOldStyle, aNewStyle,
-                                     &startedAny, &whichStarted);
-      }
+                                     propertiesChecked);
     }
   }
 
@@ -631,7 +639,7 @@ IsTransitionable(nsCSSPropertyID aProperty)
   return Servo_Property_IsTransitionable(aProperty);
 }
 
-void
+bool
 nsTransitionManager::ConsiderInitiatingTransition(
   nsCSSPropertyID aProperty,
   const nsStyleDisplay& aStyleDisplay,
@@ -641,8 +649,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
   CSSTransitionCollection*& aElementTransitions,
   const ComputedStyle& aOldStyle,
   const ComputedStyle& aNewStyle,
-  bool* aStartedAny,
-  nsCSSPropertyIDSet* aWhichStarted)
+  nsCSSPropertyIDSet& aPropertiesChecked)
 {
   
   MOZ_ASSERT(!nsCSSProps::IsShorthand(aProperty),
@@ -653,20 +660,33 @@ nsTransitionManager::ConsiderInitiatingTransition(
   
   
   
-  if (!nsCSSProps::IsEnabled(aProperty, CSSEnabledState::eForAllContent)) {
-    return;
+  if (aPropertiesChecked.HasProperty(aProperty)) {
+    return false;
   }
 
-  if (aWhichStarted->HasProperty(aProperty)) {
-    
-    
-    
-    
-    return;
+  aPropertiesChecked.AddProperty(aProperty);
+
+  
+  
+  
+  if (!nsCSSProps::IsEnabled(aProperty, CSSEnabledState::eForAllContent)) {
+    return false;
   }
 
   if (!IsTransitionable(aProperty)) {
-    return;
+    return false;
+  }
+
+  float delay = aStyleDisplay.GetTransitionDelay(transitionIdx);
+
+  
+  float duration =
+    std::max(aStyleDisplay.GetTransitionDuration(transitionIdx), 0.0f);
+
+  
+  
+  if (delay + duration <= 0.0f) {
+    return false;
   }
 
   dom::DocumentTimeline* timeline = aElement->OwnerDoc()->Timeline();
@@ -717,7 +737,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
   if (haveCurrentTransition && haveValues &&
       aElementTransitions->mAnimations[currentIndex]->ToValue() == endValue) {
     
-    return;
+    return false;
   }
 
   if (!shouldAnimate) {
@@ -745,17 +765,11 @@ nsTransitionManager::ConsiderInitiatingTransition(
       }
       
     }
-    return;
+    return false;
   }
 
   const nsTimingFunction &tf =
     aStyleDisplay.GetTransitionTimingFunction(transitionIdx);
-  float delay = aStyleDisplay.GetTransitionDelay(transitionIdx);
-  float duration = aStyleDisplay.GetTransitionDuration(transitionIdx);
-  if (duration < 0.0) {
-    
-    duration = 0.0;
-  }
 
   AnimationValue startForReversingTest = startValue;
   double reversePortion = 1.0;
@@ -839,7 +853,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
     if (!aElementTransitions) {
       MOZ_ASSERT(!createdCollection, "outparam should agree with return value");
       NS_WARNING("allocating collection failed");
-      return;
+      return false;
     }
 
     if (createdCollection) {
@@ -886,7 +900,7 @@ nsTransitionManager::ConsiderInitiatingTransition(
   } else {
     if (!animations.AppendElement(animation)) {
       NS_WARNING("out of memory");
-      return;
+      return false;
     }
   }
 
@@ -895,7 +909,6 @@ nsTransitionManager::ConsiderInitiatingTransition(
     effectSet->UpdateAnimationGeneration(mPresContext);
   }
 
-  *aStartedAny = true;
-  aWhichStarted->AddProperty(aProperty);
+  return true;
 }
 
