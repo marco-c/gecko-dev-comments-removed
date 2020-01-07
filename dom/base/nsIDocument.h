@@ -116,6 +116,7 @@ class nsWindowSizes;
 class nsDOMCaretPosition;
 class nsViewportInfo;
 class nsIGlobalObject;
+class nsIXULWindow;
 
 namespace mozilla {
 class AbstractThread;
@@ -3088,6 +3089,10 @@ public:
   };
 
   nsIDocument* GetTopLevelContentDocument();
+
+  
+  
+  already_AddRefed<nsIXULWindow> GetXULWindowIfToplevelChrome() const;
 
   already_AddRefed<Element>
   CreateElement(const nsAString& aTagName,

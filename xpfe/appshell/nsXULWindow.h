@@ -166,7 +166,6 @@ protected:
    bool                    mContinueModalLoop;
    bool                    mDebuting;       
    bool                    mChromeLoaded; 
-   bool                    mPersistentWindowStateLoaded;
    bool                    mSizingShellFromXUL; 
    bool                    mShowAfterLoad;
    bool                    mIntrinsicallySized;

@@ -181,10 +181,6 @@ protected:
     virtual ~XULDocument();
 
     
-    
-    already_AddRefed<nsIXULWindow> GetXULWindowIfToplevelChrome() const;
-
-    
     friend nsresult
     (::NS_NewXULDocument(nsIDocument** aResult));
 
