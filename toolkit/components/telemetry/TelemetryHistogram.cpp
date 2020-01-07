@@ -2812,7 +2812,7 @@ TelemetryHistogram::DeserializeHistograms(JSContext* aCx, JS::HandleValue aData)
 
   
   PersistedHistogramStorage histogramsToUpdate;
-  if (!histogramsToUpdate.resize(processes.length())) {
+  if (!histogramsToUpdate.resize(static_cast<uint32_t>(ProcessID::Count))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -2968,7 +2968,7 @@ TelemetryHistogram::DeserializeKeyedHistograms(JSContext* aCx, JS::HandleValue a
 
   
   PersistedKeyedHistogramStorage histogramsToUpdate;
-  if (!histogramsToUpdate.resize(processes.length())) {
+  if (!histogramsToUpdate.resize(static_cast<uint32_t>(ProcessID::Count))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
