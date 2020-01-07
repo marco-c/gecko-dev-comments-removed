@@ -15,15 +15,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   ExtensionTestUtils: "resource://testing-common/ExtensionXPCShellUtils.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
-  HttpServer: "resource://testing-common/httpd.js",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   PromiseTestUtils: "resource://testing-common/PromiseTestUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
 });
-
-XPCOMUtils.defineLazyServiceGetter(this, "proxyService",
-                                   "@mozilla.org/network/protocol-proxy-service;1",
-                                   "nsIProtocolProxyService");
 
 
 
@@ -39,59 +34,9 @@ add_task(function check_remote() {
 
 ExtensionTestUtils.init(this);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createHttpServer({port = -1, hosts} = {}) {
-  let server = new HttpServer();
-  server.start(port);
-
-  if (hosts) {
-    hosts = new Set(hosts);
-    const serverHost = "localhost";
-    const serverPort = server.identity.primaryPort;
-
-    for (let host of hosts) {
-      server.identity.add("http", host, 80);
-    }
-
-    const proxyFilter = {
-      proxyInfo: proxyService.newProxyInfo("http", serverHost, serverPort, 0, 4096, null),
-
-      applyFilter(service, channel, defaultProxyInfo, callback) {
-        if (hosts.has(channel.URI.host)) {
-          callback.onProxyFilterResult(this.proxyInfo);
-        } else {
-          callback.onProxyFilterResult(defaultProxyInfo);
-        }
-      },
-    };
-
-    proxyService.registerChannelFilter(proxyFilter, 0);
-    registerCleanupFunction(() => {
-      proxyService.unregisterChannelFilter(proxyFilter);
-    });
-  }
-
-  registerCleanupFunction(() => {
-    return new Promise(resolve => {
-      server.stop(resolve);
-    });
-  });
-
-  return server;
+var createHttpServer = (...args) => {
+  AddonTestUtils.maybeInit(this);
+  return AddonTestUtils.createHttpServer(...args);
 }
 
 if (AppConstants.platform === "android") {

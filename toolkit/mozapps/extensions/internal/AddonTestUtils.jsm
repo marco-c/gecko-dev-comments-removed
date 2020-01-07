@@ -33,15 +33,15 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
 
 ChromeUtils.defineModuleGetter(this, "FileTestUtils",
                                "resource://testing-common/FileTestUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "HttpServer",
+                               "resource://testing-common/httpd.js");
 
-XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
-                                   "@mozilla.org/addons/addon-manager-startup;1",
-                                   "amIAddonManagerStartup");
-XPCOMUtils.defineLazyServiceGetter(this, "rdfService",
-                                   "@mozilla.org/rdf/rdf-service;1", "nsIRDFService");
-XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
-                                   "@mozilla.org/uuid-generator;1", "nsIUUIDGenerator");
-
+XPCOMUtils.defineLazyServiceGetters(this, {
+  aomStartup: ["@mozilla.org/addons/addon-manager-startup;1", "amIAddonManagerStartup"],
+  proxyService: ["@mozilla.org/network/protocol-proxy-service;1", "nsIProtocolProxyService"],
+  rdfService: ["@mozilla.org/rdf/rdf-service;1", "nsIRDFService"],
+  uuidGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
 
 XPCOMUtils.defineLazyGetter(this, "AppInfo", () => {
   let AppInfo = {};
@@ -218,6 +218,12 @@ var AddonTestUtils = {
   usePrivilegedSignatures: true,
   overrideEntry: null,
 
+  maybeInit(testScope) {
+    if (this.testScope != testScope) {
+      this.init(testScope);
+    }
+  },
+
   init(testScope) {
     this.testScope = testScope;
 
@@ -380,6 +386,63 @@ var AddonTestUtils = {
         Cu.reportError(e);
       }
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  createHttpServer({port = -1, hosts} = {}) {
+    let server = new HttpServer();
+    server.start(port);
+
+    if (hosts) {
+      hosts = new Set(hosts);
+      const serverHost = "localhost";
+      const serverPort = server.identity.primaryPort;
+
+      for (let host of hosts) {
+        server.identity.add("http", host, 80);
+      }
+
+      const proxyFilter = {
+        proxyInfo: proxyService.newProxyInfo("http", serverHost, serverPort, 0, 4096, null),
+
+        applyFilter(service, channel, defaultProxyInfo, callback) {
+          if (hosts.has(channel.URI.host)) {
+            callback.onProxyFilterResult(this.proxyInfo);
+          } else {
+            callback.onProxyFilterResult(defaultProxyInfo);
+          }
+        },
+      };
+
+      proxyService.registerChannelFilter(proxyFilter, 0);
+      this.testScope.registerCleanupFunction(() => {
+        proxyService.unregisterChannelFilter(proxyFilter);
+      });
+    }
+
+    this.testScope.registerCleanupFunction(() => {
+      return new Promise(resolve => {
+        server.stop(resolve);
+      });
+    });
+
+    return server;
   },
 
   info(msg) {
