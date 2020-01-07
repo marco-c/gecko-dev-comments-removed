@@ -26,6 +26,9 @@ public:
 
   
   static bool DOMCachesTestingEnabled();
+
+  
+  static bool PerformanceLoggingEnabled();
 };
 
 } 

@@ -2279,14 +2279,6 @@ public:
   
 
 
-  static bool IsUserTimingLoggingEnabled()
-  {
-    return sIsUserTimingLoggingEnabled;
-  }
-
-  
-
-
   static bool IsResourceTimingEnabled()
   {
     return sIsResourceTimingEnabled;
@@ -3413,7 +3405,6 @@ private:
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
   static bool sIsPerformanceNavigationTimingEnabled;
-  static bool sIsUserTimingLoggingEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
   static bool sIsWebComponentsEnabled;
