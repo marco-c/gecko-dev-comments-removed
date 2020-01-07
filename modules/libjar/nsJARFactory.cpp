@@ -47,15 +47,6 @@ static const mozilla::Module::ContractIDEntry kJARContracts[] = {
     { nullptr }
 };
 
-
-static void nsJarShutdown()
-{
-    
-    
-    nsJARProtocolHandler *handler = gJarHandler;
-    NS_IF_RELEASE(handler);
-}
-
 static const mozilla::Module kJARModule = {
     mozilla::Module::kVersion,
     kJARCIDs,
@@ -63,7 +54,7 @@ static const mozilla::Module kJARModule = {
     nullptr,
     nullptr,
     nullptr,
-    nsJarShutdown
+    nullptr
 };
 
 NSMODULE_DEFN(nsJarModule) = &kJARModule;

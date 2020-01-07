@@ -929,7 +929,10 @@ nsPermissionManager::~nsPermissionManager()
   mPermissionKeyPromiseMap.Clear();
 
   RemoveAllFromMemory();
-  gPermissionManager = nullptr;
+  if (gPermissionManager) {
+    MOZ_ASSERT(gPermissionManager == this);
+    gPermissionManager = nullptr;
+  }
 }
 
 
@@ -948,11 +951,12 @@ nsPermissionManager::GetXPCOMSingleton()
   
   auto permManager = MakeRefPtr<nsPermissionManager>();
   if (NS_SUCCEEDED(permManager->Init())) {
+    
     gPermissionManager = permManager.get();
     return permManager.forget();
   }
 
-  return nullptr;;
+  return nullptr;
 }
 
 nsresult

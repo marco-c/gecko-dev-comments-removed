@@ -1556,6 +1556,7 @@ already_AddRefed<ApplicationReputationService>
 ApplicationReputationService::GetSingleton()
 {
   if (!gApplicationReputationService) {
+    
     gApplicationReputationService = new ApplicationReputationService();
   }
   return do_AddRef(gApplicationReputationService);

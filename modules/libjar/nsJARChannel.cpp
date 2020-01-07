@@ -204,17 +204,13 @@ nsJARChannel::nsJARChannel()
     mBlockRemoteFiles = Preferences::GetBool("network.jar.block-remote-files", false);
 
     
-    NS_ADDREF(gJarHandler);
+    mJarHandler = gJarHandler;
 }
 
 nsJARChannel::~nsJARChannel()
 {
     NS_ReleaseOnMainThreadSystemGroup("nsJARChannel::mLoadInfo",
                                       mLoadInfo.forget());
-
-    
-    nsJARProtocolHandler *handler = gJarHandler;
-    NS_RELEASE(handler); 
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsJARChannel,

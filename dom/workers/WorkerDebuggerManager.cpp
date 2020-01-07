@@ -9,6 +9,7 @@
 #include "nsISimpleEnumerator.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPtr.h"
 
 #include "WorkerPrivate.h"
 
@@ -69,8 +70,7 @@ private:
   }
 };
 
-
-static WorkerDebuggerManager* gWorkerDebuggerManager;
+static StaticRefPtr<WorkerDebuggerManager> gWorkerDebuggerManager;
 
 } 
 
@@ -143,10 +143,11 @@ WorkerDebuggerManager::GetOrCreate()
   if (!gWorkerDebuggerManager) {
     
     gWorkerDebuggerManager = new WorkerDebuggerManager();
-    if (NS_FAILED(gWorkerDebuggerManager->Init())) {
+    if (NS_SUCCEEDED(gWorkerDebuggerManager->Init())) {
+      ClearOnShutdown(&gWorkerDebuggerManager);
+    } else {
       NS_WARNING("Failed to initialize worker debugger manager!");
       gWorkerDebuggerManager = nullptr;
-      return nullptr;
     }
   }
 
