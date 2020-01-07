@@ -3504,21 +3504,13 @@ public:
 
 
 
-  bool IsVisuallyAtomic(mozilla::EffectSet* aEffectSet,
-                        const nsStyleDisplay* aStyleDisplay,
-                        const nsStyleEffects* aStyleEffects);
-
-  
 
 
-
-
-
-
-  bool IsStackingContext(const nsStyleDisplay* aStyleDisplay,
+  bool IsStackingContext(mozilla::EffectSet* aEffectSet,
+                         const nsStyleDisplay* aStyleDisplay,
                          const nsStylePosition* aStylePosition,
-                         bool aIsPositioned,
-                         bool aIsVisuallyAtomic);
+                         const nsStyleEffects* aStyleEffects,
+                         bool aIsPositioned);
   bool IsStackingContext();
 
   virtual bool HonorPrintBackgroundSettings() { return true; }
