@@ -38,16 +38,6 @@ public:
   
 
 
-  NS_IMETHOD AddSubtreeToDocument(nsIContent* aElement) = 0;
-
-  
-
-
-  NS_IMETHOD RemoveSubtreeFromDocument(nsIContent* aElement) = 0;
-
-  
-
-
 
 
 

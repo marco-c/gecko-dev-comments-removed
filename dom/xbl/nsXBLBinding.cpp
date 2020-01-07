@@ -20,7 +20,7 @@
 #include "nsContentUtils.h"
 #include "ChildIterator.h"
 #ifdef MOZ_XUL
-#include "nsIXULDocument.h"
+#include "XULDocument.h"
 #endif
 #include "nsIXMLContentSink.h"
 #include "nsContentCID.h"
@@ -230,9 +230,10 @@ nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
     
     
     
-    nsCOMPtr<nsIXULDocument> xuldoc(do_QueryInterface(doc));
-    if (xuldoc)
+    XULDocument* xuldoc = doc ? doc->AsXULDocument() : nullptr;
+    if (xuldoc) {
       xuldoc->AddSubtreeToDocument(child);
+    }
 #endif
   }
 }
@@ -246,8 +247,7 @@ nsXBLBinding::UnbindAnonymousContent(nsIDocument* aDocument,
   
   nsCOMPtr<nsIContent> anonParent = aAnonParent;
 #ifdef MOZ_XUL
-  nsCOMPtr<nsIXULDocument> xuldoc =
-    do_QueryInterface(aDocument);
+  XULDocument* xuldoc = aDocument ? aDocument->AsXULDocument() : nullptr;
 #endif
   for (nsIContent* child = aAnonParent->GetFirstChild();
        child;
