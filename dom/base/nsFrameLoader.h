@@ -109,9 +109,9 @@ public:
 
   already_AddRefed<nsILoadContext> LoadContext();
 
-  void LoadFrame(mozilla::ErrorResult& aRv);
+  void LoadFrame(bool aOriginalSrc, mozilla::ErrorResult& aRv);
 
-  void LoadURI(nsIURI* aURI, mozilla::ErrorResult& aRv);
+  void LoadURI(nsIURI* aURI, bool aOriginalSrc, mozilla::ErrorResult& aRv);
 
   
 
@@ -121,7 +121,8 @@ public:
 
 
 
-  nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
+  nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
+                   bool aOriginalSrc);
 
   void SetIsPrerendered(mozilla::ErrorResult& aRv);
 
@@ -502,6 +503,10 @@ private:
   
   
   bool mNetworkCreated : 1;
+
+  
+  
+  bool mLoadingOriginalSrc : 1;
 
   bool mRemoteBrowserShown : 1;
   bool mRemoteFrame : 1;

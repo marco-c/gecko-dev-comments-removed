@@ -36,6 +36,7 @@ public:
                             mozilla::dom::FromParser aFromParser)
     : nsGenericHTMLElement(aNodeInfo)
     , nsBrowserElement()
+    , mSrcLoadHappened(false)
     , mNetworkCreated(aFromParser == mozilla::dom::FROM_PARSER_NETWORK)
     , mIsPrerendered(false)
     , mBrowserFrameListenersRegistered(false)
@@ -124,6 +125,11 @@ protected:
   nsCOMPtr<nsPIDOMWindowOuter> mOpenerWindow;
 
   nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
+
+  
+
+
+  bool mSrcLoadHappened;
 
   
 
