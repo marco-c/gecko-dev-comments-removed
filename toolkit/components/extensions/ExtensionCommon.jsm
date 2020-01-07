@@ -85,6 +85,11 @@ class NoCloneSpreadArgs {
   }
 }
 
+
+
+
+
+
 class ExtensionAPI extends ExtensionUtils.EventEmitter {
   constructor(extension) {
     super();
@@ -176,6 +181,13 @@ var ExtensionAPIs = {
     this.apis.delete(namespace);
   },
 };
+
+
+
+
+
+
+
 
 class BaseContext {
   constructor(envType, extension) {
@@ -1519,6 +1531,17 @@ defineLazyGetter(LocaleData.prototype, "availableLocales", function() {
   return new Set([this.BUILTIN, this.selectedLocale, this.defaultLocale]
                  .filter(locale => this.messages.has(locale)));
 });
+
+
+
+
+
+
+
+
+
+
+
 
 
 
