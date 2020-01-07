@@ -236,23 +236,29 @@ public final class EventDispatcher extends JNIObject {
 
     public void dispatch(final String type, final GeckoBundle message,
                          final EventCallback callback) {
+        final boolean isGeckoReady;
         synchronized (this) {
-            if (isReadyForDispatchingToGecko() && mAttachedToGecko &&
-                hasGeckoListener(type)) {
+            isGeckoReady = isReadyForDispatchingToGecko();
+            if (isGeckoReady && mAttachedToGecko && hasGeckoListener(type)) {
                 dispatchToGecko(type, message, JavaCallbackDelegate.wrap(callback));
                 return;
             }
         }
 
-        if (!dispatchToThreads(type, message,  callback)) {
-            Log.w(LOGTAG, "No listener for " + type);
-        }
+        dispatchToThreads(type, message, callback, isGeckoReady);
     }
 
     @WrapForJNI(calledFrom = "gecko")
     private boolean dispatchToThreads(final String type,
                                       final GeckoBundle message,
                                       final EventCallback callback) {
+        return dispatchToThreads(type, message, callback,  true);
+    }
+
+    private boolean dispatchToThreads(final String type,
+                                      final GeckoBundle message,
+                                      final EventCallback callback,
+                                      final boolean isGeckoReady) {
         final List<BundleEventListener> geckoListeners;
         synchronized (mGeckoThreadListeners) {
             geckoListeners = mGeckoThreadListeners.get(type);
@@ -289,7 +295,7 @@ public final class EventDispatcher extends JNIObject {
             return true;
         }
 
-        if (!isReadyForDispatchingToGecko()) {
+        if (!isGeckoReady) {
             
             
             
@@ -303,6 +309,7 @@ public final class EventDispatcher extends JNIObject {
             return true;
         }
 
+        Log.w(LOGTAG, "No listener for " + type);
         return false;
     }
 
