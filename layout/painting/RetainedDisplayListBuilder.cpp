@@ -1001,9 +1001,9 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
   
-  if (mBuilder.BuiltOverlayScrollbars()) {
+  if (mBuilder.DisablePartialUpdates()) {
     shouldBuildPartial = false;
-    mBuilder.SetBuiltOverlayScrollbars(false);
+    mBuilder.SetDisablePartialUpdates(false);
   }
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
