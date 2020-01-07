@@ -1464,7 +1464,7 @@ struct SafepointSlotEntry {
     
     uint32_t slot:31;
 
-    SafepointSlotEntry() { }
+    SafepointSlotEntry() : stack(0), slot(0) { }
     SafepointSlotEntry(bool stack, uint32_t slot)
       : stack(stack), slot(slot)
     { }
@@ -1478,7 +1478,7 @@ struct SafepointNunboxEntry {
     LAllocation type;
     LAllocation payload;
 
-    SafepointNunboxEntry() { }
+    SafepointNunboxEntry() : typeVreg(0) { }
     SafepointNunboxEntry(uint32_t typeVreg, LAllocation type, LAllocation payload)
       : typeVreg(typeVreg), type(type), payload(payload)
     { }

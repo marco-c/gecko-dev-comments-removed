@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/RematerializedFrame.h"
 
@@ -36,13 +36,16 @@ RematerializedFrame::RematerializedFrame(JSContext* cx, uint8_t* top, unsigned n
                                          InlineFrameIterator& iter, MaybeReadFallback& fallback)
   : prevUpToDate_(false),
     isDebuggee_(iter.script()->isDebuggee()),
+    hasInitialEnv_(false),
     isConstructing_(iter.isConstructing()),
     hasCachedSavedFrame_(false),
     top_(top),
     pc_(iter.pc()),
     frameNo_(iter.frameNo()),
     numActualArgs_(numActualArgs),
-    script_(iter.script())
+    script_(iter.script()),
+    envChain_(nullptr),
+    argsObj_(nullptr)
 {
     if (iter.isFunctionFrame())
         callee_ = iter.callee(fallback);
@@ -55,7 +58,7 @@ RematerializedFrame::RematerializedFrame(JSContext* cx, uint8_t* top, unsigned n
                                 fallback);
 }
 
-/* static */ RematerializedFrame*
+ RematerializedFrame*
 RematerializedFrame::New(JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
                          MaybeReadFallback& fallback)
 {
@@ -63,10 +66,10 @@ RematerializedFrame::New(JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
     unsigned argSlots = Max(numFormals, iter.numActualArgs());
     unsigned extraSlots = argSlots + iter.script()->nfixed();
 
-    // One Value slot is included in sizeof(RematerializedFrame), so we can
-    // reduce the extra slot count by one.  However, if there are zero slot
-    // allocations total, then reducing the slots by one will lead to
-    // the memory allocation being smaller  than sizeof(RematerializedFrame).
+    
+    
+    
+    
     if (extraSlots > 0)
         extraSlots -= 1;
 
@@ -80,7 +83,7 @@ RematerializedFrame::New(JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
     return new (buf) RematerializedFrame(cx, top, iter.numActualArgs(), iter, fallback);
 }
 
-/* static */ bool
+ bool
 RematerializedFrame::RematerializeInlineFrames(JSContext* cx, uint8_t* top,
                                                InlineFrameIterator& iter,
                                                MaybeReadFallback& fallback,
@@ -109,7 +112,7 @@ RematerializedFrame::RematerializeInlineFrames(JSContext* cx, uint8_t* top,
     return true;
 }
 
-/* static */ void
+ void
 RematerializedFrame::FreeInVector(GCVector<RematerializedFrame*>& frames)
 {
     for (size_t i = 0; i < frames.length(); i++) {
