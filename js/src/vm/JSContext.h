@@ -34,6 +34,7 @@ class DebugModeOSRVolatileJitFrameIter;
 } 
 
 namespace gc {
+class AutoCheckCanAccessAtomsDuringGC;
 class AutoSuppressNurseryCellAlloc;
 }
 
@@ -264,14 +265,14 @@ struct JSContext : public JS::RootingContext,
     inline js::Handle<js::GlobalObject*> global() const;
 
     
-    js::AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
-        return runtime_->atoms(lock);
+    js::AtomSet& atoms(const js::AutoAccessAtomsZone& access) {
+        return runtime_->atoms(access);
     }
-    const JS::Zone* atomsZone(js::AutoLockForExclusiveAccess& lock) {
-        return runtime_->atomsZone(lock);
+    const JS::Zone* atomsZone(const js::AutoAccessAtomsZone& access) {
+        return runtime_->atomsZone(access);
     }
-    js::SymbolRegistry& symbolRegistry(js::AutoLockForExclusiveAccess& lock) {
-        return runtime_->symbolRegistry(lock);
+    js::SymbolRegistry& symbolRegistry(const js::AutoAccessAtomsZone& access) {
+        return runtime_->symbolRegistry(access);
     }
     js::ScriptDataTable& scriptDataTable(js::AutoLockScriptData& lock) {
         return runtime_->scriptDataTable(lock);
@@ -540,6 +541,8 @@ struct JSContext : public JS::RootingContext,
     js::ThreadData<unsigned> compactingDisabledCount;
 
     bool canCollectAtoms() const {
+        
+        
         return !runtime()->hasHelperThreadZones();
     }
 
@@ -1168,6 +1171,22 @@ class MOZ_RAII AutoLockScriptData
     }
 
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS AutoAccessAtomsZone
+{
+  public:
+    MOZ_IMPLICIT AutoAccessAtomsZone(const AutoLockForExclusiveAccess& lock) {}
+    MOZ_IMPLICIT AutoAccessAtomsZone(const gc::AutoCheckCanAccessAtomsDuringGC& canAccess) {}
 };
 
 class MOZ_RAII AutoKeepAtoms

@@ -221,7 +221,7 @@ gc::GCRuntime::startVerifyPreBarriers()
     incrementalState = State::MarkRoots;
 
     
-    traceRuntime(trc, prep.session());
+    traceRuntime(trc, prep.session);
 
     VerifyNode* node;
     node = trc->curnode;

@@ -14,6 +14,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Maybe.h"
 
+#include "gc/GC.h"
 #include "gc/RelocationOverlay.h"
 #include "gc/Zone.h"
 #include "vm/HelperThreads.h"
@@ -22,9 +23,32 @@
 namespace js {
 namespace gc {
 
+class MOZ_RAII AutoCheckCanAccessAtomsDuringGC
+{
+#ifdef DEBUG
+    JSRuntime* runtime;
 
+  public:
+    explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt)
+      : runtime(rt)
+    {
+        
+        MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
 
+        
+        MOZ_ASSERT(!rt->hasHelperThreadZones());
 
+        
+        runtime->setOffThreadParsingBlocked(true);
+    }
+    ~AutoCheckCanAccessAtomsDuringGC() {
+        runtime->setOffThreadParsingBlocked(false);
+    }
+#else
+  public:
+    explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt) {}
+#endif
+};
 
 class MOZ_RAII AutoTraceSession
 {
@@ -34,11 +58,18 @@ class MOZ_RAII AutoTraceSession
 
     
     
-    
     mozilla::Maybe<AutoLockForExclusiveAccess> maybeLock;
+
+    
+    
+    mozilla::Maybe<AutoCheckCanAccessAtomsDuringGC> maybeCheckAtomsAccess;
 
     AutoLockForExclusiveAccess& lock() {
         return maybeLock.ref();
+    }
+
+    AutoCheckCanAccessAtomsDuringGC& checkAtomsAccess() {
+        return maybeCheckAtomsAccess.ref();
     }
 
   protected:
@@ -52,13 +83,23 @@ class MOZ_RAII AutoTraceSession
     AutoGeckoProfilerEntry profilingStackFrame;
 };
 
-class MOZ_RAII AutoPrepareForTracing
-{
-    mozilla::Maybe<AutoTraceSession> session_;
 
-  public:
+
+
+
+struct MOZ_RAII AutoPrepareForTracing
+{
+    struct AutoFinishGC
+    {
+        explicit AutoFinishGC(JSContext* cx) {
+            FinishGC(cx);
+        }
+    };
+
+    AutoFinishGC finishGC;
+    AutoTraceSession session;
+
     explicit AutoPrepareForTracing(JSContext* cx);
-    AutoTraceSession& session() { return session_.ref(); }
 };
 
 AbortReason

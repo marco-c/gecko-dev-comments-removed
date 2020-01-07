@@ -65,17 +65,19 @@ CheckZone<Helper>::check() const
     if (OnHelperThread<Helper>())
         return;
 
-    JSContext* cx = TlsContext.get();
+    JSRuntime* runtime = TlsContext.get()->runtime();
     if (zone->isAtomsZone()) {
         
-        MOZ_ASSERT(cx->runtime()->currentThreadHasExclusiveAccess());
+        
+        MOZ_ASSERT(runtime->currentThreadHasExclusiveAccess() ||
+                   (!runtime->isOffThreadParseRunning() && runtime->isOffThreadParsingBlocked()));
     } else if (zone->usedByHelperThread()) {
         
         MOZ_ASSERT(zone->ownedByCurrentHelperThread());
     } else {
         
         
-        MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
     }
 }
 
