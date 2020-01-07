@@ -370,14 +370,7 @@ public:
   
   
   
-  T* get()
-  {
-    if (mPtr) {
-      return mPtr.get()->get();
-    }
-    return nullptr;
-  }
-  const T* get() const
+  T* get() const
   {
     if (mPtr) {
       return mPtr.get()->get();
@@ -385,8 +378,8 @@ public:
     return nullptr;
   }
 
-  operator T*() { return get(); }
-  T* operator->() MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
+  operator T*() const { return get(); }
+  T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
 
   
   bool operator==(const nsMainThreadPtrHandle<T>& aOther) const
