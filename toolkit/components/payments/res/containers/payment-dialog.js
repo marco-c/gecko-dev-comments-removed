@@ -106,6 +106,7 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
 
 
   setStateFromParent(state) {
+    let oldSavedAddresses = this.requestStore.getState().savedAddresses;
     this.requestStore.setState(state);
 
     
@@ -119,10 +120,23 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
       selectedShippingOption,
     } = state;
     let shippingOptions = state.request.paymentDetails.shippingOptions;
+    let shippingAddress = selectedShippingAddress && savedAddresses[selectedShippingAddress];
+    let oldShippingAddress = selectedShippingAddress &&
+                             oldSavedAddresses[selectedShippingAddress];
 
     
     
-    if (!savedAddresses[selectedShippingAddress]) {
+    
+    if (shippingAddress) {
+      
+      if (oldShippingAddress &&
+          shippingAddress.guid == oldShippingAddress.guid &&
+          shippingAddress.timeLastModified != oldShippingAddress.timeLastModified) {
+        delete this._cachedState.selectedShippingAddress;
+      }
+    } else {
+      
+      
       this.requestStore.setState({
         selectedShippingAddress: Object.keys(savedAddresses)[0] || null,
       });
@@ -156,7 +170,6 @@ class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
         selectedShippingOption,
       });
     }
-
 
     
     
