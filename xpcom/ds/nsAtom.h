@@ -52,10 +52,11 @@ public:
   void ToUTF8String(nsACString& aString) const;
 
   
+  
   nsStringBuffer* GetStringBuffer() const
   {
     
-    MOZ_ASSERT(IsDynamicAtom());
+    MOZ_ASSERT(IsDynamicAtom() || IsHTML5Atom());
     return nsStringBuffer::FromData(mString);
   }
 
@@ -98,7 +99,7 @@ protected:
   
   
   
-  char16_t* mString;
+  char16_t* const mString;
 };
 
 
