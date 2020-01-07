@@ -17,6 +17,29 @@
 
 using namespace mozilla;
 
+
+
+
+
+
+
+
+
+const nsACString& Unescape(const nsACString& aStr, nsACString& aBuffer,
+                           nsresult* rv)
+{
+    MOZ_ASSERT(rv);
+
+    bool appended = false;
+    *rv = NS_UnescapeURL(aStr.Data(), aStr.Length(),  0,
+                         aBuffer, appended, mozilla::fallible);
+    if (NS_FAILED(*rv) || !appended) {
+        return aStr;
+    }
+
+    return aBuffer;
+}
+
 nsresult
 nsDataChannel::OpenContentStream(bool async, nsIInputStream **result,
                                  nsIChannel** channel)
@@ -25,24 +48,41 @@ nsDataChannel::OpenContentStream(bool async, nsIInputStream **result,
 
     nsresult rv;
 
-    nsAutoCString spec;
-    rv = URI()->GetAsciiSpec(spec);
-    if (NS_FAILED(rv)) return rv;
-
-    nsCString contentType, contentCharset, dataBuffer;
-    bool lBase64;
-    rv = nsDataHandler::ParseURI(spec, contentType, &contentCharset,
-                                 lBase64, &dataBuffer);
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> uri;
+    rv = URI()->CloneIgnoringRef(getter_AddRefs(uri));
     if (NS_FAILED(rv))
         return rv;
 
-    NS_UnescapeURL(dataBuffer);
+    nsAutoCString path;
+    rv = uri->GetPathQueryRef(path);
+    if (NS_FAILED(rv))
+        return rv;
 
-    if (lBase64) {
+    nsCString contentType, contentCharset;
+    nsDependentCSubstring dataRange;
+    bool lBase64;
+    rv = nsDataHandler::ParsePathWithoutRef(path, contentType, &contentCharset,
+                                            lBase64, &dataRange);
+    if (NS_FAILED(rv))
+        return rv;
+
+    
+    nsAutoCString unescapedBuffer;
+    const nsACString& data = Unescape(dataRange, unescapedBuffer, &rv);
+    if (NS_FAILED(rv)) {
+        return rv;
+    }
+
+    if (lBase64 && &data == &unescapedBuffer) {
         
         
         
-        dataBuffer.StripWhitespace();
+        
+        unescapedBuffer.StripWhitespace();
     }
 
     nsCOMPtr<nsIInputStream> bufInStream;
@@ -59,25 +99,15 @@ nsDataChannel::OpenContentStream(bool async, nsIInputStream **result,
 
     uint32_t contentLen;
     if (lBase64) {
-        const uint32_t dataLen = dataBuffer.Length();
-        int32_t resultLen = 0;
-        if (dataLen >= 1 && dataBuffer[dataLen-1] == '=') {
-            if (dataLen >= 2 && dataBuffer[dataLen-2] == '=')
-                resultLen = dataLen-2;
-            else
-                resultLen = dataLen-1;
-        } else {
-            resultLen = dataLen;
-        }
-        resultLen = ((resultLen * 3) / 4);
-
         nsAutoCString decodedData;
-        rv = Base64Decode(dataBuffer, decodedData);
+        rv = Base64Decode(data, decodedData);
         NS_ENSURE_SUCCESS(rv, rv);
-        rv = bufOutStream->Write(decodedData.get(), resultLen, &contentLen);
+
+        rv = bufOutStream->Write(decodedData.get(), decodedData.Length(), &contentLen);
     } else {
-        rv = bufOutStream->Write(dataBuffer.get(), dataBuffer.Length(), &contentLen);
+        rv = bufOutStream->Write(data.Data(), data.Length(), &contentLen);
     }
+
     if (NS_FAILED(rv))
         return rv;
 
