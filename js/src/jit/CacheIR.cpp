@@ -3543,6 +3543,13 @@ SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objI
     if (!nobj->containsDenseElement(index) || nobj->getElementsHeader()->isFrozen())
         return false;
 
+    
+    
+    
+    
+    if (IsPropertyInitOp(JSOp(*pc_)) && !nobj->isExtensible())
+        return false;
+
     if (typeCheckInfo_.needsTypeBarrier())
         writer.guardGroupForTypeBarrier(objId, nobj->group());
     TestMatchingNativeReceiver(writer, nobj, objId);

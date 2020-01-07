@@ -9152,11 +9152,17 @@ IonBuilder::initOrSetElemDense(TemporaryTypeSet::DoubleConversion conversion,
 
     bool mayBeNonExtensible = ElementAccessMightBeNonExtensible(constraints(), obj);
 
-    if (mayBeNonExtensible && hasExtraIndexedProperty) {
+    if (mayBeNonExtensible) {
         
         
         
-        return Ok();
+        if (hasExtraIndexedProperty)
+            return Ok();
+
+        
+        
+        if (IsPropertyInitOp(JSOp(*pc)))
+            return Ok();
     }
 
     *emitted = true;
