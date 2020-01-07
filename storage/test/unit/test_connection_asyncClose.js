@@ -32,7 +32,7 @@
 
 
 add_task(async function test_asyncClose_does_not_complete_before_statements() {
-  let db = getService().openDatabase(getTestDB());
+  let db = Services.storage.openDatabase(getTestDB());
   let stmt = db.createStatement("SELECT * FROM sqlite_master");
   
   let asyncStatementPromise = executeAsync(stmt);
@@ -81,7 +81,7 @@ if (!AppConstants.DEBUG) {
 
 
 add_task(async function test_asyncClose_on_sync_db() {
-  let db = getService().openDatabase(getTestDB());
+  let db = Services.storage.openDatabase(getTestDB());
 
   
   await asyncClose(db);
