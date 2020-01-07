@@ -514,7 +514,7 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     
-    js::MainThreadData<size_t> numCompartments;
+    js::MainThreadData<size_t> numRealms;
 
     
     js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
