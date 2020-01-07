@@ -423,6 +423,16 @@ internal_CanRecordExtended() {
   return gCanRecordExtended;
 }
 
+bool
+internal_AttemptedGPUProcess() {
+  
+  bool attemptedGPUProcess = false;
+  if (auto gpm = mozilla::gfx::GPUProcessManager::Get()) {
+    attemptedGPUProcess = gpm->AttemptedGPUProcess();
+  }
+  return attemptedGPUProcess;
+}
+
 
 bool
 internal_IsEmpty(const Histogram *h)
@@ -2368,10 +2378,7 @@ TelemetryHistogram::CreateHistogramSnapshots(JSContext* aCx,
 
   
   
-  bool includeGPUProcess = false;
-  if (auto gpm = mozilla::gfx::GPUProcessManager::Get()) {
-    includeGPUProcess = gpm->AttemptedGPUProcess();
-  }
+  bool includeGPUProcess = internal_AttemptedGPUProcess();
 
   HistogramProcessSnapshotsArray processHistArray;
   {
@@ -2437,10 +2444,7 @@ TelemetryHistogram::GetKeyedHistogramSnapshots(JSContext* aCx,
 
   
   
-  bool includeGPUProcess = false;
-  if (auto gpm = mozilla::gfx::GPUProcessManager::Get()) {
-    includeGPUProcess = gpm->AttemptedGPUProcess();
-  }
+  bool includeGPUProcess = internal_AttemptedGPUProcess();
 
   
   KeyedHistogramProcessSnapshotsArray processHistArray;
