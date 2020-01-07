@@ -84,6 +84,8 @@ function startup() {
                     "GeckoViewRemoteDebugger");
   ModuleManager.add("resource://gre/modules/GeckoViewTrackingProtection.jsm",
                     "GeckoViewTrackingProtection");
+  ModuleManager.add("resource://gre/modules/GeckoViewSelectionAction.jsm",
+                    "GeckoViewSelectionAction");
 
   
   
