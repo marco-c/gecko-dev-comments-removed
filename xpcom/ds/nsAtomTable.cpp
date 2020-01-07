@@ -55,25 +55,6 @@ enum class GCKind {
 
 
 
-class nsAtomFriend
-{
-public:
-  static void RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
-                                  uint32_t aCount);
-
-  static void AtomTableClearEntry(PLDHashTable* aTable,
-                                  PLDHashEntryHdr* aEntry);
-
-  static void GCAtomTableLocked(const MutexAutoLock& aProofOfLock,
-                                GCKind aKind);
-
-  static already_AddRefed<nsAtom> Atomize(const nsACString& aUTF8String);
-  static already_AddRefed<nsAtom> Atomize(const nsAString& aUTF16String);
-  static already_AddRefed<nsAtom> AtomizeMainThread(const nsAString& aUTF16Str);
-};
-
-
-
 
 
 
@@ -178,14 +159,6 @@ nsAtom::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 
 
-
-
-
-
-
-static PLDHashTable* gAtomTable;
-static Mutex* gAtomTableLock;
-
 struct AtomTableKey
 {
   AtomTableKey(const char16_t* aUTF16String, uint32_t aLength, uint32_t aHash)
@@ -250,6 +223,60 @@ struct AtomTableEntry : public PLDHashEntryHdr
 static nsAtom*
   sRecentlyUsedMainThreadAtoms[RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE] = {};
 
+
+
+
+
+
+
+class nsAtomSubTable
+{
+  friend class nsAtomTable;
+  Mutex mLock;
+  PLDHashTable mTable;
+  nsAtomSubTable();
+  void GCLocked(GCKind aKind);
+  size_t SizeOfExcludingThisLocked(MallocSizeOf aMallocSizeOf);
+
+  AtomTableEntry* Add(AtomTableKey& aKey)
+  {
+    mLock.AssertCurrentThreadOwns();
+    return static_cast<AtomTableEntry*>(mTable.Add(&aKey)); 
+  }
+};
+
+
+
+class nsAtomTable
+{
+public:
+  nsAtomSubTable& SelectSubTable(AtomTableKey& aKey);
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf);
+  void GC(GCKind aKind);
+  already_AddRefed<nsAtom> Atomize(const nsAString& aUTF16String);
+  already_AddRefed<nsAtom> Atomize(const nsACString& aUTF8String);
+  already_AddRefed<nsAtom> AtomizeMainThread(const nsAString& aUTF16String);
+  void RegisterStaticAtoms(const nsStaticAtomSetup* aSetup, uint32_t aCount);
+
+  
+  
+  
+  size_t RacySlowCount();
+
+  
+  
+  static void AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
+
+  
+  const static size_t kNumSubTables = 1; 
+
+private:
+  nsAtomSubTable mSubTables[kNumSubTables];
+};
+
+
+static nsAtomTable* gAtomTable;
+
 static PLDHashNumber
 AtomTableGetHash(const void* aKey)
 {
@@ -274,7 +301,7 @@ AtomTableMatchKey(const PLDHashEntryHdr* aEntry, const void* aKey)
 }
 
 void
-nsAtomFriend::AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
+nsAtomTable::AtomTableClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
 {
   auto entry = static_cast<AtomTableEntry*>(aEntry);
   nsAtom* atom = entry->mAtom;
@@ -296,7 +323,7 @@ static const PLDHashTableOps AtomTableOps = {
   AtomTableGetHash,
   AtomTableMatchKey,
   PLDHashTable::MoveEntryStub,
-  nsAtomFriend::AtomTableClearEntry,
+  nsAtomTable::AtomTableClearEntry,
   AtomTableInitEntry
 };
 
@@ -311,20 +338,117 @@ static const PLDHashTableOps AtomTableOps = {
 
 
 
-#define ATOM_HASHTABLE_INITIAL_LENGTH  4096
 
-void
-nsAtomFriend::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
+
+
+
+
+#define INITIAL_SUBTABLE_LENGTH (4096 / nsAtomTable::kNumSubTables)
+
+nsAtomSubTable&
+nsAtomTable::SelectSubTable(AtomTableKey& aKey)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static_assert((kNumSubTables & (kNumSubTables - 1)) == 0, "must be power of two");
+  return mSubTables[aKey.mHash & (kNumSubTables - 1)];
+}
+
+size_t
+nsAtomTable::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  size_t size = aMallocSizeOf(this);
+  for (auto& table : mSubTables) {
+    MutexAutoLock lock(table.mLock);
+    size += table.SizeOfExcludingThisLocked(aMallocSizeOf);
+  }
+
+  return size;
+}
+
+void nsAtomTable::GC(GCKind aKind)
 {
   MOZ_ASSERT(NS_IsMainThread());
   for (uint32_t i = 0; i < RECENTLY_USED_MAIN_THREAD_ATOM_CACHE_SIZE; ++i) {
     sRecentlyUsedMainThreadAtoms[i] = nullptr;
   }
 
+  
+  
+  for (auto& table: mSubTables) {
+    MutexAutoLock lock(table.mLock);
+    table.GCLocked(aKind);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT_IF(aKind == GCKind::Shutdown, gUnusedAtomCount == 0);
+}
+
+size_t
+nsAtomTable::RacySlowCount()
+{
+  
+  GC(GCKind::RegularOperation);
+  size_t count = 0;
+  for (auto& table: mSubTables) {
+    MutexAutoLock lock(table.mLock);
+    count += table.mTable.EntryCount();
+  }
+
+  return count;
+}
+
+nsAtomSubTable::nsAtomSubTable()
+  : mLock("Atom Sub-Table Lock")
+  , mTable(&AtomTableOps, sizeof(AtomTableEntry), INITIAL_SUBTABLE_LENGTH)
+{
+}
+
+void
+nsAtomSubTable::GCLocked(GCKind aKind)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  mLock.AssertCurrentThreadOwns();
+
   int32_t removedCount = 0; 
   nsAutoCString nonZeroRefcountAtoms;
   uint32_t nonZeroRefcountAtomsCount = 0;
-  for (auto i = gAtomTable->Iter(); !i.Done(); i.Next()) {
+  for (auto i = mTable.Iter(); !i.Done(); i.Next()) {
     auto entry = static_cast<AtomTableEntry*>(i.Get());
     if (entry->mAtom->IsStaticAtom()) {
       continue;
@@ -362,31 +486,15 @@ nsAtomFriend::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
     NS_ASSERTION(nonZeroRefcountAtomsCount == 0, msg.get());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT_IF(aKind == GCKind::Shutdown, removedCount == gUnusedAtomCount);
-
   gUnusedAtomCount -= removedCount;
 }
 
 static void
 GCAtomTable()
 {
+  MOZ_ASSERT(gAtomTable);
   if (NS_IsMainThread()) {
-    MutexAutoLock lock(*gAtomTableLock);
-    nsAtomFriend::GCAtomTableLocked(lock, GCKind::RegularOperation);
+    gAtomTable->GC(GCKind::RegularOperation);
   }
 }
 
@@ -499,9 +607,7 @@ void
 NS_InitAtomTable()
 {
   MOZ_ASSERT(!gAtomTable);
-  gAtomTable = new PLDHashTable(&AtomTableOps, sizeof(AtomTableEntry),
-                                ATOM_HASHTABLE_INITIAL_LENGTH);
-  gAtomTableLock = new Mutex("Atom Table Lock");
+  gAtomTable = new nsAtomTable();
 
   
   
@@ -515,34 +621,28 @@ NS_InitAtomTable()
 void
 NS_ShutdownAtomTable()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(gAtomTable);
   delete gStaticAtomTable;
   gStaticAtomTable = nullptr;
 
 #ifdef NS_FREE_PERMANENT_DATA
   
   
-  {
-    MutexAutoLock lock(*gAtomTableLock);
-    nsAtomFriend::GCAtomTableLocked(lock, GCKind::Shutdown);
-  }
+  gAtomTable->GC(GCKind::Shutdown);
 #endif
 
   delete gAtomTable;
   gAtomTable = nullptr;
-  delete gAtomTableLock;
-  gAtomTableLock = nullptr;
 }
 
 void
 NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
                                  size_t* aMain, size_t* aStatic)
 {
-  MutexAutoLock lock(*gAtomTableLock);
-  *aMain = gAtomTable->ShallowSizeOfIncludingThis(aMallocSizeOf);
-  for (auto iter = gAtomTable->Iter(); !iter.Done(); iter.Next()) {
-    auto entry = static_cast<AtomTableEntry*>(iter.Get());
-    *aMain += entry->mAtom->SizeOfIncludingThis(aMallocSizeOf);
-  }
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(gAtomTable);
+  *aMain = gAtomTable->SizeOfIncludingThis(aMallocSizeOf);
 
   
   
@@ -551,30 +651,26 @@ NS_SizeOfAtomTablesIncludingThis(MallocSizeOf aMallocSizeOf,
            : 0;
 }
 
-static inline AtomTableEntry*
-GetAtomHashEntry(const char* aString, uint32_t aLength, uint32_t* aHashOut)
+size_t
+nsAtomSubTable::SizeOfExcludingThisLocked(MallocSizeOf aMallocSizeOf)
 {
-  gAtomTableLock->AssertCurrentThreadOwns();
-  AtomTableKey key(aString, aLength, aHashOut);
-  
-  return static_cast<AtomTableEntry*>(gAtomTable->Add(&key));
-}
+  mLock.AssertCurrentThreadOwns();
+  size_t size = mTable.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (auto iter = mTable.Iter(); !iter.Done(); iter.Next()) {
+    auto entry = static_cast<AtomTableEntry*>(iter.Get());
+    size += entry->mAtom->SizeOfIncludingThis(aMallocSizeOf);
+  }
 
-static inline AtomTableEntry*
-GetAtomHashEntry(const char16_t* aString, uint32_t aLength, uint32_t* aHashOut)
-{
-  gAtomTableLock->AssertCurrentThreadOwns();
-  AtomTableKey key(aString, aLength, aHashOut);
-  
-  return static_cast<AtomTableEntry*>(gAtomTable->Add(&key));
+  return size;
 }
 
 void
-nsAtomFriend::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
-                                  uint32_t aCount)
+nsAtomTable::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
+                                 uint32_t aCount)
 {
-  MutexAutoLock lock(*gAtomTableLock);
-
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(!gStaticAtomTableSealed,
                      "Atom table has already been sealed!");
 
@@ -591,7 +687,10 @@ nsAtomFriend::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
     uint32_t stringLen = NS_strlen(string);
 
     uint32_t hash;
-    AtomTableEntry* he = GetAtomHashEntry(string, stringLen, &hash);
+    AtomTableKey key(string, stringLen, &hash);
+    nsAtomSubTable& table = SelectSubTable(key);
+    MutexAutoLock lock(table.mLock);
+    AtomTableEntry* he = table.Add(key);
 
     nsStaticAtom* atom;
     if (he->mAtom) {
@@ -624,23 +723,25 @@ nsAtomFriend::RegisterStaticAtoms(const nsStaticAtomSetup* aSetup,
 void
 RegisterStaticAtoms(const nsStaticAtomSetup* aSetup, uint32_t aCount)
 {
-  nsAtomFriend::RegisterStaticAtoms(aSetup, aCount);
+  MOZ_ASSERT(gAtomTable);
+  gAtomTable->RegisterStaticAtoms(aSetup, aCount);
 }
 
 already_AddRefed<nsAtom>
 NS_Atomize(const char* aUTF8String)
 {
-  return nsAtomFriend::Atomize(nsDependentCString(aUTF8String));
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->Atomize(nsDependentCString(aUTF8String));
 }
 
 already_AddRefed<nsAtom>
-nsAtomFriend::Atomize(const nsACString& aUTF8String)
+nsAtomTable::Atomize(const nsACString& aUTF8String)
 {
-  MutexAutoLock lock(*gAtomTableLock);
   uint32_t hash;
-  AtomTableEntry* he = GetAtomHashEntry(aUTF8String.Data(),
-                                        aUTF8String.Length(),
-                                        &hash);
+  AtomTableKey key(aUTF8String.Data(), aUTF8String.Length(), &hash);
+  nsAtomSubTable& table = SelectSubTable(key);
+  MutexAutoLock lock(table.mLock);
+  AtomTableEntry* he = table.Add(key);
 
   if (he->mAtom) {
     RefPtr<nsAtom> atom = he->mAtom;
@@ -664,23 +765,25 @@ nsAtomFriend::Atomize(const nsACString& aUTF8String)
 already_AddRefed<nsAtom>
 NS_Atomize(const nsACString& aUTF8String)
 {
-  return nsAtomFriend::Atomize(aUTF8String);
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->Atomize(aUTF8String);
 }
 
 already_AddRefed<nsAtom>
 NS_Atomize(const char16_t* aUTF16String)
 {
-  return nsAtomFriend::Atomize(nsDependentString(aUTF16String));
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->Atomize(nsDependentString(aUTF16String));
 }
 
 already_AddRefed<nsAtom>
-nsAtomFriend::Atomize(const nsAString& aUTF16String)
+nsAtomTable::Atomize(const nsAString& aUTF16String)
 {
-  MutexAutoLock lock(*gAtomTableLock);
   uint32_t hash;
-  AtomTableEntry* he = GetAtomHashEntry(aUTF16String.Data(),
-                                        aUTF16String.Length(),
-                                        &hash);
+  AtomTableKey key(aUTF16String.Data(), aUTF16String.Length(), &hash);
+  nsAtomSubTable& table = SelectSubTable(key);
+  MutexAutoLock lock(table.mLock);
+  AtomTableEntry* he = table.Add(key);
 
   if (he->mAtom) {
     RefPtr<nsAtom> atom = he->mAtom;
@@ -698,11 +801,12 @@ nsAtomFriend::Atomize(const nsAString& aUTF16String)
 already_AddRefed<nsAtom>
 NS_Atomize(const nsAString& aUTF16String)
 {
-  return nsAtomFriend::Atomize(aUTF16String);
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->Atomize(aUTF16String);
 }
 
 already_AddRefed<nsAtom>
-nsAtomFriend::AtomizeMainThread(const nsAString& aUTF16String)
+nsAtomTable::AtomizeMainThread(const nsAString& aUTF16String)
 {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<nsAtom> retVal;
@@ -720,8 +824,9 @@ nsAtomFriend::AtomizeMainThread(const nsAString& aUTF16String)
     }
   }
 
-  MutexAutoLock lock(*gAtomTableLock);
-  AtomTableEntry* he = static_cast<AtomTableEntry*>(gAtomTable->Add(&key));
+  nsAtomSubTable& table = SelectSubTable(key);
+  MutexAutoLock lock(table.mLock);
+  AtomTableEntry* he = table.Add(key);
 
   if (he->mAtom) {
     retVal = he->mAtom;
@@ -739,15 +844,15 @@ nsAtomFriend::AtomizeMainThread(const nsAString& aUTF16String)
 already_AddRefed<nsAtom>
 NS_AtomizeMainThread(const nsAString& aUTF16String)
 {
-  return nsAtomFriend::AtomizeMainThread(aUTF16String);
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->AtomizeMainThread(aUTF16String);
 }
 
 nsrefcnt
 NS_GetNumberOfAtoms(void)
 {
-  GCAtomTable(); 
-  MutexAutoLock lock(*gAtomTableLock);
-  return gAtomTable->EntryCount();
+  MOZ_ASSERT(gAtomTable);
+  return gAtomTable->RacySlowCount();
 }
 
 int32_t
@@ -768,5 +873,6 @@ NS_GetStaticAtom(const nsAString& aUTF16String)
 void
 NS_SealStaticAtomTable()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   gStaticAtomTableSealed = true;
 }

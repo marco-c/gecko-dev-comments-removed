@@ -79,7 +79,8 @@ public:
   typedef mozilla::TrueType HasThreadSafeRefCnt;
 
 private:
-  friend class nsAtomFriend;
+  friend class nsAtomTable;
+  friend class nsAtomSubTable;
   friend class nsHtml5AtomEntry;
 
   
@@ -121,7 +122,7 @@ public:
   }
 
 private:
-  friend class nsAtomFriend;
+  friend class nsAtomTable;
 
   
   nsStaticAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash)
@@ -151,6 +152,11 @@ already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String);
 
 
 already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
+
+
+
+
+
 
 
 nsrefcnt NS_GetNumberOfAtoms();
