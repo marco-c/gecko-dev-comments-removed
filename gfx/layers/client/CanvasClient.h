@@ -16,8 +16,6 @@
 #include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/PersistentBufferProvider.h"
 
-
-#undef None
 #include "mozilla/MaybeOneOf.h"
 
 #include "mozilla/mozalloc.h"           
