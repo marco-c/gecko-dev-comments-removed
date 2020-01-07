@@ -30,6 +30,8 @@ this.Memory = {
 
 
 
+
+
   summary() {
     if (!this._pendingPromise) {
       this._pendingPromise = new Promise((resolve) => {
@@ -65,7 +67,8 @@ this.Memory = {
                    .getService(Ci.nsIMemoryReporterManager);
     let rss = memMgr.resident;
     let uss = memMgr.residentUnique;
-    this._summaries.Parent = { uss, rss };
+    let ghosts = memMgr.ghostWindows;
+    this._summaries.Parent = { uss, rss, ghosts };
     this._pendingResolve(this._summaries);
     this._pendingResolve = null;
     this._summaries = null;
