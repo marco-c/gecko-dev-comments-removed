@@ -142,6 +142,9 @@ public class TabStrip extends ThemedLinearLayout
                     
                     tabStripView.selectTab(tab);
                     setPrivateMode(tab.isPrivate());
+                    tabStripView.updateTab(tab);
+                    break;
+
                 case UNSELECTED:
                     
                 case TITLE:
