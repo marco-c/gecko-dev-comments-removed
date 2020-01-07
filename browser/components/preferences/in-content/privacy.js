@@ -29,6 +29,9 @@ const TRACKING_PROTECTION_KEY = "websites.trackingProtectionMode";
 const TRACKING_PROTECTION_PREFS = ["privacy.trackingprotection.enabled",
                                    "privacy.trackingprotection.pbmode.enabled"];
 
+const PREF_OPT_OUT_STUDIES_ENABLED = "app.shield.optoutstudies.enabled";
+const PREF_NORMANDY_ENABLED = "app.normandy.enabled";
+
 XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
   try {
     let alertsService = Cc["@mozilla.org/alerts-service;1"]
@@ -111,7 +114,17 @@ Preferences.addAll([
 
   { id: "browser.safebrowsing.downloads.remote.block_potentially_unwanted", type: "bool" },
   { id: "browser.safebrowsing.downloads.remote.block_uncommon", type: "bool" },
+
 ]);
+
+
+if (AppConstants.MOZ_DATA_REPORTING) {
+  Preferences.addAll([
+    
+    { id: PREF_OPT_OUT_STUDIES_ENABLED, type: "bool" },
+    { id: PREF_UPLOAD_ENABLED, type: "bool" },
+  ]);
+}
 
 
 if (AppConstants.NIGHTLY_BUILD) {
@@ -380,6 +393,7 @@ var gPrivacyPane = {
       this.initSubmitHealthReport();
       setEventListener("submitHealthReportBox", "command",
         gPrivacyPane.updateSubmitHealthReport);
+      this.initOptOutStudyCheckbox();
     }
     this._initA11yState();
     let signonBundle = document.getElementById("signonBundle");
@@ -1363,6 +1377,68 @@ var gPrivacyPane = {
   updateSubmitHealthReport() {
     let checkbox = document.getElementById("submitHealthReportBox");
     Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
+  },
+
+
+  
+
+
+
+  initOptOutStudyCheckbox(doc) {
+    const allowedByPolicy = Services.policies.isAllowed("Shield");
+    const checkbox = document.getElementById("optOutStudiesEnabled");
+
+    function updateStudyCheckboxState() {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      const checkboxMatchesPref = (
+        allowedByPolicy &&
+        Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED, false) &&
+        Services.prefs.getBoolPref(PREF_NORMANDY_ENABLED, false)
+      );
+
+      if (checkboxMatchesPref) {
+        if (Services.prefs.getBoolPref(PREF_OPT_OUT_STUDIES_ENABLED, false)) {
+          checkbox.setAttribute("checked", "checked");
+        } else {
+          checkbox.removeAttribute("checked");
+        }
+        checkbox.setAttribute("preference", PREF_OPT_OUT_STUDIES_ENABLED);
+      } else {
+        checkbox.removeAttribute("preference");
+        checkbox.removeAttribute("checked");
+      }
+
+      const isDisabled = (
+        !allowedByPolicy ||
+        Services.prefs.prefIsLocked(PREF_OPT_OUT_STUDIES_ENABLED) ||
+        !Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED, false)
+      );
+
+      
+      
+      if (isDisabled) {
+        checkbox.setAttribute("disabled", "true");
+      } else {
+        checkbox.removeAttribute("disabled");
+      }
+    }
+    Preferences.get(PREF_UPLOAD_ENABLED).on("change", updateStudyCheckboxState);
+    updateStudyCheckboxState();
   },
 
   observe(aSubject, aTopic, aData) {
