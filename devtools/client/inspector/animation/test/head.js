@@ -219,6 +219,24 @@ const waitForAllSummaryGraph = async function (animationInspector) {
 
 
 
+function assertLinearGradient(linearGradientEl, offset, expectedColor) {
+  const stopEl = findStopElement(linearGradientEl, offset);
+  ok(stopEl, `stop element at offset ${ offset } should exist`);
+  is(stopEl.getAttribute("stop-color"), expectedColor,
+    `stop-color of stop element at offset ${ offset } should be ${ expectedColor }`);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -289,6 +307,26 @@ function findAnimationItemElementsByTargetClassName(panel, targetClassName) {
 
     if (className === targetClassName) {
       return animationTargetEl.closest(".animation-item");
+    }
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+function findStopElement(linearGradientEl, offset) {
+  for (const stopEl of linearGradientEl.querySelectorAll("stop")) {
+    if (offset <= parseFloat(stopEl.getAttribute("offset"))) {
+      return stopEl;
     }
   }
 
