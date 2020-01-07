@@ -221,18 +221,16 @@ function parseRegExp(aStr) {
 
 function Blocklist() {
   Services.obs.addObserver(this, "xpcom-shutdown");
+  Services.obs.addObserver(this, "sessionstore-windows-restored");
   gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
   gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
   gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
                              MAX_BLOCK_LEVEL);
   Services.prefs.addObserver("extensions.blocklist.", this);
   Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
-  
-  
-  if (AppConstants.MOZ_BUILD_APP != "browser") {
-    this.loadBlocklistAsync();
-  }
   this.wrappedJSObject = this;
+  
+  Services.ppmm.addMessageListener("Blocklist:content-blocklist-updated", this);
 }
 
 Blocklist.prototype = {
@@ -284,7 +282,23 @@ Blocklist.prototype = {
           break;
       }
       break;
+    case "sessionstore-windows-restored":
+      Services.obs.removeObserver(this, "sessionstore-windows-restored");
+      this._preloadBlocklist();
+      break;
     }
+  },
+
+  
+  receiveMessage(aMsg) {
+    switch (aMsg.name) {
+      case "Blocklist:content-blocklist-updated":
+        Services.obs.notifyObservers(null, "content-blocklist-updated");
+        break;
+      default:
+        throw new Error("Unknown blocklist message received from content: " + aMsg.name);
+    }
+    return undefined;
   },
 
   
@@ -783,13 +797,13 @@ Blocklist.prototype = {
     this._pluginEntries = null;
   },
 
-  async loadBlocklistAsync() {
+  async _preloadBlocklist() {
     let profPath = OS.Path.join(OS.Constants.Path.profileDir, FILE_BLOCKLIST);
     try {
       await this._preloadBlocklistFile(profPath);
       return;
     } catch (e) {
-      LOG("Blocklist::loadBlocklistAsync: Failed to load XML file " + e);
+      LOG("Blocklist::_preloadBlocklist: Failed to load XML file " + e);
     }
 
     var appFile = FileUtils.getFile(KEY_APPDIR, [FILE_BLOCKLIST]);
@@ -797,10 +811,10 @@ Blocklist.prototype = {
       await this._preloadBlocklistFile(appFile.path);
       return;
     } catch (e) {
-      LOG("Blocklist::loadBlocklistAsync: Failed to load XML file " + e);
+      LOG("Blocklist::_preloadBlocklist: Failed to load XML file " + e);
     }
 
-    LOG("Blocklist::loadBlocklistAsync: no XML File found");
+    LOG("Blocklist::_preloadBlocklist: no XML File found");
   },
 
   async _preloadBlocklistFile(path) {
