@@ -286,12 +286,32 @@ class PerHandlerParser
     using Node = typename ParseHandler::Node;
 
   protected:
+    
+    ParseHandler handler;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void* internalSyntaxParser_;
+
+  protected:
     PerHandlerParser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
                      const char16_t* chars, size_t length, bool foldConstants,
                      UsedNameTracker& usedNames, LazyScript* lazyOuterFunction);
-
-    
-    ParseHandler handler;
 
     static Node null() { return ParseHandler::null(); }
 
@@ -324,6 +344,34 @@ class PerHandlerParser
     Node newThisName();
     Node newDotGeneratorName();
 
+    
+    
+    
+    
+    
+    inline void disableSyntaxParser();
+
+    
+    
+    
+    
+    
+    
+    inline bool abortIfSyntaxParser();
+
+    
+    
+    
+    
+    
+    inline bool hadAbortedSyntaxParse();
+
+    
+    
+    
+    
+    inline void clearAbortedSyntaxParse();
+
   public:
     bool isValidSimpleAssignmentTarget(Node node,
                                        FunctionCallBehavior behavior = ForbidAssignmentToFunctionCalls);
@@ -332,6 +380,68 @@ class PerHandlerParser
                                 Directives directives, GeneratorKind generatorKind,
                                 FunctionAsyncKind asyncKind);
 };
+
+#define ABORTED_SYNTAX_PARSE_SENTINEL reinterpret_cast<void*>(0x1)
+
+template<>
+inline void
+PerHandlerParser<SyntaxParseHandler>::disableSyntaxParser()
+{
+}
+
+template<>
+inline bool
+PerHandlerParser<SyntaxParseHandler>::abortIfSyntaxParser()
+{
+    internalSyntaxParser_ = ABORTED_SYNTAX_PARSE_SENTINEL;
+    return false;
+}
+
+template<>
+inline bool
+PerHandlerParser<SyntaxParseHandler>::hadAbortedSyntaxParse()
+{
+    return internalSyntaxParser_ == ABORTED_SYNTAX_PARSE_SENTINEL;
+}
+
+template<>
+inline void
+PerHandlerParser<SyntaxParseHandler>::clearAbortedSyntaxParse()
+{
+    internalSyntaxParser_ = nullptr;
+}
+
+#undef ABORTED_SYNTAX_PARSE_SENTINEL
+
+
+
+template<>
+inline void
+PerHandlerParser<FullParseHandler>::disableSyntaxParser()
+{
+    internalSyntaxParser_ = nullptr;
+}
+
+template<>
+inline bool
+PerHandlerParser<FullParseHandler>::abortIfSyntaxParser()
+{
+    disableSyntaxParser();
+    return true;
+}
+
+template<>
+inline bool
+PerHandlerParser<FullParseHandler>::hadAbortedSyntaxParse()
+{
+    return false;
+}
+
+template<>
+inline void
+PerHandlerParser<FullParseHandler>::clearAbortedSyntaxParse()
+{
+}
 
 enum class ExpressionClosure { Allowed, Forbidden };
 
@@ -367,6 +477,7 @@ class GeneralParser
     using FinalParser = Parser<ParseHandler, CharT>;
     using Node = typename ParseHandler::Node;
     using typename Base::InvokedPrediction;
+    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
 
   protected:
     using Modifier = TokenStreamShared::Modifier;
@@ -398,6 +509,11 @@ class GeneralParser
     using Base::setLocalStrictMode;
     using Base::traceListHead;
     using Base::yieldExpressionsSupported;
+
+    using Base::disableSyntaxParser;
+    using Base::abortIfSyntaxParser;
+    using Base::hadAbortedSyntaxParse;
+    using Base::clearAbortedSyntaxParse;
 
   public:
     using Base::anyChars;
@@ -548,22 +664,19 @@ class GeneralParser
         void transferErrorsTo(PossibleError* other);
     };
 
-  protected:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    using SyntaxParser = Parser<SyntaxParseHandler, CharT>;
-    SyntaxParser* syntaxParser_;
-
   private:
-    inline bool abortIfSyntaxParser();
+    
+    
+    using Base::internalSyntaxParser_;
+
+  protected:
+    SyntaxParser* getSyntaxParser() const {
+        return reinterpret_cast<SyntaxParser*>(internalSyntaxParser_);
+    }
+
+    void setSyntaxParser(SyntaxParser* syntaxParser) {
+        internalSyntaxParser_ = syntaxParser;
+    }
 
   public:
     using TokenStream = TokenStreamSpecific<CharT, ParserAnyCharsAccess<GeneralParser>>;
@@ -1004,7 +1117,9 @@ class Parser<SyntaxParseHandler, CharT> final
 
   public:
     using Base::anyChars;
+    using Base::clearAbortedSyntaxParse;
     using Base::context;
+    using Base::hadAbortedSyntaxParse;
     using Base::innerFunctionForFunctionBox;
     using Base::tokenStream;
 
@@ -1034,8 +1149,11 @@ class Parser<SyntaxParseHandler, CharT> final
     using Base::ss;
     using Base::statementList;
     using Base::stringLiteral;
-    using Base::syntaxParser_;
     using Base::usedNames;
+
+  private:
+    using Base::abortIfSyntaxParser;
+    using Base::disableSyntaxParser;
 
   public:
     
@@ -1076,33 +1194,6 @@ class Parser<SyntaxParseHandler, CharT> final
 
     bool finishFunction(bool isStandaloneFunction = false);
 
-#define ABORTED_SYNTAX_PARSE_SENTINEL reinterpret_cast<SyntaxParser*>(0x1)
-
-    
-    
-    
-    bool abortIfSyntaxParser() {
-        syntaxParser_ = ABORTED_SYNTAX_PARSE_SENTINEL;
-        return false;
-    }
-
-    
-    
-    bool hadAbortedSyntaxParse() {
-        return syntaxParser_ == ABORTED_SYNTAX_PARSE_SENTINEL;
-    }
-
-    
-    void clearAbortedSyntaxParse() {
-        syntaxParser_ = nullptr;
-    }
-
-    
-    
-    void disableSyntaxParser() {}
-
-#undef ABORTED_SYNTAX_PARSE_SENTINEL
-
     bool asmJS(Node list);
 
     
@@ -1126,19 +1217,6 @@ class Parser<FullParseHandler, CharT> final
     friend class GeneralParser<FullParseHandler, CharT>;
 
   public:
-    Parser(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
-           const CharT* chars, size_t length, bool foldConstants, UsedNameTracker& usedNames,
-           SyntaxParser* syntaxParser, LazyScript* lazyOuterFunction)
-      : Base(cx, alloc, options, chars, length, foldConstants, usedNames, syntaxParser,
-             lazyOuterFunction)
-    {
-        
-        
-        
-        if (options.extraWarningsOption)
-            disableSyntaxParser();
-    }
-
     using Base::Base;
 
     
@@ -1148,7 +1226,9 @@ class Parser<FullParseHandler, CharT> final
 
   public:
     using Base::anyChars;
+    using Base::clearAbortedSyntaxParse;
     using Base::functionFormalParametersAndBody;
+    using Base::hadAbortedSyntaxParse;
     using Base::handler;
     using Base::newFunctionBox;
     using Base::options;
@@ -1184,8 +1264,12 @@ class Parser<FullParseHandler, CharT> final
     using Base::propagateFreeNamesAndMarkClosedOverBindings;
     using Base::statementList;
     using Base::stringLiteral;
-    using Base::syntaxParser_;
     using Base::usedNames;
+
+    using Base::abortIfSyntaxParser;
+    using Base::disableSyntaxParser;
+    using Base::getSyntaxParser;
+    using Base::setSyntaxParser;
 
   public:
     
@@ -1247,26 +1331,6 @@ class Parser<FullParseHandler, CharT> final
                             const mozilla::Maybe<uint32_t>& parameterListEnd,
                             GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                             Directives inheritedDirectives, Directives* newDirectives);
-
-    bool abortIfSyntaxParser() {
-        disableSyntaxParser();
-        return true;
-    }
-
-    
-    
-    bool hadAbortedSyntaxParse() {
-        return false;
-    }
-
-    
-    void clearAbortedSyntaxParse() {}
-
-    
-    
-    void disableSyntaxParser() {
-        syntaxParser_ = nullptr;
-    }
 
     bool checkStatementsEOF();
 
