@@ -47,7 +47,7 @@
   document.l10n = new DOMLocalization(window, resourceIds);
 
   
-  document.l10n.ctxs.touchNext(2);
+  document.l10n.ctxs.touchNext();
 
   document.l10n.ready = documentReady().then(() => {
     document.l10n.registerObservers();

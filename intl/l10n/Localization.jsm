@@ -32,7 +32,7 @@ const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants
 
 
 
-class CachedAsyncIterable {
+class CachedIterable {
   
 
 
@@ -83,15 +83,10 @@ class CachedAsyncIterable {
 
 
 
-
-
-  async touchNext(count = 1) {
+  touchNext() {
     const { seen, iterator } = this;
-    let idx = 0;
-    while (idx++ < count) {
-      if (seen.length === 0 || seen[seen.length - 1].done === false) {
-        seen.push(await iterator.next());
-      }
+    if (seen.length === 0 || seen[seen.length - 1].done === false) {
+      seen.push(iterator.next());
     }
   }
 }
