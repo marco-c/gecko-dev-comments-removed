@@ -355,6 +355,7 @@ public:
 
 
 
+
   EditorDOMPoint
   InsertNodeIntoProperAncestor(nsIContent& aNode,
                                const EditorRawDOMPoint& aPointToInsert,

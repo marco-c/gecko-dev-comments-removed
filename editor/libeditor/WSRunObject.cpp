@@ -293,7 +293,7 @@ WSRunObject::InsertText(nsIDocument& aDocument,
     } else if (afterRun->mType == WSType::normalWS) {
       
       
-      nsresult rv = CheckLeadingNBSP(afterRun, pointToInsert.Container(),
+      nsresult rv = CheckLeadingNBSP(afterRun, pointToInsert.GetContainer(),
                                      pointToInsert.Offset());
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -695,7 +695,7 @@ WSRunObject::GetWSNodes()
     nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(start, wsBoundingParent);
     if (priorNode) {
       if (IsBlockNode(priorNode)) {
-        mStartNode = start.Container();
+        mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
         mStartReason = WSType::otherBlock;
         mStartReasonNode = priorNode;
@@ -744,7 +744,7 @@ WSRunObject::GetWSNodes()
       } else {
         
         
-        mStartNode = start.Container();
+        mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
         if (TextEditUtils::IsBreak(priorNode)) {
           mStartReason = WSType::br;
@@ -755,7 +755,7 @@ WSRunObject::GetWSNodes()
       }
     } else {
       
-      mStartNode = start.Container();
+      mStartNode = start.GetContainer();
       mStartOffset = start.Offset();
       mStartReason = WSType::thisBlock;
       mStartReasonNode = wsBoundingParent;
@@ -804,7 +804,7 @@ WSRunObject::GetWSNodes()
     if (nextNode) {
       if (IsBlockNode(nextNode)) {
         
-        mEndNode = end.Container();
+        mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
         mEndReason = WSType::otherBlock;
         mEndReasonNode = nextNode;
@@ -854,7 +854,7 @@ WSRunObject::GetWSNodes()
         
         
         
-        mEndNode = end.Container();
+        mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
         if (TextEditUtils::IsBreak(nextNode)) {
           mEndReason = WSType::br;
@@ -865,7 +865,7 @@ WSRunObject::GetWSNodes()
       }
     } else {
       
-      mEndNode = end.Container();
+      mEndNode = end.GetContainer();
       mEndOffset = end.Offset();
       mEndReason = WSType::thisBlock;
       mEndReasonNode = wsBoundingParent;
@@ -1075,24 +1075,24 @@ WSRunObject::GetPreviousWSNode(const EditorDOMPoint& aPoint,
   
   MOZ_ASSERT(aPoint.IsSet() && aBlockParent);
 
-  if (aPoint.Container()->NodeType() == nsIDOMNode::TEXT_NODE) {
-    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
+  if (aPoint.IsInTextNode()) {
+    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.Container())) {
-    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
+  if (!mHTMLEditor->IsContainer(aPoint.GetContainer())) {
+    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
   if (!aPoint.Offset()) {
-    if (aPoint.Container() == aBlockParent) {
+    if (aPoint.GetContainer() == aBlockParent) {
       
       return nullptr;
     }
 
     
-    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
+    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
-  if (NS_WARN_IF(!aPoint.Container()->IsContent())) {
+  if (NS_WARN_IF(!aPoint.GetContainerAsContent())) {
     return nullptr;
   }
 
@@ -1164,26 +1164,26 @@ WSRunObject::GetNextWSNode(const EditorDOMPoint& aPoint,
   
   MOZ_ASSERT(aPoint.IsSet() && aBlockParent);
 
-  if (aPoint.Container()->NodeType() == nsIDOMNode::TEXT_NODE) {
-    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
+  if (aPoint.IsInTextNode()) {
+    return GetNextWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.Container())) {
-    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
+  if (!mHTMLEditor->IsContainer(aPoint.GetContainer())) {
+    return GetNextWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
-  if (NS_WARN_IF(!aPoint.Container()->IsContent())) {
+  if (NS_WARN_IF(!aPoint.GetContainerAsContent())) {
     return nullptr;
   }
 
   nsCOMPtr<nsIContent> nextNode = aPoint.GetChildAtOffset();
   if (!nextNode) {
-    if (aPoint.Container() == aBlockParent) {
+    if (aPoint.GetContainer() == aBlockParent) {
       
       return nullptr;
     }
 
     
-    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
+    return GetNextWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
   
@@ -1325,16 +1325,16 @@ WSRunObject::DeleteRange(const EditorRawDOMPoint& aStartPoint,
     return NS_OK;
   }
 
-  if (aStartPoint.Container() == aEndPoint.Container() &&
-      aStartPoint.Container()->GetAsText()) {
-    return mHTMLEditor->DeleteText(*aStartPoint.Container()->GetAsText(),
+  if (aStartPoint.GetContainer() == aEndPoint.GetContainer() &&
+      aStartPoint.IsInTextNode()) {
+    return mHTMLEditor->DeleteText(*aStartPoint.GetContainerAsText(),
                                    aStartPoint.Offset(),
                                    aEndPoint.Offset() - aStartPoint.Offset());
   }
 
   RefPtr<nsRange> range;
   int32_t count = mNodeArray.Length();
-  int32_t idx = mNodeArray.IndexOf(aStartPoint.Container());
+  int32_t idx = mNodeArray.IndexOf(aStartPoint.GetContainer());
   if (idx == -1) {
     
     
@@ -1346,17 +1346,17 @@ WSRunObject::DeleteRange(const EditorRawDOMPoint& aStartPoint,
       
       return NS_OK;
     }
-    if (node == aStartPoint.Container()) {
+    if (node == aStartPoint.GetContainer()) {
       if (!aStartPoint.IsEndOfContainer()) {
         nsresult rv =
           mHTMLEditor->DeleteText(*node, aStartPoint.Offset(),
-                                  aStartPoint.Container()->Length() -
+                                  aStartPoint.GetContainer()->Length() -
                                     aStartPoint.Offset());
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
-    } else if (node == aEndPoint.Container()) {
+    } else if (node == aEndPoint.GetContainer()) {
       if (!aEndPoint.IsStartOfContainer()) {
         nsresult rv = mHTMLEditor->DeleteText(*node, 0, aEndPoint.Offset());
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1366,7 +1366,7 @@ WSRunObject::DeleteRange(const EditorRawDOMPoint& aStartPoint,
       break;
     } else {
       if (!range) {
-        range = new nsRange(aStartPoint.Container());
+        range = new nsRange(aStartPoint.GetContainer());
         nsresult rv = range->SetStartAndEnd(aStartPoint, aEndPoint);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -1400,7 +1400,7 @@ WSRunObject::GetNextCharPoint(const EditorRawDOMPoint& aPoint)
 {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  int32_t idx = mNodeArray.IndexOf(aPoint.Container());
+  int32_t idx = mNodeArray.IndexOf(aPoint.GetContainer());
   if (idx == -1) {
     
     return GetNextCharPointInternal(aPoint);
@@ -1414,7 +1414,7 @@ WSRunObject::GetPreviousCharPoint(const EditorRawDOMPoint& aPoint)
 {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  int32_t idx = mNodeArray.IndexOf(aPoint.Container());
+  int32_t idx = mNodeArray.IndexOf(aPoint.GetContainer());
   if (idx == -1) {
     
     return GetPreviousCharPointInternal(aPoint);

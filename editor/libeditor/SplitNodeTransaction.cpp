@@ -24,7 +24,7 @@ SplitNodeTransaction::SplitNodeTransaction(
   , mStartOfRightNode(aStartOfRightNode)
 {
   MOZ_DIAGNOSTIC_ASSERT(aStartOfRightNode.IsSet());
-  MOZ_DIAGNOSTIC_ASSERT(aStartOfRightNode.Container()->IsContent());
+  MOZ_DIAGNOSTIC_ASSERT(aStartOfRightNode.GetContainerAsContent());
 }
 
 SplitNodeTransaction::~SplitNodeTransaction()
@@ -55,7 +55,7 @@ SplitNodeTransaction::DoTransaction()
   ErrorResult error;
   
   nsCOMPtr<nsINode> clone =
-    mStartOfRightNode.Container()->CloneNode(false, error);
+    mStartOfRightNode.GetContainer()->CloneNode(false, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
@@ -63,10 +63,10 @@ SplitNodeTransaction::DoTransaction()
     return NS_ERROR_UNEXPECTED;
   }
   mNewLeftNode = dont_AddRef(clone.forget().take()->AsContent());
-  mEditorBase->MarkNodeDirty(mStartOfRightNode.Container()->AsDOMNode());
+  mEditorBase->MarkNodeDirty(mStartOfRightNode.GetContainerAsDOMNode());
 
   
-  mParent = mStartOfRightNode.Container()->GetParentNode();
+  mParent = mStartOfRightNode.GetContainer()->GetParentNode();
   if (NS_WARN_IF(!mParent)) {
     return NS_ERROR_FAILURE;
   }
@@ -114,8 +114,8 @@ SplitNodeTransaction::UndoTransaction()
   
   
   
-  return mEditorBase->JoinNodesImpl(mStartOfRightNode.Container(), mNewLeftNode,
-                                    mParent);
+  return mEditorBase->JoinNodesImpl(mStartOfRightNode.GetContainer(),
+                                    mNewLeftNode, mParent);
 }
 
 
@@ -132,8 +132,8 @@ SplitNodeTransaction::RedoTransaction()
   }
 
   
-  if (mStartOfRightNode.Container()->IsNodeOfType(nsINode::eTEXT)) {
-    Text* rightNodeAsText = mStartOfRightNode.Container()->GetAsText();
+  if (mStartOfRightNode.IsInTextNode()) {
+    Text* rightNodeAsText = mStartOfRightNode.GetContainerAsText();
     MOZ_DIAGNOSTIC_ASSERT(rightNodeAsText);
     nsresult rv =
       rightNodeAsText->DeleteData(0, mStartOfRightNode.Offset());
@@ -141,7 +141,8 @@ SplitNodeTransaction::RedoTransaction()
       return rv;
     }
   } else {
-    nsCOMPtr<nsIContent> child = mStartOfRightNode.Container()->GetFirstChild();
+    nsCOMPtr<nsIContent> child =
+      mStartOfRightNode.GetContainer()->GetFirstChild();
     nsCOMPtr<nsIContent> nextSibling;
     for (uint32_t i = 0; i < mStartOfRightNode.Offset(); i++) {
       
@@ -154,7 +155,7 @@ SplitNodeTransaction::RedoTransaction()
       }
       nextSibling = child->GetNextSibling();
       ErrorResult error;
-      mStartOfRightNode.Container()->RemoveChild(*child, error);
+      mStartOfRightNode.GetContainer()->RemoveChild(*child, error);
       if (NS_WARN_IF(error.Failed())) {
         return error.StealNSResult();
       }
@@ -167,7 +168,7 @@ SplitNodeTransaction::RedoTransaction()
   }
   
   ErrorResult error;
-  mParent->InsertBefore(*mNewLeftNode, mStartOfRightNode.Container(), error);
+  mParent->InsertBefore(*mNewLeftNode, mStartOfRightNode.GetContainer(), error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }

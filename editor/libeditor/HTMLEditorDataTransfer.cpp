@@ -151,11 +151,12 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
       
       
       
-      pointToInsert.Set(pointToInsert.Container(), pointToInsert.Offset() + 1);
+      pointToInsert.Set(pointToInsert.GetContainer(),
+                        pointToInsert.Offset() + 1);
       if (NS_WARN_IF(!pointToInsert.Offset())) {
         
         
-        pointToInsert.SetToEndOf(pointToInsert.Container());
+        pointToInsert.SetToEndOf(pointToInsert.GetContainer());
       }
     }
   }
@@ -354,7 +355,8 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     
     
     
-    WSRunObject wsObj(this, pointToInsert.Container(), pointToInsert.Offset());
+    WSRunObject wsObj(this, pointToInsert.GetContainer(),
+                      pointToInsert.Offset());
     if (wsObj.mEndReasonNode &&
         TextEditUtils::IsBreak(wsObj.mEndReasonNode) &&
         !IsVisibleBRElement(wsObj.mEndReasonNode)) {
@@ -364,12 +366,12 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     }
 
     
-    bool bStartedInLink = IsInLink(pointToInsert.Container()->AsDOMNode());
+    bool bStartedInLink = IsInLink(pointToInsert.GetContainerAsDOMNode());
 
     
-    if (IsTextNode(pointToInsert.Container())) {
+    if (pointToInsert.IsInTextNode()) {
       SplitNodeResult splitNodeResult =
-        SplitNodeDeep(*pointToInsert.Container()->AsContent(),
+        SplitNodeDeep(*pointToInsert.GetContainerAsContent(),
                       pointToInsert.AsRaw(),
                       SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
@@ -419,14 +421,15 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                endListAndTableArray, highWaterMark);
     }
 
-    MOZ_ASSERT(pointToInsert.Container()->GetChildAt(pointToInsert.Offset()) ==
+    MOZ_ASSERT(pointToInsert.GetContainer()->
+                               GetChildAt(pointToInsert.Offset()) ==
                  pointToInsert.GetChildAtOffset());
 
     
     nsCOMPtr<nsINode> parentBlock =
-      IsBlockNode(pointToInsert.Container()) ?
-        pointToInsert.Container() :
-        GetBlockNodeParent(pointToInsert.Container());
+      IsBlockNode(pointToInsert.GetContainer()) ?
+        pointToInsert.GetContainer() :
+        GetBlockNodeParent(pointToInsert.GetContainer());
     nsCOMPtr<nsIContent> lastInsertNode;
     nsCOMPtr<nsINode> insertedContextParent;
     for (OwningNonNull<nsINode>& curNode : nodeList) {
@@ -450,9 +453,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       
       bool bDidInsert = false;
       if (HTMLEditUtils::IsTableRow(curNode) &&
-          HTMLEditUtils::IsTableRow(pointToInsert.Container()) &&
+          HTMLEditUtils::IsTableRow(pointToInsert.GetContainer()) &&
           (HTMLEditUtils::IsTable(curNode) ||
-           HTMLEditUtils::IsTable(pointToInsert.Container()))) {
+           HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
         for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
              firstChild;
              firstChild = curNode->GetFirstChild()) {
@@ -476,8 +479,8 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       
       
       else if (HTMLEditUtils::IsList(curNode) &&
-               (HTMLEditUtils::IsList(pointToInsert.Container()) ||
-                HTMLEditUtils::IsListItem(pointToInsert.Container()))) {
+               (HTMLEditUtils::IsList(pointToInsert.GetContainer()) ||
+                HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
         for (nsCOMPtr<nsIContent> firstChild = curNode->GetFirstChild();
              firstChild;
              firstChild = curNode->GetFirstChild()) {
@@ -485,15 +488,16 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
               HTMLEditUtils::IsList(firstChild)) {
             
             
-            if (HTMLEditUtils::IsListItem(pointToInsert.Container())) {
+            if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer())) {
               bool isEmpty;
-              rv = IsEmptyNode(pointToInsert.Container(), &isEmpty, true);
+              rv = IsEmptyNode(pointToInsert.GetContainer(), &isEmpty, true);
               if (NS_SUCCEEDED(rv) && isEmpty) {
-                if (NS_WARN_IF(!pointToInsert.Container()->GetParentNode())) {
+                if (NS_WARN_IF(!pointToInsert.GetContainer()->
+                                                GetParentNode())) {
                   
                 } else {
-                  DeleteNode(pointToInsert.Container());
-                  pointToInsert.Set(pointToInsert.Container());
+                  DeleteNode(pointToInsert.GetContainer());
+                  pointToInsert.Set(pointToInsert.GetContainer());
                 }
               }
             }
@@ -618,7 +622,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
         }
         
         
-        selNode = pointAtContainer.Container();
+        selNode = pointAtContainer.GetContainer();
         
         selOffset = pointAtContainer.Offset() + 1;
       }
@@ -639,7 +643,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
           
           
           EditorRawDOMPoint atStartReasonNode(wsRunObj.mStartReasonNode);
-          selNode = atStartReasonNode.Container();
+          selNode = atStartReasonNode.GetContainer();
           selOffset = atStartReasonNode.Offset();
           
           WSRunObject wsRunObj(this, selNode, selOffset);
@@ -652,7 +656,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
             
             
             atStartReasonNode.Set(wsRunObj.mStartReasonNode);
-            selNode = atStartReasonNode.Container();
+            selNode = atStartReasonNode.GetContainer();
             selOffset = atStartReasonNode.Offset() + 1;
           }
         }

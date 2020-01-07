@@ -440,17 +440,17 @@ TextEditor::CreateBRImpl(Selection& aSelection,
 
   
   RefPtr<Element> newBRElement;
-  if (IsTextNode(aPointToInsert.Container())) {
+  if (aPointToInsert.IsInTextNode()) {
     EditorDOMPoint pointInContainer;
     if (aPointToInsert.IsStartOfContainer()) {
       
-      pointInContainer.Set(aPointToInsert.Container());
+      pointInContainer.Set(aPointToInsert.GetContainer());
       if (NS_WARN_IF(!pointInContainer.IsSet())) {
         return nullptr;
       }
     } else if (aPointToInsert.IsEndOfContainer()) {
       
-      pointInContainer.Set(aPointToInsert.Container());
+      pointInContainer.Set(aPointToInsert.GetContainer());
       if (NS_WARN_IF(!pointInContainer.IsSet())) {
         return nullptr;
       }
@@ -468,7 +468,7 @@ TextEditor::CreateBRImpl(Selection& aSelection,
       }
       Unused << newLeftNode;
       
-      pointInContainer.Set(aPointToInsert.Container());
+      pointInContainer.Set(aPointToInsert.GetContainer());
     }
     
     newBRElement = CreateNode(nsGkAtoms::br, pointInContainer.AsRaw());
@@ -584,9 +584,9 @@ TextEditor::ExtendSelectionForDelete(Selection* aSelection,
         EditorRawDOMPoint insertionPoint =
           FindBetterInsertionPoint(atStartOfSelection);
 
-        if (IsTextNode(insertionPoint.Container())) {
+        if (insertionPoint.IsInTextNode()) {
           const nsTextFragment* data =
-            insertionPoint.Container()->GetAsText()->GetText();
+            insertionPoint.GetContainerAsText()->GetText();
           uint32_t offset = insertionPoint.Offset();
           if ((offset > 1 &&
                NS_IS_LOW_SURROGATE(data->CharAt(offset - 1)) &&
@@ -763,8 +763,9 @@ TextEditor::InsertLineBreak()
     MOZ_ASSERT(pointToInsert.IsSetAndValid());
 
     
-    if (!IsTextNode(pointToInsert.Container()) &&
-        !CanContainTag(*pointToInsert.Container(), *nsGkAtoms::textTagName)) {
+    if (!pointToInsert.IsInTextNode() &&
+        !CanContainTag(*pointToInsert.GetContainer(),
+                       *nsGkAtoms::textTagName)) {
       return NS_ERROR_FAILURE;
     }
 

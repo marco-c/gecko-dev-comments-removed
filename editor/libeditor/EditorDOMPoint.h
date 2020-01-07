@@ -10,8 +10,12 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/Text.h"
+#include "nsAtom.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
+#include "nsIDOMNode.h"
 #include "nsINode.h"
 
 namespace mozilla {
@@ -168,10 +172,87 @@ public:
 
   
 
+
+
   nsINode*
-  Container() const
+  GetContainer() const
   {
     return mParent;
+  }
+
+  nsIContent*
+  GetContainerAsContent() const
+  {
+    return mParent && mParent->IsContent() ? mParent->AsContent() : nullptr;
+  }
+
+  dom::Element*
+  GetContainerAsElement() const
+  {
+    return mParent && mParent->IsElement() ? mParent->AsElement() : nullptr;
+  }
+
+  dom::Text*
+  GetContainerAsText() const
+  {
+    return mParent ? mParent->GetAsText() : nullptr;
+  }
+
+  nsIDOMNode*
+  GetContainerAsDOMNode() const
+  {
+    return mParent ? mParent->AsDOMNode() : nullptr;
+  }
+
+  
+
+
+
+
+  bool
+  CanContainerHaveChildren() const
+  {
+    return mParent && mParent->IsContainerNode();
+  }
+
+  
+
+
+
+  bool
+  IsInDataNode() const
+  {
+    return mParent && mParent->IsNodeOfType(nsINode::eDATA_NODE);
+  }
+
+  
+
+
+  bool
+  IsInTextNode() const
+  {
+    return mParent && mParent->IsNodeOfType(nsINode::eTEXT);
+  }
+
+  
+
+
+
+  bool
+  IsContainerHTMLElement(nsAtom* aTag) const
+  {
+    return mParent && mParent->IsHTMLElement(aTag);
+  }
+
+  
+
+
+
+  template<typename First, typename... Args>
+  bool
+  IsContainerAnyOfHTMLElements(First aFirst, Args... aArgs) const
+  {
+    return mParent && mParent->IsAnyOfHTMLElements(aFirst, aArgs...);
   }
 
   nsIContent*
@@ -703,7 +784,7 @@ public:
     : mPoint(aPoint)
   {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    MOZ_ASSERT(mPoint.Container()->IsContainerNode());
+    MOZ_ASSERT(mPoint.CanContainerHaveChildren());
     mChild = mPoint.GetChildAtOffset();
   }
 
@@ -722,7 +803,7 @@ public:
     } else {
       
       
-      mPoint.SetToEndOf(mPoint.Container());
+      mPoint.SetToEndOf(mPoint.GetContainer());
     }
   }
 
@@ -770,7 +851,7 @@ public:
 
   void InvalidateChild()
   {
-    mPoint.Set(mPoint.Container(), mPoint.Offset());
+    mPoint.Set(mPoint.GetContainer(), mPoint.Offset());
   }
 
 private:

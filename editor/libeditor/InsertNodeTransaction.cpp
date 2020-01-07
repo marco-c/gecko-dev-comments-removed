@@ -66,14 +66,14 @@ InsertNodeTransaction::DoTransaction()
       if (!newPointToInsert.IsSet()) {
         
         
-        newPointToInsert.SetToEndOf(mPointToInsert.Container());
+        newPointToInsert.SetToEndOf(mPointToInsert.GetContainer());
         if (NS_WARN_IF(!newPointToInsert.IsSet())) {
           return NS_ERROR_FAILURE;
         }
       }
       mPointToInsert = newPointToInsert;
     } else {
-      mPointToInsert.SetToEndOf(mPointToInsert.Container());
+      mPointToInsert.SetToEndOf(mPointToInsert.GetContainer());
       if (NS_WARN_IF(!mPointToInsert.IsSet())) {
         return NS_ERROR_FAILURE;
       }
@@ -83,9 +83,9 @@ InsertNodeTransaction::DoTransaction()
   mEditorBase->MarkNodeDirty(GetAsDOMNode(mContentToInsert));
 
   ErrorResult error;
-  mPointToInsert.Container()->InsertBefore(*mContentToInsert,
-                                           mPointToInsert.GetChildAtOffset(),
-                                           error);
+  mPointToInsert.GetContainer()->InsertBefore(*mContentToInsert,
+                                              mPointToInsert.GetChildAtOffset(),
+                                              error);
   error.WouldReportJSException();
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
@@ -120,7 +120,7 @@ InsertNodeTransaction::UndoTransaction()
   
   
   ErrorResult error;
-  mPointToInsert.Container()->RemoveChild(*mContentToInsert, error);
+  mPointToInsert.GetContainer()->RemoveChild(*mContentToInsert, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
