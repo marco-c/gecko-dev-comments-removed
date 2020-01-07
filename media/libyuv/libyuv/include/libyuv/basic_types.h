@@ -13,7 +13,9 @@
 
 #include <stddef.h>  
 
-#if !defined(_MSC_VER) && (_MSC_VER < 1600)
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+#include <sys/types.h>  
+#else
 #include <stdint.h>  
 #endif
 
