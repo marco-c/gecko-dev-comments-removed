@@ -3381,6 +3381,10 @@ profiler_set_js_context(JSContext* aCx)
   }
 
   info->SetJSContext(aCx);
+
+  
+  
+  info->PollJSSampling();
 }
 
 void
@@ -3403,11 +3407,23 @@ profiler_clear_js_context()
     if (info->IsBeingProfiled()) {
       info->FlushSamplesAndMarkers(CorePS::ProcessStartTime(),
                                    ActivePS::Buffer(lock));
+
+      if (ActivePS::FeatureJS(lock)) {
+        
+        
+        
+        info->StopJSSampling();
+        info->PollJSSampling();
+
+        info->mContext = nullptr;
+
+        
+        
+        info->StartJSSampling();
+        return;
+      }
     }
   }
-
-  
-  
 
   info->mContext = nullptr;
 }

@@ -959,6 +959,11 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
     moduleLoaders = nullptr;
   }
 
+  
+  
+  
+  PROFILER_CLEAR_JS_CONTEXT();
+
   bool shutdownCollect;
 #ifdef NS_FREE_PERMANENT_DATA
   shutdownCollect = true;
@@ -984,16 +989,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   } else {
     NS_WARNING("Component Manager was never created ...");
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  PROFILER_CLEAR_JS_CONTEXT();
 
   if (sInitializedJS) {
     
