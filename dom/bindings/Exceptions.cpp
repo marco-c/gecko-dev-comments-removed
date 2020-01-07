@@ -187,7 +187,7 @@ already_AddRefed<nsIStackFrame>
 GetCurrentJSStack(int32_t aMaxDepth)
 {
   
-  JSContext* cx = nsContentUtils::GetCurrentJSContextForThread();
+  JSContext* cx = nsContentUtils::GetCurrentJSContext();
 
   if (!cx || !js::GetContextCompartment(cx)) {
     return nullptr;
