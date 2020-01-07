@@ -573,11 +573,14 @@ public:
   
   
   
-  bool IsInlineAxisMainAxis() const { return mIsInlineAxisMainAxis; }
-
   
   
+  
+  bool IsInlineAxisMainAxis() const  { return mIsInlineAxisMainAxis;  }
   bool IsInlineAxisCrossAxis() const { return !mIsInlineAxisMainAxis; }
+  bool IsBlockAxisMainAxis() const   { return !mIsInlineAxisMainAxis; }
+  bool IsBlockAxisCrossAxis() const  { return mIsInlineAxisMainAxis;  }
+
 
   WritingMode GetWritingMode() const { return mWM; }
   uint8_t GetAlignSelf() const     { return mAlignSelf; }
@@ -4865,16 +4868,16 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
 
   
   
-  bool didOverrideComputedWidth = false;
-  bool didOverrideComputedHeight = false;
+  bool didOverrideComputedISize = false;
+  bool didOverrideComputedBSize = false;
 
   
-  if (aAxisTracker.IsMainAxisHorizontal()) {
-    childReflowInput.SetComputedWidth(aItem.GetMainSize());
-    didOverrideComputedWidth = true;
+  if (aItem.IsInlineAxisMainAxis()) {
+    childReflowInput.SetComputedISize(aItem.GetMainSize());
+    didOverrideComputedISize = true;
   } else {
-    childReflowInput.SetComputedHeight(aItem.GetMainSize());
-    didOverrideComputedHeight = true;
+    childReflowInput.SetComputedBSize(aItem.GetMainSize());
+    didOverrideComputedBSize = true;
   }
 
   
@@ -4888,15 +4891,23 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
   
   if (aItem.IsStretched() ||
       aItem.HasIntrinsicRatio()) {
-    if (aAxisTracker.IsCrossAxisHorizontal()) {
-      childReflowInput.SetComputedWidth(aItem.GetCrossSize());
-      didOverrideComputedWidth = true;
+    if (aItem.IsInlineAxisCrossAxis()) {
+      childReflowInput.SetComputedISize(aItem.GetCrossSize());
+      didOverrideComputedISize = true;
     } else {
-      childReflowInput.SetComputedHeight(aItem.GetCrossSize());
-      didOverrideComputedHeight = true;
+      childReflowInput.SetComputedBSize(aItem.GetCrossSize());
+      didOverrideComputedBSize = true;
     }
   }
-  if (aItem.IsStretched() && !aAxisTracker.IsCrossAxisHorizontal()) {
+  if (aItem.IsStretched() && aItem.IsBlockAxisCrossAxis()) {
+    
+    
+    
+    
+    
+    
+    
+    
     
     aItem.Frame()->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
@@ -4909,15 +4920,15 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
   
   
   if (aItem.HadMeasuringReflow()) {
-    if (didOverrideComputedWidth) {
+    if (didOverrideComputedISize) {
       
       
       
       
-      childReflowInput.SetHResize(true);
+      childReflowInput.SetIResize(true);
     }
-    if (didOverrideComputedHeight) {
-      childReflowInput.SetVResize(true);
+    if (didOverrideComputedBSize) {
+      childReflowInput.SetBResize(true);
     }
   }
   
