@@ -16,6 +16,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "MainThreadUtils.h"
 #include "nsClassHashtable.h"
 #include "nsDebug.h"
 #include "NSPRLogModulesParser.h"
@@ -179,6 +180,7 @@ public:
     , mAddTimestamp(false)
     , mIsSync(false)
     , mRotate(0)
+    , mInitialized(false)
   {
   }
 
@@ -191,8 +193,16 @@ public:
   
 
 
+
+
+
+
+
   void Init()
   {
+    MOZ_DIAGNOSTIC_ASSERT(!mInitialized);
+    mInitialized = true;
+
     bool shouldAppend = false;
     bool addTimestamp = false;
     bool isSync = false;
@@ -213,8 +223,10 @@ public:
       }
     }
 
+    
+    
     NSPRLogModulesParser(modules,
-        [&shouldAppend, &addTimestamp, &isSync, &rotate]
+        [this, &shouldAppend, &addTimestamp, &isSync, &rotate]
             (const char* aName, LogLevel aLevel, int32_t aValue) mutable {
           if (strcmp(aName, "append") == 0) {
             shouldAppend = true;
@@ -225,7 +237,7 @@ public:
           } else if (strcmp(aName, "rotate") == 0) {
             rotate = (aValue << 20) / kRotateFilesNumber;
           } else {
-            LogModule::Get(aName)->SetLevel(aLevel);
+            this->CreateOrGetModule(aName)->SetLevel(aLevel);
           }
     });
 
@@ -513,6 +525,7 @@ private:
   Atomic<bool, Relaxed> mAddTimestamp;
   Atomic<bool, Relaxed> mIsSync;
   int32_t mRotate;
+  bool mInitialized;
 };
 
 StaticAutoPtr<LogModuleManager> sLogModuleManager;
@@ -557,6 +570,8 @@ LogModule::Init()
 {
   
   
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
   if (sLogModuleManager) {
     
     return;
@@ -565,8 +580,12 @@ LogModule::Init()
   
   
   
-  sLogModuleManager = new LogModuleManager();
-  sLogModuleManager->Init();
+
+  
+  
+  auto mgr = new LogModuleManager();
+  mgr->Init();
+  sLogModuleManager = mgr;
 }
 
 void
