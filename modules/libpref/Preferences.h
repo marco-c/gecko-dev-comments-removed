@@ -398,6 +398,7 @@ public:
   };
 
 private:
+  static void SetupTelemetryPref();
   static mozilla::Result<mozilla::Ok, const char*> InitInitialObjects();
 
   
