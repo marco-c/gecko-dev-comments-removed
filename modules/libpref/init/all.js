@@ -1416,12 +1416,6 @@ pref("privacy.resistFingerprinting", false);
 
 
 
-
-
-pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
-
-
-
 pref("privacy.reduceTimerPrecision", true);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
@@ -1567,7 +1561,7 @@ pref("javascript.options.dump_stack_on_debuggee_would_run", false);
 
 
 pref("javascript.options.spectre.index_masking", true);
-pref("javascript.options.spectre.object_mitigations.barriers", false);
+pref("javascript.options.spectre.object_mitigations.barriers", true);
 pref("javascript.options.spectre.string_mitigations", true);
 pref("javascript.options.spectre.value_masking", true);
 
@@ -5187,7 +5181,6 @@ pref("dom.streams.enabled", false);
 
 
 pref("dom.push.enabled", false);
-pref("dom.push.alwaysConnect", false);
 
 pref("dom.push.loglevel", "error");
 
