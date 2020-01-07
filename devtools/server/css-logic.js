@@ -41,6 +41,7 @@ const {
   FILTER,
   STATUS
 } = require("devtools/shared/inspector/css-logic");
+const InspectorUtils = require("InspectorUtils");
 
 
 
@@ -904,8 +905,8 @@ function CssRule(cssSheet, domRule, element) {
   if (this._cssSheet) {
     
     this._selectors = null;
-    this.line = domUtils.getRuleLine(this.domRule);
-    this.column = domUtils.getRuleColumn(this.domRule);
+    this.line = InspectorUtils.getRuleLine(this.domRule);
+    this.column = InspectorUtils.getRuleColumn(this.domRule);
     this.source = this._cssSheet.shortSource + ":" + this.line;
     if (this.mediaText) {
       this.source += " @media " + this.mediaText;

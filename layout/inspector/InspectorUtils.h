@@ -41,6 +41,32 @@ public:
                                const nsAString& aPseudo,
                                nsTArray<RefPtr<css::Rule>>& aResult);
 
+  
+
+
+
+
+
+  static uint32_t GetRuleLine(GlobalObject& aGlobal, css::Rule& aRule);
+
+  
+
+
+
+
+
+  static uint32_t GetRuleColumn(GlobalObject& aGlobal, css::Rule& aRule);
+
+  
+
+
+
+
+
+
+
+  static uint32_t GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
