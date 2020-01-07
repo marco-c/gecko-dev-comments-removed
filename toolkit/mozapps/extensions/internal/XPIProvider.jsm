@@ -758,10 +758,15 @@ function canRunInSafeMode(aAddon) {
 
   
   
-  if (aAddon._installLocation.name == KEY_APP_TEMPORARY)
+  let location = aAddon._installLocation || null;
+  if (!location) {
+    return false;
+  }
+
+  if (location.name == KEY_APP_TEMPORARY)
     return true;
 
-  return aAddon._installLocation.isSystem;
+  return location.isSystem;
 }
 
 
