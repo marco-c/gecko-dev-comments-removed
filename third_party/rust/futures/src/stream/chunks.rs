@@ -57,6 +57,29 @@ impl<S> Chunks<S> where S: Stream {
         let cap = self.items.capacity();
         mem::replace(&mut self.items, Vec::with_capacity(cap))
     }
+
+    
+    
+    pub fn get_ref(&self) -> &S {
+        self.stream.get_ref()
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        self.stream.get_mut()
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream.into_inner()
+    }
 }
 
 impl<S> Stream for Chunks<S>

@@ -22,6 +22,31 @@ pub fn new<S, F, U>(s: S, f: F) -> Map<S, F>
     }
 }
 
+impl<S, F> Map<S, F> {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S, F> ::sink::Sink for Map<S, F>
     where S: ::sink::Sink

@@ -7,7 +7,7 @@ use {Future, Poll, Async};
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[must_use = "futures do nothing unless polled"]
 
 pub struct FutureResult<T, E> {
@@ -71,5 +71,11 @@ impl<T, E> Future for FutureResult<T, E> {
 
     fn poll(&mut self) -> Poll<T, E> {
         self.inner.take().expect("cannot poll Result twice").map(Async::Ready)
+    }
+}
+
+impl<T, E> From<Result<T, E>> for FutureResult<T, E> {
+    fn from(r: Result<T, E>) -> Self {
+        result(r)
     }
 }

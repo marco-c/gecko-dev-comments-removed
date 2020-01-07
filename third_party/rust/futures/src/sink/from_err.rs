@@ -7,7 +7,7 @@ use {Sink, Poll, StartSend};
 
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled"]
-pub struct SinkFromErr<S, E> where S: Sink {
+pub struct SinkFromErr<S, E> {
     sink: S,
     f: PhantomData<E>
 }
@@ -18,6 +18,26 @@ pub fn new<S, E>(sink: S) -> SinkFromErr<S, E>
     SinkFromErr {
         sink: sink,
         f: PhantomData
+    }
+}
+
+impl<S, E> SinkFromErr<S, E> {
+    
+    pub fn get_ref(&self) -> &S {
+        &self.sink
+    }
+
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.sink
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.sink
     }
 }
 
@@ -41,7 +61,7 @@ impl<S, E> Sink for SinkFromErr<S, E>
     }
 }
 
-impl<S: ::stream::Stream, E> ::stream::Stream for SinkFromErr<S, E> where S: Sink {
+impl<S: ::stream::Stream, E> ::stream::Stream for SinkFromErr<S, E> {
     type Item = S::Item;
     type Error = S::Error;
 

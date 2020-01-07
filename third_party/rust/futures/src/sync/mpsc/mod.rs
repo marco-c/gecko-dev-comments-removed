@@ -77,8 +77,12 @@ use std::thread;
 use std::usize;
 
 use sync::mpsc::queue::{Queue, PopResult};
+use sync::oneshot;
 use task::{self, Task};
-use {Async, AsyncSink, Poll, StartSend, Sink, Stream};
+use future::Executor;
+use sink::SendAll;
+use resultstream::{self, Results};
+use {Async, AsyncSink, Future, Poll, StartSend, Sink, Stream};
 
 mod queue;
 
@@ -93,7 +97,7 @@ pub struct Sender<T> {
     
     
     
-    sender_task: SenderTask,
+    sender_task: Arc<Mutex<SenderTask>>,
 
     
     
@@ -106,14 +110,8 @@ pub struct Sender<T> {
 #[derive(Debug)]
 pub struct UnboundedSender<T>(Sender<T>);
 
-fn _assert_kinds() {
-    fn _assert_send<T: Send>() {}
-    fn _assert_sync<T: Sync>() {}
-    fn _assert_clone<T: Clone>() {}
-    _assert_send::<UnboundedSender<u32>>();
-    _assert_sync::<UnboundedSender<u32>>();
-    _assert_clone::<UnboundedSender<u32>>();
-}
+trait AssertKinds: Send + Sync + Clone {}
+impl AssertKinds for UnboundedSender<u32> {}
 
 
 
@@ -138,6 +136,18 @@ pub struct UnboundedReceiver<T>(Receiver<T>);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct SendError<T>(T);
+
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct TrySendError<T> {
+    kind: TrySendErrorKind<T>,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+enum TrySendErrorKind<T> {
+    Full(T),
+    Disconnected(T),
+}
 
 impl<T> fmt::Debug for SendError<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -167,6 +177,65 @@ impl<T> SendError<T> {
     }
 }
 
+impl<T> fmt::Debug for TrySendError<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_tuple("TrySendError")
+            .field(&"...")
+            .finish()
+    }
+}
+
+impl<T> fmt::Display for TrySendError<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        if self.is_full() {
+            write!(fmt, "send failed because channel is full")
+        } else {
+            write!(fmt, "send failed because receiver is gone")
+        }
+    }
+}
+
+impl<T: Any> Error for TrySendError<T> {
+    fn description(&self) -> &str {
+        if self.is_full() {
+            "send failed because channel is full"
+        } else {
+            "send failed because receiver is gone"
+        }
+    }
+}
+
+impl<T> TrySendError<T> {
+    
+    pub fn is_full(&self) -> bool {
+        use self::TrySendErrorKind::*;
+
+        match self.kind {
+            Full(_) => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn is_disconnected(&self) -> bool {
+        use self::TrySendErrorKind::*;
+
+        match self.kind {
+            Disconnected(_) => true,
+            _ => false,
+        }
+    }
+
+    
+    pub fn into_inner(self) -> T {
+        use self::TrySendErrorKind::*;
+
+        match self.kind {
+            Full(v) | Disconnected(v) => v,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Inner<T> {
     
@@ -180,7 +249,7 @@ struct Inner<T> {
     message_queue: Queue<Option<T>>,
 
     
-    parked_queue: Queue<SenderTask>,
+    parked_queue: Queue<Arc<Mutex<SenderTask>>>,
 
     
     num_senders: AtomicUsize,
@@ -213,7 +282,7 @@ enum TryPark {
 }
 
 
-const OPEN_MASK: usize = 1 << 31;
+const OPEN_MASK: usize = usize::MAX - (usize::MAX >> 1);
 
 
 
@@ -227,7 +296,28 @@ const MAX_CAPACITY: usize = !(OPEN_MASK);
 const MAX_BUFFER: usize = MAX_CAPACITY >> 1;
 
 
-type SenderTask = Arc<Mutex<Option<Task>>>;
+#[derive(Debug)]
+struct SenderTask {
+    task: Option<Task>,
+    is_parked: bool,
+}
+
+impl SenderTask {
+    fn new() -> Self {
+        SenderTask {
+            task: None,
+            is_parked: false,
+        }
+    }
+
+    fn notify(&mut self) {
+        self.is_parked = false;
+
+        if let Some(task) = self.task.take() {
+            task.notify();
+        }
+    }
+}
 
 
 
@@ -281,7 +371,7 @@ fn channel2<T>(buffer: Option<usize>) -> (Sender<T>, Receiver<T>) {
 
     let tx = Sender {
         inner: inner.clone(),
-        sender_task: Arc::new(Mutex::new(None)),
+        sender_task: Arc::new(Mutex::new(SenderTask::new())),
         maybe_parked: false,
     };
 
@@ -300,7 +390,34 @@ fn channel2<T>(buffer: Option<usize>) -> (Sender<T>, Receiver<T>) {
 
 impl<T> Sender<T> {
     
-    fn do_send(&mut self, msg: Option<T>, can_park: bool) -> Result<(), SendError<T>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_send(&mut self, msg: T) -> Result<(), TrySendError<T>> {
+        
+        if !self.poll_unparked(false).is_ready() {
+            return Err(TrySendError {
+                kind: TrySendErrorKind::Full(msg),
+            });
+        }
+
+        
+        self.do_send(Some(msg), false)
+            .map_err(|SendError(v)| {
+                TrySendError {
+                    kind: TrySendErrorKind::Disconnected(v),
+                }
+            })
+    }
+
+    
+    
+    fn do_send(&mut self, msg: Option<T>, do_park: bool) -> Result<(), SendError<T>> {
         
         
         
@@ -335,7 +452,7 @@ impl<T> Sender<T> {
         
         
         if park_self {
-            self.park(can_park);
+            self.park(do_park);
         }
 
         self.queue_push_and_signal(msg);
@@ -435,7 +552,7 @@ impl<T> Sender<T> {
         };
 
         if let Some(task) = task {
-            task.unpark();
+            task.notify();
         }
     }
 
@@ -443,12 +560,16 @@ impl<T> Sender<T> {
         
 
         let task = if can_park {
-            Some(task::park())
+            Some(task::current())
         } else {
             None
         };
 
-        *self.sender_task.lock().unwrap() = task;
+        {
+            let mut sender = self.sender_task.lock().unwrap();
+            sender.task = task;
+            sender.is_parked = true;
+        }
 
         
         let t = self.sender_task.clone();
@@ -460,14 +581,33 @@ impl<T> Sender<T> {
         self.maybe_parked = state.is_open;
     }
 
-    fn poll_unparked(&mut self) -> Async<()> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_ready(&mut self) -> Poll<(), SendError<()>> {
+        let state = decode_state(self.inner.state.load(SeqCst));
+        if !state.is_open {
+            return Err(SendError(()));
+        }
+
+        Ok(self.poll_unparked(true))
+    }
+
+    fn poll_unparked(&mut self, do_park: bool) -> Async<()> {
         
         
         if self.maybe_parked {
             
             let mut task = self.sender_task.lock().unwrap();
 
-            if task.is_none() {
+            if !task.is_parked {
                 self.maybe_parked = false;
                 return Async::Ready(())
             }
@@ -478,7 +618,11 @@ impl<T> Sender<T> {
             
             
             
-            *task = Some(task::park());
+            task.task = if do_park {
+                Some(task::current())
+            } else {
+                None
+            };
 
             Async::NotReady
         } else {
@@ -494,12 +638,12 @@ impl<T> Sink for Sender<T> {
     fn start_send(&mut self, msg: T) -> StartSend<T, SendError<T>> {
         
         
-        if !self.poll_unparked().is_ready() {
+        if !self.poll_unparked(true).is_ready() {
             return Ok(AsyncSink::NotReady(msg));
         }
 
         
-        try!(self.do_send(Some(msg), true));
+        self.do_send(Some(msg), true)?;
 
         Ok(AsyncSink::Ready)
     }
@@ -519,7 +663,18 @@ impl<T> UnboundedSender<T> {
     
     
     
+    #[deprecated(note = "renamed to `unbounded_send`")]
+    #[doc(hidden)]
     pub fn send(&self, msg: T) -> Result<(), SendError<T>> {
+        self.unbounded_send(msg)
+    }
+
+    
+    
+    
+    
+    
+    pub fn unbounded_send(&self, msg: T) -> Result<(), SendError<T>> {
         self.0.do_send_nb(msg)
     }
 }
@@ -546,7 +701,7 @@ impl<'a, T> Sink for &'a UnboundedSender<T> {
     type SinkError = SendError<T>;
 
     fn start_send(&mut self, msg: T) -> StartSend<T, SendError<T>> {
-        try!(self.0.do_send_nb(msg));
+        self.0.do_send_nb(msg)?;
         Ok(AsyncSink::Ready)
     }
 
@@ -589,7 +744,7 @@ impl<T> Clone for Sender<T> {
             if actual == curr {
                 return Sender {
                     inner: self.inner.clone(),
-                    sender_task: Arc::new(Mutex::new(None)),
+                    sender_task: Arc::new(Mutex::new(SenderTask::new())),
                     maybe_parked: false,
                 };
             }
@@ -645,10 +800,7 @@ impl<T> Receiver<T> {
         loop {
             match unsafe { self.inner.parked_queue.pop() } {
                 PopResult::Data(task) => {
-                    let task = task.lock().unwrap().take();
-                    if let Some(task) = task {
-                        task.unpark();
-                    }
+                    task.lock().unwrap().notify();
                 }
                 PopResult::Empty => break,
                 PopResult::Inconsistent => thread::yield_now(),
@@ -690,14 +842,7 @@ impl<T> Receiver<T> {
         loop {
             match unsafe { self.inner.parked_queue.pop() } {
                 PopResult::Data(task) => {
-                    
-                    
-                    let task = task.lock().unwrap().take();
-
-                    if let Some(task) = task {
-                        task.unpark();
-                    }
-
+                    task.lock().unwrap().notify();
                     return;
                 }
                 PopResult::Empty => {
@@ -731,7 +876,7 @@ impl<T> Receiver<T> {
             return TryPark::NotEmpty;
         }
 
-        recv_task.task = Some(task::park());
+        recv_task.task = Some(task::current());
         TryPark::Parked
     }
 
@@ -825,6 +970,138 @@ impl<T> Stream for UnboundedReceiver<T> {
 
     fn poll(&mut self) -> Poll<Option<T>, ()> {
         self.0.poll()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+pub struct SpawnHandle<Item, Error> {
+    rx: Receiver<Result<Item, Error>>,
+    _cancel_tx: oneshot::Sender<()>,
+}
+
+
+pub struct Execute<S: Stream> {
+    inner: SendAll<Sender<Result<S::Item, S::Error>>, Results<S, SendError<Result<S::Item, S::Error>>>>,
+    cancel_rx: oneshot::Receiver<()>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn spawn<S, E>(stream: S, executor: &E, buffer: usize) -> SpawnHandle<S::Item, S::Error>
+    where S: Stream,
+          E: Executor<Execute<S>>
+{
+    let (cancel_tx, cancel_rx) = oneshot::channel();
+    let (tx, rx) = channel(buffer);
+    executor.execute(Execute {
+        inner: tx.send_all(resultstream::new(stream)),
+        cancel_rx: cancel_rx,
+    }).expect("failed to spawn stream");
+    SpawnHandle {
+        rx: rx,
+        _cancel_tx: cancel_tx,
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn spawn_unbounded<S, E>(stream: S, executor: &E) -> SpawnHandle<S::Item, S::Error>
+    where S: Stream,
+          E: Executor<Execute<S>>
+{
+    let (cancel_tx, cancel_rx) = oneshot::channel();
+    let (tx, rx) = channel2(None);
+    executor.execute(Execute {
+        inner: tx.send_all(resultstream::new(stream)),
+        cancel_rx: cancel_rx,
+    }).expect("failed to spawn stream");
+    SpawnHandle {
+        rx: rx,
+        _cancel_tx: cancel_tx,
+    }
+}
+
+impl<I, E> Stream for SpawnHandle<I, E> {
+    type Item = I;
+    type Error = E;
+
+    fn poll(&mut self) -> Poll<Option<I>, E> {
+        match self.rx.poll() {
+            Ok(Async::Ready(Some(Ok(t)))) => Ok(Async::Ready(Some(t.into()))),
+            Ok(Async::Ready(Some(Err(e)))) => Err(e),
+            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(_) => unreachable!("mpsc::Receiver should never return Err"),
+        }
+    }
+}
+
+impl<I, E> fmt::Debug for SpawnHandle<I, E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("SpawnHandle")
+         .finish()
+    }
+}
+
+impl<S: Stream> Future for Execute<S> {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<(), ()> {
+        match self.cancel_rx.poll() {
+            Ok(Async::NotReady) => (),
+            _ => return Ok(Async::Ready(())),
+        }
+        match self.inner.poll() {
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            _ => Ok(Async::Ready(()))
+        }
+    }
+}
+
+impl<S: Stream> fmt::Debug for Execute<S> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Execute")
+         .finish()
     }
 }
 

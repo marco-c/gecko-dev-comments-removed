@@ -25,6 +25,31 @@ pub fn new<S>(s: S) -> Flatten<S>
     }
 }
 
+impl<S: Stream> Flatten<S> {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S> ::sink::Sink for Flatten<S>
     where S: ::sink::Sink + Stream

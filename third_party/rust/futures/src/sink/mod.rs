@@ -12,6 +12,7 @@ use {IntoFuture, Poll, StartSend};
 use stream::Stream;
 
 mod with;
+mod with_flat_map;
 
 
 
@@ -20,6 +21,7 @@ mod from_err;
 mod send;
 mod send_all;
 mod map_err;
+mod fanout;
 
 if_std! {
     mod buffer;
@@ -49,7 +51,7 @@ if_std! {
         }
     }
 
-    /// A type alias for `Box<Stream + Send>`
+    /// A type alias for `Box<Sink + Send>`
     pub type BoxSink<T, E> = ::std::boxed::Box<Sink<SinkItem = T, SinkError = E> +
                                                ::core::marker::Send>;
 
@@ -73,11 +75,13 @@ if_std! {
 }
 
 pub use self::with::With;
+pub use self::with_flat_map::WithFlatMap;
 pub use self::flush::Flush;
 pub use self::send::Send;
 pub use self::send_all::SendAll;
 pub use self::map_err::SinkMapErr;
 pub use self::from_err::SinkFromErr;
+pub use self::fanout::Fanout;
 
 
 
@@ -316,6 +320,44 @@ pub trait Sink {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn with_flat_map<U, F, St>(self, f: F) -> WithFlatMap<Self, U, F, St>
+        where F: FnMut(U) -> St,
+              St: Stream<Item = Self::SinkItem, Error=Self::SinkError>,
+              Self: Sized
+        {
+            with_flat_map::new(self, f)
+        }
+
+    
 
 
 
@@ -371,6 +413,18 @@ pub trait Sink {
     
     
     
+    fn fanout<S>(self, other: S) -> Fanout<Self, S>
+        where Self: Sized,
+              Self::SinkItem: Clone,
+              S: Sink<SinkItem=Self::SinkItem, SinkError=Self::SinkError>
+    {
+        fanout::new(self, other)
+    }
+
+    
+    
+    
+    
     
     
     fn flush(self) -> Flush<Self>
@@ -393,6 +447,8 @@ pub trait Sink {
         send::new(self, item)
     }
 
+    
+    
     
     
     

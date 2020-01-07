@@ -65,6 +65,24 @@ impl<S> Fuse<S> {
     }
 
     
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
     pub fn into_inner(self) -> S {
         self.stream
     }

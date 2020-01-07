@@ -7,6 +7,7 @@
 use std::prelude::v1::*;
 use std::sync::Arc;
 use std::cell::UnsafeCell;
+use task_impl;
 
 
 
@@ -63,7 +64,7 @@ use std::cell::UnsafeCell;
 
 #[derive(Debug)]
 pub struct TaskRc<A> {
-    task_id: usize,
+    task: task_impl::Task,
     ptr: Arc<UnsafeCell<A>>,
 }
 
@@ -89,12 +90,10 @@ impl<A> TaskRc<A> {
     
     
     pub fn new(a: A) -> TaskRc<A> {
-        super::with(|task| {
-            TaskRc {
-                task_id: task.id,
-                ptr: Arc::new(UnsafeCell::new(a)),
-            }
-        })
+        TaskRc {
+            task: task_impl::park(),
+            ptr: Arc::new(UnsafeCell::new(a)),
+        }
     }
 
     
@@ -112,19 +111,18 @@ impl<A> TaskRc<A> {
     pub fn with<F, R>(&self, f: F) -> R
         where F: FnOnce(&A) -> R
     {
-        
-        super::with(|task| {
-            assert!(self.task_id == task.id,
-                    "TaskRc being accessed on task it does not belong to");
-            f(unsafe { &*self.ptr.get() })
-        })
+        if !self.task.is_current() {
+            panic!("TaskRc being accessed on task it does not belong to");
+        }
+
+        f(unsafe { &*self.ptr.get() })
     }
 }
 
 impl<A> Clone for TaskRc<A> {
     fn clone(&self) -> TaskRc<A> {
         TaskRc {
-            task_id: self.task_id,
+            task: self.task.clone(),
             ptr: self.ptr.clone(),
         }
     }

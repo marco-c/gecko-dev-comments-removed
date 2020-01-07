@@ -76,6 +76,16 @@ pub enum AsyncSink<T> {
 
 impl<T> AsyncSink<T> {
     
+    pub fn map<F, U>(self, f: F) -> AsyncSink<U>
+        where F: FnOnce(T) -> U,
+    {
+        match self {
+            AsyncSink::Ready => AsyncSink::Ready,
+            AsyncSink::NotReady(t) => AsyncSink::NotReady(f(t)),
+        }
+    }
+
+    
     pub fn is_ready(&self) -> bool {
         match *self {
             AsyncSink::Ready => true,

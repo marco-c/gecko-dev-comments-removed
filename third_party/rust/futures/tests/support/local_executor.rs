@@ -4,90 +4,159 @@
 
 
 
+use std::cell::{Cell, RefCell};
 use std::sync::{Arc, Mutex, mpsc};
-use std::collections::HashMap;
-use std::collections::hash_map;
-use std::boxed::Box;
-use std::rc::Rc;
-use std::cell::RefCell;
 
+use futures::executor::{self, Spawn, Notify};
+use futures::future::{Executor, ExecuteError};
 use futures::{Future, Async};
-
-use futures::executor::{self, Spawn};
 
 
 pub struct Core {
-    unpark_send: mpsc::Sender<u64>,
-    unpark: mpsc::Receiver<u64>,
-    live: HashMap<u64, Spawn<Box<Future<Item=(), Error=()>>>>,
-    next_id: u64,
+    tx: mpsc::Sender<usize>,
+    rx: mpsc::Receiver<usize>,
+    notify: Arc<MyNotify>,
+
+    
+    
+    
+    tasks: RefCell<Vec<Slot>>,
+    next_vacant: Cell<usize>,
+}
+
+enum Slot {
+    Vacant { next_vacant: usize },
+    Running(Option<Spawn<Box<Future<Item = (), Error = ()>>>>),
 }
 
 impl Core {
     
     pub fn new() -> Self {
-        let (send, recv) = mpsc::channel();
+        let (tx, rx) = mpsc::channel();
         Core {
-            unpark_send: send,
-            unpark: recv,
-            live: HashMap::new(),
-            next_id: 0,
+            notify: Arc::new(MyNotify {
+                tx: Mutex::new(tx.clone()),
+            }),
+            tx: tx,
+            rx: rx,
+            next_vacant: Cell::new(0),
+            tasks: RefCell::new(Vec::new()),
         }
     }
 
     
-    pub fn spawn<F>(&mut self, f: F)
+    
+    
+    
+    
+    pub fn spawn<F>(&self, f: F)
         where F: Future<Item=(), Error=()> + 'static
     {
-        self.live.insert(self.next_id, executor::spawn(Box::new(f)));
-        self.unpark_send.send(self.next_id).unwrap();
-        self.next_id += 1;
-    }
-
-    
-    pub fn wait(&mut self) {
-        while !self.live.is_empty() {
-            self.turn();
+        let idx = self.next_vacant.get();
+        let mut tasks = self.tasks.borrow_mut();
+        match tasks.get_mut(idx) {
+            Some(&mut Slot::Vacant { next_vacant }) => {
+                self.next_vacant.set(next_vacant);
+            }
+            Some(&mut Slot::Running (_)) => {
+                panic!("vacant points to running future")
+            }
+            None => {
+                assert_eq!(idx, tasks.len());
+                tasks.push(Slot::Vacant { next_vacant: 0 });
+                self.next_vacant.set(idx + 1);
+            }
         }
+        tasks[idx] = Slot::Running(Some(executor::spawn(Box::new(f))));
+        self.tx.send(idx).unwrap();
     }
 
     
-    pub fn run<F>(&mut self, f: F) -> Result<F::Item, F::Error>
-        where F: Future + 'static,
-              F::Item: 'static,
-              F::Error: 'static,
+    
+    
+    
+    
+    pub fn run<F>(&self, f: F) -> Result<F::Item, F::Error>
+        where F: Future,
     {
-        let out = Rc::new(RefCell::new(None));
-        let out2 = out.clone();
-        self.spawn(f.then(move |x| { *out.borrow_mut() = Some(x); Ok(()) }));
+        let id = usize::max_value();
+        self.tx.send(id).unwrap();
+        let mut f = executor::spawn(f);
         loop {
-            self.turn();
-            if let Some(x) = out2.borrow_mut().take() {
-                return x;
+            if self.turn() {
+                match f.poll_future_notify(&self.notify, id)? {
+                    Async::Ready(e) => return Ok(e),
+                    Async::NotReady => {}
+                }
             }
         }
     }
 
-    fn turn(&mut self) {
-        let task = self.unpark.recv().unwrap(); 
-        let unpark = Arc::new(Unpark { task: task, send: Mutex::new(self.unpark_send.clone()), });
-        let mut task = if let hash_map::Entry::Occupied(x) = self.live.entry(task) { x } else { return };
-        let result = task.get_mut().poll_future(unpark);
-        match result {
-            Ok(Async::Ready(())) => { task.remove(); }
-            Err(()) => { task.remove(); }
-            Ok(Async::NotReady) => {}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn turn(&self) -> bool {
+        let task_id = self.rx.recv().unwrap();
+        if task_id == usize::max_value() {
+            return true
         }
+
+        
+        
+        
+        
+        
+        
+        
+        let mut future = match self.tasks.borrow_mut().get_mut(task_id) {
+            Some(&mut Slot::Running(ref mut future)) => future.take().unwrap(),
+            Some(&mut Slot::Vacant { .. }) => return false,
+            None => return false,
+        };
+
+        
+        
+        let done = match future.poll_future_notify(&self.notify, task_id) {
+            Ok(Async::Ready(())) | Err(()) => true,
+            Ok(Async::NotReady) => false,
+        };
+        let mut tasks = self.tasks.borrow_mut();
+        if done {
+            tasks[task_id] = Slot::Vacant { next_vacant: self.next_vacant.get() };
+            self.next_vacant.set(task_id);
+        } else {
+            tasks[task_id] = Slot::Running(Some(future));
+        }
+
+        return false
     }
 }
 
-struct Unpark {
-    task: u64,
-    send: Mutex<mpsc::Sender<u64>>,
+impl<F> Executor<F> for Core
+    where F: Future<Item = (), Error = ()> + 'static,
+{
+    fn execute(&self, future: F) -> Result<(), ExecuteError<F>> {
+        self.spawn(future);
+        Ok(())
+    }
 }
 
-impl executor::Unpark for Unpark {
-    fn unpark(&self) {
-        let _ = self.send.lock().unwrap().send(self.task);
+struct MyNotify {
+    
+    
+    
+    
+    tx: Mutex<mpsc::Sender<usize>>,
+}
+
+impl Notify for MyNotify {
+    fn notify(&self, id: usize) {
+        drop(self.tx.lock().unwrap().send(id));
     }
 }

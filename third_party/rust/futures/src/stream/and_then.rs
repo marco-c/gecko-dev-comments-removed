@@ -27,6 +27,33 @@ pub fn new<S, F, U>(s: S, f: F) -> AndThen<S, F, U>
     }
 }
 
+impl<S, F, U> AndThen<S, F, U>
+    where U: IntoFuture,
+{
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S, F, U: IntoFuture> ::sink::Sink for AndThen<S, F, U>
     where S: ::sink::Sink

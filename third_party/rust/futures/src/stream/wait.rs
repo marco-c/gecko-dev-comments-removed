@@ -13,6 +13,31 @@ pub struct Wait<S> {
     stream: executor::Spawn<S>,
 }
 
+impl<S> Wait<S> {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        self.stream.get_ref()
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        self.stream.get_mut()
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream.into_inner()
+    }
+}
+
 pub fn new<S: Stream>(s: S) -> Wait<S> {
     Wait {
         stream: executor::spawn(s),

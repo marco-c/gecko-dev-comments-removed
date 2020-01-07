@@ -1,10 +1,7 @@
-use std::prelude::v1::*;
-
 use std::fmt;
-use std::mem;
 
-use {Async, IntoFuture, Poll, Future};
-use stream::{Stream, Fuse};
+use {Async, IntoFuture, Poll};
+use stream::{Stream, Fuse, FuturesOrdered};
 
 
 
@@ -18,8 +15,8 @@ pub struct Buffered<S>
           S::Item: IntoFuture,
 {
     stream: Fuse<S>,
-    futures: Vec<State<<S::Item as IntoFuture>::Future>>,
-    cur: usize,
+    queue: FuturesOrdered<<S::Item as IntoFuture>::Future>,
+    max: usize,
 }
 
 impl<S> fmt::Debug for Buffered<S>
@@ -30,19 +27,12 @@ impl<S> fmt::Debug for Buffered<S>
           <<S as Stream>::Item as IntoFuture>::Error: fmt::Debug,
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Stream")
+        fmt.debug_struct("Buffered")
             .field("stream", &self.stream)
-            .field("futures", &self.futures)
-            .field("cur", &self.cur)
+            .field("queue", &self.queue)
+            .field("max", &self.max)
             .finish()
     }
-}
-
-#[derive(Debug)]
-enum State<S: Future> {
-    Empty,
-    Running(S),
-    Finished(Result<S::Item, S::Error>),
 }
 
 pub fn new<S>(s: S, amt: usize) -> Buffered<S>
@@ -51,8 +41,36 @@ pub fn new<S>(s: S, amt: usize) -> Buffered<S>
 {
     Buffered {
         stream: super::fuse::new(s),
-        futures: (0..amt).map(|_| State::Empty).collect(),
-        cur: 0,
+        queue: FuturesOrdered::new(),
+        max: amt,
+    }
+}
+
+impl<S> Buffered<S>
+    where S: Stream,
+          S::Item: IntoFuture<Error=<S as Stream>::Error>,
+{
+    
+    
+    pub fn get_ref(&self) -> &S {
+        self.stream.get_ref()
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        self.stream.get_mut()
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream.into_inner()
     }
 }
 
@@ -86,57 +104,29 @@ impl<S> Stream for Buffered<S>
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         
-        for i in 0..self.futures.len() {
-            let mut idx = self.cur + i;
-            if idx >= self.futures.len() {
-                idx -= self.futures.len();
-            }
+        
+        while self.queue.len() < self.max {
+            let future = match self.stream.poll()? {
+                Async::Ready(Some(s)) => s.into_future(),
+                Async::Ready(None) |
+                Async::NotReady => break,
+            };
 
-            if let State::Empty = self.futures[idx] {
-                match try!(self.stream.poll()) {
-                    Async::Ready(Some(future)) => {
-                        let future = future.into_future();
-                        self.futures[idx] = State::Running(future);
-                    }
-                    Async::Ready(None) => break,
-                    Async::NotReady => break,
-                }
-            }
+            self.queue.push(future);
         }
 
         
-        for future in self.futures.iter_mut() {
-            let result = match *future {
-                State::Running(ref mut s) => {
-                    match s.poll() {
-                        Ok(Async::NotReady) => continue,
-                        Ok(Async::Ready(e)) => Ok(e),
-                        Err(e) => Err(e),
-                    }
-                }
-                _ => continue,
-            };
-            *future = State::Finished(result);
+        if let Some(val) = try_ready!(self.queue.poll()) {
+            return Ok(Async::Ready(Some(val)));
         }
 
         
-        if let State::Finished(_) = self.futures[self.cur] {
-            let r = match mem::replace(&mut self.futures[self.cur], State::Empty) {
-                State::Finished(r) => r,
-                _ => panic!(),
-            };
-            self.cur += 1;
-            if self.cur >= self.futures.len() {
-                self.cur = 0;
-            }
-            return Ok(Async::Ready(Some(try!(r))))
-        }
-
+        
+        
         if self.stream.is_done() {
-            if let State::Empty = self.futures[self.cur] {
-                return Ok(Async::Ready(None))
-            }
+            Ok(Async::Ready(None))
+        } else {
+            Ok(Async::NotReady)
         }
-        Ok(Async::NotReady)
     }
 }

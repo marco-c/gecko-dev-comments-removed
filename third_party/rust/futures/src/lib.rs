@@ -154,6 +154,7 @@
 
 
 
+
 #![no_std]
 #![deny(missing_docs, missing_debug_implementations)]
 #![doc(html_root_url = "https://docs.rs/futures/0.1")]
@@ -196,16 +197,21 @@ pub use future::{
     SelectNext, Then
 };
 
+#[cfg(feature = "use_std")]
+mod lock;
+mod task_impl;
+
+mod resultstream;
+
+pub mod task;
+pub mod executor;
+#[cfg(feature = "use_std")]
+pub mod sync;
+#[cfg(feature = "use_std")]
+pub mod unsync;
+
+
 if_std! {
-    mod lock;
-    mod task_impl;
-    mod stack;
-
-    pub mod task;
-    pub mod executor;
-    pub mod sync;
-    pub mod unsync;
-
     #[doc(hidden)]
     #[deprecated(since = "0.1.4", note = "use sync::oneshot::channel instead")]
     #[cfg(feature = "with-deprecated")]
@@ -229,10 +235,31 @@ if_std! {
     #[doc(hidden)]
     #[deprecated(since = "0.1.4", note = "import through the future module instead")]
     #[cfg(feature = "with-deprecated")]
+    #[allow(deprecated)]
     pub use future::{BoxFuture, collect, select_all, select_ok};
 
     #[doc(hidden)]
     #[deprecated(since = "0.1.4", note = "import through the future module instead")]
     #[cfg(feature = "with-deprecated")]
     pub use future::{SelectAll, SelectAllNext, Collect, SelectOk};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub mod prelude {
+    #[doc(no_inline)]
+    pub use {Future, Stream, Sink, Async, AsyncSink, Poll, StartSend};
+    #[doc(no_inline)]
+    pub use IntoFuture;
 }

@@ -3,6 +3,7 @@
 
 
 
+use core::fmt;
 use core::result;
 
 
@@ -55,6 +56,7 @@ mod select;
 mod select2;
 mod then;
 mod either;
+mod inspect;
 
 
 mod chain;
@@ -73,6 +75,7 @@ pub use self::select::{Select, SelectNext};
 pub use self::select2::Select2;
 pub use self::then::Then;
 pub use self::either::Either;
+pub use self::inspect::Inspect;
 
 if_std! {
     mod catch_unwind;
@@ -96,6 +99,10 @@ if_std! {
     pub use self::join_all::JoinAll as Collect;
 
     /// A type alias for `Box<Future + Send>`
+    #[doc(hidden)]
+    #[deprecated(note = "removed without replacement, recommended to use a \
+                         local extension trait or function if needed, more \
+                         details in https://github.com/alexcrichton/futures-rs/issues/228")]
     pub type BoxFuture<T, E> = ::std::boxed::Box<Future<Item = T, Error = E> + Send>;
 
     impl<F: ?Sized + Future> Future for ::std::boxed::Box<F> {
@@ -254,6 +261,14 @@ pub trait Future {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     fn poll(&mut self) -> Poll<Self::Item, Self::Error>;
 
     
@@ -303,13 +318,32 @@ pub trait Future {
     
     
     
+    
     #[cfg(feature = "use_std")]
+    #[doc(hidden)]
+    #[deprecated(note = "removed without replacement, recommended to use a \
+                         local extension trait or function if needed, more \
+                         details in https://github.com/alexcrichton/futures-rs/issues/228")]
+    #[allow(deprecated)]
     fn boxed(self) -> BoxFuture<Self::Item, Self::Error>
         where Self: Sized + Send + 'static
     {
         ::std::boxed::Box::new(self)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -362,6 +396,17 @@ pub trait Future {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn map_err<F, E>(self, f: F) -> MapErr<Self, F>
         where F: FnOnce(Self::Error) -> E,
               Self: Sized,
@@ -391,12 +436,14 @@ pub trait Future {
     
     
     
+    
     fn from_err<E:From<Self::Error>>(self) -> FromErr<Self, E>
         where Self: Sized,
     {
         assert_future::<Self::Item, E, _>(from_err::new(self))
     }
 
+    
     
     
     
@@ -474,6 +521,7 @@ pub trait Future {
     
     
     
+    
     fn and_then<F, B>(self, f: F) -> AndThen<Self, B, F>
         where F: FnOnce(Self::Item) -> B,
               B: IntoFuture<Error = Self::Error>,
@@ -514,6 +562,7 @@ pub trait Future {
     
     
     
+    
     fn or_else<F, B>(self, f: F) -> OrElse<Self, B, F>
         where F: FnOnce(Self::Error) -> B,
               B: IntoFuture<Item = Self::Item>,
@@ -522,6 +571,28 @@ pub trait Future {
         assert_future::<Self::Item, B::Error, _>(or_else::new(self, f))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -595,12 +666,25 @@ pub trait Future {
     
     
     
+    
     fn select2<B>(self, other: B) -> Select2<Self, B::Future>
         where B: IntoFuture, Self: Sized
     {
         select2::new(self, other.into_future())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -718,6 +802,20 @@ pub trait Future {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn flatten(self) -> Flatten<Self>
         where Self::Item: IntoFuture,
         <<Self as Future>::Item as IntoFuture>::Error:
@@ -730,6 +828,7 @@ pub trait Future {
                         _>(f)
     }
 
+    
     
     
     
@@ -820,6 +919,30 @@ pub trait Future {
     
     
     
+    fn inspect<F>(self, f: F) -> Inspect<Self, F>
+        where F: FnOnce(&Self::Item) -> (),
+              Self: Sized,
+    {
+        assert_future::<Self::Item, Self::Error, _>(inspect::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -841,6 +964,8 @@ pub trait Future {
         catch_unwind::new(self)
     }
 
+    
+    
     
     
     
@@ -956,4 +1081,90 @@ pub trait FutureFrom<T>: Sized {
 
     
     fn future_from(T) -> Self::Future;
+}
+
+
+
+
+
+
+
+
+
+pub trait Executor<F: Future<Item = (), Error = ()>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn execute(&self, future: F) -> Result<(), ExecuteError<F>>;
+}
+
+
+pub struct ExecuteError<F> {
+    future: F,
+    kind: ExecuteErrorKind,
+}
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ExecuteErrorKind {
+    
+    
+    Shutdown,
+
+    
+    
+    NoCapacity,
+
+    #[doc(hidden)]
+    __Nonexhaustive,
+}
+
+impl<F> ExecuteError<F> {
+    
+    pub fn new(kind: ExecuteErrorKind, future: F) -> ExecuteError<F> {
+        ExecuteError {
+            future: future,
+            kind: kind,
+        }
+    }
+
+    
+    pub fn kind(&self) -> ExecuteErrorKind {
+        self.kind
+    }
+
+    
+    pub fn into_future(self) -> F {
+        self.future
+    }
+}
+
+impl<F> fmt::Debug for ExecuteError<F> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.kind {
+            ExecuteErrorKind::Shutdown => "executor has shut down".fmt(f),
+            ExecuteErrorKind::NoCapacity => "executor has no more capacity".fmt(f),
+            ExecuteErrorKind::__Nonexhaustive => panic!(),
+        }
+    }
 }

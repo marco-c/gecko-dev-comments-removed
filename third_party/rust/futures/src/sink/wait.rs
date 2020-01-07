@@ -47,4 +47,13 @@ impl<S: Sink> Wait<S> {
     pub fn flush(&mut self) -> Result<(), S::SinkError> {
         self.sink.wait_flush()
     }
+
+    
+    
+    
+    
+    
+    pub fn close(&mut self) -> Result<(), S::SinkError> {
+        self.sink.wait_close()
+    }
 }

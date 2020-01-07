@@ -3,10 +3,12 @@
 
 
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::fmt;
 use std::rc::{Rc, Weak};
 
 use {Future, Poll, Async};
+use future::{Executor, IntoFuture, Lazy, lazy};
 use task::{self, Task};
 
 
@@ -57,9 +59,7 @@ enum State<T> {
     Closed(Option<T>),
 }
 
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Canceled;
+pub use sync::oneshot::Canceled;
 
 #[derive(Debug)]
 struct Inner<T> {
@@ -110,11 +110,28 @@ impl<T> Sender<T> {
     pub fn poll_cancel(&mut self) -> Poll<(), ()> {
         match self.inner.upgrade() {
             Some(inner) => {
-                inner.borrow_mut().tx_task = Some(task::park());
+                inner.borrow_mut().tx_task = Some(task::current());
                 Ok(Async::NotReady)
             }
             None => Ok(().into()),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_canceled(&self) -> bool {
+        !self.inner.upgrade().is_some()
     }
 }
 
@@ -130,7 +147,7 @@ impl<T> Drop for Sender<T> {
             borrow.rx_task.take()
         };
         if let Some(task) = rx_task {
-            task.unpark();
+            task.notify();
         }
     }
 }
@@ -153,7 +170,7 @@ impl<T> Receiver<T> {
         };
         self.state = State::Closed(item);
         if let Some(task) = task {
-            task.unpark();
+            task.notify();
         }
     }
 }
@@ -184,7 +201,7 @@ impl<T> Future for Receiver<T> {
         if Rc::get_mut(inner).is_some() {
             Err(Canceled)
         } else {
-            inner.borrow_mut().rx_task = Some(task::park());
+            inner.borrow_mut().rx_task = Some(task::current());
             Ok(Async::NotReady)
         }
     }
@@ -193,5 +210,142 @@ impl<T> Future for Receiver<T> {
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         self.close();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+pub struct SpawnHandle<T, E> {
+    rx: Receiver<Result<T, E>>,
+    keep_running: Rc<Cell<bool>>,
+}
+
+
+pub struct Execute<F: Future> {
+    future: F,
+    tx: Option<Sender<Result<F::Item, F::Error>>>,
+    keep_running: Rc<Cell<bool>>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn spawn<F, E>(future: F, executor: &E) -> SpawnHandle<F::Item, F::Error>
+    where F: Future,
+          E: Executor<Execute<F>>,
+{
+    let flag = Rc::new(Cell::new(false));
+    let (tx, rx) = channel();
+    executor.execute(Execute {
+        future: future,
+        tx: Some(tx),
+        keep_running: flag.clone(),
+    }).expect("failed to spawn future");
+    SpawnHandle {
+        rx: rx,
+        keep_running: flag,
+    }
+}
+
+
+
+
+
+
+pub fn spawn_fn<F, R, E>(f: F, executor: &E) -> SpawnHandle<R::Item, R::Error>
+    where F: FnOnce() -> R,
+          R: IntoFuture,
+          E: Executor<Execute<Lazy<F, R>>>,
+{
+    spawn(lazy(f), executor)
+}
+
+impl<T, E> SpawnHandle<T, E> {
+    
+    
+    
+    
+    
+    pub fn forget(self) {
+        self.keep_running.set(true);
+    }
+}
+
+impl<T, E> Future for SpawnHandle<T, E> {
+    type Item = T;
+    type Error = E;
+
+    fn poll(&mut self) -> Poll<T, E> {
+        match self.rx.poll() {
+            Ok(Async::Ready(Ok(t))) => Ok(t.into()),
+            Ok(Async::Ready(Err(e))) => Err(e),
+            Ok(Async::NotReady) => Ok(Async::NotReady),
+            Err(_) => panic!("future was canceled before completion"),
+        }
+    }
+}
+
+impl<T: fmt::Debug, E: fmt::Debug> fmt::Debug for SpawnHandle<T, E> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("SpawnHandle")
+         .finish()
+    }
+}
+
+impl<F: Future> Future for Execute<F> {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<(), ()> {
+        
+        
+        
+        if self.tx.as_mut().unwrap().poll_cancel().unwrap().is_ready() {
+            if !self.keep_running.get() {
+                return Ok(().into())
+            }
+        }
+
+        let result = match self.future.poll() {
+            Ok(Async::NotReady) => return Ok(Async::NotReady),
+            Ok(Async::Ready(t)) => Ok(t),
+            Err(e) => Err(e),
+        };
+        drop(self.tx.take().unwrap().send(result));
+        Ok(().into())
+    }
+}
+
+impl<F: Future + fmt::Debug> fmt::Debug for Execute<F> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Execute")
+         .field("future", &self.future)
+         .finish()
     }
 }

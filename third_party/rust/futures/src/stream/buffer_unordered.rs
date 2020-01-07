@@ -1,13 +1,7 @@
-use std::prelude::v1::*;
 use std::fmt;
-use std::mem;
-use std::sync::Arc;
 
-use task::{self, UnparkEvent};
-
-use {Async, IntoFuture, Poll, Future};
-use stream::{Stream, Fuse};
-use stack::{Stack, Drain};
+use {Async, IntoFuture, Poll};
+use stream::{Stream, Fuse, FuturesUnordered};
 
 
 
@@ -21,26 +15,8 @@ pub struct BufferUnordered<S>
           S::Item: IntoFuture,
 {
     stream: Fuse<S>,
-
-    
-    
-    
-    
-    
-    
-    
-    futures: Vec<Slot<<S::Item as IntoFuture>::Future>>,
-    next_future: usize,
-
-    
-    
-    
-    
-    stack: Arc<Stack<usize>>,
-    pending: Drain<usize>,
-
-    
-    active: usize,
+    queue: FuturesUnordered<<S::Item as IntoFuture>::Future>,
+    max: usize,
 }
 
 impl<S> fmt::Debug for BufferUnordered<S>
@@ -51,19 +27,10 @@ impl<S> fmt::Debug for BufferUnordered<S>
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("BufferUnordered")
             .field("stream", &self.stream)
-            .field("futures", &self.futures)
-            .field("next_future", &self.next_future)
-            .field("stack", &self.stack)
-            .field("pending", &self.pending)
-            .field("active", &self.active)
+            .field("queue", &self.queue)
+            .field("max", &self.max)
             .finish()
     }
-}
-
-#[derive(Debug)]
-enum Slot<T> {
-    Next(usize),
-    Data(T),
 }
 
 pub fn new<S>(s: S, amt: usize) -> BufferUnordered<S>
@@ -72,11 +39,8 @@ pub fn new<S>(s: S, amt: usize) -> BufferUnordered<S>
 {
     BufferUnordered {
         stream: super::fuse::new(s),
-        futures: (0..amt).map(|i| Slot::Next(i + 1)).collect(),
-        next_future: 0,
-        pending: Stack::new().drain(),
-        stack: Arc::new(Stack::new()),
-        active: 0,
+        queue: FuturesUnordered::new(),
+        max: amt,
     }
 }
 
@@ -84,27 +48,27 @@ impl<S> BufferUnordered<S>
     where S: Stream,
           S::Item: IntoFuture<Error=<S as Stream>::Error>,
 {
-    fn poll_pending(&mut self)
-                    -> Option<Poll<Option<<S::Item as IntoFuture>::Item>,
-                                   S::Error>> {
-        while let Some(idx) = self.pending.next() {
-            let result = match self.futures[idx] {
-                Slot::Data(ref mut f) => {
-                    let event = UnparkEvent::new(self.stack.clone(), idx);
-                    match task::with_unpark_event(event, || f.poll()) {
-                        Ok(Async::NotReady) => continue,
-                        Ok(Async::Ready(e)) => Ok(Async::Ready(Some(e))),
-                        Err(e) => Err(e),
-                    }
-                },
-                Slot::Next(_) => continue,
-            };
-            self.active -= 1;
-            self.futures[idx] = Slot::Next(self.next_future);
-            self.next_future = idx;
-            return Some(result)
-        }
-        None
+    
+    
+    pub fn get_ref(&self) -> &S {
+        self.stream.get_ref()
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        self.stream.get_mut()
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream.into_inner()
     }
 }
 
@@ -118,43 +82,29 @@ impl<S> Stream for BufferUnordered<S>
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         
         
-        while self.next_future < self.futures.len() {
-            let future = match try!(self.stream.poll()) {
+        while self.queue.len() < self.max {
+            let future = match self.stream.poll()? {
                 Async::Ready(Some(s)) => s.into_future(),
                 Async::Ready(None) |
                 Async::NotReady => break,
             };
-            self.active += 1;
-            self.stack.push(self.next_future);
-            match mem::replace(&mut self.futures[self.next_future],
-                               Slot::Data(future)) {
-                Slot::Next(next) => self.next_future = next,
-                Slot::Data(_) => panic!(),
-            }
+
+            self.queue.push(future);
         }
 
         
-        
-        if let Some(ret) = self.poll_pending() {
-            return ret
-        }
-
-        
-        
-        assert!(self.pending.next().is_none());
-        self.pending = self.stack.drain();
-        if let Some(ret) = self.poll_pending() {
-            return ret
+        if let Some(val) = try_ready!(self.queue.poll()) {
+            return Ok(Async::Ready(Some(val)));
         }
 
         
         
         
-        Ok(if self.active > 0 || !self.stream.is_done() {
-            Async::NotReady
+        if self.stream.is_done() {
+            Ok(Async::Ready(None))
         } else {
-            Async::Ready(None)
-        })
+            Ok(Async::NotReady)
+        }
     }
 }
 

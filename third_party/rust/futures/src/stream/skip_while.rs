@@ -27,6 +27,31 @@ pub fn new<S, P, R>(s: S, p: P) -> SkipWhile<S, P, R>
     }
 }
 
+impl<S, P, R> SkipWhile<S, P, R> where S: Stream, R: IntoFuture {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S, P, R> ::sink::Sink for SkipWhile<S, P, R>
     where S: ::sink::Sink + Stream, R: IntoFuture

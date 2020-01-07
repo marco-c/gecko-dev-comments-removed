@@ -1,14 +1,15 @@
-use {Async, Poll};
-use stream::Stream;
+#![deprecated(note = "implementation moved to `iter_ok` and `iter_result`")]
+#![allow(deprecated)]
+
+use Poll;
+use stream::{iter_result, IterResult, Stream};
 
 
 
 
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
-pub struct Iter<I> {
-    iter: I,
-}
+pub struct Iter<I>(IterResult<I>);
 
 
 
@@ -25,12 +26,11 @@ pub struct Iter<I> {
 
 
 
+#[inline]
 pub fn iter<J, T, E>(i: J) -> Iter<J::IntoIter>
     where J: IntoIterator<Item=Result<T, E>>,
 {
-    Iter {
-        iter: i.into_iter(),
-    }
+    Iter(iter_result(i))
 }
 
 impl<I, T, E> Stream for Iter<I>
@@ -39,11 +39,8 @@ impl<I, T, E> Stream for Iter<I>
     type Item = T;
     type Error = E;
 
+    #[inline]
     fn poll(&mut self) -> Poll<Option<T>, E> {
-        match self.iter.next() {
-            Some(Ok(e)) => Ok(Async::Ready(Some(e))),
-            Some(Err(e)) => Err(e),
-            None => Ok(Async::Ready(None)),
-        }
+        self.0.poll()
     }
 }

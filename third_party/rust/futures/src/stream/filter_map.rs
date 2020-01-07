@@ -22,6 +22,31 @@ pub fn new<S, F, B>(s: S, f: F) -> FilterMap<S, F>
     }
 }
 
+impl<S, F> FilterMap<S, F> {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S, F> ::sink::Sink for FilterMap<S, F>
     where S: ::sink::Sink

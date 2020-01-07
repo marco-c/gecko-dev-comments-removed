@@ -1,37 +1,34 @@
-use std::prelude::v1::*;
+use core::fmt;
+use core::marker::PhantomData;
 
-use std::cell::Cell;
-use std::fmt;
-use std::mem;
-use std::sync::Arc;
-use std::sync::atomic::{Ordering, AtomicBool, AtomicUsize, ATOMIC_USIZE_INIT};
-use std::thread;
+use {Poll, Future, Stream, Sink, StartSend};
 
-use {Poll, Future, Async, Stream, Sink, StartSend, AsyncSink};
-use future::BoxFuture;
+mod atomic_task;
+pub use self::atomic_task::AtomicTask;
 
-mod unpark_mutex;
-use self::unpark_mutex::UnparkMutex;
+mod core;
 
-mod task_rc;
-mod data;
-#[allow(deprecated)]
-#[cfg(feature = "with-deprecated")]
-pub use self::task_rc::TaskRc;
-pub use self::data::LocalKey;
+#[cfg(feature = "use_std")]
+mod std;
+#[cfg(feature = "use_std")]
+pub use self::std::*;
+#[cfg(not(feature = "use_std"))]
+pub use self::core::*;
 
-struct BorrowedTask<'a> {
+pub struct BorrowedTask<'a> {
     id: usize,
-    unpark: &'a Arc<Unpark>,
-    map: &'a data::LocalMap,
-    events: Events,
+    unpark: BorrowedUnpark<'a>,
+    events: BorrowedEvents<'a>,
+    
+    map: &'a LocalMap,
 }
 
-thread_local!(static CURRENT_TASK: Cell<*const BorrowedTask<'static>> = {
-    Cell::new(0 as *const _)
-});
-
 fn fresh_task_id() -> usize {
+    use core::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+
+    
+    
+    
     
     
     static NEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
@@ -41,32 +38,11 @@ fn fresh_task_id() -> usize {
     id
 }
 
-fn set<'a, F, R>(task: &BorrowedTask<'a>, f: F) -> R
-    where F: FnOnce() -> R
-{
-    struct Reset(*const BorrowedTask<'static>);
-    impl Drop for Reset {
-        fn drop(&mut self) {
-            CURRENT_TASK.with(|c| c.set(self.0));
-        }
-    }
-
-    CURRENT_TASK.with(move |c| {
-        let _reset = Reset(c.get());
-        let task = unsafe {
-            mem::transmute::<&BorrowedTask<'a>,
-                             *const BorrowedTask<'static>>(task)
-        };
-        c.set(task);
-        f()
-    })
-}
-
 fn with<F: FnOnce(&BorrowedTask) -> R, R>(f: F) -> R {
-    let task = CURRENT_TASK.with(|c| c.get());
-    assert!(!task.is_null(), "no Task is currently running");
     unsafe {
-        f(&*task)
+        let task = get_ptr().expect("no Task is currently running");
+        assert!(!task.is_null(), "no Task is currently running");
+        f(&*(task as *const BorrowedTask))
     }
 }
 
@@ -81,14 +57,12 @@ fn with<F: FnOnce(&BorrowedTask) -> R, R>(f: F) -> R {
 #[derive(Clone)]
 pub struct Task {
     id: usize,
-    unpark: Arc<Unpark>,
-    events: Events,
+    unpark: TaskUnpark,
+    events: UnparkEvents,
 }
 
-fn _assert_kinds() {
-    fn _assert_send<T: Send>() {}
-    _assert_send::<Task>();
-}
+trait AssertSend: Send {}
+impl AssertSend for Task {}
 
 
 
@@ -112,18 +86,23 @@ fn _assert_kinds() {
 
 
 
+pub fn current() -> Task {
+    with(|borrowed| {
+        let unpark = borrowed.unpark.to_owned();
+        let events = borrowed.events.to_owned();
 
-
-
-
-pub fn park() -> Task {
-    with(|task| {
         Task {
-            id: task.id,
-            events: task.events.clone(),
-            unpark: task.unpark.clone(),
+            id: borrowed.id,
+            unpark: unpark,
+            events: events,
         }
     })
+}
+
+#[doc(hidden)]
+#[deprecated(note = "renamed to `current`")]
+pub fn park() -> Task {
+    current()
 }
 
 impl Task {
@@ -135,23 +114,88 @@ impl Task {
     
     
     
+    pub fn notify(&self) {
+        self.events.notify();
+        self.unpark.notify();
+    }
+
+    #[doc(hidden)]
+    #[deprecated(note = "renamed to `notify`")]
     pub fn unpark(&self) {
-        self.events.trigger();
-        self.unpark.unpark();
+        self.notify()
     }
 
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(note = "intended to be removed, see docs for details")]
     pub fn is_current(&self) -> bool {
         with(|current| current.id == self.id)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[allow(deprecated)]
+    pub fn will_notify_current(&self) -> bool {
+        with(|current| {
+            self.unpark.will_notify(&current.unpark) &&
+                self.events.will_notify(&current.events)
+        })
     }
 }
 
 impl fmt::Debug for Task {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Task")
-         .field("id", &self.id)
          .finish()
     }
 }
@@ -166,124 +210,12 @@ impl fmt::Debug for Task {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn with_unpark_event<F, R>(event: UnparkEvent, f: F) -> R
-    where F: FnOnce() -> R
-{
-    with(|task| {
-        let new_task = BorrowedTask {
-            id: task.id,
-            unpark: task.unpark,
-            events: task.events.with_event(event),
-            map: task.map,
-        };
-        set(&new_task, f)
-    })
-}
-
-#[derive(Clone)]
-
-
-
-
-
-
-pub struct UnparkEvent {
-    set: Arc<EventSet>,
-    item: usize,
-}
-
-impl UnparkEvent {
-    
-    
-    pub fn new(set: Arc<EventSet>, id: usize) -> UnparkEvent {
-        UnparkEvent {
-            set: set,
-            item: id,
-        }
-    }
-}
-
-impl fmt::Debug for UnparkEvent {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("UnparkEvent")
-         .field("set", &"...")
-         .field("item", &self.item)
-         .finish()
-    }
-}
-
-
-
-
-
-pub trait EventSet: Send + Sync + 'static {
-    
-    fn insert(&self, id: usize);
-}
-
-
-#[derive(Clone)]
-enum Events {
-    Zero,
-    One(UnparkEvent),
-    Lots(Vec<UnparkEvent>),
-}
-
-impl Events {
-    fn new() -> Events {
-        Events::Zero
-    }
-
-    fn trigger(&self) {
-        match *self {
-            Events::Zero => {}
-            Events::One(ref event) => event.set.insert(event.item),
-            Events::Lots(ref list) => {
-                for event in list {
-                    event.set.insert(event.item);
-                }
-            }
-        }
-    }
-
-    fn with_event(&self, event: UnparkEvent) -> Events {
-        let mut list = match *self {
-            Events::Zero => return Events::One(event),
-            Events::One(ref event) => vec![event.clone()],
-            Events::Lots(ref list) => list.clone(),
-        };
-        list.push(event);
-        Events::Lots(list)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-pub struct Spawn<T> {
-    obj: T,
+pub struct Spawn<T: ?Sized> {
     id: usize,
-    data: data::LocalMap,
+    data: LocalMap,
+    obj: T,
 }
+
 
 
 
@@ -296,13 +228,13 @@ pub struct Spawn<T> {
 
 pub fn spawn<T>(obj: T) -> Spawn<T> {
     Spawn {
-        obj: obj,
         id: fresh_task_id(),
-        data: data::local_map(),
+        obj: obj,
+        data: local_map(),
     }
 }
 
-impl<T> Spawn<T> {
+impl<T: ?Sized> Spawn<T> {
     
     pub fn get_ref(&self) -> &T {
         &self.obj
@@ -314,44 +246,9 @@ impl<T> Spawn<T> {
     }
 
     
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T where T: Sized {
         self.obj
     }
-}
-
-impl<F: Future> Spawn<F> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn poll_future(&mut self, unpark: Arc<Unpark>) -> Poll<F::Item, F::Error> {
-        self.enter(&unpark, |f| f.poll())
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn wait_future(&mut self) -> Result<F::Item, F::Error> {
-        let unpark = Arc::new(ThreadUnpark::new(thread::current()));
-        loop {
-            match try!(self.poll_future(unpark.clone())) {
-                Async::NotReady => unpark.park(),
-                Async::Ready(e) => return Ok(e),
-            }
-        }
-    }
 
     
     
@@ -368,58 +265,40 @@ impl<F: Future> Spawn<F> {
     
     
     
-    pub fn execute(self, exec: Arc<Executor>)
-        where F: Future<Item=(), Error=()> + Send + 'static,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_future_notify<N>(&mut self,
+                                 notify: &N,
+                                 id: usize) -> Poll<T::Item, T::Error>
+        where N: Clone + Into<NotifyHandle>,
+              T: Future,
     {
-        exec.clone().execute(Run {
-            
-            
-            
-            
-            spawn: Spawn {
-                id: self.id,
-                data: self.data,
-                obj: self.obj.boxed(),
-            },
-            inner: Arc::new(Inner {
-                exec: exec,
-                mutex: UnparkMutex::new()
-            }),
-        })
-    }
-}
-
-impl<S: Stream> Spawn<S> {
-    
-    pub fn poll_stream(&mut self, unpark: Arc<Unpark>)
-                       -> Poll<Option<S::Item>, S::Error> {
-        self.enter(&unpark, |stream| stream.poll())
+        let mk = || notify.clone().into();
+        self.enter(BorrowedUnpark::new(&mk, id), |f| f.poll())
     }
 
     
-    
-    pub fn wait_stream(&mut self) -> Option<Result<S::Item, S::Error>> {
-        let unpark = Arc::new(ThreadUnpark::new(thread::current()));
-        loop {
-            match self.poll_stream(unpark.clone()) {
-                Ok(Async::NotReady) => unpark.park(),
-                Ok(Async::Ready(Some(e))) => return Some(Ok(e)),
-                Ok(Async::Ready(None)) => return None,
-                Err(e) => return Some(Err(e)),
-            }
-        }
-    }
-}
-
-impl<S: Sink> Spawn<S> {
-    
-    
-    
-    
-    
-    pub fn start_send(&mut self, value: S::SinkItem, unpark: &Arc<Unpark>)
-                       -> StartSend<S::SinkItem, S::SinkError> {
-        self.enter(unpark, |sink| sink.start_send(value))
+    pub fn poll_stream_notify<N>(&mut self,
+                                 notify: &N,
+                                 id: usize)
+                                 -> Poll<Option<T::Item>, T::Error>
+        where N: Clone + Into<NotifyHandle>,
+              T: Stream,
+    {
+        let mk = || notify.clone().into();
+        self.enter(BorrowedUnpark::new(&mk, id), |s| s.poll())
     }
 
     
@@ -427,9 +306,16 @@ impl<S: Sink> Spawn<S> {
     
     
     
-    pub fn poll_flush(&mut self, unpark: &Arc<Unpark>)
-                       -> Poll<(), S::SinkError> {
-        self.enter(unpark, |sink| sink.poll_complete())
+    pub fn start_send_notify<N>(&mut self,
+                                value: T::SinkItem,
+                                notify: &N,
+                                id: usize)
+                               -> StartSend<T::SinkItem, T::SinkError>
+        where N: Clone + Into<NotifyHandle>,
+              T: Sink,
+    {
+        let mk = || notify.clone().into();
+        self.enter(BorrowedUnpark::new(&mk, id), |s| s.start_send(value))
     }
 
     
@@ -437,17 +323,15 @@ impl<S: Sink> Spawn<S> {
     
     
     
-    pub fn wait_send(&mut self, mut value: S::SinkItem)
-                     -> Result<(), S::SinkError> {
-        let unpark = Arc::new(ThreadUnpark::new(thread::current()));
-        let unpark2 = unpark.clone() as Arc<Unpark>;
-        loop {
-            value = match try!(self.start_send(value, &unpark2)) {
-                AsyncSink::NotReady(v) => v,
-                AsyncSink::Ready => return Ok(()),
-            };
-            unpark.park();
-        }
+    pub fn poll_flush_notify<N>(&mut self,
+                                notify: &N,
+                                id: usize)
+                                -> Poll<(), T::SinkError>
+        where N: Clone + Into<NotifyHandle>,
+              T: Sink,
+    {
+        let mk = || notify.clone().into();
+        self.enter(BorrowedUnpark::new(&mk, id), |s| s.poll_complete())
     }
 
     
@@ -455,41 +339,35 @@ impl<S: Sink> Spawn<S> {
     
     
     
-    
-    
-    
-    pub fn wait_flush(&mut self) -> Result<(), S::SinkError> {
-        let unpark = Arc::new(ThreadUnpark::new(thread::current()));
-        let unpark2 = unpark.clone() as Arc<Unpark>;
-        loop {
-            if try!(self.poll_flush(&unpark2)).is_ready() {
-                return Ok(())
-            }
-            unpark.park();
-        }
+    pub fn close_notify<N>(&mut self,
+                           notify: &N,
+                           id: usize)
+                           -> Poll<(), T::SinkError>
+        where N: Clone + Into<NotifyHandle>,
+              T: Sink,
+    {
+        let mk = || notify.clone().into();
+        self.enter(BorrowedUnpark::new(&mk, id), |s| s.close())
     }
-}
 
-impl<T> Spawn<T> {
-    fn enter<F, R>(&mut self, unpark: &Arc<Unpark>, f: F) -> R
+    fn enter<F, R>(&mut self, unpark: BorrowedUnpark, f: F) -> R
         where F: FnOnce(&mut T) -> R
     {
-        let task = BorrowedTask {
+        let borrowed = BorrowedTask {
             id: self.id,
             unpark: unpark,
-            events: Events::new(),
+            events: BorrowedEvents::new(),
             map: &self.data,
         };
         let obj = &mut self.obj;
-        set(&task, || f(obj))
+        set(&borrowed, || f(obj))
     }
 }
 
-impl<T: fmt::Debug> fmt::Debug for Spawn<T> {
+impl<T: fmt::Debug + ?Sized> fmt::Debug for Spawn<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Spawn")
-         .field("obj", &self.obj)
-         .field("id", &self.id)
+         .field("obj", &&self.obj)
          .finish()
     }
 }
@@ -501,104 +379,311 @@ impl<T: fmt::Debug> fmt::Debug for Spawn<T> {
 
 
 
-pub trait Unpark: Send + Sync {
+
+
+
+
+
+
+
+
+pub trait Notify: Send + Sync {
     
     
     
     
     
-    fn unpark(&self);
-}
-
-
-
-
-
-
-pub trait Executor: Send + Sync + 'static {
     
-    fn execute(&self, r: Run);
-}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn notify(&self, id: usize);
 
-struct ThreadUnpark {
-    thread: thread::Thread,
-    ready: AtomicBool,
-}
-
-impl ThreadUnpark {
-    fn new(thread: thread::Thread) -> ThreadUnpark {
-        ThreadUnpark {
-            thread: thread,
-            ready: AtomicBool::new(false),
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn clone_id(&self, id: usize) -> usize {
+        id
     }
 
-    fn park(&self) {
-        if !self.ready.swap(false, Ordering::SeqCst) {
-            thread::park();
-        }
+    
+    
+    
+    
+    
+    
+    
+    fn drop_id(&self, id: usize) {
+        drop(id);
     }
 }
 
-impl Unpark for ThreadUnpark {
-    fn unpark(&self) {
-        self.ready.store(true, Ordering::SeqCst);
-        self.thread.unpark()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn with_notify<F, T, R>(notify: &T, id: usize, f: F) -> R
+    where F: FnOnce() -> R,
+          T: Clone + Into<NotifyHandle>,
+{
+    with(|task| {
+        let mk = || notify.clone().into();
+        let new_task = BorrowedTask {
+            id: task.id,
+            unpark: BorrowedUnpark::new(&mk, id),
+            events: task.events,
+            map: task.map,
+        };
+
+        set(&new_task, f)
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe trait UnsafeNotify: Notify {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn clone_raw(&self) -> NotifyHandle;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn drop_raw(&self);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct NotifyHandle {
+    inner: *mut UnsafeNotify,
+}
+
+unsafe impl Send for NotifyHandle {}
+unsafe impl Sync for NotifyHandle {}
+
+impl NotifyHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn new(inner: *mut UnsafeNotify) -> NotifyHandle {
+        NotifyHandle { inner: inner }
+    }
+
+    
+    pub fn notify(&self, id: usize) {
+        unsafe { (*self.inner).notify(id) }
+    }
+
+    fn clone_id(&self, id: usize) -> usize {
+        unsafe { (*self.inner).clone_id(id) }
+    }
+
+    fn drop_id(&self, id: usize) {
+        unsafe { (*self.inner).drop_id(id) }
     }
 }
 
-
-
-pub struct Run {
-    spawn: Spawn<BoxFuture<(), ()>>,
-    inner: Arc<Inner>,
-}
-
-struct Inner {
-    mutex: UnparkMutex<Run>,
-    exec: Arc<Executor>,
-}
-
-impl Run {
-    
-    
-    pub fn run(self) {
-        let Run { mut spawn, inner } = self;
-
-        
-        
+impl Clone for NotifyHandle {
+    #[inline]
+    fn clone(&self) -> Self {
         unsafe {
-            inner.mutex.start_poll();
-
-            loop {
-                match spawn.poll_future(inner.clone()) {
-                    Ok(Async::NotReady) => {}
-                    Ok(Async::Ready(())) |
-                    Err(()) => return inner.mutex.complete(),
-                }
-                let run = Run { spawn: spawn, inner: inner.clone() };
-                match inner.mutex.wait(run) {
-                    Ok(()) => return,            
-                    Err(r) => spawn = r.spawn,   
-                }
-            }
+            (*self.inner).clone_raw()
         }
     }
 }
 
-impl fmt::Debug for Run {
+impl fmt::Debug for NotifyHandle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Run")
-         .field("contents", &"...")
+        f.debug_struct("NotifyHandle")
          .finish()
     }
 }
 
-impl Unpark for Inner {
-    fn unpark(&self) {
-        match self.mutex.notify() {
-            Ok(run) => self.exec.execute(run),
-            Err(()) => {}
+impl Drop for NotifyHandle {
+    fn drop(&mut self) {
+        unsafe {
+            (*self.inner).drop_raw()
         }
+    }
+}
+
+
+struct StaticRef<T>(PhantomData<T>);
+
+impl<T: Notify> Notify for StaticRef<T> {
+    fn notify(&self, id: usize) {
+        let me = unsafe { &*(self as *const _ as *const T) };
+        me.notify(id);
+    }
+
+    fn clone_id(&self, id: usize) -> usize {
+        let me = unsafe { &*(self as *const _ as *const T) };
+        me.clone_id(id)
+    }
+
+    fn drop_id(&self, id: usize) {
+        let me = unsafe { &*(self as *const _ as *const T) };
+        me.drop_id(id);
+    }
+}
+
+unsafe impl<T: Notify + 'static> UnsafeNotify for StaticRef<T> {
+    unsafe fn clone_raw(&self) -> NotifyHandle {
+        NotifyHandle::new(self as *const _ as *mut StaticRef<T>)
+    }
+
+    unsafe fn drop_raw(&self) {}
+}
+
+impl<T: Notify> From<&'static T> for NotifyHandle {
+    fn from(src : &'static T) -> NotifyHandle {
+        unsafe { NotifyHandle::new(src as *const _ as *mut StaticRef<T>) }
     }
 }

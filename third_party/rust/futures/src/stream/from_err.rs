@@ -8,7 +8,7 @@ use stream::Stream;
 
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled"]
-pub struct FromErr<S, E> where S: Stream {
+pub struct FromErr<S, E> {
     stream: S,
     f: PhantomData<E>
 }
@@ -21,6 +21,32 @@ pub fn new<S, E>(stream: S) -> FromErr<S, E>
         f: PhantomData
     }
 }
+
+impl<S, E> FromErr<S, E> {
+    
+    
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    
+    
+    
+    
+    pub fn into_inner(self) -> S {
+        self.stream
+    }
+}
+
 
 impl<S: Stream, E: From<S::Error>> Stream for FromErr<S, E> {
     type Item = S::Item;

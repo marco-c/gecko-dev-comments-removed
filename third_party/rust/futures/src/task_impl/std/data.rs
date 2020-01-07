@@ -5,6 +5,8 @@ use std::cell::RefCell;
 use std::hash::{BuildHasherDefault, Hasher};
 use std::collections::HashMap;
 
+use task_impl::with;
+
 
 
 
@@ -113,7 +115,7 @@ impl<T: Send + 'static> LocalKey<T> {
         where F: FnOnce(&T) -> R
     {
         let key = (self.__key)();
-        super::with(|task| {
+        with(|task| {
             let raw_pointer = {
                 let mut data = task.map.borrow_mut();
                 let entry = data.entry(key).or_insert_with(|| {

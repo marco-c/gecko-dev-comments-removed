@@ -18,9 +18,15 @@
 use {IntoFuture, Poll};
 
 mod iter;
+#[allow(deprecated)]
 pub use self::iter::{iter, Iter};
 #[cfg(feature = "with-deprecated")]
+#[allow(deprecated)]
 pub use self::Iter as IterStream;
+mod iter_ok;
+pub use self::iter_ok::{iter_ok, IterOk};
+mod iter_result;
+pub use self::iter_result::{iter_result, IterResult};
 
 mod repeat;
 pub use self::repeat::{repeat, Repeat};
@@ -37,12 +43,15 @@ mod for_each;
 mod from_err;
 mod fuse;
 mod future;
+mod inspect;
+mod inspect_err;
 mod map;
 mod map_err;
 mod merge;
 mod once;
 mod or_else;
 mod peek;
+mod poll_fn;
 mod select;
 mod skip;
 mod skip_while;
@@ -54,7 +63,9 @@ mod zip;
 mod forward;
 pub use self::and_then::AndThen;
 pub use self::chain::Chain;
+#[allow(deprecated)]
 pub use self::concat::Concat;
+pub use self::concat::Concat2;
 pub use self::empty::{Empty, empty};
 pub use self::filter::Filter;
 pub use self::filter_map::FilterMap;
@@ -64,12 +75,16 @@ pub use self::for_each::ForEach;
 pub use self::from_err::FromErr;
 pub use self::fuse::Fuse;
 pub use self::future::StreamFuture;
+pub use self::inspect::Inspect;
+pub use self::inspect_err::InspectErr;
 pub use self::map::Map;
 pub use self::map_err::MapErr;
+#[allow(deprecated)]
 pub use self::merge::{Merge, MergedItem};
 pub use self::once::{Once, once};
 pub use self::or_else::OrElse;
 pub use self::peek::Peekable;
+pub use self::poll_fn::{poll_fn, PollFn};
 pub use self::select::Select;
 pub use self::skip::Skip;
 pub use self::skip_while::SkipWhile;
@@ -92,7 +107,8 @@ if_std! {
     mod wait;
     mod channel;
     mod split;
-    mod futures_unordered;
+    pub mod futures_unordered;
+    mod futures_ordered;
     pub use self::buffered::Buffered;
     pub use self::buffer_unordered::BufferUnordered;
     pub use self::catch_unwind::CatchUnwind;
@@ -100,7 +116,8 @@ if_std! {
     pub use self::collect::Collect;
     pub use self::wait::Wait;
     pub use self::split::{SplitStream, SplitSink};
-    pub use self::futures_unordered::{futures_unordered, FuturesUnordered};
+    pub use self::futures_unordered::FuturesUnordered;
+    pub use self::futures_ordered::{futures_ordered, FuturesOrdered};
 
     #[doc(hidden)]
     #[cfg(feature = "with-deprecated")]
@@ -108,6 +125,10 @@ if_std! {
     pub use self::channel::{channel, Sender, Receiver, FutureSender, SendError};
 
     /// A type alias for `Box<Stream + Send>`
+    #[doc(hidden)]
+    #[deprecated(note = "removed without replacement, recommended to use a \
+                         local extension trait or function if needed, more \
+                         details in https://github.com/alexcrichton/futures-rs/issues/228")]
     pub type BoxStream<T, E> = ::std::boxed::Box<Stream<Item = T, Error = E> + Send>;
 
     impl<S: ?Sized + Stream> Stream for ::std::boxed::Box<S> {
@@ -247,6 +268,11 @@ pub trait Stream {
     
     
     #[cfg(feature = "use_std")]
+    #[doc(hidden)]
+    #[deprecated(note = "removed without replacement, recommended to use a \
+                         local extension trait or function if needed, more \
+                         details in https://github.com/alexcrichton/futures-rs/issues/228")]
+    #[allow(deprecated)]
     fn boxed(self) -> BoxStream<Self::Item, Self::Error>
         where Self: Sized + Send + 'static,
     {
@@ -462,6 +488,9 @@ pub trait Stream {
     
     
     
+    
+    
+    
     fn and_then<F, U>(self, f: F) -> AndThen<Self, F, U>
         where F: FnMut(Self::Item) -> U,
               U: IntoFuture<Error = Self::Error>,
@@ -563,6 +592,49 @@ pub trait Stream {
     
     
     
+    
+    
+    
+    fn concat2(self) -> Concat2<Self>
+        where Self: Sized,
+              Self::Item: Extend<<<Self as Stream>::Item as IntoIterator>::Item> + IntoIterator + Default,
+    {
+        concat::new2(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(since="0.1.14", note="please use `Stream::concat2` instead")]
+    #[allow(deprecated)]
     fn concat(self) -> Concat<Self>
         where Self: Sized,
               Self::Item: Extend<<<Self as Stream>::Item as IntoIterator>::Item> + IntoIterator,
@@ -570,6 +642,7 @@ pub trait Stream {
         concat::new(self)
     }
 
+    
     
     
     
@@ -682,6 +755,9 @@ pub trait Stream {
     
     
     
+    
+    
+    
     fn for_each<F, U>(self, f: F) -> ForEach<Self, F, U>
         where F: FnMut(Self::Item) -> U,
               U: IntoFuture<Item=(), Error = Self::Error>,
@@ -778,6 +854,30 @@ pub trait Stream {
     
     
     
+    fn by_ref(&mut self) -> &mut Self
+        where Self: Sized
+    {
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -847,6 +947,8 @@ pub trait Stream {
     
     
     
+    #[deprecated(note = "functionality provided by `select` now")]
+    #[allow(deprecated)]
     fn merge<S>(self, other: S) -> Merge<Self, S>
         where S: Stream<Error = Self::Error>,
               Self: Sized,
@@ -958,6 +1060,8 @@ pub trait Stream {
     
     
     
+    
+    
     fn forward<S>(self, sink: S) -> Forward<Self, S>
         where S: Sink<SinkItem = Self::Item>,
               Self::Error: From<S::SinkError>,
@@ -981,6 +1085,30 @@ pub trait Stream {
     {
         split::split(self)
     }
+
+    
+    
+    
+    
+    
+    fn inspect<F>(self, f: F) -> Inspect<Self, F>
+        where F: FnMut(&Self::Item),
+              Self: Sized,
+    {
+        inspect::new(self, f)
+    }
+
+    
+    
+    
+    
+    
+    fn inspect_err<F>(self, f: F) -> InspectErr<Self, F>
+        where F: FnMut(&Self::Error),
+              Self: Sized,
+    {
+        inspect_err::new(self, f)
+    }
 }
 
 impl<'a, S: ?Sized + Stream> Stream for &'a mut S {
@@ -990,4 +1118,28 @@ impl<'a, S: ?Sized + Stream> Stream for &'a mut S {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         (**self).poll()
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "use_std")]
+pub fn futures_unordered<I>(futures: I) -> FuturesUnordered<<I::Item as IntoFuture>::Future>
+    where I: IntoIterator,
+        I::Item: IntoFuture
+{
+    let mut set = FuturesUnordered::new();
+
+    for future in futures {
+        set.push(future.into_future());
+    }
+
+    return set
 }
