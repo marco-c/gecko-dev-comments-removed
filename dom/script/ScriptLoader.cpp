@@ -1286,79 +1286,13 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement)
   }
 
   
+  nsresult rv = NS_OK;
+  RefPtr<ScriptLoadRequest> request;
+  mozilla::net::ReferrerPolicy ourRefPolicy = mDocument->GetReferrerPolicy();
   if (aElement->GetScriptExternal()) {
-    return ProcessExternalScript(aElement, scriptKind, type, scriptContent);
-  }
-
-  return ProcessInlineScript(aElement, scriptKind);
-}
-
-bool
-ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
-                                    ScriptKind aScriptKind,
-                                    nsAutoString aTypeAttr,
-                                    nsIContent* aScriptContent)
-{
-  nsCOMPtr<nsIURI> scriptURI = aElement->GetScriptURI();
-  if (!scriptURI) {
     
-    NS_DispatchToCurrentThread(
-      NewRunnableMethod("nsIScriptElement::FireErrorEvent",
-                        aElement,
-                        &nsIScriptElement::FireErrorEvent));
-    return false;
-  }
-
-  RefPtr<ScriptLoadRequest> request = LookupPreloadRequest(aElement, aScriptKind);
-
-  if (request && NS_FAILED(CheckContentPolicy(mDocument, aElement, request->mURI,
-                                              aTypeAttr, false))) {
-    
-    
-    request->Cancel();
-    return false;
-  }
-
-  if (request) {
-    
-    request->mElement = aElement;
-
-    
-    
-    request->SetScriptMode(aElement->GetScriptDeferred(),
-                           aElement->GetScriptAsync());
-  } else {
-    
-
-    SRIMetadata sriMetadata;
-    {
-      nsAutoString integrity;
-      aScriptContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                          nsGkAtoms::integrity,
-                                          integrity);
-      GetSRIMetadata(integrity, &sriMetadata);
-    }
-
-    nsCOMPtr<nsIPrincipal> principal = aElement->GetScriptURITriggeringPrincipal();
-    if (!principal) {
-      principal = aScriptContent->NodePrincipal();
-    }
-
-    CORSMode ourCORSMode = aElement->GetCORSMode();
-    mozilla::net::ReferrerPolicy ourRefPolicy = mDocument->GetReferrerPolicy();
-    request = CreateLoadRequest(aScriptKind, scriptURI, aElement,
-                                ourCORSMode, sriMetadata, ourRefPolicy);
-    request->mTriggeringPrincipal = Move(principal);
-    request->mIsInline = false;
-    request->SetScriptMode(aElement->GetScriptDeferred(),
-                           aElement->GetScriptAsync());
-    
-    
-
-    nsresult rv = StartLoad(request);
-    if (NS_FAILED(rv)) {
-      ReportErrorToConsole(request, rv);
-
+    nsCOMPtr<nsIURI> scriptURI = aElement->GetScriptURI();
+    if (!scriptURI) {
       
       NS_DispatchToCurrentThread(
         NewRunnableMethod("nsIScriptElement::FireErrorEvent",
@@ -1366,75 +1300,174 @@ ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
                           &nsIScriptElement::FireErrorEvent));
       return false;
     }
-  }
 
-  
-  NS_ASSERTION(!request->InCompilingStage(),
-               "Request should not yet be in compiling stage.");
+    
+    CORSMode ourCORSMode = aElement->GetCORSMode();
+    nsTArray<PreloadInfo>::index_type i =
+      mPreloads.IndexOf(scriptURI.get(), 0, PreloadURIComparator());
+    if (i != nsTArray<PreloadInfo>::NoIndex) {
+      
+      
+      request = mPreloads[i].mRequest;
+      request->mElement = aElement;
+      nsString preloadCharset(mPreloads[i].mCharset);
+      mPreloads.RemoveElementAt(i);
 
-  if (request->IsAsyncScript()) {
-    AddAsyncRequest(request);
-    if (request->IsReadyToRun()) {
       
+      
+      nsAutoString elementCharset;
+      aElement->GetScriptCharset(elementCharset);
+      if (elementCharset.Equals(preloadCharset) &&
+          ourCORSMode == request->mCORSMode &&
+          ourRefPolicy == request->mReferrerPolicy &&
+          scriptKind == request->mKind) {
+        rv = CheckContentPolicy(mDocument, aElement, request->mURI, type, false);
+        if (NS_FAILED(rv)) {
+          
+          
+          request->Cancel();
+          return false;
+        }
+      } else {
+        
+        request = nullptr;
+      }
+    }
+
+    if (request) {
       
 
       
       
+      request->SetScriptMode(aElement->GetScriptDeferred(),
+                             aElement->GetScriptAsync());
+    } else {
+      
+
+      SRIMetadata sriMetadata;
+      {
+        nsAutoString integrity;
+        scriptContent->AsElement()->GetAttr(kNameSpaceID_None,
+                                            nsGkAtoms::integrity,
+                                            integrity);
+        if (!integrity.IsEmpty()) {
+          MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
+                  ("ScriptLoader::ProcessScriptElement, integrity=%s",
+                   NS_ConvertUTF16toUTF8(integrity).get()));
+          nsAutoCString sourceUri;
+          if (mDocument->GetDocumentURI()) {
+            mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
+          }
+          SRICheck::IntegrityMetadata(integrity, sourceUri, mReporter,
+                                      &sriMetadata);
+        }
+      }
+
+      nsCOMPtr<nsIPrincipal> principal = aElement->GetScriptURITriggeringPrincipal();
+      if (!principal) {
+        principal = scriptContent->NodePrincipal();
+      }
+
+      request = CreateLoadRequest(scriptKind, scriptURI, aElement, ourCORSMode,
+                                  sriMetadata, ourRefPolicy);
+      request->mTriggeringPrincipal = Move(principal);
+      request->mIsInline = false;
+      request->SetScriptMode(aElement->GetScriptDeferred(),
+                             aElement->GetScriptAsync());
+      
+      
+
+      rv = StartLoad(request);
+      if (NS_FAILED(rv)) {
+        ReportErrorToConsole(request, rv);
+
+        
+        NS_DispatchToCurrentThread(
+          NewRunnableMethod("nsIScriptElement::FireErrorEvent",
+                            aElement,
+                            &nsIScriptElement::FireErrorEvent));
+        return false;
+      }
+    }
+
+    
+    NS_ASSERTION(!request->InCompilingStage(),
+                 "Request should not yet be in compiling stage.");
+
+    if (request->IsAsyncScript()) {
+      AddAsyncRequest(request);
+      if (request->IsReadyToRun()) {
+        
+        
+
+        
+        
+        ProcessPendingRequestsAsync();
+      }
+      return false;
+    }
+    if (!aElement->GetParserCreated()) {
+      
+      
+      
+      request->mIsNonAsyncScriptInserted = true;
+      mNonAsyncExternalScriptInsertedRequests.AppendElement(request);
+      if (request->IsReadyToRun()) {
+        
+        
+        ProcessPendingRequestsAsync();
+      }
+      return false;
+    }
+    
+    
+    if (request->IsDeferredScript()) {
+      
+      
+      
+      
+      
+      
+      NS_ASSERTION(mDocument->GetCurrentContentSink() ||
+                   aElement->GetParserCreated() == FROM_PARSER_XSLT,
+          "Non-XSLT Defer script on a document without an active parser; bug 592366.");
+      AddDeferRequest(request);
+      return false;
+    }
+
+    if (aElement->GetParserCreated() == FROM_PARSER_XSLT) {
+      
+      NS_ASSERTION(!mParserBlockingRequest,
+          "Parser-blocking scripts and XSLT scripts in the same doc!");
+      request->mIsXSLT = true;
+      mXSLTRequests.AppendElement(request);
+      if (request->IsReadyToRun()) {
+        
+        
+        ProcessPendingRequestsAsync();
+      }
+      return true;
+    }
+
+    if (request->IsReadyToRun() && ReadyToExecuteParserBlockingScripts()) {
+      
+      
+      
+      if (aElement->GetParserCreated() == FROM_PARSER_NETWORK) {
+        return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
+      }
+      
+      
+      
+      NS_ASSERTION(!mParserBlockingRequest,
+          "There can be only one parser-blocking script at a time");
+      NS_ASSERTION(mXSLTRequests.isEmpty(),
+          "Parser-blocking scripts and XSLT scripts in the same doc!");
+      mParserBlockingRequest = request;
       ProcessPendingRequestsAsync();
+      return true;
     }
-    return false;
-  }
-  if (!aElement->GetParserCreated()) {
-    
-    
-    
-    request->mIsNonAsyncScriptInserted = true;
-    mNonAsyncExternalScriptInsertedRequests.AppendElement(request);
-    if (request->IsReadyToRun()) {
-      
-      
-      ProcessPendingRequestsAsync();
-    }
-    return false;
-  }
-  
-  
-  if (request->IsDeferredScript()) {
-    
-    
-    
-    
-    
-    
-    NS_ASSERTION(mDocument->GetCurrentContentSink() ||
-                 aElement->GetParserCreated() == FROM_PARSER_XSLT,
-        "Non-XSLT Defer script on a document without an active parser; bug 592366.");
-    AddDeferRequest(request);
-    return false;
-  }
 
-  if (aElement->GetParserCreated() == FROM_PARSER_XSLT) {
-    
-    NS_ASSERTION(!mParserBlockingRequest,
-        "Parser-blocking scripts and XSLT scripts in the same doc!");
-    request->mIsXSLT = true;
-    mXSLTRequests.AppendElement(request);
-    if (request->IsReadyToRun()) {
-      
-      
-      ProcessPendingRequestsAsync();
-    }
-    return true;
-  }
-
-  if (request->IsReadyToRun() && ReadyToExecuteParserBlockingScripts()) {
-    
-    
-    
-    if (aElement->GetParserCreated() == FROM_PARSER_NETWORK) {
-      return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
-    }
-    
     
     
     NS_ASSERTION(!mParserBlockingRequest,
@@ -1442,24 +1475,10 @@ ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     NS_ASSERTION(mXSLTRequests.isEmpty(),
         "Parser-blocking scripts and XSLT scripts in the same doc!");
     mParserBlockingRequest = request;
-    ProcessPendingRequestsAsync();
     return true;
   }
 
   
-  
-  NS_ASSERTION(!mParserBlockingRequest,
-      "There can be only one parser-blocking script at a time");
-  NS_ASSERTION(mXSLTRequests.isEmpty(),
-      "Parser-blocking scripts and XSLT scripts in the same doc!");
-  mParserBlockingRequest = request;
-  return true;
-}
-
-bool
-ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
-                                  ScriptKind aScriptKind)
-{
   
   if (mDocument->HasScriptsBlockedBySandbox()) {
     return false;
@@ -1472,15 +1491,14 @@ ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
   
   CORSMode corsMode = CORS_NONE;
-  if (aScriptKind == ScriptKind::eModule) {
+  if (scriptKind == ScriptKind::eModule) {
     corsMode = aElement->GetCORSMode();
   }
 
-  RefPtr<ScriptLoadRequest> request =
-    CreateLoadRequest(aScriptKind, mDocument->GetDocumentURI(), aElement,
-                      corsMode,
-                      SRIMetadata(), 
-                      mDocument->GetReferrerPolicy());
+  request = CreateLoadRequest(scriptKind, mDocument->GetDocumentURI(), aElement,
+                              corsMode,
+                              SRIMetadata(), 
+                              ourRefPolicy);
   request->mIsInline = true;
   request->mTriggeringPrincipal = mDocument->NodePrincipal();
   request->mLineNo = aElement->GetScriptLineNumber();
@@ -1554,59 +1572,6 @@ ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
       "Not safe to run a parser-inserted script?");
   return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
-}
-
-ScriptLoadRequest*
-ScriptLoader::LookupPreloadRequest(nsIScriptElement* aElement,
-                                   ScriptKind aScriptKind)
-{
-  nsTArray<PreloadInfo>::index_type i =
-    mPreloads.IndexOf(aElement->GetScriptURI(), 0, PreloadURIComparator());
-  if (i == nsTArray<PreloadInfo>::NoIndex) {
-    return nullptr;
-  }
-
-  
-  
-  RefPtr<ScriptLoadRequest> request = mPreloads[i].mRequest;
-  nsString preloadCharset(mPreloads[i].mCharset);
-  mPreloads.RemoveElementAt(i);
-
-  
-  
-  nsAutoString elementCharset;
-  aElement->GetScriptCharset(elementCharset);
-  if (!elementCharset.Equals(preloadCharset) ||
-      aElement->GetCORSMode() != request->mCORSMode ||
-      mDocument->GetReferrerPolicy() != request->mReferrerPolicy ||
-      aScriptKind != request->mKind) {
-    
-    return nullptr;
-  }
-
-  return request;
-}
-
-void
-ScriptLoader::GetSRIMetadata(const nsAString& aIntegrityAttr,
-                             SRIMetadata *aMetadataOut)
-{
-  MOZ_ASSERT(aMetadataOut->IsEmpty());
-
-  if (aIntegrityAttr.IsEmpty()) {
-    return;
-  }
-
-  MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
-          ("ScriptLoader::GetSRIMetadata, integrity=%s",
-           NS_ConvertUTF16toUTF8(aIntegrityAttr).get()));
-
-  nsAutoCString sourceUri;
-  if (mDocument->GetDocumentURI()) {
-    mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
-  }
-  SRICheck::IntegrityMetadata(aIntegrityAttr, sourceUri, mReporter,
-                              aMetadataOut);
 }
 
 namespace {
@@ -3164,7 +3129,16 @@ ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
   }
 
   SRIMetadata sriMetadata;
-  GetSRIMetadata(aIntegrity, &sriMetadata);
+  if (!aIntegrity.IsEmpty()) {
+    MOZ_LOG(SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
+            ("ScriptLoader::PreloadURI, integrity=%s",
+             NS_ConvertUTF16toUTF8(aIntegrity).get()));
+    nsAutoCString sourceUri;
+    if (mDocument->GetDocumentURI()) {
+      mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
+    }
+    SRICheck::IntegrityMetadata(aIntegrity, sourceUri, mReporter, &sriMetadata);
+  }
 
   RefPtr<ScriptLoadRequest> request =
     CreateLoadRequest(ScriptKind::eClassic, aURI, nullptr,
