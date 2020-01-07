@@ -757,8 +757,10 @@ HttpObserverManager = {
         }
 
         if (opts.responseHeaders) {
-          responseHeaders = responseHeaders || new ResponseHeaderChanger(channel);
-          data.responseHeaders = responseHeaders.toArray();
+          try {
+            responseHeaders = responseHeaders || new ResponseHeaderChanger(channel);
+            data.responseHeaders = responseHeaders.toArray();
+          } catch (e) {  }
         }
 
         if (opts.requestBody && channel.canModify) {
