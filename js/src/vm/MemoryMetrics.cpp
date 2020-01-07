@@ -13,6 +13,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "vm/ArrayObject.h"
+#include "vm/HelperThreads.h"
 #include "vm/JSCompartment.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
@@ -848,6 +849,12 @@ CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats, ObjectPrivateVis
 JS_PUBLIC_API(bool)
 JS::CollectGlobalStats(GlobalStats *gStats)
 {
+    AutoLockHelperThreadState lock;
+
+    
+    
+    HelperThreadState().addSizeOfIncludingThis(gStats, lock);
+
 #ifdef JS_TRACE_LOGGING
     
     gStats->tracelogger += SizeOfTraceLogState(gStats->mallocSizeOf_);

@@ -2318,6 +2318,17 @@ JSReporter::CollectReports(WindowPaths* windowPaths,
         "The sum of all measurements under 'explicit/js-non-window/runtime/'.");
 
     
+
+    REPORT(NS_LITERAL_CSTRING("js-helper-threads/idle"),
+        KIND_OTHER, UNITS_COUNT, gStats.helperThread.idleThreadCount,
+        "The current number of idle JS HelperThreads.");
+
+    REPORT(NS_LITERAL_CSTRING("js-helper-threads/active"),
+        KIND_OTHER, UNITS_COUNT, gStats.helperThread.activeThreadCount,
+        "The current number of active JS HelperThreads. Memory held by these is"
+        " not reported.");
+
+    
     REPORT_BYTES(NS_LITERAL_CSTRING("wasm-runtime"),
         KIND_OTHER, rtStats.runtime.wasmRuntime,
         "The memory used for wasm runtime bookkeeping.");
@@ -2474,6 +2485,12 @@ JSReporter::CollectReports(WindowPaths* windowPaths,
     REPORT_BYTES(NS_LITERAL_CSTRING("explicit/js-non-window/tracelogger"),
         KIND_HEAP, gStats.tracelogger,
         "The memory used for the tracelogger, including the graph and events.");
+
+    
+
+    REPORT_BYTES(NS_LITERAL_CSTRING("explicit/js-non-window/helper-thread/heap-other"),
+        KIND_HEAP, gStats.helperThread.stateData,
+        "Memory used by HelperThreadState.");
 }
 
 static nsresult
