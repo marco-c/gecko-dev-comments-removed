@@ -1527,6 +1527,13 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* aNe
                 return LOOKUP_OK;
             }
 
+            if (rec->mTrrA && (!gTRRService || !gTRRService->EarlyAAAA())) {
+                
+                
+                LOG(("CompleteLookup: avoiding early use of TRR AAAA!\n"));
+                return LOOKUP_OK;
+            }
+
             
             
             newRRSet = new AddrInfo(rec->mFirstTRR);
