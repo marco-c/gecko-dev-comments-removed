@@ -19,8 +19,7 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
-class WorkerHolder;
-class WorkerPrivate;
+class ThreadSafeWorkerRef;
 
 template <class Derived> class FetchBody;
 
@@ -48,7 +47,7 @@ public:
   ReleaseObject();
 
   void
-  BeginConsumeBodyMainThread();
+  BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef);
 
   void
   ContinueConsumeBody(nsresult aStatus, uint32_t aLength, uint8_t* aResult,
@@ -59,12 +58,6 @@ public:
 
   void
   ShutDownMainThreadConsuming();
-
-  WorkerPrivate*
-  GetWorkerPrivate() const
-  {
-    return mWorkerPrivate;
-  }
 
   void
   NullifyConsumeBodyPump()
@@ -79,7 +72,6 @@ public:
 private:
   FetchBodyConsumer(nsIEventTarget* aMainThreadEventTarget,
                     nsIGlobalObject* aGlobalObject,
-                    WorkerPrivate* aWorkerPrivate,
                     FetchBody<Derived>* aBody,
                     nsIInputStream* aBodyStream,
                     Promise* aPromise,
@@ -89,9 +81,6 @@ private:
 
   void
   AssertIsOnTargetThread() const;
-
-  bool
-  RegisterWorkerHolder();
 
   nsCOMPtr<nsIThread> mTargetThread;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
@@ -107,15 +96,7 @@ private:
   MutableBlobStorage::MutableBlobStorageType mBlobStorageType;
   nsCString mBodyMimeType;
 
-  
-  
-  
-  UniquePtr<WorkerHolder> mWorkerHolder;
-
   nsCOMPtr<nsIGlobalObject> mGlobal;
-
-  
-  WorkerPrivate* mWorkerPrivate;
 
   
   nsCOMPtr<nsIInputStreamPump> mConsumeBodyPump;
