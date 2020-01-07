@@ -1590,7 +1590,7 @@ HTMLEditor::PasteAsCitedQuotation(const nsAString& aCitation,
 {
   AutoPlaceholderBatch beginBatching(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertQuotation,
+                                      *this, EditSubAction::eInsertQuotation,
                                       nsIEditor::eNext);
 
   
@@ -1800,7 +1800,7 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
 
   AutoPlaceholderBatch beginBatching(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertQuotation,
+                                      *this, EditSubAction::eInsertQuotation,
                                       nsIEditor::eNext);
 
   
@@ -1907,7 +1907,7 @@ HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
 
   AutoPlaceholderBatch beginBatching(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertQuotation,
+                                      *this, EditSubAction::eInsertQuotation,
                                       nsIEditor::eNext);
 
   

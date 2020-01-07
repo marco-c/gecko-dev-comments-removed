@@ -96,7 +96,8 @@ enum class EditSubAction : int32_t
   
   eInsertElement,
 
-  insertQuotation,
+  
+  eInsertQuotation,
 
   htmlPaste = 3012,
   loadHTML,
