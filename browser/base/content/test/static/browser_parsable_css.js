@@ -112,9 +112,6 @@ let whitelist = [
   {propName: "--theme-search-overlays-semitransparent",
    isFromDevTools: true},
   
-  {propName: "--breakpoint-hover-background",
-   isFromDevTools: true},
-  
   {propName: "--theme-codemirror-gutter-background",
    isFromDevTools: true},
   
