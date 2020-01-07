@@ -113,8 +113,8 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
   }
 
   
-  for (size_t i = 0; i < document->SheetCount(); i++) {
-    sheets.AppendElement(document->SheetAt(i));
+  for (int32_t i = 0; i < document->GetNumberOfStyleSheets(); i++) {
+    sheets.AppendElement(document->GetStyleSheetAt(i));
   }
 
   nsISupports** ret = static_cast<nsISupports**>(moz_xmalloc(sheets.Length() *
