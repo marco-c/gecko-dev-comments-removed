@@ -504,7 +504,13 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
         cloneElem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension);
       }
 
-      if (data || !extension.IsEmpty()) {
+      if ((data && data->GetCustomElementType() == tagAtom) ||
+          !extension.IsEmpty()) {
+        
+        
+        
+        
+        
         RefPtr<nsAtom> typeAtom = extension.IsEmpty() ? tagAtom : NS_Atomize(extension);
         cloneElem->SetCustomElementData(new CustomElementData(typeAtom));
         CustomElementDefinition* definition =
