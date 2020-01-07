@@ -8438,6 +8438,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   if (!childFrame || childFrame->GetContent() != aChild) {
     
     
+    childFrame = nullptr;
     UnregisterDisplayNoneStyleFor(aChild, aContainer);
   }
   MOZ_ASSERT(!childFrame || !GetDisplayContentsStyleFor(aChild),
