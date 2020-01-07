@@ -337,12 +337,33 @@ public:
     auto castLoadInfo = static_cast<LoadInfo*>(loadInfo.get());
     castLoadInfo->SynthesizeServiceWorkerTainting(mInternalResponse->GetTainting());
 
-    nsCOMPtr<nsIInputStream> body;
-    mInternalResponse->GetUnfilteredBody(getter_AddRefs(body));
+    
+    nsAutoCString preferredAltDataType(EmptyCString());
+    nsCOMPtr<nsICacheInfoChannel> outerChannel = do_QueryInterface(underlyingChannel);
+    if (outerChannel) {
+      outerChannel->GetPreferredAlternativeDataType(preferredAltDataType);
+    }
+
+    
+    nsAutoCString altDataType;
+    nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel = mInternalResponse->GetCacheInfoChannel();
+    if (cacheInfoChannel) {
+      cacheInfoChannel->GetAlternativeDataType(altDataType);
+    }
+
+     nsCOMPtr<nsIInputStream> body;
+    if (preferredAltDataType.Equals(altDataType)) {
+      body = mInternalResponse->TakeAlternativeBody();
+    }
+    if (!body) {
+      mInternalResponse->GetUnfilteredBody(getter_AddRefs(body));
+    }
+
     RefPtr<BodyCopyHandle> copyHandle;
     copyHandle = new BodyCopyHandle(Move(mClosure));
 
-    rv = mChannel->StartSynthesizedResponse(body, copyHandle, mResponseURLSpec,
+    rv = mChannel->StartSynthesizedResponse(body, copyHandle, cacheInfoChannel,
+                                            mResponseURLSpec,
                                             mInternalResponse->IsRedirected());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
