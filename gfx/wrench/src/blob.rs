@@ -55,8 +55,9 @@ fn render_blob(
     };
 
     let mut dirty_rect = dirty_rect.unwrap_or(DeviceUintRect::new(
-        DeviceUintPoint::new(0, 0),
-        DeviceUintSize::new(descriptor.size.width, descriptor.size.height)));
+        DeviceUintPoint::origin(),
+        descriptor.size,
+    ));
 
     if let Some((tile_size, tile)) = tile {
         dirty_rect = intersect_for_tile(dirty_rect, size2(tile_size as u32, tile_size as u32),
