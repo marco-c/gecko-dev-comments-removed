@@ -17,8 +17,8 @@ async function setup() {
   
   requestLongerTimeout(100);
 
-  SimpleTest.requestCompleteLog();
   
+  SimpleTest.requestCompleteLog();
 
   info("installing extension temporarily");
   let chromeURL = Services.io.newURI(EXTENSION_DIR);
