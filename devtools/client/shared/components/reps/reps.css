@@ -66,6 +66,12 @@
 
 .objectBox-string a, .objectBox-string a:visited {
   color: currentColor;
+  text-decoration: none;
+  font-style: italic;
+}
+
+.objectBox-string a:hover {
+  text-decoration: underline;
 }
 
 .objectBox-function,
@@ -146,6 +152,13 @@
 
 .angleBracket {
   color: var(--theme-body-color);
+}
+
+
+
+
+.objectLengthBubble {
+  color: var(--null-color);
 }
 
 
