@@ -86,12 +86,6 @@ using namespace mozilla::media;
 #define SLOGW(x, ...) NS_WARNING(nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get())
 #define SLOGE(x, ...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get(), nullptr, __FILE__, __LINE__)
 
-#ifdef NIGHTLY_BUILD
-#define DEBUG_SHUTDOWN(fmt, ...) printf_stderr("[DEBUG SHUTDOWN] %s: " fmt "\n", __func__, ##__VA_ARGS__)
-#else
-#define DEBUG_SHUTDOWN(...) do { } while (0)
-#endif
-
 
 
 
@@ -2663,8 +2657,6 @@ ShutdownState::Enter()
   
   master->mWatchManager.Shutdown();
 
-  DEBUG_SHUTDOWN("state machine=%p reader=%p", this, Reader());
-
   return Reader()->Shutdown()->Then(
     OwnerThread(), __func__, master,
     &MediaDecoderStateMachine::FinishShutdown,
@@ -3499,7 +3491,6 @@ MediaDecoderStateMachine::FinishShutdown()
 {
   MOZ_ASSERT(OnTaskQueue());
   LOG("Shutting down state machine task queue");
-  DEBUG_SHUTDOWN("state machine=%p", this);
   return OwnerThread()->BeginShutdown();
 }
 

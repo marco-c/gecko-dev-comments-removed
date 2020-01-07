@@ -284,9 +284,6 @@ MediaDecoder::Shutdown()
 
   DiscardOngoingSeekIfExists();
 
-#ifdef NIGHTLY_BUILD
-  DUMP("[DEBUG SHUTDOWN] %s: decoder=%p state machine=%p", __func__, this, mDecoderStateMachine.get());
-#endif
   
   
   
