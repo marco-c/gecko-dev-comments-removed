@@ -52,7 +52,9 @@ var miscElements = {
   },
 
   
-  undefinedelement: {},
+  undefinedelement: {
+    inputMode: {type: "enum", keywords: ["none", "text", "tel", "url", "email", "numeric", "decimal", "search"]},
+  },
 };
 
 mergeElements(miscElements);

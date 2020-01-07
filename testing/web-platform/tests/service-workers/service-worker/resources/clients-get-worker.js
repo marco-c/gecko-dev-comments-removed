@@ -4,9 +4,9 @@
 
 
 self.onfetch = function(e) {
-  if (e.request.mode === 'navigate' && e.clientId !== null) {
+  if (e.request.mode === 'navigate' && e.clientId !== "") {
     e.respondWith(Response.error(
-      '`clientId` incorrectly set to non-null value for request with mode `navigate`'
+      '`clientId` incorrectly set to non-empty string for request with mode `navigate`'
     ));
     return;
   }

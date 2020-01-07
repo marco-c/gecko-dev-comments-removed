@@ -74,12 +74,14 @@ function runTest(config,qualifier) {
 
             
             window.addEventListener('message', test.step_func(function(messageEvent) {
-                messageEvent.data.forEach(test.step_func(function(assertion) {
-                    assert_equals(assertion.actual, assertion.expected, assertion.message);
-                }));
+                if (messageEvent.data.testResult) {
+                    messageEvent.data.testResult.forEach(test.step_func(function(assertion) {
+                        assert_equals(assertion.actual, assertion.expected, assertion.message);
+                    }));
 
-                win.close();
-                test.done();
+                    win.close();
+                    test.done();
+                }
             }));
 
             
@@ -96,7 +98,8 @@ function runTest(config,qualifier) {
             return access.createMediaKeys();
         }).then(function(mediaKeys) {
             _mediaKeys = mediaKeys;
-            _video.setMediaKeys( mediaKeys );
+            return _video.setMediaKeys( mediaKeys );
+        }).then(function() {
             _mediaKeySession = _mediaKeys.createSession('persistent-license');
             waitForEventAndRunStep('encrypted', _video, onEncrypted, test);
             waitForEventAndRunStep('playing', _video, onPlaying, test);

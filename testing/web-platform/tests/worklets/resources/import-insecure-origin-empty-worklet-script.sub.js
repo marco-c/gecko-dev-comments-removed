@@ -1,0 +1,5 @@
+
+
+
+
+import 'http://{{host}}:{{ports[https][0]}}/worklets/resources/empty-worklet-script.js';

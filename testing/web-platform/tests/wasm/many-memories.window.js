@@ -7,7 +7,7 @@
 test(function() {
   let memories = [];
   try {
-    for (let i = 0; i < 600; i++) {
+    for (let i = 0; i < 20; i++) {
       memories.push(new WebAssembly.Memory({initial: 1}));
     }
   } catch (e) {

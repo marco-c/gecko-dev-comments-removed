@@ -1,32 +1,14 @@
 
 def main(request, response):
-    credentials_mode = request.GET.first("mode")
     cookie = request.cookies.first("cookieName", None)
-    source_origin = request.headers.get("origin", None);
-    is_cross_origin = request.GET.first("is_cross_origin", False)
+    expected_value = request.GET.first("value", None)
+    source_origin = request.headers.get("origin", None)
 
-    
-    if credentials_mode is "default" and cookie is not None:
-        return (404)
+    response_headers = [("Content-Type", "text/javascript"),
+                        ("Access-Control-Allow-Origin", source_origin),
+                        ("Access-Control-Allow-Credentials", "true")]
 
-    
-    if credentials_mode is "omit" and cookie is not None:
-        return (404)
+    if cookie == expected_value:
+        return (200, response_headers, "")
 
-    if credentials_mode is "same-origin":
-        
-        
-        if is_cross_origin and cookie is not None:
-          return (404)
-        
-        
-        if not is_cross_origin and cookie is None:
-          return (404)
-
-    
-    if credentials_mode is "include" and cookie is None:
-        return (404)
-
-    return (200, [("Content-Type", "text/javascript"),
-                  ("Access-Control-Allow-Origin", source_origin),
-                  ("Access-Control-Allow-Credentials", "true")], "")
+    return (404, response_headers)

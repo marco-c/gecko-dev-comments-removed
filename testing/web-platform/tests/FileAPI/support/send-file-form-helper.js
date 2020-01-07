@@ -1,0 +1,249 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const kTestChars = 'ABC~‾¥≈¤･・•∙·☼★星🌟星★☼·∙•・･¤≈¥‾~XYZ';
+
+
+
+
+const kTestFallbackIso2022jp =
+      ('ABC~\x1B(J~\\≈¤\x1B$B!&!&\x1B(B•∙·☼\x1B$B!z@1\x1B(B🌟' +
+       '\x1B$B@1!z\x1B(B☼·∙•\x1B$B!&!&\x1B(B¤≈\x1B(J\\~\x1B(B~XYZ').replace(
+             /[^\0-\x7F]/gu,
+           x => `&#${x.codePointAt(0)};`);
+
+
+
+
+
+const kTestFallbackWindows1252 =
+      'ABC~‾\xA5≈\xA4･・\x95∙\xB7☼★星🌟星★☼\xB7∙\x95・･\xA4≈\xA5‾~XYZ'.replace(
+            /[^\0-\xFF]/gu,
+          x => `&#${x.codePointAt(0)};`).replace(/[\x80-\xFF]/g, '\uFFFD');
+
+const kTestFallbackXUserDefined =
+      kTestChars.replace(/[^\0-\x7F]/gu, x => `&#${x.codePointAt(0)};`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const formPostFileUploadTest = ({
+  fileNameSource,
+  fileBaseName,
+  formEncoding,
+  expectedEncodedBaseName,
+}) => {
+  promise_test(async testCase => {
+
+    if (document.readyState !== 'complete') {
+      await new Promise(resolve => addEventListener('load', resolve));
+    }
+
+    const formTargetFrame = Object.assign(document.createElement('iframe'), {
+      name: 'formtargetframe',
+    });
+    document.body.append(formTargetFrame);
+    testCase.add_cleanup(() => {
+      document.body.removeChild(formTargetFrame);
+    });
+
+    const form = Object.assign(document.createElement('form'), {
+      acceptCharset: formEncoding,
+      action: '/fetch/api/resources/echo-content.py',
+      method: 'POST',
+      enctype: 'multipart/form-data',
+      target: formTargetFrame.name,
+    });
+    document.body.append(form);
+    testCase.add_cleanup(() => {
+      document.body.removeChild(form);
+    });
+
+    
+    
+    form.append(Object.assign(document.createElement('input'), {
+      type: 'hidden',
+      name: '_charset_',
+    }));
+
+    
+    
+    
+    form.append(Object.assign(document.createElement('input'), {
+      type: 'hidden',
+      name: 'filename',
+      value: fileBaseName,
+    }));
+
+    
+    
+    form.append(Object.assign(document.createElement('input'), {
+      type: 'hidden',
+      name: fileBaseName,
+      value: 'filename',
+    }));
+
+    const fileInput = Object.assign(document.createElement('input'), {
+      type: 'file',
+      name: 'file',
+    });
+    form.append(fileInput);
+
+    
+    
+    
+    const baseNameOfFilePath = filePath => filePath.split(/[\/\\]/).pop();
+    await new Promise(resolve => {
+      const dataTransfer = new DataTransfer;
+      dataTransfer.items.add(
+          new File([kTestChars], fileBaseName, {type: 'text/plain'}));
+      fileInput.files = dataTransfer.files;
+      
+      
+      
+      
+      assert_equals(
+          fileInput.files[0].name,
+          baseNameOfFilePath(fileInput.value),
+          `The basename of the field's value should match its files[0].name`);
+      form.submit();
+      formTargetFrame.onload = resolve;
+    });
+
+    const formDataText = formTargetFrame.contentDocument.body.textContent;
+    const formDataLines = formDataText.split('\n');
+    if (formDataLines.length && !formDataLines[formDataLines.length - 1]) {
+      --formDataLines.length;
+    }
+    assert_greater_than(
+        formDataLines.length,
+        2,
+        `${fileBaseName}: multipart form data must have at least 3 lines: ${
+             JSON.stringify(formDataText)
+           }`);
+    const boundary = formDataLines[0];
+    assert_equals(
+        formDataLines[formDataLines.length - 1],
+        boundary + '--',
+        `${fileBaseName}: multipart form data must end with ${boundary}--: ${
+             JSON.stringify(formDataText)
+           }`);
+    const expectedText = [
+      boundary,
+      'Content-Disposition: form-data; name="_charset_"',
+      '',
+      formEncoding,
+      boundary,
+      'Content-Disposition: form-data; name="filename"',
+      '',
+      expectedEncodedBaseName,
+      boundary,
+      `Content-Disposition: form-data; name="${expectedEncodedBaseName}"`,
+      '',
+      'filename',
+      boundary,
+      `Content-Disposition: form-data; name="file"; ` +
+          `filename="${expectedEncodedBaseName}"`,
+      'Content-Type: text/plain',
+      '',
+      kTestChars,
+      boundary + '--',
+    ].join('\n');
+    assert_true(
+        formDataText.startsWith(expectedText),
+        `Unexpected multipart-shaped form data received:\n${
+             formDataText
+           }\nExpected:\n${expectedText}`);
+  }, `Upload ${fileBaseName} (${fileNameSource}) in ${formEncoding} form`);
+};

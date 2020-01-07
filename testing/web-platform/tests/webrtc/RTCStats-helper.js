@@ -28,12 +28,6 @@
 
 
 
-
-
-
-
-
-
 const statsValidatorTable = {
   'codec': validateCodecStats,
   'inbound-rtp': validateInboundRtpStreamStats,
@@ -80,6 +74,16 @@ function assert_stats_report_has_stats(statsReport, statsTypes) {
     assert_true(hasTypes.has(type),
       `Expect statsReport to contain stats object of type ${type}`);
   }
+}
+
+function findStatsFromReport(statsReport, predicate, message) {
+  for (const stats of statsReport.values()) {
+    if (predicate(stats)) {
+      return stats;
+    }
+  }
+
+  assert_unreached(message || 'none of stats in statsReport satisfy given condition')
 }
 
 
@@ -132,14 +136,10 @@ function validateOptionalIdField(statsReport, stats, field, type) {
 
 
 function validateRtcStats(statsReport, stats) {
-  assert_number_field(stats, 'timeStamp');
+  assert_number_field(stats, 'timestamp');
   assert_string_field(stats, 'type');
   assert_string_field(stats, 'id');
 }
-
-
-
-
 
 
 
@@ -170,6 +170,7 @@ function validateRtpStreamStats(statsReport, stats) {
 
   assert_unsigned_int_field(stats, 'ssrc');
   assert_string_field(stats, 'mediaType');
+  assert_enum_field(stats, 'mediaType', ['audio', 'video'])
 
   validateIdField(statsReport, stats, 'trackId', 'track');
   validateIdField(statsReport, stats, 'transportId', 'transport');
@@ -181,9 +182,6 @@ function validateRtpStreamStats(statsReport, stats) {
   assert_optional_unsigned_int_field(stats, 'sliCount');
   assert_optional_unsigned_int_field(stats, 'qpSum');
 }
-
-
-
 
 
 
@@ -221,9 +219,16 @@ function validateCodecStats(statsReport, stats) {
   assert_unsigned_int_field(stats, 'clockRate');
   assert_unsigned_int_field(stats, 'channels');
 
-  assert_optional_string_field(stats, 'sdpFmtpLine');
+  assert_string_field(stats, 'sdpFmtpLine');
   assert_optional_string_field(stats, 'implementation');
 }
+
+
+
+
+
+
+
 
 
 
@@ -249,14 +254,15 @@ function validateCodecStats(statsReport, stats) {
 function validateReceivedRtpStreamStats(statsReport, stats) {
   validateRtpStreamStats(statsReport, stats);
 
-  assert_optional_unsigned_int_field(stats, 'packetsReceived');
-  assert_optional_unsigned_int_field(stats, 'bytesReceived');
-  assert_optional_unsigned_int_field(stats, 'packetsLost');
+  assert_unsigned_int_field(stats, 'packetsReceived');
+  assert_unsigned_int_field(stats, 'bytesReceived');
+  assert_unsigned_int_field(stats, 'packetsLost');
 
-  assert_optional_number_field(stats, 'jitter');
+  assert_number_field(stats, 'jitter');
   assert_optional_number_field(stats, 'fractionLost');
 
-  assert_optional_unsigned_int_field(stats, 'packetsDiscarded');
+  assert_unsigned_int_field(stats, 'packetsDiscarded');
+  assert_optional_unsigned_int_field(stats, 'packetsFailedDecryption');
   assert_optional_unsigned_int_field(stats, 'packetsRepaired');
   assert_optional_unsigned_int_field(stats, 'burstPacketsLost');
   assert_optional_unsigned_int_field(stats, 'burstPacketsDiscarded');
@@ -283,29 +289,15 @@ function validateReceivedRtpStreamStats(statsReport, stats) {
 
 
 
-
-
-
-
-
-
-
-
-
 function validateInboundRtpStreamStats(statsReport, stats) {
   validateReceivedRtpStreamStats(statsReport, stats);
 
-  assert_unsigned_int_field(stats, 'packetsReceived');
-  assert_unsigned_int_field(stats, 'bytesReceived');
-  assert_unsigned_int_field(stats, 'packetsLost');
-  assert_number_field(stats, 'jitter');
-  assert_unsigned_int_field(stats, 'packetsDiscarded');
-
-  validateOptionalIdField(statsReport, stats, 'remoteId', 'remote-outbound-rtp');
-
-  assert_optional_unsigned_int_field(stats, 'framesDecoded');
+  validateIdField(statsReport, stats, 'remoteId', 'remote-outbound-rtp');
+  assert_unsigned_int_field(stats, 'framesDecoded');
   assert_optional_number_field(stats, 'lastPacketReceivedTimeStamp');
 }
+
+
 
 
 
@@ -321,9 +313,14 @@ function validateInboundRtpStreamStats(statsReport, stats) {
 function validateRemoteInboundRtpStreamStats(statsReport, stats) {
   validateReceivedRtpStreamStats(statsReport, stats);
 
-  validateOptionalIdField(statsReport, stats, 'localId', 'outbound-rtp');
-  assert_optional_number_field(stats, 'roundTripTime');
+  validateIdField(statsReport, stats, 'localId', 'outbound-rtp');
+  assert_number_field(stats, 'roundTripTime');
 }
+
+
+
+
+
 
 
 
@@ -338,9 +335,9 @@ function validateRemoteInboundRtpStreamStats(statsReport, stats) {
 function validateSentRtpStreamStats(statsReport, stats) {
   validateRtpStreamStats(statsReport, stats);
 
-  assert_optional_unsigned_int_field(stats, 'packetsSent');
+  assert_unsigned_int_field(stats, 'packetsSent');
   assert_optional_unsigned_int_field(stats, 'packetsDiscardedOnSend');
-  assert_optional_unsigned_int_field(stats, 'bytesSent');
+  assert_unsigned_int_field(stats, 'bytesSent');
   assert_optional_unsigned_int_field(stats, 'bytesDiscardedOnSend');
 }
 
@@ -361,20 +358,14 @@ function validateSentRtpStreamStats(statsReport, stats) {
 
 
 
-
-
-
-
-
 function validateOutboundRtpStreamStats(statsReport, stats) {
-  validateOptionalIdField(statsReport, stats, 'remoteId', 'remote-inbound-rtp');
+  validateSentRtpStreamStats(statsReport, stats)
 
-  assert_unsigned_int_field(stats, 'packetsSent');
-  assert_unsigned_int_field(stats, 'bytesSent');
+  validateIdField(statsReport, stats, 'remoteId', 'remote-inbound-rtp');
 
   assert_optional_number_field(stats, 'lastPacketSentTimestamp');
   assert_optional_number_field(stats, 'targetBitrate');
-  assert_optional_unsigned_int_field(stats, 'framesEncoded');
+  assert_unsigned_int_field(stats, 'framesEncoded');
   assert_optional_number_field(stats, 'totalEncodeTime');
   assert_optional_number_field(stats, 'averageRTCPInterval');
 }
@@ -389,15 +380,15 @@ function validateOutboundRtpStreamStats(statsReport, stats) {
 
 
 
+
+
+
 function validateRemoteOutboundRtpStreamStats(statsReport, stats) {
   validateSentRtpStreamStats(statsReport, stats);
 
-  validateOptionalIdField(statsReport, stats, 'localId', 'inbound-rtp');
-  assert_optional_number_field(stats, 'remoteTimeStamp');
+  validateIdField(statsReport, stats, 'localId', 'inbound-rtp');
+  assert_number_field(stats, 'remoteTimeStamp');
 }
-
-
-
 
 
 
@@ -441,8 +432,6 @@ function validatePeerConnectionStats(statsReport, stats) {
   assert_optional_unsigned_int_field(stats, 'dataChannelsRequested');
   assert_optional_unsigned_int_field(stats, 'dataChannelsAccepted');
 }
-
-
 
 
 
@@ -525,6 +514,8 @@ function validateMediaStreamStats(statsReport, stats) {
 
 
 
+
+
 function validateMediaStreamTrackStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
@@ -533,7 +524,7 @@ function validateMediaStreamTrackStats(statsReport, stats) {
   assert_boolean_field(stats, 'ended');
   assert_boolean_field(stats, 'detached');
 
-  assert_optional_string_field(stats, 'kind');
+  assert_optional_enum_field(stats, 'kind', ['audio', 'video']);
   assert_optional_number_field(stats, 'estimatedPlayoutTimestamp');
 
   assert_unsigned_int_field(stats, 'frameWidth');
@@ -541,11 +532,13 @@ function validateMediaStreamTrackStats(statsReport, stats) {
   assert_number_field(stats, 'framesPerSecond');
 
   assert_optional_unsigned_int_field(stats, 'framesCaptured');
-  assert_unsigned_int_field(stats, 'frameSent');
-  assert_unsigned_int_field(stats, 'frameReceived');
-  assert_unsigned_int_field(stats, 'frameDecoded');
-  assert_unsigned_int_field(stats, 'frameDropped');
-  assert_unsigned_int_field(stats, 'frameCorrupted');
+  assert_unsigned_int_field(stats, 'framesSent');
+  assert_optional_unsigned_int_field(stats, 'keyFramesSent');
+  assert_unsigned_int_field(stats, 'framesReceived');
+  assert_optional_unsigned_int_field(stats, 'keyFramesReceived');
+  assert_unsigned_int_field(stats, 'framesDecoded');
+  assert_unsigned_int_field(stats, 'framesDropped');
+  assert_unsigned_int_field(stats, 'framesCorrupted');
 
   assert_optional_unsigned_int_field(stats, 'partialFramesLost');
   assert_optional_unsigned_int_field(stats, 'fullFramesLost');
@@ -595,38 +588,23 @@ function validateMediaStreamTrackStats(statsReport, stats) {
 
 
 
-
-
-
-
 function validateDataChannelStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
   assert_string_field(stats, 'label');
   assert_string_field(stats, 'protocol');
-  assert_int_field(stats, 'datachannelid');
+  assert_int_field(stats, 'dataChannelIdentifier');
 
   validateOptionalIdField(statsReport, stats, 'transportId', 'transport');
 
   assert_enum_field(stats, 'state',
     ['connecting', 'open', 'closing', 'closed']);
 
-  assert_unsigned_int_field(stats, 'messageSent');
-
-  assert_unsigned_int_field(stats, 'messageSent');
+  assert_unsigned_int_field(stats, 'messagesSent');
   assert_unsigned_int_field(stats, 'bytesSent');
   assert_unsigned_int_field(stats, 'messagesReceived');
   assert_unsigned_int_field(stats, 'bytesReceived');
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -718,11 +696,22 @@ function validateTransportStats(statsReport, stats) {
 
 
 
+
+
+
+
+
+
+
+
 function validateIceCandidateStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
   validateOptionalIdField(statsReport, stats, 'transportId', 'transport');
   assert_optional_boolean_field(stats, 'isRemote');
+
+  assert_optional_enum_field(stats, 'networkType',
+    ['bluetooth', 'cellular', 'ethernet', 'wifi', 'wimax', 'vpn', 'unknown'])
 
   assert_string_field(stats, 'ip');
   assert_int_field(stats, 'port');
@@ -736,13 +725,6 @@ function validateIceCandidateStats(statsReport, stats) {
   assert_optional_string_field(stats, 'relayProtocol');
   assert_optional_boolean_field(stats, 'deleted');
 }
-
-
-
-
-
-
-
 
 
 
@@ -830,7 +812,6 @@ function validateIceCandidatePairStats(statsReport, stats) {
   assert_optional_unsigned_int_field(stats, 'consentRequestsSent');
   assert_optional_number_field(stats, 'consentExpiredTimestamp');
 }
-
 
 
 

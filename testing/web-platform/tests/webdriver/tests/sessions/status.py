@@ -21,13 +21,13 @@ def test_get_status_no_session(http):
         assert isinstance(value["message"], basestring)
 
 
-def test_status_with_session_running_on_endpoint_node(new_session):
+def test_status_with_session_running_on_endpoint_node(new_session, add_browser_capabilites):
     
     
     
     
 
-    _, session = new_session("{}")  
+    _, session = new_session({"capabilities": {"alwaysMatch": add_browser_capabilites({})}})
     value = session.send_command("GET", "status")
 
     assert value["ready"] == False

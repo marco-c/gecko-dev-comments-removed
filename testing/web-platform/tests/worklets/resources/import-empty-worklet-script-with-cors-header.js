@@ -1,0 +1,3 @@
+
+
+import './empty-worklet-script-with-cors-header.js';

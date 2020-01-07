@@ -1,8 +1,7 @@
 
 
 var PORT = "{{ports[ws][0]}}";
-
-var PORT_SSL = "{{ports[ws][0]}}";
+var PORT_SSL = "{{ports[wss][0]}}";
 
 var SCHEME_DOMAIN_PORT;
 if (location.search == '?wss') {
