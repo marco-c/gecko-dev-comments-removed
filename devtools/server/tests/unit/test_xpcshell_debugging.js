@@ -11,6 +11,7 @@ function run_test() {
   let testFile = do_get_file("xpcshell_debugging_script.js");
 
   
+  
   let testResumed = false;
   let DebuggerServer = _setupDebuggerServer([testFile.path], () => {
     testResumed = true;

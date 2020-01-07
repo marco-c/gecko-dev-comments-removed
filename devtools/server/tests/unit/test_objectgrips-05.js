@@ -57,10 +57,11 @@ function test_object_grip() {
     });
   });
 
+  
   gDebuggee.eval("(" + function() {
     let obj1 = {};
     Object.freeze(obj1);
     stopMe(obj1, {});
   } + "())");
+  
 }
-

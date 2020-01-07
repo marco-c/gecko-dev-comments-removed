@@ -61,6 +61,7 @@ function test_object_grip() {
     });
   });
 
+  
   gDebuggee.eval("(" + function() {
     let f = {};
     Object.freeze(f);
@@ -70,5 +71,5 @@ function test_object_grip() {
     Object.preventExtensions(ne);
     stopMe(f, s, ne, {});
   } + "())");
+  
 }
-
