@@ -353,7 +353,7 @@ public:
 
 
   gfxRect TransformFrameRectFromTextChild(const nsRect& aRect,
-                                          nsIFrame* aChildFrame);
+                                          const nsIFrame* aChildFrame);
 
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;

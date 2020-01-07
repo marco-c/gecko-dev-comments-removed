@@ -223,7 +223,7 @@ public:
 
 
 
-  static bool FrameHasDisplayPort(nsIFrame* aFrame, nsIFrame* aScrolledFrame = nullptr);
+  static bool FrameHasDisplayPort(nsIFrame* aFrame, const nsIFrame* aScrolledFrame = nullptr);
 
   
 
@@ -854,7 +854,7 @@ public:
 
 
 
-  static nsRect TransformFrameRectToAncestor(nsIFrame* aFrame,
+  static nsRect TransformFrameRectToAncestor(const nsIFrame* aFrame,
                                              const nsRect& aRect,
                                              const nsIFrame* aAncestor,
                                              bool* aPreservesAxisAlignedRectangles = nullptr,
@@ -868,7 +868,7 @@ public:
 
 
 
-  static Matrix4x4Flagged GetTransformToAncestor(nsIFrame *aFrame,
+  static Matrix4x4Flagged GetTransformToAncestor(const nsIFrame *aFrame,
                                           const nsIFrame *aAncestor,
                                           uint32_t aFlags = 0,
                                           nsIFrame** aOutAncestor = nullptr);
@@ -2029,7 +2029,7 @@ public:
 
 
 
-  static bool IsPopup(nsIFrame* aFrame);
+  static bool IsPopup(const nsIFrame* aFrame);
 
   
 
