@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/layers/IAPZCTreeManager.h"
+#include "mozilla/layers/APZInputBridge.h"
 
 #include "gfxPrefs.h"                       
 #include "InputData.h"                      
@@ -29,7 +29,7 @@ WillHandleMouseEvent(const WidgetMouseEventBase& aEvent)
 }
 
  bool
-IAPZCTreeManager::WillHandleWheelEvent(WidgetWheelEvent* aEvent)
+APZInputBridge::WillHandleWheelEvent(WidgetWheelEvent* aEvent)
 {
   return EventStateManager::WheelEventIsScrollAction(aEvent) &&
          (aEvent->mDeltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE ||
@@ -38,7 +38,7 @@ IAPZCTreeManager::WillHandleWheelEvent(WidgetWheelEvent* aEvent)
 }
 
 nsEventStatus
-IAPZCTreeManager::ReceiveInputEvent(
+APZInputBridge::ReceiveInputEvent(
     WidgetInputEvent& aEvent,
     ScrollableLayerGuid* aOutTargetGuid,
     uint64_t* aOutInputBlockId)

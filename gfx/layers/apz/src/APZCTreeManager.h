@@ -15,6 +15,7 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
+#include "mozilla/layers/APZInputBridge.h" 
 #include "mozilla/layers/APZTestData.h" 
 #include "mozilla/layers/IAPZCTreeManager.h" 
 #include "mozilla/layers/KeyboardMap.h" 
@@ -99,7 +100,8 @@ struct ScrollThumbData;
 
 
 
-class APZCTreeManager : public IAPZCTreeManager {
+class APZCTreeManager : public IAPZCTreeManager
+                      , public APZInputBridge {
 
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
   typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
@@ -472,6 +474,8 @@ public:
 
 
   void SetLongTapEnabled(bool aTapGestureEnabled) override;
+
+  APZInputBridge* InputBridge() override { return this; }
 
   
 

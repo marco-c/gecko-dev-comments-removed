@@ -10,17 +10,15 @@
 #include <stdint.h>                     
 
 #include "FrameMetrics.h"               
-#include "mozilla/EventForwards.h"      
-#include "mozilla/layers/LayersTypes.h"    
+#include "mozilla/layers/LayersTypes.h" 
 #include "nsTArrayForwardDeclare.h"     
 #include "nsISupportsImpl.h"            
 #include "Units.h"                      
 
 namespace mozilla {
-class InputData;
-
 namespace layers {
 
+class APZInputBridge;
 class KeyboardMap;
 
 enum AllowedTouchBehavior {
@@ -45,67 +43,6 @@ class IAPZCTreeManager {
   NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(IAPZCTreeManager)
 
 public:
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsEventStatus ReceiveInputEvent(
-      InputData& aEvent,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutInputBlockId) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsEventStatus ReceiveInputEvent(
-      WidgetInputEvent& aEvent,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutInputBlockId);
-
   
 
 
@@ -190,27 +127,16 @@ public:
 
   virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
+  
 
-  
-  
-  
-  
-  
-  
-  static bool WillHandleWheelEvent(WidgetWheelEvent* aEvent);
+
+
+
+
+
+  virtual APZInputBridge* InputBridge() = 0;
 
 protected:
-
-  
-
-  virtual void ProcessUnhandledEvent(
-      LayoutDeviceIntPoint* aRefPoint,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutFocusSequenceNumber) = 0;
-
-  virtual void UpdateWheelTransaction(
-      LayoutDeviceIntPoint aRefPoint,
-      EventMessage aEventMessage) = 0;
 
   
 
