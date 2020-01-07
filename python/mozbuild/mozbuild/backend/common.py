@@ -65,6 +65,7 @@ class XPIDLManager(object):
         The IDL file will be built, installed, etc.
         """
         basename = mozpath.basename(idl.source_path)
+        dirname = mozpath.dirname(idl.source_path)
         root = mozpath.splitext(basename)[0]
         xpt = '%s.xpt' % idl.module
 
@@ -80,8 +81,13 @@ class XPIDLManager(object):
 
         self.idls[entry['basename']] = entry
         
-        t = self.modules.setdefault(entry['module'], (set(),))
+        
+        
+        
+        
+        t = self.modules.setdefault(entry['module'], (set(), set()))
         t[0].add(entry['root'])
+        t[1].add(dirname)
 
 class BinariesCollection(object):
     """Tracks state of binaries produced by the build."""

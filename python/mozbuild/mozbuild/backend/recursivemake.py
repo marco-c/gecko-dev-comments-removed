@@ -1054,8 +1054,9 @@ class RecursiveMakeBackend(CommonBackend):
         mk = Makefile()
 
         for module in xpt_modules:
-            sources = modules[module][0]
+            sources, directories = modules[module]
             deps = sorted(sources)
+            directories = sorted(directories)
 
             
             
@@ -1068,6 +1069,8 @@ class RecursiveMakeBackend(CommonBackend):
             
             
             mk.add_statement('%s_deps = %s' % (module, ' '.join(deps)))
+
+            mk.add_statement('%s_dirs = %s' % (module, ' '.join(directories)))
 
             build_files.add_optional_exists('%s.xpt' % module)
 
