@@ -36,6 +36,9 @@ XPCOMUtils.defineLazyGetter(this, "log", function() {
   return log;
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "IGNORE_CACHED_AUTH_CREDENTIALS",
+                                      "services.sync.debug.ignoreCachedAuthCredentials");
+
 
 var fxAccountsCommon = {};
 Cu.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommon);
@@ -170,6 +173,7 @@ this.BrowserIDManager = function BrowserIDManager() {
   
   this.whenReadyToAuthenticate = null;
   this._log = log;
+  XPCOMUtils.defineLazyPreferenceGetter(this, "_username", "services.sync.username");
 };
 
 this.BrowserIDManager.prototype = {
@@ -432,7 +436,7 @@ this.BrowserIDManager.prototype = {
   },
 
   get username() {
-    return Svc.Prefs.get("username", null);
+    return this._username;
   },
 
   
@@ -586,13 +590,7 @@ this.BrowserIDManager.prototype = {
   hasValidToken() {
     
     
-    let ignoreCachedAuthCredentials = false;
-    try {
-      ignoreCachedAuthCredentials = Svc.Prefs.get("debug.ignoreCachedAuthCredentials");
-    } catch (e) {
-      
-    }
-    if (ignoreCachedAuthCredentials) {
+    if (IGNORE_CACHED_AUTH_CREDENTIALS) {
       return false;
     }
     if (!this._token) {

@@ -27,6 +27,14 @@ XPCOMUtils.defineLazyServiceGetter(this, "cryptoSDR",
                                    "@mozilla.org/login-manager/crypto/SDR;1",
                                    "nsILoginManagerCrypto");
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "localDeviceName",
+                                      "services.sync.client.name",
+                                      "");
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "localDeviceType",
+                                      "services.sync.client.type",
+                                      DEVICE_TYPE_DESKTOP);
+
 
 
 
@@ -80,7 +88,7 @@ this.Utils = {
         Services.appinfo.appBuildID + ".";                        
       
     }
-    return this._userAgent + Svc.Prefs.get("client.type", "desktop");
+    return this._userAgent + localDeviceType;
   },
 
   
@@ -626,17 +634,60 @@ this.Utils = {
   },
 
   getDeviceName() {
-    const deviceName = Svc.Prefs.get("client.name", "");
+    let deviceName = localDeviceName;
 
     if (deviceName === "") {
-      return this.getDefaultDeviceName();
+      deviceName = this.getDefaultDeviceName();
+      Svc.Prefs.set("client.name", deviceName);
     }
 
     return deviceName;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  defineLazyIDProperty(object, propName, prefName) {
+    
+    
+    
+    const storage = {};
+    XPCOMUtils.defineLazyPreferenceGetter(storage, "value", prefName, "");
+    Object.defineProperty(object, propName, {
+      configurable: true,
+      enumerable: true,
+      get() {
+        let value = storage.value;
+        if (!value) {
+          value = Utils.makeGUID();
+          Services.prefs.setStringPref(prefName, value);
+        }
+        return value;
+      },
+      set(value) {
+        Services.prefs.setStringPref(prefName, value);
+      }
+    });
+  },
+
   getDeviceType() {
-    return Svc.Prefs.get("client.type", DEVICE_TYPE_DESKTOP);
+    return localDeviceType;
   },
 
   formatTimestamp(date) {

@@ -91,6 +91,7 @@ this.ClientEngine = function ClientEngine(service) {
   this.resetLastSync();
   this.fxAccounts = fxAccounts;
   this.addClientCommandQueue = Promise.resolve();
+  Utils.defineLazyIDProperty(this, "localID", "services.sync.client.GUID");
 };
 ClientEngine.prototype = {
   __proto__: SyncEngine.prototype,
@@ -99,6 +100,7 @@ ClientEngine.prototype = {
   _trackerObj: ClientsTracker,
   allowSkippedRecord: false,
   _knownStaleFxADeviceIds: null,
+  _lastDeviceCounts: null,
 
   
   
@@ -186,15 +188,6 @@ ClientEngine.prototype = {
     return counts;
   },
 
-  get localID() {
-    
-    let localID = Svc.Prefs.get("client.GUID", "");
-    return localID == "" ? this.localID = Utils.makeGUID() : localID;
-  },
-  set localID(value) {
-    Svc.Prefs.set("client.GUID", value);
-  },
-
   get brandName() {
     let brand = Services.strings.createBundle(
       "chrome://branding/locale/brand.properties");
@@ -202,12 +195,7 @@ ClientEngine.prototype = {
   },
 
   get localName() {
-    let name = Utils.getDeviceName();
-    
-    
-    
-    Svc.Prefs.set("client.name", name);
-    return name;
+    return Utils.getDeviceName();
   },
   set localName(value) {
     Svc.Prefs.set("client.name", value);
@@ -562,7 +550,8 @@ ClientEngine.prototype = {
     
     
     
-    for (let [deviceType, count] of this.deviceTypes) {
+    let deviceTypeCounts = this.deviceTypes;
+    for (let [deviceType, count] of deviceTypeCounts) {
       let hid;
       let prefName = this.name + ".devices.";
       switch (deviceType) {
@@ -579,8 +568,13 @@ ClientEngine.prototype = {
           continue;
       }
       Services.telemetry.getHistogramById(hid).add(count);
-      Svc.Prefs.set(prefName, count);
+      
+      if (this._lastDeviceCounts == null ||
+          this._lastDeviceCounts.get(prefName) != count) {
+        Svc.Prefs.set(prefName, count);
+      }
     }
+    this._lastDeviceCounts = deviceTypeCounts;
     return SyncEngine.prototype._syncFinish.call(this);
   },
 
@@ -1077,7 +1071,7 @@ ClientsTracker.prototype = {
         break;
       case "nsPref:changed":
         this._log.debug("client.name preference changed");
-        this.addChangedID(Svc.Prefs.get("client.GUID"));
+        this.addChangedID(this.engine.localID);
         this.score += SCORE_INCREMENT_XLARGE;
         break;
     }

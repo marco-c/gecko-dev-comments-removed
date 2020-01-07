@@ -69,6 +69,7 @@ XPCOMUtils.defineLazyGetter(this, "browserSessionID", Utils.makeGUID);
 
 function Sync11Service() {
   this._notify = Utils.notify("weave:service:");
+  Utils.defineLazyIDProperty(this, "syncID", "services.sync.client.syncID");
 }
 Sync11Service.prototype = {
 
@@ -93,15 +94,6 @@ Sync11Service.prototype = {
     }
     this._clusterURL = value;
     this._updateCachedURLs();
-  },
-
-  get syncID() {
-    
-    let syncID = Svc.Prefs.get("client.syncID", "");
-    return syncID == "" ? this.syncID = Utils.makeGUID() : syncID;
-  },
-  set syncID(value) {
-    Svc.Prefs.set("client.syncID", value);
   },
 
   get isLoggedIn() { return this._loggedIn; },
