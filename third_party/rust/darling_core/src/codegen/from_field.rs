@@ -26,7 +26,7 @@ impl<'a> ToTokens for FromFieldImpl<'a> {
         let error_check = self.base.check_errors();
 
         let initializers = self.base.initializers();
-        
+
         let default = if self.from_ident {
             quote!(let __default: Self = ::darling::export::From::from(#input.ident.clone());)
         } else {
@@ -61,7 +61,7 @@ impl<'a> ToTokens for FromFieldImpl<'a> {
                     #passed_attrs
                     #initializers
                 }) #map
-                
+
             }
         }, tokens);
     }

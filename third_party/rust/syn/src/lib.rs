@@ -1,44 +1,320 @@
-#![doc(html_root_url = "https://dtolnay.github.io/syn")]
 
-#![cfg_attr(feature = "cargo-clippy", allow(large_enum_variant))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/syn/0.12.12")]
+#![cfg_attr(feature = "cargo-clippy",
+            allow(const_static_lifetime, doc_markdown, large_enum_variant, match_bool,
+                  redundant_closure, needless_pass_by_value))]
+
+extern crate proc_macro2;
+extern crate proc_macro;
+extern crate unicode_xid;
 
 #[cfg(feature = "printing")]
 extern crate quote;
 
 #[cfg(feature = "parsing")]
-extern crate unicode_xid;
-
-#[cfg(feature = "parsing")]
 #[macro_use]
-extern crate synom;
+#[doc(hidden)]
+pub mod parsers;
 
-#[cfg(feature = "aster")]
-pub mod aster;
+#[macro_use]
+mod macros;
 
+#[macro_use]
+pub mod token;
+
+#[cfg(any(feature = "full", feature = "derive"))]
 mod attr;
-pub use attr::{Attribute, AttrStyle, MetaItem, NestedMetaItem};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use attr::{AttrStyle, Attribute, Meta, MetaList, MetaNameValue, NestedMeta};
 
-mod constant;
-pub use constant::ConstExpr;
-
+#[cfg(any(feature = "full", feature = "derive"))]
 mod data;
-pub use data::{Field, Variant, VariantData, Visibility};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use data::{Field, Fields, FieldsNamed, FieldsUnnamed, Variant, VisCrate, VisPublic,
+               VisRestricted, Visibility};
 
-#[cfg(feature = "parsing")]
-mod escape;
-
-#[cfg(feature = "full")]
+#[cfg(any(feature = "full", feature = "derive"))]
 mod expr;
-#[cfg(feature = "full")]
-pub use expr::{Arm, BindingMode, Block, CaptureBy, Expr, ExprKind, FieldPat, FieldValue, Local,
-               MacStmtStyle, Pat, RangeLimits, Stmt};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use expr::{Expr, ExprAddrOf, ExprArray, ExprAssign, ExprAssignOp, ExprBinary, ExprBlock,
+               ExprBox, ExprBreak, ExprCall, ExprCast, ExprCatch, ExprClosure, ExprContinue,
+               ExprField, ExprForLoop, ExprGroup, ExprIf, ExprIfLet, ExprInPlace, ExprIndex,
+               ExprLit, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall, ExprParen, ExprPath,
+               ExprRange, ExprRepeat, ExprReturn, ExprStruct, ExprTry, ExprTuple, ExprType,
+               ExprUnary, ExprUnsafe, ExprVerbatim, ExprWhile, ExprWhileLet, ExprYield, Index,
+               Member};
 
+#[cfg(feature = "full")]
+pub use expr::{Arm, Block, FieldPat, FieldValue, GenericMethodArgument, Label, Local,
+               MethodTurbofish, Pat, PatBox, PatIdent, PatLit, PatMacro, PatPath, PatRange,
+               PatRef, PatSlice, PatStruct, PatTuple, PatTupleStruct, PatVerbatim, PatWild,
+               RangeLimits, Stmt};
+
+#[cfg(any(feature = "full", feature = "derive"))]
 mod generics;
-pub use generics::{Generics, Lifetime, LifetimeDef, TraitBoundModifier, TyParam, TyParamBound,
-                   WhereBoundPredicate, WhereClause, WhereEqPredicate, WherePredicate,
-                   WhereRegionPredicate};
-#[cfg(feature = "printing")]
-pub use generics::{ImplGenerics, Turbofish, TyGenerics};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use generics::{BoundLifetimes, ConstParam, GenericParam, Generics, LifetimeDef, PredicateEq,
+                   PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, TypeParam,
+                   TypeParamBound, WhereClause, WherePredicate};
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
+pub use generics::{ImplGenerics, Turbofish, TypeGenerics};
 
 mod ident;
 pub use ident::Ident;
@@ -46,166 +322,402 @@ pub use ident::Ident;
 #[cfg(feature = "full")]
 mod item;
 #[cfg(feature = "full")]
-pub use item::{Constness, Defaultness, FnArg, FnDecl, ForeignItemKind, ForeignItem, ForeignMod,
-               ImplItem, ImplItemKind, ImplPolarity, Item, ItemKind, MethodSig, PathListItem,
-               TraitItem, TraitItemKind, ViewPath};
+pub use item::{ArgCaptured, ArgSelf, ArgSelfRef, FnArg, FnDecl, ForeignItem, ForeignItemFn,
+               ForeignItemStatic, ForeignItemType, ForeignItemVerbatim, ImplItem, ImplItemConst,
+               ImplItemMacro, ImplItemMethod, ImplItemType, ImplItemVerbatim, Item, ItemConst,
+               ItemEnum, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl, ItemMacro, ItemMacro2,
+               ItemMod, ItemStatic, ItemStruct, ItemTrait, ItemType, ItemUnion, ItemUse,
+               ItemVerbatim, MethodSig, TraitItem, TraitItemConst, TraitItemMacro,
+               TraitItemMethod, TraitItemType, TraitItemVerbatim, UseGlob, UseList, UsePath,
+               UseTree};
 
 #[cfg(feature = "full")]
-mod krate;
+mod file;
 #[cfg(feature = "full")]
-pub use krate::Crate;
+pub use file::File;
 
+#[cfg(any(feature = "full", feature = "derive"))]
+mod lifetime;
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use lifetime::Lifetime;
+
+#[cfg(any(feature = "full", feature = "derive"))]
 mod lit;
-pub use lit::{FloatTy, IntTy, Lit, StrStyle};
-#[cfg(feature = "parsing")]
-pub use lit::{ByteStrLit, FloatLit, IntLit, StrLit};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use lit::{FloatSuffix, IntSuffix, Lit, LitBool, LitByte, LitByteStr, LitChar, LitFloat,
+              LitInt, LitStr, LitVerbatim, StrStyle};
 
+#[cfg(any(feature = "full", feature = "derive"))]
 mod mac;
-pub use mac::{BinOpToken, DelimToken, Delimited, Mac, Token, TokenTree};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use mac::{Macro, MacroDelimiter};
 
+#[cfg(any(feature = "full", feature = "derive"))]
 mod derive;
-pub use derive::{Body, DeriveInput};
+#[cfg(feature = "derive")]
+pub use derive::{Data, DataEnum, DataStruct, DataUnion, DeriveInput};
 
-#[doc(hidden)]
-pub type MacroInput = DeriveInput;
-
+#[cfg(any(feature = "full", feature = "derive"))]
 mod op;
+#[cfg(any(feature = "full", feature = "derive"))]
 pub use op::{BinOp, UnOp};
 
+#[cfg(any(feature = "full", feature = "derive"))]
 mod ty;
-pub use ty::{Abi, AngleBracketedParameterData, BareFnArg, BareFnTy, FunctionRetTy, MutTy,
-             Mutability, ParenthesizedParameterData, Path, PathParameters, PathSegment,
-             PolyTraitRef, QSelf, Ty, TypeBinding, Unsafety};
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use ty::{Abi, BareFnArg, BareFnArgName, ReturnType, Type, TypeArray, TypeBareFn, TypeGroup,
+             TypeImplTrait, TypeInfer, TypeMacro, TypeNever, TypeParen, TypePath, TypePtr,
+             TypeReference, TypeSlice, TypeTraitObject, TypeTuple, TypeVerbatim};
 
-#[cfg(feature = "visit")]
-pub mod visit;
-
-#[cfg(feature = "fold")]
-pub mod fold;
+#[cfg(any(feature = "full", feature = "derive"))]
+mod path;
+#[cfg(any(feature = "full", feature = "derive"))]
+pub use path::{AngleBracketedGenericArguments, Binding, GenericArgument,
+               ParenthesizedGenericArguments, Path, PathArguments, PathSegment, QSelf};
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
+pub use path::PathTokens;
 
 #[cfg(feature = "parsing")]
-pub use parsing::*;
+pub mod buffer;
+#[cfg(feature = "parsing")]
+pub mod synom;
+pub mod punctuated;
+#[cfg(any(feature = "full", feature = "derive"))]
+mod tt;
+
 
 #[cfg(feature = "parsing")]
-mod parsing {
-    use super::*;
-    use {derive, generics, ident, mac, ty, attr};
-    use synom::{space, IResult};
+#[doc(hidden)]
+pub mod parse_quote;
 
-    #[cfg(feature = "full")]
-    use {expr, item, krate};
+#[cfg(all(feature = "parsing", feature = "printing"))]
+pub mod spanned;
 
-    pub fn parse_derive_input(input: &str) -> Result<DeriveInput, String> {
-        unwrap("derive input", derive::parsing::derive_input, input)
-    }
+mod gen {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "visit")]
+    pub mod visit;
 
-    #[cfg(feature = "full")]
-    pub fn parse_crate(input: &str) -> Result<Crate, String> {
-        unwrap("crate", krate::parsing::krate, input)
-    }
-
-    #[cfg(feature = "full")]
-    pub fn parse_item(input: &str) -> Result<Item, String> {
-        unwrap("item", item::parsing::item, input)
-    }
-
-    #[cfg(feature = "full")]
-    pub fn parse_items(input: &str) -> Result<Vec<Item>, String> {
-        unwrap("items", item::parsing::items, input)
-    }
-
-    #[cfg(feature = "full")]
-    pub fn parse_expr(input: &str) -> Result<Expr, String> {
-        unwrap("expression", expr::parsing::expr, input)
-    }
-
-    pub fn parse_type(input: &str) -> Result<Ty, String> {
-        unwrap("type", ty::parsing::ty, input)
-    }
-
-    pub fn parse_path(input: &str) -> Result<Path, String> {
-        unwrap("path", ty::parsing::path, input)
-    }
-
-    pub fn parse_where_clause(input: &str) -> Result<WhereClause, String> {
-        unwrap("where clause", generics::parsing::where_clause, input)
-    }
-
-    pub fn parse_token_trees(input: &str) -> Result<Vec<TokenTree>, String> {
-        unwrap("token trees", mac::parsing::token_trees, input)
-    }
-
-    pub fn parse_ident(input: &str) -> Result<Ident, String> {
-        unwrap("identifier", ident::parsing::ident, input)
-    }
-
-    pub fn parse_ty_param_bound(input: &str) -> Result<TyParamBound, String> {
-        unwrap("type parameter bound",
-               generics::parsing::ty_param_bound,
-               input)
-    }
-
-    pub fn parse_outer_attr(input: &str) -> Result<Attribute, String> {
-        unwrap("outer attribute", attr::parsing::outer_attr, input)
-    }
-
-    #[cfg(feature = "full")]
-    pub fn parse_inner_attr(input: &str) -> Result<Attribute, String> {
-        unwrap("inner attribute", attr::parsing::inner_attr, input)
-    }
 
     
-    #[doc(hidden)]
-    pub fn parse_macro_input(input: &str) -> Result<MacroInput, String> {
-        parse_derive_input(input)
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "visit-mut")]
+    pub mod visit_mut;
 
-    fn unwrap<T>(name: &'static str,
-                 f: fn(&str) -> IResult<&str, T>,
-                 input: &str)
-                 -> Result<T, String> {
-        match f(input) {
-            IResult::Done(mut rest, t) => {
-                rest = space::skip_whitespace(rest);
-                if rest.is_empty() {
-                    Ok(t)
-                } else if rest.len() == input.len() {
-                    
-                    Err(format!("failed to parse {}: {:?}", name, rest))
-                } else {
-                    Err(format!("unparsed tokens after {}: {:?}", name, rest))
-                }
-            }
-            IResult::Error => Err(format!("failed to parse {}: {:?}", name, input)),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "fold")]
+    pub mod fold;
+
+    #[cfg(any(feature = "full", feature = "derive"))]
+    #[path = "../gen_helper.rs"]
+    mod helper;
+}
+pub use gen::*;
+
+
+
+#[cfg(feature = "parsing")]
+use synom::{Synom, Parser};
+
+#[cfg(feature = "parsing")]
+mod error;
+#[cfg(feature = "parsing")]
+use error::ParseError;
+
+
+#[cfg(feature = "parsing")]
+#[doc(hidden)]
+pub use error::parse_error;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "parsing")]
+pub fn parse<T>(tokens: proc_macro::TokenStream) -> Result<T, ParseError>
+where
+    T: Synom,
+{
+    parse2(tokens.into())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "parsing")]
+pub fn parse2<T>(tokens: proc_macro2::TokenStream) -> Result<T, ParseError>
+where
+    T: Synom,
+{
+    let parser = T::parse;
+    parser.parse2(tokens).map_err(|err| {
+        match T::description() {
+            Some(s) => ParseError::new(format!("failed to parse {}: {}", s, err)),
+            None => err,
         }
+    })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "parsing")]
+pub fn parse_str<T: Synom>(s: &str) -> Result<T, ParseError> {
+    match s.parse() {
+        Ok(tts) => parse2(tts),
+        Err(_) => Err(ParseError::new("error while lexing input string")),
     }
 }
 
-#[cfg(feature = "parsing")]
-pub mod parse {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(all(feature = "parsing", feature = "full"))]
+pub fn parse_file(mut content: &str) -> Result<File, ParseError> {
     
-    
-    
-    
-    
-    
-    
+    const BOM: &'static str = "\u{feff}";
+    if content.starts_with(BOM) {
+        content = &content[BOM.len()..];
+    }
 
-    pub use synom::IResult;
+    let mut shebang = None;
+    if content.starts_with("#!") && !content.starts_with("#![") {
+        if let Some(idx) = content.find('\n') {
+            shebang = Some(content[..idx].to_string());
+            content = &content[idx..];
+        } else {
+            shebang = Some(content.to_string());
+            content = "";
+        }
+    }
 
-    #[cfg(feature = "full")]
-    pub use item::parsing::item;
+    let mut file: File = parse_str(content)?;
+    file.shebang = shebang;
+    Ok(file)
+}
 
-    #[cfg(feature = "full")]
-    pub use expr::parsing::{expr, pat, block, stmt};
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
+struct TokensOrDefault<'a, T: 'a>(&'a Option<T>);
 
-    pub use lit::parsing::{lit, string, byte_string, byte, character, float, int, boolean};
-
-    pub use ty::parsing::{ty, path};
-
-    pub use mac::parsing::token_tree as tt;
-
-    pub use ident::parsing::ident;
-
-    pub use generics::parsing::lifetime;
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
+impl<'a, T> quote::ToTokens for TokensOrDefault<'a, T>
+where
+    T: quote::ToTokens + Default,
+{
+    fn to_tokens(&self, tokens: &mut quote::Tokens) {
+        match *self.0 {
+            Some(ref t) => t.to_tokens(tokens),
+            None => T::default().to_tokens(tokens),
+        }
+    }
 }

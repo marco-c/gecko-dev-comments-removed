@@ -208,7 +208,7 @@ impl Iterator for IntoIter {
 }
 
 type FieldName = String;
-type MetaItemFormat = String;
+type MetaFormat = String;
 
 #[derive(Debug)]
 
@@ -220,14 +220,14 @@ enum ErrorKind {
     DuplicateField(FieldName),
     MissingField(FieldName),
     UnknownField(FieldName),
-    UnexpectedFormat(MetaItemFormat),
+    UnexpectedFormat(MetaFormat),
     UnexpectedType(String),
     UnknownValue(String),
     TooFewItems(usize),
     TooManyItems(usize),
     
     Multiple(Vec<Error>),
-    
+
     
     #[doc(hidden)]
     __NonExhaustive
@@ -236,7 +236,7 @@ enum ErrorKind {
 impl ErrorKind {
     pub fn description(&self) -> &str {
         use self::ErrorKind::*;
-        
+
         match *self {
             Custom(ref s) => s,
             DuplicateField(_) => "Duplicate field",
@@ -289,7 +289,7 @@ impl fmt::Display for ErrorKind {
 
                     item.fmt(f)?;
                 }
-                
+
                 write!(f, ")")
             },
             __NonExhaustive => unreachable!(),
@@ -317,7 +317,7 @@ mod tests {
         assert!(err.location().is_empty());
 
         let mut err_iter = err.into_iter();
-        
+
         let first = err_iter.next();
         assert!(first.is_some());
         assert_eq!(first.unwrap().location(), vec!["foo", "world"]);

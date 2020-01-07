@@ -1,6 +1,6 @@
 use std::fmt;
 
-use syn::{Lit, NestedMetaItem};
+use syn::{Lit, NestedMeta};
 
 use {Result, FromMetaItem};
 
@@ -137,7 +137,7 @@ impl<T: FromMetaItem> FromMetaItem for Override<T> {
         Ok(Inherit)
     }
 
-    fn from_list(items: &[NestedMetaItem]) -> Result<Self> {
+    fn from_list(items: &[NestedMeta]) -> Result<Self> {
         Ok(Explicit(FromMetaItem::from_list(items)?))
     }
 

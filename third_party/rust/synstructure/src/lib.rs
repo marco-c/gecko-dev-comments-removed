@@ -46,16 +46,141 @@
 
 
 
-extern crate syn;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern crate proc_macro;
+extern crate proc_macro2;
 #[macro_use]
 extern crate quote;
+extern crate syn;
+extern crate unicode_xid;
 
-use std::borrow::Cow;
-use syn::{Body, Field, Ident, MacroInput, VariantData, Variant};
-use quote::{Tokens, ToTokens};
+use std::collections::HashSet;
+
+use syn::{
+    Generics, Ident, Attribute, Field, Fields, Expr, DeriveInput,
+    TraitBound, WhereClause, GenericParam, Data, WherePredicate,
+    TypeParamBound, Type, TypeMacro, FieldsUnnamed, FieldsNamed,
+    PredicateType, TypePath, token, punctuated,
+};
+use syn::visit::{self, Visit};
+
+use quote::{ToTokens, Tokens};
+
+use unicode_xid::UnicodeXID;
+
+use proc_macro2::Span;
 
 
-#[derive(Debug, Copy, Clone)]
+
+
+#[doc(hidden)]
+pub mod macros;
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum BindStyle {
     
     Move,
@@ -71,52 +196,49 @@ impl ToTokens for BindStyle {
     fn to_tokens(&self, tokens: &mut Tokens) {
         match *self {
             BindStyle::Move => {}
-            BindStyle::MoveMut => tokens.append("mut"),
-            BindStyle::Ref => tokens.append("ref"),
-            BindStyle::RefMut => {
-                tokens.append("ref");
-                tokens.append("mut");
+            BindStyle::MoveMut => quote_spanned!(Span::call_site() => mut).to_tokens(tokens),
+            BindStyle::Ref => quote_spanned!(Span::call_site() => ref).to_tokens(tokens),
+            BindStyle::RefMut => quote_spanned!(Span::call_site() => ref mut).to_tokens(tokens),
+        }
+    }
+}
+
+
+fn generics_fuse(res: &mut Vec<bool>, new: &[bool]) {
+    for (i, &flag) in new.iter().enumerate() {
+        if i == res.len() {
+            res.push(false);
+        }
+        if flag {
+            res[i] = true;
+        }
+    }
+}
+
+
+fn fetch_generics<'a>(set: &[bool], generics: &'a Generics) -> Vec<&'a Ident> {
+    let mut tys = vec![];
+    for (&seen, param) in set.iter().zip(generics.params.iter()) {
+        if seen {
+            match *param {
+                GenericParam::Type(ref tparam) => tys.push(&tparam.ident),
+                _ => {}
             }
         }
     }
+    tys
 }
 
 
-
-
-
-
-
-
-
-#[derive(Debug, Clone)]
-pub struct BindOpts {
-    bind_style: BindStyle,
-    prefix: Cow<'static, str>,
-}
-
-impl BindOpts {
-    
-    pub fn new(bind_style: BindStyle) -> BindOpts {
-        BindOpts {
-            bind_style: bind_style,
-            prefix: "__binding".into(),
-        }
+fn sanitize_ident(s: &str) -> Ident {
+    let mut res = String::with_capacity(s.len());
+    for mut c in s.chars() {
+        if ! UnicodeXID::is_xid_continue(c) { c = '_' }
+        
+        if res.ends_with('_') && c == '_' { continue }
+        res.push(c);
     }
-
-    
-    pub fn with_prefix(bind_style: BindStyle, prefix: String) -> BindOpts {
-        BindOpts {
-            bind_style: bind_style,
-            prefix: prefix.into(),
-        }
-    }
-}
-
-impl From<BindStyle> for BindOpts {
-    fn from(style: BindStyle) -> Self {
-        BindOpts::new(style)
-    }
+    Ident::new(&res, Span::def_site())
 }
 
 
@@ -125,249 +247,1521 @@ impl From<BindStyle> for BindOpts {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BindingInfo<'a> {
-    pub ident: Ident,
-    pub field: &'a Field,
+    
+    pub binding: Ident,
+
+    
+    pub style: BindStyle,
+
+    field: &'a Field,
+
+    
+    generics: &'a Generics,
+    seen_generics: Vec<bool>,
 }
 
 impl<'a> ToTokens for BindingInfo<'a> {
     fn to_tokens(&self, tokens: &mut Tokens) {
-        self.ident.to_tokens(tokens);
+        self.binding.to_tokens(tokens);
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn match_pattern<'a, N: ToTokens>(name: &N,
-                                      vd: &'a VariantData,
-                                      options: &BindOpts)
-                                      -> (Tokens, Vec<BindingInfo<'a>>) {
-    let mut t = Tokens::new();
-    let mut matches = Vec::new();
-
-    let binding = options.bind_style;
-    name.to_tokens(&mut t);
-    match *vd {
-        VariantData::Unit => {}
-        VariantData::Tuple(ref fields) => {
-            t.append("(");
-            for (i, field) in fields.iter().enumerate() {
-                let ident: Ident = format!("{}_{}", options.prefix, i).into();
-                quote!(#binding #ident ,).to_tokens(&mut t);
-                matches.push(BindingInfo {
-                    ident: ident,
-                    field: field,
-                });
-            }
-            t.append(")");
-        }
-        VariantData::Struct(ref fields) => {
-            t.append("{");
-            for (i, field) in fields.iter().enumerate() {
-                let ident: Ident = format!("{}_{}", options.prefix, i).into();
-                {
-                    let field_name = field.ident.as_ref().unwrap();
-                    quote!(#field_name : #binding #ident ,).to_tokens(&mut t);
-                }
-                matches.push(BindingInfo {
-                    ident: ident,
-                    field: field,
-                });
-            }
-            t.append("}");
-        }
-    }
-
-    (t, matches)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn each_variant<F, T: ToTokens>(input: &MacroInput,
-                                    options: &BindOpts,
-                                    mut func: F)
-                                    -> Tokens
-    where F: FnMut(Vec<BindingInfo>, &Variant) -> T {
-    let ident = &input.ident;
-
-    let struct_variant;
+impl<'a> BindingInfo<'a> {
     
-    let variants = match input.body {
-        Body::Enum(ref variants) => {
-            variants.iter()
-                .map(|variant| {
-                    let variant_ident = &variant.ident;
-                    let (pat, bindings) = match_pattern(&quote!(#ident :: #variant_ident),
-                                                        &variant.data,
-                                                        options);
-                    (pat, bindings, variant)
-                })
-                .collect()
-        }
-        Body::Struct(ref vd) => {
-            struct_variant = Variant {
-                ident: ident.clone(),
-                attrs: input.attrs.clone(),
-                data: vd.clone(),
-                discriminant: None,
-            };
+    
+    pub fn ast(&self) -> &'a Field {
+        self.field
+    }
 
-            let (pat, bindings) = match_pattern(&ident, &vd, options);
-            vec![(pat, bindings, &struct_variant)]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn pat(&self) -> Tokens {
+        let BindingInfo {
+            ref binding,
+            ref style,
+            ..
+        } = *self;
+        quote!(#style #binding)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
+        fetch_generics(&self.seen_generics, self.generics)
+    }
+}
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct VariantAst<'a> {
+    pub attrs: &'a [Attribute],
+    pub ident: &'a Ident,
+    pub fields: &'a Fields,
+    pub discriminant: &'a Option<(token::Eq, Expr)>,
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct VariantInfo<'a> {
+    pub prefix: Option<&'a Ident>,
+    bindings: Vec<BindingInfo<'a>>,
+    omitted_fields: bool,
+    ast: VariantAst<'a>,
+    generics: &'a Generics,
+}
+
+
+
+
+fn get_ty_params<'a>(field: &Field, generics: &Generics) -> Vec<bool> {
+    
+    
+    struct BoundTypeLocator<'a> {
+        result: Vec<bool>,
+        generics: &'a Generics,
+    }
+
+    impl<'a> Visit<'a> for BoundTypeLocator<'a> {
+        
+        
+        fn visit_ident(&mut self, id: &Ident) {
+            for (idx, i) in self.generics.params.iter().enumerate() {
+                if let GenericParam::Type(ref tparam) = *i {
+                    if tparam.ident == id {
+                        self.result[idx] = true;
+                    }
+                }
+            }
         }
+
+        fn visit_type_macro(&mut self, x: &'a TypeMacro) {
+            
+            
+            for r in &mut self.result {
+                *r = true;
+            }
+            visit::visit_type_macro(self, x)
+        }
+    }
+
+    let mut btl = BoundTypeLocator {
+        result: vec![false; generics.params.len()],
+        generics: generics,
     };
 
-    
-    
-    let mut t = Tokens::new();
-    for (pat, bindings, variant) in variants {
-        let body = func(bindings, variant);
-        quote!(#pat => { #body }).to_tokens(&mut t);
+    btl.visit_type(&field.ty);
+
+    btl.result
+}
+
+impl<'a> VariantInfo<'a> {
+    fn new(ast: VariantAst<'a>, prefix: Option<&'a Ident>, generics: &'a Generics) -> Self {
+        let bindings = match *ast.fields {
+            Fields::Unit => vec![],
+            Fields::Unnamed(FieldsUnnamed { unnamed: ref fields, .. }) |
+            Fields::Named(FieldsNamed { named: ref fields, .. }) => {
+                fields.into_iter()
+                    .enumerate()
+                    .map(|(i, field)| {
+                        BindingInfo {
+                            
+                            
+                            binding: Ident::new(
+                                &format!("__binding_{}", i),
+                                Span::call_site(),
+                            ),
+                            style: BindStyle::Ref,
+                            field: field,
+                            generics: generics,
+                            seen_generics: get_ty_params(field, generics),
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            }
+        };
+
+        VariantInfo {
+            prefix: prefix,
+            bindings: bindings,
+            omitted_fields: false,
+            ast: ast,
+            generics: generics,
+        }
     }
 
-    t
-}
+    
+    pub fn bindings(&self) -> &[BindingInfo<'a>] {
+        &self.bindings
+    }
 
+    
+    pub fn bindings_mut(&mut self) -> &mut [BindingInfo<'a>] {
+        &mut self.bindings
+    }
 
+    
+    
+    pub fn ast(&self) -> VariantAst<'a> {
+        self.ast
+    }
 
+    
+    pub fn omitted_bindings(&self) -> bool {
+        self.omitted_fields
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn match_substructs<F, T: ToTokens>(input: &MacroInput,
-                                        options: &BindOpts,
-                                        mut func: F)
-                                        -> Tokens
-    where F: FnMut(Vec<BindingInfo>) -> T
-{
-    each_variant(input, options, |bindings, _| func(bindings))
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn each_field<F, T: ToTokens>(input: &MacroInput, options: &BindOpts, mut func: F) -> Tokens
-    where F: FnMut(BindingInfo) -> T
-{
-    each_variant(input, options, |bindings, _| {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn pat(&self) -> Tokens {
         let mut t = Tokens::new();
-        for binding in bindings {
-            t.append("{");
-            func(binding).to_tokens(&mut t);
-            t.append("}");
+        if let Some(prefix) = self.prefix {
+            prefix.to_tokens(&mut t);
+            quote!(::).to_tokens(&mut t);
         }
-        quote!(()).to_tokens(&mut t);
+        self.ast.ident.to_tokens(&mut t);
+        match *self.ast.fields {
+            Fields::Unit => {
+                assert!(self.bindings.len() == 0);
+            }
+            Fields::Unnamed(..) => {
+                token::Paren(Span::call_site()).surround(&mut t, |t| {
+                    for binding in &self.bindings {
+                        binding.pat().to_tokens(t);
+                        quote!(,).to_tokens(t);
+                    }
+                    if self.omitted_fields {
+                        quote!(..).to_tokens(t);
+                    }
+                })
+            }
+            Fields::Named(..) => {
+                token::Brace(Span::call_site()).surround(&mut t, |t| {
+                    for binding in &self.bindings {
+                        binding.field.ident.to_tokens(t);
+                        quote!(:).to_tokens(t);
+                        binding.pat().to_tokens(t);
+                        quote!(,).to_tokens(t);
+                    }
+                    if self.omitted_fields {
+                        quote!(..).to_tokens(t);
+                    }
+                })
+            }
+        }
         t
-    })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn construct<F, T>(&self, mut func: F) -> Tokens
+    where
+        F: FnMut(&Field, usize) -> T,
+        T: ToTokens,
+    {
+        let mut t = Tokens::new();
+        if let Some(prefix) = self.prefix {
+            quote!(#prefix ::).to_tokens(&mut t);
+        }
+        self.ast.ident.to_tokens(&mut t);
+
+        match *self.ast.fields {
+            Fields::Unit => (),
+            Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
+                token::Paren::default().surround(&mut t, |t| {
+                    for (i, field) in unnamed.into_iter().enumerate() {
+                        func(field, i).to_tokens(t);
+                        quote!(,).to_tokens(t);
+                    }
+                })
+            }
+            Fields::Named(FieldsNamed { ref named, .. }) => {
+                token::Brace::default().surround(&mut t, |t| {
+                    for (i, field) in named.into_iter().enumerate() {
+                        field.ident.to_tokens(t);
+                        quote!(:).to_tokens(t);
+                        func(field, i).to_tokens(t);
+                        quote!(,).to_tokens(t);
+                    }
+                })
+            }
+        }
+        t
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn each<F, R>(&self, mut f: F) -> Tokens
+    where
+        F: FnMut(&BindingInfo) -> R,
+        R: ToTokens,
+    {
+        let pat = self.pat();
+        let mut body = Tokens::new();
+        for binding in &self.bindings {
+            token::Brace::default().surround(&mut body, |body| {
+                f(binding).to_tokens(body);
+            });
+        }
+        quote!(#pat => { #body })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> Tokens
+    where
+        F: FnMut(Tokens, &BindingInfo) -> R,
+        I: ToTokens,
+        R: ToTokens,
+    {
+        let pat = self.pat();
+        let body = self.bindings.iter().fold(quote!(#init), |i, bi| {
+            let r = f(i, bi);
+            quote!(#r)
+        });
+        quote!(#pat => { #body })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn filter<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnMut(&BindingInfo) -> bool,
+    {
+        let before_len = self.bindings.len();
+        self.bindings.retain(f);
+        if self.bindings.len() != before_len {
+            self.omitted_fields = true;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn remove_binding(&mut self, idx: usize) -> &mut Self {
+        self.bindings.remove(idx);
+        self.omitted_fields = true;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_with<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&BindingInfo) -> BindStyle,
+    {
+        for binding in &mut self.bindings {
+            binding.style = f(&binding);
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn binding_name<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&Field, usize) -> Ident,
+    {
+        for (it, binding) in self.bindings.iter_mut().enumerate() {
+            binding.binding = f(binding.field, it);
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
+        let mut flags = Vec::new();
+        for binding in &self.bindings {
+            generics_fuse(&mut flags, &binding.seen_generics);
+        }
+        fetch_generics(&flags, self.generics)
+    }
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Structure<'a> {
+    variants: Vec<VariantInfo<'a>>,
+    omitted_variants: bool,
+    ast: &'a DeriveInput,
+}
+
+impl<'a> Structure<'a> {
+    
+    
+    pub fn new(ast: &'a DeriveInput) -> Self {
+        let variants = match ast.data {
+            Data::Enum(ref data) => {
+                (&data.variants).into_iter()
+                    .map(|v| {
+                        VariantInfo::new(
+                            VariantAst {
+                                attrs: &v.attrs,
+                                ident: &v.ident,
+                                fields: &v.fields,
+                                discriminant: &v.discriminant
+                            },
+                            Some(&ast.ident),
+                            &ast.generics,
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            }
+            Data::Struct(ref data) => {
+                
+                
+                
+                
+                
+                struct UnsafeMakeSync(Option<(token::Eq, Expr)>);
+                unsafe impl Sync for UnsafeMakeSync {}
+                static NONE_DISCRIMINANT: UnsafeMakeSync = UnsafeMakeSync(None);
+
+                vec![
+                    VariantInfo::new(
+                        VariantAst {
+                            attrs: &ast.attrs,
+                            ident: &ast.ident,
+                            fields: &data.fields,
+                            discriminant: &NONE_DISCRIMINANT.0,
+                        },
+                        None,
+                        &ast.generics,
+                    ),
+                ]
+            }
+            Data::Union(_) => {
+                panic!("synstructure does not handle untagged unions \
+                    (https://github.com/mystor/synstructure/issues/6)");
+            }
+        };
+
+        Structure {
+            variants: variants,
+            omitted_variants: false,
+            ast: ast,
+        }
+    }
+
+    
+    pub fn variants(&self) -> &[VariantInfo<'a>] {
+        &self.variants
+    }
+
+    
+    pub fn variants_mut(&mut self) -> &mut [VariantInfo<'a>] {
+        &mut self.variants
+    }
+
+    
+    
+    pub fn ast(&self) -> &'a DeriveInput {
+        self.ast
+    }
+
+    
+    pub fn omitted_variants(&self) -> bool {
+        self.omitted_variants
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn each<F, R>(&self, mut f: F) -> Tokens
+    where
+        F: FnMut(&BindingInfo) -> R,
+        R: ToTokens,
+    {
+        let mut t = Tokens::new();
+        for variant in &self.variants {
+            variant.each(&mut f).to_tokens(&mut t);
+        }
+        if self.omitted_variants {
+            quote!(_ => {}).to_tokens(&mut t);
+        }
+        t
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fold<F, I, R>(&self, init: I, mut f: F) -> Tokens
+    where
+        F: FnMut(Tokens, &BindingInfo) -> R,
+        I: ToTokens,
+        R: ToTokens,
+    {
+        let mut t = Tokens::new();
+        for variant in &self.variants {
+            variant.fold(&init, &mut f).to_tokens(&mut t);
+        }
+        if self.omitted_variants {
+            quote!(_ => { #init }).to_tokens(&mut t);
+        }
+        t
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn each_variant<F, R>(&self, mut f: F) -> Tokens
+    where
+        F: FnMut(&VariantInfo) -> R,
+        R: ToTokens,
+    {
+        let mut t = Tokens::new();
+        for variant in &self.variants {
+            let pat = variant.pat();
+            let body = f(variant);
+            quote!(#pat => { #body }).to_tokens(&mut t);
+        }
+        if self.omitted_variants {
+            quote!(_ => {}).to_tokens(&mut t);
+        }
+        t
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn filter<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&BindingInfo) -> bool,
+    {
+        for variant in &mut self.variants {
+            variant.filter(&mut f);
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn filter_variants<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnMut(&VariantInfo) -> bool,
+    {
+        let before_len = self.variants.len();
+        self.variants.retain(f);
+        if self.variants.len() != before_len {
+            self.omitted_variants = true;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn remove_variant(&mut self, idx: usize) -> &mut Self {
+        self.variants.remove(idx);
+        self.omitted_variants = true;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bind_with<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&BindingInfo) -> BindStyle,
+    {
+        for variant in &mut self.variants {
+            variant.bind_with(&mut f);
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn binding_name<F>(&mut self, mut f: F) -> &mut Self
+    where
+        F: FnMut(&Field, usize) -> Ident,
+    {
+        for variant in &mut self.variants {
+            variant.binding_name(&mut f);
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn referenced_ty_params(&self) -> Vec<&'a Ident> {
+        let mut flags = Vec::new();
+        for variant in &self.variants {
+            for binding in &variant.bindings {
+                generics_fuse(&mut flags, &binding.seen_generics);
+            }
+        }
+        fetch_generics(&flags, &self.ast.generics)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_trait_bounds(&self, bound: &TraitBound, where_clause: &mut Option<WhereClause>) {
+        let mut seen = HashSet::new();
+        let mut pred = |ty: Type| if !seen.contains(&ty) {
+            seen.insert(ty.clone());
+
+            
+            
+            
+            if where_clause.is_none() {
+                *where_clause = Some(WhereClause {
+                    where_token: Default::default(),
+                    predicates: punctuated::Punctuated::new(),
+                });
+            }
+            let clause = where_clause.as_mut().unwrap();
+
+            
+            clause.predicates.push(WherePredicate::Type(PredicateType {
+                lifetimes: None,
+                bounded_ty: ty,
+                colon_token: Default::default(),
+                bounds: Some(punctuated::Pair::End(TypeParamBound::Trait(bound.clone())))
+                    .into_iter()
+                    .collect(),
+            }));
+        };
+
+        for variant in &self.variants {
+            for binding in &variant.bindings {
+                for &seen in &binding.seen_generics {
+                    if seen {
+                        pred(binding.ast().ty.clone());
+                        break;
+                    }
+                }
+
+                for param in binding.referenced_ty_params() {
+                    pred(Type::Path(TypePath {
+                        qself: None,
+                        path: (*param).clone().into(),
+                    }));
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn bound_impl<P: ToTokens,B: ToTokens>(&self, path: P, body: B) -> Tokens {
+        self.impl_internal(
+            path.into_tokens(),
+            body.into_tokens(),
+            quote!(),
+            true,
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unsafe_bound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+        self.impl_internal(
+            path.into_tokens(),
+            body.into_tokens(),
+            quote!(unsafe),
+            true,
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+        self.impl_internal(
+            path.into_tokens(),
+            body.into_tokens(),
+            quote!(),
+            false,
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unsafe_unbound_impl<P: ToTokens, B: ToTokens>(&self, path: P, body: B) -> Tokens {
+        self.impl_internal(
+            path.into_tokens(),
+            body.into_tokens(),
+            quote!(unsafe),
+            false,
+        )
+    }
+
+    fn impl_internal(
+        &self,
+        path: Tokens,
+        body: Tokens,
+        safety: Tokens,
+        add_bounds: bool,
+    ) -> Tokens {
+        let name = &self.ast.ident;
+        let (impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+
+        let bound = syn::parse2::<TraitBound>(path.into())
+            .expect("`path` argument must be a valid rust trait bound");
+
+        let mut where_clause = where_clause.cloned();
+        if add_bounds {
+            self.add_trait_bounds(&bound, &mut where_clause);
+        }
+
+        let dummy_const: Ident = sanitize_ident(&format!(
+            "_DERIVE_{}_FOR_{}",
+            (&bound).into_tokens(),
+            name.into_tokens(),
+        ));
+
+        
+        
+        
+        
+        let mut extern_crate = quote!();
+        if bound.path.leading_colon.is_none() {
+            if let Some(ref seg) = bound.path.segments.first() {
+                let seg = seg.value();
+                extern_crate = quote! { extern crate #seg; };
+            }
+        }
+
+        quote! {
+            #[allow(non_upper_case_globals)]
+            const #dummy_const: () = {
+                #extern_crate
+                #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
+                    #body
+                }
+            };
+        }
+    }
 }

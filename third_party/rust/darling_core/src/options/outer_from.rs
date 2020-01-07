@@ -1,7 +1,7 @@
-use syn::{self, Field, Ident, MetaItem};
+use syn::{self, Field, Ident, Meta};
 
 use {FromMetaItem, Result};
-use options::{Core, DefaultExpression, ForwardAttrs, ParseAttribute, ParseBody};
+use options::{Core, DefaultExpression, ForwardAttrs, ParseAttribute, ParseData};
 use util::IdentList;
 
 
@@ -41,15 +41,15 @@ impl OuterFrom {
 }
 
 impl ParseAttribute for OuterFrom {
-    fn parse_nested(&mut self, mi: &MetaItem) -> Result<()> {
-        match mi.name() {
+    fn parse_nested(&mut self, mi: &Meta) -> Result<()> {
+        match mi.name().as_ref() {
             "attributes" => { self.attr_names = FromMetaItem::from_meta_item(mi)?; Ok(()) }
             "forward_attrs" => { self.forward_attrs = FromMetaItem::from_meta_item(mi)?; Ok(()) },
             "from_ident" => {
                 
                 
                 self.container.default = Some(DefaultExpression::Trait);
-                self.from_ident = true; 
+                self.from_ident = true;
                 Ok(())
             }
             _ => self.container.parse_nested(mi)
@@ -57,7 +57,7 @@ impl ParseAttribute for OuterFrom {
     }
 }
 
-impl ParseBody for OuterFrom {
+impl ParseData for OuterFrom {
     fn parse_field(&mut self, field: &Field) -> Result<()> {
         match field.ident.as_ref().map(|v| v.as_ref()) {
             Some("ident") => { self.ident = field.ident.clone(); Ok(()) }

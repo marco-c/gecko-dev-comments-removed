@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use ident_case;
-use syn::{self, Lit, MetaItem, NestedMetaItem};
+use syn::{self, Lit, Meta, NestedMeta};
 
 use {Error, Result};
 
@@ -37,20 +37,20 @@ use {Error, Result};
 
 
 pub trait FromMetaItem: Sized {
-    fn from_nested_meta_item(item: &NestedMetaItem) -> Result<Self> {
+    fn from_nested_meta_item(item: &NestedMeta) -> Result<Self> {
         match *item {
-            NestedMetaItem::Literal(ref lit) => Self::from_value(lit),
-            NestedMetaItem::MetaItem(ref mi) => Self::from_meta_item(mi),
+            NestedMeta::Literal(ref lit) => Self::from_value(lit),
+            NestedMeta::Meta(ref mi) => Self::from_meta_item(mi),
         }
     }
 
     
     
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         match *item {
-            MetaItem::Word(_) => Self::from_word(),
-            MetaItem::List(_, ref items) => Self::from_list(items),
-            MetaItem::NameValue(_, ref val) => Self::from_value(val),
+            Meta::Word(_) => Self::from_word(),
+            Meta::List(ref value) => Self::from_list(&value.nested.clone().into_iter().collect::<Vec<syn::NestedMeta>>()[..]),
+            Meta::NameValue(ref value) => Self::from_value(&value.lit),
         }
     }
 
@@ -62,7 +62,7 @@ pub trait FromMetaItem: Sized {
 
     
     #[allow(unused_variables)]
-    fn from_list(items: &[NestedMetaItem]) -> Result<Self> {
+    fn from_list(items: &[NestedMeta]) -> Result<Self> {
         Err(Error::unsupported_format("list"))
     }
 
@@ -71,8 +71,8 @@ pub trait FromMetaItem: Sized {
     
     fn from_value(value: &Lit) -> Result<Self> {
         match *value {
-            Lit::Bool(ref b) => Self::from_bool(b.clone()),
-            Lit::Str(ref s, _) => Self::from_string(s),
+            Lit::Bool(ref b) => Self::from_bool(b.value),
+            Lit::Str(ref s) => Self::from_string(&s.value()),
             ref _other => Err(Error::unexpected_type("other"))
         }
     }
@@ -119,7 +119,7 @@ impl FromMetaItem for bool {
 }
 
 impl FromMetaItem for AtomicBool {
-    fn from_meta_item(mi: &MetaItem) -> Result<Self> {
+    fn from_meta_item(mi: &Meta) -> Result<Self> {
         Ok(AtomicBool::new(FromMetaItem::from_meta_item(mi)?))
     }
 }
@@ -130,39 +130,101 @@ impl FromMetaItem for String {
     }
 }
 
+impl FromMetaItem for u8 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for u16 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for u32 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for u64 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for usize {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for i8 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for i16 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for i32 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for i64 {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
+impl FromMetaItem for isize {
+    fn from_string(s: &str) -> Result<Self> {
+        s.parse().or_else(|_| Err(Error::unknown_value(s)))
+    }
+}
+
 impl FromMetaItem for syn::Ident {
     fn from_string(value: &str) -> Result<Self> {
-        Ok(syn::Ident::new(value))
+        Ok(syn::Ident::from(value))
     }
 }
 
 impl FromMetaItem for syn::Path {
     fn from_string(value: &str) -> Result<Self> {
-        syn::parse_path(value).or_else(|_| Err(Error::unknown_value(value)))
+        Ok(syn::parse_str::<syn::Path>(value).unwrap())
     }
 }
 
-impl FromMetaItem for syn::TyParamBound {
-    fn from_string(value: &str) -> Result<Self> {
-        syn::parse_ty_param_bound(value).or_else(|_| Err(Error::unknown_value(value)))
-    }
-}
 
-impl FromMetaItem for syn::MetaItem {
-    fn from_meta_item(value: &syn::MetaItem) -> Result<Self> {
+
+
+
+
+
+
+impl FromMetaItem for syn::Meta {
+    fn from_meta_item(value: &syn::Meta) -> Result<Self> {
         Ok(value.clone())
     }
 }
 
 impl FromMetaItem for syn::WhereClause {
     fn from_string(value: &str) -> Result<Self> {
-        syn::parse_where_clause(value).or_else(|_| Err(Error::unknown_value(value)))
+        let ret: syn::WhereClause = syn::parse_str(value).unwrap();
+        Ok(ret)
     }
 }
 
 impl FromMetaItem for Vec<syn::WherePredicate> {
     fn from_string(value: &str) -> Result<Self> {
-        syn::WhereClause::from_string(&format!("where {}", value)).map(|c| c.predicates)
+        syn::WhereClause::from_string(&format!("where {}", value)).map(|c| c.predicates.into_iter().collect())
     }
 }
 
@@ -173,60 +235,60 @@ impl FromMetaItem for ident_case::RenameRule {
 }
 
 impl<T: FromMetaItem> FromMetaItem for Option<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(Some(FromMetaItem::from_meta_item(item)?))
     }
 }
 
 impl<T: FromMetaItem> FromMetaItem for Box<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(Box::new(FromMetaItem::from_meta_item(item)?))
     }
 }
 
 impl<T: FromMetaItem> FromMetaItem for Result<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(FromMetaItem::from_meta_item(item))
     }
 }
 
 
 
-impl<T: FromMetaItem> FromMetaItem for ::std::result::Result<T, MetaItem> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+impl<T: FromMetaItem> FromMetaItem for ::std::result::Result<T, Meta> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         T::from_meta_item(item).map(Ok).or_else(|_| Ok(Err(item.clone())))
     }
 }
 
 impl<T: FromMetaItem> FromMetaItem for Rc<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(Rc::new(FromMetaItem::from_meta_item(item)?))
     }
 }
 
 impl<T: FromMetaItem> FromMetaItem for Arc<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(Arc::new(FromMetaItem::from_meta_item(item)?))
     }
 }
 
 impl<T: FromMetaItem> FromMetaItem for RefCell<T> {
-    fn from_meta_item(item: &MetaItem) -> Result<Self> {
+    fn from_meta_item(item: &Meta) -> Result<Self> {
         Ok(RefCell::new(FromMetaItem::from_meta_item(item)?))
     }
 }
 
 impl<V: FromMetaItem> FromMetaItem for HashMap<String, V> {
-    fn from_list(nested: &[syn::NestedMetaItem]) -> Result<Self> {
+    fn from_list(nested: &[syn::NestedMeta]) -> Result<Self> {
         let mut map = HashMap::with_capacity(nested.len());
         for item in nested {
-            if let syn::NestedMetaItem::MetaItem(ref inner) = *item {
+            if let syn::NestedMeta::Meta(ref inner) = *item {
                 match map.entry(inner.name().to_string()) {
-                    Entry::Occupied(_) => return Err(Error::duplicate_field(inner.name())),
-                    Entry::Vacant(entry) => { 
+                    Entry::Occupied(_) => return Err(Error::duplicate_field(inner.name().as_ref())),
+                    Entry::Vacant(entry) => {
                         entry.insert(
                             FromMetaItem::from_meta_item(inner).map_err(|e| e.at(inner.name()))?
-                        ); 
+                        );
                     }
                 }
             }
@@ -241,52 +303,60 @@ impl<V: FromMetaItem> FromMetaItem for HashMap<String, V> {
 #[cfg(test)]
 mod tests {
     use syn;
-    
+    use quote::Tokens;
+
     use {FromMetaItem, Result};
 
     
-    fn pmi(s: &str) -> ::std::result::Result<syn::MetaItem, String> {
-        Ok(syn::parse_outer_attr(&format!("#[{}]", s))?.value)
+    fn pmi(tokens: Tokens) -> ::std::result::Result<syn::Meta, String> {
+        let attribute: syn::Attribute = parse_quote!(#[#tokens]);
+        attribute.interpret_meta().ok_or("Unable to parse".into())
     }
 
-    fn fmi<T: FromMetaItem>(s: &str) -> T {
-        FromMetaItem::from_meta_item(&pmi(s).expect("Tests should pass well-formed input"))
+    fn fmi<T: FromMetaItem>(tokens: Tokens) -> T {
+        FromMetaItem::from_meta_item(&pmi(tokens).expect("Tests should pass well-formed input"))
             .expect("Tests should pass valid input")
     }
 
     #[test]
     fn unit_succeeds() {
-        assert_eq!(fmi::<()>("ignore"), ());
+        assert_eq!(fmi::<()>(quote!(ignore)), ());
     }
 
     #[test]
     fn bool_succeeds() {
         
-        assert_eq!(fmi::<bool>("ignore"), true);
+        assert_eq!(fmi::<bool>(quote!(ignore)), true);
 
         
-        assert_eq!(fmi::<bool>("ignore = true"), true);
-        assert_eq!(fmi::<bool>("ignore = false"), false);
+        assert_eq!(fmi::<bool>(quote!(ignore = true)), true);
+        assert_eq!(fmi::<bool>(quote!(ignore = false)), false);
 
         
-        assert_eq!(fmi::<bool>(r#"ignore = "true""#), true);
-        assert_eq!(fmi::<bool>(r#"ignore = "false""#), false);
+        assert_eq!(fmi::<bool>(quote!(ignore = "true")), true);
+        assert_eq!(fmi::<bool>(quote!(ignore = "false")), false);
     }
 
     #[test]
     fn string_succeeds() {
         
-        assert_eq!(&fmi::<String>(r#"ignore = "world""#), "world");
+        assert_eq!(&fmi::<String>(quote!(ignore = "world")), "world");
 
         
-        assert_eq!(&fmi::<String>(r##"ignore = r#"world"#"##), "world");
+        assert_eq!(&fmi::<String>(quote!(ignore = r#"world"#)), "world");
+    }
+
+    #[test]
+    fn number_succeeds() {
+        assert_eq!(fmi::<u8>(quote!(ignore = "2")), 2u8);
+        assert_eq!(fmi::<i16>(quote!(ignore="-25")), -25i16);
     }
 
     #[test]
     fn meta_item_succeeds() {
-        use syn::MetaItem;
+        use syn::Meta;
 
-        assert_eq!(fmi::<MetaItem>("hello(world,today)"), pmi("hello(world,today)").unwrap());
+        assert_eq!(fmi::<Meta>(quote!(hello(world,today))), pmi(quote!(hello(world,today))).unwrap());
     }
 
     #[test]
@@ -301,14 +371,14 @@ mod tests {
             c
         };
 
-        assert_eq!(fmi::<HashMap<String, bool>>(r#"ignore(hello, world = false, there = "true")"#), comparison);
+        assert_eq!(fmi::<HashMap<String, bool>>(quote!(ignore(hello, world = false, there = "true"))), comparison);
     }
 
     
     
     #[test]
     fn darling_result_succeeds() {
-        fmi::<Result<()>>("ignore").unwrap();
-        fmi::<Result<()>>("ignore(world)").unwrap_err();
+        fmi::<Result<()>>(quote!(ignore)).unwrap();
+        fmi::<Result<()>>(quote!(ignore(world))).unwrap_err();
     }
 }
