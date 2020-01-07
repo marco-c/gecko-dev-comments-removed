@@ -1025,6 +1025,8 @@ DoApplyRenderingChangeToTree(nsIFrame* aFrame,
         
         nsSVGUtils::ScheduleReflowSVG(aFrame);
       }
+
+      ActiveLayerTracker::NotifyNeedsRepaint(aFrame);
     }
     if (aChange & nsChangeHint_UpdateTextPath) {
       if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {

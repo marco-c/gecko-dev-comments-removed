@@ -50,6 +50,7 @@ public:
     ACTIVITY_BACKGROUND_POSITION,
 
     ACTIVITY_SCALE,
+    ACTIVITY_TRIGGERED_REPAINT,
 
     
     ACTIVITY_COUNT
@@ -370,6 +371,19 @@ ActiveLayerTracker::NotifyInlineStyleRuleModified(nsIFrame* aFrame,
   }
 }
 
+ void
+ActiveLayerTracker::NotifyNeedsRepaint(nsIFrame* aFrame)
+{
+  LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
+  if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
+    
+    
+    layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] = 0xFF;
+  } else {
+    IncrementMutationCount(&layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT]);
+  }
+}
+
  bool
 ActiveLayerTracker::IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty)
 {
@@ -426,7 +440,8 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     LayerActivity::ActivityIndex activityIndex = LayerActivity::GetActivityIndexForProperty(aProperty);
-    if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
+    if (layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2 &&
+        layerActivity->mRestyleCounts[activityIndex] >= 2) {
       return true;
     }
     if (CheckScrollInducedActivity(layerActivity, activityIndex, aBuilder)) {

@@ -77,6 +77,13 @@ public:
 
 
 
+
+
+  static void NotifyNeedsRepaint(nsIFrame* aFrame);
+  
+
+
+
   static bool IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty);
   
 
