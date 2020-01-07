@@ -1755,6 +1755,9 @@ nsGlobalWindowInner::EnsureClientSource()
   
   
   
+  
+  
+  
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsCOMPtr<nsIChannel> channel = mDoc->GetChannel();
   if (channel) {
@@ -1770,6 +1773,12 @@ nsGlobalWindowInner::EnsureClientSource()
       nsCString spec = uri->GetSpecOrDefault();
       ignoreLoadInfo = spec.EqualsLiteral("about:blank") ||
                        spec.EqualsLiteral("about:srcdoc");
+    } else {
+      
+      bool isData = false;
+      bool isBlob = false;
+      ignoreLoadInfo = (NS_SUCCEEDED(uri->SchemeIs("data", &isData)) && isData) ||
+                       (NS_SUCCEEDED(uri->SchemeIs("blob", &isBlob)) && isBlob);
     }
 
     if (!ignoreLoadInfo) {
