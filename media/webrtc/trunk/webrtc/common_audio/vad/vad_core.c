@@ -115,8 +115,9 @@ static int32_t WeightedAverage(int16_t* data, int16_t offset,
 
 
 
-static inline int32_t OverflowingMulS16ByS32ToS32(int16_t a, int32_t b)
-    RTC_NO_SANITIZE("signed-integer-overflow") {
+static inline int32_t RTC_NO_SANITIZE("signed-integer-overflow")
+OverflowingMulS16ByS32ToS32(int16_t a, int32_t b)
+{
   return a * b;
 }
 

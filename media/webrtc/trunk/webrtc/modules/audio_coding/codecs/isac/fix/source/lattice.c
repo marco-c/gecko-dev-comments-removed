@@ -209,8 +209,9 @@ void WebRtcIsacfix_NormLatticeFilterMa(size_t orderCoef,
 
 
 
-static inline int32_t OverflowingLShiftS32(int32_t x, int shift)
-    RTC_NO_SANITIZE("shift") {
+static inline int32_t RTC_NO_SANITIZE("shift")
+OverflowingLShiftS32(int32_t x, int shift)
+{
   return x << shift;
 }
 
