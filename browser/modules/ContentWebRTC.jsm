@@ -150,7 +150,7 @@ function handleGUMRequest(aSubject, aTopic, aData) {
     function(error) {
       
       
-      denyGUMRequest({callID: aSubject.callID}, error);
+      denyGUMRequest({callID: aSubject.callID});
     },
     aSubject.innerWindowID,
     aSubject.callID);
@@ -203,7 +203,9 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
     requestTypes.push(sharingAudio ? "AudioCapture" : "Microphone");
 
   if (!requestTypes.length) {
-    denyGUMRequest({callID: aCallID}, "NotFoundError");
+    
+    
+    denyGUMRequest({callID: aCallID});
     return;
   }
 
@@ -235,13 +237,8 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
   mm.sendAsyncMessage("webrtc:Request", request);
 }
 
-function denyGUMRequest(aData, aError) {
-  let msg = null;
-  if (aError) {
-    msg = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
-    msg.data = aError;
-  }
-  Services.obs.notifyObservers(msg, "getUserMedia:response:deny", aData.callID);
+function denyGUMRequest(aData) {
+  Services.obs.notifyObservers(null, "getUserMedia:response:deny", aData.callID);
 
   if (!aData.windowID)
     return;

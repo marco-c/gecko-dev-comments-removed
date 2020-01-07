@@ -3665,27 +3665,11 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
 
   } else if (!strcmp(aTopic, "getUserMedia:response:deny")) {
-    MediaMgrError::Name errorName = MediaMgrError::Name::NotAllowedError;
-
-    if (aSubject) {
-      nsCOMPtr<nsISupportsString> msg(do_QueryInterface(aSubject));
-      MOZ_ASSERT(msg);
-      nsString msgData;
-      msg->GetData(msgData);
-      
-      
-      
-      
-      errorName = (msgData.EqualsLiteral("NotFoundError"))
-          ? MediaMgrError::Name::NotFoundError
-          : MediaMgrError::Name::AbortError;
-    }
-
     nsString key(aData);
     RefPtr<GetUserMediaTask> task;
     mActiveCallbacks.Remove(key, getter_AddRefs(task));
     if (task) {
-      task->Denied(errorName);
+      task->Denied(MediaMgrError::Name::NotAllowedError);
       nsTArray<nsString>* array;
       if (!mCallIds.Get(task->GetWindowID(), &array)) {
         return NS_OK;
