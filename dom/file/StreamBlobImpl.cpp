@@ -4,7 +4,10 @@
 
 
 
+#include "EmptyBlobImpl.h"
+#include "mozilla/SlicedInputStream.h"
 #include "StreamBlobImpl.h"
+#include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsICloneableInputStream.h"
 
