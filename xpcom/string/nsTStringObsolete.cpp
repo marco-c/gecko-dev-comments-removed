@@ -118,20 +118,13 @@ ToIntegerCommon(const nsTString<T>& aSrc, nsresult* aErrorCode, uint32_t aRadix)
 {
   MOZ_ASSERT(aRadix == 10 || aRadix == 16);
 
-  using char_type = typename nsTString<T>::char_type;
-
-  auto cp = aSrc.BeginReading();
-  mozilla::CheckedInt<int_type> result;
-  bool negate = false;
-  char_type theChar = 0;
-
   
   *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
 
   
-  
-
+  auto cp = aSrc.BeginReading();
   auto endcp = aSrc.EndReading();
+  bool negate = false;
   bool done = false;
 
   
@@ -154,11 +147,11 @@ ToIntegerCommon(const nsTString<T>& aSrc, nsresult* aErrorCode, uint32_t aRadix)
         break;
       
       case '-':
-        negate = true; 
+        negate = true;
         break;
       default:
         break;
-    } 
+    }
   }
 
   if (!done) {
@@ -169,27 +162,24 @@ ToIntegerCommon(const nsTString<T>& aSrc, nsresult* aErrorCode, uint32_t aRadix)
   
   cp--;
 
-  
-  *aErrorCode = NS_OK;
+  mozilla::CheckedInt<int_type> result;
 
   
   while (cp < endcp) {
-    theChar = *cp++;
+    auto theChar = *cp++;
     if (('0' <= theChar) && (theChar <= '9')) {
       result = (aRadix * result) + (theChar - '0');
     } else if ((theChar >= 'A') && (theChar <= 'F')) {
       if (10 == aRadix) {
-        *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
-        result = 0;
-        break;
+        
+        return 0;
       } else {
         result = (aRadix * result) + ((theChar - 'A') + 10);
       }
     } else if ((theChar >= 'a') && (theChar <= 'f')) {
       if (10 == aRadix) {
-        *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
-        result = 0;
-        break;
+        
+        return 0;
       } else {
         result = (aRadix * result) + ((theChar - 'a') + 10);
       }
@@ -200,15 +190,18 @@ ToIntegerCommon(const nsTString<T>& aSrc, nsresult* aErrorCode, uint32_t aRadix)
       continue;
     } else {
       
+      
       break;
     }
 
     if (!result.isValid()) {
       
-      *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
       return 0;
     }
-  } 
+  }
+
+  
+  *aErrorCode = NS_OK;
 
   if (negate) {
     result = -result;
