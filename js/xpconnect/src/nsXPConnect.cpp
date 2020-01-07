@@ -120,6 +120,12 @@ nsXPConnect::~nsXPConnect()
 void
 nsXPConnect::InitStatics()
 {
+#ifdef NS_BUILD_REFCNT_LOGGING
+    
+    
+    js::SetLogCtorDtorFunctions(NS_LogCtor, NS_LogDtor);
+#endif
+
     gSelf = new nsXPConnect();
     gOnceAliveNowDead = false;
 
