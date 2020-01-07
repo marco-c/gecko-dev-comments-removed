@@ -34,6 +34,7 @@
 #include "mozilla/dom/Element.h"
 
 using namespace mozilla;
+using mozilla::dom::Element;
 
 static LazyLogModule gCommandLog("nsXULCommandDispatcher");
 
@@ -120,7 +121,7 @@ nsXULCommandDispatcher::GetRootFocusedContentAndWindow(nsPIDOMWindowOuter** aWin
 }
 
 NS_IMETHODIMP
-nsXULCommandDispatcher::GetFocusedElement(nsIDOMElement** aElement)
+nsXULCommandDispatcher::GetFocusedElement(Element** aElement)
 {
   *aElement = nullptr;
 
@@ -131,7 +132,7 @@ nsXULCommandDispatcher::GetFocusedElement(nsIDOMElement** aElement)
     CallQueryInterface(focusedContent, aElement);
 
     
-    nsCOMPtr<nsINode> node = do_QueryInterface(*aElement);
+    nsINode* node = *aElement;
     if (!node || !nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller()->Subsumes(node->NodePrincipal())) {
       
       
@@ -168,13 +169,14 @@ nsXULCommandDispatcher::GetFocusedWindow(mozIDOMWindowProxy** aWindow)
 }
 
 NS_IMETHODIMP
-nsXULCommandDispatcher::SetFocusedElement(nsIDOMElement* aElement)
+nsXULCommandDispatcher::SetFocusedElement(Element* aElement)
 {
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, NS_ERROR_FAILURE);
 
-  if (aElement)
+  if (aElement) {
     return fm->SetFocus(aElement, 0);
+  }
 
   
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
@@ -197,10 +199,10 @@ nsXULCommandDispatcher::SetFocusedWindow(mozIDOMWindowProxy* aWindow)
   
   
   
-  nsCOMPtr<nsIDOMElement> frameElement =
-    do_QueryInterface(window->GetFrameElementInternal());
-  if (frameElement)
+  RefPtr<Element> frameElement = window->GetFrameElementInternal();
+  if (frameElement) {
     return fm->SetFocus(frameElement, 0);
+  }
 
   return NS_OK;
 }
@@ -359,9 +361,8 @@ nsXULCommandDispatcher::UpdateCommands(const nsAString& aEventName)
   }
 
   nsAutoString id;
-  nsCOMPtr<nsIDOMElement> domElement;
-  GetFocusedElement(getter_AddRefs(domElement));
-  nsCOMPtr<Element> element = do_QueryInterface(domElement);
+  RefPtr<Element> element;
+  GetFocusedElement(getter_AddRefs(element));
   if (element) {
     element->GetAttribute(NS_LITERAL_STRING("id"), id);
   }

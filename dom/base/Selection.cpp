@@ -3737,8 +3737,6 @@ Selection::NotifySelectionListeners()
       
       if (newEditingHost && newEditingHost != focusedElement) {
         MOZ_ASSERT(!newEditingHost->IsInNativeAnonymousSubtree());
-        nsCOMPtr<nsIDOMElement> domElementToFocus =
-          do_QueryInterface(newEditingHost->AsDOMNode());
         
         
         
@@ -3746,7 +3744,7 @@ Selection::NotifySelectionListeners()
         if (focusedWindow != fm->GetFocusedWindow()) {
           flags |= nsIFocusManager::FLAG_NOSCROLL;
         }
-        fm->SetFocus(domElementToFocus, flags);
+        fm->SetFocus(newEditingHost, flags);
       }
     }
   }

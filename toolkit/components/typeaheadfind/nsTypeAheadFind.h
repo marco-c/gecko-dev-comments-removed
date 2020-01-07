@@ -26,6 +26,7 @@ class nsRange;
 
 namespace mozilla {
 namespace dom {
+class Element;
 class Selection;
 } 
 } 
@@ -95,7 +96,7 @@ protected:
   bool mCaretBrowsingOn;
   bool mDidAddObservers;
   nsCOMPtr<nsIDOMElement> mFoundLink;     
-  nsCOMPtr<nsIDOMElement> mFoundEditable; 
+  nsCOMPtr<mozilla::dom::Element> mFoundEditable; 
   RefPtr<nsRange> mFoundRange;            
   nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
   

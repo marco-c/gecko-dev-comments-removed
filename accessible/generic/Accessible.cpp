@@ -761,7 +761,9 @@ Accessible::TakeFocus()
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     AutoHandlingUserInputStatePusher inputStatePusher(true, nullptr, focusContent->OwnerDoc());
-    nsCOMPtr<nsIDOMElement> element(do_QueryInterface(focusContent));
+    
+    RefPtr<Element> element =
+      focusContent->IsElement() ? focusContent->AsElement() : nullptr;
     fm->SetFocus(element, 0);
   }
 }
