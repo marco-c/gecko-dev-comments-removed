@@ -46,6 +46,12 @@ graph_config_schema = Schema({
         
         Required('worker-types'): {basestring: [basestring]}
     },
+    Required('partner'): {
+        
+        Required('release'): {basestring: basestring},
+        
+        Required('staging'): {basestring: basestring},
+    },
 })
 
 
