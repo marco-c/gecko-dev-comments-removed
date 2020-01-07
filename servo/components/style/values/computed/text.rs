@@ -18,6 +18,7 @@ use values::generics::text::Spacing;
 use values::specified::text::{TextDecorationLine, TextEmphasisFillMode, TextEmphasisShapeKeyword, TextOverflowSide};
 
 pub use values::specified::TextAlignKeyword as TextAlign;
+pub use values::specified::TextEmphasisPosition;
 
 
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
