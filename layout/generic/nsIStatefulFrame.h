@@ -15,7 +15,9 @@
 #include "nsContentUtils.h"
 #include "nsQueryFrame.h"
 
-class nsPresState;
+namespace mozilla {
+class PresState;
+} 
 
 class nsIStatefulFrame
 {
@@ -23,11 +25,10 @@ class nsIStatefulFrame
   NS_DECL_QUERYFRAME_TARGET(nsIStatefulFrame)
 
   
-  
-  NS_IMETHOD SaveState(nsPresState** aState) = 0;
+  virtual mozilla::UniquePtr<mozilla::PresState> SaveState() = 0;
 
   
-  NS_IMETHOD RestoreState(nsPresState* aState) = 0;
+  NS_IMETHOD RestoreState(mozilla::PresState* aState) = 0;
 
   
   NS_IMETHOD GenerateStateKey(nsIContent* aContent,

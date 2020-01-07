@@ -32,7 +32,7 @@
 #include "nsISelectControlFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsMappedAttributes.h"
-#include "nsPresState.h"
+#include "mozilla/PresState.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStyleConsts.h"
 #include "nsTextNode.h"
@@ -41,8 +41,6 @@ NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Select)
 
 namespace mozilla {
 namespace dom {
-
-NS_IMPL_ISUPPORTS(SelectState, SelectState)
 
 
 
@@ -1245,7 +1243,7 @@ HTMLSelectElement::DoneAddingChildren(bool aHaveNotified)
   
   
   if (mRestoreState) {
-    RestoreStateTo(mRestoreState);
+    RestoreStateTo(*mRestoreState);
     mRestoreState = nullptr;
   }
 
@@ -1422,12 +1420,12 @@ HTMLSelectElement::IntrinsicState() const
 NS_IMETHODIMP
 HTMLSelectElement::SaveState()
 {
-  nsPresState* presState = GetPrimaryPresState();
+  PresState* presState = GetPrimaryPresState();
   if (!presState) {
     return NS_OK;
   }
 
-  RefPtr<SelectState> state = new SelectState();
+  SelectContentData state;
 
   uint32_t len = Length();
 
@@ -1436,37 +1434,40 @@ HTMLSelectElement::SaveState()
     if (option && option->Selected()) {
       nsAutoString value;
       option->GetValue(value);
-      state->PutOption(optIndex, value);
+      if (value.IsEmpty()) {
+        state.indices().AppendElement(optIndex);
+      } else {
+        state.values().AppendElement(Move(value));
+      }
     }
   }
 
-  presState->SetStateProperty(state);
+  presState->contentData() = Move(state);
 
   if (mDisabledChanged) {
     
     
-    presState->SetDisabled(HasAttr(kNameSpaceID_None, nsGkAtoms::disabled));
+    presState->disabled() = HasAttr(kNameSpaceID_None, nsGkAtoms::disabled);
+    presState->disabledSet() = true;
   }
 
   return NS_OK;
 }
 
 bool
-HTMLSelectElement::RestoreState(nsPresState* aState)
+HTMLSelectElement::RestoreState(PresState* aState)
 {
   
-  nsCOMPtr<SelectState> state(
-    do_QueryInterface(aState->GetStateProperty()));
-
-  if (state) {
-    RestoreStateTo(state);
+  const PresContentData& state = aState->contentData();
+  if (state.type() == PresContentData::TSelectContentData) {
+    RestoreStateTo(state.get_SelectContentData());
 
     
     
     DispatchContentReset();
   }
 
-  if (aState->IsDisabledSet() && !aState->GetDisabled()) {
+  if (aState->disabledSet() && !aState->disabled()) {
     SetDisabled(false, IgnoreErrors());
   }
 
@@ -1474,10 +1475,11 @@ HTMLSelectElement::RestoreState(nsPresState* aState)
 }
 
 void
-HTMLSelectElement::RestoreStateTo(SelectState* aNewSelected)
+HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected)
 {
   if (!mIsDoneAddingChildren) {
-    mRestoreState = aNewSelected;
+    
+    mRestoreState = MakeUnique<SelectContentData>(aNewSelected);
     return;
   }
 
@@ -1488,12 +1490,19 @@ HTMLSelectElement::RestoreStateTo(SelectState* aNewSelected)
   SetOptionsSelectedByIndex(-1, -1, mask);
 
   
-  for (uint32_t i = 0; i < len; i++) {
+  for (uint32_t idx : aNewSelected.indices()) {
+    if (idx < len) {
+      SetOptionsSelectedByIndex(idx, idx, IS_SELECTED | SET_DISABLED | NOTIFY);
+    }
+  }
+
+  
+  for (uint32_t i = 0; i < len; ++i) {
     HTMLOptionElement* option = Item(i);
     if (option) {
       nsAutoString value;
       option->GetValue(value);
-      if (aNewSelected->ContainsOption(i, value)) {
+      if (aNewSelected.values().Contains(value)) {
         SetOptionsSelectedByIndex(i, i, IS_SELECTED | SET_DISABLED | NOTIFY);
       }
     }
