@@ -843,7 +843,7 @@ pref("gfx.downloadable_fonts.otl_validation", true);
 pref("gfx.downloadable_fonts.keep_color_bitmaps", false);
 
 
-pref("gfx.downloadable_fonts.keep_variation_tables", true);
+pref("gfx.downloadable_fonts.keep_variation_tables", false);
 
 #ifdef ANDROID
 pref("gfx.bundled_fonts.enabled", true);
@@ -3065,7 +3065,7 @@ pref("layout.css.image-orientation.enabled", true);
 pref("layout.css.font-display.enabled", true);
 
 
-pref("layout.css.font-variations.enabled", true);
+pref("layout.css.font-variations.enabled", false);
 
 
 #ifdef RELEASE_OR_BETA
