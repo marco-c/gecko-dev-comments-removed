@@ -371,6 +371,27 @@ private:
   nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>& aToEqual) = delete;
 };
 
+namespace mozilla {
+namespace detail {
+
+
+
+
+
+
+
+template<size_t N>
+static void
+FixedSizeEntryMover(PLDHashTable*,
+                    const PLDHashEntryHdr* aFrom,
+                    PLDHashEntryHdr* aTo)
+{
+  memcpy(aTo, aFrom, N);
+}
+
+} 
+} 
+
 
 
 
@@ -397,7 +418,7 @@ nsTHashtable<EntryType>::Ops()
   {
     s_HashKey,
     s_MatchEntry,
-    EntryType::ALLOW_MEMMOVE ? PLDHashTable::MoveEntryStub : s_CopyEntry,
+    EntryType::ALLOW_MEMMOVE ? mozilla::detail::FixedSizeEntryMover<sizeof(EntryType)> : s_CopyEntry,
     s_ClearEntry,
     s_InitEntry
   };
