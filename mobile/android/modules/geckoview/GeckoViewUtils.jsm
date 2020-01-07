@@ -178,13 +178,7 @@ var GeckoViewUtils = {
       });
   },
 
-  
-
-
-
-
-
-  getChromeWindow: function(aWin) {
+  _getRootDocShell: function(aWin) {
     if (!aWin) {
       return null;
     }
@@ -195,9 +189,8 @@ var GeckoViewUtils = {
       docShell = aWin.QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIDocShell);
     }
-    return docShell.QueryInterface(Ci.nsIDocShellTreeItem)
-                   .rootTreeItem.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindow);
+    return docShell.QueryInterface(Ci.nsIDocShellTreeItem).rootTreeItem
+                   .QueryInterface(Ci.nsIInterfaceRequestor);
   },
 
   
@@ -205,16 +198,42 @@ var GeckoViewUtils = {
 
 
 
+
+  getChromeWindow: function(aWin) {
+    const docShell = this._getRootDocShell(aWin);
+    return docShell && docShell.getInterface(Ci.nsIDOMWindow);
+  },
+
+  
+
+
+
+
+
+  getContentFrameMessageManager: function(aWin) {
+    const docShell = this._getRootDocShell(aWin);
+    return docShell && docShell.getInterface(Ci.nsITabChild).messageManager;
+  },
+
+  
+
+
+
+
+
   getDispatcherForWindow: function(aWin) {
     try {
-      let win = this.getChromeWindow(aWin.top || aWin);
-      let dispatcher = win.WindowEventDispatcher || EventDispatcher.for(win);
-      if (!win.closed && dispatcher) {
-        return dispatcher;
+      if (!this.IS_PARENT_PROCESS) {
+        const mm = this.getContentFrameMessageManager(aWin.top || aWin);
+        return mm && EventDispatcher.forMessageManager(mm);
+      }
+      const win = this.getChromeWindow(aWin.top || aWin);
+      if (!win.closed) {
+        return win.WindowEventDispatcher || EventDispatcher.for(win);
       }
     } catch (e) {
-      return null;
     }
+    return null;
   },
 
   getActiveDispatcher: function() {
@@ -234,3 +253,6 @@ var GeckoViewUtils = {
     return null;
   },
 };
+
+XPCOMUtils.defineLazyGetter(GeckoViewUtils, "IS_PARENT_PROCESS", _ =>
+    Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT);
