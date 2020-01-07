@@ -67,8 +67,7 @@ public:
                     const uint8_t* aFontData = nullptr,
                     uint32_t aLength = 0);
 
-    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle,
-                                        bool aNeedsBold) override;
+    gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle) override;
 
     
     

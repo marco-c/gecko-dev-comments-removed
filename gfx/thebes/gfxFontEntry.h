@@ -287,7 +287,6 @@ public:
     
     
     gfxFont* FindOrMakeFont(const gfxFontStyle *aStyle,
-                            bool aNeedsBold,
                             gfxCharacterMap* aUnicodeRangeMap = nullptr);
 
     
@@ -475,8 +474,7 @@ protected:
     
     virtual ~gfxFontEntry();
 
-    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle,
-                                        bool aNeedsBold) = 0;
+    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle) = 0;
 
     virtual void CheckForGraphiteTables();
 
@@ -733,16 +731,12 @@ public:
     
     
     
-    
-    
     gfxFontEntry *FindFontForStyle(const gfxFontStyle& aFontStyle, 
-                                   bool& aNeedsSyntheticBold,
                                    bool aIgnoreSizeTolerance = false);
 
     virtual void
     FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
                          nsTArray<gfxFontEntry*>& aFontEntryList,
-                         bool& aNeedsSyntheticBold,
                          bool aIgnoreSizeTolerance = false);
 
     

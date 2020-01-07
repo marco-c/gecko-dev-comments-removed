@@ -574,11 +574,8 @@ gfxPlatformFontList::SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
     
     
     if (aCh == 0xFFFD && mReplacementCharFallbackFamily) {
-        bool needsBold;  
-
         fontEntry =
-            mReplacementCharFallbackFamily->FindFontForStyle(*aStyle,
-                                                             needsBold);
+            mReplacementCharFallbackFamily->FindFontForStyle(*aStyle);
 
         
         
@@ -671,10 +668,9 @@ gfxPlatformFontList::CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
         }
 
         gfxFontEntry *fontEntry;
-        bool needsBold;  
 
         
-        fontEntry = fallback->FindFontForStyle(*aMatchStyle, needsBold);
+        fontEntry = fallback->FindFontForStyle(*aMatchStyle);
         if (fontEntry) {
             if (fontEntry->HasCharacter(aCh)) {
                 *aMatchedFamily = fallback;
@@ -830,14 +826,13 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
 }
 
 gfxFontEntry*
-gfxPlatformFontList::FindFontForFamily(const nsAString& aFamily, const gfxFontStyle* aStyle, bool& aNeedsBold)
+gfxPlatformFontList::FindFontForFamily(const nsAString& aFamily,
+                                       const gfxFontStyle* aStyle)
 {
     gfxFontFamily *familyEntry = FindFamily(aFamily);
 
-    aNeedsBold = false;
-
     if (familyEntry)
-        return familyEntry->FindFontForStyle(*aStyle, aNeedsBold);
+        return familyEntry->FindFontForStyle(*aStyle);
 
     return nullptr;
 }
