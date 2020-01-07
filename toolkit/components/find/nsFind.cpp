@@ -25,8 +25,10 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Text.h"
 
 using namespace mozilla;
+using namespace mozilla::dom;
 
 
 #define CHAR_TO_UNICHAR(c) ((char16_t)(unsigned char)c)
@@ -121,6 +123,7 @@ public:
   virtual bool IsDone() override;
   virtual nsresult PositionAt(nsINode* aCurNode) override;
 
+  void Reset();
 protected:
   virtual ~nsFindContentIterator() {}
 
@@ -145,7 +148,6 @@ private:
   nsCOMPtr<nsIContent> mEndOuterContent;
   bool mFindBackward;
 
-  void Reset();
   void MaybeSetupInnerIterator();
   void SetupInnerIterator(nsIContent* aContent);
 };
@@ -252,17 +254,39 @@ nsFindContentIterator::IsDone()
   return mOuterIterator->IsDone();
 }
 
+static nsIContent&
+AnonymousSubtreeRootParent(nsINode& aNode)
+{
+  MOZ_ASSERT(aNode.IsInNativeAnonymousSubtree());
+
+  nsIContent* current = aNode.GetParent();
+  while (current->IsInNativeAnonymousSubtree()) {
+    current = current->GetParent();
+    MOZ_ASSERT(current, "huh?");
+  }
+  return *current;
+}
+
 nsresult
 nsFindContentIterator::PositionAt(nsINode* aCurNode)
 {
-  nsINode* oldNode = mOuterIterator->GetCurrentNode();
   nsresult rv = mOuterIterator->PositionAt(aCurNode);
   if (NS_SUCCEEDED(rv)) {
     MaybeSetupInnerIterator();
-  } else {
-    mOuterIterator->PositionAt(oldNode);
-    if (mInnerIterator) {
-      rv = mInnerIterator->PositionAt(aCurNode);
+    return rv;
+  }
+
+  
+  nsIContent& nonAnonNode = AnonymousSubtreeRootParent(*aCurNode);
+  SetupInnerIterator(&nonAnonNode);
+  MOZ_ASSERT(mInnerIterator, "How did we have an anonymous node otherwise?");
+  rv = mInnerIterator->PositionAt(aCurNode);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  if (!mOuterIterator->IsDone()) {
+    if (mFindBackward) {
+      mOuterIterator->Last();
+    } else {
+      mOuterIterator->First();
     }
   }
   return rv;
@@ -457,54 +481,6 @@ NS_NewFindContentIterator(bool aFindBackward, nsIContentIterator** aResult)
   return it->QueryInterface(NS_GET_IID(nsIContentIterator), (void**)aResult);
 }
 
-struct nsFind::State final
-{
-  
-  State(const State&) = delete;
-  State() = default;
-
-  int32_t mIterOffset = 0;
-
-  
-  
-  nsCOMPtr<nsINode> mIterNode;
-  nsCOMPtr<nsIContent> mLastBlockParent;
-
-  RefPtr<nsFindContentIterator> mIterator;
-};
-
-class MOZ_STACK_CLASS nsFind::StateRestorer final
-{
-public:
-  explicit StateRestorer(State& aState)
-    : mState(aState)
-    , mIterOffset(aState.mIterOffset)
-    , mIterNode(aState.mIterNode)
-    , mCurrNode(aState.mIterator->GetCurrentNode())
-    , mLastBlockParent(aState.mLastBlockParent)
-  {
-  }
-
-  ~StateRestorer()
-  {
-    mState.mIterOffset = mIterOffset;
-    mState.mIterNode = mIterNode;
-    mState.mLastBlockParent = mLastBlockParent;
-    mState.mIterator->PositionAt(mCurrNode);
-  }
-
-private:
-  State& mState;
-
-  int32_t mIterOffset;
-
-  
-  
-  nsCOMPtr<nsINode> mIterNode;
-  nsCOMPtr<nsINode> mCurrNode;
-  nsCOMPtr<nsIContent> mLastBlockParent;
-};
-
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFind)
   NS_INTERFACE_MAP_ENTRY(nsIFind)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -531,7 +507,7 @@ nsFind::~nsFind() = default;
 #endif
 
 static void
-DumpNode(nsINode* aNode)
+DumpNode(const nsINode* aNode)
 {
 #ifdef DEBUG_FIND
   if (!aNode) {
@@ -552,7 +528,7 @@ DumpNode(nsINode* aNode)
 }
 
 static bool
-IsBlockNode(nsIContent* aContent)
+IsBlockNode(const nsIContent* aContent)
 {
   if (aContent->IsElement() && aContent->AsElement()->IsDisplayContents()) {
     return false;
@@ -571,23 +547,22 @@ IsBlockNode(nsIContent* aContent)
 }
 
 static bool
-IsDisplayedNode(nsINode* aNode)
+IsDisplayedNode(const nsINode* aNode)
 {
   if (!aNode->IsContent()) {
     return false;
   }
 
-  nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
-  if (!frame) {
-    
-    return aNode->IsElement() && aNode->AsElement()->IsDisplayContents();
+  if (aNode->AsContent()->GetPrimaryFrame()) {
+    return true;
   }
 
-  return true;
+  
+  return aNode->IsElement() && aNode->AsElement()->IsDisplayContents();
 }
 
 static bool
-IsVisibleNode(nsINode* aNode)
+IsVisibleNode(const nsINode* aNode)
 {
   if (!IsDisplayedNode(aNode)) {
     return false;
@@ -603,9 +578,9 @@ IsVisibleNode(nsINode* aNode)
 }
 
 static bool
-SkipNode(nsIContent* aContent)
+SkipNode(const nsIContent* aContent)
 {
-  nsIContent* content = aContent;
+  const nsIContent* content = aContent;
   while (content) {
     if (!IsDisplayedNode(content) ||
         content->IsComment() ||
@@ -628,15 +603,12 @@ SkipNode(nsIContent* aContent)
   return false;
 }
 
-static nsIContent*
-GetBlockParent(nsINode* aNode)
+static const nsIContent*
+GetBlockParent(const Text* aNode)
 {
-  if (!aNode) {
-    return nullptr;
-  }
   
   
-  for (nsIContent* current = aNode->GetParent(); current;
+  for (const nsIContent* current = aNode->GetParent(); current;
        current = current->GetParent()) {
     if (IsBlockNode(current)) {
       return current;
@@ -645,36 +617,205 @@ GetBlockParent(nsINode* aNode)
   return nullptr;
 }
 
-nsresult
-nsFind::InitIterator(State& aState,
-                     nsINode* aStartNode,
-                     int32_t aStartOffset,
-                     nsINode* aEndNode,
-                     int32_t aEndOffset) const
+struct nsFind::State final
 {
-  if (!aState.mIterator) {
-    aState.mIterator = new nsFindContentIterator(mFindBackward);
+  
+  State(const State&) = delete;
+
+  State(bool aFindBackward,
+        const nsRange& aSearchRange,
+        const nsRange& aStartPoint,
+        const nsRange& aEndPoint)
+    : mFindBackward(aFindBackward)
+    , mInitialized(false)
+    , mIterOffset(-1)
+    , mLastBlockParent(nullptr)
+    , mSearchRange(aSearchRange)
+    , mStartPoint(aStartPoint)
+    , mEndPoint(aEndPoint)
+  {
   }
 
-  NS_ENSURE_ARG_POINTER(aStartNode);
-  NS_ENSURE_ARG_POINTER(aEndNode);
-
-  DEBUG_FIND_PRINTF("InitIterator search range:\n");
-  DEBUG_FIND_PRINTF(" -- start %d, ", aStartOffset);
-  DumpNode(aStartNode);
-  DEBUG_FIND_PRINTF(" -- end %d, ", aEndOffset);
-  DumpNode(aEndNode);
-
-  nsresult rv =
-    aState.mIterator->Init(aStartNode, aStartOffset, aEndNode, aEndOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (mFindBackward) {
-    aState.mIterator->Last();
-  } else {
-    aState.mIterator->First();
+  Text* GetCurrentNode() const
+  {
+    MOZ_ASSERT(mInitialized);
+    nsINode* node = mIterator->GetCurrentNode();
+    MOZ_ASSERT(!node || node->IsText());
+    return node ? node->GetAsText() : nullptr;
   }
-  return NS_OK;
+
+  Text* GetNextNode()
+  {
+    if (MOZ_UNLIKELY(!mInitialized)) {
+      Initialize();
+    } else {
+      Advance();
+      mIterOffset = -1; 
+    }
+    return GetCurrentNode();
+  }
+
+  
+  
+  const nsTextFragment* GetNextNonEmptyTextFragmentInSameBlock();
+
+private:
+  
+  void Advance();
+  
+  void Initialize();
+
+  const bool mFindBackward;
+
+  
+  bool mInitialized;
+
+public:
+  
+  int mIterOffset;
+  const nsIContent* mLastBlockParent;
+  RefPtr<nsFindContentIterator> mIterator;
+
+  
+  const nsRange& mSearchRange;
+  const nsRange& mStartPoint;
+  const nsRange& mEndPoint;
+};
+
+void
+nsFind::State::Advance()
+{
+  MOZ_ASSERT(mInitialized);
+
+  while (true) {
+    if (mFindBackward) {
+      mIterator->Prev();
+    } else {
+      mIterator->Next();
+    }
+
+    nsINode* current = mIterator->GetCurrentNode();
+    if (!current) {
+      return;
+    }
+
+    if (!current->IsContent() || SkipNode(current->AsContent())) {
+      continue;
+    }
+
+    if (current->IsText()) {
+      return;
+    }
+  }
 }
+
+void
+nsFind::State::Initialize()
+{
+  MOZ_ASSERT(!mInitialized);
+  mInitialized = true;
+  mIterOffset = mFindBackward ? -1 : 0;
+  mIterator = new nsFindContentIterator(mFindBackward);
+
+  
+  {
+    nsINode* startNode;
+    nsINode* endNode;
+    uint32_t startOffset;
+    uint32_t endOffset;
+    if (mFindBackward) {
+      startNode = mSearchRange.GetStartContainer();
+      startOffset = mSearchRange.StartOffset();
+      endNode = mStartPoint.GetEndContainer();
+      endOffset = mStartPoint.EndOffset();
+    } else {
+      startNode = mStartPoint.GetStartContainer();
+      startOffset = mStartPoint.StartOffset();
+      endNode = mEndPoint.GetEndContainer();
+      endOffset = mEndPoint.EndOffset();
+    }
+
+    nsresult rv =
+      mIterator->Init(startNode,
+                      static_cast<int32_t>(startOffset),
+                      endNode,
+                      static_cast<int32_t>(endOffset));
+    if (NS_FAILED(rv)) {
+      return;
+    }
+
+    mIterator->Reset();
+  }
+
+  nsINode* current = mIterator->GetCurrentNode();
+  if (!current) {
+    return;
+  }
+
+  if (!current->IsText() || SkipNode(current->AsText())) {
+    Advance();
+    return;
+  }
+
+  mLastBlockParent = GetBlockParent(current->AsText());
+
+  
+  nsINode* beginning = mFindBackward ? mStartPoint.GetEndContainer()
+                                     : mStartPoint.GetStartContainer();
+  if (current != beginning) {
+    return;
+  }
+
+  mIterOffset = mFindBackward ? mStartPoint.EndOffset()
+                              : mStartPoint.StartOffset();
+}
+
+const nsTextFragment*
+nsFind::State::GetNextNonEmptyTextFragmentInSameBlock()
+{
+  while (true) {
+    const Text* current = GetNextNode();
+    if (!current) {
+      return nullptr;
+    }
+
+    const nsIContent* blockParent = GetBlockParent(current);
+    if (!blockParent || blockParent != mLastBlockParent) {
+      return nullptr;
+    }
+
+    const nsTextFragment& frag = current->TextFragment();
+    if (frag.GetLength()) {
+      return &frag;
+    }
+  }
+}
+
+class MOZ_STACK_CLASS nsFind::StateRestorer final
+{
+public:
+  explicit StateRestorer(State& aState)
+    : mState(aState)
+    , mIterOffset(aState.mIterOffset)
+    , mCurrNode(aState.mIterator->GetCurrentNode())
+    , mLastBlockParent(aState.mLastBlockParent)
+  {
+  }
+
+  ~StateRestorer()
+  {
+    mState.mIterOffset = mIterOffset;
+    mState.mIterator->PositionAt(mCurrNode);
+    mState.mLastBlockParent = mLastBlockParent;
+  }
+
+private:
+  State& mState;
+
+  int32_t mIterOffset;
+  nsINode* mCurrNode;
+  const nsIContent* mLastBlockParent;
+};
 
 NS_IMETHODIMP
 nsFind::GetFindBackwards(bool* aFindBackward)
@@ -742,161 +883,19 @@ nsFind::SetEntireWord(bool aEntireWord)
 
 
 
-nsresult
-nsFind::NextNode(State& aState,
-                 const nsRange* aSearchRange,
-                 const nsRange* aStartPoint,
-                 const nsRange* aEndPoint) const
-{
-  nsresult rv;
-
-  nsCOMPtr<nsIContent> content;
-
-  if (!aState.mIterator) {
-    
-    
-    
-    nsCOMPtr<nsINode> startNode;
-    nsCOMPtr<nsINode> endNode;
-    uint32_t startOffset, endOffset;
-    if (mFindBackward) {
-      startNode = aSearchRange->GetStartContainer();
-      startOffset = aSearchRange->StartOffset();
-      endNode = aStartPoint->GetEndContainer();
-      endOffset = aStartPoint->EndOffset();
-      
-      
-      
-      
-      
-      
-    } else { 
-      startNode = aStartPoint->GetStartContainer();
-      startOffset = aStartPoint->StartOffset();
-      endNode = aEndPoint->GetEndContainer();
-      endOffset = aEndPoint->EndOffset();
-    }
-
-    rv = InitIterator(aState,
-                      startNode,
-                      static_cast<int32_t>(startOffset),
-                      endNode,
-                      static_cast<int32_t>(endOffset));
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!aStartPoint) {
-      aStartPoint = aSearchRange;
-    }
-
-    content = do_QueryInterface(aState.mIterator->GetCurrentNode());
-    DEBUG_FIND_PRINTF(":::::: Got the first node ");
-    DumpNode(content);
-
-    if (content && content->IsText() && !SkipNode(content)) {
-      aState.mIterNode = content;
-      
-      nsCOMPtr<nsINode> node;
-      if (mFindBackward) {
-        node = aStartPoint->GetEndContainer();
-        if (aState.mIterNode == node) {
-          uint32_t endOffset = aStartPoint->EndOffset();
-          aState.mIterOffset = static_cast<int32_t>(endOffset);
-        } else {
-          aState.mIterOffset = -1; 
-        }
-      } else {
-        node = aStartPoint->GetStartContainer();
-        if (aState.mIterNode == node) {
-          uint32_t startOffset = aStartPoint->StartOffset();
-          aState.mIterOffset = static_cast<int32_t>(startOffset);
-        } else {
-          aState.mIterOffset = 0;
-        }
-      }
-      DEBUG_FIND_PRINTF("Setting initial offset to %d\n", aState.mIterOffset);
-      return NS_OK;
-    }
-  }
-
-  while (true) {
-    if (mFindBackward) {
-      aState.mIterator->Prev();
-    } else {
-      aState.mIterator->Next();
-    }
-
-    content = do_QueryInterface(aState.mIterator->GetCurrentNode());
-    if (!content) {
-      break;
-    }
-
-    DEBUG_FIND_PRINTF(":::::: Got another node ");
-    DumpNode(content);
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    if (SkipNode(content)) {
-      continue;
-    }
-
-    if (content->IsText()) {
-      break;
-    }
-    DEBUG_FIND_PRINTF("Not a text node: ");
-    DumpNode(content);
-  }
-
-  
-  
-  aState.mIterNode = content;
-  aState.mIterOffset = -1;
-
-  DEBUG_FIND_PRINTF("Iterator gave: ");
-  DumpNode(aState.mIterNode);
-  return NS_OK;
-}
-
 char16_t
-nsFind::PeekNextChar(State& aState,
-                     const nsRange* aSearchRange,
-                     const nsRange* aStartPoint,
-                     const nsRange* aEndPoint) const
+nsFind::PeekNextChar(State& aState) const
 {
   
   StateRestorer restorer(aState);
 
-  const nsTextFragment *frag;
-  int32_t fragLen;
+  const nsTextFragment* frag = aState.GetNextNonEmptyTextFragmentInSameBlock();
+  if (!frag) {
+    return L'\0';
+  }
 
-  
-  do {
-    NextNode(aState, aSearchRange, aStartPoint, aEndPoint);
-
-    
-    nsCOMPtr<nsIContent> tc = do_QueryInterface(aState.mIterNode);
-
-    
-    nsIContent* blockParent = GetBlockParent(aState.mIterNode);
-    if (!blockParent)
-      return L'\0';
-
-    
-    if (!aState.mIterNode || !tc || blockParent != aState.mLastBlockParent)
-      return L'\0';
-
-    frag = tc->GetText();
-    fragLen = frag->GetLength();
-  } while (fragLen <= 0);
-
-  const char16_t *t2b = nullptr;
-  const char *t1b = nullptr;
+  const char16_t* t2b = nullptr;
+  const char* t1b = nullptr;
 
   if (frag->Is2b()) {
     t2b = frag->Get2b();
@@ -904,9 +903,10 @@ nsFind::PeekNextChar(State& aState,
     t1b = frag->Get1b();
   }
 
-  
-  int32_t index = mFindBackward ? fragLen - 1 : 0;
+  uint32_t len = frag->GetLength();
+  MOZ_ASSERT(len);
 
+  int32_t index = mFindBackward ? len - 1 : 0;
   return t1b ? CHAR_TO_UNICHAR(t1b[index]) : t2b[index];
 }
 
@@ -959,7 +959,6 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
   
   int incr = (mFindBackward ? -1 : 1);
 
-  nsCOMPtr<nsIContent> tc;
   const nsTextFragment* frag = nullptr;
   int32_t fragLen = 0;
 
@@ -974,7 +973,7 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
   bool wordBreakPrev = false;
 
   
-  nsCOMPtr<nsINode> matchAnchorNode;
+  Text* matchAnchorNode = nullptr;
   int32_t matchAnchorOffset = 0;
 
   
@@ -986,26 +985,25 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
   char16_t prevChar = 0;
   char16_t prevCharInMatch = 0;
 
-  State state;
+  State state(mFindBackward, *aSearchRange, *aStartPoint, *aEndPoint);
+  Text* current = nullptr;
 
-  while (1) {
+  while (true) {
     DEBUG_FIND_PRINTF("Loop ...\n");
 
     
     if (!frag) {
-
-      tc = nullptr;
-      NextNode(state, aSearchRange, aStartPoint, aEndPoint);
-      if (!state.mIterNode) { 
+      current = state.GetNextNode();
+      if (!current) {
         return NS_OK;
       }
 
       
       
       
-      nsIContent* blockParent = GetBlockParent(state.mIterNode);
+      const nsIContent* blockParent = GetBlockParent(current);
       DEBUG_FIND_PRINTF("New node: old blockparent = %p, new = %p\n",
-                        (void*)state.mLastBlockParent.get(), (void*)blockParent);
+                        (void*)state.mLastBlockParent, (void*)blockParent);
       if (blockParent != state.mLastBlockParent) {
         DEBUG_FIND_PRINTF("Different block parent!\n");
         state.mLastBlockParent = blockParent;
@@ -1019,47 +1017,35 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
         inWhitespace = false;
       }
 
-      
-      tc = do_QueryInterface(state.mIterNode);
-      if (!tc || !(frag = tc->GetText())) { 
-        return NS_OK;
-      }
-
+      frag = &current->TextFragment();
       fragLen = frag->GetLength();
 
       
       
       
-      if (state.mIterNode == matchAnchorNode) {
+      
+      
+      
+      if (current == matchAnchorNode) {
         findex = matchAnchorOffset + (mFindBackward ? 1 : 0);
-      }
-
-      
-      
-      
-      
-      else if (state.mIterOffset >= 0) {
+      } else if (state.mIterOffset >= 0) {
         findex = state.mIterOffset - (mFindBackward ? 1 : 0);
-      }
-
-      
-      else if (mFindBackward) {
-        findex = fragLen - 1;
       } else {
-        findex = 0;
+        findex = mFindBackward ? (fragLen - 1) : 0;
       }
 
       
       state.mIterOffset = -1;
 
+      DEBUG_FIND_PRINTF("Starting from offset %d of %d\n", findex, fragLen);
+
       
       if (findex < 0 || findex > fragLen - 1) {
         DEBUG_FIND_PRINTF("At the end of a text node -- skipping to the next\n");
-        frag = 0;
+        frag = nullptr;
         continue;
       }
 
-      DEBUG_FIND_PRINTF("Starting from offset %d\n", findex);
       if (frag->Is2b()) {
         t2b = frag->Get2b();
         t1b = nullptr;
@@ -1091,7 +1077,7 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
 
     
     
-    if (state.mIterNode == endNode &&
+    if (state.GetCurrentNode() == endNode &&
         ((mFindBackward && findex < static_cast<int32_t>(endOffset)) ||
          (!mFindBackward && findex > static_cast<int32_t>(endOffset)))) {
       return NS_OK;
@@ -1196,7 +1182,7 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
 
       
       if (!matchAnchorNode) {
-        matchAnchorNode = state.mIterNode;
+        matchAnchorNode = state.GetCurrentNode();
         matchAnchorOffset = findex;
       }
 
@@ -1206,9 +1192,6 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
         DEBUG_FIND_PRINTF("Found a match!\n");
 
         
-        nsCOMPtr<nsINode> startParent;
-        nsCOMPtr<nsINode> endParent;
-
         
         if (mWordBreaker) {
           int32_t nextfindex = findex + incr;
@@ -1219,7 +1202,7 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
             nextChar = (t2b ? t2b[nextfindex] : CHAR_TO_UNICHAR(t1b[nextfindex]));
           
           else
-            nextChar = PeekNextChar(state, aSearchRange, aStartPoint, aEndPoint);
+            nextChar = PeekNextChar(state);
 
           if (nextChar == NBSP_CHARCODE)
             nextChar = CHAR_TO_UNICHAR(' ');
@@ -1231,41 +1214,37 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
           }
         }
 
-        RefPtr<nsRange> range = new nsRange(tc);
-        if (range) {
-          int32_t matchStartOffset, matchEndOffset;
+        RefPtr<nsRange> range = new nsRange(current);
+
+        int32_t matchStartOffset;
+        int32_t matchEndOffset;
+        
+        int32_t mao = matchAnchorOffset + (mFindBackward ? 1 : 0);
+        Text* startParent;
+        Text* endParent;
+        if (mFindBackward) {
+          startParent = current;
+          endParent = matchAnchorNode;
+          matchStartOffset = findex;
+          matchEndOffset = mao;
+        } else {
+          startParent = matchAnchorNode;
+          endParent = current;
+          matchStartOffset = mao;
+          matchEndOffset = findex + 1;
+        }
+        if (startParent && endParent &&
+            IsVisibleNode(startParent) && IsVisibleNode(endParent)) {
+          range->SetStart(*startParent, matchStartOffset, IgnoreErrors());
+          range->SetEnd(*endParent, matchEndOffset, IgnoreErrors());
+          *aRangeRet = range.get();
+          NS_ADDREF(*aRangeRet);
+        } else {
           
-          int32_t mao = matchAnchorOffset + (mFindBackward ? 1 : 0);
-          if (mFindBackward) {
-            startParent = tc;
-            endParent = matchAnchorNode;
-            matchStartOffset = findex;
-            matchEndOffset = mao;
-          } else {
-            startParent = matchAnchorNode;
-            endParent = tc;
-            matchStartOffset = mao;
-            matchEndOffset = findex + 1;
-          }
-          if (startParent && endParent &&
-              IsVisibleNode(startParent) && IsVisibleNode(endParent)) {
-            range->SetStart(*startParent, matchStartOffset, IgnoreErrors());
-            range->SetEnd(*endParent, matchEndOffset, IgnoreErrors());
-            *aRangeRet = range.get();
-            NS_ADDREF(*aRangeRet);
-          } else {
-            
-            startParent = nullptr;
-          }
+          startParent = nullptr;
         }
 
         if (startParent) {
-          
-          
-          
-          state.mIterOffset = findex + (mFindBackward ? 1 : 0);
-          DEBUG_FIND_PRINTF("mIterOffset = %d, mIterNode = ", state.mIterOffset);
-          DumpNode(state.mIterNode);
           return NS_OK;
         }
         
@@ -1296,14 +1275,11 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
       
 
       
-      if (matchAnchorNode != state.mIterNode) {
-        nsCOMPtr<nsIContent> content(do_QueryInterface(matchAnchorNode));
-        DebugOnly<nsresult> rv = NS_ERROR_UNEXPECTED;
-        if (content) {
-          rv = state.mIterator->PositionAt(content);
-        }
-        frag = 0;
-        NS_ASSERTION(NS_SUCCEEDED(rv), "Text content wasn't nsIContent!");
+      if (matchAnchorNode != state.GetCurrentNode()) {
+        frag = nullptr;
+
+        DebugOnly<nsresult> rv = state.mIterator->PositionAt(matchAnchorNode);
+        MOZ_ASSERT(NS_SUCCEEDED(rv), "nsFindContentIterator failed to rewind");
         DEBUG_FIND_PRINTF("Repositioned anchor node\n");
       }
       DEBUG_FIND_PRINTF("Ending a partial match; findex -> %d, mIterOffset -> %d\n",
@@ -1312,7 +1288,7 @@ nsFind::Find(const char16_t* aPatText, nsRange* aSearchRange,
     matchAnchorNode = nullptr;
     matchAnchorOffset = 0;
     inWhitespace = false;
-    pindex = (mFindBackward ? patLen : 0);
+    pindex = mFindBackward ? patLen : 0;
     DEBUG_FIND_PRINTF("Setting findex back to %d, pindex to %d\n", findex, pindex);
   }
 

@@ -49,25 +49,9 @@ protected:
   class StateRestorer;
 
   
-  nsresult NextNode(State&,
-                    const nsRange* aSearchRange,
-                    const nsRange* aStartPoint,
-                    const nsRange* aEndPoint) const;
-
   
   
-  
-  char16_t PeekNextChar(State&,
-                        const nsRange* aSearchRange,
-                        const nsRange* aStartPoint,
-                        const nsRange* aEndPoint) const;
-
-  
-  nsresult InitIterator(State&,
-                        nsINode* aStartNode,
-                        int32_t aStartOffset,
-                        nsINode* aEndNode,
-                        int32_t aEndOffset) const;
+  char16_t PeekNextChar(State&) const;
 };
 
 #endif 
