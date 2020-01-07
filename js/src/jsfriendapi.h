@@ -325,6 +325,9 @@ ForceLexicalInitialization(JSContext *cx, HandleObject obj);
 extern JS_FRIEND_API(int)
 IsGCPoisoning();
 
+extern JS_FRIEND_API(JSPrincipals*)
+GetRealmPrincipals(JS::Realm* realm);
+
 } 
 
 
@@ -3104,7 +3107,7 @@ EnableAccessValidation(JSContext* cx, bool enabled);
 
 
 extern JS_FRIEND_API(void)
-SetCompartmentValidAccessPtr(JSContext* cx, JS::HandleObject global, bool* accessp);
+SetRealmValidAccessPtr(JSContext* cx, JS::HandleObject global, bool* accessp);
 
 
 

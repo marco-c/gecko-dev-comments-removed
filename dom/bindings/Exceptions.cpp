@@ -189,7 +189,7 @@ GetCurrentJSStack(int32_t aMaxDepth)
   
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
 
-  if (!cx || !js::GetContextCompartment(cx)) {
+  if (!cx || !js::GetContextRealm(cx)) {
     return nullptr;
   }
 
