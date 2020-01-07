@@ -787,13 +787,74 @@ public class GeckoSession extends LayerSession
         return mTextInput;
     }
 
+    @IntDef(flag = true,
+            value = { LOAD_FLAGS_NONE, LOAD_FLAGS_BYPASS_CACHE, LOAD_FLAGS_BYPASS_PROXY,
+                      LOAD_FLAGS_EXTERNAL, LOAD_FLAGS_ALLOW_POPUPS })
+    public @interface LoadFlags {}
+
+    
+    
+    
+    
+    
+
+    
+
+
+    public static final int LOAD_FLAGS_NONE = 0;
+
+    
+
+
+    public static final int LOAD_FLAGS_BYPASS_CACHE = 1 << 0;
+
+    
+
+
+    public static final int LOAD_FLAGS_BYPASS_PROXY = 1 << 1;
+
+    
+
+
+    public static final int LOAD_FLAGS_EXTERNAL = 1 << 2;
+
+    
+
+
+    public static final int LOAD_FLAGS_ALLOW_POPUPS = 1 << 3;
+
     
 
 
 
-    public void loadUri(String uri) {
+    public void loadUri(@NonNull String uri) {
+        loadUri(uri, null, LOAD_FLAGS_NONE);
+    }
+
+    
+
+
+
+
+
+    public void loadUri(@NonNull String uri, @LoadFlags int flags) {
+        loadUri(uri, null, flags);
+    }
+
+    
+
+
+
+
+
+
+    public void loadUri(@NonNull String uri, @Nullable String referrer, @LoadFlags int flags) {
         final GeckoBundle msg = new GeckoBundle();
         msg.putString("uri", uri);
+        msg.putInt("flags", flags);
+        if (referrer != null) {
+            msg.putString("referrer", referrer);
+        }
         mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
     }
 
@@ -801,8 +862,27 @@ public class GeckoSession extends LayerSession
 
 
 
-    public void loadUri(Uri uri) {
-        loadUri(uri.toString());
+    public void loadUri(@NonNull Uri uri) {
+        loadUri(uri, null, LOAD_FLAGS_NONE);
+    }
+
+    
+
+
+
+
+    public void loadUri(@NonNull Uri uri, @LoadFlags int flags) {
+        loadUri(uri.toString(), null, flags);
+    }
+
+    
+
+
+
+
+
+    public void loadUri(@NonNull Uri uri, @Nullable Uri referrer, @LoadFlags int flags) {
+        loadUri(uri.toString(), referrer != null ? referrer.toString() : null, flags);
     }
 
     
