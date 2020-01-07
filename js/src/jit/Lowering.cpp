@@ -116,7 +116,7 @@ TryToUseImplicitInterruptCheck(MIRGraph& graph, MBasicBlock* backedge)
                 continue;
             }
 
-            MOZ_ASSERT_IF(iter->isPostWriteBarrierO() || iter->isPostWriteBarrierV() || iter->isPostWriteBarrierS(),
+            MOZ_ASSERT_IF(iter->isPostWriteBarrierO() || iter->isPostWriteBarrierV(),
                           iter->safepoint());
 
             if (iter->safepoint())
@@ -1960,9 +1960,7 @@ LIRGenerator::visitCharCodeAt(MCharCodeAt* ins)
     MOZ_ASSERT(str->type() == MIRType::String);
     MOZ_ASSERT(idx->type() == MIRType::Int32);
 
-    LCharCodeAt* lir = new(alloc()) LCharCodeAt(useRegister(str),
-                                                useRegister(idx),
-                                                temp(LDefinition::INT32));
+    LCharCodeAt* lir = new(alloc()) LCharCodeAt(useRegister(str), useRegister(idx));
     define(lir, ins);
     assignSafepoint(lir, ins);
 }
@@ -2854,17 +2852,6 @@ LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins)
         assignSafepoint(lir, ins);
         break;
       }
-      case MIRType::String: {
-          LDefinition tmp = needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-          LPostWriteBarrierS* lir =
-            new(alloc()) LPostWriteBarrierS(useConstantObject
-                                            ? useOrConstant(ins->object())
-                                            : useRegister(ins->object()),
-                                            useRegister(ins->value()), tmp);
-        add(lir, ins);
-        assignSafepoint(lir, ins);
-        break;
-      }
       case MIRType::Value: {
         LDefinition tmp = needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
         LPostWriteBarrierV* lir =
@@ -2904,19 +2891,6 @@ LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins)
         LDefinition tmp = needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
         LPostWriteElementBarrierO* lir =
             new(alloc()) LPostWriteElementBarrierO(useConstantObject
-                                                   ? useOrConstant(ins->object())
-                                                   : useRegister(ins->object()),
-                                                   useRegister(ins->value()),
-                                                   useRegister(ins->index()),
-                                                   tmp);
-        add(lir, ins);
-        assignSafepoint(lir, ins);
-        break;
-      }
-      case MIRType::String: {
-        LDefinition tmp = needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-        LPostWriteElementBarrierS* lir =
-            new(alloc()) LPostWriteElementBarrierS(useConstantObject
                                                    ? useOrConstant(ins->object())
                                                    : useRegister(ins->object()),
                                                    useRegister(ins->value()),

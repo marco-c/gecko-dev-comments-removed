@@ -28,7 +28,7 @@
     _(CheckHashTables,          "ckTbls")                                     \
     _(MarkRuntime,              "mkRntm")                                     \
     _(MarkDebugger,             "mkDbgr")                                     \
-    _(SweepCaches,              "swpCch")                                     \
+    _(ClearNewObjectCache,      "clrNOC")                                     \
     _(CollectToFP,              "collct")                                     \
     _(ObjectsTenuredCallback,   "tenCB")                                      \
     _(Sweep,                    "sweep")                                      \
@@ -83,16 +83,15 @@ class TenuringTracer : public JSTracer
     
     
     
-    gc::RelocationOverlay* objHead;
-    gc::RelocationOverlay** objTail;
-    gc::RelocationOverlay* stringHead;
-    gc::RelocationOverlay** stringTail;
+    gc::RelocationOverlay* head;
+    gc::RelocationOverlay** tail;
 
     TenuringTracer(JSRuntime* rt, Nursery* nursery);
 
   public:
-    Nursery& nursery() { return nursery_; }
+    const Nursery& nursery() const { return nursery_; }
 
+    
     template <typename T> void traverse(T** thingp);
     template <typename T> void traverse(T* thingp);
 
@@ -100,21 +99,18 @@ class TenuringTracer : public JSTracer
     void traceObject(JSObject* src);
     void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t length);
     void traceSlots(JS::Value* vp, uint32_t nslots);
-    void traceString(JSString* src);
 
   private:
-    inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
-    inline void insertIntoStringFixupList(gc::RelocationOverlay* entry);
+    Nursery& nursery() { return nursery_; }
+
+    inline void insertIntoFixupList(gc::RelocationOverlay* entry);
     template <typename T>
     inline T* allocTenured(JS::Zone* zone, gc::AllocKind kind);
 
     inline JSObject* movePlainObjectToTenured(PlainObject* src);
     JSObject* moveToTenuredSlow(JSObject* src);
-    JSString* moveToTenured(JSString* src);
-
     size_t moveElementsToTenured(NativeObject* dst, NativeObject* src, gc::AllocKind dstKind);
     size_t moveSlotsToTenured(NativeObject* dst, NativeObject* src, gc::AllocKind dstKind);
-    size_t moveStringToTenured(JSString* dst, JSString* src, gc::AllocKind dstKind);
 
     void traceSlots(JS::Value* vp, JS::Value* end);
 };
@@ -139,15 +135,6 @@ class Nursery
     static const size_t Alignment = gc::ChunkSize;
     static const size_t ChunkShift = gc::ChunkShift;
 
-    struct alignas(gc::CellAlignBytes) CellAlignedByte {
-        char byte;
-    };
-
-    struct StringLayout {
-        JS::Zone* zone;
-        CellAlignedByte cell;
-    };
-
     explicit Nursery(JSRuntime* rt);
     ~Nursery();
 
@@ -169,10 +156,6 @@ class Nursery
     void enable();
     void disable();
     bool isEnabled() const { return maxChunkCount() != 0; }
-
-    void enableStrings();
-    void disableStrings();
-    bool canAllocateStrings() const { return canAllocateStrings_; }
 
     
     bool isEmpty() const;
@@ -198,29 +181,6 @@ class Nursery
 
 
     JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic, const js::Class* clasp);
-
-    
-
-
-
-    gc::Cell* allocateString(JSContext* cx, JS::Zone* zone, size_t size, gc::AllocKind kind);
-
-    
-
-
-    static JS::Zone* getStringZone(const JSString* str) {
-#ifdef DEBUG
-        auto cell = reinterpret_cast<const js::gc::Cell*>(str); 
-        MOZ_ASSERT(js::gc::IsInsideNursery(cell), "getStringZone must be passed a nursery string");
-#endif
-
-        auto layout = reinterpret_cast<const uint8_t*>(str) - offsetof(StringLayout, cell);
-        return reinterpret_cast<const StringLayout*>(layout)->zone;
-    }
-
-    static size_t stringHeaderSize() {
-        return offsetof(StringLayout, cell);
-    }
 
     
     void* allocateBuffer(JS::Zone* zone, size_t nbytes);
@@ -256,20 +216,13 @@ class Nursery
 
 
 
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(js::gc::Cell** ref);
+    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(JSObject** ref);
 
     
     void forwardBufferPointer(HeapSlot** pSlotsElems);
 
     inline void maybeSetForwardingPointer(JSTracer* trc, void* oldData, void* newData, bool direct);
     inline void setForwardingPointerWhileTenuring(void* oldData, void* newData, bool direct);
-
-    
-
-
-
-
-    bool registerMallocedBuffer(void* buffer);
 
     
     void removeMallocedBuffer(void* buffer) {
@@ -328,7 +281,6 @@ class Nursery
 
     void* addressOfCurrentEnd() const { return (void*)&currentEnd_; }
     void* addressOfPosition() const { return (void*)&position_; }
-    void* addressOfCurrentStringEnd() const { return (void*)&currentStringEnd_; }
 
     void requestMinorGC(JS::gcreason::Reason reason) const;
 
@@ -366,12 +318,6 @@ class Nursery
     uintptr_t currentEnd_;
 
     
-
-
-
-    uintptr_t currentStringEnd_;
-
-    
     unsigned currentChunk_;
 
     
@@ -395,9 +341,6 @@ class Nursery
     
     mozilla::TimeDuration profileThreshold_;
     bool enableProfiling_;
-
-    
-    bool canAllocateStrings_;
 
     
     int64_t reportTenurings_;
@@ -517,6 +460,9 @@ class Nursery
     uintptr_t position() const { return position_; }
 
     JSRuntime* runtime() const { return runtime_; }
+
+    
+    gc::TenuredCell* allocateFromTenured(JS::Zone* zone, gc::AllocKind thingKind);
 
     
     void* allocate(size_t size);

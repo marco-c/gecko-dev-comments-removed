@@ -16,9 +16,7 @@
 #include "jsstr.h"
 
 #include "gc/Barrier.h"
-#include "gc/Cell.h"
 #include "gc/Heap.h"
-#include "gc/Nursery.h"
 #include "gc/Rooting.h"
 #include "js/CharacterEncoding.h"
 #include "js/RootingAPI.h"
@@ -155,7 +153,7 @@ static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
 
 
 
-class JSString : public js::gc::Cell
+class JSString : public js::gc::TenuredCell
 {
   protected:
     static const size_t NUM_INLINE_CHARS_LATIN1   = 2 * sizeof(void*) / sizeof(JS::Latin1Char);
@@ -255,33 +253,23 @@ class JSString : public js::gc::Cell
 
 
 
+    static const uint32_t FLAT_BIT               = JS_BIT(0);
+    static const uint32_t HAS_BASE_BIT           = JS_BIT(1);
+    static const uint32_t INLINE_CHARS_BIT       = JS_BIT(2);
+    static const uint32_t ATOM_BIT               = JS_BIT(3);
 
-
-
-
-
-
-
-
-    static const uint32_t NON_ATOM_BIT           = JS_BIT(0);
-    static const uint32_t FLAT_BIT               = JS_BIT(1);
-    static const uint32_t HAS_BASE_BIT           = JS_BIT(2);
-    static const uint32_t INLINE_CHARS_BIT       = JS_BIT(3);
-
-    static const uint32_t ROPE_FLAGS             = NON_ATOM_BIT;
-    static const uint32_t DEPENDENT_FLAGS        = NON_ATOM_BIT | HAS_BASE_BIT;
-    static const uint32_t FLAT_FLAGS             = NON_ATOM_BIT | FLAT_BIT;
-    static const uint32_t UNDEPENDED_FLAGS       = NON_ATOM_BIT | FLAT_BIT | HAS_BASE_BIT;
-    static const uint32_t EXTENSIBLE_FLAGS       = NON_ATOM_BIT | FLAT_BIT | JS_BIT(4);
-    static const uint32_t EXTERNAL_FLAGS         = NON_ATOM_BIT | JS_BIT(5);
+    static const uint32_t ROPE_FLAGS             = 0;
+    static const uint32_t DEPENDENT_FLAGS        = HAS_BASE_BIT;
+    static const uint32_t UNDEPENDED_FLAGS       = FLAT_BIT | HAS_BASE_BIT;
+    static const uint32_t EXTENSIBLE_FLAGS       = FLAT_BIT | JS_BIT(4);
+    static const uint32_t EXTERNAL_FLAGS         = JS_BIT(5);
 
     static const uint32_t FAT_INLINE_MASK        = INLINE_CHARS_BIT | JS_BIT(4);
-    static const uint32_t PERMANENT_ATOM_MASK    = NON_ATOM_BIT | JS_BIT(5);
-    static const uint32_t PERMANENT_ATOM         = JS_BIT(5);
+    static const uint32_t PERMANENT_ATOM_MASK    = ATOM_BIT | JS_BIT(5);
 
     
-    static const uint32_t INIT_THIN_INLINE_FLAGS = NON_ATOM_BIT | FLAT_BIT | INLINE_CHARS_BIT;
-    static const uint32_t INIT_FAT_INLINE_FLAGS  = NON_ATOM_BIT | FLAT_BIT | FAT_INLINE_MASK;
+    static const uint32_t INIT_THIN_INLINE_FLAGS = FLAT_BIT | INLINE_CHARS_BIT;
+    static const uint32_t INIT_FAT_INLINE_FLAGS  = FLAT_BIT | FAT_INLINE_MASK;
 
     static const uint32_t TYPE_FLAGS_MASK        = JS_BIT(6) - 1;
 
@@ -483,26 +471,18 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isAtom() const {
-        return !(d.u1.flags & NON_ATOM_BIT);
+        return d.u1.flags & ATOM_BIT;
     }
 
     MOZ_ALWAYS_INLINE
     bool isPermanentAtom() const {
-        return (d.u1.flags & PERMANENT_ATOM_MASK) == PERMANENT_ATOM;
+        return (d.u1.flags & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_MASK;
     }
 
     MOZ_ALWAYS_INLINE
     JSAtom& asAtom() const {
         MOZ_ASSERT(isAtom());
         return *(JSAtom*)this;
-    }
-
-    
-    
-    MOZ_ALWAYS_INLINE
-    static bool nurseryCellIsString(js::gc::Cell* cell) {
-        MOZ_ASSERT(!cell->isTenured());
-        return !static_cast<JSString*>(cell)->isAtom();
     }
 
     
@@ -545,54 +525,6 @@ class JSString : public js::gc::Cell
 
     static const JS::TraceKind TraceKind = JS::TraceKind::String;
 
-    JS::Zone* zone() const {
-        if (isTenured()) {
-            
-            if (isPermanentAtom())
-                return zoneFromAnyThread();
-            return asTenured().zone();
-        }
-        return js::Nursery::getStringZone(this);
-    }
-
-    
-
-    JS::Zone* zoneFromAnyThread() const {
-        if (isTenured())
-            return asTenured().zoneFromAnyThread();
-        return js::Nursery::getStringZone(this);
-    }
-
-    void fixupAfterMovingGC() {}
-
-    js::gc::AllocKind getAllocKind() const {
-        using js::gc::AllocKind;
-        AllocKind kind;
-        if (isAtom())
-            if (isFatInline())
-                kind = AllocKind::FAT_INLINE_ATOM;
-            else
-                kind = AllocKind::ATOM;
-        else if (isFatInline())
-            kind = AllocKind::FAT_INLINE_STRING;
-        else if (isExternal())
-            kind = AllocKind::EXTERNAL_STRING;
-        else
-            kind = AllocKind::STRING;
-
-#if DEBUG
-        if (isTenured()) {
-            
-            
-            
-            AllocKind tenuredKind = asTenured().getAllocKind();
-            MOZ_ASSERT(kind == tenuredKind ||
-                       (tenuredKind == AllocKind::EXTERNAL_STRING && kind == AllocKind::STRING));
-        }
-#endif
-        return kind;
-    }
-
 #ifdef DEBUG
     void dump(); 
     void dump(js::GenericPrinter& out);
@@ -610,42 +542,17 @@ class JSString : public js::gc::Cell
     void traceChildren(JSTracer* trc);
 
     static MOZ_ALWAYS_INLINE void readBarrier(JSString* thing) {
-        if (thing->isPermanentAtom() || js::gc::IsInsideNursery(thing))
+        if (thing->isPermanentAtom())
             return;
-        js::gc::TenuredCell::readBarrier(&thing->asTenured());
+
+        TenuredCell::readBarrier(thing);
     }
 
     static MOZ_ALWAYS_INLINE void writeBarrierPre(JSString* thing) {
-        if (!thing || thing->isPermanentAtom() || js::gc::IsInsideNursery(thing))
+        if (!thing || thing->isPermanentAtom())
             return;
 
-        js::gc::TenuredCell::writeBarrierPre(&thing->asTenured());
-    }
-
-    static void addCellAddressToStoreBuffer(js::gc::StoreBuffer* buffer, js::gc::Cell** cellp)
-    {
-        buffer->putCell(cellp);
-    }
-
-    static void removeCellAddressFromStoreBuffer(js::gc::StoreBuffer* buffer, js::gc::Cell** cellp)
-    {
-        buffer->unputCell(cellp);
-    }
-
-    static void writeBarrierPost(void* cellp, JSString* prev, JSString* next) {
-        
-        MOZ_ASSERT(cellp);
-
-        js::gc::StoreBuffer* buffer;
-        if (next && (buffer = next->storeBuffer())) {
-            if (prev && prev->storeBuffer())
-                return;
-            buffer->putCell(static_cast<js::gc::Cell**>(cellp));
-            return;
-        }
-
-        if (prev && (buffer = prev->storeBuffer()))
-            buffer->unputCell(static_cast<js::gc::Cell**>(cellp));
+        TenuredCell::writeBarrierPre(thing);
     }
 
   private:
@@ -722,7 +629,6 @@ class JSLinearString : public JSString
 {
     friend class JSString;
     friend class js::AutoStableStringChars;
-    friend class js::TenuringTracer;
 
     
     JSLinearString* ensureLinear(JSContext* cx) = delete;
@@ -1090,11 +996,6 @@ class JSExternalString : public JSLinearString
 
     inline void finalize(js::FreeOp* fop);
 
-    
-
-
-
-
     JSFlatString* ensureFlat(JSContext* cx);
 
 #ifdef DEBUG
@@ -1137,8 +1038,7 @@ class JSAtom : public JSFlatString
     
     
     MOZ_ALWAYS_INLINE void morphIntoPermanentAtom() {
-        MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
-        d.u1.flags = (d.u1.flags & ~PERMANENT_ATOM_MASK) | PERMANENT_ATOM;
+        d.u1.flags |= PERMANENT_ATOM_MASK;
     }
 
     inline js::HashNumber hash() const;
@@ -1215,8 +1115,7 @@ JSAtom::initHash(js::HashNumber hash)
 MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
 {
-    MOZ_ASSERT(!isAtom());
-    d.u1.flags &= ~NON_ATOM_BIT;
+    d.u1.flags |= ATOM_BIT;
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;
@@ -1225,8 +1124,7 @@ JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
 MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoPermanentAtom(js::HashNumber hash)
 {
-    MOZ_ASSERT(!isAtom());
-    d.u1.flags = (d.u1.flags & ~PERMANENT_ATOM_MASK) | PERMANENT_ATOM;
+    d.u1.flags |= PERMANENT_ATOM_MASK;
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;
@@ -1667,24 +1565,6 @@ JSAtom::asPropertyName()
     MOZ_ASSERT(!isIndex(&dummy));
 #endif
     return static_cast<js::PropertyName*>(this);
-}
-
-namespace js {
-namespace gc {
-template<>
-inline JSString*
-Cell::as<JSString>() {
-    MOZ_ASSERT(is<JSString>());
-    return reinterpret_cast<JSString*>(this);
-}
-
-template<>
-inline JSString*
-TenuredCell::as<JSString>() {
-    MOZ_ASSERT(is<JSString>());
-    return reinterpret_cast<JSString*>(this);
-}
-}
 }
 
 #endif 
