@@ -69,6 +69,75 @@ let whitelist = [
    intermittent: true,
    errorMessage: /Property contained reference to invalid variable.*color/i,
    isFromDevTools: true},
+
+  
+  
+  
+  {propName: "--in-content-category-text-active",
+   isFromDevTools: false},
+  
+  {propName: "--chrome-nav-bar-separator-color",
+   isFromDevTools: false},
+  
+  {propName: "--chrome-nav-buttons-background",
+   isFromDevTools: false},
+  
+  {propName: "--chrome-nav-buttons-hover-background",
+   isFromDevTools: false},
+  
+  {propName: "--muteButton-width",
+   isFromDevTools: false},
+  
+  {propName: "--closedCaptionButton-width",
+   isFromDevTools: false},
+  
+  {propName: "--fullscreenButton-width",
+   isFromDevTools: false},
+  
+  {propName: "--durationSpan-width",
+   isFromDevTools: false},
+  
+  {propName: "--durationSpan-width-long",
+   isFromDevTools: false},
+  
+  {propName: "--positionDurationBox-width",
+   isFromDevTools: false},
+  
+  {propName: "--positionDurationBox-width-long",
+   isFromDevTools: false},
+  
+  {propName: "--rule-flex-toggle-color",
+   isFromDevTools: true},
+  
+  {propName: "--theme-search-overlays-semitransparent",
+   isFromDevTools: true},
+  
+  {propName: "--breakpoint-hover-background",
+   isFromDevTools: true},
+  
+  {propName: "--theme-codemirror-gutter-background",
+   isFromDevTools: true},
+  
+  {propName: "--arrow-width",
+   isFromDevTools: true},
+  
+  {propName: "--in-content-category-background",
+   isFromDevTools: false},
+  
+  {propName: "--separator-border-image",
+   isFromDevTools: true},
+
+  
+  {propName: "--in-content-box-background-odd",
+   platforms: ["win", "macosx"],
+   isFromDevTools: false},
+
+  
+  
+  {propName: "--bezier-diagonal-color",
+   isFromDevTools: true},
+  {propName: "--bezier-grid-color",
+   isFromDevTools: true},
 ];
 
 if (!Services.prefs.getBoolPref("full-screen-api.unprefix.enabled")) {
@@ -194,6 +263,7 @@ function messageIsCSSError(msg) {
 }
 
 let imageURIsToReferencesMap = new Map();
+let customPropsToReferencesMap = new Map();
 
 function processCSSRules(sheet) {
   for (let rule of sheet.cssRules) {
@@ -208,10 +278,11 @@ function processCSSRules(sheet) {
     
     
     let urls = rule.cssText.match(/url\("[^"]*"\)/g);
-    if (!urls)
+    let props = rule.cssText.match(/(var\()?(--[\w\-]+)/g);
+    if (!urls && !props)
       continue;
 
-    for (let url of urls) {
+    for (let url of (urls || [])) {
       
       url = url.replace(/url\("(.*)"\)/, "$1");
       if (url.startsWith("data:"))
@@ -227,6 +298,16 @@ function processCSSRules(sheet) {
         imageURIsToReferencesMap.set(url, new Set([baseUrl]));
       } else {
         imageURIsToReferencesMap.get(url).add(baseUrl);
+      }
+    }
+
+    for (let prop of (props || [])) {
+      if (prop.startsWith("var(")) {
+        prop = prop.substring(4);
+        let prevValue = customPropsToReferencesMap.get(prop) || 0;
+        customPropsToReferencesMap.set(prop, prevValue + 1);
+      } else if (!customPropsToReferencesMap.has(prop)) {
+        customPropsToReferencesMap.set(prop, undefined);
       }
     }
   }
@@ -354,6 +435,26 @@ add_task(async function checkAllTheCSS() {
     }
   }
 
+  
+  for (let [prop, refCount] of customPropsToReferencesMap) {
+    if (!refCount) {
+      let ignored = false;
+      for (let item of whitelist) {
+        if (item.propName == prop &&
+            isDevtools == item.isFromDevTools) {
+          item.used = true;
+          if (!item.platforms || item.platforms.includes(AppConstants.platform)) {
+            ignored = true;
+          }
+          break;
+        }
+      }
+      if (!ignored) {
+        ok(false, "custom property `" + prop + "` is not referenced");
+      }
+    }
+  }
+
   let messages = Services.console.getMessageArray();
   
   
@@ -362,8 +463,12 @@ add_task(async function checkAllTheCSS() {
 
   
   for (let item of whitelist) {
-    if (!item.used && isDevtools == item.isFromDevTools && !item.intermittent) {
+    if (!item.used &&
+        (!item.platforms || item.platforms.includes(AppConstants.platform)) &&
+        isDevtools == item.isFromDevTools &&
+        !item.intermittent) {
       ok(false, "Unused whitelist item. " +
+                (item.propName ? " propName: " + item.propName : "") +
                 (item.sourceName ? " sourceName: " + item.sourceName : "") +
                 (item.errorMessage ? " errorMessage: " + item.errorMessage : ""));
     }
@@ -388,4 +493,5 @@ add_task(async function checkAllTheCSS() {
   hiddenFrame.destroy();
   hiddenFrame = null;
   imageURIsToReferencesMap = null;
+  customPropsToReferencesMap = null;
 });
