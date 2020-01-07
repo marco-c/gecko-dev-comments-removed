@@ -4445,12 +4445,12 @@ class Tree extends Component {
           return;
         }
 
-        const { relatedTarget } = nativeEvent;
+        const { explicitOriginalTarget } = nativeEvent;
 
         
         
         
-        if (relatedTarget !== this.treeRef && !this.treeRef.contains(relatedTarget)) {
+        if (explicitOriginalTarget !== this.treeRef && !this.treeRef.contains(explicitOriginalTarget)) {
           this._focus(traversal[0].item);
         }
       },
