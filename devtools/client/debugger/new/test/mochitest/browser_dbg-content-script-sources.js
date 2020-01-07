@@ -2,9 +2,6 @@
 
 
 
-
-
-
 async function selectContentScriptSources(dbg) {
   await waitForSources(dbg, "content_script.js");
 
@@ -67,8 +64,8 @@ add_task(async function() {
     info(`Reloading tab (${i} time)`);
     gBrowser.reloadTab(gBrowser.selectedTab);
     await waitForPaused(dbg);
-    await waitForSources(dbg, "content_script.js");
     await waitForSelectedSource(dbg, "content_script.js");
+
     ok(
       findElementWithSelector(dbg, ".sources-list .focused"),
       "Source is focused"

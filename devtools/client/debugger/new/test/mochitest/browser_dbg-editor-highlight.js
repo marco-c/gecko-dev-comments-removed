@@ -13,12 +13,8 @@ add_task(async function() {
   
   
   
-  dbg.actions.selectSourceURL(sourceUrl, { location: { line: 66 } });
 
-  
-  
-  await waitForSelectedSource(dbg, sourceUrl);
-  log(`loaded source`);
+  await selectSource(dbg, sourceUrl, 66)
 
   
   
