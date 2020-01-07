@@ -182,10 +182,26 @@ var gMenuBuilder = {
         
         
         
-        let maxSelectionLength = gMaxLabelLength - label.length + 2;
-        if (maxSelectionLength > 4) {
-          selection = selection.substring(0, maxSelectionLength - 3) + "...";
+
+        let codePointsToRemove = 0;
+
+        let selectionArray = Array.from(selection);
+
+        let completeLabelLength = label.length - 2 + selectionArray.length;
+        if (completeLabelLength > gMaxLabelLength) {
+          codePointsToRemove = completeLabelLength - gMaxLabelLength;
         }
+
+        if (codePointsToRemove) {
+          let ellipsis = "\u2026";
+          try {
+            ellipsis = Services.prefs.getComplexValue("intl.ellipsis",
+                                                      Ci.nsIPrefLocalizedString).data;
+          } catch (e) { }
+          codePointsToRemove += 1;
+          selection = selectionArray.slice(0, -codePointsToRemove).join("") + ellipsis;
+        }
+
         label = label.replace(/%s/g, selection);
       }
 
