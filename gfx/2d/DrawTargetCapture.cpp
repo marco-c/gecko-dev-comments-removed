@@ -119,11 +119,6 @@ DrawTargetCaptureImpl::DetachAllSnapshots()
 void
 DrawTargetCaptureImpl::SetPermitSubpixelAA(bool aPermitSubpixelAA)
 {
-  
-  if (mPermitSubpixelAA == aPermitSubpixelAA) {
-    return;
-  }
-
   AppendCommand(SetPermitSubpixelAACommand)(aPermitSubpixelAA);
 
   
@@ -315,11 +310,6 @@ DrawTargetCaptureImpl::PopClip()
 void
 DrawTargetCaptureImpl::SetTransform(const Matrix& aTransform)
 {
-  
-  if (mTransform == aTransform) {
-    return;
-  }
-
   AppendCommand(SetTransformCommand)(aTransform);
 
   
