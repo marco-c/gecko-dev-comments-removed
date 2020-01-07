@@ -302,10 +302,6 @@ public:
   static nsCSSCounterDesc LookupCounterDesc(const nsACString& aProperty);
 
   
-  static bool IsPredefinedCounterStyle(const nsAString& aStyle);
-  static bool IsPredefinedCounterStyle(const nsACString& aStyle);
-
-  
   static const nsCString& GetStringValue(nsCSSPropertyID aProperty);
   static const nsCString& GetStringValue(nsCSSFontDesc aFontDesc);
   static const nsCString& GetStringValue(nsCSSCounterDesc aCounterDesc);
