@@ -315,32 +315,34 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: async function(event, packet) {
-    if (event == "will-navigate") {
-      if (this.persistLog) {
-        
-        packet._type = true;
-        this.newConsoleOutput.dispatchMessageAdd(packet);
-      } else {
-        this.jsterm.clearOutput(false);
-      }
+  handleTabNavigated: async function(packet) {
+    if (packet.url) {
+      this.onLocationChange(packet.url, packet.title);
+    }
+
+    if (!packet.nativeConsoleAPI) {
+      this.logWarningAboutReplacedAPI();
+    }
+
+    
+    
+    await this.newConsoleOutput.waitAsyncDispatches();
+    this.emit("reloaded");
+  },
+
+  handleTabWillNavigate: function(packet) {
+    if (this.persistLog) {
+      
+      packet._type = true;
+      this.newConsoleOutput.dispatchMessageAdd(packet);
+    } else {
+      this.jsterm.clearOutput(false);
     }
 
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }
-
-    if (event == "navigate" && !packet.nativeConsoleAPI) {
-      this.logWarningAboutReplacedAPI();
-    }
-
-    if (event == "navigate") {
-      
-      
-      await this.newConsoleOutput.waitAsyncDispatches();
-      this.emit("reloaded");
-    }
-  },
+  }
 };
 
 exports.NewWebConsoleFrame = NewWebConsoleFrame;

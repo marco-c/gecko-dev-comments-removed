@@ -1876,23 +1876,32 @@ WebConsoleFrame.prototype = {
 
 
 
-
-
-  handleTabNavigated: function (event, packet) {
-    if (event == "will-navigate") {
-      if (this.persistLog) {
-        let marker = new Messages.NavigationMarker(packet, Date.now());
-        this.output.addMessage(marker);
-      } else {
-        this.jsterm.clearOutput();
-      }
-    }
+  handleTabNavigated: function (packet) {
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }
 
-    if (event == "navigate" && !packet.nativeConsoleAPI) {
+    if (!packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
+    }
+  },
+
+  
+
+
+
+
+
+  handleTabWillNavigate: function (packet) {
+    if (this.persistLog) {
+      let marker = new Messages.NavigationMarker(packet, Date.now());
+      this.output.addMessage(marker);
+    } else {
+      this.jsterm.clearOutput();
+    }
+
+    if (packet.url) {
+      this.onLocationChange(packet.url, packet.title);
     }
   },
 

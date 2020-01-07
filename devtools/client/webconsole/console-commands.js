@@ -29,12 +29,11 @@ exports.items = [
         
         
         let toolbox = gDevTools.getToolbox(target);
-        let callback = changeHandler.bind(null, "changed", { target: target });
-
         if (!toolbox) {
           return;
         }
 
+        let callback = changeHandler.bind(null, { target });
         toolbox.on("split-console", callback);
         toolbox.once("destroyed", () => {
           toolbox.off("split-console", callback);
