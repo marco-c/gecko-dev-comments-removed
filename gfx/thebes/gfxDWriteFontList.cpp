@@ -784,8 +784,9 @@ gfxDWriteFontEntry::CreateFontFace(IDWriteFontFace **aFontFace,
 
         
         
+        
         AutoTArray<gfxFontVariation,4> vars;
-        GetVariationsForStyle(vars, *aFontStyle);
+        GetVariationsForStyle(vars, aFontStyle ? *aFontStyle : gfxFontStyle());
 
         
         if (!vars.IsEmpty()) {
