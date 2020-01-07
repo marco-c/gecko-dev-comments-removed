@@ -261,7 +261,6 @@ using ZoneOrGCTaskOrIonCompileData =
 enum class GlobalLock
 {
     GCLock,
-    ExclusiveAccessLock,
     ScriptDataLock,
     HelperThreadLock
 };
@@ -279,18 +278,6 @@ class CheckGlobalLock
 template <typename T>
 using GCLockData =
     ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>, T>;
-
-
-template <typename T>
-using ExclusiveAccessLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::None>, T>;
-
-
-
-
-template <typename T>
-using ExclusiveAccessLockOrGCTaskData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::GCTask>, T>;
 
 
 template <typename T>
@@ -359,11 +346,6 @@ class ProtectedDataWriteOnce
 
 template <typename T>
 using WriteOnceData = ProtectedDataWriteOnce<CheckUnprotected, T>;
-
-
-template <typename T>
-using ExclusiveAccessLockWriteOnceData =
-    ProtectedDataWriteOnce<CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::None>, T>;
 
 
 

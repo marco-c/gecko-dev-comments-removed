@@ -712,7 +712,6 @@ class GCRuntime
     GCSchedulingState schedulingState;
 
     
-    
     AtomMarkingRuntime atomMarking;
 
   private:

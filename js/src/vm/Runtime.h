@@ -203,7 +203,6 @@ AtomStateOffsetToName(const JSAtomState& atomState, size_t offset)
 
 
 enum RuntimeLock {
-    ExclusiveAccessLock,
     HelperThreadStateLock,
     GCLock
 };
@@ -219,7 +218,6 @@ void DisableExtraThreads();
 
 using ScriptAndCountsVector = GCVector<ScriptAndCounts, 0, SystemAllocPolicy>;
 
-class AutoLockForExclusiveAccess;
 class AutoLockScriptData;
 
 } 
@@ -467,18 +465,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
 
 
-    js::Mutex exclusiveAccessLock;
-#ifdef DEBUG
-    bool activeThreadHasExclusiveAccess;
-#endif
-
-    
-
-
-
-
-
-
     js::Mutex scriptDataLock;
 #ifdef DEBUG
     bool activeThreadHasScriptDataAccess;
@@ -490,7 +476,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     mozilla::Atomic<JS::HeapState> heapState_;
 
-    friend class js::AutoLockForExclusiveAccess;
     friend class js::AutoLockScriptData;
 
   public:
@@ -502,13 +487,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     }
 
 #ifdef DEBUG
-    bool currentThreadHasExclusiveAccess() const {
-        if (!hasHelperThreadZones())
-            return CurrentThreadCanAccessRuntime(this) && activeThreadHasExclusiveAccess;
-
-        return exclusiveAccessLock.ownedByCurrentThread();
-    }
-
     bool currentThreadHasScriptDataAccess() const {
         if (!hasHelperThreadZones())
             return CurrentThreadCanAccessRuntime(this) && activeThreadHasScriptDataAccess;
