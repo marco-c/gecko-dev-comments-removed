@@ -601,10 +601,6 @@ private:
 
   
   
-  AutoTArray<SheetLoadData*, 8> mParsingDatas;
-
-  
-  
   LoadDataArray     mPostedEvents;
 
   

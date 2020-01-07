@@ -137,6 +137,9 @@ public:
   bool mIsLoading : 1;
 
   
+  bool mIsBeingParsed : 1;
+
+  
   
   
   
