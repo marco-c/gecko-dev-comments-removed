@@ -752,8 +752,7 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
     }
 
     if (currentFrame != aBuilder.RootReferenceFrame() &&
-        currentFrame->IsStackingContext() &&
-        currentFrame->IsFixedPosContainingBlock()) {
+        currentFrame->IsStackingContext()) {
       CRR_LOG("Frame belongs to stacking context frame %p\n", currentFrame);
       
       
