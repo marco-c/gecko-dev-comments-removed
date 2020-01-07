@@ -162,7 +162,7 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
     const bool sIsStreamPreservationNeeded = false;
 #endif 
 
-    paramType::EnvType env;
+    typename paramType::EnvType env;
 
     mozilla::mscom::ProxyStreamFlags flags = sIsStreamPreservationNeeded ?
          mozilla::mscom::ProxyStreamFlags::ePreservable :
