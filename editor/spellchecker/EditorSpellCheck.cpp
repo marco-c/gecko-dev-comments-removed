@@ -23,7 +23,6 @@
 #include "nsIContent.h"                 
 #include "nsIContentPrefService2.h"     
 #include "nsIDOMDocument.h"             
-#include "nsIDOMElement.h"              
 #include "nsIDocument.h"                
 #include "nsIEditor.h"                  
 #include "nsIHTMLEditor.h"              
@@ -737,10 +736,7 @@ EditorSpellCheck::UpdateCurrentDictionary(
   if (htmlEditor) {
     rootContent = htmlEditor->GetActiveEditingHost();
   } else {
-    nsCOMPtr<nsIDOMElement> rootElement;
-    rv = mEditor->GetRootElement(getter_AddRefs(rootElement));
-    NS_ENSURE_SUCCESS(rv, rv);
-    rootContent = do_QueryInterface(rootElement);
+    rootContent = mEditor->AsEditorBase()->GetRoot();
   }
 
   

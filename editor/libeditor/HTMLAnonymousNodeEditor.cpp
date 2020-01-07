@@ -18,7 +18,6 @@
 #include "nsAtom.h"
 #include "nsIContent.h"
 #include "nsID.h"
-#include "nsIDOMElement.h"
 #include "nsIDOMEventTarget.h"
 #include "nsIDOMNode.h"
 #include "nsIDOMWindow.h"
@@ -69,10 +68,13 @@ GetCSSFloatValue(nsComputedDOMStyle* aComputedStyle,
     return 0;
   }
 
-  
-  
+  MOZ_ASSERT(value.Length() > 2, "Should always have a `px` suffix");
+
   int32_t val = value.ToInteger(&rv);
-  return NS_SUCCEEDED(rv) ? val : 0;
+  MOZ_ASSERT(NS_SUCCEEDED(rv),
+             "These properties should only get resolved values");
+
+  return val;
 }
 
 class ElementDeletionObserver final : public nsStubMutationObserver

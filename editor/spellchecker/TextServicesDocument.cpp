@@ -20,7 +20,6 @@
 #include "nsIContentIterator.h"         
 #include "nsID.h"                       
 #include "nsIDOMDocument.h"             
-#include "nsIDOMElement.h"              
 #include "nsIDOMNode.h"                 
 #include "nsIEditor.h"                  
 #include "nsINode.h"                    

@@ -31,7 +31,6 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DragEvent.h"
 #include "nsIDOMDocument.h"             
-#include "nsIDOMElement.h"              
 #include "nsIDOMEvent.h"                
 #include "nsIDOMEventTarget.h"          
 #include "nsIDOMMouseEvent.h"           
@@ -220,14 +219,12 @@ EditorEventListener::Disconnect()
   }
   UninstallFromEditor();
 
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
-    nsCOMPtr<nsIDOMElement> domFocus;
-    fm->GetFocusedElement(getter_AddRefs(domFocus));
-    nsCOMPtr<nsINode> focusedElement = do_QueryInterface(domFocus);
+    nsIContent* focusedContent = fm->GetFocusedContent();
     mozilla::dom::Element* root = mEditorBase->GetRoot();
-    if (focusedElement && root &&
-        nsContentUtils::ContentIsDescendantOf(focusedElement, root)) {
+    if (focusedContent && root &&
+        nsContentUtils::ContentIsDescendantOf(focusedContent, root)) {
       
       
       mEditorBase->FinalizeSelection();
@@ -1102,12 +1099,11 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
     
     
     if (editableRoot) {
-      nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+      nsFocusManager* fm = nsFocusManager::GetFocusManager();
       NS_ENSURE_TRUE(fm, NS_OK);
 
-      nsCOMPtr<nsIDOMElement> element;
-      fm->GetFocusedElement(getter_AddRefs(element));
-      if (!element) {
+      nsIContent* focusedContent = fm->GetFocusedContent();
+      if (!focusedContent) {
         return NS_OK;
       }
 
@@ -1116,11 +1112,9 @@ EditorEventListener::Focus(InternalFocusEvent* aFocusEvent)
 
       nsCOMPtr<nsIContent> originalTargetAsContent =
         do_QueryInterface(originalTarget);
-      nsCOMPtr<nsIContent> focusedElementAsContent =
-        do_QueryInterface(element);
 
       if (!SameCOMIdentity(
-            focusedElementAsContent->FindFirstNonChromeOnlyAccessContent(),
+            focusedContent->FindFirstNonChromeOnlyAccessContent(),
             originalTargetAsContent->FindFirstNonChromeOnlyAccessContent())) {
         return NS_OK;
       }
@@ -1150,12 +1144,11 @@ EditorEventListener::Blur(InternalFocusEvent* aBlurEvent)
 
   
   
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, NS_OK);
 
-  nsCOMPtr<nsIDOMElement> element;
-  fm->GetFocusedElement(getter_AddRefs(element));
-  if (!element) {
+  nsIContent* content = fm->GetFocusedContent();
+  if (!content || !content->IsElement()) {
     RefPtr<EditorBase> editorBase(mEditorBase);
     editorBase->FinalizeSelection();
   }
