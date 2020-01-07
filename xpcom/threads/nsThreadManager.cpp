@@ -425,6 +425,12 @@ nsThreadManager::GetCurrentThread()
   return thread.get();  
 }
 
+bool
+nsThreadManager::IsNSThread() const
+{
+  return mInitialized && !!PR_GetThreadPrivate(mCurThreadIndex);
+}
+
 NS_IMETHODIMP
 nsThreadManager::NewThread(uint32_t aCreationFlags,
                            uint32_t aStackSize,
