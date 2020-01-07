@@ -99,6 +99,8 @@ private:
   
   
   
+  
+  
   Monitor mMonitor;
   bool mNotifiedDone;
   nsCOMPtr<nsIStreamLoader> mLoader;
@@ -361,6 +363,9 @@ OCSPRequest::NotifyDone(nsresult rv, MonitorAutoLock& lock)
   }
   mLoader = nullptr;
   mResponseResult = rv;
+  if (mTimeoutTimer) {
+    Unused << mTimeoutTimer->Cancel();
+  }
   mNotifiedDone = true;
   lock.Notify();
   return rv;
@@ -430,6 +435,9 @@ OCSPRequest::OnTimeout(nsITimer* timer, void* closure)
     return;
   }
 
+  
+  
+  
   OCSPRequest* self = static_cast<OCSPRequest*>(closure);
   MonitorAutoLock lock(self->mMonitor);
   self->mTimeoutTimer = nullptr;
