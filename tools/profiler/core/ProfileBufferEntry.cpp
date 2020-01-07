@@ -918,16 +918,17 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
 {
   EntryGetter e(*this);
 
-  int currentThreadID = -1;
-
+  
+  
+  
+  
   
   
   while (e.Has()) {
-    if (e.Get().IsThreadId()) {
-      currentThreadID = e.Get().u.mInt;
-    } else if (currentThreadID == aThreadId && e.Get().IsMarker()) {
+    if (e.Get().IsMarker()) {
       const ProfilerMarker* marker = e.Get().u.mMarker;
-      if (marker->GetTime() >= aSinceTime) {
+      if (marker->GetTime() >= aSinceTime &&
+          marker->GetThreadId() == aThreadId) {
         marker->StreamJSON(aWriter, aProcessStartTime, aUniqueStacks);
       }
     }
