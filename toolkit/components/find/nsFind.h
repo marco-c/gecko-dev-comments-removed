@@ -49,8 +49,8 @@ protected:
   nsCOMPtr<nsINode> mIterNode;
 
   
-  nsCOMPtr<nsINode> mLastBlockParent;
-  nsresult GetBlockParent(nsINode* aNode, nsINode** aParent);
+  nsCOMPtr<nsIContent> mLastBlockParent;
+  nsIContent* GetBlockParent(nsINode* aNode);
 
   
   nsresult NextNode(nsRange* aSearchRange,
