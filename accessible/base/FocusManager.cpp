@@ -199,7 +199,7 @@ FocusManager::ActiveItemChanged(Accessible* aItem, bool aCheckIfActive)
   if (!mActiveItem && XRE_IsParentProcess()) {
     nsFocusManager* domfm = nsFocusManager::GetFocusManager();
     if (domfm) {
-      nsIContent* focusedElm = domfm->GetFocusedElement();
+      nsIContent* focusedElm = domfm->GetFocusedContent();
       if (EventStateManager::IsRemoteTarget(focusedElm)) {
         dom::TabParent* tab = dom::TabParent::GetFrom(focusedElm);
         if (tab) {
@@ -399,7 +399,7 @@ nsINode*
 FocusManager::FocusedDOMNode() const
 {
   nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager();
-  nsIContent* focusedElm = DOMFocusManager->GetFocusedElement();
+  nsIContent* focusedElm = DOMFocusManager->GetFocusedContent();
 
   
   

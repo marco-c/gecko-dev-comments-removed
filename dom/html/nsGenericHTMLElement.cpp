@@ -2570,7 +2570,7 @@ nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
 
     
     nsPIDOMWindowOuter* window = OwnerDoc()->GetWindow();
-    focused = (window && window->GetFocusedElement());
+    focused = (window && window->GetFocusedNode());
   }
 
   if (aKeyCausesActivation) {

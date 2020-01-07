@@ -166,7 +166,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFocusManager)
 NS_IMPL_CYCLE_COLLECTION(nsFocusManager,
                          mActiveWindow,
                          mFocusedWindow,
-                         mFocusedElement,
+                         mFocusedContent,
                          mFirstBlurEvent,
                          mFirstFocusEvent,
                          mWindowBeingLowered,
@@ -259,7 +259,7 @@ nsFocusManager::Observe(nsISupports *aSubject,
   } else if (!nsCRT::strcmp(aTopic, "xpcom-shutdown")) {
     mActiveWindow = nullptr;
     mFocusedWindow = nullptr;
-    mFocusedElement = nullptr;
+    mFocusedContent = nullptr;
     mFirstBlurEvent = nullptr;
     mFirstFocusEvent = nullptr;
     mWindowBeingLowered = nullptr;
@@ -287,10 +287,10 @@ GetContentWindow(nsIContent* aContent)
 bool
 nsFocusManager::IsFocused(nsIContent* aContent)
 {
-  if (!aContent || !mFocusedElement) {
+  if (!aContent || !mFocusedContent) {
     return false;
   }
-  return aContent == mFocusedElement;
+  return aContent == mFocusedContent.get();
 }
 
 
@@ -311,16 +311,16 @@ nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
 
   *aFocusedWindow = nullptr;
 
-  Element* currentElement = nullptr;
+  Element* currentContent = nullptr;
   nsPIDOMWindowOuter* window = aWindow;
   for (;;) {
     *aFocusedWindow = window;
-    currentElement = window->GetFocusedElement();
-    if (!currentElement || aSearchRange == eOnlyCurrentWindow) {
+    currentContent = window->GetFocusedNode();
+    if (!currentContent || aSearchRange == eOnlyCurrentWindow) {
       break;
     }
 
-    window = GetContentWindow(currentElement);
+    window = GetContentWindow(currentContent);
     if (!window) {
       break;
     }
@@ -345,7 +345,7 @@ nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
 
   NS_IF_ADDREF(*aFocusedWindow);
 
-  return currentElement;
+  return currentContent;
 }
 
 
@@ -468,7 +468,7 @@ NS_IMETHODIMP nsFocusManager::SetFocusedWindow(mozIDOMWindowProxy* aWindowToFocu
     
     
     
-    nsIContent* content = windowToFocus->GetFocusedElement();
+    nsIContent* content = windowToFocus->GetFocusedNode();
     if (content) {
       if (nsCOMPtr<nsPIDOMWindowOuter> childWindow = GetContentWindow(content))
         ClearFocus(windowToFocus);
@@ -487,8 +487,8 @@ NS_IMETHODIMP nsFocusManager::SetFocusedWindow(mozIDOMWindowProxy* aWindowToFocu
 NS_IMETHODIMP
 nsFocusManager::GetFocusedElement(nsIDOMElement** aFocusedElement)
 {
-  if (mFocusedElement)
-    CallQueryInterface(mFocusedElement, aFocusedElement);
+  if (mFocusedContent)
+    CallQueryInterface(mFocusedContent, aFocusedElement);
   else
     *aFocusedElement = nullptr;
   return NS_OK;
@@ -554,7 +554,7 @@ nsFocusManager::MoveFocus(mozIDOMWindowProxy* aWindow, Element* aStartElement,
     }
   }
 
-  LOGCONTENT("  Current Focus: %s", mFocusedElement.get());
+  LOGCONTENT("  Current Focus: %s", mFocusedContent.get());
 
   
   
@@ -625,7 +625,7 @@ nsFocusManager::ClearFocus(mozIDOMWindowProxy* aWindow)
     }
   }
   else {
-    window->SetFocusedElement(nullptr);
+    window->SetFocusedNode(nullptr);
   }
 
   LOGFOCUS(("<<ClearFocus end>>"));
@@ -681,7 +681,7 @@ nsFocusManager::MoveCaretToFocus(mozIDOMWindowProxy* aWindow)
       NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
       nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
-      nsCOMPtr<nsIContent> content = window->GetFocusedElement();
+      nsCOMPtr<nsIContent> content = window->GetFocusedNode();
       if (content)
         MoveCaretToFocus(presShell, content);
     }
@@ -851,15 +851,15 @@ nsFocusManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
   
   
   
-  nsIContent* content = window->GetFocusedElement();
+  nsIContent* content = window->GetFocusedNode();
   if (content && nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
     bool shouldShowFocusRing = window->ShouldShowFocusRing();
-    window->SetFocusedElement(nullptr);
+    window->SetFocusedNode(nullptr);
 
     
     
     if (window == mFocusedWindow) {
-      mFocusedElement = nullptr;
+      mFocusedContent = nullptr;
     } else {
       
       
@@ -993,13 +993,13 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow)
   
   
 
-  RefPtr<Element> oldFocusedElement = mFocusedElement.forget();
+  nsCOMPtr<nsIContent> oldFocusedContent = mFocusedContent.forget();
 
   nsCOMPtr<nsIDocShell> focusedDocShell = mFocusedWindow->GetDocShell();
   nsCOMPtr<nsIPresShell> presShell = focusedDocShell->GetPresShell();
 
-  if (oldFocusedElement && oldFocusedElement->IsInComposedDoc()) {
-    NotifyFocusStateChange(oldFocusedElement,
+  if (oldFocusedContent && oldFocusedContent->IsInComposedDoc()) {
+    NotifyFocusStateChange(oldFocusedContent,
                            nullptr,
                            mFocusedWindow->ShouldShowFocusRing(),
                            false);
@@ -1007,8 +1007,8 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow)
 
     if (presShell) {
       SendFocusOrBlurEvent(eBlur, presShell,
-                           oldFocusedElement->GetComposedDoc(),
-                           oldFocusedElement, 1, false);
+                           oldFocusedContent->GetComposedDoc(),
+                           oldFocusedContent, 1, false);
     }
   }
 
@@ -1056,7 +1056,7 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow)
       dsti->GetParent(getter_AddRefs(parentDsti));
       if (parentDsti) {
         if (nsCOMPtr<nsPIDOMWindowOuter> parentWindow = parentDsti->GetWindow())
-          parentWindow->SetFocusedElement(nullptr);
+          parentWindow->SetFocusedNode(nullptr);
       }
     }
 
@@ -1227,19 +1227,18 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
                               bool aFocusChanged, bool aAdjustWidget)
 {
   
-  RefPtr<Element> elementToFocus = CheckIfFocusable(aNewContent, aFlags);
-  if (!elementToFocus) {
+  RefPtr<Element> contentToFocus = CheckIfFocusable(aNewContent, aFlags);
+  if (!contentToFocus)
     return;
-  }
 
   
   
   
   
   nsCOMPtr<nsPIDOMWindowOuter> newWindow;
-  nsCOMPtr<nsPIDOMWindowOuter> subWindow = GetContentWindow(elementToFocus);
+  nsCOMPtr<nsPIDOMWindowOuter> subWindow = GetContentWindow(contentToFocus);
   if (subWindow) {
-    elementToFocus = GetFocusedDescendant(subWindow, eIncludeAllDescendants,
+    contentToFocus = GetFocusedDescendant(subWindow, eIncludeAllDescendants,
                                           getter_AddRefs(newWindow));
     
     
@@ -1247,17 +1246,14 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   }
 
   
-  if (!newWindow) {
-    newWindow = GetCurrentWindow(elementToFocus);
-  }
+  if (!newWindow)
+    newWindow = GetCurrentWindow(contentToFocus);
 
   
   
   
-  if (!newWindow ||
-      (newWindow == mFocusedWindow && elementToFocus == mFocusedElement)) {
+  if (!newWindow || (newWindow == mFocusedWindow && contentToFocus == mFocusedContent))
     return;
-  }
 
   
   
@@ -1322,16 +1318,16 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   
   
 #ifndef XP_MACOSX
-  if (elementToFocus &&
+  if (contentToFocus &&
       nsContentUtils::
-        GetRootDocument(elementToFocus->OwnerDoc())->GetFullscreenElement() &&
-      nsContentUtils::HasPluginWithUncontrolledEventDispatch(elementToFocus)) {
+        GetRootDocument(contentToFocus->OwnerDoc())->GetFullscreenElement() &&
+      nsContentUtils::HasPluginWithUncontrolledEventDispatch(contentToFocus)) {
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                     NS_LITERAL_CSTRING("DOM"),
-                                    elementToFocus->OwnerDoc(),
+                                    contentToFocus->OwnerDoc(),
                                     nsContentUtils::eDOM_PROPERTIES,
                                     "FocusedWindowedPluginWhileFullscreen");
-    nsIDocument::AsyncExitFullscreen(elementToFocus->OwnerDoc());
+    nsIDocument::AsyncExitFullscreen(contentToFocus->OwnerDoc());
   }
 #endif
 
@@ -1351,12 +1347,12 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   
   
   
-  if (sendFocusEvent && mFocusedElement && !nsContentUtils::LegacyIsCallerNativeCode() &&
-      mFocusedElement->OwnerDoc() != aNewContent->OwnerDoc()) {
+  if (sendFocusEvent && mFocusedContent && !nsContentUtils::LegacyIsCallerNativeCode() &&
+      mFocusedContent->OwnerDoc() != aNewContent->OwnerDoc()) {
     
     
     
-    nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mFocusedElement));
+    nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mFocusedContent));
     sendFocusEvent = nsContentUtils::CanCallerAccess(domNode);
     if (!sendFocusEvent && mMouseButtonEventHandlingDocument) {
       
@@ -1366,14 +1362,14 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
     }
   }
 
-  LOGCONTENT("Shift Focus: %s", elementToFocus.get());
+  LOGCONTENT("Shift Focus: %s", contentToFocus.get());
   LOGFOCUS((" Flags: %x Current Window: %p New Window: %p Current Element: %p",
-           aFlags, mFocusedWindow.get(), newWindow.get(), mFocusedElement.get()));
+           aFlags, mFocusedWindow.get(), newWindow.get(), mFocusedContent.get()));
   LOGFOCUS((" In Active Window: %d In Focused Window: %d SendFocus: %d",
            isElementInActiveWindow, isElementInFocusedWindow, sendFocusEvent));
 
   if (sendFocusEvent) {
-    RefPtr<Element> oldFocusedElement = mFocusedElement;
+    RefPtr<Element> oldFocusedContent = mFocusedContent;
     
     if (mFocusedWindow) {
       
@@ -1400,13 +1396,12 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
 
       if (!Blur(currentIsSameOrAncestor ? mFocusedWindow.get() : nullptr,
                 commonAncestor, !isElementInFocusedWindow, aAdjustWidget,
-                elementToFocus)) {
+                contentToFocus))
         return;
-      }
     }
 
-    Focus(newWindow, elementToFocus, aFlags, !isElementInFocusedWindow,
-          aFocusChanged, false, aAdjustWidget, oldFocusedElement);
+    Focus(newWindow, contentToFocus, aFlags, !isElementInFocusedWindow,
+          aFocusChanged, false, aAdjustWidget, oldFocusedContent);
   }
   else {
     
@@ -1417,13 +1412,13 @@ nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
     
     uint32_t focusMethod = aFocusChanged ? aFlags & FOCUSMETHODANDRING_MASK :
                            newWindow->GetFocusMethod() | (aFlags & FLAG_SHOWRING);
-    newWindow->SetFocusedElement(elementToFocus, focusMethod);
+    newWindow->SetFocusedNode(contentToFocus, focusMethod);
     if (aFocusChanged) {
       nsCOMPtr<nsIDocShell> docShell = newWindow->GetDocShell();
 
       nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
       if (presShell && presShell->DidInitialize())
-        ScrollIntoView(presShell, elementToFocus, aFlags);
+        ScrollIntoView(presShell, contentToFocus, aFlags);
     }
 
     
@@ -1537,7 +1532,7 @@ nsFocusManager::AdjustWindowFocus(nsPIDOMWindowOuter* aWindow,
         break;
       }
 
-      window->SetFocusedElement(frameElement);
+      window->SetFocusedNode(frameElement);
     }
   }
 }
@@ -1584,22 +1579,22 @@ nsFocusManager::IsNonFocusableRoot(nsIContent* aContent)
 }
 
 Element*
-nsFocusManager::CheckIfFocusable(Element* aElement, uint32_t aFlags)
+nsFocusManager::CheckIfFocusable(Element* aContent, uint32_t aFlags)
 {
-  if (!aElement)
+  if (!aContent)
     return nullptr;
 
   
   
-  RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement);
+  RefPtr<Element> redirectedFocus = GetRedirectedFocus(aContent);
   if (redirectedFocus) {
     return CheckIfFocusable(redirectedFocus, aFlags);
   }
 
-  nsCOMPtr<nsIDocument> doc = aElement->GetComposedDoc();
+  nsCOMPtr<nsIDocument> doc = aContent->GetComposedDoc();
   
   if (!doc) {
-    LOGCONTENT("Cannot focus %s because content not in document", aElement)
+    LOGCONTENT("Cannot focus %s because content not in document", aContent)
     return nullptr;
   }
 
@@ -1614,44 +1609,44 @@ nsFocusManager::CheckIfFocusable(Element* aElement, uint32_t aFlags)
 
   
   
-  if (aElement == doc->GetRootElement()) {
-    return nsContentUtils::IsUserFocusIgnored(aElement) ? nullptr : aElement;
+  if (aContent == doc->GetRootElement()) {
+    return nsContentUtils::IsUserFocusIgnored(aContent) ? nullptr : aContent;
   }
 
   
   nsPresContext* presContext = shell->GetPresContext();
   if (presContext && presContext->Type() == nsPresContext::eContext_PrintPreview) {
-    LOGCONTENT("Cannot focus %s while in print preview", aElement)
+    LOGCONTENT("Cannot focus %s while in print preview", aContent)
     return nullptr;
   }
 
-  nsIFrame* frame = aElement->GetPrimaryFrame();
+  nsIFrame* frame = aContent->GetPrimaryFrame();
   if (!frame) {
-    LOGCONTENT("Cannot focus %s as it has no frame", aElement)
+    LOGCONTENT("Cannot focus %s as it has no frame", aContent)
     return nullptr;
   }
 
-  if (aElement->IsHTMLElement(nsGkAtoms::area)) {
+  if (aContent->IsHTMLElement(nsGkAtoms::area)) {
     
     
     
     return frame->IsVisibleConsideringAncestors() &&
-           aElement->IsFocusable() ? aElement : nullptr;
+           aContent->IsFocusable() ? aContent : nullptr;
   }
 
   
   
   
   
-  nsIDocument* subdoc = doc->GetSubDocumentFor(aElement);
+  nsIDocument* subdoc = doc->GetSubDocumentFor(aContent);
   if (subdoc && IsWindowVisible(subdoc->GetWindow())) {
     const nsStyleUserInterface* ui = frame->StyleUserInterface();
     int32_t tabIndex = (ui->mUserFocus == StyleUserFocus::Ignore ||
                         ui->mUserFocus == StyleUserFocus::None) ? -1 : 0;
-    return aElement->IsFocusable(&tabIndex, aFlags & FLAG_BYMOUSE) ? aElement : nullptr;
+    return aContent->IsFocusable(&tabIndex, aFlags & FLAG_BYMOUSE) ? aContent : nullptr;
   }
 
-  return frame->IsFocusable(nullptr, aFlags & FLAG_BYMOUSE) ? aElement : nullptr;
+  return frame->IsFocusable(nullptr, aFlags & FLAG_BYMOUSE) ? aContent : nullptr;
 }
 
 bool
@@ -1664,26 +1659,26 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
   LOGFOCUS(("<<Blur begin>>"));
 
   
-  RefPtr<Element> element = mFocusedElement;
-  if (element) {
-    if (!element->IsInComposedDoc()) {
-      mFocusedElement = nullptr;
+  RefPtr<Element> content = mFocusedContent;
+  if (content) {
+    if (!content->IsInComposedDoc()) {
+      mFocusedContent = nullptr;
       return true;
     }
-    if (element == mFirstBlurEvent)
+    if (content == mFirstBlurEvent)
       return true;
   }
 
   
   nsCOMPtr<nsPIDOMWindowOuter> window = mFocusedWindow;
   if (!window) {
-    mFocusedElement = nullptr;
+    mFocusedContent = nullptr;
     return true;
   }
 
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   if (!docShell) {
-    mFocusedElement = nullptr;
+    mFocusedContent = nullptr;
     return true;
   }
 
@@ -1691,13 +1686,13 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
   
   nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
   if (!presShell) {
-    mFocusedElement = nullptr;
+    mFocusedContent = nullptr;
     return true;
   }
 
   bool clearFirstBlurEvent = false;
   if (!mFirstBlurEvent) {
-    mFirstBlurEvent = element;
+    mFirstBlurEvent = content;
     clearFirstBlurEvent = true;
   }
 
@@ -1708,19 +1703,19 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
 
   
   
-  mFocusedElement = nullptr;
+  mFocusedContent = nullptr;
   bool shouldShowFocusRing = window->ShouldShowFocusRing();
   if (aWindowToClear)
-    aWindowToClear->SetFocusedElement(nullptr);
+    aWindowToClear->SetFocusedNode(nullptr);
 
-  LOGCONTENT("Element %s has been blurred", element.get());
+  LOGCONTENT("Element %s has been blurred", content.get());
 
   
   bool sendBlurEvent =
-    element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
-  if (element) {
+    content && content->IsInComposedDoc() && !IsNonFocusableRoot(content);
+  if (content) {
     if (sendBlurEvent) {
-      NotifyFocusStateChange(element,
+      NotifyFocusStateChange(content,
                              aContentToFocus,
                              shouldShowFocusRing,
                              false);
@@ -1731,7 +1726,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
     
     
     if (mActiveWindow) {
-      nsIFrame* contentFrame = element->GetPrimaryFrame();
+      nsIFrame* contentFrame = content->GetPrimaryFrame();
       nsIObjectFrame* objectFrame = do_QueryFrame(contentFrame);
       if (aAdjustWidgets && objectFrame && !sTestMode) {
         if (XRE_IsContentProcess()) {
@@ -1757,7 +1752,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
     }
 
       
-    if (TabParent* remote = TabParent::GetFrom(element)) {
+    if (TabParent* remote = TabParent::GetFrom(content)) {
       remote->Deactivate();
       LOGFOCUS(("Remote browser deactivated"));
     }
@@ -1772,7 +1767,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
       window->UpdateCommands(NS_LITERAL_STRING("focus"), nullptr, 0);
 
     SendFocusOrBlurEvent(eBlur, presShell,
-                         element->GetComposedDoc(), element, 1,
+                         content->GetComposedDoc(), content, 1,
                          false, false, aContentToFocus);
   }
 
@@ -1794,7 +1789,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
   
   
   if (mFocusedWindow != window ||
-      (mFocusedElement != nullptr && !aIsLeavingDocument)) {
+      (mFocusedContent != nullptr && !aIsLeavingDocument)) {
     result = false;
   }
   else if (aIsLeavingDocument) {
@@ -1804,10 +1799,10 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
     
     
     if (aAncestorWindowToFocus)
-      aAncestorWindowToFocus->SetFocusedElement(nullptr, 0, true);
+      aAncestorWindowToFocus->SetFocusedNode(nullptr, 0, true);
 
     SetFocusedWindowInternal(nullptr);
-    mFocusedElement = nullptr;
+    mFocusedContent = nullptr;
 
     
     
@@ -1839,7 +1834,7 @@ nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
 
 void
 nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
-                      Element* aElement,
+                      Element* aContent,
                       uint32_t aFlags,
                       bool aIsNewDocument,
                       bool aFocusChanged,
@@ -1852,7 +1847,7 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
   if (!aWindow)
     return;
 
-  if (aElement && (aElement == mFirstFocusEvent || aElement == mFirstBlurEvent))
+  if (aContent && (aContent == mFirstFocusEvent || aContent == mFirstBlurEvent))
     return;
 
   
@@ -1874,21 +1869,21 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
   if (!IsWindowVisible(aWindow)) {
     
     
-    if (CheckIfFocusable(aElement, aFlags)) {
-      aWindow->SetFocusedElement(aElement, focusMethod);
+    if (CheckIfFocusable(aContent, aFlags)) {
+      aWindow->SetFocusedNode(aContent, focusMethod);
       if (aFocusChanged)
-        ScrollIntoView(presShell, aElement, aFlags);
+        ScrollIntoView(presShell, aContent, aFlags);
     }
     return;
   }
 
   bool clearFirstFocusEvent = false;
   if (!mFirstFocusEvent) {
-    mFirstFocusEvent = aElement;
+    mFirstFocusEvent = aContent;
     clearFirstFocusEvent = true;
   }
 
-  LOGCONTENT("Element %s has been focused", aElement);
+  LOGCONTENT("Element %s has been focused", aContent);
 
   if (MOZ_LOG_TEST(gFocusLog, LogLevel::Debug)) {
     nsIDocument* docm = aWindow->GetExtantDoc();
@@ -1916,8 +1911,8 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
   
   
   nsCOMPtr<nsIWidget> objectFrameWidget;
-  if (aElement) {
-    nsIFrame* contentFrame = aElement->GetPrimaryFrame();
+  if (aContent) {
+    nsIFrame* contentFrame = aContent->GetPrimaryFrame();
     nsIObjectFrame* objectFrame = do_QueryFrame(contentFrame);
     if (objectFrame)
       objectFrameWidget = objectFrame->GetWidget();
@@ -1943,38 +1938,36 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
       IMEStateManager::OnChangeFocus(presShell->GetPresContext(), nullptr,
                                      GetFocusMoveActionCause(aFlags));
     }
-    if (doc) {
+    if (doc)
       SendFocusOrBlurEvent(eFocus, presShell, doc,
                            doc, aFlags & FOCUSMETHOD_MASK, aWindowRaised);
-    }
-    if (mFocusedWindow == aWindow && mFocusedElement == nullptr) {
+    if (mFocusedWindow == aWindow && mFocusedContent == nullptr)
       SendFocusOrBlurEvent(eFocus, presShell, doc,
                            aWindow->GetCurrentInnerWindow(),
                            aFlags & FOCUSMETHOD_MASK, aWindowRaised);
-    }
   }
 
   
   
-  if (CheckIfFocusable(aElement, aFlags) &&
-      mFocusedWindow == aWindow && mFocusedElement == nullptr) {
-    mFocusedElement = aElement;
+  if (CheckIfFocusable(aContent, aFlags) &&
+      mFocusedWindow == aWindow && mFocusedContent == nullptr) {
+    mFocusedContent = aContent;
 
-    nsIContent* focusedNode = aWindow->GetFocusedElement();
-    bool isRefocus = focusedNode && focusedNode->IsEqualNode(aElement);
+    nsIContent* focusedNode = aWindow->GetFocusedNode();
+    bool isRefocus = focusedNode && focusedNode->IsEqualNode(aContent);
 
-    aWindow->SetFocusedElement(aElement, focusMethod);
+    aWindow->SetFocusedNode(aContent, focusMethod);
 
     
-    if (aElement && aFocusChanged) {
-      ScrollIntoView(presShell, aElement, aFlags);
+    if (aContent && aFocusChanged) {
+      ScrollIntoView(presShell, aContent, aFlags);
     }
 
     bool sendFocusEvent =
-      aElement && aElement->IsInComposedDoc() && !IsNonFocusableRoot(aElement);
+      aContent && aContent->IsInComposedDoc() && !IsNonFocusableRoot(aContent);
     nsPresContext* presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
-      NotifyFocusStateChange(aElement,
+      NotifyFocusStateChange(aContent,
                              nullptr,
                              aWindow->ShouldShowFocusRing(),
                              true);
@@ -1982,18 +1975,18 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
       
       
       
-      if (presShell->GetDocument() == aElement->GetComposedDoc()) {
+      if (presShell->GetDocument() == aContent->GetComposedDoc()) {
         if (aAdjustWidgets && objectFrameWidget && !sTestMode)
           objectFrameWidget->SetFocus(false);
 
         
-        if (TabParent* remote = TabParent::GetFrom(aElement)) {
+        if (TabParent* remote = TabParent::GetFrom(aContent)) {
           remote->Activate();
           LOGFOCUS(("Remote browser activated"));
         }
       }
 
-      IMEStateManager::OnChangeFocus(presContext, aElement,
+      IMEStateManager::OnChangeFocus(presContext, aContent,
                                      GetFocusMoveActionCause(aFlags));
 
       
@@ -2003,8 +1996,8 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
         aWindow->UpdateCommands(NS_LITERAL_STRING("focus"), nullptr, 0);
 
       SendFocusOrBlurEvent(eFocus, presShell,
-                           aElement->GetComposedDoc(),
-                           aElement, aFlags & FOCUSMETHOD_MASK,
+                           aContent->GetComposedDoc(),
+                           aContent, aFlags & FOCUSMETHOD_MASK,
                            aWindowRaised, isRefocus, aContentLostFocus);
     } else {
       IMEStateManager::OnChangeFocus(presContext, nullptr,
@@ -2019,7 +2012,7 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
     
     
     if (aAdjustWidgets && objectFrameWidget &&
-        mFocusedWindow == aWindow && mFocusedElement == nullptr &&
+        mFocusedWindow == aWindow && mFocusedContent == nullptr &&
         !sTestMode) {
       nsViewManager* vm = presShell->GetViewManager();
       if (vm) {
@@ -2030,7 +2023,7 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
       }
     }
 
-    if (!mFocusedElement) {
+    if (!mFocusedContent) {
       
       
       nsPresContext* presContext = presShell->GetPresContext();
@@ -2048,9 +2041,9 @@ nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow,
   
   
   
-  if (mFocusedElement == aElement)
+  if (mFocusedContent == aContent)
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
-                mFocusedElement);
+                mFocusedContent);
 
   if (clearFirstFocusEvent)
     mFirstFocusEvent = nullptr;
@@ -2116,7 +2109,7 @@ public:
   NS_IMETHOD Run() override
   {
     nsCOMPtr<nsIContent> originalWindowFocus = mOriginalFocusedWindow ?
-        mOriginalFocusedWindow->GetFocusedElement() :
+        mOriginalFocusedWindow->GetFocusedNode() :
         nullptr;
     
     
@@ -2239,7 +2232,7 @@ nsFocusManager::FireFocusOrBlurEvent(EventMessage aEventMessage,
   nsCOMPtr<nsPIDOMWindowInner> targetWindow = do_QueryInterface(aTarget);
   nsCOMPtr<nsIDocument> targetDocument = do_QueryInterface(aTarget);
   nsCOMPtr<nsIContent> currentFocusedContent = currentWindow ?
-      currentWindow->GetFocusedElement() : nullptr;
+      currentWindow->GetFocusedNode() : nullptr;
 
   bool dontDispatchEvent =
     eventTargetDoc && nsContentUtils::IsUserFocusIgnored(eventTargetDoc);
@@ -2360,7 +2353,7 @@ nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow)
 void
 nsFocusManager::UpdateCaretForCaretBrowsingMode()
 {
-  UpdateCaret(false, true, mFocusedElement);
+  UpdateCaret(false, true, mFocusedContent);
 }
 
 void
@@ -2694,7 +2687,7 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
       
       
       
-      startContent = aWindow->GetFocusedElement();
+      startContent = aWindow->GetFocusedNode();
     }
   }
 
@@ -3024,10 +3017,10 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
       
       if (tookFocus) {
         nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
-        if (window->GetFocusedElement() == mFocusedElement)
+        if (window->GetFocusedNode() == mFocusedContent)
           Blur(mFocusedWindow, nullptr, true, true);
         else
-          window->SetFocusedElement(nullptr);
+          window->SetFocusedNode(nullptr);
         return NS_OK;
       }
 
@@ -3964,7 +3957,7 @@ nsFocusManager::GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
   nsCOMPtr<nsIContent> testContent = aStartSelection;
   nsCOMPtr<nsIContent> nextTestContent = aEndSelection;
 
-  nsCOMPtr<nsIContent> currentFocus = aWindow->GetFocusedElement();
+  nsCOMPtr<nsIContent> currentFocus = aWindow->GetFocusedNode();
 
   
   
@@ -4131,8 +4124,8 @@ nsFocusManager::MarkUncollectableForCCGeneration(uint32_t aGeneration)
     sInstance->mWindowBeingLowered->
       MarkUncollectableForCCGeneration(aGeneration);
   }
-  if (sInstance->mFocusedElement) {
-    sInstance->mFocusedElement->OwnerDoc()->
+  if (sInstance->mFocusedContent) {
+    sInstance->mFocusedContent->OwnerDoc()->
       MarkUncollectableForCCGeneration(aGeneration);
   }
   if (sInstance->mFirstBlurEvent) {
@@ -4157,7 +4150,7 @@ nsFocusManager::CanSkipFocus(nsIContent* aContent)
     return false;
   }
 
-  if (mFocusedElement == aContent) {
+  if (mFocusedContent == aContent) {
     return true;
   }
 
@@ -4172,7 +4165,7 @@ nsFocusManager::CanSkipFocus(nsIContent* aContent)
     root ? root->GetWindow() : nullptr;
   if (mActiveWindow != newRootWindow) {
     nsPIDOMWindowOuter* outerWindow = aContent->OwnerDoc()->GetWindow();
-    if (outerWindow && outerWindow->GetFocusedElement() == aContent) {
+    if (outerWindow && outerWindow->GetFocusedNode() == aContent) {
       return true;
     }
   }

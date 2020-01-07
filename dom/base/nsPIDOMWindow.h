@@ -484,10 +484,10 @@ public:
 
 
 
-  inline mozilla::dom::Element* GetFocusedElement() const;
-  virtual void SetFocusedElement(mozilla::dom::Element* aElement,
-                                 uint32_t aFocusMethod = 0,
-                                 bool aNeedsFocus = false) = 0;
+  inline mozilla::dom::Element* GetFocusedNode() const;
+  virtual void SetFocusedNode(mozilla::dom::Element* aNode,
+                              uint32_t aFocusMethod = 0,
+                              bool aNeedsFocus = false) = 0;
 
   
 
@@ -660,7 +660,7 @@ protected:
 
   
   
-  RefPtr<mozilla::dom::Element> mFocusedElement;
+  RefPtr<mozilla::dom::Element> mFocusedNode;
 
   
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
@@ -973,10 +973,10 @@ public:
 
 
 
-  inline mozilla::dom::Element* GetFocusedElement() const;
-  virtual void SetFocusedElement(mozilla::dom::Element* aElement,
-                                 uint32_t aFocusMethod = 0,
-                                 bool aNeedsFocus = false) = 0;
+  inline mozilla::dom::Element* GetFocusedNode() const;
+  virtual void SetFocusedNode(mozilla::dom::Element* aNode,
+                              uint32_t aFocusMethod = 0,
+                              bool aNeedsFocus = false) = 0;
 
   
 

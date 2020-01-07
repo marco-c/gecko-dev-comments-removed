@@ -6626,12 +6626,11 @@ nsGlobalWindowOuter::SetChromeEventHandler(EventTarget* aChromeEventHandler)
 }
 
 void
-nsGlobalWindowOuter::SetFocusedElement(Element* aElement,
-                                       uint32_t aFocusMethod,
-                                       bool aNeedsFocus)
+nsGlobalWindowOuter::SetFocusedNode(Element* aNode,
+                                    uint32_t aFocusMethod,
+                                    bool aNeedsFocus)
 {
-  FORWARD_TO_INNER_VOID(SetFocusedElement,
-                        (aElement, aFocusMethod, aNeedsFocus));
+  FORWARD_TO_INNER_VOID(SetFocusedNode, (aNode, aFocusMethod, aNeedsFocus));
 }
 
 uint32_t
@@ -6678,13 +6677,13 @@ nsGlobalWindowOuter::SetKeyboardIndicators(UIStateChangeType aShowAccelerators,
 
   bool newShouldShowFocusRing = ShouldShowFocusRing();
   if (mInnerWindow && nsGlobalWindowInner::Cast(mInnerWindow)->mHasFocus &&
-      mInnerWindow->mFocusedElement &&
+      mInnerWindow->mFocusedNode &&
       oldShouldShowFocusRing != newShouldShowFocusRing) {
     
     if (newShouldShowFocusRing) {
-      mInnerWindow->mFocusedElement->AddStates(NS_EVENT_STATE_FOCUSRING);
+      mInnerWindow->mFocusedNode->AddStates(NS_EVENT_STATE_FOCUSRING);
     } else {
-      mInnerWindow->mFocusedElement->RemoveStates(NS_EVENT_STATE_FOCUSRING);
+      mInnerWindow->mFocusedNode->RemoveStates(NS_EVENT_STATE_FOCUSRING);
     }
   }
 }
@@ -7259,14 +7258,14 @@ nsGlobalWindowOuter::RestoreWindowState(nsISupports *aState)
 
   
   
-  Element* focusedElement = inner->GetFocusedElement();
-  if (nsContentUtils::ContentIsLink(focusedElement)) {
+  Element* focusedNode = inner->GetFocusedNode();
+  if (nsContentUtils::ContentIsLink(focusedNode)) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
       
-      RefPtr<Element> kungFuDeathGrip(focusedElement);
-      fm->SetFocus(kungFuDeathGrip, nsIFocusManager::FLAG_NOSCROLL |
-                                    nsIFocusManager::FLAG_SHOWRING);
+      RefPtr<Element> focusedElement = focusedNode;
+      fm->SetFocus(focusedElement, nsIFocusManager::FLAG_NOSCROLL |
+                                   nsIFocusManager::FLAG_SHOWRING);
     }
   }
 
