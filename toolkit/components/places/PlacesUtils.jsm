@@ -103,6 +103,34 @@ async function notifyKeywordChange(url, keyword, source) {
 
 
 
+
+
+
+function getAnnotationsForItem(aItemId) {
+  var annos = [];
+  var annoNames = PlacesUtils.annotations.getItemAnnotationNames(aItemId);
+  for (let name of annoNames) {
+    let value = {}, flags = {}, exp = {}, storageType = {};
+    PlacesUtils.annotations.getItemAnnotationInfo(aItemId, name, value,
+                                                  flags, exp, storageType);
+    annos.push({
+      name,
+      flags: flags.value,
+      expires: exp.value,
+      value: value.value
+    });
+  }
+  return annos;
+}
+
+
+
+
+
+
+
+
+
 function serializeNode(aNode, aIsLivemark) {
   let data = {};
 
@@ -137,7 +165,7 @@ function serializeNode(aNode, aIsLivemark) {
     data.dateAdded = aNode.dateAdded;
     data.lastModified = aNode.lastModified;
 
-    let annos = PlacesUtils.getAnnotationsForItem(data.id);
+    let annos = getAnnotationsForItem(data.id);
     if (annos.length > 0)
       data.annos = annos;
   }
@@ -1184,19 +1212,27 @@ var PlacesUtils = {
 
 
 
-  getAnnotationsForItem: function PU_getAnnotationsForItem(aItemId) {
-    var annosvc = this.annotations;
-    var annos = [];
-    var annoNames = annosvc.getItemAnnotationNames(aItemId);
-    for (var i = 0; i < annoNames.length; i++) {
-      let value = {}, flags = {}, exp = {}, storageType = {};
-      annosvc.getItemAnnotationInfo(aItemId, annoNames[i], value, flags, exp, storageType);
-      annos.push({name: annoNames[i],
-                  flags: flags.value,
-                  expires: exp.value,
-                  value: value.value});
+  async promiseAnnotationsForItem(itemId) {
+    let db =  await PlacesUtils.promiseDBConnection();
+    let rows = await db.executeCached(
+      `SELECT n.name, a.content, a.expiration, a.flags
+       FROM moz_items_annos a
+       JOIN moz_anno_attributes n ON a.anno_attribute_id = n.id
+       WHERE a.item_id = :itemId
+      `, { itemId });
+
+    let result = [];
+    for (let row of rows) {
+      let anno = {
+        name: row.getResultByName("name"),
+        value: row.getResultByName("content"),
+        expires: row.getResultByName("expiration"),
+        flags: row.getResultByName("flags"),
+      };
+      result.push(anno);
     }
-    return annos;
+
+    return result;
   },
 
   
@@ -1710,7 +1746,7 @@ var PlacesUtils = {
       
       if (aRow.getResultByName("has_annos")) {
         try {
-          item.annos = PlacesUtils.getAnnotationsForItem(itemId);
+          item.annos = await PlacesUtils.promiseAnnotationsForItem(itemId);
         } catch (ex) {
           Cu.reportError("Unexpected error while reading annotations " + ex);
         }
