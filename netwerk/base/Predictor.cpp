@@ -1451,6 +1451,7 @@ Predictor::Prefetch(nsIURI *uri, nsIURI *referrer,
                               nsIContentPolicy::TYPE_OTHER,
                               nullptr, 
                               nullptr, 
+                              nullptr, 
                               nsIRequest::LOAD_BACKGROUND);
 
   if (NS_FAILED(rv)) {

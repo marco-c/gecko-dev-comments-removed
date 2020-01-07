@@ -32,6 +32,7 @@ namespace dom {
 
 class InternalRequest;
 class InternalResponse;
+class PerformanceStorage;
 
 
 
@@ -109,6 +110,7 @@ public:
               nsIPrincipal* aPrincipal,
               nsILoadGroup* aLoadGroup,
               nsIEventTarget* aMainThreadEventTarget,
+              PerformanceStorage* aPerformanceStorage,
               bool aIsTrackingFetch);
 
   nsresult Fetch(AbortSignal* aSignal,
@@ -147,6 +149,10 @@ private:
   nsCOMPtr<nsIChannel> mChannel;
   nsAutoPtr<SRICheckDataVerifier> mSRIDataVerifier;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
+
+  
+  RefPtr<PerformanceStorage> mPerformanceStorage;
+
   SRIMetadata mSRIMetadata;
   nsCString mWorkerScript;
 

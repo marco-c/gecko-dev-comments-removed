@@ -1065,6 +1065,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       aRequest->mTriggeringPrincipal,
       securityFlags,
       contentPolicyType,
+      nullptr, 
       loadGroup,
       prompter,
       nsIRequest::LOAD_NORMAL |

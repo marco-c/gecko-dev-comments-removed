@@ -10681,6 +10681,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                                aURI,
                                loadInfo,
                                nullptr,   
+                               nullptr,   
                                static_cast<nsIInterfaceRequestor*>(this),
                                loadFlags);
 
