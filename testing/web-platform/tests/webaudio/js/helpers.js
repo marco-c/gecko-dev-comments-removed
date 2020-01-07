@@ -5,7 +5,7 @@
 function trimEmptyElements(array) {
   var start = 0;
   var end = array.length;
-  
+
   while (start < array.length) {
     if (array[start] !== 0) {
       break;
