@@ -164,6 +164,12 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
+      
+      
+      
+      
+      
+      
       outer.setAttribute("remote", "true");
       outer.setAttribute("remoteType", inner.remoteType);
 
@@ -171,13 +177,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       outer.destroy();
-      
-      
-      
-      
-      
-      outer.style.MozBinding = "url(chrome://browser/content/tabbrowser.xml" +
-                               "#tabbrowser-remote-browser)";
 
       
       
@@ -185,6 +184,10 @@ function tunnelToInnerBrowser(outer, inner) {
       Services.tm.spinEventLoopUntil(() => {
         return outer._remoteWebNavigation;
       });
+      
+      if (!outer.isRemoteBrowser) {
+        throw new Error("Browser failed to switch to remote browser binding");
+      }
 
       
       
@@ -279,7 +282,6 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       outer.destroy();
-      outer.style.MozBinding = "";
 
       
       outer.setAttribute("remote", "false");
