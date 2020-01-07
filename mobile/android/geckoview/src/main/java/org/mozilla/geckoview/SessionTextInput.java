@@ -29,7 +29,7 @@ import android.view.inputmethod.InputConnection;
 
 
 
-public final class TextInputController {
+public final class SessionTextInput {
 
     
     public interface Delegate {
@@ -100,8 +100,8 @@ public final class TextInputController {
     private final GeckoEditableChild mEditableChild = new GeckoEditableChild(mEditable);
     private Delegate mInputConnection;
 
-     TextInputController(final @NonNull GeckoSession session,
-                                      final @NonNull NativeQueue queue) {
+     SessionTextInput(final @NonNull GeckoSession session,
+                                   final @NonNull NativeQueue queue) {
         mSession = session;
         mQueue = queue;
         mEditable.setDefaultEditableChild(mEditableChild);

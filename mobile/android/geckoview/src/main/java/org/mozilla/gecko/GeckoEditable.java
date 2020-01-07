@@ -47,7 +47,7 @@ public final class GeckoEditable
     extends IGeckoEditableParent.Stub
     implements InvocationHandler,
                Editable,
-               TextInputController.EditableClient {
+               SessionTextInput.EditableClient {
 
     private static final boolean DEBUG = false;
     private static final String LOGTAG = "GeckoEditable";
@@ -71,7 +71,7 @@ public final class GeckoEditable
     
      IGeckoEditableChild mFocusedChild; 
      IBinder mFocusedToken; 
-     TextInputController.EditableListener mListener;
+     SessionTextInput.EditableListener mListener;
 
      boolean mInBatchMode; 
      boolean mNeedSync; 
@@ -278,7 +278,7 @@ public final class GeckoEditable
         }
 
         public synchronized void syncShadowText(
-                final TextInputController.EditableListener listener) {
+                final SessionTextInput.EditableListener listener) {
             if (DEBUG) {
                 assertOnIcThread();
             }
@@ -626,7 +626,7 @@ public final class GeckoEditable
         mDefaultChild = child;
     }
 
-    public void setListener(final TextInputController.EditableListener newListener) {
+    public void setListener(final SessionTextInput.EditableListener newListener) {
         if (DEBUG) {
             
             ThreadUtils.assertOnUiThread();
@@ -685,7 +685,7 @@ public final class GeckoEditable
         final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
         final boolean keepCurrent = (flags & SEND_COMPOSITION_KEEP_CURRENT) != 0;
         final int updateFlags = keepCurrent ?
-                GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
+                                GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
 
         if (!keepCurrent) {
             
@@ -1061,16 +1061,16 @@ public final class GeckoEditable
         
         if (DEBUG) {
             
-            if (type != TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+            if (type != SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
                 Log.d(LOGTAG, "notifyIME(" +
-                              getConstantName(TextInputController.EditableListener.class,
+                              getConstantName(SessionTextInput.EditableListener.class,
                                               "NOTIFY_IME_", type) +
                               ")");
             }
         }
 
         final IBinder token = child.asBinder();
-        if (type == TextInputController.EditableListener.NOTIFY_IME_OF_TOKEN) {
+        if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN) {
             synchronized (this) {
                 if (mFocusedToken != null && mFocusedToken != token &&
                         mFocusedToken.pingBinder()) {
@@ -1081,20 +1081,20 @@ public final class GeckoEditable
                 mFocusedToken = token;
                 return;
             }
-        } else if (type == TextInputController.EditableListener.NOTIFY_IME_OPEN_VKB) {
+        } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB) {
             
             ThreadUtils.assertOnGeckoThread();
         } else if (!binderCheckToken(token,  false)) {
             return;
         }
 
-        if (type == TextInputController.EditableListener.NOTIFY_IME_OF_BLUR) {
+        if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
             synchronized (this) {
                 onTextChange(token, "", 0, Integer.MAX_VALUE);
                 mActions.clear();
                 mFocusedToken = null;
             }
-        } else if (type == TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+        } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
             geckoActionReply(mActions.poll());
             if (!mActions.isEmpty()) {
                 
@@ -1105,19 +1105,19 @@ public final class GeckoEditable
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (type == TextInputController.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+                if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
                     if (mNeedSync) {
                         icSyncShadowText();
                     }
                     return;
                 }
 
-                if (type == TextInputController.EditableListener.NOTIFY_IME_OF_FOCUS &&
+                if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS &&
                         mListener != null) {
                     mFocusedChild = child;
                     mNeedSync = false;
                     mText.syncShadowText( null);
-                } else if (type == TextInputController.EditableListener.NOTIFY_IME_OF_BLUR) {
+                } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
                     mFocusedChild = null;
                 }
 
@@ -1135,7 +1135,7 @@ public final class GeckoEditable
         
         if (DEBUG) {
             Log.d(LOGTAG, "notifyIMEContext(" +
-                          getConstantName(TextInputController.EditableListener.class,
+                          getConstantName(SessionTextInput.EditableListener.class,
                                           "IME_STATE_", state) +
                           ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint +
                           "\", 0x" + Integer.toHexString(flags) + ")");
