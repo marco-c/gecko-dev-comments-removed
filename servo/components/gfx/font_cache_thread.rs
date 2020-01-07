@@ -3,6 +3,7 @@
 
 
 use app_units::Au;
+use font_context::FontSource;
 use font_template::{FontTemplate, FontTemplateDescriptor};
 use fontsan;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
@@ -30,7 +31,7 @@ use style::values::computed::font::{SingleFontFamily, FamilyName};
 use webrender_api;
 
 
-struct FontTemplates {
+pub struct FontTemplates {
     templates: Vec<FontTemplate>,
 }
 
@@ -41,14 +42,14 @@ pub struct FontTemplateInfo {
 }
 
 impl FontTemplates {
-    fn new() -> FontTemplates {
+    pub fn new() -> FontTemplates {
         FontTemplates {
             templates: vec!(),
         }
     }
 
     
-    fn find_font_for_style(&mut self, desc: &FontTemplateDescriptor, fctx: &FontContextHandle)
+    pub fn find_font_for_style(&mut self, desc: &FontTemplateDescriptor, fctx: &FontContextHandle)
                                -> Option<Arc<FontTemplateData>> {
         
         
@@ -89,7 +90,7 @@ impl FontTemplates {
         None
     }
 
-    fn add_template(&mut self, identifier: Atom, maybe_data: Option<Vec<u8>>) {
+    pub fn add_template(&mut self, identifier: Atom, maybe_data: Option<Vec<u8>>) {
         for template in &self.templates {
             if *template.identifier() == identifier {
                 return;
@@ -453,7 +454,31 @@ impl FontCacheThread {
         }
     }
 
-    pub fn find_font_template(&self, family: SingleFontFamily, desc: FontTemplateDescriptor)
+    pub fn add_web_font(&self, family: FamilyName, sources: EffectiveSources, sender: IpcSender<()>) {
+        self.chan.send(Command::AddWebFont(LowercaseString::new(&family.name), sources, sender)).unwrap();
+    }
+
+    pub fn exit(&self) {
+        let (response_chan, response_port) = ipc::channel().unwrap();
+        self.chan.send(Command::Exit(response_chan)).expect("Couldn't send FontCacheThread exit message");
+        response_port.recv().expect("Couldn't receive FontCacheThread reply");
+    }
+}
+
+impl FontSource for FontCacheThread {
+    fn get_font_instance(&mut self, key: webrender_api::FontKey, size: Au) -> webrender_api::FontInstanceKey {
+        let (response_chan, response_port) =
+            ipc::channel().expect("failed to create IPC channel");
+        self.chan.send(Command::GetFontInstance(key, size, response_chan))
+            .expect("failed to send message to font cache thread");
+
+        let instance_key = response_port.recv()
+            .expect("failed to receive response to font request");
+
+        instance_key
+    }
+
+    fn find_font_template(&mut self, family: SingleFontFamily, desc: FontTemplateDescriptor)
                                                 -> Option<FontTemplateInfo> {
         let (response_chan, response_port) =
             ipc::channel().expect("failed to create IPC channel");
@@ -470,7 +495,7 @@ impl FontCacheThread {
         }
     }
 
-    pub fn last_resort_font_template(&self, desc: FontTemplateDescriptor)
+    fn last_resort_font_template(&mut self, desc: FontTemplateDescriptor)
                                                 -> FontTemplateInfo {
         let (response_chan, response_port) =
             ipc::channel().expect("failed to create IPC channel");
@@ -486,30 +511,7 @@ impl FontCacheThread {
             }
         }
     }
-
-    pub fn add_web_font(&self, family: FamilyName, sources: EffectiveSources, sender: IpcSender<()>) {
-        self.chan.send(Command::AddWebFont(LowercaseString::new(&family.name), sources, sender)).unwrap();
-    }
-
-    pub fn get_font_instance(&self, key: webrender_api::FontKey, size: Au) -> webrender_api::FontInstanceKey {
-        let (response_chan, response_port) =
-            ipc::channel().expect("failed to create IPC channel");
-        self.chan.send(Command::GetFontInstance(key, size, response_chan))
-            .expect("failed to send message to font cache thread");
-
-        let instance_key = response_port.recv()
-            .expect("failed to receive response to font request");
-
-        instance_key
-    }
-
-    pub fn exit(&self) {
-        let (response_chan, response_port) = ipc::channel().unwrap();
-        self.chan.send(Command::Exit(response_chan)).expect("Couldn't send FontCacheThread exit message");
-        response_port.recv().expect("Couldn't receive FontCacheThread reply");
-    }
 }
-
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct LowercaseString {
