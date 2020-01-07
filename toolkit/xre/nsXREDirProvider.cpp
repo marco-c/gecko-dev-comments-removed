@@ -1010,6 +1010,12 @@ nsXREDirProvider::DoStartup()
     obsSvc->NotifyObservers(nullptr, "profile-do-change", kStartup);
 
     
+    nsCOMPtr<nsIObserver> policies(do_GetService("@mozilla.org/browser/enterprisepolicies;1"));
+    if (policies) {
+      policies->Observe(nullptr, "policies-startup", nullptr);
+    }
+
+    
     nsCOMPtr<nsIObserver> em = do_GetService("@mozilla.org/addons/integration;1");
     if (em) {
       em->Observe(nullptr, "addons-startup", nullptr);

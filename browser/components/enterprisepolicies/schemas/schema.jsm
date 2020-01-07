@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+this.EXPORTED_SYMBOLS = ["schema"];
+
+this.schema =
+#include policies-schema.json
