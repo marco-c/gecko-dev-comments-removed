@@ -82,6 +82,28 @@ public:
   
 
 
+
+
+
+  virtual EventTarget* GetTargetForDOMEvent()
+  {
+    return this;
+  };
+
+  
+
+
+
+
+
+  virtual EventTarget* GetTargetForEventTargetChain()
+  {
+    return this;
+  }
+
+  
+
+
   virtual bool DispatchEvent(Event& aEvent, CallerType aCallerType,
                              ErrorResult& aRv) = 0;
 
