@@ -67,6 +67,10 @@ Report.prototype.getReport = function() {
   report += "|i|pagename|runs|\n";
 
   for (var i = 0; i < pages.length; i++) {
+    
+    
+    if (pages[i] == "about:blank")
+      continue;
     report += "|" +
       i + ";" +
       pages[i].substr(prefixLen) + ";" +

@@ -1,9 +1,8 @@
 
 
 
-var gRetryCounter = 0;
 var gErr = "Abort: firstNonBlankPaint value is not available after loading the page";
-
+var gRetryCounter = 0;
 
 function _contentFNBPaintHandler() {
   var x = content.window.performance.timing.timeToNonBlankPaint;
@@ -11,15 +10,17 @@ function _contentFNBPaintHandler() {
     sendAsyncMessage("PageLoader:Error", {"msg": gErr});
   }
   if (x > 0) {
+    dump("received fnbpaint value\n");
     sendAsyncMessage("PageLoader:LoadEvent", {"time": x,
                                               "name": "fnbpaint"});
+    gRetryCounter = 0;
   } else {
     gRetryCounter += 1;
     if (gRetryCounter <= 10) {
-      dump("fnbpaint is not yet available (0), retry number " + gRetryCounter + "...\n");
+      dump("\nfnbpaint is not yet available (0), retry number " + gRetryCounter + "...\n");
       content.setTimeout(_contentFNBPaintHandler, 100);
     } else {
-      dump("unable to get a value for fnbpaint after " + gRetryCounter + " retries\n");
+      dump("\nunable to get a value for fnbpaint after " + gRetryCounter + " retries\n");
       sendAsyncMessage("PageLoader:Error", {"msg": gErr});
     }
   }
