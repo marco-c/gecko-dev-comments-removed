@@ -7,6 +7,7 @@ from __future__ import absolute_import
 import errno
 import random
 import os
+import shutil
 import subprocess
 import types
 import xml.etree.ElementTree as ET
@@ -171,6 +172,16 @@ class CppEclipseBackend(CommonBackend):
                              ["eclipse", "-application", "-nosplash",
                               "org.eclipse.cdt.managedbuilder.core.headlessbuild",
                               "-data", self._workspace_dir, "-importAll", self._project_dir])
+        except OSError as e:
+            
+            
+            shutil.rmtree(self._workspace_dir)
+
+            if e.errno == errno.ENOENT:
+                raise Exception("Failed to launch eclipse to import project. "
+                                "Ensure 'eclipse' is in your PATH and try again")
+            else:
+                raise
         finally:
             self._remove_noindex()
 
@@ -181,7 +192,12 @@ class CppEclipseBackend(CommonBackend):
 
     def _remove_noindex(self):
         noindex_path = os.path.join(self._project_dir, '.settings/org.eclipse.cdt.core.prefs')
-        os.remove(noindex_path)
+        
+        try:
+            os.remove(noindex_path)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
 
     def _define_entry(self, name, value):
         define = ET.Element('entry')
