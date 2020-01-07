@@ -11,6 +11,12 @@
 
 
 
+
+
+
+
+
+
 this.rpc = function(method, ...params) {
   let id = nextId++;
 

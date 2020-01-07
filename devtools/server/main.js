@@ -779,11 +779,15 @@ var DebuggerServer = {
     });
   },
 
+  
+
+
+
   connectToWorker(connection, dbg, id, options) {
     return new Promise((resolve, reject) => {
       
       if (!dbg.isInitialized) {
-        dbg.initialize("resource://devtools/server/worker.js");
+        dbg.initialize("resource://devtools/server/startup/worker.js");
 
         
         
