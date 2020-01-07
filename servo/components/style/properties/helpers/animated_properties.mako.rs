@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
@@ -2924,25 +2924,25 @@ impl ToAnimatedZero for AnimatedFilter {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/// A comparator to sort PropertyIds such that longhands are sorted before shorthands,
+/// shorthands with fewer components are sorted before shorthands with more components,
+/// and otherwise shorthands are sorted by IDL name as defined by [Web Animations][property-order].
+///
+/// Using this allows us to prioritize values specified by longhands (or smaller
+/// shorthand subsets) when longhands and shorthands are both specified on the one keyframe.
+///
+/// Example orderings that result from this:
+///
+///   margin-left, margin
+///
+/// and:
+///
+///   border-top-color, border-color, border-top, border
+///
+/// [property-order] https://drafts.csswg.org/web-animations/#calculating-computed-keyframes
 pub fn compare_property_priority(a: &PropertyId, b: &PropertyId) -> cmp::Ordering {
     match (a.as_shorthand(), b.as_shorthand()) {
-        
+        // Within shorthands, sort by the number of subproperties, then by IDL name.
         (Ok(a), Ok(b)) => {
             let subprop_count_a = a.longhands().count();
             let subprop_count_b = b.longhands().count();
@@ -2953,12 +2953,12 @@ pub fn compare_property_priority(a: &PropertyId, b: &PropertyId) -> cmp::Orderin
                 })
         },
 
-        
+        // Longhands go before shorthands.
         (Ok(_), Err(_)) => cmp::Ordering::Greater,
         (Err(_), Ok(_)) => cmp::Ordering::Less,
 
-        
-        
+        // Both are longhands or custom properties in which case they don't overlap and should
+        // sort equally.
         _ => cmp::Ordering::Equal,
     }
 }
