@@ -11,6 +11,7 @@
 #include "gfxCrashReporterUtils.h"
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
+#include "GLContextProvider.h"
 #include "GPUProcessHost.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Telemetry.h"
@@ -498,6 +499,20 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
   if (wr::RenderThread::Get()) {
     wr::RenderThread::ShutDown();
   }
+
+  
+  gl::GLContextProvider::Shutdown();
+
+#if defined(XP_WIN)
+  
+  
+  
+  
+  
+  
+  gl::GLContextProviderEGL::Shutdown();
+#endif
+
   Factory::ShutDown();
 #if defined(XP_WIN)
   DeviceManagerDx::Shutdown();
