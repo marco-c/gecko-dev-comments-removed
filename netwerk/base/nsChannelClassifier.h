@@ -91,8 +91,10 @@ private:
     bool AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri);
     void AddShutdownObserver();
     void RemoveShutdownObserver();
-    nsresult SendThreatHitReport(nsIChannel *aChannel,
-                                 const nsACString& aProvider);
+    static nsresult SendThreatHitReport(nsIChannel *aChannel,
+                                        const nsACString& aProvider,
+                                        const nsACString& aList,
+                                        const nsACString& aFullHash);
 public:
     
     
