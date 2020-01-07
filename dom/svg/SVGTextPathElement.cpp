@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGTextPathElement.h"
+#include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGTextPathElementBinding.h"
 #include "nsSVGElement.h"
 #include "nsGkAtoms.h"
@@ -26,9 +27,9 @@ SVGTextPathElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 nsSVGElement::LengthInfo SVGTextPathElement::sLengthInfo[2] =
 {
   
-  { &nsGkAtoms::textLength, 0, nsIDOMSVGLength::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::XY },
+  { &nsGkAtoms::textLength, 0, SVGLengthBinding::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::XY },
   
-  { &nsGkAtoms::startOffset, 0, nsIDOMSVGLength::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::X }
+  { &nsGkAtoms::startOffset, 0, SVGLengthBinding::SVG_LENGTHTYPE_NUMBER, SVGContentUtils::X }
 };
 
 nsSVGEnumMapping SVGTextPathElement::sMethodMap[] = {
