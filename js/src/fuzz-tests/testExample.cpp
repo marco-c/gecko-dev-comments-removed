@@ -40,7 +40,7 @@ testExampleFuzz(const uint8_t* buf, size_t size)
 
     auto gcGuard = mozilla::MakeScopeExit([&] {
         JS::PrepareForFullGC(gCx);
-        JS::GCForReason(gCx, GC_NORMAL, JS::gcreason::API);
+        JS::NonIncrementalGC(gCx, GC_NORMAL, JS::gcreason::API);
     });
 
     

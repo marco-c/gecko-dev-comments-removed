@@ -111,7 +111,7 @@ BEGIN_TEST(testGCUID)
     
     
     JS::PrepareForFullGC(cx);
-    JS::GCForReason(cx, GC_SHRINK, JS::gcreason::API);
+    JS::NonIncrementalGC(cx, GC_SHRINK, JS::gcreason::API);
     MinimizeHeap(cx);
     CHECK(uintptr_t(obj.get()) != tenuredAddr);
     CHECK(obj->zone()->hasUniqueId(obj));

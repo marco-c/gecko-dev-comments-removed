@@ -485,7 +485,7 @@ SkipZoneForGC(Zone* zone);
 
 
 extern JS_PUBLIC_API(void)
-GCForReason(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason);
+NonIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason);
 
 
 
