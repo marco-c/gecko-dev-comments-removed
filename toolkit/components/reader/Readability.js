@@ -47,6 +47,7 @@ function Readability(uri, doc, options) {
   this._maxElemsToParse = options.maxElemsToParse || this.DEFAULT_MAX_ELEMS_TO_PARSE;
   this._nbTopCandidates = options.nbTopCandidates || this.DEFAULT_N_TOP_CANDIDATES;
   this._wordThreshold = options.wordThreshold || this.DEFAULT_WORD_THRESHOLD;
+  this._classesToPreserve = this.CLASSES_TO_PRESERVE.concat(options.classesToPreserve || []);
 
   
   this._flags = this.FLAG_STRIP_UNLIKELYS |
@@ -131,6 +132,9 @@ Readability.prototype = {
   DEPRECATED_SIZE_ATTRIBUTE_ELEMS: [ "TABLE", "TH", "TD", "HR", "PRE" ],
 
   
+  CLASSES_TO_PRESERVE: [ "readability-styled", "page" ],
+
+  
 
 
 
@@ -139,6 +143,9 @@ Readability.prototype = {
   _postProcessContent: function(articleContent) {
     
     this._fixRelativeUris(articleContent);
+
+    
+    this._cleanClasses(articleContent);
   },
 
   
@@ -230,6 +237,34 @@ Readability.prototype = {
       var collection = node.getElementsByTagName(tag);
       return Array.isArray(collection) ? collection : Array.from(collection);
     }));
+  },
+
+  
+
+
+
+
+
+
+
+  _cleanClasses: function(node) {
+    var classesToPreserve = this._classesToPreserve;
+    var className = node.className
+      .split(/\s+/)
+      .filter(function(cls) {
+        return classesToPreserve.indexOf(cls) != -1;
+      })
+      .join(" ");
+
+    if (className) {
+      node.className = className;
+    } else {
+      node.removeAttribute("class");
+    }
+
+    for (node = node.firstElementChild; node; node = node.nextElementSibling) {
+      this._cleanClasses(node);
+    }
   },
 
   
@@ -342,8 +377,13 @@ Readability.prototype = {
         curTitle = origTitle.substring(origTitle.lastIndexOf(':') + 1);
 
         
-        if (wordCount(curTitle) < 3)
+        if (wordCount(curTitle) < 3) {
           curTitle = origTitle.substring(origTitle.indexOf(':') + 1);
+          
+          
+        } else if (wordCount(origTitle.substr(0, origTitle.indexOf(':'))) > 5) {
+          curTitle = origTitle;
+        }
       }
     } else if (curTitle.length > 150 || curTitle.length < 15) {
       var hOnes = doc.getElementsByTagName('h1');
@@ -764,6 +804,7 @@ Readability.prototype = {
             var newNode = node.children[0];
             node.parentNode.replaceChild(newNode, node);
             node = newNode;
+            elementsToScore.push(node);
           } else if (!this._hasChildBlockElement(node)) {
             node = this._setNodeTag(node, "P");
             elementsToScore.push(node);
