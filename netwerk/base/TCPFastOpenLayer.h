@@ -65,6 +65,7 @@ typedef enum {
   TFO_FAILED_BACKUP_CONNECTION_NO_TFO_FAILED_TOO,
   TFO_BACKUP_CONN, 
                    
+  TFO_INIT_FAILED, 
   TFO_FAILED,
   TFO_HTTP 
 } TFOResult;
