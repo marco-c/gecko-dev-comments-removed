@@ -499,7 +499,7 @@ struct ChunkTrailer
   public:
     
     ChunkLocation   location;
-    uint32_t        padding;
+    uint32_t : 32; 
 
     
     
