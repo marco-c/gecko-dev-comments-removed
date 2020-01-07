@@ -7,6 +7,8 @@
 #include "mozilla/dom/TestFunctions.h"
 #include "mozilla/dom/TestFunctionsBinding.h"
 #include "nsStringBuffer.h"
+#include "mozITestInterfaceJS.h"
+#include "nsComponentManagerUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -81,6 +83,22 @@ TestFunctions::GetStringDataAsDOMString(const Optional<uint32_t>& aLength,
   
   MOZ_RELEASE_ASSERT(length == 0, "Why no stringbuffer?");
   
+}
+
+void
+TestFunctions::TestThrowNsresult(ErrorResult& aError)
+{
+  nsCOMPtr<mozITestInterfaceJS> impl =
+    do_CreateInstance("@mozilla.org/dom/test-interface-js;1");
+  aError = impl->TestThrowNsresult();
+}
+
+void
+TestFunctions::TestThrowNsresultFromNative(ErrorResult& aError)
+{
+  nsCOMPtr<mozITestInterfaceJS> impl =
+    do_CreateInstance("@mozilla.org/dom/test-interface-js;1");
+  aError = impl->TestThrowNsresultFromNative();
 }
 
 bool
