@@ -22,12 +22,10 @@ function reportErrorAndQuit(error) {
 function runTests(sw) {
   const sp = sw.Scratchpad;
 
-  let foo = "" + function main() {
-    console.log(1);
-  };
-  let bar = "var bar = " + (() => {
-    console.log(2);
-  });
+  
+  let foo = "" + function main() { console.log(1); };
+  let bar = "var bar = " + (() => { console.log(2); });
+  
 
   const fullText =
     foo + "\n" +

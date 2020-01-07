@@ -115,7 +115,7 @@ add_task(async function runTest() {
         }, interval);
       });
     }
-  }).toSource().replace(/^\(function \(\) \{|\}\)$/g, "");
+  }).toSource().replace(/^\(function\(\) \{|\}\)$/g, "");
   
   
 
