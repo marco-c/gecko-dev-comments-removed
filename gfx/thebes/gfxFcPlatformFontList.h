@@ -94,9 +94,9 @@ public:
     
     
     explicit gfxFontconfigFontEntry(const nsAString& aFaceName,
-                                    WeightRange aWeight,
-                                    StretchRange aStretch,
-                                    SlantStyleRange aStyle,
+                                    FontWeight aWeight,
+                                    FontStretch aStretch,
+                                    FontSlantStyle aStyle,
                                     const uint8_t *aData,
                                     uint32_t aLength,
                                     FT_Face aFace);
@@ -104,9 +104,9 @@ public:
     
     explicit gfxFontconfigFontEntry(const nsAString& aFaceName,
                                     FcPattern* aFontPattern,
-                                    WeightRange aWeight,
-                                    StretchRange aStretch,
-                                    SlantStyleRange aStyle);
+                                    FontWeight aWeight,
+                                    FontStretch aStretch,
+                                    FontSlantStyle aStyle);
 
     gfxFontEntry* Clone() const override;
 
@@ -167,13 +167,6 @@ protected:
     
     
     bool      mIgnoreFcCharmap;
-
-    
-    
-    
-    
-    bool      mHasVariations;
-    bool      mHasVariationsInitialized;
 
     double    mAspect;
 
@@ -296,15 +289,15 @@ public:
 
     gfxFontEntry*
     LookupLocalFont(const nsAString& aFontName,
-                    WeightRange aWeightForEntry,
-                    StretchRange aStretchForEntry,
-                    SlantStyleRange aStyleForEntry) override;
+                    FontWeight aWeight,
+                    FontStretch aStretch,
+                    FontSlantStyle aStyle) override;
 
     gfxFontEntry*
     MakePlatformFont(const nsAString& aFontName,
-                     WeightRange aWeightForEntry,
-                     StretchRange aStretchForEntry,
-                     SlantStyleRange aStyleForEntry,
+                     FontWeight aWeight,
+                     FontStretch aStretch,
+                     FontSlantStyle aStyle,
                      const uint8_t* aFontData,
                      uint32_t aLength) override;
 

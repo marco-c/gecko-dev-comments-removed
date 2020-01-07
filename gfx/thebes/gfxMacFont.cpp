@@ -36,7 +36,8 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
 {
     mApplySyntheticBold = aNeedsBold;
 
-    if (mVariationFont) {
+    if (mVariationFont && (!aFontStyle->variationSettings.IsEmpty() ||
+                           !aFontEntry->mVariationSettings.IsEmpty())) {
         CGFontRef baseFont = aUnscaledFont->GetFont();
         if (!baseFont) {
             mIsValid = false;
@@ -45,13 +46,24 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
 
         
         
-        AutoTArray<gfxFontVariation,4> vars;
-        aFontEntry->GetVariationsForStyle(vars, *aFontStyle);
+        
+        const nsTArray<gfxFontVariation>* vars;
+        AutoTArray<gfxFontVariation,4> mergedSettings;
+        if (aFontStyle->variationSettings.IsEmpty()) {
+            vars = &aFontEntry->mVariationSettings;
+        } else if (aFontEntry->mVariationSettings.IsEmpty()) {
+            vars = &aFontStyle->variationSettings;
+        } else {
+            gfxFontUtils::MergeVariations(aFontEntry->mVariationSettings,
+                                          aFontStyle->variationSettings,
+                                          &mergedSettings);
+            vars = &mergedSettings;
+        }
 
         mCGFont =
             UnscaledFontMac::CreateCGFontWithVariations(baseFont,
-                                                        vars.Length(),
-                                                        vars.Elements());
+                                                        vars->Length(),
+                                                        vars->Elements());
         if (!mCGFont) {
           ::CFRetain(baseFont);
           mCGFont = baseFont;

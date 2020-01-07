@@ -115,9 +115,6 @@ public:
     typedef mozilla::FontWeight FontWeight;
     typedef mozilla::FontSlantStyle FontSlantStyle;
     typedef mozilla::FontStretch FontStretch;
-    typedef mozilla::WeightRange WeightRange;
-    typedef mozilla::SlantStyleRange SlantStyleRange;
-    typedef mozilla::StretchRange StretchRange;
 
     
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
@@ -146,17 +143,16 @@ public:
     
     virtual nsString RealFaceName();
 
-    WeightRange Weight() const { return mWeightRange; }
-    StretchRange Stretch() const { return mStretchRange; }
-    SlantStyleRange SlantStyle() const { return mStyleRange; }
+    FontWeight Weight() const { return mWeight; }
+    FontStretch Stretch() const { return mStretch; }
 
     bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
     bool IsLocalUserFont() const { return mIsLocalUserFont; }
     bool IsFixedPitch() const { return mFixedPitch; }
-    bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
-    bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
-    bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
-    bool IsBold() const { return Weight().Max().IsBold(); } 
+    bool IsItalic() const { return mStyle.IsItalic(); }
+    bool IsOblique() const { return mStyle.IsOblique(); }
+    bool IsUpright() const { return mStyle.IsNormal(); }
+    bool IsBold() const { return mWeight.IsBold(); } 
     bool IgnoreGDEF() const { return mIgnoreGDEF; }
     bool IgnoreGSUB() const { return mIgnoreGSUB; }
 
@@ -169,10 +165,8 @@ public:
     bool IsNormalStyle() const
     {
         return IsUpright() &&
-               Weight().Min() <= FontWeight::Normal() &&
-               Weight().Max() >= FontWeight::Normal() &&
-               Stretch().Min() <= FontStretch::Normal() &&
-               Stretch().Max() >= FontStretch::Normal();
+               Weight() == FontWeight::Normal() &&
+               Stretch().IsNormal();
     }
 
     
@@ -377,16 +371,6 @@ public:
     }
 
     
-    
-    
-    void SetupVariationRanges();
-
-    
-    
-    void GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
-                               const gfxFontStyle& aStyle);
-
-    
     void GetFeatureInfo(nsTArray<gfxFontFeatureInfo>& aFeatureInfo);
 
     nsString         mName;
@@ -421,9 +405,9 @@ public:
     uint32_t         mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
     uint32_t         mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
 
-    WeightRange      mWeightRange;
-    StretchRange     mStretchRange;
-    SlantStyleRange  mStyleRange;
+    FontWeight mWeight;
+    FontStretch mStretch;
+    FontSlantStyle mStyle;
 
     RefPtr<gfxCharacterMap> mCharacterMap;
     uint32_t         mUVSOffset;
@@ -628,14 +612,14 @@ struct GlobalFontMatch {
     GlobalFontMatch(const uint32_t aCharacter,
                     const gfxFontStyle *aStyle) :
         mCh(aCharacter), mStyle(aStyle),
-        mMatchRank(0.0f), mCount(0), mCmapsTested(0)
+        mMatchRank(0), mCount(0), mCmapsTested(0)
         {
 
         }
 
     const uint32_t         mCh;          
     const gfxFontStyle*    mStyle;       
-    float                  mMatchRank;   
+    int32_t                mMatchRank;   
     RefPtr<gfxFontEntry> mBestMatch;   
     RefPtr<gfxFontFamily> mMatchedFamily; 
     uint32_t               mCount;       

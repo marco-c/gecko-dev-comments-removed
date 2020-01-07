@@ -8,17 +8,10 @@
 #ifndef GFX_FONT_PROPERTY_TYPES_H
 #define GFX_FONT_PROPERTY_TYPES_H
 
-#include <algorithm>
 #include <cstdint>
 #include <cmath>
-#include <utility>
-
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "mozilla/Assertions.h"
-#include "nsString.h"
+#include "nsStringFwd.h"
 
 
 
@@ -62,7 +55,7 @@ public:
   
   FontPropertyValue() = default;
   explicit FontPropertyValue(const FontPropertyValue& aOther) = default;
-  FontPropertyValue& operator=(const FontPropertyValue& aOther) = default;
+  FontPropertyValue& operator= (const FontPropertyValue& aOther) = default;
 
   bool operator==(const FontPropertyValue& aOther) const
   {
@@ -97,10 +90,9 @@ public:
   }
 
   
-  
-  uint16_t ForHash() const
+  InternalType ForHash() const
   {
-    return uint16_t(mValue);
+    return mValue;
   }
 
   static constexpr const float kMin = float(Min);
@@ -194,10 +186,8 @@ public:
   float ToFloat() const { return FontPropertyValue::ToFloat(); }
   int ToIntRounded() const { return FontPropertyValue::ToIntRounded(); }
 
-  typedef uint16_t InternalType;
-
 private:
-  friend class WeightRange;
+  typedef uint16_t InternalType;
 
   explicit FontWeight(InternalType aValue)
     : FontPropertyValue(aValue)
@@ -277,10 +267,8 @@ public:
   bool IsNormal() const { return mValue == kNormal; }
   float Percentage() const { return ToFloat(); }
 
-  typedef uint16_t InternalType;
-
 private:
-  friend class StretchRange;
+  typedef uint16_t InternalType;
 
   explicit FontStretch(InternalType aValue)
     : FontPropertyValue(aValue)
@@ -310,6 +298,7 @@ private:
 
 class FontSlantStyle final : public FontPropertyValue<int16_t,8,-90,90>
 {
+  typedef int16_t InternalType;
 public:
   const static constexpr float kDefaultAngle = 14.0;
 
@@ -332,26 +321,6 @@ public:
     return FontSlantStyle(aAngle);
   }
 
-  
-  
-  
-  static FontSlantStyle FromString(const char* aString)
-  {
-    if (strcmp(aString, "normal") == 0) {
-      return Normal();
-    } else if (strcmp(aString, "italic") == 0) {
-      return Italic();
-    } else {
-      if (isdigit(aString[0]) && strstr(aString, "deg")) {
-        float angle = strtof(aString, nullptr);
-        return Oblique(angle);
-      }
-      
-      
-      return Normal();
-    }
-  }
-
   bool IsNormal() const { return mValue == kNormal; }
   bool IsItalic() const { return mValue == kItalic; }
   bool IsOblique() const { return mValue != kItalic && mValue != kNormal; }
@@ -364,28 +333,7 @@ public:
     return ToFloat();
   }
 
-  
-
-
-
-
-
-  void ToString(nsACString& aOutString) const
-  {
-    if (IsNormal()) {
-      aOutString.Append("normal");
-    } else if (IsItalic()) {
-      aOutString.Append("italic");
-    } else {
-      aOutString.AppendPrintf("%gdeg", ObliqueAngle());
-    }
-  }
-
-  typedef int16_t InternalType;
-
 private:
-  friend class SlantStyleRange;
-
   explicit FontSlantStyle(InternalType aConstant)
     : FontPropertyValue(aConstant)
   {
@@ -400,197 +348,7 @@ private:
   static const InternalType kItalic = INT16_MAX;
 };
 
-
-
-
-
-
-
-
-template<class T>
-class FontPropertyRange
-{
-  
-  
-  static_assert(sizeof(T) == 2, "FontPropertyValue should be a 16-bit type!");
-
-public:
-  
-
-
-  FontPropertyRange(T aMin, T aMax)
-    : mValues(aMin, aMax)
-  {
-    MOZ_ASSERT(aMin <= aMax);
-  }
-
-  
-
-
-  explicit FontPropertyRange(T aValue)
-    : mValues(aValue, aValue)
-  {
-  }
-
-  explicit FontPropertyRange(const FontPropertyRange& aOther) = default;
-  FontPropertyRange& operator=(const FontPropertyRange& aOther) = default;
-
-  T Min() const { return mValues.first; }
-  T Max() const { return mValues.second; }
-
-  
-
-
-
-
-  T Clamp(T aValue) const
-  {
-    return aValue <= Min() ? Min() : (aValue >= Max() ? Max() : aValue);
-  }
-
-  
-
-
-  bool IsSingle() const
-  {
-    return Min() == Max();
-  }
-
-  bool operator==(const FontPropertyRange& aOther) const
-  {
-    return mValues == aOther.mValues;
-  }
-  bool operator!=(const FontPropertyRange& aOther) const
-  {
-    return mValues != aOther.mValues;
-  }
-
-  
-
-
-
-
-
-
-
-  typedef uint32_t ScalarType;
-
-  ScalarType AsScalar() const
-  {
-    return (mValues.first.ForHash() << 16) | mValues.second.ForHash();
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-protected:
-  std::pair<T,T> mValues;
-};
-
-class WeightRange : public FontPropertyRange<FontWeight>
-{
-public:
-  WeightRange(FontWeight aMin, FontWeight aMax)
-    : FontPropertyRange(aMin, aMax)
-  {
-  }
-
-  explicit WeightRange(FontWeight aWeight)
-    : FontPropertyRange(aWeight)
-  {
-  }
-
-  WeightRange(const WeightRange& aOther) = default;
-
-  void ToString(nsACString& aOutString, const char* aDelim = "..") const
-  {
-    aOutString.AppendFloat(Min().ToFloat());
-    if (!IsSingle()) {
-      aOutString.Append(aDelim);
-      aOutString.AppendFloat(Max().ToFloat());
-    }
-  }
-
-  static WeightRange FromScalar(ScalarType aScalar)
-  {
-    return WeightRange(FontWeight(FontWeight::InternalType(aScalar >> 16)),
-                       FontWeight(FontWeight::InternalType(aScalar & 0xffff)));
-  }
-};
-
-class StretchRange : public FontPropertyRange<FontStretch>
-{
-public:
-  StretchRange(FontStretch aMin, FontStretch aMax)
-    : FontPropertyRange(aMin, aMax)
-  {
-  }
-
-  explicit StretchRange(FontStretch aStretch)
-    : FontPropertyRange(aStretch)
-  {
-  }
-
-  StretchRange(const StretchRange& aOther) = default;
-
-  void ToString(nsACString& aOutString, const char* aDelim = "..") const
-  {
-    aOutString.AppendFloat(Min().Percentage());
-    if (!IsSingle()) {
-      aOutString.Append(aDelim);
-      aOutString.AppendFloat(Max().Percentage());
-    }
-  }
-
-  static StretchRange FromScalar(ScalarType aScalar)
-  {
-    return StretchRange(
-      FontStretch(FontStretch::InternalType(aScalar >> 16)),
-      FontStretch(FontStretch::InternalType(aScalar & 0xffff)));
-  }
-};
-
-class SlantStyleRange : public FontPropertyRange<FontSlantStyle>
-{
-public:
-  SlantStyleRange(FontSlantStyle aMin, FontSlantStyle aMax)
-    : FontPropertyRange(aMin, aMax)
-  {
-  }
-
-  explicit SlantStyleRange(FontSlantStyle aStyle)
-    : FontPropertyRange(aStyle)
-  {
-  }
-
-  SlantStyleRange(const SlantStyleRange& aOther) = default;
-
-  void ToString(nsACString& aOutString, const char* aDelim = "..") const
-  {
-    Min().ToString(aOutString);
-    if (!IsSingle()) {
-      aOutString.Append(aDelim);
-      Max().ToString(aOutString);
-    }
-  }
-
-  static SlantStyleRange FromScalar(ScalarType aScalar)
-  {
-    return SlantStyleRange(
-      FontSlantStyle(FontSlantStyle::InternalType(aScalar >> 16)),
-      FontSlantStyle(FontSlantStyle::InternalType(aScalar & 0xffff)));
-  }
-};
-
 } 
 
 #endif 
+

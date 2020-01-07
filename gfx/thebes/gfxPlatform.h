@@ -159,9 +159,9 @@ class gfxPlatform {
     friend class SRGBOverrideObserver;
 
 public:
-    typedef mozilla::StretchRange StretchRange;
-    typedef mozilla::SlantStyleRange SlantStyleRange;
-    typedef mozilla::WeightRange WeightRange;
+    typedef mozilla::FontStretch FontStretch;
+    typedef mozilla::FontSlantStyle FontSlantStyle;
+    typedef mozilla::FontWeight FontWeight;
     typedef mozilla::gfx::Color Color;
     typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
     typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -394,10 +394,10 @@ public:
 
 
 
-    gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
-                                  WeightRange aWeightForEntry,
-                                  StretchRange aStretchForEntry,
-                                  SlantStyleRange aStyleForEntry);
+    virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
+                                          FontWeight aWeight,
+                                          FontStretch aStretch,
+                                          FontSlantStyle aStyle);
 
     
 
@@ -407,12 +407,12 @@ public:
 
 
 
-    gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
-                                   WeightRange aWeightForEntry,
-                                   StretchRange aStretchForEntry,
-                                   SlantStyleRange aStyleForEntry,
-                                   const uint8_t* aFontData,
-                                   uint32_t aLength);
+    virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
+                                           FontWeight aWeight,
+                                           FontStretch aStretch,
+                                           FontSlantStyle aStyle,
+                                           const uint8_t* aFontData,
+                                           uint32_t aLength);
 
     
 

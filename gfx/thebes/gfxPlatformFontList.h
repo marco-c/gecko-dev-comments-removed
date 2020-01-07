@@ -98,9 +98,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader
     friend class InitOtherFamilyNamesRunnable;
 
 public:
-    typedef mozilla::StretchRange StretchRange;
-    typedef mozilla::SlantStyleRange SlantStyleRange;
-    typedef mozilla::WeightRange WeightRange;
+    typedef mozilla::FontStretch FontStretch;
+    typedef mozilla::FontSlantStyle FontSlantStyle;
+    typedef mozilla::FontWeight FontWeight;
     typedef mozilla::unicode::Script Script;
 
     static gfxPlatformFontList* PlatformFontList() {
@@ -189,32 +189,17 @@ public:
     gfxFontFamily* GetDefaultFont(const gfxFontStyle* aStyle);
 
     
-
-
-
-
-
-
     virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
-                                          WeightRange aWeightForEntry,
-                                          StretchRange aStretchForEntry,
-                                          SlantStyleRange aStyleForEntry) = 0;
+                                          FontWeight aWeight,
+                                          FontStretch aStretch,
+                                          FontSlantStyle aStyle) = 0;
 
     
-
-
-
-
-
-
-
-
-
-
+    
     virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
-                                           WeightRange aWeightForEntry,
-                                           StretchRange aStretchForEntry,
-                                           SlantStyleRange aStyleForEntry,
+                                           FontWeight aWeight,
+                                           FontStretch aStretch,
+                                           FontSlantStyle aStyle,
                                            const uint8_t* aFontData,
                                            uint32_t aLength) = 0;
 

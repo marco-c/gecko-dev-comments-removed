@@ -294,6 +294,9 @@ void nsFont::AddFontVariationsToStyle(gfxFontStyle *aStyle) const
 {
   
   
+
+  
+  
   class VariationTagComparator {
   public:
     bool Equals(const gfxFontVariation& aVariation, uint32_t aTag) const {
