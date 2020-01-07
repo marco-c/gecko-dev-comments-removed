@@ -48,15 +48,6 @@ class gfxVarReceiver;
 
 
 
-#if defined(MOZ_STYLO) && !defined(ANDROID)
-  #define USE_STYLO_ON_COMPOSITOR true
-#else
-  #define USE_STYLO_ON_COMPOSITOR false
-#endif
-
-
-
-
 
 
 

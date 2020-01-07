@@ -42,6 +42,7 @@ enum class CSSPseudoElementType : uint8_t;
 enum class StyleBackendType : uint8_t;
 struct PropertyStyleAnimationValuePair;
 
+#ifdef MOZ_OLD_STYLE
 
 
 
@@ -88,7 +89,6 @@ public:
   static double ComputeColorDistance(const css::RGBAColorData& aStartColor,
                                      const css::RGBAColorData& aEndColor);
 
-#ifdef MOZ_OLD_STYLE
   
 
 
@@ -115,7 +115,6 @@ public:
                   const StyleAnimationValue& aEndValue,
                   GeckoStyleContext* aStyleContext,
                   double& aDistance);
-#endif
 
   
 
@@ -177,7 +176,6 @@ public:
 
   
   
-#ifdef MOZ_OLD_STYLE
   
 
 
@@ -248,7 +246,6 @@ public:
                 const nsCSSValue& aSpecifiedValue,
                 bool aUseSVGMode,
                 nsTArray<PropertyStyleAnimationValuePair>& aResult);
-#endif
 
   
 
@@ -280,7 +277,6 @@ public:
                  const StyleAnimationValue& aComputedValue,
                  nsAString& aSpecifiedValue);
 
-#ifdef MOZ_OLD_STYLE
   
 
 
@@ -299,7 +295,6 @@ public:
     nsCSSPropertyID aProperty,
     mozilla::GeckoStyleContext* aStyleContext,
     StyleAnimationValue& aComputedValue);
-#endif
 
   
 
@@ -574,24 +569,38 @@ private:
     return aUnit == eUnit_UnparsedString;
   }
 };
+#endif
 
 struct AnimationValue
 {
+#ifdef MOZ_OLD_STYLE
   explicit AnimationValue(const StyleAnimationValue& aValue)
     : mGecko(aValue) { }
+#endif
   explicit AnimationValue(const RefPtr<RawServoAnimationValue>& aValue)
     : mServo(aValue) { }
   AnimationValue() = default;
 
   AnimationValue(const AnimationValue& aOther)
-    : mGecko(aOther.mGecko), mServo(aOther.mServo) { }
+#ifdef MOZ_OLD_STYLE
+    : mGecko(aOther.mGecko)
+    , mServo(aOther.mServo) { }
+#else
+    : mServo(aOther.mServo) { }
+#endif
   AnimationValue(AnimationValue&& aOther)
+#ifdef MOZ_OLD_STYLE
     : mGecko(Move(aOther.mGecko)), mServo(Move(aOther.mServo)) { }
+#else
+    : mServo(Move(aOther.mServo)) { }
+#endif
 
   AnimationValue& operator=(const AnimationValue& aOther)
   {
     if (this != &aOther) {
+#ifdef MOZ_OLD_STYLE
       mGecko = aOther.mGecko;
+#endif
       mServo = aOther.mServo;
     }
     return *this;
@@ -600,7 +609,9 @@ struct AnimationValue
   {
     MOZ_ASSERT(this != &aOther, "Do not move itself");
     if (this != &aOther) {
+#ifdef MOZ_OLD_STYLE
       mGecko = Move(aOther.mGecko);
+#endif
       mServo = Move(aOther.mServo);
     }
     return *this;
@@ -609,7 +620,15 @@ struct AnimationValue
   bool operator==(const AnimationValue& aOther) const;
   bool operator!=(const AnimationValue& aOther) const;
 
-  bool IsNull() const { return mGecko.IsNull() && !mServo; }
+  bool IsNull() const
+  {
+#ifdef MOZ_OLD_STYLE
+    if (!mGecko.IsNull()) {
+      return false;
+    }
+#endif
+    return !mServo;
+  }
 
   float GetOpacity() const;
 
@@ -657,7 +676,15 @@ struct AnimationValue
   
   
   
+#ifdef MOZ_OLD_STYLE
   StyleAnimationValue mGecko;
+#else
+  
+  
+  
+  
+  uintptr_t mGecko;
+#endif
   RefPtr<RawServoAnimationValue> mServo;
 };
 

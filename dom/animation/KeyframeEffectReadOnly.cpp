@@ -395,6 +395,7 @@ KeyframeEffectReadOnly::DoUpdateProperties(StyleType* aStyle)
   RequestRestyle(EffectCompositor::RestyleType::Layer);
 }
 
+#ifdef MOZ_OLD_STYLE
  StyleAnimationValue
 KeyframeEffectReadOnly::CompositeValue(
   nsCSSPropertyID aProperty,
@@ -430,7 +431,6 @@ KeyframeEffectReadOnly::CompositeValue(
   return StyleAnimationValue();
 }
 
-#ifdef MOZ_OLD_STYLE
 StyleAnimationValue
 KeyframeEffectReadOnly::GetUnderlyingStyle(
   nsCSSPropertyID aProperty,
@@ -1364,33 +1364,39 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
                                            &stringValue);
           }
         }
-      } else if (nsCSSProps::IsShorthand(propertyValue.mProperty)) {
-         
-         
-         
-         propertyValue.mValue.AppendToString(
-           eCSSProperty_UNKNOWN, stringValue);
       } else {
-        nsCSSValue cssValue = propertyValue.mValue;
-        if (cssValue.GetUnit() == eCSSUnit_Null) {
-          
-          
-          
-          
-          
-          
-          DebugOnly<bool> uncomputeResult =
-            StyleAnimationValue::UncomputeValue(
-              propertyValue.mProperty,
-              Move(BaseStyle(propertyValue.mProperty).mGecko),
-              cssValue);
+#ifdef MOZ_OLD_STYLE
+        if (nsCSSProps::IsShorthand(propertyValue.mProperty)) {
+           
+           
+           
+           propertyValue.mValue.AppendToString(
+             eCSSProperty_UNKNOWN, stringValue);
+        } else {
+          nsCSSValue cssValue = propertyValue.mValue;
+          if (cssValue.GetUnit() == eCSSUnit_Null) {
+            
+            
+            
+            
+            
+            
+            DebugOnly<bool> uncomputeResult =
+              StyleAnimationValue::UncomputeValue(
+                propertyValue.mProperty,
+                Move(BaseStyle(propertyValue.mProperty).mGecko),
+                cssValue);
 
-          MOZ_ASSERT(uncomputeResult,
-                     "Unable to get specified value from computed value");
-          MOZ_ASSERT(cssValue.GetUnit() != eCSSUnit_Null,
-                     "Got null computed value");
+            MOZ_ASSERT(uncomputeResult,
+                       "Unable to get specified value from computed value");
+            MOZ_ASSERT(cssValue.GetUnit() != eCSSUnit_Null,
+                       "Got null computed value");
+          }
+          cssValue.AppendToString(propertyValue.mProperty, stringValue);
         }
-        cssValue.AppendToString(propertyValue.mProperty, stringValue);
+#else
+        MOZ_CRASH("old style system disabled");
+#endif
       }
 
       const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
