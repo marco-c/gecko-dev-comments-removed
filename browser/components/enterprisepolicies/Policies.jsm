@@ -359,7 +359,11 @@ var Policies = {
         setAndLockPref("pref.browser.homepage.disable_button.bookmark_page", true);
         setAndLockPref("pref.browser.homepage.disable_button.restore_default", true);
       } else {
-        setDefaultPref("browser.startup.homepage", homepages);
+        
+        
+        let homepagePrefVal = "data:text/plain,browser.startup.homepage=" +
+                               homepages;
+        setDefaultPref("browser.startup.homepage", homepagePrefVal);
         setDefaultPref("browser.startup.page", 1);
         runOncePerModification("setHomepage", homepages, () => {
           Services.prefs.clearUserPref("browser.startup.homepage");
