@@ -13,7 +13,7 @@
 
 #include "mozilla/Attributes.h"
 #include "nsIAttribute.h"
-#include "nsIDOMAttr.h"
+#include "nsIDOMNode.h"
 #include "nsIDOMText.h"
 #include "nsIDOMNodeList.h"
 #include "nsString.h"
@@ -30,7 +30,7 @@ namespace dom {
 
 
 class Attr final : public nsIAttribute,
-                   public nsIDOMAttr
+                   public nsIDOMNode
 {
   virtual ~Attr() {}
 
@@ -51,9 +51,6 @@ public:
   virtual void GetNodeValueInternal(nsAString& aNodeValue) override;
   virtual void SetNodeValueInternal(const nsAString& aNodeValue,
                                     ErrorResult& aError) override;
-
-  
-  NS_DECL_NSIDOMATTR
 
   virtual nsresult GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
@@ -86,11 +83,11 @@ public:
   
   virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  
-
-  
+  void GetName(nsAString& aName);
+  void GetValue(nsAString& aValue);
 
   void SetValue(const nsAString& aValue, nsIPrincipal* aTriggeringPrincipal, ErrorResult& aRv);
+  void SetValue(const nsAString& aValue, ErrorResult& aRv);
 
   bool Specified() const;
 

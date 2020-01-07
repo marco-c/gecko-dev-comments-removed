@@ -105,8 +105,7 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
     RefPtr<dom::Attr> attrNode = mAttributes->Item(mCurAttrIndex++);
     NS_ENSURE_ARG_POINTER(attrNode);
     nsString curAttr;
-    rv = attrNode->GetName(curAttr);
-    NS_ENSURE_SUCCESS(rv, rv);
+    attrNode->GetName(curAttr);
 
     
     if (MATCHES(curAttr, "href")) {
@@ -114,8 +113,7 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
           !MATCHES(tagName, "base") && !MATCHES(tagName, "link")) {
         continue;
       }
-      rv = attrNode->GetValue(aURI);
-      NS_ENSURE_SUCCESS(rv, rv);
+      attrNode->GetValue(aURI);
       nsString uri (aURI);
       
       if (aURI.First() != char16_t('#')) {
@@ -131,7 +129,8 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
           !MATCHES(tagName, "input") && !MATCHES(tagName, "script")) {
         continue;
       }
-      return attrNode->GetValue(aURI);
+      attrNode->GetValue(aURI);
+      return NS_OK;
     }
     
     else if (MATCHES(curAttr, "content")) {
