@@ -135,7 +135,7 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     
     
     
-    taskdesc['worker'].setdefault('docker-image', {'in-tree': 'desktop-build'})
+    taskdesc['worker'].setdefault('docker-image', {'in-tree': 'debian7-amd64-build'})
 
     worker['taskcluster-proxy'] = run.get('taskcluster-proxy')
 
