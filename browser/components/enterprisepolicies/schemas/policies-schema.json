@@ -96,7 +96,8 @@
       "description": "If false, removes access to create a master password.",
       "first_available": "60.0",
 
-      "type": "boolean"
+      "type": "boolean",
+      "enum": [false]
     },
 
     "DisableAppUpdate": {
@@ -109,6 +110,13 @@
 
     "DisableDeveloperTools": {
       "description": "Prevents access to developer tools.",
+      "first_available": "60.0",
+
+      "type": "boolean"
+    },
+
+    "DisableFeedbackCommands": {
+      "description": "Prevents ability to send feedback for phishing detection and others.",
       "first_available": "60.0",
 
       "type": "boolean"
@@ -153,7 +161,8 @@
       "description": "Disables private browsing.",
       "first_available": "60.0",
 
-      "type": "boolean"
+      "type": "boolean",
+      "enum": [true]
     },
 
     "DisableSysAddonUpdate": {
