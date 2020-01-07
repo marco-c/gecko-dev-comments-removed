@@ -792,10 +792,8 @@ private:
   
   
   
-  
-  
-  
-  bool ServiceWorkerAllowedToControlWindow(nsIURI* aURI);
+  bool ServiceWorkerAllowedToControlWindow(nsIPrincipal* aPrincipal,
+                                           nsIURI* aURI);
 
   
   

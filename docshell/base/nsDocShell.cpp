@@ -136,7 +136,6 @@
 #include "nsIUploadChannel.h"
 #include "nsIURIFixup.h"
 #include "nsIURILoader.h"
-#include "nsIURIMutator.h"
 #include "nsIURL.h"
 #include "nsIViewSourceChannel.h"
 #include "nsIWebBrowserChrome.h"
@@ -1042,11 +1041,13 @@ nsDocShell::LoadStream(nsIInputStream* aStream, nsIURI* aURI,
   if (!uri) {
     
     nsresult rv = NS_OK;
+    uri = do_CreateInstance(NS_SIMPLEURI_CONTRACTID, &rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
     
     
-    rv = NS_MutateURI(NS_SIMPLEURIMUTATOR_CONTRACTID)
-           .SetSpec(NS_LITERAL_CSTRING("internal:load-stream"))
-           .Finalize(uri);
+    rv = uri->SetSpec(NS_LITERAL_CSTRING("internal:load-stream"));
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -2834,10 +2835,14 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     return;
   }
 
+  nsCOMPtr<nsIURI> uri;
+  MOZ_ALWAYS_SUCCEEDS(
+    NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:blank")));
+
   
   
   Maybe<ServiceWorkerDescriptor> controller(parentInner->GetController());
-  if (controller.isNothing() || !ServiceWorkerAllowedToControlWindow(nullptr)) {
+  if (controller.isNothing() || !ServiceWorkerAllowedToControlWindow(principal, uri)) {
     return;
   }
 
@@ -14098,51 +14103,26 @@ nsDocShell::CanSetOriginAttributes()
 }
 
 bool
-nsDocShell::ServiceWorkerAllowedToControlWindow(nsIURI* aURI)
+nsDocShell::ServiceWorkerAllowedToControlWindow(nsIPrincipal* aPrincipal,
+                                                nsIURI* aURI)
 {
-  
-  
-  
-  
-  
-  
-  
-  
+  MOZ_ASSERT(aPrincipal);
+  MOZ_ASSERT(aURI);
 
   if (UsePrivateBrowsing() || mSandboxFlags) {
     return false;
   }
 
-  uint32_t cookieBehavior = nsContentUtils::CookiesBehavior();
-  uint32_t lifetimePolicy = nsContentUtils::CookiesLifetimePolicy();
-  if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT ||
-      lifetimePolicy == nsICookieService::ACCEPT_SESSION) {
-    return false;
-  }
-
-  if (!aURI || cookieBehavior == nsICookieService::BEHAVIOR_ACCEPT) {
-    return true;
-  }
-
   nsCOMPtr<nsIDocShellTreeItem> parent;
   GetSameTypeParent(getter_AddRefs(parent));
-  nsCOMPtr<nsPIDOMWindowOuter> parentWindow = parent ? parent->GetWindow()
-                                                     : nullptr;
-  if (parentWindow) {
-    nsresult rv = NS_OK;
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-      do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
-    if (thirdPartyUtil) {
-      bool isThirdPartyURI = true;
-      rv = thirdPartyUtil->IsThirdPartyWindow(parentWindow, aURI,
-                                              &isThirdPartyURI);
-      if (NS_SUCCEEDED(rv) && isThirdPartyURI) {
-        return false;
-      }
-    }
-  }
+  nsPIDOMWindowOuter* parentOuter = parent ? parent->GetWindow() : nullptr;
+  nsPIDOMWindowInner* parentInner =
+    parentOuter ? parentOuter->GetCurrentInnerWindow() : nullptr;
 
-  return true;
+  nsContentUtils::StorageAccess storage =
+    nsContentUtils::StorageAllowedForNewWindow(aPrincipal, aURI, parentInner);
+
+  return storage == nsContentUtils::StorageAccess::eAllow;
 }
 
 nsresult
@@ -14369,9 +14349,12 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
     return NS_OK;
   }
 
+  nsCOMPtr<nsIPrincipal> principal =
+    BasePrincipal::CreateCodebasePrincipal(aURI, mOriginAttributes);
+
   
   
-  if (!ServiceWorkerAllowedToControlWindow(aURI)) {
+  if (!ServiceWorkerAllowedToControlWindow(principal, aURI)) {
     return NS_OK;
   }
 
@@ -14382,8 +14365,6 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
 
   
   
-  nsCOMPtr<nsIPrincipal> principal =
-    BasePrincipal::CreateCodebasePrincipal(aURI, mOriginAttributes);
   *aShouldIntercept = swm->IsAvailable(principal, aURI);
   return NS_OK;
 }
