@@ -123,9 +123,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.23.0"
-#define SQLITE_VERSION_NUMBER 3023000
-#define SQLITE_SOURCE_ID      "2018-04-02 11:04:16 736b53f57f70b23172c30880186dce7ad9baa3b74e3838cae5847cffb98f5cd2"
+#define SQLITE_VERSION        "3.23.1"
+#define SQLITE_VERSION_NUMBER 3023001
+#define SQLITE_SOURCE_ID      "2018-04-10 17:39:29 4bb2294022060e61de7da5c227a69ccd846ba330e31626ebcd59a94efd148b3b"
 
 
 
@@ -10107,6 +10107,13 @@ SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
 
 
 
+
+
+
+
+
+
+
 SQLITE_API int sqlite3changeset_apply(
   sqlite3 *db,                    
   int nChangeset,                 
@@ -10136,8 +10143,27 @@ SQLITE_API int sqlite3changeset_apply_v2(
     sqlite3_changeset_iter *p     
   ),
   void *pCtx,                     
-  void **ppRebase, int *pnRebase
+  void **ppRebase, int *pnRebase, 
+  int flags                       
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 
 
 
@@ -10479,6 +10505,7 @@ SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p);
 
 
 
+
 SQLITE_API int sqlite3changeset_apply_strm(
   sqlite3 *db,                    
   int (*xInput)(void *pIn, void *pData, int *pnData), 
@@ -10508,7 +10535,8 @@ SQLITE_API int sqlite3changeset_apply_v2_strm(
     sqlite3_changeset_iter *p     
   ),
   void *pCtx,                     
-  void **ppRebase, int *pnRebase
+  void **ppRebase, int *pnRebase,
+  int flags
 );
 SQLITE_API int sqlite3changeset_concat_strm(
   int (*xInputA)(void *pIn, void *pData, int *pnData),
