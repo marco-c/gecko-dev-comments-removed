@@ -144,8 +144,7 @@ private:
   
   std::unordered_map<LayersId,
                      FocusTarget,
-                     LayersId::HashFn,
-                     LayersId::EqualFn> mFocusTree;
+                     LayersId::HashFn> mFocusTree;
 
   
   

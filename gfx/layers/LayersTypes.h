@@ -86,12 +86,6 @@ struct LayersId {
       return std::hash<uint64_t>{}(aKey.mId);
     }
   };
-  struct EqualFn {
-    bool operator()(const LayersId& lhs, const LayersId& rhs) const
-    {
-      return lhs.mId == rhs.mId;
-    }
-  };
 };
 
 enum class LayersBackend : int8_t {
