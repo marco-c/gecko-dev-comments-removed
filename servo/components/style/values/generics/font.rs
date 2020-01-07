@@ -197,13 +197,11 @@ where
 }
 
 
-#[derive(Animate, ComputeSquaredDistance, MallocSizeOf, ToAnimatedValue, ToAnimatedZero)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf)]
+#[derive(PartialEq, ToAnimatedValue, ToAnimatedZero)]
 #[allow(missing_docs)]
 pub enum KeywordSize {
-    XXSmall = 1, 
-                 
-                 
+    XXSmall,
     XSmall,
     Small,
     Medium,
@@ -217,17 +215,9 @@ pub enum KeywordSize {
 
 impl KeywordSize {
     
-    pub fn html_size(&self) -> u8 {
-        match *self {
-            KeywordSize::XXSmall => 0,
-            KeywordSize::XSmall => 1,
-            KeywordSize::Small => 2,
-            KeywordSize::Medium => 3,
-            KeywordSize::Large => 4,
-            KeywordSize::XLarge => 5,
-            KeywordSize::XXLarge => 6,
-            KeywordSize::XXXLarge => 7,
-        }
+    #[inline]
+    pub fn html_size(self) -> u8 {
+        self as u8
     }
 }
 
