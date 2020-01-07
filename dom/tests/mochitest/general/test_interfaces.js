@@ -1265,19 +1265,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "XSLTProcessor", insecureContext: true},
 
-    {name: "XULButtonElement", insecureContext: true, xbl: true},
-
-    {name: "XULCheckboxElement", insecureContext: true, xbl: true},
-
     {name: "XULCommandEvent", insecureContext: true, xbl: true},
-
-    {name: "XULControlElement", insecureContext: true, xbl: true},
 
     {name: "XULDocument", insecureContext: true, xbl: true},
 
     {name: "XULElement", insecureContext: true, xbl: true},
-
-    {name: "XULLabeledControlElement", insecureContext: true, xbl: true},
 
   ];
 
