@@ -21,46 +21,46 @@ using namespace mozilla;
 
 struct txCoreFunctionDescriptor
 {
-    const int8_t mMinParams;
-    const int8_t mMaxParams;
-    const Expr::ResultType mReturnType;
-    const nsStaticAtom* const mName;
+    int8_t mMinParams;
+    int8_t mMaxParams;
+    Expr::ResultType mReturnType;
+    nsStaticAtom** mName;
 };
 
 
 
 static const txCoreFunctionDescriptor descriptTable[] =
 {
-    { 1, 1, Expr::NUMBER_RESULT,  nsGkAtoms::count }, 
-    { 1, 1, Expr::NODESET_RESULT, nsGkAtoms::id }, 
-    { 0, 0, Expr::NUMBER_RESULT,  nsGkAtoms::last }, 
-    { 0, 1, Expr::STRING_RESULT,  nsGkAtoms::localName }, 
-    { 0, 1, Expr::STRING_RESULT,  nsGkAtoms::namespaceUri }, 
-    { 0, 1, Expr::STRING_RESULT,  nsGkAtoms::name }, 
-    { 0, 0, Expr::NUMBER_RESULT,  nsGkAtoms::position }, 
+    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::count }, 
+    { 1, 1, Expr::NODESET_RESULT, &nsGkAtoms::id }, 
+    { 0, 0, Expr::NUMBER_RESULT,  &nsGkAtoms::last }, 
+    { 0, 1, Expr::STRING_RESULT,  &nsGkAtoms::localName }, 
+    { 0, 1, Expr::STRING_RESULT,  &nsGkAtoms::namespaceUri }, 
+    { 0, 1, Expr::STRING_RESULT,  &nsGkAtoms::name }, 
+    { 0, 0, Expr::NUMBER_RESULT,  &nsGkAtoms::position }, 
 
-    { 2, -1, Expr::STRING_RESULT, nsGkAtoms::concat }, 
-    { 2, 2, Expr::BOOLEAN_RESULT, nsGkAtoms::contains }, 
-    { 0, 1, Expr::STRING_RESULT,  nsGkAtoms::normalizeSpace }, 
-    { 2, 2, Expr::BOOLEAN_RESULT, nsGkAtoms::startsWith }, 
-    { 0, 1, Expr::STRING_RESULT,  nsGkAtoms::string }, 
-    { 0, 1, Expr::NUMBER_RESULT,  nsGkAtoms::stringLength }, 
-    { 2, 3, Expr::STRING_RESULT,  nsGkAtoms::substring }, 
-    { 2, 2, Expr::STRING_RESULT,  nsGkAtoms::substringAfter }, 
-    { 2, 2, Expr::STRING_RESULT,  nsGkAtoms::substringBefore }, 
-    { 3, 3, Expr::STRING_RESULT,  nsGkAtoms::translate }, 
+    { 2, -1, Expr::STRING_RESULT, &nsGkAtoms::concat }, 
+    { 2, 2, Expr::BOOLEAN_RESULT, &nsGkAtoms::contains }, 
+    { 0, 1, Expr::STRING_RESULT,  &nsGkAtoms::normalizeSpace }, 
+    { 2, 2, Expr::BOOLEAN_RESULT, &nsGkAtoms::startsWith }, 
+    { 0, 1, Expr::STRING_RESULT,  &nsGkAtoms::string }, 
+    { 0, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::stringLength }, 
+    { 2, 3, Expr::STRING_RESULT,  &nsGkAtoms::substring }, 
+    { 2, 2, Expr::STRING_RESULT,  &nsGkAtoms::substringAfter }, 
+    { 2, 2, Expr::STRING_RESULT,  &nsGkAtoms::substringBefore }, 
+    { 3, 3, Expr::STRING_RESULT,  &nsGkAtoms::translate }, 
 
-    { 0, 1, Expr::NUMBER_RESULT,  nsGkAtoms::number }, 
-    { 1, 1, Expr::NUMBER_RESULT,  nsGkAtoms::round }, 
-    { 1, 1, Expr::NUMBER_RESULT,  nsGkAtoms::floor }, 
-    { 1, 1, Expr::NUMBER_RESULT,  nsGkAtoms::ceiling }, 
-    { 1, 1, Expr::NUMBER_RESULT,  nsGkAtoms::sum }, 
+    { 0, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::number }, 
+    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::round }, 
+    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::floor }, 
+    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::ceiling }, 
+    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::sum }, 
 
-    { 1, 1, Expr::BOOLEAN_RESULT, nsGkAtoms::boolean }, 
-    { 0, 0, Expr::BOOLEAN_RESULT, nsGkAtoms::_false }, 
-    { 1, 1, Expr::BOOLEAN_RESULT, nsGkAtoms::lang }, 
-    { 1, 1, Expr::BOOLEAN_RESULT, nsGkAtoms::_not }, 
-    { 0, 0, Expr::BOOLEAN_RESULT, nsGkAtoms::_true } 
+    { 1, 1, Expr::BOOLEAN_RESULT, &nsGkAtoms::boolean }, 
+    { 0, 0, Expr::BOOLEAN_RESULT, &nsGkAtoms::_false }, 
+    { 1, 1, Expr::BOOLEAN_RESULT, &nsGkAtoms::lang }, 
+    { 1, 1, Expr::BOOLEAN_RESULT, &nsGkAtoms::_not }, 
+    { 0, 0, Expr::BOOLEAN_RESULT, &nsGkAtoms::_true } 
 };
 
 
@@ -723,7 +723,7 @@ txCoreFunctionCall::getTypeFromAtom(nsAtom* aName, eType& aType)
 {
     uint32_t i;
     for (i = 0; i < ArrayLength(descriptTable); ++i) {
-        if (aName == descriptTable[i].mName) {
+        if (aName == *descriptTable[i].mName) {
             aType = static_cast<eType>(i);
 
             return true;
@@ -737,6 +737,6 @@ txCoreFunctionCall::getTypeFromAtom(nsAtom* aName, eType& aType)
 void
 txCoreFunctionCall::appendName(nsAString& aDest)
 {
-    aDest.Append(descriptTable[mType].mName->GetUTF16String());
+    aDest.Append((*descriptTable[mType].mName)->GetUTF16String());
 }
 #endif

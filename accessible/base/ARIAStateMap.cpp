@@ -24,7 +24,7 @@ struct EnumTypeData
 
   
   
-  nsStaticAtom* const mValues[4];
+  nsStaticAtom* const* const mValues[4];
 
   
   const uint64_t mStates[3];
@@ -89,9 +89,9 @@ aria::MapToState(EStateRule aRule, dom::Element* aElement, uint64_t* aState)
     {
       static const EnumTypeData data = {
         nsGkAtoms::aria_autocomplete,
-        { nsGkAtoms::inlinevalue,
-          nsGkAtoms::list_,
-          nsGkAtoms::both, nullptr },
+        { &nsGkAtoms::inlinevalue,
+          &nsGkAtoms::list_,
+          &nsGkAtoms::both, nullptr },
         { states::SUPPORTS_AUTOCOMPLETION,
           states::HASPOPUP | states::SUPPORTS_AUTOCOMPLETION,
           states::HASPOPUP | states::SUPPORTS_AUTOCOMPLETION }, 0
@@ -105,8 +105,8 @@ aria::MapToState(EStateRule aRule, dom::Element* aElement, uint64_t* aState)
     {
       static const EnumTypeData data = {
         nsGkAtoms::aria_busy,
-        { nsGkAtoms::_true,
-          nsGkAtoms::error, nullptr },
+        { &nsGkAtoms::_true,
+          &nsGkAtoms::error, nullptr },
         { states::BUSY,
           states::INVALID }, 0
       };
@@ -229,8 +229,8 @@ aria::MapToState(EStateRule aRule, dom::Element* aElement, uint64_t* aState)
     {
       static const EnumTypeData data = {
         nsGkAtoms::aria_orientation,
-        { nsGkAtoms::horizontal,
-          nsGkAtoms::vertical, nullptr },
+        { &nsGkAtoms::horizontal,
+          &nsGkAtoms::vertical, nullptr },
         { states::HORIZONTAL,
           states::VERTICAL },
         states::HORIZONTAL | states::VERTICAL

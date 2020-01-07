@@ -262,13 +262,13 @@ SVGAElement::IsLink(nsIURI** aURI) const
   
 
   static Element::AttrValuesArray sTypeVals[] =
-    { nsGkAtoms::_empty, nsGkAtoms::simple, nullptr };
+    { &nsGkAtoms::_empty, &nsGkAtoms::simple, nullptr };
 
   static Element::AttrValuesArray sShowVals[] =
-    { nsGkAtoms::_empty, nsGkAtoms::_new, nsGkAtoms::replace, nullptr };
+    { &nsGkAtoms::_empty, &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
   static Element::AttrValuesArray sActuateVals[] =
-    { nsGkAtoms::_empty, nsGkAtoms::onRequest, nullptr };
+    { &nsGkAtoms::_empty, &nsGkAtoms::onRequest, nullptr };
 
   
   bool useBareHref = mStringAttributes[HREF].IsExplicitlySet();
@@ -304,7 +304,7 @@ SVGAElement::GetLinkTarget(nsAString& aTarget)
   if (aTarget.IsEmpty()) {
 
     static Element::AttrValuesArray sShowVals[] =
-      { nsGkAtoms::_new, nsGkAtoms::replace, nullptr };
+      { &nsGkAtoms::_new, &nsGkAtoms::replace, nullptr };
 
     switch (FindAttrValueIn(kNameSpaceID_XLink, nsGkAtoms::show,
                             sShowVals, eCaseMatters)) {

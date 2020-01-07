@@ -319,7 +319,8 @@ nsTreeColumn::Invalidate()
   
   mType = nsITreeColumn::TYPE_TEXT;
   static Element::AttrValuesArray typestrings[] =
-    {nsGkAtoms::checkbox, nsGkAtoms::password, nullptr};
+    {&nsGkAtoms::checkbox, &nsGkAtoms::password,
+     nullptr};
   switch (mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
                                                  nsGkAtoms::type,
                                                  typestrings,
@@ -331,7 +332,7 @@ nsTreeColumn::Invalidate()
   
   mCropStyle = 0;
   static Element::AttrValuesArray cropstrings[] =
-    {nsGkAtoms::center, nsGkAtoms::left, nsGkAtoms::start, nullptr};
+    {&nsGkAtoms::center, &nsGkAtoms::left, &nsGkAtoms::start, nullptr};
   switch (mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
                                                  nsGkAtoms::crop, cropstrings,
                                                  eCaseMatters)) {
