@@ -2,8 +2,6 @@
 
 Cu.import("resource://services-sync/bookmark_repair.js");
 
-initTestLogging("Trace");
-
 function makeClientRecord(id, fields = {}) {
   return {
     id,

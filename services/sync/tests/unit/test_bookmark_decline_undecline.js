@@ -8,12 +8,6 @@ Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/engines/bookmarks.js");
 Cu.import("resource://services-sync/service.js");
 Cu.import("resource://services-sync/util.js");
-Cu.import("resource://testing-common/services/sync/utils.js");
-
-add_task(async function setup() {
-  initTestLogging("Trace");
-  await Service.engineManager.register(BookmarksEngine);
-});
 
 
 function getBookmarkWBO(server, guid) {
@@ -25,7 +19,7 @@ function getBookmarkWBO(server, guid) {
 }
 
 add_task(async function setup() {
-  initTestLogging("Trace");
+  await Service.engineManager.register(BookmarksEngine);
   await generateNewKeys(Service.collectionKeys);
 });
 

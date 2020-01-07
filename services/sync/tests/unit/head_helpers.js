@@ -18,8 +18,12 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://gre/modules/ObjectUtils.jsm");
+Cu.import("resource://testing-common/services/sync/utils.js");
 
 add_task(async function head_setup() {
+  
+  
+  syncTestLogging();
   
   if (this.Service) {
     await this.Service.promiseInitialized;

@@ -4,8 +4,6 @@
 const { Doctor, REPAIR_ADVANCE_PERIOD } = Cu.import("resource://services-sync/doctor.js", {});
 Cu.import("resource://gre/modules/Services.jsm");
 
-initTestLogging("Trace");
-
 function mockDoctor(mocks) {
   
   return Object.assign({}, Doctor, mocks);
