@@ -64,7 +64,7 @@ user_pref("browser.search.countryCode", "US");
 user_pref("browser.search.geoSpecificDefaults", false);
 
 
-user_pref("extensions.shield-recipe-client.api_url", "https://localhost/selfsupport-dummy/");
+user_pref("app.normandy.api_url", "https://localhost/selfsupport-dummy/");
 
 
 user_pref("browser.ping-centre.staging.endpoint", "https://localhost");
