@@ -2,11 +2,14 @@
 
 
 
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = [
   "RemoteSettings",
-  "jexlFilterFunc"
+  "jexlFilterFunc",
+  "remoteSettingsBroadcastHandler",
 ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -26,6 +29,8 @@ ChromeUtils.defineModuleGetter(this, "ClientEnvironmentBase",
                                "resource://gre/modules/components-utils/ClientEnvironment.jsm");
 ChromeUtils.defineModuleGetter(this, "FilterExpressions",
                                "resource://gre/modules/components-utils/FilterExpressions.jsm");
+ChromeUtils.defineModuleGetter(this, "pushBroadcastService",
+                               "resource://gre/modules/PushBroadcastService.jsm");
 
 const PREF_SETTINGS_SERVER             = "services.settings.server";
 const PREF_SETTINGS_DEFAULT_BUCKET     = "services.settings.default_bucket";
@@ -733,7 +738,23 @@ function remoteSettingsFunction() {
     Services.obs.notifyObservers(null, "remote-settings-changes-polled");
   };
 
+
+  const broadcastID = "remote-settings/monitor_changes";
+  const currentVersion = Services.prefs.getStringValue(PREF_SETTINGS_LAST_ETAG, "");
+  const moduleInfo = {
+    moduleURI: __URI__,
+    symbolName: "remoteSettingsBroadcastHandler",
+  };
+  pushBroadcastService.addListener(broadcastID, currentVersion,
+                                   moduleInfo);
+
   return remoteSettings;
 }
 
 var RemoteSettings = remoteSettingsFunction();
+
+var remoteSettingsBroadcastHandler = {
+  async receivedBroadcastMessage(data, broadcastID) {
+    return RemoteSettings.pollChanges();
+  }
+};
