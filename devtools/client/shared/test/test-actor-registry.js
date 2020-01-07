@@ -21,7 +21,7 @@
 
     
     const options = {
-      type: { target: true },
+      type: { tab: true },
       constructor: "TestActor",
       prefix: "testActor"
     };

@@ -1,0 +1,25 @@
+
+
+
+"use strict";
+
+
+
+
+function PostInitTabActor(connection) {}
+
+PostInitTabActor.prototype = {
+  actorPostfix: "postInitTab",
+  onPing(request) {
+    return { message: "pong" };
+  },
+};
+
+PostInitTabActor.prototype.requestTypes = {
+  "ping": PostInitTabActor.prototype.onPing,
+};
+
+DebuggerServer.addTabActor({
+  constructorName: "PostInitTabActor",
+  constructorFun: PostInitTabActor,
+}, "postInitTabActor");

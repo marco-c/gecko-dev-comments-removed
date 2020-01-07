@@ -15,7 +15,7 @@ const TAB_URL_2 = "data:text/html;charset=utf-8,bar";
 
 var gClient;
 var gTab1, gTab2;
-var gTargetActor1, gTargetActor2;
+var gTabActor1, gTabActor2;
 
 function test() {
   waitForExplicitFinish();
@@ -45,8 +45,8 @@ function connect() {
     .then(() => gClient.listTabs())
     .then(response => {
       
-      gTargetActor1 = response.tabs.filter(a => a.url === TAB_URL_1)[0];
-      gTargetActor2 = response.tabs.filter(a => a.url === TAB_URL_2)[0];
+      gTabActor1 = response.tabs.filter(a => a.url === TAB_URL_1)[0];
+      gTabActor2 = response.tabs.filter(a => a.url === TAB_URL_2)[0];
 
       checkGetTab();
     });
@@ -55,8 +55,8 @@ function connect() {
 function checkGetTab() {
   gClient.getTab({tab: gTab1})
          .then(response => {
-           is(JSON.stringify(gTargetActor1), JSON.stringify(response.tab),
-              "getTab returns the same target form for first tab");
+           is(JSON.stringify(gTabActor1), JSON.stringify(response.tab),
+              "getTab returns the same tab grip for first tab");
          })
          .then(() => {
            const filter = {};
@@ -73,13 +73,13 @@ function checkGetTab() {
            return gClient.getTab(filter);
          })
          .then(response => {
-           is(JSON.stringify(gTargetActor1), JSON.stringify(response.tab),
-              "getTab returns the same target form when filtering by tabId/outerWindowID");
+           is(JSON.stringify(gTabActor1), JSON.stringify(response.tab),
+              "getTab returns the same tab grip when filtering by tabId/outerWindowID");
          })
          .then(() => gClient.getTab({tab: gTab2}))
          .then(response => {
-           is(JSON.stringify(gTargetActor2), JSON.stringify(response.tab),
-              "getTab returns the same target form for second tab");
+           is(JSON.stringify(gTabActor2), JSON.stringify(response.tab),
+              "getTab returns the same tab grip for second tab");
          })
          .then(checkGetTabFailures);
 }
@@ -101,12 +101,13 @@ function checkGetTabFailures() {
         is(response.message, "Unable to find tab with outerWindowID '-999'");
       }
     )
-    .then(checkSelectedTargetActor);
+    .then(checkSelectedTabActor);
 }
 
-function checkSelectedTargetActor() {
+function checkSelectedTabActor() {
   
-  gClient.request({ to: gTargetActor2.consoleActor, type: "startListeners", listeners: [] }, aResponse => {
+  
+  gClient.request({ to: gTabActor2.consoleActor, type: "startListeners", listeners: [] }, aResponse => {
     ok("startedListeners" in aResponse, "Actor from the selected tab should respond to the request.");
 
     closeSecondTab();
@@ -117,14 +118,15 @@ function closeSecondTab() {
   
   const container = gBrowser.tabContainer;
   container.addEventListener("TabClose", function() {
-    checkFirstTargetActor();
+    checkFirstTabActor();
   }, {once: true});
   gBrowser.removeTab(gTab2);
 }
 
-function checkFirstTargetActor() {
+function checkFirstTabActor() {
   
-  gClient.request({ to: gTargetActor1.consoleActor, type: "startListeners", listeners: [] }, aResponse => {
+  
+  gClient.request({ to: gTabActor1.consoleActor, type: "startListeners", listeners: [] }, aResponse => {
     ok("startedListeners" in aResponse, "Actor from the first tab should still respond.");
 
     cleanup();

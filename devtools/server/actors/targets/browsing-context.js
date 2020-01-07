@@ -215,9 +215,11 @@ const browsingContextTargetPrototype = {
 
 
 
+
   initialize: function(connection) {
     Actor.prototype.initialize.call(this, connection);
 
+    this._tabActorPool = null;
     
     this._extraActors = {};
     this._exited = false;
@@ -289,8 +291,15 @@ const browsingContextTargetPrototype = {
     return this.conn._getOrCreateActor(form.consoleActor);
   },
 
-  _targetScopedActorPool: null,
+  _tabPool: null,
+  get tabActorPool() {
+    return this._tabPool;
+  },
+
   _contextPool: null,
+  get contextActorPool() {
+    return this._contextPool;
+  },
 
   
 
@@ -482,15 +491,16 @@ const browsingContextTargetPrototype = {
 
     
     
-    if (!this._targetScopedActorPool) {
-      this._targetScopedActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._targetScopedActorPool);
+    if (!this._tabActorPool) {
+      this._tabActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._tabActorPool);
     }
 
     
     
-    this._createExtraActors(DebuggerServer.targetScopedActorFactories,
-      this._targetScopedActorPool);
+    
+    this._createExtraActors(DebuggerServer.tabActorFactories,
+      this._tabActorPool);
 
     this._appendExtraActors(response);
     return response;
@@ -577,6 +587,11 @@ const browsingContextTargetPrototype = {
     if (this._attached) {
       return;
     }
+
+    
+    assert(!this._tabPool, "Shouldn't have a tab pool if we weren't attached.");
+    this._tabPool = new ActorPool(this.conn);
+    this.conn.addActorPool(this._tabPool);
 
     
     this._pushContext();
@@ -914,10 +929,15 @@ const browsingContextTargetPrototype = {
     this._popContext();
 
     
+    for (const sheetActor of this._styleSheetActors.values()) {
+      this._tabPool.removeActor(sheetActor);
+    }
     this._styleSheetActors.clear();
-    if (this._targetScopedActorPool) {
-      this.conn.removeActorPool(this._targetScopedActorPool);
-      this._targetScopedActorPool = null;
+    this.conn.removeActorPool(this._tabPool);
+    this._tabPool = null;
+    if (this._tabActorPool) {
+      this.conn.removeActorPool(this._tabActorPool);
+      this._tabActorPool = null;
     }
 
     
@@ -1457,7 +1477,7 @@ const browsingContextTargetPrototype = {
     const actor = new StyleSheetActor(styleSheet, this);
     this._styleSheetActors.set(styleSheet, actor);
 
-    this._targetScopedActorPool.addActor(actor);
+    this._tabPool.addActor(actor);
     this.emit("stylesheet-added", actor);
 
     return actor;
@@ -1466,8 +1486,8 @@ const browsingContextTargetPrototype = {
   removeActorByName(name) {
     if (name in this._extraActors) {
       const actor = this._extraActors[name];
-      if (this._targetScopedActorPool.has(actor)) {
-        this._targetScopedActorPool.removeActor(actor);
+      if (this._tabActorPool.has(actor)) {
+        this._tabActorPool.removeActor(actor);
       }
       delete this._extraActors[name];
     }

@@ -44,6 +44,15 @@ const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
+
+
+
+
+
+
+
+
+
 parentProcessTargetPrototype.initialize = function(connection) {
   BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 

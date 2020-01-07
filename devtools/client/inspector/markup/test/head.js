@@ -13,6 +13,7 @@ Services.scriptloader.loadSubScript(
 
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 var clipboard = require("devtools/shared/platform/clipboard");
+var {ActorRegistryFront} = require("devtools/shared/fronts/actor-registry");
 
 
 
@@ -409,6 +410,62 @@ var getAttributesFromEditor = async function(selector, inspector) {
 
   return [...nodeList].map(node => node.getAttribute("data-attr"));
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function registerTabActor(client, options) {
+  const moduleUrl = options.moduleUrl;
+
+  return client.listTabs().then(response => {
+    const config = {
+      prefix: options.prefix,
+      constructor: options.actorClass,
+      type: { tab: true },
+    };
+
+    
+    const registry = ActorRegistryFront(client, response);
+    return registry.registerActor(moduleUrl, config).then(registrar => {
+      return client.getTab().then(tabResponse => ({
+        registrar: registrar,
+        form: tabResponse.tab
+      }));
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+function unregisterActor(registrar, front) {
+  return front.detach().then(() => {
+    return registrar.unregister();
+  });
+}
 
 
 

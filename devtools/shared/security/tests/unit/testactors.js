@@ -27,28 +27,28 @@ function TestTabList(connection) {
 
   
   
-  this._targetActors = [];
+  this._tabActors = [];
 
   
-  this._targetActorPool = new ActorPool(connection);
+  this._tabActorPool = new ActorPool(connection);
 
   for (const global of gTestGlobals) {
-    const actor = new TestTargetActor(connection, global);
+    const actor = new TestTabActor(connection, global);
     actor.selected = false;
-    this._targetActors.push(actor);
-    this._targetActorPool.addActor(actor);
+    this._tabActors.push(actor);
+    this._tabActorPool.addActor(actor);
   }
-  if (this._targetActors.length > 0) {
-    this._targetActors[0].selected = true;
+  if (this._tabActors.length > 0) {
+    this._tabActors[0].selected = true;
   }
 
-  connection.addActorPool(this._targetActorPool);
+  connection.addActorPool(this._tabActorPool);
 }
 
 TestTabList.prototype = {
   constructor: TestTabList,
   getList: function() {
-    return promise.resolve([...this._targetActors]);
+    return promise.resolve([...this._tabActors]);
   }
 };
 
@@ -61,7 +61,7 @@ function createRootActor(connection) {
   return root;
 }
 
-function TestTargetActor(connection, global) {
+function TestTabActor(connection, global) {
   this.conn = connection;
   this._global = global;
   this._threadActor = new ThreadActor(this, this._global);
@@ -70,9 +70,9 @@ function TestTargetActor(connection, global) {
   this._extraActors = {};
 }
 
-TestTargetActor.prototype = {
-  constructor: TestTargetActor,
-  actorPrefix: "TestTargetActor",
+TestTabActor.prototype = {
+  constructor: TestTabActor,
+  actorPrefix: "TestTabActor",
 
   get window() {
     return { wrappedJSObject: this._global };
@@ -87,10 +87,10 @@ TestTargetActor.prototype = {
 
     
     const actorPool = new ActorPool(this.conn);
-    this._createExtraActors(DebuggerServer.targetScopedActorFactories, actorPool);
+    this._createExtraActors(DebuggerServer.tabActorFactories, actorPool);
     if (!actorPool.isEmpty()) {
-      this._targetActorPool = actorPool;
-      this.conn.addActorPool(this._targetActorPool);
+      this._tabActorPool = actorPool;
+      this.conn.addActorPool(this._tabActorPool);
     }
 
     this._appendExtraActors(response);
@@ -119,9 +119,9 @@ TestTargetActor.prototype = {
   _appendExtraActors: appendExtraActors
 };
 
-TestTargetActor.prototype.requestTypes = {
-  "attach": TestTargetActor.prototype.onAttach,
-  "detach": TestTargetActor.prototype.onDetach
+TestTabActor.prototype.requestTypes = {
+  "attach": TestTabActor.prototype.onAttach,
+  "detach": TestTabActor.prototype.onDetach
 };
 
 exports.register = function(handle) {

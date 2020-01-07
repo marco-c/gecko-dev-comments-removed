@@ -1,0 +1,25 @@
+
+
+
+"use strict";
+
+
+
+
+function PreInitTabActor(connection) {}
+
+PreInitTabActor.prototype = {
+  actorPrefix: "preInitTab",
+  onPing(request) {
+    return { message: "pong" };
+  },
+};
+
+PreInitTabActor.prototype.requestTypes = {
+  "ping": PreInitTabActor.prototype.onPing,
+};
+
+DebuggerServer.addTabActor({
+  constructorName: "PreInitTabActor",
+  constructorFun: PreInitTabActor,
+}, "preInitTabActor");
