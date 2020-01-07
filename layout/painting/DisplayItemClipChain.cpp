@@ -28,9 +28,13 @@ DisplayItemClipChain::Equal(const DisplayItemClipChain* aClip1, const DisplayIte
     return false;
   }
 
-  return aClip1->mASR == aClip2->mASR &&
+  bool ret = aClip1->mASR == aClip2->mASR &&
          aClip1->mClip == aClip2->mClip &&
          Equal(aClip1->mParent, aClip2->mParent);
+  
+  
+  MOZ_ASSERT(!ret || (Hash(aClip1) == Hash(aClip2)));
+  return ret;
 }
 
 uint32_t
@@ -48,7 +52,12 @@ DisplayItemClipChain::Hash(const DisplayItemClipChain* aClip)
   uint32_t hash = HashGeneric(aClip->mASR, aClip->mClip.GetRoundedRectCount());
   if (aClip->mClip.HasClip()) {
     const nsRect& rect = aClip->mClip.GetClipRect();
-    hash = AddToHash(hash, rect.x, rect.y, rect.width, rect.height);
+    
+    
+    
+    if (!rect.IsEmpty()) {
+      hash = AddToHash(hash, rect.x, rect.y, rect.width, rect.height);
+    }
   }
 
   return hash;
