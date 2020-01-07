@@ -272,13 +272,11 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       error = e;
     }
     Log.e(TAG, "startCapture failed", error);
-    
-    
-    
-    
-    
-    
-    
+    if (camera != null) {
+      Exchanger<Boolean> resultDropper = new Exchanger<Boolean>();
+      stopCaptureOnCameraThread(resultDropper);
+      exchange(resultDropper, false);
+    }
     exchange(result, false);
     return;
   }
