@@ -5173,6 +5173,11 @@ nsDisplayText::RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder,
   if (f->StyleContext()->IsTextCombined()) {
     float scaleFactor = GetTextCombineScaleFactor(f);
     if (scaleFactor != 1.0f) {
+      if (auto* textDrawer = aCtx->GetTextDrawer()) {
+        
+        textDrawer->FoundUnsupportedFeature();
+        return;
+      }
       matrixSR.SetContext(aCtx);
       
       
