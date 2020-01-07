@@ -49,7 +49,11 @@ RootContainer.prototype = {
   
 
 
-  updateLevel: function() {}
+  updateLevel: function() {},
+
+  isSlotted: function() {
+    return false;
+  }
 };
 
 module.exports = RootContainer;

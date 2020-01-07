@@ -441,6 +441,10 @@ MarkupContainer.prototype = {
            this.node.parentNode().tagName !== null;
   },
 
+  isSlotted: function() {
+    return false;
+  },
+
   
 
 
