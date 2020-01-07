@@ -49,6 +49,7 @@ MarkFramesWithItemsAndImagesModified(nsDisplayList* aList)
       
       
       DisplayItemData* data = FrameLayerBuilder::GetOldDataFor(i);
+      
       bool invalidate = false;
       if (data &&
           data->GetGeometry()) {

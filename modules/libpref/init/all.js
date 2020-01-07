@@ -917,6 +917,7 @@ pref("gfx.webrender.program-binary", true);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.blob-images", 1);
+pref("gfx.webrender.blob.invalidation", false);
 pref("gfx.webrender.hit-test", true);
 
 
@@ -1429,7 +1430,7 @@ pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 pref("privacy.reduceTimerPrecision", true);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 100);
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
@@ -3083,6 +3084,9 @@ pref("layout.css.prefixes.webkit", true);
 
 
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
+
+
+pref("layout.css.scope-pseudo.enabled", true);
 
 
 pref("layout.css.background-blend-mode.enabled", true);

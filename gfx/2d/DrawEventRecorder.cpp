@@ -102,6 +102,7 @@ DrawEventRecorderMemory::FlushItem(IntRect aRect)
   
   DetatchResources();
 
+  
   WriteElement(mIndex, mOutputStream.mLength);
 
   
@@ -113,6 +114,8 @@ DrawEventRecorderMemory::FlushItem(IntRect aRect)
   WriteElement(mIndex, aRect.XMost());
   WriteElement(mIndex, aRect.YMost());
   ClearResources();
+
+  
   WriteHeader(mOutputStream);
 }
 

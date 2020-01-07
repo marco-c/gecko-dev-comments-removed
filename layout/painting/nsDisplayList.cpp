@@ -6313,6 +6313,7 @@ nsDisplayWrapList::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBui
                                            nsDisplayListBuilder* aDisplayListBuilder)
 {
   aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(GetChildren(),
+                                                                    this,
                                                                     aDisplayListBuilder,
                                                                     aSc,
                                                                     aBuilder,
@@ -6679,6 +6680,7 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
                            opacityForSC);
 
   aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(&mList,
+                                                                    this,
                                                                     aDisplayListBuilder,
                                                                     sc,
                                                                     aBuilder,
@@ -6754,6 +6756,12 @@ nsDisplayBlendMode::BuildLayer(nsDisplayListBuilder* aBuilder,
   container->SetMixBlendMode(nsCSSRendering::GetGFXBlendMode(mBlendMode));
 
   return container.forget();
+}
+
+mozilla::gfx::CompositionOp
+nsDisplayBlendMode::BlendMode()
+{
+  return nsCSSRendering::GetGFXBlendMode(mBlendMode);
 }
 
 bool
@@ -8515,15 +8523,6 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
-  Maybe<Matrix4x4> transformForScrollData;
-  if (!mFrame->HasPerspective()) {
-    
-    
-    
-    
-    
-    transformForScrollData = Some(GetTransform().GetMatrix());
-  }
   StackingContextHelper sc(aSc,
                            aBuilder,
                            filters,
@@ -8535,8 +8534,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            nullptr,
                            gfx::CompositionOp::OP_OVER,
                            !BackfaceIsHidden(),
-                           mFrame->Extend3DContext() && !mNoExtendContext,
-                           transformForScrollData);
+                           mFrame->Extend3DContext() && !mNoExtendContext);
 
   return mStoredList.CreateWebRenderCommands(aBuilder, aResources, sc,
                                              aManager, aDisplayListBuilder);
@@ -8546,9 +8544,9 @@ bool
 nsDisplayTransform::UpdateScrollData(mozilla::layers::WebRenderScrollData* aData,
                                      mozilla::layers::WebRenderLayerScrollData* aLayerData)
 {
-  if (aLayerData && mFrame->HasPerspective()) {
+  if (aLayerData) {
     aLayerData->SetTransform(GetTransform().GetMatrix());
-    aLayerData->SetTransformIsPerspective(true);
+    aLayerData->SetTransformIsPerspective(mFrame->HasPerspective());
   }
   return true;
 }
@@ -10016,7 +10014,15 @@ nsDisplaySVGWrapper::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aB
                                              mozilla::layers::WebRenderLayerManager* aManager,
                                              nsDisplayListBuilder* aDisplayListBuilder)
 {
-  return false;
+  if (gfxPrefs::WebRenderBlobInvalidation()) {
+    return nsDisplayWrapList::CreateWebRenderCommands(aBuilder,
+                                             aResources,
+                                             aSc,
+                                             aManager,
+                                             aDisplayListBuilder);
+  } else {
+    return false;
+  }
 }
 
 namespace mozilla {

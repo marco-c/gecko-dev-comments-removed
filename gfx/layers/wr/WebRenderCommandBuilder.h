@@ -38,6 +38,7 @@ public:
   explicit WebRenderCommandBuilder(WebRenderLayerManager* aManager)
   : mManager(aManager)
   , mLastAsr(nullptr)
+  , mDoGrouping(false)
   {}
 
   void Destroy();
@@ -85,10 +86,19 @@ public:
                        nsDisplayListBuilder* aDisplayListBuilder);
 
   void CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
+                                              nsDisplayItem* aOuterItem,
                                               nsDisplayListBuilder* aDisplayListBuilder,
                                               const StackingContextHelper& aSc,
                                               wr::DisplayListBuilder& aBuilder,
                                               wr::IpcResourceUpdateQueue& aResources);
+
+  
+  void DoGroupingForDisplayList(nsDisplayList* aDisplayList,
+                                nsDisplayItem* aWrappingItem,
+                                nsDisplayListBuilder* aDisplayListBuilder,
+                                const StackingContextHelper& aSc,
+                                wr::DisplayListBuilder& aBuilder,
+                                wr::IpcResourceUpdateQueue& aResources);
 
   already_AddRefed<WebRenderFallbackData> GenerateFallbackData(nsDisplayItem* aItem,
                                                                wr::DisplayListBuilder& aBuilder,
@@ -148,8 +158,8 @@ public:
     return res.forget();
   }
 
-private:
   WebRenderLayerManager* mManager;
+private:
   ScrollingLayersHelper mScrollingHelper;
 
   
@@ -170,6 +180,10 @@ private:
 
   
   CanvasDataSet mLastCanvasDatas;
+
+  
+  
+  bool mDoGrouping;
 };
 
 } 
