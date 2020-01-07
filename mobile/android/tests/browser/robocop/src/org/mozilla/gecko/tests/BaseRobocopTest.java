@@ -249,7 +249,7 @@ public abstract class BaseRobocopTest extends ActivityInstrumentationTestCase2<A
         
         
         
-        final String rawUrl = ((String) mConfig.get("rawhost")).replaceAll("(/$)", "");
+        final String rawUrl = mConfig.get("rawhost").replaceAll("(/$)", "");
 
         HttpURLConnection urlConnection = null;
 
