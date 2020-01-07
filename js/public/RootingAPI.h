@@ -895,7 +895,6 @@ class JS_PUBLIC_API(AutoGCRooter)
 #if defined(JS_BUILD_BINAST)
         BINPARSER =    -4, 
 #endif 
-        IONMASM =     -19, 
         WRAPVECTOR =  -20, 
         WRAPPER =     -21, 
         CUSTOM =      -26  

@@ -575,12 +575,6 @@ LinkBackgroundCodeGen(JSContext* cx, IonBuilder* builder)
         return false;
 
     JitContext jctx(cx, &builder->alloc());
-
-    
-    
-    
-    MacroAssembler::AutoRooter masm(cx, &codegen->masm);
-
     return LinkCodeGen(cx, builder, codegen);
 }
 

@@ -160,9 +160,6 @@ class Assembler : public AssemblerMIPSShared
       : AssemblerMIPSShared()
     { }
 
-    
-    void trace(JSTracer* trc);
-
     static uintptr_t GetPointer(uint8_t*);
 
     using AssemblerMIPSShared::bind;

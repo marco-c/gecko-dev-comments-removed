@@ -152,9 +152,6 @@ class Assembler : public AssemblerMIPSShared
     static Condition UnsignedCondition(Condition cond);
     static Condition ConditionWithoutEqual(Condition cond);
 
-    
-    void trace(JSTracer* trc);
-
     static uintptr_t GetPointer(uint8_t*);
 
   protected:
