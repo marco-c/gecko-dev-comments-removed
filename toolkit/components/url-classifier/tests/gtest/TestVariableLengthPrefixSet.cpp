@@ -177,7 +177,7 @@ static void SetupPrefixMap(const _PrefixArray& array,
 
 
 
-TEST(VariableLengthPrefixSet, FixedLengthSet)
+TEST(UrlClassifierVLPrefixSet, FixedLengthSet)
 {
   srand(time(nullptr));
 
@@ -215,7 +215,7 @@ TEST(VariableLengthPrefixSet, FixedLengthSet)
 }
 
 
-TEST(VariableLengthPrefixSet, VariableLengthSet)
+TEST(UrlClassifierVLPrefixSet, VariableLengthSet)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -258,7 +258,7 @@ TEST(VariableLengthPrefixSet, VariableLengthSet)
 }
 
 
-TEST(VariableLengthPrefixSet, MixedPrefixSet)
+TEST(UrlClassifierVLPrefixSet, MixedPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -300,7 +300,7 @@ TEST(VariableLengthPrefixSet, MixedPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, ResetPrefix)
+TEST(UrlClassifierVLPrefixSet, ResetPrefix)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -346,7 +346,7 @@ TEST(VariableLengthPrefixSet, ResetPrefix)
 }
 
 
-TEST(VariableLengthPrefixSet, TinyPrefixSet)
+TEST(UrlClassifierVLPrefixSet, TinyPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -367,7 +367,7 @@ TEST(VariableLengthPrefixSet, TinyPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, EmptyPrefixSet)
+TEST(UrlClassifierVLPrefixSet, EmptyPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -401,7 +401,7 @@ TEST(VariableLengthPrefixSet, EmptyPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, MinMaxPrefixSet)
+TEST(UrlClassifierVLPrefixSet, MinMaxPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> pset = new VariableLengthPrefixSet;
   pset->Init(NS_LITERAL_CSTRING("test"));
@@ -437,7 +437,7 @@ TEST(VariableLengthPrefixSet, MinMaxPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, LoadSaveFixedLengthPrefixSet)
+TEST(UrlClassifierVLPrefixSet, LoadSaveFixedLengthPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> save = new VariableLengthPrefixSet;
   save->Init(NS_LITERAL_CSTRING("test-save"));
@@ -477,7 +477,7 @@ TEST(VariableLengthPrefixSet, LoadSaveFixedLengthPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, LoadSaveVariableLengthPrefixSet)
+TEST(UrlClassifierVLPrefixSet, LoadSaveVariableLengthPrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> save = new VariableLengthPrefixSet;
   save->Init(NS_LITERAL_CSTRING("test-save"));
@@ -517,7 +517,7 @@ TEST(VariableLengthPrefixSet, LoadSaveVariableLengthPrefixSet)
 }
 
 
-TEST(VariableLengthPrefixSet, LoadSavePrefixSet)
+TEST(UrlClassifierVLPrefixSet, LoadSavePrefixSet)
 {
   RefPtr<VariableLengthPrefixSet> save = new VariableLengthPrefixSet;
   save->Init(NS_LITERAL_CSTRING("test-save"));

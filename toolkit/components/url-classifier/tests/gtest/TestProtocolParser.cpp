@@ -22,7 +22,7 @@ InitUpdateResponse(ListUpdateResponse* aUpdateResponse,
 static void
 DumpBinary(const nsACString& aBinary);
 
-TEST(ProtocolParser, UpdateWait)
+TEST(UrlClassifierProtocolParser, UpdateWait)
 {
   
   
@@ -53,7 +53,7 @@ TEST(ProtocolParser, UpdateWait)
   delete p;
 }
 
-TEST(ProtocolParser, SingleValueEncoding)
+TEST(UrlClassifierProtocolParser, SingleValueEncoding)
 {
   
   
