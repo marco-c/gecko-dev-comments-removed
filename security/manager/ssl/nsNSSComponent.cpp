@@ -248,6 +248,13 @@ NS_IMETHODIMP
 nsNSSComponent::GetPIPNSSBundleString(const char* name, nsAString& outString)
 {
   MutexAutoLock lock(mMutex);
+  return GetPIPNSSBundleStringLocked(name, outString, lock);
+}
+
+nsresult
+nsNSSComponent::GetPIPNSSBundleStringLocked(
+  const char* name, nsAString& outString, const MutexAutoLock& )
+{
   nsresult rv = NS_ERROR_FAILURE;
 
   outString.SetLength(0);
@@ -970,9 +977,11 @@ nsNSSComponent::TrustLoaded3rdPartyRoots()
 class LoadLoadableRootsTask final : public Runnable
 {
 public:
-  explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent)
+  explicit LoadLoadableRootsTask(nsNSSComponent* nssComponent,
+                                 nsCString&& rootModuleName)
     : Runnable("LoadLoadableRootsTask")
     , mNSSComponent(nssComponent)
+    , mRootModuleName(Move(rootModuleName))
   {
     MOZ_ASSERT(nssComponent);
   }
@@ -986,6 +995,7 @@ private:
   nsresult LoadLoadableRoots();
   RefPtr<nsNSSComponent> mNSSComponent;
   nsCOMPtr<nsIThread> mThread;
+  nsCString mRootModuleName;
 };
 
 nsresult
@@ -1002,6 +1012,9 @@ LoadLoadableRootsTask::Dispatch()
   
   return mThread->Dispatch(this, NS_DISPATCH_NORMAL);
 }
+
+
+
 
 NS_IMETHODIMP
 LoadLoadableRootsTask::Run()
@@ -1231,27 +1244,11 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   
   
   
-
-  nsAutoString modName;
-  nsresult rv = mNSSComponent->GetPIPNSSBundleString("RootCertModuleName",
-                                                     modName);
-  if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    
-    
-    
-    modName.AssignLiteral("Builtin Roots Module");
-  }
-  NS_ConvertUTF16toUTF8 modNameUTF8(modName);
-
   Vector<nsCString> possibleCKBILocations;
   
   
   nsAutoCString nss3Dir;
-  rv = GetNSS3Directory(nss3Dir);
+  nsresult rv = GetNSS3Directory(nss3Dir);
   if (NS_SUCCEEDED(rv)) {
     if (!possibleCKBILocations.append(Move(nss3Dir))) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -1289,7 +1286,7 @@ LoadLoadableRootsTask::LoadLoadableRoots()
   }
 
   for (const auto& possibleCKBILocation : possibleCKBILocations) {
-    if (mozilla::psm::LoadLoadableRoots(possibleCKBILocation, modNameUTF8)) {
+    if (mozilla::psm::LoadLoadableRoots(possibleCKBILocation, mRootModuleName)) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("loaded CKBI from %s",
                                             possibleCKBILocation.get()));
       return NS_OK;
@@ -1300,12 +1297,14 @@ LoadLoadableRootsTask::LoadLoadableRoots()
 }
 
 void
-nsNSSComponent::UnloadLoadableRoots()
+nsNSSComponent::UnloadLoadableRoots(const MutexAutoLock& proofOfLock)
 {
   nsresult rv;
   nsAutoString modName;
-  rv = GetPIPNSSBundleString("RootCertModuleName", modName);
-  if (NS_FAILED(rv)) return;
+  rv = GetPIPNSSBundleStringLocked("RootCertModuleName", modName, proofOfLock);
+  if (NS_FAILED(rv)) {
+    return;
+  }
 
   NS_ConvertUTF16toUTF8 modNameUTF8(modName);
   ::mozilla::psm::UnloadLoadableRoots(modNameUTF8.get());
@@ -1576,9 +1575,9 @@ CipherSuiteChangeObserver::Observe(nsISupports* ,
 
 } 
 
-void nsNSSComponent::setValidationOptions(bool isInitialSetting)
+void nsNSSComponent::setValidationOptions(
+  bool isInitialSetting, const mozilla::MutexAutoLock& proofOfLock)
 {
-  MutexAutoLock lock(mMutex);
   
   
   
@@ -1701,7 +1700,7 @@ void nsNSSComponent::setValidationOptions(bool isInitialSetting)
   TimeDuration hardTimeout;
 
   GetRevocationBehaviorFromPrefs(&odc, &osc, &certShortLifetimeInDays,
-                                 softTimeout, hardTimeout, lock);
+                                 softTimeout, hardTimeout, proofOfLock);
   mDefaultCertVerifier = new SharedCertVerifier(odc, osc, softTimeout,
                                                 hardTimeout,
                                                 certShortLifetimeInDays,
@@ -2136,20 +2135,6 @@ nsNSSComponent::InitializeNSS()
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (SSL_ConfigServerSessionIDCache(1000, 0, 0, nullptr) != SECSuccess) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  setValidationOptions(true);
-
   mozilla::pkix::RegisterErrorTable();
 
   if (PK11_IsFIPS()) {
@@ -2198,20 +2183,54 @@ nsNSSComponent::InitializeNSS()
     mMitmDetecionEnabled =
       Preferences::GetBool("security.pki.mitm_canary_issuer.enabled", true);
 
-    mNSSInitialized = true;
-  }
-
 #ifdef XP_WIN
-  nsCOMPtr<nsINSSComponent> handle(this);
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsNSSComponent::TrustLoaded3rdPartyRoots",
-  [handle]() {
-    MOZ_ALWAYS_SUCCEEDS(handle->TrustLoaded3rdPartyRoots());
-  }));
+    nsCOMPtr<nsINSSComponent> handle(this);
+    NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsNSSComponent::TrustLoaded3rdPartyRoots",
+    [handle]() {
+      MOZ_ALWAYS_SUCCEEDS(handle->TrustLoaded3rdPartyRoots());
+    }));
 #endif 
 
-  RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
-    new LoadLoadableRootsTask(this));
-  return loadLoadableRootsTask->Dispatch();
+    
+    
+    
+    
+    
+    
+    
+    if (SSL_ConfigServerSessionIDCache(1000, 0, 0, nullptr) != SECSuccess) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    
+    setValidationOptions(true, lock);
+
+    nsAutoString rootModuleName;
+    rv = GetPIPNSSBundleStringLocked("RootCertModuleName", rootModuleName,
+                                     lock);
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      
+      
+      
+      
+      rootModuleName.AssignLiteral("Builtin Roots Module");
+    }
+    NS_ConvertUTF16toUTF8 rootModuleNameUTF8(rootModuleName);
+
+    RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
+      new LoadLoadableRootsTask(this, Move(rootModuleNameUTF8)));
+    rv = loadLoadableRootsTask->Dispatch();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    mNSSInitialized = true;
+    return NS_OK;
+  }
 }
 
 void
@@ -2220,25 +2239,26 @@ nsNSSComponent::ShutdownNSS()
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ShutdownNSS\n"));
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  
-  
-  
-  Unused << BlockUntilLoadableRootsLoaded();
-
-  
-  
-  
-  
-  UnloadLoadableRoots();
-
   MutexAutoLock lock(mMutex);
 
   
   
-  if (!mNSSInitialized) {
-    return;
+  
+  
+  
+  
+  if (mNSSInitialized) {
+    Unused << BlockUntilLoadableRootsLoaded();
+
+    
+    
+    SSL_ClearSessionCache();
+    
+    
+    Unused << SSL_ShutdownServerSessionIDCache();
   }
-  mNSSInitialized = false;
+
+  UnloadLoadableRoots(lock);
 
 #ifdef XP_WIN
   mFamilySafetyRoot = nullptr;
@@ -2249,17 +2269,14 @@ nsNSSComponent::ShutdownNSS()
 
   Preferences::RemoveObserver(this, "security.");
 
-  SSL_ClearSessionCache();
-  
-  
-  Unused << SSL_ShutdownServerSessionIDCache();
-
   
   
   mDefaultCertVerifier = nullptr;
   
   
   
+
+  mNSSInitialized = false;
 }
 
 nsresult
@@ -2354,7 +2371,8 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
                prefName.EqualsLiteral("security.OCSP.timeoutMilliseconds.soft") ||
                prefName.EqualsLiteral("security.OCSP.timeoutMilliseconds.hard") ||
                prefName.EqualsLiteral("security.pki.distrust_ca_policy")) {
-      setValidationOptions(false);
+      MutexAutoLock lock(mMutex);
+      setValidationOptions(false, lock);
 #ifdef DEBUG
     } else if (prefName.EqualsLiteral("security.test.built_in_root_hash")) {
       MutexAutoLock lock(mMutex);
