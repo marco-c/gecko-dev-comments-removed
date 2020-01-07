@@ -158,7 +158,7 @@ public:
     
     
     
-    MOZ_MUST_USE nsresult JoinAndExec(void **aOffThreadToken,
+    MOZ_MUST_USE nsresult JoinAndExec(JS::OffThreadToken** aOffThreadToken,
                                       JS::MutableHandle<JSScript*> aScript);
 
     
@@ -178,7 +178,7 @@ public:
     
     
     
-    MOZ_MUST_USE nsresult DecodeJoinAndExec(void **aOffThreadToken);
+    MOZ_MUST_USE nsresult DecodeJoinAndExec(JS::OffThreadToken** aOffThreadToken);
   };
 
   static nsresult CompileModule(JSContext* aCx,

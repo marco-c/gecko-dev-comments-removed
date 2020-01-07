@@ -89,7 +89,7 @@ public:
 
   virtual void SetReady();
 
-  void** OffThreadTokenPtr()
+  JS::OffThreadToken** OffThreadTokenPtr()
   {
     return mOffThreadToken ?  &mOffThreadToken : nullptr;
   }
@@ -202,7 +202,7 @@ public:
   bool mIsCanceled;       
   bool mWasCompiledOMT;   
   bool mIsTracking;       
-  void* mOffThreadToken;  
+  JS::OffThreadToken* mOffThreadToken; 
   nsString mSourceMapURL; 
 
   
