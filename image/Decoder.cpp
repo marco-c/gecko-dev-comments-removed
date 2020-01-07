@@ -356,8 +356,6 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
 
   if (frameNum == 1) {
     MOZ_ASSERT(aPreviousFrame, "Must provide a previous frame when animated");
-    aPreviousFrame->SetRawAccessOnly();
-
     
     
     
@@ -370,8 +368,6 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
   }
 
   if (frameNum > 0) {
-    ref->SetRawAccessOnly();
-
     
     
     mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea, frame->GetRect());

@@ -314,6 +314,13 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
     }
   }
 
+  if (aAnimParams) {
+    
+    
+    
+    ++mLockCount;
+  }
+
   return NS_OK;
 }
 
@@ -499,16 +506,6 @@ imgFrame::RawAccessRef(bool aOnlyFinished )
 {
   return RawAccessFrameRef(this, aOnlyFinished);
 }
-
-void
-imgFrame::SetRawAccessOnly()
-{
-  AssertImageDataLocked();
-
-  
-  LockImageData(false);
-}
-
 
 imgFrame::SurfaceWithFormat
 imgFrame::SurfaceForDrawing(bool               aDoPartialDecode,

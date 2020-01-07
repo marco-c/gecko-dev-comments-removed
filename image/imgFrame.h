@@ -103,18 +103,6 @@ public:
 
   RawAccessFrameRef RawAccessRef(bool aOnlyFinished = false);
 
-  
-
-
-
-
-
-
-
-
-
-  void SetRawAccessOnly();
-
   bool Draw(gfxContext* aContext, const ImageRegion& aRegion,
             SamplingFilter aSamplingFilter, uint32_t aImageFlags,
             float aOpacity);
