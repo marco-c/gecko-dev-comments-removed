@@ -592,13 +592,32 @@ class ObjectGroup : public gc::TenuredCell
 
 class ObjectGroupCompartment
 {
-    friend class ObjectGroup;
-
+  private:
     class NewTable;
 
+    struct ArrayObjectKey;
+    using ArrayObjectTable = js::GCRekeyableHashMap<ArrayObjectKey,
+                                                    ReadBarrieredObjectGroup,
+                                                    ArrayObjectKey,
+                                                    SystemAllocPolicy>;
+
+    struct PlainObjectKey;
+    struct PlainObjectEntry;
+    struct PlainObjectTableSweepPolicy {
+        static bool needsSweep(PlainObjectKey* key, PlainObjectEntry* entry);
+    };
+    using PlainObjectTable = JS::GCHashMap<PlainObjectKey,
+                                           PlainObjectEntry,
+                                           PlainObjectKey,
+                                           SystemAllocPolicy,
+                                           PlainObjectTableSweepPolicy>;
+
+    class AllocationSiteTable;
+
+  private:
     
-    NewTable* defaultNewTable;
-    NewTable* lazyTable;
+    NewTable* defaultNewTable = nullptr;
+    NewTable* lazyTable = nullptr;
 
     
     class DefaultNewGroupCache
@@ -619,25 +638,7 @@ class ObjectGroupCompartment
 
         MOZ_ALWAYS_INLINE ObjectGroup* lookup(const Class* clasp, TaggedProto proto,
                                               JSObject* associated);
-    };
-    DefaultNewGroupCache defaultNewGroupCache;
-
-    struct ArrayObjectKey;
-    using ArrayObjectTable = js::GCRekeyableHashMap<ArrayObjectKey,
-                                                    ReadBarrieredObjectGroup,
-                                                    ArrayObjectKey,
-                                                    SystemAllocPolicy>;
-
-    struct PlainObjectKey;
-    struct PlainObjectEntry;
-    struct PlainObjectTableSweepPolicy {
-        static bool needsSweep(PlainObjectKey* key, PlainObjectEntry* entry);
-    };
-    using PlainObjectTable = JS::GCHashMap<PlainObjectKey,
-                                           PlainObjectEntry,
-                                           PlainObjectKey,
-                                           SystemAllocPolicy,
-                                           PlainObjectTableSweepPolicy>;
+    } defaultNewGroupCache = {};
 
     
     
@@ -648,27 +649,31 @@ class ObjectGroupCompartment
     
     
     
-    ArrayObjectTable* arrayObjectTable;
-    PlainObjectTable* plainObjectTable;
+    ArrayObjectTable* arrayObjectTable = nullptr;
+    PlainObjectTable* plainObjectTable = nullptr;
+
+    
+    AllocationSiteTable* allocationSiteTable = nullptr;
+
+    
+    
+    
+    
+    
+    
+    ReadBarrieredObjectGroup stringSplitStringGroup = {};
+
+    
+
+  private:
+    friend class ObjectGroup;
 
     struct AllocationSiteKey;
-    class AllocationSiteTable;
-
-    
-    AllocationSiteTable* allocationSiteTable;
-
-    
-    
-    
-    
-    
-    
-    ReadBarrieredObjectGroup stringSplitStringGroup;
 
   public:
     struct NewEntry;
 
-    ObjectGroupCompartment();
+    ObjectGroupCompartment() = default;
     ~ObjectGroupCompartment();
 
     void replaceAllocationSiteGroup(JSScript* script, jsbytecode* pc,
