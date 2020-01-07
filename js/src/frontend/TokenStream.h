@@ -1040,26 +1040,44 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     using GeneralCharsBase = GeneralTokenStreamChars<char16_t, AnyCharsAccess>;
     using CharsSharedBase = TokenStreamCharsBase<char16_t>;
 
+    using GeneralCharsBase::asSpecific;
     using GeneralCharsBase::getCharIgnoreEOL;
     using CharsSharedBase::ungetCharIgnoreEOL;
     using CharsSharedBase::userbuf;
 
-    bool matchTrailForLeadSurrogate(char16_t lead, uint32_t* codePoint);
+    void matchMultiUnitCodePointSlow(char16_t lead, uint32_t* codePoint);
 
   public:
     using typename GeneralCharsBase::TokenStreamSpecific;
 
-    using GeneralCharsBase::asSpecific;
     using GeneralCharsBase::anyCharsAccess;
 
   public:
     using GeneralCharsBase::GeneralCharsBase;
 
-    MOZ_ALWAYS_INLINE bool isMultiUnitCodepoint(char16_t c, uint32_t* codepoint) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ALWAYS_INLINE bool matchMultiUnitCodePoint(char16_t c, uint32_t* codePoint) {
         if (MOZ_LIKELY(!unicode::IsLeadSurrogate(c)))
-            return false;
-
-        return matchTrailForLeadSurrogate(c, codepoint);
+            *codePoint = 0;
+        else
+            matchMultiUnitCodePointSlow(c, codePoint);
+        return true;
     }
 
     void ungetCodePointIgnoreEOL(uint32_t codePoint);
@@ -1143,7 +1161,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using CharsSharedBase::atomizeChars;
     using CharsSharedBase::copyTokenbufTo;
     using GeneralCharsBase::getCharIgnoreEOL;
-    using CharsBase::isMultiUnitCodepoint;
+    using CharsBase::matchMultiUnitCodePoint;
     using CharsSharedBase::tokenbuf;
     using GeneralCharsBase::ungetChar;
     using CharsSharedBase::ungetCharIgnoreEOL;
