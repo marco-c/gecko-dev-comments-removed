@@ -170,11 +170,13 @@ public:
 
   size_t Count() const { return mEffects.Count(); }
 
+#ifdef MOZ_OLD_STYLE
   RefPtr<AnimValuesStyleRule>&
   AnimationRule(EffectCompositor::CascadeLevel aCascadeLevel)
   {
     return mAnimationRule[aCascadeLevel];
   }
+#endif
 
   const TimeStamp& LastTransformSyncTime() const
   {
@@ -212,6 +214,7 @@ private:
 
   OwningEffectSet mEffects;
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -221,6 +224,7 @@ private:
                   EffectCompositor::CascadeLevel(
                     EffectCompositor::kCascadeLevelCount),
                   RefPtr<AnimValuesStyleRule>> mAnimationRule;
+#endif
 
   
   

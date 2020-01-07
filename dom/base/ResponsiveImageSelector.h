@@ -125,9 +125,11 @@ private:
   
   UniquePtr<RawServoSourceSizeList> mServoSourceSizeList;
 
+#ifdef MOZ_OLD_STYLE
   
   nsTArray< nsAutoPtr<nsMediaQuery> > mSizeQueries;
   nsTArray<nsCSSValue> mSizeValues;
+#endif
 };
 
 class ResponsiveImageCandidate {

@@ -13,6 +13,8 @@
 #ifndef RuleNodeCacheConditions_h_
 #define RuleNodeCacheConditions_h_
 
+#ifdef MOZ_OLD_STYLE
+
 #include "mozilla/Attributes.h"
 #include "nsCoord.h"
 #include "nsTArray.h"
@@ -153,5 +155,19 @@ private:
 };
 
 } 
+
+#else
+
+namespace mozilla {
+
+
+
+class RuleNodeCacheConditions
+{
+};
+
+} 
+
+#endif
 
 #endif 

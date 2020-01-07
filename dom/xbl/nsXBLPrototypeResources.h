@@ -50,6 +50,7 @@ public:
   bool HasStyleSheets() const;
   void AppendStyleSheetsTo(nsTArray<mozilla::StyleSheet*>& aResult) const;
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -58,6 +59,7 @@ public:
   void GatherRuleProcessor();
 
   nsCSSRuleProcessor* GetRuleProcessor() const { return mRuleProcessor; }
+#endif
 
   
   
@@ -73,8 +75,10 @@ private:
   
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheetList;
 
+#ifdef MOZ_OLD_STYLE
   
   RefPtr<nsCSSRuleProcessor> mRuleProcessor;
+#endif
 
   
   

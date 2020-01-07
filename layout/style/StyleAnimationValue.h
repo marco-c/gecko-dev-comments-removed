@@ -88,6 +88,7 @@ public:
   static double ComputeColorDistance(const css::RGBAColorData& aStartColor,
                                      const css::RGBAColorData& aEndColor);
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -114,6 +115,7 @@ public:
                   const StyleAnimationValue& aEndValue,
                   GeckoStyleContext* aStyleContext,
                   double& aDistance);
+#endif
 
   
 
@@ -175,6 +177,7 @@ public:
 
   
   
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -245,6 +248,7 @@ public:
                 const nsCSSValue& aSpecifiedValue,
                 bool aUseSVGMode,
                 nsTArray<PropertyStyleAnimationValuePair>& aResult);
+#endif
 
   
 
@@ -276,6 +280,7 @@ public:
                  const StyleAnimationValue& aComputedValue,
                  nsAString& aSpecifiedValue);
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -294,6 +299,7 @@ public:
     nsCSSPropertyID aProperty,
     mozilla::GeckoStyleContext* aStyleContext,
     StyleAnimationValue& aComputedValue);
+#endif
 
   
 

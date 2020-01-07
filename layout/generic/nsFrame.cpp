@@ -779,6 +779,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
     
     
     if (presContext->RestyleManager()->IsGecko()) {
+#ifdef MOZ_OLD_STYLE
       
       
       
@@ -787,6 +788,9 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
       if (rsc) {
         rsc->Put(mContent, mStyleContext->AsGecko());
       }
+#else
+      MOZ_CRASH("old style system disabled");
+#endif
     }
   }
 
@@ -7765,6 +7769,7 @@ nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix, uint32_t aFlags) con
       pseudoTag->ToString(atomString);
       aTo += nsPrintfCString("%s", NS_LossyConvertUTF16toASCII(atomString).get());
     }
+#ifdef MOZ_OLD_STYLE
     if (auto* geckoContext = mStyleContext->GetAsGecko()) {
       if (!geckoContext->GetParent() ||
           (GetParent() && GetParent()->StyleContext() != geckoContext->GetParent())) {
@@ -7777,6 +7782,7 @@ nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix, uint32_t aFlags) con
         }
       }
     }
+#endif
   }
   aTo += "]";
 }

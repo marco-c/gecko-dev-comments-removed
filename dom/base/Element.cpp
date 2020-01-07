@@ -3538,6 +3538,7 @@ Element::Closest(const nsAString& aSelector, ErrorResult& aResult)
       return const_cast<Element*>(Servo_SelectorList_Closest(this, aList));
     },
     [&](nsCSSSelectorList* aList) -> Element* {
+#ifdef MOZ_OLD_STYLE
       if (!aList) {
         
         
@@ -3558,6 +3559,9 @@ Element::Closest(const nsAString& aSelector, ErrorResult& aResult)
         }
       }
       return nullptr;
+#else
+      MOZ_CRASH("old style system disabled");
+#endif
     }
   );
 }
@@ -3575,6 +3579,7 @@ Element::Matches(const nsAString& aSelector, ErrorResult& aError)
       return Servo_SelectorList_Matches(this, aList);
     },
     [&](nsCSSSelectorList* aList) {
+#ifdef MOZ_OLD_STYLE
       if (!aList) {
         
         
@@ -3588,6 +3593,9 @@ Element::Matches(const nsAString& aSelector, ErrorResult& aError)
       matchingContext.AddScopeElement(this);
       return nsCSSRuleProcessor::SelectorListMatches(this, matchingContext,
                                                      aList);
+#else
+      MOZ_CRASH("old style system disabled");
+#endif
     }
   );
 }

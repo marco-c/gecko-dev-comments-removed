@@ -316,6 +316,7 @@ public:
   typedef mozilla::AnimationCollection<mozilla::dom::CSSTransition>
     CSSTransitionCollection;
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -333,6 +334,7 @@ public:
   void StyleContextChanged(mozilla::dom::Element *aElement,
                            mozilla::GeckoStyleContext* aOldStyleContext,
                            RefPtr<mozilla::GeckoStyleContext>* aNewStyleContext );
+#endif
 
   
 
@@ -343,6 +345,7 @@ public:
     const mozilla::ServoStyleContext* aOldStyle,
     const mozilla::ServoStyleContext* aNewStyle);
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -354,6 +357,7 @@ public:
   void PruneCompletedTransitions(mozilla::dom::Element* aElement,
                                  mozilla::CSSPseudoElementType aPseudoType,
                                  mozilla::GeckoStyleContext* aNewStyleContext);
+#endif
 
   void SetInAnimationOnlyStyleUpdate(bool aInAnimationOnlyUpdate) {
     mInAnimationOnlyStyleUpdate = aInAnimationOnlyUpdate;

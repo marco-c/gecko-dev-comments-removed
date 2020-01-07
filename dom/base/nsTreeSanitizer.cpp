@@ -1094,8 +1094,12 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
                                 CORS_NONE, aDocument->GetReferrerPolicy(),
                                 SRIMetadata());
   } else {
+#ifdef MOZ_OLD_STYLE
     sheet = new CSSStyleSheet(mozilla::css::eAuthorSheetFeatures,
                               CORS_NONE, aDocument->GetReferrerPolicy());
+#else
+    MOZ_CRASH("old style system disabled");
+#endif
   }
   sheet->SetURIs(aDocument->GetDocumentURI(), nullptr, aBaseURI);
   sheet->SetPrincipal(aDocument->NodePrincipal());
@@ -1105,10 +1109,14 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
         aDocument->GetDocumentURI(), aBaseURI, aDocument->NodePrincipal(),
         0, aDocument->GetCompatibilityMode());
   } else {
+#ifdef MOZ_OLD_STYLE
     
     nsCSSParser parser(nullptr, sheet->AsGecko());
     rv = parser.ParseSheet(aOriginal, aDocument->GetDocumentURI(), aBaseURI,
                            aDocument->NodePrincipal(), 0);
+#else
+    MOZ_CRASH("old style system disabled");
+#endif
   }
   NS_ENSURE_SUCCESS(rv, true);
   
@@ -1188,12 +1196,16 @@ nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
               document->GetCompatibilityMode(),
               document->CSSLoader());
         } else {
+#ifdef MOZ_OLD_STYLE
           
           
           nsCSSParser parser(document->CSSLoader());
           decl = parser.ParseStyleAttribute(value, document->GetDocumentURI(),
                                             aElement->GetBaseURIForStyleAttr(),
                                             document->NodePrincipal());
+#else
+          MOZ_CRASH("old style system disabled");
+#endif
         }
         if (decl) {
           if (SanitizeStyleDeclaration(decl)) {

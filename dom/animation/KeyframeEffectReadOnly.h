@@ -165,8 +165,10 @@ public:
   void SetAnimation(Animation* aAnimation) override;
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
+#ifdef MOZ_OLD_STYLE
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     GeckoStyleContext* aStyleContext);
+#endif
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     const ServoStyleContext* aComputedValues);
 
@@ -347,6 +349,7 @@ protected:
   
   void MarkCascadeNeedsUpdate();
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -365,9 +368,11 @@ protected:
   
   void EnsureBaseStyles(GeckoStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
+#endif
   void EnsureBaseStyles(const ServoStyleContext* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties);
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -376,6 +381,7 @@ protected:
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
                        GeckoStyleContext* aStyleContext,
                        RefPtr<GeckoStyleContext>& aCachedBaseStyleContext);
+#endif
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
@@ -428,20 +434,24 @@ private:
   template<typename StyleType>
   void DoUpdateProperties(StyleType* aStyle);
 
+#ifdef MOZ_OLD_STYLE
   void ComposeStyleRule(RefPtr<AnimValuesStyleRule>& aStyleRule,
                         const AnimationProperty& aProperty,
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);
+#endif
 
   void ComposeStyleRule(RawServoAnimationValueMap& aAnimationValues,
                         const AnimationProperty& aProperty,
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);
 
+#ifdef MOZ_OLD_STYLE
   already_AddRefed<nsStyleContext> CreateStyleContextForAnimationValue(
     nsCSSPropertyID aProperty,
     const AnimationValue& aValue,
     GeckoStyleContext* aBaseStyleContext);
+#endif
 
   already_AddRefed<nsStyleContext> CreateStyleContextForAnimationValue(
     nsCSSPropertyID aProperty,

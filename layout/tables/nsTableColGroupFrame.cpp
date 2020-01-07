@@ -294,6 +294,7 @@ nsTableColGroupFrame::RemoveFrame(ChildListID     aListID,
       nsTableColFrame* nextCol;
       while (col && col->GetColType() == eColAnonymousCol) {
 #ifdef DEBUG
+#ifdef MOZ_OLD_STYLE
         nsIFrame* providerFrame;
         nsStyleContext* psc = colFrame->GetParentStyleContext(&providerFrame);
         if (psc->IsGecko()) {
@@ -308,6 +309,7 @@ nsTableColGroupFrame::RemoveFrame(ChildListID     aListID,
           
           
         }
+#endif
 #endif
         nextCol = col->GetNextCol();
         RemoveFrame(kPrincipalList, col);

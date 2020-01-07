@@ -59,6 +59,7 @@ ServoMediaRule::Clone() const
   return nullptr;
 }
 
+#ifdef MOZ_OLD_STYLE
  bool
 ServoMediaRule::UseForPresentation(nsPresContext* aPresContext,
                                    nsMediaQueryResultCacheKey& aKey)
@@ -68,6 +69,7 @@ ServoMediaRule::UseForPresentation(nsPresContext* aPresContext,
   MOZ_ASSERT_UNREACHABLE("Shouldn't be calling UseForPresentation");
   return false;
 }
+#endif
 
  void
 ServoMediaRule::SetStyleSheet(StyleSheet* aSheet)

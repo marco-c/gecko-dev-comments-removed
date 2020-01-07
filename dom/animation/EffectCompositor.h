@@ -48,11 +48,13 @@ public:
   explicit EffectCompositor(nsPresContext* aPresContext)
     : mPresContext(aPresContext)
   {
+#ifdef MOZ_OLD_STYLE
     for (size_t i = 0; i < kCascadeLevelCount; i++) {
       CascadeLevel cascadeLevel = CascadeLevel(i);
       mRuleProcessors[cascadeLevel] =
         new AnimationStyleRuleProcessor(this, cascadeLevel);
     }
+#endif
   }
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(EffectCompositor)
@@ -126,6 +128,7 @@ public:
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -154,6 +157,7 @@ public:
                                  CSSPseudoElementType aPseudoType,
                                  CascadeLevel aCascadeLevel,
                                  nsStyleContext* aStyleContext);
+#endif
 
   
   
@@ -169,6 +173,7 @@ public:
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
 
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -178,6 +183,7 @@ public:
   {
     return mRuleProcessors[aCascadeLevel];
   }
+#endif
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSPropertyID aProperty);
@@ -254,11 +260,13 @@ public:
 private:
   ~EffectCompositor() = default;
 
+#ifdef MOZ_OLD_STYLE
   
   
   static void ComposeAnimationRule(dom::Element* aElement,
                                    CSSPseudoElementType aPseudoType,
                                    CascadeLevel aCascadeLevel);
+#endif
 
   
   
@@ -312,6 +320,7 @@ private:
 
   bool mIsInPreTraverse = false;
 
+#ifdef MOZ_OLD_STYLE
   class AnimationStyleRuleProcessor final : public nsIStyleRuleProcessor
   {
   public:
@@ -356,6 +365,7 @@ private:
   EnumeratedArray<CascadeLevel, CascadeLevel(kCascadeLevelCount),
                   OwningNonNull<AnimationStyleRuleProcessor>>
                     mRuleProcessors;
+#endif
 };
 
 } 

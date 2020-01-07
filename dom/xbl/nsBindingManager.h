@@ -124,6 +124,7 @@ public:
 
   nsresult GetBindingImplementation(nsIContent* aContent, REFNSIID aIID, void** aResult);
 
+#ifdef MOZ_OLD_STYLE
   
   nsresult WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
                      ElementDependentRuleProcessorData* aData,
@@ -131,6 +132,7 @@ public:
 
   void WalkAllRules(nsIStyleRuleProcessor::EnumFunc aFunc,
                     ElementDependentRuleProcessorData* aData);
+#endif
 
   
   

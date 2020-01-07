@@ -290,6 +290,7 @@ public:
   typedef nsTArray<RefPtr<mozilla::dom::CSSAnimation>>
     OwningCSSAnimationPtrArray;
 
+#ifdef MOZ_OLD_STYLE
   
 
 
@@ -300,6 +301,7 @@ public:
 
   void UpdateAnimations(mozilla::GeckoStyleContext* aStyleContext,
                         mozilla::dom::Element* aElement);
+#endif
 
   
 

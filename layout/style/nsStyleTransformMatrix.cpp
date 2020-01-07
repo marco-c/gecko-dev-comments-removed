@@ -162,12 +162,16 @@ ProcessTranslatePart(const nsCSSValue& aValue,
     return aValue.GetFloatValue();
   } else if (aValue.IsCalcUnit()) {
     if (aContext) {
+#ifdef MOZ_OLD_STYLE
       
       nsRuleNode::ComputedCalc result =
         nsRuleNode::SpecifiedCalcToComputedCalc(aValue, aContext, aPresContext,
                                                 aConditions);
       percent = result.mPercent;
       offset = result.mLength;
+#else
+      MOZ_CRASH("old style system disabled");
+#endif
     } else {
       
       
@@ -182,9 +186,13 @@ ProcessTranslatePart(const nsCSSValue& aValue,
     
     
     
+#ifdef MOZ_OLD_STYLE
     MOZ_ASSERT(aContext, "We need a valid context to compute the length");
     offset = nsRuleNode::CalcLength(aValue, aContext, aPresContext,
                                     aConditions);
+#else
+    MOZ_CRASH("unexpected unit in ProcessTranslatePart");
+#endif
   }
 
   float translation =
@@ -540,7 +548,11 @@ ProcessMatrixOperator(Matrix4x4& aMatrix,
 
     float appUnitPerCSSPixel = nsPresContext::AppUnitsPerCSSPixel();
     matrix = nsStyleTransformMatrix::ReadTransforms(list,
+#ifdef MOZ_OLD_STYLE
                                                     aContext,
+#else
+                                                    nullptr,
+#endif
                                                     aPresContext,
                                                     aConditions,
                                                     aRefBox,
@@ -1022,9 +1034,12 @@ ReadTransforms(const nsCSSValueList* aList,
                bool* aContains3dTransform)
 {
   Matrix4x4 result;
-  GeckoStyleContext* contextIfGecko = aContext
-                                      ? aContext->GetAsGecko()
-                                      : nullptr;
+  GeckoStyleContext* contextIfGecko =
+#ifdef MOZ_OLD_STYLE
+    aContext ? aContext->GetAsGecko() : nullptr;
+#else
+    nullptr;
+#endif
 
   for (const nsCSSValueList* curr = aList; curr != nullptr; curr = curr->mNext) {
     const nsCSSValue &currElem = curr->mValue;

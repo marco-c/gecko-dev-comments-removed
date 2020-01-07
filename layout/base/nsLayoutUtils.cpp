@@ -8270,6 +8270,7 @@ nsLayoutUtils::Shutdown()
 bool
 nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
 {
+#ifdef MOZ_OLD_STYLE
   
   
   
@@ -8278,7 +8279,7 @@ nsLayoutUtils::ShouldUseStylo(nsIPrincipal* aPrincipal)
       nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     return false;
   }
-
+#endif
   return true;
 }
 

@@ -9,6 +9,8 @@
 #ifndef nsCSSParser_h___
 #define nsCSSParser_h___
 
+#ifdef MOZ_OLD_STYLE
+
 #include "mozilla/Attributes.h"
 #include "mozilla/css/Loader.h"
 
@@ -348,5 +350,23 @@ protected:
   
   void* mImpl;
 };
+
+#else
+
+namespace mozilla {
+namespace css {
+class Loader;
+} 
+} 
+
+
+
+class nsCSSParser
+{
+public:
+  explicit nsCSSParser(mozilla::css::Loader* aLoader = nullptr) {}
+};
+
+#endif
 
 #endif 

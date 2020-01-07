@@ -290,6 +290,7 @@ nsSplitterFrame::Init(nsIContent*       aContent,
         aContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
                                        NS_LITERAL_STRING("vertical"), false);
         if (StyleContext()->IsGecko()) {
+#ifdef MOZ_OLD_STYLE
           
           
           GeckoStyleContext* parentStyleContext =
@@ -298,6 +299,9 @@ nsSplitterFrame::Init(nsIContent*       aContent,
             ResolveStyleFor(aContent->AsElement(), parentStyleContext,
                             LazyComputeBehavior::Allow);
           SetStyleContextWithoutNotification(newContext);
+#else
+          MOZ_CRASH("old style system disabled");
+#endif
         }
       }
     }

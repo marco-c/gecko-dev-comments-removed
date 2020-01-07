@@ -2518,8 +2518,10 @@ public:
   
   
   static bool StyloEnabled() {
-#ifdef MOZ_STYLO
+#if defined(MOZ_STYLO) && defined(MOZ_OLD_STYLE)
     return sStyloEnabled && StyloSupportedInCurrentProcess();
+#elif defined(MOZ_STYLO)
+    return true;
 #else
     return false;
 #endif
