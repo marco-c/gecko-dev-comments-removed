@@ -8,13 +8,13 @@
 #define mozilla_dom_CSSSupportsRule_h
 
 #include "mozilla/css/GroupRule.h"
-#include "nsIDOMCSSSupportsRule.h"
+#include "nsIDOMCSSConditionRule.h"
 
 namespace mozilla {
 namespace dom {
 
 class CSSSupportsRule : public css::ConditionRule
-                      , public nsIDOMCSSSupportsRule
+                      , public nsIDOMCSSConditionRule
 {
 protected:
   using ConditionRule::ConditionRule;
@@ -31,9 +31,6 @@ public:
 
   
   NS_IMETHOD SetConditionText(const nsAString& aConditionText) override = 0;
-
-  
-  NS_DECL_NSIDOMCSSSUPPORTSRULE
 
   
   uint16_t Type() const override { return nsIDOMCSSRule::SUPPORTS_RULE; }
