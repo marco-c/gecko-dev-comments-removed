@@ -1706,7 +1706,9 @@ JSStructuredCloneWriter::transferOwnership()
                 return false;
             }
 
-            if (scope == JS::StructuredCloneScope::DifferentProcess) {
+            if (scope == JS::StructuredCloneScope::DifferentProcess ||
+                scope == JS::StructuredCloneScope::DifferentProcessForIndexedDB)
+            {
                 
                 
                 
@@ -2393,19 +2395,33 @@ JSStructuredCloneReader::readHeader()
         storedScope = JS::StructuredCloneScope(data);
     } else {
         
-        storedScope = JS::StructuredCloneScope::DifferentProcess;
+        storedScope = JS::StructuredCloneScope::DifferentProcessForIndexedDB;
     }
 
-    if (storedScope != JS::StructuredCloneScope::SameProcessSameThread &&
-        storedScope != JS::StructuredCloneScope::SameProcessDifferentThread &&
-        storedScope != JS::StructuredCloneScope::DifferentProcess)
+    if (storedScope < JS::StructuredCloneScope::SameProcessSameThread ||
+        storedScope > JS::StructuredCloneScope::DifferentProcessForIndexedDB)
     {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
                                   "invalid structured clone scope");
         return false;
     }
 
-    
+    if (storedScope == JS::StructuredCloneScope::SameProcessSameThread &&
+        allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB)
+    {
+        
+        
+        
+        allowedScope = JS::StructuredCloneScope::DifferentProcess;
+        return true;
+    }
+
+    if (storedScope < allowedScope) {
+        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                  JSMSG_SC_BAD_SERIALIZED_DATA,
+                                  "incompatible structured clone scope");
+        return false;
+    }
 
     return true;
 }
@@ -2446,7 +2462,9 @@ JSStructuredCloneReader::readTransferMap()
             return false;
 
         if (tag == SCTAG_TRANSFER_MAP_ARRAY_BUFFER) {
-            if (allowedScope == JS::StructuredCloneScope::DifferentProcess) {
+            if (allowedScope == JS::StructuredCloneScope::DifferentProcess ||
+                allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB)
+            {
                 
                 
                 

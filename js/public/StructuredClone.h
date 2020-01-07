@@ -158,7 +158,17 @@ enum class StructuredCloneScope : uint32_t {
 
 
 
-    DifferentProcess
+
+    DifferentProcess,
+
+    
+
+
+
+
+
+
+    DifferentProcessForIndexedDB
 };
 
 enum TransferableOwnership {
@@ -395,6 +405,9 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API(JSStructuredCloneData) {
         , closure_(nullptr)
         , ownTransferables_(OwnTransferablePolicy::NoTransferables)
     {}
+
+    
+    
     MOZ_IMPLICIT JSStructuredCloneData(BufferList&& buffers)
         : bufList_(mozilla::Move(buffers))
         , callbacks_(nullptr)
