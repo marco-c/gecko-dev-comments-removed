@@ -26,7 +26,8 @@ const {
   pageError,
 } = require("devtools/client/webconsole/test/fixtures/stub-generators/stub-snippets.js");
 
-const BASE_PATH = "../../../devtools/client/webconsole/test/fixtures";
+const BASE_PATH = env.get("MOZ_DEVELOPER_REPO_DIR") +
+                  "/devtools/client/webconsole/test/fixtures";
 
 let cachedPackets = {};
 
