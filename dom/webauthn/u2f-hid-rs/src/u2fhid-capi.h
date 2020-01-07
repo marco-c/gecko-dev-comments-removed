@@ -24,6 +24,12 @@ const uint8_t U2F_AUTHENTICATOR_TRANSPORT_USB = 1;
 const uint8_t U2F_AUTHENTICATOR_TRANSPORT_NFC = 2;
 const uint8_t U2F_AUTHENTICATOR_TRANSPORT_BLE = 4;
 
+const uint8_t U2F_ERROR_UKNOWN = 1;
+const uint8_t U2F_ERROR_NOT_SUPPORTED = 2;
+const uint8_t U2F_ERROR_INVALID_STATE = 3;
+const uint8_t U2F_ERROR_CONSTRAINT = 4;
+const uint8_t U2F_ERROR_NOT_ALLOWED = 5;
+
 
 
 
@@ -95,6 +101,9 @@ void rust_u2f_khs_add(rust_u2f_key_handles* khs,
 
 
 
+
+
+uint8_t rust_u2f_result_error(const rust_u2f_result *res);
 
 
 bool rust_u2f_resbuf_length(const rust_u2f_result *res, uint8_t bid, size_t* len);

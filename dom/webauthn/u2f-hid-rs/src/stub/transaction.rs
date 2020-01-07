@@ -2,18 +2,21 @@
 
 
 
-use std::io;
-use util::{io_err, OnceCallback};
+use util::OnceCallback;
 
 pub struct Transaction {}
 
 impl Transaction {
-    pub fn new<F, T>(timeout: u64, callback: OnceCallback<T>, new_device_cb: F) -> io::Result<Self>
+    pub fn new<F, T>(
+        timeout: u64,
+        callback: OnceCallback<T>,
+        new_device_cb: F,
+    ) -> Result<Self, ::Error>
     where
         F: Fn(String, &Fn() -> bool),
     {
-        callback.call(Err(io_err("not implemented")));
-        Err(io_err("not implemented"))
+        callback.call(Err(::Error::NotSupported));
+        Err(::Error::NotSupported)
     }
 
     pub fn cancel(&mut self) {
