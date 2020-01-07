@@ -7188,11 +7188,35 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    nsIFrame* pointerCapturingFrame =
-      PointerEventHandler::GetPointerCapturingFrame(aEvent);
+    
+    nsIContent* pointerCapturingContent =
+      PointerEventHandler::GetPointerCapturingContent(aEvent);
 
-    if (pointerCapturingFrame) {
-      frame = pointerCapturingFrame;
+    if (pointerCapturingContent) {
+      nsIFrame* pointerCapturingFrame =
+        pointerCapturingContent->GetPrimaryFrame();
+
+      if (!pointerCapturingFrame) {
+        
+        
+        PointerEventHandler::DispatchPointerFromMouseOrTouch(
+          this, nullptr, pointerCapturingContent, aEvent, false, aEventStatus,
+          nullptr);
+
+        PresShell* shell = GetShellForEventTarget(nullptr,
+                                                  pointerCapturingContent);
+
+        if (!shell) {
+          
+          
+          return NS_OK;
+        }
+        return shell->HandleEventWithTarget(aEvent, nullptr,
+                                            pointerCapturingContent,
+                                            aEventStatus, true);
+      } else {
+        frame = pointerCapturingFrame;
+      }
     }
 
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
@@ -7204,7 +7228,8 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     
-    if (!captureRetarget && !isWindowLevelMouseExit && !pointerCapturingFrame) {
+    if (!captureRetarget && !isWindowLevelMouseExit &&
+        !pointerCapturingContent) {
       if (aEvent->mClass == eTouchEventClass) {
         frame = TouchManager::SetupTarget(aEvent->AsTouchEvent(), frame);
       } else {
@@ -7228,7 +7253,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     
-    if (capturingContent && !pointerCapturingFrame &&
+    if (capturingContent && !pointerCapturingContent &&
         (gCaptureInfo.mRetargetToElement || !frame->GetContent() ||
          !nsContentUtils::ContentIsCrossDocDescendantOf(frame->GetContent(),
                                                         capturingContent))) {

@@ -331,8 +331,8 @@ PointerEventHandler::GetPointerCapturingContent(uint32_t aPointerId)
   return nullptr;
 }
 
- nsIFrame*
-PointerEventHandler::GetPointerCapturingFrame(WidgetGUIEvent* aEvent)
+ nsIContent*
+PointerEventHandler::GetPointerCapturingContent(WidgetGUIEvent* aEvent)
 {
   if (!IsPointerEventEnabled() || (aEvent->mClass != ePointerEventClass &&
                                    aEvent->mClass != eMouseEventClass) ||
@@ -346,17 +346,7 @@ PointerEventHandler::GetPointerCapturingFrame(WidgetGUIEvent* aEvent)
   if (!mouseEvent) {
     return nullptr;
   }
-
-  
-  nsIContent* capturingContent =
-    GetPointerCapturingContent(mouseEvent->pointerId);
-
-  if (!capturingContent) {
-    return nullptr;
-  }
-  
-  nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
-  return capturingFrame ? capturingFrame : nullptr;
+  return GetPointerCapturingContent(mouseEvent->pointerId);
 }
 
  void

@@ -98,8 +98,7 @@ public:
 
 
 
-
-  static nsIFrame* GetPointerCapturingFrame(WidgetGUIEvent* aEvent);
+  static nsIContent* GetPointerCapturingContent(WidgetGUIEvent* aEvent);
 
   static nsIContent* GetPointerCapturingContent(uint32_t aPointerId);
 
