@@ -2841,6 +2841,25 @@ HttpBaseChannel::GetFetchCacheMode(uint32_t* aFetchCacheMode)
   return NS_OK;
 }
 
+namespace {
+
+void
+SetCacheFlags(uint32_t& aLoadFlags, uint32_t aFlags)
+{
+  
+  uint32_t allPossibleFlags = nsIRequest::INHIBIT_CACHING
+                            | nsIRequest::LOAD_BYPASS_CACHE
+                            | nsIRequest::VALIDATE_ALWAYS
+                            | nsIRequest::LOAD_FROM_CACHE
+                            | nsICachingChannel::LOAD_ONLY_FROM_CACHE;
+  aLoadFlags &= ~allPossibleFlags;
+
+  
+  aLoadFlags |= aFlags;
+}
+
+} 
+
 NS_IMETHODIMP
 HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
 {
@@ -2851,20 +2870,20 @@ HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_NO_STORE:
     
     
-    mLoadFlags |= INHIBIT_CACHING | LOAD_BYPASS_CACHE;
+    SetCacheFlags(mLoadFlags, INHIBIT_CACHING | LOAD_BYPASS_CACHE);
     break;
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_RELOAD:
     
     
-    mLoadFlags |= LOAD_BYPASS_CACHE;
+    SetCacheFlags(mLoadFlags, LOAD_BYPASS_CACHE);
     break;
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_NO_CACHE:
     
-    mLoadFlags |= VALIDATE_ALWAYS;
+    SetCacheFlags(mLoadFlags, VALIDATE_ALWAYS);
     break;
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_FORCE_CACHE:
     
-    mLoadFlags |= LOAD_FROM_CACHE;
+    SetCacheFlags(mLoadFlags, LOAD_FROM_CACHE);
     break;
   case nsIHttpChannelInternal::FETCH_CACHE_MODE_ONLY_IF_CACHED:
     
@@ -2873,9 +2892,16 @@ HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
     
     
     
-    mLoadFlags |= LOAD_FROM_CACHE | nsICachingChannel::LOAD_ONLY_FROM_CACHE;
+    SetCacheFlags(mLoadFlags, LOAD_FROM_CACHE |
+                              nsICachingChannel::LOAD_ONLY_FROM_CACHE);
     break;
   }
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  uint32_t finalMode = 0;
+  MOZ_ALWAYS_SUCCEEDS(GetFetchCacheMode(&finalMode));
+  MOZ_DIAGNOSTIC_ASSERT(finalMode == aFetchCacheMode);
+#endif 
 
   return NS_OK;
 }
