@@ -6519,7 +6519,7 @@ IonBuilder::jsop_initprop(PropertyName* name)
             }
         }
     }
-    MInstruction* last = *current->rbegin();
+    MInstructionReverseIterator last = current->rbegin();
 
     if (useFastPath && !forceInlineCaches()) {
         
@@ -6541,7 +6541,7 @@ IonBuilder::jsop_initprop(PropertyName* name)
     
     current->pop();
     current->push(obj);
-    for (MInstructionReverseIterator riter = current->rbegin(); *riter != last; riter++) {
+    for (MInstructionReverseIterator riter = current->rbegin(); riter != last; riter++) {
         if (MResumePoint* resumePoint = riter->resumePoint()) {
             MOZ_ASSERT(resumePoint->pc() == pc);
             if (resumePoint->mode() == MResumePoint::ResumeAfter) {
