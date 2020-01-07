@@ -454,7 +454,10 @@ nsresult FileBlockCache::Read(int64_t aOffset,
     
     
     int32_t bytesRead = 0;
-    RefPtr<BlockChange> change = mBlockChanges[blockIndex];
+    MOZ_ASSERT(!mBlockChanges.IsEmpty());
+    MOZ_ASSERT(blockIndex >= 0 &&
+               static_cast<uint32_t>(blockIndex) < mBlockChanges.Length());
+    RefPtr<BlockChange> change = mBlockChanges.SafeElementAt(blockIndex);
     if (change && change->IsWrite()) {
       
       const uint8_t* blockData = change->mData.get();
@@ -468,7 +471,7 @@ nsresult FileBlockCache::Read(int64_t aOffset,
         
         
         
-        blockIndex = mBlockChanges[blockIndex]->mSourceBlockIndex;
+        blockIndex = change->mSourceBlockIndex;
       }
       
       
