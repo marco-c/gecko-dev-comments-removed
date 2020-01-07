@@ -7856,6 +7856,34 @@ class LRoundF : public LInstructionHelper<1, 1, 1>
 
 
 
+class LTrunc : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(Trunc)
+
+    explicit LTrunc(const LAllocation& num)
+      : LInstructionHelper(classOpcode)
+    {
+        setOperand(0, num);
+    }
+};
+
+
+
+class LTruncF : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(TruncF)
+
+    explicit LTruncF(const LAllocation& num)
+      : LInstructionHelper(classOpcode)
+    {
+        setOperand(0, num);
+    }
+};
+
+
+
 class LNearbyInt : public LInstructionHelper<1, 1, 0>
 {
   public:
