@@ -1496,7 +1496,7 @@ public class GeckoSession extends LayerSession
 
 
         void onContextMenu(GeckoSession session, int screenX, int screenY,
-                           String uri, @ElementType int elementTypes,
+                           String uri, @ElementType int elementType,
                            String elementSrc);
     }
 
