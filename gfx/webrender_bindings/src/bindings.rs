@@ -159,6 +159,39 @@ impl WrVecU8 {
     }
 }
 
+#[repr(C)]
+pub struct FfiVec<T> {
+    
+    
+    data: *const T,
+    length: usize,
+    capacity: usize,
+}
+
+impl<T> FfiVec<T> {
+    fn from_vec(v: Vec<T>) -> FfiVec<T> {
+        let ret = FfiVec {
+            data: v.as_ptr(),
+            length: v.len(),
+            capacity: v.capacity(),
+        };
+        mem::forget(v);
+        ret
+    }
+}
+
+impl<T> Drop for FfiVec<T> {
+    fn drop(&mut self) {
+        
+        let _ = unsafe {
+            Vec::from_raw_parts(
+                self.data as *mut T,
+                self.length,
+                self.capacity
+            )
+        };
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn wr_vec_u8_push_bytes(v: &mut WrVecU8, bytes: ByteSlice) {
