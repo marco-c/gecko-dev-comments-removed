@@ -74,6 +74,8 @@ loader.lazyRequireGetter(this, "buildHarLog",
   "devtools/client/netmonitor/src/har/har-builder-utils", true);
 loader.lazyRequireGetter(this, "getKnownDeviceFront",
   "devtools/shared/fronts/device", true);
+loader.lazyRequireGetter(this, "NetMonitorAPI",
+  "devtools/client/netmonitor/src/api", true);
 
 loader.lazyGetter(this, "domNodeConstants", () => {
   return require("devtools/shared/dom-node-constants");
@@ -116,13 +118,11 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._initInspector = null;
   this._inspector = null;
   this._styleSheets = null;
+  this._netMonitorAPI = null;
 
   
   this.frameMap = new Map();
   this.selectedFrameId = null;
-
-  
-  this._requestFinishedListeners = new Set();
 
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
@@ -2687,7 +2687,6 @@ Toolbox.prototype = {
       this._sourceMapURLService.destroy();
       this._sourceMapURLService = null;
     }
-
     if (this._sourceMapService) {
       this._sourceMapService.stopSourceMapWorker();
       this._sourceMapService = null;
@@ -2785,6 +2784,11 @@ Toolbox.prototype = {
     
     deferred.resolve(settleAll(outstanding)
         .catch(console.error)
+        .then(() => {
+          let api = this._netMonitorAPI;
+          this._netMonitorAPI = null;
+          return api ? api.destroy() : null;
+        }, console.error)
         .then(() => {
           this._removeHostListeners();
 
@@ -3047,19 +3051,36 @@ Toolbox.prototype = {
   
 
 
-  getHARFromNetMonitor: async function() {
+
+  getNetMonitorAPI: async function() {
     let netPanel = this.getPanel("netmonitor");
 
     
-    
-    
-    if (!netPanel) {
-      let har = await buildHarLog(Services.appinfo);
-      return har.log;
+    if (netPanel) {
+      return netPanel.panelWin.Netmonitor.api;
+    }
+
+    if (this._netMonitorAPI) {
+      return this._netMonitorAPI;
     }
 
     
-    let har = await netPanel.panelWin.Netmonitor.getHar();
+    
+    this._netMonitorAPI = new NetMonitorAPI();
+    await this._netMonitorAPI.connect(this);
+
+    return this._netMonitorAPI;
+  },
+
+  
+
+
+  getHARFromNetMonitor: async function() {
+    let netMonitor = await this.getNetMonitorAPI();
+    let har = await netMonitor.getHar();
+
+    
+    har = har || buildHarLog(Services.appinfo);
 
     
     
@@ -3074,24 +3095,26 @@ Toolbox.prototype = {
 
 
 
-  addRequestFinishedListener: function(listener) {
-    
-    
-    
-    let message = "The Network panel needs to be selected at least" +
-      " once in order to receive 'onRequestFinished' events.";
-    this.target.logWarningInPage(message, "har");
-
-    
-    this._requestFinishedListeners.add(listener);
+  addRequestFinishedListener: async function(listener) {
+    let netMonitor = await this.getNetMonitorAPI();
+    netMonitor.addRequestFinishedListener(listener);
   },
 
-  removeRequestFinishedListener: function(listener) {
-    this._requestFinishedListeners.delete(listener);
-  },
+  removeRequestFinishedListener: async function(listener) {
+    let netMonitor = await this.getNetMonitorAPI();
+    netMonitor.removeRequestFinishedListener(listener);
 
-  getRequestFinishedListeners: function() {
-    return this._requestFinishedListeners;
+    
+    
+    
+    
+    
+    let netPanel = this.getPanel("netmonitor");
+    let hasListeners = netMonitor.hasRequestFinishedListeners();
+    if (this._netMonitorAPI && !hasListeners && !netPanel) {
+      this._netMonitorAPI.destroy();
+      this._netMonitorAPI = null;
+    }
   },
 
   
@@ -3102,17 +3125,9 @@ Toolbox.prototype = {
 
 
 
-  fetchResponseContent: function(requestId) {
-    let netPanel = this.getPanel("netmonitor");
-
-    
-    
-    
-    if (!netPanel) {
-      return Promise.resolve({content: {}});
-    }
-
-    return netPanel.panelWin.Netmonitor.fetchResponseContent(requestId);
+  fetchResponseContent: async function(requestId) {
+    let netMonitor = await this.getNetMonitorAPI();
+    return netMonitor.fetchResponseContent(requestId);
   },
 
   
