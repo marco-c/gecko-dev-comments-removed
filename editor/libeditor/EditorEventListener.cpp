@@ -455,7 +455,7 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       
       if (mMouseDownOrUpConsumedByIME) {
         mMouseDownOrUpConsumedByIME = false;
-        mouseEvent->AsEvent()->PreventDefault();
+        mouseEvent->PreventDefault();
         return NS_OK;
       }
       return MouseClick(mouseEvent);
