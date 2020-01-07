@@ -519,7 +519,7 @@ public:
 
 
 
-  virtual int32_t IndexOf(const nsINode* aPossibleChild) const = 0;
+  virtual int32_t ComputeIndexOf(const nsINode* aPossibleChild) const = 0;
 
   
 

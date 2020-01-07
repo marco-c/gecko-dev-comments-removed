@@ -257,7 +257,7 @@ public:
     if (!parentNode) {
       return nullptr;
     }
-    int32_t indexInParent = parentNode->IndexOf(aNode);
+    int32_t indexInParent = parentNode->ComputeIndexOf(aNode);
     if (NS_WARN_IF(indexInParent < 0)) {
       return nullptr;
     }
@@ -273,7 +273,7 @@ public:
     if (!parentNode) {
       return nullptr;
     }
-    int32_t indexInParent = parentNode->IndexOf(aNode);
+    int32_t indexInParent = parentNode->ComputeIndexOf(aNode);
     if (NS_WARN_IF(indexInParent < 0)) {
       return nullptr;
     }

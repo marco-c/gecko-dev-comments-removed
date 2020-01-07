@@ -9,7 +9,6 @@
 
 #include "HTMLEditUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/FlushType.h"
@@ -672,7 +671,7 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
     
     nsCOMPtr<nsINode> parentOfRow = parentRow->GetParentNode();
     NS_ENSURE_TRUE(parentOfRow, NS_ERROR_NULL_POINTER);
-    int32_t newRowOffset = parentOfRow->IndexOf(parentRow);
+    int32_t newRowOffset = parentOfRow->ComputeIndexOf(parentRow);
 
     
     if (aAfter && startRowIndex >= rowCount) {

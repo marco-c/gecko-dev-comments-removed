@@ -563,7 +563,7 @@ nsContentIterator::RebuildIndexStack()
       return NS_ERROR_FAILURE;
     }
 
-    mIndexes.InsertElementAt(0, parent->IndexOf(current));
+    mIndexes.InsertElementAt(0, parent->ComputeIndexOf(current));
 
     current = parent;
   }
@@ -694,7 +694,7 @@ nsContentIterator::GetNextSibling(nsINode* aNode,
   nsIContent* sib = parent->GetChildAt_Deprecated(indx);
   if (sib != aNode) {
     
-    indx = parent->IndexOf(aNode);
+    indx = parent->ComputeIndexOf(aNode);
     NS_WARNING_ASSERTION(indx >= 0, "bad indx");
   }
 
@@ -755,7 +755,7 @@ nsContentIterator::GetPrevSibling(nsINode* aNode,
   nsIContent* sib = parent->GetChildAt_Deprecated(indx);
   if (sib != aNode) {
     
-    indx = parent->IndexOf(aNode);
+    indx = parent->ComputeIndexOf(aNode);
     NS_WARNING_ASSERTION(indx >= 0, "bad indx");
   }
 
@@ -833,7 +833,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
   }
   if (sibling != node) {
     
-    indx = parent->IndexOf(node);
+    indx = parent->ComputeIndexOf(node);
     NS_WARNING_ASSERTION(indx >= 0, "bad indx");
   }
 
@@ -904,7 +904,7 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
 
     if (sibling != node) {
       
-      indx = parent->IndexOf(node);
+      indx = parent->ComputeIndexOf(node);
       NS_WARNING_ASSERTION(indx >= 0, "bad indx");
     }
 
@@ -1140,7 +1140,7 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
       break;
     }
 
-    int32_t indx = parent->IndexOf(newCurNode);
+    int32_t indx = parent->ComputeIndexOf(newCurNode);
     NS_WARNING_ASSERTION(indx >= 0, "bad indx");
 
     

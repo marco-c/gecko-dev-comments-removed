@@ -6,10 +6,8 @@
 #include "mozilla/HTMLEditor.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EventStates.h"
-#include "mozilla/mozInlineSpellChecker.h"
 #include "mozilla/TextEvents.h"
 
 #include "nsCRT.h"
@@ -136,8 +134,13 @@ HTMLEditor::HTMLEditor()
 
 HTMLEditor::~HTMLEditor()
 {
-  if (mRules && mRules->AsHTMLEditRules()) {
-    mRules->AsHTMLEditRules()->EndListeningToEditActions();
+  
+  
+  
+  if (mRules) {
+    nsCOMPtr<nsIEditActionListener> listener =
+      static_cast<nsIEditActionListener*>(mRules->AsHTMLEditRules());
+    RemoveEditActionListener(listener);
   }
 
   
@@ -537,7 +540,7 @@ HTMLEditor::BeginningOfDocument()
       done = true;
     } else if (visType == WSType::br || visType == WSType::special) {
       selNode = visNode->GetParentNode();
-      selOffset = selNode ? selNode->IndexOf(visNode) : -1;
+      selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
       done = true;
     } else if (visType == WSType::otherBlock) {
       
@@ -554,7 +557,7 @@ HTMLEditor::BeginningOfDocument()
         
         
         selNode = visNode->GetParentNode();
-        selOffset = selNode ? selNode->IndexOf(visNode) : -1;
+        selOffset = selNode ? selNode->ComputeIndexOf(visNode) : -1;
         done = true;
       } else {
         bool isEmptyBlock;
@@ -562,7 +565,7 @@ HTMLEditor::BeginningOfDocument()
             isEmptyBlock) {
           
           curNode = visNode->GetParentNode();
-          curOffset = curNode ? curNode->IndexOf(visNode) : -1;
+          curOffset = curNode ? curNode->ComputeIndexOf(visNode) : -1;
           curOffset++;
         } else {
           curNode = visNode;
@@ -1598,7 +1601,7 @@ HTMLEditor::SelectElement(nsIDOMElement* aElement)
     return NS_ERROR_FAILURE;
   }
 
-  int32_t offsetInParent = parent->IndexOf(element);
+  int32_t offsetInParent = parent->ComputeIndexOf(element);
 
   
   nsresult rv = selection->Collapse(parent, offsetInParent);

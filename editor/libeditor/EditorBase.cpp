@@ -19,7 +19,6 @@
 #include "DeleteTextTransaction.h"      
 #include "EditAggregateTransaction.h"   
 #include "EditorEventListener.h"        
-#include "HTMLEditRules.h"              
 #include "InsertNodeTransaction.h"      
 #include "InsertTextTransaction.h"      
 #include "JoinNodeTransaction.h"        
@@ -27,28 +26,24 @@
 #include "SplitNodeTransaction.h"       
 #include "StyleSheetTransactions.h"     
 #include "TextEditUtils.h"              
+#include "mozInlineSpellChecker.h"      
 #include "mozilla/CheckedInt.h"         
-#include "mozilla/EditAction.h"         
 #include "mozilla/EditorDOMPoint.h"     
-#include "mozilla/EditorSpellCheck.h"   
 #include "mozilla/EditorUtils.h"        
 #include "mozilla/EditTransactionBase.h" 
 #include "mozilla/FlushType.h"          
 #include "mozilla/IMEStateManager.h"    
-#include "mozilla/mozalloc.h"           
-#include "mozilla/mozInlineSpellChecker.h" 
-#include "mozilla/mozSpellChecker.h"    
 #include "mozilla/Preferences.h"        
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/Services.h"           
 #include "mozilla/TextComposition.h"    
-#include "mozilla/TextServicesDocument.h" 
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/mozalloc.h"           
 #include "nsAString.h"                  
 #include "nsCCUncollectableMarker.h"    
 #include "nsCaret.h"                    
@@ -168,7 +163,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionController)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInlineSpellChecker)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextServicesDocument)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTxnMgr)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorObservers)
@@ -191,7 +185,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionController)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInlineSpellChecker)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextServicesDocument)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTxnMgr)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActionListeners)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorObservers)
@@ -470,7 +463,6 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   mEditorObservers.Clear();
   mDocStateListeners.Clear();
   mInlineSpellChecker = nullptr;
-  mTextServicesDocument = nullptr;
   mSpellcheckCheckboxState = eTriUnset;
   mRootElement = nullptr;
 
@@ -1122,7 +1114,7 @@ EditorBase::BeginningOfDocument()
     return NS_ERROR_NULL_POINTER;
   }
 
-  MOZ_ASSERT(parent->IndexOf(firstNode) == 0,
+  MOZ_ASSERT(parent->ComputeIndexOf(firstNode) == 0,
              "How come the first node isn't the left most child in its parent?");
   return selection->Collapse(parent, 0);
 }
@@ -1371,7 +1363,8 @@ EditorBase::GetInlineSpellChecker(bool autoCreate,
 
   nsresult rv;
   if (!mInlineSpellChecker && autoCreate) {
-    mInlineSpellChecker = new mozInlineSpellChecker();
+    mInlineSpellChecker = do_CreateInstance(MOZ_INLINESPELLCHECKER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if (mInlineSpellChecker) {
@@ -1435,6 +1428,14 @@ EditorBase::CreateNode(nsAtom* aTag,
 
   AutoRules beginRulesSniffing(this, EditAction::createNode, nsIEditor::eNext);
 
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      listener->WillCreateNode(nsDependentAtomString(aTag),
+                               GetAsDOMNode(pointToInsert.GetChild()));
+    }
+  }
+
   nsCOMPtr<Element> ret;
 
   RefPtr<CreateElementTransaction> transaction =
@@ -1451,12 +1452,7 @@ EditorBase::CreateNode(nsAtom* aTag,
 
   mRangeUpdater.SelAdjCreateNode(pointToInsert.AsRaw());
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidCreateNode(ret);
-  }
-
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidCreateNode(nsDependentAtomString(aTag),
@@ -1497,18 +1493,22 @@ EditorBase::InsertNode(nsIContent& aContentToInsert,
 
   AutoRules beginRulesSniffing(this, EditAction::insertNode, nsIEditor::eNext);
 
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      listener->WillInsertNode(
+                  aContentToInsert.AsDOMNode(),
+                  GetAsDOMNode(aPointToInsert.GetNextSiblingOfChild()));
+    }
+  }
+
   RefPtr<InsertNodeTransaction> transaction =
     InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
   nsresult rv = DoTransaction(transaction);
 
   mRangeUpdater.SelAdjInsertNode(aPointToInsert.AsRaw());
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidInsertNode(aContentToInsert);
-  }
-
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidInsertNode(aContentToInsert.AsDOMNode(), rv);
@@ -1556,7 +1556,16 @@ EditorBase::SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
   
   
   
-  Unused << aStartOfRightNode.Offset();
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      
+      
+      
+      listener->WillSplitNode(aStartOfRightNode.GetContainerAsDOMNode(),
+                              aStartOfRightNode.Offset());
+    }
+  }
 
   RefPtr<SplitNodeTransaction> transaction =
     SplitNodeTransaction::Create(*this, aStartOfRightNode);
@@ -1570,17 +1579,7 @@ EditorBase::SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
   mRangeUpdater.SelAdjSplitNode(*aStartOfRightNode.GetContainerAsContent(),
                                 newNode);
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidSplitNode(aStartOfRightNode.GetContainer(), newNode);
-  }
-
-  if (mInlineSpellChecker) {
-    RefPtr<mozInlineSpellChecker> spellChecker = mInlineSpellChecker;
-    spellChecker->DidSplitNode(aStartOfRightNode.GetContainer(), newNode);
-  }
-
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidSplitNode(aStartOfRightNode.GetContainerAsDOMNode(),
@@ -1618,13 +1617,16 @@ EditorBase::JoinNodes(nsINode& aLeftNode,
 
   
   
-  int32_t offset = parent->IndexOf(&aRightNode);
+  int32_t offset = parent->ComputeIndexOf(&aRightNode);
   
   uint32_t oldLeftNodeLen = aLeftNode.Length();
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->WillJoinNodes(aLeftNode, aRightNode);
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      listener->WillJoinNodes(aLeftNode.AsDOMNode(), aRightNode.AsDOMNode(),
+                              parent->AsDOMNode());
+    }
   }
 
   nsresult rv = NS_OK;
@@ -1639,22 +1641,7 @@ EditorBase::JoinNodes(nsINode& aLeftNode,
   mRangeUpdater.SelAdjJoinNodes(aLeftNode, aRightNode, *parent, offset,
                                 (int32_t)oldLeftNodeLen);
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidJoinNodes(aLeftNode, aRightNode);
-  }
-
-  if (mInlineSpellChecker) {
-    RefPtr<mozInlineSpellChecker> spellChecker = mInlineSpellChecker;
-    spellChecker->DidJoinNodes(aLeftNode, aRightNode);
-  }
-
-  if (mTextServicesDocument && NS_SUCCEEDED(rv)) {
-    RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
-    textServicesDocument->DidJoinNodes(aLeftNode, aRightNode);
-  }
-
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidJoinNodes(aLeftNode.AsDOMNode(), aRightNode.AsDOMNode(),
@@ -1683,9 +1670,12 @@ EditorBase::DeleteNode(nsINode* aNode)
   AutoRules beginRulesSniffing(this, EditAction::createNode,
                                nsIEditor::ePrevious);
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->WillDeleteNode(aNode);
+  
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      listener->WillDeleteNode(aNode->AsDOMNode());
+    }
   }
 
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
@@ -1693,12 +1683,7 @@ EditorBase::DeleteNode(nsINode* aNode)
   nsresult rv = deleteNodeTransaction ? DoTransaction(deleteNodeTransaction) :
                                         NS_ERROR_FAILURE;
 
-  if (mTextServicesDocument && NS_SUCCEEDED(rv)) {
-    RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
-    textServicesDocument->DidDeleteNode(aNode);
-  }
-
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidDeleteNode(aNode->AsDOMNode(), rv);
@@ -1912,7 +1897,7 @@ EditorBase::MoveNode(nsIContent* aNode,
   if (NS_WARN_IF(!oldParent)) {
     return NS_ERROR_FAILURE;
   }
-  int32_t oldOffset = oldParent->IndexOf(aNode);
+  int32_t oldOffset = oldParent->ComputeIndexOf(aNode);
 
   if (aOffset == -1) {
     
@@ -2201,30 +2186,8 @@ EditorBase::AddEditActionListener(nsIEditActionListener* aListener)
   NS_ENSURE_TRUE(aListener, NS_ERROR_NULL_POINTER);
 
   
-  
-  
-  if (mInlineSpellChecker) {
-    EditorSpellCheck* editorSpellCheck =
-      mInlineSpellChecker->GetEditorSpellCheck();
-    if (editorSpellCheck) {
-      mozSpellChecker* spellChecker = editorSpellCheck->GetSpellChecker();
-      if (spellChecker) {
-        TextServicesDocument* textServicesDocument =
-          spellChecker->GetTextServicesDocument();
-        if (static_cast<nsIEditActionListener*>(textServicesDocument) ==
-              aListener) {
-          mTextServicesDocument = textServicesDocument;
-          return NS_OK;
-        }
-      }
-    }
-  }
-
-  
   if (!mActionListeners.Contains(aListener)) {
     mActionListeners.AppendElement(*aListener);
-    NS_WARNING_ASSERTION(mActionListeners.Length() != 1,
-      "nsIEditActionListener installed, this editor becomes slower");
   }
 
   return NS_OK;
@@ -2235,13 +2198,6 @@ EditorBase::RemoveEditActionListener(nsIEditActionListener* aListener)
 {
   NS_ENSURE_TRUE(aListener, NS_ERROR_FAILURE);
 
-  if (static_cast<nsIEditActionListener*>(mTextServicesDocument) == aListener) {
-    mTextServicesDocument = nullptr;
-    return NS_OK;
-  }
-
-  NS_WARNING_ASSERTION(mActionListeners.Length() != 1,
-    "All nsIEditActionListeners have been removed, this editor becomes faster");
   mActionListeners.RemoveElement(aListener);
 
   return NS_OK;
@@ -2853,19 +2809,23 @@ EditorBase::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   }
 
   
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    for (auto& listener : listeners) {
+      listener->WillInsertText(
+        static_cast<nsIDOMCharacterData*>(insertedTextNode->AsDOMNode()),
+        insertedOffset, aStringToInsert);
+    }
+  }
+
+  
   
   BeginUpdateViewBatch();
   nsresult rv = DoTransaction(transaction);
   EndUpdateViewBatch();
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidInsertText(insertedTextNode, insertedOffset,
-                                 aStringToInsert);
-  }
-
   
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidInsertText(
@@ -2993,11 +2953,19 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
                                nsIEditor::eNext);
 
   
-  if (!mActionListeners.IsEmpty() && length) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      listener->WillDeleteText(
-        static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0, length);
+      if (length) {
+        listener->WillDeleteText(
+          static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0,
+          length);
+      }
+      if (!aString.IsEmpty()) {
+        listener->WillInsertText(
+          static_cast<nsIDOMCharacterData*>(aCharData.AsDOMNode()), 0,
+          aString);
+      }
     }
   }
 
@@ -3020,18 +2988,8 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
   mRangeUpdater.SelAdjDeleteText(&aCharData, 0, length);
   mRangeUpdater.SelAdjInsertText(aCharData, 0, aString);
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    if (length) {
-      htmlEditRules->DidDeleteText(&aCharData, 0, length);
-    }
-    if (!aString.IsEmpty()) {
-      htmlEditRules->DidInsertText(&aCharData, 0, aString);
-    }
-  }
-
   
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       if (length) {
@@ -3065,7 +3023,7 @@ EditorBase::DeleteText(nsGenericDOMDataNode& aCharData,
                                nsIEditor::ePrevious);
 
   
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->WillDeleteText(
@@ -3076,13 +3034,8 @@ EditorBase::DeleteText(nsGenericDOMDataNode& aCharData,
 
   nsresult rv = DoTransaction(transaction);
 
-  if (mRules && mRules->AsHTMLEditRules()) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidDeleteText(&aCharData, aOffset, aLength);
-  }
-
   
-  if (!mActionListeners.IsEmpty()) {
+  {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidDeleteText(
@@ -3452,18 +3405,18 @@ EditorBase::GetChildOffset(nsINode* aChild,
 
   
   if (aParent->GetFirstChild() == aChild) {
-    MOZ_ASSERT(aParent->IndexOf(aChild) == 0);
+    MOZ_ASSERT(aParent->ComputeIndexOf(aChild) == 0);
     return 0;
   }
 
   
   if (aParent->GetLastChild() == aChild) {
     int32_t lastChildIndex = static_cast<int32_t>(aParent->Length() - 1);
-    MOZ_ASSERT(aParent->IndexOf(aChild) == lastChildIndex);
+    MOZ_ASSERT(aParent->ComputeIndexOf(aChild) == lastChildIndex);
     return lastChildIndex;
   }
 
-  int32_t index = aParent->IndexOf(aChild);
+  int32_t index = aParent->ComputeIndexOf(aChild);
   MOZ_ASSERT(index != -1);
   return index;
 }
@@ -3502,6 +3455,21 @@ EditorBase::GetNodeLocation(nsINode* aChild,
     *aOffset = -1;
   }
   return parent;
+}
+
+
+
+
+
+nsresult
+EditorBase::GetLengthOfDOMNode(nsIDOMNode* aNode,
+                               uint32_t& aCount)
+{
+  aCount = 0;
+  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
+  NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
+  aCount = node->Length();
+  return NS_OK;
 }
 
 nsIContent*
@@ -4412,45 +4380,26 @@ EditorBase::DeleteSelectionImpl(EDirection aAction,
 
   nsCOMPtr<nsIDOMCharacterData> deleteCharData(do_QueryInterface(deleteNode));
   AutoRules beginRulesSniffing(this, EditAction::deleteSelection, aAction);
-
-  if (mRules && mRules->AsHTMLEditRules()) {
-    if (!deleteNode) {
-      RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-      htmlEditRules->WillDeleteSelection(selection);
-    } else if (!deleteCharData) {
-      RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-      htmlEditRules->WillDeleteNode(deleteNode);
-    }
-  }
-
   
-  if (!mActionListeners.IsEmpty()) {
+  {
+    AutoActionListenerArray listeners(mActionListeners);
     if (!deleteNode) {
-      AutoActionListenerArray listeners(mActionListeners);
       for (auto& listener : listeners) {
         listener->WillDeleteSelection(selection);
       }
     } else if (deleteCharData) {
-      AutoActionListenerArray listeners(mActionListeners);
       for (auto& listener : listeners) {
         listener->WillDeleteText(deleteCharData, deleteCharOffset, 1);
+      }
+    } else {
+      for (auto& listener : listeners) {
+        listener->WillDeleteNode(deleteNode->AsDOMNode());
       }
     }
   }
 
   
   nsresult rv = DoTransaction(deleteSelectionTransaction);
-
-  if (mRules && mRules->AsHTMLEditRules() && deleteCharData) {
-    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidDeleteText(deleteNode, deleteCharOffset, 1);
-  }
-
-  if (mTextServicesDocument && NS_SUCCEEDED(rv) &&
-      deleteNode && !deleteCharData) {
-    RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
-    textServicesDocument->DidDeleteNode(deleteNode);
-  }
 
   
   {

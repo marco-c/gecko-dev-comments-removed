@@ -1686,7 +1686,7 @@ Selection::GetPrimaryFrameForFocusNode(nsIFrame** aReturnFrame,
   if (NS_WARN_IF(!parent)) {
     return NS_ERROR_FAILURE;
   }
-  int32_t offset = parent->IndexOf(content);
+  int32_t offset = parent->ComputeIndexOf(content);
 
   return GetPrimaryOrCaretFrameForNodeOffset(parent, offset, aReturnFrame,
                                              aOffsetUsed, aVisual);
