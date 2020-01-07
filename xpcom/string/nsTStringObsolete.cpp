@@ -112,10 +112,9 @@ nsTString<T>::RFindCharInSet(const char_type* aSet, int32_t aOffset) const
 
 
 
-template <typename T, typename int_type>
+template<typename T, typename int_type>
 int_type
-ToIntegerCommon(const nsTString<T>& aSrc,
-                nsresult* aErrorCode, uint32_t aRadix)
+ToIntegerCommon(const nsTString<T>& aSrc, nsresult* aErrorCode, uint32_t aRadix)
 {
   MOZ_ASSERT(aRadix == 10 || aRadix == 16);
 
@@ -127,15 +126,14 @@ ToIntegerCommon(const nsTString<T>& aSrc,
   char_type theChar = 0;
 
   
-  *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-
-  
-
-  auto endcp=aSrc.EndReading();
-  bool done=false;
+  *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
 
   
   
+
+  auto endcp = aSrc.EndReading();
+  bool done = false;
+
   
   
   
@@ -143,16 +141,20 @@ ToIntegerCommon(const nsTString<T>& aSrc,
   
   
   
-  while((cp<endcp) && (!done)){
-    switch(*cp++) {
+  
+  
+  while ((cp < endcp) && (!done)) {
+    switch (*cp++) {
+      
       case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
       case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
-        done=true;
+        done = true;
         break;
+      
       case '-':
-        negate=true; 
+        negate = true; 
         break;
       default:
         break;
@@ -171,38 +173,32 @@ ToIntegerCommon(const nsTString<T>& aSrc,
   *aErrorCode = NS_OK;
 
   
-  while(cp<endcp){
-    theChar=*cp++;
-    if(('0'<=theChar) && (theChar<='9')){
-      result = (aRadix * result) + (theChar-'0');
-    }
-    else if((theChar>='A') && (theChar<='F')) {
-      if(10==aRadix) {
-        *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-        result=0;
+  while (cp < endcp) {
+    theChar = *cp++;
+    if (('0' <= theChar) && (theChar <= '9')) {
+      result = (aRadix * result) + (theChar - '0');
+    } else if ((theChar >= 'A') && (theChar <= 'F')) {
+      if (10 == aRadix) {
+        *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
+        result = 0;
         break;
+      } else {
+        result = (aRadix * result) + ((theChar - 'A') + 10);
       }
-      else {
-        result = (aRadix * result) + ((theChar-'A')+10);
-      }
-    }
-    else if((theChar>='a') && (theChar<='f')) {
-      if(10==aRadix) {
-        *aErrorCode=NS_ERROR_ILLEGAL_VALUE;
-        result=0;
+    } else if ((theChar >= 'a') && (theChar <= 'f')) {
+      if (10 == aRadix) {
+        *aErrorCode = NS_ERROR_ILLEGAL_VALUE;
+        result = 0;
         break;
+      } else {
+        result = (aRadix * result) + ((theChar - 'a') + 10);
       }
-      else {
-        result = (aRadix * result) + ((theChar-'a')+10);
-      }
-    }
-    else if((('X'==theChar) || ('x'==theChar)) && result == 0) {
+    } else if ((('X' == theChar) || ('x' == theChar)) && result == 0) {
       
       
       
       continue;
-    }
-    else {
+    } else {
       
       break;
     }
@@ -213,8 +209,10 @@ ToIntegerCommon(const nsTString<T>& aSrc,
       return 0;
     }
   } 
-  if(negate)
-    result=-result;
+
+  if (negate) {
+    result = -result;
+  }
 
   return result.value();
 }
