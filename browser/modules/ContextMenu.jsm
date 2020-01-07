@@ -16,7 +16,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
-  PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   findCssSelector: "resource://gre/modules/css-selector.js",
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
   LoginManagerContent: "resource://gre/modules/LoginManagerContent.jsm",
@@ -36,8 +35,7 @@ const messageListeners = {
     let frame = this.getTarget(aMessage).ownerDocument;
 
     this.global.sendAsyncMessage("ContextMenu:BookmarkFrame:Result",
-                                 { title: frame.title,
-                                 description: PlacesUIUtils.getDescriptionFromDocument(frame) });
+                                 { title: frame.title });
   },
 
   "ContextMenu:Canvas:ToBlobURL": function(aMessage) {
@@ -125,7 +123,6 @@ const messageListeners = {
                          (node.form.enctype == "application/x-www-form-urlencoded" ||
                           node.form.enctype == ""));
     let title = node.ownerDocument.title;
-    let description = PlacesUIUtils.getDescriptionFromDocument(node.ownerDocument);
     let formData = [];
 
     function escapeNameValuePair(aName, aValue, aIsFormUrlEncoded) {
@@ -172,7 +169,7 @@ const messageListeners = {
     }
 
     this.global.sendAsyncMessage("ContextMenu:SearchFieldBookmarkData:Result",
-                                 { spec, title, description, postData, charset });
+                                 { spec, title, postData, charset });
   },
 
   "ContextMenu:SaveVideoFrameAsImage": function(aMessage) {
@@ -336,7 +333,7 @@ class ContextMenu {
     let depth = 1;
     while (node && depth > 0) {
       
-      if (node.nodeType == node.TEXT_NODE) {
+      if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE) {
         
         text += " " + node.data;
       } else if (node instanceof this.content.HTMLImageElement) {
@@ -535,7 +532,7 @@ class ContextMenu {
     
     let contentType = null;
     let contentDisposition = null;
-    if (aEvent.composedTarget.nodeType == aEvent.composedTarget.ELEMENT_NODE &&
+    if (aEvent.composedTarget.nodeType == Ci.nsIDOMNode.ELEMENT_NODE &&
         aEvent.composedTarget instanceof Ci.nsIImageLoadingContent &&
         aEvent.composedTarget.currentURI) {
       disableSetDesktopBg = this._disableSetDesktopBackground(aEvent.composedTarget);
@@ -711,7 +708,7 @@ class ContextMenu {
 
     context.shouldDisplay = true;
 
-    if (node.nodeType == node.DOCUMENT_NODE ||
+    if (node.nodeType == Ci.nsIDOMNode.DOCUMENT_NODE ||
         
         (node.namespaceURI == XUL_NS && !this._isXULTextLinkLabel(node))) {
       context.shouldDisplay = false;
@@ -791,7 +788,7 @@ class ContextMenu {
   _setContextForNodesNoChildren(editFlags) {
     const context = this.context;
 
-    if (context.target.nodeType == context.target.TEXT_NODE) {
+    if (context.target.nodeType == Ci.nsIDOMNode.TEXT_NODE) {
       
       context.canSpellCheck = context.target.parentNode &&
                               this._isSpellCheckEnabled(context.target);
@@ -800,7 +797,7 @@ class ContextMenu {
 
     
     
-    if (context.target.nodeType != context.target.ELEMENT_NODE) {
+    if (context.target.nodeType != Ci.nsIDOMNode.ELEMENT_NODE) {
       return;
     }
 
@@ -931,7 +928,7 @@ class ContextMenu {
     let elem = context.target;
 
     while (elem) {
-      if (elem.nodeType == elem.ELEMENT_NODE) {
+      if (elem.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
         
         const XLINK_NS = "http://www.w3.org/1999/xlink";
 
@@ -997,7 +994,7 @@ class ContextMenu {
     
     const MathML_NS = "http://www.w3.org/1998/Math/MathML";
 
-    if ((context.target.nodeType == context.target.TEXT_NODE &&
+    if ((context.target.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
          context.target.parentNode.namespaceURI == MathML_NS) ||
          (context.target.namespaceURI == MathML_NS)) {
       context.onMathML = true;

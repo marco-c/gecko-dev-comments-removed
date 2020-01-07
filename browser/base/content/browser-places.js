@@ -284,7 +284,7 @@ var StarUI = {
     };
     gEditItemOverlay.initPanel({ node: aNode,
                                  onPanelReady,
-                                 hiddenRows: ["description", "location",
+                                 hiddenRows: ["location",
                                               "loadInSidebar", "keyword"],
                                  focusedElement: "preferred"});
     this.panel.openPopup(aAnchorElement, aPosition);
@@ -367,13 +367,15 @@ var PlacesCommandHook = {
       let parentGuid = PlacesUtils.bookmarks.unfiledGuid;
       info = { url, parentGuid };
       
-      let description = null;
       let charset = null;
 
-      let docInfo = aUrl ? {} : await this._getPageDetails(aBrowser);
+      let isErrorPage = false;
+      if (!aUrl && aBrowser.documentURI) {
+        isErrorPage = /^about:(neterror|certerror|blocked)/.test(aBrowser.documentURI.spec);
+      }
 
       try {
-        if (docInfo.isErrorPage) {
+        if (isErrorPage) {
           let entry = await PlacesUtils.history.fetch(aBrowser.currentURI);
           if (entry) {
             info.title = entry.title;
@@ -382,7 +384,6 @@ var PlacesCommandHook = {
           info.title = aTitle || aBrowser.contentTitle;
         }
         info.title = info.title || url.href;
-        description = docInfo.description;
         charset = aUrl ? null : aBrowser.characterSet;
       } catch (e) {
         Cu.reportError(e);
@@ -393,11 +394,6 @@ var PlacesCommandHook = {
         
         
         StarUI.beginBatch();
-      }
-
-      if (description) {
-        info.annotations = [{ name: PlacesUIUtils.DESCRIPTION_ANNO,
-                              value: description }];
       }
 
       info.guid = await PlacesTransactions.NewBookmark(info).transact();
@@ -428,18 +424,6 @@ var PlacesCommandHook = {
                                        url);
   },
 
-  _getPageDetails(browser) {
-    return new Promise(resolve => {
-      let mm = browser.messageManager;
-      mm.addMessageListener("Bookmarks:GetPageDetails:Result", function listener(msg) {
-        mm.removeMessageListener("Bookmarks:GetPageDetails:Result", listener);
-        resolve(msg.data);
-      });
-
-      mm.sendAsyncMessage("Bookmarks:GetPageDetails", { });
-    });
-  },
-
   
 
 
@@ -450,9 +434,7 @@ var PlacesCommandHook = {
 
 
 
-
-
-  async bookmarkLink(parentId, url, title, description = "") {
+  async bookmarkLink(parentId, url, title) {
     let bm = await PlacesUtils.bookmarks.fetch({url});
     if (bm) {
       let node = await PlacesUIUtils.promiseNodeLikeFromFetchInfo(bm);
@@ -468,10 +450,8 @@ var PlacesCommandHook = {
                                        type: "bookmark",
                                        uri: makeURI(url),
                                        title,
-                                       description,
                                        defaultInsertionPoint,
-                                       hiddenRows: [ "description",
-                                                     "location",
+                                       hiddenRows: [ "location",
                                                      "loadInSidebar",
                                                      "keyword" ]
                                      }, window.top);
@@ -508,8 +488,7 @@ var PlacesCommandHook = {
     if (pages.length > 1) {
     PlacesUIUtils.showBookmarkDialog({ action: "add",
                                        type: "folder",
-                                       URIList: pages,
-                                       hiddenRows: [ "description" ]
+                                       URIList: pages
                                      }, window);
     }
   },
@@ -536,9 +515,7 @@ var PlacesCommandHook = {
 
 
 
-
-
-  async addLiveBookmark(url, feedTitle, feedSubtitle) {
+  async addLiveBookmark(url, feedTitle) {
     let toolbarIP = new PlacesInsertionPoint({
       parentId: PlacesUtils.toolbarFolderId,
       parentGuid: PlacesUtils.bookmarks.toolbarGuid
@@ -546,21 +523,15 @@ var PlacesCommandHook = {
 
     let feedURI = makeURI(url);
     let title = feedTitle || gBrowser.contentTitle;
-    let description = feedSubtitle;
-    if (!description) {
-      description = (await this._getPageDetails(gBrowser.selectedBrowser)).description;
-    }
 
     PlacesUIUtils.showBookmarkDialog({ action: "add",
                                        type: "livemark",
                                        feedURI,
                                        siteURI: gBrowser.currentURI,
                                        title,
-                                       description,
                                        defaultInsertionPoint: toolbarIP,
                                        hiddenRows: [ "feedLocation",
-                                                     "siteLocation",
-                                                     "description" ]
+                                                     "siteLocation" ]
                                      }, window);
   },
 

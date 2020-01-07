@@ -57,9 +57,6 @@
 
 
 
-
-
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
@@ -89,7 +86,6 @@ var BookmarkPropertiesPanel = {
   _uri: null,
   _loadInSidebar: false,
   _title: "",
-  _description: "",
   _URIs: [],
   _keyword: "",
   _postData: null,
@@ -226,9 +222,6 @@ var BookmarkPropertiesPanel = {
               this._title = this._strings.getString("newLivemarkDefault");
           }
       }
-
-      if ("description" in dialogInfo)
-        this._description = dialogInfo.description;
     } else { 
       this._node = dialogInfo.node;
       this._title = this._node.title;
@@ -461,10 +454,6 @@ var BookmarkPropertiesPanel = {
   async _promiseNewItem() {
     let [containerId, index, parentGuid] = await this._getInsertionPointDetails();
     let annotations = [];
-    if (this._description) {
-      annotations.push({ name: PlacesUIUtils.DESCRIPTION_ANNO,
-                         value: this._description });
-    }
     if (this._loadInSidebar) {
       annotations.push({ name: PlacesUIUtils.LOAD_IN_SIDEBAR_ANNO,
                          value: true });

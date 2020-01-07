@@ -32,7 +32,6 @@ var PlacesOrganizer = {
   
   
   _additionalInfoFields: [
-    "editBMPanel_descriptionRow",
     "editBMPanel_loadInSidebarCheckbox",
     "editBMPanel_keywordRow",
   ],
@@ -677,7 +676,6 @@ var PlacesOrganizer = {
                                                   "loadInSidebar",
                                                   "location",
                                                   "keyword",
-                                                  "description",
                                                   "name"]});
         this._detectAndSetDetailsPaneMinimalState(selectedNode);
       } else {
@@ -1177,9 +1175,6 @@ var ViewMenu = {
       visitCount:   { key: "VISITCOUNT",   dir: "descending" },
       dateAdded:    { key: "DATEADDED",    dir: "descending" },
       lastModified: { key: "LASTMODIFIED", dir: "descending" },
-      description:  { key: "ANNOTATION",
-                      dir: "ascending",
-                      anno: PlacesUIUtils.DESCRIPTION_ANNO }
     };
 
     

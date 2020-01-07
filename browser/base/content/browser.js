@@ -6196,8 +6196,7 @@ function contentAreaClick(event, isPanelClick) {
                                          uri: makeURI(href),
                                          title: linkNode.getAttribute("title"),
                                          loadBookmarkInSidebar: true,
-                                         hiddenRows: [ "description",
-                                                       "location",
+                                         hiddenRows: [ "location",
                                                        "keyword" ]
                                        }, window);
       event.preventDefault();
@@ -6871,9 +6870,9 @@ var IndexedDBPromptHelper = {
       throw new Error("Unexpected topic!");
     }
 
-    var request = subject.QueryInterface(Ci.nsIIDBPermissionsRequest);
+    var requestor = subject.QueryInterface(Ci.nsIInterfaceRequestor);
 
-    var browser = request.browserElement;
+    var browser = requestor.getInterface(Ci.nsIDOMNode);
     if (browser.ownerGlobal != window) {
       
       return;
@@ -6890,7 +6889,7 @@ var IndexedDBPromptHelper = {
       responseTopic = this._permissionsResponse;
     }
 
-    var observer = request.responseObserver;
+    var observer = requestor.getInterface(Ci.nsIObserver);
 
     var mainAction = {
       label: gNavigatorBundle.getString("offlineApps.allowStoring.label"),
@@ -7338,12 +7337,10 @@ function AddKeywordForSearchField() {
                                        type: "bookmark",
                                        uri: makeURI(bookmarkData.spec),
                                        title,
-                                       description: bookmarkData.description,
                                        keyword: "",
                                        postData: bookmarkData.postData,
                                        charSet: bookmarkData.charset,
                                        hiddenRows: [ "location",
-                                                     "description",
                                                      "tags",
                                                      "loadInSidebar" ]
                                      }, window);
