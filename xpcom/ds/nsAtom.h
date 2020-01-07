@@ -10,10 +10,28 @@
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsStringBuffer.h"
+#include "mozilla/HashFunctions.h"
 
 namespace mozilla {
 struct AtomsSizes;
 }
+
+class nsStaticAtom;
+class nsDynamicAtom;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class nsAtom
 {
@@ -21,16 +39,20 @@ public:
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               mozilla::AtomsSizes& aSizes) const;
 
+  
+  
+  
+  
   enum class AtomKind : uint8_t {
-    DynamicAtom = 0,
-    StaticAtom = 1,
-    HTML5Atom = 2,
+    Static = 0,
+    DynamicNormal = 1,
+    DynamicHTML5 = 2,
   };
 
   bool Equals(char16ptr_t aString, uint32_t aLength) const
   {
     return mLength == aLength &&
-           memcmp(mString, aString, mLength * sizeof(char16_t)) == 0;
+           memcmp(GetUTF16String(), aString, mLength * sizeof(char16_t)) == 0;
   }
 
   bool Equals(const nsAString& aString) const
@@ -40,11 +62,22 @@ public:
 
   AtomKind Kind() const { return static_cast<AtomKind>(mKind); }
 
-  bool IsDynamic() const { return Kind() == AtomKind::DynamicAtom; }
-  bool IsHTML5()   const { return Kind() == AtomKind::HTML5Atom; }
-  bool IsStatic()  const { return Kind() == AtomKind::StaticAtom; }
+  bool IsStatic() const { return Kind() == AtomKind::Static; }
+  bool IsDynamic() const
+  {
+    return Kind() == AtomKind::DynamicNormal ||
+           Kind() == AtomKind::DynamicHTML5;
+  }
+  bool IsDynamicHTML5() const
+  {
+    return Kind() == AtomKind::DynamicHTML5;
+  }
 
-  char16ptr_t GetUTF16String() const { return mString; }
+  const nsStaticAtom* AsStatic() const;
+  const nsDynamicAtom* AsDynamic() const;
+  nsDynamicAtom* AsDynamic();
+
+  char16ptr_t GetUTF16String() const;
 
   uint32_t GetLength() const { return mLength; }
 
@@ -53,21 +86,12 @@ public:
 
   
   
-  nsStringBuffer* GetStringBuffer() const
-  {
-    
-    MOZ_ASSERT(IsDynamic() || IsHTML5());
-    return nsStringBuffer::FromData(const_cast<char16_t*>(mString));
-  }
-
-  
-  
   
   
   
   uint32_t hash() const
   {
-    MOZ_ASSERT(!IsHTML5());
+    MOZ_ASSERT(!IsDynamicHTML5());
     return mHash;
   }
 
@@ -78,33 +102,30 @@ public:
 
   typedef mozilla::TrueType HasThreadSafeRefCnt;
 
-private:
-  friend class nsAtomTable;
-  friend class nsAtomSubTable;
-  friend class nsHtml5AtomEntry;
-
 protected:
   
-  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
+  constexpr nsAtom(const char16_t* aStr, uint32_t aLength)
+    : mLength(aLength)
+    , mKind(static_cast<uint32_t>(nsAtom::AtomKind::Static))
+    , mHash(mozilla::ConstExprHashString(aStr))
+  {}
 
   
-  nsAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash);
+  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash)
+    : mLength(aString.Length())
+    , mKind(static_cast<uint32_t>(aKind))
+    , mHash(aHash)
+  {
+    MOZ_ASSERT(aKind == AtomKind::DynamicNormal ||
+               aKind == AtomKind::DynamicHTML5);
+  }
 
-  ~nsAtom();
+  ~nsAtom() = default;
 
   const uint32_t mLength:30;
   const uint32_t mKind:2; 
   const uint32_t mHash;
-  
-  
-  
-  
-  const char16_t* const mString;
 };
-
-
-
-
 
 
 
@@ -117,17 +138,64 @@ public:
   MozExternalRefCountType AddRef() = delete;
   MozExternalRefCountType Release() = delete;
 
+  constexpr nsStaticAtom(const char16_t* aStr, uint32_t aLength,
+                         uint32_t aStringOffset)
+    : nsAtom(aStr, aLength)
+    , mStringOffset(aStringOffset)
+  {}
+
+  const char16_t* String() const
+  {
+    return reinterpret_cast<const char16_t*>(uintptr_t(this) - mStringOffset);
+  }
+
   already_AddRefed<nsAtom> ToAddRefed() {
     return already_AddRefed<nsAtom>(static_cast<nsAtom*>(this));
   }
 
 private:
-  friend class nsAtomTable;
+  
+  
+  uint32_t mStringOffset;
+};
+
+class nsDynamicAtom : public nsAtom
+{
+public:
+  
+  
+  MozExternalRefCountType AddRef();
+  MozExternalRefCountType Release();
+
+  ~nsDynamicAtom();
+
+  const char16_t* String() const { return mString; }
 
   
-  nsStaticAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash)
-    : nsAtom(aString, aLength, aHash)
-  {}
+  
+  nsStringBuffer* GetStringBuffer() const
+  {
+    
+    MOZ_ASSERT(IsDynamic());
+    return nsStringBuffer::FromData(const_cast<char16_t*>(mString));
+  }
+
+private:
+  friend class nsAtomTable;
+  friend class nsAtomSubTable;
+  
+  friend class nsHtml5AtomEntry;
+
+  
+  
+  
+  nsDynamicAtom(const nsAString& aString, uint32_t aHash);
+  explicit nsDynamicAtom(const nsAString& aString);
+
+  mozilla::ThreadSafeAutoRefCnt mRefCnt;
+  
+  
+  const char16_t* const mString;
 };
 
 

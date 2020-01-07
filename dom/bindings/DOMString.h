@@ -223,7 +223,8 @@ public:
       } else {
         
         
-        SetKnownLiveStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
+        SetKnownLiveStringBuffer(
+          aAtom->AsDynamic()->GetStringBuffer(), aAtom->GetLength());
       }
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
