@@ -379,10 +379,19 @@ var PingPicker = {
 
   _updateCurrentPingData() {
     const subsession = document.getElementById("show-subsession-data").checked;
-    const ping = TelemetryController.getCurrentPingData(subsession);
+    let ping = TelemetryController.getCurrentPingData(subsession);
     if (!ping) {
       return;
     }
+
+    
+    let eventSnapshot = Telemetry.snapshotEvents(Telemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
+    for (let process of Object.keys(eventSnapshot)) {
+      if (process in ping.payload.processes) {
+        ping.payload.processes[process].events = eventSnapshot[process].filter(e => !e[1].startsWith("telemetry.test"));
+      }
+    }
+
     displayPingData(ping, true);
   },
 
@@ -1708,6 +1717,47 @@ var KeyedScalars = {
   },
 };
 
+var Events = {
+  
+
+
+
+  render(aPayload) {
+    let eventsSection = document.getElementById("events");
+    removeAllChildNodes(eventsSection);
+
+    let processesSelect = document.getElementById("processes");
+    let selectedProcess = processesSelect.selectedOptions.item(0).getAttribute("value");
+
+    if (!aPayload.processes ||
+        !selectedProcess ||
+        !(selectedProcess in aPayload.processes)) {
+      return;
+    }
+
+    let events = aPayload.processes[selectedProcess].events || {};
+    let hasData = Array.from(processesSelect.options).some((option) => {
+      let value = option.getAttribute("value");
+      let evts = aPayload.processes[value].events;
+      return evts && Object.keys(evts).length > 0;
+    });
+    setHasData("events-section", hasData);
+    if (Object.keys(events).length > 0) {
+      const headings = [
+        "timestampHeader",
+        "categoryHeader",
+        "methodHeader",
+        "objectHeader",
+        "valuesHeader",
+        "extraHeader",
+      ].map(h => bundle.GetStringFromName(h));
+
+      const table = GenericTable.render(events, headings);
+      eventsSection.appendChild(table);
+    }
+  },
+};
+
 
 
 
@@ -2305,6 +2355,9 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   KeyedHistogramSection.render(payload);
+
+  
+  Events.render(payload);
 
   
   CapturedStacks.render(payload);
