@@ -122,10 +122,16 @@ nsHTTPDownloadEvent::Run()
   
   
   
+  
+  
+  
+  
   if (mRequestSession->mOriginAttributes != OriginAttributes()) {
     OriginAttributes attrs;
     attrs.mFirstPartyDomain =
       mRequestSession->mOriginAttributes.mFirstPartyDomain;
+    attrs.mPrivateBrowsingId =
+      mRequestSession->mOriginAttributes.mPrivateBrowsingId;
 
     nsCOMPtr<nsILoadInfo> loadInfo = chan->GetLoadInfo();
     if (loadInfo) {
