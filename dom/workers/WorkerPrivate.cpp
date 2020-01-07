@@ -3280,9 +3280,11 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       if (currentStatus == Killing) {
         
         
-        PromiseDebugging::FlushUncaughtRejections();
+        MOZ_DIAGNOSTIC_ASSERT(!mClientSource);
 
-        mClientSource = nullptr;
+        
+        
+        PromiseDebugging::FlushUncaughtRejections();
 
         ShutdownGCTimers();
 
@@ -3500,12 +3502,17 @@ WorkerPrivate::EnsurePerformanceStorage()
   }
 }
 
-const ClientInfo&
+Maybe<ClientInfo>
 WorkerPrivate::GetClientInfo() const
 {
   AssertIsOnWorkerThread();
-  MOZ_DIAGNOSTIC_ASSERT(mClientSource);
-  return mClientSource->Info();
+  Maybe<ClientInfo> clientInfo;
+  if (!mClientSource) {
+    MOZ_DIAGNOSTIC_ASSERT(mStatus >= Terminating);
+    return Move(clientInfo);
+  }
+  clientInfo.emplace(mClientSource->Info());
+  return Move(clientInfo);
 }
 
 const ClientState
@@ -3540,6 +3547,12 @@ void
 WorkerPrivate::ExecutionReady()
 {
   AssertIsOnWorkerThread();
+  {
+    MutexAutoLock lock(mMutex);
+    if (mStatus >= Terminating) {
+      return;
+    }
+  }
   MOZ_DIAGNOSTIC_ASSERT(mClientSource);
   mClientSource->WorkerExecutionReady(this);
 }
@@ -4514,8 +4527,9 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
     }
 
     if (aStatus >= Terminating) {
+      MutexAutoUnlock unlock(mMutex);
+      mClientSource.reset();
       if (mScope) {
-        MutexAutoUnlock unlock(mMutex);
         mScope->NoteTerminating();
       }
     }
