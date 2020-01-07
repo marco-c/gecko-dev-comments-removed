@@ -269,10 +269,8 @@ BookmarkImporter.prototype = {
 
       
       
-      
       if (!PlacesUtils.bookmarks.userContentRoots.includes(node.guid)) {
-        node.parentGuid = PlacesUtils.bookmarks.rootGuid;
-        await PlacesUtils.bookmarks.insert(node);
+        continue;
       }
 
       await PlacesUtils.bookmarks.insertTree(node, { fixupOrSkipInvalidEntries: true });
