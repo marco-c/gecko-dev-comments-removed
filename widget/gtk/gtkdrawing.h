@@ -82,6 +82,9 @@ typedef struct {
     GtkBorder scrollbar;
     GtkBorder track;
   } border;
+  struct {
+    GtkBorder thumb;
+  } margin;
 } ScrollbarGTKMetrics;
 
 typedef struct {
@@ -501,10 +504,16 @@ moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length, gint* 
 
 
 
+const ScrollbarGTKMetrics*
+GetScrollbarMetrics(GtkOrientation aOrientation);
+
+
+
+
 
 
 const ScrollbarGTKMetrics*
-GetScrollbarMetrics(GtkOrientation aOrientation, bool aActive = false);
+GetActiveScrollbarMetrics(GtkOrientation aOrientation);
 
 
 
