@@ -912,6 +912,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   int32_t nativeIndex = aNativeStack.mCount - 1;
 
   uint8_t* lastPseudoCppStackAddr = nullptr;
+  uint8_t* jitEndStackAddr = nullptr;
 
   
   while (pseudoIndex != pseudoCount || jsIndex >= 0 || nativeIndex >= 0) {
@@ -919,6 +920,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     uint8_t* pseudoStackAddr = nullptr;
     uint8_t* jsStackAddr = nullptr;
     uint8_t* nativeStackAddr = nullptr;
+    uint8_t* jsActivationAddr = nullptr;
 
     if (pseudoIndex != pseudoCount) {
       const js::ProfileEntry& pseudoEntry = pseudoEntries[pseudoIndex];
@@ -943,6 +945,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 
     if (jsIndex >= 0) {
       jsStackAddr = (uint8_t*) jsFrames[jsIndex].stackAddress;
+      jsActivationAddr = (uint8_t*) jsFrames[jsIndex].activation;
     }
 
     if (nativeIndex >= 0) {
@@ -989,7 +992,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
     if (jsStackAddr > nativeStackAddr) {
       MOZ_ASSERT(jsIndex >= 0);
       const JS::ProfilingFrameIterator::Frame& jsFrame = jsFrames[jsIndex];
-
+      jitEndStackAddr = (uint8_t*) jsFrame.endStackAddress;
       
       
       
@@ -1018,7 +1021,16 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
 
     
     
-    if (nativeStackAddr) {
+    if (nativeStackAddr &&
+        
+        
+        
+        
+        (!jitEndStackAddr || nativeStackAddr < jitEndStackAddr ) &&
+        
+        
+        (!jsActivationAddr || nativeStackAddr > jsActivationAddr)
+      ) {
       MOZ_ASSERT(nativeIndex >= 0);
       void* addr = (void*)aNativeStack.mPCs[nativeIndex];
       aCollector.CollectNativeLeafAddr(addr);
