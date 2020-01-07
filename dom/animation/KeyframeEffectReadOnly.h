@@ -394,6 +394,8 @@ private:
     const ComputedStyle* aBaseComputedStyle);
 
   
+  nsIFrame* GetPrimaryFrame() const;
+  
   nsIFrame* GetStyleFrame() const;
 
   bool CanThrottle() const;
