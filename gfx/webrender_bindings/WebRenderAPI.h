@@ -23,6 +23,8 @@
 
 namespace mozilla {
 
+struct ActiveScrolledRoot;
+
 namespace widget {
 class CompositorWidget;
 }
@@ -468,6 +470,11 @@ public:
 
   
   
+  
+  Maybe<layers::FrameMetrics::ViewID> GetContainingFixedPosScrollTarget(const ActiveScrolledRoot* aAsr);
+
+  
+  
   void SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo);
   
@@ -476,6 +483,24 @@ public:
   
   wr::WrState* Raw() { return mWrState; }
 
+  
+  
+  
+  class MOZ_RAII FixedPosScrollTargetTracker {
+  public:
+    FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
+                                const ActiveScrolledRoot* aAsr,
+                                layers::FrameMetrics::ViewID aScrollId);
+    ~FixedPosScrollTargetTracker();
+    Maybe<layers::FrameMetrics::ViewID> GetScrollTargetForASR(const ActiveScrolledRoot* aAsr);
+
+  private:
+    FixedPosScrollTargetTracker* mParentTracker;
+    DisplayListBuilder& mBuilder;
+    const ActiveScrolledRoot* mAsr;
+    layers::FrameMetrics::ViewID mScrollId;
+  };
+
 protected:
   wr::WrState* mWrState;
 
@@ -483,6 +508,8 @@ protected:
   
   
   std::unordered_map<layers::FrameMetrics::ViewID, wr::WrClipId> mScrollIds;
+
+  FixedPosScrollTargetTracker* mActiveFixedPosTracker;
 
   friend class WebRenderAPI;
 };

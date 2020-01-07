@@ -4850,7 +4850,6 @@ nsDisplayBackgroundColor::Paint(nsDisplayListBuilder* aBuilder,
     }
 
     ctx->SetColor(mColor);
-    ctx->NewPath();
     ctx->Rectangle(bounds, true);
     ctx->Fill();
     ctx->PopGroupAndBlend();
@@ -5106,7 +5105,13 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
   
   FrameMetrics::ViewID scrollId = mScrollTarget.valueOrFrom(
       [&]() -> FrameMetrics::ViewID {
-          if (const ActiveScrolledRoot* asr = GetActiveScrolledRoot()) {
+          const ActiveScrolledRoot* asr = GetActiveScrolledRoot();
+          Maybe<FrameMetrics::ViewID> fixedTarget =
+              aBuilder.GetContainingFixedPosScrollTarget(asr);
+          if (fixedTarget) {
+            return *fixedTarget;
+          }
+          if (asr) {
             return asr->GetViewId();
           }
           return FrameMetrics::NULL_SCROLL_ID;
@@ -7420,6 +7425,25 @@ nsDisplayFixedPosition::BuildLayer(nsDisplayListBuilder* aBuilder,
       viewportFrame, anchorRect, fixedFrame, presContext, aContainerParameters);
 
   return layer.forget();
+}
+
+bool
+nsDisplayFixedPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                                const StackingContextHelper& aSc,
+                                                mozilla::layers::WebRenderLayerManager* aManager,
+                                                nsDisplayListBuilder* aDisplayListBuilder)
+{
+  
+  
+  
+  
+  mozilla::wr::DisplayListBuilder::FixedPosScrollTargetTracker tracker(
+      aBuilder,
+      GetActiveScrolledRoot(),
+      nsLayoutUtils::ScrollIdForRootScrollFrame(Frame()->PresContext()));
+  return nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, aSc,
+      aManager, aDisplayListBuilder);
 }
 
 bool
