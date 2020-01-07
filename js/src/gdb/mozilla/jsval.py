@@ -71,31 +71,6 @@ mozilla.prettyprinters.clear_module_printers(__name__)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Box(object):
     def __init__(self, asBits, jtc):
         self.asBits = asBits
@@ -151,7 +126,7 @@ class Nunbox(Box):
     def as_address(self): return gdb.Value(self.asBits & Nunbox.PAYLOAD_MASK)
 
 
-class jsvalTypeCache(object):
+class JSValueTypeCache(object):
     def __init__(self, cache):
         
         d = gdb.types.make_enum_dict(gdb.lookup_type('JSValueType'))
@@ -183,49 +158,50 @@ class jsvalTypeCache(object):
         
         self.boxer = Punbox if cache.void_ptr_t.sizeof == 8 else Nunbox
 
-@pretty_printer('jsval_layout')
-class jsval_layout(object):
+@pretty_printer('JS::Value')
+class JSValue(object):
     def __init__(self, value, cache):
         
         self.cache = cache
-        if not cache.mod_jsval:
-            cache.mod_jsval = jsvalTypeCache(cache)
-        self.jtc = cache.mod_jsval
+        if not cache.mod_JS_Value:
+            cache.mod_JS_Value = JSValueTypeCache(cache)
+        self.jtc = cache.mod_JS_Value
 
-        self.value = value
-        self.box = self.jtc.boxer(value['asBits'], self.jtc)
+        data = value['data']
+        self.data = data
+        self.box = self.jtc.boxer(data['asBits'], self.jtc)
 
     def to_string(self):
         tag = self.box.tag()
+
+        if tag == self.jtc.UNDEFINED:
+            return '$JS::UndefinedValue()'
+        if tag == self.jtc.NULL:
+            return '$JS::NullValue()'
+        if tag == self.jtc.BOOLEAN:
+            return '$JS::BooleanValue(%s)' % str(self.box.as_uint32() != 0).lower()
+        if tag == self.jtc.MAGIC:
+            value = self.box.as_uint32()
+            if 0 <= value and value < len(self.jtc.magic_names):
+                return '$JS::MagicValue(%s)' % (self.jtc.magic_names[value],)
+            else:
+                return '$JS::MagicValue(%d)' % (value,)
+
         if tag == self.jtc.INT32:
             value = self.box.as_uint32()
             signbit = 1 << 31
             value = (value ^ signbit) - signbit
-        elif tag == self.jtc.UNDEFINED:
-            return 'JSVAL_VOID'
-        elif tag == self.jtc.BOOLEAN:
-            return 'JSVAL_TRUE' if self.box.as_uint32() else 'JSVAL_FALSE'
-        elif tag == self.jtc.MAGIC:
-            value = self.box.as_uint32()
-            if 0 <= value and value < len(self.jtc.magic_names):
-                return '$jsmagic(%s)' % (self.jtc.magic_names[value],)
-            else:
-                return '$jsmagic(%d)' % (value,)
-        elif tag == self.jtc.STRING:
+            return '$JS::Int32Value(%s)' % value
+
+        if tag == self.jtc.DOUBLE:
+            return '$JS::DoubleValue(%s)' % self.data['asDouble']
+
+        if tag == self.jtc.STRING:
             value = self.box.as_address().cast(self.cache.JSString_ptr_t)
-        elif tag == self.jtc.SYMBOL:
-            value = self.box.as_address().cast(self.cache.JSSymbol_ptr_t)
-        elif tag == self.jtc.NULL:
-            return 'JSVAL_NULL'
         elif tag == self.jtc.OBJECT:
             value = self.box.as_address().cast(self.cache.JSObject_ptr_t)
-        elif tag == self.jtc.DOUBLE:
-            value = self.value['asDouble']
+        elif tag == self.jtc.SYMBOL:
+            value = self.box.as_address().cast(self.cache.JSSymbol_ptr_t)
         else:
-            return '$jsval(unrecognized!)'
-        return '$jsval(%s)' % (value,)
-
-@pretty_printer('JS::Value')
-class JSValue(object):
-    def __new__(cls, value, cache):
-        return jsval_layout(value['data'], cache)
+            value = 'unrecognized!'
+        return '$JS::Value(%s)' % (value,)
