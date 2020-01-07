@@ -751,9 +751,7 @@ private:
   bool LaunchSubprocess(hal::ProcessPriority aInitialPriority = hal::PROCESS_PRIORITY_FOREGROUND);
 
   
-  void InitInternal(ProcessPriority aPriority,
-                    bool aSetupOffMainThreadCompositing,
-                    bool aSendRegisteredChrome);
+  void InitInternal(ProcessPriority aPriority);
 
   virtual ~ContentParent();
 
