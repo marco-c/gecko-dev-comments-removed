@@ -259,14 +259,15 @@ PodSet(T* aDst, const T& aSrc, size_t aNElem)
 
 
 
-#define JS_FRESH_NURSERY_PATTERN 0x2F
-#define JS_SWEPT_NURSERY_PATTERN 0x2B
-#define JS_ALLOCATED_NURSERY_PATTERN 0x2D
-#define JS_FRESH_TENURED_PATTERN 0x4F
-#define JS_MOVED_TENURED_PATTERN 0x49
-#define JS_SWEPT_TENURED_PATTERN 0x4B
-#define JS_ALLOCATED_TENURED_PATTERN 0x4D
-#define JS_FREED_HEAP_PTR_PATTERN 0x6B
+const uint8_t JS_FRESH_NURSERY_PATTERN     = 0x2F;
+const uint8_t JS_SWEPT_NURSERY_PATTERN     = 0x2B;
+const uint8_t JS_ALLOCATED_NURSERY_PATTERN = 0x2D;
+const uint8_t JS_FRESH_TENURED_PATTERN     = 0x4F;
+const uint8_t JS_MOVED_TENURED_PATTERN     = 0x49;
+const uint8_t JS_SWEPT_TENURED_PATTERN     = 0x4B;
+const uint8_t JS_ALLOCATED_TENURED_PATTERN = 0x4D;
+const uint8_t JS_FREED_HEAP_PTR_PATTERN    = 0x6B;
+const uint8_t JS_FREED_CHUNK_PATTERN       = 0x8B;
 #define JS_SWEPT_TI_PATTERN 0x6F
 
 
@@ -309,13 +310,11 @@ SetMemCheckKind(void* ptr, size_t bytes, MemCheckKind kind)
     MOZ_CRASH("Invalid kind");
 }
 
-static inline void*
-Poison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
-{
-    static bool disablePoison = bool(getenv("JSGC_DISABLE_POISONING"));
-    if (disablePoison)
-        return ptr;
+namespace js {
 
+static inline void
+AlwaysPoison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
+{
     
     
     
@@ -342,8 +341,17 @@ Poison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
 #endif 
 
     SetMemCheckKind(ptr, num, kind);
-    return ptr;
 }
+
+static inline void
+Poison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
+{
+    static bool disablePoison = bool(getenv("JSGC_DISABLE_POISONING"));
+    if (!disablePoison)
+        AlwaysPoison(ptr, value, num, kind);
+}
+
+} 
 
 
 #if defined(DEBUG) || defined(NIGHTLY_BUILD)
@@ -352,7 +360,7 @@ Poison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
 
 
 #if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
-# define JS_POISON(p, val, size, kind) Poison(p, val, size, kind)
+# define JS_POISON(p, val, size, kind) js::Poison(p, val, size, kind)
 # define JS_GC_POISONING 1
 #else
 # define JS_POISON(p, val, size, kind) ((void) 0)
@@ -360,7 +368,7 @@ Poison(void* ptr, uint8_t value, size_t num, MemCheckKind kind)
 
 
 #if defined(DEBUG)
-# define JS_EXTRA_POISON(p, val, size, kind) Poison(p, val, size, kind)
+# define JS_EXTRA_POISON(p, val, size, kind) js::Poison(p, val, size, kind)
 #else
 # define JS_EXTRA_POISON(p, val, size, kind) ((void) 0)
 #endif
