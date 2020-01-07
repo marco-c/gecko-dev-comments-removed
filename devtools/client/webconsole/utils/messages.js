@@ -83,6 +83,7 @@ function transformConsoleAPICallPacket(packet) {
       parameters = [l10n.getStr("consoleCleared")];
       break;
     case "count":
+    case "countReset":
       
       type = MESSAGE_TYPE.LOG;
       let {counter} = message;
@@ -90,6 +91,10 @@ function transformConsoleAPICallPacket(packet) {
       if (!counter) {
         
         type = MESSAGE_TYPE.NULL_MESSAGE;
+      } else if (counter.error) {
+        messageText = l10n.getFormatStr(counter.error, [counter.label]);
+        level = MESSAGE_LEVEL.WARN;
+        parameters = null;
       } else {
         let label = counter.label ? counter.label : l10n.getStr("noCounterLabel");
         messageText = `${label}: ${counter.count}`;
