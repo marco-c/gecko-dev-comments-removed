@@ -17,6 +17,7 @@ namespace layers {
 class SyncObjectClient;
 class TextureForwarder;
 class LayersIPCActor;
+class ImageBridgeChild;
 
 
 
@@ -63,6 +64,12 @@ public:
   void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
 
   SyncObjectClient* GetSyncObject() { return mSyncObject; }
+
+  
+  
+  virtual bool IsThreadSafe() const { return true; }
+
+  virtual RefPtr<KnowsCompositor> GetForMedia() { return RefPtr<KnowsCompositor>(this); }
 
   int32_t GetMaxTextureSize() const
   {
@@ -132,7 +139,7 @@ public:
   
 
 
-  virtual TextureForwarder* GetTextureForwarder() = 0;
+   virtual TextureForwarder* GetTextureForwarder() = 0;
   virtual LayersIPCActor* GetLayersIPCActor() = 0;
   virtual ActiveResourceTracker* GetActiveResourceTracker()
   {
@@ -146,6 +153,40 @@ protected:
 
   const int32_t mSerial;
   static mozilla::Atomic<int32_t> sSerialCounter;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+class KnowsCompositorMediaProxy: public KnowsCompositor
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(KnowsCompositorMediaProxy, override);
+
+  explicit KnowsCompositorMediaProxy(const TextureFactoryIdentifier& aIdentifier);
+
+  virtual TextureForwarder* GetTextureForwarder() override;
+
+
+  virtual LayersIPCActor* GetLayersIPCActor() override;
+
+  virtual ActiveResourceTracker* GetActiveResourceTracker() override;
+
+  virtual void SyncWithCompositor() override;
+
+protected:
+  virtual ~KnowsCompositorMediaProxy();
+
+  RefPtr<ImageBridgeChild> mThreadSafeAllocator;
 };
 
 } 
