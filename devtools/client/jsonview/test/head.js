@@ -32,47 +32,83 @@ registerCleanupFunction(() => {
 
 
 
-async function addJsonViewTab(url, timeout = -1) {
-  info("Adding a new JSON tab with URL: '" + url + "'");
 
-  let tab = await addTab(url);
+
+
+
+
+
+
+
+
+
+
+
+
+async function addJsonViewTab(url, {
+  appReadyState = "complete",
+  docReadyState = "complete",
+} = {}) {
+  info("Adding a new JSON tab with URL: '" + url + "'");
+  let tabLoaded = addTab(url);
+  let tab = gBrowser.selectedTab;
   let browser = tab.linkedBrowser;
+  await Promise.race([tabLoaded, new Promise(resolve => {
+    browser.webProgress.addProgressListener({
+      QueryInterface: XPCOMUtils.generateQI(["nsIWebProgressListener",
+                                             "nsISupportsWeakReference"]),
+      onLocationChange(webProgress) {
+        
+        webProgress.removeProgressListener(this);
+        resolve();
+      },
+    }, Ci.nsIWebProgress.NOTIFY_LOCATION);
+  })]);
 
   
   getFrameScript();
-
-  
   let rootDir = getRootDirectory(gTestPath);
-  let frameScriptUrl = rootDir + "doc_frame_script.js";
-  browser.messageManager.loadFrameScript(frameScriptUrl, false);
 
+  let data = {rootDir, appReadyState, docReadyState};
   
-  if (!content.window.wrappedJSObject.JSONView) {
-    throw new Error("JSON Viewer did not load.");
-  }
+  await ContentTask.spawn(browser, data, async function (data) {
+    
+    let {JSONView} = content.window.wrappedJSObject;
+    if (!JSONView) {
+      throw new Error("The JSON Viewer did not load.");
+    }
 
-  
-  if (content.window.wrappedJSObject.JSONView.initialized) {
-    return tab;
-  }
+    
+    let frameScriptUrl = data.rootDir + "doc_frame_script.js";
+    Services.scriptloader.loadSubScript(frameScriptUrl, {}, "UTF-8");
 
-  
-  const onJSONViewInitialized =
-    waitForContentMessage("Test:JsonView:JSONViewInitialized")
-    .then(() => tab);
+    let docReadyStates = ["loading", "interactive", "complete"];
+    let docReadyIndex = docReadyStates.indexOf(data.docReadyState);
+    let appReadyStates = ["uninitialized", ...docReadyStates];
+    let appReadyIndex = appReadyStates.indexOf(data.appReadyState);
+    if (docReadyIndex < 0 || appReadyIndex < 0) {
+      throw new Error("Invalid app or doc readyState parameter.");
+    }
 
-  if (!(timeout >= 0)) {
-    return onJSONViewInitialized;
-  }
+    
+    let {document} = content.window;
+    while (docReadyStates.indexOf(document.readyState) < docReadyIndex) {
+      info(`DocReadyState is "${document.readyState}". Await "${data.docReadyState}"`);
+      await new Promise(resolve => {
+        document.addEventListener("readystatechange", resolve, {once: true});
+      });
+    }
 
-  if (content.window.document.readyState !== "complete") {
-    await waitForContentMessage("Test:JsonView:load");
-  }
+    
+    while (appReadyStates.indexOf(JSONView.readyState) < appReadyIndex) {
+      info(`AppReadyState is "${JSONView.readyState}". Await "${data.appReadyState}"`);
+      await new Promise(resolve => {
+        content.addEventListener("AppReadyStateChange", resolve, {once: true});
+      });
+    }
+  });
 
-  let onTimeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("JSON Viewer did not load.")), timeout));
-
-  return Promise.race([onJSONViewInitialized, onTimeout]);
+  return tab;
 }
 
 

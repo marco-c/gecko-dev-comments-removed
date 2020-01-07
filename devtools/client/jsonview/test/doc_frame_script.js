@@ -29,14 +29,23 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-content.addEventListener("JSONViewInitialized", () => {
-  sendAsyncMessage("Test:JsonView:JSONViewInitialized");
+content.addEventListener("AppReadyStateChange", () => {
+  sendAsyncMessage("Test:JsonView:AppReadyStateChange");
 });
 
-content.addEventListener("load", () => {
-  sendAsyncMessage("Test:JsonView:load");
+
+
+
+content.document.addEventListener("readystatechange", () => {
+  sendAsyncMessage("Test:JsonView:DocReadyStateChange");
 });
+
+
+
+
+new content.MutationObserver(function (mutations, observer) {
+  sendAsyncMessage("Test:JsonView:NewDataReceived");
+}).observe(content.wrappedJSObject.JSONView.json, {characterData: true});
 
 addMessageListener("Test:JsonView:GetElementCount", function (msg) {
   let {selector} = msg.data;
