@@ -318,35 +318,66 @@ if (typeof WebAssembly.Global === "function") {
     assertEq((new WebAssembly.Global({type: "f32", value: { valueOf: () => 33.5 }})).value, 33.5);
 
     
-    let g = new WebAssembly.Global({type: "i32", value: 42});
+    assertEq((new WebAssembly.Global({type: "i32", value: NaN})).value, 0);
+
+    {
+	
+	let x = new WebAssembly.Global({type: "i32"});
+	let s = "";
+	for ( let i in x )
+	    s = s + i + ",";
+	assertEq(s, "value,");
+    }
 
     
-    assertEq(g - 5, 37);
-    assertEq(String(g), "42");
+    assertEq("value" in WebAssembly.Global.prototype, true);
 
     
-    assertEq(g.toString(), "[object WebAssembly.Global]");
+    assertErrorMessage(() => (new WebAssembly.Global({type: "i32"})).value = 10,
+		       TypeError,
+		       /can't set value of immutable global/);
+
+    {
+	
+	let g = new WebAssembly.Global({type: "i32", value: 42});
+
+	
+	assertEq(g - 5, 37);
+
+	
+	assertEq(g.toString(), "[object WebAssembly.Global]");
+    }
+
+    {
+	
+	let i =
+	    new WebAssembly.Instance(
+		new WebAssembly.Module(
+		    wasmTextToBinary(`(module (global (export "g") i32 (i32.const 42)))`)));
+
+	assertEq(typeof i.exports.g, "object");
+	assertEq(i.exports.g instanceof WebAssembly.Global, true);
+
+	
+	
+	let j =
+	    new WebAssembly.Instance(
+		new WebAssembly.Module(
+		    wasmTextToBinary(`(module
+				       (global (import "" "g") i32)
+				       (func (export "f") (result i32)
+					(get_global 0)))`)),
+		{ "": { "g": i.exports.g }});
+
+	
+	assertEq(j.exports.f(), 42);
+    }
 
     
-    let i =
-	new WebAssembly.Instance(
-	    new WebAssembly.Module(
-		wasmTextToBinary(`(module (global (export "g") i32 (i32.const 42)))`)));
-
-    assertEq(typeof i.exports.g, "object");
-    assertEq(i.exports.g instanceof WebAssembly.Global, true);
 
     
-    
-    let j =
-	new WebAssembly.Instance(
-	    new WebAssembly.Module(
-		wasmTextToBinary(`(module
-				   (global (import "" "g") i32)
-				   (func (export "f") (result i32)
-				    (get_global 0)))`)),
-	    { "": { "g": i.exports.g }});
+    assertEq(delete WebAssembly.Global.prototype.value, true);
+    assertEq("value" in WebAssembly.Global.prototype, false);
 
     
-    assertEq(j.exports.f(), 42);
 }
