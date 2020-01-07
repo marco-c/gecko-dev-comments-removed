@@ -350,7 +350,7 @@ class ManageCreditCards extends ManageRecords {
     
     
     if (!creditCard || !this._hasMasterPassword || await MasterPassword.ensureLoggedIn(true)) {
-      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, null, creditCard);
+      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, "resizable=no", creditCard);
     }
   }
 
