@@ -429,21 +429,9 @@ InternalRequest::MapChannelToRequestMode(nsIChannel* aChannel)
       
       return RequestMode::Cors;
     default:
-      
-      MOZ_ASSERT(securityMode == nsILoadInfo::SEC_NORMAL);
-      break;
+      MOZ_ASSERT_UNREACHABLE("Unexpected security mode!");
+      return RequestMode::Same_origin;
   }
-
-  
-
-  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-
-  uint32_t corsMode;
-  MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCorsMode(&corsMode));
-  MOZ_ASSERT(corsMode != nsIHttpChannelInternal::CORS_MODE_NAVIGATE);
-
-  
-  return static_cast<RequestMode>(corsMode);
 }
 
 
@@ -454,8 +442,6 @@ InternalRequest::MapChannelToRequestCredentials(nsIChannel* aChannel)
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   MOZ_ALWAYS_SUCCEEDS(aChannel->GetLoadInfo(getter_AddRefs(loadInfo)));
-
-  MOZ_DIAGNOSTIC_ASSERT(loadInfo->GetSecurityMode() != nsILoadInfo::SEC_NORMAL);
 
   uint32_t cookiePolicy = loadInfo->GetCookiePolicy();
 
