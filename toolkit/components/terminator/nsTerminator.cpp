@@ -423,6 +423,25 @@ nsTerminator::StartWatchdog()
     crashAfterMS += ADDITIONAL_WAIT_BEFORE_CRASH_MS;
   }
 
+# ifdef MOZ_VALGRIND
+  
+  
+  
+  
+  
+  
+  
+  if (RUNNING_ON_VALGRIND) {
+    const int32_t scaleUp = 3;
+    if (crashAfterMS >= (INT32_MAX / scaleUp) - 1) {
+      
+      crashAfterMS = INT32_MAX;
+    } else {
+      crashAfterMS *= scaleUp;
+    }
+  }
+# endif
+
   UniquePtr<Options> options(new Options());
   const PRIntervalTime ticksDuration = PR_MillisecondsToInterval(1000);
   options->crashAfterTicks = crashAfterMS / ticksDuration;
