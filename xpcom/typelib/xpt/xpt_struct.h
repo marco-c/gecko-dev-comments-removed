@@ -101,7 +101,7 @@ struct XPTInterfaceDescriptor {
 
 
 
-  XPTMethodDescriptor* method_descriptors;
+  const XPTMethodDescriptor* method_descriptors;
   XPTConstDescriptor* const_descriptors;
   XPTTypeDescriptor* additional_types;
   uint16_t parent_interface;
