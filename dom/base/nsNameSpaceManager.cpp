@@ -94,14 +94,21 @@ nsresult
 nsNameSpaceManager::RegisterNameSpace(const nsAString& aURI,
                                       int32_t& aNameSpaceID)
 {
-  if (aURI.IsEmpty()) {
-    aNameSpaceID = kNameSpaceID_None; 
+  RefPtr<nsAtom> atom = NS_Atomize(aURI);
+  return RegisterNameSpace(atom.forget(), aNameSpaceID);
+}
 
+nsresult
+nsNameSpaceManager::RegisterNameSpace(already_AddRefed<nsAtom> aURI,
+                                      int32_t& aNameSpaceID)
+{
+  RefPtr<nsAtom> atom = aURI;
+  nsresult rv = NS_OK;
+  if (atom == nsGkAtoms::_empty) {
+    aNameSpaceID = kNameSpaceID_None; 
     return NS_OK;
   }
 
-  RefPtr<nsAtom> atom = NS_Atomize(aURI);
-  nsresult rv = NS_OK;
   if (!mURIToIDTable.Get(atom, &aNameSpaceID)) {
     aNameSpaceID = mURIArray.Length();
 
