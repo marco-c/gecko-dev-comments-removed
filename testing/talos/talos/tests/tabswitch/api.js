@@ -4,7 +4,6 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Task.jsm");
 ChromeUtils.import("resource://gre/modules/RemotePageManager.jsm");
 
 let context = {};
@@ -156,7 +155,7 @@ function loadTPSContentScript(browser) {
 
 
 
-function switchToTab(tab) {
+async function switchToTab(tab) {
   let browser = tab.linkedBrowser;
   let gBrowser = tab.ownerGlobal.gBrowser;
   let window = tab.ownerGlobal;
@@ -168,55 +167,52 @@ function switchToTab(tab) {
   
 
   if (browser.isRemoteBrowser) {
-    return Task.spawn(function* () {
-      
-      
-      
-      yield loadTPSContentScript(browser);
-      let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
-
-      
-      
-      let switchDone = waitForTabSwitchDone(browser);
-      
-      
-      let finishPromise = waitForContentPresented(browser);
-      
-      gBrowser.selectedTab = tab;
-
-      yield switchDone;
-      let finish = yield finishPromise;
-      return finish - start;
-    });
-  }
-
-  return Task.spawn(function* () {
-    let win = browser.ownerGlobal;
-    let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIDOMWindowUtils);
-
+    
+    
+    
+    await loadTPSContentScript(browser);
     let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
 
     
     
-    
     let switchDone = waitForTabSwitchDone(browser);
     
+    
+    let finishPromise = waitForContentPresented(browser);
+    
     gBrowser.selectedTab = tab;
-    
-    
-    
-    let lastTransactionId = winUtils.lastTransactionId;
 
-    yield switchDone;
-
-    
-    
-    
-    
-    let finish = yield waitForContentPresented(browser, lastTransactionId);
+    await switchDone;
+    let finish = await finishPromise;
     return finish - start;
-  });
+  }
+
+  let win = browser.ownerGlobal;
+  let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                    .getInterface(Ci.nsIDOMWindowUtils);
+
+  let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
+
+  
+  
+  
+  let switchDone = waitForTabSwitchDone(browser);
+  
+  gBrowser.selectedTab = tab;
+  
+  
+  
+  let lastTransactionId = winUtils.lastTransactionId;
+
+  await switchDone;
+
+  
+  
+  
+  
+  let finish = await waitForContentPresented(browser, lastTransactionId);
+  return finish - start;
+
 }
 
 
@@ -332,94 +328,92 @@ function forceGC(win, browser) {
 
 
 
-function test(window) {
+async function test(window) {
   Services.scriptloader.loadSubScript("chrome://talos-powers-content/content/TalosParentProfiler.js", context);
   TalosParentProfiler = context.TalosParentProfiler;
 
-  return Task.spawn(function* () {
-    let testURLs = [];
+  let testURLs = [];
 
-    let win = window.OpenBrowserWindow();
-    try {
-      let prefFile = Services.prefs.getCharPref("addon.test.tabswitch.urlfile");
-      if (prefFile) {
-        testURLs = handleFile(win, prefFile);
-      }
-    } catch (ex) {  }
-    if (!testURLs || testURLs.length == 0) {
-      dump("no tabs to test, 'addon.test.tabswitch.urlfile' pref isn't set to page set path\n");
-      return;
+  let win = window.OpenBrowserWindow();
+  try {
+    let prefFile = Services.prefs.getCharPref("addon.test.tabswitch.urlfile");
+    if (prefFile) {
+      testURLs = handleFile(win, prefFile);
     }
+  } catch (ex) {  }
+  if (!testURLs || testURLs.length == 0) {
+    dump("no tabs to test, 'addon.test.tabswitch.urlfile' pref isn't set to page set path\n");
+    return;
+  }
 
-    yield waitForDelayedStartup(win);
+  await waitForDelayedStartup(win);
 
-    let gBrowser = win.gBrowser;
+  let gBrowser = win.gBrowser;
 
+  
+  gBrowser.tabContainer.style.visibility = "hidden";
+
+  let initialTab = gBrowser.selectedTab;
+  await loadTabs(gBrowser, testURLs);
+
+  
+  
+  
+  initialTab.linkedBrowser.loadURI("about:blank", null, null);
+
+  let tabs = gBrowser.getTabsToTheEndFrom(initialTab);
+  let times = [];
+
+  for (let tab of tabs) {
     
-    gBrowser.tabContainer.style.visibility = "hidden";
-
-    let initialTab = gBrowser.selectedTab;
-    yield loadTabs(gBrowser, testURLs);
-
     
     
     
-    initialTab.linkedBrowser.loadURI("about:blank", null, null);
+    
+    
+    
+    await switchToTab(tab);
+    await switchToTab(initialTab);
+  }
 
-    let tabs = gBrowser.getTabsToTheEndFrom(initialTab);
-    let times = [];
+  for (let tab of tabs) {
+    gBrowser.moveTabTo(tab, 1);
+    await forceGC(win, tab.linkedBrowser);
+    TalosParentProfiler.resume("start: " + tab.linkedBrowser.currentURI.spec);
+    let time = await switchToTab(tab);
+    TalosParentProfiler.pause("finish: " + tab.linkedBrowser.currentURI.spec);
+    dump(`${tab.linkedBrowser.currentURI.spec}: ${time}ms\n`);
+    times.push(time);
+    await switchToTab(initialTab);
+  }
 
-    for (let tab of tabs) {
-      
-      
-      
-      
-      
-      
-      
-      yield switchToTab(tab);
-      yield switchToTab(initialTab);
-    }
+  let output = "<!DOCTYPE html>" +
+               '<html lang="en">' +
+               "<head><title>Tab Switch Results</title></head>" +
+               "<body><h1>Tab switch times</h1>" +
+               "<table>";
+  let time = 0;
+  for (let i in times) {
+    time += times[i];
+    output += "<tr><td>" + testURLs[i] + "</td><td>" + times[i] + "ms</td></tr>";
+  }
+  output += "</table></body></html>";
+  dump("total tab switch time:" + time + "\n");
 
-    for (let tab of tabs) {
-      gBrowser.moveTabTo(tab, 1);
-      yield forceGC(win, tab.linkedBrowser);
-      TalosParentProfiler.resume("start: " + tab.linkedBrowser.currentURI.spec);
-      let time = yield switchToTab(tab);
-      TalosParentProfiler.pause("finish: " + tab.linkedBrowser.currentURI.spec);
-      dump(`${tab.linkedBrowser.currentURI.spec}: ${time}ms\n`);
-      times.push(time);
-      yield switchToTab(initialTab);
-    }
+  let resultsTab = win.gBrowser.loadOneTab(
+    "data:text/html;charset=utf-8," + encodeURIComponent(output), {
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+  });
 
-    let output = "<!DOCTYPE html>" +
-                 '<html lang="en">' +
-                 "<head><title>Tab Switch Results</title></head>" +
-                 "<body><h1>Tab switch times</h1>" +
-                 "<table>";
-    let time = 0;
-    for (let i in times) {
-      time += times[i];
-      output += "<tr><td>" + testURLs[i] + "</td><td>" + times[i] + "ms</td></tr>";
-    }
-    output += "</table></body></html>";
-    dump("total tab switch time:" + time + "\n");
+  win.gBrowser.selectedTab = resultsTab;
 
-    let resultsTab = win.gBrowser.loadOneTab(
-      "data:text/html;charset=utf-8," + encodeURIComponent(output), {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
+  remotePage.sendAsyncMessage("tabswitch-test-results", {
+    times,
+    urls: testURLs,
+  });
 
-    win.gBrowser.selectedTab = resultsTab;
-
-    remotePage.sendAsyncMessage("tabswitch-test-results", {
-      times,
-      urls: testURLs,
-    });
-
-    TalosParentProfiler.afterProfileGathered().then(() => {
-      win.close();
-    });
+  TalosParentProfiler.afterProfileGathered().then(() => {
+    win.close();
   });
 }
 
