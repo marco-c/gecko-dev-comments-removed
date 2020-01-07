@@ -2376,6 +2376,9 @@ IonBuilder::inspectOpcode(JSOp op)
         return Ok();
       }
 
+      case JSOP_IMPORTMETA:
+          return jsop_importmeta();
+
       
       
 
@@ -2440,7 +2443,6 @@ IonBuilder::inspectOpcode(JSOp op)
       case JSOP_RETSUB:
       case JSOP_SETINTRINSIC:
       case JSOP_THROWMSG:
-      case JSOP_IMPORTMETA:
         
         
         
@@ -13141,6 +13143,21 @@ IonBuilder::jsop_implicitthis(PropertyName* name)
     current->push(implicitThis);
 
     return resumeAfter(implicitThis);
+}
+
+AbortReasonOr<Ok>
+IonBuilder::jsop_importmeta()
+{
+    ModuleObject* module = GetModuleObjectForScript(script());
+    MOZ_ASSERT(module);
+
+    
+    JSObject* metaObject = module->metaObject();
+    MOZ_ASSERT(metaObject);
+
+    pushConstant(ObjectValue(*metaObject));
+
+    return Ok();
 }
 
 MInstruction*
