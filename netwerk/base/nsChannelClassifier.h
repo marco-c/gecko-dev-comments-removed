@@ -81,8 +81,6 @@ private:
     
     static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
     
-    static nsPIDOMWindowOuter* GetWindowForChannel(nsIChannel *aChannel);
-    
     
     
     
