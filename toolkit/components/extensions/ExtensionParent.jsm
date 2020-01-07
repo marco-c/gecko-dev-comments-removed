@@ -1260,7 +1260,7 @@ let IconDetails = {
   
   
   normalize(details, extension, context = null) {
-    if (!details.imageData && details.path) {
+    if (!details.imageData && details.path != null) {
       
       
       let key = details.path;
@@ -1301,7 +1301,7 @@ let IconDetails = {
 
       let baseURI = context ? context.uri : extension.baseURI;
 
-      if (path) {
+      if (path != null) {
         if (typeof path != "object") {
           path = {"19": path};
         }
