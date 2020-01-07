@@ -198,6 +198,9 @@ public:
       !HasAnyStateBits(NS_FRAME_GENERATED_CONTENT);
   }
 
+  
+  nsImageFrame* CreateContinuingFrame(nsIPresShell*, ComputedStyle*) const;
+
 private:
   friend nsIFrame* NS_NewImageFrame(nsIPresShell*, ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForContentProperty(nsIPresShell*, ComputedStyle*);
