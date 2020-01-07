@@ -66,7 +66,9 @@ enum class EditSubAction : int32_t
   eSetText,
 
   
-  insertBreak = 3000,
+  
+  eInsertParagraphSeparator,
+
   makeList,
   indent,
   outdent,

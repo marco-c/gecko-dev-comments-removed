@@ -1156,6 +1156,7 @@ HTMLEditor::InsertBrElementAtSelectionWithTransaction()
   
   
   
+  
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertText,
                                       nsIEditor::eNext);
