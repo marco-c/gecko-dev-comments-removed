@@ -8100,7 +8100,7 @@ nsDisplayTransform::FrameTransformProperties::FrameTransformProperties(const nsI
                                                                        float aAppUnitsPerPixel,
                                                                        const nsRect* aBoundsOverride)
   : mFrame(aFrame)
-  , mTransformList(aFrame->StyleDisplay()->mSpecifiedTransform)
+  , mTransformList(aFrame->StyleDisplay()->GetCombinedTransform())
   , mToTransformOrigin(GetDeltaToTransformOrigin(aFrame, aAppUnitsPerPixel, aBoundsOverride))
 {
 }
@@ -8220,7 +8220,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
   if ((aFlags & INCLUDE_PRESERVE3D_ANCESTORS) &&
       frame && frame->Combines3DTransformWithAncestors()) {
     
-    nsIFrame* parentFrame = frame->GetInFlowParent();
+    nsIFrame* parentFrame = frame->GetFlattenedTreeParentPrimaryFrame();
     NS_ASSERTION(parentFrame && parentFrame->IsTransformed() &&
                  parentFrame->Extend3DContext(),
                  "Preserve3D mismatch!");
@@ -8446,7 +8446,7 @@ nsDisplayTransform::GetAccumulatedPreserved3DTransform(nsDisplayListBuilder* aBu
     const nsIFrame* establisher; 
     for (establisher = mFrame;
          establisher && establisher->Combines3DTransformWithAncestors();
-         establisher = establisher->GetInFlowParent()) {
+         establisher = establisher->GetFlattenedTreeParentPrimaryFrame()) {
     }
     const nsIFrame* establisherReference =
       aBuilder->FindReferenceFrameFor(nsLayoutUtils::GetCrossDocParentFrame(establisher));
