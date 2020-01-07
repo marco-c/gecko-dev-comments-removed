@@ -1,12 +1,10 @@
 /* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
 import android.support.test.InstrumentationRegistry
-import org.mozilla.geckoview.GeckoResponse
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
@@ -30,7 +28,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = intArrayOf(1))
             override fun onLoadRequest(session: GeckoSession, uri: String,
                                        where: Int,
-                                       response: GeckoResponse<Boolean>) {
+                                       response: GeckoSession.Response<Boolean>) {
                 assertThat("Session should not be null", session, notNullValue())
                 assertThat("URI should not be null", uri, notNullValue())
                 assertThat("URI should match", uri, endsWith(HELLO_HTML_PATH))
@@ -61,7 +59,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
             @AssertCalled(false)
             override fun onNewSession(session: GeckoSession, uri: String,
-                                      response: GeckoResponse<GeckoSession>) {
+                                      response: GeckoSession.Response<GeckoSession>) {
             }
         })
     }
@@ -191,7 +189,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = intArrayOf(1))
             override fun onLoadRequest(session: GeckoSession, uri: String,
                                        where: Int,
-                                       response: GeckoResponse<Boolean>) {
+                                       response: GeckoSession.Response<Boolean>) {
                 assertThat("URI should match", uri, endsWith(HELLO_HTML_PATH))
                 assertThat("Where should match", where,
                            equalTo(GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT))
@@ -215,7 +213,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
             @AssertCalled(false)
             override fun onNewSession(session: GeckoSession, uri: String,
-                                      response: GeckoResponse<GeckoSession>) {
+                                      response: GeckoSession.Response<GeckoSession>) {
             }
         })
     }
@@ -241,7 +239,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = intArrayOf(1))
             override fun onLoadRequest(session: GeckoSession, uri: String,
                                        where: Int,
-                                       response: GeckoResponse<Boolean>) {
+                                       response: GeckoSession.Response<Boolean>) {
                 assertThat("URI should match", uri, endsWith(HELLO_HTML_PATH))
                 assertThat("Where should match", where,
                            equalTo(GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT))
@@ -265,7 +263,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
             @AssertCalled(false)
             override fun onNewSession(session: GeckoSession, uri: String,
-                                      response: GeckoResponse<GeckoSession>) {
+                                      response: GeckoSession.Response<GeckoSession>) {
             }
         })
 
@@ -276,7 +274,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = intArrayOf(1))
             override fun onLoadRequest(session: GeckoSession, uri: String,
                                        where: Int,
-                                       response: GeckoResponse<Boolean>) {
+                                       response: GeckoSession.Response<Boolean>) {
                 assertThat("URI should match", uri, endsWith(HELLO2_HTML_PATH))
                 assertThat("Where should match", where,
                            equalTo(GeckoSession.NavigationDelegate.TARGET_WINDOW_CURRENT))
@@ -300,7 +298,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
             @AssertCalled(false)
             override fun onNewSession(session: GeckoSession, uri: String,
-                                      response: GeckoResponse<GeckoSession>) {
+                                      response: GeckoSession.Response<GeckoSession>) {
             }
         })
     }
@@ -310,7 +308,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 2)
             override fun onLoadRequest(session: GeckoSession, uri: String,
                                        where: Int,
-                                       response: GeckoResponse<Boolean>) {
+                                       response: GeckoSession.Response<Boolean>) {
                 response.respond(uri.endsWith(HELLO_HTML_PATH))
             }
         })
@@ -339,7 +337,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         sessionRule.delegateDuringNextWait(object : Callbacks.NavigationDelegate {
             @AssertCalled(count = 1)
-            override fun onNewSession(session: GeckoSession, uri: String, response: GeckoResponse<GeckoSession>) {
+            override fun onNewSession(session: GeckoSession, uri: String, response: GeckoSession.Response<GeckoSession>) {
                 response.respond(null)
             }
         })
@@ -356,7 +354,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         sessionRule.delegateDuringNextWait(object : Callbacks.NavigationDelegate {
             @AssertCalled(count = 1)
-            override fun onNewSession(session: GeckoSession, uri: String, response: GeckoResponse<GeckoSession>) {
+            override fun onNewSession(session: GeckoSession, uri: String, response: GeckoSession.Response<GeckoSession>) {
                 val newSession = sessionRule.createClosedSession(session.settings)
                 newSession.open()
                 response.respond(newSession)
