@@ -1,5 +1,31 @@
 var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
 
+function waitForPluginVisibility(browser, shouldBeVisible, errorMessage) {
+  return new Promise((resolve, reject) => {
+    let visibilityCheckCount = 0;
+    let listener = async () => {
+      let visibility = await ContentTask.spawn(browser, null, async function() {
+        let doc = content.document;
+        let plugin = doc.getElementById("testplugin");
+        return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
+      });
+
+      if (visibility == shouldBeVisible) {
+        window.removeEventListener("MozAfterPaint", listener);
+        resolve();
+      } else if (++visibilityCheckCount > 1) {
+        
+        
+        
+        
+        reject();
+      }
+    };
+    window.addEventListener("MozAfterPaint", listener);
+    listener();
+  });
+}
+
 
 
 
@@ -29,76 +55,44 @@ add_task(async function() {
   
   is(gBrowser.selectedTab == pluginTab2, true, "plugin2 is selected");
 
-  result = await ContentTask.spawn(pluginTab1.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, false, "plugin1 is hidden");
+  await waitForPluginVisibility(pluginTab1.linkedBrowser,
+                                false, "plugin1 should be hidden");
 
-  result = await ContentTask.spawn(pluginTab2.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, true, "plugin2 is visible");
+  await waitForPluginVisibility(pluginTab2.linkedBrowser,
+                                true, "plugin2 should be visible");
 
   
   tabSwitchedPromise = waitTabSwitched();
   gBrowser.selectedTab = pluginTab1;
   await tabSwitchedPromise;
 
-  result = await ContentTask.spawn(pluginTab1.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, true, "plugin1 is visible");
+  await waitForPluginVisibility(pluginTab1.linkedBrowser,
+                                true, "plugin1 should be visible");
 
-  result = await ContentTask.spawn(pluginTab2.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, false, "plugin2 is hidden");
+  await waitForPluginVisibility(pluginTab2.linkedBrowser,
+                                false, "plugin2 should be hidden");
 
   
   tabSwitchedPromise = waitTabSwitched();
   gBrowser.selectedTab = pluginTab2;
   await tabSwitchedPromise;
 
-  result = await ContentTask.spawn(pluginTab1.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, false, "plugin1 is hidden");
+  await waitForPluginVisibility(pluginTab1.linkedBrowser,
+                                false, "plugin1 should be hidden");
 
-  result = await ContentTask.spawn(pluginTab2.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, true, "plugin2 is visible");
+  await waitForPluginVisibility(pluginTab2.linkedBrowser,
+                                true, "plugin2 should be visible");
 
   
   tabSwitchedPromise = waitTabSwitched();
   gBrowser.selectedTab = testTab;
   await tabSwitchedPromise;
 
-  result = await ContentTask.spawn(pluginTab1.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, false, "plugin1 is hidden");
+  await waitForPluginVisibility(pluginTab1.linkedBrowser,
+                                false, "plugin1 should be hidden");
 
-  result = await ContentTask.spawn(pluginTab2.linkedBrowser, null, async function() {
-    let doc = content.document;
-    let plugin = doc.getElementById("testplugin");
-    return XPCNativeWrapper.unwrap(plugin).nativeWidgetIsVisible();
-  });
-  is(result, false, "plugin2 is hidden");
+  await waitForPluginVisibility(pluginTab2.linkedBrowser,
+                                false, "plugin2 should be hidden");
 
   gBrowser.removeTab(pluginTab1);
   gBrowser.removeTab(pluginTab2);
