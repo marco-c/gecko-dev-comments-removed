@@ -156,11 +156,6 @@ FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame)
   return 0;
 }
 
-
-
-
-
-
 SizeComputationInput::SizeComputationInput(nsIFrame *aFrame,
                                    gfxContext *aRenderingContext,
                                    WritingMode aContainingBlockWritingMode,
@@ -169,12 +164,6 @@ SizeComputationInput::SizeComputationInput(nsIFrame *aFrame,
   , mRenderingContext(aRenderingContext)
   , mWritingMode(aFrame->GetWritingMode())
 {
-  MOZ_ASSERT(!aFrame->IsFlexOrGridItem(),
-             "We're about to resolve percent margin & padding "
-             "values against CB inline size, which is incorrect for "
-             "flex/grid items. "
-             "Additionally for grid items, this path doesn't handle baseline "
-             "padding contribution - see SizeComputationInput::InitOffsets");
   ReflowInputFlags flags;
   InitOffsets(aContainingBlockWritingMode, aContainingBlockISize,
               mFrame->Type(), flags);
