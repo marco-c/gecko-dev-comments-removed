@@ -169,15 +169,12 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     
-    if (shippingOptions &&
-        !shippingOptions.find(option => option.id == selectedShippingOption)) {
+    if (shippingOptions && (!selectedShippingOption ||
+                            !shippingOptions.find(option => option.id == selectedShippingOption))) {
       
-      for (let i = shippingOptions.length - 1; i >= 0; i--) {
-        if (shippingOptions[i].selected) {
-          selectedShippingOption = shippingOptions[i].id;
-          break;
-        }
-      }
+      selectedShippingOption = state.request.shippingOption;
+
+      
       if (!selectedShippingOption && shippingOptions.length) {
         selectedShippingOption = shippingOptions[0].id;
       }
