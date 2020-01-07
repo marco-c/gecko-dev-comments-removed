@@ -378,17 +378,20 @@ public class WebAppActivity extends AppCompatActivity
             
             Log.w(LOGTAG, "Failed to parse URL for navigation: " + urlStr);
             response.respond(true);
+            return;
         }
 
         if (mManifest.isInScope(uri) && target != TARGET_WINDOW_NEW) {
             
             
             response.respond(false);
+            return;
         }
 
         if ("javascript".equals(uri.getScheme())) {
             
             response.respond(false);
+            return;
         }
 
         if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()) ||
