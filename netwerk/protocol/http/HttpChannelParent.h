@@ -83,6 +83,7 @@ public:
   MOZ_MUST_USE nsresult SuspendForDiversion() override;
   MOZ_MUST_USE nsresult SuspendMessageDiversion() override;
   MOZ_MUST_USE nsresult ResumeMessageDiversion() override;
+  MOZ_MUST_USE nsresult CancelDiversion() override;
 
   
   

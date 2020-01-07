@@ -737,6 +737,15 @@ FTPChannelParent::ResumeMessageDiversion()
   return NS_OK;
 }
 
+nsresult
+FTPChannelParent::CancelDiversion()
+{
+  
+  
+  
+  return NS_OK;
+}
+
 void
 FTPChannelParent::DivertTo(nsIStreamListener *aListener)
 {

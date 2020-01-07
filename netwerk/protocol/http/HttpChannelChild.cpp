@@ -3872,6 +3872,21 @@ HttpChannelChild::RecvAttachStreamFilter(Endpoint<extensions::PStreamFilterParen
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult
+HttpChannelChild::RecvCancelDiversion()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  Cancel(NS_ERROR_ABORT);
+  return IPC_OK();
+}
+
 void
 HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy)
 {
