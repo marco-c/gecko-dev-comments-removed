@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 const { ShellService } = ChromeUtils.import("resource:///modules/ShellService.jsm", {});
 
