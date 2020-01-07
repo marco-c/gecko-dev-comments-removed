@@ -175,11 +175,6 @@ private:
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
   nsTArray<wr::ImageKey> mImageKeysToDelete;
-  
-  
-  
-  
-  nsTArray<wr::ImageKey> mImageKeysToDeleteLater;
 
   
   

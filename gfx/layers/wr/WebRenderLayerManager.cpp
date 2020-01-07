@@ -108,7 +108,6 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
 
   if (WrBridge()) {
     
-    mImageKeysToDeleteLater.Clear();
     mImageKeysToDelete.Clear();
     
     mDiscardedCompositorAnimationsIds.Clear();
@@ -298,7 +297,6 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
     resourceUpdates.DeleteImage(key);
   }
   mImageKeysToDelete.Clear();
-  mImageKeysToDelete.SwapElements(mImageKeysToDeleteLater);
 
   WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
 
@@ -406,20 +404,16 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
 void
 WebRenderLayerManager::AddImageKeyForDiscard(wr::ImageKey key)
 {
-  mImageKeysToDeleteLater.AppendElement(key);
+  mImageKeysToDelete.AppendElement(key);
 }
 
 void
 WebRenderLayerManager::DiscardImages()
 {
   wr::IpcResourceUpdateQueue resources(WrBridge());
-  for (const auto& key : mImageKeysToDeleteLater) {
-    resources.DeleteImage(key);
-  }
   for (const auto& key : mImageKeysToDelete) {
     resources.DeleteImage(key);
   }
-  mImageKeysToDeleteLater.Clear();
   mImageKeysToDelete.Clear();
   WrBridge()->UpdateResources(resources);
 }
@@ -462,7 +456,6 @@ WebRenderLayerManager::DiscardLocalImages()
   
   
   
-  mImageKeysToDeleteLater.Clear();
   mImageKeysToDelete.Clear();
 }
 
