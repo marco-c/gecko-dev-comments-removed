@@ -79,8 +79,8 @@ module.exports = React;
 
 
 
- __webpack_require__.d(__webpack_exports__, "a", function() { return actionCreators; });
- __webpack_require__.d(__webpack_exports__, "c", function() { return actionUtils; });
+ __webpack_require__.d(__webpack_exports__, "b", function() { return actionCreators; });
+ __webpack_require__.d(__webpack_exports__, "d", function() { return actionUtils; });
 
 
 
@@ -109,11 +109,21 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
- __webpack_exports__["b"] = actionTypes;
+ __webpack_exports__["c"] = actionTypes;
 
 
-for (const type of ["ARCHIVE_FROM_POCKET", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "DOWNLOAD_CHANGED", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "THEME_UPDATE", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
+for (const type of ["ARCHIVE_FROM_POCKET", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISABLE_ONBOARDING", "DOWNLOAD_CHANGED", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "THEME_UPDATE", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
   actionTypes[type] = type;
+}
+
+
+
+const ASRouterActions = {};
+ __webpack_exports__["a"] = ASRouterActions;
+
+
+for (const type of ["OPEN_PRIVATE_BROWSER_WINDOW", "OPEN_URL", "OPEN_ABOUT_PAGE"]) {
+  ASRouterActions[type] = type;
 }
 
 
@@ -525,7 +535,7 @@ const INITIAL_STATE = {
 
 function App(prevState = INITIAL_STATE.App, action) {
   switch (action.type) {
-    case Actions["b" ].INIT:
+    case Actions["c" ].INIT:
       return Object.assign({}, prevState, action.data || {}, { initialized: true });
     default:
       return prevState;
@@ -572,23 +582,23 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
   let hasMatch;
   let newRows;
   switch (action.type) {
-    case Actions["b" ].TOP_SITES_UPDATED:
+    case Actions["c" ].TOP_SITES_UPDATED:
       if (!action.data || !action.data.links) {
         return prevState;
       }
       return Object.assign({}, prevState, { initialized: true, rows: action.data.links }, action.data.pref ? { pref: action.data.pref } : {});
-    case Actions["b" ].TOP_SITES_PREFS_UPDATED:
+    case Actions["c" ].TOP_SITES_PREFS_UPDATED:
       return Object.assign({}, prevState, { pref: action.data.pref });
-    case Actions["b" ].TOP_SITES_EDIT:
+    case Actions["c" ].TOP_SITES_EDIT:
       return Object.assign({}, prevState, {
         editForm: {
           index: action.data.index,
           previewResponse: null
         }
       });
-    case Actions["b" ].TOP_SITES_CANCEL_EDIT:
+    case Actions["c" ].TOP_SITES_CANCEL_EDIT:
       return Object.assign({}, prevState, { editForm: null });
-    case Actions["b" ].PREVIEW_RESPONSE:
+    case Actions["c" ].PREVIEW_RESPONSE:
       if (!prevState.editForm || action.data.url !== prevState.editForm.previewUrl) {
         return prevState;
       }
@@ -599,7 +609,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
           previewUrl: action.data.url
         }
       });
-    case Actions["b" ].PREVIEW_REQUEST:
+    case Actions["c" ].PREVIEW_REQUEST:
       if (!prevState.editForm) {
         return prevState;
       }
@@ -610,7 +620,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
           previewUrl: action.data.url
         }
       });
-    case Actions["b" ].PREVIEW_REQUEST_CANCEL:
+    case Actions["c" ].PREVIEW_REQUEST_CANCEL:
       if (!prevState.editForm) {
         return prevState;
       }
@@ -620,7 +630,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
           previewResponse: null
         }
       });
-    case Actions["b" ].SCREENSHOT_UPDATED:
+    case Actions["c" ].SCREENSHOT_UPDATED:
       newRows = prevState.rows.map(row => {
         if (row && row.url === action.data.url) {
           hasMatch = true;
@@ -629,7 +639,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         return row;
       });
       return hasMatch ? Object.assign({}, prevState, { rows: newRows }) : prevState;
-    case Actions["b" ].PLACES_BOOKMARK_ADDED:
+    case Actions["c" ].PLACES_BOOKMARK_ADDED:
       if (!action.data) {
         return prevState;
       }
@@ -641,7 +651,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         return site;
       });
       return Object.assign({}, prevState, { rows: newRows });
-    case Actions["b" ].PLACES_BOOKMARK_REMOVED:
+    case Actions["c" ].PLACES_BOOKMARK_REMOVED:
       if (!action.data) {
         return prevState;
       }
@@ -656,7 +666,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         return site;
       });
       return Object.assign({}, prevState, { rows: newRows });
-    case Actions["b" ].PLACES_LINK_DELETED:
+    case Actions["c" ].PLACES_LINK_DELETED:
       if (!action.data) {
         return prevState;
       }
@@ -669,11 +679,11 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
 
 function Dialog(prevState = INITIAL_STATE.Dialog, action) {
   switch (action.type) {
-    case Actions["b" ].DIALOG_OPEN:
+    case Actions["c" ].DIALOG_OPEN:
       return Object.assign({}, prevState, { visible: true, data: action.data });
-    case Actions["b" ].DIALOG_CANCEL:
+    case Actions["c" ].DIALOG_CANCEL:
       return Object.assign({}, prevState, { visible: false });
-    case Actions["b" ].DELETE_HISTORY_URL:
+    case Actions["c" ].DELETE_HISTORY_URL:
       return Object.assign({}, INITIAL_STATE.Dialog);
     default:
       return prevState;
@@ -683,9 +693,9 @@ function Dialog(prevState = INITIAL_STATE.Dialog, action) {
 function Prefs(prevState = INITIAL_STATE.Prefs, action) {
   let newValues;
   switch (action.type) {
-    case Actions["b" ].PREFS_INITIAL_VALUES:
+    case Actions["c" ].PREFS_INITIAL_VALUES:
       return Object.assign({}, prevState, { initialized: true, values: action.data });
-    case Actions["b" ].PREF_CHANGED:
+    case Actions["c" ].PREF_CHANGED:
       newValues = Object.assign({}, prevState.values);
       newValues[action.data.name] = action.data.value;
       return Object.assign({}, prevState, { values: newValues });
@@ -698,9 +708,9 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
   let hasMatch;
   let newState;
   switch (action.type) {
-    case Actions["b" ].SECTION_DEREGISTER:
+    case Actions["c" ].SECTION_DEREGISTER:
       return prevState.filter(section => section.id !== action.data);
-    case Actions["b" ].SECTION_REGISTER:
+    case Actions["c" ].SECTION_REGISTER:
       
       newState = prevState.map(section => {
         if (section && section.id === action.data.id) {
@@ -716,7 +726,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
         newState.push(section);
       }
       return newState;
-    case Actions["b" ].SECTION_UPDATE:
+    case Actions["c" ].SECTION_UPDATE:
       newState = prevState.map(section => {
         if (section && section.id === action.data.id) {
           
@@ -761,7 +771,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
       });
 
       return newState;
-    case Actions["b" ].SECTION_UPDATE_CARD:
+    case Actions["c" ].SECTION_UPDATE_CARD:
       return prevState.map(section => {
         if (section && section.id === action.data.id && section.rows) {
           const newRows = section.rows.map(card => {
@@ -774,7 +784,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
         }
         return section;
       });
-    case Actions["b" ].PLACES_BOOKMARK_ADDED:
+    case Actions["c" ].PLACES_BOOKMARK_ADDED:
       if (!action.data) {
         return prevState;
       }
@@ -793,7 +803,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
           return item;
         })
       }));
-    case Actions["b" ].PLACES_SAVED_TO_POCKET:
+    case Actions["c" ].PLACES_SAVED_TO_POCKET:
       if (!action.data) {
         return prevState;
       }
@@ -810,7 +820,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
           return item;
         })
       }));
-    case Actions["b" ].PLACES_BOOKMARK_REMOVED:
+    case Actions["c" ].PLACES_BOOKMARK_REMOVED:
       if (!action.data) {
         return prevState;
       }
@@ -830,14 +840,14 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
           return item;
         })
       }));
-    case Actions["b" ].PLACES_LINK_DELETED:
-    case Actions["b" ].PLACES_LINK_BLOCKED:
+    case Actions["c" ].PLACES_LINK_DELETED:
+    case Actions["c" ].PLACES_LINK_BLOCKED:
       if (!action.data) {
         return prevState;
       }
       return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.url !== action.data.url) }));
-    case Actions["b" ].DELETE_FROM_POCKET:
-    case Actions["b" ].ARCHIVE_FROM_POCKET:
+    case Actions["c" ].DELETE_FROM_POCKET:
+    case Actions["c" ].ARCHIVE_FROM_POCKET:
       return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.pocket_id !== action.data.pocket_id) }));
     default:
       return prevState;
@@ -846,13 +856,13 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
 
 function Snippets(prevState = INITIAL_STATE.Snippets, action) {
   switch (action.type) {
-    case Actions["b" ].SNIPPETS_DATA:
+    case Actions["c" ].SNIPPETS_DATA:
       return Object.assign({}, prevState, { initialized: true }, action.data);
-    case Actions["b" ].SNIPPET_BLOCKED:
+    case Actions["c" ].SNIPPET_BLOCKED:
       return Object.assign({}, prevState, { blockList: prevState.blockList.concat(action.data) });
-    case Actions["b" ].SNIPPETS_BLOCKLIST_CLEARED:
+    case Actions["c" ].SNIPPETS_BLOCKLIST_CLEARED:
       return Object.assign({}, prevState, { blockList: [] });
-    case Actions["b" ].SNIPPETS_RESET:
+    case Actions["c" ].SNIPPETS_RESET:
       return INITIAL_STATE.Snippets;
     default:
       return prevState;
@@ -861,7 +871,7 @@ function Snippets(prevState = INITIAL_STATE.Snippets, action) {
 
 function Theme(prevState = INITIAL_STATE.Theme, action) {
   switch (action.type) {
-    case Actions["b" ].THEME_UPDATE:
+    case Actions["c" ].THEME_UPDATE:
       return Object.assign({}, prevState, action.data);
     default:
       return prevState;
@@ -879,12 +889,14 @@ var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections, Theme };
  var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__ = __webpack_require__(8);
  var __WEBPACK_IMPORTED_MODULE_2__components_ImpressionsWrapper_ImpressionsWrapper__ = __webpack_require__(22);
- var __WEBPACK_IMPORTED_MODULE_3_react__ = __webpack_require__(0);
- var __WEBPACK_IMPORTED_MODULE_3_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react__);
- var __WEBPACK_IMPORTED_MODULE_4_react_dom__ = __webpack_require__(9);
- var __WEBPACK_IMPORTED_MODULE_4_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react_dom__);
- var __WEBPACK_IMPORTED_MODULE_5__templates_SimpleSnippet_SimpleSnippet__ = __webpack_require__(23);
+ var __WEBPACK_IMPORTED_MODULE_3__templates_OnboardingMessage_OnboardingMessage__ = __webpack_require__(23);
+ var __WEBPACK_IMPORTED_MODULE_4_react__ = __webpack_require__(0);
+ var __WEBPACK_IMPORTED_MODULE_4_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react__);
+ var __WEBPACK_IMPORTED_MODULE_5_react_dom__ = __webpack_require__(9);
+ var __WEBPACK_IMPORTED_MODULE_5_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_dom__);
+ var __WEBPACK_IMPORTED_MODULE_6__templates_SimpleSnippet_SimpleSnippet__ = __webpack_require__(24);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -909,8 +921,19 @@ const ASRouterUtils = {
   blockById(id) {
     ASRouterUtils.sendMessage({ type: "BLOCK_MESSAGE_BY_ID", data: { id } });
   },
+  blockBundle(bundle) {
+    ASRouterUtils.sendMessage({ type: "BLOCK_BUNDLE", data: { bundle } });
+  },
+  executeAction({ button_action, button_action_params }) {
+    if (button_action in __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ]) {
+      ASRouterUtils.sendMessage({ type: button_action, data: { button_action_params } });
+    }
+  },
   unblockById(id) {
     ASRouterUtils.sendMessage({ type: "UNBLOCK_MESSAGE_BY_ID", data: { id } });
+  },
+  unblockBundle(bundle) {
+    ASRouterUtils.sendMessage({ type: "UNBLOCK_BUNDLE", data: { bundle } });
   },
   getNextMessage() {
     ASRouterUtils.sendMessage({ type: "GET_NEXT_MESSAGE" });
@@ -919,7 +942,7 @@ const ASRouterUtils = {
     ASRouterUtils.sendMessage({ type: "OVERRIDE_MESSAGE", data: { id } });
   },
   sendTelemetry(ping) {
-    const payload = __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].ASRouterUserEvent(ping);
+    const payload = __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ASRouterUserEvent(ping);
     global.sendAsyncMessage(__WEBPACK_IMPORTED_MODULE_1_content_src_lib_init_store__["a" ], payload);
   }
 };
@@ -931,21 +954,24 @@ function shouldSendImpressionOnUpdate(nextProps, prevProps) {
   return nextProps.message.id && (!prevProps.message || prevProps.message.id !== nextProps.message.id);
 }
 
-class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureComponent {
+class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onMessageFromParent = this.onMessageFromParent.bind(this);
     this.sendImpression = this.sendImpression.bind(this);
     this.sendUserActionTelemetry = this.sendUserActionTelemetry.bind(this);
-    this.state = { message: {} };
+    this.state = { message: {}, bundle: {} };
   }
 
   sendUserActionTelemetry(extraProps = {}) {
-    const { message } = this.state;
-    const eventType = `${message.provider}_user_event`;
+    const { message, bundle } = this.state;
+    if (!message && !extraProps.message_id) {
+      throw new Error(`You must provide a message_id for bundled messages`);
+    }
+    const eventType = `${message.provider || bundle.provider}_user_event`;
 
     ASRouterUtils.sendTelemetry(Object.assign({
-      message_id: message.id,
+      message_id: message.id || extraProps.message_id,
       source: this.props.id,
       action: eventType
     }, extraProps));
@@ -959,13 +985,20 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pu
     return () => ASRouterUtils.blockById(id);
   }
 
+  clearBundle(bundle) {
+    return () => ASRouterUtils.blockBundle(bundle);
+  }
+
   onMessageFromParent({ data: action }) {
     switch (action.type) {
       case "SET_MESSAGE":
         this.setState({ message: action.data });
         break;
+      case "SET_BUNDLED_MESSAGES":
+        this.setState({ bundle: action.data });
+        break;
       case "CLEAR_MESSAGE":
-        this.setState({ message: {} });
+        this.setState({ message: {}, bundle: {} });
         break;
     }
   }
@@ -979,25 +1012,41 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pu
     ASRouterUtils.removeListener(this.onMessageFromParent);
   }
 
-  render() {
-    const { message } = this.state;
-    if (!message.id) {
-      return null;
-    }
-    return __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+  renderSnippets() {
+    return __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(
       __WEBPACK_IMPORTED_MODULE_2__components_ImpressionsWrapper_ImpressionsWrapper__["a" ],
       {
-        message: message,
+        message: this.state.message,
         sendImpression: this.sendImpression,
         shouldSendImpressionOnUpdate: shouldSendImpressionOnUpdate
         
         , document: this.props.document },
-      __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_5__templates_SimpleSnippet_SimpleSnippet__["a" ], _extends({}, message, {
-        UISurface: this.props.id,
+      __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_6__templates_SimpleSnippet_SimpleSnippet__["a" ], _extends({}, this.state.message, {
+        UISurface: "NEWTAB_FOOTER_BAR",
         getNextMessage: ASRouterUtils.getNextMessage,
-        onBlock: this.onBlockById(message.id),
+        onBlock: this.onBlockById(this.state.message.id),
         sendUserActionTelemetry: this.sendUserActionTelemetry }))
     );
+  }
+
+  renderOnboarding() {
+    return __WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3__templates_OnboardingMessage_OnboardingMessage__["a" ], _extends({}, this.state.bundle, {
+      UISurface: "NEWTAB_OVERLAY",
+      onAction: ASRouterUtils.executeAction,
+      onDoneButton: this.clearBundle(this.state.bundle.bundle),
+      getNextMessage: ASRouterUtils.getNextMessage,
+      sendUserActionTelemetry: this.sendUserActionTelemetry }));
+  }
+
+  render() {
+    const { message, bundle } = this.state;
+    if (!message.id && !bundle.template) {
+      return null;
+    }
+    if (bundle.template === "onboarding") {
+      return this.renderOnboarding();
+    }
+    return this.renderSnippets();
   }
 }
 
@@ -1006,7 +1055,7 @@ class ASRouterUISurface extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pu
 ASRouterUISurface.defaultProps = { document: global.document };
 
 function initASRouter() {
-  __WEBPACK_IMPORTED_MODULE_4_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(ASRouterUISurface, { id: "NEWTAB_FOOTER_BAR" }), document.getElementById("snippets-container"));
+  __WEBPACK_IMPORTED_MODULE_5_react_dom___default.a.render(__WEBPACK_IMPORTED_MODULE_4_react___default.a.createElement(ASRouterUISurface, null), document.getElementById("snippets-container"));
 }
 }.call(__webpack_exports__, __webpack_require__(3)))
 
@@ -1033,7 +1082,7 @@ const OUTGOING_MESSAGE_NAME = "ActivityStream:ContentToMain";
 const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
 
 
-const EARLY_QUEUED_ACTIONS = [__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA, __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].PAGE_PRERENDERED];
+const EARLY_QUEUED_ACTIONS = [__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_SESSION_PERF_DATA, __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].PAGE_PRERENDERED];
 
 
 
@@ -1068,7 +1117,7 @@ function mergeStateReducer(mainReducer) {
 
 const messageMiddleware = store => next => action => {
   const skipLocal = action.meta && action.meta.skipLocal;
-  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToMain(action)) {
+  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isSendToMain(action)) {
     sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
   }
   if (!skipLocal) {
@@ -1082,7 +1131,7 @@ const rehydrationMiddleware = store => next => action => {
   }
 
   const isMergeStoreAction = action.type === MERGE_STORE_ACTION;
-  const isRehydrationRequest = action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST;
+  const isRehydrationRequest = action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].NEW_TAB_STATE_REQUEST;
 
   if (isRehydrationRequest) {
     store._didRequestInitialState = true;
@@ -1095,11 +1144,11 @@ const rehydrationMiddleware = store => next => action => {
   }
 
   
-  if (store._didRequestInitialState && action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].INIT) {
-    return next(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
+  if (store._didRequestInitialState && action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].INIT) {
+    return next(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].NEW_TAB_STATE_REQUEST }));
   }
 
-  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isBroadcastToContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToOneContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isSendToPreloaded(action)) {
+  if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isBroadcastToContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isSendToOneContent(action) || __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isSendToPreloaded(action)) {
     
     
     
@@ -1121,7 +1170,7 @@ const rehydrationMiddleware = store => next => action => {
 const queueEarlyMessageMiddleware = store => next => action => {
   if (store._receivedFromMain) {
     next(action);
-  } else if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].isFromMain(action)) {
+  } else if (__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["d" ].isFromMain(action)) {
     next(action);
     store._receivedFromMain = true;
     
@@ -1273,8 +1322,8 @@ ErrorBoundary.defaultProps = { FallbackComponent: ErrorBoundaryFallback };
 const _OpenInPrivateWindow = site => ({
   id: "menu_action_open_private_window",
   icon: "new-window-private",
-  action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-    type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_PRIVATE_WINDOW,
+  action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+    type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_PRIVATE_WINDOW,
     data: { url: site.url, referrer: site.referrer }
   }),
   userEvent: "OPEN_PRIVATE_WINDOW"
@@ -1306,8 +1355,8 @@ const LinkMenuOptions = {
   RemoveBookmark: site => ({
     id: "menu_action_remove_bookmark",
     icon: "bookmark-added",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DELETE_BOOKMARK_BY_ID,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DELETE_BOOKMARK_BY_ID,
       data: site.bookmarkGuid
     }),
     userEvent: "BOOKMARK_DELETE"
@@ -1315,8 +1364,8 @@ const LinkMenuOptions = {
   AddBookmark: site => ({
     id: "menu_action_bookmark",
     icon: "bookmark-hollow",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].BOOKMARK_URL,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].BOOKMARK_URL,
       data: { url: site.url, title: site.title, type: site.type }
     }),
     userEvent: "BOOKMARK_ADD"
@@ -1324,8 +1373,8 @@ const LinkMenuOptions = {
   OpenInNewWindow: site => ({
     id: "menu_action_open_new_window",
     icon: "new-window",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_NEW_WINDOW,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_NEW_WINDOW,
       data: {
         referrer: site.referrer,
         typedBonus: site.typedBonus,
@@ -1337,11 +1386,11 @@ const LinkMenuOptions = {
   BlockUrl: (site, index, eventSource) => ({
     id: "menu_action_dismiss",
     icon: "dismiss",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].BLOCK_URL,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].BLOCK_URL,
       data: { url: site.url, pocket_id: site.pocket_id }
     }),
-    impression: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].ImpressionStats({
+    impression: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ImpressionStats({
       source: eventSource,
       block: 0,
       tiles: [{ id: site.guid, pos: index }]
@@ -1355,7 +1404,7 @@ const LinkMenuOptions = {
     id: "menu_action_webext_dismiss",
     string_id: "menu_action_dismiss",
     icon: "dismiss",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].WebExtEvent(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].WEBEXT_DISMISS, {
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].WebExtEvent(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].WEBEXT_DISMISS, {
       source: eventSource,
       url: site.url,
       action_position: index
@@ -1365,9 +1414,9 @@ const LinkMenuOptions = {
     id: "menu_action_delete",
     icon: "delete",
     action: {
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DIALOG_OPEN,
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DIALOG_OPEN,
       data: {
-        onConfirm: [__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
+        onConfirm: [__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
         eventSource,
         body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
         confirm_button_string_id: "menu_action_delete",
@@ -1380,32 +1429,32 @@ const LinkMenuOptions = {
   ShowFile: (site, index, eventSource, isEnabled, siteInfo, platform) => ({
     id: GetPlatformString(platform),
     icon: "search",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SHOW_DOWNLOAD_FILE,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SHOW_DOWNLOAD_FILE,
       data: { url: site.url }
     })
   }),
   OpenFile: site => ({
     id: "menu_action_open_file",
     icon: "open-file",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_DOWNLOAD_FILE,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_DOWNLOAD_FILE,
       data: { url: site.url }
     })
   }),
   CopyDownloadLink: site => ({
     id: "menu_action_copy_download_link",
     icon: "copy",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].COPY_DOWNLOAD_LINK,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].COPY_DOWNLOAD_LINK,
       data: { url: site.url }
     })
   }),
   GoToDownloadPage: site => ({
     id: "menu_action_go_to_download_page",
     icon: "download",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_LINK,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_LINK,
       data: { url: site.referrer }
     }),
     disabled: !site.referrer
@@ -1413,16 +1462,16 @@ const LinkMenuOptions = {
   RemoveDownload: site => ({
     id: "menu_action_remove_download",
     icon: "delete",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].REMOVE_DOWNLOAD_FILE,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].REMOVE_DOWNLOAD_FILE,
       data: { url: site.url }
     })
   }),
   PinTopSite: (site, index) => ({
     id: "menu_action_pin",
     icon: "pin",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_PIN,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_PIN,
       data: { site: { url: site.url }, index }
     }),
     userEvent: "PIN"
@@ -1430,8 +1479,8 @@ const LinkMenuOptions = {
   UnpinTopSite: site => ({
     id: "menu_action_unpin",
     icon: "unpin",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_UNPIN,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_UNPIN,
       data: { site: { url: site.url } }
     }),
     userEvent: "UNPIN"
@@ -1439,11 +1488,11 @@ const LinkMenuOptions = {
   SaveToPocket: (site, index, eventSource) => ({
     id: "menu_action_save_to_pocket",
     icon: "pocket",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_TO_POCKET,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_TO_POCKET,
       data: { site: { url: site.url, title: site.title } }
     }),
-    impression: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].ImpressionStats({
+    impression: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ImpressionStats({
       source: eventSource,
       pocket: 0,
       tiles: [{ id: site.guid, pos: index }]
@@ -1453,8 +1502,8 @@ const LinkMenuOptions = {
   DeleteFromPocket: site => ({
     id: "menu_action_delete_pocket",
     icon: "delete",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DELETE_FROM_POCKET,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DELETE_FROM_POCKET,
       data: { pocket_id: site.pocket_id }
     }),
     userEvent: "DELETE_FROM_POCKET"
@@ -1462,8 +1511,8 @@ const LinkMenuOptions = {
   ArchiveFromPocket: site => ({
     id: "menu_action_archive_pocket",
     icon: "check",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].ARCHIVE_FROM_POCKET,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].ARCHIVE_FROM_POCKET,
       data: { pocket_id: site.pocket_id }
     }),
     userEvent: "ARCHIVE_FROM_POCKET"
@@ -1472,7 +1521,7 @@ const LinkMenuOptions = {
     id: "edit_topsites_button_text",
     icon: "edit",
     action: {
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_EDIT,
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_EDIT,
       data: { index }
     }
   }),
@@ -1528,7 +1577,7 @@ class _LinkMenu extends __WEBPACK_IMPORTED_MODULE_5_react___default.a.PureCompon
               source,
               action_position: index
             }, siteInfo);
-            props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent(userEventData));
+            props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent(userEventData));
           }
           if (impression && props.shouldSendImpressionStats) {
             props.dispatch(impression);
@@ -1671,7 +1720,7 @@ class ContextMenuItem extends __WEBPACK_IMPORTED_MODULE_0_react___default.a.Pure
  var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(10);
  var __WEBPACK_IMPORTED_MODULE_3_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_3_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react__);
- var __WEBPACK_IMPORTED_MODULE_4_content_src_components_SectionMenu_SectionMenu__ = __webpack_require__(33);
+ var __WEBPACK_IMPORTED_MODULE_4_content_src_components_SectionMenu_SectionMenu__ = __webpack_require__(34);
  var __WEBPACK_IMPORTED_MODULE_5_content_src_lib_section_menu_options__ = __webpack_require__(15);
 
 
@@ -1698,8 +1747,8 @@ class Disclaimer extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureCompo
   }
 
   onAcknowledge() {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["a" ].SetPref(this.props.disclaimerPref, false));
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["a" ].UserEvent({ event: "DISCLAIMER_ACKED", source: this.props.eventSource }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].SetPref(this.props.disclaimerPref, false));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({ event: "DISCLAIMER_ACKED", source: this.props.eventSource }));
   }
 
   render() {
@@ -1793,7 +1842,7 @@ class _CollapsibleSection extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.
     });
     const { action, userEvent } = __WEBPACK_IMPORTED_MODULE_5_content_src_lib_section_menu_options__["a" ].CheckCollapsed(this.props);
     this.props.dispatch(action);
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["a" ].UserEvent({
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({
       event: userEvent,
       source: this.props.source
     }));
@@ -1834,14 +1883,16 @@ class _CollapsibleSection extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.
   render() {
     const isCollapsible = this.props.collapsed !== undefined;
     const { enableAnimation, isAnimating, maxHeight, menuButtonHover, showContextMenu } = this.state;
-    const { id, eventSource, collapsed, disclaimer, title, extraMenuOptions, showPrefName, privacyNoticeURL, dispatch, isFirst, isLast } = this.props;
+    const { id, eventSource, collapsed, disclaimer, title, extraMenuOptions, showPrefName, privacyNoticeURL, dispatch, isFirst, isLast, isWebExtension } = this.props;
     const disclaimerPref = `section.${id}.showDisclaimer`;
     const needsDisclaimer = disclaimer && this.props.Prefs.values[disclaimerPref];
     const active = menuButtonHover || showContextMenu;
-
     return __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
       "section",
-      { className: `collapsible-section ${this.props.className}${enableAnimation ? " animation-enabled" : ""}${collapsed ? " collapsed" : ""}${active ? " active" : ""}` },
+      {
+        className: `collapsible-section ${this.props.className}${enableAnimation ? " animation-enabled" : ""}${collapsed ? " collapsed" : ""}${active ? " active" : ""}`
+        
+        , "data-section-id": id },
       __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
         "div",
         { className: "section-top-bar" },
@@ -1882,7 +1933,8 @@ class _CollapsibleSection extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.
             onUpdate: this.onMenuUpdate,
             isFirst: isFirst,
             isLast: isLast,
-            dispatch: dispatch })
+            dispatch: dispatch,
+            isWebExtension: isWebExtension })
         )
       ),
       __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
@@ -1936,8 +1988,8 @@ const SectionMenuOptions = {
   MoveUp: section => ({
     id: "section_menu_action_move_up",
     icon: "arrowhead-up",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SECTION_MOVE,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SECTION_MOVE,
       data: { id: section.id, direction: -1 }
     }),
     userEvent: "MENU_MOVE_UP",
@@ -1946,8 +1998,8 @@ const SectionMenuOptions = {
   MoveDown: section => ({
     id: "section_menu_action_move_down",
     icon: "arrowhead-down",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SECTION_MOVE,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SECTION_MOVE,
       data: { id: section.id, direction: +1 }
     }),
     userEvent: "MENU_MOVE_DOWN",
@@ -1956,38 +2008,43 @@ const SectionMenuOptions = {
   RemoveSection: section => ({
     id: "section_menu_action_remove_section",
     icon: "dismiss",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].SetPref(section.showPrefName, false),
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SetPref(section.showPrefName, false),
     userEvent: "MENU_REMOVE"
   }),
   CollapseSection: section => ({
     id: "section_menu_action_collapse_section",
     icon: "minimize",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UPDATE_SECTION_PREFS, data: { id: section.id, value: { collapsed: true } } }),
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].UPDATE_SECTION_PREFS, data: { id: section.id, value: { collapsed: true } } }),
     userEvent: "MENU_COLLAPSE"
   }),
   ExpandSection: section => ({
     id: "section_menu_action_expand_section",
     icon: "maximize",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UPDATE_SECTION_PREFS, data: { id: section.id, value: { collapsed: false } } }),
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].UPDATE_SECTION_PREFS, data: { id: section.id, value: { collapsed: false } } }),
     userEvent: "MENU_EXPAND"
   }),
   ManageSection: section => ({
     id: "section_menu_action_manage_section",
     icon: "settings",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SETTINGS_OPEN }),
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SETTINGS_OPEN }),
     userEvent: "MENU_MANAGE"
+  }),
+  ManageWebExtension: section => ({
+    id: "section_menu_action_manage_webext",
+    icon: "settings",
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_WEBEXT_SETTINGS, data: section.id })
   }),
   AddTopSite: section => ({
     id: "section_menu_action_add_topsite",
     icon: "add",
-    action: { type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_EDIT, data: { index: -1 } },
+    action: { type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_EDIT, data: { index: -1 } },
     userEvent: "MENU_ADD_TOPSITE"
   }),
   PrivacyNotice: section => ({
     id: "section_menu_action_privacy_notice",
     icon: "info",
-    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_LINK,
+    action: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_LINK,
       data: { url: section.privacyNoticeURL }
     }),
     userEvent: "MENU_PRIVACY_NOTICE"
@@ -2124,8 +2181,8 @@ class ComponentPerfTimer extends __WEBPACK_IMPORTED_MODULE_2_react___default.a.C
       const firstRenderKey = `${this.props.id}_first_render_ts`;
       
       const value = parseInt(this.perfSvc.getMostRecentAbsMarkStartByName(dataReadyKey) - this.perfSvc.getMostRecentAbsMarkStartByName(firstRenderKey), 10);
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_SESSION_PERF_DATA,
         
         data: { [`${this.props.id}_data_late_by_ms`]: value }
       }));
@@ -2149,8 +2206,8 @@ class ComponentPerfTimer extends __WEBPACK_IMPORTED_MODULE_2_react___default.a.C
       const data = {};
       data[key] = this.perfSvc.getMostRecentAbsMarkStartByName(key);
 
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_SESSION_PERF_DATA,
         data
       }));
     } catch (ex) {
@@ -2490,7 +2547,7 @@ class TopSite extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponen
   }
 
   userEvent(event) {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent(Object.assign({
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent(Object.assign({
       event,
       source: __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__["d" ],
       action_position: this.props.index
@@ -2504,8 +2561,8 @@ class TopSite extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponen
     
     event.preventDefault();
     const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OPEN_LINK,
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].OPEN_LINK,
       data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
     }));
   }
@@ -2566,7 +2623,7 @@ class TopSitePlaceholder extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.P
   }
 
   onEditButtonClick() {
-    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_EDIT, data: { index: this.props.index } });
+    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_EDIT, data: { index: this.props.index } });
   }
 
   render() {
@@ -2612,7 +2669,7 @@ class _TopSiteList extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureCom
   }
 
   userEvent(event, index) {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({
       event,
       source: __WEBPACK_IMPORTED_MODULE_2__TopSitesConstants__["d" ],
       action_position: index
@@ -2647,8 +2704,8 @@ class _TopSiteList extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureCom
       case "drop":
         if (index !== this.state.draggedIndex) {
           this.dropped = true;
-          this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-            type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_INSERT,
+          this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+            type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_INSERT,
             data: {
               site: {
                 url: this.state.draggedSite.url,
@@ -2774,8 +2831,8 @@ const TopSiteList = Object(__WEBPACK_IMPORTED_MODULE_1_react_intl__["injectIntl"
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_content_src_lib_snippets__ = __webpack_require__(20);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_Base_Base__ = __webpack_require__(24);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__ = __webpack_require__(37);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_Base_Base__ = __webpack_require__(25);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__ = __webpack_require__(39);
  var __WEBPACK_IMPORTED_MODULE_4_content_src_lib_init_store__ = __webpack_require__(8);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_5_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_redux__);
@@ -2802,13 +2859,14 @@ new __WEBPACK_IMPORTED_MODULE_3_content_src_lib_detect_user_session_start__["a" 
 
 
 if (!global.gActivityStreamPrerenderedState) {
-  store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
+  store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].NEW_TAB_STATE_REQUEST }));
 }
 
 __WEBPACK_IMPORTED_MODULE_7_react_dom___default.a.hydrate(__WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
   __WEBPACK_IMPORTED_MODULE_5_react_redux__["Provider"],
   { store: store },
   __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_2_content_src_components_Base_Base__["a" ], {
+    isFirstrun: global.document.location.href === "about:welcome",
     isPrerendered: !!global.gActivityStreamPrerenderedState,
     locale: global.document.documentElement.lang,
     strings: global.gActivityStreamStrings })
@@ -2865,7 +2923,7 @@ class SnippetsMap extends Map {
 
   clear() {
     super.clear();
-    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SNIPPETS_BLOCKLIST_CLEARED }));
+    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SNIPPETS_BLOCKLIST_CLEARED }));
     return this._dbTransaction(db => db.clear());
   }
 
@@ -2887,24 +2945,24 @@ class SnippetsMap extends Map {
     const { blockList } = this;
     if (!blockList.includes(id)) {
       blockList.push(id);
-      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SNIPPETS_BLOCKLIST_UPDATED, data: id }));
+      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SNIPPETS_BLOCKLIST_UPDATED, data: id }));
       await this.set("blockList", blockList);
     }
   }
 
   disableOnboarding() {
-    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DISABLE_ONBOARDING }));
+    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DISABLE_ONBOARDING }));
   }
 
   showFirefoxAccounts() {
-    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SHOW_FIREFOX_ACCOUNTS }));
+    this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SHOW_FIREFOX_ACCOUNTS }));
   }
 
   getTotalBookmarksCount() {
     return new Promise(resolve => {
-      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOTAL_BOOKMARKS_REQUEST }));
+      this._dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOTAL_BOOKMARKS_REQUEST }));
       global.addMessageListener("ActivityStream:MainToContent", function onMessage({ data: action }) {
-        if (action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOTAL_BOOKMARKS_RESPONSE) {
+        if (action.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOTAL_BOOKMARKS_RESPONSE) {
           resolve(action.data);
           global.removeMessageListener("ActivityStream:MainToContent", onMessage);
         }
@@ -3107,7 +3165,7 @@ class SnippetsProvider {
   }
 
   _onAction(msg) {
-    if (msg.data.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SNIPPET_BLOCKED) {
+    if (msg.data.type === __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SNIPPET_BLOCKED) {
       if (!this.snippetsMap.blockList.includes(msg.data.data)) {
         this.snippetsMap.set("blockList", this.snippetsMap.blockList.concat(msg.data.data));
         document.getElementById("snippets-container").style.display = "none";
@@ -3205,7 +3263,7 @@ function addSnippetsSubscriber(store) {
     
     !state.Prefs.values.asrouterExperimentEnabled && !state.Prefs.values.disableSnippets && state.Snippets.initialized && !snippets.initialized &&
     
-    !initializing) {
+    !initializing && location.href !== "about:welcome") {
       initializing = true;
       await snippets.init({ appData: state.Snippets });
       initializing = false;
@@ -3315,6 +3373,141 @@ var external__React_ = __webpack_require__(0);
 var external__React__default = __webpack_require__.n(external__React_);
 
 
+
+
+class ModalOverlay_ModalOverlay extends external__React__default.a.PureComponent {
+  componentWillMount() {
+    this.setState({ active: true });
+    document.body.classList.add("modal-open");
+  }
+
+  componentWillUnmount() {
+    document.body.classList.remove("modal-open");
+    this.setState({ active: false });
+  }
+
+  render() {
+    const { active } = this.state;
+    const { title, button_label } = this.props;
+    return external__React__default.a.createElement(
+      "div",
+      null,
+      external__React__default.a.createElement("div", { className: `modalOverlayOuter ${active ? "active" : ""}` }),
+      external__React__default.a.createElement(
+        "div",
+        { className: `modalOverlayInner ${active ? "active" : ""}` },
+        external__React__default.a.createElement(
+          "h2",
+          null,
+          " ",
+          title,
+          " "
+        ),
+        this.props.children,
+        external__React__default.a.createElement(
+          "div",
+          { className: "footer" },
+          external__React__default.a.createElement(
+            "button",
+            { onClick: this.props.onDoneButton, className: "button primary modalButton" },
+            " ",
+            button_label,
+            " "
+          )
+        )
+      )
+    );
+  }
+}
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+class OnboardingMessage_OnboardingCard extends external__React__default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onClick = this.onClick.bind(this);
+  }
+
+  onClick() {
+    const { props } = this;
+    props.sendUserActionTelemetry({ event: "TRY_NOW", message_id: props.id });
+    props.onAction(props.content);
+  }
+
+  render() {
+    const { content } = this.props;
+    return external__React__default.a.createElement(
+      "div",
+      { className: "onboardingMessage" },
+      external__React__default.a.createElement("div", { className: `onboardingMessageImage ${content.icon}` }),
+      external__React__default.a.createElement(
+        "div",
+        { className: "onboardingContent" },
+        external__React__default.a.createElement(
+          "span",
+          null,
+          external__React__default.a.createElement(
+            "h3",
+            null,
+            " ",
+            content.title,
+            " "
+          ),
+          external__React__default.a.createElement(
+            "p",
+            null,
+            " ",
+            content.text,
+            " "
+          )
+        ),
+        external__React__default.a.createElement(
+          "span",
+          null,
+          external__React__default.a.createElement(
+            "button",
+            { className: "button onboardingButton", onClick: this.onClick },
+            " ",
+            content.button_label,
+            " "
+          )
+        )
+      )
+    );
+  }
+}
+
+class OnboardingMessage_OnboardingMessage extends external__React__default.a.PureComponent {
+  render() {
+    const { props } = this;
+    return external__React__default.a.createElement(
+      ModalOverlay_ModalOverlay,
+      _extends({}, props, { button_label: "Start Browsing", title: "Welcome to Firefox" }),
+      external__React__default.a.createElement(
+        "div",
+        { className: "onboardingMessageContainer" },
+        props.bundle.map(message => external__React__default.a.createElement(OnboardingMessage_OnboardingCard, _extends({ key: message.id, sendUserActionTelemetry: props.sendUserActionTelemetry, onAction: props.onAction }, message)))
+      )
+    );
+  }
+}
+ __webpack_exports__["a"] = OnboardingMessage_OnboardingMessage;
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+
+
+var external__React_ = __webpack_require__(0);
+var external__React__default = __webpack_require__.n(external__React_);
+
+
 function safeURI(url) {
   if (!url) {
     return "";
@@ -3334,7 +3527,7 @@ const Button = props => external__React__default.a.createElement(
   "a",
   { href: safeURI(props.url),
     onClick: props.onClick,
-    className: "ASRouterButton" },
+    className: props.className || "ASRouterButton" },
   props.children
 );
 
@@ -3388,8 +3581,31 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
     this.props.sendUserActionTelemetry({ event: "CLICK_BUTTON" });
   }
 
+  renderTitle() {
+    const { title } = this.props.content;
+    return title ? external__React__default.a.createElement(
+      "h3",
+      { className: "title" },
+      title
+    ) : null;
+  }
+
+  renderButton(className) {
+    const { props } = this;
+    return external__React__default.a.createElement(
+      Button,
+      {
+        className: className,
+        onClick: this.onButtonClick,
+        url: props.content.button_url },
+      props.content.button_label
+    );
+  }
+
   render() {
     const { props } = this;
+    const hasLink = props.content.button_url && props.content.button_type === "anchor";
+    const hasButton = props.content.button_url && !props.content.button_type;
     return external__React__default.a.createElement(
       SnippetBase_SnippetBase,
       _extends({}, props, { className: "SimpleSnippet" }),
@@ -3397,26 +3613,20 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
       external__React__default.a.createElement(
         "div",
         null,
-        props.content.title ? external__React__default.a.createElement(
-          "h3",
-          { className: "title" },
-          props.content.title
-        ) : null,
+        this.renderTitle(),
         " ",
         external__React__default.a.createElement(
           "p",
           { className: "body" },
           props.content.text
-        )
+        ),
+        " ",
+        hasLink ? this.renderButton("ASRouterAnchor") : null
       ),
-      props.content.button_url ? external__React__default.a.createElement(
+      hasButton ? external__React__default.a.createElement(
         "div",
         null,
-        external__React__default.a.createElement(
-          Button,
-          { onClick: this.onButtonClick, url: props.content.button_url },
-          props.content.button_label
-        )
+        this.renderButton()
       ) : null
     );
   }
@@ -3432,17 +3642,19 @@ class SimpleSnippet_SimpleSnippet extends external__React__default.a.PureCompone
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_intl__);
- var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ASRouterAdmin_ASRouterAdmin__ = __webpack_require__(25);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__ = __webpack_require__(26);
+ var __WEBPACK_IMPORTED_MODULE_2_content_src_components_ASRouterAdmin_ASRouterAdmin__ = __webpack_require__(26);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__ = __webpack_require__(27);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_4_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react_redux__);
  var __WEBPACK_IMPORTED_MODULE_5_content_src_components_ErrorBoundary_ErrorBoundary__ = __webpack_require__(10);
- var __WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__ = __webpack_require__(27);
- var __WEBPACK_IMPORTED_MODULE_7_common_PrerenderData_jsm__ = __webpack_require__(28);
+ var __WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__ = __webpack_require__(28);
+ var __WEBPACK_IMPORTED_MODULE_7_common_PrerenderData_jsm__ = __webpack_require__(29);
  var __WEBPACK_IMPORTED_MODULE_8_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_8_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_8_react__);
- var __WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__ = __webpack_require__(29);
- var __WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__ = __webpack_require__(31);
+ var __WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__ = __webpack_require__(30);
+ var __WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__ = __webpack_require__(32);
+ var __WEBPACK_IMPORTED_MODULE_11_content_src_components_StartupOverlay_StartupOverlay__ = __webpack_require__(38);
+
 
 
 
@@ -3483,8 +3695,8 @@ class _Base extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComponent 
     
     
     if (this.props.isPrerendered) {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_STATE_REQUEST }));
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].PAGE_PRERENDERED }));
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].NEW_TAB_STATE_REQUEST }));
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].PAGE_PRERENDERED }));
     }
   }
 
@@ -3498,7 +3710,7 @@ class _Base extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComponent 
   }
 
   updateTheme(Theme) {
-    const bodyClassName = ["activity-stream", Theme.className].filter(v => v).join(" ");
+    const bodyClassName = ["activity-stream", Theme.className, this.props.isFirstrun ? "welcome" : ""].filter(v => v).join(" ");
     global.document.body.className = bodyClassName;
   }
 
@@ -3507,7 +3719,7 @@ class _Base extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComponent 
   
   sendNewTabRehydrated(App) {
     if (App && App.initialized && !this.renderNotified) {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].NEW_TAB_REHYDRATED, data: {} }));
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].NEW_TAB_REHYDRATED, data: {} }));
       this.renderNotified = true;
     }
   }
@@ -3546,8 +3758,8 @@ class BaseContent extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComp
   }
 
   openPreferences() {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SETTINGS_OPEN }));
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({ event: "OPEN_NEWTAB_PREFS" }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].OnlyToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SETTINGS_OPEN }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({ event: "OPEN_NEWTAB_PREFS" }));
   }
 
   render() {
@@ -3562,32 +3774,37 @@ class BaseContent extends __WEBPACK_IMPORTED_MODULE_8_react___default.a.PureComp
 
     return __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
       "div",
-      { className: outerClassName },
+      null,
       __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
-        "main",
-        null,
-        prefs.showSearch && __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
-          "div",
-          { className: "non-collapsible-section" },
-          __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
-            __WEBPACK_IMPORTED_MODULE_5_content_src_components_ErrorBoundary_ErrorBoundary__["a" ],
-            null,
-            __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__["a" ], null)
-          )
-        ),
+        "div",
+        { className: outerClassName },
         __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
-          "div",
-          { className: `body-wrapper${initialized ? " on" : ""}` },
-          !prefs.migrationExpired && __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
+          "main",
+          null,
+          prefs.showSearch && __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
             "div",
             { className: "non-collapsible-section" },
-            __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__["a" ], null)
+            __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
+              __WEBPACK_IMPORTED_MODULE_5_content_src_components_ErrorBoundary_ErrorBoundary__["a" ],
+              null,
+              __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_9_content_src_components_Search_Search__["a" ], null)
+            )
           ),
-          __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__["a" ], null),
-          __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(PrefsButton, { onClick: this.openPreferences })
-        ),
-        __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__["a" ], null)
-      )
+          __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
+            "div",
+            { className: `body-wrapper${initialized ? " on" : ""}` },
+            !prefs.migrationExpired && __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(
+              "div",
+              { className: "non-collapsible-section" },
+              __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_6_content_src_components_ManualMigration_ManualMigration__["a" ], null)
+            ),
+            __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_10_content_src_components_Sections_Sections__["a" ], null),
+            __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(PrefsButton, { onClick: this.openPreferences })
+          ),
+          __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3_content_src_components_ConfirmDialog_ConfirmDialog__["a" ], null)
+        )
+      ),
+      this.props.isFirstrun && __WEBPACK_IMPORTED_MODULE_8_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_11_content_src_components_StartupOverlay_StartupOverlay__["a" ], null)
     );
   }
 }
@@ -3614,6 +3831,7 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
   constructor(props) {
     super(props);
     this.onMessage = this.onMessage.bind(this);
+    this.findOtherBundledMessagesOfSameTemplate = this.findOtherBundledMessagesOfSameTemplate.bind(this);
     this.state = {};
   }
 
@@ -3632,12 +3850,26 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
     __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].removeListener(this.onMessage);
   }
 
-  handleBlock(id) {
-    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].blockById(id);
+  findOtherBundledMessagesOfSameTemplate(template) {
+    return this.state.messages.filter(msg => msg.template === template && msg.bundled);
   }
 
-  handleUnblock(id) {
-    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].unblockById(id);
+  handleBlock(msg) {
+    if (msg.bundled) {
+      
+      let bundle = this.findOtherBundledMessagesOfSameTemplate(msg.template);
+      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].blockBundle(bundle);
+    }
+    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].blockById(msg.id);
+  }
+
+  handleUnblock(msg) {
+    if (msg.bundled) {
+      
+      let bundle = this.findOtherBundledMessagesOfSameTemplate(msg.template);
+      return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].unblockBundle(bundle);
+    }
+    return () => __WEBPACK_IMPORTED_MODULE_0__asrouter_asrouter_content__["a" ].unblockById(msg.id);
   }
 
   handleOverride(id) {
@@ -3673,7 +3905,7 @@ class ASRouterAdmin extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureCo
         null,
         __WEBPACK_IMPORTED_MODULE_1_react___default.a.createElement(
           "button",
-          { className: `button ${isBlocked ? "" : " primary"}`, onClick: isBlocked ? this.handleUnblock(msg.id) : this.handleBlock(msg.id) },
+          { className: `button ${isBlocked ? "" : " primary"}`, onClick: isBlocked ? this.handleUnblock(msg) : this.handleBlock(msg) },
           isBlocked ? "Unblock" : "Block"
         ),
         isBlocked ? null : __WEBPACK_IMPORTED_MODULE_1_react___default.a.createElement(
@@ -3814,8 +4046,8 @@ class _ConfirmDialog extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureC
   }
 
   _handleCancelBtn() {
-    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DIALOG_CANCEL });
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].DIALOG_CANCEL, source: this.props.data.eventSource }));
+    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DIALOG_CANCEL });
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].DIALOG_CANCEL, source: this.props.data.eventSource }));
   }
 
   _handleConfirmBtn() {
@@ -3916,13 +4148,13 @@ class _ManualMigration extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.Pur
   }
 
   onLaunchTour() {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].MIGRATION_START }));
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].MIGRATION_START }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].MIGRATION_START }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].MIGRATION_START }));
   }
 
   onCancelTour() {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].MIGRATION_CANCEL }));
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].MIGRATION_CANCEL }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].MIGRATION_CANCEL }));
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({ event: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].MIGRATION_CANCEL }));
   }
 
   render() {
@@ -4071,7 +4303,7 @@ var PrerenderData = new _PrerenderData({
  var __WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_2_react_redux__ = __webpack_require__(4);
  var __WEBPACK_IMPORTED_MODULE_2_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react_redux__);
- var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_constants__ = __webpack_require__(30);
+ var __WEBPACK_IMPORTED_MODULE_3_content_src_lib_constants__ = __webpack_require__(31);
  var __WEBPACK_IMPORTED_MODULE_4_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_4_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_react__);
 
@@ -4093,7 +4325,7 @@ class _Search extends __WEBPACK_IMPORTED_MODULE_4_react___default.a.PureComponen
   handleEvent(event) {
     
     if (event.detail.type === "Search") {
-      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["a" ].UserEvent({ event: "SEARCH" }));
+      this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({ event: "SEARCH" }));
     }
   }
 
@@ -4195,7 +4427,7 @@ const Search = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect"])()(Ob
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-(function(global) { var __WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__ = __webpack_require__(32);
+(function(global) { var __WEBPACK_IMPORTED_MODULE_0_content_src_components_Card_Card__ = __webpack_require__(33);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl__ = __webpack_require__(2);
  var __WEBPACK_IMPORTED_MODULE_1_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_intl__);
  var __WEBPACK_IMPORTED_MODULE_2_common_Actions_jsm__ = __webpack_require__(1);
@@ -4205,8 +4437,8 @@ const Search = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect"])()(Ob
  var __WEBPACK_IMPORTED_MODULE_5_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_react_redux__);
  var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
- var __WEBPACK_IMPORTED_MODULE_7_content_src_components_Topics_Topics__ = __webpack_require__(34);
- var __WEBPACK_IMPORTED_MODULE_8_content_src_components_TopSites_TopSites__ = __webpack_require__(35);
+ var __WEBPACK_IMPORTED_MODULE_7_content_src_components_Topics_Topics__ = __webpack_require__(35);
+ var __WEBPACK_IMPORTED_MODULE_8_content_src_components_TopSites_TopSites__ = __webpack_require__(36);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4238,7 +4470,7 @@ class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponen
     const cards = props.rows.slice(0, maxCards);
 
     if (this.needsImpressionStats(cards)) {
-      props.dispatch(__WEBPACK_IMPORTED_MODULE_2_common_Actions_jsm__["a" ].ImpressionStats({
+      props.dispatch(__WEBPACK_IMPORTED_MODULE_2_common_Actions_jsm__["b" ].ImpressionStats({
         source: props.eventSource,
         tiles: cards.map(link => ({ id: link.guid }))
       }));
@@ -4369,7 +4601,8 @@ class Section extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureComponen
           Prefs: this.props.Prefs,
           isFirst: isFirst,
           isLast: isLast,
-          dispatch: this.props.dispatch },
+          dispatch: this.props.dispatch,
+          isWebExtension: this.props.isWebExtension },
         !shouldShowEmptyState && __WEBPACK_IMPORTED_MODULE_6_react___default.a.createElement(
           "ul",
           { className: "section-list", style: { padding: 0 } },
@@ -4595,32 +4828,32 @@ class Card__Card extends external__React__default.a.PureComponent {
   onLinkClick(event) {
     event.preventDefault();
     if (this.props.link.type === "download") {
-      this.props.dispatch(Actions["a" ].OnlyToMain({
-        type: Actions["b" ].SHOW_DOWNLOAD_FILE,
+      this.props.dispatch(Actions["b" ].OnlyToMain({
+        type: Actions["c" ].SHOW_DOWNLOAD_FILE,
         data: this.props.link
       }));
     } else {
       const { altKey, button, ctrlKey, metaKey, shiftKey } = event;
-      this.props.dispatch(Actions["a" ].OnlyToMain({
-        type: Actions["b" ].OPEN_LINK,
+      this.props.dispatch(Actions["b" ].OnlyToMain({
+        type: Actions["c" ].OPEN_LINK,
         data: Object.assign(this.props.link, { event: { altKey, button, ctrlKey, metaKey, shiftKey } })
       }));
     }
     if (this.props.isWebExtension) {
-      this.props.dispatch(Actions["a" ].WebExtEvent(Actions["b" ].WEBEXT_CLICK, {
+      this.props.dispatch(Actions["b" ].WebExtEvent(Actions["c" ].WEBEXT_CLICK, {
         source: this.props.eventSource,
         url: this.props.link.url,
         action_position: this.props.index
       }));
     } else {
-      this.props.dispatch(Actions["a" ].UserEvent(Object.assign({
+      this.props.dispatch(Actions["b" ].UserEvent(Object.assign({
         event: "CLICK",
         source: this.props.eventSource,
         action_position: this.props.index
       }, this._getTelemetryInfo())));
 
       if (this.props.shouldSendImpressionStats) {
-        this.props.dispatch(Actions["a" ].ImpressionStats({
+        this.props.dispatch(Actions["b" ].ImpressionStats({
           source: this.props.eventSource,
           click: 0,
           tiles: [{ id: this.props.link.guid, pos: this.props.index }]
@@ -4769,12 +5002,13 @@ const PlaceholderCard = () => external__React__default.a.createElement(Card, { p
 
 
 const DEFAULT_SECTION_MENU_OPTIONS = ["MoveUp", "MoveDown", "Separator", "RemoveSection", "CheckCollapsed", "Separator", "ManageSection"];
+const WEBEXT_SECTION_MENU_OPTIONS = ["MoveUp", "MoveDown", "Separator", "CheckCollapsed", "Separator", "ManageWebExtension"];
 
 class _SectionMenu extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureComponent {
   getOptions() {
     const { props } = this;
 
-    const propOptions = Array.from(DEFAULT_SECTION_MENU_OPTIONS);
+    const propOptions = props.isWebExtension ? [...WEBEXT_SECTION_MENU_OPTIONS] : [...DEFAULT_SECTION_MENU_OPTIONS];
     
     if (props.extraOptions) {
       propOptions.splice(0, 0, ...props.extraOptions, "Separator");
@@ -4791,7 +5025,7 @@ class _SectionMenu extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureCom
         option.onClick = () => {
           props.dispatch(action);
           if (userEvent) {
-            props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({
+            props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({
               event: userEvent,
               source: props.source
             }));
@@ -4894,7 +5128,7 @@ class Topics extends __WEBPACK_IMPORTED_MODULE_1_react___default.a.PureComponent
  var __WEBPACK_IMPORTED_MODULE_6_react__ = __webpack_require__(0);
  var __WEBPACK_IMPORTED_MODULE_6_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_6_react__);
  var __WEBPACK_IMPORTED_MODULE_7_common_Reducers_jsm__ = __webpack_require__(6);
- var __WEBPACK_IMPORTED_MODULE_8__TopSiteForm__ = __webpack_require__(36);
+ var __WEBPACK_IMPORTED_MODULE_8__TopSiteForm__ = __webpack_require__(37);
  var __WEBPACK_IMPORTED_MODULE_9__TopSite__ = __webpack_require__(18);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -4963,8 +5197,8 @@ class _TopSites extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureCompon
     const topSitesIconsStats = countTopSitesIconsTypes(topSites);
     const topSitesPinned = topSites.filter(site => !!site.isPinned).length;
     
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+      type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_SESSION_PERF_DATA,
       data: { topsites_icon_stats: topSitesIconsStats, topsites_pinned: topSitesPinned }
     }));
   }
@@ -4991,11 +5225,11 @@ class _TopSites extends __WEBPACK_IMPORTED_MODULE_6_react___default.a.PureCompon
   }
 
   onFormClose() {
-    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].UserEvent({
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].UserEvent({
       source: __WEBPACK_IMPORTED_MODULE_1__TopSitesConstants__["d" ],
       event: "TOP_SITES_EDIT_CLOSE"
     }));
-    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].TOP_SITES_CANCEL_EDIT });
+    this.props.dispatch({ type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].TOP_SITES_CANCEL_EDIT });
   }
 
   render() {
@@ -5211,7 +5445,7 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
       customScreenshotUrl,
       validationError: false
     });
-    this.props.dispatch({ type: Actions["b" ].PREVIEW_REQUEST_CANCEL });
+    this.props.dispatch({ type: Actions["c" ].PREVIEW_REQUEST_CANCEL });
   }
 
   onCustomScreenshotUrlChange(event) {
@@ -5243,11 +5477,11 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
         
         site.customScreenshotURL = null;
       }
-      this.props.dispatch(Actions["a" ].AlsoToMain({
-        type: Actions["b" ].TOP_SITES_PIN,
+      this.props.dispatch(Actions["b" ].AlsoToMain({
+        type: Actions["c" ].TOP_SITES_PIN,
         data: { site, index }
       }));
-      this.props.dispatch(Actions["a" ].UserEvent({
+      this.props.dispatch(Actions["b" ].UserEvent({
         source: TopSitesConstants["d" ],
         event: "TOP_SITES_EDIT",
         action_position: index
@@ -5260,11 +5494,11 @@ class TopSiteForm_TopSiteForm extends external__React__default.a.PureComponent {
   onPreviewButtonClick(event) {
     event.preventDefault();
     if (this.validateForm()) {
-      this.props.dispatch(Actions["a" ].AlsoToMain({
-        type: Actions["b" ].PREVIEW_REQUEST,
+      this.props.dispatch(Actions["b" ].AlsoToMain({
+        type: Actions["c" ].PREVIEW_REQUEST,
         data: { url: this.cleanUrl(this.state.customScreenshotUrl) }
       }));
-      this.props.dispatch(Actions["a" ].UserEvent({
+      this.props.dispatch(Actions["b" ].UserEvent({
         source: TopSitesConstants["d" ],
         event: "PREVIEW_REQUEST"
       }));
@@ -5430,6 +5664,161 @@ TopSiteForm_TopSiteForm.defaultProps = {
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+ var __WEBPACK_IMPORTED_MODULE_0_react_intl__ = __webpack_require__(2);
+ var __WEBPACK_IMPORTED_MODULE_0_react_intl___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react_intl__);
+ var __WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__ = __webpack_require__(1);
+ var __WEBPACK_IMPORTED_MODULE_2_react_redux__ = __webpack_require__(4);
+ var __WEBPACK_IMPORTED_MODULE_2_react_redux___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_react_redux__);
+ var __WEBPACK_IMPORTED_MODULE_3_react__ = __webpack_require__(0);
+ var __WEBPACK_IMPORTED_MODULE_3_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react__);
+
+
+
+
+
+class _StartupOverlay extends __WEBPACK_IMPORTED_MODULE_3_react___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onInputChange = this.onInputChange.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
+    this.clickSkip = this.clickSkip.bind(this);
+    this.initScene = this.initScene.bind(this);
+    this.removeOverlay = this.removeOverlay.bind(this);
+
+    this.state = { emailInput: "" };
+    this.initScene();
+  }
+
+  initScene() {
+    
+    
+    setTimeout(() => {
+      this.setState({ show: true });
+    }, 10);
+  }
+
+  removeOverlay() {
+    window.removeEventListener("visibilitychange", this.removeOverlay);
+    this.setState({ show: false });
+    setTimeout(() => {
+      
+      document.body.classList.remove("welcome");
+    }, 400);
+  }
+
+  onInputChange(e) {
+    this.setState({ emailInput: e.target.value });
+  }
+
+  onSubmit() {
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({ event: "SUBMIT_EMAIL" }));
+    window.addEventListener("visibilitychange", this.removeOverlay);
+  }
+
+  clickSkip() {
+    this.props.dispatch(__WEBPACK_IMPORTED_MODULE_1_common_Actions_jsm__["b" ].UserEvent({ event: "SKIPPED_SIGNIN" }));
+    this.removeOverlay();
+  }
+
+  render() {
+    let termsLink = __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+      "a",
+      { href: "https://accounts.firefox.com/legal/terms", target: "_blank", rel: "noopener noreferrer" },
+      __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_terms_of_service" })
+    );
+    let privacyLink = __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+      "a",
+      { href: "https://accounts.firefox.com/legal/privacy", target: "_blank", rel: "noopener noreferrer" },
+      __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_privacy_notice" })
+    );
+    return __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+      "div",
+      { className: `overlay-wrapper ${this.state.show ? "show " : ""}` },
+      __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("div", { className: "background" }),
+      __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+        "div",
+        { className: "firstrun-scene" },
+        __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+          "div",
+          { className: "fxaccounts-container" },
+          __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+            "div",
+            { className: "firstrun-left-divider" },
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "h1",
+              { className: "firstrun-title" },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_title" })
+            ),
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "p",
+              { className: "firstrun-content" },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_content" })
+            ),
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "a",
+              { className: "firstrun-link", href: "https://www.mozilla.org/firefox/features/sync/", target: "_blank", rel: "noopener noreferrer" },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_learn_more_link" })
+            )
+          ),
+          __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+            "div",
+            { className: "firstrun-sign-in" },
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "p",
+              { className: "form-header" },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_form_header" }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+                "span",
+                null,
+                __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_form_sub_header" })
+              )
+            ),
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "form",
+              { method: "get", action: "https://accounts.firefox.com", target: "_blank", rel: "noopener noreferrer", onSubmit: this.onSubmit },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "service", type: "hidden", value: "sync" }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "action", type: "hidden", value: "email" }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { name: "context", type: "hidden", value: "fx_desktop_v3" }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement("input", { className: "email-input", name: "email", type: "email", required: "true", placeholder: this.props.intl.formatMessage({ id: "firstrun_email_input_placeholder" }), onChange: this.onInputChange }),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+                "div",
+                { className: "extra-links" },
+                __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], {
+                  id: "firstrun_extra_legal_links",
+                  values: {
+                    terms: termsLink,
+                    privacy: privacyLink
+                  } })
+              ),
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+                "button",
+                { className: "continue-button", type: "submit" },
+                __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_continue_to_login" })
+              )
+            ),
+            __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(
+              "button",
+              { className: "skip-button", disabled: !!this.state.emailInput, onClick: this.clickSkip },
+              __WEBPACK_IMPORTED_MODULE_3_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_0_react_intl__["FormattedMessage"], { id: "firstrun_skip_login" })
+            )
+          )
+        )
+      )
+    );
+  }
+}
+
+
+
+const StartupOverlay = Object(__WEBPACK_IMPORTED_MODULE_2_react_redux__["connect"])()(Object(__WEBPACK_IMPORTED_MODULE_0_react_intl__["injectIntl"])(_StartupOverlay));
+ __webpack_exports__["a"] = StartupOverlay;
+
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 (function(global) { var __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__ = __webpack_require__(1);
  var __WEBPACK_IMPORTED_MODULE_1_common_PerfService_jsm__ = __webpack_require__(17);
 
@@ -5475,8 +5864,8 @@ class DetectUserSessionStart {
     try {
       let visibility_event_rcvd_ts = this._perfService.getMostRecentAbsMarkStartByName("visibility_event_rcvd_ts");
 
-      this._store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["a" ].AlsoToMain({
-        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].SAVE_SESSION_PERF_DATA,
+      this._store.dispatch(__WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["b" ].AlsoToMain({
+        type: __WEBPACK_IMPORTED_MODULE_0_common_Actions_jsm__["c" ].SAVE_SESSION_PERF_DATA,
         data: { visibility_event_rcvd_ts }
       }));
     } catch (ex) {
