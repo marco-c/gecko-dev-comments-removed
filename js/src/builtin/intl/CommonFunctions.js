@@ -15,8 +15,6 @@ internalIntlRegExps.unicodeLocaleExtensionSequenceRE = null;
 internalIntlRegExps.languageTagRE = null;
 internalIntlRegExps.duplicateVariantRE = null;
 internalIntlRegExps.duplicateSingletonRE = null;
-internalIntlRegExps.isWellFormedCurrencyCodeRE = null;
-internalIntlRegExps.currencyDigitsRE = null;
 
 
 
