@@ -254,23 +254,33 @@ class JSString : public js::gc::Cell
 
 
 
-    static const uint32_t LINEAR_BIT             = JS_BIT(0);
-    static const uint32_t HAS_BASE_BIT           = JS_BIT(1);
-    static const uint32_t INLINE_CHARS_BIT       = JS_BIT(2);
-    static const uint32_t ATOM_BIT               = JS_BIT(3);
 
-    static const uint32_t DEPENDENT_FLAGS        = LINEAR_BIT | HAS_BASE_BIT;
-    static const uint32_t UNDEPENDED_FLAGS       = LINEAR_BIT | HAS_BASE_BIT | JS_BIT(4);
-    static const uint32_t EXTENSIBLE_FLAGS       = LINEAR_BIT | JS_BIT(4);
-    static const uint32_t EXTERNAL_FLAGS         = LINEAR_BIT | JS_BIT(5);
+
+
+
+
+
+
+
+    static const uint32_t NON_ATOM_BIT           = JS_BIT(0);
+    static const uint32_t LINEAR_BIT             = JS_BIT(1);
+    static const uint32_t HAS_BASE_BIT           = JS_BIT(2);
+    static const uint32_t INLINE_CHARS_BIT       = JS_BIT(3);
+
+    static const uint32_t DEPENDENT_FLAGS        = NON_ATOM_BIT | LINEAR_BIT | HAS_BASE_BIT;
+    static const uint32_t UNDEPENDED_FLAGS       = NON_ATOM_BIT | LINEAR_BIT | HAS_BASE_BIT | JS_BIT(4);
+    static const uint32_t EXTENSIBLE_FLAGS       = NON_ATOM_BIT | LINEAR_BIT | JS_BIT(4);
+    static const uint32_t EXTERNAL_FLAGS         = NON_ATOM_BIT | LINEAR_BIT | JS_BIT(5);
 
     static const uint32_t FAT_INLINE_MASK        = INLINE_CHARS_BIT | JS_BIT(4);
-    static const uint32_t PERMANENT_ATOM_MASK    = ATOM_BIT | JS_BIT(5);
+    static const uint32_t PERMANENT_ATOM_MASK    = NON_ATOM_BIT | JS_BIT(5);
+    static const uint32_t PERMANENT_ATOM_FLAGS   = JS_BIT(5);
 
     
-    static const uint32_t INIT_THIN_INLINE_FLAGS = LINEAR_BIT | INLINE_CHARS_BIT;
-    static const uint32_t INIT_FAT_INLINE_FLAGS  = LINEAR_BIT | FAT_INLINE_MASK;
-    static const uint32_t INIT_ROPE_FLAGS        = 0;
+    static const uint32_t INIT_THIN_INLINE_FLAGS = NON_ATOM_BIT | LINEAR_BIT | INLINE_CHARS_BIT;
+    static const uint32_t INIT_FAT_INLINE_FLAGS  = NON_ATOM_BIT | LINEAR_BIT | FAT_INLINE_MASK;
+    static const uint32_t INIT_ROPE_FLAGS        = NON_ATOM_BIT;
+    static const uint32_t INIT_FLAT_FLAGS        = NON_ATOM_BIT | LINEAR_BIT;
 
     static const uint32_t TYPE_FLAGS_MASK        = JS_BIT(6) - 1;
 
@@ -317,6 +327,8 @@ class JSString : public js::gc::Cell
                       "shadow::String inlineStorage offset must match JSString");
         static_assert(offsetof(JSString, d.inlineStorageTwoByte) == offsetof(String, inlineStorageTwoByte),
                       "shadow::String inlineStorage offset must match JSString");
+        static_assert(NON_ATOM_BIT == String::NON_ATOM_BIT,
+                      "shadow::String::NON_ATOM_BIT must match JSString::NON_ATOM_BIT");
         static_assert(LINEAR_BIT == String::LINEAR_BIT,
                       "shadow::String::LINEAR_BIT must match JSString::LINEAR_BIT");
         static_assert(INLINE_CHARS_BIT == String::INLINE_CHARS_BIT,
@@ -472,18 +484,26 @@ class JSString : public js::gc::Cell
 
     MOZ_ALWAYS_INLINE
     bool isAtom() const {
-        return d.u1.flags & ATOM_BIT;
+        return !(d.u1.flags & NON_ATOM_BIT);
     }
 
     MOZ_ALWAYS_INLINE
     bool isPermanentAtom() const {
-        return (d.u1.flags & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_MASK;
+        return (d.u1.flags & PERMANENT_ATOM_MASK) == PERMANENT_ATOM_FLAGS;
     }
 
     MOZ_ALWAYS_INLINE
     JSAtom& asAtom() const {
         MOZ_ASSERT(isAtom());
         return *(JSAtom*)this;
+    }
+
+    
+    
+    MOZ_ALWAYS_INLINE
+    static bool nurseryCellIsString(js::gc::Cell* cell) {
+        MOZ_ASSERT(!cell->isTenured());
+        return !static_cast<JSString*>(cell)->isAtom();
     }
 
     
@@ -1091,7 +1111,8 @@ class JSAtom : public JSFlatString
     
     
     MOZ_ALWAYS_INLINE void morphIntoPermanentAtom() {
-        d.u1.flags |= PERMANENT_ATOM_MASK;
+        MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
+        d.u1.flags |= PERMANENT_ATOM_FLAGS;
     }
 
     inline js::HashNumber hash() const;
@@ -1170,7 +1191,8 @@ JSAtom::initHash(js::HashNumber hash)
 MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
 {
-    d.u1.flags |= ATOM_BIT;
+    MOZ_ASSERT(!isAtom());
+    d.u1.flags &= ~NON_ATOM_BIT;
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;
@@ -1179,7 +1201,9 @@ JSFlatString::morphAtomizedStringIntoAtom(js::HashNumber hash)
 MOZ_ALWAYS_INLINE JSAtom*
 JSFlatString::morphAtomizedStringIntoPermanentAtom(js::HashNumber hash)
 {
-    d.u1.flags |= PERMANENT_ATOM_MASK;
+    MOZ_ASSERT(!isAtom());
+    d.u1.flags |= PERMANENT_ATOM_FLAGS;
+    d.u1.flags &= ~NON_ATOM_BIT;
     JSAtom* atom = &asAtom();
     atom->initHash(hash);
     return atom;

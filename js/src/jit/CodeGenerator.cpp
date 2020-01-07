@@ -8051,8 +8051,11 @@ JitCompartment::generateStringConcatStub(JSContext* cx)
     
     
     
-    static_assert(JSString::INIT_ROPE_FLAGS == 0, "Rope type flags must be 0");
+    
+    static_assert(JSString::INIT_ROPE_FLAGS == JSString::NON_ATOM_BIT,
+                  "Rope type flags must be NON_ATOM_BIT only");
     masm.and32(Imm32(JSString::LATIN1_CHARS_BIT), temp1);
+    masm.or32(Imm32(JSString::NON_ATOM_BIT), temp1);
     masm.store32(temp1, Address(output, JSString::offsetOfFlags()));
     masm.store32(temp2, Address(output, JSString::offsetOfLength()));
 
