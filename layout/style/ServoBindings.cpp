@@ -671,14 +671,23 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
   }
 
   if (aTasks & UpdateAnimationsTasks::CascadeResults) {
+    EffectSet* effectSet = EffectSet::GetEffectSet(aElement, pseudoType);
     
     
     
-    presContext->EffectCompositor()
-               ->RequestRestyle(const_cast<Element*>(aElement),
-                                pseudoType,
-                                EffectCompositor::RestyleType::Standard,
-                                EffectCompositor::CascadeLevel::Animations);
+    if (effectSet) {
+      
+      
+      
+      
+      
+      presContext->EffectCompositor()
+                 ->UpdateCascadeResults(StyleBackendType::Servo,
+                                        *effectSet,
+                                        const_cast<Element*>(aElement),
+                                        pseudoType,
+                                        nullptr);
+    }
   }
 
   if (aTasks & UpdateAnimationsTasks::DisplayChangedFromNone) {
