@@ -132,8 +132,9 @@ var PromiseTestUtils = {
   
   onLeftUncaught(promise) {
     let message = "(Unable to convert rejection reason to string.)";
+    let reason = null;
     try {
-      let reason = PromiseDebugging.getState(promise).reason;
+      reason = PromiseDebugging.getState(promise).reason;
       if (reason === this._ensureDOMPromiseRejectionsProcessedReason) {
         
         return;
@@ -146,7 +147,12 @@ var PromiseTestUtils = {
     
     let stack = "(Unable to convert rejection stack to string.)";
     try {
-      stack = "" + PromiseDebugging.getRejectionStack(promise);
+      
+      
+      
+      stack = "" + (PromiseDebugging.getRejectionStack(promise) ||
+                    (reason && reason.stack) ||
+                    "(No stack available.)");
     } catch (ex) {}
 
     
