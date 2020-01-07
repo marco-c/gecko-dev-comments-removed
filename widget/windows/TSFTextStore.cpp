@@ -4302,6 +4302,16 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     return E_INVALIDARG;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (acpStart < 0 || acpEnd < acpStart) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
       ("0x%p   TSFTextStore::GetTextExt() FAILED due to "
@@ -4451,6 +4461,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
            this, mContentForTSF.MinOffsetOfLayoutChanged()));
         return E_FAIL;
       }
+      bool collapsed = acpStart == acpEnd;
       
       
       
@@ -4459,11 +4470,23 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
         static_cast<int32_t>(mContentForTSF.MinOffsetOfLayoutChanged());
       LONG lastUnmodifiedOffset = std::max(firstModifiedOffset - 1, 0);
       if (mContentForTSF.IsLayoutChangedAt(acpStart)) {
-        
-        
         if (acpStart >= mContentForTSF.LatestCompositionStartOffset()) {
-          acpStart = mContentForTSF.LatestCompositionStartOffset();
+          
+          
+          
+          
+          
+          
+          LONG maxCachedOffset = mContentForTSF.LatestCompositionEndOffset();
+          if (mContentForTSF.WasLastComposition()) {
+            maxCachedOffset =
+              std::min(maxCachedOffset,
+                       mContentForTSF.LastCompositionStringEndOffset());
+          }
+          acpStart = std::min(acpStart, maxCachedOffset);
         }
+        
+        
         
         
         else {
@@ -4471,9 +4494,21 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
         }
         MOZ_ASSERT(acpStart <= acpEnd);
       }
-      if (mContentForTSF.IsLayoutChangedAt(acpEnd)) {
-        
-        
+      
+      
+      if (collapsed) {
+        acpEnd = acpStart;
+      }
+      
+      
+      
+      
+      
+      
+      
+      else if (mContentForTSF.IsLayoutChangedAt(acpEnd) &&
+               (acpEnd < mContentForTSF.LatestCompositionStartOffset() ||
+                acpEnd > mContentForTSF.LatestCompositionEndOffset())) {
         acpEnd = std::max(acpStart, lastUnmodifiedOffset);
       }
       MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -5955,6 +5990,9 @@ TSFTextStore::OnUpdateCompositionInternal()
   if (mDestroyed) {
     return NS_OK;
   }
+
+  
+  mContentForTSF.OnCompositionEventsHandled();
 
   
   
