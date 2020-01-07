@@ -542,6 +542,7 @@ add_task(async function test_sendNewProfile() {
 
   
   Assert.throws(() => req.getHeader("X-PingSender-Version"),
+                /NS_ERROR_NOT_AVAILABLE/,
                 "Should not have used the pingsender.");
 
   
