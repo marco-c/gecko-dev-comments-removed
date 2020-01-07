@@ -340,7 +340,10 @@ TracerConcrete<Referent>::edges(JSContext* cx, bool wantNames) const {
     if (!range->init(cx->runtime(), ptr, JS::MapTypeToTraceKind<Referent>::kind, wantNames))
         return nullptr;
 
-    return range;
+    
+    
+    
+    return UniquePtr<EdgeRange>(range.release());
 }
 
 template UniquePtr<EdgeRange> TracerConcrete<JSScript>::edges(JSContext* cx, bool wantNames) const;
