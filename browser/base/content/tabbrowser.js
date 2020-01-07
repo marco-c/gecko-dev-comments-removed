@@ -1284,6 +1284,7 @@ window._gBrowser = {
                                                   [brandShortName]);
       isContentTitle = true;
     } else {
+      
       if (browser.currentURI.displaySpec) {
         try {
           title = this.mURIFixup.createExposableURI(browser.currentURI).displaySpec;
@@ -1296,20 +1297,19 @@ window._gBrowser = {
         
         
         
-        try {
+        
+        
+        
+        
+        if (title.length > 500 && title.match(/^data:[^,]+;base64,/)) {
+          title = title.substring(0, 500) + "\u2026";
+        } else {
           
-          
-          
-          
-          
-          
-          if (title.length > 500 && title.match(/^data:[^,]+;base64,/)) {
-            title = title.substring(0, 500) + "\u2026";
-          } else {
-            var characterSet = browser.characterSet;
+          try {
+            let characterSet = browser.characterSet;
             title = Services.textToSubURI.unEscapeNonAsciiURI(characterSet, title);
-          }
-        } catch (ex) {  }
+          } catch (ex) {  }
+        }
       } else {
         
         title = this.tabContainer.emptyTabTitle;
