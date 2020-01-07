@@ -2008,7 +2008,7 @@ MakeDisplayItem(nsDisplayListBuilder* aBuilder, Args&&... aArgs)
     mozilla::DisplayItemData* did = array.ElementAt(i);
     if (did->GetDisplayItemKey() == item->GetPerFrameKey()) {
       if (!did->HasMergedFrames()) {
-        item->SetDisplayItemData(did, did->GetLayer()->Manager());
+        item->SetDisplayItemData(did);
       }
       break;
     }
@@ -2808,16 +2808,11 @@ public:
       nsDisplayListBuilder* aBuilder,
       const ActiveScrolledRoot* aASR) const;
 
-  void SetDisplayItemData(mozilla::DisplayItemData* aDID, mozilla::layers::LayerManager* aLayerManager) {
-    if (aDID) {
-      aDID->SetItem(this);
-    }
+  void SetDisplayItemData(mozilla::DisplayItemData* aDID) {
     mDisplayItemData = aDID;
-    mDisplayItemDataLayerManager = aLayerManager;
   }
 
   mozilla::DisplayItemData* GetDisplayItemData() { return mDisplayItemData; }
-  mozilla::layers::LayerManager* GetDisplayItemDataLayerManager() { return mDisplayItemDataLayerManager; }
 
   
   
@@ -2863,8 +2858,7 @@ protected:
   RefPtr<struct AnimatedGeometryRoot> mAnimatedGeometryRoot;
   
   nsPoint   mToReferenceFrame;
-  mozilla::DisplayItemData* mDisplayItemData = nullptr;
-  mozilla::layers::LayerManager* mDisplayItemDataLayerManager = nullptr;
+  RefPtr<mozilla::DisplayItemData> mDisplayItemData;
 
 private:
   
