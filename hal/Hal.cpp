@@ -438,14 +438,29 @@ UnregisterSensorObserver(SensorType aSensor, ISensorObserver *aObserver) {
   }
   DisableSensorNotifications(aSensor);
 
-  
   for (int i = 0; i < NUM_SENSOR_TYPE; i++) {
     if (gSensorObservers[i].Length() > 0) {
       return;
     }
   }
-  delete [] gSensorObservers;
+
+  
+  
+  
+  
+  SensorObserverList* sensorlists = gSensorObservers;
   gSensorObservers = nullptr;
+
+  
+  
+  if (NS_FAILED(NS_DispatchToCurrentThread(NS_NewRunnableFunction("UnregisterSensorObserver",
+                                                                  [sensorlists]() -> void {
+      delete [] sensorlists;
+      }))))
+  {
+    
+    delete [] sensorlists;
+  }
 }
 
 void
