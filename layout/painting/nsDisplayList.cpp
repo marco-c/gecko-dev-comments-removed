@@ -3296,7 +3296,7 @@ nsDisplayItem::IntersectClip(nsDisplayListBuilder* aBuilder,
                              const DisplayItemClipChain* aOther,
                              bool aStore)
 {
-  if (!aOther) {
+  if (!aOther || mClipChain == aOther) {
     return;
   }
 
@@ -6713,21 +6713,8 @@ nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
     }
   }
 
-  
-  
-  
-  
-  
-  
-  const DisplayItemClipChain* clip = nullptr;
-
-  if (mClip) {
-    clip = aBuilder->AllocateDisplayItemClipChain(*mClip, mActiveScrolledRoot,
-                                                  nullptr);
-  }
-
   for (uint32_t i = 0; i < childCount; i++) {
-    children[i].item->ApplyOpacity(aBuilder, mOpacity, clip);
+    children[i].item->ApplyOpacity(aBuilder, mOpacity, mClipChain);
   }
 
   return true;
