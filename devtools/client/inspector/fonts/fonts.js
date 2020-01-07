@@ -19,9 +19,18 @@ const INSPECTOR_L10N =
 
 const { updateFonts } = require("./actions/fonts");
 const { updatePreviewText } = require("./actions/font-options");
-const { toggleFontEditor } = require("./actions/font-editor");
+const { resetFontEditor, toggleFontEditor, updateAxis, updateFontEditor } =
+  require("./actions/font-editor");
 
 const FONT_EDITOR_ID = "fonteditor";
+const FONT_PROPERTIES = [
+  "font-optical-sizing",
+  "font-size",
+  "font-stretch",
+  "font-style",
+  "font-variation-settings",
+  "font-weight",
+];
 
 class FontInspector {
   constructor(inspector, window) {
@@ -33,6 +42,7 @@ class FontInspector {
     this.store = this.inspector.store;
 
     this.update = this.update.bind(this);
+    this.onAxisUpdate = this.onAxisUpdate.bind(this);
     this.onNewNode = this.onNewNode.bind(this);
     this.onPreviewFonts = this.onPreviewFonts.bind(this);
     this.onRuleSelected = this.onRuleSelected.bind(this);
@@ -49,6 +59,7 @@ class FontInspector {
 
     let fontsApp = FontsApp({
       onPreviewFonts: this.onPreviewFonts,
+      onAxisUpdate: this.onAxisUpdate,
     });
 
     let provider = createElement(Provider, {
@@ -148,6 +159,19 @@ class FontInspector {
   
 
 
+
+
+
+
+
+
+  onAxisUpdate(tag, value) {
+    this.store.dispatch(updateAxis(tag, value));
+  }
+
+  
+
+
   onNewNode() {
     if (this.isPanelVisible()) {
       this.update();
@@ -173,11 +197,13 @@ class FontInspector {
 
 
 
-  onRuleSelected(eventData) {
+  async onRuleSelected(eventData) {
     const { editorId, rule } = eventData;
     if (editorId === FONT_EDITOR_ID) {
       const selector = rule.matchedSelectors[0];
       this.selectedRule = rule;
+
+      await this.refreshFontEditor();
       this.store.dispatch(toggleFontEditor(true, selector));
     }
   }
@@ -198,6 +224,7 @@ class FontInspector {
     if (editorId === FONT_EDITOR_ID && rule == this.selectedRule) {
       this.selectedRule = null;
       this.store.dispatch(toggleFontEditor(false));
+      this.store.dispatch(resetFontEditor());
     }
   }
 
@@ -207,6 +234,46 @@ class FontInspector {
   onThemeChanged(frame) {
     if (frame === this.document.defaultView) {
       this.update();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async refreshFontEditor() {
+    if (!this.selectedRule || !this.inspector || !this.store) {
+      return;
+    }
+
+    const options = {};
+    if (this.pageStyle.supportsFontVariations) {
+      options.includeVariations = true;
+    }
+
+    const node = this.inspector.selection.nodeFront;
+    const fonts = await this.getFontsForNode(node, options);
+    
+    const properties = this.selectedRule.textProps.reduce((acc, prop) => {
+      if (FONT_PROPERTIES.includes(prop.name)) {
+        acc[prop.name] = prop.value;
+      }
+
+      return acc;
+    }, {});
+
+    const fontEditor = this.store.getState().fontEditor;
+
+    
+    
+    if (JSON.stringify(properties) !== JSON.stringify(fontEditor.properties)) {
+      this.store.dispatch(updateFontEditor(fonts, properties));
     }
   }
 
