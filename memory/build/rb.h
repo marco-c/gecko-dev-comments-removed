@@ -145,6 +145,9 @@ public:
 
   
   
+  
+  
+  
   class TreeNode
   {
   public:
@@ -164,28 +167,40 @@ public:
       return *this;
     }
 
-    TreeNode Left() { return TreeNode(Trait::GetTreeNode(mNode).Left()); }
+    TreeNode Left()
+    {
+      return TreeNode(mNode ? Trait::GetTreeNode(mNode).Left() : nullptr);
+    }
 
     void SetLeft(TreeNode aNode)
     {
+      MOZ_RELEASE_ASSERT(mNode);
       Trait::GetTreeNode(mNode).SetLeft(aNode.mNode);
     }
 
-    TreeNode Right() { return TreeNode(Trait::GetTreeNode(mNode).Right()); }
+    TreeNode Right()
+    {
+      return TreeNode(mNode ? Trait::GetTreeNode(mNode).Right() : nullptr);
+    }
 
     void SetRight(TreeNode aNode)
     {
+      MOZ_RELEASE_ASSERT(mNode);
       Trait::GetTreeNode(mNode).SetRight(aNode.mNode);
     }
 
-    NodeColor Color() { return Trait::GetTreeNode(mNode).Color(); }
+    NodeColor Color()
+    {
+      return mNode ? Trait::GetTreeNode(mNode).Color() : NodeColor::Black;
+    }
 
-    bool IsRed() { return Trait::GetTreeNode(mNode).IsRed(); }
+    bool IsRed() { return Color() == NodeColor::Red; }
 
-    bool IsBlack() { return Trait::GetTreeNode(mNode).IsBlack(); }
+    bool IsBlack() { return Color() == NodeColor::Black; }
 
     void SetColor(NodeColor aColor)
     {
+      MOZ_RELEASE_ASSERT(mNode);
       Trait::GetTreeNode(mNode).SetColor(aColor);
     }
 
