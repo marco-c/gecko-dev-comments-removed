@@ -647,8 +647,10 @@ public:
   
 
 
-  virtual bool IsDisabled() const {
-    return false;
+
+
+  bool IsDisabled() const {
+    return State().HasState(NS_EVENT_STATE_DISABLED);
   }
 
   bool IsHidden() const
@@ -1057,7 +1059,6 @@ public:
                      mozilla::EventChainPreVisitor& aVisitor) override;
   virtual nsresult PreHandleEvent(
                      mozilla::EventChainVisitor& aVisitor) override;
-  virtual bool IsDisabled() const override;
 
   
 
