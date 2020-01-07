@@ -78,7 +78,7 @@ public:
 private:
   
   static nsStaticAtom* sTagAtomTable[eHTMLTag_userdefined - 1];
-  static const char16_t* const sTagUnicodeTable[];
+  static const char16_t* const sTagNames[];
 
   static int32_t gTableRefCount;
   static TagStringHash* gTagTable;
