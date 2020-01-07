@@ -470,6 +470,10 @@ protected:
 
   nsresult TabInTable(bool inIsShift, bool* outHandled);
 
+  
+
+
+
   nsresult InsertBR();
 
   
