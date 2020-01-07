@@ -105,15 +105,24 @@ protected:
     if (mFlags & SkipInvisibleContent) {
       
       
-      nsCOMPtr<nsIContent> content = do_QueryInterface(aNode);
-      if (ShadowRoot* shadowRoot = ShadowRoot::FromNodeOrNull(content)) {
-        content = shadowRoot->GetHost();
+      
+      
+      
+      
+      if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aNode)) {
+        aNode = shadowRoot->GetHost();
       }
 
-      if (content) {
-        nsIFrame* frame = content->GetPrimaryFrame();
+      if (aNode->IsContent()) {
+        nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
         if (!frame) {
+          if (aNode->IsElement() && aNode->AsElement()->IsDisplayContents()) {
+            return true;
+          }
           if (aNode->IsText()) {
+            
+            
+            
             
             return true;
           }
@@ -1248,11 +1257,14 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
   
   
   
+  
+  
+  
+  
+  
+  
+  
   RefPtr<nsRange> range = selection->GetRangeAt(0);
-  if (!range) {
-    
-    return NS_ERROR_NULL_POINTER;
-  }
   nsINode* commonParent = range->GetCommonAncestor();
 
   for (nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
