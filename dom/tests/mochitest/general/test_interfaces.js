@@ -145,12 +145,6 @@ var interfaceNamesInGlobalScope =
 
     "AudioStreamTrack",
 
-    {name: "AuthenticatorAssertionResponse", isSecureContext:true, nightly: true},
-
-    {name: "AuthenticatorAttestationResponse", isSecureContext:true, nightly: true},
-
-    {name: "AuthenticatorResponse", isSecureContext:true, nightly: true},
-
     "BarProp",
 
     "BaseAudioContext",
@@ -206,10 +200,6 @@ var interfaceNamesInGlobalScope =
     "ConstantSourceNode",
 
     "ConvolverNode",
-
-    {name: "Credential", isSecureContext:true, nightly: true},
-
-    {name: "CredentialsContainer", isSecureContext:true, nightly: true},
 
     "Crypto",
 
@@ -743,6 +733,8 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceResourceTiming",
 
+    "PerformanceServerTiming",
+
     "PerformanceTiming",
 
     "PeriodicWave",
@@ -782,8 +774,6 @@ var interfaceNamesInGlobalScope =
     "ProcessingInstruction",
 
     "ProgressEvent",
-
-    {name: "PublicKeyCredential", isSecureContext:true, nightly: true},
 
     "PushManager",
 

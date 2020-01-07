@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "nsContentUtils.h"
 #include "nsDOMNavigationTiming.h"
-#include "nsRFPService.h"
 #include "nsWrapperCache.h"
 #include "Performance.h"
 
@@ -108,8 +107,7 @@ public:
     MOZ_ASSERT(!aStamp.IsNull());
     TimeDuration duration =
         aStamp - GetDOMTiming()->GetNavigationStartTimeStamp();
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      duration.ToMilliseconds() + mZeroTime);
+    return duration.ToMilliseconds() + mZeroTime;
   }
 
   virtual JSObject* WrapObject(JSContext *cx,
@@ -122,8 +120,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetNavigationStart());
+    return GetDOMTiming()->GetNavigationStart();
   }
 
   DOMTimeMilliSec UnloadEventStart()
@@ -132,8 +129,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetUnloadEventStart());
+    return GetDOMTiming()->GetUnloadEventStart();
   }
 
   DOMTimeMilliSec UnloadEventEnd()
@@ -142,8 +138,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetUnloadEventEnd());
+    return GetDOMTiming()->GetUnloadEventEnd();
   }
 
   uint8_t GetRedirectCount() const;
@@ -199,8 +194,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomLoading());
+    return GetDOMTiming()->GetDomLoading();
   }
 
   DOMTimeMilliSec DomInteractive() const
@@ -209,8 +203,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomInteractive());
+    return GetDOMTiming()->GetDomInteractive();
   }
 
   DOMTimeMilliSec DomContentLoadedEventStart() const
@@ -219,8 +212,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomContentLoadedEventStart());
+    return GetDOMTiming()->GetDomContentLoadedEventStart();
   }
 
   DOMTimeMilliSec DomContentLoadedEventEnd() const
@@ -229,8 +221,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomContentLoadedEventEnd());
+    return GetDOMTiming()->GetDomContentLoadedEventEnd();
   }
 
   DOMTimeMilliSec DomComplete() const
@@ -239,8 +230,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomComplete());
+    return GetDOMTiming()->GetDomComplete();
   }
 
   DOMTimeMilliSec LoadEventStart() const
@@ -249,8 +239,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetLoadEventStart());
+    return GetDOMTiming()->GetLoadEventStart();
   }
 
   DOMTimeMilliSec LoadEventEnd() const
@@ -259,8 +248,7 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetLoadEventEnd());
+    return GetDOMTiming()->GetLoadEventEnd();
   }
 
   DOMTimeMilliSec TimeToNonBlankPaint() const
@@ -269,9 +257,10 @@ public:
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetTimeToNonBlankPaint());
+    return GetDOMTiming()->GetTimeToNonBlankPaint();
   }
+
+  already_AddRefed<nsIArray> GetServerTiming() const;
 
 private:
   ~PerformanceTiming();
@@ -320,6 +309,7 @@ private:
   bool mReportCrossOriginRedirect;
 
   bool mSecureConnection;
+  nsCOMPtr<nsIArray> mServerTiming;
 };
 
 } 
