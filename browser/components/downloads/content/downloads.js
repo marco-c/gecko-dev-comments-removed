@@ -56,10 +56,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -104,35 +100,18 @@ var DownloadsPanel = {
     return 2;
   },
   
-
-  get kStateWaitingAnchor() {
+  get kStateShown() {
     return 3;
   },
-  
-  get kStateShown() {
-    return 4;
-  },
-
-  
-
-
-  get kDownloadsOverlay() {
-    return "chrome://browser/content/downloads/downloadsOverlay.xul";
-  },
 
   
 
 
 
-
-
-
-  initialize(aCallback) {
+  initialize() {
     DownloadsCommon.log("Attempting to initialize DownloadsPanel for a window.");
     if (this._state != this.kStateUninitialized) {
       DownloadsCommon.log("DownloadsPanel is already initialized.");
-      DownloadsOverlayLoader.ensureOverlayLoaded(this.kDownloadsOverlay,
-                                                 aCallback);
       return;
     }
     this._state = this.kStateHidden;
@@ -145,19 +124,17 @@ var DownloadsPanel = {
 
     
     
-    DownloadsCommon.log("Ensuring DownloadsPanel overlay loaded.");
-    DownloadsOverlayLoader.ensureOverlayLoaded(this.kDownloadsOverlay, () => {
-      DownloadsViewController.initialize();
-      DownloadsCommon.log("Attaching DownloadsView...");
-      DownloadsCommon.getData(window).addView(DownloadsView);
-      DownloadsCommon.getSummary(window, DownloadsView.kItemCountLimit)
-                     .addView(DownloadsSummary);
-      DownloadsCommon.log("DownloadsView attached - the panel for this window",
-                          "should now see download items come in.");
-      DownloadsPanel._attachEventListeners();
-      DownloadsCommon.log("DownloadsPanel initialized.");
-      aCallback();
-    });
+
+    this.panel.hidden = false;
+    DownloadsViewController.initialize();
+    DownloadsCommon.log("Attaching DownloadsView...");
+    DownloadsCommon.getData(window).addView(DownloadsView);
+    DownloadsCommon.getSummary(window, DownloadsView.kItemCountLimit)
+                   .addView(DownloadsSummary);
+    DownloadsCommon.log("DownloadsView attached - the panel for this window",
+                        "should now see download items come in.");
+    DownloadsPanel._attachEventListeners();
+    DownloadsCommon.log("DownloadsPanel initialized.");
   },
 
   
@@ -194,16 +171,9 @@ var DownloadsPanel = {
   
 
 
-
   get panel() {
-    
-    
-    let downloadsPanel = document.getElementById("downloadsPanel");
-    if (!downloadsPanel)
-      return null;
-
     delete this.panel;
-    return this.panel = downloadsPanel;
+    return this.panel = document.getElementById("downloadsPanel");
   },
 
   
@@ -224,13 +194,12 @@ var DownloadsPanel = {
     
     DownloadsButton.unhide();
 
-    this.initialize(() => {
-      
-      
-      
-      
-      setTimeout(() => this._openPopupIfDataReady(), 0);
-    });
+    this.initialize();
+    
+    
+    
+    
+    setTimeout(() => this._openPopupIfDataReady(), 0);
 
     DownloadsCommon.log("Waiting for the downloads panel to appear.");
     this._state = this.kStateWaitingData;
@@ -262,7 +231,6 @@ var DownloadsPanel = {
 
   get isPanelShowing() {
     return this._state == this.kStateWaitingData ||
-           this._state == this.kStateWaitingAnchor ||
            this._state == this.kStateShown;
   },
 
@@ -530,130 +498,42 @@ var DownloadsPanel = {
       return;
     }
 
-    this._state = this.kStateWaitingAnchor;
+    
+    
+    
+    
+    if (window.windowState == window.STATE_MINIMIZED) {
+      this._state = this.kStateHidden;
+      return;
+    }
 
     
     
-    DownloadsButton.getAnchor(anchor => {
-      
-      
-      if (this._state != this.kStateWaitingAnchor) {
-        return;
-      }
+    let anchor = DownloadsButton.getAnchor();
 
-      
-      
-      
-      
-      if (window.windowState == window.STATE_MINIMIZED) {
-        DownloadsButton.releaseAnchor();
-        this._state = this.kStateHidden;
-        return;
-      }
+    if (!anchor) {
+      DownloadsCommon.error("Downloads button cannot be found.");
+      return;
+    }
 
-      if (!anchor) {
-        DownloadsCommon.error("Downloads button cannot be found.");
-        return;
-      }
+    let onBookmarksToolbar = !!anchor.closest("#PersonalToolbar");
+    this.panel.classList.toggle("bookmarks-toolbar", onBookmarksToolbar);
 
-      let onBookmarksToolbar = !!anchor.closest("#PersonalToolbar");
-      this.panel.classList.toggle("bookmarks-toolbar", onBookmarksToolbar);
+    
+    
+    
+    
+    for (let viewItem of DownloadsView._visibleViewItems.values()) {
+      viewItem.download.refresh().catch(Cu.reportError);
+    }
 
-      
-      
-      
-      
-      for (let viewItem of DownloadsView._visibleViewItems.values()) {
-        viewItem.download.refresh().catch(Cu.reportError);
-      }
-
-      DownloadsCommon.log("Opening downloads panel popup.");
-      PanelMultiView.openPopup(this.panel, anchor, "bottomcenter topright",
-                               0, 0, false, null).catch(Cu.reportError);
-    });
+    DownloadsCommon.log("Opening downloads panel popup.");
+    PanelMultiView.openPopup(this.panel, anchor, "bottomcenter topright",
+                             0, 0, false, null).catch(Cu.reportError);
   },
 };
 
 XPCOMUtils.defineConstant(this, "DownloadsPanel", DownloadsPanel);
-
-
-
-
-
-
-
-var DownloadsOverlayLoader = {
-  
-
-
-
-  _loadRequests: [],
-
-  
-
-
-  _overlayLoading: false,
-
-  
-
-
-  _loadedOverlays: {},
-
-  
-
-
-
-
-
-
-
-
-
-
-  ensureOverlayLoaded(aOverlay, aCallback) {
-    
-    if (aOverlay in this._loadedOverlays) {
-      aCallback();
-      return;
-    }
-
-    
-    this._loadRequests.push({ overlay: aOverlay, callback: aCallback });
-    if (this._overlayLoading) {
-      return;
-    }
-
-    this._overlayLoading = true;
-    DownloadsCommon.log("Loading overlay ", aOverlay);
-    document.loadOverlay(aOverlay, () => {
-      this._overlayLoading = false;
-      this._loadedOverlays[aOverlay] = true;
-
-      this.processPendingRequests();
-    });
-  },
-
-  
-
-
-
-
-  processPendingRequests() {
-    
-    
-    let currentLength = this._loadRequests.length;
-    for (let i = 0; i < currentLength; i++) {
-      let request = this._loadRequests.shift();
-
-      
-      
-      
-      this.ensureOverlayLoaded(request.overlay, request.callback);
-    }
-  },
-};
-
-XPCOMUtils.defineConstant(this, "DownloadsOverlayLoader", DownloadsOverlayLoader);
 
 
 
