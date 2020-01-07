@@ -623,7 +623,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 }
 
 .PanelUI-remotetabs-instruction-title,
-.PanelUI-remotetabs-instruction-label {
+.PanelUI-remotetabs-instruction-label,
+#PanelUI-remotetabs-mobile-promo {
   
 
 
@@ -648,7 +649,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   padding-top: 15px;
 }
 
-.PanelUI-remotetabs-button {
+.PanelUI-remotetabs-prefs-button {
   -moz-appearance: none;
   background-color: #0060df;
   
@@ -665,11 +666,11 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   min-width: 200px;
 }
 
-.PanelUI-remotetabs-button:hover {
+.PanelUI-remotetabs-prefs-button:hover {
   background-color: #003eaa;
 }
 
-.PanelUI-remotetabs-button:hover:active {
+.PanelUI-remotetabs-prefs-button:hover:active {
   background-color: #002275;
 }
 
@@ -703,7 +704,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
   list-style-image: url(chrome://browser/skin/fxa/sync-illustration-issue.svg);
 }
 
-.PanelUI-remotetabs-button > .toolbarbutton-text {
+.PanelUI-remotetabs-prefs-button > .toolbarbutton-text {
   
   text-align: center !important;
   text-shadow: none;
