@@ -5,6 +5,10 @@
 ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
+  ExtensionError,
+} = ExtensionUtils;
+
+var {
   IconDetails,
 } = ExtensionParent;
 
@@ -50,8 +54,13 @@ this.sidebarAction = class extends ExtensionAPI {
     };
     this.globals = Object.create(this.defaults);
 
-    this.tabContext = new TabContext(tab => Object.create(this.globals),
-                                     extension);
+    this.tabContext = new TabContext(target => {
+      let window = target.ownerGlobal;
+      if (target === window) {
+        return Object.create(this.globals);
+      }
+      return Object.create(this.tabContext.get(window));
+    }, extension);
 
     
     this.windowOpenListener = (window) => {
@@ -254,10 +263,12 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-  updateOnChange(nativeTab) {
-    if (nativeTab) {
-      if (nativeTab.selected) {
-        this.updateWindow(nativeTab.ownerGlobal);
+
+  updateOnChange(target) {
+    if (target) {
+      let window = target.ownerGlobal;
+      if (target === window || target.selected) {
+        this.updateWindow(window);
       }
     } else {
       for (let window of windowTracker.browserWindows()) {
@@ -276,20 +287,27 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-  setProperty(nativeTab, prop, value) {
-    let values;
-    if (nativeTab === null) {
-      values = this.globals;
-    } else {
-      values = this.tabContext.get(nativeTab);
-    }
-    if (value === null) {
-      delete values[prop];
-    } else {
-      values[prop] = value;
-    }
 
-    this.updateOnChange(nativeTab);
+
+
+
+
+  getContextData({tabId, windowId}) {
+    if (tabId != null && windowId != null) {
+      throw new ExtensionError("Only one of tabId and windowId can be specified.");
+    }
+    let target, values;
+    if (tabId != null) {
+      target = tabTracker.getTab(tabId);
+      values = this.tabContext.get(target);
+    } else if (windowId != null) {
+      target = windowTracker.getWindow(windowId);
+      values = this.tabContext.get(target);
+    } else {
+      target = null;
+      values = this.globals;
+    }
+    return {target, values};
   }
 
   
@@ -302,11 +320,29 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
 
-  getProperty(nativeTab, prop) {
-    if (nativeTab === null) {
-      return this.globals[prop];
+  setProperty(details, prop, value) {
+    let {target, values} = this.getContextData(details);
+    if (value === null) {
+      delete values[prop];
+    } else {
+      values[prop] = value;
     }
-    return this.tabContext.get(nativeTab)[prop];
+
+    this.updateOnChange(target);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getProperty(details, prop) {
+    return this.getContextData(details).values[prop];
   }
 
   
@@ -360,40 +396,25 @@ this.sidebarAction = class extends ExtensionAPI {
     let {extension} = context;
     const sidebarAction = this;
 
-    function getTab(tabId) {
-      if (tabId !== null) {
-        return tabTracker.getTab(tabId);
-      }
-      return null;
-    }
-
     return {
       sidebarAction: {
         async setTitle(details) {
-          let nativeTab = getTab(details.tabId);
-          sidebarAction.setProperty(nativeTab, "title", details.title);
+          sidebarAction.setProperty(details, "title", details.title);
         },
 
         getTitle(details) {
-          let nativeTab = getTab(details.tabId);
-
-          let title = sidebarAction.getProperty(nativeTab, "title");
-          return Promise.resolve(title);
+          return sidebarAction.getProperty(details, "title");
         },
 
         async setIcon(details) {
-          let nativeTab = getTab(details.tabId);
-
           let icon = IconDetails.normalize(details, extension, context);
           if (!Object.keys(icon).length) {
             icon = null;
           }
-          sidebarAction.setProperty(nativeTab, "icon", icon);
+          sidebarAction.setProperty(details, "icon", icon);
         },
 
         async setPanel(details) {
-          let nativeTab = getTab(details.tabId);
-
           let url;
           
           if (!details.panel) {
@@ -405,14 +426,11 @@ this.sidebarAction = class extends ExtensionAPI {
             }
           }
 
-          sidebarAction.setProperty(nativeTab, "panel", url);
+          sidebarAction.setProperty(details, "panel", url);
         },
 
         getPanel(details) {
-          let nativeTab = getTab(details.tabId);
-
-          let panel = sidebarAction.getProperty(nativeTab, "panel");
-          return Promise.resolve(panel);
+          return sidebarAction.getProperty(details, "panel");
         },
 
         open() {
