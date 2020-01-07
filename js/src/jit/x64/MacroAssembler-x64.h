@@ -755,49 +755,95 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
         xorq(Imm32(1), val.valueReg());
     }
 
-    
-    
-    void unboxNonDouble(const ValueOperand& src, Register dest) {
+    void unboxNonDouble(const ValueOperand& src, Register dest, JSValueType type) {
+        MOZ_ASSERT(type != JSVAL_TYPE_DOUBLE);
+        if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
+            movl(src.valueReg(), dest);
+            return;
+        }
         if (src.valueReg() == dest) {
             ScratchRegisterScope scratch(asMasm());
-            mov(ImmWord(JSVAL_PAYLOAD_MASK), scratch);
-            andq(scratch, dest);
+            mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
+            xorq(scratch, dest);
         } else {
-            mov(ImmWord(JSVAL_PAYLOAD_MASK), dest);
-            andq(src.valueReg(), dest);
+            mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), dest);
+            xorq(src.valueReg(), dest);
         }
     }
-    void unboxNonDouble(const Operand& src, Register dest) {
+    void unboxNonDouble(const Operand& src, Register dest, JSValueType type) {
+        MOZ_ASSERT(type != JSVAL_TYPE_DOUBLE);
+        if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
+            movl(src, dest);
+            return;
+        }
         
         ScratchRegisterScope scratch(asMasm());
         MOZ_ASSERT(dest != scratch);
         if (src.containsReg(dest)) {
-            mov(ImmWord(JSVAL_PAYLOAD_MASK), scratch);
+            mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
             
             
             if (src.kind() != Operand::REG)
                 movq(src, dest);
-            andq(scratch, dest);
+            xorq(scratch, dest);
         } else {
-            mov(ImmWord(JSVAL_PAYLOAD_MASK), dest);
-            andq(src, dest);
+            mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), dest);
+            xorq(src, dest);
         }
     }
-    void unboxNonDouble(const Address& src, Register dest) {
-        unboxNonDouble(Operand(src), dest);
+    void unboxNonDouble(const Address& src, Register dest, JSValueType type) {
+        unboxNonDouble(Operand(src), dest, type);
+    }
+    void unboxNonDouble(const BaseIndex& src, Register dest, JSValueType type) {
+        unboxNonDouble(Operand(src), dest, type);
     }
 
-    void unboxString(const ValueOperand& src, Register dest) { unboxNonDouble(src, dest); }
-    void unboxString(const Operand& src, Register dest) { unboxNonDouble(src, dest); }
-    void unboxString(const Address& src, Register dest) { unboxNonDouble(src, dest); }
+    void unboxString(const ValueOperand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_STRING);
+    }
+    void unboxString(const Operand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_STRING);
+    }
+    void unboxString(const Address& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_STRING);
+    }
 
-    void unboxSymbol(const ValueOperand& src, Register dest) { unboxNonDouble(src, dest); }
-    void unboxSymbol(const Operand& src, Register dest) { unboxNonDouble(src, dest); }
+    void unboxSymbol(const ValueOperand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_SYMBOL);
+    }
+    void unboxSymbol(const Operand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_SYMBOL);
+    }
 
-    void unboxObject(const ValueOperand& src, Register dest) { unboxNonDouble(src, dest); }
-    void unboxObject(const Operand& src, Register dest) { unboxNonDouble(src, dest); }
-    void unboxObject(const Address& src, Register dest) { unboxNonDouble(Operand(src), dest); }
-    void unboxObject(const BaseIndex& src, Register dest) { unboxNonDouble(Operand(src), dest); }
+    void unboxObject(const ValueOperand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
+    }
+    void unboxObject(const Operand& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
+    }
+    void unboxObject(const Address& src, Register dest) {
+        unboxNonDouble(Operand(src), dest, JSVAL_TYPE_OBJECT);
+    }
+    void unboxObject(const BaseIndex& src, Register dest) {
+        unboxNonDouble(Operand(src), dest, JSVAL_TYPE_OBJECT);
+    }
+
+    template <typename T>
+    void unboxObjectOrNull(const T& src, Register dest) {
+        unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
+        ScratchRegisterScope scratch(asMasm());
+        mov(ImmWord(~JSVAL_OBJECT_OR_NULL_BIT), scratch);
+        andq(scratch, dest);
+    }
+
+    
+    
+    
+    
+    void unboxGCThingForPreBarrierTrampoline(const Address& src, Register dest) {
+        movq(ImmWord(JSVAL_PAYLOAD_MASK_GCTHING), dest);
+        andq(Operand(src), dest);
+    }
 
     
     
@@ -810,6 +856,16 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     Register extractObject(const ValueOperand& value, Register scratch) {
         MOZ_ASSERT(scratch != ScratchReg);
         unboxObject(value, scratch);
+        return scratch;
+    }
+    Register extractString(const ValueOperand& value, Register scratch) {
+        MOZ_ASSERT(scratch != ScratchReg);
+        unboxString(value, scratch);
+        return scratch;
+    }
+    Register extractSymbol(const ValueOperand& value, Register scratch) {
+        MOZ_ASSERT(scratch != ScratchReg);
+        unboxSymbol(value, scratch);
         return scratch;
     }
     Register extractInt32(const ValueOperand& value, Register scratch) {
@@ -834,7 +890,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
         return scratch;
     }
 
-    inline void unboxValue(const ValueOperand& src, AnyRegister dest);
+    inline void unboxValue(const ValueOperand& src, AnyRegister dest, JSValueType type);
 
     
     void boolValueToDouble(const ValueOperand& operand, FloatRegister dest) {
@@ -899,19 +955,26 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared
     void loadUnboxedValue(const T& src, MIRType type, AnyRegister dest) {
         if (dest.isFloat())
             loadInt32OrDouble(src, dest.fpu());
-        else if (type == MIRType::Int32 || type == MIRType::Boolean)
-            movl(Operand(src), dest.gpr());
+        else if (type == MIRType::ObjectOrNull)
+            unboxObjectOrNull(src, dest.gpr());
         else
-            unboxNonDouble(Operand(src), dest.gpr());
+            unboxNonDouble(Operand(src), dest.gpr(), ValueTypeFromMIRType(type));
     }
 
     template <typename T>
-    void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes) {
+    void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes, JSValueType type) {
         switch (nbytes) {
           case 8: {
             ScratchRegisterScope scratch(asMasm());
-            unboxNonDouble(value, scratch);
+            unboxNonDouble(value, scratch, type);
             storePtr(scratch, address);
+            if (type == JSVAL_TYPE_OBJECT) {
+                
+                
+                
+                mov(ImmWord(~JSVAL_OBJECT_OR_NULL_BIT), scratch);
+                andq(scratch, Operand(address));
+            }
             return;
           }
           case 4:
