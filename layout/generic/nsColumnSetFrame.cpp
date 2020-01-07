@@ -1280,7 +1280,7 @@ nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   if (IsVisibleForPainting(aBuilder)) {
     aLists.BorderBackground()->
-      AppendToTop(new (aBuilder) nsDisplayColumnRule(aBuilder, this));
+      AppendToTop(MakeDisplayItem<nsDisplayColumnRule>(aBuilder, this));
   }
 
   

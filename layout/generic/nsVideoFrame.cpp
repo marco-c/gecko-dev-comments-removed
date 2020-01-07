@@ -570,7 +570,7 @@ nsVideoFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   if (HasVideoElement() && !shouldDisplayPoster) {
     aLists.Content()->AppendToTop(
-      new (aBuilder) nsDisplayVideo(aBuilder, this));
+      MakeDisplayItem<nsDisplayVideo>(aBuilder, this));
   }
 
   
