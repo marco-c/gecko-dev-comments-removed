@@ -18,10 +18,6 @@
 #include "nsPrintfCString.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/PContent.h"
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-
-#include "mozilla/JSONWriter.h"
-#endif
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -44,7 +40,6 @@ using mozilla::Telemetry::Common::CanRecordProduct;
 using mozilla::Telemetry::Common::IsInDataset;
 using mozilla::Telemetry::Common::LogToBrowserConsole;
 using mozilla::Telemetry::Common::GetNameForProcessID;
-using mozilla::Telemetry::Common::GetIDForProcessName;
 using mozilla::Telemetry::Common::RecordedProcessType;
 using mozilla::Telemetry::Common::IsValidIdentifierString;
 using mozilla::Telemetry::Common::GetCurrentProduct;
@@ -259,50 +254,6 @@ GetVariantFromIVariant(nsIVariant* aInput, uint32_t aScalarKind,
   }
   return ScalarResult::Ok;
 }
-
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-
-
-
-nsresult
-WriteVariantToJSONWriter(uint32_t aScalarType, nsIVariant* aInputValue,
-                         const char* aPropertyName, mozilla::JSONWriter& aWriter)
-{
-  MOZ_ASSERT(aInputValue);
-
-  switch (aScalarType) {
-    case nsITelemetry::SCALAR_TYPE_COUNT:
-      {
-        uint32_t val = 0;
-        nsresult rv = aInputValue->GetAsUint32(&val);
-        NS_ENSURE_SUCCESS(rv, rv);
-        aWriter.IntProperty(aPropertyName, val);
-        break;
-      }
-    case nsITelemetry::SCALAR_TYPE_STRING:
-      {
-        nsCString val;
-        nsresult rv = aInputValue->GetAsACString(val);
-        NS_ENSURE_SUCCESS(rv, rv);
-        aWriter.StringProperty(aPropertyName, val.get());
-        break;
-      }
-    case nsITelemetry::SCALAR_TYPE_BOOLEAN:
-      {
-        bool val = false;
-        nsresult rv = aInputValue->GetAsBool(&val);
-        NS_ENSURE_SUCCESS(rv, rv);
-        aWriter.BoolProperty(aPropertyName, val);
-        break;
-      }
-    default:
-      MOZ_ASSERT(false, "Unknown scalar kind.");
-      return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-#endif 
 
 
 const char *
@@ -896,14 +847,6 @@ typedef nsClassHashtable<ScalarIDHashKey, KeyedScalar> KeyedScalarStorageMapType
 typedef nsClassHashtable<ProcessIDHashKey, ScalarStorageMapType> ProcessesScalarsMapType;
 typedef nsClassHashtable<ProcessIDHashKey, KeyedScalarStorageMapType> ProcessesKeyedScalarsMapType;
 
-typedef mozilla::Tuple<const char*, nsCOMPtr<nsIVariant>, uint32_t> ScalarDataTuple;
-typedef nsTArray<ScalarDataTuple> ScalarTupleArray;
-typedef nsDataHashtable<ProcessIDHashKey, ScalarTupleArray> ScalarSnapshotTable;
-
-typedef mozilla::Tuple<const char*, nsTArray<KeyedScalar::KeyValuePair>, uint32_t> KeyedScalarDataTuple;
-typedef nsTArray<KeyedScalarDataTuple> KeyedScalarTupleArray;
-typedef nsDataHashtable<ProcessIDHashKey, KeyedScalarTupleArray> KeyedScalarSnapshotTable;
-
 } 
 
 
@@ -1258,13 +1201,9 @@ internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
 
 
 
-
-
-
 ScalarResult
 internal_UpdateScalar(const StaticMutexAutoLock& lock, const nsACString& aName,
-                      ScalarActionType aType, nsIVariant* aValue,
-                      ProcessID aProcessOverride = ProcessID::Parent)
+                      ScalarActionType aType, nsIVariant* aValue)
 {
   ScalarKey uniqueId;
   nsresult rv = internal_GetEnumByScalarName(lock, aName, &uniqueId);
@@ -1298,7 +1237,7 @@ internal_UpdateScalar(const StaticMutexAutoLock& lock, const nsACString& aName,
 
   
   ScalarBase* scalar = nullptr;
-  rv = internal_GetScalarByEnum(lock, uniqueId, aProcessOverride, &scalar);
+  rv = internal_GetScalarByEnum(lock, uniqueId, ProcessID::Parent, &scalar);
   if (NS_FAILED(rv)) {
     
     if (rv == NS_ERROR_NOT_AVAILABLE) {
@@ -1421,14 +1360,10 @@ internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
 
 
 
-
-
-
 ScalarResult
 internal_UpdateKeyedScalar(const StaticMutexAutoLock& lock,
                            const nsACString& aName, const nsAString& aKey,
-                           ScalarActionType aType, nsIVariant* aValue,
-                           ProcessID aProcessOverride = ProcessID::Parent)
+                           ScalarActionType aType, nsIVariant* aValue)
 {
   ScalarKey uniqueId;
   nsresult rv = internal_GetEnumByScalarName(lock, aName, &uniqueId);
@@ -1462,7 +1397,8 @@ internal_UpdateKeyedScalar(const StaticMutexAutoLock& lock,
 
   
   KeyedScalar* scalar = nullptr;
-  rv = internal_GetKeyedScalarByEnum(lock, uniqueId, aProcessOverride, &scalar);
+  rv = internal_GetKeyedScalarByEnum(lock, uniqueId, ProcessID::Parent,
+                                     &scalar);
   if (NS_FAILED(rv)) {
     
     if (rv == NS_ERROR_NOT_AVAILABLE) {
@@ -1551,193 +1487,6 @@ internal_RegisterScalars(const StaticMutexAutoLock& lock,
     CharPtrEntryType *entry = gScalarNameIDMap.PutEntry(scalarInfo.name());
     entry->mData = ScalarKey{scalarId, true};
   }
-}
-
-
-
-
-
-
-
-
-
-
-nsresult
-internal_ScalarSnapshotter(const StaticMutexAutoLock& aLock,
-                           ScalarSnapshotTable& aScalarsToReflect,
-                           unsigned int aDataset,
-                           ProcessesScalarsMapType& aProcessStorage,
-                           bool aIsBuiltinDynamic)
-{
-  
-  
-  for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
-    ScalarStorageMapType* scalarStorage = static_cast<ScalarStorageMapType*>(iter.Data());
-    ScalarTupleArray& processScalars = aScalarsToReflect.GetOrInsert(iter.Key());
-
-    
-    bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
-
-    
-    for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-      ScalarBase* scalar = static_cast<ScalarBase*>(childIter.Data());
-
-      
-      const BaseScalarInfo& info =
-        internal_GetScalarInfo(aLock, ScalarKey{childIter.Key(),
-                               aIsBuiltinDynamic ? true : isDynamicProcess});
-
-      
-      if (IsInDataset(info.dataset, aDataset)) {
-        
-        nsCOMPtr<nsIVariant> scalarValue;
-        nsresult rv = scalar->GetValue(scalarValue);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-        
-        processScalars.AppendElement(mozilla::MakeTuple(info.name(), scalarValue, info.kind));
-      }
-    }
-  }
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
-nsresult
-internal_KeyedScalarSnapshotter(const StaticMutexAutoLock& aLock,
-                                KeyedScalarSnapshotTable& aScalarsToReflect,
-                                unsigned int aDataset,
-                                ProcessesKeyedScalarsMapType& aProcessStorage,
-                                bool aIsBuiltinDynamic)
-{
-  
-  
-  for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
-    KeyedScalarStorageMapType* scalarStorage =
-      static_cast<KeyedScalarStorageMapType*>(iter.Data());
-    KeyedScalarTupleArray& processScalars = aScalarsToReflect.GetOrInsert(iter.Key());
-
-    
-    bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
-
-    for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
-      KeyedScalar* scalar = static_cast<KeyedScalar*>(childIter.Data());
-
-      
-      const BaseScalarInfo& info =
-        internal_GetScalarInfo(aLock, ScalarKey{childIter.Key(),
-                               aIsBuiltinDynamic ? true : isDynamicProcess});
-
-      
-      if (IsInDataset(info.dataset, aDataset)) {
-        
-        nsTArray<KeyedScalar::KeyValuePair> scalarKeyedData;
-        nsresult rv = scalar->GetValue(scalarKeyedData);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-        
-        processScalars.AppendElement(
-          mozilla::MakeTuple(info.name(), scalarKeyedData, info.kind));
-      }
-    }
-  }
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
-nsresult
-internal_GetScalarSnapshot(const StaticMutexAutoLock& aLock,
-                           ScalarSnapshotTable& aScalarsToReflect,
-                           unsigned int aDataset, bool aClearScalars)
-{
-  
-  nsresult rv = internal_ScalarSnapshotter(aLock,
-                                           aScalarsToReflect,
-                                           aDataset,
-                                           gScalarStorageMap,
-                                           false );
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  rv = internal_ScalarSnapshotter(aLock,
-                                  aScalarsToReflect,
-                                  aDataset,
-                                  gDynamicBuiltinScalarStorageMap,
-                                  true );
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (aClearScalars) {
-    
-    gScalarStorageMap.Clear();
-    gDynamicBuiltinScalarStorageMap.Clear();
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-
-nsresult
-internal_GetKeyedScalarSnapshot(const StaticMutexAutoLock& aLock,
-                                KeyedScalarSnapshotTable& aScalarsToReflect,
-                                unsigned int aDataset, bool aClearScalars)
-{
-  
-  nsresult rv = internal_KeyedScalarSnapshotter(aLock,
-                                                aScalarsToReflect,
-                                                aDataset,
-                                                gKeyedScalarStorageMap,
-                                                false );
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  rv = internal_KeyedScalarSnapshotter(aLock,
-                                       aScalarsToReflect,
-                                       aDataset,
-                                       gDynamicBuiltinKeyedScalarStorageMap,
-                                       true );
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (aClearScalars) {
-    
-    gKeyedScalarStorageMap.Clear();
-    gDynamicBuiltinKeyedScalarStorageMap.Clear();
-  }
-
-  return NS_OK;
 }
 
 } 
@@ -2444,20 +2193,74 @@ TelemetryScalar::CreateSnapshots(unsigned int aDataset, bool aClearScalars, JSCo
   }
 
   
-  ScalarSnapshotTable scalarsToReflect;
+  typedef mozilla::Pair<const char*, nsCOMPtr<nsIVariant>> DataPair;
+  typedef nsTArray<DataPair> ScalarArray;
+  nsDataHashtable<ProcessIDHashKey, ScalarArray> scalarsToReflect;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
-    nsresult rv =
-      internal_GetScalarSnapshot(locker, scalarsToReflect, aDataset, aClearScalars);
+    
+    
+    auto snapshotter = [aDataset, &locker, &scalarsToReflect]
+                       (ProcessesScalarsMapType& aProcessStorage, bool aIsBuiltinDynamic)
+                       -> nsresult
+    {
+      
+      
+      for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
+        ScalarStorageMapType* scalarStorage = static_cast<ScalarStorageMapType*>(iter.Data());
+        ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
+
+        
+        bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
+
+        
+        for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
+          ScalarBase* scalar = static_cast<ScalarBase*>(childIter.Data());
+
+          
+          const BaseScalarInfo& info =
+            internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
+                                   aIsBuiltinDynamic ? true : isDynamicProcess});
+
+          
+          if (IsInDataset(info.dataset, aDataset)) {
+            
+            nsCOMPtr<nsIVariant> scalarValue;
+            nsresult rv = scalar->GetValue(scalarValue);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
+            
+            processScalars.AppendElement(mozilla::MakePair(info.name(), scalarValue));
+          }
+        }
+      }
+      return NS_OK;
+    };
+
+    
+    nsresult rv = snapshotter(gScalarStorageMap, false);
     if (NS_FAILED(rv)) {
       return rv;
+    }
+
+    
+    rv = snapshotter(gDynamicBuiltinScalarStorageMap, true);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (aClearScalars) {
+      
+      gScalarStorageMap.Clear();
+      gDynamicBuiltinScalarStorageMap.Clear();
     }
   }
 
   
   for (auto iter = scalarsToReflect.Iter(); !iter.Done(); iter.Next()) {
-    ScalarTupleArray& processScalars = iter.Data();
+    ScalarArray& processScalars = iter.Data();
     const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
 
     
@@ -2468,19 +2271,19 @@ TelemetryScalar::CreateSnapshots(unsigned int aDataset, bool aClearScalars, JSCo
       return NS_ERROR_FAILURE;
     }
 
-    for (ScalarTupleArray::size_type i = 0; i < processScalars.Length(); i++) {
-      const ScalarDataTuple& scalar = processScalars[i];
+    for (nsTArray<DataPair>::size_type i = 0; i < processScalars.Length(); i++) {
+      const DataPair& scalar = processScalars[i];
 
       
       JS::Rooted<JS::Value> scalarJsValue(aCx);
       nsresult rv =
-        nsContentUtils::XPConnect()->VariantToJS(aCx, processObj, mozilla::Get<1>(scalar), &scalarJsValue);
+        nsContentUtils::XPConnect()->VariantToJS(aCx, processObj, scalar.second(), &scalarJsValue);
       if (NS_FAILED(rv)) {
         return rv;
       }
 
       
-      if (!JS_DefineProperty(aCx, processObj, mozilla::Get<0>(scalar), scalarJsValue, JSPROP_ENUMERATE)) {
+      if (!JS_DefineProperty(aCx, processObj, scalar.first(), scalarJsValue, JSPROP_ENUMERATE)) {
         return NS_ERROR_FAILURE;
       }
     }
@@ -2520,20 +2323,72 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
   }
 
   
-  KeyedScalarSnapshotTable scalarsToReflect;
+  typedef mozilla::Pair<const char*, nsTArray<KeyedScalar::KeyValuePair>> DataPair;
+  typedef nsTArray<DataPair> ScalarArray;
+  nsDataHashtable<ProcessIDHashKey, ScalarArray> scalarsToReflect;
   {
     StaticMutexAutoLock locker(gTelemetryScalarsMutex);
 
-    nsresult rv =
-      internal_GetKeyedScalarSnapshot(locker, scalarsToReflect, aDataset, aClearScalars);
+    auto snapshotter = [aDataset, &locker, &scalarsToReflect]
+                       (ProcessesKeyedScalarsMapType& aProcessStorage,
+                        bool aIsBuiltinDynamic) -> nsresult
+    {
+      
+      
+      for (auto iter = aProcessStorage.Iter(); !iter.Done(); iter.Next()) {
+        KeyedScalarStorageMapType* scalarStorage =
+          static_cast<KeyedScalarStorageMapType*>(iter.Data());
+        ScalarArray& processScalars = scalarsToReflect.GetOrInsert(iter.Key());
+
+        
+        bool isDynamicProcess = ProcessID::Dynamic == static_cast<ProcessID>(iter.Key());
+
+        for (auto childIter = scalarStorage->Iter(); !childIter.Done(); childIter.Next()) {
+          KeyedScalar* scalar = static_cast<KeyedScalar*>(childIter.Data());
+
+          
+          const BaseScalarInfo& info =
+            internal_GetScalarInfo(locker, ScalarKey{childIter.Key(),
+                                   aIsBuiltinDynamic ? true : isDynamicProcess});
+
+          
+          if (IsInDataset(info.dataset, aDataset)) {
+            
+            nsTArray<KeyedScalar::KeyValuePair> scalarKeyedData;
+            nsresult rv = scalar->GetValue(scalarKeyedData);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
+            
+            processScalars.AppendElement(mozilla::MakePair(info.name(), scalarKeyedData));
+          }
+        }
+      }
+      return NS_OK;
+    };
+
+    
+    nsresult rv = snapshotter(gKeyedScalarStorageMap, false);
     if (NS_FAILED(rv)) {
       return rv;
+    }
+
+    
+    rv = snapshotter(gDynamicBuiltinKeyedScalarStorageMap, true);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (aClearScalars) {
+      
+      gKeyedScalarStorageMap.Clear();
+      gDynamicBuiltinKeyedScalarStorageMap.Clear();
     }
   }
 
   
   for (auto iter = scalarsToReflect.Iter(); !iter.Done(); iter.Next()) {
-    KeyedScalarTupleArray& processScalars = iter.Data();
+    ScalarArray& processScalars = iter.Data();
     const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
 
     
@@ -2544,8 +2399,8 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
       return NS_ERROR_FAILURE;
     }
 
-    for (KeyedScalarTupleArray::size_type i = 0; i < processScalars.Length(); i++) {
-      const KeyedScalarDataTuple& keyedScalarData = processScalars[i];
+    for (nsTArray<DataPair>::size_type i = 0; i < processScalars.Length(); i++) {
+      const DataPair& keyedScalarData = processScalars[i];
 
       
       
@@ -2553,7 +2408,7 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
 
       
       
-      const nsTArray<KeyedScalar::KeyValuePair>& keyProps = mozilla::Get<1>(keyedScalarData);
+      const nsTArray<KeyedScalar::KeyValuePair>& keyProps = keyedScalarData.second();
       for (uint32_t i = 0; i < keyProps.Length(); i++) {
         const KeyedScalar::KeyValuePair& keyData = keyProps[i];
 
@@ -2573,7 +2428,7 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
       }
 
       
-      if (!JS_DefineProperty(aCx, processObj, mozilla::Get<0>(keyedScalarData), keyedScalarObj, JSPROP_ENUMERATE)) {
+      if (!JS_DefineProperty(aCx, processObj, keyedScalarData.first(), keyedScalarObj, JSPROP_ENUMERATE)) {
         return NS_ERROR_FAILURE;
       }
     }
@@ -3083,426 +2938,3 @@ TelemetryScalar::AddDynamicScalarDefinitions(
     internal_RegisterScalars(locker, dynamicStubs);
   }
 }
-
-#if defined(MOZ_TELEMETRY_GECKOVIEW)
-
-
-
-
-
-
-
-
-nsresult
-TelemetryScalar::SerializeScalars(mozilla::JSONWriter& aWriter)
-{
-  
-  ScalarSnapshotTable scalarsToReflect;
-  {
-    StaticMutexAutoLock locker(gTelemetryScalarsMutex);
-    
-    
-    nsresult rv = internal_GetScalarSnapshot(locker,
-                                             scalarsToReflect,
-                                             nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
-                                             false );
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  
-  for (auto iter = scalarsToReflect.Iter(); !iter.Done(); iter.Next()) {
-    ScalarTupleArray& processScalars = iter.Data();
-    const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
-
-    aWriter.StartObjectProperty(processName);
-
-    for (const ScalarDataTuple& scalar : processScalars) {
-      nsresult rv = WriteVariantToJSONWriter(mozilla::Get<2>(scalar) ,
-                                             mozilla::Get<1>(scalar) ,
-                                             mozilla::Get<0>(scalar) ,
-                                             aWriter );
-      if (NS_FAILED(rv)) {
-        
-        
-        continue;
-      }
-    }
-
-    aWriter.EndObject();
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-nsresult
-TelemetryScalar::SerializeKeyedScalars(mozilla::JSONWriter& aWriter)
-{
-  
-  KeyedScalarSnapshotTable keyedScalarsToReflect;
-  {
-    StaticMutexAutoLock locker(gTelemetryScalarsMutex);
-    
-    
-    nsresult rv = internal_GetKeyedScalarSnapshot(locker,
-                                         keyedScalarsToReflect,
-                                         nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
-                                         false );
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  
-  for (auto iter = keyedScalarsToReflect.Iter(); !iter.Done(); iter.Next()) {
-    KeyedScalarTupleArray& processScalars = iter.Data();
-    const char* processName = GetNameForProcessID(ProcessID(iter.Key()));
-
-    aWriter.StartObjectProperty(processName);
-
-    for (const KeyedScalarDataTuple& keyedScalarData : processScalars) {
-      aWriter.StartObjectProperty(mozilla::Get<0>(keyedScalarData));
-
-      
-      
-      const nsTArray<KeyedScalar::KeyValuePair>& keyProps = mozilla::Get<1>(keyedScalarData);
-      for (const KeyedScalar::KeyValuePair& keyData : keyProps) {
-        nsresult rv = WriteVariantToJSONWriter(mozilla::Get<2>(keyedScalarData) ,
-                                               keyData.second() ,
-                                               PromiseFlatCString(keyData.first()).get() ,
-                                               aWriter );
-        if (NS_FAILED(rv)) {
-          
-          
-          continue;
-        }
-      }
-      aWriter.EndObject();
-    }
-    aWriter.EndObject();
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-nsresult
-TelemetryScalar::DeserializePersistedScalars(JSContext* aCx, JS::HandleValue aData)
-{
-  MOZ_ASSERT(XRE_IsParentProcess(), "Only load scalars in the parent process");
-  if (!XRE_IsParentProcess()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  typedef mozilla::Pair<nsCString, nsCOMPtr<nsIVariant>> PersistedScalarPair;
-  typedef nsTArray<PersistedScalarPair> PersistedScalarArray;
-  typedef nsDataHashtable<ProcessIDHashKey, PersistedScalarArray> PeristedScalarStorage;
-
-  PeristedScalarStorage scalarsToUpdate;
-
-  
-  
-  
-  JS::RootedObject scalarDataObj(aCx, &aData.toObject());
-  JS::Rooted<JS::IdVector> processes(aCx, JS::IdVector(aCx));
-  if (!JS_Enumerate(aCx, scalarDataObj, &processes)) {
-    
-    
-    JS_ClearPendingException(aCx);
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  JS::RootedId process(aCx);
-  for (auto& processVal : processes) {
-    
-    
-    process = processVal;
-    
-    nsAutoJSString processNameJS;
-    if (!processNameJS.init(aCx, process)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    
-    
-    NS_ConvertUTF16toUTF8 processName(processNameJS);
-    ProcessID processID = GetIDForProcessName(processName.get());
-    if (processID == ProcessID::Count) {
-      NS_WARNING(nsPrintfCString("Failed to get process ID for %s", processName.get()).get());
-      continue;
-    }
-
-    
-    JS::RootedValue processData(aCx);
-    if (!JS_GetPropertyById(aCx, scalarDataObj, process, &processData)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    if (!processData.isObject()) {
-      
-      
-      
-      continue;
-    }
-
-    
-    JS::RootedObject processDataObj(aCx, &processData.toObject());
-    JS::Rooted<JS::IdVector> scalars(aCx, JS::IdVector(aCx));
-    if (!JS_Enumerate(aCx, processDataObj, &scalars)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    JS::RootedId scalar(aCx);
-    for (auto& scalarVal : scalars) {
-      scalar = scalarVal;
-      
-      nsAutoJSString scalarName;
-      if (!scalarName.init(aCx, scalar)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      
-      JS::RootedValue scalarValue(aCx);
-      if (!JS_GetPropertyById(aCx, processDataObj, scalar, &scalarValue)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      if (scalarValue.isNullOrUndefined()) {
-        
-        
-        continue;
-      }
-
-      
-      nsCOMPtr<nsIVariant> unpackedVal;
-      nsresult rv =
-        nsContentUtils::XPConnect()->JSToVariant(aCx, scalarValue,  getter_AddRefs(unpackedVal));
-      if (NS_FAILED(rv)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      
-      PersistedScalarArray& processScalars =
-        scalarsToUpdate.GetOrInsert(static_cast<uint32_t>(processID));
-      processScalars.AppendElement(
-        mozilla::MakePair(nsCString(NS_ConvertUTF16toUTF8(scalarName)), unpackedVal));
-    }
-  }
-
-  
-  {
-    StaticMutexAutoLock lock(gTelemetryScalarsMutex);
-
-    for (auto iter = scalarsToUpdate.ConstIter(); !iter.Done(); iter.Next()) {
-      PersistedScalarArray& processScalars = iter.Data();
-      for (PersistedScalarArray::size_type i = 0; i < processScalars.Length(); i++) {
-        mozilla::Unused << internal_UpdateScalar(lock,
-                                                 processScalars[i].first(),
-                                                 ScalarActionType::eSet,
-                                                 processScalars[i].second(),
-                                                 ProcessID(iter.Key()));
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-nsresult
-TelemetryScalar::DeserializePersistedKeyedScalars(JSContext* aCx, JS::HandleValue aData)
-{
-  MOZ_ASSERT(XRE_IsParentProcess(), "Only load scalars in the parent process");
-  if (!XRE_IsParentProcess()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  typedef mozilla::Tuple<nsCString, nsString, nsCOMPtr<nsIVariant>> PersistedKeyedScalarTuple;
-  typedef nsTArray<PersistedKeyedScalarTuple> PersistedKeyedScalarArray;
-  typedef nsDataHashtable<ProcessIDHashKey, PersistedKeyedScalarArray> PeristedKeyedScalarStorage;
-
-  PeristedKeyedScalarStorage scalarsToUpdate;
-
-  
-  
-  
-  JS::RootedObject scalarDataObj(aCx, &aData.toObject());
-  JS::Rooted<JS::IdVector> processes(aCx, JS::IdVector(aCx));
-  if (!JS_Enumerate(aCx, scalarDataObj, &processes)) {
-    
-    
-    JS_ClearPendingException(aCx);
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  JS::RootedId process(aCx);
-  for (auto& processVal : processes) {
-    process = processVal;
-    
-    nsAutoJSString processNameJS;
-    if (!processNameJS.init(aCx, process)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    
-    
-    NS_ConvertUTF16toUTF8 processName(processNameJS);
-    ProcessID processID = GetIDForProcessName(processName.get());
-    if (processID == ProcessID::Count) {
-      NS_WARNING(nsPrintfCString("Failed to get process ID for %s", processName.get()).get());
-      continue;
-    }
-
-    
-    JS::RootedValue processData(aCx);
-    if (!JS_GetPropertyById(aCx, scalarDataObj, process, &processData)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    if (!processData.isObject()) {
-      
-      
-      
-      continue;
-    }
-
-    
-    JS::RootedObject processDataObj(aCx, &processData.toObject());
-    JS::Rooted<JS::IdVector> keyedScalars(aCx, JS::IdVector(aCx));
-    if (!JS_Enumerate(aCx, processDataObj, &keyedScalars)) {
-      JS_ClearPendingException(aCx);
-      continue;
-    }
-
-    JS::RootedId keyedScalar(aCx);
-    for (auto& keyedScalarVal : keyedScalars) {
-      keyedScalar = keyedScalarVal;
-      
-      nsAutoJSString scalarName;
-      if (!scalarName.init(aCx, keyedScalar)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      
-      JS::RootedValue keyedScalarData(aCx);
-      if (!JS_GetPropertyById(aCx, processDataObj, keyedScalar, &keyedScalarData)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      if (!keyedScalarData.isObject()) {
-        
-        
-        continue;
-      }
-
-      
-      JS::RootedObject keyedScalarDataObj(aCx, &keyedScalarData.toObject());
-      JS::Rooted<JS::IdVector> keys(aCx, JS::IdVector(aCx));
-      if (!JS_Enumerate(aCx, keyedScalarDataObj, &keys)) {
-        JS_ClearPendingException(aCx);
-        continue;
-      }
-
-      JS::RootedId key(aCx);
-      for (auto keyVal : keys) {
-        key = keyVal;
-        
-        nsAutoJSString keyName;
-        if (!keyName.init(aCx, key)) {
-          JS_ClearPendingException(aCx);
-          continue;
-        }
-
-        
-        JS::RootedValue scalarValue(aCx);
-        if (!JS_GetPropertyById(aCx, keyedScalarDataObj, key, &scalarValue)) {
-          JS_ClearPendingException(aCx);
-          continue;
-        }
-
-        if (scalarValue.isNullOrUndefined()) {
-          
-          
-          continue;
-        }
-
-        
-        nsCOMPtr<nsIVariant> unpackedVal;
-        nsresult rv =
-          nsContentUtils::XPConnect()->JSToVariant(aCx, scalarValue,  getter_AddRefs(unpackedVal));
-        if (NS_FAILED(rv)) {
-          JS_ClearPendingException(aCx);
-          continue;
-        }
-
-        
-        PersistedKeyedScalarArray& processScalars =
-          scalarsToUpdate.GetOrInsert(static_cast<uint32_t>(processID));
-        processScalars.AppendElement(
-          mozilla::MakeTuple(nsCString(NS_ConvertUTF16toUTF8(scalarName)),
-                             nsString(keyName), unpackedVal));
-      }
-    }
-  }
-
-  
-  {
-    StaticMutexAutoLock lock(gTelemetryScalarsMutex);
-
-    for (auto iter = scalarsToUpdate.ConstIter(); !iter.Done(); iter.Next()) {
-      PersistedKeyedScalarArray& processScalars = iter.Data();
-      for (PersistedKeyedScalarArray::size_type i = 0; i < processScalars.Length(); i++) {
-        mozilla::Unused << internal_UpdateKeyedScalar(lock,
-                                                      mozilla::Get<0>(processScalars[i]),
-                                                      mozilla::Get<1>(processScalars[i]),
-                                                      ScalarActionType::eSet,
-                                                      mozilla::Get<2>(processScalars[i]),
-                                                      ProcessID(iter.Key()));
-      }
-    }
-  }
-
-  return NS_OK;
-}
-#endif 
