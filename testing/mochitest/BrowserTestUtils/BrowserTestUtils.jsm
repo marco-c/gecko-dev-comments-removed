@@ -144,7 +144,7 @@ var BrowserTestUtils = {
 
   openNewForegroundTab(tabbrowser, ...args) {
     let options;
-    if (tabbrowser.ownerGlobal && tabbrowser === tabbrowser.ownerGlobal.gBrowser) {
+    if (tabbrowser instanceof Ci.nsIDOMXULElement) {
       
       let [
         opening = "about:blank",
@@ -570,10 +570,10 @@ var BrowserTestUtils = {
 
   domWindowOpened(win, checkFn) {
     return new Promise(resolve => {
-      function observer(subject, topic, data) {
+      async function observer(subject, topic, data) {
         if (topic == "domwindowopened" && (!win || subject === win)) {
           let observedWindow = subject.QueryInterface(Ci.nsIDOMWindow);
-          if (checkFn && !checkFn(observedWindow)) {
+          if (checkFn && !await checkFn(observedWindow)) {
             return;
           }
           Services.ww.unregisterNotification(observer);
@@ -1596,6 +1596,61 @@ var BrowserTestUtils = {
       await this.unregisterAboutPage(aboutModule);
     }
     Services.ppmm.removeDelayedProcessScript(kAboutPageRegistrationContentScript);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async promiseAlertDialogOpen(buttonAction,
+                               uri="chrome://global/content/commonDialog.xul",
+                               func) {
+    let win = await this.domWindowOpened(null, async win => {
+      
+      
+      
+      await this.waitForEvent(win, "load");
+
+      return win.document.documentURI === uri;
+    });
+
+    if (func) {
+      await func(win);
+      return win;
+    }
+
+    let doc = win.document.documentElement;
+    doc.getButton(buttonAction).click();
+
+    return win;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async promiseAlertDialog(buttonAction,
+                           uri="chrome://global/content/commonDialog.xul",
+                           func) {
+    let win = await this.promiseAlertDialogOpen(buttonAction, uri, func);
+    return this.windowClosed(win);
   },
 
   

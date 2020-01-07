@@ -34,43 +34,24 @@ async function clearDownloads() {
 
 
 
-
-
-
-
 function promiseClickDownloadDialogButton(buttonAction) {
-  return new Promise(resolve => {
-    Services.ww.registerNotification(function onOpen(win, topic, data) {
-      if (topic === "domwindowopened" && win instanceof Ci.nsIDOMWindow) {
-        
-        
-        
-        win.addEventListener("load", function() {
-          info(`found window of type: ${win.document.documentURI}`);
-          if (win.document.documentURI ===
-                "chrome://mozapps/content/downloads/unknownContentType.xul") {
-            Services.ww.unregisterNotification(onOpen);
+  const uri = "chrome://mozapps/content/downloads/unknownContentType.xul";
+  BrowserTestUtils.promiseAlertDialogOpen(buttonAction, uri, async win => {
+    
+    
+    
+    
+    
+    
+    
+    await TestUtils.waitForTick();
 
-            
-            
-            
-            
-            
-            
-            
-            executeSoon(function() {
-              setTimeout(function() {
-                const button = win.document.documentElement.getButton(buttonAction);
-                button.disabled = false;
-                info(`clicking ${buttonAction} button`);
-                button.click();
-                resolve();
-              }, 0);
-            });
-          }
-        }, {once: true});
-      }
-    });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const button = win.document.documentElement.getButton(buttonAction);
+    button.disabled = false;
+    info(`clicking ${buttonAction} button`);
+    button.click();
   });
 }
 
