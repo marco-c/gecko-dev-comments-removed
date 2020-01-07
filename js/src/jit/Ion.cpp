@@ -769,7 +769,8 @@ JitCode::copyFrom(MacroAssembler& masm)
 {
     
     
-    *(JitCode**)(code_ - sizeof(JitCode*)) = this;
+    JitCodeHeader::FromExecutable(code_)->init(this);
+
     insnSize_ = masm.instructionsSize();
     masm.executableCopy(code_);
 
