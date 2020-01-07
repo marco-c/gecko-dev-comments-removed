@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set ts=8 sts=4 et sw=4 tw=99: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef __SANDBOXPRIVATE_H__
 #define __SANDBOXPRIVATE_H__
@@ -22,16 +22,27 @@ class SandboxPrivate : public nsIGlobalObject,
                        public nsWrapperCache
 {
 public:
-    SandboxPrivate(nsIPrincipal* principal, JSObject* global)
-        : mPrincipal(principal)
-    {
-        SetIsNotDOMBinding();
-        SetWrapper(global);
-    }
-
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
     NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(SandboxPrivate,
                                                            nsIGlobalObject)
+
+    static void Create(nsIPrincipal* principal, JS::Handle<JSObject*> global)
+    {
+        RefPtr<SandboxPrivate> sbp = new SandboxPrivate(principal);
+        sbp->SetWrapper(global);
+        sbp->PreserveWrapper(ToSupports(sbp.get()));
+
+        
+        
+        JS_SetPrivate(global, static_cast<nsIScriptObjectPrincipal*>(sbp.forget().take()));
+    }
+
+    static SandboxPrivate* GetPrivate(JSObject* obj)
+    {
+        
+        return static_cast<SandboxPrivate*>(
+            static_cast<nsIScriptObjectPrincipal*>(JS_GetPrivate(obj)));
+    }
 
     nsIPrincipal* GetPrincipal() override
     {
@@ -60,9 +71,16 @@ public:
     }
 
 private:
-    virtual ~SandboxPrivate() { }
+    explicit SandboxPrivate(nsIPrincipal* principal)
+        : mPrincipal(principal)
+    {
+        SetIsNotDOMBinding();
+    }
+
+    virtual ~SandboxPrivate()
+    { }
 
     nsCOMPtr<nsIPrincipal> mPrincipal;
 };
 
-#endif // __SANDBOXPRIVATE_H__
+#endif 

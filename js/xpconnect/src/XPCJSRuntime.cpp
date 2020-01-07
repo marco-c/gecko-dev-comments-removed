@@ -3047,7 +3047,15 @@ XPCJSRuntime::InitSingletonScopes()
 void
 XPCJSRuntime::DeleteSingletonScopes()
 {
+    
+    
+    RefPtr<SandboxPrivate> sandbox = SandboxPrivate::GetPrivate(mUnprivilegedJunkScope);
+    sandbox->ReleaseWrapper(sandbox);
     mUnprivilegedJunkScope = nullptr;
+    sandbox = SandboxPrivate::GetPrivate(mPrivilegedJunkScope);
+    sandbox->ReleaseWrapper(sandbox);
     mPrivilegedJunkScope = nullptr;
+    sandbox = SandboxPrivate::GetPrivate(mCompilationScope);
+    sandbox->ReleaseWrapper(sandbox);
     mCompilationScope = nullptr;
 }
