@@ -7840,10 +7840,42 @@ dom_set_x(JSContext* cx, HandleObject obj, void* self, JSJitSetterCallArgs args)
 }
 
 static bool
+dom_get_global(JSContext* cx, HandleObject obj, void* self, JSJitGetterCallArgs args)
+{
+    MOZ_ASSERT(JS_GetClass(obj) == GetDomClass());
+    MOZ_ASSERT(self == (void*)0x1234);
+
+    
+    
+    args.rval().setObject(*ToWindowProxyIfWindow(cx->global()));
+
+    return true;
+}
+
+static bool
+dom_set_global(JSContext* cx, HandleObject obj, void* self, JSJitSetterCallArgs args)
+{
+    MOZ_ASSERT(JS_GetClass(obj) == GetDomClass());
+    MOZ_ASSERT(self == (void*)0x1234);
+
+    
+    
+    if (!args[0].isObject() ||
+        ToWindowIfWindowProxy(&args[0].toObject()) != cx->global())
+    {
+        JS_ReportErrorASCII(cx, "Setter not called with matching global argument");
+        return false;
+    }
+
+    return true;
+}
+
+static bool
 dom_doFoo(JSContext* cx, HandleObject obj, void* self, const JSJitMethodCallArgs& args)
 {
     MOZ_ASSERT(JS_GetClass(obj) == GetDomClass());
     MOZ_ASSERT(self == (void*)0x1234);
+    MOZ_ASSERT(cx->realm() == args.callee().as<JSFunction>().realm());
 
     
     args.rval().setInt32(args.length());
@@ -7854,8 +7886,8 @@ static const JSJitInfo dom_x_getterinfo = {
     { (JSJitGetterOp)dom_get_x },
     { 0 },    
     { 0 },    
-    JSJitInfo::AliasNone, 
     JSJitInfo::Getter,
+    JSJitInfo::AliasNone, 
     JSVAL_TYPE_UNKNOWN, 
     true,     
     true,     
@@ -7868,6 +7900,41 @@ static const JSJitInfo dom_x_getterinfo = {
 
 static const JSJitInfo dom_x_setterinfo = {
     { (JSJitGetterOp)dom_set_x },
+    { 0 },    
+    { 0 },    
+    JSJitInfo::Setter,
+    JSJitInfo::AliasEverything, 
+    JSVAL_TYPE_UNKNOWN, 
+    false,    
+    false,    
+    false,    
+    false,    
+    false,    
+    false,    
+    0         
+};
+
+
+
+
+static const JSJitInfo dom_global_getterinfo = {
+    { (JSJitGetterOp)dom_get_global },
+    { 0 },    
+    { 0 },    
+    JSJitInfo::Getter,
+    JSJitInfo::AliasEverything, 
+    JSVAL_TYPE_OBJECT, 
+    false,    
+    false,    
+    false,    
+    false,    
+    false,    
+    false,    
+    0         
+};
+
+static const JSJitInfo dom_global_setterinfo = {
+    { (JSJitGetterOp)dom_set_global },
     { 0 },    
     { 0 },    
     JSJitInfo::Setter,
@@ -7904,6 +7971,13 @@ static const JSPropertySpec dom_props[] = {
      { {
         { { dom_genericGetter, &dom_x_getterinfo } },
         { { dom_genericSetter, &dom_x_setterinfo } }
+     } },
+    },
+    {"global",
+     JSPROP_ENUMERATE,
+     { {
+        { { dom_genericGetter, &dom_global_getterinfo } },
+        { { dom_genericSetter, &dom_global_setterinfo } }
      } },
     },
     JS_PS_END

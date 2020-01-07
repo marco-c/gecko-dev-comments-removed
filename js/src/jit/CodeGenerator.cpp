@@ -4418,6 +4418,12 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
     masm.Push(argObj);
     masm.moveStackPtrTo(argObj);
 
+    if (call->mir()->maybeCrossRealm()) {
+        
+        masm.movePtr(ImmGCPtr(target->rawJSFunction()), argJSContext);
+        masm.switchToObjectRealm(argJSContext, argJSContext);
+    }
+
     
     uint32_t safepointOffset = masm.buildFakeExitFrame(argJSContext);
     masm.loadJSContext(argJSContext);
@@ -4445,6 +4451,14 @@ CodeGenerator::visitCallDOMNative(LCallDOMNative* call)
         
         masm.loadValue(Address(masm.getStackPointer(), IonDOMMethodExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
+    }
+
+    
+    
+    if (call->mir()->maybeCrossRealm()) {
+        static_assert(!JSReturnOperand.aliases(ReturnReg),
+                      "Clobbering ReturnReg should not affect the return value");
+        masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
     }
 
     
@@ -12255,6 +12269,12 @@ CodeGenerator::visitGetDOMProperty(LGetDOMProperty* ins)
     
     masm.moveStackPtrTo(ObjectReg);
 
+    Realm* getterRealm = ins->mir()->getterRealm();
+    if (gen->realm->realmPtr() != getterRealm) {
+        
+        masm.switchToRealm(getterRealm, JSContextReg);
+    }
+
     uint32_t safepointOffset = masm.buildFakeExitFrame(JSContextReg);
     masm.loadJSContext(JSContextReg);
     masm.enterFakeExitFrame(JSContextReg, JSContextReg, ExitFrameType::IonDOMGetter);
@@ -12278,6 +12298,14 @@ CodeGenerator::visitGetDOMProperty(LGetDOMProperty* ins)
 
         masm.loadValue(Address(masm.getStackPointer(), IonDOMExitFrameLayout::offsetOfResult()),
                        JSReturnOperand);
+    }
+
+    
+    
+    if (gen->realm->realmPtr() != getterRealm) {
+        static_assert(!JSReturnOperand.aliases(ReturnReg),
+                      "Clobbering ReturnReg should not affect the return value");
+        masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
     }
 
     
@@ -12360,6 +12388,12 @@ CodeGenerator::visitSetDOMProperty(LSetDOMProperty* ins)
     
     masm.moveStackPtrTo(ObjectReg);
 
+    Realm* setterRealm = ins->mir()->setterRealm();
+    if (gen->realm->realmPtr() != setterRealm) {
+        
+        masm.switchToRealm(setterRealm, JSContextReg);
+    }
+
     uint32_t safepointOffset = masm.buildFakeExitFrame(JSContextReg);
     masm.loadJSContext(JSContextReg);
     masm.enterFakeExitFrame(JSContextReg, JSContextReg, ExitFrameType::IonDOMSetter);
@@ -12376,6 +12410,11 @@ CodeGenerator::visitSetDOMProperty(LSetDOMProperty* ins)
                      CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
     masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
+
+    
+    
+    if (gen->realm->realmPtr() != setterRealm)
+        masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
 
     masm.adjustStack(IonDOMExitFrameLayout::Size());
 
