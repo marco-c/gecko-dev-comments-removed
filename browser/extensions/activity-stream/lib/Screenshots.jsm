@@ -43,8 +43,14 @@ this.Screenshots = {
     return str;
   },
 
+  
+
+
+
+
+
+
   async getScreenshotForURL(url) {
-    let screenshot = null;
     try {
       await BackgroundPageThumbs.captureIfMissing(url, {backgroundColor: GREY_10});
       const imgPath = PageThumbs.getThumbnailPath(url);
@@ -53,17 +59,34 @@ this.Screenshots = {
       const file = await OS.File.open(imgPath, {read: true, existing: true});
 
       
-      const nsFile = FileUtils.File(imgPath);
-
-      const contentType = MIMEService.getTypeFromFile(nsFile);
+      
       const bytes = await file.read();
+      if (bytes.length === 0) {
+        return null;
+      }
+
+      
+      const nsFile = FileUtils.File(imgPath);
+      const contentType = MIMEService.getTypeFromFile(nsFile);
+
       const encodedData = btoa(this._bytesToString(bytes));
       file.close();
-      screenshot = `data:${contentType};base64,${encodedData}`;
+      return `data:${contentType};base64,${encodedData}`;
     } catch (err) {
-      Cu.reportError(`getScreenshot error: ${err}`);
+      Cu.reportError(`getScreenshot(${url}) failed: ${err}`);
     }
-    return screenshot;
+
+    
+    
+    
+    
+    
+    try {
+      await PageThumbs._store(url, url, null, true);
+    } catch (err) {
+      
+    }
+    return null;
   },
 
   

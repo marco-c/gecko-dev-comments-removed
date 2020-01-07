@@ -773,6 +773,12 @@ var ActivityStreamProvider = {
 
 
 
+
+
+
+
+
+
   _commonPlacesWhere: `
     AND hidden = 0
     AND last_visit_date > 0
