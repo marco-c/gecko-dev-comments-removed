@@ -147,7 +147,7 @@ let AddressDataLoader = {
 
 
 
-  getData(country, level1) {
+  getData(country, level1 = null) {
     let defaultLocale = this._loadData(country, level1);
     if (!defaultLocale) {
       return null;
