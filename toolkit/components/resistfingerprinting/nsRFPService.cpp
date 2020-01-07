@@ -35,6 +35,7 @@
 #include "nsJSUtils.h"
 
 #include "prenv.h"
+#include "nss.h"
 
 #include "js/Date.h"
 
@@ -478,7 +479,13 @@ nsRFPService::ReduceTimePrecisionImpl(
 
   long long midpoint = 0,
             clampedAndJittered = clamped;
-  if (sJitter) {
+  
+  
+  
+  
+  
+  
+  if (sJitter && NSS_IsInitialized()) {
     if(!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, &midpoint)) &&
        timeAsInt >= clamped + midpoint) {
       clampedAndJittered += resolutionAsInt;
