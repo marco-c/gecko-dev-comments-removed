@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 var EXPORTED_SYMBOLS = ["XPIProvider", "XPIInternal"];
 
 
@@ -433,6 +435,7 @@ function findMatchingStaticBlocklistItem(aAddon) {
 
 
 
+
 function isWebExtension(type) {
   return type == "webextension" || type == "webextension-theme";
 }
@@ -445,11 +448,13 @@ var gThemeAliases = null;
 
 
 
+
 function isTheme(type) {
   if (!gThemeAliases)
     gThemeAliases = getAllAliasesForTypes(["theme"]);
   return gThemeAliases.includes(type);
 }
+
 
 
 
@@ -498,6 +503,7 @@ function isDisabledLegacy(addon) {
           
           addon.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED);
 }
+
 
 
 
@@ -574,6 +580,7 @@ function isUsableAddon(aAddon) {
 
 
 
+
 function getExternalType(aType) {
   if (aType in TYPE_ALIASES)
     return TYPE_ALIASES[aType];
@@ -589,6 +596,7 @@ function getManifestFileForDir(aDir) {
     return file;
   return null;
 }
+
 
 
 
@@ -630,6 +638,7 @@ function getAllAliasesForTypes(aTypes) {
 
 
 
+
 function getURIForResourceInFile(aFile, aPath) {
   if (aFile.exists() && aFile.isDirectory()) {
     let resource = aFile.clone();
@@ -651,11 +660,13 @@ function getURIForResourceInFile(aFile, aPath) {
 
 
 
+
 function buildJarURI(aJarfile, aPath) {
   let uri = Services.io.newFileURI(aJarfile);
   uri = "jar:" + uri.spec + "!/" + aPath;
   return Services.io.newURI(uri);
 }
+
 
 
 
@@ -692,6 +703,11 @@ function getDirectoryEntries(aDir, aSortEntries) {
     }
   }
 }
+
+
+
+
+
 
 
 
@@ -769,6 +785,7 @@ class XPIState {
 
 
 
+
   static migrate(location, id, saved, bootstrapped) {
     let data = {
       enabled: saved.e,
@@ -832,6 +849,8 @@ class XPIState {
 
 
 
+
+
   toJSON() {
     let json = {
       enabled: this.enabled,
@@ -860,6 +879,10 @@ class XPIState {
 
 
 
+
+
+
+
   getModTime(aFile, aId) {
     
     
@@ -876,6 +899,10 @@ class XPIState {
   }
 
   
+
+
+
+
 
 
 
@@ -947,6 +974,8 @@ class XPIStateLocation extends Map {
   }
 
   
+
+
 
 
 
@@ -1145,6 +1174,8 @@ var XPIStates = {
 
 
 
+
+
   loadExtensionState() {
     let state;
     try {
@@ -1169,6 +1200,7 @@ var XPIStates = {
   },
 
   
+
 
 
 
@@ -1255,6 +1287,15 @@ var XPIStates = {
 
 
 
+
+
+
+
+
+
+
+
+
   getLocation(name, path, saved) {
     let location = this.db.get(name);
 
@@ -1274,6 +1315,11 @@ var XPIStates = {
   },
 
   
+
+
+
+
+
 
 
 
@@ -1350,6 +1396,8 @@ var XPIStates = {
 
 
 
+
+
   addAddon(aAddon) {
     let location = this.getLocation(aAddon._installLocation.name);
     location.addAddon(aAddon);
@@ -1386,6 +1434,10 @@ var XPIStates = {
 
 
 
+
+
+
+
   removeAddon(aLocation, aId) {
     logger.debug("Removing XPIState for " + aLocation + ":" + aId);
     let location = this.db.get(aLocation);
@@ -1399,6 +1451,9 @@ var XPIStates = {
   },
 
   
+
+
+
 
 
   disableAddon(aId) {
@@ -2182,6 +2237,7 @@ var XPIProvider = {
 
 
 
+
   processPendingFileChanges(aManifests) {
     let changed = false;
     for (let location of this.installLocations) {
@@ -2231,6 +2287,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -2335,6 +2392,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -2485,6 +2543,7 @@ var XPIProvider = {
 
 
 
+
   supportsMimetype(aMimetype) {
     return aMimetype == "application/x-xpinstall";
   },
@@ -2512,6 +2571,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -2559,6 +2619,7 @@ var XPIProvider = {
 
 
 
+
   async getAddonByID(aId) {
     let aAddon = await XPIDatabase.getVisibleAddonForID(aId);
     return aAddon ? aAddon.wrapper : null;
@@ -2585,6 +2646,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -2654,12 +2716,14 @@ var XPIProvider = {
 
 
 
+
   async getAddonBySyncGUID(aGUID) {
     let addon = await XPIDatabase.getAddonBySyncGUID(aGUID);
     return addon ? addon.wrapper : null;
   },
 
   
+
 
 
 
@@ -2679,6 +2743,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -2802,7 +2867,6 @@ var XPIProvider = {
   },
 
   
-
 
 
 
@@ -3049,6 +3113,7 @@ var XPIProvider = {
   },
 
   
+
 
 
 
@@ -3514,10 +3579,7 @@ AddonInternal.prototype = {
 
 
 
-
-
-
-  toJSON(aKey) {
+  toJSON() {
     let obj = {};
     for (let prop in this) {
       
@@ -3603,6 +3665,9 @@ AddonInternal.prototype = {
     return permissions;
   },
 };
+
+
+
 
 
 
@@ -4258,6 +4323,7 @@ class DirectoryInstallLocation {
 
 
 
+
   _readDirectoryFromFile(aFile) {
     let linkedDirectory;
     if (aFile.isSymlink()) {
@@ -4310,6 +4376,10 @@ class DirectoryInstallLocation {
   }
 
   
+
+
+
+
 
 
   _readAddons(rescan = false) {
@@ -4379,6 +4449,12 @@ class DirectoryInstallLocation {
   
 
 
+
+
+
+
+
+
   getAddonLocations(rescan = false) {
     this._readAddons(rescan);
 
@@ -4407,6 +4483,7 @@ class DirectoryInstallLocation {
   }
 
   
+
 
 
 
@@ -4535,6 +4612,8 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   
 
 
+
+
   static _loadAddonSet() {
     try {
       let setStr = Services.prefs.getStringPref(PREF_SYSTEM_ADDON_SET, null);
@@ -4570,6 +4649,8 @@ class SystemAddonInstallLocation extends MutableDirectoryInstallLocation {
   }
 
   
+
+
 
 
   isActive() {
