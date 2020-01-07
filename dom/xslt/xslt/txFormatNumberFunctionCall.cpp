@@ -272,6 +272,12 @@ txFormatNumberFunctionCall::evaluate(txIEvalContext* aContext,
     }
 
     
+    if (value == mozilla::PositiveInfinity<double>()) {
+        return aContext->recycler()->getStringResult(format->mInfinity,
+                                                     aResult);
+    }
+
+    
     nsAutoString res(prefix);
 
     int bufsize;
