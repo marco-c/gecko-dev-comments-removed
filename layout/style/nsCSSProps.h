@@ -549,33 +549,6 @@ private:
   static bool BuildShorthandsContainingTable();
 
 private:
-  
-  
-  static const nsCSSPropertyID* const
-    kLogicalGroupTable[eCSSPropertyLogicalGroup_COUNT];
-
-public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static const nsCSSPropertyID* LogicalGroup(nsCSSPropertyID aProperty);
-
-private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
 
 private:
