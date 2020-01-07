@@ -6,19 +6,27 @@
 function run_test() {
   
   
-  check_except(function() {
-    DebuggerServer.createListener();
-  });
-  check_except(DebuggerServer.closeAllListeners);
-  check_except(DebuggerServer.connectPipe);
+  Assert.throws(() => DebuggerServer.createListener(),
+    /DebuggerServer has not been initialized/,
+    "createListener should throw before it has been initialized");
+  Assert.throws(DebuggerServer.closeAllListeners,
+    /this is undefined/,
+    "closeAllListeners should throw before it has been initialized");
+  Assert.throws(DebuggerServer.connectPipe,
+    /this is undefined/,
+    "connectPipe should throw before it has been initialized");
 
   
   DebuggerServer.init();
 
   
   
-  check_except(DebuggerServer.closeAllListeners);
-  check_except(DebuggerServer.connectPipe);
+  Assert.throws(DebuggerServer.closeAllListeners,
+    /this is undefined/,
+    "closeAllListeners should throw if createRootActor hasn't been added");
+  Assert.throws(DebuggerServer.connectPipe,
+    /this is undefined/,
+    "closeAllListeners should throw if createRootActor hasn't been added");
 
   DebuggerServer.registerModule("xpcshell-test/testactors");
 
