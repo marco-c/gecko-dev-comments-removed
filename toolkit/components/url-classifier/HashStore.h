@@ -8,11 +8,11 @@
 #include "Entries.h"
 #include "ChunkSet.h"
 
-#include "chromium/safebrowsing.pb.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
+#include "nsISupports.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include <string>
@@ -30,7 +30,7 @@ public:
   {
   }
 
-  virtual ~TableUpdate() {}
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TableUpdate);
 
   
   virtual bool Empty() const = 0;
@@ -43,11 +43,16 @@ public:
     return (T::TAG == aThat->Tag() ? reinterpret_cast<T*>(aThat) : nullptr);
   }
 
+protected:
+  virtual ~TableUpdate() {}
+
 private:
   virtual int Tag() const = 0;
 
   const nsCString mTable;
 };
+
+typedef nsTArray<RefPtr<TableUpdate>> TableUpdateArray;
 
 
 
@@ -220,7 +225,7 @@ public:
   nsresult BeginUpdate();
 
   
-  nsresult ApplyUpdate(TableUpdateV2 *aUpdate);
+  nsresult ApplyUpdate(RefPtr<TableUpdateV2> aUpdate);
 
   
   nsresult Expire();

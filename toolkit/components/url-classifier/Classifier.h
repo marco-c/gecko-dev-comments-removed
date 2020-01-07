@@ -66,10 +66,8 @@ public:
 
 
 
-
-
   using AsyncUpdateCallback = std::function<void(nsresult)>;
-  nsresult AsyncApplyUpdates(nsTArray<TableUpdate*>* aUpdates,
+  nsresult AsyncApplyUpdates(const TableUpdateArray& aUpdates,
                              const AsyncUpdateCallback& aCallback);
 
   
@@ -82,7 +80,7 @@ public:
   
 
 
-  nsresult ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates);
+  nsresult ApplyFullHashes(TableUpdateArray& aUpdates);
 
   
 
@@ -150,13 +148,13 @@ private:
 
   nsresult ScanStoreDir(nsIFile* aDirectory, nsTArray<nsCString>& aTables);
 
-  nsresult UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
+  nsresult UpdateHashStore(TableUpdateArray& aUpdates,
                            const nsACString& aTable);
 
-  nsresult UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
+  nsresult UpdateTableV4(TableUpdateArray& aUpdates,
                          const nsACString& aTable);
 
-  nsresult UpdateCache(TableUpdate* aUpdates);
+  nsresult UpdateCache(RefPtr<TableUpdate> aUpdates);
 
   LookupCache *GetLookupCacheForUpdate(const nsACString& aTable) {
     return GetLookupCache(aTable, true);
@@ -167,7 +165,7 @@ private:
                                   nsIFile* aRootStoreDirectory);
 
 
-  bool CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
+  bool CheckValidUpdate(TableUpdateArray& aUpdates,
                         const nsACString& aTable);
 
   nsresult LoadMetadata(nsIFile* aDirectory, nsACString& aResult);
@@ -180,7 +178,7 @@ private:
 
 
 
-  nsresult ApplyUpdatesBackground(nsTArray<TableUpdate*>* aUpdates,
+  nsresult ApplyUpdatesBackground(TableUpdateArray& aUpdates,
                                   nsACString& aFailedTableName);
 
   

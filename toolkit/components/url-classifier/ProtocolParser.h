@@ -48,11 +48,9 @@ public:
   
   virtual void End() = 0;
 
-  
-  
-  TableUpdate *GetTableUpdate(const nsACString& aTable);
+  RefPtr<TableUpdate> GetTableUpdate(const nsACString& aTable);
   void ForgetTableUpdates() { mTableUpdates.Clear(); }
-  const nsTArray<TableUpdate*>& GetTableUpdates() { return mTableUpdates; }
+  const TableUpdateArray& GetTableUpdates() { return mTableUpdates; }
 
   
   
@@ -63,13 +61,13 @@ public:
   const nsTArray<nsCString>& TablesToReset() const { return mTablesToReset; }
 
 protected:
-  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const = 0;
+  virtual RefPtr<TableUpdate> CreateTableUpdate(const nsACString& aTableName) const = 0;
 
   nsCString mPending;
   nsresult mUpdateStatus;
 
   
-  nsTArray<TableUpdate*> mTableUpdates;
+  TableUpdateArray mTableUpdates;
 
   nsTArray<ForwardedUpdate> mForwards;
 
@@ -81,9 +79,6 @@ protected:
 
   
   uint32_t mUpdateWaitSec;
-
-private:
-  void CleanupUpdates();
 };
 
 
@@ -108,7 +103,7 @@ public:
 #endif
 
 private:
-  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
+  virtual RefPtr<TableUpdate> CreateTableUpdate(const nsACString& aTableName) const override;
 
   nsresult ProcessControl(bool* aDone);
   nsresult ProcessExpirations(const nsCString& aLine);
@@ -161,7 +156,7 @@ private:
   ChunkState mChunkState;
 
   
-  TableUpdateV2 *mTableUpdate;
+  RefPtr<TableUpdateV2> mTableUpdate;
 
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
   nsCString mRawUpdate; 
@@ -184,7 +179,7 @@ public:
 private:
   virtual ~ProtocolParserProtobuf();
 
-  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
+  virtual RefPtr<TableUpdate> CreateTableUpdate(const nsACString& aTableName) const override;
 
   
   nsresult ProcessOneResponse(const ListUpdateResponse& aResponse,

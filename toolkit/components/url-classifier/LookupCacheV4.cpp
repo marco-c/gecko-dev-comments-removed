@@ -261,7 +261,7 @@ UpdateChecksum(nsICryptoHash* aCrypto, const nsACString& aPrefix)
 
 
 nsresult
-LookupCacheV4::ApplyUpdate(TableUpdateV4* aTableUpdate,
+LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
                            PrefixStringMap& aInputMap,
                            PrefixStringMap& aOutputMap)
 {

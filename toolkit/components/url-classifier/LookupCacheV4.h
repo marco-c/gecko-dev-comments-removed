@@ -37,7 +37,7 @@ public:
   nsresult GetFixedLengthPrefixes(FallibleTArray<uint32_t>& aPrefixes);
 
   
-  nsresult ApplyUpdate(TableUpdateV4* aTableUpdate,
+  nsresult ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
                        PrefixStringMap& aInputMap,
                        PrefixStringMap& aOutputMap);
 
