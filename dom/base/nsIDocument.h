@@ -157,6 +157,7 @@ class FrameRequestCallback;
 struct FullscreenRequest;
 class ImageTracker;
 class HTMLBodyElement;
+class HTMLImageElement;
 struct LifecycleCallbackArgs;
 class Link;
 class Location;
@@ -2785,9 +2786,25 @@ public:
   virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) = 0;
   virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) = 0;
 
-  virtual nsresult AddResponsiveContent(nsIContent* aContent) = 0;
-  virtual void RemoveResponsiveContent(nsIContent* aContent) = 0;
-  virtual void NotifyMediaFeatureValuesChanged() = 0;
+  
+  
+  void AddResponsiveContent(mozilla::dom::HTMLImageElement* aContent)
+  {
+    MOZ_ASSERT(aContent);
+    mResponsiveContent.PutEntry(aContent);
+  }
+
+  
+  
+  void RemoveResponsiveContent(mozilla::dom::HTMLImageElement* aContent)
+  {
+    MOZ_ASSERT(aContent);
+    mResponsiveContent.RemoveEntry(aContent);
+  }
+
+  
+  
+  void NotifyMediaFeatureValuesChanged();
 
   virtual nsresult GetStateObject(nsIVariant** aResult) = 0;
 
@@ -4055,6 +4072,9 @@ protected:
   RefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
 
   RefPtr<nsContentList> mImageMaps;
+
+  
+  nsTHashtable<nsPtrHashKey<mozilla::dom::HTMLImageElement>> mResponsiveContent;
 
 public:
   js::ExpandoAndGeneration mExpandoAndGeneration;
