@@ -2219,7 +2219,8 @@ XULDocument::LoadOverlayInternal(nsIURI* aURI, bool aIsDynamic,
     
     
     bool overlayIsChrome = IsChromeURI(aURI);
-    bool documentIsChrome = IsChromeURI(mDocumentURI);
+    bool documentIsChrome = mDocumentURI ?
+        IsChromeURI(mDocumentURI) : false;
     mCurrentPrototype = overlayIsChrome && documentIsChrome ?
         nsXULPrototypeCache::GetInstance()->GetPrototype(aURI) : nullptr;
 
