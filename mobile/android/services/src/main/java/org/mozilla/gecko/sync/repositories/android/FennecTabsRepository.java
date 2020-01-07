@@ -164,7 +164,7 @@ public class FennecTabsRepository extends Repository {
         }
       };
 
-      delegateQueue.execute(command);
+      fetchWorkQueue.execute(command);
     }
 
     @Override
@@ -201,7 +201,7 @@ public class FennecTabsRepository extends Repository {
       
       
       Logger.warn(LOG_TAG, "Not returning anything from fetch");
-      delegateQueue.execute(new Runnable() {
+      fetchWorkQueue.execute(new Runnable() {
         @Override
         public void run() {
           delegate.onFetchCompleted();

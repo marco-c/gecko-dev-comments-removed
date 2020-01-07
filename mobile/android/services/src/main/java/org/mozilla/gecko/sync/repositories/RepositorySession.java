@@ -56,7 +56,9 @@ public abstract class RepositorySession {
   
 
 
-  protected ExecutorService delegateQueue  = Executors.newSingleThreadExecutor();
+
+
+  protected ExecutorService fetchWorkQueue = Executors.newSingleThreadExecutor();
 
   
 
@@ -203,7 +205,7 @@ public abstract class RepositorySession {
 
   protected void sharedBegin() throws InvalidSessionTransitionException {
     Logger.debug(LOG_TAG, "Shared begin.");
-    if (delegateQueue.isShutdown()) {
+    if (fetchWorkQueue.isShutdown()) {
       throw new InvalidSessionTransitionException(null);
     }
     if (storeWorkQueue.isShutdown()) {
@@ -250,7 +252,7 @@ public abstract class RepositorySession {
 
   public void abort(RepositorySessionFinishDelegate delegate) {
     this.abort();
-    delegate.deferredFinishDelegate(delegateQueue).onFinishSucceeded(this, this.getBundle());
+    delegate.deferredFinishDelegate(fetchWorkQueue).onFinishSucceeded(this, this.getBundle());
   }
 
   
@@ -266,7 +268,7 @@ public abstract class RepositorySession {
       Logger.error(LOG_TAG, "Caught exception shutting down store work queue.", e);
     }
     try {
-      delegateQueue.shutdown();
+      fetchWorkQueue.shutdown();
     } catch (Exception e) {
       Logger.error(LOG_TAG, "Caught exception shutting down delegate queue.", e);
     }
@@ -282,7 +284,7 @@ public abstract class RepositorySession {
   public void finish(final RepositorySessionFinishDelegate delegate) throws InactiveSessionException {
     try {
       this.transitionFrom(SessionStatus.ACTIVE, SessionStatus.DONE);
-      delegate.deferredFinishDelegate(delegateQueue).onFinishSucceeded(this, this.getBundle());
+      delegate.deferredFinishDelegate(fetchWorkQueue).onFinishSucceeded(this, this.getBundle());
     } catch (InvalidSessionTransitionException e) {
       Logger.error(LOG_TAG, "Tried to finish() an unstarted or already finished session");
       throw new InactiveSessionException(e);
@@ -290,19 +292,7 @@ public abstract class RepositorySession {
 
     Logger.trace(LOG_TAG, "Shutting down work queues.");
     storeWorkQueue.shutdown();
-    delegateQueue.shutdown();
-  }
-
-  
-
-
-
-  protected synchronized void executeDelegateCommand(Runnable command)
-      throws InactiveSessionException {
-    if (!isActive() || delegateQueue.isShutdown()) {
-      throw new InactiveSessionException();
-    }
-    delegateQueue.execute(command);
+    fetchWorkQueue.shutdown();
   }
 
   public synchronized void ensureActive() throws InactiveSessionException {
