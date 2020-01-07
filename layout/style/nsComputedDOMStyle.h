@@ -615,6 +615,10 @@ private:
   already_AddRefed<CSSValue> DoGetContextProperties();
 
   
+  
+  already_AddRefed<CSSValue> DummyGetter();
+
+  
   void SetToRGBAColor(nsROCSSPrimitiveValue* aValue, nscolor aColor);
   void SetValueFromComplexColor(nsROCSSPrimitiveValue* aValue,
                                 const mozilla::StyleComplexColor& aColor);
