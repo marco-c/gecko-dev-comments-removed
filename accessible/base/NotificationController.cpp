@@ -419,8 +419,7 @@ NotificationController::ScheduleContentInsertion(Accessible* aContainer,
                                                  nsIContent* aStartChildNode,
                                                  nsIContent* aEndChildNode)
 {
-  nsTArray<nsCOMPtr<nsIContent>>* list =
-    mContentInsertions.LookupOrAdd(aContainer);
+  nsTArray<nsCOMPtr<nsIContent>> list;
 
   bool needsProcessing = false;
   nsIContent* node = aStartChildNode;
@@ -429,13 +428,14 @@ NotificationController::ScheduleContentInsertion(Accessible* aContainer,
     
     
     if (node->GetPrimaryFrame()) {
-      if (list->AppendElement(node))
+      if (list.AppendElement(node))
         needsProcessing = true;
     }
     node = node->GetNextSibling();
   }
 
   if (needsProcessing) {
+    mContentInsertions.LookupOrAdd(aContainer)->AppendElements(list);
     ScheduleProcessing();
   }
 }
@@ -459,9 +459,29 @@ NotificationController::IsUpdatePending()
 {
   return mPresShell->IsLayoutFlushObserver() ||
     mObservingState == eRefreshProcessingForUpdate ||
+    WaitingForParent() ||
     mContentInsertions.Count() != 0 || mNotifications.Length() != 0 ||
     mTextHash.Count() != 0 ||
     !mDocument->HasLoadState(DocAccessible::eTreeConstructed);
+}
+
+bool
+NotificationController::WaitingForParent()
+{
+  DocAccessible* parentdoc = mDocument->ParentDocument();
+  if (!parentdoc) {
+    return false;
+  }
+
+  NotificationController* parent = parentdoc->mNotificationController;
+  if (!parent || parent == this) {
+    
+    return false;
+  }
+
+  
+  return parent->mContentInsertions.Count() != 0 ||
+         parent->mNotifications.Length() != 0;
 }
 
 void
@@ -606,6 +626,12 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   if (mObservingState == eRefreshProcessing ||
       mObservingState == eRefreshProcessingForUpdate ||
       mPresShell->IsReflowInterrupted()) {
+    return;
+  }
+
+  
+  
+  if (WaitingForParent()) {
     return;
   }
 

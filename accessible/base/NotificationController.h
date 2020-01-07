@@ -274,6 +274,12 @@ protected:
 
   bool IsUpdatePending();
 
+  
+
+
+
+  bool WaitingForParent();
+
 private:
   NotificationController(const NotificationController&);
   NotificationController& operator = (const NotificationController&);
