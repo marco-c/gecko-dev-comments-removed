@@ -834,6 +834,15 @@ HttpObserverManager = {
           try {
             channel.suspended = false;
             channel.redirectTo(Services.io.newURI(result.redirectUrl));
+            
+            
+            
+            
+            
+            
+            
+            
+            channel.loadInfo.allowInsecureRedirectToDataURI = true;
             return;
           } catch (e) {
             Cu.reportError(e);

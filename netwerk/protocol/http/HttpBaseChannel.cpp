@@ -2209,6 +2209,10 @@ HttpBaseChannel::RedirectTo(nsIURI *targetURI)
   NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
 
   mAPIRedirectToURI = targetURI;
+  
+  
+  
+  mLoadInfo->SetAllowInsecureRedirectToDataURI(false);
   return NS_OK;
 }
 

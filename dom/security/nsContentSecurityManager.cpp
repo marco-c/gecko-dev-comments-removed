@@ -109,6 +109,55 @@ nsContentSecurityManager::AllowTopLevelNavigationToDataURI(nsIChannel* aChannel)
   return false;
 }
 
+ bool
+nsContentSecurityManager::AllowInsecureRedirectToDataURI(nsIChannel* aNewChannel)
+{
+  nsCOMPtr<nsILoadInfo> loadInfo = aNewChannel->GetLoadInfo();
+  if (!loadInfo) {
+    return true;
+  }
+  if (loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_SCRIPT) {
+    return true;
+  }
+  nsCOMPtr<nsIURI> newURI;
+  nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
+  if (NS_FAILED(rv) || !newURI) {
+    return true;
+  }
+  bool isDataURI = (NS_SUCCEEDED(newURI->SchemeIs("data", &isDataURI)) && isDataURI);
+  if (!isDataURI) {
+    return true;
+  }
+
+  
+  
+  
+  if (loadInfo->GetAllowInsecureRedirectToDataURI()) {
+    return true;
+  }
+
+  nsAutoCString dataSpec;
+  newURI->GetSpec(dataSpec);
+  if (dataSpec.Length() > 50) {
+    dataSpec.Truncate(50);
+    dataSpec.AppendLiteral("...");
+  }
+  nsCOMPtr<nsIDocument> doc;
+  nsINode* node = loadInfo->LoadingNode();
+  if (node) {
+    doc = node->OwnerDoc();
+  }
+  NS_ConvertUTF8toUTF16 specUTF16(NS_UnescapeURL(dataSpec));
+  const char16_t* params[] = { specUTF16.get() };
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
+                                  doc,
+                                  nsContentUtils::eSECURITY_PROPERTIES,
+                                  "BlockSubresourceRedirectToData",
+                                  params, ArrayLength(params));
+  return false;
+}
+
 static nsresult
 ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
 {
@@ -608,33 +657,10 @@ nsContentSecurityManager::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   NS_ENSURE_STATE(oldPrincipal && newURI);
 
   
-  if (loadInfo && loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_SCRIPT) {
-    bool isDataURI = (NS_SUCCEEDED(newURI->SchemeIs("data", &isDataURI)) && isDataURI);
-    if (isDataURI) {
-      nsAutoCString dataSpec;
-      newURI->GetSpec(dataSpec);
-      if (dataSpec.Length() > 50) {
-        dataSpec.Truncate(50);
-        dataSpec.AppendLiteral("...");
-      }
-      nsCOMPtr<nsIDocument> doc;
-      nsINode* node = loadInfo->LoadingNode();
-      if (node) {
-        doc = node->OwnerDoc();
-      }
-      NS_ConvertUTF8toUTF16 specUTF16(NS_UnescapeURL(dataSpec));
-      const char16_t* params[] = { specUTF16.get() };
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
-                                      doc,
-                                      nsContentUtils::eSECURITY_PROPERTIES,
-                                      "BlockSubresourceRedirectToData",
-                                      params, ArrayLength(params));
-
-      
-      aOldChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
-      return NS_ERROR_CONTENT_BLOCKED;
-    }
+  if (!AllowInsecureRedirectToDataURI(aNewChannel)) {
+    
+    aOldChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
+    return NS_ERROR_CONTENT_BLOCKED;
   }
 
   const uint32_t flags =
