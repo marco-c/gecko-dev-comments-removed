@@ -1419,6 +1419,16 @@ JsepSessionImpl::GetTransceiverForLocal(size_t level)
 
   
 
+  
+  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+    if (transceiver->GetMediaType() != SdpMediaSection::kApplication &&
+        !transceiver->IsStopped() && !transceiver->HasLevel()) {
+      transceiver->SetLevel(level);
+      return transceiver.get();
+    }
+  }
+
+  
   for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
     if (!transceiver->IsStopped() && !transceiver->HasLevel()) {
       transceiver->SetLevel(level);
