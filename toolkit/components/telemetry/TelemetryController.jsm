@@ -687,7 +687,11 @@ var Impl = {
         TelemetryStorage.removeFHRDatabase();
 
         
-        TelemetryModules.start();
+        
+        if (!this._shuttingDown) {
+          
+          TelemetryModules.start();
+        }
 
         this._delayedInitTaskDeferred.resolve();
       } catch (e) {
@@ -727,8 +731,6 @@ var Impl = {
     if (!this._initialized) {
       return;
     }
-
-    this._shuttingDown = true;
 
     Services.prefs.removeObserver(PREF_BRANCH_LOG, configureLogging);
     this._detachObservers();
@@ -772,6 +774,8 @@ var Impl = {
   shutdown() {
     this._log.trace("shutdown");
 
+    this._shuttingDown = true;
+
     
     
     
@@ -781,7 +785,6 @@ var Impl = {
 
     
     if (!this._initStarted) {
-      this._shuttingDown = true;
       this._shutDown = true;
       return Promise.resolve();
     }
