@@ -4057,20 +4057,6 @@ nsTextPaintStyle::GetSystemFieldBackgroundColor()
   return mSystemFieldBackgroundColor;
 }
 
-static Element*
-FindElementAncestorForMozSelection(nsIContent* aContent)
-{
-  NS_ENSURE_TRUE(aContent, nullptr);
-  while (aContent && aContent->IsInNativeAnonymousSubtree()) {
-    aContent = aContent->GetBindingParent();
-  }
-  NS_ASSERTION(aContent, "aContent isn't in non-anonymous tree?");
-  while (aContent && !aContent->IsElement()) {
-    aContent = aContent->GetParent();
-  }
-  return aContent ? aContent->AsElement() : nullptr;
-}
-
 bool
 nsTextPaintStyle::InitSelectionColorsAndShadow()
 {
@@ -4089,25 +4075,15 @@ nsTextPaintStyle::InitSelectionColorsAndShadow()
 
   mInitSelectionColorsAndShadow = true;
 
-  nsIFrame* nonGeneratedAncestor = nsLayoutUtils::GetNonGeneratedAncestor(mFrame);
-  Element* selectionElement =
-    FindElementAncestorForMozSelection(nonGeneratedAncestor->GetContent());
-
-  if (selectionElement &&
-      selectionStatus == nsISelectionController::SELECTION_ON) {
-    RefPtr<ComputedStyle> sc =
-      mPresContext->StyleSet()->
-        ProbePseudoElementStyle(selectionElement,
-                                CSSPseudoElementType::mozSelection,
-                                mFrame->Style());
+  if (selectionStatus == nsISelectionController::SELECTION_ON) {
     
-    if (sc) {
+    if (RefPtr<ComputedStyle> style = mFrame->ComputeSelectionStyle()) {
       mSelectionBGColor =
-        sc->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
+        style->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
       mSelectionTextColor =
-        sc->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor);
+        style->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor);
       mHasSelectionShadow = true;
-      mSelectionShadow = sc->StyleText()->mTextShadow;
+      mSelectionShadow = style->StyleText()->mTextShadow;
       return true;
     }
   }
