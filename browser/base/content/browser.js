@@ -1321,7 +1321,7 @@ var gBrowserInit = {
 
     if (!gMultiProcessBrowser) {
       
-      Services.els.addSystemEventListener(gBrowser.mPanelContainer, "click",
+      Services.els.addSystemEventListener(gBrowser.tabpanels, "click",
         contentAreaClick, true);
     }
 
