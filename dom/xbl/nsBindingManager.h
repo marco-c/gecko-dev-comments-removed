@@ -171,9 +171,6 @@ public:
   
   void DropDocumentReference();
 
-  nsIContent* FindNestedInsertionPoint(nsIContent* aContainer,
-                                       nsIContent* aChild);
-
   nsIContent* FindNestedSingleInsertionPoint(nsIContent* aContainer, bool* aMulti);
 
   bool AnyBindingHasDocumentStateDependency(mozilla::EventStates aStateMask);
