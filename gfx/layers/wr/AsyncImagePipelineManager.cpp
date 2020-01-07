@@ -383,7 +383,7 @@ AsyncImagePipelineManager::HoldExternalImage(const wr::PipelineId& aPipelineId, 
 }
 
 void
-AsyncImagePipelineManager::Update(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch)
+AsyncImagePipelineManager::PipelineRendered(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch)
 {
   if (mDestroyed) {
     return;
@@ -391,18 +391,24 @@ AsyncImagePipelineManager::Update(const wr::PipelineId& aPipelineId, const wr::E
   if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
     PipelineTexturesHolder* holder = entry.Data();
     
-    if (holder->mDestroyedEpoch.isSome() && holder->mDestroyedEpoch.ref() <= aEpoch) {
-      entry.Remove();
-      return;
-    }
-
-    
     while (!holder->mTextureHosts.empty()) {
       if (aEpoch <= holder->mTextureHosts.front().mEpoch) {
         break;
       }
       holder->mTextureHosts.pop();
     }
+  }
+}
+
+void
+AsyncImagePipelineManager::PipelineRemoved(const wr::PipelineId& aPipelineId)
+{
+  if (mDestroyed) {
+    return;
+  }
+  if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
+    
+    entry.Remove();
   }
 }
 
