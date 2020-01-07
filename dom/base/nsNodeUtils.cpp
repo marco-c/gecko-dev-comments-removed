@@ -442,22 +442,9 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       Element* cloneElem = clone->AsElement();
       RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
       CustomElementData* data = elem->GetCustomElementData();
+      RefPtr<nsAtom> typeAtom = data ? data->GetCustomElementType() : nullptr;
 
-      
-      
-      nsAutoString extension;
-      if (!data || data->GetCustomElementType() != tagAtom) {
-        cloneElem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension);
-      }
-
-      if ((data && data->GetCustomElementType() == tagAtom) ||
-          !extension.IsEmpty()) {
-        
-        
-        
-        
-        
-        RefPtr<nsAtom> typeAtom = extension.IsEmpty() ? tagAtom : NS_Atomize(extension);
+      if (typeAtom) {
         cloneElem->SetCustomElementData(new CustomElementData(typeAtom));
 
         MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
