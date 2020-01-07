@@ -294,7 +294,7 @@ void run_loopback_duplex_test(bool is_float)
     cleanup_stream_at_exit(stream, cubeb_stream_destroy);
 
   cubeb_stream_start(stream);
-  delay(150);
+  delay(300);
   cubeb_stream_stop(stream);
 
   
@@ -377,7 +377,7 @@ void run_loopback_separate_streams_test(bool is_float)
 
   cubeb_stream_start(input_stream);
   cubeb_stream_start(output_stream);
-  delay(150);
+  delay(300);
   cubeb_stream_stop(output_stream);
   cubeb_stream_stop(input_stream);
 
@@ -444,7 +444,7 @@ void run_loopback_silence_test(bool is_float)
     cleanup_input_stream_at_exit(input_stream, cubeb_stream_destroy);
 
   cubeb_stream_start(input_stream);
-  delay(50);
+  delay(300);
   cubeb_stream_stop(input_stream);
 
   
@@ -453,7 +453,7 @@ void run_loopback_silence_test(bool is_float)
 
   
   ASSERT_GE(input_frames.size(), SAMPLE_FREQUENCY / 20);
-  double EPISILON = 0.000001;
+  double EPISILON = 0.0001;
   
 
   for (double frame : input_frames) {
@@ -544,7 +544,7 @@ void run_loopback_device_selection_test(bool is_float)
 
   cubeb_stream_start(input_stream);
   cubeb_stream_start(output_stream);
-  delay(150);
+  delay(300);
   cubeb_stream_stop(output_stream);
   cubeb_stream_stop(input_stream);
 

@@ -9,79 +9,26 @@
 #define CUBEB_MIXER
 
 #include "cubeb/cubeb.h" 
-#include <stdbool.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-typedef enum {
-  CHANNEL_INVALID = -1,
-  CHANNEL_MONO = 0,
-  CHANNEL_LEFT,
-  CHANNEL_RIGHT,
-  CHANNEL_CENTER,
-  CHANNEL_LS,
-  CHANNEL_RS,
-  CHANNEL_RLS,
-  CHANNEL_RCENTER,
-  CHANNEL_RRS,
-  CHANNEL_LFE,
-  CHANNEL_UNMAPPED,
-  CHANNEL_MAX = 256 
-} cubeb_channel;
-
-static cubeb_channel const CHANNEL_INDEX_TO_ORDER[CUBEB_LAYOUT_MAX][CHANNEL_MAX] = {
-  { CHANNEL_INVALID },                                                                                            
-  { CHANNEL_LEFT, CHANNEL_RIGHT },                                                                                
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_LFE },                                                                   
-  { CHANNEL_MONO },                                                                                               
-  { CHANNEL_MONO, CHANNEL_LFE },                                                                                  
-  { CHANNEL_LEFT, CHANNEL_RIGHT },                                                                                
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_LFE },                                                                   
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER },                                                                
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LFE },                                                   
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_RCENTER },                                                               
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_LFE, CHANNEL_RCENTER },                                                  
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_RCENTER },                                               
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LFE, CHANNEL_RCENTER },                                  
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_LS, CHANNEL_RS },                                                        
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_LFE, CHANNEL_LS, CHANNEL_RS },                                           
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LS, CHANNEL_RS },                                        
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LFE, CHANNEL_LS, CHANNEL_RS },                           
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LFE, CHANNEL_RCENTER, CHANNEL_LS, CHANNEL_RS },          
-  { CHANNEL_LEFT, CHANNEL_RIGHT, CHANNEL_CENTER, CHANNEL_LFE, CHANNEL_RLS, CHANNEL_RRS, CHANNEL_LS, CHANNEL_RS }  
-  
-  
-};
-
-typedef struct {
-  unsigned int channels;
-  cubeb_channel map[CHANNEL_MAX];
-} cubeb_channel_map;
-
-cubeb_channel_layout cubeb_channel_map_to_layout(cubeb_channel_map const * channel_map);
-
-bool cubeb_should_upmix(cubeb_stream_params const * stream, cubeb_stream_params const * mixer);
-
-bool cubeb_should_downmix(cubeb_stream_params const * stream, cubeb_stream_params const * mixer);
-
-bool cubeb_should_mix(cubeb_stream_params const * stream, cubeb_stream_params const * mixer);
-
-typedef enum {
-  CUBEB_MIXER_DIRECTION_DOWNMIX = 0x01,
-  CUBEB_MIXER_DIRECTION_UPMIX   = 0x02,
-} cubeb_mixer_direction;
-
 typedef struct cubeb_mixer cubeb_mixer;
 cubeb_mixer * cubeb_mixer_create(cubeb_sample_format format,
-                                 unsigned char direction);
+                                 uint32_t in_channels,
+                                 cubeb_channel_layout in_layout,
+                                 uint32_t out_channels,
+                                 cubeb_channel_layout out_layout);
 void cubeb_mixer_destroy(cubeb_mixer * mixer);
-void cubeb_mixer_mix(cubeb_mixer * mixer, long frames,
-                     void * input_buffer, unsigned long input_buffer_length,
-                     void * output_buffer, unsigned long output_buffer_length,
-                     cubeb_stream_params const * stream_params,
-                     cubeb_stream_params const * mixer_params);
+int cubeb_mixer_mix(cubeb_mixer * mixer,
+                    size_t frames,
+                    const void * input_buffer,
+                    size_t input_buffer_size,
+                    void * output_buffer,
+                    size_t output_buffer_size);
+
+unsigned int cubeb_channel_layout_nb_channels(cubeb_channel_layout channel_layout);
 
 #if defined(__cplusplus)
 }

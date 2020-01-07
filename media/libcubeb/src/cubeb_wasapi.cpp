@@ -135,32 +135,6 @@ private:
   T * ptr = nullptr;
 };
 
-struct auto_com {
-  auto_com() {
-    result = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-  }
-  ~auto_com() {
-    if (result == RPC_E_CHANGED_MODE) {
-      
-      
-      LOG("COM was already initialized in STA.");
-    } else if (result == S_FALSE) {
-      
-      
-      
-      LOG("COM was already initialized in MTA");
-    }
-    if (SUCCEEDED(result)) {
-      CoUninitialize();
-    }
-  }
-  bool ok() {
-    return result == RPC_E_CHANGED_MODE || SUCCEEDED(result);
-  }
-private:
-  HRESULT result;
-};
-
 extern cubeb_ops const wasapi_ops;
 
 int wasapi_stream_stop(cubeb_stream * stm);
@@ -274,7 +248,8 @@ struct cubeb_stream {
   
   std::unique_ptr<cubeb_resampler, decltype(&cubeb_resampler_destroy)> resampler = { nullptr, cubeb_resampler_destroy };
   
-  std::unique_ptr<cubeb_mixer, decltype(&cubeb_mixer_destroy)> mixer = { nullptr, cubeb_mixer_destroy };
+  std::unique_ptr<cubeb_mixer, decltype(&cubeb_mixer_destroy)> output_mixer = { nullptr, cubeb_mixer_destroy };
+  std::unique_ptr<cubeb_mixer, decltype(&cubeb_mixer_destroy)> input_mixer = { nullptr, cubeb_mixer_destroy };
   
   std::vector<BYTE> mix_buffer;
   
@@ -425,61 +400,11 @@ double stream_to_mix_samplerate_ratio(cubeb_stream_params & stream, cubeb_stream
 
 
 
-#define MASK_DUAL_MONO      (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT)
-#define MASK_DUAL_MONO_LFE  (MASK_DUAL_MONO | SPEAKER_LOW_FREQUENCY)
-#define MASK_MONO           (KSAUDIO_SPEAKER_MONO)
-#define MASK_MONO_LFE       (MASK_MONO | SPEAKER_LOW_FREQUENCY)
-#define MASK_STEREO         (KSAUDIO_SPEAKER_STEREO)
-#define MASK_STEREO_LFE     (MASK_STEREO | SPEAKER_LOW_FREQUENCY)
-#define MASK_3F             (MASK_STEREO | SPEAKER_FRONT_CENTER)
-#define MASK_3F_LFE         (MASK_3F | SPEAKER_LOW_FREQUENCY)
-#define MASK_2F1            (MASK_STEREO | SPEAKER_BACK_CENTER)
-#define MASK_2F1_LFE        (MASK_2F1 | SPEAKER_LOW_FREQUENCY)
-#define MASK_3F1            (KSAUDIO_SPEAKER_SURROUND)
-#define MASK_3F1_LFE        (MASK_3F1 | SPEAKER_LOW_FREQUENCY)
-#define MASK_2F2            (MASK_STEREO | SPEAKER_SIDE_LEFT | SPEAKER_SIDE_RIGHT)
-#define MASK_2F2_LFE        (MASK_2F2 | SPEAKER_LOW_FREQUENCY)
-#define MASK_3F2            (MASK_3F | SPEAKER_SIDE_LEFT | SPEAKER_SIDE_RIGHT)
-#define MASK_3F2_LFE        (KSAUDIO_SPEAKER_5POINT1_SURROUND)
-#define MASK_3F3R_LFE       (MASK_3F2_LFE | SPEAKER_BACK_CENTER)
-#define MASK_3F4_LFE        (KSAUDIO_SPEAKER_7POINT1_SURROUND)
-
-static DWORD
-channel_layout_to_mask(cubeb_channel_layout layout)
-{
-  XASSERT(layout < CUBEB_LAYOUT_MAX && "invalid conversion.");
-
-  
-  
-  
-  static DWORD map[CUBEB_LAYOUT_MAX] = {
-    KSAUDIO_SPEAKER_DIRECTOUT, 
-    MASK_DUAL_MONO,            
-    MASK_DUAL_MONO_LFE,        
-    MASK_MONO,                 
-    MASK_MONO_LFE,             
-    MASK_STEREO,               
-    MASK_STEREO_LFE,           
-    MASK_3F,                   
-    MASK_3F_LFE,               
-    MASK_2F1,                  
-    MASK_2F1_LFE,              
-    MASK_3F1,                  
-    MASK_3F1_LFE,              
-    MASK_2F2,                  
-    MASK_2F2_LFE,              
-    MASK_3F2,                  
-    MASK_3F2_LFE,              
-    MASK_3F3R_LFE,             
-    MASK_3F4_LFE,              
-  };
-  return map[layout];
-}
 
 cubeb_channel_layout
 mask_to_channel_layout(WAVEFORMATEX const * fmt)
 {
-  DWORD mask = 0;
+  cubeb_channel_layout mask = 0;
 
   if (fmt->wFormatTag == WAVE_FORMAT_EXTENSIBLE) {
     WAVEFORMATEXTENSIBLE const * ext = reinterpret_cast<WAVEFORMATEXTENSIBLE const *>(fmt);
@@ -487,44 +412,12 @@ mask_to_channel_layout(WAVEFORMATEX const * fmt)
   } else if (fmt->wFormatTag == WAVE_FORMAT_PCM ||
              fmt->wFormatTag == WAVE_FORMAT_IEEE_FLOAT) {
     if (fmt->nChannels == 1) {
-      mask = MASK_MONO;
+      mask = CHANNEL_FRONT_CENTER;
     } else if (fmt->nChannels == 2) {
-      mask = MASK_STEREO;
+      mask = CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT;
     }
   }
-
-  switch (mask) {
-    
-    case MASK_MONO: return CUBEB_LAYOUT_MONO;
-    case MASK_MONO_LFE: return CUBEB_LAYOUT_MONO_LFE;
-    case MASK_STEREO: return CUBEB_LAYOUT_STEREO;
-    case MASK_STEREO_LFE: return CUBEB_LAYOUT_STEREO_LFE;
-    case MASK_3F: return CUBEB_LAYOUT_3F;
-    case MASK_3F_LFE: return CUBEB_LAYOUT_3F_LFE;
-    case MASK_2F1: return CUBEB_LAYOUT_2F1;
-    case MASK_2F1_LFE: return CUBEB_LAYOUT_2F1_LFE;
-    case MASK_3F1: return CUBEB_LAYOUT_3F1;
-    case MASK_3F1_LFE: return CUBEB_LAYOUT_3F1_LFE;
-    case MASK_2F2: return CUBEB_LAYOUT_2F2;
-    
-    
-    
-    
-    
-    case KSAUDIO_SPEAKER_QUAD: return CUBEB_LAYOUT_2F2;
-    case MASK_2F2_LFE: return CUBEB_LAYOUT_2F2_LFE;
-    case MASK_3F2: return CUBEB_LAYOUT_3F2;
-    case MASK_3F2_LFE: return CUBEB_LAYOUT_3F2_LFE;
-    
-    
-    
-    
-    
-    case KSAUDIO_SPEAKER_5POINT1: return CUBEB_LAYOUT_3F2_LFE;
-    case MASK_3F3R_LFE: return CUBEB_LAYOUT_3F3R_LFE;
-    case MASK_3F4_LFE: return CUBEB_LAYOUT_3F4_LFE;
-    default: return CUBEB_LAYOUT_UNDEFINED;
-  }
+  return mask;
 }
 
 uint32_t
@@ -574,7 +467,7 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
 
   void * dest = nullptr;
   if (has_output(stm) && !stm->has_dummy_output) {
-    if (cubeb_should_mix(&stm->output_stream_params, &stm->output_mix_params)) {
+    if (stm->output_mixer) {
       dest = stm->mix_buffer.data();
     } else {
       dest = output_buffer;
@@ -595,7 +488,10 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
   }
 
   
-  if (out_frames < output_frames_needed) {
+
+
+  if ((out_frames < output_frames_needed) ||
+      (!has_output(stm) && out_frames < input_frames_count)) {
     LOG("start draining.");
     stm->draining = true;
   }
@@ -605,14 +501,22 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
   XASSERT(out_frames == output_frames_needed || stm->draining || !has_output(stm) || stm->has_dummy_output);
 
   
-  if (!stm->has_dummy_output && has_output(stm) && cubeb_should_mix(&stm->output_stream_params, &stm->output_mix_params)) {
+  if (!stm->has_dummy_output && has_output(stm) && stm->output_mixer) {
     XASSERT(dest == stm->mix_buffer.data());
-    unsigned long dest_len = out_frames * stm->output_stream_params.channels;
-    XASSERT(dest_len <= stm->mix_buffer.size() / stm->bytes_per_sample);
-    unsigned long output_buffer_len = out_frames * stm->output_mix_params.channels;
-    cubeb_mixer_mix(stm->mixer.get(), out_frames,
-                    dest, dest_len, output_buffer, output_buffer_len,
-                    &stm->output_stream_params, &stm->output_mix_params);
+    size_t dest_size =
+      out_frames * stm->output_stream_params.channels * stm->bytes_per_sample;
+    XASSERT(dest_size <= stm->mix_buffer.size());
+    size_t output_buffer_size =
+      out_frames * stm->output_mix_params.channels * stm->bytes_per_sample;
+    int ret = cubeb_mixer_mix(stm->output_mixer.get(),
+                              out_frames,
+                              dest,
+                              dest_size,
+                              output_buffer,
+                              output_buffer_size);
+    if (ret < 0) {
+      LOG("Error remixing content (%d)", ret);
+    }
   }
 
   return out_frames;
@@ -655,9 +559,9 @@ bool get_input_buffer(cubeb_stream * stm)
       return false;
     }
 
-    UINT32 packet_size;
+    UINT32 frames;
     hr = stm->capture_client->GetBuffer(&input_packet,
-                                        &packet_size,
+                                        &frames,
                                         &flags,
                                         &dev_pos,
                                         NULL);
@@ -665,7 +569,9 @@ bool get_input_buffer(cubeb_stream * stm)
       LOG("GetBuffer failed for capture: %lx", hr);
       return false;
     }
-    XASSERT(packet_size == next);
+    XASSERT(frames == next);
+
+    UINT32 input_stream_samples = frames * stm->input_stream_params.channels;
     
     
     
@@ -682,32 +588,38 @@ bool get_input_buffer(cubeb_stream * stm)
     
     
     if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-      LOG("insert silence: ps=%u", packet_size);
-      stm->linear_input_buffer->push_silence(packet_size * stm->input_stream_params.channels);
+      LOG("insert silence: ps=%u", frames);
+      stm->linear_input_buffer->push_silence(input_stream_samples);
     } else {
-      if (cubeb_should_mix(&stm->input_mix_params, &stm->input_stream_params)) {
-        bool ok = stm->linear_input_buffer->reserve(stm->linear_input_buffer->length() +
-                                                   packet_size * stm->input_stream_params.channels);
+      if (stm->input_mixer) {
+        bool ok = stm->linear_input_buffer->reserve(
+          stm->linear_input_buffer->length() + input_stream_samples);
         XASSERT(ok);
-        unsigned long input_packet_length = packet_size * stm->input_mix_params.channels;
-        unsigned long linear_input_buffer_length = packet_size * stm->input_stream_params.channels;
-        cubeb_mixer_mix(stm->mixer.get(), packet_size,
-                        input_packet, input_packet_length,
-                        stm->linear_input_buffer->end(), linear_input_buffer_length,
-                        &stm->input_mix_params,
-                        &stm->input_stream_params);
-        stm->linear_input_buffer->set_length(stm->linear_input_buffer->length() + linear_input_buffer_length);
+        size_t input_packet_size =
+          frames * stm->input_mix_params.channels *
+          cubeb_sample_size(stm->input_mix_params.format);
+        size_t linear_input_buffer_size =
+          input_stream_samples *
+          cubeb_sample_size(stm->input_stream_params.format);
+        cubeb_mixer_mix(stm->input_mixer.get(),
+                        frames,
+                        input_packet,
+                        input_packet_size,
+                        stm->linear_input_buffer->end(),
+                        linear_input_buffer_size);
+        stm->linear_input_buffer->set_length(
+          stm->linear_input_buffer->length() + input_stream_samples);
       } else {
-        stm->linear_input_buffer->push(input_packet,
-                                      packet_size * stm->input_stream_params.channels);
+        stm->linear_input_buffer->push(
+          input_packet, input_stream_samples);
       }
     }
-    hr = stm->capture_client->ReleaseBuffer(packet_size);
+    hr = stm->capture_client->ReleaseBuffer(frames);
     if (FAILED(hr)) {
       LOG("FAILED to release intput buffer");
       return false;
     }
-    offset += packet_size;
+    offset += input_stream_samples;
   }
 
   XASSERT(stm->linear_input_buffer->length() >= offset);
@@ -904,7 +816,7 @@ refill_callback_output(cubeb_stream * stm)
         output_frames, got);
 
   XASSERT(got >= 0);
-  XASSERT((unsigned long) got == output_frames || stm->draining);
+  XASSERT(size_t(got) == output_frames || stm->draining);
 
   hr = stm->render_client->ReleaseBuffer(got, 0);
   if (FAILED(hr)) {
@@ -912,7 +824,7 @@ refill_callback_output(cubeb_stream * stm)
     return false;
   }
 
-  return (unsigned long) got == output_frames || stm->draining;
+  return size_t(got) == output_frames || stm->draining;
 }
 
 static unsigned int __stdcall
@@ -931,12 +843,15 @@ wasapi_stream_render_loop(LPVOID stream)
   HANDLE mmcss_handle = NULL;
   HRESULT hr = 0;
   DWORD mmcss_task_index = 0;
-  auto_com com;
-  if (!com.ok()) {
-    LOG("COM initialization failed on render_loop thread.");
-    stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
-    return 0;
-  }
+  struct auto_com {
+    auto_com() {
+      HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+      XASSERT(SUCCEEDED(hr));
+    }
+    ~auto_com() {
+      CoUninitialize();
+    }
+  } com;
 
   
 
@@ -1079,6 +994,7 @@ HRESULT register_notification_client(cubeb_stream * stm)
                                 IID_PPV_ARGS(stm->device_enumerator.receive()));
   if (FAILED(hr)) {
     LOG("Could not get device enumerator: %lx", hr);
+    XASSERT(hr != CO_E_NOTINITIALIZED);
     return hr;
   }
 
@@ -1125,6 +1041,7 @@ HRESULT get_endpoint(com_ptr<IMMDevice> & device, LPCWSTR devid)
                                 IID_PPV_ARGS(enumerator.receive()));
   if (FAILED(hr)) {
     LOG("Could not get device enumerator: %lx", hr);
+    XASSERT(hr != CO_E_NOTINITIALIZED);
     return hr;
   }
 
@@ -1145,6 +1062,7 @@ HRESULT get_default_endpoint(com_ptr<IMMDevice> & device, EDataFlow direction)
                                 IID_PPV_ARGS(enumerator.receive()));
   if (FAILED(hr)) {
     LOG("Could not get device enumerator: %lx", hr);
+    XASSERT(hr != CO_E_NOTINITIALIZED);
     return hr;
   }
   hr = enumerator->GetDefaultAudioEndpoint(direction, eConsole, device.receive());
@@ -1229,17 +1147,11 @@ stream_set_volume(cubeb_stream * stm, float volume)
 extern "C" {
 int wasapi_init(cubeb ** context, char const * context_name)
 {
-  HRESULT hr;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
-
   
 
 
   com_ptr<IMMDevice> device;
-  hr = get_default_endpoint(device, eRender);
+  HRESULT hr = get_default_endpoint(device, eRender);
   if (FAILED(hr)) {
     LOG("Could not get device: %lx", hr);
     return CUBEB_ERROR;
@@ -1334,16 +1246,10 @@ char const * wasapi_get_backend_id(cubeb * context)
 int
 wasapi_get_max_channel_count(cubeb * ctx, uint32_t * max_channels)
 {
-  HRESULT hr;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
-
   XASSERT(ctx && max_channels);
 
   com_ptr<IMMDevice> device;
-  hr = get_default_endpoint(device, eRender);
+  HRESULT hr = get_default_endpoint(device, eRender);
   if (FAILED(hr)) {
     return CUBEB_ERROR;
   }
@@ -1371,19 +1277,12 @@ wasapi_get_max_channel_count(cubeb * ctx, uint32_t * max_channels)
 int
 wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * latency_frames)
 {
-  HRESULT hr;
-  REFERENCE_TIME default_period;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
-
   if (params.format != CUBEB_SAMPLE_FLOAT32NE && params.format != CUBEB_SAMPLE_S16NE) {
     return CUBEB_ERROR_INVALID_FORMAT;
   }
 
   com_ptr<IMMDevice> device;
-  hr = get_default_endpoint(device, eRender);
+  HRESULT hr = get_default_endpoint(device, eRender);
   if (FAILED(hr)) {
     LOG("Could not get default endpoint: %lx", hr);
     return CUBEB_ERROR;
@@ -1399,6 +1298,7 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
   }
 
   
+  REFERENCE_TIME default_period;
   hr = client->GetDevicePeriod(&default_period, NULL);
   if (FAILED(hr)) {
     LOG("Could not get device period: %lx", hr);
@@ -1421,14 +1321,8 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
 int
 wasapi_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
 {
-  HRESULT hr;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
-
   com_ptr<IMMDevice> device;
-  hr = get_default_endpoint(device, eRender);
+  HRESULT hr = get_default_endpoint(device, eRender);
   if (FAILED(hr)) {
     return CUBEB_ERROR;
   }
@@ -1451,43 +1345,6 @@ wasapi_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
   *rate = mix_format->nSamplesPerSec;
 
   LOG("Preferred sample rate for output: %u", *rate);
-
-  return CUBEB_OK;
-}
-
-int
-wasapi_get_preferred_channel_layout(cubeb * context, cubeb_channel_layout * layout)
-{
-  HRESULT hr;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
-
-  com_ptr<IMMDevice> device;
-  hr = get_default_endpoint(device, eRender);
-  if (FAILED(hr)) {
-    return CUBEB_ERROR;
-  }
-
-  com_ptr<IAudioClient> client;
-  hr = device->Activate(__uuidof(IAudioClient),
-                        CLSCTX_INPROC_SERVER,
-                        NULL, client.receive_vpp());
-  if (FAILED(hr)) {
-    return CUBEB_ERROR;
-  }
-
-  WAVEFORMATEX * tmp = nullptr;
-  hr = client->GetMixFormat(&tmp);
-  if (FAILED(hr)) {
-    return CUBEB_ERROR;
-  }
-  com_heap_ptr<WAVEFORMATEX> mix_format(tmp);
-
-  *layout = mask_to_channel_layout(mix_format.get());
-
-  LOG("Preferred channel layout: %s", CUBEB_CHANNEL_LAYOUT_MAPS[*layout].name);
 
   return CUBEB_OK;
 }
@@ -1528,7 +1385,7 @@ handle_channel_layout(cubeb_stream * stm,  EDataFlow direction, com_heap_ptr<WAV
 
   
 
-  format_pcm->dwChannelMask = channel_layout_to_mask(stream_params->layout);
+  format_pcm->dwChannelMask = stream_params->layout;
   mix_format->nChannels = stream_params->channels;
   waveformatex_update_derived_properties(mix_format.get());
 
@@ -1648,6 +1505,7 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
     format_pcm->SubFormat = stm->waveformatextensible_sub_format;
   }
   waveformatex_update_derived_properties(mix_format.get());
+
   
 
 
@@ -1659,20 +1517,12 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
   mix_params->rate = mix_format->nSamplesPerSec;
   mix_params->channels = mix_format->nChannels;
   mix_params->layout = mask_to_channel_layout(mix_format.get());
-  if (mix_params->layout == CUBEB_LAYOUT_UNDEFINED) {
-    LOG("Stream using undefined layout! Any mixing may be unpredictable!\n");
-  } else if (mix_format->nChannels != CUBEB_CHANNEL_LAYOUT_MAPS[mix_params->layout].channels) {
-    
-    
-    
-    
-    LOG("Channel count is different from the layout standard!\n");
-  }
-  LOG("Setup requested=[f=%d r=%u c=%u l=%s] mix=[f=%d r=%u c=%u l=%s]",
+
+  LOG("Setup requested=[f=%d r=%u c=%u l=%u] mix=[f=%d r=%u c=%u l=%u]",
       stream_params->format, stream_params->rate, stream_params->channels,
-      CUBEB_CHANNEL_LAYOUT_MAPS[stream_params->layout].name,
+      stream_params->layout,
       mix_params->format, mix_params->rate, mix_params->channels,
-      CUBEB_CHANNEL_LAYOUT_MAPS[mix_params->layout].name);
+      mix_params->layout);
 
   DWORD flags = AUDCLNT_STREAMFLAGS_NOPERSIST;
 
@@ -1701,10 +1551,6 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
         " for %s %lx.", DIRECTION_NAME, hr);
     return CUBEB_ERROR;
   }
-  
-  if (has_output(stm) && cubeb_should_mix(stream_params, mix_params)) {
-    stm->mix_buffer.resize(frames_to_bytes_before_mix(stm, *buffer_frame_count));
-  }
 
   
   if (!is_loopback) {
@@ -1729,16 +1575,9 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
 
 int setup_wasapi_stream(cubeb_stream * stm)
 {
-  HRESULT hr;
   int rv;
 
   stm->stream_reset_lock.assert_current_thread_owns();
-
-  auto_com com;
-  if (!com.ok()) {
-    LOG("Failure to initialize COM.");
-    return CUBEB_ERROR;
-  }
 
   XASSERT((!stm->output_client || !stm->input_client) && "WASAPI stream already setup, close it first.");
 
@@ -1812,8 +1651,8 @@ int setup_wasapi_stream(cubeb_stream * stm)
       return rv;
     }
 
-    hr = stm->output_client->GetService(__uuidof(IAudioStreamVolume),
-                                        stm->audio_stream_volume.receive_vpp());
+    HRESULT hr = stm->output_client->GetService(__uuidof(IAudioStreamVolume),
+                                                stm->audio_stream_volume.receive_vpp());
     if (FAILED(hr)) {
       LOG("Could not get the IAudioStreamVolume: %lx", hr);
       return CUBEB_ERROR;
@@ -1881,6 +1720,39 @@ int setup_wasapi_stream(cubeb_stream * stm)
     stm->refill_callback = refill_callback_output;
   }
 
+  
+  if (has_input(stm) &&
+      ((stm->input_mix_params.layout != CUBEB_LAYOUT_UNDEFINED &&
+        stm->input_mix_params.layout != stm->input_stream_params.layout) ||
+       (stm->input_mix_params.channels != stm->input_stream_params.channels))) {
+    if (stm->input_mix_params.layout == CUBEB_LAYOUT_UNDEFINED) {
+      LOG("Input stream using undefined layout! Any mixing may be "
+          "unpredictable!\n");
+    }
+    stm->input_mixer.reset(cubeb_mixer_create(stm->input_stream_params.format,
+                                              stm->input_mix_params.channels,
+                                              stm->input_mix_params.layout,
+                                              stm->input_stream_params.channels,
+                                              stm->input_stream_params.layout));
+    assert(stm->input_mixer);
+  }
+
+  
+  if (has_output(stm) && stm->output_mix_params.layout != stm->output_stream_params.layout) {
+    if (stm->output_mix_params.layout == CUBEB_LAYOUT_UNDEFINED) {
+      LOG("Output stream using undefined layout! Any mixing may be unpredictable!\n");
+    }
+    stm->output_mixer.reset(cubeb_mixer_create(stm->output_stream_params.format,
+                                               stm->output_stream_params.channels,
+                                               stm->output_stream_params.layout,
+                                               stm->output_mix_params.channels,
+                                               stm->output_mix_params.layout));
+    assert(stm->output_mixer);
+    
+    stm->mix_buffer.resize(
+      frames_to_bytes_before_mix(stm, stm->output_buffer_frame_count));
+  }
+
   return CUBEB_OK;
 }
 
@@ -1894,12 +1766,7 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
                    unsigned int latency_frames, cubeb_data_callback data_callback,
                    cubeb_state_callback state_callback, void * user_ptr)
 {
-  HRESULT hr;
   int rv;
-  auto_com com;
-  if (!com.ok()) {
-    return CUBEB_ERROR;
-  }
 
   XASSERT(context && stream && (input_stream_params || output_stream_params));
 
@@ -1917,16 +1784,10 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
   if (input_stream_params) {
     stm->input_stream_params = *input_stream_params;
     stm->input_device = utf8_to_wstr(reinterpret_cast<char const *>(input_device));
-    
-    XASSERT(stm->input_stream_params.layout == CUBEB_LAYOUT_UNDEFINED ||
-            stm->input_stream_params.channels == CUBEB_CHANNEL_LAYOUT_MAPS[stm->input_stream_params.layout].channels);
   }
   if (output_stream_params) {
     stm->output_stream_params = *output_stream_params;
     stm->output_device = utf8_to_wstr(reinterpret_cast<char const *>(output_device));
-    
-    XASSERT(stm->output_stream_params.layout == CUBEB_LAYOUT_UNDEFINED ||
-            stm->output_stream_params.channels == CUBEB_CHANNEL_LAYOUT_MAPS[stm->output_stream_params.layout].channels);
   }
 
   switch (output_stream_params ? output_stream_params->format : input_stream_params->format) {
@@ -1943,9 +1804,6 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
     default:
       return CUBEB_ERROR_INVALID_FORMAT;
   }
-  stm->mixer.reset(cubeb_mixer_create(output_stream_params ? output_stream_params->format :
-                                                             input_stream_params->format,
-                                      CUBEB_MIXER_DIRECTION_DOWNMIX | CUBEB_MIXER_DIRECTION_UPMIX));
 
   stm->latency = latency_frames;
 
@@ -1979,7 +1837,7 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
     return rv;
   }
 
-  hr = register_notification_client(stm.get());
+  HRESULT hr = register_notification_client(stm.get());
   if (FAILED(hr)) {
     
 
@@ -2011,7 +1869,8 @@ void close_wasapi_stream(cubeb_stream * stm)
   stm->frames_written = 0;
 
   stm->resampler.reset();
-
+  stm->output_mixer.reset();
+  stm->input_mixer.reset();
   stm->mix_buffer.clear();
 }
 
@@ -2036,7 +1895,6 @@ void wasapi_stream_destroy(cubeb_stream * stm)
 
   
   
-  stm->mixer.reset();
   stm->linear_input_buffer.reset();
 
   {
@@ -2442,20 +2300,17 @@ static int
 wasapi_enumerate_devices(cubeb * context, cubeb_device_type type,
                          cubeb_device_collection * out)
 {
-  auto_com com;
   com_ptr<IMMDeviceEnumerator> enumerator;
   com_ptr<IMMDeviceCollection> collection;
   HRESULT hr;
   UINT cc, i;
   EDataFlow flow;
 
-  if (!com.ok())
-    return CUBEB_ERROR;
-
   hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-      CLSCTX_INPROC_SERVER, IID_PPV_ARGS(enumerator.receive()));
+                        CLSCTX_INPROC_SERVER, IID_PPV_ARGS(enumerator.receive()));
   if (FAILED(hr)) {
     LOG("Could not get device enumerator: %lx", hr);
+    XASSERT(hr != CO_E_NOTINITIALIZED);
     return CUBEB_ERROR;
   }
 
@@ -2519,7 +2374,6 @@ cubeb_ops const wasapi_ops = {
    wasapi_get_max_channel_count,
    wasapi_get_min_latency,
    wasapi_get_preferred_sample_rate,
-   wasapi_get_preferred_channel_layout,
    wasapi_enumerate_devices,
    wasapi_device_collection_destroy,
    wasapi_destroy,
