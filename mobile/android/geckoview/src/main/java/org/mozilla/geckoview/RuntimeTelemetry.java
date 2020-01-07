@@ -6,15 +6,7 @@
 
 package org.mozilla.geckoview;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
@@ -31,48 +23,6 @@ public final class RuntimeTelemetry {
     private final GeckoRuntime mRuntime;
     private final EventDispatcher mEventDispatcher;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ DATASET_BASE, DATASET_EXTENDED })
-    public @interface DatasetType {}
-
-    
-    
-
-
-    public static final int DATASET_BASE = 0;
-    
-
-
-    public static final int DATASET_EXTENDED = 1;
-
-    @IntDef(flag = true,
-            value = { SNAPSHOT_HISTOGRAMS, SNAPSHOT_KEYED_HISTOGRAMS,
-                      SNAPSHOT_SCALARS, SNAPSHOT_KEYED_SCALARS,
-                      SNAPSHOT_ALL })
-    public @interface SnapshotType {}
-
-    
-    
-
-
-    public static final int SNAPSHOT_HISTOGRAMS = 1 << 0;
-    
-
-
-    public static final int SNAPSHOT_KEYED_HISTOGRAMS = 1 << 1;
-    
-
-
-    public static final int SNAPSHOT_SCALARS = 1 << 2;
-    
-
-
-    public static final int SNAPSHOT_KEYED_SCALARS = 1 << 3;
-    
-
-
-    public static final int SNAPSHOT_ALL = (1 << 4) - 1;
-
      RuntimeTelemetry(final @NonNull GeckoRuntime runtime) {
         mRuntime = runtime;
         mEventDispatcher = EventDispatcher.getInstance();
@@ -86,31 +36,15 @@ public final class RuntimeTelemetry {
 
 
 
-    public void getSnapshots(
-          final @DatasetType int dataset,
-          final boolean clear,
-          final @NonNull GeckoResponse<GeckoBundle> response) {
-        getSnapshots(SNAPSHOT_ALL, dataset, clear, response);
-    }
-
-    
-
-
-
-
 
 
 
 
 
     public void getSnapshots(
-          final @SnapshotType int types,
-          final @DatasetType int dataset,
           final boolean clear,
           final @NonNull GeckoResponse<GeckoBundle> response) {
-        final GeckoBundle msg = new GeckoBundle(3);
-        msg.putInt("types", types);
-        msg.putInt("dataset", dataset);
+        final GeckoBundle msg = new GeckoBundle(1);
         msg.putBoolean("clear", clear);
 
         mEventDispatcher.dispatch("GeckoView:TelemetrySnapshots", msg,
