@@ -148,6 +148,11 @@ public:
   nsString mKey;
 };
 
+enum TimerPrecisionType {
+  All = 1,
+  RFPOnly = 2
+};
+
 class nsRFPService final : public nsIObserver
 {
 public:
@@ -156,12 +161,18 @@ public:
 
   static nsRFPService* GetOrCreate();
   static bool IsResistFingerprintingEnabled();
-  static bool IsTimerPrecisionReductionEnabled();
+  static bool IsTimerPrecisionReductionEnabled(TimerPrecisionType aType);
 
   
-  static double ReduceTimePrecisionAsMSecs(double aTime);
-  static double ReduceTimePrecisionAsUSecs(double aTime);
-  static double ReduceTimePrecisionAsSecs(double aTime);
+  static double ReduceTimePrecisionAsMSecs(
+    double aTime,
+    TimerPrecisionType aType = TimerPrecisionType::All);
+  static double ReduceTimePrecisionAsUSecs(
+    double aTime,
+    TimerPrecisionType aType = TimerPrecisionType::All);
+  static double ReduceTimePrecisionAsSecs(
+    double aTime,
+    TimerPrecisionType aType = TimerPrecisionType::All);
 
   
   
