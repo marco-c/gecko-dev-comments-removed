@@ -147,10 +147,25 @@ DocumentNeedsRestyle(
   if (!shell) {
     return true;
   }
+
+  nsPresContext* presContext = shell->GetPresContext();
+  MOZ_ASSERT(presContext);
+
   
   
   StyleSetHandle styleSet = shell->StyleSet();
   if (styleSet->StyleSheetsHaveChanged()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (presContext->HasPendingMediaQueryUpdates()) {
+    
     return true;
   }
 
@@ -167,7 +182,6 @@ DocumentNeedsRestyle(
     }
   }
 
-  nsPresContext* presContext = shell->GetPresContext();
   if (styleSet->IsServo()) {
     
     

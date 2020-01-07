@@ -306,13 +306,11 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mPendingSysColorChanged(false),
     mPendingThemeChanged(false),
     mPendingUIResolutionChanged(false),
-    mPendingMediaFeatureValuesChanged(false),
     mPrefChangePendingNeedsReflow(false),
     mIsEmulatingMedia(false),
     mIsGlyph(false),
     mUsesRootEMUnits(false),
     mUsesExChUnits(false),
-    mPendingViewportChange(false),
     mCounterStylesDirty(true),
     mFontFeatureValuesDirty(true),
     mSuppressResizeReflow(false),
@@ -741,7 +739,11 @@ nsPresContext::AppUnitsPerDevPixelChanged()
 
   if (HasCachedStyleData()) {
     
-    MediaFeatureValuesChanged(eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW);
+    MediaFeatureValuesChanged({
+      eRestyle_ForceDescendants,
+      NS_STYLE_HINT_REFLOW,
+      MediaFeatureChangeReason::ResolutionChange
+    });
   }
 
   mCurAppUnitsPerDevPixel = AppUnitsPerDevPixel();
@@ -1412,8 +1414,11 @@ nsPresContext::UpdateEffectiveTextZoom()
   if (mDocument->IsStyledByServo() || HasCachedStyleData()) {
     
     
-    MediaFeatureValuesChanged(eRestyle_ForceDescendants,
-                              NS_STYLE_HINT_REFLOW);
+    MediaFeatureValuesChanged({
+      eRestyle_ForceDescendants,
+      NS_STYLE_HINT_REFLOW,
+      MediaFeatureChangeReason::ZoomChange
+    });
   }
 }
 
@@ -1461,7 +1466,7 @@ nsPresContext::SetOverrideDPPX(float aDPPX)
     mOverrideDPPX = aDPPX;
 
     if (HasCachedStyleData()) {
-      MediaFeatureValuesChanged(nsRestyleHint(0), nsChangeHint(0));
+      MediaFeatureValuesChanged({ MediaFeatureChangeReason::ResolutionChange });
     }
   }
 }
@@ -1920,7 +1925,11 @@ nsPresContext::RefreshSystemMetrics()
   
   
   
-  MediaFeatureValuesChanged(eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW);
+  MediaFeatureValuesChanged({
+    eRestyle_ForceDescendants,
+    NS_STYLE_HINT_REFLOW,
+    MediaFeatureChangeReason::SystemMetricsChange,
+  });
 }
 
 void
@@ -2020,7 +2029,7 @@ nsPresContext::EmulateMedium(const nsAString& aMediaType)
 
   mMediaEmulated = NS_Atomize(mediaType);
   if (mMediaEmulated != previousMedium && mShell) {
-    MediaFeatureValuesChanged(nsRestyleHint(0), nsChangeHint(0));
+    MediaFeatureValuesChanged({ MediaFeatureChangeReason::MediumChange });
   }
 }
 
@@ -2029,7 +2038,7 @@ void nsPresContext::StopEmulatingMedium()
   nsAtom* previousMedium = Medium();
   mIsEmulatingMedia = false;
   if (Medium() != previousMedium) {
-    MediaFeatureValuesChanged(nsRestyleHint(0), nsChangeHint(0));
+    MediaFeatureValuesChanged({ MediaFeatureChangeReason::MediumChange });
   }
 }
 
@@ -2067,6 +2076,8 @@ nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
     return;
   }
 
+  
+  
   mUsesRootEMUnits = false;
   mUsesExChUnits = false;
   if (mShell->StyleSet()->IsGecko()) {
@@ -2108,49 +2119,50 @@ struct MediaFeatureHints
 };
 
 static bool
-MediaFeatureValuesChangedAllDocumentsCallback(nsIDocument* aDocument, void* aHints)
+MediaFeatureValuesChangedAllDocumentsCallback(nsIDocument* aDocument, void* aChange)
 {
-  MediaFeatureHints* hints = static_cast<MediaFeatureHints*>(aHints);
+  auto* change = static_cast<const MediaFeatureChange*>(aChange);
   if (nsIPresShell* shell = aDocument->GetShell()) {
     if (nsPresContext* pc = shell->GetPresContext()) {
-      pc->MediaFeatureValuesChangedAllDocuments(hints->restyleHint,
-                                                hints->changeHint);
+      pc->MediaFeatureValuesChangedAllDocuments(*change);
     }
   }
   return true;
 }
 
 void
-nsPresContext::MediaFeatureValuesChangedAllDocuments(nsRestyleHint aRestyleHint,
-                                                     nsChangeHint aChangeHint)
+nsPresContext::MediaFeatureValuesChangedAllDocuments(
+    const MediaFeatureChange& aChange)
 {
-    MediaFeatureValuesChanged(aRestyleHint, aChangeHint);
-    MediaFeatureHints hints = {
-      aRestyleHint,
-      aChangeHint
-    };
-
-    mDocument->EnumerateSubDocuments(MediaFeatureValuesChangedAllDocumentsCallback,
-                                     &hints);
+    MediaFeatureValuesChanged(aChange);
+    mDocument->EnumerateSubDocuments(
+      MediaFeatureValuesChangedAllDocumentsCallback,
+      const_cast<MediaFeatureChange*>(&aChange));
 }
 
 void
-nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
-                                         nsChangeHint aChangeHint)
+nsPresContext::FlushPendingMediaFeatureValuesChanged()
 {
-  mPendingMediaFeatureValuesChanged = false;
+  if (!mPendingMediaFeatureValuesChange) {
+    return;
+  }
+
+  MediaFeatureChange change = *mPendingMediaFeatureValuesChange;
+  mPendingMediaFeatureValuesChange.reset();
+
+  const bool viewportChanged =
+    bool(change.mReason & MediaFeatureChangeReason::ViewportChange);
+
 
   
   if (mShell) {
-    aRestyleHint |= mShell->
-      StyleSet()->MediumFeaturesChanged(mPendingViewportChange);
+    change.mRestyleHint |=
+      mShell->StyleSet()->MediumFeaturesChanged(viewportChanged);
   }
 
-  if (aRestyleHint || aChangeHint) {
-    RebuildAllStyleData(aChangeHint, aRestyleHint);
+  if (change.mRestyleHint || change.mChangeHint) {
+    RebuildAllStyleData(change.mChangeHint, change.mRestyleHint);
   }
-
-  mPendingViewportChange = false;
 
   if (!mShell || !mShell->DidInitialize()) {
     return;
@@ -2172,51 +2184,24 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   
   
 
-  if (!mDocument->MediaQueryLists().isEmpty()) {
-    
-    
-
-    
-    
-    nsTArray<RefPtr<mozilla::dom::MediaQueryList>> localMediaQueryLists;
-    for (auto* mql : mDocument->MediaQueryLists()) {
-      localMediaQueryLists.AppendElement(mql);
-    }
-
-    
-    for (const auto& mql : localMediaQueryLists) {
-      nsAutoMicroTask mt;
-      mql->MaybeNotify();
-    }
+  if (mDocument->MediaQueryLists().isEmpty()) {
+    return;
   }
-}
 
-void
-nsPresContext::PostMediaFeatureValuesChangedEvent()
-{
   
   
+
   
-  if (!mPendingMediaFeatureValuesChanged && mShell) {
-    nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod("nsPresContext::HandleMediaFeatureValuesChangedEvent",
-                        this, &nsPresContext::HandleMediaFeatureValuesChangedEvent);
-    nsresult rv =
-      Document()->Dispatch(TaskCategory::Other, ev.forget());
-    if (NS_SUCCEEDED(rv)) {
-      mPendingMediaFeatureValuesChanged = true;
-      mShell->SetNeedStyleFlush();
-    }
+  
+  nsTArray<RefPtr<mozilla::dom::MediaQueryList>> localMediaQueryLists;
+  for (auto* mql : mDocument->MediaQueryLists()) {
+    localMediaQueryLists.AppendElement(mql);
   }
-}
 
-void
-nsPresContext::HandleMediaFeatureValuesChangedEvent()
-{
   
-  
-  if (mPendingMediaFeatureValuesChanged && mShell) {
-    MediaFeatureValuesChanged(nsRestyleHint(0));
+  for (const auto& mql : localMediaQueryLists) {
+    nsAutoMicroTask mt;
+    mql->MaybeNotify();
   }
 }
 
@@ -2231,12 +2216,14 @@ NotifyTabSizeModeChanged(TabParent* aTab, void* aArg)
 void
 nsPresContext::SizeModeChanged(nsSizeMode aSizeMode)
 {
-  if (HasCachedStyleData()) {
-    nsContentUtils::CallOnAllRemoteChildren(mDocument->GetWindow(),
-                                            NotifyTabSizeModeChanged,
-                                            &aSizeMode);
-    MediaFeatureValuesChangedAllDocuments(nsRestyleHint(0));
+  if (!HasCachedStyleData()) {
+    return;
   }
+
+  nsContentUtils::CallOnAllRemoteChildren(mDocument->GetWindow(),
+                                          NotifyTabSizeModeChanged,
+                                          &aSizeMode);
+  MediaFeatureValuesChangedAllDocuments({ MediaFeatureChangeReason::SizeModeChange });
 }
 
 nsCompatibility
