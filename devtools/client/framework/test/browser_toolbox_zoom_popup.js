@@ -8,6 +8,7 @@
 const {Toolbox} = require("devtools/client/framework/toolbox");
 
 
+
 const TEST_URL = "data:text/html;charset=utf-8,<iframe/>";
 
 add_task(async function() {
@@ -37,8 +38,10 @@ add_task(async function() {
 
   info("Resizing and moving the toolbox window in order to display the chevron menu.");
   
+  
   hostWindow.moveTo(0, 0);
 
+  
   
   const prevTabs = toolbox.doc.querySelectorAll(".devtools-tab").length;
   hostWindow.resizeTo(400, hostWindow.outerHeight);
@@ -58,15 +61,35 @@ add_task(async function() {
      inspector.panelDoc.querySelector(".all-tabs-menu")];
 
   for (const menu of menuList) {
-    const [btnRect, menuRect] = await getButtonAndMenuRects(toolbox, menu);
+    const { buttonBounds, menuType, menuBounds, arrowBounds } =
+      await getButtonAndMenuInfo(toolbox.doc, menu);
 
-    
-    
-    
-    const xDelta = Math.abs(menuRect.left - btnRect.left);
-    const yDelta = Math.abs(menuRect.top - btnRect.bottom);
-    ok(xDelta < 2, "xDelta is lower than 2: " + xDelta + ". #" + menu.id);
-    ok(yDelta < 6, "yDelta is lower than 6: " + yDelta + ". #" + menu.id);
+    switch (menuType) {
+      case "native":
+        {
+          
+          
+          
+          
+          const xDelta = Math.abs(menuBounds.left - buttonBounds.left);
+          const yDelta = Math.abs(menuBounds.top - buttonBounds.bottom);
+          ok(xDelta < 2, "xDelta is lower than 2: " + xDelta + ". #" + menu.id);
+          ok(yDelta < 6, "yDelta is lower than 6: " + yDelta + ". #" + menu.id);
+        }
+        break;
+
+      case "doorhanger":
+        {
+          
+          
+          const buttonCenter = buttonBounds.left + buttonBounds.width / 2;
+          const arrowCenter = arrowBounds.left + arrowBounds.width / 2;
+          const delta = Math.abs(arrowCenter - buttonCenter);
+          ok(delta < 1, "Center of arrow is within 1px of button center" +
+             ` (delta: ${delta})`);
+        }
+        break;
+    }
   }
 
   const onResize = once(hostWindow, "resize");
@@ -83,25 +106,57 @@ add_task(async function() {
 
 
 
-async function getButtonAndMenuRects(toolbox, menuButton) {
+
+
+
+
+
+
+
+
+
+
+
+async function getButtonAndMenuInfo(doc, menuButton) {
   info("Show popup menu with click event.");
   menuButton.click();
 
-  const popupset = toolbox.doc.querySelector("popupset");
   let menuPopup;
-  await waitUntil(() => {
-    menuPopup = popupset.querySelector("menupopup[menu-api=\"true\"]");
-    return !!menuPopup && menuPopup.state === "open";
-  });
+  let menuType;
+  let arrowBounds = null;
+  if (menuButton.hasAttribute("aria-controls")) {
+    menuType = "doorhanger";
+    menuPopup = doc.getElementById(menuButton.getAttribute("aria-controls"));
+    await waitUntil(() => menuPopup.classList.contains("tooltip-visible"));
+  } else {
+    menuType = "native";
+    const popupset = doc.querySelector("popupset");
+    await waitUntil(() => {
+      menuPopup = popupset.querySelector("menupopup[menu-api=\"true\"]");
+      return !!menuPopup && menuPopup.state === "open";
+    });
+  }
   ok(menuPopup, "Menu popup is displayed.");
 
-  const btnRect = menuButton.getBoxQuads({relativeTo: toolbox.doc})[0].getBounds();
-  const menuRect = menuPopup.getBoxQuads({relativeTo: toolbox.doc})[0].getBounds();
+  const buttonBounds = menuButton
+    .getBoxQuads({ relativeTo: doc })[0]
+    .getBounds();
+  const menuBounds = menuPopup.getBoxQuads({ relativeTo: doc })[0].getBounds();
+
+  if (menuType === "doorhanger") {
+    const arrow = menuPopup.querySelector(".tooltip-arrow");
+    arrowBounds = arrow.getBoxQuads({ relativeTo: doc })[0].getBounds();
+  }
 
   info("Hide popup menu.");
-  const onPopupHidden = once(menuPopup, "popuphidden");
-  menuPopup.hidePopup();
-  await onPopupHidden;
+  if (menuType === "doorhanger") {
+    EventUtils.sendKey("Escape", doc.defaultView);
+    await waitUntil(() => !menuPopup.classList.contains("tooltip-visible"));
+  } else {
+    const popupHidden = once(menuPopup, "popuphidden");
+    menuPopup.hidePopup();
+    await popupHidden;
+  }
 
-  return [btnRect, menuRect];
+  return { buttonBounds, menuType, menuBounds, arrowBounds };
 }
