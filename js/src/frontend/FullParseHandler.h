@@ -97,9 +97,6 @@ class FullParseHandler
     
     SourceKind sourceKind() const { return sourceKind_; }
 
-    ParseNode* freeTree(ParseNode* pn) { return allocator.freeTree(pn); }
-    void prepareNodeForMutation(ParseNode* pn) { return allocator.prepareNodeForMutation(pn); }
-
     ParseNode* newName(PropertyName* name, const TokenPos& pos, JSContext* cx)
     {
         return new_<NameNode>(ParseNodeKind::Name, JSOP_GETNAME, name, pos);
