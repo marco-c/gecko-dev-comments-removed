@@ -6,9 +6,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var EXPORTED_SYMBOLS = ["sendMessageToJava", "Messaging", "EventDispatcher"];
-
-ChromeUtils.defineModuleGetter(this, "Task", "resource://gre/modules/Task.jsm");
+var EXPORTED_SYMBOLS = ["EventDispatcher"];
 
 XPCOMUtils.defineLazyServiceGetter(this, "UUIDGen",
                                    "@mozilla.org/uuid-generator;1",
@@ -16,18 +14,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "UUIDGen",
 
 const IS_PARENT_PROCESS = (Services.appinfo.processType ==
                            Services.appinfo.PROCESS_TYPE_DEFAULT);
-
-function sendMessageToJava(aMessage, aCallback) {
-  Cu.reportError("sendMessageToJava is deprecated. Use EventDispatcher instead.");
-
-  if (aCallback) {
-    EventDispatcher.instance.sendRequestForResult(aMessage)
-      .then(result => aCallback(result, null),
-            error => aCallback(null, error));
-  } else {
-    EventDispatcher.instance.sendRequest(aMessage);
-  }
-}
 
 function DispatcherDelegate(aDispatcher, aMessageManager) {
   this._dispatcher = aDispatcher;
@@ -106,10 +92,6 @@ DispatcherDelegate.prototype = {
 
 
 
-  
-
-
-
 
   sendRequest: function(msg, callback) {
     let type = msg.type;
@@ -133,81 +115,6 @@ DispatcherDelegate.prototype = {
         onError: reject,
       });
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addListener: function(listener, event) {
-    if (this._requestHandler.listeners[event]) {
-      throw new Error("Error in addListener: A listener already exists for event " + event);
-    }
-    if (typeof listener !== "function") {
-      throw new Error("Error in addListener: Listener must be a function for event " + event);
-    }
-
-    this._requestHandler.listeners[event] = listener;
-    this.registerListener(this._requestHandler, event);
-  },
-
-  
-
-
-
-
-  removeListener: function(event) {
-    if (!this._requestHandler.listeners[event]) {
-      throw new Error("Error in removeListener: There is no listener for event " + event);
-    }
-
-    this._requestHandler.listeners[event] = undefined;
-    this.unregisterListener(this._requestHandler, event);
-  },
-
-  _requestHandler: {
-    listeners: {},
-
-    onEvent: function(event, data, callback) {
-      let self = this;
-      Task.spawn(function* () {
-        return yield self.listeners[event](data.data);
-      }).then(response => {
-        callback.onSuccess(response);
-      }, e => {
-        Cu.reportError("Error in Messaging handler for " + event + ": " + e);
-        callback.onError({
-          message: e.message || (e && e.toString()),
-          stack: e.stack || Components.stack.formattedStack,
-        });
-      });
-    },
   },
 };
 
@@ -283,33 +190,3 @@ if (IS_PARENT_PROCESS) {
   Services.mm.addMessageListener("GeckoView:Messaging", EventDispatcher);
   Services.ppmm.addMessageListener("GeckoView:Messaging", EventDispatcher);
 }
-
-
-var Messaging = {};
-
-function _addMessagingGetter(name) {
-  Messaging[name] = function() {
-    Cu.reportError("Messaging." + name + " is deprecated. " +
-                   "Use EventDispatcher object instead.");
-
-    
-    let ret = EventDispatcher.instance[name].apply(EventDispatcher.instance, arguments);
-    if (ret) {
-      
-      return ret;
-    }
-
-    
-    let window = Services.wm.getMostRecentWindow("navigator:browser");
-    let dispatcher = window && window.WindowEventDispatcher;
-    let func = dispatcher && dispatcher[name];
-    if (typeof func === "function") {
-      return func.apply(dispatcher, arguments);
-    }
-  };
-}
-
-_addMessagingGetter("sendRequest");
-_addMessagingGetter("sendRequestForResult");
-_addMessagingGetter("addListener");
-_addMessagingGetter("removeListener");

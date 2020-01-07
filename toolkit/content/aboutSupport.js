@@ -913,12 +913,9 @@ function copyRawDataToClipboard(button) {
       Services.clipboard.setData(transferable, null, Ci.nsIClipboard.kGlobalClipboard);
       if (AppConstants.platform == "android") {
         
-        let message = {
-          type: "Toast:Show",
-          message: stringBundle().GetStringFromName("rawDataCopied"),
-          duration: "short"
-        };
-        Services.androidBridge.handleGeckoMessage(message);
+        ChromeUtils.import("resource://gre/modules/Snackbars.jsm");
+        Snackbars.show(stringBundle().GetStringFromName("rawDataCopied"),
+                       Snackbars.LENGTH_SHORT);
       }
     });
   } catch (err) {
@@ -964,12 +961,9 @@ function copyContentsToClipboard() {
 
   if (AppConstants.platform == "android") {
     
-    let message = {
-      type: "Toast:Show",
-      message: stringBundle().GetStringFromName("textCopied"),
-      duration: "short"
-    };
-    Services.androidBridge.handleGeckoMessage(message);
+    ChromeUtils.import("resource://gre/modules/Snackbars.jsm");
+    Snackbars.show(stringBundle().GetStringFromName("textCopied"),
+                   Snackbars.LENGTH_SHORT);
   }
 }
 
