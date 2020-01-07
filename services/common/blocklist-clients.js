@@ -11,8 +11,8 @@ var EXPORTED_SYMBOLS = [
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
 
-ChromeUtils.defineModuleGetter(this, "RemoteSettings", "resource://services-common/remote-settings.js");
-ChromeUtils.defineModuleGetter(this, "jexlFilterFunc", "resource://services-common/remote-settings.js");
+ChromeUtils.defineModuleGetter(this, "RemoteSettings",
+                               "resource://services-common/remote-settings.js");
 
 const PREF_BLOCKLIST_BUCKET                  = "services.blocklist.bucket";
 const PREF_BLOCKLIST_ONECRL_COLLECTION       = "services.blocklist.onecrl.collection";
@@ -133,21 +133,16 @@ async function updateJSONBlocklist(client, { data: { current: records } }) {
 
 
 
-async function targetAppFilter(entry, environment) {
-  
-  
-  
-  const { filters } = entry;
-  if (filters) {
-    return jexlFilterFunc(entry, environment);
-  }
 
+
+
+
+async function targetAppFilter(entry, { appID, version: appVersion }) {
   
   if (!("versionRange" in entry)) {
     return entry;
   }
 
-  const { appID, version: appVersion } = environment;
   const { versionRange } = entry;
 
   
