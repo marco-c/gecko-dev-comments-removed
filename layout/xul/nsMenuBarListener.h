@@ -17,11 +17,11 @@
 
 class nsMenuFrame;
 class nsMenuBarFrame;
-class nsIDOMKeyEvent;
 
 namespace mozilla {
 namespace dom {
 class EventTarget;
+class KeyboardEvent;
 } 
 } 
 
@@ -58,7 +58,7 @@ public:
 
 
 
-  static bool IsAccessKeyPressed(nsIDOMKeyEvent* aEvent);
+  static bool IsAccessKeyPressed(mozilla::dom::KeyboardEvent* aEvent);
 
 protected:
   virtual ~nsMenuBarListener();
@@ -73,14 +73,15 @@ protected:
 
   static void InitAccessKey();
 
-  static mozilla::Modifiers GetModifiersForAccessKey(nsIDOMKeyEvent* event);
+  static mozilla::Modifiers
+    GetModifiersForAccessKey(mozilla::dom::KeyboardEvent* event);
 
   
 
 
 
 
-  nsMenuFrame* GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent, bool aPeek);
+  nsMenuFrame* GetMenuForKeyEvent(mozilla::dom::KeyboardEvent* aKeyEvent, bool aPeek);
 
   
 

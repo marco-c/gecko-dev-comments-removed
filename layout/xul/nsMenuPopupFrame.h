@@ -27,6 +27,12 @@
 
 class nsIWidget;
 
+namespace mozilla {
+namespace dom {
+class KeyboardEvent;
+} 
+} 
+
 
 
 
@@ -339,7 +345,8 @@ public:
   
   
   
-  nsMenuFrame* FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool& doAction);
+  nsMenuFrame* FindMenuWithShortcut(mozilla::dom::KeyboardEvent* aKeyEvent,
+                                    bool& doAction);
 
   void ClearIncrementalString() { mIncrementalString.Truncate(); }
   static bool IsWithinIncrementalTime(DOMTimeStamp time) {

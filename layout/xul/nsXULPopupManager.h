@@ -52,10 +52,15 @@ class nsMenuFrame;
 class nsMenuPopupFrame;
 class nsMenuBarFrame;
 class nsMenuParent;
-class nsIDOMKeyEvent;
 class nsIDocShellTreeItem;
 class nsPIDOMWindowOuter;
 class nsRefreshDriver;
+
+namespace mozilla {
+namespace dom {
+class KeyboardEvent;
+} 
+} 
 
 
 
@@ -670,7 +675,7 @@ public:
 
 
 
-  bool HandleShortcutNavigation(nsIDOMKeyEvent* aKeyEvent,
+  bool HandleShortcutNavigation(mozilla::dom::KeyboardEvent* aKeyEvent,
                                 nsMenuPopupFrame* aFrame);
 
   
@@ -694,15 +699,15 @@ public:
 
 
 
-  bool HandleKeyboardEventWithKeyCode(nsIDOMKeyEvent* aKeyEvent,
+  bool HandleKeyboardEventWithKeyCode(mozilla::dom::KeyboardEvent* aKeyEvent,
                                       nsMenuChainItem* aTopVisibleMenuItem);
 
   
   nsresult UpdateIgnoreKeys(bool aIgnoreKeys);
 
-  nsresult KeyUp(nsIDOMKeyEvent* aKeyEvent);
-  nsresult KeyDown(nsIDOMKeyEvent* aKeyEvent);
-  nsresult KeyPress(nsIDOMKeyEvent* aKeyEvent);
+  nsresult KeyUp(mozilla::dom::KeyboardEvent* aKeyEvent);
+  nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);
+  nsresult KeyPress(mozilla::dom::KeyboardEvent* aKeyEvent);
 
 protected:
   nsXULPopupManager();
