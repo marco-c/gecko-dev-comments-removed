@@ -307,13 +307,9 @@ var gEditItemOverlay = {
       
       
       
-      
-      
       let elt;
       if (focusedElement === "preferred") {
-        
         elt = this._element(Services.prefs.getCharPref("browser.bookmarks.editDialog.firstEditField"));
-        
       } else if (focusedElement === "first") {
         elt = document.querySelector("textbox:not([collapsed=true])");
       }
