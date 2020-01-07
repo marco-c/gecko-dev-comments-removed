@@ -287,8 +287,9 @@ protected:
 
 
 
-  EditActionResult TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
-                                                  nsIContent& aRightNode);
+  MOZ_MUST_USE EditActionResult
+  TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
+                                 nsIContent& aRightNode);
 
   
 
