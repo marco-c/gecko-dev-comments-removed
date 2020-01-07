@@ -34,7 +34,7 @@
 
 
 
- 
+
 
 #ifndef GOOGLE_BREAKPAD_COMMON_MINIDUMP_EXCEPTION_MAC_H__
 #define GOOGLE_BREAKPAD_COMMON_MINIDUMP_EXCEPTION_MAC_H__
@@ -65,7 +65,9 @@ typedef enum {
       
   MD_EXCEPTION_MAC_MACH_SYSCALL    = 8,
       
-  MD_EXCEPTION_MAC_RPC_ALERT       = 9
+  MD_EXCEPTION_MAC_RPC_ALERT       = 9,
+      
+  MD_EXCEPTION_MAC_SIMULATED       = 0x43507378
       
 } MDExceptionMac;
 

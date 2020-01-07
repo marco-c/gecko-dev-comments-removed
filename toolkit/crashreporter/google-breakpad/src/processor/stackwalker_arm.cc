@@ -267,17 +267,13 @@ StackFrame* StackwalkerARM::GetCallerFrame(const CallStack* stack,
   if (!frame.get())
     return NULL;
 
-
   
-  if (frame->context.iregs[MD_CONTEXT_ARM_REG_PC] == 0)
+  if (TerminateWalk(frame->context.iregs[MD_CONTEXT_ARM_REG_PC],
+                    frame->context.iregs[MD_CONTEXT_ARM_REG_SP],
+                    last_frame->context.iregs[MD_CONTEXT_ARM_REG_SP],
+                    frames.size() == 1)) {
     return NULL;
-
-  
-  
-  
-  if (frame->context.iregs[MD_CONTEXT_ARM_REG_SP]
-      < last_frame->context.iregs[MD_CONTEXT_ARM_REG_SP])
-    return NULL;
+  }
 
   
   

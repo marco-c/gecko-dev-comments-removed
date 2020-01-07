@@ -169,6 +169,10 @@ class MinidumpGenerator {
   std::wstring dump_path_;
 
   
+  UUID uuid_;
+  bool uuid_generated_;
+
+  
   HANDLE dump_file_;
 
   

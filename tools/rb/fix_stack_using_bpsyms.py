@@ -46,6 +46,7 @@ class SymbolFile:
                 
                 if line.startswith("FUNC "):
                     
+                    line = line.replace("FUNC m ", "FUNC ")  
                     bits = line.split(None, 4)
                     if len(bits) < 5:
                         bits.append('unnamed_function')
@@ -56,6 +57,7 @@ class SymbolFile:
                     lastFuncName = name
                 elif line.startswith("PUBLIC "):
                     
+                    line = line.replace("PUBLIC m ", "PUBLIC ")  
                     (junk, rva, ss, name) = line.split(None, 3)
                     rva = int(rva, 16)
                     funcs[rva] = name

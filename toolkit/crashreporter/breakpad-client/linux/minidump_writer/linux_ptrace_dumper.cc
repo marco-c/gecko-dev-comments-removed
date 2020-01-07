@@ -149,6 +149,50 @@ bool LinuxPtraceDumper::CopyFromProcess(void* dest, pid_t child,
   return true;
 }
 
+bool LinuxPtraceDumper::ReadRegisterSet(ThreadInfo* info, pid_t tid)
+{
+#ifdef PTRACE_GETREGSET
+  struct iovec io;
+  info->GetGeneralPurposeRegisters(&io.iov_base, &io.iov_len);
+  if (sys_ptrace(PTRACE_GETREGSET, tid, (void*)NT_PRSTATUS, (void*)&io) == -1) {
+    return false;
+  }
+
+  info->GetFloatingPointRegisters(&io.iov_base, &io.iov_len);
+  if (sys_ptrace(PTRACE_GETREGSET, tid, (void*)NT_FPREGSET, (void*)&io) == -1) {
+    return false;
+  }
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool LinuxPtraceDumper::ReadRegisters(ThreadInfo* info, pid_t tid) {
+#ifdef PTRACE_GETREGS
+  void* gp_addr;
+  info->GetGeneralPurposeRegisters(&gp_addr, NULL);
+  if (sys_ptrace(PTRACE_GETREGS, tid, NULL, gp_addr) == -1) {
+    return false;
+  }
+
+#if !(defined(__ANDROID__) && defined(__ARM_EABI__))
+  
+  
+  
+  
+  void* fp_addr;
+  info->GetFloatingPointRegisters(&fp_addr, NULL);
+  if (sys_ptrace(PTRACE_GETFPREGS, tid, NULL, fp_addr) == -1) {
+    return false;
+  }
+#endif  
+  return true;
+#else  
+  return false;
+#endif
+}
+
 
 
 
@@ -188,36 +232,11 @@ bool LinuxPtraceDumper::GetThreadInfoByIndex(size_t index, ThreadInfo* info) {
   if (info->ppid == -1 || info->tgid == -1)
     return false;
 
-#ifdef PTRACE_GETREGSET
-  struct iovec io;
-  info->GetGeneralPurposeRegisters(&io.iov_base, &io.iov_len);
-  if (sys_ptrace(PTRACE_GETREGSET, tid, (void*)NT_PRSTATUS, (void*)&io) == -1) {
-    return false;
+  if (!ReadRegisterSet(info, tid)) {
+    if (!ReadRegisters(info, tid)) {
+      return false;
+    }
   }
-
-  info->GetFloatingPointRegisters(&io.iov_base, &io.iov_len);
-  if (sys_ptrace(PTRACE_GETREGSET, tid, (void*)NT_FPREGSET, (void*)&io) == -1) {
-    return false;
-  }
-#else  
-  void* gp_addr;
-  info->GetGeneralPurposeRegisters(&gp_addr, NULL);
-  if (sys_ptrace(PTRACE_GETREGS, tid, NULL, gp_addr) == -1) {
-    return false;
-  }
-
-#if !(defined(__ANDROID__) && defined(__ARM_EABI__))
-  
-  
-  
-  
-  void* fp_addr;
-  info->GetFloatingPointRegisters(&fp_addr, NULL);
-  if (sys_ptrace(PTRACE_GETFPREGS, tid, NULL, fp_addr) == -1) {
-    return false;
-  }
-#endif
-#endif  
 
 #if defined(__i386)
 #if !defined(bit_FXSAVE)  
@@ -249,6 +268,8 @@ bool LinuxPtraceDumper::GetThreadInfoByIndex(size_t index, ThreadInfo* info) {
 #endif
 
 #if defined(__mips__)
+  sys_ptrace(PTRACE_PEEKUSER, tid,
+             reinterpret_cast<void*>(PC), &info->mcontext.pc);
   sys_ptrace(PTRACE_PEEKUSER, tid,
              reinterpret_cast<void*>(DSP_BASE), &info->mcontext.hi1);
   sys_ptrace(PTRACE_PEEKUSER, tid,

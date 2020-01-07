@@ -52,7 +52,7 @@ struct MappedMemoryRegion {
 
 
 
-bool ParseProcMaps(const std::string& input,
+bool ParseProcMaps(const string& input,
                    std::vector<MappedMemoryRegion>* regions);
 
 }  

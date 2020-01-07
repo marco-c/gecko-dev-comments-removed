@@ -34,18 +34,70 @@
 
 #include "common/language.h"
 
+#include <stdlib.h>
+
+#if !defined(__ANDROID__)
+#include <cxxabi.h>
+#endif
+
+#if defined(HAVE_RUST_DEMANGLE)
+#include <rust_demangle.h>
+#endif
+
+#include <limits>
+
+namespace {
+
+string MakeQualifiedNameWithSeparator(const string& parent_name,
+                                      const char* separator,
+                                      const string& name) {
+  if (parent_name.empty()) {
+    return name;
+  }
+
+  return parent_name + separator + name;
+}
+
+}  
+
 namespace google_breakpad {
 
 
 class CPPLanguage: public Language {
  public:
   CPPLanguage() {}
+
   string MakeQualifiedName(const string &parent_name,
                            const string &name) const {
-    if (parent_name.empty())
-      return name;
-    else
-      return parent_name + "::" + name;
+    return MakeQualifiedNameWithSeparator(parent_name, "::", name);
+  }
+
+  virtual DemangleResult DemangleName(const string& mangled,
+                                      string* demangled) const {
+#if defined(__ANDROID__)
+    
+    demangled->clear();
+    return kDontDemangle;
+#else
+    int status;
+    char* demangled_c =
+        abi::__cxa_demangle(mangled.c_str(), NULL, NULL, &status);
+
+    DemangleResult result;
+    if (status == 0) {
+      result = kDemangleSuccess;
+      demangled->assign(demangled_c);
+    } else {
+      result = kDemangleFailure;
+      demangled->clear();
+    }
+
+    if (demangled_c) {
+      free(reinterpret_cast<void*>(demangled_c));
+    }
+
+    return result;
+#endif
   }
 };
 
@@ -54,19 +106,79 @@ CPPLanguage CPPLanguageSingleton;
 
 class JavaLanguage: public Language {
  public:
+  JavaLanguage() {}
+
   string MakeQualifiedName(const string &parent_name,
                            const string &name) const {
-    if (parent_name.empty())
-      return name;
-    else
-      return parent_name + "." + name;
+    return MakeQualifiedNameWithSeparator(parent_name, ".", name);
   }
 };
 
 JavaLanguage JavaLanguageSingleton;
 
 
+class SwiftLanguage: public Language {
+ public:
+  SwiftLanguage() {}
+
+  string MakeQualifiedName(const string &parent_name,
+                           const string &name) const {
+    return MakeQualifiedNameWithSeparator(parent_name, ".", name);
+  }
+
+  virtual DemangleResult DemangleName(const string& mangled,
+                                      string* demangled) const {
+    
+    
+    
+    
+    
+    demangled->assign(mangled);
+    return kDemangleSuccess;
+  }
+};
+
+SwiftLanguage SwiftLanguageSingleton;
+
+
+class RustLanguage: public Language {
+ public:
+  RustLanguage() {}
+
+  string MakeQualifiedName(const string &parent_name,
+                           const string &name) const {
+    return MakeQualifiedNameWithSeparator(parent_name, ".", name);
+  }
+
+  virtual DemangleResult DemangleName(const string& mangled,
+                                      string* demangled) const {
+    
+    
+    
+    
+#if defined(HAVE_RUST_DEMANGLE)
+    char* rust_demangled = rust_demangle(mangled.c_str());
+    if (rust_demangled == nullptr) {
+      return kDemangleFailure;
+    }
+    demangled->assign(rust_demangled);
+    free_rust_demangled_name(rust_demangled);
+#else
+    
+    
+    demangled->assign(mangled);
+#endif
+    return kDemangleSuccess;
+  }
+};
+
+RustLanguage RustLanguageSingleton;
+
+
 class AssemblerLanguage: public Language {
+ public:
+  AssemblerLanguage() {}
+
   bool HasFunctions() const { return false; }
   string MakeQualifiedName(const string &parent_name,
                            const string &name) const {
@@ -78,6 +190,8 @@ AssemblerLanguage AssemblerLanguageSingleton;
 
 const Language * const Language::CPlusPlus = &CPPLanguageSingleton;
 const Language * const Language::Java = &JavaLanguageSingleton;
+const Language * const Language::Swift = &SwiftLanguageSingleton;
+const Language * const Language::Rust = &RustLanguageSingleton;
 const Language * const Language::Assembler = &AssemblerLanguageSingleton;
 
 } 

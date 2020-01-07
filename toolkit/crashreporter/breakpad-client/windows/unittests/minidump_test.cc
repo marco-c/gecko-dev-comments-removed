@@ -31,10 +31,9 @@
 #include <objbase.h>
 #include <dbghelp.h>
 
+#include "breakpad_googletest_includes.h"
 #include "client/windows/crash_generation/minidump_generator.h"
 #include "client/windows/unittests/dump_analysis.h"  
-
-#include "gtest/gtest.h"
 
 namespace {
 
@@ -94,7 +93,7 @@ class MinidumpTest: public testing::Test {
         STATUS_ACCESS_VIOLATION,  
         0,  
         NULL,  
-        reinterpret_cast<void*>(0xCAFEBABE),  
+        reinterpret_cast<void*>(static_cast<uintptr_t>(0xCAFEBABE)),  
         2,  
         { EXCEPTION_WRITE_FAULT, reinterpret_cast<ULONG_PTR>(this) }
     };

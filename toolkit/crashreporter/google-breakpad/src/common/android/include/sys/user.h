@@ -38,6 +38,10 @@
 
 
 
+
+
+#include <sys/types.h>
+
 #include_next <sys/user.h>
 
 #include <android/api-level.h>

@@ -99,10 +99,22 @@ class LinuxDumper {
   
   virtual bool GetThreadInfoByIndex(size_t index, ThreadInfo* info) = 0;
 
+  size_t GetMainThreadIndex() const {
+    for (size_t i = 0; i < threads_.size(); ++i) {
+      if (threads_[i] == pid_) return i;
+    }
+    return -1u;
+  }
+
   
   const wasteful_vector<pid_t> &threads() { return threads_; }
   const wasteful_vector<MappingInfo*> &mappings() { return mappings_; }
   const MappingInfo* FindMapping(const void* address) const;
+  
+  
+  
+  
+  const MappingInfo* FindMappingNoBias(uintptr_t address) const;
   const wasteful_vector<elf_aux_val_t>& auxv() { return auxv_; }
 
   
@@ -110,6 +122,32 @@ class LinuxDumper {
   
   
   bool GetStackInfo(const void** stack, size_t* stack_len, uintptr_t stack_top);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void SanitizeStackCopy(uint8_t* stack_copy, size_t stack_len,
+                         uintptr_t stack_pointer, uintptr_t sp_offset);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool StackHasPointerToMapping(const uint8_t* stack_copy, size_t stack_len,
+                                uintptr_t sp_offset,
+                                const MappingInfo& mapping);
 
   PageAllocator* allocator() { return &allocator_; }
 
@@ -132,6 +170,8 @@ class LinuxDumper {
                                    unsigned int mapping_id,
                                    wasteful_vector<uint8_t>& identifier);
 
+  void SetCrashInfoFromSigInfo(const siginfo_t& siginfo);
+
   uintptr_t crash_address() const { return crash_address_; }
   void set_crash_address(uintptr_t crash_address) {
     crash_address_ = crash_address;
@@ -139,6 +179,10 @@ class LinuxDumper {
 
   int crash_signal() const { return crash_signal_; }
   void set_crash_signal(int crash_signal) { crash_signal_ = crash_signal; }
+  const char* GetCrashSignalString() const;
+
+  void set_crash_signal_code(int code) { crash_signal_code_ = code; }
+  int crash_signal_code() const { return crash_signal_code_; }
 
   pid_t crash_thread() const { return crash_thread_; }
   void set_crash_thread(pid_t crash_thread) { crash_thread_ = crash_thread; }
@@ -188,6 +232,9 @@ class LinuxDumper {
 
   
   int crash_signal_;
+
+  
+  int crash_signal_code_;
 
   
   pid_t crash_thread_;

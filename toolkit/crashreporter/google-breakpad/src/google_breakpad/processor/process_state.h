@@ -91,7 +91,7 @@ enum ExploitabilityRating {
 
 class ProcessState {
  public:
-  ProcessState() : modules_(NULL) { Clear(); }
+  ProcessState() : modules_(NULL), unloaded_modules_(NULL) { Clear(); }
   ~ProcessState();
 
   
@@ -111,6 +111,7 @@ class ProcessState {
   }
   const SystemInfo* system_info() const { return &system_info_; }
   const CodeModules* modules() const { return modules_; }
+  const CodeModules* unloaded_modules() const { return unloaded_modules_; }
   const vector<linked_ptr<const CodeModule> >* shrunk_range_modules() const {
     return &shrunk_range_modules_;
   }
@@ -176,6 +177,10 @@ class ProcessState {
   
   
   const CodeModules *modules_;
+
+  
+  
+  const CodeModules *unloaded_modules_;
 
   
   

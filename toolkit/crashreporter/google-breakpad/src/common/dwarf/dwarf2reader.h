@@ -1229,6 +1229,14 @@ class CallFrameInfo::Reporter {
 
   
   
+  virtual void UnexpectedAddressSize(uint64 offset, uint8_t address_size);
+
+  
+  
+  virtual void UnexpectedSegmentSize(uint64 offset, uint8_t segment_size);
+
+  
+  
   
   virtual void UnrecognizedVersion(uint64 offset, int version);
 

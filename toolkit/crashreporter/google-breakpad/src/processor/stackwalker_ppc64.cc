@@ -32,6 +32,7 @@
 
 
 
+#include "common/scoped_ptr.h"
 #include "processor/stackwalker_ppc64.h"
 #include "google_breakpad/processor/call_stack.h"
 #include "google_breakpad/processor/memory_region.h"
@@ -112,7 +113,7 @@ StackFrame* StackwalkerPPC64::GetCallerFrame(const CallStack* stack,
     return NULL;
   }
 
-  StackFramePPC64* frame = new StackFramePPC64();
+  scoped_ptr<StackFramePPC64> frame(new StackFramePPC64());
 
   frame->context = last_frame->context;
   frame->context.srr0 = instruction;
@@ -120,6 +121,14 @@ StackFrame* StackwalkerPPC64::GetCallerFrame(const CallStack* stack,
   frame->context_validity = StackFramePPC64::CONTEXT_VALID_SRR0 |
                             StackFramePPC64::CONTEXT_VALID_GPR1;
   frame->trust = StackFrame::FRAME_TRUST_FP;
+
+  
+  if (TerminateWalk(instruction,
+                    stack_pointer,
+                    last_frame->context.gpr[1],
+                    stack->frames()->size() == 1)) {
+    return NULL;
+  }
 
   
   
@@ -130,7 +139,7 @@ StackFrame* StackwalkerPPC64::GetCallerFrame(const CallStack* stack,
   
   frame->instruction = frame->context.srr0 - 8;
 
-  return frame;
+  return frame.release();
 }
 
 
