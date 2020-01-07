@@ -17,18 +17,18 @@ run_task_schema = Schema({
 
     
     
-    Required('cache-dotcache', default=False): bool,
+    Required('cache-dotcache'): bool,
 
     
-    Required('checkout', default=True): bool,
-
-    
-    
-    Required('sparse-profile', default=None): basestring,
+    Required('checkout'): bool,
 
     
     
-    Required('comm-checkout', default=False): bool,
+    Required('sparse-profile'): Any(basestring, None),
+
+    
+    
+    Required('comm-checkout'): bool,
 
     
     
@@ -57,7 +57,15 @@ def add_checkout_to_command(run, command):
                        run['sparse-profile'])
 
 
-@run_job_using("docker-worker", "run-task", schema=run_task_schema)
+docker_defaults = {
+    'cache-dotcache': False,
+    'checkout': True,
+    'comm-checkout': False,
+    'sparse-profile': None,
+}
+
+
+@run_job_using("docker-worker", "run-task", schema=run_task_schema, defaults=docker_defaults)
 def docker_worker_run_task(config, job, taskdesc):
     run = job['run']
     worker = taskdesc['worker'] = job['worker']
