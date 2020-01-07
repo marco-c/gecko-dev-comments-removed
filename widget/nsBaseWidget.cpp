@@ -938,13 +938,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager()
 
   ConfigureAPZControllerThread();
 
-  float dpi = GetDPI();
-  
-  APZThreadUtils::RunOnControllerThread(NewRunnableMethod<float>(
-      "layers::IAPZCTreeManager::SetDPI",
-      mAPZC,
-      &IAPZCTreeManager::SetDPI,
-      dpi));
+  mAPZC->SetDPI(GetDPI());
 
   if (gfxPrefs::APZKeyboardEnabled()) {
     KeyboardMap map = nsXBLWindowKeyHandler::CollectKeyboardShortcuts();
@@ -1933,14 +1927,7 @@ nsBaseWidget::ZoomToRect(const uint32_t& aPresShellId,
     return;
   }
   uint64_t layerId = mCompositorSession->RootLayerTreeId();
-  APZThreadUtils::RunOnControllerThread(
-    NewRunnableMethod<ScrollableLayerGuid, CSSRect, uint32_t>(
-      "layers::IAPZCTreeManager::ZoomToRect",
-      mAPZC,
-      &IAPZCTreeManager::ZoomToRect,
-      ScrollableLayerGuid(layerId, aPresShellId, aViewId),
-      aRect,
-      aFlags));
+  mAPZC->ZoomToRect(ScrollableLayerGuid(layerId, aPresShellId, aViewId), aRect, aFlags);
 }
 
 #ifdef ACCESSIBILITY

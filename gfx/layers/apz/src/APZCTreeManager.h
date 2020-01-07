@@ -343,13 +343,12 @@ public:
 
 
 
-
-  void SetDPI(float aDpiValue) override;
+  void SetDPI(float aDpiValue) override { sDPI = aDpiValue; }
 
   
 
 
-  float GetDPI() const;
+  static float GetDPI() { return sDPI; }
 
   
 
@@ -552,7 +551,7 @@ public:
 
 
 
-  void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY);
+  void ProcessTouchVelocity(uint32_t aTimestampMs, float aSpeedY) override;
 private:
   typedef bool (*GuidComparator)(const ScrollableLayerGuid&, const ScrollableLayerGuid&);
 
@@ -692,11 +691,10 @@ private:
 
 
 
+
   mutable mozilla::RecursiveMutex mTreeLock;
   RefPtr<HitTestingTreeNode> mRootNode;
-
   
-
 
   std::unordered_map<ScrollableLayerGuid, ZoomConstraints, ScrollableLayerGuidHash> mZoomConstraints;
   
@@ -749,8 +747,7 @@ private:
   std::unordered_map<uint64_t, UniquePtr<APZTestData>> mTestData;
   mutable mozilla::Mutex mTestDataLock;
 
-  
-  float mDPI;
+  static float sDPI;
 
 #if defined(MOZ_WIDGET_ANDROID)
 public:
