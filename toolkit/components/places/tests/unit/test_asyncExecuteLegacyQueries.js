@@ -15,7 +15,7 @@ add_task(async function test_history_query() {
 
   return new Promise(resolve => {
     PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                       .asyncExecuteLegacyQueries([query], 1, options, {
+                       .asyncExecuteLegacyQuery(query, options, {
       handleResult(aResultSet) {
         for (let row; (row = aResultSet.getNextRow());) {
           try {
@@ -52,7 +52,7 @@ add_task(async function test_bookmarks_query() {
 
   return new Promise(resolve => {
     PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                       .asyncExecuteLegacyQueries([query], 1, options, {
+                       .asyncExecuteLegacyQuery(query, options, {
       handleResult(aResultSet) {
         for (let row; (row = aResultSet.getNextRow());) {
           try {

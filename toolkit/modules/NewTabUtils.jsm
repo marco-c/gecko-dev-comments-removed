@@ -617,7 +617,7 @@ var PlacesProvider = {
     
     let query = PlacesUtils.history.getNewQuery();
     let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase);
-    db.asyncExecuteLegacyQueries([query], 1, options, callback);
+    db.asyncExecuteLegacyQuery(query, options, callback);
   },
 
   
