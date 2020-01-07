@@ -17,28 +17,28 @@ const TEST_URL = "data:text/html;charset=utf-8," + encodeURIComponent(HTML);
 
 var highlightedNodeFront, highlighterOptions;
 
-add_task(async function() {
+add_task(async function () {
   await addTab(TEST_URL);
-  let {toolbox, inspector, view} = await openBoxModelView();
+  let {toolbox, inspector, boxmodel} = await openLayoutView();
   await selectNode("div", inspector);
 
   
-  toolbox.highlighter.showBoxModel = function(nodeFront, options) {
+  toolbox.highlighter.showBoxModel = function (nodeFront, options) {
     highlightedNodeFront = nodeFront;
     highlighterOptions = options;
   };
 
-  let elt = view.document.querySelector(".boxmodel-margins");
-  await testGuideOnLayoutHover(elt, "margin", inspector, view);
+  let elt = boxmodel.document.querySelector(".boxmodel-margins");
+  await testGuideOnLayoutHover(elt, "margin", inspector);
 
-  elt = view.document.querySelector(".boxmodel-borders");
-  await testGuideOnLayoutHover(elt, "border", inspector, view);
+  elt = boxmodel.document.querySelector(".boxmodel-borders");
+  await testGuideOnLayoutHover(elt, "border", inspector);
 
-  elt = view.document.querySelector(".boxmodel-paddings");
-  await testGuideOnLayoutHover(elt, "padding", inspector, view);
+  elt = boxmodel.document.querySelector(".boxmodel-paddings");
+  await testGuideOnLayoutHover(elt, "padding", inspector);
 
-  elt = view.document.querySelector(".boxmodel-content");
-  await testGuideOnLayoutHover(elt, "content", inspector, view);
+  elt = boxmodel.document.querySelector(".boxmodel-content");
+  await testGuideOnLayoutHover(elt, "content", inspector);
 });
 
 async function testGuideOnLayoutHover(elt, expectedRegion, inspector) {

@@ -53,7 +53,7 @@ var openInspectorSidebarTab = Task.async(function* (id) {
   info("Selecting the " + id + " sidebar");
 
   let onSidebarSelect = inspector.sidebar.once("select");
-  if (id === "computedview" || id === "layoutview") {
+  if (id === "layoutview") {
     
     let onBoxModelViewReady = inspector.once("boxmodel-view-updated");
     
@@ -126,10 +126,10 @@ function openLayoutView() {
     
     
     function mockHighlighter({highlighter}) {
-      highlighter.showBoxModel = function() {
+      highlighter.showBoxModel = function () {
         return promise.resolve();
       };
-      highlighter.hideBoxModel = function() {
+      highlighter.hideBoxModel = function () {
         return promise.resolve();
       };
     }
@@ -167,6 +167,17 @@ function selectRuleView(inspector) {
 function selectComputedView(inspector) {
   inspector.sidebar.select("computedview");
   return inspector.getPanel("computedview").computedView;
+}
+
+
+
+
+
+
+
+function selectLayoutView(inspector) {
+  inspector.sidebar.select("layoutview");
+  return inspector.getPanel("boxmodel");
 }
 
 
@@ -214,7 +225,7 @@ function manualDebounce() {
   let calls = [];
 
   function debounce(func, wait, scope) {
-    return function() {
+    return function () {
       let existingCall = calls.find(call => call.func === func);
       if (existingCall) {
         existingCall.args = arguments;
@@ -224,7 +235,7 @@ function manualDebounce() {
     };
   }
 
-  debounce.flush = function() {
+  debounce.flush = function () {
     calls.forEach(({func, scope, args}) => func.apply(scope, args));
     calls = [];
   };
