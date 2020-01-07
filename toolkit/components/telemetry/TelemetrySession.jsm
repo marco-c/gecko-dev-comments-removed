@@ -815,57 +815,6 @@ var Impl = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  packHistogram: function packHistogram(hgram) {
-    let r = hgram.ranges;
-    let c = hgram.counts;
-    let retgram = {
-      range: [r[1], r[r.length - 1]],
-      bucket_count: r.length,
-      histogram_type: hgram.histogram_type,
-      values: {},
-      sum: hgram.sum
-    };
-
-    let first = true;
-    let last = 0;
-
-    for (let i = 0; i < c.length; i++) {
-      let value = c[i];
-      if (!value)
-        continue;
-
-      
-      if (i && first) {
-        retgram.values[r[i - 1]] = 0;
-      }
-      first = false;
-      last = i + 1;
-      retgram.values[r[i]] = value;
-    }
-
-    
-    if (last && last < c.length)
-      retgram.values[r[last]] = 0;
-    return retgram;
-  },
-
-  
-
-
-
   getDatasetType() {
     return Telemetry.canRecordExtended ? Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN
                                        : Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
@@ -873,42 +822,12 @@ var Impl = {
 
   getHistograms: function getHistograms(clearSubsession) {
     let hls = Telemetry.snapshotHistograms(this.getDatasetType(), clearSubsession);
-    let ret = {};
-
-    for (let [process, histograms] of Object.entries(hls)) {
-      ret[process] = {};
-      for (let [name, value] of Object.entries(histograms)) {
-        if (this._testing || !name.startsWith("TELEMETRY_TEST_")) {
-          ret[process][name] = this.packHistogram(value);
-        }
-      }
-    }
-
-    return ret;
+    return TelemetryUtils.packHistograms(hls, this._testing);
   },
 
   getKeyedHistograms(clearSubsession) {
     let khs = Telemetry.snapshotKeyedHistograms(this.getDatasetType(), clearSubsession);
-    let ret = {};
-
-    for (let [process, histograms] of Object.entries(khs)) {
-      ret[process] = {};
-      for (let [name, value] of Object.entries(histograms)) {
-        if (this._testing || !name.startsWith("TELEMETRY_TEST_")) {
-          let keys = Object.keys(value);
-          if (keys.length == 0) {
-            
-            continue;
-          }
-          ret[process][name] = {};
-          for (let [key, hgram] of Object.entries(value)) {
-            ret[process][name][key] = this.packHistogram(hgram);
-          }
-        }
-      }
-    }
-
-    return ret;
+    return TelemetryUtils.packKeyedHistograms(khs, this._testing);
   },
 
   
