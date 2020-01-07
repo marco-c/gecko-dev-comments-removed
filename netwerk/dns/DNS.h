@@ -8,7 +8,6 @@
 #define DNS_h_
 
 #include "nscore.h"
-#include "nsString.h"
 #include "prio.h"
 #include "prnetdb.h"
 #include "plstr.h"
@@ -135,15 +134,15 @@ public:
 class AddrInfo {
 public:
   
-  explicit AddrInfo(const nsACString& host, const PRAddrInfo *prAddrInfo,
-           bool disableIPv4, bool filterNameCollision,
-           const nsACString& cname);
+  
+  explicit AddrInfo(const char *host, const PRAddrInfo *prAddrInfo, bool disableIPv4,
+                    bool filterNameCollision, const char *cname);
 
   
-  explicit AddrInfo(const nsACString& host, const nsACString& cname, unsigned int TRRType);
+  explicit AddrInfo(const char *host, const char *cname, unsigned int TRRType);
 
   
-  explicit AddrInfo(const nsACString& host, unsigned int TRRType);
+  explicit AddrInfo(const char *host, unsigned int TRRType);
   ~AddrInfo();
 
   explicit AddrInfo(const AddrInfo *src); 
@@ -152,8 +151,8 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  nsCString mHostName;
-  nsCString mCanonicalName;
+  char *mHostName;
+  char *mCanonicalName;
   uint32_t ttl;
   static const uint32_t NO_TTL_DATA = (uint32_t) -1;
 
@@ -161,6 +160,7 @@ public:
   unsigned int IsTRR() { return mFromTRR; }
 private:
   unsigned int mFromTRR;
+  void Init(const char *host, const char *cname);
 };
 
 
