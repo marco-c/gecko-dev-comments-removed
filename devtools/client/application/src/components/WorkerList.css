@@ -2,11 +2,15 @@
 
 
 
-.application-aboutdebugging-plug {
+.aboutdebugging-plug {
   text-align: right;
-  padding: 5px 0;
+  padding: 1rem 0;
 }
 
-.application-workers-container {
+.aboutdebugging-plug__link {
+  margin-right: 0;
+}
+
+.workers-container {
   flex-grow: 1;
 }
