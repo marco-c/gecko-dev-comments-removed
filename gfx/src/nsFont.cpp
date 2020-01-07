@@ -56,6 +56,7 @@ nsFont::CalcDifference(const nsFont& aOther) const
       (sizeAdjust != aOther.sizeAdjust) ||
       (fontlist != aOther.fontlist) ||
       (kerning != aOther.kerning) ||
+      (opticalSizing != aOther.opticalSizing) ||
       (synthesis != aOther.synthesis) ||
       (fontFeatureSettings != aOther.fontFeatureSettings) ||
       (fontVariationSettings != aOther.fontVariationSettings) ||
@@ -293,6 +294,25 @@ void nsFont::AddFontVariationsToStyle(gfxFontStyle *aStyle) const
 {
   
   
+
+  
+  
+  class VariationTagComparator {
+  public:
+    bool Equals(const gfxFontVariation& aVariation, uint32_t aTag) const {
+      return aVariation.mTag == aTag;
+    }
+  };
+  const uint32_t kTagOpsz = TRUETYPE_TAG('o','p','s','z');
+  if (opticalSizing == NS_FONT_OPTICAL_SIZING_AUTO &&
+    !fontVariationSettings.Contains(kTagOpsz, VariationTagComparator())) {
+    gfxFontVariation opsz = {
+      kTagOpsz,
+      
+      float(size) / float(AppUnitsPerCSSPixel())
+    };
+    aStyle->variationSettings.AppendElement(opsz);
+  }
 
   
   aStyle->variationSettings.AppendElements(fontVariationSettings);
