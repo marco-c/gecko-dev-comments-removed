@@ -827,22 +827,24 @@ private:
   uint16_t mMaxSending[SdpMediaSection::kMediaTypes];
 
   
-  struct DTMFState {
-    DTMFState();
-    ~DTMFState();
-    nsWeakPtr mPCObserver;
-    RefPtr<TransceiverImpl> mTransceiver;
-    nsCOMPtr<nsITimer> mSendTimer;
-    nsString mTones;
-    uint32_t mDuration;
-    uint32_t mInterToneGap;
+  class DTMFState : public nsITimerCallback {
+      virtual ~DTMFState();
+    public:
+      DTMFState();
+
+      NS_DECL_NSITIMERCALLBACK
+      NS_DECL_THREADSAFE_ISUPPORTS
+
+      nsWeakPtr mPCObserver;
+      RefPtr<TransceiverImpl> mTransceiver;
+      nsCOMPtr<nsITimer> mSendTimer;
+      nsString mTones;
+      uint32_t mDuration;
+      uint32_t mInterToneGap;
   };
 
-  static void
-  DTMFSendTimerCallback_m(nsITimer* timer, void*);
-
   
-  nsTArray<DTMFState> mDTMFStates;
+  nsTArray<RefPtr<DTMFState>> mDTMFStates;
 
   std::vector<unsigned> mSendPacketDumpFlags;
   std::vector<unsigned> mRecvPacketDumpFlags;
