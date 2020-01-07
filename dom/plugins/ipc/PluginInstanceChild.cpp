@@ -86,6 +86,7 @@ static decltype(ImmAssociateContextEx)* sImm32ImmAssociateContextExStub =
                                           nullptr;
 static PluginInstanceChild* sCurrentPluginInstance = nullptr;
 static const HIMC sHookIMC = (const HIMC)0xefefefef;
+static bool sPopupMenuHookSet;
 
 using mozilla::gfx::SharedDIB;
 
@@ -1978,19 +1979,23 @@ PluginInstanceChild::TrackPopupHookProc(HMENU hMenu,
 void
 PluginInstanceChild::InitPopupMenuHook()
 {
-    if (!(GetQuirks() & QUIRK_WINLESS_TRACKPOPUP_HOOK) ||
-        sUser32TrackPopupMenuStub)
+    if (!(GetQuirks() & QUIRK_WINLESS_TRACKPOPUP_HOOK)) {
         return;
+    }
+
+    
+    if (sPopupMenuHookSet) {
+        return;
+    }
+    sPopupMenuHookSet = true;
 
     
     
     
     
-    if (!sUser32TrackPopupMenuStub) {
-        sUser32Intercept.Init("user32.dll");
-        sUser32Intercept.AddHook("TrackPopupMenu", reinterpret_cast<intptr_t>(TrackPopupHookProc),
-                                 (void**) &sUser32TrackPopupMenuStub);
-    }
+    sUser32Intercept.Init("user32.dll");
+    sUser32Intercept.AddHook("TrackPopupMenu", reinterpret_cast<intptr_t>(TrackPopupHookProc),
+                             (void**) &sUser32TrackPopupMenuStub);
 }
 
 void
