@@ -26,6 +26,9 @@
 #include "gfxVROpenVR.h"
 #include "gfxVROSVR.h"
 #endif
+#if defined(MOZ_ANDROID_GOOGLE_VR)
+#include "gfxVRGVR.h"
+#endif 
 
 #include "gfxVRPuppet.h"
 #include "ipc/VRLayerParent.h"
@@ -100,6 +103,13 @@ VRManager::VRManager()
       mManagers.AppendElement(mgr);
   }
 #endif
+
+#if defined(MOZ_ANDROID_GOOGLE_VR)
+   mgr = VRSystemManagerGVR::Create();
+   if (mgr) {
+     mManagers.AppendElement(mgr);
+   }
+#endif 
 
   
   
