@@ -783,6 +783,10 @@ public class GeckoSession extends LayerSession
         mScrollHandler.setListener(listener, this);
     }
 
+    public ScrollListener getScrollListener() {
+        return mScrollHandler.getListener();
+    }
+
     
 
 
