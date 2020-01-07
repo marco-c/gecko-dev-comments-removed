@@ -182,14 +182,14 @@ htmlhelp_basename = 'FirefoxforAndroiddoc'
 
 
 latex_elements = {
+    
+    
 
+    
+    
 
-
-
-
-
-
-
+    
+    
 }
 
 

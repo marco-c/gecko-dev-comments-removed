@@ -7,68 +7,69 @@ reported and l10n-merged.
 This needs to stay in sync with the copy in mobile/locales.
 """
 
-def test(mod, path, entity = None):
-  import re
-  
-  if mod not in ("dom", "toolkit", "mobile",
-                 "mobile/android/base",  "mobile/android"):
-    return "ignore"
 
-  if mod == "toolkit":
+def test(mod, path, entity=None):
+    import re
     
-    if path in (
-        "chrome/global/aboutAbout.dtd",
-        "chrome/global/aboutReader.properties",
-        "chrome/global/aboutRights.dtd",
-        "chrome/global/charsetMenu.properties",
-        "chrome/global/commonDialogs.properties",
-        "chrome/global/intl.properties",
-        "chrome/global/intl.css",
-        "chrome/search/search.properties",
-        "chrome/pluginproblem/pluginproblem.dtd",
-        "chrome/global/aboutSupport.dtd",
-        "chrome/global/aboutSupport.properties",
-        "crashreporter/crashes.dtd",
-        "crashreporter/crashes.properties",
-        "chrome/global/mozilla.dtd",
-        "chrome/global/aboutTelemetry.dtd",
-        "chrome/global/aboutTelemetry.properties",
-        "chrome/global/aboutWebrtc.properties"):
-      return "error"
-    return "ignore"
-
-  if mod == "dom":
-    
-    if path in (
-        "chrome/global.dtd",
-        "chrome/accessibility/AccessFu.properties",
-        "chrome/dom/dom.properties",
-        "chrome/plugins.properties"):
-      return "error"
-    return "ignore"
-
-  if mod not in ("mobile", "mobile/android"):
-    
-    return "error"
-  if mod == "mobile/android":
-    if entity is None:
-      if (re.match(r"mobile-l10n.js", path) or
-          re.match(r"defines.inc", path)):
+    if mod not in ("dom", "toolkit", "mobile",
+                   "mobile/android/base",  "mobile/android"):
         return "ignore"
-    if path == "defines.inc":
-      if entity == "MOZ_LANGPACK_CONTRIBUTORS":
+
+    if mod == "toolkit":
+        
+        if path in (
+            "chrome/global/aboutAbout.dtd",
+            "chrome/global/aboutReader.properties",
+            "chrome/global/aboutRights.dtd",
+            "chrome/global/charsetMenu.properties",
+            "chrome/global/commonDialogs.properties",
+            "chrome/global/intl.properties",
+            "chrome/global/intl.css",
+            "chrome/search/search.properties",
+            "chrome/pluginproblem/pluginproblem.dtd",
+            "chrome/global/aboutSupport.dtd",
+            "chrome/global/aboutSupport.properties",
+            "crashreporter/crashes.dtd",
+            "crashreporter/crashes.properties",
+            "chrome/global/mozilla.dtd",
+            "chrome/global/aboutTelemetry.dtd",
+            "chrome/global/aboutTelemetry.properties",
+            "chrome/global/aboutWebrtc.properties"):
+            return "error"
         return "ignore"
-    return "error"
 
-  
-  if path == "chrome/region.properties":
+    if mod == "dom":
+        
+        if path in (
+            "chrome/global.dtd",
+            "chrome/accessibility/AccessFu.properties",
+            "chrome/dom/dom.properties",
+            "chrome/plugins.properties"):
+            return "error"
+        return "ignore"
+
+    if mod not in ("mobile", "mobile/android"):
+        
+        return "error"
+    if mod == "mobile/android":
+        if entity is None:
+            if (re.match(r"mobile-l10n.js", path) or
+                re.match(r"defines.inc", path)):
+                return "ignore"
+        if path == "defines.inc":
+            if entity == "MOZ_LANGPACK_CONTRIBUTORS":
+                return "ignore"
+        return "error"
+
     
-    if (re.match(r"browser\.search\.order\.[1-9]", entity) or
-        re.match(r"browser\.search\.[a-zA-Z]+\.US", entity) or
-        re.match(r"browser\.contentHandlers\.types\.[0-5]", entity) or
-        re.match(r"gecko\.handlerService\.schemes\.", entity) or
-        re.match(r"gecko\.handlerService\.defaultHandlersVersion", entity) or
-        re.match(r"browser\.suggestedsites\.", entity)):
-      return "ignore"
+    if path == "chrome/region.properties":
+        
+        if (re.match(r"browser\.search\.order\.[1-9]", entity) or
+            re.match(r"browser\.search\.[a-zA-Z]+\.US", entity) or
+            re.match(r"browser\.contentHandlers\.types\.[0-5]", entity) or
+            re.match(r"gecko\.handlerService\.schemes\.", entity) or
+            re.match(r"gecko\.handlerService\.defaultHandlersVersion", entity) or
+            re.match(r"browser\.suggestedsites\.", entity)):
+            return "ignore"
 
-  return "error"
+    return "error"
