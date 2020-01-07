@@ -7,12 +7,6 @@
 "use strict";
 
 
-
-if (typeof define === "undefined") {
-  require("amd-loader");
-}
-
-
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
   MESSAGE_TYPE,
