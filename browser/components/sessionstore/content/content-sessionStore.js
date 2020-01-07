@@ -52,6 +52,9 @@ const kNoIndex = Number.MAX_SAFE_INTEGER;
 const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 
 
+const global = this;
+
+
 
 
 
@@ -150,7 +153,7 @@ var StateChangeNotifier = {
 var EventListener = {
 
   init() {
-    addEventListener("load", ssu.createDynamicFrameEventFilter(this), true);
+    ssu.addDynamicFrameFilteredListener(global, "load", this, true);
   },
 
   handleEvent(event) {
@@ -464,7 +467,7 @@ var SessionHistoryListener = {
 
 var ScrollPositionListener = {
   init() {
-    addEventListener("scroll", ssu.createDynamicFrameEventFilter(this));
+    ssu.addDynamicFrameFilteredListener(global, "scroll", this, false);
     StateChangeNotifier.addObserver(this);
   },
 
@@ -504,7 +507,7 @@ var ScrollPositionListener = {
 
 var FormDataListener = {
   init() {
-    addEventListener("input", ssu.createDynamicFrameEventFilter(this), true);
+    ssu.addDynamicFrameFilteredListener(global, "input", this, true);
     StateChangeNotifier.addObserver(this);
   },
 
@@ -596,13 +599,15 @@ var SessionStorageListener = {
 
   resetEventListener() {
     if (!this._listener) {
-      this._listener = ssu.createDynamicFrameEventFilter(this);
-      addEventListener("MozSessionStorageChanged", this._listener, true);
+      this._listener =
+        ssu.addDynamicFrameFilteredListener(global, "MozSessionStorageChanged",
+                                            this, true);
     }
   },
 
   removeEventListener() {
-    removeEventListener("MozSessionStorageChanged", this._listener, true);
+    ssu.removeDynamicFrameFilteredListener(global, "MozSessionStorageChanged",
+                                           this._listener, true);
     this._listener = null;
   },
 
