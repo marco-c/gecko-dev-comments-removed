@@ -8,8 +8,11 @@ const { createFactory, PureComponent } = require("devtools/client/shared/vendor/
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const FontPropertyValue = createFactory(require("./FontPropertyValue"));
 const FontMeta = createFactory(require("./FontMeta"));
+const FontPropertyValue = createFactory(require("./FontPropertyValue"));
+const FontSize = createFactory(require("./FontSize"));
+const FontStyle = createFactory(require("./FontStyle"));
+const FontWeight = createFactory(require("./FontWeight"));
 
 const { getStr } = require("../utils/l10n");
 const Types = require("../types");
@@ -96,6 +99,27 @@ class FontEditor extends PureComponent {
     );
   }
 
+  renderFontSize(value) {
+    return FontSize({
+      onChange: this.props.onPropertyChange,
+      value,
+    });
+  }
+
+  renderFontStyle(value) {
+    return FontStyle({
+      onChange: this.props.onPropertyChange,
+      value,
+    });
+  }
+
+  renderFontWeight(value) {
+    return FontWeight({
+      onChange: this.props.onPropertyChange,
+      value,
+    });
+  }
+
   
 
 
@@ -155,34 +179,37 @@ class FontEditor extends PureComponent {
     );
   }
 
-  
-  
-  renderPlaceholder() {
-    return dom.div({}, "No fonts with variation axes apply to this element.");
-  }
-
   render() {
-    const { fonts, axes, instance } = this.props.fontEditor;
+    const { fonts, axes, instance, properties } = this.props.fontEditor;
     
     
     const font = fonts[0];
-    const fontAxes = (font && font.variationAxes) ? font.variationAxes : null;
-    const fontInstances = (font && font.variationInstances.length) ?
-      font.variationInstances
-      :
-      null;
+    const hasFontAxes = font && font.variationAxes;
+    const hasFontInstances = font && font.variationInstances.length > 0;
+    const hasSlantOrItalicAxis = hasFontAxes && font.variationAxes.find(axis => {
+      return axis.tag === "slnt" || axis.tag === "ital";
+    });
+    const hasWeightAxis = hasFontAxes && font.variationAxes.find(axis => {
+      return axis.tag === "wght";
+    });
 
     return dom.div(
       {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-fontinspector"
       },
+      
       this.renderFontFamily(font),
-      fontInstances && this.renderInstances(fontInstances, instance),
-      fontAxes ?
-        this.renderAxes(fontAxes, axes)
-        :
-        this.renderPlaceholder()
+      
+      hasFontInstances && this.renderInstances(font.variationInstances, instance),
+      
+      this.renderFontSize(properties["font-size"]),
+      
+      !hasWeightAxis && this.renderFontWeight(properties["font-weight"]),
+      
+      !hasSlantOrItalicAxis && this.renderFontStyle(properties["font-style"]),
+      
+      hasFontAxes && this.renderAxes(font.variationAxes, axes)
     );
   }
 }
