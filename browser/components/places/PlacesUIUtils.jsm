@@ -257,14 +257,6 @@ this.PlacesUIUtils = {
     return bundle.GetStringFromName(key);
   },
 
-  get _copyableAnnotations() {
-    return [
-      this.DESCRIPTION_ANNO,
-      this.LOAD_IN_SIDEBAR_ANNO,
-      PlacesUtils.READ_ONLY_ANNO,
-    ];
-  },
-
   
 
 
@@ -1211,19 +1203,6 @@ this.PlacesUIUtils = {
         return parent;
       }
     });
-  },
-
-  
-
-
-
-
-
-  async fetchNodeLike(aGuidOrInfo) {
-    let info = await PlacesUtils.bookmarks.fetch(aGuidOrInfo);
-    if (!info)
-      return null;
-    return this.promiseNodeLikeFromFetchInfo(info);
   },
 
   

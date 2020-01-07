@@ -213,13 +213,6 @@ var StarUI = {
 
     this._isNewBookmark = aIsNewBookmark;
     this._itemGuids = null;
-    
-    
-    if (typeof(aNode) == "number") {
-      let itemId = aNode;
-      let guid = await PlacesUtils.promiseItemGuid(itemId);
-      aNode = await PlacesUIUtils.fetchNodeLike(guid);
-    }
 
     
     
@@ -478,8 +471,9 @@ var PlacesCommandHook = {
 
 
   async bookmarkLink(parentId, url, title, description = "") {
-    let node = await PlacesUIUtils.fetchNodeLike({ url });
-    if (node) {
+    let bm = await PlacesUtils.bookmarks.fetch({url});
+    if (bm) {
+      let node = await PlacesUIUtils.promiseNodeLikeFromFetchInfo(bm);
       PlacesUIUtils.showBookmarkDialog({ action: "edit", node }, window.top);
       return;
     }
