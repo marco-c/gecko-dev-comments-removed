@@ -552,16 +552,16 @@ class MOZ_STACK_CLASS AutoPointerEventTargetUpdater final
 {
 public:
   AutoPointerEventTargetUpdater(PresShell* aShell,
-                                WidgetGUIEvent* aEvent,
+                                WidgetEvent* aEvent,
                                 nsIFrame* aFrame,
                                 nsIContent** aTargetContent)
   {
-    MOZ_ASSERT(aShell);
     MOZ_ASSERT(aEvent);
-    MOZ_ASSERT(aFrame);
     if (!aTargetContent || aEvent->mClass != ePointerEventClass) {
       return;
     }
+    MOZ_ASSERT(aShell);
+    MOZ_ASSERT(aFrame);
     MOZ_ASSERT(!aFrame->GetContent() ||
                aShell->GetDocument() == aFrame->GetContent()->OwnerDoc());
 
@@ -6831,6 +6831,22 @@ PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const
 }
 
  PresShell*
+PresShell::GetShellForEventTarget(nsIFrame* aFrame, nsIContent* aContent)
+{
+  if (aFrame) {
+    return static_cast<PresShell*>(aFrame->PresShell());
+  }
+  if (aContent) {
+    nsIDocument* doc = aContent->GetComposedDoc();
+    if (!doc) {
+      return nullptr;
+    }
+    return static_cast<PresShell*>(doc->GetShell());
+  }
+  return nullptr;
+}
+
+ PresShell*
 PresShell::GetShellForTouchEvent(WidgetGUIEvent* aEvent)
 {
   PresShell* shell = nullptr;
@@ -6907,27 +6923,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
     
     aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY, false);
-  }
-
-  if (PointerEventHandler::IsPointerEventEnabled()) {
-    AutoWeakFrame weakFrame(aFrame);
-    nsCOMPtr<nsIContent> targetContent;
-    PointerEventHandler::DispatchPointerFromMouseOrTouch(
-                           this, aFrame, aEvent, aDontRetargetEvents,
-                           aEventStatus, getter_AddRefs(targetContent));
-    if (!weakFrame.IsAlive()) {
-      if (targetContent) {
-        aFrame = targetContent->GetPrimaryFrame();
-        if (!aFrame) {
-          PushCurrentEventInfo(aFrame, targetContent);
-          nsresult rv = HandleEventInternal(aEvent, aEventStatus, true);
-          PopCurrentEventInfo();
-          return rv;
-        }
-      } else {
-        return NS_OK;
-      }
-    }
   }
 
   if (mIsDestroying ||
@@ -7172,6 +7167,34 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    {
+      AutoWeakFrame frameKeeper(frame);
+      PointerEventHandler::MaybeProcessPointerCapture(aEvent);
+      
+      if (!frameKeeper.IsAlive()) {
+        NS_WARNING("Nothing to handle this event!");
+        return NS_OK;
+      }
+    }
+
+    nsIFrame* pointerCapturingFrame =
+      PointerEventHandler::GetPointerCapturingFrame(aEvent);
+
+    if (pointerCapturingFrame) {
+      frame = pointerCapturingFrame;
+    }
+
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
     bool isWindowLevelMouseExit = (aEvent->mMessage == eMouseExitFromWidget) &&
       (mouseEvent && mouseEvent->mExitFrom == WidgetMouseEvent::eTopLevel);
@@ -7181,14 +7204,9 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     
-    if (!captureRetarget && !isWindowLevelMouseExit) {
+    if (!captureRetarget && !isWindowLevelMouseExit && !pointerCapturingFrame) {
       if (aEvent->mClass == eTouchEventClass) {
         frame = TouchManager::SetupTarget(aEvent->AsTouchEvent(), frame);
-        if (nsIFrame* newFrame =
-            TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
-              aEvent->AsTouchEvent())) {
-          frame = newFrame;
-        }
       } else {
         uint32_t flags = 0;
         nsPoint eventPoint =
@@ -7210,7 +7228,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     
-    if (capturingContent &&
+    if (capturingContent && !pointerCapturingFrame &&
         (gCaptureInfo.mRetargetToElement || !frame->GetContent() ||
          !nsContentUtils::ContentIsCrossDocDescendantOf(frame->GetContent(),
                                                         capturingContent))) {
@@ -7222,24 +7240,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       if (capturingFrame) {
         frame = capturingFrame;
       }
-    }
-
-    
-    
-    {
-      AutoWeakFrame frameKeeper(frame);
-      PointerEventHandler::CheckPointerCaptureState(aEvent->AsPointerEvent());
-      
-      if (!frameKeeper.IsAlive()) {
-        frame = nullptr;
-      }
-    }
-
-    nsIFrame* pointerCapturingFrame =
-      PointerEventHandler::GetPointerCapturingFrame(aEvent);
-
-    if (pointerCapturingFrame) {
-      frame = pointerCapturingFrame;
     }
 
     
@@ -7266,12 +7266,6 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     }
 
     PresShell* shell = static_cast<PresShell*>(frame->PresShell());
-    if (aEvent->mClass == eTouchEventClass) {
-      if (PresShell* newShell = GetShellForTouchEvent(aEvent)) {
-        shell = newShell;
-      }
-    }
-
     
     
     
@@ -7327,11 +7321,65 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
+    if (PointerEventHandler::IsPointerEventEnabled()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsIFrame* targetFrame =
+        aEvent->mClass == eTouchEventClass ? aFrame : frame;
+
+      AutoWeakFrame weakFrame(targetFrame);
+      nsCOMPtr<nsIContent> targetContent;
+      PointerEventHandler::DispatchPointerFromMouseOrTouch(
+                             shell, targetFrame, targetElement, aEvent,
+                             aDontRetargetEvents, aEventStatus,
+                             getter_AddRefs(targetContent));
+
+      if (!weakFrame.IsAlive() && aEvent->mClass == eMouseEventClass) {
+        
+        
+        
+        
+        if (!targetContent) {
+          return NS_OK;
+        }
+        frame = targetContent->GetPrimaryFrame();
+        shell = GetShellForEventTarget(frame, targetContent);
+        if (!shell) {
+          return NS_OK;
+        }
+      }
+    }
+
     
+    if (aEvent->mClass == eTouchEventClass) {
+      if (aEvent->mMessage == eTouchStart) {
+        WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
+        if (nsIFrame* newFrame =
+              TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
+                touchEvent)) {
+          frame = newFrame;
+          frame->GetContentForEvent(aEvent, getter_AddRefs(targetElement));
+          shell = static_cast<PresShell*>(frame->PresContext()->PresShell());
+        }
+      } else if (PresShell* newShell = GetShellForTouchEvent(aEvent)) {
+        
+        
+        shell = newShell;
+      }
+    }
+
     
     nsCOMPtr<nsIPresShell> kungFuDeathGrip(shell);
     nsresult rv;
-    AutoPointerEventTargetUpdater updater(shell, aEvent, frame, aTargetContent);
 
     
     
@@ -7494,7 +7542,9 @@ PresShell::ShowEventTargetDebug()
 
 nsresult
 PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
-                                 nsIContent* aContent, nsEventStatus* aStatus)
+                                 nsIContent* aContent, nsEventStatus* aStatus,
+                                 bool aIsHandlingNativeEvent,
+                                 nsIContent** aTargetContent)
 {
 #if DEBUG
   MOZ_ASSERT(!aFrame || aFrame->PresContext()->GetPresShell() == this,
@@ -7507,7 +7557,7 @@ PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
   }
 #endif
   NS_ENSURE_STATE(!aContent || aContent->GetComposedDoc() == mDocument);
-
+  AutoPointerEventTargetUpdater updater(this, aEvent, aFrame, aTargetContent);
   PushCurrentEventInfo(aFrame, aContent);
   nsresult rv = HandleEventInternal(aEvent, aStatus, false);
   PopCurrentEventInfo();
