@@ -11,6 +11,7 @@
 #include "nsString.h"
 #endif 
 
+#include "mozilla/Attributes.h"
 #include <guiddef.h>
 
 struct IStream;
@@ -62,6 +63,40 @@ bool IsInterfaceEqualToOrInheritedFrom(REFIID aInterface, REFIID aFrom,
 #endif 
 
 #endif 
+
+
+
+
+
+
+
+
+template <typename CondFnT, typename ExeFnT>
+class MOZ_RAII ExecuteWhen final
+{
+public:
+  ExecuteWhen(CondFnT& aCondFn, ExeFnT& aExeFn)
+    : mCondFn(aCondFn)
+    , mExeFn(aExeFn)
+  {
+  }
+
+  ~ExecuteWhen()
+  {
+    if (mCondFn()) {
+      mExeFn();
+    }
+  }
+
+  ExecuteWhen(const ExecuteWhen&) = delete;
+  ExecuteWhen(ExecuteWhen&&) = delete;
+  ExecuteWhen& operator=(const ExecuteWhen&) = delete;
+  ExecuteWhen& operator=(ExecuteWhen&&) = delete;
+
+private:
+  CondFnT&  mCondFn;
+  ExeFnT&   mExeFn;
+};
 
 } 
 } 
