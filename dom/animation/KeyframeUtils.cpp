@@ -19,6 +19,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/KeyframeEffectReadOnly.h" 
+#include "mozilla/dom/Nullable.h"
 #include "jsapi.h" 
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h" 
@@ -31,6 +32,8 @@
 #include "nsIScriptError.h"
 #include "nsTArray.h"
 #include <algorithm> 
+
+using mozilla::dom::Nullable;
 
 namespace mozilla {
 

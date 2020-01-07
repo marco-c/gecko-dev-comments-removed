@@ -35,7 +35,7 @@ struct ComputedTiming
   
   
   
-  Nullable<double>    mProgress;
+  dom::Nullable<double>    mProgress;
   
   uint64_t            mCurrentIteration = 0;
   
