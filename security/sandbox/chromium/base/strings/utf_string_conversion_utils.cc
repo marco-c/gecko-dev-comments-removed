@@ -122,7 +122,10 @@ void PrepareForUTF8Output(const CHAR* src,
 
 
 template void PrepareForUTF8Output(const wchar_t*, size_t, std::string*);
+#ifndef __MINGW32__
+
 template void PrepareForUTF8Output(const char16*, size_t, std::string*);
+#endif
 
 template<typename STRING>
 void PrepareForUTF16Or32Output(const char* src,
@@ -143,6 +146,9 @@ void PrepareForUTF16Or32Output(const char* src,
 
 
 template void PrepareForUTF16Or32Output(const char*, size_t, std::wstring*);
+#ifndef __MINGW32__
+
 template void PrepareForUTF16Or32Output(const char*, size_t, string16*);
+#endif
 
 }  
