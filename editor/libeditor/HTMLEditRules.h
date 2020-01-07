@@ -464,8 +464,35 @@ protected:
   bool IsEmptyBlockElement(Element& aElement,
                            IgnoreSingleBR aIgnoreSingleBR);
 
-  nsresult CheckForEmptyBlock(nsINode* aStartNode, Element* aBodyNode,
-                              nsIEditor::EDirection aAction, bool* aHandled);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  MaybeDeleteTopMostEmptyAncestor(nsINode& aStartNode,
+                                  Element& aEditingHostElement,
+                                  nsIEditor::EDirection aAction,
+                                  bool* aHandled);
+
   enum class BRLocation { beforeBlock, blockEnd };
   Element* CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
                                int32_t aOffset = 0);

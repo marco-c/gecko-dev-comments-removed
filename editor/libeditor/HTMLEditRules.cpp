@@ -2395,7 +2395,7 @@ HTMLEditRules::WillDeleteSelection(nsIEditor::EDirection aAction,
     if (NS_WARN_IF(!host)) {
       return NS_ERROR_FAILURE;
     }
-    rv = CheckForEmptyBlock(startNode, host, aAction, aHandled);
+    rv = MaybeDeleteTopMostEmptyAncestor(*startNode, *host, aAction, aHandled);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -5898,41 +5898,37 @@ HTMLEditRules::AlignBlockContents(nsINode& aNode,
   return NS_OK;
 }
 
-
-
-
-
 nsresult
-HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
-                                  Element* aBodyNode,
-                                  nsIEditor::EDirection aAction,
-                                  bool* aHandled)
+HTMLEditRules::MaybeDeleteTopMostEmptyAncestor(nsINode& aStartNode,
+                                               Element& aEditingHostElement,
+                                               nsIEditor::EDirection aAction,
+                                               bool* aHandled)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
-  if (aBodyNode && IsInlineNode(*aBodyNode)) {
+  if (IsInlineNode(aEditingHostElement)) {
     return NS_OK;
   }
 
   
   
-  RefPtr<Element> block = HTMLEditorRef().GetBlock(*aStartNode);
-  bool bIsEmptyNode;
+  RefPtr<Element> block = HTMLEditorRef().GetBlock(aStartNode);
   RefPtr<Element> emptyBlock;
-  if (block && block != aBodyNode) {
+  if (block && block != &aEditingHostElement) {
     
+    bool isEmptyNode = false;
     nsresult rv =
-      HTMLEditorRef().IsEmptyNode(block, &bIsEmptyNode, true, false);
+      HTMLEditorRef().IsEmptyNode(block, &isEmptyNode, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    while (block && bIsEmptyNode && !HTMLEditUtils::IsTableElement(block) &&
-           block != aBodyNode) {
+    while (block && isEmptyNode && !HTMLEditUtils::IsTableElement(block) &&
+           block != &aEditingHostElement) {
       emptyBlock = block;
       block = HTMLEditorRef().GetBlockNodeParent(emptyBlock);
       if (block) {
-        rv = HTMLEditorRef().IsEmptyNode(block, &bIsEmptyNode, true, false);
+        rv = HTMLEditorRef().IsEmptyNode(block, &isEmptyNode, true, false);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -5940,43 +5936,59 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
     }
   }
 
-  if (emptyBlock && emptyBlock->IsEditable()) {
-    nsCOMPtr<nsINode> blockParent = emptyBlock->GetParentNode();
-    NS_ENSURE_TRUE(blockParent, NS_ERROR_FAILURE);
+  if (!emptyBlock || !emptyBlock->IsEditable()) {
+    return NS_OK;
+  }
 
-    if (HTMLEditUtils::IsListItem(emptyBlock)) {
+  nsCOMPtr<nsINode> blockParent = emptyBlock->GetParentNode();
+  if (NS_WARN_IF(!blockParent)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (HTMLEditUtils::IsListItem(emptyBlock)) {
+    
+    
+    
+    
+    
+    if (HTMLEditorRef().IsFirstEditableChild(emptyBlock)) {
+      EditorDOMPoint atBlockParent(blockParent);
+      if (NS_WARN_IF(!atBlockParent.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
       
-      if (HTMLEditorRef().IsFirstEditableChild(emptyBlock)) {
-        EditorDOMPoint atBlockParent(blockParent);
-        if (NS_WARN_IF(!atBlockParent.IsSet())) {
+      
+      if (!HTMLEditUtils::IsList(atBlockParent.GetContainer())) {
+        RefPtr<Element> brElement =
+          HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
+                                                         atBlockParent);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(!brElement)) {
           return NS_ERROR_FAILURE;
         }
-        
-        if (!HTMLEditUtils::IsList(atBlockParent.GetContainer())) {
-          
-          RefPtr<Element> brElement =
-            HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
-                                                           atBlockParent);
-          if (NS_WARN_IF(!brElement)) {
-            return NS_ERROR_FAILURE;
-          }
-          
-          ErrorResult error;
-          SelectionRef().Collapse(EditorRawDOMPoint(brElement), error);
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
+        ErrorResult error;
+        SelectionRef().Collapse(EditorRawDOMPoint(brElement), error);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
         }
-        
-        
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
       }
-    } else {
-      if (aAction == nsIEditor::eNext || aAction == nsIEditor::eNextWord ||
-          aAction == nsIEditor::eToEndOfLine) {
+    }
+  } else {
+    switch (aAction) {
+      case nsIEditor::eNext:
+      case nsIEditor::eNextWord:
+      case nsIEditor::eToEndOfLine: {
+        
         
         EditorRawDOMPoint afterEmptyBlock(emptyBlock);
-        DebugOnly<bool> advanced = afterEmptyBlock.AdvanceOffset();
-        NS_WARNING_ASSERTION(advanced,
+        bool advancedFromEmptyBlock = afterEmptyBlock.AdvanceOffset();
+        NS_WARNING_ASSERTION(advancedFromEmptyBlock,
           "Failed to set selection to the after the empty block");
         nsCOMPtr<nsIContent> nextNode =
           HTMLEditorRef().GetNextNode(afterEmptyBlock);
@@ -5984,24 +5996,33 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
           EditorDOMPoint pt = GetGoodSelPointForNode(*nextNode, aAction);
           ErrorResult error;
           SelectionRef().Collapse(pt, error);
+          if (NS_WARN_IF(!CanHandleEditAction())) {
+            error.SuppressException();
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
-        } else {
-          
-          EditorRawDOMPoint afterEmptyBlock(emptyBlock);
-          if (NS_WARN_IF(!afterEmptyBlock.AdvanceOffset())) {
-            return NS_ERROR_FAILURE;
-          }
-          ErrorResult error;
-          SelectionRef().Collapse(afterEmptyBlock, error);
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
+          break;
         }
-      } else if (aAction == nsIEditor::ePrevious ||
-                 aAction == nsIEditor::ePreviousWord ||
-                 aAction == nsIEditor::eToBeginningOfLine) {
+        if (NS_WARN_IF(!advancedFromEmptyBlock)) {
+          return NS_ERROR_FAILURE;
+        }
+        ErrorResult error;
+        SelectionRef().Collapse(afterEmptyBlock, error);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+        break;
+      }
+      case nsIEditor::ePrevious:
+      case nsIEditor::ePreviousWord:
+      case nsIEditor::eToBeginningOfLine: {
+        
         
         EditorRawDOMPoint atEmptyBlock(emptyBlock);
         nsCOMPtr<nsIContent> priorNode =
@@ -6010,29 +6031,43 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
           EditorDOMPoint pt = GetGoodSelPointForNode(*priorNode, aAction);
           ErrorResult error;
           SelectionRef().Collapse(pt, error);
+          if (NS_WARN_IF(!CanHandleEditAction())) {
+            error.SuppressException();
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
           if (NS_WARN_IF(error.Failed())) {
             return error.StealNSResult();
           }
-        } else {
-          EditorRawDOMPoint afterEmptyBlock(emptyBlock);
-          if (NS_WARN_IF(!afterEmptyBlock.AdvanceOffset())) {
-            return NS_ERROR_FAILURE;
-          }
-          ErrorResult error;
-          SelectionRef().Collapse(afterEmptyBlock, error);
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
+          break;
         }
-      } else if (aAction != nsIEditor::eNone) {
-        MOZ_CRASH("CheckForEmptyBlock doesn't support this action yet");
+        EditorRawDOMPoint afterEmptyBlock(emptyBlock);
+        if (NS_WARN_IF(!afterEmptyBlock.AdvanceOffset())) {
+          return NS_ERROR_FAILURE;
+        }
+        ErrorResult error;
+        SelectionRef().Collapse(afterEmptyBlock, error);
+        if (NS_WARN_IF(!CanHandleEditAction())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+        break;
       }
+      case nsIEditor::eNone:
+        break;
+      default:
+        MOZ_CRASH("CheckForEmptyBlock doesn't support this action yet");
     }
-    *aHandled = true;
-    nsresult rv = HTMLEditorRef().DeleteNodeWithTransaction(*emptyBlock);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  }
+  *aHandled = true;
+  nsresult rv = HTMLEditorRef().DeleteNodeWithTransaction(*emptyBlock);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   return NS_OK;
 }
