@@ -1,3 +1,4 @@
+
 import os
 
 BUILD_DIR = "mozilla-central"
