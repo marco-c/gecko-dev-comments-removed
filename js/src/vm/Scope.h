@@ -129,6 +129,39 @@ class BindingName
     void trace(JSTracer* trc);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TrailingNamesArray
+{
+  private:
+    alignas(BindingName) unsigned char data_[sizeof(BindingName)];
+
+  private:
+    
+    
+    
+    
+    void* ptr() {
+        return data_;
+    }
+
+  public:
+    BindingName* start() { return reinterpret_cast<BindingName*>(ptr()); }
+
+    BindingName& operator[](size_t i) { return start()[i]; }
+};
+
 class BindingLocation
 {
   public:
@@ -388,7 +421,7 @@ class LexicalScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
@@ -398,7 +431,7 @@ class LexicalScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -510,7 +543,7 @@ class FunctionScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
         Zone* zone() const;
@@ -521,7 +554,7 @@ class FunctionScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -612,7 +645,7 @@ class VarScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
@@ -622,7 +655,7 @@ class VarScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -706,7 +739,7 @@ class GlobalScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
@@ -716,7 +749,7 @@ class GlobalScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -811,7 +844,7 @@ class EvalScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
@@ -821,7 +854,7 @@ class EvalScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -917,7 +950,7 @@ class ModuleScope : public Scope
 
         
         
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
         Zone* zone() const;
@@ -928,7 +961,7 @@ class ModuleScope : public Scope
     }
 
     static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->names;
+        *names = data->trailingNames.start();
         *length = data->length;
     }
 
@@ -978,7 +1011,7 @@ class WasmInstanceScope : public Scope
         
         GCPtr<WasmInstanceObject*> instance;
 
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
@@ -1034,7 +1067,7 @@ class WasmFunctionScope : public Scope
         uint32_t nextFrameSlot;
         uint32_t funcIndex;
 
-        BindingName names[1];
+        TrailingNamesArray trailingNames;
 
         void trace(JSTracer* trc);
     };
