@@ -47,6 +47,14 @@ function validateAndParseParamRecursive(param, properties) {
       return validateAndParseSimpleParam(param, properties.type);
 
     case "array":
+      if (param === undefined) {
+        
+        
+        
+        
+        return [true, undefined];
+      }
+
       if (!Array.isArray(param)) {
         log.error("Array expected but not received");
         return [false, null];
