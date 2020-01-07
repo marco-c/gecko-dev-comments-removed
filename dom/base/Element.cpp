@@ -1705,8 +1705,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   
   
-  
-  if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot()) {
+  if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
     nsXBLBinding* binding =
       OwnerDoc()->BindingManager()->GetBindingWithContent(this);
 
@@ -1768,8 +1767,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
 
   
-  ShadowRoot* shadowRoot = GetShadowRoot();
-  if (shadowRoot) {
+  if (ShadowRoot* shadowRoot = GetShadowRoot()) {
     shadowRoot->SetIsComposedDocParticipant(IsInComposedDoc());
     for (nsIContent* child = shadowRoot->GetFirstChild(); child;
          child = child->GetNextSibling()) {
@@ -1989,11 +1987,9 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   }
 
   if (document) {
-    
-    
-    
-    
-    if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) && !GetShadowRoot()) {
+    if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+      
+      
       nsContentUtils::AddScriptRunner(
         new RemoveFromBindingManagerRunnable(
           document->BindingManager(), this, document));
