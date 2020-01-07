@@ -18,13 +18,16 @@ from collections import OrderedDict
 
 PHFSIZE = 512
 
+
 def indented(s):
     return s.replace('\n', '\n  ')
+
 
 def cpp(v):
     if type(v) == bool:
         return "true" if v else "false"
     return str(v)
+
 
 def mkstruct(*fields):
     def mk(comment, **vals):
@@ -35,6 +38,7 @@ def mkstruct(*fields):
         r += "\n}"
         return r
     return mk
+
 
 
 
@@ -129,11 +133,13 @@ def split_at_idxs(s, lengths):
         idx += length
     assert idx == len(s)
 
-def split_iid(iid): 
-    iid = iid.replace('-', '') 
+
+def split_iid(iid):  
+    iid = iid.replace('-', '')  
     return tuple(split_at_idxs(iid, (8, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2)))
 
-def iid_bytes(iid): 
+
+def iid_bytes(iid):  
     bs = bytearray()
     for num in split_iid(iid):
         b = bytearray.fromhex(num)
@@ -143,6 +149,8 @@ def iid_bytes(iid):
         b.reverse()
         bs += b
     return bs
+
+
 
 
 def splitint(i):
@@ -157,23 +165,23 @@ def splitint(i):
 
 
 utility_types = [
-    { 'tag': 'TD_INT8' },
-    { 'tag': 'TD_UINT8' },
-    { 'tag': 'TD_INT16' },
-    { 'tag': 'TD_UINT16' },
-    { 'tag': 'TD_INT32' },
-    { 'tag': 'TD_UINT32' },
-    { 'tag': 'TD_INT64' },
-    { 'tag': 'TD_UINT64' },
-    { 'tag': 'TD_FLOAT' },
-    { 'tag': 'TD_DOUBLE' },
-    { 'tag': 'TD_BOOL' },
-    { 'tag': 'TD_CHAR' },
-    { 'tag': 'TD_WCHAR' },
-    { 'tag': 'TD_PNSIID' },
-    { 'tag': 'TD_PSTRING' },
-    { 'tag': 'TD_PWSTRING' },
-    { 'tag': 'TD_INTERFACE_IS_TYPE', 'iid_is': 0 },
+    {'tag': 'TD_INT8'},
+    {'tag': 'TD_UINT8'},
+    {'tag': 'TD_INT16'},
+    {'tag': 'TD_UINT16'},
+    {'tag': 'TD_INT32'},
+    {'tag': 'TD_UINT32'},
+    {'tag': 'TD_INT64'},
+    {'tag': 'TD_UINT64'},
+    {'tag': 'TD_FLOAT'},
+    {'tag': 'TD_DOUBLE'},
+    {'tag': 'TD_BOOL'},
+    {'tag': 'TD_CHAR'},
+    {'tag': 'TD_WCHAR'},
+    {'tag': 'TD_PNSIID'},
+    {'tag': 'TD_PSTRING'},
+    {'tag': 'TD_PWSTRING'},
+    {'tag': 'TD_INTERFACE_IS_TYPE', 'iid_is': 0},
 ]
 
 
@@ -195,7 +203,7 @@ def link_to_cpp(interfaces, fd):
         if name is not None:
             idx = name_phf.lookup(bytearray(name, 'ascii'))
             if iid_phf.values[idx]['name'] == name:
-                return idx + 1 
+                return idx + 1  
         return 0
 
     
@@ -228,7 +236,7 @@ def link_to_cpp(interfaces, fd):
                 "%d = %s" % (idx, do['name']),
                 
                 mUnwrap="UnwrapDOMObject<mozilla::dom::prototypes::id::%s, %s>" %
-                    (do['name'], do['native']),
+                (do['name'], do['native']),
                 mWrap="WrapDOMObject<%s>" % do['native'],
                 mCleanup="CleanupDOMObject<%s>" % do['native'],
             ))
@@ -255,7 +263,7 @@ def link_to_cpp(interfaces, fd):
             types.append(lower_type(type))
         return idx
 
-    def describe_type(type): 
+    def describe_type(type):  
         tag = type['tag'][3:].lower()
         if tag == 'array':
             return '%s[size_is=%d]' % (
@@ -312,7 +320,7 @@ def link_to_cpp(interfaces, fd):
         methodname = "%s::%s" % (ifacename, method['name'])
 
         if 'notxpcom' in method['flags'] or 'hidden' in method['flags']:
-            paramidx = name = numparams = 0 
+            paramidx = name = numparams = 0  
         else:
             name = lower_string(method['name'])
             numparams = len(method['params'])
@@ -361,17 +369,17 @@ def link_to_cpp(interfaces, fd):
             mValue="(uint32_t)%d" % const['value'],
         ))
 
-    def lower_prop_hooks(iface): 
+    def lower_prop_hooks(iface):  
         assert iface['shim'] is not None
 
         
         includes.add("mozilla/dom/%sBinding.h" %
-            (iface['shimfile'] or iface['shim']))
+                     (iface['shimfile'] or iface['shim']))
 
         
         prophooks.append(
-            "mozilla::dom::%sBinding::sNativePropertyHooks, // %d = %s(%s)" % \
-                (iface['shim'], len(prophooks), iface['name'], iface['shim']))
+            "mozilla::dom::%sBinding::sNativePropertyHooks, // %d = %s(%s)" %
+            (iface['shim'], len(prophooks), iface['name'], iface['shim']))
 
     def collect_base_info(iface):
         methods = 0
@@ -493,7 +501,7 @@ namespace detail {
     
     def array(ty, name, els):
         fd.write("const %s %s[] = {%s\n};\n\n" %
-            (ty, name, ','.join(indented('\n' + str(e)) for e in els)))
+                 (ty, name, ','.join(indented('\n' + str(e)) for e in els)))
     array("nsXPTInterfaceInfo", "sInterfaces", ifaces)
     array("nsXPTType", "sTypes", types)
     array("nsXPTParamInfo", "sParams", params)
@@ -571,6 +579,7 @@ def main():
     args = parser.parse_args(sys.argv[1:])
     with open(args.outfile, 'w') as fd:
         link_and_write(args.xpts, fd)
+
 
 if __name__ == '__main__':
     main()

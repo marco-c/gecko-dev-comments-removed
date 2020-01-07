@@ -32,15 +32,19 @@ U32_HIGH_BIT = 0x80000000
 
 
 
+
+
 def hash(bytes, h=FNV_OFFSET_BASIS):
     for byte in bytes:
         h ^= byte       
         h *= FNV_PRIME  
-        h &= 0xffffffff 
+        h &= 0xffffffff  
     return h
+
 
 IntermediateBucket = namedtuple('IntermediateBucket', ['index', 'entries'])
 HashEntry = namedtuple('HashEntry', ['key', 'value'])
+
 
 class PerfectHash(object):
     """An object representing a perfect hash function"""

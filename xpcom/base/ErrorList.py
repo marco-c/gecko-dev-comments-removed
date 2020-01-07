@@ -1,6 +1,7 @@
 
 from collections import OrderedDict
 
+
 class Mod:
     """
     A nserror module. When used with a `with` statement, binds the itself to
@@ -16,6 +17,7 @@ class Mod:
 
     def __exit__(self, _type, _value, _traceback):
         Mod.active = None
+
 
 modules = OrderedDict()
 
@@ -95,14 +97,18 @@ MODULE_BASE_OFFSET = 0x45
 NS_ERROR_SEVERITY_SUCCESS = 0
 NS_ERROR_SEVERITY_ERROR = 1
 
+
 def SUCCESS_OR_FAILURE(sev, module, code):
     return (sev << 31) | ((module + MODULE_BASE_OFFSET) << 16) | code
+
 
 def FAILURE(code):
     return SUCCESS_OR_FAILURE(NS_ERROR_SEVERITY_ERROR, Mod.active.num, code)
 
+
 def SUCCESS(code):
     return SUCCESS_OR_FAILURE(NS_ERROR_SEVERITY_SUCCESS, Mod.active.num, code)
+
 
 
 
@@ -199,7 +205,6 @@ with modules["BASE"]:
 
 
 
-
 with modules["GFX"]:
     
     errors["NS_ERROR_GFX_PRINTER_NO_PRINTER_AVAILABLE"] = FAILURE(1)
@@ -223,7 +228,6 @@ with modules["GFX"]:
 
 
 
-
 with modules["WIDGET"]:
     
     
@@ -236,7 +240,6 @@ with modules["WIDGET"]:
     
     
     errors["NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY"] = SUCCESS(2)
-
 
 
 
@@ -357,7 +360,6 @@ with modules["NETWORK"]:
     
     errors["NS_ERROR_DOCSHELL_DYING"] = FAILURE(78)
 
-
     
 
     errors["NS_ERROR_FTP_LOGIN"] = FAILURE(21)
@@ -378,7 +380,6 @@ with modules["NETWORK"]:
     
     
     errors["NS_ERROR_UNKNOWN_PROXY_HOST"] = FAILURE(42)
-
 
     
 
@@ -411,7 +412,6 @@ with modules["NETWORK"]:
     errors["NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS"] = FAILURE(80)
     
     errors["NS_ERROR_HOST_IS_IP_ADDRESS"] = FAILURE(81)
-
 
     
 
@@ -454,14 +454,12 @@ with modules["NETWORK"]:
 
 
 
-
 with modules["PLUGINS"]:
     errors["NS_ERROR_PLUGINS_PLUGINSNOTCHANGED"] = FAILURE(1000)
     errors["NS_ERROR_PLUGIN_DISABLED"] = FAILURE(1001)
     errors["NS_ERROR_PLUGIN_BLOCKLISTED"] = FAILURE(1002)
     errors["NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED"] = FAILURE(1003)
     errors["NS_ERROR_PLUGIN_CLICKTOPLAY"] = FAILURE(1004)
-
 
 
 
@@ -474,7 +472,6 @@ with modules["LAYOUT"]:
     errors["NS_OK_PARSE_SHEET"] = SUCCESS(1)
     
     errors["NS_POSITION_BEFORE_TABLE"] = SUCCESS(3)
-
 
 
 
@@ -511,7 +508,6 @@ with modules["HTMLPARSER"]:
 
 
 
-
 with modules["RDF"]:
     
     
@@ -528,7 +524,6 @@ with modules["RDF"]:
     errors["NS_RDF_ASSERTION_REJECTED"] = SUCCESS(3)
     
     errors["NS_RDF_STOP_VISIT"] = SUCCESS(4)
-
 
 
 
@@ -560,7 +555,6 @@ with modules["UCONV"]:
 
 
 
-
 with modules["FILES"]:
     errors["NS_ERROR_FILE_UNRECOGNIZED_PATH"] = FAILURE(1)
     errors["NS_ERROR_FILE_UNRESOLVABLE_SYMLINK"] = FAILURE(2)
@@ -587,7 +581,6 @@ with modules["FILES"]:
     errors["NS_SUCCESS_FILE_DIRECTORY_EMPTY"] = SUCCESS(1)
     
     errors["NS_SUCCESS_AGGREGATE_RESULT"] = SUCCESS(2)
-
 
 
 
@@ -659,9 +652,12 @@ with modules["DOM"]:
     errors["NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_SENDING"] = FAILURE(1020)
     errors["NS_ERROR_DOM_INVALID_STATE_XHR_MUST_NOT_BE_LOADING_OR_DONE"] = FAILURE(1021)
     errors["NS_ERROR_DOM_INVALID_STATE_XHR_HAS_WRONG_RESPONSETYPE_FOR_RESPONSEXML"] = FAILURE(1022)
-    errors["NS_ERROR_DOM_INVALID_STATE_XHR_HAS_WRONG_RESPONSETYPE_FOR_RESPONSETEXT"] = FAILURE(1023)
-    errors["NS_ERROR_DOM_INVALID_STATE_XHR_CHUNKED_RESPONSETYPES_UNSUPPORTED_FOR_SYNC"] = FAILURE(1024)
-    errors["NS_ERROR_DOM_INVALID_ACCESS_XHR_TIMEOUT_AND_RESPONSETYPE_UNSUPPORTED_FOR_SYNC"] = FAILURE(1025)
+    errors["NS_ERROR_DOM_INVALID_STATE_XHR_HAS_WRONG_RESPONSETYPE_FOR_RESPONSETEXT"] = FAILURE(
+        1023)
+    errors["NS_ERROR_DOM_INVALID_STATE_XHR_CHUNKED_RESPONSETYPES_UNSUPPORTED_FOR_SYNC"] = FAILURE(
+        1024)
+    errors["NS_ERROR_DOM_INVALID_ACCESS_XHR_TIMEOUT_AND_RESPONSETYPE_UNSUPPORTED_FOR_SYNC"] = FAILURE(
+        1025)
 
     
     
@@ -687,7 +683,6 @@ with modules["DOM"]:
 
 
 
-
 with modules["IMGLIB"]:
     errors["NS_IMAGELIB_SUCCESS_LOAD_FINISHED"] = SUCCESS(0)
 
@@ -700,13 +695,11 @@ with modules["IMGLIB"]:
 
 
 
-
 with modules["EDITOR"]:
     errors["NS_ERROR_EDITOR_DESTROYED"] = FAILURE(1)
 
     errors["NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND"] = SUCCESS(1)
     errors["NS_SUCCESS_EDITOR_FOUND_TARGET"] = SUCCESS(2)
-
 
 
 
@@ -773,10 +766,8 @@ with modules["XPCONNECT"]:
 
 
 
-
 with modules["PROFILE"]:
     errors["NS_ERROR_LAUNCHED_CHILD_PROCESS"] = FAILURE(200)
-
 
 
 
@@ -818,12 +809,10 @@ with modules["SECURITY"]:
 
 
 
-
 with modules["DOM_XPATH"]:
     
     errors["NS_ERROR_DOM_INVALID_EXPRESSION_ERR"] = FAILURE(51)
     errors["NS_ERROR_DOM_TYPE_ERR"] = FAILURE(52)
-
 
 
 
@@ -854,7 +843,6 @@ with modules["URILOADER"]:
 
 
 
-
 with modules["CONTENT"]:
     
     errors["NS_ERROR_CONTENT_BLOCKED"] = FAILURE(6)
@@ -878,7 +866,6 @@ with modules["CONTENT"]:
     errors["NS_FINDBROADCASTER_NOT_FOUND"] = SUCCESS(12)
     errors["NS_FINDBROADCASTER_FOUND"] = SUCCESS(13)
     errors["NS_FINDBROADCASTER_AWAIT_OVERLAYS"] = SUCCESS(14)
-
 
 
 
@@ -926,7 +913,6 @@ with modules["XSLT"]:
 
 
 
-
 with modules["IPC"]:
     
     errors["NS_ERROR_TRANSPORT_INIT"] = FAILURE(1)
@@ -951,7 +937,6 @@ with modules["SVG"]:
 
 
 
-
 with modules["STORAGE"]:
     
     
@@ -969,12 +954,10 @@ with modules["STORAGE"]:
 
 
 
-
 with modules["DOM_FILE"]:
     errors["NS_ERROR_DOM_FILE_NOT_FOUND_ERR"] = FAILURE(0)
     errors["NS_ERROR_DOM_FILE_NOT_READABLE_ERR"] = FAILURE(1)
     errors["NS_ERROR_DOM_FILE_ABORT_ERR"] = FAILURE(2)
-
 
 
 
@@ -994,7 +977,6 @@ with modules["DOM_INDEXEDDB"]:
     errors["NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR"] = FAILURE(11)
     errors["NS_ERROR_DOM_INDEXEDDB_VERSION_ERR"] = FAILURE(12)
     errors["NS_ERROR_DOM_INDEXEDDB_RECOVERABLE_ERR"] = FAILURE(1001)
-
 
 
 
@@ -1155,7 +1137,6 @@ with modules["GENERAL"]:
     errors["NS_SUCCESS_RESTART_APP_NOT_SAME_PROFILE"] = SUCCESS(3)
     errors["NS_SUCCESS_UNORM_NOTFOUND"] = SUCCESS(17)
 
-
     
     
     errors["NS_ERROR_NOT_IN_TREE"] = FAILURE(38)
@@ -1208,6 +1189,7 @@ const nsresult
 
 #endif // ErrorList_h__
 """.format(",\n".join(items)))
+
 
 def error_names_internal_h(output):
     """Generate ErrorNamesInternal.h, which is a header file declaring one
