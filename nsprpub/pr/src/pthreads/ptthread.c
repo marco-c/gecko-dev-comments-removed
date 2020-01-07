@@ -978,7 +978,23 @@ void _PR_InitThreads(
 
 
 
+#if defined(DARWIN)
+
+
+
+
+
+
+static void _PR_Fini(void);
+
+__attribute__ ((constructor))
+static void _register_PR_Fini() {
+  atexit(_PR_Fini);
+}
+#else
 static void _PR_Fini(void) __attribute__ ((destructor));
+#endif
+
 #elif defined(__SUNPRO_C)
 
 
