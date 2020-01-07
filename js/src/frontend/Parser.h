@@ -913,8 +913,6 @@ class GeneralParser
     
     MOZ_MUST_USE bool warningAt(uint32_t offset, unsigned errorNumber, ...);
 
-    bool warnOnceAboutExprClosure();
-
     
 
 
