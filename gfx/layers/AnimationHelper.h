@@ -249,12 +249,7 @@ public:
 
 
 
-
-
-
-
-
-  static bool
+  static void
   SampleAnimations(CompositorAnimationStorage* aStorage,
                    TimeStamp aTime);
 };

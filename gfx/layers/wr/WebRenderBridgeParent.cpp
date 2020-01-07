@@ -776,6 +776,15 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
         if (data.animations().Length()) {
           mAnimStorage->SetAnimations(data.id(), data.animations());
           mActiveAnimations.insert(data.id());
+          
+          if (op.opacity().type() == OptionalOpacity::Tfloat) {
+            mAnimStorage->SetAnimatedValue(data.id(), op.opacity().get_float());
+          }
+          
+          if (op.transform().type() == OptionalTransform::TMatrix4x4) {
+            Matrix4x4 transform(Move(op.transform().get_Matrix4x4()));
+            mAnimStorage->SetAnimatedValue(data.id(), Move(transform));
+          }
         }
         break;
       }
@@ -1167,7 +1176,7 @@ WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
   Destroy();
 }
 
-bool
+void
 WebRenderBridgeParent::AdvanceAnimations()
 {
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
@@ -1178,15 +1187,15 @@ WebRenderBridgeParent::AdvanceAnimations()
       
       
       
-      return AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp);
+      AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp);
+      return;
     }
   }
 
   TimeStamp lastComposeTime = mCompositorScheduler->GetLastComposeTime();
   
   
-  const bool isAnimating =
-    AnimationHelper::SampleAnimations(mAnimStorage,
+  AnimationHelper::SampleAnimations(mAnimStorage,
       !mPreviousFrameTimeStamp.IsNull()
       ? mPreviousFrameTimeStamp
       : lastComposeTime);
@@ -1196,15 +1205,13 @@ WebRenderBridgeParent::AdvanceAnimations()
   
   mPreviousFrameTimeStamp =
     mAnimStorage->AnimatedValueCount() ? lastComposeTime : TimeStamp();
-
-  return isAnimating;
 }
 
-bool
+void
 WebRenderBridgeParent::SampleAnimations(nsTArray<wr::WrOpacityProperty>& aOpacityArray,
                                         nsTArray<wr::WrTransformProperty>& aTransformArray)
 {
-  const bool isAnimating = AdvanceAnimations();
+  AdvanceAnimations();
 
   
   if (mAnimStorage->AnimatedValueCount()) {
@@ -1220,8 +1227,6 @@ WebRenderBridgeParent::SampleAnimations(nsTArray<wr::WrOpacityProperty>& aOpacit
       }
     }
   }
-
-  return isAnimating;
 }
 
 void
@@ -1268,7 +1273,8 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   nsTArray<wr::WrOpacityProperty> opacityArray;
   nsTArray<wr::WrTransformProperty> transformArray;
 
-  if (SampleAnimations(opacityArray, transformArray)) {
+  SampleAnimations(opacityArray, transformArray);
+  if (!transformArray.IsEmpty() || !opacityArray.IsEmpty()) {
     ScheduleGenerateFrame();
   }
   
