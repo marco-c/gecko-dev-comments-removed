@@ -52,6 +52,9 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
         public @NonNull Builder arguments(final @NonNull String[] args) {
+            if (args == null) {
+                throw new IllegalArgumentException("Arguments must not  be null");
+            }
             mSettings.mArgs = args;
             return this;
         }
@@ -62,6 +65,9 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
         public @NonNull Builder extras(final @NonNull Bundle extras) {
+            if (extras == null) {
+                throw new IllegalArgumentException("Extras must not  be null");
+            }
             mSettings.mExtras = extras;
             return this;
         }
