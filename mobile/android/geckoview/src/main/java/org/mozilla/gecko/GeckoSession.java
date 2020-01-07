@@ -75,6 +75,7 @@ public class GeckoSession extends LayerSession
             new String[]{
                 "GeckoView:ContextMenu",
                 "GeckoView:DOMTitleChanged",
+                "GeckoView:DOMWindowFocus",
                 "GeckoView:FullScreenEnter",
                 "GeckoView:FullScreenExit"
             }
@@ -94,6 +95,8 @@ public class GeckoSession extends LayerSession
                 } else if ("GeckoView:DOMTitleChanged".equals(event)) {
                     listener.onTitleChange(GeckoSession.this,
                                            message.getString("title"));
+                } else if ("GeckoView:DOMWindowFocus".equals(event)) {
+                    listener.onFocusRequest(GeckoSession.this);
                 } else if ("GeckoView:FullScreenEnter".equals(event)) {
                     listener.onFullScreen(GeckoSession.this, true);
                 } else if ("GeckoView:FullScreenExit".equals(event)) {
@@ -1196,6 +1199,13 @@ public class GeckoSession extends LayerSession
 
 
         void onTitleChange(GeckoSession session, String title);
+
+        
+
+
+
+
+        void onFocusRequest(GeckoSession session);
 
         
 
