@@ -94,7 +94,7 @@ static uint32_t getTLSProviderFlagFallbackLimit(uint32_t flags)
   return (flags & 0x38) >> 3;
 }
 
-static bool getTLSProviderFlagAltHandshake(uint32_t flags)
+static bool getTLSProviderFlagCompatMode(uint32_t flags)
 {
   return (flags & 0x40);
 }
@@ -2602,12 +2602,12 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   
-  if (getTLSProviderFlagAltHandshake(infoObject->GetProviderTlsFlags())) {
+  if (getTLSProviderFlagCompatMode(infoObject->GetProviderTlsFlags())) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] nsSSLIOLayerSetOptions: Use AltHandshake\n", fd));
-    if (SECSuccess != SSL_UseAltServerHelloType(fd, PR_TRUE)) {
+            ("[%p] nsSSLIOLayerSetOptions: Use Compatible Handshake\n", fd));
+    if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE)) {
           MOZ_LOG(gPIPNSSLog, LogLevel::Error,
-                  ("[%p] nsSSLIOLayerSetOptions: Use AltHandshake failed\n", fd));
+                  ("[%p] nsSSLIOLayerSetOptions: Setting compat mode failed\n", fd));
           
     }
   }
