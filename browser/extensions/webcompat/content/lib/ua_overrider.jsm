@@ -15,7 +15,26 @@ class UAOverrider {
   }
 
   initOverrides(overrides) {
+    
+    
+    
+    let currentApplication = "firefox";
+    try {
+      currentApplication = Services.appinfo.name.toLowerCase();
+    } catch (_) {}
+
     for (let override of overrides) {
+      
+      if (!override.applications) {
+        override.applications = ["firefox"];
+      }
+
+      
+      
+      if (!override.applications.includes(currentApplication)) {
+        continue;
+      }
+
       if (!this._overrides[override.baseDomain]) {
         this._overrides[override.baseDomain] = [];
       }
