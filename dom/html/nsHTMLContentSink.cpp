@@ -981,9 +981,7 @@ HTMLContentSink::NotifyRootInsertion()
   
   
   mNotifiedRootInsertion = true;
-  int32_t index = mDocument->ComputeIndexOf(mRoot);
-  NS_ASSERTION(index != -1, "mRoot not child of document?");
-  NotifyInsert(nullptr, mRoot, index);
+  NotifyInsert(nullptr, mRoot);
 
   
   
