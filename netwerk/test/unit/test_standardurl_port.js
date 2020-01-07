@@ -23,9 +23,9 @@ function run_test() {
   Assert.ok(!/80/.test(httpURI.spec));
 
   
-  httpURI.spec = "http://foo.com:81";
+  httpURI = httpURI.mutate().setSpec("http://foo.com:81").finalize();
   Assert.equal(81, httpURI.port);
-  httpURI.spec = "http://foo.com:80";
+  httpURI = httpURI.mutate().setSpec("http://foo.com:80").finalize();
   Assert.equal(-1, httpURI.port);
   Assert.ok(!/80/.test(httpURI.spec));
 

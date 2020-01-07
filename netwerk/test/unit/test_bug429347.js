@@ -6,33 +6,33 @@ function run_test() {
   var uri2 = ios.newURI("http://example.com/#bar");
   Assert.ok(uri1.equals(uri2));
 
-  uri1.spec = "http://example.com?bar";
-  uri2.spec = "http://example.com/?bar";
+  uri1 = uri1.mutate().setSpec("http://example.com?bar").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/?bar").finalize();
   Assert.ok(uri1.equals(uri2));
 
   
   
   
-  uri1.spec = "http://example.com;bar";
-  uri2.spec = "http://example.com/;bar";
+  uri1 = uri1.mutate().setSpec("http://example.com;bar").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/;bar").finalize();
   Assert.ok(!uri1.equals(uri2));
 
-  uri1.spec = "http://example.com#";
-  uri2.spec = "http://example.com/#";
+  uri1 = uri1.mutate().setSpec("http://example.com#").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/#").finalize();
   Assert.ok(uri1.equals(uri2));
 
-  uri1.spec = "http://example.com?";
-  uri2.spec = "http://example.com/?";
+  uri1 = uri1.mutate().setSpec("http://example.com?").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/?").finalize();
   Assert.ok(uri1.equals(uri2));
 
   
   
   
-  uri1.spec = "http://example.com;";
-  uri2.spec = "http://example.com/;";
+  uri1 = uri1.mutate().setSpec("http://example.com;").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/;").finalize();
   Assert.ok(!uri1.equals(uri2));
 
-  uri1.spec = "http://example.com";
-  uri2.spec = "http://example.com/";
+  uri1 = uri1.mutate().setSpec("http://example.com").finalize();
+  uri2 = uri2.mutate().setSpec("http://example.com/").finalize();
   Assert.ok(uri1.equals(uri2));
 }
