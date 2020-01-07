@@ -6,8 +6,7 @@
 
 
 const {CSSFilterEditorWidget} = require("devtools/client/shared/widgets/FilterWidget");
-const DOMUtils =
-      Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+const InspectorUtils = require("InspectorUtils");
 
 const TEST_URI = CHROME_URL_ROOT + "doc_filter-editor-01.html";
 const {getClientCssProperties} = require("devtools/shared/fronts/css-properties");
@@ -15,7 +14,7 @@ const {getClientCssProperties} = require("devtools/shared/fronts/css-properties"
 
 
 function verifyURL(string) {
-  let lexer = DOMUtils.getCSSLexer(string);
+  let lexer = InspectorUtils.getCSSLexer(string);
 
   let token = lexer.nextToken();
   if (!token || token.tokenType !== "url") {

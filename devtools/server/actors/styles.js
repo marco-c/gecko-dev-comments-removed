@@ -1584,7 +1584,7 @@ function getRuleText(initialText, line, column) {
 
   let {offset: textOffset, text} =
       getTextAtLineColumn(initialText, line, column);
-  let lexer = DOMUtils.getCSSLexer(text);
+  let lexer = InspectorUtils.getCSSLexer(text);
 
   
   while (true) {
@@ -1658,7 +1658,7 @@ function getSelectorOffsets(initialText, line, column) {
 
   let {offset: textOffset, text} =
       getTextAtLineColumn(initialText, line, column);
-  let lexer = DOMUtils.getCSSLexer(text);
+  let lexer = InspectorUtils.getCSSLexer(text);
 
   
   let endOffset;

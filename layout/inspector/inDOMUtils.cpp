@@ -363,21 +363,14 @@ InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal, css::Rule& aRule)
   return lineNumber;
 }
 
-} 
-} 
-
-NS_IMETHODIMP
-inDOMUtils::GetCSSLexer(const nsAString& aText, JSContext* aCx,
-                        JS::MutableHandleValue aResult)
+ CSSLexer*
+InspectorUtils::GetCSSLexer(GlobalObject& aGlobal, const nsAString& aText)
 {
-  MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
-  JS::Rooted<JSObject*> scope(aCx, JS::CurrentGlobalOrNull(aCx));
-  nsAutoPtr<CSSLexer> lexer(new CSSLexer(aText));
-  if (!WrapNewBindingNonWrapperCachedObject(aCx, scope, lexer, aResult)) {
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
+  return new CSSLexer(aText);
 }
+
+} 
+} 
 
 NS_IMETHODIMP
 inDOMUtils::GetSelectorCount(nsIDOMCSSStyleRule* aRule, uint32_t *aCount)
