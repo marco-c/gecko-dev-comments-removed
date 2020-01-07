@@ -499,9 +499,7 @@ nsMultiplexInputStream::IsNonBlocking(bool* aNonBlocking)
       return rv;
     }
     
-    
-    
-    if (*aNonBlocking) {
+    if (!*aNonBlocking) {
       return NS_OK;
     }
   }
