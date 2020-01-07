@@ -948,6 +948,7 @@ class RTCPeerConnection {
 
     
     
+    
     let pos = sdp.search(/[^\u0000-\u007f]/);
     if (pos != -1) {
       throw new this._win.DOMException(
