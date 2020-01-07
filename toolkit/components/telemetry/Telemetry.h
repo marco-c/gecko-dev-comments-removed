@@ -305,6 +305,41 @@ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+class MOZ_RAII RuntimeAutoCounter
+{
+public:
+  explicit RuntimeAutoCounter(
+    HistogramID aId,
+    uint32_t counterStart = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : id(aId)
+    , counter(counterStart)
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  }
+
+  ~RuntimeAutoCounter()
+  {
+    Accumulate(id, counter);
+  }
+
+  
+  void operator++()
+  {
+    ++counter;
+  }
+
+  
+  void operator+=(int increment)
+  {
+    counter += increment;
+  }
+
+private:
+  HistogramID id;
+  uint32_t counter;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
 template<HistogramID id>
 class MOZ_RAII AutoCounter {
 public:
