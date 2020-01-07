@@ -378,6 +378,11 @@ private:
   
 
 
+  mozilla::Atomic<int32_t> mDefaultTransactionType;
+
+  
+
+
 
   bool mTransactionInProgress;
 

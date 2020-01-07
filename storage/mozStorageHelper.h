@@ -63,7 +63,7 @@ class mozStorageTransaction
 public:
   mozStorageTransaction(mozIStorageConnection* aConnection,
                         bool aCommitOnComplete,
-                        int32_t aType = mozIStorageConnection::TRANSACTION_DEFERRED,
+                        int32_t aType = mozIStorageConnection::TRANSACTION_DEFAULT,
                         bool aAsyncCommit = false)
     : mConnection(aConnection),
       mHasTransaction(false),
@@ -73,7 +73,11 @@ public:
   {
     if (mConnection) {
       nsAutoCString query("BEGIN");
-      switch(aType) {
+      int32_t type = aType;
+      if (type == mozIStorageConnection::TRANSACTION_DEFAULT) {
+        MOZ_ALWAYS_SUCCEEDS(mConnection->GetDefaultTransactionType(&type));
+      }
+      switch (type) {
         case mozIStorageConnection::TRANSACTION_IMMEDIATE:
           query.AppendLiteral(" IMMEDIATE");
           break;
