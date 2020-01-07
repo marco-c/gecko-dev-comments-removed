@@ -35,7 +35,6 @@ public final class SessionTextInput {
         Handler getHandler(Handler defHandler);
         InputConnection onCreateInputConnection(EditorInfo attrs);
         boolean isInputActive();
-        void setShowSoftInputOnFocus(boolean showSoftInputOnFocus);
     }
 
     
@@ -92,7 +91,6 @@ public final class SessionTextInput {
     private final NativeQueue mQueue;
     private final GeckoEditable mEditable = new GeckoEditable();
     private final GeckoEditableChild mEditableChild = new GeckoEditableChild(mEditable);
-    private boolean mShowSoftInputOnFocus = true;
     private InputConnectionClient mInputConnection;
 
      SessionTextInput(final @NonNull GeckoSession session,
@@ -162,7 +160,6 @@ public final class SessionTextInput {
             mInputConnection = null;
         } else if (mInputConnection == null || mInputConnection.getView() != view) {
             mInputConnection = GeckoInputConnection.create(mSession, view, mEditable);
-            mInputConnection.setShowSoftInputOnFocus(mShowSoftInputOnFocus);
         }
         mEditable.setListener((EditableListener) mInputConnection);
     }
@@ -254,29 +251,5 @@ public final class SessionTextInput {
     public boolean isInputActive() {
         ThreadUtils.assertOnUiThread();
         return mInputConnection != null && mInputConnection.isInputActive();
-    }
-
-    
-
-
-
-
-    public void setShowSoftInputOnFocus(final boolean showSoftInputOnFocus) {
-        ThreadUtils.assertOnUiThread();
-
-        mShowSoftInputOnFocus = showSoftInputOnFocus;
-        if (mInputConnection != null) {
-            mInputConnection.setShowSoftInputOnFocus(showSoftInputOnFocus);
-        }
-    }
-
-    
-
-
-
-
-    public boolean getShowSoftInputOnFocus() {
-        ThreadUtils.assertOnUiThread();
-        return mShowSoftInputOnFocus;
     }
 }

@@ -81,7 +81,6 @@ import java.lang.reflect.Proxy;
 
     
     private volatile boolean mSoftInputReentrancyGuard;
-     boolean mShowSoftInputOnFocus = true;
 
     public static SessionTextInput.InputConnectionClient create(
             final GeckoSession session,
@@ -295,10 +294,6 @@ import java.lang.reflect.Proxy;
         v.post(new Runnable() {
             @Override
             public void run() {
-                if (!mShowSoftInputOnFocus) {
-                    return;
-                }
-
                 if (v.hasFocus() && !imm.isActive(v)) {
                     
                     
@@ -820,12 +815,6 @@ import java.lang.reflect.Proxy;
     public synchronized boolean isInputActive() {
         
         return mIMEState != IME_STATE_DISABLED;
-    }
-
-    @Override 
-    public void setShowSoftInputOnFocus(final boolean showSoftInputOnFocus) {
-        ThreadUtils.assertOnUiThread();
-        mShowSoftInputOnFocus = showSoftInputOnFocus;
     }
 
     @Override 
