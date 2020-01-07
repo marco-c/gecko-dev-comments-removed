@@ -57,7 +57,7 @@ private:
 
     void InitMemoryReporter();
 
-    void RegisterXPTHeader(XPTHeader* aHeader);
+    void RegisterXPTHeader(const XPTHeader* aHeader);
 
     
     void VerifyAndAddEntryIfNew(XPTInterfaceDirectoryEntry* iface,
