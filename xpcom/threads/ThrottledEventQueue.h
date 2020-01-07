@@ -55,23 +55,13 @@ namespace mozilla {
 
 
 
-
-
-
 class ThrottledEventQueue final : public nsISerialEventTarget
 {
   class Inner;
   RefPtr<Inner> mInner;
 
   explicit ThrottledEventQueue(already_AddRefed<Inner> aInner);
-  ~ThrottledEventQueue();
-
-  
-  
-  
-  
-  
-  void MaybeStartShutdown();
+  ~ThrottledEventQueue() = default;
 
 public:
   

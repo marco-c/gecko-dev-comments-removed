@@ -12,17 +12,11 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
 
-using mozilla::services::GetObserverService;
-
 namespace {
-
-static const char kShutdownTopic[] = "xpcom-shutdown";
 
 } 
 
@@ -55,16 +49,15 @@ static const char kShutdownTopic[] = "xpcom-shutdown";
 
 
 
-
-
-
-class ThrottledEventQueue::Inner final : public nsIObserver
+class ThrottledEventQueue::Inner final : public nsISupports
 {
   
   
   
   class Executor final : public Runnable
   {
+    
+    
     RefPtr<Inner> mInner;
 
   public:
@@ -93,29 +86,32 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   mutable CondVar mIdleCondVar;
 
   
+  
   EventQueue mEventQueue;
 
+  
   
   nsCOMPtr<nsISerialEventTarget> mBaseTarget;
 
   
-  nsCOMPtr<nsIRunnable> mExecutor;
-
   
-  bool mShutdownStarted;
+  
+  nsCOMPtr<nsIRunnable> mExecutor;
 
   explicit Inner(nsISerialEventTarget* aBaseTarget)
     : mMutex("ThrottledEventQueue")
     , mIdleCondVar(mMutex, "ThrottledEventQueue:Idle")
     , mBaseTarget(aBaseTarget)
-    , mShutdownStarted(false)
   {
   }
 
   ~Inner()
   {
+#ifdef DEBUG
+    MutexAutoLock lock(mMutex);
     MOZ_ASSERT(!mExecutor);
-    MOZ_ASSERT(mShutdownStarted);
+    MOZ_ASSERT(mEventQueue.IsEmpty(lock));
+#endif
   }
 
   nsresult
@@ -152,7 +148,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   {
     
     nsCOMPtr<nsIRunnable> event;
-    bool shouldShutdown = false;
 
 #ifdef DEBUG
     bool currentThread = false;
@@ -182,9 +177,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
 
       
       
-      
       else {
-        shouldShutdown = mShutdownStarted;
         
         mExecutor = nullptr;
         mIdleCondVar.NotifyAll();
@@ -193,24 +186,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
 
     
     Unused << event->Run();
-
-    
-    
-    
-    if (shouldShutdown) {
-      MOZ_ASSERT(IsEmpty());
-      NS_DispatchToMainThread(NewRunnableMethod("ThrottledEventQueue::Inner::ShutdownComplete",
-                                                this, &Inner::ShutdownComplete));
-    }
-  }
-
-  void
-  ShutdownComplete()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(IsEmpty());
-    nsCOMPtr<nsIObserverService> obs = GetObserverService();
-    obs->RemoveObserver(this, kShutdownTopic);
   }
 
 public:
@@ -218,68 +193,10 @@ public:
   Create(nsISerialEventTarget* aBaseTarget)
   {
     MOZ_ASSERT(NS_IsMainThread());
-
-    if (ClearOnShutdown_Internal::sCurrentShutdownPhase != ShutdownPhase::NotInShutdown) {
-      return nullptr;
-    }
-
-    nsCOMPtr<nsIObserverService> obs = GetObserverService();
-    if (NS_WARN_IF(!obs)) {
-      return nullptr;
-    }
+    MOZ_ASSERT(ClearOnShutdown_Internal::sCurrentShutdownPhase == ShutdownPhase::NotInShutdown);
 
     RefPtr<Inner> ref = new Inner(aBaseTarget);
-
-    nsresult rv = obs->AddObserver(ref, kShutdownTopic,
-                                   false );
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      ref->MaybeStartShutdown();
-      MOZ_ASSERT(ref->IsEmpty());
-      return nullptr;
-    }
-
     return ref.forget();
-  }
-
-  NS_IMETHOD
-  Observe(nsISupports*, const char* aTopic, const char16_t*) override
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!strcmp(aTopic, kShutdownTopic));
-
-    MaybeStartShutdown();
-
-    
-    
-    
-    MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() -> bool {
-        return IsEmpty();
-    }));
-
-    return NS_OK;
-  }
-
-  void
-  MaybeStartShutdown()
-  {
-    
-    MutexAutoLock lock(mMutex);
-
-    if (mShutdownStarted) {
-      return;
-    }
-    mShutdownStarted = true;
-
-    
-    
-    
-    if (mExecutor) {
-      return;
-    }
-
-    
-    NS_DispatchToMainThread(NewRunnableMethod("ThrottledEventQueue::Inner::ShutdownComplete",
-                                              this, &Inner::ShutdownComplete));
   }
 
   bool
@@ -335,12 +252,6 @@ public:
 
     
     
-    if (mShutdownStarted) {
-      return mBaseTarget->Dispatch(Move(aEvent), aFlags);
-    }
-
-    
-    
     
     
     if (!mExecutor) {
@@ -377,7 +288,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 };
 
-NS_IMPL_ISUPPORTS(ThrottledEventQueue::Inner, nsIObserver);
+NS_IMPL_ISUPPORTS(ThrottledEventQueue::Inner, nsISupports);
 
 NS_IMPL_ISUPPORTS(ThrottledEventQueue,
                   ThrottledEventQueue,
@@ -388,17 +299,6 @@ ThrottledEventQueue::ThrottledEventQueue(already_AddRefed<Inner> aInner)
   : mInner(aInner)
 {
   MOZ_ASSERT(mInner);
-}
-
-ThrottledEventQueue::~ThrottledEventQueue()
-{
-  mInner->MaybeStartShutdown();
-}
-
-void
-ThrottledEventQueue::MaybeStartShutdown()
-{
-  return mInner->MaybeStartShutdown();
 }
 
 already_AddRefed<ThrottledEventQueue>
