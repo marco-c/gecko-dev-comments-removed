@@ -834,10 +834,10 @@ nsWindow::Create(nsIWidget* aParent,
                            className,
                            L"",
                            style,
-                           aRect.x,
-                           aRect.y,
-                           aRect.width,
-                           GetHeight(aRect.height),
+                           aRect.X(),
+                           aRect.Y(),
+                           aRect.Width(),
+                           GetHeight(aRect.Height()),
                            parent,
                            nullptr,
                            nsToolkit::mDllInstance,
@@ -1435,14 +1435,14 @@ nsWindow::CreateScrollSnapshot()
     
     clip.left = 0;
     clip.top = 0;
-    clip.right = mBounds.width;
-    clip.bottom = mBounds.height;
+    clip.right = mBounds.Width();
+    clip.bottom = mBounds.Height();
     return GetFallbackScrollSnapshot(clip);
   }
 
   
   
-  if (clip.top || clip.bottom != mBounds.height) {
+  if (clip.top || clip.bottom != mBounds.Height()) {
     return GetFallbackScrollSnapshot(clip);
   }
 
@@ -1454,9 +1454,9 @@ nsWindow::CreateScrollSnapshot()
     ::ReleaseDC(mWnd, windowDC);
   });
 
-  gfx::IntSize snapshotSize(mBounds.width, mBounds.height);
+  gfx::IntSize snapshotSize(mBounds.Width(), mBounds.Height());
   ScrollSnapshot* snapshot;
-  if (clip.left || clip.right != mBounds.width) {
+  if (clip.left || clip.right != mBounds.Width()) {
     
     snapshot = EnsureSnapshotSurface(mPartialSnapshot, snapshotSize);
   } else {
@@ -1480,7 +1480,7 @@ nsWindow::CreateScrollSnapshot()
 already_AddRefed<SourceSurface>
 nsWindow::GetFallbackScrollSnapshot(const RECT& aRequiredClip)
 {
-  gfx::IntSize snapshotSize(mBounds.width, mBounds.height);
+  gfx::IntSize snapshotSize(mBounds.Width(), mBounds.Height());
 
   
   
@@ -1693,7 +1693,7 @@ void nsWindow::SetThemeRegion()
       (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
        (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
     HRGN hRgn = nullptr;
-    RECT rect = {0,0,mBounds.width,mBounds.height};
+    RECT rect = {0,0,mBounds.Width(),mBounds.Height()};
     
     HDC dc = ::GetDC(mWnd);
     GetThemeBackgroundRegion(nsUXThemeData::GetTheme(eUXTooltip), dc, TTP_STANDARD, TS_NORMAL, &rect, &hRgn);
@@ -1804,14 +1804,13 @@ nsWindow::Move(double aX, double aY)
   
   
   
-  if (mWindowType != eWindowType_popup && (mBounds.x == x) && (mBounds.y == y))
+  if (mWindowType != eWindowType_popup && mBounds.IsEqualXY(x, y))
   {
     
     return;
   }
 
-  mBounds.x = x;
-  mBounds.y = y;
+  mBounds.MoveTo(x, y);
 
   if (mWnd) {
 #ifdef DEBUG
@@ -1843,7 +1842,7 @@ nsWindow::Move(double aX, double aY)
     if (IsPlugin() &&
         !mLayerManager &&
         mClipRects &&
-        (mClipRectCount != 1 || !mClipRects[0].IsEqualInterior(LayoutDeviceIntRect(0, 0, mBounds.width, mBounds.height)))) {
+        (mClipRectCount != 1 || !mClipRects[0].IsEqualInterior(LayoutDeviceIntRect(0, 0, mBounds.Width(), mBounds.Height())))) {
       flags |= SWP_NOCOPYBITS;
     }
     double oldScale = mDefaultScale;
@@ -1875,7 +1874,7 @@ nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
   ConstrainSize(&width, &height);
 
   
-  if (mBounds.width == width && mBounds.height == height) {
+  if (mBounds.IsEqualSize(width, height)) {
     if (aRepaint) {
       Invalidate();
     }
@@ -1883,8 +1882,7 @@ nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
   }
 
   
-  mBounds.width  = width;
-  mBounds.height = height;
+  mBounds.SizeTo(width, height);
 
   if (mWnd) {
     UINT  flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE;
@@ -1928,8 +1926,7 @@ nsWindow::Resize(double aX, double aY, double aWidth,
   ConstrainSize(&width, &height);
 
   
-  if (mBounds.x == x && mBounds.y == y &&
-      mBounds.width == width && mBounds.height == height) {
+  if (mBounds.IsEqualRect(x, y, width, height)) {
     if (aRepaint) {
       Invalidate();
     }
@@ -1937,10 +1934,7 @@ nsWindow::Resize(double aX, double aY, double aWidth,
   }
 
   
-  mBounds.x      = x;
-  mBounds.y      = y;
-  mBounds.width  = width;
-  mBounds.height = height;
+  mBounds.SetRect(x, y, width, height);
 
   if (mWnd) {
     UINT  flags = SWP_NOZORDER | SWP_NOACTIVATE;
@@ -2147,8 +2141,8 @@ nsWindow::ConstrainPosition(bool aAllowSlop, int32_t *aX, int32_t *aY)
 
   
   
-  int32_t logWidth = std::max<int32_t>(NSToIntRound(mBounds.width / dpiScale), 1);
-  int32_t logHeight = std::max<int32_t>(NSToIntRound(mBounds.height / dpiScale), 1);
+  int32_t logWidth = std::max<int32_t>(NSToIntRound(mBounds.Width() / dpiScale), 1);
+  int32_t logHeight = std::max<int32_t>(NSToIntRound(mBounds.Height() / dpiScale), 1);
 
   
 
@@ -2292,14 +2286,12 @@ nsWindow::GetBounds()
   LayoutDeviceIntRect rect;
 
   
-  rect.width  = r.right - r.left;
-  rect.height = r.bottom - r.top;
+  rect.SizeTo(r.right - r.left, r.bottom - r.top);
 
   
   
   if (mWindowType == eWindowType_popup) {
-    rect.x = r.left;
-    rect.y = r.top;
+    rect.MoveTo(r.left, r.top);
     return rect;
   }
 
@@ -2344,8 +2336,7 @@ nsWindow::GetBounds()
       r.top  -= clientOffset.y;
     }
   }
-  rect.x = r.left;
-  rect.y = r.top;
+  rect.MoveTo(r.left, r.top);
   return rect;
 }
 
@@ -2363,8 +2354,7 @@ nsWindow::GetClientBounds()
   LayoutDeviceIntRect bounds = GetBounds();
   LayoutDeviceIntRect rect;
   rect.MoveTo(bounds.TopLeft() + GetClientOffset());
-  rect.width  = r.right - r.left;
-  rect.height = r.bottom - r.top;
+  rect.SizeTo(r.right - r.left, r.bottom - r.top);
   return rect;
 }
 
@@ -2379,12 +2369,7 @@ nsWindow::GetScreenBounds()
   RECT r;
   VERIFY(::GetWindowRect(mWnd, &r));
 
-  LayoutDeviceIntRect rect;
-  rect.x = r.left;
-  rect.y = r.top;
-  rect.width  = r.right - r.left;
-  rect.height = r.bottom - r.top;
-  return rect;
+  return LayoutDeviceIntRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
 }
 
 nsresult
@@ -3094,16 +3079,16 @@ void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion)
     
     LayoutDeviceIntRect largest =
       aOpaqueRegion.GetLargestRectangle(pluginBounds);
-    margins.cxLeftWidth = largest.x;
-    margins.cxRightWidth = clientBounds.width - largest.XMost();
-    margins.cyBottomHeight = clientBounds.height - largest.YMost();
+    margins.cxLeftWidth = largest.X();
+    margins.cxRightWidth = clientBounds.Width() - largest.XMost();
+    margins.cyBottomHeight = clientBounds.Height() - largest.YMost();
     if (mCustomNonClient) {
       
       
-      largest.y = std::max<uint32_t>(largest.y,
-                         nsUXThemeData::GetCommandButtonBoxMetrics().cy);
+      largest.MoveToY(std::max<uint32_t>(largest.Y(),
+                        nsUXThemeData::GetCommandButtonBoxMetrics().cy));
     }
-    margins.cyTopHeight = largest.y;
+    margins.cyTopHeight = largest.Y();
   }
 
   
@@ -3276,10 +3261,10 @@ nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
 
     RECT rect;
 
-    rect.left   = aRect.x;
-    rect.top    = aRect.y;
-    rect.right  = aRect.x + aRect.width;
-    rect.bottom = aRect.y + aRect.height;
+    rect.left   = aRect.X();
+    rect.top    = aRect.Y();
+    rect.right  = aRect.XMost();
+    rect.bottom = aRect.YMost();
 
     VERIFY(::InvalidateRect(mWnd, &rect, FALSE));
   }
@@ -3366,8 +3351,8 @@ FullscreenTransitionThreadProc(LPVOID lpParam)
   ::SetWindowLongW(wnd, GWL_STYLE, 0);
   ::SetWindowLongW(wnd, GWL_EXSTYLE, WS_EX_LAYERED |
                    WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
-  ::SetWindowPos(wnd, HWND_TOPMOST, data->mBounds.x, data->mBounds.y,
-                 data->mBounds.width, data->mBounds.height, 0);
+  ::SetWindowPos(wnd, HWND_TOPMOST, data->mBounds.X(), data->mBounds.Y(),
+                 data->mBounds.Width(), data->mBounds.Height(), 0);
   data->mWnd = wnd;
   ::ReleaseSemaphore(data->mSemaphore, 1, nullptr);
   
@@ -3426,10 +3411,10 @@ nsWindow::PrepareForFullscreenTransition(nsISupports** aData)
   MOZ_ASSERT(BoundsUseDesktopPixels(),
              "Should only be called on top-level window");
   double scale = GetDesktopToDeviceScale().scale; 
-  initData.mBounds.x = NSToIntRound(x * scale);
-  initData.mBounds.y = NSToIntRound(y * scale);
-  initData.mBounds.width = NSToIntRound(width * scale);
-  initData.mBounds.height = NSToIntRound(height * scale);
+  initData.mBounds.SetRect(NSToIntRound(x * scale),
+                           NSToIntRound(y * scale),
+                           NSToIntRound(width * scale),
+                           NSToIntRound(height * scale));
 
   
   
@@ -4024,8 +4009,8 @@ nsWindow::OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect)
   LayoutDeviceIntRect widgetRect = GetScreenBounds();
   LayoutDeviceIntRect buttonRect(aButtonRect + widgetRect.TopLeft());
 
-  LayoutDeviceIntPoint centerOfButton(buttonRect.x + buttonRect.width / 2,
-                                      buttonRect.y + buttonRect.height / 2);
+  LayoutDeviceIntPoint centerOfButton(buttonRect.X() + buttonRect.Width() / 2,
+                                      buttonRect.Y() + buttonRect.Height() / 2);
   
   
   if (!widgetRect.Contains(centerOfButton)) {
@@ -4074,7 +4059,7 @@ nsWindow::UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries)
         
         
         
-        bounds.width += 1;
+        bounds.SetWidth(bounds.Width() + 1);
         if (!mWindowButtonsRect) {
           mWindowButtonsRect = Some(bounds);
         }
@@ -4640,8 +4625,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   if (mWidgetListener) {
     if (aEventMessage == eMouseMove) {
       LayoutDeviceIntRect rect = GetBounds();
-      rect.x = 0;
-      rect.y = 0;
+      rect.MoveTo(0, 0);
 
       if (rect.Contains(event.mRefPoint)) {
         if (sCurrentWindow == nullptr || sCurrentWindow != this) {
@@ -6728,9 +6712,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
 
   
   if (!(wp->flags & SWP_NOMOVE)) {
-    mBounds.x = wp->x;
-    mBounds.y = wp->y;
-
+    mBounds.MoveTo(wp->x, wp->y);
     NotifyWindowMoved(wp->x, wp->y);
   }
 
@@ -6780,8 +6762,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
                      RDW_ALLCHILDREN);
     }
 
-    mBounds.width    = newWidth;
-    mBounds.height   = newHeight;
+    mBounds.SizeTo(newWidth, newHeight);
     mLastSize.width  = newWidth;
     mLastSize.height = newHeight;
 
@@ -6801,8 +6782,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
 
     
     if (::GetClientRect(mWnd, &r)) {
-      rect.width  = r.right - r.left;
-      rect.height = r.bottom - r.top;
+      rect.SizeTo(r.right - r.left, r.bottom - r.top);
     }
     
     
@@ -7090,11 +7070,11 @@ nsWindow::ConfigureChildren(const nsTArray<Configuration>& aConfigurations)
     NS_ENSURE_SUCCESS(rv, rv);
     LayoutDeviceIntRect bounds = w->GetBounds();
     if (bounds.Size() != configuration.mBounds.Size()) {
-      w->Resize(configuration.mBounds.x, configuration.mBounds.y,
-                configuration.mBounds.width, configuration.mBounds.height,
+      w->Resize(configuration.mBounds.X(), configuration.mBounds.Y(),
+                configuration.mBounds.Width(), configuration.mBounds.Height(),
                 true);
     } else if (bounds.TopLeft() != configuration.mBounds.TopLeft()) {
-      w->Move(configuration.mBounds.x, configuration.mBounds.y);
+      w->Move(configuration.mBounds.X(), configuration.mBounds.Y());
 
 
       if (gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend() ||
@@ -7104,8 +7084,8 @@ nsWindow::ConfigureChildren(const nsTArray<Configuration>& aConfigurations)
         
         LayoutDeviceIntRegion r;
         r.Sub(bounds, configuration.mBounds);
-        r.MoveBy(-bounds.x,
-                 -bounds.y);
+        r.MoveBy(-bounds.X(),
+                 -bounds.Y());
         LayoutDeviceIntRect toInvalidate = r.GetBounds();
 
         WinUtils::InvalidatePluginAsWorkaround(w, toInvalidate);
@@ -7132,9 +7112,9 @@ CreateHRGNFromArray(const nsTArray<LayoutDeviceIntRect>& aRects)
   for (uint32_t i = 0; i < aRects.Length(); ++i) {
     const LayoutDeviceIntRect& r = aRects[i];
     bounds.UnionRect(bounds, r);
-    ::SetRect(&rects[i], r.x, r.y, r.XMost(), r.YMost());
+    ::SetRect(&rects[i], r.X(), r.Y(), r.XMost(), r.YMost());
   }
-  ::SetRect(&data->rdh.rcBound, bounds.x, bounds.y, bounds.XMost(), bounds.YMost());
+  ::SetRect(&data->rdh.rcBound, bounds.X(), bounds.Y(), bounds.XMost(), bounds.YMost());
   return ::ExtCreateRegion(nullptr, buf.Length(), data);
 }
 
@@ -7266,11 +7246,11 @@ void nsWindow::OnDestroy()
 bool nsWindow::OnResize(nsIntRect &aWindowRect)
 {
   bool result = mWidgetListener ?
-                mWidgetListener->WindowResized(this, aWindowRect.width, aWindowRect.height) : false;
+    mWidgetListener->WindowResized(this, aWindowRect.Width(), aWindowRect.Height()) : false;
 
   
   if (mAttachedWidgetListener) {
-    return mAttachedWidgetListener->WindowResized(this, aWindowRect.width, aWindowRect.height);
+    return mAttachedWidgetListener->WindowResized(this, aWindowRect.Width(), aWindowRect.Height());
   }
 
   return result;
@@ -8291,10 +8271,10 @@ nsWindow::SetCandidateWindowForPlugin(const CandidateWindowPosition& aPosition)
   form.dwIndex = 0;
   if (aPosition.mExcludeRect) {
     form.dwStyle = CFS_EXCLUDE;
-    form.rcArea.left = aPosition.mRect.x;
-    form.rcArea.top = aPosition.mRect.y;
-    form.rcArea.right = aPosition.mRect.x + aPosition.mRect.width;
-    form.rcArea.bottom = aPosition.mRect.y + aPosition.mRect.height;
+    form.rcArea.left = aPosition.mRect.X();
+    form.rcArea.top = aPosition.mRect.Y();
+    form.rcArea.right = aPosition.mRect.XMost();
+    form.rcArea.bottom = aPosition.mRect.YMost();
   } else {
     form.dwStyle = CFS_CANDIDATEPOS;
   }
