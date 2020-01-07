@@ -230,7 +230,7 @@ HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   
   ps->PostRecreateFramesFor(newContent);
 
-  return std::move(newContent);
+  return newContent;
 }
 
 

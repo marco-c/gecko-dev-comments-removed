@@ -1511,10 +1511,10 @@ class NewSdpTest : public ::testing::Test,
     void ParseSdp(const std::string &sdp, bool expectSuccess = true) {
       if (::testing::get<1>(GetParam())) {
         mSdpErrorHolder = &mSipccParser;
-        mSdp = std::move(mSipccParser.Parse(sdp));
+        mSdp = mSipccParser.Parse(sdp);
       } else {
         mSdpErrorHolder = &mRustParser;
-        mSdp = std::move(mRustParser.Parse(sdp));
+        mSdp = mRustParser.Parse(sdp);
       }
 
       
@@ -1531,9 +1531,9 @@ class NewSdpTest : public ::testing::Test,
           
           mSdp->Serialize(os);
           if (::testing::get<1>(GetParam())) {
-            mSdp = std::move(mSipccParser.Parse(os.str()));
+            mSdp = mSipccParser.Parse(os.str());
           } else {
-            mSdp = std::move(mRustParser.Parse(os.str()));
+            mSdp = mRustParser.Parse(os.str());
           }
 
           

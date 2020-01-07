@@ -289,11 +289,7 @@ SandboxReporter::GetSnapshot()
     MOZ_ASSERT(rep->IsValid());
     snapshot.mReports.AppendElement(*rep);
   }
-  
-  
-  
-  
-  return std::move(snapshot);
+  return snapshot;
 }
 
 } 
