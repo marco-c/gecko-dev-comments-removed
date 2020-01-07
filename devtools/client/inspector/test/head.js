@@ -582,7 +582,7 @@ function waitForStyleEditor(toolbox, href) {
 
       
       
-      let gotEditor = (event, editor) => {
+      let gotEditor = editor => {
         let currentHref = editor.styleSheet.href;
         if (!href || (href && currentHref.endsWith(href))) {
           info("Stylesheet editor selected");
@@ -603,7 +603,7 @@ function waitForStyleEditor(toolbox, href) {
       
       
       
-      if (!gotEditor("styleeditor-selected", panel.UI.selectedEditor)) {
+      if (!gotEditor(panel.UI.selectedEditor)) {
         
         panel.UI.on("editor-selected", gotEditor);
       }
