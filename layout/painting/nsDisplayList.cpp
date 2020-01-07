@@ -7648,19 +7648,21 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       NSAppUnitsToFloatPixels(appliedOffset.x, auPerDevPixel),
       NSAppUnitsToFloatPixels(appliedOffset.y, auPerDevPixel)
     };
-    wr::WrStickyId id = aBuilder.DefineStickyFrame(wr::ToRoundedLayoutRect(bounds),
+    wr::WrClipId id = aBuilder.DefineStickyFrame(wr::ToRoundedLayoutRect(bounds),
         topMargin.ptrOr(nullptr), rightMargin.ptrOr(nullptr),
         bottomMargin.ptrOr(nullptr), leftMargin.ptrOr(nullptr),
         vBounds, hBounds, applied);
 
-    aBuilder.PushStickyFrame(id, GetClipChain());
+    aBuilder.PushClip(id);
+    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Some(id));
   }
 
   nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, aSc,
       aManager, aDisplayListBuilder);
 
   if (stickyScrollContainer) {
-    aBuilder.PopStickyFrame(GetClipChain());
+    aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
+    aBuilder.PopClip();
   }
 
   return true;
@@ -7991,11 +7993,11 @@ nsDisplayTransform::GetDeltaToTransformOrigin(const nsIFrame* aFrame,
                                               float aAppUnitsPerPixel,
                                               const nsRect* aBoundsOverride)
 {
-  MOZ_ASSERT(aFrame, "Can't get delta for a null frame!");
-  MOZ_ASSERT(aFrame->IsTransformed() ||
-             aFrame->BackfaceIsHidden() ||
-             aFrame->Combines3DTransformWithAncestors(),
-             "Shouldn't get a delta for an untransformed frame!");
+  NS_PRECONDITION(aFrame, "Can't get delta for a null frame!");
+  NS_PRECONDITION(aFrame->IsTransformed() ||
+                  aFrame->BackfaceIsHidden() ||
+                  aFrame->Combines3DTransformWithAncestors(),
+                  "Shouldn't get a delta for an untransformed frame!");
 
   if (!aFrame->IsTransformed()) {
     return Point3D();
@@ -8066,12 +8068,12 @@ nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
                                              float aAppUnitsPerPixel,
                                              Matrix4x4& aOutMatrix)
 {
-  MOZ_ASSERT(aFrame, "Can't get delta for a null frame!");
-  MOZ_ASSERT(aFrame->IsTransformed() ||
-             aFrame->BackfaceIsHidden() ||
-             aFrame->Combines3DTransformWithAncestors(),
-             "Shouldn't get a delta for an untransformed frame!");
-  MOZ_ASSERT(aOutMatrix.IsIdentity(), "Must have a blank output matrix");
+  NS_PRECONDITION(aFrame, "Can't get delta for a null frame!");
+  NS_PRECONDITION(aFrame->IsTransformed() ||
+                  aFrame->BackfaceIsHidden() ||
+                  aFrame->Combines3DTransformWithAncestors(),
+                  "Shouldn't get a delta for an untransformed frame!");
+  NS_PRECONDITION(aOutMatrix.IsIdentity(), "Must have a blank output matrix");
 
   if (!aFrame->IsTransformed()) {
     return false;
@@ -9010,7 +9012,7 @@ nsRect nsDisplayTransform::TransformRect(const nsRect &aUntransformedBounds,
                                          const nsIFrame* aFrame,
                                          const nsRect* aBoundsOverride)
 {
-  MOZ_ASSERT(aFrame, "Can't take the transform based on a null frame!");
+  NS_PRECONDITION(aFrame, "Can't take the transform based on a null frame!");
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
 
@@ -9026,7 +9028,7 @@ bool nsDisplayTransform::UntransformRect(const nsRect &aTransformedBounds,
                                          const nsIFrame* aFrame,
                                          nsRect *aOutRect)
 {
-  MOZ_ASSERT(aFrame, "Can't take the transform based on a null frame!");
+  NS_PRECONDITION(aFrame, "Can't take the transform based on a null frame!");
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
 
@@ -9704,7 +9706,7 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
   const StackingContextHelper* sc = &aSc;
   if (mask) {
     auto layoutBounds = wr::ToRoundedLayoutRect(bounds);
-    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(), Nothing(),
+    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(),
         layoutBounds, nullptr, mask.ptr());
 
     
@@ -9728,9 +9730,14 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                    Nothing(),
                    &clipId);
     sc = layer.ptr();
+    aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(), Some(clipId));
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, *sc, aManager, aDisplayListBuilder);
+
+  if (mask) {
+    aManager->CommandBuilder().PopOverrideForASR(GetActiveScrolledRoot());
+  }
 
   return true;
 }

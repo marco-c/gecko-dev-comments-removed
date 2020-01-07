@@ -766,35 +766,33 @@ struct WrClipId {
   bool operator==(const WrClipId& other) const {
     return id == other.id;
   }
+
+  bool operator!=(const WrClipId& other) const {
+    return !(*this == other);
+  }
+
+  static WrClipId RootScrollNode();
+
+  
+  
+  
+  struct HashFn {
+    std::size_t operator()(const WrClipId& aKey) const
+    {
+      return std::hash<size_t>{}(aKey.id);
+    }
+  };
 };
 
 
 
-struct WrScrollId {
-  size_t id;
+struct WrClipChainId {
+  uint64_t id;
 
-  bool operator==(const WrScrollId& other) const {
+  bool operator==(const WrClipChainId& other) const {
     return id == other.id;
   }
-
-  bool operator!=(const WrScrollId& other) const {
-    return id != other.id;
-  }
-
-  static WrScrollId RootScrollNode();
 };
-
-
-
-struct WrStickyId {
-  size_t id;
-
-  bool operator==(const WrStickyId& other) const {
-    return id == other.id;
-  }
-};
-
-typedef Variant<WrScrollId, WrClipId> ScrollOrClipId;
 
 enum class WebRenderError : int8_t {
   INITIALIZE = 0,

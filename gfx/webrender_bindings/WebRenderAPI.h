@@ -23,8 +23,6 @@
 
 namespace mozilla {
 
-struct DisplayItemClipChain;
-
 namespace widget {
 class CompositorWidget;
 }
@@ -294,38 +292,33 @@ public:
                            const wr::GlyphRasterSpace& aRasterSpace);
   void PopStackingContext();
 
-  wr::WrClipId DefineClip(const Maybe<wr::WrScrollId>& aAncestorScrollId,
-                          const Maybe<wr::WrClipId>& aAncestorClipId,
+  wr::WrClipChainId DefineClipChain(const Maybe<wr::WrClipChainId>& aParent,
+                                    const nsTArray<wr::WrClipId>& aClips);
+
+  wr::WrClipId DefineClip(const Maybe<wr::WrClipId>& aParentId,
                           const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
                           const wr::WrImageMask* aMask = nullptr);
-  void PushClip(const wr::WrClipId& aClipId, const DisplayItemClipChain* aParent = nullptr);
-  void PopClip(const DisplayItemClipChain* aParent = nullptr);
-  Maybe<wr::WrClipId> GetCacheOverride(const DisplayItemClipChain* aParent);
+  void PushClip(const wr::WrClipId& aClipId);
+  void PopClip();
 
-  wr::WrStickyId DefineStickyFrame(const wr::LayoutRect& aContentRect,
-                                   const float* aTopMargin,
-                                   const float* aRightMargin,
-                                   const float* aBottomMargin,
-                                   const float* aLeftMargin,
-                                   const StickyOffsetBounds& aVerticalBounds,
-                                   const StickyOffsetBounds& aHorizontalBounds,
-                                   const wr::LayoutVector2D& aAppliedOffset);
-  void PushStickyFrame(const wr::WrStickyId& aStickyId,
-                       const DisplayItemClipChain* aParent);
-  void PopStickyFrame(const DisplayItemClipChain* aParent);
+  wr::WrClipId DefineStickyFrame(const wr::LayoutRect& aContentRect,
+                                 const float* aTopMargin,
+                                 const float* aRightMargin,
+                                 const float* aBottomMargin,
+                                 const float* aLeftMargin,
+                                 const StickyOffsetBounds& aVerticalBounds,
+                                 const StickyOffsetBounds& aHorizontalBounds,
+                                 const wr::LayoutVector2D& aAppliedOffset);
 
-  Maybe<wr::WrScrollId> GetScrollIdForDefinedScrollLayer(layers::FrameMetrics::ViewID aViewId) const;
-  wr::WrScrollId DefineScrollLayer(const layers::FrameMetrics::ViewID& aViewId,
-                                   const Maybe<wr::WrScrollId>& aAncestorScrollId,
-                                   const Maybe<wr::WrClipId>& aAncestorClipId,
-                                   const wr::LayoutRect& aContentRect, 
-                                   const wr::LayoutRect& aClipRect);
-  void PushScrollLayer(const wr::WrScrollId& aScrollId);
-  void PopScrollLayer();
+  Maybe<wr::WrClipId> GetScrollIdForDefinedScrollLayer(layers::FrameMetrics::ViewID aViewId) const;
+  wr::WrClipId DefineScrollLayer(const layers::FrameMetrics::ViewID& aViewId,
+                                 const Maybe<wr::WrClipId>& aParentId,
+                                 const wr::LayoutRect& aContentRect, 
+                                 const wr::LayoutRect& aClipRect);
 
-  void PushClipAndScrollInfo(const wr::WrScrollId& aScrollId,
-                             const wr::WrClipId* aClipId);
+  void PushClipAndScrollInfo(const wr::WrClipId& aScrollId,
+                             const wr::WrClipChainId* aClipChainId);
   void PopClipAndScrollInfo();
 
   void PushRect(const wr::LayoutRect& aBounds,
@@ -472,15 +465,6 @@ public:
 
   
   
-  
-  Maybe<wr::WrClipId> TopmostClipId();
-  
-  wr::WrScrollId TopmostScrollId();
-  
-  bool TopmostIsClip();
-
-  
-  
   void SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo);
   
@@ -489,40 +473,13 @@ public:
   
   wr::WrState* Raw() { return mWrState; }
 
-  
-  bool HasExtraClip() { return !mCacheOverride.empty(); }
-
 protected:
-  void PushCacheOverride(const DisplayItemClipChain* aParent,
-                         const wr::WrClipId& aClipId);
-  void PopCacheOverride(const DisplayItemClipChain* aParent);
-
   wr::WrState* mWrState;
 
   
   
   
-  std::vector<wr::ScrollOrClipId> mClipStack;
-
-  
-  
-  
-  std::unordered_map<layers::FrameMetrics::ViewID, wr::WrScrollId> mScrollIds;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::unordered_map<const DisplayItemClipChain*, std::vector<wr::WrClipId>> mCacheOverride;
+  std::unordered_map<layers::FrameMetrics::ViewID, wr::WrClipId> mScrollIds;
 
   friend class WebRenderAPI;
 };

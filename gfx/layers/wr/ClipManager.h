@@ -1,0 +1,155 @@
+
+
+
+
+
+
+#ifndef GFX_CLIPMANAGER_H
+#define GFX_CLIPMANAGER_H
+
+#include <stack>
+#include <unordered_map>
+
+#include "mozilla/Attributes.h"
+#include "mozilla/webrender/WebRenderAPI.h"
+
+class nsDisplayItem;
+
+namespace mozilla {
+
+struct ActiveScrolledRoot;
+struct DisplayItemClipChain;
+
+namespace wr {
+class DisplayListBuilder;
+}
+
+namespace layers {
+
+class StackingContextHelper;
+class WebRenderLayerManager;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ClipManager
+{
+public:
+  ClipManager();
+
+  void BeginBuild(WebRenderLayerManager* aManager,
+                  wr::DisplayListBuilder& aBuilder);
+  void EndBuild();
+
+  void BeginList(const StackingContextHelper& aStackingContext);
+  void EndList(const StackingContextHelper& aStackingContext);
+
+  void BeginItem(nsDisplayItem* aItem,
+                 const StackingContextHelper& aStackingContext);
+  ~ClipManager();
+
+  void PushOverrideForASR(const ActiveScrolledRoot* aASR,
+                          const Maybe<wr::WrClipId>& aClipId);
+  void PopOverrideForASR(const ActiveScrolledRoot* aASR);
+
+private:
+  Maybe<wr::WrClipId> ClipIdAfterOverride(const Maybe<wr::WrClipId>& aClipId);
+
+  Maybe<wr::WrClipId>
+  DefineScrollLayers(const ActiveScrolledRoot* aASR,
+                     nsDisplayItem* aItem,
+                     const StackingContextHelper& aSc);
+
+  Maybe<wr::WrClipChainId>
+  DefineClipChain(const DisplayItemClipChain* aChain,
+                  int32_t aAppUnitsPerDevPixel,
+                  const StackingContextHelper& aSc);
+
+  WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
+  wr::DisplayListBuilder* mBuilder;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
+  std::stack<ClipIdMap> mCacheStack;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unordered_map<wr::WrClipId,
+                     std::stack<Maybe<wr::WrClipId>>,
+                     wr::WrClipId::HashFn> mASROverride;
+
+  
+  struct ItemClips {
+    ItemClips(const ActiveScrolledRoot* aASR,
+              const DisplayItemClipChain* aChain);
+
+    
+    const ActiveScrolledRoot* mASR;
+    const DisplayItemClipChain* mChain;
+
+    
+    Maybe<wr::WrClipId> mScrollId;
+    Maybe<wr::WrClipChainId> mClipChainId;
+
+    
+    bool mApplied;
+
+    void Apply(wr::DisplayListBuilder* aBuilder);
+    void Unapply(wr::DisplayListBuilder* aBuilder);
+    bool HasSameInputs(const ItemClips& aOther);
+    void CopyOutputsFrom(const ItemClips& aOther);
+  };
+
+  
+  
+  
+  
+  
+  std::stack<ItemClips> mItemClipStack;
+};
+
+} 
+} 
+
+#endif

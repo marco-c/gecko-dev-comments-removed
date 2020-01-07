@@ -1273,7 +1273,7 @@ nsWindow::SetParent(nsIWidget *aNewParent)
 void
 nsWindow::ReparentNativeWidget(nsIWidget* aNewParent)
 {
-  MOZ_ASSERT(aNewParent, "null widget");
+  NS_PRECONDITION(aNewParent, "");
 
   mParent = aNewParent;
   if (mWindowType == eWindowType_popup) {
@@ -4090,7 +4090,7 @@ nsWindow::AddWindowOverlayWebRenderCommands(layers::WebRenderBridgeChild* aWrBri
       RoundedRect(ThebesRect(mWindowButtonsRect->ToUnknownRect()),
                   RectCornerRadii(0, 0, 3, 3))));
     wr::WrClipId clipId =
-      aBuilder.DefineClip(Nothing(), Nothing(), rect, &roundedClip);
+      aBuilder.DefineClip(Nothing(), rect, &roundedClip);
     aBuilder.PushClip(clipId);
     aBuilder.PushClearRect(rect);
     aBuilder.PopClip();

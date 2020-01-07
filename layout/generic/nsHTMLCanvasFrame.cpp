@@ -153,7 +153,6 @@ public:
         
         
 
-        
         nsIntSize canvasSizeInPx = data->GetSize();
         IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
         nsSize intrinsicRatio = IntrinsicRatioFromCanvasSize(canvasSizeInPx);
@@ -346,7 +345,7 @@ nsHTMLCanvasFrame::Reflow(nsPresContext*           aPresContext,
                   ("enter nsHTMLCanvasFrame::Reflow: availSize=%d,%d",
                   aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
 
-  MOZ_ASSERT(mState & NS_FRAME_IN_REFLOW, "frame is not in reflow");
+  NS_PRECONDITION(mState & NS_FRAME_IN_REFLOW, "frame is not in reflow");
 
   WritingMode wm = aReflowInput.GetWritingMode();
   LogicalSize finalSize(wm,
