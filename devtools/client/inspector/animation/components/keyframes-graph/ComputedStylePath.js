@@ -75,7 +75,7 @@ class ComputedStylePath extends PureComponent {
       return {
         offset: index,
         easing: keyframe.easing,
-        [propertyName]: this.getPropertyValue(keyframe),
+        [getJsPropertyName(propertyName)]: this.getPropertyValue(keyframe),
       };
     });
     const effect = {
@@ -149,6 +149,24 @@ class ComputedStylePath extends PureComponent {
 
     return dom.path({ d, style });
   }
+}
+
+
+
+
+
+
+
+
+
+function getJsPropertyName(cssPropertyName) {
+  if (cssPropertyName == "float") {
+    return "cssFloat";
+  }
+  
+  return cssPropertyName.replace(/-([a-z])/gi, (str, group) => {
+    return group.toUpperCase();
+  });
 }
 
 module.exports = ComputedStylePath;
