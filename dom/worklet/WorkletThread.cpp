@@ -230,6 +230,12 @@ public:
     GetMicroTaskQueue().push(runnable.forget());
   }
 
+  bool IsSystemCaller() const override
+  {
+    
+    return false;
+  }
+
 private:
   RefPtr<WorkletThread> mWorkletThread;
 };

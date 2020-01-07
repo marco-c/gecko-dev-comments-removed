@@ -239,6 +239,8 @@ public:
   JS::PersistentRooted<JS::GCVector<JSObject*, 0, js::SystemAllocPolicy>> mConsumedRejections;
   nsTArray<nsCOMPtr<nsISupports  >> mUncaughtRejectionObservers;
 
+  virtual bool IsSystemCaller() const = 0;
+
 private:
   
   

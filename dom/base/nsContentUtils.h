@@ -230,6 +230,7 @@ public:
   static bool IsSystemCaller(JSContext* aCx);
 
   
+  
   static bool ThreadsafeIsSystemCaller(JSContext* aCx);
 
   
