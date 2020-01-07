@@ -16,11 +16,25 @@ output = open(output_file, 'w')
 with open(sys.argv[1]) as f:
   searchinfo = json.load(f)
 
+
 if locale in searchinfo["locales"]:
   localeSearchInfo = searchinfo["locales"][locale]
 else:
   localeSearchInfo = {}
   localeSearchInfo["default"] = searchinfo["default"]
+
+def validateDefault(key):
+  if (not key in searchinfo["default"]):
+    print >>sys.stderr, "Error: Missing default %s in list.json" % (key)
+    sys.exit(1)
+
+validateDefault("searchDefault");
+validateDefault("visibleDefaultEngines");
+
+
+
+if not "searchDefault" in localeSearchInfo["default"]:
+  localeSearchInfo["default"]["searchDefault"] = searchinfo["default"]["searchDefault"]
 
 
 
@@ -28,16 +42,20 @@ if "regionOverrides" in searchinfo:
   regionOverrides = searchinfo["regionOverrides"]
 
   for region in regionOverrides:
-    if not region in localeSearchInfo:
-      
-      if set(localeSearchInfo["default"]["visibleDefaultEngines"]) & set(regionOverrides[region].keys()):
-        localeSearchInfo[region] = copy.deepcopy(localeSearchInfo["default"])
-      else:
-        continue
-    for i, engine in enumerate(localeSearchInfo[region]["visibleDefaultEngines"]):
-      if engine in regionOverrides[region]:
-        localeSearchInfo[region]["visibleDefaultEngines"][i] = regionOverrides[region][engine]
+    
+    enginesToOverride = set(regionOverrides[region].keys())
+    if region in localeSearchInfo and "visibleDefaultEngines" in localeSearchInfo[region]:
+       visibleDefaultEngines = localeSearchInfo[region]["visibleDefaultEngines"]
+    else:
+       visibleDefaultEngines = localeSearchInfo["default"]["visibleDefaultEngines"]
+    if set(visibleDefaultEngines) & enginesToOverride:
+      if region not in localeSearchInfo:
+        localeSearchInfo[region] = {}
+      localeSearchInfo[region]["visibleDefaultEngines"] = copy.deepcopy(visibleDefaultEngines)
+      for i, engine in enumerate(localeSearchInfo[region]["visibleDefaultEngines"]):
+        if engine in regionOverrides[region]:
+          localeSearchInfo[region]["visibleDefaultEngines"][i] = regionOverrides[region][engine]
 
-output.write(json.dumps(localeSearchInfo))
+output.write(json.dumps(localeSearchInfo, ensure_ascii=False).encode('utf8'))
 
 output.close();

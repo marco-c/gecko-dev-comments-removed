@@ -2778,6 +2778,7 @@ SearchService.prototype = {
   _engines: { },
   __sortedEngines: null,
   _visibleDefaultEngines: [],
+  _searchDefault: null,
   get _sortedEngines() {
     if (!this.__sortedEngines)
       return this._buildSortedEngineList();
@@ -2789,15 +2790,26 @@ SearchService.prototype = {
   get originalDefaultEngine() {
     let defaultEngine = this.getVerifiedGlobalAttr("searchDefault");
     if (!defaultEngine) {
-      let defaultPrefB = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
-      let nsIPLS = Ci.nsIPrefLocalizedString;
+      
+      
+      
+      if (Services.prefs.getCharPref("distribution.id", "")) {
+        let defaultPrefB = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
+        let nsIPLS = Ci.nsIPrefLocalizedString;
 
-      let defPref = getGeoSpecificPrefName("defaultenginename");
-      try {
-        defaultEngine = defaultPrefB.getComplexValue(defPref, nsIPLS).data;
-      } catch (ex) {
-        
-        
+        let defPref = getGeoSpecificPrefName("defaultenginename");
+        try {
+          defaultEngine = defaultPrefB.getComplexValue(defPref, nsIPLS).data;
+        } catch (ex) {
+          
+          
+          
+          
+          
+          defaultEngine = this._searchDefault;
+        }
+      } else {
+        defaultEngine = this._searchDefault;
       }
     }
 
@@ -3009,6 +3021,7 @@ SearchService.prototype = {
         this.__sortedEngines = null;
         this._currentEngine = null;
         this._visibleDefaultEngines = [];
+        this._searchDefault = null;
         this._metaData = {};
         this._cacheFileJSON = null;
 
@@ -3483,16 +3496,17 @@ SearchService.prototype = {
       }
     }
 
+    let searchRegion;
+    if (Services.prefs.prefHasUserValue("browser.search.region")) {
+      searchRegion = Services.prefs.getCharPref("browser.search.region");
+    }
+    if (!searchRegion || !(searchRegion in searchSettings)) {
+      searchRegion = "default";
+    }
+
     
     if (!engineNames || !engineNames.length) {
-      let region;
-      if (Services.prefs.prefHasUserValue("browser.search.region")) {
-        region = Services.prefs.getCharPref("browser.search.region");
-      }
-      if (!region || !(region in searchSettings)) {
-        region = "default";
-      }
-      engineNames = searchSettings[region].visibleDefaultEngines;
+      engineNames = searchSettings[searchRegion].visibleDefaultEngines;
     }
 
     
@@ -3515,6 +3529,12 @@ SearchService.prototype = {
 
     
     this._visibleDefaultEngines = engineNames;
+
+    if ("searchDefault" in searchSettings[searchRegion]) {
+      this._searchDefault = searchSettings[searchRegion].searchDefault;
+    } else {
+      this._searchDefault = searchSettings.default.searchDefault;
+    }
   },
 
   _parseListTxt: function SRCH_SVC_parseListTxt(list, uris) {
