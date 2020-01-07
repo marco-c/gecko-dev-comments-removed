@@ -103,17 +103,17 @@ static NPNetscapeFuncs sBrowserFuncs = {
   _geturl,
   _posturl,
   _requestread,
-  nullptr,
-  nullptr,
-  nullptr,
+  nullptr, 
+  nullptr, 
+  nullptr, 
   _status,
   _useragent,
   _memalloc,
   _memfree,
   _memflush,
   _reloadplugins,
-  _getJavaEnv,
-  _getJavaPeer,
+  nullptr, 
+  nullptr, 
   _geturlnotify,
   _posturlnotify,
   _getvalue,
@@ -1702,14 +1702,6 @@ _requestread(NPStream *pstream, NPByteRange *rangeList)
   return NPERR_STREAM_NOT_SEEKABLE;
 }
 
-
-void* 
-_getJavaEnv()
-{
-  NPN_PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("NPN_GetJavaEnv\n"));
-  return nullptr;
-}
-
 const char *
 _useragent(NPP npp)
 {
@@ -1741,14 +1733,6 @@ _memalloc (uint32_t size)
   }
   NPN_PLUGIN_LOG(PLUGIN_LOG_NOISY, ("NPN_MemAlloc: size=%d\n", size));
   return moz_xmalloc(size);
-}
-
-
-void* 
-_getJavaPeer(NPP npp)
-{
-  NPN_PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("NPN_GetJavaPeer: npp=%p\n", (void*)npp));
-  return nullptr;
 }
 
 void
