@@ -20,7 +20,6 @@ let gSiteDataSettings = {
   
   
   
-  
   _sites: null,
 
   _list: null,
@@ -51,20 +50,16 @@ let gSiteDataSettings = {
     addColumnItem(site.host, "4");
 
     
-    addColumnItem(site.persisted ?
-      this._prefStrBundle.getString("persistent") : null, "2");
-
-    
     addColumnItem(site.cookies.length, "1");
 
     
-    if (site.usage > 0) {
+    if (site.usage > 0 || site.persisted) {
       let size = DownloadUtils.convertByteUnits(site.usage);
-      let str = this._prefStrBundle.getFormattedString("siteUsage", size);
-      addColumnItem(str, "1");
+      let strName = site.persisted ? "siteUsagePersistent" : "siteUsage";
+      addColumnItem(this._prefStrBundle.getFormattedString(strName, size), "2");
     } else {
       
-      addColumnItem(null, "1");
+      addColumnItem(null, "2");
     }
 
     
@@ -105,7 +100,6 @@ let gSiteDataSettings = {
     setEventListener("usageCol", "click", this.onClickTreeCol);
     setEventListener("lastAccessedCol", "click", this.onClickTreeCol);
     setEventListener("cookiesCol", "click", this.onClickTreeCol);
-    setEventListener("statusCol", "click", this.onClickTreeCol);
     setEventListener("cancel", "command", this.close);
     setEventListener("save", "command", this.saveChanges);
     setEventListener("searchBox", "command", this.onCommandSearch);
@@ -149,17 +143,6 @@ let gSiteDataSettings = {
           let aHost = a.baseDomain.toLowerCase();
           let bHost = b.baseDomain.toLowerCase();
           return aHost.localeCompare(bHost);
-        };
-        break;
-
-      case "statusCol":
-        sortFunc = (a, b) => {
-          if (a.persisted && !b.persisted) {
-            return 1;
-          } else if (!a.persisted && b.persisted) {
-            return -1;
-          }
-          return 0;
         };
         break;
 
