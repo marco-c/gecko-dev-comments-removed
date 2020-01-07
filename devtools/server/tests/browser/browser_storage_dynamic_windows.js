@@ -164,10 +164,10 @@ function testAddIframe(front) {
     front.on("stores-update", onStoresUpdate);
 
     
-    let iframe = content.document.createElement("iframe");
+    let iframe = gBrowser.contentDocumentAsCPOW.createElement("iframe");
     iframe.src = ALT_DOMAIN_SECURED + "storage-secured-iframe.html";
     
-    content.document.querySelector("body").appendChild(iframe);
+    gBrowser.contentDocumentAsCPOW.querySelector("body").appendChild(iframe);
   });
 }
 

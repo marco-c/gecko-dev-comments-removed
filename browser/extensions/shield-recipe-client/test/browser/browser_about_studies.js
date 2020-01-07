@@ -15,7 +15,7 @@ decorate_task(
   withAboutStudies,
   async function testAboutStudiesWorks(browser) {
     
-    ok(browser.contentDocument.getElementById("app"), "App element was found");
+    ok(browser.contentDocumentAsCPOW.getElementById("app"), "App element was found");
   }
 );
 
@@ -43,6 +43,8 @@ decorate_task(
 decorate_task(
   withAboutStudies,
   async function testUpdatePreferencesNewOrganization(browser) {
+    let loadPromise = BrowserTestUtils.firstBrowserLoaded(window);
+
     
     
     const tab = await BrowserTestUtils.switchTab(gBrowser, () => {
@@ -51,13 +53,9 @@ decorate_task(
       });
     });
 
-    
-    if (gBrowser.contentDocument.readyState !== "complete") {
-      await BrowserTestUtils.waitForEvent(gBrowser.contentWindow, "load");
-    }
+    await loadPromise;
 
-    const location = gBrowser.contentWindow.location.href;
-    
+    const location = gBrowser.currentURI.spec;
     is(
       location,
       "about:preferences#privacy",

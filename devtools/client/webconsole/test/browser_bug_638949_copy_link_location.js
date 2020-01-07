@@ -26,7 +26,7 @@ add_task(function* () {
   let menu = hud.iframeWindow.document.getElementById("output-contextmenu");
 
   hud.jsterm.clearOutput();
-  content.console.log("bug 638949");
+  gBrowser.contentWindowAsCPOW.console.log("bug 638949");
 
   
   
@@ -54,7 +54,7 @@ add_task(function* () {
 
   hud.jsterm.clearOutput();
   
-  content.location.reload();
+  gBrowser.reload();
 
   
   

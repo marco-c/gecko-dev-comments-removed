@@ -1582,10 +1582,26 @@ this.BrowserTestUtils = {
 
 
 
-  addTab(browser, uri, params = {}) {
+
+
+
+
+
+
+
+
+
+
+  addTab(tabbrowser, uri, params = {}, beforeLoadFunc = null) {
     if (!params.triggeringPrincipal) {
       params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     }
-    return browser.addTab(uri, params);
+    if (beforeLoadFunc) {
+      let window = tabbrowser.ownerGlobal;
+      window.addEventListener("TabOpen", function(e) {
+        beforeLoadFunc(e.target);
+      }, {once: true});
+    }
+    return tabbrowser.addTab(uri, params);
   }
 };
