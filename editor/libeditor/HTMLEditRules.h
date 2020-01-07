@@ -593,7 +593,13 @@ protected:
   nsresult CacheInlineStyles(nsINode* aNode);
   nsresult ReapplyCachedStyles();
   void ClearCachedStyles();
-  void AdjustSpecialBreaks();
+
+  
+
+
+
+  MOZ_MUST_USE nsresult
+  InsertBRElementToEmptyListItemsAndTableCellsInChangedRange();
 
   
 
