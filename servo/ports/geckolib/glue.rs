@@ -2019,12 +2019,11 @@ pub extern "C" fn Servo_ComputedValues_GetForAnonymousBox(parent_style_or_null: 
         page_decls,
     );
 
-    let cascade_flags = CascadeFlags::SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP;
     data.stylist.precomputed_values_for_pseudo_with_rule_node(
         &guards,
         &pseudo,
         parent_style_or_null.map(|x| &*x),
-        cascade_flags,
+        CascadeFlags::empty(),
         &metrics,
         rule_node
     ).into()
@@ -3620,10 +3619,17 @@ pub extern "C" fn Servo_ReparentStyle(
     let element = element.map(GeckoElement);
 
     let mut cascade_flags = CascadeFlags::empty();
-    if style_to_reparent.is_anon_box() {
-        cascade_flags.insert(CascadeFlags::SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP);
-    }
     if let Some(element) = element {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if element.is_link() {
             cascade_flags.insert(CascadeFlags::IS_LINK);
             if element.is_visited_link() && doc_data.visited_styles_enabled() {

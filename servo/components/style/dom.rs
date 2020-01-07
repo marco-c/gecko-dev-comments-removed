@@ -673,11 +673,6 @@ pub trait TElement
     
     
     
-    fn skip_root_and_item_based_display_fixup(&self) -> bool;
-
-    
-    
-    
     
     
     
