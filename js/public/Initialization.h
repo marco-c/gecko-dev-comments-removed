@@ -53,26 +53,6 @@ JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
                          JS_ICUReallocFn reallocFn,
                          JS_ICUFreeFn freeFn);
 
-#ifdef ENABLE_BIGINT
-namespace JS {
-
-
-
-using GMPAllocFn = void* (*)(size_t allocSize);
-using GMPReallocFn = void* (*)(void* p, size_t oldSize, size_t newSize);
-using GMPFreeFn = void (*)(void* p, size_t size);
-
-
-
-
-extern JS_PUBLIC_API(void)
-SetGMPMemoryFunctions(GMPAllocFn allocFn,
-                      GMPReallocFn reallocFn,
-                      GMPFreeFn freeFn);
-
-}; 
-#endif
-
 
 
 
