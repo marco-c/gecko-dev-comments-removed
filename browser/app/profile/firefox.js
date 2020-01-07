@@ -1764,3 +1764,6 @@ pref("browser.onboarding.updatetour", "performance,library,screenshots,singlesea
 
 
 pref("extensions.screenshots.disabled", false);
+
+
+pref("extensions.screenshots.upload-disabled", false);
