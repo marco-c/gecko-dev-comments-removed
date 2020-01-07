@@ -538,8 +538,7 @@ class MOZ_STACK_CLASS TokenStreamPosition final
 } JS_HAZ_ROOTED;
 
 class TokenStreamAnyChars
-  : public TokenStreamShared,
-    public ErrorReporter
+  : public TokenStreamShared
 {
   public:
     TokenStreamAnyChars(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -814,22 +813,20 @@ class TokenStreamAnyChars
     
     void computeErrorMetadataNoOffset(ErrorMetadata* err);
 
-  public:
     
 
-    const JS::ReadOnlyCompileOptions& options() const final {
+    void lineAndColumnAt(size_t offset, uint32_t *line, uint32_t *column) const;
+
+    
+    
+    void reportErrorNoOffset(unsigned errorNumber, ...);
+    void reportErrorNoOffsetVA(unsigned errorNumber, va_list args);
+
+    const JS::ReadOnlyCompileOptions& options() const {
         return options_;
     }
 
-    void
-    lineAndColumnAt(size_t offset, uint32_t* line, uint32_t* column) const final;
-
-    void currentLineAndColumn(uint32_t* line, uint32_t* column) const final;
-
-    bool hasTokenizationStarted() const final;
-    void reportErrorNoOffsetVA(unsigned errorNumber, va_list args) final;
-
-    const char* getFilename() const final {
+    const char* getFilename() const {
         return filename_;
     }
 
@@ -1141,7 +1138,8 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 template<typename CharT, class AnyCharsAccess>
 class MOZ_STACK_CLASS TokenStreamSpecific
   : public TokenStreamChars<CharT, AnyCharsAccess>,
-    public TokenStreamShared
+    public TokenStreamShared,
+    public ErrorReporter
 {
   public:
     using CharsBase = TokenStreamChars<CharT, AnyCharsAccess>;
@@ -1196,6 +1194,28 @@ class MOZ_STACK_CLASS TokenStreamSpecific
         reportInvalidEscapeError(anyCharsAccess().invalidTemplateEscapeOffset,
                                  anyCharsAccess().invalidTemplateEscapeType);
         return false;
+    }
+
+    
+
+    const JS::ReadOnlyCompileOptions& options() const final {
+        return anyCharsAccess().options();
+    }
+
+    void
+    lineAndColumnAt(size_t offset, uint32_t* line, uint32_t* column) const final {
+        anyCharsAccess().lineAndColumnAt(offset, line, column);
+    }
+
+    void currentLineAndColumn(uint32_t* line, uint32_t* column) const final;
+    bool hasTokenizationStarted() const final;
+
+    void reportErrorNoOffsetVA(unsigned errorNumber, va_list args) final {
+        anyCharsAccess().reportErrorNoOffsetVA(errorNumber, args);
+    }
+
+    const char* getFilename() const final {
+        return anyCharsAccess().getFilename();
     }
 
     
