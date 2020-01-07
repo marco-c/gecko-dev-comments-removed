@@ -20,16 +20,11 @@
 extern crate freetype_sys;
 extern crate libc;
 
+pub type FT_Error = ::std::os::raw::c_int;
 
-#[repr(C)]
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub struct FT_Error(pub ::std::os::raw::c_int);
-
-impl FT_Error {
-    #[inline]
-    pub fn succeeded(&self) -> bool {
-        self.0 == freetype::FT_Err_Ok as ::std::os::raw::c_int
-    }
+#[inline]
+pub fn succeeded(error: FT_Error) -> bool {
+    error == freetype::FT_Err_Ok as FT_Error
 }
 
 #[allow(improper_ctypes)] 
