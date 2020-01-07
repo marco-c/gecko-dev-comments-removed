@@ -685,7 +685,7 @@ window._gBrowser = {
 
   getTabFromAudioEvent(aEvent) {
     if (!Services.prefs.getBoolPref("browser.tabs.showAudioPlayingIcon") ||
-      !aEvent.isTrusted) {
+        !aEvent.isTrusted) {
       return null;
     }
 
@@ -694,7 +694,7 @@ window._gBrowser = {
     return tab;
   },
 
-  _callProgressListeners(aBrowser, aMethod, aArguments, aCallGlobalListeners, aCallTabsListeners) {
+  _callProgressListeners(aBrowser, aMethod, aArguments, aCallGlobalListeners = true, aCallTabsListeners = true) {
     var rv = true;
 
     function callListeners(listeners, args) {
@@ -711,17 +711,13 @@ window._gBrowser = {
       }
     }
 
-    if (!aBrowser)
-      aBrowser = this.mCurrentBrowser;
+    aBrowser = aBrowser || this.mCurrentBrowser;
 
-    
-    if (aCallGlobalListeners != false &&
-        aBrowser == this.mCurrentBrowser) {
+    if (aCallGlobalListeners && aBrowser == this.mCurrentBrowser) {
       callListeners(this.mProgressListeners, aArguments);
     }
 
-    
-    if (aCallTabsListeners != false) {
+    if (aCallTabsListeners) {
       aArguments.unshift(aBrowser);
 
       callListeners(this.mTabsProgressListeners, aArguments);
@@ -2695,7 +2691,7 @@ window._gBrowser = {
     setTimeout(function(tab, tabbrowser) {
       if (tab.parentNode &&
           window.getComputedStyle(tab).maxWidth == "0.1px") {
-        console.assert(false, "Giving up waiting for the tab closing animation to finish (bug 608589)");
+        NS_ASSERT(false, "Giving up waiting for the tab closing animation to finish (bug 608589)");
         tabbrowser._endRemoveTab(tab);
       }
     }, 3000, aTab, this);
