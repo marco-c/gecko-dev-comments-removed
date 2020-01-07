@@ -6727,6 +6727,11 @@ nsWindow::SetDrawsInTitlebar(bool aState)
         mNeedsShow = true;
         NativeResize();
 
+        
+        
+        g_object_set_data(G_OBJECT(gtk_widget_get_window(mShell)),
+                          "nsWindow", this);
+
         UpdateClientOffsetForCSDWindow();
 
         gtk_widget_destroy(tmpWindow);
