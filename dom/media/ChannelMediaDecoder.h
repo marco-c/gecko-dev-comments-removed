@@ -134,7 +134,8 @@ private:
 
   
   
-  void UpdatePlaybackRate(const PlaybackRateInfo& aInfo);
+  static void UpdatePlaybackRate(const PlaybackRateInfo& aInfo,
+                                 BaseMediaResource* aResource);
 
   
   
