@@ -181,7 +181,7 @@ public class GeckoSession extends LayerSession
                     final String uri = message.getString("uri");
                     final int where = convertGeckoTarget(message.getInt("where"));
                     delegate.onLoadRequest(GeckoSession.this, uri, where,
-                        new Response<Boolean>() {
+                        new GeckoResponse<Boolean>() {
                             @Override
                             public void respond(Boolean handled) {
                                 callback.sendSuccess(handled);
@@ -190,7 +190,7 @@ public class GeckoSession extends LayerSession
                 } else if ("GeckoView:OnNewSession".equals(event)) {
                     final String uri = message.getString("uri");
                     delegate.onNewSession(GeckoSession.this, uri,
-                        new Response<GeckoSession>() {
+                        new GeckoResponse<GeckoSession>() {
                             @Override
                             public void respond(GeckoSession session) {
                                 if (session == null) {
@@ -363,7 +363,7 @@ public class GeckoSession extends LayerSession
 
                     final String[] actions = message.getStringArray("actions");
                     final int seqNo = message.getInt("seqNo");
-                    final Response<String> response = new Response<String>() {
+                    final GeckoResponse<String> response = new GeckoResponse<String>() {
                         @Override
                         public void respond(final String action) {
                             final GeckoBundle response = new GeckoBundle(2);
@@ -1918,7 +1918,7 @@ public class GeckoSession extends LayerSession
 
 
         void onShowActionRequest(GeckoSession session, Selection selection,
-                                 @Action String[] actions, Response<String> response);
+                                 @Action String[] actions, GeckoResponse<String> response);
 
         @IntDef({HIDE_REASON_NO_SELECTION,
                  HIDE_REASON_INVISIBLE_SELECTION,
@@ -1959,16 +1959,6 @@ public class GeckoSession extends LayerSession
 
 
         void onHideAction(GeckoSession session, @HideReason int reason);
-    }
-
-    
-
-
-    public interface Response<T> {
-        
-
-
-        void respond(T val);
     }
 
     public interface NavigationDelegate {
@@ -2016,7 +2006,7 @@ public class GeckoSession extends LayerSession
 
         void onLoadRequest(GeckoSession session, String uri,
                            @TargetWindow int target,
-                           Response<Boolean> response);
+                           GeckoResponse<Boolean> response);
 
         
 
@@ -2028,7 +2018,7 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onNewSession(GeckoSession session, String uri, Response<GeckoSession> response);
+        void onNewSession(GeckoSession session, String uri, GeckoResponse<GeckoSession> response);
     }
 
     

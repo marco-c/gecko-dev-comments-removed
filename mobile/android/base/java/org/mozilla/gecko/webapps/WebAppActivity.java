@@ -37,6 +37,7 @@ import org.mozilla.gecko.text.TextSelection;
 import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.ColorUtil;
 import org.mozilla.gecko.widget.ActionModePresenter;
+import org.mozilla.geckoview.GeckoResponse;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
@@ -93,6 +94,10 @@ public class WebAppActivity extends AppCompatActivity
 
         final GeckoSessionSettings settings = new GeckoSessionSettings();
         settings.setBoolean(GeckoSessionSettings.USE_MULTIPROCESS, false);
+        settings.setBoolean(
+            GeckoSessionSettings.USE_REMOTE_DEBUGGER,
+            GeckoSharedPrefs.forApp(this).getBoolean(
+                GeckoPreferences.PREFS_DEVTOOLS_REMOTE_USB_ENABLED, false));
         mGeckoSession = new GeckoSession(settings);
         mGeckoView.setSession(mGeckoSession, GeckoRuntime.getDefault(this));
 
@@ -369,7 +374,7 @@ public class WebAppActivity extends AppCompatActivity
     @Override
     public void onLoadRequest(final GeckoSession session, final String urlStr,
                               final int target,
-                              final GeckoSession.Response<Boolean> response) {
+                              final GeckoResponse<Boolean> response) {
         final Uri uri = Uri.parse(urlStr);
         if (uri == null) {
             
@@ -421,7 +426,7 @@ public class WebAppActivity extends AppCompatActivity
 
     @Override
     public void onNewSession(final GeckoSession session, final String uri,
-                             final GeckoSession.Response<GeckoSession> response) {
+                             final GeckoResponse<GeckoSession> response) {
         
         throw new IllegalStateException("Unexpected new session");
     }
