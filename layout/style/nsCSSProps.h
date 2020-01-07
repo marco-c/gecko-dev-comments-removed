@@ -126,46 +126,12 @@
 
 #define CSS_PROPERTY_VALUE_LIST_USES_COMMAS       (1<<1) /* otherwise spaces */
 
-#define CSS_PROPERTY_APPLIES_TO_FIRST_LETTER      (1<<2)
-#define CSS_PROPERTY_APPLIES_TO_FIRST_LINE        (1<<3)
-#define CSS_PROPERTY_APPLIES_TO_FIRST_LETTER_AND_FIRST_LINE \
-  (CSS_PROPERTY_APPLIES_TO_FIRST_LETTER | CSS_PROPERTY_APPLIES_TO_FIRST_LINE)
-
-
-
-
-
-
-#define CSS_PROPERTY_START_IMAGE_LOADS            (1<<5)
-
-
-
-
-
-#define CSS_PROPERTY_IMAGE_IS_IN_ARRAY_0          (1<<6)
-
-
-
-
-
-#define CSS_PROPERTY_STORES_CALC                  (1<<8)
-
-
-
-
-
-
-
-
-
 
 
 
 #define CSS_PROPERTY_PARSE_PROPERTY_MASK          (7<<9)
 #define CSS_PROPERTY_PARSE_INACCESSIBLE           (1<<9)
 #define CSS_PROPERTY_PARSE_FUNCTION               (2<<9)
-#define CSS_PROPERTY_PARSE_VALUE                  (3<<9)
-#define CSS_PROPERTY_PARSE_VALUE_LIST             (4<<9)
 
 
 
@@ -175,25 +141,10 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
               "didn't leave enough room for the parse property constants");
 
 
-#define CSS_PROPERTY_HASHLESS_COLOR_QUIRK         (1<<15)
-
-
-#define CSS_PROPERTY_UNITLESS_LENGTH_QUIRK        (1<<16)
-
-
-
-
-#define CSS_PROPERTY_APPLIES_TO_PLACEHOLDER       (1<<18)
-
-
-#define CSS_PROPERTY_APPLIES_TO_PAGE_RULE         (1<<19)
 
 
 
 #define CSS_PROPERTY_GETCS_NEEDS_LAYOUT_FLUSH     (1<<20)
-
-
-#define CSS_PROPERTY_CREATES_STACKING_CONTEXT     (1<<21)
 
 
 
@@ -218,20 +169,12 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
   (CSS_PROPERTY_ENABLED_IN_UA_SHEETS | CSS_PROPERTY_ENABLED_IN_CHROME)
 
 
-#define CSS_PROPERTY_NUMBERS_ARE_PIXELS           (1<<24)
-
-
 #define CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR    (1<<27)
 
 
 
 
 #define CSS_PROPERTY_INTERNAL                     (1<<28)
-
-
-
-
-#define CSS_PROPERTY_LOAD_USE_CORS                (1U<<31)
 
 
 
