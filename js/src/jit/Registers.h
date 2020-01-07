@@ -81,12 +81,9 @@ struct Register {
         return 1;
     }
 
-    
-    
-    
-    void aliased(uint32_t aliasIdx, Register* ret) const {
+    Register aliased(uint32_t aliasIdx) const {
         MOZ_ASSERT(aliasIdx == 0);
-        *ret = *this;
+        return *this;
     }
 
     SetType alignedOrDominatedAliasedSet() const {

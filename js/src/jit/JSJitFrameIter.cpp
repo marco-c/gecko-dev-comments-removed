@@ -216,8 +216,7 @@ JSJitFrameIter::machineState() const
         for (uint32_t a = 0; a < (*iter).numAlignedAliased(); a++) {
             
             
-            FloatRegister ftmp;
-            (*iter).alignedAliased(a, &ftmp);
+            FloatRegister ftmp = (*iter).alignedAliased(a);
             machine.setRegisterLocation(ftmp, (double*)floatSpill);
         }
     }

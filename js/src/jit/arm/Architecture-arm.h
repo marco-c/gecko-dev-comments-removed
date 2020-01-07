@@ -498,21 +498,16 @@ class VFPRegister
         return 2;
     }
 
-    
-    
-    void aliased(uint32_t aliasIdx, VFPRegister* ret) {
-        if (aliasIdx == 0) {
-            *ret = *this;
-            return;
-        }
+    VFPRegister aliased(uint32_t aliasIdx) {
+        if (aliasIdx == 0)
+            return *this;
         if (isDouble()) {
             MOZ_ASSERT(code_ < NumAliasedDoubles);
             MOZ_ASSERT(aliasIdx <= 2);
-            *ret = singleOverlay(aliasIdx - 1);
-            return;
+            return singleOverlay(aliasIdx - 1);
         }
         MOZ_ASSERT(aliasIdx == 1);
-        *ret = doubleOverlay(aliasIdx - 1);
+        return doubleOverlay(aliasIdx - 1);
     }
     uint32_t numAlignedAliased() const {
         if (isDouble()) {
@@ -529,20 +524,16 @@ class VFPRegister
     
     
     
-    void alignedAliased(uint32_t aliasIdx, VFPRegister* ret) {
-        if (aliasIdx == 0) {
-            *ret = *this;
-            return;
-        }
+    VFPRegister alignedAliased(uint32_t aliasIdx) {
+        if (aliasIdx == 0)
+            return *this;
         MOZ_ASSERT(aliasIdx == 1);
         if (isDouble()) {
             MOZ_ASSERT(code_ < NumAliasedDoubles);
-            *ret = singleOverlay(aliasIdx - 1);
-            return;
+            return singleOverlay(aliasIdx - 1);
         }
         MOZ_ASSERT((code_ & 1) == 0);
-        *ret = doubleOverlay(aliasIdx - 1);
-        return;
+        return doubleOverlay(aliasIdx - 1);
     }
 
     typedef FloatRegisters::SetType SetType;
