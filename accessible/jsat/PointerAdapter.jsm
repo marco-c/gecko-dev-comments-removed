@@ -8,8 +8,6 @@
 
 var EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 ChromeUtils.defineModuleGetter(this, "Utils", 
   "resource://gre/modules/accessibility/Utils.jsm");
 ChromeUtils.defineModuleGetter(this, "Logger", 
