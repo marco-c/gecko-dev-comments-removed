@@ -159,9 +159,12 @@ public:
   static bool IsTimerPrecisionReductionEnabled();
 
   
-  static double ReduceTimePrecisionAsMSecs(double aTime);
   static double ReduceTimePrecisionAsUSecs(double aTime);
+  static double ReduceTimePrecisionAsMSecs(double aTime);
   static double ReduceTimePrecisionAsSecs(double aTime);
+  
+  static double ReduceTimePrecisionImpl(double aTime, double aResolutionUSec, double aTimeScaleCorrection);
+
 
   
   
