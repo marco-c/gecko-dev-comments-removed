@@ -3281,6 +3281,19 @@ class BookmarkMerger {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   mergeRemoteChildIntoMergedNode(mergedNode, remoteParentNode,
                                  remoteChildNode) {
     if (this.mergedGuids.has(remoteChildNode.guid)) {
@@ -3294,15 +3307,15 @@ class BookmarkMerger {
                     { remoteChildNode, remoteParentNode, mergedNode });
 
     
-    
-    
-    
-    
-    
-    
-    let locallyMovedOrDeleted = this.checkForLocalMoveOrDeletionOfRemoteNode(
-      mergedNode, remoteChildNode);
-    if (locallyMovedOrDeleted) {
+    let structureChange = this.checkForLocalStructureChangeOfRemoteNode(
+      mergedNode, remoteParentNode, remoteChildNode);
+    if (structureChange == BookmarkMerger.STRUCTURE.DELETED) {
+      
+      
+      
+      
+      
+      
       return true;
     }
 
@@ -3410,6 +3423,8 @@ class BookmarkMerger {
 
 
 
+
+
   mergeLocalChildIntoMergedNode(mergedNode, localParentNode, localChildNode) {
     if (this.mergedGuids.has(localChildNode.guid)) {
       
@@ -3424,11 +3439,12 @@ class BookmarkMerger {
 
     
     
-    
-    
-    let remotelyMovedOrDeleted = this.checkForRemoteMoveOrDeletionOfLocalNode(
-      mergedNode, localChildNode);
-    if (remotelyMovedOrDeleted) {
+    let structureChange = this.checkForRemoteStructureChangeOfLocalNode(
+      mergedNode, localParentNode, localChildNode);
+    if (structureChange == BookmarkMerger.STRUCTURE.DELETED) {
+      
+      
+      
       return true;
     }
 
@@ -3584,14 +3600,32 @@ class BookmarkMerger {
 
 
 
-  checkForLocalMoveOrDeletionOfRemoteNode(mergedNode, remoteNode) {
-    if (this.mergedGuids.has(remoteNode.guid)) {
-      
-      return true;
-    }
 
+
+
+
+
+
+
+
+
+  checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
+                                          remoteNode) {
     if (!this.localTree.isDeleted(remoteNode.guid)) {
-      return false;
+      let localNode = this.localTree.nodeForGuid(remoteNode.guid);
+      if (!localNode) {
+        return BookmarkMerger.STRUCTURE.UNCHANGED;
+      }
+      let localParentNode = this.localTree.parentNodeFor(localNode);
+      if (!localParentNode) {
+        
+        throw new SyncedBookmarksMirror.ConsistencyError(
+          "Can't check for structure changes of local orphan");
+      }
+      if (localParentNode.guid != remoteParentNode.guid) {
+        return BookmarkMerger.STRUCTURE.MOVED;
+      }
+      return BookmarkMerger.STRUCTURE.UNCHANGED;
     }
 
     if (remoteNode.needsMerge) {
@@ -3632,7 +3666,7 @@ class BookmarkMerger {
     MirrorLog.trace("Relocating remote orphans ${mergedOrphanNodes} to " +
                     "${mergedNode}", { mergedOrphanNodes, mergedNode });
 
-    return true;
+    return BookmarkMerger.STRUCTURE.DELETED;
   }
 
   
@@ -3643,14 +3677,32 @@ class BookmarkMerger {
 
 
 
-  checkForRemoteMoveOrDeletionOfLocalNode(mergedNode, localNode) {
-    if (this.mergedGuids.has(localNode.guid)) {
-      
-      return true;
-    }
 
+
+
+
+
+
+
+
+
+  checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
+                                          localNode) {
     if (!this.remoteTree.isDeleted(localNode.guid)) {
-      return false;
+      let remoteNode = this.remoteTree.nodeForGuid(localNode.guid);
+      if (!remoteNode) {
+        return BookmarkMerger.STRUCTURE.UNCHANGED;
+      }
+      let remoteParentNode = this.remoteTree.parentNodeFor(remoteNode);
+      if (!remoteParentNode) {
+        
+        throw new SyncedBookmarksMirror.ConsistencyError(
+          "Can't check for structure changes of remote orphan");
+      }
+      if (remoteParentNode.guid != localParentNode.guid) {
+        return BookmarkMerger.STRUCTURE.MOVED;
+      }
+      return BookmarkMerger.STRUCTURE.UNCHANGED;
     }
 
     if (localNode.needsMerge) {
@@ -3685,7 +3737,7 @@ class BookmarkMerger {
     MirrorLog.trace("Relocating local orphans ${mergedOrphanNodes} to " +
                     "${mergedNode}", { mergedOrphanNodes, mergedNode });
 
-    return true;
+    return BookmarkMerger.STRUCTURE.DELETED;
   }
 
   
@@ -3698,9 +3750,10 @@ class BookmarkMerger {
     let remoteOrphanNodes = [];
 
     for (let remoteChildNode of remoteNode.children) {
-      let locallyMovedOrDeleted = this.checkForLocalMoveOrDeletionOfRemoteNode(
-        mergedNode, remoteChildNode);
-      if (locallyMovedOrDeleted) {
+      let structureChange = this.checkForLocalStructureChangeOfRemoteNode(
+        mergedNode, remoteNode, remoteChildNode);
+      if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
+          structureChange == BookmarkMerger.STRUCTURE.DELETED) {
         
         
         continue;
@@ -3732,9 +3785,10 @@ class BookmarkMerger {
 
     let localOrphanNodes = [];
     for (let localChildNode of localNode.children) {
-      let remotelyMovedOrDeleted = this.checkForRemoteMoveOrDeletionOfLocalNode(
-        mergedNode, localChildNode);
-      if (remotelyMovedOrDeleted) {
+      let structureChange = this.checkForRemoteStructureChangeOfLocalNode(
+        mergedNode, localNode, localChildNode);
+      if (structureChange == BookmarkMerger.STRUCTURE.MOVED ||
+          structureChange == BookmarkMerger.STRUCTURE.DELETED) {
         
         
         continue;
@@ -3754,6 +3808,8 @@ class BookmarkMerger {
   }
 
   
+
+
 
 
 
@@ -3854,6 +3910,16 @@ class BookmarkMerger {
     return infos;
   }
 }
+
+
+
+
+
+BookmarkMerger.STRUCTURE = {
+  UNCHANGED: 1,
+  MOVED: 2,
+  DELETED: 3,
+};
 
 
 
