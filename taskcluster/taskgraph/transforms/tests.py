@@ -23,6 +23,8 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by, OptimizationSchema
 from taskgraph.util.treeherder import split_symbol, join_symbol
 from taskgraph.util.platforms import platform_family
+from taskgraph import files_changed
+from mozpack.path import match as mozpackmatch
 from taskgraph.util.schema import (
     validate_schema,
     optionally_keyed_by,
@@ -40,6 +42,7 @@ from voluptuous import (
 
 import copy
 import logging
+import math
 
 
 LINUX_WORKER_TYPES = {
@@ -673,7 +676,7 @@ def handle_suite_category(config, tests):
 
         script = test['mozharness']['script']
         category_arg = None
-        if suite == 'test-verify' or suite == 'test-coverage':
+        if suite.startswith('test-verify') or suite.startswith('test-coverage'):
             pass
         elif script == 'android_emulator_unittest.py':
             category_arg = '--test-suite'
@@ -773,6 +776,18 @@ def split_chunks(config, tests):
     them and assigning 'this-chunk' appropriately and updating the treeherder
     symbol."""
     for test in tests:
+        if test['suite'].startswith('test-verify'):
+            test['chunks'] = perfile_number_of_chunks(config, test['test-name'])
+            if test['chunks'] == 0:
+                continue
+            
+            
+            
+            
+            maximum_number_verify_chunks = 3
+            if test['chunks'] > maximum_number_verify_chunks:
+                test['chunks'] = maximum_number_verify_chunks
+
         if test['chunks'] == 1:
             test['this-chunk'] = 1
             yield test
@@ -789,6 +804,31 @@ def split_chunks(config, tests):
             chunked['treeherder-symbol'] = join_symbol(group, symbol)
 
             yield chunked
+
+
+def perfile_number_of_chunks(config, type):
+    
+    
+
+    
+    tests_per_chunk = 10.0
+
+    if type.startswith('test-verify-wpt'):
+        file_patterns = ['testing/web-platform/tests/**']
+    elif type.startswith('test-verify'):
+        file_patterns = ['**/test_*', '**/browser_*', '**/crashtest*/**',
+                          'js/src/test/test/', 'js/src/test/non262/', 'js/src/test/test262/']
+
+    changed_files = files_changed.get_changed_files(config.params.get('head_repository'),
+                                                    config.params.get('head_rev'))
+    test_count = 0
+    for pattern in file_patterns:
+        for path in changed_files:
+            if mozpackmatch(path, pattern):
+                test_count += 1
+
+    chunks = test_count/tests_per_chunk
+    return int(math.ceil(chunks))
 
 
 @transforms.add
