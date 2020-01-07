@@ -168,6 +168,13 @@ protected:
     
     bool      mIgnoreFcCharmap;
 
+    
+    
+    
+    
+    bool      mHasVariations;
+    bool      mHasVariationsInitialized;
+
     double    mAspect;
 
     
