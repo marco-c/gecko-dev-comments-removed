@@ -732,6 +732,33 @@ GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId o
     }
 }
 
+
+
+
+static void
+TestMatchingHolder(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+{
+    
+    
+    
+    MOZ_ASSERT(obj->is<NativeObject>());
+
+    writer.guardShapeForOwnProperties(objId, obj->as<NativeObject>().lastProperty());
+}
+
+static bool
+UncacheableProtoOnChain(JSObject* obj)
+{
+    while (true) {
+        if (obj->hasUncacheableProto())
+            return true;
+
+        obj = obj->staticPrototype();
+        if (!obj)
+            return false;
+    }
+}
+
 static void
 ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
 {
@@ -753,17 +780,35 @@ ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
 
 
 
-static void
-TestMatchingHolder(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
-{
-    
-    
-    
-    MOZ_ASSERT(obj->is<NativeObject>());
 
-    writer.guardShapeForOwnProperties(objId, obj->as<NativeObject>().lastProperty());
+static void
+ShapeGuardProtoChainForCrossCompartmentHolder(CacheIRWriter& writer, JSObject* obj,
+                                              ObjOperandId objId, JSObject* holder,
+                                              Maybe<ObjOperandId>* holderId)
+{
+    MOZ_ASSERT(obj != holder);
+    MOZ_ASSERT(holder);
+    while (true) {
+        obj = obj->staticPrototype();
+        MOZ_ASSERT(obj);
+
+        objId = writer.loadProto(objId);
+        if (obj == holder) {
+            TestMatchingHolder(writer, obj, objId);
+            holderId->emplace(objId);
+            return;
+        } else {
+            writer.guardShapeForOwnProperties(objId, obj->as<NativeObject>().shape());
+        }
+    }
 }
 
+enum class SlotReadType {
+    Normal,
+    CrossCompartment
+};
+
+template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
 static void
 EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
                   ObjOperandId objId, Maybe<ObjOperandId>* holderId)
@@ -773,12 +818,20 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
 
     if (obj != holder) {
         if (holder) {
-            
-            GeneratePrototypeGuards(writer, obj, holder, objId);
+            if (MaybeCrossCompartment == SlotReadType::CrossCompartment) {
+                
+                
+                
+                ShapeGuardProtoChainForCrossCompartmentHolder(writer, obj, objId, holder,
+                                                              holderId);
+            } else {
+                
+                GeneratePrototypeGuards(writer, obj, holder, objId);
 
-            
-            holderId->emplace(writer.loadObject(holder));
-            TestMatchingHolder(writer, holder, holderId->ref());
+                
+                holderId->emplace(writer.loadObject(holder));
+                TestMatchingHolder(writer, holder, holderId->ref());
+            }
         } else {
             
             
@@ -792,12 +845,13 @@ EmitReadSlotGuard(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
     }
 }
 
+template <SlotReadType MaybeCrossCompartment = SlotReadType::Normal>
 static void
 EmitReadSlotResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
                    Shape* shape, ObjOperandId objId)
 {
     Maybe<ObjOperandId> holderId;
-    EmitReadSlotGuard(writer, obj, holder, objId, &holderId);
+    EmitReadSlotGuard<MaybeCrossCompartment>(writer, obj, holder, objId, &holderId);
 
     if (obj == holder && obj->is<UnboxedPlainObject>())
         holder = obj->as<UnboxedPlainObject>().maybeExpando();
@@ -1044,37 +1098,54 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     if (unwrapped->compartment()->zone() != cx_->compartment()->zone())
         return false;
 
-    RootedObject wrappedGlobal(cx_, &obj->global());
-    if (!cx_->compartment()->wrap(cx_, &wrappedGlobal))
+    
+    
+    
+    RootedObject wrappedTargetGlobal(cx_, &unwrapped->global());
+    if (!cx_->compartment()->wrap(cx_, &wrappedTargetGlobal))
         return false;
 
-    AutoRealm ar(cx_, unwrapped);
-
-    
-    
-    bool isWindowProxy = IsWindowProxy(unwrapped);
-    if (isWindowProxy) {
-        MOZ_ASSERT(ToWindowIfWindowProxy(unwrapped) == unwrapped->realm()->maybeGlobal());
-        unwrapped = cx_->global();
-        MOZ_ASSERT(unwrapped);
-    }
-
+    bool isWindowProxy = false;
     RootedShape shape(cx_);
     RootedNativeObject holder(cx_);
-    NativeGetPropCacheability canCache =
-        CanAttachNativeGetProp(cx_, unwrapped, id, &holder, &shape, pc_,
-                               resultFlags_, isTemporarilyUnoptimizable_);
-    if (canCache != CanAttachReadSlot)
-        return false;
 
-    if (holder) {
-        EnsureTrackPropertyTypes(cx_, holder, id);
-        if (unwrapped == holder) {
+    
+    
+    {
+        AutoRealm ar(cx_, unwrapped);
+
+        
+        
+        isWindowProxy = IsWindowProxy(unwrapped);
+        if (isWindowProxy) {
+            MOZ_ASSERT(ToWindowIfWindowProxy(unwrapped) == unwrapped->realm()->maybeGlobal());
+            unwrapped = cx_->global();
+            MOZ_ASSERT(unwrapped);
+        }
+
+        NativeGetPropCacheability canCache =
+            CanAttachNativeGetProp(cx_, unwrapped, id, &holder, &shape, pc_,
+                                resultFlags_, isTemporarilyUnoptimizable_);
+        if (canCache != CanAttachReadSlot)
+            return false;
+
+        if (holder) {
             
-            if (IsPreliminaryObject(unwrapped))
-                preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
-            else
-                preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
+            
+            EnsureTrackPropertyTypes(cx_, holder, id);
+            if (unwrapped == holder) {
+                
+                if (IsPreliminaryObject(unwrapped))
+                    preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
+                else
+                    preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
+            }
+        } else {
+            
+            
+            if (UncacheableProtoOnChain(unwrapped)) {
+                return false;
+            }
         }
     }
 
@@ -1086,7 +1157,7 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
     ObjOperandId wrapperTargetId = writer.loadWrapperTarget(objId);
 
     
-    writer.guardCompartment(wrapperTargetId, wrappedGlobal, unwrapped->compartment());
+    writer.guardCompartment(wrapperTargetId, wrappedTargetGlobal, unwrapped->compartment());
 
     ObjOperandId unwrappedId = wrapperTargetId;
     if (isWindowProxy) {
@@ -1097,7 +1168,7 @@ GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperan
         unwrappedId = writer.loadWrapperTarget(wrapperTargetId);
     }
 
-    EmitReadSlotResult(writer, unwrapped, holder, shape, unwrappedId);
+    EmitReadSlotResult<SlotReadType::CrossCompartment>(writer, unwrapped, holder, shape, unwrappedId);
     EmitReadSlotReturn(writer, unwrapped, holder, shape,  true);
 
     trackAttached("CCWSlot");
