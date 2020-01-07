@@ -35,7 +35,6 @@
 #include <windows.h>
 #include <dia2.h>
 
-#include <map>
 #include <vector>
 
 namespace google_breakpad {
@@ -131,8 +130,6 @@ struct ImageMap {
   
   
   EndpointIndexMap endpoint_index_map;
-
-  std::map<DWORD, DWORD> subsequent_rva_block;
 };
 
 }  

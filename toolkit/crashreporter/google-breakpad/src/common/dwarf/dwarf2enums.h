@@ -501,7 +501,7 @@ enum DwarfOpcode {
   DW_OP_call_frame_cfa               =0x9c,
   DW_OP_bit_piece                    =0x9d,
   DW_OP_lo_user                      =0xe0,
-  DW_OP_hi_user                      =0xff,
+  DW_OP_hi_user                      =0xff,  
   
   DW_OP_GNU_push_tls_address         =0xe0,
   
@@ -544,8 +544,6 @@ enum DwarfLanguage
     DW_LANG_ObjC_plus_plus           =0x0011,
     DW_LANG_UPC                      =0x0012,
     DW_LANG_D                        =0x0013,
-    DW_LANG_Rust                     =0x001c,
-    DW_LANG_Swift                    =0x001e,
     
     DW_LANG_lo_user = 0x8000,
     DW_LANG_hi_user = 0xffff,
@@ -672,7 +670,7 @@ enum DwarfPointerEncoding
     
     
     
-    DW_EH_PE_indirect	= 0x80
+    DW_EH_PE_indirect	= 0x80  
   };
 
 }  

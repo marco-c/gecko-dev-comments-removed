@@ -94,9 +94,6 @@ class CodeModule {
   
   virtual uint64_t shrink_down_delta() const = 0;
   virtual void SetShrinkDownDelta(uint64_t shrink_down_delta) = 0;
-
-  
-  virtual bool is_unloaded() const = 0;
 };
 
 }  

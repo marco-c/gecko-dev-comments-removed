@@ -28,7 +28,9 @@
 
 
 
-#include "breakpad_googletest_includes.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "testing/include/gmock/gmock.h"
+
 #include "client/windows/crash_generation/crash_generation_server.h"
 #include "client/windows/common/ipc_protocol.h"
 

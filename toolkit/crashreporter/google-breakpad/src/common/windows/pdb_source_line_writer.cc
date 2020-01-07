@@ -37,11 +37,8 @@
 #include <ImageHlp.h>
 #include <stdio.h>
 
-#include <algorithm>
 #include <limits>
-#include <map>
 #include <set>
-#include <utility>
 
 #include "common/windows/dia_util.h"
 #include "common/windows/guid_string.h"
@@ -110,54 +107,6 @@ namespace {
 using std::vector;
 
 
-struct SelectedSymbol {
-  SelectedSymbol(const CComPtr<IDiaSymbol>& symbol, bool is_public)
-      : symbol(symbol), is_public(is_public), is_multiple(false) {}
-
-  
-  CComPtr<IDiaSymbol> symbol;
-  
-  bool is_public;
-  
-  
-  bool is_multiple;
-};
-
-
-typedef std::map<DWORD, SelectedSymbol> SymbolMap;
-
-
-
-void MaybeRecordSymbol(DWORD rva,
-                       const CComPtr<IDiaSymbol> symbol,
-                       bool is_public,
-                       SymbolMap* map) {
-  SymbolMap::iterator loc = map->find(rva);
-  if (loc == map->end()) {
-    map->insert(std::make_pair(rva, SelectedSymbol(symbol, is_public)));
-    return;
-  }
-
-  
-  if (is_public && !loc->second.is_public) {
-    return;
-  }
-
-  loc->second.is_multiple = true;
-
-  
-  
-  
-  BSTR current_name, new_name;
-  loc->second.symbol->get_name(&current_name);
-  symbol->get_name(&new_name);
-  if (wcscmp(new_name, current_name) < 0) {
-    loc->second.symbol = symbol;
-    loc->second.is_public = is_public;
-  }
-}
-
-
 class AutoImage {
  public:
   explicit AutoImage(PLOADED_IMAGE img) : img_(img) {}
@@ -172,16 +121,6 @@ class AutoImage {
  private:
   PLOADED_IMAGE img_;
 };
-
-bool SymbolsMatch(IDiaSymbol* a, IDiaSymbol* b) {
-  DWORD a_section, a_offset, b_section, b_offset;
-  if (FAILED(a->get_addressSection(&a_section)) ||
-      FAILED(a->get_addressOffset(&a_offset)) ||
-      FAILED(b->get_addressSection(&b_section)) ||
-      FAILED(b->get_addressOffset(&b_offset)))
-    return false;
-  return a_section == b_section && a_offset == b_offset;
-}
 
 bool CreateDiaDataSourceInstance(CComPtr<IDiaDataSource> &data_source) {
   if (SUCCEEDED(data_source.CoCreateInstance(CLSID_DiaSource))) {
@@ -326,7 +265,7 @@ bool PDBSourceLineWriter::PrintLines(IDiaEnumLineNumbers *lines) {
     AddressRangeVector ranges;
     MapAddressRange(image_map_, AddressRange(rva, length), &ranges);
     for (size_t i = 0; i < ranges.size(); ++i) {
-      fprintf(output_, "%lx %lx %lu %lu\n", ranges[i].rva, ranges[i].length,
+      fprintf(output_, "%x %x %d %d\n", ranges[i].rva, ranges[i].length,
               line_num, source_id);
     }
     line.Release();
@@ -335,8 +274,7 @@ bool PDBSourceLineWriter::PrintLines(IDiaEnumLineNumbers *lines) {
 }
 
 bool PDBSourceLineWriter::PrintFunction(IDiaSymbol *function,
-                                        IDiaSymbol *block,
-                                        bool has_multiple_symbols) {
+                                        IDiaSymbol *block) {
   
   
   DWORD rva;
@@ -372,9 +310,9 @@ bool PDBSourceLineWriter::PrintFunction(IDiaSymbol *function,
   MapAddressRange(image_map_, AddressRange(rva, static_cast<DWORD>(length)),
                   &ranges);
   for (size_t i = 0; i < ranges.size(); ++i) {
-    const char* optional_multiple_field = has_multiple_symbols ? "m " : "";
-    fprintf(output_, "FUNC %s%lx %lx %x %ws\n", optional_multiple_field,
-            ranges[i].rva, ranges[i].length, stack_param_size, name.m_str);
+    fprintf(output_, "FUNC %x %x %x %ws\n",
+            ranges[i].rva, ranges[i].length, stack_param_size,
+            name.m_str);
   }
 
   CComPtr<IDiaEnumLineNumbers> lines;
@@ -452,7 +390,7 @@ bool PDBSourceLineWriter::PrintFunctions() {
   CComPtr<IDiaEnumSymbols> symbols = NULL;
 
   
-  SymbolMap rva_symbol;
+  std::set<DWORD> rvas;
   hr = global->findChildren(SymTagFunction, NULL, nsNone, &symbols);
 
   if (SUCCEEDED(hr)) {
@@ -461,7 +399,8 @@ bool PDBSourceLineWriter::PrintFunctions() {
     while (SUCCEEDED(symbols->Next(1, &symbol, &count)) && count == 1) {
       if (SUCCEEDED(symbol->get_relativeVirtualAddress(&rva))) {
         
-        MaybeRecordSymbol(rva, symbol, false, &rva_symbol);
+        
+        rvas.insert(rva);
       } else {
         fprintf(stderr, "get_relativeVirtualAddress failed on the symbol\n");
         return false;
@@ -475,6 +414,7 @@ bool PDBSourceLineWriter::PrintFunctions() {
 
   
   
+  std::set<DWORD> public_only_rvas;
   hr = global->findChildren(SymTagPublicSymbol, NULL, nsNone, &symbols);
 
   if (SUCCEEDED(hr)) {
@@ -482,8 +422,10 @@ bool PDBSourceLineWriter::PrintFunctions() {
 
     while (SUCCEEDED(symbols->Next(1, &symbol, &count)) && count == 1) {
       if (SUCCEEDED(symbol->get_relativeVirtualAddress(&rva))) {
-        
-        MaybeRecordSymbol(rva, symbol, true, &rva_symbol);
+        if (rvas.count(rva) == 0) {
+          rvas.insert(rva); 
+          public_only_rvas.insert(rva);
+        }
       } else {
         fprintf(stderr, "get_relativeVirtualAddress failed on the symbol\n");
         return false;
@@ -495,17 +437,39 @@ bool PDBSourceLineWriter::PrintFunctions() {
     symbols.Release();
   }
 
+  std::set<DWORD>::iterator it;
+
   
-  SymbolMap::iterator it;
-  for (it = rva_symbol.begin(); it != rva_symbol.end(); ++it) {
-    CComPtr<IDiaSymbol> symbol = it->second.symbol;
+  for (it = rvas.begin(); it != rvas.end(); ++it) {
+    CComPtr<IDiaSymbol> symbol = NULL;
     
-    if (!it->second.is_public) {
-      if (!PrintFunction(symbol, symbol, it->second.is_multiple))
+    
+    
+    
+    if (public_only_rvas.count(*it) == 0) {
+      if (SUCCEEDED(session_->findSymbolByRVA(*it, SymTagFunction, &symbol))) {
+        
+        if (symbol) {
+          if (!PrintFunction(symbol, symbol))
+            return false;
+          symbol.Release();
+        }
+      } else {
+        fprintf(stderr, "findSymbolByRVA SymTagFunction failed\n");
         return false;
+      }
+    } else if (SUCCEEDED(session_->findSymbolByRVA(*it,
+                                                   SymTagPublicSymbol,
+                                                   &symbol))) {
+      
+      if (symbol) {
+        if (!PrintCodePublicSymbol(symbol))
+          return false;
+        symbol.Release();
+      }
     } else {
-      if (!PrintCodePublicSymbol(symbol, it->second.is_multiple))
-        return false;
+      fprintf(stderr, "findSymbolByRVA SymTagPublicSymbol failed\n");
+      return false;
     }
   }
 
@@ -548,7 +512,7 @@ bool PDBSourceLineWriter::PrintFunctions() {
             SUCCEEDED(parent->get_relativeVirtualAddress(&func_rva)) &&
             SUCCEEDED(parent->get_length(&func_length))) {
           if (block_rva < func_rva || block_rva > (func_rva + func_length)) {
-            if (!PrintFunction(parent, block, false)) {
+            if (!PrintFunction(parent, block)) {
               return false;
             }
           }
@@ -699,7 +663,7 @@ bool PDBSourceLineWriter::PrintFrameDataUsingPDB() {
 
       for (size_t i = 0; i < frame_infos.size(); ++i) {
         const FrameInfo& fi(frame_infos[i]);
-        fprintf(output_, "STACK WIN %lx %lx %lx %lx %x %lx %lx %lx %lx %d ",
+        fprintf(output_, "STACK WIN %x %x %x %x %x %x %x %x %x %d ",
                 type, fi.rva, fi.code_size, fi.prolog_size,
                 0 , parameter_size, saved_register_size,
                 local_size, max_stack_size, program_string_result == S_OK);
@@ -845,10 +809,10 @@ bool PDBSourceLineWriter::PrintFrameDataUsingEXE() {
         unwind_info = NULL;
       }
     } while (unwind_info);
-    fprintf(output_, "STACK CFI INIT %lx %lx .cfa: $rsp .ra: .cfa %lu - ^\n",
+    fprintf(output_, "STACK CFI INIT %x %x .cfa: $rsp .ra: .cfa %d - ^\n",
             funcs[i].BeginAddress,
             funcs[i].EndAddress - funcs[i].BeginAddress, rip_offset);
-    fprintf(output_, "STACK CFI %lx .cfa: $rsp %lu +\n",
+    fprintf(output_, "STACK CFI %x .cfa: $rsp %d +\n",
             funcs[i].BeginAddress, stack_size);
   }
 
@@ -865,8 +829,7 @@ bool PDBSourceLineWriter::PrintFrameData() {
   return false;
 }
 
-bool PDBSourceLineWriter::PrintCodePublicSymbol(IDiaSymbol *symbol,
-                                                bool has_multiple_symbols) {
+bool PDBSourceLineWriter::PrintCodePublicSymbol(IDiaSymbol *symbol) {
   BOOL is_code;
   if (FAILED(symbol->get_code(&is_code))) {
     return false;
@@ -889,44 +852,10 @@ bool PDBSourceLineWriter::PrintCodePublicSymbol(IDiaSymbol *symbol,
   AddressRangeVector ranges;
   MapAddressRange(image_map_, AddressRange(rva, 1), &ranges);
   for (size_t i = 0; i < ranges.size(); ++i) {
-    const char* optional_multiple_field = has_multiple_symbols ? "m " : "";
-    fprintf(output_, "PUBLIC %s%lx %x %ws\n", optional_multiple_field,
-            ranges[i].rva, stack_param_size > 0 ? stack_param_size : 0,
+    fprintf(output_, "PUBLIC %x %x %ws\n", ranges[i].rva,
+            stack_param_size > 0 ? stack_param_size : 0,
             name.m_str);
   }
-
-  
-  
-  
-  
-  
-  
-  for (;;) {
-    
-    
-    
-    rva = image_map_.subsequent_rva_block[rva];
-    if (rva == 0)
-      break;
-
-    CComPtr<IDiaSymbol> next_sym = NULL;
-    LONG displacement;
-    if (FAILED(session_->findSymbolByRVAEx(rva, SymTagPublicSymbol, &next_sym,
-                                           &displacement))) {
-      break;
-    }
-
-    if (!SymbolsMatch(symbol, next_sym))
-      break;
-
-    AddressRangeVector next_ranges;
-    MapAddressRange(image_map_, AddressRange(rva, 1), &next_ranges);
-    for (size_t i = 0; i < next_ranges.size(); ++i) {
-      fprintf(output_, "PUBLIC %lx %x %ws\n", next_ranges[i].rva,
-              stack_param_size > 0 ? stack_param_size : 0, name.m_str);
-    }
-  }
-
   return true;
 }
 
@@ -1008,7 +937,7 @@ bool PDBSourceLineWriter::FindPEFile() {
 
     
     const wchar_t *extensions[] = { L"exe", L"dll" };
-    for (size_t i = 0; i < sizeof(extensions) / sizeof(extensions[0]); i++) {
+    for (int i = 0; i < sizeof(extensions) / sizeof(extensions[0]); i++) {
       size_t dot_pos = file.find_last_of(L".");
       if (dot_pos != wstring::npos) {
         file.replace(dot_pos + 1, wstring::npos, extensions[i]);
@@ -1041,7 +970,20 @@ bool PDBSourceLineWriter::GetSymbolFunctionName(IDiaSymbol *function,
                                    UNDNAME_NO_ECSU;
 
   
-  if (function->get_undecoratedNameEx(undecorate_options, name) != S_OK) {
+  
+  
+  HRESULT res;
+  __try {
+    res = function->get_undecoratedNameEx(undecorate_options, name);
+  }
+  __except (GetExceptionCode() == EXCEPTION_INT_DIVIDE_BY_ZERO ?
+            EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+  {
+    fprintf(stderr, "div-by-zero error in get_undecoratedNameEx\n");
+    
+    res = E_FAIL;
+  }
+  if (res != S_OK) {
     if (function->get_name(name) != S_OK) {
       fprintf(stderr, "failed to get function name\n");
       return false;
@@ -1194,15 +1136,12 @@ int PDBSourceLineWriter::GetFunctionStackParamSize(IDiaSymbol *function) {
       goto next_child;
     }
 
-    
-    {
-      int child_end = child_register_offset + static_cast<ULONG>(child_length);
-      if (child_register_offset < lowest_base) {
-        lowest_base = child_register_offset;
-      }
-      if (child_end > highest_end) {
-        highest_end = child_end;
-      }
+    int child_end = child_register_offset + static_cast<ULONG>(child_length);
+    if (child_register_offset < lowest_base) {
+      lowest_base = child_register_offset;
+    }
+    if (child_end > highest_end) {
+      highest_end = child_end;
     }
 
 next_child:

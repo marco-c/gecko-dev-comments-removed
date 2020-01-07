@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <libgen.h>
 #include <mach-o/arch.h>
 #include <mach-o/fat.h>
 #include <stdint.h>
@@ -59,7 +60,6 @@
 #include "common/mac/arch_utilities.h"
 #include "common/mac/macho_reader.h"
 #include "common/module.h"
-#include "common/path_helper.h"
 #include "common/scoped_ptr.h"
 #include "common/stabs_reader.h"
 #include "common/stabs_to_module.h"
@@ -370,7 +370,8 @@ bool DumpSymbols::CreateEmptyModule(scoped_ptr<Module>& module) {
   }
 
   
-  string module_name = google_breakpad::BaseName(object_filename_);
+  string module_name = object_filename_;
+  module_name = basename(&module_name[0]);
 
   
   string identifier = Identifier();

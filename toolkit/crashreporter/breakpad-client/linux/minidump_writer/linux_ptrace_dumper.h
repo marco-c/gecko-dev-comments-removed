@@ -85,15 +85,6 @@ class LinuxPtraceDumper : public LinuxDumper {
  private:
   
   bool threads_suspended_;
-
-  
-  
-  
-  bool ReadRegisterSet(ThreadInfo* info, pid_t tid);
-
-  
-  
-  bool ReadRegisters(ThreadInfo* info, pid_t tid);
 };
 
 }  

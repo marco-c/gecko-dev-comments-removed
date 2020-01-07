@@ -526,6 +526,9 @@ struct CFIFixture: public StackwalkerMIPSFixture {
                      
                      "FUNC 5000 1000 0 epictetus\n"
                      
+                     
+                     "STACK CFI INIT 5000 1000 .cfa: $sp .ra: $ra\n"
+                     
                      "STACK CFI INIT 5000 8 .cfa: $sp 0 + .ra: $ra\n"
 
                      

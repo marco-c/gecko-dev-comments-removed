@@ -38,7 +38,6 @@
 
 #include "common/linux/guid_creator.h"
 #include "common/memory_allocator.h"
-#include "common/using_std_string.h"
 
 namespace google_breakpad {
 
@@ -71,16 +70,16 @@ class FileID {
   
   
   
-  static string ConvertIdentifierToUUIDString(
+  static std::string ConvertIdentifierToUUIDString(
       const wasteful_vector<uint8_t>& identifier);
 
   
-  static string ConvertIdentifierToString(
+  static std::string ConvertIdentifierToString(
       const wasteful_vector<uint8_t>& identifier);
 
  private:
   
-  string path_;
+  std::string path_;
 };
 
 }  

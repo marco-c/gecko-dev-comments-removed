@@ -356,11 +356,6 @@ bool ExceptionHandler::WriteMinidumpWithException(
     bool report_current_thread) {
   bool result = false;
 
-#if TARGET_OS_IPHONE
-  
-  exit_after_write = false;
-#endif
-
   if (directCallback_) {
     if (directCallback_(callback_context_,
                         exception_type,

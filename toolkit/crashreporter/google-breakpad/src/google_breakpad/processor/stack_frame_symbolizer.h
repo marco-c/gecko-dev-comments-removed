@@ -75,11 +75,9 @@ class StackFrameSymbolizer {
 
   
   
-  virtual SymbolizerResult FillSourceLineInfo(
-      const CodeModules* modules,
-      const CodeModules* unloaded_modules,
-      const SystemInfo* system_info,
-      StackFrame* stack_frame);
+  virtual SymbolizerResult FillSourceLineInfo(const CodeModules* modules,
+                                              const SystemInfo* system_info,
+                                              StackFrame* stack_frame);
 
   virtual WindowsFrameInfo* FindWindowsFrameInfo(const StackFrame* frame);
 

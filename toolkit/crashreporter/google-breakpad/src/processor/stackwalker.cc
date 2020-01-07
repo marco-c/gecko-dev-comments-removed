@@ -60,15 +60,10 @@ namespace google_breakpad {
 
 const int Stackwalker::kRASearchWords = 40;
 
-
-
-
-
-
-uint32_t Stackwalker::max_frames_ = 1 << 20;  
+uint32_t Stackwalker::max_frames_ = 1024;
 bool Stackwalker::max_frames_set_ = false;
 
-uint32_t Stackwalker::max_frames_scanned_ = 1 << 14;  
+uint32_t Stackwalker::max_frames_scanned_ = 1024;
 
 Stackwalker::Stackwalker(const SystemInfo* system_info,
                          MemoryRegion* memory,
@@ -77,7 +72,6 @@ Stackwalker::Stackwalker(const SystemInfo* system_info,
     : system_info_(system_info),
       memory_(memory),
       modules_(modules),
-      unloaded_modules_(NULL),
       frame_symbolizer_(frame_symbolizer) {
   assert(frame_symbolizer_);
 }
@@ -140,9 +134,8 @@ bool Stackwalker::Walk(
 
     
     StackFrameSymbolizer::SymbolizerResult symbolizer_result =
-        frame_symbolizer_->FillSourceLineInfo(modules_, unloaded_modules_,
-                                              system_info_,
-                                              frame.get());
+        frame_symbolizer_->FillSourceLineInfo(modules_, system_info_,
+                                             frame.get());
     switch (symbolizer_result) {
       case StackFrameSymbolizer::kInterrupt:
         BPLOG(INFO) << "Stack walk is interrupted.";
@@ -194,12 +187,12 @@ bool Stackwalker::Walk(
 }
 
 
+
 Stackwalker* Stackwalker::StackwalkerForCPU(
     const SystemInfo* system_info,
     DumpContext* context,
     MemoryRegion* memory,
     const CodeModules* modules,
-    const CodeModules* unloaded_modules,
     StackFrameSymbolizer* frame_symbolizer) {
   if (!context) {
     BPLOG(ERROR) << "Can't choose a stackwalker implementation without context";
@@ -239,7 +232,7 @@ Stackwalker* Stackwalker::StackwalkerForCPU(
                                              context->GetContextSPARC(),
                                              memory, modules, frame_symbolizer);
       break;
-
+ 
     case MD_CONTEXT_MIPS:
     case MD_CONTEXT_MIPS64:
       cpu_stackwalker = new StackwalkerMIPS(system_info,
@@ -258,7 +251,7 @@ Stackwalker* Stackwalker::StackwalkerForCPU(
                                            frame_symbolizer);
       break;
     }
-
+    
     case MD_CONTEXT_ARM64:
       cpu_stackwalker = new StackwalkerARM64(system_info,
                                              context->GetContextARM64(),
@@ -270,44 +263,14 @@ Stackwalker* Stackwalker::StackwalkerForCPU(
   BPLOG_IF(ERROR, !cpu_stackwalker) << "Unknown CPU type " << HexString(cpu) <<
                                        ", can't choose a stackwalker "
                                        "implementation";
-  if (cpu_stackwalker) {
-    cpu_stackwalker->unloaded_modules_ = unloaded_modules;
-  }
   return cpu_stackwalker;
 }
 
-
-bool Stackwalker::TerminateWalk(uint64_t caller_ip,
-                                uint64_t caller_sp,
-                                uint64_t callee_sp,
-                                bool first_unwind) const {
-  
-  
-  
-  if (caller_ip < (1 << 12)) {
-    return true;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  if (first_unwind ? (caller_sp < callee_sp) : (caller_sp <= callee_sp)) {
-    return true;
-  }
-
-  return false;
-}
-
-bool Stackwalker::InstructionAddressSeemsValid(uint64_t address) const {
+bool Stackwalker::InstructionAddressSeemsValid(uint64_t address) {
   StackFrame frame;
   frame.instruction = address;
   StackFrameSymbolizer::SymbolizerResult symbolizer_result =
-      frame_symbolizer_->FillSourceLineInfo(modules_, unloaded_modules_,
-                                            system_info_, &frame);
+      frame_symbolizer_->FillSourceLineInfo(modules_, system_info_, &frame);
 
   if (!frame.module) {
     

@@ -105,6 +105,12 @@
 #define PR_SET_PTRACER 0x59616d61
 #endif
 
+
+static int _tgkill(pid_t tgid, pid_t tid, int sig) {
+  return syscall(__NR_tgkill, tgid, tid, sig);
+  return 0;
+}
+
 namespace google_breakpad {
 
 namespace {
@@ -212,7 +218,6 @@ pthread_mutex_t g_handler_stack_mutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 ExceptionHandler::CrashContext g_crash_context_;
 
-FirstChanceHandler g_first_chance_handler_ = nullptr;
 }  
 
 
@@ -326,18 +331,6 @@ void ExceptionHandler::RestoreHandlersLocked() {
 
 
 void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
-
-  
-  
-  
-  
-  
-  
-  if (g_first_chance_handler_ != nullptr &&
-      g_first_chance_handler_(sig, info, uc)) {
-    return;
-  }
-
   
   pthread_mutex_lock(&g_handler_stack_mutex_);
 
@@ -353,7 +346,6 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
   
   struct sigaction cur_handler;
   if (sigaction(sig, NULL, &cur_handler) == 0 &&
-      cur_handler.sa_sigaction == SignalHandler &&
       (cur_handler.sa_flags & SA_SIGINFO) == 0) {
     
     sigemptyset(&cur_handler.sa_mask);
@@ -395,7 +387,7 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
     
     
     
-    if (sys_tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
+    if (_tgkill(getpid(), syscall(__NR_gettid), sig) < 0) {
       
       
       
@@ -424,12 +416,7 @@ int ExceptionHandler::ThreadEntry(void *arg) {
 
   
   
-  sys_close(thread_arg->handler->fdes[1]);
-
-  
-  
   thread_arg->handler->WaitForContinueSignal();
-  sys_close(thread_arg->handler->fdes[0]);
 
   return thread_arg->handler->DoDump(thread_arg->pid, thread_arg->context,
                                      thread_arg->context_size) == false;
@@ -437,7 +424,7 @@ int ExceptionHandler::ThreadEntry(void *arg) {
 
 
 
-bool ExceptionHandler::HandleSignal(int , siginfo_t* info, void* uc) {
+bool ExceptionHandler::HandleSignal(int sig, siginfo_t* info, void* uc) {
   if (filter_ && !filter_(callback_context_))
     return false;
 
@@ -536,8 +523,8 @@ bool ExceptionHandler::GenerateDump(CrashContext *context) {
   }
 
   const pid_t child = sys_clone(
-      ThreadEntry, stack, CLONE_FS | CLONE_UNTRACED, &thread_arg, NULL, NULL,
-      NULL);
+      ThreadEntry, stack, CLONE_FILES | CLONE_FS | CLONE_UNTRACED,
+      &thread_arg, NULL, NULL, NULL);
   if (child == -1) {
     sys_close(fdes[0]);
     sys_close(fdes[1]);
@@ -562,13 +549,12 @@ bool ExceptionHandler::GenerateDump(CrashContext *context) {
   }
 
   
-  sys_close(fdes[0]);
-  
   sys_prctl(PR_SET_PTRACER, child, 0, 0, 0);
   SendContinueSignalToChild();
-  int status = 0;
+  int status;
   const int r = HANDLE_EINTR(sys_waitpid(child, &status, __WALL));
 
+  sys_close(fdes[0]);
   sys_close(fdes[1]);
 
   if (r == -1) {
@@ -624,20 +610,12 @@ void ExceptionHandler::WaitForContinueSignal() {
 
 bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                               size_t context_size) {
-  const bool may_skip_dump =
-      minidump_descriptor_.skip_dump_if_principal_mapping_not_referenced();
-  const uintptr_t principal_mapping_address =
-      minidump_descriptor_.address_within_principal_mapping();
-  const bool sanitize_stacks = minidump_descriptor_.sanitize_stacks();
   if (minidump_descriptor_.IsMicrodumpOnConsole()) {
     return google_breakpad::WriteMicrodump(
         crashing_process,
         context,
         context_size,
         mapping_list_,
-        may_skip_dump,
-        principal_mapping_address,
-        sanitize_stacks,
         *minidump_descriptor_.microdump_extra_info());
   }
   if (minidump_descriptor_.IsFD()) {
@@ -647,10 +625,7 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                                           context,
                                           context_size,
                                           mapping_list_,
-                                          app_memory_list_,
-                                          may_skip_dump,
-                                          principal_mapping_address,
-                                          sanitize_stacks);
+                                          app_memory_list_);
   }
   return google_breakpad::WriteMinidump(minidump_descriptor_.path(),
                                         minidump_descriptor_.size_limit(),
@@ -658,10 +633,7 @@ bool ExceptionHandler::DoDump(pid_t crashing_process, const void* context,
                                         context,
                                         context_size,
                                         mapping_list_,
-                                        app_memory_list_,
-                                        may_skip_dump,
-                                        principal_mapping_address,
-                                        sanitize_stacks);
+                                        app_memory_list_);
 }
 
 
@@ -812,10 +784,6 @@ bool ExceptionHandler::WriteMinidumpForChild(pid_t child,
       return false;
 
   return callback ? callback(descriptor, callback_context, true) : true;
-}
-
-void SetFirstChanceExceptionHandler(FirstChanceHandler callback) {
-  g_first_chance_handler_ = callback;
 }
 
 }  

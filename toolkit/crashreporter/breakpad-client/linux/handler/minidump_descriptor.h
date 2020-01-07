@@ -53,19 +53,14 @@ class MinidumpDescriptor {
   MinidumpDescriptor()
       : mode_(kUninitialized),
         fd_(-1),
-        size_limit_(-1),
-        address_within_principal_mapping_(0),
-        skip_dump_if_principal_mapping_not_referenced_(false) {}
+        size_limit_(-1) {}
 
   explicit MinidumpDescriptor(const string& directory)
       : mode_(kWriteMinidumpToFile),
         fd_(-1),
         directory_(directory),
         c_path_(NULL),
-        size_limit_(-1),
-        address_within_principal_mapping_(0),
-        skip_dump_if_principal_mapping_not_referenced_(false),
-        sanitize_stacks_(false) {
+        size_limit_(-1) {
     assert(!directory.empty());
   }
 
@@ -73,20 +68,14 @@ class MinidumpDescriptor {
       : mode_(kWriteMinidumpToFd),
         fd_(fd),
         c_path_(NULL),
-        size_limit_(-1),
-        address_within_principal_mapping_(0),
-        skip_dump_if_principal_mapping_not_referenced_(false),
-        sanitize_stacks_(false) {
+        size_limit_(-1) {
     assert(fd != -1);
   }
 
   explicit MinidumpDescriptor(const MicrodumpOnConsole&)
       : mode_(kWriteMicrodumpToConsole),
         fd_(-1),
-        size_limit_(-1),
-        address_within_principal_mapping_(0),
-        skip_dump_if_principal_mapping_not_referenced_(false),
-        sanitize_stacks_(false) {}
+        size_limit_(-1) {}
 
   explicit MinidumpDescriptor(const MinidumpDescriptor& descriptor);
   MinidumpDescriptor& operator=(const MinidumpDescriptor& descriptor);
@@ -111,28 +100,6 @@ class MinidumpDescriptor {
 
   off_t size_limit() const { return size_limit_; }
   void set_size_limit(off_t limit) { size_limit_ = limit; }
-
-  uintptr_t address_within_principal_mapping() const {
-    return address_within_principal_mapping_;
-  }
-  void set_address_within_principal_mapping(
-      uintptr_t address_within_principal_mapping) {
-    address_within_principal_mapping_ = address_within_principal_mapping;
-  }
-
-  bool skip_dump_if_principal_mapping_not_referenced() {
-    return skip_dump_if_principal_mapping_not_referenced_;
-  }
-  void set_skip_dump_if_principal_mapping_not_referenced(
-      bool skip_dump_if_principal_mapping_not_referenced) {
-    skip_dump_if_principal_mapping_not_referenced_ =
-        skip_dump_if_principal_mapping_not_referenced;
-  }
-
-  bool sanitize_stacks() const { return sanitize_stacks_; }
-  void set_sanitize_stacks(bool sanitize_stacks) {
-    sanitize_stacks_ = sanitize_stacks;
-  }
 
   MicrodumpExtraInfo* microdump_extra_info() {
     assert(IsMicrodumpOnConsole());
@@ -164,23 +131,6 @@ class MinidumpDescriptor {
   const char* c_path_;
 
   off_t size_limit_;
-
-  
-  
-  
-  uintptr_t address_within_principal_mapping_;
-
-  
-  
-  
-  bool skip_dump_if_principal_mapping_not_referenced_;
-
-  
-  
-  
-  
-  
-  bool sanitize_stacks_;
 
   
   

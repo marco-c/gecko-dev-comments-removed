@@ -77,26 +77,9 @@ class Language {
   virtual string MakeQualifiedName (const string &parent_name,
                                     const string &name) const = 0;
 
-  enum DemangleResult {
-    
-    kDontDemangle = -1,
-
-    kDemangleSuccess,
-    kDemangleFailure,
-  };
-
-  
-  virtual DemangleResult DemangleName(const string& mangled,
-                                      string* demangled) const {
-    demangled->clear();
-    return kDontDemangle;
-  }
-
   
   static const Language * const CPlusPlus,
                         * const Java,
-                        * const Swift,
-                        * const Rust,
                         * const Assembler;
 };
 

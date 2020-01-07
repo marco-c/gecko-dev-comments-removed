@@ -94,8 +94,7 @@ class LogStream {
  public:
   enum Severity {
     SEVERITY_INFO,
-    SEVERITY_ERROR,
-    SEVERITY_CRITICAL
+    SEVERITY_ERROR
   };
 
   
@@ -178,15 +177,6 @@ int ErrnoString(string *error_string);
 #endif  
 #define BPLOG_ERROR google_breakpad::LogStream(BPLOG_ERROR_STREAM, \
                         google_breakpad::LogStream::SEVERITY_ERROR, \
-                        __FILE__, __LINE__)
-#endif  
-
-#ifndef BPLOG_CRITICAL
-#ifndef BPLOG_CRITICAL_STREAM
-#define BPLOG_CRITICAL_STREAM std::cerr
-#endif  
-#define BPLOG_CRITICAL google_breakpad::LogStream(BPLOG_CRITICAL_STREAM, \
-                        google_breakpad::LogStream::SEVERITY_CRITICAL, \
                         __FILE__, __LINE__)
 #endif  
 

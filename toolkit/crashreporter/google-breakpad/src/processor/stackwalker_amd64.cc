@@ -147,6 +147,23 @@ StackFrameAMD64* StackwalkerAMD64::GetCallerByCFIFrameInfo(
   return frame.release();
 }
 
+bool StackwalkerAMD64::IsEndOfStack(uint64_t caller_rip, uint64_t caller_rsp,
+                                    uint64_t callee_rsp) {
+  
+  if (caller_rip == 0) {
+    return true;
+  }
+
+  
+  
+  
+  if (caller_rsp < callee_rsp) {
+    return true;
+  }
+
+  return false;
+}
+
 
 
 static bool is_non_canonical(uint64_t ptr) {
@@ -156,6 +173,7 @@ static bool is_non_canonical(uint64_t ptr) {
 StackFrameAMD64* StackwalkerAMD64::GetCallerByFramePointerRecovery(
     const vector<StackFrame*>& frames) {
   StackFrameAMD64* last_frame = static_cast<StackFrameAMD64*>(frames.back());
+  uint64_t last_rsp = last_frame->context.rsp;
   uint64_t last_rbp = last_frame->context.rbp;
 
   
@@ -191,13 +209,9 @@ StackFrameAMD64* StackwalkerAMD64::GetCallerByFramePointerRecovery(
     }
 
     
-    if (caller_rsp <= last_rbp || caller_rbp < caller_rsp) {
-      return NULL;
-    }
-
-    
-    uint64_t unused;
-    if (!memory_->GetMemoryAtAddress(caller_rbp, &unused)) {
+    if (IsEndOfStack(caller_rip, caller_rsp, last_rsp) ||
+        caller_rbp < last_rbp) {
+      
       return NULL;
     }
 
@@ -307,9 +321,9 @@ StackFrame* StackwalkerAMD64::GetCallerFrame(const CallStack* stack,
     new_frame->context.rbp = static_cast<uint32_t>(new_frame->context.rbp);
   }
 
-  
-  if (TerminateWalk(new_frame->context.rip, new_frame->context.rsp,
-                    last_frame->context.rsp, frames.size() == 1)) {
+  if (IsEndOfStack(new_frame->context.rip, new_frame->context.rsp,
+                   last_frame->context.rsp)) {
+    
     return NULL;
   }
 

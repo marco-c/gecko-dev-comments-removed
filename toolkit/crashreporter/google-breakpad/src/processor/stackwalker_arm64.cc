@@ -253,12 +253,15 @@ StackFrame* StackwalkerARM64::GetCallerFrame(const CallStack* stack,
     return NULL;
 
   
-  if (TerminateWalk(frame->context.iregs[MD_CONTEXT_ARM64_REG_PC],
-                    frame->context.iregs[MD_CONTEXT_ARM64_REG_SP],
-                    last_frame->context.iregs[MD_CONTEXT_ARM64_REG_SP],
-                    frames.size() == 1)) {
+  if (frame->context.iregs[MD_CONTEXT_ARM64_REG_PC] == 0)
     return NULL;
-  }
+
+  
+  
+  
+  if (frame->context.iregs[MD_CONTEXT_ARM64_REG_SP]
+      < last_frame->context.iregs[MD_CONTEXT_ARM64_REG_SP])
+    return NULL;
 
   
   

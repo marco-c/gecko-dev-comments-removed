@@ -270,16 +270,6 @@ class Module: public Section {
   static const MDVSFixedFileInfo stock_version_info;
 };
 
-class UnloadedModule: public Section {
- public:
-  UnloadedModule(const Dump &dump,
-                 uint64_t base_of_image,
-                 uint32_t size_of_image,
-                 const String &name,
-                 uint32_t checksum = 0,
-                 uint32_t time_date_stamp = 1262805309);
-};
-
 class Exception : public Stream {
 public:
   Exception(const Dump &dump,
@@ -318,18 +308,7 @@ class List: public Stream {
 
  private:
   size_t count_;
-
- protected:
-  
-  
-  List(const Dump &dump, uint32_t type, bool) : Stream(dump, type), count_(0) {}
-
   Label count_label_;
-};
-
-class UnloadedModuleList : public List<UnloadedModule> {
- public:
-  UnloadedModuleList(const Dump &dump, uint32_t type);
 };
 
 class Dump: public test_assembler::Section {
@@ -354,7 +333,6 @@ class Dump: public test_assembler::Section {
   Dump &Add(Memory *object); 
   Dump &Add(Thread *object); 
   Dump &Add(Module *object); 
-  Dump &Add(UnloadedModule *object); 
 
   
   
@@ -380,10 +358,6 @@ class Dump: public test_assembler::Section {
   
   
   List<Module> module_list_;
-
-  
-  
-  UnloadedModuleList unloaded_module_list_;
 
   
   

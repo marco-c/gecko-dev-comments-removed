@@ -750,12 +750,11 @@ struct kernel_statfs {
 #endif
 #ifndef MAKE_PROCESS_CPUCLOCK
 #define MAKE_PROCESS_CPUCLOCK(pid, clock)                                     \
-        ((int)(~(unsigned)(pid) << 3) | (int)(clock))
+        ((~(int)(pid) << 3) | (int)(clock))
 #endif
 #ifndef MAKE_THREAD_CPUCLOCK
 #define MAKE_THREAD_CPUCLOCK(tid, clock)                                      \
-        ((int)(~(unsigned)(tid) << 3) |                                       \
-         (int)((clock) | CPUCLOCK_PERTHREAD_MASK))
+        ((~(int)(tid) << 3) | (int)((clock) | CPUCLOCK_PERTHREAD_MASK))
 #endif
 
 #ifndef FUTEX_WAIT
@@ -2623,20 +2622,6 @@ struct kernel_statfs {
                                    int flags, void *arg, int *parent_tidptr,
                                    void *newtls, int *child_tidptr) {
       long __res;
-      if (fn == NULL || child_stack == NULL) {
-        __res = -EINVAL;
-        LSS_RETURN(int, __res);
-      }
-
-      
-
-
-      {
-        uintptr_t* cstack = (uintptr_t*)child_stack - 2;
-        cstack[0] = (uintptr_t)fn;
-        cstack[1] = (uintptr_t)arg;
-        child_stack = cstack;
-      }
       {
         register int   __flags __asm__("r0") = flags;
         register void *__stack __asm__("r1") = child_stack;
@@ -2644,50 +2629,69 @@ struct kernel_statfs {
         register void *__tls   __asm__("r3") = newtls;
         register int  *__ctid  __asm__("r4") = child_tidptr;
         __asm__ __volatile__(
-#ifdef __thumb2__
-            "push {r7}\n"
-#endif
-            
+
+
+                             "cmp   %2,#0\n"
+                             "it    ne\n"
+                             "cmpne %3,#0\n"
+                             "it    eq\n"
+                             "moveq %0,%1\n"
+                             "beq   1f\n"
+
+                             
+
+
+                             "str   %5,[%3,#-4]!\n"
+                             "str   %2,[%3,#-4]!\n"
+
+                             
 
 
 
 
 
-            "mov r7, %6\n"
-            "swi 0x0\n"
+                             "mov r7, %9\n"
+                             "swi 0x0\n"
 
-            
+                             
 
 
-            "cmp   r0, #0\n"
-            "bne   1f\n"
+                             "movs  %0,r0\n"
+                             "bne   1f\n"
 
-            
+                             
 
-            "ldr   r0,[sp, #4]\n"
+                             "ldr   r0,[sp, #4]\n"
 
-            "ldr   lr,[sp]\n"
-            "blx   lr\n"
+                             
 
-            
 
-            "mov r7, %7\n"
-            "swi 0x0\n"
-            
-            "bkpt #0\n"
-         "1:\n"
-#ifdef __thumb2__
-            "pop {r7}\n"
-#endif
-            "movs  %0,r0\n"
-            : "=r"(__res)
-            : "r"(__stack), "r"(__flags), "r"(__ptid), "r"(__tls), "r"(__ctid),
-              "i"(__NR_clone), "i"(__NR_exit)
-            : "cc", "lr", "memory"
-#ifndef __thumb2__
-            , "r7"
-#endif
-            );
+
+
+
+
+
+
+
+                           #ifdef __thumb2__
+                             "ldr   r7,[sp]\n"
+                             "blx   r7\n"
+                           #else
+                             "mov   lr,pc\n"
+                             "ldr   pc,[sp]\n"
+                           #endif
+
+                             
+
+                             "mov r7, %10\n"
+                             "swi 0x0\n"
+                           "1:\n"
+                             : "=r" (__res)
+                             : "i"(-EINVAL),
+                               "r"(fn), "r"(__stack), "r"(__flags), "r"(arg),
+                               "r"(__ptid), "r"(__tls), "r"(__ctid),
+                               "i"(__NR_clone), "i"(__NR_exit)
+                             : "cc", "r7", "lr", "memory");
       }
       LSS_RETURN(int, __res);
     }

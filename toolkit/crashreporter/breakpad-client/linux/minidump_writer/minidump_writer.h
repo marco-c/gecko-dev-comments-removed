@@ -78,16 +78,10 @@ typedef std::list<AppMemory> AppMemoryList;
 
 
 bool WriteMinidump(const char* minidump_path, pid_t crashing_process,
-                   const void* blob, size_t blob_size,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const void* blob, size_t blob_size);
 
 bool WriteMinidump(int minidump_fd, pid_t crashing_process,
-                   const void* blob, size_t blob_size,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const void* blob, size_t blob_size);
 
 
 
@@ -102,35 +96,23 @@ bool WriteMinidump(const char* minidump_path, pid_t process,
 bool WriteMinidump(const char* minidump_path, pid_t crashing_process,
                    const void* blob, size_t blob_size,
                    const MappingList& mappings,
-                   const AppMemoryList& appdata,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const AppMemoryList& appdata);
 bool WriteMinidump(int minidump_fd, pid_t crashing_process,
                    const void* blob, size_t blob_size,
                    const MappingList& mappings,
-                   const AppMemoryList& appdata,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const AppMemoryList& appdata);
 
 
 bool WriteMinidump(const char* minidump_path, off_t minidump_size_limit,
                    pid_t crashing_process,
                    const void* blob, size_t blob_size,
                    const MappingList& mappings,
-                   const AppMemoryList& appdata,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const AppMemoryList& appdata);
 bool WriteMinidump(int minidump_fd, off_t minidump_size_limit,
                    pid_t crashing_process,
                    const void* blob, size_t blob_size,
                    const MappingList& mappings,
-                   const AppMemoryList& appdata,
-                   bool skip_stacks_if_mapping_unreferenced = false,
-                   uintptr_t principal_mapping_address = 0,
-                   bool sanitize_stacks = false);
+                   const AppMemoryList& appdata);
 
 bool WriteMinidump(const char* filename,
                    const MappingList& mappings,

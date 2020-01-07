@@ -67,7 +67,6 @@
 #include "common/linux/file_id.h"
 #include "common/memory_allocator.h"
 #include "common/module.h"
-#include "common/path_helper.h"
 #include "common/scoped_ptr.h"
 #ifndef NO_STABS_SUPPORT
 #include "common/stabs_reader.h"
@@ -106,6 +105,15 @@ using google_breakpad::wasteful_vector;
 
 #ifndef EM_AARCH64
 #define EM_AARCH64      183
+#endif
+
+
+
+#ifndef SHT_ANDROID_REL
+#define SHT_ANDROID_REL  (SHT_LOOS + 1)
+#endif
+#ifndef SHT_ANDROID_RELA
+#define SHT_ANDROID_RELA (SHT_LOOS + 2)
 #endif
 
 
@@ -654,6 +662,7 @@ bool LoadSymbols(const string& obj_file,
   typedef typename ElfClass::Addr Addr;
   typedef typename ElfClass::Phdr Phdr;
   typedef typename ElfClass::Shdr Shdr;
+  typedef typename ElfClass::Word Word;
 
   Addr loading_addr = GetLoadingAddress<ElfClass>(
       GetOffset<ElfClass, Phdr>(elf_header, elf_header->e_phoff),
@@ -661,6 +670,8 @@ bool LoadSymbols(const string& obj_file,
   module->SetLoadAddress(loading_addr);
   info->set_loading_addr(loading_addr, obj_file);
 
+  Word debug_section_type =
+      elf_header->e_machine == EM_MIPS ? SHT_MIPS_DWARF : SHT_PROGBITS;
   const Shdr* sections =
       GetOffset<ElfClass, Shdr>(elf_header, elf_header->e_shoff);
   const Shdr* section_names = sections + elf_header->e_shstrndx;
@@ -669,6 +680,28 @@ bool LoadSymbols(const string& obj_file,
   const char *names_end = names + section_names->sh_size;
   bool found_debug_info_section = false;
   bool found_usable_info = false;
+
+  
+  
+  
+  if (FindElfSectionByName<ElfClass>(".rel.dyn", SHT_ANDROID_REL,
+                                     sections, names,
+                                     names_end, elf_header->e_shnum)) {
+    fprintf(stderr, "%s: file contains a \".rel.dyn\" section "
+                    "with type SHT_ANDROID_REL\n", obj_file.c_str());
+    fprintf(stderr, "Files containing Android packed relocations "
+                    "may not be symbolized.\n");
+    return false;
+  }
+  if (FindElfSectionByName<ElfClass>(".rela.dyn", SHT_ANDROID_RELA,
+                                     sections, names,
+                                     names_end, elf_header->e_shnum)) {
+    fprintf(stderr, "%s: file contains a \".rela.dyn\" section "
+                    "with type SHT_ANDROID_RELA\n", obj_file.c_str());
+    fprintf(stderr, "Files containing Android packed relocations "
+                    "may not be symbolized.\n");
+    return false;
+  }
 
   if (options.symbol_data != ONLY_CFI) {
 #ifndef NO_STABS_SUPPORT
@@ -694,19 +727,9 @@ bool LoadSymbols(const string& obj_file,
 
     
     const Shdr* dwarf_section =
-      FindElfSectionByName<ElfClass>(".debug_info", SHT_PROGBITS,
+      FindElfSectionByName<ElfClass>(".debug_info", debug_section_type,
                                      sections, names, names_end,
                                      elf_header->e_shnum);
-
-    
-    
-    if (elf_header->e_machine == EM_MIPS && !dwarf_section) {
-      dwarf_section =
-        FindElfSectionByName<ElfClass>(".debug_info", SHT_MIPS_DWARF,
-                                       sections, names, names_end,
-                                       elf_header->e_shnum);
-    }
-
     if (dwarf_section) {
       found_debug_info_section = true;
       found_usable_info = true;
@@ -781,19 +804,9 @@ bool LoadSymbols(const string& obj_file,
     
     
     const Shdr* dwarf_cfi_section =
-        FindElfSectionByName<ElfClass>(".debug_frame", SHT_PROGBITS,
+        FindElfSectionByName<ElfClass>(".debug_frame", debug_section_type,
                                        sections, names, names_end,
                                        elf_header->e_shnum);
-
-    
-    
-    if (elf_header->e_machine == EM_MIPS && !dwarf_cfi_section) {
-      dwarf_cfi_section =
-          FindElfSectionByName<ElfClass>(".debug_frame", SHT_MIPS_DWARF,
-                                        sections, names, names_end,
-                                        elf_header->e_shnum);
-    }
-
     if (dwarf_cfi_section) {
       
       
@@ -922,6 +935,16 @@ const char* ElfArchitecture(const typename ElfClass::Ehdr* elf_header) {
   }
 }
 
+
+
+string BaseFileName(const string &filename) {
+  
+  char* c_filename = strdup(filename.c_str());
+  string base = basename(c_filename);
+  free(c_filename);
+  return base;
+}
+
 template<typename ElfClass>
 bool SanitizeDebugFile(const typename ElfClass::Ehdr* debug_elf_header,
                        const string& debuglink_file,
@@ -972,7 +995,7 @@ bool InitModuleForElfClass(const typename ElfClass::Ehdr* elf_header,
     return false;
   }
 
-  string name = google_breakpad::BaseName(obj_filename);
+  string name = BaseFileName(obj_filename);
   string os = "Linux";
   
   

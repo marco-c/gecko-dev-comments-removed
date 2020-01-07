@@ -942,13 +942,6 @@ void LineInfo::ReadHeader() {
   header_.min_insn_length = reader_->ReadOneByte(lineptr);
   lineptr += 1;
 
-  if (header_.version >= 4) {
-    __attribute__((unused)) uint8 max_ops_per_insn =
-        reader_->ReadOneByte(lineptr);
-    ++lineptr;
-    assert(max_ops_per_insn == 1);
-  }
-
   header_.default_is_stmt = reader_->ReadOneByte(lineptr);
   lineptr += 1;
 
@@ -1270,7 +1263,7 @@ class CallFrameInfo::Rule {
   
   
   virtual bool Handle(Handler *handler,
-                      uint64 address, int reg) const = 0;
+                      uint64 address, int register) const = 0;
 
   
   
@@ -2264,7 +2257,7 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
   
   
   
-  if (cie->version < 1 || cie->version > 4) {
+  if (cie->version < 1 || cie->version > 3) {
     reporter_->UnrecognizedVersion(cie->offset, cie->version);
     return false;
   }
@@ -2294,36 +2287,16 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
     }
   }
 
-  if (cie->version >= 4) {
-    uint8_t address_size = *cursor++;
-    if (address_size != 8) {
-      
-      reporter_->UnexpectedAddressSize(cie->offset, address_size);
-      return false;
-    }
-
-    uint8_t segment_size = *cursor++;
-    if (segment_size != 0) {
-      
-      
-      
-      
-      
-      reporter_->UnexpectedSegmentSize(cie->offset, segment_size);
-      return false;
-    }
-  }
-
   
   cie->code_alignment_factor = reader_->ReadUnsignedLEB128(cursor, &len);
   if (size_t(cie->end - cursor) < len) return ReportIncomplete(cie);
   cursor += len;
-
+  
   
   cie->data_alignment_factor = reader_->ReadSignedLEB128(cursor, &len);
   if (size_t(cie->end - cursor) < len) return ReportIncomplete(cie);
   cursor += len;
-
+  
   
   
   if (cie->version == 1) {
@@ -2434,7 +2407,7 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
 
   return true;
 }
-
+  
 bool CallFrameInfo::ReadFDEFields(FDE *fde) {
   const uint8_t *cursor = fde->fields;
   size_t size;
@@ -2673,22 +2646,6 @@ void CallFrameInfo::Reporter::BadCIEId(uint64 offset, uint64 cie_offset) {
           "%s: CFI frame description entry at offset 0x%llx in '%s':"
           " CIE pointer does not point to a CIE: 0x%llx\n",
           filename_.c_str(), offset, section_.c_str(), cie_offset);
-}
-
-void CallFrameInfo::Reporter::UnexpectedAddressSize(uint64 offset,
-                                                    uint8_t address_size) {
-  fprintf(stderr,
-          "%s: CFI frame description entry at offset 0x%llx in '%s':"
-          " CIE specifies unexpected address size: %d\n",
-          filename_.c_str(), offset, section_.c_str(), address_size);
-}
-
-void CallFrameInfo::Reporter::UnexpectedSegmentSize(uint64 offset,
-                                                    uint8_t segment_size) {
-  fprintf(stderr,
-          "%s: CFI frame description entry at offset 0x%llx in '%s':"
-          " CIE specifies unexpected segment size: %d\n",
-          filename_.c_str(), offset, section_.c_str(), segment_size);
 }
 
 void CallFrameInfo::Reporter::UnrecognizedVersion(uint64 offset, int version) {

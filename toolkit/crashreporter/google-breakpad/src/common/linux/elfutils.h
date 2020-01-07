@@ -37,8 +37,6 @@
 #include <link.h>
 #include <stdint.h>
 
-#include "common/memory_allocator.h"
-
 namespace google_breakpad {
 
 
@@ -84,11 +82,13 @@ int ElfClass(const void* elf_base);
 
 
 
+
 bool FindElfSection(const void *elf_mapped_base,
                     const char *section_name,
                     uint32_t section_type,
                     const void **section_start,
-                    size_t *section_size);
+                    size_t *section_size,
+                    int *elfclass);
 
 
 
@@ -101,17 +101,16 @@ FindElfSectionByName(const char* name,
                      const char* names_end,
                      int nsection);
 
-struct ElfSegment {
-  const void* start;
-  size_t size;
-};
 
 
 
 
-bool FindElfSegments(const void* elf_mapped_base,
-                     uint32_t segment_type,
-                     wasteful_vector<ElfSegment>* segments);
+
+bool FindElfSegment(const void *elf_mapped_base,
+                    uint32_t segment_type,
+                    const void **segment_start,
+                    size_t *segment_size,
+                    int *elfclass);
 
 
 

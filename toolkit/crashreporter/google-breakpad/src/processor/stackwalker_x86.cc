@@ -207,8 +207,6 @@ StackFrameX86* StackwalkerX86::GetCallerByWindowsFrameInfo(
   
   dictionary["$ebp"] = last_frame->context.ebp;
   dictionary["$esp"] = last_frame->context.esp;
-  if (last_frame->context_validity & StackFrameX86::CONTEXT_VALID_EBX)
-    dictionary["$ebx"] = last_frame->context.ebx;
   
   
   
@@ -335,16 +333,8 @@ StackFrameX86* StackwalkerX86::GetCallerByWindowsFrameInfo(
     
     
     
-    
-    
-    
-    
-    
-    
     program_string = "$eip .raSearchStart ^ = "
-                     "$esp .raSearchStart 4 + =";
-    if (last_frame->context_validity & StackFrameX86::CONTEXT_VALID_EBX)
-      program_string += " $ebx $ebx =";
+        "$esp .raSearchStart 4 + =";
     recover_ebp = false;
   }
 
@@ -660,12 +650,14 @@ StackFrame* StackwalkerX86::GetCallerFrame(const CallStack* stack,
     return NULL;
 
   
-  if (TerminateWalk(new_frame->context.eip,
-                    new_frame->context.esp,
-                    last_frame->context.esp,
-                    frames.size() == 1)) {
+  if (new_frame->context.eip == 0)
     return NULL;
-  }
+
+  
+  
+  
+  if (new_frame->context.esp <= last_frame->context.esp)
+    return NULL;
 
   
   
