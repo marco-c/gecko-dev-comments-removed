@@ -7,11 +7,7 @@
 #ifndef mozilla_layers_APZSampler_h
 #define mozilla_layers_APZSampler_h
 
-#include "base/message_loop.h"
-#include "LayersTypes.h"
-#include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/AsyncCompositionManager.h" 
-#include "mozilla/Maybe.h"
 #include "nsTArray.h"
 #include "Units.h"
 
@@ -27,11 +23,8 @@ struct WrTransformProperty;
 namespace layers {
 
 class APZCTreeManager;
-class FocusTarget;
-class Layer;
 class LayerMetricsWrapper;
 struct ScrollThumbData;
-class WebRenderScrollData;
 
 
 
@@ -44,39 +37,9 @@ class APZSampler {
 public:
   explicit APZSampler(const RefPtr<APZCTreeManager>& aApz);
 
-  bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
-
-  void ClearTree();
-  void UpdateFocusState(LayersId aRootLayerTreeId,
-                        LayersId aOriginatingLayersId,
-                        const FocusTarget& aFocusTarget);
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
-                            Layer* aRoot,
-                            bool aIsFirstPaint,
-                            LayersId aOriginatingLayersId,
-                            uint32_t aPaintSequenceNumber);
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
-                            const WebRenderScrollData& aScrollData,
-                            bool aIsFirstPaint,
-                            LayersId aOriginatingLayersId,
-                            uint32_t aPaintSequenceNumber);
-
-  void NotifyLayerTreeAdopted(LayersId aLayersId,
-                              const RefPtr<APZSampler>& aOldSampler);
-  void NotifyLayerTreeRemoved(LayersId aLayersId);
-
   bool PushStateToWR(wr::TransactionBuilder& aTxn,
                      const TimeStamp& aSampleTime,
                      nsTArray<wr::WrTransformProperty>& aTransformArray);
-
-  bool GetAPZTestData(LayersId aLayersId, APZTestData* aOutData);
-
-  void SetTestAsyncScrollOffset(LayersId aLayersId,
-                                const FrameMetrics::ViewID& aScrollId,
-                                const CSSPoint& aOffset);
-  void SetTestAsyncZoom(LayersId aLayersId,
-                        const FrameMetrics::ViewID& aScrollId,
-                        const LayerToParentLayerScale& aZoom);
 
   bool SampleAnimations(const LayerMetricsWrapper& aLayer,
                         const TimeStamp& aSampleTime);
@@ -117,24 +80,7 @@ public:
   
 
 
-
-
-  void RunOnSamplerThread(already_AddRefed<Runnable> aTask);
-
-  
-
-
   bool IsSamplerThread();
-
-  
-
-
-
-
-
-
-
-  void RunOnControllerThread(already_AddRefed<Runnable> aTask);
 
 protected:
   virtual ~APZSampler();

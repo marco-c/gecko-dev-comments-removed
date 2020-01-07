@@ -15,6 +15,7 @@
 #include "nsTArray.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/DebugOnly.h"   
+#include "mozilla/GfxMessageUtils.h" 
 #include "mozilla/ToString.h"    
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "ipc/IPCMessageUtils.h"

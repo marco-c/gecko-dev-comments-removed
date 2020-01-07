@@ -46,6 +46,7 @@ class Layer;
 class AsyncPanZoomController;
 class APZCTreeManagerParent;
 class APZSampler;
+class APZUpdater;
 class CompositorBridgeParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
@@ -118,6 +119,7 @@ public:
   explicit APZCTreeManager(LayersId aRootLayersId);
 
   void SetSampler(APZSampler* aSampler);
+  void SetUpdater(APZUpdater* aUpdater);
 
   
 
@@ -528,12 +530,15 @@ public:
 
   
   void AssertOnSamplerThread();
+  
+  void AssertOnUpdaterThread();
 
 protected:
   
   virtual ~APZCTreeManager();
 
   APZSampler* GetSampler() const;
+  APZUpdater* GetUpdater() const;
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(LayersId aLayersId,
@@ -705,6 +710,12 @@ private:
 
 
   APZSampler* MOZ_NON_OWNING_REF mSampler;
+  
+
+
+
+
+  APZUpdater* MOZ_NON_OWNING_REF mUpdater;
 
   
 

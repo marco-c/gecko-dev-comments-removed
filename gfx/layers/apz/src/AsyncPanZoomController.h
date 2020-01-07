@@ -241,6 +241,10 @@ public:
                        nsTArray<RefPtr<Runnable>>* aOutDeferredTasks);
 
   
+  
+  
+
+  
 
 
 
@@ -754,6 +758,7 @@ protected:
   APZCTreeManager* GetApzcTreeManager() const;
 
   void AssertOnSamplerThread() const;
+  void AssertOnUpdaterThread() const;
 
   
 
