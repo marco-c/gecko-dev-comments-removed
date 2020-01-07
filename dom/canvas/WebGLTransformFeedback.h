@@ -27,7 +27,8 @@ public:
     const GLuint mGLName;
 private:
     
-    WebGLRefPtr<WebGLBuffer> mGenericBufferBinding;
+    
+    
     std::vector<IndexedBufferBinding> mIndexedBindings;
     bool mIsPaused;
     bool mIsActive;
