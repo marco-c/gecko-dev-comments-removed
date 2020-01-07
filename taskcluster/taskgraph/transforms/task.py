@@ -450,6 +450,9 @@ task_description_schema = Schema({
         Required('os'): Any('macosx', 'linux'),
 
         
+        Required('max-run-time'): int,
+
+        
         Optional('context'): basestring,
 
         
@@ -1221,6 +1224,7 @@ def build_macosx_engine_payload(config, task, task_def):
         'command': worker['command'],
         'env': worker['env'],
         'artifacts': artifacts,
+        'maxRunTime': worker['max-run-time'],
     }
     if worker.get('reboot'):
         task_def['payload'] = worker['reboot']
