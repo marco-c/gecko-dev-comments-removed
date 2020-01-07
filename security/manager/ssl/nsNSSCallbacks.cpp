@@ -962,9 +962,8 @@ AccumulateCipherSuite(Telemetry::HistogramID probe, const SSLChannelInfo& channe
 
 
 static void
-RebuildVerifiedCertificateInformation(RefPtr<nsSSLStatus> sslStatus,
-                                      PRFileDesc* fd,
-                                      nsNSSSocketInfo* infoObject)
+DetermineEVAndCTStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus,
+                                    PRFileDesc* fd, nsNSSSocketInfo* infoObject)
 {
   MOZ_ASSERT(sslStatus);
   MOZ_ASSERT(fd);
@@ -1002,7 +1001,8 @@ RebuildVerifiedCertificateInformation(RefPtr<nsSSLStatus> sslStatus,
     sctsFromTLSExtension = nullptr;
   }
 
-  int flags = mozilla::psm::CertVerifier::FLAG_LOCAL_ONLY;
+  int flags = mozilla::psm::CertVerifier::FLAG_LOCAL_ONLY |
+              mozilla::psm::CertVerifier::FLAG_MUST_BE_EV;
   if (!infoObject->SharedState().IsOCSPStaplingEnabled() ||
       !infoObject->SharedState().IsOCSPMustStapleEnabled()) {
     flags |= CertVerifier::FLAG_TLS_IGNORE_STATUS_REQUEST;
@@ -1029,11 +1029,6 @@ RebuildVerifiedCertificateInformation(RefPtr<nsSSLStatus> sslStatus,
     nullptr, 
     nullptr, 
     &certificateTransparencyInfo);
-
-  if (rv != Success) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("HandshakeCallback: couldn't rebuild verified certificate info"));
-  }
 
   RefPtr<nsNSSCertificate> nssc(nsNSSCertificate::Create(cert.get()));
   if (rv == Success && evOidPolicy != SEC_OID_UNKNOWN) {
@@ -1253,7 +1248,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("HandshakeCallback KEEPING existing cert\n"));
   } else {
-    RebuildVerifiedCertificateInformation(status, fd, infoObject);
+    DetermineEVAndCTStatusAndSetNewCert(status, fd, infoObject);
   }
 
   nsCOMPtr<nsIX509CertList> succeededCertChain;
