@@ -34,13 +34,10 @@ JITFLAGS = {
     ],
     
     
-    
-    
     'tsan': [
-        ['--no-asmjs', '--no-wasm'],
-        ['--no-asmjs', '--no-wasm', '--ion-eager',
-         '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3'],
-        ['--no-asmjs', '--no-wasm', '--no-baseline', '--no-ion'],
+        [],
+        ['--ion-eager', '--ion-check-range-analysis', '--ion-extra-checks', '--no-sse3'],
+        ['--no-baseline', '--no-ion'],
     ],
     'baseline': [
         ['--no-ion'],
