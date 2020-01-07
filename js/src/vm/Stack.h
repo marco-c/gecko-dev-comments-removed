@@ -1360,6 +1360,11 @@ class LiveSavedFrameCache
     
     
     
+    void findWithoutInvalidation(const FramePtr& framePtr, MutableHandleSavedFrame frame) const;
+
+    
+    
+    
     
     
     bool insert(JSContext* cx, FramePtr& framePtr, const jsbytecode* pc,
