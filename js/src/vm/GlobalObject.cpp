@@ -120,17 +120,10 @@ GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key)
 }
 
  bool
-GlobalObject::ensureConstructor(JSContext* cx, Handle<GlobalObject*> global, JSProtoKey key)
-{
-    if (global->isStandardClassResolved(key))
-        return true;
-    return resolveConstructor(cx, global, key);
-}
-
- bool
 GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JSProtoKey key)
 {
     MOZ_ASSERT(!global->isStandardClassResolved(key));
+    MOZ_ASSERT(!cx->helperThread());
 
     
     
