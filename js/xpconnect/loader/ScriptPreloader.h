@@ -22,6 +22,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsIThread.h"
+#include "nsITimer.h"
 
 #include "jsapi.h"
 #include "js/GCAnnotations.h"
@@ -43,7 +44,6 @@ namespace loader {
         Parent,
         Web,
         Extension,
-        Privileged,
     };
 
     template <typename T>
@@ -380,6 +380,8 @@ private:
 
     void PrepareCacheWriteInternal();
 
+    void FinishContentStartup();
+
     
     
     Result<nsCOMPtr<nsIFile>, nsresult>
@@ -460,6 +462,7 @@ private:
 
     nsCOMPtr<nsIFile> mProfD;
     nsCOMPtr<nsIThread> mSaveThread;
+    nsCOMPtr<nsITimer> mSaveTimer;
 
     
     AutoMemMap mCacheData;

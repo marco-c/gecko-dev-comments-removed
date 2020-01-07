@@ -27,6 +27,7 @@
 #include "nsIFile.h"
 #include "nsIObserverService.h"
 #include "nsJSUtils.h"
+#include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
@@ -38,6 +39,10 @@
 #define CLEANUP_TOPIC "xpcom-shutdown"
 #define SHUTDOWN_TOPIC "quit-application-granted"
 #define CACHE_INVALIDATE_TOPIC "startupcache-invalidate"
+
+
+
+constexpr uint32_t CHILD_STARTUP_TIMEOUT_MS = 8000;
 
 namespace mozilla {
 namespace {
@@ -191,9 +196,6 @@ ScriptPreloader::GetChildProcessType(const nsAString& remoteType)
 {
     if (remoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE)) {
         return ProcessType::Extension;
-    }
-    if (remoteType.EqualsLiteral(PRIVILEGED_REMOTE_TYPE)) {
-        return ProcessType::Privileged;
     }
     return ProcessType::Web;
 }
@@ -359,15 +361,22 @@ ScriptPreloader::Observe(nsISupports* subject, const char* topic, const char16_t
                                         getter_AddRefs(mSaveThread), this);
         }
     } else if (!strcmp(topic, DOC_ELEM_INSERTED_TOPIC)) {
-        obs->RemoveObserver(this, DOC_ELEM_INSERTED_TOPIC);
+        
+        
+        
+        if (nsCOMPtr<nsIDocument> doc = do_QueryInterface(subject)) {
+            nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();
 
-        MOZ_ASSERT(XRE_IsContentProcess());
-
-        mStartupFinished = true;
-
-        if (mChildActor) {
-            mChildActor->SendScriptsAndFinalize(mScripts);
+            bool schemeIs;
+            if ((NS_IsAboutBlank(uri) &&
+                 doc->GetReadyStateEnum() == doc->READYSTATE_UNINITIALIZED) ||
+                (NS_SUCCEEDED(uri->SchemeIs("chrome", &schemeIs)) && schemeIs)) {
+                return NS_OK;
+            }
         }
+        FinishContentStartup();
+    } else if (!strcmp(topic, "timer-callback")) {
+        FinishContentStartup();
     } else if (!strcmp(topic, SHUTDOWN_TOPIC)) {
         ForceWriteCacheFile();
     } else if (!strcmp(topic, CLEANUP_TOPIC)) {
@@ -379,6 +388,22 @@ ScriptPreloader::Observe(nsISupports* subject, const char* topic, const char16_t
     return NS_OK;
 }
 
+void
+ScriptPreloader::FinishContentStartup()
+{
+    MOZ_ASSERT(XRE_IsContentProcess());
+
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    obs->RemoveObserver(this, DOC_ELEM_INSERTED_TOPIC);
+
+    mSaveTimer = nullptr;
+
+    mStartupFinished = true;
+
+    if (mChildActor) {
+        mChildActor->SendScriptsAndFinalize(mScripts);
+    }
+}
 
 Result<nsCOMPtr<nsIFile>, nsresult>
 ScriptPreloader::GetCacheFile(const nsAString& suffix)
@@ -460,6 +485,19 @@ ScriptPreloader::InitCache(const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCa
     mChildActor = cacheChild;
 
     RegisterWeakMemoryReporter(this);
+
+    auto cleanup = MakeScopeExit([&] {
+        
+        
+        
+        
+        
+        if (cacheChild) {
+            NS_NewTimerWithObserver(getter_AddRefs(mSaveTimer),
+                                    this, CHILD_STARTUP_TIMEOUT_MS,
+                                    nsITimer::TYPE_ONE_SHOT);
+        }
+    });
 
     if (cacheFile.isNothing()){
         return Ok();
