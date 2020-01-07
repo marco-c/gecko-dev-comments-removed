@@ -147,7 +147,7 @@ class HGRepoInfo:
         rev = os.environ.get('MOZ_SOURCE_CHANGESET')
         if not rev:
             rev = read_output('hg', '-R', path,
-                              'parent', '--template={node|short}')
+                              'parent', '--template={node}')
 
         
         
