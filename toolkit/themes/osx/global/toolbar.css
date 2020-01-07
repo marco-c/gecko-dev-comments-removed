@@ -4,30 +4,28 @@
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
+toolbox {
+  
+
+  -moz-appearance: toolbox;
+}
+
 toolbar {
   min-width: 1px;
   min-height: 20px;
   -moz-appearance: toolbar;
 }
 
-menubar:-moz-lwtheme,
 toolbar:-moz-lwtheme {
   -moz-appearance: none;
   background: none;
   border-color: transparent;
 }
 
-menubar {
-  -moz-appearance: dialog; 
-  min-width: 1px;
-}
-
 toolbarseparator {
   -moz-appearance: separator;
   margin: 3px 4px;
 }
-
-
 
 toolbarpaletteitem {
   cursor: grab;
