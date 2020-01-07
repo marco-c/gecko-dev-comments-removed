@@ -63,13 +63,13 @@ var PropertiesView = {
 
 
 
-  async _buildPropertiesView() {
+  _buildPropertiesView: Task.async(function* () {
     let propsView = this._propsView;
     let node = this._currentNode;
     propsView.empty();
 
     let audioParamsScope = propsView.addScope("AudioParams");
-    let props = await node.getParams();
+    let props = yield node.getParams();
 
     
     
@@ -89,7 +89,7 @@ var PropertiesView = {
     audioParamsScope.expanded = true;
 
     window.emit(EVENTS.UI_PROPERTIES_TAB_RENDERED, node.id);
-  },
+  }),
 
   
 
@@ -126,7 +126,7 @@ var PropertiesView = {
   
 
 
-  async _onEval(variable, value) {
+  _onEval: Task.async(function* (variable, value) {
     let ownerScope = variable.ownerView;
     let node = this._currentNode;
     let propName = variable.name;
@@ -143,7 +143,7 @@ var PropertiesView = {
         } else {
           value = JSON.parse(value);
         }
-        error = await node.actor.setParam(propName, value);
+        error = yield node.actor.setParam(propName, value);
       }
       catch (e) {
         error = e;
@@ -159,5 +159,5 @@ var PropertiesView = {
     } else {
       window.emit(EVENTS.UI_SET_PARAM_ERROR, node.id, propName, value);
     }
-  }
+  })
 };

@@ -10,6 +10,7 @@
 
 
 const { Cc, Ci } = require("chrome");
+const { Task } = require("devtools/shared/task");
 
 const FRAME_SCRIPT_UTILS_URL = "chrome://mochitests/content/browser/devtools/client/shared/test/frame-script-utils.js";
 
@@ -65,24 +66,24 @@ exports.pmmIsProfilerActive = () => {
 
 
 
-exports.pmmStartProfiler = async function ({ entries, interval, features }) {
-  let isActive = (await exports.pmmSendProfilerCommand("IsActive")).isActive;
+exports.pmmStartProfiler = Task.async(function* ({ entries, interval, features }) {
+  let isActive = (yield exports.pmmSendProfilerCommand("IsActive")).isActive;
   if (!isActive) {
     return exports.pmmSendProfilerCommand("StartProfiler", [entries, interval, features,
                                                             features.length]);
   }
   return null;
-};
+});
 
 
 
-exports.pmmStopProfiler = async function () {
-  let isActive = (await exports.pmmSendProfilerCommand("IsActive")).isActive;
+exports.pmmStopProfiler = Task.async(function* () {
+  let isActive = (yield exports.pmmSendProfilerCommand("IsActive")).isActive;
   if (isActive) {
     return exports.pmmSendProfilerCommand("StopProfiler");
   }
   return null;
-};
+});
 
 
 

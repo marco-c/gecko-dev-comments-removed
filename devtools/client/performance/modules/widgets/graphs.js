@@ -7,6 +7,7 @@
 
 
 
+const { Task } = require("devtools/shared/task");
 const { extend } = require("devtools/shared/extend");
 const LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
 const MountainGraphWidget = require("devtools/client/shared/widgets/MountainGraphWidget");
@@ -205,12 +206,12 @@ GraphsController.prototype = {
 
 
 
-  async render(recordingData, resolution) {
+  render: Task.async(function* (recordingData, resolution) {
     
     
     
     
-    await (this._rendering && this._rendering.promise);
+    yield (this._rendering && this._rendering.promise);
 
     
     
@@ -219,17 +220,17 @@ GraphsController.prototype = {
     }
 
     this._rendering = defer();
-    for (let graph of (await this._getEnabled())) {
-      await graph.setPerformanceData(recordingData, resolution);
+    for (let graph of (yield this._getEnabled())) {
+      yield graph.setPerformanceData(recordingData, resolution);
       this.emit("rendered", graph.graphName);
     }
     this._rendering.resolve();
-  },
+  }),
 
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     let primary = this._getPrimaryLink();
 
     this._destroyed = true;
@@ -241,13 +242,13 @@ GraphsController.prototype = {
     
     
     if (this._rendering) {
-      await this._rendering.promise;
+      yield this._rendering.promise;
     }
 
     for (let graph of this.getWidgets()) {
-      await graph.destroy();
+      yield graph.destroy();
     }
-  },
+  }),
 
   
 
@@ -266,7 +267,7 @@ GraphsController.prototype = {
 
 
 
-  async isAvailable(graphName) {
+  isAvailable: Task.async(function* (graphName) {
     if (!this._enabled.has(graphName)) {
       return null;
     }
@@ -274,12 +275,12 @@ GraphsController.prototype = {
     let graph = this.get(graphName);
 
     if (!graph) {
-      graph = await this._construct(graphName);
+      graph = yield this._construct(graphName);
     }
 
-    await graph.ready();
+    yield graph.ready();
     return graph;
-  },
+  }),
 
   
 
@@ -355,23 +356,23 @@ GraphsController.prototype = {
   
 
 
-  async selectionEnabled(enabled) {
-    for (let graph of (await this._getEnabled())) {
+  selectionEnabled: Task.async(function* (enabled) {
+    for (let graph of (yield this._getEnabled())) {
       graph.selectionEnabled = enabled;
     }
-  },
+  }),
 
   
 
 
-  async _construct(graphName) {
+  _construct: Task.async(function* (graphName) {
     let def = this._definition[graphName];
     let el = this.$(def.selector);
     let filter = this._getFilter();
     let graph = this._graphs[graphName] = new def.constructor(el, filter);
     graph.graphName = graphName;
 
-    await graph.ready();
+    yield graph.ready();
 
     
     if (def.primaryLink) {
@@ -386,7 +387,7 @@ GraphsController.prototype = {
 
     this.setTheme();
     return graph;
-  },
+  }),
 
   
 
@@ -409,20 +410,20 @@ GraphsController.prototype = {
 
 
 
-  async _getEnabled() {
+  _getEnabled: Task.async(function* () {
     if (this._enabledGraphs) {
       return this._enabledGraphs;
     }
     let enabled = [];
     for (let graphName of this._enabled) {
-      let graph = await this.isAvailable(graphName);
+      let graph = yield this.isAvailable(graphName);
       if (graph) {
         enabled.push(graph);
       }
     }
     this._enabledGraphs = enabled;
     return this._enabledGraphs;
-  },
+  }),
 };
 
 
@@ -440,10 +441,10 @@ function OptimizationsGraph(parent) {
 
 OptimizationsGraph.prototype = extend(MountainGraphWidget.prototype, {
 
-  async render(threadNode, frameNode) {
+  render: Task.async(function* (threadNode, frameNode) {
     
     
-    await this.ready();
+    yield this.ready();
 
     if (!threadNode || !frameNode) {
       this.setData([]);
@@ -476,8 +477,8 @@ OptimizationsGraph.prototype = extend(MountainGraphWidget.prototype, {
     }
 
     this.dataOffsetX = startTime;
-    await this.setData(data);
-  },
+    yield this.setData(data);
+  }),
 
   
 

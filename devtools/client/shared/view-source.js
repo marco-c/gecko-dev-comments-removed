@@ -4,6 +4,8 @@
 
 "use strict";
 
+var { Task } = require("devtools/shared/task");
+
 var Services = require("Services");
 var { gDevTools } = require("devtools/client/framework/devtools");
 var { getSourceText } = require("devtools/client/debugger/content/queries");
@@ -21,19 +23,19 @@ var { getSourceText } = require("devtools/client/debugger/content/queries");
 
 
 
-exports.viewSourceInStyleEditor = async function (toolbox, sourceURL,
+exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL,
                                                         sourceLine) {
-  let panel = await toolbox.loadTool("styleeditor");
+  let panel = yield toolbox.loadTool("styleeditor");
 
   try {
-    await panel.selectStyleSheet(sourceURL, sourceLine);
-    await toolbox.selectTool("styleeditor");
+    yield panel.selectStyleSheet(sourceURL, sourceLine);
+    yield toolbox.selectTool("styleeditor");
     return true;
   } catch (e) {
     exports.viewSource(toolbox, sourceURL, sourceLine);
     return false;
   }
-};
+});
 
 
 
@@ -48,18 +50,18 @@ exports.viewSourceInStyleEditor = async function (toolbox, sourceURL,
 
 
 
-exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
+exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL, sourceLine) {
   
   
   
   let debuggerAlreadyOpen = toolbox.getPanel("jsdebugger");
-  let dbg = await toolbox.loadTool("jsdebugger");
+  let dbg = yield toolbox.loadTool("jsdebugger");
 
   
   if (Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
     const source = dbg.getSource(sourceURL);
     if (source) {
-      await toolbox.selectTool("jsdebugger");
+      yield toolbox.selectTool("jsdebugger");
       dbg.selectSource(sourceURL, sourceLine);
       return true;
     }
@@ -72,7 +74,7 @@ exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
 
   
   if (!debuggerAlreadyOpen) {
-    await win.DebuggerController.waitForSourcesLoaded();
+    yield win.DebuggerController.waitForSourcesLoaded();
   }
 
   let { DebuggerView } = win;
@@ -80,7 +82,7 @@ exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
 
   let item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
   if (item) {
-    await toolbox.selectTool("jsdebugger");
+    yield toolbox.selectTool("jsdebugger");
 
     
     
@@ -110,7 +112,7 @@ exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
 
     
     if (!isSelected || isLoading) {
-      await win.DebuggerController.waitForSourceShown(sourceURL);
+      yield win.DebuggerController.waitForSourceShown(sourceURL);
     }
     return true;
   }
@@ -118,7 +120,7 @@ exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
   
   exports.viewSource(toolbox, sourceURL, sourceLine);
   return false;
-};
+});
 
 
 
@@ -128,7 +130,7 @@ exports.viewSourceInDebugger = async function (toolbox, sourceURL, sourceLine) {
 
 
 
-exports.viewSourceInScratchpad = async function (sourceURL, sourceLine) {
+exports.viewSourceInScratchpad = Task.async(function* (sourceURL, sourceLine) {
   
   let wins = Services.wm.getEnumerator("devtools:scratchpad");
 
@@ -156,7 +158,7 @@ exports.viewSourceInScratchpad = async function (sourceURL, sourceLine) {
       }
     }
   }
-};
+});
 
 
 
@@ -167,10 +169,10 @@ exports.viewSourceInScratchpad = async function (sourceURL, sourceLine) {
 
 
 
-exports.viewSource = async function (toolbox, sourceURL, sourceLine) {
+exports.viewSource = Task.async(function* (toolbox, sourceURL, sourceLine) {
   let utils = toolbox.gViewSourceUtils;
   utils.viewSource({
     URL: sourceURL,
     lineNumber: sourceLine || 0,
   });
-};
+});

@@ -14,29 +14,29 @@ const TAB_URL = URL_ROOT + "service-workers/empty-sw.html";
 
 const SW_TIMEOUT = 1000;
 
-add_task(async function () {
-  await enableServiceWorkerDebugging();
-  await pushPref("dom.serviceWorkers.idle_timeout", SW_TIMEOUT);
-  await pushPref("dom.serviceWorkers.idle_extended_timeout", SW_TIMEOUT);
+add_task(function* () {
+  yield enableServiceWorkerDebugging();
+  yield pushPref("dom.serviceWorkers.idle_timeout", SW_TIMEOUT);
+  yield pushPref("dom.serviceWorkers.idle_extended_timeout", SW_TIMEOUT);
 
-  let { tab, document } = await openAboutDebugging("workers");
+  let { tab, document } = yield openAboutDebugging("workers");
 
   
   let serviceWorkersElement = getServiceWorkerList(document);
 
   
-  let swTab = await addTab(TAB_URL);
+  let swTab = yield addTab(TAB_URL);
 
   
   info("Wait until the service worker appears in about:debugging");
-  await waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
+  yield waitUntilServiceWorkerContainer(SERVICE_WORKER, document);
 
   info("Ensure that the registration resolved before trying to interact with " +
     "the service worker.");
-  await waitForServiceWorkerRegistered(swTab);
+  yield waitForServiceWorkerRegistered(swTab);
   ok(true, "Service worker registration resolved");
 
-  await waitForServiceWorkerActivation(SERVICE_WORKER, document);
+  yield waitForServiceWorkerActivation(SERVICE_WORKER, document);
 
   
   let names = [...document.querySelectorAll("#service-workers .target-name")];
@@ -49,7 +49,7 @@ add_task(async function () {
   
   
   info("Wait until the start button is visible");
-  await waitUntilElement(".start-button", targetElement);
+  yield waitUntilElement(".start-button", targetElement);
 
   
   let startBtn = targetElement.querySelector(".start-button");
@@ -60,7 +60,7 @@ add_task(async function () {
   startBtn.click();
 
   info("Wait until the service worker starts and the debug button appears");
-  await waitUntilElement(".debug-button", targetElement);
+  yield waitUntilElement(".debug-button", targetElement);
   info("Found the debug button");
 
   
@@ -68,12 +68,12 @@ add_task(async function () {
 
   
   try {
-    await unregisterServiceWorker(swTab, serviceWorkersElement);
+    yield unregisterServiceWorker(swTab, serviceWorkersElement);
     ok(true, "Service worker registration unregistered");
   } catch (e) {
     ok(false, "SW not unregistered; " + e);
   }
 
-  await removeTab(swTab);
-  await closeAboutDebugging(tab);
+  yield removeTab(swTab);
+  yield closeAboutDebugging(tab);
 });

@@ -11,6 +11,7 @@ const {loader, require} = ChromeUtils.import("resource://devtools/shared/Loader.
 const Services = require("Services");
 const {NetUtil} = require("resource://gre/modules/NetUtil.jsm");
 const {OS} = require("resource://gre/modules/osfile.jsm");
+const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/old-event-emitter");
 const {gDevTools} = require("devtools/client/framework/devtools");
 const {
@@ -110,28 +111,28 @@ StyleEditorUI.prototype = {
 
 
 
-  async initialize() {
-    await this.initializeHighlighter();
+  initialize: Task.async(function* () {
+    yield this.initializeHighlighter();
 
     this.createUI();
 
-    let styleSheets = await this._debuggee.getStyleSheets();
-    await this._resetStyleSheetList(styleSheets);
+    let styleSheets = yield this._debuggee.getStyleSheets();
+    yield this._resetStyleSheetList(styleSheets);
 
     this._target.on("will-navigate", this._clear);
     this._target.on("navigate", this._onNewDocument);
-  },
+  }),
 
-  async initializeHighlighter() {
+  initializeHighlighter: Task.async(function* () {
     let toolbox = gDevTools.getToolbox(this._target);
-    await toolbox.initInspector();
+    yield toolbox.initInspector();
     this._walker = toolbox.walker;
 
     let hUtils = toolbox.highlighterUtils;
     if (hUtils.supportsCustomHighlighters()) {
       try {
         this._highlighter =
-          await hUtils.getHighlighterByType(SELECTOR_HIGHLIGHTER_TYPE);
+          yield hUtils.getHighlighterByType(SELECTOR_HIGHLIGHTER_TYPE);
       } catch (e) {
         
         
@@ -140,7 +141,7 @@ StyleEditorUI.prototype = {
           "elements matching hovered selectors will not be highlighted");
       }
     }
-  },
+  }),
 
   
 
@@ -231,13 +232,13 @@ StyleEditorUI.prototype = {
 
 
 
-  async _resetStyleSheetList(styleSheets) {
+  _resetStyleSheetList: Task.async(function* (styleSheets) {
     this._clear();
     this._suppressAdd = false;
 
     for (let sheet of styleSheets) {
       try {
-        await this._addStyleSheet(sheet);
+        yield this._addStyleSheet(sheet);
       } catch (e) {
         console.error(e);
         this.emit("error", { key: LOAD_ERROR, level: "warning" });
@@ -247,7 +248,7 @@ StyleEditorUI.prototype = {
     this._root.classList.remove("loading");
 
     this.emit("stylesheets-reset");
-  },
+  }),
 
   
 
@@ -357,7 +358,7 @@ StyleEditorUI.prototype = {
 
 
 
-  async _addStyleSheetEditor(styleSheet, isNew) {
+  _addStyleSheetEditor: Task.async(function* (styleSheet, isNew) {
     
     let file = null;
     let identifier = this.getStyleSheetIdentifier(styleSheet);
@@ -377,11 +378,11 @@ StyleEditorUI.prototype = {
 
     this.editors.push(editor);
 
-    await editor.fetchSource();
+    yield editor.fetchSource();
     this._sourceLoaded(editor);
 
     return editor;
-  },
+  }),
 
   
 
@@ -625,12 +626,12 @@ StyleEditorUI.prototype = {
         let showEditor = data.editor;
         this.selectedEditor = showEditor;
 
-        (async function () {
+        Task.spawn(function* () {
           if (!showEditor.sourceEditor) {
             
             let inputElement =
                 details.querySelector(".stylesheet-editor-input");
-            await showEditor.load(inputElement, this._cssProperties);
+            yield showEditor.load(inputElement, this._cssProperties);
           }
 
           showEditor.onShow();
@@ -638,13 +639,13 @@ StyleEditorUI.prototype = {
           this.emit("editor-selected", showEditor);
 
           
-          let usage = await csscoverage.getUsage(this._target);
+          let usage = yield csscoverage.getUsage(this._target);
           if (usage == null) {
             return;
           }
 
           let sheet = showEditor.styleSheet;
-          let {reports} = await usage.createEditorReportForSheet(sheet);
+          let {reports} = yield usage.createEditorReportForSheet(sheet);
 
           showEditor.removeAllUnusedRegions();
 
@@ -660,7 +661,7 @@ StyleEditorUI.prototype = {
               this.emit("error", { key: "error-compressed", level: "info" });
             }
           }
-        }.bind(this))().catch(console.error);
+        }.bind(this)).catch(console.error);
       }
     });
   },
@@ -882,8 +883,8 @@ StyleEditorUI.prototype = {
 
 
   _updateMediaList: function (editor) {
-    (async function () {
-      let details = await this.getEditorDetails(editor);
+    Task.spawn(function* () {
+      let details = yield this.getEditorDetails(editor);
       let list = details.querySelector(".stylesheet-media-list");
 
       while (list.firstChild) {
@@ -907,7 +908,7 @@ StyleEditorUI.prototype = {
         };
         if (editor.styleSheet.isOriginalSource) {
           let styleSheet = editor.cssSheet;
-          location = await editor.styleSheet.getOriginalLocation(styleSheet, line,
+          location = yield editor.styleSheet.getOriginalLocation(styleSheet, line,
                                                                  column);
         }
 
@@ -947,7 +948,7 @@ StyleEditorUI.prototype = {
       sidebar.hidden = !showSidebar || !inSource;
 
       this.emit("media-list-changed", editor);
-    }.bind(this))().catch(console.error);
+    }.bind(this)).catch(console.error);
   },
 
   
@@ -1011,13 +1012,13 @@ StyleEditorUI.prototype = {
 
 
 
-  async _launchResponsiveMode(options = {}) {
+  _launchResponsiveMode: Task.async(function* (options = {}) {
     let tab = this._target.tab;
     let win = this._target.tab.ownerDocument.defaultView;
 
-    await ResponsiveUIManager.openIfNeeded(win, tab);
+    yield ResponsiveUIManager.openIfNeeded(win, tab);
     ResponsiveUIManager.getResponsiveUIForTab(tab).setViewportSize(options);
-  },
+  }),
 
   
 

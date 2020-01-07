@@ -15,10 +15,10 @@ const TEST_URI = "data:text/html;charset=utf-8,Test page";
 
 
 
-add_task(async function () {
+add_task(function* () {
   info("Test Notification box basic started");
 
-  let toolbox = await openNewTabAndToolbox(TEST_URI, "webconsole");
+  let toolbox = yield openNewTabAndToolbox(TEST_URI, "webconsole");
 
   
   let notificationBox = toolbox.getNotificationBox();

@@ -161,11 +161,11 @@ var RecordingsView = {
   
 
 
-  async _onSelect(recording) {
+  _onSelect: Task.async(function* (recording) {
     this._listState.selected = recording;
     this.emit(EVENTS.UI_RECORDING_SELECTED, recording);
     this._renderList();
-  },
+  }),
 
   
 

@@ -43,7 +43,7 @@ var WebAudioEditorController = {
   
 
 
-  async initialize() {
+  initialize: Task.async(function* () {
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onThemeChange = this._onThemeChange.bind(this);
 
@@ -67,9 +67,9 @@ var WebAudioEditorController = {
     
     
     
-    let actorHasDefinition = await gTarget.actorHasMethod("webaudio", "getDefinition");
+    let actorHasDefinition = yield gTarget.actorHasMethod("webaudio", "getDefinition");
     if (actorHasDefinition) {
-      AUDIO_NODE_DEFINITION = await gFront.getDefinition();
+      AUDIO_NODE_DEFINITION = yield gFront.getDefinition();
     } else {
       AUDIO_NODE_DEFINITION = require("devtools/server/actors/utils/audionodes.json");
     }
@@ -79,7 +79,7 @@ var WebAudioEditorController = {
     
     
     gFront.setup({ reload: false });
-  },
+  }),
 
   
 
@@ -112,7 +112,7 @@ var WebAudioEditorController = {
   
   
   
-  getNode: async function (nodeActor) {
+  getNode: function* (nodeActor) {
     let id = nodeActor.actorID;
     let node = gAudioNodes.get(id);
 
@@ -124,7 +124,7 @@ var WebAudioEditorController = {
           resolve(createdNode);
         }
       });
-      node = await promise;
+      node = yield promise;
     }
     return node;
   },
@@ -142,7 +142,7 @@ var WebAudioEditorController = {
   
 
 
-  async _onTabNavigated(event, {isFrameSwitching}) {
+  _onTabNavigated: Task.async(function* (event, {isFrameSwitching}) {
     switch (event) {
       case "will-navigate": {
         
@@ -173,7 +173,7 @@ var WebAudioEditorController = {
         break;
       }
     }
-  },
+  }),
 
   
 
@@ -205,34 +205,34 @@ var WebAudioEditorController = {
   
 
 
-  async _onConnectNode({ source: sourceActor, dest: destActor }) {
-    let source = await WebAudioEditorController.getNode(sourceActor);
-    let dest = await WebAudioEditorController.getNode(destActor);
+  _onConnectNode: Task.async(function* ({ source: sourceActor, dest: destActor }) {
+    let source = yield WebAudioEditorController.getNode(sourceActor);
+    let dest = yield WebAudioEditorController.getNode(destActor);
     source.connect(dest);
-  },
+  }),
 
   
 
 
-  async _onConnectParam({ source: sourceActor, dest: destActor, param }) {
-    let source = await WebAudioEditorController.getNode(sourceActor);
-    let dest = await WebAudioEditorController.getNode(destActor);
+  _onConnectParam: Task.async(function* ({ source: sourceActor, dest: destActor, param }) {
+    let source = yield WebAudioEditorController.getNode(sourceActor);
+    let dest = yield WebAudioEditorController.getNode(destActor);
     source.connect(dest, param);
-  },
+  }),
 
   
 
 
-  async _onDisconnectNode(nodeActor) {
-    let node = await WebAudioEditorController.getNode(nodeActor);
+  _onDisconnectNode: Task.async(function* (nodeActor) {
+    let node = yield WebAudioEditorController.getNode(nodeActor);
     node.disconnect();
-  },
+  }),
 
   
 
 
-  async _onChangeParam({ actor, param, value }) {
-    let node = await WebAudioEditorController.getNode(actor);
+  _onChangeParam: Task.async(function* ({ actor, param, value }) {
+    let node = yield WebAudioEditorController.getNode(actor);
     window.emit(EVENTS.CHANGE_PARAM, node, param, value);
-  }
+  })
 };

@@ -18,7 +18,7 @@ function clickOnNodeArrow(node, panel) {
                                      {}, panel.panelWin);
 }
 
-this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
+this.test = makeMemoryTest(TEST_URL, function* ({ panel }) {
   
   requestLongerTimeout(4);
 
@@ -33,7 +33,7 @@ this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   EventUtils.synthesizeMouseAtCenter(takeSnapshotButton, {}, panel.panelWin);
 
   
-  await waitUntilState(store, state =>
+  yield waitUntilState(store, state =>
     state.snapshots[0] &&
     state.snapshots[0].dominatorTree &&
     state.snapshots[0].dominatorTree.state === dominatorTreeState.LOADED);
@@ -47,7 +47,7 @@ this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   const rootNode = doc.querySelector(`.node-${root.nodeId}`);
   clickOnNodeArrow(rootNode, panel);
 
-  await waitUntilState(store, state =>
+  yield waitUntilState(store, state =>
     state.snapshots[0] &&
     state.snapshots[0].dominatorTree &&
     !state.snapshots[0].dominatorTree.expanded.has(root.nodeId));
@@ -56,7 +56,7 @@ this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   
   clickOnNodeArrow(rootNode, panel);
 
-  await waitUntilState(store, state =>
+  yield waitUntilState(store, state =>
     state.snapshots[0] &&
     state.snapshots[0].dominatorTree &&
     state.snapshots[0].dominatorTree.expanded.has(root.nodeId));

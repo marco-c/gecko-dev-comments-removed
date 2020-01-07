@@ -20,6 +20,7 @@ var promise = require("promise");
 var defer = require("devtools/shared/defer");
 var Services = require("Services");
 var ChromeUtils = require("ChromeUtils");
+var {Task} = require("devtools/shared/task");
 var {gDevTools} = require("devtools/client/framework/devtools");
 var EventEmitter = require("devtools/shared/old-event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
@@ -425,7 +426,7 @@ Toolbox.prototype = {
 
 
   open: function () {
-    return (async function () {
+    return Task.spawn(function* () {
       this.browserRequire = BrowserLoader({
         window: this.doc.defaultView,
         useOnlyShared: true
@@ -446,19 +447,19 @@ Toolbox.prototype = {
       
 
       
-      await this._target.makeRemote();
+      yield this._target.makeRemote();
 
       
       
       if (this._target.activeConsole) {
-        await this._target.activeConsole.startListeners([
+        yield this._target.activeConsole.startListeners([
           "NetworkActivity",
         ]);
       }
 
       
-      this._threadClient = await attachThread(this);
-      await domReady.promise;
+      this._threadClient = yield attachThread(this);
+      yield domReady.promise;
 
       this.isReady = true;
 
@@ -537,7 +538,7 @@ Toolbox.prototype = {
         }, {timeout: 16});
       });
 
-      await this.selectTool(this._defaultToolId);
+      yield this.selectTool(this._defaultToolId);
 
       
       
@@ -546,7 +547,7 @@ Toolbox.prototype = {
         splitConsolePromise = this.openSplitConsole();
       }
 
-      await promise.all([
+      yield promise.all([
         splitConsolePromise,
         buttonsPromise,
         framesPromise
@@ -560,12 +561,12 @@ Toolbox.prototype = {
       
       
       if (flags.testing) {
-        await performanceFrontConnection;
+        yield performanceFrontConnection;
       }
 
       this.emit("ready");
       this._isOpenDeferred.resolve();
-    }.bind(this))().catch(console.error.bind(console));
+    }.bind(this)).catch(console.error.bind(console));
   },
 
   
@@ -1257,12 +1258,12 @@ Toolbox.prototype = {
   
 
 
-  async _buildButtons() {
+  _buildButtons: Task.async(function* () {
     
     this.toolbarButtons = [
       this._buildPickerButton(),
       this._buildFrameButton(),
-      await this._buildNoAutoHideButton()
+      yield this._buildNoAutoHideButton()
     ];
 
     ToolboxButtons.forEach(definition => {
@@ -1271,7 +1272,7 @@ Toolbox.prototype = {
     });
 
     this.component.setToolboxButtons(this.toolbarButtons);
-  },
+  }),
 
   
 
@@ -1294,7 +1295,7 @@ Toolbox.prototype = {
 
 
 
-  async _buildNoAutoHideButton() {
+  _buildNoAutoHideButton: Task.async(function* () {
     this.autohideButton = this._createButtonState({
       id: "command-button-noautohide",
       description: L10N.getStr("toolbox.noautohide.tooltip"),
@@ -1307,7 +1308,7 @@ Toolbox.prototype = {
     });
 
     return this.autohideButton;
-  },
+  }),
 
   
 
@@ -2065,12 +2066,12 @@ Toolbox.prototype = {
 
 
 
-  async highlightTool(id) {
+  highlightTool: Task.async(function* (id) {
     if (!this.component) {
-      await this.isOpen;
+      yield this.isOpen;
     }
     this.component.highlightTool(id);
-  },
+  }),
 
   
 
@@ -2078,12 +2079,12 @@ Toolbox.prototype = {
 
 
 
-  async unhighlightTool(id) {
+  unhighlightTool: Task.async(function* (id) {
     if (!this.component) {
-      await this.isOpen;
+      yield this.isOpen;
     }
     this.component.unhighlightTool(id);
-  },
+  }),
 
   
 
@@ -2151,26 +2152,26 @@ Toolbox.prototype = {
     });
   },
 
-  async _toggleNoAutohide() {
-    let front = await this.preferenceFront;
-    let toggledValue = !(await this._isDisableAutohideEnabled());
+  _toggleNoAutohide: Task.async(function* () {
+    let front = yield this.preferenceFront;
+    let toggledValue = !(yield this._isDisableAutohideEnabled());
 
     front.setBoolPref(DISABLE_AUTOHIDE_PREF, toggledValue);
 
     this.autohideButton.isChecked = toggledValue;
     this._autohideHasBeenToggled = true;
-  },
+  }),
 
-  async _isDisableAutohideEnabled() {
+  _isDisableAutohideEnabled: Task.async(function* () {
     
-    await this.isOpen;
+    yield this.isOpen;
     if (!this.autohideButton.isVisible) {
       return false;
     }
 
-    let prefFront = await this.preferenceFront;
-    return prefFront.getBoolPref(DISABLE_AUTOHIDE_PREF);
-  },
+    let prefFront = yield this.preferenceFront;
+    return yield prefFront.getBoolPref(DISABLE_AUTOHIDE_PREF);
+  }),
 
   _listFrames: function (event) {
     if (!this._target.activeTab || !this._target.activeTab.traits.frames) {
@@ -2552,11 +2553,11 @@ Toolbox.prototype = {
 
   initInspector: function () {
     if (!this._initInspector) {
-      this._initInspector = (async function () {
+      this._initInspector = Task.spawn(function* () {
         this._inspector = InspectorFront(this._target.client, this._target.form);
         let pref = "devtools.inspector.showAllAnonymousContent";
         let showAllAnonymousContent = Services.prefs.getBoolPref(pref);
-        this._walker = await this._inspector.getWalker({ showAllAnonymousContent });
+        this._walker = yield this._inspector.getWalker({ showAllAnonymousContent });
         this._selection = new Selection(this._walker);
         this._selection.on("new-node-front", this._onNewSelectedNodeFront);
 
@@ -2565,9 +2566,9 @@ Toolbox.prototype = {
           this.walker.on("highlighter-hide", this._highlighterHidden);
 
           let autohide = !flags.testing;
-          this._highlighter = await this._inspector.getHighlighter(autohide);
+          this._highlighter = yield this._inspector.getHighlighter(autohide);
         }
-      }.bind(this))();
+      }.bind(this));
     }
     return this._initInspector;
   },
@@ -2615,23 +2616,23 @@ Toolbox.prototype = {
       return this._destroyingInspector;
     }
 
-    this._destroyingInspector = (async function () {
+    this._destroyingInspector = Task.spawn(function* () {
       if (!this._inspector) {
         return;
       }
 
       
       
-      await this._initInspector;
+      yield this._initInspector;
 
       let currentPanel = this.getCurrentPanel();
       if (currentPanel.stopPicker) {
-        await currentPanel.stopPicker();
+        yield currentPanel.stopPicker();
       } else {
-        await this.highlighterUtils.stopPicker();
+        yield this.highlighterUtils.stopPicker();
       }
 
-      await this._inspector.destroy();
+      yield this._inspector.destroy();
       if (this._highlighter) {
         
         
@@ -2641,7 +2642,7 @@ Toolbox.prototype = {
         if (!this.highlighter.traits.autoHideOnDestroy) {
           this.highlighterUtils.unhighlight();
         }
-        await this._highlighter.destroy();
+        yield this._highlighter.destroy();
       }
       if (this._selection) {
         this._selection.off("new-node-front", this._onNewSelectedNodeFront);
@@ -2657,7 +2658,7 @@ Toolbox.prototype = {
       this._highlighter = null;
       this._selection = null;
       this._walker = null;
-    }.bind(this))();
+    }.bind(this));
     return this._destroyingInspector;
   },
 
@@ -2897,7 +2898,7 @@ Toolbox.prototype = {
 
 
 
-  async initPerformance() {
+  initPerformance: Task.async(function* () {
     
     
     if (!this.target.hasActor("performance")) {
@@ -2910,7 +2911,7 @@ Toolbox.prototype = {
 
     this._performanceFrontConnection = defer();
     this._performance = createPerformanceFront(this._target);
-    await this.performance.connect();
+    yield this.performance.connect();
 
     
     this.emit("profiler-connected");
@@ -2918,26 +2919,26 @@ Toolbox.prototype = {
     this.performance.on("*", this._onPerformanceFrontEvent);
     this._performanceFrontConnection.resolve(this.performance);
     return this._performanceFrontConnection.promise;
-  },
+  }),
 
   
 
 
 
 
-  async destroyPerformance() {
+  destroyPerformance: Task.async(function* () {
     if (!this.performance) {
       return;
     }
     
     
     if (this._performanceFrontConnection) {
-      await this._performanceFrontConnection.promise;
+      yield this._performanceFrontConnection.promise;
     }
     this.performance.off("*", this._onPerformanceFrontEvent);
-    await this.performance.destroy();
+    yield this.performance.destroy();
     this._performance = null;
-  },
+  }),
 
   
 
@@ -2953,7 +2954,7 @@ Toolbox.prototype = {
   
 
 
-  async destroyPreference() {
+  destroyPreference: Task.async(function* () {
     if (!this._preferenceFront) {
       return;
     }
@@ -2961,12 +2962,12 @@ Toolbox.prototype = {
     
     
     if (this._autohideHasBeenToggled) {
-      await this._preferenceFront.clearUserPref(DISABLE_AUTOHIDE_PREF);
+      yield this._preferenceFront.clearUserPref(DISABLE_AUTOHIDE_PREF);
     }
 
     this._preferenceFront.destroy();
     this._preferenceFront = null;
-  },
+  }),
 
   
 
@@ -2975,7 +2976,7 @@ Toolbox.prototype = {
 
 
 
-  async _onPerformanceFrontEvent(eventName, recording) {
+  _onPerformanceFrontEvent: Task.async(function* (eventName, recording) {
     if (this.getPanel("performance")) {
       this.performance.off("*", this._onPerformanceFrontEvent);
       return;
@@ -2990,8 +2991,8 @@ Toolbox.prototype = {
     
     if (eventName === "console-profile-start" && !this._performanceToolOpenedViaConsole) {
       this._performanceToolOpenedViaConsole = this.loadTool("performance");
-      let panel = await this._performanceToolOpenedViaConsole;
-      await panel.open();
+      let panel = yield this._performanceToolOpenedViaConsole;
+      yield panel.open();
 
       panel.panelWin.PerformanceController.populateWithRecordings(recordings);
       this.performance.off("*", this._onPerformanceFrontEvent);
@@ -3003,7 +3004,7 @@ Toolbox.prototype = {
     if (eventName === "recording-started") {
       recordings.push(recording);
     }
-  },
+  }),
 
   
 

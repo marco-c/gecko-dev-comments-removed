@@ -3,6 +3,7 @@
 
 "use strict";
 
+const { Task } = require("devtools/shared/task");
 const { ViewHelpers, setNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 const { ELLIPSIS } = require("devtools/shared/l10n");
 
@@ -231,8 +232,8 @@ FlameGraph.prototype = {
   
 
 
-  async destroy() {
-    await this.ready();
+  destroy: Task.async(function* () {
+    yield this.ready();
 
     this._window.removeEventListener("keydown", this._onKeyDown);
     this._window.removeEventListener("keyup", this._onKeyUp);
@@ -261,7 +262,7 @@ FlameGraph.prototype = {
     this._data = null;
 
     this.emit("destroyed");
-  },
+  }),
 
   
 
@@ -311,10 +312,10 @@ FlameGraph.prototype = {
 
 
 
-  async setDataWhenReady(data) {
-    await this.ready();
+  setDataWhenReady: Task.async(function* (data) {
+    yield this.ready();
     this.setData(data);
-  },
+  }),
 
   
 

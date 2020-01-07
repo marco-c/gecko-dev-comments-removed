@@ -46,24 +46,24 @@ var AutomationView = {
 
 
 
-  async build() {
+  build: Task.async(function* () {
     let node = this._currentNode;
 
-    let props = await node.getParams();
+    let props = yield node.getParams();
     let params = props.filter(({ flags }) => flags && flags.param);
 
     this._createParamButtons(params);
 
     this._selectedParamName = params[0] ? params[0].param : null;
     this.render();
-  },
+  }),
 
   
 
 
 
 
-  async render() {
+  render: Task.async(function* () {
     let node = this._currentNode;
     let paramName = this._selectedParamName;
     
@@ -73,11 +73,11 @@ var AutomationView = {
       return;
     }
 
-    let { values, events } = await node.getAutomationData(paramName);
+    let { values, events } = yield node.getAutomationData(paramName);
     this._setState(events.length ? "show" : "no-events");
-    await this.graph.setDataWhenReady(values);
+    yield this.graph.setDataWhenReady(values);
     window.emit(EVENTS.UI_AUTOMATION_TAB_RENDERED, node.id);
-  },
+  }),
 
   
 

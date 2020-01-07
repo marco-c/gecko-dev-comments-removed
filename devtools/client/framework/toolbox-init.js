@@ -20,6 +20,7 @@ if (url.search.length > 1) {
   const { TargetFactory } = require("devtools/client/framework/target");
   const { DebuggerServer } = require("devtools/server/main");
   const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+  const { Task } = require("devtools/shared/task");
 
   
   let host = window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -46,7 +47,7 @@ if (url.search.length > 1) {
   
   let tool = url.searchParams.get("tool");
 
-  (async function () {
+  Task.spawn(function* () {
     let target;
     if (url.searchParams.has("target")) {
       
@@ -71,17 +72,17 @@ if (url.search.length > 1) {
       DebuggerServer.registerAllActors();
       let client = new DebuggerClient(DebuggerServer.connectPipe());
 
-      await client.connect();
+      yield client.connect();
       
-      let response = await client.getTab({ tab });
+      let response = yield client.getTab({ tab });
       let form = response.tab;
-      target = await TargetFactory.forRemoteTab({client, form, chrome: false});
+      target = yield TargetFactory.forRemoteTab({client, form, chrome: false});
     } else {
-      target = await targetFromURL(url);
+      target = yield targetFromURL(url);
     }
     let options = { customIframe: host };
-    await gDevTools.showToolbox(target, tool, Toolbox.HostType.CUSTOM, options);
-  })().catch(error => {
+    yield gDevTools.showToolbox(target, tool, Toolbox.HostType.CUSTOM, options);
+  }).catch(error => {
     console.error("Exception while loading the toolbox", error);
   });
 }

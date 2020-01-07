@@ -192,13 +192,13 @@ function runAsyncTests(aScratchpad, aTests)
 
 
 
-var runAsyncCallbackTests = async function (aScratchpad, aTests) {
+var runAsyncCallbackTests = Task.async(function* (aScratchpad, aTests) {
   for (let {prepare, method, then} of aTests) {
-    await prepare();
-    let res = await aScratchpad[method]();
-    await then(res);
+    yield prepare();
+    let res = yield aScratchpad[method]();
+    yield then(res);
   }
-};
+});
 
 
 

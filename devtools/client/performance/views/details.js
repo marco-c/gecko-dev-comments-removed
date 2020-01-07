@@ -46,7 +46,7 @@ var DetailsView = {
   
 
 
-  async initialize() {
+  initialize: Task.async(function* () {
     this.el = $("#details-pane");
     this.toolbar = $("#performance-toolbar-controls-detail-views");
 
@@ -58,25 +58,25 @@ var DetailsView = {
       button.addEventListener("command", this._onViewToggle);
     }
 
-    await this.setAvailableViews();
+    yield this.setAvailableViews();
 
     PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE,
                              this._onRecordingStoppedOrSelected);
     PerformanceController.on(EVENTS.RECORDING_SELECTED,
                              this._onRecordingStoppedOrSelected);
     PerformanceController.on(EVENTS.PREF_CHANGED, this.setAvailableViews);
-  },
+  }),
 
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     for (let button of $$("toolbarbutton[data-view]", this.toolbar)) {
       button.removeEventListener("command", this._onViewToggle);
     }
 
     for (let component of Object.values(this.components)) {
-      component.initialized && (await component.view.destroy());
+      component.initialized && (yield component.view.destroy());
     }
 
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
@@ -84,7 +84,7 @@ var DetailsView = {
     PerformanceController.off(EVENTS.RECORDING_SELECTED,
                               this._onRecordingStoppedOrSelected);
     PerformanceController.off(EVENTS.PREF_CHANGED, this.setAvailableViews);
-  },
+  }),
 
   
 
@@ -92,7 +92,7 @@ var DetailsView = {
 
 
 
-  async setAvailableViews() {
+  setAvailableViews: Task.async(function* () {
     let recording = PerformanceController.getCurrentRecording();
     let isCompleted = recording && recording.isCompleted();
     let invalidCurrentView = false;
@@ -119,9 +119,9 @@ var DetailsView = {
     
     if ((this._initialized && isCompleted && invalidCurrentView) ||
         (!this._initialized && isCompleted && recording)) {
-      await this.selectDefaultView();
+      yield this.selectDefaultView();
     }
-  },
+  }),
 
   
 
@@ -151,11 +151,11 @@ var DetailsView = {
 
 
 
-  async selectView(viewName) {
+  selectView: Task.async(function* (viewName) {
     let component = this.components[viewName];
     this.el.selectedPanel = $("#" + component.id);
 
-    await this._whenViewInitialized(component);
+    yield this._whenViewInitialized(component);
 
     for (let button of $$("toolbarbutton[data-view]", this.toolbar)) {
       if (button.getAttribute("data-view") === viewName) {
@@ -170,7 +170,7 @@ var DetailsView = {
     this._initialized = true;
 
     this.emit(EVENTS.UI_DETAILS_VIEW_SELECTED, viewName);
-  },
+  }),
 
   
 
@@ -220,12 +220,12 @@ var DetailsView = {
 
 
 
-  async _whenViewInitialized(component) {
+  _whenViewInitialized: Task.async(function* (component) {
     if (component.initialized) {
       return;
     }
     component.initialized = true;
-    await component.view.initialize();
+    yield component.view.initialize();
 
     
     
@@ -235,7 +235,7 @@ var DetailsView = {
     if (recording && recording.isCompleted()) {
       component.view.shouldUpdateWhenShown = true;
     }
-  },
+  }),
 
   
 

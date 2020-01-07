@@ -4,17 +4,17 @@
 
 const ITEMS_PER_PAGE = 50;
 
-add_task(async function () {
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-overflow.html");
+add_task(function* () {
+  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-overflow.html");
 
   gUI.tree.expandAll();
-  await selectTreeItem(["localStorage", "http://test1.example.org"]);
+  yield selectTreeItem(["localStorage", "http://test1.example.org"]);
   checkCellLength(ITEMS_PER_PAGE);
 
-  await scroll();
+  yield scroll();
   checkCellLength(ITEMS_PER_PAGE * 2);
 
-  await scroll();
+  yield scroll();
   checkCellLength(ITEMS_PER_PAGE * 3);
 
   
@@ -26,7 +26,7 @@ add_task(async function () {
   
   checkCellValues("DEC");
 
-  await finishTests();
+  yield finishTests();
 });
 
 function checkCellLength(len) {
@@ -46,7 +46,7 @@ function checkCellValues(order) {
   });
 }
 
-async function scroll() {
+function* scroll() {
   let $ = id => gPanelWindow.document.querySelector(id);
   let table = $("#storage-table .table-widget-body");
   let cell = $("#name .table-widget-cell");
@@ -54,5 +54,5 @@ async function scroll() {
 
   let onStoresUpdate = gUI.once("store-objects-updated");
   table.scrollTop += cellHeight * 50;
-  await onStoresUpdate;
+  yield onStoresUpdate;
 }

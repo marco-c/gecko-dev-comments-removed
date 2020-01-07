@@ -9,8 +9,8 @@
 
 var { CATEGORY_MASK } = require("devtools/client/performance/modules/categories");
 
-async function spawnTest() {
-  let { panel } = await initPerformance(SIMPLE_URL);
+function* spawnTest() {
+  let { panel } = yield initPerformance(SIMPLE_URL);
   let { EVENTS, $, $$, window, PerformanceController } = panel.panelWin;
   let { OverviewView, DetailsView, JsCallTreeView } = panel.panelWin;
 
@@ -22,12 +22,12 @@ async function spawnTest() {
 
   
   
-  await startRecording(panel);
-  await stopRecording(panel);
+  yield startRecording(panel);
+  yield stopRecording(panel);
 
-  await DetailsView.selectView("js-calltree");
+  yield DetailsView.selectView("js-calltree");
 
-  await injectAndRenderProfilerData();
+  yield injectAndRenderProfilerData();
 
   let rows = $$("#js-calltree-view .call-tree-item");
   is(rows.length, 4, "4 call tree rows exist");
@@ -52,10 +52,10 @@ async function spawnTest() {
     }
   }
 
-  await teardown(panel);
+  yield teardown(panel);
   finish();
 
-  async function injectAndRenderProfilerData() {
+  function* injectAndRenderProfilerData() {
     
     info("Injecting mock profile data");
     let recording = PerformanceController.getCurrentRecording();
@@ -64,7 +64,7 @@ async function spawnTest() {
     
     let rendered = once(JsCallTreeView, EVENTS.UI_JS_CALL_TREE_RENDERED);
     JsCallTreeView.render(OverviewView.getTimeInterval());
-    await rendered;
+    yield rendered;
   }
 }
 

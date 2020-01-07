@@ -5,6 +5,7 @@
 "use strict";
 
 var Services = require("Services");
+var {Task} = require("devtools/shared/task");
 var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
 
@@ -334,7 +335,7 @@ ToolSidebar.prototype = {
 
 
 
-  async removeTab(tabId, tabPanelId) {
+  removeTab: Task.async(function* (tabId, tabPanelId) {
     
     let tab = this.getTab(tabId);
     if (!tab) {
@@ -343,7 +344,7 @@ ToolSidebar.prototype = {
 
     let win = this.getWindowForTab(tabId);
     if (win && ("destroy" in win)) {
-      await win.destroy();
+      yield win.destroy();
     }
 
     tab.remove();
@@ -356,7 +357,7 @@ ToolSidebar.prototype = {
 
     this._tabs.delete(tabId);
     this.emit("tab-unregistered", tabId);
-  },
+  }),
 
   
 
@@ -548,7 +549,7 @@ ToolSidebar.prototype = {
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     if (this._destroyed) {
       return;
     }
@@ -569,7 +570,7 @@ ToolSidebar.prototype = {
       let panel = this._tabbox.tabpanels.firstChild;
       let win = panel.firstChild.contentWindow;
       if (win && ("destroy" in win)) {
-        await win.destroy();
+        yield win.destroy();
       }
       panel.remove();
     }
@@ -588,5 +589,5 @@ ToolSidebar.prototype = {
     this._tabbox = null;
     this._panelDoc = null;
     this._toolPanel = null;
-  }
+  })
 };

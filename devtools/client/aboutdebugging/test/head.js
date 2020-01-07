@@ -20,20 +20,20 @@ registerCleanupFunction(() => {
   flags.testing = false;
 });
 
-async function openAboutDebugging(page, win) {
+function* openAboutDebugging(page, win) {
   info("opening about:debugging");
   let url = "about:debugging";
   if (page) {
     url += "#" + page;
   }
 
-  let tab = await addTab(url, { window: win });
+  let tab = yield addTab(url, { window: win });
   let browser = tab.linkedBrowser;
   let document = browser.contentDocument;
   let window = browser.contentWindow;
 
   info("Wait until the main about debugging container is available");
-  await waitUntilElement(".app", document);
+  yield waitUntilElement(".app", document);
 
   return { tab, document, window };
 }
@@ -135,8 +135,8 @@ function getServiceWorkerContainer(name, document) {
 
 
 
-async function waitUntilServiceWorkerContainer(name, document) {
-  await waitUntil(() => {
+function* waitUntilServiceWorkerContainer(name, document) {
+  yield waitUntil(() => {
     return getServiceWorkerContainer(name, document);
   }, 100);
   return getServiceWorkerContainer(name, document);
@@ -152,8 +152,8 @@ async function waitUntilServiceWorkerContainer(name, document) {
 
 
 
-async function waitUntilElement(selector, parent) {
-  await waitUntil(() => {
+function* waitUntilElement(selector, parent) {
+  yield waitUntil(() => {
     return parent.querySelector(selector);
   }, 100);
   return parent.querySelector(selector);
@@ -170,7 +170,7 @@ function getTabList(document) {
     document.querySelector("#tabs.targets");
 }
 
-async function installAddon({document, path, name, isWebExtension}) {
+function* installAddon({document, path, name, isWebExtension}) {
   
   let MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
@@ -203,16 +203,16 @@ async function installAddon({document, path, name, isWebExtension}) {
   
   document.getElementById("load-addon-from-file").click();
 
-  await onAddonInstalled;
+  yield onAddonInstalled;
   ok(true, "Addon installed and running its bootstrap.js file");
 
   info("Wait for the addon to appear in the UI");
-  await waitUntilAddonContainer(name, document);
+  yield waitUntilAddonContainer(name, document);
 }
 
-async function uninstallAddon({document, id, name}) {
+function* uninstallAddon({document, id, name}) {
   
-  await new Promise(done => {
+  yield new Promise(done => {
     AddonManager.getAddonByID(id, addon => {
       let listener = {
         onUninstalled: function (uninstalledAddon) {
@@ -230,7 +230,7 @@ async function uninstallAddon({document, id, name}) {
   });
 
   info("Wait until the addon is removed from about:debugging");
-  await waitUntil(() => !getAddonContainer(name, document), 100);
+  yield waitUntil(() => !getAddonContainer(name, document), 100);
 }
 
 function getAddonCount(document) {
@@ -260,8 +260,8 @@ function getAddonContainer(name, document) {
   return null;
 }
 
-async function waitUntilAddonContainer(name, document) {
-  await waitUntil(() => {
+function* waitUntilAddonContainer(name, document) {
+  yield waitUntil(() => {
     return getAddonContainer(name, document);
   });
   return getAddonContainer(name, document);
@@ -289,10 +289,10 @@ function assertHasTarget(expected, document, type, name) {
 
 
 function waitForServiceWorkerRegistered(tab) {
-  return ContentTask.spawn(tab.linkedBrowser, {}, async function () {
+  return ContentTask.spawn(tab.linkedBrowser, {}, function* () {
     
     let { sw } = content.wrappedJSObject;
-    await sw;
+    yield sw;
   });
 }
 
@@ -305,7 +305,7 @@ function waitForServiceWorkerRegistered(tab) {
 
 
 
-async function unregisterServiceWorker(tab, serviceWorkersElement) {
+function* unregisterServiceWorker(tab, serviceWorkersElement) {
   
   let registrations = serviceWorkersElement.querySelectorAll(".target-container");
   let registrationCount = registrations.length;
@@ -317,11 +317,11 @@ async function unregisterServiceWorker(tab, serviceWorkersElement) {
   }, 100);
 
   
-  await ContentTask.spawn(tab.linkedBrowser, {}, async function () {
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
     
     let { sw } = content.wrappedJSObject;
-    let registration = await sw;
-    await registration.unregister();
+    let registration = yield sw;
+    yield registration.unregister();
   });
 
   return isRemoved;
@@ -347,8 +347,8 @@ function waitForDelayedStartupFinished(win) {
 
 
 
-async function setupTestAboutDebuggingWebExtension(name, path) {
-  await new Promise(resolve => {
+function* setupTestAboutDebuggingWebExtension(name, path) {
+  yield new Promise(resolve => {
     let options = {"set": [
       
       ["devtools.chrome.enabled", true],
@@ -361,10 +361,10 @@ async function setupTestAboutDebuggingWebExtension(name, path) {
     SpecialPowers.pushPrefEnv(options, resolve);
   });
 
-  let { tab, document } = await openAboutDebugging("addons");
-  await waitForInitialAddonList(document);
+  let { tab, document } = yield openAboutDebugging("addons");
+  yield waitForInitialAddonList(document);
 
-  await installAddon({
+  yield installAddon({
     document,
     path,
     name,
@@ -386,14 +386,14 @@ async function setupTestAboutDebuggingWebExtension(name, path) {
 
 
 
-async function waitForServiceWorkerActivation(swUrl, document) {
+function* waitForServiceWorkerActivation(swUrl, document) {
   let serviceWorkersElement = getServiceWorkerList(document);
   let names = serviceWorkersElement.querySelectorAll(".target-name");
   let name = [...names].filter(element => element.textContent === swUrl)[0];
 
   let targetElement = name.parentNode.parentNode;
   let targetStatus = targetElement.querySelector(".target-status");
-  await waitUntil(() => {
+  yield waitUntil(() => {
     return targetStatus.textContent !== "Registering";
   }, 100);
 }
@@ -401,7 +401,7 @@ async function waitForServiceWorkerActivation(swUrl, document) {
 
 
 
-async function enableServiceWorkerDebugging() {
+function* enableServiceWorkerDebugging() {
   let options = { "set": [
     
     ["dom.serviceWorkers.enabled", true],
@@ -412,7 +412,7 @@ async function enableServiceWorkerDebugging() {
   ]};
 
   
-  await new Promise(done => {
+  yield new Promise(done => {
     SpecialPowers.pushPrefEnv(options, done);
   });
 
@@ -466,10 +466,10 @@ function getAddonByID(addonId) {
 
 
 
-async function tearDownAddon(addon) {
+function* tearDownAddon(addon) {
   const onUninstalled = promiseAddonEvent("onUninstalled");
   addon.uninstall();
-  const [uninstalledAddon] = await onUninstalled;
+  const [uninstalledAddon] = yield onUninstalled;
   is(uninstalledAddon.id, addon.id,
      `Add-on was uninstalled: ${uninstalledAddon.id}`);
 }

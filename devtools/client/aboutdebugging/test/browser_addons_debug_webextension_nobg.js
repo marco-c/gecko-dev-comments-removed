@@ -25,10 +25,10 @@ const {
 
 
 
-add_task(async function testWebExtensionsToolboxNoBackgroundPage() {
+add_task(function* testWebExtensionsToolboxNoBackgroundPage() {
   let {
     tab, document, debugBtn,
-  } = await setupTestAboutDebuggingWebExtension(ADDON_NOBG_NAME, ADDON_NOBG_PATH);
+  } = yield setupTestAboutDebuggingWebExtension(ADDON_NOBG_NAME, ADDON_NOBG_PATH);
 
   
   
@@ -80,10 +80,10 @@ add_task(async function testWebExtensionsToolboxNoBackgroundPage() {
 
   let onToolboxClose = BrowserToolboxProcess.once("close");
   debugBtn.click();
-  await onToolboxClose;
+  yield onToolboxClose;
 
   ok(true, "Addon toolbox closed");
 
-  await uninstallAddon({document, id: ADDON_NOBG_ID, name: ADDON_NOBG_NAME});
-  await closeAboutDebugging(tab);
+  yield uninstallAddon({document, id: ADDON_NOBG_ID, name: ADDON_NOBG_NAME});
+  yield closeAboutDebugging(tab);
 });

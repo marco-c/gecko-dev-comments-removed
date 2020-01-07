@@ -7,8 +7,8 @@
 
 
 
-add_task(async function () {
-  await openTabAndSetupStorage("about:home");
+add_task(function* () {
+  yield openTabAndSetupStorage("about:home");
 
   let itemsToOpen = [
     ["localStorage", "about:home"],
@@ -16,9 +16,9 @@ add_task(async function () {
   ];
 
   for (let item of itemsToOpen) {
-    await selectTreeItem(item);
+    yield selectTreeItem(item);
     ok(gUI.tree.isSelected(item), `Item ${item.join(" > ")} is present in the tree`);
   }
 
-  await finishTests();
+  yield finishTests();
 });

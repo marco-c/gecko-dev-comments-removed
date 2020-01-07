@@ -6,6 +6,8 @@
 
 "use strict";
 
+const {Task} = require("devtools/shared/task");
+
 const DEFAULT_TOGGLE_DELAY = 50;
 
 
@@ -142,14 +144,14 @@ TooltipToggle.prototype = {
 
 
 
-  async isValidHoverTarget(target) {
-    let res = await this._targetNodeCb(target, this.tooltip);
+  isValidHoverTarget: Task.async(function* (target) {
+    let res = yield this._targetNodeCb(target, this.tooltip);
     if (res) {
       return res.nodeName ? res : target;
     }
 
     return null;
-  },
+  }),
 
   _onMouseOut: function (event) {
     

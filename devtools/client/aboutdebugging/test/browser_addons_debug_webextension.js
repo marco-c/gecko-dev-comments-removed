@@ -24,10 +24,10 @@ const {
 
 
 
-add_task(async function testWebExtensionsToolboxWebConsole() {
+add_task(function* testWebExtensionsToolboxWebConsole() {
   let {
     tab, document, debugBtn,
-  } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
+  } = yield setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
 
   
   
@@ -73,9 +73,9 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
 
   debugBtn.click();
 
-  await onToolboxClose;
+  yield onToolboxClose;
   ok(true, "Addon toolbox closed");
 
-  await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
-  await closeAboutDebugging(tab);
+  yield uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
+  yield closeAboutDebugging(tab);
 });

@@ -13,21 +13,21 @@ const JSON_XHR_URL = URL_ROOT + "test.json";
 
 
 
-add_task(async function () {
+add_task(function* () {
   
-  await pushPref("network.http.rcwn.enabled", false);
+  yield pushPref("network.http.rcwn.enabled", false);
 
   info("Test XHR Spy headers started");
 
-  let {hud} = await addTestTab(TEST_PAGE_URL);
+  let {hud} = yield addTestTab(TEST_PAGE_URL);
 
-  let netInfoBody = await executeAndInspectXhr(hud, {
+  let netInfoBody = yield executeAndInspectXhr(hud, {
     method: "GET",
     url: JSON_XHR_URL
   });
 
   
-  let tabBody = await selectNetInfoTab(hud, netInfoBody, "headers");
+  let tabBody = yield selectNetInfoTab(hud, netInfoBody, "headers");
   let paramName = tabBody.querySelector(
     ".netInfoParamName > span[title='content-type']");
 

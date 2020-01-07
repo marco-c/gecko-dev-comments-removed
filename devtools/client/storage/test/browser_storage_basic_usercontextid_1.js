@@ -87,7 +87,7 @@ function testTree(tests) {
 
 
 
-async function testTables(tests) {
+function* testTables(tests) {
   let doc = gPanelWindow.document;
   
   gUI.tree.expandAll();
@@ -100,7 +100,7 @@ async function testTables(tests) {
 
   
   for (let [treeItem, items] of tests.slice(1)) {
-    await selectTreeItem(treeItem);
+    yield selectTreeItem(treeItem);
 
     
     is(doc.querySelectorAll(
@@ -115,11 +115,11 @@ async function testTables(tests) {
   }
 }
 
-add_task(async function () {
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
+add_task(function* () {
+  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 
   testTree(testCases);
-  await testTables(testCases);
+  yield testTables(testCases);
 
-  await finishTests();
+  yield finishTests();
 });

@@ -17,7 +17,7 @@ var gWebConsole, gJSTerm, gVariablesView;
 
 
 Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
-registerCleanupFunction(function () {
+registerCleanupFunction(function* () {
   Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
 });
 
