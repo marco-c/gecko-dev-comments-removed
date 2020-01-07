@@ -308,6 +308,7 @@ NS_IMPL_ISUPPORTS(D3DSharedTexturesReporter, nsIMemoryReporter)
 
 gfxWindowsPlatform::gfxWindowsPlatform()
   : mRenderMode(RENDER_GDI)
+  , mUsingDirectWrite(false)
 {
   
 
@@ -561,6 +562,7 @@ gfxWindowsPlatform::CreatePlatformFontList()
     if (IsNotWin7PreRTM() && DWriteEnabled()) {
         pfl = new gfxDWriteFontList();
         if (NS_SUCCEEDED(pfl->InitFontList())) {
+            mUsingDirectWrite = true;
             return pfl;
         }
         
@@ -571,6 +573,7 @@ gfxWindowsPlatform::CreatePlatformFontList()
                    NS_LITERAL_CSTRING("FEATURE_FAILURE_FONT_FAIL"));
     }
 
+    mUsingDirectWrite = false;
     pfl = new gfxGDIFontList();
 
     if (NS_SUCCEEDED(pfl->InitFontList())) {
@@ -2062,4 +2065,11 @@ gfxWindowsPlatform::SupportsPluginDirectDXGIDrawing()
     return false;
   }
   return true;
+}
+
+bool
+gfxWindowsPlatform::CheckVariationFontSupport()
+{
+  
+  return mUsingDirectWrite && IsWin10FallCreatorsUpdateOrLater();
 }

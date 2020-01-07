@@ -520,6 +520,16 @@ gfxPlatformGtk::GetPlatformCMSOutputProfile(void *&mem, size_t &size)
 #endif
 }
 
+bool
+gfxPlatformGtk::CheckVariationFontSupport()
+{
+  
+  
+  
+  FT_Int major, minor, patch;
+  FT_Library_Version(GetFTLibrary(), &major, &minor, &patch);
+  return major * 1000000 + minor * 1000 + patch >= 2007001;
+}
 
 #ifdef GL_PROVIDER_GLX
 
