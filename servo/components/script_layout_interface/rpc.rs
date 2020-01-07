@@ -38,7 +38,8 @@ pub trait LayoutRPC {
     fn text_index(&self) -> TextIndexResponse;
     
     fn nodes_from_point_response(&self) -> Vec<UntrustedNodeAddress>;
-
+    
+    fn element_inner_text(&self) -> String;
 }
 
 pub struct ContentBoxResponse(pub Option<Rect<Au>>);
