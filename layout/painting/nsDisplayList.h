@@ -6755,8 +6755,7 @@ private:
     while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
       if (AtEndOfNestedList()) {
         
-        mNext = mStack.LastElement();
-        mStack.RemoveElementAt(mStack.Length() - 1);
+        mNext = mStack.PopLastElement();
         
         mNext = mNext->GetAbove();
       } else {

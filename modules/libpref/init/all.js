@@ -1116,6 +1116,12 @@ pref("devtools.debugger.force-local", true);
 pref("devtools.debugger.forbid-certified-apps", true);
 
 
+
+
+
+pref("devtools.netmonitor.responseBodyLimit", 1048576);
+
+
 pref("devtools.defaultColorUnit", "authored");
 
 
