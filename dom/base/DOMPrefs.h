@@ -19,6 +19,10 @@ public:
   
   static bool ImageBitmapExtensionsEnabled();
   static bool ImageBitmapExtensionsEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool DOMCachesEnabled();
+  static bool DOMCachesEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
