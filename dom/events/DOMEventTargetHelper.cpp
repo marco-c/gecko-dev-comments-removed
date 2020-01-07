@@ -89,8 +89,8 @@ NS_IMPL_DOMTARGET_DEFAULTS(DOMEventTargetHelper)
 
 DOMEventTargetHelper::~DOMEventTargetHelper()
 {
-  if (nsPIDOMWindowInner* owner = GetOwner()) {
-    nsGlobalWindowInner::Cast(owner)->RemoveEventTargetObject(this);
+  if (mParentObject) {
+    mParentObject->RemoveEventTargetObject(this);
   }
   if (mListenerManager) {
     mListenerManager->Disconnect();
@@ -108,23 +108,21 @@ DOMEventTargetHelper::BindToOwner(nsPIDOMWindowInner* aOwner)
 void
 DOMEventTargetHelper::BindToOwner(nsIGlobalObject* aOwner)
 {
-  nsCOMPtr<nsIGlobalObject> parentObject = do_QueryReferent(mParentObject);
-  if (parentObject) {
+  if (mParentObject) {
+    mParentObject->RemoveEventTargetObject(this);
     if (mOwnerWindow) {
-      nsGlobalWindowInner::Cast(mOwnerWindow)->RemoveEventTargetObject(this);
       mOwnerWindow = nullptr;
     }
     mParentObject = nullptr;
     mHasOrHasHadOwnerWindow = false;
   }
   if (aOwner) {
-    mParentObject = do_GetWeakReference(aOwner);
-    MOZ_ASSERT(mParentObject, "All nsIGlobalObjects must support nsISupportsWeakReference");
+    mParentObject = aOwner;
+    aOwner->AddEventTargetObject(this);
     
     mOwnerWindow = nsCOMPtr<nsPIDOMWindowInner>(do_QueryInterface(aOwner)).get();
     if (mOwnerWindow) {
       mHasOrHasHadOwnerWindow = true;
-      nsGlobalWindowInner::Cast(mOwnerWindow)->AddEventTargetObject(this);
     }
   }
 }
@@ -132,22 +130,23 @@ DOMEventTargetHelper::BindToOwner(nsIGlobalObject* aOwner)
 void
 DOMEventTargetHelper::BindToOwner(DOMEventTargetHelper* aOther)
 {
+  if (mParentObject) {
+    mParentObject->RemoveEventTargetObject(this);
+  }
   if (mOwnerWindow) {
-    nsGlobalWindowInner::Cast(mOwnerWindow)->RemoveEventTargetObject(this);
     mOwnerWindow = nullptr;
     mParentObject = nullptr;
     mHasOrHasHadOwnerWindow = false;
   }
   if (aOther) {
     mHasOrHasHadOwnerWindow = aOther->HasOrHasHadOwner();
-    if (aOther->GetParentObject()) {
-      mParentObject = do_GetWeakReference(aOther->GetParentObject());
-      MOZ_ASSERT(mParentObject, "All nsIGlobalObjects must support nsISupportsWeakReference");
+    mParentObject = aOther->GetParentObject();
+    if (mParentObject) {
+      mParentObject->AddEventTargetObject(this);
       
-      mOwnerWindow = nsCOMPtr<nsPIDOMWindowInner>(do_QueryInterface(aOther->GetParentObject())).get();
+      mOwnerWindow = nsCOMPtr<nsPIDOMWindowInner>(do_QueryInterface(mParentObject)).get();
       if (mOwnerWindow) {
         mHasOrHasHadOwnerWindow = true;
-        nsGlobalWindowInner::Cast(mOwnerWindow)->AddEventTargetObject(this);
       }
     }
   }
@@ -156,6 +155,9 @@ DOMEventTargetHelper::BindToOwner(DOMEventTargetHelper* aOther)
 void
 DOMEventTargetHelper::DisconnectFromOwner()
 {
+  if (mParentObject) {
+    mParentObject->RemoveEventTargetObject(this);
+  }
   mOwnerWindow = nullptr;
   mParentObject = nullptr;
   

@@ -9,7 +9,6 @@
 
 #include "nsPIDOMWindow.h"
 
-#include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "nsRefPtrHashtable.h"
 #include "nsInterfaceHashtable.h"
@@ -92,7 +91,6 @@ class DialogValueHolder;
 
 namespace mozilla {
 class AbstractThread;
-class DOMEventTargetHelper;
 class ThrottledEventQueue;
 namespace dom {
 class BarProp;
@@ -516,10 +514,6 @@ public:
   }
 
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
-
-  
-  void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
-  void RemoveEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
 
   void NotifyIdleObserver(IdleObserverHolder* aIdleObserverHolder,
                           bool aCallOnidle);
@@ -1259,8 +1253,6 @@ private:
   
   void FireOnNewGlobalObject();
 
-  void DisconnectEventTargetObjects();
-
   
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
@@ -1427,8 +1419,6 @@ protected:
   
   
   bool                          mAreDialogsEnabled;
-
-  nsTHashtable<nsPtrHashKey<mozilla::DOMEventTargetHelper> > mEventTargetObjects;
 
   nsTArray<uint32_t> mEnabledSensors;
 

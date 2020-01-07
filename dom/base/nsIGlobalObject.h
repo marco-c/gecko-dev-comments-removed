@@ -11,9 +11,11 @@
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
+#include "nsHashKeys.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTHashtable.h"
 #include "js/TypeDecls.h"
 
 
@@ -25,6 +27,7 @@ class nsCycleCollectionTraversalCallback;
 class nsIPrincipal;
 
 namespace mozilla {
+class DOMEventTargetHelper;
 namespace dom {
 class ServiceWorker;
 } 
@@ -34,6 +37,13 @@ class nsIGlobalObject : public nsISupports,
                         public mozilla::dom::DispatcherTrait
 {
   nsTArray<nsCString> mHostObjectURIs;
+
+  
+  
+  
+  
+  nsTHashtable<nsPtrHashKey<mozilla::DOMEventTargetHelper>> mEventTargetObjects;
+
   bool mIsDying;
 
 protected:
@@ -84,6 +94,18 @@ public:
   void UnlinkHostObjectURIs();
   void TraverseHostObjectURIs(nsCycleCollectionTraversalCallback &aCb);
 
+  
+  
+  
+  
+  void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
+  void RemoveEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
+
+  
+  
+  void
+  ForEachEventTargetObject(const std::function<void(mozilla::DOMEventTargetHelper*)>& aFunc) const;
+
   virtual bool IsInSyncOperation() { return false; }
 
   virtual mozilla::Maybe<mozilla::dom::ClientInfo>
@@ -115,6 +137,12 @@ protected:
   {
     mIsDying = true;
   }
+
+  void
+  DisconnectEventTargetObjects();
+
+  size_t
+  ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject,

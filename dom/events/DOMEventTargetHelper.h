@@ -146,8 +146,7 @@ public:
   using EventTarget::GetParentObject;
   virtual nsIGlobalObject* GetOwnerGlobal() const override
   {
-    nsCOMPtr<nsIGlobalObject> parentObject = do_QueryReferent(mParentObject);
-    return parentObject;
+    return mParentObject;
   }
   bool HasOrHasHadOwner() { return mHasOrHasHadOwnerWindow; }
 
@@ -196,7 +195,8 @@ protected:
 
 private:
   
-  nsWeakPtr                  mParentObject;
+  
+  nsIGlobalObject* MOZ_NON_OWNING_REF mParentObject;
   
   
   
