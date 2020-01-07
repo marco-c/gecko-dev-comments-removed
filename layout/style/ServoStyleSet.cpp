@@ -373,10 +373,6 @@ ServoStyleSet::PreTraverseSync()
 
   LookAndFeel::NativeInit();
 
-  
-  
-  mPresContext->Document()->GetDocumentState();
-
   if (gfxUserFontSet* userFontSet = mPresContext->Document()->GetUserFontSet()) {
     
     uint64_t generation = userFontSet->GetGeneration();

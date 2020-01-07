@@ -1554,6 +1554,8 @@ public:
     return window ? window->WindowID() : 0;
   }
 
+  bool IsTopLevelWindowInactive() const;
+
   
 
 
@@ -2637,17 +2639,7 @@ public:
 
 
 
-  mozilla::EventStates GetDocumentState()
-  {
-    UpdatePossiblyStaleDocumentState();
-    return ThreadSafeGetDocumentState();
-  }
-
-  
-  
-  
-  
-  mozilla::EventStates ThreadSafeGetDocumentState() const
+  mozilla::EventStates GetDocumentState() const
   {
     return mDocumentState;
   }
@@ -3275,9 +3267,9 @@ protected:
     return mChildDocumentUseCounters[aUseCounter];
   }
 
-private:
-  void UpdatePossiblyStaleDocumentState();
+  void UpdateDocumentStates(mozilla::EventStates);
 
+private:
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
 
@@ -3433,7 +3425,6 @@ protected:
   mozilla::TimeStamp mLastFocusTime;
 
   mozilla::EventStates mDocumentState;
-  mozilla::EventStates mGotDocumentState;
 
   
   bool mBidiEnabled : 1;

@@ -1668,6 +1668,10 @@ XULDocument::AddElementToDocumentPre(Element* aElement)
 nsresult
 XULDocument::AddElementToDocumentPost(Element* aElement)
 {
+    if (aElement == GetRootElement()) {
+        ResetDocumentDirection();
+    }
+
     
     if (aElement->NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
         
