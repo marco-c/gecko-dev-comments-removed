@@ -1069,9 +1069,7 @@ nsTypeAheadFind::Find(const nsAString& aSearchString, bool aLinksOnly,
     
     
     
-    bool isSelectionCollapsed = true;
-    if (selection)
-      selection->GetIsCollapsed(&isSelectionCollapsed);
+    bool isSelectionCollapsed = !selection || selection->IsCollapsed();
 
     
     

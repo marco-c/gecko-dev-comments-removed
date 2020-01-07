@@ -847,7 +847,7 @@ HTMLEditRules::GetAlignment(bool* aMixed,
 
   
   nsCOMPtr<nsINode> nodeToExamine;
-  if (selection->Collapsed() || atStartOfSelection.GetContainerAsText()) {
+  if (selection->IsCollapsed() || atStartOfSelection.GetContainerAsText()) {
     
     
     
@@ -1226,7 +1226,7 @@ HTMLEditRules::WillInsert(Selection& aSelection,
   
   
   
-  if (!aSelection.Collapsed()) {
+  if (!aSelection.IsCollapsed()) {
     return;
   }
 
@@ -1303,7 +1303,7 @@ HTMLEditRules::WillInsertText(EditAction aAction,
   *aHandled = true;
   
   
-  if (!aSelection->Collapsed()) {
+  if (!aSelection->IsCollapsed()) {
     nsresult rv =
       htmlEditor->DeleteSelectionAsAction(nsIEditor::eNone,
                                           nsIEditor::eNoStrip);
@@ -1636,7 +1636,7 @@ HTMLEditRules::WillInsertBreak(Selection& aSelection,
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
   
-  if (!aSelection.Collapsed()) {
+  if (!aSelection.IsCollapsed()) {
     nsresult rv =
       htmlEditor->DeleteSelectionAsAction(nsIEditor::eNone, nsIEditor::eStrip);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2229,7 +2229,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
   
   
   
-  bool bCollapsed = aSelection->Collapsed();
+  bool bCollapsed = aSelection->IsCollapsed();
   bool join = false;
   bool origCollapsed = bCollapsed;
 
@@ -2278,7 +2278,7 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
     startOffset = aSelection->GetRangeAt(0)->StartOffset();
     NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
 
-    bCollapsed = aSelection->Collapsed();
+    bCollapsed = aSelection->IsCollapsed();
   }
 
   if (bCollapsed) {
@@ -4181,7 +4181,7 @@ HTMLEditRules::DidMakeBasicBlock(Selection* aSelection,
 {
   NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
   
-  if (!aSelection->Collapsed()) {
+  if (!aSelection->IsCollapsed()) {
     return NS_OK;
   }
 
@@ -4244,7 +4244,7 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
   
 
   nsCOMPtr<Element> liNode;
-  if (aSelection->Collapsed()) {
+  if (aSelection->IsCollapsed()) {
     EditorRawDOMPoint selectionStartPoint(
                         EditorBase::GetStartPoint(aSelection));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
@@ -4958,7 +4958,7 @@ HTMLEditRules::WillOutdent(Selection& aSelection,
   
   
   if (rememberedLeftBQ || rememberedRightBQ) {
-    if (aSelection.Collapsed()) {
+    if (aSelection.IsCollapsed()) {
       
       NS_ENSURE_TRUE(aSelection.GetRangeAt(0), NS_OK);
       nsCOMPtr<nsINode> startNode =
@@ -5791,7 +5791,7 @@ nsresult
 HTMLEditRules::ExpandSelectionForDeletion(Selection& aSelection)
 {
   
-  if (aSelection.Collapsed()) {
+  if (aSelection.IsCollapsed()) {
     return NS_OK;
   }
 
@@ -5931,7 +5931,7 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
   NS_ENSURE_TRUE(inSelection, NS_ERROR_NULL_POINTER);
 
   
-  if (inSelection->Collapsed()) {
+  if (inSelection->IsCollapsed()) {
     return NS_OK;
   }
 
@@ -8350,7 +8350,7 @@ nsresult
 HTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
 {
   NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
-  if (!aSelection->Collapsed()) {
+  if (!aSelection->IsCollapsed()) {
     return NS_OK;
   }
 
@@ -8421,7 +8421,7 @@ void
 HTMLEditRules::CheckInterlinePosition(Selection& aSelection)
 {
   
-  if (!aSelection.Collapsed()) {
+  if (!aSelection.IsCollapsed()) {
     return;
   }
 
@@ -8488,7 +8488,7 @@ HTMLEditRules::AdjustSelection(Selection* aSelection,
   
   
   
-  if (!aSelection->Collapsed()) {
+  if (!aSelection->IsCollapsed()) {
     return NS_OK;
   }
 

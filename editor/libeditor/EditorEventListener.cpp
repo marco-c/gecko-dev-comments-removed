@@ -965,7 +965,7 @@ EditorEventListener::CanDrop(DragEvent* aEvent)
   }
 
   
-  if (selection->Collapsed()) {
+  if (selection->IsCollapsed()) {
     return true;
   }
 

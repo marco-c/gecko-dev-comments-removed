@@ -112,7 +112,7 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
 
   if (!handled) {
     
-    if (!selection->Collapsed()) {
+    if (!selection->IsCollapsed()) {
       rv = DeleteSelectionAsAction(eNone, eStrip);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;

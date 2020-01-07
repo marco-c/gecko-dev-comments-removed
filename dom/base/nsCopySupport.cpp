@@ -833,9 +833,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     
     if (originalEventMessage != eCut || content->IsEditable()) {
       
-      bool isCollapsed;
-      sel->GetIsCollapsed(&isCollapsed);
-      if (isCollapsed) {
+      if (sel->IsCollapsed()) {
         if (aActionTaken) {
           *aActionTaken = true;
         }

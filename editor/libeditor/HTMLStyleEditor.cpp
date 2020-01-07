@@ -77,7 +77,7 @@ HTMLEditor::SetInlineProperty(nsAtom* aProperty,
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-  if (selection->Collapsed()) {
+  if (selection->IsCollapsed()) {
     
     
     mTypeInState->SetProp(aProperty, aAttribute, aValue);
@@ -983,7 +983,7 @@ HTMLEditor::GetInlinePropertyBase(nsAtom& aProperty,
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-  bool isCollapsed = selection->Collapsed();
+  bool isCollapsed = selection->IsCollapsed();
   RefPtr<nsRange> range = selection->GetRangeAt(0);
   
   
@@ -1216,7 +1216,7 @@ HTMLEditor::RemoveInlineProperty(nsAtom* aProperty,
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
-  if (selection->Collapsed()) {
+  if (selection->IsCollapsed()) {
     
     
 
@@ -1366,7 +1366,7 @@ HTMLEditor::RelativeFontChange(FontSize aDir)
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
   
-  if (selection->Collapsed()) {
+  if (selection->IsCollapsed()) {
     nsAtom& atom = aDir == FontSize::incr ? *nsGkAtoms::big :
                                              *nsGkAtoms::small;
 

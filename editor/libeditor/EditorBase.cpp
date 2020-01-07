@@ -4259,7 +4259,7 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
   }
 
   
-  if (NS_WARN_IF(selection->Collapsed() && aAction == eNone)) {
+  if (NS_WARN_IF(selection->IsCollapsed() && aAction == eNone)) {
     return nullptr;
   }
 
