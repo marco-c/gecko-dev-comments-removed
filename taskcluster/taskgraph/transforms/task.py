@@ -871,7 +871,7 @@ def build_docker_worker_payload(config, task, task_def):
         
         
         
-        cache_version = 'v1'
+        cache_version = 'v2'
 
         if run_task:
             suffix = '-%s-%s' % (cache_version, _run_task_suffix())
