@@ -2188,7 +2188,7 @@ pref("network.auth.subresource-http-auth-allow", 2);
 
 
 
-pref("network.auth.subresource-img-cross-origin-http-auth-allow", true);
+pref("network.auth.subresource-img-cross-origin-http-auth-allow", false);
 
 
 
