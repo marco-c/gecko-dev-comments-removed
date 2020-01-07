@@ -6582,14 +6582,6 @@ CodeGenerator::visitComputeThis(LComputeThis* lir)
 }
 
 void
-CodeGenerator::visitImplicitThis(LImplicitThis* lir)
-{
-    pushArg(ImmGCPtr(lir->mir()->name()));
-    pushArg(ToRegister(lir->env()));
-    callVM(ImplicitThisInfo, lir);
-}
-
-void
 CodeGenerator::visitArrowNewTarget(LArrowNewTarget* lir)
 {
     Register callee = ToRegister(lir->callee());
@@ -8533,6 +8525,31 @@ CodeGenerator::visitBoundsCheckLower(LBoundsCheckLower* lir)
     int32_t min = lir->mir()->minimum();
     bailoutCmp32(Assembler::LessThan, ToRegister(lir->index()), Imm32(min),
                  lir->snapshot());
+}
+
+void
+CodeGenerator::visitSpectreMaskIndex(LSpectreMaskIndex* lir)
+{
+    MOZ_ASSERT(JitOptions.spectreIndexMasking);
+
+    const LAllocation* index = lir->index();
+    const LAllocation* length = lir->length();
+    Register output = ToRegister(lir->output());
+
+    if (index->isConstant()) {
+        int32_t idx = ToInt32(index);
+        if (length->isRegister())
+            masm.spectreMaskIndex(idx, ToRegister(length), output);
+        else
+            masm.spectreMaskIndex(idx, ToAddress(length), output);
+        return;
+    }
+
+    Register indexReg = ToRegister(index);
+    if (length->isRegister())
+        masm.spectreMaskIndex(indexReg, ToRegister(length), output);
+    else
+        masm.spectreMaskIndex(indexReg, ToAddress(length), output);
 }
 
 class OutOfLineStoreElementHole : public OutOfLineCodeBase<CodeGenerator>

@@ -1855,24 +1855,6 @@ class LComputeThis : public LInstructionHelper<BOX_PIECES, BOX_PIECES, 0>
     }
 };
 
-class LImplicitThis : public LCallInstructionHelper<BOX_PIECES, 1, 0>
-{
-  public:
-    LIR_HEADER(ImplicitThis)
-
-    explicit LImplicitThis(const LAllocation& env) {
-        setOperand(0, env);
-    }
-
-    const LAllocation* env() {
-        return getOperand(0);
-    }
-
-    MImplicitThis* mir() const {
-        return mir_->toImplicitThis();
-    }
-};
-
 
 class LStackArgT : public LInstructionHelper<0, 1, 0>
 {
@@ -5547,6 +5529,23 @@ class LBoundsCheckLower : public LInstructionHelper<0, 1, 0>
     }
     const LAllocation* index() {
         return getOperand(0);
+    }
+};
+
+class LSpectreMaskIndex : public LInstructionHelper<1, 2, 0>
+{
+  public:
+    LIR_HEADER(SpectreMaskIndex)
+
+    LSpectreMaskIndex(const LAllocation& index, const LAllocation& length) {
+        setOperand(0, index);
+        setOperand(1, length);
+    }
+    const LAllocation* index() {
+        return getOperand(0);
+    }
+    const LAllocation* length() {
+        return getOperand(1);
     }
 };
 
