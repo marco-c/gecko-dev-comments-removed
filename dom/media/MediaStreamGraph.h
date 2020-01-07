@@ -12,7 +12,6 @@
 #include "StreamTracks.h"
 #include "VideoSegment.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TaskQueue.h"
 #include "nsAutoPtr.h"
@@ -720,10 +719,7 @@ public:
 
 
 
-
-  typedef MozPromise<bool, bool, true  > NotifyPullPromise;
-  bool PullNewData(StreamTime aDesiredUpToTime,
-                   nsTArray<RefPtr<NotifyPullPromise>>& aPromises);
+  bool PullNewData(StreamTime aDesiredUpToTime);
 
   
 
