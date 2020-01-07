@@ -21,6 +21,12 @@
 
 
 
+
+
+
+
+
+
 var ecmaGlobals =
   [
     {name: "Array", insecureContext: true},
