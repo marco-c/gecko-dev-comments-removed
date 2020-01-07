@@ -15,6 +15,7 @@ namespace layers {
 StackingContextHelper::StackingContextHelper()
   : mBuilder(nullptr)
   , mScale(1.0f, 1.0f)
+  , mAffectsClipPositioning(false)
 {
   
 }
@@ -54,6 +55,10 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                 wr::ToMixBlendMode(aMixBlendMode),
                                 aFilters,
                                 aBackfaceVisible);
+
+  mAffectsClipPositioning =
+      !mTransform.IsIdentity() ||
+      (aBounds.TopLeft() != LayoutDevicePoint());
 }
 
 StackingContextHelper::~StackingContextHelper()
