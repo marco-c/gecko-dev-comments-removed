@@ -33,6 +33,9 @@ const PREF_TEST_ROOT          = "mochitest.testRoot";
 const PREF_ENABLED            = "browser.policies.enabled";
 const PREF_LOGLEVEL           = "browser.policies.loglevel";
 
+
+const PREF_DISALLOW_ENTERPRISE = "browser.policies.testing.disallowEnterprise";
+
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
   return new ConsoleAPI({
@@ -124,6 +127,11 @@ EnterprisePoliciesManager.prototype = {
 
       if (!policySchema) {
         log.error(`Unknown policy: ${policyName}`);
+        continue;
+      }
+
+      if (policySchema.enterprise_only && !areEnterpriseOnlyPoliciesAllowed()) {
+        log.error(`Policy ${policyName} is only allowed on ESR`);
         continue;
       }
 
@@ -305,6 +313,33 @@ EnterprisePoliciesManager.prototype = {
 
 let DisallowedFeatures = {};
 
+
+
+
+
+
+
+
+
+
+
+
+
+function areEnterpriseOnlyPoliciesAllowed() {
+  if (Services.prefs.getBoolPref(PREF_DISALLOW_ENTERPRISE, false)) {
+    
+    
+    
+    return false;
+  }
+
+  if (AppConstants.MOZ_UPDATE_CHANNEL != "release" ||
+      Cu.isInAutomation) {
+    return true;
+  }
+
+  return false;
+}
 
 
 
