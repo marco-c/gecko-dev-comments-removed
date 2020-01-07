@@ -31,6 +31,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.UiThreadTestRule;
+import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.Surface;
 
@@ -266,19 +267,20 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
     }
 
     public static class MethodCall {
+        public final GeckoSession session;
         public final Method method;
         public final CallRequirement requirement;
         public final Object target;
         private int currentCount;
 
-        public MethodCall(final Method method,
+        public MethodCall(final GeckoSession session, final Method method,
                           final CallRequirement requirement) {
-            this(method, requirement,  null);
+            this(session, method, requirement,  null);
         }
 
-         MethodCall(final Method method, final AssertCalled annotation,
-                                 final Object target) {
-            this(method,
+         MethodCall(final GeckoSession session, final Method method,
+                                 final AssertCalled annotation, final Object target) {
+            this(session, method,
                  (annotation != null) ? new CallRequirement(annotation.value(),
                                                             annotation.count(),
                                                             annotation.order())
@@ -286,8 +288,9 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                   target);
         }
 
-         MethodCall(final Method method, final CallRequirement requirement,
-                                 final Object target) {
+         MethodCall(final GeckoSession session, final Method method,
+                                 final CallRequirement requirement, final Object target) {
+            this.session = session;
             this.method = method;
             this.requirement = requirement;
             this.target = target;
@@ -299,7 +302,10 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             if (this == other) {
                 return true;
             } else if (other instanceof MethodCall) {
-                return methodsEqual(method, ((MethodCall) other).method);
+                final MethodCall otherCall = (MethodCall) other;
+                return (session == null || otherCall.session == null ||
+                        session == otherCall.session) &&
+                        methodsEqual(method, ((MethodCall) other).method);
             } else if (other instanceof Method) {
                 return methodsEqual(method, (Method) other);
             }
@@ -360,9 +366,9 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         public final MethodCall methodCall;
         public final Object[] args;
 
-        public CallRecord(final Method method, final Object[] args) {
+        public CallRecord(final GeckoSession session, final Method method, final Object[] args) {
             this.method = method;
-            this.methodCall = new MethodCall(method,  null);
+            this.methodCall = new MethodCall(session, method,  null);
             this.args = args;
         }
     }
@@ -405,10 +411,11 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
     }
 
     protected class CallbackDelegates {
-        private final Map<Method, MethodCall> mDelegates = new HashMap<>();
+        private final Map<Pair<GeckoSession, Method>, MethodCall> mDelegates = new HashMap<>();
         private int mOrder;
 
-        public void delegate(final Object callback) {
+        public void delegate(final @Nullable GeckoSession session,
+                             final @NonNull Object callback) {
             for (final Class<?> ifce : CALLBACK_CLASSES) {
                 if (!ifce.isInstance(callback)) {
                     continue;
@@ -422,8 +429,9 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                         throw new RuntimeException(e);
                     }
                     final MethodCall call = new MethodCall(
-                            callbackMethod, getAssertCalled(callbackMethod, callback), callback);
-                    mDelegates.put(method, call);
+                            session, callbackMethod,
+                            getAssertCalled(callbackMethod, callback), callback);
+                    mDelegates.put(new Pair<>(session, method), call);
                 }
             }
         }
@@ -440,8 +448,11 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             }
         }
 
-        public MethodCall prepareMethodCall(final Method method) {
-            final MethodCall call = mDelegates.get(method);
+        public MethodCall prepareMethodCall(final GeckoSession session, final Method method) {
+            MethodCall call = mDelegates.get(new Pair<>(session, method));
+            if (call == null && session != null) {
+                call = mDelegates.get(new Pair<>((GeckoSession) null, method));
+            }
             if (call == null) {
                 return null;
             }
@@ -670,11 +681,12 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                     assertThat("Callback first argument must be session object",
                                args[0], instanceOf(GeckoSession.class));
 
-                    records.add(new CallRecord(method, args));
+                    final GeckoSession session = (GeckoSession) args[0];
+                    records.add(new CallRecord(session, method, args));
 
-                    call = waitDelegates.prepareMethodCall(method);
+                    call = waitDelegates.prepareMethodCall(session, method);
                     if (call == null) {
-                        call = testDelegates.prepareMethodCall(method);
+                        call = testDelegates.prepareMethodCall(session, method);
                     }
                 }
 
@@ -910,7 +922,17 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
     public void waitForPageStop() {
-        waitForPageStops( 1);
+        waitForPageStop( null);
+    }
+
+    
+
+
+
+
+
+    public void waitForPageStop(final GeckoSession session) {
+        waitForPageStops(session,  1);
     }
 
     
@@ -920,14 +942,26 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
     public void waitForPageStops(final int count) {
-        final List<MethodCall> methodCalls = new ArrayList<>(1);
-        methodCalls.add(new MethodCall(sOnPageStop,
-                new CallRequirement( true, count, null)));
-
-        waitUntilCalled(GeckoSession.ProgressDelegate.class, methodCalls);
+        waitForPageStops( null, count);
     }
 
     
+
+
+
+
+
+
+    public void waitForPageStops(final GeckoSession session, final int count) {
+        final List<MethodCall> methodCalls = new ArrayList<>(1);
+        methodCalls.add(new MethodCall(session, sOnPageStop,
+                new CallRequirement( true, count, null)));
+
+        waitUntilCalled(session, GeckoSession.ProgressDelegate.class, methodCalls);
+    }
+
+    
+
 
 
 
@@ -936,7 +970,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
     public void waitUntilCalled(final @NonNull KClass<?> callback,
                                 final @Nullable String... methods) {
-        waitUntilCalled(JvmClassMappingKt.getJavaClass(callback), methods);
+        waitUntilCalled( null, callback, methods);
     }
 
     
@@ -946,7 +980,36 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
+
+    public void waitUntilCalled(final @Nullable GeckoSession session,
+                                final @NonNull KClass<?> callback,
+                                final @Nullable String... methods) {
+        waitUntilCalled(session, JvmClassMappingKt.getJavaClass(callback), methods);
+    }
+
+    
+
+
+
+
+
+
+
     public void waitUntilCalled(final @NonNull Class<?> callback,
+                                final @Nullable String... methods) {
+        waitUntilCalled( null, callback, methods);
+    }
+
+    
+
+
+
+
+
+
+
+    public void waitUntilCalled(final @Nullable GeckoSession session,
+                                final @NonNull Class<?> callback,
                                 final @Nullable String... methods) {
         final int length = (methods != null) ? methods.length : 0;
         final Pattern[] patterns = new Pattern[length];
@@ -966,7 +1029,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                     if (!pattern.matcher(method.getName()).matches()) {
                         continue;
                     }
-                    waitMethods.add(new MethodCall(method,  null));
+                    waitMethods.add(new MethodCall(session, method,
+                                                    null));
                     break;
                 }
             }
@@ -976,7 +1040,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         assertThat("Class should be a GeckoSession interface",
                    isSessionCallback, equalTo(true));
 
-        waitUntilCalled(callback, waitMethods);
+        waitUntilCalled(session, callback, waitMethods);
     }
 
     
@@ -988,8 +1052,22 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
     public void waitUntilCalled(final @NonNull Object callback) {
+        waitUntilCalled( null, callback);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void waitUntilCalled(final @Nullable GeckoSession session,
+                                final @NonNull Object callback) {
         if (callback instanceof Class<?>) {
-            waitUntilCalled((Class<?>) callback, (String[]) null);
+            waitUntilCalled(session, (Class<?>) callback, (String[]) null);
             return;
         }
 
@@ -1008,17 +1086,24 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                 }
                 final AssertCalled ac = getAssertCalled(callbackMethod, callback);
                 if (ac != null && ac.value()) {
-                    methodCalls.add(new MethodCall(callbackMethod, ac,  null));
+                    methodCalls.add(new MethodCall(session, callbackMethod,
+                                                   ac,  null));
                 }
             }
         }
 
-        waitUntilCalled(callback.getClass(), methodCalls);
-        forCallbacksDuringWait(callback);
+        waitUntilCalled(session, callback.getClass(), methodCalls);
+        forCallbacksDuringWait(session, callback);
     }
 
-    protected void waitUntilCalled(final @NonNull Class<?> delegate,
+    protected void waitUntilCalled(final @Nullable GeckoSession session,
+                                   final @NonNull Class<?> delegate,
                                    final @NonNull List<MethodCall> methodCalls) {
+        if (session != null && !session.equals(mMainSession)) {
+            assertThat("Session should be wrapped through wrapSession",
+                       session, isIn(mSubSessions));
+        }
+
         
         
         
@@ -1026,7 +1111,9 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             try {
                 assertThat("Callbacks should be set through" +
                            " GeckoSessionTestRule delegate methods",
-                           getCallbackGetter(ifce).invoke(mSession), sameInstance(mCallbackProxy));
+                           getCallbackGetter(ifce).invoke(session == null ? mMainSession
+                                                                          : session),
+                           sameInstance(mCallbackProxy));
             } catch (final NoSuchMethodException | IllegalAccessException |
                            InvocationTargetException e) {
                 throw unwrapRuntimeException(e);
@@ -1072,6 +1159,22 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
     public void forCallbacksDuringWait(final @NonNull Object callback) {
+        forCallbacksDuringWait( null, callback);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public void forCallbacksDuringWait(final @Nullable GeckoSession session,
+                                       final @NonNull Object callback) {
         final Method[] declaredMethods = callback.getClass().getDeclaredMethods();
         final List<MethodCall> methodCalls = new ArrayList<>(declaredMethods.length);
         for (final Class<?> ifce : CALLBACK_CLASSES) {
@@ -1087,7 +1190,7 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
                     throw new RuntimeException(e);
                 }
                 methodCalls.add(new MethodCall(
-                        callbackMethod, getAssertCalled(callbackMethod, callback),
+                        session, callbackMethod, getAssertCalled(callbackMethod, callback),
                          null));
             }
         }
@@ -1097,7 +1200,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
         for (int index = mLastWaitStart; index < mLastWaitEnd; index++) {
             final CallRecord record = mCallRecords.get(index);
-            if (!record.method.getDeclaringClass().isInstance(callback)) {
+            if (!record.method.getDeclaringClass().isInstance(callback) ||
+                    (session != null && record.args[0] != session)) {
                 continue;
             }
 
@@ -1153,8 +1257,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
-    public void delegateUntilTestEnd(final Object callback) {
-        mTestScopeDelegates.delegate(callback);
+    public void delegateUntilTestEnd(final @NonNull Object callback) {
+        delegateUntilTestEnd( null, callback);
     }
 
     
@@ -1165,8 +1269,10 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
-    public void delegateDuringNextWait(final Object callback) {
-        mWaitScopeDelegates.delegate(callback);
+
+    public void delegateUntilTestEnd(final @Nullable GeckoSession session,
+                                     final @NonNull Object callback) {
+        mTestScopeDelegates.delegate(session, callback);
     }
 
     
@@ -1176,15 +1282,43 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
 
 
-    public void synthesizeTap(final int x, final int y) {
+
+    public void delegateDuringNextWait(final @NonNull Object callback) {
+        delegateDuringNextWait( null, callback);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void delegateDuringNextWait(final @Nullable GeckoSession session,
+                                       final @NonNull Object callback) {
+        mWaitScopeDelegates.delegate(session, callback);
+    }
+
+    
+
+
+
+
+
+
+
+    public void synthesizeTap(final @NonNull GeckoSession session,
+                              final int x, final int y) {
         final long downTime = SystemClock.uptimeMillis();
         final MotionEvent down = MotionEvent.obtain(
                 downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, x, y, 0);
-        mSession.getPanZoomController().onTouchEvent(down);
+        session.getPanZoomController().onTouchEvent(down);
 
         final MotionEvent up = MotionEvent.obtain(
                 downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0);
-        mSession.getPanZoomController().onTouchEvent(up);
+        session.getPanZoomController().onTouchEvent(up);
     }
 
     
