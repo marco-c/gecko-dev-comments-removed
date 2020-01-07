@@ -2292,8 +2292,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 
     enum IntConversionBehavior {
+        
+        
         IntConversion_Normal,
         IntConversion_NegativeZeroCheck,
+        
         IntConversion_Truncate,
         IntConversion_ClampToUint8,
     };
@@ -2337,7 +2340,6 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    
     void convertValueToInt32(ValueOperand value, MDefinition* input,
                              FloatRegister temp, Register output, Label* fail,
                              bool negativeZeroCheck,
@@ -2350,7 +2352,6 @@ class MacroAssembler : public MacroAssemblerSpecific
                           conversion);
     }
 
-    
     
     
     void truncateValueToInt32(ValueOperand value, MDefinition* input,
