@@ -54,7 +54,7 @@ readFull(JSContext* cx, const char* path, js::Vector<char16_t>& buf)
 }
 
 
-void
+template<typename Tok> void
 runTestFromPath(JSContext* cx, const char* path)
 {
     const char BIN_SUFFIX[] = ".binjs";
@@ -122,7 +122,7 @@ runTestFromPath(JSContext* cx, const char* path)
                 MOZ_CRASH();
             if (!subPath.append(0))
                 MOZ_CRASH();
-            runTestFromPath(cx, subPath.begin());
+            runTestFromPath<Tok>(cx, subPath.begin());
             continue;
         }
 
@@ -202,7 +202,7 @@ runTestFromPath(JSContext* cx, const char* path)
         if (!binUsedNames.init())
             MOZ_CRASH("Couldn't initialized binUsedNames");
 
-        js::frontend::BinASTParser binParser(cx, allocScope.alloc(), binUsedNames, binOptions);
+        js::frontend::BinASTParser<Tok> binParser(cx, allocScope.alloc(), binUsedNames, binOptions);
 
         auto binParsed = binParser.parse(binSource); 
         RootedValue binExn(cx);
@@ -283,7 +283,7 @@ runTestFromPath(JSContext* cx, const char* path)
             MOZ_CRASH("Got distinct ASTs");
         }
 
-        fprintf(stderr, "Got the same AST when parsing %s\n", txtPath.begin());
+        fprintf(stderr, "Got the same AST when parsing %s\n%s\n", txtPath.begin(), binPrinter.string());
 #endif 
     }
 
@@ -299,9 +299,11 @@ runTestFromPath(JSContext* cx, const char* path)
 BEGIN_TEST(testBinASTReaderECMAScript2)
 {
 #if defined(XP_WIN)
-    runTestFromPath(cx, "jsapi-tests\\binast\\parser\\tester\\");
+    runTestFromPath<js::frontend::BinTokenReaderTester>(cx, "jsapi-tests\\binast\\parser\\tester\\");
+    runTestFromPath<js::frontend::BinTokenReaderMultipart(cx, "jsapi-tests\\binast\\parser\\multipart\\");
 #else
-    runTestFromPath(cx, "jsapi-tests/binast/parser/tester/");
+    runTestFromPath<js::frontend::BinTokenReaderTester>(cx, "jsapi-tests/binast/parser/tester/");
+    runTestFromPath<js::frontend::BinTokenReaderMultipart>(cx, "jsapi-tests/binast/parser/multipart/");
 #endif 
     return true;
 }
