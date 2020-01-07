@@ -4,7 +4,6 @@
 
 
 
-import os
 import sys
 
 config = {
@@ -21,8 +20,6 @@ config = {
     "exes": {
         'python': sys.executable,
         'hg': 'c:/mozilla-build/hg/hg',
-        'mozinstall': ['%s/build/venv/scripts/python' % os.getcwd(),
-                       '%s/build/venv/scripts/mozinstall-script.py' % os.getcwd()],
     },
 
     "default_actions": [
