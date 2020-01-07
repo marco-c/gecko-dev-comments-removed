@@ -5,137 +5,176 @@
 
 
 
-use bincode::{self, Bounded, deserialize, serialize_into, serialized_size};
-use bytes::{Buf, BufMut, BytesMut, LittleEndian};
+use bincode::{self, deserialize, serialize_into, serialized_size, Bounded};
+use bytes::{BufMut, ByteOrder, BytesMut, LittleEndian};
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
-use std::io as std_io;
-use std::io::Cursor;
-use std::mem;
+use std::fmt::Debug;
+use std::io;
+use std::marker::PhantomData;
 
 
 
 
 
 
-#[derive(Debug)]
-enum FrameState {
-    Head,
-    Data(usize)
-}
+pub trait Codec {
+    
+    type In;
 
-#[derive(Debug)]
-pub struct Decoder {
-    state: FrameState
-}
+    
+    type Out;
 
-impl Decoder {
-    pub fn new() -> Self {
-        Decoder {
-            state: FrameState::Head
+    
+    fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<Self::Out>>;
+
+    
+    
+    fn decode_eof(&mut self, buf: &mut BytesMut) -> io::Result<Self::Out> {
+        match try!(self.decode(buf)) {
+            Some(frame) => Ok(frame),
+            None => Err(io::Error::new(
+                io::ErrorKind::Other,
+                "bytes remaining on stream"
+            ))
         }
     }
 
-    fn decode_head(&mut self, src: &mut BytesMut) -> std_io::Result<Option<usize>> {
-        let head_size = mem::size_of::<u16>();
-        if src.len() < head_size {
+    
+    fn encode(&mut self, msg: Self::In, buf: &mut BytesMut) -> io::Result<()>;
+}
+
+
+
+
+
+
+
+pub struct LengthDelimitedCodec<In, Out> {
+    state: State,
+    __in: PhantomData<In>,
+    __out: PhantomData<Out>
+}
+
+enum State {
+    Length,
+    Data(u16)
+}
+
+impl<In, Out> Default for LengthDelimitedCodec<In, Out> {
+    fn default() -> Self {
+        LengthDelimitedCodec {
+            state: State::Length,
+            __in: PhantomData,
+            __out: PhantomData
+        }
+    }
+}
+
+impl<In, Out> LengthDelimitedCodec<In, Out> {
+    
+    fn decode_length(&mut self, buf: &mut BytesMut) -> io::Result<Option<u16>> {
+        if buf.len() < 2 {
             
             return Ok(None);
         }
 
-        let n = {
-            let mut src = Cursor::new(&mut *src);
-
-            
-            let n = src.get_uint::<LittleEndian>(head_size);
-
-            if n > u64::from(u16::max_value()) {
-                return Err(std_io::Error::new(
-                    std_io::ErrorKind::InvalidData,
-                    "frame size too big"
-                ));
-            }
-
-            
-            n as usize
-        };
+        let n = LittleEndian::read_u16(buf.as_ref());
 
         
-        let _ = src.split_to(head_size);
+        let _ = buf.split_to(2);
 
         Ok(Some(n))
     }
 
-    fn decode_data(&self, n: usize, src: &mut BytesMut) -> std_io::Result<Option<BytesMut>> {
+    fn decode_data(&mut self, buf: &mut BytesMut, n: u16) -> io::Result<Option<Out>>
+    where
+        Out: DeserializeOwned + Debug
+    {
         
         
-        if src.len() < n {
+        let n = n as usize;
+        if buf.len() < n {
             return Ok(None);
         }
 
-        Ok(Some(src.split_to(n)))
+        let buf = buf.split_to(n).freeze();
+
+        trace!("Attempting to decode");
+        let msg = try!(deserialize::<Out>(buf.as_ref()).map_err(|e| match *e {
+            bincode::ErrorKind::IoError(e) => e,
+            _ => io::Error::new(io::ErrorKind::Other, *e)
+        }));
+
+        trace!("... Decoded {:?}", msg);
+        Ok(Some(msg))
     }
+}
 
-    pub fn split_frame(&mut self, src: &mut BytesMut) -> std_io::Result<Option<BytesMut>> {
+impl<In, Out> Codec for LengthDelimitedCodec<In, Out>
+where
+    In: Serialize + Debug,
+    Out: DeserializeOwned + Debug
+{
+    type In = In;
+    type Out = Out;
+
+    fn decode(&mut self, buf: &mut BytesMut) -> io::Result<Option<Self::Out>> {
         let n = match self.state {
-            FrameState::Head => {
-                match try!(self.decode_head(src)) {
+            State::Length => {
+                match try!(self.decode_length(buf)) {
                     Some(n) => {
-                        self.state = FrameState::Data(n);
+                        self.state = State::Data(n);
 
                         
                         
-                        src.reserve(n);
+                        buf.reserve(n as usize);
 
                         n
                     },
-                    None => return Ok(None),
+                    None => return Ok(None)
                 }
             },
-            FrameState::Data(n) => n,
+            State::Data(n) => n
         };
 
-        match try!(self.decode_data(n, src)) {
+        match try!(self.decode_data(buf, n)) {
             Some(data) => {
                 
-                self.state = FrameState::Head;
+                self.state = State::Length;
 
                 
-                src.reserve(mem::size_of::<u16>());
+                buf.reserve(2);
 
                 Ok(Some(data))
             },
-            None => Ok(None),
+            None => Ok(None)
         }
     }
 
-    pub fn decode<ITEM: DeserializeOwned>(&mut self, src: &mut BytesMut) -> Result<Option<ITEM>, bincode::Error> {
-        match try!(self.split_frame(src)) {
-            Some(buf) => deserialize::<ITEM>(buf.as_ref()).and_then(|t| Ok(Some(t))),
-            None => Ok(None),
+    fn encode(&mut self, item: Self::In, buf: &mut BytesMut) -> io::Result<()> {
+        trace!("Attempting to encode");
+        let encoded_len = serialized_size(&item);
+        if encoded_len > 8 * 1024 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "encoded message too big"
+            ));
         }
+
+        buf.reserve((encoded_len + 2) as usize);
+
+        buf.put_u16::<LittleEndian>(encoded_len as u16);
+
+        if let Err(e) =
+            serialize_into::<_, Self::In, _>(&mut buf.writer(), &item, Bounded(encoded_len))
+        {
+            match *e {
+                bincode::ErrorKind::IoError(e) => return Err(e),
+                _ => return Err(io::Error::new(io::ErrorKind::Other, *e))
+            }
+        }
+
+        Ok(())
     }
-}
-
-impl Default for Decoder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-pub fn encode<ITEM: Serialize>(dst: &mut BytesMut, item: &ITEM) -> Result<(), bincode::Error> {
-    let head_len = mem::size_of::<u16>() as u64;
-    let item_len = serialized_size(item);
-
-    if head_len + item_len > u64::from(u16::max_value()) {
-        return Err(Box::new(bincode::ErrorKind::IoError(std_io::Error::new(
-            std_io::ErrorKind::InvalidInput,
-            "frame too big"
-        ))));
-    }
-
-    let n = (head_len + item_len) as usize;
-    dst.reserve(n);
-    dst.put_u16::<LittleEndian>(item_len as u16);
-    serialize_into(&mut dst.writer(), item, Bounded(item_len))
 }
