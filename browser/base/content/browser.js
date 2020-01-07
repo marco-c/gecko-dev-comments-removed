@@ -141,6 +141,25 @@ if (AppConstants.MOZ_CRASHREPORTER) {
                                      "nsICrashReporter");
 }
 
+Object.defineProperty(this, "gBrowser", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete window.gBrowser;
+
+    
+    
+    if (!window._gBrowser) {
+      return window.gBrowser = null;
+    }
+
+    window.gBrowser = window._gBrowser;
+    delete window._gBrowser;
+    gBrowser.init();
+    return gBrowser;
+  },
+});
+
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
@@ -224,7 +243,6 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", function() {
 
 const nsIWebNavigation = Ci.nsIWebNavigation;
 
-var gBrowser;
 var gLastValidURLStr = "";
 var gInPrintPreviewMode = false;
 var gContextMenu = null; 
@@ -1176,7 +1194,10 @@ function RedirectLoad({ target: browser, data }) {
 }
 
 if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-  addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("MozBeforeInitialXULLayout", function() {
+    gBrowserInit.onBeforeInitialXULLayout();
+  }, { once: true });
+  document.addEventListener("DOMContentLoaded", function() {
     gBrowserInit.onDOMContentLoaded();
   }, { once: true });
 }
@@ -1189,11 +1210,28 @@ var delayedStartupPromise = new Promise(resolve => {
 var gBrowserInit = {
   delayedStartupFinished: false,
 
-  onDOMContentLoaded() {
-    gBrowser = window._gBrowser;
-    delete window._gBrowser;
-    gBrowser.init();
+  onBeforeInitialXULLayout() {
+    
+    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
+      
+      
+      document.documentElement.setAttribute("sizemode", "normal");
+    } else if (!document.documentElement.hasAttribute("width")) {
+      const TARGET_WIDTH = 1280;
+      const TARGET_HEIGHT = 1040;
+      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
+      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
 
+      document.documentElement.setAttribute("width", width);
+      document.documentElement.setAttribute("height", height);
+
+      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
+        document.documentElement.setAttribute("sizemode", "maximized");
+      }
+    }
+  },
+
+  onDOMContentLoaded() {
     window.QueryInterface(Ci.nsIInterfaceRequestor)
           .getInterface(nsIWebNavigation)
           .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
@@ -1230,25 +1268,6 @@ var gBrowserInit = {
         sameProcessAsFrameLoader = linkedBrowser.frameLoader;
       }
       initBrowser.removeAttribute("blank");
-    }
-
-    
-    if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
-      
-      
-      document.documentElement.setAttribute("sizemode", "normal");
-    } else if (!document.documentElement.hasAttribute("width")) {
-      const TARGET_WIDTH = 1280;
-      const TARGET_HEIGHT = 1040;
-      let width = Math.min(screen.availWidth * .9, TARGET_WIDTH);
-      let height = Math.min(screen.availHeight * .9, TARGET_HEIGHT);
-
-      document.documentElement.setAttribute("width", width);
-      document.documentElement.setAttribute("height", height);
-
-      if (width < TARGET_WIDTH && height < TARGET_HEIGHT) {
-        document.documentElement.setAttribute("sizemode", "maximized");
-      }
     }
 
     gBrowser.updateBrowserRemoteness(initBrowser, isRemote, {
@@ -5141,14 +5160,14 @@ var TabsProgressListener = {
     }
   },
 
-  onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
+  onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI,
+                             aFlags) {
     
     
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
       
-      aBrowser.messageManager.sendAsyncMessage("Reader:PushState", {
-        isArticle: aBrowser.isArticle,
-      });
+      let mm = gBrowser.selectedBrowser.messageManager;
+      mm.sendAsyncMessage("Reader:PushState", {isArticle: gBrowser.selectedBrowser.isArticle});
       return;
     }
 

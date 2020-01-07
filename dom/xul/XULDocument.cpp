@@ -2662,6 +2662,13 @@ XULDocument::DoneWalking()
 
         NotifyPossibleTitleChange(false);
 
+        nsContentUtils::DispatchTrustedEvent(
+            this,
+            static_cast<nsIDocument*>(this),
+            NS_LITERAL_STRING("MozBeforeInitialXULLayout"),
+            true,
+            false);
+
         
         
         
@@ -2677,12 +2684,6 @@ XULDocument::DoneWalking()
                 }
             }
         }
-
-        nsContentUtils::DispatchTrustedEvent(this,
-                static_cast<nsIDocument*>(this),
-                NS_LITERAL_STRING("MozBeforeInitialXULLayout"),
-                true,
-                false);
 
         StartLayout();
 
