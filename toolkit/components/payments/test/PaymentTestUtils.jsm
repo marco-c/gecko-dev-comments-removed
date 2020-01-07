@@ -14,20 +14,6 @@ this.PaymentTestUtils = {
 
 
 
-    addCompletionHandler: async () => {
-      let response = await content.showPromise;
-      response.complete();
-      return {
-        response: response.toJSON(),
-        
-        methodDetails: response.details,
-      };
-    },
-
-    
-
-
-
 
 
 
@@ -48,11 +34,9 @@ this.PaymentTestUtils = {
     createAndShowRequest: ({methodData, details, options}) => {
       const rq = new content.PaymentRequest(methodData, details, options);
       content.rq = rq; 
-      content.showPromise = rq.show();
+      rq.show();
     },
-  },
 
-  DialogContentTasks: {
     
 
 
@@ -63,14 +47,6 @@ this.PaymentTestUtils = {
 
     manuallyClickCancel: () => {
       content.document.getElementById("cancel").click();
-    },
-
-    
-
-
-
-    completePayment: () => {
-      content.document.getElementById("pay").click();
     },
   },
 
