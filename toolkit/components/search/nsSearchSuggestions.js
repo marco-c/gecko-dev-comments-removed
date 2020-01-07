@@ -26,13 +26,6 @@ SuggestAutoComplete.prototype = {
     this._suggestionController.maxLocalResults = this._historyLimit;
   },
 
-  get _suggestionLabel() {
-    let bundle = Services.strings.createBundle("chrome://global/locale/search/search.properties");
-    let label = bundle.GetStringFromName("suggestion_label");
-    Object.defineProperty(SuggestAutoComplete.prototype, "_suggestionLabel", {value: label});
-    return label;
-  },
-
   
 
 
@@ -65,8 +58,7 @@ SuggestAutoComplete.prototype = {
     
     if (results.remote.length) {
       
-      let comments = new Array(results.remote.length).fill("", 1);
-      comments[0] = this._suggestionLabel;
+      let comments = new Array(results.remote.length).fill("");
       
       finalResults = finalResults.concat(results.remote);
       finalComments = finalComments.concat(comments);
