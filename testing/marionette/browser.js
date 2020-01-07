@@ -29,13 +29,8 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-
-
-const Context = {
-  Chrome: "chrome",
-  Content: "content",
-};
-this.Context = Context;
+class Context {
+  
 
 
 
@@ -47,18 +42,22 @@ this.Context = Context;
 
 
 
+  static fromString(s) {
+    switch (s) {
+      case "chrome":
+        return Context.Chrome;
 
+      case "content":
+        return Context.Content;
 
-Context.fromString = function(s) {
-  switch (s) {
-    case "chrome":
-      return Context.Chrome;
-    case "content":
-      return Context.Content;
-    default:
-      throw new TypeError(`Unknown context: ${s}`);
+      default:
+        throw new TypeError(`Unknown context: ${s}`);
+    }
   }
-};
+}
+Context.Chrome = "chrome";
+Context.Content = "content";
+this.Context = Context;
 
 
 
