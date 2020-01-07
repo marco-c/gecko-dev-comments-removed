@@ -32,9 +32,9 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/TypedArray.h"
+#include "mozilla/dom/DOMPrefs.h"
 
 #include "nsCOMPtr.h"
-#include "nsContentUtils.h" 
 #include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
