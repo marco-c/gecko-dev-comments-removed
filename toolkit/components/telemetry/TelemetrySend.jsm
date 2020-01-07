@@ -89,12 +89,15 @@ const OVERDUE_PING_FILE_AGE = 7 * 24 * 60 * MS_IN_A_MINUTE;
 
 
 
+
+
 const XHR_ERROR_TYPE = [
   "eOK",
   "eRequest",
   "eUnreachable",
   "eChannelOpen",
   "eRedirect",
+  "eTerminated",
 ];
 
 

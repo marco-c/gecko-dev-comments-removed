@@ -185,6 +185,8 @@ public:
     ENUM_MAX
   };
 
+  
+  
   enum class ErrorType : uint16_t {
     eOK,
     eRequest,
