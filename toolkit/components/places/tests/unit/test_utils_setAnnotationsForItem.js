@@ -12,13 +12,11 @@ var as = PlacesUtils.annotations;
 
 const TEST_URL = "http://test.mozilla.org/";
 
-add_task(async function test_setAnnotationsFor() {
-  let testURI = uri(TEST_URL);
-  
+add_task(async function test_setAnnotationsForItem() {
   let bookmark = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     title: "test",
-    url: testURI,
+    url: TEST_URL,
   });
 
   let itemId = await PlacesUtils.promiseItemId(bookmark.guid);
@@ -50,14 +48,6 @@ add_task(async function test_setAnnotationsFor() {
   });
 
   
-  PlacesUtils.setAnnotationsForURI(testURI, testAnnos);
-  
-  testAnnos.forEach(function(anno) {
-    Assert.ok(as.pageHasAnnotation(testURI, anno.name));
-    Assert.equal(as.getPageAnnotation(testURI, anno.name), anno.value);
-  });
-
-  
   
   testAnnos[0].value = null;
   testAnnos[1].value = undefined;
@@ -69,14 +59,5 @@ add_task(async function test_setAnnotationsFor() {
   
   testAnnos.forEach(function(anno) {
     Assert.ok(!as.itemHasAnnotation(itemId, anno.name));
-    
-    Assert.ok(as.pageHasAnnotation(testURI, anno.name));
-  });
-
-  
-  PlacesUtils.setAnnotationsForURI(testURI, testAnnos);
-  
-  testAnnos.forEach(function(anno) {
-    Assert.ok(!as.pageHasAnnotation(testURI, anno.name));
   });
 });
