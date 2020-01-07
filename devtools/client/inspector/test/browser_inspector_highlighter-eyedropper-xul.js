@@ -18,7 +18,7 @@ add_task(async function() {
   ok(isDisabled(button), "The button is hidden in the toolbar");
 
   info("Check the color picker");
-  await selectNode("#scale", inspector);
+  await selectNode("#tree", inspector);
 
   
   let ruleView = inspector.getPanel("ruleview").view;
