@@ -2407,11 +2407,6 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     
     
 
-    sheet = cache->NumberControlSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
-    }
-
     sheet = cache->FormsSheet();
     if (sheet) {
       styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
