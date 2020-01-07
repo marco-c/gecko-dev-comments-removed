@@ -373,12 +373,24 @@ SummaryGraphHelper.prototype = {
 
   setKeyframes: function (keyframes) {
     let frames = null;
+    
+    
+    let durationResolution = DURATION_RESOLUTION;
+
     if (keyframes) {
+      let previousOffset = 0;
+
       
       
       
       
       frames = keyframes.map(keyframe => {
+        if (previousOffset) {
+          const interval = keyframe.offset - previousOffset;
+          durationResolution = Math.max(durationResolution, Math.ceil(1 / interval));
+        }
+        previousOffset = keyframe.offset;
+
         return {
           opacity: keyframe.offset,
           offset: keyframe.offset,
@@ -390,6 +402,8 @@ SummaryGraphHelper.prototype = {
       
       this.targetEl.style.opacity = 0;
     }
+
+    this.durationResolution = durationResolution;
     this.animation.effect.setKeyframes(frames);
     this.hasFrames = !!frames;
   },
@@ -458,11 +472,9 @@ SummaryGraphHelper.prototype = {
 
 
 
-
-
   createPathSegments: function (startTime, endTime) {
-    return createPathSegments(startTime, endTime,
-                              this.minSegmentDuration, this.minProgressThreshold, this);
+    return createPathSegments(startTime, endTime, this.minSegmentDuration,
+                              this.minProgressThreshold, this, this.durationResolution);
   },
 
   
@@ -508,8 +520,11 @@ exports.SummaryGraphHelper = SummaryGraphHelper;
 
 
 
+
+
 function createPathSegments(startTime, endTime, minSegmentDuration,
-                            minProgressThreshold, segmentHelper) {
+                            minProgressThreshold, segmentHelper,
+                            resolution = DURATION_RESOLUTION) {
   
   if (endTime - startTime < minSegmentDuration) {
     return [segmentHelper.getSegment(startTime),
@@ -526,8 +541,8 @@ function createPathSegments(startTime, endTime, minSegmentDuration,
 
   
   
-  const interval = (endTime - startTime) / DURATION_RESOLUTION;
-  for (let index = 1; index <= DURATION_RESOLUTION; index++) {
+  const interval = (endTime - startTime) / resolution;
+  for (let index = 1; index <= resolution; index++) {
     
     const currentSegment =
       segmentHelper.getSegment(startTime + index * interval);
