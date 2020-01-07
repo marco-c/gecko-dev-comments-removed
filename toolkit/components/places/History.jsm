@@ -462,17 +462,27 @@ var History = Object.freeze({
 
 
 
+
   removeByFilter(filter, onResult) {
     if (!filter || typeof filter !== "object") {
       throw new TypeError("Expected a filter object");
     }
 
-    let hasHost = "host" in filter;
+    let hasHost = filter.host;
     if (hasHost) {
       if (typeof filter.host !== "string") {
         throw new TypeError("`host` should be a string");
       }
       filter.host = filter.host.toLowerCase();
+      if (filter.host.length > 1 && filter.host.lastIndexOf(".") == 0) {
+        
+        
+        
+        
+        
+        
+        filter.host = filter.host.slice(1);
+      }
     }
 
     let hasBeginDate = "beginDate" in filter;
@@ -495,12 +505,9 @@ var History = Object.freeze({
 
     
     
-    
-    
     if (hasHost &&
-        !((/^[a-z0-9-]+$/).test(filter.host)) &&
-        !((/^(\*\.)?([a-z0-9-]+)(\.[a-z0-9-]+)+$/).test(filter.host)) &&
-        (filter.host !== "")) {
+        (!/^(\.?([.a-z0-9-]+\.[a-z0-9-]+)?|[a-z0-9-]+)$/.test(filter.host) ||
+         filter.host.includes(".."))) {
       throw new TypeError("Expected well formed hostname string for `host` with atmost 1 wildcard.");
     }
 
@@ -1145,24 +1152,24 @@ var removeByFilter = async function(db, filter, onResult = null) {
 
   
   let hostFilterSQLFragment = "";
-  if (filter.host || filter.host === "") {
+  if (filter.host) {
     
     
-
-    if (filter.host.indexOf("*") === 0) {
+    let revHost = filter.host.split("").reverse().join("");
+    if (filter.host == ".") {
       
-      let revHost = filter.host.slice(2).split("").reverse().join("");
+      hostFilterSQLFragment = `h.rev_host = :revHost`;
+    } else if (filter.host.startsWith(".")) {
+      
+      revHost = revHost.slice(0, -1);
       hostFilterSQLFragment =
-        `h.rev_host between :revHostStart and :revHostEnd`;
-      params.revHostStart = revHost + ".";
-      params.revHostEnd = revHost + "/";
+        `h.rev_host between :revHost || "." and :revHost || "/"`;
     } else {
       
-      let revHost = filter.host.split("").reverse().join("") + ".";
       hostFilterSQLFragment =
-        `h.rev_host = :hostName`;
-      params.hostName = revHost;
+        `h.rev_host = :revHost || "."`;
     }
+    params.revHost = revHost;
   }
 
   

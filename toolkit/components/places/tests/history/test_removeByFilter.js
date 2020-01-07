@@ -18,6 +18,7 @@
 
 
 
+
 add_task(async function test_removeByFilter() {
   
   await PlacesUtils.history.clear();
@@ -155,7 +156,7 @@ add_task(async function test_removeByFilter() {
                                  () => checkClosure(remoteUriList[0]),
                                  callbackUse, bookmarkedUri(remoteUriList));
       
-      await removeByFilterTester(randomHostVisits, { host: "*.mozilla.org" },
+      await removeByFilterTester(randomHostVisits, { host: ".mozilla.org" },
                                  async () => { for (let uri of remoteUriList) await assertInDB(uri); },
                                  async () => { for (let uri of checkableArray(remoteUriList)) await checkClosure(uri); },
                                  callbackUse, bookmarkedUri(remoteUriList));
@@ -167,7 +168,7 @@ add_task(async function test_removeByFilter() {
                                async () => { for (let uri of localhostUriList) await assertNotInDB(uri); },
                                callbackUse);
     
-    await removeByFilterTester(fileVisits, { host: "" },
+    await removeByFilterTester(fileVisits, { host: "." },
                                async () => { for (let uri of fileUriList) await assertInDB(uri); },
                                async () => { for (let uri of fileUriList) await assertNotInDB(uri); },
                                callbackUse);
@@ -185,7 +186,12 @@ add_task(async function test_removeByFilter() {
                                () => assertInDB(remoteUriList[0]),
                                callbackUse);
     
-    await removeByFilterTester(randomHostVisits, { host: "*.notthere.org" },
+    await removeByFilterTester(randomHostVisits, { host: ".notthere.org" },
+                               async () => { for (let uri of remoteUriList) await assertInDB(uri); },
+                               async () => { for (let uri of remoteUriList) await assertInDB(uri); },
+                               callbackUse);
+    
+    await removeByFilterTester(randomHostVisits, { host: ".org" },
                                async () => { for (let uri of remoteUriList) await assertInDB(uri); },
                                async () => { for (let uri of remoteUriList) await assertInDB(uri); },
                                callbackUse);
@@ -201,7 +207,7 @@ add_task(async function test_removeByFilter() {
                                callbackUse);
     
     await removeByFilterTester(randomHostVisits,
-                               { host: "*.mozilla.org",
+                               { host: ".mozilla.org",
                                  beginDate: new Date(2005, 1, 1),
                                  endDate: new Date(2017, 1, 1) },
                                async () => { for (let uri of remoteUriList) await assertInDB(uri); },
@@ -246,11 +252,7 @@ add_task(async function test_error_cases() {
       /TypeError: Expected well formed hostname string for/
   );
   Assert.throws(
-    () => PlacesUtils.history.removeByFilter({host: "*.org"}),
-      /TypeError: Expected well formed hostname string for/
-  );
-  Assert.throws(
-    () => PlacesUtils.history.removeByFilter({host: "www.*.org"}),
+    () => PlacesUtils.history.removeByFilter({host: "www..org"}),
       /TypeError: Expected well formed hostname string for/
   );
   Assert.throws(
@@ -258,7 +260,7 @@ add_task(async function test_error_cases() {
       /TypeError: `host` should be a string/
   );
   Assert.throws(
-    () => PlacesUtils.history.removeByFilter({host: ".mozilla.org"}),
+    () => PlacesUtils.history.removeByFilter({host: "*.mozilla.org"}),
       /TypeError: Expected well formed hostname string for/
   );
   Assert.throws(
@@ -272,6 +274,10 @@ add_task(async function test_error_cases() {
   Assert.throws(
     () => PlacesUtils.history.removeByFilter({host: "(local files)"}),
       /TypeError: Expected well formed hostname string for/
+  );
+  Assert.throws(
+    () => PlacesUtils.history.removeByFilter({host: ""}),
+      /TypeError: Expected a non-empty filter/
   );
 });
 
