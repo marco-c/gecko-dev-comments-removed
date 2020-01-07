@@ -3219,14 +3219,6 @@ pref("dom.ipc.processCount.file", 1);
 pref("dom.ipc.processCount.extension", 1);
 
 
-pref("dom.ipc.processCount.privileged", 1);
-
-
-
-
-pref("dom.ipc.keepProcessesAlive.privileged", 1);
-
-
 #if defined(XP_WIN)
 pref("dom.ipc.useNativeEventProcessing.content", false);
 #else
@@ -3261,9 +3253,6 @@ pref("browser.tabs.remote.separateFileUriProcess", true);
 
 
 pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
-
-
-pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 
 
 pref("svg.display-lists.hit-testing.enabled", true);
@@ -5815,7 +5804,7 @@ pref("toolkit.crashreporter.include_context_heap", true);
 
 pref("dom.noopener.newprocess.enabled", true);
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
 pref("layers.omtp.enabled", true);
 #else
 pref("layers.omtp.enabled", false);
