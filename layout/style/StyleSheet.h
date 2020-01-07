@@ -111,10 +111,6 @@ public:
   URLExtraData* URLData() const { return Inner()->mURLData; }
 
   
-  StyleSheet* AsServo() { return this; }
-  const StyleSheet* AsServo() const { return this; }
-
-  
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
                               nsresult aStatus) final;
 

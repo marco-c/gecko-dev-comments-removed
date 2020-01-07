@@ -1197,11 +1197,11 @@ nsPresContext::CompatibilityModeChanged()
   if (needsQuirkSheet) {
     
     DebugOnly<nsresult> rv =
-      styleSet->AppendStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->AppendStyleSheet(SheetType::Agent, sheet);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "failed to insert quirk.css");
   } else {
     DebugOnly<nsresult> rv =
-      styleSet->RemoveStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->RemoveStyleSheet(SheetType::Agent, sheet);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "failed to remove quirk.css");
   }
 

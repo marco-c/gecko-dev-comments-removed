@@ -2351,7 +2351,7 @@ nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO)
     
     
     auto cache = nsLayoutStylesheetCache::Singleton();
-    styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet()->AsServo());
+    styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
   }
 
   aPO->mPresShell = aPO->mDocument->CreateShell(aPO->mPresContext,

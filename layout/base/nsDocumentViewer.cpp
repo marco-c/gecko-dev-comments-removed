@@ -2345,13 +2345,13 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   }
 
   if (sheet) {
-    styleSet->AppendStyleSheet(SheetType::User, sheet->AsServo());
+    styleSet->AppendStyleSheet(SheetType::User, sheet);
   }
 
   
   sheet = cache->ScrollbarsSheet();
   if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
   }
 
   if (!aDocument->IsSVGDocument()) {
@@ -2366,21 +2366,21 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->FormsSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
     if (aDocument->LoadsFullXULStyleSheetUpFront()) {
       
       sheet = cache->XULComponentsSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
       }
 
       
       
       sheet = cache->XULSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
       }
     }
 
@@ -2388,25 +2388,25 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     if (sheet) {
       
       
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
     sheet = cache->CounterStylesSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
     if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
       sheet = cache->NoScriptSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
       }
     }
 
     if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
       sheet = cache->NoFramesSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
       }
     }
 
@@ -2415,26 +2415,25 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->HTMLSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
 
-    styleSet->PrependStyleSheet(SheetType::Agent,
-                                cache->UASheet()->AsServo());
+    styleSet->PrependStyleSheet(SheetType::Agent, cache->UASheet());
   } else {
     
     sheet = cache->MinimalXULSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
     }
   }
 
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
     for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
-      styleSet->AppendStyleSheet(SheetType::Agent, sheet->AsServo());
+      styleSet->AppendStyleSheet(SheetType::Agent, sheet);
     }
     for (StyleSheet* sheet : Reversed(*sheetService->UserStyleSheets())) {
-      styleSet->PrependStyleSheet(SheetType::User, sheet->AsServo());
+      styleSet->PrependStyleSheet(SheetType::User, sheet);
     }
   }
 
