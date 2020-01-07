@@ -80,6 +80,7 @@ define(function (require, exports, module) {
         
         
         
+        
         created: [],
 
         
@@ -116,24 +117,46 @@ define(function (require, exports, module) {
 
     componentWillReceiveProps(nextProps) {
       let { children, tabActive } = nextProps;
+      let panels = children.filter(panel => panel);
+      let created = [...this.state.created];
 
       
+      
+      
+      if (this.state.created.length != panels.length) {
+        created = panels.map(panel => {
+          
+          let createdEntry = this.state.created.find(entry => {
+            return entry && entry.tabId === panel.props.id;
+          });
+          let isCreated = !!createdEntry && createdEntry.isCreated;
+          let tabId = panel.props.id;
+
+          return {
+            isCreated,
+            tabId,
+          };
+        });
+      }
+
       
       if (typeof tabActive === "number") {
-        let panels = children.filter((panel) => panel);
-
         
         tabActive = (tabActive < panels.length && tabActive >= 0) ?
           tabActive : 0;
 
-        let created = [...this.state.created];
-        created[tabActive] = true;
+        created[tabActive] = Object.assign({}, created[tabActive], {
+          isCreated: true,
+        });
 
         this.setState({
-          created,
           tabActive,
         });
       }
+
+      this.setState({
+        created,
+      });
     }
 
     componentWillUnmount() {
@@ -209,11 +232,13 @@ define(function (require, exports, module) {
       }
 
       let created = [...this.state.created];
-      created[index] = true;
+      created[index] = Object.assign({}, created[index], {
+        isCreated: true,
+      });
 
       let newState = Object.assign({}, this.state, {
+        created,
         tabActive: index,
-        created: created
       });
 
       this.setState(newState, () => {
@@ -335,6 +360,8 @@ define(function (require, exports, module) {
           }
 
           let id = tab.props.id;
+          let isCreated = this.state.created[index] &&
+            this.state.created[index].isCreated;
 
           
           
@@ -354,13 +381,13 @@ define(function (require, exports, module) {
           return (
             dom.div({
               id: id ? id + "-panel" : "panel-" + index,
-              key: index,
+              key: id,
               style: style,
               className: selected ? "tab-panel-box" : "tab-panel-box hidden",
               role: "tabpanel",
               "aria-labelledby": id ? id + "-tab" : "tab-" + index,
             },
-              (selected || this.state.created[index]) ? panel : null
+              (selected || isCreated) ? panel : null
             )
           );
         });
@@ -388,6 +415,8 @@ define(function (require, exports, module) {
   class Panel extends Component {
     static get propTypes() {
       return {
+        id: PropTypes.string.isRequired,
+        className: PropTypes.string,
         title: PropTypes.string.isRequired,
         children: PropTypes.oneOfType([
           PropTypes.array,

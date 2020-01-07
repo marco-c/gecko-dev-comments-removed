@@ -27,6 +27,8 @@ class InspectorTabPanel extends Component {
       idPrefix: PropTypes.string,
       
       onMount: PropTypes.func,
+      
+      onUnmount: PropTypes.func,
     };
   }
 
@@ -51,6 +53,10 @@ class InspectorTabPanel extends Component {
   componentWillUnmount() {
     let doc = this.refs.content.ownerDocument;
     let panels = doc.getElementById("tabpanels");
+
+    if (this.props.onUnmount) {
+      this.props.onUnmount(this.refs.content, this.props);
+    }
 
     
     panels.appendChild(this.refs.content.firstChild);
