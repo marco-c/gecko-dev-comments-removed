@@ -103,6 +103,12 @@ public:
   static bool IsInheritedProperty(GlobalObject& aGlobal,
                                   const nsAString& aPropertyName);
 
+  
+  
+  static void GetCSSPropertyNames(GlobalObject& aGlobal,
+                                  const PropertyNamesOptions& aOptions,
+                                  nsTArray<nsString>& aResult);
+
 private:
   static already_AddRefed<nsStyleContext>
     GetCleanStyleContextForElement(Element* aElement, nsAtom* aPseudo);
