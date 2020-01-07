@@ -5321,7 +5321,7 @@ JS_ReportErrorFlagsAndNumberUC(JSContext* cx, unsigned flags,
 
 
 
-extern JS_PUBLIC_API(void)
+extern MOZ_COLD JS_PUBLIC_API(void)
 JS_ReportOutOfMemory(JSContext* cx);
 
 
