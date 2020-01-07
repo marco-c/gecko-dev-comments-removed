@@ -1601,10 +1601,6 @@ protected:
 
   
   
-  bool mStatsShowing = false;
-
-  
-  
   
   
   bool mAllowCasting = false;
@@ -1679,9 +1675,6 @@ protected:
 
   
   bool mSrcStreamIsPlaying = false;
-
-  
-  bool mMediaSecurityVerified = false;
 
   
   

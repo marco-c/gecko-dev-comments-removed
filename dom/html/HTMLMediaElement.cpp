@@ -4876,9 +4876,6 @@ HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder)
   ChangeNetworkState(NETWORK_LOADING);
 
   
-  mMediaSecurityVerified = false;
-
-  
   
   SetDecoder(aDecoder);
 
