@@ -149,8 +149,12 @@ protected:
   nsresult WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
                                bool* aCancel,
                                bool* aHandled);
-  nsresult DidDeleteSelection(nsIEditor::EDirection aCollapsedAction,
-                              nsresult aResult);
+  
+
+
+
+
+  MOZ_MUST_USE nsresult DidDeleteSelection();
 
   nsresult WillSetTextProperty(bool* aCancel, bool* aHandled);
 
