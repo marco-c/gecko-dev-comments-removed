@@ -971,16 +971,12 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
 
 void
-nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
+nsPresContext::AttachShell(nsIPresShell* aShell)
 {
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  if (aBackendType == StyleBackendType::Servo) {
-    mRestyleManager = new ServoRestyleManager(this);
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
+  mRestyleManager = new ServoRestyleManager(this);
 
   
   
@@ -1207,9 +1203,7 @@ nsPresContext::CompatibilityModeChanged()
   }
 
   StyleSetHandle styleSet = mShell->StyleSet();
-  if (styleSet->IsServo()) {
-    styleSet->AsServo()->CompatibilityModeChanged();
-  }
+  styleSet->AsServo()->CompatibilityModeChanged();
 
   if (doc->IsSVGDocument()) {
     
@@ -1221,7 +1215,7 @@ nsPresContext::CompatibilityModeChanged()
     return;
   }
 
-  auto cache = nsLayoutStylesheetCache::For(styleSet->BackendType());
+  auto cache = nsLayoutStylesheetCache::Singleton();
   StyleSheet* sheet = cache->QuirkSheet();
 
   if (needsQuirkSheet) {

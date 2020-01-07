@@ -2689,8 +2689,6 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
                      nsAString& aOutUsedFont,
                      ErrorResult& aError)
 {
-  MOZ_ASSERT(aPresShell->StyleSet()->IsServo());
-
   RefPtr<RawServoDeclarationBlock> declarations =
     CreateFontDeclarationForServo(aFont, aPresShell->GetDocument());
   if (!declarations) {
@@ -2760,8 +2758,6 @@ ResolveFilterStyleForServo(const nsAString& aFilterString,
                            nsIPresShell* aPresShell,
                            ErrorResult& aError)
 {
-  MOZ_ASSERT(aPresShell->StyleSet()->IsServo());
-
   RefPtr<RawServoDeclarationBlock> declarations =
     CreateFilterDeclarationForServo(aFilterString, aPresShell->GetDocument());
   if (!declarations) {
@@ -2800,14 +2796,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
     return false;
   }
 
-  nsString usedFont;
-  if (presShell->StyleSet()->IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-    return false;
-  }
-
-  
-  MOZ_ASSERT(presShell->StyleSet()->IsServo());
+  nsString usedFont; 
 
   RefPtr<ComputedStyle> parentStyle =
     GetFontStyleForServo(mCanvasElement,
@@ -3735,14 +3724,9 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
     return false;
   }
 
-  RefPtr<ComputedStyle> sc;
   nsString usedFont;
-  if (presShell->StyleSet()->IsServo()) {
-    sc =
-      GetFontStyleForServo(mCanvasElement, aFont, presShell, usedFont, aError);
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
+  RefPtr<ComputedStyle> sc =
+    GetFontStyleForServo(mCanvasElement, aFont, presShell, usedFont, aError);
   if (!sc) {
     return false;
   }
@@ -3755,8 +3739,8 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& aFont,
   
   
   
-  MOZ_ASSERT(presShell->StyleSet()->IsServo() || !fontStyle->mAllowZoom,
-             "expected text zoom to be disabled on this nsStyleFont");
+  
+  
   nsFont resizedFont(fontStyle->mFont);
   
   

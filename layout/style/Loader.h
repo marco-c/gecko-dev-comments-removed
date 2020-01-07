@@ -24,7 +24,6 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
@@ -192,11 +191,11 @@ class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
 public:
+  Loader();
   
   
   
-  Loader(StyleBackendType aType, mozilla::dom::DocGroup* aDocGroup);
-
+  explicit Loader(mozilla::dom::DocGroup*);
   explicit Loader(nsIDocument*);
 
  private:
@@ -304,14 +303,10 @@ public:
 
 
 
-
-
-
   nsresult LoadChildSheet(StyleSheet* aParentSheet,
                           SheetLoadData* aParentData,
                           nsIURI* aURL,
                           dom::MediaList* aMedia,
-                          ImportRule* aGeckoParentRule,
                           LoaderReusableStyleSheets* aSavedSheets);
 
   
@@ -531,8 +526,7 @@ private:
                             nsIDocument* aDocument);
 
   nsresult InsertChildSheet(StyleSheet* aSheet,
-                            StyleSheet* aParentSheet,
-                            ImportRule* aGeckoParentRule);
+                            StyleSheet* aParentSheet);
 
   nsresult InternalLoadNonDocumentSheet(
     nsIURI* aURL,
@@ -612,8 +606,6 @@ private:
   
   void MarkLoadTreeFailed(SheetLoadData* aLoadData);
 
-  StyleBackendType GetStyleBackendType() const;
-
   struct Sheets {
     nsBaseHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey,
                     RefPtr<StyleSheet>,
@@ -647,10 +639,6 @@ private:
 
   nsCompatibility   mCompatMode;
   nsString          mPreferredSheet;  
-
-  
-  
-  mozilla::Maybe<StyleBackendType> mStyleBackendType;
 
   bool              mEnabled; 
 

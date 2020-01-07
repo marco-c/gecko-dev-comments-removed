@@ -116,14 +116,10 @@ nsHTMLStyleSheet::ImplLinkColorSetter(
 
   RestyleManager* restyle = mDocument->GetPresContext()->RestyleManager();
 
-  if (restyle->IsServo()) {
-    MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
-    aDecl = Servo_DeclarationBlock_CreateEmpty().Consume();
-    Servo_DeclarationBlock_SetColorValue(aDecl.get(), eCSSProperty_color,
-                                         aColor);
-  } else {
-    MOZ_CRASH("old style system disabled");
-  }
+  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
+  aDecl = Servo_DeclarationBlock_CreateEmpty().Consume();
+  Servo_DeclarationBlock_SetColorValue(aDecl.get(), eCSSProperty_color,
+                                       aColor);
 
   
   

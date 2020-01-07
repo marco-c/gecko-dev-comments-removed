@@ -33,13 +33,11 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
-RestyleManager::RestyleManager(StyleBackendType aType,
-                               nsPresContext* aPresContext)
+RestyleManager::RestyleManager(nsPresContext* aPresContext)
   : mPresContext(aPresContext)
   , mRestyleGeneration(1)
   , mUndisplayedRestyleGeneration(1)
   , mHoverGeneration(0)
-  , mType(aType)
   , mInStyleRefresh(false)
   , mAnimationGeneration(0)
 {
@@ -374,7 +372,7 @@ RestyleManager::ContentRemoved(nsINode* aContainer,
 {
   
   
-  if (IsServo() && aOldChild->IsElement()) {
+  if (aOldChild->IsElement()) {
     ServoRestyleManager::ClearServoDataFromSubtree(aOldChild->AsElement());
   }
 
@@ -629,13 +627,9 @@ static bool gInApplyRenderingChangeToTree = false;
 void
 RestyleManager::DebugVerifyStyleTree(nsIFrame* aFrame)
 {
-  if (IsServo()) {
-    
-    
-    
-    return;
-  }
-  MOZ_CRASH("old style system disabled");
+  
+  
+  
 }
 
 #endif 
@@ -1750,14 +1744,9 @@ RestyleManager::IncrementAnimationGeneration()
   
   
   
-  if (IsGecko()) {
-    MOZ_CRASH("old style system disabled");
-  } else {
-    if (mInStyleRefresh) {
-      return;
-    }
+  if (!mInStyleRefresh) {
+    ++mAnimationGeneration;
   }
-  ++mAnimationGeneration;
 }
 
  void

@@ -24,19 +24,6 @@ MOZ_DEFINE_STYLO_METHODS(GenericSpecifiedValues,
                          ServoSpecifiedValues)
 
 bool
-GenericSpecifiedValues::ShouldIgnoreColors() const
-{
-  if (IsServo()) {
-    
-    
-    
-    return false;
-  }
-
-  MOZ_CRASH("old style system disabled");
-}
-
-bool
 GenericSpecifiedValues::PropertyIsSet(nsCSSPropertyID aId)
 {
   MOZ_STYLO_FORWARD(PropertyIsSet, (aId))
@@ -77,10 +64,7 @@ void
 GenericSpecifiedValues::SetKeywordValue(nsCSSPropertyID aId, int32_t aValue)
 {
 
-  if (IsServo()) {
-    return AsServo()->SetKeywordValue(aId, aValue);
-  }
-  MOZ_CRASH("old style system disabled");
+  return AsServo()->SetKeywordValue(aId, aValue);
 }
 
 void
