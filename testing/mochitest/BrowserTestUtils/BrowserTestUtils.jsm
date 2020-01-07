@@ -104,6 +104,10 @@ this.BrowserTestUtils = {
     let result = await taskFn(tab.linkedBrowser);
     let finalWindow = tab.ownerGlobal;
     if (originalWindow == finalWindow && !tab.closing && tab.linkedBrowser) {
+      
+      
+      
+      await TestUtils.waitForTick();
       await BrowserTestUtils.removeTab(tab);
     } else {
       Services.console.logStringMessage(
