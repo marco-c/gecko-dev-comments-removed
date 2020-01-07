@@ -5489,20 +5489,7 @@ BytecodeEmitter::setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name,
         
         
         JSFunction* fun = maybeFun->pn_funbox->function();
-
-        
-        
-        
-        if (fun->hasInferredName()) {
-#ifdef DEBUG
-            RootedFunction rootedFun(cx, fun);
-            JSAtom* funName = NameToFunctionName(cx, name, prefixKind);
-            if (!funName)
-                return false;
-            MOZ_ASSERT(funName == rootedFun->inferredName());
-#endif
-            return true;
-        }
+        MOZ_ASSERT(!fun->hasInferredName());
 
         fun->setInferredName(name);
         return true;
