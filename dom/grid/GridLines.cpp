@@ -137,15 +137,11 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
       
       
       
-      nsTArray<nsString> possiblyDuplicateLineNames(
+      const nsTArray<nsString>& possiblyDuplicateLineNames(
         aLineInfo->mNames.SafeElementAt(i, nsTArray<nsString>()));
 
-      
-      
       nsTArray<nsString> lineNames;
-      for (const auto& name : possiblyDuplicateLineNames) {
-        AddLineNameIfNotPresent(lineNames, name);
-      }
+      AddLineNamesIfNotPresent(lineNames, possiblyDuplicateLineNames);
 
       
       for (auto area : aAreas) {
@@ -185,6 +181,16 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
                                                numRepeatTracks,
                                                leadingTrackCount,
                                                lineNames);
+      }
+
+      
+      
+      if (numRepeatTracks > 0 &&
+          i == (aTrackInfo->mRepeatFirstTrack +
+                aTrackInfo->mNumLeadingImplicitTracks +
+                numRepeatTracks - numAddedLines)) {
+        AddLineNamesIfNotPresent(lineNames,
+                                 aLineInfo->mNamesFollowingRepeat);
       }
 
       RefPtr<GridLine> line = new GridLine(this);
