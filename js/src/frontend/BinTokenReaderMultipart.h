@@ -12,11 +12,10 @@
 #include "frontend/BinToken.h"
 #include "frontend/BinTokenReaderBase.h"
 
+#include "js/Result.h"
+
 namespace js {
 namespace frontend {
-
-using namespace mozilla;
-using namespace JS;
 
 
 
@@ -114,7 +113,7 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
     
 
 
-    MOZ_MUST_USE JS::Result<Maybe<BinVariant>> readMaybeVariant();
+    MOZ_MUST_USE JS::Result<mozilla::Maybe<BinVariant>> readMaybeVariant();
     MOZ_MUST_USE JS::Result<BinVariant> readVariant();
 
     
