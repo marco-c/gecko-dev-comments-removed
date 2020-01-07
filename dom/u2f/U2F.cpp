@@ -160,6 +160,23 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
     return ErrorCode::BAD_REQUEST;
   }
 
+  nsAutoCString appIdHost;
+  if (NS_FAILED(appIdUri->GetAsciiHost(appIdHost))) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  
+  if (appIdHost.EqualsLiteral("localhost")) {
+    nsAutoCString facetHost;
+    if (NS_FAILED(facetUri->GetAsciiHost(facetHost))) {
+      return ErrorCode::BAD_REQUEST;
+    }
+
+    if (facetHost.EqualsLiteral("localhost")) {
+      return ErrorCode::OK;
+    }
+  }
+
   
   
   
@@ -182,10 +199,6 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
 
   nsAutoCString lowestFacetHost;
   if (NS_FAILED(tldService->GetBaseDomain(facetUri, 0, lowestFacetHost))) {
-    return ErrorCode::BAD_REQUEST;
-  }
-  nsAutoCString appIdHost;
-  if (NS_FAILED(appIdUri->GetAsciiHost(appIdHost))) {
     return ErrorCode::BAD_REQUEST;
   }
 
