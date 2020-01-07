@@ -46,17 +46,7 @@ public class GeckoSession extends LayerSession
     private static final String LOGTAG = "GeckoSession";
     private static final boolean DEBUG = false;
 
-    
-    
-    private static final int WINDOW_CLOSE = 0;
-    
-    private static final int WINDOW_OPEN = 1; 
-    
-    private static final int WINDOW_TRANSFER_OUT = 2; 
-    
-    private static final int WINDOW_TRANSFER_IN = 3;
-
-    private enum State implements NativeQueue.State {
+     enum State implements NativeQueue.State {
         INITIAL(0),
         READY(1);
 
@@ -133,7 +123,7 @@ public class GeckoSession extends LayerSession
             "GeckoViewNavigation", this,
             new String[]{
                 "GeckoView:LocationChange",
-                "GeckoView:OnLoadUri",
+                "GeckoView:OnLoadRequest",
                 "GeckoView:OnNewSession"
             }
         ) {
@@ -160,7 +150,7 @@ public class GeckoSession extends LayerSession
                                          message.getBoolean("canGoBack"));
                     delegate.onCanGoForward(GeckoSession.this,
                                             message.getBoolean("canGoForward"));
-                } else if ("GeckoView:OnLoadUri".equals(event)) {
+                } else if ("GeckoView:OnLoadRequest".equals(event)) {
                     final String uri = message.getString("uri");
                     final int where = convertGeckoTarget(message.getInt("where"));
                     final boolean result =
@@ -319,13 +309,6 @@ public class GeckoSession extends LayerSession
             }
         };
 
-     int handlersCount;
-
-    private final GeckoSessionHandler<?>[] mSessionHandlers = new GeckoSessionHandler<?>[] {
-        mContentHandler, mNavigationHandler, mProgressHandler, mScrollHandler,
-        mTrackingProtectionHandler, mPermissionHandler
-    };
-
     private static class PermissionCallback implements
         PermissionDelegate.Callback, PermissionDelegate.MediaCallback {
 
@@ -412,15 +395,23 @@ public class GeckoSession extends LayerSession
             return mBinder;
         }
 
-        
         @WrapForJNI(dispatchTo = "proxy")
-        public static native void open(Window instance, NativeQueue queue,
-                                       Compositor compositor, EventDispatcher dispatcher,
-                                       GeckoBundle settings, String id, String chromeUri,
-                                       int screenId, boolean privateMode);
+        public static native void open(Window instance, Compositor compositor,
+                                       EventDispatcher dispatcher,
+                                       GeckoBundle settings, String chromeUri,
+                                       int screenId, boolean privateMode, String id);
 
         @Override 
-        public void disposeNative() {
+        protected void disposeNative() {
+            
+            
+            asBinder().attachInterface(null, Window.class.getName());
+
+            
+            synchronized (this) {
+                mNativeQueue.reset(State.INITIAL);
+            }
+
             if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
                 nativeDisposeNative();
             } else {
@@ -432,88 +423,33 @@ public class GeckoSession extends LayerSession
         @WrapForJNI(dispatchTo = "proxy", stubName = "DisposeNative")
         private native void nativeDisposeNative();
 
-        
-        public void close() {
-            
-            synchronized (this) {
-                if (mNativeQueue == null) {
-                    
-                    return;
-                }
+        @WrapForJNI(dispatchTo = "proxy")
+        public native void close();
+
+        @WrapForJNI(dispatchTo = "proxy")
+        public native void transfer(Compositor compositor, EventDispatcher dispatcher,
+                                    GeckoBundle settings);
+
+        @WrapForJNI(calledFrom = "gecko")
+        private synchronized void onTransfer(final EventDispatcher dispatcher) {
+            final NativeQueue nativeQueue = dispatcher.getNativeQueue();
+            if (mNativeQueue != nativeQueue) {
+                
+                
+                
+                nativeQueue.setState(mNativeQueue.getState());
                 mNativeQueue.reset(State.INITIAL);
-                mNativeQueue = null;
-            }
-
-            
-            
-            asBinder().attachInterface(null, Window.class.getName());
-
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                nativeClose();
-            } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                        this, "nativeClose");
+                mNativeQueue = nativeQueue;
             }
         }
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "Close")
-        private native void nativeClose();
-
-        
-        
-        public synchronized void transfer(final NativeQueue queue,
-                                          final Compositor compositor,
-                                          final EventDispatcher dispatcher,
-                                          final GeckoBundle settings) {
-            if (mNativeQueue == null) {
-                
-                return;
-            }
-
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                nativeTransfer(queue, compositor, dispatcher, settings);
-            } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                        this, "nativeTransfer",
-                        NativeQueue.class, queue,
-                        Compositor.class, compositor,
-                        EventDispatcher.class, dispatcher,
-                        GeckoBundle.class, settings);
-            }
-
-            if (mNativeQueue != queue) {
-                
-                
-                mNativeQueue.reset(State.INITIAL);
-                mNativeQueue = queue;
-            }
-        }
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "Transfer")
-        private native void nativeTransfer(NativeQueue queue, Compositor compositor,
-                                           EventDispatcher dispatcher, GeckoBundle settings);
 
         @WrapForJNI(dispatchTo = "proxy")
         public native void attachEditable(IGeckoEditableParent parent,
                                           GeckoEditableChild child);
 
         @WrapForJNI(calledFrom = "gecko")
-        private synchronized void onReady(final @Nullable NativeQueue queue) {
-            
-            
-            
-            
-            
-            
-            
-
-            if ((queue == null && mNativeQueue == null) ||
-                (queue != null && mNativeQueue != queue)) {
-                return;
-            }
-
-            if (mNativeQueue.checkAndSetState(State.INITIAL, State.READY) &&
-                    queue == null) {
+        private synchronized void onReady() {
+            if (mNativeQueue.checkAndSetState(State.INITIAL, State.READY)) {
                 Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
                       " - chrome startup finished");
             }
@@ -550,10 +486,6 @@ public class GeckoSession extends LayerSession
     public GeckoSession(final GeckoSessionSettings settings) {
         mSettings = new GeckoSessionSettings(settings, this);
         mListener.registerListeners();
-
-        if (BuildConfig.DEBUG && handlersCount != mSessionHandlers.length) {
-            throw new AssertionError("Add new handler to handlers list");
-        }
     }
 
     private void transferFrom(final Window window, final GeckoSessionSettings settings,
@@ -562,34 +494,29 @@ public class GeckoSession extends LayerSession
             throw new IllegalStateException("Session is open");
         }
 
-        if (window != null) {
-            onWindowChanged(WINDOW_TRANSFER_IN,  true);
-        }
-
         mWindow = window;
         mSettings = new GeckoSessionSettings(settings, this);
         mId = id;
 
         if (mWindow != null) {
-            mWindow.transfer(mNativeQueue, mCompositor,
-                             mEventDispatcher, mSettings.asBundle());
-
-            onWindowChanged(WINDOW_TRANSFER_IN,  false);
+            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+                mWindow.transfer(mCompositor, mEventDispatcher, mSettings.asBundle());
+            } else {
+                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
+                        mWindow, "transfer",
+                        Compositor.class, mCompositor,
+                        EventDispatcher.class, mEventDispatcher,
+                        GeckoBundle.class, mSettings.asBundle());
+            }
         }
+
+        onWindowChanged();
     }
 
      void transferFrom(final GeckoSession session) {
-        final boolean changing = (session.mWindow != null);
-        if (changing) {
-            session.onWindowChanged(WINDOW_TRANSFER_OUT,  true);
-        }
-
         transferFrom(session.mWindow, session.mSettings, session.mId);
         session.mWindow = null;
-
-        if (changing) {
-            session.onWindowChanged(WINDOW_TRANSFER_OUT,  false);
-        }
+        session.onWindowChanged();
     }
 
     @Override 
@@ -711,26 +638,22 @@ public class GeckoSession extends LayerSession
 
         mWindow = new Window(mNativeQueue);
 
-        onWindowChanged(WINDOW_OPEN,  true);
-
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            Window.open(mWindow, mNativeQueue, mCompositor, mEventDispatcher,
-                        mSettings.asBundle(), mId, chromeUri, screenId, isPrivate);
+            Window.open(mWindow, mCompositor, mEventDispatcher,
+                        mSettings.asBundle(), chromeUri, screenId, isPrivate, mId);
         } else {
             GeckoThread.queueNativeCallUntil(
                 GeckoThread.State.PROFILE_READY,
                 Window.class, "open",
                 Window.class, mWindow,
-                NativeQueue.class, mNativeQueue,
                 Compositor.class, mCompositor,
                 EventDispatcher.class, mEventDispatcher,
                 GeckoBundle.class, mSettings.asBundle(),
-                String.class, mId,
                 String.class, chromeUri,
-                screenId, isPrivate);
+                screenId, isPrivate, mId);
         }
 
-        onWindowChanged(WINDOW_OPEN,  false);
+        onWindowChanged();
     }
 
     
@@ -748,27 +671,21 @@ public class GeckoSession extends LayerSession
             return;
         }
 
-        onWindowChanged(WINDOW_CLOSE,  true);
-
-        mWindow.close();
-        mWindow.disposeNative();
-        mWindow = null;
-
-        onWindowChanged(WINDOW_CLOSE,  false);
-    }
-
-    private void onWindowChanged(int change, boolean inProgress) {
-        if ((change == WINDOW_OPEN || change == WINDOW_TRANSFER_IN) && !inProgress) {
-            mTextInput.onWindowChanged(mWindow);
+        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+            mWindow.close();
+        } else {
+            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
+                    mWindow, "close");
         }
 
-        if (change == WINDOW_CLOSE) {
-            
-            
-            
-            for (final GeckoSessionHandler<?> handler : mSessionHandlers) {
-                handler.setSessionIsReady(getEventDispatcher(), !inProgress);
-            }
+        mWindow.disposeNative();
+        mWindow = null;
+        onWindowChanged();
+    }
+
+    private void onWindowChanged() {
+        if (mWindow != null) {
+            mTextInput.onWindowChanged(mWindow);
         }
     }
 
