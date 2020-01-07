@@ -66,16 +66,14 @@ InsertNodeTransaction::DoTransaction()
       if (!newPointToInsert.IsSet()) {
         
         
-        newPointToInsert.Set(mPointToInsert.Container(),
-                             mPointToInsert.Container()->Length());
+        newPointToInsert.SetToEndOf(mPointToInsert.Container());
         if (NS_WARN_IF(!newPointToInsert.IsSet())) {
           return NS_ERROR_FAILURE;
         }
       }
       mPointToInsert = newPointToInsert;
     } else {
-      mPointToInsert.Set(mPointToInsert.Container(),
-                         mPointToInsert.Container()->Length());
+      mPointToInsert.SetToEndOf(mPointToInsert.Container());
       if (NS_WARN_IF(!mPointToInsert.IsSet())) {
         return NS_ERROR_FAILURE;
       }

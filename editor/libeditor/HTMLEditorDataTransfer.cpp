@@ -155,8 +155,7 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
       if (NS_WARN_IF(!pointToInsert.Offset())) {
         
         
-        pointToInsert.Set(pointToInsert.Container(),
-                          pointToInsert.Container()->Length());
+        pointToInsert.SetToEndOf(pointToInsert.Container());
       }
     }
   }

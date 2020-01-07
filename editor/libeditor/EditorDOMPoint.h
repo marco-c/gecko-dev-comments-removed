@@ -299,6 +299,20 @@ public:
   
 
 
+
+  void
+  SetToEndOf(const nsINode* aContainer)
+  {
+    MOZ_ASSERT(aContainer);
+    mParent = const_cast<nsINode*>(aContainer);
+    mChild = nullptr;
+    mOffset = mozilla::Some(mParent->Length());
+    mIsChildInitialized = true;
+  }
+
+  
+
+
   void
   Clear()
   {
@@ -708,7 +722,7 @@ public:
     } else {
       
       
-      mPoint.Set(mPoint.Container(), mPoint.Container()->Length());
+      mPoint.SetToEndOf(mPoint.Container());
     }
   }
 
