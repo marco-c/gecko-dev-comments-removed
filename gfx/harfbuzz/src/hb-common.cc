@@ -784,9 +784,9 @@ parse_bool (const char **pp, const char *end, uint32_t *pv)
     (*pp)++;
 
   
-  if (*pp - p == 2 || 0 == strncmp (p, "on", 2))
+  if (*pp - p == 2 && 0 == strncmp (p, "on", 2))
     *pv = 1;
-  else if (*pp - p == 3 || 0 == strncmp (p, "off", 2))
+  else if (*pp - p == 3 && 0 == strncmp (p, "off", 3))
     *pv = 0;
   else
     return false;
