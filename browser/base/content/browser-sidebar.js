@@ -360,6 +360,15 @@ var SidebarUI = {
     return this.show(commandID, triggerNode);
   },
 
+  _loadSidebarExtension(sidebarBroadcaster) {
+    let extensionId = sidebarBroadcaster.getAttribute("extensionId");
+    if (extensionId) {
+      let extensionUrl = sidebarBroadcaster.getAttribute("panel");
+      let browserStyle = sidebarBroadcaster.getAttribute("browserStyle");
+      SidebarUI.browser.contentWindow.loadPanel(extensionId, extensionUrl, browserStyle);
+    }
+  },
+
   
 
 
@@ -371,7 +380,9 @@ var SidebarUI = {
 
 
   show(commandID, triggerNode) {
-    return this._show(commandID).then(() => {
+    return this._show(commandID).then((sidebarBroadcaster) => {
+      this._loadSidebarExtension(sidebarBroadcaster);
+
       if (triggerNode) {
         updateToggleControlLabel(triggerNode);
       }
@@ -388,9 +399,11 @@ var SidebarUI = {
 
 
 
-   showInitially(commandID) {
-     return this._show(commandID);
-   },
+  showInitially(commandID) {
+    return this._show(commandID).then((sidebarBroadcaster) => {
+      this._loadSidebarExtension(sidebarBroadcaster);
+    });
+  },
 
   
 
@@ -446,14 +459,14 @@ var SidebarUI = {
           
           
           setTimeout(() => {
-            resolve();
+            resolve(sidebarBroadcaster);
 
             
             this._fireShowEvent();
           }, 0);
         }, {capture: true, once: true});
       } else {
-        resolve();
+        resolve(sidebarBroadcaster);
 
         
         this._fireShowEvent();
