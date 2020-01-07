@@ -614,28 +614,10 @@ struct JSCompartment
 #ifdef JSGC_HASH_TABLE_CHECKS
     void checkWrapperMapAfterMovingGC();
 #endif
-    
-    
-    js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
-
-    
-    JS::WeakCache<js::InnerViewTable> innerViews;
-
-    
-    
-    
-    js::UniquePtr<js::ObjectWeakMap> lazyArrayBuffers;
 
     
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
-  protected:
-    
-    
-    
-    js::UniquePtr<js::ObjectWeakMap> nonSyntacticLexicalEnvironments_;
-
-  public:
     
 
 
@@ -697,10 +679,6 @@ struct JSCompartment
         explicit StringWrapperEnum(JSCompartment* c) : js::WrapperMap::Enum(c->crossCompartmentWrappers, nullptr) {}
     };
 
-    js::LexicalEnvironmentObject*
-    getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx, js::HandleObject enclosing);
-    js::LexicalEnvironmentObject* getNonSyntacticLexicalEnvironment(JSObject* enclosing) const;
-
     
 
 
@@ -716,7 +694,6 @@ struct JSCompartment
     void sweepSavedStacks();
     void sweepRegExps();
     void sweepDebugEnvironments();
-    void sweepNativeIterators();
 
     static void fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
     void fixupAfterMovingGC();
@@ -733,24 +710,74 @@ struct JSCompartment
     js::UniquePtr<js::DebugEnvironments> debugEnvs;
 
     
-
-
-
-  private:
-    using NativeIteratorSentinel = js::UniquePtr<js::NativeIterator, JS::FreePolicy>;
-    NativeIteratorSentinel iteratorSentinel_;
-  public:
-    js::NativeIterator* enumerators;
-
-    MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
-
-    
     
     
     
     bool scheduledForDestruction = false;
     bool maybeAlive = true;
 };
+
+namespace js {
+
+
+
+
+class ObjectRealm
+{
+    using NativeIteratorSentinel = js::UniquePtr<js::NativeIterator, JS::FreePolicy>;
+    NativeIteratorSentinel iteratorSentinel_;
+
+    
+    
+    
+    js::UniquePtr<js::ObjectWeakMap> nonSyntacticLexicalEnvironments_;
+
+    ObjectRealm(const ObjectRealm&) = delete;
+    void operator=(const ObjectRealm&) = delete;
+
+  public:
+    
+    
+    js::NativeIterator* enumerators = nullptr;
+
+    
+    JS::WeakCache<js::InnerViewTable> innerViews;
+
+    
+    
+    
+    js::UniquePtr<js::ObjectWeakMap> lazyArrayBuffers;
+
+    
+    
+    js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
+
+    static inline ObjectRealm& get(const JSObject* obj);
+
+    explicit ObjectRealm(JS::Zone* zone);
+    ~ObjectRealm();
+
+    MOZ_MUST_USE bool init(JSContext* maybecx);
+
+    void finishRoots();
+    void trace(JSTracer* trc);
+    void sweepAfterMinorGC();
+    void sweepNativeIterators();
+
+    void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                                size_t* innerViewsArg,
+                                size_t* lazyArrayBuffersArg,
+                                size_t* objectMetadataTablesArg,
+                                size_t* nonSyntacticLexicalEnvironmentsArg);
+
+    MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
+
+    js::LexicalEnvironmentObject*
+    getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx, js::HandleObject enclosing);
+    js::LexicalEnvironmentObject* getNonSyntacticLexicalEnvironment(JSObject* enclosing) const;
+};
+
+} 
 
 class JS::Realm : public JSCompartment
 {
@@ -759,6 +786,10 @@ class JS::Realm : public JSCompartment
 
     friend struct ::JSContext;
     js::ReadBarrieredGlobalObject global_;
+
+    
+    js::ObjectRealm objects_;
+    friend js::ObjectRealm& js::ObjectRealm::get(const JSObject*);
 
     
     
@@ -865,6 +896,9 @@ class JS::Realm : public JSCompartment
   private:
     void updateDebuggerObservesFlag(unsigned flag);
 
+    Realm(const Realm&) = delete;
+    void operator=(const Realm&) = delete;
+
   public:
     Realm(JS::Zone* zone, const JS::RealmOptions& options);
     ~Realm();
@@ -949,6 +983,8 @@ class JS::Realm : public JSCompartment
 
     void finishRoots();
 
+    void sweepAfterMinorGC();
+    void sweepObjectRealm();
     void sweepSelfHostingScriptSource();
     void sweepTemplateObjects();
 
