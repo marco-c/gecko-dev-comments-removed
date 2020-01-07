@@ -37,6 +37,7 @@ import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -1319,10 +1320,15 @@ public class GeckoSession extends LayerSession
 
 
         public class SecurityInformation {
+            @IntDef({SECURITY_MODE_UNKNOWN, SECURITY_MODE_IDENTIFIED,
+                     SECURITY_MODE_VERIFIED})
+            public @interface SecurityMode {}
             public static final int SECURITY_MODE_UNKNOWN = 0;
             public static final int SECURITY_MODE_IDENTIFIED = 1;
             public static final int SECURITY_MODE_VERIFIED = 2;
 
+            @IntDef({CONTENT_UNKNOWN, CONTENT_BLOCKED, CONTENT_LOADED})
+            public @interface ContentType {}
             public static final int CONTENT_UNKNOWN = 0;
             public static final int CONTENT_BLOCKED = 1;
             public static final int CONTENT_LOADED = 2;
@@ -1363,22 +1369,22 @@ public class GeckoSession extends LayerSession
 
 
 
-            public final int securityMode;
+            public final @SecurityMode int securityMode;
             
 
 
 
-            public final int mixedModePassive;
+            public final @ContentType int mixedModePassive;
             
 
 
 
-            public final int mixedModeActive;
+            public final @ContentType int mixedModeActive;
             
 
 
 
-            public final int trackingMode;
+            public final @ContentType int trackingMode;
 
              SecurityInformation(GeckoBundle identityData) {
                 final GeckoBundle mode = identityData.getBundle("mode");
@@ -1434,6 +1440,9 @@ public class GeckoSession extends LayerSession
     }
 
     public interface ContentDelegate {
+        @IntDef({ELEMENT_TYPE_NONE, ELEMENT_TYPE_IMAGE, ELEMENT_TYPE_VIDEO,
+                 ELEMENT_TYPE_AUDIO})
+        public @interface ElementType {}
         static final int ELEMENT_TYPE_NONE = 0;
         static final int ELEMENT_TYPE_IMAGE = 1;
         static final int ELEMENT_TYPE_VIDEO = 2;
@@ -1487,7 +1496,8 @@ public class GeckoSession extends LayerSession
 
 
         void onContextMenu(GeckoSession session, int screenX, int screenY,
-                           String uri, int elementTypes, String elementSrc);
+                           String uri, @ElementType int elementTypes,
+                           String elementSrc);
     }
 
     
@@ -1522,6 +1532,8 @@ public class GeckoSession extends LayerSession
 
         void onCanGoForward(GeckoSession session, boolean canGoForward);
 
+        @IntDef({TARGET_WINDOW_NONE, TARGET_WINDOW_CURRENT, TARGET_WINDOW_NEW})
+        public @interface TargetWindow {}
         public static final int TARGET_WINDOW_NONE = 0;
         public static final int TARGET_WINDOW_CURRENT = 1;
         public static final int TARGET_WINDOW_NEW = 2;
@@ -1536,7 +1548,8 @@ public class GeckoSession extends LayerSession
 
 
 
-        boolean onLoadRequest(GeckoSession session, String uri, int target);
+        boolean onLoadRequest(GeckoSession session, String uri,
+                              @TargetWindow int target);
 
         
 
@@ -1694,6 +1707,12 @@ public class GeckoSession extends LayerSession
         }
 
         class AuthOptions {
+            @IntDef(flag = true,
+                    value = {AUTH_FLAG_HOST, AUTH_FLAG_PROXY,
+                             AUTH_FLAG_ONLY_PASSWORD, AUTH_FLAG_PREVIOUS_FAILED,
+                             AUTH_FLAG_CROSS_ORIGIN_SUB_RESOURCE})
+            public @interface AuthFlag {}
+
             
 
 
@@ -1715,6 +1734,8 @@ public class GeckoSession extends LayerSession
 
             public static final int AUTH_FLAG_CROSS_ORIGIN_SUB_RESOURCE = 32;
 
+            @IntDef({AUTH_LEVEL_NONE, AUTH_LEVEL_PW_ENCRYPTED, AUTH_LEVEL_SECURE})
+            public @interface AuthLevel {}
             
 
 
@@ -1731,7 +1752,7 @@ public class GeckoSession extends LayerSession
             
 
 
-            public int flags;
+            public @AuthFlag int flags;
 
             
 
@@ -1741,7 +1762,7 @@ public class GeckoSession extends LayerSession
             
 
 
-            public int level;
+            public @AuthLevel int level;
 
             
 
@@ -1775,6 +1796,8 @@ public class GeckoSession extends LayerSession
                            AuthOptions options, AuthCallback callback);
 
         class Choice {
+            @IntDef({CHOICE_TYPE_MENU, CHOICE_TYPE_SINGLE, CHOICE_TYPE_MULTIPLE})
+            public @interface ChoiceType {}
             
 
 
@@ -1899,8 +1922,9 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onChoicePrompt(GeckoSession session, String title, String msg, int type,
-                             Choice[] choices, ChoiceCallback callback);
+        void onChoicePrompt(GeckoSession session, String title, String msg,
+                            @Choice.ChoiceType int type, Choice[] choices,
+                            ChoiceCallback callback);
 
         
 
@@ -1914,6 +1938,9 @@ public class GeckoSession extends LayerSession
         void onColorPrompt(GeckoSession session, String title, String value,
                             TextCallback callback);
 
+        @IntDef({DATETIME_TYPE_DATE, DATETIME_TYPE_MONTH, DATETIME_TYPE_WEEK,
+                 DATETIME_TYPE_TIME, DATETIME_TYPE_DATETIME_LOCAL})
+        public @interface DatetimeType {}
         
 
 
@@ -1951,8 +1978,9 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onDateTimePrompt(GeckoSession session, String title, int type,
-                               String value, String min, String max, TextCallback callback);
+        void onDateTimePrompt(GeckoSession session, String title,
+                              @DatetimeType int type, String value, String min,
+                              String max, TextCallback callback);
 
         
 
@@ -1977,6 +2005,8 @@ public class GeckoSession extends LayerSession
             void confirm(Context context, Uri[] uris);
         }
 
+        @IntDef({FILE_TYPE_SINGLE, FILE_TYPE_MULTIPLE})
+        public @interface FileType {}
         static final int FILE_TYPE_SINGLE = 1;
         static final int FILE_TYPE_MULTIPLE = 2;
 
@@ -1991,8 +2021,8 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onFilePrompt(GeckoSession session, String title, int type,
-                           String[] mimeTypes, FileCallback callback);
+        void onFilePrompt(GeckoSession session, String title, @FileType int type,
+                          String[] mimeTypes, FileCallback callback);
     }
 
     
@@ -2017,6 +2047,10 @@ public class GeckoSession extends LayerSession
 
 
     public interface TrackingProtectionDelegate {
+        @IntDef(flag = true,
+                value = {CATEGORY_AD, CATEGORY_ANALYTIC, CATEGORY_SOCIAL,
+                         CATEGORY_CONTENT})
+        public @interface Category {}
         static final int CATEGORY_AD = 1 << 0;
         static final int CATEGORY_ANALYTIC = 1 << 1;
         static final int CATEGORY_SOCIAL = 1 << 2;
@@ -2031,7 +2065,8 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onTrackerBlocked(GeckoSession session, String uri, int categories);
+        void onTrackerBlocked(GeckoSession session, String uri,
+                              @Category int categories);
     }
 
     
@@ -2040,7 +2075,7 @@ public class GeckoSession extends LayerSession
 
 
 
-    public void enableTrackingProtection(int categories) {
+    public void enableTrackingProtection(@TrackingProtectionDelegate.Category int categories) {
         mTrackingProtection.enable(categories);
     }
 
@@ -2061,6 +2096,8 @@ public class GeckoSession extends LayerSession
 
 
     public interface PermissionDelegate {
+        @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION})
+        public @interface Permission {}
         
 
 
@@ -2102,7 +2139,7 @@ public class GeckoSession extends LayerSession
 
 
         void onAndroidPermissionsRequest(GeckoSession session, String[] permissions,
-                                       Callback callback);
+                                         Callback callback);
 
         
 
@@ -2115,10 +2152,16 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onContentPermissionRequest(GeckoSession session, String uri, int type,
-                                      String access, Callback callback);
+        void onContentPermissionRequest(GeckoSession session, String uri,
+                                        @Permission int type,
+                                        String access, Callback callback);
 
         class MediaSource {
+            @IntDef({SOURCE_CAMERA, SOURCE_SCREEN, SOURCE_APPLICATION,
+                     SOURCE_WINDOW, SOURCE_BROWSER, SOURCE_MICROPHONE,
+                     SOURCE_AUDIOCAPTURE, SOURCE_OTHER})
+            public @interface Source {}
+
             
 
 
@@ -2159,6 +2202,8 @@ public class GeckoSession extends LayerSession
 
             public static final int SOURCE_OTHER = 7;
 
+            @IntDef({TYPE_VIDEO, TYPE_AUDIO})
+            public @interface Type {}
             
 
 
@@ -2193,14 +2238,14 @@ public class GeckoSession extends LayerSession
 
 
 
-            public final int source;
+            public final @Source int source;
 
             
 
 
-            public final int type;
+            public final @Type int type;
 
-            private static int getSourceFromString(String src) {
+            private static @Source int getSourceFromString(String src) {
                 
                 if ("camera".equals(src)) {
                     return SOURCE_CAMERA;
@@ -2223,7 +2268,7 @@ public class GeckoSession extends LayerSession
                 }
             }
 
-            private static int getTypeFromString(String type) {
+            private static @Type int getTypeFromString(String type) {
                 
                 if ("video".equals(type)) {
                     return TYPE_VIDEO;
@@ -2290,6 +2335,6 @@ public class GeckoSession extends LayerSession
 
 
         void onMediaPermissionRequest(GeckoSession session, String uri, MediaSource[] video,
-                                    MediaSource[] audio, MediaCallback callback);
+                                      MediaSource[] audio, MediaCallback callback);
     }
 }
