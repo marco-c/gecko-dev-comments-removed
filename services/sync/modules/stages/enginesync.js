@@ -137,6 +137,8 @@ EngineSynchronizer.prototype = {
       throw ex;
     }
 
+    await this.service.engineManager.switchAlternatives();
+
     
     let enginesToSync;
     if (allowEnginesHint && engineNamesToSync) {
