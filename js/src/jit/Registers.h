@@ -125,7 +125,7 @@ struct RegisterOrSP
 {
     
     
-    const uint32_t code;
+    uint32_t code;
 
     explicit RegisterOrSP(uint32_t code) : code(code) {}
     explicit RegisterOrSP(Register r) : code(r.code()) {}

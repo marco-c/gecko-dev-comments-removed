@@ -70,6 +70,10 @@ typedef Rooted<WasmTableObject*> RootedWasmTableObject;
 typedef Handle<WasmTableObject*> HandleWasmTableObject;
 typedef MutableHandle<WasmTableObject*> MutableHandleWasmTableObject;
 
+class WasmGlobalObject;
+typedef GCVector<HeapPtr<WasmGlobalObject*>, 8, SystemAllocPolicy> WasmGlobalObjectVector;
+typedef Rooted<WasmGlobalObject*> RootedWasmGlobalObject;
+
 namespace wasm {
 
 using mozilla::Atomic;
@@ -434,6 +438,20 @@ class Tiers
 
 
 
+enum ModuleKind
+{
+    Wasm,
+    AsmJS
+};
+
+enum class Shareable
+{
+    False,
+    True
+};
+
+
+
 
 
 
@@ -690,6 +708,10 @@ typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
 
 
 
+
+
+
+
 enum class GlobalKind
 {
     Import,
@@ -711,33 +733,44 @@ class GlobalDesc
             } val;
             unsigned offset_;
             bool isMutable_;
+            bool isWasm_;
+            bool isExport_;
         } var;
         Val cst_;
         V() {}
     } u;
     GlobalKind kind_;
 
+    
+
+    bool isExport() const { return !isConstant() && u.var.isExport_; }
+    bool isWasm() const { return !isConstant() && u.var.isWasm_; }
+
   public:
     GlobalDesc() = default;
 
-    explicit GlobalDesc(InitExpr initial, bool isMutable)
+    explicit GlobalDesc(InitExpr initial, bool isMutable, ModuleKind kind = ModuleKind::Wasm)
       : kind_((isMutable || !initial.isVal()) ? GlobalKind::Variable : GlobalKind::Constant)
     {
         if (isVariable()) {
             u.var.val.initial_ = initial;
             u.var.isMutable_ = isMutable;
+            u.var.isWasm_ = kind == Wasm;
+            u.var.isExport_ = false;
             u.var.offset_ = UINT32_MAX;
         } else {
             u.cst_ = initial.val();
         }
     }
 
-    explicit GlobalDesc(ValType type, bool isMutable, uint32_t importIndex)
+    explicit GlobalDesc(ValType type, bool isMutable, uint32_t importIndex, ModuleKind kind = ModuleKind::Wasm)
       : kind_(GlobalKind::Import)
     {
         u.var.val.import.type_ = type;
         u.var.val.import.index_ = importIndex;
         u.var.isMutable_ = isMutable;
+        u.var.isWasm_ = kind == Wasm;
+        u.var.isExport_ = false;
         u.var.offset_ = UINT32_MAX;
     }
 
@@ -752,6 +785,11 @@ class GlobalDesc
         return u.var.offset_;
     }
 
+    void setIsExport() {
+        if (!isConstant())
+            u.var.isExport_ = true;
+    }
+
     GlobalKind kind() const { return kind_; }
     bool isVariable() const { return kind_ == GlobalKind::Variable; }
     bool isConstant() const { return kind_ == GlobalKind::Constant; }
@@ -761,6 +799,15 @@ class GlobalDesc
     Val constantValue() const { MOZ_ASSERT(isConstant()); return u.cst_; }
     const InitExpr& initExpr() const { MOZ_ASSERT(isVariable()); return u.var.val.initial_; }
     uint32_t importIndex() const { MOZ_ASSERT(isImport()); return u.var.val.import.index_; }
+
+    
+    
+    
+    
+    
+    
+    
+    bool isIndirect() const { return isMutable() && isWasm() && (isImport() || isExport()); }
 
     ValType type() const {
         switch (kind_) {
@@ -1442,20 +1489,6 @@ struct Assumptions
     uint8_t* serialize(uint8_t* cursor) const;
     const uint8_t* deserialize(const uint8_t* cursor, size_t remain);
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-};
-
-
-
-enum ModuleKind
-{
-    Wasm,
-    AsmJS
-};
-
-enum class Shareable
-{
-    False,
-    True
 };
 
 

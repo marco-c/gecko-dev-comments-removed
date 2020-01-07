@@ -49,8 +49,8 @@ HasSupport(JSContext* cx);
 bool
 ToWebAssemblyValue(JSContext* cx, ValType targetType, HandleValue v, Val* val);
 
-void
-ToJSValue(const Val& val, MutableHandleValue v);
+Value
+ToJSValue(const Val& val);
 
 
 
@@ -123,6 +123,54 @@ class WasmModuleObject : public NativeObject
 
 
 
+
+
+
+class WasmGlobalObject : public NativeObject
+{
+    static const unsigned TYPE_SLOT = 0;
+    static const unsigned MUTABLE_SLOT = 1;
+    static const unsigned CELL_SLOT = 2;
+
+    static const ClassOps classOps_;
+    static void finalize(FreeOp*, JSObject* obj);
+
+    static bool valueGetterImpl(JSContext* cx, const CallArgs& args);
+    static bool valueGetter(JSContext* cx, unsigned argc, Value* vp);
+    static bool valueSetterImpl(JSContext* cx, const CallArgs& args);
+    static bool valueSetter(JSContext* cx, unsigned argc, Value* vp);
+
+  public:
+    
+    
+    union Cell {
+        int32_t i32;
+        int64_t i64;
+        float   f32;
+        double  f64;
+    };
+
+    static const unsigned RESERVED_SLOTS = 3;
+    static const Class class_;
+    static const JSPropertySpec properties[];
+    static const JSFunctionSpec methods[];
+    static const JSFunctionSpec static_methods[];
+    static bool construct(JSContext*, unsigned, Value*);
+
+    static WasmGlobalObject* create(JSContext* cx, const wasm::Val& value, bool isMutable);
+
+    wasm::ValType type() const;
+    wasm::Val val() const;
+    bool isMutable() const;
+    
+    Value value() const;
+    Cell* cell() const;
+};
+
+
+
+
+
 class WasmInstanceObject : public NativeObject
 {
     static const unsigned INSTANCE_SLOT = 0;
@@ -130,6 +178,7 @@ class WasmInstanceObject : public NativeObject
     static const unsigned EXPORTS_SLOT = 2;
     static const unsigned SCOPES_SLOT = 3;
     static const unsigned INSTANCE_SCOPE_SLOT = 4;
+    static const unsigned GLOBALS_SLOT = 5;
 
     static const ClassOps classOps_;
     static bool exportsGetterImpl(JSContext* cx, const CallArgs& args);
@@ -158,7 +207,7 @@ class WasmInstanceObject : public NativeObject
     ScopeMap& scopes() const;
 
   public:
-    static const unsigned RESERVED_SLOTS = 5;
+    static const unsigned RESERVED_SLOTS = 6;
     static const Class class_;
     static const JSPropertySpec properties[];
     static const JSFunctionSpec methods[];
@@ -172,7 +221,9 @@ class WasmInstanceObject : public NativeObject
                                       HandleWasmMemoryObject memory,
                                       Vector<RefPtr<wasm::Table>, 0, SystemAllocPolicy>&& tables,
                                       Handle<FunctionVector> funcImports,
-                                      const wasm::ValVector& globalImports,
+                                      const wasm::GlobalDescVector& globals,
+                                      const wasm::ValVector& globalImportValues,
+                                      const WasmGlobalObjectVector& globalObjs,
                                       HandleObject proto);
     void initExportsObj(JSObject& exportsObj);
 
@@ -190,6 +241,8 @@ class WasmInstanceObject : public NativeObject
     static WasmFunctionScope* getFunctionScope(JSContext* cx,
                                                HandleWasmInstanceObject instanceObj,
                                                uint32_t funcIndex);
+
+    WasmGlobalObjectVector& indirectGlobals() const;
 };
 
 
@@ -284,42 +337,6 @@ class WasmTableObject : public NativeObject
     static WasmTableObject* create(JSContext* cx, const wasm::Limits& limits);
     wasm::Table& table() const;
 };
-
-#if defined(ENABLE_WASM_GLOBAL) && defined(EARLY_BETA_OR_EARLIER)
-
-
-
-
-class WasmGlobalObject : public NativeObject
-{
-    static const unsigned TYPE_SLOT = 0;
-    static const unsigned MUTABLE_SLOT = 1;
-    static const unsigned VALUE_SLOT = 2;
-
-    static const ClassOps classOps_;
-
-    static bool valueGetterImpl(JSContext* cx, const CallArgs& args);
-    static bool valueGetter(JSContext* cx, unsigned argc, Value* vp);
-    static bool valueSetterImpl(JSContext* cx, const CallArgs& args);
-    static bool valueSetter(JSContext* cx, unsigned argc, Value* vp);
-
-  public:
-    static const unsigned RESERVED_SLOTS = 3;
-    static const Class class_;
-    static const JSPropertySpec properties[];
-    static const JSFunctionSpec methods[];
-    static const JSFunctionSpec static_methods[];
-    static bool construct(JSContext*, unsigned, Value*);
-
-    static WasmGlobalObject* create(JSContext* cx, wasm::ValType type, bool isMutable,
-                                    HandleValue value);
-
-    wasm::ValType type() const;
-    bool isMutable() const;
-    Value value() const;
-};
-
-#endif 
 
 } 
 
