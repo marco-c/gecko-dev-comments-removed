@@ -909,6 +909,8 @@ js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
                   HandleScriptSourceObject sourceObject, HandleFunction fun,
                   MutableHandle<LazyScript*> lazy)
 {
+    MOZ_ASSERT_IF(mode == XDR_DECODE, sourceObject);
+
     JSContext* cx = xdr->cx();
 
     {
@@ -967,7 +969,7 @@ js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
             if (mode == XDR_ENCODE)
                 func = innerFunctions[i];
 
-            MOZ_TRY(XDRInterpretedFunction(xdr, nullptr, nullptr, &func));
+            MOZ_TRY(XDRInterpretedFunction(xdr, nullptr, sourceObject, &func));
 
             if (mode == XDR_DECODE)
                 innerFunctions[i] = func;
@@ -4175,13 +4177,14 @@ JSScript::formalLivesInArgumentsObject(unsigned argSlot)
     return argsObjAliasesFormals() && !formalIsAliased(argSlot);
 }
 
-LazyScript::LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
+LazyScript::LazyScript(JSFunction* fun, ScriptSourceObject& sourceObject,
+                       void* table, uint64_t packedFields,
                        uint32_t sourceStart, uint32_t sourceEnd,
                        uint32_t toStringStart, uint32_t lineno, uint32_t column)
   : script_(nullptr),
     function_(fun),
     enclosingScope_(nullptr),
-    sourceObject_(nullptr),
+    sourceObject_(&sourceObject),
     table_(table),
     packedFields_(packedFields),
     sourceStart_(sourceStart),
@@ -4191,6 +4194,9 @@ LazyScript::LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
     lineno_(lineno),
     column_(column)
 {
+    MOZ_ASSERT(function_);
+    MOZ_ASSERT(sourceObject_);
+    MOZ_ASSERT(function_->compartment() == sourceObject_->compartment());
     MOZ_ASSERT(sourceStart <= sourceEnd);
     MOZ_ASSERT(toStringStart <= sourceStart);
 }
@@ -4211,36 +4217,33 @@ LazyScript::resetScript()
 }
 
 void
-LazyScript::setEnclosingScopeAndSource(Scope* enclosingScope, ScriptSourceObject* sourceObject)
+LazyScript::setEnclosingScope(Scope* enclosingScope)
 {
-    MOZ_ASSERT(function_->compartment() == sourceObject->compartment());
     
     
-    MOZ_ASSERT_IF(sourceObject_, sourceObject_ == sourceObject && enclosingScope_);
-    MOZ_ASSERT_IF(!sourceObject_, !enclosingScope_);
-
     enclosingScope_ = enclosingScope;
-    sourceObject_ = sourceObject;
 }
 
-ScriptSourceObject*
+ScriptSourceObject&
 LazyScript::sourceObject() const
 {
-    return sourceObject_ ? &sourceObject_->as<ScriptSourceObject>() : nullptr;
+    return sourceObject_->as<ScriptSourceObject>();
 }
 
 ScriptSource*
 LazyScript::maybeForwardedScriptSource() const
 {
-    JSObject* source = MaybeForwarded(sourceObject());
+    JSObject* source = MaybeForwarded(&sourceObject());
     return UncheckedUnwrapWithoutExpose(source)->as<ScriptSourceObject>().source();
 }
 
  LazyScript*
 LazyScript::CreateRaw(JSContext* cx, HandleFunction fun,
+                      HandleScriptSourceObject sourceObject,
                       uint64_t packedFields, uint32_t sourceStart, uint32_t sourceEnd,
                       uint32_t toStringStart, uint32_t lineno, uint32_t column)
 {
+    MOZ_ASSERT(sourceObject);
     union {
         PackedView p;
         uint64_t packed;
@@ -4267,12 +4270,13 @@ LazyScript::CreateRaw(JSContext* cx, HandleFunction fun,
 
     cx->compartment()->scheduleDelazificationForDebugger();
 
-    return new (res) LazyScript(fun, table.forget(), packed, sourceStart, sourceEnd,
+    return new (res) LazyScript(fun, *sourceObject, table.forget(), packed, sourceStart, sourceEnd,
                                 toStringStart, lineno, column);
 }
 
  LazyScript*
 LazyScript::Create(JSContext* cx, HandleFunction fun,
+                   HandleScriptSourceObject sourceObject,
                    const frontend::AtomVector& closedOverBindings,
                    Handle<GCVector<JSFunction*, 8>> innerFunctions,
                    uint32_t sourceStart, uint32_t sourceEnd,
@@ -4298,7 +4302,8 @@ LazyScript::Create(JSContext* cx, HandleFunction fun,
     p.isDerivedClassConstructor = false;
     p.needsHomeObject = false;
 
-    LazyScript* res = LazyScript::CreateRaw(cx, fun, packedFields, sourceStart, sourceEnd,
+    LazyScript* res = LazyScript::CreateRaw(cx, fun, sourceObject, packedFields,
+                                            sourceStart, sourceEnd,
                                             toStringStart, lineno, column);
     if (!res)
         return nullptr;
@@ -4328,7 +4333,8 @@ LazyScript::Create(JSContext* cx, HandleFunction fun,
     
     HandleFunction dummyFun = fun;
 
-    LazyScript* res = LazyScript::CreateRaw(cx, fun, packedFields, sourceStart, sourceEnd,
+    LazyScript* res = LazyScript::CreateRaw(cx, fun, sourceObject, packedFields,
+                                            sourceStart, sourceEnd,
                                             toStringStart, lineno, column);
     if (!res)
         return nullptr;
@@ -4348,11 +4354,9 @@ LazyScript::Create(JSContext* cx, HandleFunction fun,
     
     
     
-    MOZ_ASSERT(!!sourceObject == !!enclosingScope);
-    MOZ_ASSERT(!res->sourceObject());
     MOZ_ASSERT(!res->enclosingScope());
-    if (sourceObject)
-        res->setEnclosingScopeAndSource(enclosingScope, sourceObject);
+    if (enclosingScope)
+        res->setEnclosingScope(enclosingScope);
 
     MOZ_ASSERT(!res->hasScript());
     if (script)
@@ -4502,11 +4506,7 @@ JS::ubi::Concrete<js::LazyScript>::size(mozilla::MallocSizeOf mallocSizeOf) cons
 const char*
 JS::ubi::Concrete<js::LazyScript>::scriptFilename() const
 {
-    auto sourceObject = get().sourceObject();
-    if (!sourceObject)
-        return nullptr;
-
-    auto source = sourceObject->source();
+    auto source = get().sourceObject().source();
     if (!source)
         return nullptr;
 

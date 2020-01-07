@@ -7943,8 +7943,7 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             
             
             
-            ScriptSourceObject* source = &script->sourceObject()->as<ScriptSourceObject>();
-            fun->lazyScript()->setEnclosingScopeAndSource(innermostScope(), source);
+            fun->lazyScript()->setEnclosingScope(innermostScope());
             if (emittingRunOnceLambda)
                 fun->lazyScript()->setTreatAsRunOnce();
         } else {
