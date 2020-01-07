@@ -7,57 +7,53 @@
 
 #include "MediaPipeline.h"
 
-#include "MediaStreamGraphImpl.h"
-
 #include <inttypes.h>
 #include <math.h>
 
-#include "nspr.h"
-#include "srtp.h"
-
-#include "VideoSegment.h"
-#include "Layers.h"
-#include "LayersLogging.h"
-#include "ImageTypes.h"
-#include "ImageContainer.h"
-#include "MediaStreamTrack.h"
-#include "MediaStreamListener.h"
-#include "MediaStreamVideoSink.h"
-#include "VideoUtils.h"
-#include "VideoStreamTrack.h"
-#include "MediaEngine.h"
-
-#include "nsError.h"
 #include "AudioSegment.h"
 #include "AutoTaskQueue.h"
-#include "MediaSegment.h"
+#include "CSFLog.h"
+#include "DOMMediaStream.h"
+#include "ImageContainer.h"
+#include "ImageTypes.h"
+#include "Layers.h"
+#include "LayersLogging.h"
+#include "MediaEngine.h"
 #include "MediaPipelineFilter.h"
+#include "MediaSegment.h"
+#include "MediaStreamGraphImpl.h"
+#include "MediaStreamListener.h"
+#include "MediaStreamTrack.h"
+#include "MediaStreamVideoSink.h"
 #include "RtpLogger.h"
+#include "VideoSegment.h"
+#include "VideoStreamTrack.h"
+#include "VideoUtils.h"
 #include "databuffer.h"
+#include "libyuv/convert.h"
+#include "mozilla/PeerIdentity.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
+#include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Types.h"
+#include "nsError.h"
+#include "nsThreadUtils.h"
+#include "nspr.h"
+#include "runnable_utils.h"
+#include "srtp.h"
 #include "transportflow.h"
 #include "transportlayer.h"
 #include "transportlayerdtls.h"
 #include "transportlayerice.h"
-#include "runnable_utils.h"
-#include "libyuv/convert.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/PeerIdentity.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/Types.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/Sprintf.h"
 
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/base/bind.h"
-
-#include "nsThreadUtils.h"
-
-#include "CSFLog.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 
 
@@ -470,7 +466,7 @@ protected:
   }
 
   Atomic<int32_t, Relaxed> mLength;
-  RefPtr<AutoTaskQueue> mTaskQueue;
+  const RefPtr<AutoTaskQueue> mTaskQueue;
 
   
   int32_t mLastImage;           
@@ -2181,38 +2177,60 @@ public:
                    const RefPtr<MediaSessionConduit>& aConduit)
     : GenericReceiveListener(aTrack)
     , mConduit(aConduit)
+    , mSource(mTrack->GetInputStream()->AsSourceStream())
+    , mTrackId(mTrack->GetInputTrackId())
+    , mRate(mSource ? mSource->GraphRate() : 0)
+    , mTaskQueue(new AutoTaskQueue(
+        SharedThreadPool::Get(NS_LITERAL_CSTRING("PipelineAudioListener"))))
     , mLastLog(0)
   {
+    MOZ_ASSERT(mSource);
   }
 
+  
+  void NotifyPull(MediaStreamGraph* aGraph,
+                  StreamTime aDesiredTime) override
+  {
+    if (!mSource) {
+      CSFLogError(LOGTAG, "NotifyPull() called from a non-SourceMediaStream");
+      return;
+    }
+    NotifyPullImpl(aDesiredTime);
+  }
+
+  RefPtr<SourceMediaStream::NotifyPullPromise> AsyncNotifyPull(
+    MediaStreamGraph* aGraph,
+    StreamTime aDesiredTime) override
+  {
+    if (!mSource) {
+      CSFLogError(LOGTAG, "NotifyPull() called from a non-SourceMediaStream");
+      return SourceMediaStream::NotifyPullPromise::CreateAndReject(true,
+                                                                   __func__);
+    }
+    RefPtr<PipelineListener> self = this;
+    return InvokeAsync(mTaskQueue, __func__, [self, aDesiredTime]() {
+      self->NotifyPullImpl(aDesiredTime);
+      return SourceMediaStream::NotifyPullPromise::CreateAndResolve(true,
+                                                                    __func__);
+    });
+  }
+
+private:
   ~PipelineListener()
   {
     if (!NS_IsMainThread()) {
       
       nsresult rv =
         NS_DispatchToMainThread(new ConduitDeleteEvent(mConduit.forget()));
-      MOZ_ASSERT(!NS_FAILED(rv), "Could not dispatch conduit shutdown to main");
-      if (NS_FAILED(rv)) {
-        MOZ_CRASH();
-      }
+      MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
     } else {
       mConduit = nullptr;
     }
   }
 
-  
-  void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) override
+  void NotifyPullImpl(StreamTime aDesiredTime)
   {
-    RefPtr<SourceMediaStream> source =
-      mTrack->GetInputStream()->AsSourceStream();
-    MOZ_ASSERT(source);
-    if (!source) {
-      CSFLogError(LOGTAG, "NotifyPull() called from a non-SourceMediaStream");
-      return;
-    }
-
-    const TrackRate rate = aGraph->GraphRate();
-    uint32_t samplesPer10ms = rate / 100;
+    uint32_t samplesPer10ms = mRate / 100;
     
     
     
@@ -2227,7 +2245,7 @@ public:
       MediaConduitErrorCode err =
         static_cast<AudioSessionConduit*>(mConduit.get())
           ->GetAudioFrame(scratchBuffer,
-                          rate,
+                          mRate,
                           0, 
                              
                           samplesLength);
@@ -2240,7 +2258,7 @@ public:
                     err,
                     mPlayedTicks,
                     aDesiredTime,
-                    source->StreamTimeToSeconds(aDesiredTime));
+                    mSource->StreamTimeToSeconds(aDesiredTime));
         
         samplesLength = samplesPer10ms;
         PodArrayZero(scratchBuffer);
@@ -2281,19 +2299,18 @@ public:
         samples.forget(), outputChannels, frames, mPrincipalHandle);
 
       
-      if (source->AppendToTrack(mTrack->GetInputTrackId(), &segment)) {
+      if (mSource->AppendToTrack(mTrackId, &segment)) {
         framesNeeded -= frames;
         mPlayedTicks += frames;
         if (MOZ_LOG_TEST(AudioLogModule(), LogLevel::Debug)) {
-          if (mPlayedTicks > mLastLog + rate) { 
-            MOZ_LOG(
-              AudioLogModule(),
-              LogLevel::Debug,
-              ("%p: Inserting %zu samples into track %d, total = %" PRIu64,
-               (void*)this,
-               frames,
-               mTrack->GetInputTrackId(),
-               mPlayedTicks));
+          if (mPlayedTicks > mLastLog + mRate) {
+            MOZ_LOG(AudioLogModule(),
+                    LogLevel::Debug,
+                    ("%p: Inserting samples into track %d, total = "
+                     "%" PRIu64,
+                     (void*)this,
+                     mTrackId,
+                     mPlayedTicks));
             mLastLog = mPlayedTicks;
           }
         }
@@ -2301,14 +2318,18 @@ public:
         CSFLogError(LOGTAG, "AppendToTrack failed");
         
         
-        return;
+        break;
       }
     }
   }
 
-private:
   RefPtr<MediaSessionConduit> mConduit;
-  TrackTicks mLastLog; 
+  const RefPtr<SourceMediaStream> mSource;
+  const TrackID mTrackId;
+  const TrackRate mRate;
+  const RefPtr<AutoTaskQueue> mTaskQueue;
+  
+  TrackTicks mLastLog = 0; 
 };
 
 MediaPipelineReceiveAudio::MediaPipelineReceiveAudio(
