@@ -593,31 +593,18 @@ WindowSurfaceWayland::~WindowSurfaceWayland()
   }
 }
 
-void
-WindowSurfaceWayland::UpdateScaleFactor()
-{
-  wl_surface* waylandSurface = mWindow->GetWaylandSurface();
-  if (waylandSurface) {
-    wl_surface_set_buffer_scale(waylandSurface, mWindow->GdkScaleFactor());
-  }
-}
-
 WindowBackBuffer*
 WindowSurfaceWayland::GetBufferToDraw(int aWidth, int aHeight)
 {
   if (!mFrontBuffer) {
     mFrontBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
     mBackBuffer = new WindowBackBuffer(mWaylandDisplay, aWidth, aHeight);
-    UpdateScaleFactor();
     return mFrontBuffer;
   }
 
   if (!mFrontBuffer->IsAttached()) {
     if (!mFrontBuffer->IsMatchingSize(aWidth, aHeight)) {
       mFrontBuffer->Resize(aWidth, aHeight);
-      
-      
-      UpdateScaleFactor();
     }
     return mFrontBuffer;
   }
@@ -648,7 +635,6 @@ WindowSurfaceWayland::GetBufferToDraw(int aWidth, int aHeight)
     
     mFrontBuffer->Resize(aWidth, aHeight);
   }
-  UpdateScaleFactor();
 
   return mFrontBuffer;
 }
@@ -714,6 +700,10 @@ WindowSurfaceWayland::Commit(const LayoutDeviceIntRegion& aInvalidRegion)
     mFrameCallback = wl_surface_frame(waylandSurface);
     wl_callback_add_listener(mFrameCallback, &frame_listener, this);
     mFrameCallbackSurface = waylandSurface;
+
+    
+    
+    wl_surface_set_buffer_scale(waylandSurface, mWindow->GdkScaleFactor());
 
     
     

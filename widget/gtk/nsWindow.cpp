@@ -5931,7 +5931,6 @@ scale_changed_cb (GtkWidget* widget, GParamSpec* aPSpec, gpointer aPointer)
     if (!window) {
       return;
     }
-    
     window->OnDPIChanged();
 
     
