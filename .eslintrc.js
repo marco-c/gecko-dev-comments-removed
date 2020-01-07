@@ -27,6 +27,21 @@ module.exports = {
   }, {
     
     
+    
+    
+    "files": [
+      "browser/base/content/tabbrowser.xml",
+      "browser/base/content/urlbarBindings.xml",
+      "browser/components/search/content/search.xml",
+      "browser/components/translation/translation-infobar.xml",
+      "toolkit/components/prompts/content/tabprompts.xml"
+    ],
+    "env": {
+      "mozilla/browser-window": true
+    }
+  },{
+    
+    
     "files": [
       "devtools/**",
       "extensions/pref/**",
