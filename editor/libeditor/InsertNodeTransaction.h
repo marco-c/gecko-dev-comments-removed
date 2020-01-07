@@ -22,6 +22,11 @@ class EditorBase;
 
 class InsertNodeTransaction final : public EditTransactionBase
 {
+protected:
+  InsertNodeTransaction(EditorBase& aEditorBase,
+                        nsIContent& aContentToInsert,
+                        const EditorRawDOMPoint& aPointToInsert);
+
 public:
   
 
@@ -31,9 +36,17 @@ public:
 
 
 
-  InsertNodeTransaction(EditorBase& aEditorBase,
-                        nsIContent& aContentToInsert,
-                        const EditorRawDOMPoint& aPointToInsert);
+
+
+
+
+
+
+  static already_AddRefed<InsertNodeTransaction>
+  Create(EditorBase& aEditorBase,
+         nsIContent& aContentToInsert,
+         const EditorRawDOMPoint& aPointToInsert);
+
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTransaction,

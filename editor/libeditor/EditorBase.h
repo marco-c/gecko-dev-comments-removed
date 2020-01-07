@@ -556,23 +556,6 @@ protected:
   
 
 
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<InsertNodeTransaction>
-    CreateTxnForInsertNode(nsIContent& aContentToInsert,
-                           const EditorRawDOMPoint& aPointToInsert);
-
-  
-
-
   already_AddRefed<DeleteNodeTransaction>
     CreateTxnForDeleteNode(nsINode* aNode);
 
