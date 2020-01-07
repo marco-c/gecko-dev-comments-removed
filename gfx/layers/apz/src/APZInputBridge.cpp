@@ -135,8 +135,7 @@ APZInputBridge::ReceiveInputEvent(
         
         if (wheelEvent.mDeltaX || wheelEvent.mDeltaY) {
           ScreenPoint origin(wheelEvent.mRefPoint.x, wheelEvent.mRefPoint.y);
-          ScrollWheelInput input(wheelEvent.mTime, wheelEvent.mTimeStamp,
-                                 wheelEvent.mModifiers,
+          ScrollWheelInput input(wheelEvent.mTime, wheelEvent.mTimeStamp, 0,
                                  scrollMode,
                                  ScrollWheelInput::DeltaTypeForDeltaMode(
                                                      wheelEvent.mDeltaMode),
