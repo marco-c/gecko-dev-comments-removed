@@ -212,15 +212,3 @@ class DateTimeTestHelper {
     this.panel = null;
   }
 }
-
-
-
-
-function once(target, name) {
-  var p = new Promise(function(resolve, reject) {
-    target.addEventListener(name, function() {
-      resolve();
-    }, {once: true});
-  });
-  return p;
-}
