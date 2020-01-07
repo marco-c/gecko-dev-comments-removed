@@ -32,6 +32,17 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
         currentActivity = new WeakReference<>(activity);
     }
 
+    private void checkAppGoingIntoBackground(final Activity activity) {
+        
+        
+        
+        
+        if (currentActivity.get() == activity) {
+            currentActivity.clear();
+            ((GeckoApplication) activity.getApplication()).onApplicationBackground();
+        }
+    }
+
     public Activity getCurrentActivity() {
         return currentActivity.get();
     }
@@ -57,20 +68,14 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
     public void onActivityPaused(Activity activity) { }
 
     @Override
-    public void onActivityStopped(Activity activity) {
-        
-        
-        
-        
-        
-        if (currentActivity.get() == activity) {
-            currentActivity.clear();
-            ((GeckoApplication) activity.getApplication()).onApplicationBackground();
-        }
+    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        checkAppGoingIntoBackground(activity);
     }
 
     @Override
-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
+    public void onActivityStopped(Activity activity) {
+        checkAppGoingIntoBackground(activity);
+    }
 
     @Override
     public void onActivityDestroyed(Activity activity) { }
