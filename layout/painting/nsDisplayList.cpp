@@ -2302,23 +2302,9 @@ nsDisplayListBuilder::IsBuildingLayerEventRegions()
     return false;
   }
   if (IsPaintingToWindow()) {
-    
-    
-    
-    return gfxPrefs::LayoutEventRegionsEnabledDoNotUseDirectly() ||
-           mAsyncPanZoomEnabled;
+    return mAsyncPanZoomEnabled;
   }
   return false;
-}
-
- bool
-nsDisplayListBuilder::LayerEventRegionsEnabled()
-{
-  
-  
-  
-  return gfxPrefs::LayoutEventRegionsEnabledDoNotUseDirectly() ||
-         gfxPlatform::AsyncPanZoomEnabled();
 }
 
 void nsDisplayListSet::MoveTo(const nsDisplayListSet& aDestination) const

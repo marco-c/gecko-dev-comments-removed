@@ -606,9 +606,6 @@ pref("layers.amd-switchable-gfx.enabled", true);
 pref("layers.async-pan-zoom.enabled", true);
 
 
-pref("layout.event-regions.enabled", false);
-
-
 pref("layers.geometry.opengl.enabled", true);
 
 
