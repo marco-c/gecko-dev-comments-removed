@@ -1393,6 +1393,11 @@ ProcessHasSignalHandlers()
         return sHaveSignalHandlers;
     sTriedInstallSignalHandlers = true;
 
+#if defined (JS_CODEGEN_NONE)
+    
+    return false;
+#endif
+
 #if defined(ANDROID) && defined(MOZ_LINKER)
     
     if (IsSignalHandlingBroken())
