@@ -42,6 +42,21 @@ public:
 protected:
   virtual ~nsAutoCompleteController();
 
+  
+
+
+
+  void SetValueOfInputTo(const nsString& aValue, uint16_t aReason);
+
+  
+
+
+
+  void SetSearchStringInternal(const nsAString& aSearchString)
+  {
+    mSearchString = mSetValue = aSearchString;
+  }
+
   nsresult OpenPopup();
   nsresult ClosePopup();
 
@@ -138,8 +153,19 @@ protected:
   nsCOMPtr<nsITreeSelection> mSelection;
   nsCOMPtr<nsITreeBoxObject> mTree;
 
+  
+  
+  
+  
+  
   nsString mSearchString;
   nsString mPlaceholderCompletionString;
+  
+  
+  
+  
+  
+  nsString mSetValue;
   bool mDefaultIndexCompleted;
   bool mPopupClosedByCompositionStart;
 

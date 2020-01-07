@@ -26,20 +26,6 @@ static const char *kAutoCompleteSearchCID = "@mozilla.org/autocomplete/search;1?
 
 using namespace mozilla;
 
-namespace {
-
-void
-SetTextValue(nsIAutoCompleteInput* aInput,
-             const nsString& aValue,
-             uint16_t aReason) {
-  nsresult rv = aInput->SetTextValueWithReason(aValue, aReason);
-  if (NS_FAILED(rv)) {
-    aInput->SetTextValue(aValue);
-  }
-}
-
-} 
-
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsAutoCompleteController)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsAutoCompleteController)
@@ -80,6 +66,18 @@ nsAutoCompleteController::nsAutoCompleteController() :
 nsAutoCompleteController::~nsAutoCompleteController()
 {
   SetInput(nullptr);
+}
+
+void
+nsAutoCompleteController::SetValueOfInputTo(const nsString& aValue,
+                                            uint16_t aReason)
+{
+  mSetValue = aValue;
+  nsCOMPtr<nsIAutoCompleteInput> input(mInput);
+  nsresult rv = input->SetTextValueWithReason(aValue, aReason);
+  if (NS_FAILED(rv)) {
+    input->SetTextValue(aValue);
+  }
 }
 
 
@@ -149,7 +147,9 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   nsCOMPtr<nsIAutoCompleteInput> input(mInput);
 
   
-  input->GetTextValue(mSearchString);
+  nsAutoString value;
+  input->GetTextValue(value);
+  SetSearchStringInternal(value);
 
   
   mTree = nullptr;
@@ -208,7 +208,7 @@ nsAutoCompleteController::ResetInternalState()
     
     Unused << StopSearch();
     Unused << ClearResults();
-    mSearchString = value;
+    SetSearchStringInternal(value);
   }
 
   mPlaceholderCompletionString.Truncate();
@@ -225,7 +225,7 @@ nsAutoCompleteController::ResetInternalState()
 NS_IMETHODIMP
 nsAutoCompleteController::StartSearch(const nsAString &aSearchString)
 {
-  mSearchString = aSearchString;
+  SetSearchStringInternal(aSearchString);
   StartSearches();
   return NS_OK;
 }
@@ -321,7 +321,7 @@ nsAutoCompleteController::HandleText(bool *_retval)
     mProhibitAutoFill = false;
   }
 
-  mSearchString = newValue;
+  SetSearchStringInternal(newValue);
 
   
   if (newValue.Length() == 0) {
@@ -526,12 +526,12 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
                              nsCaseInsensitiveStringComparator())) {
               start = mSearchString.Length();
               value = mPlaceholderCompletionString;
-              SetTextValue(input, value,
-                           nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
+              SetValueOfInputTo(
+                value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
             } else {
               start = value.Length();
-              SetTextValue(input, value,
-                           nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
+              SetValueOfInputTo(
+                value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
             }
 
             input->SelectTextRange(start, value.Length());
@@ -539,8 +539,8 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
           mCompletedSelectionIndex = selectedIndex;
         } else {
           
-          SetTextValue(input, mSearchString,
-                       nsIAutoCompleteInput::TEXTVALUE_REASON_REVERT);
+          SetValueOfInputTo(
+            mSearchString, nsIAutoCompleteInput::TEXTVALUE_REASON_REVERT);
           input->SelectTextRange(mSearchString.Length(), mSearchString.Length());
           mCompletedSelectionIndex = -1;
         }
@@ -592,7 +592,7 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
           
           nsAutoString value;
           input->GetTextValue(value);
-          mSearchString = value;
+          SetSearchStringInternal(value);
 
           StartSearches();
         }
@@ -638,8 +638,8 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
         
         nsAutoString value;
         if (NS_SUCCEEDED(GetResultValueAt(selectedIndex, false, value))) {
-          SetTextValue(input, value,
-                       nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
+          SetValueOfInputTo(
+            value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETESELECTED);
           input->SelectTextRange(value.Length(), value.Length());
         }
       }
@@ -664,8 +664,8 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
           }
 
           if (value.Equals(suggestedValue, nsCaseInsensitiveStringComparator())) {
-            SetTextValue(input, value,
-                         nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
+            SetValueOfInputTo(
+              value, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
             input->SelectTextRange(value.Length(), value.Length());
           }
         }
@@ -680,7 +680,7 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
     
     nsAutoString value;
     input->GetTextValue(value);
-    mSearchString = value;
+    SetSearchStringInternal(value);
   }
 
   return NS_OK;
@@ -850,7 +850,7 @@ nsAutoCompleteController::GetFinalCompleteValueAt(int32_t aIndex,
 NS_IMETHODIMP
 nsAutoCompleteController::SetSearchString(const nsAString &aSearchString)
 {
-  mSearchString = aSearchString;
+  SetSearchStringInternal(aSearchString);
   return NS_OK;
 }
 
@@ -1574,9 +1574,9 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
   obsSvc->NotifyObservers(input, "autocomplete-will-enter-text", nullptr);
 
   if (!value.IsEmpty()) {
-    SetTextValue(input, value, nsIAutoCompleteInput::TEXTVALUE_REASON_ENTERMATCH);
+    SetValueOfInputTo(value, nsIAutoCompleteInput::TEXTVALUE_REASON_ENTERMATCH);
     input->SelectTextRange(value.Length(), value.Length());
-    mSearchString = value;
+    SetSearchStringInternal(value);
   }
 
   obsSvc->NotifyObservers(input, "autocomplete-did-enter-text", nullptr);
@@ -1597,8 +1597,17 @@ nsAutoCompleteController::RevertTextValue()
   if (!mInput)
     return NS_OK;
 
-  nsAutoString oldValue(mSearchString);
   nsCOMPtr<nsIAutoCompleteInput> input(mInput);
+
+  
+  
+  
+  nsAutoString currentValue;
+  input->GetTextValue(currentValue);
+  if (currentValue != mSetValue) {
+    SetSearchStringInternal(currentValue);
+    return NS_OK;
+  }
 
   bool cancel = false;
   input->OnTextReverted(&cancel);
@@ -1608,12 +1617,11 @@ nsAutoCompleteController::RevertTextValue()
     NS_ENSURE_STATE(obsSvc);
     obsSvc->NotifyObservers(input, "autocomplete-will-revert-text", nullptr);
 
-    nsAutoString inputValue;
-    input->GetTextValue(inputValue);
     
     
-    if (!oldValue.Equals(inputValue)) {
-      SetTextValue(input, oldValue, nsIAutoCompleteInput::TEXTVALUE_REASON_REVERT);
+    if (mSearchString != currentValue) {
+      SetValueOfInputTo(
+        mSearchString, nsIAutoCompleteInput::TEXTVALUE_REASON_REVERT);
     }
 
     obsSvc->NotifyObservers(input, "autocomplete-did-revert-text", nullptr);
@@ -1952,8 +1960,8 @@ nsAutoCompleteController::CompleteValue(nsString &aValue)
     
     
     mPlaceholderCompletionString = aValue;
-    SetTextValue(input, aValue,
-                 nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
+    SetValueOfInputTo(
+      aValue, nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
   } else {
     nsresult rv;
     nsCOMPtr<nsIIOService> ios = do_GetService(NS_IOSERVICE_CONTRACTID, &rv);
@@ -1975,16 +1983,18 @@ nsAutoCompleteController::CompleteValue(nsString &aValue)
 
       mPlaceholderCompletionString = mSearchString +
         Substring(aValue, mSearchStringLength + findIndex, endSelect);
-      SetTextValue(input, mPlaceholderCompletionString,
-                   nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
+      SetValueOfInputTo(
+        mPlaceholderCompletionString,
+        nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
 
       endSelect -= findIndex; 
     } else {
       
       
       
-      SetTextValue(input, mSearchString + NS_LITERAL_STRING(" >> ") + aValue,
-                   nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
+      SetValueOfInputTo(
+        mSearchString + NS_LITERAL_STRING(" >> ") + aValue,
+        nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
 
       endSelect = mSearchString.Length() + 4 + aValue.Length();
 
