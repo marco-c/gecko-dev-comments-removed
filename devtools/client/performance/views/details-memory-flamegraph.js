@@ -23,32 +23,32 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
   
 
 
-  async initialize() {
+  initialize: Task.async(function* () {
     DetailsSubview.initialize.call(this);
 
     this.graph = new FlameGraph($("#memory-flamegraph-view"));
     this.graph.timelineTickUnits = L10N.getStr("graphs.ms");
     this.graph.setTheme(PerformanceController.getTheme());
-    await this.graph.ready();
+    yield this.graph.ready();
 
     this._onRangeChangeInGraph = this._onRangeChangeInGraph.bind(this);
     this._onThemeChanged = this._onThemeChanged.bind(this);
 
     PerformanceController.on(EVENTS.THEME_CHANGED, this._onThemeChanged);
     this.graph.on("selecting", this._onRangeChangeInGraph);
-  },
+  }),
 
   
 
 
-  async destroy() {
+  destroy: Task.async(function* () {
     DetailsSubview.destroy.call(this);
 
     PerformanceController.off(EVENTS.THEME_CHANGED, this._onThemeChanged);
     this.graph.off("selecting", this._onRangeChangeInGraph);
 
-    await this.graph.destroy();
-  },
+    yield this.graph.destroy();
+  }),
 
   
 
@@ -56,7 +56,7 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
 
 
 
-  render: function(interval = {}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let duration = recording.getDuration();
     let allocations = recording.getAllocations();
@@ -87,7 +87,7 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onRangeChangeInGraph: function() {
+  _onRangeChangeInGraph: function () {
     let interval = this.graph.getViewRange();
 
     
@@ -101,7 +101,7 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onRerenderPrefChanged: function() {
+  _onRerenderPrefChanged: function () {
     let recording = PerformanceController.getCurrentRecording();
     let allocations = recording.getAllocations();
     let thread = RecordingUtils.getProfileThreadFromAllocations(allocations);
@@ -111,7 +111,7 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
   
 
 
-  _onThemeChanged: function(_, theme) {
+  _onThemeChanged: function (_, theme) {
     this.graph.setTheme(theme);
     this.graph.refresh({ force: true });
   },

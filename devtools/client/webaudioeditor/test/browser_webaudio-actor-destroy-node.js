@@ -5,10 +5,10 @@
 
 
 
-add_task(async function () {
-  let { target, front } = await initBackend(DESTROY_NODES_URL);
+add_task(function* () {
+  let { target, front } = yield initBackend(DESTROY_NODES_URL);
 
-  let [, , created] = await Promise.all([
+  let [, , created] = yield Promise.all([
     front.setup({ reload: true }),
     once(front, "start-context"),
     
@@ -21,7 +21,7 @@ add_task(async function () {
   
   forceNodeCollection();
 
-  let destroyed = await waitUntilDestroyed;
+  let destroyed = yield waitUntilDestroyed;
 
   destroyed.forEach((node, i) => {
     ok(node.type, "AudioBufferSourceNode", "Only buffer nodes are destroyed");
@@ -29,7 +29,7 @@ add_task(async function () {
       "`destroy-node` called only on AudioNodes in current document.");
   });
 
-  await removeTab(target.tab);
+  yield removeTab(target.tab);
 });
 
 function actorIsInList(list, actor) {

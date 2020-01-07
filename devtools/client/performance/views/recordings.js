@@ -13,7 +13,7 @@ var RecordingsView = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this._onSelect = this._onSelect.bind(this);
     this._onRecordingStateChange = this._onRecordingStateChange.bind(this);
     this._onNewRecording = this._onNewRecording.bind(this);
@@ -73,7 +73,7 @@ var RecordingsView = {
   
 
 
-  _renderList: function() {
+  _renderList: function () {
     const {recordings, labels, selected} = this._listState;
 
     const recordingList = RecordingList({
@@ -95,7 +95,7 @@ var RecordingsView = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
                               this._onRecordingStateChange);
     PerformanceController.off(EVENTS.RECORDING_ADDED, this._onNewRecording);
@@ -109,7 +109,7 @@ var RecordingsView = {
 
 
 
-  _onNewRecording: function(_, recording) {
+  _onNewRecording: function (_, recording) {
     this._onRecordingStateChange(_, null, recording);
   },
 
@@ -121,7 +121,7 @@ var RecordingsView = {
 
 
 
-  _onRecordingStateChange: function(_, state, recording) {
+  _onRecordingStateChange: function (_, state, recording) {
     const { recordings, labels } = this._listState;
 
     if (!recordings.includes(recording)) {
@@ -148,7 +148,7 @@ var RecordingsView = {
   
 
 
-  _onRecordingDeleted: function(_, recording) {
+  _onRecordingDeleted: function (_, recording) {
     const { recordings } = this._listState;
     const index = recordings.indexOf(recording);
     if (index === -1) {
@@ -161,16 +161,16 @@ var RecordingsView = {
   
 
 
-  async _onSelect(recording) {
+  _onSelect: Task.async(function* (recording) {
     this._listState.selected = recording;
     this.emit(EVENTS.UI_RECORDING_SELECTED, recording);
     this._renderList();
-  },
+  }),
 
   
 
 
-  _onSaveButtonClick: function(recording) {
+  _onSaveButtonClick: function (recording) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, L10N.getStr("recordingsList.saveDialogTitle"),
             Ci.nsIFilePicker.modeSave);
@@ -186,7 +186,7 @@ var RecordingsView = {
     }});
   },
 
-  _onRecordingExported: function(_, recording, file) {
+  _onRecordingExported: function (_, recording, file) {
     if (recording.isConsole()) {
       return;
     }

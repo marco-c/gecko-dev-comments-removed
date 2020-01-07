@@ -7,9 +7,9 @@ var {colorUtils} = require("devtools/shared/css/color");
 
 loadHelperScript("helper_color_data.js");
 
-add_task(async function() {
-  await addTab("about:blank");
-  let [host,, doc] = await createHost("bottom");
+add_task(function* () {
+  yield addTab("about:blank");
+  let [host,, doc] = yield createHost("bottom");
 
   info("Creating a test canvas element to test colors");
   let canvas = createTestCanvas(doc);
@@ -65,21 +65,21 @@ function testColorMatch(name, hex, hsl, rgb, rgba, canvas) {
   let target;
   let ctx = canvas.getContext("2d");
 
-  let clearCanvas = function() {
+  let clearCanvas = function () {
     canvas.width = 1;
   };
-  let setColor = function(color) {
+  let setColor = function (color) {
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, 1, 1);
   };
-  let setTargetColor = function() {
+  let setTargetColor = function () {
     clearCanvas();
     
     setColor(rgba);
     let [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
     target = {r: r, g: g, b: b, a: a};
   };
-  let test = function(color, type) {
+  let test = function (color, type) {
     
     
     let tolerance = 3;

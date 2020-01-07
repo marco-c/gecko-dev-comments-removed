@@ -13,7 +13,7 @@
 const TEST_URI = "https://example.com/browser/devtools/client/webconsole/" +
                  "new-console-output/test/mochitest/test-eval-in-stackframe.html";
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.debugger.new-debugger-frontend", false);
   let hud = await openNewTabAndConsole(TEST_URI);
@@ -73,7 +73,7 @@ async function waitForFrameAdded() {
   info("Waiting for framesadded");
   await new Promise(resolve => {
     thread.addOneTimeListener("framesadded", resolve);
-    ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
+    ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
       content.wrappedJSObject.firstCall();
     });
   });

@@ -8,8 +8,6 @@
 
 
 
-const { Task } = require("devtools/shared/task");
-
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 
 

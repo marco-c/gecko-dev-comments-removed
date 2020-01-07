@@ -11,9 +11,9 @@ requestLongerTimeout(2);
 
 loadHelperScript("helper_disable_cache.js");
 
-add_task(async function () {
+add_task(function* () {
   
-  await pushPref("network.http.rcwn.enabled", false);
+  yield pushPref("network.http.rcwn.enabled", false);
 
   
   registerCleanupFunction(() => {
@@ -23,28 +23,28 @@ add_task(async function () {
 
   
   for (let tab of tabs) {
-    await initTab(tab, tab.startToolbox);
+    yield initTab(tab, tab.startToolbox);
   }
 
   
-  await setDisableCacheCheckboxChecked(tabs[0], true);
+  yield setDisableCacheCheckboxChecked(tabs[0], true);
 
   
-  tabs[2].toolbox = await gDevTools.showToolbox(tabs[2].target, "options");
-  await checkCacheEnabled(tabs[2], false);
+  tabs[2].toolbox = yield gDevTools.showToolbox(tabs[2].target, "options");
+  yield checkCacheEnabled(tabs[2], false);
 
   
-  await tabs[2].toolbox.destroy();
+  yield tabs[2].toolbox.destroy();
   tabs[2].target = TargetFactory.forTab(tabs[2].tab);
-  await checkCacheEnabled(tabs[2], true);
+  yield checkCacheEnabled(tabs[2], true);
 
   
-  tabs[2].toolbox = await gDevTools.showToolbox(tabs[2].target, "options");
-  await checkCacheEnabled(tabs[2], false);
+  tabs[2].toolbox = yield gDevTools.showToolbox(tabs[2].target, "options");
+  yield checkCacheEnabled(tabs[2], false);
 
   
-  await setDisableCacheCheckboxChecked(tabs[2], false);
-  await checkCacheStateForAllTabs([true, true, true, true]);
+  yield setDisableCacheCheckboxChecked(tabs[2], false);
+  yield checkCacheStateForAllTabs([true, true, true, true]);
 
-  await finishUp();
+  yield finishUp();
 });

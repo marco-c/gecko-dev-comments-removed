@@ -8,10 +8,10 @@
 
 const TESTCASE_URI = TEST_BASE_HTTPS + "simple.html";
 
-add_task(async function() {
-  let { ui } = await openStyleEditorForURL(TESTCASE_URI);
+add_task(function* () {
+  let { ui } = yield openStyleEditorForURL(TESTCASE_URI);
 
-  await rightClickStyleSheet(ui, ui.editors[0]);
+  yield rightClickStyleSheet(ui, ui.editors[0]);
   is(ui._openLinkNewTabItem.getAttribute("disabled"), "false",
     "The menu item is not disabled");
   is(ui._openLinkNewTabItem.getAttribute("hidden"), "false",
@@ -35,22 +35,22 @@ add_task(async function() {
   ui._openLinkNewTabItem.click();
 
   info(`Waiting for a tab to open - ${url}`);
-  await tabOpenedDefer;
+  yield tabOpenedDefer;
 
-  await rightClickInlineStyleSheet(ui, ui.editors[1]);
+  yield rightClickInlineStyleSheet(ui, ui.editors[1]);
   is(ui._openLinkNewTabItem.getAttribute("disabled"), "true",
     "The menu item is disabled");
   is(ui._openLinkNewTabItem.getAttribute("hidden"), "false",
     "The menu item is not hidden");
 
-  await rightClickNoStyleSheet(ui);
+  yield rightClickNoStyleSheet(ui);
   is(ui._openLinkNewTabItem.getAttribute("hidden"), "true",
     "The menu item is not hidden");
 });
 
 function onPopupShow(contextMenu) {
   return new Promise(resolve => {
-    contextMenu.addEventListener("popupshown", function() {
+    contextMenu.addEventListener("popupshown", function () {
       resolve();
     }, {once: true});
   });
@@ -58,7 +58,7 @@ function onPopupShow(contextMenu) {
 
 function onPopupHide(contextMenu) {
   return new Promise(resolve => {
-    contextMenu.addEventListener("popuphidden", function() {
+    contextMenu.addEventListener("popuphidden", function () {
       resolve();
     }, {once: true});
   });

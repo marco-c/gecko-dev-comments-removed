@@ -12,25 +12,25 @@ const { once } = require("devtools/client/performance/test/helpers/event-utils")
 
 
 
-exports.initPanelInNewTab = async function({ tool, url, win }, options = {}) {
-  let tab = await addTab({ url, win }, options);
-  return exports.initPanelInTab({ tool, tab });
+exports.initPanelInNewTab = function* ({ tool, url, win }, options = {}) {
+  let tab = yield addTab({ url, win }, options);
+  return (yield exports.initPanelInTab({ tool, tab }));
 };
 
 
 
 
-exports.initPanelInTab = async function({ tool, tab }) {
+exports.initPanelInTab = function* ({ tool, tab }) {
   dump(`Initializing a ${tool} panel.\n`);
 
   let target = TargetFactory.forTab(tab);
-  await target.makeRemote();
+  yield target.makeRemote();
 
   
   
   
-  let toolbox = await gDevTools.showToolbox(target, tool);
-  await toolbox.initPerformance();
+  let toolbox = yield gDevTools.showToolbox(target, tool);
+  yield toolbox.initPerformance();
 
   let panel = toolbox.getCurrentPanel();
   return { target, toolbox, panel };
@@ -39,56 +39,56 @@ exports.initPanelInTab = async function({ tool, tab }) {
 
 
 
-exports.initPerformanceInNewTab = async function({ url, win }, options = {}) {
-  let tab = await addTab({ url, win }, options);
-  return exports.initPerformanceInTab({ tab });
+exports.initPerformanceInNewTab = function* ({ url, win }, options = {}) {
+  let tab = yield addTab({ url, win }, options);
+  return (yield exports.initPerformanceInTab({ tab }));
 };
 
 
 
 
-exports.initPerformanceInTab = async function({ tab }) {
-  return exports.initPanelInTab({
+exports.initPerformanceInTab = function* ({ tab }) {
+  return (yield exports.initPanelInTab({
     tool: "performance",
     tab: tab
-  });
+  }));
 };
 
 
 
 
 
-exports.initConsoleInNewTab = async function({ url, win }, options = {}) {
-  let tab = await addTab({ url, win }, options);
-  return exports.initConsoleInTab({ tab });
+exports.initConsoleInNewTab = function* ({ url, win }, options = {}) {
+  let tab = yield addTab({ url, win }, options);
+  return (yield exports.initConsoleInTab({ tab }));
 };
 
 
 
 
 
-exports.initConsoleInTab = async function({ tab }) {
-  let { target, toolbox, panel } = await exports.initPanelInTab({
+exports.initConsoleInTab = function* ({ tab }) {
+  let { target, toolbox, panel } = yield exports.initPanelInTab({
     tool: "webconsole",
     tab: tab
   });
 
-  let consoleMethod = async function(method, label, event) {
+  let consoleMethod = function* (method, label, event) {
     let recordingEventReceived = once(toolbox.performance, event);
     if (label === undefined) {
-      await panel.hud.jsterm.execute(`console.${method}()`);
+      yield panel.hud.jsterm.execute(`console.${method}()`);
     } else {
-      await panel.hud.jsterm.execute(`console.${method}("${label}")`);
+      yield panel.hud.jsterm.execute(`console.${method}("${label}")`);
     }
-    await recordingEventReceived;
+    yield recordingEventReceived;
   };
 
-  let profile = async function(label) {
-    return consoleMethod("profile", label, "recording-started");
+  let profile = function* (label) {
+    return yield consoleMethod("profile", label, "recording-started");
   };
 
-  let profileEnd = async function(label) {
-    return consoleMethod("profileEnd", label, "recording-stopped");
+  let profileEnd = function* (label) {
+    return yield consoleMethod("profileEnd", label, "recording-stopped");
   };
 
   return { target, toolbox, panel, console: { profile, profileEnd } };
@@ -97,10 +97,10 @@ exports.initConsoleInTab = async function({ tab }) {
 
 
 
-exports.teardownToolboxAndRemoveTab = async function(panel, options) {
+exports.teardownToolboxAndRemoveTab = function* (panel, options) {
   dump("Destroying panel.\n");
 
   let tab = panel.target.tab;
-  await panel.toolbox.destroy();
-  await removeTab(tab, options);
+  yield panel.toolbox.destroy();
+  yield removeTab(tab, options);
 };

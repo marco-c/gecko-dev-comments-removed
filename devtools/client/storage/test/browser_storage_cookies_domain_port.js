@@ -9,10 +9,10 @@
 
 
 
-add_task(async function() {
-  await openTabAndSetupStorage(MAIN_DOMAIN_WITH_PORT + "storage-cookies.html");
+add_task(function* () {
+  yield openTabAndSetupStorage(MAIN_DOMAIN_WITH_PORT + "storage-cookies.html");
 
-  await checkState([
+  yield checkState([
     [
       ["cookies", "http://test1.example.org:8000"],
       [
@@ -25,5 +25,5 @@ add_task(async function() {
     ],
   ]);
 
-  await finishTests();
+  yield finishTests();
 });

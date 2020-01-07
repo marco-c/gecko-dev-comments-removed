@@ -24,16 +24,16 @@ const {
 
 
 
-add_task(async function testWebExtensionsToolboxWebConsole() {
+add_task(function* testWebExtensionsToolboxWebConsole() {
   let {
     tab, document, debugBtn,
-  } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
+  } = yield setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_MANIFEST_PATH);
 
   
   
   let env = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
-  let testScript = function() {
+  let testScript = function () {
     
     function findMessages(hud, text, selector = ".message") {
       const messages = hud.ui.outputNode.querySelectorAll(selector);
@@ -73,9 +73,9 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
 
   debugBtn.click();
 
-  await onToolboxClose;
+  yield onToolboxClose;
   ok(true, "Addon toolbox closed");
 
-  await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
-  await closeAboutDebugging(tab);
+  yield uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
+  yield closeAboutDebugging(tab);
 });

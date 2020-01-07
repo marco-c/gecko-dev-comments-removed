@@ -3,19 +3,20 @@
 
 "use strict";
 
-(function(exports) {
+(function (exports) {
   const CC = Components.Constructor;
 
   const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
   const { fetch } = require("devtools/shared/DevToolsUtils");
+  const { Task } = require("devtools/shared/task");
 
   const TEST_URL_ROOT = "http://example.com/browser/devtools/client/shared/test/";
   const ACTOR_URL = TEST_URL_ROOT + "test-actor.js";
 
   
-  exports.registerTestActor = async function(client) {
+  exports.registerTestActor = Task.async(function* (client) {
     
-    let response = await client.listTabs();
+    let response = yield client.listTabs();
     let { ActorRegistryFront } = require("devtools/shared/fronts/actor-registry");
     let registryFront = ActorRegistryFront(client, response);
 
@@ -25,37 +26,37 @@
       constructor: "TestActor",
       prefix: "testActor"
     };
-    let testActorFront = await registryFront.registerActor(ACTOR_URL, options);
+    let testActorFront = yield registryFront.registerActor(ACTOR_URL, options);
     return testActorFront;
-  };
+  });
 
   
-  let loadFront = async function() {
-    let sourceText = await request(ACTOR_URL);
+  let loadFront = Task.async(function* () {
+    let sourceText = yield request(ACTOR_URL);
     const principal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
     const sandbox = Cu.Sandbox(principal);
     sandbox.exports = {};
     sandbox.require = require;
     Cu.evalInSandbox(sourceText, sandbox, "1.8", ACTOR_URL, 1);
     return sandbox.exports;
-  };
+  });
 
   
   
-  let getUpdatedForm = function(client, tab) {
+  let getUpdatedForm = function (client, tab) {
     return client.getTab({tab: tab})
                  .then(response => response.tab);
   };
 
   
-  exports.getTestActor = async function(toolbox) {
+  exports.getTestActor = Task.async(function* (toolbox) {
     let client = toolbox.target.client;
     return getTestActor(client, toolbox.target.tab, toolbox);
-  };
+  });
 
   
   
-  exports.getTestActorWithoutToolbox = async function(tab) {
+  exports.getTestActorWithoutToolbox = Task.async(function* (tab) {
     let { DebuggerServer } = require("devtools/server/main");
     let { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
@@ -65,26 +66,26 @@
     DebuggerServer.registerAllActors();
     let client = new DebuggerClient(DebuggerServer.connectPipe());
 
-    await client.connect();
+    yield client.connect();
 
     
-    await exports.registerTestActor(client);
+    yield exports.registerTestActor(client);
 
     return getTestActor(client, tab);
-  };
+  });
 
   
-  let request = function(uri) {
+  let request = function (uri) {
     return fetch(uri).then(({ content }) => content);
   };
 
-  let getTestActor = async function(client, tab, toolbox) {
+  let getTestActor = Task.async(function* (client, tab, toolbox) {
     
     
-    let form = await getUpdatedForm(client, tab);
+    let form = yield getUpdatedForm(client, tab);
 
-    let { TestActorFront } = await loadFront();
+    let { TestActorFront } = yield loadFront();
 
     return new TestActorFront(client, form, toolbox);
-  };
+  });
 })(this);

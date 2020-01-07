@@ -4,6 +4,8 @@
 
 "use strict";
 
+const { Task } = require("devtools/shared/task");
+
 loader.lazyRequireGetter(this, "gDevTools",
   "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "TargetFactory",
@@ -19,7 +21,7 @@ loader.lazyRequireGetter(this, "Toolbox",
 
 
 
-exports.debugWorker = function(client, workerActor) {
+exports.debugWorker = function (client, workerActor) {
   client.attachWorker(workerActor, (response, workerClient) => {
     let workerTarget = TargetFactory.forWorker(workerClient);
     gDevTools.showToolbox(workerTarget, "jsdebugger", Toolbox.HostType.WINDOW)
@@ -40,28 +42,28 @@ exports.debugWorker = function(client, workerActor) {
 
 
 
-exports.getWorkerForms = async function(client) {
+exports.getWorkerForms = Task.async(function* (client) {
   let registrations = [];
   let workers = [];
 
   try {
     
     ({ registrations } =
-      await client.mainRoot.listServiceWorkerRegistrations());
+      yield client.mainRoot.listServiceWorkerRegistrations());
 
     
-    ({ workers } = await client.mainRoot.listWorkers());
+    ({ workers } = yield client.mainRoot.listWorkers());
 
     
-    let { processes } = await client.mainRoot.listProcesses();
+    let { processes } = yield client.mainRoot.listProcesses();
     for (let process of processes) {
       
       if (process.parent) {
         continue;
       }
-      let { form } = await client.getProcess(process.id);
+      let { form } = yield client.getProcess(process.id);
       let processActor = form.actor;
-      let response = await client.request({
+      let response = yield client.request({
         to: processActor,
         type: "listWorkers"
       });
@@ -72,4 +74,4 @@ exports.getWorkerForms = async function(client) {
   }
 
   return { registrations, workers };
-};
+});

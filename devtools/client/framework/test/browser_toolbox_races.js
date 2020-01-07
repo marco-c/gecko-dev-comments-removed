@@ -13,12 +13,12 @@ requestLongerTimeout(2);
 const URL = "data:text/html;charset=utf-8,Toggling devtools quickly";
 const {gDevToolsBrowser} = require("devtools/client/framework/devtools-browser");
 
-add_task(async function () {
+add_task(function* () {
   
   
   Services.prefs.clearUserPref("devtools.toolbox.selectedTool");
 
-  let tab = await addTab(URL);
+  let tab = yield addTab(URL);
 
   let created = 0, ready = 0, destroy = 0, destroyed = 0;
   let onCreated = () => {
@@ -51,7 +51,7 @@ add_task(async function () {
     toggle();
 
     
-    await wait(50);
+    yield wait(50);
   }
   info("Toggled the toolbox 3 times");
 
@@ -60,11 +60,11 @@ add_task(async function () {
   
   
   while (ready != 3) {
-    await wait(100);
+    yield wait(100);
   }
   toggle();
   while (destroyed != 3) {
-    await wait(100);
+    yield wait(100);
   }
 
   is(created, 3, "right number of created events");

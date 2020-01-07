@@ -8,11 +8,11 @@
 
 
 
-add_task(async function() {
+add_task(function* () {
   
   Services.prefs.setBoolPref(DOM_CACHE, false);
 
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
+  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 
   const state = [
     [["localStorage", "http://test1.example.org"],
@@ -31,7 +31,7 @@ add_task(async function() {
       [1, 2, 3]],
   ];
 
-  await checkState(state);
+  yield checkState(state);
 
-  await finishTests();
+  yield finishTests();
 });

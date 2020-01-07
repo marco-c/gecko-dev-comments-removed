@@ -11,7 +11,7 @@ PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
 
 
 
-add_task(async function() {
+add_task(async function () {
   
   await pushPref("devtools.toolbox.footer.height", 400);
 
@@ -61,8 +61,7 @@ async function checkClickOnNode(toolbox, frameLinkNode) {
   
   await onJsDebuggerSelected;
 
-  let dbg = await toolbox.getPanelWhenReady("jsdebugger");
-  await waitUntil(() => dbg._selectors.getSelectedSource(dbg._getState()));
+  let dbg = toolbox.getPanel("jsdebugger");
   is(
     dbg._selectors.getSelectedSource(dbg._getState()).get("url"),
     url,

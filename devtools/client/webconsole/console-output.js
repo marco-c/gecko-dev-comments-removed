@@ -19,6 +19,7 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 const WebConsoleUtils = require("devtools/client/webconsole/utils").Utils;
 const { getSourceNames } = require("devtools/client/shared/source-utils");
+const {Task} = require("devtools/shared/task");
 const l10n = require("devtools/client/webconsole/webconsole-l10n");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const {PluralForm} = require("devtools/shared/plural-form");
@@ -207,7 +208,7 @@ ConsoleOutput.prototype = {
 
 
 
-  _releaseObject: function(actorId) {
+  _releaseObject: function (actorId) {
     this.owner._releaseObject(actorId);
   },
 
@@ -218,7 +219,7 @@ ConsoleOutput.prototype = {
 
 
 
-  addMessage: function(...args) {
+  addMessage: function (...args) {
     for (let msg of args) {
       msg.init(this);
       this.owner.outputMessage(msg._categoryCompat, this._onFlushOutputMessage,
@@ -241,7 +242,7 @@ ConsoleOutput.prototype = {
 
 
 
-  _onFlushOutputMessage: function(message) {
+  _onFlushOutputMessage: function (message) {
     return message.render().element;
   },
 
@@ -255,7 +256,7 @@ ConsoleOutput.prototype = {
 
 
 
-  getSelectedMessages: function(limit) {
+  getSelectedMessages: function (limit) {
     let selection = this.window.getSelection();
     if (selection.isCollapsed) {
       return [];
@@ -300,7 +301,7 @@ ConsoleOutput.prototype = {
 
 
 
-  getMessageForElement: function(elem) {
+  getMessageForElement: function (elem) {
     while (elem && elem.parentNode) {
       if (elem.classList && elem.classList.contains("message")) {
         return elem;
@@ -313,7 +314,7 @@ ConsoleOutput.prototype = {
   
 
 
-  selectAllMessages: function() {
+  selectAllMessages: function () {
     let selection = this.window.getSelection();
     selection.removeAllRanges();
     let range = this.document.createRange();
@@ -327,7 +328,7 @@ ConsoleOutput.prototype = {
 
 
 
-  selectMessage: function(elem) {
+  selectMessage: function (elem) {
     let selection = this.window.getSelection();
     selection.removeAllRanges();
     let range = this.document.createRange();
@@ -339,11 +340,11 @@ ConsoleOutput.prototype = {
 
 
 
-  openLink: function() {
+  openLink: function () {
     this.owner.owner.openLink.apply(this.owner.owner, arguments);
   },
 
-  openLocationInDebugger: function({url, line}) {
+  openLocationInDebugger: function ({url, line}) {
     return this.owner.owner.viewSourceInDebugger(url, line);
   },
 
@@ -351,14 +352,14 @@ ConsoleOutput.prototype = {
 
 
 
-  openVariablesView: function() {
+  openVariablesView: function () {
     this.owner.jsterm.openVariablesView.apply(this.owner.jsterm, arguments);
   },
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     this._dummyElement = null;
     this.owner = null;
   },
@@ -376,7 +377,7 @@ var Messages = {};
 
 
 
-Messages.BaseMessage = function() {
+Messages.BaseMessage = function () {
   this.widgets = new Set();
   this._onClickAnchor = this._onClickAnchor.bind(this);
   this._repeatID = { uid: gSequenceId() };
@@ -461,7 +462,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-  init: function(output, parent = null) {
+  init: function (output, parent = null) {
     this.output = output;
     this.parent = parent;
     return this;
@@ -473,7 +474,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-  getRepeatID: function() {
+  getRepeatID: function () {
     return JSON.stringify(this._repeatID);
   },
 
@@ -482,7 +483,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-  render: function() {
+  render: function () {
     if (!this.element) {
       this.element = this._renderCompat();
     }
@@ -498,7 +499,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-  _renderCompat: function() {
+  _renderCompat: function () {
     let doc = this.output.document;
     let container = doc.createElementNS(XHTML_NS, "div");
     container.id = "console-msg-" + gSequenceId();
@@ -530,7 +531,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-  _addLinkCallback: function(element, callback = this._onClickAnchor) {
+  _addLinkCallback: function (element, callback = this._onClickAnchor) {
     
     
     
@@ -547,11 +548,11 @@ Messages.BaseMessage.prototype = {
 
 
 
-  _onClickAnchor: function(event) {
+  _onClickAnchor: function (event) {
     this.output.openLink(event.target.href);
   },
 
-  destroy: function() {
+  destroy: function () {
     
     for (let widget of this.widgets) {
       widget.destroy();
@@ -571,7 +572,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-Messages.NavigationMarker = function(response, timestamp) {
+Messages.NavigationMarker = function (response, timestamp) {
   Messages.BaseMessage.call(this);
 
   
@@ -608,7 +609,7 @@ Messages.NavigationMarker.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }
@@ -666,7 +667,7 @@ Messages.NavigationMarker.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-Messages.Simple = function(message, options = {}) {
+Messages.Simple = function (message, options = {}) {
   Messages.BaseMessage.call(this);
 
   this.category = options.category;
@@ -804,7 +805,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
            null;
   },
 
-  init: function() {
+  init: function () {
     Messages.BaseMessage.prototype.init.apply(this, arguments);
     this._groupDepthCompat = this.output.owner.groupDepth;
     this._initRepeatID();
@@ -825,7 +826,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
     return this.collapsible && this.element && !this.element.hasAttribute("open");
   },
 
-  _initRepeatID: function() {
+  _initRepeatID: function () {
     if (!this._filterDuplicates) {
       return;
     }
@@ -846,7 +847,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
     rid.textContent = "";
   },
 
-  getRepeatID: function() {
+  getRepeatID: function () {
     
     
     if (this._repeatID.uid) {
@@ -856,7 +857,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
     return JSON.stringify(this._repeatID);
   },
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }
@@ -930,7 +931,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-  _renderBody: function() {
+  _renderBody: function () {
     let bodyWrapper = this.document.createElementNS(XHTML_NS, "span");
     bodyWrapper.className = "message-body-wrapper";
 
@@ -992,7 +993,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-  _renderRepeatNode: function() {
+  _renderRepeatNode: function () {
     if (!this._filterDuplicates) {
       return null;
     }
@@ -1010,7 +1011,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-  _renderLocation: function() {
+  _renderLocation: function () {
     if (!this.location) {
       return null;
     }
@@ -1034,7 +1035,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-  _onClickCollapsible: function(ev) {
+  _onClickCollapsible: function (ev) {
     ev.preventDefault();
     this.toggleDetails();
   },
@@ -1042,7 +1043,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
   
 
 
-  toggleDetails: function() {
+  toggleDetails: function () {
     let twisty = this.element.querySelector(".theme-twisty");
     if (this.element.hasAttribute("open")) {
       this.element.removeAttribute("open");
@@ -1068,7 +1069,7 @@ Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
 
 
 
-Messages.Extended = function(messagePieces, options = {}) {
+Messages.Extended = function (messagePieces, options = {}) {
   Messages.Simple.call(this, null, options);
 
   this._messagePieces = messagePieces;
@@ -1097,7 +1098,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
   _quoteStrings: true,
 
-  getRepeatID: function() {
+  getRepeatID: function () {
     if (this._repeatID.uid) {
       return JSON.stringify({ uid: this._repeatID.uid });
     }
@@ -1110,7 +1111,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
     return result;
   },
 
-  render: function() {
+  render: function () {
     let result = this.document.createDocumentFragment();
 
     for (let i = 0; i < this._messagePieces.length; i++) {
@@ -1134,7 +1135,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  _renderBodyPieceSeparator: function() {
+  _renderBodyPieceSeparator: function () {
     return null;
   },
 
@@ -1147,7 +1148,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  _renderBodyPiece: function(piece, options = {}) {
+  _renderBodyPiece: function (piece, options = {}) {
     if (piece instanceof Ci.nsIDOMNode) {
       return piece;
     }
@@ -1178,7 +1179,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  _renderValueGrip: function(grip, options = {}) {
+  _renderValueGrip: function (grip, options = {}) {
     let isPrimitive = VariablesView.isPrimitive({ value: grip });
     let isActorGrip = WebConsoleUtils.isActorGrip(grip);
     let noStringQuotes = !this._quoteStrings;
@@ -1236,7 +1237,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  shortenValueGrip: function(grip) {
+  shortenValueGrip: function (grip) {
     let shortVal = grip;
     if (typeof (grip) == "string") {
       shortVal = grip.replace(/(\r\n|\n|\r)/gm, " ");
@@ -1256,7 +1257,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  getClassNameForValueGrip: function(grip) {
+  getClassNameForValueGrip: function (grip) {
     let map = {
       "number": "cm-number",
       "longstring": "console-string",
@@ -1293,7 +1294,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  _renderObjectActor: function(objectActor, options = {}) {
+  _renderObjectActor: function (objectActor, options = {}) {
     let Widget = Widgets.ObjectRenderers.byClass[objectActor.class];
 
     let { preview } = objectActor;
@@ -1324,7 +1325,7 @@ Messages.Extended.prototype = extend(Messages.Simple.prototype, {
 
 
 
-Messages.JavaScriptEvalOutput = function(evalResponse, errorMessage, errorDocLink) {
+Messages.JavaScriptEvalOutput = function (evalResponse, errorMessage, errorDocLink) {
   let severity = "log", msg, quoteStrings = true;
 
   
@@ -1365,7 +1366,7 @@ Messages.JavaScriptEvalOutput.prototype = Messages.Extended.prototype;
 
 
 
-Messages.ConsoleGeneric = function(packet) {
+Messages.ConsoleGeneric = function (packet) {
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
@@ -1404,11 +1405,11 @@ Messages.ConsoleGeneric = function(packet) {
 Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
   _styles: null,
 
-  _renderBodyPieceSeparator: function() {
+  _renderBodyPieceSeparator: function () {
     return this.document.createTextNode(" ");
   },
 
-  render: function() {
+  render: function () {
     let result = this.document.createDocumentFragment();
     this._renderBodyPieces(result);
 
@@ -1420,7 +1421,7 @@ Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
     return this;
   },
 
-  _renderBodyPieces: function(container) {
+  _renderBodyPieces: function (container) {
     let lastStyle = null;
     let stylePieces = this._styles.length > 0 ? this._styles.length : 1;
 
@@ -1445,7 +1446,7 @@ Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
     this._styles = null;
   },
 
-  _renderBodyPiece: function(piece, style) {
+  _renderBodyPiece: function (piece, style) {
     
     let options = { noStringQuotes: true };
     let elem = Messages.Extended.prototype._renderBodyPiece.call(this, piece, options);
@@ -1478,7 +1479,7 @@ Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
 
 
 
-  cleanupStyle: function(style) {
+  cleanupStyle: function (style) {
     for (let r of RE_CLEANUP_STYLES) {
       style = style.replace(r, "notallowed");
     }
@@ -1518,7 +1519,7 @@ Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
 
 
 
-Messages.ConsoleTrace = function(packet) {
+Messages.ConsoleTrace = function (packet) {
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
@@ -1558,7 +1559,7 @@ Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
 
   _arguments: null,
 
-  init: function() {
+  init: function () {
     let result = Messages.Simple.prototype.init.apply(this, arguments);
 
     
@@ -1574,7 +1575,7 @@ Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
     return result;
   },
 
-  render: function() {
+  render: function () {
     this._message = this._renderMessage();
     this._attachment = this._renderStack();
 
@@ -1586,7 +1587,7 @@ Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
   
 
 
-  _renderMessage: function() {
+  _renderMessage: function () {
     let cmvar = this.document.createElementNS(XHTML_NS, "span");
     cmvar.className = "cm-variable";
     cmvar.textContent = "console";
@@ -1610,7 +1611,7 @@ Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
 
 
 
-  _renderStack: function() {
+  _renderStack: function () {
     return new Widgets.Stacktrace(this, this._stacktrace).render().element;
   },
 }); 
@@ -1623,7 +1624,7 @@ Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
 
 
 
-Messages.ConsoleTable = function(packet) {
+Messages.ConsoleTable = function (packet) {
   let options = {
     className: "cm-s-mozilla",
     timestamp: packet.timeStamp,
@@ -1681,7 +1682,7 @@ Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
 
   _populatePromise: null,
 
-  init: function() {
+  init: function () {
     let result = Messages.Extended.prototype.init.apply(this, arguments);
     this._data = [];
     this._columns = {};
@@ -1700,7 +1701,7 @@ Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
 
 
 
-  _setColumns: function(columns) {
+  _setColumns: function (columns) {
     if (columns.class == "Array") {
       let items = columns.preview.items;
 
@@ -1722,7 +1723,7 @@ Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
 
 
 
-  _populateTableData: function() {
+  _populateTableData: function () {
     let deferred = defer();
 
     if (this._arguments.length <= 0) {
@@ -1865,14 +1866,14 @@ Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
     return deferred.promise;
   },
 
-  render: function() {
+  render: function () {
     this._attachment = this._renderTable();
     Messages.Extended.prototype.render.apply(this, arguments);
     this.element.setAttribute("open", true);
     return this;
   },
 
-  _renderMessage: function() {
+  _renderMessage: function () {
     let cmvar = this.document.createElementNS(XHTML_NS, "span");
     cmvar.className = "cm-variable";
     cmvar.textContent = "console";
@@ -1896,7 +1897,7 @@ Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
 
 
 
-  _renderTable: function() {
+  _renderTable: function () {
     let result = this.document.createElementNS(XHTML_NS, "div");
 
     if (this._populatePromise) {
@@ -1934,7 +1935,7 @@ var Widgets = {};
 
 
 
-Widgets.BaseWidget = function(message) {
+Widgets.BaseWidget = function (message) {
   this.message = message;
 };
 
@@ -1970,12 +1971,12 @@ Widgets.BaseWidget.prototype = {
 
 
 
-  render: function() { },
+  render: function () { },
 
   
 
 
-  destroy: function() { },
+  destroy: function () { },
 
   
 
@@ -2007,7 +2008,7 @@ Widgets.BaseWidget.prototype = {
 
 
 
-  el: function(tagNameIdAndClasses) {
+  el: function (tagNameIdAndClasses) {
     let attrs, text;
     if (typeof arguments[1] == "object") {
       attrs = arguments[1];
@@ -2048,7 +2049,7 @@ Widgets.BaseWidget.prototype = {
 
 
 
-Widgets.MessageTimestamp = function(message, timestamp) {
+Widgets.MessageTimestamp = function (message, timestamp) {
   Widgets.BaseWidget.call(this, message);
   this.timestamp = timestamp;
 };
@@ -2060,7 +2061,7 @@ Widgets.MessageTimestamp.prototype = extend(Widgets.BaseWidget.prototype, {
 
   timestamp: 0,
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }
@@ -2085,7 +2086,7 @@ Widgets.MessageTimestamp.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-Widgets.URLString = function(message, str, unshortenedStr) {
+Widgets.URLString = function (message, str, unshortenedStr) {
   Widgets.BaseWidget.call(this, message);
   this.str = str;
   this.unshortenedStr = unshortenedStr;
@@ -2098,7 +2099,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
 
   str: "",
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }
@@ -2147,7 +2148,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  containsURL: function(grip) {
+  containsURL: function (grip) {
     if (typeof grip != "string") {
       return false;
     }
@@ -2164,7 +2165,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _isURL: function(token) {
+  _isURL: function (token) {
     try {
       if (!validProtocols.test(token)) {
         return false;
@@ -2186,7 +2187,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _renderURL: function(url, fullUrl) {
+  _renderURL: function (url, fullUrl) {
     let unshortened = fullUrl || url;
     let result = this.el("a", {
       class: "url",
@@ -2198,7 +2199,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
     return result;
   },
 
-  _renderText: function(text) {
+  _renderText: function (text) {
     return this.el("span", text);
   },
 }); 
@@ -2216,7 +2217,7 @@ Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-Widgets.JSObject = function(message, objectActor, options = {}) {
+Widgets.JSObject = function (message, objectActor, options = {}) {
   Widgets.BaseWidget.call(this, message);
   this.objectActor = objectActor;
   this.options = options;
@@ -2230,7 +2231,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
   objectActor: null,
 
-  render: function() {
+  render: function () {
     if (!this.element) {
       this._render();
     }
@@ -2238,7 +2239,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
     return this;
   },
 
-  _render: function() {
+  _render: function () {
     let str = VariablesView.getString(this.objectActor, this.options);
     let className = this.message.getClassNameForValueGrip(this.objectActor);
     if (!className && this.objectActor.class == "Object") {
@@ -2251,7 +2252,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
-  _renderConciseObject: function() {
+  _renderConciseObject: function () {
     this.element = this._anchor(this.objectActor.class,
                                 { className: "cm-variable" });
   },
@@ -2259,7 +2260,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
-  _renderObjectPrefix: function() {
+  _renderObjectPrefix: function () {
     let { kind } = this.objectActor.preview;
     this.element = this.el("span.kind-" + kind);
     this._anchor(this.objectActor.class, { className: "cm-variable" });
@@ -2269,7 +2270,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
-  _renderObjectSuffix: function() {
+  _renderObjectSuffix: function () {
     this._text(" }");
   },
 
@@ -2289,7 +2290,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _renderObjectProperty: function(
+  _renderObjectProperty: function (
     key,
     value,
     container,
@@ -2323,7 +2324,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _renderObjectProperties: function(container, needsComma) {
+  _renderObjectProperties: function (container, needsComma) {
     let { preview } = this.objectActor;
     let { ownProperties, safeGetterValues } = preview;
 
@@ -2383,7 +2384,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _anchor: function(text, options = {}) {
+  _anchor: function (text, options = {}) {
     if (!options.onClick) {
       
       
@@ -2411,7 +2412,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
     return anchor;
   },
 
-  openObjectInVariablesView: function() {
+  openObjectInVariablesView: function () {
     this.output.openVariablesView({
       label: VariablesView.getString(this.objectActor, { concise: true }),
       objectActor: this.objectActor,
@@ -2419,7 +2420,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
     });
   },
 
-  storeObjectInWindow: function() {
+  storeObjectInWindow: function () {
     let evalString = `{ let i = 0;
       while (this.hasOwnProperty("temp" + i) && i < 1000) {
         i++;
@@ -2441,11 +2442,11 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _onClick: function() {
+  _onClick: function () {
     this.openObjectInVariablesView();
   },
 
-  _onContextMenu: function(ev) {
+  _onContextMenu: function (ev) {
     
     
     
@@ -2456,7 +2457,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
     let openVarView = this.openObjectInVariablesView.bind(this);
     openInVarViewCmd.addEventListener("command", openVarView);
     openInVarViewCmd.removeAttribute("disabled");
-    cmPopup.addEventListener("popuphiding", function() {
+    cmPopup.addEventListener("popuphiding", function () {
       openInVarViewCmd.removeEventListener("command", openVarView);
       openInVarViewCmd.setAttribute("disabled", "true");
     }, {once: true});
@@ -2470,7 +2471,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
       let storeObjectInWindow = this.storeObjectInWindow.bind(this);
       storeInGlobalCmd.addEventListener("command", storeObjectInWindow);
       storeInGlobalCmd.removeAttribute("disabled");
-      cmPopup.addEventListener("popuphiding", function() {
+      cmPopup.addEventListener("popuphiding", function () {
         storeInGlobalCmd.removeEventListener("command", storeObjectInWindow);
         storeInGlobalCmd.setAttribute("disabled", "true");
       }, {once: true});
@@ -2487,7 +2488,7 @@ Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _text: function(str, target = this.element) {
+  _text: function (str, target = this.element) {
     target.appendChild(this.document.createTextNode(str));
   },
 }); 
@@ -2522,10 +2523,10 @@ Widgets.ObjectRenderers.byClass = {};
 
 
 
-Widgets.ObjectRenderers.add = function(obj) {
+Widgets.ObjectRenderers.add = function (obj) {
   let extendObj = obj.extends || Widgets.JSObject;
 
-  let constructor = function() {
+  let constructor = function () {
     if (obj.initialize) {
       obj.initialize.apply(this, arguments);
     } else {
@@ -2533,7 +2534,7 @@ Widgets.ObjectRenderers.add = function(obj) {
     }
   };
 
-  let proto = WebConsoleUtils.cloneObject(obj, false, function(key) {
+  let proto = WebConsoleUtils.cloneObject(obj, false, function (key) {
     if (key == "initialize" || key == "canRender" ||
         (key == "render" && extendObj === Widgets.JSObject)) {
       return false;
@@ -2564,7 +2565,7 @@ Widgets.ObjectRenderers.add = function(obj) {
 Widgets.ObjectRenderers.add({
   byClass: "Date",
 
-  render: function() {
+  render: function () {
     let {preview} = this.objectActor;
     this.element = this.el("span.class-" + this.objectActor.class);
 
@@ -2594,7 +2595,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byClass: "Function",
 
-  render: function() {
+  render: function () {
     let grip = this.objectActor;
     this.element = this.el("span.class-" + this.objectActor.class);
 
@@ -2635,7 +2636,7 @@ Widgets.ObjectRenderers.add({
     this._text(")");
   },
 
-  _onClick: function() {
+  _onClick: function () {
     let location = this.objectActor.location;
     let url = location && location.url;
     if (url && !IGNORED_SOURCE_URLS.includes(url)) {
@@ -2652,7 +2653,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "ArrayLike",
 
-  render: function() {
+  render: function () {
     let {preview} = this.objectActor;
     let {items} = preview;
     this.element = this.el("span.kind-" + preview.kind);
@@ -2709,7 +2710,7 @@ Widgets.ObjectRenderers.add({
     return this;
   },
 
-  _renderEmptySlots: function(numSlots, appendComma = true) {
+  _renderEmptySlots: function (numSlots, appendComma = true) {
     let slotLabel = l10n.getStr("emptySlotLabel");
     let slotText = PluralForm.get(numSlots, slotLabel);
     this._text("<" + slotText.replace("#1", numSlots) + ">");
@@ -2726,7 +2727,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "MapLike",
 
-  render: function() {
+  render: function () {
     let {preview} = this.objectActor;
     let {entries} = preview;
 
@@ -2789,12 +2790,12 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "ObjectWithURL",
 
-  render: function() {
+  render: function () {
     this.element = this._renderElement(this.objectActor,
                                        this.objectActor.preview.url);
   },
 
-  _renderElement: function(objectActor, url) {
+  _renderElement: function (objectActor, url) {
     let container = this.el("span.kind-" + objectActor.preview.kind);
 
     this._anchor(objectActor.class, {
@@ -2818,7 +2819,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "ObjectWithText",
 
-  render: function() {
+  render: function () {
     let {preview} = this.objectActor;
     this.element = this.el("span.kind-" + preview.kind);
 
@@ -2838,7 +2839,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "DOMEvent",
 
-  render: function() {
+  render: function () {
     let {preview} = this.objectActor;
 
     let container = this.element = this.el("span.kind-" + preview.kind);
@@ -2900,7 +2901,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "DOMNode",
 
-  canRender: function(objectActor) {
+  canRender: function (objectActor) {
     let {preview} = objectActor;
     if (!preview) {
       return false;
@@ -2919,7 +2920,7 @@ Widgets.ObjectRenderers.add({
     }
   },
 
-  render: function() {
+  render: function () {
     const {preview} = this.objectActor;
 
     switch (preview.nodeType) {
@@ -2949,7 +2950,7 @@ Widgets.ObjectRenderers.add({
     }
   },
 
-  _renderDocumentNode: function() {
+  _renderDocumentNode: function () {
     let fn =
       Widgets.ObjectRenderers.byKind.ObjectWithURL.prototype._renderElement;
     this.element = fn.call(this, this.objectActor,
@@ -2957,7 +2958,7 @@ Widgets.ObjectRenderers.add({
     this.element.classList.add("documentNode");
   },
 
-  _renderAttributeNode: function(nodeName, nodeValue, addLink) {
+  _renderAttributeNode: function (nodeName, nodeValue, addLink) {
     let value = VariablesView.getString(nodeValue, { noStringQuotes: true });
 
     let fragment = this.document.createDocumentFragment();
@@ -2974,7 +2975,7 @@ Widgets.ObjectRenderers.add({
     return fragment;
   },
 
-  _renderTextNode: function() {
+  _renderTextNode: function () {
     let {preview} = this.objectActor;
     this.element = this.el("span.textNode.kind-" + preview.kind);
 
@@ -2985,7 +2986,7 @@ Widgets.ObjectRenderers.add({
     this.element.appendChild(this.el("span.console-string", text));
   },
 
-  _renderCommentNode: function() {
+  _renderCommentNode: function () {
     let {preview} = this.objectActor;
     let comment = "<!-- " + VariablesView.getString(preview.textContent, {
       noStringQuotes: true,
@@ -2996,7 +2997,7 @@ Widgets.ObjectRenderers.add({
     });
   },
 
-  _renderDocumentFragmentNode: function() {
+  _renderDocumentFragmentNode: function () {
     let {preview} = this.objectActor;
     let {childNodes} = preview;
     let container = this.element = this.el("span.documentFragmentNode.kind-" +
@@ -3035,7 +3036,7 @@ Widgets.ObjectRenderers.add({
     this._text(" ]");
   },
 
-  _renderElementNode: function() {
+  _renderElementNode: function () {
     let {attributes, nodeName} = this.objectActor.preview;
 
     this.element = this.el("span." + "kind-" + this.objectActor.preview.kind +
@@ -3084,7 +3085,7 @@ Widgets.ObjectRenderers.add({
 
 
 
-  async linkToInspector() {
+  linkToInspector: Task.async(function* () {
     if (this._linkedToInspector) {
       return;
     }
@@ -3104,8 +3105,8 @@ Widgets.ObjectRenderers.add({
     }
 
     
-    await this.toolbox.initInspector();
-    this._nodeFront = await this.toolbox.walker.getNodeActorFromObjectActor(
+    yield this.toolbox.initInspector();
+    this._nodeFront = yield this.toolbox.walker.getNodeActorFromObjectActor(
       this.objectActor.actor);
     if (!this._nodeFront) {
       throw new Error("The object cannot be linked to the inspector, the " +
@@ -3134,29 +3135,29 @@ Widgets.ObjectRenderers.add({
       onClick: this.openNodeInInspector.bind(this)
     });
     this._openInspectorNode.title = l10n.getStr("openNodeInInspector");
-  },
+  }),
 
   
 
 
 
 
-  async highlightDomNode() {
-    await this.linkToInspector();
-    let isAttached = await this.toolbox.walker.isInDOMTree(this._nodeFront);
+  highlightDomNode: Task.async(function* () {
+    yield this.linkToInspector();
+    let isAttached = yield this.toolbox.walker.isInDOMTree(this._nodeFront);
     if (isAttached) {
-      await this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
+      yield this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
     } else {
       throw new Error("Node is not attached.");
     }
-  },
+  }),
 
   
 
 
 
 
-  unhighlightDomNode: function() {
+  unhighlightDomNode: function () {
     return this.linkToInspector().then(() => {
       return this.toolbox.highlighterUtils.unhighlight();
     }).catch(console.error);
@@ -3169,22 +3170,22 @@ Widgets.ObjectRenderers.add({
 
 
 
-  async openNodeInInspector() {
-    await this.linkToInspector();
-    await this.toolbox.selectTool("inspector");
+  openNodeInInspector: Task.async(function* () {
+    yield this.linkToInspector();
+    yield this.toolbox.selectTool("inspector");
 
-    let isAttached = await this.toolbox.walker.isInDOMTree(this._nodeFront);
+    let isAttached = yield this.toolbox.walker.isInDOMTree(this._nodeFront);
     if (isAttached) {
       let onReady = defer();
       this.toolbox.inspector.once("inspector-updated", onReady.resolve);
-      await this.toolbox.selection.setNodeFront(this._nodeFront, "console");
-      await onReady.promise;
+      yield this.toolbox.selection.setNodeFront(this._nodeFront, "console");
+      yield onReady.promise;
     } else {
       throw new Error("Node is not attached.");
     }
-  },
+  }),
 
-  destroy: function() {
+  destroy: function () {
     if (this.toolbox && this._nodeFront) {
       this.element.removeEventListener("mouseover", this.highlightDomNode);
       this.element.removeEventListener("mouseout", this.unhighlightDomNode);
@@ -3211,7 +3212,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byClass: "Promise",
 
-  render: function() {
+  render: function () {
     let { ownProperties, safeGetterValues } = this.objectActor.preview || {};
     if ((!ownProperties && !safeGetterValues) || this.options.concise) {
       this._renderConciseObject();
@@ -3294,7 +3295,7 @@ Widgets.ObjectRenderers.add({
 Widgets.ObjectRenderers.add({
   byKind: "Object",
 
-  render: function() {
+  render: function () {
     let { ownProperties, safeGetterValues } = this.objectActor.preview || {};
     if ((!ownProperties && !safeGetterValues) || this.options.concise) {
       this._renderConciseObject();
@@ -3318,7 +3319,7 @@ Widgets.ObjectRenderers.add({
 
 
 
-Widgets.LongString = function(message, longStringActor, options) {
+Widgets.LongString = function (message, longStringActor, options) {
   Widgets.BaseWidget.call(this, message);
   this.longStringActor = longStringActor;
   this.noStringQuotes = (options && "noStringQuotes" in options) ?
@@ -3335,7 +3336,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
   longStringActor: null,
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }
@@ -3354,7 +3355,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _renderString: function(str) {
+  _renderString: function (str) {
     this.element.textContent = VariablesView.getString(str, {
       noStringQuotes: this.noStringQuotes,
       noEllipsis: true,
@@ -3367,7 +3368,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _renderEllipsis: function() {
+  _renderEllipsis: function () {
     let ellipsis = this.document.createElementNS(XHTML_NS, "a");
     ellipsis.className = "longStringEllipsis";
     ellipsis.textContent = l10n.getStr("longStringEllipsis");
@@ -3383,7 +3384,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _onClick: function() {
+  _onClick: function () {
     let longString = this.output.webConsoleClient.longString(this.longStringActor);
     let toIndex = Math.min(longString.length, MAX_LONG_STRING_LENGTH);
 
@@ -3397,7 +3398,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _onSubstring: function(response) {
+  _onSubstring: function (response) {
     if (response.error) {
       console.error("LongString substring failure: " + response.error);
       return;
@@ -3424,7 +3425,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-  _logWarningAboutStringTooLong: function() {
+  _logWarningAboutStringTooLong: function () {
     let msg = new Messages.Simple(l10n.getStr("longStringTooLong"), {
       category: "output",
       severity: "warning",
@@ -3444,7 +3445,7 @@ Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-Widgets.Stacktrace = function(message, stacktrace) {
+Widgets.Stacktrace = function (message, stacktrace) {
   Widgets.BaseWidget.call(this, message);
   this.stacktrace = stacktrace;
 };
@@ -3491,7 +3492,7 @@ Widgets.Stacktrace.prototype = extend(Widgets.BaseWidget.prototype, {
 
 
 
-Widgets.Table = function(message, data, columns) {
+Widgets.Table = function (message, data, columns) {
   Widgets.BaseWidget.call(this, message);
   this.data = data;
   this.columns = columns;
@@ -3511,7 +3512,7 @@ Widgets.Table.prototype = extend(Widgets.BaseWidget.prototype, {
 
   columns: null,
 
-  render: function() {
+  render: function () {
     if (this.element) {
       return this;
     }

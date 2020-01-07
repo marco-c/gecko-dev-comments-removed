@@ -23,16 +23,16 @@ const {
 
 
 
-add_task(async function testWebExtensionsToolboxInspector() {
+add_task(function* testWebExtensionsToolboxInspector() {
   let {
     tab, document, debugBtn,
-  } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_PATH);
+  } = yield setupTestAboutDebuggingWebExtension(ADDON_NAME, ADDON_PATH);
 
   
   
   let env = Cc["@mozilla.org/process/environment;1"]
         .getService(Ci.nsIEnvironment);
-  let testScript = function() {
+  let testScript = function () {
     
     toolbox.selectTool("inspector")
       .then(inspector => {
@@ -78,10 +78,10 @@ add_task(async function testWebExtensionsToolboxInspector() {
 
   let onToolboxClose = BrowserToolboxProcess.once("close");
   debugBtn.click();
-  await onToolboxClose;
+  yield onToolboxClose;
 
   ok(true, "Addon toolbox closed");
 
-  await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
-  await closeAboutDebugging(tab);
+  yield uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
+  yield closeAboutDebugging(tab);
 });
