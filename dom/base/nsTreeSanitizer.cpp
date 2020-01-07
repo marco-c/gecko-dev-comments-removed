@@ -1098,9 +1098,10 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
   sheet->SetURIs(aDocument->GetDocumentURI(), nullptr, aBaseURI);
   sheet->SetPrincipal(aDocument->NodePrincipal());
   sheet->AsServo()->ParseSheetSync(
-    aDocument->CSSLoader(), NS_ConvertUTF16toUTF8(aOriginal),
-    aDocument->GetDocumentURI(), aBaseURI, aDocument->NodePrincipal(),
-     nullptr, 0, aDocument->GetCompatibilityMode());
+    aDocument->CSSLoader(),
+    NS_ConvertUTF16toUTF8(aOriginal),
+     nullptr,
+     0);
   NS_ENSURE_SUCCESS(rv, true);
   
   MOZ_ASSERT(!sheet->HasForcedUniqueInner(),

@@ -889,9 +889,10 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
 
   ServoStyleSheet* servoSheet = sheet->AsServo();
   
-  servoSheet->ParseSheetSync(nullptr, sheetText, uri, uri, nullptr,
-                              nullptr, 0,
-                             eCompatibility_FullStandards);
+  servoSheet->ParseSheetSync(nullptr,
+                             sheetText,
+                              nullptr,
+                              0);
 
 #undef NS_GET_R_G_B
 }
