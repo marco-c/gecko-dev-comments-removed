@@ -11,12 +11,16 @@ graph_config_schema = Schema({
     
     
     Required('trust-domain'): basestring,
+    
+    
+    
+    
+    Required('project-repo-param-prefix'): basestring,
     Required('treeherder'): {
         
         Required('group-names'): {basestring: basestring}
     },
     Required('index'): {
-
         Required('products'): [basestring],
     },
     Required('try'): {
