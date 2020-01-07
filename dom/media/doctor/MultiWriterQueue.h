@@ -300,7 +300,10 @@ private:
     T mT;
     
     
-    Atomic<bool> mValid{ false };
+    
+    
+    
+    Atomic<bool, ReleaseAcquire> mValid{ false };
   };
 
   
@@ -447,7 +450,11 @@ private:
   
   
   
-  Atomic<Index::ValueType> mNextElementToWrite{ 0 };
+  
+  
+  
+  
+  Atomic<Index::ValueType, Relaxed> mNextElementToWrite{ 0 };
 
   
   
@@ -456,15 +463,21 @@ private:
   
   
   
-  Atomic<Index::ValueType> mBuffersCoverAtLeastUpTo;
+  
+  
+  Atomic<Index::ValueType, ReleaseAcquire> mBuffersCoverAtLeastUpTo;
 
   
   
   
-  Atomic<Buffer*> mMostRecentBuffer;
+  
+  
+  Atomic<Buffer*, ReleaseAcquire> mMostRecentBuffer;
 
   
-  Atomic<Buffer*> mReusableBuffers;
+  
+  
+  Atomic<Buffer*, ReleaseAcquire> mReusableBuffers;
 
   
   
@@ -518,8 +531,10 @@ private:
     }
 
   private:
-    Atomic<int> mCount;
-    Atomic<int> mWatermark;
+    
+    
+    Atomic<int, Relaxed> mCount;
+    Atomic<int, Relaxed> mWatermark;
   };
   
   AtomicCountAndWatermark mLiveBuffersStats;
