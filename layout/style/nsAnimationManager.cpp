@@ -198,17 +198,11 @@ CSSAnimation::QueueEvents(StickyTimeDuration aActiveTime)
     return;
   }
 
-  dom::Element* owningElement;
-  CSSPseudoElementType owningPseudoType;
-  mOwningElement.GetElement(owningElement, owningPseudoType);
-  MOZ_ASSERT(owningElement, "Owning element should be set");
-
-  
-  nsPresContext* presContext =
-    nsContentUtils::GetContextForContent(owningElement);
+  nsPresContext* presContext = mOwningElement.GetPresContext();
   if (!presContext) {
     return;
   }
+  
   nsAnimationManager* manager = presContext->AnimationManager();
 
   const StickyTimeDuration zeroDuration;
@@ -316,7 +310,7 @@ CSSAnimation::QueueEvents(StickyTimeDuration aActiveTime)
 
   for (const AnimationEventParams& event : events){
     manager->QueueEvent(
-               AnimationEventInfo(owningElement, owningPseudoType,
+               AnimationEventInfo(mOwningElement.Target(),
                                   event.mMessage, mAnimationName,
                                   event.mElapsedTime, event.mTimeStamp,
                                   this));
