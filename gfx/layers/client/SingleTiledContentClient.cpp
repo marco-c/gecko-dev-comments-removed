@@ -142,6 +142,7 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
   }
 
   
+  nsIntRegion tileVisibleRegion = aNewValidRegion.MovedBy(-mTilingOrigin);
   nsIntRegion tileDirtyRegion = paintRegion.MovedBy(-mTilingOrigin);
 
   std::vector<RefPtr<TextureClient>> paintClients;
@@ -153,6 +154,7 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
   RefPtr<TextureClient> backBuffer =
     mTile.GetBackBuffer(mCompositableClient,
                         tileDirtyRegion,
+                        tileVisibleRegion,
                         content, mode,
                         extraPainted,
                         aFlags,
@@ -166,9 +168,14 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 
   
   
-  paintRegion.OrWith(mTile.mInvalidBack.MovedBy(mTilingOrigin));
-  tileDirtyRegion.OrWith(mTile.mInvalidBack);
+  nsIntRegion tileInvalidRegion = mTile.mInvalidBack;
+  tileInvalidRegion.AndWith(tileVisibleRegion);
 
+  paintRegion.OrWith(tileInvalidRegion.MovedBy(mTilingOrigin));
+  tileDirtyRegion.OrWith(tileInvalidRegion);
+
+  
+  
   mTile.mUpdateRect = tileDirtyRegion.GetBounds().Union(extraPainted.GetBounds());
 
   extraPainted.MoveBy(mTilingOrigin);
