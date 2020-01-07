@@ -89,12 +89,9 @@ this.evaluate = {};
 
 
 
-
-
 evaluate.sandbox = function(sb, script, args = [],
     {
       async = false,
-      debug = false,
       file = "dummy file",
       line = 0,
       sandboxName = null,
@@ -129,17 +126,6 @@ evaluate.sandbox = function(sb, script, args = [],
     
     if (sandboxName) {
       sb[MARIONETTE_SCRIPT_FINISHED] = sb[CALLBACK];
-    }
-
-    
-    
-    
-    
-    if (debug) {
-      sb.window.onerror = (msg, url, line) => {
-        let err = new JavaScriptError(`${msg} at ${url}:${line}`);
-        reject(err);
-      };
     }
 
     

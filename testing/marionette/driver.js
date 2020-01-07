@@ -865,9 +865,6 @@ GeckoDriver.prototype.getContext = function() {
 
 
 
-
-
-
 GeckoDriver.prototype.executeScript = async function(cmd, resp) {
   let {script, args} = cmd.parameters;
   let opts = {
@@ -878,13 +875,9 @@ GeckoDriver.prototype.executeScript = async function(cmd, resp) {
     newSandbox: cmd.parameters.newSandbox,
     file: cmd.parameters.filename,
     line: cmd.parameters.line,
-    debug: cmd.parameters.debug_script,
   };
   resp.body.value = await this.execute_(script, args, opts);
 };
-
-
-
 
 
 
@@ -950,7 +943,6 @@ GeckoDriver.prototype.executeAsyncScript = async function(cmd, resp) {
     newSandbox: cmd.parameters.newSandbox,
     file: cmd.parameters.filename,
     line: cmd.parameters.line,
-    debug: cmd.parameters.debug_script,
     async: true,
   };
   resp.body.value = await this.execute_(script, args, opts);
@@ -965,7 +957,6 @@ GeckoDriver.prototype.execute_ = async function(
       newSandbox = false,
       file = "",
       line = 0,
-      debug = false,
       async = false,
     } = {}) {
 
@@ -984,7 +975,6 @@ GeckoDriver.prototype.execute_ = async function(
   assert.boolean(newSandbox, pprint`Expected newSandbox to be boolean: ${newSandbox}`);
   assert.string(file, pprint`Expected file to be a string: ${file}`);
   assert.number(line, pprint`Expected line to be a number: ${line}`);
-  assert.boolean(debug, pprint`Expected debug_script to be boolean: ${debug}`);
 
   let opts = {
     timeout,
@@ -992,7 +982,6 @@ GeckoDriver.prototype.execute_ = async function(
     newSandbox,
     file,
     line,
-    debug,
     async,
   };
 
