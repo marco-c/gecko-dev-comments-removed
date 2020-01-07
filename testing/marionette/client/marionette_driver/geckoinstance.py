@@ -105,6 +105,9 @@ class GeckoInstance(object):
         
         "marionette.prefs.recommended": False,
 
+        
+        "media.gmp-manager.updateEnabled": False,
+
         "media.volume_scale": "0.01",
 
         
