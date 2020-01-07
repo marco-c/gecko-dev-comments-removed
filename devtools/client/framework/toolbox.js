@@ -69,6 +69,8 @@ loader.lazyRequireGetter(this, "viewSource",
   "devtools/client/shared/view-source");
 loader.lazyRequireGetter(this, "StyleSheetsFront",
   "devtools/shared/fronts/stylesheets", true);
+loader.lazyRequireGetter(this, "buildHarLog",
+  "devtools/client/netmonitor/src/har/har-builder-utils", true);
 
 loader.lazyGetter(this, "domNodeConstants", () => {
   return require("devtools/shared/dom-node-constants");
@@ -3006,4 +3008,21 @@ Toolbox.prototype = {
   viewSource: function (sourceURL, sourceLine) {
     return viewSource.viewSource(this, sourceURL, sourceLine);
   },
+
+  
+
+
+  getHARFromNetMonitor: function () {
+    let netPanel = this.getPanel("netmonitor");
+
+    
+    
+    
+    if (!netPanel) {
+      return Promise.resolve(buildHarLog(Services.appinfo));
+    }
+
+    
+    return netPanel.panelWin.Netmonitor.getHar();
+  }
 };

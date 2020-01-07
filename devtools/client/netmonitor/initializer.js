@@ -24,8 +24,11 @@ const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
 const { Connector } = require("./src/connector/index");
 const { configureStore } = require("./src/utils/create-store");
 const App = createFactory(require("./src/components/App"));
-const { getDisplayedRequestById } = require("./src/selectors/index");
 const { EVENTS } = require("./src/constants");
+const {
+  getDisplayedRequestById,
+  getSortedRequests
+} = require("./src/selectors/index");
 
 
 EventEmitter.decorate(window);
@@ -75,6 +78,25 @@ window.Netmonitor = {
   destroy() {
     unmountComponentAtNode(this.mount);
     return connector.disconnect();
+  },
+
+  
+
+
+  getHar() {
+    let { HarExporter } = require("devtools/client/netmonitor/src/har/har-exporter");
+    let { getLongString, getTabTarget, requestData } = connector;
+    let { form: { title, url } } = getTabTarget();
+    let state = store.getState();
+
+    let options = {
+      getString: getLongString,
+      items: getSortedRequests(state),
+      requestData,
+      title: title || url,
+    };
+
+    return HarExporter.getHar(options);
   },
 
   
