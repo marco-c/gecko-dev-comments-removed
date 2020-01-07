@@ -28,7 +28,8 @@ class ToolboxToolbar extends Component {
       
       currentToolId: PropTypes.string,
       
-      highlightedTool: PropTypes.string,
+      
+      highlightedTools: PropTypes.object,
       
       panelDefinitions: PropTypes.array,
       
@@ -150,12 +151,14 @@ function renderToolboxButtons({toolboxButtons, focusedButton, focusButton}, isSt
 
 
 
+
 function renderOptions({optionsPanel, currentToolId, selectTool, focusedButton,
-                        focusButton}) {
+                        focusButton, highlightedTools}) {
   return div({id: "toolbox-option-container"}, ToolboxTab({
     panelDefinition: optionsPanel,
     currentToolId,
     selectTool,
+    highlightedTools,
     focusedButton,
     focusButton,
   }));

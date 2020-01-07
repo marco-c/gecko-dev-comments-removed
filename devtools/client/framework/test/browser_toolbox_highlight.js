@@ -3,6 +3,8 @@
 
 
 
+"use strict";
+
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
 var toolbox = null;
@@ -16,10 +18,10 @@ function test() {
     yield addTab(URL);
 
     const target = TargetFactory.forTab(gBrowser.selectedTab);
-    toolbox = yield gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM)
+    toolbox = yield gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM);
 
     
-    yield toolbox.selectTool(TOOL_ID_2)
+    yield toolbox.selectTool(TOOL_ID_2);
     
     yield highlightTab(TOOL_ID_1);
     
@@ -33,6 +35,20 @@ function test() {
     yield toolbox.selectTool(TOOL_ID_2);
     
     yield checkHighlighted(TOOL_ID_1);
+    
+    yield highlightTab(TOOL_ID_2);
+    
+    yield checkHighlighted(TOOL_ID_1);
+    
+    yield checkNoHighlightWhenSelected(TOOL_ID_2);
+    
+    yield toolbox.selectTool(TOOL_ID_1);
+    
+    yield checkHighlighted(TOOL_ID_2);
+    
+    yield unhighlightTab(TOOL_ID_2);
+    
+    yield checkNoHighlight(TOOL_ID_2);
     
     yield unhighlightTab(TOOL_ID_1);
     
