@@ -242,7 +242,6 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
       };
 
       
-      let haveStateFile = false;
       let dataReportingDir = this._getFileObject(sourceProfileDir, "datareporting");
       if (dataReportingDir && dataReportingDir.isDirectory()) {
         
@@ -255,26 +254,7 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
           if (file.isDirectory() || !toCopy.includes(file.leafName)) {
             continue;
           }
-
-          if (file.leafName == "state.json") {
-            haveStateFile = true;
-          }
           file.copyTo(dest, "");
-        }
-      }
-
-      if (!haveStateFile) {
-        
-        
-        
-        
-        let healthReportDir = this._getFileObject(sourceProfileDir, "healthreport");
-        if (healthReportDir && healthReportDir.isDirectory()) {
-          let stateFile = this._getFileObject(healthReportDir, "state.json");
-          if (stateFile) {
-            let dest = createSubDir("healthreport");
-            stateFile.copyTo(dest, "");
-          }
         }
       }
 
