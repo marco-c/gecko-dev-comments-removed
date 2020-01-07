@@ -277,6 +277,22 @@ GeckoDriver.prototype.QueryInterface = XPCOMUtils.generateQI([
   Ci.nsISupportsWeakReference,
 ]);
 
+GeckoDriver.prototype.init = function() {
+  this.mm.addMessageListener("Marionette:GetLogLevel", this);
+  this.mm.addMessageListener("Marionette:getVisibleCookies", this);
+  this.mm.addMessageListener("Marionette:listenersAttached", this);
+  this.mm.addMessageListener("Marionette:register", this);
+  this.mm.addMessageListener("Marionette:switchedToFrame", this);
+};
+
+GeckoDriver.prototype.uninit = function() {
+  this.mm.removeMessageListener("Marionette:GetLogLevel", this);
+  this.mm.removeMessageListener("Marionette:getVisibleCookies", this);
+  this.mm.removeMessageListener("Marionette:listenersAttached", this);
+  this.mm.removeMessageListener("Marionette:register", this);
+  this.mm.removeMessageListener("Marionette:switchedToFrame", this);
+};
+
 
 
 
@@ -2786,9 +2802,6 @@ GeckoDriver.prototype.deleteSession = function() {
             `Could not remove listener from page ${win.location.href}`);
       }
     }
-
-    this.curBrowser.frameManager.removeMessageManagerListeners(
-        globalMessageManager);
   }
 
   

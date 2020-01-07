@@ -13,7 +13,6 @@ const {
   NoSuchWindowError,
   UnsupportedOperationError,
 } = Cu.import("chrome://marionette/content/error.js", {});
-Cu.import("chrome://marionette/content/frame.js");
 const {WindowState} = Cu.import("chrome://marionette/content/wm.js", {});
 
 this.EXPORTED_SYMBOLS = ["browser", "Context", "WindowState"];
@@ -151,13 +150,8 @@ browser.Context = class {
     this.pendingCommands = [];
     this._needsFlushPendingCommands = false;
 
-    
-    
-    this.frameManager = new frame.Manager(driver);
     this.frameRegsPending = 0;
 
-    
-    this.frameManager.addMessageManagerListeners(driver.mm);
     this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
     this.updateIdForBrowser = driver.updateIdForBrowser.bind(driver);
   }
