@@ -1962,9 +1962,13 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
       
       return kMediaConduitNoError;
     }
+    
+    
     if (frame.width() != mLastWidth || frame.height() != mLastHeight) {
       CSFLogVerbose(LOGTAG, "%s: call SelectSendResolution with %ux%u",
                     __FUNCTION__, frame.width(), frame.height());
+      MOZ_ASSERT(frame.width() != 0 && frame.height() != 0);
+      
       if (SelectSendResolution(frame.width(), frame.height(), &frame)) {
         
         
