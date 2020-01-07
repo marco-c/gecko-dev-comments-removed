@@ -88,9 +88,11 @@ var ShortcutUtils = {
     let key;
     let keyCode = aElemKey.getAttribute("keycode");
     if (keyCode) {
+      keyCode = keyCode.toUpperCase();
       try {
+        let bundle = keyCode == "VK_RETURN" ? PlatformKeys : Keys;
         
-        key = Keys.GetStringFromName(keyCode.toUpperCase());
+        key = bundle.GetStringFromName(keyCode);
       } catch (ex) {
         Cu.reportError("Error finding " + keyCode + ": " + ex);
         key = keyCode.replace(/^VK_/, "");
