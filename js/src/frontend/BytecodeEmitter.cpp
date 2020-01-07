@@ -7434,11 +7434,9 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
     if (!emitTreeInBranch(expr))                          
         return false;
 
-    
-    
-    unsigned iflags = forInLoop->pn_iflags;
-    MOZ_ASSERT(0 == (iflags & ~JSITER_ENUMERATE));
-    if (!emit2(JSOP_ITER, AssertedCast<uint8_t>(iflags))) 
+    MOZ_ASSERT(forInLoop->pn_iflags == 0);
+
+    if (!emit1(JSOP_ITER))                                
         return false;
 
     
@@ -7491,10 +7489,8 @@ BytecodeEmitter::emitForIn(ParseNode* forInLoop, EmitterScope* headLexicalEmitte
 #endif
         MOZ_ASSERT(loopDepth >= 2);
 
-        if (iflags == JSITER_ENUMERATE) {
-            if (!emit1(JSOP_ITERNEXT))                    
-                return false;
-        }
+        if (!emit1(JSOP_ITERNEXT))                        
+            return false;
 
         if (!emitInitializeForInOrOfTarget(forInHead))    
             return false;

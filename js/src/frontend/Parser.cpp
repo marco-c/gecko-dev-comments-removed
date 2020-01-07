@@ -6306,12 +6306,10 @@ Parser<ParseHandler, CharT>::forStatement(YieldHandling yieldHandling)
         Node target = startNode;
 
         
-        if (headKind == PNK_FORIN) {
+        if (headKind == PNK_FORIN)
             stmt.refineForKind(StatementKind::ForInLoop);
-            iflags |= JSITER_ENUMERATE;
-        } else {
+        else
             stmt.refineForKind(StatementKind::ForOfLoop);
-        }
 
         
         

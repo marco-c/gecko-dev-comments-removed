@@ -1002,7 +1002,6 @@ IsObjectInContextCompartment(JSObject* obj, const JSContext* cx);
 
 
 
-#define JSITER_ENUMERATE  0x1   /* for-in compatible hidden default iterator */
 
 
 #define JSITER_OWNONLY    0x8   /* iterate over obj's own properties only */
