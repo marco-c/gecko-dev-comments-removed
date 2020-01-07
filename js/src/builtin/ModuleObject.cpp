@@ -812,7 +812,8 @@ ModuleObject::initialEnvironment() const
 ModuleEnvironmentObject*
 ModuleObject::environment() const
 {
-    MOZ_ASSERT(!hadEvaluationError());
+    
+    
 
     
     
