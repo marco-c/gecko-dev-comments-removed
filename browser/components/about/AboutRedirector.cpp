@@ -21,6 +21,8 @@ namespace browser {
 
 NS_IMPL_ISUPPORTS(AboutRedirector, nsIAboutModule)
 
+bool AboutRedirector::sNewTabPageEnabled = false;
+
 struct RedirEntry {
   const char* id;
   const char* url;
@@ -133,12 +135,21 @@ AboutRedirector::NewChannel(nsIURI* aURI,
   nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  static bool sNTPEnabledCacheInited = false;
+  if (!sNTPEnabledCacheInited) {
+    Preferences::AddBoolVarCache(&AboutRedirector::sNewTabPageEnabled,
+                                 "browser.newtabpage.enabled");
+    sNTPEnabledCacheInited = true;
+  }
+
   for (auto & redir : kRedirMap) {
     if (!strcmp(path.get(), redir.id)) {
       nsAutoCString url;
 
-      if (path.EqualsLiteral("newtab") || path.EqualsLiteral("home")) {
-        
+      
+      
+      if (path.EqualsLiteral("home") ||
+          (sNewTabPageEnabled && path.EqualsLiteral("newtab"))) {
         nsCOMPtr<nsIAboutNewTabService> aboutNewTabService =
           do_GetService("@mozilla.org/browser/aboutnewtab-service;1", &rv);
         NS_ENSURE_SUCCESS(rv, rv);
