@@ -2239,16 +2239,6 @@ nsDocument::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup)
     
     NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
 
-  bool isWyciwyg = false;
-  uri->SchemeIs("wyciwyg", &isWyciwyg);
-  if (isWyciwyg) {
-    nsCOMPtr<nsIURI> cleanURI;
-    nsresult rv = nsContentUtils::RemoveWyciwygScheme(uri, getter_AddRefs(cleanURI));
-    if (NS_SUCCEEDED(rv)) {
-      uri = cleanURI;
-    }
-  }
-
     nsIScriptSecurityManager *securityManager =
       nsContentUtils::GetSecurityManager();
     if (securityManager) {
@@ -3542,110 +3532,6 @@ nsIDocument::GetCurrentScript()
 {
   nsCOMPtr<Element> el(do_QueryInterface(ScriptLoader()->GetCurrentScript()));
   return el;
-}
-
-Element*
-nsIDocument::ElementFromPoint(float aX, float aY)
-{
-  return ElementFromPointHelper(aX, aY, false, true);
-}
-
-void
-nsIDocument::ElementsFromPoint(float aX, float aY,
-                               nsTArray<RefPtr<Element>>& aElements)
-{
-  ElementsFromPointHelper(aX, aY, nsIDocument::FLUSH_LAYOUT, aElements);
-}
-
-Element*
-nsDocument::ElementFromPointHelper(float aX, float aY,
-                                   bool aIgnoreRootScrollFrame,
-                                   bool aFlushLayout)
-{
-  AutoTArray<RefPtr<Element>, 1> elementArray;
-  ElementsFromPointHelper(aX, aY,
-                          ((aIgnoreRootScrollFrame ? nsIDocument::IGNORE_ROOT_SCROLL_FRAME : 0) |
-                           (aFlushLayout ? nsIDocument::FLUSH_LAYOUT : 0) |
-                           nsIDocument::IS_ELEMENT_FROM_POINT),
-                          elementArray);
-  if (elementArray.IsEmpty()) {
-    return nullptr;
-  }
-  return elementArray[0];
-}
-
-void
-nsDocument::ElementsFromPointHelper(float aX, float aY,
-                                    uint32_t aFlags,
-                                    nsTArray<RefPtr<mozilla::dom::Element>>& aElements)
-{
-  
-  if (!(aFlags & nsIDocument::IGNORE_ROOT_SCROLL_FRAME) && (aX < 0 || aY < 0)) {
-    return;
-  }
-
-  nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
-  nscoord y = nsPresContext::CSSPixelsToAppUnits(aY);
-  nsPoint pt(x, y);
-
-  
-  
-  if (aFlags & nsIDocument::FLUSH_LAYOUT) {
-    FlushPendingNotifications(FlushType::Layout);
-  }
-
-  nsIPresShell *ps = GetShell();
-  if (!ps) {
-    return;
-  }
-  nsIFrame *rootFrame = ps->GetRootFrame();
-
-  
-  if (!rootFrame) {
-    return; 
-  }
-
-  nsTArray<nsIFrame*> outFrames;
-  
-  
-  nsLayoutUtils::GetFramesForArea(rootFrame, nsRect(pt, nsSize(1, 1)), outFrames,
-    nsLayoutUtils::IGNORE_PAINT_SUPPRESSION | nsLayoutUtils::IGNORE_CROSS_DOC |
-    ((aFlags & nsIDocument::IGNORE_ROOT_SCROLL_FRAME) ? nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME : 0));
-
-  
-  if (outFrames.IsEmpty()) {
-    return;
-  }
-
-  
-  nsIContent* lastAdded = nullptr;
-
-  for (uint32_t i = 0; i < outFrames.Length(); i++) {
-    nsIContent* node = GetContentInThisDocument(outFrames[i]);
-
-    if (!node || !node->IsElement()) {
-      
-      
-      
-      
-      
-      
-      if (!(aFlags & nsIDocument::IS_ELEMENT_FROM_POINT) &&
-          !nsSVGUtils::IsInSVGTextSubtree(outFrames[i])) {
-        continue;
-      }
-      node = node->GetParent();
-    }
-    if (node && node != lastAdded) {
-      aElements.AppendElement(node->AsElement());
-      lastAdded = node;
-      
-      
-      if (aFlags & nsIDocument::IS_ELEMENT_FROM_POINT) {
-        return;
-      }
-    }
-  }
 }
 
 nsresult
@@ -8539,7 +8425,7 @@ nsDocument::DoUnblockOnload()
 }
 
 nsIContent*
-nsDocument::GetContentInThisDocument(nsIFrame* aFrame) const
+nsIDocument::GetContentInThisDocument(nsIFrame* aFrame) const
 {
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {

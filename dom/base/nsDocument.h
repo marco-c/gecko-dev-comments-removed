@@ -690,14 +690,6 @@ public:
                                    nsAtom* aAttrName,
                                    const nsAString& aAttrValue) const override;
 
-  virtual Element* ElementFromPointHelper(float aX, float aY,
-                                          bool aIgnoreRootScrollFrame,
-                                          bool aFlushLayout) override;
-
-  virtual void ElementsFromPointHelper(float aX, float aY,
-                                       uint32_t aFlags,
-                                       nsTArray<RefPtr<mozilla::dom::Element>>& aElements) override;
-
   virtual nsresult NodesFromRectHelper(float aX, float aY,
                                                    float aTopSize, float aRightSize,
                                                    float aBottomSize, float aLeftSize,
@@ -1224,16 +1216,6 @@ private:
   void DoUnblockOnload();
 
   nsresult InitCSP(nsIChannel* aChannel);
-
-  
-
-
-
-
-
-
-
-  nsIContent* GetContentInThisDocument(nsIFrame* aFrame) const;
 
   
   
