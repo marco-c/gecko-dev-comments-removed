@@ -247,15 +247,9 @@ public:
 
   
   
-  
-  
-  
-  
-  
   void ContentAppended(nsIContent* aContainer,
                        nsIContent* aFirstNewContent,
-                       InsertionKind aInsertionKind,
-                       TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+                       InsertionKind aInsertionKind);
 
   
   
@@ -272,15 +266,11 @@ public:
   
   
   
-  
-  
-  
   void ContentRangeInserted(nsIContent* aContainer,
                             nsIContent* aStartChild,
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
-                            InsertionKind aInsertionKind,
-                            TreeMatchContext* aProvidedTreeMatchContext = nullptr);
+                            InsertionKind aInsertionKind);
 
   enum RemoveFlags {
     REMOVE_CONTENT,
@@ -399,26 +389,21 @@ private:
                             nsIFrame*                      aNewFrame,
                             bool                           aAllowCounters = true);
 
-  
-  
   already_AddRefed<nsStyleContext>
-  ResolveStyleContext(nsIFrame*                aParentFrame,
-                      nsIContent*              aContainer,
-                      nsIContent*              aChild,
-                      nsFrameConstructorState* aState);
+  ResolveStyleContext(nsIFrame* aParentFrame,
+                      nsIContent* aContainer,
+                      nsIContent* aChild);
+
   already_AddRefed<nsStyleContext>
-  ResolveStyleContext(nsIFrame*                aParentFrame,
-                      nsIContent*              aChild,
-                      nsFrameConstructorState* aState);
+  ResolveStyleContext(nsIFrame* aParentFrame, nsIContent* aChild);
+
   already_AddRefed<nsStyleContext>
-  ResolveStyleContext(const InsertionPoint&    aInsertion,
-                      nsIContent*              aChild,
-                      nsFrameConstructorState* aState);
+  ResolveStyleContext(const InsertionPoint& aInsertion, nsIContent* aChild);
+
   already_AddRefed<nsStyleContext>
-  ResolveStyleContext(nsStyleContext*          aParentStyleContext,
-                      nsIContent*              aContent,
-                      nsFrameConstructorState* aState,
-                      Element*                 aOriginatingElementOrNull = nullptr);
+  ResolveStyleContext(nsStyleContext* aParentStyleContext,
+                      nsIContent* aContent,
+                      Element* aOriginatingElementOrNull = nullptr);
 
   
   

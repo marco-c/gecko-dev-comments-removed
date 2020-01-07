@@ -123,7 +123,6 @@
 #include "nsSVGUtils.h"
 
 #include "nsRefreshDriver.h"
-#include "nsRuleProcessorData.h"
 #include "nsTextNode.h"
 #include "ActiveLayerTracker.h"
 #include "nsIPresShellInlines.h"
@@ -334,18 +333,6 @@ static int32_t FFWC_doSibling=0;
 static int32_t FFWC_recursions=0;
 static int32_t FFWC_nextInFlows=0;
 #endif
-
-
-
-
-class TreeMatchContextHolder
-{
-public:
-  explicit TreeMatchContextHolder(nsIDocument* aDocument) {}
-  bool Exists() const { return false; }
-  operator TreeMatchContext*() { return nullptr; }
-  TreeMatchContext* operator->() { MOZ_CRASH("old style system disabled"); }
-};
 
 
 
@@ -842,32 +829,19 @@ public:
 
   
   
-  TreeMatchContext*         mTreeMatchContext;
-
-  
-  
-  
-  
   nsFrameConstructorState(
     nsIPresShell* aPresShell,
-    TreeMatchContext* aTreeMatchContext,
     nsContainerFrame* aFixedContainingBlock,
     nsContainerFrame* aAbsoluteContainingBlock,
     nsContainerFrame* aFloatContainingBlock,
     already_AddRefed<nsILayoutHistoryState> aHistoryState);
   
   nsFrameConstructorState(nsIPresShell* aPresShell,
-                          TreeMatchContext* aTreeMatchContext,
                           nsContainerFrame* aFixedContainingBlock,
                           nsContainerFrame* aAbsoluteContainingBlock,
                           nsContainerFrame* aFloatContainingBlock);
 
   ~nsFrameConstructorState();
-
-  bool HasAncestorFilter()
-  {
-    return false;
-  }
 
   
   
@@ -1014,24 +988,8 @@ protected:
   PendingBinding* mCurrentPendingBindingInsertionPoint;
 };
 
-
-namespace mozilla {
-
-class AutoDisplayContentsAncestorPusher
-{
-public:
-  AutoDisplayContentsAncestorPusher(TreeMatchContext& aTreeMatchContext,
-                                    nsPresContext* aPresContext,
-                                    nsIContent* aParent) {}
-  bool IsEmpty() const { return false; }
-};
-
-} 
-
-
 nsFrameConstructorState::nsFrameConstructorState(
   nsIPresShell* aPresShell,
-  TreeMatchContext* aTreeMatchContext,
   nsContainerFrame* aFixedContainingBlock,
   nsContainerFrame* aAbsoluteContainingBlock,
   nsContainerFrame* aFloatContainingBlock,
@@ -1058,7 +1016,6 @@ nsFrameConstructorState::nsFrameConstructorState(
     mFixedPosIsAbsPos(aFixedContainingBlock == aAbsoluteContainingBlock),
     mHavePendingPopupgroup(false),
     mCreatingExtraFrames(false),
-    mTreeMatchContext(aTreeMatchContext),
     mCurrentPendingBindingInsertionPoint(nullptr)
 {
 #ifdef MOZ_XUL
@@ -1071,12 +1028,10 @@ nsFrameConstructorState::nsFrameConstructorState(
 }
 
 nsFrameConstructorState::nsFrameConstructorState(nsIPresShell* aPresShell,
-                                                 TreeMatchContext* aTreeMatchContext,
                                                  nsContainerFrame* aFixedContainingBlock,
                                                  nsContainerFrame* aAbsoluteContainingBlock,
                                                  nsContainerFrame* aFloatContainingBlock)
   : nsFrameConstructorState(aPresShell,
-                            aTreeMatchContext,
                             aFixedContainingBlock,
                             aAbsoluteContainingBlock,
                             aFloatContainingBlock,
@@ -1884,10 +1839,8 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   
   RefPtr<nsStyleContext> pseudoStyleContext;
   pseudoStyleContext =
-    styleSet->ProbePseudoElementStyle(aParentContent,
-                                      aPseudoElement,
-                                      aStyleContext,
-                                      aState.mTreeMatchContext);
+    styleSet->ProbePseudoElementStyle(aParentContent, aPseudoElement,
+                                      aStyleContext);
   if (!pseudoStyleContext)
     return;
 
@@ -2478,15 +2431,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   SetUpDocElementContainingBlock(aDocElement);
 
   NS_ASSERTION(mDocElementContainingBlock, "Should have parent by now");
-
-  TreeMatchContextHolder matchContext(mDocument);
-  
-  
-  if (matchContext.Exists()) {
-    matchContext->InitAncestors(nullptr);
-  }
   nsFrameConstructorState state(mPresShell,
-                                matchContext,
                                 GetAbsoluteContainingBlock(mDocElementContainingBlock, FIXED_POS),
                                 nullptr,
                                 nullptr, do_AddRef(aFrameState));
@@ -2572,9 +2517,6 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     RegisterDisplayNoneStyleFor(aDocElement, styleContext);
     return nullptr;
   }
-
-  TreeMatchContext::AutoAncestorPusher ancestorPusher(state.mTreeMatchContext);
-  ancestorPusher.PushAncestor(aDocElement);
 
   
   styleContext->StartBackgroundImageLoads();
@@ -2929,8 +2871,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
   RefPtr<nsStyleContext> rootPseudoStyle;
   
   
-  TreeMatchContextHolder matchContext(mDocument);
-  nsFrameConstructorState state(mPresShell, matchContext, nullptr, nullptr, nullptr);
+  nsFrameConstructorState state(mPresShell, nullptr, nullptr, nullptr);
 
   
   nsContainerFrame* parentFrame = viewportFrame;
@@ -3940,45 +3881,6 @@ nsCSSFrameConstructor::ConstructFrameFromItemInternal(FrameConstructionItem& aIt
   }
 
   nsIContent* const content = aItem.mContent;
-  nsIContent* parent = content->GetParent();
-
-  
-  Maybe<AutoDisplayContentsAncestorPusher> adcp;
-  if (aState.mTreeMatchContext) {
-    adcp.emplace(*aState.mTreeMatchContext, aState.mPresContext, parent);
-  } else {
-    MOZ_ASSERT(content->IsStyledByServo());
-  }
-
-  
-  
-  
-  
-  
-  
-  TreeMatchContext::AutoAncestorPusher
-    insertionPointPusher(aState.mTreeMatchContext);
-  if (adcp.isSome() && adcp->IsEmpty() && parent &&
-      parent->IsActiveChildrenElement()) {
-    if (aState.HasAncestorFilter()) {
-      insertionPointPusher.PushAncestor(parent);
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  TreeMatchContext::AutoAncestorPusher
-    ancestorPusher(aState.mTreeMatchContext);
-  if (aState.HasAncestorFilter()) {
-    ancestorPusher.PushAncestor(content);
-  }
-
   nsIFrame* newFrame;
   nsIFrame* primaryFrame;
   nsStyleContext* const styleContext = aItem.mStyleContext;
@@ -4708,11 +4610,6 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
   DebugOnly<nsresult> rv = GetAnonymousContent(aContent, gfxScrollFrame, scrollNAC);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
   if (scrollNAC.Length() > 0) {
-    TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
-    if (aState.HasAncestorFilter()) {
-      ancestorPusher.PushAncestor(aContent->AsElement());
-    }
-
     AutoFrameConstructionItemList items(this);
     AddFCItemsForAnonymousContent(aState, gfxScrollFrame, scrollNAC, items);
     ConstructFramesFromItemList(aState, items, gfxScrollFrame,
@@ -5132,10 +5029,9 @@ nsCSSFrameConstructor::InitAndRestoreFrame(const nsFrameConstructorState& aState
 }
 
 already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(nsIFrame*         aParentFrame,
-                                           nsIContent*       aContainer,
-                                           nsIContent*       aChild,
-                                           nsFrameConstructorState* aState)
+nsCSSFrameConstructor::ResolveStyleContext(nsIFrame* aParentFrame,
+                                           nsIContent* aContainer,
+                                           nsIContent* aChild)
 {
   MOZ_ASSERT(aContainer, "Must have parent here");
   
@@ -5157,30 +5053,27 @@ nsCSSFrameConstructor::ResolveStyleContext(nsIFrame*         aParentFrame,
     }
   }
 
-  return ResolveStyleContext(parentStyleContext, aChild, aState);
+  return ResolveStyleContext(parentStyleContext, aChild);
 }
 
 already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(nsIFrame*          aParentFrame,
-                                           nsIContent*              aChild,
-                                           nsFrameConstructorState* aState)
+nsCSSFrameConstructor::ResolveStyleContext(nsIFrame* aParentFrame,
+                                           nsIContent* aChild)
 {
-  return ResolveStyleContext(aParentFrame, aChild->GetFlattenedTreeParent(), aChild, aState);
+  return ResolveStyleContext(aParentFrame, aChild->GetFlattenedTreeParent(), aChild);
 }
 
 already_AddRefed<nsStyleContext>
-nsCSSFrameConstructor::ResolveStyleContext(const InsertionPoint&    aInsertion,
-                                           nsIContent*              aChild,
-                                           nsFrameConstructorState* aState)
+nsCSSFrameConstructor::ResolveStyleContext(const InsertionPoint& aInsertion,
+                                           nsIContent* aChild)
 {
   return ResolveStyleContext(aInsertion.mParentFrame, aInsertion.mContainer,
-                             aChild, aState);
+                             aChild);
 }
 
 already_AddRefed<nsStyleContext>
 nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
                                            nsIContent* aContent,
-                                           nsFrameConstructorState* aState,
                                            Element* aOriginatingElementOrNull)
 {
   StyleSetHandle styleSet = mPresShell->StyleSet();
@@ -5190,16 +5083,9 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
     auto pseudoType = aContent->AsElement()->GetPseudoElementType();
     if (pseudoType == CSSPseudoElementType::NotPseudo) {
       MOZ_ASSERT(!aOriginatingElementOrNull);
-      if (aState) {
-        result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                           aParentStyleContext,
-                                           LazyComputeBehavior::Assert,
-                                           aState->mTreeMatchContext);
-      } else {
-        result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                           aParentStyleContext,
-                                           LazyComputeBehavior::Assert);
-      }
+      result = styleSet->ResolveStyleFor(aContent->AsElement(),
+                                         aParentStyleContext,
+                                         LazyComputeBehavior::Assert);
     } else {
       MOZ_ASSERT(aContent->IsInNativeAnonymousSubtree());
       if (!aOriginatingElementOrNull) {
@@ -5827,7 +5713,7 @@ nsCSSFrameConstructor::AddFrameConstructionItems(nsFrameConstructorState& aState
     return;
   }
   RefPtr<nsStyleContext> styleContext =
-    ResolveStyleContext(aInsertion, aContent, &aState);
+    ResolveStyleContext(aInsertion, aContent);
   DoAddFrameConstructionItems(aState, aContent, styleContext,
                               aSuppressWhiteSpaceOptimizations, parentFrame,
                               nullptr, aItems);
@@ -6084,11 +5970,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
                                                                     styleContext);
     }
 
-    TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
-    if (aState.HasAncestorFilter()) {
-      ancestorPusher.PushAncestor(aContent->AsElement());
-    }
-
     if (aParentFrame) {
       aParentFrame->AddStateBits(NS_FRAME_MAY_HAVE_GENERATED_CONTENT);
     }
@@ -6102,22 +5983,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
         continue;
       }
 
-      
-      
-      
-      
-      
-      nsIContent* parent = child->GetParent();
-      MOZ_ASSERT(parent, "Parent must be non-null because we are iterating children.");
-      TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
-      if (parent != aContent && parent->IsElement()) {
-        if (aState.HasAncestorFilter()) {
-          ancestorPusher.PushAncestor(parent->AsElement());
-        }
-      }
-
       RefPtr<nsStyleContext> childContext =
-        ResolveStyleContext(styleContext, child, &aState);
+        ResolveStyleContext(styleContext, child);
       DoAddFrameConstructionItems(aState, child, childContext,
                                   aSuppressWhiteSpaceOptimizations,
                                   aParentFrame, aAnonChildren, aItems);
@@ -6676,9 +6543,8 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
         return false;
       }
       
-      
       RefPtr<nsStyleContext> styleContext =
-        ResolveStyleContext(styleParent, aContent, nullptr);
+        ResolveStyleContext(styleParent, aContent);
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       aDisplay = display->mDisplay;
     }
@@ -7226,7 +7092,7 @@ nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
 
     
     ContentRangeInserted(aContainer, child, child->GetNextSibling(),
-                         mTempFrameTreeState, InsertionKind::Sync, nullptr);
+                         mTempFrameTreeState, InsertionKind::Sync);
   }
 }
 
@@ -7362,11 +7228,8 @@ nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
 void
 nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        nsIContent* aFirstNewContent,
-                                       InsertionKind aInsertionKind,
-                                       TreeMatchContext* aProvidedTreeMatchContext)
+                                       InsertionKind aInsertionKind)
 {
-  MOZ_ASSERT(!aProvidedTreeMatchContext ||
-             aInsertionKind == InsertionKind::Sync);
   MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
              !RestyleManager()->IsInStyleRefresh());
 
@@ -7533,18 +7396,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 
   
-  
-  
-  
-  Maybe<TreeMatchContext> matchContext;
-  if (!aProvidedTreeMatchContext && !aContainer->IsStyledByServo()) {
-    
-    
-    matchContext.emplace(mDocument, TreeMatchContext::ForFrameConstruction);
-    matchContext->InitAncestors(aFirstNewContent->GetParentElementCrossingShadowRoot());
-  }
   nsFrameConstructorState state(mPresShell,
-                                matchContext.ptrOr(aProvidedTreeMatchContext),
                                 GetAbsoluteContainingBlock(parentFrame, FIXED_POS),
                                 GetAbsoluteContainingBlock(parentFrame, ABS_POS),
                                 containingBlock);
@@ -7763,11 +7615,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
                                             nsIContent* aStartChild,
                                             nsIContent* aEndChild,
                                             nsILayoutHistoryState* aFrameState,
-                                            InsertionKind aInsertionKind,
-                                            TreeMatchContext* aProvidedTreeMatchContext)
+                                            InsertionKind aInsertionKind)
 {
-  MOZ_ASSERT(!aProvidedTreeMatchContext ||
-             aInsertionKind == InsertionKind::Sync);
   MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
              !RestyleManager()->IsInStyleRefresh());
 
@@ -8010,15 +7859,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  Maybe<TreeMatchContext> matchContext;
-  if (!aProvidedTreeMatchContext && !aContainer->IsStyledByServo()) {
-    
-    
-    matchContext.emplace(mDocument, TreeMatchContext::ForFrameConstruction);
-    matchContext->InitAncestors(aStartChild->GetParentElementCrossingShadowRoot());
-  }
   nsFrameConstructorState state(mPresShell,
-                                matchContext.ptrOr(aProvidedTreeMatchContext),
                                 GetAbsoluteContainingBlock(insertion.mParentFrame, FIXED_POS),
                                 GetAbsoluteContainingBlock(insertion.mParentFrame, ABS_POS),
                                 GetFloatContainingBlock(insertion.mParentFrame),
@@ -8840,9 +8681,7 @@ nsCSSFrameConstructor::CreateContinuingTableFrame(nsIPresShell*     aPresShell,
       nsTableRowGroupFrame*   headerFooterFrame;
       nsFrameItems            childItems;
 
-      TreeMatchContextHolder matchContext(mDocument);
       nsFrameConstructorState state(mPresShell,
-                                    matchContext,
                                     GetAbsoluteContainingBlock(newFrame, FIXED_POS),
                                     GetAbsoluteContainingBlock(newFrame, ABS_POS),
                                     nullptr);
@@ -9115,9 +8954,7 @@ nsCSSFrameConstructor::ReplicateFixedFrames(nsPageContentFrame* aParentFrame)
   
   
   
-  TreeMatchContextHolder matchContext(mDocument);
   nsFrameConstructorState state(mPresShell,
-                                matchContext,
                                 aParentFrame,
                                 nullptr,
                                 mRootElementFrame);
@@ -9591,8 +9428,7 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent,
         
         ContentRangeInserted(container, aContent, aContent->GetNextSibling(),
                              mTempFrameTreeState,
-                             aInsertionKind,
-                             nullptr);
+                             aInsertionKind);
       }
     }
   }
@@ -10581,14 +10417,6 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
                !content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION),
                "Why is someone creating garbage anonymous content");
 
-    RefPtr<nsStyleContext> styleContext;
-    Maybe<TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper>
-      parentDisplayBasedStyleFixupSkipper;
-    MOZ_ASSERT(aState.mTreeMatchContext || content->IsStyledByServo());
-    if (aState.mTreeMatchContext) {
-      parentDisplayBasedStyleFixupSkipper.emplace(*aState.mTreeMatchContext);
-    }
-
     
     
     MOZ_ASSERT(!content->IsStyledByServo() || !content->IsElement() ||
@@ -10689,8 +10517,8 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
       pseudo ? styleParentFrame->GetContent()->AsElement() : nullptr;
     nsStyleContext* parentStyle =
       styleParentFrame ? styleParentFrame->StyleContext() : nullptr;
-    styleContext =
-      ResolveStyleContext(parentStyle, content, &aState, originating);
+    RefPtr<nsStyleContext> styleContext =
+      ResolveStyleContext(parentStyle, content, originating);
 
     nsTArray<nsIAnonymousContentCreator::ContentInfo>* anonChildren = nullptr;
     if (!aAnonymousItems[i].mChildren.IsEmpty()) {
@@ -10808,15 +10636,6 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
       NS_WARNING("ProcessChildren max depth exceeded");
     }
 
-    
-    
-    Maybe<TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper>
-      parentDisplayBasedStyleFixupSkipper;
-    MOZ_ASSERT(aState.mTreeMatchContext || aContent->IsStyledByServo());
-    if (!isFlexOrGridContainer && aState.mTreeMatchContext) {
-      parentDisplayBasedStyleFixupSkipper.emplace(*aState.mTreeMatchContext);
-    }
-
     InsertionPoint insertion(aFrame, nullptr);
     FlattenedChildIterator iter(aContent);
     for (nsIContent* child = iter.GetNextChild(); child; child = iter.GetNextChild()) {
@@ -10826,15 +10645,15 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
       
       
       insertion.mContainer = aContent;
+
+
+      
+      
       nsIContent* parent = child->GetParent();
       MOZ_ASSERT(parent, "Parent must be non-null because we are iterating children.");
-      TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
       if (parent != aContent && parent->IsElement()) {
         insertion.mContainer = child->GetFlattenedTreeParent();
         MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(child).mContainer);
-        if (aState.HasAncestorFilter()) {
-          ancestorPusher.PushAncestor(parent->AsElement());
-        }
       }
 
       
@@ -11282,9 +11101,7 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
 
     NS_ASSERTION(aBlockContinuation == GetFloatContainingBlock(aParentFrame),
                  "Containing block is confused");
-    TreeMatchContextHolder matchContext(mDocument);
     nsFrameConstructorState state(mPresShell,
-                                  matchContext,
                                   GetAbsoluteContainingBlock(aParentFrame, FIXED_POS),
                                   GetAbsoluteContainingBlock(aParentFrame, ABS_POS),
                                   aBlockContinuation);
@@ -11669,11 +11486,9 @@ nsCSSFrameConstructor::CreateListBoxContent(nsContainerFrame*      aParentFrame,
 {
 #ifdef MOZ_XUL
   
-  if (nullptr != aParentFrame) {
+  if (aParentFrame) {
     nsFrameItems            frameItems;
-    TreeMatchContextHolder matchContext(mDocument);
     nsFrameConstructorState state(mPresShell,
-                                  matchContext,
                                   GetAbsoluteContainingBlock(aParentFrame, FIXED_POS),
                                   GetAbsoluteContainingBlock(aParentFrame, ABS_POS),
                                   GetFloatContainingBlock(aParentFrame),
@@ -11682,8 +11497,8 @@ nsCSSFrameConstructor::CreateListBoxContent(nsContainerFrame*      aParentFrame,
     
     
 
-    RefPtr<nsStyleContext> styleContext;
-    styleContext = ResolveStyleContext(aParentFrame, aChild, &state);
+    RefPtr<nsStyleContext> styleContext =
+      ResolveStyleContext(aParentFrame, aChild);
 
     
     
@@ -12019,11 +11834,6 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
   nsStyleContext* const parentStyleContext = aParentItem.mStyleContext;
   nsIContent* const parentContent = aParentItem.mContent;
 
-  TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
-  if (aState.HasAncestorFilter()) {
-    ancestorPusher.PushAncestor(parentContent->AsElement());
-  }
-
   if (!aItemIsWithinSVGText) {
     
     CreateGeneratedContentItem(aState, nullptr, parentContent->AsElement(),
@@ -12053,20 +11863,6 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
       
       
       
-      
-      
-      nsIContent* contentParent = content->GetParent();
-      MOZ_ASSERT(contentParent, "Parent must be non-null because we are iterating children.");
-      TreeMatchContext::AutoAncestorPusher insertionPointPusher(aState.mTreeMatchContext);
-      if (contentParent != parentContent && contentParent->IsElement()) {
-        if (aState.HasAncestorFilter()) {
-          insertionPointPusher.PushAncestor(contentParent->AsElement());
-        }
-      }
-
-      
-      
-      
       content->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
       if (content->IsNodeOfType(nsINode::eCOMMENT) ||
           content->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
@@ -12080,7 +11876,7 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
       content->UnsetRestyleFlagsIfGecko();
 
       RefPtr<nsStyleContext> childContext =
-        ResolveStyleContext(parentStyleContext, content, &aState);
+        ResolveStyleContext(parentStyleContext, content);
 
       AddFrameConstructionItemsInternal(aState, content, nullptr,
                                         content->NodeInfo()->NameAtom(),
@@ -12543,8 +12339,7 @@ nsCSSFrameConstructor::GenerateChildFrames(nsContainerFrame* aFrame)
   {
     nsAutoScriptBlocker scriptBlocker;
     nsFrameItems childItems;
-    TreeMatchContextHolder matchContext(mDocument);
-    nsFrameConstructorState state(mPresShell, matchContext, nullptr, nullptr, nullptr);
+    nsFrameConstructorState state(mPresShell, nullptr, nullptr, nullptr);
     
     
     
