@@ -26,17 +26,47 @@ PDFiumProcessParent::PDFiumProcessParent()
 PDFiumProcessParent::~PDFiumProcessParent()
 {
   MOZ_COUNT_DTOR(PDFiumProcessParent);
+
+  if (mPDFiumParentActor) {
+    mPDFiumParentActor->Close();
+  }
 }
 
 bool
 PDFiumProcessParent::Launch()
 {
-  return SyncLaunch();
+  mLaunchThread = NS_GetCurrentThread();
+
+  if (!SyncLaunch()) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(!mPDFiumParentActor);
+  mPDFiumParentActor = new PDFiumParent();
+  return mPDFiumParentActor->Init(GetChannel(),
+                            base::GetProcId(GetChildProcessHandle()));
 }
 
 void
 PDFiumProcessParent::Delete()
 {
+  
+  
+  if (!mLaunchThread) {
+    delete this;
+    return;
+  }
+
+  if (mLaunchThread == NS_GetCurrentThread()) {
+    delete this;
+    return;
+  }
+
+  mLaunchThread->Dispatch(
+    NewNonOwningRunnableMethod("PDFiumProcessParent::Delete",
+                               this,
+                               &PDFiumProcessParent::Delete));
 }
 
 } 
