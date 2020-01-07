@@ -5,7 +5,9 @@
 
 
 #include "WebRenderAPI.h"
+
 #include "DisplayItemClipChain.h"
+#include "gfxPrefs.h"
 #include "LayersLogging.h"
 #include "mozilla/webrender/RendererOGL.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -134,8 +136,15 @@ private:
 
 TransactionBuilder::TransactionBuilder()
 {
-  mTxn = wr_transaction_new();
-  mResourceUpdates = wr_resource_updates_new();
+  
+  
+  if (gfxPrefs::WebRenderAsyncSceneBuild()) {
+    mTxn = wr_transaction_new(true);
+    mResourceUpdates = wr_resource_updates_new();
+  } else {
+    mResourceUpdates = wr_resource_updates_new();
+    mTxn = wr_transaction_new(false);
+  }
 }
 
 TransactionBuilder::~TransactionBuilder()
