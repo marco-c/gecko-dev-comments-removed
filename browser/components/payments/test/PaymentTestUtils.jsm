@@ -69,19 +69,6 @@ var PaymentTestUtils = {
 
 
 
-    createRequest: ({methodData, details, options}) => {
-      const rq = new content.PaymentRequest(methodData, details, options);
-      content.rq = rq; 
-    },
-
-    
-
-
-
-
-
-
-
     createAndShowRequest: ({methodData, details, options}) => {
       const rq = new content.PaymentRequest(methodData, details, options);
       content.rq = rq; 
