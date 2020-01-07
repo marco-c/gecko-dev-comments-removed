@@ -42,6 +42,7 @@ import argparse
 import re
 import subprocess
 import sys
+import buildconfig
 
 
 
@@ -76,7 +77,8 @@ def main():
     
     
     
-    cmd = ['nm', '-u', '-C', '-A', args.file]
+    nm = buildconfig.substs.get('NM') or 'nm'
+    cmd = [nm, '-u', '-C', '-A', args.file]
     lines = subprocess.check_output(cmd, universal_newlines=True,
                                     stderr=subprocess.PIPE).split('\n')
 
