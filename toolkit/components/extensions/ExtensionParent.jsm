@@ -1243,9 +1243,6 @@ function watchExtensionProxyContextLoad({extension, viewType, browser}, onExtens
 }
 
 
-let gBaseManifestProperties = null;
-
-
 
 let IconDetails = {
   
@@ -1590,20 +1587,6 @@ var ExtensionParent = {
   StartupCache,
   WebExtensionPolicy,
   apiManager,
-  get baseManifestProperties() {
-    if (gBaseManifestProperties) {
-      return gBaseManifestProperties;
-    }
-
-    let types = Schemas.schemaJSON.get(BASE_SCHEMA).deserialize({})[0].types;
-    let manifest = types.find(type => type.id === "WebExtensionManifest");
-    if (!manifest) {
-      throw new Error("Unable to find base manifest properties");
-    }
-
-    gBaseManifestProperties = Object.getOwnPropertyNames(manifest.properties);
-    return gBaseManifestProperties;
-  },
   promiseExtensionViewLoaded,
   watchExtensionProxyContextLoad,
   DebugUtils,

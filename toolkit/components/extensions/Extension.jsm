@@ -101,39 +101,6 @@ XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData
 const SHUTDOWN_BLOCKER_MAX_MS = 8000;
 
 
-XPCOMUtils.defineLazyGetter(this, "allowedThemeProperties", () => {
-  Cu.import("resource://gre/modules/ExtensionParent.jsm");
-  let propertiesInBaseManifest = ExtensionParent.baseManifestProperties;
-
-  
-  
-  
-  
-  return propertiesInBaseManifest.filter(prop => {
-    const propertiesToRemove = ["background", "content_scripts", "permissions"];
-    return !propertiesToRemove.includes(prop);
-  });
-});
-
-
-
-
-
-
-
-
-
-function validateThemeManifest(manifestProperties) {
-  let invalidProps = [];
-  for (let propName of manifestProperties) {
-    if (propName != "theme" && !allowedThemeProperties.includes(propName)) {
-      invalidProps.push(propName);
-    }
-  }
-  return invalidProps;
-}
-
-
 
 
 
@@ -524,15 +491,7 @@ class ExtensionData {
     let manifestType = "manifest.WebExtensionManifest";
     if (this.manifest.theme) {
       this.type = "theme";
-      
-      let invalidProps = validateThemeManifest(Object.getOwnPropertyNames(this.manifest));
-
-      if (invalidProps.length) {
-        let message = `Themes defined in the manifest may only contain static resources. ` +
-          `If you would like to use additional properties, please use the "theme" permission instead. ` +
-          `(the invalid properties found are: ${invalidProps})`;
-        this.manifestError(message);
-      }
+      manifestType = "manifest.ThemeManifest";
     } else if (this.manifest.langpack_id) {
       this.type = "langpack";
       manifestType = "manifest.WebExtensionLangpackManifest";
