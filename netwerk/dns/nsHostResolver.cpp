@@ -870,6 +870,9 @@ nsHostResolver::ResolveHost(const char             *host,
                         
                         MutexAutoLock lock(he->rec->addr_info_lock);
 
+                        
+                        
+                        
                         he->rec->addr_info = nullptr;
                         if (unspecHe->rec->negative) {
                             he->rec->negative = unspecHe->rec->negative;
