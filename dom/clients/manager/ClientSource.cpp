@@ -124,6 +124,28 @@ ClientSource::GetDocShell() const
   return mOwner.as<nsCOMPtr<nsIDocShell>>();
 }
 
+nsIGlobalObject*
+ClientSource::GetGlobal() const
+{
+  NS_ASSERT_OWNINGTHREAD(ClientSource);
+  nsPIDOMWindowInner* win = GetInnerWindow();
+  if (win) {
+    return win->AsGlobal();
+  }
+
+  WorkerPrivate* wp = GetWorkerPrivate();
+  if (wp) {
+    return wp->GlobalScope();
+  }
+
+  
+  
+  
+  
+
+  return nullptr;
+}
+
 void
 ClientSource::MaybeCreateInitialDocument()
 {
@@ -431,10 +453,47 @@ ClientSource::Control(const ClientControlledArgs& aArgs)
 {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool controlAllowed = true;
+  if (GetInnerWindow()) {
+
+    
+    controlAllowed = Info().URL().LowerCaseEqualsLiteral("about:blank") ||
+                     StringBeginsWith(Info().URL(), NS_LITERAL_CSTRING("blob:")) ||
+                     nsContentUtils::StorageAllowedForWindow(GetInnerWindow()) ==
+                      nsContentUtils::StorageAccess::eAllow;
+  } else if (GetWorkerPrivate()) {
+    
+    controlAllowed = GetWorkerPrivate()->IsStorageAllowed() ||
+                     StringBeginsWith(GetWorkerPrivate()->ScriptURL(),
+                                      NS_LITERAL_STRING("blob:"));
+  }
+
+  RefPtr<ClientOpPromise> ref;
+
+  if (NS_WARN_IF(!controlAllowed)) {
+    ref = ClientOpPromise::CreateAndReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+                                           __func__);
+    return ref.forget();
+  }
+
   SetController(ServiceWorkerDescriptor(aArgs.serviceWorker()));
 
-  RefPtr<ClientOpPromise> ref =
-    ClientOpPromise::CreateAndResolve(NS_OK, __func__);
+  ref = ClientOpPromise::CreateAndResolve(NS_OK, __func__);
   return ref.forget();
 }
 
@@ -670,35 +729,55 @@ ClientSource::PostMessage(const ClientPostMessageArgs& aArgs)
 RefPtr<ClientOpPromise>
 ClientSource::Claim(const ClientClaimArgs& aArgs)
 {
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!ServiceWorkerParentInterceptEnabled());
+
   RefPtr<ClientOpPromise> ref;
 
-  ServiceWorkerDescriptor swd(aArgs.serviceWorker());
+  nsIGlobalObject* global = GetGlobal();
+  if (NS_WARN_IF(!global)) {
+    ref = ClientOpPromise::CreateAndReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+                                           __func__);
+    return ref.forget();
+  }
 
   
   
   
   
   
-  
-  
-  nsPIDOMWindowInner* innerWindow = GetInnerWindow();
-  nsIDocument* doc = innerWindow ? innerWindow->GetExtantDoc() : nullptr;
-  RefPtr<ServiceWorkerManager> swm = doc ? ServiceWorkerManager::GetInstance()
-                                         : nullptr;
-  if (!swm || !doc) {
-    SetController(swd);
-    ref = ClientOpPromise::CreateAndResolve(NS_OK, __func__);
-    return ref.forget();
+
+  RefPtr<GenericPromise::Private> innerPromise =
+    new GenericPromise::Private(__func__);
+  ServiceWorkerDescriptor swd(aArgs.serviceWorker());
+
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "ClientSource::Claim",
+    [innerPromise, clientInfo = mClientInfo, swd] () mutable {
+      RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+      if (NS_WARN_IF(!swm)) {
+        innerPromise->Reject(NS_ERROR_DOM_INVALID_STATE_ERR, __func__);
+        return;
+      }
+
+      RefPtr<GenericPromise> p = swm->MaybeClaimClient(clientInfo, swd);
+      p->ChainTo(innerPromise.forget(), __func__);
+    });
+
+  if (NS_IsMainThread()) {
+    r->Run();
+  } else {
+    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
   }
 
   RefPtr<ClientOpPromise::Private> outerPromise =
     new ClientOpPromise::Private(__func__);
 
-  auto holder =
-    MakeRefPtr<DOMMozPromiseRequestHolder<GenericPromise>>(innerWindow->AsGlobal());
+  auto holder = MakeRefPtr<DOMMozPromiseRequestHolder<GenericPromise>>(global);
 
-  RefPtr<GenericPromise> p = swm->MaybeClaimClient(mClientInfo, swd);
-  p->Then(mEventTarget, __func__,
+  innerPromise->Then(mEventTarget, __func__,
     [outerPromise, holder] (bool aResult) {
       holder->Complete();
       outerPromise->Resolve(NS_OK, __func__);
