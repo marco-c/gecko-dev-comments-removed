@@ -344,6 +344,41 @@ void UpdateASR(nsDisplayItem* aItem,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
                                               nsDisplayList* aOldList,
@@ -407,39 +442,49 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
       
       
       
-      if (!oldItem->IsReused()) {
-        nsDisplayItem* old = nullptr;
-        while ((old = aOldList->RemoveBottom()) && !IsSameItem(newItem, old)) {
-          if (IsAnyAncestorModified(old->FrameForInvalidation())) {
-            
-            oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
-            old->Destroy(&mBuilder);
-          } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
-            
-            
-            
-            old->SetReused(true);
-          } else {
-            
-            
-            if (old->GetChildren()) {
-              nsDisplayList empty;
-              Maybe<const ActiveScrolledRoot*> containerASRForChildren;
-              MergeDisplayLists(&empty, old->GetChildren(),
-                                old->GetChildren(), containerASRForChildren);
-              UpdateASR(old, containerASRForChildren);
-              old->UpdateBounds(&mBuilder);
-            }
-            ReuseItem(old);
+      nsDisplayItem* old = nullptr;
+      while ((old = aOldList->GetBottom()) && old != oldItem) {
+        if (IsAnyAncestorModified(old->FrameForInvalidation())) {
+          
+          oldListLookup.Remove({ old->Frame(), old->GetPerFrameKey() });
+          aOldList->RemoveBottom();
+          old->Destroy(&mBuilder);
+        } else if (newListLookup.Get({ old->Frame(), old->GetPerFrameKey() })) {
+          
+          
+          break;
+        } else {
+          
+          
+          if (old->GetChildren()) {
+            nsDisplayList empty;
+            Maybe<const ActiveScrolledRoot*> containerASRForChildren;
+            MergeDisplayLists(&empty, old->GetChildren(),
+                              old->GetChildren(), containerASRForChildren);
+            UpdateASR(old, containerASRForChildren);
+            old->UpdateBounds(&mBuilder);
           }
+          aOldList->RemoveBottom();
+          ReuseItem(old);
         }
-        MOZ_ASSERT(old && IsSameItem(newItem, old));
-        MOZ_ASSERT(old == oldItem);
+      }
+      bool destroy = false;
+      if (old == oldItem) {
+        
+        
+        aOldList->RemoveBottom();
+        destroy = true;
+      } else {
+        
+        
+        
+        oldItem->SetReused(true);
       }
 
       
       
-      if (oldItem->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
+      if (destroy &&
+          oldItem->GetType() == DisplayItemType::TYPE_LAYER_EVENT_REGIONS &&
           !IsAnyAncestorModified(oldItem->FrameForInvalidation())) {
         
         
@@ -459,7 +504,9 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
           newItem->UpdateBounds(&mBuilder);
         }
 
-        oldItem->Destroy(&mBuilder);
+        if (destroy) {
+          oldItem->Destroy(&mBuilder);
+        }
         UseItem(newItem);
       }
     } else {
@@ -471,7 +518,8 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
 
   
   while (nsDisplayItem* old = aOldList->RemoveBottom()) {
-    if (!IsAnyAncestorModified(old->FrameForInvalidation())) {
+    if (!IsAnyAncestorModified(old->FrameForInvalidation()) &&
+        !old->IsReused()) {
       if (old->GetChildren()) {
         
         
@@ -489,7 +537,7 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
         MergeLayerEventRegions(old, nullptr);
       }
       ReuseItem(old);
-    } else {
+    } else if (!old->IsReused()) {
       old->Destroy(&mBuilder);
     }
   }
