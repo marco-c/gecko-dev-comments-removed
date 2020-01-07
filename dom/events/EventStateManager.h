@@ -93,11 +93,16 @@ public:
 
 
 
+
+
+
+
   nsresult PreHandleEvent(nsPresContext* aPresContext,
                           WidgetEvent* aEvent,
                           nsIFrame* aTargetFrame,
                           nsIContent* aTargetContent,
-                          nsEventStatus* aStatus);
+                          nsEventStatus* aStatus,
+                          nsIContent* aOverrideClickTarget);
 
   
 
@@ -107,7 +112,8 @@ public:
   nsresult PostHandleEvent(nsPresContext* aPresContext,
                            WidgetEvent* aEvent,
                            nsIFrame* aTargetFrame,
-                           nsEventStatus* aStatus);
+                           nsEventStatus* aStatus,
+                           nsIContent* aOverrideClickTarget);
 
   void PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
                                nsIFrame* aTargetFrame, nsEventStatus& aStatus);
@@ -442,10 +448,13 @@ protected:
                                             nsIPresShell* aPresShell,
                                             nsIContent* aMouseTarget,
                                             AutoWeakFrame aCurrentTarget,
-                                            bool aNoContentDispatch);
-  nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus);
+                                            bool aNoContentDispatch,
+                                            nsIContent* aOverrideClickTarget);
+  nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus,
+                         nsIContent* aOverrideClickTarget = nullptr);
   nsresult CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
-                                    nsEventStatus* aStatus);
+                                    nsEventStatus* aStatus,
+                                    nsIContent* aOverrideClickTarget);
   void EnsureDocument(nsPresContext* aPresContext);
   void FlushPendingEvents(nsPresContext* aPresContext);
 
@@ -1022,6 +1031,8 @@ private:
 
   void NotifyTargetUserActivation(WidgetEvent* aEvent,
                                   nsIContent* aTargetContent);
+
+  already_AddRefed<EventStateManager> ESMFromContentOrThis(nsIContent* aContent);
 
   int32_t     mLockCursor;
   bool mLastFrameConsumedSetCursor;

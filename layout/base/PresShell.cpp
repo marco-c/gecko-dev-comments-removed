@@ -7077,23 +7077,29 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       frame = pointerCapturingContent->GetPrimaryFrame();
 
       if (!frame) {
-        
-        
-        PointerEventHandler::DispatchPointerFromMouseOrTouch(
-          this, nullptr, pointerCapturingContent, aEvent, false,
-          aEventStatus, nullptr);
-
         RefPtr<PresShell> shell =
           GetShellForEventTarget(nullptr, pointerCapturingContent);
-
         if (!shell) {
           
           
+          PointerEventHandler::ReleaseIfCaptureByDescendant(
+            pointerCapturingContent);
           return NS_OK;
         }
+
+        nsCOMPtr<nsIContent> overrideClickTarget =
+          GetOverrideClickTarget(aEvent, aFrame);
+
+        
+        
+        PointerEventHandler::DispatchPointerFromMouseOrTouch(
+          shell, nullptr, pointerCapturingContent, aEvent, false,
+          aEventStatus, nullptr);
+
         return shell->HandleEventWithTarget(aEvent, nullptr,
                                             pointerCapturingContent,
-                                            aEventStatus, true);
+                                            aEventStatus, true, nullptr,
+                                            overrideClickTarget);
       }
     }
 
@@ -7224,6 +7230,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       }
     }
 
+    nsCOMPtr<nsIContent> overrideClickTarget;
     if (PointerEventHandler::IsPointerEventEnabled()) {
       
       
@@ -7238,6 +7245,21 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       
       nsIFrame* targetFrame =
         aEvent->mClass == eTouchEventClass ? aFrame : frame;
+
+      if (pointerCapturingContent) {
+        overrideClickTarget = GetOverrideClickTarget(aEvent, aFrame);
+        shell = GetShellForEventTarget(nullptr, pointerCapturingContent);
+        if (!shell) {
+          
+          
+          PointerEventHandler::ReleaseIfCaptureByDescendant(
+            pointerCapturingContent);
+          return NS_OK;
+        }
+
+        targetFrame = pointerCapturingContent->GetPrimaryFrame();
+        frame = targetFrame;
+      }
 
       AutoWeakFrame weakFrame(targetFrame);
       nsCOMPtr<nsIContent> targetContent;
@@ -7288,7 +7310,8 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     
     
     shell->PushCurrentEventInfo(frame, targetElement);
-    rv = shell->HandleEventInternal(aEvent, aEventStatus, true);
+    rv = shell->HandleEventInternal(aEvent, aEventStatus, true,
+                                    overrideClickTarget);
 #ifdef DEBUG
     shell->ShowEventTargetDebug();
 #endif
@@ -7445,7 +7468,8 @@ nsresult
 PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
                                  nsIContent* aContent, nsEventStatus* aStatus,
                                  bool aIsHandlingNativeEvent,
-                                 nsIContent** aTargetContent)
+                                 nsIContent** aTargetContent,
+                                 nsIContent* aOverrideClickTarget)
 {
 #if DEBUG
   MOZ_ASSERT(!aFrame || aFrame->PresContext()->GetPresShell() == this,
@@ -7460,7 +7484,8 @@ PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
   NS_ENSURE_STATE(!aContent || aContent->GetComposedDoc() == mDocument);
   AutoPointerEventTargetUpdater updater(this, aEvent, aFrame, aTargetContent);
   PushCurrentEventInfo(aFrame, aContent);
-  nsresult rv = HandleEventInternal(aEvent, aStatus, false);
+  nsresult rv =
+    HandleEventInternal(aEvent, aStatus, false, aOverrideClickTarget);
   PopCurrentEventInfo();
   return rv;
 }
@@ -7468,7 +7493,8 @@ PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
 nsresult
 PresShell::HandleEventInternal(WidgetEvent* aEvent,
                                nsEventStatus* aStatus,
-                               bool aIsHandlingNativeEvent)
+                               bool aIsHandlingNativeEvent,
+                               nsIContent* aOverrideClickTarget)
 {
   RefPtr<EventStateManager> manager = mPresContext->EventStateManager();
   nsresult rv = NS_OK;
@@ -7640,7 +7666,8 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
     
     
     rv = manager->PreHandleEvent(mPresContext, aEvent, mCurrentEventFrame,
-                                 mCurrentEventContent, aStatus);
+                                 mCurrentEventContent, aStatus,
+                                 aOverrideClickTarget);
 
     
     if (NS_SUCCEEDED(rv)) {
@@ -7694,7 +7721,8 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
       
       if (!mIsDestroying && NS_SUCCEEDED(rv)) {
         rv = manager->PostHandleEvent(mPresContext, aEvent,
-                                      GetCurrentEventFrame(), aStatus);
+                                      GetCurrentEventFrame(), aStatus,
+                                      aOverrideClickTarget);
       }
     }
 
@@ -10640,4 +10668,35 @@ PresShell::NotifyStyleSheetServiceSheetRemoved(StyleSheet* aSheet,
   }
 
   RemoveSheet(ToSheetType(aSheetType), aSheet);
+}
+
+nsIContent*
+PresShell::GetOverrideClickTarget(WidgetGUIEvent* aEvent,
+                                  nsIFrame* aFrame)
+{
+  if (aEvent->mMessage != eMouseUp) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(aEvent->mClass == eMouseEventClass);
+  WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+
+  uint32_t flags = 0;
+  nsPoint eventPoint =
+    nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, aFrame);
+  if (mouseEvent->mIgnoreRootScrollFrame) {
+    flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
+  }
+
+  nsIFrame* target =
+    FindFrameTargetedByInputEvent(aEvent, aFrame, eventPoint, flags);
+  if (!target) {
+    return nullptr;
+  }
+
+  nsIContent* overrideClickTarget = target->GetContent();
+  while (overrideClickTarget && !overrideClickTarget->IsElement()) {
+    overrideClickTarget = overrideClickTarget->GetFlattenedTreeParent();
+  }
+  return overrideClickTarget;
 }
