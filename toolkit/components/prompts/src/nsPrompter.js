@@ -440,8 +440,13 @@ function openRemotePrompt(domWin, args, tabPrompt) {
     let eventDetail = Cu.cloneInto({tabPrompt, inPermitUnload}, domWin);
     PromptUtils.fireDialogEvent(domWin, "DOMWillOpenModalDialog", null, eventDetail);
 
-    let winUtils = domWin.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDOMWindowUtils);
+    
+    
+    
+    
+    
+    let winUtils = domWin.top.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIDOMWindowUtils);
     winUtils.enterModalState();
     let closed = false;
 
