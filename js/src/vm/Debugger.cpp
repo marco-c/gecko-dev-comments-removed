@@ -2413,7 +2413,7 @@ class MOZ_RAII ExecutionObservableFrame : public Debugger::ExecutionObservableSe
     Zone* singleZone() const override {
         
         
-        return frame_.script()->compartment()->zone();
+        return frame_.script()->zone();
     }
 
     JSScript* singleScriptForZoneInvalidation() const override {
@@ -2472,7 +2472,7 @@ class MOZ_RAII ExecutionObservableScript : public Debugger::ExecutionObservableS
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     }
 
-    Zone* singleZone() const override { return script_->compartment()->zone(); }
+    Zone* singleZone() const override { return script_->zone(); }
     JSScript* singleScriptForZoneInvalidation() const override { return script_; }
     bool shouldRecompileOrInvalidate(JSScript* script) const override {
         return script->hasBaselineScript() && script == script_;
@@ -2558,7 +2558,7 @@ AppendAndInvalidateScript(JSContext* cx, Zone* zone, JSScript* script, Vector<JS
     
     
     
-    MOZ_ASSERT(script->compartment()->zone() == zone);
+    MOZ_ASSERT(script->zone() == zone);
     AutoRealm ar(cx, script);
     zone->types.addPendingRecompile(cx, script);
     return scripts.append(script);
