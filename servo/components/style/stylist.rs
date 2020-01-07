@@ -1158,6 +1158,9 @@ impl Stylist {
     
     
     
+    
+    
+    
     pub fn push_applicable_declarations<E, F>(
         &self,
         element: E,
@@ -1206,22 +1209,6 @@ impl Stylist {
             );
         }
 
-        if pseudo_element.is_none() && !only_default_rules {
-            
-            let length_before_preshints = applicable_declarations.len();
-            element.synthesize_presentational_hints_for_legacy_attributes(
-                context.visited_handling(),
-                applicable_declarations
-            );
-            if applicable_declarations.len() != length_before_preshints {
-                if cfg!(debug_assertions) {
-                    for declaration in &applicable_declarations[length_before_preshints..] {
-                        assert_eq!(declaration.level(), CascadeLevel::PresHints);
-                    }
-                }
-            }
-        }
-
         
         
         
@@ -1241,6 +1228,25 @@ impl Stylist {
                     flags_setter,
                     CascadeLevel::UserNormal,
                 );
+            }
+        }
+
+        if pseudo_element.is_none() && !only_default_rules {
+            
+            
+            
+            
+            let length_before_preshints = applicable_declarations.len();
+            element.synthesize_presentational_hints_for_legacy_attributes(
+                context.visited_handling(),
+                applicable_declarations
+            );
+            if applicable_declarations.len() != length_before_preshints {
+                if cfg!(debug_assertions) {
+                    for declaration in &applicable_declarations[length_before_preshints..] {
+                        assert_eq!(declaration.level(), CascadeLevel::PresHints);
+                    }
+                }
             }
         }
 
@@ -1333,7 +1339,6 @@ impl Stylist {
             }
 
             
-            
             if let Some(so) = smil_override {
                 applicable_declarations.push(
                     ApplicableDeclarationBlock::from_declarations(
@@ -1356,7 +1361,6 @@ impl Stylist {
             }
         }
 
-        
         
         
         

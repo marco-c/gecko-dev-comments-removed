@@ -478,6 +478,12 @@ const RULE_TREE_GC_INTERVAL: usize = 300;
 
 
 
+
+
+
+
+
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
@@ -485,9 +491,9 @@ pub enum CascadeLevel {
     
     UANormal = 0,
     
-    PresHints,
-    
     UserNormal,
+    
+    PresHints,
     
     AuthorNormal,
     
