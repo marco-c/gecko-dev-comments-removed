@@ -193,10 +193,10 @@ gfxPlatformGtk::UpdateFontList()
 
 static const char kFontDejaVuSans[] = "DejaVu Sans";
 static const char kFontDejaVuSerif[] = "DejaVu Serif";
-static const char kFontEmojiOneMozilla[] = "EmojiOne Mozilla";
 static const char kFontFreeSans[] = "FreeSans";
 static const char kFontFreeSerif[] = "FreeSerif";
 static const char kFontTakaoPGothic[] = "TakaoPGothic";
+static const char kFontTwemojiMozilla[] = "Twemoji Mozilla";
 static const char kFontDroidSansFallback[] = "Droid Sans Fallback";
 static const char kFontWenQuanYiMicroHei[] = "WenQuanYi Micro Hei";
 static const char kFontNanumGothic[] = "NanumGothic";
@@ -212,7 +212,7 @@ gfxPlatformGtk::GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
            (aNextCh != kVariationSelector15 &&
             emoji == EmojiPresentation::EmojiDefault)) {
             
-            aFontList.AppendElement(kFontEmojiOneMozilla);
+            aFontList.AppendElement(kFontTwemojiMozilla);
         }
     }
 

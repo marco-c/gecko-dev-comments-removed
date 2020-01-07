@@ -874,6 +874,8 @@ pref("gfx.font_rendering.graphite.enabled", true);
 pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
+pref("gfx.font_rendering.opentype_svg.enabled", true);
+
 #ifdef XP_WIN
 
 
@@ -2927,6 +2929,20 @@ pref("layout.selection.caret_style", 0);
 
 pref("layout.css.report_errors", true);
 
+
+pref("layout.css.visited_links_enabled", true);
+
+
+pref("layout.css.moz-document.content.enabled",  false);
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("layout.css.moz-document.url-prefix-hack.enabled", false);
+#else
+pref("layout.css.moz-document.url-prefix-hack.enabled", true);
+#endif
+
 #ifdef NIGHTLY_BUILD
 pref("layout.css.getPropertyCSSValue.enabled", false);
 #else
@@ -3011,6 +3027,26 @@ pref("layout.css.float-logical-values.enabled", true);
 pref("layout.css.image-orientation.enabled", true);
 
 
+pref("layout.css.font-display.enabled", true);
+
+
+pref("layout.css.font-variations.enabled", true);
+
+
+#ifdef RELEASE_OR_BETA
+pref("layout.css.frames-timing.enabled", false);
+#else
+pref("layout.css.frames-timing.enabled", true);
+#endif
+
+
+
+
+#ifndef RELEASE_OR_BETA
+pref("layout.css.emulate-moz-box-with-flex", false);
+#endif
+
+
 
 pref("layout.css.paint-order.enabled", true);
 
@@ -3021,6 +3057,17 @@ pref("layout.css.prefixes.transitions", true);
 pref("layout.css.prefixes.animations", true);
 pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
+
+
+pref("layout.css.prefixes.gradients", true);
+
+
+pref("layout.css.prefixes.webkit", true);
+
+
+
+
+pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
 pref("layout.css.background-blend-mode.enabled", true);
@@ -3046,6 +3093,9 @@ pref("layout.css.all-shorthand.enabled", true);
 
 
 pref("layout.css.overflow-clip-box.enabled", false);
+
+
+pref("layout.css.grid-template-subgrid-value.enabled", false);
 
 
 pref("layout.css.contain.enabled", false);
@@ -3086,6 +3136,13 @@ pref("layout.css.shape-outside.enabled", false);
 
 
 pref("layout.css.font-loading-api.enabled", true);
+
+
+#ifdef RELEASE_OR_BETA
+pref("layout.css.control-characters.visible", false);
+#else
+pref("layout.css.control-characters.visible", true);
+#endif
 
 
 pref("layout.css.column-span.enabled", false);
@@ -3660,7 +3717,7 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
 
 #ifdef XP_WIN
 
-pref("font.name-list.emoji", "Segoe UI Emoji, EmojiOne Mozilla");
+pref("font.name-list.emoji", "Segoe UI Emoji, Twemoji Mozilla");
 
 pref("font.name-list.serif.ar", "Times New Roman");
 pref("font.name-list.sans-serif.ar", "Segoe UI, Tahoma, Arial");
@@ -4330,7 +4387,7 @@ pref("print.print_in_color", true);
 
 
 
-pref("font.name-list.emoji", "EmojiOne Mozilla");
+pref("font.name-list.emoji", "Twemoji Mozilla");
 
 pref("font.name-list.serif.ar", "serif");
 pref("font.name-list.sans-serif.ar", "sans-serif");
@@ -5071,6 +5128,11 @@ pref("alerts.useSystemBackend", true);
 
 
 pref("full-screen-api.enabled", false);
+#ifdef RELEASE_OR_BETA
+pref("full-screen-api.unprefix.enabled", false);
+#else
+pref("full-screen-api.unprefix.enabled", true);
+#endif
 pref("full-screen-api.allow-trusted-requests-only", true);
 
 pref("full-screen-api.ignore-widgets", false);
@@ -5199,6 +5261,11 @@ pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 
 pref("layout.css.touch_action.enabled", true);
+
+
+
+
+pref("layout.css.expensive-style-struct-assertions.enabled", false);
 
 #if defined(MOZ_WIDGET_ANDROID)
 
