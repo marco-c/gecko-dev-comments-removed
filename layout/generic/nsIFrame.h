@@ -684,15 +684,7 @@ public:
 
   void Destroy() {
     AutoPostDestroyData data(PresContext());
-    Destroy(data.mData);
-    
-  }
-
-  
-
-
-  void Destroy(PostDestroyData& aPostDestroyData) {
-    DestroyFrom(this, aPostDestroyData);
+    DestroyFrom(this, data.mData);
     
   }
 
