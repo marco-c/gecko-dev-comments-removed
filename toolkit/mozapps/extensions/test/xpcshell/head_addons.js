@@ -4,19 +4,12 @@
 
 
 
-var AM_Cc = Cc;
-var AM_Ci = Ci;
-var AM_Cu = Cu;
-
-AM_Cu.importGlobalProperties(["TextEncoder"]);
-
 if (!_TEST_FILE[0].includes("toolkit/mozapps/extensions/test/xpcshell/")) {
   ok(false, ("head_addons.js may not be loaded by tests outside of " +
              "the add-on manager component."));
 }
 
-const CERTDB_CONTRACTID = "@mozilla.org/security/x509certdb;1";
-const CERTDB_CID = Components.ID("{fb0bbc5c-452e-4783-b32c-80124693d871}");
+Cu.importGlobalProperties(["TextEncoder"]);
 
 const PREF_EM_CHECK_UPDATE_SECURITY   = "extensions.checkUpdateSecurity";
 const PREF_EM_STRICT_COMPATIBILITY    = "extensions.strictCompatibility";
@@ -43,14 +36,13 @@ const MAX_TIME_DIFFERENCE = 3000;
 
 const MAKE_FILE_OLD_DIFFERENCE = 10 * 3600 * 1000;
 
-ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
-ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
@@ -76,6 +68,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
 const {
   awaitPromise,
   createAppInfo,
+  createHttpServer,
   createInstallRDF,
   createTempWebExtensionFile,
   createUpdateRDF,
@@ -125,7 +118,7 @@ Object.defineProperty(this, "gAddonStartup", {
 
 Object.defineProperty(this, "gInternalManager", {
   get() {
-    return AddonTestUtils.addonIntegrationService.QueryInterface(AM_Ci.nsITimerCallback);
+    return AddonTestUtils.addonIntegrationService.QueryInterface(Ci.nsITimerCallback);
   },
 });
 
@@ -172,7 +165,7 @@ var gUrlToFileMap = {};
 
 
 var resHandler = Services.io.getProtocolHandler("resource")
-                         .QueryInterface(AM_Ci.nsISubstitutingProtocolHandler);
+                         .QueryInterface(Ci.nsISubstitutingProtocolHandler);
 
 var dataURI = NetUtil.newURI(do_get_file("data", true));
 resHandler.setSubstitution("xpcshell-data", dataURI);
@@ -180,13 +173,13 @@ resHandler.setSubstitution("xpcshell-data", dataURI);
 function isManifestRegistered(file) {
   let manifests = Components.manager.getManifestLocations();
   for (let i = 0; i < manifests.length; i++) {
-    let manifest = manifests.queryElementAt(i, AM_Ci.nsIURI);
+    let manifest = manifests.queryElementAt(i, Ci.nsIURI);
 
     
     
-    if (manifest instanceof AM_Ci.nsIJARURI) {
-      manifest = manifest.JARFile.QueryInterface(AM_Ci.nsIFileURL).file;
-    } else if (manifest instanceof AM_Ci.nsIFileURL) {
+    if (manifest instanceof Ci.nsIJARURI) {
+      manifest = manifest.JARFile.QueryInterface(Ci.nsIFileURL).file;
+    } else if (manifest instanceof Ci.nsIFileURL) {
       manifest = manifest.file.parent;
     } else {
       continue;
@@ -481,11 +474,11 @@ function do_get_file_hash(aFile, aAlgorithm) {
   if (!aAlgorithm)
     aAlgorithm = "sha1";
 
-  let crypto = AM_Cc["@mozilla.org/security/hash;1"].
-               createInstance(AM_Ci.nsICryptoHash);
+  let crypto = Cc["@mozilla.org/security/hash;1"].
+               createInstance(Ci.nsICryptoHash);
   crypto.initWithString(aAlgorithm);
-  let fis = AM_Cc["@mozilla.org/network/file-input-stream;1"].
-            createInstance(AM_Ci.nsIFileInputStream);
+  let fis = Cc["@mozilla.org/network/file-input-stream;1"].
+            createInstance(Ci.nsIFileInputStream);
   fis.init(aFile, -1, -1, false);
   crypto.updateFromStream(fis, aFile.fileSize);
 
@@ -608,7 +601,7 @@ function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
         break;
 
       default:
-        if (remove_port(actualValue) !== remove_port(expectedValue))
+        if (actualValue !== expectedValue)
           do_throw("Failed for " + aProperty + " for add-on " + aExpectedAddon.id +
                    " (" + actualValue + " === " + expectedValue + ")");
     }
@@ -668,7 +661,7 @@ function do_check_compatibilityoverride(aActual, aExpected) {
 
 function do_check_icons(aActual, aExpected) {
   for (var size in aExpected) {
-    Assert.equal(remove_port(aActual[size]), remove_port(aExpected[size]));
+    Assert.equal(aActual[size], aExpected[size]);
   }
 }
 
@@ -778,7 +771,7 @@ function writeInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
     files[aExtraFile] = "";
 
   if (!aDir.exists())
-    aDir.create(AM_Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+    aDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
   var file = aDir.clone();
   file.append(`${aId}.xpi`);
@@ -1198,8 +1191,8 @@ function timeout() {
   do_test_finished();
 }
 
-var timer = AM_Cc["@mozilla.org/timer;1"].createInstance(AM_Ci.nsITimer);
-timer.init(timeout, TIMEOUT_MS, AM_Ci.nsITimer.TYPE_ONE_SHOT);
+var timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+timer.init(timeout, TIMEOUT_MS, Ci.nsITimer.TYPE_ONE_SHOT);
 
 
 function pathShouldntExist(file) {
@@ -1214,93 +1207,6 @@ registerCleanupFunction(function addon_cleanup() {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-function createHttpServer(port = -1) {
-  let server = new HttpServer();
-  server.start(port);
-
-  registerCleanupFunction(() => {
-    return new Promise(resolve => {
-      server.stop(resolve);
-    });
-  });
-
-  return server;
-}
-
-
-
-
-
-
-
-function interpolateAndServeFile(request, response) {
-  try {
-    let file = gUrlToFileMap[request.path];
-    var data = "";
-    var fstream = Cc["@mozilla.org/network/file-input-stream;1"].
-    createInstance(Ci.nsIFileInputStream);
-    var cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].
-    createInstance(Ci.nsIConverterInputStream);
-    fstream.init(file, -1, 0, 0);
-    cstream.init(fstream, "UTF-8", 0, 0);
-
-    let str = {};
-    let read = 0;
-    do {
-      
-      read = cstream.readString(0xffffffff, str);
-      data += str.value;
-    } while (read != 0);
-    data = data.replace(/%PORT%/g, gPort);
-
-    response.write(data);
-  } catch (e) {
-    do_throw(`Exception while serving interpolated file: ${e}\n${e.stack}`);
-  } finally {
-    cstream.close(); 
-  }
-}
-
-
-
-
-
-
-
-
-
-
-function mapUrlToFile(url, file, server) {
-  server.registerPathHandler(url, interpolateAndServeFile);
-  gUrlToFileMap[url] = file;
-}
-
-function mapFile(path, server) {
-  mapUrlToFile(path, do_get_file(path), server);
-}
-
-
-
-
-
-
-
-function remove_port(url) {
-  if (typeof url === "string")
-    return url.replace(/:\d+/, "");
-  return url;
-}
-
 function do_exception_wrap(func) {
   return function() {
     try {
@@ -1314,59 +1220,35 @@ function do_exception_wrap(func) {
 
 
 
-function changeXPIDBVersion(aNewVersion, aMutator = undefined) {
-  let jData = loadJSON(gExtensionsJSON);
-  jData.schemaVersion = aNewVersion;
-  if (aMutator)
-    aMutator(jData);
-  saveJSON(jData, gExtensionsJSON);
+async function changeXPIDBVersion(aNewVersion) {
+  let json = await loadJSON(gExtensionsJSON.path);
+  json.schemaVersion = aNewVersion;
+  await saveJSON(json, gExtensionsJSON.path);
 }
 
 
 
 
-function loadFile(aFile) {
-  let data = "";
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
-          createInstance(Ci.nsIFileInputStream);
-  let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].
-          createInstance(Ci.nsIConverterInputStream);
-  fstream.init(aFile, -1, 0, 0);
-  cstream.init(fstream, "UTF-8", 0, 0);
-  let str = {};
-  let read = 0;
-  do {
-    read = cstream.readString(0xffffffff, str); 
-    data += str.value;
-  } while (read != 0);
-  cstream.close();
-  return data;
+async function loadFile(aFile) {
+  let buffer = await OS.File.read(aFile);
+  return new TextDecoder().decode(buffer);
 }
 
 
 
 
-function loadJSON(aFile) {
-  let data = loadFile(aFile);
-  info("Loaded JSON file " + aFile.path);
-  return (JSON.parse(data));
+async function loadJSON(aFile) {
+  let data = await loadFile(aFile);
+  info("Loaded JSON file " + aFile);
+  return JSON.parse(data);
 }
 
 
 
 
-function saveJSON(aData, aFile) {
-  info("Starting to save JSON file " + aFile.path);
-  let stream = FileUtils.openSafeFileOutputStream(aFile);
-  let converter = AM_Cc["@mozilla.org/intl/converter-output-stream;1"].
-    createInstance(AM_Ci.nsIConverterOutputStream);
-  converter.init(stream, "UTF-8");
-  
-  converter.writeString(JSON.stringify(aData, null, 2));
-  converter.flush();
-  
-  FileUtils.closeSafeFileOutputStream(stream);
-  converter.close();
+async function saveJSON(aData, aFile) {
+  info("Starting to save JSON file " + aFile);
+  await OS.File.writeAtomic(aFile, new TextEncoder().encode(JSON.stringify(aData, null, 2)));
   info("Done saving JSON file " + aFile.path);
 }
 
@@ -1554,7 +1436,7 @@ async function checkInstalledSystemAddons(conditions, distroDir) {
       Assert.ok(file.isFile());
 
       let uri = addon.getResourceURI(null);
-      Assert.ok(uri instanceof AM_Ci.nsIFileURL);
+      Assert.ok(uri instanceof Ci.nsIFileURL);
       Assert.equal(uri.file.path, file.path);
 
       if (isUpgrade) {
