@@ -9,10 +9,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 ChromeUtils.defineModuleGetter(this, "PlacesUtils",
                                "resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Downloads",
-                               "resource://gre/modules/Downloads.jsm");
-ChromeUtils.defineModuleGetter(this, "ServiceWorkerCleanUp",
-                               "resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 var EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
@@ -80,28 +76,6 @@ var ForgetAboutSite = {
         }
       }));
     }
-
-    
-    await ServiceWorkerCleanUp.removeFromHost("http://" + aDomain);
-    await ServiceWorkerCleanUp.removeFromHost("https://" + aDomain);
-
-    
-    promises.push((async function() {
-      
-      let httpURI = NetUtil.newURI("http://" + aDomain);
-      let httpsURI = NetUtil.newURI("https://" + aDomain);
-      
-      
-      
-      let httpPrincipal = Services.scriptSecurityManager
-                                   .createCodebasePrincipal(httpURI, {});
-      let httpsPrincipal = Services.scriptSecurityManager
-                                   .createCodebasePrincipal(httpsURI, {});
-      Services.qms.clearStoragesForPrincipal(httpPrincipal, null, true);
-      Services.qms.clearStoragesForPrincipal(httpsPrincipal, null, true);
-    })().catch(ex => {
-      throw new Error("Exception occured while clearing offline storages: " + ex);
-    }));
 
     
     promises.push((async function() {

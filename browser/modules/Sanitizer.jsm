@@ -13,13 +13,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   FormHistory: "resource://gre/modules/FormHistory.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
-  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "sas",
-                                   "@mozilla.org/storage/activity-service;1",
-                                   "nsIStorageActivityService");
 XPCOMUtils.defineLazyServiceGetter(this, "quotaManagerService",
                                    "@mozilla.org/dom/quota-manager-service;1",
                                    "nsIQuotaManagerService");
@@ -334,70 +330,6 @@ var Sanitizer = {
     offlineApps: {
       async clear(range) {
         await clearData(range, Ci.nsIClearDataService.CLEAR_DOM_STORAGES);
-
-        if (range) {
-          let principals = sas.getActiveOrigins(range[0], range[1])
-                              .QueryInterface(Ci.nsIArray);
-
-          let promises = [];
-
-          for (let i = 0; i < principals.length; ++i) {
-            let principal = principals.queryElementAt(i, Ci.nsIPrincipal);
-
-            if (principal.URI.scheme != "http" &&
-                principal.URI.scheme != "https" &&
-                principal.URI.scheme != "file") {
-              continue;
-            }
-
-            
-            Services.obs.notifyObservers(null, "browser:purge-domain-data", principal.URI.host);
-
-            
-            await ServiceWorkerCleanUp.removeFromPrincipal(principal);
-
-            
-            promises.push(new Promise(r => {
-              let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
-              req.callback = () => { r(); };
-            }));
-          }
-
-          return Promise.all(promises);
-        }
-
-        
-        Services.obs.notifyObservers(null, "extension:purge-localStorage");
-
-        
-        await ServiceWorkerCleanUp.removeAll();
-
-        
-        let promises = [];
-        await new Promise(resolve => {
-          quotaManagerService.getUsage(request => {
-            if (request.resultCode != Cr.NS_OK) {
-              
-              
-              resolve();
-              return;
-            }
-
-            for (let item of request.result) {
-              let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
-              let uri = principal.URI;
-              if (uri.scheme == "http" || uri.scheme == "https" || uri.scheme == "file") {
-                promises.push(new Promise(r => {
-                  let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
-                  req.callback = () => { r(); };
-                }));
-              }
-            }
-            resolve();
-          });
-        });
-
-        return Promise.all(promises);
       }
     },
 
@@ -930,13 +862,13 @@ async function maybeSanitizeSessionPrincipals(principals) {
 }
 
 async function sanitizeSessionPrincipal(principal) {
-  return Promise.all([
-    new Promise(r => {
-      let req = quotaManagerService.clearStoragesForPrincipal(principal, null, false);
-      req.callback = () => { r(); };
-    }).catch(() => {}),
-    ServiceWorkerCleanUp.removeFromPrincipal(principal).catch(() => {}),
-  ]);
+  await new Promise(resolve => {
+    let service = Cc["@mozilla.org/clear-data-service;1"]
+                    .getService(Ci.nsIClearDataService);
+    service.deleteDataFromPrincipal(principal, true ,
+                                    Ci.nsIClearDataService.CLEAR_DOM_STORAGES,
+                                    resolve);
+  });
 }
 
 function sanitizeNewTabSegregation() {
