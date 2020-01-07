@@ -591,11 +591,6 @@ public:
   
   void AsyncBlockOnload();
 
-  virtual void SetScrollToRef(nsIURI *aDocumentURI) override;
-  virtual void ScrollToRef() override;
-  virtual void ResetScrolledToRefAlready() override;
-  virtual void SetChangeScrollPosWhenScrollingToRef(bool aValue) override;
-
   
   
   
@@ -791,10 +786,6 @@ private:
 
   
   nsString mPreloadPictureFoundSource;
-
-  nsCString mScrollToRef;
-  uint8_t mScrolledToRefAlready : 1;
-  uint8_t mChangeScrollPosWhenScrollingToRef : 1;
 
   
   
