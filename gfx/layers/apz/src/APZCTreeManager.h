@@ -268,6 +268,13 @@ public:
 
 
 
+
+
+
+
+
+
+
   void SetTargetAPZC(
       uint64_t aInputBlockId,
       const nsTArray<ScrollableLayerGuid>& aTargets) override;
