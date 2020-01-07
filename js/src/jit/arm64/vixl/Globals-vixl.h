@@ -81,10 +81,9 @@ const int MBytes = 1024 * KBytes;
 
 
 
-#define VIXL_CONCAT(a, b) a##b
+#define VIXL_S(x) #x
 #define VIXL_STATIC_ASSERT_LINE(line, condition) \
-  typedef char VIXL_CONCAT(STATIC_ASSERT_LINE_, line)[(condition) ? 1 : -1] \
-  __attribute__((unused))
+    static_assert(condition, "STATIC_ASSERT_LINE_" VIXL_S(line))
 #define VIXL_STATIC_ASSERT(condition) \
     VIXL_STATIC_ASSERT_LINE(__LINE__, condition)
 
