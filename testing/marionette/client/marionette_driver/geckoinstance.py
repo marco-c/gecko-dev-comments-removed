@@ -499,9 +499,6 @@ class DesktopInstance(GeckoInstance):
 
         
         "browser.newtabpage.enabled": False,
-        
-        
-        "browser.newtabpage.introShown": True,
 
         
         

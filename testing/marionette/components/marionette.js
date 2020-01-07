@@ -95,10 +95,6 @@ const RECOMMENDED_PREFS = new Map([
 
   
   
-  ["browser.newtabpage.introShown", true],
-
-  
-  
   
   
   ["browser.offline", false],

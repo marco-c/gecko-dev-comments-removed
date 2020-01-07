@@ -38,13 +38,6 @@ XPCOMUtils.defineLazyGetter(this, "gUnicodeConverter", function() {
 
 
 const PREF_NEWTAB_ENABLED = "browser.newtabpage.enabled";
-const PREF_NEWTAB_ENHANCED = "browser.newtabpage.enhanced";
-
-
-const PREF_NEWTAB_ROWS = "browser.newtabpage.rows";
-
-
-const PREF_NEWTAB_COLUMNS = "browser.newtabpage.columns";
 
 
 const HISTORY_RESULTS_LIMIT = 100;
@@ -211,11 +204,6 @@ var AllPages = {
   
 
 
-  _enhanced: null,
-
-  
-
-
 
   register: function AllPages_register(aPage) {
     this._pages.push(aPage);
@@ -253,24 +241,6 @@ var AllPages = {
   
 
 
-  get enhanced() {
-    if (this._enhanced === null)
-      this._enhanced = Services.prefs.getBoolPref(PREF_NEWTAB_ENHANCED);
-
-    return this._enhanced;
-  },
-
-  
-
-
-  set enhanced(aEnhanced) {
-    if (this.enhanced != aEnhanced)
-      Services.prefs.setBoolPref(PREF_NEWTAB_ENHANCED, !!aEnhanced);
-  },
-
-  
-
-
 
   get length() {
     return this._pages.length;
@@ -300,9 +270,6 @@ var AllPages = {
         case PREF_NEWTAB_ENABLED:
           this._enabled = null;
           break;
-        case PREF_NEWTAB_ENHANCED:
-          this._enhanced = null;
-          break;
       }
     }
     
@@ -317,7 +284,6 @@ var AllPages = {
 
   _addObserver: function AllPages_addObserver() {
     Services.prefs.addObserver(PREF_NEWTAB_ENABLED, this, true);
-    Services.prefs.addObserver(PREF_NEWTAB_ENHANCED, this, true);
     Services.obs.addObserver(this, "page-thumbnail:create", true);
     this._addObserver = function() {};
   },
@@ -325,68 +291,6 @@ var AllPages = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
                                          Ci.nsISupportsWeakReference])
 };
-
-
-
-
-var GridPrefs = {
-  
-
-
-  _gridRows: null,
-  get gridRows() {
-    if (!this._gridRows) {
-      this._gridRows = Math.max(1, Services.prefs.getIntPref(PREF_NEWTAB_ROWS));
-    }
-
-    return this._gridRows;
-  },
-
-  
-
-
-  _gridColumns: null,
-  get gridColumns() {
-    if (!this._gridColumns) {
-      this._gridColumns = Math.max(1, Services.prefs.getIntPref(PREF_NEWTAB_COLUMNS));
-    }
-
-    return this._gridColumns;
-  },
-
-
-  
-
-
-  init: function GridPrefs_init() {
-    Services.prefs.addObserver(PREF_NEWTAB_ROWS, this);
-    Services.prefs.addObserver(PREF_NEWTAB_COLUMNS, this);
-  },
-
- 
-
-
-  uninit: function GridPrefs_uninit() {
-    Services.prefs.removeObserver(PREF_NEWTAB_ROWS, this);
-    Services.prefs.removeObserver(PREF_NEWTAB_COLUMNS, this);
-  },
-
-  
-
-
-
-  observe: function GridPrefs_observe(aSubject, aTopic, aData) {
-    if (aData == PREF_NEWTAB_ROWS) {
-      this._gridRows = null;
-    } else {
-      this._gridColumns = null;
-    }
-
-    AllPages.update();
-  }
-};
-
-GridPrefs.init();
 
 
 
@@ -1838,10 +1742,6 @@ var Links = {
     
     let linkLists = [];
     for (let provider of this._providers.keys()) {
-      if (!AllPages.enhanced && provider != PlacesProvider) {
-        
-        continue;
-      }
       let links = this._providers.get(provider);
       if (links && links.sortedLinks) {
         linkLists.push(links.sortedLinks.slice());
@@ -2054,8 +1954,6 @@ var Telemetry = {
     let probes = [
       { histogram: "NEWTAB_PAGE_ENABLED",
         value: AllPages.enabled },
-      { histogram: "NEWTAB_PAGE_ENHANCED",
-        value: AllPages.enhanced },
       { histogram: "NEWTAB_PAGE_PINNED_SITES_COUNT",
         value: PinnedLinks.links.length },
       { histogram: "NEWTAB_PAGE_BLOCKED_SITES_COUNT",
@@ -2186,7 +2084,6 @@ var NewTabUtils = {
   uninit: function NewTabUtils_uninit() {
     if (this.initialized) {
       Telemetry.uninit();
-      GridPrefs.uninit();
       BlockedLinks.removeObservers();
     }
   },
@@ -2239,11 +2136,8 @@ var NewTabUtils = {
 
   links: Links,
   allPages: AllPages,
-  linkChecker: LinkChecker,
   pinnedLinks: PinnedLinks,
   blockedLinks: BlockedLinks,
-  gridPrefs: GridPrefs,
-  placesProvider: PlacesProvider,
   activityStreamLinks: ActivityStreamLinks,
   activityStreamProvider: ActivityStreamProvider
 };
