@@ -32,6 +32,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
   ContentClick: "resource:///modules/ContentClick.jsm",
   ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   DateTimePickerHelper: "resource://gre/modules/DateTimePickerHelper.jsm",
   DirectoryLinksProvider: "resource:///modules/DirectoryLinksProvider.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
@@ -438,6 +439,8 @@ BrowserGlue.prototype = {
           if (this._placesBrowserInitComplete) {
             Services.obs.notifyObservers(null, "places-browser-init-complete");
           }
+        } else if (data == "migrateMatchBucketsPrefForUIVersion60") {
+          this._migrateMatchBucketsPrefForUIVersion60();
         }
         break;
       case "initial-migration-will-import-default-bookmarks":
@@ -1771,7 +1774,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 59;
+    const UI_VERSION = 60;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2256,6 +2259,12 @@ BrowserGlue.prototype = {
       }
     }
 
+    if (currentUIVersion < 60) {
+      
+      
+      this._migrateMatchBucketsPrefForUIVersion60();
+    }
+
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },
@@ -2335,6 +2344,26 @@ BrowserGlue.prototype = {
     if (willPrompt) {
       DefaultBrowserCheck.prompt(RecentWindow.getMostRecentBrowserWindow());
     }
+  },
+
+  _migrateMatchBucketsPrefForUIVersion60() {
+    let prefName = "browser.urlbar.matchBuckets";
+    let pref = Services.prefs.getCharPref(prefName, "");
+    if (!pref) {
+      
+      
+      
+      
+      
+      
+      if (CustomizableUI.getPlacementOfWidget("search-container")) {
+        Services.prefs.setCharPref(prefName, "general:5,suggestion:Infinity");
+      }
+    }
+    
+    
+    
+    
   },
 
   
