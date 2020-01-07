@@ -771,6 +771,19 @@ DocAccessible::AttributeChanged(dom::Element* aElement,
 
   
   
+  if (aAttribute == nsGkAtoms::aria_hidden) {
+    if (aria::HasDefinedARIAHidden(aElement)) {
+      ContentRemoved(aElement);
+    }
+    else {
+      ContentInserted(aElement->GetFlattenedTreeParent(),
+                      aElement, aElement->GetNextSibling());
+    }
+    return;
+  }
+
+  
+  
   
   
   
@@ -991,22 +1004,6 @@ DocAccessible::ARIAAttributeChanged(Accessible* aAccessible, nsAtom* aAttribute)
   }
 
   dom::Element* elm = aAccessible->GetContent()->AsElement();
-
-  
-  
-  
-  if (aAttribute == nsGkAtoms::aria_hidden) {
-    bool isDefined = aria::HasDefinedARIAHidden(elm);
-    if (isDefined != aAccessible->IsARIAHidden() &&
-        (!aAccessible->Parent() || !aAccessible->Parent()->IsARIAHidden())) {
-      aAccessible->SetARIAHidden(isDefined);
-
-      RefPtr<AccEvent> event =
-        new AccObjectAttrChangedEvent(aAccessible, aAttribute);
-      FireDelayedEvent(event);
-    }
-    return;
-  }
 
   if (aAttribute == nsGkAtoms::aria_checked ||
       (aAccessible->IsButton() &&
@@ -1233,13 +1230,21 @@ DocAccessible::GetAccessibleByUniqueIDInSubtree(void* aUniqueID)
 }
 
 Accessible*
-DocAccessible::GetAccessibleOrContainer(nsINode* aNode) const
+DocAccessible::GetAccessibleOrContainer(nsINode* aNode,
+                                        int aARIAHiddenFlag) const
 {
   if (!aNode || !aNode->GetComposedDoc())
     return nullptr;
 
   for (nsINode* currNode = aNode; currNode;
        currNode = currNode->GetFlattenedTreeParentNode()) {
+
+    
+    if (aARIAHiddenFlag == eNoContainerIfARIAHidden && currNode->IsElement() &&
+        aria::HasDefinedARIAHidden(currNode->AsElement())) {
+      return nullptr;
+    }
+
     if (Accessible* accessible = GetAccessible(currNode)) {
       return accessible;
     }
@@ -1797,7 +1802,8 @@ InsertIterator::Next()
     
     nsIContent* prevNode = mNodes->SafeElementAt(mNodesIdx - 1);
     nsIContent* node = mNodes->ElementAt(mNodesIdx++);
-    Accessible* container = Document()->AccessibleOrTrueContainer(node);
+    Accessible* container = Document()->
+      AccessibleOrTrueContainer(node, DocAccessible::eNoContainerIfARIAHidden);
     if (container != Context()) {
       continue;
     }

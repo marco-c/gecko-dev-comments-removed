@@ -215,21 +215,6 @@ this.EventManager.prototype = {
         }
         break;
       }
-      case Events.OBJECT_ATTRIBUTE_CHANGED:
-      {
-        let evt = aEvent.QueryInterface(
-          Ci.nsIAccessibleObjectAttributeChangedEvent);
-        if (evt.changedAttribute !== "aria-hidden") {
-          
-          break;
-        }
-        let hidden = Utils.isHidden(aEvent.accessible);
-        this[hidden ? "_handleHide" : "_handleShow"](evt);
-        if (this.inTest) {
-          this.sendMsgFunc("AccessFu:AriaHidden", { hidden });
-        }
-        break;
-      }
       case Events.SHOW:
       {
         this._handleShow(aEvent);
@@ -629,7 +614,16 @@ const AccessibilityEventObserver = {
         Logger.accessibleToString(event.accessible));
       return;
     }
-    let content = event.accessibleDocument.window;
+    let content;
+    try {
+      content = event.accessibleDocument.window;
+    } catch (e) {
+      Logger.warning(
+        "AccessibilityEventObserver.observe: no window for accessible document:",
+        Logger.eventToString(event), "accessible:",
+        Logger.accessibleToString(event.accessible));
+      return;
+    }
     
     let eventManager = this.getListener(content);
     if (!eventManager || !eventManager._started) {

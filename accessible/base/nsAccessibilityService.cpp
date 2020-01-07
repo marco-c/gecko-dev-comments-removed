@@ -1049,10 +1049,16 @@ nsAccessibilityService::CreateAccessible(nsINode* aNode,
     return nullptr;
 
   nsIContent* content = aNode->AsContent();
-  nsIFrame* frame = content->GetPrimaryFrame();
+  if (aria::HasDefinedARIAHidden(content)) {
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
+    return nullptr;
+  }
 
   
   
+  nsIFrame* frame = content->GetPrimaryFrame();
   if (!frame || !frame->StyleVisibility()->IsVisible()) {
     
     
