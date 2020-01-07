@@ -2939,7 +2939,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (loadInfo->GetAllowDocumentToBeAgnosticToCSP()) {
+  if (loadInfo && loadInfo->GetAllowDocumentToBeAgnosticToCSP()) {
     return NS_OK;
   }
 
