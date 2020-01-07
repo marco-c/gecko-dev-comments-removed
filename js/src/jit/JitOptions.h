@@ -95,7 +95,6 @@ struct DefaultJitOptions
     mozilla::Maybe<IonRegisterAllocator> forcedRegisterAllocator;
 
     bool spectreIndexMasking;
-    bool spectreStringMitigations;
 
     
     bool disableUnboxedObjects;
