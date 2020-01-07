@@ -296,7 +296,7 @@ public class GeckoSession extends LayerSession
         }
 
         @Override 
-        public Binder asBinder() {
+        public IBinder asBinder() {
             if (mBinder == null) {
                 mBinder = new Binder();
                 mBinder.attachInterface(this, Window.class.getName());
@@ -310,16 +310,8 @@ public class GeckoSession extends LayerSession
                                        GeckoBundle settings, String chromeUri,
                                        int screenId, boolean privateMode);
 
-        @Override 
-        protected void disposeNative() {
-            
-            
-            asBinder().attachInterface(null, Window.class.getName());
-            nativeDisposeNative();
-        }
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "DisposeNative")
-        private native void nativeDisposeNative();
+        @WrapForJNI(dispatchTo = "proxy")
+        @Override protected native void disposeNative();
 
         @WrapForJNI(dispatchTo = "proxy")
         public native void close();
