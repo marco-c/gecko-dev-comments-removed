@@ -106,18 +106,25 @@ class BindingName
 {
     
     
+    
+    
     uintptr_t bits_;
 
     static const uintptr_t ClosedOverFlag = 0x1;
-    static const uintptr_t FlagMask = 0x1;
+    
+    
+    static const uintptr_t TopLevelFunctionFlag = 0x2;
+    static const uintptr_t FlagMask = 0x3;
 
   public:
     BindingName()
       : bits_(0)
     { }
 
-    BindingName(JSAtom* name, bool closedOver)
-      : bits_(uintptr_t(name) | (closedOver ? ClosedOverFlag : 0x0))
+    BindingName(JSAtom* name, bool closedOver, bool isTopLevelFunction = false)
+      : bits_(uintptr_t(name) |
+              (closedOver ? ClosedOverFlag : 0x0) |
+              (isTopLevelFunction? TopLevelFunctionFlag : 0x0))
     { }
 
     JSAtom* name() const {
@@ -128,6 +135,15 @@ class BindingName
         return bits_ & ClosedOverFlag;
     }
 
+  private:
+    friend class BindingIter;
+    
+    
+    bool isTopLevelFunction() const {
+        return bits_ & TopLevelFunctionFlag;
+    }
+
+  public:
     void trace(JSTracer* trc);
 };
 
@@ -752,7 +768,7 @@ class GlobalScope : public Scope
         
         
         
-        uint32_t varStart = 0;
+        
         uint32_t letStart = 0;
         uint32_t constStart = 0;
         uint32_t length = 0;
@@ -1174,12 +1190,8 @@ class BindingIter
     
     
     
-    
-    
-    
     MOZ_INIT_OUTSIDE_CTOR uint32_t positionalFormalStart_;
     MOZ_INIT_OUTSIDE_CTOR uint32_t nonPositionalFormalStart_;
-    MOZ_INIT_OUTSIDE_CTOR uint32_t topLevelFunctionStart_;
     MOZ_INIT_OUTSIDE_CTOR uint32_t varStart_;
     MOZ_INIT_OUTSIDE_CTOR uint32_t letStart_;
     MOZ_INIT_OUTSIDE_CTOR uint32_t constStart_;
@@ -1211,14 +1223,12 @@ class BindingIter
     MOZ_INIT_OUTSIDE_CTOR BindingName* names_;
 
     void init(uint32_t positionalFormalStart, uint32_t nonPositionalFormalStart,
-              uint32_t topLevelFunctionStart, uint32_t varStart,
-              uint32_t letStart, uint32_t constStart,
+              uint32_t varStart, uint32_t letStart, uint32_t constStart,
               uint8_t flags, uint32_t firstFrameSlot, uint32_t firstEnvironmentSlot,
               BindingName* names, uint32_t length)
     {
         positionalFormalStart_ = positionalFormalStart;
         nonPositionalFormalStart_ = nonPositionalFormalStart;
-        topLevelFunctionStart_ = topLevelFunctionStart;
         varStart_ = varStart;
         letStart_ = letStart;
         constStart_ = constStart;
@@ -1385,7 +1395,7 @@ class BindingIter
         MOZ_ASSERT(!done());
         if (index_ < positionalFormalStart_)
             return BindingKind::Import;
-        if (index_ < topLevelFunctionStart_) {
+        if (index_ < varStart_) {
             
             
             if (hasFormalParameterExprs())
@@ -1403,7 +1413,9 @@ class BindingIter
 
     bool isTopLevelFunction() const {
         MOZ_ASSERT(!done());
-        return index_ >= topLevelFunctionStart_ && index_ < varStart_;
+        bool result = names_[index_].isTopLevelFunction();
+        MOZ_ASSERT_IF(result, kind() == BindingKind::Var);
+        return result;
     }
 
     bool hasArgumentSlot() const {
