@@ -54,8 +54,7 @@ SandboxLogJSStack(void)
     
     fileName.SetIsVoid(true);
     frame->GetFilename(cx, fileName);
-    lineNumber = 0;
-    Unused << frame->GetLineNumber(cx, &lineNumber);
+    lineNumber = frame->GetLineNumber(cx);
     funName.SetIsVoid(true);
     Unused << frame->GetName(cx, funName);
 
