@@ -3824,7 +3824,8 @@ public:
   nsDisplayTableBackgroundImage(const InitData& aInitData, nsIFrame* aCellFrame);
 
   virtual uint32_t GetPerFrameKey() const override {
-    return (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
+    return (mLayer << (TYPE_BITS + static_cast<uint8_t>(TableTypeBits::COUNT))) |
+           (static_cast<uint8_t>(mTableType) << TYPE_BITS) |
            nsDisplayItem::GetPerFrameKey();
   }
 
@@ -4307,6 +4308,7 @@ public:
   nsDisplayEventReceiver(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayEventReceiver);
+    MOZ_ASSERT(aBuilder->IsForEventDelivery());
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayEventReceiver() {
