@@ -1471,6 +1471,19 @@ nsresult nsPluginInstanceOwner::DispatchFocusToPlugin(Event* aFocusEvent)
 
 nsresult nsPluginInstanceOwner::ProcessKeyPress(Event* aKeyEvent)
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aKeyEvent->WidgetEventPtr()->mFlags.mOnlySystemGroupDispatchInContent &&
+      aKeyEvent->WidgetEventPtr()->mFlags.mInSystemGroup) {
+    return NS_OK;
+  }
+
 #ifdef XP_MACOSX
   return DispatchKeyToPlugin(aKeyEvent);
 #else
@@ -2548,6 +2561,7 @@ nsPluginInstanceOwner::Destroy()
   content->RemoveEventListener(NS_LITERAL_STRING("mouseover"), this, false);
   content->RemoveEventListener(NS_LITERAL_STRING("mouseout"), this, false);
   content->RemoveEventListener(NS_LITERAL_STRING("keypress"), this, true);
+  content->RemoveSystemEventListener(NS_LITERAL_STRING("keypress"), this, true);
   content->RemoveEventListener(NS_LITERAL_STRING("keydown"), this, true);
   content->RemoveEventListener(NS_LITERAL_STRING("keyup"), this, true);
   content->RemoveEventListener(NS_LITERAL_STRING("drop"), this, true);
@@ -2875,7 +2889,11 @@ nsresult nsPluginInstanceOwner::Init(nsIContent* aContent)
                              false);
   aContent->AddEventListener(NS_LITERAL_STRING("mouseout"), this, false,
                              false);
+  
+  
+  
   aContent->AddEventListener(NS_LITERAL_STRING("keypress"), this, true);
+  aContent->AddSystemEventListener(NS_LITERAL_STRING("keypress"), this, true);
   aContent->AddEventListener(NS_LITERAL_STRING("keydown"), this, true);
   aContent->AddEventListener(NS_LITERAL_STRING("keyup"), this, true);
   aContent->AddEventListener(NS_LITERAL_STRING("drop"), this, true);
