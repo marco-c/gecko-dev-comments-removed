@@ -246,7 +246,6 @@ WebrtcVideoConduit::WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall,
   , mEngineReceiving(false)
   , mCapId(-1)
   , mCodecMutex("VideoConduit codec db")
-  , mInReconfig(false)
   , mRecvStream(nullptr)
   , mSendStream(nullptr)
   , mLastWidth(0)
@@ -1697,12 +1696,9 @@ WebrtcVideoConduit::SelectBitrates(
 
 
 
-
-
-bool
+void
 WebrtcVideoConduit::SelectSendResolution(unsigned short width,
-                                         unsigned short height,
-                                         const webrtc::VideoFrame* frame) 
+                                         unsigned short height)
 {
   mCodecMutex.AssertCurrentThreadOwns();
   
@@ -1733,8 +1729,6 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
 
   
   
-  
-  bool changed = false;
   if (mSendingWidth != width || mSendingHeight != height) {
     CSFLogDebug(LOGTAG, "%s: resolution changing to %ux%u (from %ux%u)",
                 __FUNCTION__, width, height, mSendingWidth, mSendingHeight);
@@ -1743,7 +1737,6 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
     
     mSendingWidth = width;
     mSendingHeight = height;
-    changed = true;
   }
 
   unsigned int framerate = SelectSendFrameRate(mCurSendCodecConfig,
@@ -1754,72 +1747,7 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
     CSFLogDebug(LOGTAG, "%s: framerate changing to %u (from %u)",
                 __FUNCTION__, framerate, mSendingFramerate);
     mSendingFramerate = framerate;
-    changed = true;
   }
-
-  if (changed) {
-    
-    
-    
-
-    
-    if (!NS_IsMainThread()) {
-      
-      
-      
-      
-      
-      
-      mInReconfig = true;
-
-      
-      webrtc::VideoFrame* new_frame = nullptr;
-      if (frame) {
-        
-        new_frame = new webrtc::VideoFrame(*frame);
-      }
-      RefPtr<WebrtcVideoConduit> self(this);
-      RefPtr<Runnable> webrtc_runnable =
-        media::NewRunnableFrom([self, width, height, new_frame]() -> nsresult {
-            UniquePtr<webrtc::VideoFrame> local_frame(new_frame); 
-
-            MutexAutoLock lock(self->mCodecMutex);
-            return self->ReconfigureSendCodec(width, height, new_frame);
-          });
-      
-      CSFLogDebug(LOGTAG, "%s: proxying lambda to WebRTC thread for reconfig (width %u/%u, height %u/%u",
-                  __FUNCTION__, width, mLastWidth, height, mLastHeight);
-      NS_DispatchToMainThread(webrtc_runnable.forget());
-      if (new_frame) {
-        return true; 
-      }
-    } else {
-      
-      ReconfigureSendCodec(width, height, frame);
-    }
-  }
-  return false;
-}
-
-nsresult
-WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
-                                         unsigned short height,
-                                         const webrtc::VideoFrame* frame)
-{
-  mCodecMutex.AssertCurrentThreadOwns();
-
-  
-  
-  
-  mInReconfig = false;
-  if (mSendStream) {
-    mSendStream->ReconfigureVideoEncoder(mEncoderConfig.CopyConfig());
-    if (frame) {
-      mVideoBroadcaster.OnFrame(*frame);
-      CSFLogDebug(LOGTAG, "%s Inserted a frame from reconfig lambda", __FUNCTION__);
-    }
-  }
-  return NS_OK;
 }
 
 unsigned int
@@ -1963,15 +1891,10 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
   
 
   CSFLogVerbose(LOGTAG, "%s (send SSRC %u (0x%x))", __FUNCTION__,
-              mSendStreamConfig.rtp.ssrcs.front(), mSendStreamConfig.rtp.ssrcs.front());
+                mSendStreamConfig.rtp.ssrcs.front(), mSendStreamConfig.rtp.ssrcs.front());
   
   
   {
-    MutexAutoLock lock(mCodecMutex);
-    if (mInReconfig) {
-      
-      return kMediaConduitNoError;
-    }
     
     
     if (frame.width() != mLastWidth || frame.height() != mLastHeight) {
@@ -1979,12 +1902,11 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
                     __FUNCTION__, frame.width(), frame.height());
       MOZ_ASSERT(frame.width() != 0 && frame.height() != 0);
       
-      if (SelectSendResolution(frame.width(), frame.height(), &frame)) {
-        
-        
-        return kMediaConduitNoError;
-      }
+
+      MutexAutoLock lock(mCodecMutex);
+      SelectSendResolution(frame.width(), frame.height());
     }
+
     
     if (!mVideoBroadcaster.frame_wanted()) {
       return kMediaConduitNoError;

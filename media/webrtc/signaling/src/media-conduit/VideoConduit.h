@@ -171,19 +171,8 @@ public:
 
 
 
-  bool SelectSendResolution(unsigned short width,
-                            unsigned short height,
-                            const webrtc::VideoFrame* frame);
-
-  
-
-
-
-
-
-  nsresult ReconfigureSendCodec(unsigned short width,
-                                unsigned short height,
-                                const webrtc::VideoFrame* frame);
+  void SelectSendResolution(unsigned short width,
+                            unsigned short height);
 
   
 
@@ -509,7 +498,6 @@ private:
   
   Mutex mCodecMutex;
   nsAutoPtr<VideoCodecConfig> mCurSendCodecConfig;
-  bool mInReconfig;
   SendStreamStatistics mSendStreamStats;
   ReceiveStreamStatistics mRecvStreamStats;
   webrtc::RtcpPacketTypeCounter mSendPacketCounts;
