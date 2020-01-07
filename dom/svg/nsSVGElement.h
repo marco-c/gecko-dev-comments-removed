@@ -130,7 +130,7 @@ public:
 
   NS_DECL_NSIDOMELEMENT
 
-  NS_IMPL_FROMCONTENT(nsSVGElement, kNameSpaceID_SVG)
+  NS_IMPL_FROMNODE(nsSVGElement, kNameSpaceID_SVG)
 
   
   
