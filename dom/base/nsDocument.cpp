@@ -2417,15 +2417,17 @@ nsDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
     
     
 
-    
-    
-    nsCOMPtr<nsIRequestContextService> rcsvc =
-      do_GetService("@mozilla.org/network/request-context-service;1");
-    if (rcsvc) {
-      nsCOMPtr<nsIRequestContext> rc;
-      rcsvc->GetRequestContextFromLoadGroup(aLoadGroup, getter_AddRefs(rc));
-      if (rc) {
-        rc->BeginLoad();
+    if (IsContentDocument()) {
+      
+      
+      nsCOMPtr<nsIRequestContextService> rcsvc =
+        do_GetService("@mozilla.org/network/request-context-service;1");
+      if (rcsvc) {
+        nsCOMPtr<nsIRequestContext> rc;
+        rcsvc->GetRequestContextFromLoadGroup(aLoadGroup, getter_AddRefs(rc));
+        if (rc) {
+          rc->BeginLoad();
+        }
       }
     }
   }
