@@ -21,8 +21,8 @@ enum : StyleFlags {
 GtkWidget*
 GetWidget(WidgetNodeType aNodeType);
 
-GdkPixbuf*
-GetWidgetIconPixbuf(GtkWidget* aWidgetIcon);
+cairo_surface_t*
+GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale);
 
 
 

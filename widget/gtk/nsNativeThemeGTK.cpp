@@ -1151,6 +1151,10 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext,
                            widgetRect.height/scaleFactor};
 
   
+  
+  state.scale = scaleFactor;
+
+  
   gfxPoint origin = rect.TopLeft() + drawingRect.TopLeft();
 
   DrawThemeWithCairo(ctx, aContext->GetDrawTarget(),

@@ -32,6 +32,7 @@ typedef struct {
   guint8 depressed;
   gint32 curpos; 
   gint32 maxpos;
+  gint32 scale;  
 } GtkWidgetState;
 
 
