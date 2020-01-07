@@ -13,26 +13,73 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 public final class GeckoRuntimeSettings implements Parcelable {
-    private boolean mUseContentProcess;
-    private String[] mArgs;
-    private Bundle mExtras;
-
     
 
 
-    public  GeckoRuntimeSettings() {
-        this(null);
+    public static final class Builder {
+        private final GeckoRuntimeSettings mSettings;
+
+        public Builder() {
+            mSettings = new GeckoRuntimeSettings();
+        }
+
+        public Builder(final GeckoRuntimeSettings settings) {
+            mSettings = new GeckoRuntimeSettings(settings);
+        }
+
+        
+
+
+
+
+        public @NonNull GeckoRuntimeSettings build() {
+            return new GeckoRuntimeSettings(mSettings);
+        }
+
+        
+
+
+
+
+        public @NonNull Builder useContentProcessHint(final boolean use) {
+            mSettings.mUseContentProcess = use;
+            return this;
+        }
+
+        
+
+
+
+
+        public @NonNull Builder arguments(final @NonNull String[] args) {
+            mSettings.mArgs = args;
+            return this;
+        }
+
+        
+
+
+
+
+        public @NonNull Builder extras(final @NonNull Bundle extras) {
+            mSettings.mExtras = extras;
+            return this;
+        }
     }
 
-     GeckoRuntimeSettings(final @Nullable GeckoRuntimeSettings settings) {
-        if (settings != null) {
-            mUseContentProcess = settings.mUseContentProcess;
-            mArgs = settings.mArgs.clone();
-            mExtras = new Bundle(settings.mExtras);
-        } else {
-            mArgs = new String[0];
-            mExtras = new Bundle();
-        }
+     boolean mUseContentProcess;
+     String[] mArgs;
+     Bundle mExtras;
+
+     GeckoRuntimeSettings() {
+        mArgs = new String[0];
+        mExtras = new Bundle();
+    }
+
+     GeckoRuntimeSettings(final @NonNull GeckoRuntimeSettings settings) {
+        mUseContentProcess = settings.getUseContentProcessHint();
+        mArgs = settings.getArguments().clone();
+        mExtras = new Bundle(settings.getExtras());
     }
 
     
@@ -60,33 +107,6 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
     public Bundle getExtras() {
         return mExtras;
-    }
-
-    
-
-
-
-
-    public void setUseContentProcessHint(boolean use) {
-        mUseContentProcess = use;
-    }
-
-    
-
-
-
-
-    public void setArguments(final @NonNull String[] args) {
-        mArgs = args;
-    }
-
-    
-
-
-
-
-    public void setExtras(final @NonNull Bundle extras) {
-        mExtras = extras;
     }
 
     @Override 
