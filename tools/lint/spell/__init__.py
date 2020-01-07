@@ -103,9 +103,7 @@ def lint(paths, config, fix=None, **lintargs):
                 
                 
                 
-		
-                
-                '--quiet-level=4',
+                '--quiet-level=3',
                 ]
 
 
