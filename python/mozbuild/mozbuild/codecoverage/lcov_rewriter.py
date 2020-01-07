@@ -578,7 +578,6 @@ class UrlFinder(object):
             elif '.xpi!' in url:
                 
                 
-                
                 parts = url_obj.path.split('.xpi!', 1)
                 addon_name = os.path.basename(parts[0])
                 if '-test@mozilla.org' in addon_name:
