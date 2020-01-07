@@ -1309,9 +1309,10 @@ css::URLValueData::ResolveLocalRef(nsIURI* aURI) const
     nsresult rv = NS_MutateURI(aURI)
                     .SetRef(ref)
                     .Finalize(result);
+
     if (NS_FAILED(rv)) {
       
-      aURI->Clone(getter_AddRefs(result));
+      result = aURI;
     }
   }
 

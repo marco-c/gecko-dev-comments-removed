@@ -59,7 +59,7 @@ var gSafeBrowsing = {
   getReportURL(name, info) {
     let reportInfo = info;
     if (!reportInfo) {
-      let pageUri = gBrowser.currentURI.clone();
+      let pageUri = gBrowser.currentURI;
 
       
       if (pageUri instanceof Ci.nsIURL) {

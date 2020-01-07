@@ -136,15 +136,14 @@ nsXBLPrototypeBinding::Init(const nsACString& aID,
   
   
   if (aFirstBinding) {
-    rv = bindingURI->Clone(getter_AddRefs(mAlternateBindingURI));
-    NS_ENSURE_SUCCESS(rv, rv);
+    mAlternateBindingURI = bindingURI;
   }
   rv = NS_MutateURI(bindingURI)
         .SetRef(aID)
         .Finalize(mBindingURI);
   if (NS_FAILED(rv)) {
     
-    bindingURI->Clone(getter_AddRefs(mBindingURI));
+    mBindingURI = bindingURI;
   }
 
   mXBLDocInfoWeak = aInfo;

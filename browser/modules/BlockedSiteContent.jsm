@@ -19,7 +19,7 @@ function getSiteBlockedErrorDetails(docShell) {
     if (classifiedChannel) {
       let httpChannel = docShell.failedChannel.QueryInterface(Ci.nsIHttpChannel);
 
-      let reportUri = httpChannel.URI.clone();
+      let reportUri = httpChannel.URI;
 
       
       if (reportUri instanceof Ci.nsIURL) {

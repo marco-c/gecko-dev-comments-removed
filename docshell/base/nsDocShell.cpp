@@ -13478,15 +13478,6 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
 
   
   
-  
-  nsCOMPtr<nsIURI> clonedURI;
-  aURI->Clone(getter_AddRefs(clonedURI));
-  if (!clonedURI) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  
-  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
     aTriggeringPrincipal ? aTriggeringPrincipal
                          : aContent->NodePrincipal();
@@ -13501,7 +13492,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
     flags |= INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED;
   }
 
-  nsresult rv = InternalLoad(clonedURI,                 
+  nsresult rv = InternalLoad(aURI,                      
                              nullptr,                   
                              Nothing(),                 
                              false,                     

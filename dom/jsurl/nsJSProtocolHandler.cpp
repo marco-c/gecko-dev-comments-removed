@@ -1376,16 +1376,7 @@ nsJSURI::Deserialize(const mozilla::ipc::URIParams& aParams)
 nsJSURI::StartClone(mozilla::net::nsSimpleURI::RefHandlingEnum refHandlingMode,
                     const nsACString& newRef)
 {
-    nsCOMPtr<nsIURI> baseClone;
-    if (mBaseURI) {
-      
-      nsresult rv = mBaseURI->Clone(getter_AddRefs(baseClone));
-      if (NS_FAILED(rv)) {
-        return nullptr;
-      }
-    }
-
-    nsJSURI* url = new nsJSURI(baseClone);
+    nsJSURI* url = new nsJSURI(mBaseURI);
     SetRefOnClone(url, refHandlingMode, newRef);
     return url;
 }
