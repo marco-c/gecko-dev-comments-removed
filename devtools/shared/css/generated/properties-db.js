@@ -3053,7 +3053,8 @@ exports.CSS_PROPERTIES = {
       "-moz-outline-radius-topright",
       "outline-style",
       "outline-width",
-      "overflow-clip-box",
+      "overflow-clip-box-block",
+      "overflow-clip-box-inline",
       "overflow-x",
       "overflow-y",
       "padding-block-end",
@@ -9859,78 +9860,6 @@ exports.PREFERENCES = [
     "layout.css.font-variations.enabled"
   ],
   [
-    "grid",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-area",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-auto-columns",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-auto-flow",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-auto-rows",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-column",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-column-end",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-column-gap",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-column-start",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-gap",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-row",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-row-end",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-row-gap",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-row-start",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-template",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-template-areas",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-template-columns",
-    "layout.css.grid.enabled"
-  ],
-  [
-    "grid-template-rows",
-    "layout.css.grid.enabled"
-  ],
-  [
     "initial-letter",
     "layout.css.initial-letter.enabled"
   ],
@@ -9952,6 +9881,14 @@ exports.PREFERENCES = [
   ],
   [
     "overflow-clip-box",
+    "layout.css.overflow-clip-box.enabled"
+  ],
+  [
+    "overflow-clip-box-block",
+    "layout.css.overflow-clip-box.enabled"
+  ],
+  [
+    "overflow-clip-box-inline",
     "layout.css.overflow-clip-box.enabled"
   ],
   [

@@ -3025,9 +3025,6 @@ pref("layout.css.all-shorthand.enabled", true);
 pref("layout.css.overflow-clip-box.enabled", false);
 
 
-pref("layout.css.grid.enabled", true);
-
-
 pref("layout.css.grid-template-subgrid-value.enabled", false);
 
 

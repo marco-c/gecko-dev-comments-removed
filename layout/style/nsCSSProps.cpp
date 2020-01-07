@@ -1301,7 +1301,6 @@ KTableEntry nsCSSProps::kDisplayKTable[] = {
   { eCSSKeyword_ruby_base_container, StyleDisplay::RubyBaseContainer },
   { eCSSKeyword_ruby_text,           StyleDisplay::RubyText },
   { eCSSKeyword_ruby_text_container, StyleDisplay::RubyTextContainer },
-  
   { eCSSKeyword_grid,                StyleDisplay::Grid },
   { eCSSKeyword_inline_grid,         StyleDisplay::InlineGrid },
   
@@ -2927,6 +2926,12 @@ static const nsCSSPropertyID gGridGapSubpropTable[] = {
 static const nsCSSPropertyID gOverflowSubpropTable[] = {
   eCSSProperty_overflow_x,
   eCSSProperty_overflow_y,
+  eCSSProperty_UNKNOWN
+};
+
+static const nsCSSPropertyID gOverflowClipBoxSubpropTable[] = {
+  eCSSProperty_overflow_clip_box_block,
+  eCSSProperty_overflow_clip_box_inline,
   eCSSProperty_UNKNOWN
 };
 
