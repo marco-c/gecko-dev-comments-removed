@@ -1,8 +1,14 @@
 
 
+
+
+
 "use strict";
 
 const { require, loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/shared/test/telemetry-test-helpers.js", this);
 
 
 

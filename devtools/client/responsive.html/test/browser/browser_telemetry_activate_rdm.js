@@ -2,8 +2,7 @@
 
 
 "use strict";
-const URL =
-  "data:text/html;charset=utf8,browser_telemetry_activate_rdm.js";
+const URL = "data:text/html;charset=utf8,browser_telemetry_activate_rdm.js";
 const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
 const DATA = [
   {

@@ -6,6 +6,7 @@
 
 
 
+
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
 
 const EventEmitter = require("devtools/shared/event-emitter");

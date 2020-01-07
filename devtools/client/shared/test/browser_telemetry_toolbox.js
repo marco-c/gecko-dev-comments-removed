@@ -10,13 +10,20 @@ const TEST_URI = "data:text/html;charset=utf-8," +
 
 const TOOL_DELAY = 200;
 
-add_task(function* () {
-  yield addTab(TEST_URI);
-  let Telemetry = loadTelemetryAndRecordLogs();
+add_task(async function() {
+  await addTab(TEST_URI);
+  startTelemetry();
 
-  yield openAndCloseToolbox(3, TOOL_DELAY, "inspector");
-  checkTelemetryResults(Telemetry);
+  await openAndCloseToolbox(3, TOOL_DELAY, "inspector");
+  checkResults();
 
-  stopRecordingTelemetryLogs(Telemetry);
   gBrowser.removeCurrentTab();
 });
+
+function checkResults() {
+  
+  
+  checkTelemetry("DEVTOOLS_TOOLBOX_OPENED_COUNT", "", [3, 0, 0], "array");
+  checkTelemetry("DEVTOOLS_TOOLBOX_TIME_ACTIVE_SECONDS", "", null, "hasentries");
+  checkTelemetry("DEVTOOLS_TOOLBOX_HOST", "", null, "hasentries");
+}
