@@ -74,7 +74,6 @@ typedef uint32_t ScreenOrientationInternal;
 } 
 } 
 
-class nsIClipboardDragDropHookList;
 class nsICommandManager;
 class nsIContentViewer;
 class nsIController;
@@ -963,9 +962,6 @@ private:
 
   
   nsAutoPtr<nsDocShellEditorData> mEditorData;
-
-  
-  nsCOMPtr<nsIClipboardDragDropHookList> mTransferableHookData;
 
   
   nsCOMPtr<nsISecureBrowserUI> mSecurityUI;

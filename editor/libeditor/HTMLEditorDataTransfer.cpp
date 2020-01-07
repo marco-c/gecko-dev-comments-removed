@@ -1415,13 +1415,6 @@ HTMLEditor::Paste(int32_t aSelectionType)
     }
   }
 
-  
-  nsCOMPtr<nsIDOMDocument> domdoc;
-  GetDocument(getter_AddRefs(domdoc));
-  if (!EditorHookUtils::DoInsertionHook(domdoc, nullptr, trans)) {
-    return NS_OK;
-  }
-
   return InsertFromTransferable(trans, nullptr, contextStr, infoStr, bHavePrivateHTMLFlavor,
                                 nullptr, 0, true);
 }
@@ -1432,12 +1425,6 @@ HTMLEditor::PasteTransferable(nsITransferable* aTransferable)
   
   
   if (!FireClipboardEvent(ePaste, nsIClipboard::kGlobalClipboard)) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIDOMDocument> domdoc = GetDOMDocument();
-  if (!EditorHookUtils::DoInsertionHook(domdoc, nullptr, aTransferable)) {
     return NS_OK;
   }
 
