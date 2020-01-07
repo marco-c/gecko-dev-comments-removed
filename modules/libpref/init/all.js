@@ -1429,7 +1429,7 @@ pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 pref("privacy.reduceTimerPrecision", true);
 
-pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 2000);
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 100);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
