@@ -4,8 +4,6 @@ Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
-                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
 
 
 
@@ -13,24 +11,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
 
 
 global.EventManager = ExtensionCommon.EventManager;
-
-global.initializeBackgroundPage = (contentWindow) => {
-  
-  
-  
-  let alertDisplayedWarning = false;
-  let alertOverwrite = text => {
-    if (!alertDisplayedWarning) {
-      DevToolsShim.openBrowserConsole();
-      contentWindow.console.warn("alert() is not supported in background windows; please use console.log instead.");
-
-      alertDisplayedWarning = true;
-    }
-
-    contentWindow.console.log(text);
-  };
-  Cu.exportFunction(alertOverwrite, contentWindow, {defineAs: "alert"});
-};
 
 extensions.registerModules({
   backgroundPage: {

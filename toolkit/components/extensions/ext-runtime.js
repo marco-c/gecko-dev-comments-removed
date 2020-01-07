@@ -11,6 +11,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
                                   "resource://gre/modules/ExtensionParent.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
+                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
 
 this.runtime = class extends ExtensionAPI {
   getAPI(context) {
@@ -135,6 +137,15 @@ this.runtime = class extends ExtensionAPI {
 
           extension.uninstallURL = url;
           return Promise.resolve();
+        },
+
+        
+        
+        
+        openBrowserConsole() {
+          if (AppConstants.platform !== "android") {
+            DevToolsShim.openBrowserConsole();
+          }
         },
       },
     };
