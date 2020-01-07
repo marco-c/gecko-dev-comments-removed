@@ -206,7 +206,7 @@ private:
 
   
   
-  static mozilla::Atomic<uint32_t> sActiveAndFeatures;
+  static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> sActiveAndFeatures;
 };
 
 } 
