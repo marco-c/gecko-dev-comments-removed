@@ -12,6 +12,9 @@
 
 #include "compiler/preprocessor/SourceLocation.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -103,6 +106,8 @@ inline bool operator!=(const Token &lhs, const Token &rhs)
 }
 
 std::ostream &operator<<(std::ostream &out, const Token &token);
+
+}  
 
 }  
 

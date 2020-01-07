@@ -38,7 +38,16 @@ class VertexBinding final : angle::NonCopyable
 
     const BindingPointer<Buffer> &getBuffer() const { return mBuffer; }
     void setBuffer(const gl::Context *context, Buffer *bufferIn, bool containerIsBound);
-    void onContainerBindingChanged(bool bound);
+
+    void onContainerBindingChanged(const Context *context, bool bound) const;
+
+    GLuint64 getCachedBufferSizeMinusOffset() const
+    {
+        return mCachedBufferSizeMinusOffset;
+    }
+
+    
+    void updateCachedBufferSizeMinusOffset();
 
   private:
     GLuint mStride;
@@ -46,6 +55,9 @@ class VertexBinding final : angle::NonCopyable
     GLintptr mOffset;
 
     BindingPointer<Buffer> mBuffer;
+
+    
+    GLuint64 mCachedBufferSizeMinusOffset;
 };
 
 
@@ -56,6 +68,9 @@ struct VertexAttribute final : private angle::NonCopyable
     explicit VertexAttribute(GLuint bindingIndex);
     VertexAttribute(VertexAttribute &&attrib);
     VertexAttribute &operator=(VertexAttribute &&attrib);
+
+    
+    void updateCachedSizePlusRelativeOffset();
 
     bool enabled;  
     GLenum type;
@@ -68,6 +83,9 @@ struct VertexAttribute final : private angle::NonCopyable
 
     GLuint vertexAttribArrayStride;  
     GLuint bindingIndex;
+
+    
+    GLuint64 cachedSizePlusRelativeOffset;
 };
 
 size_t ComputeVertexAttributeTypeSize(const VertexAttribute &attrib);

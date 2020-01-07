@@ -20,7 +20,7 @@
 
 
 #ifndef NOTREACHED
-#define NOTREACHED() UNREACHABLE()
+#define NOTREACHED() ({ UNREACHABLE(); })
 #endif
 
 #endif  

@@ -12,6 +12,9 @@
 #include <cmath>
 #include <sstream>
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -60,6 +63,8 @@ bool numeric_lex_float(const std::string &str, FloatType *value)
     stream >> (*value);
     return !stream.fail() && std::isfinite(*value);
 }
+
+}  
 
 }  
 

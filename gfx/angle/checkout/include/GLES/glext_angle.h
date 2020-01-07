@@ -12,6 +12,12 @@
 
 
 
+#ifndef GL_ANGLE_explicit_context_gles1
+#define GL_ANGLE_explicit_context_gles1
+typedef void *GLeglContext;
+#include "glext_explicit_context_autogen.inc"
+#endif 
+
 
 
 #endif  

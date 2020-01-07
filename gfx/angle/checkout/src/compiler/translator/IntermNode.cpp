@@ -1711,6 +1711,32 @@ TIntermTyped *TIntermAggregate::fold(TDiagnostics *diagnostics)
         if (mType.canReplaceWithConstantUnion())
         {
             constArray = getConstantValue();
+            if (constArray && mType.getBasicType() == EbtUInt)
+            {
+                
+                size_t sizeRemaining = mType.getObjectSize();
+                for (TIntermNode *arg : mArguments)
+                {
+                    TIntermTyped *typedArg = arg->getAsTyped();
+                    if (typedArg->getBasicType() == EbtFloat)
+                    {
+                        const TConstantUnion *argValue = typedArg->getConstantValue();
+                        size_t castSize =
+                            std::min(typedArg->getType().getObjectSize(), sizeRemaining);
+                        for (size_t i = 0; i < castSize; ++i)
+                        {
+                            if (argValue[i].getFConst() < 0.0f)
+                            {
+                                
+                                diagnostics->warning(
+                                    mLine, "casting a negative float to uint is undefined",
+                                    mType.getBuiltInTypeNameString());
+                            }
+                        }
+                    }
+                    sizeRemaining -= typedArg->getType().getObjectSize();
+                }
+            }
         }
     }
     else if (CanFoldAggregateBuiltInOp(mOp))
@@ -1901,10 +1927,10 @@ const TConstantUnion *TIntermConstantUnion::FoldBinary(TOperator op,
                                 {
                                     
                                     
-                                    
                                     diagnostics->warning(line,
                                                          "Negative modulus operator operand "
-                                                         "encountered during constant folding",
+                                                         "encountered during constant folding. "
+                                                         "Results are undefined.",
                                                          "%");
                                     resultArray[i].setIConst(0);
                                 }

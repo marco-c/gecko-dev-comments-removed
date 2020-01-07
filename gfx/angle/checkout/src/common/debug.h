@@ -6,6 +6,7 @@
 
 
 
+
 #ifndef COMMON_DEBUG_H_
 #define COMMON_DEBUG_H_
 
@@ -104,6 +105,8 @@ class LogMessageVoidify
     void operator&(std::ostream &) {}
 };
 
+extern std::ostream *gSwallowStream;
+
 
 bool ShouldCreatePlatformLogMessage(LogSeverity severity);
 
@@ -124,39 +127,52 @@ std::ostream &FmtHex(std::ostream &os, T value)
 
     return os;
 }
-}  
-
-#if defined(ANGLE_PLATFORM_WINDOWS)
-class FmtHR
-{
-  public:
-    explicit FmtHR(HRESULT hresult) : mHR(hresult) {}
-  private:
-    HRESULT mHR;
-    friend std::ostream &operator<<(std::ostream &os, const FmtHR &fmt);
-};
-
-class FmtErr
-{
-  public:
-    explicit FmtErr(DWORD err) : mErr(err) {}
-
-  private:
-    DWORD mErr;
-    friend std::ostream &operator<<(std::ostream &os, const FmtErr &fmt);
-};
-#endif  
 
 template <typename T>
-std::ostream &FmtHexShort(std::ostream &os, T value)
+std::ostream &FmtHexAutoSized(std::ostream &os, T value)
 {
-    return priv::FmtHex<4>(os, value);
+    constexpr int N = sizeof(T) * 2;
+    return priv::FmtHex<N>(os, value);
 }
 
 template <typename T>
-std::ostream &FmtHexInt(std::ostream &os, T value)
+class FmtHexHelper
 {
-    return priv::FmtHex<8>(os, value);
+  public:
+    FmtHexHelper(const char *prefix, T value) : mPrefix(prefix), mValue(value) {}
+    explicit FmtHexHelper(T value) : mPrefix(nullptr), mValue(value) {}
+
+  private:
+    const char *mPrefix;
+    T mValue;
+
+    friend std::ostream &operator<<(std::ostream &os, const FmtHexHelper &fmt)
+    {
+        if (fmt.mPrefix)
+        {
+            os << fmt.mPrefix;
+        }
+        return FmtHexAutoSized(os, fmt.mValue);
+    }
+};
+
+}  
+
+template <typename T>
+priv::FmtHexHelper<T> FmtHex(T value)
+{
+    return priv::FmtHexHelper<T>(value);
+}
+
+#if defined(ANGLE_PLATFORM_WINDOWS)
+priv::FmtHexHelper<HRESULT> FmtHR(HRESULT value);
+priv::FmtHexHelper<DWORD> FmtErr(DWORD value);
+#endif  
+
+template <typename T>
+std::ostream &FmtHex(std::ostream &os, T value)
+{
+    return priv::FmtHexAutoSized(os, value);
 }
 
 
@@ -233,6 +249,18 @@ std::ostream &FmtHexInt(std::ostream &os, T value)
 #endif  
 
 
+
+
+
+
+
+
+
+
+#define ANGLE_EAT_STREAM_PARAMETERS \
+    true ? static_cast<void>(0) : ::gl::priv::LogMessageVoidify() & (*::gl::priv::gSwallowStream)
+
+
 #if defined(ANGLE_ENABLE_ASSERTS)
 #define ASSERT(expression)                                                                         \
     (expression ? static_cast<void>(0) : ((ERR() << "\t! Assert failed in " << __FUNCTION__ << "(" \
@@ -240,22 +268,11 @@ std::ostream &FmtHexInt(std::ostream &os, T value)
                                           ANGLE_ASSERT_IMPL(expression)))
 #define UNREACHABLE_IS_NORETURN ANGLE_ASSERT_IMPL_IS_NORETURN
 #else
-
-#define COMPACT_ANGLE_LOG_EX_ASSERT(ClassName, ...) \
-    COMPACT_ANGLE_LOG_EX_EVENT(ClassName, ##__VA_ARGS__)
-#define COMPACT_ANGLE_LOG_ASSERT COMPACT_ANGLE_LOG_EVENT
-namespace gl
-{
-constexpr LogSeverity LOG_ASSERT = LOG_EVENT;
-}  
-
-#define ASSERT(condition)                                                     \
-    ANGLE_LAZY_STREAM(ANGLE_LOG_STREAM(ASSERT), false ? !(condition) : false) \
-        << "Check failed: " #condition ". "
+#define ASSERT(condition) ANGLE_EAT_STREAM_PARAMETERS << !(condition)
 #define UNREACHABLE_IS_NORETURN 0
 #endif  
 
-#define UNUSED_VARIABLE(variable) ((void)variable)
+#define ANGLE_UNUSED_VARIABLE(variable) (static_cast<void>(variable))
 
 
 #ifndef NOASSERT_UNIMPLEMENTED
@@ -263,19 +280,22 @@ constexpr LogSeverity LOG_ASSERT = LOG_EVENT;
 #endif
 
 #if defined(ANGLE_TRACE_ENABLED) || defined(ANGLE_ENABLE_ASSERTS)
-#define UNIMPLEMENTED()                                                                      \
-    {                                                                                        \
-        ERR() << "\t! Unimplemented: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
-              << ")";                                                                        \
-        ASSERT(NOASSERT_UNIMPLEMENTED);                                                      \
-    }                                                                                        \
+#define UNIMPLEMENTED()                                                                       \
+    {                                                                                         \
+        WARN() << "\t! Unimplemented: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
+               << ")";                                                                        \
+        ASSERT(NOASSERT_UNIMPLEMENTED);                                                       \
+    }                                                                                         \
     ANGLE_EMPTY_STATEMENT
 
 
-#define UNREACHABLE()                                                                            \
-    ((ERR() << "\t! Unreachable reached: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
-            << ")"),                                                                             \
-     ASSERT(false))
+#define UNREACHABLE()                                                                              \
+    {                                                                                              \
+        ERR() << "\t! Unreachable reached: " << __FUNCTION__ << "(" << __FILE__ << ":" << __LINE__ \
+              << ")";                                                                              \
+        ASSERT(false);                                                                             \
+    }                                                                                              \
+    ANGLE_EMPTY_STATEMENT
 #else
 #define UNIMPLEMENTED()                 \
     {                                   \
@@ -284,7 +304,11 @@ constexpr LogSeverity LOG_ASSERT = LOG_EVENT;
     ANGLE_EMPTY_STATEMENT
 
 
-#define UNREACHABLE() ASSERT(false)
+#define UNREACHABLE()  \
+    {                  \
+        ASSERT(false); \
+    }                  \
+    ANGLE_EMPTY_STATEMENT
 #endif  
 
 #endif   

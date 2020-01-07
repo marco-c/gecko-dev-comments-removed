@@ -335,9 +335,11 @@ bool VaryingPacking::collectAndPackUserVaryings(gl::InfoLog &infoLog,
         
         if (!input)
         {
+            mInactiveVaryingNames.push_back(ref.first);
             continue;
         }
 
+        
         for (const std::string &tfVarying : tfVaryings)
         {
             std::vector<unsigned int> subscripts;
@@ -384,6 +386,11 @@ bool VaryingPacking::collectAndPackUserVaryings(gl::InfoLog &infoLog,
                 }
             }
         }
+
+        if (uniqueFullNames.count(ref.first) == 0)
+        {
+            mInactiveVaryingNames.push_back(ref.first);
+        }
     }
 
     std::sort(mPackedVaryings.begin(), mPackedVaryings.end(), ComparePackedVarying);
@@ -429,4 +436,8 @@ bool VaryingPacking::packUserVaryings(gl::InfoLog &infoLog,
     return true;
 }
 
+const std::vector<std::string> &VaryingPacking::getInactiveVaryingNames() const
+{
+    return mInactiveVaryingNames;
+}
 }  

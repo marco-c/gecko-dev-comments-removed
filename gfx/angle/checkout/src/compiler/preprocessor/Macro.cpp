@@ -9,6 +9,9 @@
 #include "common/angleutils.h"
 #include "compiler/preprocessor/Token.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -40,5 +43,7 @@ void PredefineMacro(MacroSet *macroSet, const char *name, int value)
 
     (*macroSet)[name] = macro;
 }
+
+}  
 
 }  

@@ -7,6 +7,9 @@
 #ifndef COMPILER_PREPROCESSOR_SOURCELOCATION_H_
 #define COMPILER_PREPROCESSOR_SOURCELOCATION_H_
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -33,6 +36,8 @@ inline bool operator!=(const SourceLocation &lhs, const SourceLocation &rhs)
 {
     return !lhs.equals(rhs);
 }
+
+}  
 
 }  
 

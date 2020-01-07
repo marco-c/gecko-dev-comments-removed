@@ -184,6 +184,36 @@ struct Extensions
     bool compressedETC1RGB8Texture;
 
     
+    bool compressedETC2RGB8Texture;
+
+    
+    bool compressedETC2sRGB8Texture;
+
+    
+    bool compressedETC2PunchthroughARGB8Texture;
+
+    
+    bool compressedETC2PunchthroughAsRGB8AlphaTexture;
+
+    
+    bool compressedETC2RGBA8Texture;
+
+    
+    bool compressedETC2sRGB8Alpha8Texture;
+
+    
+    bool compressedEACR11UnsignedTexture;
+
+    
+    bool compressedEACR11SignedTexture;
+
+    
+    bool compressedEACRG11UnsignedTexture;
+
+    
+    bool compressedEACRG11SignedTexture;
+
+    
     
     
     bool sRGB;
@@ -374,6 +404,18 @@ struct Extensions
 
     
     bool geometryShader;
+
+    
+    
+    bool pointSizeArray;
+    
+    bool textureCubeMap;
+
+    
+    
+    bool explicitContextGles1;
+    
+    bool explicitContext;
 };
 
 struct ExtensionInfo
@@ -489,27 +531,32 @@ struct Caps
     TypePrecision fragmentLowpInt;
 
     
+    
+    
+    
+    
+    
+    
+    ShaderMap<GLuint> maxShaderUniformBlocks;
+    ShaderMap<GLuint> maxShaderTextureImageUnits;
+    ShaderMap<GLuint> maxShaderStorageBlocks;
+
+    
     GLuint maxVertexAttributes;
     GLuint maxVertexUniformComponents;
     GLuint maxVertexUniformVectors;
-    GLuint maxVertexUniformBlocks;
     GLuint maxVertexOutputComponents;
-    GLuint maxVertexTextureImageUnits;
     GLuint maxVertexAtomicCounterBuffers;
     GLuint maxVertexAtomicCounters;
     GLuint maxVertexImageUniforms;
-    GLuint maxVertexShaderStorageBlocks;
 
     
     GLuint maxFragmentUniformComponents;
     GLuint maxFragmentUniformVectors;
-    GLuint maxFragmentUniformBlocks;
     GLuint maxFragmentInputComponents;
-    GLuint maxTextureImageUnits;
     GLuint maxFragmentAtomicCounterBuffers;
     GLuint maxFragmentAtomicCounters;
     GLuint maxFragmentImageUniforms;
-    GLuint maxFragmentShaderStorageBlocks;
     GLint minProgramTextureGatherOffset;
     GLuint maxProgramTextureGatherOffset;
     GLint minProgramTexelOffset;
@@ -519,15 +566,12 @@ struct Caps
     std::array<GLuint, 3> maxComputeWorkGroupCount;
     std::array<GLuint, 3> maxComputeWorkGroupSize;
     GLuint maxComputeWorkGroupInvocations;
-    GLuint maxComputeUniformBlocks;
-    GLuint maxComputeTextureImageUnits;
     GLuint maxComputeSharedMemorySize;
     GLuint maxComputeUniformComponents;
     GLuint maxComputeAtomicCounterBuffers;
     GLuint maxComputeAtomicCounters;
     GLuint maxComputeImageUniforms;
     GLuint maxCombinedComputeUniformComponents;
-    GLuint maxComputeShaderStorageBlocks;
 
     
     GLuint maxUniformBufferBindings;
@@ -569,15 +613,12 @@ struct Caps
     
     
     GLuint maxGeometryUniformComponents;
-    GLuint maxGeometryUniformBlocks;
     GLuint maxGeometryInputComponents;
     GLuint maxGeometryOutputComponents;
     GLuint maxGeometryOutputVertices;
     GLuint maxGeometryTotalOutputComponents;
-    GLuint maxGeometryTextureImageUnits;
     GLuint maxGeometryAtomicCounterBuffers;
     GLuint maxGeometryAtomicCounters;
-    GLuint maxGeometryShaderStorageBlocks;
     GLuint maxGeometryShaderInvocations;
 
     
@@ -788,6 +829,9 @@ struct ClientExtensions
 
     
     bool clientGetAllProcAddresses;
+
+    
+    bool explicitContext;
 };
 
 }  

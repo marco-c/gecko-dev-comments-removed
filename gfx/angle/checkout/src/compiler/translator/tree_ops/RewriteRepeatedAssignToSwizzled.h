@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_TREEOPS_REWRITEREPEATEDASSIGNTOSWIZZLED_H_
+#define COMPILER_TRANSLATOR_TREEOPS_REWRITEREPEATEDASSIGNTOSWIZZLED_H_
+
+namespace sh
+{
+
+class TIntermBlock;
+
+void RewriteRepeatedAssignToSwizzled(TIntermBlock *root);
+
+}  
+
+#endif  

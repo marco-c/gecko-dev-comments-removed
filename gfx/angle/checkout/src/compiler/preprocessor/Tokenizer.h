@@ -11,6 +11,9 @@
 #include "compiler/preprocessor/Input.h"
 #include "compiler/preprocessor/Lexer.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -52,6 +55,8 @@ class Tokenizer : public Lexer
     Context mContext;      
     size_t mMaxTokenSize;  
 };
+
+}  
 
 }  
 

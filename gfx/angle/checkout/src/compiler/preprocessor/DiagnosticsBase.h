@@ -9,6 +9,9 @@
 
 #include <string>
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -84,6 +87,8 @@ class Diagnostics
 
     virtual void print(ID id, const SourceLocation &loc, const std::string &text) = 0;
 };
+
+}  
 
 }  
 

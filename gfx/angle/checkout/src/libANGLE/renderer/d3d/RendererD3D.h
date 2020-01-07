@@ -74,6 +74,9 @@ enum RendererClass
 };
 
 
+constexpr unsigned int kPollingD3DDeviceLostCheckFrequency = 10;
+
+
 class BufferFactoryD3D : angle::NonCopyable
 {
   public:

@@ -6,7 +6,7 @@
 
 
 
-#include "libANGLE/PackedGLEnums.h"
+#include "libANGLE/PackedEnums.h"
 
 #include "common/utilities.h"
 

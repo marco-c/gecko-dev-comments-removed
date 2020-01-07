@@ -262,6 +262,10 @@ const ShCompileOptions SH_SKIP_D3D_CONSTANT_REGISTER_ZERO = UINT64_C(1) << 37;
 const ShCompileOptions SH_CLAMP_FRAG_DEPTH = UINT64_C(1) << 38;
 
 
+
+const ShCompileOptions SH_REWRITE_REPEATED_ASSIGN_TO_SWIZZLED = UINT64_C(1) << 39;
+
+
 enum ShArrayIndexClampingStrategy
 {
     

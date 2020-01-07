@@ -11,6 +11,9 @@
 
 #include "common/angleutils.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -54,6 +57,8 @@ class Preprocessor : angle::NonCopyable
   private:
     PreprocessorImpl *mImpl;
 };
+
+}  
 
 }  
 

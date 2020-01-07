@@ -18,6 +18,9 @@
 #include "compiler/preprocessor/Token.h"
 #include "compiler/preprocessor/Tokenizer.h"
 
+namespace angle
+{
+
 namespace
 {
 enum DirectiveType
@@ -996,5 +999,7 @@ int DirectiveParser::parseExpressionIfdef(Token *token)
     }
     return expression;
 }
+
+}  
 
 }  

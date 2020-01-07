@@ -9,6 +9,9 @@
 
 #include <string>
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -37,6 +40,8 @@ class DirectiveHandler
 
     virtual void handleVersion(const SourceLocation &loc, int version) = 0;
 };
+
+}  
 
 }  
 

@@ -12,6 +12,9 @@
 #include "compiler/preprocessor/DiagnosticsBase.h"
 #include "compiler/preprocessor/Token.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -477,5 +480,7 @@ void MacroExpander::MacroContext::unget()
     ASSERT(index > 0);
     --index;
 }
+
+}  
 
 }  

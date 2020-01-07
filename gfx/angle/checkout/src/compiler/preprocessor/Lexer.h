@@ -9,6 +9,9 @@
 
 #include "common/angleutils.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -21,6 +24,8 @@ class Lexer : angle::NonCopyable
 
     virtual void lex(Token *token) = 0;
 };
+
+}  
 
 }  
 

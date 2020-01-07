@@ -19,11 +19,6 @@ namespace angle
 using VendorID = uint32_t;
 using DeviceID = uint32_t;
 
-constexpr VendorID kVendorID_AMD      = 0x1002;
-constexpr VendorID kVendorID_Intel    = 0x8086;
-constexpr VendorID kVendorID_Nvidia   = 0x10DE;
-constexpr VendorID kVendorID_Qualcomm = 0x5143;
-
 struct GPUDeviceInfo
 {
     GPUDeviceInfo();
@@ -47,7 +42,12 @@ struct SystemInfo
     SystemInfo(const SystemInfo &other);
 
     std::vector<GPUDeviceInfo> gpus;
+
+    
+    
     int primaryGPUIndex = -1;
+    
+    
     int activeGPUIndex  = -1;
 
     bool isOptimus       = false;
@@ -61,7 +61,17 @@ struct SystemInfo
     std::string primaryDisplayDeviceId;
 };
 
+
+
+
 bool GetSystemInfo(SystemInfo *info);
+
+
+constexpr VendorID kVendorID_AMD      = 0x1002;
+constexpr VendorID kVendorID_Intel    = 0x8086;
+constexpr VendorID kVendorID_Nvidia   = 0x10DE;
+constexpr VendorID kVendorID_Qualcomm = 0x5143;
+
 
 bool IsAMD(VendorID vendorId);
 bool IsIntel(VendorID vendorId);

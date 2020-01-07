@@ -361,11 +361,12 @@ egl::Error Renderer9::initializeDevice()
 
     const gl::Caps &rendererCaps = getNativeCaps();
 
-    mCurVertexSamplerStates.resize(rendererCaps.maxVertexTextureImageUnits);
-    mCurPixelSamplerStates.resize(rendererCaps.maxTextureImageUnits);
+    mCurVertexSamplerStates.resize(rendererCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]);
+    mCurPixelSamplerStates.resize(
+        rendererCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment]);
 
-    mCurVertexTextures.resize(rendererCaps.maxVertexTextureImageUnits);
-    mCurPixelTextures.resize(rendererCaps.maxTextureImageUnits);
+    mCurVertexTextures.resize(rendererCaps.maxShaderTextureImageUnits[gl::ShaderType::Vertex]);
+    mCurPixelTextures.resize(rendererCaps.maxShaderTextureImageUnits[gl::ShaderType::Fragment]);
 
     markAllStateDirty();
 
@@ -665,19 +666,25 @@ gl::Error Renderer9::finish()
     }
 
     
+    unsigned int attempt = 0;
     while (result == S_FALSE)
     {
         
         ScheduleYield();
 
         result = query->GetData(nullptr, 0, D3DGETDATA_FLUSH);
+        attempt++;
 
-        
-        
-        
-        if (result == S_FALSE && testDeviceLost())
+        if (result == S_FALSE)
         {
-            result = D3DERR_DEVICELOST;
+            
+            
+            
+            bool checkDeviceLost = (attempt % kPollingD3DDeviceLostCheckFrequency) == 0;
+            if (checkDeviceLost && testDeviceLost())
+            {
+                result = D3DERR_DEVICELOST;
+            }
         }
 
         if (FAILED(result))
@@ -1817,8 +1824,8 @@ gl::Error Renderer9::applyUniforms(ProgramD3D *programD3D)
     for (const D3DUniform *targetUniform : uniformArray)
     {
         
-        if (!targetUniform->isReferencedByFragmentShader() &&
-            !targetUniform->isReferencedByVertexShader())
+        if (!targetUniform->isReferencedByShader(gl::ShaderType::Vertex) &&
+            !targetUniform->isReferencedByShader(gl::ShaderType::Fragment))
             continue;
 
         const GLfloat *f = reinterpret_cast<const GLfloat *>(targetUniform->firstNonNullData());
@@ -1862,16 +1869,18 @@ gl::Error Renderer9::applyUniforms(ProgramD3D *programD3D)
 
 void Renderer9::applyUniformnfv(const D3DUniform *targetUniform, const GLfloat *v)
 {
-    if (targetUniform->isReferencedByFragmentShader())
+    if (targetUniform->isReferencedByShader(gl::ShaderType::Fragment))
     {
-        mDevice->SetPixelShaderConstantF(targetUniform->psRegisterIndex, v,
-                                         targetUniform->registerCount);
+        mDevice->SetPixelShaderConstantF(
+            targetUniform->mShaderRegisterIndexes[gl::ShaderType::Fragment], v,
+            targetUniform->registerCount);
     }
 
-    if (targetUniform->isReferencedByVertexShader())
+    if (targetUniform->isReferencedByShader(gl::ShaderType::Vertex))
     {
-        mDevice->SetVertexShaderConstantF(targetUniform->vsRegisterIndex, v,
-                                          targetUniform->registerCount);
+        mDevice->SetVertexShaderConstantF(
+            targetUniform->mShaderRegisterIndexes[gl::ShaderType::Vertex], v,
+            targetUniform->registerCount);
     }
 }
 
@@ -3236,8 +3245,8 @@ gl::Error Renderer9::applyTextures(const gl::Context *context, gl::ShaderType sh
 
     
     size_t samplerCount = (shaderType == gl::ShaderType::Fragment)
-                              ? caps.maxTextureImageUnits
-                              : caps.maxVertexTextureImageUnits;
+                              ? caps.maxShaderTextureImageUnits[gl::ShaderType::Fragment]
+                              : caps.maxShaderTextureImageUnits[gl::ShaderType::Vertex];
 
     
     for (size_t samplerIndex = samplerRange; samplerIndex < samplerCount; samplerIndex++)

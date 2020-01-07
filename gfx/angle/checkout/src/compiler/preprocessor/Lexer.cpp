@@ -6,11 +6,16 @@
 
 #include "compiler/preprocessor/Lexer.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
 Lexer::~Lexer()
 {
 }
+
+}  
 
 }  

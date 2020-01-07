@@ -13,6 +13,9 @@
 #include "compiler/preprocessor/Lexer.h"
 #include "compiler/preprocessor/Macro.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -77,6 +80,8 @@ class MacroExpander : public Lexer
 
     class ScopedMacroReenabler;
 };
+
+}  
 
 }  
 

@@ -10,6 +10,9 @@
 #include <cstddef>
 #include <vector>
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -48,6 +51,8 @@ class Input
 
     Location mReadLoc;
 };
+
+}  
 
 }  
 

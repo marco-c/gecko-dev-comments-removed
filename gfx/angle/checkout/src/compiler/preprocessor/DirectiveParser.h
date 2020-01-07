@@ -11,6 +11,9 @@
 #include "compiler/preprocessor/Macro.h"
 #include "compiler/preprocessor/SourceLocation.h"
 
+namespace angle
+{
+
 namespace pp
 {
 
@@ -77,6 +80,8 @@ class DirectiveParser : public Lexer
     int mShaderVersion;
     int mMaxMacroExpansionDepth;
 };
+
+}  
 
 }  
 

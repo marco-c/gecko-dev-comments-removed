@@ -33,6 +33,9 @@ enum Visit
 
 
 
+
+
+
 class TIntermTraverser : angle::NonCopyable
 {
   public:
