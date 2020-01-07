@@ -195,11 +195,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
   get currentShowPromise() {
     return this._currentShowPromise || Promise.resolve();
   }
-  get _keyNavigationMap() {
-    if (!this.__keyNavigationMap)
-      this.__keyNavigationMap = new Map();
-    return this.__keyNavigationMap;
-  }
 
   connect() {
     this.knownViews = new Set(Array.from(
@@ -297,20 +292,15 @@ this.PanelMultiView = class extends this.AssociatedToNode {
   }
 
   goBack() {
+    if (this.openViews.length < 2) {
+      
+      
+      return;
+    }
+
     let previous = this.openViews.pop().node;
     let current = this._currentSubView;
-    return this.showSubView(current, null, previous);
-  }
-
-  
-
-
-
-
-
-
-  _canGoBack(view = this._currentSubView) {
-    return view.id != this._mainViewId;
+    this.showSubView(current, null, previous);
   }
 
   showMainView() {
@@ -437,7 +427,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       await this._cleanupTransitionPhase();
       if (playTransition) {
         await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
-        this._updateKeyboardFocus(viewNode);
+        nextPanelView.focusSelectedElement();
       } else {
         this.hideAllViewsExcept(nextPanelView);
       }
@@ -622,6 +612,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       this._transitionDetails = null;
 
     let nextPanelView = PanelView.forNode(viewNode);
+    let prevPanelView = PanelView.forNode(previousViewNode);
 
     
     
@@ -629,7 +620,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     previousViewNode.removeAttribute("in-transition");
     viewNode.removeAttribute("in-transition");
     if (reverse)
-      this._resetKeyNavigation(previousViewNode);
+      prevPanelView.clearNavigation();
 
     if (anchor)
       anchor.removeAttribute("open");
@@ -721,10 +712,13 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     }
     switch (aEvent.type) {
       case "keydown":
-        this._keyNavigation(aEvent);
+        if (!this._transitioning) {
+          PanelView.forNode(this._currentSubView)
+                   .keyNavigation(aEvent, this._dir);
+        }
         break;
       case "mousemove":
-        this._resetKeyNavigation();
+        this.openViews.forEach(panelView => panelView.clearNavigation());
         break;
       case "popupshowing": {
         this.node.setAttribute("panelopen", "true");
@@ -772,7 +766,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         }
         this.window.removeEventListener("keydown", this);
         this._panel.removeEventListener("mousemove", this);
-        this._resetKeyNavigation();
+        this.openViews.forEach(panelView => panelView.clearNavigation());
         this.openViews = [];
 
         
@@ -787,194 +781,6 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         this.dispatchCustomEvent("PanelMultiViewHidden");
         break;
       }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  _updateSelectedKeyNav(navMap, buttons, isDown) {
-    let lastSelected = navMap.selected && navMap.selected.get();
-    let newButton = null;
-    let maxIdx = buttons.length - 1;
-    if (lastSelected) {
-      let buttonIndex = buttons.indexOf(lastSelected);
-      if (buttonIndex != -1) {
-        
-        
-        do {
-          buttonIndex = buttonIndex + (isDown ? 1 : -1);
-        } while (buttons[buttonIndex] && buttons[buttonIndex].disabled);
-        if (isDown && buttonIndex > maxIdx)
-          buttonIndex = 0;
-        else if (!isDown && buttonIndex < 0)
-          buttonIndex = maxIdx;
-        newButton = buttons[buttonIndex];
-      } else {
-        
-        let allButtons = lastSelected.closest("panelview").getElementsByTagName("toolbarbutton");
-        let maxAllButtonIdx = allButtons.length - 1;
-        let allButtonIndex = allButtons.indexOf(lastSelected);
-        while (allButtonIndex >= 0 && allButtonIndex <= maxAllButtonIdx) {
-          allButtonIndex++;
-          
-          buttonIndex = buttons.indexOf(allButtons[allButtonIndex]);
-          if (buttonIndex != -1) {
-            
-            
-            
-            
-            newButton = buttons[isDown ? buttonIndex : buttonIndex - 1];
-            break;
-          }
-        }
-      }
-    }
-
-    
-    if (!newButton) {
-      newButton = buttons[isDown ? 0 : maxIdx];
-    }
-    navMap.selected = Cu.getWeakReference(newButton);
-    return newButton;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _keyNavigation(event) {
-    if (this._transitioning)
-      return;
-
-    let view = this._currentSubView;
-    let navMap = this._keyNavigationMap.get(view);
-    if (!navMap) {
-      navMap = {};
-      this._keyNavigationMap.set(view, navMap);
-    }
-
-    let buttons = navMap.buttons;
-    if (!buttons || !buttons.length) {
-      buttons = navMap.buttons = PanelView.forNode(view).getNavigableElements();
-      
-      for (let button of buttons) {
-        if (!button.classList.contains("subviewbutton-back") &&
-            !button.hasAttribute("tabindex")) {
-          button.setAttribute("tabindex", 0);
-        }
-      }
-    }
-    if (!buttons.length)
-      return;
-
-    let stop = () => {
-      event.stopPropagation();
-      event.preventDefault();
-    };
-
-    let keyCode = event.code;
-    switch (keyCode) {
-      case "ArrowDown":
-      case "ArrowUp":
-      case "Tab": {
-        stop();
-        let isDown = (keyCode == "ArrowDown") ||
-                     (keyCode == "Tab" && !event.shiftKey);
-        let button = this._updateSelectedKeyNav(navMap, buttons, isDown);
-        button.focus();
-        break;
-      }
-      case "ArrowLeft":
-      case "ArrowRight": {
-        stop();
-        let dir = this._dir;
-        if ((dir == "ltr" && keyCode == "ArrowLeft") ||
-            (dir == "rtl" && keyCode == "ArrowRight")) {
-          if (this._canGoBack(view))
-            this.goBack();
-          break;
-        }
-        
-        
-        if (!navMap.selected || !navMap.selected.get() ||
-            !navMap.selected.get().classList.contains("subviewbutton-nav")) {
-          break;
-        }
-        
-      }
-      case "Space":
-      case "Enter": {
-        let button = navMap.selected && navMap.selected.get();
-        if (!button)
-          break;
-        stop();
-
-        
-        
-        
-        
-        
-        button.doCommand();
-        let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
-        button.dispatchEvent(clickEvent);
-        break;
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-  _resetKeyNavigation(view) {
-    let viewToBlur = view || this._currentSubView;
-    let navMap = this._keyNavigationMap.get(viewToBlur);
-    if (navMap && navMap.selected && navMap.selected.get()) {
-      navMap.selected.get().blur();
-    }
-
-    
-    
-    
-    
-    
-    if (view) {
-      this._keyNavigationMap.delete(view);
-    } else {
-      this._keyNavigationMap.clear();
-    }
-  }
-
-  
-
-
-
-
-  _updateKeyboardFocus(view) {
-    let navMap = this._keyNavigationMap.get(view);
-    if (navMap && navMap.selected && navMap.selected.get()) {
-      navMap.selected.get().focus();
     }
   }
 };
@@ -1143,5 +949,184 @@ this.PanelView = class extends this.AssociatedToNode {
       let bounds = dwu.getBoundsWithoutFlushing(button);
       return bounds.width > 0 && bounds.height > 0;
     });
+  }
+
+  
+
+
+
+
+
+
+
+  get selectedElement() {
+    return this._selectedElement && this._selectedElement.get();
+  }
+  set selectedElement(value) {
+    if (!value) {
+      delete this._selectedElement;
+    } else {
+      this._selectedElement = Cu.getWeakReference(value);
+    }
+  }
+
+  
+
+
+
+
+
+
+  moveSelection(isDown) {
+    let buttons = this.buttons;
+    let lastSelected = this.selectedElement;
+    let newButton = null;
+    let maxIdx = buttons.length - 1;
+    if (lastSelected) {
+      let buttonIndex = buttons.indexOf(lastSelected);
+      if (buttonIndex != -1) {
+        
+        
+        do {
+          buttonIndex = buttonIndex + (isDown ? 1 : -1);
+        } while (buttons[buttonIndex] && buttons[buttonIndex].disabled);
+        if (isDown && buttonIndex > maxIdx)
+          buttonIndex = 0;
+        else if (!isDown && buttonIndex < 0)
+          buttonIndex = maxIdx;
+        newButton = buttons[buttonIndex];
+      } else {
+        
+        let allButtons = lastSelected.closest("panelview").getElementsByTagName("toolbarbutton");
+        let maxAllButtonIdx = allButtons.length - 1;
+        let allButtonIndex = allButtons.indexOf(lastSelected);
+        while (allButtonIndex >= 0 && allButtonIndex <= maxAllButtonIdx) {
+          allButtonIndex++;
+          
+          buttonIndex = buttons.indexOf(allButtons[allButtonIndex]);
+          if (buttonIndex != -1) {
+            
+            
+            
+            
+            newButton = buttons[isDown ? buttonIndex : buttonIndex - 1];
+            break;
+          }
+        }
+      }
+    }
+
+    
+    if (!newButton) {
+      newButton = buttons[isDown ? 0 : maxIdx];
+    }
+    this.selectedElement = newButton;
+    return newButton;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  keyNavigation(event, dir) {
+    let buttons = this.buttons;
+    if (!buttons || !buttons.length) {
+      buttons = this.buttons = this.getNavigableElements();
+      
+      for (let button of buttons) {
+        if (!button.classList.contains("subviewbutton-back") &&
+            !button.hasAttribute("tabindex")) {
+          button.setAttribute("tabindex", 0);
+        }
+      }
+    }
+    if (!buttons.length)
+      return;
+
+    let stop = () => {
+      event.stopPropagation();
+      event.preventDefault();
+    };
+
+    let keyCode = event.code;
+    switch (keyCode) {
+      case "ArrowDown":
+      case "ArrowUp":
+      case "Tab": {
+        stop();
+        let isDown = (keyCode == "ArrowDown") ||
+                     (keyCode == "Tab" && !event.shiftKey);
+        let button = this.moveSelection(isDown);
+        button.focus();
+        break;
+      }
+      case "ArrowLeft":
+      case "ArrowRight": {
+        stop();
+        if ((dir == "ltr" && keyCode == "ArrowLeft") ||
+            (dir == "rtl" && keyCode == "ArrowRight")) {
+          this.node.panelMultiView.goBack();
+          break;
+        }
+        
+        
+        let button = this.selectedElement;
+        if (!button || !button.classList.contains("subviewbutton-nav")) {
+          break;
+        }
+        
+      }
+      case "Space":
+      case "Enter": {
+        let button = this.selectedElement;
+        if (!button)
+          break;
+        stop();
+
+        
+        
+        
+        
+        
+        button.doCommand();
+        let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
+        button.dispatchEvent(clickEvent);
+        break;
+      }
+    }
+  }
+
+  
+
+
+  focusSelectedElement() {
+    let selected = this.selectedElement;
+    if (selected) {
+      selected.focus();
+    }
+  }
+
+  
+
+
+  clearNavigation() {
+    delete this.buttons;
+    let selected = this.selectedElement;
+    if (selected) {
+      selected.blur();
+      this.selectedElement = null;
+    }
   }
 };
