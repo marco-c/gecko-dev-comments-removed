@@ -1633,7 +1633,7 @@ Loader::LoadSheet(SheetLoadData* aLoadData,
 
 
 
-nsresult
+void
 Loader::ParseSheet(const nsAString& aUTF16,
                    const nsACString& aUTF8,
                    SheetLoadData* aLoadData,
@@ -1646,14 +1646,16 @@ Loader::ParseSheet(const nsAString& aUTF16,
   aCompleted = false;
   MOZ_ASSERT(aUTF16.IsEmpty() || aUTF8.IsEmpty());
   if (!aUTF16.IsEmpty()) {
-    return DoParseSheetServo(NS_ConvertUTF16toUTF8(aUTF16),
-                             aLoadData, aAllowAsync, aCompleted);
+    DoParseSheetServo(NS_ConvertUTF16toUTF8(aUTF16),
+                      aLoadData,
+                      aAllowAsync,
+                      aCompleted);
   } else {
-    return DoParseSheetServo(aUTF8, aLoadData, aAllowAsync, aCompleted);
+    DoParseSheetServo(aUTF8, aLoadData, aAllowAsync, aCompleted);
   }
 }
 
-nsresult
+void
 Loader::DoParseSheetServo(const nsACString& aBytes,
                           SheetLoadData* aLoadData,
                           bool aAllowAsync,
@@ -1677,7 +1679,7 @@ Loader::DoParseSheetServo(const nsACString& aBytes,
       SheetComplete(aLoadData, NS_OK);
     }
 
-    return NS_OK;
+    return;
   }
 
   
@@ -1700,8 +1702,6 @@ Loader::DoParseSheetServo(const nsACString& aBytes,
       }
     }, [] { MOZ_CRASH("rejected parse promise"); }
   );
-
-  return NS_OK;
 }
 
 
@@ -1979,13 +1979,7 @@ Loader::LoadInlineStyle(nsIContent* aElement,
   
   
   
-  rv = ParseSheet(aBuffer, EmptyCString(),
-                  data,
-                   false,
-                  completed);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
+  ParseSheet(aBuffer, EmptyCString(), data,  false, completed);
 
   
   if (!completed) {

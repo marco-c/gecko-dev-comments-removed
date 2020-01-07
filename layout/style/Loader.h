@@ -571,16 +571,16 @@ private:
   
   
   
-  nsresult ParseSheet(const nsAString& aUTF16,
-                      const nsACString& aUTF8,
-                      SheetLoadData* aLoadData,
-                      bool aAllowAsync,
-                      bool& aCompleted);
+  void ParseSheet(const nsAString& aUTF16,
+                  const nsACString& aUTF8,
+                  SheetLoadData* aLoadData,
+                  bool aAllowAsync,
+                  bool& aCompleted);
 
-  nsresult DoParseSheetServo(const nsACString& aBytes,
-                             SheetLoadData* aLoadData,
-                             bool aAllowAsync,
-                             bool& aCompleted);
+  void DoParseSheetServo(const nsACString& aBytes,
+                         SheetLoadData* aLoadData,
+                         bool aAllowAsync,
+                         bool& aCompleted);
 
   
   
