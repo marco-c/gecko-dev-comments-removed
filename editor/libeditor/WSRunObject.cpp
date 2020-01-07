@@ -180,11 +180,8 @@ WSRunObject::InsertBreak(Selection& aSelection,
   
   
 
-  WSFragment *beforeRun, *afterRun;
-  FindRun(aPointToInsert.Container(), aPointToInsert.Offset(),
-          &beforeRun, false);
-  FindRun(aPointToInsert.Container(), aPointToInsert.Offset(),
-          &afterRun, true);
+  WSFragment* beforeRun = FindNearestRun(aPointToInsert, false);
+  WSFragment* afterRun = FindNearestRun(aPointToInsert, true);
 
   EditorDOMPoint pointToInsert(aPointToInsert);
   {
@@ -273,15 +270,11 @@ WSRunObject::InsertText(nsIDocument& aDocument,
     return NS_OK;
   }
 
+  WSFragment* beforeRun = FindNearestRun(aPointToInsert, false);
+  WSFragment* afterRun = FindNearestRun(aPointToInsert, true);
+
   EditorDOMPoint pointToInsert(aPointToInsert);
   nsAutoString theString(aStringToInsert);
-
-  WSFragment *beforeRun, *afterRun;
-  FindRun(pointToInsert.Container(), pointToInsert.Offset(),
-          &beforeRun, false);
-  FindRun(pointToInsert.Container(), pointToInsert.Offset(),
-          &afterRun, true);
-
   {
     
     
@@ -510,8 +503,7 @@ WSRunObject::PriorVisibleNode(nsINode* aNode,
   
   MOZ_ASSERT(aNode && outVisNode && outVisOffset && outType);
 
-  WSFragment* run;
-  FindRun(aNode, aOffset, &run, false);
+  WSFragment* run = FindNearestRun(EditorRawDOMPoint(aNode, aOffset), false);
 
   
   for (; run; run = run->mLeft) {
@@ -552,8 +544,7 @@ WSRunObject::NextVisibleNode(nsINode* aNode,
   
   MOZ_ASSERT(aNode && outVisNode && outVisOffset && outType);
 
-  WSFragment* run;
-  FindRun(aNode, aOffset, &run, true);
+  WSFragment* run = FindNearestRun(EditorRawDOMPoint(aNode, aOffset), true);
 
   
   for (; run; run = run->mRight) {
@@ -1193,9 +1184,8 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
   NS_ENSURE_TRUE(aEndObject, NS_ERROR_NULL_POINTER);
 
   
-  WSFragment *beforeRun, *afterRun;
-  FindRun(mNode, mOffset, &beforeRun, false);
-  aEndObject->FindRun(aEndObject->mNode, aEndObject->mOffset, &afterRun, true);
+  WSFragment* beforeRun = FindNearestRun(Point(), false);
+  WSFragment* afterRun = aEndObject->FindNearestRun(aEndObject->Point(), true);
 
   
   if (afterRun && (afterRun->mType & WSType::leadingWS)) {
@@ -1253,9 +1243,8 @@ WSRunObject::PrepareToSplitAcrossBlocksPriv()
   
 
   
-  WSFragment *beforeRun, *afterRun;
-  FindRun(mNode, mOffset, &beforeRun, false);
-  FindRun(mNode, mOffset, &afterRun, true);
+  WSFragment* beforeRun = FindNearestRun(Point(), false);
+  WSFragment* afterRun = FindNearestRun(Point(), true);
 
   
   if (afterRun && afterRun->mType == WSType::normalWS) {
@@ -1552,55 +1541,43 @@ WSRunObject::GetAsciiWSBounds(int16_t aDir,
   *outEndOffset = endOffset;
 }
 
-
-
-
-
-void
-WSRunObject::FindRun(nsINode* aNode,
-                     int32_t aOffset,
-                     WSFragment** outRun,
-                     bool after)
+WSRunObject::WSFragment*
+WSRunObject::FindNearestRun(const EditorRawDOMPoint& aPoint,
+                            bool aForward)
 {
-  MOZ_ASSERT(aNode && outRun);
-  *outRun = nullptr;
+  MOZ_ASSERT(aPoint.IsSetAndValid());
 
   for (WSFragment* run = mStartRun; run; run = run->mRight) {
-    int32_t comp = run->mStartNode ? nsContentUtils::ComparePoints(aNode,
-        aOffset, run->mStartNode, run->mStartOffset) : -1;
+    int32_t comp = run->mStartNode ?
+      nsContentUtils::ComparePoints(aPoint, run->StartPoint()) : -1;
     if (comp <= 0) {
-      if (after) {
-        *outRun = run;
-      } else {
-        
-        *outRun = nullptr;
-      }
-      return;
+      
+      
+      return aForward ? run : nullptr;
     }
-    comp = run->mEndNode ? nsContentUtils::ComparePoints(aNode, aOffset,
-        run->mEndNode, run->mEndOffset) : -1;
+
+    comp = run->mEndNode ?
+      nsContentUtils::ComparePoints(aPoint, run->EndPoint()) : -1;
     if (comp < 0) {
-      *outRun = run;
-      return;
-    } else if (!comp) {
-      if (after) {
-        *outRun = run->mRight;
-      } else {
-        
-        *outRun = run;
-      }
-      return;
+      
+      return run;
     }
+
+    if (!comp) {
+      
+      
+      return aForward ? run->mRight : run;
+    }
+
     if (!run->mRight) {
-      if (after) {
-        *outRun = nullptr;
-      } else {
-        
-        *outRun = run;
-      }
-      return;
+      
+      
+      
+      return aForward ? nullptr : run;
     }
   }
+
+  return nullptr;
 }
 
 char16_t

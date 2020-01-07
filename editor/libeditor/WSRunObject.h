@@ -317,6 +317,15 @@ protected:
       , mLeft(nullptr)
       , mRight(nullptr)
     {}
+
+    EditorRawDOMPoint StartPoint() const
+    {
+      return EditorRawDOMPoint(mStartNode, mStartOffset);
+    }
+    EditorRawDOMPoint EndPoint() const
+    {
+      return EditorRawDOMPoint(mEndNode, mEndOffset);
+    }
   };
 
   
@@ -372,8 +381,30 @@ protected:
   void GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
                         dom::Text** outStartNode, int32_t* outStartOffset,
                         dom::Text** outEndNode, int32_t* outEndOffset);
-  void FindRun(nsINode* aNode, int32_t aOffset, WSFragment** outRun,
-               bool after);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  WSFragment* FindNearestRun(const EditorRawDOMPoint& aPoint, bool aForward);
+
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset);
   WSPoint GetWSPointAfter(nsINode* aNode, int32_t aOffset);
   WSPoint GetWSPointBefore(nsINode* aNode, int32_t aOffset);
@@ -385,6 +416,19 @@ protected:
 
   nsresult Scrub();
   bool IsBlockNode(nsINode* aNode);
+
+  EditorRawDOMPoint Point() const
+  {
+    return EditorRawDOMPoint(mNode, mOffset);
+  }
+  EditorRawDOMPoint StartPoint() const
+  {
+    return EditorRawDOMPoint(mStartNode, mStartOffset);
+  }
+  EditorRawDOMPoint EndPoint() const
+  {
+    return EditorRawDOMPoint(mEndNode, mEndOffset);
+  }
 
   
   nsCOMPtr<nsINode> mNode;
