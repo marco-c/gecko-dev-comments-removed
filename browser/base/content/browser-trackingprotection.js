@@ -19,7 +19,13 @@ var TrackingProtection = {
     
     
     
-    return Services.io.newURI("https://" + gBrowser.selectedBrowser.currentURI.hostPort);
+    try {
+      return Services.io.newURI("https://" + gBrowser.selectedBrowser.currentURI.hostPort);
+    } catch (e) {
+      
+      
+      return null;
+    }
   },
 
   init() {
@@ -133,6 +139,13 @@ var TrackingProtection = {
   },
 
   onSecurityChange(state, isSimulated) {
+    let baseURI = this._baseURIForChannelClassifier;
+
+    
+    if (!baseURI) {
+      return;
+    }
+
     
     
     if (isSimulated) {
@@ -147,9 +160,9 @@ var TrackingProtection = {
     
     let hasException = false;
     if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-      hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(this._baseURIForChannelClassifier);
+      hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(baseURI);
     } else {
-      hasException = Services.perms.testExactPermission(this._baseURIForChannelClassifier,
+      hasException = Services.perms.testExactPermission(baseURI,
         "trackingprotection") == Services.perms.ALLOW_ACTION;
     }
 
