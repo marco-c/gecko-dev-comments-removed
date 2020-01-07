@@ -155,18 +155,9 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
   static void
-  MaybeUpdateCascadeResults(StyleBackendType aBackendType,
-                            dom::Element* aElement,
-                            CSSPseudoElementType aPseudoType,
-                            ComputedStyle* aComputedStyle);
+  MaybeUpdateCascadeResults(dom::Element* aElement,
+                            CSSPseudoElementType aPseudoType);
 
   
   
@@ -180,16 +171,10 @@ public:
   
   
   
-  
-  
-  
-  
   static void
-  UpdateCascadeResults(StyleBackendType aBackendType,
-                       EffectSet& aEffectSet,
+  UpdateCascadeResults(EffectSet& aEffectSet,
                        dom::Element* aElement,
-                       CSSPseudoElementType aPseudoType,
-                       ComputedStyle* aComputedStyle);
+                       CSSPseudoElementType aPseudoType);
 
   
   
@@ -240,21 +225,10 @@ private:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
   static nsCSSPropertyIDSet
-  GetOverriddenProperties(StyleBackendType aBackendType,
-                          EffectSet& aEffectSet,
+  GetOverriddenProperties(EffectSet& aEffectSet,
                           dom::Element* aElement,
-                          CSSPseudoElementType aPseudoType,
-                          ComputedStyle* aComputedStyle);
+                          CSSPseudoElementType aPseudoType);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 

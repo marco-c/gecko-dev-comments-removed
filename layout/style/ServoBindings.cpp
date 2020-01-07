@@ -658,11 +658,9 @@ Gecko_UpdateAnimations(RawGeckoElementBorrowed aElement,
       
       
       presContext->EffectCompositor()
-                 ->UpdateCascadeResults(StyleBackendType::Servo,
-                                        *effectSet,
+                 ->UpdateCascadeResults(*effectSet,
                                         const_cast<Element*>(aElement),
-                                        pseudoType,
-                                        nullptr);
+                                        pseudoType);
     }
   }
 
