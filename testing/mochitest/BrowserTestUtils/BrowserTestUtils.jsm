@@ -1027,6 +1027,9 @@ var BrowserTestUtils = {
 
 
 
+
+
+
   synthesizeMouse(target, offsetX, offsetY, event, browser)
   {
     return new Promise((resolve, reject) => {
@@ -1045,7 +1048,7 @@ var BrowserTestUtils = {
       if (typeof target == "function") {
         targetFn = target.toString();
         target = null;
-      } else if (typeof target != "string") {
+      } else if (typeof target != "string" && !Array.isArray(target)) {
         cpowObject = target;
         target = null;
       }
