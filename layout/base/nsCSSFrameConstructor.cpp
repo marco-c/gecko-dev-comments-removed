@@ -107,7 +107,6 @@
 #include "nsTransitionManager.h"
 #include "DetailsFrame.h"
 #include "nsThemeConstants.h"
-#include "mozilla/Preferences.h"
 
 #ifdef MOZ_XUL
 #include "nsIRootBox.h"
@@ -135,7 +134,6 @@ using namespace mozilla::dom;
 
 
 static const nsIFrame::ChildListID kPrincipalList = nsIFrame::kPrincipalList;
-static const char* kPrefSelectPopupInContent = "dom.select_popup_in_content.enabled";
 
 nsIFrame*
 NS_NewHTMLCanvasFrame (nsIPresShell* aPresShell, nsStyleContext* aContext);
@@ -3236,7 +3234,7 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
     
     comboboxFrame->SetDropDown(listFrame);
 
-    if (!Preferences::GetBool(kPrefSelectPopupInContent)) {
+    if (!nsLayoutUtils::IsContentSelectEnabled()) {
       
       NS_ASSERTION(!listFrame->IsAbsPosContainingBlock(),
                    "Ended up with positioned dropdown list somehow.");
@@ -3288,7 +3286,7 @@ nsCSSFrameConstructor::ConstructSelectFrame(nsFrameConstructorState& aState,
 
     comboboxFrame->SetInitialChildList(kPrincipalList, childItems);
 
-    if (!Preferences::GetBool(kPrefSelectPopupInContent)) {
+    if (!nsLayoutUtils::IsContentSelectEnabled()) {
       
       
       nsFrameItems popupItems;
@@ -3347,7 +3345,7 @@ nsCSSFrameConstructor::InitializeSelectFrame(nsFrameConstructorState& aState,
 
   scrollFrame->Init(aContent, geometricParent, nullptr);
 
-  if (!aBuildCombobox || Preferences::GetBool(kPrefSelectPopupInContent)) {
+  if (!aBuildCombobox || nsLayoutUtils::IsContentSelectEnabled()) {
     aState.AddChild(scrollFrame, aFrameItems, aContent, aParentFrame);
   }
 
