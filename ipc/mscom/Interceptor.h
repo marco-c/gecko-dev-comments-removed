@@ -145,6 +145,7 @@ private:
   mozilla::Mutex            mStdMarshalMutex; 
   RefPtr<IUnknown>          mStdMarshalUnk;
   IMarshal*                 mStdMarshal; 
+  static MOZ_THREAD_LOCAL(bool) tlsCreatingStdMarshal;
 };
 
 template <typename InterfaceT>
