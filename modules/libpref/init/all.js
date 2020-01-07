@@ -5236,7 +5236,7 @@ pref("dom.placeholder.show_on_focus", true);
 
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) || !defined(RELEASE_OR_BETA)
 pref("dom.vr.enabled", true);
 #else
 pref("dom.vr.enabled", false);
@@ -5806,6 +5806,25 @@ pref("layout.css.servo.chrome.enabled", false);
 
 
 
+pref("security.mixed_content.send_hsts_priming", false);
+pref("security.mixed_content.use_hsts", false);
+#ifdef EARLY_BETA_OR_EARLIER
+
+
+pref("security.mixed_content.send_hsts_priming", true);
+pref("security.mixed_content.use_hsts", true);
+#endif
+
+pref("security.mixed_content.hsts_priming_cache_timeout", 604800);
+
+
+pref("security.mixed_content.hsts_priming_request_timeout", 2000);
+
+
+
+
+
+
 pref("security.data_uri.unique_opaque_origin", true);
 
 
@@ -5913,4 +5932,3 @@ pref("layers.omtp.enabled", true);
 pref("layers.omtp.enabled", false);
 #endif
 pref("layers.omtp.release-capture-on-main-thread", false);
-pref("layers.omtp.paint-workers", 1);
