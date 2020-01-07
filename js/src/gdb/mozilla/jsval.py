@@ -68,9 +68,6 @@ mozilla.prettyprinters.clear_module_printers(__name__)
 
 
 
-
-
-
 class Box(object):
     def __init__(self, asBits, jtc):
         self.asBits = asBits
@@ -167,9 +164,8 @@ class JSValue(object):
             cache.mod_JS_Value = JSValueTypeCache(cache)
         self.jtc = cache.mod_JS_Value
 
-        data = value['data']
-        self.data = data
-        self.box = self.jtc.boxer(data['asBits'], self.jtc)
+        self.value = value
+        self.box = self.jtc.boxer(value['asBits_'], self.jtc)
 
     def to_string(self):
         tag = self.box.tag()
@@ -194,7 +190,7 @@ class JSValue(object):
             return '$JS::Int32Value(%s)' % value
 
         if tag == self.jtc.DOUBLE:
-            return '$JS::DoubleValue(%s)' % self.data['asDouble']
+            return '$JS::DoubleValue(%s)' % self.value['asDouble_']
 
         if tag == self.jtc.STRING:
             value = self.box.as_address().cast(self.cache.JSString_ptr_t)
