@@ -2752,7 +2752,7 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
       }
       if (data.mBackfaceHidden == aBackfaceHidden &&
           data.mASR == aASR &&
-          DisplayItemClipChain::Equal(data.mClipChain, aClipChain)) {
+          data.mClipChain == aClipChain) {
         lowestUsableLayer = &data;
       }
       

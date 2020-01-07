@@ -73,16 +73,6 @@ private:
   const DisplayItemClipChain* ExtendChain(const DisplayItemClipChain* aClip);
   Maybe<ClipAndScroll> EnclosingClipAndScroll() const;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
 
   WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
@@ -97,9 +87,6 @@ private:
   
   
   std::vector<ClipIdMap> mCacheStack;
-
-  typedef std::unordered_map<FrameMetrics::ViewID, const DisplayItemClipChain*> ScrollParentMap;
-  ScrollParentMap mScrollParents;
 
   struct ItemClips {
     ItemClips(const ActiveScrolledRoot* aAsr,

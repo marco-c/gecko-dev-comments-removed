@@ -37,7 +37,6 @@ ScrollingLayersHelper::BeginBuild(WebRenderLayerManager* aManager,
   mBuilder = &aBuilder;
   MOZ_ASSERT(mCacheStack.empty());
   mCacheStack.emplace_back();
-  MOZ_ASSERT(mScrollParents.empty());
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
@@ -48,7 +47,6 @@ ScrollingLayersHelper::EndBuild()
   mManager = nullptr;
   mCacheStack.pop_back();
   MOZ_ASSERT(mCacheStack.empty());
-  mScrollParents.clear();
   MOZ_ASSERT(mItemClipStack.empty());
 }
 
@@ -366,26 +364,8 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
       if (mBuilder->HasExtraClip()) {
         ids.second = mBuilder->GetCacheOverride(aChain);
       } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const DisplayItemClipChain* canonicalChain = aChain;
-        auto it = mScrollParents.find(scrollId);
-        if (it != mScrollParents.end()) {
-          const DisplayItemClipChain* scrollParent = it->second;
-          if (DisplayItemClipChain::Equal(scrollParent, aChain)) {
-            canonicalChain = scrollParent;
-          }
-        }
-
         const ClipIdMap& cache = mCacheStack.back();
-        auto it2 = cache.find(canonicalChain);
+        auto it = cache.find(aChain);
         
         
         
@@ -396,14 +376,8 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
         
         
         
-        if (it2 == cache.end()) {
-          
-          
-          
-          
-          MOZ_ASSERT(canonicalChain == aChain);
-        } else {
-          ids.second = Some(it2->second);
+        if (it != cache.end()) {
+          ids.second = Some(it->second);
         }
       }
     }
@@ -448,11 +422,6 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   
   
   MOZ_ASSERT(!(ancestorIds.first && ancestorIds.second));
-
-  if (ancestorIds.second) {
-    MOZ_ASSERT(aChain);
-    mScrollParents[scrollId] = aChain;
-  }
 
   LayoutDeviceRect contentRect =
       metrics.GetExpandedScrollableRect() * metrics.GetDevPixelsPerCSSPixel();
