@@ -81,8 +81,9 @@ GetMonitorScaleFactor(nsIFrame* aFrame)
         
         int monitorScale = int(round(rootWidget->GetDefaultScale().scale
               / gfxPlatformGtk::GetFontScaleFactor()));
+        
+        
         if (monitorScale < 1) {
-          NS_WARNING(nsPrintfCString("Invalid monitor scale: %d", monitorScale).get());
           return 1;
         }
         return monitorScale;
