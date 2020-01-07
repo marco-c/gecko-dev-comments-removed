@@ -220,9 +220,7 @@ ChangeStyleTransaction::DoTransaction()
   }
 
   
-  uint32_t length;
-  rv = cssDecl->GetLength(&length);
-  NS_ENSURE_SUCCESS(rv, rv);
+  uint32_t length = cssDecl->Length();
   if (!length) {
     rv = mElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::style, true);
     NS_ENSURE_SUCCESS(rv, rv);
