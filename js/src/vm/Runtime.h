@@ -1081,6 +1081,30 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     void* wasmUnwindPC() const {
         return wasmUnwindPC_;
     }
+
+  public:
+#if defined(NIGHTLY_BUILD)
+    
+    
+    
+    
+    
+    struct ErrorInterceptionSupport {
+        ErrorInterceptionSupport()
+          : isExecuting(false)
+          , interceptor(nullptr)
+        { }
+
+        
+        
+        bool isExecuting;
+
+        
+        
+        JSErrorInterceptor* interceptor;
+    };
+    ErrorInterceptionSupport errorInterception;
+#endif 
 };
 
 namespace js {
