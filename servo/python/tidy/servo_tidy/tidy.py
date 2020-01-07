@@ -17,8 +17,10 @@ import re
 import StringIO
 import subprocess
 import sys
+
 import colorama
 import toml
+import voluptuous
 import yaml
 
 from licenseck import MPL, APACHE, COPYRIGHT, licenses_toml, licenses_dep_toml
@@ -775,15 +777,24 @@ def duplicate_key_yaml_constructor(loader, node, deep=False):
 
 
 def lint_buildbot_steps_yaml(mapping):
-    
-    
-    for k in mapping.keys():
-        if not isinstance(mapping[k], list):
-            raise ValueError("Key '{}' maps to type '{}', but list expected".format(k, type(mapping[k]).__name__))
+    from voluptuous import Any, Extra, Required, Schema
 
-        
-        for item in itertools.ifilter(lambda i: not isinstance(i, str), mapping[k]):
-            raise ValueError("List mapped to '{}' contains non-string element".format(k))
+    
+    env = Schema({Extra: str})
+    commands = Schema([str])
+    schema = Schema({
+        'env': env,
+        Extra: Any(
+            commands,
+            {
+                'env': env,
+                Required('commands'): commands,
+            },
+        ),
+    })
+
+    
+    schema(mapping)
 
 
 class SafeYamlLoader(yaml.SafeLoader):
@@ -811,8 +822,8 @@ def check_yaml(file_name, contents):
         yield (line, e)
     except KeyError as e:
         yield (None, "Duplicated Key ({})".format(e.message))
-    except ValueError as e:
-        yield (None, e.message)
+    except voluptuous.MultipleInvalid as e:
+        yield (None, str(e))
 
 
 def check_for_possible_duplicate_json_keys(key_value_pairs):
