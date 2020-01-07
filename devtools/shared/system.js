@@ -39,7 +39,6 @@ const APP_MAP = {
   "{3550f703-e582-4d05-9a08-453d09bdfdc6}": "thunderbird",
   "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}": "seamonkey",
   "{718e30fb-e89b-41dd-9da7-e25a45638b28}": "sunbird",
-  "{3c2e2abc-06d4-11e1-ac3b-374f68613e61}": "b2g",
   "{aa3c5121-dab2-40e2-81ca-7ea25febc110}": "mobile/android"
 };
 
@@ -67,22 +66,8 @@ async function getSystemInfo() {
   let hardware = "unknown";
   let version = "unknown";
 
-  
-  if (apptype === "b2g") {
-    os = "B2G";
-    
-    
-    try {
-      hardware = await exports.getSetting("deviceinfo.hardware");
-      version = await exports.getSetting("deviceinfo.os");
-    } catch (e) {
-      
-    }
-  } else {
-    
-    os = appInfo.OS;
-    version = appInfo.version;
-  }
+  os = appInfo.OS;
+  version = appInfo.version;
 
   let bundle = Services.strings.createBundle("chrome://branding/locale/brand.properties");
   if (bundle) {
@@ -124,7 +109,6 @@ async function getSystemInfo() {
     
     
     
-    
     version,
 
     
@@ -153,7 +137,6 @@ async function getSystemInfo() {
     
     hostname: hostname,
 
-    
     
     
     os,
@@ -270,7 +253,6 @@ function getSetting(name) {
   if ("@mozilla.org/settingsService;1" in Cc) {
     let settingsService;
 
-    
     
     try {
       settingsService = Cc["@mozilla.org/settingsService;1"]
