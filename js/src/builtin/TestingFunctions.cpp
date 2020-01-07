@@ -4983,7 +4983,7 @@ MonotonicNow(JSContext* cx, unsigned argc, Value* vp)
     };
 
     timespec ts;
-    if (false && clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
         
         now = ComputeNow(ts);
     } else {
