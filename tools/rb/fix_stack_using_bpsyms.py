@@ -18,158 +18,146 @@ import bisect
 
 here = os.path.dirname(__file__)
 
-
 def prettyFileName(name):
-    if name.startswith("../") or name.startswith("..\\"):
-        
-        
-        return os.path.basename(name) + ":"
-    elif name.startswith("hg:"):
-        bits = name.split(":")
-        if len(bits) == 4:
-            (junk, repo, path, rev) = bits
-            
-            
-            return path + ":"
-    return name + ":"
-
+  if name.startswith("../") or name.startswith("..\\"):
+    
+    
+    return os.path.basename(name) + ":"
+  elif name.startswith("hg:"):
+    bits = name.split(":")
+    if len(bits) == 4:
+      (junk, repo, path, rev) = bits
+      
+      
+      return path  + ":"
+  return name  + ":"
 
 class SymbolFile:
-    def __init__(self, fn):
-        addrs = []  
-        funcs = {}  
+  def __init__(self, fn):
+    addrs = [] 
+    funcs = {} 
+    files = {} 
+    with open(fn) as f:
+      for line in f:
+        line = line.rstrip()
         
-        files = {}
-        with open(fn) as f:
-            for line in f:
-                line = line.rstrip()
-                
-                if line.startswith("FUNC "):
-                    
-                    bits = line.split(None, 4)
-                    if len(bits) < 5:
-                        bits.append('unnamed_function')
-                    (junk, rva, size, ss, name) = bits
-                    rva = int(rva, 16)
-                    funcs[rva] = name
-                    addrs.append(rva)
-                    lastFuncName = name
-                elif line.startswith("PUBLIC "):
-                    
-                    (junk, rva, ss, name) = line.split(None, 3)
-                    rva = int(rva, 16)
-                    funcs[rva] = name
-                    addrs.append(rva)
-                elif line.startswith("FILE "):
-                    
-                    (junk, filenum, name) = line.split(None, 2)
-                    files[filenum] = prettyFileName(name)
-                elif line[0] in "0123456789abcdef":
-                    
-                    
-                    (rva, size, line, filenum) = line.split(None)
-                    rva = int(rva, 16)
-                    file = files[filenum]
-                    name = lastFuncName + " [" + file + line + "]"
-                    funcs[rva] = name
-                    addrs.append(rva)
-                
+        if line.startswith("FUNC "):
+          
+          bits = line.split(None, 4)
+          if len(bits) < 5:
+            bits.append('unnamed_function')
+          (junk, rva, size, ss, name) = bits
+          rva = int(rva,16)
+          funcs[rva] = name
+          addrs.append(rva)
+          lastFuncName = name
+        elif line.startswith("PUBLIC "):
+          
+          (junk, rva, ss, name) = line.split(None, 3)
+          rva = int(rva,16)
+          funcs[rva] = name
+          addrs.append(rva)
+        elif line.startswith("FILE "):
+          
+          (junk, filenum, name) = line.split(None, 2)
+          files[filenum] = prettyFileName(name)
+        elif line[0] in "0123456789abcdef":
+          
+          
+          (rva, size, line, filenum) = line.split(None)
+          rva = int(rva,16)
+          file = files[filenum]
+          name = lastFuncName + " [" + file + line + "]"
+          funcs[rva] = name
+          addrs.append(rva)
         
-        self.addrs = sorted(addrs)
-        self.funcs = funcs
+    
+    self.addrs = sorted(addrs)
+    self.funcs = funcs
 
-    def addrToSymbol(self, address):
-        i = bisect.bisect(self.addrs, address) - 1
-        if i > 0:
-            
-            return self.funcs[self.addrs[i]]
-        else:
-            return ""
-
+  def addrToSymbol(self, address):
+    i = bisect.bisect(self.addrs, address) - 1
+    if i > 0:
+      
+      return self.funcs[self.addrs[i]]
+    else:
+      return ""
 
 def findIdForPath(path):
-    """Finds the breakpad id for the object file at the given path."""
-    
-    fileid_exe = os.path.join(here, 'fileid')
+  """Finds the breakpad id for the object file at the given path."""
+  
+  fileid_exe = os.path.join(here, 'fileid')
+  if not os.path.isfile(fileid_exe):
+    fileid_exe = fileid_exe + '.exe'
     if not os.path.isfile(fileid_exe):
-        fileid_exe = fileid_exe + '.exe'
-        if not os.path.isfile(fileid_exe):
-            raise Exception("Could not find fileid executable in %s" % here)
+      raise Exception("Could not find fileid executable in %s" % here)
 
-    if not os.path.isfile(path):
-        for suffix in ('.exe', '.dll'):
-            if os.path.isfile(path + suffix):
-                path = path + suffix
-    try:
-        return subprocess.check_output([fileid_exe, path]).rstrip()
-    except subprocess.CalledProcessError as e:
-        raise Exception("Error getting fileid for %s: %s" %
-                        (path, e.output))
-
+  if not os.path.isfile(path):
+    for suffix in ('.exe', '.dll'):
+      if os.path.isfile(path + suffix):
+        path = path + suffix
+  try:
+    return subprocess.check_output([fileid_exe, path]).rstrip()
+  except subprocess.CalledProcessError as e:
+    raise Exception("Error getting fileid for %s: %s" %
+                    (path, e.output))
 
 def guessSymbolFile(full_path, symbolsDir):
-    """Guess a symbol file based on an object file's basename, ignoring the path and UUID."""
-    fn = os.path.basename(full_path)
-    d1 = os.path.join(symbolsDir, fn)
-    root, _ = os.path.splitext(fn)
-    if os.path.exists(os.path.join(symbolsDir, root) + '.pdb'):
-        d1 = os.path.join(symbolsDir, root) + '.pdb'
-        fn = root
-    if not os.path.exists(d1):
-        return None
-    uuids = os.listdir(d1)
-    if len(uuids) == 0:
-        raise Exception("Missing symbol file for " + fn)
-    if len(uuids) > 1:
-        uuid = findIdForPath(full_path)
-    else:
-        uuid = uuids[0]
-    return os.path.join(d1, uuid, fn + ".sym")
-
+  """Guess a symbol file based on an object file's basename, ignoring the path and UUID."""
+  fn = os.path.basename(full_path)
+  d1 = os.path.join(symbolsDir, fn)
+  root, _ = os.path.splitext(fn)
+  if os.path.exists(os.path.join(symbolsDir, root) + '.pdb'):
+    d1 = os.path.join(symbolsDir, root) + '.pdb'
+    fn = root
+  if not os.path.exists(d1):
+    return None
+  uuids = os.listdir(d1)
+  if len(uuids) == 0:
+    raise Exception("Missing symbol file for " + fn)
+  if len(uuids) > 1:
+    uuid = findIdForPath(full_path)
+  else:
+    uuid = uuids[0]
+  return os.path.join(d1, uuid, fn + ".sym")
 
 parsedSymbolFiles = {}
-
-
 def getSymbolFile(file, symbolsDir):
-    p = None
-    if file not in parsedSymbolFiles:
-        symfile = guessSymbolFile(file, symbolsDir)
-        if symfile:
-            p = SymbolFile(symfile)
-        else:
-            p = None
-        parsedSymbolFiles[file] = p
+  p = None
+  if not file in parsedSymbolFiles:
+    symfile = guessSymbolFile(file, symbolsDir)
+    if symfile:
+      p = SymbolFile(symfile)
     else:
-        p = parsedSymbolFiles[file]
-    return p
-
+      p = None
+    parsedSymbolFiles[file] = p
+  else:
+    p = parsedSymbolFiles[file]
+  return p
 
 def addressToSymbol(file, address, symbolsDir):
-    p = getSymbolFile(file, symbolsDir)
-    if p:
-        return p.addrToSymbol(address)
-    else:
-        return ""
-
+  p = getSymbolFile(file, symbolsDir)
+  if p:
+    return p.addrToSymbol(address)
+  else:
+    return ""
 
 
 line_re = re.compile("^(.*#\d+: )(.+)\[(.+) \+(0x[0-9A-Fa-f]+)\](.*)$")
 
-
 def fixSymbols(line, symbolsDir):
-    result = line_re.match(line)
-    if result is not None:
-        (before, fn, file, address, after) = result.groups()
-        address = int(address, 16)
-        symbol = addressToSymbol(file, address, symbolsDir)
-        if not symbol:
-            symbol = "%s + 0x%x" % (os.path.basename(file), address)
-        return before + symbol + after + "\n"
-    else:
-        return line
-
+  result = line_re.match(line)
+  if result is not None:
+    (before, fn, file, address, after) = result.groups()
+    address = int(address, 16)
+    symbol = addressToSymbol(file, address, symbolsDir)
+    if not symbol:
+      symbol = "%s + 0x%x" % (os.path.basename(file), address)
+    return before + symbol + after + "\n"
+  else:
+    return line
 
 if __name__ == "__main__":
-    symbolsDir = sys.argv[1]
-    for line in iter(sys.stdin.readline, ''):
-        print fixSymbols(line, symbolsDir),
+  symbolsDir = sys.argv[1]
+  for line in iter(sys.stdin.readline, ''):
+    print fixSymbols(line, symbolsDir),

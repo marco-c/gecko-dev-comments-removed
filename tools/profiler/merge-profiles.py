@@ -9,7 +9,6 @@ import json
 import re
 import sys
 
-
 def MergeProfiles(files):
     threads = []
     fileData = []
@@ -59,6 +58,7 @@ def MergeProfiles(files):
                         stringTable[i] = newLoc
                         symTable[newLoc] = str
             else:
+                samples = thread['samples']
                 for sample in thread['samples']:
                     for frame in sample['frames']:
                         if "location" in frame and frame['location'][0:2] == '0x':
@@ -108,3 +108,6 @@ if len(sys.argv) > 1:
     sys.exit(0)
 
 print "Usage: merge-profile.py profile_<pid1>_<pname1>.sym profile_<pid2>_<pname2>.sym > merged.sym"
+
+
+
