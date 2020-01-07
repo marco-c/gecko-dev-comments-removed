@@ -5392,25 +5392,15 @@ EventStateManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
   if (fm)
     fm->ContentRemoved(aDocument, aContent);
 
-  if (aContent->IsElement() &&
-      aContent->AsElement()->State().HasState(NS_EVENT_STATE_HOVER)) {
-    MOZ_ASSERT(mHoverContent);
-    
-    
-    MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(mHoverContent,
-                                                                  aContent) ||
-               mHoverContent->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
+  if (mHoverContent &&
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(mHoverContent, aContent)) {
     
     
     SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_HOVER);
   }
 
-  if (aContent->IsElement() &&
-      aContent->AsElement()->State().HasState(NS_EVENT_STATE_ACTIVE)) {
-    MOZ_ASSERT(mActiveContent);
-    MOZ_ASSERT(nsContentUtils::ContentIsFlattenedTreeDescendantOf(mActiveContent,
-                                                                  aContent) ||
-               mHoverContent->SubtreeRoot()->HasFlag(NODE_IS_ANONYMOUS_ROOT));
+  if (mActiveContent &&
+      nsContentUtils::ContentIsFlattenedTreeDescendantOf(mActiveContent, aContent)) {
     
     
     SetContentState(aContent->GetFlattenedTreeParent(), NS_EVENT_STATE_ACTIVE);
