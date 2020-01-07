@@ -1326,6 +1326,18 @@ var AddonManagerInternal = {
   },
 
   
+  systemUpdateEnabled() {
+    if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_ENABLED) ||
+        !Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO)) {
+      return false;
+    }
+    if (Services.policies && !Services.policies.isAllowed("SysAddonUpdate")) {
+      return false;
+    }
+    return true;
+  },
+
+  
 
 
 
@@ -1337,9 +1349,6 @@ var AddonManagerInternal = {
                                  Cr.NS_ERROR_NOT_INITIALIZED);
 
     let buPromise = (async () => {
-      let appUpdateEnabled = Services.prefs.getBoolPref(PREF_APP_UPDATE_ENABLED) &&
-                             Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO);
-
       logger.debug("Background update check beginning");
 
       Services.obs.notifyObservers(null, "addons-background-update-start");
@@ -1386,7 +1395,7 @@ var AddonManagerInternal = {
         await Promise.all(updates);
       }
 
-      if (appUpdateEnabled) {
+      if (AddonManagerInternal.systemUpdateEnabled()) {
         try {
           await AddonManagerInternal._getProviderByName("XPIProvider").updateSystemAddons();
         } catch (e) {
@@ -3004,14 +3013,6 @@ var AddonManagerPrivate = {
   },
 
   backgroundUpdateTimerHandler() {
-    
-    let appUpdateEnabled = Services.prefs.getBoolPref(PREF_APP_UPDATE_ENABLED) &&
-                           Services.prefs.getBoolPref(PREF_APP_UPDATE_AUTO);
-
-    if (!AddonManagerInternal.updateEnabled && !appUpdateEnabled) {
-      logger.info("Skipping background update check");
-      return;
-    }
     
     AddonManagerInternal.backgroundUpdateCheck();
   },
