@@ -128,12 +128,13 @@ struct EventKey {
 struct DynamicEventInfo {
   DynamicEventInfo(const nsACString& category, const nsACString& method,
                    const nsACString& object, nsTArray<nsCString>& extra_keys,
-                   bool recordOnRelease)
+                   bool recordOnRelease, bool builtin)
     : category(category)
     , method(method)
     , object(object)
     , extra_keys(extra_keys)
     , recordOnRelease(recordOnRelease)
+    , builtin(builtin)
   {}
 
   DynamicEventInfo(const DynamicEventInfo&) = default;
@@ -144,6 +145,7 @@ struct DynamicEventInfo {
   const nsCString object;
   const nsTArray<nsCString> extra_keys;
   const bool recordOnRelease;
+  const bool builtin;
 
   size_t
   SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
@@ -316,8 +318,14 @@ nsTHashtable<nsCStringHashKey> gEnabledCategories;
 
 
 
+typedef nsUint32HashKey ProcessIDHashKey;
 typedef nsTArray<EventRecord> EventRecordArray;
-nsClassHashtable<nsUint32HashKey, EventRecordArray> gEventRecords;
+typedef nsClassHashtable<ProcessIDHashKey, EventRecordArray> EventRecordsMapType;
+
+EventRecordsMapType gEventRecords;
+
+
+EventRecordsMapType gBuiltinEventRecords;
 
 
 StaticAutoPtr<nsTArray<DynamicEventInfo>> gDynamicEventInfo;
@@ -392,12 +400,17 @@ IsExpired(const EventKey& key)
 
 EventRecordArray*
 GetEventRecordsForProcess(const StaticMutexAutoLock& lock, ProcessID processType,
-                          const EventKey& eventKey)
+                          const EventKey& eventKey, bool isDynamicBuiltin)
 {
+  
+  
+  EventRecordsMapType& processStorage =
+    isDynamicBuiltin ? gBuiltinEventRecords : gEventRecords;
+
   EventRecordArray* eventRecords = nullptr;
-  if (!gEventRecords.Get(uint32_t(processType), &eventRecords)) {
+  if (!processStorage.Get(uint32_t(processType), &eventRecords)) {
     eventRecords = new EventRecordArray();
-    gEventRecords.Put(uint32_t(processType), eventRecords);
+    processStorage.Put(uint32_t(processType), eventRecords);
   }
   return eventRecords;
 }
@@ -451,23 +464,28 @@ RecordEvent(const StaticMutexAutoLock& lock, ProcessID processType,
     return RecordEventResult::UnknownEvent;
   }
 
-  if (eventKey->dynamic) {
-    processType = ProcessID::Dynamic;
-  }
-
-  EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType, *eventKey);
-
-  
-  if (eventRecords->Length() >= kMaxEventRecords) {
-    return RecordEventResult::StorageLimitReached;
-  }
-
   
   
   
   
   if (IsExpired(*eventKey)) {
     return RecordEventResult::ExpiredEvent;
+  }
+
+  
+  
+  if (eventKey->dynamic &&
+      !(*gDynamicEventInfo)[eventKey->id].builtin) {
+    processType = ProcessID::Dynamic;
+  }
+
+  bool isDynamicBuiltin = eventKey->dynamic && (*gDynamicEventInfo)[eventKey->id].builtin;
+  EventRecordArray* eventRecords =
+    GetEventRecordsForProcess(lock, processType, *eventKey, isDynamicBuiltin);
+
+  
+  if (eventRecords->Length() >= kMaxEventRecords) {
+    return RecordEventResult::StorageLimitReached;
   }
 
   
@@ -732,6 +750,7 @@ TelemetryEvent::DeInitializeGlobalState()
   gCategoryNameIDMap.Clear();
   gEnabledCategories.Clear();
   gEventRecords.Clear();
+  gBuiltinEventRecords.Clear();
 
   gDynamicEventInfo = nullptr;
 
@@ -956,6 +975,7 @@ GetArrayPropertyValues(JSContext* cx, JS::HandleObject obj, const char* property
 nsresult
 TelemetryEvent::RegisterEvents(const nsACString& aCategory,
                                JS::Handle<JS::Value> aEventData,
+                               bool aBuiltin,
                                JSContext* cx)
 {
   MOZ_ASSERT(XRE_IsParentProcess(),
@@ -1077,7 +1097,7 @@ TelemetryEvent::RegisterEvents(const nsACString& aCategory,
         
         
         DynamicEventInfo info{aCategory, method, object,
-                              extra_keys, recordOnRelease};
+                              extra_keys, recordOnRelease, aBuiltin};
         newEventInfos.AppendElement(info);
         newEventExpired.AppendElement(expired);
       }
