@@ -150,9 +150,7 @@ struct CustomElementDefinition
                           nsAtom* aLocalName,
                           Function* aConstructor,
                           nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-                          JS::Handle<JSObject*> aPrototype,
-                          mozilla::dom::LifecycleCallbacks* aCallbacks,
-                          uint32_t aDocOrder);
+                          mozilla::dom::LifecycleCallbacks* aCallbacks);
 
   
   
@@ -168,16 +166,10 @@ struct CustomElementDefinition
   nsTArray<RefPtr<nsAtom>> mObservedAttributes;
 
   
-  JS::Heap<JSObject *> mPrototype;
-
-  
   UniquePtr<mozilla::dom::LifecycleCallbacks> mCallbacks;
 
   
   nsTArray<RefPtr<Element>> mConstructionStack;
-
-  
-  uint32_t mDocOrder;
 
   bool IsCustomBuiltIn()
   {

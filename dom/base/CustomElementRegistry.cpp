@@ -200,12 +200,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementRegistry)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CustomElementRegistry)
-  for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
-    aCallbacks.Trace(&iter.UserData()->mPrototype,
-                     "mCustomDefinitions prototype",
-                     aClosure);
-  }
-
   for (ConstructorMap::Enum iter(tmp->mConstructors); !iter.empty(); iter.popFront()) {
     aCallbacks.Trace(&iter.front().mutableKey(),
                      "mConstructors key",
@@ -592,7 +586,7 @@ CustomElementRegistry::Define(const nsAString& aName,
     return;
   }
 
-  JS::Rooted<JSObject*> constructorPrototype(cx);
+  JS::Rooted<JS::Value> constructorPrototype(cx);
   nsAutoPtr<LifecycleCallbacks> callbacksHolder(new LifecycleCallbacks());
   nsTArray<RefPtr<nsAtom>> observedAttributes;
   { 
@@ -606,11 +600,10 @@ CustomElementRegistry::Define(const nsAString& aName,
 
 
       JSAutoCompartment ac(cx, constructor);
-      JS::Rooted<JS::Value> prototypev(cx);
       
       
       
-      if (!JS_GetProperty(cx, constructor, "prototype", &prototypev)) {
+      if (!JS_GetProperty(cx, constructor, "prototype", &constructorPrototype)) {
         aRv.StealExceptionFromJSContext(cx);
         return;
       }
@@ -618,15 +611,14 @@ CustomElementRegistry::Define(const nsAString& aName,
       
 
 
-      if (!prototypev.isObject()) {
+      if (!constructorPrototype.isObject()) {
         aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("constructor.prototype"));
         return;
       }
-
-      constructorPrototype = &prototypev.toObject();
     } 
 
-    JS::Rooted<JSObject*> constructorProtoUnwrapped(cx, js::CheckedUnwrap(constructorPrototype));
+    JS::Rooted<JSObject*> constructorProtoUnwrapped(
+      cx, js::CheckedUnwrap(&constructorPrototype.toObject()));
     if (!constructorProtoUnwrapped) {
       
       
@@ -753,9 +745,7 @@ CustomElementRegistry::Define(const nsAString& aName,
                                 localNameAtom,
                                 &aFunctionConstructor,
                                 Move(observedAttributes),
-                                constructorPrototype,
-                                callbacks,
-                                0 );
+                                callbacks);
 
   CustomElementDefinition* def = definition.get();
   mCustomDefinitions.Put(nameAtom, definition.forget());
@@ -1079,7 +1069,6 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(CustomElementDefinition)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CustomElementDefinition)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mConstructor)
-  tmp->mPrototype = nullptr;
   tmp->mCallbacks = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -1112,7 +1101,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementDefinition)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CustomElementDefinition)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mPrototype)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(CustomElementDefinition, AddRef)
@@ -1123,16 +1111,12 @@ CustomElementDefinition::CustomElementDefinition(nsAtom* aType,
                                                  nsAtom* aLocalName,
                                                  Function* aConstructor,
                                                  nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-                                                 JS::Handle<JSObject*> aPrototype,
-                                                 LifecycleCallbacks* aCallbacks,
-                                                 uint32_t aDocOrder)
+                                                 LifecycleCallbacks* aCallbacks)
   : mType(aType),
     mLocalName(aLocalName),
     mConstructor(new CustomElementConstructor(aConstructor)),
     mObservedAttributes(Move(aObservedAttributes)),
-    mPrototype(aPrototype),
-    mCallbacks(aCallbacks),
-    mDocOrder(aDocOrder)
+    mCallbacks(aCallbacks)
 {
 }
 
