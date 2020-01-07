@@ -190,8 +190,6 @@ private:
 
   
   DECL_MEDIA_PREF("media.playback.warnings-as-errors",        MediaWarningsAsErrors, bool, false);
-  DECL_MEDIA_PREF("media.playback.warnings-as-errors.stagefright-vs-rust",
-                                                              MediaWarningsAsErrorsStageFrightVsRust, bool, false);
 
   
   DECL_MEDIA_PREF("media.resume-bkgnd-video-on-tabhover",     ResumeVideoDecodingOnTabHover, bool, false);
