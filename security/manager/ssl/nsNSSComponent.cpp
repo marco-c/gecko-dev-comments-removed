@@ -822,11 +822,6 @@ nsNSSComponent::GetEnterpriseRoots(nsIX509CertList** enterpriseRoots)
   }
   NS_ENSURE_ARG_POINTER(enterpriseRoots);
 
-  
-  
-  
-  
-  
   if (!mEnterpriseRoots) {
     *enterpriseRoots = nullptr;
     return NS_OK;
@@ -1003,9 +998,6 @@ private:
 
 LoadLoadableRootsTask::~LoadLoadableRootsTask()
 {
-  if (isAlreadyShutDown()) {
-    return;
-  }
   shutdown(ShutdownCalledFrom::Object);
 }
 
@@ -1027,10 +1019,6 @@ LoadLoadableRootsTask::Dispatch()
 NS_IMETHODIMP
 LoadLoadableRootsTask::Run()
 {
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   nsresult rv = LoadLoadableRoots();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("LoadLoadableRoots failed"));

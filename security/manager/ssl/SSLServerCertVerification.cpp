@@ -1564,71 +1564,67 @@ SSLServerCertVerificationJob::Run()
 
   PRErrorCode error;
 
-  if (mInfoObject->isAlreadyShutDown()) {
-    error = SEC_ERROR_USER_CANCELLED;
-  } else {
-    Telemetry::HistogramID successTelemetry
-      = Telemetry::SSL_SUCCESFUL_CERT_VALIDATION_TIME_MOZILLAPKIX;
-    Telemetry::HistogramID failureTelemetry
-      = Telemetry::SSL_INITIAL_FAILED_CERT_VALIDATION_TIME_MOZILLAPKIX;
+  Telemetry::HistogramID successTelemetry
+    = Telemetry::SSL_SUCCESFUL_CERT_VALIDATION_TIME_MOZILLAPKIX;
+  Telemetry::HistogramID failureTelemetry
+    = Telemetry::SSL_INITIAL_FAILED_CERT_VALIDATION_TIME_MOZILLAPKIX;
 
-    
-    
-    PR_SetError(0, 0);
-    SECStatus rv = AuthCertificate(*mCertVerifier, mInfoObject, mCert,
-                                   mPeerCertChain, mStapledOCSPResponse.get(),
-                                   mSCTsFromTLSExtension.get(),
-                                   mProviderFlags, mTime);
-    MOZ_ASSERT(mPeerCertChain || rv != SECSuccess,
-               "AuthCertificate() should take ownership of chain on failure");
-    if (rv == SECSuccess) {
-      uint32_t interval = (uint32_t) ((TimeStamp::Now() - mJobStartTime).ToMilliseconds());
-      RefPtr<SSLServerCertVerificationResult> restart(
-        new SSLServerCertVerificationResult(mInfoObject, 0,
-                                            successTelemetry, interval));
-      restart->Dispatch();
-      Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, 1);
-      return NS_OK;
-    }
+  
+  
+  PR_SetError(0, 0);
+  SECStatus rv = AuthCertificate(*mCertVerifier, mInfoObject, mCert,
+                                 mPeerCertChain, mStapledOCSPResponse.get(),
+                                 mSCTsFromTLSExtension.get(),
+                                 mProviderFlags, mTime);
+  MOZ_ASSERT(mPeerCertChain || rv != SECSuccess,
+             "AuthCertificate() should take ownership of chain on failure");
+  if (rv == SECSuccess) {
+    uint32_t interval = (uint32_t) ((TimeStamp::Now() - mJobStartTime).ToMilliseconds());
+    RefPtr<SSLServerCertVerificationResult> restart(
+      new SSLServerCertVerificationResult(mInfoObject, 0,
+                                          successTelemetry, interval));
+    restart->Dispatch();
+    Telemetry::Accumulate(Telemetry::SSL_CERT_ERROR_OVERRIDES, 1);
+    return NS_OK;
+  }
 
-    
-    
-    error = PR_GetError();
+  
+  
+  error = PR_GetError();
 
-    TimeStamp now = TimeStamp::Now();
-    Telemetry::AccumulateTimeDelta(failureTelemetry, mJobStartTime, now);
+  TimeStamp now = TimeStamp::Now();
+  Telemetry::AccumulateTimeDelta(failureTelemetry, mJobStartTime, now);
 
-    if (error != 0) {
-      RefPtr<CertErrorRunnable> runnable(
-          CreateCertErrorRunnable(*mCertVerifier, error, mInfoObject, mCert,
-                                  mFdForLogging, mProviderFlags, mPRTime));
-      if (!runnable) {
-        
-        error = PR_GetError();
-      } else {
-        
-        
-        
-        
+  if (error != 0) {
+    RefPtr<CertErrorRunnable> runnable(
+        CreateCertErrorRunnable(*mCertVerifier, error, mInfoObject, mCert,
+                                mFdForLogging, mProviderFlags, mPRTime));
+    if (!runnable) {
+      
+      error = PR_GetError();
+    } else {
+      
+      
+      
+      
 
-        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("[%p][%p] Before dispatching CertErrorRunnable\n",
-                mFdForLogging, runnable.get()));
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("[%p][%p] Before dispatching CertErrorRunnable\n",
+              mFdForLogging, runnable.get()));
 
-        nsresult nrv;
-        nsCOMPtr<nsIEventTarget> stsTarget
-          = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &nrv);
-        if (NS_SUCCEEDED(nrv)) {
-          nrv = stsTarget->Dispatch(new CertErrorRunnableRunnable(runnable),
-                                    NS_DISPATCH_NORMAL);
-        }
-        if (NS_SUCCEEDED(nrv)) {
-          return NS_OK;
-        }
-
-        NS_ERROR("Failed to dispatch CertErrorRunnable");
-        error = PR_INVALID_STATE_ERROR;
+      nsresult nrv;
+      nsCOMPtr<nsIEventTarget> stsTarget
+        = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &nrv);
+      if (NS_SUCCEEDED(nrv)) {
+        nrv = stsTarget->Dispatch(new CertErrorRunnableRunnable(runnable),
+                                  NS_DISPATCH_NORMAL);
       }
+      if (NS_SUCCEEDED(nrv)) {
+        return NS_OK;
+      }
+
+      NS_ERROR("Failed to dispatch CertErrorRunnable");
+      error = PR_INVALID_STATE_ERROR;
     }
   }
 
