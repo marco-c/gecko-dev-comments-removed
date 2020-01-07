@@ -20,16 +20,9 @@ Services.scriptloader.loadSubScript(
 
 var {HUDService} = require("devtools/client/webconsole/hudservice");
 var WCUL10n = require("devtools/client/webconsole/webconsole-l10n");
-const DOCS_GA_PARAMS = `?${new URLSearchParams({
-  "utm_source": "mozilla",
-  "utm_medium": "firefox-console-errors",
-  "utm_campaign": "default"
-})}`;
-const STATUS_CODES_GA_PARAMS = `?${new URLSearchParams({
-  "utm_source": "mozilla",
-  "utm_medium": "devtools-webconsole",
-  "utm_campaign": "default"
-})}`;
+const DOCS_GA_PARAMS = "?utm_source=mozilla" +
+                       "&utm_medium=firefox-console-errors" +
+                       "&utm_campaign=default";
 
 Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", true);
 registerCleanupFunction(function* () {
@@ -426,47 +419,18 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 
 
 
-
-
-
-
-
-
-function simulateLinkClick(element, clickEventProps) {
-  
-  let oldOpenUILinkIn = window.openUILinkIn;
-
-  const onOpenLink = new Promise((resolve) => {
-    window.openUILinkIn = function (link, where) {
+function simulateLinkClick(element) {
+  return new Promise((resolve) => {
+    
+    let oldOpenUILinkIn = window.openUILinkIn;
+    window.openUILinkIn = function (link) {
       window.openUILinkIn = oldOpenUILinkIn;
-      resolve({link: link, where});
+      resolve(link);
     };
 
-    if (clickEventProps) {
-      
-      element.dispatchEvent(clickEventProps);
-    } else {
-      
-      element.click();
-    }
+    
+    element.click();
   });
-
-  
-  let timeoutId;
-  const onTimeout = new Promise(function(resolve, reject) {
-    timeoutId = setTimeout(() => {
-      window.openUILinkIn = oldOpenUILinkIn;
-      timeoutId = null;
-      resolve({link: null, where: null});
-    }, 1000);
-  });
-
-  onOpenLink.then(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  });
-  return Promise.race([onOpenLink, onTimeout]);
 }
 
 
