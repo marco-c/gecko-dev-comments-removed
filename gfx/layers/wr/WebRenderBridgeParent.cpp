@@ -852,6 +852,62 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
   }
 }
 
+void
+WebRenderBridgeParent::FlushSceneBuilds()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  if (gfxPrefs::WebRenderAsyncSceneBuild()) {
+    
+    
+    
+    
+    mApi->FlushSceneBuilder();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ScheduleGenerateFrame();
+  }
+}
+
+void
+WebRenderBridgeParent::FlushFrameGeneration()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_ASSERT(mWidget); 
+
+  
+  
+  mForceRendering = true;
+  mCompositorScheduler->FlushPendingComposite();
+  mForceRendering = false;
+}
+
+void
+WebRenderBridgeParent::FlushFramePresentation()
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  
+  
+  
+  
+  
+  mApi->WaitFlushed();
+}
+
 mozilla::ipc::IPCResult
 WebRenderBridgeParent::RecvGetSnapshot(PTextureParent* aTexture)
 {
@@ -1116,6 +1172,23 @@ WebRenderBridgeParent::RecvCapture()
   if (!mDestroyed) {
     mApi->Capture();
   }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+WebRenderBridgeParent::RecvSyncWithCompositor()
+{
+  FlushSceneBuilds();
+  if (RefPtr<WebRenderBridgeParent> root = GetRootWebRenderBridgeParent()) {
+    root->FlushFrameGeneration();
+  }
+  FlushFramePresentation();
+  
+  
+  
+  
+  mAsyncImageManager->ProcessPipelineUpdates();
+
   return IPC_OK();
 }
 
@@ -1456,11 +1529,9 @@ WebRenderBridgeParent::FlushRendering()
     return;
   }
 
-  mForceRendering = true;
-  mCompositorScheduler->FlushPendingComposite();
   
-  mApi->WaitFlushed();
-  mForceRendering = false;
+  FlushFrameGeneration();
+  FlushFramePresentation();
 }
 
 void
