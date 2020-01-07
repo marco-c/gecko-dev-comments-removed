@@ -563,6 +563,9 @@ sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
     
     sandbox.usesRepeatResampling = sandbox.d2d;
 
+    
+    sandbox.verify = prefs.getBoolPref("reftest.verify", false);
+
     if (!g.dumpedConditionSandbox) {
         g.logger.info("Dumping JSON representation of sandbox");
         g.logger.info(JSON.stringify(Cu.waiveXrays(sandbox)));
