@@ -1954,13 +1954,11 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
 
   WritingMode wm = rootFrame->GetWritingMode();
   const bool shrinkToFit = aOptions == ResizeReflowOptions::eBSizeLimit;
-  NS_PRECONDITION(shrinkToFit ||
-                  (wm.IsVertical() ? aWidth : aHeight) !=
-                    NS_UNCONSTRAINEDSIZE,
-                  "unconstrained bsize only usable with eBSizeLimit");
-  NS_PRECONDITION((wm.IsVertical() ? aHeight : aWidth) !=
-                    NS_UNCONSTRAINEDSIZE,
-                  "unconstrained isize not allowed");
+  MOZ_ASSERT(shrinkToFit ||
+             (wm.IsVertical() ? aWidth : aHeight) != NS_UNCONSTRAINEDSIZE,
+             "unconstrained bsize only usable with eBSizeLimit");
+  MOZ_ASSERT((wm.IsVertical() ? aHeight : aWidth) != NS_UNCONSTRAINEDSIZE,
+             "unconstrained isize not allowed");
   bool isBSizeChanging = wm.IsVertical() ? aOldWidth != aWidth
                                          : aOldHeight != aHeight;
   nscoord targetWidth = aWidth;
@@ -1975,20 +1973,36 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
     isBSizeChanging = true;
   }
 
-  mPresContext->SetVisibleArea(nsRect(0, 0, targetWidth, targetHeight));
+  const bool suppressingResizeReflow =
+    GetPresContext()->SuppressingResizeReflow();
 
   RefPtr<nsViewManager> viewManager = mViewManager;
   nsCOMPtr<nsIPresShell> kungFuDeathGrip(this);
 
-  if (!GetPresContext()->SuppressingResizeReflow()) {
+  if (!suppressingResizeReflow && shrinkToFit) {
     
     
-    mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
+    
+    
+    
+    
+    mDocument->FlushPendingNotifications(FlushType::Frames);
+  }
 
-    
-    {
-      nsAutoScriptBlocker scriptBlocker;
-      mPresContext->RestyleManager()->ProcessPendingRestyles();
+  if (!mIsDestroying) {
+    mPresContext->SetVisibleArea(nsRect(0, 0, targetWidth, targetHeight));
+  }
+
+  if (!mIsDestroying && !suppressingResizeReflow) {
+    if (!shrinkToFit) {
+      
+      
+      
+      
+      
+      
+      
+      mDocument->FlushPendingNotifications(FlushType::Frames);
     }
 
     rootFrame = mFrameConstructor->GetRootFrame();
