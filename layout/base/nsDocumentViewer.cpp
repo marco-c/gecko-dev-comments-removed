@@ -2113,10 +2113,8 @@ nsDocumentViewer::Show(void)
       nsCOMPtr<nsIDocShellTreeItem> root;
       treeItem->GetSameTypeRootTreeItem(getter_AddRefs(root));
       nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(root);
-      nsCOMPtr<nsISHistory> history;
-      webNav->GetSessionHistory(getter_AddRefs(history));
-      nsCOMPtr<nsISHistoryInternal> historyInt = do_QueryInterface(history);
-      if (historyInt) {
+      RefPtr<ChildSHistory> history = webNav->GetSessionHistory();
+      if (history) {
         int32_t prevIndex,loadedIndex;
         nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(treeItem);
         docShell->GetPreviousTransIndex(&prevIndex);
@@ -2125,7 +2123,8 @@ nsDocumentViewer::Show(void)
         printf("About to evict content viewers: prev=%d, loaded=%d\n",
                prevIndex, loadedIndex);
 #endif
-        historyInt->EvictOutOfRangeContentViewers(loadedIndex);
+        history->LegacySHistoryInternal()->
+          EvictOutOfRangeContentViewers(loadedIndex);
       }
     }
   }
@@ -2350,9 +2349,52 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   }
 
   
-  sheet = cache->ScrollbarsSheet();
-  if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+  bool shouldOverride = false;
+  
+  
+  nsCOMPtr<nsIDocShell> ds(mContainer);
+  nsCOMPtr<nsIDOMEventTarget> chromeHandler;
+  nsCOMPtr<nsIURI> uri;
+  RefPtr<StyleSheet> chromeSheet;
+
+  if (ds) {
+    ds->GetChromeEventHandler(getter_AddRefs(chromeHandler));
+  }
+  if (chromeHandler) {
+    nsCOMPtr<Element> elt(do_QueryInterface(chromeHandler));
+    if (elt) {
+      nsCOMPtr<nsIURI> baseURI = elt->GetBaseURI();
+
+      nsAutoString sheets;
+      elt->GetAttribute(NS_LITERAL_STRING("usechromesheets"), sheets);
+      if (!sheets.IsEmpty() && baseURI) {
+        RefPtr<css::Loader> cssLoader =
+          new css::Loader(aDocument->GetDocGroup());
+
+        char *str = ToNewCString(sheets);
+        char *newStr = str;
+        char *token;
+        while ( (token = nsCRT::strtok(newStr, ", ", &newStr)) ) {
+          NS_NewURI(getter_AddRefs(uri), nsDependentCString(token), nullptr,
+                    baseURI);
+          if (!uri) continue;
+
+          cssLoader->LoadSheetSync(uri, &chromeSheet);
+          if (!chromeSheet) continue;
+
+          styleSet->PrependStyleSheet(SheetType::Agent, chromeSheet->AsServo());
+          shouldOverride = true;
+        }
+        free(str);
+      }
+    }
+  }
+
+  if (!shouldOverride) {
+    sheet = cache->ScrollbarsSheet();
+    if (sheet) {
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+    }
   }
 
   if (!aDocument->IsSVGDocument()) {
@@ -2364,6 +2406,11 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     
     
     
+
+    sheet = cache->NumberControlSheet();
+    if (sheet) {
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsServo());
+    }
 
     sheet = cache->FormsSheet();
     if (sheet) {

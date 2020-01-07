@@ -1789,15 +1789,9 @@ nsSHistory::GetReferringURI(nsIURI** aURI)
 }
 
 NS_IMETHODIMP
-nsSHistory::SetSessionHistory(nsISHistory* aSessionHistory)
+nsSHistory::GetSessionHistoryXPCOM(nsISupports** aSessionHistory)
 {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSHistory::GetSessionHistory(nsISHistory** aSessionHistory)
-{
+  *aSessionHistory = nullptr;
   
   return NS_OK;
 }
