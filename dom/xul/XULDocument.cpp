@@ -2664,17 +2664,15 @@ XULDocument::DoneWalking()
         
         
         
-        nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell();
-        if (item) {
+        if (nsCOMPtr<nsIDocShellTreeItem> item = GetDocShell()) {
             nsCOMPtr<nsIDocShellTreeOwner> owner;
             item->GetTreeOwner(getter_AddRefs(owner));
-            nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner);
-            if (xulWin) {
+            if (nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(owner)) {
                 nsCOMPtr<nsIDocShell> xulWinShell;
                 xulWin->GetDocShell(getter_AddRefs(xulWinShell));
                 if (SameCOMIdentity(xulWinShell, item)) {
                     
-                    xulWin->ApplyChromeFlags();
+                    xulWin->BeforeStartLayout();
                 }
             }
         }
@@ -3346,7 +3344,7 @@ XULDocument::OverlayForwardReference::Resolve()
             return eResolve_Error;
         }
 
-        rv = XULDocument::InsertElement(root, mOverlay, notify);
+        rv = mDocument->InsertElement(root, mOverlay, notify);
         if (NS_FAILED(rv)) return eResolve_Error;
 
         target = mOverlay;
