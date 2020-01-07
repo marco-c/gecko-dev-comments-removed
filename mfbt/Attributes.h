@@ -238,6 +238,12 @@
 #  endif
 #endif
 
+#ifdef __clang__
+#  ifdef MOZ_HAVE_NO_SANITIZE_ATTR
+#    define MOZ_HAVE_UNSIGNED_OVERFLOW_SANITIZE_ATTR
+#    define MOZ_HAVE_SIGNED_OVERFLOW_SANITIZE_ATTR
+#  endif
+#endif
 
 
 
@@ -271,7 +277,8 @@
 
 
 
-#if defined(MOZ_HAVE_NO_SANITIZE_ATTR)
+
+#ifdef MOZ_HAVE_UNSIGNED_OVERFLOW_SANITIZE_ATTR
 #  define MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
 #else
 #  define MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
@@ -299,7 +306,7 @@
 
 
 
-#if defined(MOZ_HAVE_NO_SANITIZE_ATTR)
+#ifdef MOZ_HAVE_SIGNED_OVERFLOW_SANITIZE_ATTR
 #  define MOZ_NO_SANITIZE_SIGNED_OVERFLOW __attribute__((no_sanitize("signed-integer-overflow")))
 #else
 #  define MOZ_NO_SANITIZE_SIGNED_OVERFLOW
