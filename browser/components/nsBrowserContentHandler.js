@@ -174,77 +174,114 @@ function getPostUpdateOverridePage(defaultOverridePage) {
 }
 
 
-const NO_EXTERNAL_URIS = 1;
 
-function openWindow(parent, url, target, features, args, noExternalArgs) {
-  if (noExternalArgs == NO_EXTERNAL_URIS) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function openBrowserWindow(cmdLine, urlOrUrlList, postData = null,
+                           forcePrivate = false) {
+  let chromeURL = Services.prefs.getCharPref("browser.chromeURL");
+
+  let args;
+  if (!urlOrUrlList) {
     
-    var argstring;
-    if (args) {
-      argstring = Cc["@mozilla.org/supports-string;1"]
-                    .createInstance(nsISupportsString);
-      argstring.data = args;
-    }
-
-    return Services.ww.openWindow(parent, url, target, features, argstring);
-  }
-
-  
-  var argArray = Cc["@mozilla.org/array;1"]
-                    .createInstance(Ci.nsIMutableArray);
-
-  
-  var stringArgs = null;
-  if (args instanceof Array) 
-    stringArgs = args;
-  else if (args) 
-    stringArgs = [args];
-
-  if (stringArgs) {
+    args = [gBrowserContentHandler.defaultArgs];
+  } else if (Array.isArray(urlOrUrlList)) {
     
-    var uriArray = Cc["@mozilla.org/array;1"]
-                       .createInstance(Ci.nsIMutableArray);
-    stringArgs.forEach(function(uri) {
+    let uriArray = Cc["@mozilla.org/array;1"]
+                     .createInstance(Ci.nsIMutableArray);
+    urlOrUrlList.forEach(function(uri) {
       var sstring = Cc["@mozilla.org/supports-string;1"]
                       .createInstance(nsISupportsString);
       sstring.data = uri;
       uriArray.appendElement(sstring);
     });
-    argArray.appendElement(uriArray);
+    args = [uriArray];
   } else {
-    argArray.appendElement(null);
+    
+    
+    args = [urlOrUrlList,
+            null, 
+            null, 
+            postData];
+  }
+
+  if (cmdLine.state == nsICommandLine.STATE_INITIAL_LAUNCH) {
+    let win = Services.wm.getMostRecentWindow("navigator:blank");
+    if (win) {
+      
+      
+      win.document.documentElement.removeAttribute("windowtype");
+
+      if (forcePrivate) {
+        
+        
+        
+        win.QueryInterface(Ci.nsIInterfaceRequestor)
+           .getInterface(Ci.nsIWebNavigation)
+           .QueryInterface(Ci.nsILoadContext)
+           .usePrivateBrowsing = true;
+      }
+
+      win.location = chromeURL;
+      win.arguments = args; 
+
+      return;
+    }
   }
 
   
-  
-  
-  argArray.appendElement(null); 
-  argArray.appendElement(null); 
-  argArray.appendElement(null); 
-  argArray.appendElement(null); 
+  if (!urlOrUrlList) {
+    
+    
+    let [url] = args;
+    args = Cc["@mozilla.org/supports-string;1"]
+             .createInstance(nsISupportsString);
+    args.data = url;
+  } else {
+    
+    if (args.length > 1) {
+      let string = Cc["@mozilla.org/supports-string;1"]
+                     .createInstance(Ci.nsISupportsString);
+      string.data = args[0];
+      args[0] = string;
+    }
+    let array = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+    args.forEach(a => { array.appendElement(a); });
+    args = array;
+  }
 
-  return Services.ww.openWindow(parent, url, target, features, argArray);
+  let features = "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine);
+  if (forcePrivate)
+    features += ",private";
+
+  Services.ww.openWindow(null, chromeURL, "_blank", features, args);
 }
 
-function openPreferences(extraArgs) {
+function openPreferences(cmdLine, extraArgs) {
   if (extraArgs && extraArgs.origin) {
     Services.telemetry.getHistogramById("FX_PREFERENCES_OPENED_VIA").add(extraArgs.origin);
   } else {
     Services.telemetry.getHistogramById("FX_PREFERENCES_OPENED_VIA").add("other");
   }
-  var args = Cc["@mozilla.org/array;1"]
-                     .createInstance(Ci.nsIMutableArray);
-
-  var wuri = Cc["@mozilla.org/supports-string;1"]
-               .createInstance(Ci.nsISupportsString);
-  wuri.data = "about:preferences";
-
-  args.appendElement(wuri);
-
-  Services.ww.openWindow(null, gBrowserContentHandler.chromeURL,
-                         "_blank",
-                         "chrome,dialog=no,all",
-                         args);
+  openBrowserWindow(cmdLine, "about:preferences");
 }
 
 function logSystemBasedSearch(engine) {
@@ -260,26 +297,8 @@ function doSearch(searchTerm, cmdLine) {
   var submission = engine.getSubmission(searchTerm, null, "system");
 
   
-  var args = Cc["@mozilla.org/array;1"]
-                     .createInstance(Ci.nsIMutableArray);
-
-  var wuri = Cc["@mozilla.org/supports-string;1"]
-               .createInstance(Ci.nsISupportsString);
-  wuri.data = submission.uri.spec;
-
-  args.appendElement(wuri);
-  args.appendElement(null);
-  args.appendElement(null);
-  args.appendElement(submission.postData);
-
   
-  
-
-  return Services.ww.openWindow(null, gBrowserContentHandler.chromeURL,
-                                "_blank",
-                                "chrome,dialog=no,all" +
-                                gBrowserContentHandler.getFeatures(cmdLine),
-                                args);
+  openBrowserWindow(cmdLine, submission.uri.spec, submission.postData);
 }
 
 function nsBrowserContentHandler() {
@@ -296,20 +315,6 @@ nsBrowserContentHandler.prototype = {
   },
 
   
-
-  mChromeURL: null,
-
-  get chromeURL() {
-    if (this.mChromeURL) {
-      return this.mChromeURL;
-    }
-
-    this.mChromeURL = Services.prefs.getCharPref("browser.chromeURL");
-
-    return this.mChromeURL;
-  },
-
-  
   QueryInterface: XPCOMUtils.generateQI([nsICommandLineHandler,
                                          nsIBrowserHandler,
                                          nsIContentHandler,
@@ -318,10 +323,7 @@ nsBrowserContentHandler.prototype = {
   
   handle: function bch_handle(cmdLine) {
     if (cmdLine.handleFlag("browser", false)) {
-      
-      openWindow(null, this.chromeURL, "_blank",
-                 "chrome,dialog=no,all" + this.getFeatures(cmdLine),
-                 this.defaultArgs, NO_EXTERNAL_URIS);
+      openBrowserWindow(cmdLine);
       cmdLine.preventDefault = true;
     }
 
@@ -342,9 +344,7 @@ nsBrowserContentHandler.prototype = {
         let uri = resolveURIInternal(cmdLine, uriparam);
         if (!shouldLoadURI(uri))
           continue;
-        openWindow(null, this.chromeURL, "_blank",
-                   "chrome,dialog=no,all" + this.getFeatures(cmdLine),
-                   uri.spec);
+        openBrowserWindow(cmdLine, uri.spec);
         cmdLine.preventDefault = true;
       }
     } catch (e) {
@@ -368,7 +368,7 @@ nsBrowserContentHandler.prototype = {
       
       if (chromeParam == "chrome://browser/content/pref/pref.xul" ||
           chromeParam == "chrome://browser/content/preferences/preferences.xul") {
-        openPreferences({origin: "commandLineLegacy"});
+        openPreferences(cmdLine, {origin: "commandLineLegacy"});
         cmdLine.preventDefault = true;
       } else try {
         let resolvedURI = resolveURIInternal(cmdLine, chromeParam);
@@ -382,7 +382,7 @@ nsBrowserContentHandler.prototype = {
         if (isLocal(resolvedURI)) {
           
           let features = "chrome,dialog=no,all" + this.getFeatures(cmdLine);
-          openWindow(null, resolvedURI.spec, "_blank", features);
+          Services.ww.openWindow(null, resolvedURI.spec, "_blank", features, null);
           cmdLine.preventDefault = true;
         } else {
           dump("*** Preventing load of web URI as chrome\n");
@@ -393,7 +393,7 @@ nsBrowserContentHandler.prototype = {
       }
     }
     if (cmdLine.handleFlag("preferences", false)) {
-      openPreferences({origin: "commandLineLegacy"});
+      openPreferences(cmdLine, {origin: "commandLineLegacy"});
       cmdLine.preventDefault = true;
     }
     if (cmdLine.handleFlag("silent", false))
@@ -422,13 +422,8 @@ nsBrowserContentHandler.prototype = {
       }
       
       if (cmdLine.handleFlag("private-window", false)) {
-        let features = "chrome,dialog=no,all";
-        if (PrivateBrowsingUtils.enabled) {
-          features += ",private";
-        }
-        openWindow(null, this.chromeURL, "_blank",
-          features + this.getFeatures(cmdLine),
-          "about:privatebrowsing");
+        openBrowserWindow(cmdLine, "about:privatebrowsing", null,
+                          PrivateBrowsingUtils.enabled);
         cmdLine.preventDefault = true;
       }
     }
@@ -449,9 +444,7 @@ nsBrowserContentHandler.prototype = {
     if (fileParam) {
       var file = cmdLine.resolveFile(fileParam);
       var fileURI = Services.io.newFileURI(file);
-      openWindow(null, this.chromeURL, "_blank",
-                 "chrome,dialog=no,all" + this.getFeatures(cmdLine),
-                 fileURI.spec);
+      openBrowserWindow(cmdLine, fileURI.spec);
       cmdLine.preventDefault = true;
     }
 
@@ -690,11 +683,7 @@ function handURIToExistingBrowser(uri, location, cmdLine, forcePrivate, triggeri
   var navWin = RecentWindow.getMostRecentBrowserWindow({private: allowPrivate});
   if (!navWin) {
     
-    var features = "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine);
-    if (forcePrivate) {
-      features += ",private";
-    }
-    openWindow(null, gBrowserContentHandler.chromeURL, "_blank", features, uri.spec);
+    openBrowserWindow(cmdLine, uri.spec, null, forcePrivate);
     return;
   }
 
@@ -794,9 +783,7 @@ nsDefaultCommandLineHandler.prototype = {
 
       var URLlist = urilist.filter(shouldLoadURI).map(u => u.spec);
       if (URLlist.length) {
-        openWindow(null, gBrowserContentHandler.chromeURL, "_blank",
-                   "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine),
-                   URLlist);
+        openBrowserWindow(cmdLine, URLlist);
       }
 
     } else if (!cmdLine.preventDefault) {
@@ -810,19 +797,7 @@ nsDefaultCommandLineHandler.prototype = {
           return;
         }
       }
-      if (cmdLine.state == nsICommandLine.STATE_INITIAL_LAUNCH) {
-        let win = Services.wm.getMostRecentWindow("navigator:blank");
-        if (win) {
-          win.location = gBrowserContentHandler.chromeURL;
-          win.arguments = [gBrowserContentHandler.defaultArgs];
-          return;
-        }
-      }
-
-      
-      openWindow(null, gBrowserContentHandler.chromeURL, "_blank",
-                 "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine),
-                 gBrowserContentHandler.defaultArgs, NO_EXTERNAL_URIS);
+      openBrowserWindow(cmdLine);
     } else {
       
       
