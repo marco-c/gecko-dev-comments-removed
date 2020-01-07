@@ -4511,7 +4511,7 @@ pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2
 
 
 
-pref("image.animated.decode-on-demand.threshold-kb", 4194303);
+pref("image.animated.decode-on-demand.threshold-kb", 20480);
 
 
 
