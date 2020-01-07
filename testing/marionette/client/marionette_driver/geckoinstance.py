@@ -50,6 +50,10 @@ class GeckoInstance(object):
         
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
 
+        
+        "dom.disable_beforeunload": True,
+
+        
         "dom.ipc.reportProcessHangs": False,
 
         
