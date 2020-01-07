@@ -639,6 +639,13 @@ protected:
 
   
   
+  static nscoord LineEdge(const nsTArray<nsRect>& aIntervals,
+                          const nscoord aBStart,
+                          const nscoord aBEnd,
+                          bool aIsLineLeft);
+
+  
+  
   
   
   
@@ -1446,10 +1453,6 @@ public:
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override;
 
 private:
-  nscoord LineEdge(const nscoord aBStart,
-                   const nscoord aBEnd,
-                   bool aLeft) const;
-
   
   
   
@@ -1869,57 +1872,17 @@ nsFloatManager::ImageShapeInfo::CreateInterval(
 }
 
 nscoord
-nsFloatManager::ImageShapeInfo::LineEdge(const nscoord aBStart,
-                                         const nscoord aBEnd,
-                                         bool aLeft) const
-{
-  MOZ_ASSERT(aBStart <= aBEnd,
-             "The band's block start is greater than its block end?");
-
-  
-  
-  
-
-  
-  
-  
-
-  nscoord lineEdge = aLeft ? nscoord_MAX : nscoord_MIN;
-
-  size_t intervalCount = mIntervals.Length();
-  for (size_t i = MinIntervalIndexContainingY(mIntervals, aBStart);
-	   i < intervalCount; ++i) {
-    
-    
-    
-    auto& interval = mIntervals[i];
-    nscoord bCoord = interval.Y();
-    if (bCoord > aBEnd) {
-      break;
-    }
-    
-    if (aLeft) {
-      lineEdge = std::min(lineEdge, interval.X());
-    } else {
-      lineEdge = std::max(lineEdge, interval.XMost());
-    }
-  }
-
-  return lineEdge;
-}
-
-nscoord
 nsFloatManager::ImageShapeInfo::LineLeft(const nscoord aBStart,
                                          const nscoord aBEnd) const
 {
-  return LineEdge(aBStart, aBEnd, true);
+  return LineEdge(mIntervals, aBStart, aBEnd, true);
 }
 
 nscoord
 nsFloatManager::ImageShapeInfo::LineRight(const nscoord aBStart,
                                           const nscoord aBEnd) const
 {
-  return LineEdge(aBStart, aBEnd, false);
+  return LineEdge(mIntervals, aBStart, aBEnd, false);
 }
 
 void
@@ -2536,32 +2499,6 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(
                  logicalPoint.B(aWM));
 }
 
- size_t
-nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
-  const nsTArray<nsRect>& aIntervals,
-  const nscoord aTargetY)
-{
-  
-  
-  
-  size_t startIdx = 0;
-  size_t endIdx = aIntervals.Length();
-  while (startIdx < endIdx) {
-    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
-    if (aIntervals[midIdx].ContainsY(aTargetY)) {
-      return midIdx;
-    }
-    nscoord midY = aIntervals[midIdx].Y();
-    if (midY < aTargetY) {
-      startIdx = midIdx + 1;
-    } else {
-      endIdx = midIdx;
-    }
-  }
-
-  return endIdx;
-}
-
  nsFloatManager::ShapeInfo::dfType
 nsFloatManager::ShapeInfo::CalcUsedShapeMargin5X(
   nscoord aShapeMargin,
@@ -2633,6 +2570,73 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
   }
 
   return logicalRadii;
+}
+
+ size_t
+nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
+  const nsTArray<nsRect>& aIntervals,
+  const nscoord aTargetY)
+{
+  
+  
+  
+  size_t startIdx = 0;
+  size_t endIdx = aIntervals.Length();
+  while (startIdx < endIdx) {
+    size_t midIdx = startIdx + (endIdx - startIdx) / 2;
+    if (aIntervals[midIdx].ContainsY(aTargetY)) {
+      return midIdx;
+    }
+    nscoord midY = aIntervals[midIdx].Y();
+    if (midY < aTargetY) {
+      startIdx = midIdx + 1;
+    } else {
+      endIdx = midIdx;
+    }
+  }
+
+  return endIdx;
+}
+
+ nscoord
+nsFloatManager::ShapeInfo::LineEdge(const nsTArray<nsRect>& aIntervals,
+                                    const nscoord aBStart,
+                                    const nscoord aBEnd,
+                                    bool aIsLineLeft)
+{
+  MOZ_ASSERT(aBStart <= aBEnd,
+             "The band's block start is greater than its block end?");
+
+  
+  
+  
+
+  
+  
+  
+
+  nscoord lineEdge = aIsLineLeft ? nscoord_MAX : nscoord_MIN;
+
+  size_t intervalCount = aIntervals.Length();
+  for (size_t i = MinIntervalIndexContainingY(aIntervals, aBStart);
+       i < intervalCount; ++i) {
+    
+    
+    
+    auto& interval = aIntervals[i];
+    nscoord bCoord = interval.Y();
+    if (bCoord > aBEnd) {
+      break;
+    }
+    
+    if (aIsLineLeft) {
+      lineEdge = std::min(lineEdge, interval.X());
+    } else {
+      lineEdge = std::max(lineEdge, interval.XMost());
+    }
+  }
+
+  return lineEdge;
 }
 
 
