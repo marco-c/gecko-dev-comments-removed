@@ -526,6 +526,12 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
   if (!content_type)
     return NS_ERROR_FAILURE;
 
+  
+  
+  if (g_content_type_is_unknown(content_type)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   GAppInfo *app_info = g_app_info_get_default_for_type(content_type, false);
   if (app_info) {
     nsGIOMimeApp *mozApp = new nsGIOMimeApp(app_info);
