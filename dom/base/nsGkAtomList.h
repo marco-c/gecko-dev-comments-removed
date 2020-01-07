@@ -2286,6 +2286,18 @@ GK_ATOM(windows_theme_zune, "windows-theme-zune")
 GK_ATOM(windows_theme_generic, "windows-theme-generic")
 
 
+GK_ATOM(aero, "aero")
+GK_ATOM(aero_lite, "aero-lite")
+GK_ATOM(luna_blue, "luna-blue")
+GK_ATOM(luna_olive, "luna-olive")
+GK_ATOM(luna_silver, "luna-silver")
+GK_ATOM(royale, "royale")
+GK_ATOM(zune, "zune")
+GK_ATOM(windows_win7, "windows-win7")
+GK_ATOM(windows_win8, "windows-win8")
+GK_ATOM(windows_win10, "windows-win10")
+
+
 GK_ATOM(_moz_scrollbar_start_backward, "-moz-scrollbar-start-backward")
 GK_ATOM(_moz_scrollbar_start_forward, "-moz-scrollbar-start-forward")
 GK_ATOM(_moz_scrollbar_end_backward, "-moz-scrollbar-end-backward")
