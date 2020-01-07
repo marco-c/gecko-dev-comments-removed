@@ -1488,9 +1488,6 @@ var gBrowserInit = {
 
     UpdateUrlbarSearchSplitterState();
 
-    
-    gBrowser.tabContainer.updateVisibility();
-
     BookmarkingUI.init();
     AutoShowBookmarksToolbar.init();
 
