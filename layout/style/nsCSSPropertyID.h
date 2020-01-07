@@ -21,16 +21,16 @@
 enum nsCSSPropertyID {
   eCSSProperty_UNKNOWN = -1,
 
-  #define CSS_PROP_LONGHAND(name_, id_, ...) eCSSProperty_##id_,
-  #include "mozilla/ServoCSSPropList.h"
-  #undef CSS_PROP_LONGHAND
+  #define CSS_PROP(name_, id_, ...) eCSSProperty_##id_,
+  #include "nsCSSPropList.h"
+  #undef CSS_PROP
 
   eCSSProperty_COUNT_no_shorthands,
   
   eCSSProperty_COUNT_DUMMY = eCSSProperty_COUNT_no_shorthands - 1,
 
   #define CSS_PROP_SHORTHAND(name_, id_, ...) eCSSProperty_##id_,
-  #include "mozilla/ServoCSSPropList.h"
+  #include "nsCSSPropList.h"
   #undef CSS_PROP_SHORTHAND
 
   eCSSProperty_COUNT,
@@ -38,8 +38,8 @@ enum nsCSSPropertyID {
   eCSSProperty_COUNT_DUMMY2 = eCSSProperty_COUNT - 1,
 
   #define CSS_PROP_ALIAS(aliasname_, aliasid_, id_, method_, pref_) \
-    eCSSPropertyAlias_##aliasid_,
-  #include "mozilla/ServoCSSPropList.h"
+    eCSSPropertyAlias_##method_,
+  #include "nsCSSPropAliasList.h"
   #undef CSS_PROP_ALIAS
 
   eCSSProperty_COUNT_with_aliases,
