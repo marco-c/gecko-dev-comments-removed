@@ -665,11 +665,6 @@ public:
   virtual void ResolveScheduledSVGPresAttrs() override;
   bool IsSynthesized();
 
-  
-  static bool IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject);
-  
-  
-  static bool IsWebComponentsEnabled(const nsINode* aNode);
 private:
   void AddOnDemandBuiltInUASheet(mozilla::StyleSheet* aSheet);
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
