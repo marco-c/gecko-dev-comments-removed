@@ -2951,6 +2951,7 @@ nsLocalFile::IsExecutable(bool* aResult)
       "scf",         
       "scr",
       "sct",
+      "settingcontent-ms",
       "shb",
       "shs",
       "url",
