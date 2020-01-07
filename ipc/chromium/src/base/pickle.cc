@@ -117,10 +117,6 @@ bool Pickle::IteratorHasRoomFor(const PickleIterator& iter, uint32_t len) const 
   return iter.iter_.HasRoomFor(AlignInt(len));
 }
 
-bool Pickle::HasBytesAvailable(const PickleIterator* iter, uint32_t len) const {
-  return iter->iter_.HasBytesAvailable(buffers_, len);
-}
-
 void Pickle::UpdateIter(PickleIterator* iter, uint32_t bytes) const {
   
   MOZ_RELEASE_ASSERT(bytes < 64);
@@ -689,13 +685,7 @@ bool Pickle::WriteWString(const std::wstring& value) {
 }
 
 bool Pickle::WriteData(const char* data, uint32_t length) {
-#ifdef FUZZING
-  std::string v(data, length);
-  Singleton<mozilla::ipc::Faulty>::get()->FuzzData(v, v.size());
-  return WriteInt(v.size()) && WriteBytes(v.data(), v.size());
-#else
    return WriteInt(length) && WriteBytes(data, length);
-#endif
 }
 
 void Pickle::InputBytes(const char* data, uint32_t length) {
