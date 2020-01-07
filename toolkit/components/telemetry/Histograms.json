@@ -6408,7 +6408,7 @@
     "alert_emails": ["jaws@mozilla.com"],
     "expires_in_version": "66",
     "kind": "categorical",
-    "labels": ["unknown", "searchresults", "general", "applications", "privacy", "sync", "advanced", "search"],
+    "labels": ["unknown", "searchresults", "general", "home", "applications", "privacy", "sync", "advanced", "search"],
     "releaseChannelCollection": "opt-out",
     "description": "Count how often each preference category is opened."
   },
@@ -7204,6 +7204,13 @@
     "high": 30,
     "n_buckets": 29,
     "description": "The size (MB) of the ping data submitted to Telemetry exceeding the maximum size"
+  },
+  "TELEMETRY_DISCARDED_CONTENT_PINGS_COUNT": {
+    "record_in_processes": ["main"],
+    "alert_emails": ["telemetry-client-dev@mozilla.com"],
+    "expires_in_version": "never",
+    "kind": "count",
+    "description": "Count of discarded content payloads."
   },
   "TELEMETRY_COMPRESS": {
     "record_in_processes": ["main"],
