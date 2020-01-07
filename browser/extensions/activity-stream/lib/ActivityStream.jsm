@@ -41,10 +41,6 @@ const REASON_ADDON_UNINSTALL = 6;
 
 
 const PREFS_CONFIG = new Map([
-  ["aboutHome.autoFocus", {
-    title: "Focus the about:home search box on load",
-    value: false
-  }],
   ["default.sites", {
     title: "Comma-separated list of default top sites to fill in behind visited sites",
     getValue: ({geo}) => DEFAULT_SITES.get(DEFAULT_SITES.has(geo) ? geo : "")

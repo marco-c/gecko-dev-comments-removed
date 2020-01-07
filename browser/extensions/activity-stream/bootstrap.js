@@ -181,7 +181,7 @@ this.startup = function startup(data, reason) {
   startupReason = reason;
 
   
-  if (Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup).startingUp) {
+  if (Services.startup.startingUp) {
     Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
   } else {
     
