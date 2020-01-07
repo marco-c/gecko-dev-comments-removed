@@ -497,7 +497,7 @@ class ChromeProfile(BaseProfile):
         @classmethod
         def is_addon(self, addon):
             
-            return os.path.exists(addon)
+            return False
 
     def __init__(self, **kwargs):
         super(ChromeProfile, self).__init__(**kwargs)
