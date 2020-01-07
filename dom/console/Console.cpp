@@ -1084,7 +1084,7 @@ Console::IsEnabled(JSContext* aCx) const
   }
 
   
-  return nsContentUtils::DevToolsEnabled(aCx);
+  return DOMPrefs::DevToolsEnabled();
 }
 
 void
