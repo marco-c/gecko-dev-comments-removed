@@ -240,6 +240,13 @@ public:
     RefPtr<FilterNode> filter = mFilter;
     if (mFilter->GetBackendType() == FilterBackend::FILTER_BACKEND_CAPTURE) {
       filter = static_cast<FilterNodeCapture*>(filter.get())->Validate(aDT);
+
+      
+      
+      
+      if (!filter) {
+        return;
+      }
     }
     aDT->DrawFilter(filter, mSourceRect, mDestPoint, mOptions);
   }
