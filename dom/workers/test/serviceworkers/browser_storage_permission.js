@@ -10,6 +10,9 @@ const SW_SCRIPT = BASE_URI + "empty.js";
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({"set": [
+    
+    
+    ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
   ]});
