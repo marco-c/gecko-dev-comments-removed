@@ -286,7 +286,6 @@ ToObject(JSContext* cx, HandleValue v)
     return js::ToObjectSlow(cx, v, false);
 }
 
-namespace detail {
 
 
 
@@ -300,13 +299,12 @@ namespace detail {
 
 
 
-
-template<typename ResultType>
-inline ResultType
-ToUintWidth(double d)
+template<typename UnsignedInteger>
+inline UnsignedInteger
+ToUnsignedInteger(double d)
 {
-    static_assert(mozilla::IsUnsigned<ResultType>::value,
-                  "ResultType must be an unsigned type");
+    static_assert(mozilla::IsUnsigned<UnsignedInteger>::value,
+                  "UnsignedInteger must be an unsigned type");
 
     uint64_t bits = mozilla::BitwiseCast<uint64_t>(d);
     unsigned DoubleExponentShift = mozilla::FloatingPoint<double>::kExponentShift;
@@ -330,18 +328,18 @@ ToUintWidth(double d)
     
     
     
-    const size_t ResultWidth = CHAR_BIT * sizeof(ResultType);
+    constexpr size_t ResultWidth = CHAR_BIT * sizeof(UnsignedInteger);
     if (exponent >= DoubleExponentShift + ResultWidth)
         return 0;
 
     
     
     
-    static_assert(sizeof(ResultType) <= sizeof(uint64_t),
-                  "Left-shifting below would lose upper bits");
-    ResultType result = (exponent > DoubleExponentShift)
-                        ? ResultType(bits << (exponent - DoubleExponentShift))
-                        : ResultType(bits >> (DoubleExponentShift - exponent));
+    static_assert(sizeof(UnsignedInteger) <= sizeof(uint64_t),
+                  "left-shifting below would lose upper bits");
+    UnsignedInteger result = (exponent > DoubleExponentShift)
+                             ? UnsignedInteger(bits << (exponent - DoubleExponentShift))
+                             : UnsignedInteger(bits >> (DoubleExponentShift - exponent));
 
     
     
@@ -368,7 +366,7 @@ ToUintWidth(double d)
     
     
     if (exponent < ResultWidth) {
-        ResultType implicitOne = ResultType(1) << exponent;
+        UnsignedInteger implicitOne = UnsignedInteger(1) << exponent;
         result &= implicitOne - 1; 
         result += implicitOne; 
     }
@@ -377,28 +375,27 @@ ToUintWidth(double d)
     return (bits & mozilla::FloatingPoint<double>::kSignBit) ? ~result + 1 : result;
 }
 
-template<typename ResultType>
-inline ResultType
-ToIntWidth(double d)
+template<typename SignedInteger>
+inline SignedInteger
+ToSignedInteger(double d)
 {
-    static_assert(mozilla::IsSigned<ResultType>::value,
-                  "ResultType must be a signed type");
+    static_assert(mozilla::IsSigned<SignedInteger>::value,
+                  "SignedInteger must be a signed type");
 
-    using UnsignedResult = typename mozilla::MakeUnsigned<ResultType>::Type;
-    UnsignedResult u = ToUintWidth<UnsignedResult>(d);
+    using UnsignedInteger = typename mozilla::MakeUnsigned<SignedInteger>::Type;
+    UnsignedInteger u = ToUnsignedInteger<UnsignedInteger>(d);
 
     return mozilla::WrapToSigned(u);
 }
 
-} 
 
 
-inline int32_t
-ToInt32(double d)
-{
-    
-    
 #if defined (__arm__) && defined (__GNUC__) && !defined(__clang__)
+
+template<>
+inline int32_t
+ToSignedInteger<int32_t>(double d)
+{
     int32_t i;
     uint32_t    tmp0;
     uint32_t    tmp1;
@@ -519,57 +516,94 @@ ToInt32(double d)
     : "cc"
         );
     return i;
-#else
-    return detail::ToIntWidth<int32_t>(d);
-#endif
 }
 
+#endif 
 
-inline uint32_t
-ToUint32(double d)
+namespace detail {
+
+template<typename IntegerType,
+         bool IsUnsigned = mozilla::IsUnsigned<IntegerType>::value>
+struct ToSignedOrUnsignedInteger;
+
+template<typename IntegerType>
+struct ToSignedOrUnsignedInteger<IntegerType, true>
 {
-    return detail::ToUintWidth<uint32_t>(d);
+    static IntegerType compute(double d) {
+        return ToUnsignedInteger<IntegerType>(d);
+    }
+};
+
+template<typename IntegerType>
+struct ToSignedOrUnsignedInteger<IntegerType, false>
+{
+    static IntegerType compute(double d) {
+        return ToSignedInteger<IntegerType>(d);
+    }
+};
+
+} 
+
+template<typename IntegerType>
+inline IntegerType
+ToSignedOrUnsignedInteger(double d)
+{
+    return detail::ToSignedOrUnsignedInteger<IntegerType>::compute(d);
 }
 
 
 inline int8_t
 ToInt8(double d)
 {
-    return detail::ToIntWidth<int8_t>(d);
+    return ToSignedInteger<int8_t>(d);
 }
 
 
 inline int8_t
 ToUint8(double d)
 {
-    return detail::ToUintWidth<uint8_t>(d);
+    return ToUnsignedInteger<uint8_t>(d);
 }
 
 
 inline int16_t
 ToInt16(double d)
 {
-    return detail::ToIntWidth<int16_t>(d);
+    return ToSignedInteger<int16_t>(d);
 }
 
 inline uint16_t
 ToUint16(double d)
 {
-    return detail::ToUintWidth<uint16_t>(d);
+    return ToUnsignedInteger<uint16_t>(d);
+}
+
+
+inline int32_t
+ToInt32(double d)
+{
+    return ToSignedInteger<int32_t>(d);
+}
+
+
+inline uint32_t
+ToUint32(double d)
+{
+    return ToUnsignedInteger<uint32_t>(d);
 }
 
 
 inline int64_t
 ToInt64(double d)
 {
-    return detail::ToIntWidth<int64_t>(d);
+    return ToSignedInteger<int64_t>(d);
 }
 
 
 inline uint64_t
 ToUint64(double d)
 {
-    return detail::ToUintWidth<uint64_t>(d);
+    return ToUnsignedInteger<uint64_t>(d);
 }
 
 } 
