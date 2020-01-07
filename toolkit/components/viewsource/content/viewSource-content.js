@@ -37,12 +37,8 @@ var ViewSourceContent = {
 
   messages: [
     "ViewSource:LoadSource",
-    "ViewSource:LoadSourceDeprecated",
     "ViewSource:LoadSourceWithSelection",
     "ViewSource:GoToLine",
-    "ViewSource:ToggleWrapping",
-    "ViewSource:ToggleSyntaxHighlighting",
-    "ViewSource:SetCharacterSet",
   ],
 
   
@@ -104,30 +100,16 @@ var ViewSourceContent = {
       return;
     }
     let data = msg.data;
-    let objects = msg.objects;
     switch (msg.name) {
       case "ViewSource:LoadSource":
         this.viewSource(data.URL, data.outerWindowID, data.lineNumber,
                         data.shouldWrap);
-        break;
-      case "ViewSource:LoadSourceDeprecated":
-        this.viewSourceDeprecated(data.URL, objects.pageDescriptor, data.lineNumber,
-                                  data.forcedCharSet);
         break;
       case "ViewSource:LoadSourceWithSelection":
         this.viewSourceWithSelection(data.URL, data.drawSelection, data.baseURI);
         break;
       case "ViewSource:GoToLine":
         this.goToLine(data.lineNumber);
-        break;
-      case "ViewSource:ToggleWrapping":
-        this.toggleWrapping();
-        break;
-      case "ViewSource:ToggleSyntaxHighlighting":
-        this.toggleSyntaxHighlighting();
-        break;
-      case "ViewSource:SetCharacterSet":
-        this.setCharacterSet(data.charset, data.doPageLoad);
         break;
     }
   },
@@ -218,33 +200,6 @@ var ViewSourceContent = {
       let doc = contentWindow.document;
       forcedCharSet = utils.docCharsetIsForced ? doc.characterSet
                                                : null;
-    }
-
-    this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  viewSourceDeprecated(URL, pageDescriptor, lineNumber, forcedCharSet) {
-    
-    
-    if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      throw new Error("ViewSource deprecated API should not be used with " +
-                      "remote browsers.");
     }
 
     this.loadSource(URL, pageDescriptor, lineNumber, forcedCharSet);
@@ -632,37 +587,6 @@ var ViewSourceContent = {
     let body = content.document.body;
     let state = body.classList.toggle("highlight");
     sendAsyncMessage("ViewSource:StoreSyntaxHighlighting", { state });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  setCharacterSet(charset, doPageLoad) {
-    docShell.charset = charset;
-    if (doPageLoad) {
-      this.reload();
-    }
-  },
-
-  
-
-
-  reload() {
-    let pageLoader = docShell.QueryInterface(Ci.nsIWebPageDescriptor);
-    try {
-      pageLoader.loadPage(pageLoader.currentDescriptor,
-                          Ci.nsIWebPageDescriptor.DISPLAY_NORMAL);
-    } catch (e) {
-      let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
-      webNav.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
-    }
   },
 
   
