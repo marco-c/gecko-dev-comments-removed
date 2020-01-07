@@ -542,7 +542,7 @@ public:
   
 
 
-  virtual void TakeFocus();
+  virtual void TakeFocus() const;
 
   
 
@@ -765,7 +765,7 @@ public:
   
 
 
-  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex);
+  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const;
 
   
 
