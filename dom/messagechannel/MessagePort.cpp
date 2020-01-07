@@ -204,6 +204,7 @@ MessagePort::MessagePort(nsIGlobalObject* aGlobal)
   , mInnerID(0)
   , mMessageQueueEnabled(false)
   , mIsKeptAlive(false)
+  , mHasBeenTransferredOrClosed(false)
 {
   MOZ_ASSERT(aGlobal);
 
@@ -501,6 +502,7 @@ MessagePort::Dispatch()
 void
 MessagePort::Close()
 {
+  mHasBeenTransferredOrClosed = true;
   CloseInternal(true );
 }
 
@@ -721,10 +723,13 @@ MessagePort::Disentangle()
   UpdateMustKeepAlive();
 }
 
-bool
+void
 MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
 {
   MOZ_ASSERT(mIdentifier);
+  MOZ_ASSERT(!mHasBeenTransferredOrClosed);
+
+  mHasBeenTransferredOrClosed = true;
 
   
   
@@ -732,14 +737,14 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
   aIdentifier.neutered() = true;
 
   if (mState > eStateEntangled) {
-    return false;
+    return;
   }
 
   
   
   if (mState == eStateEntanglingForDisentangle ||
       mState == eStateEntanglingForClose) {
-    return false;
+    return;
   }
 
   aIdentifier.uuid() = mIdentifier->uuid();
@@ -755,7 +760,7 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
     
     if (!mUnshippedEntangledPort->ConnectToPBackground()) {
       
-      return false;
+      return;
     }
 
     mUnshippedEntangledPort = nullptr;
@@ -766,28 +771,27 @@ MessagePort::CloneAndDisentangle(MessagePortIdentifier& aIdentifier)
 
       mState = eStateDisentangled;
       UpdateMustKeepAlive();
-      return true;
+      return;
     }
 
     
     if (!ConnectToPBackground()) {
       
-      return false;
+      return;
     }
 
     mState = eStateEntanglingForDisentangle;
-    return true;
+    return;
   }
 
   
   if (mState == eStateEntangling) {
     mState = eStateEntanglingForDisentangle;
-    return true;
+    return;
   }
 
   MOZ_ASSERT(mState == eStateEntangled);
   StartDisentangling();
-  return true;
 }
 
 void

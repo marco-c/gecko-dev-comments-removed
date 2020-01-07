@@ -88,6 +88,10 @@ public:
                             void* aContent,
                             uint64_t aExtraData);
 
+  virtual bool
+  CustomCanTransferHandler(JSContext* aCx,
+                           JS::Handle<JSObject*> aObj);
+
   
 
   
@@ -282,6 +286,9 @@ public:
                                          JS::TransferableOwnership aOwnership,
                                          void* aContent,
                                          uint64_t aExtraData) override;
+
+  virtual bool CustomCanTransferHandler(JSContext* aCx,
+                                        JS::Handle<JSObject*> aObj) override;
 
   
   

@@ -74,7 +74,12 @@ public:
 
   void UnshippedEntangle(MessagePort* aEntangledPort);
 
-  bool CloneAndDisentangle(MessagePortIdentifier& aIdentifier);
+  bool CanBeCloned() const
+  {
+    return !mHasBeenTransferredOrClosed;
+  }
+
+  void CloneAndDisentangle(MessagePortIdentifier& aIdentifier);
 
   void CloseForced();
 
@@ -182,6 +187,12 @@ private:
   bool mMessageQueueEnabled;
 
   bool mIsKeptAlive;
+
+  
+  
+  
+  
+  bool mHasBeenTransferredOrClosed;
 };
 
 } 
