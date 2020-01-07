@@ -619,6 +619,14 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
 
   if (aFlags & nsIPrintSettings::kInitSaveToFileName) {
     if (GETSTRPREF(kPrintToFileName, str)) {
+      if (StringEndsWith(str, NS_LITERAL_STRING(".ps"))) {
+        
+        
+        
+        
+        str.Truncate(str.Length() - 2);
+        str.AppendLiteral("pdf");
+      }
       aPS->SetToFileName(str);
       DUMP_STR(kReadStr, kPrintToFileName, str.get());
     }

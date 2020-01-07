@@ -148,7 +148,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
   if (format == nsIPrintSettings::kOutputFormatNative) {
     if (mIsPPreview) {
       
-      format = nsIPrintSettings::kOutputFormatPS;
+      format = nsIPrintSettings::kOutputFormatPDF;
     } else {
       return nullptr;
     }
