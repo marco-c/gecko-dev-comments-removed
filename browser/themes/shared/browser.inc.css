@@ -141,9 +141,7 @@
 
 
 
-
-#DateTimePickerPanel[active="true"] {
-  --lwt-arrowpanel-background: var(--arrowpanel-background);
-  --lwt-arrowpanel-color: var(--arrowpanel-color);
-  --lwt-arrowpanel-border-color: var(--arrowpanel-border-color);
+#DateTimePickerPanel[active="true"] > .panel-arrowcontainer > .panel-arrowbox,
+#DateTimePickerPanel[active="true"] > .panel-arrowcontainer > .panel-arrowcontent {
+  --arrowpanel-background: #fff;
 }
