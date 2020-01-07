@@ -709,7 +709,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "OfflineAudioContext", insecureContext: true},
 
-    {name: "OfflineResourceList", insecureContext: true},
+    {name: "OfflineResourceList", insecureContext: SpecialPowers.getBoolPref("browser.cache.offline.insecure.enable")},
 
     {name: "Option", insecureContext: true},
 

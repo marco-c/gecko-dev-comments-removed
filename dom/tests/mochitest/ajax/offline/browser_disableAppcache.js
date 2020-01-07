@@ -117,6 +117,7 @@ add_task(async function test_pref_removes_api() {
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async () => {
     
     is(content.document.getElementById("hasAppcache").textContent, "yes", "Appcache is enabled");
+    is(content.document.getElementById("hasOfflineResourceList").textContent, "yes", "OfflineResourceList is enabled");
   });
   gBrowser.removeCurrentTab();
 
@@ -128,6 +129,7 @@ add_task(async function test_pref_removes_api() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
   await ContentTask.spawn(gBrowser.selectedBrowser, [URL], async (URL) => {
     is(content.document.getElementById("hasAppcache").textContent, "no", "Appcache is disabled");
+    is(content.document.getElementById("hasOfflineResourceList").textContent, "no", "OfflineResourceList is disabled");
     content.window.eval("OfflineTest.clear()");
   });
   gBrowser.removeCurrentTab();
