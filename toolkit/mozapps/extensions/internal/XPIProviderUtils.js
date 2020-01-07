@@ -67,15 +67,16 @@ const ASYNC_SAVE_DELAY_MS = 20;
 
 
 
-function getRepositoryAddon(aAddon, aCallback) {
-  if (!aAddon) {
-    aCallback(aAddon);
-    return;
+async function getRepositoryAddon(aAddon, aCallback) {
+  let addon;
+  if (aAddon) {
+    addon = await AddonRepository.getCachedAddonByID(aAddon.id);
+    aAddon._repositoryAddon = addon;
   }
-  AddonRepository.getCachedAddonByID(aAddon.id, repoAddon => {
-    aAddon._repositoryAddon = repoAddon;
-    aCallback(aAddon);
-  });
+  if (aCallback) {
+    aCallback(addon);
+  }
+  return addon;
 }
 
 
@@ -89,33 +90,6 @@ function makeSafe(aCallback) {
       logger.warn("XPI Database callback failed", ex);
     }
   };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function asyncMap(aObjects, aMethod) {
-  let methodCalls = aObjects.map(obj => {
-    return new Promise(resolve => {
-      try {
-        aMethod(obj, resolve);
-      } catch (e) {
-        logger.error("Async map function failed", e);
-        resolve(undefined);
-      }
-    });
-  });
-
-  return Promise.all(methodCalls);
 }
 
 
@@ -659,7 +633,7 @@ this.XPIDatabase = {
     try {
       let addonDB = await this.asyncLoadDB();
       let addonList = _filterDB(addonDB, aFilter);
-      let addons = await asyncMap(addonList, getRepositoryAddon);
+      let addons = await Promise.all(addonList.map(addon => getRepositoryAddon(addon)));
       if (aCallback) {
         makeSafe(aCallback)(addons);
       }
@@ -682,11 +656,9 @@ this.XPIDatabase = {
 
 
   getAddon(aFilter, aCallback) {
-    return this.asyncLoadDB().then(
-      addonDB => {
-        getRepositoryAddon(_findAddon(addonDB, aFilter), makeSafe(aCallback));
-      })
-    .catch(
+    return this.asyncLoadDB()
+      .then(addonDB => getRepositoryAddon(_findAddon(addonDB, aFilter)))
+      .catch(
         error => {
           logger.error("getAddon failed", error);
           makeSafe(aCallback)(null);
@@ -705,7 +677,7 @@ this.XPIDatabase = {
 
 
   getAddonInLocation(aId, aLocation, aCallback) {
-    this.asyncLoadDB().then(
+    return this.asyncLoadDB().then(
         addonDB => getRepositoryAddon(addonDB.get(aLocation + ":" + aId),
                                       makeSafe(aCallback)));
   },
@@ -719,7 +691,7 @@ this.XPIDatabase = {
 
 
   getAddonsInLocation(aLocation, aCallback) {
-    this.getAddonList(aAddon => aAddon._installLocation.name == aLocation, aCallback);
+    return this.getAddonList(aAddon => aAddon._installLocation.name == aLocation, aCallback);
   },
 
   
@@ -731,8 +703,8 @@ this.XPIDatabase = {
 
 
   getVisibleAddonForID(aId, aCallback) {
-    this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible),
-                  aCallback);
+    return this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible),
+                         aCallback);
   },
 
   
@@ -744,10 +716,10 @@ this.XPIDatabase = {
 
 
   getVisibleAddons(aTypes, aCallback) {
-    this.getAddonList(aAddon => (aAddon.visible &&
-                                 (!aTypes || (aTypes.length == 0) ||
-                                  (aTypes.indexOf(aAddon.type) > -1))),
-                      aCallback);
+    return this.getAddonList(aAddon => (aAddon.visible &&
+                                        (!aTypes || (aTypes.length == 0) ||
+                                         (aTypes.indexOf(aAddon.type) > -1))),
+                             aCallback);
   },
 
   
@@ -803,7 +775,7 @@ this.XPIDatabase = {
 
 
   getVisibleAddonsWithPendingOperations(aTypes, aCallback) {
-    this.getAddonList(
+    return this.getAddonList(
         aAddon => (aAddon.visible &&
                    aAddon.pendingUninstall &&
                    (!aTypes || (aTypes.length == 0) || (aTypes.indexOf(aAddon.type) > -1))),
@@ -821,8 +793,8 @@ this.XPIDatabase = {
 
 
   getAddonBySyncGUID(aGUID, aCallback) {
-    this.getAddon(aAddon => aAddon.syncGUID == aGUID,
-                  aCallback);
+    return this.getAddon(aAddon => aAddon.syncGUID == aGUID,
+                         aCallback);
   },
 
   
