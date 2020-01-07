@@ -248,25 +248,6 @@ pref("devtools.webconsole.filter.css", false);
 pref("devtools.webconsole.filter.net", false);
 pref("devtools.webconsole.filter.netxhr", false);
 
-pref("devtools.webconsole.filter.network", true);
-pref("devtools.webconsole.filter.networkinfo", false);
-pref("devtools.webconsole.filter.netwarn", true);
-pref("devtools.webconsole.filter.csserror", true);
-pref("devtools.webconsole.filter.cssparser", false);
-pref("devtools.webconsole.filter.csslog", false);
-pref("devtools.webconsole.filter.exception", true);
-pref("devtools.webconsole.filter.jswarn", true);
-pref("devtools.webconsole.filter.jslog", false);
-pref("devtools.webconsole.filter.secerror", true);
-pref("devtools.webconsole.filter.secwarn", true);
-pref("devtools.webconsole.filter.serviceworkers", true);
-pref("devtools.webconsole.filter.sharedworkers", false);
-pref("devtools.webconsole.filter.windowlessworkers", false);
-pref("devtools.webconsole.filter.servererror", false);
-pref("devtools.webconsole.filter.serverwarn", false);
-pref("devtools.webconsole.filter.serverinfo", false);
-pref("devtools.webconsole.filter.serverlog", false);
-
 
 pref("devtools.browserconsole.filter.error", true);
 pref("devtools.browserconsole.filter.warn", true);
@@ -276,30 +257,6 @@ pref("devtools.browserconsole.filter.debug", true);
 pref("devtools.browserconsole.filter.css", false);
 pref("devtools.browserconsole.filter.net", false);
 pref("devtools.browserconsole.filter.netxhr", false);
-
-pref("devtools.browserconsole.filter.network", true);
-pref("devtools.browserconsole.filter.networkinfo", false);
-pref("devtools.browserconsole.filter.netwarn", true);
-pref("devtools.browserconsole.filter.netxhr", false);
-pref("devtools.browserconsole.filter.csserror", true);
-pref("devtools.browserconsole.filter.cssparser", false);
-pref("devtools.browserconsole.filter.csslog", false);
-pref("devtools.browserconsole.filter.exception", true);
-pref("devtools.browserconsole.filter.jswarn", true);
-pref("devtools.browserconsole.filter.jslog", true);
-pref("devtools.browserconsole.filter.error", true);
-pref("devtools.browserconsole.filter.warn", true);
-pref("devtools.browserconsole.filter.info", true);
-pref("devtools.browserconsole.filter.log", true);
-pref("devtools.browserconsole.filter.secerror", true);
-pref("devtools.browserconsole.filter.secwarn", true);
-pref("devtools.browserconsole.filter.serviceworkers", true);
-pref("devtools.browserconsole.filter.sharedworkers", true);
-pref("devtools.browserconsole.filter.windowlessworkers", true);
-pref("devtools.browserconsole.filter.servererror", false);
-pref("devtools.browserconsole.filter.serverwarn", false);
-pref("devtools.browserconsole.filter.serverinfo", false);
-pref("devtools.browserconsole.filter.serverlog", false);
 
 
 pref("devtools.webconsole.ui.filterbar", false);
@@ -325,10 +282,6 @@ pref("devtools.webconsole.timestampMessages", false);
 pref("devtools.webconsole.autoMultiline", true);
 
 
-pref("devtools.webconsole.new-frontend-enabled", true);
-pref("devtools.browserconsole.new-frontend-enabled", true);
-
-
 pref("devtools.webconsole.sidebarToggle", false);
 
 
@@ -339,14 +292,6 @@ pref("devtools.source-map.client-service.enabled", true);
 
 
 pref("devtools.hud.loglimit", 10000);
-
-
-
-
-pref("devtools.hud.loglimit.network", 1000);
-pref("devtools.hud.loglimit.cssparser", 1000);
-pref("devtools.hud.loglimit.exception", 1000);
-pref("devtools.hud.loglimit.console", 1000);
 
 
 
