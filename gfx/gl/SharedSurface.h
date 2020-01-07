@@ -76,8 +76,7 @@ protected:
                   bool canRecycle);
 
 public:
-    virtual ~SharedSurface() {
-    }
+    virtual ~SharedSurface();
 
     
     

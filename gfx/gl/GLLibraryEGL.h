@@ -18,32 +18,16 @@
 #include <bitset>
 #include <vector>
 
-#ifdef XP_WIN
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN 1
-    #endif
-
-    #include <windows.h>
-
-    typedef HDC EGLNativeDisplayType;
-    typedef HBITMAP EGLNativePixmapType;
-    typedef HWND EGLNativeWindowType;
-#else
-    typedef void* EGLNativeDisplayType;
-    typedef void* EGLNativePixmapType;
-    typedef void* EGLNativeWindowType;
-
-    #ifdef ANDROID
-        
-        
-        
-        
-        
-        
-        
-        
-        #define APITRACE_LIB "/data/local/tmp/egltrace.so"
-    #endif
+#ifdef ANDROID
+    
+    
+    
+    
+    
+    
+    
+    
+    #define APITRACE_LIB "/data/local/tmp/egltrace.so"
 #endif
 
 #if defined(MOZ_X11)
