@@ -6409,7 +6409,6 @@ nsDisplayOpacity::nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true)
     , mOpacity(aFrame->StyleEffects()->mOpacity)
     , mForEventsAndPluginsOnly(aForEventsAndPluginsOnly)
-    , mOpacityAppliedToChildren(false)
 {
   MOZ_COUNT_CTOR(nsDisplayOpacity);
   mState.mOpacity = mOpacity;
@@ -6545,8 +6544,27 @@ CollectItemsWithOpacity(nsDisplayList* aList,
 }
 
 bool
-nsDisplayOpacity::ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder)
+nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
 {
+  if (mFrame->GetPrevContinuation() ||
+      mFrame->GetNextContinuation()) {
+    
+    
+    return false;
+  }
+
+  if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
+    
+    
+    
+    
+    return false;
+  }
+
+  if (mList.IsEmpty()) {
+    return false;
+  }
+
   
   
   static const size_t kMaxChildCount = 3;
@@ -6583,39 +6601,7 @@ nsDisplayOpacity::ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder)
     children[i].item->ApplyOpacity(aBuilder, mOpacity, mClipChain);
   }
 
-  mOpacityAppliedToChildren = true;
   return true;
-}
-
-bool
-nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
-{
-  
-  MOZ_ASSERT(!mOpacityAppliedToChildren);
-
-  if (mFrame->GetPrevContinuation() ||
-      mFrame->GetNextContinuation()) {
-    
-    
-    return false;
-  }
-
-  if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
-    
-    
-    
-    
-    return false;
-  }
-
-  if (mList.IsEmpty()) {
-    return false;
-  }
-
-  
-  
-  
-  return ApplyOpacityToChildren(aBuilder) || !gfxVars::UseWebRender();
 }
 
 nsDisplayItem::LayerState
@@ -6652,20 +6638,6 @@ nsDisplayOpacity::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   visibleUnderChildren.And(*aVisibleRegion, bounds);
   return
     nsDisplayWrapList::ComputeVisibility(aBuilder, &visibleUnderChildren);
-}
-
-void
-nsDisplayOpacity::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
-                                            const nsDisplayItemGeometry* aGeometry,
-                                            nsRegion* aInvalidRegion) const
-{
-  const nsDisplayOpacityGeometry* geometry =
-    static_cast<const nsDisplayOpacityGeometry*>(aGeometry);
-
-  bool snap;
-  if (mOpacity != geometry->mOpacity) {
-    aInvalidRegion->Or(GetBounds(aBuilder, &snap), geometry->mBounds);
-  }
 }
 
 void
