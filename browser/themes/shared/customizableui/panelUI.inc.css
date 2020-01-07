@@ -1268,6 +1268,19 @@ toolbarpaletteitem[place="menu-panel"] > .subviewbutton-nav::after {
   margin-inline-end: 0;
 }
 
+%ifdef XP_WIN
+
+
+#BMB_bookmarksPopup .subviewbutton > .menu-iconic-left {
+  padding-top: 0;
+  -moz-appearance: none;
+}
+
+#BMB_bookmarksPopup .subviewbutton {
+  -moz-appearance: none;
+}
+%endif
+
 menuitem[checked="true"].subviewbutton > .menu-iconic-left {
   visibility: hidden;
 }
