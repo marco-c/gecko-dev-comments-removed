@@ -52,9 +52,6 @@ module.exports = {
     
     
     "files": [
-      "browser/extensions/formautofill/test/unit/test_storage_tombstones.js",
-      "browser/modules/test/browser/**",
-      "browser/tools/mozscreenshots/browser_boundingbox.js",
       "devtools/client/inspector/extensions/test/head_devtools_inspector_sidebar.js",
       "storage/test/unit/**",
       "testing/marionette/test/unit/**",
