@@ -79,52 +79,17 @@ public:
   }
 
 private:
-  DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult Init(nsIURI* aDocumentURI, nsIURI* aBaseURI,
-                nsIGlobalObject* aSriptObjet);
-
+  DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal,
+            nsIURI* aDocumentURI, nsIURI* aBaseURI);
 
   already_AddRefed<nsIDocument> SetUpDocument(DocumentFlavor aFlavor,
                                               ErrorResult& aRv);
-
-  class AttemptedInitMarker {
-  public:
-    explicit AttemptedInitMarker(bool* aAttemptedInit) :
-      mAttemptedInit(aAttemptedInit)
-    {}
-
-    ~AttemptedInitMarker() {
-      *mAttemptedInit = true;
-    }
-
-  private:
-    bool* mAttemptedInit;
-  };
 
   nsCOMPtr<nsIGlobalObject> mOwner;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
   nsCOMPtr<nsIURI> mBaseURI;
 
-  bool mAttemptedInit;
   bool mForceEnableXULXBL;
 };
 
