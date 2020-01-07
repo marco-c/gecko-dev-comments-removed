@@ -294,6 +294,9 @@ pref("devtools.webconsole.sidebarToggle", false);
 #endif
 
 
+pref("devtools.webconsole.jsterm.codeMirror", false);
+
+
 pref("devtools.performance.new-panel-enabled", false);
 
 
