@@ -116,10 +116,29 @@ ServiceWorkerRegistrationInfo::~ServiceWorkerRegistrationInfo()
 }
 
 void
-ServiceWorkerRegistrationInfo::AddInstance(ServiceWorkerRegistrationListener* aInstance)
+ServiceWorkerRegistrationInfo::AddInstance(ServiceWorkerRegistrationListener* aInstance,
+                                           const ServiceWorkerRegistrationDescriptor& aDescriptor)
 {
   MOZ_DIAGNOSTIC_ASSERT(aInstance);
   MOZ_ASSERT(!mInstanceList.Contains(aInstance));
+  MOZ_DIAGNOSTIC_ASSERT(aDescriptor.Id() == mDescriptor.Id());
+  MOZ_DIAGNOSTIC_ASSERT(aDescriptor.PrincipalInfo() == mDescriptor.PrincipalInfo());
+  MOZ_DIAGNOSTIC_ASSERT(aDescriptor.Scope() == mDescriptor.Scope());
+  MOZ_DIAGNOSTIC_ASSERT(aDescriptor.Version() <= mDescriptor.Version());
+  uint64_t lastVersion = aDescriptor.Version();
+  for (auto& entry : mVersionList) {
+    if (lastVersion > entry->mDescriptor.Version()) {
+      continue;
+    }
+    lastVersion = entry->mDescriptor.Version();
+    aInstance->UpdateState(entry->mDescriptor);
+  }
+  
+  
+  
+  if (lastVersion < mDescriptor.Version()) {
+    aInstance->UpdateState(mDescriptor);
+  }
   mInstanceList.AppendElement(aInstance);
 }
 
@@ -437,6 +456,18 @@ void
 ServiceWorkerRegistrationInfo::UpdateRegistrationState(ServiceWorkerUpdateViaCache aUpdateViaCache)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  TimeStamp oldest = TimeStamp::Now() - TimeDuration::FromSeconds(30);
+  if (!mVersionList.IsEmpty() && mVersionList[0]->mTimeStamp < oldest) {
+    nsTArray<UniquePtr<VersionEntry>> list;
+    mVersionList.SwapElements(list);
+    for (auto& entry : list) {
+      if (entry->mTimeStamp >= oldest) {
+        mVersionList.AppendElement(std::move(entry));
+      }
+    }
+  }
+  mVersionList.AppendElement(MakeUnique<VersionEntry>(mDescriptor));
 
   
   mDescriptor.SetVersion(GetNextVersion());
