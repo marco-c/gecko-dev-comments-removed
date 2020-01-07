@@ -1314,6 +1314,11 @@ MediaStreamGraphImpl::UpdateMainThreadState()
 bool
 MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
 {
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mLifecycleState <= LIFECYCLE_RUNNING);
   MOZ_ASSERT(OnGraphThread());
   WebCore::DenormalDisabler disabler;
 
@@ -1742,6 +1747,9 @@ MediaStreamGraphImpl::SignalMainThreadCleanup()
   MOZ_ASSERT(mDriver->OnThread());
 
   MonitorAutoLock lock(mMonitor);
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mLifecycleState <= LIFECYCLE_RUNNING);
   LOG(LogLevel::Debug,
       ("MediaStreamGraph %p waiting for main thread cleanup", this));
   LifecycleStateRef() =
