@@ -384,11 +384,7 @@ TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
       return TypedText(EmptyString(), eTypedBreak);
   }
 
-  
-  
-  if (!aKeyboardEvent->mCharCode || aKeyboardEvent->IsControl() ||
-      aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
-      aKeyboardEvent->IsOS()) {
+  if (!aKeyboardEvent->IsInputtingText()) {
     
     return NS_OK;
   }

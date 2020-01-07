@@ -228,6 +228,19 @@ public:
     return IsKeyEventOnPlugin(mMessage);
   }
 
+  bool IsInputtingText() const
+  {
+    
+    
+    
+    return mMessage == eKeyPress &&
+           mCharCode &&
+           !(mModifiers & (MODIFIER_ALT |
+                           MODIFIER_CONTROL |
+                           MODIFIER_META |
+                           MODIFIER_OS));
+  }
+
   virtual WidgetEvent* Duplicate() const override
   {
     MOZ_ASSERT(mClass == eKeyboardEventClass,
