@@ -14,6 +14,7 @@ Cu.importGlobalProperties(["fetch", "URL"]);
 
 var EXPORTED_SYMBOLS = ["BrowserErrorReporter"];
 
+const CONTEXT_LINES = 5;
 const ERROR_PREFIX_RE = /^[^\W]+:/m;
 const PREF_ENABLED = "browser.chrome.errorReporter.enabled";
 const PREF_LOG_LEVEL = "browser.chrome.errorReporter.logLevel";
@@ -21,6 +22,8 @@ const PREF_PROJECT_ID = "browser.chrome.errorReporter.projectId";
 const PREF_PUBLIC_KEY = "browser.chrome.errorReporter.publicKey";
 const PREF_SAMPLE_RATE = "browser.chrome.errorReporter.sampleRate";
 const PREF_SUBMIT_URL = "browser.chrome.errorReporter.submitUrl";
+const SDK_NAME = "firefox-error-reporter";
+const SDK_VERSION = "1.0.0";
 
 
 const REPORTED_CATEGORIES = new Set([
@@ -46,6 +49,11 @@ const REPORTED_CATEGORIES = new Set([
 
 
 
+
+
+
+
+
 class BrowserErrorReporter {
   constructor(fetchMethod = this._defaultFetch) {
     
@@ -53,11 +61,6 @@ class BrowserErrorReporter {
 
     
     this.requestBodyTemplate = {
-      request: {
-        headers: {
-          "User-Agent": Services.appShell.hiddenDOMWindow.navigator.userAgent,
-        },
-      },
       logger: "javascript",
       platform: "javascript",
       release: Services.appinfo.version,
@@ -65,6 +68,10 @@ class BrowserErrorReporter {
       tags: {
         appBuildID: Services.appinfo.appBuildID,
         changeset: AppConstants.SOURCE_REVISION_URL,
+      },
+      sdk: {
+        name: SDK_NAME,
+        version: SDK_VERSION,
       },
     };
 
@@ -145,31 +152,23 @@ class BrowserErrorReporter {
       errorMessage = parts.slice(1).join(":").trim();
     }
 
-    
     const frames = [];
     let frame = message.stack;
-
     
     while (frame && frames.length < 100) {
-      frames.push({
-        function: frame.functionDisplayName,
-        filename: frame.source,
-        lineno: frame.line,
-        colno: frame.column,
-        in_app: true,
-      });
+      frames.push(await this.normalizeStackFrame(frame));
       frame = frame.parent;
     }
-
     
+    frames.reverse();
+
     const requestBody = Object.assign({}, this.requestBodyTemplate, {
+      timestamp: new Date().toISOString().slice(0, -1), 
       project: Services.prefs.getCharPref(PREF_PROJECT_ID),
       exception: {
         values: [
           {
             type: errorName,
-            
-            
             value: errorMessage,
             stacktrace: {
               frames,
@@ -179,10 +178,9 @@ class BrowserErrorReporter {
       },
       culprit: message.sourceName,
     });
-    requestBody.request.url = message.sourceName;
 
     const url = new URL(Services.prefs.getCharPref(PREF_SUBMIT_URL));
-    url.searchParams.set("sentry_client", "firefox-error-reporter/1.0.0");
+    url.searchParams.set("sentry_client", `${SDK_NAME}/${SDK_VERSION}`);
     url.searchParams.set("sentry_version", "7");
     url.searchParams.set("sentry_key", Services.prefs.getCharPref(PREF_PUBLIC_KEY));
 
@@ -201,6 +199,44 @@ class BrowserErrorReporter {
     } catch (error) {
       this.logger.warn(`Failed to send error: ${error}`);
     }
+  }
+
+  async normalizeStackFrame(frame) {
+    const normalizedFrame = {
+      function: frame.functionDisplayName,
+      module: frame.source,
+      lineno: frame.line,
+      colno: frame.column,
+    };
+
+    try {
+      const response = await fetch(frame.source);
+      const sourceCode = await response.text();
+      const sourceLines = sourceCode.split(/\r?\n/);
+      
+      let lineIndex = Math.max(frame.line - 1, 0);
+
+      
+      
+      if (frame.source.endsWith(".xml") && lineIndex > 0) {
+        lineIndex--;
+      }
+
+      normalizedFrame.context_line = sourceLines[lineIndex];
+      normalizedFrame.pre_context = sourceLines.slice(
+        Math.max(lineIndex - CONTEXT_LINES, 0),
+        lineIndex,
+      );
+      normalizedFrame.post_context = sourceLines.slice(
+        lineIndex + 1,
+        Math.min(lineIndex + 1 + CONTEXT_LINES, sourceLines.length),
+      );
+    } catch (err) {
+      
+      
+    }
+
+    return normalizedFrame;
   }
 
   async _defaultFetch(...args) {
