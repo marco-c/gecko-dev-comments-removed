@@ -26,7 +26,6 @@
 
 
 
-
 #include "js/StructuredClone.h"
 
 #include "mozilla/CheckedInt.h"
@@ -120,10 +119,8 @@ enum StructuredDataType : uint32_t {
     SCTAG_TYPED_ARRAY_V1_MAX = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::MaxTypedArrayViewType - 1,
 
     
-
-
-
-
+    
+    
     SCTAG_TRANSFER_MAP_HEADER = 0xFFFF0200,
     SCTAG_TRANSFER_MAP_PENDING_ENTRY,
     SCTAG_TRANSFER_MAP_ARRAY_BUFFER,
@@ -432,6 +429,16 @@ struct JSStructuredCloneReader {
     
     AutoValueVector objs;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     AutoValueVector allObjs;
 
@@ -845,8 +852,6 @@ SCInput::readArray(T* p, size_t nelems)
     JS_STATIC_ASSERT(sizeof(uint64_t) % sizeof(T) == 0);
 
     
-
-
     mozilla::CheckedInt<size_t> size = mozilla::CheckedInt<size_t>(nelems) * sizeof(T);
     if (!size.isValid())
         return reportTruncated();
@@ -916,14 +921,12 @@ bool
 SCOutput::writePair(uint32_t tag, uint32_t data)
 {
     
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
     return write(PairToUInt64(tag, data));
 }
 
@@ -1318,9 +1321,7 @@ bool
 JSStructuredCloneWriter::traverseObject(HandleObject obj)
 {
     
-
-
-
+    
     AutoIdVector properties(context());
     if (!GetPropertyKeys(context(), obj, JSITER_OWNONLY, &properties))
         return false;
@@ -1787,10 +1788,8 @@ JSStructuredCloneWriter::write(HandleValue v)
                 MOZ_ASSERT(JSID_IS_STRING(id) || JSID_IS_INT(id));
 
                 
-
-
-
-
+                
+                
                 bool found;
                 if (!HasOwnProperty(context(), obj, id, &found))
                     return false;

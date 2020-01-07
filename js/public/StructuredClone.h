@@ -20,16 +20,143 @@
 #include "js/Value.h"
 #include "js/Vector.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define JS_STRUCTURED_CLONE_VERSION 8
+
 namespace JS {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class StructuredCloneScope : uint32_t {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     SameProcessSameThread,
+
+    
+
+
+
+
+
+
+
+
+
+
     SameProcessDifferentThread,
+
+    
+
+
+
+
+
+
+
+
+
+
+
     DifferentProcess
 };
 
@@ -168,12 +295,6 @@ typedef bool (*TransferStructuredCloneOp)(JSContext* cx,
 typedef void (*FreeTransferStructuredCloneOp)(uint32_t tag, JS::TransferableOwnership ownership,
                                               void* content, uint64_t extraData, void* closure);
 
-
-
-
-
-#define JS_STRUCTURED_CLONE_VERSION 8
-
 struct JSStructuredCloneCallbacks {
     ReadStructuredCloneOp read;
     WriteStructuredCloneOp write;
@@ -258,11 +379,18 @@ public:
 };
 
 
+
+
+
+
 JS_PUBLIC_API(bool)
 JS_ReadStructuredClone(JSContext* cx, JSStructuredCloneData& data, uint32_t version,
                        JS::StructuredCloneScope scope,
                        JS::MutableHandleValue vp,
                        const JSStructuredCloneCallbacks* optionalCallbacks, void* closure);
+
+
+
 
 
 
