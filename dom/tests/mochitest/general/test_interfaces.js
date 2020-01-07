@@ -1181,21 +1181,21 @@ var interfaceNamesInGlobalScope =
 
     {name: "VideoStreamTrack", insecureContext: true},
 
-    {name: "VRDisplay", releaseNonWindows: false},
+    {name: "VRDisplay", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRDisplayCapabilities", releaseNonWindows: false},
+    {name: "VRDisplayCapabilities", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRDisplayEvent", releaseNonWindows: false},
+    {name: "VRDisplayEvent", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VREyeParameters", releaseNonWindows: false},
+    {name: "VREyeParameters", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRFieldOfView", releaseNonWindows: false},
+    {name: "VRFieldOfView", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRFrameData", releaseNonWindows: false},
+    {name: "VRFrameData", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRPose", releaseNonWindows: false},
+    {name: "VRPose", insecureContext: true, releaseNonWindows: false},
 
-    {name: "VRStageParameters", releaseNonWindows: false},
+    {name: "VRStageParameters", insecureContext: true, releaseNonWindows: false},
 
     {name: "VTTCue", insecureContext: true},
 
