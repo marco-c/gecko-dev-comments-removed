@@ -52,15 +52,6 @@ public:
   GetNotifications(const GetNotificationOptions& aOptions,
                    ErrorResult& aRv) override;
 
-  already_AddRefed<ServiceWorker>
-  GetInstalling() override;
-
-  already_AddRefed<ServiceWorker>
-  GetWaiting() override;
-
-  already_AddRefed<ServiceWorker>
-  GetActive() override;
-
   already_AddRefed<PushManager>
   GetPushManager(JSContext* aCx, ErrorResult& aRv) override;
 
@@ -141,14 +132,6 @@ private:
   const nsString mScope;
   bool mListeningForEvents;
 
-  
-  
-  
-  
-  RefPtr<ServiceWorker> mInstallingWorker;
-  RefPtr<ServiceWorker> mWaitingWorker;
-  RefPtr<ServiceWorker> mActiveWorker;
-
   RefPtr<PushManager> mPushManager;
 };
 
@@ -184,15 +167,6 @@ public:
   already_AddRefed<Promise>
   GetNotifications(const GetNotificationOptions& aOptions,
                    ErrorResult& aRv) override;
-
-  already_AddRefed<ServiceWorker>
-  GetInstalling() override;
-
-  already_AddRefed<ServiceWorker>
-  GetWaiting() override;
-
-  already_AddRefed<ServiceWorker>
-  GetActive() override;
 
   void
   GetScope(nsAString& aScope) const override
