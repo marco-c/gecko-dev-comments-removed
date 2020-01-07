@@ -485,7 +485,7 @@ var BrowserUtils = {
     let linkText;
 
     
-    if (!selectionStr && focusedElement instanceof Ci.nsIDOMNSEditableElement) {
+    if (!selectionStr && focusedElement) {
       
       if (ChromeUtils.getClassName(focusedElement) === "HTMLTextAreaElement" ||
           (ChromeUtils.getClassName(focusedElement) === "HTMLInputElement" &&

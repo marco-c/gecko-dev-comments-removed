@@ -1405,7 +1405,8 @@ FinderHighlighter.prototype = {
 
   _getEditableNode(node) {
     if (node.nodeType === node.TEXT_NODE && node.parentNode && node.parentNode.parentNode &&
-        node.parentNode.parentNode instanceof Ci.nsIDOMNSEditableElement) {
+        (ChromeUtils.getClassName(node.parentNode.parentNode) === "HTMLInputElement" ||
+         ChromeUtils.getClassName(node.parentNode.parentNode) === "HTMLTextAreaElement")) {
       return node.parentNode.parentNode;
     }
     return null;
