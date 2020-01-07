@@ -3,8 +3,8 @@
 
 
 
-#ifndef PerformanceCollector_h
-#define PerformanceCollector_h
+#ifndef PerformanceUtils_h
+#define PerformanceUtils_h
 
 #include "mozilla/dom/DOMTypes.h"   
 
@@ -15,12 +15,6 @@ namespace mozilla {
 
 
 void CollectPerformanceInfo(nsTArray<dom::PerformanceInfo>& aMetrics);
-
-
-
-
-
-nsresult NotifyPerformanceInfo(const nsTArray<dom::PerformanceInfo>& aMetrics);
 
 } 
 #endif   
