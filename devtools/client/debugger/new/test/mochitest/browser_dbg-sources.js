@@ -34,7 +34,6 @@ add_task(async function() {
 
   await assertSourceCount(dbg, 7);
   await clickElement(dbg, "sourceArrow", 3);
-
   await assertSourceCount(dbg, 8);
 
   
@@ -42,9 +41,12 @@ add_task(async function() {
     !findElementWithSelector(dbg, ".sources-list .focused"),
     "Source is not focused"
   );
+
   const selected = waitForDispatch(dbg, "SELECT_SOURCE");
   await clickElement(dbg, "sourceNode", 4);
   await selected;
+  await waitForSelectedSource(dbg);
+
   ok(
     findElementWithSelector(dbg, ".sources-list .focused"),
     "Source is focused"
