@@ -5,12 +5,31 @@
 
 package org.mozilla.geckoview.test.rdp;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.json.JSONObject;
 
 
 
 
 public final class Console extends Actor {
+    private final ReplyParser<Object> JS_RESULT_PARSER = new ReplyParser<Object>() {
+        @Override
+        public boolean canParse(@NonNull JSONObject packet) {
+            return packet.has("result") || packet.has("exception");
+        }
+
+        @Override
+        public @Nullable Object parse(@NonNull JSONObject packet) {
+            if (packet.has("exception") && !packet.isNull("exception")) {
+                throw new RuntimeException(
+                        "JS exception: " + packet.optString("exceptionMessage", null));
+            }
+            return Grip.unpack(connection, packet.opt("result"));
+        }
+    };
+
      Console(final RDPConnection connection, final String name) {
         super(connection, name);
     }
@@ -26,14 +45,11 @@ public final class Console extends Actor {
 
 
 
-    public Object evaluateJS(final String js) {
-        final JSONObject reply = sendPacket("{\"type\":\"evaluateJS\",\"text\":" +
-                                                    JSONObject.quote(js) + '}',
-                                            "result");
-        if (reply.has("exception") && !reply.isNull("exception")) {
-            throw new RuntimeException("JS exception: " + reply.optString("exceptionMessage",
-                                                                          null));
-        }
-        return Grip.unpack(connection, reply.opt("result"));
+
+
+
+    public Reply<Object> evaluateJS(final String js) {
+        return sendPacket("{\"type\":\"evaluateJS\",\"text\":" + JSONObject.quote(js) + '}',
+                          JS_RESULT_PARSER);
     }
 }

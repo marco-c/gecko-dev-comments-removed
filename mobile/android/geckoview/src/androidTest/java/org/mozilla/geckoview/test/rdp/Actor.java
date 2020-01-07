@@ -5,8 +5,15 @@
 
 package org.mozilla.geckoview.test.rdp;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 
 
@@ -15,9 +22,63 @@ import org.json.JSONObject;
 
 
 public class Actor {
+     interface ReplyParser<T> {
+        boolean canParse(@NonNull JSONObject packet);
+        @Nullable T parse(@NonNull JSONObject packet);
+    }
+
+     static final ReplyParser<JSONObject> JSON_PARSER = new ReplyParser<JSONObject>() {
+        @Override
+        public boolean canParse(@NonNull JSONObject packet) {
+            return true;
+        }
+
+        @Override
+        public @NonNull JSONObject parse(@NonNull JSONObject packet) {
+            return packet;
+        }
+    };
+
+    
+
+
+
+
+    public class Reply<T> {
+         final ReplyParser<T> parser;
+         JSONObject packet;
+
+         Reply(final @NonNull ReplyParser<T> parser) {
+            this.parser = parser;
+        }
+
+        
+
+
+
+
+
+        public boolean hasResult() {
+            return packet != null;
+        }
+
+        
+
+
+
+
+        public T get() {
+            while (packet == null) {
+                Actor.this.connection.processInputPacket();
+            }
+            return parser.parse(packet);
+        }
+    }
+
     public final RDPConnection connection;
     public final String name;
-    protected JSONObject mReply;
+
+    private List<Reply<?>> mPendingReplies;
 
     protected Actor(final RDPConnection connection, final JSONObject packet) {
         this(connection, packet.optString("actor", null));
@@ -46,38 +107,42 @@ public class Actor {
         connection.removeActor(name);
     }
 
-    protected JSONObject sendPacket(final String packet, final String replyProp) {
+     <T> Reply<T> addReply(final @NonNull ReplyParser<T> parser) {
+        final Reply<T> reply = new Reply<>(parser);
+        if (mPendingReplies == null) {
+            mPendingReplies = new ArrayList<>(1);
+        }
+        mPendingReplies.add(reply);
+        return reply;
+    }
+
+    protected <T> Reply<T> sendPacket(final @NonNull String packet,
+                                      final @NonNull ReplyParser<T> parser) {
         if (packet.charAt(0) != '{') {
             throw new IllegalArgumentException();
         }
         connection.sendRawPacket("{\"to\":" + JSONObject.quote(name) + ',' + packet.substring(1));
-        return getReply(replyProp);
+        return addReply(parser);
     }
 
-    protected JSONObject sendPacket(final JSONObject packet, final String replyProp) {
+    protected <T> Reply<T> sendPacket(final @NonNull JSONObject packet,
+                                      final @NonNull ReplyParser<T> parser) {
         try {
             packet.put("to", name);
             connection.sendRawPacket(packet);
-            return getReply(replyProp);
+            return addReply(parser);
         } catch (final JSONException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected void onPacket(final JSONObject packet) {
-        mReply = packet;
-    }
-
-    protected JSONObject getReply(final String replyProp) {
-        mReply = null;
-        do {
-            connection.dispatchInputPacket();
-
-            if (mReply != null && replyProp != null && !mReply.has(replyProp)) {
-                
-                mReply = null;
+    protected void onPacket(final @NonNull JSONObject packet) {
+        for (final Iterator<Reply<?>> it = mPendingReplies.iterator(); it.hasNext();) {
+            final Reply<?> reply = it.next();
+            if (reply.parser.canParse(packet)) {
+                it.remove();
+                reply.packet = packet;
             }
-        } while (mReply == null);
-        return mReply;
+        }
     }
 }
