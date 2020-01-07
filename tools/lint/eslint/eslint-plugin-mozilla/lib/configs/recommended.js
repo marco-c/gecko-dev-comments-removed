@@ -62,6 +62,13 @@ module.exports = {
     "rules": {
       "mozilla/use-services": "off"
     }
+  }, {
+    
+    "env": {
+      "browser": false,
+      "mozilla/jsm": true
+    },
+    "files": "**/*.jsm"
   }],
 
   "parserOptions": {

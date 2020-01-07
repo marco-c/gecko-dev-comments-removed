@@ -126,6 +126,7 @@ exports.defineLazyGetter = defineLazyGetter;
 
 
 var gLogger;
+
 if (typeof window != "undefined" && window.console && console.log) {
   gLogger = console.log.bind(console, "OS");
 } else {
