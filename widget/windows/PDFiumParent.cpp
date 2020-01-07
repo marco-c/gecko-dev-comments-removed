@@ -29,6 +29,10 @@ PDFiumParent::Init(IPC::Channel* aChannel, base::ProcessId aPid)
 void
 PDFiumParent::ActorDestroy(ActorDestroyReason aWhy)
 {
+  if (mTarget) {
+    mTarget->ChannelIsBroken();
+  }
+
   if (mConversionDoneCallback) {
     
     
@@ -57,6 +61,12 @@ PDFiumParent::AbortConversion(ConversionDoneCallback aCallback)
   
   mTarget = nullptr;
   mConversionDoneCallback = aCallback;
+}
+
+void PDFiumParent::EndConversion()
+{
+  
+  mTarget = nullptr;
 }
 
 void
