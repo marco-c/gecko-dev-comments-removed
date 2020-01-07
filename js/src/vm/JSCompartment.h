@@ -1015,28 +1015,6 @@ struct JSCompartment
 
     js::NativeIterator* enumerators;
 
-  private:
-    
-    JS::RealmStats* realmStats_;
-
-  public:
-    
-    
-    JS::RealmStats& realmStats() {
-        
-        
-        MOZ_RELEASE_ASSERT(realmStats_);
-        return *realmStats_;
-    }
-    void nullRealmStats() {
-        MOZ_ASSERT(realmStats_);
-        realmStats_ = nullptr;
-    }
-    void setRealmStats(JS::RealmStats* newStats) {
-        MOZ_ASSERT(!realmStats_ && newStats);
-        realmStats_ = newStats;
-    }
-
     MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
 
     
@@ -1087,6 +1065,9 @@ class JS::Realm : public JSCompartment
                                       js::DefaultHasher<JSAtom*>,
                                       js::SystemAllocPolicy>;
     VarNamesSet varNames_;
+
+    
+    JS::RealmStats* realmStats_ = nullptr;
 
     const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
     void* realmPrivate_ = nullptr;
@@ -1219,6 +1200,23 @@ class JS::Realm : public JSCompartment
     }
     void setRealmPrivate(void* p) {
         realmPrivate_ = p;
+    }
+
+    
+    
+    JS::RealmStats& realmStats() {
+        
+        
+        MOZ_RELEASE_ASSERT(realmStats_);
+        return *realmStats_;
+    }
+    void nullRealmStats() {
+        MOZ_ASSERT(realmStats_);
+        realmStats_ = nullptr;
+    }
+    void setRealmStats(JS::RealmStats* newStats) {
+        MOZ_ASSERT(!realmStats_ && newStats);
+        realmStats_ = newStats;
     }
 };
 
