@@ -672,7 +672,8 @@ function getTypedURLs(registryKeyPath) {
     let entryName;
     for (let entry = 1; typedURLKey.hasValue((entryName = "url" + entry)); entry++) {
       let url = typedURLKey.readStringValue(entryName);
-      let timeTyped = 0;
+      
+      let timeTyped = Date.now() - 31536000 / 2;
       if (typedURLTimeKey && typedURLTimeKey.hasValue(entryName)) {
         let urlTime = "";
         try {
@@ -692,16 +693,20 @@ function getTypedURLs(registryKeyPath) {
             let hi = parseInt(urlTimeHex.slice(0, 4).join(""), 16);
             let lo = parseInt(urlTimeHex.slice(4, 8).join(""), 16);
             
-            timeTyped = cTypes.fileTimeToSecondsSinceEpoch(hi, lo);
+            let secondsSinceEpoch = cTypes.fileTimeToSecondsSinceEpoch(hi, lo);
+
             
-            timeTyped *= 1000 * 1000;
+            if (secondsSinceEpoch > Date.now() / 1000000) {
+              
+              timeTyped = secondsSinceEpoch * 1000;
+            }
           } catch (ex) {
             
             
           }
         }
       }
-      typedURLs.set(url, timeTyped);
+      typedURLs.set(url, timeTyped * 1000);
     }
   } catch (ex) {
     Cu.reportError("Error reading typed URL history: " + ex);
