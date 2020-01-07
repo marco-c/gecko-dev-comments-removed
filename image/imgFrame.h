@@ -29,40 +29,6 @@ enum class Opacity : uint8_t {
   SOME_TRANSPARENCY
 };
 
-
-
-
-
-
-
-
-
-struct AnimationData
-{
-  AnimationData(uint8_t* aRawData, uint32_t aPaletteDataLength,
-                FrameTimeout aTimeout, const nsIntRect& aRect,
-                BlendMethod aBlendMethod, const Maybe<gfx::IntRect>& aBlendRect,
-                DisposalMethod aDisposalMethod, bool aHasAlpha)
-    : mRawData(aRawData)
-    , mPaletteDataLength(aPaletteDataLength)
-    , mTimeout(aTimeout)
-    , mRect(aRect)
-    , mBlendMethod(aBlendMethod)
-    , mBlendRect(aBlendRect)
-    , mDisposalMethod(aDisposalMethod)
-    , mHasAlpha(aHasAlpha)
-  { }
-
-  uint8_t* mRawData;
-  uint32_t mPaletteDataLength;
-  FrameTimeout mTimeout;
-  nsIntRect mRect;
-  BlendMethod mBlendMethod;
-  Maybe<gfx::IntRect> mBlendRect;
-  DisposalMethod mDisposalMethod;
-  bool mHasAlpha;
-};
-
 class imgFrame
 {
   typedef gfx::Color Color;
@@ -222,8 +188,6 @@ public:
   void GetPaletteData(uint32_t** aPalette, uint32_t* length) const;
   uint32_t* GetPaletteData() const;
   uint8_t GetPaletteDepth() const { return mPaletteDepth; }
-
-  AnimationData GetAnimationData() const;
 
   bool GetCompositingFailed() const;
   void SetCompositingFailed(bool val);
