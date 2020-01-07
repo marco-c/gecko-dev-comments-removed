@@ -457,7 +457,7 @@ CertificateSerialNumber(Reader& input,  Input& value)
 
 
 
-enum class Version { v1 = 0, v2 = 1, v3 = 2, v4 = 3 };
+enum class Version { v1 = 0, v2 = 1, v3 = 2, v4 = 3, Uninitialized = 255 };
 
 
 
@@ -522,6 +522,7 @@ enum class PublicKeyAlgorithm
 {
   RSA_PKCS1,
   ECDSA,
+  Uninitialized
 };
 
 Result SignatureAlgorithmIdentifierValue(
