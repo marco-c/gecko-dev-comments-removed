@@ -37,8 +37,7 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
 
 function Rule(elementStyle, options) {
   this.elementStyle = elementStyle;
-  this.domRule = options.rule || null;
-  this.style = options.rule;
+  this.domRule = options.rule;
   this.matchedSelectors = options.matchedSelectors || [];
   this.pseudoElement = options.pseudoElement || "";
 
@@ -133,7 +132,7 @@ Rule.prototype = {
 
 
   matches: function(options) {
-    return this.style === options.rule;
+    return this.domRule === options.rule;
   },
 
   
@@ -206,9 +205,9 @@ Rule.prototype = {
     
     const disabled = this.elementStyle.store.disabled;
     if (disabledProps.length > 0) {
-      disabled.set(this.style, disabledProps);
+      disabled.set(this.domRule, disabledProps);
     } else {
-      disabled.delete(this.style);
+      disabled.delete(this.domRule);
     }
 
     return modifications.apply().then(() => {
@@ -217,7 +216,7 @@ Rule.prototype = {
       
       
       for (const cssProp of parseNamedDeclarations(this.cssProperties.isKnown,
-                                                 this.style.authoredText)) {
+                                                 this.domRule.authoredText)) {
         cssProps[cssProp.name] = cssProp;
       }
 
@@ -281,10 +280,10 @@ Rule.prototype = {
     
     const resultPromise =
         promise.resolve(this._applyingModifications).then(() => {
-          const modifications = this.style.startModifyingProperties(
+          const modifications = this.domRule.startModifyingProperties(
             this.cssProperties);
           modifier(modifications);
-          if (this.style.canSetRuleText) {
+          if (this.domRule.canSetRuleText) {
             return this._applyPropertiesAuthored(modifications);
           }
           return this._applyPropertiesNoAuthored(modifications);
@@ -358,7 +357,7 @@ Rule.prototype = {
 
 
   previewPropertyValue: function(property, value, priority) {
-    const modifications = this.style.startModifyingProperties(this.cssProperties);
+    const modifications = this.domRule.startModifyingProperties(this.cssProperties);
     modifications.setProperty(this.textProps.indexOf(property),
                               property.name, value, priority);
     modifications.apply().then(() => {
@@ -412,13 +411,13 @@ Rule.prototype = {
     const store = this.elementStyle.store;
 
     
-    let props = this.style.declarations;
+    let props = this.domRule.declarations;
     if (!props.length) {
       
       
       
       props = parseNamedDeclarations(this.cssProperties.isKnown,
-                                     this.style.authoredText, true);
+                                     this.domRule.authoredText, true);
     }
 
     for (const prop of props) {
@@ -428,7 +427,7 @@ Rule.prototype = {
       
       
       const invisible = this.inherited && !this.cssProperties.isInherited(name);
-      const value = store.userProperties.getProperty(this.style, name,
+      const value = store.userProperties.getProperty(this.domRule, name,
                                                    prop.value);
       const textProp = new TextProperty(this, name, value, prop.priority,
                                       !("commentOffsets" in prop),
@@ -446,7 +445,7 @@ Rule.prototype = {
     const store = this.elementStyle.store;
 
     
-    const disabledProps = store.disabled.get(this.style);
+    const disabledProps = store.disabled.get(this.domRule);
     if (!disabledProps) {
       return [];
     }
@@ -454,7 +453,7 @@ Rule.prototype = {
     const textProps = [];
 
     for (const prop of disabledProps) {
-      const value = store.userProperties.getProperty(this.style, prop.name,
+      const value = store.userProperties.getProperty(this.domRule, prop.name,
                                                    prop.value);
       const textProp = new TextProperty(this, prop.name, value, prop.priority);
       textProp.enabled = false;
@@ -471,17 +470,6 @@ Rule.prototype = {
   refresh: function(options) {
     this.matchedSelectors = options.matchedSelectors || [];
     const newTextProps = this._getTextProperties();
-
-    
-    
-    
-    
-    
-    if (this.domRule.type === ELEMENT_STYLE) {
-      this.textProps = newTextProps;
-      this.editor.populate(true);
-      return;
-    }
 
     
     
