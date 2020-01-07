@@ -1427,6 +1427,14 @@ static const LiveRegisterSet AllRegsExceptPCSP(
                                               (uint32_t(1) << Registers::pc))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
 static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+static const LiveRegisterSet AllUserRegsExceptSP(
+    GeneralRegisterSet(Registers::AllMask & ~((uint32_t(1) << Registers::k0) |
+                                              (uint32_t(1) << Registers::k1) |
+                                              (uint32_t(1) << Registers::sp) |
+                                              (uint32_t(1) << Registers::zero))),
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
+static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
 #else
 static const LiveRegisterSet AllRegsExceptSP(
     GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
@@ -1489,12 +1497,14 @@ GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     masm.subFromStackPtr(Imm32(2 * sizeof(intptr_t)));
     
     masm.setFramePushed(0);
-    static_assert(!SupportsSimd, "high lanes of SIMD registers need to be saved too.");
+
     
-    masm.PushRegsInMask(AllRegsExceptSP);
+    masm.PushRegsInMask(AllUserRegsExceptSP);
 
     
     masm.moveStackPtrTo(s0);
+    masm.as_cfc1(s1, Assembler::FCSR);
+
     
     masm.ma_and(StackPointer, StackPointer, Imm32(~(ABIStackAlignment - 1)));
 
@@ -1509,19 +1519,18 @@ GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
     masm.assertStackAlignment(ABIStackAlignment);
     masm.call(SymbolicAddress::HandleExecutionInterrupt);
 
-# ifdef USES_O32_ABI
-    masm.addToStackPtr(Imm32(4 * sizeof(intptr_t)));
-# endif
-
     masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
 
     
     masm.moveToStackPtr(s0);
 
     
+    masm.as_ctc1(s1, Assembler::FCSR);
+
+    
     masm.storePtr(ReturnReg, Address(s0, masm.framePushed()));
 
-    masm.PopRegsInMask(AllRegsExceptSP);
+    masm.PopRegsInMask(AllUserRegsExceptSP);
 
     
     
