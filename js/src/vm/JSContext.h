@@ -1015,8 +1015,8 @@ ReportIsNotDefined(JSContext* cx, HandleId id);
 
 
 
-extern bool
-ReportIsNullOrUndefined(JSContext* cx, int spindex, HandleValue v, HandleString fallback);
+extern void
+ReportIsNullOrUndefined(JSContext* cx, int spindex, HandleValue v);
 
 extern void
 ReportMissingArg(JSContext* cx, js::HandleValue v, unsigned arg);

@@ -3259,7 +3259,7 @@ js::ToObjectSlow(JSContext* cx, JS::HandleValue val, bool reportScanStack)
 
     if (val.isNullOrUndefined()) {
         if (reportScanStack) {
-            ReportIsNullOrUndefined(cx, JSDVG_SEARCH_STACK, val, nullptr);
+            ReportIsNullOrUndefined(cx, JSDVG_SEARCH_STACK, val);
         } else {
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
                                       val.isNull() ? "null" : "undefined", "object");
