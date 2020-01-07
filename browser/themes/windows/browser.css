@@ -87,6 +87,26 @@
   -moz-box-flex: 1; 
 }
 
+#main-menubar > menu {
+  -moz-appearance: none;
+}
+
+#main-menubar > menu:not([_moz-menuactive="true"]) {
+  color: inherit;
+}
+
+
+
+
+
+@media (-moz-windows-default-theme) {
+  @media not all and (-moz-os-version: windows-win7) {
+    #toolbar-menubar:not(:-moz-lwtheme):-moz-window-inactive {
+      color: ThreeDShadow;
+    }
+  }
+}
+
 
 
 #toolbar-menubar:not([autohide="true"]) + #TabsToolbar > .titlebar-placeholder[type="caption-buttons"] {
@@ -186,12 +206,6 @@
   #main-window[tabsintitlebar] #titlebar-content:-moz-lwtheme {
     visibility: visible;
     -moz-window-dragging: drag;
-  }
-
-  
-
-  #main-window[tabsintitlebar] #main-menubar > menu:not(:-moz-lwtheme) {
-    color: inherit;
   }
 }
 

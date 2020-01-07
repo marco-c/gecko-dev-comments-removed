@@ -174,7 +174,7 @@
 
       @media (-moz-windows-default-theme) {
         #main-menubar > menu {
-          -moz-appearance: none;
+          color: inherit;
         }
 
         #main-menubar > menu[_moz-menuactive="true"],
@@ -264,22 +264,6 @@
 
     #main-window[sizemode="normal"] > #navigator-toolbox:-moz-lwtheme {
       border-top: 1px solid @glassShadowColor@;
-    }
-  }
-
-  @media (-moz-windows-default-theme) {
-    #main-menubar > menu:not(:-moz-lwtheme) {
-      color: inherit;
-    }
-
-    
-
-
-
-    @media not all and (-moz-os-version: windows-win7) {
-      #toolbar-menubar:not(:-moz-lwtheme):-moz-window-inactive {
-        color: ThreeDShadow;
-      }
     }
   }
 
