@@ -150,10 +150,17 @@ async function installAddonFromInstall(install) {
 
 
 
-async function installAddon(name) {
+
+
+
+async function installAddon(name, reconciler = null) {
   let install = await getAddonInstall(name);
   Assert.notEqual(null, install);
-  return installAddonFromInstall(install);
+  const addon = await installAddonFromInstall(install);
+  if (reconciler) {
+    await reconciler.queueCaller.promiseCallsComplete();
+  }
+  return addon;
 }
 
 
@@ -162,18 +169,26 @@ async function installAddon(name) {
 
 
 
-function uninstallAddon(addon) {
-  return new Promise(res => {
-    let listener = {onUninstalled(uninstalled) {
-      if (uninstalled.id == addon.id) {
-        AddonManager.removeAddonListener(listener);
-        res(uninstalled);
-      }
-    }};
 
+
+
+async function uninstallAddon(addon, reconciler = null) {
+  const uninstallPromise = new Promise(res => {
+    let listener = {
+      onUninstalled(uninstalled) {
+        if (uninstalled.id == addon.id) {
+          AddonManager.removeAddonListener(listener);
+          res(uninstalled);
+        }
+      }
+    };
     AddonManager.addAddonListener(listener);
-    addon.uninstall();
   });
+  addon.uninstall();
+  await uninstallPromise;
+  if (reconciler) {
+    await reconciler.queueCaller.promiseCallsComplete();
+  }
 }
 
 async function generateNewKeys(collectionKeys, collections = null) {
