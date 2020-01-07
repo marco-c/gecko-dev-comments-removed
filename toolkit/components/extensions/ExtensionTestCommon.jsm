@@ -57,8 +57,9 @@ XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
 
 
 
+
 class MockExtension {
-  constructor(file, rootURI, installType) {
+  constructor(file, rootURI, installType, embedded) {
     this.id = null;
     this.file = file;
     this.rootURI = rootURI;
@@ -84,6 +85,9 @@ class MockExtension {
     this._extension = null;
     this._extensionPromise = promiseEvent("startup");
     this._readyPromise = promiseEvent("ready");
+    if (!embedded) {
+      this._uninstallPromise = promiseEvent("uninstall-complete");
+    }
   }
 
   maybeSetID(uri, id) {
@@ -374,7 +378,7 @@ var ExtensionTestCommon = class ExtensionTestCommon {
 
     
     if (data.useAddonManager) {
-      return new MockExtension(file, jarURI, data.useAddonManager);
+      return new MockExtension(file, jarURI, data.useAddonManager, data.embedded);
     }
 
     let id;
