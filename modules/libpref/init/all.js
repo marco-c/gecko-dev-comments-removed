@@ -2890,6 +2890,10 @@ pref("layout.word_select.stop_at_punctuation", true);
 
 
 
+pref("layout.word_select.stop_at_underscore", false);
+
+
+
 
 
 

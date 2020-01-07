@@ -4,6 +4,7 @@
 
 
 #include "mozilla/intl/WordBreaker.h"
+#include "mozilla/Preferences.h"
 
 using mozilla::intl::WordBreaker;
 using mozilla::intl::WordBreakClass;
@@ -48,12 +49,17 @@ bool WordBreaker::BreakInBetween(
 WordBreaker::GetClass(char16_t c)
 {
   
+  static bool sStopAtUnderscore =
+    Preferences::GetBool("layout.word_select.stop_at_underscore", false);
+
+  
 
   if (IS_ALPHABETICAL_SCRIPT(c))  {
 	  if(IS_ASCII(c))  {
 		  if(ASCII_IS_SPACE(c)) {
 			  return kWbClassSpace;
-		  } else if(ASCII_IS_ALPHA(c) || ASCII_IS_DIGIT(c) || c == '_') {
+		  } else if(ASCII_IS_ALPHA(c) || ASCII_IS_DIGIT(c) ||
+		            (c == '_' && !sStopAtUnderscore)) {
 			  return kWbClassAlphaLetter;
 		  } else {
 			  return kWbClassPunct;
