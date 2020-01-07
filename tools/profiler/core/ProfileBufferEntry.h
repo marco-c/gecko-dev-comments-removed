@@ -24,6 +24,7 @@
 #include "gtest/MozGtestFriend.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/UniquePtr.h"
+#include "nsClassHashtable.h"
 
 class ProfilerMarker;
 
@@ -216,32 +217,6 @@ public:
     uint32_t mHash;
   };
 
-  
-  struct MOZ_STACK_CLASS OnStackFrameKey : public FrameKey {
-    explicit OnStackFrameKey(const char* aLocation)
-      : FrameKey(aLocation)
-      , mJITFrameHandle(nullptr)
-    { }
-
-    OnStackFrameKey(const OnStackFrameKey& aToCopy)
-      : FrameKey(aToCopy)
-      , mJITFrameHandle(aToCopy.mJITFrameHandle)
-    { }
-
-    const JS::ProfiledFrameHandle* mJITFrameHandle;
-
-    OnStackFrameKey(void* aJITAddress, unsigned aJITDepth)
-      : FrameKey(aJITAddress, aJITDepth)
-      , mJITFrameHandle(nullptr)
-    { }
-
-    OnStackFrameKey(void* aJITAddress, unsigned aJITDepth,
-                    const JS::ProfiledFrameHandle& aJITFrameHandle)
-      : FrameKey(aJITAddress, aJITDepth)
-      , mJITFrameHandle(&aJITFrameHandle)
-    { }
-  };
-
   struct StackKey {
     mozilla::Maybe<uint32_t> mPrefixStackIndex;
     uint32_t mFrameIndex;
@@ -276,21 +251,27 @@ public:
   explicit UniqueStacks(JSContext* aContext);
 
   
-  MOZ_MUST_USE StackKey BeginStack(const OnStackFrameKey& aFrame);
+  MOZ_MUST_USE StackKey BeginStack(const FrameKey& aFrame);
 
   
   MOZ_MUST_USE StackKey AppendFrame(const StackKey& aStack,
-                                    const OnStackFrameKey& aFrame);
+                                    const FrameKey& aFrame);
 
-  MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const OnStackFrameKey& aFrame);
+  MOZ_MUST_USE nsTArray<FrameKey>
+  GetOrAddJITFrameKeysForAddress(void* aJITAddress);
+
+  MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
   MOZ_MUST_USE uint32_t GetOrAddStackIndex(const StackKey& aStack);
 
-  uint32_t LookupJITFrameDepth(void* aAddr);
-  void AddJITFrameDepth(void* aAddr, unsigned depth);
   void SpliceFrameTableElements(SpliceableJSONWriter& aWriter);
   void SpliceStackTableElements(SpliceableJSONWriter& aWriter);
 
 private:
+  
+  
+  void MaybeAddJITFrameIndex(const FrameKey& aFrame,
+                             const JS::ProfiledFrameHandle& aJITFrame);
+
   void StreamNonJITFrame(const FrameKey& aFrame);
   void StreamJITFrame(const JS::ProfiledFrameHandle& aJITFrame);
   void StreamStack(const StackKey& aStack);
@@ -304,15 +285,12 @@ private:
   
   
   
-  
-  std::map<void*, uint32_t> mJITFrameDepthMap;
+  nsClassHashtable<nsPtrHashKey<void>, nsTArray<FrameKey>> mAddressToJITFrameKeysMap;
 
-  uint32_t mFrameCount;
   SpliceableChunkedJSONWriter mFrameTableWriter;
   nsDataHashtable<nsGenericHashKey<FrameKey>, uint32_t> mFrameToIndexMap;
 
   SpliceableChunkedJSONWriter mStackTableWriter;
-
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
 };
 
