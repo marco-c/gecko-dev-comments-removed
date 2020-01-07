@@ -71,7 +71,14 @@ pref("security.pki.sha1_enforcement_level", 3);
 
 
 
-pref("security.signed_app_signatures.policy", 0);
+
+
+
+
+
+
+
+pref("security.signed_app_signatures.policy", 2);
 
 
 

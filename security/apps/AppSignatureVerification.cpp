@@ -13,6 +13,7 @@
 #include "SharedCertVerifier.h"
 #include "certdb.h"
 #include "cms.h"
+#include "cosec.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
@@ -343,8 +344,10 @@ ReadLine( const char* & nextLineStart,  nsCString & line,
 
 
 #define JAR_MF_SEARCH_STRING "(M|/M)ETA-INF/(M|m)(ANIFEST|anifest).(MF|mf)$"
+#define JAR_COSE_MF_SEARCH_STRING "(M|/M)ETA-INF/cose.manifest$"
 #define JAR_SF_SEARCH_STRING "(M|/M)ETA-INF/*.(SF|sf)$"
 #define JAR_RSA_SEARCH_STRING "(M|/M)ETA-INF/*.(RSA|rsa)$"
+#define JAR_COSE_SEARCH_STRING "(M|/M)ETA-INF/cose.sig$"
 #define JAR_META_DIR "META-INF"
 #define JAR_MF_HEADER "Manifest-Version: 1.0"
 #define JAR_SF_HEADER "Signature-Version: 1.0"
@@ -840,14 +843,463 @@ VerifySignature(AppTrustedRoot trustedRoot, const SECItem& buffer,
                              &pkcs7DataOid));
 }
 
+class CoseVerificationContext
+{
+public:
+  explicit CoseVerificationContext(AppTrustedRoot aTrustedRoot)
+    : mTrustedRoot(aTrustedRoot)
+    , mCertDER(nullptr)
+    , mCertDERLen(0)
+  {
+  }
+  ~CoseVerificationContext() {}
 
-enum class SignaturePolicy {
-  PKCS7WithSHA1OrSHA256 = 0,
-  PKCS7WithSHA256 = 1,
+  AppTrustedRoot GetTrustedRoot() { return mTrustedRoot; }
+  nsresult SetCert(SECItem* aCertDER)
+  {
+    mCertDERLen = aCertDER->len;
+    mCertDER = MakeUnique<uint8_t[]>(mCertDERLen);
+    if (!mCertDER) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    memcpy(mCertDER.get(), aCertDER->data, mCertDERLen);
+    return NS_OK;
+  }
+  uint8_t* GetCert() { return mCertDER.get(); }
+  unsigned int GetCertLen() { return mCertDERLen; }
+
+private:
+  AppTrustedRoot mTrustedRoot;
+  UniquePtr<uint8_t[]> mCertDER;
+  unsigned int mCertDERLen;
+};
+
+
+
+
+bool
+CoseVerificationCallback(const uint8_t* aPayload,
+                         size_t aPayloadLen,
+                         const uint8_t** aCertChain,
+                         size_t aCertChainLen,
+                         const size_t* aCertsLen,
+                         const uint8_t* aEECert,
+                         size_t aEECertLen,
+                         const uint8_t* aSignature,
+                         size_t aSignatureLen,
+                         uint8_t aSignatureAlgorithm,
+                         void* ctx)
+{
+  if (!ctx || !aPayload || !aEECert || !aSignature) {
+    return false;
+  }
+  
+  CoseVerificationContext* context = static_cast<CoseVerificationContext*>(ctx);
+  AppTrustedRoot aTrustedRoot = context->GetTrustedRoot();
+
+  CK_MECHANISM_TYPE mechanism;
+  SECOidTag oid;
+  uint32_t hash_length;
+  SECItem param = { siBuffer, nullptr, 0 };
+  switch (aSignatureAlgorithm) {
+    case ES256:
+      mechanism = CKM_ECDSA;
+      oid = SEC_OID_SHA256;
+      hash_length = SHA256_LENGTH;
+      break;
+    case ES384:
+      mechanism = CKM_ECDSA;
+      oid = SEC_OID_SHA384;
+      hash_length = SHA384_LENGTH;
+      break;
+    case ES512:
+      mechanism = CKM_ECDSA;
+      oid = SEC_OID_SHA512;
+      hash_length = SHA512_LENGTH;
+      break;
+    default:
+      return false;
+  }
+
+  uint8_t hashBuf[HASH_LENGTH_MAX];
+  SECStatus rv = PK11_HashBuf(oid, hashBuf, aPayload, aPayloadLen);
+  if (rv != SECSuccess) {
+    return false;
+  }
+  SECItem hashItem = { siBuffer, hashBuf, hash_length };
+  CERTCertDBHandle* dbHandle = CERT_GetDefaultCertDB();
+  if (!dbHandle) {
+    return false;
+  }
+  SECItem derCert = { siBuffer,
+                      const_cast<uint8_t*>(aEECert),
+                      static_cast<unsigned int>(aEECertLen) };
+  UniqueCERTCertificate cert(
+    CERT_NewTempCertificate(dbHandle, &derCert, nullptr, false, true));
+  if (!cert) {
+    return false;
+  }
+  UniqueSECKEYPublicKey key(CERT_ExtractPublicKey(cert.get()));
+  if (!key) {
+    return false;
+  }
+  SECItem signatureItem = { siBuffer,
+                             const_cast<uint8_t*>(aSignature),
+                             static_cast<unsigned int>(aSignatureLen) };
+  rv = PK11_VerifyWithMechanism(
+    key.get(), mechanism, &param, &signatureItem, &hashItem, nullptr);
+  if (rv != SECSuccess) {
+    return false;
+  }
+
+  
+  UniqueCERTCertList tempCerts(CERT_NewCertList());
+  for (size_t i = 0; i < aCertChainLen; ++i) {
+    SECItem derCert = { siBuffer,
+                        const_cast<uint8_t*>(aCertChain[i]),
+                        static_cast<unsigned int>(aCertsLen[i]) };
+    UniqueCERTCertificate tempCert(
+      CERT_NewTempCertificate(dbHandle, &derCert, nullptr, false, true));
+    
+    
+    if (!tempCert) {
+      continue;
+    }
+    if (CERT_AddCertToListTail(tempCerts.get(), tempCert.get()) != SECSuccess) {
+      return false;
+    }
+    Unused << tempCert.release();
+  }
+
+  UniqueCERTCertList builtChain;
+  nsresult nrv = VerifyCertificate(cert.get(), aTrustedRoot, builtChain);
+  bool result = true;
+  if (NS_FAILED(nrv)) {
+    result = false;
+  }
+
+  
+  nrv = context->SetCert(&cert->derCert);
+  if (NS_FAILED(nrv)) {
+    result = false;
+  }
+
+  return result;
+}
+
+nsresult
+VerifyAppManifest(SECOidTag aDigestToUse, nsCOMPtr<nsIZipReader> aZip,
+                  nsTHashtable<nsCStringHashKey>& aIgnoredFiles,
+                  const SECItem& aManifestBuffer)
+{
+  
+  
+  
+  ScopedAutoSECItem buf(128 * 1024);
+
+  nsTHashtable<nsCStringHashKey> items;
+
+  nsresult rv = ParseMF(BitwiseCast<char*, unsigned char*>(aManifestBuffer.data),
+    aZip, aDigestToUse, items, buf);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIUTF8StringEnumerator> entries;
+  rv = aZip->FindEntries(EmptyCString(), getter_AddRefs(entries));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!entries) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  for (;;) {
+    bool hasMore;
+    rv = entries->HasMore(&hasMore);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!hasMore) {
+      break;
+    }
+
+    nsAutoCString entryFilename;
+    rv = entries->GetNext(entryFilename);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    MOZ_LOG(gPIPNSSLog,
+            LogLevel::Debug,
+            ("Verifying digests for %s", entryFilename.get()));
+
+    if (entryFilename.Length() == 0) {
+      return NS_ERROR_SIGNED_JAR_ENTRY_INVALID;
+    }
+
+    
+    
+    if (aIgnoredFiles.Contains(entryFilename)) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    if (entryFilename.Last() == '/') {
+      continue;
+    }
+
+    nsCStringHashKey* item = items.GetEntry(entryFilename);
+    if (!item) {
+      return NS_ERROR_SIGNED_JAR_UNSIGNED_ENTRY;
+    }
+
+    
+    items.RemoveEntry(item);
+  }
+
+  
+  
+  
+  if (items.Count() != 0) {
+    return NS_ERROR_SIGNED_JAR_ENTRY_MISSING;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+
+
+
+
+
+
+class SignaturePolicy
+{
+public:
+  explicit SignaturePolicy(int32_t preference)
+    : mProcessCose(true)
+    , mCoseRequired(false)
+    , mProcessPK7(true)
+    , mPK7Required(true)
+    , mSHA1Allowed(true)
+    , mSHA256Allowed(true)
+  {
+    mCoseRequired = (preference & 0b100) != 0;
+    mProcessCose = (preference & 0b110) != 0;
+    mPK7Required = (preference & 0b100) == 0;
+    mProcessPK7 = (preference & 0b110) != 0b110;
+    if ((preference & 0b1) == 0) {
+      mSHA1Allowed = true;
+      mSHA256Allowed = true;
+    } else {
+      mSHA1Allowed = false;
+      mSHA256Allowed = true;
+    }
+  }
+  ~SignaturePolicy()
+  {
+  }
+  bool ProcessCOSE() { return mProcessCose; }
+  bool COSERequired() { return mCoseRequired; }
+  bool PK7Required() { return mPK7Required; }
+  bool ProcessPK7() { return mProcessPK7; }
+  bool IsPK7HashAllowed(SECOidTag aHashAlg)
+  {
+    if (aHashAlg == SEC_OID_SHA256 && mSHA256Allowed) {
+      return true;
+    }
+    if (aHashAlg == SEC_OID_SHA1 && mSHA1Allowed) {
+      return true;
+    }
+    return false;
+  }
+
+private:
+  bool mProcessCose;
+  bool mCoseRequired;
+  bool mProcessPK7;
+  bool mPK7Required;
+  bool mSHA1Allowed;
+  bool mSHA256Allowed;
 };
 
 nsresult
-OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
+VerifyCOSESignature(AppTrustedRoot aTrustedRoot, nsIZipReader* aZip,
+                    SignaturePolicy& aPolicy,
+                    nsTHashtable<nsCStringHashKey>& aIgnoredFiles,
+                     bool& aVerified,
+                     UniqueSECItem* aCoseCertItem)
+{
+  NS_ENSURE_ARG_POINTER(aZip);
+  NS_ENSURE_ARG_POINTER(aCoseCertItem);
+  bool required = aPolicy.COSERequired();
+  aVerified = false;
+
+  
+  nsAutoCString coseFilename;
+  ScopedAutoSECItem coseBuffer;
+  nsresult rv = FindAndLoadOneEntry(
+    aZip, NS_LITERAL_CSTRING(JAR_COSE_SEARCH_STRING), coseFilename, coseBuffer);
+  if (NS_FAILED(rv)) {
+    return required ? NS_ERROR_SIGNED_JAR_WRONG_SIGNATURE : NS_OK;
+  }
+
+  
+  nsAutoCString mfFilename;
+  ScopedAutoSECItem manifestBuffer;
+  rv = FindAndLoadOneEntry(aZip,
+                           NS_LITERAL_CSTRING(JAR_COSE_MF_SEARCH_STRING),
+                           mfFilename,
+                           manifestBuffer);
+  if (NS_FAILED(rv)) {
+    return required ? NS_ERROR_SIGNED_JAR_WRONG_SIGNATURE : rv;
+  }
+  MOZ_ASSERT(manifestBuffer.len >= 1);
+  MOZ_ASSERT(coseBuffer.len >= 1);
+  CoseVerificationContext context(aTrustedRoot);
+  bool coseVerification = verify_cose_signature_ffi(manifestBuffer.data,
+                                                    manifestBuffer.len - 1,
+                                                    coseBuffer.data,
+                                                    coseBuffer.len - 1,
+                                                    &context,
+                                                    CoseVerificationCallback);
+  if (!coseVerification) {
+    return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
+  }
+  
+  
+  const SECItem derCert = { siBuffer, context.GetCert(), context.GetCertLen() };
+  aCoseCertItem->reset(SECITEM_DupItem(&derCert));
+  if (!aCoseCertItem) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  aIgnoredFiles.PutEntry(mfFilename);
+  aIgnoredFiles.PutEntry(coseFilename);
+  rv = VerifyAppManifest(SEC_OID_SHA256, aZip, aIgnoredFiles, manifestBuffer);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  aVerified = true;
+  return NS_OK;
+}
+
+nsresult
+VerifyPK7Signature(AppTrustedRoot aTrustedRoot, nsIZipReader* aZip,
+                   SignaturePolicy& aPolicy,
+                    nsTHashtable<nsCStringHashKey>& aIgnoredFiles,
+                    bool& aVerified,
+                    UniqueCERTCertList& aBuiltChain)
+{
+  NS_ENSURE_ARG_POINTER(aZip);
+  bool required = aPolicy.PK7Required();
+  aVerified = false;
+
+  
+  nsAutoCString sigFilename;
+  ScopedAutoSECItem sigBuffer;
+  nsresult rv = FindAndLoadOneEntry(
+    aZip, nsLiteralCString(JAR_RSA_SEARCH_STRING), sigFilename, sigBuffer);
+  if (NS_FAILED(rv)) {
+    return required ? NS_ERROR_SIGNED_JAR_NOT_SIGNED : NS_OK;
+  }
+
+  
+  nsAutoCString sfFilename;
+  ScopedAutoSECItem sfBuffer;
+  rv = FindAndLoadOneEntry(
+    aZip, NS_LITERAL_CSTRING(JAR_SF_SEARCH_STRING), sfFilename, sfBuffer);
+  if (NS_FAILED(rv)) {
+    return required ? NS_ERROR_SIGNED_JAR_MANIFEST_INVALID : NS_OK;
+  }
+
+  
+  
+  Digest sfCalculatedSHA1Digest;
+  rv = sfCalculatedSHA1Digest.DigestBuf(
+    SEC_OID_SHA1, sfBuffer.data, sfBuffer.len - 1);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  Digest sfCalculatedSHA256Digest;
+  rv = sfCalculatedSHA256Digest.DigestBuf(
+    SEC_OID_SHA256, sfBuffer.data, sfBuffer.len - 1);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  sigBuffer.type = siBuffer;
+  SECOidTag digestToUse;
+  rv = VerifySignature(aTrustedRoot,
+                       sigBuffer,
+                       sfCalculatedSHA1Digest.get(),
+                       sfCalculatedSHA256Digest.get(),
+                       digestToUse,
+                       aBuiltChain);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  if (!aPolicy.IsPK7HashAllowed(digestToUse)) {
+    return NS_ERROR_SIGNED_JAR_WRONG_SIGNATURE;
+  }
+
+  nsAutoCString mfDigest;
+  rv = ParseSF(
+    BitwiseCast<char*, unsigned char*>(sfBuffer.data), digestToUse, mfDigest);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  ScopedAutoSECItem manifestBuffer;
+  Digest mfCalculatedDigest;
+  nsAutoCString mfFilename;
+  rv = FindAndLoadOneEntry(aZip,
+                           NS_LITERAL_CSTRING(JAR_MF_SEARCH_STRING),
+                           mfFilename,
+                           manifestBuffer,
+                           digestToUse,
+                           &mfCalculatedDigest);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  nsDependentCSubstring calculatedDigest(
+    DigestToDependentString(mfCalculatedDigest));
+  if (!mfDigest.Equals(calculatedDigest)) {
+    return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
+  }
+
+  
+  aIgnoredFiles.PutEntry(sfFilename);
+  aIgnoredFiles.PutEntry(sigFilename);
+  aIgnoredFiles.PutEntry(mfFilename);
+  rv = VerifyAppManifest(digestToUse, aZip, aIgnoredFiles, manifestBuffer);
+  if (NS_FAILED(rv)) {
+    aIgnoredFiles.Clear();
+    return rv;
+  }
+
+  aVerified = true;
+  return NS_OK;
+}
+
+nsresult
+OpenSignedAppFile(AppTrustedRoot aTrustedRoot,
+                  nsIFile* aJarFile,
                   SignaturePolicy aPolicy,
                    nsIZipReader** aZipReader,
                    nsIX509Cert** aSignerCert)
@@ -871,162 +1323,36 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   rv = zip->Open(aJarFile);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  nsAutoCString sigFilename;
-  ScopedAutoSECItem sigBuffer;
-  rv = FindAndLoadOneEntry(zip, nsLiteralCString(JAR_RSA_SEARCH_STRING),
-                           sigFilename, sigBuffer);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_SIGNED_JAR_NOT_SIGNED;
-  }
-
-  
-  nsAutoCString sfFilename;
-  ScopedAutoSECItem sfBuffer;
-  rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_SF_SEARCH_STRING),
-                           sfFilename, sfBuffer);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
-  }
-
-  
-  
-  Digest sfCalculatedSHA1Digest;
-  rv = sfCalculatedSHA1Digest.DigestBuf(SEC_OID_SHA1, sfBuffer.data,
-                                        sfBuffer.len - 1);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  Digest sfCalculatedSHA256Digest;
-  rv = sfCalculatedSHA256Digest.DigestBuf(SEC_OID_SHA256, sfBuffer.data,
-                                          sfBuffer.len - 1);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  sigBuffer.type = siBuffer;
-  UniqueCERTCertList builtChain;
-  SECOidTag digestToUse;
-  rv = VerifySignature(aTrustedRoot, sigBuffer, sfCalculatedSHA1Digest.get(),
-                       sfCalculatedSHA256Digest.get(), digestToUse, builtChain);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  switch (aPolicy) {
-    case SignaturePolicy::PKCS7WithSHA256:
-      if (digestToUse != SEC_OID_SHA256) {
-        return NS_ERROR_SIGNED_JAR_WRONG_SIGNATURE;
-      }
-      break;
-    case SignaturePolicy::PKCS7WithSHA1OrSHA256:
-      break;
-  }
-
-  nsAutoCString mfDigest;
-  rv = ParseSF(BitwiseCast<char*, unsigned char*>(sfBuffer.data), digestToUse,
-               mfDigest);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  nsAutoCString mfFilename;
-  ScopedAutoSECItem manifestBuffer;
-  Digest mfCalculatedDigest;
-  rv = FindAndLoadOneEntry(zip, NS_LITERAL_CSTRING(JAR_MF_SEARCH_STRING),
-                           mfFilename, manifestBuffer, digestToUse,
-                           &mfCalculatedDigest);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsDependentCSubstring calculatedDigest(
-    DigestToDependentString(mfCalculatedDigest));
-  if (!mfDigest.Equals(calculatedDigest)) {
-    return NS_ERROR_SIGNED_JAR_MANIFEST_INVALID;
-  }
+  bool pk7Verified = false;
+  bool coseVerified = false;
+  nsTHashtable<nsCStringHashKey> ignoredFiles;
+  UniqueCERTCertList pk7BuiltChain;
+  UniqueSECItem coseCertItem;
 
   
   
   
-  ScopedAutoSECItem buf(128 * 1024);
-
-  nsTHashtable<nsCStringHashKey> items;
-
-  rv = ParseMF(BitwiseCast<char*, unsigned char*>(manifestBuffer.data), zip,
-               digestToUse, items, buf);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   
-  nsCOMPtr<nsIUTF8StringEnumerator> entries;
-  rv = zip->FindEntries(EmptyCString(), getter_AddRefs(entries));
-  if (NS_SUCCEEDED(rv) && !entries) {
-    rv = NS_ERROR_UNEXPECTED;
-  }
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  for (;;) {
-    bool hasMore;
-    rv = entries->HasMore(&hasMore);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!hasMore) {
-      break;
+  
+  if (aPolicy.ProcessPK7()) {
+    rv = VerifyPK7Signature(
+      aTrustedRoot, zip, aPolicy, ignoredFiles, pk7Verified, pk7BuiltChain);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
-
-    nsAutoCString entryFilename;
-    rv = entries->GetNext(entryFilename);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Verifying digests for %s",
-           entryFilename.get()));
-
-    
-    
-    
-    
-    
-    
-    if (entryFilename == mfFilename ||
-        entryFilename == sfFilename ||
-        entryFilename == sigFilename) {
-      continue;
-    }
-
-    if (entryFilename.Length() == 0) {
-      return NS_ERROR_SIGNED_JAR_ENTRY_INVALID;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (entryFilename[entryFilename.Length() - 1] == '/') {
-      continue;
-    }
-
-    nsCStringHashKey * item = items.GetEntry(entryFilename);
-    if (!item) {
-      return NS_ERROR_SIGNED_JAR_UNSIGNED_ENTRY;
-    }
-
-    
-    items.RemoveEntry(item);
   }
 
-  
-  
-  
-  if (items.Count() != 0) {
-    return NS_ERROR_SIGNED_JAR_ENTRY_MISSING;
+  if (aPolicy.ProcessCOSE()) {
+    rv = VerifyCOSESignature(
+      aTrustedRoot, zip, aPolicy, ignoredFiles, coseVerified, &coseCertItem);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  if ((aPolicy.PK7Required() && !pk7Verified) ||
+      (aPolicy.COSERequired() && !coseVerified)) {
+    return NS_ERROR_SIGNED_JAR_WRONG_SIGNATURE;
   }
 
   
@@ -1037,15 +1363,36 @@ OpenSignedAppFile(AppTrustedRoot aTrustedRoot, nsIFile* aJarFile,
   
   
   if (aSignerCert) {
-    CERTCertListNode* signerCertNode = CERT_LIST_HEAD(builtChain);
-    if (!signerCertNode || CERT_LIST_END(signerCertNode, builtChain) ||
-        !signerCertNode->cert) {
-      return NS_ERROR_FAILURE;
+    
+    if (aPolicy.COSERequired() || (coseCertItem && coseCertItem->len != 0)) {
+      if (!coseCertItem || coseCertItem->len == 0) {
+        return NS_ERROR_FAILURE;
+      }
+      CERTCertDBHandle* dbHandle = CERT_GetDefaultCertDB();
+      if (!dbHandle) {
+        return NS_ERROR_FAILURE;
+      }
+      UniqueCERTCertificate cert(CERT_NewTempCertificate(
+        dbHandle, coseCertItem.get(), nullptr, false, true));
+      if (!cert) {
+        return NS_ERROR_FAILURE;
+      }
+      nsCOMPtr<nsIX509Cert> signerCert = nsNSSCertificate::Create(cert.get());
+      if (!signerCert) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      signerCert.forget(aSignerCert);
+    } else {
+      CERTCertListNode* signerCertNode = CERT_LIST_HEAD(pk7BuiltChain);
+      if (!signerCertNode || CERT_LIST_END(signerCertNode, pk7BuiltChain) ||
+          !signerCertNode->cert) {
+        return NS_ERROR_FAILURE;
+      }
+      nsCOMPtr<nsIX509Cert> signerCert =
+        nsNSSCertificate::Create(signerCertNode->cert);
+      NS_ENSURE_TRUE(signerCert, NS_ERROR_OUT_OF_MEMORY);
+      signerCert.forget(aSignerCert);
     }
-    nsCOMPtr<nsIX509Cert> signerCert =
-      nsNSSCertificate::Create(signerCertNode->cert);
-    NS_ENSURE_TRUE(signerCert, NS_ERROR_OUT_OF_MEMORY);
-    signerCert.forget(aSignerCert);
   }
 
   return NS_OK;
@@ -1090,8 +1437,7 @@ private:
   nsCOMPtr<nsIX509Cert> mSignerCert; 
 };
 
-static const SignaturePolicy sDefaultSignaturePolicy =
-  SignaturePolicy::PKCS7WithSHA1OrSHA256;
+static const int32_t sDefaultSignaturePolicy = 0b10;
 
 } 
 
@@ -1105,19 +1451,10 @@ nsNSSCertificateDB::OpenSignedAppFileAsync(
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
-  SignaturePolicy policy =
-    static_cast<SignaturePolicy>(
-      Preferences::GetInt("security.signed_app_signatures.policy",
-                          static_cast<int32_t>(sDefaultSignaturePolicy)));
-  switch (policy) {
-    case SignaturePolicy::PKCS7WithSHA1OrSHA256:
-      break;
-    case SignaturePolicy::PKCS7WithSHA256:
-      break;
-    default:
-      policy = sDefaultSignaturePolicy;
-      break;
-  }
+  int32_t policyInt =
+    Preferences::GetInt("security.signed_app_signatures.policy",
+                        static_cast<int32_t>(sDefaultSignaturePolicy));
+  SignaturePolicy policy(policyInt);
   RefPtr<OpenSignedAppFileTask> task(new OpenSignedAppFileTask(aTrustedRoot,
                                                                aJarFile,
                                                                policy,

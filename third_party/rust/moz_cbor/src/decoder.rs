@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read, Seek, SeekFrom};
-use cbor::{CborError, CborType};
+use {CborError, CborType};
 
 
 

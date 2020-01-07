@@ -1,8 +1,8 @@
 use test_setup as test;
-use util_test::{sign, verify_signature};
-use {CoseError, SignatureAlgorithm, SignatureParameters};
-use std::str::FromStr;
-use decoder::decode_signature;
+use {CoseError, SignatureAlgorithm};
+use decoder::{COSE_HEADER_ALG, COSE_HEADER_KID, COSE_SIGN_TAG, COSE_TYPE_ES256, decode_signature};
+use cbor::CborType;
+use std::collections::BTreeMap;
 
 #[test]
 fn test_cose_decode() {
@@ -15,216 +15,482 @@ fn test_cose_decode() {
     assert_eq!(cose_signatures[0].certs[1], test::P256_INT.to_vec());
 }
 
+fn test_cose_format_error(bytes: &[u8], expected_error: CoseError) {
+    let payload = vec![0];
+    let result = decode_signature(bytes, &payload);
+    assert!(result.is_err());
+    assert_eq!(result.err(), Some(expected_error));
+}
 
 
 
-const P256_PARAMS: SignatureParameters = SignatureParameters {
-    certificate: &test::P256_EE,
-    algorithm: SignatureAlgorithm::ES256,
-    pkcs8: &test::PKCS8_P256_EE,
-};
-const P384_PARAMS: SignatureParameters = SignatureParameters {
-    certificate: &test::P384_EE,
-    algorithm: SignatureAlgorithm::ES384,
-    pkcs8: &test::PKCS8_P384_EE,
-};
-const P521_PARAMS: SignatureParameters = SignatureParameters {
-    certificate: &test::P521_EE,
-    algorithm: SignatureAlgorithm::ES512,
-    pkcs8: &test::PKCS8_P521_EE,
-};
+fn wrap_tag_and_encode_array(array: Vec<CborType>) -> Vec<u8> {
+    CborType::Tag(COSE_SIGN_TAG, Box::new(CborType::Array(array))).serialize()
+}
 
-#[cfg(test)]
-fn test_verify(payload: &[u8], cert_chain: &[&[u8]], params_vec: Vec<SignatureParameters>) {
-    test::setup();
-    let cose_signature = sign(payload, cert_chain, &params_vec);
-    assert!(cose_signature.is_ok());
-    let cose_signature = cose_signature.unwrap();
 
+
+fn encode_test_protected_header(keys: Vec<CborType>, values: Vec<CborType>) -> Vec<u8> {
+    assert_eq!(keys.len(), values.len());
+    let mut map: BTreeMap<CborType, CborType> = BTreeMap::new();
+    for (key, value) in keys.iter().zip(values) {
+        map.insert(key.clone(), value.clone());
+    }
+    CborType::Map(map).serialize()
+}
+
+
+fn build_test_cose_signature(protected_header: Vec<u8>) -> CborType {
+    CborType::Array(vec![CborType::Bytes(protected_header),
+         CborType::Map(BTreeMap::new()),
+         CborType::Bytes(Vec::new())])
+}
+
+
+fn make_minimally_valid_cose_sign_protected_header() -> Vec<u8> {
+    encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::Array(Vec::new())],
+    )
+}
+
+
+fn make_minimally_valid_cose_signature_protected_header() -> Vec<u8> {
+    encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Bytes(Vec::new())],
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn test_cose_sign_minimally_valid() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    let payload = vec![0];
+    let result = decode_signature(&bytes, &payload);
+    assert!(result.is_ok());
+    let decoded = result.unwrap();
+    assert_eq!(decoded.len(), 1);
+    assert_eq!(decoded[0].signer_cert.len(), 0);
+    assert_eq!(decoded[0].certs.len(), 0);
+}
+
+#[test]
+fn test_cose_sign_not_tagged() {
+    let bytes = CborType::Array(vec![CborType::Integer(0)]).serialize();
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_sign_wrong_tag() {
     
-    assert!(verify_signature(payload, cose_signature).is_ok());
+    let bytes = CborType::Tag(99, Box::new(CborType::Integer(0))).serialize();
+    test_cose_format_error(&bytes, CoseError::UnexpectedTag);
 }
 
-#[cfg(test)]
-fn test_verify_modified_payload(
-    payload: &mut [u8],
-    cert_chain: &[&[u8]],
-    params_vec: Vec<SignatureParameters>,
-) {
-    test::setup();
-    let cose_signature = sign(payload, cert_chain, &params_vec);
-    assert!(cose_signature.is_ok());
-    let cose_signature = cose_signature.unwrap();
-
+#[test]
+fn test_cose_sign_right_tag_wrong_contents() {
     
-    payload[0] = !payload[0];
-    let verify_result = verify_signature(payload, cose_signature);
-    assert!(verify_result.is_err());
-    assert_eq!(verify_result, Err(CoseError::VerificationFailed));
+    let bytes = CborType::Tag(98, Box::new(CborType::Integer(0))).serialize();
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
 }
 
-#[cfg(test)]
-fn test_verify_modified_signature(
-    payload: &[u8],
-    cert_chain: &[&[u8]],
-    params_vec: Vec<SignatureParameters>,
-) {
-    test::setup();
-    let cose_signature = sign(payload, cert_chain, &params_vec);
-    assert!(cose_signature.is_ok());
-    let mut cose_signature = cose_signature.unwrap();
+#[test]
+fn test_cose_sign_too_small() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
 
+#[test]
+fn test_cose_sign_too_large() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(Vec::new()),
+                      CborType::Array(Vec::new())];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_sign_protected_header_empty() {
+    let body_protected_header = encode_test_protected_header(Vec::new(), Vec::new());
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_sign_protected_header_missing_kid() {
+    let body_protected_header =
+        encode_test_protected_header(vec![CborType::Integer(2)], vec![CborType::Integer(2)]);
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MissingHeader);
+}
+
+#[test]
+fn test_cose_sign_protected_header_kid_wrong_type() {
+    let body_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::Integer(2)],
+    );
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_sign_protected_header_extra_header_key() {
+    let body_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_KID),
+             CborType::Integer(2)],
+        vec![CborType::Bytes(Vec::new()),
+             CborType::Integer(2)],
+    );
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_sign_unprotected_header_wrong_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Integer(1),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_sign_unprotected_header_not_empty() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let mut unprotected_header_map: BTreeMap<CborType, CborType> = BTreeMap::new();
+    unprotected_header_map.insert(CborType::Integer(0), CborType::SignedInteger(-1));
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(unprotected_header_map),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_sign_payload_not_null() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Integer(0),
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_signatures_not_array() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Integer(0)];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_signatures_empty() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(Vec::new())];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_signature_protected_header_wrong_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature = CborType::Array(vec![CborType::Null,
+         CborType::Map(BTreeMap::new()),
+         CborType::SignedInteger(-1)]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
+}
+
+#[test]
+fn test_cose_signature_protected_header_empty() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(Vec::new(), Vec::new());
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_signature_protected_header_too_large() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = CborType::Array(vec![CborType::Bytes(signature_protected_header),
+         CborType::Map(BTreeMap::new()),
+         CborType::Bytes(Vec::new()),
+         CborType::Null]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_signature_protected_header_bad_encoding() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
     
-    let len = cose_signature.len();
-    cose_signature[len - 15] = !cose_signature[len - 15];
-
-    
-    let verify_result = verify_signature(payload, cose_signature);
-    assert!(verify_result.is_err());
-    assert_eq!(verify_result, Err(CoseError::VerificationFailed));
-}
-
-
-
-#[cfg(test)]
-fn test_verify_verification_fails(
-    payload: &[u8],
-    cert_chain: &[&[u8]],
-    params_vec: Vec<SignatureParameters>,
-) {
-    test::setup();
-    let cose_signature = sign(payload, cert_chain, &params_vec);
-    assert!(cose_signature.is_ok());
-    let cose_signature = cose_signature.unwrap();
-
-    
-    let verify_result = verify_signature(payload, cose_signature);
-    assert!(verify_result.is_err());
-    assert_eq!(verify_result, Err(CoseError::VerificationFailed));
+    let signature = CborType::Array(vec![CborType::Bytes(vec![0x1a, 0x00, 0x00]),
+         CborType::Map(BTreeMap::new()),
+         CborType::Bytes(Vec::new())]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::DecodingFailure);
 }
 
 #[test]
-fn test_cose_sign_verify() {
-    let payload = b"This is the content.";
-
-    
-    let certs: [&[u8]; 2] = [&test::P256_ROOT,
-                             &test::P256_INT];
-    let params_vec = vec![P256_PARAMS];
-    test_verify(payload, &certs, params_vec);
-
-    
-    let params_vec = vec![P384_PARAMS];
-    test_verify(payload, &certs, params_vec);
-
-    
-    let params_vec = vec![P521_PARAMS];
-    test_verify(payload, &certs, params_vec);
+fn test_cose_signature_protected_header_missing_alg() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(2),
+             CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Bytes(Vec::new())],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MissingHeader);
 }
 
 #[test]
-fn test_cose_sign_verify_modified_payload() {
-    let mut payload = String::from_str("This is the content.")
-        .unwrap()
-        .into_bytes();
-    let certs: [&[u8]; 2] = [&test::P256_ROOT,
-                             &test::P256_INT];
-    let params_vec = vec![P256_PARAMS];
-    test_verify_modified_payload(&mut payload, &certs, params_vec);
+fn test_cose_signature_protected_header_missing_kid() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(3)],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Bytes(Vec::new())],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MissingHeader);
 }
 
 #[test]
-fn test_cose_sign_verify_wrong_cert() {
-    let payload = b"This is the content.";
-    let certs: [&[u8]; 2] = [&test::P256_ROOT,
-                             &test::P256_INT];
-    let params = SignatureParameters {
-        certificate: &test::P384_EE,
-        algorithm: SignatureAlgorithm::ES256,
-        pkcs8: &test::PKCS8_P256_EE,
-    };
-    let params_vec = vec![params];
-    test_verify_verification_fails(payload, &certs, params_vec);
+fn test_cose_signature_protected_header_wrong_key_types() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::SignedInteger(-1),
+             CborType::Bytes(vec![0])],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Bytes(Vec::new())],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MissingHeader);
 }
 
 #[test]
-fn test_cose_sign_verify_tampered_signature() {
-    let payload = b"This is the content.";
-    let certs: [&[u8]; 2] = [&test::P256_ROOT,
-                             &test::P256_INT];
-    let params_vec = vec![P256_PARAMS];
-    test_verify_modified_signature(payload, &certs, params_vec);
-}
-
-const RSA_PARAMS: SignatureParameters = SignatureParameters {
-    certificate: &test::RSA_EE,
-    algorithm: SignatureAlgorithm::PS256,
-    pkcs8: &test::PKCS8_RSA_EE,
-};
-
-#[test]
-fn test_cose_sign_verify_rsa() {
-    let payload = b"This is the RSA-signed content.";
-    let certs: [&[u8]; 2] = [&test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![RSA_PARAMS];
-    test_verify(payload, &certs, params_vec);
+fn test_cose_signature_protected_header_unexpected_alg_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::Integer(10),
+             CborType::Integer(4)],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
 }
 
 #[test]
-fn test_cose_sign_verify_rsa_modified_payload() {
-    let mut payload = String::from_str("This is the RSA-signed content.")
-        .unwrap()
-        .into_bytes();
-    let certs: [&[u8]; 2] = [&test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![RSA_PARAMS];
-    test_verify_modified_payload(&mut payload, &certs, params_vec);
+fn test_cose_signature_protected_header_unsupported_alg() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::SignedInteger(-10),
+             CborType::Bytes(Vec::new())],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedHeaderValue);
 }
 
 #[test]
-fn test_cose_sign_verify_rsa_tampered_signature() {
-    let payload = b"This is the RSA-signed content.";
-    let certs: [&[u8]; 2] = [&test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![RSA_PARAMS];
-    test_verify_modified_signature(payload, &certs, params_vec);
+fn test_cose_signature_protected_header_unexpected_kid_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(COSE_HEADER_KID)],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Integer(0)],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
 }
 
 #[test]
-fn test_cose_sign_verify_two_signatures() {
-    let payload = b"This is the content.";
-    let certs: [&[u8]; 4] = [&test::P256_ROOT,
-                             &test::P256_INT,
-                             &test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![P256_PARAMS,
-                          RSA_PARAMS];
-    test_verify(payload, &certs, params_vec);
+fn test_cose_signature_protected_header_extra_key() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = encode_test_protected_header(
+        vec![CborType::Integer(COSE_HEADER_ALG),
+             CborType::Integer(COSE_HEADER_KID),
+             CborType::Integer(5)],
+        vec![CborType::SignedInteger(COSE_TYPE_ES256),
+             CborType::Bytes(Vec::new()),
+             CborType::Integer(5)],
+    );
+    let signature = build_test_cose_signature(signature_protected_header);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
 }
 
 #[test]
-fn test_cose_sign_verify_two_signatures_tampered_payload() {
-    let mut payload = String::from_str("This is the content.")
-        .unwrap()
-        .into_bytes();
-    let certs: [&[u8]; 4] = [&test::P256_ROOT,
-                             &test::P256_INT,
-                             &test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![P256_PARAMS,
-                          RSA_PARAMS];
-    test_verify_modified_payload(&mut payload, &certs, params_vec);
+fn test_cose_signature_unprotected_header_wrong_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = CborType::Array(vec![CborType::Bytes(signature_protected_header),
+         CborType::Integer(1),
+         CborType::Bytes(Vec::new())]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
 }
 
 #[test]
-fn test_cose_sign_verify_two_signatures_tampered_signature() {
-    let payload = b"This is the content.";
-    let certs: [&[u8]; 4] = [&test::P256_ROOT,
-                             &test::P256_INT,
-                             &test::RSA_ROOT,
-                             &test::RSA_INT];
-    let params_vec = vec![P256_PARAMS,
-                          RSA_PARAMS];
-    test_verify_modified_signature(payload, &certs, params_vec);
+fn test_cose_signature_unprotected_header_not_empty() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let mut unprotected_header_map: BTreeMap<CborType, CborType> = BTreeMap::new();
+    unprotected_header_map.insert(CborType::Integer(0), CborType::SignedInteger(-1));
+    let signature = CborType::Array(vec![CborType::Bytes(signature_protected_header),
+         CborType::Map(unprotected_header_map),
+         CborType::Bytes(Vec::new())]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::MalformedInput);
+}
+
+#[test]
+fn test_cose_signature_signature_wrong_type() {
+    let body_protected_header = make_minimally_valid_cose_sign_protected_header();
+    let signature_protected_header = make_minimally_valid_cose_signature_protected_header();
+    let signature = CborType::Array(vec![CborType::Bytes(signature_protected_header),
+         CborType::Map(BTreeMap::new()),
+         CborType::SignedInteger(-1)]);
+    let values = vec![CborType::Bytes(body_protected_header),
+                      CborType::Map(BTreeMap::new()),
+                      CborType::Null,
+                      CborType::Array(vec![signature])];
+    let bytes = wrap_tag_and_encode_array(values);
+    test_cose_format_error(&bytes, CoseError::UnexpectedType);
 }

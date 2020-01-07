@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use cbor::CborType;
+use CborType;
 
 
 
