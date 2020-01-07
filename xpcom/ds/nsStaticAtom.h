@@ -192,10 +192,6 @@
 
 
 
-
-
-
-
 #define NS_STATIC_ATOM_DECL_STRING(name_, value_) \
   const char16_t name_##_string[sizeof(value_)];
 
