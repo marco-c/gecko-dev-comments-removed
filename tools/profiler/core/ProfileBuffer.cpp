@@ -139,8 +139,13 @@ static bool
 IsChromeJSScript(JSScript* aScript)
 {
   
-  auto compartment = js::GetScriptCompartment(aScript);
-  return js::IsSystemCompartment(compartment);
+
+  nsIScriptSecurityManager* const secman =
+    nsScriptSecurityManager::GetScriptSecurityManager();
+  NS_ENSURE_TRUE(secman, false);
+
+  JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
+  return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
 }
 
 Maybe<uint32_t>
