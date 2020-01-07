@@ -2978,6 +2978,12 @@ pref("layout.css.moz-document.url-prefix-hack.enabled", false);
 pref("layout.css.moz-document.url-prefix-hack.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("layout.css.getPropertyCSSValue.enabled", false);
+#else
+pref("layout.css.getPropertyCSSValue.enabled", true);
+#endif
+
 
 
 
