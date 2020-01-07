@@ -53,7 +53,7 @@ class SavantShieldStudyClass {
         this.startupStudy();
       } else {
         
-        this.endStudy("study-disabled");
+        this.endStudy("study_disable");
       }
     }
   }
@@ -127,15 +127,11 @@ class SavantShieldStudyClass {
     return false;
   }
 
-
-  sendEvent(method, object, value, extra) {
-    this.TelemetryEvents.sendEvent(method, object, value, extra);
-  }
-
   endStudy(reason) {
     log.debug(`Ending the study due to reason: ${ reason }`);
     const isStudyEnding = true;
-    
+    Services.telemetry.recordEvent(this.STUDY_TELEMETRY_CATEGORY, "end_study", reason, null,
+                                  { subcategory: "shield" });
     this.TelemetryEvents.disableCollection();
     this.uninit(isStudyEnding);
     
@@ -161,8 +157,6 @@ class SavantShieldStudyClass {
   }
 }
 
-const SavantShieldStudy = new SavantShieldStudyClass();
-
 
 
 
@@ -181,3 +175,5 @@ class TelemetryEvents {
     Services.telemetry.setEventRecordingEnabled(this.STUDY_TELEMETRY_CATEGORY, false);
   }
 }
+
+const SavantShieldStudy = new SavantShieldStudyClass();
