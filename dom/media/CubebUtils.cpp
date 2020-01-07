@@ -473,12 +473,6 @@ cubeb* GetCubebContextUnlocked()
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
   sCubebState = (rv == CUBEB_OK) ? CubebState::Initialized : CubebState::Uninitialized;
 
-  if (MOZ_LOG_TEST(gCubebLog, LogLevel::Verbose)) {
-    cubeb_set_log_callback(CUBEB_LOG_VERBOSE, CubebLogCallback);
-  } else if (MOZ_LOG_TEST(gCubebLog, LogLevel::Error)) {
-    cubeb_set_log_callback(CUBEB_LOG_NORMAL, CubebLogCallback);
-  }
-
   return sCubebContext;
 }
 
@@ -550,6 +544,11 @@ void InitLibrary()
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_LATENCY_MSG);
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_BACKEND);
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_SANDBOX);
+  if (MOZ_LOG_TEST(gCubebLog, LogLevel::Verbose)) {
+    cubeb_set_log_callback(CUBEB_LOG_VERBOSE, CubebLogCallback);
+  } else if (MOZ_LOG_TEST(gCubebLog, LogLevel::Error)) {
+    cubeb_set_log_callback(CUBEB_LOG_NORMAL, CubebLogCallback);
+  }
   
   
   
