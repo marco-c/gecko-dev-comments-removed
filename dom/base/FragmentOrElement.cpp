@@ -184,6 +184,24 @@ nsIContent::GetAssignedSlotByMode() const
 }
 
 nsINode*
+nsIContent::GetFlattenedTreeParentForMaybeAssignedNode() const
+{
+  if (HTMLSlotElement* assignedSlot = GetAssignedSlot()) {
+    return assignedSlot;
+  }
+
+  HTMLSlotElement* parentSlot = HTMLSlotElement::FromContent(GetParent());
+  if (!parentSlot) {
+    return nullptr;
+  }
+
+  
+  MOZ_ASSERT(parentSlot->AssignedNodes().IsEmpty());
+
+  return parentSlot;
+}
+
+nsINode*
 nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
 {
   nsINode* parentNode = GetParentNode();
@@ -239,20 +257,11 @@ nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
   }
 
   if (nsContentUtils::HasDistributedChildren(parent)) {
-    
-    
-    
-    
-    
-    
-    nsTArray<nsIContent*>* destInsertionPoints = GetExistingDestInsertionPoints();
-    if (!destInsertionPoints || destInsertionPoints->IsEmpty()) {
-      return nullptr;
-    }
-    parent = destInsertionPoints->LastElement()->GetParent();
-    MOZ_ASSERT(parent);
-  } else if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
-             parent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+    return GetFlattenedTreeParentForMaybeAssignedNode();
+  }
+
+  if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
+      parent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
     
     
     

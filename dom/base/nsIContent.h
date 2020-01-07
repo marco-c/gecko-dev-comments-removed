@@ -1049,6 +1049,12 @@ protected:
 
   nsAtom* DoGetID() const;
 
+  
+
+
+
+  nsINode* GetFlattenedTreeParentForMaybeAssignedNode() const;
+
 public:
 #ifdef DEBUG
   

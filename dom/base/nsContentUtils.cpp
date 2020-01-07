@@ -48,6 +48,7 @@
 #include "mozilla/dom/FileSystemSecurity.h"
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/IPCBlobUtils.h"
@@ -7551,6 +7552,13 @@ nsContentUtils::HasDistributedChildren(nsIContent* aContent)
     
     
     return true;
+  }
+
+  HTMLSlotElement* slotEl = HTMLSlotElement::FromContent(aContent);
+  if (slotEl && slotEl->GetContainingShadow()) {
+    
+    
+    return slotEl->AssignedNodes().IsEmpty();
   }
 
   return false;

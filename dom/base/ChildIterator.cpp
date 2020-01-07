@@ -6,6 +6,7 @@
 
 #include "ChildIterator.h"
 #include "nsContentUtils.h"
+#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/XBLChildrenElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsIAnonymousContentCreator.h"
@@ -57,14 +58,33 @@ GetMatchedNodesForPoint(nsIContent* aContent)
   
 }
 
+ExplicitChildIterator::ExplicitChildIterator(const nsIContent* aParent,
+                                             bool aStartAtBeginning)
+  : mParent(aParent),
+    mChild(nullptr),
+    mDefaultChild(nullptr),
+    mIsFirst(aStartAtBeginning),
+    mIndexInInserted(0)
+{
+  mParentAsSlot = HTMLSlotElement::FromContent(mParent);
+}
+
 nsIContent*
 ExplicitChildIterator::GetNextChild()
 {
   
   if (mIndexInInserted) {
     MOZ_ASSERT(mChild);
-    MOZ_ASSERT(nsContentUtils::IsContentInsertionPoint(mChild));
     MOZ_ASSERT(!mDefaultChild);
+
+    if (mParentAsSlot) {
+      const nsTArray<RefPtr<nsINode>>& assignedNodes =
+        mParentAsSlot->AssignedNodes();
+
+      mChild = (mIndexInInserted < assignedNodes.Length()) ?
+        assignedNodes[mIndexInInserted++]->AsContent() : nullptr;
+      return mChild;
+    }
 
     MatchedNodes assignedChildren = GetMatchedNodesForPoint(mChild);
     if (mIndexInInserted < assignedChildren.Length()) {
@@ -84,6 +104,19 @@ ExplicitChildIterator::GetNextChild()
 
     mChild = mChild->GetNextSibling();
   } else if (mIsFirst) {  
+    
+    
+    if (mParentAsSlot) {
+      const nsTArray<RefPtr<nsINode>>& assignedNodes =
+        mParentAsSlot->AssignedNodes();
+      if (!assignedNodes.IsEmpty()) {
+        mIndexInInserted = 1;
+        mChild = assignedNodes[0]->AsContent();
+        mIsFirst = false;
+        return mChild;
+      }
+    }
+
     mChild = mParent->GetFirstChild();
     mIsFirst = false;
   } else if (mChild) { 
@@ -183,6 +216,12 @@ ExplicitChildIterator::Get() const
 {
   MOZ_ASSERT(!mIsFirst);
 
+  
+  
+  if (mParentAsSlot) {
+    return mChild;
+  }
+
   if (mIndexInInserted) {
     MatchedNodes assignedChildren = GetMatchedNodesForPoint(mChild);
     return assignedChildren[mIndexInInserted - 1];
@@ -196,6 +235,20 @@ ExplicitChildIterator::GetPreviousChild()
 {
   
   if (mIndexInInserted) {
+
+    if (mParentAsSlot) {
+      const nsTArray<RefPtr<nsINode>>& assignedNodes =
+        mParentAsSlot->AssignedNodes();
+
+      mChild = (--mIndexInInserted) ?
+        assignedNodes[mIndexInInserted - 1]->AsContent() : nullptr;
+
+      if (!mChild) {
+        mIsFirst = true;
+      }
+      return mChild;
+    }
+
     
     
     MatchedNodes assignedChildren = GetMatchedNodesForPoint(mChild);
@@ -216,6 +269,18 @@ ExplicitChildIterator::GetPreviousChild()
   } else if (mChild) { 
     mChild = mChild->GetPreviousSibling();
   } else { 
+    
+    
+    if (mParentAsSlot) {
+      const nsTArray<RefPtr<nsINode>>& assignedNodes =
+        mParentAsSlot->AssignedNodes();
+      if (!assignedNodes.IsEmpty()) {
+        mIndexInInserted = assignedNodes.Length();
+        mChild = assignedNodes[mIndexInInserted - 1]->AsContent();
+        return mChild;
+      }
+    }
+
     mChild = mParent->GetLastChild();
   }
 

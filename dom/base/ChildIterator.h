@@ -36,23 +36,20 @@ class ExplicitChildIterator
 {
 public:
   explicit ExplicitChildIterator(const nsIContent* aParent,
-                                 bool aStartAtBeginning = true)
-    : mParent(aParent),
-      mChild(nullptr),
-      mDefaultChild(nullptr),
-      mIsFirst(aStartAtBeginning),
-      mIndexInInserted(0)
-  {
-  }
+                                 bool aStartAtBeginning = true);
 
   ExplicitChildIterator(const ExplicitChildIterator& aOther)
-    : mParent(aOther.mParent), mChild(aOther.mChild),
+    : mParent(aOther.mParent),
+      mParentAsSlot(aOther.mParentAsSlot),
+      mChild(aOther.mChild),
       mDefaultChild(aOther.mDefaultChild),
       mIsFirst(aOther.mIsFirst),
       mIndexInInserted(aOther.mIndexInInserted) {}
 
   ExplicitChildIterator(ExplicitChildIterator&& aOther)
-    : mParent(aOther.mParent), mChild(aOther.mChild),
+    : mParent(aOther.mParent),
+      mParentAsSlot(aOther.mParentAsSlot),
+      mChild(aOther.mChild),
       mDefaultChild(aOther.mDefaultChild),
       mIsFirst(aOther.mIsFirst),
       mIndexInInserted(aOther.mIndexInInserted) {}
@@ -99,6 +96,10 @@ protected:
   
   
   const nsIContent* mParent;
+
+  
+  
+  const HTMLSlotElement* mParentAsSlot;
 
   
   
