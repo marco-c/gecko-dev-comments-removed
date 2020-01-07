@@ -60,6 +60,16 @@ public:
     mStorage->ShutdownOnWorker();
     return WorkerRunnable::Cancel();
   }
+
+  bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  {
+    return true;
+  }
+
+  void
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
+  {}
 };
 
 
@@ -88,6 +98,16 @@ public:
     mStorage->ShutdownOnWorker();
     return WorkerRunnable::Cancel();
   }
+
+  bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  {
+    return true;
+  }
+
+  void
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
+  {}
 
 private:
   RefPtr<PerformanceStorageWorker> mStorage;
