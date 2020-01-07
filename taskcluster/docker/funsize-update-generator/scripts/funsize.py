@@ -3,9 +3,10 @@
 
 
 
+from __future__ import absolute_import, division, print_function
+
 import configparser
 import argparse
-import functools
 import hashlib
 import json
 import logging
