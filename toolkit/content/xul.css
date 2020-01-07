@@ -863,6 +863,17 @@ grippy {
 
 
 
+scale {
+  -moz-binding: url(chrome://global/content/bindings/scale.xml#scale);
+}
+
+.scale-slider {
+  -moz-binding: url(chrome://global/content/bindings/general.xml#basecontrol);
+  -moz-user-focus: normal;
+}
+
+
+
 slider {
   
 
