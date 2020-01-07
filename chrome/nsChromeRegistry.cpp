@@ -421,23 +421,22 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  int32_t count = document->GetNumberOfStyleSheets();
+  size_t count = document->SheetCount();
 
   
   nsTArray<RefPtr<StyleSheet>> oldSheets(count);
   nsTArray<RefPtr<StyleSheet>> newSheets(count);
 
   
-  for (int32_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     
-    StyleSheet* styleSheet = document->GetStyleSheetAt(i);
-    oldSheets.AppendElement(styleSheet);
+    oldSheets.AppendElement(document->SheetAt(i));
   }
 
   
   
   for (StyleSheet* sheet : oldSheets) {
-    MOZ_ASSERT(sheet, "GetStyleSheetAt shouldn't return nullptr for "
+    MOZ_ASSERT(sheet, "SheetAt shouldn't return nullptr for "
                       "in-range sheet indexes");
     nsIURI* uri = sheet->GetSheetURI();
 
