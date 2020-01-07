@@ -31,12 +31,11 @@ APZSampler::~APZSampler()
 
 bool
 APZSampler::PushStateToWR(wr::TransactionBuilder& aTxn,
-                          const TimeStamp& aSampleTime,
-                          nsTArray<wr::WrTransformProperty>& aTransformArray)
+                          const TimeStamp& aSampleTime)
 {
   
   
-  return mApz->PushStateToWR(aTxn, aSampleTime, aTransformArray);
+  return mApz->PushStateToWR(aTxn, aSampleTime);
 }
 
 bool

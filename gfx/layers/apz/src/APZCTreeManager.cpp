@@ -532,8 +532,7 @@ APZCTreeManager::UpdateHitTestingTree(LayersId aRootLayerTreeId,
 
 bool
 APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
-                               const TimeStamp& aSampleTime,
-                               nsTArray<wr::WrTransformProperty>& aTransformArray)
+                               const TimeStamp& aSampleTime)
 {
   AssertOnSamplerThread();
 
@@ -608,6 +607,7 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
   
   
   
+  nsTArray<wr::WrTransformProperty> scrollbarTransforms;
   ForEachNode<ReverseIterator>(mRootNode.get(),
       [&](HitTestingTreeNode* aNode)
       {
@@ -637,10 +637,11 @@ APZCTreeManager::PushStateToWR(wr::TransactionBuilder& aTxn,
                     scrollTargetNode->IsAncestorOf(aNode),
                     nullptr);
             });
-        aTransformArray.AppendElement(wr::ToWrTransformProperty(
+        scrollbarTransforms.AppendElement(wr::ToWrTransformProperty(
             aNode->GetScrollbarAnimationId(),
             transform));
       });
+  aTxn.AppendTransformProperties(scrollbarTransforms);
 
   return activeAnimations;
 }

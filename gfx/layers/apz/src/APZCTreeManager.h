@@ -206,8 +206,7 @@ public:
 
 
   bool PushStateToWR(wr::TransactionBuilder& aTxn,
-                     const TimeStamp& aSampleTime,
-                     nsTArray<wr::WrTransformProperty>& aTransformArray);
+                     const TimeStamp& aSampleTime);
 
   
 
