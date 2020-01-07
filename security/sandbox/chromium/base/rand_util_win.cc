@@ -12,7 +12,7 @@
 
 
 #define SystemFunction036 NTAPI SystemFunction036
-#include <NTSecAPI.h>
+#include <ntsecapi.h>
 #undef SystemFunction036
 
 #include <algorithm>

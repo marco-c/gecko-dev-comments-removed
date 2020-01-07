@@ -17,7 +17,7 @@
 
 #undef FACILITY_VISUALCPP
 #endif
-#include <DelayIMP.h>
+#include <delayimp.h>
 
 namespace base {
 namespace win {
