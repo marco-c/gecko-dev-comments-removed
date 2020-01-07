@@ -9,8 +9,8 @@
 
 #include "nsISupportsImpl.h"
 #include "nsString.h"
-#include "nsStringBuffer.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 struct AtomsSizes;
@@ -167,17 +167,9 @@ public:
   MozExternalRefCountType AddRef();
   MozExternalRefCountType Release();
 
-  ~nsDynamicAtom();
-
-  const char16_t* String() const { return mString; }
-
-  
-  
-  nsStringBuffer* GetStringBuffer() const
+  const char16_t* String() const
   {
-    
-    MOZ_ASSERT(IsDynamic());
-    return nsStringBuffer::FromData(const_cast<char16_t*>(mString));
+    return reinterpret_cast<const char16_t*>(this + 1);
   }
 
 private:
@@ -188,14 +180,19 @@ private:
 
   
   
-  
+  static nsDynamicAtom* CreateInner(const nsAString& aString, uint32_t aHash);
   nsDynamicAtom(const nsAString& aString, uint32_t aHash);
-  explicit nsDynamicAtom(const nsAString& aString);
+  ~nsDynamicAtom() {}
+
+  
+  
+  static nsDynamicAtom* Create(const nsAString& aString, uint32_t aHash);
+  static nsDynamicAtom* Create(const nsAString& aString);
+  static void Destroy(nsDynamicAtom* aAtom);
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
+
   
-  
-  const char16_t* const mString;
 };
 
 

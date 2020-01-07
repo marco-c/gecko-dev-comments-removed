@@ -122,7 +122,8 @@ impl WeakAtom {
             unsafe { u8_ptr.offset(string_offset) as *const u16 }
         } else {
             let atom_ptr = self.as_ptr() as *const nsDynamicAtom;
-            unsafe { (*(atom_ptr)).mString }
+            
+            unsafe { atom_ptr.offset(1) as *const u16 }
         };
         unsafe { slice::from_raw_parts(string, self.len() as usize) }
     }

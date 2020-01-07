@@ -223,8 +223,8 @@ public:
       } else {
         
         
-        SetKnownLiveStringBuffer(
-          aAtom->AsDynamic()->GetStringBuffer(), aAtom->GetLength());
+        MOZ_ASSERT(aAtom->GetLength() > 0);
+        AsAString().Assign(aAtom->AsDynamic()->String(), aAtom->GetLength());
       }
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
