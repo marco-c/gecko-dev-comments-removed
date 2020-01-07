@@ -83,18 +83,19 @@ var gTests = [
     is(webrtcUI.getActiveStreams(true, true, true).length, 2, "2 active streams");
 
     info("removing the second tab");
-    
-    let sessionStorePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+
     BrowserTestUtils.removeTab(tab);
-    await sessionStorePromise;
 
     
-    await TestUtils.waitForCondition(() => !webrtcUI.showCameraIndicator);
+    await Promise.all([
+      TestUtils.waitForCondition(() => !webrtcUI.showCameraIndicator),
+      TestUtils.waitForCondition(() => webrtcUI.getActiveStreams(true, true, true).length == 1),
+    ]);
+
     ok(webrtcUI.showGlobalIndicator, "webrtcUI wants the global indicator shown");
     ok(!webrtcUI.showCameraIndicator, "webrtcUI wants the camera indicator hidden");
     ok(webrtcUI.showMicrophoneIndicator, "webrtcUI wants the mic indicator shown");
     is(webrtcUI.getActiveStreams(false, true).length, 1, "1 active audio stream");
-    is(webrtcUI.getActiveStreams(true, true, true).length, 1, "1 active stream");
 
     await checkSharingUI({audio: true});
 
