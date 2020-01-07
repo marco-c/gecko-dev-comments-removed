@@ -903,7 +903,17 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(
     const OptionsType& aOptions,
     ErrorResult& aRv)
 {
-  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIDocument* doc = AnimationUtils::GetDocumentFromGlobal(aGlobal.Get());
   if (!doc) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
