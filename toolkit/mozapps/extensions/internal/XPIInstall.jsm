@@ -1396,6 +1396,18 @@ class AddonInstall {
 
 
 
+  onShutdown() {
+    switch (this.state) {
+    case AddonManager.STATE_POSTPONED:
+      this.removeTemporaryFile();
+      break;
+    }
+  }
+
+  
+
+
+
 
 
 
@@ -1677,6 +1689,7 @@ class AddonInstall {
     if (!AddonManagerPrivate.callInstallListeners("onInstallStarted",
                                                   this.listeners, this.wrapper)) {
       this.state = AddonManager.STATE_DOWNLOADED;
+      this.removeTemporaryFile();
       XPIProvider.removeActiveInstall(this);
       AddonManagerPrivate.callInstallListeners("onInstallCancelled",
                                                this.listeners, this.wrapper);

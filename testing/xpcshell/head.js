@@ -1109,6 +1109,16 @@ function do_get_profile(notifyProfileAfterChange = false) {
   _Services.dirsvc.QueryInterface(Ci.nsIDirectoryService)
            .registerProvider(provider);
 
+  try {
+    _Services.dirsvc.undefine("TmpD");
+  } catch (e) {
+    
+    
+    if (e.result != Cr.NS_ERROR_FAILURE) {
+      throw e;
+    }
+  }
+
   
   if (runningInParent &&
       "@mozilla.org/toolkit/crash-reporter;1" in Cc) {

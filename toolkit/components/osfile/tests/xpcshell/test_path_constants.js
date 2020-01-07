@@ -23,6 +23,13 @@ function compare_paths(ospath, key) {
 }
 
 
+add_task(async function test_simple_paths() {
+  Assert.ok(!!OS.Constants.Path.tmpDir);
+  compare_paths(OS.Constants.Path.tmpDir, "TmpD");
+
+});
+
+
 
 add_task(async function test_before_after_profile() {
   Assert.equal(null, OS.Constants.Path.profileDir);
@@ -42,13 +49,6 @@ add_task(async function test_before_after_profile() {
   Assert.ok(!!OS.Constants.Path.userApplicationDataDir);
 
   
-});
-
-
-add_task(async function test_simple_paths() {
-  Assert.ok(!!OS.Constants.Path.tmpDir);
-  compare_paths(OS.Constants.Path.tmpDir, "TmpD");
-
 });
 
 

@@ -2326,6 +2326,12 @@ var XPIProvider = {
     this.activeAddons.clear();
     this.allAppGlobal = true;
 
+    for (let install of this.installs) {
+      if (install.onShutdown()) {
+        install.onShutdown();
+      }
+    }
+
     
     
     if (Services.prefs.getBoolPref(PREF_PENDING_OPERATIONS, false)) {

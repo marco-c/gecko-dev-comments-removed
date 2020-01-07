@@ -31,6 +31,9 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
   return Management;
 });
 
+ChromeUtils.defineModuleGetter(this, "FileTestUtils",
+                               "resource://testing-common/FileTestUtils.jsm");
+
 XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
                                    "@mozilla.org/addons/addon-manager-startup;1",
                                    "amIAddonManagerStartup");
@@ -295,12 +298,27 @@ var AddonTestUtils = {
     testScope.registerCleanupFunction(() => {
       this.cleanupTempXPIs();
 
+      let ignoreEntries = new Set();
+      {
+        
+        
+        let {value} = Object.getOwnPropertyDescriptor(FileTestUtils,
+                                                      "_globalTemporaryDirectory");
+        if (value) {
+          ignoreEntries.add(value.leafName);
+        }
+      }
+
       
       var dirEntries = this.tempDir.directoryEntries
                            .QueryInterface(Ci.nsIDirectoryEnumerator);
       var entries = [];
-      while (dirEntries.hasMoreElements())
-        entries.push(dirEntries.nextFile.leafName);
+      while (dirEntries.hasMoreElements()) {
+        let {leafName} = dirEntries.nextFile;
+        if (!ignoreEntries.has(leafName)) {
+          entries.push(leafName);
+        }
+      }
       if (entries.length)
         throw new Error(`Found unexpected files in temporary directory: ${entries.join(", ")}`);
 
@@ -1054,6 +1072,16 @@ var AddonTestUtils = {
       QueryInterface: XPCOMUtils.generateQI([Ci.nsIDirectoryServiceProvider]),
     };
     Services.dirsvc.registerProvider(dirProvider);
+
+    try {
+      Services.dirsvc.undefine(key);
+    } catch (e) {
+      
+      
+      if (e.result != Cr.NS_ERROR_FAILURE) {
+        throw e;
+      }
+    }
   },
 
   
