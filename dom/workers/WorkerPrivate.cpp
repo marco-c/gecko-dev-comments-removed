@@ -4578,8 +4578,7 @@ WorkerPrivate::SetTimeout(JSContext* aCx,
   
   
   if (currentStatus >= Closing) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return 0;
+    return timerId;
   }
 
   nsAutoPtr<TimeoutInfo> newInfo(new TimeoutInfo());
