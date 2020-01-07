@@ -263,6 +263,9 @@ void nsBaseWidget::DestroyCompositor()
   
   
   if (mCompositorVsyncDispatcher) {
+    MOZ_ASSERT(mCompositorVsyncDispatcherLock.get());
+
+    MutexAutoLock lock(*mCompositorVsyncDispatcherLock.get());
     mCompositorVsyncDispatcher->Shutdown();
     mCompositorVsyncDispatcher = nullptr;
   }
@@ -1267,6 +1270,10 @@ void nsBaseWidget::CreateCompositorVsyncDispatcher()
   
   
   if (XRE_IsParentProcess()) {
+    if (!mCompositorVsyncDispatcherLock) {
+      mCompositorVsyncDispatcherLock = MakeUnique<Mutex>("mCompositorVsyncDispatcherLock");
+    }
+    MutexAutoLock lock(*mCompositorVsyncDispatcherLock.get());
     mCompositorVsyncDispatcher = new CompositorVsyncDispatcher();
   }
 }
@@ -1274,6 +1281,9 @@ void nsBaseWidget::CreateCompositorVsyncDispatcher()
 already_AddRefed<CompositorVsyncDispatcher>
 nsBaseWidget::GetCompositorVsyncDispatcher()
 {
+  MOZ_ASSERT(mCompositorVsyncDispatcherLock.get());
+
+  MutexAutoLock lock(*mCompositorVsyncDispatcherLock.get());
   RefPtr<CompositorVsyncDispatcher> dispatcher = mCompositorVsyncDispatcher;
   return dispatcher.forget();
 }
