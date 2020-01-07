@@ -38,12 +38,7 @@ async function loadRangeMetadata(source, frame, originalAstScopes, sourceMaps) {
     }
 
     while (i < sortedOriginalAstBindings.length && sortedOriginalAstBindings[i].start.line === range.line && (0, _locColumn.locColumn)(sortedOriginalAstBindings[i].start) >= range.columnStart && (0, _locColumn.locColumn)(sortedOriginalAstBindings[i].start) < range.columnEnd) {
-      const lastBinding = bindings[bindings.length - 1]; 
-
-      if (!lastBinding || (0, _positionCmp.positionCmp)(lastBinding.start, sortedOriginalAstBindings[i].start) !== 0) {
-        bindings.push(sortedOriginalAstBindings[i]);
-      }
-
+      bindings.push(sortedOriginalAstBindings[i]);
       i++;
     }
 

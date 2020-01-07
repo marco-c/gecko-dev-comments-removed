@@ -40,7 +40,7 @@ add_task(async function() {
   
   
   const simple1 = findSource(dbg, "simple1.js");
-  is(getSource(getState(), simple1.id).loadedState, "loading");
+  is(getSource(getState(), simple1.id).get("loadedState"), "loading");
 
   await waitForSelectedSource(dbg, "simple1.js");
   ok(getSource(getState(), simple1.id).text);

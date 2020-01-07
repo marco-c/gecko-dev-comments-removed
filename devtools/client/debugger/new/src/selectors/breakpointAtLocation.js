@@ -15,7 +15,8 @@ var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
 
 
 function isGenerated(selectedSource) {
-  return (0, _devtoolsSourceMap.isGeneratedId)(selectedSource.id);
+  const sourceId = selectedSource.get("id");
+  return (0, _devtoolsSourceMap.isGeneratedId)(sourceId);
 }
 
 function getColumn(column, selectedSource) {
@@ -34,7 +35,7 @@ function getBreakpointsForSource(state, selectedSource) {
   const breakpoints = (0, _breakpoints.getBreakpoints)(state);
   return breakpoints.filter(bp => {
     const location = getLocation(bp, selectedSource);
-    return location.sourceId === selectedSource.id;
+    return location.sourceId === selectedSource.get("id");
   });
 }
 

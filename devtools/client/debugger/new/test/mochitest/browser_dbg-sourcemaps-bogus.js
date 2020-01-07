@@ -9,7 +9,7 @@ add_task(async function() {
   
   const dbg = await initDebugger("doc-sourcemap-bogus.html");
   const {
-    selectors: { getSourceCount },
+    selectors: { getSources },
     getState
   } = dbg;
 
@@ -24,5 +24,5 @@ add_task(async function() {
 
   
   
-  is(getSourceCount(getState()), 1, "Only 1 source exists");
+  is(getSources(getState()).size, 1, "Only 1 source exists");
 });

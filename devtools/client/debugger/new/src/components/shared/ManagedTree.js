@@ -125,11 +125,8 @@ class ManagedTree extends _react.Component {
     } else {
       
       
-      const index = highlightItems.reverse().findIndex(item => !expanded.has(this.props.getPath(item)) && item.name !== "root");
-
-      if (highlightItems[index]) {
-        this.focusItem(highlightItems[index]);
-      }
+      const index = highlightItems.reverse().findIndex(item => !expanded.has(this.props.getPath(item)));
+      this.focusItem(highlightItems[index]);
     }
   }
 
