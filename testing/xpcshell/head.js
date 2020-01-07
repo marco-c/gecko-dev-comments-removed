@@ -124,6 +124,10 @@ try {
   }
 } catch (e) { }
 
+if (runningInParent) {
+  _Services.prefs.setBoolPref("dom.push.connection.enabled", false);
+}
+
 
 
 try {

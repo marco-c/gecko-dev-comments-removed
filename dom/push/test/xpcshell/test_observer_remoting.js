@@ -4,6 +4,7 @@ const pushNotifier = Cc['@mozilla.org/push/Notifier;1']
                        .getService(Ci.nsIPushNotifier);
 
 add_task(async function test_observer_remoting() {
+  do_get_profile();
   if (isParent) {
     await testInParent();
   } else {
@@ -22,6 +23,7 @@ const parentTests = [{
 }];
 
 async function testInParent() {
+  setPrefs();
   
   
   let promiseNotifications = childTests.reduce(
