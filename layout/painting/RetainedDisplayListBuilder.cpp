@@ -102,21 +102,25 @@ SelectAGRForFrame(nsIFrame* aFrame, AnimatedGeometryRoot* aParentAGR)
 
 
 
-void
+bool
 RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
                                                   AnimatedGeometryRoot* aAGR)
 {
+  bool modified = false;
   nsDisplayList saved;
   while (nsDisplayItem* i = aList->RemoveBottom()) {
     if (i->HasDeletedFrame() || !i->CanBeReused()) {
       i->Destroy(&mBuilder);
+      modified = true;
       continue;
     }
 
     nsIFrame* f = i->Frame();
 
     if (i->GetChildren()) {
-      PreProcessDisplayList(i->GetChildren(), SelectAGRForFrame(f, aAGR));
+      if (PreProcessDisplayList(i->GetChildren(), SelectAGRForFrame(f, aAGR))) {
+        modified = true;
+      }
     }
 
     
@@ -124,6 +128,7 @@ RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
     
     if (aAGR && i->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
       mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
+      modified = true;
     }
 
     
@@ -135,6 +140,7 @@ RetainedDisplayListBuilder::PreProcessDisplayList(nsDisplayList* aList,
   }
   aList->AppendToTop(&saved);
   aList->RestoreState();
+  return modified;
 }
 
 bool IsSameItem(nsDisplayItem* aFirst, nsDisplayItem* aSecond)
@@ -386,12 +392,14 @@ void UpdateASR(nsDisplayItem* aItem,
 
 
 
-void
+bool
 RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
                                               nsDisplayList* aOldList,
                                               nsDisplayList* aOutList,
                                               Maybe<const ActiveScrolledRoot*>& aOutContainerASR)
 {
+  bool modified = aNewList->IsEmpty() ? false : true;
+
   nsDisplayList merged;
   const auto UseItem = [&](nsDisplayItem* aItem) {
     const ActiveScrolledRoot* itemClipASR =
@@ -535,8 +543,10 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
         nsDisplayList empty;
         Maybe<const ActiveScrolledRoot*> containerASRForChildren;
 
-        MergeDisplayLists(&empty, old->GetChildren(),
-                          old->GetChildren(), containerASRForChildren);
+        if (MergeDisplayLists(&empty, old->GetChildren(),
+                              old->GetChildren(), containerASRForChildren)) {
+          modified = true;
+        }
         UpdateASR(old, containerASRForChildren);
         old->UpdateBounds(&mBuilder);
       }
@@ -546,10 +556,12 @@ RetainedDisplayListBuilder::MergeDisplayLists(nsDisplayList* aNewList,
       ReuseItem(old);
     } else {
       old->Destroy(&mBuilder);
+      modified = true;
     }
   }
 
   aOutList->AppendToTop(&merged);
+  return modified;
 }
 
 static void
@@ -1013,8 +1025,8 @@ RetainedDisplayListBuilder::ClearFramesWithProps()
   GetModifiedAndFramesWithProps(&mBuilder, &modifiedFrames.Frames(), &framesWithProps.Frames());
 }
 
-bool
-RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
+auto
+RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop) -> PartialUpdateResult
 {
   mBuilder.RemoveModifiedWindowDraggingRegion();
   if (mBuilder.ShouldSyncDecodeImages()) {
@@ -1056,12 +1068,17 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
       !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
                            &modifiedAGR, framesWithProps.Frames())) {
     mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
-    return false;
+    return PartialUpdateResult::Failed;
   }
 
   modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
-  PreProcessDisplayList(&mList, modifiedAGR);
+  PartialUpdateResult result = PartialUpdateResult::NoChange;
+  if (PreProcessDisplayList(&mList, modifiedAGR) ||
+      !modifiedDirty.IsEmpty() ||
+      !framesWithProps.IsEmpty()) {
+    result = PartialUpdateResult::Updated;
+  }
 
   nsDisplayList modifiedDL;
   if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
@@ -1090,12 +1107,18 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
   
   
   
+  
+  
+  
+  
   Maybe<const ActiveScrolledRoot*> dummy;
-  MergeDisplayLists(&modifiedDL, &mList, &mList, dummy);
+  if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
+    result = PartialUpdateResult::Updated;
+  }
 
   
   
 
   mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), &mList);
-  return true;
+  return result;
 }
