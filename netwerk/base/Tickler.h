@@ -27,7 +27,7 @@
 
 
 
-#if defined(ANDROID)
+#if defined(ANDROID) && !defined(MOZ_PROXY_BYPASS_PROTECTION)
 #define MOZ_USE_WIFI_TICKLER
 #endif
 
