@@ -79,8 +79,16 @@ class FontEditor extends PureComponent {
       });
     });
   }
+  
 
-  renderFontFamily(font, onToggleFontHighlight) {
+
+
+
+
+
+
+
+  renderFontFamily(fonts, onToggleFontHighlight) {
     return dom.label(
       {
         className: "font-control font-control-family",
@@ -95,7 +103,9 @@ class FontEditor extends PureComponent {
         {
           className: "font-control-box",
         },
-        FontMeta({ font, onToggleFontHighlight })
+        fonts.map(font => {
+          return FontMeta({ font, onToggleFontHighlight });
+        })
       )
     );
   }
@@ -198,7 +208,7 @@ class FontEditor extends PureComponent {
     return dom.div(
       {},
       
-      this.renderFontFamily(font, onToggleFontHighlight),
+      this.renderFontFamily(fonts, onToggleFontHighlight),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
