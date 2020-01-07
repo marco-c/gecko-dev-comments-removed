@@ -29,7 +29,6 @@ const {
 const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {Task} = require("devtools/shared/task");
 const {Tools} = require("devtools/client/definitions");
 const {gDevTools} = require("devtools/client/framework/devtools");
 const CssLogic = require("devtools/shared/inspector/css-logic");
@@ -168,7 +167,7 @@ RuleEditor.prototype = {
     }
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
-      Task.spawn(function* () {
+      (async function() {
         let selector;
 
         if (this.rule.domRule.selectors) {
@@ -177,7 +176,7 @@ RuleEditor.prototype = {
         } else if (this.rule.inherited) {
           
           
-          selector = yield this.rule.inherited.getUniqueSelector();
+          selector = await this.rule.inherited.getUniqueSelector();
         } else {
           
           selector = this.ruleView.inspector.selectionCssSelector;
@@ -195,7 +194,7 @@ RuleEditor.prototype = {
 
         this.uniqueSelector = selector;
         this.emit("selector-icon-created");
-      }.bind(this));
+      }.bind(this))();
     }
 
     this.openBrace = createChild(header, "span", {
@@ -668,7 +667,7 @@ RuleEditor.prototype = {
 
 
 
-  _onSelectorDone: Task.async(function* (value, commit, direction) {
+  async _onSelectorDone(value, commit, direction) {
     if (!commit || this.isEditing || value === "" ||
         value === this.rule.selectorText) {
       return;
@@ -683,7 +682,7 @@ RuleEditor.prototype = {
     this.isEditing = true;
 
     try {
-      let response = yield this.rule.domRule.modifySelector(element, value);
+      let response = await this.rule.domRule.modifySelector(element, value);
 
       if (!supportsUnmatchedRules) {
         this.isEditing = false;
@@ -696,7 +695,7 @@ RuleEditor.prototype = {
 
       
       
-      let applied = yield elementStyle.pageStyle.getApplied(element, {
+      let applied = await elementStyle.pageStyle.getApplied(element, {
         inherited: true,
         matchedSelectors: true,
         filter: elementStyle.showUserAgentStyles ? "ua" : undefined
@@ -749,7 +748,7 @@ RuleEditor.prototype = {
       this.isEditing = false;
       promiseWarn(err);
     }
-  }),
+  },
 
   
 

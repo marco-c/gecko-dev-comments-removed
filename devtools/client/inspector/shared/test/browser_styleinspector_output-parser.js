@@ -292,10 +292,10 @@ const TEST_DATA = [
   }
 ];
 
-add_task(function* () {
+add_task(async function() {
   
   let toolbox = {target: {client: {}, hasActor: () => false}};
-  yield initCssProperties(toolbox);
+  await initCssProperties(toolbox);
   let cssProperties = getCssProperties(toolbox);
 
   let parser = new OutputParser(document, cssProperties);

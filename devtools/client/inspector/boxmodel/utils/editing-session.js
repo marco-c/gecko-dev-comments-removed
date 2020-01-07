@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 const { getCssProperties } = require("devtools/shared/fronts/css-properties");
 
 
@@ -107,7 +106,7 @@ EditingSession.prototype = {
 
 
 
-  setProperties: Task.async(function* (properties) {
+  async setProperties(properties) {
     for (let property of properties) {
       
       
@@ -135,16 +134,16 @@ EditingSession.prototype = {
         modifications.setProperty(index, property.name, property.value, "");
       }
 
-      yield modifications.apply();
+      await modifications.apply();
     }
-  }),
+  },
 
   
 
 
 
 
-  revert: Task.async(function* () {
+  async revert() {
     
     
     for (let [property, value] of this._modifications) {
@@ -170,9 +169,9 @@ EditingSession.prototype = {
         modifications.removeProperty(index, property);
       }
 
-      yield modifications.apply();
+      await modifications.apply();
     }
-  }),
+  },
 
   destroy: function() {
     this._doc = null;
