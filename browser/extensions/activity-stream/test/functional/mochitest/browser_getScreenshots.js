@@ -11,11 +11,12 @@ const XHTMLNS = "http://www.w3.org/1999/xhtml";
 
 ChromeUtils.defineModuleGetter(this, "Screenshots", "resource://activity-stream/lib/Screenshots.jsm");
 
-function get_pixels_for_data_uri(dataURI, width, height) {
+function get_pixels_for_blob(blob, width, height) {
   return new Promise(resolve => {
     
     let img = document.createElementNS(XHTMLNS, "img");
-    img.setAttribute("src", dataURI);
+    let imgPath = URL.createObjectURL(blob);
+    img.setAttribute("src", imgPath);
     img.addEventListener("load", () => {
       let canvas = document.createElementNS(XHTMLNS, "canvas");
       canvas.setAttribute("width", width);
@@ -23,6 +24,7 @@ function get_pixels_for_data_uri(dataURI, width, height) {
       let ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
       const result = ctx.getImageData(0, 0, width, height).data;
+      URL.revokeObjectURL(imgPath);
       resolve(result);
     }, {once: true});
   });
@@ -32,8 +34,8 @@ add_task(async function test_screenshot() {
   await SpecialPowers.pushPrefEnv({set: [["browser.pagethumbnails.capturing_disabled", false]]});
 
   
-  const screenshotAsDataURI = await Screenshots.getScreenshotForURL(TEST_URL);
-  let pixels = await get_pixels_for_data_uri(screenshotAsDataURI, 10, 10);
+  const screenshotAsObject = await Screenshots.getScreenshotForURL(TEST_URL);
+  let pixels = await get_pixels_for_blob(screenshotAsObject.data, 10, 10);
   let rgbaCount = {r: 0, g: 0, b: 0, a: 0};
   while (pixels.length) {
     

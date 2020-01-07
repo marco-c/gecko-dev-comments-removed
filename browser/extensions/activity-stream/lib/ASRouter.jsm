@@ -8,6 +8,9 @@ Cu.importGlobalProperties(["fetch"]);
 const {ASRouterActions: ra} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
 const {OnboardingMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/OnboardingMessageProvider.jsm", {});
 
+ChromeUtils.defineModuleGetter(this, "ASRouterTargeting",
+  "resource://activity-stream/lib/ASRouterTargeting.jsm");
+
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
 const OUTGOING_MESSAGE_NAME = "ASRouter:parent-to-child";
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
@@ -101,17 +104,6 @@ const MessageLoaderUtils = {
 };
 
 this.MessageLoaderUtils = MessageLoaderUtils;
-
-
-
-
-
-
-
-function getRandomItemFromArray(arr) {
-  const index = Math.floor(Math.random() * arr.length);
-  return arr[index];
-}
 
 
 
@@ -241,26 +233,37 @@ class _ASRouter {
         
         bundledMessages.push({content: msg.content, id: msg.id});
       }
+
+      
       if (bundledMessages.length === originalMessage.bundled) {
         break;
       }
     }
+
+    
+    if (bundledMessages.length < originalMessage.bundled) {
+      return null;
+    }
+
     return {bundle: bundledMessages, provider: originalMessage.provider, template: originalMessage.template};
   }
 
-  async sendNextMessage(target) {
-    let message;
-    let bundledMessages;
+  _getUnblockedMessages() {
+    let {state} = this;
+    return state.messages.filter(item => !state.blockList.includes(item.id));
+  }
 
-    await this.setState(state => {
-      message = getRandomItemFromArray(state.messages.filter(item => item.id !== state.lastMessageId && !state.blockList.includes(item.id)));
-      return {lastMessageId: message ? message.id : null};
-    });
+  async sendNextMessage(target) {
+    let bundledMessages;
+    const msgs = this._getUnblockedMessages();
+    let message = await ASRouterTargeting.findMatchingMessage(msgs);
+    await this.setState({lastMessageId: message ? message.id : null});
+
     
     if (message && message.bundled) {
       bundledMessages = this._getBundledMessages(message);
     }
-    if (message && !bundledMessages) {
+    if (message && !message.bundled) {
       
       target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
     } else if (bundledMessages) {

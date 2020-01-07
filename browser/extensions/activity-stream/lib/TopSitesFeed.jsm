@@ -30,6 +30,7 @@ const MIN_FAVICON_SIZE = 96;
 const CACHED_LINK_PROPS_TO_MIGRATE = ["screenshot", "customScreenshot"];
 const PINNED_FAVICON_PROPS_TO_MIGRATE = ["favicon", "faviconRef", "faviconSize"];
 const SECTION_ID = "topsites";
+const ROWS_PREF = "topSitesRows";
 
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
@@ -88,8 +89,7 @@ this.TopSitesFeed = class TopSitesFeed {
   }
 
   async getLinksWithDefaults() {
-    
-    const numItems = Math.max(this.store.getState().Prefs.values.topSitesRows, 2) * TOP_SITES_MAX_SITES_PER_ROW;
+    const numItems = this.store.getState().Prefs.values[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
     const frecent = (await this.frecentCache.request({
       numItems,
       topsiteFrecency: FRECENCY_THRESHOLD
@@ -329,7 +329,7 @@ this.TopSitesFeed = class TopSitesFeed {
     
     
     
-    const topSitesCount = this.store.getState().Prefs.values.topSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
+    const topSitesCount = this.store.getState().Prefs.values[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
     if (index >= topSitesCount) {
       return;
     }
@@ -378,7 +378,7 @@ this.TopSitesFeed = class TopSitesFeed {
     
     this._insertPin(
       action.data.site, index,
-      action.data.draggedFromIndex !== undefined ? action.data.draggedFromIndex : this.store.getState().Prefs.values.topSitesRows * TOP_SITES_MAX_SITES_PER_ROW);
+      action.data.draggedFromIndex !== undefined ? action.data.draggedFromIndex : this.store.getState().Prefs.values[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW);
 
     await this._clearLinkCustomScreenshot(action.data.site);
     this._broadcastPinnedSitesUpdated();
@@ -410,6 +410,8 @@ this.TopSitesFeed = class TopSitesFeed {
       case at.PREF_CHANGED:
         if (action.data.name === DEFAULT_SITES_PREF) {
           this.refreshDefaults(action.data.value);
+        } else if (action.data.name === ROWS_PREF) {
+          this.refresh({broadcast: true});
         }
         break;
       case at.UPDATE_SECTION_PREFS:
