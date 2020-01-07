@@ -44,8 +44,8 @@ ServiceWorkerRegisterJob::AsyncExecute()
     
     
     
-    if (registration->mPendingUninstall) {
-      registration->mPendingUninstall = false;
+    if (registration->IsPendingUninstall()) {
+      registration->ClearPendingUninstall();
       swm->StoreRegistration(mPrincipal, registration);
       
       

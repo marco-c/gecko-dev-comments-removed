@@ -125,12 +125,12 @@ ServiceWorkerUnregisterJob::Unregister()
   
   
   
-  if (mSendToParent && !registration->mPendingUninstall) {
+  if (mSendToParent && !registration->IsPendingUninstall()) {
     swm->MaybeSendUnregister(mPrincipal, mScope);
   }
 
   
-  registration->mPendingUninstall = true;
+  registration->SetPendingUninstall();
 
   
   mResult = true;
