@@ -6180,10 +6180,6 @@ HTMLMediaElement::CanActivateAutoplay()
   
   
 
-  if (!AutoplayPolicy::IsMediaElementAllowedToPlay(WrapNotNull(this))) {
-    return false;
-  }
-
   if (!HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay)) {
     return false;
   }
@@ -6233,6 +6229,16 @@ HTMLMediaElement::CheckAutoplayDataReady()
 {
   if (!CanActivateAutoplay()) {
     return;
+  }
+
+  switch (AutoplayPolicy::IsAllowedToPlay(*this)) {
+    case Authorization::Blocked:
+      return;
+    case Authorization::Prompt:
+      EnsureAutoplayRequested(false);
+      return;
+    case Authorization::Allowed:
+      break;
   }
 
   mPaused = false;
