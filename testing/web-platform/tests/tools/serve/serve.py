@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import platform
 import socket
 import sys
 import threading
@@ -447,8 +448,16 @@ def make_hosts_file(config, host):
     for domain in config.domains_set:
         rv.append("%s\t%s\n" % (host, domain))
 
-    for not_domain in config.not_domains_set:
-        rv.append("0.0.0.0\t%s\n" % not_domain)
+    
+    
+    
+    
+    
+    
+    
+    if platform.uname()[0] == "Windows":
+        for not_domain in config.not_domains_set:
+            rv.append("0.0.0.0\t%s\n" % not_domain)
 
     return "".join(rv)
 
@@ -656,7 +665,7 @@ _subdomains = {u"www",
                u"天気の良い日",
                u"élève"}
 
-_not_subdomains = {u"nonexistent-origin"}
+_not_subdomains = {u"nonexistent"}
 
 
 class Config(config.Config):
