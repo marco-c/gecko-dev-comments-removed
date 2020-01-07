@@ -47,6 +47,7 @@ class TextureClient;
 class TextureClientPool;
 class CapturedBufferState;
 class CapturedPaintState;
+class CapturedTiledPaintState;
 struct FrameMetrics;
 
 class CompositorBridgeChild final : public PCompositorBridgeChild,
@@ -239,6 +240,14 @@ public:
   
   
   void NotifyFinishedAsyncPaint(CapturedPaintState* aState);
+
+  
+  
+  void NotifyBeginAsyncTiledPaint(CapturedTiledPaintState* aState);
+
+  
+  
+  void NotifyFinishedAsyncTiledPaint(CapturedTiledPaintState* aState);
 
   
   

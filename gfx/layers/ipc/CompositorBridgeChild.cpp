@@ -1276,6 +1276,40 @@ CompositorBridgeChild::NotifyFinishedAsyncPaint(CapturedPaintState* aState)
 }
 
 void
+CompositorBridgeChild::NotifyBeginAsyncTiledPaint(CapturedTiledPaintState* aState)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(mPaintLock);
+
+  
+  
+  
+  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
+
+  mOutstandingAsyncPaints++;
+
+  
+  
+  for (auto& client : aState->mClients) {
+    mTextureClientsForAsyncPaint.AppendElement(client);
+  }
+  aState->mClients.clear();
+}
+
+void
+CompositorBridgeChild::NotifyFinishedAsyncTiledPaint(CapturedTiledPaintState* aState)
+{
+  MOZ_ASSERT(PaintThread::IsOnPaintThread());
+
+  MonitorAutoLock lock(mPaintLock);
+
+  mOutstandingAsyncPaints--;
+
+  aState->mTargetTiled = nullptr;
+}
+
+void
 CompositorBridgeChild::NotifyBeginAsyncEndLayerTransaction()
 {
   MOZ_ASSERT(NS_IsMainThread());

@@ -105,9 +105,9 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
                                           const nsIntRegion& aDirtyRegion,
                                           LayerManager::DrawPaintedLayerCallback aCallback,
                                           void* aCallbackData,
-                                          bool aIsProgressive)
+                                          TilePaintFlags aFlags)
 {
-  mWasLastPaintProgressive = aIsProgressive;
+  mWasLastPaintProgressive = !!(aFlags & TilePaintFlags::Progressive);
 
   
   gfx::IntSize size = aNewValidRegion.GetBounds().Size();
@@ -150,6 +150,7 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
                         tileDirtyRegion,
                         content, mode,
                         extraPainted,
+                        TilePaintFlags::None,
                         &backBufferOnWhite);
 
   
