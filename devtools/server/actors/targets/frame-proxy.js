@@ -35,6 +35,11 @@ function FrameTargetActorProxy(connection, browser, options = {}) {
 }
 
 FrameTargetActorProxy.prototype = {
+  
+  
+  
+  actorPrefix: "frameTargetProxy",
+
   async connect() {
     const onDestroy = () => {
       if (this._deferredUpdate) {
