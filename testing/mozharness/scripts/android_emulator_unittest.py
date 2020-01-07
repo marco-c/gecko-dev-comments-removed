@@ -27,9 +27,11 @@ from mozharness.mozilla.buildbot import TBPL_RETRY, EXIT_STATUS_DICT
 from mozharness.mozilla.mozbase import MozbaseMixin
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 from mozharness.mozilla.testing.unittest import EmulatorMixin
+from mozharness.mozilla.testing.codecoverage import CodeCoverageMixin
 
 
-class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin):
+class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin,
+                          CodeCoverageMixin):
     config_options = [[
         ["--test-suite"],
         {"action": "store",
@@ -471,7 +473,7 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
 
         try_options, try_tests = self.try_args(self.test_suite)
         cmd.extend(try_options)
-        if self.config.get('verify') is not True:
+        if self.verify_enabled or self.per_test_coverage:
             cmd.extend(self.query_tests_args(
                 self.config["suite_definitions"][self.test_suite].get("tests"),
                 None,
@@ -749,7 +751,7 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
                ('xpcshell', {'xpcshell': 'xpcshell'})]
         suites = []
         for (category, all_suites) in all:
-            cat_suites = self.query_verify_category_suites(category, all_suites)
+            cat_suites = self.query_per_test_category_suites(category, all_suites)
             for k in cat_suites.keys():
                 suites.append((k, cat_suites[k]))
         return suites
@@ -767,12 +769,12 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
         Run the tests
         """
         self.start_time = datetime.datetime.now()
-        max_verify_time = datetime.timedelta(minutes=60)
+        max_per_test_time = datetime.timedelta(minutes=60)
 
-        verify_args = []
+        per_test_args = []
         suites = self._query_suites()
         minidump = self.query_minidump_stackwalk()
-        for (verify_suite, suite) in suites:
+        for (per_test_suite, suite) in suites:
             self.test_suite = suite
 
             cmd = self._build_command()
@@ -788,24 +790,24 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
             env['MINIDUMP_SAVE_PATH'] = self.query_abs_dirs()['abs_blob_upload_dir']
             env['RUST_BACKTRACE'] = 'full'
 
-            for verify_args in self.query_verify_args(verify_suite):
-                if (datetime.datetime.now() - self.start_time) > max_verify_time:
+            for per_test_args in self.query_args(per_test_suite):
+                if (datetime.datetime.now() - self.start_time) > max_per_test_time:
                     
                     
                     
-                    self.info("TinderboxPrint: Verification too long: "
-                              "Not all tests were verified.<br/>")
+                    self.info("TinderboxPrint: Running tests took too long: "
+                              "Not all tests were executed.<br/>")
                     
                     
                     return False
 
                 final_cmd = copy.copy(cmd)
-                if len(verify_args) > 0:
+                if len(per_test_args) > 0:
                     
                     for arg in final_cmd:
                         if 'total-chunk' in arg or 'this-chunk' in arg:
                             final_cmd.remove(arg)
-                final_cmd.extend(verify_args)
+                final_cmd.extend(per_test_args)
 
                 self.info("Running on %s the command %s" % (self.emulator["name"],
                           subprocess.list2cmdline(final_cmd)))
@@ -823,9 +825,9 @@ class AndroidEmulatorTest(TestingMixin, EmulatorMixin, BaseScript, MozbaseMixin)
 
                 self.info("##### %s log ends" % self.test_suite)
 
-                if len(verify_args) > 0:
+                if len(per_test_args) > 0:
                     self.buildbot_status(tbpl_status, level=log_level)
-                    self.log_verify_status(verify_args[-1], tbpl_status, log_level)
+                    self.log_per_test_status(per_test_args[-1], tbpl_status, log_level)
                 else:
                     self.buildbot_status(tbpl_status, level=log_level)
                     self.log("The %s suite: %s ran with return status: %s" %

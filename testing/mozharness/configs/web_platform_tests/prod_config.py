@@ -36,6 +36,6 @@ config = {
     
     "geckodriver": "%(abs_test_bin_dir)s/geckodriver",
 
-    "verify_category": "web-platform",
+    "per_test_category": "web-platform",
 }
 
