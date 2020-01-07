@@ -132,6 +132,9 @@ using namespace mozilla::widget;
 #include "WindowSurfaceX11SHM.h"
 #include "WindowSurfaceXRender.h"
 #endif 
+#ifdef MOZ_WAYLAND
+#include "nsIClipboard.h"
+#endif
 
 #include "nsShmImage.h"
 
@@ -461,11 +464,23 @@ nsWindow::nsWindow()
     mXVisual  = nullptr;
     mXDepth   = 0;
 #endif 
+
     if (!gGlobalsInitialized) {
         gGlobalsInitialized = true;
 
         
         initialize_prefs();
+
+#ifdef MOZ_WAYLAND
+        
+        
+        
+        if (!mIsX11Display) {
+            nsCOMPtr<nsIClipboard> clipboard =
+                do_GetService("@mozilla.org/widget/clipboard;1");
+            NS_ASSERTION(clipboard, "Failed to init clipboard!");
+        }
+#endif
     }
 
     mLastMotionPressure = 0;
