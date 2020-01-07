@@ -22,6 +22,9 @@ const rootDir = helpers.rootDir;
 
 
 
+
+
+
 const EXTRA_SCRIPTS = [
   "browser/base/content/nsContextMenu.js",
   "toolkit/content/contentAreaUtils.js",

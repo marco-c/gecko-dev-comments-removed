@@ -17,6 +17,8 @@ var path = require("path");
 var helpers = require("../helpers");
 var globals = require("../globals");
 
+
+
 const simpleTestFiles = [
   "ExtensionTestUtils.js",
   "EventUtils.js",
