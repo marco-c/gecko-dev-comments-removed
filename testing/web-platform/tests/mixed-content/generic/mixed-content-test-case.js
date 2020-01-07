@@ -125,25 +125,10 @@ function MixedContentTestCase(scenario, description, sanityChecker) {
         return resourceMap[scenario.subresource](resourceRequestUrl);
       }))
       .then(mixed_content_test.step_func(_ => {
-        mixed_content_test.step(function() {
-          assert_equals("allowed", scenario.expectation,
-                        "The triggered event should match '" +
-                        scenario.expectation + "'.");
-        }, "Check if success event was triggered.");
-
         
         return xhrRequest(assertResourceRequestUrl);
       }))
       .catch(mixed_content_test.step_func(e => {
-        mixed_content_test.step(function() {
-          assert_equals("blocked", scenario.expectation,
-                        "The triggered event should match '" +
-                        scenario.expectation + "'.");
-          
-          
-          
-        }, "Check if error event was triggered.");
-
         
         return xhrRequest(assertResourceRequestUrl);
       }))
