@@ -544,7 +544,14 @@ ServiceWorkerContainer::GetReady(ErrorResult& aRv)
       RefPtr<ServiceWorkerRegistration> reg =
         global->GetOrCreateServiceWorkerRegistration(aDescriptor);
       NS_ENSURE_TRUE_VOID(reg);
-      outer->MaybeResolve(reg);
+
+      
+      
+      
+      reg->WhenVersionReached(aDescriptor.Version(),
+        [outer, reg] (bool aResult) {
+          outer->MaybeResolve(reg);
+        });
     }, [self, outer] (ErrorResult& aRv) {
       outer->MaybeReject(aRv);
     });
