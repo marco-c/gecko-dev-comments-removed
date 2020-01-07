@@ -25,7 +25,7 @@ let whitelist = [
    isFromDevTools: false},
   
   {sourceName: /web\/viewer\.css$/i,
-   errorMessage: /Unknown property.*appearance/i,
+   errorMessage: /Unknown property.*(appearance|user-select)/i,
    isFromDevTools: false},
   
   {sourceName: /highlighters\.css$/i,
