@@ -179,6 +179,12 @@ ServoStyleSet::Shutdown()
   ClearNonInheritingStyleContexts();
   mRawSet = nullptr;
   mStyleRuleMap = nullptr;
+
+  
+  
+  
+  
+  mPresContext = nullptr;
 }
 
 void

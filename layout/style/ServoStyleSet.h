@@ -601,6 +601,7 @@ private:
   const Kind mKind;
 
   
+  
   nsPresContext* MOZ_NON_OWNING_REF mPresContext = nullptr;
 
   
