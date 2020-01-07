@@ -60,164 +60,6 @@ var logger = Log.repository.getLogger(LOGGER_ID);
 
 
 
-function RDFSerializer() {
-  this.cUtils = Cc["@mozilla.org/rdf/container-utils;1"].
-                getService(Ci.nsIRDFContainerUtils);
-  this.resources = [];
-}
-
-RDFSerializer.prototype = {
-  INDENT: "  ",      
-  resources: null,   
-
-  
-
-
-
-
-
-
-
-  escapeEntities(aString) {
-    aString = aString.replace(/&/g, "&amp;");
-    aString = aString.replace(/</g, "&lt;");
-    aString = aString.replace(/>/g, "&gt;");
-    return aString.replace(/"/g, "&quot;");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  serializeContainerItems(aDs, aContainer, aIndent) {
-    var result = "";
-    var items = aContainer.GetElements();
-    while (items.hasMoreElements()) {
-      var item = items.getNext().QueryInterface(Ci.nsIRDFResource);
-      result += aIndent + "<RDF:li>\n";
-      result += this.serializeResource(aDs, item, aIndent + this.INDENT);
-      result += aIndent + "</RDF:li>\n";
-    }
-    return result;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  serializeResourceProperties(aDs, aResource, aIndent) {
-    var result = "";
-    var items = [];
-    var arcs = aDs.ArcLabelsOut(aResource);
-    while (arcs.hasMoreElements()) {
-      var arc = arcs.getNext().QueryInterface(Ci.nsIRDFResource);
-      if (arc.ValueUTF8.substring(0, PREFIX_NS_EM.length) != PREFIX_NS_EM)
-        continue;
-      var prop = arc.ValueUTF8.substring(PREFIX_NS_EM.length);
-      if (prop == "signature")
-        continue;
-
-      var targets = aDs.GetTargets(aResource, arc, true);
-      while (targets.hasMoreElements()) {
-        var target = targets.getNext();
-        if (target instanceof Ci.nsIRDFResource) {
-          var item = aIndent + "<em:" + prop + ">\n";
-          item += this.serializeResource(aDs, target, aIndent + this.INDENT);
-          item += aIndent + "</em:" + prop + ">\n";
-          items.push(item);
-        } else if (target instanceof Ci.nsIRDFLiteral) {
-          items.push(aIndent + "<em:" + prop + ">" +
-                     this.escapeEntities(target.Value) + "</em:" + prop + ">\n");
-        } else if (target instanceof Ci.nsIRDFInt) {
-          items.push(aIndent + "<em:" + prop + " NC:parseType=\"Integer\">" +
-                     target.Value + "</em:" + prop + ">\n");
-        } else {
-          throw Components.Exception("Cannot serialize unknown literal type");
-        }
-      }
-    }
-    items.sort();
-    result += items.join("");
-    return result;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  serializeResource(aDs, aResource, aIndent) {
-    if (this.resources.includes(aResource) ) {
-      
-      throw Components.Exception("Cannot serialize multiple references to " + aResource.Value);
-    }
-    if (aIndent === undefined)
-      aIndent = "";
-
-    this.resources.push(aResource);
-    var container = null;
-    var type = "Description";
-    if (this.cUtils.IsSeq(aDs, aResource)) {
-      type = "Seq";
-      container = this.cUtils.MakeSeq(aDs, aResource);
-    } else if (this.cUtils.IsAlt(aDs, aResource)) {
-      type = "Alt";
-      container = this.cUtils.MakeAlt(aDs, aResource);
-    } else if (this.cUtils.IsBag(aDs, aResource)) {
-      type = "Bag";
-      container = this.cUtils.MakeBag(aDs, aResource);
-    }
-
-    var result = aIndent + "<RDF:" + type;
-    if (!gRDF.IsAnonymousResource(aResource))
-      result += " about=\"" + this.escapeEntities(aResource.ValueUTF8) + "\"";
-    result += ">\n";
-
-    if (container)
-      result += this.serializeContainerItems(aDs, container, aIndent + this.INDENT);
-
-    result += this.serializeResourceProperties(aDs, aResource, aIndent + this.INDENT);
-
-    result += aIndent + "</RDF:" + type + ">\n";
-    return result;
-  }
-};
-
-
-
-
-
-
-
-
-
 
 
 
@@ -264,9 +106,7 @@ function sanitizeUpdateURL(aUpdate, aRequest, aHashPattern, aHashString) {
 
 
 
-
-
-function parseRDFManifest(aId, aUpdateKey, aRequest, aManifestData) {
+function parseRDFManifest(aId, aRequest, aManifestData) {
   if (aManifestData.documentElement.namespaceURI != PREFIX_NS_RDF) {
     throw Components.Exception("Update manifest had an unrecognised namespace: " +
                                aManifestData.documentElement.namespaceURI);
@@ -321,36 +161,6 @@ function parseRDFManifest(aId, aUpdateKey, aRequest, aManifestData) {
     addonRes = themeRes;
   else
     addonRes = itemRes;
-
-  
-  if (aUpdateKey) {
-    let signature = getProperty(ds, addonRes, "signature");
-    if (!signature)
-      throw Components.Exception("Update manifest for " + aId + " does not contain a required signature");
-    let serializer = new RDFSerializer();
-    let updateString = null;
-
-    try {
-      updateString = serializer.serializeResource(ds, addonRes);
-    } catch (e) {
-      throw Components.Exception("Failed to generate signed string for " + aId + ". Serializer threw " + e,
-                                 e.result);
-    }
-
-    let result = false;
-
-    try {
-      let verifier = Cc["@mozilla.org/security/datasignatureverifier;1"].
-                     getService(Ci.nsIDataSignatureVerifier);
-      result = verifier.verifyData(updateString, signature, aUpdateKey);
-    } catch (e) {
-      throw Components.Exception("The signature or updateKey for " + aId + " is malformed." +
-                                 "Verifier threw " + e, e.result);
-    }
-
-    if (!result)
-      throw Components.Exception("The signature for " + aId + " was not created by the add-on's updateKey");
-  }
 
   let updates = ds.GetTarget(addonRes, EM_R("updates"), true);
 
@@ -430,12 +240,7 @@ function parseRDFManifest(aId, aUpdateKey, aRequest, aManifestData) {
 
 
 
-
-
-function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
-  if (aUpdateKey)
-    throw Components.Exception("Update keys are not supported for JSON update manifests");
-
+function parseJSONManifest(aId, aRequest, aManifestData) {
   let TYPE_CHECK = {
     "array": val => Array.isArray(val),
     "object": val => val && typeof val == "object" && !Array.isArray(val),
@@ -550,11 +355,8 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
 
 
 
-
-
-function UpdateParser(aId, aUpdateKey, aUrl, aObserver) {
+function UpdateParser(aId, aUrl, aObserver) {
   this.id = aId;
-  this.updateKey = aUpdateKey;
   this.observer = aObserver;
   this.url = aUrl;
 
@@ -582,7 +384,6 @@ function UpdateParser(aId, aUpdateKey, aUrl, aObserver) {
 
 UpdateParser.prototype = {
   id: null,
-  updateKey: null,
   observer: null,
   request: null,
   url: null,
@@ -626,7 +427,7 @@ UpdateParser.prototype = {
       try {
         let json = JSON.parse(request.responseText);
 
-        parser = () => parseJSONManifest(this.id, this.updateKey, request, json);
+        parser = () => parseJSONManifest(this.id, request, json);
       } catch (e) {
         if (!(e instanceof SyntaxError))
           throw e;
@@ -636,7 +437,7 @@ UpdateParser.prototype = {
         if (xml.documentElement.namespaceURI == XMLURI_PARSE_ERROR)
           throw new Error("Update manifest was not valid XML or JSON");
 
-        parser = () => parseRDFManifest(this.id, this.updateKey, request, xml);
+        parser = () => parseRDFManifest(this.id, request, xml);
       }
     } catch (e) {
       logger.warn("onUpdateCheckComplete failed to determine manifest type");
@@ -875,9 +676,7 @@ var AddonUpdateChecker = {
 
 
 
-
-
-  checkForUpdates(aId, aUpdateKey, aUrl, aObserver) {
-    return new UpdateParser(aId, aUpdateKey, aUrl, aObserver);
+  checkForUpdates(aId, aUrl, aObserver) {
+    return new UpdateParser(aId, aUrl, aObserver);
   }
 };
