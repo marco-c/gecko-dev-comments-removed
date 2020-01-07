@@ -1245,6 +1245,11 @@ Database::InitSchema(bool* aDatabaseMigrated)
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 47) {
+        rv = MigrateV47Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -2110,13 +2115,15 @@ Database::MigrateV46Up() {
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "UPDATE moz_places "
-       "SET url = 'place:tag=' || ( "
-          "SELECT title FROM moz_bookmarks "
-          "WHERE id = CAST(get_query_param(substr(url, 7), 'folder') AS INT) "
-       ") "
+      "SET url = IFNULL('place:tag=' || ( "
+        "SELECT title FROM moz_bookmarks "
+        "WHERE id = CAST(get_query_param(substr(url, 7), 'folder') AS INT) "
+      "), url) "
     "WHERE url_hash BETWEEN hash('place', 'prefix_lo') AND "
                            "hash('place', 'prefix_hi') "
       "AND url LIKE '%type=7%' "
+      "AND EXISTS(SELECT 1 FROM moz_bookmarks "
+          "WHERE id = CAST(get_query_param(substr(url, 7), 'folder') AS INT)) "
   ));
 
   
@@ -2139,7 +2146,30 @@ Database::MigrateV46Up() {
     ") "
   ));
   NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
 
+nsresult
+Database::MigrateV47Up() {
+  
+  
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_places "
+    "SET url = 'place:excludeItems=1', url_hash = hash('place:excludeItems=1') "
+    "WHERE url ISNULL "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "UPDATE moz_bookmarks SET syncChangeCounter = syncChangeCounter + 1 "
+    "WHERE fk IN ( "
+      "SELECT id FROM moz_places "
+      "WHERE url_hash = hash('place:excludeItems=1') "
+        "AND url = 'place:excludeItems=1' "
+    ") "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
@@ -2340,6 +2370,15 @@ Database::Shutdown()
     rv = stmt->ExecuteStep(&hasResult);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     MOZ_ASSERT(!hasResult, "Found a duplicate url!");
+
+    
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "SELECT 1 FROM moz_places WHERE url ISNULL "
+    ), getter_AddRefs(stmt));
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = stmt->ExecuteStep(&hasResult);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    MOZ_ASSERT(!hasResult, "Found a NULL url!");
   }
 #endif
 

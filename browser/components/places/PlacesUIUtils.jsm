@@ -769,10 +769,8 @@ var PlacesUIUtils = {
 
 
 
-
-
-  guessUrlSchemeForUI: function PUIU_guessUrlSchemeForUI(aUrlString) {
-    return aUrlString.substr(0, aUrlString.indexOf(":"));
+  guessUrlSchemeForUI(href) {
+    return href.substr(0, href.indexOf(":"));
   },
 
   getBestTitle: function PUIU_getBestTitle(aNode, aDoNotCutTitle) {

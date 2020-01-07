@@ -3460,6 +3460,12 @@ nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
   nsAutoCString url;
   nsresult rv = aRow->GetUTF8String(kGetInfoIndex_URL, url);
   NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (url.IsVoid()) {
+    MOZ_ASSERT(false, "Found a NULL url in moz_places");
+    url.SetIsVoid(false);
+  }
 
   
   nsAutoCString title;
