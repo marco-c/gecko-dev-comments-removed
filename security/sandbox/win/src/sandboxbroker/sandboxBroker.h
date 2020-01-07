@@ -64,8 +64,18 @@ public:
   bool AllowReadFile(wchar_t const *file);
 
   
-  
+
+
+
   bool AddTargetPeer(HANDLE aPeerProcess);
+
+  
+
+
+
+
+
+  void AddHandleToShare(HANDLE aHandle);
 
   
   void ApplyLoggingPolicy();

@@ -352,8 +352,10 @@ bool LaunchApp(const std::wstring& cmdline,
   
   
   LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList = NULL;
-  HANDLE handlesToInherit[2];
-  int handleCount = 0;
+  std::vector<HANDLE> handlesToInherit;
+  for (HANDLE h : options.handles_to_inherit) {
+    handlesToInherit.push_back(h);
+  }
 
   
   
@@ -361,12 +363,12 @@ bool LaunchApp(const std::wstring& cmdline,
   HANDLE stdErr = ::GetStdHandle(STD_ERROR_HANDLE);
 
   if (IsInheritableHandle(stdOut))
-    handlesToInherit[handleCount++] = stdOut;
+    handlesToInherit.push_back(stdOut);
   if (stdErr != stdOut && IsInheritableHandle(stdErr))
-    handlesToInherit[handleCount++] = stdErr;
+    handlesToInherit.push_back(stdErr);
 
-  if (handleCount) {
-    lpAttributeList = CreateThreadAttributeList(handlesToInherit, handleCount);
+  if (!handlesToInherit.empty()) {
+    lpAttributeList = CreateThreadAttributeList(handlesToInherit.data(), handlesToInherit.size());
     if (lpAttributeList) {
       
       startup_info.cb = sizeof(startup_info_ex);
