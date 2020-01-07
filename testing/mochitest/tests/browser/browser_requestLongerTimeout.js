@@ -5,5 +5,6 @@ function test() {
     finish();
   }
   waitForExplicitFinish();
+  
   setTimeout(end, 40000);
 }

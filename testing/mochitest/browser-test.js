@@ -1,5 +1,10 @@
 
 
+
+
+
+
+
 var gTimeoutSeconds = 45;
 var gConfig;
 var gSaveInstrumentationData = null;
@@ -83,9 +88,11 @@ function testInit() {
   } else {
     
     let messageHandler = function(m) {
+      
       messageManager.removeMessageListener("chromeEvent", messageHandler);
       var url = m.json.data;
 
+      
       
       
       var webNav = content.window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -94,7 +101,9 @@ function testInit() {
     };
 
     var listener = 'data:,function doLoad(e) { var data=e.detail&&e.detail.data;removeEventListener("contentEvent", function (e) { doLoad(e); }, false, true);sendAsyncMessage("chromeEvent", {"data":data}); };addEventListener("contentEvent", function (e) { doLoad(e); }, false, true);';
+    
     messageManager.addMessageListener("chromeEvent", messageHandler);
+    
     messageManager.loadFrameScript(listener, true);
   }
   if (gConfig.e10s) {
@@ -524,7 +533,7 @@ Tester.prototype = {
 
   waitForWindowsState: function Tester_waitForWindowsState(aCallback) {
     let timedOut = this.currentTest && this.currentTest.timedOut;
-    let startTime = Date.now();
+    
     let baseMsg = timedOut ? "Found a {elt} after previous test timed out"
                            : this.currentTest ? "Found an unexpected {elt} at the end of test run"
                                               : "Found an unexpected {elt}";
@@ -548,7 +557,7 @@ Tester.prototype = {
 
     
     if (window.gBrowser) {
-      let newTab = gBrowser.addTab("about:blank", { skipAnimation: true });
+      gBrowser.addTab("about:blank", { skipAnimation: true });
       gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
       gBrowser.stop();
     }
@@ -604,7 +613,7 @@ Tester.prototype = {
     this.PromiseTestUtils.uninit();
 
     
-    let pid = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processID;
+    let pid = Services.appinfo.processID;
     dump("Completed ShutdownLeaks collections in process " + pid + "\n");
 
     this.structuredLogger.info("TEST-START | Shutdown");
@@ -740,6 +749,7 @@ Tester.prototype = {
       
       document.popupNode = null;
 
+      
       await new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));
 
       if (gConfig.cleanupCrashes) {
@@ -836,9 +846,7 @@ Tester.prototype = {
       }
 
       
-      if (Cc["@mozilla.org/xre/runtime;1"]
-          .getService(Ci.nsIXULRuntime)
-          .processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
         this.MemoryStats.dump(this.currentTestIndex,
                               this.currentTest.path,
                               gConfig.dumpOutputDirectory,
@@ -1050,7 +1058,6 @@ Tester.prototype = {
         if ("test" in this.currentTest.scope) {
           throw "Cannot run both a add_task test and a normal test at the same time.";
         }
-        let Promise = this.Promise;
         let PromiseTestUtils = this.PromiseTestUtils;
 
         
@@ -1396,6 +1403,7 @@ function testScope(aTester, aTest, expected) {
     Cu.permitCPOWsInScope(sandbox);
     return sandbox;
   }
+  return this;
 }
 
 function decorateTaskFn(fn) {

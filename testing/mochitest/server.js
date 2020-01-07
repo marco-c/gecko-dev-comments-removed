@@ -10,12 +10,29 @@
 
 
 
+
+
+
+
+
 var ios = Cc["@mozilla.org/network/io-service;1"]
             .getService(Ci.nsIIOService);
 ios.manageOfflineStatus = false;
 ios.offline = false;
 
 var server; 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -547,9 +564,9 @@ function jsonArrayOfTestFiles(links) {
 
 
 function regularListing(metadata, response) {
-  var [links, count] = list(metadata.path,
-                            metadata.getProperty("directory"),
-                            false);
+  var [links] = list(metadata.path,
+                     metadata.getProperty("directory"),
+                     false);
   response.write(
     HTML(
       HEAD(

@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/Task.jsm", this);
@@ -29,6 +31,7 @@ addMessageListener("content-task:spawn", function(msg) {
     });
   });
 
+  
   var ok = Assert.ok.bind(Assert);
   var is = Assert.equal.bind(Assert);
   var isnot = Assert.notEqual.bind(Assert);
@@ -40,6 +43,7 @@ addMessageListener("content-task:spawn", function(msg) {
   function info(name) {
     sendAsyncMessage("content-task:test-info", {id, name});
   }
+  
 
   try {
     let runnablestr = `
@@ -47,6 +51,7 @@ addMessageListener("content-task:spawn", function(msg) {
         return (${source});
       })();`;
 
+    
     let runnable = eval(runnablestr);
     let iterator = runnable.call(this, msg.data.arg);
     Task.spawn(iterator).then((val) => {

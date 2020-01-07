@@ -2,8 +2,11 @@
 
 
 
+
+
 const flavor  = __webDriverArguments[0].flavor;
 const url = __webDriverArguments[0].testUrl;
+
 
 let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
           .getService(Ci.nsIWindowMediator);

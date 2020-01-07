@@ -7,6 +7,8 @@ function test() {
     finish();
   }
   waitForExplicitFinish();
+  
   setTimeout(message, 20000);
+  
   setTimeout(end, 40000);
 }

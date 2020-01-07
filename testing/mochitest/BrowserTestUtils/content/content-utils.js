@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -21,4 +23,3 @@ addEventListener("load", function(event) {
     {subframe, internalURL: event.target.documentURI,
      visibleURL: content.document.location.href});
 }, true);
-

@@ -4,5 +4,6 @@ function test() {
     ok(true, "timeout ran");
     finish();
   }
+  
   setTimeout(done, 500);
 }

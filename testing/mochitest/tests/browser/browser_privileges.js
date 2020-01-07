@@ -4,6 +4,7 @@ function test() {
 
   
   try {
+    
     var prefs = Cc["@mozilla.org/preferences-service;1"].
                 getService(Ci.nsIPrefBranch);
   } catch (e) {
