@@ -893,8 +893,20 @@ protected:
   
 
 
-  nsresult MakeDefinitionItem(const nsAString& aItemType);
-  nsresult InsertBasicBlock(const nsAString& aBlockType);
+
+
+
+
+  nsresult MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
+
+  
+
+
+
+
+
+
+  nsresult InsertBasicBlockWithTransaction(nsAtom& aTagName);
 
   
 
