@@ -2936,6 +2936,27 @@ struct MaybeGlobalThisPolicy : public NormalThisPolicy
 
 
 
+struct LenientThisPolicy : public MaybeGlobalThisPolicy
+{
+  
+
+  
+
+  static bool HandleInvalidThis(JSContext* aCx, const JS::CallArgs& aArgs,
+                                bool aSecurityError,
+                                prototypes::ID aProtoId)
+  {
+    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
+    if (!ReportLenientThisUnwrappingFailure(aCx, &aArgs.callee())) {
+      return false;
+    }
+    aArgs.rval().set(JS::UndefinedValue());
+    return true;
+  }
+};
+
+
+
 
 
 
@@ -3029,6 +3050,11 @@ GenericGetter<MaybeGlobalThisPolicy, ThrowExceptions>(
 template bool
 GenericGetter<MaybeGlobalThisPolicy, ConvertExceptionsToPromises>(
   JSContext* cx, unsigned argc, JS::Value* vp);
+template bool
+GenericGetter<LenientThisPolicy, ThrowExceptions>(
+  JSContext* cx, unsigned argc, JS::Value* vp);
+
+
 
 } 
 

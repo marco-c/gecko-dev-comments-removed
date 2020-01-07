@@ -3251,6 +3251,9 @@ struct NormalThisPolicy;
 struct MaybeGlobalThisPolicy;
 
 
+struct LenientThisPolicy;
+
+
 struct ThrowExceptions;
 
 
