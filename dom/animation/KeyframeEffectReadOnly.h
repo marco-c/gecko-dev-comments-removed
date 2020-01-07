@@ -393,7 +393,8 @@ private:
     nsPresContext* aPresContext,
     const ComputedStyle* aBaseComputedStyle);
 
-  nsIFrame* GetAnimationFrame() const;
+  
+  nsIFrame* GetStyleFrame() const;
 
   bool CanThrottle() const;
   bool CanThrottleTransformChanges(const nsIFrame& aFrame) const;
