@@ -34,24 +34,6 @@ let searchDomains = [{
 }, {
   
   "domains": [
-    "search.yahoo.com", "ca.search.yahoo.com", "hk.search.yahoo.com",
-    "tw.search.yahoo.com", "mozilla.search.yahoo.com", "us.search.yahoo.com",
-    "no.search.yahoo.com", "ar.search.yahoo.com", "br.search.yahoo.com",
-    "ch.search.yahoo.com", "cl.search.yahoo.com", "de.search.yahoo.com",
-    "uk.search.yahoo.com", "es.search.yahoo.com", "espanol.search.yahoo.com",
-    "fi.search.yahoo.com", "fr.search.yahoo.com", "nl.search.yahoo.com",
-    "id.search.yahoo.com", "in.search.yahoo.com", "it.search.yahoo.com",
-    "mx.search.yahoo.com", "se.search.yahoo.com", "sg.search.yahoo.com",
-  ],
-  "search": "p",
-  "followOnSearch": "fr2",
-  "prefix": ["hspart", "fr"],
-  "reportPrefix": "hsimp",
-  "codes": ["mozilla", "moz35"],
-  "sap": "yahoo",
-}, {
-  
-  "domains": [
     "www.google.com", "www.google.ac", "www.google.ad", "www.google.ae",
     "www.google.com.af", "www.google.com.ag", "www.google.com.ai",
     "www.google.al", "www.google.am", "www.google.co.ao", "www.google.com.ar",
@@ -108,7 +90,7 @@ let searchDomains = [{
   "search": "q",
   "prefix": ["client"],
   "followOnSearch": "oq",
-  "codes": ["firefox-b-ab", "firefox-b"],
+  "codes": ["firefox-b-ab", "firefox-b", "firefox-b-1-ab", "firefox-b-1"],
   "sap": "google",
 }];
 
@@ -192,14 +174,14 @@ var webProgressListener = {
           gLastSearchQueue.push(aLocation.spec);
           
           if (queries.get("oe") && queries.get("ie")) {
-            sendSaveTelemetryMsg(code ? code : "none", code ? domainInfo.sap : "google-nocodes", "sap");
+            sendSaveTelemetryMsg(code ? code : "none", code, "sap");
             searchingGoogle = true;
           } else {
             
             
             let tbm = queries.get("tbm");
             if (searchingGoogle) {
-              sendSaveTelemetryMsg(code ? code : "none", code ? domainInfo.sap : "google-nocodes", "follow-on", tbm ? `vertical-${tbm}` : null);
+              sendSaveTelemetryMsg(code ? code : "none", code, "follow-on", tbm ? `vertical-${tbm}` : null);
             } else if (code) {
               
               sendSaveTelemetryMsg(code, domainInfo.sap, "follow-on", tbm ? `vertical-${tbm}` : null);
