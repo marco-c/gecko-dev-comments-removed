@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_UnboxedObject_h
 #define vm_UnboxedObject_h
@@ -15,8 +15,8 @@
 
 namespace js {
 
-
-
+// Memory required for an unboxed value of a given type. Returns zero for types
+// which can't be used for unboxed objects.
 static inline size_t
 UnboxedTypeSize(JSValueType type)
 {
@@ -42,7 +42,7 @@ UnboxedTypeNeedsPostBarrier(JSValueType type)
     return type == JSVAL_TYPE_STRING || type == JSVAL_TYPE_OBJECT;
 }
 
-
+// Class tracking information specific to unboxed objects.
 class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
 {
   public:
@@ -61,41 +61,41 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
   private:
     Zone* zone_;
 
-    
-    
-    
+    // If objects in this group have ever been converted to native objects,
+    // these store the corresponding native group and initial shape for such
+    // objects. Type information for this object is reflected in nativeGroup.
     GCPtrObjectGroup nativeGroup_;
     GCPtrShape nativeShape_;
 
-    
+    // Any script/pc which the associated group is created for.
     GCPtrScript allocationScript_;
     jsbytecode* allocationPc_;
 
-    
-    
-    
-    
-    
+    // If nativeGroup is set and this object originally had a TypeNewScript or
+    // was keyed to an allocation site, this points to the group which replaced
+    // this one. This link is only needed to keep the replacement group from
+    // being GC'ed. If it were GC'ed and a new one regenerated later, that new
+    // group might have a different allocation kind from this group.
     GCPtrObjectGroup replacementGroup_;
 
-    
+    // The following members are only used for unboxed plain objects.
 
-    
+    // All properties on objects with this layout, in enumeration order.
     PropertyVector properties_;
 
-    
+    // Byte size of the data for objects with this layout.
     size_t size_;
 
-    
+    // Any 'new' script information associated with this layout.
     TypeNewScript* newScript_;
 
-    
-    
+    // List for use in tracing objects with this layout. This has the same
+    // structure as the trace list on a TypeDescr.
     int32_t* traceList_;
 
-    
-    
-    
+    // If this layout has been used to construct script or JSON constant
+    // objects, this code might be filled in to more quickly fill in objects
+    // from an array of values.
     GCPtrJitCode constructorCode_;
 
   public:
@@ -209,30 +209,30 @@ class UnboxedObject : public JSObject
                    js::HandleObjectGroup group);
 };
 
-
-
-
+// Class for expando objects holding extra properties given to an unboxed plain
+// object. These objects behave identically to normal native plain objects, and
+// have a separate Class to distinguish them for memory usage reporting.
 class UnboxedExpandoObject : public NativeObject
 {
   public:
     static const Class class_;
 };
 
-
-
-
-
+// Class for a plain object using an unboxed representation. The physical
+// layout of these objects is identical to that of an InlineTypedObject, though
+// these objects use an UnboxedLayout instead of a TypeDescr to keep track of
+// how their properties are stored.
 class UnboxedPlainObject : public UnboxedObject
 {
-    
-    
-    
-    
-    
-    
-    
+    // The |JSObject::shapeOrExpando_| field can optionally refer to an object
+    // which stores extra properties on this object. This is not automatically
+    // barriered to avoid problems if the object is converted to a native. See
+    // ensureExpando(). This object must be an UnboxedExpandoObject.
+    //
+    // NOTE: The JIT should not assume that seeing the same expando pointer
+    //       means the object is even an UnboxedObject. Always check |group_|.
 
-    
+    // Start of the inline data, which immediately follows the group and extra properties.
     uint8_t data_[1];
 
   public:
@@ -285,7 +285,7 @@ class UnboxedPlainObject : public UnboxedObject
         shapeOrExpando_ = nullptr;
     }
 
-    
+    // For use during GC.
     JSObject** addressOfExpando() {
         return reinterpret_cast<JSObject**>(&shapeOrExpando_);
     }
@@ -297,7 +297,7 @@ class UnboxedPlainObject : public UnboxedObject
     bool setValue(JSContext* cx, const UnboxedLayout::Property& property, const Value& v);
     Value getValue(const UnboxedLayout::Property& property, bool maybeUninitialized = false);
 
-    static bool convertToNative(JSContext* cx, JSObject* obj);
+    static NativeObject* convertToNative(JSContext* cx, JSObject* obj);
     static UnboxedPlainObject* create(JSContext* cx, HandleObjectGroup group,
                                       NewObjectKind newKind);
     static JSObject* createWithProperties(JSContext* cx, HandleObjectGroup group,
@@ -324,14 +324,14 @@ IsUnboxedObjectClass(const Class* class_)
 }
 
 
-
-
-
+// Try to construct an UnboxedLayout for each of the preliminary objects,
+// provided they all match the template shape. If successful, converts the
+// preliminary objects and their group to the new unboxed representation.
 bool
 TryConvertToUnboxedLayout(JSContext* cx, AutoEnterAnalysis& enter, Shape* templateShape,
                           ObjectGroup* group, PreliminaryObjectArray* objects);
 
-} 
+} // namespace js
 
 namespace JS {
 
@@ -339,6 +339,6 @@ template <>
 struct DeletePolicy<js::UnboxedLayout> : public js::GCManagedDeletePolicy<js::UnboxedLayout>
 {};
 
-} 
+} /* namespace JS */
 
-#endif 
+#endif /* vm_UnboxedObject_h */

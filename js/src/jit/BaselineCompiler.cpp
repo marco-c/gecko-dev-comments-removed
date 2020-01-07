@@ -4380,7 +4380,8 @@ BaselineCompiler::emit_JSOP_SUPERFUN()
     masm.branchPtr(Assembler::BelowOrEqual, proto, ImmWord(1), &needVMCall);
 
     
-    masm.branchTestObjClass(Assembler::NotEqual, proto, scratch, &JSFunction::class_, &needVMCall);
+    masm.branchTestObjClass(Assembler::NotEqual, proto, &JSFunction::class_, scratch, proto,
+                            &needVMCall);
 
     
     masm.load16ZeroExtend(Address(proto, JSFunction::offsetOfFlags()), scratch);

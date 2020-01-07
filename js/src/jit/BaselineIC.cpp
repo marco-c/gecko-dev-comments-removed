@@ -426,10 +426,11 @@ ICTypeUpdate_ObjectGroup::Compiler::generateStubCode(MacroAssembler& masm)
     masm.branchTestObject(Assembler::NotEqual, R0, &failure);
 
     
-    Register scratch = R1.scratchReg();
-    Register obj = masm.extractObject(R0, scratch);
     Address expectedGroup(ICStubReg, ICTypeUpdate_ObjectGroup::offsetOfGroup());
-    masm.branchTestObjGroup(Assembler::NotEqual, obj, expectedGroup, scratch, &failure);
+    Register scratch1 = R1.scratchReg();
+    masm.unboxObject(R0, scratch1);
+    masm.branchTestObjGroup(Assembler::NotEqual, scratch1, expectedGroup, scratch1,
+                            R0.payloadOrValueReg(), &failure);
 
     
     masm.mov(ImmWord(1), R1.scratchReg());
@@ -2631,8 +2632,8 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
         regsx.add(secondArgVal);
         regsx.takeUnchecked(secondArgObj);
 
-        masm.branchTestObjClass(Assembler::NotEqual, secondArgObj, regsx.getAny(),
-                                &ArrayObject::class_, failure);
+        masm.branchTestObjClass(Assembler::NotEqual, secondArgObj, &ArrayObject::class_,
+                                regsx.getAny(), secondArgObj, failure);
 
         
         masm.loadPtr(Address(secondArgObj, NativeObject::offsetOfElements()), secondArgObj);
@@ -2679,8 +2680,8 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
     masm.branchTestObject(Assembler::NotEqual, val, failure);
     Register callee = masm.extractObject(val, ExtractTemp1);
 
-    masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
-                            failure);
+    masm.branchTestObjClass(Assembler::NotEqual, callee, &JSFunction::class_, regs.getAny(),
+                            callee, failure);
     masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrEnv()), callee);
 
     masm.branchPtr(Assembler::NotEqual, callee, ImmPtr(fun_apply), failure);
@@ -2695,8 +2696,8 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
     regs.add(val);
     regs.takeUnchecked(target);
 
-    masm.branchTestObjClass(Assembler::NotEqual, target, regs.getAny(), &JSFunction::class_,
-                            failure);
+    masm.branchTestObjClass(Assembler::NotEqual, target, &JSFunction::class_, regs.getAny(),
+                            target, failure);
 
     Register temp = regs.takeAny();
     masm.branchIfFunctionHasNoJitEntry(target,  false, failure);
@@ -2943,8 +2944,8 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         masm.branchIfFunctionHasNoJitEntry(callee, isConstructing_, &failure);
     } else {
         
-        masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
-                                &failure);
+        masm.branchTestObjClass(Assembler::NotEqual, callee, &JSFunction::class_, regs.getAny(),
+                                callee, &failure);
         if (isConstructing_) {
             masm.branchIfNotInterpretedConstructor(callee, regs.getAny(), &failure);
         } else {
@@ -3188,8 +3189,8 @@ ICCall_ConstStringSplit::Compiler::generateStubCode(MacroAssembler& masm)
 
         
         Register calleeObj = masm.extractObject(calleeVal, ExtractTemp0);
-        masm.branchTestObjClass(Assembler::NotEqual, calleeObj, scratchReg,
-                                &JSFunction::class_, &failureRestoreArgc);
+        masm.branchTestObjClass(Assembler::NotEqual, calleeObj, &JSFunction::class_, scratchReg,
+                                calleeObj, &failureRestoreArgc);
 
         
         masm.loadPtr(Address(calleeObj, JSFunction::offsetOfNativeOrEnv()), scratchReg);
@@ -3278,8 +3279,8 @@ ICCall_IsSuspendedGenerator::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     Register scratch = regs.takeAny();
-    masm.branchTestObjClass(Assembler::NotEqual, genObj, scratch, &GeneratorObject::class_,
-                            &returnFalse);
+    masm.branchTestObjClass(Assembler::NotEqual, genObj, &GeneratorObject::class_, scratch,
+                            genObj, &returnFalse);
 
     
     
@@ -3427,11 +3428,15 @@ ICCall_ClassHook::Compiler::generateStubCode(MacroAssembler& masm)
     masm.branchTestObject(Assembler::NotEqual, R1, &failure);
 
     
+    
+    
+    
+    
     Register callee = masm.extractObject(R1, ExtractTemp0);
     Register scratch = regs.takeAny();
-    masm.branchTestObjClass(Assembler::NotEqual, callee, scratch,
+    masm.branchTestObjClass(Assembler::NotEqual, callee,
                             Address(ICStubReg, ICCall_ClassHook::offsetOfClass()),
-                            &failure);
+                            scratch, ICStubReg, &failure);
     regs.add(R1);
     regs.takeUnchecked(callee);
 
@@ -3694,8 +3699,8 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
     masm.branchTestObject(Assembler::NotEqual, R1, &failure);
 
     Register callee = masm.extractObject(R1, ExtractTemp0);
-    masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
-                            &failure);
+    masm.branchTestObjClass(Assembler::NotEqual, callee, &JSFunction::class_, regs.getAny(),
+                            callee, &failure);
     masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrEnv()), callee);
     masm.branchPtr(Assembler::NotEqual, callee, ImmPtr(fun_call), &failure);
 
@@ -3706,8 +3711,8 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
     masm.branchTestObject(Assembler::NotEqual, R1, &failure);
     callee = masm.extractObject(R1, ExtractTemp0);
 
-    masm.branchTestObjClass(Assembler::NotEqual, callee, regs.getAny(), &JSFunction::class_,
-                            &failure);
+    masm.branchTestObjClass(Assembler::NotEqual, callee, &JSFunction::class_, regs.getAny(),
+                            callee, &failure);
     masm.branchIfFunctionHasNoJitEntry(callee,  false, &failure);
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor,
                             callee, regs.getAny(), &failure);
@@ -4042,8 +4047,8 @@ ICIteratorMore_Native::Compiler::generateStubCode(MacroAssembler& masm)
     Register nativeIterator = regs.takeAny();
     Register scratch = regs.takeAny();
 
-    masm.branchTestObjClass(Assembler::NotEqual, obj, scratch,
-                            &PropertyIteratorObject::class_, &failure);
+    masm.branchTestObjClass(Assembler::NotEqual, obj, &PropertyIteratorObject::class_, scratch,
+                            obj, &failure);
     masm.loadObjPrivate(obj, JSObject::ITER_CLASS_NFIXED_SLOTS, nativeIterator);
 
     

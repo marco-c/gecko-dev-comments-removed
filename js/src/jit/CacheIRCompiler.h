@@ -379,6 +379,10 @@ class MOZ_RAII CacheRegisterAllocator
         currentInstruction_++;
     }
 
+    bool isDeadAfterInstruction(OperandId opId) const {
+        return writer_.operandIsDead(opId.id(), currentInstruction_ + 1);
+    }
+
     uint32_t stackPushed() const {
         return stackPushed_;
     }
@@ -568,6 +572,14 @@ class MOZ_RAII CacheIRCompiler
     
     FloatRegisterSet liveVolatileFloatRegs() const {
         return FloatRegisterSet::Intersect(liveFloatRegs_.set(), FloatRegisterSet::Volatile());
+    }
+
+    bool objectGuardNeedsSpectreMitigations(ObjOperandId objId) const {
+        
+        
+        
+        
+        return JitOptions.spectreObjectMitigationsMisc && !allocator.isDeadAfterInstruction(objId);
     }
 
     void emitLoadTypedObjectResultShared(const Address& fieldAddr, Register scratch,

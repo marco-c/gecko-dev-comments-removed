@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_mips_shared_MacroAssembler_mips_shared_inl_h
 #define jit_mips_shared_MacroAssembler_mips_shared_inl_h
@@ -12,7 +12,7 @@
 namespace js {
 namespace jit {
 
-
+//{{{ check_macroassembler_style
 
 void
 MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest)
@@ -38,8 +38,8 @@ MacroAssembler::move16SignExtend(Register src, Register dest)
     ma_seh(dest, src);
 }
 
-
-
+// ===============================================================
+// Logical instructions
 
 void
 MacroAssembler::not32(Register reg)
@@ -106,8 +106,8 @@ MacroAssembler::xor32(Imm32 imm, Register dest)
     ma_xor(dest, imm);
 }
 
-
-
+// ===============================================================
+// Arithmetic instructions
 
 void
 MacroAssembler::add32(Register src, Register dest)
@@ -326,8 +326,8 @@ MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest, bool handl
     minMaxDouble(srcDest, other, handleNaN, true);
 }
 
-
-
+// ===============================================================
+// Shift functions
 
 void
 MacroAssembler::lshift32(Register src, Register dest)
@@ -365,8 +365,8 @@ MacroAssembler::rshift32Arithmetic(Imm32 imm, Register dest)
     ma_sra(dest, dest, imm);
 }
 
-
-
+// ===============================================================
+// Rotation functions
 void
 MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest)
 {
@@ -394,8 +394,8 @@ MacroAssembler::rotateRight(Register count, Register input, Register dest)
     ma_ror(dest, input, count);
 }
 
-
-
+// ===============================================================
+// Bit counting functions
 
 void
 MacroAssembler::clz32(Register src, Register dest, bool knownNotZero)
@@ -412,7 +412,7 @@ MacroAssembler::ctz32(Register src, Register dest, bool knownNotZero)
 void
 MacroAssembler::popcnt32(Register input,  Register output, Register tmp)
 {
-    
+    // Equivalent to GCC output of mozilla::CountPopulation32()
     ma_move(output, input);
     ma_sra(tmp, input, Imm32(1));
     ma_and(tmp, Imm32(0x55555555));
@@ -431,8 +431,8 @@ MacroAssembler::popcnt32(Register input,  Register output, Register tmp)
     ma_sra(output, output, Imm32(24));
 }
 
-
-
+// ===============================================================
+// Branch functions
 
 template <class L>
 void
@@ -1037,8 +1037,14 @@ MacroAssembler::spectreMovePtr(Condition cond, Register src, Register dest)
     MOZ_CRASH();
 }
 
+void
+MacroAssembler::spectreZeroRegister(Condition cond, Register scratch, Register dest)
+{
+    MOZ_CRASH();
+}
 
-
+// ========================================================================
+// Memory access primitives.
 void
 MacroAssembler::storeFloat32x3(FloatRegister src, const Address& dest)
 {
@@ -1078,26 +1084,26 @@ MacroAssembler::memoryBarrier(MemoryBarrierBits barrier)
     as_sync();
 }
 
-
-
+// ===============================================================
+// Clamping functions.
 
 void
 MacroAssembler::clampIntToUint8(Register reg)
 {
-    
+    // If reg is < 0, then we want to clamp to 0.
     as_slti(ScratchRegister, reg, 0);
     as_movn(reg, zero, ScratchRegister);
 
-    
+    // If reg is >= 255, then we want to clamp to 255.
     ma_li(SecondScratchReg, Imm32(255));
     as_slti(ScratchRegister, reg, 255);
     as_movz(reg, SecondScratchReg, ScratchRegister);
 }
 
+//}}} check_macroassembler_style
+// ===============================================================
 
+} // namespace jit
+} // namespace js
 
-
-} 
-} 
-
-#endif 
+#endif /* jit_mips_shared_MacroAssembler_mips_shared_inl_h */
