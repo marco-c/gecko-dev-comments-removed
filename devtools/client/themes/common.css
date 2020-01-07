@@ -230,6 +230,15 @@ checkbox:-moz-focusring {
 }
 
 
+
+.devtools-button:-moz-focusring,
+.devtools-tab:-moz-focusring {
+  outline:none;
+  padding-inline-end: 0;
+  padding-inline-start: 0;
+}
+
+
 .devtools-menulist,
 .devtools-toolbarbutton,
 .devtools-button {
@@ -246,6 +255,11 @@ checkbox:-moz-focusring {
 
   
   white-space: nowrap;
+}
+
+
+.devtools-button::-moz-focus-inner {
+  border: 0;
 }
 
 .devtools-toolbarbutton:not([label]) > .toolbarbutton-icon,
@@ -321,6 +335,10 @@ checkbox:-moz-focusring {
 .devtools-toolbarbutton:not([label]):hover,
 .devtools-button:empty:not(:disabled):hover {
   background: var(--toolbarbutton-background);
+}
+
+.devtools-button:focus {
+  background-color: var(--theme-toolbar-hover);
 }
 
 .devtools-button:not(:empty):not(:disabled):not(.checked):hover,
@@ -710,6 +728,12 @@ checkbox:-moz-focusring {
 .devtools-tab.selected .devtools-tab-line,
 .tabs-menu-item.is-active .devtools-tab-line {
   background: var(--tab-line-selected-color);
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.devtools-tab:not(.selected):focus .devtools-tab-line {
+  background: var(--tab-line-hover-color);
   opacity: 1;
   transform: scaleX(1);
 }
