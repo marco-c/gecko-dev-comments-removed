@@ -157,7 +157,7 @@ private:
   mozilla::UniquePtr<_MappableBuffer> buffer;
 
   
-  zxx_stream zStream;
+  z_stream zStream;
 };
 
 #endif 
