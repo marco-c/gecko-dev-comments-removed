@@ -332,30 +332,31 @@ namespace {
 } 
 
 bool
-MediaStreamGraphImpl::AudioTrackPresent(bool& aNeedsAEC)
+MediaStreamGraphImpl::AudioTrackPresent()
 {
   MOZ_ASSERT(OnGraphThreadOrNotRunning());
 
   bool audioTrackPresent = false;
-  for (uint32_t i = 0; i < mStreams.Length() && audioTrackPresent == false; ++i) {
-    MediaStream* stream = mStreams[i];
-    SourceMediaStream* source = stream->AsSourceStream();
-#ifdef MOZ_WEBRTC
-    if (source && source->NeedsMixing()) {
-      aNeedsAEC = true;
-    }
-#endif
-    
+  for (MediaStream* stream : mStreams) {
     if (stream->AsAudioNodeStream()) {
       audioTrackPresent = true;
-    } else {
-      for (StreamTracks::TrackIter tracks(stream->GetStreamTracks(), MediaSegment::AUDIO);
-           !tracks.IsEnded(); tracks.Next()) {
-        audioTrackPresent = true;
-      }
+      break;
     }
-    if (source) {
+
+    if (!StreamTracks::TrackIter(
+            stream->GetStreamTracks(),
+            MediaSegment::AUDIO
+          ).IsEnded()) {
+      audioTrackPresent = true;
+      break;
+    }
+
+    if (SourceMediaStream* source = stream->AsSourceStream()) {
       audioTrackPresent = source->HasPendingAudioTrack();
+    }
+
+    if (audioTrackPresent) {
+      break;
     }
   }
 
@@ -365,9 +366,6 @@ MediaStreamGraphImpl::AudioTrackPresent(bool& aNeedsAEC)
   if (!audioTrackPresent && mInputDeviceUsers.Count() != 0) {
     NS_WARNING("No audio tracks, but full-duplex audio is enabled!!!!!");
     audioTrackPresent = true;
-#ifdef MOZ_WEBRTC
-    aNeedsAEC = true;
-#endif
   }
 
   return audioTrackPresent;
@@ -377,8 +375,7 @@ void
 MediaStreamGraphImpl::UpdateStreamOrder()
 {
   MOZ_ASSERT(OnGraphThreadOrNotRunning());
-  bool shouldAEC = false;
-  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
+  bool audioTrackPresent = AudioTrackPresent();
 
   
   
@@ -895,8 +892,7 @@ MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
   mAudioInputs.RemoveElement(aListener);
 
   
-  bool shouldAEC = false;
-  bool audioTrackPresent = AudioTrackPresent(shouldAEC);
+  bool audioTrackPresent = AudioTrackPresent();
 
   MonitorAutoLock mon(mMonitor);
   if (LifecycleStateRef() == LIFECYCLE_RUNNING) {
@@ -4148,8 +4144,7 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
   
   
   if (aOperation != AudioContextOperation::Resume) {
-    bool shouldAEC = false;
-    bool audioTrackPresent = AudioTrackPresent(shouldAEC);
+    bool audioTrackPresent = AudioTrackPresent();
 
     if (!audioTrackPresent && CurrentDriver()->AsAudioCallbackDriver()) {
       CurrentDriver()->AsAudioCallbackDriver()->
