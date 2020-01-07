@@ -506,34 +506,31 @@ class LiveBundle : public TempObject
 class VirtualRegister
 {
     
-    LNode* ins_;
+    LNode* ins_ = nullptr;
 
     
-    LDefinition* def_;
+    LDefinition* def_ = nullptr;
 
     
     
     InlineForwardList<LiveRange::RegisterLink> ranges_;
 
     
-    bool isTemp_;
+    bool isTemp_ = false;
 
     
     
-    bool usedByPhi_;
+    bool usedByPhi_ = false;
 
     
     
-    bool mustCopyInput_;
+    bool mustCopyInput_ = false;
 
     void operator=(const VirtualRegister&) = delete;
     VirtualRegister(const VirtualRegister&) = delete;
 
   public:
-    explicit VirtualRegister()
-    {
-        
-    }
+    VirtualRegister() = default;
 
     void init(LNode* ins, LDefinition* def, bool isTemp) {
         MOZ_ASSERT(!ins_);
