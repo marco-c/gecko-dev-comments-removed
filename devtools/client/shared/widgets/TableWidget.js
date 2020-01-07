@@ -492,7 +492,14 @@ TableWidget.prototype = {
       return;
     }
 
-    let selectedCell = this.tbody.querySelector(".theme-selected");
+    
+    
+    
+    
+    const selectedCells = [...this.tbody.querySelectorAll(".theme-selected")]
+                                        .filter(cell => cell.clientWidth > 0);
+    
+    const selectedCell = selectedCells[0];
     if (!selectedCell) {
       return;
     }
