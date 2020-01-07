@@ -13,7 +13,6 @@
 #include <algorithm>
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/RestyleLogging.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/StyleComplexColor.h"
@@ -115,9 +114,7 @@ public:
                 CSSPseudoElementType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
 
-  
-  
-  nsPresContext* PresContextForFrame() const { return mPresContext; }
+  nsPresContext* PresContext() const { return mPresContext; }
   const ServoComputedData* ComputedData() const { return &mSource; }
 
   
@@ -385,6 +382,12 @@ public:
 
   inline void StartBackgroundImageLoads();
 
+  static bool IsReset(const nsStyleStructID aSID) {
+    MOZ_ASSERT(0 <= aSID && aSID < nsStyleStructID_Length,
+               "must be an inherited or reset SID");
+    return nsStyleStructID_Reset_Start <= aSID;
+  }
+  static bool IsInherited(const nsStyleStructID aSID) { return !IsReset(aSID); }
   static uint32_t GetBitForSID(const nsStyleStructID aSID) { return 1 << aSID; }
 
 #ifdef DEBUG
