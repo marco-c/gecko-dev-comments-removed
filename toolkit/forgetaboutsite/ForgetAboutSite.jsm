@@ -64,21 +64,6 @@ var ForgetAboutSite = {
     }));
 
     
-    promises.push((async function() {
-      
-      let logins = Services.logins.getAllLogins();
-      for (let i = 0; i < logins.length; i++)
-        if (hasRootDomain(logins[i].hostname, aDomain))
-          Services.logins.removeLogin(logins[i]);
-    })().catch(ex => {
-      
-      
-      if (!ex.message.includes("User canceled Master Password entry")) {
-        throw new Error("Exception occured in clearing passwords :" + ex);
-      }
-    }));
-
-    
     
     let enumerator = Services.perms.enumerator;
     while (enumerator.hasMoreElements()) {
