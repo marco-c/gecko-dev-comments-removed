@@ -92,7 +92,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         src_x, src_y = sel.first_caret_location()
-        dest_x, dest_y = el.size['width'], el.size['height']
+        dest_x, dest_y = el.rect['width'], el.rect['height']
         self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
 
         self.actions.key_down(content_to_add).key_up(content_to_add).perform()
@@ -219,7 +219,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         sel.move_cursor_to_front()
         el.tap(*sel.cursor_location())
         src_x, src_y = sel.first_caret_location()
-        dest_x, dest_y = el.size['width'], el.size['height']
+        dest_x, dest_y = el.rect['width'], el.rect['height']
 
         
         self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
