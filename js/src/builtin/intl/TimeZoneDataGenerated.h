@@ -1,8 +1,8 @@
 
 
 
-#ifndef builtin_IntlTimeZoneData_h
-#define builtin_IntlTimeZoneData_h
+#ifndef builtin_intl_TimeZoneDataGenerated_h
+#define builtin_intl_TimeZoneDataGenerated_h
 
 namespace js {
 namespace timezone {
