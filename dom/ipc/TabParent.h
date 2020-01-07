@@ -783,7 +783,7 @@ private:
   bool mPreserveLayers;
 
   
-  bool mRenderLayers;
+  bool mRenderingLayers;
 
   
   
