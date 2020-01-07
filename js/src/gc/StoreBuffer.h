@@ -504,6 +504,9 @@ class ArenaCellSet
     void check() const;
 
     
+    
+    
+    
     static ArenaCellSet Empty;
 
     static size_t getCellIndex(const TenuredCell* cell);
