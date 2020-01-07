@@ -9,6 +9,7 @@
 
 
 
+
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
@@ -134,6 +135,17 @@ var PlacesOrganizer = {
   },
 
   init: function PO_init() {
+    
+    const DOWNLOADS_QUERY = "place:transition=" +
+      Ci.nsINavHistoryService.TRANSITION_DOWNLOAD +
+      "&sort=" +
+      Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
+
+    ContentArea.setContentViewForQueryString(DOWNLOADS_QUERY,
+      () => new DownloadsPlacesView(document.getElementById("downloadsRichListBox"), false),
+      { showDetailsPane: false,
+        toolbarSet: "back-button, forward-button, organizeButton, clearDownloadsButton, libraryToolbarSpacer, searchFilter" });
+
     ContentArea.init();
 
     this._places = document.getElementById("placesList");
