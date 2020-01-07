@@ -105,6 +105,7 @@ XPCOMUtils.defineLazyGetter(this, "LocalItemsSQLFragment", () => `
            s.isSyncable, s.level + 1
     FROM moz_bookmarks b
     JOIN localItems s ON s.id = b.parent
+    WHERE b.guid <> '${PlacesUtils.bookmarks.rootGuid}'
   )
 `);
 
@@ -421,6 +422,11 @@ class SyncedBookmarksMirror {
     if (!hasChanges) {
       MirrorLog.debug("No changes detected in both mirror and Places");
       return {};
+    }
+
+    if (!(await this.validLocalRoots())) {
+      throw new SyncedBookmarksMirror.ConsistencyError(
+        "Local tree has misparented root");
     }
 
     
@@ -791,8 +797,7 @@ class SyncedBookmarksMirror {
                                                           childRecordId });
           continue;
         }
-        if (childGuid == PlacesUtils.bookmarks.rootGuid ||
-            PlacesUtils.bookmarks.userContentRoots.includes(childGuid)) {
+        if (childGuid == PlacesUtils.bookmarks.rootGuid) {
           MirrorLog.warn("Ignoring move for root", childGuid);
           continue;
         }
@@ -809,8 +814,7 @@ class SyncedBookmarksMirror {
     
     
     let parentGuid = validateGuid(record.parentid);
-    if (parentGuid == PlacesUtils.bookmarks.rootGuid &&
-        !PlacesUtils.bookmarks.userContentRoots.includes(guid)) {
+    if (parentGuid == PlacesUtils.bookmarks.rootGuid) {
         await this.db.executeCached(`
           INSERT OR IGNORE INTO structure(guid, parentGuid, position)
           VALUES(:guid, :parentGuid, -1)`,
@@ -874,8 +878,7 @@ class SyncedBookmarksMirror {
       return;
     }
 
-    if (guid == PlacesUtils.bookmarks.rootGuid ||
-        PlacesUtils.bookmarks.userContentRoots.includes(guid)) {
+    if (guid == PlacesUtils.bookmarks.rootGuid) {
       MirrorLog.warn("Ignoring tombstone for root", guid);
       return;
     }
@@ -1053,6 +1056,30 @@ class SyncedBookmarksMirror {
       AS hasChanges
     `);
     return !!rows[0].getResultByName("hasChanges");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async validLocalRoots() {
+    let rows = await this.db.execute(`
+      SELECT EXISTS(SELECT 1 FROM moz_bookmarks
+                    WHERE guid = '${PlacesUtils.bookmarks.rootGuid}' AND
+                          parent = 0) AND
+             (SELECT COUNT(*) FROM moz_bookmarks b
+              JOIN moz_bookmarks p ON p.id = b.parent
+              WHERE b.guid IN (${PlacesUtils.bookmarks.userContentRoots.map(
+                v => `'${v}'`)}) AND
+                    p.guid = '${PlacesUtils.bookmarks.rootGuid}') =
+             ${PlacesUtils.bookmarks.userContentRoots.length} AS areValid`);
+    return !!rows[0].getResultByName("areValid");
   }
 
   
@@ -3485,6 +3512,7 @@ class BookmarkMerger {
 
   resolveTwoWayValueConflict(mergedGuid, localNode, remoteNode) {
     if (PlacesUtils.bookmarks.userContentRoots.includes(mergedGuid)) {
+      
       return BookmarkMergeState.local;
     }
     if (!remoteNode.needsMerge) {
@@ -3546,6 +3574,18 @@ class BookmarkMerger {
                     "${remoteParentNode} into ${mergedNode}",
                     { remoteChildNode, remoteParentNode, mergedNode });
 
+    if (PlacesUtils.bookmarks.userContentRoots.includes(remoteChildNode.guid)) {
+      
+      
+      
+      
+      
+      MirrorLog.trace("Ignoring remote root ${remoteChildNode} in " +
+                      "${remoteParentNode}", { remoteChildNode,
+                                               remoteParentNode });
+      return true;
+    }
+
     
     let structureChange = await this.checkForLocalStructureChangeOfRemoteNode(
       mergedNode, remoteParentNode, remoteChildNode);
@@ -3562,6 +3602,7 @@ class BookmarkMerger {
     
     let localChildNode = this.localTree.nodeForGuid(remoteChildNode.guid);
     if (!localChildNode) {
+      
       
       
       MirrorLog.trace("Remote child ${remoteChildNode} doesn't exist " +
@@ -3690,6 +3731,18 @@ class BookmarkMerger {
                     "${localParentNode} into ${mergedNode}",
                     { localChildNode, localParentNode, mergedNode });
 
+    if (PlacesUtils.bookmarks.userContentRoots.includes(localChildNode.guid)) {
+      
+      
+      
+      
+      let remoteRootNode = this.remoteTree.nodeForGuid(localChildNode.guid);
+      let mergedRootNode = await this.mergeNode(localChildNode.guid,
+                                                localChildNode, remoteRootNode);
+      mergedNode.mergedChildren.push(mergedRootNode);
+      return true;
+    }
+
     
     
     let structureChange = await this.checkForRemoteStructureChangeOfLocalNode(
@@ -3705,6 +3758,7 @@ class BookmarkMerger {
     
     let remoteChildNode = this.remoteTree.nodeForGuid(localChildNode.guid);
     if (!remoteChildNode) {
+      
       
       
       MirrorLog.trace("Local child ${localChildNode} doesn't exist " +
@@ -3955,6 +4009,12 @@ class BookmarkMerger {
 
   async checkForLocalStructureChangeOfRemoteNode(mergedNode, remoteParentNode,
                                                  remoteNode) {
+    if (PlacesUtils.bookmarks.userContentRoots.includes(remoteNode.guid)) {
+      
+      throw new TypeError(
+        "Shouldn't check remote syncable root for structure changes");
+    }
+
     if (!remoteNode.isSyncable) {
       
       
@@ -4049,6 +4109,12 @@ class BookmarkMerger {
 
   async checkForRemoteStructureChangeOfLocalNode(mergedNode, localParentNode,
                                                  localNode) {
+    if (PlacesUtils.bookmarks.userContentRoots.includes(localNode.guid)) {
+      
+      throw new TypeError(
+        "Shouldn't check local syncable root for structure changes");
+    }
+
     if (!localNode.isSyncable) {
       
       
