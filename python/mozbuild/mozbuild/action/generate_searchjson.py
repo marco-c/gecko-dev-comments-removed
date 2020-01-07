@@ -38,6 +38,12 @@ if not "searchDefault" in localeSearchInfo["default"]:
 
 
 
+
+if not "searchOrder" in localeSearchInfo["default"] and "searchOrder" in searchinfo["default"]:
+    localeSearchInfo["default"]["searchOrder"] = searchinfo["default"]["searchOrder"]
+
+
+
 if "regionOverrides" in searchinfo:
   regionOverrides = searchinfo["regionOverrides"]
 
