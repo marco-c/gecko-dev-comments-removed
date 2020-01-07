@@ -139,8 +139,6 @@ var whitelist = [
   
   {file: "chrome://global/content/customizeToolbar.xul"},
   
-  {file: "chrome://global/content/findUtils.js"},
-  
   {file: "chrome://global/skin/icons/error-16.png"},
   
   {file: "chrome://global/skin/icons/warning-64.png", platforms: ["linux"]},
