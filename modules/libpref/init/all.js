@@ -2246,6 +2246,8 @@ pref("network.http.tailing.delay-quantum-after-domcontentloaded", 100);
 
 pref("network.http.tailing.delay-max", 6000);
 
+pref("network.http.tailing.total-max", 45000);
+
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);

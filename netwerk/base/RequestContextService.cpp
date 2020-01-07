@@ -79,6 +79,12 @@ private:
   
   
   
+  
+  TimeStamp mBeginLoadTime;
+
+  
+  
+  
   bool mAfterDOMContentLoaded;
 };
 
@@ -117,6 +123,7 @@ RequestContext::BeginLoad()
   }
 
   mAfterDOMContentLoaded = false;
+  mBeginLoadTime = TimeStamp::NowLoRes();
   return NS_OK;
 }
 
@@ -251,6 +258,21 @@ RequestContext::ScheduleUnblock()
 
   uint32_t quantum = gHttpHandler->TailBlockingDelayQuantum(mAfterDOMContentLoaded);
   uint32_t delayMax = gHttpHandler->TailBlockingDelayMax();
+  uint32_t totalMax = gHttpHandler->TailBlockingTotalMax();
+
+  if (!mBeginLoadTime.IsNull()) {
+    
+    
+    
+
+    uint32_t sinceBeginLoad = static_cast<uint32_t>(
+      (TimeStamp::NowLoRes() - mBeginLoadTime).ToMilliseconds());
+    uint32_t tillTotal = totalMax - std::min(sinceBeginLoad, totalMax);
+    uint32_t proportion = totalMax 
+      ? (delayMax * tillTotal) / totalMax
+      : 0;
+    delayMax = std::min(delayMax, proportion);
+  }
 
   CheckedInt<uint32_t> delay = quantum * mNonTailRequests;
 
