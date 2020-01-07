@@ -85,20 +85,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = [
@@ -110,6 +96,8 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm");
 
@@ -687,7 +675,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     }
 
     await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
-    this._activateView(nextPanelView);
+    this._viewShown(nextPanelView);
   }
 
   
@@ -711,7 +699,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     this._closeLatestView();
 
-    this._activateView(nextPanelView);
+    this._viewShown(nextPanelView);
   }
 
   
@@ -728,10 +716,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     let oldPanelMultiViewNode = nextPanelView.node.panelMultiView;
     if (oldPanelMultiViewNode) {
       PanelMultiView.forNode(oldPanelMultiViewNode).hidePopup();
-      
-      
-      
-      await this.window.promiseDocumentFlushed(() => {});
     }
 
     if (!(await this._openView(nextPanelView))) {
@@ -748,6 +732,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
     nextPanelView.visible = true;
     nextPanelView.descriptionHeightWorkaround();
 
+    this._viewShown(nextPanelView);
     return true;
   }
 
@@ -789,10 +774,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
   
 
 
-
-  _activateView(panelView) {
+  _viewShown(panelView) {
     if (panelView.node.panelMultiView == this.node) {
-      panelView.active = true;
       panelView.dispatchCustomEvent("ViewShown");
     }
   }
@@ -867,6 +850,10 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
+    
+    previousViewNode.setAttribute("in-transition", true);
+    
+    
     let olderView = reverse ? nextPanelView : prevPanelView;
     this._viewContainer.style.minHeight = olderView.knownHeight + "px";
     this._viewContainer.style.height = prevPanelView.knownHeight + "px";
@@ -882,7 +869,7 @@ var PanelMultiView = class extends this.AssociatedToNode {
       
       viewRect = { width: nextPanelView.knownWidth,
                    height: nextPanelView.knownHeight };
-      nextPanelView.visible = true;
+      viewNode.setAttribute("in-transition", true);
     } else if (viewNode.customRectGetter) {
       
       
@@ -893,13 +880,12 @@ var PanelMultiView = class extends this.AssociatedToNode {
       if (header && header.classList.contains("panel-header")) {
         viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
-      nextPanelView.visible = true;
-      nextPanelView.descriptionHeightWorkaround();
+      viewNode.setAttribute("in-transition", true);
     } else {
       let oldSibling = viewNode.nextSibling || null;
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
-      nextPanelView.visible = true;
+      viewNode.setAttribute("in-transition", true);
 
       
       
@@ -955,14 +941,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
     await window.promiseDocumentFlushed(() => {});
 
     
-    
-    
-    
-    
-    
-    prevPanelView.active = false;
-
-    
     details.phase = TRANSITION_PHASES.TRANSITION;
     this._viewStack.style.transform = "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
 
@@ -992,6 +970,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
     
     if (nextPanelView.node.panelMultiView == this.node) {
       prevPanelView.visible = false;
+      nextPanelView.visible = true;
+      nextPanelView.descriptionHeightWorkaround();
     }
 
     
@@ -1022,6 +1002,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
     
     
+    previousViewNode.removeAttribute("in-transition");
+    viewNode.removeAttribute("in-transition");
+
     if (anchor)
       anchor.removeAttribute("open");
 
@@ -1146,11 +1129,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
         break;
       }
       case "popupshown":
-        let mainPanelView = PanelView.forNode(this._mainView);
         
         
-        mainPanelView.descriptionHeightWorkaround();
-        this._activateView(mainPanelView);
+        PanelView.forNode(this._mainView).descriptionHeightWorkaround();
         break;
       case "popuphidden": {
         
@@ -1180,16 +1161,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
 
 
 var PanelView = class extends this.AssociatedToNode {
-  constructor(node) {
-    super(node);
-
-    
-
-
-
-    this.active = false;
-  }
-
   
 
 
@@ -1204,16 +1175,11 @@ var PanelView = class extends this.AssociatedToNode {
     }
   }
 
-  
-
-
-
   set visible(value) {
     if (value) {
-      this.node.setAttribute("visible", true);
+      this.node.setAttribute("current", true);
     } else {
-      this.node.removeAttribute("visible");
-      this.active = false;
+      this.node.removeAttribute("current");
     }
   }
 

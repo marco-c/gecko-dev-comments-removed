@@ -38,7 +38,7 @@ add_task(async function testSyncRemoteTabsButtonFunctionality() {
   
   syncRemoteTabsBtn.click();
   await viewShown;
-  ok(remoteTabsPanel.getAttribute("visible"), "Sync Panel is in view");
+  ok(remoteTabsPanel.getAttribute("current"), "Sync Panel is in view");
 
   
   let syncNowButton = document.getElementById("PanelUI-remotetabs-syncnow");
