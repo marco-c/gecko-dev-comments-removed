@@ -2921,6 +2921,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       }
     }
     inTransform = true;
+  } else if (IsFixedPosContainingBlock()) {
+    
+    
+    
+    visibleRect.IntersectRect(visibleRect, GetVisualOverflowRect());
+    dirtyRect.IntersectRect(dirtyRect, GetVisualOverflowRect());
   }
 
   bool hasOverrideDirtyRect = false;
