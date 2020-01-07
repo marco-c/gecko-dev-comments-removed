@@ -38,11 +38,11 @@ public:
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
 
-  void AppendInsertedChild(nsIContent* aChild)
+  void AppendInsertedChild(nsIContent* aChild, bool aNotify)
   {
     
     
-    MaybeRemoveDefaultContent();
+    MaybeRemoveDefaultContent(aNotify);
 
     mInsertedChildren.AppendElement(aChild);
     aChild->SetXBLInsertionPoint(this);
@@ -52,7 +52,7 @@ public:
   {
     
     
-    MaybeRemoveDefaultContent();
+    MaybeRemoveDefaultContent(true);
 
     mInsertedChildren.InsertElementAt(aIndex, aChild);
     aChild->SetXBLInsertionPoint(this);
@@ -68,6 +68,9 @@ public:
 
     
     
+    
+    
+    
     MaybeSetupDefaultContent();
   }
 
@@ -78,6 +81,9 @@ public:
     }
     mInsertedChildren.Clear();
 
+    
+    
+    
     
     
     MaybeSetupDefaultContent();
@@ -94,14 +100,10 @@ public:
     }
   }
 
-  void MaybeRemoveDefaultContent()
+  void MaybeRemoveDefaultContent(bool aNotify)
   {
-    if (!HasInsertedChildren()) {
-      for (nsIContent* child = static_cast<nsINode*>(this)->GetFirstChild();
-           child;
-           child = child->GetNextSibling()) {
-        child->SetXBLInsertionPoint(nullptr);
-      }
+    if (!HasInsertedChildren() && HasChildren()) {
+      DoRemoveDefaultContent(aNotify);
     }
   }
 
@@ -142,6 +144,8 @@ protected:
   virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                  const nsAttrValueOrString* aValue,
                                  bool aNotify) override;
+
+  void DoRemoveDefaultContent(bool aNotify);
 
 private:
   nsTArray<nsIContent*> mInsertedChildren; 
