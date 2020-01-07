@@ -4977,8 +4977,9 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     mScrollTarget = Some(aBuilder->GetCurrentScrollbarTarget());
   }
 
+  nsRect area;
   if (aArea.isSome()) {
-    mArea = *aArea;
+    area = *aArea;
   } else {
     nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
     if (scrollFrame) {
@@ -4987,9 +4988,9 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
       
       
       
-      mArea = mFrame->GetScrollableOverflowRect();
+      area = mFrame->GetScrollableOverflowRect();
     } else {
-      mArea = nsRect(nsPoint(0, 0), mFrame->GetSize());
+      area = nsRect(nsPoint(0, 0), mFrame->GetSize());
     }
 
     
@@ -4997,7 +4998,11 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
     
     
     
-    mArea += aBuilder->ToReferenceFrame(mFrame);
+    area += aBuilder->ToReferenceFrame(mFrame);
+  }
+
+  if (!area.IsEmpty()) {
+    mArea = LayoutDeviceRect::FromAppUnits(area, mFrame->PresContext()->AppUnitsPerDevPixel());
   }
 }
 
@@ -5011,11 +5016,6 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
   if (mArea.IsEmpty()) {
     return true;
   }
-
-  wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
-      LayoutDeviceRect::FromAppUnits(
-          mArea,
-          mFrame->PresContext()->AppUnitsPerDevPixel()));
 
   
   
@@ -5032,6 +5032,7 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
 
   
   aBuilder.SetHitTestInfo(scrollId, mHitTestInfo);
+  wr::LayoutRect rect = aSc.ToRelativeLayoutRect(mArea);
   aBuilder.PushRect(rect, rect, true, wr::ToColorF(gfx::Color()));
   aBuilder.ClearHitTestInfo();
 
