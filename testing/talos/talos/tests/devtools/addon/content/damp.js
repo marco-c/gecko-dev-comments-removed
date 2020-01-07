@@ -1032,7 +1032,7 @@ async _consoleOpenWithCachedMessagesTest() {
 
       function maybeResolve() {
         
-        if (payloadReady === expectedRequests && timingsUpdated === expectedRequests) {
+        if (payloadReady >= expectedRequests && timingsUpdated >= expectedRequests) {
           
           window.off(EVENTS.PAYLOAD_READY, onPayloadReady);
           window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimingsUpdated);
