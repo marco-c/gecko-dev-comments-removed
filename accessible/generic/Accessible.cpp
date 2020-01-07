@@ -1445,7 +1445,7 @@ Accessible::SetCurValue(double aValue)
 }
 
 role
-Accessible::ARIATransformRole(role aRole)
+Accessible::ARIATransformRole(role aRole) const
 {
   
   

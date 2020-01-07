@@ -144,7 +144,7 @@ AccGroupInfo::Update()
 }
 
 Accessible*
-AccGroupInfo::FirstItemOf(Accessible* aContainer)
+AccGroupInfo::FirstItemOf(const Accessible* aContainer)
 {
   
   

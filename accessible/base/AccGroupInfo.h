@@ -67,7 +67,7 @@ public:
   
 
 
-  static Accessible* FirstItemOf(Accessible* aContainer);
+  static Accessible* FirstItemOf(const Accessible* aContainer);
 
   
 

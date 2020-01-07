@@ -222,7 +222,7 @@ public:
   
 
 
-  mozilla::a11y::role Role();
+  mozilla::a11y::role Role() const;
 
   
 
@@ -1062,7 +1062,7 @@ protected:
   
 
 
-  mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole);
+  mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
 
   
   
