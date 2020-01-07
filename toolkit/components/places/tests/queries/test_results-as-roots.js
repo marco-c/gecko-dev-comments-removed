@@ -87,15 +87,6 @@ add_task(async function test_results_as_root_remove_mobile_dynamic() {
   
   Services.prefs.clearUserPref(MOBILE_BOOKMARKS_PREF);
 
-  
-  
-  assertExpectedChildren(root, expectedRootsWithMobile);
-
-  await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.menuGuid,
-    url: "http://example.com",
-  });
-
   assertExpectedChildren(root, expectedRoots);
 
   root.containerOpen = false;

@@ -39,6 +39,7 @@
 #define QUERYUPDATE_COMPLEX 2
 #define QUERYUPDATE_COMPLEX_WITH_BOOKMARKS 3
 #define QUERYUPDATE_HOST 4
+#define QUERYUPDATE_MOBILEPREF 5
 
 
 
@@ -56,6 +57,13 @@
 
 
 #define TOPIC_FRECENCY_UPDATED "places-frecency-updated"
+
+
+
+#define MOBILE_BOOKMARKS_PREF "browser.bookmarks.showMobileBookmarks"
+
+
+#define MOBILE_BOOKMARKS_VIRTUAL_GUID "mobile____v"
 
 class nsNavHistory;
 class QueryKeyValuePair;
