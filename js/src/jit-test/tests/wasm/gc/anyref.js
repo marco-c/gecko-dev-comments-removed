@@ -151,6 +151,19 @@ assertEq(ref, baguette);
 assertEq(ref.calories, baguette.calories);
 
 
+(function() {
+    assertEq(wasmEvalText(`(module
+    (memory 0 64)
+    (func (export "f") (param anyref) (result i32)
+        i32.const 10
+        grow_memory
+        drop
+        current_memory
+    )
+)`).exports.f({}), 10);
+})();
+
+
 
 function assertJoin(body) {
     let val = { i: -1 };
