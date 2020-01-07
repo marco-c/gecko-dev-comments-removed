@@ -226,93 +226,98 @@ public class SDKProcessor {
 
     public static void main(String[] args) throws Exception {
         
-        if (args.length < 5) {
-            System.err.println("Usage: java SDKProcessor sdkjar configfile outdir fileprefix max-sdk-version");
+        if (args.length < 5 || args.length % 2 != 1) {
+            System.err.println("Usage: java SDKProcessor sdkjar max-sdk-version outdir [configfile fileprefix]+");
             System.exit(1);
         }
 
         System.out.println("Processing platform bindings...");
 
-        String sdkJar = args[0];
-        String outdir = args[2];
-        String generatedFilePrefix = args[3];
-        sMaxSdkVersion = Integer.parseInt(args[4]);
+        final String sdkJar = args[0];
+        sMaxSdkVersion = Integer.parseInt(args[1]);
+        final String outdir = args[2];
 
-        LintCliClient lintClient = new LintCliClient();
+        final LintCliClient lintClient = new LintCliClient();
         sApiLookup = ApiLookup.get(lintClient);
 
-        
-        long s = System.currentTimeMillis();
+        for (int argIndex = 3; argIndex < args.length; argIndex += 2) {
+            final String configFile = args[argIndex];
+            final String generatedFilePrefix = args[argIndex + 1];
+            System.out.println("Processing bindings from " + configFile);
 
-        
-        
+            
+            long s = System.currentTimeMillis();
 
-        StringBuilder headerFile = new StringBuilder(GENERATED_COMMENT);
-        headerFile.append(
-                "#ifndef " + generatedFilePrefix + "_h__\n" +
-                "#define " + generatedFilePrefix + "_h__\n" +
-                "\n" +
-                "#include \"mozilla/jni/Refs.h\"\n" +
-                "\n" +
-                "namespace mozilla {\n" +
-                "namespace java {\n" +
-                "namespace sdk {\n" +
-                "\n");
+            
+            
 
-        StringBuilder implementationFile = new StringBuilder(GENERATED_COMMENT);
-        implementationFile.append(
-                "#include \"" + generatedFilePrefix + ".h\"\n" +
-                "#include \"mozilla/jni/Accessors.h\"\n" +
-                "\n" +
-                "namespace mozilla {\n" +
-                "namespace java {\n" +
-                "namespace sdk {\n" +
-                "\n");
+            StringBuilder headerFile = new StringBuilder(GENERATED_COMMENT);
+            headerFile.append(
+                    "#ifndef " + generatedFilePrefix + "_h__\n" +
+                    "#define " + generatedFilePrefix + "_h__\n" +
+                    "\n" +
+                    "#include \"mozilla/jni/Refs.h\"\n" +
+                    "\n" +
+                    "namespace mozilla {\n" +
+                    "namespace java {\n" +
+                    "namespace sdk {\n" +
+                    "\n");
 
-        
-        ClassLoader loader = null;
-        try {
-            loader = URLClassLoader.newInstance(new URL[] { new URL("file://" + sdkJar) },
-                                                SDKProcessor.class.getClassLoader());
-        } catch (Exception e) {
-            throw new RuntimeException(e.toString());
-        }
+            StringBuilder implementationFile = new StringBuilder(GENERATED_COMMENT);
+            implementationFile.append(
+                    "#include \"" + generatedFilePrefix + ".h\"\n" +
+                    "#include \"mozilla/jni/Accessors.h\"\n" +
+                    "\n" +
+                    "namespace mozilla {\n" +
+                    "namespace java {\n" +
+                    "namespace sdk {\n" +
+                    "\n");
 
-        try {
-            final ClassInfo[] classes = getClassList(args[1]);
-            for (final ClassInfo cls : classes) {
-                System.out.println("Looking up: " + cls.name);
-                generateClass(Class.forName(cls.name, true, loader),
-                              cls,
-                              implementationFile,
-                              headerFile);
+            
+            ClassLoader loader = null;
+            try {
+                loader = URLClassLoader.newInstance(new URL[]{new URL("file://" + sdkJar)},
+                        SDKProcessor.class.getClassLoader());
+            } catch (Exception e) {
+                throw new RuntimeException(e.toString());
             }
-        } catch (final IllegalStateException|IOException|ParseException e) {
-            System.err.println("***");
-            System.err.println("*** Error parsing config file: " + args[1]);
-            System.err.println("*** " + e);
-            System.err.println("***");
-            if (e.getCause() != null) {
-                e.getCause().printStackTrace(System.err);
+
+            try {
+                final ClassInfo[] classes = getClassList(configFile);
+                for (final ClassInfo cls : classes) {
+                    System.out.println("Looking up: " + cls.name);
+                    generateClass(Class.forName(cls.name, true, loader),
+                            cls,
+                            implementationFile,
+                            headerFile);
+                }
+            } catch (final IllegalStateException | IOException | ParseException e) {
+                System.err.println("***");
+                System.err.println("*** Error parsing config file: " + configFile);
+                System.err.println("*** " + e);
+                System.err.println("***");
+                if (e.getCause() != null) {
+                    e.getCause().printStackTrace(System.err);
+                }
+                System.exit(1);
+                return;
             }
-            System.exit(1);
-            return;
+
+            implementationFile.append(
+                    "} /* sdk */\n" +
+                    "} /* java */\n" +
+                    "} /* mozilla */\n");
+
+            headerFile.append(
+                    "} /* sdk */\n" +
+                    "} /* java */\n" +
+                    "} /* mozilla */\n" +
+                    "#endif\n");
+
+            writeOutputFiles(outdir, generatedFilePrefix, headerFile, implementationFile);
+            long e = System.currentTimeMillis();
+            System.out.println("SDK processing complete in " + (e - s) + "ms");
         }
-
-        implementationFile.append(
-                "} /* sdk */\n" +
-                "} /* java */\n" +
-                "} /* mozilla */\n");
-
-        headerFile.append(
-                "} /* sdk */\n" +
-                "} /* java */\n" +
-                "} /* mozilla */\n" +
-                "#endif\n");
-
-        writeOutputFiles(outdir, generatedFilePrefix, headerFile, implementationFile);
-        long e = System.currentTimeMillis();
-        System.out.println("SDK processing complete in " + (e - s) + "ms");
     }
 
     private static int getAPIVersion(Class<?> cls, Member m) {
