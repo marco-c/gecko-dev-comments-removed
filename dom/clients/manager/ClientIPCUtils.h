@@ -8,9 +8,6 @@
 
 #include "ipc/IPCMessageUtils.h"
 
-
-#undef None
-
 #include "mozilla/dom/ClientBinding.h"
 #include "mozilla/dom/ClientsBinding.h"
 #include "mozilla/dom/DocumentBinding.h"
