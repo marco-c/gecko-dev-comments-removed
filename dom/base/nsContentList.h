@@ -43,13 +43,10 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
-  NS_DECL_NSIDOMNODELIST
-
-  
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsIContent* Item(uint32_t aIndex) override;
 
-  uint32_t Length() const {
+  uint32_t Length() override {
     return mElements.Length();
   }
 
@@ -153,8 +150,6 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsEmptyContentList,
                                            nsBaseContentList)
-  
-  NS_DECL_NSIDOMNODELIST
 
   virtual nsINode* GetParentObject() override
   {
@@ -336,9 +331,6 @@ protected:
 public:
 
   
-  NS_DECL_NSIDOMNODELIST
-
-  
   virtual int32_t IndexOf(nsIContent *aContent, bool aDoFlush) override;
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsINode* GetParentObject() override
@@ -350,7 +342,7 @@ public:
   {
     return Length(true);
   }
-  virtual nsIContent* Item(uint32_t aIndex) override;
+  nsIContent* Item(uint32_t aIndex) final;
   virtual mozilla::dom::Element* GetElementAt(uint32_t index) override;
   virtual mozilla::dom::Element*
   GetFirstNamedElement(const nsAString& aName, bool& aFound) override

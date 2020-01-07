@@ -36,11 +36,9 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  NS_DECL_NSIDOMNODELIST
-
-  
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsIContent* Item(uint32_t aIndex) override;
+  uint32_t Length() override;
 
   virtual void DropReference()
   {
@@ -73,11 +71,9 @@ public:
   }
 
   
-  NS_DECL_NSIDOMNODELIST
-
-  
   virtual int32_t IndexOf(nsIContent* aContent) override;
   virtual nsIContent* Item(uint32_t aIndex) override;
+  uint32_t Length() override;
 
   void DropReference() override
   {

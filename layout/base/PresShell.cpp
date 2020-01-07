@@ -3117,23 +3117,15 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   if (!content && mDocument->IsHTMLDocument()) {
     
-    nsCOMPtr<nsIDOMNodeList> list = mDocument->GetElementsByName(aAnchorName);
+    nsCOMPtr<nsINodeList> list = mDocument->GetElementsByName(aAnchorName);
     if (list) {
-      uint32_t i;
       
-      for (i = 0; true; i++) {
-        nsCOMPtr<nsIDOMNode> node;
-        rv = list->Item(i, getter_AddRefs(node));
-        if (!node) {  
+      uint32_t length = list->Length();
+      for (uint32_t i = 0; i < length; i++) {
+        nsIContent* node = list->Item(i);
+        if (node->IsHTMLElement(nsGkAtoms::a)) {
+          content = node;
           break;
-        }
-        
-        content = do_QueryInterface(node);
-        if (content) {
-          if (content->IsHTMLElement(nsGkAtoms::a)) {
-            break;
-          }
-          content = nullptr;
         }
       }
     }
