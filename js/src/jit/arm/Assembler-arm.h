@@ -1353,14 +1353,11 @@ class Assembler : public AssemblerShared
         jumpRelocations_.writeUnsigned(src.getOffset());
     }
 
-    
-    
-    void writeDataRelocation(ImmGCPtr ptr) {
+    void writeDataRelocation(BufferOffset offset, ImmGCPtr ptr) {
         if (ptr.value) {
             if (gc::IsInsideNursery(ptr.value))
                 embedsNurseryPointers_ = true;
-            if (ptr.value)
-                dataRelocations_.writeUnsigned(nextOffset().getOffset());
+            dataRelocations_.writeUnsigned(offset.getOffset());
         }
     }
 

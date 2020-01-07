@@ -3081,6 +3081,7 @@ BufferInstructionIterator::maybeSkipAutomaticInstructions()
         
         if (ph->isNatural())
             return cur();
+        advance(sizeof(Instruction) * ph->size());
         return next();
     }
     if (InstIsBNop<BufferInstructionIterator>(*this))
