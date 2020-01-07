@@ -3260,8 +3260,22 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   nsBackgroundLayerState state(aForFrame, &aLayer.mImage, irFlags);
   if (!state.mImageRenderer.PrepareImage()) {
     
-    if (aOutIsTransformedFixed) {
-      *aOutIsTransformedFixed = false;
+    if (aOutIsTransformedFixed &&
+        StyleImageLayerAttachment::Fixed == aLayer.mAttachment) {
+
+      nsIFrame* attachedToFrame = aPresContext->PresShell()->GetRootFrame();
+      NS_ASSERTION(attachedToFrame, "no root frame");
+      nsIFrame* pageContentFrame = nullptr;
+      if (aPresContext->IsPaginated()) {
+        pageContentFrame = nsLayoutUtils::GetClosestFrameOfType(
+          aForFrame, LayoutFrameType::PageContent);
+        if (pageContentFrame) {
+          attachedToFrame = pageContentFrame;
+        }
+        
+      }
+
+      *aOutIsTransformedFixed = nsLayoutUtils::IsTransformed(aForFrame, attachedToFrame);
     }
     return state;
   }
