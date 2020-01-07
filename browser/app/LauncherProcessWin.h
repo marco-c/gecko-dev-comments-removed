@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_LauncherProcessWin_h
+#define mozilla_LauncherProcessWin_h
+
+namespace mozilla {
+
+bool RunAsLauncherProcess(int& argc, wchar_t* argv[]);
+int LauncherMain(int argc, wchar_t* argv[]);
+
+} 
+
+#endif 
+

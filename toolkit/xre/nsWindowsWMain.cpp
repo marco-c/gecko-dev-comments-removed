@@ -2,6 +2,9 @@
 
 
 
+#ifndef nsWindowsWMain_cpp
+#define nsWindowsWMain_cpp
+
 
 
 
@@ -101,6 +104,14 @@ int wmain(int argc, WCHAR **argv)
   SanitizeEnvironmentVariables();
   SetDllDirectoryW(L"");
 
+  
+  
+#if defined(mozilla_LauncherProcessWin_h)
+  if (mozilla::RunAsLauncherProcess(argc, argv)) {
+    return mozilla::LauncherMain(argc, argv);
+  }
+#endif 
+
   char **argvConverted = new char*[argc + 1];
   if (!argvConverted)
     return 127;
@@ -134,3 +145,5 @@ int wmain(int argc, WCHAR **argv)
 
   return result;
 }
+
+#endif 
