@@ -230,7 +230,6 @@ nsPrintJob::Destroy()
 
 #ifdef NS_PRINT_PREVIEW
   mPrtPreview = nullptr;
-  mOldPrtPreview = nullptr;
 #endif
   mDocViewerPrint = nullptr;
 }
@@ -418,10 +417,6 @@ nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
     
     nsCOMPtr<nsIPrintingPromptService> pps(do_QueryInterface(aWebProgressListener));
     mProgressDialogIsShown = pps != nullptr;
-
-    if (mIsDoingPrintPreview) {
-      mOldPrtPreview = Move(mPrtPreview);
-    }
   } else {
     mProgressDialogIsShown = false;
   }
@@ -3456,10 +3451,6 @@ nsPrintJob::FinishPrintPreview()
 
   
   
-
-  if (mIsDoingPrintPreview && mOldPrtPreview) {
-    mOldPrtPreview = nullptr;
-  }
 
   printData->OnEndPrinting();
   

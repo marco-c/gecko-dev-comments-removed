@@ -257,10 +257,7 @@ private:
   
   
   RefPtr<nsPrintData> mPrt;
-
-  
   RefPtr<nsPrintData> mPrtPreview;
-  RefPtr<nsPrintData> mOldPrtPreview;
 
   nsPagePrintTimer* mPagePrintTimer = nullptr;
 
