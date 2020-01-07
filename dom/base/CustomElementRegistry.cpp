@@ -335,6 +335,12 @@ CustomElementRegistry::LookupCustomElementDefinition(JSContext* aCx,
 void
 CustomElementRegistry::RegisterUnresolvedElement(Element* aElement, nsAtom* aTypeName)
 {
+  
+  
+  if (aElement->IsInNativeAnonymousSubtree()) {
+    return;
+  }
+
   mozilla::dom::NodeInfo* info = aElement->NodeInfo();
 
   
