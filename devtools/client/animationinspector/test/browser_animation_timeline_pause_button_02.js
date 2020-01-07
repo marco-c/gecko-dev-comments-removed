@@ -6,11 +6,21 @@
 "use strict";
 
 requestLongerTimeout(2);
+ChromeUtils.defineModuleGetter(this, "Preferences",
+  "resource://gre/modules/Preferences.jsm");
 
 
 
 
 add_task(function* () {
+  
+  
+  
+
+  
+  
+  
+
   yield addTab(URL_ROOT + "doc_simple_animation.html");
 
   let {panel, inspector} = yield openAnimationInspector();

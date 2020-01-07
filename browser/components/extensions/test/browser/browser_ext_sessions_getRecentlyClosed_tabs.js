@@ -21,6 +21,10 @@ function checkTabInfo(expected, actual) {
 }
 
 add_task(async function test_sessions_get_recently_closed_tabs() {
+  
+  
+  await SpecialPowers.pushPrefEnv({set: [["privacy.reduceTimerPrecision", false]]});
+
   async function background() {
     browser.test.onMessage.addListener(async msg => {
       if (msg == "check-sessions") {

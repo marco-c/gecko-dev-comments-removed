@@ -20,9 +20,14 @@ var newTab;
 
 function test() {
   waitForExplicitFinish();
-
-  originalTab = gBrowser.selectedTab;
-  nextStep(step2);
+  
+  
+  
+  SpecialPowers.pushPrefEnv({"set": [["privacy.reduceTimerPrecision", false]]},
+    function() {
+      originalTab = gBrowser.selectedTab;
+      nextStep(step2);
+    });
 }
 
 function step2() {
