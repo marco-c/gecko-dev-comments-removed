@@ -1269,6 +1269,7 @@ Simulator::Simulator()
     pc_modified_ = false;
     icount_ = 0;
     break_count_ = 0;
+    wasm_interrupt_ = false;
     break_pc_ = nullptr;
     break_instr_ = 0;
 
@@ -1646,6 +1647,32 @@ Simulator::registerState()
 
 
 
+void
+Simulator::handleWasmInterrupt()
+{
+    if (!wasm::CodeExists)
+        return;
+
+    void* pc = (void*)get_pc();
+    void* fp = (void*)getRegister(Register::fp);
+
+    JitActivation* activation = TlsContext.get()->activation()->asJit();
+    const wasm::CodeSegment* segment = wasm::LookupCodeSegment(pc);
+    if (!segment || !segment->isModule() || !segment->containsCodePC(pc))
+        return;
+
+    if (!activation->startWasmInterrupt(registerState()))
+         return;
+
+    set_pc(int32_t(segment->asModule()->interruptCode()));
+}
+
+
+
+
+
+
+
 
 bool
 Simulator::handleWasmFault(int32_t addr, unsigned numBytes)
@@ -1679,7 +1706,7 @@ Simulator::handleWasmFault(int32_t addr, unsigned numBytes)
 
     const wasm::MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
     if (!memoryAccess) {
-        act->startWasmTrap(wasm::Trap::OutOfBounds, 0, registerState());
+        MOZ_ALWAYS_TRUE(act->startWasmInterrupt(registerState()));
         if (!instance->code().containsCodePC(pc))
             MOZ_CRASH("Cannot map PC to trap handler");
         set_pc(int32_t(moduleSegment->outOfBoundsCode()));
@@ -3646,6 +3673,19 @@ Simulator::branchDelayInstructionDecode(SimInstruction* instr)
     instructionDecode(instr);
 }
 
+static void
+FakeInterruptHandler()
+{
+    JSContext* cx = TlsContext.get();
+    uint8_t* pc = cx->simulator()->get_pc_as<uint8_t*>();
+
+    const wasm::ModuleSegment* ms = nullptr;
+    if (!wasm::InInterruptibleCode(cx, pc, &ms))
+        return;
+
+    cx->simulator()->trigger_wasm_interrupt();
+}
+
 template<bool enableStopSimAt>
 void
 Simulator::execute()
@@ -3659,9 +3699,16 @@ Simulator::execute()
             MipsDebugger dbg(this);
             dbg.debug();
         } else {
+            if (MOZ_UNLIKELY(JitOptions.simulatorAlwaysInterrupt))
+                FakeInterruptHandler();
             SimInstruction* instr = reinterpret_cast<SimInstruction*>(program_counter);
             instructionDecode(instr);
             icount_++;
+
+            if (MOZ_UNLIKELY(wasm_interrupt_)) {
+                handleWasmInterrupt();
+                wasm_interrupt_ = false;
+            }
         }
         program_counter = get_pc();
     }

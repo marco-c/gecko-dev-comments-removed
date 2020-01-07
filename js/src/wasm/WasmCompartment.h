@@ -24,6 +24,8 @@
 namespace js {
 namespace wasm {
 
+typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
+
 
 
 
@@ -31,11 +33,10 @@ namespace wasm {
 
 class Compartment
 {
-    JSRuntime* runtime_;
     InstanceVector instances_;
 
   public:
-    explicit Compartment(JSRuntime* rt);
+    explicit Compartment(Zone* zone);
     ~Compartment();
 
     
@@ -62,19 +63,6 @@ class Compartment
 
     void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* compartmentTables);
 };
-
-
-
-
-extern void
-InterruptRunningCode(JSContext* cx);
-
-
-
-
-
-void
-ResetInterruptState(JSContext* cx);
 
 } 
 } 

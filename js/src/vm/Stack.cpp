@@ -1574,7 +1574,7 @@ jit::JitActivation::~JitActivation()
     
     MOZ_ASSERT(!bailoutData_);
 
-    
+    MOZ_ASSERT(!isWasmInterrupted());
     MOZ_ASSERT(!isWasmTrapping());
 
     clearRematerializedFrames();
@@ -1742,6 +1742,86 @@ jit::JitActivation::traceIonRecovery(JSTracer* trc)
         it->trace(trc);
 }
 
+bool
+jit::JitActivation::startWasmInterrupt(const JS::ProfilingFrameIterator::RegisterState& state)
+{
+    
+    
+    if (!state.fp)
+        return false;
+
+    MOZ_ASSERT(state.pc);
+
+    
+    
+    
+
+    bool unwound;
+    wasm::UnwindState unwindState;
+    MOZ_ALWAYS_TRUE(wasm::StartUnwinding(state, &unwindState, &unwound));
+
+    void* pc = unwindState.pc;
+
+    if (unwound) {
+        
+        
+        
+        
+        if (!wasm::LookupCode(pc)->lookupFuncRange(pc))
+            return false;
+    }
+
+    cx_->runtime()->wasmUnwindData.ref().construct<wasm::InterruptData>(pc, state.pc);
+    setWasmExitFP(unwindState.fp);
+
+    MOZ_ASSERT(compartment() == unwindState.fp->tls->instance->compartment());
+    MOZ_ASSERT(isWasmInterrupted());
+    return true;
+}
+
+void
+jit::JitActivation::finishWasmInterrupt()
+{
+    MOZ_ASSERT(isWasmInterrupted());
+
+    cx_->runtime()->wasmUnwindData.ref().destroy();
+    packedExitFP_ = nullptr;
+}
+
+bool
+jit::JitActivation::isWasmInterrupted() const
+{
+    JSRuntime* rt = cx_->runtime();
+    if (!rt->wasmUnwindData.ref().constructed<wasm::InterruptData>())
+        return false;
+
+    Activation* act = cx_->activation();
+    while (act && !act->hasWasmExitFP())
+        act = act->prev();
+
+    if (act != this)
+        return false;
+
+    DebugOnly<const wasm::Frame*> fp = wasmExitFP();
+    DebugOnly<void*> unwindPC = rt->wasmInterruptData().unwindPC;
+    MOZ_ASSERT(fp->instance()->code().containsCodePC(unwindPC));
+    return true;
+}
+
+void*
+jit::JitActivation::wasmInterruptUnwindPC() const
+{
+    MOZ_ASSERT(isWasmInterrupted());
+    return cx_->runtime()->wasmInterruptData().unwindPC;
+}
+
+void*
+jit::JitActivation::wasmInterruptResumePC() const
+{
+    MOZ_ASSERT(isWasmInterrupted());
+    return cx_->runtime()->wasmInterruptData().resumePC;
+}
+
 void
 jit::JitActivation::startWasmTrap(wasm::Trap trap, uint32_t bytecodeOffset,
                                   const wasm::RegisterState& state)
@@ -1762,13 +1842,7 @@ jit::JitActivation::startWasmTrap(wasm::Trap trap, uint32_t bytecodeOffset,
     if (unwound)
         bytecodeOffset = code.lookupCallSite(pc)->lineOrBytecode();
 
-    wasm::TrapData trapData;
-    trapData.resumePC = ((uint8_t*)state.pc) + jit::WasmTrapInstructionLength;
-    trapData.unwoundPC = pc;
-    trapData.trap = trap;
-    trapData.bytecodeOffset = bytecodeOffset;
-
-    cx_->runtime()->wasmTrapData = Some(trapData);
+    cx_->runtime()->wasmUnwindData.ref().construct<wasm::TrapData>(pc, trap, bytecodeOffset);
     setWasmExitFP(fp);
 }
 
@@ -1777,7 +1851,7 @@ jit::JitActivation::finishWasmTrap()
 {
     MOZ_ASSERT(isWasmTrapping());
 
-    cx_->runtime()->wasmTrapData.ref().reset();
+    cx_->runtime()->wasmUnwindData.ref().destroy();
     packedExitFP_ = nullptr;
 }
 
@@ -1785,7 +1859,7 @@ bool
 jit::JitActivation::isWasmTrapping() const
 {
     JSRuntime* rt = cx_->runtime();
-    if (!rt->wasmTrapData.ref())
+    if (!rt->wasmUnwindData.ref().constructed<wasm::TrapData>())
         return false;
 
     Activation* act = cx_->activation();
@@ -1795,29 +1869,24 @@ jit::JitActivation::isWasmTrapping() const
     if (act != this)
         return false;
 
-    MOZ_ASSERT(wasmExitFP()->instance()->code().containsCodePC(rt->wasmTrapData->unwoundPC));
+    DebugOnly<const wasm::Frame*> fp = wasmExitFP();
+    DebugOnly<void*> unwindPC = rt->wasmTrapData().pc;
+    MOZ_ASSERT(fp->instance()->code().containsCodePC(unwindPC));
     return true;
 }
 
 void*
-jit::JitActivation::wasmTrapResumePC() const
+jit::JitActivation::wasmTrapPC() const
 {
     MOZ_ASSERT(isWasmTrapping());
-    return cx_->runtime()->wasmTrapData->resumePC;
-}
-
-void*
-jit::JitActivation::wasmTrapUnwoundPC() const
-{
-    MOZ_ASSERT(isWasmTrapping());
-    return cx_->runtime()->wasmTrapData->unwoundPC;
+    return cx_->runtime()->wasmTrapData().pc;
 }
 
 uint32_t
 jit::JitActivation::wasmTrapBytecodeOffset() const
 {
     MOZ_ASSERT(isWasmTrapping());
-    return cx_->runtime()->wasmTrapData->bytecodeOffset;
+    return cx_->runtime()->wasmTrapData().bytecodeOffset;
 }
 
 InterpreterFrameIterator&
