@@ -4998,20 +4998,22 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
       float bestHeight = float(maxHeight)*RELATIVE_SCALEFACTOR;
       float bestWidth = float(maxWidth)*RELATIVE_SCALEFACTOR;
       
-      scale = bestWidth / float(pixelArea.width);
+      float adjustedScale = bestWidth / float(pixelArea.width);
       
-      float worstHeight = float(pixelArea.height)*scale;
+      float worstHeight = float(pixelArea.height)*adjustedScale;
       
       float difference = bestHeight - worstHeight;
       
       
-      scale = (worstHeight + difference / 2) / float(pixelArea.height);
+      
+      adjustedScale = (worstHeight + difference / 2) / float(pixelArea.height);
+      
+      scale = std::min(scale, adjustedScale);
     } else {
       
       nscoord maxWidth = pc->AppUnitsToDevPixels(maxSize.width >> 1);
       nscoord maxHeight = pc->AppUnitsToDevPixels(maxSize.height >> 1);
       if (pixelArea.width > maxWidth || pixelArea.height > maxHeight) {
-        scale = 1.0;
         
         
         
@@ -9008,7 +9010,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
                                          target->GetView(), rcx,
                                          nsContainerFrame::SET_ASYNC);
 
-  target->DidReflow(mPresContext, nullptr);
+  target->DidReflow(mPresContext, nullptr, nsDidReflowStatus::FINISHED);
   if (target == rootFrame && size.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
     mPresContext->SetVisibleArea(boundsRelativeToTarget);
   }

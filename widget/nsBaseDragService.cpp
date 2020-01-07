@@ -667,7 +667,12 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
       uint32_t count = 0;
       nsAutoString childNodeName;
 
-      if (NS_SUCCEEDED(dragNode->GetChildNodes(getter_AddRefs(childList))) &&
+      
+      if (NS_SUCCEEDED(dragNode->GetNodeName(childNodeName)) &&
+          childNodeName.LowerCaseEqualsLiteral("img")) {
+        renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
+      } else if (
+          NS_SUCCEEDED(dragNode->GetChildNodes(getter_AddRefs(childList))) &&
           NS_SUCCEEDED(childList->GetLength(&length))) {
         
         while (count < length) {
