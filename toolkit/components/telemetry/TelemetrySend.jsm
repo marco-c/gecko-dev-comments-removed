@@ -83,9 +83,6 @@ const SEND_TICK_DELAY = 1 * MS_IN_A_MINUTE;
 const SEND_MAXIMUM_BACKOFF_DELAY_MS = 120 * MS_IN_A_MINUTE;
 
 
-const OVERDUE_PING_FILE_AGE = 7 * 24 * 60 * MS_IN_A_MINUTE; 
-
-
 
 
 
@@ -176,13 +173,6 @@ function gzipCompressString(string) {
 
 var TelemetrySend = {
 
-  
-
-
-  get OVERDUE_PING_FILE_AGE() {
-    return OVERDUE_PING_FILE_AGE;
-  },
-
   get pendingPingCount() {
     return TelemetrySendImpl.pendingPingCount;
   },
@@ -229,13 +219,6 @@ var TelemetrySend = {
   submitPing(ping, options = {}) {
     options.usePingSender = options.usePingSender || false;
     return TelemetrySendImpl.submitPing(ping, options);
-  },
-
-  
-
-
-  get overduePingsCount() {
-    return TelemetrySendImpl.overduePingsCount;
   },
 
   
@@ -598,8 +581,6 @@ var TelemetrySendImpl = {
   
   _isOSShutdown: false,
   
-  _overduePingCount: 0,
-  
   _tooLateToSend: false,
 
   OBSERVER_TOPICS: [
@@ -625,10 +606,6 @@ var TelemetrySendImpl = {
     }
 
     return this._logger;
-  },
-
-  get overduePingsCount() {
-    return this._overduePingCount;
   },
 
   get pendingPingRequests() {
@@ -732,11 +709,6 @@ var TelemetrySendImpl = {
     const now = Policy.now();
 
     
-    const overduePings = infos.filter((info) =>
-      (now.getTime() - info.lastModificationDate) > OVERDUE_PING_FILE_AGE);
-    this._overduePingCount = overduePings.length;
-
-    
     for (let pingInfo of infos) {
       const ageInDays =
         Utils.millisecondsToDays(Math.abs(now.getTime() - pingInfo.lastModificationDate));
@@ -783,7 +755,6 @@ var TelemetrySendImpl = {
 
     this._shutdown = false;
     this._currentPings = new Map();
-    this._overduePingCount = 0;
     this._tooLateToSend = false;
     this._isOSShutdown = false;
     this._sendingEnabled = true;
