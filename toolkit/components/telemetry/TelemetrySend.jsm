@@ -109,6 +109,7 @@ var Policy = {
   pingSubmissionTimeout: () => PING_SUBMIT_TIMEOUT_MS,
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearSchedulerTickTimeout: (id) => clearTimeout(id),
+  gzipCompressString: gzipCompressString,
 };
 
 
@@ -1214,7 +1215,7 @@ var TelemetrySendImpl = {
     let payloadStream = Cc["@mozilla.org/io/string-input-stream;1"]
                         .createInstance(Ci.nsIStringInputStream);
     startTime = Utils.monotonicNow();
-    payloadStream.data = gzipCompressString(utf8Payload);
+    payloadStream.data = Policy.gzipCompressString(utf8Payload);
 
     
     const compressedPingSizeBytes = payloadStream.data.length;
