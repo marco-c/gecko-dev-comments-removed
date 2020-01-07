@@ -31,6 +31,17 @@ namespace mozilla {
 
 class EventTargetChainItem;
 
+enum class CrossProcessForwarding
+{
+  
+  eStop,
+  
+  
+  
+  
+  eAllow,
+};
+
 
 
 
@@ -190,18 +201,23 @@ public:
     
     
     if (aCalledByDefaultHandler) {
+      StopCrossProcessForwarding();
       mDefaultPreventedByChrome = true;
     } else {
       mDefaultPreventedByContent = true;
     }
   }
   
-  inline void PreventDefaultBeforeDispatch()
+  inline void
+  PreventDefaultBeforeDispatch(CrossProcessForwarding aCrossProcessForwarding)
   {
     if (!mCancelable) {
       return;
     }
     mDefaultPrevented = true;
+    if (aCrossProcessForwarding == CrossProcessForwarding::eStop) {
+      StopCrossProcessForwarding();
+    }
   }
   inline bool DefaultPrevented() const
   {
@@ -651,7 +667,11 @@ public:
   void PreventDefault(bool aCalledByDefaultHandler = true,
                       nsIPrincipal* aPrincipal = nullptr);
 
-  void PreventDefaultBeforeDispatch() { mFlags.PreventDefaultBeforeDispatch(); }
+  void
+  PreventDefaultBeforeDispatch(CrossProcessForwarding aCrossProcessForwarding)
+  {
+    mFlags.PreventDefaultBeforeDispatch(aCrossProcessForwarding);
+  }
   bool DefaultPrevented() const { return mFlags.DefaultPrevented(); }
   bool DefaultPreventedByContent() const
   {

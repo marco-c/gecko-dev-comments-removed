@@ -605,7 +605,9 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     
-    keyEvent.PreventDefaultBeforeDispatch();
+    
+    
+    keyEvent.PreventDefaultBeforeDispatch(CrossProcessForwarding::eAllow);
   }
 
   

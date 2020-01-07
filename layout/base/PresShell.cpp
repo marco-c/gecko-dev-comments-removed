@@ -7485,7 +7485,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
             
             
             
-            aEvent->PreventDefaultBeforeDispatch();
+            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
             aEvent->mFlags.mOnlyChromeDispatch = true;
 
             
@@ -7504,7 +7504,7 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
             
             
             
-            aEvent->PreventDefaultBeforeDispatch();
+            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
             aEvent->mFlags.mOnlyChromeDispatch = true;
             if (aEvent->mMessage == eKeyUp) {
               nsIDocument::UnlockPointer();
