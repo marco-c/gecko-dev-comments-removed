@@ -502,12 +502,7 @@ Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise)
                   win ? win->AsInner()->WindowID() : 0);
 
   
-  RefPtr<nsIRunnable> event = new AsyncErrorReporter(xpcReport);
-  if (win) {
-    win->Dispatch(mozilla::TaskCategory::Other, event.forget());
-  } else {
-    NS_DispatchToMainThread(event);
-  }
+  NS_DispatchToMainThread(new AsyncErrorReporter(xpcReport));
 }
 
 bool
