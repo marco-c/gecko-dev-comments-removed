@@ -6790,11 +6790,24 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
         return;
       }
     }
+  }
 
-    
-    LayoutDeviceIntSize clientSize(newWidth, newHeight);
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!(wp->flags & SWP_NOSIZE) ||
+      ((wp->flags & SWP_FRAMECHANGED) && !IsPopup())) {
+    RECT r;
+    LayoutDeviceIntSize clientSize;
     if (::GetClientRect(mWnd, &r)) {
       clientSize = WinUtils::ToIntRect(r).Size();
+    } else {
+      clientSize = mBounds.Size();
     }
     
     OnResize(clientSize);
