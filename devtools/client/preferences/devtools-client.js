@@ -70,6 +70,10 @@ pref("devtools.inspector.flexboxHighlighter.enabled", false);
 
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
+pref("devtools.changesview.enabled", false);
+
+pref("devtools.eventsview.enabled", false);
+
 pref("devtools.flexboxinspector.enabled", false);
 
 #if defined(NIGHTLY_BUILD)
