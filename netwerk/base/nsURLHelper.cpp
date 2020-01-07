@@ -5,7 +5,6 @@
 
 
 #include "mozilla/RangedPtr.h"
-#include "mozilla/TextUtils.h"
 
 #include <algorithm>
 #include <iterator>
@@ -478,10 +477,14 @@ net_ResolveRelativePath(const nsACString &relativePath,
 
 
 
+static bool isAsciiAlpha(char c) {
+    return nsCRT::IsAsciiAlpha(c);
+}
+
 static bool
 net_IsValidSchemeChar(const char aChar)
 {
-    if (IsAsciiAlpha(aChar) || IsAsciiDigit(aChar) ||
+    if (nsCRT::IsAsciiAlpha(aChar) || nsCRT::IsAsciiDigit(aChar) ||
         aChar == '+' || aChar == '.' || aChar == '-') {
         return true;
     }
@@ -507,7 +510,7 @@ net_ExtractURLScheme(const nsACString &inURI,
 
     Tokenizer p(Substring(start, end), "\r\n\t");
     p.Record();
-    if (!p.CheckChar(IsAsciiAlpha)) {
+    if (!p.CheckChar(isAsciiAlpha)) {
         
         return NS_ERROR_MALFORMED_URI;
     }
@@ -530,13 +533,13 @@ bool
 net_IsValidScheme(const char *scheme, uint32_t schemeLen)
 {
     
-    if (!IsAsciiAlpha(*scheme))
+    if (!nsCRT::IsAsciiAlpha(*scheme))
         return false;
 
     
     for (; schemeLen; ++scheme, --schemeLen) {
-        if (!(IsAsciiAlpha(*scheme) ||
-              IsAsciiDigit(*scheme) ||
+        if (!(nsCRT::IsAsciiAlpha(*scheme) ||
+              nsCRT::IsAsciiDigit(*scheme) ||
               *scheme == '+' ||
               *scheme == '.' ||
               *scheme == '-'))
@@ -564,7 +567,7 @@ net_IsAbsoluteURL(const nsACString& uri)
     Tokenizer p(Substring(start, end), "\r\n\t");
 
     
-    if (!p.CheckChar(IsAsciiAlpha)) {
+    if (!p.CheckChar(isAsciiAlpha)) {
         return false;
     }
 

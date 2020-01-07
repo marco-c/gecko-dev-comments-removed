@@ -8,7 +8,6 @@
 
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/TextUtils.h"
 #include "HTMLSplitOnSpacesTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsCRTGlue.h"
@@ -16,9 +15,6 @@
 #include "nsIIOService.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
-
-using mozilla::IsAsciiAlpha;
-using mozilla::IsAsciiDigit;
 
 bool
 SingleLineTextInputTypeBase::IsMutable() const
@@ -227,7 +223,7 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
     char16_t c = value[i];
 
     
-    if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) ||
+    if (!(nsCRT::IsAsciiAlpha(c) || nsCRT::IsAsciiDigit(c) ||
           c == '.' || c == '!' || c == '#' || c == '$' || c == '%' ||
           c == '&' || c == '\''|| c == '*' || c == '+' || c == '-' ||
           c == '/' || c == '=' || c == '?' || c == '^' || c == '_' ||
@@ -258,7 +254,7 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
       if (value[i-1] == '.') {
         return false;
       }
-    } else if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) ||
+    } else if (!(nsCRT::IsAsciiAlpha(c) || nsCRT::IsAsciiDigit(c) ||
                  c == '-')) {
       
       return false;
