@@ -129,6 +129,8 @@ async function doTest(aTestPage, aFaviconURL, aTailingEnabled) {
   
   await promiseWaitOnFaviconLoaded;
 
+  Services.obs.removeObserver(observer, "http-on-modify-request");
+
   
   BrowserTestUtils.removeTab(tab);
 }
