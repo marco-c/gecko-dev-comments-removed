@@ -1143,14 +1143,17 @@ public:
   public:
     TracksAvailableCallback(MediaManager* aManager,
                             const nsMainThreadPtrHandle<nsIDOMGetUserMediaSuccessCallback>& aSuccess,
-                            uint64_t aWindowID,
+                            const RefPtr<GetUserMediaWindowListener>& aWindowListener,
                             DOMMediaStream* aStream)
-      : mWindowID(aWindowID), mOnSuccess(aSuccess), mManager(aManager),
-        mStream(aStream) {}
+      : mWindowListener(aWindowListener),
+        mOnSuccess(aSuccess),
+        mManager(aManager),
+        mStream(aStream)
+    {}
     void NotifyTracksAvailable(DOMMediaStream* aStream) override
     {
       
-      if (!(mManager->IsWindowStillActive(mWindowID))) {
+      if (!mManager->IsWindowListenerStillActive(mWindowListener)) {
         return;
       }
 
@@ -1163,7 +1166,7 @@ public:
       LOG(("Returning success for getUserMedia()"));
       mOnSuccess->OnSuccess(aStream);
     }
-    uint64_t mWindowID;
+    RefPtr<GetUserMediaWindowListener> mWindowListener;
     nsMainThreadPtrHandle<nsIDOMGetUserMediaSuccessCallback> mOnSuccess;
     RefPtr<MediaManager> mManager;
     
@@ -1187,9 +1190,7 @@ public:
 
     
     
-    GetUserMediaWindowListener* listener =
-      mManager->GetWindowListener(mWindowID);
-    if (!listener || !window || !window->GetExtantDoc()) {
+    if (!mManager->IsWindowListenerStillActive(mWindowListener)) {
       
       return NS_OK;
     }
@@ -1421,7 +1422,7 @@ public:
         MakeAndAddRef<Callback>(
           new TracksAvailableCallback(mManager,
                                       mOnSuccess,
-                                      mWindowID,
+                                      mWindowListener,
                                       domStream))));
 
     
@@ -3261,6 +3262,13 @@ MediaManager::RemoveWindowID(uint64_t aWindowId)
   obs->NotifyObservers(nullptr, "recording-window-ended", data.get());
   LOG(("Sent recording-window-ended for window %" PRIu64 " (outer %" PRIu64 ")",
        aWindowId, outerID));
+}
+
+bool
+MediaManager::IsWindowListenerStillActive(GetUserMediaWindowListener* aListener)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aListener);
+  return aListener && aListener == GetWindowListener(aListener->WindowID());
 }
 
 void

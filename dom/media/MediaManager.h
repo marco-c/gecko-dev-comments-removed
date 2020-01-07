@@ -186,6 +186,7 @@ public:
   bool IsWindowStillActive(uint64_t aWindowId) {
     return !!GetWindowListener(aWindowId);
   }
+  bool IsWindowListenerStillActive(GetUserMediaWindowListener* aListener);
   
   void RemoveFromWindowList(uint64_t aWindowID,
     GetUserMediaWindowListener *aListener);
