@@ -49,6 +49,11 @@ private:
   DISALLOW_EVIL_CONSTRUCTORS(ContentProcess);
 };
 
+#ifdef ANDROID
+
+void SetPrefsFd(int aFd);
+#endif
+
 } 
 } 
 

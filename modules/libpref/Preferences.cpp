@@ -3081,11 +3081,130 @@ NS_IMPL_ISUPPORTS(Preferences,
                   nsISupportsWeakReference)
 
  void
-Preferences::SetEarlyPreferences(const nsTArray<dom::Pref>* aDomPrefs)
+Preferences::SerializeEarlyPreferences(nsCString& aStr)
+{
+  MOZ_RELEASE_ASSERT(InitStaticMembers());
+
+  nsAutoCStringN<256> boolPrefs, intPrefs, stringPrefs;
+  size_t numEarlyPrefs;
+  dom::ContentPrefs::GetEarlyPrefs(&numEarlyPrefs);
+
+  for (unsigned int i = 0; i < numEarlyPrefs; i++) {
+    const char* prefName = dom::ContentPrefs::GetEarlyPref(i);
+    MOZ_ASSERT_IF(i > 0,
+                  strcmp(prefName, dom::ContentPrefs::GetEarlyPref(i - 1)) > 0);
+
+    Pref* pref = pref_HashTableLookup(prefName);
+    if (!pref || !pref->MustSendToContentProcesses()) {
+      continue;
+    }
+
+    switch (pref->Type()) {
+      case PrefType::Bool:
+        boolPrefs.Append(
+          nsPrintfCString("%u:%d|", i, Preferences::GetBool(prefName)));
+        break;
+      case PrefType::Int:
+        intPrefs.Append(
+          nsPrintfCString("%u:%d|", i, Preferences::GetInt(prefName)));
+        break;
+      case PrefType::String: {
+        nsAutoCString value;
+        Preferences::GetCString(prefName, value);
+        stringPrefs.Append(
+          nsPrintfCString("%u:%d;%s|", i, value.Length(), value.get()));
+      } break;
+      case PrefType::None:
+        break;
+      default:
+        printf_stderr("preference type: %d\n", int(pref->Type()));
+        MOZ_CRASH();
+    }
+  }
+
+  aStr.Truncate();
+  aStr.Append(boolPrefs);
+  aStr.Append('\n');
+  aStr.Append(intPrefs);
+  aStr.Append('\n');
+  aStr.Append(stringPrefs);
+  aStr.Append('\n');
+  aStr.Append('\0');
+}
+
+ void
+Preferences::DeserializeEarlyPreferences(char* aStr, size_t aStrLen)
 {
   MOZ_ASSERT(!XRE_IsParentProcess());
 
-  gEarlyDomPrefs = new InfallibleTArray<dom::Pref>(mozilla::Move(*aDomPrefs));
+  MOZ_ASSERT(!gEarlyDomPrefs);
+  gEarlyDomPrefs = new InfallibleTArray<dom::Pref>();
+
+  char* p = aStr;
+
+  
+  
+  
+
+  
+  while (*p != '\n') {
+    int32_t index = strtol(p, &p, 10);
+    MOZ_ASSERT(p[0] == ':');
+    p++;
+    int v = strtol(p, &p, 10);
+    MOZ_ASSERT(v == 0 || v == 1);
+    dom::MaybePrefValue value(dom::PrefValue(!!v));
+    MOZ_ASSERT(p[0] == '|');
+    p++;
+    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
+                    false,
+                   value,
+                   dom::MaybePrefValue());
+    gEarlyDomPrefs->AppendElement(pref);
+  }
+  p++;
+
+  
+  while (*p != '\n') {
+    int32_t index = strtol(p, &p, 10);
+    MOZ_ASSERT(p[0] == ':');
+    p++;
+    dom::MaybePrefValue value(
+      dom::PrefValue(static_cast<int32_t>(strtol(p, &p, 10))));
+    MOZ_ASSERT(p[0] == '|');
+    p++;
+    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
+                    false,
+                   value,
+                   dom::MaybePrefValue());
+    gEarlyDomPrefs->AppendElement(pref);
+  }
+  p++;
+
+  
+  while (*p != '\n') {
+    int32_t index = strtol(p, &p, 10);
+    MOZ_ASSERT(p[0] == ':');
+    p++;
+    int32_t length = strtol(p, &p, 10);
+    MOZ_ASSERT(p[0] == ';');
+    p++;
+    dom::MaybePrefValue value(dom::PrefValue(nsCString(p, length)));
+    dom::Pref pref(nsCString(dom::ContentPrefs::GetEarlyPref(index)),
+                    false,
+                   value,
+                   dom::MaybePrefValue());
+    gEarlyDomPrefs->AppendElement(pref);
+    p += length + 1;
+    MOZ_ASSERT(*(p - 1) == '|');
+  }
+  p++;
+
+  MOZ_ASSERT(*p == '\0');
+
+  
+  
+  MOZ_ASSERT(aStr + aStrLen - 1 == p);
 
 #ifdef DEBUG
   MOZ_ASSERT(gPhase == ContentProcessPhase::eNoPrefsSet);
@@ -4296,15 +4415,6 @@ Preferences::HasUserValue(const char* aPrefName)
 
   Pref* pref = pref_HashTableLookup(aPrefName);
   return pref && pref->HasUserValue();
-}
-
- bool
-Preferences::MustSendToContentProcesses(const char* aPrefName)
-{
-  NS_ENSURE_TRUE(InitStaticMembers(), false);
-
-  Pref* pref = pref_HashTableLookup(aPrefName);
-  return pref && pref->MustSendToContentProcesses();
 }
 
  int32_t

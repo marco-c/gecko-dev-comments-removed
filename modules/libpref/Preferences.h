@@ -41,6 +41,11 @@ class PrefValue;
 
 struct PrefsSizes;
 
+#ifdef XP_UNIX
+
+static const int kPrefsFileDescriptor = 8;
+#endif
+
 
 enum class PrefValueKind : uint8_t
 {
@@ -231,9 +236,6 @@ public:
   static bool HasUserValue(const char* aPref);
 
   
-  static bool MustSendToContentProcesses(const char* aPref);
-
-  
   
   static nsresult AddStrongObserver(nsIObserver* aObserver, const char* aPref);
   static nsresult AddWeakObserver(nsIObserver* aObserver, const char* aPref);
@@ -331,8 +333,9 @@ public:
   
   
   
+  static void SerializeEarlyPreferences(nsCString& aStr);
+  static void DeserializeEarlyPreferences(char* aStr, size_t aStrLen);
   static void GetPreferences(InfallibleTArray<dom::Pref>* aSettings);
-  static void SetEarlyPreferences(const nsTArray<dom::Pref>* aSettings);
   static void SetLatePreferences(const nsTArray<dom::Pref>* aSettings);
 
   

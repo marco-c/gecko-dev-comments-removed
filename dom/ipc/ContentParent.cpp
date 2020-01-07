@@ -7,6 +7,7 @@
 #include "mozilla/DebugOnly.h"
 
 #include "base/basictypes.h"
+#include "base/shared_memory.h"
 
 #include "ContentParent.h"
 #include "TabParent.h"
@@ -1998,61 +1999,56 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   extraArgs.push_back(idStr);
   extraArgs.push_back(IsForBrowser() ? "-isForBrowser" : "-notForBrowser");
 
-  nsAutoCStringN<1024> boolPrefs;
-  nsAutoCStringN<1024> intPrefs;
-  nsAutoCStringN<1024> stringPrefs;
+  
+  
 
-  size_t prefsLen;
-  ContentPrefs::GetEarlyPrefs(&prefsLen);
+  
+  nsAutoCStringN<1024> prefs;
+  Preferences::SerializeEarlyPreferences(prefs);
 
-  for (unsigned int i = 0; i < prefsLen; i++) {
-    const char* prefName = ContentPrefs::GetEarlyPref(i);
-    MOZ_ASSERT(i == 0 || strcmp(prefName, ContentPrefs::GetEarlyPref(i - 1)) > 0,
-               "Content process preferences should be sorted alphabetically.");
-
-    if (!Preferences::MustSendToContentProcesses(prefName)) {
-      continue;
-    }
-
-    switch (Preferences::GetType(prefName)) {
-    case nsIPrefBranch::PREF_INT:
-      intPrefs.Append(nsPrintfCString("%u:%d|", i, Preferences::GetInt(prefName)));
-      break;
-    case nsIPrefBranch::PREF_BOOL:
-      boolPrefs.Append(nsPrintfCString("%u:%d|", i, Preferences::GetBool(prefName)));
-      break;
-    case nsIPrefBranch::PREF_STRING: {
-      nsAutoCString value;
-      Preferences::GetCString(prefName, value);
-      stringPrefs.Append(nsPrintfCString("%u:%d;%s|", i, value.Length(), value.get()));
-      }
-      break;
-    case nsIPrefBranch::PREF_INVALID:
-      break;
-    default:
-      printf("preference type: %x\n", Preferences::GetType(prefName));
-      MOZ_CRASH();
-    }
+  
+  base::SharedMemory shm;
+  if (!shm.Create("",  false,  false,
+                  prefs.Length())) {
+    NS_ERROR("failed to create shared memory in the parent");
+    MarkAsDead();
+    return false;
+  }
+  if (!shm.Map(prefs.Length())) {
+    NS_ERROR("failed to map shared memory in the parent");
+    MarkAsDead();
+    return false;
   }
 
+  
+  memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
+
+#if defined(XP_WIN)
+  
+  
+  HANDLE prefsHandle = shm.handle();
+  mSubprocess->AddHandleToShare(prefsHandle);
+  extraArgs.push_back("-prefsHandle");
+  extraArgs.push_back(
+    nsPrintfCString("%zu", reinterpret_cast<uintptr_t>(prefsHandle)).get());
+#else
+  
+  
+  
+  
+  
+  
+  
+  mSubprocess->AddFdToRemap(shm.handle().fd, kPrefsFileDescriptor);
+#endif
+
+  
+  extraArgs.push_back("-prefsLen");
+  extraArgs.push_back(nsPrintfCString("%zu", uintptr_t(prefs.Length())).get());
+
+  
+  
   nsCString schedulerPrefs = Scheduler::GetPrefs();
-
-  
-  if (!intPrefs.IsEmpty()) {
-    extraArgs.push_back("-intPrefs");
-    extraArgs.push_back(intPrefs.get());
-  }
-  if (!boolPrefs.IsEmpty()) {
-    extraArgs.push_back("-boolPrefs");
-    extraArgs.push_back(boolPrefs.get());
-  }
-  if (!stringPrefs.IsEmpty()) {
-    extraArgs.push_back("-stringPrefs");
-    extraArgs.push_back(stringPrefs.get());
-  }
-
-  
-  
   extraArgs.push_back("-schedulerPrefs");
   extraArgs.push_back(schedulerPrefs.get());
 
@@ -2061,6 +2057,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   }
 
   if (!mSubprocess->LaunchAndWaitForProcessHandle(extraArgs)) {
+    NS_ERROR("failed to launch child in the parent");
     MarkAsDead();
     return false;
   }
