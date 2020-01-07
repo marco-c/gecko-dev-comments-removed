@@ -90,7 +90,7 @@ CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
     baselineEnabled = cx->options().wasmBaseline();
     ionEnabled = cx->options().wasmIon();
     sharedMemoryEnabled = cx->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled();
-    testTiering = cx->options().testWasmAwaitTier2();
+    testTiering = cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
 
     
     
@@ -316,9 +316,6 @@ static const double spaceCutoffPct = 0.9;
 static bool
 TieringBeneficial(uint32_t codeSize)
 {
-    if (!CanUseExtraThreads())
-        return false;
-
     uint32_t cpuCount = HelperThreadState().cpuCount;
     MOZ_ASSERT(cpuCount > 0);
 
@@ -402,7 +399,7 @@ InitialCompileFlags(const CompileArgs& args, Decoder& d, CompileMode* mode, Tier
     
     MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled);
 
-    if (baselineEnabled && ionEnabled && !debugEnabled &&
+    if (baselineEnabled && ionEnabled && !debugEnabled && CanUseExtraThreads() &&
         (TieringBeneficial(codeSectionSize) || args.testTiering))
     {
         *mode = CompileMode::Tier1;
