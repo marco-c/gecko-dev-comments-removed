@@ -853,12 +853,6 @@ nsresult NS_LinkRedirectChannels(uint32_t channelId,
 
 
 
-nsresult NS_MakeRandomInvalidURLString(nsCString &result);
-
-
-
-
-
 
 nsresult NS_MaybeOpenChannelUsingOpen2(nsIChannel* aChannel,
                                        nsIInputStream **aStream);
@@ -870,15 +864,6 @@ nsresult NS_MaybeOpenChannelUsingOpen2(nsIChannel* aChannel,
 
 nsresult NS_MaybeOpenChannelUsingAsyncOpen2(nsIChannel* aChannel,
                                             nsIStreamListener *aListener);
-
-
-
-
-
-
-
-
-nsresult NS_CheckIsJavaCompatibleURLString(nsCString& urlString, bool *result);
 
 
 
