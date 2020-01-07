@@ -7,14 +7,19 @@
 #define _mozilla_dom_ClientSource_h
 
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/ClientThing.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
+#include "mozilla/Variant.h"
 
 class nsIDocShell;
+class nsISerialEventTarget;
 class nsPIDOMWindowInner;
 
 namespace mozilla {
 namespace dom {
 
+class ClientControlledArgs;
 class ClientManager;
 class ClientSourceChild;
 class ClientSourceConstructorArgs;
@@ -46,6 +51,7 @@ class ClientSource final : public ClientThing<ClientSourceChild>
           mozilla::dom::workers::WorkerPrivate*> mOwner;
 
   ClientInfo mClientInfo;
+  Maybe<ServiceWorkerDescriptor> mController;
 
   void
   Shutdown();
@@ -90,6 +96,27 @@ public:
 
   const ClientInfo&
   Info() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void
+  SetController(const ServiceWorkerDescriptor& aServiceWorker);
+
+  
+  
+  RefPtr<ClientOpPromise>
+  Control(const ClientControlledArgs& aArgs);
+
+  
+  
+  const Maybe<ServiceWorkerDescriptor>&
+  GetController() const;
 
   nsISerialEventTarget*
   EventTarget() const;

@@ -9,6 +9,7 @@
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/ClientThing.h"
+#include "mozilla/MozPromise.h"
 
 #ifdef XP_WIN
 #undef PostMessage
@@ -22,6 +23,7 @@ class ClientManager;
 class ClientHandleChild;
 class ClientOpConstructorArgs;
 class PClientManagerChild;
+class ServiceWorkerDescriptor;
 
 
 
@@ -61,6 +63,12 @@ class ClientHandle final : public ClientThing<ClientHandleChild>
 public:
   const ClientInfo&
   Info() const;
+
+  
+  
+  
+  RefPtr<GenericPromise>
+  Control(const ServiceWorkerDescriptor& aServiceWorker);
 
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };
