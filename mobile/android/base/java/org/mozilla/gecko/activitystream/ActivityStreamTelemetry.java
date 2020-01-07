@@ -217,7 +217,7 @@ public class ActivityStreamTelemetry {
                         break;
                     
                     case BrowserContract.TopSites.TYPE_BLANK:
-                        throw new IllegalStateException("Unknown top site type :" + topSite.getType());
+                        throw new IllegalStateException("Unknown top site type :" + String.valueOf(topSite.getType()));
                 }
 
                 return this;
