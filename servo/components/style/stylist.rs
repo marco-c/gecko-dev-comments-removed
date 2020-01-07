@@ -1453,6 +1453,7 @@ impl Stylist {
         
         
         
+        
         if let Some(shadow) = element.shadow_root() {
             try_find_in!(shadow.style_data());
         }
