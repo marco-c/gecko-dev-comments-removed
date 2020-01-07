@@ -88,10 +88,12 @@ function initialize() {
 }
 
 
-async function reloadFile(finalize) {
-  if (finalize) {
-    await _store.finalize();
+async function reloadFile(saveChanges) {
+  if (!saveChanges) {
+    
+    _store._saver.disarm();
   }
+  await _store.finalize();
   _initializePromise = null;
   return initialize();
 }
@@ -514,7 +516,8 @@ this.ExtensionSettingsStore = {
 
 
 
-  _reloadFile(finalize = true) {
-    return reloadFile(finalize);
+
+  _reloadFile(saveChanges = true) {
+    return reloadFile(saveChanges);
   },
 };

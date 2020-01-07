@@ -445,6 +445,9 @@ add_task(async function testExtensionControlledHomepageUninstalledAddon() {
   await checkHomepageEnabled();
 
   
+  await ExtensionSettingsStore._reloadFile(false);
+
+  
   let storeData = {
     prefs: {
       homepage_override: {
