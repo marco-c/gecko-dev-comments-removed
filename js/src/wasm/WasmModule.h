@@ -193,7 +193,7 @@ class Module : public JS::WasmModule
     ~Module() override {  }
 
     const Code& code() const { return *code_; }
-    const CodeSegment& codeSegment(Tier t) const { return code_->segment(t); }
+    const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
     const Metadata& metadata() const { return code_->metadata(); }
     const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
     const LinkData& linkData() const { return linkData_; }
@@ -221,7 +221,7 @@ class Module : public JS::WasmModule
 
     void startTier2(const CompileArgs& args);
     void finishTier2(UniqueLinkDataTier linkData2, UniqueMetadataTier metadata2,
-                     UniqueCodeSegment code2, ModuleEnvironment* env2);
+                     UniqueModuleSegment code2, ModuleEnvironment* env2);
     void blockOnTier2Complete() const;
 
     

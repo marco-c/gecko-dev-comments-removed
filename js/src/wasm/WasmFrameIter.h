@@ -34,12 +34,10 @@ class Label;
 
 namespace wasm {
 
-class CallSite;
 class Code;
 class CodeRange;
-class CodeSegment;
+class ModuleSegment;
 class DebugFrame;
-class DebugState;
 class Instance;
 class SigIdDesc;
 struct Frame;
@@ -229,7 +227,7 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 
 
 Instance*
-LookupFaultingInstance(const CodeSegment& codeSegment, void* pc, void* fp);
+LookupFaultingInstance(const ModuleSegment& codeSegment, void* pc, void* fp);
 
 
 

@@ -24,7 +24,6 @@
 namespace js {
 namespace wasm {
 
-class CodeSegment;
 typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 
 

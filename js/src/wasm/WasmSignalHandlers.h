@@ -49,12 +49,12 @@ EnsureSignalHandlers(JSContext* cx);
 bool
 HaveSignalHandlers();
 
-class CodeSegment;
+class ModuleSegment;
 
 
 
 bool
-InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs);
+InInterruptibleCode(JSContext* cx, uint8_t* pc, const ModuleSegment** ms);
 
 #if defined(XP_DARWIN)
 

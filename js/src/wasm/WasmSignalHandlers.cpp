@@ -793,7 +793,7 @@ ComputeAccessAddress(EMULATOR_CONTEXT* context, const Disassembler::ComplexAddre
 
 MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const CodeSegment* segment, const Instance& instance, JitActivation* activation,
+                   const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
                    uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
@@ -949,7 +949,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
 
 MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const CodeSegment* segment, const Instance& instance, JitActivation* activation,
+                   const ModuleSegment* segment, const Instance& instance, JitActivation* activation,
                    uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
@@ -996,13 +996,15 @@ HandleFault(PEXCEPTION_POINTERS exception)
     uint8_t* pc = *ppc;
 
     const CodeSegment* codeSegment = LookupCodeSegment(pc);
-    if (!codeSegment)
+    if (!codeSegment || !codeSegment->isModule())
         return false;
+
+    const ModuleSegment* moduleSegment = codeSegment->asModule();
 
     JitActivation* activation = TlsContext.get()->activation()->asJit();
     MOZ_ASSERT(activation);
 
-    const Instance* instance = LookupFaultingInstance(*codeSegment, pc, ContextToFP(context));
+    const Instance* instance = LookupFaultingInstance(*moduleSegment, pc, ContextToFP(context));
     if (!instance) {
         
         
@@ -1014,8 +1016,8 @@ HandleFault(PEXCEPTION_POINTERS exception)
         
         
         return activation->isWasmInterrupted() &&
-               pc == codeSegment->interruptCode() &&
-               codeSegment->containsCodePC(activation->wasmInterruptResumePC());
+               pc == moduleSegment->interruptCode() &&
+               moduleSegment->containsCodePC(activation->wasmInterruptResumePC());
     }
 
     
@@ -1034,11 +1036,11 @@ HandleFault(PEXCEPTION_POINTERS exception)
     if (record->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION) {
         Trap trap;
         BytecodeOffset bytecode;
-        if (!codeSegment->code().lookupTrap(pc, &trap, &bytecode))
+        if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
         activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(context));
-        *ppc = codeSegment->trapCode();
+        *ppc = moduleSegment->trapCode();
         return true;
     }
 
@@ -1054,7 +1056,7 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
     MOZ_ASSERT(activation->compartment() == instance->compartment());
 
-    HandleMemoryAccess(context, pc, faultingAddress, codeSegment, *instance, activation, ppc);
+    HandleMemoryAccess(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
     return true;
 }
 
@@ -1150,10 +1152,12 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     AutoNoteSingleThreadedRegion anstr;
 
     const CodeSegment* codeSegment = LookupCodeSegment(pc);
-    if (!codeSegment)
+    if (!codeSegment || !codeSegment->isModule())
         return false;
 
-    const Instance* instance = LookupFaultingInstance(*codeSegment, pc, ContextToFP(&context));
+    const ModuleSegment* moduleSegment = codeSegment->asModule();
+
+    const Instance* instance = LookupFaultingInstance(*moduleSegment, pc, ContextToFP(&context));
     if (!instance)
         return false;
 
@@ -1163,11 +1167,11 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     if (request.body.exception == EXC_BAD_INSTRUCTION) {
         Trap trap;
         BytecodeOffset bytecode;
-        if (!codeSegment->code().lookupTrap(pc, &trap, &bytecode))
+        if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
         activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(&context));
-        *ppc = codeSegment->trapCode();
+        *ppc = moduleSegment->trapCode();
     } else {
         MOZ_ASSERT(request.body.exception == EXC_BAD_ACCESS);
         if (request.body.codeCnt != 2)
@@ -1180,7 +1184,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
         if (!IsHeapAccessAddress(*instance, faultingAddress))
             return false;
 
-        HandleMemoryAccess(&context, pc, faultingAddress, codeSegment, *instance, activation, ppc);
+        HandleMemoryAccess(&context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
     }
 
     
@@ -1367,10 +1371,12 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     uint8_t* pc = *ppc;
 
     const CodeSegment* segment = LookupCodeSegment(pc);
-    if (!segment)
+    if (!segment || !segment->isModule())
         return false;
 
-    const Instance* instance = LookupFaultingInstance(*segment, pc, ContextToFP(context));
+    const ModuleSegment* moduleSegment = segment->asModule();
+
+    const Instance* instance = LookupFaultingInstance(*moduleSegment, pc, ContextToFP(context));
     if (!instance)
         return false;
 
@@ -1385,11 +1391,11 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 #endif
         Trap trap;
         BytecodeOffset bytecode;
-        if (!segment->code().lookupTrap(pc, &trap, &bytecode))
+        if (!moduleSegment->code().lookupTrap(pc, &trap, &bytecode))
             return false;
 
         activation->startWasmTrap(trap, bytecode.offset, pc, ContextToFP(context));
-        *ppc = segment->trapCode();
+        *ppc = moduleSegment->trapCode();
         return true;
     }
 
@@ -1421,12 +1427,12 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         
         
         MOZ_ALWAYS_TRUE(activation->startWasmInterrupt(ToRegisterState(context)));
-        *ppc = segment->unalignedAccessCode();
+        *ppc = moduleSegment->unalignedAccessCode();
         return true;
     }
 #endif
 
-    HandleMemoryAccess(context, pc, faultingAddress, segment, *instance, activation, ppc);
+    HandleMemoryAccess(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
     return true;
 }
 
@@ -1489,7 +1495,7 @@ RedirectIonBackedgesToInterruptCheck(JSContext* cx)
 }
 
 bool
-wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs)
+wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const ModuleSegment** ms)
 {
     
     
@@ -1498,11 +1504,12 @@ wasm::InInterruptibleCode(JSContext* cx, uint8_t* pc, const CodeSegment** cs)
     if (!cx->compartment())
         return false;
 
-    *cs = LookupCodeSegment(pc);
-    if (!*cs)
+    const CodeSegment* cs = LookupCodeSegment(pc);
+    if (!cs || !cs->isModule())
         return false;
 
-    const CodeRange* codeRange = (*cs)->code().lookupRange(pc);
+    *ms = cs->asModule();
+    const CodeRange* codeRange = (*ms)->code().lookupRange(pc);
     return codeRange && codeRange->isFunction();
 }
 
@@ -1527,8 +1534,8 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     uint8_t* pc = *ContextToPC(context);
 #endif
 
-    const CodeSegment* codeSegment = nullptr;
-    if (!InInterruptibleCode(cx, pc, &codeSegment))
+    const ModuleSegment* moduleSegment = nullptr;
+    if (!InInterruptibleCode(cx, pc, &moduleSegment))
         return false;
 
 #ifdef JS_SIMULATOR
@@ -1549,7 +1556,7 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     if (!activation->startWasmInterrupt(ToRegisterState(context)))
         return false;
 
-    *ContextToPC(context) = codeSegment->interruptCode();
+    *ContextToPC(context) = moduleSegment->interruptCode();
 #endif
 
     return true;
