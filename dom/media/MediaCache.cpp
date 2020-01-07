@@ -2314,8 +2314,8 @@ MediaCacheStream::NotifyResume()
       }
       
       
-      if (mStreamLength < 0 || mChannelOffset < mStreamLength) {
-        int64_t offset = mSeekTarget != -1 ? mSeekTarget : mChannelOffset;
+      int64_t offset = mSeekTarget != -1 ? mSeekTarget : mChannelOffset;
+      if (mStreamLength < 0 || offset < mStreamLength) {
         mClient->CacheClientSeek(offset, false);
         
       }
