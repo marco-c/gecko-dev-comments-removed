@@ -494,8 +494,6 @@ public:
   
   static void VerifyDirtyBitSet(const nsFrameList& aFrameList);
 
-  static void XMLQuote(nsString& aString);
-
   
   static void* DisplayReflowEnter(nsPresContext*          aPresContext,
                                   nsIFrame*                aFrame,
@@ -727,11 +725,6 @@ public:
 
 #ifdef DEBUG
 public:
-  
-
-
-
-  nsFrameState GetDebugStateBits() const override;
   
 
 

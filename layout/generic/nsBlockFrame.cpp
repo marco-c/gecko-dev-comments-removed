@@ -452,16 +452,6 @@ nsBlockFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
-#ifdef DEBUG
-nsFrameState
-nsBlockFrame::GetDebugStateBits() const
-{
-  
-  
-  return nsContainerFrame::GetDebugStateBits() & ~NS_BLOCK_HAS_LINE_CURSOR;
-}
-#endif
-
 void
 nsBlockFrame::InvalidateFrame(uint32_t aDisplayItemKey)
 {
