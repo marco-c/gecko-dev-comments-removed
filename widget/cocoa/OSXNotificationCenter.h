@@ -13,6 +13,11 @@
 #include "nsTArray.h"
 #include "mozilla/RefPtr.h"
 
+
+
+
+
+
 @class mozNotificationCenterDelegate;
 
 #if !defined(MAC_OS_X_VERSION_10_8) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8)
