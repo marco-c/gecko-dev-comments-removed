@@ -141,7 +141,7 @@ public:
 
 protected:
   nsPresContext* mPresContext;
-  nsCOMPtr<nsIPresShell> mPresShell;
+  nsCOMPtr<nsIDocument> mDocument;
   
   
   
