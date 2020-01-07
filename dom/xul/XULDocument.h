@@ -281,12 +281,6 @@ protected:
     bool                           mRestrictPersistence;
     nsTHashtable<nsStringHashKey>  mPersistenceIds;
 
-    
-
-
-
-    nsTArray<RefPtr<StyleSheet>> mOverlaySheets;
-
     nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 
     uint32_t mPendingSheets;
@@ -398,12 +392,6 @@ protected:
 
     char16_t* mOffThreadCompileStringBuf;
     size_t mOffThreadCompileStringLength;
-
-    
-
-
-
-    nsresult AddPrototypeSheets();
 
 
 protected:

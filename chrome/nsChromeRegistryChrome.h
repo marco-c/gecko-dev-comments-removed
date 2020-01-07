@@ -44,8 +44,6 @@ class nsChromeRegistryChrome : public nsChromeRegistry
 #ifdef MOZ_XUL
   NS_IMETHOD GetXULOverlays(nsIURI *aURI,
                             nsISimpleEnumerator **_retval) override;
-  NS_IMETHOD GetStyleOverlays(nsIURI *aURI,
-                              nsISimpleEnumerator **_retval) override;
 #endif
 
   
@@ -149,7 +147,6 @@ class nsChromeRegistryChrome : public nsChromeRegistry
   
   
   OverlayListHash mOverlayHash;
-  OverlayListHash mStyleHash;
 
   bool mProfileLoaded;
   bool mDynamicRegistration;
@@ -167,8 +164,6 @@ class nsChromeRegistryChrome : public nsChromeRegistry
                             char *const * argv, int flags) override;
   virtual void ManifestOverlay(ManifestProcessingContext& cx, int lineno,
                                char *const * argv, int flags) override;
-  virtual void ManifestStyle(ManifestProcessingContext& cx, int lineno,
-                             char *const * argv, int flags) override;
   virtual void ManifestOverride(ManifestProcessingContext& cx, int lineno,
                                 char *const * argv, int flags) override;
   virtual void ManifestResource(ManifestProcessingContext& cx, int lineno,

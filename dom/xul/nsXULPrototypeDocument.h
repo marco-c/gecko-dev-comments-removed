@@ -71,17 +71,6 @@ public:
 
     const nsTArray<RefPtr<nsXULPrototypePI> >& GetProcessingInstructions() const;
 
-    
-
-
-
-
-
-
-
-    void AddStyleSheetReference(nsIURI* aStyleSheet);
-    const nsCOMArray<nsIURI>& GetStyleSheetReferences() const;
-
     nsIPrincipal *DocumentPrincipal();
     void SetDocumentPrincipal(nsIPrincipal *aPrincipal);
 
@@ -113,7 +102,6 @@ protected:
     nsCOMPtr<nsIURI> mURI;
     RefPtr<nsXULPrototypeElement> mRoot;
     nsTArray<RefPtr<nsXULPrototypePI> > mProcessingInstructions;
-    nsCOMArray<nsIURI> mStyleSheetReferences;
 
     bool mLoaded;
     nsTArray< RefPtr<mozilla::dom::XULDocument> > mPrototypeWaiters;

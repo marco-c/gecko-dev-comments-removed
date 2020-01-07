@@ -472,42 +472,12 @@ XULDocument::EndLoad()
         nsXULPrototypeCache::GetInstance()->WritePrototype(mCurrentPrototype);
     }
 
-    if (IsOverlayAllowed(uri)) {
-        nsCOMPtr<nsIXULOverlayProvider> reg =
-            mozilla::services::GetXULOverlayProviderService();
-
-        if (reg) {
-            nsCOMPtr<nsISimpleEnumerator> overlays;
-            rv = reg->GetStyleOverlays(uri, getter_AddRefs(overlays));
-            if (NS_FAILED(rv)) return;
-
-            bool moreSheets;
-            nsCOMPtr<nsISupports> next;
-            nsCOMPtr<nsIURI> sheetURI;
-
-            while (NS_SUCCEEDED(rv = overlays->HasMoreElements(&moreSheets)) &&
-                   moreSheets) {
-                overlays->GetNext(getter_AddRefs(next));
-
-                sheetURI = do_QueryInterface(next);
-                if (!sheetURI) {
-                    NS_ERROR("Chrome registry handed me a non-nsIURI object!");
-                    continue;
-                }
-
-                if (IsChromeURI(sheetURI)) {
-                    mCurrentPrototype->AddStyleSheetReference(sheetURI);
-                }
-            }
-        }
-
-        if (isChrome && useXULCache) {
-            
-            
-            
-            rv = mCurrentPrototype->NotifyLoadDone();
-            if (NS_FAILED(rv)) return;
-        }
+    if (IsOverlayAllowed(uri) && isChrome && useXULCache) {
+        
+        
+        
+        rv = mCurrentPrototype->NotifyLoadDone();
+        if (NS_FAILED(rv)) return;
     }
 
     OnPrototypeLoadDone(true);
@@ -525,10 +495,6 @@ nsresult
 XULDocument::OnPrototypeLoadDone(bool aResumeWalk)
 {
     nsresult rv;
-
-    
-    rv = AddPrototypeSheets();
-    if (NS_FAILED(rv)) return rv;
 
     rv = PrepareToWalk();
     NS_ASSERTION(NS_SUCCEEDED(rv), "unable to prepare for walk");
@@ -2667,15 +2633,6 @@ XULDocument::DoneWalking()
     
     
 
-    {
-        uint32_t count = mOverlaySheets.Length();
-        for (uint32_t i = 0; i < count; ++i) {
-            AddStyleSheet(mOverlaySheets[i]);
-        }
-    }
-
-    mOverlaySheets.Clear();
-
     if (!mDocumentLoaded) {
         
         
@@ -3311,35 +3268,6 @@ XULDocument::AddAttributes(nsXULPrototypeElement* aPrototype,
                                valueStr,
                                false);
         if (NS_FAILED(rv)) return rv;
-    }
-
-    return NS_OK;
-}
-
-
-nsresult
-XULDocument::AddPrototypeSheets()
-{
-    nsresult rv;
-
-    const nsCOMArray<nsIURI>& sheets = mCurrentPrototype->GetStyleSheetReferences();
-
-    for (int32_t i = 0; i < sheets.Count(); i++) {
-        nsCOMPtr<nsIURI> uri = sheets[i];
-
-        RefPtr<StyleSheet> incompleteSheet;
-        rv = CSSLoader()->LoadSheet(
-          uri, mCurrentPrototype->DocumentPrincipal(), this, &incompleteSheet);
-
-        
-        
-        
-        if (NS_SUCCEEDED(rv)) {
-            ++mPendingSheets;
-            if (!mOverlaySheets.AppendElement(incompleteSheet)) {
-                return NS_ERROR_OUT_OF_MEMORY;
-            }
-        }
     }
 
     return NS_OK;
