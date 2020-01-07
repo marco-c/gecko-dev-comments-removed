@@ -803,25 +803,6 @@ nsChannelClassifier::SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel)
 }
 
 
-nsPIDOMWindowOuter*
-nsChannelClassifier::GetWindowForChannel(nsIChannel *aChannel)
-{
-  nsCOMPtr<nsILoadContext> ctx;
-  NS_QueryNotificationCallbacks(aChannel, ctx);
-  if (!ctx) {
-    return nullptr;
-  }
-
-  nsCOMPtr<mozIDOMWindowProxy> window;
-  ctx->GetAssociatedWindow(getter_AddRefs(window));
-  if (!window) {
-    return nullptr;
-  }
-
-  return nsPIDOMWindowOuter::From(window);
-}
-
-
 nsresult
 nsChannelClassifier::SetBlockedContent(nsIChannel *channel,
                                        nsresult aErrorCode,
@@ -849,59 +830,41 @@ nsChannelClassifier::SetBlockedContent(nsIChannel *channel,
     classifiedChannel->SetMatchedInfo(aList, aProvider, aFullHash);
   }
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> win = GetWindowForChannel(channel);
-  if (!win) {
+  nsCOMPtr<mozIDOMWindowProxy> win;
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+    do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
+  rv = thirdPartyUtil->GetTopWindowForChannel(channel, getter_AddRefs(win));
+  NS_ENSURE_SUCCESS(rv, NS_OK);
+  auto* pwin = nsPIDOMWindowOuter::From(win);
+  nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
+  if (!docShell) {
     return NS_OK;
   }
-  nsCOMPtr<nsIDocument> frameDoc = win->GetExtantDoc();
+  nsCOMPtr<nsIDocument> doc = docShell->GetDocument();
+  NS_ENSURE_TRUE(doc, NS_OK);
 
   
   
   
   
-  bool isDocumentLoad = false;
-  Unused << NS_WARN_IF(NS_FAILED(channel->GetIsDocument(&isDocumentLoad)));
-  if (isDocumentLoad || !frameDoc) {
-    win = win->GetParent();
-    if (NS_WARN_IF(!win)) {
-      return NS_OK;
-    }
-    frameDoc = win->GetExtantDoc();
-  }
-
-  if (!frameDoc || !SameLoadingURI(frameDoc, channel)) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsPIDOMWindowOuter> topWin = win->GetScriptableTop();
-  nsCOMPtr<nsIDocShell> topDocShell = topWin->GetDocShell();
-  if (!topDocShell) {
+  if (!SameLoadingURI(doc, channel)) {
     return NS_OK;
   }
 
   
   
-  nsCOMPtr<nsISecurityEventSink> eventSink = do_QueryInterface(topDocShell, &rv);
+  nsCOMPtr<nsISecurityEventSink> eventSink = do_QueryInterface(docShell, &rv);
   NS_ENSURE_SUCCESS(rv, NS_OK);
   uint32_t state = 0;
   nsCOMPtr<nsISecureBrowserUI> securityUI;
-  topDocShell->GetSecurityUI(getter_AddRefs(securityUI));
+  docShell->GetSecurityUI(getter_AddRefs(securityUI));
   if (!securityUI) {
     return NS_OK;
   }
   securityUI->GetState(&state);
   if (aErrorCode == NS_ERROR_TRACKING_URI) {
-    nsCOMPtr<nsIDocument> topLevelDoc = topDocShell->GetDocument();
-    if (!topLevelDoc) {
-      return NS_OK;
-    }
-    topLevelDoc->SetHasTrackingContentBlocked(true);
+    doc->SetHasTrackingContentBlocked(true);
     state |= nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT;
   } else {
     state |= nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
@@ -922,7 +885,7 @@ nsChannelClassifier::SetBlockedContent(nsIChannel *channel,
 
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                   category,
-                                  frameDoc,
+                                  doc,
                                   nsContentUtils::eNECKO_PROPERTIES,
                                   message,
                                   params, ArrayLength(params));
