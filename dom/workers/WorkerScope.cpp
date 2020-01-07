@@ -191,7 +191,7 @@ bool
 WorkerGlobalScope::IsSecureContext() const
 {
   bool globalSecure =
-    JS::GetIsSecureContext(js::GetNonCCWObjectRealm(GetWrapperPreserveColor()));
+    JS_GetIsSecureContext(js::GetObjectCompartment(GetWrapperPreserveColor()));
   MOZ_ASSERT(globalSecure == mWorkerPrivate->IsSecureContext());
   return globalSecure;
 }
@@ -548,7 +548,7 @@ WorkerGlobalScope::GetClientState() const
 {
   Maybe<ClientState> state;
   state.emplace(mWorkerPrivate->GetClientState());
-  return std::move(state);
+  return state;
 }
 
 Maybe<ServiceWorkerDescriptor>

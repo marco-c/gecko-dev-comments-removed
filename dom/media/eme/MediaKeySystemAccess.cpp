@@ -764,7 +764,7 @@ GetSupportedCapabilities(
     
     
   }
-  return std::move(supportedCapabilities);
+  return supportedCapabilities;
 }
 
 

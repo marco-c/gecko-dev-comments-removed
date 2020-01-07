@@ -3527,7 +3527,7 @@ struct FindPathHandler {
         EdgeName edgeName = DuplicateString(cx, edge.name.get());
         if (!edgeName)
             return false;
-        *backEdge = std::move(BackEdge(origin, std::move(edgeName)));
+        *backEdge = BackEdge(origin, std::move(edgeName));
 
         
         if (edge.referent == target) {

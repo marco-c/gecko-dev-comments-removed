@@ -711,7 +711,7 @@ class LifoAlloc
         if (!mark.markedChunk())
             released = std::move(chunks_);
         else
-            released = std::move(chunks_.splitAfter(mark.markedChunk()));
+            released = chunks_.splitAfter(mark.markedChunk());
 
         
         for (detail::BumpChunk& bc : released)
