@@ -472,21 +472,6 @@ HttpBaseChannel::GetLoadFlags(nsLoadFlags *aLoadFlags)
 NS_IMETHODIMP
 HttpBaseChannel::SetLoadFlags(nsLoadFlags aLoadFlags)
 {
-  bool synthesized = false;
-  nsresult rv = GetResponseSynthesized(&synthesized);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  
-  
-  if (synthesized && aLoadFlags != mLoadFlags) {
-    aLoadFlags &= ~LOAD_ANONYMOUS;
-  }
-
   mLoadFlags = aLoadFlags;
   return NS_OK;
 }

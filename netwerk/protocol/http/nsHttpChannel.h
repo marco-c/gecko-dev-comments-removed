@@ -257,7 +257,6 @@ public:
       uint32_t mKeep : 2;
     };
 
-    NS_IMETHOD GetResponseSynthesized(bool* aSynthesized) override;
     bool AwaitingCacheCallbacks();
     void SetCouldBeSynthesized();
 

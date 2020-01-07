@@ -566,11 +566,8 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
     return NS_ERROR_DOM_BAD_URI;
   }
 
-  nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(aRequest);
-  NS_ENSURE_STATE(internal);
-  bool responseSynthesized = false;
-  if (NS_SUCCEEDED(internal->GetResponseSynthesized(&responseSynthesized)) &&
-      responseSynthesized) {
+  nsCOMPtr<nsILoadInfo> loadInfo = http->GetLoadInfo();
+  if (loadInfo && loadInfo->GetServiceWorkerTaintingSynthesized()) {
     
     
     
@@ -1270,15 +1267,9 @@ nsCORSPreflightListener::OnStartRequest(nsIRequest *aRequest,
 {
 #ifdef DEBUG
   {
-    nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(aRequest);
-    bool responseSynthesized = false;
-    if (internal &&
-        NS_SUCCEEDED(internal->GetResponseSynthesized(&responseSynthesized))) {
-      
-      
-      
-      MOZ_ASSERT(!responseSynthesized);
-    }
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+    nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->GetLoadInfo() : nullptr;
+    MOZ_ASSERT(!loadInfo || !loadInfo->GetServiceWorkerTaintingSynthesized());
   }
 #endif
 
