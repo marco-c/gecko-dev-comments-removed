@@ -114,6 +114,13 @@ var TelemetryController = Object.freeze({
   
 
 
+  testAssemblePing(aType, aPayload, aOptions) {
+    return Impl.assemblePing(aType, aPayload, aOptions);
+  },
+
+  
+
+
   testInitLogging() {
     configureLogging();
   },
