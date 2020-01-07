@@ -41,6 +41,17 @@ const POLICIES_TESTS = [
 
   
   {
+    policies: {
+      "DisableSecurityBypass": {
+        "SafeBrowsing": true
+      }
+    },
+    lockedPrefs: { "browser.safebrowsing.allowOverride": false },
+  },
+
+
+  
+  {
     policies: { "DisableFormHistory": true },
     lockedPrefs: { "browser.formfill.enable": false },
   },
