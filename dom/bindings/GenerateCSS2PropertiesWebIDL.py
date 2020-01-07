@@ -17,7 +17,7 @@ def generate(output, idlFilename, dataFile):
         propList = eval(f.read())
     props = ""
     for name, prop, id, flags, pref, proptype in propList:
-        if "CSS_PROPERTY_INTERNAL" in flags:
+        if "CSSPropFlags::Internal" in flags:
             continue
         
         
