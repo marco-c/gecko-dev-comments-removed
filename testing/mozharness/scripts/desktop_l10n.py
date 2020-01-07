@@ -15,7 +15,7 @@ import sys
 import shlex
 
 
-sys.path.insert(1, os.path.dirname(sys.path[0]))
+sys.path.insert(1, os.path.dirname(sys.path[0]))  
 
 from mozharness.base.errors import MakefileErrorList
 from mozharness.base.script import BaseScript
