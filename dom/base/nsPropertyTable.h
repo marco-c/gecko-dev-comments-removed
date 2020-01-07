@@ -82,26 +82,22 @@ class nsPropertyTable
 
 
 
-
-
-  nsresult SetProperty(const nsPropertyOwner&     aObject,
-                                   nsAtom            *aPropertyName,
-                                   void               *aPropertyValue,
-                                   NSPropertyDtorFunc  aDtor,
-                                   void               *aDtorData,
-                                   bool                aTransfer = false,
-                                   void              **aOldValue = nullptr)
+  nsresult SetProperty(const nsPropertyOwner& aObject,
+                       nsAtom* aPropertyName,
+                       void* aPropertyValue,
+                       NSPropertyDtorFunc aDtor,
+                       void* aDtorData,
+                       bool aTransfer = false)
   {
     return SetPropertyInternal(aObject, aPropertyName, aPropertyValue,
-                               aDtor, aDtorData, aTransfer, aOldValue);
+                               aDtor, aDtorData, aTransfer);
   }
 
   
 
 
 
-  nsresult DeleteProperty(nsPropertyOwner aObject,
-                                      nsAtom    *aPropertyName);
+  nsresult DeleteProperty(nsPropertyOwner aObject, nsAtom* aPropertyName);
 
   
 
@@ -109,8 +105,8 @@ class nsPropertyTable
 
 
   void* UnsetProperty(const nsPropertyOwner& aObject,
-                      nsAtom    *aPropertyName,
-                      nsresult   *aStatus = nullptr)
+                      nsAtom* aPropertyName,
+                      nsresult* aStatus = nullptr)
   {
     return GetPropertyInternal(aObject, aPropertyName, true, aStatus);
   }
@@ -128,17 +124,15 @@ class nsPropertyTable
 
 
 
-  nsresult
-    TransferOrDeleteAllPropertiesFor(nsPropertyOwner aObject,
-                                     nsPropertyTable *aOtherTable);
+  nsresult TransferOrDeleteAllPropertiesFor(nsPropertyOwner aObject,
+                                            nsPropertyTable& aOtherTable);
 
   
 
 
 
 
-  void Enumerate(nsPropertyOwner aObject,
-                             NSPropertyFunc aCallback, void *aData);
+  void Enumerate(nsPropertyOwner aObject, NSPropertyFunc aCallback, void* aData);
 
   
 
@@ -173,18 +167,17 @@ class nsPropertyTable
 
  private:
   void DestroyPropertyList();
-  PropertyList* GetPropertyListFor(nsAtom *aPropertyName) const;
+  PropertyList* GetPropertyListFor(nsAtom* aPropertyName) const;
   void* GetPropertyInternal(nsPropertyOwner aObject,
-                                        nsAtom    *aPropertyName,
-                                        bool        aRemove,
-                                        nsresult   *aStatus);
-  nsresult SetPropertyInternal(nsPropertyOwner     aObject,
-                                           nsAtom            *aPropertyName,
-                                           void               *aPropertyValue,
-                                           NSPropertyDtorFunc  aDtor,
-                                           void               *aDtorData,
-                                           bool                aTransfer,
-                                           void              **aOldValue);
+                            nsAtom* aPropertyName,
+                            bool aRemove,
+                            nsresult* aStatus);
+  nsresult SetPropertyInternal(nsPropertyOwner aObject,
+                               nsAtom* aPropertyName,
+                               void* aPropertyValue,
+                               NSPropertyDtorFunc  aDtor,
+                               void* aDtorData,
+                               bool aTransfer);
 
   PropertyList *mPropertyList;
 };

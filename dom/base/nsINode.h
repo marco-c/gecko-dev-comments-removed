@@ -275,10 +275,6 @@ private:
 
 
 
-#define DOM_USER_DATA         1
-
-
-
 #define NS_INODE_IID \
 { 0x70ba4547, 0x7699, 0x44fc, \
   { 0xb3, 0x20, 0x52, 0xdb, 0xe3, 0xd1, 0xf9, 0x0a } }
@@ -844,26 +840,7 @@ public:
 
 
 
-  void* GetProperty(nsAtom *aPropertyName,
-                    nsresult *aStatus = nullptr) const
-  {
-    return GetProperty(0, aPropertyName, aStatus);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  void* GetProperty(uint16_t aCategory, nsAtom *aPropertyName,
-                    nsresult *aStatus = nullptr) const;
+  void* GetProperty(nsAtom* aPropertyName, nsresult* aStatus = nullptr) const;
 
   
 
@@ -882,43 +859,16 @@ public:
 
 
 
-  nsresult SetProperty(nsAtom *aPropertyName, void *aValue,
+  nsresult SetProperty(nsAtom* aPropertyName,
+                       void* aValue,
                        NSPropertyDtorFunc aDtor = nullptr,
-                       bool aTransfer = false)
-  {
-    return SetProperty(0, aPropertyName, aValue, aDtor, aTransfer);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult SetProperty(uint16_t aCategory,
-                       nsAtom *aPropertyName, void *aValue,
-                       NSPropertyDtorFunc aDtor = nullptr,
-                       bool aTransfer = false,
-                       void **aOldValue = nullptr);
+                       bool aTransfer = false);
 
   
 
 
   template<class T>
-  static void DeleteProperty(void *, nsAtom *, void *aPropertyValue, void *)
+  static void DeleteProperty(void*, nsAtom*, void* aPropertyValue, void*)
   {
     delete static_cast<T *>(aPropertyValue);
   }
@@ -929,19 +879,7 @@ public:
 
 
 
-  void DeleteProperty(nsAtom *aPropertyName)
-  {
-    DeleteProperty(0, aPropertyName);
-  }
-
-  
-
-
-
-
-
-
-  void DeleteProperty(uint16_t aCategory, nsAtom *aPropertyName);
+  void DeleteProperty(nsAtom* aPropertyName);
 
   
 
@@ -956,28 +894,7 @@ public:
 
 
 
-  void* UnsetProperty(nsAtom  *aPropertyName,
-                      nsresult *aStatus = nullptr)
-  {
-    return UnsetProperty(0, aPropertyName, aStatus);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void* UnsetProperty(uint16_t aCategory, nsAtom *aPropertyName,
-                      nsresult *aStatus = nullptr);
+  void* UnsetProperty(nsAtom* aPropertyName, nsresult* aStatus = nullptr);
 
   bool HasProperties() const
   {
@@ -1451,31 +1368,6 @@ protected:
   
   mozilla::dom::Element* GetElementById(const nsAString& aId);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  nsresult SetUserData(const nsAString& aKey, nsIVariant* aData,
-                       nsIVariant** aResult);
-
-  
-
-
-
-
-
-
-
-  nsIVariant* GetUserData(const nsAString& aKey);
-
 public:
   void LookupPrefix(const nsAString& aNamespace, nsAString& aResult);
   bool IsDefaultNamespace(const nsAString& aNamespaceURI)
@@ -1944,13 +1836,6 @@ public:
   }
 
   nsDOMAttributeMap* GetAttributes();
-  void SetUserData(JSContext* aCx, const nsAString& aKey,
-                   JS::Handle<JS::Value> aData,
-                   JS::MutableHandle<JS::Value> aRetval,
-                   mozilla::ErrorResult& aError);
-  void GetUserData(JSContext* aCx, const nsAString& aKey,
-                   JS::MutableHandle<JS::Value> aRetval,
-                   mozilla::ErrorResult& aError);
 
   
   

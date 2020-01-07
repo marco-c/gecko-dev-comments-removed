@@ -230,28 +230,12 @@ public:
 
 
 
-  static void TraverseUserData(nsINode* aNode,
-                               nsCycleCollectionTraversalCallback &aCb);
-
-  
-
-
-
-
-
 
 
 
 
   static already_AddRefed<nsINode> CloneNodeImpl(nsINode *aNode, bool aDeep,
                                                  mozilla::ErrorResult& aError);
-
-  
-
-
-
-
-  static void UnlinkUserData(nsINode *aNode);
 
   
 

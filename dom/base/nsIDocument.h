@@ -2289,13 +2289,10 @@ public:
   void DeleteAllProperties();
   void DeleteAllPropertiesFor(nsINode* aNode);
 
-  nsPropertyTable* PropertyTable(uint16_t aCategory) {
-    if (aCategory == 0)
-      return &mPropertyTable;
-    return GetExtraPropertyTable(aCategory);
+  nsPropertyTable& PropertyTable()
+  {
+    return mPropertyTable;
   }
-  uint32_t GetPropertyTableCount()
-  { return mExtraPropertyTables.Length() + 1; }
 
   
 
@@ -3807,7 +3804,6 @@ protected:
   }
 
   ~nsIDocument();
-  nsPropertyTable* GetExtraPropertyTable(uint16_t aCategory);
 
   
   nsPIDOMWindowOuter* GetWindowInternal() const;
@@ -3949,7 +3945,6 @@ protected:
 
   
   nsPropertyTable mPropertyTable;
-  nsTArray<nsAutoPtr<nsPropertyTable> > mExtraPropertyTables;
 
   
   nsCOMPtr<nsIHTMLCollection> mChildrenCollection;
