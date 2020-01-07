@@ -238,17 +238,6 @@ Event::GetTarget() const
   return mEvent->GetDOMEventTarget();
 }
 
-bool
-Event::IsSrcElementEnabled(JSContext* , JSObject* )
-{
-  
-#ifdef NIGHTLY_BUILD
-  return true;
-#else
-  return false;
-#endif
-}
-
 EventTarget*
 Event::GetCurrentTarget() const
 {
