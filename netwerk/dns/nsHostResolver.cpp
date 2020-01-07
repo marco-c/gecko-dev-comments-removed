@@ -509,6 +509,7 @@ nsHostRecord::RemoveOrRefresh()
 
 static const char kPrefGetTtl[] = "network.dns.get-ttl";
 static const char kPrefNativeIsLocalhost[] = "network.dns.native-is-localhost";
+static const char kPrefThreadIdleTime[] = "network.dns.resolver-thread-extra-idle-time-seconds";
 static bool sGetTtlEnabled = false;
 mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
@@ -594,9 +595,23 @@ nsHostResolver::Init()
     }
 #endif
 
+    
+    
+    int32_t poolTimeoutSecs = Preferences::GetInt(kPrefThreadIdleTime, 60);
+    uint32_t poolTimeoutMs;
+    if (poolTimeoutSecs < 0) {
+        
+        poolTimeoutMs = UINT32_MAX;
+    } else {
+        
+        poolTimeoutMs = mozilla::clamped<uint32_t>(poolTimeoutSecs * 1000,
+                                                   0, 3600 * 1000);
+    }
+
     nsCOMPtr<nsIThreadPool> threadPool = do_CreateInstance(NS_THREADPOOL_CONTRACTID);
     MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadLimit(MAX_RESOLVER_THREADS));
     MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadLimit(MAX_RESOLVER_THREADS));
+    MOZ_ALWAYS_SUCCEEDS(threadPool->SetIdleThreadTimeout(poolTimeoutMs));
     MOZ_ALWAYS_SUCCEEDS(threadPool->SetThreadStackSize(nsIThreadManager::kThreadPoolStackSize));
     MOZ_ALWAYS_SUCCEEDS(threadPool->SetName(NS_LITERAL_CSTRING("DNS Resolver")));
     mResolverThreads = threadPool.forget();
