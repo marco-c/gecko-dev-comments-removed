@@ -82,7 +82,7 @@ NS_IMPL_RELEASE_INHERITED(XULTreeAccessible, Accessible)
 
 
 uint64_t
-XULTreeAccessible::NativeState()
+XULTreeAccessible::NativeState() const
 {
   
   uint64_t state = Accessible::NativeState();
@@ -919,7 +919,7 @@ XULTreeItemAccessibleBase::GroupPosition()
 }
 
 uint64_t
-XULTreeItemAccessibleBase::NativeState()
+XULTreeItemAccessibleBase::NativeState() const
 {
 
   

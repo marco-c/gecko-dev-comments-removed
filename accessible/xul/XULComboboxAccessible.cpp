@@ -50,7 +50,7 @@ XULComboboxAccessible::NativeRole() const
 }
 
 uint64_t
-XULComboboxAccessible::NativeState()
+XULComboboxAccessible::NativeState() const
 {
   
   

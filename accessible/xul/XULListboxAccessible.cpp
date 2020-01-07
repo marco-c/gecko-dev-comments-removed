@@ -41,7 +41,7 @@ XULColumAccessible::NativeRole() const
 }
 
 uint64_t
-XULColumAccessible::NativeState()
+XULColumAccessible::NativeState() const
 {
   return states::READONLY;
 }
@@ -64,7 +64,7 @@ XULColumnItemAccessible::NativeRole() const
 }
 
 uint64_t
-XULColumnItemAccessible::NativeState()
+XULColumnItemAccessible::NativeState() const
 {
   return states::READONLY;
 }
@@ -116,7 +116,7 @@ XULListboxAccessible::
 
 
 uint64_t
-XULListboxAccessible::NativeState()
+XULListboxAccessible::NativeState() const
 {
   
   
@@ -613,7 +613,7 @@ XULListitemAccessible::NativeRole() const
 }
 
 uint64_t
-XULListitemAccessible::NativeState()
+XULListitemAccessible::NativeState() const
 {
   if (mIsCheckbox)
     return XULMenuitemAccessible::NativeState();

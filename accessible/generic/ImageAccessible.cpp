@@ -42,7 +42,7 @@ ImageAccessible::~ImageAccessible()
 
 
 uint64_t
-ImageAccessible::NativeState()
+ImageAccessible::NativeState() const
 {
   
   

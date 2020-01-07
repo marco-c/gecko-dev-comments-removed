@@ -236,7 +236,7 @@ DocAccessible::Description(nsString& aDescription)
 
 
 uint64_t
-DocAccessible::NativeState()
+DocAccessible::NativeState() const
 {
   
   uint64_t state = states::FOCUSABLE; 

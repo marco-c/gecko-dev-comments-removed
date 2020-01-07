@@ -293,7 +293,7 @@ public:
 
 
 
-  virtual uint64_t NativeState();
+  virtual uint64_t NativeState() const;
 
   
 

@@ -37,7 +37,7 @@ public:
 
   
   virtual mozilla::a11y::role NativeRole() const override;
-  virtual uint64_t NativeState() override;
+  virtual uint64_t NativeState() const override;
 
   
   virtual uint8_t ActionCount() const override;
@@ -71,7 +71,7 @@ public:
 
   
   virtual mozilla::a11y::role NativeRole() const override;
-  virtual uint64_t NativeState() override;
+  virtual uint64_t NativeState() const override;
 
   
   virtual uint8_t ActionCount() const override;
@@ -90,7 +90,7 @@ public:
 
   
   virtual mozilla::a11y::role NativeRole() const override;
-  virtual uint64_t NativeState() override;
+  virtual uint64_t NativeState() const override;
 
   
   virtual uint8_t ActionCount() const override;
@@ -128,7 +128,7 @@ public:
   XULRadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual uint64_t NativeState() override;
+  virtual uint64_t NativeState() const override;
   virtual uint64_t NativeInteractiveState() const override;
 
   
@@ -208,7 +208,7 @@ public:
 
   
   virtual mozilla::a11y::role NativeRole() const override;
-  virtual uint64_t NativeState() override;
+  virtual uint64_t NativeState() const override;
 };
 
 } 

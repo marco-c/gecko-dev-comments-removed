@@ -79,7 +79,7 @@ XULLabelAccessible::NativeRole() const
 }
 
 uint64_t
-XULLabelAccessible::NativeState()
+XULLabelAccessible::NativeState() const
 {
   
   
@@ -133,7 +133,7 @@ XULLabelTextLeafAccessible::NativeRole() const
 }
 
 uint64_t
-XULLabelTextLeafAccessible::NativeState()
+XULLabelTextLeafAccessible::NativeState() const
 {
   return TextLeafAccessibleWrap::NativeState() | states::READONLY;
 }
@@ -150,7 +150,7 @@ XULTooltipAccessible::
 }
 
 uint64_t
-XULTooltipAccessible::NativeState()
+XULTooltipAccessible::NativeState() const
 {
   return LeafAccessible::NativeState() | states::READONLY;
 }
