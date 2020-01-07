@@ -46,7 +46,10 @@ PDFiumProcessChild::Init(int aArgc, char* aArgv[])
   
   
   
-  mPDFium = PR_LoadLibrary("pdfium.dll");
+  PRLibSpec libSpec;
+  libSpec.type = PR_LibSpec_PathnameU;
+  libSpec.value.pathname_u = char16ptr_t(u"pdfium.dll");
+  mPDFium = PR_LoadLibraryWithFlags(libSpec, 0);
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #endif
 

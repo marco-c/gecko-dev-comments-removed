@@ -33,7 +33,7 @@ public:
   
   
   static already_AddRefed<PDFiumEngineShim>
-  GetInstanceOrNull(const nsCString& aLibrary);
+  GetInstanceOrNull(const nsString& aLibrary);
 
   FPDF_DOCUMENT LoadDocument(FPDF_STRING file_path,
                              FPDF_BYTESTRING aPassword);
@@ -54,7 +54,7 @@ public:
 private:
   PDFiumEngineShim();
   ~PDFiumEngineShim();
-  bool Init(const nsCString& aLibrary);
+  bool Init(const nsString& aLibrary);
 
   UniquePtr<PDFFunctionPointerTable> mTable;
   bool        mInitialized ;
