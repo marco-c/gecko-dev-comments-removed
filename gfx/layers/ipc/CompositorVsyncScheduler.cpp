@@ -211,24 +211,28 @@ void
 CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  {
+  MOZ_ASSERT(mVsyncSchedulerOwner);
+
+  { 
     MonitorAutoLock lock(mCurrentCompositeTaskMonitor);
     mCurrentCompositeTask = nullptr;
   }
 
-  if ((aVsyncTimestamp < mLastCompose) && !mAsapScheduling) {
+  if (!mAsapScheduling) {
     
-    
-    
-    return;
-  }
+    if (aVsyncTimestamp < mLastCompose) {
+      
+      
+      
+      return;
+    }
 
-  MOZ_ASSERT(mVsyncSchedulerOwner);
-  if (!mAsapScheduling && mVsyncSchedulerOwner->IsPendingComposite()) {
-    
-    
-    mVsyncSchedulerOwner->FinishPendingComposite();
-    return;
+    if (mVsyncSchedulerOwner->IsPendingComposite()) {
+      
+      
+      mVsyncSchedulerOwner->FinishPendingComposite();
+      return;
+    }
   }
 
   DispatchTouchEvents(aVsyncTimestamp);
@@ -236,7 +240,10 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
   if (mNeedsComposite || mAsapScheduling) {
     mNeedsComposite = 0;
     mLastCompose = aVsyncTimestamp;
+
+    
     mVsyncSchedulerOwner->CompositeToTarget(nullptr, nullptr);
+
     mVsyncNotificationsSkipped = 0;
 
     TimeDuration compositeFrameTotal = TimeStamp::Now() - aVsyncTimestamp;

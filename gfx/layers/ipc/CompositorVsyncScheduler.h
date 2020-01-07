@@ -58,7 +58,6 @@ public:
   void ScheduleComposition();
   void CancelCurrentCompositeTask();
   bool NeedsComposite();
-  void Composite(TimeStamp aVsyncTimestamp);
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect);
 
   const TimeStamp& GetLastComposeTime()
@@ -86,6 +85,10 @@ private:
   
   
   void PostVRTask(TimeStamp aTimestamp);
+
+  
+  
+  void Composite(TimeStamp aVsyncTimestamp);
 
   void NotifyCompositeTaskExecuted();
   void ObserveVsync();
