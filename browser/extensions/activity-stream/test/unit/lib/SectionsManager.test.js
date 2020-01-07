@@ -1,5 +1,5 @@
 "use strict";
-import {CONTENT_MESSAGE_TYPE, MAIN_MESSAGE_TYPE} from "common/Actions.jsm";
+import {CONTENT_MESSAGE_TYPE, MAIN_MESSAGE_TYPE, PRELOAD_MESSAGE_TYPE} from "common/Actions.jsm";
 import {EventEmitter, GlobalOverrider} from "test/unit/utils";
 import {SectionsFeed, SectionsManager} from "lib/SectionsManager.jsm";
 
@@ -355,7 +355,8 @@ describe("SectionsFeed", () => {
       assert.equal(action.type, "SECTION_UPDATE");
       assert.deepEqual(action.data, {id: FAKE_ID, rows: FAKE_ROWS});
       
-      assert.notOk(action.meta);
+      assert.equal(action.meta.from, MAIN_MESSAGE_TYPE);
+      assert.equal(action.meta.to, PRELOAD_MESSAGE_TYPE);
     });
     it("should broadcast the action only if shouldBroadcast is true", () => {
       feed.onUpdateSection(null, FAKE_ID, {rows: FAKE_ROWS}, true);
@@ -376,7 +377,8 @@ describe("SectionsFeed", () => {
       assert.equal(action.type, "SECTION_UPDATE_CARD");
       assert.deepEqual(action.data, {id: FAKE_ID, url: FAKE_URL, options: FAKE_CARD_OPTIONS});
       
-      assert.notOk(action.meta);
+      assert.equal(action.meta.from, MAIN_MESSAGE_TYPE);
+      assert.equal(action.meta.to, PRELOAD_MESSAGE_TYPE);
     });
     it("should broadcast the action only if shouldBroadcast is true", () => {
       feed.onUpdateSectionCard(null, FAKE_ID, FAKE_URL, FAKE_CARD_OPTIONS, true);

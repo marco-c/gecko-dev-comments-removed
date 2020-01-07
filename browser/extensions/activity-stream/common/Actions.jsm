@@ -5,6 +5,7 @@
 
 this.MAIN_MESSAGE_TYPE = "ActivityStream:Main";
 this.CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+this.PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
 this.UI_CODE = 1;
 this.BACKGROUND_PROCESS = 2;
 
@@ -161,6 +162,19 @@ function SendToContent(action, target) {
 
 
 
+function SendToPreloaded(action) {
+  return _RouteMessage(action, {
+    from: MAIN_MESSAGE_TYPE,
+    to: PRELOAD_MESSAGE_TYPE
+  });
+}
+
+
+
+
+
+
+
 
 function UserEvent(data) {
   return SendToMain({
@@ -229,6 +243,7 @@ this.actionCreators = {
   ImpressionStats,
   SendToContent,
   SendToMain,
+  SendToPreloaded,
   SetPref
 };
 
@@ -258,6 +273,13 @@ this.actionUtils = {
     }
     return false;
   },
+  isSendToPreloaded(action) {
+    if (!action.meta) {
+      return false;
+    }
+    return action.meta.to === PRELOAD_MESSAGE_TYPE &&
+      action.meta.from === MAIN_MESSAGE_TYPE;
+  },
   isFromMain(action) {
     if (!action.meta) {
       return false;
@@ -279,5 +301,6 @@ this.EXPORTED_SYMBOLS = [
   "UI_CODE",
   "BACKGROUND_PROCESS",
   "MAIN_MESSAGE_TYPE",
-  "CONTENT_MESSAGE_TYPE"
+  "CONTENT_MESSAGE_TYPE",
+  "PRELOAD_MESSAGE_TYPE"
 ];

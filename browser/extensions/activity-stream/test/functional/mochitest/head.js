@@ -1,5 +1,8 @@
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
+  "resource://testing-common/PlacesTestUtils.jsm");
+
 function popPrefs() {
   return SpecialPowers.popPrefEnv();
 }
@@ -13,6 +16,11 @@ const ACTIVITY_STREAM_PREF = "browser.newtabpage.activity-stream.enabled";
 pushPrefs([ACTIVITY_STREAM_PREF, true]);
 gBrowser.removePreloadedBrowser();
 
+async function clearHistoryAndBookmarks() { 
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.history.clear();
+}
+
 
 
 
@@ -23,6 +31,36 @@ async function waitForPreloaded(browser) {
   if (readyState !== "complete") {
     await BrowserTestUtils.browserLoaded(browser);
   }
+}
+
+
+
+
+function refreshHighlightsFeed() {
+  
+  Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.section.highlights", false);
+  Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.section.highlights", true);
+}
+
+
+
+
+
+async function addHighlightsBookmarks(count) { 
+  const bookmarks = new Array(count).fill(null).map((entry, i) => ({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    title: "foo",
+    url: `https://mozilla${i}.com/nowNew`
+  }));
+
+  for (let placeInfo of bookmarks) {
+    await PlacesUtils.bookmarks.insert(placeInfo);
+    
+    await PlacesTestUtils.addVisits(placeInfo.url);
+  }
+
+  
+  refreshHighlightsFeed();
 }
 
 

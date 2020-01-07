@@ -158,7 +158,7 @@ this.TopSitesFeed = class TopSitesFeed {
       this.store.dispatch(ac.BroadcastToContent(newAction));
     } else {
       
-      this.store.dispatch(ac.SendToMain(newAction));
+      this.store.dispatch(ac.SendToPreloaded(newAction));
     }
   }
 

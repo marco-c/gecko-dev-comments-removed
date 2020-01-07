@@ -68,6 +68,8 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
         this.send(action);
       } else if (au.isBroadcastToContent(action)) {
         this.broadcast(action);
+      } else if (au.isSendToPreloaded(action)) {
+        this.sendToPreloaded(action);
       }
 
       if (!skipMain) {
@@ -123,6 +125,40 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
       }
     }
     return null;
+  }
+
+  
+
+
+
+
+  sendToPreloaded(action) {
+    const preloadedBrowsers = this.getPreloadedBrowser();
+    if (preloadedBrowsers && action.data) {
+      for (let preloadedBrowser of preloadedBrowsers) {
+        try {
+          preloadedBrowser.sendAsyncMessage(this.outgoingMessageName, action);
+        } catch (e) {
+          
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  getPreloadedBrowser() {
+    let preloadedPorts = [];
+    for (let port of this.channel.messagePorts) {
+      if (port.browser.getAttribute("preloadedState") === "preloaded") {
+        preloadedPorts.push(port);
+      }
+    }
+    return preloadedPorts.length ? preloadedPorts : null;
   }
 
   

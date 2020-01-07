@@ -21,7 +21,7 @@ const TOPIC_LOCALES_CHANGE = "intl:requested-locales-changed";
 
 
 
-const ACTIVITY_STREAM_LOCALES = new Set("en-US ach ar ast az be bg bn-BD bn-IN br bs ca cak cs cy da de dsb el en-GB eo es-AR es-CL es-ES es-MX et eu fa ff fi fr fy-NL ga-IE gd gl gn gu-IN he hi-IN hr hsb hu hy-AM ia id it ja ka kab kk km kn ko lij lo lt ltg lv mk ml mr ms my nb-NO ne-NP nl nn-NO pa-IN pl pt-BR pt-PT rm ro ru si sk sl sq sr sv-SE ta te th tl tr uk ur uz vi zh-CN zh-TW".split(" "));
+const ACTIVITY_STREAM_LOCALES = "en-US ach ar ast az be bg bn-BD bn-IN br bs ca cak cs cy da de dsb el en-GB eo es-AR es-CL es-ES es-MX et eu fa ff fi fr fy-NL ga-IE gd gl gn gu-IN he hi-IN hr hsb hu hy-AM ia id it ja ka kab kk km kn ko lij lo lt ltg lv mk ml mr ms my nb-NO ne-NP nl nn-NO pa-IN pl pt-BR pt-PT rm ro ru si sk sl sq sr sv-SE ta te th tl tr uk ur uz vi zh-CN zh-TW".split(" ");
 
 const ABOUT_URL = "about:newtab";
 
@@ -179,26 +179,14 @@ AboutNewTabService.prototype = {
 
   updatePrerenderedPath() {
     
-    let path;
-    if (this._activityStreamDebug) {
-      path = "static";
-    } else {
+    this._activityStreamPath = `${this._activityStreamDebug ? "static" :
       
-      const locale = Services.locale.getRequestedLocale();
-      if (ACTIVITY_STREAM_LOCALES.has(locale)) {
-        path = locale;
-      } else {
+      Services.locale.negotiateLanguages(
+        Services.locale.getAppLocalesAsLangTags(),
+        ACTIVITY_STREAM_LOCALES,
         
-        const language = locale.split("-")[0];
-        if (ACTIVITY_STREAM_LOCALES.has(language)) {
-          path = language;
-        } else {
-          
-          path = "en-US";
-        }
-      }
-    }
-    this._activityStreamPath = `${path}/`;
+        "en-US"
+      )[0]}/`;
   },
 
   
