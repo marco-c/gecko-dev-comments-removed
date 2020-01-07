@@ -880,7 +880,8 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
   }
 
   
-  mGIFStruct.pixels_remaining = frameRect.Width() * frameRect.Height();
+  mGIFStruct.pixels_remaining =
+    int64_t(frameRect.Width()) * int64_t(frameRect.Height());
 
   if (haveLocalColorTable) {
     
