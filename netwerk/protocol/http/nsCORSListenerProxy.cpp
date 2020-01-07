@@ -584,7 +584,7 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
   
   rv = http->VisitOriginalResponseHeaders(visitor);
   if (NS_FAILED(rv)) {
-    LogBlockedRequest(aRequest, "CORSAllowOriginNotMatchingOrigin", nullptr, topChannel);
+    LogBlockedRequest(aRequest, "CORSMultipleAllowOriginNotAllowed", nullptr, topChannel);
     return rv;
   }
 
