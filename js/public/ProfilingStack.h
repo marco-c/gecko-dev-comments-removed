@@ -15,7 +15,7 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
-class JS_PUBLIC_API(JSTracer);
+class JSTracer;
 class PseudoStack;
 
 
