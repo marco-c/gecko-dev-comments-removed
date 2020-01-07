@@ -71,6 +71,17 @@ public:
 
 
 
+
+class nsATimerAdjustmentObserver {
+public:
+  virtual void NotifyTimerAdjusted(mozilla::TimeStamp aTime) = 0;
+};
+
+
+
+
+
+
 class nsAPostRefreshObserver {
 public:
   virtual void DidRefresh() = 0;
@@ -132,6 +143,12 @@ public:
                           mozilla::FlushType aFlushType);
   bool RemoveRefreshObserver(nsARefreshObserver *aObserver,
                              mozilla::FlushType aFlushType);
+  
+
+
+
+  bool AddTimerAdjustmentObserver(nsATimerAdjustmentObserver *aObserver);
+  bool RemoveTimerAdjustmentObserver(nsATimerAdjustmentObserver *aObserver);
 
   void PostScrollEvent(mozilla::Runnable* aScrollEvent);
   void DispatchScrollEvents();
@@ -425,6 +442,7 @@ private:
   void StopTimer();
 
   bool HasObservers() const;
+  
   uint32_t ObserverCount() const;
   bool HasImageRequests() const;
   ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
@@ -507,6 +525,12 @@ private:
 
   
   ObserverArray mObservers[4];
+  
+  
+  
+  
+  
+  nsTObserverArray<nsATimerAdjustmentObserver*> mTimerAdjustmentObservers;
   RequestTable mRequests;
   ImageStartTable mStartTable;
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;
