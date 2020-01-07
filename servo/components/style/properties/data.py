@@ -210,7 +210,7 @@ class Longhand(object):
             
             self.animatable = False
             self.transitionable = False
-            self.animation_type = None
+            self.animation_value_type = None
 
         
         self.servo_restyle_damage = servo_restyle_damage
