@@ -895,7 +895,11 @@ gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
     }
 
     
-    if (mFontDataLoadingState != LOADING_TIMED_OUT) {
+    
+    if (mFontDataLoadingState == LOADING_TIMED_OUT) {
+      mFontDataLoadingState = LOADING_FAILED;
+      SetLoadState(STATUS_FAILED);
+    } else {
       LoadNextSrc();
     }
 
