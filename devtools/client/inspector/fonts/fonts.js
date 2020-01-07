@@ -479,7 +479,8 @@ class FontInspector {
 
 
 
-  async onToggleFontHighlight(font, show, isForCurrentElement) {
+
+  async onToggleFontHighlight(font, show, isForCurrentElement = true) {
     if (!this.fontsHighlighter) {
       try {
         this.fontsHighlighter = await this.inspector.toolbox.highlighterUtils

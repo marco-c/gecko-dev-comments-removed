@@ -23,6 +23,7 @@ class FontEditor extends PureComponent {
       fontEditor: PropTypes.shape(Types.fontEditor).isRequired,
       onInstanceChange: PropTypes.func.isRequired,
       onPropertyChange: PropTypes.func.isRequired,
+      onToggleFontHighlight: PropTypes.func.isRequired,
     };
   }
 
@@ -79,7 +80,7 @@ class FontEditor extends PureComponent {
     });
   }
 
-  renderFontFamily(font) {
+  renderFontFamily(font, onToggleFontHighlight) {
     return dom.label(
       {
         className: "font-control font-control-family",
@@ -94,7 +95,7 @@ class FontEditor extends PureComponent {
         {
           className: "font-control-box",
         },
-        FontMeta({ font })
+        FontMeta({ font, onToggleFontHighlight })
       )
     );
   }
@@ -180,7 +181,8 @@ class FontEditor extends PureComponent {
   }
 
   render() {
-    const { fonts, axes, instance, properties } = this.props.fontEditor;
+    const { fontEditor, onToggleFontHighlight } = this.props;
+    const { fonts, axes, instance, properties } = fontEditor;
     const usedFonts = fonts.filter(font => font.used);
     
     
@@ -197,7 +199,7 @@ class FontEditor extends PureComponent {
     return dom.div(
       {},
       
-      this.renderFontFamily(font),
+      this.renderFontFamily(font, onToggleFontHighlight),
       
       hasFontInstances && this.renderInstances(font.variationInstances, instance),
       
