@@ -510,7 +510,7 @@ extern const ConstInfo sConsts[];
 extern const mozilla::dom::NativePropertyHooks* sPropHooks[];
 
 
-static const uint16_t kPHFSize = 256;
+static const uint16_t kPHFSize = 512;
 extern const uint32_t sPHF_IIDs[]; 
 extern const uint32_t sPHF_Names[]; 
 extern const uint16_t sPHF_NamesIdxs[]; 

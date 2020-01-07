@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 
 
-PHFSIZE = 256
+PHFSIZE = 512
 
 def indented(s):
     return s.replace('\n', '\n  ')
