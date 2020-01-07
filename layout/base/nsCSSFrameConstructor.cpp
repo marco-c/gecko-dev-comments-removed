@@ -7099,15 +7099,13 @@ InvalidateCanvasIfNeeded(nsIPresShell* presShell, nsIContent* node);
 
 #ifdef MOZ_XUL
 
-static
-bool
+static bool
 IsXULListBox(nsIContent* aContainer)
 {
-  return (aContainer->IsXULElement(nsGkAtoms::listbox));
+  return aContainer->IsXULElement(nsGkAtoms::listbox);
 }
 
-static
-nsListBoxBodyFrame*
+static nsListBoxBodyFrame*
 MaybeGetListBoxBodyFrame(nsIContent* aContainer, nsIContent* aChild)
 {
   if (!aContainer)
@@ -7617,13 +7615,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     return;
   }
 
-  
-  
-  
-  if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
-    StyleNewChildRange(aFirstNewContent, nullptr);
-  }
-
   LAYOUT_PHASE_TEMP_EXIT();
   InsertionPoint insertion =
     GetRangeInsertionPoint(aContainer, aFirstNewContent, nullptr);
@@ -7631,6 +7622,13 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   LAYOUT_PHASE_TEMP_REENTER();
   if (!parentFrame) {
     return;
+  }
+
+  
+  
+  
+  if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
+    StyleNewChildRange(aFirstNewContent, nullptr);
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7874,42 +7872,32 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
 #ifdef MOZ_XUL
 
-enum content_operation
-{
-    CONTENT_INSERTED,
-    CONTENT_REMOVED
-};
 
 
-
-static
-bool NotifyListBoxBody(nsPresContext*    aPresContext,
-                         nsIContent*        aContainer,
-                         nsIContent*        aChild,
-                         
-                         nsIContent*        aOldNextSibling,
-                         nsIFrame*          aChildFrame,
-                         content_operation  aOperation)
+static bool
+MaybeNotifyListBoxBodyOfRemoval(nsPresContext* aPresContext,
+                                nsIContent* aContainer,
+                                nsIContent* aChild,
+                                nsIContent* aOldNextSibling,
+                                nsIFrame* aChildFrame)
 {
   nsListBoxBodyFrame* listBoxBodyFrame =
     MaybeGetListBoxBodyFrame(aContainer, aChild);
-  if (listBoxBodyFrame) {
-    if (aOperation == CONTENT_REMOVED) {
-      
-      
-      if (!aChildFrame || aChildFrame->GetParent() == listBoxBodyFrame) {
-        listBoxBodyFrame->OnContentRemoved(aPresContext, aContainer,
-                                           aChildFrame, aOldNextSibling);
-        return true;
-      }
-    } else {
-      listBoxBodyFrame->OnContentInserted(aChild);
-      return true;
-    }
+  if (!listBoxBodyFrame) {
+    return false;
   }
 
-  return false;
+  
+  
+  if (aChildFrame && aChildFrame->GetParent() != listBoxBodyFrame) {
+    return false;
+  }
+
+  listBoxBodyFrame->OnContentRemoved(
+    aPresContext, aContainer, aChildFrame, aOldNextSibling);
+  return true;
 }
+
 #endif 
 
 void
@@ -8008,12 +7996,11 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 #ifdef MOZ_XUL
   if (aContainer && IsXULListBox(aContainer)) {
     
-    styleNewChildRangeEagerly();
     if (isSingleInsert) {
-      if (NotifyListBoxBody(mPresShell->GetPresContext(), aContainer,
-                            
-                            
-                            aStartChild, nullptr, nullptr, CONTENT_INSERTED)) {
+      if (nsListBoxBodyFrame* listBoxBodyFrame =
+            MaybeGetListBoxBodyFrame(aContainer, aStartChild)) {
+        styleNewChildRangeEagerly();
+        listBoxBodyFrame->OnContentInserted(aStartChild);
         return;
       }
     } else {
@@ -8102,10 +8089,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
-  
-  
-  styleNewChildRangeEagerly();
-
   InsertionPoint insertion;
   if (isSingleInsert) {
     
@@ -8123,6 +8106,11 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   if (!insertion.mParentFrame) {
     return;
   }
+
+  
+  
+  
+  styleNewChildRangeEagerly();
 
   bool isAppend, isRangeInsertSafe;
   nsIFrame* prevSibling = GetInsertionPrevSibling(&insertion, aStartChild,
@@ -8560,8 +8548,8 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   }
 
 #ifdef MOZ_XUL
-  if (NotifyListBoxBody(presContext, aContainer, aChild, aOldNextSibling,
-                        childFrame, CONTENT_REMOVED)) {
+  if (MaybeNotifyListBoxBodyOfRemoval(
+        presContext, aContainer, aChild, aOldNextSibling, childFrame)) {
     return false;
   }
 #endif 
