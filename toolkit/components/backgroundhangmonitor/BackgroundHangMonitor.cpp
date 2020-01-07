@@ -202,9 +202,9 @@ public:
   
   HangStack mHangStack;
   
-  BackgroundHangAnnotations mAnnotations;
+  HangMonitor::HangAnnotations mAnnotations;
   
-  BackgroundHangAnnotators mAnnotators;
+  HangMonitor::Observer::Annotators mAnnotators;
   
   nsCString mRunnableName;
   
@@ -488,6 +488,12 @@ BackgroundHangThread::ReportHang(TimeDuration aHangTime)
   
   
 
+  nsTArray<HangAnnotation> annotations;
+  for (auto& annotation : mAnnotations) {
+    HangAnnotation annot(annotation.mName, annotation.mValue);
+    annotations.AppendElement(mozilla::Move(annot));
+  }
+
   HangDetails hangDetails(
     aHangTime,
     nsDependentCString(XRE_ChildProcessTypeToString(XRE_GetProcessType())),
@@ -495,7 +501,7 @@ BackgroundHangThread::ReportHang(TimeDuration aHangTime)
     mThreadName,
     mRunnableName,
     Move(mHangStack),
-    Move(mAnnotations)
+    Move(annotations)
   );
 
   
@@ -761,7 +767,7 @@ BackgroundHangMonitor::NotifyWait()
 }
 
 bool
-BackgroundHangMonitor::RegisterAnnotator(BackgroundHangAnnotator& aAnnotator)
+BackgroundHangMonitor::RegisterAnnotator(HangMonitor::Annotator& aAnnotator)
 {
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   BackgroundHangThread* thisThread = BackgroundHangThread::FindThread();
@@ -775,7 +781,7 @@ BackgroundHangMonitor::RegisterAnnotator(BackgroundHangAnnotator& aAnnotator)
 }
 
 bool
-BackgroundHangMonitor::UnregisterAnnotator(BackgroundHangAnnotator& aAnnotator)
+BackgroundHangMonitor::UnregisterAnnotator(HangMonitor::Annotator& aAnnotator)
 {
 #ifdef MOZ_ENABLE_BACKGROUND_HANG_MONITOR
   BackgroundHangThread* thisThread = BackgroundHangThread::FindThread();

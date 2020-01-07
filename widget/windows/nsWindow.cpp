@@ -182,7 +182,7 @@
 
 #include "nsIContent.h"
 
-#include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/HangMonitor.h"
 #include "WinIMEHandler.h"
 
 #include "npapi.h"
@@ -4957,6 +4957,20 @@ DisplaySystemMenu(HWND hWnd, nsSizeMode sizeMode, bool isRtl, int32_t x, int32_t
   return false;
 }
 
+inline static mozilla::HangMonitor::ActivityType ActivityTypeForMessage(UINT msg)
+{
+  if ((msg >= WM_KEYFIRST && msg <= WM_IME_KEYLAST) ||
+      (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) ||
+      (msg >= MOZ_WM_MOUSEWHEEL_FIRST && msg <= MOZ_WM_MOUSEWHEEL_LAST) ||
+      (msg >= NS_WM_IMEFIRST && msg <= NS_WM_IMELAST)) {
+    return mozilla::HangMonitor::kUIActivity;
+  }
+
+  
+  
+  return mozilla::HangMonitor::kActivityUIAVail;
+}
+
 
 
 
@@ -4964,7 +4978,7 @@ LRESULT CALLBACK nsWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 {
   mozilla::ipc::CancelCPOWs();
 
-  BackgroundHangMonitor().NotifyActivity();
+  HangMonitor::NotifyActivity(ActivityTypeForMessage(msg));
 
   return mozilla::CallWindowProcCrashProtected(WindowProcInternal, hWnd, msg, wParam, lParam);
 }

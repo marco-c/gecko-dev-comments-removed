@@ -33,7 +33,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AutoTimelineMarker.h"
-#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/Base64.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
@@ -564,7 +563,7 @@ NS_IMPL_ISUPPORTS(nsContentUtils::nsContentUtilsReporter, nsIMemoryReporter)
 
 
 class nsContentUtils::UserInteractionObserver final : public nsIObserver
-                                                    , public BackgroundHangAnnotator
+                                                    , public HangMonitor::Annotator
 {
 public:
   NS_DECL_ISUPPORTS
@@ -572,7 +571,7 @@ public:
 
   void Init();
   void Shutdown();
-  void AnnotateHang(BackgroundHangAnnotations& aAnnotations) override;
+  void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) override;
 
   static Atomic<bool> sUserActive;
 
@@ -10797,7 +10796,7 @@ nsContentUtils::UserInteractionObserver::Init()
   RefPtr<UserInteractionObserver> self = this;
   NS_DispatchToMainThread(
     NS_NewRunnableFunction("nsContentUtils::UserInteractionObserver::Init",
-                           [=]() { BackgroundHangMonitor::RegisterAnnotator(*self); }));
+                           [=]() { HangMonitor::RegisterAnnotator(*self); }));
 }
 
 void
@@ -10809,7 +10808,7 @@ nsContentUtils::UserInteractionObserver::Shutdown()
     obs->RemoveObserver(this, kUserInteractionActive);
   }
 
-  BackgroundHangMonitor::UnregisterAnnotator(*this);
+  HangMonitor::UnregisterAnnotator(*this);
 }
 
 
@@ -10817,7 +10816,7 @@ nsContentUtils::UserInteractionObserver::Shutdown()
 
 
 void
-nsContentUtils::UserInteractionObserver::AnnotateHang(BackgroundHangAnnotations& aAnnotations)
+nsContentUtils::UserInteractionObserver::AnnotateHang(HangMonitor::HangAnnotations& aAnnotations)
 {
   
   if (sUserActive) {
