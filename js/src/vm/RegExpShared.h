@@ -28,10 +28,10 @@
 namespace js {
 
 class ArrayObject;
-class MatchPairs;
 class RegExpCompartment;
 class RegExpShared;
 class RegExpStatics;
+class VectorMatchPairs;
 
 using RootedRegExpShared = JS::Rooted<RegExpShared*>;
 using HandleRegExpShared = JS::Handle<RegExpShared*>;
@@ -159,7 +159,7 @@ class RegExpShared : public gc::TenuredCell
     
     static RegExpRunStatus execute(JSContext* cx, MutableHandleRegExpShared res,
                                    HandleLinearString input, size_t searchIndex,
-                                   MatchPairs* matches, size_t* endIndex);
+                                   VectorMatchPairs* matches, size_t* endIndex);
 
     
     bool addTable(JitCodeTable table) {

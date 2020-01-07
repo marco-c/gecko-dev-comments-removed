@@ -52,6 +52,7 @@ struct MatchPair
 };
 
 
+
 class MatchPairs
 {
   protected:
@@ -72,10 +73,6 @@ class MatchPairs
     friend class RegExpShared;
     friend class RegExpStatics;
 
-    
-    virtual bool allocOrExpandArray(size_t pairCount) = 0;
-
-    bool initArrayFrom(MatchPairs& copyFrom);
     void forgetArray() { pairs_ = nullptr; }
 
     void checkAgainst(size_t inputLength) {
@@ -114,37 +111,18 @@ class MatchPairs
     }
 };
 
-
-class ScopedMatchPairs : public MatchPairs
-{
-    LifoAllocScope lifoScope_;
-
-  public:
-    
-    explicit ScopedMatchPairs(LifoAlloc* lifoAlloc)
-      : lifoScope_(lifoAlloc)
-    { }
-
-  protected:
-    bool allocOrExpandArray(size_t pairCount) override;
-};
-
-
-
-
-
 class VectorMatchPairs : public MatchPairs
 {
     Vector<MatchPair, 10, SystemAllocPolicy> vec_;
 
-  public:
-    VectorMatchPairs() {
-        vec_.clear();
-    }
-
   protected:
+    friend class RegExpShared;
     friend class RegExpStatics;
-    bool allocOrExpandArray(size_t pairCount) override;
+
+    
+    bool allocOrExpandArray(size_t pairCount);
+
+    bool initArrayFrom(VectorMatchPairs& copyFrom);
 };
 
 } 
