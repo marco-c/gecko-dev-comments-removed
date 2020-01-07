@@ -90,6 +90,19 @@ function readFile(path) {
 
 
 
+
+function statPath(path) {
+  Components.utils.import("resource://gre/modules/osfile.jsm");
+  let promise = OS.File.stat(path).then(function (stat) {
+    return {ok: true};
+  }).catch(function (error) {
+    return {ok: false};
+  });
+  return promise;
+}
+
+
+
 function isContentFileIOSandboxed(level) {
   let fileIOSandboxMinLevel = 0;
 
@@ -347,6 +360,7 @@ async function testFileAccess() {
         browser:  webBrowser,                   
         file:     fontFile,                     
         minLevel: minHomeReadSandboxLevel(),    
+        func:     readFile,                     
       });
     }
     for (let fontPath of badFontTestPaths) {
@@ -360,6 +374,7 @@ async function testFileAccess() {
         browser:  webBrowser,                   
         file:     fontFile,                     
         minLevel: minHomeReadSandboxLevel(),    
+        func:     readFile,                     
       });
     }
   }
@@ -375,6 +390,7 @@ async function testFileAccess() {
       browser:  webBrowser,                   
       file:     profileDir,                   
       minLevel: minProfileReadSandboxLevel(), 
+      func:     readDir,
     });
   }
   if (fileContentProcessEnabled) {
@@ -384,6 +400,7 @@ async function testFileAccess() {
       browser:  fileBrowser,
       file:     profileDir,
       minLevel: 0,
+      func:     readDir,
     });
   }
 
@@ -394,6 +411,7 @@ async function testFileAccess() {
     browser:  webBrowser,
     file:     homeDir,
     minLevel: minHomeReadSandboxLevel(),
+    func:     readDir,
   });
   if (fileContentProcessEnabled) {
     tests.push({
@@ -402,6 +420,7 @@ async function testFileAccess() {
       browser:  fileBrowser,
       file:     homeDir,
       minLevel: 0,
+      func:     readDir,
     });
   }
 
@@ -412,6 +431,7 @@ async function testFileAccess() {
     browser:  webBrowser,
     file:     sysExtDevDir,
     minLevel: 0,
+    func:     readDir,
   });
 
   if (isWin()) {
@@ -422,6 +442,7 @@ async function testFileAccess() {
       browser:    webBrowser,
       file:       extDir,
       minLevel:   minHomeReadSandboxLevel(),
+      func:       readDir,
     });
   }
 
@@ -445,6 +466,7 @@ async function testFileAccess() {
         browser:  webBrowser,
         file:     homeTempDir,
         minLevel,
+        func:     readDir,
       });
     }
   }
@@ -465,6 +487,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     varDir,
       minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
     });
     if (fileContentProcessEnabled) {
       tests.push({
@@ -473,6 +496,7 @@ async function testFileAccess() {
         browser:  fileBrowser,
         file:     varDir,
         minLevel: 0,
+        func:     readDir,
       });
     }
   }
@@ -493,6 +517,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     macTempDir,
       minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
     });
     if (fileContentProcessEnabled) {
       tests.push({
@@ -501,6 +526,7 @@ async function testFileAccess() {
         browser:  fileBrowser,
         file:     macTempDir,
         minLevel: 0,
+        func:     readDir,
       });
     }
 
@@ -512,6 +538,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     volumes,
       minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
     });
     
     let network = GetDir("/Network");
@@ -521,6 +548,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     network,
       minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
     });
     
     let users = GetDir("/Users");
@@ -530,6 +558,69 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     users,
       minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
+    });
+
+    
+    tests.push({
+      desc:     "/Users",
+      ok:       true,
+      browser:  webBrowser,
+      file:     users,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     statPath,
+    });
+
+    
+    
+    
+    
+    
+    let libraryDir = GetDir("/Library");
+    tests.push({
+      desc:     "/Library",
+      ok:       true,
+      browser:  webBrowser,
+      file:     libraryDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     statPath,
+    });
+    tests.push({
+      desc:     "/Library",
+      ok:       false,
+      browser:  webBrowser,
+      file:     libraryDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     readDir,
+    });
+    let libraryWidgetsDir = GetDir("/Library/Widgets");
+    tests.push({
+      desc:     "/Library/Widgets",
+      ok:       false,
+      browser:  webBrowser,
+      file:     libraryWidgetsDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     statPath,
+    });
+
+    
+    let privateDir = GetDir("/private");
+    tests.push({
+      desc:     "/private",
+      ok:       true,
+      browser:  webBrowser,
+      file:     privateDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     statPath,
+    });
+    let privateEtcDir = GetFile("/private/etc");
+    tests.push({
+      desc:     "/private/etc",
+      ok:       false,
+      browser:  webBrowser,
+      file:     privateEtcDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func:     statPath,
     });
   }
 
@@ -541,6 +632,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     extensionsDir,
       minLevel: 0,
+      func:     readDir,
     });
   } else {
     ok(false, `${extensionsDir.path} is a valid dir`);
@@ -554,6 +646,7 @@ async function testFileAccess() {
       browser:  webBrowser,
       file:     chromeDir,
       minLevel: 0,
+      func:     readDir,
     });
   } else {
     ok(false, `${chromeDir.path} is valid dir`);
@@ -570,6 +663,7 @@ async function testFileAccess() {
         browser:  webBrowser,
         file:     cookiesFile,
         minLevel: minProfileReadSandboxLevel(),
+        func:     readFile,
       });
     }
     if (fileContentProcessEnabled) {
@@ -579,6 +673,7 @@ async function testFileAccess() {
         browser:  fileBrowser,
         file:     cookiesFile,
         minLevel: 0,
+        func:     readFile,
       });
     }
   } else {
@@ -589,12 +684,17 @@ async function testFileAccess() {
   tests = tests.filter((test) => (test.minLevel <= level));
 
   for (let test of tests) {
-    let testFunc = test.file.isDirectory() ? readDir : readFile;
     let okString = test.ok ? "allowed" : "blocked";
     let processType = test.browser === webBrowser ? "web" : "file";
 
+    
+    
+    if (test.func === statPath) {
+      ok(test.file.exists(), `${test.file.path} exists`);
+    }
+
     let result = await ContentTask.spawn(test.browser, test.file.path,
-        testFunc);
+        test.func);
 
     ok(result.ok == test.ok,
         `reading ${test.desc} from a ${processType} process ` +
@@ -602,7 +702,7 @@ async function testFileAccess() {
 
     
     
-    if (test.file.isDirectory() && !test.ok) {
+    if (test.func === readDir && !test.ok) {
       ok(result.numEntries == 0, `directory list is empty (${test.file.path})`);
     }
   }
