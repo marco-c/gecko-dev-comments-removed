@@ -1792,6 +1792,7 @@ CreateDependentString::generate(MacroAssembler& masm, const JSAtomState& names,
 
         
         
+        masm.branchPtrInNurseryChunk(Assembler::Equal, string, temp2, &done);
         masm.branchPtrInNurseryChunk(Assembler::NotEqual, temp1, temp2, &done);
 
         LiveRegisterSet regsToSave(RegisterSet::Volatile());
