@@ -374,11 +374,6 @@ public:
 
   nsresult SetOriginAttributes(const mozilla::OriginAttributes& aAttrs);
 
-  void GetInterceptedDocumentId(nsAString& aId)
-  {
-    aId = mInterceptedDocumentId;
-  }
-
 private:
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
@@ -1150,8 +1145,6 @@ protected:
   
   
   uint32_t mPrivateBrowsingId;
-
-  nsString mInterceptedDocumentId;
 
   
   

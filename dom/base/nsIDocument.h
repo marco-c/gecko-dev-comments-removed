@@ -1087,10 +1087,6 @@ public:
     return mAnonymousContents;
   }
 
-  static nsresult GenerateDocumentId(nsAString& aId);
-  nsresult GetOrCreateId(nsAString& aId);
-  void SetId(const nsAString& aId);
-
   mozilla::TimeStamp GetPageUnloadingEventTimeStamp() const
   {
     if (!mParentDocument) {
@@ -3333,11 +3329,6 @@ protected:
     FlushUserFontSet();
   }
 
-  const nsString& GetId() const
-  {
-    return mId;
-  }
-
   
   
   
@@ -3696,7 +3687,6 @@ protected:
   nsCOMPtr<nsIChannel> mChannel;
 private:
   nsCString mContentType;
-  nsString mId;
 protected:
 
   
