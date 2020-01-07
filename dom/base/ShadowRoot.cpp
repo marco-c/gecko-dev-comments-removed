@@ -301,8 +301,6 @@ ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = true;
   aVisitor.mRootOfClosedTree = IsClosed();
-  
-  aVisitor.mRelatedTargetRetargetedInCurrentScope = false;
 
   
   if (!aVisitor.mEvent->mFlags.mComposed) {
@@ -325,10 +323,12 @@ ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   nsIContent* shadowHost = GetHost();
   aVisitor.SetParentTarget(shadowHost, false);
 
-  nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mEvent->mTarget));
-  if (content && content->GetBindingParent() == shadowHost) {
-    aVisitor.mEventTargetAtParent = shadowHost;
-  }
+  if (aVisitor.mOriginalTargetIsInAnon) {
+    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mEvent->mTarget));
+    if (content && content->GetBindingParent() == shadowHost) {
+      aVisitor.mEventTargetAtParent = shadowHost;
+    }
+ }
 
   return NS_OK;
 }

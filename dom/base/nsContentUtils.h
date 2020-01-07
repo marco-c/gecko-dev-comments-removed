@@ -332,13 +332,6 @@ public:
 
 
 
-  static bool ContentIsShadowIncludingDescendantOf(
-    const nsINode* aPossibleDescendant, const nsINode* aPossibleAncestor);
-
-  
-
-
-
 
   static bool ContentIsCrossDocDescendantOf(nsINode* aPossibleDescendant,
                                               nsINode* aPossibleAncestor);
@@ -362,13 +355,6 @@ public:
   static bool
   ContentIsFlattenedTreeDescendantOfForStyle(const nsINode* aPossibleDescendant,
                                              const nsINode* aPossibleAncestor);
-
-  
-
-
-
-  static nsINode*
-  Retarget(nsINode* aTargetA, nsINode* aTargetB);
 
   
 

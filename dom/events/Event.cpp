@@ -154,7 +154,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Event)
     tmp->mEvent->mCurrentTarget = nullptr;
     tmp->mEvent->mOriginalTarget = nullptr;
     tmp->mEvent->mRelatedTarget = nullptr;
-    tmp->mEvent->mOriginalRelatedTarget = nullptr;
     switch (tmp->mEvent->mClass) {
       case eDragEventClass: {
         WidgetDragEvent* dragEvent = tmp->mEvent->AsDragEvent();
@@ -183,7 +182,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Event)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->mCurrentTarget)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->mOriginalTarget)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->mRelatedTarget)
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEvent->mOriginalRelatedTarget);
     switch (tmp->mEvent->mClass) {
       case eDragEventClass: {
         WidgetDragEvent* dragEvent = tmp->mEvent->AsDragEvent();
@@ -545,11 +543,19 @@ Event::EnsureWebAccessibleRelatedTarget(EventTarget* aRelatedTarget)
   nsCOMPtr<EventTarget> relatedTarget = aRelatedTarget;
   if (relatedTarget) {
     nsCOMPtr<nsIContent> content = do_QueryInterface(relatedTarget);
+    nsCOMPtr<nsIContent> currentTarget =
+      do_QueryInterface(mEvent->mCurrentTarget);
 
     if (content && content->ChromeOnlyAccess() &&
         !nsContentUtils::CanAccessNativeAnon()) {
       content = content->FindFirstNonChromeOnlyAccessContent();
       relatedTarget = do_QueryInterface(content);
+    }
+
+    nsIContent* shadowRelatedTarget =
+      GetShadowRelatedTarget(currentTarget, content);
+    if (shadowRelatedTarget) {
+      relatedTarget = shadowRelatedTarget;
     }
 
     if (relatedTarget) {
@@ -1210,6 +1216,44 @@ Event::SetOwner(EventTarget* aOwner)
   nsCOMPtr<nsPIWindowRoot> root = do_QueryInterface(aOwner);
   MOZ_ASSERT(root, "Unexpected EventTarget!");
 #endif
+}
+
+
+nsIContent*
+Event::GetShadowRelatedTarget(nsIContent* aCurrentTarget,
+                              nsIContent* aRelatedTarget)
+{
+  if (!aCurrentTarget || !aRelatedTarget) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  ShadowRoot* currentTargetShadow = aCurrentTarget->GetContainingShadow();
+  if (!currentTargetShadow) {
+    return nullptr;
+  }
+
+  nsIContent* relatedTarget = aCurrentTarget;
+  while (relatedTarget) {
+    ShadowRoot* ancestorShadow = relatedTarget->GetContainingShadow();
+    if (currentTargetShadow == ancestorShadow) {
+      return relatedTarget;
+    }
+
+    
+    
+    if (!ancestorShadow) {
+      return nullptr;
+    }
+
+    relatedTarget = ancestorShadow->GetHost();
+  }
+
+  return nullptr;
 }
 
 void

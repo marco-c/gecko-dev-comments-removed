@@ -917,22 +917,6 @@ FindChromeAccessOnlySubtreeOwner(nsIContent* aContent)
   return aContent;
 }
 
-already_AddRefed<nsINode>
-FindChromeAccessOnlySubtreeOwner(EventTarget* aTarget)
-{
-  nsCOMPtr<nsINode> node = do_QueryInterface(aTarget);
-  if (!node || !node->ChromeOnlyAccess()) {
-    return node.forget();
-  }
-
-  if (!node->IsContent()) {
-    return nullptr;
-  }
-
-  node = FindChromeAccessOnlySubtreeOwner(node->AsContent());
-  return node.forget();
-}
-
 nsresult
 nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
@@ -953,11 +937,23 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
       
       
       ((this == aVisitor.mEvent->mOriginalTarget &&
-        !ChromeOnlyAccess()) || isAnonForEvents)) {
+        !ChromeOnlyAccess()) || isAnonForEvents || GetShadowRoot())) {
      nsCOMPtr<nsIContent> relatedTarget =
        do_QueryInterface(aVisitor.mEvent->AsMouseEvent()->mRelatedTarget);
     if (relatedTarget &&
         relatedTarget->OwnerDoc() == OwnerDoc()) {
+
+      
+      
+      if (GetShadowRoot()) {
+        nsIContent* adjustedTarget =
+          Event::GetShadowRelatedTarget(this, relatedTarget);
+        if (this == adjustedTarget) {
+          aVisitor.SetParentTarget(nullptr, false);
+          aVisitor.mCanHandle = false;
+          return NS_OK;
+        }
+      }
 
       
       
@@ -1074,104 +1070,6 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   } else {
     aVisitor.SetParentTarget(GetComposedDoc(), false);
   }
-
-  if (!ChromeOnlyAccess() && !aVisitor.mRelatedTargetRetargetedInCurrentScope) {
-    
-    aVisitor.mRelatedTargetRetargetedInCurrentScope = true;
-    if (aVisitor.mEvent->mOriginalRelatedTarget) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      bool initialTarget = this == aVisitor.mEvent->mOriginalTarget;
-      nsCOMPtr<nsINode> originalTargetAsNode;
-      
-      if (!initialTarget && aVisitor.mOriginalTargetIsInAnon) {
-        originalTargetAsNode =
-          FindChromeAccessOnlySubtreeOwner(aVisitor.mEvent->mOriginalTarget);
-        initialTarget = originalTargetAsNode == this;
-      }
-      if (initialTarget) {
-        nsCOMPtr<nsINode> relatedTargetAsNode =
-          FindChromeAccessOnlySubtreeOwner(aVisitor.mEvent->mOriginalRelatedTarget);
-        if (!originalTargetAsNode) {
-          originalTargetAsNode =
-            do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
-        }
-
-        if (relatedTargetAsNode && originalTargetAsNode) {
-          nsINode* retargetedRelatedTarget =
-            nsContentUtils::Retarget(relatedTargetAsNode, originalTargetAsNode);
-          if (originalTargetAsNode == retargetedRelatedTarget &&
-              retargetedRelatedTarget != relatedTargetAsNode) {
-            
-            
-            
-            aVisitor.IgnoreCurrentTarget();
-            
-            
-            
-            
-            aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
-            return NS_OK;
-          }
-
-          
-          
-          
-          
-          aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
-        }
-      } else {
-        nsCOMPtr<nsINode> relatedTargetAsNode =
-          FindChromeAccessOnlySubtreeOwner(aVisitor.mEvent->mOriginalRelatedTarget);
-        if (relatedTargetAsNode) {
-          
-          
-          
-          
-          nsINode* retargetedRelatedTarget =
-            nsContentUtils::Retarget(relatedTargetAsNode, this);
-          nsCOMPtr<nsINode> targetInKnownToBeHandledScope =
-            FindChromeAccessOnlySubtreeOwner(aVisitor.mTargetInKnownToBeHandledScope);
-          if (nsContentUtils::ContentIsShadowIncludingDescendantOf(
-                this, targetInKnownToBeHandledScope->SubtreeRoot())) {
-            
-            
-            
-            
-            
-            aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
-          } else if (this == retargetedRelatedTarget) {
-            
-            
-            
-            aVisitor.IgnoreCurrentTarget();
-            
-            
-            
-            
-            aVisitor.mEvent->mTarget = aVisitor.mTargetInKnownToBeHandledScope;
-            return NS_OK;
-          } else {
-            
-            aVisitor.mRetargetedRelatedTarget = retargetedRelatedTarget;
-          }
-        }
-      }
-    }
-  }
-
-  if (slot) {
-    
-    aVisitor.mRelatedTargetRetargetedInCurrentScope = false;
-  }
-
   return NS_OK;
 }
 
