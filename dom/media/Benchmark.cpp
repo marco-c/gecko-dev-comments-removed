@@ -41,7 +41,7 @@ bool VP9Benchmark::sHasRunTest = false;
 
 
 bool
-VP9Benchmark::IsVP9DecodeFast()
+VP9Benchmark::IsVP9DecodeFast(bool aDefault)
 {
   
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_APPLEMEDIA)
@@ -88,7 +88,7 @@ VP9Benchmark::IsVP9DecodeFast()
   }
 
   if (decodeFps == 0) {
-    return false;
+    return aDefault;
   }
 
   return decodeFps >= StaticPrefs::MediaBenchmarkVp9Threshold();
