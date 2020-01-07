@@ -3490,6 +3490,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       }
       containingPaintedLayerData->mDispatchToContentHitRegion.Or(
         containingPaintedLayerData->mDispatchToContentHitRegion, rect);
+      containingPaintedLayerData->mDispatchToContentHitRegion.SimplifyOutward(8);
       if (data->mDTCRequiresTargetConfirmation) {
         containingPaintedLayerData->mDTCRequiresTargetConfirmation = true;
       }
@@ -3817,6 +3818,7 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
   
   
   mMaybeHitRegion.SimplifyOutward(8);
+  mDispatchToContentHitRegion.SimplifyOutward(8);
 
   
   
@@ -3921,6 +3923,7 @@ PaintedLayerData::AccumulateHitTestInfo(ContainerState* aState,
   
   
   mMaybeHitRegion.SimplifyOutward(8);
+  mDispatchToContentHitRegion.SimplifyOutward(8);
 
   
   
