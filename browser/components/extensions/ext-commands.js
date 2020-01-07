@@ -8,41 +8,87 @@
 
 ChromeUtils.defineModuleGetter(this, "ExtensionParent",
                                "resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
+                               "resource://gre/modules/ExtensionSettingsStore.jsm");
 
 var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
+function normalizeShortcut(shortcut) {
+  return shortcut ? shortcut.replace(/\s+/g, "") : null;
+}
+
 this.commands = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
+  static async onUninstall(extensionId) {
+    
+    
+    
+    
+    await ExtensionSettingsStore.initialize();
+    ExtensionSettingsStore
+      .getAllForExtension(extensionId, "commands")
+      .forEach(key => {
+        ExtensionSettingsStore.removeSetting(extensionId, "commands", key);
+      });
+  }
+
+  async onManifestEntry(entryName) {
     let {extension} = this;
 
     this.id = makeWidgetId(extension.id);
     this.windowOpenListener = null;
 
     
-    this.commands = this.loadCommandsFromManifest(this.extension.manifest);
+    this.manifestCommands = this.loadCommandsFromManifest(extension.manifest);
+
+    this.commands = new Promise(async (resolve) => {
+      
+      
+      let commands = new Map();
+      this.manifestCommands.forEach((command, name) => {
+        commands.set(name, {...command});
+      });
+
+      
+      
+      let savedCommands = await this.loadCommandsFromStorage(extension.id);
+      savedCommands.forEach((update, name) => {
+        let command = commands.get(name);
+        if (command) {
+          
+          Object.assign(command, update);
+        }
+      });
+
+      resolve(commands);
+    });
 
     
     this.keysetsMap = new WeakMap();
 
-    this.register();
+    await this.register();
   }
 
   onShutdown(reason) {
     this.unregister();
   }
 
+  registerKeys(commands) {
+    for (let window of windowTracker.browserWindows()) {
+      this.registerKeysToDocument(window, commands);
+    }
+  }
+
   
 
 
 
-  register() {
-    for (let window of windowTracker.browserWindows()) {
-      this.registerKeysToDocument(window);
-    }
+  async register() {
+    let commands = await this.commands;
+    this.registerKeys(commands);
 
     this.windowOpenListener = (window) => {
       if (!this.keysetsMap.has(window)) {
-        this.registerKeysToDocument(window);
+        this.registerKeysToDocument(window, commands);
       }
     };
 
@@ -77,8 +123,7 @@ this.commands = class extends ExtensionAPI {
     let os = PlatformInfo.os == "win" ? "windows" : PlatformInfo.os;
     for (let [name, command] of Object.entries(manifest.commands)) {
       let suggested_key = command.suggested_key || {};
-      let shortcut = suggested_key[os] || suggested_key.default;
-      shortcut = shortcut ? shortcut.replace(/\s+/g, "") : null;
+      let shortcut = normalizeShortcut(suggested_key[os] || suggested_key.default);
       commands.set(name, {
         description: command.description,
         shortcut,
@@ -87,15 +132,29 @@ this.commands = class extends ExtensionAPI {
     return commands;
   }
 
+  async loadCommandsFromStorage(extensionId) {
+    await ExtensionSettingsStore.initialize();
+    let names = ExtensionSettingsStore.getAllForExtension(extensionId, "commands");
+    return names.reduce((map, name) => {
+      let command = ExtensionSettingsStore.getSetting(
+        "commands", name, extensionId).value;
+      return map.set(name, command);
+    }, new Map());
+  }
+
   
 
 
 
-  registerKeysToDocument(window) {
+
+  registerKeysToDocument(window, commands) {
     let doc = window.document;
     let keyset = doc.createElementNS(XUL_NS, "keyset");
     keyset.id = `ext-keyset-id-${this.id}`;
-    this.commands.forEach((command, name) => {
+    if (this.keysetsMap.has(window)) {
+      this.keysetsMap.get(window).remove();
+    }
+    commands.forEach((command, name) => {
       if (command.shortcut) {
         let keyElement = this.buildKey(doc, name, command.shortcut);
         keyset.appendChild(keyElement);
@@ -235,15 +294,46 @@ this.commands = class extends ExtensionAPI {
   getAPI(context) {
     return {
       commands: {
-        getAll: () => {
-          let commands = this.commands;
-          return Promise.resolve(Array.from(commands, ([name, command]) => {
+        getAll: async () => {
+          let commands = await this.commands;
+          return Array.from(commands, ([name, command]) => {
             return ({
               name,
               description: command.description,
               shortcut: command.shortcut,
             });
-          }));
+          });
+        },
+        update: async ({name, description, shortcut}) => {
+          let {extension} = this;
+          let commands = await this.commands;
+          let command = commands.get(name);
+
+          if (!command) {
+            throw new ExtensionError(`Unknown command "${name}"`);
+          }
+
+          
+          
+          let previousUpdates = await ExtensionSettingsStore.getSetting(
+            "commands", name, extension.id);
+          let commandUpdates = (previousUpdates && previousUpdates.value) || {};
+
+          if (description && description != command.description) {
+            commandUpdates.description = description;
+            command.description = description;
+          }
+
+          if (shortcut && shortcut != command.shortcut) {
+            shortcut = normalizeShortcut(shortcut);
+            commandUpdates.shortcut = shortcut;
+            command.shortcut = shortcut;
+          }
+
+          await ExtensionSettingsStore.addSetting(
+            extension.id, "commands", name, commandUpdates);
+
+          this.registerKeys(commands);
         },
         onCommand: new EventManager(context, "commands.onCommand", fire => {
           let listener = (eventName, commandName) => {
