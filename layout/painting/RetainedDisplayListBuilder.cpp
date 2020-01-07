@@ -1109,7 +1109,15 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(
 
   
   
-  const bool shouldBuildPartial = !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
+  bool shouldBuildPartial = !List()->IsEmpty() && ShouldBuildPartial(modifiedFrames.Frames());
+
+  
+  
+  
+  if (mBuilder.BuiltOverlayScrollbars()) {
+    shouldBuildPartial = false;
+    mBuilder.SetBuiltOverlayScrollbars(false);
+  }
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
