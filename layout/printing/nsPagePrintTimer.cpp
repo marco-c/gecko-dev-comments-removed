@@ -81,8 +81,11 @@ nsPagePrintTimer::Run()
   
   donePrinting = !mPrintEngine || mPrintEngine->PrintPage(mPrintObj, inRange);
   if (donePrinting) {
-    
-    if (!mPrintEngine || mPrintEngine->DonePrintingPages(mPrintObj, NS_OK)) {
+
+    if (mWaitingForRemotePrint ||
+        
+        
+        (!mPrintEngine || mPrintEngine->DonePrintingPages(mPrintObj, NS_OK))) {
       initNewTimer = false;
       mDone = true;
     }
@@ -179,6 +182,11 @@ nsPagePrintTimer::RemotePrintFinished()
 {
   if (!mWaitingForRemotePrint) {
     return;
+  }
+
+  
+  if (mDone && mPrintEngine) {
+    mDone = mPrintEngine->DonePrintingPages(mPrintObj, NS_OK);
   }
 
   mWaitingForRemotePrint->SetTarget(
