@@ -450,6 +450,15 @@ UseInternalJobQueues(JSContext* cx, bool cooperative = false);
 
 
 
+extern JS_FRIEND_API(bool)
+EnqueueJob(JSContext* cx, JS::HandleObject job);
+
+
+
+
+
+
+
 extern JS_FRIEND_API(void)
 StopDrainingJobQueue(JSContext* cx);
 
