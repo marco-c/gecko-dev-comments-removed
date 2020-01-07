@@ -722,7 +722,9 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     
     
-    GenerateDragGesture(aPresContext, mouseEvent);
+    if (!mInTouchDrag) {
+      GenerateDragGesture(aPresContext, mouseEvent);
+    }
     UpdateCursor(aPresContext, aEvent, mCurrentTarget, aStatus);
 
     UpdateLastRefPointOfMouseEvent(mouseEvent);
