@@ -539,7 +539,10 @@ FT2FontEntry::ReadCMAP(FontInfoData *aFontInfoData)
                                     *charmap, mUVSOffset);
     }
 
-    if (NS_SUCCEEDED(rv) && !HasGraphiteTables()) {
+    if (NS_SUCCEEDED(rv) && !mIsDataUserFont && !HasGraphiteTables()) {
+        
+        
+
         
         
         
