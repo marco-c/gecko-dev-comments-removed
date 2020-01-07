@@ -620,6 +620,11 @@ GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
     InitKeyEvent(event, aAction, aKeyCode, aScanCode, aMetaState, aTime,
                  aDomPrintableKeyValue, aRepeatCount, aFlags);
 
+    if (nsIWidget::UsePuppetWidgets()) {
+        
+        event.PreventNativeKeyBindings();
+    }
+
     if (aIsSynthesizedImeKey) {
         
         
@@ -645,13 +650,14 @@ GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
     InitKeyEvent(pressEvent, aAction, aKeyCode, aScanCode, aKeyPressMetaState,
                  aTime, aDomPrintableKeyValue, aRepeatCount, aFlags);
 
+    if (nsIWidget::UsePuppetWidgets()) {
+        
+        pressEvent.PreventNativeKeyBindings();
+    }
+
     if (aIsSynthesizedImeKey) {
         mIMEKeyEvents.AppendElement(
                 UniquePtr<WidgetEvent>(pressEvent.Duplicate()));
-    } else if (nsIWidget::UsePuppetWidgets()) {
-        
-        pressEvent.PreventNativeKeyBindings();
-        dispatcher->MaybeDispatchKeypressEvents(pressEvent, status);
     } else {
         dispatcher->MaybeDispatchKeypressEvents(pressEvent, status);
     }
@@ -987,10 +993,6 @@ GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
                 if (event->mMessage != eKeyPress) {
                     mDispatcher->DispatchKeyboardEvent(
                             event->mMessage, *event, status);
-                } else if (nsIWidget::UsePuppetWidgets()) {
-                    
-                    event->PreventNativeKeyBindings();
-                    mDispatcher->MaybeDispatchKeypressEvents(*event, status);
                 } else {
                     mDispatcher->MaybeDispatchKeypressEvents(*event, status);
                 }
