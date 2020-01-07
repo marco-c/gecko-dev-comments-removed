@@ -6111,9 +6111,6 @@ HTMLEditRules::GetInnerContent(
   }
 }
 
-
-
-
 nsresult
 HTMLEditRules::ExpandSelectionForDeletion()
 {
@@ -6142,7 +6139,7 @@ HTMLEditRules::ExpandSelectionForDeletion()
   int32_t selEndOffset = firstRange->EndOffset();
 
   
-  nsCOMPtr<Element> selCommon =
+  RefPtr<Element> selCommon =
     HTMLEditor::GetBlock(*firstRange->GetCommonAncestor());
   if (NS_WARN_IF(!selCommon)) {
     return NS_ERROR_FAILURE;
@@ -6215,6 +6212,9 @@ HTMLEditRules::ExpandSelectionForDeletion()
   
   DebugOnly<nsresult> rv =
     SelectionRef().Collapse(selStartNode, selStartOffset);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse selection");
 
   
@@ -6245,12 +6245,18 @@ HTMLEditRules::ExpandSelectionForDeletion()
   }
   if (doEndExpansion) {
     nsresult rv = SelectionRef().Extend(selEndNode, selEndOffset);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
     
     nsresult rv = SelectionRef().Extend(firstBRParent, firstBROffset);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

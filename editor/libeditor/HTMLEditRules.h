@@ -469,7 +469,14 @@ protected:
   enum class BRLocation { beforeBlock, blockEnd };
   Element* CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
                                int32_t aOffset = 0);
-  nsresult ExpandSelectionForDeletion();
+
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult ExpandSelectionForDeletion();
 
   
 
