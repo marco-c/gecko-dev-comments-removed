@@ -22,12 +22,12 @@ from taskgraph.util.cached_tasks import add_optimization
 run_schema = Schema({
     Required('using'): 'debian-package',
     
-    Required('dist'): basestring,
+    Optional('dist'): basestring,
 
     
     
     
-    Required('snapshot'): basestring,
+    Optional('snapshot'): basestring,
 
     
     Required('dsc'): basestring,
