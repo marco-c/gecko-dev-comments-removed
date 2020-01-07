@@ -119,6 +119,12 @@ nsListControlFrame::~nsListControlFrame()
 }
 
 static bool ShouldFireDropDownEvent() {
+  
+  
+  if (nsLayoutUtils::IsContentSelectEnabled()) {
+    return false;
+  }
+
   return (XRE_IsContentProcess() &&
           Preferences::GetBool("browser.tabs.remote.desktopbehavior", false)) ||
          Preferences::GetBool("dom.select_popup_in_parent.enabled", false);
@@ -969,7 +975,9 @@ nsListControlFrame::Init(nsIContent*       aContent,
 {
   nsHTMLScrollFrame::Init(aContent, aParent, aPrevInFlow);
 
-  if (IsInDropDownMode()) {
+  if (!nsLayoutUtils::IsContentSelectEnabled() &&
+      IsInDropDownMode()) {
+    
     AddStateBits(NS_FRAME_IN_POPUP);
     CreateView();
   }
