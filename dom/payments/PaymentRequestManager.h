@@ -32,9 +32,6 @@ public:
 
   static already_AddRefed<PaymentRequestManager> GetSingleton();
 
-  already_AddRefed<PaymentRequest>
-  GetPaymentRequestById(const nsAString& aRequestId);
-
   
 
 
@@ -55,19 +52,17 @@ public:
   nsresult CompletePayment(PaymentRequest* aRequest,
                            const PaymentComplete& aComplete);
   nsresult UpdatePayment(JSContext* aCx,
-                         const nsAString& aRequestId,
+                         PaymentRequest* aRequest,
                          const PaymentDetailsUpdate& aDetails,
                          bool aRequestShipping,
                          bool aDeferredShow);
 
-  nsresult RespondPayment(const IPCPaymentActionResponse& aResponse);
-  nsresult ChangeShippingAddress(const nsAString& aRequestId,
+  nsresult RespondPayment(PaymentRequest* aRequest,
+                          const IPCPaymentActionResponse& aResponse);
+  nsresult ChangeShippingAddress(PaymentRequest* aRequest,
                                  const IPCPaymentAddress& aAddress);
-  nsresult ChangeShippingOption(const nsAString& aRequestId,
+  nsresult ChangeShippingOption(PaymentRequest* aRequest,
                                 const nsAString& aOption);
-
-  nsresult
-  ReleasePaymentChild(const nsAString& aId);
 
 private:
   PaymentRequestManager() = default;
@@ -84,8 +79,6 @@ private:
 
   void NotifyRequestDone(PaymentRequest* aRequest);
 
-  
-  nsDataHashtable<nsStringHashKey, PaymentRequest*> mPaymentChildHash;
   
   nsDataHashtable<nsRefPtrHashKey<PaymentRequest>, uint32_t> mActivePayments;
   RefPtr<PaymentRequest> mShowingRequest;
