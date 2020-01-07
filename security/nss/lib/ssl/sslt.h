@@ -425,7 +425,7 @@ typedef enum {
     ssl_padding_xtn = 21,
     ssl_extended_master_secret_xtn = 23,
     ssl_session_ticket_xtn = 35,
-    ssl_tls13_key_share_xtn = 40,
+    
     ssl_tls13_pre_shared_key_xtn = 41,
     ssl_tls13_early_data_xtn = 42,
     ssl_tls13_supported_versions_xtn = 43,
@@ -433,6 +433,8 @@ typedef enum {
     ssl_tls13_psk_key_exchange_modes_xtn = 45,
     ssl_tls13_ticket_early_data_info_xtn = 46, 
     ssl_tls13_certificate_authorities_xtn = 47,
+    ssl_signature_algorithms_cert_xtn = 50,
+    ssl_tls13_key_share_xtn = 51,
     ssl_next_proto_nego_xtn = 13172, 
     ssl_renegotiation_info_xtn = 0xff01,
     ssl_tls13_short_header_xtn = 0xff03 
@@ -444,7 +446,7 @@ typedef enum {
 
 
 
-#define SSL_MAX_EXTENSIONS 19
+#define SSL_MAX_EXTENSIONS 20
 
 
 typedef enum {
