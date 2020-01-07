@@ -344,7 +344,6 @@ GroupRule::AppendRulesToCssText(nsAString& aCssText) const
   aCssText.Append('}');
 }
 
-
 nsresult
 GroupRule::GetCssRules(nsIDOMCSSRuleList* *aRuleList)
 {
