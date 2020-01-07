@@ -9648,8 +9648,10 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       return NS_ERROR_DOM_INVALID_ACCESS_ERR;
     }
 
-    if (NS_SUCCEEDED(mLoadURIDelegate->LoadURI(aURI, where, aFlags,
-                                               aTriggeringPrincipal))) {
+    bool loadURIHandled = false;
+    rv = mLoadURIDelegate->LoadURI(aURI, where, aFlags, aTriggeringPrincipal,
+                                   &loadURIHandled);
+    if (NS_SUCCEEDED(rv) && loadURIHandled) {
       
       return NS_OK;
     }
