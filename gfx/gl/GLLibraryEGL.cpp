@@ -678,19 +678,6 @@ GLLibraryEGL::DoEnsureInitialized(bool forceAccel, nsACString* const out_failure
         }
     }
 
-    if (IsExtensionSupported(KHR_surfaceless_context)) {
-        const auto vendor = fQueryString(EGL_DISPLAY(), LOCAL_EGL_VENDOR);
-
-        
-        
-        
-        
-        
-        if (strcmp((const char*)vendor, "ARM") == 0) {
-            MarkExtensionUnsupported(KHR_surfaceless_context);
-        }
-    }
-
     mInitialized = true;
     reporter.SetSuccessful();
     return true;
