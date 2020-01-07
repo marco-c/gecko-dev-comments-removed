@@ -582,6 +582,15 @@ class XPIStateLocation extends Map {
     this.staged = {};
     this.changed = false;
 
+    
+    
+    
+    
+    
+    if (name === KEY_APP_PROFILE) {
+      OS.File.makeDir(this.path, {ignoreExisting: true});
+    }
+
     if (saved) {
       this.restore(saved);
     }
