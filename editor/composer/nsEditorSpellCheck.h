@@ -15,6 +15,7 @@
 #include "nsTArray.h"                   
 #include "nscore.h"                     
 
+class mozSpellChecker;
 class nsIEditor;
 class nsISpellChecker;
 class nsITextServicesFilter;
@@ -49,7 +50,7 @@ public:
 protected:
   virtual ~nsEditorSpellCheck();
 
-  nsCOMPtr<nsISpellChecker> mSpellChecker;
+  RefPtr<mozSpellChecker> mSpellChecker;
 
   nsTArray<nsString>  mSuggestedWordList;
   int32_t        mSuggestedWordIndex;

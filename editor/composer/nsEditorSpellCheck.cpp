@@ -11,6 +11,7 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/intl/LocaleService.h" 
 #include "mozilla/mozalloc.h"           
+#include "mozilla/mozSpellChecker.h"    
 #include "mozilla/Preferences.h"        
 #include "mozilla/TextServicesDocument.h" 
 #include "nsAString.h"                  
@@ -28,7 +29,6 @@
 #include "nsIHTMLEditor.h"              
 #include "nsILoadContext.h"
 #include "nsISelection.h"               
-#include "nsISpellChecker.h"            
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
 #include "nsITextServicesFilter.h"      
@@ -319,17 +319,17 @@ nsEditorSpellCheck::~nsEditorSpellCheck()
 NS_IMETHODIMP
 nsEditorSpellCheck::CanSpellCheck(bool* _retval)
 {
-  nsresult rv;
-  nsCOMPtr<nsISpellChecker> spellChecker;
-  if (! mSpellChecker) {
-    spellChecker = do_CreateInstance(NS_SPELLCHECKER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    spellChecker = mSpellChecker;
+  RefPtr<mozSpellChecker> spellChecker = mSpellChecker;
+  if (!spellChecker) {
+    spellChecker = new mozSpellChecker();
+    DebugOnly<nsresult> rv = spellChecker->Init();
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
   nsTArray<nsString> dictList;
-  rv = spellChecker->GetDictionaryList(&dictList);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = spellChecker->GetDictionaryList(&dictList);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   *_retval = (dictList.Length() > 0);
   return NS_OK;
@@ -420,11 +420,9 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
     }
   }
 
-  mSpellChecker = do_CreateInstance(NS_SPELLCHECKER_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NULL_POINTER);
-
+  mSpellChecker = new mozSpellChecker();
+  rv = mSpellChecker->Init();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   rv = mSpellChecker->SetDocument(textServicesDocument, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
