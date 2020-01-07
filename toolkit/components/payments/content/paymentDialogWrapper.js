@@ -120,12 +120,21 @@ var paymentDialogWrapper = {
       return null;
     }
 
+    let billingAddressGUID = cardData.billingAddressGUID;
+    let billingAddress;
+    try {
+      billingAddress = await this._convertProfileAddressToPaymentAddress(billingAddressGUID);
+    } catch (ex) {
+      
+      Cu.reportError(ex);
+    }
     let methodData = this.createBasicCardResponseData({
       cardholderName: cardData["cc-name"],
       cardNumber,
       expiryMonth: cardData["cc-exp-month"].toString().padStart(2, "0"),
       expiryYear: cardData["cc-exp-year"].toString(),
       cardSecurityCode,
+      billingAddress,
     });
 
     return methodData;
