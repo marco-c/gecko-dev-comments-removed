@@ -366,7 +366,8 @@ const Preferences = window.Preferences = (function() {
           
           if (value) {
             
-            element.setAttribute(attribute, attribute);
+            
+            element.setAttribute(attribute, "true");
           } else {
             element.removeAttribute(attribute);
           }
