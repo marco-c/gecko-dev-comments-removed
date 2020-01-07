@@ -4,10 +4,11 @@
 
 
 
-#ifndef jscompartmentinlines_h
-#define jscompartmentinlines_h
+#ifndef vm_JSCompartment_inl_h
+#define vm_JSCompartment_inl_h
 
-#include "jscompartment.h"
+#include "vm/JSCompartment.h"
+
 #include "jsiter.h"
 
 #include "gc/Barrier.h"

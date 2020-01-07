@@ -5,10 +5,10 @@
 
 
 
-#include "jscompartment.h"
 #include "jsfriendapi.h"
 
 #include "jsapi-tests/tests.h"
+#include "vm/JSCompartment.h"
 
 using namespace js;
 

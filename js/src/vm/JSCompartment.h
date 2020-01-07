@@ -4,8 +4,8 @@
 
 
 
-#ifndef jscompartment_h
-#define jscompartment_h
+#ifndef vm_JSCompartment_h
+#define vm_JSCompartment_h
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -781,8 +781,7 @@ struct JSCompartment
                                 size_t* nonSyntacticLexicalScopes,
                                 size_t* templateLiteralMap,
                                 size_t* jitCompartment,
-                                size_t* privateData,
-                                size_t* scriptCountsMapArg);
+                                size_t* privateData);
 
     
     js::ObjectGroupCompartment   objectGroups;

@@ -4,7 +4,7 @@
 
 
 
-#include "jscompartmentinlines.h"
+#include "vm/JSCompartment-inl.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"

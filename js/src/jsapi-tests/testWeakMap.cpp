@@ -5,11 +5,9 @@
 
 
 
-#include "jscompartment.h"
-
 #include "gc/Zone.h"
-
 #include "jsapi-tests/tests.h"
+#include "vm/JSCompartment.h"
 
 JSObject* keyDelegate = nullptr;
 
