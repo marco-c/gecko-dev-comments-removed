@@ -54,22 +54,6 @@ ServiceWorkerRegistration::Visible(JSContext* aCx, JSObject* aObj)
   return workerPrivate->ServiceWorkersEnabled();
 }
 
- bool
-ServiceWorkerRegistration::NotificationAPIVisible(JSContext* aCx, JSObject* aObj)
-{
-  if (NS_IsMainThread()) {
-    return Preferences::GetBool("dom.webnotifications.serviceworker.enabled", false);
-  }
-
-  
-  WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
-  if (!workerPrivate) {
-    return false;
-  }
-
-  return workerPrivate->DOMServiceWorkerNotificationEnabled();
-}
-
 
 
 
