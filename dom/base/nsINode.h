@@ -2140,12 +2140,6 @@ ToSupports(nsINode* aPointer)
   return aPointer;
 }
 
-inline nsISupports*
-ToCanonicalSupports(nsINode* aPointer)
-{
-  return aPointer;
-}
-
 
 
 #define NS_IMPL_FROMNODE_GENERIC(_class, _check, _const)                 \
