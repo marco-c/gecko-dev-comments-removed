@@ -72,25 +72,13 @@ protected:
   explicit VRDisplayHost(VRDeviceType aType);
   virtual ~VRDisplayHost();
 
-#if defined(XP_WIN)
   
   
   
-  
-  virtual bool SubmitFrame(ID3D11Texture2D* aSource,
-                           const IntSize& aSize,
+  virtual bool SubmitFrame(const layers::SurfaceDescriptor& aTexture,
+                           uint64_t aFrameId,
                            const gfx::Rect& aLeftEyeRect,
                            const gfx::Rect& aRightEyeRect) = 0;
-#elif defined(XP_MACOSX)
-  virtual bool SubmitFrame(MacIOSurface* aMacIOSurface,
-                           const IntSize& aSize,
-                           const gfx::Rect& aLeftEyeRect,
-                           const gfx::Rect& aRightEyeRect) = 0;
-#elif defined(MOZ_WIDGET_ANDROID)
-  virtual bool SubmitFrame(const mozilla::layers::SurfaceTextureDescriptor& aSurface,
-                           const gfx::Rect& aLeftEyeRect,
-                           const gfx::Rect& aRightEyeRect) = 0;
-#endif
 
   VRDisplayInfo mDisplayInfo;
 

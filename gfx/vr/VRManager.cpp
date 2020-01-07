@@ -231,6 +231,12 @@ VRManager::CheckForInactiveTimeout()
     TimeDuration duration = TimeStamp::Now() - mLastActiveTime;
     if (duration.ToMilliseconds() > gfxPrefs::VRInactiveTimeout()) {
       Shutdown();
+      
+      
+      
+      
+      
+      mLastDisplayEnumerationTime = TimeStamp();
     }
   }
 }
