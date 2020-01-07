@@ -19,7 +19,6 @@ module.exports = {
 
     
     "mozilla/no-aArgs": "error",
-    "mozilla/no-cpows-in-tests": "error",
     "mozilla/no-single-arg-cu-import": "error",
     
     "mozilla/reject-importGlobalProperties": "error",
