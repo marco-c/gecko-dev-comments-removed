@@ -62,6 +62,8 @@ ChromeUtils.defineModuleGetter(this, "XPIProvider",
 
 const PREF_ALLOW_NON_RESTARTLESS      = "extensions.legacy.non-restartless.enabled";
 
+const DEFAULT_SKIN = "classic/1.0";
+
 
 const XPI_INTERNAL_SYMBOLS = [
   "AddonInternal",
@@ -665,7 +667,7 @@ async function loadManifestFromRDF(aUri, aStream) {
   
   if (isTheme(addon.type)) {
     addon.userDisabled = !!LightweightThemeManager.currentTheme ||
-                         addon.internalName != XPIProvider.selectedSkin;
+                         addon.internalName != DEFAULT_SKIN;
   } else if (addon.type == "experiment") {
     
     

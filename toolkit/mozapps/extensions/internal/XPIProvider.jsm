@@ -62,9 +62,6 @@ const PREF_XPI_STATE                  = "extensions.xpiState";
 const PREF_BLOCKLIST_ITEM_URL         = "extensions.blocklist.itemURL";
 const PREF_BOOTSTRAP_ADDONS           = "extensions.bootstrappedAddons";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
-const PREF_SKIN_SWITCHPENDING         = "extensions.dss.switchPending";
-const PREF_SKIN_TO_SELECT             = "extensions.lastSelectedSkin";
-const PREF_GENERAL_SKINS_SELECTEDSKIN = "general.skins.selectedSkin";
 const PREF_EM_EXTENSION_FORMAT        = "extensions.";
 const PREF_EM_ENABLED_SCOPES          = "extensions.enabledScopes";
 const PREF_EM_STARTUP_SCAN_SCOPES     = "extensions.startupScanScopes";
@@ -91,6 +88,8 @@ const PREF_EM_MIN_COMPAT_PLATFORM_VERSION = "extensions.minCompatiblePlatformVer
 
 const PREF_EM_LAST_APP_BUILD_ID       = "extensions.lastAppBuildId";
 
+const DEFAULT_SKIN = "classic/1.0";
+
 
 const BUILT_IN_ADDONS_URI             = "chrome://browser/content/built_in_addons.json";
 
@@ -110,7 +109,6 @@ const DIR_TRASH                       = "trash";
 
 const FILE_XPI_STATES                 = "addonStartup.json.lz4";
 const FILE_DATABASE                   = "extensions.json";
-const FILE_OLD_CACHE                  = "extensions.cache";
 const FILE_RDF_MANIFEST               = "install.rdf";
 const FILE_WEB_MANIFEST               = "manifest.json";
 const FILE_XPI_ADDONS_LIST            = "extensions.ini";
@@ -301,6 +299,7 @@ function loadLazyObjects() {
     SIGNED_TYPES,
     BOOTSTRAP_REASONS,
     DB_SCHEMA,
+    DEFAULT_SKIN,
     AddonInternal,
     XPIProvider,
     XPIStates,
@@ -800,9 +799,8 @@ function isDisabledLegacy(addon) {
 
 
 function isUsableAddon(aAddon) {
-  
-  if (aAddon.type == "theme" && aAddon.internalName == XPIProvider.defaultSkin)
-    return true;
+  if (aAddon.type == "theme")
+    return aAddon.internalName == DEFAULT_SKIN;
 
   if (mustSign(aAddon.type) && !aAddon.isCorrectlySigned) {
     logger.warn(`Add-on ${aAddon.id} is not correctly signed.`);
@@ -1291,7 +1289,7 @@ class XPIState {
     
     
     if (aDBAddon.type == "theme") {
-      this.enabled = aDBAddon.internalName == XPIProvider.selectedSkin;
+      this.enabled = aDBAddon.internalName == DEFAULT_SKIN;
     } else {
       this.enabled = aDBAddon.visible && !aDBAddon.disabled;
     }
@@ -1779,14 +1777,6 @@ var XPIProvider = {
   
   installs: null,
   
-  defaultSkin: "classic/1.0",
-  
-  currentSkin: null,
-  
-  
-  
-  selectedSkin: null,
-  
   minCompatibleAppVersion: null,
   
   minCompatiblePlatformVersion: null,
@@ -2064,14 +2054,6 @@ var XPIProvider = {
         }
       }
 
-      let defaultPrefs = Services.prefs.getDefaultBranch("");
-      this.defaultSkin = defaultPrefs.getStringPref(PREF_GENERAL_SKINS_SELECTEDSKIN,
-                                                    "classic/1.0");
-      this.currentSkin = Services.prefs.getStringPref(PREF_GENERAL_SKINS_SELECTEDSKIN,
-                                                      this.defaultSkin);
-      this.selectedSkin = this.currentSkin;
-      this.applyThemeChange();
-
       this.minCompatibleAppVersion = Services.prefs.getStringPref(PREF_EM_MIN_COMPAT_APP_VERSION,
                                                                   null);
       this.minCompatiblePlatformVersion = Services.prefs.getStringPref(PREF_EM_MIN_COMPAT_PLATFORM_VERSION,
@@ -2089,9 +2071,6 @@ var XPIProvider = {
 
       let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
                                              aOldPlatformVersion);
-
-      
-      this.applyThemeChange();
 
       AddonManagerPrivate.markProviderSafe(this);
 
@@ -2118,7 +2097,7 @@ var XPIProvider = {
       if (AppConstants.MOZ_CRASHREPORTER) {
         
         try {
-          Services.appinfo.annotateCrashReport("Theme", this.currentSkin);
+          Services.appinfo.annotateCrashReport("Theme", DEFAULT_SKIN);
         } catch (e) { }
         try {
           Services.appinfo.annotateCrashReport("EMCheckCompatibility",
@@ -2333,27 +2312,6 @@ var XPIProvider = {
         }
       }
     }
-  },
-
-  
-
-
-  applyThemeChange() {
-    if (!Services.prefs.getBoolPref(PREF_SKIN_SWITCHPENDING, false))
-      return;
-
-    
-    try {
-      this.selectedSkin = Services.prefs.getCharPref(PREF_SKIN_TO_SELECT);
-      Services.prefs.setCharPref(PREF_GENERAL_SKINS_SELECTEDSKIN,
-                                 this.selectedSkin);
-      Services.prefs.clearUserPref(PREF_SKIN_TO_SELECT);
-      logger.debug("Changed skin to " + this.selectedSkin);
-      this.currentSkin = this.selectedSkin;
-    } catch (e) {
-      logger.error("Error applying theme change", e);
-    }
-    Services.prefs.clearUserPref(PREF_SKIN_SWITCHPENDING);
   },
 
   
@@ -3197,26 +3155,6 @@ var XPIProvider = {
         }
       }
 
-      if (aAppChanged) {
-        
-        
-        if (this.currentSkin != this.defaultSkin) {
-          let oldSkin = XPIDatabase.getVisibleAddonForInternalName(this.currentSkin);
-          if (!oldSkin || oldSkin.disabled)
-            this.enableDefaultTheme();
-        }
-
-        
-        
-        let oldCache = FileUtils.getFile(KEY_PROFILEDIR, [FILE_OLD_CACHE], true);
-        try {
-          if (oldCache.exists())
-            oldCache.remove(true);
-        } catch (e) {
-          logger.warn("Unable to remove old extension cache " + oldCache.path, e);
-        }
-      }
-
       if (Services.appinfo.inSafeMode) {
         aomStartup.initializeExtensions(this.getSafeModeExtensions());
         logger.debug("Initialized safe mode add-ons");
@@ -3762,45 +3700,14 @@ var XPIProvider = {
     if (!isTheme(aType))
       return;
 
-    if (!aId) {
-      
-      this.enableDefaultTheme();
-      return;
-    }
-
-    
-    
-    let previousTheme = null;
-    let newSkin = this.defaultSkin;
     let addons = XPIDatabase.getAddonsByType("theme", "webextension-theme");
     for (let theme of addons) {
-      if (!theme.visible)
-        return;
-      let isChangedAddon = (theme.id == aId);
-      if (isWebExtension(theme.type)) {
-        if (!isChangedAddon)
-          this.updateAddonDisabledState(theme, true, undefined);
-      } else if (isChangedAddon) {
-        newSkin = theme.internalName;
-      } else if (!theme.userDisabled && !theme.pendingUninstall) {
-        previousTheme = theme;
-      }
+      if (isWebExtension(theme.type) && theme.visible && theme.id != aId)
+        this.updateAddonDisabledState(theme, true, undefined);
     }
 
-    if (newSkin != this.currentSkin) {
-      Services.prefs.setCharPref(PREF_GENERAL_SKINS_SELECTEDSKIN, newSkin);
-      this.currentSkin = newSkin;
-    }
-    this.selectedSkin = newSkin;
-
-    
-    
-    Services.prefs.savePrefFile(null);
-
-    
-    
-    if (previousTheme)
-      this.updateAddonDisabledState(previousTheme, true, undefined);
+    let defaultTheme = XPIDatabase.getVisibleAddonForInternalName(DEFAULT_SKIN);
+    this.updateAddonDisabledState(defaultTheme, aId && aId != defaultTheme.id);
   },
 
   
@@ -3845,33 +3752,6 @@ var XPIProvider = {
         });
       }
     });
-  },
-
-  
-
-
-
-  enableDefaultTheme() {
-    logger.debug("Activating default theme");
-    let addon = XPIDatabase.getVisibleAddonForInternalName(this.defaultSkin);
-    if (addon) {
-      if (addon.userDisabled) {
-        this.updateAddonDisabledState(addon, false);
-      } else if (!this.extensionsActive) {
-        
-        
-        
-        Services.prefs.setCharPref(PREF_GENERAL_SKINS_SELECTEDSKIN,
-                                   addon.internalName);
-        this.currentSkin = this.selectedSkin = addon.internalName;
-        Services.prefs.clearUserPref(PREF_SKIN_TO_SELECT);
-        Services.prefs.clearUserPref(PREF_SKIN_SWITCHPENDING);
-      } else {
-        logger.warn("Attempting to activate an already active default theme");
-      }
-    } else {
-      logger.warn("Unable to activate the default theme");
-    }
   },
 
   onDebugConnectionChange({what, connection}) {
@@ -5039,7 +4919,7 @@ AddonWrapper.prototype = {
     }
 
     let canUseIconURLs = this.isActive ||
-      (addon.type == "theme" && addon.internalName == XPIProvider.defaultSkin);
+      (addon.type == "theme" && addon.internalName == DEFAULT_SKIN);
     if (canUseIconURLs && addon.iconURL) {
       icons[32] = addon.iconURL;
       icons[48] = addon.iconURL;
@@ -5208,9 +5088,11 @@ AddonWrapper.prototype = {
     if (addon.inDatabase) {
       let theme = isTheme(addon.type);
       if (theme && val) {
-        if (addon.internalName == XPIProvider.defaultSkin)
+        if (addon.internalName == DEFAULT_SKIN)
           throw new Error("Cannot disable the default theme");
-        XPIProvider.enableDefaultTheme();
+
+        let defaultTheme = XPIDatabase.getVisibleAddonForInternalName(DEFAULT_SKIN);
+        XPIProvider.updateAddonDisabledState(defaultTheme, false);
       }
       if (!(theme && val) || isWebExtension(addon.type)) {
         
@@ -5238,9 +5120,8 @@ AddonWrapper.prototype = {
     if (addon.inDatabase) {
       
       if (isTheme(addon.type) && val && !addon.userDisabled) {
-        if (addon.internalName == XPIProvider.defaultSkin)
+        if (addon.internalName == DEFAULT_SKIN)
           throw new Error("Cannot disable the default theme");
-        XPIProvider.enableDefaultTheme();
         if (isWebExtension(addon.type))
           XPIProvider.updateAddonDisabledState(addon, undefined, val);
       } else {

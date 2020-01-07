@@ -191,9 +191,6 @@ pref("extensions.update.background.url", "https://versioncheck-bg.addons.mozilla
 pref("extensions.update.interval", 86400);  
                                             
 
-pref("extensions.dss.switchPending", false);    
-                                                
-
 pref("extensions.{972ce4c6-7e08-4474-a285-3208198ce6fd}.name", "chrome://browser/locale/browser.properties");
 pref("extensions.{972ce4c6-7e08-4474-a285-3208198ce6fd}.description", "chrome://browser/locale/browser.properties");
 
@@ -221,8 +218,6 @@ pref("browser.uitour.surveyDuration", 7200);
 
 pref("keyword.enabled", true);
 pref("browser.fixup.domainwhitelist.localhost", true);
-
-pref("general.skins.selectedSkin", "classic/1.0");
 
 pref("general.smoothScroll", true);
 #ifdef UNIX_BUT_NOT_MAC
@@ -465,15 +460,7 @@ pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 
 pref("browser.tabs.closeTabByDblclick", false);
 pref("browser.tabs.closeWindowWithLastTab", true);
-
-
-
 pref("browser.tabs.insertRelatedAfterCurrent", true);
-
-
-
-
-pref("browser.tabs.insertAfterCurrent", false);
 pref("browser.tabs.warnOnClose", true);
 pref("browser.tabs.warnOnCloseOtherTabs", true);
 pref("browser.tabs.warnOnOpen", true);
@@ -1743,6 +1730,10 @@ pref("browser.chrome.errorReporter.logLevel", "Error");
 
 pref("browser.chrome.errorReporter.infoURL",
      "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/nightly-error-collection");
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.policies.enabled", true);
+#endif
 
 
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");

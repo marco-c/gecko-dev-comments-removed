@@ -1178,7 +1178,7 @@ this.XPIDatabaseReconcile = {
     aNewAddon.appDisabled = !isUsableAddon(aNewAddon);
 
     
-    if (aNewAddon.type == "theme" && aNewAddon.internalName == XPIProvider.defaultSkin)
+    if (aNewAddon.type == "theme" && aNewAddon.internalName == DEFAULT_SKIN)
       aNewAddon.foreignInstall = false;
 
     if (isDetectedInstall && aNewAddon.foreignInstall) {
@@ -1524,7 +1524,6 @@ this.XPIDatabaseReconcile = {
 
     let previousVisible = this.getVisibleAddons(previousAddons);
     let currentVisible = this.flattenByID(currentAddons, hideLocation);
-    let sawActiveTheme = false;
 
     
     
@@ -1548,9 +1547,12 @@ this.XPIDatabaseReconcile = {
         if (!wasStaged && XPIDatabase.activeBundles) {
           
           if (currentAddon.type == "theme")
-            isActive = currentAddon.internalName == XPIProvider.currentSkin;
+            isActive = currentAddon.internalName == DEFAULT_SKIN;
           else
             isActive = XPIDatabase.activeBundles.includes(currentAddon.path);
+
+          if (currentAddon.type == "webextension-theme")
+            currentAddon.userDisabled = !isActive;
 
           
           
@@ -1620,9 +1622,6 @@ this.XPIDatabaseReconcile = {
 
       XPIDatabase.makeAddonVisible(currentAddon);
       currentAddon.active = isActive;
-
-      if (currentAddon.active && currentAddon.internalName == XPIProvider.selectedSkin)
-        sawActiveTheme = true;
     }
 
     
@@ -1654,13 +1653,6 @@ this.XPIDatabaseReconcile = {
         addon.visible = false;
         addon.active = false;
       }
-    }
-
-    
-    
-    if (XPIProvider.selectedSkin != XPIProvider.defaultSkin && !sawActiveTheme) {
-      logger.info("Didn't see selected skin " + XPIProvider.selectedSkin);
-      XPIProvider.enableDefaultTheme();
     }
 
     

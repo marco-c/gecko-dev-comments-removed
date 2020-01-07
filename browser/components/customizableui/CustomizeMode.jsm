@@ -104,10 +104,6 @@ function CustomizeMode(aWindow) {
   
   this.visiblePalette = this.document.getElementById(kPaletteId);
   this.pongArena = this.document.getElementById("customization-pong-arena");
-  if (Services.prefs.getCharPref("general.skins.selectedSkin") != "classic/1.0") {
-    let lwthemeButton = this.document.getElementById("customization-lwtheme-button");
-    lwthemeButton.setAttribute("hidden", "true");
-  }
   if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
     this._updateTitlebarCheckbox();
     this._updateDragSpaceCheckbox();
