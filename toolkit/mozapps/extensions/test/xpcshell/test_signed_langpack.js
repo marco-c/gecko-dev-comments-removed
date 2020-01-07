@@ -49,8 +49,13 @@ add_task(async function() {
   await installShouldFail(unsignedXPI);
 
   
+  
   Services.prefs.setBoolPref(PREF_SIGNATURES_LANGPACKS, false);
-  await installShouldSucceed(unsignedXPI);
+  if (AppConstants.MOZ_REQUIRE_SIGNING) {
+    await installShouldFail(unsignedXPI);
+  } else {
+    await installShouldSucceed(unsignedXPI);
+  }
 
   await promiseShutdownManager();
 });
