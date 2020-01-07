@@ -10,116 +10,15 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
 
 public class GeckoVRManager {
-    
-
-
-    public interface GVRDelegate {
-        
-
-
-        long createNonPresentingContext();
-        
-
-
-        void destroyNonPresentingContext();
-        
-
-
-        boolean enableVRMode();
-        
-
-
-        void disableVRMode();
-    }
-
-    private static GVRDelegate mGVRDelegate;
-
-    
-
-
-
-    public static void setGVRDelegate(GVRDelegate delegate) {
-        mGVRDelegate = delegate;
-    }
-
-    
-
-
-
-
-    @WrapForJNI(calledFrom = "ui")
-    public static native void setGVRPaused(final boolean aPaused);
-
-    
-
-
-
-
-    @WrapForJNI(calledFrom = "ui")
-    public static native void setGVRPresentingContext(final long aContext);
-
-    
-
-
-    @WrapForJNI(calledFrom = "ui")
-    public static native void cleanupGVRNonPresentingContext();
+    private static long mExternalContext;
 
     @WrapForJNI
-     static boolean isGVRPresent() {
-        return mGVRDelegate != null;
+    public static synchronized long getExternalContext() {
+      return mExternalContext;
     }
 
-    @WrapForJNI
-     static long createGVRNonPresentingContext() {
-        if (mGVRDelegate == null) {
-            return 0;
-        }
-        return mGVRDelegate.createNonPresentingContext();
+    public static synchronized void setExternalContext(final long externalContext) {
+        mExternalContext = externalContext;
     }
 
-    @WrapForJNI
-     static void destroyGVRNonPresentingContext() {
-        if (mGVRDelegate == null) {
-            return;
-        }
-        mGVRDelegate.destroyNonPresentingContext();
-    }
-
-    @WrapForJNI
-     static void enableVRMode() {
-        if (!ThreadUtils.isOnUiThread()) {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    enableVRMode();
-                }
-            });
-            return;
-        }
-
-        if (mGVRDelegate == null) {
-            return;
-        }
-
-        mGVRDelegate.enableVRMode();
-    }
-
-    @WrapForJNI
-     static void disableVRMode() {
-        if (!ThreadUtils.isOnUiThread()) {
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    disableVRMode();
-                }
-            });
-            return;
-        }
-
-        if (mGVRDelegate == null) {
-            return;
-        }
-
-        mGVRDelegate.disableVRMode();
-    }
 }
