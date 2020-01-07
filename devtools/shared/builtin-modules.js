@@ -18,7 +18,7 @@ const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://gre/modules/Services.jsm");
 const { Services } = jsmScope;
 
-const { ChromeUtils, HeapSnapshot, XMLHttpRequest,
+const { ChromeUtils, HeapSnapshot, XMLHttpRequest, console,
         atob, btoa, TextEncoder, TextDecoder } = Cu.getGlobalForObject(jsmScope);
 
 
@@ -217,6 +217,7 @@ exports.globals = {
   reportError: Cu.reportError,
   atob: atob,
   btoa: btoa,
+  console: console,
   TextEncoder: TextEncoder,
   TextDecoder: TextDecoder,
   URL,
@@ -273,9 +274,6 @@ function lazyGlobal(name, getter) {
 
 
 
-lazyGlobal("console", () => {
-  return require("resource://gre/modules/Console.jsm").console;
-});
 lazyGlobal("clearTimeout", () => {
   return require("resource://gre/modules/Timer.jsm").clearTimeout;
 });

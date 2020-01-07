@@ -10,8 +10,6 @@
 
 
 
-
-const {console} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
 const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const {DebuggerServer} = require("devtools/server/main");
 const {DebuggerClient} = require("devtools/shared/client/debugger-client");
