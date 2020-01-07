@@ -1951,11 +1951,31 @@ class MOZ_STACK_CLASS TryEmitter
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS IfThenElseEmitter
 {
     BytecodeEmitter* bce_;
 
+    
     JumpList jumpAroundThen_;
+
+    
     JumpList jumpsAroundElse_;
 
     
@@ -1970,6 +1990,10 @@ class MOZ_STACK_CLASS IfThenElseEmitter
     bool calculatedPushed_;
 #endif
 
+    
+    
+    
+    
     
     
     
