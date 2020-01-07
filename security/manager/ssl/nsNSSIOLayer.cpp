@@ -1985,6 +1985,8 @@ nsConvertCANamesToStrings(const UniquePLArenaPool& arena, char** caNameStrings,
         }
 
         if (headerlen + contentlen != dername->len) {
+            Telemetry::ScalarAdd(Telemetry::ScalarID::SECURITY_CLIENT_CERT,
+                                 NS_LITERAL_STRING("compat"), 1);
             
             
             
@@ -2145,6 +2147,9 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
     return SECFailure;
   }
 
+  Telemetry::ScalarAdd(Telemetry::ScalarID::SECURITY_CLIENT_CERT,
+                       NS_LITERAL_STRING("requested"), 1);
+
   RefPtr<nsNSSSocketInfo> info(
     BitwiseCast<nsNSSSocketInfo*, PRFilePrivate*>(socket->higher->secret));
 
@@ -2190,6 +2195,8 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   } else if (*runnable->mPRetCert || *runnable->mPRetKey) {
     
     info->SetSentClientCert();
+    Telemetry::ScalarAdd(Telemetry::ScalarID::SECURITY_CLIENT_CERT,
+                         NS_LITERAL_STRING("sent"), 1);
   }
 
   return runnable->mRV;
