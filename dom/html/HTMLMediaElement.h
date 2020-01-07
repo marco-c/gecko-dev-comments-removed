@@ -1823,6 +1823,10 @@ private:
 
   
   
+  bool mForcedHidden;
+
+  
+  
   bool mMediaTracksConstructed;
 
   Visibility mVisibilityState;
