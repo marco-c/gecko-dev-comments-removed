@@ -1203,11 +1203,12 @@ var gBrowserInit = {
       }
     }
 
-    new LightweightThemeConsumer(document);
-    CompactTheme.init();
-
+    
+    window.TabBarVisibility.update();
     TabsInTitlebar.init();
 
+    new LightweightThemeConsumer(document);
+    CompactTheme.init();
     if (window.matchMedia("(-moz-os-version: windows-win8)").matches &&
         window.matchMedia("(-moz-windows-default-theme)").matches) {
       let windowFrameColor = new Color(...ChromeUtils.import("resource:///modules/Windows8WindowFrameColor.jsm", {})
@@ -1267,8 +1268,6 @@ var gBrowserInit = {
       remoteType, sameProcessAsFrameLoader
     });
 
-    gUIDensity.init();
-
     
     
     this._callWithURIToLoad(uriToLoad => {
@@ -1281,8 +1280,9 @@ var gBrowserInit = {
 
     this._setInitialFocus();
 
-    window.TabBarVisibility.update();
-    TabsInTitlebar.onDOMContentLoaded();
+    
+    gUIDensity.init();
+    TabsInTitlebar.whenWindowLayoutReady();
   },
 
   onLoad() {
