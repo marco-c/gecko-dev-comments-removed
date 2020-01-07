@@ -234,7 +234,7 @@ class ArenaLists
     
     
     
-    static FreeSpan placeholder;
+    static FreeSpan emptySentinel;
 
     ZoneOrGCTaskData<AllAllocKindArray<ArenaList>> arenaLists_;
     ArenaList& arenaLists(AllocKind i) { return arenaLists_.ref()[i]; }
