@@ -770,13 +770,13 @@ ReadLine(const char* prompt)
         }
         if (!result) {
             
-            result = (char*)js_malloc(len + 1);
+            result = js_pod_malloc<char>(len + 1);
             if (!result)
                 return nullptr;
         } else {
             
             int new_len = offset + len + 1;
-            char* new_result = (char*)js_malloc(new_len);
+            char* new_result = js_pod_malloc<char>(new_len);
             if (!new_result)
                 return nullptr;
             
@@ -1288,7 +1288,7 @@ Simulator::init()
 {
     
     static const size_t stackSize = 2 * 1024 * 1024;
-    stack_ = static_cast<char*>(js_malloc(stackSize));
+    stack_ = js_pod_malloc<char>(stackSize);
     if (!stack_)
         return false;
 
@@ -1347,7 +1347,7 @@ class Redirection
         }
 
         AutoEnterOOMUnsafeRegion oomUnsafe;
-        Redirection* redir = (Redirection*)js_malloc(sizeof(Redirection));
+        Redirection* redir = js_pod_malloc<Redirection>();
         if (!redir) {
             oomUnsafe.crash("Simulator redirection");
         }

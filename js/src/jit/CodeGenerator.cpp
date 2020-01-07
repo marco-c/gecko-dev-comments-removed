@@ -5405,7 +5405,7 @@ CodeGenerator::maybeCreateScriptCounts()
             if (block->entryResumePoint()->caller()) {
                 
                 JSScript* innerScript = block->info().script();
-                description = (char*) js_calloc(200);
+                description = js_pod_calloc<char>(200);
                 if (description) {
                     snprintf(description, 200, "%s:%u",
                              innerScript->filename(), innerScript->lineno());
