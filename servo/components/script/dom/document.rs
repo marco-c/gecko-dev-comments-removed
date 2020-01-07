@@ -364,6 +364,8 @@ pub struct Document {
     tti_window: DomRefCell<InteractiveWindow>,
     
     canceller: FetchCanceller,
+    
+    throw_on_dynamic_markup_insertion_counter: Cell<u64>,
 }
 
 #[derive(JSTraceable, MallocSizeOf)]
@@ -1894,7 +1896,12 @@ impl Document {
 
     pub fn can_invoke_script(&self) -> bool {
         match self.get_current_parser() {
-            Some(parser) => parser.parser_is_not_active(),
+            Some(parser) => {
+                
+                
+                parser.parser_is_not_active() ||
+                self.throw_on_dynamic_markup_insertion_counter.get() > 0
+            }
             None => true,
         }
     }
@@ -2052,6 +2059,16 @@ impl Document {
     fn send_to_constellation(&self, msg: ScriptMsg) {
         let global_scope = self.window.upcast::<GlobalScope>();
         global_scope.script_to_constellation_chan().send(msg).unwrap();
+    }
+
+    pub fn increment_throw_on_dynamic_markup_insertion_counter(&self) {
+        let counter = self.throw_on_dynamic_markup_insertion_counter.get();
+        self.throw_on_dynamic_markup_insertion_counter.set(counter + 1);
+    }
+
+    pub fn decrement_throw_on_dynamic_markup_insertion_counter(&self) {
+        let counter = self.throw_on_dynamic_markup_insertion_counter.get();
+        self.throw_on_dynamic_markup_insertion_counter.set(counter - 1);
     }
 }
 
@@ -2294,6 +2311,7 @@ impl Document {
             interactive_time: DomRefCell::new(interactive_time),
             tti_window: DomRefCell::new(InteractiveWindow::new()),
             canceller: canceller,
+            throw_on_dynamic_markup_insertion_counter: Cell::new(0),
         }
     }
 
@@ -3717,7 +3735,9 @@ impl DocumentMethods for Document {
         }
 
         
-        
+        if self.throw_on_dynamic_markup_insertion_counter.get() > 0 {
+            return Err(Error::InvalidState);
+        }
 
         if !self.is_active() {
             
@@ -3863,7 +3883,10 @@ impl DocumentMethods for Document {
         }
 
         
-        
+        if self.throw_on_dynamic_markup_insertion_counter.get() > 0 {
+            return Err(Error::InvalidState);
+        }
+
         if !self.is_active() {
             
             return Ok(());
@@ -3910,7 +3933,9 @@ impl DocumentMethods for Document {
         }
 
         
-        
+        if self.throw_on_dynamic_markup_insertion_counter.get() > 0 {
+            return Err(Error::InvalidState);
+        }
 
         let parser = match self.get_current_parser() {
             Some(ref parser) if parser.is_script_created() => DomRoot::from_ref(&**parser),

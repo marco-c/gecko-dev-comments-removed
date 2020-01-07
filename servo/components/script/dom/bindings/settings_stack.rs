@@ -35,6 +35,12 @@ pub unsafe fn trace(tracer: *mut JSTracer) {
     })
 }
 
+pub fn is_execution_stack_empty() -> bool {
+    STACK.with(|stack| {
+        stack.borrow().is_empty()
+    })
+}
+
 
 pub struct AutoEntryScript {
     global: DomRoot<GlobalScope>,
