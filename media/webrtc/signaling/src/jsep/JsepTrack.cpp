@@ -487,24 +487,20 @@ JsepTrack::NegotiateCodecs(
   
   
   
+  
+  
   if (!codecs->empty() && !red) {
-    std::vector<JsepCodecDescription*> codecsToKeep;
-
-    bool foundPreferredCodec = false;
-    for (auto codec: *codecs) {
-      if (codec == dtmf) {
-        codecsToKeep.push_back(codec);
-      } else if (codec == ulpfec) {
-        codecsToKeep.push_back(codec);
-      } else if (!foundPreferredCodec) {
-        codecsToKeep.insert(codecsToKeep.begin(), codec);
-        foundPreferredCodec = true;
-      } else {
-        delete codec;
+    int newSize = dtmf ? 2 : 1;
+    for (size_t i = 1; i < codecs->size(); ++i) {
+      if (!dtmf || dtmf != (*codecs)[i]) {
+        delete (*codecs)[i];
+        (*codecs)[i] = nullptr;
       }
     }
-
-    *codecs = codecsToKeep;
+    if (dtmf) {
+      (*codecs)[newSize-1] = dtmf;
+    }
+    codecs->resize(newSize);
   }
 }
 
