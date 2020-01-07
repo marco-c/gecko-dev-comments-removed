@@ -35,6 +35,9 @@ private:
   int32_t mCurrentStep;
 };
 
+
+void XPCOMShutdownNotified();
+
 } 
 
 #define NS_TOOLKIT_TERMINATOR_CID { 0x2e59cc70, 0xf83a, 0x412f, \

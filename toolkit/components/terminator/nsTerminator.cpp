@@ -40,6 +40,7 @@
 #endif
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryChecking.h"
@@ -64,6 +65,34 @@
 namespace mozilla {
 
 namespace {
+
+
+
+
+
+
+
+
+struct ShutdownStep
+{
+  char const* const mTopic;
+  int mTicks;
+
+  constexpr explicit ShutdownStep(const char *const topic)
+    : mTopic(topic)
+    , mTicks(-1)
+  {}
+};
+
+static ShutdownStep sShutdownSteps[] = {
+  ShutdownStep("quit-application"),
+  ShutdownStep("profile-change-teardown"),
+  ShutdownStep("profile-before-change"),
+  ShutdownStep("xpcom-will-shutdown"),
+  ShutdownStep("xpcom-shutdown"),
+};
+
+Atomic<bool> sShutdownNotified;
 
 
 
@@ -156,6 +185,28 @@ RunWatchdog(void* arg)
       continue;
     }
 
+    
+    if (!sShutdownNotified) {
+      const char* lastStep = nullptr;
+      for (size_t i = 0; i < ArrayLength(sShutdownSteps); ++i) {
+        if (sShutdownSteps[i].mTicks == -1) {
+          break;
+        }
+        lastStep = sShutdownSteps[i].mTopic;
+      }
+
+      if (lastStep) {
+        nsCString msg;
+        msg.AppendPrintf("Shutdown hanging at step %s. "
+                         "Something is blocking the main-thread.", lastStep);
+        
+        MOZ_CRASH_UNSAFE_OOL(strdup(msg.BeginReading()));
+      }
+
+      MOZ_CRASH("Shutdown hanging before starting.");
+    }
+
+    
     mozilla::dom::workerinternals::RuntimeService* runtimeService =
       mozilla::dom::workerinternals::RuntimeService::GetService();
     if (runtimeService) {
@@ -307,33 +358,6 @@ void RunWriter(void* arg)
   }
 }
 
-
-
-
-
-
-
-
-struct ShutdownStep
-{
-  char const* const mTopic;
-  int mTicks;
-
-  constexpr explicit ShutdownStep(const char *const topic)
-    : mTopic(topic)
-    , mTicks(-1)
-  {}
-
-};
-
-static ShutdownStep sShutdownSteps[] = {
-  ShutdownStep("quit-application"),
-  ShutdownStep("profile-change-teardown"),
-  ShutdownStep("profile-before-change"),
-  ShutdownStep("xpcom-will-shutdown"),
-  ShutdownStep("xpcom-shutdown"),
-};
-
 } 
 
 NS_IMPL_ISUPPORTS(nsTerminator, nsIObserver)
@@ -374,6 +398,7 @@ nsTerminator::Start()
   StartWriter();
 #endif 
   mInitialized = true;
+  sShutdownNotified = false;
 }
 
 
@@ -563,5 +588,11 @@ nsTerminator::UpdateCrashReport(const char* aTopic)
                                                report);
 }
 
+void
+XPCOMShutdownNotified()
+{
+  MOZ_DIAGNOSTIC_ASSERT(sShutdownNotified == false);
+  sShutdownNotified = true;
+}
 
 } 
