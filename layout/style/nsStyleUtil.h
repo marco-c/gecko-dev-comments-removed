@@ -149,14 +149,12 @@ public:
 
 
   static bool IsSignificantChild(nsIContent* aChild,
-                                   bool aTextIsSignificant,
-                                   bool aWhitespaceIsSignificant);
+                                 bool aWhitespaceIsSignificant);
 
   
 
 
   static bool ThreadSafeIsSignificantChild(const nsIContent* aChild,
-                                           bool aTextIsSignificant,
                                            bool aWhitespaceIsSignificant);
   
 
