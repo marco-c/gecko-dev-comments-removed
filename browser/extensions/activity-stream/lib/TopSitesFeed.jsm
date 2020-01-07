@@ -166,16 +166,21 @@ this.TopSitesFeed = class TopSitesFeed {
 
   async _fetchIcon(link) {
     
-    this._tippyTopProvider.processSite(link);
-    let hasTippyTop = !!link.tippyTopIcon;
-    let hasRichIcon = link.favicon && link.faviconSize >= MIN_FAVICON_SIZE;
-
-    if (!hasTippyTop && !hasRichIcon) {
-      this._requestRichIcon(link.url);
+    if (link.favicon && link.faviconSize >= MIN_FAVICON_SIZE) {
+      return;
     }
 
     
-    if (!hasTippyTop && !hasRichIcon && !link.screenshot) {
+    this._tippyTopProvider.processSite(link);
+    if (link.tippyTopIcon) {
+      return;
+    }
+
+    
+    this._requestRichIcon(link.url);
+
+    
+    if (!link.screenshot) {
       const {url} = link;
       await Screenshots.maybeCacheScreenshot(link, url, "screenshot",
         screenshot => this.store.dispatch(ac.BroadcastToContent({
