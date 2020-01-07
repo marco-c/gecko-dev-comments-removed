@@ -165,12 +165,30 @@ LazyInstantiator::GetClientPid(const DWORD aClientTid)
   return ::GetProcessIdOfThread(callingThread);
 }
 
+#define ALL_VERSIONS   ((unsigned long long)-1LL)
+
+struct DllBlockInfo {
+  
+  const wchar_t* mName;
+
+  
+  
+  
+  
+  
+  
+  
+  unsigned long long mUntilVersion;
+};
 
 
 
-static const wchar_t* gBlockedInprocDlls[] = {
-  L"dtvhooks.dll",  
-  L"dtvhooks64.dll" 
+
+static const DllBlockInfo gBlockedInprocDlls[] = {
+  
+  
+  {L"dtvhooks.dll", MAKE_FILE_VERSION(18, 1, 11, 0)},
+  {L"dtvhooks64.dll", MAKE_FILE_VERSION(18, 1, 11, 0)}
 };
 
 
@@ -201,9 +219,17 @@ LazyInstantiator::IsBlockedInjection()
 
   for (size_t index = 0, len = ArrayLength(gBlockedInprocDlls); index < len;
        ++index) {
-    if (::GetModuleHandleW(gBlockedInprocDlls[index])) {
+    const DllBlockInfo& blockedDll = gBlockedInprocDlls[index];
+    HMODULE module = ::GetModuleHandleW(blockedDll.mName);
+    if (!module) {
+      
+      continue;
+    }
+    if (blockedDll.mUntilVersion == ALL_VERSIONS) {
       return true;
     }
+    return Compatibility::IsModuleVersionLessThan(module,
+                                                  blockedDll.mUntilVersion);
   }
 
   return false;
