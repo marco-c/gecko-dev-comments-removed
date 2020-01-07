@@ -208,8 +208,14 @@ SessionStore.prototype = {
         
         
         log("Session:FlushTabs");
-        if (this._loadState == STATE_RUNNING) {
-          this.flushPendingState();
+        if (!this._loadState == STATE_RUNNING || !this.flushPendingState()) {
+          let window = Services.wm.getMostRecentWindow("navigator:browser");
+          if (window) { 
+            window.WindowEventDispatcher.sendRequest({
+              type: "PrivateBrowsing:Data",
+              noChange: true
+            });
+          }
         }
         break;
 
@@ -993,11 +999,17 @@ SessionStore.prototype = {
   },
 
   
+
+
+
+
   flushPendingState: function ss_flushPendingState() {
     log("flushPendingState(), _pendingWrite = " + this._pendingWrite);
     if (this._pendingWrite) {
       this._saveState(false);
+      return true;
     }
+    return false;
   },
 
   _saveState: function ss_saveState(aAsync) {
@@ -1057,15 +1069,6 @@ SessionStore.prototype = {
     }
 
     
-    if (normalData.windows[0] && normalData.windows[0].tabs) {
-      log("_saveState() writing normal data, " +
-           normalData.windows[0].tabs.length + " tabs in window[0]");
-    } else {
-      log("_saveState() writing empty normal data");
-    }
-    this._writeFile(this._sessionFile, this._sessionFileTemp, normalData, aAsync);
-
-    
     
     let window = Services.wm.getMostRecentWindow("navigator:browser");
     if (window) { 
@@ -1074,6 +1077,15 @@ SessionStore.prototype = {
         session: (privateData.windows.length > 0 && privateData.windows[0].tabs.length > 0) ? JSON.stringify(privateData) : null
       });
     }
+
+    
+    if (normalData.windows[0] && normalData.windows[0].tabs) {
+      log("_saveState() writing normal data, " +
+           normalData.windows[0].tabs.length + " tabs in window[0]");
+    } else {
+      log("_saveState() writing empty normal data");
+    }
+    this._writeFile(this._sessionFile, this._sessionFileTemp, normalData, aAsync);
 
     this._lastSaveTime = Date.now();
   },
