@@ -147,14 +147,6 @@ enum class RepeatMode : uint32_t {
   Sentinel 
 };
 
-enum class SubpixelDirection : uint32_t {
-  None = 0,
-  Horizontal,
-  Vertical,
-
-  Sentinel 
-};
-
 enum class TransformStyle : uint32_t {
   Flat = 0,
   Preserve3D = 1,
@@ -225,9 +217,6 @@ struct LayoutPixel;
 
 
 struct Renderer;
-
-
-struct ResourceUpdates;
 
 
 struct Tiles;
@@ -888,7 +877,6 @@ struct ColorU {
 
 struct FontInstanceOptions {
   FontRenderMode render_mode;
-  SubpixelDirection subpx_dir;
   FontInstanceFlags flags;
   
   
@@ -897,7 +885,6 @@ struct FontInstanceOptions {
 
   bool operator==(const FontInstanceOptions& aOther) const {
     return render_mode == aOther.render_mode &&
-           subpx_dir == aOther.subpx_dir &&
            flags == aOther.flags &&
            bg_color == aOther.bg_color;
   }
