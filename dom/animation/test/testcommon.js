@@ -419,3 +419,14 @@ function waitForPaints() {
   
   return waitForAnimationFrames(2);
 }
+
+
+
+
+
+
+function animationStartsRightNow(aAnimation) {
+  return aAnimation.startTime === aAnimation.timeline.currentTime &&
+         aAnimation.currentTime === 0;
+}
+
