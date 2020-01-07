@@ -681,6 +681,16 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 
 
+
+bool NS_IsSafeTopLevelNav(nsIChannel* aChannel);
+
+
+
+
+bool NS_IsTopLevelForeign(nsIChannel* aChannel);
+
+
+
 #define NECKO_NO_APP_ID 0
 #define NECKO_UNKNOWN_APP_ID UINT32_MAX
 
