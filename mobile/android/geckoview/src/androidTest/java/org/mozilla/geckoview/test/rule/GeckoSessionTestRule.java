@@ -234,7 +234,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         
 
 
-        int count() default 0;
+
+        int count() default -1;
 
         
 
@@ -325,8 +326,8 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         }
 
          int getCount() {
-            return (requirement == null) ? 0 :
-                   !requirement.allowed ? -1 : requirement.count;
+            return (requirement == null) ? -1 :
+                   requirement.allowed ? requirement.count : 0;
         }
 
          void incrementCounter() {
@@ -338,12 +339,12 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
         }
 
          boolean allowUnlimitedCalls() {
-            return getCount() == 0;
+            return getCount() == -1;
         }
 
          boolean allowMoreCalls() {
             final int count = getCount();
-            return count == 0 || count > currentCount;
+            return count == -1 || count > currentCount;
         }
 
          CallInfo getInfo() {
@@ -569,9 +570,9 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
 
     private void assertAllowMoreCalls(final MethodCall call) {
         final int count = call.getCount();
-        if (count != 0) {
+        if (count != -1) {
             assertThat(call.method.getName() + " call count should be within limit",
-                       call.getCurrentCount() + 1, lessThanOrEqualTo(Math.max(0, count)));
+                       call.getCurrentCount() + 1, lessThanOrEqualTo(count));
         }
     }
 
@@ -588,10 +589,10 @@ public class GeckoSessionTestRule extends UiThreadTestRule {
             return;
         }
         final int count = call.getCount();
-        if (count < 0) {
+        if (count == 0) {
             assertThat(call.method.getName() + " should not be called",
                        call.getCurrentCount(), equalTo(0));
-        } else if (count == 0) {
+        } else if (count == -1) {
             assertThat(call.method.getName() + " should be called",
                        call.getCurrentCount(), greaterThan(0));
         } else {
