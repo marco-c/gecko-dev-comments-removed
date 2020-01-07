@@ -5520,22 +5520,11 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis              aAxis,
     
     
     boxSizing = StyleBoxSizing::Content;
-    if (aMarginBoxMinSizeClamp != NS_MAXSIZE &&
-        styleISize.GetIntValue() == NS_STYLE_WIDTH_MIN_CONTENT) {
-      
-      result = aFrame->GetMinISize(aRenderingContext);
-    }
   } else if (!styleISize.ConvertsToLength() &&
              !(haveFixedMinISize && haveFixedMaxISize && maxISize <= minISize)) {
 #ifdef DEBUG_INTRINSIC_WIDTH
     ++gNoiseIndent;
 #endif
-    if (aType != MIN_ISIZE) {
-      
-      
-      
-      aMarginBoxMinSizeClamp = NS_MAXSIZE;
-    }
     if (MOZ_UNLIKELY(!isInlineAxis)) {
       IntrinsicSize intrinsicSize = aFrame->GetIntrinsicSize();
       const nsStyleCoord intrinsicBCoord =
