@@ -150,8 +150,6 @@ private:
 };
 
 
-typedef nsAutoString nsVoidableString;
-
 #include "nsDependentString.h"
 #include "nsLiteralString.h"
 #include "nsPromiseFlatString.h"
