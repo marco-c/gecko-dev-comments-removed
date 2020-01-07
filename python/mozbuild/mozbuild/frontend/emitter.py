@@ -137,7 +137,6 @@ class TreeMetadataEmitter(LoggingMixin):
         self._rust_compile_dirs = set()
         self._asm_compile_dirs = set()
         self._compile_flags = dict()
-        self._compile_as_flags = dict()
         self._linkage = []
         self._static_linking_shared = set()
         self._crate_verified_local = set()
@@ -279,14 +278,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 objdir_flags = self._compile_flags[lib.objdir]
                 objdir_flags.resolve_flags('LIBRARY_DEFINES', lib_defines)
 
-                objdir_flags = self._compile_as_flags.get(lib.objdir)
-                if objdir_flags:
-                    objdir_flags.resolve_flags('LIBRARY_DEFINES', lib_defines)
-
         for flags_obj in self._compile_flags.values():
-            yield flags_obj
-
-        for flags_obj in self._compile_as_flags.values():
             yield flags_obj
 
         for obj in self._binaries.values():
@@ -1033,8 +1025,8 @@ class TreeMetadataEmitter(LoggingMixin):
             generated_files.add(str(sub.relpath))
             yield sub
 
-        for defines_var, cls, backend_flags in (('DEFINES', Defines, (computed_flags, computed_as_flags)),
-                                                ('HOST_DEFINES', HostDefines, (computed_host_flags,))):
+        for defines_var, cls, backend_flags in (('DEFINES', Defines, computed_flags),
+                                                ('HOST_DEFINES', HostDefines, computed_host_flags)):
             defines = context.get(defines_var)
             if defines:
                 defines_obj = cls(context, defines)
@@ -1049,8 +1041,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
             defines_from_obj = list(defines_obj.get_defines())
             if defines_from_obj:
-                for flags in backend_flags:
-                    flags.resolve_flags(defines_var, defines_from_obj)
+                backend_flags.resolve_flags(defines_var, defines_from_obj)
 
         simple_lists = [
             ('GENERATED_EVENTS_WEBIDL_FILES', GeneratedEventWebIDLFile),
@@ -1078,8 +1069,6 @@ class TreeMetadataEmitter(LoggingMixin):
             yield include_obj
 
         computed_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
-        computed_as_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
-        computed_host_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
 
         for obj in self._handle_linkables(context, passthru, generated_files):
             yield obj
@@ -1241,7 +1230,7 @@ class TreeMetadataEmitter(LoggingMixin):
             yield computed_link_flags
 
         if context.objdir in self._asm_compile_dirs:
-            self._compile_as_flags[context.objdir] = computed_as_flags
+            yield computed_as_flags
 
         if context.objdir in self._host_compile_dirs:
             yield computed_host_flags
@@ -1287,45 +1276,47 @@ class TreeMetadataEmitter(LoggingMixin):
                                 unicode(path),
                                 [Path(context, path + '.in')])
 
-        generated_files = context.get('GENERATED_FILES')
-        if not generated_files:
+        generated_files = context.get('GENERATED_FILES') or []
+        localized_generated_files = context.get('LOCALIZED_GENERATED_FILES') or []
+        if not (generated_files or localized_generated_files):
             return
 
-        for f in generated_files:
-            flags = generated_files[f]
-            outputs = f
-            inputs = []
-            if flags.script:
-                method = "main"
-                script = SourcePath(context, flags.script).full_path
+        for (localized, gen) in ((False, generated_files), (True, localized_generated_files)):
+            for f in gen:
+                flags = gen[f]
+                outputs = f
+                inputs = []
+                if flags.script:
+                    method = "main"
+                    script = SourcePath(context, flags.script).full_path
 
-                
-                if '.py:' in script:
-                    script, method = script.rsplit('.py:', 1)
-                    script += '.py'
+                    
+                    if '.py:' in script:
+                        script, method = script.rsplit('.py:', 1)
+                        script += '.py'
 
-                if not os.path.exists(script):
-                    raise SandboxValidationError(
-                        'Script for generating %s does not exist: %s'
-                        % (f, script), context)
-                if os.path.splitext(script)[1] != '.py':
-                    raise SandboxValidationError(
-                        'Script for generating %s does not end in .py: %s'
-                        % (f, script), context)
-
-                for i in flags.inputs:
-                    p = Path(context, i)
-                    if (isinstance(p, SourcePath) and
-                            not os.path.exists(p.full_path)):
+                    if not os.path.exists(script):
                         raise SandboxValidationError(
-                            'Input for generating %s does not exist: %s'
-                            % (f, p.full_path), context)
-                    inputs.append(p)
-            else:
-                script = None
-                method = None
-            yield GeneratedFile(context, script, method, outputs, inputs,
-                                flags.flags)
+                            'Script for generating %s does not exist: %s'
+                            % (f, script), context)
+                    if os.path.splitext(script)[1] != '.py':
+                        raise SandboxValidationError(
+                            'Script for generating %s does not end in .py: %s'
+                            % (f, script), context)
+
+                    for i in flags.inputs:
+                        p = Path(context, i)
+                        if (isinstance(p, SourcePath) and
+                                not os.path.exists(p.full_path)):
+                            raise SandboxValidationError(
+                                'Input for generating %s does not exist: %s'
+                                % (f, p.full_path), context)
+                        inputs.append(p)
+                else:
+                    script = None
+                    method = None
+                yield GeneratedFile(context, script, method, outputs, inputs,
+                                    flags.flags, localized=localized)
 
     def _process_test_manifests(self, context):
         for prefix, info in TEST_MANIFESTS.items():
