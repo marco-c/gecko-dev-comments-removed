@@ -131,8 +131,6 @@ protected:
 
 private:
 
-  Atomic<bool> mLoadingWorkerScript;
-
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
 
@@ -143,7 +141,6 @@ private:
   
   
   uint32_t mParentWindowPausedDepth;
-  WorkerType mWorkerType;
 
 protected:
   WorkerPrivateParent(WorkerPrivate* aParent,
@@ -300,29 +297,6 @@ public:
     return mParentWindowPausedDepth > 0;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool
-  LoadScriptAsPartOfLoadingServiceWorkerScript()
-  {
-    MOZ_ASSERT(IsServiceWorker());
-    return mLoadingWorkerScript;
-  }
-
-  void
-  SetLoadingWorkerScript(bool aLoadingWorkerScript)
-  {
-    
-    MOZ_ASSERT(IsServiceWorker());
-    mLoadingWorkerScript = aLoadingWorkerScript;
-  }
-
   nsresult
   SetPrincipalOnMainThread(nsIPrincipal* aPrincipal, nsILoadGroup* aLoadGroup);
 
@@ -338,52 +312,6 @@ public:
 #endif
 
   nsIDocument* GetDocument() const;
-
-  WorkerType
-  Type() const
-  {
-    return mWorkerType;
-  }
-
-  bool
-  IsDedicatedWorker() const
-  {
-    return mWorkerType == WorkerTypeDedicated;
-  }
-
-  bool
-  IsSharedWorker() const
-  {
-    return mWorkerType == WorkerTypeShared;
-  }
-
-  bool
-  IsServiceWorker() const
-  {
-    return mWorkerType == WorkerTypeService;
-  }
-
-  nsContentPolicyType
-  ContentPolicyType() const
-  {
-    return ContentPolicyType(mWorkerType);
-  }
-
-  static nsContentPolicyType
-  ContentPolicyType(WorkerType aWorkerType)
-  {
-    switch (aWorkerType) {
-    case WorkerTypeDedicated:
-      return nsIContentPolicy::TYPE_INTERNAL_WORKER;
-    case WorkerTypeShared:
-      return nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER;
-    case WorkerTypeService:
-      return nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid worker type");
-      return nsIContentPolicy::TYPE_INVALID;
-    }
-  }
 
   void
   GetAllSharedWorkers(nsTArray<RefPtr<SharedWorker>>& aSharedWorkers);
@@ -451,6 +379,8 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
 
   
   nsString mWorkerName;
+
+  WorkerType mWorkerType;
 
   
   
@@ -563,6 +493,8 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   
   
   Atomic<uint64_t> mBusyCount;
+
+  Atomic<bool> mLoadingWorkerScript;
 
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
@@ -1124,6 +1056,52 @@ public:
     return mWorkerName;
   }
 
+  WorkerType
+  Type() const
+  {
+    return mWorkerType;
+  }
+
+  bool
+  IsDedicatedWorker() const
+  {
+    return mWorkerType == WorkerTypeDedicated;
+  }
+
+  bool
+  IsSharedWorker() const
+  {
+    return mWorkerType == WorkerTypeShared;
+  }
+
+  bool
+  IsServiceWorker() const
+  {
+    return mWorkerType == WorkerTypeService;
+  }
+
+  nsContentPolicyType
+  ContentPolicyType() const
+  {
+    return ContentPolicyType(mWorkerType);
+  }
+
+  static nsContentPolicyType
+  ContentPolicyType(WorkerType aWorkerType)
+  {
+    switch (aWorkerType) {
+    case WorkerTypeDedicated:
+      return nsIContentPolicy::TYPE_INTERNAL_WORKER;
+    case WorkerTypeShared:
+      return nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER;
+    case WorkerTypeService:
+      return nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid worker type");
+      return nsIContentPolicy::TYPE_INVALID;
+    }
+  }
+
   nsIScriptContext*
   GetScriptContext() const
   {
@@ -1390,6 +1368,29 @@ public:
   StealLoadFailedAsyncRunnable()
   {
     return mLoadInfo.mLoadFailedAsyncRunnable.forget();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool
+  LoadScriptAsPartOfLoadingServiceWorkerScript()
+  {
+    MOZ_ASSERT(IsServiceWorker());
+    return mLoadingWorkerScript;
+  }
+
+  void
+  SetLoadingWorkerScript(bool aLoadingWorkerScript)
+  {
+    
+    MOZ_ASSERT(IsServiceWorker());
+    mLoadingWorkerScript = aLoadingWorkerScript;
   }
 
 private:
