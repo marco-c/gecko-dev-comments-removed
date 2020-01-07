@@ -38,9 +38,6 @@ GeckoViewStartup.prototype = {
     switch (aTopic) {
       case "app-startup": {
         
-        Services.obs.addObserver(this, "chrome-document-global-created");
-        Services.obs.addObserver(this, "content-document-global-created");
-
         GeckoViewUtils.addLazyGetter(this, "GeckoViewPermission", {
           service: "@mozilla.org/content-permission/prompt;1",
           observers: [
@@ -54,11 +51,8 @@ GeckoViewStartup.prototype = {
           
           this.setResourceSubstitutions();
 
-        } else {
-          
-          GeckoViewUtils.addLazyGetter(this, "GeckoViewPrompt", {
-            service: "@mozilla.org/prompter;1",
-          });
+          Services.mm.loadFrameScript(
+              "chrome://geckoview/content/GeckoViewPromptContent.js", true);
         }
         break;
       }
@@ -81,24 +75,6 @@ GeckoViewStartup.prototype = {
           mm: [
             "GeckoView:Prompt",
           ],
-        });
-        break;
-      }
-
-      case "chrome-document-global-created":
-      case "content-document-global-created": {
-        let win = GeckoViewUtils.getChromeWindow(aSubject);
-        if (win !== aSubject) {
-          
-          return;
-        }
-
-        GeckoViewUtils.addLazyEventListener(win, ["click", "contextmenu"], {
-          handler: _ => this.GeckoViewPrompt,
-          options: {
-            capture: false,
-            mozSystemGroup: true,
-          },
         });
         break;
       }
