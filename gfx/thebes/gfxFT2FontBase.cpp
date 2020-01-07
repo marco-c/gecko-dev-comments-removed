@@ -317,18 +317,14 @@ gfxFT2FontBase::InitMetrics()
         
         
         const uint16_t kUseTypoMetricsMask = 1 << 7;
-        if (os2->fsSelection & kUseTypoMetricsMask) {
+        if ((os2->fsSelection & kUseTypoMetricsMask) ||
+            
+            
+	    (mMetrics.maxAscent == 0.0 && mMetrics.maxDescent == 0.0)) {
+            
+            
             mMetrics.maxAscent = NS_round(mMetrics.emAscent);
             mMetrics.maxDescent = NS_round(mMetrics.emDescent);
-        } else {
-            
-            
-            
-            
-            mMetrics.maxAscent =
-                std::max(mMetrics.maxAscent, NS_round(mMetrics.emAscent));
-            mMetrics.maxDescent =
-                std::max(mMetrics.maxDescent, NS_round(mMetrics.emDescent));
         }
     } else {
         mMetrics.emAscent = mMetrics.maxAscent;
