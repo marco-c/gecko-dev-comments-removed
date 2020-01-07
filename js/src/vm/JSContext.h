@@ -25,7 +25,7 @@ struct DtoaState;
 
 namespace js {
 
-class AutoAtomsZone;
+class AutoAllocInAtomsZone;
 class AutoRealm;
 
 namespace jit {
@@ -131,6 +131,9 @@ struct JSContext : public JS::RootingContext,
     
     js::ThreadData<js::gc::FreeLists*> freeLists_;
 
+    
+    js::ThreadData<js::gc::FreeLists*> atomsZoneFreeLists_;
+
   public:
     
     
@@ -141,6 +144,11 @@ struct JSContext : public JS::RootingContext,
     js::gc::FreeLists& freeLists() {
         MOZ_ASSERT(freeLists_);
         return *freeLists_;
+    }
+
+    js::gc::FreeLists& atomsZoneFreeLists() {
+        MOZ_ASSERT(atomsZoneFreeLists_);
+        return *atomsZoneFreeLists_;
     }
 
     template <typename T>
@@ -210,9 +218,9 @@ struct JSContext : public JS::RootingContext,
   private:
     inline void setRealm(JS::Realm* realm);
     inline void enterRealm(JS::Realm* realm);
-    inline void enterAtomsZone(const js::AutoLockForExclusiveAccess& lock);
+    inline void enterAtomsZone();
 
-    friend class js::AutoAtomsZone;
+    friend class js::AutoAllocInAtomsZone;
     friend class js::AutoRealm;
 
   public:
@@ -224,8 +232,7 @@ struct JSContext : public JS::RootingContext,
     inline void setRealmForJitExceptionHandler(JS::Realm* realm);
 
     inline void leaveRealm(JS::Realm* oldRealm);
-    inline void leaveAtomsZone(JS::Realm* oldRealm,
-                               const js::AutoLockForExclusiveAccess& lock);
+    inline void leaveAtomsZone(JS::Realm* oldRealm);
 
     void setHelperThread(js::HelperThread* helperThread);
     js::HelperThread* helperThread() const { return helperThread_; }
@@ -271,16 +278,18 @@ struct JSContext : public JS::RootingContext,
     
     inline js::Handle<js::GlobalObject*> global() const;
 
-    
     js::AtomSet& atoms(const js::AutoAccessAtomsZone& access) {
         return runtime_->atoms(access);
     }
     const JS::Zone* atomsZone(const js::AutoAccessAtomsZone& access) {
         return runtime_->atomsZone(access);
     }
+
     js::SymbolRegistry& symbolRegistry(const js::AutoAccessAtomsZone& access) {
         return runtime_->symbolRegistry(access);
     }
+
+    
     js::ScriptDataTable& scriptDataTable(js::AutoLockScriptData& lock) {
         return runtime_->scriptDataTable(lock);
     }

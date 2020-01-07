@@ -65,19 +65,13 @@ CheckZone<Helper>::check() const
     if (OnHelperThread<Helper>())
         return;
 
-    JSRuntime* runtime = TlsContext.get()->runtime();
-    if (zone->isAtomsZone()) {
-        
-        
-        MOZ_ASSERT(runtime->currentThreadHasExclusiveAccess() ||
-                   (!runtime->isOffThreadParseRunning() && runtime->isOffThreadParsingBlocked()));
-    } else if (zone->usedByHelperThread()) {
+    if (zone->usedByHelperThread()) {
         
         MOZ_ASSERT(zone->ownedByCurrentHelperThread());
     } else {
         
         
-        MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(TlsContext.get()->runtime()));
     }
 }
 
@@ -114,6 +108,32 @@ template class CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThr
 template class CheckGlobalLock<GlobalLock::ExclusiveAccessLock, AllowedHelperThread::GCTask>;
 template class CheckGlobalLock<GlobalLock::ScriptDataLock, AllowedHelperThread::None>;
 template class CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedHelperThread::None>;
+
+template <AllowedHelperThread Helper>
+void
+CheckArenaListAccess<Helper>::check() const
+{
+    MOZ_ASSERT(zone);
+
+    if (OnHelperThread<Helper>())
+        return;
+
+    JSRuntime* rt = TlsContext.get()->runtime();
+    if (zone->isAtomsZone()) {
+        
+        
+        if (CurrentThreadCanAccessRuntime(rt) && rt->currentThreadHasExclusiveAccess())
+            return;
+
+        
+        MOZ_ASSERT_IF(rt->isOffThreadParseRunning(), rt->gc.currentThreadHasLockedGC());
+        return;
+    }
+
+    CheckZone<AllowedHelperThread::None>::check();
+}
+
+template class CheckArenaListAccess<AllowedHelperThread::GCTask>;
 
 #endif 
 

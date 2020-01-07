@@ -3079,7 +3079,6 @@ ArenaLists::ArenaLists(Zone* zone)
   : zone_(zone),
     freeLists_(zone),
     arenaLists_(zone),
-    backgroundFinalizeState_(),
     arenaListsToSweep_(),
     incrementalSweptArenaKind(zone, AllocKind::LIMIT),
     incrementalSweptArenas(zone),
@@ -3090,7 +3089,7 @@ ArenaLists::ArenaLists(Zone* zone)
     savedEmptyArenas(zone, nullptr)
 {
     for (auto i : AllAllocKinds()) {
-        backgroundFinalizeState(i) = BFS_DONE;
+        concurrentUse(i) = ConcurrentUse::None;
         arenaListsToSweep(i) = nullptr;
     }
 }
@@ -3114,7 +3113,7 @@ ArenaLists::~ArenaLists()
 
 
 
-        MOZ_ASSERT(backgroundFinalizeState(i) == BFS_DONE);
+        MOZ_ASSERT(concurrentUse(i) == ConcurrentUse::None);
         ReleaseArenaList(runtime(), arenaLists(i).head(), lock);
     }
     ReleaseArenaList(runtime(), incrementalSweptArenas.ref().head(), lock);
@@ -3134,7 +3133,7 @@ void
 ArenaLists::queueForForegroundSweep(AllocKind thingKind)
 {
     MOZ_ASSERT(!IsBackgroundFinalized(thingKind));
-    MOZ_ASSERT(backgroundFinalizeState(thingKind) == BFS_DONE);
+    MOZ_ASSERT(concurrentUse(thingKind) == ConcurrentUse::None);
     MOZ_ASSERT(!arenaListsToSweep(thingKind));
 
     arenaListsToSweep(thingKind) = arenaLists(thingKind).head();
@@ -3156,15 +3155,15 @@ ArenaLists::queueForBackgroundSweep(AllocKind thingKind)
 
     ArenaList* al = &arenaLists(thingKind);
     if (al->isEmpty()) {
-        MOZ_ASSERT(backgroundFinalizeState(thingKind) == BFS_DONE);
+        MOZ_ASSERT(concurrentUse(thingKind) == ConcurrentUse::None);
         return;
     }
 
-    MOZ_ASSERT(backgroundFinalizeState(thingKind) == BFS_DONE);
+    MOZ_ASSERT(concurrentUse(thingKind) == ConcurrentUse::None);
 
     arenaListsToSweep(thingKind) = al->head();
     al->clear();
-    backgroundFinalizeState(thingKind) = BFS_RUN;
+    concurrentUse(thingKind) = ConcurrentUse::BackgroundFinalize;
 }
 
  void
@@ -3202,7 +3201,7 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
     
     {
         AutoLockGC lock(lists->runtimeFromAnyThread());
-        MOZ_ASSERT(lists->backgroundFinalizeState(thingKind) == BFS_RUN);
+        MOZ_ASSERT(lists->concurrentUse(thingKind) == ConcurrentUse::BackgroundFinalize);
 
         
         *al = finalized.insertListWithCursorAtEnd(*al);
@@ -3210,7 +3209,7 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
         lists->arenaListsToSweep(thingKind) = nullptr;
     }
 
-    lists->backgroundFinalizeState(thingKind) = BFS_DONE;
+    lists->concurrentUse(thingKind) = ConcurrentUse::None;
 }
 
 void
@@ -8353,7 +8352,7 @@ ArenaLists::adoptArenas(ArenaLists* fromArenaLists, bool targetZoneIsCollecting)
     fromArenaLists->clearFreeLists();
 
     for (auto thingKind : AllAllocKinds()) {
-        MOZ_ASSERT(fromArenaLists->backgroundFinalizeState(thingKind) == BFS_DONE);
+        MOZ_ASSERT(fromArenaLists->concurrentUse(thingKind) == ConcurrentUse::None);
         ArenaList* fromList = &fromArenaLists->arenaLists(thingKind);
         ArenaList* toList = &arenaLists(thingKind);
         fromList->check();

@@ -77,16 +77,16 @@ class JitRuntime
     MainThreadData<uint64_t> nextCompilationId_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> exceptionTailOffset_;
+    WriteOnceData<uint32_t> exceptionTailOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> bailoutTailOffset_;
+    WriteOnceData<uint32_t> bailoutTailOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> profilerExitFrameTailOffset_;
+    WriteOnceData<uint32_t> profilerExitFrameTailOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> enterJITOffset_;
+    WriteOnceData<uint32_t> enterJITOffset_;
 
     
     struct BailoutTable {
@@ -97,50 +97,50 @@ class JitRuntime
         {}
     };
     typedef Vector<BailoutTable, 4, SystemAllocPolicy> BailoutTableVector;
-    ExclusiveAccessLockWriteOnceData<BailoutTableVector> bailoutTables_;
+    WriteOnceData<BailoutTableVector> bailoutTables_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> bailoutHandlerOffset_;
+    WriteOnceData<uint32_t> bailoutHandlerOffset_;
 
     
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> argumentsRectifierOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> argumentsRectifierReturnOffset_;
+    WriteOnceData<uint32_t> argumentsRectifierOffset_;
+    WriteOnceData<uint32_t> argumentsRectifierReturnOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> invalidatorOffset_;
+    WriteOnceData<uint32_t> invalidatorOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> valuePreBarrierOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> stringPreBarrierOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> objectPreBarrierOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> shapePreBarrierOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> objectGroupPreBarrierOffset_;
+    WriteOnceData<uint32_t> valuePreBarrierOffset_;
+    WriteOnceData<uint32_t> stringPreBarrierOffset_;
+    WriteOnceData<uint32_t> objectPreBarrierOffset_;
+    WriteOnceData<uint32_t> shapePreBarrierOffset_;
+    WriteOnceData<uint32_t> objectGroupPreBarrierOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> mallocStubOffset_;
-    ExclusiveAccessLockWriteOnceData<uint32_t> freeStubOffset_;
+    WriteOnceData<uint32_t> mallocStubOffset_;
+    WriteOnceData<uint32_t> freeStubOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> lazyLinkStubOffset_;
+    WriteOnceData<uint32_t> lazyLinkStubOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<uint32_t> interpreterStubOffset_;
+    WriteOnceData<uint32_t> interpreterStubOffset_;
 
     
-    ExclusiveAccessLockWriteOnceData<JitCode*> debugTrapHandler_;
+    WriteOnceData<JitCode*> debugTrapHandler_;
 
     
-    ExclusiveAccessLockWriteOnceData<JitCode*> baselineDebugModeOSRHandler_;
-    ExclusiveAccessLockWriteOnceData<void*> baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
+    WriteOnceData<JitCode*> baselineDebugModeOSRHandler_;
+    WriteOnceData<void*> baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
 
     
-    ExclusiveAccessLockWriteOnceData<JitCode*> trampolineCode_;
+    WriteOnceData<JitCode*> trampolineCode_;
 
     
     
     using VMWrapperMap = HashMap<const VMFunction*, uint32_t, VMFunction>;
-    ExclusiveAccessLockWriteOnceData<VMWrapperMap*> functionWrappers_;
+    WriteOnceData<VMWrapperMap*> functionWrappers_;
 
     
     UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
