@@ -11,7 +11,7 @@
 #ifndef mozilla_dom_TreeWalker_h
 #define mozilla_dom_TreeWalker_h
 
-#include "nsIDOMTreeWalker.h"
+#include "nsISupports.h"
 #include "nsTraversal.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
@@ -23,13 +23,12 @@ class nsIDOMNode;
 namespace mozilla {
 namespace dom {
 
-class TreeWalker final : public nsIDOMTreeWalker, public nsTraversal
+class TreeWalker final : public nsISupports, public nsTraversal
 {
     virtual ~TreeWalker();
 
 public:
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_NSIDOMTREEWALKER
 
     TreeWalker(nsINode *aRoot,
                uint32_t aWhatToShow,
