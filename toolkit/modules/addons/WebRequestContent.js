@@ -128,7 +128,7 @@ var ContentPolicy = {
     let node = loadInfo.loadingContext;
     if (node &&
         (policyType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT ||
-         (ChromeUtils.getClassName(node) == "XULElement" &&
+        (ChromeUtils.getClassName(node) == "XULFrameElement" &&
           node.localName == "browser"))) {
       
       

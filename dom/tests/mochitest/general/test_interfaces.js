@@ -1253,6 +1253,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "XULElement", insecureContext: true, xbl: true},
 
+    {name: "XULFrameElement", insecureContext: true, xbl: true},
+
     {name: "XULPopupElement", insecureContext: true, xbl: true},
 
   ];
