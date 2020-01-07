@@ -23,6 +23,9 @@
 #include <algorithm>
 #include "LayersLogging.h"
 
+using namespace mozilla;
+using namespace mozilla::dom;
+
 
 
 #define PET_LOG(...)
