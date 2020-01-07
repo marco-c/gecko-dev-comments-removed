@@ -6,17 +6,16 @@
 
 
 
-use cssparser::{Parser, Token};
 use context::QuirksMode;
+use cssparser::{Parser, Token};
 use parser::ParserContext;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
 use super::{Device, MediaFeatureExpression};
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Parse, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]
 #[allow(missing_docs)]
 pub enum Operator {
     And,
@@ -24,7 +23,7 @@ pub enum Operator {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Parse, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
 enum AllowOr {
     Yes,
     No,
