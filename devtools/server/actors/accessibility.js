@@ -4,8 +4,9 @@
 
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cc, Ci } = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const { DebuggerServer } = require("devtools/server/main");
 const Services = require("Services");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
 const defer = require("devtools/shared/defer");
@@ -16,9 +17,16 @@ const {
   accessibilitySpec
 } = require("devtools/shared/specs/accessibility");
 
+const { isXUL } = require("devtools/server/actors/highlighters/utils/markup");
+const { isWindowIncluded } = require("devtools/shared/layout/utils");
+const { CustomHighlighterActor, register } =
+  require("devtools/server/actors/highlighters");
+const PREF_ACCESSIBILITY_FORCE_DISABLED = "accessibility.force_disabled";
+
 const nsIAccessibleEvent = Ci.nsIAccessibleEvent;
 const nsIAccessibleStateChangeEvent = Ci.nsIAccessibleStateChangeEvent;
 const nsIPropertyElement = Ci.nsIPropertyElement;
+const nsIAccessibleRole = Ci.nsIAccessibleRole;
 
 const {
   EVENT_TEXT_CHANGED,
@@ -39,7 +47,84 @@ const {
   EVENT_VALUE_CHANGE
 } = nsIAccessibleEvent;
 
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+
+
+const NAME_FROM_SUBTREE_RULE_ROLES = new Set([
+  nsIAccessibleRole.ROLE_BUTTONDROPDOWN,
+  nsIAccessibleRole.ROLE_BUTTONDROPDOWNGRID,
+  nsIAccessibleRole.ROLE_BUTTONMENU,
+  nsIAccessibleRole.ROLE_CELL,
+  nsIAccessibleRole.ROLE_CHECKBUTTON,
+  nsIAccessibleRole.ROLE_CHECK_MENU_ITEM,
+  nsIAccessibleRole.ROLE_CHECK_RICH_OPTION,
+  nsIAccessibleRole.ROLE_COLUMN,
+  nsIAccessibleRole.ROLE_COLUMNHEADER,
+  nsIAccessibleRole.ROLE_COMBOBOX_OPTION,
+  nsIAccessibleRole.ROLE_DEFINITION,
+  nsIAccessibleRole.ROLE_GRID_CELL,
+  nsIAccessibleRole.ROLE_HEADING,
+  nsIAccessibleRole.ROLE_HELPBALLOON,
+  nsIAccessibleRole.ROLE_HTML_CONTAINER,
+  nsIAccessibleRole.ROLE_KEY,
+  nsIAccessibleRole.ROLE_LABEL,
+  nsIAccessibleRole.ROLE_LINK,
+  nsIAccessibleRole.ROLE_LISTITEM,
+  nsIAccessibleRole.ROLE_MATHML_IDENTIFIER,
+  nsIAccessibleRole.ROLE_MATHML_NUMBER,
+  nsIAccessibleRole.ROLE_MATHML_OPERATOR,
+  nsIAccessibleRole.ROLE_MATHML_TEXT,
+  nsIAccessibleRole.ROLE_MATHML_STRING_LITERAL,
+  nsIAccessibleRole.ROLE_MATHML_GLYPH,
+  nsIAccessibleRole.ROLE_MENUITEM,
+  nsIAccessibleRole.ROLE_OPTION,
+  nsIAccessibleRole.ROLE_OUTLINEITEM,
+  nsIAccessibleRole.ROLE_PAGETAB,
+  nsIAccessibleRole.ROLE_PARENT_MENUITEM,
+  nsIAccessibleRole.ROLE_PUSHBUTTON,
+  nsIAccessibleRole.ROLE_RADIOBUTTON,
+  nsIAccessibleRole.ROLE_RADIO_MENU_ITEM,
+  nsIAccessibleRole.ROLE_RICH_OPTION,
+  nsIAccessibleRole.ROLE_ROW,
+  nsIAccessibleRole.ROLE_ROWHEADER,
+  nsIAccessibleRole.ROLE_SUMMARY,
+  nsIAccessibleRole.ROLE_SWITCH,
+  nsIAccessibleRole.ROLE_TABLE_COLUMN_HEADER,
+  nsIAccessibleRole.ROLE_TABLE_ROW_HEADER,
+  nsIAccessibleRole.ROLE_TEAR_OFF_MENU_ITEM,
+  nsIAccessibleRole.ROLE_TERM,
+  nsIAccessibleRole.ROLE_TOGGLE_BUTTON,
+  nsIAccessibleRole.ROLE_TOOLTIP
+]);
+
+const IS_OSX = Services.appinfo.OS === "Darwin";
+
+register("AccessibleHighlighter", "accessible");
+register("XULWindowAccessibleHighlighter", "xul-accessible");
+
+
+
+
+
+
+
+
+
+function isDefunct(accessible) {
+  let defunct = false;
+
+  try {
+    let extState = {};
+    accessible.getState({}, extState);
+    
+    
+    defunct = !!(extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT);
+  } catch (e) {
+    defunct = true;
+  }
+
+  return defunct;
+}
 
 
 
@@ -72,18 +157,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
 
     Object.defineProperty(this, "isDefunct", {
       get() {
-        let defunct = false;
-
-        try {
-          let extState = {};
-          this.rawAccessible.getState({}, extState);
-          
-          
-          defunct = !!(extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT);
-        } catch (e) {
-          defunct = true;
-        }
-
+        let defunct = isDefunct(this.rawAccessible);
         if (defunct) {
           delete this.isDefunct;
           this.isDefunct = true;
@@ -165,6 +239,13 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return this.rawAccessible.DOMNode ? this.rawAccessible.DOMNode.nodeType : 0;
   },
 
+  get parentAcc() {
+    if (this.isDefunct) {
+      return null;
+    }
+    return this.walker.addRef(this.rawAccessible.parent);
+  },
+
   children() {
     let children = [];
     if (this.isDefunct) {
@@ -177,14 +258,20 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return children;
   },
 
-  getIndexInParent() {
+  get indexInParent() {
     if (this.isDefunct) {
       return -1;
     }
-    return this.rawAccessible.indexInParent;
+
+    try {
+      return this.rawAccessible.indexInParent;
+    } catch (e) {
+      
+      return -1;
+    }
   },
 
-  getActions() {
+  get actions() {
     let actions = [];
     if (this.isDefunct) {
       return actions;
@@ -196,7 +283,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return actions;
   },
 
-  getState() {
+  get states() {
     if (this.isDefunct) {
       return [];
     }
@@ -209,7 +296,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     ];
   },
 
-  getAttributes() {
+  get attributes() {
     if (this.isDefunct || !this.rawAccessible.attributes) {
       return {};
     }
@@ -225,6 +312,25 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return attributes;
   },
 
+  get bounds() {
+    if (this.isDefunct) {
+      return null;
+    }
+
+    let x = {}, y = {}, w = {}, h = {};
+    try {
+      this.rawAccessible.getBounds(x, y, w, h);
+      x = x.value;
+      y = y.value;
+      w = w.value;
+      h = h.value;
+    } catch (e) {
+      return null;
+    }
+
+    return { x, y, w, h };
+  },
+
   form() {
     return {
       actor: this.actorID,
@@ -236,7 +342,10 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
       keyboardShortcut: this.keyboardShortcut,
       childCount: this.childCount,
       domNodeType: this.domNodeType,
-      walker: this.walker.form()
+      indexInParent: this.indexInParent,
+      states: this.states,
+      actions: this.actions,
+      attributes: this.attributes
     };
   }
 });
@@ -253,67 +362,33 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   initialize(conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
-    this.rootWin = tabActor.window;
-    this.rootDoc = tabActor.window.document;
     this.refMap = new Map();
-    
-    
-    
-    this.readyDeferred = defer();
+    this.setA11yServiceGetter();
+    this.onPick = this.onPick.bind(this);
+    this.onHovered = this.onHovered.bind(this);
+    this.onKey = this.onKey.bind(this);
 
+    this.highlighter = CustomHighlighterActor(this, isXUL(this.rootWin) ?
+      "XULWindowAccessibleHighlighter" : "AccessibleHighlighter");
+  },
+
+  setA11yServiceGetter() {
     DevToolsUtils.defineLazyGetter(this, "a11yService", () => {
       Services.obs.addObserver(this, "accessible-event");
       return Cc["@mozilla.org/accessibilityService;1"].getService(
         Ci.nsIAccessibilityService);
     });
-
-    this.onLoad = this.onLoad.bind(this);
-    this.onUnload = this.onUnload.bind(this);
-
-    events.on(tabActor, "will-navigate", this.onUnload);
-    events.on(tabActor, "window-ready", this.onLoad);
   },
 
-  onUnload({ window }) {
-    let doc = window.document;
-    let actor = this.getRef(doc);
-
-    
-    
-    if (!actor) {
-      return;
-    }
-
-    
-    this.purgeSubtree(this.a11yService.getAccessibleFor(this.doc));
-    
-    if (this.rootDoc === doc) {
-      this.rootDoc = null;
-      this.refMap.clear();
-      this.readyDeferred = defer();
-    }
+  get rootWin() {
+    return this.tabActor && this.tabActor.window;
   },
 
-  onLoad({ window, isTopLevel }) {
-    if (isTopLevel) {
-      
-      if (this.rootDoc && !Cu.isDeadWrapper(this.rootDoc) &&
-          this.rootDoc.defaultView) {
-        this.onUnload({ window: this.rootDoc.defaultView });
-      }
-
-      this.rootWin = window;
-      this.rootDoc = window.document;
-    }
+  get rootDoc() {
+    return this.tabActor && this.tabActor.window.document;
   },
 
-  destroy() {
-    if (this._destroyed) {
-      return;
-    }
-
-    this._destroyed = true;
-
+  reset() {
     try {
       Services.obs.removeObserver(this, "accessible-event");
     } catch (e) {
@@ -321,23 +396,34 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       
     }
 
+    this.cancelPick();
+
     
     if (this.refMap.size > 0) {
-      this.purgeSubtree(this.a11yService.getAccessibleFor(this.rootDoc));
-      this.refMap.clear();
+      try {
+        if (this.rootDoc) {
+          this.purgeSubtree(this.a11yService.getAccessibleFor(this.rootDoc),
+                            this.rootDoc);
+        }
+      } catch (e) {
+        
+      }
     }
 
-    events.off(this.tabActor, "will-navigate", this.onUnload);
-    events.off(this.tabActor, "window-ready", this.onLoad);
-
-    this.onLoad = null;
-    this.onUnload = null;
     delete this.a11yService;
-    this.tabActor = null;
-    this.rootDoc = null;
-    this.refMap = null;
+    this.setA11yServiceGetter();
+  },
 
+  destroy() {
     Actor.prototype.destroy.call(this);
+
+    this.reset();
+
+    this.highlighter.destroy();
+    this.highlighter = null;
+
+    this.tabActor = null;
+    this.refMap = null;
   },
 
   getRef(rawAccessible) {
@@ -362,7 +448,8 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  purgeSubtree(rawAccessible) {
+
+  purgeSubtree(rawAccessible, rawNode) {
     let actor = this.getRef(rawAccessible);
     if (actor && rawAccessible && !actor.isDefunct) {
       for (let child = rawAccessible.firstChild; child; child = child.nextSibling) {
@@ -375,6 +462,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     if (actor) {
       events.emit(this, "accessible-destroy", actor);
       actor.destroy();
+    }
+
+    
+    if (rawNode && rawNode === this.rootDoc) {
+      this.refMap.clear();
     }
   },
 
@@ -393,21 +485,49 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   getDocument() {
-    let doc = this.addRef(this.a11yService.getAccessibleFor(this.rootDoc));
-    let states = doc.getState();
-
-    if (states.includes("busy")) {
-      return this.readyDeferred.promise.then(() => doc);
+    if (!this.rootDoc || !this.rootDoc.documentElement) {
+      return this.once("document-ready").then(docAcc => this.addRef(docAcc));
     }
 
-    this.readyDeferred.resolve();
-    return Promise.resolve(doc);
+    if (isXUL(this.rootWin)) {
+      let doc = this.addRef(this.a11yService.getAccessibleFor(this.rootDoc));
+      return Promise.resolve(doc);
+    }
+
+    let doc = this.a11yService.getAccessibleFor(this.rootDoc);
+    let state = {};
+    doc.getState(state, {});
+    if (state.value & Ci.nsIAccessibleStates.STATE_BUSY) {
+      return this.once("document-ready").then(docAcc => this.addRef(docAcc));
+    }
+
+    return Promise.resolve(this.addRef(doc));
   },
 
   getAccessibleFor(domNode) {
     
     return this.getDocument().then(() =>
       this.addRef(this.a11yService.getAccessibleFor(domNode.rawNode)));
+  },
+
+  async getAncestry(accessible) {
+    if (accessible.indexInParent === -1) {
+      return [];
+    }
+    const doc = await this.getDocument();
+    let ancestry = [];
+    try {
+      let parent = accessible;
+      while (parent && (parent = parent.parentAcc) && parent != doc) {
+        ancestry.push(parent);
+      }
+      ancestry.push(doc);
+    } catch (error) {
+      throw new Error(`Failed to get ancestor for ${accessible}: ${error}`);
+    }
+
+    return ancestry.map(parent => (
+      { accessible: parent, children: parent.children() }));
   },
 
   
@@ -424,25 +544,28 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     switch (event.eventType) {
       case EVENT_STATE_CHANGE:
         let { state, isEnabled } = event.QueryInterface(nsIAccessibleStateChangeEvent);
-        let states = [...this.a11yService.getStringStates(state, 0)];
-
-        if (states.includes("busy") && !isEnabled) {
-          let { DOMNode } = event;
+        let isBusy = state & Ci.nsIAccessibleStates.STATE_BUSY;
+        
+        if (isBusy && !isEnabled && rawAccessible instanceof Ci.nsIAccessibleDocument) {
+          
+          this.purgeSubtree(rawAccessible, event.DOMNode);
           
           
-          if (DOMNode == this.rootDoc || (
-            this.rootDoc.documentElement.namespaceURI === XUL_NS &&
-            this.rootWin.gBrowser.selectedBrowser.contentDocument == DOMNode)) {
-            this.readyDeferred.resolve();
+          if (event.DOMNode == this.rootDoc) {
+            events.emit(this, "document-ready", rawAccessible);
           }
         }
 
         if (accessible) {
           
-          if (states.includes("busy") && isEnabled) {
+          if (isBusy && isEnabled) {
+            if (rawAccessible instanceof Ci.nsIAccessibleDocument) {
+              
+              this.purgeSubtree(rawAccessible, event.DOMNode);
+            }
             return;
           }
-          events.emit(accessible, "state-change", accessible.getState());
+          events.emit(accessible, "states-change", accessible.states);
         }
 
         break;
@@ -450,7 +573,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         if (accessible) {
           events.emit(accessible, "name-change", rawAccessible.name,
             event.DOMNode == this.rootDoc ?
-              undefined : this.getRef(rawAccessible.parent));
+              undefined : this.getRef(rawAccessible.parent), this);
         }
         break;
       case EVENT_VALUE_CHANGE:
@@ -470,7 +593,9 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         break;
       case EVENT_REORDER:
         if (accessible) {
-          events.emit(accessible, "reorder", rawAccessible.childCount);
+          accessible.children().forEach(child =>
+            events.emit(child, "index-in-parent-change", child.indexInParent));
+          events.emit(accessible, "reorder", rawAccessible.childCount, this);
         }
         break;
       case EVENT_HIDE:
@@ -479,21 +604,26 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       case EVENT_DEFACTION_CHANGE:
       case EVENT_ACTION_CHANGE:
         if (accessible) {
-          events.emit(accessible, "actions-change", accessible.getActions());
+          events.emit(accessible, "actions-change", accessible.actions);
         }
         break;
       case EVENT_TEXT_CHANGED:
       case EVENT_TEXT_INSERTED:
       case EVENT_TEXT_REMOVED:
         if (accessible) {
-          events.emit(accessible, "text-change");
+          events.emit(accessible, "text-change", this);
+          if (NAME_FROM_SUBTREE_RULE_ROLES.has(rawAccessible.role)) {
+            events.emit(accessible, "name-change", rawAccessible.name,
+              event.DOMNode == this.rootDoc ?
+                undefined : this.getRef(rawAccessible.parent), this);
+          }
         }
         break;
       case EVENT_DOCUMENT_ATTRIBUTES_CHANGED:
       case EVENT_OBJECT_ATTRIBUTE_CHANGED:
       case EVENT_TEXT_ATTRIBUTE_CHANGED:
         if (accessible) {
-          events.emit(accessible, "attributes-change", accessible.getAttributes());
+          events.emit(accessible, "attributes-change", accessible.attributes);
         }
         break;
       case EVENT_ACCELERATOR_CHANGE:
@@ -503,6 +633,265 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         break;
       default:
         break;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  highlightAccessible(accessible, options = {}) {
+    let bounds = accessible.bounds;
+    if (!bounds) {
+      return false;
+    }
+
+    return this.highlighter.show({ rawNode: accessible.rawAccessible.DOMNode },
+                                 { ...options, ...bounds });
+  },
+
+  
+
+
+
+  unhighlight() {
+    this.highlighter.hide();
+  },
+
+  
+
+
+
+  _isPicking: false,
+  _currentAccessible: null,
+
+  
+
+
+  _isEventAllowed: function ({ view }) {
+    return this.rootWin instanceof Ci.nsIDOMChromeWindow ||
+           isWindowIncluded(this.rootWin, view);
+  },
+
+  _preventContentEvent(event) {
+    event.stopPropagation();
+    event.preventDefault();
+  },
+
+  
+
+
+
+
+
+  async onPick(event) {
+    if (!this._isPicking) {
+      return;
+    }
+
+    this._preventContentEvent(event);
+    if (!this._isEventAllowed(event)) {
+      return;
+    }
+
+    
+    
+    if (event.shiftKey) {
+      if (!this._currentAccessible) {
+        this._currentAccessible = await this._findAndAttachAccessible(event);
+      }
+      events.emit(this, "picker-accessible-previewed", this._currentAccessible);
+      return;
+    }
+
+    this._stopPickerListeners();
+    this._isPicking = false;
+    if (!this._currentAccessible) {
+      this._currentAccessible = await this._findAndAttachAccessible(event);
+    }
+    events.emit(this, "picker-accessible-picked", this._currentAccessible);
+  },
+
+  
+
+
+
+
+
+  async onHovered(event) {
+    if (!this._isPicking) {
+      return;
+    }
+
+    this._preventContentEvent(event);
+    if (!this._isEventAllowed(event)) {
+      return;
+    }
+
+    let accessible = await this._findAndAttachAccessible(event);
+    if (!accessible) {
+      return;
+    }
+
+    if (this._currentAccessible !== accessible) {
+      let { bounds } = accessible;
+      if (bounds) {
+        this.highlighter.show({ rawNode: event.originalTarget || event.target }, bounds);
+      }
+
+      events.emit(this, "picker-accessible-hovered", accessible);
+      this._currentAccessible = accessible;
+    }
+  },
+
+  
+
+
+
+
+
+  onKey(event) {
+    if (!this._currentAccessible || !this._isPicking) {
+      return;
+    }
+
+    this._preventContentEvent(event);
+    if (!this._isEventAllowed(event)) {
+      return;
+    }
+
+    
+
+
+
+
+    switch (event.keyCode) {
+      
+      case event.DOM_VK_RETURN:
+        this._onPick(event);
+        break;
+      
+      case event.DOM_VK_ESCAPE:
+        this.cancelPick();
+        events.emit(this, "picker-accessible-canceled");
+        break;
+      case event.DOM_VK_C:
+        if ((IS_OSX && event.metaKey && event.altKey) ||
+          (!IS_OSX && event.ctrlKey && event.shiftKey)) {
+          this.cancelPick();
+          events.emit(this, "picker-accessible-canceled");
+        }
+        break;
+      default:
+        break;
+    }
+  },
+
+  
+
+
+  pick: function () {
+    if (!this._isPicking) {
+      this._isPicking = true;
+      this._startPickerListeners();
+    }
+  },
+
+  
+
+
+  pickAndFocus: function () {
+    this.pick();
+    this.rootWin.focus();
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _findAndAttachAccessible(event) {
+    let target = event.originalTarget || event.target;
+    let rawAccessible = this.a11yService.getAccessibleFor(target);
+    
+    
+    if (!rawAccessible || isDefunct(rawAccessible) || rawAccessible.indexInParent < 0) {
+      return {};
+    }
+
+    const doc = await this.getDocument();
+    let accessible = this.addRef(rawAccessible);
+    
+    
+    
+    try {
+      let parent = accessible;
+      while (parent && parent != doc) {
+        parent = parent.parentAcc;
+      }
+    } catch (error) {
+      throw new Error(`Failed to get ancestor for ${accessible}: ${error}`);
+    }
+
+    return accessible;
+  },
+
+  
+
+
+  _startPickerListeners: function () {
+    let target = this.tabActor.chromeEventHandler;
+    target.addEventListener("mousemove", this.onHovered, true);
+    target.addEventListener("click", this.onPick, true);
+    target.addEventListener("mousedown", this._preventContentEvent, true);
+    target.addEventListener("mouseup", this._preventContentEvent, true);
+    target.addEventListener("dblclick", this._preventContentEvent, true);
+    target.addEventListener("keydown", this.onKey, true);
+    target.addEventListener("keyup", this._preventContentEvent, true);
+  },
+
+  
+
+
+  _stopPickerListeners: function () {
+    let target = this.tabActor.chromeEventHandler;
+
+    if (!target) {
+      return;
+    }
+
+    target.removeEventListener("mousemove", this.onHovered, true);
+    target.removeEventListener("click", this.onPick, true);
+    target.removeEventListener("mousedown", this._preventContentEvent, true);
+    target.removeEventListener("mouseup", this._preventContentEvent, true);
+    target.removeEventListener("dblclick", this._preventContentEvent, true);
+    target.removeEventListener("keydown", this.onKey, true);
+    target.removeEventListener("keyup", this._preventContentEvent, true);
+  },
+
+  
+
+
+  cancelPick: function () {
+    this.highlighter.hide();
+
+    if (this._isPicking) {
+      this._stopPickerListeners();
+      this._isPicking = false;
+      this._currentAccessible = null;
     }
   }
 });
@@ -515,8 +904,206 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
   initialize(conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
+
+    this.initializedDeferred = defer();
+
+    if (DebuggerServer.isInChildProcess) {
+      this._msgName = `debug:${this.conn.prefix}accessibility`;
+      this.conn.setupInParent({
+        module: "devtools/server/actors/accessibility-parent",
+        setupParent: "setupParentProcess"
+      });
+
+      this.onMessage = this.onMessage.bind(this);
+      this.messageManager.addMessageListener(`${this._msgName}:event`, this.onMessage);
+    } else {
+      this.userPref = Services.prefs.getIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED);
+      Services.obs.addObserver(this, "a11y-consumers-changed");
+      Services.prefs.addObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
+      this.initializedDeferred.resolve();
+    }
+
+    Services.obs.addObserver(this, "a11y-init-or-shutdown");
     this.tabActor = tabActor;
   },
+
+  bootstrap() {
+    return this.initializedDeferred.promise.then(() => ({
+      enabled: this.enabled,
+      canBeEnabled: this.canBeEnabled,
+      canBeDisabled: this.canBeDisabled
+    }));
+  },
+
+  get enabled() {
+    return Services.appinfo.accessibilityEnabled;
+  },
+
+  get canBeEnabled() {
+    if (DebuggerServer.isInChildProcess) {
+      return this._canBeEnabled;
+    }
+
+    return Services.prefs.getIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED) < 1;
+  },
+
+  get canBeDisabled() {
+    if (DebuggerServer.isInChildProcess) {
+      return this._canBeDisabled;
+    } else if (!this.enabled) {
+      return true;
+    }
+
+    let { PlatformAPI } = JSON.parse(this.walker.a11yService.getConsumers());
+    return !PlatformAPI;
+  },
+
+  
+
+
+
+
+
+
+  get messageManager() {
+    if (!DebuggerServer.isInChildProcess) {
+      throw new Error(
+        "Message manager should only be used when actor is in child process.");
+    }
+
+    return this.conn.parentMessageManager;
+  },
+
+  onMessage(msg) {
+    let { topic, data } = msg.data;
+
+    switch (topic) {
+      case "initialized":
+        this._canBeEnabled = data.canBeEnabled;
+        this._canBeDisabled = data.canBeDisabled;
+        this.initializedDeferred.resolve();
+        break;
+      case "can-be-disabled-change":
+        this._canBeDisabled = data;
+        events.emit(this, "can-be-disabled-change", this.canBeDisabled);
+        break;
+
+      case "can-be-enabled-change":
+        this._canBeEnabled = data;
+        events.emit(this, "can-be-enabled-change", this.canBeEnabled);
+        break;
+
+      default:
+        break;
+    }
+  },
+
+  
+
+
+  async enable() {
+    if (this.enabled || !this.canBeEnabled) {
+      return;
+    }
+
+    let initPromise = this.once("init");
+
+    if (DebuggerServer.isInChildProcess) {
+      this.messageManager.sendAsyncMessage(this._msgName, { action: "enable" });
+    } else {
+      
+      
+      this.walker.a11yService;
+    }
+
+    await initPromise;
+  },
+
+  
+
+
+  async disable() {
+    if (!this.enabled || !this.canBeDisabled) {
+      return;
+    }
+
+    this.disabling = true;
+    let shutdownPromise = this.once("shutdown");
+    if (DebuggerServer.isInChildProcess) {
+      this.messageManager.sendAsyncMessage(this._msgName, { action: "disable" });
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, 1);
+      
+      
+      
+      
+      Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, this.userPref);
+    }
+
+    await shutdownPromise;
+    delete this.disabling;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    if (topic === "a11y-init-or-shutdown") {
+      
+      
+      
+      
+      const enabled = data === "1";
+      if (enabled && this.enabled) {
+        events.emit(this, "init");
+      } else if (!enabled && !this.enabled) {
+        if (this.walker) {
+          this.walker.reset();
+        }
+
+        events.emit(this, "shutdown");
+      }
+    } else if (topic === "a11y-consumers-changed") {
+      
+      
+      
+      
+      
+      
+      let { PlatformAPI } = JSON.parse(data);
+      events.emit(this, "can-be-disabled-change", !PlatformAPI);
+    } else if (!this.disabling && topic === "nsPref:changed" &&
+               data === PREF_ACCESSIBILITY_FORCE_DISABLED) {
+      
+      
+      
+      
+      
+      events.emit(this, "can-be-enabled-change", this.canBeEnabled);
+    }
+  },
+
+  
+
+
+
+
 
   getWalker() {
     if (!this.walker) {
@@ -525,11 +1112,38 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
     return this.walker;
   },
 
-  destroy() {
+  
+
+
+
+  async destroy() {
+    if (this.destroyed) {
+      await this.destroyed;
+      return;
+    }
+
+    let resolver;
+    this.destroyed = new Promise(resolve => {
+      resolver = resolve;
+    });
+
+    if (this.walker) {
+      this.walker.reset();
+    }
+
+    Services.obs.removeObserver(this, "a11y-init-or-shutdown");
+    if (DebuggerServer.isInChildProcess) {
+      this.messageManager.removeMessageListener(`${this._msgName}:event`,
+                                                this.onMessage);
+    } else {
+      Services.obs.removeObserver(this, "a11y-consumers-changed");
+      Services.prefs.removeObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
+    }
+
     Actor.prototype.destroy.call(this);
-    this.walker.destroy();
     this.walker = null;
     this.tabActor = null;
+    resolver();
   }
 });
 
