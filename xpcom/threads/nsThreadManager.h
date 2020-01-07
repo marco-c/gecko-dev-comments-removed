@@ -44,6 +44,10 @@ public:
 
   
   
+  bool IsNSThread() const;
+
+  
+  
   
   
   
