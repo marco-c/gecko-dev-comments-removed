@@ -6,8 +6,6 @@ Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", 
 
 
 
-ChromeUtils.import("resource:///modules/PlacesUIUtils.jsm");
-
 
 
 add_task(async function test_no_result_node() {

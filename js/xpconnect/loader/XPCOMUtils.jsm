@@ -92,6 +92,21 @@ var EXPORTED_SYMBOLS = [ "XPCOMUtils" ];
 
 let global = Cu.getGlobalForObject({});
 
+
+
+
+
+
+function redefine(object, prop, value) {
+  Object.defineProperty(object, prop, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+  return value;
+}
+
 var XPCOMUtils = {
   
 
@@ -175,21 +190,15 @@ var XPCOMUtils = {
 
   defineLazyGetter: function XPCU_defineLazyGetter(aObject, aName, aLambda)
   {
+    let redefining = false;
     Object.defineProperty(aObject, aName, {
       get: function () {
-        
-        
-        
-        
-        delete aObject[aName];
-        let value = aLambda.apply(aObject);
-        Object.defineProperty(aObject, aName, {
-          value,
-          writable: true,
-          configurable: true,
-          enumerable: true
-        });
-        return value;
+        if (!redefining) {
+          
+          
+          redefining = true;
+          return redefine(aObject, aName, aLambda.apply(aObject));
+        }
       },
       configurable: true,
       enumerable: true
@@ -219,11 +228,11 @@ var XPCOMUtils = {
     for (let name of aNames) {
       Object.defineProperty(aObject, name, {
         get: function() {
-          for (let n of aNames) {
-            delete aObject[n];
-          }
           Services.scriptloader.loadSubScript(aResource, aObject);
           return aObject[name];
+        },
+        set(value) {
+          redefine(aObject, name, value);
         },
         configurable: true,
         enumerable: true

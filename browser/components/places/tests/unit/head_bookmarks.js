@@ -15,10 +15,8 @@ if (commonFile) {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "PlacesUIUtils", function() {
-  ChromeUtils.import("resource:///modules/PlacesUIUtils.jsm");
-  return PlacesUIUtils;
-});
+ChromeUtils.defineModuleGetter(this, "PlacesUIUtils",
+                               "resource:///modules/PlacesUIUtils.jsm");
 
 
 ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
