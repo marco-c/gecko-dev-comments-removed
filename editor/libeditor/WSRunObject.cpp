@@ -196,10 +196,10 @@ WSRunObject::InsertBreak(Selection& aSelection,
       
       
       
-      nsresult rv =
-        DeleteChars(pointToInsert.Container(), pointToInsert.Offset(),
-                    afterRun->mEndNode, afterRun->mEndOffset);
-      NS_ENSURE_SUCCESS(rv, nullptr);
+      nsresult rv = DeleteRange(pointToInsert.AsRaw(), afterRun->EndPoint());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
     } else if (afterRun->mType == WSType::normalWS) {
       
       
@@ -222,10 +222,10 @@ WSRunObject::InsertBreak(Selection& aSelection,
     } else if (beforeRun->mType & WSType::trailingWS) {
       
       
-      nsresult rv =
-        DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                    pointToInsert.Container(), pointToInsert.Offset());
-      NS_ENSURE_SUCCESS(rv, nullptr);
+      nsresult rv = DeleteRange(beforeRun->StartPoint(), pointToInsert.AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return nullptr;
+      }
     } else if (beforeRun->mType == WSType::normalWS) {
       
       nsresult rv =
@@ -286,10 +286,10 @@ WSRunObject::InsertText(nsIDocument& aDocument,
     } else if (afterRun->mType & WSType::leadingWS) {
       
       
-      nsresult rv =
-        DeleteChars(pointToInsert.Container(), pointToInsert.Offset(),
-                    afterRun->mEndNode, afterRun->mEndOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = DeleteRange(pointToInsert.AsRaw(), afterRun->EndPoint());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else if (afterRun->mType == WSType::normalWS) {
       
       
@@ -304,10 +304,10 @@ WSRunObject::InsertText(nsIDocument& aDocument,
     } else if (beforeRun->mType & WSType::trailingWS) {
       
       
-      nsresult rv =
-        DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                    pointToInsert.Container(), pointToInsert.Offset());
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = DeleteRange(beforeRun->StartPoint(), pointToInsert.AsRaw());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else if (beforeRun->mType == WSType::normalWS) {
       
       
@@ -396,8 +396,13 @@ WSRunObject::DeleteWSBackward()
 
   
   if (mPRE &&  (nsCRT::IsAsciiSpace(point.mChar) || point.mChar == nbsp)) {
-    return DeleteChars(point.mTextNode, point.mOffset,
-                       point.mTextNode, point.mOffset + 1);
+    nsresult rv =
+      DeleteRange(EditorRawDOMPoint(point.mTextNode, point.mOffset),
+                  EditorRawDOMPoint(point.mTextNode, point.mOffset + 1));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   
@@ -419,7 +424,12 @@ WSRunObject::DeleteWSBackward()
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    return DeleteChars(startNode, startOffset, endNode, endOffset);
+    rv = DeleteRange(EditorRawDOMPoint(startNode, startOffset),
+                     EditorRawDOMPoint(endNode, endOffset));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   if (point.mChar == nbsp) {
@@ -434,7 +444,12 @@ WSRunObject::DeleteWSBackward()
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    return DeleteChars(node, startOffset, node, endOffset);
+    rv = DeleteRange(EditorRawDOMPoint(node, startOffset),
+                     EditorRawDOMPoint(node, endOffset));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   return NS_OK;
@@ -448,8 +463,13 @@ WSRunObject::DeleteWSForward()
 
   
   if (mPRE && (nsCRT::IsAsciiSpace(point.mChar) || point.mChar == nbsp)) {
-    return DeleteChars(point.mTextNode, point.mOffset,
-                       point.mTextNode, point.mOffset + 1);
+    nsresult rv =
+      DeleteRange(EditorRawDOMPoint(point.mTextNode, point.mOffset),
+                  EditorRawDOMPoint(point.mTextNode, point.mOffset + 1));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   
@@ -470,7 +490,12 @@ WSRunObject::DeleteWSForward()
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    return DeleteChars(startNode, startOffset, endNode, endOffset);
+    rv = DeleteRange(EditorRawDOMPoint(startNode, startOffset),
+                     EditorRawDOMPoint(endNode, endOffset));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   if (point.mChar == nbsp) {
@@ -485,7 +510,12 @@ WSRunObject::DeleteWSForward()
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    return DeleteChars(node, startOffset, node, endOffset);
+    rv = DeleteRange(EditorRawDOMPoint(node, startOffset),
+                     EditorRawDOMPoint(node, endOffset));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
   return NS_OK;
@@ -1190,9 +1220,10 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
   
   if (afterRun && (afterRun->mType & WSType::leadingWS)) {
     nsresult rv =
-      aEndObject->DeleteChars(aEndObject->mNode, aEndObject->mOffset,
-                              afterRun->mEndNode, afterRun->mEndOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+      aEndObject->DeleteRange(aEndObject->Point(), afterRun->EndPoint());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   
   if (afterRun && afterRun->mType == WSType::normalWS && !aEndObject->mPRE) {
@@ -1210,9 +1241,10 @@ WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject)
   }
   
   if (beforeRun && (beforeRun->mType & WSType::trailingWS)) {
-    nsresult rv = DeleteChars(beforeRun->mStartNode, beforeRun->mStartOffset,
-                              mNode, mOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rv = DeleteRange(beforeRun->StartPoint(), Point());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   } else if (beforeRun && beforeRun->mType == WSType::normalWS && !mPRE) {
     if ((afterRun && (afterRun->mType & WSType::trailingWS)) ||
         (afterRun && afterRun->mType == WSType::normalWS) ||
@@ -1276,73 +1308,85 @@ WSRunObject::PrepareToSplitAcrossBlocksPriv()
 }
 
 nsresult
-WSRunObject::DeleteChars(nsINode* aStartNode,
-                         int32_t aStartOffset,
-                         nsINode* aEndNode,
-                         int32_t aEndOffset)
+WSRunObject::DeleteRange(const EditorRawDOMPoint& aStartPoint,
+                         const EditorRawDOMPoint& aEndPoint)
 {
-  
-  
-  NS_ENSURE_TRUE(aStartNode && aEndNode, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aStartPoint.IsSet()) ||
+      NS_WARN_IF(!aEndPoint.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  MOZ_ASSERT(aStartPoint.IsSetAndValid());
+  MOZ_ASSERT(aEndPoint.IsSetAndValid());
 
-  if (aStartNode == aEndNode && aStartOffset == aEndOffset) {
+  
+  
+
+  if (aStartPoint == aEndPoint) {
     
     return NS_OK;
   }
 
-  int32_t idx = mNodeArray.IndexOf(aStartNode);
+  if (aStartPoint.Container() == aEndPoint.Container() &&
+      aStartPoint.Container()->GetAsText()) {
+    return mHTMLEditor->DeleteText(*aStartPoint.Container()->GetAsText(),
+                                   aStartPoint.Offset(),
+                                   aEndPoint.Offset() - aStartPoint.Offset());
+  }
+
+  RefPtr<nsRange> range;
+  int32_t count = mNodeArray.Length();
+  int32_t idx = mNodeArray.IndexOf(aStartPoint.Container());
   if (idx == -1) {
     
     
     idx = 0;
   }
-
-  if (aStartNode == aEndNode && aStartNode->GetAsText()) {
-    return mHTMLEditor->DeleteText(*aStartNode->GetAsText(),
-        static_cast<uint32_t>(aStartOffset),
-        static_cast<uint32_t>(aEndOffset - aStartOffset));
-  }
-
-  RefPtr<nsRange> range;
-  int32_t count = mNodeArray.Length();
   for (; idx < count; idx++) {
     RefPtr<Text> node = mNodeArray[idx];
     if (!node) {
       
       return NS_OK;
     }
-    if (node == aStartNode) {
-      uint32_t len = node->Length();
-      if (uint32_t(aStartOffset) < len) {
+    if (node == aStartPoint.Container()) {
+      if (!aStartPoint.IsEndOfContainer()) {
         nsresult rv =
-          mHTMLEditor->DeleteText(*node, AssertedCast<uint32_t>(aStartOffset),
-                                  len - aStartOffset);
-        NS_ENSURE_SUCCESS(rv, rv);
+          mHTMLEditor->DeleteText(*node, aStartPoint.Offset(),
+                                  aStartPoint.Container()->Length() -
+                                    aStartPoint.Offset());
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
-    } else if (node == aEndNode) {
-      if (aEndOffset) {
-        nsresult rv =
-          mHTMLEditor->DeleteText(*node, 0, AssertedCast<uint32_t>(aEndOffset));
-        NS_ENSURE_SUCCESS(rv, rv);
+    } else if (node == aEndPoint.Container()) {
+      if (!aEndPoint.IsStartOfContainer()) {
+        nsresult rv = mHTMLEditor->DeleteText(*node, 0, aEndPoint.Offset());
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
       break;
     } else {
       if (!range) {
-        range = new nsRange(aStartNode);
-        nsresult rv =
-          range->SetStartAndEnd(aStartNode, aStartOffset, aEndNode, aEndOffset);
-        NS_ENSURE_SUCCESS(rv, rv);
+        range = new nsRange(aStartPoint.Container());
+        nsresult rv = range->SetStartAndEnd(aStartPoint, aEndPoint);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
       bool nodeBefore, nodeAfter;
       nsresult rv =
         nsRange::CompareNodeToRange(node, range, &nodeBefore, &nodeAfter);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       if (nodeAfter) {
         break;
       }
       if (!nodeBefore) {
         rv = mHTMLEditor->DeleteNode(node);
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
         mNodeArray.RemoveElement(node);
         --count;
         --idx;
@@ -1475,8 +1519,11 @@ WSRunObject::ConvertToNBSP(WSPoint aPoint)
 
   
   if (startNode) {
-    rv = DeleteChars(startNode, startOffset, endNode, endOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = DeleteRange(EditorRawDOMPoint(startNode, startOffset),
+                     EditorRawDOMPoint(endNode, endOffset));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   return NS_OK;
@@ -1778,9 +1825,13 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
       NS_ENSURE_SUCCESS(rv, rv);
 
       
-      rv = DeleteChars(thePoint.mTextNode, thePoint.mOffset + 1,
-                       thePoint.mTextNode, thePoint.mOffset + 2);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
+                                         thePoint.mOffset + 1),
+                       EditorRawDOMPoint(thePoint.mTextNode,
+                                         thePoint.mOffset + 2));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     } else if (!mPRE && spaceNBSP && rightCheck) {
       
       
@@ -1796,9 +1847,13 @@ WSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
                        getter_AddRefs(endNode), &endOffset);
 
       
-      nsresult rv = DeleteChars(thePoint.mTextNode, thePoint.mOffset,
-                                thePoint.mTextNode, thePoint.mOffset + 1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
+                                                  thePoint.mOffset),
+                                EditorRawDOMPoint(thePoint.mTextNode,
+                                                  thePoint.mOffset + 1));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
@@ -1845,9 +1900,13 @@ WSRunObject::CheckTrailingNBSP(WSFragment* aRun,
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = DeleteChars(thePoint.mTextNode, thePoint.mOffset + 1,
-                     thePoint.mTextNode, thePoint.mOffset + 2);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
+                                       thePoint.mOffset + 1),
+                     EditorRawDOMPoint(thePoint.mTextNode,
+                                       thePoint.mOffset + 2));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -1888,9 +1947,13 @@ WSRunObject::CheckLeadingNBSP(WSFragment* aRun,
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = DeleteChars(thePoint.mTextNode, thePoint.mOffset + 1,
-                     thePoint.mTextNode, thePoint.mOffset + 2);
-    NS_ENSURE_SUCCESS(rv, rv);
+    rv = DeleteRange(EditorRawDOMPoint(thePoint.mTextNode,
+                                       thePoint.mOffset + 1),
+                     EditorRawDOMPoint(thePoint.mTextNode,
+                                       thePoint.mOffset + 2));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   return NS_OK;
 }
@@ -1902,9 +1965,10 @@ WSRunObject::Scrub()
   WSFragment *run = mStartRun;
   while (run) {
     if (run->mType & (WSType::leadingWS | WSType::trailingWS)) {
-      nsresult rv = DeleteChars(run->mStartNode, run->mStartOffset,
-                                run->mEndNode, run->mEndOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsresult rv = DeleteRange(run->StartPoint(), run->EndPoint());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
     run = run->mRight;
   }
