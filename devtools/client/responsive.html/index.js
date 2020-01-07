@@ -122,12 +122,12 @@ function onDevicePixelRatioChange() {
 
 
 
-window.addInitialViewport = contentURI => {
+window.addInitialViewport = ({ uri, userContextId }) => {
   try {
     onDevicePixelRatioChange();
-    bootstrap.dispatch(changeLocation(contentURI));
+    bootstrap.dispatch(changeLocation(uri));
     bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
-    bootstrap.dispatch(addViewport());
+    bootstrap.dispatch(addViewport(userContextId));
   } catch (e) {
     console.error(e);
   }

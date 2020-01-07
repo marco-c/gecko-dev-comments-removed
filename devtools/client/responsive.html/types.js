@@ -173,6 +173,10 @@ exports.viewport = {
   
   pixelRatio: PropTypes.shape(pixelRatio),
 
+  
+  
+  userContextId: PropTypes.number,
+
 };
 
 

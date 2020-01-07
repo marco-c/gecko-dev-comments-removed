@@ -22,9 +22,10 @@ module.exports = {
   
 
 
-  addViewport() {
+  addViewport(userContextId = 0) {
     return {
       type: ADD_VIEWPORT,
+      userContextId,
     };
   },
 
