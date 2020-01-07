@@ -16,9 +16,17 @@
 
 namespace mozilla {
 
+template <typename TChar>
 class TokenizerBase
 {
 public:
+  typedef nsTSubstring<TChar> TAString;
+  typedef nsTString<TChar> TString;
+  typedef nsTDependentString<TChar> TDependentString;
+  typedef nsTDependentSubstring<TChar> TDependentSubstring;
+
+  static TChar const sWhitespaces[];
+
   
 
 
@@ -51,9 +59,9 @@ public:
   class Token
   {
     TokenType mType;
-    nsDependentCSubstring mWord;
-    nsCString mCustom;
-    char mChar;
+    TDependentSubstring mWord;
+    TString mCustom;
+    TChar mChar;
     uint64_t mInteger;
     ECaseSensitivity mCustomCaseInsensitivity;
     bool mCustomEnabled;
@@ -61,11 +69,11 @@ public:
     
     
     
-    nsDependentCSubstring mFragment;
+    TDependentSubstring mFragment;
 
-    friend class TokenizerBase;
-    void AssignFragment(nsACString::const_char_iterator begin,
-                        nsACString::const_char_iterator end);
+    friend class TokenizerBase<TChar>;
+    void AssignFragment(typename TAString::const_char_iterator begin,
+                        typename TAString::const_char_iterator end);
 
     static Token Raw();
 
@@ -75,9 +83,9 @@ public:
     Token& operator=(const Token& aOther);
 
     
-    static Token Word(const nsACString& aWord);
-    static Token Char(const char aChar);
-    static Token Number(const uint64_t aNumber);
+    static Token Word(TAString const& aWord);
+    static Token Char(TChar const aChar);
+    static Token Number(uint64_t const aNumber);
     static Token Whitespace();
     static Token NewLine();
     static Token EndOfFile();
@@ -88,11 +96,11 @@ public:
     bool Equals(const Token& aOther) const;
 
     TokenType Type() const { return mType; }
-    char AsChar() const;
-    nsDependentCSubstring AsString() const;
+    TChar AsChar() const;
+    TDependentSubstring AsString() const;
     uint64_t AsInteger() const;
 
-    nsDependentCSubstring Fragment() const { return mFragment; }
+    TDependentSubstring Fragment() const { return mFragment; }
   };
 
   
@@ -101,11 +109,11 @@ public:
 
 
 
-  Token AddCustomToken(const nsACString& aValue, ECaseSensitivity aCaseInsensitivity, bool aEnabled = true);
+  Token AddCustomToken(const TAString& aValue, ECaseSensitivity aCaseInsensitivity, bool aEnabled = true);
   template <uint32_t N>
-  Token AddCustomToken(const char(&aValue)[N], ECaseSensitivity aCaseInsensitivity, bool aEnabled = true)
+  Token AddCustomToken(const TChar(&aValue)[N], ECaseSensitivity aCaseInsensitivity, bool aEnabled = true)
   {
-    return AddCustomToken(nsDependentCSubstring(aValue, N - 1), aCaseInsensitivity, aEnabled);
+    return AddCustomToken(TDependentSubstring(aValue, N - 1), aCaseInsensitivity, aEnabled);
   }
   void RemoveCustomToken(Token& aToken);
   
@@ -136,34 +144,34 @@ public:
   MOZ_MUST_USE bool HasFailed() const;
 
 protected:
-  explicit TokenizerBase(const char* aWhitespaces = nullptr,
-                         const char* aAdditionalWordChars = nullptr);
+  explicit TokenizerBase(const TChar* aWhitespaces = nullptr,
+                         const TChar* aAdditionalWordChars = nullptr);
 
   
   bool HasInput() const;
   
   
-  nsACString::const_char_iterator Parse(Token& aToken) const;
+  typename TAString::const_char_iterator Parse(Token& aToken) const;
   
-  bool IsEnd(const nsACString::const_char_iterator& caret) const;
-  
-  
-  bool IsPending(const nsACString::const_char_iterator & caret) const;
-  
-  bool IsWordFirst(const char aInput) const;
-  
-  bool IsWord(const char aInput) const;
+  bool IsEnd(const typename TAString::const_char_iterator& caret) const;
   
   
-  bool IsNumber(const char aInput) const;
+  bool IsPending(const typename TAString::const_char_iterator & caret) const;
   
-  bool IsCustom(const nsACString::const_char_iterator& caret,
+  bool IsWordFirst(const TChar aInput) const;
+  
+  bool IsWord(const TChar aInput) const;
+  
+  
+  bool IsNumber(const TChar aInput) const;
+  
+  bool IsCustom(const typename TAString::const_char_iterator& caret,
                 const Token& aCustomToken, uint32_t* aLongest = nullptr) const;
 
   
   static void AssignFragment(Token& aToken,
-                             nsACString::const_char_iterator begin,
-                             nsACString::const_char_iterator end);
+                             typename TAString::const_char_iterator begin,
+                             typename TAString::const_char_iterator end);
 
   
   bool mPastEof;
@@ -178,14 +186,14 @@ protected:
   uint32_t mMinRawDelivery;
 
   
-  const char* mWhitespaces;
+  const TChar* mWhitespaces;
   
-  const char* mAdditionalWordChars;
+  const TChar* mAdditionalWordChars;
 
   
   
-  nsACString::const_char_iterator mCursor; 
-  nsACString::const_char_iterator mEnd; 
+  typename TAString::const_char_iterator mCursor; 
+  typename TAString::const_char_iterator mEnd; 
 
   
   nsTArray<UniquePtr<Token>> mCustomTokens;
@@ -207,9 +215,13 @@ private:
 
 
 
-class Tokenizer : public TokenizerBase
+
+template <typename TChar>
+class TTokenizer : public TokenizerBase<TChar>
 {
 public:
+  typedef TokenizerBase<TChar> base;
+
   
 
 
@@ -228,12 +240,13 @@ public:
 
 
 
-  explicit Tokenizer(const nsACString& aSource,
-                     const char* aWhitespaces = nullptr,
-                     const char* aAdditionalWordChars = nullptr);
-  explicit Tokenizer(const char* aSource,
-                     const char* aWhitespaces = nullptr,
-                     const char* aAdditionalWordChars = nullptr);
+
+  explicit TTokenizer(const typename base::TAString& aSource,
+                      const TChar* aWhitespaces = nullptr,
+                      const TChar* aAdditionalWordChars = nullptr);
+  explicit TTokenizer(const TChar* aSource,
+                      const TChar* aWhitespaces = nullptr,
+                      const TChar* aAdditionalWordChars = nullptr);
 
   
 
@@ -242,7 +255,7 @@ public:
 
 
   MOZ_MUST_USE
-  bool Next(Token& aToken);
+  bool Next(typename base::Token& aToken);
 
   
 
@@ -250,14 +263,14 @@ public:
 
 
   MOZ_MUST_USE
-  bool Check(const TokenType aTokenType, Token& aResult);
+  bool Check(const typename base::TokenType aTokenType, typename base::Token& aResult);
   
 
 
 
 
   MOZ_MUST_USE
-  bool Check(const Token& aToken);
+  bool Check(const typename base::Token& aToken);
 
   
 
@@ -284,7 +297,7 @@ public:
 
 
 
-  void SkipUntil(Token const& aToken);
+  void SkipUntil(typename base::Token const& aToken);
 
   
 
@@ -292,13 +305,13 @@ public:
 
 
   MOZ_MUST_USE
-  bool CheckWhite() { return Check(Token::Whitespace()); }
+  bool CheckWhite() { return Check(base::Token::Whitespace()); }
   
 
 
 
   MOZ_MUST_USE
-  bool CheckChar(const char aChar) { return Check(Token::Char(aChar)); }
+  bool CheckChar(const TChar aChar) { return Check(base::Token::Char(aChar)); }
   
 
 
@@ -307,38 +320,42 @@ public:
 
 
   MOZ_MUST_USE
-  bool CheckChar(bool (*aClassifier)(const char aChar));
+  bool CheckChar(bool (*aClassifier)(const TChar aChar));
   
 
 
   MOZ_MUST_USE
-  bool CheckWord(const nsACString& aWord) { return Check(Token::Word(aWord)); }
+  bool CheckWord(const typename base::TAString& aWord) {
+    return Check(base::Token::Word(aWord));
+  }
   
 
 
   template <uint32_t N>
   MOZ_MUST_USE
-  bool CheckWord(const char (&aWord)[N]) { return Check(Token::Word(nsDependentCString(aWord, N - 1))); }
+  bool CheckWord(const TChar (&aWord)[N]) {
+    return Check(base::Token::Word(typename base::TDependentString(aWord, N - 1)));
+  }
   
 
 
   MOZ_MUST_USE
-  bool CheckEOL() { return Check(Token::NewLine()); }
+  bool CheckEOL() { return Check(base::Token::NewLine()); }
   
 
 
 
   MOZ_MUST_USE
-  bool CheckEOF() { return Check(Token::EndOfFile()); }
+  bool CheckEOF() { return Check(base::Token::EndOfFile()); }
 
   
 
 
-  MOZ_MUST_USE bool ReadChar(char* aValue);
-  MOZ_MUST_USE bool ReadChar(bool (*aClassifier)(const char aChar),
-                             char* aValue);
-  MOZ_MUST_USE bool ReadWord(nsACString& aValue);
-  MOZ_MUST_USE bool ReadWord(nsDependentCSubstring& aValue);
+  MOZ_MUST_USE bool ReadChar(TChar* aValue);
+  MOZ_MUST_USE bool ReadChar(bool (*aClassifier)(const TChar aChar),
+                             TChar* aValue);
+  MOZ_MUST_USE bool ReadWord(typename base::TAString& aValue);
+  MOZ_MUST_USE bool ReadWord(typename base::TDependentSubstring& aValue);
 
   
 
@@ -353,10 +370,10 @@ public:
   {
     MOZ_RELEASE_ASSERT(aValue);
 
-    nsACString::const_char_iterator rollback = mRollback;
-    nsACString::const_char_iterator cursor = mCursor;
-    Token t;
-    if (!Check(TOKEN_INTEGER, t)) {
+    typename base::TAString::const_char_iterator rollback = mRollback;
+    typename base::TAString::const_char_iterator cursor = base::mCursor;
+    typename base::Token t;
+    if (!Check(base::TOKEN_INTEGER, t)) {
       return false;
     }
 
@@ -364,8 +381,8 @@ public:
     if (!checked.isValid()) {
       
       mRollback = rollback;
-      mCursor = cursor;
-      mHasFailed = true;
+      base::mCursor = cursor;
+      base::mHasFailed = true;
       return false;
     }
 
@@ -383,21 +400,21 @@ public:
   {
     MOZ_RELEASE_ASSERT(aValue);
 
-    nsACString::const_char_iterator rollback = mRollback;
-    nsACString::const_char_iterator cursor = mCursor;
+    typename base::TAString::const_char_iterator rollback = mRollback;
+    typename base::TAString::const_char_iterator cursor = base::mCursor;
     auto revert = MakeScopeExit([&] {
       
       mRollback = rollback;
-      mCursor = cursor;
-      mHasFailed = true;
+      base::mCursor = cursor;
+      base::mHasFailed = true;
     });
 
     
     
-    bool minus = CheckChar([](const char aChar) { return aChar == '-'; });
+    bool minus = CheckChar([](const TChar aChar) { return aChar == '-'; });
 
-    Token t;
-    if (!Check(TOKEN_INTEGER, t)) {
+    typename base::Token t;
+    if (!Check(base::TOKEN_INTEGER, t)) {
       return false;
     }
 
@@ -453,8 +470,8 @@ public:
 
 
 
-  void Claim(nsACString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
-  void Claim(nsDependentCSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+  void Claim(typename base::TAString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+  void Claim(typename base::TDependentSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
 
   
 
@@ -467,23 +484,26 @@ public:
 
 
 
-  MOZ_MUST_USE bool ReadUntil(Token const& aToken, nsDependentCSubstring& aResult,
+  MOZ_MUST_USE bool ReadUntil(typename base::Token const& aToken, typename base::TDependentSubstring& aResult,
                               ClaimInclusion aInclude = EXCLUDE_LAST);
-  MOZ_MUST_USE bool ReadUntil(Token const& aToken, nsACString& aResult,
+  MOZ_MUST_USE bool ReadUntil(typename base::Token const& aToken, typename base::TAString& aResult,
                               ClaimInclusion aInclude = EXCLUDE_LAST);
 
 protected:
   
-  nsACString::const_char_iterator mRecord; 
-  nsACString::const_char_iterator mRollback; 
+  typename base::TAString::const_char_iterator mRecord; 
+  typename base::TAString::const_char_iterator mRollback; 
 
 private:
-  Tokenizer() = delete;
-  Tokenizer(const Tokenizer&) = delete;
-  Tokenizer(Tokenizer&&) = delete;
-  Tokenizer(const Tokenizer&&) = delete;
-  Tokenizer &operator=(const Tokenizer&) = delete;
+  TTokenizer() = delete;
+  TTokenizer(const TTokenizer&) = delete;
+  TTokenizer(TTokenizer&&) = delete;
+  TTokenizer(const TTokenizer&&) = delete;
+  TTokenizer &operator=(const TTokenizer&) = delete;
 };
+
+typedef TTokenizer<char> Tokenizer;
+typedef TTokenizer<char16_t> Tokenizer16;
 
 } 
 
