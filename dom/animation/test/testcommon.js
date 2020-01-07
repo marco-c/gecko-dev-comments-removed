@@ -366,13 +366,6 @@ function isOMTAEnabled() {
 
 
 
-function isStyledByServo() {
-  return SpecialPowers.DOMWindowUtils.isStyledByServo;
-}
-
-
-
-
 
 
 
