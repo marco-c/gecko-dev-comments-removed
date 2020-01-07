@@ -470,7 +470,15 @@ protected:
   Element* CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
                                int32_t aOffset = 0);
   nsresult ExpandSelectionForDeletion();
-  nsresult NormalizeSelection();
+
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult NormalizeSelection();
+
   EditorDOMPoint GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode,
                                   int32_t aOffset, EditAction actionID);
   void GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,

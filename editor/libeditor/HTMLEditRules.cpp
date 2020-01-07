@@ -6259,23 +6259,24 @@ HTMLEditRules::ExpandSelectionForDeletion()
   return NS_OK;
 }
 
-
-
-
-
-
-
-
 nsresult
 HTMLEditRules::NormalizeSelection()
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   
+  
+  
+  
+  
+
+  
   if (SelectionRef().IsCollapsed()) {
     return NS_OK;
   }
 
+  
+  
   
   if (SelectionRef().RangeCount() != 1) {
     return NS_OK;
@@ -6401,6 +6402,7 @@ HTMLEditRules::NormalizeSelection()
   
   
   
+  
 
   int16_t comp;
   comp = nsContentUtils::ComparePoints(startNode, startOffset,
@@ -6418,9 +6420,15 @@ HTMLEditRules::NormalizeSelection()
   
   DebugOnly<nsresult> rv =
     SelectionRef().Collapse(newStartNode, newStartOffset);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
     "Failed to collapse selection");
   rv = SelectionRef().Extend(newEndNode, newEndOffset);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
     "Failed to extend selection");
   return NS_OK;
