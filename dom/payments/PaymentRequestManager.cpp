@@ -178,6 +178,7 @@ ConvertDetailsInit(JSContext* aCx,
                                   shippingOptions,
                                   modifiers,
                                   EmptyString(), 
+                                  EmptyString(), 
                                   aDetails.mDisplayItems.WasPassed(),
                                   aDetails.mShippingOptions.WasPassed(),
                                   aDetails.mModifiers.WasPassed());
@@ -211,12 +212,18 @@ ConvertDetailsUpdate(JSContext* aCx,
     error = aDetails.mError.Value();
   }
 
+  nsString shippingAddressErrors(EmptyString());
+  if (!aDetails.mShippingAddressErrors.ToJSON(shippingAddressErrors)) {
+    return NS_ERROR_FAILURE;
+  }
+
   aIPCDetails = IPCPaymentDetails(EmptyString(), 
                                   total,
                                   displayItems,
                                   shippingOptions,
                                   modifiers,
                                   error,
+                                  shippingAddressErrors,
                                   aDetails.mDisplayItems.WasPassed(),
                                   aDetails.mShippingOptions.WasPassed(),
                                   aDetails.mModifiers.WasPassed());
