@@ -55,9 +55,11 @@ class AddStyleSheetTransaction;
 class AutoRules;
 class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
+class AutoUpdateViewBatch;
 class ChangeAttributeTransaction;
 class CompositionTransaction;
 class CreateElementTransaction;
+class CSSEditUtils;
 class DeleteNodeTransaction;
 class DeleteTextTransaction;
 class EditAggregateTransaction;
@@ -65,6 +67,7 @@ class EditorEventListener;
 class EditTransactionBase;
 class ErrorResult;
 class HTMLEditor;
+class HTMLEditUtils;
 class IMEContentObserver;
 class InsertNodeTransaction;
 class InsertTextTransaction;
@@ -78,6 +81,8 @@ class TextEditor;
 class TextEditRules;
 class TextInputListener;
 class TextServicesDocument;
+class TypeInState;
+class WSRunObject;
 enum class EditAction : int32_t;
 
 namespace dom {
@@ -197,28 +202,20 @@ public:
   typedef dom::Selection Selection;
   typedef dom::Text Text;
 
-  enum IterDirection
-  {
-    kIterForward,
-    kIterBackward
-  };
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
+
+  
+  NS_DECL_NSIEDITOR
+
+  
+  NS_DECL_NSISELECTIONLISTENER
 
   
 
 
 
   EditorBase();
-
-protected:
-  
-
-
-
-  virtual ~EditorBase();
-
-public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
 
   
 
@@ -237,8 +234,26 @@ public:
                         uint32_t aFlags,
                         const nsAString& aInitialValue);
 
+  
+
+
+
+  nsresult PostCreate();
+
+  
+
+
+
+
+
+
+  virtual void PreDestroy(bool aDestroyingFrames);
+
   bool IsInitialized() const { return !!mDocument; }
+  bool Destroyed() const { return mDidPreDestroy; }
+
   nsIDocument* GetDocument() const { return mDocument; }
+
   nsIPresShell* GetPresShell() const
   {
     return mDocument ? mDocument->GetShell() : nullptr;
@@ -248,7 +263,9 @@ public:
     nsIPresShell* presShell = GetPresShell();
     return presShell ? presShell->GetPresContext() : nullptr;
   }
+
   already_AddRefed<nsIWidget> GetWidget();
+
   nsISelectionController* GetSelectionController() const
   {
     if (mSelectionController) {
@@ -264,6 +281,28 @@ public:
     nsISelectionController* sc = static_cast<PresShell*>(presShell);
     return sc;
   }
+
+  nsresult GetSelection(SelectionType aSelectionType,
+                        Selection** aSelection);
+
+  Selection* GetSelection(SelectionType aSelectionType =
+                                          SelectionType::eNormal)
+  {
+    nsISelectionController* sc = GetSelectionController();
+    if (!sc) {
+      return nullptr;
+    }
+    Selection* selection = sc->GetSelection(ToRawSelectionType(aSelectionType));
+    return selection;
+  }
+
+  
+
+
+  Element* GetRoot() const { return mRootElement; }
+
+  RangeUpdater& RangeUpdaterRef() { return mRangeUpdater; }
+
   enum NotificationForEditorObservers
   {
     eNotifyEditorObserversOfEnd,
@@ -271,12 +310,6 @@ public:
     eNotifyEditorObserversOfCancel
   };
   void NotifyEditorObservers(NotificationForEditorObservers aNotification);
-
-  
-  NS_DECL_NSIEDITOR
-
-  
-  NS_DECL_NSISELECTIONLISTENER
 
   
 
@@ -290,9 +323,343 @@ public:
 
   void SetIMEContentObserver(IMEContentObserver* aIMEContentObserver);
 
-public:
   virtual bool IsModifiableNode(nsINode* aNode);
 
+  
+
+
+  TextComposition* GetComposition() const;
+
+  
+
+
+  virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
+
+  
+
+
+  bool IsIMEComposing() const;
+
+  
+
+
+
+
+
+
+  nsresult CommitComposition();
+
+  void SwitchTextDirectionTo(uint32_t aDirection);
+
+  
+
+
+  nsresult FinalizeSelection();
+
+  
+
+
+
+
+
+  bool IsSelectionEditable();
+
+  
+
+
+  size_t NumberOfUndoItems() const
+  {
+    return mTransactionManager ? mTransactionManager->NumberOfUndoItems() : 0;
+  }
+  size_t NumberOfRedoItems() const
+  {
+    return mTransactionManager ? mTransactionManager->NumberOfRedoItems() : 0;
+  }
+
+  
+
+
+  bool IsUndoRedoEnabled() const
+  {
+    return !!mTransactionManager;
+  }
+
+  
+
+
+  bool CanUndo() const
+  {
+    return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
+  }
+  bool CanRedo() const
+  {
+    return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
+  }
+
+  
+
+
+
+  bool EnableUndoRedo(int32_t aMaxTransactionCount = -1)
+  {
+    if (!mTransactionManager) {
+      mTransactionManager = new TransactionManager();
+    }
+    return mTransactionManager->EnableUndoRedo(aMaxTransactionCount);
+  }
+  bool DisableUndoRedo()
+  {
+    if (!mTransactionManager) {
+      return true;
+    }
+    
+    
+    return mTransactionManager->DisableUndoRedo();
+  }
+  bool ClearUndoRedo()
+  {
+    if (!mTransactionManager) {
+      return true;
+    }
+    return mTransactionManager->ClearUndoRedo();
+  }
+
+  
+
+
+
+
+
+  bool AddTransactionListener(nsITransactionListener& aListener)
+  {
+    if (!mTransactionManager) {
+      return false;
+    }
+    return mTransactionManager->AddTransactionListener(aListener);
+  }
+  bool RemoveTransactionListener(nsITransactionListener& aListener)
+  {
+    if (!mTransactionManager) {
+      return false;
+    }
+    return mTransactionManager->RemoveTransactionListener(aListener);
+  }
+
+  virtual nsresult HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent);
+
+  virtual dom::EventTarget* GetDOMEventTarget() = 0;
+
+  
+
+
+  uint32_t Flags() const { return mFlags; }
+
+  nsresult AddFlags(uint32_t aFlags)
+  {
+    const uint32_t kOldFlags = Flags();
+    const uint32_t kNewFlags = (kOldFlags | aFlags);
+    if (kNewFlags == kOldFlags) {
+      return NS_OK;
+    }
+    return SetFlags(kNewFlags); 
+  }
+  nsresult RemoveFlags(uint32_t aFlags)
+  {
+    const uint32_t kOldFlags = Flags();
+    const uint32_t kNewFlags = (kOldFlags & ~aFlags);
+    if (kNewFlags == kOldFlags) {
+      return NS_OK;
+    }
+    return SetFlags(kNewFlags); 
+  }
+  nsresult AddAndRemoveFlags(uint32_t aAddingFlags, uint32_t aRemovingFlags)
+  {
+    MOZ_ASSERT(!(aAddingFlags & aRemovingFlags),
+               "Same flags are specified both adding and removing");
+    const uint32_t kOldFlags = Flags();
+    const uint32_t kNewFlags = ((kOldFlags | aAddingFlags) & ~aRemovingFlags);
+    if (kNewFlags == kOldFlags) {
+      return NS_OK;
+    }
+    return SetFlags(kNewFlags); 
+  }
+
+  bool IsPlaintextEditor() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
+  }
+
+  bool IsSingleLineEditor() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorSingleLineMask) != 0;
+  }
+
+  bool IsPasswordEditor() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorPasswordMask) != 0;
+  }
+
+  
+  
+  bool IsRightToLeft() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorRightToLeft) != 0;
+  }
+  bool IsLeftToRight() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorLeftToRight) != 0;
+  }
+
+  bool IsReadonly() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorReadonlyMask) != 0;
+  }
+
+  bool IsDisabled() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorDisabledMask) != 0;
+  }
+
+  bool IsInputFiltered() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorFilterInputMask) != 0;
+  }
+
+  bool IsMailEditor() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorMailMask) != 0;
+  }
+
+  bool IsWrapHackEnabled() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorEnableWrapHackMask) != 0;
+  }
+
+  bool IsFormWidget() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorWidgetMask) != 0;
+  }
+
+  bool NoCSS() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorNoCSSMask) != 0;
+  }
+
+  bool IsInteractionAllowed() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorAllowInteraction) != 0;
+  }
+
+  bool DontEchoPassword() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorDontEchoPassword) != 0;
+  }
+
+  bool ShouldSkipSpellCheck() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) != 0;
+  }
+
+  bool IsTabbable() const
+  {
+    return IsSingleLineEditor() || IsPasswordEditor() || IsFormWidget() ||
+           IsInteractionAllowed();
+  }
+
+  bool HasIndependentSelection() const
+  {
+    return !!mSelectionController;
+  }
+
+  bool IsModifiable() const
+  {
+    return !IsReadonly();
+  }
+
+  
+
+
+
+  bool IsInEditAction() const { return mIsInEditAction; }
+
+  
+
+
+
+  void SuppressDispatchingInputEvent(bool aSuppress)
+  {
+    mDispatchInputEvent = !aSuppress;
+  }
+
+  
+
+
+
+  bool IsSuppressingDispatchingInputEvent() const
+  {
+    return !mDispatchInputEvent;
+  }
+
+  
+
+
+
+  bool OutputsMozDirty() const
+  {
+    
+    
+    return !IsInteractionAllowed() || IsMailEditor();
+  }
+
+  
+
+
+  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
+
+  
+
+
+  virtual nsIContent* GetFocusedContent();
+
+  
+
+
+
+  virtual already_AddRefed<nsIContent> GetFocusedContentForIME();
+
+  
+
+
+
+
+
+  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent);
+
+  
+
+
+
+
+
+
+  virtual already_AddRefed<nsIContent> FindSelectionRoot(nsINode* aNode);
+
+  
+
+
+
+
+  void OnFocus(dom::EventTarget* aFocusEventTarget);
+
+  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) = 0;
+
+  
+
+
+
+  void SyncRealTimeSpell();
+
+protected: 
   
 
 
@@ -658,33 +1025,6 @@ public:
   
 
 
-  virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
-
-  
-
-
-
-
-
-
-  nsresult CommitComposition();
-
-  void SwitchTextDirectionTo(uint32_t aDirection);
-
-  RangeUpdater& RangeUpdaterRef() { return mRangeUpdater; }
-
-  
-
-
-  nsresult FinalizeSelection();
-
-protected:
-  nsresult DetermineCurrentDirection();
-  void FireInputEvent();
-
-  
-
-
 
 
 
@@ -801,208 +1141,6 @@ protected:
   
 
 
-  void DoAfterDoTransaction(nsITransaction *aTxn);
-
-  
-
-
-
-  void DoAfterUndoTransaction();
-
-  
-
-
-  void DoAfterRedoTransaction();
-
-  
-  nsresult DoTransaction(Selection* aSelection,
-                         nsITransaction* aTxn);
-
-  enum TDocumentListenerNotification
-  {
-    eDocumentCreated,
-    eDocumentToBeDestroyed,
-    eDocumentStateChanged
-  };
-
-  
-
-
-  nsresult NotifyDocumentListeners(
-             TDocumentListenerNotification aNotificationType);
-
-  
-
-
-  virtual nsresult SelectEntireDocument(Selection* aSelection);
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsresult ScrollSelectionIntoView(bool aScrollToAnchor);
-
-  virtual bool IsBlockNode(nsINode* aNode);
-
-  
-
-
-  nsIContent* FindNextLeafNode(nsINode* aCurrentNode,
-                               bool aGoForward,
-                               bool bNoBlockCrossing);
-  nsIContent* FindNode(nsINode* aCurrentNode,
-                       bool aGoForward,
-                       bool aEditableNode,
-                       bool aFindAnyDataNode,
-                       bool bNoBlockCrossing);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  nsIContent* GetPreviousNodeInternal(nsINode& aNode,
-                                      bool aFindEditableNode,
-                                      bool aFindAnyDataNode,
-                                      bool aNoBlockCrossing);
-
-  
-
-
-  nsIContent* GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
-                                      bool aFindEditableNode,
-                                      bool aFindAnyDataNode,
-                                      bool aNoBlockCrossing);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  nsIContent* GetNextNodeInternal(nsINode& aNode,
-                                  bool aFindEditableNode,
-                                  bool aFindAnyDataNode,
-                                  bool bNoBlockCrossing);
-
-  
-
-
-  nsIContent* GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
-                                  bool aFindEditableNode,
-                                  bool aFindAnyDataNode,
-                                  bool aNoBlockCrossing);
-
-
-  virtual nsresult InstallEventListeners();
-  virtual void CreateEventListeners();
-  virtual void RemoveEventListeners();
-
-  
-
-
-  bool GetDesiredSpellCheckState();
-
-  bool CanEnableSpellCheck()
-  {
-    
-    
-    
-    return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() &&
-           !ShouldSkipSpellCheck();
-  }
-
-  nsresult GetSelection(SelectionType aSelectionType,
-                        Selection** aSelection);
-
-  
-
-
-
-
-
-
-
-
-  void BeginPlaceholderTransaction(nsAtom* aTransactionName);
-  void EndPlaceholderTransaction();
-
-  
-
-
-
-
-
-
-
-
-
-  virtual void InitializeSelectionAncestorLimit(Selection& aSelection,
-                                                nsIContent& aAncestorLimit);
-
-public:
-  
-
-
-
-  nsresult PostCreate();
-
- 
-
-
-
-
-
-
-  virtual void PreDestroy(bool aDestroyingFrames);
-
-  
-
-
-
-  virtual nsresult StartOperation(EditAction opID,
-                                  nsIEditor::EDirection aDirection);
-
-  
-
-
-
-  virtual nsresult EndOperation();
-
-  
-
-
-
-  bool ArePreservingSelection();
-  void PreserveSelectionAcrossActions(Selection* aSel);
-  nsresult RestorePreservedSelection(Selection* aSel);
-  void StopPreservingSelection();
-
-  
-
-
 
 
 
@@ -1046,10 +1184,45 @@ public:
 
 
 
-  static int32_t GetChildOffset(nsIDOMNode* aChild,
-                                nsIDOMNode* aParent);
-  static int32_t GetChildOffset(nsINode* aChild,
-                                nsINode* aParent);
+
+
+
+
+
+
+
+
+
+
+  template<typename PT, typename CT>
+  SplitNodeResult
+  SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
+    SplitAtEdges aSplitAtEdges);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
+                                              nsIContent& aRightNode);
+
+  
+
+
+  nsresult DoTransaction(Selection* aSelection,
+                         nsITransaction* aTxn);
+
+  virtual bool IsBlockNode(nsINode* aNode);
 
   
 
@@ -1285,14 +1458,6 @@ public:
   
 
 
-
-
-
-  bool IsSelectionEditable();
-
-  
-
-
   bool IsMozEditorBogusNode(const nsINode* aNode) const
   {
     return aNode && aNode->IsElement() &&
@@ -1314,98 +1479,7 @@ public:
   
 
 
-  TextComposition* GetComposition() const;
-
-  
-
-
-  bool IsIMEComposing() const;
-
-  
-
-
   bool ShouldHandleIMEComposition() const;
-
-  
-
-
-  size_t NumberOfUndoItems() const
-  {
-    return mTransactionManager ? mTransactionManager->NumberOfUndoItems() : 0;
-  }
-  size_t NumberOfRedoItems() const
-  {
-    return mTransactionManager ? mTransactionManager->NumberOfRedoItems() : 0;
-  }
-
-  
-
-
-  bool IsUndoRedoEnabled() const
-  {
-    return !!mTransactionManager;
-  }
-
-  
-
-
-  bool CanUndo() const
-  {
-    return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
-  }
-  bool CanRedo() const
-  {
-    return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
-  }
-
-  
-
-
-
-  bool EnableUndoRedo(int32_t aMaxTransactionCount = -1)
-  {
-    if (!mTransactionManager) {
-      mTransactionManager = new TransactionManager();
-    }
-    return mTransactionManager->EnableUndoRedo(aMaxTransactionCount);
-  }
-  bool DisableUndoRedo()
-  {
-    if (!mTransactionManager) {
-      return true;
-    }
-    
-    
-    return mTransactionManager->DisableUndoRedo();
-  }
-  bool ClearUndoRedo()
-  {
-    if (!mTransactionManager) {
-      return true;
-    }
-    return mTransactionManager->ClearUndoRedo();
-  }
-
-  
-
-
-
-
-
-  bool AddTransactionListener(nsITransactionListener& aListener)
-  {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->AddTransactionListener(aListener);
-  }
-  bool RemoveTransactionListener(nsITransactionListener& aListener)
-  {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->RemoveTransactionListener(aListener);
-  }
 
   
 
@@ -1438,17 +1512,6 @@ public:
   static nsresult GetEndChildNode(Selection* aSelection,
                                   nsIContent** aEndNode);
 
-  Selection* GetSelection(SelectionType aSelectionType =
-                                          SelectionType::eNormal)
-  {
-    nsISelectionController* sc = GetSelectionController();
-    if (!sc) {
-      return nullptr;
-    }
-    Selection* selection = sc->GetSelection(ToRawSelectionType(aSelectionType));
-    return selection;
-  }
-
   
 
 
@@ -1462,67 +1525,9 @@ public:
                        nsINode* aEndContainer, int32_t aEndOffset,
                        nsRange** aRange);
 
-  
-
-
-
-  nsresult AppendNodeToSelectionAsRange(nsINode* aNode);
-
-  
-
-
-
-  nsresult ClearSelection();
-
   static bool IsPreformatted(nsINode* aNode);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template<typename PT, typename CT>
-  SplitNodeResult
-  SplitNodeDeepWithTransaction(
-    nsIContent& aMostAncestorToSplit,
-    const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
-    SplitAtEdges aSplitAtEdges);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
-                                              nsIContent& aRightNode);
-
-  nsresult GetString(const nsAString& name, nsAString& value);
-
-  void BeginUpdateViewBatch();
-  virtual nsresult EndUpdateViewBatch();
-
   bool GetShouldTxnSetSelection();
-
-  virtual nsresult HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent);
 
   nsresult HandleInlineSpellCheck(EditAction action,
                                   Selection& aSelection,
@@ -1532,13 +1537,6 @@ public:
                                   uint32_t aStartOffset,
                                   nsINode* aEndContainer,
                                   uint32_t aEndOffset);
-
-  virtual dom::EventTarget* GetDOMEventTarget() = 0;
-
-  
-
-
-  Element* GetRoot() const { return mRootElement; }
 
   
 
@@ -1555,237 +1553,9 @@ public:
   
 
 
-  uint32_t Flags() const { return mFlags; }
-
-  nsresult AddFlags(uint32_t aFlags)
-  {
-    const uint32_t kOldFlags = Flags();
-    const uint32_t kNewFlags = (kOldFlags | aFlags);
-    if (kNewFlags == kOldFlags) {
-      return NS_OK;
-    }
-    return SetFlags(kNewFlags); 
-  }
-  nsresult RemoveFlags(uint32_t aFlags)
-  {
-    const uint32_t kOldFlags = Flags();
-    const uint32_t kNewFlags = (kOldFlags & ~aFlags);
-    if (kNewFlags == kOldFlags) {
-      return NS_OK;
-    }
-    return SetFlags(kNewFlags); 
-  }
-  nsresult AddAndRemoveFlags(uint32_t aAddingFlags, uint32_t aRemovingFlags)
-  {
-    MOZ_ASSERT(!(aAddingFlags & aRemovingFlags),
-               "Same flags are specified both adding and removing");
-    const uint32_t kOldFlags = Flags();
-    const uint32_t kNewFlags = ((kOldFlags | aAddingFlags) & ~aRemovingFlags);
-    if (kNewFlags == kOldFlags) {
-      return NS_OK;
-    }
-    return SetFlags(kNewFlags); 
-  }
-
-  bool IsPlaintextEditor() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
-  }
-
-  bool IsSingleLineEditor() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorSingleLineMask) != 0;
-  }
-
-  bool IsPasswordEditor() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorPasswordMask) != 0;
-  }
-
-  
-  
-  bool IsRightToLeft() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorRightToLeft) != 0;
-  }
-  bool IsLeftToRight() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorLeftToRight) != 0;
-  }
-
-  bool IsReadonly() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorReadonlyMask) != 0;
-  }
-
-  bool IsDisabled() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorDisabledMask) != 0;
-  }
-
-  bool IsInputFiltered() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorFilterInputMask) != 0;
-  }
-
-  bool IsMailEditor() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorMailMask) != 0;
-  }
-
-  bool IsWrapHackEnabled() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorEnableWrapHackMask) != 0;
-  }
-
-  bool IsFormWidget() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorWidgetMask) != 0;
-  }
-
-  bool NoCSS() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorNoCSSMask) != 0;
-  }
-
-  bool IsInteractionAllowed() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorAllowInteraction) != 0;
-  }
-
-  bool DontEchoPassword() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorDontEchoPassword) != 0;
-  }
-
-  bool ShouldSkipSpellCheck() const
-  {
-    return (mFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) != 0;
-  }
-
-  bool IsTabbable() const
-  {
-    return IsSingleLineEditor() || IsPasswordEditor() || IsFormWidget() ||
-           IsInteractionAllowed();
-  }
-
-  bool HasIndependentSelection() const
-  {
-    return !!mSelectionController;
-  }
-
-  bool IsModifiable() const
-  {
-    return !IsReadonly();
-  }
-
-  
-
-
-
-  bool IsInEditAction() const { return mIsInEditAction; }
-
-  
-
-
-
-  void SuppressDispatchingInputEvent(bool aSuppress)
-  {
-    mDispatchInputEvent = !aSuppress;
-  }
-
-  
-
-
-
-  bool IsSuppressingDispatchingInputEvent() const
-  {
-    return !mDispatchInputEvent;
-  }
-
-  bool Destroyed() const
-  {
-    return mDidPreDestroy;
-  }
-
-  
-
-
-
-  bool OutputsMozDirty() const
-  {
-    
-    
-    return !IsInteractionAllowed() || IsMailEditor();
-  }
-
-  
-
-
-  virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
-
-  
-
-
-  virtual nsIContent* GetFocusedContent();
-
-  
-
-
-
-  virtual already_AddRefed<nsIContent> GetFocusedContentForIME();
-
-  
-
-
 
 
   virtual bool IsActiveInDOMWindow();
-
-  
-
-
-
-
-
-  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent);
-
-  
-
-
-
-
-
-
-  virtual already_AddRefed<nsIContent> FindSelectionRoot(nsINode* aNode);
-
-  
-
-
-
-
-  nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
-
-  
-
-
-
-
-  void OnFocus(dom::EventTarget* aFocusEventTarget);
-
-  
-
-
-
-
-  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
-                                          int32_t aIndex,
-                                          nsIDocument* aSourceDoc,
-                                          nsINode* aDestinationNode,
-                                          int32_t aDestOffset,
-                                          bool aDoDeleteSelection) = 0;
-
-  virtual nsresult InsertFromDrop(dom::DragEvent* aDropEvent) = 0;
 
   
 
@@ -1810,11 +1580,238 @@ public:
 
   void HideCaret(bool aHide);
 
+protected: 
   
 
 
 
-  void SyncRealTimeSpell();
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection);
+
+  
+
+
+
+  virtual nsresult EndOperation();
+
+  
+
+
+
+  bool ArePreservingSelection();
+  void PreserveSelectionAcrossActions(Selection* aSel);
+  nsresult RestorePreservedSelection(Selection* aSel);
+  void StopPreservingSelection();
+
+  
+
+
+
+
+
+
+
+
+  void BeginPlaceholderTransaction(nsAtom* aTransactionName);
+  void EndPlaceholderTransaction();
+
+  void BeginUpdateViewBatch();
+  virtual nsresult EndUpdateViewBatch();
+
+protected: 
+  
+
+
+
+  virtual ~EditorBase();
+
+  nsresult DetermineCurrentDirection();
+  void FireInputEvent();
+
+  
+
+
+  void DoAfterDoTransaction(nsITransaction *aTxn);
+
+  
+
+
+
+  void DoAfterUndoTransaction();
+
+  
+
+
+  void DoAfterRedoTransaction();
+
+  
+
+
+  enum TDocumentListenerNotification
+  {
+    eDocumentCreated,
+    eDocumentToBeDestroyed,
+    eDocumentStateChanged
+  };
+  nsresult NotifyDocumentListeners(
+             TDocumentListenerNotification aNotificationType);
+
+  
+
+
+  virtual nsresult SelectEntireDocument(Selection* aSelection);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult ScrollSelectionIntoView(bool aScrollToAnchor);
+
+  
+
+
+  nsIContent* FindNextLeafNode(nsINode* aCurrentNode,
+                               bool aGoForward,
+                               bool bNoBlockCrossing);
+  nsIContent* FindNode(nsINode* aCurrentNode,
+                       bool aGoForward,
+                       bool aEditableNode,
+                       bool aFindAnyDataNode,
+                       bool bNoBlockCrossing);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetPreviousNodeInternal(nsINode& aNode,
+                                      bool aFindEditableNode,
+                                      bool aFindAnyDataNode,
+                                      bool aNoBlockCrossing);
+
+  
+
+
+  nsIContent* GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
+                                      bool aFindEditableNode,
+                                      bool aFindAnyDataNode,
+                                      bool aNoBlockCrossing);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIContent* GetNextNodeInternal(nsINode& aNode,
+                                  bool aFindEditableNode,
+                                  bool aFindAnyDataNode,
+                                  bool bNoBlockCrossing);
+
+  
+
+
+  nsIContent* GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
+                                  bool aFindEditableNode,
+                                  bool aFindAnyDataNode,
+                                  bool aNoBlockCrossing);
+
+
+  virtual nsresult InstallEventListeners();
+  virtual void CreateEventListeners();
+  virtual void RemoveEventListeners();
+
+  
+
+
+  bool GetDesiredSpellCheckState();
+
+  bool CanEnableSpellCheck()
+  {
+    
+    
+    
+    return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() &&
+           !ShouldSkipSpellCheck();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void InitializeSelectionAncestorLimit(Selection& aSelection,
+                                                nsIContent& aAncestorLimit);
+
+  
+
+
+
+
+
+
+  static int32_t GetChildOffset(nsIDOMNode* aChild,
+                                nsIDOMNode* aParent);
+  static int32_t GetChildOffset(nsINode* aChild,
+                                nsINode* aParent);
+
+  
+
+
+
+  nsresult AppendNodeToSelectionAsRange(nsINode* aNode);
+
+  
+
+
+
+  nsresult ClearSelection();
+
+  
+
+
+
+
+  nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
+
+  
+
+
+
+
+  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
+                                          int32_t aIndex,
+                                          nsIDocument* aSourceDoc,
+                                          nsINode* aDestinationNode,
+                                          int32_t aDestOffset,
+                                          bool aDoDeleteSelection) = 0;
 
 private:
   nsCOMPtr<nsISelectionController> mSelectionController;
@@ -1910,12 +1907,24 @@ protected:
   
   bool mIsHTMLEditorClass;
 
-  friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class AutoPlaceholderBatch;
   friend class AutoRules;
   friend class AutoSelectionRestorer;
   friend class AutoTransactionsConserveSelection;
-  friend class RangeUpdater;
+  friend class AutoUpdateViewBatch;
+  friend class CompositionTransaction;
+  friend class CreateElementTransaction;
+  friend class CSSEditUtils;
+  friend class DeleteTextTransaction;
+  friend class HTMLEditRules;
+  friend class HTMLEditUtils;
+  friend class InsertNodeTransaction;
+  friend class InsertTextTransaction;
+  friend class JoinNodeTransaction;
+  friend class SplitNodeTransaction;
+  friend class TextEditRules;
+  friend class TypeInState;
+  friend class WSRunObject;
   friend class nsIEditor;
 };
 

@@ -555,10 +555,13 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded()
   return NS_OK;
 }
 
-static inline already_AddRefed<nsINode>
-GetTextNode(Selection* aSelection)
+already_AddRefed<nsINode>
+TextEditRules::GetTextNodeAroundSelectionStartContainer()
 {
-  EditorRawDOMPoint selectionStartPoint(EditorBase::GetStartPoint(aSelection));
+  MOZ_ASSERT(IsEditorDataAvailable());
+
+  EditorRawDOMPoint selectionStartPoint(
+                      EditorBase::GetStartPoint(&SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return nullptr;
   }
@@ -566,6 +569,8 @@ GetTextNode(Selection* aSelection)
     nsCOMPtr<nsINode> node = selectionStartPoint.GetContainer();
     return node.forget();
   }
+  
+  
   
   nsCOMPtr<nsINode> node = selectionStartPoint.GetContainer();
   RefPtr<NodeIterator> iter =
@@ -1720,7 +1725,7 @@ TextEditRules::HideLastPWInput()
                                             TextEditorRef().GetRoot(),
                                             start, end);
 
-  nsCOMPtr<nsINode> selNode = GetTextNode(&SelectionRef());
+  nsCOMPtr<nsINode> selNode = GetTextNodeAroundSelectionStartContainer();
   if (NS_WARN_IF(!selNode)) {
     return NS_OK;
   }

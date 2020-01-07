@@ -473,6 +473,14 @@ protected:
 #endif 
 
   
+
+
+
+
+
+  inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
+
+  
   nsString mPasswordText;
   
   nsString mPasswordIMEText;

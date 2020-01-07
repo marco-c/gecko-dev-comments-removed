@@ -44,10 +44,8 @@ class nsRange;
 namespace mozilla {
 class AutoSelectionSetterAfterTableEdit;
 class HTMLEditorEventListener;
-class HTMLEditRules;
 class ResizerSelectionListener;
 class TypeInState;
-class WSRunObject;
 enum class EditAction : int32_t;
 struct PropItem;
 template<class T> class OwningNonNull;
@@ -1472,6 +1470,12 @@ public:
   friend class WSRunObject;
 
 private:
+  
+
+
+
+  bool IsEmptyTextNode(nsINode& aNode);
+
   bool IsSimpleModifiableNode(nsIContent* aContent,
                               nsAtom* aProperty,
                               nsAtom* aAttribute,
