@@ -20,12 +20,11 @@
 
 
 
-class RacyThreadInfo final : public PseudoStack
+class RacyThreadInfo final
 {
 public:
   explicit RacyThreadInfo(int aThreadId)
-    : PseudoStack()
-    , mThreadId(aThreadId)
+    : mThreadId(aThreadId)
     , mSleep(AWAKE)
   {
     MOZ_COUNT_CTOR(RacyThreadInfo);
@@ -116,7 +115,11 @@ public:
 
   int ThreadId() const { return mThreadId; }
 
+  class PseudoStack& PseudoStack() { return mPseudoStack; }
+
 private:
+  class PseudoStack mPseudoStack;
+
   
   ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
 
@@ -277,8 +280,7 @@ public:
 
     
     
-    
-    js::SetContextProfilingStack(aContext, RacyInfo());
+    js::SetContextProfilingStack(aContext, &RacyInfo()->PseudoStack());
 
     PollJSSampling();
   }
