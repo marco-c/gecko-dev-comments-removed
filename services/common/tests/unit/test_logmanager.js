@@ -4,9 +4,9 @@
 
 
 
-ChromeUtils.import("resource://services-common/logmanager.js");
-ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+Cu.import("resource://services-common/logmanager.js");
+Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://gre/modules/FileUtils.jsm");
 
 
 

@@ -2,14 +2,14 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-                               "resource://gre/modules/AddonManager.jsm");
-ChromeUtils.defineModuleGetter(this, "ExtensionPreferencesManager",
-                               "resource://gre/modules/ExtensionPreferencesManager.jsm");
-ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
-                               "resource://gre/modules/ExtensionSettingsStore.jsm");
-ChromeUtils.defineModuleGetter(this, "Preferences",
-                               "resource://gre/modules/Preferences.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionPreferencesManager",
+                                  "resource://gre/modules/ExtensionPreferencesManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSettingsStore",
+                                  "resource://gre/modules/ExtensionSettingsStore.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+                                  "resource://gre/modules/Preferences.jsm");
 
 const {
   createAppInfo,

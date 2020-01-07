@@ -1,6 +1,6 @@
 
 
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm", this);
+Cu.import("resource://testing-common/MockRegistrar.jsm", this);
 
 
 var idleService = {

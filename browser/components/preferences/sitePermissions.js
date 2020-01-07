@@ -2,9 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource:///modules/SitePermissions.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
+Components.utils.import("resource:///modules/SitePermissions.jsm");
 
 function Permission(principal, type, capability, capabilityString) {
   this.principal = principal;

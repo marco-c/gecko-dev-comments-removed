@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 const nsIPrefLocalizedString = Components.interfaces.nsIPrefLocalizedString;
 const nsISupportsString = Components.interfaces.nsISupportsString;

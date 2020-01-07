@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
+Cu.import("resource://gre/modules/PromiseUtils.jsm", this);
 
 add_task(async function test_no_condition() {
   for (let kind of ["phase", "barrier", "xpcom-barrier", "xpcom-barrier-unwrapped"]) {

@@ -4,9 +4,9 @@
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Services",
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 
 

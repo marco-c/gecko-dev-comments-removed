@@ -27,7 +27,6 @@ module.exports = {
     
     "mozilla/reject-some-requires": ["error", "^devtools/shared/platform/(chome|content)/"],
     "mozilla/var-only-at-top-level": "error",
-    "mozilla/use-chromeutils-import": ["error", {allowCu: true}],
 
     
     "react/display-name": "error",

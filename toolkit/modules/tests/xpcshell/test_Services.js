@@ -12,8 +12,8 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 function checkService(service, interface) {
   info("Checking that Services." + service + " is an " + interface);
@@ -79,12 +79,12 @@ function run_test() {
   
   
   let tmp = {};
-  ChromeUtils.import("resource://testing-common/AppInfo.jsm", tmp);
+  Cu.import("resource://testing-common/AppInfo.jsm", tmp);
   tmp.updateAppInfo();
 
   
   Cu.unload("resource://gre/modules/Services.jsm");
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  Cu.import("resource://gre/modules/Services.jsm");
 
   checkService("appinfo", Ci.nsIXULAppInfo);
 

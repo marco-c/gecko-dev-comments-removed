@@ -16,11 +16,11 @@ this.EXPORTED_SYMBOLS = [
   "Assert"
 ];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/ObjectUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Promise",
-                               "resource://gre/modules/Promise.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Promise",
+                                  "resource://gre/modules/Promise.jsm");
 
 
 

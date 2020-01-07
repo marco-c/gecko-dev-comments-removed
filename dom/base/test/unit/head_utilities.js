@@ -3,8 +3,8 @@
 
 
 
-ChromeUtils.import("resource://testing-common/httpd.js");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Components.utils.import("resource://testing-common/httpd.js");
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 const nsIDocumentEncoder = Components.interfaces.nsIDocumentEncoder;
 const replacementChar = Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER;

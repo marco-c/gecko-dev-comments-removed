@@ -30,8 +30,8 @@ var Cr = Components.results;
 
 const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);

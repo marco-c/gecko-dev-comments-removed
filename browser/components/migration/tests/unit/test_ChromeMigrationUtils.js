@@ -2,7 +2,7 @@
 
 var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
-ChromeUtils.import("resource:///modules/ChromeMigrationUtils.jsm");
+Cu.import("resource:///modules/ChromeMigrationUtils.jsm");
 
 
 ChromeMigrationUtils.getChromeUserDataPath = () => {

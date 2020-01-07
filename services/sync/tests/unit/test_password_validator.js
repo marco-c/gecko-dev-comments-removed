@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines/passwords.js");
+Components.utils.import("resource://services-sync/engines/passwords.js");
 
 function getDummyServerAndClient() {
   return {

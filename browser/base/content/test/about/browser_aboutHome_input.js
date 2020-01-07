@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "AppConstants",
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
 
 ignoreAllUncaughtExceptions();

@@ -2,8 +2,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "WebChannel",
+Cu.import("resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
   "resource://gre/modules/WebChannel.jsm");
 
 const HTTP_PATH = "http://example.com";

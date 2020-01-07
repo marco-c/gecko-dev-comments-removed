@@ -2,8 +2,8 @@
 
 
 "use strict";
-var {GetBattery, Debugging} = ChromeUtils.import("resource://gre/modules/Battery.jsm", {});
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+var {GetBattery, Debugging} = Components.utils.import("resource://gre/modules/Battery.jsm", {});
+Cu.import("resource://gre/modules/Services.jsm", this);
 
 function test() {
   waitForExplicitFinish();

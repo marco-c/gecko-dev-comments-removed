@@ -1,9 +1,9 @@
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+                                  "resource://gre/modules/Services.jsm");
 
 
 

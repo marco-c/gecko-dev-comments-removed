@@ -5,7 +5,7 @@
 
 
 
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
+Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
 "use strict";
 

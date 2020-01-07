@@ -9,8 +9,8 @@ Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 var Ci = Components.interfaces;
 var Cu = Components.utils;
 
-ChromeUtils.import("resource://testing-common/httpd.js");
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
+Cu.import("resource://testing-common/httpd.js");
+Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 
 var EXPECTED = [

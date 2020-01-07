@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BookmarkJSONUtils.jsm");
+Cu.import("resource://gre/modules/BookmarkJSONUtils.jsm");
 
 const LOAD_IN_SIDEBAR_ANNO = "bookmarkProperties/loadInSidebar";
 const DESCRIPTION_ANNO = "bookmarkProperties/description";

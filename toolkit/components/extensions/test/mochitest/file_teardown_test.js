@@ -2,7 +2,7 @@
 
 
 
-let {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
+let {Management} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
 let events = [];
 function record(type, extensionContext) {
   let eventType = type == "proxy-context-load" ? "load" : "unload";

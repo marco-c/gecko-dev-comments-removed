@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const LAST_USED_ANNO = "bookmarkPropertiesDialog/folderLastUsed";
 const MAX_FOLDER_ITEM_IN_MENU_LIST = 5;

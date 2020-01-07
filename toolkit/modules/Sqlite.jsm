@@ -13,8 +13,8 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",

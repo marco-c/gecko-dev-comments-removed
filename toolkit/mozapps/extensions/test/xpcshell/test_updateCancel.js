@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Promise.jsm");
+Components.utils.import("resource://gre/modules/Promise.jsm");
 
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
@@ -13,7 +13,7 @@ Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
 
-ChromeUtils.import("resource://testing-common/httpd.js");
+Components.utils.import("resource://testing-common/httpd.js");
 
 const profileDir = gProfD.clone();
 profileDir.append("extensions");

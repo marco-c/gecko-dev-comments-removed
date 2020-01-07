@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 function run_test() {
   

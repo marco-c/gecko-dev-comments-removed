@@ -6,7 +6,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 

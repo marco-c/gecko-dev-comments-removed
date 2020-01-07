@@ -11,15 +11,15 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["PointerRelay", "PointerAdapter"]; 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Utils", 
+XPCOMUtils.defineLazyModuleGetter(this, "Utils", 
   "resource://gre/modules/accessibility/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "Logger", 
+XPCOMUtils.defineLazyModuleGetter(this, "Logger", 
   "resource://gre/modules/accessibility/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "GestureSettings", 
+XPCOMUtils.defineLazyModuleGetter(this, "GestureSettings", 
   "resource://gre/modules/accessibility/Gestures.jsm");
-ChromeUtils.defineModuleGetter(this, "GestureTracker", 
+XPCOMUtils.defineLazyModuleGetter(this, "GestureTracker", 
   "resource://gre/modules/accessibility/Gestures.jsm");
 
 

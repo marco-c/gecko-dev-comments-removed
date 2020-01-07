@@ -6,8 +6,8 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "ExtensionParent",
-                               "resource://gre/modules/ExtensionParent.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
+                                  "resource://gre/modules/ExtensionParent.jsm");
 
 var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 

@@ -8,16 +8,16 @@ this.EXPORTED_SYMBOLS = ["Screenshot"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/osfile.jsm");
 
 
 
 const PREF_LOG_LEVEL = "extensions.mozscreenshots@mozilla.org.loglevel";
 XPCOMUtils.defineLazyGetter(this, "log", () => {
-  let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
+  let ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
   let consoleOptions = {
     maxLogLevel: "info",
     maxLogLevelPref: PREF_LOG_LEVEL,

@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/TelemetryStopwatch.jsm");
+Components.utils.import("resource://gre/modules/TelemetryStopwatch.jsm");
 
 var gHistoryTree;
 var gSearchBox;

@@ -2,8 +2,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/ContextualIdentityService.jsm");
 
 const containersBundle = Services.strings.createBundle("chrome://browser/locale/preferences/containers.properties");
 

@@ -1,5 +1,5 @@
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 var ios = Cc["@mozilla.org/network/io-service;1"]. getService(Ci.nsIIOService);
 

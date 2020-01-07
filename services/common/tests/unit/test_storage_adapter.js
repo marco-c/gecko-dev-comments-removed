@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-common/kinto-offline-client.js");
-ChromeUtils.import("resource://services-common/kinto-storage-adapter.js");
+Cu.import("resource://services-common/kinto-offline-client.js");
+Cu.import("resource://services-common/kinto-storage-adapter.js");
 
 
 const kintoFilename = "kinto.sqlite";

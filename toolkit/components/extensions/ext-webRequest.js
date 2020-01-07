@@ -7,8 +7,8 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "WebRequest",
-                               "resource://gre/modules/WebRequest.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "WebRequest",
+                                  "resource://gre/modules/WebRequest.jsm");
 
 
 

@@ -3,9 +3,9 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-common/hawkrequest.js");
+Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://services-common/utils.js");
+Cu.import("resource://services-common/hawkrequest.js");
 
 
 var SESSION_KEYS = {

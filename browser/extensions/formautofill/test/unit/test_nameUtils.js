@@ -4,7 +4,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://formautofill/FormAutofillNameUtils.jsm");
+Cu.import("resource://formautofill/FormAutofillNameUtils.jsm");
 
 
 

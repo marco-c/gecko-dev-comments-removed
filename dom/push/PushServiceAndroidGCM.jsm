@@ -10,20 +10,20 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-const {PushDB} = ChromeUtils.import("resource://gre/modules/PushDB.jsm");
-const {PushRecord} = ChromeUtils.import("resource://gre/modules/PushRecord.jsm");
-const {PushCrypto} = ChromeUtils.import("resource://gre/modules/PushCrypto.jsm");
-ChromeUtils.import("resource://gre/modules/Messaging.jsm"); 
-ChromeUtils.import("resource://gre/modules/Services.jsm"); 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm"); 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
+const {PushDB} = Cu.import("resource://gre/modules/PushDB.jsm");
+const {PushRecord} = Cu.import("resource://gre/modules/PushRecord.jsm");
+const {PushCrypto} = Cu.import("resource://gre/modules/PushCrypto.jsm");
+Cu.import("resource://gre/modules/Messaging.jsm"); 
+Cu.import("resource://gre/modules/Services.jsm"); 
+Cu.import("resource://gre/modules/Preferences.jsm"); 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm"); 
 
-const Log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("Push");
+const Log = Cu.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("Push");
 
 this.EXPORTED_SYMBOLS = ["PushServiceAndroidGCM"];
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
-  let {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
+  let {ConsoleAPI} = Cu.import("resource://gre/modules/Console.jsm", {});
   return new ConsoleAPI({
     dump: Log.i,
     maxLogLevelPref: "dom.push.loglevel",

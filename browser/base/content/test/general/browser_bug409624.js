@@ -2,8 +2,8 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "FormHistory",
-                               "resource://gre/modules/FormHistory.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormHistory",
+                                  "resource://gre/modules/FormHistory.jsm");
 
 add_task(async function test() {
   

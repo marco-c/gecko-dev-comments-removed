@@ -1,4 +1,4 @@
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 const TEST_TABLE_DATA_V4 = {

@@ -5,11 +5,11 @@
 
 
 
-ChromeUtils.import("resource://services-sync/UIState.jsm");
+Cu.import("resource://services-sync/UIState.jsm");
 
-ChromeUtils.defineModuleGetter(this, "EnsureFxAccountsWebChannel",
+XPCOMUtils.defineLazyModuleGetter(this, "EnsureFxAccountsWebChannel",
   "resource://gre/modules/FxAccountsWebChannel.jsm");
-ChromeUtils.defineModuleGetter(this, "Weave",
+XPCOMUtils.defineLazyModuleGetter(this, "Weave",
   "resource://services-sync/main.js");
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;

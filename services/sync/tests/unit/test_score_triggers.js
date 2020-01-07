@@ -1,13 +1,13 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/engines/clients.js");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/status.js");
-ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.import("resource://testing-common/services/sync/rotaryengine.js");
+Cu.import("resource://services-sync/engines.js");
+Cu.import("resource://services-sync/engines/clients.js");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/service.js");
+Cu.import("resource://services-sync/status.js");
+Cu.import("resource://services-sync/util.js");
+Cu.import("resource://testing-common/services/sync/rotaryengine.js");
 
 
 var collectionsHelper = track_collections_helper();

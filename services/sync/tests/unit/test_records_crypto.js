@@ -1,13 +1,13 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/keys.js");
-ChromeUtils.import("resource://services-sync/record.js");
-ChromeUtils.import("resource://services-sync/resource.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/keys.js");
+Cu.import("resource://services-sync/record.js");
+Cu.import("resource://services-sync/resource.js");
+Cu.import("resource://services-sync/service.js");
+Cu.import("resource://services-sync/util.js");
 
 var cryptoWrap;
 

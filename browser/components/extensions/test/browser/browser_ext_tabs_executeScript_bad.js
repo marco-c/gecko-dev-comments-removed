@@ -6,7 +6,7 @@
 
 
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
 PromiseTestUtils.whitelistRejectionsGlobally(/Missing host permission/);
 
 

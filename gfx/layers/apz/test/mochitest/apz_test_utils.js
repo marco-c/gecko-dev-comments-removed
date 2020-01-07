@@ -331,7 +331,7 @@ function runContinuation(testFunction) {
 function getSnapshot(rect) {
   function parentProcessSnapshot() {
     addMessageListener('snapshot', function(rect) {
-      ChromeUtils.import('resource://gre/modules/Services.jsm');
+      Components.utils.import('resource://gre/modules/Services.jsm');
       var topWin = Services.wm.getMostRecentWindow('navigator:browser');
 
       

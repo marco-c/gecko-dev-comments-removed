@@ -6,7 +6,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
+Components.utils.import("resource://gre/modules/PluralForm.jsm");
 
 delete PluralForm.numForms;
 delete PluralForm.get;

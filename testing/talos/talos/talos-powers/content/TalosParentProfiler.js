@@ -17,8 +17,8 @@
 var TalosParentProfiler;
 
 (function() {
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
-  ChromeUtils.import("resource://gre/modules/Console.jsm");
+  Components.utils.import("resource://gre/modules/Services.jsm");
+  Components.utils.import("resource://gre/modules/Console.jsm");
 
   
   

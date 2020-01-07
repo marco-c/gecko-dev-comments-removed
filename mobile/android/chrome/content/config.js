@@ -4,7 +4,7 @@
 "use strict";
 
 var {classes: Cc, interfaces: Ci, manager: Cm, utils: Cu} = Components;
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 const VKB_ENTER_KEY = 13; 
 const INITIAL_PAGE_DELAY = 500; 

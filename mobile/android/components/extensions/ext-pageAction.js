@@ -6,14 +6,14 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+                                  "resource://gre/modules/Services.jsm");
 
 
-ChromeUtils.defineModuleGetter(this, "PageActions",
-                               "resource://gre/modules/PageActions.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PageActions",
+                                  "resource://gre/modules/PageActions.jsm");
 
-ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
   IconDetails,

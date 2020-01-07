@@ -1,7 +1,7 @@
 
 
 if (!gMultiProcessBrowser) {
-  ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
   PromiseTestUtils.expectUncaughtRejection(/is no longer, usable/);
 }
 

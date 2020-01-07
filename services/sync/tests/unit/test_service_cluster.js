@@ -1,9 +1,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
+Cu.import("resource://services-sync/service.js");
+Cu.import("resource://services-sync/util.js");
 
 function do_check_throws(func) {
   var raised = false;

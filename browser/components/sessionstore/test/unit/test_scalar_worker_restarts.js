@@ -9,7 +9,7 @@ const ScalarId = "browser.session.restore.worker_restart_count";
 
 
 var profd = do_get_profile();
-ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm", this);
+Cu.import("resource:///modules/sessionstore/SessionFile.jsm", this);
 
 
 
@@ -26,7 +26,7 @@ add_task(async function test_ensure_scalar_is_empty() {
 
 
 add_task(async function test_worker_restart() {
-  let backstagePass = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm", {});
+  let backstagePass = Cu.import("resource:///modules/sessionstore/SessionFile.jsm", {});
   backstagePass.SessionFileInternal._workerHealth.failures = backstagePass.kMaxWriteFailures + 1;
   backstagePass.SessionFileInternal._checkWorkerHealth();
 

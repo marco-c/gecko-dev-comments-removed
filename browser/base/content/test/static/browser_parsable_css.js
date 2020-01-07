@@ -265,7 +265,7 @@ add_task(async function checkAllTheCSS() {
   
   
   let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
-  let HiddenFrame = ChromeUtils.import("resource://testing-common/HiddenFrame.jsm", {}).HiddenFrame;
+  let HiddenFrame = Cu.import("resource://testing-common/HiddenFrame.jsm", {}).HiddenFrame;
   let hiddenFrame = new HiddenFrame();
   let win = await hiddenFrame.get();
   let iframe = win.document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");

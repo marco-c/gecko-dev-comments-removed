@@ -1,6 +1,6 @@
 "use strict";
 
-ChromeUtils.import("resource://shield-recipe-client/lib/FilterExpressions.jsm", this);
+Cu.import("resource://shield-recipe-client/lib/FilterExpressions.jsm", this);
 
 
 add_task(async function() {

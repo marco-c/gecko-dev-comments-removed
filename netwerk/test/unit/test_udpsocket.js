@@ -4,7 +4,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 const HELLO_WORLD = "Hello World";
 const EMPTY_MESSAGE = "";

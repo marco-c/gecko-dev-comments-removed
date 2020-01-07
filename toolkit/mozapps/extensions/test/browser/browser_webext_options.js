@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://testing-common/ContentTask.jsm", {});
+Components.utils.import("resource://testing-common/ContentTask.jsm", {});
 
 
 
@@ -53,7 +53,7 @@ async function runTest(installer) {
 }
 
 function promiseWebExtensionStartup() {
-  const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
+  const {Management} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
 
   return new Promise(resolve => {
     let listener = (event, extension) => {
