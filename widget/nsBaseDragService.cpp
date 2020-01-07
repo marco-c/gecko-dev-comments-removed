@@ -148,7 +148,7 @@ nsBaseDragService::GetNumDropItems(uint32_t * aNumItems)
 
 
 NS_IMETHODIMP
-nsBaseDragService::GetSourceDocument(nsIDOMDocument** aSourceDocument)
+nsBaseDragService::GetSourceDocument(nsIDocument** aSourceDocument)
 {
   *aSourceDocument = mSourceDocument.get();
   NS_IF_ADDREF(*aSourceDocument);
@@ -247,7 +247,7 @@ nsBaseDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
 
   
   nsCOMPtr<nsINode> node = do_QueryInterface(aDOMNode);
-  mSourceDocument = do_QueryInterface(node->OwnerDoc());
+  mSourceDocument = node->OwnerDoc();
   mTriggeringPrincipalURISpec.Assign(aPrincipalURISpec);
   mSourceNode = aDOMNode;
   mContentPolicyType = aContentPolicyType;
@@ -502,30 +502,27 @@ NS_IMETHODIMP
 nsBaseDragService::FireDragEventAtSource(EventMessage aEventMessage,
                                          uint32_t aKeyModifiers)
 {
-  if (mSourceNode && !mSuppressLevel) {
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(mSourceDocument);
-    if (doc) {
-      nsCOMPtr<nsIPresShell> presShell = doc->GetShell();
-      if (presShell) {
-        nsEventStatus status = nsEventStatus_eIgnore;
-        WidgetDragEvent event(true, aEventMessage, nullptr);
-        event.inputSource = mInputSource;
-        if (aEventMessage == eDragEnd) {
-          event.mRefPoint = mEndDragPoint;
-          event.mUserCancelled = mUserCancelled;
-        }
-        event.mModifiers = aKeyModifiers;
-        
-        
-        if (nsPresContext* presContext = presShell->GetPresContext()) {
-          if (nsCOMPtr<nsIWidget> widget = presContext->GetRootWidget()) {
-            widget->DispatchEventToAPZOnly(&event);
-          }
-        }
-
-        nsCOMPtr<nsIContent> content = do_QueryInterface(mSourceNode);
-        return presShell->HandleDOMEventWithTarget(content, &event, &status);
+  if (mSourceNode && mSourceDocument && !mSuppressLevel) {
+    nsCOMPtr<nsIPresShell> presShell = mSourceDocument->GetShell();
+    if (presShell) {
+      nsEventStatus status = nsEventStatus_eIgnore;
+      WidgetDragEvent event(true, aEventMessage, nullptr);
+      event.inputSource = mInputSource;
+      if (aEventMessage == eDragEnd) {
+        event.mRefPoint = mEndDragPoint;
+        event.mUserCancelled = mUserCancelled;
       }
+      event.mModifiers = aKeyModifiers;
+      
+      
+      if (nsPresContext* presContext = presShell->GetPresContext()) {
+        if (nsCOMPtr<nsIWidget> widget = presContext->GetRootWidget()) {
+          widget->DispatchEventToAPZOnly(&event);
+        }
+      }
+
+      nsCOMPtr<nsIContent> content = do_QueryInterface(mSourceNode);
+      return presShell->HandleDOMEventWithTarget(content, &event, &status);
     }
   }
 

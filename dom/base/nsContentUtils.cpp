@@ -5993,9 +5993,8 @@ nsContentUtils::CheckForSubFrameDrop(nsIDragSession* aDragSession,
 
   
   
-  nsCOMPtr<nsIDOMDocument> sourceDocument;
-  aDragSession->GetSourceDocument(getter_AddRefs(sourceDocument));
-  nsCOMPtr<nsIDocument> doc = do_QueryInterface(sourceDocument);
+  nsCOMPtr<nsIDocument> doc;
+  aDragSession->GetSourceDocument(getter_AddRefs(doc));
   if (doc) {
     
     

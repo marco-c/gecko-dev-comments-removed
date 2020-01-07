@@ -15,7 +15,6 @@
 
 #include "nsIClipboard.h"
 #include "nsIDocument.h"
-#include "nsIDOMDocument.h"
 #include "nsITransferable.h"
 #include "nsReadableUtils.h"
 
