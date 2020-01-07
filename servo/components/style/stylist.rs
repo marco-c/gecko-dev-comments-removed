@@ -1421,14 +1421,52 @@ impl Stylist {
     }
 
     
-    
-    
     #[inline]
-    pub fn get_animation(&self, name: &Atom) -> Option<&KeyframesAnimation> {
-        self.cascade_data
-            .iter_origins()
-            .filter_map(|(d, _)| d.animations.get(name))
-            .next()
+    pub fn get_animation<'a, E>(
+        &'a self,
+        name: &Atom,
+        element: E,
+    ) -> Option<&'a KeyframesAnimation>
+    where
+        E: TElement + 'a,
+    {
+        macro_rules! try_find_in {
+            ($data:expr) => {
+                if let Some(animation) = $data.animations.get(name) {
+                    return Some(animation);
+                }
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if let Some(shadow) = element.shadow_root() {
+            try_find_in!(shadow.style_data());
+        }
+
+        if let Some(shadow) = element.containing_shadow() {
+            try_find_in!(shadow.style_data());
+        } else {
+            try_find_in!(self.cascade_data.author);
+        }
+
+        try_find_in!(self.cascade_data.user);
+        try_find_in!(self.cascade_data.user_agent.cascade_data);
+
+        None
     }
 
     
