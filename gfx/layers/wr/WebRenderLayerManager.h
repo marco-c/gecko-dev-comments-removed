@@ -212,7 +212,6 @@ private:
   
   APZTestData mApzTestData;
 
-  TimeStamp mTransactionStart;
   WebRenderCommandBuilder mWebRenderCommandBuilder;
 
   size_t mLastDisplayListSize;
