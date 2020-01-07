@@ -602,13 +602,6 @@ Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior)
   PostUpdate();
 }
 
-void
-Animation::Pause(ErrorResult& aRv)
-{
-  PauseNoUpdate(aRv);
-  PostUpdate();
-}
-
 
 void
 Animation::Reverse(ErrorResult& aRv)
@@ -1224,7 +1217,7 @@ Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
 
 
 void
-Animation::PauseNoUpdate(ErrorResult& aRv)
+Animation::Pause(ErrorResult& aRv)
 {
   if (IsPausedOrPausing()) {
     return;
@@ -1271,6 +1264,8 @@ Animation::PauseNoUpdate(ErrorResult& aRv)
   if (IsRelevant()) {
     nsNodeUtils::AnimationChanged(this);
   }
+
+  PostUpdate();
 }
 
 
