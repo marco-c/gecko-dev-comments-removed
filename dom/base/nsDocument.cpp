@@ -9955,7 +9955,7 @@ nsIDocument::WarnOnceAbout(DeprecatedOperations aOperation,
   
   
   
-  if (!static_cast<const nsDocument*>(this)->IsAboutPage()) {
+  if (!IsAboutPage()) {
     const_cast<nsIDocument*>(this)->
       SetDocumentAndPageUseCounter(OperationToUseCounter(aOperation));
   }
