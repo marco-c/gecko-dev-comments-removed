@@ -1051,6 +1051,14 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
 
   modifiedFrames->AppendElement(this);
 
+  
+  
+  if (displayRoot != rootFrame &&
+      !displayRoot->HasProperty(nsIFrame::ModifiedFrameList())) {
+    displayRoot->SetProperty(nsIFrame::ModifiedFrameList(),
+                             new nsTArray<nsIFrame*>());
+  }
+
   MOZ_ASSERT(PresContext()->LayoutPhaseCount(eLayoutPhase_DisplayListBuilding) == 0);
   SetFrameIsModified(true);
 
@@ -3470,6 +3478,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
                !aBuilder->GetIncludeAllOutOfFlows(),
                "It should be held for painting to window");
 
+    if (child->HasPerspective()) {
+      
+      
+      aBuilder->AllocatePerspectiveItemIndex();
+    }
+
     
     nsRect dirty = aBuilder->GetDirtyRect() - child->GetOffsetTo(this);
     nsRect visible = aBuilder->GetVisibleRect() - child->GetOffsetTo(this);
@@ -3571,6 +3585,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     }
     pseudoStackingContext = true;
     awayFromCommonPath = true;
+  }
+
+  if (child->HasPerspective()) {
+    
+    
+    aBuilder->AllocatePerspectiveItemIndex();
   }
 
   NS_ASSERTION(!child->IsPlaceholderFrame(),
@@ -6376,16 +6396,20 @@ nsIFrame::ComputeISizeValue(gfxContext*         aRenderingContext,
 }
 
 void
-nsFrame::DidReflow(nsPresContext*     aPresContext,
-                   const ReflowInput* aReflowInput)
+nsFrame::DidReflow(nsPresContext*           aPresContext,
+                   const ReflowInput*  aReflowInput,
+                   nsDidReflowStatus         aStatus)
 {
-  NS_FRAME_TRACE_MSG(NS_FRAME_TRACE_CALLS, ("nsFrame::DidReflow"));
+  NS_FRAME_TRACE_MSG(NS_FRAME_TRACE_CALLS,
+                     ("nsFrame::DidReflow: aStatus=%d", static_cast<uint32_t>(aStatus)));
 
   SVGObserverUtils::InvalidateDirectRenderingObservers(this,
                       SVGObserverUtils::INVALIDATE_REFLOW);
 
-  RemoveStateBits(NS_FRAME_IN_REFLOW | NS_FRAME_FIRST_REFLOW |
-                  NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
+  if (nsDidReflowStatus::FINISHED == aStatus) {
+    RemoveStateBits(NS_FRAME_IN_REFLOW | NS_FRAME_FIRST_REFLOW |
+                    NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
+  }
 
   
   

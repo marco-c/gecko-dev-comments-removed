@@ -1535,7 +1535,8 @@ public:
   void SetContainsBlendMode(bool aContainsBlendMode) { mContainsBlendMode = aContainsBlendMode; }
   bool ContainsBlendMode() const { return mContainsBlendMode; }
 
-  uint32_t AllocatePerspectiveItemIndex() { return mPerspectiveItemIndex++; }
+  void AllocatePerspectiveItemIndex() { ++mPerspectiveItemIndex; }
+  uint32_t PerspectiveItemIndex() const { return mPerspectiveItemIndex; }
 
   DisplayListClipState& ClipState() { return mClipState; }
   const ActiveScrolledRoot* CurrentActiveScrolledRoot() { return mCurrentActiveScrolledRoot; }
@@ -4308,6 +4309,7 @@ public:
   nsDisplayEventReceiver(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayEventReceiver);
+    MOZ_ASSERT(aBuilder->IsForEventDelivery());
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayEventReceiver() {
