@@ -9,6 +9,7 @@
 #include "RenderThread.h"
 #include "nsThreadUtils.h"
 #include "mtransport/runnable_utils.h"
+#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
@@ -253,9 +254,6 @@ NotifyDidRender(layers::CompositorBridgeParent* aBridge,
         aStart,
         aEnd);
   }
-  for (uintptr_t i = 0; i < aInfo.removed_pipelines.length; i++) {
-    aBridge->NotifyPipelineRemoved(aInfo.removed_pipelines.data[i]);
-  }
 
   wr_pipeline_info_delete(aInfo);
 }
@@ -284,6 +282,16 @@ RenderThread::UpdateAndRender(wr::WindowId aWindowId, bool aReadback)
   TimeStamp end = TimeStamp::Now();
 
   auto info = renderer->FlushPipelineInfo();
+  RefPtr<layers::AsyncImagePipelineManager> pipelineMgr =
+      renderer->GetCompositorBridge()->GetAsyncImagePipelineManager();
+  
+  
+  
+  
+  
+  MOZ_ASSERT(pipelineMgr);
+  pipelineMgr->NotifyPipelinesUpdated(info);
+
   layers::CompositorThreadHolder::Loop()->PostTask(NewRunnableFunction(
     "NotifyDidRenderRunnable",
     &NotifyDidRender,

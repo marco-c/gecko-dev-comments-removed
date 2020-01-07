@@ -49,8 +49,15 @@ public:
 
   void HoldExternalImage(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch, WebRenderTextureHost* aTexture);
   void HoldExternalImage(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch, const wr::ExternalImageId& aImageId);
-  void PipelineRendered(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch);
-  void PipelineRemoved(const wr::PipelineId& aPipelineId);
+
+  
+  
+  
+  void NotifyPipelinesUpdated(wr::WrPipelineInfo aInfo);
+
+  
+  
+  void ProcessPipelineUpdates();
 
   TimeStamp GetCompositionTime() const {
     return mCompositionTime;
@@ -97,6 +104,8 @@ public:
   bool GetAndResetWillGenerateFrame();
 
 private:
+  void ProcessPipelineRendered(const wr::PipelineId& aPipelineId, const wr::Epoch& aEpoch);
+  void ProcessPipelineRemoved(const wr::PipelineId& aPipelineId);
 
   wr::Epoch GetNextImageEpoch();
   uint32_t GetNextResourceId() { return ++mResourceId; }
@@ -197,6 +206,15 @@ private:
   TimeStamp mCompositeUntilTime;
 
   nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
+
+  
+  Mutex mUpdatesLock;
+  
+  
+  
+  
+  
+  std::queue<std::pair<wr::PipelineId, Maybe<wr::Epoch>>> mUpdatesQueue;
 };
 
 } 
