@@ -68,6 +68,9 @@ private:
   nsresult WritePrefixes(nsIOutputStream* out);
   nsresult LoadPrefixes(nsIInputStream* in);
 
+  template<typename T>
+  void CalculateTArrayChecksum(nsTArray<T>& aArray, uint32_t* outChecksum);
+
   
   
   
@@ -81,6 +84,8 @@ private:
   
   
   nsTArray<nsTArray<uint16_t> > mIndexDeltas;
+  uint32_t mIndexDeltasChecksum;
+
   
   uint32_t mTotalPrefixes;
 

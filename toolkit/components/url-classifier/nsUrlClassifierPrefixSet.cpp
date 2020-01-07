@@ -6,6 +6,7 @@
 
 #include "nsUrlClassifierPrefixSet.h"
 #include "nsIUrlClassifierPrefixSet.h"
+#include "crc32c.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsPrintfCString.h"
@@ -41,6 +42,7 @@ const uint32_t nsUrlClassifierPrefixSet::MAX_BUFFER_SIZE;
 
 nsUrlClassifierPrefixSet::nsUrlClassifierPrefixSet()
   : mLock("nsUrlClassifierPrefixSet.mLock")
+  , mIndexDeltasChecksum(~0)
   , mTotalPrefixes(0)
   , mMemoryReportPath()
 {
@@ -117,10 +119,6 @@ nsUrlClassifierPrefixSet::MakePrefixSet(const uint32_t* aPrefixes, uint32_t aLen
       
       
       
-
-#ifndef NIGHTLY_BUILD
-      mIndexDeltas.LastElement().Compact();
-#endif
       if (!mIndexDeltas.AppendElement(fallible)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
@@ -142,14 +140,16 @@ nsUrlClassifierPrefixSet::MakePrefixSet(const uint32_t* aPrefixes, uint32_t aLen
     previousItem = aPrefixes[i];
   }
 
-
-#ifndef NIGHTLY_BUILD
   mIndexDeltas.LastElement().Compact();
+
+  
+  
+  CalculateTArrayChecksum(mIndexDeltas, &mIndexDeltasChecksum);
+
   mIndexDeltas.Compact();
   mIndexPrefixes.Compact();
-#endif
 
-  LOG(("Total number of indices: %d", aLength));
+  LOG(("Total number of indices: %d (crc=%u)", aLength, mIndexDeltasChecksum));
   LOG(("Total number of deltas: %d", totalDeltas));
   LOG(("Total number of delta chunks: %zu", mIndexDeltas.Length()));
 
@@ -504,6 +504,18 @@ nsUrlClassifierPrefixSet::WritePrefixes(nsIOutputStream* out)
 {
   mCanary.Check();
 
+  
+  
+  
+  
+  
+  uint32_t checksum;
+  CalculateTArrayChecksum(mIndexDeltas, &checksum);
+  if (checksum != mIndexDeltasChecksum) {
+    LOG(("The contents of mIndexDeltas doesn't match the checksum!"));
+    MOZ_CRASH("Memory corruption detected in mIndexDeltas.");
+  }
+
   uint32_t written;
   uint32_t writelen = sizeof(uint32_t);
   uint32_t magic = PREFIXSET_VERSION_MAGIC;
@@ -560,4 +572,20 @@ nsUrlClassifierPrefixSet::WritePrefixes(nsIOutputStream* out)
   LOG(("Saving PrefixSet successful\n"));
 
   return NS_OK;
+}
+
+template<typename T>
+void
+nsUrlClassifierPrefixSet::CalculateTArrayChecksum(nsTArray<T>& aArray,
+                                                  uint32_t* outChecksum)
+{
+  *outChecksum = ~0;
+
+  for (size_t i = 0; i < aArray.Length(); i++) {
+    const T& element = aArray[i];
+    const void* pointer = &element;
+    *outChecksum = ComputeCrc32c(*outChecksum,
+                                 reinterpret_cast<const uint8_t*>(pointer),
+                                 sizeof(void*));
+  }
 }
