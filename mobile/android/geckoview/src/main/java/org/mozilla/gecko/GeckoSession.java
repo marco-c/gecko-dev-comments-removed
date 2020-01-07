@@ -233,10 +233,28 @@ public class GeckoSession extends LayerSession
                             type, message.getString("access"),
                             new PermissionCallback(type, callback));
                 } else if ("GeckoView:MediaPermission".equals(event)) {
+                    GeckoBundle[] videoBundles = message.getBundleArray("video");
+                    GeckoBundle[] audioBundles = message.getBundleArray("audio");
+                    PermissionDelegate.MediaSource[] videos = null;
+                    PermissionDelegate.MediaSource[] audios = null;
+
+                    if (videoBundles != null) {
+                        videos = new PermissionDelegate.MediaSource[videoBundles.length];
+                        for (int i = 0; i < videoBundles.length; i++) {
+                            videos[i] = new PermissionDelegate.MediaSource(videoBundles[i]);
+                        }
+                    }
+
+                    if (audioBundles != null) {
+                        audios = new PermissionDelegate.MediaSource[audioBundles.length];
+                        for (int i = 0; i < audioBundles.length; i++) {
+                            audios[i] = new PermissionDelegate.MediaSource(audioBundles[i]);
+                        }
+                    }
+
                     listener.requestMediaPermission(
                             GeckoSession.this, message.getString("uri"),
-                            message.getBundleArray("video"), message.getBundleArray("audio"),
-                            new PermissionCallback("media", callback));
+                            videos, audios, new PermissionCallback("media", callback));
                 }
             }
         };
@@ -284,9 +302,9 @@ public class GeckoSession extends LayerSession
         }
 
         @Override 
-        public void grant(final GeckoBundle video, final GeckoBundle audio) {
-            grant(video != null ? video.getString("id") : null,
-                  audio != null ? audio.getString("id") : null);
+        public void grant(final PermissionDelegate.MediaSource video, final PermissionDelegate.MediaSource audio) {
+            grant(video != null ? video.id : null,
+                  audio != null ? audio.id : null);
         }
     }
 
@@ -896,9 +914,9 @@ public class GeckoSession extends LayerSession
         }
 
         @Override 
-        public void confirm(GeckoBundle item) {
+        public void confirm(PromptDelegate.Choice item) {
             if ("choice".equals(mType)) {
-                confirm(item == null ? null : item.getString("id"));
+                confirm(item == null ? null : item.id);
                 return;
             } else {
                 throw new UnsupportedOperationException();
@@ -906,7 +924,7 @@ public class GeckoSession extends LayerSession
         }
 
         @Override 
-        public void confirm(GeckoBundle[] items) {
+        public void confirm(PromptDelegate.Choice[] items) {
             if (("menu".equals(mMode) || "single".equals(mMode)) &&
                 (items == null || items.length != 1)) {
                 throw new IllegalArgumentException();
@@ -918,7 +936,7 @@ public class GeckoSession extends LayerSession
                 }
                 final String[] ids = new String[items.length];
                 for (int i = 0; i < ids.length; i++) {
-                    ids[i] = (items[i] == null) ? null : items[i].getString("id");
+                    ids[i] = (items[i] == null) ? null : items[i].id;
                 }
                 confirm(ids);
                 return;
@@ -1037,23 +1055,34 @@ public class GeckoSession extends LayerSession
                 break;
             }
             case "auth": {
-                delegate.promptForAuth(session, title, msg, message.getBundle("options"), cb);
+                delegate.promptForAuth(session, title, msg, new PromptDelegate.AuthenticationOptions(message.getBundle("options")), cb);
                 break;
             }
             case "choice": {
                 final int intMode;
                 if ("menu".equals(mode)) {
-                    intMode = PromptDelegate.CHOICE_TYPE_MENU;
+                    intMode = PromptDelegate.Choice.CHOICE_TYPE_MENU;
                 } else if ("single".equals(mode)) {
-                    intMode = PromptDelegate.CHOICE_TYPE_SINGLE;
+                    intMode = PromptDelegate.Choice.CHOICE_TYPE_SINGLE;
                 } else if ("multiple".equals(mode)) {
-                    intMode = PromptDelegate.CHOICE_TYPE_MULTIPLE;
+                    intMode = PromptDelegate.Choice.CHOICE_TYPE_MULTIPLE;
                 } else {
                     callback.sendError("Invalid mode");
                     return;
                 }
+
+                GeckoBundle[] choiceBundles = message.getBundleArray("choices");
+                PromptDelegate.Choice choices[];
+                if (choiceBundles == null || choiceBundles.length == 0) {
+                    choices = null;
+                } else {
+                    choices = new PromptDelegate.Choice[choiceBundles.length];
+                    for (int i = 0; i < choiceBundles.length; i++) {
+                        choices[i] = new PromptDelegate.Choice(choiceBundles[i]);
+                    }
+                }
                 delegate.promptForChoice(session, title, msg, intMode,
-                                         message.getBundleArray("choices"), cb);
+                                         choices, cb);
                 break;
             }
             case "color": {
@@ -1493,39 +1522,74 @@ public class GeckoSession extends LayerSession
             void confirm(String username, String password);
         }
 
-        
+        class AuthenticationOptions {
+            
 
 
-        static final int AUTH_FLAG_HOST = 1;
-        
+            public static final int AUTH_FLAG_HOST = 1;
+            
 
 
-        static final int AUTH_FLAG_PROXY = 2;
-        
+            public static final int AUTH_FLAG_PROXY = 2;
+            
 
 
-        static final int AUTH_FLAG_ONLY_PASSWORD = 8;
-        
+            public static final int AUTH_FLAG_ONLY_PASSWORD = 8;
+            
 
 
-        static final int AUTH_FLAG_PREVIOUS_FAILED = 16;
-        
+            public static final int AUTH_FLAG_PREVIOUS_FAILED = 16;
+            
 
 
-        static final int AUTH_FLAG_CROSS_ORIGIN_SUB_RESOURCE = 32;
+            public static final int AUTH_FLAG_CROSS_ORIGIN_SUB_RESOURCE = 32;
 
-        
-
-
-        static final int AUTH_LEVEL_NONE = 0;
-        
+            
 
 
-        static final int AUTH_LEVEL_PW_ENCRYPTED = 1;
-        
+            public static final int AUTH_LEVEL_NONE = 0;
+            
 
 
-        static final int AUTH_LEVEL_SECURE = 2;
+            public static final int AUTH_LEVEL_PW_ENCRYPTED = 1;
+            
+
+
+            public static final int AUTH_LEVEL_SECURE = 2;
+
+            
+
+
+            public int flags;
+
+            
+
+
+            public String uri;
+
+            
+
+
+            public int level;
+
+            
+
+
+            public String username;
+
+            
+
+
+            public String password;
+
+             AuthenticationOptions(GeckoBundle options) {
+                flags = options.getInt("flags");
+                uri = options.getString("uri");
+                level = options.getInt("level");
+                username = options.getString("username");
+                password = options.getString("password");
+            }
+        }
 
         
 
@@ -1542,7 +1606,82 @@ public class GeckoSession extends LayerSession
 
 
         void promptForAuth(GeckoSession session, String title, String msg,
-                           GeckoBundle options, AuthCallback callback);
+                           AuthenticationOptions options, AuthCallback callback);
+
+        class Choice {
+            
+
+
+            public static final int CHOICE_TYPE_MENU = 1;
+
+            
+
+
+            public static final int CHOICE_TYPE_SINGLE = 2;
+
+            
+
+
+            public static final int CHOICE_TYPE_MULTIPLE = 3;
+
+            
+
+
+
+            public boolean disabled;
+
+            
+
+
+
+            public String icon;
+
+            
+
+
+            public String id;
+
+            
+
+
+            public Choice[] items;
+
+            
+
+
+            public String label;
+
+            
+
+
+
+            public boolean selected;
+
+            
+
+
+
+            public boolean separator;
+
+             Choice(GeckoBundle choice) {
+                disabled = choice.getBoolean("disabled");
+                icon = choice.getString("icon");
+                id = choice.getString("id");
+                label = choice.getString("label");
+                selected = choice.getBoolean("label");
+                separator = choice.getBoolean("separator");
+
+                GeckoBundle[] choices = choice.getBundleArray("items");
+                if (choices == null) {
+                    items = null;
+                } else {
+                    items = new Choice[choices.length];
+                    for (int i = 0; i < choices.length; i++) {
+                        items[i] = new Choice(choices[i]);
+                    }
+                }
+            }
+        }
 
         
 
@@ -1571,7 +1710,7 @@ public class GeckoSession extends LayerSession
 
 
 
-            void confirm(GeckoBundle item);
+            void confirm(Choice item);
 
             
 
@@ -1580,23 +1719,9 @@ public class GeckoSession extends LayerSession
 
 
 
-            void confirm(GeckoBundle[] items);
+            void confirm(Choice[] items);
         }
 
-        
-
-
-        static final int CHOICE_TYPE_MENU = 1;
-
-        
-
-
-        static final int CHOICE_TYPE_SINGLE = 2;
-
-        
-
-
-        static final int CHOICE_TYPE_MULTIPLE = 3;
 
         
 
@@ -1620,7 +1745,7 @@ public class GeckoSession extends LayerSession
 
 
         void promptForChoice(GeckoSession session, String title, String msg, int type,
-                             GeckoBundle[] choices, ChoiceCallback callback);
+                             Choice[] choices, ChoiceCallback callback);
 
         
 
@@ -1826,6 +1951,131 @@ public class GeckoSession extends LayerSession
         void requestContentPermission(GeckoSession session, String uri, String type,
                                       String access, Callback callback);
 
+        class MediaSource {
+            
+
+
+            public static final int SOURCE_CAMERA = 0;
+
+            
+
+
+            public static final int SOURCE_SCREEN  = 1;
+
+            
+
+
+            public static final int SOURCE_APPLICATION = 2;
+
+            
+
+
+            public static final int SOURCE_WINDOW = 3;
+
+            
+
+
+            public static final int SOURCE_BROWSER = 4;
+
+            
+
+
+            public static final int SOURCE_MICROPHONE = 5;
+
+            
+
+
+            public static final int SOURCE_AUDIOCAPTURE = 6;
+
+            
+
+
+            public static final int SOURCE_OTHER = 7;
+
+            
+
+
+            public static final int TYPE_VIDEO = 0;
+
+            
+
+
+            public static final int TYPE_AUDIO = 1;
+
+            
+
+
+            public String id;
+
+            
+
+
+            public String rawId;
+
+            
+
+
+
+
+            public String name;
+
+            
+
+
+
+
+
+
+            public int source;
+
+            
+
+
+            public int type;
+
+            private static int getSourceFromString(String src) {
+                
+                if ("camera".equals(src)) {
+                    return SOURCE_CAMERA;
+                } else if ("screen".equals(src)) {
+                    return SOURCE_SCREEN;
+                } else if ("application".equals(src)) {
+                    return SOURCE_APPLICATION;
+                } else if ("window".equals(src)) {
+                    return SOURCE_WINDOW;
+                } else if ("browser".equals(src)) {
+                    return SOURCE_BROWSER;
+                } else if ("microphone".equals(src)) {
+                    return SOURCE_MICROPHONE;
+                } else if ("audioCapture".equals(src)) {
+                    return SOURCE_AUDIOCAPTURE;
+                } else if ("other".equals(src)) {
+                    return SOURCE_OTHER;
+                } else {
+                    throw new IllegalArgumentException("String: " + src + " is not a valid media source string");
+                }
+            }
+
+            private static int getTypeFromString(String type) {
+                
+                if ("video".equals(type)) {
+                    return TYPE_VIDEO;
+                } else if ("audio".equals(type)) {
+                    return TYPE_AUDIO;
+                } else {
+                    throw new IllegalArgumentException("String: " + type + " is not a valid media type string");
+                }
+            }
+
+            public MediaSource(GeckoBundle media) {
+                id = media.getString("id");
+                rawId = media.getString("id");
+                name = media.getString("name");
+                source = getSourceFromString(media.getString("source"));
+                type = getTypeFromString(media.getString("type"));
+            }
+        }
+
         
 
 
@@ -1853,7 +2103,7 @@ public class GeckoSession extends LayerSession
 
 
 
-            void grant(final GeckoBundle video, final GeckoBundle audio);
+            void grant(final MediaSource video, final MediaSource audio);
 
             
 
@@ -1872,22 +2122,7 @@ public class GeckoSession extends LayerSession
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        void requestMediaPermission(GeckoSession session, String uri, GeckoBundle[] video,
-                                    GeckoBundle[] audio, MediaCallback callback);
+        void requestMediaPermission(GeckoSession session, String uri, MediaSource[] video,
+                                    MediaSource[] audio, MediaCallback callback);
     }
 }
