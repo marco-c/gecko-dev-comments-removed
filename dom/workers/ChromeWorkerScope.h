@@ -9,11 +9,13 @@
 
 #include "WorkerCommon.h"
 
-BEGIN_WORKERS_NAMESPACE
+namespace mozilla {
+namespace dom {
 
 bool
 DefineChromeWorkerFunctions(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 
-END_WORKERS_NAMESPACE
+} 
+} 
 
 #endif 
