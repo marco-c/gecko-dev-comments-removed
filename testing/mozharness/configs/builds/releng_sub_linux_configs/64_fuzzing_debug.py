@@ -8,7 +8,6 @@ config = {
     ],
     'stage_platform': 'linux64-fuzzing-debug',
     'debug_build': True,
-    'enable_signing': False,
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),

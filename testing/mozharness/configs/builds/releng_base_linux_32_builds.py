@@ -18,7 +18,6 @@ config = {
     "buildbot_json_path": "buildprops.json",
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
-    'enable_signing': True,
     'secret_files': [
         {'filename': '/builds/gapi.data',
          'secret_name': 'project/releng/gecko/build/level-%(scm-level)s/gapi.data',

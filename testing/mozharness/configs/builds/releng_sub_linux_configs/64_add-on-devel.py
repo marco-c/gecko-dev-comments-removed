@@ -8,7 +8,6 @@ config = {
         
     ],
     'stage_platform': 'linux64-add-on-devel',
-    'enable_signing': False,
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),

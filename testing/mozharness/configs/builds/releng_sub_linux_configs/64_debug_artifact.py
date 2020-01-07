@@ -12,7 +12,6 @@ config = {
     
     'debug_build': True,
     
-    'enable_signing': False,
     
     'perfherder_extra_options': ['artifact'],
     

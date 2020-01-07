@@ -9,7 +9,6 @@ config = {
         
     ],
     'stage_platform': 'linux64-valgrind',
-    'enable_signing': False,
     'perfherder_extra_options': ['valgrind'],
     
     'env': {
