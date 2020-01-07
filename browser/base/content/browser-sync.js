@@ -53,9 +53,7 @@ var gSync = {
   
   get syncConfiguredAndLoading() {
     return UIState.get().status == UIState.STATUS_SIGNED_IN &&
-           (!this.syncReady ||
-           
-           Weave.Service.clientsEngine.lastSync == 0);
+           (!this.syncReady || Weave.Service.clientsEngine.isFirstSync);
   },
 
   get isSignedIn() {

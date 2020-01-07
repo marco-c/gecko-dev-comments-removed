@@ -114,6 +114,10 @@ ClientEngine.prototype = {
     Services.prefs.setIntPref(LAST_MODIFIED_ON_PROCESS_COMMAND_PREF, value);
   },
 
+  get isFirstSync() {
+    return !this.lastRecordUpload;
+  },
+
   
   get enabled() {
     return true;
@@ -363,18 +367,16 @@ ClientEngine.prototype = {
   },
 
   async _syncStartup() {
-    this.isFirstSync = !this.lastRecordUpload;
     
     if (Date.now() / 1000 - this.lastRecordUpload > CLIENTS_TTL_REFRESH) {
       await this._tracker.addChangedID(this.localID);
-      this.lastRecordUpload = Date.now() / 1000;
     }
     return SyncEngine.prototype._syncStartup.call(this);
   },
 
   async _processIncoming() {
     
-    await this.setLastSync(0);
+    await this.resetLastSync();
     this._incomingClients = {};
     try {
       await SyncEngine.prototype._processIncoming.call(this);
@@ -453,7 +455,9 @@ ClientEngine.prototype = {
     
     let lastSync = await this.getLastSync();
     for (let id of updatedIDs) {
-      if (id != this.localID) {
+      if (id == this.localID) {
+        this.lastRecordUpload = lastSync;
+      } else {
         this._store._remoteClients[id].serverLastModified = lastSync;
       }
     }
