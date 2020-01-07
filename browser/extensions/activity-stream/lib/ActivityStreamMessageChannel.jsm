@@ -153,11 +153,23 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   getPreloadedBrowser() {
     let preloadedPorts = [];
     for (let port of this.channel.messagePorts) {
-      if (port.browser.getAttribute("preloadedState") === "preloaded") {
+      if (this.isPreloadedBrowser(port.browser)) {
         preloadedPorts.push(port);
       }
     }
     return preloadedPorts.length ? preloadedPorts : null;
+  }
+
+  
+
+
+
+
+
+
+
+  isPreloadedBrowser(browser) {
+    return browser.getAttribute("preloadedState") === "preloaded";
   }
 
   
@@ -220,6 +232,15 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onNewTabLoad(msg) {
+    let {browser} = msg.target;
+    if (this.isPreloadedBrowser(browser)) {
+      
+      
+      
+      
+      browser.renderLayers = true;
+    }
+
     this.onActionFromContent({type: at.NEW_TAB_LOAD}, msg.target.portID);
   }
 
