@@ -2,7 +2,10 @@
 
 
 async function waitForBreakpointCount(dbg, count) {
-  return waitForState(dbg, state => dbg.selectors.getBreakpoints(state).size === count)
+  return waitForState(
+    dbg,
+    state => dbg.selectors.getBreakpoints(state).size === count
+  );
 }
 
 add_task(async function() {
