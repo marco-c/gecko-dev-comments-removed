@@ -15,7 +15,6 @@ var gFileName = "testFileForBug751744.tmp";
 
 var gFileContent = "/* this file is already saved */\n" +
                    "function foo() { alert('bar') }";
-var gLength = gFileContent.length;
 
 
 var menu;

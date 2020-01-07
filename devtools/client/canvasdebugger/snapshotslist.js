@@ -306,12 +306,11 @@ var SnapshotsListView = extend(WidgetMethods, {
 
     if (actorCanStop) {
       await gFront.stopRecordingAnimationFrame();
-    }
-    
-    
-    
-    
-    else {
+    } else {
+      
+      
+      
+      
       this._onRecordFailure();
     }
 
@@ -371,9 +370,10 @@ var SnapshotsListView = extend(WidgetMethods, {
           console.error("Could not import recorded animation frame snapshot file.");
           return;
         }
+        var data;
         try {
           let string = NetUtil.readInputStreamToString(inputStream, inputStream.available());
-          var data = JSON.parse(string);
+          data = JSON.parse(string);
         } catch (e) {
           console.error("Could not read animation frame snapshot file.");
           return;

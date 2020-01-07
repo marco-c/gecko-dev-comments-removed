@@ -5,7 +5,6 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
 const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { WebGLFront } = require("devtools/shared/fronts/webgl");
@@ -67,10 +66,10 @@ ShaderEditorPanel.prototype = {
       return this._destroyer;
     }
 
-    return this._destroyer = this.panelWin.shutdownShaderEditor().then(() => {
+    return (this._destroyer = this.panelWin.shutdownShaderEditor().then(() => {
       
       this.panelWin.gFront.destroy();
       this.emit("destroyed");
-    });
+    }));
   }
 };

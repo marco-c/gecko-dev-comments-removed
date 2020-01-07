@@ -56,9 +56,9 @@ const { extend } = require("devtools/shared/extend");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {NetUtil} = require("resource://gre/modules/NetUtil.jsm");
 const {ScratchpadManager} = require("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
-const {addDebuggerToGlobal} = require("resource://gre/modules/jsdebugger.jsm");
 const {OS} = require("resource://gre/modules/osfile.jsm");
 const {Reflect} = require("resource://gre/modules/reflect.jsm");
+
 
 
 
@@ -1079,22 +1079,22 @@ var Scratchpad = {
 
   _getUnicodeContent: function SP__getUnicodeContent(aContent, aCharsetArray) {
     let content = null,
-      converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter),
-      success = aCharsetArray.some(charset => {
-        try {
-          converter.charset = charset;
-          content = converter.ConvertToUnicode(aContent);
-          return true;
-        } catch (e) {
-          this.notificationBox.appendNotification(
-              this.strings.formatStringFromName("importFromFile.convert.failed",
-                                                [ charset ], 1),
-              "file-import-convert-failed",
-              null,
-              this.notificationBox.PRIORITY_WARNING_HIGH,
-              null);
-        }
-      });
+      converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+    aCharsetArray.some(charset => {
+      try {
+        converter.charset = charset;
+        content = converter.ConvertToUnicode(aContent);
+        return true;
+      } catch (e) {
+        this.notificationBox.appendNotification(
+            this.strings.formatStringFromName("importFromFile.convert.failed",
+                                              [ charset ], 1),
+            "file-import-convert-failed",
+            null,
+            this.notificationBox.PRIORITY_WARNING_HIGH,
+            null);
+      }
+    });
     return content;
   },
 
@@ -1281,10 +1281,9 @@ var Scratchpad = {
       
       
       filePaths.splice(pathIndex, 1);
-    }
-    
-    
-    else if (filesCount === maxRecent) {
+    } else if (filesCount === maxRecent) {
+      
+      
       filePaths.shift();
     }
 

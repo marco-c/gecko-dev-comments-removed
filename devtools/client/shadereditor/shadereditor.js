@@ -3,13 +3,14 @@
 
 "use strict";
 
+
+
 const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {SideMenuWidget} = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const {Task} = require("devtools/shared/task");
-const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Tooltip = require("devtools/client/shared/widgets/tooltip/Tooltip");
 const Editor = require("devtools/client/sourceeditor/editor");
@@ -17,6 +18,7 @@ const {LocalizationHelper} = require("devtools/shared/l10n");
 const {extend} = require("devtools/shared/extend");
 const {WidgetMethods, setNamedTimeout} =
   require("devtools/client/shared/widgets/view-helpers");
+
 
 
 

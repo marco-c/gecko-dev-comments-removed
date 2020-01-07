@@ -367,9 +367,8 @@ var CallsListView = extend(WidgetMethods, {
     let functionCall = callItem.attachment.actor;
     if (functionCall.isLoadedFromDisk) {
       display(functionCall.stack);
-    }
-    
-    else {
+    } else {
+      
       callItem.attachment.actor.getDetails().then(fn => display(fn.stack));
     }
   },

@@ -108,6 +108,8 @@ add_task(async function runTest() {
         return Promise.resolve(true);
       }
       return new Promise(resolve => {
+        
+        
         setTimeout(function() {
           waitUntil(predicate, interval).then(() => resolve(true));
         }, interval);

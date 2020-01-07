@@ -30,6 +30,8 @@ function cleanUp(toolbox) {
   off(DebuggerClient, "connect", onDebuggerClientConnect);
 
   toolbox.destroy().then(function() {
+    
+    
     setTimeout(() => {
       gBrowser.removeCurrentTab();
       executeSoon(function() {
