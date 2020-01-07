@@ -454,7 +454,7 @@ EditorBase::GetDesiredSpellCheckState()
     
     
     
-    nsCOMPtr<nsIHTMLDocument> doc = do_QueryInterface(content->GetUncomposedDoc());
+    nsCOMPtr<nsIHTMLDocument> doc = do_QueryInterface(content->GetComposedDoc());
     return doc && doc->IsEditingOn();
   }
 
