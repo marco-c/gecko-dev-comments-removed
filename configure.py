@@ -108,7 +108,6 @@ def config_status(config):
     
     os.chmod('config.status', 0o755)
     if config.get('MOZ_BUILD_APP') != 'js' or config.get('JS_STANDALONE'):
-        os.environ[b'WRITE_MOZINFO'] = b'1'
         from mozbuild.config_status import config_status
 
         
