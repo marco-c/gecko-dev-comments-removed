@@ -764,27 +764,24 @@ CustomElementRegistry::Define(JSContext* aCx,
 
     AutoSetRunningFlag as(this);
 
-    { 
-      
+    
 
 
-      JSAutoRealm ar(aCx, constructor);
-      
-      
-      
-      if (!JS_GetProperty(aCx, constructor, "prototype", &constructorPrototype)) {
-        aRv.NoteJSContextException(aCx);
-        return;
-      }
+    
+    
+    
+    if (!JS_GetProperty(aCx, constructor, "prototype", &constructorPrototype)) {
+      aRv.NoteJSContextException(aCx);
+      return;
+    }
 
-      
+    
 
 
-      if (!constructorPrototype.isObject()) {
-        aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("constructor.prototype"));
-        return;
-      }
-    } 
+    if (!constructorPrototype.isObject()) {
+      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("constructor.prototype"));
+      return;
+    }
 
     JS::Rooted<JSObject*> constructorProtoUnwrapped(
       aCx, js::CheckedUnwrap(&constructorPrototype.toObject()));
@@ -814,7 +811,7 @@ CustomElementRegistry::Define(JSContext* aCx,
       
       
       JS::RootedValue rootedv(aCx, JS::ObjectValue(*constructorProtoUnwrapped));
-      if (!JS_WrapValue(aCx, &rootedv) || !callbacksHolder->Init(aCx, rootedv)) {
+      if (!callbacksHolder->Init(aCx, rootedv)) {
         aRv.NoteJSContextException(aCx);
         return;
       }
