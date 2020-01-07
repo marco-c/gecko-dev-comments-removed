@@ -78,6 +78,8 @@ var fun3 = (x) => { if (x) return true; else return false; };
 var fun4 = (x) => { if (x) return true; else return false; };
 var fun5 = (x) => { if (x) return true; else return false; };
 var fun6 = (x) => { if (x) return true; else return false; };
+var fun7 = (x) => { if (x) return true; else return false; };
+var fun8 = (x) => { if (x) return true; else return false; };
 
 
 test_transition(fun1, NaN, 1, 0, 1);
@@ -88,3 +90,6 @@ test_transition(fun4, {}, NaN, 1, 0);
 
 test_transition(fun5, {}, null, 1, 0);
 test_transition(fun6, null, {},  0, 1);
+
+test_transition(fun7, Symbol('hi'), null, 1, 0);
+test_transition(fun8, null, Symbol('lo'),  0, 1);
