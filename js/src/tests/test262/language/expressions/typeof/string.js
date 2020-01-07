@@ -8,40 +8,50 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 assert.sameValue(
   typeof "1",
   "string",
-  '#1: typeof "1" === "string". Actual: ' + (typeof "1")
+  'typeof "1" === "string"'
 );
 
 assert.sameValue(
   typeof "NaN",
   "string",
-  '#2: typeof "NaN" === "string". Actual: ' + (typeof "NaN")
+  'typeof "NaN" === "string"'
 );
 
 assert.sameValue(
   typeof "Infinity",
   "string",
-  '#3: typeof "Infinity" === "string". Actual: ' + (typeof "Infinity")
+  'typeof "Infinity" === "string"'
 );
 
 assert.sameValue(
   typeof "",
   "string",
-  '#4: typeof "" === "string". Actual: ' + (typeof "")
+  'typeof "" === "string"'
 );
 
 assert.sameValue(
   typeof "true",
   "string",
-  '#5: typeof "true" === "string". Actual: ' + (typeof "true")
+  'typeof "true" === "string"'
 );
 
 assert.sameValue(
   typeof Date(),
   "string",
-  '#6: typeof Date() === "string". Actual: ' + (typeof Date())
+  'typeof Date() === "string"'
 );
 
 reportCompare(0, 0);

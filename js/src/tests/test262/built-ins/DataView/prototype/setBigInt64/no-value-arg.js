@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new ArrayBuffer(8);
+var sample = new DataView(buffer, 0);
+
+assert.throws(TypeError, () => sample.setBigInt64(0));
+
+reportCompare(0, 0);

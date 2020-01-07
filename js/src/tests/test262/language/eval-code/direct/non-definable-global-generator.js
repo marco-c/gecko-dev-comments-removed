@@ -22,6 +22,7 @@
 
 
 
+
 var error;
 try {
   eval("function* NaN(){}");

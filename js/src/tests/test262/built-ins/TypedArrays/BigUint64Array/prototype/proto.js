@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(BigUint64Array.prototype),
+                 TypedArray.prototype);
+
+reportCompare(0, 0);

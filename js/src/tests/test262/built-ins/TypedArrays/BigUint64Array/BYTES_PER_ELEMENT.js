@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(BigUint64Array, "BYTES_PER_ELEMENT", {
+  value: 8,
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
+
+reportCompare(0, 0);

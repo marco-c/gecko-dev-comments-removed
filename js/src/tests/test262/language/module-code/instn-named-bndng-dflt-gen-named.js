@@ -46,6 +46,7 @@
 
 
 
+
 assert.sameValue(g().next().value, 23, 'generator function value is hoisted');
 assert.sameValue(g.name, 'gName', 'correct name is assigned');
 

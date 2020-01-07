@@ -14,7 +14,6 @@
 
 
 
-
 try {} catch {}
 
 reportCompare(0, 0);

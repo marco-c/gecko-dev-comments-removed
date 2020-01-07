@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function f() {
+  throw new Test262Error();
+}
+
+assert.throws(Test262Error, function() {
+  class C {
+    [f()]
+  }
+});
+
+reportCompare(0, 0);

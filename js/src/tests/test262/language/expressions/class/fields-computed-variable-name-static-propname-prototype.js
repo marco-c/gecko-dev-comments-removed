@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var prototype = 'foo';
+var C = class {
+  static [prototype];
+};
+
+assert.sameValue(C.hasOwnProperty("foo"), true);
+
+var c = new C();
+assert.sameValue(c.hasOwnProperty("foo"), false);
+
+reportCompare(0, 0);

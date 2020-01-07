@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(this, "BigUint64Array", {
+  writable: true,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

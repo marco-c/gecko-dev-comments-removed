@@ -25,6 +25,7 @@
 
 class C {
   static ["a"] = 42; ["a"] = 39
+
 }
 
 var c = new C();

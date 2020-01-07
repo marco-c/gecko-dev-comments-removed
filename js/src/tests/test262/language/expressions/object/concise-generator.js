@@ -5,6 +5,7 @@
 
 
 
+
 var proto = {
   method() {
     return 42;

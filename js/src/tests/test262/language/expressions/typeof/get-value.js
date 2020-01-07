@@ -8,24 +8,39 @@
 
 
 
-assert.sameValue(
-  typeof 0,
-   "number",
-  '#1: typeof 0 === "number". Actual: ' + (typeof 0)
-);
 
-var x = 0;
+
+
+
+
+
+
+var count = 0;
+
+Object.defineProperties(this, {
+  x: {
+    value: 1
+  },
+  y: {
+    get() {
+      count++;
+      return 1;
+    }
+  }
+});
+
 assert.sameValue(
   typeof x,
    "number",
-  '#2: typeof x === "number". Actual: ' + (typeof x)
+  'typeof x === "number"'
 );
 
-var x = new Object();
 assert.sameValue(
-  typeof x,
-   "object",
-  '#3: var x = new Object(); typeof x === "object". Actual: ' + (typeof x)
+  typeof y,
+   "number",
+  'typeof y === "number"'
 );
+
+assert.sameValue(count, 1);
 
 reportCompare(0, 0);

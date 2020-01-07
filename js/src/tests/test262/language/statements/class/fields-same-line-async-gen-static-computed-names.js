@@ -25,6 +25,7 @@
 
 class C {
   async *m() { return 42; } static ["a"] = 42; ["a"] = 39;
+
 }
 
 var c = new C();

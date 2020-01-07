@@ -7,6 +7,7 @@
 
 
 
+
 function * G() {}
 
 assert.throws(TypeError, function() {

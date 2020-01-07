@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function () {
+  BigUint64Array.prototype.buffer;
+});
+
+reportCompare(0, 0);

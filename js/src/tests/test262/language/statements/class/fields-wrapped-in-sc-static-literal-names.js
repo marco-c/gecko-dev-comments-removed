@@ -29,6 +29,7 @@ class C {
   ;;;;;;static a; b = 42;
   static c = fn;;;;;;;
   ;;;;
+
 }
 
 var c = new C();

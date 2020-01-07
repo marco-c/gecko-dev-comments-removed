@@ -26,9 +26,10 @@ var y = Symbol();
 
 
 class C {
-  [x]; [y] = 42
+  static [x]; static [y] = 42
   foo = "foobar"
   bar = "barbaz";
+
 }
 
 var c = new C();
@@ -56,9 +57,9 @@ verifyProperty(c, "bar", {
 });
 
 assert.sameValue(Object.hasOwnProperty.call(C.prototype, x), false);
-assert.sameValue(Object.hasOwnProperty.call(C, x), false);
+assert.sameValue(Object.hasOwnProperty.call(c, x), false);
 
-verifyProperty(c, x, {
+verifyProperty(C, x, {
   value: undefined,
   enumerable: true,
   writable: true,
@@ -66,9 +67,9 @@ verifyProperty(c, x, {
 });
 
 assert.sameValue(Object.hasOwnProperty.call(C.prototype, y), false);
-assert.sameValue(Object.hasOwnProperty.call(C, y), false);
+assert.sameValue(Object.hasOwnProperty.call(c, y), false);
 
-verifyProperty(c, y, {
+verifyProperty(C, y, {
   value: 42,
   enumerable: true,
   writable: true,

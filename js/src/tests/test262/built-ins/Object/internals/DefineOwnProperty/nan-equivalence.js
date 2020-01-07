@@ -40,15 +40,22 @@
 
 
 
+var isLittleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] !== 0;
 
 var float = new Float64Array(1);
 var ints = new Uint8Array(float.buffer);
 var len = distinctNaNs.length;
-var idx, jdx, subject, first, second;
+
 function byteValue(value) {
   float[0] = value;
-  return ints[0] + (ints[1] << 8) + (ints[2] << 16) + (ints[3] << 32) +
-    (ints[4] << 64) + (ints[5] << 64) + (ints[6] << 128) + (ints[7] << 256);
+
+  var hex = "0123456789ABCDEF";
+  var s = "";
+  for (var i = 0; i < 8; ++i) {
+    var v = ints[isLittleEndian ? 7 - i : i];
+    s += hex[(v >> 4) & 0xf] + hex[v & 0xf];
+  }
+  return s;
 }
 
 
@@ -57,21 +64,23 @@ function byteValue(value) {
 
 
 
-for (idx = 0; idx < len; ++idx) {
-  for (jdx = 0 ; jdx < len; ++jdx) {
-    first = distinctNaNs[idx];
-    second = distinctNaNs[jdx];
-    if (byteValue(first) === byteValue(second)) {
+for (var idx = 0; idx < len; ++idx) {
+  for (var jdx = 0; jdx < len; ++jdx) {
+    
+    
+    
+    
+    if (byteValue(distinctNaNs[idx]) === byteValue(distinctNaNs[jdx])) {
       continue;
     }
 
-    subject = {};
-    subject.prop = first;
-    subject.prop = second;
+    var subject = {};
+    subject.prop = distinctNaNs[idx];
+    subject.prop = distinctNaNs[jdx];
 
     assert.sameValue(
       byteValue(subject.prop),
-      byteValue(second),
+      byteValue(distinctNaNs[jdx]),
       'Property value was re-set'
     );
   }

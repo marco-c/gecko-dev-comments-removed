@@ -26,6 +26,7 @@ var x = "b";
 
 var C = class {
   static ["a"] = 39; [x] = 42; [10] = "meep"; ["not initialized"]
+
 }
 
 var c = new C();

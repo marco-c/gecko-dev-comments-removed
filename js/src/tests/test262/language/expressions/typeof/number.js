@@ -8,34 +8,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 assert.sameValue(
   typeof 1,
   "number",
-  'typeof 1 === "number". Actual: ' + (typeof 1)
+  'typeof 1 === "number"'
 );
 
 assert.sameValue(
   typeof NaN,
   "number",
-  'typeof NaN === "number". Actual: ' + (typeof NaN)
+  'typeof NaN === "number"'
 );
 
 assert.sameValue(
   typeof Infinity,
   "number",
-  'typeof Infinity === "number". Actual: ' + (typeof Infinity)
+  'typeof Infinity === "number"'
 );
 
 assert.sameValue(
   typeof -Infinity,
   "number",
-  'typeof -Infinity === "number". Actual: ' + (typeof -Infinity)
+  'typeof -Infinity === "number"'
 );
 
 assert.sameValue(
   typeof Math.PI,
   "number",
-  'typeof Math.PI === "number". Actual: ' + (typeof Math.PI)
+  'typeof Math.PI === "number"'
 );
 
 reportCompare(0, 0);

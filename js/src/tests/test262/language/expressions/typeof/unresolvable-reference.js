@@ -8,8 +8,18 @@
 
 
 
+
+
+
+
+
+
+
+
 assert.sameValue(
-  typeof x, "undefined", '#1: typeof x === "undefined". Actual: ' + (typeof x)
+  typeof x,
+  "undefined",
+  "typeof x === 'undefined'"
 );
 
 reportCompare(0, 0);

@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class A {}
+
+var executed = false;
+class C extends A {
+  x = eval('executed = true; super["x"];');
+}
+
+new C();
+
+assert.sameValue(executed, true);
+
+reportCompare(0, 0);

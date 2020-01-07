@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+throw "Test262: This statement should not be evaluated.";
+
+class C {
+  #x;
+
+  x() {
+    var g = this.f;
+    delete (g().#x);
+  }
+
+  f() {
+    return this;
+  }
+}

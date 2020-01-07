@@ -8,6 +8,7 @@
 
 
 
+
 var await;
 async function foo() {
   function* bar() {

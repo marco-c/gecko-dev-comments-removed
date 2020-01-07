@@ -27,6 +27,7 @@ class C {
   "d" = 42
   foo = "foobar"
   bar = "barbaz";
+
 }
 
 var c = new C();

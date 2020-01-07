@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var executed = false;
+class C {}
+
+assert.throws(SyntaxError, function() {
+  eval("executed = true; new C().#x");
+});
+
+assert.sameValue(executed, false);
+
+reportCompare(0, 0);

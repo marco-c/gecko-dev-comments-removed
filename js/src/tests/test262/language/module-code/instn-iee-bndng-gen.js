@@ -41,6 +41,7 @@
 
 
 
+
 assert.sameValue(
   g2().next().value,
   455,

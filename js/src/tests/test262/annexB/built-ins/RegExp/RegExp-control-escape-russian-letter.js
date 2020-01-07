@@ -10,6 +10,7 @@
 
 
 
+
 function* invalidControls() {
   
   for (var alpha = 0x0410; alpha <= 0x042F; alpha++) {

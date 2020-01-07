@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var constructor = 'foo';
+var C = class {
+  [constructor];
+};
+
+var c = new C();
+assert.sameValue(c.hasOwnProperty("foo"), true);
+
+assert.sameValue(C.hasOwnProperty("foo"), false);
+
+reportCompare(0, 0);

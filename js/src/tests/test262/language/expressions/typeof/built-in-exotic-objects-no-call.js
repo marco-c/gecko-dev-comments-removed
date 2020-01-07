@@ -1,0 +1,77 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof this,
+   "object",
+  'typeof this === "object"'
+);
+
+assert.sameValue(
+  typeof new Object(),
+   "object",
+  'typeof new Object() === "object"'
+);
+
+assert.sameValue(
+  typeof new Array(),
+   "object",
+  'typeof new Array() === "object"'
+);
+
+assert.sameValue(
+  typeof new String(),
+   "object",
+  'typeof new String() === "object"'
+);
+
+assert.sameValue(
+  typeof new Boolean(),
+   "object",
+  'typeof new Boolean() === "object"'
+);
+
+assert.sameValue(
+  typeof new Number(),
+   "object",
+  'typeof new Number() === "object"'
+);
+
+assert.sameValue(
+  typeof new Date(),
+   "object",
+  'typeof new Date() === "object"'
+);
+
+assert.sameValue(
+  typeof new Error(),
+   "object",
+  ' typeof new Error() === "object"'
+);
+
+assert.sameValue(
+  typeof new RegExp(),
+   "object",
+  ' typeof new RegExp() === "object"'
+);
+
+
+reportCompare(0, 0);

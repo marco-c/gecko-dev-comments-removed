@@ -1,0 +1,65 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  toString: function() {
+    throw new Test262Error();
+  }
+};
+
+
+
+function evaluate() {
+  class C {
+    [obj]
+  }
+}
+
+assert.throws(Test262Error
+, evaluate);
+
+reportCompare(0, 0);

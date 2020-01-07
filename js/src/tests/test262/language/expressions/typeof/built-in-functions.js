@@ -10,16 +10,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 assert.sameValue(
   typeof Math.exp,
   "function",
-  '#1: typeof Math.exp!=="function" '+typeof Math.exp
+  'typeof Math.exp === "function"'
 );
 
 assert.sameValue(
   typeof parseInt,
   "function",
-  '#2: typeof parseInt!=="function" '+typeof parseInt
+  'typeof parseInt === "function"'
 );
+
+
+
 
 reportCompare(0, 0);
