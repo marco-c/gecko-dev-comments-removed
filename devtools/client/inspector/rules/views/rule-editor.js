@@ -390,7 +390,10 @@ RuleEditor.prototype = {
   
 
 
-  populate: function() {
+
+
+
+  populate: function(reset) {
     
     while (this.selectorText.hasChildNodes()) {
       this.selectorText.removeChild(this.selectorText.lastChild);
@@ -449,10 +452,20 @@ RuleEditor.prototype = {
       });
     }
 
+    if (reset) {
+      while (this.propertyList.hasChildNodes()) {
+        this.propertyList.removeChild(this.propertyList.lastChild);
+      }
+    }
+
     for (const prop of this.rule.textProps) {
       if (!prop.editor && !prop.invisible) {
         const editor = new TextPropertyEditor(this, prop);
         this.propertyList.appendChild(editor.element);
+      } else if (prop.editor) {
+        
+        
+        this.propertyList.appendChild(prop.editor.element);
       }
     }
   },

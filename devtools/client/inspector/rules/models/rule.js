@@ -477,6 +477,17 @@ Rule.prototype = {
     
     
     
+    if (this.domRule.type === ELEMENT_STYLE) {
+      this.textProps = newTextProps;
+      this.editor.populate(true);
+      return;
+    }
+
+    
+    
+    
+    
+    
     
     const brandNewProps = [];
     for (const newProp of newTextProps) {
