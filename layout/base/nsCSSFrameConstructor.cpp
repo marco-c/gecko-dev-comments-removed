@@ -7341,34 +7341,53 @@ nsCSSFrameConstructor::IssueSingleInsertNofications(nsIContent* aContainer,
   }
 }
 
+bool
+nsCSSFrameConstructor::InsertionPoint::IsMultiple() const
+{
+  if (!mParentFrame) {
+    return false;
+  }
+
+  
+  
+  if (mParentFrame->IsFieldSetFrame()) {
+    return true;
+  }
+
+  
+  
+  if (mParentFrame->IsDetailsFrame()) {
+    return true;
+  }
+
+  return false;
+}
+
 nsCSSFrameConstructor::InsertionPoint
 nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aContainer,
                                               nsIContent* aStartChild,
                                               nsIContent* aEndChild)
 {
-  
-  
-  
-  InsertionPoint insertionPoint = GetInsertionPoint(aContainer, nullptr);
-  if (!insertionPoint.mParentFrame && !insertionPoint.mMultiple) {
-    return insertionPoint; 
-  }
+  MOZ_ASSERT(aStartChild);
 
-  if (insertionPoint.mMultiple || aStartChild->GetXBLInsertionPoint()) {
-    
-    
-    
-    if (insertionPoint.mMultiple || aEndChild ||
-        insertionPoint.mParentFrame->GetContent()->HasChildren()) {
-      
-      
-      
+  
+  
+  
+  if (aContainer->GetShadowRoot() || aContainer->GetXBLBinding()) {
       IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
-      insertionPoint.mParentFrame = nullptr;
-    }
+      return { };
   }
 
-  return insertionPoint;
+  
+  
+  
+  InsertionPoint ip = GetInsertionPoint(aStartChild);
+  if (ip.IsMultiple()) {
+    IssueSingleInsertNofications(aContainer, aStartChild, aEndChild);
+    return { };
+  }
+
+  return ip;
 }
 
 bool
@@ -8009,7 +8028,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     
     
-    insertion = GetInsertionPoint(aContainer, aStartChild);
+    insertion = GetInsertionPoint(aStartChild);
   } else {
     
     
@@ -9296,78 +9315,17 @@ nsCSSFrameConstructor::ReplicateFixedFrames(nsPageContentFrame* aParentFrame)
 }
 
 nsCSSFrameConstructor::InsertionPoint
-nsCSSFrameConstructor::GetInsertionPoint(nsIContent* aContainer,
-                                         nsIContent* aChild)
+nsCSSFrameConstructor::GetInsertionPoint(nsIContent* aChild)
 {
-  nsBindingManager* bindingManager = mDocument->BindingManager();
-
-  nsIContent* insertionElement;
-  if (aChild) {
-    
-    
-    if (aChild->GetBindingParent() == aContainer) {
-      
-      
-      return InsertionPoint(GetContentInsertionFrameFor(aContainer), aContainer);
-    }
-
-    if (nsContentUtils::HasDistributedChildren(aContainer) ||
-        aContainer->IsShadowRoot()) {
-      
-      
-      
-      
-      
-      
-      
-      nsIContent* flattenedParent = aChild->GetFlattenedTreeParent();
-      if (flattenedParent) {
-        return InsertionPoint(GetContentInsertionFrameFor(flattenedParent),
-                              flattenedParent);
-      }
-      return InsertionPoint();
-    }
-
-    insertionElement = bindingManager->FindNestedInsertionPoint(aContainer, aChild);
-  } else {
-    if (nsContentUtils::HasDistributedChildren(aContainer)) {
-      
-      
-      
-      return InsertionPoint(nullptr, nullptr, true);
-    }
-
-    bool multiple;
-    insertionElement = bindingManager->FindNestedSingleInsertionPoint(aContainer, &multiple);
-    if (multiple) {
-      return InsertionPoint(nullptr, nullptr, true);
-    }
-  }
-
+  MOZ_ASSERT(aChild);
+  nsIContent* insertionElement = aChild->GetFlattenedTreeParent();
   if (!insertionElement) {
     
     
-    
-    
-    return InsertionPoint();
+    return { };
   }
 
-  InsertionPoint insertion(GetContentInsertionFrameFor(insertionElement),
-                           insertionElement);
-
-  
-  
-  if (insertion.mParentFrame && insertion.mParentFrame->IsFieldSetFrame()) {
-    insertion.mMultiple = true;
-  }
-
-  
-  
-  if (insertion.mParentFrame && insertion.mParentFrame->IsDetailsFrame()) {
-    insertion.mMultiple = true;
-  }
-
-  return insertion;
+  return { GetContentInsertionFrameFor(insertionElement), insertionElement };
 }
 
 
@@ -11073,7 +11031,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
       TreeMatchContext::AutoAncestorPusher ancestorPusher(aState.mTreeMatchContext);
       if (parent != aContent && parent->IsElement()) {
         insertion.mContainer = child->GetFlattenedTreeParent();
-        MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(parent, child).mContainer);
+        MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(child).mContainer);
         if (aState.HasAncestorFilter()) {
           ancestorPusher.PushAncestorAndStyleScope(parent->AsElement());
         } else {
