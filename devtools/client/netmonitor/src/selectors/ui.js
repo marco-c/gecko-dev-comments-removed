@@ -27,8 +27,11 @@ const getWaterfallScale = createSelector(
                                      timingMarkers.firstDocumentDOMContentLoadedTimestamp,
                                      timingMarkers.firstDocumentLoadTimestamp);
     const longestWidth = lastEventMillis - requests.firstStartedMillis;
+
+  
     return Math.min(Math.max(
-      (ui.waterfallWidth - REQUESTS_WATERFALL.LABEL_WIDTH) / longestWidth, EPSILON), 1);
+      (ui.waterfallWidth - REQUESTS_WATERFALL.LABEL_WIDTH - 20) / longestWidth,
+      EPSILON), 1);
   }
 );
 
