@@ -24,6 +24,7 @@
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersMessages.h" 
 #include "mozilla/layers/LayersTypes.h" 
+#include "mozilla/layers/PaintThread.h" 
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureClientPool.h"
 #include "ClientLayerManager.h"
@@ -130,7 +131,8 @@ struct TileClient
                                gfxContentType aContent, SurfaceMode aMode,
                                nsIntRegion& aAddPaintedRegion,
                                TilePaintFlags aFlags,
-                               RefPtr<TextureClient>* aTextureClientOnWhite);
+                               RefPtr<TextureClient>* aTextureClientOnWhite,
+                               std::vector<CapturedTiledPaintState::Copy>* aCopies);
 
   void DiscardFrontBuffer();
 
@@ -168,7 +170,8 @@ private:
   
   void ValidateBackBufferFromFront(const nsIntRegion &aDirtyRegion,
                                    nsIntRegion& aAddPaintedRegion,
-                                   TilePaintFlags aFlags);
+                                   TilePaintFlags aFlags,
+                                   std::vector<CapturedTiledPaintState::Copy>* aCopies);
 };
 
 
@@ -446,6 +449,8 @@ private:
   
   std::vector<gfx::Tile> mPaintTiles;
   std::vector<RefPtr<TextureClient>> mPaintTilesTextureClients;
+  std::vector<CapturedTiledPaintState::Copy> mPaintCopies;
+  std::vector<CapturedTiledPaintState::Clear> mPaintClears;
 
   
 

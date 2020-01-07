@@ -151,7 +151,8 @@ ClientSingleTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
                         content, mode,
                         extraPainted,
                         TilePaintFlags::None,
-                        &backBufferOnWhite);
+                        &backBufferOnWhite,
+                        nullptr);
 
   
   
