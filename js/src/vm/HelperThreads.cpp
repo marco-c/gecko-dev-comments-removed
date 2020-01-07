@@ -1192,12 +1192,7 @@ GlobalHelperThreadState::maxParseThreads() const
 {
     if (IsHelperThreadSimulatingOOM(js::THREAD_TYPE_PARSE))
         return 1;
-
-    
-    
-    
-    
-    return 1;
+    return cpuCount;
 }
 
 size_t
