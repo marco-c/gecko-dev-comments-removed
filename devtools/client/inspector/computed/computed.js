@@ -27,7 +27,6 @@ const TooltipsOverlay = require("devtools/client/inspector/shared/tooltips-overl
 loader.lazyRequireGetter(this, "StyleInspectorMenu", "devtools/client/inspector/shared/style-inspector-menu");
 loader.lazyRequireGetter(this, "KeyShortcuts", "devtools/client/shared/key-shortcuts");
 loader.lazyRequireGetter(this, "clipboardHelper", "devtools/shared/platform/clipboard");
-loader.lazyRequireGetter(this, "openContentLink", "devtools/client/shared/link", true);
 
 const STYLE_INSPECTOR_PROPERTIES = "devtools/shared/locales/styleinspector.properties";
 const {LocalizationHelper} = require("devtools/shared/l10n");
@@ -699,7 +698,8 @@ CssComputedView.prototype = {
     if (target.nodeName === "a") {
       event.stopPropagation();
       event.preventDefault();
-      openContentLink(target.href);
+      const browserWin = this.inspector.target.tab.ownerDocument.defaultView;
+      browserWin.openWebLinkIn(target.href, "tab");
     }
   },
 
@@ -1190,7 +1190,12 @@ PropertyView.prototype = {
 
 
   mdnLinkClick: function(event) {
-    openContentLink(this.link);
+    const inspector = this.tree.inspector;
+
+    if (inspector.target.tab) {
+      const browserWin = inspector.target.tab.ownerDocument.defaultView;
+      browserWin.openWebLinkIn(this.link, "tab");
+    }
   },
 
   
@@ -1473,8 +1478,11 @@ ComputedViewTool.prototype = {
     const isInactive = !this.isSidebarActive() &&
                      this.inspector.selection.nodeFront;
     if (isInactive) {
+      this.inspector.reflowTracker.untrackReflows(this, this.refresh);
       return;
     }
+
+    this.inspector.reflowTracker.trackReflows(this, this.refresh);
 
     this.computedView.setPageStyle(this.inspector.pageStyle);
 
@@ -1507,6 +1515,7 @@ ComputedViewTool.prototype = {
   },
 
   destroy: function() {
+    this.inspector.reflowTracker.untrackReflows(this, this.refresh);
     this.inspector.styleChangeTracker.off("style-changed", this.refresh);
     this.inspector.sidebar.off("computedview-selected", this.refresh);
     this.inspector.selection.off("pseudoclass", this.refresh);
