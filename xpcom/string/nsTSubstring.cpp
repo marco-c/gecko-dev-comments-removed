@@ -4,13 +4,12 @@
 
 
 
-#include "double-conversion/double-conversion.h"
+#include "nsASCIIMask.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/MathAlgorithms.h"
+#include "mozilla/double-conversion.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Printf.h"
-
-#include "nsASCIIMask.h"
+#include "mozilla/MathAlgorithms.h"
 
 using double_conversion::DoubleToStringConverter;
 

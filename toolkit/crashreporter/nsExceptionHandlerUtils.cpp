@@ -6,7 +6,7 @@
 
 #include "nsExceptionHandlerUtils.h"
 
-#include "double-conversion/double-conversion.h"
+#include "mozilla/double-conversion.h"
 
 
 
