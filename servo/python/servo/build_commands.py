@@ -233,6 +233,13 @@ class MachCommands(CommandBase):
             target = self.config["android"]["target"]
 
         if target:
+            if self.config["tools"]["use-rustup"]:
+                
+                self.call_rustup_run(["rustc", "--version"])
+
+                check_call(["rustup" + BIN_SUFFIX, "target", "add",
+                            "--toolchain", self.toolchain(), target])
+
             opts += ["--target", target]
             if not android:
                 android = self.handle_android_target(target)
@@ -340,10 +347,7 @@ class MachCommands(CommandBase):
                 os.makedirs(aar_out_dir)
             env["AAR_OUT_DIR"] = aar_out_dir
 
-        cargo_binary = "cargo" + BIN_SUFFIX
-
-        status = call(
-            [cargo_binary, "build"] + opts, env=env, verbose=verbose)
+        status = self.call_rustup_run(["cargo", "build"] + opts, env=env, verbose=verbose)
         elapsed = time() - build_start
 
         
@@ -430,9 +434,9 @@ class MachCommands(CommandBase):
             
             
             
-            opts += ["--", "-C", "link-args=-Xlinker -undefined -Xlinker dynamic_lookup"]
+            opts += ["--", "-Clink-args=-Xlinker -undefined -Xlinker dynamic_lookup"]
 
-        ret = call(["cargo", "rustc"] + opts, env=env, verbose=verbose)
+        ret = self.call_rustup_run(["cargo", "rustc"] + opts, env=env, verbose=verbose)
         elapsed = time() - build_start
 
         
@@ -455,7 +459,7 @@ class MachCommands(CommandBase):
                      action='store_true',
                      help='Build in release mode')
     def build_geckolib(self, jobs=None, verbose=False, release=False):
-        self.set_use_stable_rust()
+        self.set_use_geckolib_toolchain()
         self.ensure_bootstrapped()
         self.ensure_clobbered()
 
@@ -475,7 +479,7 @@ class MachCommands(CommandBase):
             opts += ["--features", ' '.join(features)]
 
         build_start = time()
-        ret = call(["cargo", "build"] + opts, env=env, verbose=verbose)
+        ret = self.call_rustup_run(["cargo", "build"] + opts, env=env, verbose=verbose)
         elapsed = time() - build_start
 
         
