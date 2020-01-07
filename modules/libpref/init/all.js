@@ -3189,7 +3189,7 @@ pref("layout.display-list.dump-content", false);
 pref("layout.display-list.dump-parent", false);
 
 
-#if !defined(ANDROID) && defined(NIGHTLY_BUILD)
+#if !defined(ANDROID)
 pref("layout.display-list.retain", true);
 #else
 pref("layout.display-list.retain", false);
