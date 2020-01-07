@@ -129,6 +129,7 @@ using namespace mozilla::widget;
 #endif
 
 #include "nsShmImage.h"
+#include "gtkdrawing.h"
 
 #include "NativeKeyBindings.h"
 
@@ -6594,6 +6595,28 @@ nsWindow::ClearCachedResources()
     }
 }
 
+
+
+
+
+
+
+void
+nsWindow::UpdateClientOffsetForCSDWindow()
+{
+    
+    
+    
+    GtkBorder decorationSize;
+    GetCSDDecorationSize(&decorationSize);
+    mClientOffset = nsIntPoint(decorationSize.left, decorationSize.top);
+
+    
+    
+    
+    NotifyWindowMoved(mBounds.x, mBounds.y);
+}
+
 nsresult
 nsWindow::SetNonClientMargins(LayoutDeviceIntMargin &aMargins)
 {
@@ -6667,6 +6690,8 @@ nsWindow::SetDrawsInTitlebar(bool aState)
         gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
         mNeedsShow = true;
         NativeResize();
+
+        UpdateClientOffsetForCSDWindow();
 
         gtk_widget_destroy(tmpWindow);
     }

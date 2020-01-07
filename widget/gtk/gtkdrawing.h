@@ -334,6 +334,9 @@ typedef enum {
 
   MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE_RESTORE,
 
+  
+  MOZ_GTK_WINDOW_DECORATION,
+
   MOZ_GTK_WIDGET_NODE_COUNT
 } WidgetNodeType;
 
@@ -605,5 +608,17 @@ GetToolbarButtonMetrics(WidgetNodeType aWidgetType);
 
 int
 GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout, int aMaxButtonNums);
+
+
+
+
+
+
+
+
+
+
+bool
+GetCSDDecorationSize(GtkBorder* aDecorationSize);
 
 #endif
