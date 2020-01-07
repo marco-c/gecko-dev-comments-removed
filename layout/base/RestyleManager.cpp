@@ -744,15 +744,6 @@ RecomputePosition(nsIFrame* aFrame)
   if (display->IsRelativelyPositionedStyle()) {
     
     if (display->mPosition == NS_STYLE_POSITION_STICKY) {
-      if (display->IsInnerTableStyle()) {
-        
-        
-        
-        
-        
-        return true;
-      }
-
       
       
       

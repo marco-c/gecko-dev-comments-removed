@@ -690,10 +690,7 @@ nsFrame::Init(nsIContent*       aContent,
   }
   if (disp->mPosition == NS_STYLE_POSITION_STICKY &&
       !aPrevInFlow &&
-      !(mState & NS_FRAME_IS_NONDISPLAY) &&
-      !disp->IsInnerTableStyle()) {
-    
-    
+      !(mState & NS_FRAME_IS_NONDISPLAY)) {
     
     
     
@@ -726,8 +723,7 @@ nsFrame::Init(nsIContent*       aContent,
                  "root frame should always be a container");
   }
 
-  if (PresShell()->AssumeAllFramesVisible() &&
-      TrackingVisibility()) {
+  if (PresShell()->AssumeAllFramesVisible() && TrackingVisibility()) {
     IncApproximateVisibleCount();
   }
 

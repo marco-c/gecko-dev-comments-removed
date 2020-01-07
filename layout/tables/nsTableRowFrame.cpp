@@ -941,12 +941,13 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
         
         nsMargin* computedOffsetProp =
           kidFrame->GetProperty(nsIFrame::ComputedOffsetProperty());
+
         
         
-        LogicalMargin computedOffsets(wm, computedOffsetProp ?
-                                            *computedOffsetProp : nsMargin());
-        ReflowInput::ApplyRelativePositioning(kidFrame, wm, computedOffsets,
-                                                    &kidPosition, containerSize);
+        LogicalMargin computedOffsets(
+          wm, computedOffsetProp ? *computedOffsetProp : nsMargin());
+        ReflowInput::ApplyRelativePositioning(
+            kidFrame, wm, computedOffsets, &kidPosition, containerSize);
       }
 
       
