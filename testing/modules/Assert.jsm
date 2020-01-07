@@ -194,6 +194,11 @@ proto.setReporter = function(reporterFunc) {
 
 
 proto.report = function(failed, actual, expected, message, operator, truncate = true) {
+  
+  
+  if (message !== undefined && message !== null && typeof message != "string") {
+    this.ok(false, `Expected a string or undefined for the error message to Assert.*, got ${typeof message}`);
+  }
   let err = new Assert.AssertionError({
     message,
     actual,
