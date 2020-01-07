@@ -1,0 +1,44 @@
+
+
+
+
+
+#ifndef mozilla_TransactionStack_h
+#define mozilla_TransactionStack_h
+
+#include "nsDeque.h"
+
+class nsCycleCollectionTraversalCallback;
+
+namespace mozilla {
+
+class TransactionItem;
+
+class TransactionStack : private nsDeque
+{
+public:
+  enum Type { FOR_UNDO, FOR_REDO };
+
+  explicit TransactionStack(Type aType);
+  ~TransactionStack();
+
+  void Push(TransactionItem* aTransactionItem);
+  void Push(already_AddRefed<TransactionItem> aTransactionItem);
+  already_AddRefed<TransactionItem> Pop();
+  already_AddRefed<TransactionItem> PopBottom();
+  already_AddRefed<TransactionItem> Peek();
+  already_AddRefed<TransactionItem> GetItem(int32_t aIndex);
+  void Clear();
+  int32_t GetSize() const { return static_cast<int32_t>(nsDeque::GetSize()); }
+  bool IsEmpty() const { return GetSize() == 0; }
+
+  void DoUnlink() { Clear(); }
+  void DoTraverse(nsCycleCollectionTraversalCallback &cb);
+
+private:
+  const Type mType;
+};
+
+} 
+
+#endif 
