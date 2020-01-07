@@ -193,12 +193,9 @@ PlacesTreeView.prototype = {
     }
 
     
-    
     let parent = aNode.parent;
     let parentIsPlain = this._isPlainContainer(parent);
-    if (!parentIsPlain &&
-        parent.queryOptions.resultType !=
-        Ci.nsINavHistoryQueryOptions.RESULTS_AS_ROOTS_QUERY) {
+    if (!parentIsPlain) {
       if (parent == this._rootNode) {
         return this._rows.indexOf(aNode);
       }
