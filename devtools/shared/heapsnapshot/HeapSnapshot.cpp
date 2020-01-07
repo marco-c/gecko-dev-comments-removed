@@ -1262,7 +1262,7 @@ public:
   }
 
   virtual bool writeNode(const JS::ubi::Node& ubiNode,
-                         EdgePolicy includeEdges) override final {
+                         EdgePolicy includeEdges) final {
     
     
     

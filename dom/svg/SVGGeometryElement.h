@@ -61,7 +61,7 @@ public:
 
 
 
-  virtual void ClearAnyCachedPath() override final {
+  virtual void ClearAnyCachedPath() final {
     mCachedPath = nullptr;
   }
 

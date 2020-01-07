@@ -49,7 +49,7 @@ private:
 
   MediaDecoderStateMachine* CreateStateMachine();
 
-  bool CanPlayThroughImpl() override final
+  bool CanPlayThroughImpl() final
   {
     
     
