@@ -213,6 +213,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ShadowRoot.h"
 #include "nsUnicodeProperties.h"
 #include "nsTextFragment.h"
 #include "nsAttrValue.h"
@@ -222,6 +223,7 @@
 namespace mozilla {
 
 using mozilla::dom::Element;
+using mozilla::dom::ShadowRoot;
 
 
 
@@ -275,6 +277,8 @@ GetDirectionFromChar(uint32_t ch)
       return eDir_NotSet;
   }
 }
+
+
 
 inline static bool
 NodeAffectsDirAutoAncestor(nsINode* aTextNode)
@@ -625,49 +629,67 @@ RecomputeDirectionality(Element* aElement, bool aNotify)
   MOZ_ASSERT(!aElement->HasDirAuto(),
              "RecomputeDirectionality called with dir=auto");
 
-  Directionality dir = eDir_LTR;
-
   if (aElement->HasValidDir()) {
-    dir = aElement->GetDirectionality();
-  } else {
-    Element* parent = aElement->GetParentElement();
-    if (parent) {
+    return aElement->GetDirectionality();
+  }
+
+  Directionality dir = eDir_LTR;
+  if (nsINode* parent = aElement->GetParentNode()) {
+    if (ShadowRoot* shadow = ShadowRoot::FromNode(parent)) {
+      parent = shadow->GetHost();
+    }
+
+    if (parent && parent->IsElement()) {
       
       
       
-      Directionality parentDir = parent->GetDirectionality();
+      Directionality parentDir = parent->AsElement()->GetDirectionality();
       if (parentDir != eDir_NotSet) {
         dir = parentDir;
       }
-    } else {
-      
-      
-      dir = eDir_LTR;
     }
-
-    aElement->SetDirectionality(dir, aNotify);
   }
+
+  aElement->SetDirectionality(dir, aNotify);
   return dir;
 }
 
-void
-SetDirectionalityOnDescendants(Element* aElement, Directionality aDir,
-                               bool aNotify)
+static void
+SetDirectionalityOnDescendantsInternal(nsINode* aNode,
+                                       Directionality aDir,
+                                       bool aNotify)
 {
-  for (nsIContent* child = aElement->GetFirstChild(); child; ) {
+  if (Element* element = Element::FromNode(aNode)) {
+    if (ShadowRoot* shadow = element->GetShadowRoot()) {
+      SetDirectionalityOnDescendantsInternal(shadow, aDir, aNotify);
+    }
+  }
+
+  for (nsIContent* child = aNode->GetFirstChild(); child; ) {
     if (!child->IsElement()) {
-      child = child->GetNextNode(aElement);
+      child = child->GetNextNode(aNode);
       continue;
     }
 
     Element* element = child->AsElement();
     if (element->HasValidDir() || element->HasDirAuto()) {
-      child = child->GetNextNonChildNode(aElement);
+      child = child->GetNextNonChildNode(aNode);
       continue;
     }
+    if (ShadowRoot* shadow = element->GetShadowRoot()) {
+      SetDirectionalityOnDescendantsInternal(shadow, aDir, aNotify);
+    }
     element->SetDirectionality(aDir, aNotify);
-    child = child->GetNextNode(aElement);
+    child = child->GetNextNode(aNode);
   }
+}
+
+
+void
+SetDirectionalityOnDescendants(Element* aElement, Directionality aDir,
+                               bool aNotify)
+{
+  return SetDirectionalityOnDescendantsInternal(aElement, aDir, aNotify);
 }
 
 
