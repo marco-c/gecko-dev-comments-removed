@@ -14,6 +14,13 @@
 
 
 
-#define BROTLI_VERSION 0x1000001
+#define BROTLI_VERSION 0x1000002
+
+
+
+
+
+
+#define BROTLI_ABI_VERSION 0x1002000
 
 #endif  

@@ -217,6 +217,7 @@ BROTLI_ENC_API BROTLI_BOOL BrotliEncoderSetParameter(
 
 
 
+
 BROTLI_ENC_API BrotliEncoderState* BrotliEncoderCreateInstance(
     brotli_alloc_func alloc_func, brotli_free_func free_func, void* opaque);
 

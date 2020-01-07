@@ -167,6 +167,7 @@ BROTLI_DEC_API BROTLI_BOOL BrotliDecoderSetParameter(
 
 
 
+
 BROTLI_DEC_API BrotliDecoderState* BrotliDecoderCreateInstance(
     brotli_alloc_func alloc_func, brotli_free_func free_func, void* opaque);
 

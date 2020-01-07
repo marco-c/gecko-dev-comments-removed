@@ -1912,6 +1912,10 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
   BrotliDecoderErrorCode result = BROTLI_DECODER_SUCCESS;
   BrotliBitReader* br = &s->br;
   
+  if (total_out) {
+    *total_out = s->partial_pos_out;
+  }
+  
   if ((int)s->error_code < 0) {
     return BROTLI_DECODER_RESULT_ERROR;
   }
