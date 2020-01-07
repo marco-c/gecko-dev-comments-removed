@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cmath>
 #include "mozilla/Assertions.h"
+#include "nsStringFwd.h"
 
 
 
@@ -39,7 +40,8 @@ namespace mozilla {
 
 
 
-template<class T,unsigned FractionBits,int Min,int Max>
+
+template<class InternalType, unsigned FractionBits, int Min, int Max>
 class FontPropertyValue
 {
 public:
@@ -88,14 +90,15 @@ public:
   }
 
   
-  T ForHash() const
+  InternalType ForHash() const
   {
     return mValue;
   }
 
-protected:
-  typedef T internal_type;
+  static constexpr const float kMin = float(Min);
+  static constexpr const float kMax = float(Max);
 
+protected:
   
   
   explicit FontPropertyValue(float aValue)
@@ -112,7 +115,7 @@ protected:
   
   
   
-  explicit FontPropertyValue(T aValue)
+  explicit FontPropertyValue(InternalType aValue)
     : mValue(aValue)
   {
   }
@@ -125,15 +128,13 @@ protected:
 
   static constexpr float kScale = float(1u << FractionBits);
   static constexpr float kInverseScale = 1.0f / kScale;
-  static constexpr float kMin = float(Min);
-  static constexpr float kMax = float(Max);
   static const unsigned kFractionBits = FractionBits;
 
   
   
-  static const T kPointFive = 1u << (kFractionBits - 1);
+  static const InternalType kPointFive = 1u << (kFractionBits - 1);
 
-  T mValue;
+  InternalType mValue;
 };
 
 
@@ -186,16 +187,18 @@ public:
   int ToIntRounded() const { return FontPropertyValue::ToIntRounded(); }
 
 private:
-  explicit FontWeight(internal_type aValue)
+  typedef uint16_t InternalType;
+
+  explicit FontWeight(InternalType aValue)
     : FontPropertyValue(aValue)
   {
   }
 
-  static const internal_type kNormal        = 400u << kFractionBits;
-  static const internal_type kBold          = 700u << kFractionBits;
-  static const internal_type kBoldThreshold = 600u << kFractionBits;
-  static const internal_type kThin          = 100u << kFractionBits;
-  static const internal_type kExtraBold     = 900u << kFractionBits;
+  static const InternalType kNormal        = 400u << kFractionBits;
+  static const InternalType kBold          = 700u << kFractionBits;
+  static const InternalType kBoldThreshold = 600u << kFractionBits;
+  static const InternalType kThin          = 100u << kFractionBits;
+  static const InternalType kExtraBold     = 900u << kFractionBits;
 };
 
 
@@ -265,15 +268,22 @@ public:
   float Percentage() const { return ToFloat(); }
 
 private:
-  static const internal_type kUltraCondensed =  50u << kFractionBits;
-  static const internal_type kExtraCondensed = (62u << kFractionBits) + kPointFive;
-  static const internal_type kCondensed      =  75u << kFractionBits;
-  static const internal_type kSemiCondensed  = (87u << kFractionBits) + kPointFive;
-  static const internal_type kNormal         = 100u << kFractionBits;
-  static const internal_type kSemiExpanded  = (112u << kFractionBits) + kPointFive;
-  static const internal_type kExpanded       = 125u << kFractionBits;
-  static const internal_type kExtraExpanded  = 150u << kFractionBits;
-  static const internal_type kUltraExpanded  = 200u << kFractionBits;
+  typedef uint16_t InternalType;
+
+  explicit FontStretch(InternalType aValue)
+    : FontPropertyValue(aValue)
+  {
+  }
+
+  static const InternalType kUltraCondensed =  50u << kFractionBits;
+  static const InternalType kExtraCondensed = (62u << kFractionBits) + kPointFive;
+  static const InternalType kCondensed      =  75u << kFractionBits;
+  static const InternalType kSemiCondensed  = (87u << kFractionBits) + kPointFive;
+  static const InternalType kNormal         = 100u << kFractionBits;
+  static const InternalType kSemiExpanded  = (112u << kFractionBits) + kPointFive;
+  static const InternalType kExpanded       = 125u << kFractionBits;
+  static const InternalType kExtraExpanded  = 150u << kFractionBits;
+  static const InternalType kUltraExpanded  = 200u << kFractionBits;
 };
 
 
@@ -286,26 +296,29 @@ private:
 
 
 
-class FontStyle final : public FontPropertyValue<int16_t,8,-90,90>
+class FontSlantStyle final : public FontPropertyValue<int16_t,8,-90,90>
 {
+  typedef int16_t InternalType;
 public:
+  const static constexpr float kDefaultAngle = 14.0;
+
   
   
-  FontStyle() = default;
+  FontSlantStyle() = default;
 
-  static FontStyle Normal()
+  static FontSlantStyle Normal()
   {
-    return FontStyle(kNormal);
+    return FontSlantStyle(kNormal);
   }
 
-  static FontStyle Italic()
+  static FontSlantStyle Italic()
   {
-    return FontStyle(kItalic);
+    return FontSlantStyle(kItalic);
   }
 
-  static FontStyle Oblique(float aAngle = 14.0f)
+  static FontSlantStyle Oblique(float aAngle = kDefaultAngle)
   {
-    return FontStyle(aAngle);
+    return FontSlantStyle(aAngle);
   }
 
   bool IsNormal() const { return mValue == kNormal; }
@@ -316,18 +329,23 @@ public:
   {
     
     
-    MOZ_ASSERT(!IsItalic() && !IsNormal());
+    MOZ_ASSERT(IsOblique());
     return ToFloat();
   }
 
 private:
-  explicit FontStyle(float aAngle)
+  explicit FontSlantStyle(InternalType aConstant)
+    : FontPropertyValue(aConstant)
+  {
+  }
+
+  explicit FontSlantStyle(float aAngle)
     : FontPropertyValue(aAngle)
   {
   }
 
-  static const int16_t kNormal = INT16_MIN;
-  static const int16_t kItalic = INT16_MAX;
+  static const InternalType kNormal = INT16_MIN;
+  static const InternalType kItalic = INT16_MAX;
 };
 
 } 

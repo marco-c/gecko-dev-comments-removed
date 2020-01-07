@@ -178,6 +178,16 @@ impl nsCSSValue {
     }
 
     
+    pub fn set_font_stretch(&mut self, s: f32) {
+        unsafe { bindings::Gecko_CSSValue_SetFontStretch(self, s) }
+    }
+
+    
+    pub fn set_font_style(&mut self, s: f32) {
+        unsafe { bindings::Gecko_CSSValue_SetFontSlantStyle(self, s) }
+    }
+
+    
     pub fn set_font_weight(&mut self, w: f32) {
         unsafe { bindings::Gecko_CSSValue_SetFontWeight(self, w) }
     }

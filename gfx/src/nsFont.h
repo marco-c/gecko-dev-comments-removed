@@ -45,13 +45,12 @@ const uint8_t kGenericFont_fantasy      = 0x20;
 
 
 struct nsFont {
+  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontSlantStyle FontSlantStyle;
   typedef mozilla::FontWeight FontWeight;
 
   
   mozilla::FontFamilyList fontlist;
-
-  
-  uint8_t style = NS_FONT_STYLE_NORMAL;
 
   
   
@@ -80,12 +79,9 @@ struct nsFont {
   
   nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
 
-  
+  FontSlantStyle style = FontSlantStyle::Normal();
   FontWeight weight = FontWeight::Normal();
-
-  
-  
-  int16_t stretch = NS_FONT_STRETCH_NORMAL;
+  FontStretch stretch = FontStretch::Normal();
 
   
   uint8_t kerning = NS_FONT_KERNING_AUTO;

@@ -39,7 +39,6 @@
 
 
 
-
 class gfxDWriteFontEntry;
 
 
@@ -48,6 +47,8 @@ class gfxDWriteFontEntry;
 class gfxDWriteFontFamily : public gfxFontFamily
 {
 public:
+    typedef mozilla::FontStretch FontStretch;
+    typedef mozilla::FontSlantStyle FontSlantStyle;
     typedef mozilla::FontWeight FontWeight;
 
     
@@ -115,9 +116,9 @@ public:
     {
         DWRITE_FONT_STYLE dwriteStyle = aFont->GetStyle();
         mStyle = (dwriteStyle == DWRITE_FONT_STYLE_ITALIC ?
-                  NS_FONT_STYLE_ITALIC :
+                  FontSlantStyle::Italic() :
                   (dwriteStyle == DWRITE_FONT_STYLE_OBLIQUE ?
-                   NS_FONT_STYLE_OBLIQUE : NS_FONT_STYLE_NORMAL));
+                   FontSlantStyle::Oblique() : FontSlantStyle::Normal()));
         mStretch = FontStretchFromDWriteStretch(aFont->GetStretch());
         int weight = NS_ROUNDUP(aFont->GetWeight() - 50, 100);
 
@@ -139,10 +140,10 @@ public:
 
 
     gfxDWriteFontEntry(const nsAString& aFaceName,
-                              IDWriteFont *aFont,
-                              FontWeight aWeight,
-                              uint16_t aStretch,
-                              uint8_t aStyle)
+                       IDWriteFont *aFont,
+                       FontWeight aWeight,
+                       FontStretch aStretch,
+                       FontSlantStyle aStyle)
       : gfxFontEntry(aFaceName), mFont(aFont), mFontFile(nullptr),
         mIsSystemFont(false), mForceGDIClassic(false),
         mHasVariations(false), mHasVariationsInitialized(false)
@@ -168,8 +169,8 @@ public:
                               IDWriteFontFile *aFontFile,
                               IDWriteFontFileStream *aFontFileStream,
                               FontWeight aWeight,
-                              uint16_t aStretch,
-                              uint8_t aStyle)
+                              FontStretch aStretch,
+                              FontSlantStyle aStyle)
       : gfxFontEntry(aFaceName), mFont(nullptr),
         mFontFile(aFontFile), mFontFileStream(aFontFileStream),
         mIsSystemFont(false), mForceGDIClassic(false),
@@ -405,13 +406,13 @@ public:
 
     virtual gfxFontEntry* LookupLocalFont(const nsAString& aFontName,
                                           FontWeight aWeight,
-                                          uint16_t aStretch,
-                                          uint8_t aStyle);
+                                          FontStretch aStretch,
+                                          FontSlantStyle aStyle);
 
     virtual gfxFontEntry* MakePlatformFont(const nsAString& aFontName,
                                            FontWeight aWeight,
-                                           uint16_t aStretch,
-                                           uint8_t aStyle,
+                                           FontStretch aStretch,
+                                           FontSlantStyle aStyle,
                                            const uint8_t* aFontData,
                                            uint32_t aLength);
     

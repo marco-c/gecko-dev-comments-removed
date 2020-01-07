@@ -76,10 +76,12 @@ class SVGContextPaint;
 } 
 
 struct gfxFontStyle {
+    typedef mozilla::FontStretch FontStretch;
+    typedef mozilla::FontSlantStyle FontSlantStyle;
     typedef mozilla::FontWeight FontWeight;
 
     gfxFontStyle();
-    gfxFontStyle(uint8_t aStyle, FontWeight aWeight, uint16_t aStretch,
+    gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
                  gfxFloat aSize, nsAtom *aLanguage, bool aExplicitLanguage,
                  float aSizeAdjust, bool aSystemFont,
                  bool aPrinterFont,
@@ -143,10 +145,10 @@ struct gfxFontStyle {
     FontWeight weight;
 
     
-    uint8_t stretch;
+    FontStretch stretch;
 
     
-    uint8_t style;
+    FontSlantStyle style;
 
     
     uint8_t variantCaps;
@@ -185,11 +187,7 @@ struct gfxFontStyle {
         return std::min(adjustedSize, FONT_MAX_SIZE);
     }
 
-    PLDHashNumber Hash() const {
-        return (style + (systemFont << 7) + (weight.ForHash() << 8) +
-            uint32_t(size*1000) + int32_t(sizeAdjust*1000)) ^
-            nsRefPtrHashKey<nsAtom>::HashKey(language);
-    }
+    PLDHashNumber Hash() const;
 
     
     
@@ -1453,6 +1451,8 @@ protected:
     typedef gfxFontShaper::RoundingFlags RoundingFlags;
 
 public:
+    typedef mozilla::FontSlantStyle FontSlantStyle;
+
     nsrefcnt AddRef(void) {
         NS_PRECONDITION(int32_t(mRefCnt) >= 0, "illegal refcnt");
         if (mExpirationState.IsTracked()) {
@@ -1813,7 +1813,7 @@ public:
 
     bool IsSyntheticOblique() {
         return mFontEntry->IsUpright() &&
-               mStyle.style != NS_FONT_STYLE_NORMAL &&
+               mStyle.style != FontSlantStyle::Normal() &&
                mStyle.allowSyntheticStyle;
     }
 

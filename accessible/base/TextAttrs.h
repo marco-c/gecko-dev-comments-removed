@@ -336,7 +336,7 @@ protected:
   
 
 
-  class FontStyleTextAttr : public TTextAttr<nscoord>
+  class FontStyleTextAttr : public TTextAttr<mozilla::FontSlantStyle>
   {
   public:
     FontStyleTextAttr(nsIFrame* aRootFrame, nsIFrame* aFrame);
@@ -345,10 +345,10 @@ protected:
   protected:
 
     
-    virtual bool GetValueFor(Accessible* aContent, nscoord* aValue)
+    virtual bool GetValueFor(Accessible* aContent, mozilla::FontSlantStyle* aValue)
       override;
     virtual void ExposeValue(nsIPersistentProperties* aAttributes,
-                             const nscoord& aValue) override;
+                             const mozilla::FontSlantStyle& aValue) override;
   };
 
 

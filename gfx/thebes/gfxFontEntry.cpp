@@ -58,7 +58,7 @@ gfxCharacterMap::NotifyReleased()
 }
 
 gfxFontEntry::gfxFontEntry() :
-    mStyle(NS_FONT_STYLE_NORMAL), mFixedPitch(false),
+    mFixedPitch(false),
     mIsBadUnderlineFont(false),
     mIsUserFontContainer(false),
     mIsDataUserFont(false),
@@ -80,7 +80,9 @@ gfxFontEntry::gfxFontEntry() :
     mHasCmapTable(false),
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
-    mWeight(500), mStretch(NS_FONT_STRETCH_NORMAL),
+    mWeight(500),
+    mStretch(FontStretch::Normal()),
+    mStyle(FontSlantStyle::Normal()),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -96,7 +98,7 @@ gfxFontEntry::gfxFontEntry() :
 }
 
 gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
-    mName(aName), mStyle(NS_FONT_STYLE_NORMAL), mFixedPitch(false),
+    mName(aName), mFixedPitch(false),
     mIsBadUnderlineFont(false),
     mIsUserFontContainer(false),
     mIsDataUserFont(false),
@@ -117,7 +119,9 @@ gfxFontEntry::gfxFontEntry(const nsAString& aName, bool aIsStandardFace) :
     mHasCmapTable(false),
     mGrFaceInitialized(false),
     mCheckedForColorGlyph(false),
-    mWeight(500), mStretch(NS_FONT_STRETCH_NORMAL),
+    mWeight(500),
+    mStretch(FontStretch::Normal()),
+    mStyle(FontSlantStyle::Normal()),
     mUVSOffset(0), mUVSData(nullptr),
     mLanguageOverride(NO_FONT_LANGUAGE_OVERRIDE),
     mCOLR(nullptr),
@@ -1178,30 +1182,30 @@ gfxFontFamily::FindFontForStyle(const gfxFontStyle& aFontStyle,
 
 
 static inline uint32_t
-StyleDistance(uint32_t aFontStyle, uint32_t aTargetStyle)
+StyleDistance(FontSlantStyle aFontStyle, FontSlantStyle aTargetStyle)
 {
     if (aFontStyle == aTargetStyle) {
         return 0; 
     }
-    if (aFontStyle == NS_FONT_STYLE_NORMAL ||
-        aTargetStyle == NS_FONT_STYLE_NORMAL) {
+    if (aFontStyle == FontSlantStyle::Normal() ||
+        aTargetStyle == FontSlantStyle::Normal()) {
         return 2; 
     }
     return 1; 
 }
 
-#define REVERSE_STRETCH_DISTANCE 200
+#define REVERSE_STRETCH_DISTANCE 200.0f
 
 
 static inline uint32_t
-StretchDistance(int32_t aFontStretch, int32_t aTargetStretch)
+StretchDistance(FontStretch aFontStretch, FontStretch aTargetStretch)
 {
-    int32_t distance = 0;
+    float distance = 0.0f;
     if (aTargetStretch != aFontStretch) {
         
         
         
-        if (aTargetStretch > 100) {
+        if (aTargetStretch > FontStretch::Normal()) {
             distance = (aFontStretch - aTargetStretch);
         } else {
             distance = (aTargetStretch - aFontStretch);
@@ -1210,7 +1214,7 @@ StretchDistance(int32_t aFontStretch, int32_t aTargetStretch)
         
         
         
-        if (distance < 0) {
+        if (distance < 0.0f) {
             distance = -distance + REVERSE_STRETCH_DISTANCE;
         }
     }
@@ -1335,7 +1339,7 @@ gfxFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
         
         
         
-        bool wantItalic = (aFontStyle.style != NS_FONT_STYLE_NORMAL);
+        bool wantItalic = !aFontStyle.style.IsNormal();
         uint8_t faceIndex = (wantItalic ? kItalicMask : 0) |
                             (wantBold ? kBoldMask : 0);
 
@@ -1435,7 +1439,7 @@ gfxFontFamily::CheckForSimpleFamily()
         return;
     }
 
-    uint16_t firstStretch = mAvailableFonts[0]->Stretch();
+    FontStretch firstStretch = mAvailableFonts[0]->Stretch();
 
     gfxFontEntry *faces[4] = { 0 };
     for (uint8_t i = 0; i < count; ++i) {
@@ -1498,7 +1502,7 @@ CalcStyleMatch(gfxFontEntry *aFontEntry, const gfxFontStyle *aStyle)
     int32_t rank = 0;
     if (aStyle) {
          
-         bool wantUpright = (aStyle->style == NS_FONT_STYLE_NORMAL);
+         bool wantUpright = aStyle->style.IsNormal();
          if (aFontEntry->IsUpright() == wantUpright) {
              rank += 10;
          }

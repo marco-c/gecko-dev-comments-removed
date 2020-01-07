@@ -1961,19 +1961,47 @@ nsComputedDOMStyle::DoGetFontStretch()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-  val->SetIdent(nsCSSProps::ValueToKeywordEnum(StyleFont()->mFont.stretch,
-                                               nsCSSProps::kFontStretchKTable));
+  const nsStyleFont* font = StyleFont();
 
+  
+  
+  float stretch = font->mFont.stretch.Percentage();
+  MOZ_ASSERT(stretch >= 0.f,
+             "unexpected font-stretch value");
+  val->SetPercent(stretch / 100.f);
   return val.forget();
 }
 
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetFontStyle()
 {
+  const nsStyleFont* font = StyleFont();
+  const FontSlantStyle& style = font->mFont.style;
+
+  
+  
+  
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  val->SetIdent(nsCSSProps::ValueToKeywordEnum(StyleFont()->mFont.style,
-                                               nsCSSProps::kFontStyleKTable));
-  return val.forget();
+  if (style.IsNormal() || style.IsItalic()) {
+    auto keyword = style.IsNormal() ? eCSSKeyword_normal : eCSSKeyword_italic;
+    val->SetIdent(keyword);
+    return val.forget();
+  }
+
+  float angle = style.ObliqueAngle();
+  val->SetIdent(eCSSKeyword_oblique);
+  if (angle == FontSlantStyle::kDefaultAngle) {
+    return val.forget();
+  }
+
+  RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
+  valueList->AppendCSSValue(val.forget());
+
+  RefPtr<nsROCSSPrimitiveValue> angleVal = new nsROCSSPrimitiveValue;
+  angleVal->SetDegree(angle);
+  valueList->AppendCSSValue(angleVal.forget());
+
+  return valueList.forget();
 }
 
 already_AddRefed<CSSValue>

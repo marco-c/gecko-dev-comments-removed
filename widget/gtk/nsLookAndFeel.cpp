@@ -709,7 +709,7 @@ GetSystemFontInfo(GtkStyleContext *aStyle,
                   nsString *aFontName,
                   gfxFontStyle *aFontStyle)
 {
-    aFontStyle->style       = NS_FONT_STYLE_NORMAL;
+    aFontStyle->style = FontSlantStyle::Normal();
 
     
     
@@ -727,7 +727,7 @@ GetSystemFontInfo(GtkStyleContext *aStyle,
         mozilla::FontWeight(pango_font_description_get_weight(desc));
 
     
-    aFontStyle->stretch = NS_FONT_STRETCH_NORMAL;
+    aFontStyle->stretch = FontStretch::Normal();
 
     float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
 
