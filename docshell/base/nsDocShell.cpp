@@ -9538,23 +9538,17 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
     
     
-    
-    
-    nsCOMPtr<nsISupportsString> extraStr =
-      do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_NAMED_LITERAL_STRING(msg, "conPolCheckFromDocShell");
-    rv = extraStr->SetData(msg);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
     nsCOMPtr<nsPIDOMWindowOuter> loadingWindow = mScriptGlobal->AsOuter();
     nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
       new LoadInfo(loadingWindow,
                    aTriggeringPrincipal,
                    requestingContext,
                    nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK);
+
+    
+    
+    
+    secCheckLoadInfo->SetSkipContentPolicyCheckForWebRequest(true);
 
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(aURI,

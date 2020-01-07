@@ -89,10 +89,8 @@ var ContentPolicy = {
     
     
     
-    if (extra instanceof Ci.nsISupportsString) {
-      if (extra.data === "conPolCheckFromDocShell") {
-        return Ci.nsIContentPolicy.ACCEPT;
-      }
+    if (loadInfo.skipContentPolicyCheckForWebRequest) {
+      return Ci.nsIContentPolicy.ACCEPT;
     }
 
     if (requestPrincipal &&
