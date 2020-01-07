@@ -267,6 +267,9 @@ AnimationSurfaceProvider::CheckForNewFrameAtYield()
 
     
     RawAccessFrameRef frame = mDecoder->GetCurrentFrameRef();
+    MOZ_ASSERT(mDecoder->HasFrameToTake());
+    mDecoder->ClearHasFrameToTake();
+
     if (!frame) {
       MOZ_ASSERT_UNREACHABLE("Decoder yielded but didn't produce a frame?");
       return true;
@@ -309,6 +312,18 @@ AnimationSurfaceProvider::CheckForNewFrameAtTerminalState()
     
     
     RawAccessFrameRef frame = mDecoder->GetCurrentFrameRef();
+
+    
+    
+    
+    
+    if (!mDecoder->HasFrameToTake()) {
+      frame = RawAccessFrameRef();
+    } else {
+      MOZ_ASSERT(frame);
+      mDecoder->ClearHasFrameToTake();
+    }
+
     if (!frame || (!mFrames.Frames().IsEmpty() &&
                    mFrames.Frames().LastElement().get() == frame.get())) {
       return mFrames.MarkComplete();

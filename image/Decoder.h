@@ -407,6 +407,11 @@ public:
                          : RawAccessFrameRef();
   }
 
+  bool HasFrameToTake() const { return mHasFrameToTake; }
+  void ClearHasFrameToTake() {
+    MOZ_ASSERT(mHasFrameToTake);
+    mHasFrameToTake = false;
+  }
 
 protected:
   friend class AutoRecordDecoderTelemetry;
@@ -580,6 +585,10 @@ private:
   bool mInFrame : 1;
   bool mFinishedNewFrame : 1;  
                                
+  
+  
+  
+  bool mHasFrameToTake : 1;
   bool mReachedTerminalState : 1;
   bool mDecodeDone : 1;
   bool mError : 1;
