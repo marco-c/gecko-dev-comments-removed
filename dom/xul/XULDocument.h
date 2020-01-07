@@ -130,10 +130,6 @@ public:
 
     NS_IMETHOD AddSubtreeToDocument(nsIContent* aContent) override;
     NS_IMETHOD RemoveSubtreeFromDocument(nsIContent* aContent) override;
-    NS_IMETHOD SetTemplateBuilderFor(nsIContent* aContent,
-                                     nsIXULTemplateBuilder* aBuilder) override;
-    NS_IMETHOD GetTemplateBuilderFor(nsIContent* aContent,
-                                     nsIXULTemplateBuilder** aResult) override;
     NS_IMETHOD OnPrototypeLoadDone(bool aResumeWalk) override;
     bool OnDocumentParserError() override;
 
@@ -352,12 +348,6 @@ protected:
 
     nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 
-    
-    
-    typedef nsInterfaceHashtable<nsISupportsHashKey, nsIXULTemplateBuilder>
-        BuilderTable;
-    BuilderTable* mTemplateBuilderTable;
-
     uint32_t mPendingSheets;
 
     
@@ -471,18 +461,6 @@ protected:
     
 
 
-    static nsresult
-    CheckTemplateBuilderHookup(mozilla::dom::Element* aElement, bool* aNeedsHookup);
-
-    
-
-
-    static nsresult
-    CreateTemplateBuilder(Element* aElement);
-
-    
-
-
 
     nsresult AddPrototypeSheets();
 
@@ -566,21 +544,6 @@ protected:
     };
 
     friend class OverlayForwardReference;
-
-    class TemplateBuilderHookup : public nsForwardReference
-    {
-    protected:
-        nsCOMPtr<Element> mElement; 
-
-    public:
-        explicit TemplateBuilderHookup(Element* aElement)
-            : mElement(aElement) {}
-
-        virtual Phase GetPhase() override { return eHookup; }
-        virtual Result Resolve() override;
-    };
-
-    friend class TemplateBuilderHookup;
 
     
     

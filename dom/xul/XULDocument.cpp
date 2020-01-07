@@ -51,7 +51,6 @@
 #include "nsXULCommandDispatcher.h"
 #include "nsXULElement.h"
 #include "mozilla/Logging.h"
-#include "rdf.h"
 #include "nsIFrame.h"
 #include "nsXBLService.h"
 #include "nsCExternalHandlerService.h"
@@ -59,6 +58,7 @@
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsContentList.h"
+#include "nsISimpleEnumerator.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsNodeInfoManager.h"
@@ -95,8 +95,6 @@
 #include "xpcpublic.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
-#include "nsXULTemplateBuilder.h"
-#include "nsXULTreeBuilder.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -197,7 +195,6 @@ XULDocument::XULDocument(void)
       mDocumentLoaded(false),
       mStillWalking(false),
       mRestrictPersistence(false),
-      mTemplateBuilderTable(nullptr),
       mPendingSheets(0),
       mDocLWTheme(Doc_Theme_Uninitialized),
       mState(eState_Master),
@@ -236,8 +233,6 @@ XULDocument::~XULDocument()
 
     
     delete mBroadcasterMap;
-
-    delete mTemplateBuilderTable;
 
     Preferences::UnregisterCallback(XULDocument::DirectionChanged,
                                     "intl.uidirection", this);
@@ -285,19 +280,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(XULDocument, XMLDocument)
     
     
 
-    
-    
-    if (tmp->mTemplateBuilderTable) {
-        for (auto iter = tmp->mTemplateBuilderTable->Iter();
-             !iter.Done();
-             iter.Next()) {
-            NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mTemplateBuilderTable key");
-            cb.NoteXPCOMChild(iter.Key());
-            NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mTemplateBuilderTable value");
-            cb.NoteXPCOMChild(iter.UserData());
-        }
-    }
-
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCurrentPrototype)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMasterPrototype)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCommandDispatcher)
@@ -323,9 +305,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(XULDocument, XMLDocument)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(XULDocument, XMLDocument)
-    delete tmp->mTemplateBuilderTable;
-    tmp->mTemplateBuilderTable = nullptr;
-
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mCommandDispatcher)
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalStore)
     
@@ -1667,26 +1646,6 @@ XULDocument::AddElementToDocumentPost(Element* aElement)
         nsXBLService::AttachGlobalKeyHandler(aElement);
     }
 
-    
-    bool needsHookup;
-    nsresult rv = CheckTemplateBuilderHookup(aElement, &needsHookup);
-    if (NS_FAILED(rv))
-        return rv;
-
-    if (needsHookup) {
-        if (mResolutionPhase == nsForwardReference::eDone) {
-            rv = CreateTemplateBuilder(aElement);
-            if (NS_FAILED(rv))
-                return rv;
-        }
-        else {
-            TemplateBuilderHookup* hookup = new TemplateBuilderHookup(aElement);
-            rv = AddForwardReference(hookup);
-            if (NS_FAILED(rv))
-                return rv;
-        }
-    }
-
     return NS_OK;
 }
 
@@ -1780,40 +1739,6 @@ XULDocument::RemoveSubtreeFromDocument(nsIContent* aContent)
     if (rv == NS_FINDBROADCASTER_FOUND) {
         RemoveBroadcastListenerFor(*broadcaster, *listener, attribute);
     }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-XULDocument::SetTemplateBuilderFor(nsIContent* aContent,
-                                   nsIXULTemplateBuilder* aBuilder)
-{
-    if (! mTemplateBuilderTable) {
-        if (!aBuilder) {
-            return NS_OK;
-        }
-        mTemplateBuilderTable = new BuilderTable;
-    }
-
-    if (aBuilder) {
-        mTemplateBuilderTable->Put(aContent, aBuilder);
-    }
-    else {
-        mTemplateBuilderTable->Remove(aContent);
-    }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-XULDocument::GetTemplateBuilderFor(nsIContent* aContent,
-                                   nsIXULTemplateBuilder** aResult)
-{
-    if (mTemplateBuilderTable) {
-        mTemplateBuilderTable->Get(aContent, aResult);
-    }
-    else
-        *aResult = nullptr;
 
     return NS_OK;
 }
@@ -3631,95 +3556,6 @@ XULDocument::AddAttributes(nsXULPrototypeElement* aPrototype,
 
 
 nsresult
-XULDocument::CheckTemplateBuilderHookup(Element* aElement,
-                                        bool* aNeedsHookup)
-{
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<nsXULElement> xulElement = nsXULElement::FromContent(aElement);
-    if (xulElement) {
-        nsCOMPtr<nsIRDFCompositeDataSource> ds = xulElement->GetDatabase();
-        if (ds) {
-            *aNeedsHookup = false;
-            return NS_OK;
-        }
-    }
-
-    
-    
-    *aNeedsHookup = aElement->HasAttr(kNameSpaceID_None,
-                                      nsGkAtoms::datasources);
-    return NS_OK;
-}
-
- nsresult
-XULDocument::CreateTemplateBuilder(Element* aElement)
-{
-    
-    bool isTreeBuilder = false;
-
-    
-    
-    nsIDocument* document = aElement->GetUncomposedDoc();
-    NS_ENSURE_TRUE(document, NS_OK);
-
-    int32_t nameSpaceID;
-    nsAtom* baseTag = document->BindingManager()->
-      ResolveTag(aElement, &nameSpaceID);
-
-    if ((nameSpaceID == kNameSpaceID_XUL) && (baseTag == nsGkAtoms::tree)) {
-        
-        
-        
-        
-
-        nsAutoString flags;
-        aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::flags, flags);
-        if (flags.Find(NS_LITERAL_STRING("dont-build-content")) >= 0) {
-            isTreeBuilder = true;
-        }
-    }
-
-    if (isTreeBuilder) {
-        
-        RefPtr<nsXULTreeBuilder> builder = new nsXULTreeBuilder(aElement);
-        nsresult rv = builder->Init();
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        
-        
-        RefPtr<Element> bodyContent;
-        nsXULContentUtils::FindChildByTag(aElement, kNameSpaceID_XUL,
-                                          nsGkAtoms::treechildren,
-                                          getter_AddRefs(bodyContent));
-
-        if (!bodyContent) {
-            bodyContent =
-                document->CreateElem(nsDependentAtomString(nsGkAtoms::treechildren),
-                                     nullptr, kNameSpaceID_XUL);
-
-            aElement->AppendChildTo(bodyContent, false);
-        }
-    }
-    else {
-        
-        nsCOMPtr<nsIXULTemplateBuilder> builder;
-        nsresult rv = NS_NewXULContentBuilder(aElement, getter_AddRefs(builder));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        builder->CreateContents(aElement, false);
-    }
-
-    return NS_OK;
-}
-
-
-nsresult
 XULDocument::AddPrototypeSheets()
 {
     nsresult rv;
@@ -3949,13 +3785,13 @@ XULDocument::OverlayForwardReference::Merge(Element* aTargetElement,
                 
                 rv = Merge(elementInDocument, currContent->AsElement(), aNotify);
                 if (NS_FAILED(rv)) return rv;
-                aOverlayElement->RemoveChildAt_Deprecated(0, false);
+                aOverlayElement->RemoveChildAt(0, false);
 
                 continue;
             }
         }
 
-        aOverlayElement->RemoveChildAt_Deprecated(0, false);
+        aOverlayElement->RemoveChildAt(0, false);
 
         rv = InsertElement(aTargetElement, currContent, aNotify);
         if (NS_FAILED(rv)) return rv;
@@ -4033,30 +3869,6 @@ XULDocument::BroadcasterHookup::~BroadcasterHookup()
                 broadcasteridC.get()));
     }
 }
-
-
-
-
-
-
-
-nsForwardReference::Result
-XULDocument::TemplateBuilderHookup::Resolve()
-{
-    bool needsHookup;
-    nsresult rv = CheckTemplateBuilderHookup(mElement, &needsHookup);
-    if (NS_FAILED(rv))
-        return eResolve_Error;
-
-    if (needsHookup) {
-        rv = CreateTemplateBuilder(mElement);
-        if (NS_FAILED(rv))
-            return eResolve_Error;
-    }
-
-    return eResolve_Succeeded;
-}
-
 
 
 
@@ -4339,7 +4151,7 @@ XULDocument::RemoveElement(nsINode* aParent, nsINode* aChild)
 {
     int32_t nodeOffset = aParent->IndexOf(aChild);
 
-    aParent->RemoveChildAt_Deprecated(nodeOffset, true);
+    aParent->RemoveChildAt(nodeOffset, true);
     return NS_OK;
 }
 

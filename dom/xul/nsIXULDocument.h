@@ -58,19 +58,6 @@ public:
 
 
 
-  NS_IMETHOD SetTemplateBuilderFor(nsIContent* aContent, nsIXULTemplateBuilder* aBuilder) = 0;
-
-  
-
-
-
-  NS_IMETHOD GetTemplateBuilderFor(nsIContent* aContent, nsIXULTemplateBuilder** aResult) = 0;
-
-  
-
-
-
-
 
 
 

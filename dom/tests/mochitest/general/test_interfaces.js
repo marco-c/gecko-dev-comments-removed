@@ -27,7 +27,7 @@ var ecmaGlobals =
   [
     "Array",
     "ArrayBuffer",
-    {name: "Atomics", disabled: true},
+    "Atomics",
     "Boolean",
     {name: "ByteLengthQueuingStrategy", disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
     {name: "CountQueuingStrategy", disabled: !SpecialPowers.Cu.getJSTestingFunctions().streamsAreEnabled()},
@@ -61,7 +61,7 @@ var ecmaGlobals =
     "Reflect",
     "RegExp",
     "Set",
-    {name: "SharedArrayBuffer", disabled: true},
+    "SharedArrayBuffer",
     {name: "SIMD", nightly: true},
     "String",
     "Symbol",
@@ -745,7 +745,7 @@ var interfaceNamesInGlobalScope =
 
     "PluginArray",
 
-    {name: "PointerEvent", android: false},
+    {name: "PointerEvent", nightly: true, desktop: true, android: false},
 
     "PopStateEvent",
 
@@ -1274,12 +1274,6 @@ var interfaceNamesInGlobalScope =
     {name: "XULElement", xbl: true},
 
     {name: "XULLabeledControlElement", xbl: true},
-
-    {name: "XULTemplateBuilder", xbl: true},
-
-    {name: "XULTreeBuilder", xbl: true},
-
-    {name: "XULTreeBuilderObserver", xbl: true},
 
   ];
 
