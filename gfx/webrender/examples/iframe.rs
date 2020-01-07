@@ -45,6 +45,7 @@ impl Example for App {
             None,
             MixBlendMode::Normal,
             Vec::new(),
+            GlyphRasterSpace::Screen,
         );
 
         
@@ -71,6 +72,7 @@ impl Example for App {
             None,
             MixBlendMode::Normal,
             Vec::new(),
+            GlyphRasterSpace::Screen,
         );
         
         builder.push_rect(&info, ColorF::new(1.0, 0.0, 0.0, 1.0));

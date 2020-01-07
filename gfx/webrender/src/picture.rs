@@ -27,6 +27,9 @@ use tiling::RenderTargetKind;
 
 
 
+pub const IMAGE_BRUSH_EXTRA_BLOCKS: usize = 2;
+pub const IMAGE_BRUSH_BLOCKS: usize = 6;
+
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -550,7 +553,6 @@ impl PicturePrimitive {
                 
                 request.push(self.task_rect.to_f32());
                 request.push([0.0; 4]);
-                request.push(PremultipliedColorF::WHITE);
 
                 
                 
@@ -565,20 +567,30 @@ impl PicturePrimitive {
 
                     
                     
+
+                    
+                    
+                    
                     
                     
                     let shadow_rect = prim_metadata.local_rect.translate(&offset);
                     let shadow_clip_rect = prim_metadata.local_clip_rect.translate(&offset);
 
+                    
                     request.push(shadow_rect);
                     request.push(shadow_clip_rect);
+
+                    
+                    request.push(color.premultiplied());
+                    request.push(PremultipliedColorF::WHITE);
+
+                    
                     request.push(shadow_rect);
-                    request.push([0.0; 4]);
+                    request.push([1.0, 1.0, 0.0, 0.0]);
 
                     
                     request.push(self.task_rect.to_f32());
                     request.push([offset.x, offset.y, 0.0, 0.0]);
-                    request.push(color.premultiplied());
                 }
             }
         }

@@ -452,6 +452,7 @@ pub struct StackingContext {
     pub mix_blend_mode: MixBlendMode,
     pub reference_frame_id: Option<ClipId>,
     pub clip_node_id: Option<ClipId>,
+    pub glyph_raster_space: GlyphRasterSpace,
 } 
 
 #[repr(u32)]
@@ -466,6 +467,23 @@ pub enum ScrollPolicy {
 pub enum TransformStyle {
     Flat = 0,
     Preserve3D = 1,
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+#[repr(C, u8)]
+pub enum GlyphRasterSpace {
+    
+    
+    Local(f32),
+
+    
+    
+    
+    
+    Screen,
 }
 
 #[repr(u32)]
