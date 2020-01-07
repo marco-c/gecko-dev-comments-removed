@@ -489,6 +489,17 @@ private:
   void UpdateEffectSet(mozilla::EffectSet* aEffectSet = nullptr) const;
 
   
+  
+  
+  
+  bool HasTransformThatMightAffectOverflow() const
+  {
+    return mCumulativeChangeHint & (nsChangeHint_UpdatePostTransformOverflow |
+                                    nsChangeHint_AddOrRemoveTransform |
+                                    nsChangeHint_UpdateTransformLayer);
+  }
+
+  
   bool mIsComposingStyle = false;
 };
 

@@ -773,9 +773,8 @@ KeyframeEffectReadOnly::ComposeStyle(
   
   
   
-  if (mCumulativeChangeHint & (nsChangeHint_UpdatePostTransformOverflow |
-                               nsChangeHint_AddOrRemoveTransform |
-                               nsChangeHint_UpdateTransformLayer)) {
+  
+  if (HasTransformThatMightAffectOverflow()) {
     nsPresContext* presContext =
       nsContentUtils::GetContextForContent(mTarget->mElement);
     if (presContext) {
@@ -1473,9 +1472,7 @@ KeyframeEffectReadOnly::CanThrottle() const
         frame->IsScrolledOutOfView()) {
       
       
-      if (mCumulativeChangeHint & (nsChangeHint_UpdatePostTransformOverflow |
-                                   nsChangeHint_AddOrRemoveTransform |
-                                   nsChangeHint_UpdateTransformLayer)) {
+      if (HasTransformThatMightAffectOverflow()) {
         return isVisibilityHidden
           ? CanThrottleTransformChangesInScrollable(*frame)
           : CanThrottleTransformChanges(*frame);
@@ -1514,7 +1511,7 @@ KeyframeEffectReadOnly::CanThrottle() const
 
     
     
-    if (record.mProperty == eCSSProperty_transform &&
+    if (HasTransformThatMightAffectOverflow() &&
         !CanThrottleTransformChangesInScrollable(*frame)) {
       return false;
     }
