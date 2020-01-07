@@ -250,7 +250,7 @@ protected:
                       bool* aHas,
                       bool* aConfirmed);
 
-  bool mPrimed;
+  bool mPrimed; 
   nsCString mTableName;
   nsCString mProvider;
   nsCOMPtr<nsIFile> mRootStoreDirectory;
