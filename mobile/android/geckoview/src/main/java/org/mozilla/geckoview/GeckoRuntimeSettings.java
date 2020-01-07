@@ -75,6 +75,16 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mJavaScript.set(flag);
             return this;
         }
+
+        
+
+
+
+
+        public @NonNull Builder webFontsEnabled(final boolean flag) {
+            mSettings.mWebFonts.set(flag);
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -114,9 +124,11 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
      Pref<Boolean> mJavaScript = new Pref<Boolean>(
         "javascript.enabled", true);
+     Pref<Boolean> mWebFonts = new Pref<Boolean>(
+        "browser.display.use_document_fonts", true);
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
-        mJavaScript
+        mJavaScript, mWebFonts
     };
 
      GeckoRuntimeSettings() {
@@ -136,6 +148,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mArgs = settings.getArguments().clone();
             mExtras = new Bundle(settings.getExtras());
             mJavaScript.set(settings.mJavaScript.get());
+            mWebFonts.set(settings.mWebFonts.get());
         }
     }
 
@@ -191,6 +204,25 @@ public final class GeckoRuntimeSettings implements Parcelable {
         return this;
     }
 
+    
+
+
+
+
+    public boolean getWebFontsEnabled() {
+        return mWebFonts.get();
+    }
+
+    
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setWebFontsEnabled(final boolean flag) {
+        mWebFonts.set(flag);
+        return this;
+    }
+
     @Override 
     public int describeContents() {
         return 0;
@@ -202,6 +234,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         out.writeStringArray(mArgs);
         mExtras.writeToParcel(out, flags);
         out.writeByte((byte) (mJavaScript.get() ? 1 : 0));
+        out.writeByte((byte) (mWebFonts.get() ? 1 : 0));
     }
 
     
@@ -210,6 +243,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mArgs = source.createStringArray();
         mExtras.readFromParcel(source);
         mJavaScript.set(source.readByte() == 1);
+        mWebFonts.set(source.readByte() == 1);
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
