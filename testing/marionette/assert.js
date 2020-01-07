@@ -9,7 +9,6 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const {
   InvalidArgumentError,
@@ -20,11 +19,6 @@ const {
   UnsupportedOperationError,
 } = Cu.import("chrome://marionette/content/error.js", {});
 const {pprint} = Cu.import("chrome://marionette/content/format.js", {});
-
-XPCOMUtils.defineLazyGetter(this, "browser", () => {
-  const {browser} = Cu.import("chrome://marionette/content/browser.js", {});
-  return browser;
-});
 
 this.EXPORTED_SYMBOLS = ["assert"];
 
@@ -144,6 +138,12 @@ assert.content = function(context, msg = "") {
 
 
 
+assert.window = function(win, msg = "") {
+  msg = msg || "Unable to locate window";
+  return assert.that(w => w && !w.closed,
+      msg,
+      NoSuchWindowError)(win);
+};
 
 
 
@@ -151,16 +151,19 @@ assert.content = function(context, msg = "") {
 
 
 
-assert.open = function(context, msg = "") {
+
+
+
+
+
+assert.contentBrowser = function(context, msg = "") {
   
   
   
-  if (context instanceof browser.Context) {
-    assert.open(context.window);
-  }
+  assert.window(context && context.window);
 
-  msg = msg || "Browsing context has been discarded";
-  return assert.that(ctx => ctx && !ctx.closed,
+  msg = msg || "Current window does not have a content browser";
+  assert.that(c => c.contentBrowser,
       msg,
       NoSuchWindowError)(context);
 };
