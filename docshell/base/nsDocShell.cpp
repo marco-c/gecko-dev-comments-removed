@@ -9365,9 +9365,6 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
   
   
   mURIResultedInDocument = true;
-  bool errorOnLocationChangeNeeded = false;
-  nsCOMPtr<nsIChannel> failedChannel = mFailedChannel;
-  nsCOMPtr<nsIURI> failedURI;
 
   if (mLoadType == LOAD_ERROR_PAGE) {
     
@@ -9378,15 +9375,17 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
     
     mLoadType = mFailedLoadType;
 
+    nsCOMPtr<nsIChannel> failedChannel = mFailedChannel;
 
     nsIDocument* doc = viewer->GetDocument();
     if (doc) {
       doc->SetFailedChannel(failedChannel);
     }
 
+    
+    nsCOMPtr<nsIURI> failedURI;
     nsCOMPtr<nsIPrincipal> triggeringPrincipal;
     if (failedChannel) {
-      
       NS_GetFinalChannelURI(failedChannel, getter_AddRefs(failedURI));
     }
      else {
@@ -9412,9 +9411,14 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
 
     
     if (failedURI) {
-      errorOnLocationChangeNeeded = OnNewURI(
+      bool errorOnLocationChangeNeeded = OnNewURI(
         failedURI, failedChannel, triggeringPrincipal,
         nullptr, mLoadType, false, false, false);
+
+      if (errorOnLocationChangeNeeded) {
+        FireOnLocationChange(this, failedChannel, failedURI,
+                             LOCATION_CHANGE_ERROR_PAGE);
+      }
     }
 
     
@@ -9505,10 +9509,7 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
     FavorPerformanceHint(true);
   }
 
-  if (errorOnLocationChangeNeeded) {
-    FireOnLocationChange(this, failedChannel, failedURI,
-                         LOCATION_CHANGE_ERROR_PAGE);
-  } else if (onLocationChangeNeeded) {
+  if (onLocationChangeNeeded) {
     FireOnLocationChange(this, aRequest, mCurrentURI, 0);
   }
 
