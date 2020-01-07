@@ -231,7 +231,7 @@ WebRenderImageData::CreateAsyncImageWebRenderCommands(mozilla::wr::DisplayListBu
   
   
   
-  wr::LayoutRect r = aSc.ToRelativeLayoutRect(aBounds);
+  wr::LayoutRect r = wr::ToRoundedLayoutRect(aBounds);
   aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref());
 
   WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(mPipelineId.value(),

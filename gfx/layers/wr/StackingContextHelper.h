@@ -50,18 +50,6 @@ public:
   ~StackingContextHelper();
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  wr::LayoutRect ToRelativeLayoutRect(const LayoutDeviceRect& aRect) const;
-
-  
   gfx::Size GetInheritedScale() const { return mScale; }
 
   const gfx::Matrix& GetInheritedTransform() const
