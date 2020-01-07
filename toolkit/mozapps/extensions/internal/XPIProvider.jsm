@@ -369,7 +369,9 @@ function getFile(path, base = null) {
 
 function tryGetMtime(file) {
   try {
-    return file.lastModifiedTime;
+    
+    
+    return file.clone().lastModifiedTime;
   } catch (e) {
     return 0;
   }
