@@ -51,16 +51,12 @@ const MIN_SUBSESSION_LENGTH_MS = Services.prefs.getIntPref("toolkit.telemetry.mi
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetrySession" + (Utils.isContentProcess ? "#content::" : "::");
 
-const MESSAGE_TELEMETRY_PAYLOAD = "Telemetry:Payload";
 const MESSAGE_TELEMETRY_USS = "Telemetry:USS";
 const MESSAGE_TELEMETRY_GET_CHILD_USS = "Telemetry:GetChildUSS";
 
 
 
 const IS_UNIFIED_TELEMETRY = Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false);
-
-
-const MAX_NUM_CONTENT_PAYLOADS = 10;
 
 
 const TELEMETRY_INTERVAL = 60 * 1000;
@@ -666,11 +662,6 @@ var Impl = {
   _previousBuildId: null,
   
   
-  
-  
-  _childTelemetry: [],
-  
-  
   _sessionId: null,
   
   _subsessionId: null,
@@ -1192,10 +1183,6 @@ var Impl = {
     Telemetry.getHistogramById(id).add(val);
   },
 
-  getChildPayloads: function getChildPayloads() {
-    return this._childTelemetry.map(child => child.payload);
-  },
-
   
 
 
@@ -1450,7 +1437,6 @@ var Impl = {
 
     this.attachEarlyObservers();
 
-    Services.ppmm.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
     Services.ppmm.addMessageListener(MESSAGE_TELEMETRY_USS, this);
   },
 
@@ -1569,24 +1555,6 @@ var Impl = {
   receiveMessage: function receiveMessage(message) {
     this._log.trace("receiveMessage - Message name " + message.name);
     switch (message.name) {
-    case MESSAGE_TELEMETRY_PAYLOAD:
-    {
-      
-      let source = message.data.childUUID;
-      delete message.data.childUUID;
-
-      this._childTelemetry.push({
-        source,
-        payload: message.data,
-      });
-
-      if (this._childTelemetry.length == MAX_NUM_CONTENT_PAYLOADS + 1) {
-        this._childTelemetry.shift();
-        Telemetry.getHistogramById("TELEMETRY_DISCARDED_CONTENT_PINGS_COUNT").add();
-      }
-
-      break;
-    }
     case MESSAGE_TELEMETRY_USS:
     {
       
@@ -1648,8 +1616,6 @@ var Impl = {
     }
   },
 
-  _processUUID: generateUUID(),
-
   sendContentProcessUSS: function sendContentProcessUSS(aMessageId) {
     this._log.trace("sendContentProcessUSS");
 
@@ -1666,14 +1632,6 @@ var Impl = {
       MESSAGE_TELEMETRY_USS,
       {bytes: mgr.residentUnique, id: aMessageId}
     );
-  },
-
-  sendContentProcessPing: function sendContentProcessPing(reason) {
-    this._log.trace("sendContentProcessPing - Reason " + reason);
-    const isSubsession = !this._isClassicReason(reason);
-    let payload = this.getSessionPayload(reason, isSubsession);
-    payload.childUUID = this._processUUID;
-    Services.cpmm.sendAsyncMessage(MESSAGE_TELEMETRY_PAYLOAD, payload);
   },
 
    
