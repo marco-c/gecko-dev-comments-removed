@@ -65,6 +65,29 @@ struct EnumTypeFitsWithin
   static_assert(std::is_integral<Storage>::value, "must provide an integral type");
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct MaxEnumValue;  
+
 } 
 
 #endif 
