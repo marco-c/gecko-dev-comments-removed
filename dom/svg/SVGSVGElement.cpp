@@ -495,14 +495,6 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
                                               aCompileEventHandlers);
   NS_ENSURE_SUCCESS(rv,rv);
 
-  if (nsIDocument* doc = GetComposedDoc()) {
-    
-    
-    
-    auto cache = nsLayoutStylesheetCache::Singleton();
-    doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
-  }
-
   if (mTimedDocumentRoot && smilController) {
     rv = mTimedDocumentRoot->SetParent(smilController);
     if (mStartAnimationOnBindToTree) {
