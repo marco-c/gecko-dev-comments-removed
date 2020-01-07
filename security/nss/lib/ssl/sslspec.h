@@ -170,6 +170,10 @@ struct ssl3CipherSpecStr {
     
 
     PRUint32 earlyDataRemaining;
+    
+
+
+    PRUint16 recordSizeLimit;
 };
 
 typedef void (*sslCipherSpecChangedFunc)(void *arg,

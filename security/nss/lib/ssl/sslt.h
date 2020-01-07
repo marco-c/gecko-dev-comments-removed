@@ -432,6 +432,7 @@ typedef enum {
     ssl_signed_cert_timestamp_xtn = 18,
     ssl_padding_xtn = 21,
     ssl_extended_master_secret_xtn = 23,
+    ssl_record_size_limit_xtn = 28,
     ssl_session_ticket_xtn = 35,
     
     ssl_tls13_pre_shared_key_xtn = 41,
@@ -454,7 +455,7 @@ typedef enum {
 
 
 
-#define SSL_MAX_EXTENSIONS 20
+#define SSL_MAX_EXTENSIONS 21
 
 
 typedef enum {

@@ -98,6 +98,9 @@ struct TLSExtensionDataStr {
     
 
     SECItem applicationToken;
+
+    
+    PRUint16 recordSizeLimit;
 };
 
 typedef struct TLSExtensionStr {

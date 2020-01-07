@@ -236,6 +236,7 @@ typedef struct sslOptionsStr {
     
 
     SECItem nextProtoNego;
+    PRUint16 recordSizeLimit;
 
     PRUint32 maxEarlyDataSize;
     unsigned int useSecurity : 1;

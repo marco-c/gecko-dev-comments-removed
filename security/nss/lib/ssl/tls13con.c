@@ -3254,6 +3254,17 @@ tls13_SetupPendingCipherSpec(sslSocket *ss, ssl3CipherSpec *spec)
     }
 
     tls13_SetSpecRecordVersion(ss, spec);
+
+    
+
+    if (ssl3_ExtensionNegotiated(ss, ssl_record_size_limit_xtn)) {
+        spec->recordSizeLimit = ((spec->direction == CipherSpecRead)
+                                     ? ss->opt.recordSizeLimit
+                                     : ss->xtnData.recordSizeLimit) -
+                                1;
+    } else {
+        spec->recordSizeLimit = MAX_FRAGMENT_LENGTH;
+    }
     return SECSuccess;
 }
 
@@ -4746,7 +4757,8 @@ static const struct {
     { ssl_tls13_cookie_xtn, _M2(client_hello, hello_retry_request) },
     { ssl_tls13_certificate_authorities_xtn, _M1(certificate_request) },
     { ssl_tls13_supported_versions_xtn, _M3(client_hello, server_hello,
-                                            hello_retry_request) }
+                                            hello_retry_request) },
+    { ssl_record_size_limit_xtn, _M2(client_hello, encrypted_extensions) }
 };
 
 tls13ExtensionStatus
@@ -5012,6 +5024,16 @@ tls13_UnprotectRecord(sslSocket *ss,
                 ("%d: TLS13[%d]: record has bogus MAC",
                  SSL_GETPID(), ss->fd));
         PORT_SetError(SSL_ERROR_BAD_MAC_READ);
+        return SECFailure;
+    }
+
+    
+
+
+
+    if (plaintext->len > spec->recordSizeLimit + 1) {
+        SSL3_SendAlert(ss, alert_fatal, record_overflow);
+        PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
         return SECFailure;
     }
 

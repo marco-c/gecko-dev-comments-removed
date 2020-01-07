@@ -247,6 +247,28 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_RECORD_SIZE_LIMIT 34
+
+
+
+
+
 #define SSL_ENABLE_TLS13_COMPAT_MODE 35
 
 

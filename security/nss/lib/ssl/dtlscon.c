@@ -725,7 +725,10 @@ dtls_FragmentHandshake(sslSocket *ss, DTLSQueuedMessage *msg)
         fragmentLen = PR_MIN(end, contentLen) - fragmentOffset;
 
         
+        fragmentLen = PR_MIN(fragmentLen,
+                             msg->cwSpec->recordSizeLimit - DTLS_HS_HDR_LEN);
 
+        
         fragmentLen = PR_MIN(fragmentLen,
                              ss->ssl3.mtu -           
                                  ss->pendingBuf.len - 

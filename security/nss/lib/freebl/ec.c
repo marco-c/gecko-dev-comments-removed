@@ -653,6 +653,7 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     mp_int r, s; 
     mp_int t;    
     mp_int n;
+    mp_int ar; 
     mp_err err = MP_OKAY;
     ECParams *ecParams = NULL;
     SECItem kGpoint = { siBuffer, NULL, 0 };
@@ -674,6 +675,7 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     MP_DIGITS(&s) = 0;
     MP_DIGITS(&n) = 0;
     MP_DIGITS(&t) = 0;
+    MP_DIGITS(&ar) = 0;
 
     
     if (!key || !signature || !digest || !kb || (kblen < 0)) {
@@ -700,6 +702,7 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     CHECK_MPI_OK(mp_init(&s));
     CHECK_MPI_OK(mp_init(&n));
     CHECK_MPI_OK(mp_init(&t));
+    CHECK_MPI_OK(mp_init(&ar));
 
     SECITEM_TO_MPINT(ecParams->order, &n);
     SECITEM_TO_MPINT(key->privateValue, &d);
@@ -815,12 +818,25 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
         goto cleanup;
     }
     CHECK_MPI_OK(mp_read_unsigned_octets(&t, t2, 2 * ecParams->order.len)); 
-    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k));                                
-    CHECK_MPI_OK(mp_invmod(&k, &n, &k));                                    
-    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k));                                
-    CHECK_MPI_OK(mp_mulmod(&d, &r, &n, &d));                                
-    CHECK_MPI_OK(mp_addmod(&s, &d, &n, &s));                                
-    CHECK_MPI_OK(mp_mulmod(&s, &k, &n, &s));                                
+    PORT_Memset(t2, 0, 2 * ecParams->order.len);
+    if (RNG_GenerateGlobalRandomBytes(t2, 2 * ecParams->order.len) != SECSuccess) {
+        PORT_SetError(SEC_ERROR_NEED_RANDOM);
+        rv = SECFailure;
+        goto cleanup;
+    }
+    CHECK_MPI_OK(mp_read_unsigned_octets(&ar, t2, 2 * ecParams->order.len)); 
+
+    
+    CHECK_MPI_OK(mp_mul(&k, &ar, &k));       
+    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k)); 
+    CHECK_MPI_OK(mp_invmod(&k, &n, &k));     
+    CHECK_MPI_OK(mp_mulmod(&k, &t, &n, &k)); 
+    
+    CHECK_MPI_OK(mp_mul(&d, &ar, &t));        
+    CHECK_MPI_OK(mp_mulmod(&t, &r, &n, &d));  
+    CHECK_MPI_OK(mp_mulmod(&s, &ar, &n, &t)); 
+    CHECK_MPI_OK(mp_add(&t, &d, &s));         
+    CHECK_MPI_OK(mp_mulmod(&s, &k, &n, &s));  
 
 #if EC_DEBUG
     mp_todecimal(&s, mpstr);
@@ -858,6 +874,7 @@ cleanup:
     mp_clear(&s);
     mp_clear(&n);
     mp_clear(&t);
+    mp_clear(&ar);
 
     if (t2) {
         PORT_Free(t2);
