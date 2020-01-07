@@ -797,10 +797,10 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
   IntRect frameRect;
 
   
-  frameRect.x = LittleEndian::readUint16(aData + 0);
-  frameRect.y = LittleEndian::readUint16(aData + 2);
-  frameRect.SetWidth(LittleEndian::readUint16(aData + 4));
-  frameRect.SetHeight(LittleEndian::readUint16(aData + 6));
+  frameRect.SetRect(LittleEndian::readUint16(aData + 0),
+                    LittleEndian::readUint16(aData + 2),
+                    LittleEndian::readUint16(aData + 4),
+                    LittleEndian::readUint16(aData + 6));
 
   if (!mGIFStruct.images_decoded) {
     

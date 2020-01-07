@@ -89,7 +89,7 @@ public:
   
   uint8_t* RowBuffer()
   {
-    return mRowBuffer.get() + mFrameRect.x * sizeof(uint32_t);
+    return mRowBuffer.get() + mFrameRect.X() * sizeof(uint32_t);
   }
 
   

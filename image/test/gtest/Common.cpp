@@ -170,7 +170,7 @@ PalettedRowsAreSolidColor(Decoder* aDecoder,
 {
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
   IntRect frameRect = currentFrame->GetRect();
-  IntRect solidColorRect(frameRect.x, aStartRow, frameRect.Width(), aRowCount);
+  IntRect solidColorRect(frameRect.X(), aStartRow, frameRect.Width(), aRowCount);
   return PalettedRectIsSolidColor(aDecoder, solidColorRect, aColor);
 }
 
@@ -196,8 +196,8 @@ RectIsSolidColor(SourceSurface* aSurface,
   ASSERT_TRUE_OR_RETURN(data != nullptr, false);
 
   int32_t rowLength = mapping.GetStride();
-  for (int32_t row = rect.y; row < rect.YMost(); ++row) {
-    for (int32_t col = rect.x; col < rect.XMost(); ++col) {
+  for (int32_t row = rect.Y(); row < rect.YMost(); ++row) {
+    for (int32_t col = rect.X(); col < rect.XMost(); ++col) {
       int32_t i = row * rowLength + col * 4;
       if (aFuzz != 0) {
         ASSERT_LE_OR_RETURN(abs(aColor.mBlue - data[i + 0]), aFuzz, false);
@@ -243,8 +243,8 @@ PalettedRectIsSolidColor(Decoder* aDecoder, const IntRect& aRect, uint8_t aColor
   
   
   int32_t rowLength = frameRect.Width();
-  for (int32_t row = rect.y; row < rect.YMost(); ++row) {
-    for (int32_t col = rect.x; col < rect.XMost(); ++col) {
+  for (int32_t row = rect.Y(); row < rect.YMost(); ++row) {
+    for (int32_t col = rect.X(); col < rect.XMost(); ++col) {
       int32_t i = row * rowLength + col;
       ASSERT_EQ_OR_RETURN(aColor, imageData[i], false);
     }
@@ -342,18 +342,18 @@ CheckGeneratedImage(Decoder* aDecoder,
 
   
   EXPECT_TRUE(RectIsSolidColor(surface,
-                               IntRect(0, 0, surfaceSize.width, aRect.y),
+                               IntRect(0, 0, surfaceSize.width, aRect.Y()),
                                BGRAColor::Transparent(), aFuzz));
 
   
   EXPECT_TRUE(RectIsSolidColor(surface,
-                               IntRect(0, aRect.y, aRect.x, aRect.YMost()),
+                               IntRect(0, aRect.Y(), aRect.X(), aRect.YMost()),
                                BGRAColor::Transparent(), aFuzz));
 
   
   const int32_t widthOnRight = surfaceSize.width - aRect.XMost();
   EXPECT_TRUE(RectIsSolidColor(surface,
-                               IntRect(aRect.XMost(), aRect.y, widthOnRight, aRect.YMost()),
+                               IntRect(aRect.XMost(), aRect.Y(), widthOnRight, aRect.YMost()),
                                BGRAColor::Transparent(), aFuzz));
 
   
@@ -386,18 +386,18 @@ CheckGeneratedPalettedImage(Decoder* aDecoder, const IntRect& aRect)
 
   
   EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
-                                       IntRect(0, 0, imageSize.width, aRect.y),
+                                       IntRect(0, 0, imageSize.width, aRect.Y()),
                                        0));
 
   
   EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
-                                       IntRect(0, aRect.y, aRect.x, aRect.YMost()),
+                                       IntRect(0, aRect.Y(), aRect.X(), aRect.YMost()),
                                        0));
 
   
   const int32_t widthOnRight = imageSize.width - aRect.XMost();
   EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
-                                       IntRect(aRect.XMost(), aRect.y, widthOnRight, aRect.YMost()),
+                                       IntRect(aRect.XMost(), aRect.Y(), widthOnRight, aRect.YMost()),
                                        0));
 
   

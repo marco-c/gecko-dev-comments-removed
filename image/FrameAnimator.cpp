@@ -602,9 +602,7 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
                    ? prevFrameData.mRect.Intersect(*prevFrameData.mBlendRect)
                    : prevFrameData.mRect;
 
-  bool isFullPrevFrame = prevRect.x == 0 && prevRect.y == 0 &&
-                         prevRect.Width() == mSize.width &&
-                         prevRect.Height() == mSize.height;
+  bool isFullPrevFrame = prevRect.IsEqualRect(0, 0, mSize.width, mSize.height);
 
   
   
@@ -619,9 +617,7 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
                    ? nextFrameData.mRect.Intersect(*nextFrameData.mBlendRect)
                    : nextFrameData.mRect;
 
-  bool isFullNextFrame = nextRect.x == 0 && nextRect.y == 0 &&
-                         nextRect.Width() == mSize.width &&
-                         nextRect.Height() == mSize.height;
+  bool isFullNextFrame = nextRect.IsEqualRect(0, 0, mSize.width, mSize.height);
 
   if (!nextFrame->GetIsPaletted()) {
     
@@ -719,7 +715,7 @@ FrameAnimator::DoBlend(DrawableSurface& aFrames,
       
       needToBlankComposite = false;
     } else {
-      if ((prevRect.x >= nextRect.x) && (prevRect.y >= nextRect.y) &&
+      if ((prevRect.X() >= nextRect.X()) && (prevRect.Y() >= nextRect.Y()) &&
           (prevRect.XMost() <= nextRect.XMost()) &&
           (prevRect.YMost() <= nextRect.YMost())) {
         
@@ -893,8 +889,8 @@ FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect,
   }
 
   uint32_t bytesPerRow = aFrameRect.Width() * 4;
-  for (int row = toClear.y; row < toClear.YMost(); ++row) {
-    memset(aFrameData + toClear.x * 4 + row * bytesPerRow, 0,
+  for (int row = toClear.Y(); row < toClear.YMost(); ++row) {
+    memset(aFrameData + toClear.X() * 4 + row * bytesPerRow, 0,
            toClear.Width() * 4);
   }
 }
@@ -930,24 +926,25 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
   NS_ENSURE_ARG_POINTER(aDstPixels);
 
   
-  if (aSrcRect.x < 0 || aSrcRect.y < 0) {
+  if (aSrcRect.X() < 0 || aSrcRect.Y() < 0) {
     NS_WARNING("FrameAnimator::DrawFrameTo: negative offsets not allowed");
     return NS_ERROR_FAILURE;
   }
+
   
-  if ((aSrcRect.x > aDstRect.Width()) || (aSrcRect.y > aDstRect.Height())) {
+  if ((aSrcRect.X() > aDstRect.Width()) || (aSrcRect.Y() > aDstRect.Height())) {
     return NS_OK;
   }
 
   if (aSrcPaletteLength) {
     
-    int32_t width = std::min(aSrcRect.Width(), aDstRect.Width() - aSrcRect.x);
-    int32_t height = std::min(aSrcRect.Height(), aDstRect.Height() - aSrcRect.y);
+    int32_t width = std::min(aSrcRect.Width(), aDstRect.Width() - aSrcRect.X());
+    int32_t height = std::min(aSrcRect.Height(), aDstRect.Height() - aSrcRect.Y());
 
     
-    NS_ASSERTION((aSrcRect.x >= 0) && (aSrcRect.y >= 0) &&
-                 (aSrcRect.x + width <= aDstRect.Width()) &&
-                 (aSrcRect.y + height <= aDstRect.Height()),
+    NS_ASSERTION((aSrcRect.X() >= 0) && (aSrcRect.Y() >= 0) &&
+                 (aSrcRect.X() + width <= aDstRect.Width()) &&
+                 (aSrcRect.Y() + height <= aDstRect.Height()),
                 "FrameAnimator::DrawFrameTo: Invalid aSrcRect");
 
     
@@ -960,7 +957,7 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
     const uint32_t* colormap = reinterpret_cast<const uint32_t*>(aSrcData);
 
     
-    dstPixels += aSrcRect.x + (aSrcRect.y * aDstRect.Width());
+    dstPixels += aSrcRect.X() + (aSrcRect.Y() * aDstRect.Width());
     if (!aSrcHasAlpha) {
       for (int32_t r = height; r > 0; --r) {
         for (int32_t c = 0; c < width; c++) {
@@ -1030,7 +1027,7 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
                                dst,
                                0, 0,
                                0, 0,
-                               aSrcRect.x, aSrcRect.y,
+                               aSrcRect.X(), aSrcRect.Y(),
                                aSrcRect.Width(), aSrcRect.Height());
     } else {
       
@@ -1040,15 +1037,15 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
                                dst,
                                0, 0,
                                0, 0,
-                               aSrcRect.x, aSrcRect.y,
+                               aSrcRect.X(), aSrcRect.Y(),
                                aSrcRect.Width(), aSrcRect.Height());
       pixman_image_composite32(PIXMAN_OP_SRC,
                                src,
                                nullptr,
                                dst,
-                               aBlendRect->x, aBlendRect->y,
+                               aBlendRect->X(), aBlendRect->Y(),
                                0, 0,
-                               aBlendRect->x, aBlendRect->y,
+                               aBlendRect->X(), aBlendRect->Y(),
                                aBlendRect->Width(), aBlendRect->Height());
     }
 

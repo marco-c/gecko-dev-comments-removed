@@ -423,12 +423,12 @@ protected:
       return nullptr;
     }
 
-    mRow = mUnclampedFrameRect.y;
+    mRow = mUnclampedFrameRect.Y();
 
     
     
-    if (mFrameRect.y > 0) {
-      for (int32_t rowToOutput = 0; rowToOutput < mFrameRect.y ; ++rowToOutput) {
+    if (mFrameRect.Y() > 0) {
+      for (int32_t rowToOutput = 0; rowToOutput < mFrameRect.Y() ; ++rowToOutput) {
         mNext.WriteEmptyRow();
       }
     }
@@ -459,7 +459,7 @@ protected:
     const int32_t currentRow = mRow;
     mRow++;
 
-    if (currentRow < mFrameRect.y) {
+    if (currentRow < mFrameRect.Y()) {
       
       rowPtr = mBuffer ? mBuffer.get() : mNext.CurrentRowPointer();
       return AdjustRowPointer(rowPtr);
@@ -474,13 +474,13 @@ protected:
       
       
       uint32_t* source = reinterpret_cast<uint32_t*>(mBuffer.get()) -
-                         std::min(mUnclampedFrameRect.x, 0);
+                         std::min(mUnclampedFrameRect.X(), 0);
 
       
       
       
       
-      WriteState state = mNext.WriteBuffer(source, mFrameRect.x, mFrameRect.Width());
+      WriteState state = mNext.WriteBuffer(source, mFrameRect.X(), mFrameRect.Width());
 
       rowPtr = state == WriteState::NEED_MORE_DATA ? mBuffer.get()
                                                    : nullptr;
@@ -516,7 +516,7 @@ private:
       return nullptr;  
     }
 
-    return aNextRowPointer + mFrameRect.x * sizeof(uint32_t);
+    return aNextRowPointer + mFrameRect.X() * sizeof(uint32_t);
   }
 
   Next mNext;                        
