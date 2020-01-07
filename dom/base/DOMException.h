@@ -61,6 +61,9 @@ public:
   {
     return mResult;
   }
+  
+  virtual void ToString(JSContext* aCx, nsACString& aReturn);
+
 
   
   
@@ -152,9 +155,6 @@ public:
   NS_DECL_NSIDOMDOMEXCEPTION
 
   
-  NS_IMETHOD ToString(JSContext* aCx, nsACString& aReturn) override;
-
-  
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
     override;
 
@@ -170,6 +170,9 @@ public:
 
   
   void GetName(nsString& retval);
+
+  
+  void ToString(JSContext* aCx, nsACString& aReturn) override;
 
   virtual void GetErrorMessage(nsAString& aRetVal) override
   {
