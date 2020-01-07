@@ -356,6 +356,12 @@ nsXBLWindowKeyHandler::InstallKeyboardEventListenersTo(
   aEventListenerManager->AddEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
                            TrustedEventsAtSystemGroupBubble());
+  
+  
+  
+  aEventListenerManager->AddEventListenerByType(
+                           this, NS_LITERAL_STRING("mozaccesskeynotfound"),
+                           TrustedEventsAtSystemGroupBubble());
   aEventListenerManager->AddEventListenerByType(
                            this, NS_LITERAL_STRING("mozkeydownonplugin"),
                            TrustedEventsAtSystemGroupBubble());
@@ -408,6 +414,9 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
                            TrustedEventsAtSystemGroupBubble());
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("keypress"),
+                           TrustedEventsAtSystemGroupBubble());
+  aEventListenerManager->RemoveEventListenerByType(
+                           this, NS_LITERAL_STRING("mozaccesskeynotfound"),
                            TrustedEventsAtSystemGroupBubble());
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("mozkeydownonplugin"),
@@ -465,7 +474,13 @@ nsXBLWindowKeyHandler::ConvertEventToDOMEventType(
   if (aWidgetKeyboardEvent.IsKeyUpOrKeyUpOnPlugin()) {
     return nsGkAtoms::keyup;
   }
-  if (aWidgetKeyboardEvent.mMessage == eKeyPress) {
+  
+  
+  
+  
+  
+  if (aWidgetKeyboardEvent.mMessage == eKeyPress ||
+      aWidgetKeyboardEvent.mMessage == eAccessKeyNotFound) {
     return nsGkAtoms::keypress;
   }
   MOZ_ASSERT_UNREACHABLE(
