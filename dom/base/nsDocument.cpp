@@ -9982,27 +9982,14 @@ public:
 
   NS_IMETHOD Run() override
   {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (!fm) {
-      return NS_ERROR_NULL_POINTER;
-    }
-
-    nsIDocument* document = mElement->OwnerDoc();
-
     
     if (mRootWindow->GetFocusedNode()) {
       return NS_OK;
     }
 
-    
-    if (!fm->GetFocusedContent() ||
-        fm->GetFocusedContent()->OwnerDoc() != document) {
-      mozilla::ErrorResult rv;
-      mElement->Focus(rv);
-      return rv.StealNSResult();
-    }
-
-    return NS_OK;
+    mozilla::ErrorResult rv;
+    mElement->Focus(rv);
+    return rv.StealNSResult();
   }
 private:
   nsCOMPtr<Element> mElement;
