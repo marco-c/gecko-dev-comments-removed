@@ -70,6 +70,12 @@ public:
   RefPtr<GenericPromise>
   Control(const ServiceWorkerDescriptor& aServiceWorker);
 
+  
+  
+  
+  RefPtr<ClientStatePromise>
+  Focus();
+
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };
 
