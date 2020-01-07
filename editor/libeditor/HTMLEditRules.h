@@ -102,7 +102,17 @@ public:
   nsresult GetIndentState(bool* aCanIndent, bool* aCanOutdent);
   nsresult GetAlignment(bool* aMixed, nsIHTMLEditor::EAlignment* aAlign);
   nsresult GetParagraphState(bool* aMixed, nsAString& outFormat);
-  nsresult MakeSureElemStartsAndEndsOnCR(nsINode& aNode);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult MakeSureElemStartsAndEndsOnCR(nsINode& aNode);
 
   void DidCreateNode(Selection& aSelection, Element& aNewElement);
   void DidInsertNode(Selection& aSelection, nsIContent& aNode);
@@ -589,7 +599,20 @@ protected:
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
   nsresult RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,
                            bool aChildrenOnly);
-  nsresult MakeSureElemStartsOrEndsOnCR(nsINode& aNode, bool aStarts);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult
+  MakeSureElemStartsOrEndsOnCR(nsINode& aNode, bool aStarts);
 
   
 

@@ -9802,9 +9802,6 @@ HTMLEditRules::RemoveAlignment(nsINode& aNode,
   return NS_OK;
 }
 
-
-
-
 nsresult
 HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
                                             bool aStarts)
@@ -9842,6 +9839,9 @@ HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
     RefPtr<Element> brElement =
       HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                      pointToInsert);
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(!brElement)) {
       return NS_ERROR_FAILURE;
     }
