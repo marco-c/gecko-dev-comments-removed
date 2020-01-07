@@ -737,12 +737,8 @@ GetSystemFontInfo(GtkStyleContext *aStyle,
         
         size *= float(gfxPlatformGtk::GetFontScaleDPI()) / POINTS_PER_INCH_FLOAT;
     }
-
     
     
-    
-    size *= mozilla::widget::ScreenHelperGTK::GetGTKMonitorScaleFactor();
-
     
 
     aFontStyle->size = size;
@@ -760,18 +756,18 @@ nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
     case eFont_PullDownMenu: 
       aFontName = mMenuFontName;
       aFontStyle = mMenuFontStyle;
-      return true;
+      break;
 
     case eFont_Field:        
     case eFont_List:         
       aFontName = mFieldFontName;
       aFontStyle = mFieldFontStyle;
-      return true;
+      break;
 
     case eFont_Button:       
       aFontName = mButtonFontName;
       aFontStyle = mButtonFontStyle;
-      return true;
+      break;
 
     case eFont_Caption:      
     case eFont_Icon:         
@@ -789,8 +785,11 @@ nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
     default:
       aFontName = mDefaultFontName;
       aFontStyle = mDefaultFontStyle;
-      return true;
+      break;
   }
+  
+  aFontStyle.size *= aDevPixPerCSSPixel;
+  return true;
 }
 
 void
