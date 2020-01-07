@@ -2829,6 +2829,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
     private int bulkInsertHistory(final SQLiteDatabase db, ContentValues[] values) {
         int inserted = 0;
+        
+        
+        
+        final long now = System.currentTimeMillis();
         final String fullInsertSqlStatement = "INSERT INTO " + History.TABLE_NAME + " (" +
                 History.GUID + "," +
                 History.TITLE + "," +
@@ -2836,11 +2840,15 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 History.DATE_LAST_VISITED + "," +
                 History.REMOTE_DATE_LAST_VISITED + "," +
                 History.VISITS + "," +
-                History.REMOTE_VISITS + ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+                History.REMOTE_VISITS + "," +
+                History.DATE_MODIFIED + "," +
+                History.DATE_CREATED + ") VALUES (?, ?, ?, ?, ?, ?, ?, " + now + "," + now + ")";
         final String shortInsertSqlStatement = "INSERT INTO " + History.TABLE_NAME + " (" +
                 History.GUID + "," +
                 History.TITLE + "," +
-                History.URL + ") VALUES (?, ?, ?)";
+                History.URL + "," +
+                History.DATE_MODIFIED + "," +
+                History.DATE_CREATED + ") VALUES (?, ?, ?, " + now + "," + now + ")";
         final SQLiteStatement compiledFullStatement = db.compileStatement(fullInsertSqlStatement);
         final SQLiteStatement compiledShortStatement = db.compileStatement(shortInsertSqlStatement);
         SQLiteStatement statementToExec;

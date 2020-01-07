@@ -33,14 +33,16 @@ public class HistoryDataAccessor extends
 
   @Override
   protected ContentValues getContentValues(Record record) {
-    ContentValues cv = new ContentValues();
-    HistoryRecord rec = (HistoryRecord) record;
+    
+    
+    final ContentValues cv = new ContentValues();
+    final HistoryRecord rec = (HistoryRecord) record;
     cv.put(BrowserContract.History.GUID, rec.guid);
     cv.put(BrowserContract.History.TITLE, rec.title);
     cv.put(BrowserContract.History.URL, rec.histURI);
     if (rec.visits != null) {
-      JSONArray visits = rec.visits;
-      long mostRecent = getLastVisited(visits);
+      final JSONArray visits = rec.visits;
+      final long mostRecent = getLastVisited(visits);
 
       
       
@@ -60,6 +62,8 @@ public class HistoryDataAccessor extends
   public Uri insert(Record record) {
     HistoryRecord rec = (HistoryRecord) record;
 
+    
+    
     Logger.debug(LOG_TAG, "Storing record " + record.guid);
     Uri newRecordUri = super.insert(record);
 
