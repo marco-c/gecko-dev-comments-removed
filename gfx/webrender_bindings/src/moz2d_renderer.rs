@@ -4,11 +4,14 @@ use rayon::ThreadPool;
 
 use std::collections::hash_map::HashMap;
 use std::collections::hash_map;
+use std::collections::btree_map::BTreeMap;
+use std::collections::Bound::Included;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::sync::Arc;
+use std;
 
 #[cfg(target_os = "windows")]
 use dwrote;
@@ -196,7 +199,7 @@ impl BlobWriter {
 
 
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct Box2d {
     x1: u32,
     y1: u32,
@@ -246,6 +249,51 @@ fn check_result(result: &[u8]) -> () {
 
 
 
+struct CachedReader<'a> {
+    reader: BlobReader<'a>,
+    cache: BTreeMap<(Box2d, u32), Entry>,
+    cache_index_counter: u32
+}
+
+impl<'a> CachedReader<'a> {
+    fn new(buf: &'a[u8]) -> CachedReader {
+        CachedReader{reader:BlobReader::new(buf), cache: BTreeMap::new(), cache_index_counter: 0 }
+    }
+
+    fn take_entry_with_bounds_from_cache(&mut self, bounds: &Box2d) -> Option<Entry> {
+        if self.cache.is_empty() {
+            return None;
+        }
+
+        let key_to_delete = match self.cache. range((Included((*bounds, 0u32)), Included((*bounds, std::u32::MAX)))).next() {
+            Some((&key, _)) => key,
+            None => return None,
+        };
+
+        Some(self.cache.remove(&key_to_delete).expect("We just got this key from range, it needs to be present"))
+    }
+
+    fn next_entry_with_bounds(&mut self, bounds: &Box2d, ignore_rect: &Box2d) -> Entry {
+        if let Some(entry) = self.take_entry_with_bounds_from_cache(bounds) {
+            return entry;
+        }
+
+        loop {
+            let old = self.reader.read_entry();
+            if old.bounds == *bounds {
+                return old;
+            } else if !old.bounds.contained_by(&ignore_rect) {
+                self.cache.insert((old.bounds, self.cache_index_counter), old);
+                self.cache_index_counter += 1;
+            }
+        }
+    }
+}
+
+
+
+
+
 
 
 
@@ -258,7 +306,7 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
     dlog!("new:");
     dump_blob_index(new_buf, dirty_rect);
 
-    let mut old_reader = BlobReader::new(old_buf);
+    let mut old_reader = CachedReader::new(old_buf);
     let mut new_reader = BlobReader::new(new_buf);
 
     
@@ -271,28 +319,19 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
         if new.bounds.contained_by(&dirty_rect) {
             result.new_entry(new.extra_end - new.end, new.bounds, &new_buf[new.begin..new.extra_end]);
         } else {
-            loop {
-                assert!(old_reader.reader.has_more());
-                let old = old_reader.read_entry();
-                dlog!("new bounds: {} {} {:?}", old.end, old.extra_end, old.bounds);
-                if old.bounds.contained_by(&dirty_rect) {
-                    
-                } else {
-                    assert_eq!(old.bounds, new.bounds);
-                    
-                    result.new_entry(old.extra_end - old.end, old.bounds, &old_buf[old.begin..old.extra_end]);
-                    break;
-                }
-            }
+            let old = old_reader.next_entry_with_bounds(&new.bounds, &dirty_rect);
+            result.new_entry(old.extra_end - old.end, new.bounds, &old_buf[old.begin..old.extra_end])
         }
     }
 
     
-    while old_reader.reader.has_more() {
-        let old = old_reader.read_entry();
+    while old_reader.reader.reader.has_more() {
+        let old = old_reader.reader.read_entry();
         dlog!("new bounds: {} {} {:?}", old.end, old.extra_end, old.bounds);
         assert!(old.bounds.contained_by(&dirty_rect));
     }
+
+    assert!(old_reader.cache.is_empty());
 
     let result = result.finish();
     check_result(&result);
