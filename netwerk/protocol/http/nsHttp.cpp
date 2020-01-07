@@ -443,13 +443,18 @@ ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
         doValidation = staleTime > maxStaleRequest;
         LOG(("  validating=%d, max-stale=%u requested", doValidation, maxStaleRequest));
     } else if (cacheControlRequest.MaxAge(&maxAgeRequest)) {
-        doValidation = age > maxAgeRequest;
+        
+        
+        
+        
+        
+        doValidation = age >= maxAgeRequest;
         LOG(("  validating=%d, max-age=%u requested", doValidation, maxAgeRequest));
     } else if (cacheControlRequest.MinFresh(&minFreshRequest)) {
         uint32_t freshTime = freshness > age ? freshness - age : 0;
         doValidation = freshTime < minFreshRequest;
         LOG(("  validating=%d, min-fresh=%u requested", doValidation, minFreshRequest));
-    } else if (now <= expiration) {
+    } else if (now < expiration) {
         doValidation = false;
         LOG(("  not validating, expire time not in the past"));
     } else if (cachedResponseHead->MustValidateIfExpired()) {
