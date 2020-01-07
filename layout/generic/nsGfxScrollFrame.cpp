@@ -395,12 +395,12 @@ nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
                                   std::max(0, compositionSize.height - hScrollbarDesiredHeight));
   }
 
-  if (!aForce) {
-    nsRect scrolledRect =
-      mHelper.GetUnsnappedScrolledRectInternal(aState->mContentsOverflowAreas.ScrollableOverflow(),
-                                               scrollPortSize);
-    nscoord oneDevPixel = aState->mBoxState.PresContext()->DevPixelsToAppUnits(1);
+  nsRect scrolledRect =
+    mHelper.GetUnsnappedScrolledRectInternal(aState->mContentsOverflowAreas.ScrollableOverflow(),
+                                             scrollPortSize);
+  nscoord oneDevPixel = aState->mBoxState.PresContext()->DevPixelsToAppUnits(1);
 
+  if (!aForce) {
     
     if (aState->mStyles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN) {
       bool wantHScrollbar =
@@ -425,6 +425,31 @@ nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
         return false;
     }
   }
+
+  do {
+    if (!mHelper.mIsRoot) {
+      break;
+    }
+    
+    nscoord scrolledWidth = scrolledRect.width + oneDevPixel;
+    if (scrolledWidth <= scrollPortSize.width) {
+      break;
+    }
+    
+    
+    
+    nsPresContext* pc = PresContext();
+    ScrollbarStyles styles = pc->GetViewportScrollbarStylesOverride();
+    if (styles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN) {
+      break;
+    }
+    
+    nsIDocument* doc = pc->Document();
+    if (!doc->IsTopLevelContentDocument()) {
+      break;
+    }
+    doc->UpdateViewportOverflowType(scrolledWidth, scrollPortSize.width);
+  } while (false);
 
   nscoord vScrollbarActualWidth = aState->mInsideBorderSize.width - scrollPortSize.width;
 
