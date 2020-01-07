@@ -315,11 +315,7 @@ public:
   bool isNothing() const { return !mIsSome; }
 
   
-  T value() const
-  {
-    MOZ_ASSERT(mIsSome);
-    return ref();
-  }
+  T value() const;
 
   
 
@@ -348,17 +344,8 @@ public:
   }
 
   
-  T* ptr()
-  {
-    MOZ_ASSERT(mIsSome);
-    return &ref();
-  }
-
-  const T* ptr() const
-  {
-    MOZ_ASSERT(mIsSome);
-    return &ref();
-  }
+  T* ptr();
+  const T* ptr() const;
 
   
 
@@ -402,30 +389,12 @@ public:
     return aFunc();
   }
 
-  T* operator->()
-  {
-    MOZ_ASSERT(mIsSome);
-    return ptr();
-  }
-
-  const T* operator->() const
-  {
-    MOZ_ASSERT(mIsSome);
-    return ptr();
-  }
+  T* operator->();
+  const T* operator->() const;
 
   
-  T& ref()
-  {
-    MOZ_ASSERT(mIsSome);
-    return *static_cast<T*>(data());
-  }
-
-  const T& ref() const
-  {
-    MOZ_ASSERT(mIsSome);
-    return *static_cast<const T*>(data());
-  }
+  T& ref();
+  const T& ref() const;
 
   
 
@@ -469,17 +438,8 @@ public:
     return aFunc();
   }
 
-  T& operator*()
-  {
-    MOZ_ASSERT(mIsSome);
-    return ref();
-  }
-
-  const T& operator*() const
-  {
-    MOZ_ASSERT(mIsSome);
-    return ref();
-  }
+  T& operator*();
+  const T& operator*() const;
 
   
 
@@ -544,12 +504,7 @@ public:
 
 
   template<typename... Args>
-  void emplace(Args&&... aArgs)
-  {
-    MOZ_ASSERT(!mIsSome);
-    ::new (KnownNotNull, data()) T(Forward<Args>(aArgs)...);
-    mIsSome = true;
-  }
+  void emplace(Args&&... aArgs);
 
   friend std::ostream&
   operator<<(std::ostream& aStream, const Maybe<T>& aMaybe)
@@ -562,6 +517,88 @@ public:
     return aStream;
   }
 };
+
+template<typename T>
+T
+Maybe<T>::value() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return ref();
+}
+
+template<typename T>
+T*
+Maybe<T>::ptr()
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return &ref();
+}
+
+template<typename T>
+const T*
+Maybe<T>::ptr() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return &ref();
+}
+
+template<typename T>
+T*
+Maybe<T>::operator->()
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return ptr();
+}
+
+template<typename T>
+const T*
+Maybe<T>::operator->() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return ptr();
+}
+
+template<typename T>
+T&
+Maybe<T>::ref()
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return *static_cast<T*>(data());
+}
+
+template<typename T>
+const T&
+Maybe<T>::ref() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return *static_cast<const T*>(data());
+}
+
+template<typename T>
+T&
+Maybe<T>::operator*()
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return ref();
+}
+
+template<typename T>
+const T&
+Maybe<T>::operator*() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(mIsSome);
+  return ref();
+}
+
+template<typename T>
+template<typename... Args>
+void
+Maybe<T>::emplace(Args&&... aArgs)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mIsSome);
+  ::new (KnownNotNull, data()) T(Forward<Args>(aArgs)...);
+  mIsSome = true;
+}
 
 
 
