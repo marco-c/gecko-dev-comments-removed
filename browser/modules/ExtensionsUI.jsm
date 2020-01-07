@@ -429,10 +429,10 @@ this.ExtensionsUI = {
             let doc = this.browser.ownerDocument;
         
             doc.getElementById("addon-installed-notification-header")
-               .innerHTML = msg1;
+               .unsafeSetInnerHTML(msg1);
             
             doc.getElementById("addon-installed-notification-message")
-               .innerHTML = msg2;
+               .unsafeSetInnerHTML(msg2);
           } else if (topic == "dismissed") {
             resolve();
           }
