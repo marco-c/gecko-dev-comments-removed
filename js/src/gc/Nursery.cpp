@@ -838,9 +838,9 @@ js::Nursery::doCollection(JS::gcreason::Reason reason,
     }
     endProfile(ProfileKey::MarkDebugger);
 
-    startProfile(ProfileKey::ClearNewObjectCache);
-    rt->caches().newObjectCache.clearNurseryObjects(rt);
-    endProfile(ProfileKey::ClearNewObjectCache);
+    startProfile(ProfileKey::SweepCaches);
+    rt->gc.purgeRuntimeForMinorGC();
+    endProfile(ProfileKey::SweepCaches);
 
     
     
