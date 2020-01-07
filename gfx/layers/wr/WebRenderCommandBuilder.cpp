@@ -1609,9 +1609,9 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
 
   
   
-  auto scaledBounds = bounds * LayoutDeviceToLayerScale(1);
-  scaledBounds.Scale(scale.width, scale.height);
-  LayerIntSize dtSize = RoundedToInt(scaledBounds).Size();
+  auto scaledPaintSize = bounds.Size() * LayoutDeviceToLayerScale(1);
+  scaledPaintSize.Scale(scale.width, scale.height);
+  LayerIntSize dtSize = RoundedToInt(scaledPaintSize);
 
   bool needPaint = true;
   LayoutDeviceIntPoint offset = RoundedToInt(bounds.TopLeft());
