@@ -347,7 +347,7 @@ decorate_task(
     );
 
     
-    ok(sendEventStub.calledOnce);
+    ok(sendEventStub.calledOnce, "no extra events should be generated");
   }
 );
 
