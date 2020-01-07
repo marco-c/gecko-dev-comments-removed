@@ -241,8 +241,6 @@ var maxServerCompletionSet = 0;
 
 function run_test() {
   
-  Services.prefs.setBoolPref("browser.safebrowsing.provider.test.disableBackoff", false);
-  
   completionSets.push(getRandomCompletionSet(false));
   
   
@@ -395,8 +393,6 @@ callback.prototype = {
 };
 
 function finish() {
-  Services.prefs.clearUserPref("browser.safebrowsing.provider.test.disableBackoff");
-
   do_check_eq(expectedMaxServerCompletionSet, maxServerCompletionSet);
   server.stop(function() {
     do_test_finished();

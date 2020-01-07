@@ -8,13 +8,10 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
-const Cu = Components.utils;
 const G_GDEBUG = false;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const PREF_DISABLE_TEST_BACKOFF = "browser.safebrowsing.provider.test.disableBackoff";
 
 
 
@@ -86,7 +83,7 @@ this.RequestBackoff =
 function RequestBackoff(maxErrors, retryIncrement,
                         maxRequests, requestPeriod,
                         timeoutIncrement, maxTimeout,
-                        tolerance, provider = null) {
+                        tolerance) {
   this.MAX_ERRORS_ = maxErrors;
   this.RETRY_INCREMENT_ = retryIncrement;
   this.MAX_REQUESTS_ = maxRequests;
@@ -101,17 +98,6 @@ function RequestBackoff(maxErrors, retryIncrement,
   this.numErrors_ = 0;
   this.errorTimeout_ = 0;
   this.nextRequestTime_ = 0;
-
-  
-  if (provider === "test") {
-    this.canMakeRequestDefault = this.canMakeRequest;
-    this.canMakeRequest = function () {
-      if (Services.prefs.getBoolPref(PREF_DISABLE_TEST_BACKOFF, true)) {
-        return true;
-      }
-      return this.canMakeRequestDefault();
-    }
-  }
 };
 
 
@@ -189,8 +175,7 @@ RequestBackoff.prototype.isErrorStatus = function(status) {
 
 
 
-function RequestBackoffV4(maxRequests, requestPeriod,
-                          provider = null) {
+function RequestBackoffV4(maxRequests, requestPeriod) {
   let rand = Math.random();
   let retryInterval = Math.floor(15 * 60 * 1000 * (rand + 1)); 
   let backoffInterval = Math.floor(30 * 60 * 1000 * (rand + 1)); 
@@ -201,8 +186,7 @@ function RequestBackoffV4(maxRequests, requestPeriod,
                 requestPeriod ,
               backoffInterval ,
           24 * 60 * 60 * 1000 ,
-                         1000 ,
-                     provider );
+                         1000 );
 }
 
 

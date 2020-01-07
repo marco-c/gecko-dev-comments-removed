@@ -228,8 +228,7 @@ HashCompleter.prototype = {
       
       this._backoffs[aGethashUrl] = new jslib.RequestBackoffV4(
         10 ,
-        0 ,
-        gUrlUtil.getProvider(aTableName) );
+        0 );
     }
 
     if (!this._nextGethashTimeMs[aGethashUrl]) {
