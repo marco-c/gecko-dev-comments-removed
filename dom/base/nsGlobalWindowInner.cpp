@@ -2923,32 +2923,39 @@ const InterfaceShimEntry kInterfaceShimMap[] =
   { "nsIDOMNodeFilter", "NodeFilter" },
   { "nsIDOMXPathResult", "XPathResult" } };
 
-static nsresult
-LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
-                     nsPIDOMWindowInner *win,
-                     JS::MutableHandle<JS::PropertyDescriptor> desc)
+bool
+nsGlobalWindowInner::ResolveComponentsShim(
+  JSContext *aCx,
+  JS::Handle<JSObject*> aGlobal,
+  JS::MutableHandle<JS::PropertyDescriptor> aDesc)
 {
   
   Telemetry::Accumulate(Telemetry::COMPONENTS_SHIM_ACCESSED_BY_CONTENT, true);
 
   
-  nsCOMPtr<nsIDocument> doc = win->GetExtantDoc();
+  nsCOMPtr<nsIDocument> doc = GetExtantDoc();
   if (doc) {
     doc->WarnOnceAbout(nsIDocument::eComponents,  true);
   }
 
   
-  AssertSameCompartment(cx, global);
-  JS::Rooted<JSObject*> components(cx, JS_NewPlainObject(cx));
-  NS_ENSURE_TRUE(components, NS_ERROR_OUT_OF_MEMORY);
+  AssertSameCompartment(aCx, aGlobal);
+  JS::Rooted<JSObject*> components(aCx, JS_NewPlainObject(aCx));
+  if (NS_WARN_IF(!components)) {
+    return false;
+  }
 
   
-  JS::Rooted<JSObject*> interfaces(cx, JS_NewPlainObject(cx));
-  NS_ENSURE_TRUE(interfaces, NS_ERROR_OUT_OF_MEMORY);
+  JS::Rooted<JSObject*> interfaces(aCx, JS_NewPlainObject(aCx));
+  if (NS_WARN_IF(!interfaces)) {
+    return false;
+  }
   bool ok =
-    JS_DefineProperty(cx, components, "interfaces", interfaces,
+    JS_DefineProperty(aCx, components, "interfaces", interfaces,
                       JSPROP_ENUMERATE | JSPROP_PERMANENT | JSPROP_READONLY);
-  NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+  if (NS_WARN_IF(!ok)) {
+    return false;
+  }
 
   
   
@@ -2959,23 +2966,27 @@ LookupComponentsShim(JSContext *cx, JS::Handle<JSObject*> global,
     const char *domName = kInterfaceShimMap[i].domName;
 
     
-    JS::Rooted<JS::Value> v(cx, JS::UndefinedValue());
-    ok = JS_GetProperty(cx, global, domName, &v);
-    NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+    JS::Rooted<JS::Value> v(aCx, JS::UndefinedValue());
+    ok = JS_GetProperty(aCx, aGlobal, domName, &v);
+    if (NS_WARN_IF(!ok)) {
+      return false;
+    }
     if (!v.isObject()) {
       NS_WARNING("Unable to find interface object on global");
       continue;
     }
 
     
-    ok = JS_DefineProperty(cx, interfaces, geckoName, v,
+    ok = JS_DefineProperty(aCx, interfaces, geckoName, v,
                            JSPROP_ENUMERATE | JSPROP_PERMANENT | JSPROP_READONLY);
-    NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+    if (NS_WARN_IF(!ok)) {
+      return false;
+    }
   }
 
-  FillPropertyDescriptor(desc, global, JS::ObjectValue(*components), false);
+  FillPropertyDescriptor(aDesc, aGlobal, JS::ObjectValue(*components), false);
 
-  return NS_OK;
+  return true;
 }
 
 #ifdef RELEASE_OR_BETA
@@ -3012,14 +3023,15 @@ nsGlobalWindowInner::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
     return true;
   }
 
+  
+  
+  
   if (aId == XPCJSRuntime::Get()->GetStringID(XPCJSContext::IDX_COMPONENTS)) {
-    nsresult rv = LookupComponentsShim(aCx, aObj, this, aDesc);
-    if (NS_FAILED(rv)) {
-      return Throw(aCx, rv);
-    }
-    return true;
+    return ResolveComponentsShim(aCx, aObj, aDesc);
   }
 
+  
+  
 #ifdef USE_CONTROLLERS_SHIM
   
   
@@ -3041,7 +3053,7 @@ nsGlobalWindowInner::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
     MOZ_ASSERT(JS_IsGlobalObject(aObj));
     JS::Rooted<JSObject*> shim(cx, JS_NewObject(cx, clazz));
     if (NS_WARN_IF(!shim)) {
-      return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+      return false;
     }
     FillPropertyDescriptor(aDesc, aObj, JS::ObjectValue(*shim),
                             false);

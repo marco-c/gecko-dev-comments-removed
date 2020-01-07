@@ -1270,6 +1270,10 @@ private:
   void FireOnNewGlobalObject();
 
   
+  bool ResolveComponentsShim(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                             JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+
+  
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
 
