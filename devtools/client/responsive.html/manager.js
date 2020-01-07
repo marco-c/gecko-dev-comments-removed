@@ -13,22 +13,17 @@ const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugger-client", true);
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
-loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
-loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
-loader.lazyRequireGetter(this, "throttlingProfiles",
-  "devtools/client/shared/network-throttling-profiles");
-loader.lazyRequireGetter(this, "swapToInnerBrowser",
-  "devtools/client/responsive.html/browser/swap", true);
-loader.lazyRequireGetter(this, "startup",
-  "devtools/client/responsive.html/utils/window", true);
-loader.lazyRequireGetter(this, "message",
-  "devtools/client/responsive.html/utils/message");
-loader.lazyRequireGetter(this, "getStr",
-  "devtools/client/responsive.html/utils/l10n", true);
-loader.lazyRequireGetter(this, "EmulationFront",
-  "devtools/shared/fronts/emulation", true);
+loader.lazyRequireGetter(this, "throttlingProfiles", "devtools/client/shared/network-throttling-profiles");
+loader.lazyRequireGetter(this, "swapToInnerBrowser", "devtools/client/responsive.html/browser/swap", true);
+loader.lazyRequireGetter(this, "startup", "devtools/client/responsive.html/utils/window", true);
+loader.lazyRequireGetter(this, "message", "devtools/client/responsive.html/utils/message");
+loader.lazyRequireGetter(this, "showNotification", "devtools/client/responsive.html/utils/notification", true);
+loader.lazyRequireGetter(this, "l10n", "devtools/client/responsive.html/utils/l10n");
+loader.lazyRequireGetter(this, "EmulationFront", "devtools/shared/fronts/emulation", true);
+loader.lazyRequireGetter(this, "PriorityLevels", "devtools/client/shared/components/NotificationBox", true);
 
 const RELOAD_CONDITION_PREF_PREFIX = "devtools.responsive.reloadConditions.";
+const RELOAD_NOTIFICATION_PREF = "devtools.responsive.reloadNotification.enabled";
 
 function debug(msg) {
   
@@ -224,42 +219,20 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     }
   },
 
-  showRemoteOnlyNotification(window, tab, options) {
-    this.showErrorNotification(window, tab, options, getStr("responsive.remoteOnly"));
+  showRemoteOnlyNotification(window, tab, { command } = {}) {
+    showNotification(window, tab, {
+      command,
+      msg: l10n.getStr("responsive.remoteOnly"),
+      priority: PriorityLevels.PRIORITY_CRITICAL_MEDIUM,
+    });
   },
 
-  showNoContainerTabsNotification(window, tab, options) {
-    this.showErrorNotification(window, tab, options,
-                               getStr("responsive.noContainerTabs"));
-  },
-
-  showErrorNotification(window, tab, { command } = {}, msg) {
-    
-    let nbox = window.gBrowser.getNotificationBox(tab.linkedBrowser);
-
-    
-    
-    
-    if (command) {
-      let target = TargetFactory.forTab(tab);
-      let toolbox = gDevTools.getToolbox(target);
-      if (toolbox) {
-        nbox = toolbox.notificationBox;
-      }
-    }
-
-    let value = "devtools-responsive-error";
-    if (nbox.getNotificationWithValue(value)) {
-      
-      return;
-    }
-
-    nbox.appendNotification(
-       msg,
-       value,
-       null,
-       nbox.PRIORITY_CRITICAL_MEDIUM,
-       []);
+  showNoContainerTabsNotification(window, tab, { command } = {}) {
+    showNotification(window, tab, {
+      command,
+      msg: l10n.getStr("responsive.noContainerTabs"),
+      priority: PriorityLevels.PRIORITY_CRITICAL_MEDIUM,
+    });
   },
 };
 
@@ -455,7 +428,21 @@ ResponsiveUI.prototype = {
     this.emulationFront = EmulationFront(this.client, tab);
   },
 
+  
+
+
+  showReloadNotification() {
+    if (Services.prefs.getBoolPref(RELOAD_NOTIFICATION_PREF, false)) {
+      showNotification(this.browserWindow, this.tab, {
+        msg: l10n.getFormatStr("responsive.reloadNotification.description",
+                               l10n.getStr("responsive.reloadConditions.label")),
+      });
+      Services.prefs.setBoolPref(RELOAD_NOTIFICATION_PREF, false);
+    }
+  },
+
   reloadOnChange(id) {
+    this.showReloadNotification();
     let pref = RELOAD_CONDITION_PREF_PREFIX + id;
     return Services.prefs.getBoolPref(pref, false);
   },
