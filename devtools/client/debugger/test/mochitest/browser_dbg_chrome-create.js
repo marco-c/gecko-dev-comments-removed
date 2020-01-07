@@ -7,6 +7,12 @@
 
 
 
+
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
+
 var gProcess;
 
 function test() {

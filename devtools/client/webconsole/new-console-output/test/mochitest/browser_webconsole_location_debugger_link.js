@@ -9,6 +9,12 @@
 
 
 "use strict";
+
+
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
+
 requestLongerTimeout(2);
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +

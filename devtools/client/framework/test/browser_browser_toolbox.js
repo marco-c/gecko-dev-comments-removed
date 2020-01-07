@@ -3,6 +3,11 @@
 
 
 
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+
+
 requestLongerTimeout(4);
 
 add_task(async function() {

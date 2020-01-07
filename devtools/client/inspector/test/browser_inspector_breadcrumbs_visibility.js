@@ -6,6 +6,11 @@
 
 
 
+
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+
 let { Toolbox } = require("devtools/client/framework/toolbox");
 
 const TEST_URI = URL_ROOT + "doc_inspector_breadcrumbs_visibility.html";

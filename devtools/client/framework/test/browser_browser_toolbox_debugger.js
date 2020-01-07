@@ -8,6 +8,11 @@
 
 
 
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+
+
 requestLongerTimeout(4);
 
 const { fetch } = require("devtools/shared/DevToolsUtils");

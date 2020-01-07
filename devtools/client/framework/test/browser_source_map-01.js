@@ -10,6 +10,12 @@
 
 
 
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
+PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
+
+
 const PAGE_URL = `${URL_ROOT}doc_empty-tab-01.html`;
 const JS_URL = `${URL_ROOT}code_binary_search.js`;
 const COFFEE_URL = `${URL_ROOT}code_binary_search.coffee`;

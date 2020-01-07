@@ -4,11 +4,8 @@
 
 
 
-
-
-
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/[object Object]/);
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/connection just closed/);
 
 const TAB_URL = EXAMPLE_URL + "doc_WorkerActor.attachThread-tab.html";
 const WORKER_URL = "code_WorkerActor.attachThread-worker.js";

@@ -6,6 +6,11 @@
 
 
 
+
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+
 add_task(function* () {
   yield addTab(`data:text/html;charset=utf-8,
                 <style>h1 { color: red; }</style>

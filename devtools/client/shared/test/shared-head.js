@@ -19,24 +19,6 @@ function scopedCuImport(path) {
   return scope;
 }
 
-
-
-
-
-
-const {PromiseTestUtils} = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
-PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/destroy/);
-PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/is no longer, usable/);
-PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\._urls is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.tabTarget is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.toolbox is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.webConsoleClient is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
-
 const {ScratchpadManager} = scopedCuImport("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 const {loader, require} = scopedCuImport("resource://devtools/shared/Loader.jsm");
 

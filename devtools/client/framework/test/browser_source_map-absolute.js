@@ -6,6 +6,11 @@
 "use strict";
 
 
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
+
+
 const PAGE_URL = `${URL_ROOT}doc_empty-tab-01.html`;
 const JS_URL = `${URL_ROOT}code_binary_search_absolute.js`;
 const ORIGINAL_URL = `${URL_ROOT}code_binary_search.coffee`;

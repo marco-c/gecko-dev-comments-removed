@@ -6,6 +6,11 @@
 
 
 
+
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+
 const TEST_URI = `
   <style>
     #div1 {

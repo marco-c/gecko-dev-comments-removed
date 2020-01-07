@@ -5,6 +5,11 @@
 
 
 
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
+
+
+
 
 add_task(async function () {
   

@@ -3,6 +3,11 @@
 "use strict";
 
 
+
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+
+
 requestLongerTimeout(2);
 
 const ADDON_NOBG_ID = "test-devtools-webextension-nobg@mozilla.org";

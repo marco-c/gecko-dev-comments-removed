@@ -9,6 +9,7 @@ const TEST_URL = "http://example.com/";
 
 
 
+const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/Receiving end does not exist/);
 
