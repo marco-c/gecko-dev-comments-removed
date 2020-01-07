@@ -736,6 +736,19 @@ BufferedBookmarksEngine.prototype = {
   },
 
   async _createRecord(id) {
+    let record = await this._doCreateRecord(id);
+    if (!record.deleted) {
+      
+      
+      
+      
+      
+      record.hasDupe = true;
+    }
+    return record;
+  },
+
+  async _doCreateRecord(id) {
     if (this._needWeakUpload.has(id)) {
       return this._store.createRecord(id, this.name);
     }
