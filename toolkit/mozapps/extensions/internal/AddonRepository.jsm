@@ -414,6 +414,40 @@ var AddonRepository = {
 
 
 
+  async getCompatibilityOverrides(aId) {
+    let addon = await new Promise(resolve => this.getCachedAddonByID(aId, resolve));
+    return addon ? addon.compatibilityOverrides : null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getCompatibilityOverridesSync(aId) {
+    if (this._addons == null || !this._addons.has(aId)) {
+      return null;
+    }
+    return this._addons.get(aId).compatibilityOverrides;
+  },
+
+  
+
+
+
+
+
+
+
+
 
   async getCachedAddonByID(aId, aCallback) {
     if (!aId || !this.cacheEnabled) {
