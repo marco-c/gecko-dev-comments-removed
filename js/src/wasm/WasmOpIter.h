@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_binary_iterator_h
-#define wasm_binary_iterator_h
+#ifndef wasm_op_iter_h
+#define wasm_op_iter_h
 
 #include "mozilla/Poison.h"
 
