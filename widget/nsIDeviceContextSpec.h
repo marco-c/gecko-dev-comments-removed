@@ -69,6 +69,13 @@ public:
 
    virtual float GetPrintingScale() { return 1.0f;  }
 
+   
+
+
+
+
+   virtual gfxPoint GetPrintingTranslate() { return gfxPoint(0, 0);  }
+
    NS_IMETHOD BeginDocument(const nsAString& aTitle,
                             const nsAString& aPrintToFileName,
                             int32_t          aStartPage,

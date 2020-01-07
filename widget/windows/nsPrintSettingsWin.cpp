@@ -276,6 +276,41 @@ nsPrintSettingsWin::GetEffectivePageSize(double *aWidth, double *aHeight)
 }
 
 void
+nsPrintSettingsWin::InitUnwriteableMargin(HDC aHdc)
+{
+  int32_t pixelsPerInchY = GetDeviceCaps(aHdc, LOGPIXELSY);
+  int32_t pixelsPerInchX = GetDeviceCaps(aHdc, LOGPIXELSX);
+
+  int32_t marginLeft = GetDeviceCaps(aHdc, PHYSICALOFFSETX);
+  int32_t marginTop  = GetDeviceCaps(aHdc, PHYSICALOFFSETY);
+
+  double marginLeftInch = double(marginLeft) / pixelsPerInchX;
+  double marginTopInch  = double(marginTop) / pixelsPerInchY;
+
+  int32_t printableAreaWidth = GetDeviceCaps(aHdc, HORZRES);
+  int32_t printableAreaHeight  = GetDeviceCaps(aHdc, VERTRES);
+
+  double printableAreaWidthInch = double(printableAreaWidth) / pixelsPerInchX;
+  double printableAreaHeightInch = double(printableAreaHeight) / pixelsPerInchY;
+
+  int32_t physicalWidth = GetDeviceCaps(aHdc, PHYSICALWIDTH);
+  int32_t physicalHeight = GetDeviceCaps(aHdc, PHYSICALHEIGHT);
+
+  double physicalWidthInch = double(physicalWidth) / pixelsPerInchX;
+  double physicalHeightInch = double(physicalHeight) / pixelsPerInchY;
+
+  double marginBottomInch = physicalHeightInch - printableAreaHeightInch - marginTopInch;
+  double marginRightInch = physicalWidthInch - printableAreaWidthInch - marginLeftInch;
+
+  mUnwriteableMargin.SizeTo(
+     NS_INCHES_TO_INT_TWIPS(marginTopInch),
+     NS_INCHES_TO_INT_TWIPS(marginRightInch),
+     NS_INCHES_TO_INT_TWIPS(marginBottomInch),
+     NS_INCHES_TO_INT_TWIPS(marginLeftInch)
+  );
+}
+
+void
 nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode)
 {
   MOZ_ASSERT(aHdc);
@@ -311,6 +346,8 @@ nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode)
     mPaperData = -1;
   }
 
+  InitUnwriteableMargin(aHdc);
+
   
   double sizeUnitToTenthsOfAmm =
     10L * (mPaperSizeUnit == kPaperSizeInches ? MM_PER_INCH_FLOAT : 1L);
@@ -328,12 +365,8 @@ nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode)
 
   
   
-  
-  
-  
-  
-  int32_t printableWidthInDots = GetDeviceCaps(aHdc, HORZRES);
-  int32_t printableHeightInDots = GetDeviceCaps(aHdc, VERTRES);
+  int32_t printableWidthInDots = GetDeviceCaps(aHdc, PHYSICALWIDTH);
+  int32_t printableHeightInDots = GetDeviceCaps(aHdc, PHYSICALHEIGHT);
   int32_t heightDPI = GetDeviceCaps(aHdc, LOGPIXELSY);
 
   

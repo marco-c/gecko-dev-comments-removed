@@ -29,11 +29,13 @@ PrintTargetWindows::CreateOrNull(HDC aDC)
   
   
   
+  
+  
   int32_t heightDPI = ::GetDeviceCaps(aDC, LOGPIXELSY);
   float width =
-    (::GetDeviceCaps(aDC, HORZRES) * POINTS_PER_INCH_FLOAT) / heightDPI;
+    (::GetDeviceCaps(aDC, PHYSICALWIDTH) * POINTS_PER_INCH_FLOAT) / heightDPI;
   float height =
-    (::GetDeviceCaps(aDC, VERTRES) * POINTS_PER_INCH_FLOAT) / heightDPI;
+    (::GetDeviceCaps(aDC, PHYSICALHEIGHT) * POINTS_PER_INCH_FLOAT) / heightDPI;
   IntSize size = IntSize::Truncate(width, height);
 
   if (!Factory::CheckSurfaceSize(size)) {

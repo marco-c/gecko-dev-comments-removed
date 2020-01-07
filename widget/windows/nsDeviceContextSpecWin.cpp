@@ -321,6 +321,22 @@ nsDeviceContextSpecWin::GetPrintingScale()
   return float(resolution) / GetDPI();
 }
 
+gfxPoint
+nsDeviceContextSpecWin::GetPrintingTranslate()
+{
+  
+  
+  
+  
+  
+  double marginTop, marginLeft;
+  mPrintSettings->GetUnwriteableMarginTop(&marginTop);
+  mPrintSettings->GetUnwriteableMarginLeft(&marginLeft);
+  int32_t resolution;
+  mPrintSettings->GetResolution(&resolution);
+  return gfxPoint(-marginLeft * resolution, -marginTop * resolution);
+}
+
 
 void nsDeviceContextSpecWin::SetDeviceName(const nsAString& aDeviceName)
 {
