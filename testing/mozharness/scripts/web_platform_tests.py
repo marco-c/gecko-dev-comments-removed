@@ -6,7 +6,6 @@
 
 import copy
 import os
-import shutil
 import sys
 
 from datetime import datetime, timedelta
@@ -338,18 +337,6 @@ class WebPlatformTest(TestingMixin, MercurialScript, BlobUploadMixin, CodeCovera
             if suite:
                 test_types = [suite]
 
-            
-            
-            
-            
-            if self.per_test_coverage:
-                gcov_dir, jsvm_dir = self.set_coverage_env(env)
-                
-                
-                
-                
-                
-
             for per_test_args in self.query_args(suite):
                 if (datetime.now() - start_time) > max_per_test_time:
                     
@@ -381,11 +368,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, BlobUploadMixin, CodeCovera
                                                env=env)
 
                 if self.per_test_coverage:
-                    grcov_file, jsvm_file = self.parse_coverage_artifacts(gcov_dir, jsvm_dir)
-                    shutil.rmtree(gcov_dir)
-                    shutil.rmtree(jsvm_dir)
-                    
-                    
+                    self.add_per_test_coverage_report(gcov_dir, jsvm_dir, suite, per_test_args[-1])
 
                 tbpl_status, log_level = parser.evaluate_parser(return_code)
                 self.buildbot_status(tbpl_status, level=log_level)
