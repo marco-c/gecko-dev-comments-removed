@@ -46,6 +46,7 @@
 #include "mozilla/dom/ProfileTimelineMarkerBinding.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/ServiceWorkerInterceptController.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/ToJSValue.h"
@@ -458,6 +459,8 @@ nsDocShell::Init()
   mContentListener = new nsDSURIContentListener(this);
   rv = mContentListener->Init();
   NS_ENSURE_SUCCESS(rv, rv);
+
+  mInterceptController = new ServiceWorkerInterceptController();
 
   
   
@@ -14254,61 +14257,14 @@ NS_IMETHODIMP
 nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, nsIChannel* aChannel,
                                       bool* aShouldIntercept)
 {
-  *aShouldIntercept = false;
-
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (!loadInfo) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  if (!nsContentUtils::IsNonSubresourceRequest(aChannel)) {
-    const Maybe<ServiceWorkerDescriptor>& controller = loadInfo->GetController();
-    *aShouldIntercept = controller.isSome();
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIPrincipal> principal =
-    BasePrincipal::CreateCodebasePrincipal(aURI,
-                                           loadInfo->GetOriginAttributes());
-
-  
-  
-  if (!ServiceWorkerAllowedToControlWindow(principal, aURI)) {
-    return NS_OK;
-  }
-
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    return NS_OK;
-  }
-
-  
-  
-  *aShouldIntercept = swm->IsAvailable(principal, aURI);
-  return NS_OK;
+  return mInterceptController->ShouldPrepareForIntercept(aURI, aChannel,
+                                                         aShouldIntercept);
 }
 
 NS_IMETHODIMP
 nsDocShell::ChannelIntercepted(nsIInterceptedChannel* aChannel)
 {
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    aChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
-    return NS_OK;
-  }
-
-  ErrorResult error;
-  swm->DispatchFetchEvent(aChannel, error);
-  if (NS_WARN_IF(error.Failed())) {
-    aChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
-    return error.StealNSResult();
-  }
-
-  return NS_OK;
+  return mInterceptController->ChannelIntercepted(aChannel);
 }
 
 bool
