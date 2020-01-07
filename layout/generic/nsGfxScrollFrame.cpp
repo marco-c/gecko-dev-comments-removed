@@ -3896,13 +3896,17 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
 
 
 Maybe<ScrollMetadata>
-ScrollFrameHelper::ComputeScrollMetadata(Layer* aLayer,
-                                         LayerManager* aLayerManager,
+ScrollFrameHelper::ComputeScrollMetadata(LayerManager* aLayerManager,
                                          const nsIFrame* aContainerReferenceFrame,
                                          const ContainerLayerParameters& aParameters,
                                          const DisplayItemClip* aClip) const
 {
   if (!mWillBuildScrollableLayer || mIsScrollableLayerInRootContainer) {
+    return Nothing();
+  }
+
+  if (!nsLayoutUtils::UsesAsyncScrolling(mOuter)) {
+    
     return Nothing();
   }
 
@@ -3916,11 +3920,33 @@ ScrollFrameHelper::ComputeScrollMetadata(Layer* aLayer,
   }
 
   bool isRootContent = mIsRoot && mOuter->PresContext()->IsRootContentDocument();
-  bool thisScrollFrameUsesAsyncScrolling = nsLayoutUtils::UsesAsyncScrolling(mOuter);
-  if (!thisScrollFrameUsesAsyncScrolling) {
+
+  MOZ_ASSERT(mScrolledFrame->GetContent());
+
+  nsRect scrollport = mScrollPort + toReferenceFrame;
+
+  return Some(nsLayoutUtils::ComputeScrollMetadata(
+    mScrolledFrame, mOuter, mOuter->GetContent(),
+    aContainerReferenceFrame, aLayerManager, mScrollParentID,
+    scrollport, parentLayerClip, isRootContent, aParameters));
+}
+
+void
+ScrollFrameHelper::ClipLayerToDisplayPort(Layer* aLayer,
+                                          const DisplayItemClip* aClip,
+                                          const ContainerLayerParameters& aParameters) const
+{
+  
+  
+  if (!nsLayoutUtils::UsesAsyncScrolling(mOuter)) {
+    Maybe<nsRect> parentLayerClip;
+    
+    if (aClip &&
+        (!gfxPrefs::LayoutUseContainersForRootFrames() || mAddClipRectToLayer)) {
+      parentLayerClip = Some(aClip->GetClipRect());
+    }
+
     if (parentLayerClip) {
-      
-      
       ParentLayerIntRect displayportClip =
         ViewAs<ParentLayerPixel>(
           parentLayerClip->ScaleToNearestPixels(
@@ -3936,19 +3962,7 @@ ScrollFrameHelper::ComputeScrollMetadata(Layer* aLayer,
       }
       aLayer->SetClipRect(Some(layerClip));
     }
-
-    
-    return Nothing();
   }
-
-  MOZ_ASSERT(mScrolledFrame->GetContent());
-
-  nsRect scrollport = mScrollPort + toReferenceFrame;
-
-  return Some(nsLayoutUtils::ComputeScrollMetadata(
-    mScrolledFrame, mOuter, mOuter->GetContent(),
-    aContainerReferenceFrame, aLayerManager, mScrollParentID,
-    scrollport, parentLayerClip, isRootContent, aParameters));
 }
 
 bool
