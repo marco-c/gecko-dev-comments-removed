@@ -251,11 +251,12 @@ pref("browser.startup.homepage",            "chrome://branding/locale/browsercon
 pref("browser.startup.firstrunSkipsHomepage", true);
 
 
-#ifdef XP_MACOSX
 
-pref("browser.startup.blankWindow", false);
-#else
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(EARLY_BETA_OR_EARLIER)
 pref("browser.startup.blankWindow", true);
+#else
+pref("browser.startup.blankWindow", false);
 #endif
 
 pref("browser.slowStartup.notificationDisabled", false);
