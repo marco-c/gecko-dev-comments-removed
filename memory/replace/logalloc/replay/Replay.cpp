@@ -421,6 +421,7 @@ public:
     if (aArgs) {
       die("Malformed input");
     }
+    mOps++;
     jemalloc_stats_t stats;
     ::jemalloc_stats(&stats);
     FdPrintf(mStdErr,
