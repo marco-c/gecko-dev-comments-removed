@@ -54,11 +54,11 @@ public:
   
   static already_AddRefed<EventTarget> Constructor(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
-  virtual void AddEventListener(const nsAString& aType,
-                                EventListener* aCallback,
-                                const AddEventListenerOptionsOrBoolean& aOptions,
-                                const Nullable<bool>& aWantsUntrusted,
-                                ErrorResult& aRv) = 0;
+  void AddEventListener(const nsAString& aType,
+                        EventListener* aCallback,
+                        const AddEventListenerOptionsOrBoolean& aOptions,
+                        const Nullable<bool>& aWantsUntrusted,
+                        ErrorResult& aRv);
   void RemoveEventListener(const nsAString& aType,
                            EventListener* aCallback,
                            const EventListenerOptionsOrBoolean& aOptions,
@@ -71,10 +71,10 @@ protected:
 
 
 
-  virtual nsresult AddEventListener(const nsAString& aType,
-                                    nsIDOMEventListener* aListener,
-                                    bool aUseCapture,
-                                    const Nullable<bool>& aWantsUntrusted) = 0;
+  nsresult AddEventListener(const nsAString& aType,
+                            nsIDOMEventListener* aListener,
+                            bool aUseCapture,
+                            const Nullable<bool>& aWantsUntrusted);
 
 public:
   
@@ -268,6 +268,25 @@ protected:
                                        const nsAString& aTypeString);
   void SetEventHandler(nsAtom* aType, const nsAString& aTypeString,
                        EventHandlerNonNull* aHandler);
+
+  
+
+
+
+
+
+
+
+
+
+  virtual bool ComputeDefaultWantsUntrusted(ErrorResult& aRv) = 0;
+
+  
+
+
+
+  bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted,
+                             ErrorResult& aRv);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(EventTarget, NS_EVENTTARGET_IID)
