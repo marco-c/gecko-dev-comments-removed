@@ -378,6 +378,11 @@ test_description_schema = Schema({
     
     Optional('product'): basestring,
 
+    
+    Optional('when'): Any({
+        Optional('files-changed'): [basestring],
+    }),
+
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
         Any(basestring, None),
@@ -1011,7 +1016,9 @@ def make_job_description(config, tests):
         else:
             schedules = [suite, platform_family(test['build-platform'])]
 
-        if config.params['project'] != 'try':
+        if test.get('when'):
+            jobdesc['when'] = test['when']
+        elif config.params['project'] != 'try':
             
             jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
         else:
