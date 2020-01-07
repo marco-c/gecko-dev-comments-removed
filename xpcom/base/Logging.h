@@ -194,7 +194,6 @@ void log_print(const LogModule* aModule,
 
 
 
-
 #define MOZ_LOG_EXPAND_ARGS(...) __VA_ARGS__
 
 #if MOZ_LOGGING_ENABLED

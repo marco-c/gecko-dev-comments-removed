@@ -1,0 +1,49 @@
+
+
+
+
+
+
+#ifndef LogCommandLineHandler_h
+#define LogCommandLineHandler_h
+
+#include <functional>
+#include "nsString.h"
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+LoggingHandleCommandLineArgs(int argc, char const* const* argv,
+                             std::function<void(nsACString const&)> const& consumer);
+
+} 
+
+#endif

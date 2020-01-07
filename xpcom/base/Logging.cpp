@@ -20,6 +20,7 @@
 #include "nsClassHashtable.h"
 #include "nsDebug.h"
 #include "NSPRLogModulesParser.h"
+#include "LogCommandLineHandler.h"
 
 #include "prenv.h"
 #ifdef XP_WIN
@@ -191,39 +192,6 @@ public:
     delete logFile;
   }
 
-  void HandleCommandLineArgs(int argc, char* argv[])
-  {
-    for (int arg = 2; arg < argc; ++arg) {
-      if (argv[arg][0] == '-') {
-        continue;
-      }
-
-      for (auto name : {"-MOZ_LOG", "-MOZ_LOG_FILE"}) {
-        if (strcmp(name, argv[arg - 1])) {
-          continue;
-        }
-
-        
-        
-        
-        
-        
-        
-
-        nsAutoCString env;
-        env.Assign(name + 1);
-        env.Append('=');
-        env.Append(argv[arg]);
-
-        
-        PR_SetEnv(ToNewCString(env));
-
-        ++arg;
-        break;
-      }
-    }
-  }
-
   
 
 
@@ -238,7 +206,18 @@ public:
     MOZ_DIAGNOSTIC_ASSERT(!mInitialized);
     mInitialized = true;
 
-    HandleCommandLineArgs(argc, argv);
+    LoggingHandleCommandLineArgs(argc, static_cast<char const* const*>(argv),
+                                 [](nsACString const& env) {
+      
+      
+      
+      
+      
+      
+
+      
+      PR_SetEnv(ToNewCString(env));
+    });
 
     bool shouldAppend = false;
     bool addTimestamp = false;
