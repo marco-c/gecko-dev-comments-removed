@@ -446,28 +446,6 @@ Gecko_UnsetDirtyStyleAttr(RawGeckoElementBorrowed aElement)
   decl->UnsetDirty();
 }
 
-RawServoDeclarationBlockStrongBorrowedOrNull
-Gecko_GetSMILOverrideDeclarationBlock(RawGeckoElementBorrowed aElement)
-{
-  
-  
-  
-  MOZ_ASSERT(aElement, "Invalid GeckoElement");
-
-  DeclarationBlock* decl =
-    const_cast<dom::Element*>(aElement)->GetSMILOverrideStyleDeclaration();
-  if (!decl) {
-    return nullptr;
-  }
-  if (decl->IsGecko()) {
-    
-    
-    NS_WARNING("stylo: requesting a Gecko declaration block?");
-    return nullptr;
-  }
-  return decl->AsServo()->RefRawStrong();
-}
-
 const RawServoDeclarationBlockStrong*
 AsRefRawStrong(const RefPtr<RawServoDeclarationBlock>& aDecl)
 {
