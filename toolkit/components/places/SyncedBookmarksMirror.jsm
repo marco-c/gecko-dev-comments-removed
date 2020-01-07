@@ -3547,30 +3547,40 @@ class BookmarkMerger {
   mergeChildListsIntoMergedNode(mergedNode, localNode, remoteNode) {
     let mergeStateChanged = false;
 
-    
-    MirrorLog.trace("Merging remote children of ${remoteNode} into " +
-                    "${mergedNode}", { remoteNode, mergedNode });
-    if (remoteNode) {
-      for (let remoteChildNode of remoteNode.children) {
-        let remoteChildrenChanged = this.mergeRemoteChildIntoMergedNode(
-          mergedNode, remoteNode, remoteChildNode);
-        if (remoteChildrenChanged) {
+    if (localNode && remoteNode) {
+      if (localNode.newerThan(remoteNode)) {
+        
+        
+        
+        if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
+          mergeStateChanged = true;
+        }
+        if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+          mergeStateChanged = true;
+        }
+      } else {
+        
+        
+        if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+          mergeStateChanged = true;
+        }
+        if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
           mergeStateChanged = true;
         }
       }
-    }
-
-    
-    MirrorLog.trace("Merging local children of ${localNode} into " +
-                    "${mergedNode}", { localNode, mergedNode });
-    if (localNode) {
-      for (let localChildNode of localNode.children) {
-        let remoteChildrenChanged = this.mergeLocalChildIntoMergedNode(
-          mergedNode, localNode, localChildNode);
-        if (remoteChildrenChanged) {
-          mergeStateChanged = true;
-        }
+    } else if (localNode) {
+      
+      if (this.mergeLocalChildrenIntoMergedNode(mergedNode, localNode)) {
+        mergeStateChanged = true;
       }
+    } else if (remoteNode) {
+      
+      if (this.mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode)) {
+        mergeStateChanged = true;
+      }
+    } else {
+      
+      throw new TypeError("Can't merge children for two nonexistent nodes");
     }
 
     
@@ -3590,6 +3600,60 @@ class BookmarkMerger {
       });
       mergedNode.mergeState = newMergeState;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  mergeRemoteChildrenIntoMergedNode(mergedNode, remoteNode) {
+    MirrorLog.trace("Merging remote children of ${remoteNode} into " +
+                    "${mergedNode}", { remoteNode, mergedNode });
+
+    let mergeStateChanged = false;
+    for (let remoteChildNode of remoteNode.children) {
+      let remoteChildrenChanged = this.mergeRemoteChildIntoMergedNode(
+        mergedNode, remoteNode, remoteChildNode);
+      if (remoteChildrenChanged) {
+        mergeStateChanged = true;
+      }
+    }
+    return mergeStateChanged;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  mergeLocalChildrenIntoMergedNode(mergedNode, localNode) {
+    MirrorLog.trace("Merging local children of ${localNode} into " +
+                    "${mergedNode}", { localNode, mergedNode });
+
+    let mergeStateChanged = false;
+    for (let localChildNode of localNode.children) {
+      let remoteChildrenChanged = this.mergeLocalChildIntoMergedNode(
+        mergedNode, localNode, localChildNode);
+      if (remoteChildrenChanged) {
+        mergeStateChanged = true;
+      }
+    }
+    return mergeStateChanged;
   }
 
   
