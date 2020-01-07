@@ -95,11 +95,6 @@ public:
   
   bool
   IsPrivateBrowsing() const;
-
-  
-  
-  nsCOMPtr<nsIPrincipal>
-  GetPrincipal() const;
 };
 
 } 

@@ -42,7 +42,6 @@ class ClientHandle final : public ClientThing<ClientHandleChild>
 
   RefPtr<ClientManager> mManager;
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
-  RefPtr<GenericPromise::Private> mDetachPromise;
   ClientInfo mClientInfo;
 
   ~ClientHandle();
@@ -52,10 +51,6 @@ class ClientHandle final : public ClientThing<ClientHandleChild>
 
   already_AddRefed<ClientOpPromise>
   StartOp(const ClientOpConstructorArgs& aArgs);
-
-  
-  void
-  OnShutdownThing() override;
 
   
   void
@@ -94,17 +89,6 @@ public:
   RefPtr<GenericPromise>
   PostMessage(ipc::StructuredCloneData& aData,
               const ServiceWorkerDescriptor& aSource);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<GenericPromise>
-  OnDetach();
 
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };

@@ -155,7 +155,6 @@
 #include "mozIAsyncFavicons.h"
 #endif
 #include "nsINetworkPredictor.h"
-#include "nsIServiceWorkerManager.h"
 
 
 #include "nsIEditingSession.h"
@@ -3418,7 +3417,7 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
   
   
   
-  if (!aPrincipal && mSandboxFlags) {
+  if (!aPrincipal && (mSandboxFlags & SANDBOXED_ORIGIN)) {
     return;
   }
 
@@ -3460,35 +3459,18 @@ nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal)
     return;
   }
 
-  
-  
-  
   Maybe<ServiceWorkerDescriptor> controller(parentInner->GetController());
-  if (controller.isNothing() || mSandboxFlags) {
-    return;
-  }
-
-  nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
-  if (!swm) {
+  if (controller.isNothing()) {
     return;
   }
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!swm->StartControlling(mInitialClientSource->Info(), controller.ref())) {
-    return;
-  }
+  RefPtr<ClientHandle> handle =
+    ClientManager::CreateHandle(mInitialClientSource->Info(),
+                                parentInner->EventTargetFor(TaskCategory::Other));
+  handle->Control(controller.ref());
 
   
   

@@ -138,7 +138,7 @@ ServiceWorkerUnregisterJob::Unregister()
   InvokeResultCallbacks(NS_OK);
 
   
-  if (!registration->IsControllingClients() && registration->IsIdle()) {
+  if (!registration->IsControllingDocuments() && registration->IsIdle()) {
     
     swm->RemoveRegistration(registration);
   }

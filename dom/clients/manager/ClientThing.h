@@ -90,15 +90,6 @@ protected:
       mActor->MaybeStartTeardown();
       mActor = nullptr;
     }
-
-    OnShutdownThing();
-  }
-
-  
-  virtual void
-  OnShutdownThing()
-  {
-    
   }
 
 public:
@@ -115,8 +106,6 @@ public:
     
     
     mShutdown = true;
-
-    OnShutdownThing();
   }
 };
 
