@@ -65,6 +65,7 @@ def InvokeClWithDependencyGeneration(cmdline):
     
     depstarget = os.path.basename(target) + ".pp"
 
+    showincludes = '-showIncludes' in cmdline
     cmdline += ['-showIncludes']
 
     mk = Makefile()
@@ -82,11 +83,13 @@ def InvokeClWithDependencyGeneration(cmdline):
             dep = normcase(dep)
             if ' ' not in dep:
                 rule.add_dependencies([dep])
-        else:
             
-            
-            sys.stdout.write(line)
-            sys.stdout.write('\n')
+            if not showincludes:
+                return
+        
+        
+        sys.stdout.write(line)
+        sys.stdout.write('\n')
 
     
     
