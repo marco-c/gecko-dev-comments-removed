@@ -189,7 +189,6 @@ nsHostRecord::nsHostRecord(const nsHostKey *key)
     memcpy((char *) originSuffix, key->originSuffix,
            strlen(key->originSuffix) + 1);
     PR_INIT_CLIST(this);
-    PR_INIT_CLIST(&callbacks);
 }
 
 nsresult
@@ -230,6 +229,8 @@ nsHostRecord::CopyExpirationTimesAndFlagsFrom(const nsHostRecord *aFromHostRecor
 
 nsHostRecord::~nsHostRecord()
 {
+    mCallbacks.clear();
+
     Telemetry::Accumulate(Telemetry::DNS_BLACKLIST_COUNT, mBlacklistedCount);
     delete addr_info;
 }
@@ -326,17 +327,15 @@ nsHostRecord::HasUsableResult(const mozilla::TimeStamp& now, uint16_t queryFlags
 }
 
 static size_t
-SizeOfResolveHostCallbackListExcludingHead(const PRCList *head,
+SizeOfResolveHostCallbackListExcludingHead(const mozilla::LinkedList<RefPtr<nsResolveHostCallback>>& aCallbacks,
                                            MallocSizeOf mallocSizeOf)
 {
-    size_t n = 0;
-    PRCList *curr = head->next;
-    while (curr != head) {
-        nsResolveHostCallback *callback =
-            static_cast<nsResolveHostCallback*>(curr);
-        n += callback->SizeOfIncludingThis(mallocSizeOf);
-        curr = curr->next;
+    size_t n = 0; 
+
+    for (const nsResolveHostCallback* t = aCallbacks.getFirst(); t; t = t->getNext()) {
+      n += t->SizeOfIncludingThis(mallocSizeOf);
     }
+
     return n;
 }
 
@@ -350,7 +349,7 @@ nsHostRecord::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const
     
     
 
-    n += SizeOfResolveHostCallbackListExcludingHead(&callbacks, mallocSizeOf);
+    n += SizeOfResolveHostCallbackListExcludingHead(mCallbacks, mallocSizeOf);
     n += addr_info ? addr_info->SizeOfIncludingThis(mallocSizeOf) : 0;
     n += mallocSizeOf(addr.get());
 
@@ -733,7 +732,7 @@ nsHostResolver::ResolveHost(const char             *host,
                             uint16_t                flags,
                             uint16_t                af,
                             const char             *netInterface,
-                            nsResolveHostCallback  *callback)
+                            nsResolveHostCallback  *aCallback)
 {
     NS_ENSURE_TRUE(host && *host, NS_ERROR_UNEXPECTED);
     NS_ENSURE_TRUE(netInterface, NS_ERROR_UNEXPECTED);
@@ -746,6 +745,7 @@ nsHostResolver::ResolveHost(const char             *host,
     if (!net_IsValidHostName(nsDependentCString(host)))
         return NS_ERROR_UNKNOWN_HOST;
 
+    RefPtr<nsResolveHostCallback> callback(aCallback);
     
     
     RefPtr<nsHostRecord> result;
@@ -931,26 +931,26 @@ nsHostResolver::ResolveHost(const char             *host,
                          LOG_HOST(host, netInterface)));
 
                     
-                    PR_APPEND_LINK(callback, &he->rec->callbacks);
+                    he->rec->mCallbacks.insertBack(callback);
                     he->rec->flags = flags;
                     rv = IssueLookup(he->rec);
                     Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
                                           METHOD_NETWORK_FIRST);
-                    if (NS_FAILED(rv)) {
-                        PR_REMOVE_AND_INIT_LINK(callback);
+                    if (NS_FAILED(rv) && callback->isInList()) {
+                        callback->remove();
                     }
                     else {
                         LOG(("  DNS lookup for host [%s%s%s] blocking "
                              "pending 'getaddrinfo' query: callback [%p]",
-                             LOG_HOST(host, netInterface), callback));
+                             LOG_HOST(host, netInterface), callback.get()));
                     }
                 }
             }
             else {
                 LOG(("  Host [%s%s%s] is being resolved. Appending callback "
-                     "[%p].", LOG_HOST(host, netInterface), callback));
+                     "[%p].", LOG_HOST(host, netInterface), callback.get()));
 
-                PR_APPEND_LINK(callback, &he->rec->callbacks);
+                he->rec->mCallbacks.insertBack(callback);
                 if (he->rec->onQueue) {
                     Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
                                           METHOD_NETWORK_SHARED);
@@ -976,7 +976,11 @@ nsHostResolver::ResolveHost(const char             *host,
             }
         }
     }
+
     if (result) {
+        if (callback->isInList()) {
+            callback->remove();
+        }
         callback->OnResolveHostComplete(this, result, status);
     }
 
@@ -989,10 +993,12 @@ nsHostResolver::DetachCallback(const char             *host,
                                uint16_t                flags,
                                uint16_t                af,
                                const char             *netInterface,
-                               nsResolveHostCallback  *callback,
+                               nsResolveHostCallback  *aCallback,
                                nsresult                status)
 {
     RefPtr<nsHostRecord> rec;
+    RefPtr<nsResolveHostCallback> callback(aCallback);
+
     {
         MutexAutoLock lock(mLock);
 
@@ -1004,22 +1010,22 @@ nsHostResolver::DetachCallback(const char             *host,
         if (he) {
             
             
-            PRCList *node = he->rec->callbacks.next;
-            while (node != &he->rec->callbacks) {
-                if (static_cast<nsResolveHostCallback *>(node) == callback) {
-                    PR_REMOVE_LINK(callback);
+
+            for (nsResolveHostCallback* c: he->rec->mCallbacks) {
+                if (c == callback) {
                     rec = he->rec;
+                    c->remove();
                     break;
                 }
-                node = node->next;
             }
         }
     }
 
     
     
-    if (rec)
+    if (rec) {
         callback->OnResolveHostComplete(this, rec, status);
+    }
 }
 
 nsresult
@@ -1293,8 +1299,8 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* new
 {
     
     
-    PRCList cbs;
-    PR_INIT_CLIST(&cbs);
+    mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs;
+
     {
         MutexAutoLock lock(mLock);
 
@@ -1306,7 +1312,7 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* new
         }
 
         
-        MoveCList(rec->callbacks, cbs);
+        cbs = mozilla::Move(rec->mCallbacks);
 
         
         
@@ -1374,15 +1380,8 @@ nsHostResolver::CompleteLookup(nsHostRecord* rec, nsresult status, AddrInfo* new
         }
     }
 
-    if (!PR_CLIST_IS_EMPTY(&cbs)) {
-        PRCList *node = cbs.next;
-        while (node != &cbs) {
-            nsResolveHostCallback *callback =
-                    static_cast<nsResolveHostCallback *>(node);
-            node = node->next;
-            callback->OnResolveHostComplete(this, rec, status);
-            
-        }
+    for (nsResolveHostCallback* c = cbs.getFirst(); c; c = c->removeAndGetNext()) {
+        c->OnResolveHostComplete(this, rec, status);
     }
 
     NS_RELEASE(rec);
@@ -1410,24 +1409,18 @@ nsHostResolver::CancelAsyncRequest(const char             *host,
     auto he = static_cast<nsHostDBEnt*>(mDB.Search(&key));
     if (he) {
         nsHostRecord* recPtr = nullptr;
-        PRCList *node = he->rec->callbacks.next;
-        
-        
-        while (node != &he->rec->callbacks) {
-            nsResolveHostCallback *callback
-                = static_cast<nsResolveHostCallback *>(node);
-            if (callback && (callback->EqualsAsyncListener(aListener))) {
-                
-                PR_REMOVE_LINK(callback);
+
+        for (RefPtr<nsResolveHostCallback> c : he->rec->mCallbacks) {
+            if (c->EqualsAsyncListener(aListener)) {
+                c->remove();
                 recPtr = he->rec;
-                callback->OnResolveHostComplete(this, recPtr, status);
+                c->OnResolveHostComplete(this, recPtr, status);
                 break;
             }
-            node = node->next;
         }
 
         
-        if (recPtr && PR_CLIST_IS_EMPTY(&recPtr->callbacks)) {
+        if (recPtr && recPtr->mCallbacks.isEmpty()) {
             mDB.Remove((nsHostKey *)recPtr);
             
             if (recPtr->next != recPtr) {
