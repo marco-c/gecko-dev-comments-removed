@@ -54,6 +54,9 @@ NS_IMPL_CI_INTERFACE_GETTER(nsConsoleService, nsIConsoleService, nsIObserver)
 
 static const bool gLoggingEnabled = true;
 static const bool gLoggingBuffered = true;
+#ifdef XP_WIN
+static bool gLoggingToDebugger = true;
+#endif 
 #if defined(ANDROID)
 static bool gLoggingLogcat = false;
 #endif 
@@ -71,6 +74,18 @@ nsConsoleService::nsConsoleService()
   
   
   mMaximumSize = 250;
+
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  
+  
+  const char* disableDebugLoggingVar = getenv("MOZ_CONSOLESERVICE_DISABLE_DEBUGGER_OUTPUT");
+  gLoggingToDebugger = !disableDebugLoggingVar || (disableDebugLoggingVar[0] == '0');
+#endif 
 }
 
 
@@ -286,7 +301,7 @@ nsConsoleService::LogMessageWithMode(nsIConsoleMessage* aMessage,
     }
 #endif
 #ifdef XP_WIN
-    if (IsDebuggerPresent()) {
+    if (gLoggingToDebugger && IsDebuggerPresent()) {
       nsString msg;
       aMessage->GetMessageMoz(getter_Copies(msg));
       msg.Append('\n');
