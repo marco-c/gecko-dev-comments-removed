@@ -350,14 +350,14 @@ public:
 
 
 
-  NS_IMETHOD StartOperation(EditAction opID,
-                            nsIEditor::EDirection aDirection) override;
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection) override;
 
   
 
 
 
-  NS_IMETHOD EndOperation() override;
+  virtual nsresult EndOperation() override;
 
   
 
@@ -383,8 +383,8 @@ public:
   virtual bool AreNodesSameType(nsIContent* aNode1,
                                 nsIContent* aNode2) override;
 
-  NS_IMETHOD DeleteSelectionImpl(EDirection aAction,
-                                 EStripWrappers aStripWrappers) override;
+  virtual nsresult DeleteSelectionImpl(EDirection aAction,
+                                       EStripWrappers aStripWrappers) override;
 
   
 

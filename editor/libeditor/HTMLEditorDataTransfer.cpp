@@ -114,8 +114,10 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
   if (!handled) {
     
     if (!selection->Collapsed()) {
-      rv = DeleteSelection(eNone, eStrip);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = DeleteSelectionAsAction(eNone, eStrip);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     
@@ -253,8 +255,10 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       
       
       AutoTrackDOMPoint tracker(mRangeUpdater, &targetPoint);
-      rv = DeleteSelection(eNone, eStrip);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = DeleteSelectionAsAction(eNone, eStrip);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
 
     ErrorResult error;
@@ -280,7 +284,10 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     
     
     if (aDeleteSelection) {
-      return DeleteSelection(eNone, eStrip);
+      nsresult rv = DeleteSelectionAsAction(eNone, eStrip);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
     return NS_OK;
   }

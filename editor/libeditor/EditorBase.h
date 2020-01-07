@@ -329,11 +329,6 @@ public:
                        const nsAString& aString,
                        Text& aTextNode);
 
-  NS_IMETHOD DeleteSelectionImpl(EDirection aAction,
-                                 EStripWrappers aStripWrappers);
-
-  already_AddRefed<Element> DeleteSelectionAndCreateElement(nsAtom& aTag);
-
   
 
 
@@ -593,15 +588,6 @@ protected:
   
 
 
-
-
-
-
-  nsresult DeleteSelectionAndPrepareToCreateNode();
-
-  
-
-
   void DoAfterDoTransaction(nsITransaction *aTxn);
 
   
@@ -780,14 +766,14 @@ public:
 
 
 
-  NS_IMETHOD StartOperation(EditAction opID,
-                            nsIEditor::EDirection aDirection);
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection);
 
   
 
 
 
-  NS_IMETHOD EndOperation();
+  virtual nsresult EndOperation();
 
   
 

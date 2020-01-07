@@ -60,22 +60,6 @@ public:
   NS_DECL_NSIEDITORMAILSUPPORT
 
   
-  virtual nsresult RemoveAttributeOrEquivalent(
-                     Element* aElement,
-                     nsAtom* aAttribute,
-                     bool aSuppressTransaction) override;
-  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
-                                            nsAtom* aAttribute,
-                                            const nsAString& aValue,
-                                            bool aSuppressTransaction) override;
-  using EditorBase::RemoveAttributeOrEquivalent;
-  using EditorBase::SetAttributeOrEquivalent;
-
-  virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
-                        nsISelectionController* aSelCon, uint32_t aFlags,
-                        const nsAString& aValue) override;
-
-  nsresult DocumentIsEmpty(bool* aIsEmpty);
   NS_IMETHOD GetDocumentIsEmpty(bool* aDocumentIsEmpty) override;
 
   NS_IMETHOD DeleteSelection(EDirection aAction,
@@ -109,17 +93,35 @@ public:
                             uint32_t aFlags) override;
 
   
+  virtual nsresult RemoveAttributeOrEquivalent(
+                     Element* aElement,
+                     nsAtom* aAttribute,
+                     bool aSuppressTransaction) override;
+  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
+                                            nsAtom* aAttribute,
+                                            const nsAString& aValue,
+                                            bool aSuppressTransaction) override;
+  using EditorBase::RemoveAttributeOrEquivalent;
+  using EditorBase::SetAttributeOrEquivalent;
 
+  virtual nsresult Init(nsIDocument& aDoc, Element* aRoot,
+                        nsISelectionController* aSelCon, uint32_t aFlags,
+                        const nsAString& aValue) override;
 
-
-  NS_IMETHOD StartOperation(EditAction opID,
-                            nsIEditor::EDirection aDirection) override;
+  nsresult DocumentIsEmpty(bool* aIsEmpty);
 
   
 
 
 
-  NS_IMETHOD EndOperation() override;
+  virtual nsresult StartOperation(EditAction opID,
+                                  nsIEditor::EDirection aDirection) override;
+
+  
+
+
+
+  virtual nsresult EndOperation() override;
 
   
 
@@ -136,6 +138,21 @@ public:
                      WidgetCompositionEvent* aCompositionChangeEvet) override;
 
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
+
+  
+
+
+
+
+
+
+
+
+  nsresult DeleteSelectionAsAction(EDirection aDirection,
+                                   EStripWrappers aStripWrappers);
+
+  virtual nsresult DeleteSelectionImpl(EDirection aAction,
+                                       EStripWrappers aStripWrappers);
 
   
   NS_IMETHOD TypedText(const nsAString& aString, ETypingAction aAction);
@@ -246,6 +263,24 @@ protected:
 
   NS_IMETHOD PrepareTransferable(nsITransferable** transferable);
   nsresult InsertTextFromTransferable(nsITransferable* transferable);
+
+  
+
+
+
+
+
+
+  already_AddRefed<Element> DeleteSelectionAndCreateElement(nsAtom& aTag);
+
+  
+
+
+
+
+
+
+  nsresult DeleteSelectionAndPrepareToCreateNode();
 
   
 

@@ -5,6 +5,8 @@
 
 #include "mozilla/TextEditor.h"
 
+#include "EditAggregateTransaction.h"
+#include "HTMLEditRules.h"
 #include "InternetCiter.h"
 #include "TextEditUtils.h"
 #include "gfxFontUtils.h"
@@ -18,6 +20,7 @@
 #include "mozilla/TextEditRules.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/TextServicesDocument.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Element.h"
@@ -356,10 +359,28 @@ TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
     case NS_VK_SHIFT:
     case NS_VK_CONTROL:
     case NS_VK_ALT:
-    case NS_VK_BACK:
-    case NS_VK_DELETE:
       
       return EditorBase::HandleKeyPressEvent(aKeyboardEvent);
+    case NS_VK_BACK:
+      if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
+          aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
+        return NS_OK;
+      }
+      DeleteSelectionAsAction(nsIEditor::ePrevious, nsIEditor::eStrip);
+      aKeyboardEvent->PreventDefault(); 
+      return NS_OK;
+    case NS_VK_DELETE:
+      
+      
+      
+      if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
+          aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
+          aKeyboardEvent->IsOS()) {
+        return NS_OK;
+      }
+      DeleteSelectionAsAction(nsIEditor::eNext, nsIEditor::eStrip);
+      aKeyboardEvent->PreventDefault(); 
+      return NS_OK;
     case NS_VK_TAB: {
       if (IsTabbable()) {
         return NS_OK; 
@@ -628,9 +649,20 @@ TextEditor::ExtendSelectionForDelete(Selection* aSelection,
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 TextEditor::DeleteSelection(EDirection aAction,
                             EStripWrappers aStripWrappers)
+{
+  nsresult rv = DeleteSelectionAsAction(aAction, aStripWrappers);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+TextEditor::DeleteSelectionAsAction(EDirection aDirection,
+                                    EStripWrappers aStripWrappers)
 {
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
 
@@ -643,7 +675,7 @@ TextEditor::DeleteSelection(EDirection aAction,
 
   
   AutoPlaceholderBatch batch(this, nsGkAtoms::DeleteTxnName);
-  AutoRules beginRulesSniffing(this, EditAction::deleteSelection, aAction);
+  AutoRules beginRulesSniffing(this, EditAction::deleteSelection, aDirection);
 
   
   RefPtr<Selection> selection = GetSelection();
@@ -654,31 +686,245 @@ TextEditor::DeleteSelection(EDirection aAction,
   
   
   
-  if (!selection->Collapsed() &&
-      (aAction == eNextWord || aAction == ePreviousWord ||
-       aAction == eToBeginningOfLine || aAction == eToEndOfLine)) {
-    if (mCaretStyle == 1) {
-      nsresult rv = selection->CollapseToStart();
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      aAction = eNone;
+  if (!selection->Collapsed()) {
+    switch (aDirection) {
+      case eNextWord:
+      case ePreviousWord:
+      case eToBeginningOfLine:
+      case eToEndOfLine: {
+        if (mCaretStyle != 1) {
+          aDirection = eNone;
+          break;
+        }
+        ErrorResult error;
+        selection->CollapseToStart(error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+        break;
+      }
+      default:
+        break;
     }
   }
 
   RulesInfo ruleInfo(EditAction::deleteSelection);
-  ruleInfo.collapsedAction = aAction;
+  ruleInfo.collapsedAction = aDirection;
   ruleInfo.stripWrappers = aStripWrappers;
   bool cancel, handled;
   nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled) {
-    rv = DeleteSelectionImpl(aAction, aStripWrappers);
+    rv = DeleteSelectionImpl(aDirection, aStripWrappers);
   }
   if (!cancel) {
     
     rv = rules->DidDoAction(selection, &ruleInfo, rv);
   }
   return rv;
+}
+
+nsresult
+TextEditor::DeleteSelectionImpl(EDirection aDirection,
+                                EStripWrappers aStripWrappers)
+{
+  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  RefPtr<EditAggregateTransaction> deleteSelectionTransaction;
+  nsCOMPtr<nsINode> deleteNode;
+  int32_t deleteCharOffset = 0, deleteCharLength = 0;
+  if (!selection->Collapsed() || aDirection != eNone) {
+    deleteSelectionTransaction =
+      CreateTxnForDeleteSelection(aDirection,
+                                  getter_AddRefs(deleteNode),
+                                  &deleteCharOffset,
+                                  &deleteCharLength);
+    if (NS_WARN_IF(!deleteSelectionTransaction)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  RefPtr<CharacterData> deleteCharData =
+    CharacterData::FromNodeOrNull(deleteNode);
+  AutoRules beginRulesSniffing(this, EditAction::deleteSelection, aDirection);
+
+  if (mRules && mRules->AsHTMLEditRules()) {
+    if (!deleteNode) {
+      RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
+      htmlEditRules->WillDeleteSelection(selection);
+    } else if (!deleteCharData) {
+      RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
+      htmlEditRules->WillDeleteNode(deleteNode);
+    }
+  }
+
+  
+  if (!mActionListeners.IsEmpty()) {
+    if (!deleteNode) {
+      AutoActionListenerArray listeners(mActionListeners);
+      for (auto& listener : listeners) {
+        listener->WillDeleteSelection(selection);
+      }
+    } else if (deleteCharData) {
+      AutoActionListenerArray listeners(mActionListeners);
+      for (auto& listener : listeners) {
+        listener->WillDeleteText(deleteCharData, deleteCharOffset, 1);
+      }
+    }
+  }
+
+  
+  nsresult rv = DoTransaction(deleteSelectionTransaction);
+
+  if (mRules && mRules->AsHTMLEditRules() && deleteCharData) {
+    RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
+    htmlEditRules->DidDeleteText(deleteNode, deleteCharOffset, 1);
+  }
+
+  if (mTextServicesDocument && NS_SUCCEEDED(rv) &&
+      deleteNode && !deleteCharData) {
+    RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
+    textServicesDocument->DidDeleteNode(deleteNode);
+  }
+
+  
+  {
+    AutoActionListenerArray listeners(mActionListeners);
+    if (!deleteNode) {
+      for (auto& listener : mActionListeners) {
+        listener->DidDeleteSelection(selection);
+      }
+    } else if (deleteCharData) {
+      for (auto& listener : mActionListeners) {
+        listener->DidDeleteText(deleteCharData, deleteCharOffset, 1, rv);
+      }
+    } else {
+      for (auto& listener : mActionListeners) {
+        listener->DidDeleteNode(deleteNode->AsDOMNode(), rv);
+      }
+    }
+  }
+
+  return rv;
+}
+
+already_AddRefed<Element>
+TextEditor::DeleteSelectionAndCreateElement(nsAtom& aTag)
+{
+  nsresult rv = DeleteSelectionAndPrepareToCreateNode();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return nullptr;
+  }
+
+  EditorRawDOMPoint pointToInsert(selection->AnchorRef());
+  if (!pointToInsert.IsSet()) {
+    return nullptr;
+  }
+  RefPtr<Element> newElement = CreateNodeWithTransaction(aTag, pointToInsert);
+
+  
+  EditorRawDOMPoint afterNewElement(newElement);
+  MOZ_ASSERT(afterNewElement.IsSetAndValid());
+  DebugOnly<bool> advanced = afterNewElement.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+                       "Failed to move offset next to the new element");
+  ErrorResult error;
+  selection->Collapse(afterNewElement, error);
+  if (NS_WARN_IF(error.Failed())) {
+    
+    
+    
+    error.SuppressException();
+    return nullptr;
+  }
+  return newElement.forget();
+}
+
+nsresult
+TextEditor::DeleteSelectionAndPrepareToCreateNode()
+{
+  RefPtr<Selection> selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  if (NS_WARN_IF(!selection->GetAnchorFocusRange())) {
+    return NS_OK;
+  }
+
+  if (!selection->GetAnchorFocusRange()->Collapsed()) {
+    nsresult rv = DeleteSelectionAsAction(eNone, eStrip);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    MOZ_ASSERT(selection->GetAnchorFocusRange() &&
+               selection->GetAnchorFocusRange()->Collapsed(),
+               "Selection not collapsed after delete");
+  }
+
+  
+  
+  EditorDOMPoint atAnchor(selection->AnchorRef());
+  if (NS_WARN_IF(!atAnchor.IsSet()) || !atAnchor.IsInDataNode()) {
+    return NS_OK;
+  }
+
+  if (NS_WARN_IF(!atAnchor.GetContainer()->GetParentNode())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (atAnchor.IsStartOfContainer()) {
+    EditorRawDOMPoint atAnchorContainer(atAnchor.GetContainer());
+    if (NS_WARN_IF(!atAnchorContainer.IsSetAndValid())) {
+      return NS_ERROR_FAILURE;
+    }
+    ErrorResult error;
+    selection->Collapse(atAnchorContainer, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    return NS_OK;
+  }
+
+  if (atAnchor.IsEndOfContainer()) {
+    EditorRawDOMPoint afterAnchorContainer(atAnchor.GetContainer());
+    if (NS_WARN_IF(!afterAnchorContainer.AdvanceOffset())) {
+      return NS_ERROR_FAILURE;
+    }
+    ErrorResult error;
+    selection->Collapse(afterAnchorContainer, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    return NS_OK;
+  }
+
+  ErrorResult error;
+  nsCOMPtr<nsIContent> newLeftNode = SplitNodeWithTransaction(atAnchor, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  EditorRawDOMPoint atRightNode(atAnchor.GetContainer());
+  if (NS_WARN_IF(!atRightNode.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  MOZ_ASSERT(atRightNode.IsSetAndValid());
+  selection->Collapse(atRightNode, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -858,7 +1104,8 @@ TextEditor::SetText(const nsAString& aString)
     }
     if (NS_SUCCEEDED(rv)) {
       if (aString.IsEmpty()) {
-        rv = DeleteSelection(eNone, eStrip);
+        rv = DeleteSelectionAsAction(eNone, eStrip);
+        NS_WARNING_ASSERTION(NS_FAILED(rv), "Failed to remove all text");
       } else {
         rv = InsertText(aString);
       }
@@ -1285,7 +1532,7 @@ TextEditor::Cut()
 {
   bool actionTaken = false;
   if (FireClipboardEvent(eCut, nsIClipboard::kGlobalClipboard, &actionTaken)) {
-    DeleteSelection(eNone, eStrip);
+    DeleteSelectionAsAction(eNone, eStrip);
   }
   return actionTaken ? NS_OK : NS_ERROR_FAILURE;
 }
@@ -1668,7 +1915,7 @@ TextEditor::GetEmbeddedObjects(nsIArray** aNodeList)
 
 
 
-NS_IMETHODIMP
+nsresult
 TextEditor::StartOperation(EditAction opID,
                            nsIEditor::EDirection aDirection)
 {
@@ -1686,7 +1933,7 @@ TextEditor::StartOperation(EditAction opID,
 
 
 
-NS_IMETHODIMP
+nsresult
 TextEditor::EndOperation()
 {
   
