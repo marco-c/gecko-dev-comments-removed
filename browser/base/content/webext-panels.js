@@ -93,6 +93,17 @@ var gBrowser = {
   },
 };
 
+function updatePosition() {
+  
+  
+  requestAnimationFrame(() => setTimeout(() => {
+    let browser = document.getElementById("webext-panels-browser");
+    if (browser && browser.isRemoteBrowser) {
+      browser.frameLoader.requestUpdatePosition();
+    }
+  }, 0));
+}
+
 function loadPanel(extensionId, extensionUrl, browserStyle) {
   let browserEl = document.getElementById("webext-panels-browser");
   if (browserEl) {
