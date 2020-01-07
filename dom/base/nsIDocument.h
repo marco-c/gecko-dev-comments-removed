@@ -2555,19 +2555,26 @@ public:
 
 
 
-  virtual void SuppressEventHandling(uint32_t aIncrease = 1) = 0;
+  void SuppressEventHandling(uint32_t aIncrease = 1);
 
   
 
 
 
 
-  virtual void UnsuppressEventHandlingAndFireEvents(bool aFireEvents) = 0;
+  void UnsuppressEventHandlingAndFireEvents(bool aFireEvents);
 
   uint32_t EventHandlingSuppressed() const { return mEventsSuppressed; }
 
   bool IsEventHandlingEnabled() {
     return !EventHandlingSuppressed() && mScriptGlobalObject;
+  }
+
+  void DecreaseEventSuppression()
+  {
+    MOZ_ASSERT(mEventsSuppressed);
+    --mEventsSuppressed;
+    UpdateFrameRequestCallbackSchedulingState();
   }
 
   
