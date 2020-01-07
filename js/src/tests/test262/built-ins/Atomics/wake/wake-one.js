@@ -9,71 +9,64 @@
 
 
 
-var NUMAGENT = 3;
 
-var WAKEUP = 0;                 
-var RUNNING = 1;                
-var NUMELEM = 2;
+const WAIT_INDEX = 0;             
+const RUNNING = 1;                
+const WAKECOUNT = 1;
+const NUMAGENT = 3;
+const BUFFER_SIZE = 4;
 
-var WAKECOUNT = 1;
+const TIMEOUT = $262.agent.timeouts.long;
 
-for ( var i=0 ; i < NUMAGENT ; i++ ) {
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var ia = new Int32Array(sab);
-  Atomics.add(ia, ${RUNNING}, 1);
-  // Waiters that are not woken will time out eventually.
-  $262.agent.report(Atomics.wait(ia, ${WAKEUP}, 0, 2000));
-  $262.agent.leaving();
-})
-`);
+for (var i = 0; i < NUMAGENT; i++ ) {
+  $262.agent.start(`
+    $262.agent.receiveBroadcast(function(sab) {
+      const i32a = new Int32Array(sab);
+      Atomics.add(i32a, ${RUNNING}, 1);
+
+      // Waiters that are not woken will time out eventually.
+      $262.agent.report(Atomics.wait(i32a, ${WAIT_INDEX}, 0, ${TIMEOUT}));
+      $262.agent.leaving();
+    });
+  `);
 }
 
-var ia = new Int32Array(new SharedArrayBuffer(NUMELEM * Int32Array.BYTES_PER_ELEMENT));
-$262.agent.broadcast(ia.buffer);
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * BUFFER_SIZE)
+);
+
+$262.agent.broadcast(i32a.buffer);
 
 
-waitUntil(ia, RUNNING, NUMAGENT);
+$262.agent.waitUntil(i32a, RUNNING, NUMAGENT);
+
+
+$262.agent.tryYield();
 
 
 
-$262.agent.sleep(50);
+
+assert.sameValue(
+  Atomics.wake(i32a, 0, WAKECOUNT),
+  WAKECOUNT,
+  'Atomics.wake(i32a, 0, WAKECOUNT) returns the value of `WAKECOUNT`'
+);
 
 
+$262.agent.trySleep(TIMEOUT);
 
 
-assert.sameValue(Atomics.wake(ia, 0, WAKECOUNT), WAKECOUNT);
-
-
-var rs = [];
+const reports = [];
 for (var i = 0; i < NUMAGENT; i++) {
-  rs.push(getReport());
+  reports.push($262.agent.getReport());
 }
-rs.sort();
+reports.sort();
 
 for (var i = 0; i < WAKECOUNT; i++) {
-  assert.sameValue(rs[i], "ok");
+  assert.sameValue(reports[i], 'ok', 'The value of reports[i] is "ok"');
 }
 for (var i = WAKECOUNT; i < NUMAGENT; i++) {
-  assert.sameValue(rs[i], "timed-out");
-}
-
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(10);
-  }
-  return r;
-}
-
-function waitUntil(ia, k, value) {
-  var i = 0;
-  while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(10);
-    i++;
-  }
-  assert.sameValue(Atomics.load(ia, k), value, "All agents are running");
+  assert.sameValue(reports[i], 'timed-out', 'The value of reports[i] is "timed-out"');
 }
 
 reportCompare(0, 0);

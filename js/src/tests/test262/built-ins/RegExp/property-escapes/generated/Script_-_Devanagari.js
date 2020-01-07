@@ -14,14 +14,13 @@
 
 
 
-
 const matchSymbols = buildString({
   loneCodePoints: [],
   ranges: [
     [0x000900, 0x000950],
     [0x000953, 0x000963],
     [0x000966, 0x00097F],
-    [0x00A8E0, 0x00A8FD]
+    [0x00A8E0, 0x00A8FF]
   ]
 });
 testPropertyEscapes(
@@ -53,7 +52,7 @@ const nonMatchSymbols = buildString({
     [0x000951, 0x000952],
     [0x000964, 0x000965],
     [0x000980, 0x00A8DF],
-    [0x00A8FE, 0x00DBFF],
+    [0x00A900, 0x00DBFF],
     [0x00E000, 0x10FFFF]
   ]
 });

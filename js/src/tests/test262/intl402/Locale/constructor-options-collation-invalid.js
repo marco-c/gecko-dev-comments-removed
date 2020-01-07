@@ -22,6 +22,7 @@
 
 
 const invalidCollationOptions = [
+  "",
   "a",
   "ab",
   "abcdefghi",

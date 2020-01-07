@@ -9,32 +9,40 @@
 
 
 
-var sab = new SharedArrayBuffer(1024);
-var ab = new ArrayBuffer(16);
-var views = intArrayConstructors.slice();
+const sab = new SharedArrayBuffer(1024);
+const ab = new ArrayBuffer(16);
+const views = intArrayConstructors.slice();
 
 testWithTypedArrayConstructors(function(TA) {
   
 
-  var view = new TA(sab, 32, 20);
-  var control = new TA(ab, 0, 2);
+  const view = new TA(sab, 32, 20);
+  const control = new TA(ab, 0, 2);
 
-  for (let val of [10, -5,
-      12345,
-      123456789,
-      Math.PI,
-      "33",
-      {
-        valueOf: () => 33
-      },
-      undefined
-    ])
-  {
+  const values = [
+    10,
+    -5,
+    12345,
+    123456789,
+    Math.PI,
+    "33",
+    {
+      valueOf: function() { return 33; }
+    },
+    undefined
+  ];
+
+  for (let i = 0; i < values.length; i++) {
+    let val = values[i];
     assert.sameValue(Atomics.store(view, 3, val), ToInteger(val),
-      "Atomics.store returns its third argument (" + val + ") converted to Integer, not the input value nor the value that was stored");
+      'Atomics.store(view, 3, val) returns ToInteger(val)');
 
     control[0] = val;
-    assert.sameValue(view[3], control[0]);
+    assert.sameValue(
+      view[3],
+      control[0],
+      'The value of view[3] equals the value of `control[0]` (val)'
+    );
   }
 
   
@@ -42,7 +50,7 @@ testWithTypedArrayConstructors(function(TA) {
     let Idx = IdxGen(view);
     view.fill(0);
     Atomics.store(view, Idx, 37);
-    assert.sameValue(Atomics.load(view, Idx), 37);
+    assert.sameValue(Atomics.load(view, Idx), 37, 'Atomics.load(view, Idx) returns 37');
   });
 }, views);
 

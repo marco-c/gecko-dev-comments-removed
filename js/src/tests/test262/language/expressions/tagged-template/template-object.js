@@ -8,11 +8,13 @@
 
 
 
-var templateObject;
+var templateObject
 
-(function(parameter) {
+function tag(parameter) {
   templateObject = parameter;
-})`${1}`;
+}
+
+tag`${1}`;
 
 assert(Array.isArray(templateObject.raw), 'The template object is an array');
 

@@ -11,7 +11,9 @@
 
 
 testWithAtomicsNonViewValues(function(view) {
-  assert.throws(TypeError, (() => Atomics.sub(view, 0, 0)));
+  assert.throws(TypeError, function() {
+    Atomics.sub(view, 0, 0);
+  }, '`Atomics.sub(view, 0, 0)` throws TypeError');
 });
 
 reportCompare(0, 0);

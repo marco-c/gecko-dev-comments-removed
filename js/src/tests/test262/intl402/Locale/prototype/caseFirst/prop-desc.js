@@ -16,13 +16,10 @@
 
 
 
-
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "caseFirst");
 if (propdesc) {
   assert.sameValue(propdesc.set, undefined);
   assert.sameValue(typeof propdesc.get, "function");
-  assert.sameValue(propdesc.get.name, "get caseFirst");
 
   verifyProperty(Intl.Locale.prototype, "caseFirst", {
     enumerable: false,

@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.RelativeTimeFormat.supportedLocalesOf,
+  "function",
+  "typeof Intl.RelativeTimeFormat.supportedLocalesOf is function"
+);
+
+verifyProperty(Intl.RelativeTimeFormat, "supportedLocalesOf", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+
+reportCompare(0, 0);

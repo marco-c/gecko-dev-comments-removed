@@ -11,7 +11,12 @@
 
 
 /[\p{Hex}]/u;
-assert.throws.early(SyntaxError, "/[\\p{Hex}-\\uFFFF]/u");
+assert.throws(
+  SyntaxError,
+  () => /[\p{Hex}-\uFFFF]/u,
+  
+  'property escape at start of character class range should throw if it expands to multiple characters'
+);
 assert.throws.early(SyntaxError, "/[\\p{}]/u");
 assert.throws.early(SyntaxError, "/[\\p{invalid}]/u");
 assert.throws.early(SyntaxError, "/[\\p{]/u");

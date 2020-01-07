@@ -16,19 +16,14 @@
 
 
 
-var sab = new SharedArrayBuffer(8);
-var views = [Int32Array];
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
 
-if (typeof BigInt !== "undefined") {
-  views.push(BigInt64Array);
-  views.push(BigUint64Array);
-}
-
-testWithTypedArrayConstructors(function(TA) {
-  let view = new TA(sab);
-  testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
-    assert.throws(RangeError, () => Atomics.wake(view, IdxGen(view), 0)); 
-  });
-}, views);
+testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
+  assert.throws(RangeError, function() {
+    Atomics.wake(i32a, IdxGen(i32a), 0);
+  }, '`Atomics.wake(i32a, IdxGen(i32a), 0)` throws RangeError');
+});
 
 reportCompare(0, 0);

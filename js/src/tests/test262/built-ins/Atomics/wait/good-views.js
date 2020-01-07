@@ -13,51 +13,57 @@
 
 
 
-$262.agent.start(
-`
-var sab = new SharedArrayBuffer(1024);
-var ab = new ArrayBuffer(16);
 
-var good_indices = [ (view) => 0/-1, // -0
-                     (view) => '-0',
-                     (view) => view.length - 1,
-                     (view) => ({ valueOf: () => 0 }),
-                     (view) => ({ toString: () => '0', valueOf: false }) // non-callable valueOf triggers invocation of toString
-                   ];
+$262.agent.start(`
+  var sab = new SharedArrayBuffer(1024);
+  var ab = new ArrayBuffer(16);
 
-var view = new Int32Array(sab, 32, 20);
+  var good_indices = [ (view) => 0/-1, // -0
+                       (view) => '-0',
+                       (view) => view.length - 1,
+                       (view) => ({ valueOf: () => 0 }),
+                       (view) => ({ toString: () => '0', valueOf: false }) // non-callable valueOf triggers invocation of toString
+                     ];
 
-view[0] = 0;
-$262.agent.report("A " + Atomics.wait(view, 0, 0, 0))
-$262.agent.report("B " + Atomics.wait(view, 0, 37, 0));
+  var view = new Int32Array(sab, 32, 20);
 
-// In-bounds boundary cases for indexing
-for ( let IdxGen of good_indices ) {
-    let Idx = IdxGen(view);
-    view.fill(0);
-    // Atomics.store() computes an index from Idx in the same way as other
-    // Atomics operations, not quite like view[Idx].
-    Atomics.store(view, Idx, 37);
-    $262.agent.report("C " + Atomics.wait(view, Idx, 0));
-}
+  view[0] = 0;
+  $262.agent.report("A " + Atomics.wait(view, 0, 0, 0))
+  $262.agent.report("B " + Atomics.wait(view, 0, 37, 0));
 
-$262.agent.report("done");
-$262.agent.leaving();
+  // In-bounds boundary cases for indexing
+  for ( let IdxGen of good_indices ) {
+      let Idx = IdxGen(view);
+      view.fill(0);
+      // Atomics.store() computes an index from Idx in the same way as other
+      // Atomics operations, not quite like view[Idx].
+      Atomics.store(view, Idx, 37);
+      $262.agent.report("C " + Atomics.wait(view, Idx, 0));
+  }
+
+  $262.agent.report("done");
+  $262.agent.leaving();
 `);
 
-assert.sameValue(getReport(), "A timed-out");
-assert.sameValue(getReport(), "B not-equal"); 
-var r;
-while ((r = getReport()) != "done") {
-  assert.sameValue(r, "C not-equal");
-}
+assert.sameValue(
+  $262.agent.getReport(),
+  'A timed-out',
+  '$262.agent.getReport() returns "A timed-out"'
+);
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(100);
-  }
-  return r;
+assert.sameValue(
+  $262.agent.getReport(),
+  'B not-equal',
+  '$262.agent.getReport() returns "B not-equal"'
+);
+
+var r;
+while ((r = $262.agent.getReport()) !== "done") {
+  assert.sameValue(
+    r,
+    'C not-equal',
+    '$262.agent.getReport() returns "C not-equal"'
+  );
 }
 
 reportCompare(0, 0);

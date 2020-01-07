@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.RelativeTimeFormat.prototype.resolvedOptions,
+  "function",
+  "typeof Intl.RelativeTimeFormat.prototype.resolvedOptions is function"
+);
+
+verifyProperty(Intl.RelativeTimeFormat.prototype, "resolvedOptions", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+
+reportCompare(0, 0);

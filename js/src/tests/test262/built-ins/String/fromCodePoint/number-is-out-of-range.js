@@ -21,6 +21,7 @@
 
 
 
+
 assert.throws(RangeError, function() {
   String.fromCodePoint(-1);
 });

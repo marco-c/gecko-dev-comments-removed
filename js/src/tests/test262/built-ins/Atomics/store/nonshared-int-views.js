@@ -10,16 +10,13 @@
 
 
 
-var buffer = new ArrayBuffer(16);
-var views = intArrayConstructors.slice();
-
-if (typeof BigInt !== "undefined") {
-  views.push(BigInt64Array);
-  views.push(BigUint64Array);
-}
+const buffer = new ArrayBuffer(16);
+const views = intArrayConstructors.slice();
 
 testWithTypedArrayConstructors(function(TA) {
-  assert.throws(TypeError, (() => Atomics.store(new TA(buffer), 0, 0)));
+  assert.throws(TypeError, function() {
+    Atomics.store(new TA(buffer), 0, 0);
+  }, '`Atomics.store(new TA(buffer), 0, 0)` throws TypeError');
 }, views);
 
 reportCompare(0, 0);

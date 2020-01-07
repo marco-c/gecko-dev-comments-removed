@@ -16,13 +16,10 @@
 
 
 
-
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "numeric");
 if (propdesc) {
   assert.sameValue(propdesc.set, undefined);
   assert.sameValue(typeof propdesc.get, "function");
-  assert.sameValue(propdesc.get.name, "get numeric");
 
   verifyProperty(Intl.Locale.prototype, "numeric", {
     enumerable: false,

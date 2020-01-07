@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(
   String.fromCodePoint.name, 'fromCodePoint',
   'The value of `String.fromCodePoint.name` is "fromCodePoint"'

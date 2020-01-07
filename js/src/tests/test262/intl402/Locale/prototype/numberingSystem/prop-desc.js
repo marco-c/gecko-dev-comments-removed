@@ -16,12 +16,9 @@
 
 
 
-
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "numberingSystem");
 assert.sameValue(propdesc.set, undefined);
 assert.sameValue(typeof propdesc.get, "function");
-assert.sameValue(propdesc.get.name, "get numberingSystem");
 
 verifyProperty(Intl.Locale.prototype, "numberingSystem", {
   enumerable: false,

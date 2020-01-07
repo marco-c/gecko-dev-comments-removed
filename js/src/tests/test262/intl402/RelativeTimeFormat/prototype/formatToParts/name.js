@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Intl.RelativeTimeFormat.prototype.formatToParts, "name", {
+  value: "formatToParts",
+  writable: false,
+  enumerable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

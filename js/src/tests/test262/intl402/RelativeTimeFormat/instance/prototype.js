@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const value = new Intl.RelativeTimeFormat();
+assert.sameValue(
+  Object.getPrototypeOf(value),
+  Intl.RelativeTimeFormat.prototype,
+  "Object.getPrototypeOf(value) equals the value of Intl.RelativeTimeFormat.prototype"
+);
+
+reportCompare(0, 0);

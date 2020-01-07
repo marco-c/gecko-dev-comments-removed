@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Intl.RelativeTimeFormat),
+  Function.prototype,
+  "Object.getPrototypeOf(Intl.RelativeTimeFormat) equals the value of Function.prototype"
+);
+
+reportCompare(0, 0);

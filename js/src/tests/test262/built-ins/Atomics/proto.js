@@ -14,6 +14,10 @@
 
 
 
-assert.sameValue(Object.getPrototypeOf(Atomics), Object.prototype);
+assert.sameValue(
+  Object.getPrototypeOf(Atomics),
+  Object.prototype,
+  'Object.getPrototypeOf(Atomics) returns the value of `Object.prototype`'
+);
 
 reportCompare(0, 0);

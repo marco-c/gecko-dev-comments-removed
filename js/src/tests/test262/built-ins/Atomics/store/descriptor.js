@@ -8,10 +8,10 @@
 
 
 
-
-
-verifyWritable(Atomics, "store");
-verifyNotEnumerable(Atomics, "store");
-verifyConfigurable(Atomics, "store");
+verifyProperty(Atomics, 'store', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);

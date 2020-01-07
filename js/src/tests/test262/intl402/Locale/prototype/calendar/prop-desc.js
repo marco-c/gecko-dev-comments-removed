@@ -16,12 +16,9 @@
 
 
 
-
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "calendar");
 assert.sameValue(propdesc.set, undefined);
 assert.sameValue(typeof propdesc.get, "function");
-assert.sameValue(propdesc.get.name, "get calendar");
 
 verifyProperty(Intl.Locale.prototype, "calendar", {
   enumerable: false,

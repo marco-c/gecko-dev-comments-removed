@@ -16,6 +16,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 import {} from './eval-self-once.js';
 import './eval-self-once.js';
 import * as ns1 from './eval-self-once.js';
@@ -23,6 +33,7 @@ import dflt1 from './eval-self-once.js';
 export {} from './eval-self-once.js';
 import dflt2, {} from './eval-self-once.js';
 export * from './eval-self-once.js';
+export * as ns2 from './eval-self-once.js';
 import dflt3, * as ns from './eval-self-once.js';
 export default null;
 

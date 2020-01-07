@@ -21,6 +21,10 @@
 
 
 
+
+
+
+
 import {} from './instn-once.js';
 import './instn-once.js';
 import * as ns1 from './instn-once.js';
@@ -28,6 +32,7 @@ import dflt1 from './instn-once.js';
 export {} from './instn-once.js';
 import dflt2, {} from './instn-once.js';
 export * from './instn-once.js';
+export * as ns2 from './instn-once.js';
 import dflt3, * as ns from './instn-once.js';
 export default null;
 

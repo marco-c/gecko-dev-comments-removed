@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.isExtensible(new Intl.RelativeTimeFormat()),
+  true,
+  "Object.isExtensible(new Intl.RelativeTimeFormat()) returns true"
+);
+
+reportCompare(0, 0);

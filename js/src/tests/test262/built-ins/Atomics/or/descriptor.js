@@ -8,10 +8,10 @@
 
 
 
-
-
-verifyWritable(Atomics, "or");
-verifyNotEnumerable(Atomics, "or");
-verifyConfigurable(Atomics, "or");
+verifyProperty(Atomics, 'or', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);

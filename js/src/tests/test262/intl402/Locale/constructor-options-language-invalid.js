@@ -51,7 +51,8 @@ const invalidLanguageOptions = [
   "i-klingon",
 
   
-  "zh-Hant",
+  "zh-min",
+  "zh-min-nan",
 
   
   "abcd-US",

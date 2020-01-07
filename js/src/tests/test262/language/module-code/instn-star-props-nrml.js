@@ -28,6 +28,7 @@
 
 
 
+
 import * as ns from './instn-star-props-nrml-1_FIXTURE.js';
 
 
@@ -41,6 +42,7 @@ assert('localBindingId' in ns, 'localBindingId');
 assert('localIdName' in ns, 'localIdName');
 assert('indirectIdName' in ns, 'indirectIdName');
 assert('indirectIdName2' in ns, 'indirectIdName2');
+assert('namespaceBinding' in ns, 'namespaceBinding');
 
 
 assert('starVarDecl' in ns, 'starVarDecl');
@@ -53,6 +55,7 @@ assert('starBindingId' in ns, 'starBindingId');
 assert('starIdName' in ns, 'starIdName');
 assert('starIndirectIdName' in ns, 'starIndirectIdName');
 assert('starIndirectIdName2' in ns, 'starIndirectIdName2');
+assert('starIndirectNamespaceBinding' in ns, 'starIndirectNamespaceBinding');
 
 
 assert.sameValue('nonExportedVar1' in ns, false, 'nonExportedVar1');

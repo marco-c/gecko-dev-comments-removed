@@ -9,9 +9,10 @@
 
 
 
-
-verifyWritable(Atomics, "xor");
-verifyNotEnumerable(Atomics, "xor");
-verifyConfigurable(Atomics, "xor");
+verifyProperty(Atomics, 'xor', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);

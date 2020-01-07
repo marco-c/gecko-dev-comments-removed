@@ -9,9 +9,10 @@
 
 
 
-
-verifyWritable(Atomics, "sub");
-verifyNotEnumerable(Atomics, "sub");
-verifyConfigurable(Atomics, "sub");
+verifyProperty(Atomics, 'sub', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);

@@ -38,7 +38,6 @@
 
 
 const validNumberingSystemOptions = [
-  ["", "en-u-nu"],
   ["abc", "en-u-nu-abc"],
   ["abcd", "en-u-nu-abcd"],
   ["abcde", "en-u-nu-abcde"],

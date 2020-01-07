@@ -10,18 +10,15 @@
 
 
 
-var buffer = new SharedArrayBuffer(8);
+var buffer = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
 var views = intArrayConstructors.slice();
-
-if (typeof BigInt !== "undefined") {
-  views.push(BigInt64Array);
-  views.push(BigUint64Array);
-}
 
 testWithTypedArrayConstructors(function(TA) {
   let view = new TA(buffer);
   testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
-    assert.throws(RangeError, () => Atomics.load(view, IdxGen(view)));
+    assert.throws(RangeError, function() {
+      Atomics.load(view, IdxGen(view));
+    }, '`Atomics.load(view, IdxGen(view))` throws RangeError');
   });
 }, views);
 

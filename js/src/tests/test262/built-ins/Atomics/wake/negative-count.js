@@ -9,27 +9,32 @@
 
 
 
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var ia = new Int32Array(sab);
-  $262.agent.report(Atomics.wait(ia, 0, 0, 1000)); // We will timeout eventually
-  $262.agent.leaving();
-})
+
+const RUNNING = 1;
+const TIMEOUT = $262.agent.timeouts.long;
+
+$262.agent.start(`
+  $262.agent.receiveBroadcast(function(sab) {
+    const i32a = new Int32Array(sab);
+    Atomics.add(i32a, ${RUNNING}, 1);
+
+    $262.agent.report(Atomics.wait(i32a, 0, 0, ${TIMEOUT}));
+    $262.agent.leaving();
+  });
 `);
 
-var ia = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
 
-$262.agent.broadcast(ia.buffer);
-$262.agent.sleep(500); 
-assert.sameValue(Atomics.wake(ia, 0, -1), 0); 
-assert.sameValue(getReport(), "timed-out");
+$262.agent.broadcast(i32a.buffer);
+$262.agent.waitUntil(i32a, RUNNING, 1);
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(100);
-  return r;
-}
+
+$262.agent.tryYield();
+
+assert.sameValue(Atomics.wake(i32a, 0, -1), 0, 'Atomics.wake(i32a, 0, -1) returns 0'); 
+
+assert.sameValue($262.agent.getReport(), 'timed-out', '$262.agent.getReport() returns "timed-out"');
 
 reportCompare(0, 0);

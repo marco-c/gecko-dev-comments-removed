@@ -20,29 +20,43 @@
 
 
 
-var buffer = new SharedArrayBuffer(1024);
-var int32Array = new Int32Array(buffer);
 
-var valueOf = {
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
+
+const valueOf = {
   valueOf: function() {
     return 0;
   }
 };
 
-var toString = {
+const toString = {
   toString: function() {
     return "0";
   }
 };
 
-var toPrimitive = {
+const toPrimitive = {
   [Symbol.toPrimitive]: function() {
     return 0;
   }
 };
 
-assert.sameValue(Atomics.wait(int32Array, 0, 0, valueOf), "timed-out");
-assert.sameValue(Atomics.wait(int32Array, 0, 0, toString), "timed-out");
-assert.sameValue(Atomics.wait(int32Array, 0, 0, toPrimitive), "timed-out");
+assert.sameValue(
+  Atomics.wait(i32a, 0, 0, valueOf),
+  'timed-out',
+  'Atomics.wait(i32a, 0, 0, valueOf) returns "timed-out"'
+);
+assert.sameValue(
+  Atomics.wait(i32a, 0, 0, toString),
+  'timed-out',
+  'Atomics.wait(i32a, 0, 0, toString) returns "timed-out"'
+);
+assert.sameValue(
+  Atomics.wait(i32a, 0, 0, toPrimitive),
+  'timed-out',
+  'Atomics.wait(i32a, 0, 0, toPrimitive) returns "timed-out"'
+);
 
 reportCompare(0, 0);

@@ -184,6 +184,11 @@ function getInvalidLanguageTags() {
     "中文", 
     "en-ß", 
     "ıd", 
+    "es-Latn-latn", 
+    "pl-PL-pl", 
+    "u-ca-gregory", 
+    "de-1996-1996", 
+    "pt-u-ca-gregory-u-nu-latn", 
 
     
     "de_DE",
@@ -395,6 +400,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "mwj": "vaj",
     "myt": "mry",
     "nad": "xny",
+    "ncp": "kdz",
     "nnx": "ngv",
     "nts": "pij",
     "oun": "vaj",
@@ -576,6 +582,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "lsy": ["lsy", "sgn"],
     "ltg": ["ltg", "lv"],
     "lvs": ["lvs", "lv"],
+    "lws": ["lws", "sgn"],
     "lzh": ["lzh", "zh"],
     "max": ["max", "ms"],
     "mdl": ["mdl", "sgn"],
@@ -621,6 +628,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "psr": ["psr", "sgn"],
     "pys": ["pys", "sgn"],
     "rms": ["rms", "sgn"],
+    "rsi": ["rsi", "sgn"],
     "rsl": ["rsl", "sgn"],
     "rsm": ["rsm", "sgn"],
     "sdl": ["sdl", "sgn"],
@@ -668,6 +676,7 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
     "xml": ["xml", "sgn"],
     "xmm": ["xmm", "ms"],
     "xms": ["xms", "sgn"],
+    "yds": ["yds", "sgn"],
     "ygs": ["ygs", "sgn"],
     "yhs": ["yhs", "sgn"],
     "ysl": ["ysl", "sgn"],
@@ -762,6 +771,64 @@ function isCanonicalizedStructurallyValidLanguageTag(locale) {
       canonicalizeLanguageTag(locale) === locale;
 }
 
+
+
+
+
+function getInvalidLocaleArguments() {
+  function CustomError() {}
+
+  var topLevelErrors = [
+    
+    [null, TypeError],
+
+    
+    [{ get length() { throw new CustomError(); } }, CustomError],
+
+    
+    [{ length: Symbol.toPrimitive }, TypeError],
+    [{ length: { get [Symbol.toPrimitive]() { throw new CustomError(); } } }, CustomError],
+    [{ length: { [Symbol.toPrimitive]() { throw new CustomError(); } } }, CustomError],
+    [{ length: { get valueOf() { throw new CustomError(); } } }, CustomError],
+    [{ length: { valueOf() { throw new CustomError(); } } }, CustomError],
+    [{ length: { get toString() { throw new CustomError(); } } }, CustomError],
+    [{ length: { toString() { throw new CustomError(); } } }, CustomError],
+
+    
+    [[undefined], TypeError],
+    [[null], TypeError],
+    [[true], TypeError],
+    [[Symbol.toPrimitive], TypeError],
+    [[1], TypeError],
+    [[0.1], TypeError],
+    [[NaN], TypeError],
+  ];
+
+  var invalidLanguageTags = [
+    "", 
+    "i", 
+    "x", 
+    "u", 
+    "419", 
+    "u-nu-latn-cu-bob", 
+    "hans-cmn-cn", 
+                   
+    "cmn-hans-cn-u-u", 
+    "cmn-hans-cn-t-u-ca-u", 
+    "de-gregory-gregory", 
+    "*", 
+    "de-*", 
+    "中文", 
+    "en-ß", 
+    "ıd" 
+  ];
+
+  return topLevelErrors.concat(
+    invalidLanguageTags.map(tag => [tag, RangeError]),
+    invalidLanguageTags.map(tag => [[tag], RangeError]),
+    invalidLanguageTags.map(tag => [["en", tag], RangeError]),
+  )
+}
 
 
 

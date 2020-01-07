@@ -19,35 +19,44 @@
 
 
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(100);
-  }
-  return r;
-}
+const RUNNING = 1;
 
 var value = 42;
 
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var int32Array = new Int32Array(sab);
+$262.agent.start(`
+  $262.agent.receiveBroadcast(function(sab) {
+    const i32a = new Int32Array(sab);
+    Atomics.add(i32a, ${RUNNING}, 1);
 
-  $262.agent.report(Atomics.store(int32Array, 0, ${value}));
-
-  $262.agent.report(Atomics.wait(int32Array, 0, 0));
-
-  $262.agent.leaving();
-})
+    $262.agent.report(Atomics.store(i32a, 0, ${value}));
+    $262.agent.report(Atomics.wait(i32a, 0, 0));
+    $262.agent.leaving();
+  });
 `);
 
-var int32Array = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
 
-$262.agent.broadcast(int32Array.buffer);
 
-assert.sameValue(getReport(), value.toString());
-assert.sameValue(getReport(), "not-equal");
 
+
+
+$262.agent.broadcast(i32a.buffer);
+$262.agent.waitUntil(i32a, RUNNING, 1);
+
+
+$262.agent.tryYield();
+
+assert.sameValue(
+  $262.agent.getReport(),
+  value.toString(),
+  '$262.agent.getReport() returns value.toString()'
+);
+assert.sameValue(
+  $262.agent.getReport(),
+  'not-equal',
+  '$262.agent.getReport() returns "not-equal"'
+);
 
 reportCompare(0, 0);

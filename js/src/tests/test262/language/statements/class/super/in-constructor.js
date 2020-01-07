@@ -19,4 +19,5 @@ class C extends B {
 
 new C;
 assert.sameValue(calls, 1, "The value of `calls` is `1`");
+
 reportCompare(0, 0);

@@ -16,6 +16,7 @@
 
 
 
+
 import {} from './eval-rqstd-once_FIXTURE.js';
 import './eval-rqstd-once_FIXTURE.js';
 import * as ns1 from './eval-rqstd-once_FIXTURE.js';
@@ -23,7 +24,8 @@ import dflt1 from './eval-rqstd-once_FIXTURE.js';
 export {} from './eval-rqstd-once_FIXTURE.js';
 import dflt2, {} from './eval-rqstd-once_FIXTURE.js';
 export * from './eval-rqstd-once_FIXTURE.js';
-import dflt3, * as ns from './eval-rqstd-once_FIXTURE.js';
+export * as ns2 from './eval-rqstd-once_FIXTURE.js';
+import dflt3, * as ns3 from './eval-rqstd-once_FIXTURE.js';
 export default null;
 
 var global = fnGlobalObject();

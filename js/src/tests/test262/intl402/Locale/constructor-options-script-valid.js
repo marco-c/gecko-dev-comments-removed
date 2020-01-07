@@ -35,7 +35,7 @@ const validScriptOptions = [
   [null, 'Null'],
   ['bali', 'Bali'],
   ['Bali', 'Bali'],
-  ['bALI', 'BALI'], 
+  ['bALI', 'Bali'],
   [{ toString() { return 'Brai' } }, 'Brai'],
 ];
 for (const [script, expected] of validScriptOptions) {

@@ -21,33 +21,33 @@
 
 
 
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var int32Array = new Int32Array(sab);
-  $262.agent.report(Atomics.wait(int32Array, undefined, 0, 1000)); // undefined index => 0
-  $262.agent.leaving();
-})
+
+
+const RUNNING = 1;
+const TIMEOUT = $262.agent.timeouts.long;
+
+$262.agent.start(`
+  $262.agent.receiveBroadcast(function(sab) {
+    const i32a = new Int32Array(sab);
+    Atomics.add(i32a, ${RUNNING}, 1);
+
+    $262.agent.report(Atomics.wait(i32a, undefined, 0, ${TIMEOUT})); // undefined index => 0
+    $262.agent.leaving();
+  });
 `);
 
-var sab = new SharedArrayBuffer(4);
-var int32Array = new Int32Array(sab);
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
 
-$262.agent.broadcast(int32Array.buffer);
+$262.agent.broadcast(i32a.buffer);
+$262.agent.waitUntil(i32a, RUNNING, 1);
 
-$262.agent.sleep(150);
 
-assert.sameValue(Atomics.wake(int32Array, 0), 1); 
-assert.sameValue(Atomics.wake(int32Array, 0), 0); 
+$262.agent.tryYield();
 
-assert.sameValue(getReport(), "ok");
-
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(100);
-  }
-  return r;
-}
+assert.sameValue(Atomics.wake(i32a, 0), 1, 'Atomics.wake(i32a, 0) returns 1'); 
+assert.sameValue(Atomics.wake(i32a, 0), 0, 'Atomics.wake(i32a, 0) returns 0'); 
+assert.sameValue($262.agent.getReport(), 'ok', '$262.agent.getReport() returns "ok"');
 
 reportCompare(0, 0);

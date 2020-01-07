@@ -20,4 +20,5 @@ class C extends B {
   }
 }
 assert.sameValue(C.method(), 1, "`C.method()` returns `1`");
+
 reportCompare(0, 0);

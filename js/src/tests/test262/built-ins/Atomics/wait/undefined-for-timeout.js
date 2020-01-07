@@ -16,53 +16,58 @@
 
 
 
-var NUMAGENT = 2; 
-var WAKEUP = 0; 
-var WAKECOUNT = 2; 
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(100);
-  }
-  return r;
-}
 
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var int32Array = new Int32Array(sab);
-  $262.agent.report("A " + Atomics.wait(int32Array, 0, 0, undefined));  // undefined => NaN => +Infinity
-  $262.agent.leaving();
-})
+const WAIT_INDEX = 0; 
+const RUNNING = 1;
+const NUMAGENT = 2;   
+const WAKECOUNT = 2;  
+
+$262.agent.start(`
+  $262.agent.receiveBroadcast(function(sab) {
+    var i32a = new Int32Array(sab);
+    Atomics.add(i32a, ${RUNNING}, 1);
+
+    // undefined => NaN => +Infinity
+    $262.agent.report("A " + Atomics.wait(i32a, 0, 0, undefined));
+    $262.agent.leaving();
+  });
 `);
 
-$262.agent.start(
-  `
-$262.agent.receiveBroadcast(function (sab) {
-  var int32Array = new Int32Array(sab);
-  $262.agent.report("B " + Atomics.wait(int32Array, 0, 0));  // undefined timeout arg => NaN => +Infinity
-  $262.agent.leaving();
-})
+$262.agent.start(`
+  $262.agent.receiveBroadcast(function(sab) {
+    var i32a = new Int32Array(sab);
+    Atomics.add(i32a, ${RUNNING}, 1);
+
+    // undefined timeout arg => NaN => +Infinity
+    $262.agent.report("B " + Atomics.wait(i32a, 0, 0));
+    $262.agent.leaving();
+  });
 `);
 
-var int32Array = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 4)
+);
 
-$262.agent.broadcast(int32Array.buffer);
+$262.agent.broadcast(i32a.buffer);
+$262.agent.waitUntil(i32a, RUNNING, NUMAGENT);
 
-$262.agent.sleep(500); 
 
-assert.sameValue($262.agent.getReport(), null);
+$262.agent.tryYield();
 
-assert.sameValue(Atomics.wake(int32Array, WAKEUP, WAKECOUNT), WAKECOUNT);
+assert.sameValue(
+  Atomics.wake(i32a, WAIT_INDEX, WAKECOUNT),
+  WAKECOUNT,
+  'Atomics.wake(i32a, WAIT_INDEX, WAKECOUNT) returns the value of `WAKECOUNT` (2)'
+);
 
-var sortedReports = [];
+const reports = [];
 for (var i = 0; i < NUMAGENT; i++) {
-  sortedReports.push(getReport());
+  reports.push($262.agent.getReport());
 }
-sortedReports.sort();
+reports.sort();
 
-assert.sameValue(sortedReports[0], "A ok");
-assert.sameValue(sortedReports[1], "B ok");
+assert.sameValue(reports[0], 'A ok', 'The value of reports[0] is "A ok"');
+assert.sameValue(reports[1], 'B ok', 'The value of reports[1] is "B ok"');
 
 reportCompare(0, 0);

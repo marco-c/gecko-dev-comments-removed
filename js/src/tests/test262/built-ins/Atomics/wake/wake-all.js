@@ -9,75 +9,46 @@
 
 
 
-var WAKEUP = 0;                 
-var DUMMY = 1;                  
-var RUNNING = 2;                
-var NUMELEM = 3;
 
-var NUMAGENT = 3;
-
-for (var i=0; i < NUMAGENT; i++) {
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var ia = new Int32Array(sab);
-  Atomics.add(ia, ${RUNNING}, 1);
-  $262.agent.report("A " + Atomics.wait(ia, ${WAKEUP}, 0));
-  $262.agent.leaving();
-})
-`);
-}
-
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var ia = new Int32Array(sab);
-  Atomics.add(ia, ${RUNNING}, 1);
-  // This will always time out.
-  $262.agent.report("B " + Atomics.wait(ia, ${DUMMY}, 0, 10));
-  $262.agent.leaving();
-})
-`);
-
-var ia = new Int32Array(new SharedArrayBuffer(NUMELEM * Int32Array.BYTES_PER_ELEMENT));
-$262.agent.broadcast(ia.buffer);
-
-
-waitUntil(ia, RUNNING, NUMAGENT + 1);
-
-
-
-$262.agent.sleep(50);
-
-
-assert.sameValue(Atomics.wake(ia, WAKEUP), NUMAGENT);
-
-var rs = [];
-for (var i = 0; i < NUMAGENT + 1; i++) {
-  rs.push(getReport());
-}
-rs.sort();
+const WAIT_INDEX = 0;             
+const RUNNING = 1;                
+const NUMAGENT = 3;
+const BUFFER_SIZE = 4;
 
 for (var i = 0; i < NUMAGENT; i++) {
-  assert.sameValue(rs[i], "A ok");
-}
-assert.sameValue(rs[NUMAGENT], "B timed-out");
+  $262.agent.start(`
+    $262.agent.receiveBroadcast(function(sab) {
+      const i32a = new Int32Array(sab);
+      Atomics.add(i32a, ${RUNNING}, 1);
 
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null) {
-    $262.agent.sleep(10);
-  }
-  return r;
+      $262.agent.report("A " + Atomics.wait(i32a, ${WAIT_INDEX}, 0));
+      $262.agent.leaving();
+    });
+  `);
 }
 
-function waitUntil(ia, k, value) {
-  var i = 0;
-  while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(10);
-    i++;
-  }
-  assert.sameValue(Atomics.load(ia, k), value, "All agents are running");
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * BUFFER_SIZE)
+);
+
+$262.agent.broadcast(i32a.buffer);
+
+
+$262.agent.waitUntil(i32a, RUNNING, NUMAGENT);
+
+
+
+$262.agent.tryYield();
+
+
+assert.sameValue(
+  Atomics.wake(i32a, WAIT_INDEX),
+  NUMAGENT,
+  'Atomics.wake(i32a, WAIT_INDEX) returns the value of `NUMAGENT`'
+);
+
+for (var i = 0; i < NUMAGENT; i++) {
+  assert.sameValue($262.agent.getReport(), 'A ok', 'The value of reports[i] is "A ok"');
 }
 
 reportCompare(0, 0);

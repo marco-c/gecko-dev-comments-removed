@@ -11,6 +11,7 @@
 
 
 
+
 verifyNotEnumerable(String, 'fromCodePoint');
 verifyWritable(String, 'fromCodePoint');
 verifyConfigurable(String, 'fromCodePoint');

@@ -10,18 +10,15 @@
 
 
 
-var sab = new SharedArrayBuffer(8);
+var sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
 var views = intArrayConstructors.slice();
-
-if (typeof BigInt !== "undefined") {
-  views.push(BigInt64Array);
-  views.push(BigUint64Array);
-}
 
 testWithTypedArrayConstructors(function(TA) {
   let view = new TA(sab);
   testWithAtomicsOutOfBoundsIndices(function(IdxGen) {
-    assert.throws(RangeError, () => Atomics.xor(view, IdxGen(view), 0));
+    assert.throws(RangeError, function() {
+      Atomics.xor(view, IdxGen(view), 0);
+    }, '`Atomics.xor(view, IdxGen(view), 0)` throws RangeError');
   });
 }, views);
 

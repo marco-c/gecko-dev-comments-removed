@@ -21,4 +21,5 @@ class C extends B {
   }
 }
 assert.sameValue(C.x = 3, 3, "`C.x = 3` is `3`");
+
 reportCompare(0, 0);

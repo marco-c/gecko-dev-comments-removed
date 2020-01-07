@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(String.fromCodePoint(null), '\x00');
 assert.sameValue(String.fromCodePoint(false), '\x00');
 assert.sameValue(String.fromCodePoint(true), '\x01');

@@ -16,12 +16,9 @@
 
 
 
-
-
 const propdesc = Object.getOwnPropertyDescriptor(Intl.Locale.prototype, "script");
 assert.sameValue(propdesc.set, undefined);
 assert.sameValue(typeof propdesc.get, "function");
-assert.sameValue(propdesc.get.name, "get script");
 
 verifyProperty(Intl.Locale.prototype, "script", {
   enumerable: false,

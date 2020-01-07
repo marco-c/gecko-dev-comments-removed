@@ -13,13 +13,10 @@
 var buffer = new ArrayBuffer(16);
 var views = intArrayConstructors.slice();
 
-if (typeof BigInt !== "undefined") {
-  views.push(BigInt64Array);
-  views.push(BigUint64Array);
-}
-
 testWithTypedArrayConstructors(function(TA) {
-  assert.throws(TypeError, (() => Atomics.compareExchange(new TA(buffer), 0, 0, 0)));
+  assert.throws(TypeError, function() {
+    Atomics.compareExchange(new TA(buffer), 0, 0, 0);
+  }, '`Atomics.compareExchange(new TA(buffer), 0, 0, 0)` throws TypeError');
 }, views);
 
 reportCompare(0, 0);

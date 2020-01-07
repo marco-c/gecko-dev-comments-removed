@@ -9,69 +9,51 @@
 
 
 
-var NUMAGENT = 3;
-var WAKEUP = 0;                 
-var RUNNING = 1;                
-var NUMELEM = 2;
 
-var WAKECOUNT = 0;
+const WAIT_INDEX = 0;             
+const RUNNING = 1;                
+const WAKECOUNT = 0;
+const NUMAGENT = 3;
+const BUFFER_SIZE = 4;
 
-for ( var i=0 ; i < NUMAGENT ; i++ ) {
-$262.agent.start(
-`
-$262.agent.receiveBroadcast(function (sab) {
-  var ia = new Int32Array(sab);
-  Atomics.add(ia, ${RUNNING}, 1);
-  // Waiters that are not woken will time out eventually.
-  $262.agent.report(Atomics.wait(ia, ${WAKEUP}, 0, 200));
-  $262.agent.leaving();
-})
-`);
-}
+const TIMEOUT = $262.agent.timeouts.long;
 
-var ia = new Int32Array(new SharedArrayBuffer(NUMELEM * Int32Array.BYTES_PER_ELEMENT));
-$262.agent.broadcast(ia.buffer);
-
-
-waitUntil(ia, RUNNING, NUMAGENT);
-
-
-
-$262.agent.sleep(50);
-
-
-
-
-assert.sameValue(Atomics.wake(ia, 0, WAKECOUNT), WAKECOUNT);
-
-
-var rs = [];
 for (var i = 0; i < NUMAGENT; i++) {
-  rs.push(getReport());
-}
-rs.sort();
+  $262.agent.start(`
+    $262.agent.receiveBroadcast(function(sab) {
+      const i32a = new Int32Array(sab);
+      Atomics.add(i32a, ${RUNNING}, 1);
 
-for (var i = 0; i < WAKECOUNT; i++) {
-  assert.sameValue(rs[i], "ok", "The value of rs[i] is ok");
-}
-for (var i = WAKECOUNT; i < NUMAGENT; i++) {
-  assert.sameValue(rs[i], "timed-out", "The value of rs[i] is timed-out");
-}
-
-function getReport() {
-  var r;
-  while ((r = $262.agent.getReport()) == null)
-    $262.agent.sleep(10);
-  return r;
+      // Waiters that are not woken will time out eventually.
+      $262.agent.report(Atomics.wait(i32a, ${WAIT_INDEX}, 0, ${TIMEOUT}));
+      $262.agent.leaving();
+    });
+  `);
 }
 
-function waitUntil(ia, k, value) {
-  var i = 0;
-  while (Atomics.load(ia, k) !== value && i < 15) {
-    $262.agent.sleep(10);
-    i++;
-  }
-  assert.sameValue(Atomics.load(ia, k), value, "Atomics.load(ia, k) returns value (All agents are running)");
+const i32a = new Int32Array(
+  new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * BUFFER_SIZE)
+);
+
+$262.agent.broadcast(i32a.buffer);
+
+
+$262.agent.waitUntil(i32a, RUNNING, NUMAGENT);
+
+
+$262.agent.tryYield();
+
+assert.sameValue(
+  Atomics.wake(i32a, WAIT_INDEX, WAKECOUNT),
+  WAKECOUNT,
+  'Atomics.wake(i32a, WAIT_INDEX, WAKECOUNT) returns the value of `WAKECOUNT`'
+);
+
+
+$262.agent.trySleep(TIMEOUT);
+
+for (var i = 0; i < NUMAGENT; i++) {
+  assert.sameValue($262.agent.getReport(), 'timed-out', '$262.agent.getReport() returns "timed-out"');
 }
 
 reportCompare(0, 0);

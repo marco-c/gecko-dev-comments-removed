@@ -11,10 +11,11 @@
 
 
 
-assert.sameValue(Atomics.load.name, "load");
-
-verifyNotEnumerable(Atomics.load, "name");
-verifyNotWritable(Atomics.load, "name");
-verifyConfigurable(Atomics.load, "name");
+verifyProperty(Atomics.load, 'name', {
+  value: 'load',
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

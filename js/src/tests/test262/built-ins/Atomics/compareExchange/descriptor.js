@@ -9,9 +9,10 @@
 
 
 
-
-verifyWritable(Atomics, "compareExchange");
-verifyNotEnumerable(Atomics, "compareExchange");
-verifyConfigurable(Atomics, "compareExchange");
+verifyProperty(Atomics, 'compareExchange', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
 
 reportCompare(0, 0);
