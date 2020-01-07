@@ -885,6 +885,9 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
   
   
   
+
+  
+  
   static const int32_t iExpand = 2;
   static const int32_t bExpand = 2;
   const int32_t iSize = bounds.width + iExpand;
@@ -922,6 +925,8 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
 
     for (int32_t i = 0; i < iSize; ++i) {
       const int32_t index = i + b * iSize;
+      MOZ_ASSERT(index >= 0 && index < (iSize * bSize),
+                 "Our distance field index should be in-bounds.");
 
       
       if (i < iExpand ||
@@ -947,6 +952,11 @@ nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(const nsPoint& aCenter,
         
         
         
+        MOZ_ASSERT(index - iSize - 2 >= 0 &&
+                   index - (iSize * 2) - 1 >= 0,
+                   "Our distance field most extreme indices should be "
+                   "in-bounds.");
+
         df[index] = std::min<dfType>(df[index - 1] + 5,
                     std::min<dfType>(df[index - iSize] + 5,
                     std::min<dfType>(df[index - iSize - 1] + 7,
