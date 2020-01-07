@@ -4,6 +4,8 @@
 
 
 
+
+
 const nsILDAPURL = Ci.nsILDAPURL;
 const LDAPURLContractID = "@mozilla.org/network/ldap-url;1";
 const nsILDAPSyncQuery = Ci.nsILDAPSyncQuery;
@@ -209,3 +211,25 @@ function getenv(name) {
     }
     return undefined;
 }
+
+var APIs = {
+    pref,
+    defaultPref,
+    lockPref,
+    unlockPref,
+    getPref,
+    clearPref,
+    setLDAPVersion,
+    getLDAPAttributes,
+    getLDAPValue,
+    displayError,
+    getenv,
+};
+
+for (let [defineAs, func] of Object.entries(APIs)) {
+    Cu.exportFunction(func, gSandbox, {defineAs});
+}
+
+Object.defineProperty(Cu.waiveXrays(gSandbox), "gIsUTF8", {
+  get: Cu.exportFunction(() => gIsUTF8, gSandbox),
+});

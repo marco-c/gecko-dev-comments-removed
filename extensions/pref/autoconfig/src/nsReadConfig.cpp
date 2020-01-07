@@ -4,6 +4,8 @@
 
 
 #include "nsReadConfig.h"
+#include "nsJSConfigTriggers.h"
+
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIAppStartup.h"
 #include "nsDirectoryServiceDefs.h"
@@ -26,14 +28,8 @@
 
 extern mozilla::LazyLogModule MCD;
 
-extern nsresult EvaluateAdminConfigScript(const char *js_buffer, size_t length,
-                                          const char *filename,
-                                          bool bGlobalContext,
-                                          bool bCallbacks,
-                                          bool skipFirstLine);
-extern nsresult CentralizedAdminPrefManagerInit();
+extern nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled);
 extern nsresult CentralizedAdminPrefManagerFinish();
-
 
 static nsresult DisplayError(void)
 {
@@ -99,7 +95,8 @@ NS_IMETHODIMP nsReadConfig::Observe(nsISupports *aSubject, const char *aTopic, c
 
     if (!nsCRT::strcmp(aTopic, NS_PREFSERVICE_READ_TOPIC_ID)) {
         rv = readConfigFile();
-        if (NS_FAILED(rv)) {
+        
+        if (NS_FAILED(rv) && !sandboxEnabled) {
             rv = DisplayError();
             if (NS_FAILED(rv)) {
                 nsCOMPtr<nsIAppStartup> appStartup =
@@ -139,6 +136,10 @@ nsresult nsReadConfig::readConfigFile()
     
     
 
+    bool sandboxEnabled = false;
+    rv = defaultPrefBranch->GetBoolPref("general.config.sandbox_enabled",
+                                        &sandboxEnabled);
+
     rv = defaultPrefBranch->GetCharPref("general.config.filename",
                                         lockFileName);
 
@@ -159,7 +160,7 @@ nsresult nsReadConfig::readConfigFile()
     if (!mRead) {
         
 
-        rv = CentralizedAdminPrefManagerInit();
+        rv = CentralizedAdminPrefManagerInit(sandboxEnabled);
         if (NS_FAILED(rv))
             return rv;
 
@@ -301,7 +302,8 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char *aFileName, int32_t obsc
         }
         rv = EvaluateAdminConfigScript(buf, amt, aFileName,
                                        false, true,
-                                       isEncoded ? true:false);
+                                       isEncoded,
+                                       !isBinDir);
     }
     inStr->Close();
     free(buf);
