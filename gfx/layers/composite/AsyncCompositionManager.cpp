@@ -709,26 +709,23 @@ SampleAnimations(Layer* aLayer,
             break;
           }
           case AnimationHelper::SampleResult::Skipped:
-            
-            
-#ifdef DEBUG
-            
             switch (animations[0].property()) {
               case eCSSProperty_opacity:
                 MOZ_ASSERT(
                   layer->AsHostLayer()->GetShadowOpacitySetByAnimation());
+#ifdef DEBUG
                 
                 
                 
                 
                 
+#endif
                 break;
               case eCSSProperty_transform: {
                 MOZ_ASSERT(
                   layer->AsHostLayer()->GetShadowTransformSetByAnimation());
-
                 MOZ_ASSERT(previousValue);
-
+#ifdef DEBUG
                 const TransformData& transformData =
                   animations[0].data().get_TransformData();
                 Matrix4x4 frameTransform =
@@ -740,13 +737,27 @@ SampleAnimations(Layer* aLayer,
                 MOZ_ASSERT(
                   previousValue->mTransform.mTransformInDevSpace.FuzzyEqualsMultiplicative(
                   transformInDevice));
+#endif
+                
+                
+                
+                HostLayer* layerCompositor = layer->AsHostLayer();
+                layerCompositor->SetShadowBaseTransform(
+                  
+                  
+                  
+                  
+                  
+                  
+                  previousValue
+                    ? previousValue->mTransform.mTransformInDevSpace
+                    : layer->GetBaseTransform());
                 break;
               }
               default:
                 MOZ_ASSERT_UNREACHABLE("Unsupported properties");
                 break;
             }
-#endif
             break;
           case AnimationHelper::SampleResult::None: {
             HostLayer* layerCompositor = layer->AsHostLayer();
