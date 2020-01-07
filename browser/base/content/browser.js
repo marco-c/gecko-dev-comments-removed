@@ -1773,6 +1773,8 @@ var gBrowserInit = {
       gDragSpaceObserver.uninit();
     }
 
+    TabsInTitlebar.uninit();
+
     
     
     
@@ -1805,8 +1807,6 @@ var gBrowserInit = {
     PlacesToolbarHelper.uninit();
 
     BookmarkingUI.uninit();
-
-    TabsInTitlebar.uninit();
 
     ToolbarIconColor.uninit();
 

@@ -13,15 +13,9 @@
 
 
 const EXPECTED_REFLOWS = [
-  {
-    stack: [
-      "onOverflow@resource:///modules/CustomizableUI.jsm",
-      "init@resource:///modules/CustomizableUI.jsm",
-      "observe@resource:///modules/CustomizableUI.jsm",
-      "_delayedStartup@chrome://browser/content/browser.js",
-    ],
-    times: 2, 
-  },
+  
+
+
 ];
 
 if (Services.appinfo.OS == "WINNT") {
@@ -53,7 +47,8 @@ if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
         "init@chrome://browser/content/browser-tabsintitlebar.js",
         "handleEvent@chrome://browser/content/tabbrowser.xml",
       ],
-      times: 4, 
+      
+      times: Services.appinfo.OS == "WINNT" ? 5 : 4,
     },
   );
 }
