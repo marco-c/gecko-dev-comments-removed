@@ -870,6 +870,8 @@ var PanelMultiView = class extends this.AssociatedToNode {
     } else if (viewNode.customRectGetter) {
       
       
+      
+      
       let width = prevPanelView.knownWidth;
       let height = prevPanelView.knownHeight;
       viewRect = Object.assign({height, width}, viewNode.customRectGetter());
@@ -880,7 +882,6 @@ var PanelMultiView = class extends this.AssociatedToNode {
       nextPanelView.visible = true;
       nextPanelView.descriptionHeightWorkaround();
     } else {
-      let oldSibling = viewNode.nextSibling || null;
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
       nextPanelView.visible = true;
@@ -897,11 +898,9 @@ var PanelMultiView = class extends this.AssociatedToNode {
         return;
       }
 
-      try {
-        this._viewStack.insertBefore(viewNode, oldSibling);
-      } catch (ex) {
-        this._viewStack.appendChild(viewNode);
-      }
+      
+      
+      this._viewStack.appendChild(viewNode);
 
       this._offscreenViewStack.style.removeProperty("min-height");
     }
