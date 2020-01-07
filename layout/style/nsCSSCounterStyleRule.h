@@ -9,10 +9,8 @@
 
 #include "mozilla/css/Rule.h"
 #include "nsCSSValue.h"
-#include "nsIDOMCSSCounterStyleRule.h"
 
-class nsCSSCounterStyleRule final : public mozilla::css::Rule,
-                                    public nsIDOMCSSCounterStyleRule
+class nsCSSCounterStyleRule final : public mozilla::css::Rule
 {
 public:
   explicit nsCSSCounterStyleRule(nsAtom* aName,
@@ -29,7 +27,6 @@ private:
   ~nsCSSCounterStyleRule();
 
 public:
-  NS_DECL_ISUPPORTS_INHERITED
   virtual bool IsCCLeaf() const override;
 
 #ifdef DEBUG
@@ -40,33 +37,30 @@ public:
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_DECL_NSIDOMCSSCOUNTERSTYLERULE
-
-  
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  void GetName(nsAString& aName);
+  void SetName(const nsAString& aName);
+  void GetSystem(nsAString& aSystem);
+  void SetSystem(const nsAString& aSystem);
+  void GetSymbols(nsAString& aSymbols);
+  void SetSymbols(const nsAString& aSymbols);
+  void GetAdditiveSymbols(nsAString& aAdditiveSymbols);
+  void SetAdditiveSymbols(const nsAString& aAdditiveSymbols);
+  void GetNegative(nsAString& aNegative);
+  void SetNegative(const nsAString& aNegative);
+  void GetPrefix(nsAString& aPrefix);
+  void SetPrefix(const nsAString& aPrefix);
+  void GetSuffix(nsAString& aSuffix);
+  void SetSuffix(const nsAString& aSuffix);
+  void GetRange(nsAString& aRange);
+  void SetRange(const nsAString& aRange);
+  void GetPad(nsAString& aPad);
+  void SetPad(const nsAString& aPad);
+  void GetSpeakAs(nsAString& aSpeakAs);
+  void SetSpeakAs(const nsAString& aSpeakAs);
+  void GetFallback(nsAString& aFallback);
+  void SetFallback(const nsAString& aFallback);
 
   
   
@@ -99,8 +93,8 @@ private:
   typedef decltype(&nsCSSCounterStyleRule::GetSymbols) Getter;
   static const Getter kGetters[];
 
-  nsresult GetDescriptor(nsCSSCounterDesc aDescID, nsAString& aValue);
-  nsresult SetDescriptor(nsCSSCounterDesc aDescID, const nsAString& aValue);
+  void GetDescriptor(nsCSSCounterDesc aDescID, nsAString& aValue);
+  void SetDescriptor(nsCSSCounterDesc aDescID, const nsAString& aValue);
 
   RefPtr<nsAtom> mName;
   nsCSSValue mValues[eCSSCounterDesc_COUNT];
