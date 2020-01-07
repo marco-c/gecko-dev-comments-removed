@@ -4419,8 +4419,10 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     };
 
     
-    std::stable_sort(step2Items.begin(), step2Items.end(),
-                     Step2ItemData::IsSpanLessThan);
+    
+    
+    std::sort(step2Items.begin(), step2Items.end(),
+              Step2ItemData::IsSpanLessThan);
 
     nsTArray<uint32_t> tracks(maxSpan);
     nsTArray<TrackSize> plan(mSizes.Length());
