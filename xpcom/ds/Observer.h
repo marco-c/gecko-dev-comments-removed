@@ -57,15 +57,7 @@ public:
 
   bool RemoveObserver(Observer<T>* aObserver)
   {
-    if (mObservers.RemoveElement(aObserver)) {
-      
-      
-      auto i = mBroadcastCopy.IndexOf(aObserver);
-      MOZ_ASSERT(i != NoIndex);
-      mBroadcastCopy[i] = nullptr;
-      return true;
-    }
-    return false;
+    return mObservers.RemoveElement(aObserver);
   }
 
   uint32_t Length()
@@ -73,27 +65,17 @@ public:
     return mObservers.Length();
   }
 
-  
-
-
-
   void Broadcast(const T& aParam)
   {
-    MOZ_ASSERT(mBroadcastCopy.Empty());
-    mBroadcastCopy = mObservers;
-    uint32_t size = mBroadcastCopy.Length();
+    nsTArray<Observer<T>*> observersCopy(mObservers);
+    uint32_t size = observersCopy.Length();
     for (uint32_t i = 0; i < size; ++i) {
-      
-      if (mBroadcastCopy[i]) {
-        mBroadcastCopy[i]->Notify(aParam);
-      }
+      observersCopy[i]->Notify(aParam);
     }
-    mBroadcastCopy.Clear();
   }
 
 protected:
   nsTArray<Observer<T>*> mObservers;
-  nsTArray<Observer<T>*> mBroadcastCopy;
 };
 
 } 
