@@ -590,8 +590,6 @@ struct JSCompartment
     }
 
   public:
-    js::RegExpCompartment        regExps;
-
     
     
     
@@ -684,7 +682,6 @@ struct JSCompartment
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
-    void sweepRegExps();
 
     static void fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
     void fixupAfterMovingGC();
@@ -692,10 +689,6 @@ struct JSCompartment
     js::SavedStacks& savedStacks() { return savedStacks_; }
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
-
-    static size_t offsetOfRegExps() {
-        return offsetof(JSCompartment, regExps);
-    }
 
     
     
@@ -862,6 +855,8 @@ class JS::Realm : public JSCompartment
     
     js::coverage::LCovRealm lcovOutput;
 
+    js::RegExpRealm regExps;
+
     js::DtoaCache dtoaCache;
     js::NewProxyCache newProxyCache;
     js::ArraySpeciesLookup arraySpeciesLookup;
@@ -988,6 +983,7 @@ class JS::Realm : public JSCompartment
     void sweepAfterMinorGC();
     void sweepDebugEnvironments();
     void sweepObjectRealm();
+    void sweepRegExps();
     void sweepSelfHostingScriptSource();
     void sweepTemplateObjects();
 
@@ -1280,6 +1276,10 @@ class JS::Realm : public JSCompartment
     }
     js::UniquePtr<js::DebugEnvironments>& debugEnvsRef() {
         return debugEnvs_;
+    }
+
+    static constexpr size_t offsetOfRegExps() {
+        return offsetof(JS::Realm, regExps);
     }
 };
 

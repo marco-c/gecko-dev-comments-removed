@@ -4081,7 +4081,7 @@ BuildFlatMatchArray(JSContext* cx, HandleString str, HandleString pattern, int32
     }
 
     
-    JSObject* templateObject = cx->compartment()->regExps.getOrCreateMatchResultTemplateObject(cx);
+    JSObject* templateObject = cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
     if (!templateObject)
         return false;
 
