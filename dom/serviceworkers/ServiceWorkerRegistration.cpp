@@ -76,17 +76,18 @@ ServiceWorkerRegistration::CreateForMainThread(nsPIDOMWindowInner* aWindow,
 
  already_AddRefed<ServiceWorkerRegistration>
 ServiceWorkerRegistration::CreateForWorker(WorkerPrivate* aWorkerPrivate,
+                                           nsIGlobalObject* aGlobal,
                                            const ServiceWorkerRegistrationDescriptor& aDescriptor)
 {
-  MOZ_ASSERT(aWorkerPrivate);
+  MOZ_DIAGNOSTIC_ASSERT(aWorkerPrivate);
+  MOZ_DIAGNOSTIC_ASSERT(aGlobal);
   aWorkerPrivate->AssertIsOnWorkerThread();
 
   RefPtr<Inner> inner =
     new ServiceWorkerRegistrationWorkerThread(aWorkerPrivate, aDescriptor);
 
   RefPtr<ServiceWorkerRegistration> registration =
-    new ServiceWorkerRegistration(aWorkerPrivate->GlobalScope(), aDescriptor,
-                                  inner);
+    new ServiceWorkerRegistration(aGlobal, aDescriptor, inner);
 
   return registration.forget();
 }
@@ -128,7 +129,12 @@ ServiceWorkerRegistration::UpdateState(const ServiceWorkerRegistrationDescriptor
   mDescriptor = aDescriptor;
 
   nsCOMPtr<nsIGlobalObject> global = GetParentObject();
-  if (!global) {
+
+  
+  
+  
+  
+  if (!global || !NS_IsMainThread()) {
     mInstallingWorker = nullptr;
     mWaitingWorker = nullptr;
     mActiveWorker = nullptr;
