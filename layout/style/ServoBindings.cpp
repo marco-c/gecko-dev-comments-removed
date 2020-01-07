@@ -1101,21 +1101,22 @@ ClassOrClassList(Implementor* aElement, nsAtom** aClass, nsAtom*** aClassList)
 
   
   
-  if (attr->Type() == nsAttrValue::eString) {
+  nsAttrValue::ValueType type = attr->Type();
+  if (MOZ_UNLIKELY(type == nsAttrValue::eString)) {
     MOZ_ASSERT(nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
                  attr->GetStringValue()).IsEmpty());
     return 0;
   }
 
   
-  if (attr->Type() == nsAttrValue::eAtom) {
+  if (type == nsAttrValue::eAtom) {
     *aClass = attr->GetAtomValue();
     return 1;
   }
 
   
   
-  MOZ_ASSERT(attr->Type() == nsAttrValue::eAtomArray);
+  MOZ_ASSERT(type == nsAttrValue::eAtomArray);
   nsTArray<RefPtr<nsAtom>>* atomArray = attr->GetAtomArrayValue();
   uint32_t length = atomArray->Length();
 
