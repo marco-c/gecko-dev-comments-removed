@@ -155,6 +155,9 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
     type ConcreteDocument: TDocument<ConcreteNode = Self>;
 
     
+    type ConcreteShadowRoot: TShadowRoot<ConcreteNode = Self>;
+
+    
     fn parent_node(&self) -> Option<Self>;
 
     
@@ -235,6 +238,9 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
     
     fn as_document(&self) -> Option<Self::ConcreteDocument>;
+
+    
+    fn as_shadow_root(&self) -> Option<Self::ConcreteShadowRoot>;
 }
 
 
@@ -312,6 +318,18 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
     }
 
     Ok(())
+}
+
+
+pub trait TShadowRoot : Sized + Copy + Clone {
+    
+    type ConcreteNode: TNode<ConcreteShadowRoot = Self>;
+
+    
+    fn as_node(&self) -> Self::ConcreteNode;
+
+    
+    fn host(&self) -> <Self::ConcreteNode as TNode>::ConcreteElement;
 }
 
 
@@ -718,6 +736,12 @@ pub trait TElement
     fn xbl_binding_anonymous_content(&self) -> Option<Self::ConcreteNode> {
         None
     }
+
+    
+    fn shadow_root(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
+
+    
+    fn containing_shadow(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
     
     
