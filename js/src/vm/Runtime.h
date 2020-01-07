@@ -24,6 +24,7 @@
 #include "builtin/AtomicsObject.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "builtin/Promise.h"
+#include "frontend/BinSourceRuntimeSupport.h"
 #include "frontend/NameCollections.h"
 #include "gc/GCRuntime.h"
 #include "gc/Tracer.h"
@@ -935,6 +936,15 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     
     js::ExclusiveData<js::wasm::InstanceVector> wasmInstances;
+
+  public:
+#if defined(JS_BUILD_BINAST)
+    js::BinaryASTSupport& binast() {
+        return binast_;
+    }
+  private:
+    js::BinaryASTSupport binast_;
+#endif 
 
   public:
 #if defined(NIGHTLY_BUILD)
