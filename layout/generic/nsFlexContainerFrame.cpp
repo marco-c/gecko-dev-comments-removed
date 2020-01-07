@@ -2838,7 +2838,7 @@ MainAxisPositionTracker::
   
   
   
-  if (mPackingSpaceRemaining < 0) {
+  if (mPackingSpaceRemaining < 0 || aLine->NumItems() == 1) {
     if (mJustifyContent == NS_STYLE_JUSTIFY_SPACE_BETWEEN) {
       mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
     } else if (mJustifyContent == NS_STYLE_JUSTIFY_SPACE_AROUND ||
@@ -3038,9 +3038,12 @@ CrossAxisPositionTracker::
   
   
   
-  if (mPackingSpaceRemaining < 0) {
-    if (mAlignContent == NS_STYLE_ALIGN_SPACE_BETWEEN ||
-        mAlignContent == NS_STYLE_ALIGN_STRETCH) {
+  
+  
+  if (mPackingSpaceRemaining < 0 && mAlignContent == NS_STYLE_ALIGN_STRETCH) {
+      mAlignContent = NS_STYLE_ALIGN_FLEX_START;
+  } else if (mPackingSpaceRemaining < 0 || numLines == 1) {
+    if (mAlignContent == NS_STYLE_ALIGN_SPACE_BETWEEN) {
       mAlignContent = NS_STYLE_ALIGN_FLEX_START;
     } else if (mAlignContent == NS_STYLE_ALIGN_SPACE_AROUND ||
                mAlignContent == NS_STYLE_ALIGN_SPACE_EVENLY) {
@@ -4285,8 +4288,13 @@ nsFlexContainerFrame::CalculatePackingSpace(uint32_t aNumThingsToPack,
   MOZ_ASSERT(*aPackingSpaceRemaining >= 0,
              "Should not be called with negative packing space");
 
-  MOZ_ASSERT(aNumThingsToPack >= 1,
-             "Should not be called with less than 1 thing to pack");
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aNumThingsToPack > 1,
+             "Should not be called unless there's more than 1 thing to pack");
 
   
   *aNumPackingSpacesRemaining = aNumThingsToPack - 1;
