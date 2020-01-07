@@ -9,11 +9,20 @@
 
 
   function documentReady() {
+    if (document.contentType === 'application/vnd.mozilla.xul+xml') {
+      
+      return new Promise(
+        resolve => document.addEventListener(
+          'MozBeforeInitialXULLayout', resolve, { once: true }
+        )
+      );
+    }
+
+    
     const rs = document.readyState;
     if (rs === 'interactive' || rs === 'completed') {
       return Promise.resolve();
     }
-
     return new Promise(
       resolve => document.addEventListener(
         'readystatechange', resolve, { once: true }
