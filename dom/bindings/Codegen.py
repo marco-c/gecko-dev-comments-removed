@@ -7236,9 +7236,9 @@ class CGCallGenerator(CGThing):
 
             getPrincipal = fill(
                 """
-                JSCompartment* compartment = js::GetContextCompartment(cx);
-                MOZ_ASSERT(compartment);
-                JSPrincipals* principals = JS_GetCompartmentPrincipals(compartment);
+                JS::Realm* realm = js::GetContextRealm(cx);
+                MOZ_ASSERT(realm);
+                JSPrincipals* principals = JS::GetRealmPrincipals(realm);
                 nsIPrincipal* principal = nsJSPrincipals::get(principals);
                 ${checkPrincipal}
                 """,
@@ -7563,7 +7563,7 @@ class CGPerSignatureCall(CGThing):
             if not idlNode.isStatic():
                 needsUnwrap = True
                 needsUnwrappedVar = True
-                argsPost.append("js::GetObjectCompartment(unwrappedObj ? *unwrappedObj : obj)")
+                argsPost.append("(unwrappedObj ? js::GetNonCCWObjectRealm(*unwrappedObj) : js::GetContextRealm(cx))")
         elif needScopeObject(returnType, arguments, self.extendedAttributes,
                              descriptor.wrapperCache, True,
                              idlNode.getExtendedAttribute("StoreInSlot")):
@@ -15009,7 +15009,7 @@ class CGJSImplMember(CGNativeMember):
 
     def getArgs(self, returnType, argList):
         args = CGNativeMember.getArgs(self, returnType, argList)
-        args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
+        args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
         return args
 
 
@@ -15058,7 +15058,7 @@ class CGJSImplMethod(CGJSImplMember):
             assert args[-1].argType == 'JS::Handle<JSObject*>'
             assert args[-1].name == 'aGivenProto'
             constructorArgs = [arg.name for arg in args[2:-1]]
-            constructorArgs.append("js::GetObjectCompartment(scopeObj)")
+            constructorArgs.append("js::GetNonCCWObjectRealm(scopeObj)")
             initCall = fill(
                 """
                 // Wrap the object before calling __Init so that __DOM_IMPL__ is available.
@@ -15522,7 +15522,7 @@ class CGCallback(CGClass):
         
         
         
-        args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
+        args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
         
         argsWithoutThis = list(args)
         args.insert(0, Argument("const T&",  "thisVal"))
@@ -15550,7 +15550,7 @@ class CGCallback(CGClass):
             if (!aExecutionReason) {
               aExecutionReason = "${executionReason}";
             }
-            CallSetup s(this, aRv, aExecutionReason, aExceptionHandling, aCompartment);
+            CallSetup s(this, aRv, aExecutionReason, aExceptionHandling, aRealm);
             if (!s.GetContext()) {
               MOZ_ASSERT(aRv.Failed());
               return${errorReturn};
@@ -15961,7 +15961,7 @@ class CallbackMember(CGNativeMember):
                                      "nullptr"))
                 args.append(Argument("ExceptionHandling", "aExceptionHandling",
                                      "eReportExceptions"))
-            args.append(Argument("JSCompartment*", "aCompartment", "nullptr"))
+            args.append(Argument("JS::Realm*", "aRealm", "nullptr"))
             return args
         
         
@@ -15976,10 +15976,10 @@ class CallbackMember(CGNativeMember):
         if self.rethrowContentException:
             
             
-            callSetup += ', "%s", eRethrowContentExceptions, aCompartment, /* aIsJSImplementedWebIDL = */ ' % self.getPrettyName()
+            callSetup += ', "%s", eRethrowContentExceptions, aRealm, /* aIsJSImplementedWebIDL = */ ' % self.getPrettyName()
             callSetup += toStringBool(isJSImplementedDescriptor(self.descriptorProvider))
         else:
-            callSetup += ', "%s", aExceptionHandling, aCompartment' % self.getPrettyName()
+            callSetup += ', "%s", aExceptionHandling, aRealm' % self.getPrettyName()
         callSetup += ");\n"
         return fill(
             """
