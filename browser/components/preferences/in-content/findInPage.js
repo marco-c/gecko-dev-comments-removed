@@ -472,7 +472,8 @@ var gSearchResultsPane = {
         .split(",")
         .map(s => s.trim().split(".")).filter(s => s[0].length > 0);
 
-      const messages = await document.l10n.formatMessages(refs.map(ref => [ref[0]]));
+      const messages = await document.l10n.formatMessages(
+        refs.map(ref => ({ id: ref[0] })));
 
       
       
