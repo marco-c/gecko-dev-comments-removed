@@ -15,3 +15,13 @@ extern crate nserror;
 extern crate xpcom_macros;
 #[doc(hidden)]
 pub use xpcom_macros::*;
+
+
+mod base;
+pub use base::*;
+
+mod refptr;
+pub use refptr::*;
+
+
+pub mod interfaces;
