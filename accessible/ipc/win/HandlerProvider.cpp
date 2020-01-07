@@ -614,11 +614,15 @@ HandlerProvider::GetAllTextInfoMainThread(BSTR* aText,
   long end = 0;
   long length = ::SysStringLen(*aText);
   while (end < length) {
+    long offset = end;
     long start;
     BSTR attribs;
     
-    hr = ht->get_attributes(end, &start, &end, &attribs);
-    if (FAILED(hr)) {
+    hr = ht->get_attributes(offset, &start, &end, &attribs);
+    
+    
+    
+    if (FAILED(hr) || end <= offset) {
       break;
     }
     attribRuns.AppendElement(IA2TextSegment({attribs, start, end}));
