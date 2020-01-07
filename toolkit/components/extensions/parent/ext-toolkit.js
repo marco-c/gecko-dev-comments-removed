@@ -75,8 +75,23 @@ global.isValidCookieStoreId = function(storeId) {
          isContainerCookieStoreId(storeId);
 };
 
+function makeEventPromise(name, event) {
+  Object.defineProperty(global, name, {
+    get() {
+      let promise = ExtensionUtils.promiseObserved(event);
+      Object.defineProperty(global, name, {value: promise});
+      return promise;
+    },
+    configurable: true,
+    enumerable: true,
+  });
+}
 
 
 
-global.browserPaintedPromise = ExtensionUtils.promiseObserved("browser-delayed-startup-finished");
-global.browserStartupPromise = ExtensionUtils.promiseObserved("sessionstore-windows-restored");
+
+
+
+
+makeEventPromise("browserPaintedPromise", "browser-delayed-startup-finished");
+makeEventPromise("browserStartupPromise", "sessionstore-windows-restored");
