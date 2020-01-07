@@ -105,6 +105,10 @@ function httpd_handler(statusCode, status, body) {
   };
 }
 
+function promiseStopServer(server) {
+  return new Promise(resolve => server.stop(resolve));
+}
+
 
 
 
