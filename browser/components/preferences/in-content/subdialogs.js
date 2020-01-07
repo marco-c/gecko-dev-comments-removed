@@ -72,6 +72,16 @@ SubDialog.prototype = {
   async open(aURL, aFeatures = null, aParams = null, aClosingCallback = null) {
     
     await this._frameCreated;
+
+    if (!this._frame.contentWindow) {
+      
+      
+      
+      
+      
+      this._frame.getBoundingClientRect();
+    }
+
     
     if (this._openedURL || this._isClosing) {
       if (!this._isClosing) {
@@ -525,6 +535,12 @@ var gSubDialog = {
       return;
     }
 
+    if (this._dialogs.length == 0) {
+      
+      
+      this._dialogStack.hidden = false;
+    }
+
     this._preloadDialog.open(aURL, aFeatures, aParams, aClosingCallback);
     this._dialogs.push(this._preloadDialog);
     this._preloadDialog = new SubDialog({template: this._dialogTemplate,
@@ -532,7 +548,6 @@ var gSubDialog = {
                                          id: this._nextDialogID++});
 
     if (this._dialogs.length == 1) {
-      this._dialogStack.hidden = false;
       this._ensureStackEventListeners();
     }
   },
