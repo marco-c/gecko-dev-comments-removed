@@ -623,16 +623,9 @@ function hitTestScrollbar(params) {
   var expectedHitInfo = APZHitResultFlags.VISIBLE | APZHitResultFlags.SCROLLBAR;
   if (params.expectThumb) {
     
-    
-    
-    
-    
-    
-    
-    
     expectedHitInfo |= APZHitResultFlags.DISPATCH_TO_CONTENT;
-    if (config.isWebRender || params.layerState == LayerState.ACTIVE) {
-        expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
+    if (params.layerState == LayerState.ACTIVE) {
+      expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
     }
   }
 
