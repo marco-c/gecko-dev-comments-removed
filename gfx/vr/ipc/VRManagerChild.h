@@ -132,7 +132,7 @@ private:
 
   layers::LayersBackend mBackend;
   RefPtr<layers::SyncObjectClient> mSyncObject;
-  nsRefPtrHashtable<nsUint32HashKey, dom::Promise> mGamepadPromiseList; 
+  nsRefPtrHashtable<nsUint32HashKey, dom::Promise> mGamepadPromiseList;
   uint32_t mPromiseID;
   nsRefPtrHashtable<nsUint32HashKey, dom::Promise> mPromiseList;
   RefPtr<dom::VRMockDisplay> mVRMockDisplay;
