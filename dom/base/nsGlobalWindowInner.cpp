@@ -1816,6 +1816,28 @@ nsGlobalWindowInner::EnsureClientSource()
     if (controller.isSome()) {
       mClientSource->SetController(controller.ref());
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    else if (mClientSource->GetController().isSome()) {
+      mClientSource.reset();
+      mClientSource =
+        ClientManager::CreateSource(ClientType::Window,
+                                    EventTargetFor(TaskCategory::Other),
+                                    mDoc->NodePrincipal());
+      if (NS_WARN_IF(!mClientSource)) {
+        return NS_ERROR_FAILURE;
+      }
+      newClientSource = true;
+    }
   }
 
   
