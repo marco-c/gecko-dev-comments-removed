@@ -3126,9 +3126,6 @@ struct CreateGlobalOptions<nsGlobalWindowInner>
   static bool PostCreateGlobal(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 };
 
-nsresult
-RegisterDOMNames();
-
 
 
 

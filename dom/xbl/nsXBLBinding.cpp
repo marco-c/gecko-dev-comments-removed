@@ -49,10 +49,6 @@
 #include "nsNodeUtils.h"
 #include "nsJSUtils.h"
 
-
-
-#include "nsDOMClassInfo.h"
-
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptSettings.h"
