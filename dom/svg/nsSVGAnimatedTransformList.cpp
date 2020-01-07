@@ -21,7 +21,8 @@ namespace mozilla {
 using namespace dom;
 
 nsresult
-nsSVGAnimatedTransformList::SetBaseValueString(const nsAString& aValue)
+nsSVGAnimatedTransformList::SetBaseValueString(const nsAString& aValue,
+                                               nsSVGElement* aSVGElement)
 {
   SVGTransformList newBaseValue;
   nsresult rv = newBaseValue.SetValueFromString(aValue);
@@ -29,11 +30,12 @@ nsSVGAnimatedTransformList::SetBaseValueString(const nsAString& aValue)
     return rv;
   }
 
-  return SetBaseValue(newBaseValue);
+  return SetBaseValue(newBaseValue, aSVGElement);
 }
 
 nsresult
-nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue)
+nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue,
+                                         nsSVGElement* aSVGElement)
 {
   SVGAnimatedTransformList *domWrapper =
     SVGAnimatedTransformList::GetDOMWrapperIfExists(this);
@@ -60,7 +62,12 @@ nsSVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue)
     domWrapper->InternalBaseValListWillChangeLengthTo(mBaseVal.Length());
   } else {
     mIsAttrSet = true;
-    mHadTransformBeforeLastBaseValChange = hadTransform;
+    
+    
+    
+    
+    mHadTransformBeforeLastBaseValChange =
+      !aSVGElement->GetPrimaryFrame() || hadTransform;
   }
   return rv;
 }
