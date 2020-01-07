@@ -83,43 +83,82 @@ var ClickEventHandler = {
     return aNode instanceof content.XULElement;
   },
 
+  getXBLNodes(parent, array) {
+    let anonNodes = content.document.getAnonymousNodes(parent);
+    let nodes = Array.from(anonNodes || parent.childNodes || []);
+    for (let node of nodes) {
+      if (node.nodeName == "children") {
+        return true;
+      }
+      if (this.getXBLNodes(node, array)) {
+        array.push(node);
+        return true;
+      }
+    }
+    return false;
+  },
+
+  * parentNodeIterator(aNode) {
+    while (aNode) {
+      yield aNode;
+
+      let parent = aNode.parentNode;
+      if (parent && parent instanceof content.XULElement) {
+        let anonNodes = content.document.getAnonymousNodes(parent);
+        if (anonNodes && !Array.from(anonNodes).includes(aNode)) {
+          
+          
+          let nodes = [];
+          this.getXBLNodes(parent, nodes);
+          for (let node of nodes) {
+            yield node;
+          }
+        }
+      }
+
+      aNode = parent;
+    }
+  },
+
   findNearestScrollableElement(aNode) {
     
     const scrollingAllowed = ["scroll", "auto"];
 
     
     
-    for (this._scrollable = aNode; this._scrollable;
-         this._scrollable = this._scrollable.parentNode) {
+    this._scrollable = null;
+    for (let node of this.parentNodeIterator(aNode)) {
       
       
       
-      if (!this.isScrollableElement(this._scrollable)) {
+      if (!this.isScrollableElement(node)) {
         continue;
       }
 
-      var overflowx = this._scrollable.ownerGlobal
-                          .getComputedStyle(this._scrollable)
+      var overflowx = node.ownerGlobal
+                          .getComputedStyle(node)
                           .getPropertyValue("overflow-x");
-      var overflowy = this._scrollable.ownerGlobal
-                          .getComputedStyle(this._scrollable)
+      var overflowy = node.ownerGlobal
+                          .getComputedStyle(node)
                           .getPropertyValue("overflow-y");
       
       
       
-      var scrollVert = this._scrollable.scrollTopMax &&
-        (this._scrollable instanceof content.HTMLSelectElement ||
+      var scrollVert = node.scrollTopMax &&
+        (node instanceof content.HTMLSelectElement ||
          scrollingAllowed.indexOf(overflowy) >= 0);
 
       
       
-      if (!(this._scrollable instanceof content.HTMLSelectElement) &&
-          this._scrollable.scrollLeftMin != this._scrollable.scrollLeftMax &&
+      if (!(node instanceof content.HTMLSelectElement) &&
+          node.scrollLeftMin != node.scrollLeftMax &&
           scrollingAllowed.indexOf(overflowx) >= 0) {
         this._scrolldir = scrollVert ? "NSEW" : "EW";
+        this._scrollable = node;
         break;
       } else if (scrollVert) {
         this._scrolldir = "NS";
+        this._scrollable = node;
         break;
       }
     }
