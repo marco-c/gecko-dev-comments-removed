@@ -604,7 +604,7 @@ nsImageFrame::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
 
   MarkNeedsDisplayItemRebuild();
 
-  if (intrinsicSizeChanged && (mState & IMAGE_GOTINITIALREFLOW)) {
+  if (intrinsicSizeChanged && GotInitialReflow()) {
     
     
     if (!(mState & IMAGE_SIZECONSTRAINED)) {
@@ -627,7 +627,7 @@ nsImageFrame::OnFrameUpdate(imgIRequest* aRequest, const nsIntRect* aRect)
 {
   NS_ENSURE_ARG_POINTER(aRect);
 
-  if (!(mState & IMAGE_GOTINITIALREFLOW)) {
+  if (!GotInitialReflow()) {
     
     return NS_OK;
   }
@@ -692,7 +692,7 @@ nsImageFrame::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus)
 void
 nsImageFrame::ResponsiveContentDensityChanged()
 {
-  if (!(mState & IMAGE_GOTINITIALREFLOW)) {
+  if (!GotInitialReflow()) {
     return;
   }
 
@@ -733,7 +733,7 @@ nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest, nsresult aStatus)
     mIntrinsicRatio.SizeTo(0, 0);
   }
 
-  if (mState & IMAGE_GOTINITIALREFLOW) { 
+  if (GotInitialReflow()) {
     if (intrinsicSizeChanged) {
       if (!(mState & IMAGE_SIZECONSTRAINED)) {
         PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
@@ -976,12 +976,6 @@ nsImageFrame::Reflow(nsPresContext*          aPresContext,
     AddStateBits(IMAGE_SIZECONSTRAINED);
   } else {
     RemoveStateBits(IMAGE_SIZECONSTRAINED);
-  }
-
-  
-  
-  if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
-    AddStateBits(IMAGE_GOTINITIALREFLOW);
   }
 
   mComputedSize =
