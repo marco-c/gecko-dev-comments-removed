@@ -142,7 +142,7 @@ class TransportTestPeer : public sigslot::has_slots<> {
 
     ASSERT_EQ((nsresult)NS_OK, flow_->PushLayer(loopback_));
 
-    flow_->SignalPacketReceived.connect(this, &TransportTestPeer::PacketReceived);
+    loopback_->SignalPacketReceived.connect(this, &TransportTestPeer::PacketReceived);
 
     
     ASSERT_TRUE(sctp_);
@@ -199,8 +199,9 @@ class TransportTestPeer : public sigslot::has_slots<> {
   bool connected() const { return connected_; }
 
   static TransportResult SendPacket_s(const unsigned char* data, size_t len,
-                                      const RefPtr<TransportFlow>& flow) {
-    TransportResult res = flow->SendPacket(data, len);
+                                      const RefPtr<TransportFlow>& flow,
+                                      TransportLayer* layer) {
+    TransportResult res = layer->SendPacket(data, len);
     delete data; 
     return res;
   }
@@ -216,13 +217,13 @@ class TransportTestPeer : public sigslot::has_slots<> {
     
     
     RUN_ON_THREAD(test_utils_->sts_target(), WrapRunnableNM(
-        &TransportTestPeer::SendPacket_s, buffer, len, flow_),
+        &TransportTestPeer::SendPacket_s, buffer, len, flow_, loopback_),
                   NS_DISPATCH_NORMAL);
 
     return 0;
   }
 
-  void PacketReceived(TransportFlow * flow, const unsigned char* data,
+  void PacketReceived(TransportLayer * layer, const unsigned char* data,
                       size_t len) {
     std::cerr << "Received " << len << " bytes" << std::endl;
 

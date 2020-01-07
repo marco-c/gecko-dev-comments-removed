@@ -206,13 +206,13 @@ class TransportInfo {
   void PushLayers() {
     nsresult res;
 
-    nsAutoPtr<std::queue<TransportLayer *> > layers(
-      new std::queue<TransportLayer *>);
-    layers->push(loopback_);
-    layers->push(dtls_);
-    res = flow_->PushLayers(layers);
+    
+    (void)flow_->PushLayer(loopback_);
+    res = flow_->PushLayer(dtls_);
     if (res != NS_OK) {
-      FreeLayers();
+      
+      loopback_ = nullptr;
+      dtls_ = nullptr;
     }
     ASSERT_EQ((nsresult)NS_OK, res);
   }
