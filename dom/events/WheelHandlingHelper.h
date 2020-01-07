@@ -233,6 +233,31 @@ enum class WheelDeltaAdjustmentStrategy : uint8_t
   eHorizontalize,
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  eAutoDir,
+  eAutoDirWithRootHonour,
 };
 
 

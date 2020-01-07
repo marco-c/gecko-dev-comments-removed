@@ -320,6 +320,11 @@ public:
   
   
   
+  
+  
+  
+  
+  
   static WheelDeltaAdjustmentStrategy
   GetWheelDeltaAdjustmentStrategy(const WidgetWheelEvent& aEvent);
 
@@ -607,6 +612,20 @@ protected:
 
     static bool WheelEventsEnabledOnPlugins();
 
+    
+
+
+
+
+    static bool IsAutoDirEnabled();
+
+    
+
+
+
+
+    static bool HonoursRootForAutoDir();
+
   private:
     WheelPrefs();
     ~WheelPrefs();
@@ -683,8 +702,9 @@ protected:
     Action mOverriddenActionsX[COUNT_OF_MULTIPLIERS];
 
     static WheelPrefs* sInstance;
-
     static bool sWheelEventsEnabledOnPlugins;
+    static bool sIsAutoDirEnabled;
+    static bool sHonoursRootForAutoDir;
   };
 
   
