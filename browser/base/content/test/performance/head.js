@@ -163,13 +163,13 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
   }
 }
 
-async function ensureNoPreloadedBrowser() {
+async function ensureNoPreloadedBrowser(win = window) {
   
   
   
   
   
-  let preloaded = gBrowser._getPreloadedBrowser();
+  let preloaded = win.gBrowser._getPreloadedBrowser();
   if (preloaded) {
     preloaded.remove();
   }
@@ -185,6 +185,21 @@ async function ensureNoPreloadedBrowser() {
   registerCleanupFunction(() => {
     aboutNewTabService.resetNewTabURL();
   });
+}
+
+async function prepareSettledWindow() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  await ensureNoPreloadedBrowser(win);
+
+  let overflowableToolbar = win.document.getElementById("nav-bar").overflowable;
+  if (overflowableToolbar._lazyResizeHandler && overflowableToolbar._lazyResizeHandler.isArmed) {
+    info("forcing deferred overflow handling of the navigation toolbar to happen immediately");
+    overflowableToolbar._lazyResizeHandler.disarm();
+    overflowableToolbar._onLazyResize();
+  }
+
+  return win;
 }
 
 
