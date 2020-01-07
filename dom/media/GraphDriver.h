@@ -124,8 +124,6 @@ public:
   
   virtual void Revive() = 0;
   
-  virtual void RemoveCallback() = 0;
-  
   virtual void Shutdown() = 0;
   
 
@@ -248,7 +246,6 @@ public:
   virtual ~ThreadedDriver();
   void Start() override;
   void Revive() override;
-  void RemoveCallback() override;
   void Shutdown() override;
   
 
@@ -385,7 +382,6 @@ public:
 
   void Start() override;
   void Revive() override;
-  void RemoveCallback() override;
   void WaitForNextIteration() override;
   void WakeUp() override;
   void Shutdown() override;
@@ -472,6 +468,8 @@ public:
   SharedThreadPool* GetInitShutdownThread();
 
 private:
+  
+  void RemoveCallback() ;
   
 
 
