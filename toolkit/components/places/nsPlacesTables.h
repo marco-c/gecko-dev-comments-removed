@@ -221,4 +221,15 @@
   ") WITHOUT ROWID " \
 )
 
+
+
+
+#define CREATE_MOZ_META NS_LITERAL_CSTRING( \
+  "CREATE TABLE moz_meta (" \
+    "key TEXT PRIMARY KEY, " \
+    "value NOT NULL" \
+  ") WITHOUT ROWID " \
+)
+
+
 #endif 

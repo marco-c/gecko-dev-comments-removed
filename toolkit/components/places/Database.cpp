@@ -1233,6 +1233,11 @@ Database::InitSchema(bool* aDatabaseMigrated)
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 45) {
+        rv = MigrateV45Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -1316,6 +1321,10 @@ Database::InitSchema(bool* aDatabaseMigrated)
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_ITEMS_ANNOS);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_ITEMSANNOS_PLACEATTRIBUTE);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_META);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2071,6 +2080,20 @@ Database::MigrateV44Up() {
   if (NS_FAILED(rv)) return rv;
 
   return rv;
+}
+
+nsresult
+Database::MigrateV45Up() {
+  nsCOMPtr<mozIStorageStatement> metaTableStmt;
+  nsresult rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+    "SELECT 1 FROM moz_meta"
+  ), getter_AddRefs(metaTableStmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_META);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return NS_OK;
 }
 
 nsresult
