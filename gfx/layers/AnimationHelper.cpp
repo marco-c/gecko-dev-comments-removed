@@ -156,6 +156,14 @@ AnimationHelper::SampleAnimationForEachNode(
   MOZ_ASSERT(!aAnimations.IsEmpty(), "Should be called with animations");
 
   bool hasInEffectAnimations = false;
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  bool shouldBeSkipped = false;
+#endif
   
   for (size_t i = 0, iEnd = aAnimations.Length(); i < iEnd; ++i) {
     Animation& animation = aAnimations[i];
@@ -204,7 +212,11 @@ AnimationHelper::SampleAnimationForEachNode(
           iterCompositeOperation,
           animData.mProgressOnLastCompose,
           animData.mCurrentIterationOnLastCompose)) {
+#ifdef DEBUG
+      shouldBeSkipped = true;
+#else
       return SampleResult::Skipped;
+#endif
     }
 
     uint32_t segmentIndex = 0;
@@ -236,7 +248,11 @@ AnimationHelper::SampleAnimationForEachNode(
         animData.mSegmentIndexOnLastCompose == segmentIndex &&
         !animData.mPortionInSegmentOnLastCompose.IsNull() &&
         animData.mPortionInSegmentOnLastCompose.Value() == portion) {
+#ifdef DEBUG
+      shouldBeSkipped = true;
+#else
       return SampleResult::Skipped;
+#endif
     }
 
     AnimationPropertySegment animSegment;
@@ -260,6 +276,13 @@ AnimationHelper::SampleAnimationForEachNode(
         iterCompositeOperation,
         portion,
         computedTiming.mCurrentIteration).Consume();
+
+#ifdef DEBUG
+    if (shouldBeSkipped) {
+      return SampleResult::Skipped;
+    }
+#endif
+
     hasInEffectAnimations = true;
     animData.mProgressOnLastCompose = computedTiming.mProgress;
     animData.mCurrentIterationOnLastCompose = computedTiming.mCurrentIteration;
