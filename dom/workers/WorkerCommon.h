@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_workers_workers_h__
-#define mozilla_dom_workers_workers_h__
+#ifndef mozilla_dom_workers_WorkerCommon_h
+#define mozilla_dom_workers_WorkerCommon_h
 
 #include "jsapi.h"
 #include "mozilla/Attributes.h"

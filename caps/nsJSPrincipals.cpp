@@ -16,7 +16,7 @@
 
 #include "mozilla/dom/StructuredCloneTags.h"
 
-#include "mozilla/dom/workers/Workers.h"
+#include "mozilla/dom/workers/WorkerCommon.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 
 using namespace mozilla;
