@@ -80,8 +80,11 @@ extern MOZ_THREAD_LOCAL(JSContext*) TlsContext;
 
 enum class ContextKind
 {
-    Cooperative,
-    Background
+    
+    MainThread,
+
+    
+    HelperThread
 };
 
 #ifdef DEBUG
@@ -122,7 +125,7 @@ struct JSContext : public JS::RootingContext,
     
     void setRuntime(JSRuntime* rt);
 
-    bool isCooperativelyScheduled() const { return kind_ == js::ContextKind::Cooperative; }
+    bool isMainThreadContext() const { return kind_ == js::ContextKind::MainThread; }
 
     inline js::gc::ArenaLists* arenas() const { return arenas_; }
 
@@ -1028,10 +1031,10 @@ extern bool
 PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
            JSErrorReport* report, bool reportWarnings);
 
-extern void
+extern bool
 ReportIsNotDefined(JSContext* cx, HandlePropertyName name);
 
-extern void
+extern bool
 ReportIsNotDefined(JSContext* cx, HandleId id);
 
 

@@ -100,7 +100,7 @@ bool
 JSContext::init(ContextKind kind)
 {
     
-    if (kind == ContextKind::Cooperative) {
+    if (kind == ContextKind::MainThread) {
         if (!regexpStack.ref().init())
             return false;
 
@@ -153,7 +153,7 @@ js::NewContext(uint32_t maxBytes, uint32_t maxNurseryBytes, JSRuntime* parentRun
         return nullptr;
     }
 
-    if (!cx->init(ContextKind::Cooperative)) {
+    if (!cx->init(ContextKind::MainThread)) {
         runtime->destroyRuntime();
         js_delete(cx);
         js_delete(runtime);
@@ -880,20 +880,22 @@ js::ReportErrorNumberUCArray(JSContext* cx, unsigned flags, JSErrorCallback call
     return warning;
 }
 
-void
+bool
 js::ReportIsNotDefined(JSContext* cx, HandleId id)
 {
     JSAutoByteString printable;
-    if (!ValueToPrintableUTF8(cx, IdToValue(id), &printable))
-        return;
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NOT_DEFINED, printable.ptr());
+    if (ValueToPrintable(cx, IdToValue(id), &printable)) {
+        JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr, JSMSG_NOT_DEFINED,
+                                   printable.ptr());
+    }
+    return false;
 }
 
-void
+bool
 js::ReportIsNotDefined(JSContext* cx, HandlePropertyName name)
 {
     RootedId id(cx, NameToId(name));
-    ReportIsNotDefined(cx, id);
+    return ReportIsNotDefined(cx, id);
 }
 
 bool
@@ -1218,7 +1220,7 @@ JSContext::alreadyReportedError()
 
 JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
   : runtime_(runtime),
-    kind_(ContextKind::Background),
+    kind_(ContextKind::HelperThread),
     helperThread_(nullptr),
     options_(options),
     arenas_(nullptr),
@@ -1316,7 +1318,7 @@ JSContext::~JSContext()
 {
     
     
-    kind_ = ContextKind::Background;
+    kind_ = ContextKind::HelperThread;
 
     
     MOZ_ASSERT(!resolvingList);
