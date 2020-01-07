@@ -40,14 +40,14 @@ add_task(async function() {
 
   
   const rect = prop.editor.valueSpan.getBoundingClientRect();
-  const firstQuad = prop.editor.valueSpan.getBoxQuads()[0];
+  const firstQuadBounds = prop.editor.valueSpan.getBoxQuads()[0].getBounds();
   
   
   
-  const x = firstQuad.bounds.left - rect.left + firstQuad.bounds.width / 2;
+  const x = firstQuadBounds.left - rect.left + firstQuadBounds.width / 2;
   
   
-  const y = firstQuad.bounds.height / 2;
+  const y = firstQuadBounds.height / 2;
 
   info("Focusing the css property editable value");
   const editor = await focusEditableField(view, prop.editor.valueSpan, x, y);

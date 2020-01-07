@@ -62,7 +62,7 @@ async function testClickingBelowContainer(boxmodel) {
   const container = boxmodel.document.querySelector(".boxmodel-container");
   
   
-  const bounds = container.getBoxQuads({relativeTo: boxmodel.document})[0].bounds;
+  const bounds = container.getBoxQuads({relativeTo: boxmodel.document})[0].getBounds();
   EventUtils.synthesizeMouseAtPoint(
     bounds.left + 10,
     bounds.top + bounds.height + 10,

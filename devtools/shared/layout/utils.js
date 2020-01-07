@@ -195,6 +195,11 @@ exports.getFrameOffsets = getFrameOffsets;
 
 
 
+
+
+
+
+
 function getAdjustedQuads(boundaryWindow, node, region) {
   if (!node || !node.getBoxQuads) {
     return [];
@@ -217,6 +222,7 @@ function getAdjustedQuads(boundaryWindow, node, region) {
 
   const adjustedQuads = [];
   for (const quad of quads) {
+    const bounds = quad.getBounds();
     adjustedQuads.push({
       p1: {
         w: quad.p1.w * scale,
@@ -243,14 +249,14 @@ function getAdjustedQuads(boundaryWindow, node, region) {
         z: quad.p4.z * scale
       },
       bounds: {
-        bottom: quad.bounds.bottom * scale + yOffset,
-        height: quad.bounds.height * scale,
-        left: quad.bounds.left * scale + xOffset,
-        right: quad.bounds.right * scale + xOffset,
-        top: quad.bounds.top * scale + yOffset,
-        width: quad.bounds.width * scale,
-        x: quad.bounds.x * scale + xOffset,
-        y: quad.bounds.y * scale + yOffset
+        bottom: bounds.bottom * scale + yOffset,
+        height: bounds.height * scale,
+        left: bounds.left * scale + xOffset,
+        right: bounds.right * scale + xOffset,
+        top: bounds.top * scale + yOffset,
+        width: bounds.width * scale,
+        x: bounds.x * scale + xOffset,
+        y: bounds.y * scale + yOffset
       }
     });
   }
