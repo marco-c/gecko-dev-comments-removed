@@ -140,7 +140,7 @@ protected:
   
   
   
-  nsCOMPtr<nsIFrameLoader> mFrameLoader;
+  RefPtr<nsFrameLoader> mFrameLoader;
 public:
   nsIContent* mOwner;
   nsFrameMessageManager* mChromeMessageManager;

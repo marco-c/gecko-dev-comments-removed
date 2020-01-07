@@ -660,7 +660,7 @@ public:
                                mozilla::ErrorResult& rv);
     
     already_AddRefed<nsFrameLoader> GetFrameLoader();
-    void InternalSetFrameLoader(nsIFrameLoader* aNewFrameLoader);
+    void InternalSetFrameLoader(nsFrameLoader* aNewFrameLoader);
     void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
                           mozilla::ErrorResult& rv);
     void SwapFrameLoaders(nsXULElement& aOtherLoaderOwner,
