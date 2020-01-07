@@ -32,13 +32,18 @@ function preflightTest(succeeds, withCredentials, allowMethod, allowHeader, useM
   }, "CORS that " + (succeeds ? "succeeds" : "fails") + " with credentials: " + withCredentials + "; method: " + useMethod + " (allowed: " + allowMethod + "); header: " + useHeader + " (allowed: " + allowHeader + ")")
 }
 
+
 preflightTest(true, false, "get", "x-test", "GET", ["X-Test", "1"])
+
 preflightTest(true, false, "*", "x-test", "SUPER", ["X-Test", "1"])
+
 preflightTest(true, false, "*", "*", "OK", ["X-Test", "1"])
 preflightTest(false, true, "*", "*", "OK", ["X-Test", "1"])
 preflightTest(false, true, "*", "", "PUT", [])
 preflightTest(true, true, "PUT", "*", "PUT", [])
-preflightTest(false, true, "put", "*", "PUT", [])
 preflightTest(false, true, "get", "*", "GET", ["X-Test", "1"])
 preflightTest(false, true, "*", "*", "GET", ["X-Test", "1"])
+
 preflightTest(true, true, "*", "*", "*", ["*", "1"])
+
+preflightTest(false, true, "put", "*", "PUT", [])
