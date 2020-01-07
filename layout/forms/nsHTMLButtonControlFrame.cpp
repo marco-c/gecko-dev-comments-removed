@@ -146,12 +146,14 @@ nsHTMLButtonControlFrame::GetMinISize(gfxContext* aRenderingContext)
 {
   nscoord result;
   DISPLAY_MIN_WIDTH(this, result);
-
-  nsIFrame* kid = mFrames.FirstChild();
-  result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
-                                                kid,
-                                                nsLayoutUtils::MIN_ISIZE);
-
+  if (StyleDisplay()->IsContainSize()) {
+    result = 0;
+  } else {
+    nsIFrame* kid = mFrames.FirstChild();
+    result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
+                                                  kid,
+                                                  nsLayoutUtils::MIN_ISIZE);
+  }
   return result;
 }
 
@@ -160,12 +162,14 @@ nsHTMLButtonControlFrame::GetPrefISize(gfxContext* aRenderingContext)
 {
   nscoord result;
   DISPLAY_PREF_WIDTH(this, result);
-
-  nsIFrame* kid = mFrames.FirstChild();
-  result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
-                                                kid,
-                                                nsLayoutUtils::PREF_ISIZE);
-
+  if (StyleDisplay()->IsContainSize()) {
+    result = 0;
+  } else {
+    nsIFrame* kid = mFrames.FirstChild();
+    result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
+                                                  kid,
+                                                  nsLayoutUtils::PREF_ISIZE);
+  }
   return result;
 }
 
@@ -261,6 +265,11 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   if (aButtonReflowInput.ComputedBSize() != NS_INTRINSICSIZE) {
     
     buttonContentBox.BSize(wm) = aButtonReflowInput.ComputedBSize();
+  } else if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    buttonContentBox.BSize(wm) = aButtonReflowInput.ComputedMinBSize();
   } else {
     
     
@@ -278,6 +287,8 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   }
   if (aButtonReflowInput.ComputedISize() != NS_INTRINSICSIZE) {
     buttonContentBox.ISize(wm) = aButtonReflowInput.ComputedISize();
+  } else if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
+    buttonContentBox.ISize(wm) = aButtonReflowInput.ComputedMinISize();
   } else {
     buttonContentBox.ISize(wm) = contentsDesiredSize.ISize(wm);
     buttonContentBox.ISize(wm) =
@@ -322,7 +333,14 @@ nsHTMLButtonControlFrame::ReflowButtonContents(nsPresContext* aPresContext,
   
   
   
-  if (aButtonDesiredSize.GetWritingMode().IsOrthogonalTo(wm)) {
+  if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    
+    nscoord containAscent = (buttonContentBox.BSize(wm) / 2) + clbp.BStart(wm);
+    aButtonDesiredSize.SetBlockStartAscent(containAscent);
+  } else if (aButtonDesiredSize.GetWritingMode().IsOrthogonalTo(wm)) {
     aButtonDesiredSize.SetBlockStartAscent(contentsDesiredSize.ISize(wm));
   } else {
     aButtonDesiredSize.SetBlockStartAscent(contentsDesiredSize.BlockStartAscent() +
