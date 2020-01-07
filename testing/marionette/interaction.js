@@ -359,6 +359,33 @@ interaction.focusElement = function(el) {
 
 
 
+
+
+interaction.isKeyboardInteractable = function(el) {
+  const win = getWindow(el);
+
+  
+  if (el.localName === "body" || el === win.document.documentElement) {
+    return true;
+  }
+
+  el.focus();
+
+  return el === win.document.activeElement;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
 interaction.uploadFile = async function(el, path) {
   let file;
   try {
@@ -421,9 +448,46 @@ interaction.setFormControlValue = function(el, value) {
 
 
 
+
+
 interaction.sendKeysToElement = async function(
-    el, value, strict = false) {
+    el, value, strict = false, specCompat = false) {
   const a11y = accessibility.get(strict);
+
+  if (specCompat) {
+    await webdriverSendKeysToElement(el, value, a11y);
+  } else {
+    await legacySendKeysToElement(el, value, a11y);
+  }
+};
+
+async function webdriverSendKeysToElement(el, value, a11y) {
+  const win = getWindow(el);
+
+  let containerEl = element.getContainer(el);
+
+  
+  if (!interaction.isKeyboardInteractable(containerEl)) {
+    throw new ElementNotInteractableError(
+        pprint`Element ${el} is not reachable by keyboard`);
+  }
+
+  let acc = await a11y.getAccessible(el, true);
+  a11y.assertActionable(acc, el);
+
+  interaction.focusElement(el);
+
+  if (el.type == "file") {
+    await interaction.uploadFile(el, value);
+  } else if ((el.type == "date" || el.type == "time") &&
+      Preferences.get("dom.forms.datetime")) {
+    interaction.setFormControlValue(el, value);
+  } else {
+    event.sendKeysToElement(value, el, win);
+  }
+}
+
+async function legacySendKeysToElement(el, value, a11y) {
   const win = getWindow(el);
 
   if (el.type == "file") {
@@ -447,7 +511,7 @@ interaction.sendKeysToElement = async function(
     interaction.focusElement(el);
     event.sendKeysToElement(value, el, win);
   }
-};
+}
 
 
 
