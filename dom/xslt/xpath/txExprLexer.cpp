@@ -94,8 +94,8 @@ txExprLexer::nextIsOperatorToken(Token* aToken)
 nsresult
 txExprLexer::parse(const nsAString& aPattern)
 {
-  iterator start, end;
-  start = aPattern.BeginReading(mPosition);
+  iterator end;
+  aPattern.BeginReading(mPosition);
   aPattern.EndReading(end);
 
   
@@ -125,7 +125,7 @@ txExprLexer::parse(const nsAString& aPattern)
       
       
       
-      start = mPosition;
+      iterator start = mPosition;
       while (++mPosition < end && XMLUtils::isNCNameChar(*mPosition)) {
         
       }
@@ -170,7 +170,7 @@ txExprLexer::parse(const nsAString& aPattern)
       newToken = new Token(start, mPosition, defType);
     }
     else if (isXPathDigit(*mPosition)) {
-      start = mPosition;
+      iterator start = mPosition;
       while (++mPosition < end && isXPathDigit(*mPosition)) {
         
       }
@@ -193,7 +193,8 @@ txExprLexer::parse(const nsAString& aPattern)
         break;
       case S_QUOTE :
       case D_QUOTE :
-        start = mPosition;
+      {
+        iterator start = mPosition;
         while (++mPosition < end && *mPosition != *start) {
           
         }
@@ -203,14 +204,15 @@ txExprLexer::parse(const nsAString& aPattern)
         }
         newToken = new Token(start + 1, mPosition, Token::LITERAL);
         ++mPosition;
-        break;
+      }
+      break;
       case PERIOD:
         
         if (++mPosition == end) {
           newToken = new Token(mPosition - 1, Token::SELF_NODE);
         }
         else if (isXPathDigit(*mPosition)) {
-          start = mPosition - 1;
+          iterator start = mPosition - 1;
           while (++mPosition < end && isXPathDigit(*mPosition)) {
             
           }
