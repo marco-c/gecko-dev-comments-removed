@@ -1502,7 +1502,7 @@ var AddonManagerInternal = {
 
 
 
-  async notifyAddonChanged(aID, aType, aPendingRestart) {
+  notifyAddonChanged(aID, aType, aPendingRestart) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -1530,10 +1530,7 @@ var AddonManagerInternal = {
     
     let providers = [...this.providers, ...this.pendingProviders];
     for (let provider of providers) {
-      let result = callProvider(provider, "addonChanged", null, aID, aType, aPendingRestart);
-      if (result) {
-        await result;
-      }
+      callProvider(provider, "addonChanged", null, aID, aType, aPendingRestart);
     }
   },
 
