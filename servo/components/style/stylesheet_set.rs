@@ -13,7 +13,7 @@ use std::{mem, slice};
 use stylesheets::{Origin, OriginSet, OriginSetIterator, PerOrigin, StylesheetInDocument};
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(MallocSizeOf)]
 struct StylesheetSetEntry<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -103,8 +103,7 @@ where
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub enum DataValidity {
     
     
@@ -231,7 +230,7 @@ where
     }
 }
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(MallocSizeOf)]
 struct SheetCollection<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -558,6 +557,7 @@ where
 }
 
 
+#[derive(MallocSizeOf)]
 pub struct AuthorStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,

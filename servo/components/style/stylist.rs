@@ -1835,8 +1835,7 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
 }
 
 
-#[derive(Debug, Default)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Debug, Default, MallocSizeOf)]
 struct ElementAndPseudoRules {
     
     element_map: SelectorMap<Rule>,
@@ -1904,8 +1903,7 @@ impl ElementAndPseudoRules {
 
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 pub struct CascadeData {
     
     
@@ -1927,7 +1925,7 @@ pub struct CascadeData {
     
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "just an array")]
+    #[ignore_malloc_size_of = "just an array"]
     attribute_dependencies: NonCountingBloomFilter,
 
     
@@ -1952,13 +1950,13 @@ pub struct CascadeData {
     
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "just an array")]
+    #[ignore_malloc_size_of = "just an array"]
     mapped_ids: NonCountingBloomFilter,
 
     
     
     
-    #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
+    #[ignore_malloc_size_of = "Arc"]
     selectors_for_cache_revalidation: SelectorMap<RevalidationSelectorAndHashes>,
 
     

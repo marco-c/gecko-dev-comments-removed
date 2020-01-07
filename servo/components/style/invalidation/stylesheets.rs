@@ -25,8 +25,7 @@ use stylesheets::{CssRule, StylesheetInDocument};
 
 
 
-#[derive(Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 enum Invalidation {
     
     ID(Atom),
@@ -98,7 +97,7 @@ impl Invalidation {
 
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(MallocSizeOf)]
 pub struct StylesheetInvalidationSet {
     
     invalid_scopes: FnvHashSet<Invalidation>,
