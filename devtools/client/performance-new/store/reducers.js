@@ -88,7 +88,7 @@ function entries(state = 10000000, action) {
 
 
 
-function features(state = ["js", "stackwalk"], action) {
+function features(state = ["js", "stackwalk", "responsiveness"], action) {
   switch (action.type) {
     case "CHANGE_FEATURES":
       return action.features;
