@@ -36,9 +36,6 @@ ChromeUtils.defineModuleGetter(this, "FxAccountsProfile",
 ChromeUtils.defineModuleGetter(this, "Utils",
   "resource://services-sync/util.js");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "FXA_ENABLED",
-    "identity.fxaccounts.enabled");
-
 
 var publicProperties = [
   "accountStatus",
@@ -524,23 +521,20 @@ FxAccountsInternal.prototype = {
 
 
 
-  async getSignedInUser() {
+  getSignedInUser: function getSignedInUser() {
     let currentState = this.currentAccountState;
-    const data = await currentState.getUserAccountData();
-    if (!data) {
-      return currentState.resolve(null);
-    }
-    if (!FXA_ENABLED) {
-      await this.signOut();
-      return currentState.resolve(null);
-    }
-    if (!this.isUserEmailVerified(data)) {
-      
-      
-      
-      this.startVerifiedCheck(data);
-    }
-    return currentState.resolve(data);
+    return currentState.getUserAccountData().then(data => {
+      if (!data) {
+        return null;
+      }
+      if (!this.isUserEmailVerified(data)) {
+        
+        
+        
+        this.startVerifiedCheck(data);
+      }
+      return data;
+    }).then(result => currentState.resolve(result));
   },
 
   
@@ -564,32 +558,37 @@ FxAccountsInternal.prototype = {
 
 
 
-  async setSignedInUser(credentials) {
-    if (!FXA_ENABLED) {
-      throw new Error("Cannot call setSignedInUser when FxA is disabled.");
-    }
+  setSignedInUser: function setSignedInUser(credentials) {
     log.debug("setSignedInUser - aborting any existing flows");
-    const signedInUser = await this.getSignedInUser();
-    if (signedInUser) {
-      await this.deleteDeviceRegistration(signedInUser.sessionToken, signedInUser.deviceId);
-    }
-    await this.abortExistingFlow();
-    let currentAccountState = this.currentAccountState = this.newAccountState(
-      Cu.cloneInto(credentials, {}) 
-    );
-    
-    
-    
-    
-    await currentAccountState.promiseInitialized;
-    
-    if (!this.isUserEmailVerified(credentials)) {
-      this.startVerifiedCheck(credentials);
-    }
-    await this.updateDeviceRegistration();
-    Services.telemetry.getHistogramById("FXA_CONFIGURED").add(1);
-    await this.notifyObservers(ONLOGIN_NOTIFICATION);
-    return currentAccountState.resolve();
+    return this.getSignedInUser().then(signedInUser => {
+      if (signedInUser) {
+        return this.deleteDeviceRegistration(signedInUser.sessionToken, signedInUser.deviceId);
+      }
+      return null;
+    }).then(() =>
+      this.abortExistingFlow()
+    ).then(() => {
+      let currentAccountState = this.currentAccountState = this.newAccountState(
+        Cu.cloneInto(credentials, {}) 
+      );
+      
+      
+      
+      
+      return currentAccountState.promiseInitialized.then(() => {
+        
+        if (!this.isUserEmailVerified(credentials)) {
+          this.startVerifiedCheck(credentials);
+        }
+
+        return this.updateDeviceRegistration();
+      }).then(() => {
+        Services.telemetry.getHistogramById("FXA_CONFIGURED").add(1);
+        return this.notifyObservers(ONLOGIN_NOTIFICATION);
+      }).then(() => {
+        return currentAccountState.resolve();
+      });
+    });
   },
 
   

@@ -95,8 +95,6 @@ var gSync = {
         });
     XPCOMUtils.defineLazyPreferenceGetter(this, "PRODUCT_INFO_BASE_URL",
         "app.productInfo.baseURL");
-    XPCOMUtils.defineLazyPreferenceGetter(this, "SYNC_ENABLED",
-        "identity.fxaccounts.enabled");
   },
 
   _maybeUpdateUIState() {
@@ -113,11 +111,6 @@ var gSync = {
 
   init() {
     if (this._initialized) {
-      return;
-    }
-
-    if (!this.SYNC_ENABLED) {
-      this.onSyncDisabled();
       return;
     }
 
@@ -477,10 +470,6 @@ var gSync = {
 
   
   updateTabContextMenu(aPopupMenu, aTargetTab) {
-    if (!this.SYNC_ENABLED) {
-      
-      return;
-    }
     const enabled = !this.syncConfiguredAndLoading &&
                     this.isSendableURI(aTargetTab.linkedBrowser.currentURI.spec);
 
@@ -489,10 +478,6 @@ var gSync = {
 
   
   updateContentContextMenu(contextMenu) {
-    if (!this.SYNC_ENABLED) {
-      
-      return;
-    }
     
     const showSendLink = contextMenu.onSaveableLink || contextMenu.onPlainTextLink;
     const showSendPage = !showSendLink
@@ -663,13 +648,6 @@ var gSync = {
       } else {
         broadcaster.setAttribute("devices-status", "single");
       }
-    }
-  },
-
-  onSyncDisabled() {
-    const toHide = [...document.querySelectorAll(".sync-ui-item")];
-    for (const item of toHide) {
-      item.hidden = true;
     }
   },
 

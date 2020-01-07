@@ -1417,10 +1417,6 @@ pref("browser.uiCustomization.debug", false);
 pref("browser.uiCustomization.state", "");
 
 
-
-pref("identity.fxaccounts.enabled", true);
-
-
 pref("identity.fxaccounts.remote.root", "https://accounts.firefox.com/");
 
 
