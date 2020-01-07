@@ -163,7 +163,7 @@ HTMLAreaAccessible::Description(nsString& aDescription)
 
   
   RefPtr<dom::HTMLAreaElement> area =
-    dom::HTMLAreaElement::FromContentOrNull(mContent);
+    dom::HTMLAreaElement::FromNodeOrNull(mContent);
   if (area)
     area->GetShape(aDescription);
 }

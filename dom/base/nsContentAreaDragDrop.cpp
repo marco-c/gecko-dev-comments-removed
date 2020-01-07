@@ -509,7 +509,7 @@ DragDataProducer::Produce(DataTransfer* aDataTransfer,
       
       nsCOMPtr<nsIContent> linkNode;
 
-      RefPtr<HTMLAreaElement> areaElem = HTMLAreaElement::FromContentOrNull(draggedNode);
+      RefPtr<HTMLAreaElement> areaElem = HTMLAreaElement::FromNodeOrNull(draggedNode);
       if (areaElem) {
         
         areaElem->GetAttribute(NS_LITERAL_STRING("alt"), mTitleString);

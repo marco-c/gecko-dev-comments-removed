@@ -546,7 +546,7 @@ nsContentList::GetSupportedNames(nsTArray<nsString>& aNames)
       }
     }
 
-    nsGenericHTMLElement* el = nsGenericHTMLElement::FromContent(content);
+    nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content);
     if (el) {
       
       

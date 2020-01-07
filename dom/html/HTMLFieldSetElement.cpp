@@ -263,7 +263,7 @@ HTMLFieldSetElement::AddElement(nsGenericHTMLFormElement* aElement)
 
   
   
-  HTMLFieldSetElement* fieldSet = FromContent(aElement);
+  HTMLFieldSetElement* fieldSet = FromNode(aElement);
   if (fieldSet) {
     for (int32_t i = 0; i < fieldSet->mInvalidElementsCount; i++) {
       UpdateValidity(false);
@@ -281,7 +281,7 @@ HTMLFieldSetElement::AddElement(nsGenericHTMLFormElement* aElement)
 #if DEBUG
   int32_t debugInvalidElementsCount = 0;
   for (uint32_t i = 0; i < mDependentElements.Length(); i++) {
-    HTMLFieldSetElement* fieldSet = FromContent(mDependentElements[i]);
+    HTMLFieldSetElement* fieldSet = FromNode(mDependentElements[i]);
     if (fieldSet) {
       debugInvalidElementsCount += fieldSet->mInvalidElementsCount;
       continue;
@@ -305,7 +305,7 @@ HTMLFieldSetElement::RemoveElement(nsGenericHTMLFormElement* aElement)
 
   
   
-  HTMLFieldSetElement* fieldSet = FromContent(aElement);
+  HTMLFieldSetElement* fieldSet = FromNode(aElement);
   if (fieldSet) {
     for (int32_t i = 0; i < fieldSet->mInvalidElementsCount; i++) {
       UpdateValidity(true);
@@ -323,7 +323,7 @@ HTMLFieldSetElement::RemoveElement(nsGenericHTMLFormElement* aElement)
 #if DEBUG
   int32_t debugInvalidElementsCount = 0;
   for (uint32_t i = 0; i < mDependentElements.Length(); i++) {
-    HTMLFieldSetElement* fieldSet = FromContent(mDependentElements[i]);
+    HTMLFieldSetElement* fieldSet = FromNode(mDependentElements[i]);
     if (fieldSet) {
       debugInvalidElementsCount += fieldSet->mInvalidElementsCount;
       continue;

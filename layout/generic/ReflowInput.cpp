@@ -2902,7 +2902,7 @@ ReflowInput::CalcLineHeight(nsIContent* aContent,
 
   NS_ASSERTION(lineHeight >= 0, "ComputeLineHeight screwed up");
 
-  HTMLInputElement* input = HTMLInputElement::FromContentOrNull(aContent);
+  HTMLInputElement* input = HTMLInputElement::FromNodeOrNull(aContent);
   if (input && input->IsSingleLineTextControl()) {
     
     

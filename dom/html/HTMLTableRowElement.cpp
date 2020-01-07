@@ -66,12 +66,12 @@ HTMLTableRowElement::GetTable() const
   }
 
   
-  HTMLTableElement* table = HTMLTableElement::FromContent(parent);
+  HTMLTableElement* table = HTMLTableElement::FromNode(parent);
   if (table) {
     return table;
   }
 
-  return HTMLTableElement::FromContentOrNull(parent->GetParent());
+  return HTMLTableElement::FromNodeOrNull(parent->GetParent());
 }
 
 int32_t

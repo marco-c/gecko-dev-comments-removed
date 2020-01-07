@@ -2687,7 +2687,7 @@ HTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
 
   
   nsCOMPtr<nsIContent> content = do_QueryInterface(aAnchorElement);
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromContentOrNull(content);
+  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromNodeOrNull(content);
   if (!anchor) {
     return NS_OK;
   }

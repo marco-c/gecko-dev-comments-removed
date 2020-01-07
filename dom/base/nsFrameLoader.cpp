@@ -573,7 +573,7 @@ nsFrameLoader::ReallyStartLoadingInternal()
   
   
   net::ReferrerPolicy referrerPolicy = mOwnerContent->OwnerDoc()->GetReferrerPolicy();
-  HTMLIFrameElement* iframe = HTMLIFrameElement::FromContent(mOwnerContent);
+  HTMLIFrameElement* iframe = HTMLIFrameElement::FromNode(mOwnerContent);
   if (iframe) {
     net::ReferrerPolicy iframeReferrerPolicy = iframe->GetReferrerPolicyAsEnum();
     if (iframeReferrerPolicy != net::RP_Unset) {
@@ -2248,7 +2248,7 @@ nsFrameLoader::MaybeCreateDocShell()
   
   
   uint32_t sandboxFlags = 0;
-  HTMLIFrameElement* iframe = HTMLIFrameElement::FromContent(mOwnerContent);
+  HTMLIFrameElement* iframe = HTMLIFrameElement::FromNode(mOwnerContent);
   if (iframe) {
     sandboxFlags = iframe->GetSandboxFlags();
   }

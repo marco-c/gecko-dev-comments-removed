@@ -7760,7 +7760,7 @@ nsLayoutUtils::SurfaceFromElement(nsIImageLoadingContent* aElement,
 
   int32_t imgWidth, imgHeight;
   nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
-  HTMLImageElement* element = HTMLImageElement::FromContentOrNull(content);
+  HTMLImageElement* element = HTMLImageElement::FromNodeOrNull(content);
   if (aSurfaceFlags & SFE_USE_ELEMENT_SIZE_IF_VECTOR &&
       element &&
       imgContainer->GetType() == imgIContainer::TYPE_VECTOR) {
@@ -7928,13 +7928,13 @@ nsLayoutUtils::SurfaceFromElement(dom::Element* aElement,
 {
   
   if (HTMLCanvasElement* canvas =
-        HTMLCanvasElement::FromContentOrNull(aElement)) {
+        HTMLCanvasElement::FromNodeOrNull(aElement)) {
     return SurfaceFromElement(canvas, aSurfaceFlags, aTarget);
   }
 
   
   if (HTMLVideoElement* video =
-        HTMLVideoElement::FromContentOrNull(aElement)) {
+        HTMLVideoElement::FromNodeOrNull(aElement)) {
     return SurfaceFromElement(video, aSurfaceFlags, aTarget);
   }
 

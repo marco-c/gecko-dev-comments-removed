@@ -84,7 +84,7 @@ public:
     *aSnap = false;
     nsHTMLCanvasFrame* f = static_cast<nsHTMLCanvasFrame*>(Frame());
     HTMLCanvasElement* canvas =
-      HTMLCanvasElement::FromContent(f->GetContent());
+      HTMLCanvasElement::FromNode(f->GetContent());
     nsRegion result;
     if (canvas->GetIsOpaque()) {
       
@@ -211,7 +211,7 @@ public:
                                    LayerManager* aManager,
                                    const ContainerLayerParameters& aParameters) override
   {
-    if (HTMLCanvasElement::FromContent(mFrame->GetContent())->ShouldForceInactiveLayer(aManager))
+    if (HTMLCanvasElement::FromNode(mFrame->GetContent())->ShouldForceInactiveLayer(aManager))
       return LAYER_INACTIVE;
 
     
@@ -258,7 +258,7 @@ nsHTMLCanvasFrame::GetCanvasSize()
 {
   nsIntSize size(0,0);
   HTMLCanvasElement *canvas =
-    HTMLCanvasElement::FromContentOrNull(GetContent());
+    HTMLCanvasElement::FromNodeOrNull(GetContent());
   if (canvas) {
     size = canvas->GetSize();
     MOZ_ASSERT(size.width >= 0 && size.height >= 0,

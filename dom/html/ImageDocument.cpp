@@ -361,7 +361,7 @@ ImageDocument::ShrinkToFit()
     
     
     
-    RefPtr<HTMLImageElement> img = HTMLImageElement::FromContent(mImageContent);
+    RefPtr<HTMLImageElement> img = HTMLImageElement::FromNode(mImageContent);
     uint32_t imageHeight = img->Height();
     nsDOMTokenList* classList = img->ClassList();
     ErrorResult ignored;
@@ -382,7 +382,7 @@ ImageDocument::ShrinkToFit()
 #endif
 
   
-  RefPtr<HTMLImageElement> image = HTMLImageElement::FromContent(mImageContent);
+  RefPtr<HTMLImageElement> image = HTMLImageElement::FromNode(mImageContent);
 
   uint32_t newWidth = std::max(1, NSToCoordFloor(GetRatio() * mImageWidth));
   uint32_t newHeight = std::max(1, NSToCoordFloor(GetRatio() * mImageHeight));
@@ -639,7 +639,7 @@ ImageDocument::HandleEvent(nsIDOMEvent* aEvent)
       MouseEvent* event = aEvent->InternalDOMEvent()->AsMouseEvent();
       if (event) {
         RefPtr<HTMLImageElement> img =
-          HTMLImageElement::FromContent(mImageContent);
+          HTMLImageElement::FromNode(mImageContent);
         x = event->ClientX() - img->OffsetLeft();
         y = event->ClientY() - img->OffsetTop();
       }

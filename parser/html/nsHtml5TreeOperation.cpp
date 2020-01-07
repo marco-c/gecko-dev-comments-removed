@@ -631,13 +631,13 @@ nsHtml5TreeOperation::SetFormElement(nsIContent* aNode, nsIContent* aParent)
 {
   nsCOMPtr<nsIFormControl> formControl(do_QueryInterface(aNode));
   RefPtr<dom::HTMLImageElement> domImageElement =
-    dom::HTMLImageElement::FromContentOrNull(aNode);
+    dom::HTMLImageElement::FromNodeOrNull(aNode);
   
   
   
   
   RefPtr<dom::HTMLFormElement> formElement =
-    dom::HTMLFormElement::FromContentOrNull(aParent);
+    dom::HTMLFormElement::FromNodeOrNull(aParent);
   NS_ASSERTION(formElement,
                "The form element doesn't implement HTMLFormElement.");
   

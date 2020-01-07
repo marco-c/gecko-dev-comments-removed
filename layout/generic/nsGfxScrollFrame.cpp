@@ -4621,7 +4621,7 @@ ScrollFrameHelper::CreateAnonymousContent(
   if (textFrame) {
     
     HTMLTextAreaElement* textAreaElement =
-      HTMLTextAreaElement::FromContent(parent->GetContent());
+      HTMLTextAreaElement::FromNode(parent->GetContent());
     if (!textAreaElement) {
       mNeverHasVerticalScrollbar = mNeverHasHorizontalScrollbar = true;
       return NS_OK;

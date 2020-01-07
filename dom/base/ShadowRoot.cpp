@@ -619,7 +619,7 @@ ShadowRoot::ContentInserted(nsIContent* aChild)
 
   
   
-  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aChild->GetParent());
+  HTMLSlotElement* slot = HTMLSlotElement::FromNodeOrNull(aChild->GetParent());
   if (slot && slot->GetContainingShadow() == this &&
       slot->AssignedNodes().IsEmpty()) {
     slot->EnqueueSlotChangeEvent();
@@ -655,7 +655,7 @@ ShadowRoot::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
 
   
   
-  HTMLSlotElement* slot = HTMLSlotElement::FromContentOrNull(aChild->GetParent());
+  HTMLSlotElement* slot = HTMLSlotElement::FromNodeOrNull(aChild->GetParent());
   if (slot && slot->GetContainingShadow() == this &&
       slot->AssignedNodes().IsEmpty()) {
     slot->EnqueueSlotChangeEvent();

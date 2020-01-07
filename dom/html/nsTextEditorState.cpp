@@ -882,12 +882,12 @@ DoCommandCallback(Command aCommand, void* aData)
   nsIContent *content = frame->GetContent();
 
   nsCOMPtr<nsIControllers> controllers;
-  HTMLInputElement* input = HTMLInputElement::FromContent(content);
+  HTMLInputElement* input = HTMLInputElement::FromNode(content);
   if (input) {
     input->GetControllers(getter_AddRefs(controllers));
   } else {
     HTMLTextAreaElement* textArea =
-      HTMLTextAreaElement::FromContent(content);
+      HTMLTextAreaElement::FromNode(content);
 
     if (textArea) {
       textArea->GetControllers(getter_AddRefs(controllers));
@@ -1414,12 +1414,12 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     nsCOMPtr<nsIControllers> controllers;
     nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
     HTMLInputElement* inputElement =
-      HTMLInputElement::FromContentOrNull(content);
+      HTMLInputElement::FromNodeOrNull(content);
     if (inputElement) {
       rv = inputElement->GetControllers(getter_AddRefs(controllers));
     } else {
       HTMLTextAreaElement* textAreaElement =
-        HTMLTextAreaElement::FromContentOrNull(content);
+        HTMLTextAreaElement::FromNodeOrNull(content);
 
       if (!textAreaElement)
         return NS_ERROR_FAILURE;
@@ -1986,7 +1986,7 @@ nsTextEditorState::GetParentNumberControl(nsFrame* aFrame) const
   if (!parentOfParent) {
     return nullptr;
   }
-  HTMLInputElement* input = HTMLInputElement::FromContent(parentOfParent);
+  HTMLInputElement* input = HTMLInputElement::FromNode(parentOfParent);
   if (input) {
     
     
@@ -2073,13 +2073,13 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
     nsCOMPtr<nsIControllers> controllers;
     nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
     HTMLInputElement* inputElement =
-      HTMLInputElement::FromContentOrNull(content);
+      HTMLInputElement::FromNodeOrNull(content);
     if (inputElement)
       inputElement->GetControllers(getter_AddRefs(controllers));
     else
     {
       HTMLTextAreaElement* textAreaElement =
-        HTMLTextAreaElement::FromContentOrNull(content);
+        HTMLTextAreaElement::FromNodeOrNull(content);
       if (textAreaElement) {
         textAreaElement->GetControllers(getter_AddRefs(controllers));
       }
@@ -2152,7 +2152,7 @@ nsTextEditorState::GetMaxLength()
 {
   nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
   nsGenericHTMLElement* element =
-    nsGenericHTMLElement::FromContentOrNull(content);
+    nsGenericHTMLElement::FromNodeOrNull(content);
   if (NS_WARN_IF(!element)) {
     return -1;
   }

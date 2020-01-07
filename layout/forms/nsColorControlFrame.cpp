@@ -93,7 +93,7 @@ nsColorControlFrame::UpdateColor()
   
   
   nsAutoString color;
-  HTMLInputElement* elt = HTMLInputElement::FromContent(mContent);
+  HTMLInputElement* elt = HTMLInputElement::FromNode(mContent);
   elt->GetValue(color, CallerType::System);
 
   if (color.IsEmpty()) {

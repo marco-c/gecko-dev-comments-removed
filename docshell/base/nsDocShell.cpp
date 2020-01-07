@@ -13735,7 +13735,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
 
   
   nsAutoString typeHint;
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromContent(aContent);
+  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromNode(aContent);
   if (anchor) {
     anchor->GetType(typeHint);
     NS_ConvertUTF16toUTF8 utf8Hint(typeHint);

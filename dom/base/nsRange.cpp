@@ -2288,7 +2288,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
     
     
 
-    if (auto charData = CharacterData::FromContent(node)) {
+    if (auto charData = CharacterData::FromNode(node)) {
       uint32_t dataLength = 0;
 
       if (node == startContainer) {
@@ -2725,7 +2725,7 @@ nsRange::CloneContents(ErrorResult& aRv)
     
     
 
-    if (auto charData = CharacterData::FromContent(clone))
+    if (auto charData = CharacterData::FromNode(clone))
     {
       if (node == mEnd.Container()) {
         

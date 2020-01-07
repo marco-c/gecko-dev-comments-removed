@@ -210,7 +210,7 @@ nsNativeTheme::GetCheckedOrSelected(nsIFrame* aFrame, bool aCheckSelected)
     aFrame = aFrame->GetParent();
   } else {
     
-    HTMLInputElement* inputElt = HTMLInputElement::FromContent(content);
+    HTMLInputElement* inputElt = HTMLInputElement::FromNode(content);
     if (inputElt) {
       return inputElt->Checked();
     }
@@ -260,7 +260,7 @@ nsNativeTheme::GetIndeterminate(nsIFrame* aFrame)
   }
 
   
-  HTMLInputElement* inputElt = HTMLInputElement::FromContent(content);
+  HTMLInputElement* inputElt = HTMLInputElement::FromNode(content);
   if (inputElt) {
     return inputElt->Indeterminate();
   }

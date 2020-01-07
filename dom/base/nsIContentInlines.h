@@ -95,7 +95,7 @@ GetFlattenedTreeParentNode(const nsINode* aNode)
   }
 
   if (parentAsContent->IsInShadowTree()) {
-    if (auto* slot = mozilla::dom::HTMLSlotElement::FromContent(parentAsContent)) {
+    if (auto* slot = mozilla::dom::HTMLSlotElement::FromNode(parentAsContent)) {
       
       
       return slot->AssignedNodes().IsEmpty()

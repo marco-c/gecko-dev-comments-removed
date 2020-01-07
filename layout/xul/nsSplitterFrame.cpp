@@ -429,7 +429,7 @@ nsSplitterFrameInner::MouseUp(nsPresContext* aPresContext,
     
     if (mDidDrag) {
       RefPtr<nsXULElement> element =
-        nsXULElement::FromContent(mOuter->GetContent());
+        nsXULElement::FromNode(mOuter->GetContent());
       element->DoCommand();
     }
 
