@@ -33,7 +33,7 @@ add_task(async function() {
   
   await saveJSON({not: "what we expect to find"}, gExtensionsJSON.path);
 
-  await promiseStartupManager(false);
+  await promiseStartupManager();
   
   let a1 = await AddonManager.getAddonByID(addon1.id);
 

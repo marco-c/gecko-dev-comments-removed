@@ -895,6 +895,7 @@ add_task(async function setup() {
   
   await AddonTestUtils.promiseShutdownManager();
   await AddonTestUtils.overrideBuiltIns({"system": []});
+  AddonTestUtils.addonStartup.remove(true);
   await AddonTestUtils.promiseStartupManager();
 
   

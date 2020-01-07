@@ -671,8 +671,13 @@ function do_check_icons(aActual, aExpected) {
   }
 }
 
-function startupManager(aAppChanged) {
-  promiseStartupManager(aAppChanged);
+function startupManager() {
+  
+  
+  
+  
+  
+  promiseStartupManager();
 }
 
 
@@ -1505,7 +1510,7 @@ async function setupSystemAddonConditions(setup, distroDir) {
 
   let updateList = [];
   awaitPromise(overrideBuiltIns({ "system": updateList }));
-  startupManager(false);
+  startupManager();
   await promiseShutdownManager();
 
   info("Setting up conditions.");
@@ -1519,7 +1524,7 @@ async function setupSystemAddonConditions(setup, distroDir) {
     }
   }
   awaitPromise(overrideBuiltIns({ "system": updateList }));
-  startupManager(false);
+  startupManager();
 
   
   info("Checking initial state.");

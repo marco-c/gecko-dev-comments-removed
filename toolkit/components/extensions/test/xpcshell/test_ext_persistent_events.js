@@ -238,7 +238,7 @@ add_task(async function() {
   
   [info] = await Promise.all([
     promiseObservable("prime-event-listener", 3),
-    AddonTestUtils.promiseStartupManager(false),
+    AddonTestUtils.promiseStartupManager(),
   ]);
   check(info, "prime");
 
@@ -274,7 +274,7 @@ add_task(async function() {
   
   [info] = await Promise.all([
     promiseObservable("prime-event-listener", 3),
-    AddonTestUtils.promiseStartupManager(false),
+    AddonTestUtils.promiseStartupManager(),
   ]);
   check(info, "prime");
 
@@ -309,7 +309,7 @@ add_task(async function() {
   
   
   info = await promiseObservable("prime-event-listener", 2,
-                                 () => AddonTestUtils.promiseStartupManager(false));
+                                 () => AddonTestUtils.promiseStartupManager());
   check(info, "prime", {listener3: false});
 
   
@@ -337,7 +337,7 @@ add_task(async function() {
   check(info, "unregister", {listener2: false, listener3: false});
 
   info = await promiseObservable("prime-event-listener", 1,
-                                 () => AddonTestUtils.promiseStartupManager(false));
+                                 () => AddonTestUtils.promiseStartupManager());
   check(info, "register", {listener2: false, listener3: false});
 
   
