@@ -550,8 +550,10 @@ let BrowserUsageTelemetry = {
   _recordUrlOrSearchbarSelectedResultMethod(event, highlightedIndex, histogramID, userSelectionBehavior) {
     let histogram = Services.telemetry.getHistogramById(histogramID);
     
-    let isClick = event instanceof Ci.nsIDOMMouseEvent ||
-                  (event && event.type == "command");
+    
+    
+    let isClick = event && (ChromeUtils.getClassName(event) == "MouseEvent" ||
+                            event.type == "command");
     let category;
     if (isClick) {
       category = "click";
