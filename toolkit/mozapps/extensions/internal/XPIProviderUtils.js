@@ -206,16 +206,7 @@ Object.assign(DBAddonInternal.prototype, {
   },
 
   toJSON() {
-    let jsonData = copyProperties(this, PROP_JSON_FIELDS);
-
-    
-    
-    if (this.type == "experiment") {
-      jsonData.userDisabled = true;
-      jsonData.active = false;
-    }
-
-    return jsonData;
+    return copyProperties(this, PROP_JSON_FIELDS);
   },
 
   get inDatabase() {

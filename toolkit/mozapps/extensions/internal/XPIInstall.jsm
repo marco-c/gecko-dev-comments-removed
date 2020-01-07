@@ -161,11 +161,12 @@ const PROP_TARGETAPP     = ["id", "minVersion", "maxVersion"];
 
 
 
+
+
 const TYPES = {
   extension: 2,
   theme: 4,
   dictionary: 64,
-  experiment: 128,
 };
 
 const COMPATIBLE_BY_DEFAULT_TYPES = {
@@ -175,7 +176,6 @@ const COMPATIBLE_BY_DEFAULT_TYPES = {
 
 const RESTARTLESS_TYPES = new Set([
   "dictionary",
-  "experiment",
   "webextension",
   "webextension-theme",
 ]);
@@ -807,23 +807,12 @@ async function loadManifestFromRDF(aUri, aData) {
   if (isTheme(addon.type)) {
     addon.userDisabled = !!LightweightThemeManager.currentTheme ||
                          addon.internalName != DEFAULT_SKIN;
-  } else if (addon.type == "experiment") {
-    
-    
-    addon.userDisabled = true;
   } else {
     addon.userDisabled = false;
   }
 
   addon.softDisabled = addon.blocklistState == nsIBlocklistService.STATE_SOFTBLOCKED;
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
-
-  
-  
-  if (addon.type == "experiment") {
-    addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
-    addon.updateURL = null;
-  }
 
   
   addon.icons = {};

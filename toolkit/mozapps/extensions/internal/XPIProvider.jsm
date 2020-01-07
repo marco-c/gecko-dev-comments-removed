@@ -201,12 +201,10 @@ const TYPE_ALIASES = {
 
 const CHROME_TYPES = new Set([
   "extension",
-  "experiment",
 ]);
 
 const SIGNED_TYPES = new Set([
   "extension",
-  "experiment",
   "webextension",
   "webextension-langpack",
   "webextension-theme",
@@ -220,7 +218,6 @@ const LEGACY_TYPES = new Set([
 const ALL_EXTERNAL_TYPES = new Set([
   "dictionary",
   "extension",
-  "experiment",
   "locale",
   "theme",
 ]);
@@ -811,16 +808,6 @@ function isUsableAddon(aAddon) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (aAddon.type == "experiment")
-    return true;
-
   if (AddonManager.checkUpdateSecurity && !aAddon.providesUpdatesSecurely) {
     logger.warn(`Updates for add-on ${aAddon.id} must be provided over HTTPS.`);
     return false;
@@ -1291,9 +1278,7 @@ class XPIStateLocation extends Map {
     }
 
     for (let [id, addon] of this.entries()) {
-      if (addon.type != "experiment") {
-        json.addons[id] = addon;
-      }
+      json.addons[id] = addon;
     }
     return json;
   }
@@ -3473,12 +3458,9 @@ var XPIProvider = {
     if (this.isDBLoaded) {
       return new Promise(resolve => {
         this.getAddonsByTypes(aTypes, addons => {
-          
-          
-          
-          resolve({addons: addons.filter(addon => addon.isActive ||
-                                       (addon.type == "experiment" && !addon.appDisabled)),
-                   fullData: true
+          resolve({
+            addons: addons.filter(addon => addon.isActive),
+            fullData: true,
           });
         });
       });
@@ -4659,11 +4641,9 @@ AddonInternal.prototype = {
     
     if (!this._installLocation.locked && !this.pendingUninstall) {
       
-      
       let isSystem = this._installLocation.isSystem;
       
-      if (this.type != "experiment" &&
-          !this._installLocation.isLinkedAddon(this.id) && !isSystem) {
+      if (!this._installLocation.isLinkedAddon(this.id) && !isSystem) {
         permissions |= AddonManager.PERM_CAN_UPGRADE;
       }
 
@@ -4840,11 +4820,6 @@ AddonWrapper.prototype = {
   },
   set applyBackgroundUpdates(val) {
     let addon = addonFor(this);
-    if (this.type == "experiment") {
-      logger.warn("Setting applyBackgroundUpdates on an experiment is not supported.");
-      return addon.applyBackgroundUpdates;
-    }
-
     if (val != AddonManager.AUTOUPDATE_DEFAULT &&
         val != AddonManager.AUTOUPDATE_DISABLE &&
         val != AddonManager.AUTOUPDATE_ENABLE) {
@@ -5059,14 +5034,6 @@ AddonWrapper.prototype = {
   },
 
   findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
-    
-    
-    if (this.type == "experiment") {
-      AddonManagerPrivate.callNoUpdateListeners(this, aListener, aReason,
-                                                aAppVersion, aPlatformVersion);
-      return;
-    }
-
     new UpdateChecker(addonFor(this), aListener, aReason, aAppVersion, aPlatformVersion);
   },
 
