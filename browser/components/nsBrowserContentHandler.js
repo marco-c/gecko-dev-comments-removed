@@ -381,7 +381,7 @@ nsBrowserContentHandler.prototype = {
         };
         if (isLocal(resolvedURI)) {
           
-          var features = "chrome,dialog=no,all" + this.getFeatures(cmdLine);
+          let features = "chrome,dialog=no,all" + this.getFeatures(cmdLine);
           openWindow(null, resolvedURI.spec, "_blank", features);
           cmdLine.preventDefault = true;
         } else {
@@ -402,10 +402,18 @@ nsBrowserContentHandler.prototype = {
     try {
       var privateWindowParam = cmdLine.handleFlagWithParam("private-window", false);
       if (privateWindowParam) {
-        let resolvedURI = resolveURIInternal(cmdLine, privateWindowParam);
-        handURIToExistingBrowser(resolvedURI, nsIBrowserDOMWindow.OPEN_NEWTAB, cmdLine, true,
+        let forcePrivate = true;
+        let resolvedURI;
+        if (!PrivateBrowsingUtils.enabled) {
+          
+          
+          forcePrivate = false;
+          resolvedURI = Services.io.newURI("about:privatebrowsing");
+        } else {
+          resolvedURI = resolveURIInternal(cmdLine, privateWindowParam);
+        }
+        handURIToExistingBrowser(resolvedURI, nsIBrowserDOMWindow.OPEN_NEWTAB, cmdLine, forcePrivate,
                                  Services.scriptSecurityManager.getSystemPrincipal());
-        cmdLine.preventDefault = true;
       }
     } catch (e) {
       if (e.result != Cr.NS_ERROR_INVALID_ARG) {
@@ -413,8 +421,12 @@ nsBrowserContentHandler.prototype = {
       }
       
       if (cmdLine.handleFlag("private-window", false)) {
+        let features = "chrome,dialog=no,all";
+        if (PrivateBrowsingUtils.enabled) {
+          features += ",private";
+        }
         openWindow(null, this.chromeURL, "_blank",
-          "chrome,dialog=no,private,all" + this.getFeatures(cmdLine),
+          features + this.getFeatures(cmdLine),
           "about:privatebrowsing");
         cmdLine.preventDefault = true;
       }
@@ -428,7 +440,7 @@ nsBrowserContentHandler.prototype = {
 
     
     
-    if (cmdLine.handleFlag("private", false)) {
+    if (cmdLine.handleFlag("private", false) && PrivateBrowsingUtils.enabled) {
       PrivateBrowsingUtils.enterTemporaryAutoStartMode();
     }
 

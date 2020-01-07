@@ -465,6 +465,10 @@ PlacesController.prototype = {
 
 
   _shouldShowMenuItem: function PC__shouldShowMenuItem(aMenuItem, aMetaData) {
+    if (aMenuItem.hasAttribute("hideifprivatebrowsing") && !PrivateBrowsingUtils.enabled) {
+      return false;
+    }
+
     var selectiontype = aMenuItem.getAttribute("selectiontype");
     if (!selectiontype) {
       selectiontype = "single|multiple";

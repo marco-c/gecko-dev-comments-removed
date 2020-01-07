@@ -13,6 +13,10 @@ const kAutoStartPref = "browser.privatebrowsing.autostart";
 var gTemporaryAutoStartMode = false;
 
 var PrivateBrowsingUtils = {
+  get enabled() {
+    return Services.policies.isAllowed("privatebrowsing");
+  },
+
   
   
   isWindowPrivate: function pbu_isWindowPrivate(aWindow) {

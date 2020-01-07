@@ -101,18 +101,18 @@ var tasksCfg = [
     close:            true, 
                             
   },
-
-  
-  {
-    get title() { return _getString("taskbar.tasks.newPrivateWindow.label"); },
-    get description() { return _getString("taskbar.tasks.newPrivateWindow.description"); },
-    args:             "-private-window",
-    iconIndex:        4, 
-    open:             true,
-    close:            true, 
-                            
-  },
 ];
+
+
+let privateWindowTask = {
+  get title() { return _getString("taskbar.tasks.newPrivateWindow.label"); },
+  get description() { return _getString("taskbar.tasks.newPrivateWindow.description"); },
+  args:             "-private-window",
+  iconIndex:        4, 
+  open:             true,
+  close:            true, 
+                          
+};
 
 
 
@@ -133,6 +133,10 @@ var WinTaskbarJumpList =
 
     
     this._tasks = tasksCfg;
+
+    if (PrivateBrowsingUtils.enabled) {
+      tasksCfg.push(privateWindowTask);
+    }
 
     
     this._refreshPrefs();
