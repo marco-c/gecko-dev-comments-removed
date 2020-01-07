@@ -6,7 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["MockDocument"];
 
-Cu.importGlobalProperties(["URL"]);
+Cu.importGlobalProperties(["DOMParser", "URL"]);
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", {});
@@ -16,8 +16,7 @@ const MockDocument = {
 
 
   createTestDocument(aDocumentURL, aContent = "<form>", aType = "text/html") {
-    let parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                 createInstance(Ci.nsIDOMParser);
+    let parser = new DOMParser();
     let parsedDoc = parser.parseFromString(aContent, aType);
 
     

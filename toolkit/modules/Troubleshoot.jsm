@@ -9,6 +9,7 @@ var EXPORTED_SYMBOLS = [
 ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+Cu.importGlobalProperties(["DOMParser"]);
 
 
 
@@ -440,10 +441,7 @@ var dataProviders = {
         statusMsgForFeature(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
 
 
-    let doc =
-      Cc["@mozilla.org/xmlextras/domparser;1"]
-      .createInstance(Ci.nsIDOMParser)
-      .parseFromString("<html/>", "text/html");
+    let doc = new DOMParser().parseFromString("<html/>", "text/html");
 
     function GetWebGLInfo(data, keyPrefix, contextType) {
         data[keyPrefix + "Renderer"] = "-";

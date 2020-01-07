@@ -3,10 +3,11 @@
 
 
 
+Cu.importGlobalProperties(["DOMParser"]);
+
 function run_test()
 {
-  var domParser = Cc["@mozilla.org/xmlextras/domparser;1"]
-                    .createInstance(Ci.nsIDOMParser);
+  var domParser = new DOMParser();
   var aDom = domParser.parseFromString("<root><feed><entry/><entry/></feed></root>",
                                        "application/xml");
   var feedList = aDom.getElementsByTagName("feed");

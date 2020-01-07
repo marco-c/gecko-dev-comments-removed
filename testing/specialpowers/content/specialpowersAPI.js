@@ -28,7 +28,7 @@ ChromeUtils.import("resource://gre/modules/ServiceWorkerCleanUp.jsm");
 
 
 if (!(function() { var e = eval; return e("this"); })().File) { 
-    Cu.importGlobalProperties(["File", "InspectorUtils", "NodeFilter"]);
+    Cu.importGlobalProperties(["DOMParser", "File", "InspectorUtils", "NodeFilter"]);
 }
 
 
@@ -664,6 +664,15 @@ SpecialPowersAPI.prototype = {
       return this.DOMWindowUtils;
 
     return bindDOMWindowUtils(aWindow);
+  },
+
+  
+
+
+  getNoXULDOMParser() {
+    
+    
+    return wrapPrivileged(new DOMParser());
   },
 
   get InspectorUtils() { return wrapPrivileged(InspectorUtils); },

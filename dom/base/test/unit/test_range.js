@@ -35,7 +35,7 @@ function getFragment(aNode) {
 
 
 const serializer = new DOMSerializer();
-const parser = new DOMParser();
+const parser = getParser();
 
 
 
