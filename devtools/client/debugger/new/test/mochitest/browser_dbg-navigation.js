@@ -1,15 +1,23 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 function countSources(dbg) {
   const sources = dbg.selectors.getSources(dbg.getState());
   return sources.size;
 }
 
-/**
- * Test navigating
- * navigating while paused will reset the pause state and sources
- */
+const sources = [
+  "simple1.js",
+  "simple2.js",
+  "simple3.js",
+  "long.js",
+  "scripts.html"
+];
+
+
+
+
+
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
   const { selectors: { getSelectedSource, isPaused }, getState } = dbg;
@@ -27,32 +35,20 @@ add_task(async function() {
   assertPausedLocation(dbg);
   is(countSources(dbg), 5, "5 sources are loaded.");
 
-  await navigate(dbg, "about:blank");
-  await waitForDispatch(dbg, "NAVIGATE");
-  is(countSources(dbg), 0, "0 sources are loaded.");
+  await navigate(dbg, "doc-scripts.html", ...sources);
+  is(countSources(dbg), 5, "5 sources are loaded.");
   ok(!isPaused(getState()), "Is not paused");
 
-  await navigate(
-    dbg,
-    "doc-scripts.html",
-    "simple1.js",
-    "simple2.js",
-    "simple3.js",
-    "long.js",
-    "scripts.html"
-  );
-
+  await navigate(dbg, "doc-scripts.html", ...sources);
   is(countSources(dbg), 5, "5 sources are loaded.");
 
-  // Test that the current select source persists across reloads
+  
   await selectSource(dbg, "long.js");
   await reload(dbg, "long.js");
   await waitForSelectedSource(dbg, "long.js");
 
   ok(
-    getSelectedSource(getState())
-      .get("url")
-      .includes("long.js"),
+    getSelectedSource(getState()).url.includes("long.js"),
     "Selected source is long.js"
   );
 });

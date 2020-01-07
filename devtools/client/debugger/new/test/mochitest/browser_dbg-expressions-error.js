@@ -35,11 +35,11 @@ add_task(async function() {
   await togglePauseOnExceptions(dbg, true, false);
 
   
+  log(`Adding location`);
   await addExpression(dbg, "location");
   await addExpression(dbg, "foo.bar");
   await addExpression(dbg, "foo.batt");
   await addExpression(dbg, "2");
-
   
   is(getValue(dbg, 2), "(unavailable)");
   is(getValue(dbg, 3), "(unavailable)");
