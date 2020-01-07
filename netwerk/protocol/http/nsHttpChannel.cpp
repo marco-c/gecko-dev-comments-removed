@@ -3738,7 +3738,7 @@ nsHttpChannel::OpenCacheEntryInternal(bool isHttps,
                               MOZ_LIKELY(allowApplicationCache);
         
         
-        maybeRCWN = !lookupAppCache;
+        maybeRCWN = (!lookupAppCache) && mRequestHead.IsSafeMethod();
         rv = cacheStorageService->DiskCacheStorage(
             info, lookupAppCache, getter_AddRefs(cacheStorage));
     }
