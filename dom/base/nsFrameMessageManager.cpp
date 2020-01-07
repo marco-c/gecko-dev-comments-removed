@@ -168,11 +168,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameMessageManager)
   
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIProcessScriptLoader,
                                      mChrome && mIsProcessManager)
-
-  
-  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIGlobalProcessScriptLoader,
-                                     mChrome && mIsProcessManager && mIsBroadcaster)
-
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameMessageManager)
@@ -1386,9 +1381,13 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx,
 
   if (!mChrome && XRE_IsParentProcess()) {
     
-    nsCOMPtr<nsIGlobalProcessScriptLoader> ppmm =
-      do_GetService("@mozilla.org/parentprocessmessagemanager;1");
-    ppmm->GetInitialProcessData(aCx, &init);
+    
+    
+    nsCOMPtr<nsISupports> ppmm = do_GetService("@mozilla.org/parentprocessmessagemanager;1");
+    sParentProcessManager->GetInitialProcessData(aCx, &init, aError);
+    if (aError.Failed()) {
+      return;
+    }
     mInitialProcessData = init;
   }
 
@@ -1397,14 +1396,6 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx,
     return;
   }
   aInitialProcessData.set(init);
-}
-
-NS_IMETHODIMP
-nsFrameMessageManager::GetInitialProcessData(JSContext* aCx, JS::MutableHandleValue aResult)
-{
-  ErrorResult rv;
-  GetInitialProcessData(aCx, aResult, rv);
-  return rv.StealNSResult();
 }
 
 already_AddRefed<nsIMessageSender>
