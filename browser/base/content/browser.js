@@ -143,6 +143,18 @@ if (AppConstants.MOZ_CRASHREPORTER) {
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
+XPCOMUtils.defineLazyGetter(this, "gNavigatorBundle", function() {
+  
+  
+  return {
+    getString(key) {
+      return gBrowserBundle.GetStringFromName(key);
+    },
+    getFormattedString(key, array) {
+      return gBrowserBundle.formatStringFromName(key, array, array.length);
+    }
+  };
+});
 XPCOMUtils.defineLazyGetter(this, "gTabBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/tabbrowser.properties");
 });
@@ -229,7 +241,6 @@ if (AppConstants.platform != "macosx") {
   ["gBrowser",            "content"],
   ["gNavToolbox",         "navigator-toolbox"],
   ["gURLBar",             "urlbar"],
-  ["gNavigatorBundle",    "bundle_browser"]
 ].forEach(function(elementGlobal) {
   var [name, id] = elementGlobal;
   Object.defineProperty(window, name, {
