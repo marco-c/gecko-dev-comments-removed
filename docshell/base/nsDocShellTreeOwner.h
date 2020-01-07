@@ -199,7 +199,7 @@ private:
   
   
   
-  nsCOMPtr<nsIDOMNode> mPossibleTooltipNode;
+  nsCOMPtr<nsINode> mPossibleTooltipNode;
 };
 
 #endif
