@@ -362,6 +362,7 @@ nsDocShell::nsDocShell()
   , mAllowContentRetargetingOnChildren(true)
   , mUseErrorPages(false)
   , mObserveErrorPages(true)
+  , mCSSErrorReportingEnabled(false)
   , mAllowAuth(true)
   , mAllowKeywordFixup(false)
   , mIsOffScreenBrowser(false)
@@ -1683,6 +1684,21 @@ nsDocShell::GetAllowJavascript(bool* aAllowJavascript)
   NS_ENSURE_ARG_POINTER(aAllowJavascript);
 
   *aAllowJavascript = mAllowJavascript;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::GetCssErrorReportingEnabled(bool* aEnabled)
+{
+  MOZ_ASSERT(aEnabled);
+  *aEnabled = mCSSErrorReportingEnabled;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetCssErrorReportingEnabled(bool aEnabled)
+{
+  mCSSErrorReportingEnabled = aEnabled;
   return NS_OK;
 }
 
@@ -11854,8 +11870,6 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
-  NS_ENSURE_TRUE(rootSH, NS_ERROR_UNEXPECTED);
-
   if (!aReplace) {
     int32_t curIndex = rootSH->Index();
     if (curIndex > -1) {
@@ -13676,7 +13690,7 @@ nsDocShell::OnOverLink(nsIContent* aContent,
   }
 
   nsAutoCString spec;
-  rv = aURI->GetDisplaySpec(spec);
+  rv = aURI->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);
 
   NS_ConvertUTF8toUTF16 uStr(spec);
