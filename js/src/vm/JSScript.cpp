@@ -2228,9 +2228,9 @@ ScriptSource::performXDR(XDRState<mode>* xdr)
 
 
 
-static char*
-FormatIntroducedFilename(JSContext* cx, const char* filename, unsigned lineno,
-                         const char* introducer)
+char*
+js::FormatIntroducedFilename(JSContext* cx, const char* filename, unsigned lineno,
+                             const char* introducer)
 {
     
     

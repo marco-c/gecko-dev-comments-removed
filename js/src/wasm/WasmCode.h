@@ -405,13 +405,16 @@ struct MetadataCacheablePod
     uint32_t              globalDataLength;
     Maybe<uint32_t>       maxMemoryLength;
     Maybe<uint32_t>       startFuncIndex;
+    Maybe<NameInBytecode> moduleName;
+    bool                  filenameIsURL;
 
     explicit MetadataCacheablePod(ModuleKind kind)
       : kind(kind),
         memoryUsage(MemoryUsage::None),
         temporaryHasGcTypes(HasGcTypes::False),
         minMemoryLength(0),
-        globalDataLength(0)
+        globalDataLength(0),
+        filenameIsURL(false)
     {}
 };
 
@@ -425,7 +428,6 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod
     NameInBytecodeVector  funcNames;
     CustomSectionVector   customSections;
     CacheableChars        filename;
-    CacheableChars        baseURL;
     CacheableChars        sourceMapURL;
 
     
@@ -468,7 +470,23 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod
     virtual ScriptSource* maybeScriptSource() const {
         return nullptr;
     }
-    virtual bool getFuncName(const Bytes* maybeBytecode, uint32_t funcIndex, UTF8Bytes* name) const;
+
+    
+    
+    
+    
+
+    enum NameContext { Standalone, BeforeLocation };
+
+    virtual bool getFuncName(NameContext ctx, const Bytes* maybeBytecode, uint32_t funcIndex,
+                             UTF8Bytes* name) const;
+
+    bool getFuncNameStandalone(const Bytes* maybeBytecode, uint32_t funcIndex, UTF8Bytes* name) const {
+        return getFuncName(NameContext::Standalone, maybeBytecode, funcIndex, name);
+    }
+    bool getFuncNameBeforeLocation(const Bytes* maybeBytecode, uint32_t funcIndex, UTF8Bytes* name) const {
+        return getFuncName(NameContext::BeforeLocation, maybeBytecode, funcIndex, name);
+    }
 
     WASM_DECLARE_SERIALIZABLE_VIRTUAL(Metadata);
 };

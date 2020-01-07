@@ -269,11 +269,9 @@ PopulateReportBlame(JSContext* cx, JSErrorReport* report)
         return;
 
     report->filename = iter.filename();
-    report->lineno = iter.computeLine(&report->column);
-    
-    
-    
-    report->column++;
+    uint32_t column;
+    report->lineno = iter.computeLine(&column);
+    report->column = FixupColumnForDisplay(column);
     report->isMuted = iter.mutedErrors();
 }
 

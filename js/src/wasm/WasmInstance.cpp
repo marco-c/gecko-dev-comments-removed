@@ -943,17 +943,13 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
     return true;
 }
 
-bool
-Instance::getFuncName(uint32_t funcIndex, UTF8Bytes* name) const
-{
-    return metadata().getFuncName(debug_->maybeBytecode(), funcIndex, name);
-}
-
 JSAtom*
-Instance::getFuncAtom(JSContext* cx, uint32_t funcIndex) const
+Instance::getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const
 {
+    
+    
     UTF8Bytes name;
-    if (!getFuncName(funcIndex, &name))
+    if (!metadata().getFuncNameBeforeLocation(debug_->maybeBytecode(), funcIndex, &name))
         return nullptr;
 
     return AtomizeUTF8Chars(cx, name.begin(), name.length());

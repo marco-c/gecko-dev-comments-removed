@@ -469,10 +469,7 @@ Error(JSContext* cx, unsigned argc, Value* vp)
             return false;
     } else {
         lineNumber = iter.done() ? 0 : iter.computeLine(&columnNumber);
-        
-        
-        
-        ++columnNumber;
+        columnNumber = FixupColumnForDisplay(columnNumber);
     }
 
     RootedObject stack(cx);
@@ -973,11 +970,9 @@ ErrorReport::populateUncaughtExceptionReportUTF8VA(JSContext* cx, va_list ap)
     NonBuiltinFrameIter iter(cx, cx->compartment()->principals());
     if (!iter.done()) {
         ownedReport.filename = iter.filename();
-        ownedReport.lineno = iter.computeLine(&ownedReport.column);
-        
-        
-        
-        ++ownedReport.column;
+        uint32_t column;
+        ownedReport.lineno = iter.computeLine(&column);
+        ownedReport.column = FixupColumnForDisplay(column);
         ownedReport.isMuted = iter.mutedErrors();
     }
 

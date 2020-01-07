@@ -49,6 +49,11 @@ class SavedFrame : public NativeObject {
     SavedFrame*   getParent() const;
     JSPrincipals* getPrincipals();
     bool          isSelfHosted(JSContext* cx);
+    bool          isWasm();
+
+    
+    uint32_t      wasmFuncIndex();
+    uint32_t      wasmBytecodeOffset();
 
     
     

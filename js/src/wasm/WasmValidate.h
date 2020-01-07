@@ -82,6 +82,7 @@ struct ModuleEnvironment
     
     ElemSegmentVector         elemSegments;
     DataSegmentVector         dataSegments;
+    Maybe<NameInBytecode>     moduleName;
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
 

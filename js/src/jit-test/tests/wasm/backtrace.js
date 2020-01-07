@@ -9,8 +9,9 @@ var mod = wasmEvalText(code, {
        
        
        var s = getBacktrace();
-       assertEq(s.split('\n').length, 4);
-       assertEq(s.split('\n')[1].startsWith("1 wasm-function[1]("), true);
+       var frames = s.split('\n');
+       assertEq(frames.length, 4);
+       assertEq(/> WebAssembly.Module":wasm-function\[1\]:0x/.test(frames[1]), true);
 
        
        backtrace();

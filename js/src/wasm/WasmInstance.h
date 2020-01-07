@@ -125,8 +125,7 @@ class Instance
     
     
 
-    bool getFuncName(uint32_t funcIndex, UTF8Bytes* name) const;
-    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
+    JSAtom* getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const;
     void ensureProfilingLabels(bool profilingEnabled) const;
 
     

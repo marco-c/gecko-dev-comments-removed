@@ -187,7 +187,7 @@ WasmFrameIter::functionDisplayAtom() const
     MOZ_ASSERT(!done());
 
     JSContext* cx = activation_->cx();
-    JSAtom* atom = instance()->getFuncAtom(cx, codeRange_->funcIndex());
+    JSAtom* atom = instance()->getFuncDisplayAtom(cx, codeRange_->funcIndex());
     if (!atom) {
         cx->clearPendingException();
         return cx->names().empty;
@@ -200,6 +200,40 @@ unsigned
 WasmFrameIter::lineOrBytecode() const
 {
     MOZ_ASSERT(!done());
+    return lineOrBytecode_;
+}
+
+uint32_t
+WasmFrameIter::funcIndex() const
+{
+    MOZ_ASSERT(!done());
+    return codeRange_->funcIndex();
+}
+
+unsigned
+WasmFrameIter::computeLine(uint32_t* column) const
+{
+    if (instance()->isAsmJS()) {
+        if (column)
+            *column = 1;
+        return lineOrBytecode_;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    MOZ_ASSERT(!(codeRange_->funcIndex() & ColumnBit));
+    if (column)
+        *column = codeRange_->funcIndex() | ColumnBit;
     return lineOrBytecode_;
 }
 
