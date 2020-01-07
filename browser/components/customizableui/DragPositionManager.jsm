@@ -191,7 +191,7 @@ AreaPositionManager.prototype = {
       if (aNode == firstNode) {
         
         
-        xDiff = this._horizontalDistance || aSize.width;
+        xDiff = this._horizontalDistance || (this._dir == "ltr" ? 1 : -1) * aSize.width;
       } else {
         
         
