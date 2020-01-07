@@ -580,6 +580,19 @@ var BrowserApp = {
     
     let stringGetter = name => () => Strings.browser.GetStringFromName(name);
 
+    function videoClassifier(aTarget) {
+      if (aTarget.readyState == aTarget.HAVE_NOTHING) {
+        
+        
+        return "Media";
+      } else if (aTarget.videoWidth == 0 || aTarget.videoHeight == 0) {
+        
+        
+        return "Audio";
+      }
+      return "Video";
+    }
+
     
     NativeWindow.contextmenus.add(stringGetter("contextmenu.openInNewTab"),
       NativeWindow.contextmenus.linkOpenableNonPrivateContext,
@@ -896,16 +909,9 @@ var BrowserApp = {
     NativeWindow.contextmenus.add(
       function(aTarget) {
         if (aTarget instanceof HTMLVideoElement) {
-          if (aTarget.readyState == aTarget.HAVE_NOTHING) {
-            
-            
-            return Strings.browser.GetStringFromName("contextmenu.saveMedia");
-          } else if (aTarget.videoWidth == 0 || aTarget.videoHeight == 0) {
-            
-            
-            return Strings.browser.GetStringFromName("contextmenu.saveAudio");
-          }
-          return Strings.browser.GetStringFromName("contextmenu.saveVideo");
+          return Strings.browser.GetStringFromName(
+            `contextmenu.save${videoClassifier(aTarget)}`
+          );
         } else if (aTarget instanceof HTMLAudioElement) {
           return Strings.browser.GetStringFromName("contextmenu.saveAudio");
         }
@@ -922,12 +928,7 @@ var BrowserApp = {
 
         let filePickerTitleKey;
         if (aTarget instanceof HTMLVideoElement) {
-          if (aTarget.readyState == aTarget.HAVE_NOTHING) {
-            filePickerTitleKey = "SaveMediaTitle";
-          } else if (aTarget.videoWidth == 0 || aTarget.videoHeight == 0) {
-            filePickerTitleKey = "SaveAudioTitle";
-          }
-          filePickerTitleKey = "SaveVideoTitle";
+          filePickerTitleKey = `Save${videoClassifier(aTarget)}Title`;
         } else {
           filePickerTitleKey = "SaveAudioTitle";
         }
