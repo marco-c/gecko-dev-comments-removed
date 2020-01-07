@@ -30,9 +30,6 @@
 
 
 
-
-static char *RCSSTRING __UNUSED__="$Id: stun_msg.c,v 1.2 2008/04/28 18:21:30 ekr Exp $";
-
 #include <errno.h>
 #include <csi_platform.h>
 

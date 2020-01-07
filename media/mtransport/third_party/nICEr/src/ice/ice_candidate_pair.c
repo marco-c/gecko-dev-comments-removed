@@ -30,10 +30,6 @@
 
 
 
-
-
-static char *RCSSTRING __UNUSED__="$Id: ice_candidate_pair.c,v 1.2 2008/04/28 17:59:01 ekr Exp $";
-
 #include <assert.h>
 #include <string.h>
 #include <nr_api.h>
