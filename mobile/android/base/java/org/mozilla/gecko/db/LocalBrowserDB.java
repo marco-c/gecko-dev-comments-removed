@@ -306,7 +306,11 @@ public class LocalBrowserDB extends BrowserDB {
                     bookmarkValue.put(Bookmarks.FAVICON_ID, faviconID);
                     faviconValues.add(iconValue);
                 }
-            } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
+            } catch (IllegalAccessException e) {
+                Log.wtf(LOGTAG, "Reflection failure.", e);
+            } catch (IllegalArgumentException e) {
+                Log.wtf(LOGTAG, "Reflection failure.", e);
+            } catch (NoSuchFieldException e) {
                 Log.wtf(LOGTAG, "Reflection failure.", e);
             }
         }
@@ -502,7 +506,13 @@ public class LocalBrowserDB extends BrowserDB {
             faviconField.setAccessible(true);
 
             return faviconField.getInt(null);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+        } catch (IllegalAccessException e) {
+            
+            
+            
+            
+            Log.d(LOGTAG, "No raw favicon resource found for " + name);
+        } catch (NoSuchFieldException e) {
             
             
             

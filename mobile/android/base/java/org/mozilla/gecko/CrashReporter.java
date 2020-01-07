@@ -52,7 +52,9 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 
-@SuppressLint("Registered") 
+
+
+@SuppressLint("Registered,CutPasteId")
 public class CrashReporter extends AppCompatActivity
 {
     private static final String LOGTAG = "GeckoCrashReporter";
