@@ -67,6 +67,10 @@ ServiceWorkerContainer::Create(nsIGlobalObject* aGlobal)
 ServiceWorkerContainer::ServiceWorkerContainer(nsIGlobalObject* aGlobal)
   : DOMEventTargetHelper(aGlobal)
 {
+  Maybe<ServiceWorkerDescriptor> controller = aGlobal->GetController();
+  if (controller.isSome()) {
+    mControllerWorker = aGlobal->GetOrCreateServiceWorker(controller.ref());
+  }
 }
 
 ServiceWorkerContainer::~ServiceWorkerContainer()
@@ -85,7 +89,12 @@ ServiceWorkerContainer::DisconnectFromOwner()
 void
 ServiceWorkerContainer::ControllerChanged(ErrorResult& aRv)
 {
-  mControllerWorker = nullptr;
+  nsCOMPtr<nsIGlobalObject> go = GetParentObject();
+  if (!go) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+  mControllerWorker = go->GetOrCreateServiceWorker(go->GetController().ref());
   aRv = DispatchTrustedEvent(NS_LITERAL_STRING("controllerchange"));
 }
 
@@ -224,44 +233,6 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
 already_AddRefed<ServiceWorker>
 ServiceWorkerContainer::GetController()
 {
-  if (!mControllerWorker) {
-    
-    
-    
-    
-
-    nsIGlobalObject* owner = GetOwnerGlobal();
-    NS_ENSURE_TRUE(owner, nullptr);
-
-    Maybe<ServiceWorkerDescriptor> controller(owner->GetController());
-    if (controller.isNothing()) {
-      return nullptr;
-    }
-
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (!swm) {
-      return nullptr;
-    }
-
-    
-    
-    RefPtr<ServiceWorkerRegistrationInfo> reg =
-      swm->GetRegistration(controller.ref().PrincipalInfo(),
-                           controller.ref().Scope());
-    NS_ENSURE_TRUE(reg, nullptr);
-
-    ServiceWorkerInfo* info = reg->GetActive();
-    NS_ENSURE_TRUE(info, nullptr);
-
-    nsCOMPtr<nsPIDOMWindowInner> inner = do_QueryInterface(owner);
-    NS_ENSURE_TRUE(inner, nullptr);
-
-    
-    
-    
-    mControllerWorker = inner->GetOrCreateServiceWorker(info->Descriptor());
-  }
-
   RefPtr<ServiceWorker> ref = mControllerWorker;
   return ref.forget();
 }
