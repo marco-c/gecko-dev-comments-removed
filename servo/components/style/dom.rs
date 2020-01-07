@@ -321,7 +321,7 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
 }
 
 
-pub trait TShadowRoot : Sized + Copy + Clone {
+pub trait TShadowRoot : Sized + Copy + Clone + PartialEq {
     
     type ConcreteNode: TNode<ConcreteShadowRoot = Self>;
 
@@ -388,15 +388,6 @@ pub trait TElement
         }
 
         depth
-    }
-
-    
-    
-    
-    
-    
-    fn style_scope(&self) -> Self::ConcreteNode {
-        self.as_node().owner_doc().as_node()
     }
 
     
@@ -747,6 +738,9 @@ pub trait TElement
 
     
     fn containing_shadow(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
+
+    
+    fn has_same_xbl_proto_binding_as(&self, _other: Self) -> bool { true }
 
     
     

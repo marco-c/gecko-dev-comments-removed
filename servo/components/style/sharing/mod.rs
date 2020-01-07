@@ -681,10 +681,26 @@ impl<E: TElement> StyleSharingCache<E> {
 
         
         
+        if target.element.containing_shadow() != candidate.element.containing_shadow() {
+            trace!("Miss: Different containing shadow roots");
+            return None;
+        }
+
         
         
-        if target.element.style_scope() != candidate.element.style_scope() {
-            trace!("Miss: Different style scopes");
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if !target.element.has_same_xbl_proto_binding_as(candidate.element) {
+            trace!("Miss: Different proto bindings");
             return None;
         }
 
@@ -695,7 +711,9 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         if target.element.assigned_slot() != candidate.element.assigned_slot() {
-            trace!("Miss: Different style scopes");
+            
+            
+            trace!("Miss: Different assigned slots");
             return None;
         }
 
