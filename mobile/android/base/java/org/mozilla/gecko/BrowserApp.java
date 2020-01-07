@@ -406,6 +406,8 @@ public class BrowserApp extends GeckoApp
 
     private final TabEditingState mLastTabEditingState = new TabEditingState();
 
+    private boolean mSuppressNextKeyUp;
+
     
     
     
@@ -580,6 +582,10 @@ public class BrowserApp extends GeckoApp
         
         
         if (event.getAction() != KeyEvent.ACTION_DOWN) {
+            if (mSuppressNextKeyUp && event.getAction() == KeyEvent.ACTION_UP) {
+                mSuppressNextKeyUp = false;
+                return true;
+            }
             return false;
         }
 
@@ -1391,8 +1397,13 @@ public class BrowserApp extends GeckoApp
 
         mBrowserToolbar.setOnCommitListener(new BrowserToolbar.OnCommitListener() {
             @Override
-            public void onCommit() {
-                commitEditingMode();
+            public void onCommitByKey() {
+                if (commitEditingMode()) {
+                    
+                    
+                    
+                    mSuppressNextKeyUp = true;
+                }
             }
         });
 
@@ -2681,9 +2692,12 @@ public class BrowserApp extends GeckoApp
         Telemetry.startUISession(TelemetryContract.Session.AWESOMESCREEN);
     }
 
-    private void commitEditingMode() {
+    
+
+
+    private boolean commitEditingMode() {
         if (!mBrowserToolbar.isEditing()) {
-            return;
+            return false;
         }
 
         Telemetry.stopUISession(TelemetryContract.Session.AWESOMESCREEN,
@@ -2705,6 +2719,8 @@ public class BrowserApp extends GeckoApp
         hideHomePager(url);
         loadUrlOrKeywordSearch(url);
         clearSelectedTabApplicationId();
+
+        return true;
     }
 
     private void clearSelectedTabApplicationId() {
