@@ -594,7 +594,12 @@ protected:
   nsresult ReapplyCachedStyles();
   void ClearCachedStyles();
   void AdjustSpecialBreaks();
-  nsresult AdjustWhitespace();
+
+  
+
+
+
+  MOZ_MUST_USE nsresult AdjustWhitespace();
 
   
 
