@@ -515,27 +515,11 @@ impl Wrench {
                 false,
             );
         }
-        
-        
-        
-        self.api.send_transaction(self.document_id, txn);
 
-        let mut txn = Transaction::new();
         for (id, offset) in scroll_offsets {
             txn.scroll_node_with_id(*offset, *id, ScrollClamping::NoClamping);
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        self.api.send_transaction(self.document_id, txn);
 
-        let mut txn = Transaction::new();
         txn.generate_frame();
         self.api.send_transaction(self.document_id, txn);
     }
@@ -575,6 +559,7 @@ impl Wrench {
             "M - Trigger memory pressure event",
             "T - Save CPU profile to a file",
             "C - Save a capture to captures/wrench/",
+            "X - Do a hit test at the current cursor position",
         ];
 
         let color_and_offset = [(*BLACK_COLOR, 2.0), (*WHITE_COLOR, 0.0)];

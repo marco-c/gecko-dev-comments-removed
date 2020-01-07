@@ -15,7 +15,6 @@ use api::{SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, TexelRec
 use api::{TransformStyle, YuvColorSpace, YuvData};
 use app_units::Au;
 use border::ImageBorderSegment;
-use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::{ClipRegion, ClipSource, ClipSources, ClipStore};
 use clip_scroll_node::{ClipScrollNode, NodeType, StickyFrameInfo};
 use clip_scroll_tree::{ClipChainIndex, ClipScrollNodeIndex, ClipScrollTree};
@@ -25,7 +24,7 @@ use glyph_rasterizer::FontInstance;
 use hit_test::{HitTestingItem, HitTestingRun};
 use image::{decompose_image, TiledImageInfo};
 use internal_types::{FastHashMap, FastHashSet};
-use picture::{PictureCompositeMode, PictureKind};
+use picture::PictureCompositeMode;
 use prim_store::{BrushKind, BrushPrimitive, BrushSegmentDescriptor, CachedGradient};
 use prim_store::{CachedGradientIndex, ImageCacheKey, ImagePrimitiveCpu, ImageSource};
 use prim_store::{PictureIndex, PrimitiveContainer, PrimitiveIndex, PrimitiveStore};
@@ -171,14 +170,6 @@ pub struct DisplayListFlattener<'a> {
 
     
     
-    shadow_prim_stack: Vec<(PrimitiveIndex, Vec<(PrimitiveIndex, ScrollNodeAndClipChain)>)>,
-
-    
-    
-    pending_shadow_contents: Vec<(PrimitiveIndex, ScrollNodeAndClipChain, LayerPrimitiveInfo)>,
-
-    
-    
     reference_frame_stack: Vec<(ClipId, ClipScrollNodeIndex)>,
 
     
@@ -186,6 +177,9 @@ pub struct DisplayListFlattener<'a> {
 
     
     picture_stack: Vec<PictureIndex>,
+
+    
+    shadow_stack: Vec<(Shadow, PictureIndex)>,
 
     
     pub scrollbar_prims: Vec<ScrollbarPrimitive>,
@@ -240,12 +234,11 @@ impl<'a> DisplayListFlattener<'a> {
             output_pipelines,
             id_to_index_mapper: ClipIdToIndexMapper::default(),
             hit_testing_runs: recycle_vec(old_builder.hit_testing_runs),
-            shadow_prim_stack: Vec::new(),
             cached_gradients: recycle_vec(old_builder.cached_gradients),
-            pending_shadow_contents: Vec::new(),
             scrollbar_prims: recycle_vec(old_builder.scrollbar_prims),
             reference_frame_stack: Vec::new(),
             picture_stack: Vec::new(),
+            shadow_stack: Vec::new(),
             sc_stack: Vec::new(),
             prim_store: old_builder.prim_store.recycle(),
             clip_store: old_builder.clip_store.recycle(),
@@ -930,12 +923,42 @@ impl<'a> DisplayListFlattener<'a> {
         info: &LayerPrimitiveInfo,
         clip_sources: Vec<ClipSource>,
         container: PrimitiveContainer,
-    ) -> PrimitiveIndex {
-        self.add_primitive_to_hit_testing_list(info, clip_and_scroll);
-        let prim_index = self.create_primitive(info, clip_sources, container);
+    ) {
+        if !self.shadow_stack.is_empty() {
+            
+            
+            let shadow_stack = mem::replace(&mut self.shadow_stack, Vec::new());
+            for &(ref shadow, shadow_pic_index) in &shadow_stack {
+                
+                let mut info = info.clone();
+                info.rect = info.rect.translate(&shadow.offset);
+                info.clip_rect = info.clip_rect.translate(&shadow.offset);
 
-        self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
-        prim_index
+                
+                let clip_sources: Vec<ClipSource> = clip_sources
+                    .iter()
+                    .map(|cs| cs.offset(&shadow.offset))
+                    .collect();
+
+                
+                let shadow_prim_index = self.create_primitive(
+                    &info,
+                    clip_sources,
+                    container.create_shadow(shadow),
+                );
+
+                
+                let shadow_pic = &mut self.prim_store.pictures[shadow_pic_index.0];
+                shadow_pic.add_primitive(shadow_prim_index, clip_and_scroll);
+            }
+            self.shadow_stack = shadow_stack;
+        }
+
+        if container.is_visible() {
+            let prim_index = self.create_primitive(info, clip_sources, container);
+            self.add_primitive_to_hit_testing_list(info, clip_and_scroll);
+            self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
+        }
     }
 
     pub fn push_stacking_context(
@@ -973,6 +996,7 @@ impl<'a> DisplayListFlattener<'a> {
                 pipeline_id,
                 current_reference_frame_index,
                 None,
+                true,
             );
 
             self.picture_stack.push(pic_index);
@@ -986,17 +1010,10 @@ impl<'a> DisplayListFlattener<'a> {
             let parent_pic_index = self.picture_stack.last().unwrap();
             let parent_pic = &mut self.prim_store.pictures[parent_pic_index.0];
 
-            match parent_pic.kind {
-                PictureKind::Image { ref mut composite_mode, .. } => {
-                    
-                    
-                    if composite_mode.is_none() {
-                        *composite_mode = Some(PictureCompositeMode::Blit);
-                    }
-                }
-                PictureKind::TextShadow { .. } => {
-                    panic!("bug: text pictures invalid here");
-                }
+            
+            
+            if parent_pic.composite_mode.is_none() {
+                parent_pic.composite_mode = Some(PictureCompositeMode::Blit);
             }
         }
 
@@ -1035,6 +1052,7 @@ impl<'a> DisplayListFlattener<'a> {
                 pipeline_id,
                 current_reference_frame_index,
                 None,
+                true,
             );
 
             let prim = BrushPrimitive::new_picture(container_index);
@@ -1087,6 +1105,7 @@ impl<'a> DisplayListFlattener<'a> {
                 pipeline_id,
                 current_reference_frame_index,
                 None,
+                true,
             );
 
             let src_prim = BrushPrimitive::new_picture(src_pic_index);
@@ -1118,6 +1137,7 @@ impl<'a> DisplayListFlattener<'a> {
                 pipeline_id,
                 current_reference_frame_index,
                 None,
+                true,
             );
 
             let src_prim = BrushPrimitive::new_picture(src_pic_index);
@@ -1171,6 +1191,7 @@ impl<'a> DisplayListFlattener<'a> {
             pipeline_id,
             current_reference_frame_index,
             frame_output_pipeline_id,
+                true,
         );
 
         
@@ -1237,7 +1258,7 @@ impl<'a> DisplayListFlattener<'a> {
         }
 
         assert!(
-            self.shadow_prim_stack.is_empty(),
+            self.shadow_stack.is_empty(),
             "Found unpopped text shadows when popping stacking context!"
         );
     }
@@ -1381,44 +1402,47 @@ impl<'a> DisplayListFlattener<'a> {
         info: &LayerPrimitiveInfo,
     ) {
         let pipeline_id = self.sc_stack.last().unwrap().pipeline_id;
-        let pic_index = self.prim_store.add_shadow_picture(shadow, pipeline_id);
+        let current_reference_frame_index = self.current_reference_frame_index();
+        let max_clip = LayerRect::max_rect();
 
-        let prim = BrushPrimitive::new_picture(pic_index);
+        
+        
+        
+        let std_deviation = shadow.blur_radius * 0.5;
 
         
         
         
         
-        let prim_index = self.create_primitive(
-            info,
-            Vec::new(),
-            PrimitiveContainer::Brush(prim),
+        let shadow_pic_index = self.prim_store.add_image_picture(
+            Some(PictureCompositeMode::Filter(FilterOp::Blur(std_deviation))),
+            false,
+            pipeline_id,
+            current_reference_frame_index,
+            None,
+            false,
         );
 
-        let pending = vec![(prim_index, clip_and_scroll)];
-        self.shadow_prim_stack.push((prim_index, pending));
+        
+        let shadow_prim = BrushPrimitive::new_picture(shadow_pic_index);
+        let shadow_prim_index = self.prim_store.add_primitive(
+            &LayerRect::zero(),
+            &max_clip,
+            info.is_backface_visible,
+            None,
+            None,
+            PrimitiveContainer::Brush(shadow_prim),
+        );
+
+        
+        
+        self.add_primitive_to_draw_list(shadow_prim_index, clip_and_scroll);
+        self.shadow_stack.push((shadow, shadow_pic_index));
     }
 
     pub fn pop_all_shadows(&mut self) {
-        assert!(self.shadow_prim_stack.len() > 0, "popped shadows, but none were present");
-
-        
-        let mut shadows = mem::replace(&mut self.shadow_prim_stack, Vec::new());
-        for (_, pending_primitives) in shadows.drain(..) {
-            
-            for (prim_index, clip_and_scroll) in pending_primitives {
-                self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
-            }
-        }
-
-        let mut pending_primitives = mem::replace(&mut self.pending_shadow_contents, Vec::new());
-        for (prim_index, clip_and_scroll, info) in pending_primitives.drain(..) {
-            self.add_primitive_to_hit_testing_list(&info, clip_and_scroll);
-            self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
-        }
-
-        mem::replace(&mut self.pending_shadow_contents, pending_primitives);
-        mem::replace(&mut self.shadow_prim_stack, shadows);
+        assert!(self.shadow_stack.len() > 0, "popped shadows, but none were present");
+        self.shadow_stack.clear();
     }
 
     pub fn add_solid_rectangle(
@@ -1486,11 +1510,15 @@ impl<'a> DisplayListFlattener<'a> {
             None,
         );
 
-        let prim_index = self.add_primitive(
-            clip_and_scroll,
+        let prim_index = self.create_primitive(
             info,
             Vec::new(),
             PrimitiveContainer::Brush(prim),
+        );
+
+        self.add_primitive_to_draw_list(
+            prim_index,
+            clip_and_scroll,
         );
 
         self.scrollbar_prims.push(ScrollbarPrimitive {
@@ -1509,97 +1537,37 @@ impl<'a> DisplayListFlattener<'a> {
         line_color: &ColorF,
         style: LineStyle,
     ) {
-        let line = BrushPrimitive::new(
-            BrushKind::Line {
-                wavy_line_thickness,
-                color: line_color.premultiplied(),
-                style,
-                orientation,
+        let prim = BrushPrimitive::new(
+            BrushKind::Solid {
+                color: *line_color,
             },
             None,
         );
 
-        let mut fast_shadow_prims = Vec::new();
-        let mut slow_shadow_prims = Vec::new();
-        for (idx, &(shadow_prim_index, _)) in self.shadow_prim_stack.iter().enumerate() {
-            let shadow_metadata = &self.prim_store.cpu_metadata[shadow_prim_index.0];
-            let brush = &self.prim_store.cpu_brushes[shadow_metadata.cpu_prim_index.0];
-            let pic_index = brush.get_picture_index();
-            let picture = &self.prim_store.pictures[pic_index.0];
-            match picture.kind {
-                PictureKind::TextShadow { offset, color, blur_radius, .. } => {
-                    if blur_radius == 0.0 {
-                        fast_shadow_prims.push((idx, offset, color));
-                    } else {
-                        slow_shadow_prims.push((pic_index, offset, color));
-                    }
-                }
-                _ => {}
+        let extra_clips = match style {
+            LineStyle::Solid => {
+                Vec::new()
             }
-        }
-
-        for (idx, shadow_offset, shadow_color) in fast_shadow_prims {
-            let line = BrushPrimitive::new(
-                BrushKind::Line {
-                    wavy_line_thickness,
-                    color: shadow_color.premultiplied(),
-                    style,
-                    orientation,
-                },
-                None,
-            );
-            let mut info = info.clone();
-            info.rect = info.rect.translate(&shadow_offset);
-            info.clip_rect = info.clip_rect.translate(&shadow_offset);
-            let prim_index = self.create_primitive(
-                &info,
-                Vec::new(),
-                PrimitiveContainer::Brush(line),
-            );
-            self.shadow_prim_stack[idx].1.push((prim_index, clip_and_scroll));
-        }
-
-        if line_color.a > 0.0 {
-            let prim_index = self.create_primitive(
-                &info,
-                Vec::new(),
-                PrimitiveContainer::Brush(line),
-            );
-
-            if self.shadow_prim_stack.is_empty() {
-                self.add_primitive_to_hit_testing_list(&info, clip_and_scroll);
-                self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
-            } else {
-                self.pending_shadow_contents.push((prim_index, clip_and_scroll, *info));
+            LineStyle::Wavy |
+            LineStyle::Dotted |
+            LineStyle::Dashed => {
+                vec![
+                    ClipSource::new_line_decoration(
+                        info.rect,
+                        style,
+                        orientation,
+                        wavy_line_thickness,
+                    ),
+                ]
             }
-        }
+        };
 
-        for (pic_index, shadow_offset, shadow_color) in slow_shadow_prims {
-            let line = BrushPrimitive::new(
-                BrushKind::Line {
-                    wavy_line_thickness,
-                    color: shadow_color.premultiplied(),
-                    style,
-                    orientation,
-                },
-                None,
-            );
-            let mut info = info.clone();
-            info.rect = info.rect.translate(&shadow_offset);
-            info.clip_rect = info.clip_rect.translate(&shadow_offset);
-            let prim_index = self.create_primitive(
-                &info,
-                Vec::new(),
-                PrimitiveContainer::Brush(line),
-            );
-
-            let picture = &mut self.prim_store.pictures[pic_index.0];
-
-            picture.add_primitive(
-                prim_index,
-                clip_and_scroll,
-            );
-        }
+        self.add_primitive(
+            clip_and_scroll,
+            info,
+            extra_clips,
+            PrimitiveContainer::Brush(prim),
+        );
     }
 
     pub fn add_border(
@@ -2118,102 +2086,12 @@ impl<'a> DisplayListFlattener<'a> {
             }
         };
 
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut fast_shadow_prims = Vec::new();
-        let mut slow_shadow_prims = Vec::new();
-        for (idx, &(shadow_prim_index, _)) in self.shadow_prim_stack.iter().enumerate() {
-            let shadow_metadata = &self.prim_store.cpu_metadata[shadow_prim_index.0];
-            let brush = &self.prim_store.cpu_brushes[shadow_metadata.cpu_prim_index.0];
-            let pic_index = brush.get_picture_index();
-            let picture_prim = &self.prim_store.pictures[pic_index.0];
-            match picture_prim.kind {
-                PictureKind::TextShadow { offset, color, blur_radius, .. } => {
-                    let mut text_prim = prim.clone();
-                    text_prim.font.color = color.into();
-                    text_prim.shadow = true;
-                    text_prim.offset += offset;
-
-                    if blur_radius == 0.0 {
-                        fast_shadow_prims.push((idx, text_prim, offset));
-                    } else {
-                        text_prim.font.render_mode = text_prim
-                            .font
-                            .render_mode
-                            .limit_by(FontRenderMode::Alpha);
-
-                        slow_shadow_prims.push((pic_index, text_prim, offset, blur_radius));
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        for (idx, text_prim, offset) in fast_shadow_prims {
-            let rect = prim_info.rect;
-            let mut info = prim_info.clone();
-            info.rect = rect.translate(&offset);
-            info.clip_rect = info.clip_rect.translate(&offset);
-            let prim_index = self.create_primitive(
-                &info,
-                Vec::new(),
-                PrimitiveContainer::TextRun(text_prim),
-            );
-            self.shadow_prim_stack[idx].1.push((prim_index, clip_and_scroll));
-        }
-
-        
-        if text_color.a > 0.0 {
-            
-            
-            let prim_index = self.create_primitive(
-                prim_info,
-                Vec::new(),
-                PrimitiveContainer::TextRun(prim),
-            );
-
-            if self.shadow_prim_stack.is_empty() {
-                self.add_primitive_to_hit_testing_list(prim_info, clip_and_scroll);
-                self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
-            } else {
-                self.pending_shadow_contents.push((prim_index, clip_and_scroll, *prim_info));
-            }
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        for (pic_index, shadow_prim, offset, blur_radius) in slow_shadow_prims {
-            let blur_region = blur_radius * BLUR_SAMPLE_SCALE;
-
-            let rect = prim_info.rect;
-            let mut info = prim_info.clone();
-            info.rect = rect.translate(&offset).inflate(blur_region, blur_region);
-            info.clip_rect = info.clip_rect.translate(&offset);
-
-            let prim_index = self.create_primitive(
-                &info,
-                Vec::new(),
-                PrimitiveContainer::TextRun(shadow_prim),
-            );
-
-            let picture = &mut self.prim_store.pictures[pic_index.0];
-
-            picture.add_primitive(
-                prim_index,
-                clip_and_scroll,
-            );
-        }
+        self.add_primitive(
+            clip_and_scroll,
+            prim_info,
+            Vec::new(),
+            PrimitiveContainer::TextRun(prim),
+        );
     }
 
     pub fn add_image(
