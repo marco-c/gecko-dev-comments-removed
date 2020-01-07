@@ -78,14 +78,6 @@ class mozJSComponentLoader final : public mozilla::ModuleLoader,
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-    
-
-
-
-
-
-    nsresult AnnotateCrashReport();
-
  protected:
     virtual ~mozJSComponentLoader();
 
