@@ -226,11 +226,11 @@ WebAuthnManager::MakeCredential(const MakePublicKeyCredentialOptions& aOptions,
   }
 
   
-  if (aOptions.mUser.mId.WasPassed()) {
-    
-    
+  
+  
+  {
     CryptoBuffer userId;
-    userId.Assign(aOptions.mUser.mId.Value());
+    userId.Assign(aOptions.mUser.mId);
     if (userId.Length() > 64) {
       promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
       return promise.forget();
