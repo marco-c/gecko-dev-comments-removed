@@ -206,14 +206,17 @@ LifoAlloc::getOrCreateChunk(size_t n)
     
     
     
-    if (!chunks_.empty())
-        chunks_.last()->setRWUntil(Loc::Reserved);
+    auto protectLast = [&]() {
+        if (!chunks_.empty())
+            chunks_.last()->setRWUntil(Loc::Reserved);
+    };
 
     
     
     
     if (!unused_.empty()) {
         if (unused_.begin()->canAlloc(n)) {
+            protectLast();
             chunks_.append(unused_.popFirst());
             chunks_.last()->setRWUntil(Loc::End);
             return true;
@@ -225,6 +228,7 @@ LifoAlloc::getOrCreateChunk(size_t n)
             MOZ_ASSERT(elem->empty());
             if (elem->canAlloc(n)) {
                 BumpChunkList temp = unused_.splitAfter(i.get());
+                protectLast();
                 chunks_.append(temp.popFirst());
                 unused_.appendAll(std::move(temp));
                 chunks_.last()->setRWUntil(Loc::End);
@@ -241,6 +245,7 @@ LifoAlloc::getOrCreateChunk(size_t n)
     
     
     
+    protectLast();
     chunks_.append(std::move(newChunk));
     incrementCurSize(size);
     return true;
