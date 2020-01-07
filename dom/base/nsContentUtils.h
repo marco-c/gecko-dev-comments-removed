@@ -2706,18 +2706,6 @@ public:
 
 
 
-
-
-
-
-
-  static bool IsContentInsertionPoint(nsIContent* aContent);
-
-
-  
-
-
-
   static bool HasDistributedChildren(nsIContent* aContent);
 
   

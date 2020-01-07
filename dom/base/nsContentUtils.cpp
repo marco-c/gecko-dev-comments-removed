@@ -7490,19 +7490,6 @@ nsContentUtils::GetHTMLEditor(nsPresContext* aPresContext)
   return docShell->GetHTMLEditor();
 }
 
-bool
-nsContentUtils::IsContentInsertionPoint(nsIContent* aContent)
-{
-  
-  if (aContent->IsActiveChildrenElement()) {
-    return true;
-  }
-
-  
-  
-  return false;
-}
-
 
 bool
 nsContentUtils::HasDistributedChildren(nsIContent* aContent)

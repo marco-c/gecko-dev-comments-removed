@@ -510,33 +510,6 @@ ShadowRoot::SetApplyAuthorStyles(bool aApplyAuthorStyles)
   }
 }
 
-
-
-
-
-
-
-bool
-ShadowRoot::IsPooledNode(nsIContent* aContent) const
-{
-  if (nsContentUtils::IsContentInsertionPoint(aContent)) {
-    
-    return false;
-  }
-
-  auto* host = GetHost();
-  auto* container = aContent->GetParent();
-  if (container == host && !aContent->IsRootOfAnonymousSubtree()) {
-    
-    
-    
-    
-    return true;
-  }
-
-  return false;
-}
-
 void
 ShadowRoot::AttributeChanged(nsIDocument* aDocument,
                              Element* aElement,

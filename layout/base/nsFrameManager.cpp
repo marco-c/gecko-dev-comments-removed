@@ -730,7 +730,7 @@ nsFrameManagerBase::UndisplayedMap::GetApplicableParent(nsIContent* aParent)
   
   
   
-  if (aParent && nsContentUtils::IsContentInsertionPoint(aParent)) {
+  if (aParent && aParent->IsActiveChildrenElement()) {
     return aParent->GetParent();
   }
 
