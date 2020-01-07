@@ -7387,6 +7387,12 @@ class CGCallGenerator(CGThing):
                  not a.type.nullable()) or
                 a.type.isDOMString()):
                 arg = CGWrapper(arg, pre="NonNullHelper(", post=")")
+
+            
+            
+            if a.type.isGeckoInterface():
+                arg = CGWrapper(arg, pre="MOZ_KnownLive(", post=")")
+
             args.append(arg)
 
         needResultDecl = False
