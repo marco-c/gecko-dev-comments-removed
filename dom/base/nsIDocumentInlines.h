@@ -63,27 +63,8 @@ nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
 {
   MOZ_ASSERT(aRoot);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   MOZ_ASSERT(!mServoRestyleRoot ||
              mServoRestyleRoot == aRoot ||
-             !aRoot->IsElement() ||
              nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(mServoRestyleRoot, aRoot));
   MOZ_ASSERT(aRoot == aRoot->OwnerDocAsNode() || aRoot->IsElement());
   mServoRestyleRoot = aRoot;

@@ -69,6 +69,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/ServoRestyleManager.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
@@ -1919,6 +1920,15 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     
     nsIDocument::ExitFullscreenInDocTree(OwnerDoc());
   }
+
+  if (HasServoData()) {
+    MOZ_ASSERT(IsInAnonymousSubtree());
+    MOZ_ASSERT(document && document->IsStyledByServo());
+    ClearServoData(document);
+  } else if (document && document->GetServoRestyleRoot() == this) {
+    document->ClearServoRestyleRoot();
+  }
+
   if (aNullParent) {
     if (GetParent() && GetParent()->IsInUncomposedDoc()) {
       
@@ -1979,19 +1989,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     DeleteProperty(nsGkAtoms::animationsOfBeforeProperty);
     DeleteProperty(nsGkAtoms::animationsOfAfterProperty);
     DeleteProperty(nsGkAtoms::animationsProperty);
-  }
-
-  
-  
-  if (IsStyledByServo()) {
-    if (document) {
-      ClearServoData(document);
-    } else {
-      MOZ_ASSERT(!HasServoData());
-      MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME));
-    }
-  } else {
-    MOZ_ASSERT(!HasServoData());
   }
 
   
@@ -2097,24 +2094,8 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     shadowRoot->SetIsComposedDocParticipant(false);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  UnsetFlags(kAllServoDescendantBits);
-  if (document && document->GetServoRestyleRoot() == this) {
-    document->ClearServoRestyleRoot();
-  }
+  MOZ_ASSERT_IF(IsStyledByServo(), !HasAnyOfFlags(kAllServoDescendantBits));
+  MOZ_ASSERT(!document || document->GetServoRestyleRoot() != this);
 }
 
 nsDOMCSSAttributeDeclaration*
@@ -4505,7 +4486,6 @@ BitsArePropagated(const Element* aElement, uint32_t aBits, nsINode* aRestyleRoot
     nsINode* parentNode = curr->GetParentNode();
     curr = curr->GetFlattenedTreeParentElementForStyle();
     MOZ_ASSERT_IF(!curr,
-                  !parentNode || 
                   parentNode == aElement->OwnerDoc() ||
                   parentNode == parentNode->OwnerDoc()->GetRootElement());
   }
@@ -4519,24 +4499,6 @@ AssertNoBitsPropagatedFrom(nsINode* aRoot)
 #ifdef DEBUG
   if (!aRoot || !aRoot->IsElement()) {
     return;
-  }
-
-  
-  
-  
-  
-  
-  
-  for (nsINode* n = aRoot; n; n = n->GetFlattenedTreeParentElementForStyle()) {
-    if (!n->IsInComposedDoc()) {
-      
-      
-      do {
-        aRoot = n;
-        n = n->GetFlattenedTreeParentElementForStyle();
-      } while (n && !n->IsInComposedDoc());
-      break;
-    }
   }
 
   auto* element = aRoot->GetFlattenedTreeParentElementForStyle();

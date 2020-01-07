@@ -253,6 +253,12 @@ RestyleManager::ContentRemoved(nsINode* aContainer,
                                nsIContent* aFollowingSibling)
 {
   
+  
+  if (IsServo() && aOldChild->IsElement()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(aOldChild->AsElement());
+  }
+
+  
   if (!aContainer->IsElement()) {
     return;
   }
