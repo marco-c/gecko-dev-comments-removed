@@ -30,7 +30,7 @@ const reOverlay = /<|&#?\w+;/;
 
 
 
-const ALLOWED_ELEMENTS = {
+const LOCALIZABLE_ELEMENTS = {
   'http://www.w3.org/1999/xhtml': [
     'a', 'em', 'strong', 'small', 's', 'cite', 'q', 'dfn', 'abbr', 'data',
     'time', 'code', 'var', 'samp', 'kbd', 'sub', 'sup', 'i', 'b', 'u',
@@ -38,7 +38,7 @@ const ALLOWED_ELEMENTS = {
   ],
 };
 
-const ALLOWED_ATTRIBUTES = {
+const LOCALIZABLE_ATTRIBUTES = {
   'http://www.w3.org/1999/xhtml': {
     global: ['title', 'aria-label', 'aria-valuetext', 'aria-moz-hint'],
     a: ['download'],
@@ -92,21 +92,28 @@ function overlayElement(targetElement, translation) {
     }
   }
 
-  if (translation.attrs === null) {
-    return;
-  }
-
   const explicitlyAllowed = targetElement.hasAttribute('data-l10n-attrs')
     ? targetElement.getAttribute('data-l10n-attrs')
       .split(',').map(i => i.trim())
     : null;
 
-  for (const [name, val] of translation.attrs) {
-    if (isAttrNameAllowed(name, targetElement, explicitlyAllowed)) {
-      targetElement.setAttribute(name, val);
+  
+  
+  for (const attr of Array.from(targetElement.attributes)) {
+    if (isAttrNameLocalizable(attr.name, targetElement, explicitlyAllowed)) {
+      targetElement.removeAttribute(attr.name);
+    }
+  }
+
+  if (translation.attrs) {
+    for (const [name, val] of translation.attrs) {
+      if (isAttrNameLocalizable(name, targetElement, explicitlyAllowed)) {
+        targetElement.setAttribute(name, val);
+      }
     }
   }
 }
+
 
 
 
@@ -134,6 +141,7 @@ function overlayElement(targetElement, translation) {
 
 
 function sanitizeUsing(translationFragment, sourceElement) {
+  const ownerDocument = translationFragment.ownerDocument;
   
   
   
@@ -144,32 +152,29 @@ function sanitizeUsing(translationFragment, sourceElement) {
     }
 
     
-    if (!isElementAllowed(childNode)) {
-      const text = translationFragment.ownerDocument.createTextNode(
-        childNode.textContent
-      );
+    if (!isElementLocalizable(childNode)) {
+      const text = ownerDocument.createTextNode(childNode.textContent);
       translationFragment.replaceChild(text, childNode);
       continue;
     }
 
-
     
-    
-    const sourceChild = shiftNamedElement(sourceElement, childNode.localName);
-
-    const mergedChild = sourceChild
-      
-      ? sourceChild.cloneNode(false)
-      
-      : childNode.ownerDocument.createElement(childNode.localName);
+    const mergedChild = ownerDocument.createElement(childNode.localName);
 
     
     mergedChild.textContent = childNode.textContent;
 
-    for (const attr of Array.from(childNode.attributes)) {
-      if (isAttrNameAllowed(attr.name, childNode)) {
-        mergedChild.setAttribute(attr.name, attr.value);
-      }
+    
+    
+    
+    const sourceChild = shiftNamedElement(sourceElement, childNode.localName);
+
+    
+    
+    const safeAttributes = sanitizeAttrsUsing(childNode, sourceChild);
+
+    for (const attr of safeAttributes) {
+      mergedChild.setAttribute(attr.name, attr.value);
     }
 
     translationFragment.replaceChild(mergedChild, childNode);
@@ -192,8 +197,35 @@ function sanitizeUsing(translationFragment, sourceElement) {
 
 
 
-function isElementAllowed(element) {
-  const allowed = ALLOWED_ELEMENTS[element.namespaceURI];
+
+function sanitizeAttrsUsing(translatedElement, sourceElement) {
+  const localizedAttrs = Array.from(translatedElement.attributes).filter(
+    attr => isAttrNameLocalizable(attr.name, translatedElement)
+  );
+
+  if (!sourceElement) {
+    return localizedAttrs;
+  }
+
+  const functionalAttrs = Array.from(sourceElement.attributes).filter(
+    attr => !isAttrNameLocalizable(attr.name, sourceElement)
+  );
+
+  return localizedAttrs.concat(functionalAttrs);
+}
+
+
+
+
+
+
+
+
+
+
+
+function isElementLocalizable(element) {
+  const allowed = LOCALIZABLE_ELEMENTS[element.namespaceURI];
   return allowed && allowed.includes(element.localName);
 }
 
@@ -213,12 +245,12 @@ function isElementAllowed(element) {
 
 
 
-function isAttrNameAllowed(name, element, explicitlyAllowed = null) {
+function isAttrNameLocalizable(name, element, explicitlyAllowed = null) {
   if (explicitlyAllowed && explicitlyAllowed.includes(name)) {
     return true;
   }
 
-  const allowed = ALLOWED_ATTRIBUTES[element.namespaceURI];
+  const allowed = LOCALIZABLE_ATTRIBUTES[element.namespaceURI];
   if (!allowed) {
     return false;
   }
@@ -475,7 +507,7 @@ class DOMLocalization extends Localization {
           for (const addedNode of mutation.addedNodes) {
             if (addedNode.nodeType === addedNode.ELEMENT_NODE) {
               if (addedNode.childElementCount) {
-                for (let element of this.getTranslatables(addedNode)) {
+                for (const element of this.getTranslatables(addedNode)) {
                   this.pendingElements.add(element);
                 }
               } else if (addedNode.hasAttribute(L10NID_ATTR_NAME)) {
@@ -499,6 +531,7 @@ class DOMLocalization extends Localization {
       }
     }
   }
+
 
   
 

@@ -22,7 +22,9 @@
 
 const MAX_PLACEABLES = 100;
 
-const identifierRe = new RegExp('[a-zA-Z_][a-zA-Z0-9_-]*', 'y');
+const entryIdentifierRe = /-?[a-zA-Z][a-zA-Z0-9_-]*/y;
+const identifierRe = /[a-zA-Z][a-zA-Z0-9_-]*/y;
+const functionIdentifierRe = /^[A-Z][A-Z_?-]*$/;
 
 
 
@@ -92,7 +94,8 @@ class RuntimeParser {
     const ch = this._source[this._index];
 
     
-    if (ch === '/') {
+    if (ch === '/' ||
+      (ch === '#' && [' ', '#'].includes(this._source[this._index + 1]))) {
       this.skipComment();
       return;
     }
@@ -119,7 +122,7 @@ class RuntimeParser {
     this._index += 1;
 
     this.skipInlineWS();
-    this.getSymbol();
+    this.getVariantName();
     this.skipInlineWS();
 
     if (this._source[this._index] !== ']' ||
@@ -137,61 +140,49 @@ class RuntimeParser {
 
 
   getMessage() {
-    const id = this.getIdentifier();
-    let attrs = null;
-    let tags = null;
+    const id = this.getEntryIdentifier();
 
     this.skipInlineWS();
 
-    let ch = this._source[this._index];
-
-    let val;
-
-    if (ch === '=') {
+    if (this._source[this._index] === '=') {
       this._index++;
+    }
 
+    this.skipInlineWS();
+
+    const val = this.getPattern();
+
+    if (id.startsWith('-') && val === null) {
+      throw this.error('Expected term to have a value');
+    }
+
+    let attrs = null;
+
+    if (this._source[this._index] === ' ') {
+      const lineStart = this._index;
       this.skipInlineWS();
 
-      val = this.getPattern();
-    } else {
-      this.skipWS();
-    }
-
-    ch = this._source[this._index];
-
-    if (ch === '\n') {
-      this._index++;
-      this.skipInlineWS();
-      ch = this._source[this._index];
-    }
-
-    if (ch === '.') {
-      attrs = this.getAttributes();
-    }
-
-    if (ch === '#') {
-      if (attrs !== null) {
-        throw this.error('Tags cannot be added to a message with attributes.');
+      if (this._source[this._index] === '.') {
+        this._index = lineStart;
+        attrs = this.getAttributes();
       }
-      tags = this.getTags();
     }
 
-    if (tags === null && attrs === null && typeof val === 'string') {
+    if (attrs === null && typeof val === 'string') {
       this.entries[id] = val;
     } else {
-      if (val === undefined) {
-        if (tags === null && attrs === null) {
-          throw this.error(`Expected a value (like: " = value") or
-            an attribute (like: ".key = value")`);
-        }
+      if (val === null && attrs === null) {
+        throw this.error('Expected message to have a value or attributes');
       }
 
-      this.entries[id] = { val };
-      if (attrs) {
-        this.entries[id].attrs = attrs;
+      this.entries[id] = {};
+
+      if (val !== null) {
+        this.entries[id].val = val;
       }
-      if (tags) {
-        this.entries[id].tags = tags;
+
+      if (attrs !== null) {
+        this.entries[id].attrs = attrs;
       }
     }
   }
@@ -225,18 +216,40 @@ class RuntimeParser {
 
 
 
+  skipBlankLines() {
+    while (true) {
+      const ptr = this._index;
 
-  getIdentifier() {
-    identifierRe.lastIndex = this._index;
+      this.skipInlineWS();
 
-    const result = identifierRe.exec(this._source);
+      if (this._source[this._index] === '\n') {
+        this._index += 1;
+      } else {
+        this._index = ptr;
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  getIdentifier(re = identifierRe) {
+    re.lastIndex = this._index;
+    const result = re.exec(this._source);
 
     if (result === null) {
       this._index += 1;
-      throw this.error('Expected an identifier (starting with [a-zA-Z_])');
+      throw this.error(`Expected an identifier [${re.toString()}]`);
     }
 
-    this._index = identifierRe.lastIndex;
+    this._index = re.lastIndex;
     return result[0];
   }
 
@@ -246,24 +259,34 @@ class RuntimeParser {
 
 
 
-  getSymbol() {
+  getEntryIdentifier() {
+    return this.getIdentifier(entryIdentifierRe);
+  }
+
+  
+
+
+
+
+
+  getVariantName() {
     let name = '';
 
     const start = this._index;
     let cc = this._source.charCodeAt(this._index);
 
     if ((cc >= 97 && cc <= 122) || 
-        (cc >= 65 && cc <= 90) ||  
-        cc === 95 || cc === 32) {  
+        (cc >= 65 && cc <= 90) || 
+        cc === 95 || cc === 32) { 
       cc = this._source.charCodeAt(++this._index);
     } else {
       throw this.error('Expected a keyword (starting with [a-zA-Z_])');
     }
 
     while ((cc >= 97 && cc <= 122) || 
-           (cc >= 65 && cc <= 90) ||  
-           (cc >= 48 && cc <= 57) ||  
-           cc === 95 || cc === 45 || cc === 32) {  
+           (cc >= 65 && cc <= 90) || 
+           (cc >= 48 && cc <= 57) || 
+           cc === 95 || cc === 45 || cc === 32) { 
       cc = this._source.charCodeAt(++this._index);
     }
 
@@ -277,7 +300,7 @@ class RuntimeParser {
 
     name += this._source.slice(start, this._index);
 
-    return { type: 'sym', name };
+    return { type: 'varname', name };
   }
 
   
@@ -297,7 +320,7 @@ class RuntimeParser {
       }
 
       if (ch === '\n') {
-        break;
+        throw this.error('Unterminated string expression');
       }
     }
 
@@ -325,21 +348,40 @@ class RuntimeParser {
       eol = this._length;
     }
 
-    const line = start !== eol ?
-      this._source.slice(start, eol) : undefined;
+    const firstLineContent = start !== eol ?
+      this._source.slice(start, eol) : null;
 
-    if (line !== undefined && line.includes('{')) {
+    if (firstLineContent && firstLineContent.includes('{')) {
       return this.getComplexPattern();
     }
 
     this._index = eol + 1;
 
-    if (this._source[this._index] === ' ') {
-      this._index = start;
-      return this.getComplexPattern();
+    this.skipBlankLines();
+
+    if (this._source[this._index] !== ' ') {
+      
+      return firstLineContent;
     }
 
-    return line;
+    const lineStart = this._index;
+
+    this.skipInlineWS();
+
+    if (this._source[this._index] === '.') {
+      
+      
+      this._index = lineStart;
+      return firstLineContent;
+    }
+
+    if (firstLineContent) {
+      
+      
+      this._index = start;
+    }
+
+    return this.getComplexPattern();
   }
 
   
@@ -364,6 +406,16 @@ class RuntimeParser {
       
       if (ch === '\n') {
         this._index++;
+
+        
+        
+        
+        
+        const blankLinesStart = this._index;
+        this.skipBlankLines();
+        const blankLinesEnd = this._index;
+
+
         if (this._source[this._index] !== ' ') {
           break;
         }
@@ -372,10 +424,12 @@ class RuntimeParser {
         if (this._source[this._index] === '}' ||
             this._source[this._index] === '[' ||
             this._source[this._index] === '*' ||
-            this._source[this._index] === '#' ||
             this._source[this._index] === '.') {
+          this._index = blankLinesEnd;
           break;
         }
+
+        buffer += this._source.substring(blankLinesStart, blankLinesEnd);
 
         if (buffer.length || content.length) {
           buffer += '\n';
@@ -415,7 +469,7 @@ class RuntimeParser {
     }
 
     if (content.length === 0) {
-      return buffer.length ? buffer : undefined;
+      return buffer.length ? buffer : null;
     }
 
     if (buffer.length) {
@@ -462,12 +516,33 @@ class RuntimeParser {
     const ch = this._source[this._index];
 
     if (ch === '}') {
+      if (selector.type === 'attr' && selector.id.name.startsWith('-')) {
+        throw this.error(
+          'Attributes of private messages cannot be interpolated.'
+        );
+      }
+
       return selector;
     }
 
     if (ch !== '-' || this._source[this._index + 1] !== '>') {
       throw this.error('Expected "}" or "->"');
     }
+
+    if (selector.type === 'ref') {
+      throw this.error('Message references cannot be used as selectors.');
+    }
+
+    if (selector.type === 'var') {
+      throw this.error('Variants cannot be used as selectors.');
+    }
+
+    if (selector.type === 'attr' && !selector.id.name.startsWith('-')) {
+      throw this.error(
+        'Attributes of public messages cannot be used as selectors.'
+      );
+    }
+
 
     this._index += 2; 
 
@@ -534,6 +609,10 @@ class RuntimeParser {
       this._index++;
       const args = this.getCallArgs();
 
+      if (!functionIdentifierRe.test(literal.name)) {
+        throw this.error('Function names must be all upper-case');
+      }
+
       this._index++;
 
       literal.type = 'fun';
@@ -557,19 +636,18 @@ class RuntimeParser {
   getCallArgs() {
     const args = [];
 
-    if (this._source[this._index] === ')') {
-      return args;
-    }
-
     while (this._index < this._length) {
       this.skipInlineWS();
+
+      if (this._source[this._index] === ')') {
+        return args;
+      }
 
       const exp = this.getSelectorExpression();
 
       
       
-      if (exp.type !== 'ref' ||
-         exp.namespace !== undefined) {
+      if (exp.type !== 'ref') {
         args.push(exp);
       } else {
         this.skipInlineWS();
@@ -678,9 +756,12 @@ class RuntimeParser {
     const attrs = {};
 
     while (this._index < this._length) {
-      const ch = this._source[this._index];
+      if (this._source[this._index] !== ' ') {
+        break;
+      }
+      this.skipInlineWS();
 
-      if (ch !== '.') {
+      if (this._source[this._index] !== '.') {
         break;
       }
       this._index++;
@@ -689,6 +770,9 @@ class RuntimeParser {
 
       this.skipInlineWS();
 
+      if (this._source[this._index] !== '=') {
+        throw this.error('Expected "="');
+      }
       this._index++;
 
       this.skipInlineWS();
@@ -703,37 +787,10 @@ class RuntimeParser {
         };
       }
 
-      this.skipWS();
+      this.skipBlankLines();
     }
 
     return attrs;
-  }
-
-  
-
-
-
-
-
-  getTags() {
-    const tags = [];
-
-    while (this._index < this._length) {
-      const ch = this._source[this._index];
-
-      if (ch !== '#') {
-        break;
-      }
-      this._index++;
-
-      const symbol = this.getSymbol();
-
-      tags.push(symbol.name);
-
-      this.skipWS();
-    }
-
-    return tags;
   }
 
   
@@ -796,7 +853,7 @@ class RuntimeParser {
     if ((cc >= 48 && cc <= 57) || cc === 45) {
       literal = this.getNumber();
     } else {
-      literal = this.getSymbol();
+      literal = this.getVariantName();
     }
 
     if (this._source[this._index] !== ']') {
@@ -814,12 +871,9 @@ class RuntimeParser {
 
 
   getLiteral() {
-    const cc = this._source.charCodeAt(this._index);
-    if ((cc >= 48 && cc <= 57) || cc === 45) {
-      return this.getNumber();
-    } else if (cc === 34) { 
-      return this.getString();
-    } else if (cc === 36) { 
+    const cc0 = this._source.charCodeAt(this._index);
+
+    if (cc0 === 36) { 
       this._index++;
       return {
         type: 'ext',
@@ -827,10 +881,29 @@ class RuntimeParser {
       };
     }
 
-    return {
-      type: 'ref',
-      name: this.getIdentifier()
-    };
+    const cc1 = cc0 === 45 
+      
+      ? this._source.charCodeAt(this._index + 1)
+      
+      : cc0;
+
+    if ((cc1 >= 97 && cc1 <= 122) || 
+        (cc1 >= 65 && cc1 <= 90)) { 
+      return {
+        type: 'ref',
+        name: this.getEntryIdentifier()
+      };
+    }
+
+    if ((cc1 >= 48 && cc1 <= 57)) { 
+      return this.getNumber();
+    }
+
+    if (cc0 === 34) { 
+      return this.getString();
+    }
+
+    throw this.error('Expected literal');
   }
 
   
@@ -844,7 +917,9 @@ class RuntimeParser {
     let eol = this._source.indexOf('\n', this._index);
 
     while (eol !== -1 &&
-      this._source[eol + 1] === '/' && this._source[eol + 2] === '/') {
+      ((this._source[eol + 1] === '/' && this._source[eol + 2] === '/') ||
+       (this._source[eol + 1] === '#' &&
+         [' ', '#'].includes(this._source[eol + 2])))) {
       this._index = eol + 3;
 
       eol = this._source.indexOf('\n', this._index);
@@ -887,8 +962,8 @@ class RuntimeParser {
         const cc = this._source.charCodeAt(start);
 
         if ((cc >= 97 && cc <= 122) || 
-            (cc >= 65 && cc <= 90) ||  
-             cc === 95 || cc === 47 || cc === 91) {  
+            (cc >= 65 && cc <= 90) || 
+             cc === 47 || cc === 91) { 
           this._index = start;
           return;
         }
@@ -945,24 +1020,27 @@ class FluentType {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   valueOf() {
-    throw new Error('Subclasses of FluentType must implement valueOf.');
+    return this.value;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  toString() {
+    throw new Error('Subclasses of FluentType must implement toString.');
   }
 }
 
 class FluentNone extends FluentType {
-  valueOf() {
+  toString() {
     return this.value || '???';
   }
 }
@@ -972,11 +1050,16 @@ class FluentNumber extends FluentType {
     super(parseFloat(value), opts);
   }
 
-  valueOf(ctx) {
-    const nf = ctx._memoizeIntlObject(
-      Intl.NumberFormat, this.opts
-    );
-    return nf.format(this.value);
+  toString(ctx) {
+    try {
+      const nf = ctx._memoizeIntlObject(
+        Intl.NumberFormat, this.opts
+      );
+      return nf.format(this.value);
+    } catch (e) {
+      
+      return this.value;
+    }
   }
 
   
@@ -999,16 +1082,21 @@ class FluentDateTime extends FluentType {
     super(new Date(value), opts);
   }
 
-  valueOf(ctx) {
-    const dtf = ctx._memoizeIntlObject(
-      Intl.DateTimeFormat, this.opts
-    );
-    return dtf.format(this.value);
+  toString(ctx) {
+    try {
+      const dtf = ctx._memoizeIntlObject(
+        Intl.DateTimeFormat, this.opts
+      );
+      return dtf.format(this.value);
+    } catch (e) {
+      
+      return this.value;
+    }
   }
 }
 
 class FluentSymbol extends FluentType {
-  valueOf() {
+  toString() {
     return this.value;
   }
 
@@ -1029,9 +1117,6 @@ class FluentSymbol extends FluentType {
         Intl.PluralRules, other.opts
       );
       return this.value === pr.select(other.value);
-    } else if (Array.isArray(other)) {
-      const values = other.map(symbol => symbol.value);
-      return values.includes(this.value);
     }
     return false;
   }
@@ -1052,9 +1137,9 @@ class FluentSymbol extends FluentType {
 
 const builtins = {
   'NUMBER': ([arg], opts) =>
-    new FluentNumber(arg.value, merge(arg.opts, opts)),
+    new FluentNumber(arg.valueOf(), merge(arg.opts, opts)),
   'DATETIME': ([arg], opts) =>
-    new FluentDateTime(arg.value, merge(arg.opts, opts)),
+    new FluentDateTime(arg.valueOf(), merge(arg.opts, opts)),
 };
 
 function merge(argopts, opts) {
@@ -1063,8 +1148,8 @@ function merge(argopts, opts) {
 
 function values(opts) {
   const unwrapped = {};
-  for (const name of Object.keys(opts)) {
-    unwrapped[name] = opts[name].value;
+  for (const [name, opt] of Object.entries(opts)) {
+    unwrapped[name] = opt.valueOf();
   }
   return unwrapped;
 }
@@ -1138,27 +1223,6 @@ const PDI = '\u2069';
 
 
 
-function PlaceableLength(env, parts) {
-  const { ctx } = env;
-  return parts.reduce(
-    (sum, part) => sum + part.valueOf(ctx).length,
-    0
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function DefaultMember(env, members, def) {
@@ -1186,47 +1250,20 @@ function DefaultMember(env, members, def) {
 
 function MessageReference(env, {name}) {
   const { ctx, errors } = env;
-  const message = ctx.getMessage(name);
+  const message = name.startsWith('-')
+    ? ctx._terms.get(name)
+    : ctx._messages.get(name);
 
   if (!message) {
-    errors.push(new ReferenceError(`Unknown message: ${name}`));
+    const err = name.startsWith('-')
+      ? new ReferenceError(`Unknown term: ${name}`)
+      : new ReferenceError(`Unknown message: ${name}`);
+    errors.push(err);
     return new FluentNone(name);
   }
 
   return message;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Tags(env, {name}) {
-  const { ctx, errors } = env;
-  const message = ctx.getMessage(name);
-
-  if (!message) {
-    errors.push(new ReferenceError(`Unknown message: ${name}`));
-    return new FluentNone(name);
-  }
-
-  if (!message.tags) {
-    errors.push(new RangeError(`No tags in message "${name}"`));
-    return new FluentNone(name);
-  }
-
-  return message.tags.map(
-    tag => new FluentSymbol(tag)
-  );
-}
-
 
 
 
@@ -1269,7 +1306,7 @@ function VariantExpression(env, {id, key}) {
     }
   }
 
-  errors.push(new ReferenceError(`Unknown variant: ${keyword.valueOf(ctx)}`));
+  errors.push(new ReferenceError(`Unknown variant: ${keyword.toString(ctx)}`));
   return Type(env, message);
 }
 
@@ -1329,9 +1366,7 @@ function SelectExpression(env, {exp, vars, def}) {
     return DefaultMember(env, vars, def);
   }
 
-  const selector = exp.type === 'ref'
-    ? Tags(env, exp)
-    : Type(env, exp);
+  const selector = Type(env, exp);
   if (selector instanceof FluentNone) {
     return DefaultMember(env, vars, def);
   }
@@ -1386,7 +1421,7 @@ function Type(env, expr) {
 
 
   switch (expr.type) {
-    case 'sym':
+    case 'varname':
       return new FluentSymbol(expr.name);
     case 'num':
       return new FluentNumber(expr.val);
@@ -1414,7 +1449,7 @@ function Type(env, expr) {
     }
     case undefined: {
       
-      if (expr.val !== undefined) {
+      if (expr.val !== null && expr.val !== undefined) {
         return Type(env, expr.val);
       }
 
@@ -1449,6 +1484,7 @@ function ExternalArgument(env, {name}) {
 
   const arg = args[name];
 
+  
   if (arg instanceof FluentType) {
     return arg;
   }
@@ -1524,7 +1560,7 @@ function CallExpression(env, {fun, args}) {
   }
 
   const posargs = [];
-  const keyargs = [];
+  const keyargs = {};
 
   for (const arg of args) {
     if (arg.type === 'narg') {
@@ -1534,8 +1570,12 @@ function CallExpression(env, {fun, args}) {
     }
   }
 
-  
-  return callee(posargs, keyargs);
+  try {
+    return callee(posargs, keyargs);
+  } catch (e) {
+    
+    return new FluentNone();
+  }
 }
 
 
@@ -1566,26 +1606,20 @@ function Pattern(env, ptn) {
       continue;
     }
 
-    const part = Type(env, elem);
+    const part = Type(env, elem).toString(ctx);
 
     if (ctx._useIsolating) {
       result.push(FSI);
     }
 
-    if (Array.isArray(part)) {
-      const len = PlaceableLength(env, part);
-
-      if (len > MAX_PLACEABLE_LENGTH) {
-        errors.push(
-          new RangeError(
-            'Too many characters in placeable ' +
-            `(${len}, max allowed is ${MAX_PLACEABLE_LENGTH})`
-          )
-        );
-        result.push(new FluentNone());
-      } else {
-        result.push(...part);
-      }
+    if (part.length > MAX_PLACEABLE_LENGTH) {
+      errors.push(
+        new RangeError(
+          'Too many characters in placeable ' +
+          `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
+        )
+      );
+      result.push(part.slice(MAX_PLACEABLE_LENGTH));
     } else {
       result.push(part);
     }
@@ -1596,10 +1630,8 @@ function Pattern(env, ptn) {
   }
 
   dirty.delete(ptn);
-  return result;
+  return result.join('');
 }
-
-
 
 
 
@@ -1620,7 +1652,7 @@ function resolve(ctx, args, message, errors = []) {
   const env = {
     ctx, args, errors, dirty: new WeakSet()
   };
-  return Type(env, message);
+  return Type(env, message).toString(ctx);
 }
 
 
@@ -1672,6 +1704,7 @@ class MessageContext {
   constructor(locales, { functions = {}, useIsolating = true } = {}) {
     this.locales = Array.isArray(locales) ? locales : [locales];
 
+    this._terms = new Map();
     this._messages = new Map();
     this._functions = functions;
     this._useIsolating = useIsolating;
@@ -1731,65 +1764,16 @@ class MessageContext {
   addMessages(source) {
     const [entries, errors] = parse(source);
     for (const id in entries) {
-      this._messages.set(id, entries[id]);
+      if (id.startsWith('-')) {
+        
+        
+        this._terms.set(id, entries[id]);
+      } else {
+        this._messages.set(id, entries[id]);
+      }
     }
 
     return errors;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  formatToParts(message, args, errors) {
-    
-    if (typeof message === 'string') {
-      return [message];
-    }
-
-    
-    if (typeof message.val === 'string') {
-      return [message.val];
-    }
-
-    
-    if (message.val === undefined) {
-      return null;
-    }
-
-    const result = resolve(this, args, message, errors);
-
-    return result instanceof FluentNone ? null : result;
   }
 
   
@@ -1838,13 +1822,7 @@ class MessageContext {
       return null;
     }
 
-    const result = resolve(this, args, message, errors);
-
-    if (result instanceof FluentNone) {
-      return null;
-    }
-
-    return result.map(part => part.valueOf(this)).join('');
+    return resolve(this, args, message, errors);
   }
 
   _memoizeIntlObject(ctor, opts) {
