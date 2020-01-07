@@ -1,0 +1,8 @@
+
+
+
+self.addEventListener('fetch', e => {
+    if (e.request.url.indexOf('embedded-content-from-server.html') != -1) {
+      e.respondWith(fetch('embedded-content-from-service-worker.html'));
+    }
+  });
