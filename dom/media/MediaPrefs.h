@@ -205,9 +205,6 @@ private:
 
   
   DECL_MEDIA_PREF("media.seamless-looping",                   SeamlessLooping, bool, true);
-
-  DECL_MEDIA_PREF("media.block-midflight-redirects",           BlockMidflightRedirects, bool, true);
-
 public:
   
   static MediaPrefs& GetSingleton();
