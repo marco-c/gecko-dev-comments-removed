@@ -38,6 +38,31 @@ async function resetTracker() {
   tracker.resetScore();
 }
 
+
+
+function promiseSpinningly(promise) {
+  let resolved = false;
+  let rv, rerror;
+  promise.then(result => {
+    rv = result;
+  }, err => {
+    rerror = err || new Error("Promise rejected without explicit error");
+  }).finally(() => {
+    resolved = true;
+  });
+  let tm = Cc["@mozilla.org/thread-manager;1"].getService();
+
+  
+  tm.spinEventLoopUntil(() => resolved);
+  if (rerror) {
+    throw rerror;
+  }
+  return rv;
+}
+
+
+
+
 async function cleanup() {
   engine.lastSync = 0;
   engine._needWeakUpload.clear();
@@ -354,7 +379,7 @@ add_task(async function test_batch_tracking() {
         "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
       
       
-      Async.promiseSpinningly(verifyTrackedCount(2));
+      promiseSpinningly(verifyTrackedCount(2));
       
       Assert.equal(tracker.score, 0);
     }
@@ -381,14 +406,14 @@ add_task(async function test_nested_batch_tracking() {
             "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
           
           
-          Async.promiseSpinningly(verifyTrackedCount(2));
+          promiseSpinningly(verifyTrackedCount(2));
           
           Assert.equal(tracker.score, 0);
         }
       }, null);
       _("inner batch complete.");
       
-      Async.promiseSpinningly(verifyTrackedCount(2));
+      promiseSpinningly(verifyTrackedCount(2));
       Assert.equal(tracker.score, 0);
     }
   }, null);

@@ -4,13 +4,6 @@
 
 var EXPORTED_SYMBOLS = ["Async"];
 
-
-const CB_READY = {};
-const CB_COMPLETE = {};
-const CB_FAIL = {};
-
-const REASON_ERROR = Ci.mozIStorageStatementCallback.REASON_ERROR;
-
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -53,65 +46,6 @@ var Async = {
 
 
 
-
-
-  
-
-
-
-
-
-
-
-
-
-  makeSyncCallback: function makeSyncCallback() {
-    
-    let onComplete = function onComplete(data) {
-      onComplete.state = CB_COMPLETE;
-      onComplete.value = data;
-    };
-
-    
-    onComplete.state = CB_READY;
-    onComplete.value = null;
-
-    
-    onComplete.throw = function onComplete_throw(data) {
-      onComplete.state = CB_FAIL;
-      onComplete.value = data;
-    };
-
-    return onComplete;
-  },
-
-  
-
-
-  waitForSyncCallback: function waitForSyncCallback(callback) {
-    
-    let tm = Cc["@mozilla.org/thread-manager;1"].getService();
-
-    
-    tm.spinEventLoopUntil(() => !Async.checkAppReady || callback.state != CB_READY);
-
-    
-    let state = callback.state;
-    callback.state = CB_READY;
-
-    
-    if (state == CB_FAIL) {
-      throw callback.value;
-    }
-
-    
-    return callback.value;
-  },
-
-  
-
-
-
   checkAppReady: function checkAppReady() {
     
     Services.obs.addObserver(function onQuitApplication() {
@@ -148,32 +82,6 @@ var Async = {
 
   isShutdownException(exception) {
     return exception && exception.appIsShuttingDown === true;
-  },
-
-  
-
-
-
-  makeSpinningCallback: function makeSpinningCallback() {
-    let cb = Async.makeSyncCallback();
-    function callback(error, ret) {
-      if (error)
-        cb.throw(error);
-      else
-        cb(ret);
-    }
-    callback.wait = () => Async.waitForSyncCallback(cb);
-    return callback;
-  },
-
-  promiseSpinningly(promise) {
-    let cb = Async.makeSpinningCallback();
-    promise.then(result => {
-      cb(null, result);
-    }, err => {
-      cb(err || new Error("Promise rejected without explicit error"));
-    });
-    return cb.wait();
   },
 
   
