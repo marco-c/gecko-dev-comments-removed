@@ -65,7 +65,6 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
     return this.popupBox.querySelector(":scope > [selected]");
   }
 
-
   
 
 
@@ -110,13 +109,16 @@ class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
     if (event.button != 0) {
       return;
     }
+    
+    
+    let isOpen = this.open;
 
     let option = event.target.closest(".rich-option");
-    if (this.open && option && !option.matches(".rich-select-selected-clone") && !option.selected) {
+    if (isOpen && option && !option.matches(".rich-select-selected-clone") && !option.selected) {
       this.selectedOption = option;
       this._dispatchChangeEvent();
     }
-    this.open = !this.open;
+    this.open = !isOpen;
   }
 
   onKeyDown(event) {

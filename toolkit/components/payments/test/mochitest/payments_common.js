@@ -10,3 +10,14 @@
 function asyncElementRendered() {
   return Promise.resolve();
 }
+
+function promiseStateChange(store) {
+  return new Promise(resolve => {
+    store.subscribe({
+      stateChangeCallback(state) {
+        store.unsubscribe(this);
+        resolve(state);
+      },
+    });
+  });
+}
