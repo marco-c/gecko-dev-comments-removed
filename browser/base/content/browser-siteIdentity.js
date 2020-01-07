@@ -201,6 +201,10 @@ var gIdentityHandler = {
     delete this._popupExpander;
     return this._popupExpander = document.getElementById("identity-popup-security-expander");
   },
+  get _clearSiteDataFooter() {
+    delete this._clearSiteDataFooter;
+    return this._clearSiteDataFooter = document.getElementById("identity-popup-clear-sitedata-footer");
+  },
   get _permissionAnchors() {
     delete this._permissionAnchors;
     let permissionAnchors = {};
@@ -208,6 +212,39 @@ var gIdentityHandler = {
       permissionAnchors[anchor.getAttribute("data-permission-id")] = anchor;
     }
     return this._permissionAnchors = permissionAnchors;
+  },
+
+  
+
+
+  async clearSiteData(event) {
+    if (!this._uriHasHost) {
+      return;
+    }
+
+    let host = this._uri.host;
+
+    
+    
+    await SiteDataManager.updateSites();
+
+    let baseDomain = SiteDataManager.getBaseDomainFromHost(host);
+    let siteData = await SiteDataManager.getSites(baseDomain);
+
+    
+    
+    
+    
+    PanelMultiView.hidePopup(this._identityPopup);
+
+    if (siteData && siteData.length) {
+      let hosts = siteData.map(site => site.host);
+      if (SiteDataManager.promptSiteDataRemoval(window, hosts)) {
+        SiteDataManager.remove(hosts);
+      }
+    }
+
+    event.stopPropagation();
   },
 
   
@@ -578,6 +615,21 @@ var gIdentityHandler = {
 
 
   refreshIdentityPopup() {
+    
+    
+    this._clearSiteDataFooter.hidden = true;
+    if (this._uriHasHost) {
+      let host = this._uri.host;
+      SiteDataManager.updateSites().then(async () => {
+        let baseDomain = SiteDataManager.getBaseDomainFromHost(host);
+        let siteData = await SiteDataManager.getSites(baseDomain);
+
+        if (siteData && siteData.length) {
+          this._clearSiteDataFooter.hidden = false;
+        }
+      });
+    }
+
     
     let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
     this._identityPopupMixedContentLearnMore
