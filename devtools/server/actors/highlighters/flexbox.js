@@ -64,6 +64,9 @@ const JUSTIFY_CONTENT = "justify-content";
 
 
 
+
+
+
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -536,7 +539,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
 
   renderFlexItemBasis(flexItem, left, top, right, bottom, boundsWidth) {
-    if (!this.computedStyle) {
+    if (!this.options.showFlexBasis || !this.computedStyle) {
       return;
     }
 
