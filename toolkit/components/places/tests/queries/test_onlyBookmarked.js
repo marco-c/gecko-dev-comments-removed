@@ -96,27 +96,6 @@ add_task(async function test_onlyBookmarked() {
   compareArrayToResult(testData, root);
   info("end live-update test");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
   root.containerOpen = false;
 });

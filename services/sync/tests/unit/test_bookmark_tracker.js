@@ -242,63 +242,6 @@ add_task(async function test_tracking() {
   }
 });
 
-add_task(async function test_batch_tracking() {
-  _("Test tracker does the correct thing during and after a places 'batch'");
-
-  await startTracking();
-
-  PlacesUtils.bookmarks.runInBatchMode({
-    runBatched() {
-      PlacesUtils.bookmarks.createFolder(
-        PlacesUtils.bookmarks.bookmarksMenuFolder,
-        "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
-      
-      
-      promiseSpinningly(verifyTrackedCount(2));
-      
-      Assert.equal(tracker.score, 0);
-    }
-  }, null);
-
-  
-  await verifyTrackedCount(2);
-  Assert.equal(tracker.score, SCORE_INCREMENT_XLARGE);
-  await cleanup();
-});
-
-add_task(async function test_nested_batch_tracking() {
-  _("Test tracker does the correct thing if a places 'batch' is nested");
-
-  await startTracking();
-
-  PlacesUtils.bookmarks.runInBatchMode({
-    runBatched() {
-
-      PlacesUtils.bookmarks.runInBatchMode({
-        runBatched() {
-          PlacesUtils.bookmarks.createFolder(
-            PlacesUtils.bookmarks.bookmarksMenuFolder,
-            "Test Folder", PlacesUtils.bookmarks.DEFAULT_INDEX);
-          
-          
-          promiseSpinningly(verifyTrackedCount(2));
-          
-          Assert.equal(tracker.score, 0);
-        }
-      }, null);
-      _("inner batch complete.");
-      
-      promiseSpinningly(verifyTrackedCount(2));
-      Assert.equal(tracker.score, 0);
-    }
-  }, null);
-
-  
-  await verifyTrackedCount(2);
-  Assert.equal(tracker.score, SCORE_INCREMENT_XLARGE);
-  await cleanup();
-});
-
 add_task(async function test_tracker_sql_batching() {
   _("Test tracker does the correct thing when it is forced to batch SQL queries");
 

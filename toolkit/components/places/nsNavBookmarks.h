@@ -382,10 +382,6 @@ private:
 
   
   bool mCanNotify;
-
-  
-  
-  bool mBatching;
 };
 
 #endif 
