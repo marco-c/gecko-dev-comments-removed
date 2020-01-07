@@ -243,6 +243,11 @@ public:
 
     void SetEvent(nsresult aStatus);
 
+    
+    
+    
+    bool NoClientCertAuth() const;
+
 private:
     
     enum TCPKeepaliveConfig {

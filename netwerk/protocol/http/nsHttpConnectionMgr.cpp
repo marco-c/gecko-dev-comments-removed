@@ -3791,6 +3791,21 @@ nsHttpConnectionMgr::GetOrCreateConnectionEntry(nsHttpConnectionInfo *specificCI
         return specificEnt;
     }
 
+    
+    
+    
+    RefPtr<nsHttpConnectionInfo> anonInvertedCI(specificCI->Clone());
+    anonInvertedCI->SetAnonymous(!specificCI->GetAnonymous());
+    nsConnectionEntry *invertedEnt = mCT.GetWeak(anonInvertedCI->HashKey());
+    if (invertedEnt) {
+        nsHttpConnection* h2conn = GetSpdyActiveConn(invertedEnt);
+        if (h2conn && h2conn->IsExperienced() && h2conn->NoClientCertAuth()) {
+            MOZ_ASSERT(h2conn->UsingSpdy());
+            LOG(("GetOrCreateConnectionEntry is coalescing h2 an/onymous connections, ent=%p", invertedEnt));
+            return invertedEnt;
+        }
+    }
+
     if (!specificCI->UsingHttpsProxy()) {
         prohibitWildCard = true;
     }
