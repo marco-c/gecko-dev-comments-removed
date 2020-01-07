@@ -20,7 +20,10 @@ const {
   fetchNetworkUpdatePacket,
   writeHeaderText,
 } = require("../utils/request-utils");
-const { sortObjectKeys } = require("../utils/sort-utils");
+const {
+  HeadersProvider,
+  HeaderList,
+} = require("../utils/headers-provider");
 
 
 const PropertiesView = createFactory(require("./PropertiesView"));
@@ -103,13 +106,8 @@ class HeadersPanel extends Component {
     if (headers && headers.headers.length) {
       let headerKey = `${title} (${getFormattedSize(headers.headersSize, 3)})`;
       let propertiesResult = {
-        [headerKey]:
-          headers.headers.reduce((acc, { name, value }) =>
-            name ? Object.assign(acc, { [name]: value }) : acc
-          , {})
+        [headerKey]: new HeaderList(headers.headers)
       };
-
-      propertiesResult[headerKey] = sortObjectKeys(propertiesResult[headerKey]);
       return propertiesResult;
     }
 
@@ -302,6 +300,7 @@ class HeadersPanel extends Component {
         ),
         PropertiesView({
           object,
+          provider: HeadersProvider,
           filterPlaceHolder: HEADERS_FILTER_TEXT,
           sectionNames: Object.keys(object),
           renderValue: this.renderValue,
