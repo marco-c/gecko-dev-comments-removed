@@ -1800,7 +1800,7 @@ Debugger::onNewScript(JSContext* cx, HandleScript script)
     
     MOZ_ASSERT_IF(!script->realm()->creationOptions().invisibleToDebugger() &&
                   !script->selfHosted(),
-                  script->compartment()->firedOnNewGlobalObject);
+                  script->realm()->firedOnNewGlobalObject);
 
     
     if (script->hideScriptFromDebugger())
@@ -1813,9 +1813,9 @@ Debugger::onNewScript(JSContext* cx, HandleScript script)
  void
 Debugger::onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 {
-    MOZ_ASSERT(!global->compartment()->firedOnNewGlobalObject);
+    MOZ_ASSERT(!global->realm()->firedOnNewGlobalObject);
 #ifdef DEBUG
-    global->compartment()->firedOnNewGlobalObject = true;
+    global->realm()->firedOnNewGlobalObject = true;
 #endif
     if (!cx->runtime()->onNewGlobalObjectWatchers().isEmpty())
         Debugger::slowPathOnNewGlobalObject(cx, global);
