@@ -566,9 +566,6 @@ pref("media.navigator.mediadatadecoder_enabled", false);
 
 pref("dom.webaudio.enabled", true);
 
-
-pref("dom.webdriver.enabled", true);
-
 #if !defined(ANDROID)
 pref("media.getusermedia.screensharing.enabled", true);
 #endif
@@ -5958,3 +5955,4 @@ pref("layers.omtp.paint-workers", -1);
 pref("layers.omtp.paint-workers", 1);
 #endif
 pref("layers.omtp.release-capture-on-main-thread", false);
+pref("layers.omtp.dump-capture", false);
