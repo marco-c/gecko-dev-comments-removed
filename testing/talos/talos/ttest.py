@@ -292,4 +292,9 @@ class TTest(object):
                 LOG.debug('COUNTER %r: %s' % (key, value))
 
         
+        
+        if browser_config.get('code_coverage', False):
+            setup.collect_or_clean_ccov()
+
+        
         return test_results

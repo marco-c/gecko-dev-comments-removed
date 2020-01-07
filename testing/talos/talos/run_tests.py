@@ -119,6 +119,18 @@ def run_tests(config, browser_config):
         browser_config['preferences']['talos.subtests'] = browser_config['subtests']
 
     
+    
+    
+    
+    
+    if config.get('code_coverage', False):
+        if browser_config['develop']:
+            raise TalosError('Aborting: talos --code-coverage flag is only '
+                             'supported in production')
+        else:
+            browser_config['code_coverage'] = True
+
+    
     testdate = config.get('testdate', '')
 
     
