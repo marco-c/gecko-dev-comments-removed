@@ -183,10 +183,6 @@
 #include "nsBindingManager.h"
 #include "nsXBLService.h"
 
-
-
-#include "nsIPopupWindowManager.h"
-
 #include "nsIDragService.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"

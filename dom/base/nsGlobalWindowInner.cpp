@@ -182,10 +182,6 @@
 #include "nsBindingManager.h"
 #include "nsXBLService.h"
 
-
-
-#include "nsIPopupWindowManager.h"
-
 #include "nsIDragService.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
@@ -1230,10 +1226,7 @@ nsGlobalWindowInner::FreeInnerObjects()
     mApplicationCache = nullptr;
   }
 
-  if (mIndexedDB) {
-    mIndexedDB->DisconnectFromWindow(this);
-    mIndexedDB = nullptr;
-  }
+  mIndexedDB = nullptr;
 
   UnlinkHostObjectURIs();
 
@@ -1527,10 +1520,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
     static_cast<nsDOMOfflineResourceList*>(tmp->mApplicationCache.get())->Disconnect();
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mApplicationCache)
   }
-  if (tmp->mIndexedDB) {
-    tmp->mIndexedDB->DisconnectFromWindow(tmp);
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(mIndexedDB)
-  }
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIndexedDB)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
@@ -2477,32 +2467,6 @@ nsGlobalWindowInner::NoteCalledRegisterForServiceWorkerScope(const nsACString& a
   }
 
   mClientSource->NoteCalledRegisterForServiceWorkerScope(aScope);
-}
-
-void
-nsGlobalWindowInner::MigrateStateForDocumentOpen(nsGlobalWindowInner* aOldInner)
-{
-  MOZ_DIAGNOSTIC_ASSERT(aOldInner);
-  MOZ_DIAGNOSTIC_ASSERT(aOldInner != this);
-  MOZ_DIAGNOSTIC_ASSERT(mDoc);
-
-  
-  
-  
-  
-  aOldInner->ForEachEventTargetObject(
-    [&] (DOMEventTargetHelper* aDETH, bool* aDoneOut) {
-      aDETH->BindToOwner(this->AsInner());
-    });
-
-  
-  
-  mPerformance = aOldInner->mPerformance.forget();
-
-  if (aOldInner->mIndexedDB) {
-    aOldInner->mIndexedDB->RebindToNewWindow(this);
-    mIndexedDB = aOldInner->mIndexedDB.forget();
-  }
 }
 
 void
