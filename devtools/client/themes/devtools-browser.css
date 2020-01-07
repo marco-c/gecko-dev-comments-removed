@@ -5,7 +5,9 @@
 @import url("resource://devtools/client/themes/splitters.css");
 
 .devtools-toolbox-side-iframe {
-  min-width: 250px;
+  
+
+  min-width: 74px;
 }
 
 
