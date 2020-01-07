@@ -2805,7 +2805,3 @@ namespace sigslot {
 
 #endif 
 #endif 
-#endif
-#endif
-#endif
-#endif
