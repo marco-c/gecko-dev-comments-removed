@@ -35,11 +35,6 @@ class nsIXULDocument : public nsISupports
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IXULDOCUMENT_IID)
 
-  
-
-
-  virtual void ResetDocumentDirection() = 0;
-
   virtual void ResetDocumentLWTheme() = 0;
 };
 
