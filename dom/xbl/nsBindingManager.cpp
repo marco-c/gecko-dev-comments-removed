@@ -335,7 +335,7 @@ nsBindingManager::RemoveFromAttachedQueue(nsXBLBinding* aBinding)
   
   
   size_t index = mAttachedStack.IndexOf(aBinding);
-  if (index != nsBindingList::NoIndex) {
+  if (index != mAttachedStack.NoIndex) {
     mAttachedStack[index] = nullptr;
   }
 }

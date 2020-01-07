@@ -1765,7 +1765,7 @@ MaybeShutdownAccService(uint32_t aFormerConsumer)
   nsAccessibilityService* accService =
     nsAccessibilityService::gAccessibilityService;
 
-  if (!accService || nsAccessibilityService::IsShutdown()) {
+  if (!accService || accService->IsShutdown()) {
     return;
   }
 
@@ -1863,7 +1863,7 @@ PrefChanged(const char* aPref, void* aClosure)
   if (ReadPlatformDisabledState() == ePlatformIsDisabled) {
     
     nsAccessibilityService* accService = nsAccessibilityService::gAccessibilityService;
-    if (accService && !nsAccessibilityService::IsShutdown()) {
+    if (accService && !accService->IsShutdown()) {
       accService->Shutdown();
     }
   }

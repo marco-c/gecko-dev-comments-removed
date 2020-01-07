@@ -122,7 +122,7 @@ CodeGeneratorShared::generatePrologue()
 
     
     if (isProfilerInstrumentationEnabled())
-        masm.profilerEnterFrame(MacroAssembler::getStackPointer(), CallTempReg0);
+        masm.profilerEnterFrame(masm.getStackPointer(), CallTempReg0);
 
     
     masm.assertStackAlignment(JitStackAlignment, 0);

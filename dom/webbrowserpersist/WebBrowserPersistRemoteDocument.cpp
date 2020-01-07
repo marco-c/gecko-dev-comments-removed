@@ -28,7 +28,7 @@ WebBrowserPersistRemoteDocument
 WebBrowserPersistRemoteDocument::~WebBrowserPersistRemoteDocument()
 {
     if (mActor) {
-        Unused << WebBrowserPersistDocumentParent::Send__delete__(mActor);
+        Unused << mActor->Send__delete__(mActor);
         
         
     }

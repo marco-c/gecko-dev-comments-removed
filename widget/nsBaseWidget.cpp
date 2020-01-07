@@ -1066,7 +1066,7 @@ nsBaseWidget::ProcessUntransformedAPZEvent(WidgetInputEvent* aEvent,
   UniquePtr<WidgetEvent> original(aEvent->Duplicate());
   DispatchEvent(aEvent, status);
 
-  if (mAPZC && !InputAPZContext::WasRoutedToChildProcess() && aInputBlockId) {
+  if (mAPZC && !context.WasRoutedToChildProcess() && aInputBlockId) {
     
     
     

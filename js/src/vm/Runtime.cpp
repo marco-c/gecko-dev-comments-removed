@@ -594,10 +594,10 @@ JSContext::requestInterrupt(InterruptMode mode)
         
         
         interruptRegExpJit_ = true;
-        FutexThread::lock();
+        fx.lock();
         if (fx.isWaiting())
             fx.wake(FutexThread::WakeForJSInterrupt);
-        FutexThread::unlock();
+        fx.unlock();
         InterruptRunningJitCode(this);
     }
 }

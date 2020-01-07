@@ -53,7 +53,7 @@ nsCounterUseNode::Calc(nsCounterList* aList)
 {
   NS_ASSERTION(!aList->IsDirty(),
                "Why are we calculating with a dirty list?");
-  mValueAfter = nsCounterList::ValueBefore(this);
+  mValueAfter = aList->ValueBefore(this);
 }
 
 
@@ -66,7 +66,7 @@ nsCounterChangeNode::Calc(nsCounterList* aList)
     mValueAfter = mChangeValue;
   } else {
     NS_ASSERTION(mType == INCREMENT, "invalid type");
-    mValueAfter = nsCounterManager::IncrementCounter(nsCounterList::ValueBefore(this),
+    mValueAfter = nsCounterManager::IncrementCounter(aList->ValueBefore(this),
                                                      mChangeValue);
   }
 }

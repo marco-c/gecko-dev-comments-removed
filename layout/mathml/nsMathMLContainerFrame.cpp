@@ -1368,7 +1368,7 @@ AddInterFrameSpacingToSize(ReflowOutput&    aDesiredSize,
                                   parent, aFrame);
     
     nscoord leftCorrection = 0, italicCorrection = 0;
-    nsMathMLContainerFrame::GetItalicCorrection(aDesiredSize.mBoundingMetrics,
+    aFrame->GetItalicCorrection(aDesiredSize.mBoundingMetrics,
                                 leftCorrection, italicCorrection);
     gap += leftCorrection;
     if (gap) {
