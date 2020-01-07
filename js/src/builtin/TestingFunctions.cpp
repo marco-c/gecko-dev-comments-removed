@@ -2708,6 +2708,14 @@ SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
+    
+    
+    HelperThreadState().waitForAllThreads();
+
+    
+    
+    ReleaseAllJITCode(cx->runtime()->defaultFreeOp());
+
     JS_SetGlobalJitCompilerOption(cx, opt, uint32_t(number));
 
     args.rval().setUndefined();

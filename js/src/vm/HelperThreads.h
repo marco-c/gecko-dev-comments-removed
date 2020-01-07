@@ -308,14 +308,13 @@ class GlobalHelperThreadState
     JSObject* finishModuleParseTask(JSContext* cx, void* token);
 
     bool hasActiveThreads(const AutoLockHelperThreadState&);
+    void waitForAllThreads();
     void waitForAllThreadsLocked(AutoLockHelperThreadState&);
 
     template <typename T>
     bool checkTaskThreadLimit(size_t maxThreads, bool isMaster = false) const;
 
   private:
-    void waitForAllThreads();
-
     
 
 
