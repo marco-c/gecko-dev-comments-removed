@@ -245,13 +245,6 @@ class GCSchedulingTunables
 
 
 
-    ActiveThreadData<bool> refreshFrameSlicesEnabled_;
-
-    
-
-
-
-
 
     UnprotectedData<uint32_t> minEmptyChunkCount_;
     UnprotectedData<uint32_t> maxEmptyChunkCount_;
@@ -274,7 +267,6 @@ class GCSchedulingTunables
     double highFrequencyHeapGrowthMin() const { return highFrequencyHeapGrowthMin_; }
     double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
     bool isDynamicMarkSliceEnabled() const { return dynamicMarkSliceEnabled_; }
-    bool areRefreshFrameSlicesEnabled() const { return refreshFrameSlicesEnabled_; }
     unsigned minEmptyChunkCount(const AutoLockGC&) const { return minEmptyChunkCount_; }
     unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
 
@@ -804,7 +796,6 @@ class GCRuntime
     void traceRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock);
     void traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAccess& lock);
 
-    void notifyDidPaint();
     void shrinkBuffers();
     void onOutOfMallocMemory();
     void onOutOfMallocMemory(const AutoLockGC& lock);
@@ -1386,13 +1377,6 @@ class GCRuntime
 #ifdef JS_GC_ZEAL
     ActiveThreadData<MarkingValidator*> markingValidator;
 #endif
-
-    
-
-
-
-
-    ActiveThreadData<bool> interFrameGC;
 
     
 

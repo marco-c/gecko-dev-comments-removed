@@ -1491,9 +1491,6 @@ pref("javascript.options.mem.gc_dynamic_heap_growth", true);
 pref("javascript.options.mem.gc_dynamic_mark_slice", true);
 
 
-pref("javascript.options.mem.gc_refresh_frame_slices_enabled", true);
-
-
 pref("javascript.options.mem.gc_allocation_threshold_mb", 30);
 
 

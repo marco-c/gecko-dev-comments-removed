@@ -250,14 +250,6 @@ typedef enum JSGCParamKey {
 
 
 
-    JSGC_REFRESH_FRAME_SLICES_ENABLED = 24,
-
-    
-
-
-
-
-
     JSGC_ALLOCATION_THRESHOLD_FACTOR = 25,
 
     
@@ -390,7 +382,7 @@ struct Zone;
     D(DOM_IPC)                                  \
     D(DOM_WORKER)                               \
     D(INTER_SLICE_GC)                           \
-    D(REFRESH_FRAME)                            \
+    D(UNUSED1)                                  \
     D(FULL_GC_TIMER)                            \
     D(SHUTDOWN_CC)                              \
     D(UNUSED2)                                  \
