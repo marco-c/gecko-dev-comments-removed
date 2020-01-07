@@ -55,7 +55,7 @@ const APP_SEARCH_PREFIX = "resource://search-plugins/";
 
 
 const SEARCH_ENGINE_TOPIC        = "browser-search-engine-modified";
-const REQ_LOCALES_CHANGED_TOPIC  = "intl:requested-locales-changed";
+const TOPIC_LOCALES_CHANGE       = "intl:app-locales-changed";
 const QUIT_APPLICATION_TOPIC     = "quit-application";
 
 const SEARCH_ENGINE_REMOVED      = "engine-removed";
@@ -3004,9 +3004,9 @@ SearchService.prototype = {
 
         
         
+        gInitialized = true;
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "init-complete");
         this._recordEngineTelemetry();
-        gInitialized = true;
       } catch (err) {
         LOG("Reinit failed: " + err);
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "reinit-failed");
@@ -3401,12 +3401,29 @@ SearchService.prototype = {
   },
 
   _parseListJSON: function SRCH_SVC_parseListJSON(list, uris) {
-    let searchSettings;
+    let json;
     try {
-      searchSettings = JSON.parse(list);
+      json = JSON.parse(list);
     } catch (e) {
-      LOG("failing to parse list.json: " + e);
+      Cu.reportError("parseListJSON: Failed to parse list.json: " + e);
+      dump("parseListJSON: Failed to parse list.json: " + e + "\n");
       return;
+    }
+
+    let searchSettings;
+    let locale = Services.locale.getAppLocaleAsBCP47();
+    if ("locales" in json &&
+        locale in json.locales) {
+      searchSettings = json.locales[locale];
+    } else {
+      
+      
+      if (!("default" in json)) {
+        Cu.reportError("parseListJSON: Missing default in list.json");
+        dump("parseListJSON: Missing default in list.json\n");
+        return;
+      }
+      searchSettings = json;
     }
 
     
@@ -3473,6 +3490,16 @@ SearchService.prototype = {
       }
     }
 
+    if ("regionOverrides" in json &&
+        searchRegion in json.regionOverrides) {
+      for (let engine in json.regionOverrides[searchRegion]) {
+        let index = engineNames.indexOf(engine);
+        if (index > -1) {
+          engineNames[index] = json.regionOverrides[searchRegion][engine];
+        }
+      }
+    }
+
     for (let name of engineNames) {
       uris.push(APP_SEARCH_PREFIX + name + ".xml");
     }
@@ -3483,8 +3510,14 @@ SearchService.prototype = {
     if (searchRegion && searchRegion in searchSettings &&
         "searchDefault" in searchSettings[searchRegion]) {
       this._searchDefault = searchSettings[searchRegion].searchDefault;
-    } else {
+    } else if ("searchDefault" in searchSettings.default) {
       this._searchDefault = searchSettings.default.searchDefault;
+    } else {
+      this._searchDefault = json.default.searchDefault;
+    }
+
+    if (!this._searchDefault) {
+      Cu.reportError("parseListJSON: No searchDefault");
     }
 
     if (searchRegion && searchRegion in searchSettings &&
@@ -3492,6 +3525,8 @@ SearchService.prototype = {
       this._searchOrder = searchSettings[searchRegion].searchOrder;
     } else if ("searchOrder" in searchSettings.default) {
       this._searchOrder = searchSettings.default.searchOrder;
+    } else if ("searchOrder" in json.default) {
+      this._searchOrder = json.default.searchOrder;
     }
   },
 
@@ -4416,7 +4451,8 @@ SearchService.prototype = {
         this._removeObservers();
         break;
 
-      case REQ_LOCALES_CHANGED_TOPIC:
+      case TOPIC_LOCALES_CHANGE:
+        
         
         
         this._asyncReInit();
@@ -4473,10 +4509,7 @@ SearchService.prototype = {
 
     Services.obs.addObserver(this, SEARCH_ENGINE_TOPIC);
     Services.obs.addObserver(this, QUIT_APPLICATION_TOPIC);
-
-    if (AppConstants.MOZ_BUILD_APP == "mobile/android") {
-      Services.obs.addObserver(this, REQ_LOCALES_CHANGED_TOPIC);
-    }
+    Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
 
     
     
@@ -4518,10 +4551,7 @@ SearchService.prototype = {
   _removeObservers: function SRCH_SVC_removeObservers() {
     Services.obs.removeObserver(this, SEARCH_ENGINE_TOPIC);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
-
-    if (AppConstants.MOZ_BUILD_APP == "mobile/android") {
-      Services.obs.removeObserver(this, REQ_LOCALES_CHANGED_TOPIC);
-    }
+    Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
   },
 
   QueryInterface: ChromeUtils.generateQI([
