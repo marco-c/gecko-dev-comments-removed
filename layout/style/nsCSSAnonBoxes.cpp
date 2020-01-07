@@ -40,20 +40,11 @@ MOZ_POP_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING
 
 static const nsStaticAtomSetup sCSSAnonBoxAtomSetup[] = {
   
-  #define CSS_ANON_BOX(name_, value_) 
-  #define CSS_NON_INHERITING_ANON_BOX(name_, value_) \
-    NS_STATIC_ATOM_SUBCLASS_SETUP( \
-      mozilla::detail::gCSSAnonBoxAtoms, nsCSSAnonBoxes, name_)
-  #include "nsCSSAnonBoxList.h"
-  #undef CSS_NON_INHERITING_ANON_BOX
-  #undef CSS_ANON_BOX
-
+  
   #define CSS_ANON_BOX(name_, value_) \
     NS_STATIC_ATOM_SUBCLASS_SETUP( \
       mozilla::detail::gCSSAnonBoxAtoms, nsCSSAnonBoxes, name_)
-  #define CSS_NON_INHERITING_ANON_BOX(name_, value_) 
   #include "nsCSSAnonBoxList.h"
-  #undef CSS_NON_INHERITING_ANON_BOX
   #undef CSS_ANON_BOX
 };
 

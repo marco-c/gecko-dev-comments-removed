@@ -35,6 +35,7 @@
 
 
 
+
 #ifndef CSS_NON_INHERITING_ANON_BOX
 #  ifdef DEFINED_CSS_NON_INHERITING_ANON_BOX
 #    error "Recursive includes of nsCSSAnonBoxList.h?"
@@ -53,11 +54,31 @@
 
 
 
-CSS_ANON_BOX(mozText, ":-moz-text")
+
+
 
 
 
 CSS_NON_INHERITING_ANON_BOX(oofPlaceholder, ":-moz-oof-placeholder")
+
+
+CSS_NON_INHERITING_ANON_BOX(horizontalFramesetBorder, ":-moz-hframeset-border")
+CSS_NON_INHERITING_ANON_BOX(verticalFramesetBorder, ":-moz-vframeset-border")
+
+CSS_NON_INHERITING_ANON_BOX(framesetBlank, ":-moz-frameset-blank")
+
+CSS_NON_INHERITING_ANON_BOX(tableColGroup, ":-moz-table-column-group")
+CSS_NON_INHERITING_ANON_BOX(tableCol, ":-moz-table-column")
+
+CSS_NON_INHERITING_ANON_BOX(pageBreak, ":-moz-pagebreak")
+
+
+
+
+
+
+
+CSS_ANON_BOX(mozText, ":-moz-text")
 
 CSS_ANON_BOX(firstLetterContinuation, ":-moz-first-letter-continuation")
 
@@ -65,31 +86,23 @@ CSS_ANON_BOX(mozBlockInsideInlineWrapper, ":-moz-block-inside-inline-wrapper")
 CSS_WRAPPER_ANON_BOX(mozMathMLAnonymousBlock, ":-moz-mathml-anonymous-block")
 CSS_ANON_BOX(mozXULAnonymousBlock, ":-moz-xul-anonymous-block")
 
-
-CSS_NON_INHERITING_ANON_BOX(horizontalFramesetBorder, ":-moz-hframeset-border")
-CSS_NON_INHERITING_ANON_BOX(verticalFramesetBorder, ":-moz-vframeset-border")
-
 CSS_ANON_BOX(mozLineFrame, ":-moz-line-frame")
 
 CSS_ANON_BOX(buttonContent, ":-moz-button-content")
 CSS_ANON_BOX(cellContent, ":-moz-cell-content")
 CSS_ANON_BOX(dropDownList, ":-moz-dropdown-list")
 CSS_ANON_BOX(fieldsetContent, ":-moz-fieldset-content")
-CSS_NON_INHERITING_ANON_BOX(framesetBlank, ":-moz-frameset-blank")
 CSS_ANON_BOX(mozDisplayComboboxControlFrame, ":-moz-display-comboboxcontrol-frame")
 CSS_ANON_BOX(htmlCanvasContent, ":-moz-html-canvas-content")
 
 CSS_WRAPPER_ANON_BOX(inlineTable, ":-moz-inline-table")
 CSS_WRAPPER_ANON_BOX(table, ":-moz-table")
 CSS_WRAPPER_ANON_BOX(tableCell, ":-moz-table-cell")
-CSS_NON_INHERITING_ANON_BOX(tableColGroup, ":-moz-table-column-group")
-CSS_NON_INHERITING_ANON_BOX(tableCol, ":-moz-table-column")
 CSS_ANON_BOX(tableWrapper, ":-moz-table-wrapper")
 CSS_WRAPPER_ANON_BOX(tableRowGroup, ":-moz-table-row-group")
 CSS_WRAPPER_ANON_BOX(tableRow, ":-moz-table-row")
 
 CSS_ANON_BOX(canvas, ":-moz-canvas")
-CSS_NON_INHERITING_ANON_BOX(pageBreak, ":-moz-pagebreak")
 CSS_ANON_BOX(page, ":-moz-page")
 CSS_ANON_BOX(pageContent, ":-moz-pagecontent")
 CSS_ANON_BOX(pageSequence, ":-moz-page-sequence")
