@@ -123,7 +123,7 @@ WeaveService.prototype = {
 
 
   get enabled() {
-    return !!syncUsername;
+    return !!syncUsername && Services.prefs.getBoolPref("identity.fxaccounts.enabled");
   }
 };
 

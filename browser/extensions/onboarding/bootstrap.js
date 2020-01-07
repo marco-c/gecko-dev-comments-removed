@@ -98,6 +98,9 @@ let syncTourChecker = {
   },
 
   init() {
+    if (!Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
+      return;
+    }
     
     const state = UIState.get();
     if (state.status != UIState.STATUS_NOT_CONFIGURED) {
