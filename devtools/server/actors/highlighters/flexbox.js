@@ -461,7 +461,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
           this.currentMatrix);
 
         
-        if (crossStart != 0) {;
+        if (crossStart != 0) {
           drawLine(this.ctx, crossStart, 0, crossStart, bounds.height, options);
           this.ctx.stroke();
         }
