@@ -34597,15 +34597,15 @@ var _validate = __webpack_require__(1629);
 
 var _frameworks = __webpack_require__(1703);
 
+var _pauseLocation = __webpack_require__(2422);
+
 var _devtoolsUtils = __webpack_require__(1363);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const { workerHandler } = _devtoolsUtils.workerUtils; 
 
 
-
-
-const { workerHandler } = _devtoolsUtils.workerUtils;
 
 self.onmessage = workerHandler({
   getClosestExpression: _closest.getClosestExpression,
@@ -34618,6 +34618,7 @@ self.onmessage = workerHandler({
   hasSource: _sources.hasSource,
   setSource: _sources.setSource,
   clearSources: _sources.clearSources,
+  isInvalidPauseLocation: _pauseLocation.isInvalidPauseLocation,
   getVariablesInScope: _scopes.getVariablesInScope,
   getNextStep: _steps.getNextStep,
   getEmptyLines: _getEmptyLines2.default,
@@ -60816,6 +60817,82 @@ function stripModuleScope(rootScope) {
   rootLexicalScope.children.forEach(child => {
     child.parent = rootLexicalScope;
   });
+}
+
+ }),
+,
+,
+,
+,
+,
+,
+,
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isInvalidPauseLocation = isInvalidPauseLocation;
+
+var _types = __webpack_require__(2268);
+
+var t = _interopRequireWildcard(_types);
+
+var _ast = __webpack_require__(1375);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+
+
+
+
+const STOP = {};
+
+function isInvalidPauseLocation(location) {
+  const state = {
+    invalid: false,
+    location
+  };
+
+  try {
+    (0, _ast.fastTraverseAst)(location.sourceId, { enter: invalidLocationVisitor }, state);
+  } catch (e) {
+    if (e !== STOP) {
+      throw e;
+    }
+  }
+
+  return state.invalid;
+}
+
+function invalidLocationVisitor(node, ancestors, state) {
+  const { location } = state;
+
+  if (node.loc.end.line < location.line) {
+    return;
+  }
+  if (node.loc.start.line > location.line) {
+    throw STOP;
+  }
+
+  if (location.line === node.loc.start.line && location.column >= node.loc.start.column && t.isFunction(node) && !t.isArrowFunctionExpression(node) && (location.line < node.body.loc.start.line || location.line === node.body.loc.start.line && location.column <= node.body.loc.start.column)) {
+    
+    
+    state.invalid = true;
+    throw STOP;
+  }
+
+  if (location.line === node.loc.start.line && location.column === node.loc.start.column && t.isBlockStatement(node)) {
+    
+    
+    
+    state.invalid = true;
+    throw STOP;
+  }
 }
 
  })
