@@ -1026,6 +1026,33 @@ ServoStyleSet::MarkOriginsDirty(OriginFlags aChangedOrigins)
 }
 
 void
+ServoStyleSet::SetStylistStyleSheetsDirty()
+{
+  mStylistState |= StylistState::StyleSheetsDirty;
+
+  
+  
+  
+  if (mPresContext) {
+    
+    
+    mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+  }
+}
+
+void
+ServoStyleSet::SetStylistXBLStyleSheetsDirty()
+{
+  mStylistState |= StylistState::XBLStyleSheetsDirty;
+
+  
+  
+  
+  MOZ_ASSERT(mPresContext);
+  mPresContext->RestyleManager()->AsServo()->IncrementUndisplayedRestyleGeneration();
+}
+
+void
 ServoStyleSet::RecordStyleSheetChange(
     ServoStyleSheet* aSheet,
     StyleSheet::ChangeType aChangeType)
