@@ -201,21 +201,9 @@ class DownloadsSubview extends DownloadsViewUI.BaseView {
 
 
 
-  static init(window) {
-    return new Promise(resolve =>
-      window.DownloadsOverlayLoader.ensureOverlayLoaded(window.DownloadsPanel.kDownloadsOverlay, resolve));
-  }
-
-  
-
-
-
-
-
-  static async show(anchor) {
+  static show(anchor) {
     let document = anchor.ownerDocument;
     let window = anchor.ownerGlobal;
-    await DownloadsSubview.init(window);
 
     let panelview = document.getElementById("PanelUI-downloads");
     anchor.setAttribute("closemenu", "none");

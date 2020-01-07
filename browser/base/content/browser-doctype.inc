@@ -9,6 +9,8 @@
 %charsetDTD;
 <!ENTITY % textcontextDTD SYSTEM "chrome:
 %textcontextDTD;
+<!ENTITY % downloadsDTD SYSTEM "chrome:
+%downloadsDTD;
 <!ENTITY % placesDTD SYSTEM "chrome:
 %placesDTD;
 <!ENTITY % safebrowsingDTD SYSTEM "chrome:
