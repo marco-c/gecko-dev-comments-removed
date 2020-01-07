@@ -634,10 +634,8 @@ public:
                "out of range");
     
     
-    
-    MOZ_ASSERT(XRE_IsParentProcess() ||
-               mozilla::Preferences::InitPhase() == END_ALL_PREFS,
-               "Checking style preferences before they have been set");
+    MOZ_ASSERT_IF(!XRE_IsParentProcess(),
+                  mozilla::Preferences::AreAllPrefsSetInContentProcess());
     return gPropertyEnabled[aProperty];
   }
 

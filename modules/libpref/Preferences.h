@@ -30,22 +30,6 @@ class nsIFile;
 
 typedef void (*PrefChangedFunc)(const char* aPref, void* aData);
 
-#ifdef DEBUG
-enum pref_initPhase
-{
-  START,
-  BEGIN_INIT_PREFS,
-  END_INIT_PREFS,
-  BEGIN_ALL_PREFS,
-  END_ALL_PREFS
-};
-#define SET_PREF_PHASE(p) Preferences::SetInitPhase(p)
-#else
-#define SET_PREF_PHASE(p)                                                      \
-  do {                                                                         \
-  } while (0)
-#endif
-
 class nsPrefBranch;
 
 namespace mozilla {
@@ -340,8 +324,12 @@ public:
 
   
   
+  
+  
+  
   static void GetPreferences(InfallibleTArray<dom::Pref>* aSettings);
-  static void SetInitPreferences(nsTArray<dom::Pref>* aSettings);
+  static void SetEarlyPreferences(const nsTArray<dom::Pref>* aSettings);
+  static void SetLatePreferences(const nsTArray<dom::Pref>* aSettings);
 
   
   
@@ -349,8 +337,7 @@ public:
   static void SetPreference(const dom::Pref& aPref);
 
 #ifdef DEBUG
-  static void SetInitPhase(pref_initPhase phase);
-  static pref_initPhase InitPhase();
+  static bool AreAllPrefsSetInContentProcess();
 #endif
 
   static void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,

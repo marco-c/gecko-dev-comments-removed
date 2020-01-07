@@ -1150,11 +1150,8 @@ void
 ContentChild::InitXPCOM(const XPCOMInitData& aXPCOMInit,
                         const mozilla::dom::ipc::StructuredCloneData& aInitialData)
 {
-  SET_PREF_PHASE(pref_initPhase::BEGIN_ALL_PREFS);
-  for (unsigned int i = 0; i < aXPCOMInit.prefs().Length(); i++) {
-    Preferences::SetPreference(aXPCOMInit.prefs().ElementAt(i));
-  }
-  SET_PREF_PHASE(pref_initPhase::END_ALL_PREFS);
+  Preferences::SetLatePreferences(&aXPCOMInit.prefs());
+
   
   
   BackgroundChild::Startup();

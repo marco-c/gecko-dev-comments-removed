@@ -730,7 +730,17 @@ pref_savePrefs()
 
 #ifdef DEBUG
 
-static pref_initPhase gPhase = START;
+
+enum class ContentProcessPhase
+{
+  eNoPrefsSet,
+  eEarlyPrefsSet,
+  eEarlyAndLatePrefsSet,
+};
+
+
+
+static ContentProcessPhase gPhase = ContentProcessPhase::eNoPrefsSet;
 
 struct StringComparator
 {
@@ -748,11 +758,11 @@ struct StringComparator
 };
 
 static bool
-InInitArray(const char* aPrefName)
+IsEarlyPref(const char* aPrefName)
 {
   size_t prefsLen;
   size_t found;
-  const char** list = mozilla::dom::ContentPrefs::GetContentPrefs(&prefsLen);
+  const char** list = mozilla::dom::ContentPrefs::GetEarlyPrefs(&prefsLen);
   return BinarySearchIf(list, 0, prefsLen, StringComparator(aPrefName), &found);
 }
 
@@ -774,29 +784,34 @@ public:
 #endif 
 
 static Pref*
-pref_HashTableLookup(const char* aKey)
+pref_HashTableLookup(const char* aPrefName)
 {
   MOZ_ASSERT(NS_IsMainThread() || mozilla::ServoStyleSet::IsInServoTraversal());
-  MOZ_ASSERT((XRE_IsParentProcess() || gPhase != START),
-             "pref access before commandline prefs set");
 
-  
-  
-  
-  
-  
-  
-  
-  
 #ifdef DEBUG
-  if (!XRE_IsParentProcess() && gPhase <= END_INIT_PREFS &&
-      !gInstallingCallback && !InInitArray(aKey)) {
-    MOZ_CRASH_UNSAFE_PRINTF(
-      "accessing non-init pref %s before the rest of the prefs are sent", aKey);
+  if (!XRE_IsParentProcess()) {
+    if (gPhase == ContentProcessPhase::eNoPrefsSet) {
+      MOZ_CRASH_UNSAFE_PRINTF(
+        "accessing pref %s before early prefs are set", aPrefName);
+    }
+
+    if (gPhase == ContentProcessPhase::eEarlyPrefsSet && !gInstallingCallback &&
+        !IsEarlyPref(aPrefName)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_CRASH_UNSAFE_PRINTF(
+        "accessing non-early pref %s before late prefs are set", aPrefName);
+    }
   }
 #endif
 
-  return static_cast<Pref*>(gHashTable->Search(aKey));
+  return static_cast<Pref*>(gHashTable->Search(aPrefName));
 }
 
 static nsresult
@@ -3263,7 +3278,8 @@ public:
 
 } 
 
-static InfallibleTArray<dom::Pref>* gInitDomPrefs;
+
+static InfallibleTArray<dom::Pref>* gEarlyDomPrefs;
 
  already_AddRefed<Preferences>
 Preferences::GetInstanceForService()
@@ -3291,12 +3307,12 @@ Preferences::GetInstanceForService()
   }
 
   if (!XRE_IsParentProcess()) {
-    MOZ_ASSERT(gInitDomPrefs);
-    for (unsigned int i = 0; i < gInitDomPrefs->Length(); i++) {
-      Preferences::SetPreference(gInitDomPrefs->ElementAt(i));
+    MOZ_ASSERT(gEarlyDomPrefs);
+    for (unsigned int i = 0; i < gEarlyDomPrefs->Length(); i++) {
+      Preferences::SetPreference(gEarlyDomPrefs->ElementAt(i));
     }
-    delete gInitDomPrefs;
-    gInitDomPrefs = nullptr;
+    delete gEarlyDomPrefs;
+    gEarlyDomPrefs = nullptr;
 
   } else {
     
@@ -3422,9 +3438,29 @@ NS_INTERFACE_MAP_BEGIN(Preferences)
 NS_INTERFACE_MAP_END
 
  void
-Preferences::SetInitPreferences(nsTArray<dom::Pref>* aDomPrefs)
+Preferences::SetEarlyPreferences(const nsTArray<dom::Pref>* aDomPrefs)
 {
-  gInitDomPrefs = new InfallibleTArray<dom::Pref>(mozilla::Move(*aDomPrefs));
+  MOZ_ASSERT(!XRE_IsParentProcess());
+
+#ifdef DEBUG
+  MOZ_ASSERT(gPhase == ContentProcessPhase::eNoPrefsSet);
+  gPhase = ContentProcessPhase::eEarlyPrefsSet;
+#endif
+  gEarlyDomPrefs = new InfallibleTArray<dom::Pref>(mozilla::Move(*aDomPrefs));
+}
+
+ void
+Preferences::SetLatePreferences(const nsTArray<dom::Pref>* aDomPrefs)
+{
+  MOZ_ASSERT(!XRE_IsParentProcess());
+
+#ifdef DEBUG
+  MOZ_ASSERT(gPhase == ContentProcessPhase::eEarlyPrefsSet);
+  gPhase = ContentProcessPhase::eEarlyAndLatePrefsSet;
+#endif
+  for (unsigned int i = 0; i < aDomPrefs->Length(); i++) {
+    Preferences::SetPreference(aDomPrefs->ElementAt(i));
+  }
 }
 
  void
@@ -3640,6 +3676,8 @@ Preferences::SetPreference(const dom::Pref& aDomPref)
  void
 Preferences::GetPreference(dom::Pref* aDomPref)
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   Pref* pref = pref_HashTableLookup(aDomPref->name().get());
   if (pref && pref->HasAdvisablySizedValues()) {
     pref->ToDomPref(aDomPref);
@@ -3649,6 +3687,8 @@ Preferences::GetPreference(dom::Pref* aDomPref)
 void
 Preferences::GetPreferences(InfallibleTArray<dom::Pref>* aDomPrefs)
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   aDomPrefs->SetCapacity(gHashTable->EntryCount());
   for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
     auto pref = static_cast<Pref*>(iter.Get());
@@ -3661,16 +3701,11 @@ Preferences::GetPreferences(InfallibleTArray<dom::Pref>* aDomPrefs)
 }
 
 #ifdef DEBUG
-void
-Preferences::SetInitPhase(pref_initPhase aPhase)
+bool
+Preferences::AreAllPrefsSetInContentProcess()
 {
-  gPhase = aPhase;
-}
-
-pref_initPhase
-Preferences::InitPhase()
-{
-  return gPhase;
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  return gPhase == ContentProcessPhase::eEarlyAndLatePrefsSet;
 }
 #endif
 
