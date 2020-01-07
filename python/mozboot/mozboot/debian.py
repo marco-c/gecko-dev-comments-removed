@@ -49,7 +49,8 @@ class DebianBootstrapper(StyloInstall, BaseBootstrapper):
 
     
     DEBIAN_PACKAGES = [
-        'npm'
+        
+        
     ]
 
     
