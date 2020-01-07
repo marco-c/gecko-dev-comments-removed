@@ -824,9 +824,9 @@ public:
 
 
 
-  nsresult JoinNodesImpl(nsINode* aNodeToKeep,
-                         nsINode* aNodeToJoin,
-                         nsINode* aParent);
+  nsresult DoJoinNodes(nsINode* aNodeToKeep,
+                       nsINode* aNodeToJoin,
+                       nsINode* aParent);
 
   
 

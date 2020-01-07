@@ -136,8 +136,8 @@ SplitNodeTransaction::UndoTransaction()
   
   
   
-  return mEditorBase->JoinNodesImpl(mStartOfRightNode.GetContainer(),
-                                    mNewLeftNode, mParent);
+  return mEditorBase->DoJoinNodes(mStartOfRightNode.GetContainer(),
+                                  mNewLeftNode, mParent);
 }
 
 

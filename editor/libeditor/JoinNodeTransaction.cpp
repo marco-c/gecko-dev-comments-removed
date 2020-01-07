@@ -89,7 +89,7 @@ JoinNodeTransaction::DoTransaction()
   mParent = leftParent;
   mOffset = mLeftNode->Length();
 
-  return mEditorBase->JoinNodesImpl(mRightNode, mLeftNode, mParent);
+  return mEditorBase->DoJoinNodes(mRightNode, mLeftNode, mParent);
 }
 
 
