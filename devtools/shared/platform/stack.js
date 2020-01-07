@@ -15,26 +15,31 @@ const { Cu, components } = require("chrome");
 
 
 
-function describeNthCaller(n) {
-  if (isWorker) {
-    return "";
-  }
 
-  let caller = components.stack;
+
+function getNthPathExcluding(n, substr) {
+  let stack = components.stack.formattedStack.split("\n");
+
   
-  while (n >= 0) {
-    --n;
-    caller = caller.caller;
+  stack = stack.splice(1);
+
+  stack = stack.map(line => {
+    if (line.includes(" -> ")) {
+      return line.split(" -> ")[1];
+    }
+    return line;
+  });
+
+  if (substr) {
+    stack = stack.filter(line => {
+      return line && !line.includes(substr);
+    });
   }
 
-  let func = caller.name;
-  let file = caller.filename;
-  if (file.includes(" -> ")) {
-    file = caller.filename.split(/ -> /)[1];
+  if (!stack[n]) {
+    n = 0;
   }
-  let path = file + ":" + caller.lineNumber;
-
-  return func + "() -> " + path;
+  return (stack[n] || "");
 }
 
 
@@ -57,5 +62,5 @@ function callFunctionWithAsyncStack(callee, stack, id) {
 }
 
 exports.callFunctionWithAsyncStack = callFunctionWithAsyncStack;
-exports.describeNthCaller = describeNthCaller;
+exports.getNthPathExcluding = getNthPathExcluding;
 exports.getStack = getStack;

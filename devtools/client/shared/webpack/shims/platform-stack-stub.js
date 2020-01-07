@@ -23,13 +23,17 @@ function callFunctionWithAsyncStack(callee, stack, id) {
 
 
 
-function describeNthCaller(n) {
+
+
+function getNthPathExcluding(n, substr) {
   if (isWorker) {
     return "";
   }
 
   let stack = new Error().stack.split("\n");
-  
+  stack = stack.filter(line => {
+    return line && !line.includes(substr);
+  });
   return stack[n + 1];
 }
 
@@ -45,5 +49,5 @@ function getStack() {
 }
 
 exports.callFunctionWithAsyncStack = callFunctionWithAsyncStack;
-exports.describeNthCaller = describeNthCaller;
+exports.getNthPathExcluding = getNthPathExcluding;
 exports.getStack = getStack;

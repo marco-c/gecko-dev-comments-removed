@@ -262,7 +262,7 @@ const isEventHandler = (listener) =>
   listener && handler in listener && typeof listener[handler] === "function";
 
 const Services = require("Services");
-const { describeNthCaller } = require("devtools/shared/platform/stack");
+const { getNthPathExcluding } = require("devtools/shared/platform/stack");
 let loggingEnabled = false;
 
 if (!isWorker) {
@@ -275,20 +275,80 @@ if (!isWorker) {
 }
 
 function serialize(target) {
-  let out = String(target);
+  const MAXLEN = 60;
 
-  if (target && target.nodeName) {
-    out += " (" + target.nodeName;
+  
+  if (typeof target === "undefined") {
+    return "undefined";
+  }
+
+  if (target === null) {
+    return "null";
+  }
+
+  
+  if (typeof target === "string" ||
+      typeof target === "number") {
+    return truncate(target, MAXLEN);
+  }
+
+  
+  if (target.nodeName) {
+    let out = target.nodeName;
+
     if (target.id) {
       out += "#" + target.id;
     }
     if (target.className) {
       out += "." + target.className;
     }
-    out += ")";
+
+    return out;
   }
 
-  return out;
+  
+  if (Array.isArray(target)) {
+    return truncate(target.toSource(), MAXLEN);
+  }
+
+  
+  if (typeof target === "function") {
+    return `function ${target.name ? target.name : "anonymous"}()`;
+  }
+
+  
+  if (target.constructor &&
+      target.constructor.name &&
+      target.constructor.name === "Window") {
+    return `window (${target.location.origin})`;
+  }
+
+  
+  if (typeof target === "object") {
+    let out = "{";
+
+    let entries = Object.entries(target);
+    for (let i = 0; i < Math.min(10, entries.length); i++) {
+      let [name, value] = entries[i];
+
+      if (i > 0) {
+        out += ", ";
+      }
+
+      out += `${name}: ${truncate(value, MAXLEN)}`;
+    }
+
+    return out + "}";
+  }
+
+  
+  return truncate(target.toSource(), MAXLEN);
+}
+
+function truncate(value, maxLen) {
+  
+  let str = String(value);
+  return str.length > maxLen ? str.substring(0, maxLen) + "..." : str;
 }
 
 function logEvent(type, args) {
@@ -297,15 +357,20 @@ function logEvent(type, args) {
   }
 
   let argsOut = "";
-  let description = describeNthCaller(2);
 
   
   try {
-    argsOut = args.map(serialize).join(", ");
+    argsOut = `${args.map(serialize).join(", ")}`;
   } catch (e) {
     
     
   }
 
-  dump(`EMITTING: emit(${type}${argsOut}) from ${description}\n`);
+  const path = getNthPathExcluding(0, "devtools/shared/event-emitter.js");
+
+  if (args.length > 0) {
+    dump(`EMITTING: emit(${type}, ${argsOut}) from ${path}\n`);
+  } else {
+    dump(`EMITTING: emit(${type}) from ${path}\n`);
+  }
 }
