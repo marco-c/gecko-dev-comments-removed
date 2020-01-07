@@ -11018,6 +11018,7 @@ nsIFrame::IsVisuallyAtomic(EffectSet* aEffectSet,
                            const nsStyleEffects* aStyleEffects) {
   return HasOpacity(aEffectSet) ||
          IsTransformed(aStyleDisplay) ||
+         aStyleDisplay->IsContainPaint() ||
          
          
          ChildrenHavePerspective(aStyleDisplay) ||

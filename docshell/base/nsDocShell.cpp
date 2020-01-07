@@ -12609,6 +12609,9 @@ nsDocShell::AddURIVisit(nsIURI* aURI,
 
     if (aResponseStatus >= 300 && aResponseStatus < 400) {
       visitURIFlags |= IHistory::REDIRECT_SOURCE;
+      if (aResponseStatus == 301 || aResponseStatus == 308) {
+        visitURIFlags |= IHistory::REDIRECT_SOURCE_PERMANENT;
+      }
     }
     
     
