@@ -67,7 +67,7 @@ public:
 
 
 
-  mozilla::dom::Element* GetFocusedContent() { return mFocusedContent; }
+  mozilla::dom::Element* GetFocusedElement() { return mFocusedElement; }
 
   
 
@@ -102,7 +102,7 @@ public:
 
   void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement)
   {
-    if (mFocusedContent == aElement) {
+    if (mFocusedElement == aElement) {
       mEventHandlingNeedsFlush = true;
     }
   }
@@ -645,7 +645,7 @@ private:
   
   
   
-  RefPtr<mozilla::dom::Element> mFocusedContent;
+  RefPtr<mozilla::dom::Element> mFocusedElement;
 
   
   

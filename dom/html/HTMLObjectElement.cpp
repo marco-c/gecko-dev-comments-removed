@@ -192,12 +192,8 @@ HTMLObjectElement::HandlePluginInstantiated(Element* aElement)
   
   
   
-  nsIContent* focusedContent = nullptr;
   nsFocusManager *fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    focusedContent = fm->GetFocusedContent();
-  }
-  if (SameCOMIdentity(focusedContent, aElement)) {
+  if (fm && fm->GetFocusedElement() == aElement) {
     OnFocusBlurPlugin(aElement, true);
   }
 }
