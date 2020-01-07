@@ -53,6 +53,11 @@ protected:
   nsresult GetBlockParent(nsINode* aNode, nsINode** aParent);
 
   
+  bool IsBlockNode(nsIContent* aNode);
+  bool SkipNode(nsIContent* aNode);
+  bool IsVisibleNode(nsINode* aNode);
+
+  
   nsresult NextNode(nsRange* aSearchRange,
                     nsRange* aStartPoint, nsRange* aEndPoint,
                     bool aContinueOk);
