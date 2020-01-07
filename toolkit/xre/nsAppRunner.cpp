@@ -3193,6 +3193,65 @@ bool SafeModeBlockedByPolicy()
 } 
 #endif 
 
+#if defined(XP_UNIX) && !defined(ANDROID)
+static SmprintfPointer
+FormatUid(uid_t aId)
+{
+  if (const auto pw = getpwuid(aId)) {
+    return mozilla::Smprintf("%s", pw->pw_name);
+  }
+  return mozilla::Smprintf("uid %d", static_cast<int>(aId));
+}
+
+
+static bool
+CheckForUserMismatch()
+{
+  static char const * const kVars[] = {
+    "HOME",
+#ifdef MOZ_WIDGET_GTK
+    "XDG_RUNTIME_DIR",
+#endif
+#ifdef MOZ_X11
+    "XAUTHORITY",
+#endif
+  };
+
+  const uid_t euid = geteuid();
+  if (euid != 0) {
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  for (const auto var : kVars) {
+    if (const auto path = PR_GetEnv(var)) {
+      struct stat st;
+      if (stat(path, &st) == 0) {
+        if (st.st_uid != euid) {
+          const auto owner = FormatUid(st.st_uid);
+          Output(true, "Running " MOZ_APP_DISPLAYNAME " as root in a regular"
+                 " user's session is not supported.  ($%s is %s which is"
+                 " owned by %s.)\n",
+                 var, path, owner.get());
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+#else 
+static bool
+CheckForUserMismatch()
+{
+  return false;
+}
+#endif
+
 
 
 
@@ -3211,6 +3270,10 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   });
 
   StartupTimeline::Record(StartupTimeline::MAIN);
+
+  if (CheckForUserMismatch()) {
+    return 1;
+  }
 
   if (PR_GetEnv("MOZ_CHAOSMODE")) {
     ChaosFeature feature = ChaosFeature::Any;
