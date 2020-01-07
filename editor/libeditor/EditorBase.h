@@ -50,6 +50,7 @@ class nsINode;
 class nsIPresShell;
 class nsISupports;
 class nsITransaction;
+class nsITransactionListener;
 class nsIWidget;
 class nsRange;
 
@@ -1162,6 +1163,27 @@ public:
   
 
 
+
+
+
+  bool AddTransactionListener(nsITransactionListener& aListener)
+  {
+    if (!mTransactionManager) {
+      return false;
+    }
+    return mTransactionManager->AddTransactionListener(aListener);
+  }
+  bool RemoveTransactionListener(nsITransactionListener& aListener)
+  {
+    if (!mTransactionManager) {
+      return false;
+    }
+    return mTransactionManager->RemoveTransactionListener(aListener);
+  }
+
+  
+
+
   static nsAtom* GetTag(nsIDOMNode* aNode);
 
   bool NodesSameType(nsIDOMNode* aNode1, nsIDOMNode* aNode2);
@@ -1449,12 +1471,6 @@ public:
     
     return !IsInteractionAllowed() || IsMailEditor();
   }
-
-  
-
-
-
-  already_AddRefed<nsITransactionManager> GetTransactionManager() const;
 
   
 

@@ -470,11 +470,11 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   htmlEditor->SetComposerCommandsUpdater(mComposerCommandsUpdater);
 
   
-  nsCOMPtr<nsITransactionManager> txnMgr;
-  htmlEditor->GetTransactionManager(getter_AddRefs(txnMgr));
-  if (txnMgr) {
-    txnMgr->AddListener(mComposerCommandsUpdater);
-  }
+  MOZ_ASSERT(mComposerCommandsUpdater);
+  DebugOnly<bool> addedTransactionListener =
+    htmlEditor->AddTransactionListener(*mComposerCommandsUpdater);
+  NS_WARNING_ASSERTION(addedTransactionListener,
+    "Failed to add transaction listener to the editor");
 
   
   rv = SetEditorOnControllers(aWindow, htmlEditor);
@@ -498,14 +498,11 @@ nsEditingSession::RemoveListenersAndControllers(nsPIDOMWindowOuter* aWindow,
 
   
   aHTMLEditor->SetComposerCommandsUpdater(nullptr);
-
   aHTMLEditor->RemoveDocumentStateListener(mComposerCommandsUpdater);
-
-  nsCOMPtr<nsITransactionManager> txnMgr;
-  aHTMLEditor->GetTransactionManager(getter_AddRefs(txnMgr));
-  if (txnMgr) {
-    txnMgr->RemoveListener(mComposerCommandsUpdater);
-  }
+  DebugOnly<bool> removedTransactionListener =
+    aHTMLEditor->RemoveTransactionListener(*mComposerCommandsUpdater);
+  NS_WARNING_ASSERTION(removedTransactionListener,
+    "Failed to remove transaction listener from the editor");
 
   
   
