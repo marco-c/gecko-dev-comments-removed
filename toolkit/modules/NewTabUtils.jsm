@@ -64,7 +64,10 @@ const ACTIVITY_STREAM_DEFAULT_LIMIT = 12;
 
 const ACTIVITY_STREAM_DEFAULT_RECENT = 5 * 24 * 60 * 60;
 
-const POCKET_UPDATE_TIME = 60 * 60 * 1000; 
+const POCKET_UPDATE_TIME = 24 * 60 * 60 * 1000; 
+const POCKET_INACTIVE_TIME = 7 * 24 * 60 * 60 * 1000; 
+const PREF_POCKET_LATEST_SINCE = "extensions.pocket.settings.latestSince";
+
 
 
 
@@ -987,9 +990,13 @@ var ActivityStreamProvider = {
 
 
   fetchSavedPocketItems(requestData) {
-    if (!pktApi.isUserLoggedIn()) {
+    const latestSince = (Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0) * 1000);
+
+    
+    if (!pktApi.isUserLoggedIn() || (Date.now() - latestSince > POCKET_INACTIVE_TIME)) {
       return Promise.resolve(null);
     }
+
     return new Promise((resolve, reject) => {
       pktApi.retrieve(requestData, {
         success(data) {
@@ -1304,6 +1311,7 @@ var ActivityStreamProvider = {
 var ActivityStreamLinks = {
   _savedPocketStories: null,
   _pocketLastUpdated: 0,
+  _pocketLastLatest: 0,
 
  
 
@@ -1454,12 +1462,17 @@ var ActivityStreamLinks = {
 
     
     if (aOptions.numItems - results.length > 0 && !aOptions.excludePocket) {
+      const latestSince = ~~(Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0));
       
       
       
-      if (!this._savedPocketStories || (Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME)) {
+      
+      if (!this._savedPocketStories ||
+          (Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME) ||
+          (this._pocketLastLatest < latestSince)) {
         this._savedPocketStories = await ActivityStreamProvider.getRecentlyPocketed(aOptions);
         this._pocketLastUpdated = Date.now();
+        this._pocketLastLatest = latestSince;
       }
       results.push(...this._savedPocketStories);
     }
