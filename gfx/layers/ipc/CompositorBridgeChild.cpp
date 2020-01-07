@@ -156,6 +156,9 @@ CompositorBridgeChild::Destroy()
     mLayerManager = nullptr;
   }
 
+  
+  FlushAsyncPaints();
+
   if (!mCanSend) {
     
     
@@ -181,9 +184,6 @@ CompositorBridgeChild::Destroy()
       static_cast<WebRenderBridgeChild*>(wrBridges[i]);
     wrBridge->Destroy( false);
   }
-
-  
-  FlushAsyncPaints();
 
   const ManagedContainer<PTextureChild>& textures = ManagedPTextureChild();
   for (auto iter = textures.ConstIter(); !iter.Done(); iter.Next()) {
