@@ -1307,11 +1307,6 @@ pref("pdfjs.previousHandler.preferredAction", 0);
 pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 
-
-
-pref("image.mem.max_decoded_image_kb", 256000);
-
-
 pref("sidebar.position_start", true);
 
 

@@ -42,9 +42,6 @@ var MemoryObserver = {
     let defaults = Services.prefs.getDefaultBranch(null);
 
     
-    defaults.setIntPref("image.mem.max_decoded_image_kb", 0);
-
-    
     if (!Services.prefs.getBoolPref("browser.sessionhistory.bfcacheIgnoreMemoryPressure")) {
       this._defaultMaxContentViewers = defaults.getIntPref(MAX_CONTENT_VIEWERS_PREF);
       defaults.setIntPref(MAX_CONTENT_VIEWERS_PREF, 0);
