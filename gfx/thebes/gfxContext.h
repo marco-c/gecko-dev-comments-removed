@@ -272,15 +272,6 @@ public:
     
 
 
-
-
-
-
-    void SetSource(gfxASurface *surface, const gfxPoint& offset = gfxPoint(0.0, 0.0));
-
-    
-
-
     void SetPattern(gfxPattern *pattern);
 
     
@@ -489,10 +480,6 @@ private:
     mozilla::gfx::CompositionOp op;
     Color color;
     RefPtr<gfxPattern> pattern;
-    RefPtr<gfxASurface> sourceSurfCairo;
-    RefPtr<SourceSurface> sourceSurface;
-    mozilla::gfx::Point sourceSurfaceDeviceOffset;
-    Matrix surfTransform;
     Matrix transform;
     struct PushedClip {
       RefPtr<Path> path;
