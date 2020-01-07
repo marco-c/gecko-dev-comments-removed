@@ -5660,13 +5660,13 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
   
   
   
-  bool usingFlexBasisForISize = false;
+  LogicalAxis flexMainAxis = eLogicalAxisInline; 
   if (isFlexItem) {
     
     
     
-    usingFlexBasisForISize =
-      nsFlexContainerFrame::IsItemInlineAxisMainAxis(this);
+    flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this) ?
+      eLogicalAxisInline : eLogicalAxisBlock;
 
     
     
@@ -5674,8 +5674,8 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
     if (flexBasis->GetUnit() != eStyleUnit_Auto) {
       
-      (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
-        flexBasis;
+      (flexMainAxis == eLogicalAxisInline ?
+       inlineStyleCoord : blockStyleCoord) = flexBasis;
     }
   }
 
@@ -5716,7 +5716,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
   const nsStyleCoord& maxISizeCoord = stylePos->MaxISize(aWM);
   nscoord maxISize = NS_UNCONSTRAINEDSIZE;
   if (maxISizeCoord.GetUnit() != eStyleUnit_None &&
-      !(isFlexItem && usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     maxISize =
       ComputeISizeValue(aRenderingContext, aCBSize.ISize(aWM),
                         boxSizingAdjust.ISize(aWM), boxSizingToMarginEdgeISize,
@@ -5727,7 +5727,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
   const nsStyleCoord& minISizeCoord = stylePos->MinISize(aWM);
   nscoord minISize;
   if (minISizeCoord.GetUnit() != eStyleUnit_Auto &&
-      !(isFlexItem && usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     minISize =
       ComputeISizeValue(aRenderingContext, aCBSize.ISize(aWM),
                         boxSizingAdjust.ISize(aWM), boxSizingToMarginEdgeISize,
@@ -5804,7 +5804,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
 
   if (result.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
     if (!nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM)) &&
-        !(isFlexItem && !usingFlexBasisForISize)) {
+        !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
       nscoord maxBSize =
         nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
                                          boxSizingAdjust.BSize(aWM),
@@ -5815,7 +5815,7 @@ nsFrame::ComputeSize(gfxContext*         aRenderingContext,
     const nsStyleCoord& minBSizeCoord = stylePos->MinBSize(aWM);
 
     if (!nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM)) &&
-        !(isFlexItem && !usingFlexBasisForISize)) {
+        !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
       nscoord minBSize =
         nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
                                          boxSizingAdjust.BSize(aWM),
@@ -5879,7 +5879,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   
   
   
-  bool usingFlexBasisForISize = false;
+  LogicalAxis flexMainAxis = eLogicalAxisInline; 
   Maybe<nsStyleCoord> imposedMainSizeStyleCoord;
 
   
@@ -5888,8 +5888,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   
   
   if (isFlexItem) {
-    usingFlexBasisForISize =
-      nsFlexContainerFrame::IsItemInlineAxisMainAxis(this);
+    flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this) ?
+      eLogicalAxisInline : eLogicalAxisBlock;
 
     
     
@@ -5900,7 +5900,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
     if (didImposeMainSize) {
       imposedMainSizeStyleCoord.emplace(imposedMainSize,
                                         nsStyleCoord::CoordConstructor);
-      if (usingFlexBasisForISize) {
+      if (flexMainAxis == eLogicalAxisInline) {
         inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
         blockStyleCoord = imposedMainSizeStyleCoord.ptr();
@@ -5916,8 +5916,8 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
       const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
       if (flexBasis->GetUnit() != eStyleUnit_Auto) {
         
-        (usingFlexBasisForISize ? inlineStyleCoord : blockStyleCoord) =
-          flexBasis;
+        (flexMainAxis == eLogicalAxisInline ?
+         inlineStyleCoord : blockStyleCoord) = flexBasis;
       }
     }
   }
@@ -6029,7 +6029,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   const nsStyleCoord& maxISizeCoord = stylePos->MaxISize(aWM);
 
   if (maxISizeCoord.GetUnit() != eStyleUnit_None &&
-      !(isFlexItem && usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     maxISize = ComputeISizeValue(aRenderingContext,
                  aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
                  boxSizingToMarginEdgeISize, maxISizeCoord, aFlags);
@@ -6044,7 +6044,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   const nsStyleCoord& minISizeCoord = stylePos->MinISize(aWM);
 
   if (minISizeCoord.GetUnit() != eStyleUnit_Auto &&
-      !(isFlexItem && usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     minISize = ComputeISizeValue(aRenderingContext,
                  aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
                  boxSizingToMarginEdgeISize, minISizeCoord, aFlags);
@@ -6098,7 +6098,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   const nsStyleCoord& maxBSizeCoord = stylePos->MaxBSize(aWM);
 
   if (!nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM)) &&
-      !(isFlexItem && !usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
     maxBSize = nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
                   boxSizingAdjust.BSize(aWM), maxBSizeCoord);
   } else {
@@ -6108,7 +6108,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(gfxContext*          aRenderingConte
   const nsStyleCoord& minBSizeCoord = stylePos->MinBSize(aWM);
 
   if (!nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM)) &&
-      !(isFlexItem && !usingFlexBasisForISize)) {
+      !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
     minBSize = nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
                   boxSizingAdjust.BSize(aWM), minBSizeCoord);
   } else {
