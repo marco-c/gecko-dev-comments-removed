@@ -835,6 +835,11 @@ public:
   
 
 
+  void FreeTemporaryItems();
+
+  
+
+
 
 
   uint32_t GetBackgroundPaintFlags();
@@ -1941,7 +1946,7 @@ public:
 
   virtual void RemoveFrame(nsIFrame* aFrame)
   {
-    if (aFrame == mFrame) {
+    if (mFrame && aFrame == mFrame) {
       MOZ_ASSERT(!mFrame->HasDisplayItem(this));
       mFrame = nullptr;
     }
@@ -4309,7 +4314,6 @@ public:
   nsDisplayEventReceiver(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayEventReceiver);
-    MOZ_ASSERT(aBuilder->IsForEventDelivery());
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayEventReceiver() {
