@@ -63,17 +63,10 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
 
 
 UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
-    r'^(linux(|64)|macosx64)-nightly$':
+    r'^(linux(|64)|macosx64)(|-devedition)-nightly$':
         _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
             'host/bin/mar',
             'host/bin/mbsdiff',
-        ],
-    r'^(linux(|64)|macosx64)-devedition-nightly$':
-        _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
-            'host/bin/mar',
-            'host/bin/mbsdiff',
-            
-            'target.langpack.xpi',
         ],
     r'^linux64-asan-reporter-nightly$':
         filter(lambda a: a not in ('target.crashreporter-symbols.zip', 'target.jsshell.zip'),
@@ -81,24 +74,12 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
                     "host/bin/mar",
                     "host/bin/mbsdiff",
                 ]),
-    r'^win(32|64)-nightly$':
+    r'^win(32|64)(|-devedition)-nightly$':
         _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
             'host/bin/mar.exe',
             'host/bin/mbsdiff.exe',
         ],
-    r'^win(32|64)-devedition-nightly$':
-        _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US + [
-            'host/bin/mar.exe',
-            'host/bin/mbsdiff.exe',
-            
-            'target.langpack.xpi',
-        ],
-    r'^(linux(|64)|macosx64|win(32|64))-nightly-l10n$': [],
-    r'^(linux(|64)|macosx64|win(32|64))-devedition-nightly-l10n$':
-        [
-            
-            'target.langpack.xpi',
-        ],
+    r'^(linux(|64)|macosx64|win(32|64))(|-devedition)-nightly-l10n$': [],
 }
 
 
