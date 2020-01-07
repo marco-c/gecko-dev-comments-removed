@@ -102,6 +102,10 @@ ModuleScript::SetErrorToRethrow(const JS::Value& aError)
   MOZ_ASSERT(!aError.isUndefined());
   MOZ_ASSERT(!HasErrorToRethrow());
 
+  
+  
+  MOZ_ASSERT(mModuleRecord || HasParseError());
+
   mErrorToRethrow = aError;
 }
 
