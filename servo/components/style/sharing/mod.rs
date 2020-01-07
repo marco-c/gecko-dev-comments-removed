@@ -816,6 +816,10 @@ impl<E: TElement> StyleSharingCache<E> {
     }
 
     
+    
+    
+    
+    
     pub fn lookup_by_rules(
         &mut self,
         shared_context: &SharedStyleContext,
@@ -841,7 +845,16 @@ impl<E: TElement> StyleSharingCache<E> {
             if style.visited_rules() != visited_rules {
                 return None;
             }
-
+            
+            
+            
+            if target.namespace() != candidate.element.namespace() {
+                return None;
+            }
+            if target.local_name() != candidate.element.local_name() {
+                return None;
+            }
+            
             
             
             
