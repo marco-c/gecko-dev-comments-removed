@@ -220,6 +220,9 @@ async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, res
 }
 
 const  MSG_CONTEXT_OPTIONS = {
+  
+  
+  useIsolating: Services.prefs.getBoolPref("intl.l10n.enable-bidi-marks", false),
   functions: {
     
 
