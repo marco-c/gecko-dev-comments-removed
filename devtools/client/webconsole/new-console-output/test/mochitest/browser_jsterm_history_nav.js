@@ -7,22 +7,15 @@
 
 
 
+
 const TEST_URI = "data:text/html;charset=utf-8,<p>bug 660806 - history " +
                  "navigation must not show the autocomplete popup";
 
-add_task(function* () {
-  yield loadTab(TEST_URI);
-
-  let hud = yield openConsole();
-
-  yield consoleOpened(hud);
-});
-
-function consoleOpened(HUD) {
-  let deferred = defer();
-
-  let jsterm = HUD.jsterm;
+add_task(async function () {
+  let { jsterm } = await openNewTabAndConsole(TEST_URI);
   let popup = jsterm.autocompletePopup;
+
+  
   let onShown = function () {
     ok(false, "popup shown");
   };
@@ -42,15 +35,18 @@ function consoleOpened(HUD) {
      "lastInputValue is correct");
 
   EventUtils.synthesizeKey("VK_RETURN", {});
+
+  let onSetInputValue = jsterm.once("set-input-value");
   EventUtils.synthesizeKey("VK_UP", {});
+  await onSetInputValue;
+
+  
+  
+  await new Promise(executeSoon);
 
   is(jsterm.lastInputValue, "window.foobarBug660806.location",
      "lastInputValue is correct, again");
 
-  executeSoon(function () {
-    ok(!popup.isOpen, "popup is not open");
-    popup.off("popup-opened", onShown);
-    executeSoon(deferred.resolve);
-  });
-  return deferred.promise;
-}
+  ok(!popup.isOpen, "popup is not open");
+  popup.off("popup-opened", onShown);
+});
