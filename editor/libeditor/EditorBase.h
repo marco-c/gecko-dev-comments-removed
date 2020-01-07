@@ -391,9 +391,19 @@ public:
   
 
 
+  int32_t NumberOfMaximumTransactions() const
+  {
+    return mTransactionManager ?
+             mTransactionManager->NumberOfMaximumTransactions() : 0;
+  }
+
+  
+
+
   bool IsUndoRedoEnabled() const
   {
-    return !!mTransactionManager;
+    return mTransactionManager &&
+           mTransactionManager->NumberOfMaximumTransactions();
   }
 
   
@@ -424,8 +434,6 @@ public:
     if (!mTransactionManager) {
       return true;
     }
-    
-    
     return mTransactionManager->DisableUndoRedo();
   }
   bool ClearUndoRedo()
