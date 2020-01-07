@@ -4,6 +4,9 @@
 
 
 
+#ifndef mozilla_dom_serviceworkerregistrationimpl_h
+#define mozilla_dom_serviceworkerregistrationimpl_h
+
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/Unused.h"
 #include "nsCycleCollectionParticipant.h"
@@ -161,3 +164,5 @@ private:
 
 } 
 } 
+
+#endif 
