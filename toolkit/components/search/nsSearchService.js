@@ -2257,21 +2257,6 @@ Engine.prototype = {
     if (/^(?:jar:)?(?:\[app\]|\[distribution\])/.test(this._loadPath))
       return true;
 
-    
-    
-    
-    
-    if (Services.locale.defaultLocale == Services.locale.getRequestedLocale() &&
-        !gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR"))
-      return false;
-
-    
-    
-    if (!Services.io.getProtocolHandler("resource")
-                 .QueryInterface(Ci.nsIResProtocolHandler)
-                 .hasSubstitution("search-plugins"))
-      return false;
-
     let uri = makeURI(APP_SEARCH_PREFIX + this._shortName + ".xml");
     if (this.getAnonymizedLoadPath(null, uri) == this._loadPath) {
       
