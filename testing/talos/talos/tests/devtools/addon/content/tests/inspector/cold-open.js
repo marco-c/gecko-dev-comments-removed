@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+const { openToolboxAndLog, closeToolbox, testSetup,
+        testTeardown, SIMPLE_URL } = require("chrome://damp/content/tests/head");
+
+
+module.exports = async function() {
+  await testSetup(SIMPLE_URL);
+  await openToolboxAndLog("cold.inspector", "inspector");
+  await closeToolbox();
+  await testTeardown();
+};
