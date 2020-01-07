@@ -120,17 +120,18 @@ this.ShieldPreferences = {
     viewStudies.classList.add("learnMore", "text-link");
     hContainer.appendChild(viewStudies);
 
+    
     const optOutPref = doc.createElementNS(XUL_NS, "preference");
     optOutPref.setAttribute("id", OPT_OUT_STUDIES_ENABLED_PREF);
     optOutPref.setAttribute("name", OPT_OUT_STUDIES_ENABLED_PREF);
     optOutPref.setAttribute("type", "bool");
 
     
-    doc.defaultView.Preferences.add({ id: OPT_OUT_STUDIES_ENABLED_PREF, type: "bool" });
-
-    
-    const fhrPref = doc.defaultView.Preferences.add({ id: FHR_UPLOAD_ENABLED_PREF, type: "bool" });
-    fhrPref.on("change", function(event) {
+    const fhrPref = doc.createElementNS(XUL_NS, "preference");
+    fhrPref.setAttribute("id", FHR_UPLOAD_ENABLED_PREF);
+    fhrPref.setAttribute("name", FHR_UPLOAD_ENABLED_PREF);
+    fhrPref.setAttribute("type", "bool");
+    fhrPref.addEventListener("change", function(event) {
       
       const eventTargetCheckbox = event.target.ownerDocument.getElementById("optOutStudiesEnabled");
       eventTargetCheckbox.disabled = !Services.prefs.getBoolPref(FHR_UPLOAD_ENABLED_PREF);
@@ -139,5 +140,9 @@ this.ShieldPreferences = {
     
     const parent = doc.getElementById("submitHealthReportBox").closest("vbox");
     parent.appendChild(container);
+
+    const preferences = doc.getElementById("privacyPreferences");
+    preferences.appendChild(optOutPref);
+    preferences.appendChild(fhrPref);
   },
 };

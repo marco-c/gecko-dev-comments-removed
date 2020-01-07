@@ -94,6 +94,10 @@ xul|caption xul|label {
   overflow: auto;
 }
 
+xul|prefpane > xul|*.content-box {
+  overflow: visible;
+}
+
 
 
 xul|groupbox {

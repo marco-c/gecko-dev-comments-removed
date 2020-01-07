@@ -19,6 +19,7 @@ function checkElements(expectedPane) {
     
     
     if (element.nodeName == "keyset" ||
+        element.nodeName == "preferences" ||
         element.id === "drmGroup") {
       continue;
     }

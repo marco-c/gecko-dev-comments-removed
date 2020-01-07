@@ -3,25 +3,11 @@
 
 
 
-
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
 
 var {Sanitizer} = Cu.import("resource:///modules/Sanitizer.jsm", {});
-
-Preferences.addAll([
-  { id: "privacy.cpd.history", type: "bool" },
-  { id: "privacy.cpd.formdata", type: "bool" },
-  { id: "privacy.cpd.downloads", type: "bool", disabled: true },
-  { id: "privacy.cpd.cookies", type: "bool" },
-  { id: "privacy.cpd.cache", type: "bool" },
-  { id: "privacy.cpd.sessions", type: "bool" },
-  { id: "privacy.cpd.offlineApps", type: "bool" },
-  { id: "privacy.cpd.siteSettings", type: "bool" },
-  { id: "privacy.sanitize.timeSpan", type: "int" },
-]);
 
 var gSanitizePromptDialog = {
 
@@ -34,6 +20,14 @@ var gSanitizePromptDialog = {
   get selectedTimespan() {
     var durList = document.getElementById("sanitizeDurationChoice");
     return parseInt(durList.value);
+  },
+
+  get sanitizePreferences() {
+    if (!this._sanitizePreferences) {
+      this._sanitizePreferences =
+        document.getElementById("sanitizePreferences");
+    }
+    return this._sanitizePreferences;
   },
 
   get warningBox() {
@@ -150,18 +144,18 @@ var gSanitizePromptDialog = {
 
 
 
-  _getItemPrefs() {
-    return Preferences.getAll().filter(p => p.id !== "privacy.sanitize.timeSpan");
-  },
-
-  
-
-
-
   onReadGeneric() {
+    var found = false;
+
     
-    
-    var found = this._getItemPrefs().some(pref => !!pref.value && !pref.disabled);
+    var i = 0;
+    while (!found && i < this.sanitizePreferences.childNodes.length) {
+      var preference = this.sanitizePreferences.childNodes[i];
+
+      found = !!preference.value &&
+              !preference.disabled;
+      i++;
+    }
 
     try {
       document.documentElement.getButton("accept").disabled = !found;
@@ -180,19 +174,20 @@ var gSanitizePromptDialog = {
 
 
 
+
   updatePrefs() {
     Sanitizer.prefs.setIntPref("timeSpan", this.selectedTimespan);
 
     
-    Preferences.get("privacy.cpd.downloads").value =
-      Preferences.get("privacy.cpd.history").value;
+    document.getElementById("privacy.cpd.downloads").value =
+      document.getElementById("privacy.cpd.history").value;
 
     
     
-    var prefs = this._getItemPrefs();
-    for (let i = 0; i < prefs.length; ++i) {
-      var p = prefs[i];
-      Services.prefs.setBoolPref(p.name, p.value);
+    var prefs = this.sanitizePreferences.rootBranch;
+    for (let i = 0; i < this.sanitizePreferences.childNodes.length; ++i) {
+      var p = this.sanitizePreferences.childNodes[i];
+      prefs.setBoolPref(p.name, p.value);
     }
   },
 
@@ -202,7 +197,7 @@ var gSanitizePromptDialog = {
   hasNonSelectedItems() {
     let checkboxes = document.querySelectorAll("#itemList > [preference]");
     for (let i = 0; i < checkboxes.length; ++i) {
-      let pref = Preferences.get(checkboxes[i].getAttribute("preference"));
+      let pref = document.getElementById(checkboxes[i].getAttribute("preference"));
       if (!pref.value)
         return true;
     }

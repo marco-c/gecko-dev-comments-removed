@@ -3,29 +3,14 @@
 
 
 
-
-
-Preferences.addAll([
-  { id: "privacy.clearOnShutdown.history", type: "bool" },
-  { id: "privacy.clearOnShutdown.formdata", type: "bool" },
-  { id: "privacy.clearOnShutdown.downloads", type: "bool" },
-  { id: "privacy.clearOnShutdown.cookies", type: "bool" },
-  { id: "privacy.clearOnShutdown.cache", type: "bool" },
-  { id: "privacy.clearOnShutdown.offlineApps", type: "bool" },
-  { id: "privacy.clearOnShutdown.sessions", type: "bool" },
-  { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
-]);
-
 var gSanitizeDialog = Object.freeze({
   init() {
     this.onClearHistoryChanged();
-
-    Preferences.get("privacy.clearOnShutdown.history").on("change", this.onClearHistoryChanged.bind(this));
   },
 
   onClearHistoryChanged() {
-    let downloadsPref = Preferences.get("privacy.clearOnShutdown.downloads");
-    let historyPref = Preferences.get("privacy.clearOnShutdown.history");
+    let downloadsPref = document.getElementById("privacy.clearOnShutdown.downloads");
+    let historyPref = document.getElementById("privacy.clearOnShutdown.history");
     downloadsPref.value = historyPref.value;
   }
 });

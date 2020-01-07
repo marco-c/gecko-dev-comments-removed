@@ -4,8 +4,6 @@
 
 
 
-
-
 var FontBuilder = {
   _enumerator: null,
   get enumerator() {
@@ -93,7 +91,7 @@ var FontBuilder = {
     
     
     
-    const preference = Preferences.get(aElement.getAttribute("preference"));
+    const preference = document.getElementById(aElement.getAttribute("preference"));
     if (preference.value) {
       const fontItems = aElement.getElementsByAttribute("value", preference.value);
 
