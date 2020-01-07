@@ -1790,7 +1790,7 @@ public:
 
 
 
-  nsresult RemoteFrameFullscreenChanged(nsIDOMElement* aFrameElement);
+  nsresult RemoteFrameFullscreenChanged(mozilla::dom::Element* aFrameElement);
 
   
 

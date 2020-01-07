@@ -22,6 +22,9 @@ class nsView;
 struct nsPoint;
 
 namespace mozilla {
+  namespace dom {
+    class Element;
+  } 
   namespace layers {
     class LayerTransactionChild;
     class WebRenderBridgeChild;
@@ -76,7 +79,7 @@ protected:
   
   
   nsIWidget* GetWidget(nsPoint* aOffset = nullptr);
-  nsIWidget* GetWidgetForElement(nsIDOMElement* aElement);
+  nsIWidget* GetWidgetForElement(mozilla::dom::Element* aElement);
 
   nsIPresShell* GetPresShell();
   nsPresContext* GetPresContext();
