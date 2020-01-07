@@ -56,8 +56,6 @@ const FileInputStream = Components.Constructor("@mozilla.org/network/file-input-
                                                "nsIFileInputStream", "init");
 
 const PREF_DB_SCHEMA                  = "extensions.databaseSchema";
-const PREF_XPI_STATE                  = "extensions.xpiState";
-const PREF_BOOTSTRAP_ADDONS           = "extensions.bootstrappedAddons";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
 const PREF_EM_ENABLED_SCOPES          = "extensions.enabledScopes";
 const PREF_EM_STARTUP_SCAN_SCOPES     = "extensions.startupScanScopes";
@@ -75,13 +73,6 @@ const PREF_EM_LAST_APP_BUILD_ID       = "extensions.lastAppBuildId";
 
 const BUILT_IN_ADDONS_URI             = "chrome://browser/content/built_in_addons.json";
 
-const OBSOLETE_PREFERENCES = [
-  "extensions.bootstrappedAddons",
-  "extensions.enabledAddons",
-  "extensions.xpiState",
-  "extensions.installCache",
-];
-
 const URI_EXTENSION_STRINGS           = "chrome://mozapps/locale/extensions/extensions.properties";
 
 const DIR_EXTENSIONS                  = "extensions";
@@ -93,7 +84,6 @@ const FILE_XPI_STATES                 = "addonStartup.json.lz4";
 const FILE_DATABASE                   = "extensions.json";
 const FILE_RDF_MANIFEST               = "install.rdf";
 const FILE_WEB_MANIFEST               = "manifest.json";
-const FILE_XPI_ADDONS_LIST            = "extensions.ini";
 
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_ADDON_APP_DIR               = "XREAddonAppDir";
@@ -292,48 +282,6 @@ function tryGetMtime(file) {
 
 
 
-
-
-
-function getRelativePath(file, dir) {
-  if (dir && dir.contains(file)) {
-    let path = file.getRelativePath(dir);
-    if (AppConstants.platform == "win") {
-      path = path.replace(/\//g, "\\");
-    }
-    return path;
-  }
-  return file.path;
-}
-
-
-
-
-
-
-
-
-
-
-
-function descriptorToPath(descriptor, dir) {
-  try {
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    file.persistentDescriptor = descriptor;
-    return getRelativePath(file, dir);
-  } catch (e) {
-    return null;
-  }
-}
-
-
-
-
-
-
-
-
-
 function isWebExtension(type) {
   return type == "webextension" || type == "webextension-theme";
 }
@@ -513,14 +461,6 @@ const JSON_FIELDS = Object.freeze([
   "version",
 ]);
 
-const BOOTSTRAPPED_FIELDS = Object.freeze([
-  "dependencies",
-  "hasEmbeddedWebExtension",
-  "runInSafeMode",
-  "type",
-  "version",
-]);
-
 class XPIState {
   constructor(location, id, saved = {}) {
     this.location = location;
@@ -543,43 +483,6 @@ class XPIState {
       this.lastModifiedTime = saved.currentModifiedTime;
       this.changed = true;
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static migrate(location, id, saved, bootstrapped) {
-    let data = {
-      enabled: saved.e,
-      path: descriptorToPath(saved.d, location.dir),
-      lastModifiedTime: saved.mt || saved.st,
-      version: saved.v,
-    };
-
-    if (bootstrapped) {
-      data.enabled = true;
-      data.path = descriptorToPath(bootstrapped.descriptor, location.dir);
-
-      for (let field of BOOTSTRAPPED_FIELDS) {
-        if (field in bootstrapped) {
-          data[field] = bootstrapped[field];
-        }
-      }
-    }
-
-    return new XPIState(location, id, data);
   }
 
   
@@ -909,23 +812,6 @@ class XPIStateLocation extends Map {
     for (let [id, metadata] of Object.entries(this.staged)) {
       yield [id, metadata];
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  migrateAddon(id, state, bootstrapped) {
-    this.set(id, XPIState.migrate(this, id, state, bootstrapped));
   }
 
   
@@ -1395,54 +1281,6 @@ var XPIStates = {
 
 
 
-
-
-  migrateStateFromPrefs() {
-    logger.info("No addonStartup.json found. Attempting to migrate data from preferences");
-
-    let state;
-    
-    let bootstrappedAddons;
-    try {
-      state = JSON.parse(Services.prefs.getStringPref(PREF_XPI_STATE));
-      bootstrappedAddons = JSON.parse(Services.prefs.getStringPref(PREF_BOOTSTRAP_ADDONS, "{}"));
-    } catch (e) {
-      logger.warn("Error parsing extensions.xpiState and " +
-                  "extensions.bootstrappedAddons: ${error}",
-                  {error: e});
-
-    }
-
-    for (let [locName, addons] of Object.entries(state)) {
-      for (let [id, addon] of Object.entries(addons)) {
-        let loc = this.getLocation(locName);
-        if (loc) {
-          loc.migrateAddon(id, addon, bootstrappedAddons[id] || null);
-        }
-      }
-    }
-
-    
-    for (let pref of OBSOLETE_PREFERENCES) {
-      Services.prefs.clearUserPref(pref);
-    }
-    OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
-                                FILE_XPI_ADDONS_LIST));
-
-    
-    let data = JSON.parse(JSON.stringify(this));
-
-    logger.debug("Migrated data: ${}", data);
-
-    return data;
-  },
-
-  
-
-
-
-
-
   loadExtensionState() {
     let state;
     try {
@@ -1450,16 +1288,6 @@ var XPIStates = {
     } catch (e) {
       logger.warn("Error parsing extensions state: ${error}",
                   {error: e});
-    }
-
-    if (!state && Services.prefs.getPrefType(PREF_XPI_STATE) != Ci.nsIPrefBranch.PREF_INVALID) {
-      try {
-        state = this.migrateStateFromPrefs();
-      } catch (e) {
-        logger.warn("Error migrating extensions.xpiState and " +
-                    "extensions.bootstrappedAddons: ${error}",
-                    {error: e});
-      }
     }
 
     logger.debug("Loaded add-on state: ${}", state);
@@ -3158,7 +2986,6 @@ var XPIInternal = {
   XPI_PERMISSION,
   awaitPromise,
   canRunInSafeMode,
-  descriptorToPath,
   getExternalType,
   getURIForResourceInFile,
   isTheme,
