@@ -29,17 +29,6 @@ class PropertyName;
 
 }  
 
-extern bool
-AtomIsPinned(JSContext* cx, JSAtom* atom);
-
-#ifdef DEBUG
-
-
-extern bool
-AtomIsPinnedInRuntime(JSRuntime* rt, JSAtom* atom);
-
-#endif 
-
 
 #define DECLARE_PROTO_STR(name,init,clasp) extern const char js_##name##_str[];
 JS_FOR_EACH_PROTOTYPE(DECLARE_PROTO_STR)

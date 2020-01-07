@@ -2082,14 +2082,6 @@ js::StartOffThreadPromiseHelperTask(PromiseHelperTask* task)
 void
 GlobalHelperThreadState::trace(JSTracer* trc, gc::AutoTraceSession& session)
 {
-    
-    
-    
-    
-    Maybe<AutoLockForExclusiveAccess> exclusiveLock;
-    if (!session.maybeLock.isSome())
-        exclusiveLock.emplace(trc->runtime());
-
     AutoLockHelperThreadState lock;
     for (auto builder : ionWorklist(lock))
         builder->trace(trc);
