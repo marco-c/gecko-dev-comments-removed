@@ -14,4 +14,7 @@ pref("dom.ipc.processPrelaunch.enabled", false);
 
 pref("toolkit.telemetry.isGeckoViewMode", true);
 
+pref("toolkit.telemetry.eventping.enabled", false);
+
 pref("geckoview.console.enabled", false);
+

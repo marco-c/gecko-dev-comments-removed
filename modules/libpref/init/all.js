@@ -3219,6 +3219,14 @@ pref("dom.ipc.processCount.file", 1);
 pref("dom.ipc.processCount.extension", 1);
 
 
+pref("dom.ipc.processCount.privileged", 1);
+
+
+
+
+pref("dom.ipc.keepProcessesAlive.privileged", 1);
+
+
 #if defined(XP_WIN)
 pref("dom.ipc.useNativeEventProcessing.content", false);
 #else
@@ -3253,6 +3261,9 @@ pref("browser.tabs.remote.separateFileUriProcess", true);
 
 
 pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
+
+
+pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 
 
 pref("svg.display-lists.hit-testing.enabled", true);
