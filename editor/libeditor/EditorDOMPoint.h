@@ -239,6 +239,16 @@ public:
 
 
   bool
+  IsInNativeAnonymousSubtree() const
+  {
+    return mParent && mParent->IsInNativeAnonymousSubtree();
+  }
+
+  
+
+
+
+  bool
   IsContainerHTMLElement(nsAtom* aTag) const
   {
     return mParent && mParent->IsHTMLElement(aTag);
@@ -529,6 +539,33 @@ public:
     }
     mChild = previousSibling;
     return true;
+  }
+
+  
+
+
+
+
+
+
+  EditorRawDOMPoint
+  GetNonAnonymousSubtreePoint() const
+  {
+    if (NS_WARN_IF(!IsSet())) {
+      return EditorRawDOMPoint();
+    }
+    if (!IsInNativeAnonymousSubtree()) {
+      return EditorRawDOMPoint(*this);
+    }
+    nsINode* parent;
+    for (parent = mParent->GetParentNode();
+         parent && parent->IsInNativeAnonymousSubtree();
+         parent = mParent->GetParentNode()) {
+    }
+    if (!parent) {
+      return EditorRawDOMPoint();
+    }
+    return EditorRawDOMPoint(parent);
   }
 
   bool
