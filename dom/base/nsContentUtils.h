@@ -822,7 +822,7 @@ public:
 
 
   static bool CanLoadImage(nsIURI* aURI,
-                           nsISupports* aContext,
+                           nsINode* aNode,
                            nsIDocument* aLoadingDocument,
                            nsIPrincipal* aLoadingPrincipal,
                            int16_t* aImageBlockingStatus = nullptr,

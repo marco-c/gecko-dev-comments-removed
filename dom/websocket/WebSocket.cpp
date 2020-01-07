@@ -23,6 +23,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "nsAutoPtr.h"
+#include "mozilla/LoadInfo.h"
 #include "nsGlobalWindow.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIDOMWindow.h"
@@ -1652,14 +1653,17 @@ WebSocketImpl::Init(JSContext* aCx,
     
     
     
+    nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
+      new net::LoadInfo(aPrincipal, 
+                        aPrincipal, 
+                        originDoc,
+                        nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                        nsIContentPolicy::TYPE_WEBSOCKET);
+
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
-    rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_WEBSOCKET,
-                                   uri,
-                                   aPrincipal, 
-                                   aPrincipal, 
-                                   originDoc,
+    rv = NS_CheckContentLoadPolicy(uri,
+                                   secCheckLoadInfo,
                                    EmptyCString(),
-                                   nullptr,
                                    &shouldLoad,
                                    nsContentUtils::GetContentPolicy());
     NS_ENSURE_SUCCESS(rv, rv);

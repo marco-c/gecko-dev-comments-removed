@@ -855,15 +855,18 @@ ServiceWorkerManager::Register(mozIDOMWindow* aWindow,
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
+    new LoadInfo(documentPrincipal, 
+                 documentPrincipal, 
+                 doc,
+                 nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+                 nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
+
   
   int16_t decision = nsIContentPolicy::ACCEPT;
-  rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER,
-                                 aScriptURI,
-                                 documentPrincipal, 
-                                 documentPrincipal, 
-                                 doc,
+  rv = NS_CheckContentLoadPolicy(aScriptURI,
+                                 secCheckLoadInfo,
                                  EmptyCString(),
-                                 nullptr,
                                  &decision);
   NS_ENSURE_SUCCESS(rv, rv);
   if (NS_WARN_IF(decision != nsIContentPolicy::ACCEPT)) {

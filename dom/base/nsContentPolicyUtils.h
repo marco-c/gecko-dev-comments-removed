@@ -150,17 +150,13 @@ NS_CP_ContentTypeName(uint32_t contentType)
     if (!policy)                                                              \
         return NS_ERROR_FAILURE;                                              \
                                                                               \
-    return policy-> action (contentType, contentLocation, requestOrigin,      \
-                            context, mimeType, extra, triggeringPrincipal,    \
-                            decision);                                        \
+    return policy-> action (contentLocation, loadInfo, mimeType, decision);   \
   PR_END_MACRO
 
 
 #define CHECK_CONTENT_POLICY_WITH_SERVICE(action, _policy)                    \
   PR_BEGIN_MACRO                                                              \
-    return _policy-> action (contentType, contentLocation, requestOrigin,     \
-                             context, mimeType, extra, triggeringPrincipal,   \
-                             decision);                                       \
+    return _policy-> action (contentLocation, loadInfo, mimeType, decision);  \
   PR_END_MACRO
 
 
@@ -193,12 +189,8 @@ NS_CP_ContentTypeName(uint32_t contentType)
                       do_GetService(                                          \
                               "@mozilla.org/data-document-content-policy;1"); \
                   if (dataPolicy) {                                           \
-                      nsContentPolicyType externalType =                      \
-                          nsContentUtils::InternalContentPolicyTypeToExternal(contentType); \
-                      dataPolicy-> action (externalType, contentLocation,     \
-                                           requestOrigin, context,            \
-                                           mimeType, extra,                   \
-                                           triggeringPrincipal, decision);    \
+                      dataPolicy-> action (contentLocation, loadInfo,         \
+                                           mimeType, decision);               \
                   }                                                           \
               }                                                               \
           }                                                                   \
@@ -220,16 +212,15 @@ NS_CP_ContentTypeName(uint32_t contentType)
 
 
 inline nsresult
-NS_CheckContentLoadPolicy(uint32_t          contentType,
-                          nsIURI           *contentLocation,
-                          nsIPrincipal     *loadingPrincipal,
-                          nsIPrincipal     *triggeringPrincipal,
-                          nsISupports      *context,
+NS_CheckContentLoadPolicy(nsIURI           *contentLocation,
+                          nsILoadInfo      *loadInfo,
                           const nsACString &mimeType,
-                          nsISupports      *extra,
                           int16_t          *decision,
                           nsIContentPolicy *policyService = nullptr)
 {
+    nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
+    nsCOMPtr<nsISupports> context = loadInfo->GetLoadingContext();
+    nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
     CHECK_PRINCIPAL_AND_DATA(ShouldLoad);
     if (policyService) {
         CHECK_CONTENT_POLICY_WITH_SERVICE(ShouldLoad, policyService);
@@ -240,24 +231,16 @@ NS_CheckContentLoadPolicy(uint32_t          contentType,
 
 
 
-
-
-
-
-
-
-
 inline nsresult
-NS_CheckContentProcessPolicy(uint32_t          contentType,
-                             nsIURI           *contentLocation,
-                             nsIPrincipal     *loadingPrincipal,
-                             nsIPrincipal     *triggeringPrincipal,
-                             nsISupports      *context,
+NS_CheckContentProcessPolicy(nsIURI           *contentLocation,
+                             nsILoadInfo      *loadInfo,
                              const nsACString &mimeType,
-                             nsISupports      *extra,
                              int16_t          *decision,
                              nsIContentPolicy *policyService = nullptr)
 {
+    nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
+    nsCOMPtr<nsISupports> context = loadInfo->GetLoadingContext();
+    nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
     CHECK_PRINCIPAL_AND_DATA(ShouldProcess);
     if (policyService) {
         CHECK_CONTENT_POLICY_WITH_SERVICE(ShouldProcess, policyService);
