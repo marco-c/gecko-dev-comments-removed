@@ -89,7 +89,7 @@ DBusRemoteClient::DoSendDBusCommandLine(const char *aProgram, const char *aProfi
   
   
   nsAutoCString profileName;
-  nsresult rv = mozilla::Base64Encode(nsAutoCString(aProfileName), profileName);
+  nsresult rv = mozilla::Base64Encode(nsAutoCString(aProfile), profileName);
   NS_ENSURE_SUCCESS(rv, rv);
   profileName.ReplaceChar("+/=", '_');
 
