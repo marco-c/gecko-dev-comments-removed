@@ -14,27 +14,22 @@
 
 
 
-use euclid::{Transform3D, Vector2D, TypedRect, SideOffsets2D};
+use euclid::{Vector2D, TypedRect, SideOffsets2D};
 use euclid::num::{One, Zero};
 use gfx_traits::{self, StackingContextId};
 use gfx_traits::print_tree::PrintTree;
-use ipc_channel::ipc::IpcSharedMemory;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::{Image, PixelFormat};
-use range::Range;
 use servo_geometry::MaxRect;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::f32;
 use std::fmt;
-use std::sync::Arc;
-use text::TextRun;
-use text::glyph::ByteIndex;
 use webrender_api::{BorderRadius, BorderWidths, BoxShadowClipMode, ClipMode, ColorF};
 use webrender_api::{ComplexClipRegion, ExtendMode, ExternalScrollId, FilterOp, FontInstanceKey};
 use webrender_api::{GlyphInstance, GradientStop, ImageBorder, ImageKey, ImageRendering};
-use webrender_api::{LayoutPoint, LayoutRect, LayoutSize, LayoutVector2D, LineStyle, LocalClip};
-use webrender_api::{MixBlendMode, NormalBorder, ScrollPolicy, ScrollSensitivity};
+use webrender_api::{LayoutPoint, LayoutRect, LayoutSize, LayoutTransform, LayoutVector2D, LineStyle};
+use webrender_api::{LocalClip, MixBlendMode, NormalBorder, ScrollPolicy, ScrollSensitivity};
 use webrender_api::{StickyOffsetBounds, TransformStyle};
 
 pub use style::dom::OpaqueNode;
@@ -102,25 +97,6 @@ impl DisplayList {
             Some(_) => unreachable!("Root element of display list not stacking context."),
             None => LayoutRect::zero(),
         }
-    }
-
-    
-    pub fn text_index(&self, node: OpaqueNode, point_in_item: LayoutPoint) -> Option<usize> {
-        for item in &self.list {
-            match item {
-                &DisplayItem::Text(ref text) => {
-                    let base = item.base();
-                    if base.metadata.node == node {
-                        let point = point_in_item + item.base().bounds.origin.to_vector();
-                        let offset = point - text.baseline_origin;
-                        return Some(text.text_run.range_index_of_advance(&text.range, offset.x));
-                    }
-                },
-                _ => {},
-            }
-        }
-
-        None
     }
 
     pub fn print(&self) {
@@ -209,13 +185,13 @@ pub struct StackingContext {
     pub mix_blend_mode: MixBlendMode,
 
     
-    pub transform: Option<Transform3D<f32>>,
+    pub transform: Option<LayoutTransform>,
 
     
     pub transform_style: TransformStyle,
 
     
-    pub perspective: Option<Transform3D<f32>>,
+    pub perspective: Option<LayoutTransform>,
 
     
     pub scroll_policy: ScrollPolicy,
@@ -234,9 +210,9 @@ impl StackingContext {
                z_index: i32,
                filters: Vec<FilterOp>,
                mix_blend_mode: MixBlendMode,
-               transform: Option<Transform3D<f32>>,
+               transform: Option<LayoutTransform>,
                transform_style: TransformStyle,
-               perspective: Option<Transform3D<f32>>,
+               perspective: Option<LayoutTransform>,
                scroll_policy: ScrollPolicy,
                parent_clipping_and_scrolling: ClippingAndScrolling)
                -> StackingContext {
@@ -651,16 +627,6 @@ pub struct SolidColorDisplayItem {
 pub struct TextDisplayItem {
     
     pub base: BaseDisplayItem,
-
-    
-    #[ignore_malloc_size_of = "Because it is non-owning"]
-    pub text_run: Arc<TextRun>,
-
-    
-    pub range: Range<ByteIndex>,
-
-    
-    pub baseline_origin: LayoutPoint,
     
     pub glyphs: Vec<GlyphInstance>,
     
@@ -682,9 +648,6 @@ pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
 
     pub webrender_image: WebRenderImageInfo,
-
-    #[ignore_malloc_size_of = "Because it is non-owning"]
-    pub image_data: Option<Arc<IpcSharedMemory>>,
 
     
     
@@ -1028,7 +991,7 @@ pub trait SimpleMatrixDetection {
     fn is_identity_or_simple_translation(&self) -> bool;
 }
 
-impl SimpleMatrixDetection for Transform3D<f32> {
+impl SimpleMatrixDetection for LayoutTransform {
     #[inline]
     fn is_identity_or_simple_translation(&self) -> bool {
         let (_0, _1) = (Zero::zero(), One::one());

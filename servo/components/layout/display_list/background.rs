@@ -4,18 +4,25 @@
 
 
 
+
+
+
 #![deny(unsafe_code)]
 
 
 
 use app_units::Au;
 use display_list::ToLayout;
-use euclid::{Point2D, Size2D, Vector2D};
-use gfx::display_list;
-use model::MaybeAuto;
+use euclid::{Point2D, Rect, SideOffsets2D, Size2D, Vector2D};
+use gfx::display_list::{self, BorderDetails, WebRenderImageInfo};
+use model::{self, MaybeAuto};
+use style::computed_values::background_attachment::single_value::T as BackgroundAttachment;
+use style::computed_values::background_clip::single_value::T as BackgroundClip;
+use style::computed_values::background_origin::single_value::T as BackgroundOrigin;
+use style::properties::style_structs::{self, Background};
 use style::values::computed::{Angle, GradientItem};
-use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto, Percentage};
-use style::values::computed::Position;
+use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto};
+use style::values::computed::{NumberOrPercentage, Percentage, Position};
 use style::values::computed::image::{EndingShape, LineDirection};
 use style::values::generics::background::BackgroundSize;
 use style::values::generics::image::{Circle, Ellipse, ShapeExtent};
@@ -23,7 +30,8 @@ use style::values::generics::image::EndingShape as GenericEndingShape;
 use style::values::generics::image::GradientItem as GenericGradientItem;
 use style::values::specified::background::BackgroundRepeatKeyword;
 use style::values::specified::position::{X, Y};
-use webrender_api::{ExtendMode, GradientStop};
+use webrender_api::{BorderRadius, BorderSide, BorderStyle, ColorF, ExtendMode, ImageBorder};
+use webrender_api::{GradientStop, LayoutSize, NinePatchDescriptor, NormalBorder};
 
 
 #[derive(Clone, Copy)]
@@ -35,8 +43,50 @@ struct StopRun {
 }
 
 
+#[derive(Clone, Copy, Debug)]
+pub struct BackgroundPlacement {
+    
+    
+    pub bounds: Rect<Au>,
+    
+    
+    pub tile_size: Size2D<Au>,
+    
+    
+    pub tile_spacing: Size2D<Au>,
+    
+    
+    pub css_clip: Rect<Au>,
+    
+    pub fixed: bool,
+}
 
-pub fn compute_background_image_size(
+trait ResolvePercentage {
+    fn resolve(&self, length: u32) -> u32;
+}
+
+impl ResolvePercentage for NumberOrPercentage {
+    fn resolve(&self, length: u32) -> u32 {
+        match *self {
+            NumberOrPercentage::Percentage(p) => (p.0 * length as f32).round() as u32,
+            NumberOrPercentage::Number(n) => n.round() as u32,
+        }
+    }
+}
+
+
+
+
+
+
+
+pub fn get_cyclic<T>(arr: &[T], index: usize) -> &T {
+    &arr[index % arr.len()]
+}
+
+
+
+fn compute_background_image_size(
     bg_size: BackgroundSize<LengthOrPercentageOrAuto>,
     bounds_size: Size2D<Au>,
     intrinsic_size: Option<Size2D<Au>>,
@@ -96,6 +146,82 @@ pub fn compute_background_image_size(
                 ),
             }
         },
+    }
+}
+
+
+
+
+
+pub fn compute_background_placement(
+    bg: &Background,
+    viewport_size: Size2D<Au>,
+    absolute_bounds: Rect<Au>,
+    intrinsic_size: Option<Size2D<Au>>,
+    border: SideOffsets2D<Au>,
+    border_padding: SideOffsets2D<Au>,
+    index: usize,
+) -> BackgroundPlacement {
+    let bg_attachment = *get_cyclic(&bg.background_attachment.0, index);
+    let bg_clip = *get_cyclic(&bg.background_clip.0, index);
+    let bg_origin = *get_cyclic(&bg.background_origin.0, index);
+    let bg_position_x = get_cyclic(&bg.background_position_x.0, index);
+    let bg_position_y = get_cyclic(&bg.background_position_y.0, index);
+    let bg_repeat = get_cyclic(&bg.background_repeat.0, index);
+    let bg_size = *get_cyclic(&bg.background_size.0, index);
+
+    let css_clip = match bg_clip {
+        BackgroundClip::BorderBox => absolute_bounds,
+        BackgroundClip::PaddingBox => absolute_bounds.inner_rect(border),
+        BackgroundClip::ContentBox => absolute_bounds.inner_rect(border_padding),
+    };
+
+    let mut fixed = false;
+    let mut bounds = match bg_attachment {
+        BackgroundAttachment::Scroll => match bg_origin {
+            BackgroundOrigin::BorderBox => absolute_bounds,
+            BackgroundOrigin::PaddingBox => absolute_bounds.inner_rect(border),
+            BackgroundOrigin::ContentBox => absolute_bounds.inner_rect(border_padding),
+        },
+        BackgroundAttachment::Fixed => {
+            fixed = true;
+            Rect::new(Point2D::origin(), viewport_size)
+        },
+    };
+
+    let mut tile_size = compute_background_image_size(bg_size, bounds.size, intrinsic_size);
+
+    let mut tile_spacing = Size2D::zero();
+    let own_position = bounds.size - tile_size;
+    let pos_x = bg_position_x.to_used_value(own_position.width);
+    let pos_y = bg_position_y.to_used_value(own_position.height);
+    tile_image_axis(
+        bg_repeat.0,
+        &mut bounds.origin.x,
+        &mut bounds.size.width,
+        &mut tile_size.width,
+        &mut tile_spacing.width,
+        pos_x,
+        css_clip.origin.x,
+        css_clip.size.width,
+    );
+    tile_image_axis(
+        bg_repeat.1,
+        &mut bounds.origin.y,
+        &mut bounds.size.height,
+        &mut tile_size.height,
+        &mut tile_spacing.height,
+        pos_y,
+        css_clip.origin.y,
+        css_clip.size.height,
+    );
+
+    BackgroundPlacement {
+        bounds,
+        tile_size,
+        tile_spacing,
+        css_clip,
+        fixed,
     }
 }
 
@@ -175,7 +301,7 @@ fn tile_image(position: &mut Au, size: &mut Au, absolute_anchor_origin: Au, imag
 
 
 
-pub fn tile_image_axis(
+fn tile_image_axis(
     repeat: BackgroundRepeatKeyword,
     position: &mut Au,
     size: &mut Au,
@@ -322,8 +448,7 @@ fn convert_gradient_stops(gradient_items: &[GradientItem], total_length: Au) -> 
     }
 
     
-    
-    let mut stops = Vec::with_capacity(stop_items.len() + 2);
+    let mut stops = Vec::with_capacity(stop_items.len());
     let mut stop_run = None;
     for (i, stop) in stop_items.iter().enumerate() {
         let offset = match stop.position {
@@ -427,14 +552,7 @@ pub fn convert_linear_gradient(
     
     let length = Au::from_f32_px((delta.x.to_f32_px() * 2.0).hypot(delta.y.to_f32_px() * 2.0));
 
-    let mut stops = convert_gradient_stops(stops, length);
-
-    
-    
-    
-    if !repeating {
-        fix_gradient_stops(&mut stops);
-    }
+    let stops = convert_gradient_stops(stops, length);
 
     let center = Point2D::new(size.width / 2, size.height / 2);
 
@@ -473,50 +591,13 @@ pub fn convert_radial_gradient(
         },
     };
 
-    let mut stops = convert_gradient_stops(stops, radius.width);
-    
-    
-    if !repeating {
-        fix_gradient_stops(&mut stops);
-    }
+    let stops = convert_gradient_stops(stops, radius.width);
 
     display_list::RadialGradient {
         center: center.to_layout(),
         radius: radius.to_layout(),
         stops: stops,
         extend_mode: as_gradient_extend_mode(repeating),
-    }
-}
-
-#[inline]
-
-
-
-
-
-
-
-
-
-
-
-fn fix_gradient_stops(stops: &mut Vec<GradientStop>) {
-    if stops.first().unwrap().offset > 0.0 {
-        let color = stops.first().unwrap().color;
-        stops.insert(
-            0,
-            GradientStop {
-                offset: 0.0,
-                color: color,
-            },
-        )
-    }
-    if stops.last().unwrap().offset < 1.0 {
-        let color = stops.last().unwrap().color;
-        stops.push(GradientStop {
-            offset: 1.0,
-            color: color,
-        })
     }
 }
 
@@ -553,5 +634,153 @@ fn position_to_offset(position: LengthOrPercentage, total_length: Au) -> f32 {
         LengthOrPercentage::Calc(calc) => {
             calc.to_used_value(Some(total_length)).unwrap().0 as f32 / total_length.0 as f32
         },
+    }
+}
+
+fn scale_border_radii(radii: BorderRadius, factor: f32) -> BorderRadius {
+    BorderRadius {
+        top_left: radii.top_left * factor,
+        top_right: radii.top_right * factor,
+        bottom_left: radii.bottom_left * factor,
+        bottom_right: radii.bottom_right * factor,
+    }
+}
+
+fn handle_overlapping_radii(size: LayoutSize, radii: BorderRadius) -> BorderRadius {
+    
+    
+    fn scale_factor(radius_a: f32, radius_b: f32, edge_length: f32) -> f32 {
+        let required = radius_a + radius_b;
+
+        if required <= edge_length {
+            1.0
+        } else {
+            edge_length / required
+        }
+    }
+
+    let top_factor = scale_factor(radii.top_left.width, radii.top_right.width, size.width);
+    let bottom_factor = scale_factor(
+        radii.bottom_left.width,
+        radii.bottom_right.width,
+        size.width,
+    );
+    let left_factor = scale_factor(radii.top_left.height, radii.bottom_left.height, size.height);
+    let right_factor = scale_factor(
+        radii.top_right.height,
+        radii.bottom_right.height,
+        size.height,
+    );
+    let min_factor = top_factor
+        .min(bottom_factor)
+        .min(left_factor)
+        .min(right_factor);
+    if min_factor < 1.0 {
+        scale_border_radii(radii, min_factor)
+    } else {
+        radii
+    }
+}
+
+pub fn build_border_radius(
+    abs_bounds: &Rect<Au>,
+    border_style: &style_structs::Border,
+) -> BorderRadius {
+    
+    
+    
+
+    handle_overlapping_radii(
+        abs_bounds.size.to_layout(),
+        BorderRadius {
+            top_left: model::specified_border_radius(
+                border_style.border_top_left_radius,
+                abs_bounds.size,
+            ).to_layout(),
+            top_right: model::specified_border_radius(
+                border_style.border_top_right_radius,
+                abs_bounds.size,
+            ).to_layout(),
+            bottom_right: model::specified_border_radius(
+                border_style.border_bottom_right_radius,
+                abs_bounds.size,
+            ).to_layout(),
+            bottom_left: model::specified_border_radius(
+                border_style.border_bottom_left_radius,
+                abs_bounds.size,
+            ).to_layout(),
+        },
+    )
+}
+
+
+pub fn simple_normal_border(color: ColorF, style: BorderStyle) -> NormalBorder {
+    let side = BorderSide { color, style };
+    NormalBorder {
+        left: side,
+        right: side,
+        top: side,
+        bottom: side,
+        radius: BorderRadius::zero(),
+    }
+}
+
+
+
+
+
+
+
+pub fn calculate_inner_border_radii(
+    mut radii: BorderRadius,
+    offsets: SideOffsets2D<Au>,
+) -> BorderRadius {
+    fn inner_length(x: f32, offset: Au) -> f32 {
+        0.0_f32.max(x - offset.to_f32_px())
+    }
+    radii.top_left.width = inner_length(radii.top_left.width, offsets.left);
+    radii.bottom_left.width = inner_length(radii.bottom_left.width, offsets.left);
+
+    radii.top_right.width = inner_length(radii.top_right.width, offsets.right);
+    radii.bottom_right.width = inner_length(radii.bottom_right.width, offsets.right);
+
+    radii.top_left.height = inner_length(radii.top_left.height, offsets.top);
+    radii.top_right.height = inner_length(radii.top_right.height, offsets.top);
+
+    radii.bottom_left.height = inner_length(radii.bottom_left.height, offsets.bottom);
+    radii.bottom_right.height = inner_length(radii.bottom_right.height, offsets.bottom);
+    radii
+}
+
+
+
+
+pub fn build_image_border_details(
+    webrender_image: WebRenderImageInfo,
+    border_style_struct: &style_structs::Border,
+) -> Option<BorderDetails> {
+    let corners = &border_style_struct.border_image_slice.offsets;
+    let border_image_repeat = &border_style_struct.border_image_repeat;
+    if let Some(image_key) = webrender_image.key {
+        Some(BorderDetails::Image(ImageBorder {
+            image_key: image_key,
+            patch: NinePatchDescriptor {
+                width: webrender_image.width,
+                height: webrender_image.height,
+                slice: SideOffsets2D::new(
+                    corners.0.resolve(webrender_image.height),
+                    corners.1.resolve(webrender_image.width),
+                    corners.2.resolve(webrender_image.height),
+                    corners.3.resolve(webrender_image.width),
+                ),
+            },
+            fill: border_style_struct.border_image_slice.fill,
+            
+            outset: SideOffsets2D::zero(),
+            repeat_horizontal: border_image_repeat.0.to_layout(),
+            repeat_vertical: border_image_repeat.1.to_layout(),
+        }))
+    } else {
+        None
     }
 }
