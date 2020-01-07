@@ -909,7 +909,6 @@ ServoRestyleManager::ProcessPostTraversal(
 
     if (styleFrame) {
       UpdateAdditionalStyleContexts(styleFrame, aRestyleState);
-      styleFrame->UpdateStyleOfOwnedAnonBoxes(childrenRestyleState);
     }
 
     if (!aElement->GetParent()) {
@@ -973,6 +972,10 @@ ServoRestyleManager::ProcessPostTraversal(
     childrenRestyleState.ProcessWrapperRestyles(styleFrame);
 
     if (wasRestyled) {
+      
+      
+      
+      styleFrame->UpdateStyleOfOwnedAnonBoxes(childrenRestyleState);
       UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
     } else if (traverseElementChildren &&
                styleFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
