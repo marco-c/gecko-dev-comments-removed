@@ -1524,7 +1524,7 @@ NativeKey::InitWithKeyOrChar()
     }
   }
 
-  keyboardLayout->InitNativeKey(*this, mModKeyState);
+  keyboardLayout->InitNativeKey(*this);
 
   mIsDeadKey =
     (IsFollowedByDeadCharMessage() ||
@@ -1554,14 +1554,13 @@ NativeKey::InitWithKeyOrChar()
 }
 
 void
-NativeKey::InitCommittedCharsAndModifiersWithFollowingCharMessages(
-             const ModifierKeyState& aModKeyState)
+NativeKey::InitCommittedCharsAndModifiersWithFollowingCharMessages()
 {
   mCommittedCharsAndModifiers.Clear();
   
   
   
-  Modifiers modifiers = aModKeyState.GetModifiers();
+  Modifiers modifiers = mModKeyState.GetModifiers();
   if (IsFollowedByPrintableCharMessage()) {
     modifiers &= ~(MODIFIER_ALT | MODIFIER_CONTROL);
   }
@@ -3840,8 +3839,7 @@ KeyboardLayout::IsSysKey(uint8_t aVirtualKey,
 }
 
 void
-KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
-                              const ModifierKeyState& aModKeyState)
+KeyboardLayout::InitNativeKey(NativeKey& aNativeKey)
 {
   if (mIsPendingToRestoreKeyboardLayout) {
     LoadLayout(::GetKeyboardLayout(0));
@@ -3857,7 +3855,7 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     if (!NativeKey::IsControlChar(ch)) {
       aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_USE_STRING;
       Modifiers modifiers =
-        aModKeyState.GetModifiers() & ~(MODIFIER_ALT | MODIFIER_CONTROL);
+        aNativeKey.GetModifiers() & ~(MODIFIER_ALT | MODIFIER_CONTROL);
       aNativeKey.mCommittedCharsAndModifiers.Append(ch, modifiers);
       return;
     }
@@ -3876,8 +3874,7 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     MOZ_ASSERT(!aNativeKey.IsCharMessage(aNativeKey.mMsg));
     if (aNativeKey.IsFollowedByPrintableCharOrSysCharMessage()) {
       
-      aNativeKey.
-        InitCommittedCharsAndModifiersWithFollowingCharMessages(aModKeyState);
+      aNativeKey.InitCommittedCharsAndModifiersWithFollowingCharMessages();
       MOZ_ASSERT(!aNativeKey.mCommittedCharsAndModifiers.IsEmpty());
 
       
@@ -3888,11 +3885,11 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
       
       
       if (IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode) &&
-          (aModKeyState.IsControl() ^ aModKeyState.IsAlt())) {
-        ModifierKeyState state = aModKeyState;
+          (aNativeKey.IsControl() ^ aNativeKey.IsAlt())) {
+        ModifierKeyState state = aNativeKey.ModifierKeyStateRef();
         state.Unset(MODIFIER_ALT | MODIFIER_CONTROL);
         UniCharsAndModifiers charsWithoutModifier =
-          GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, state);
+          GetUniCharsAndModifiers(aNativeKey.GenericVirtualKeyCode(), state);
         aNativeKey.mCanIgnoreModifierStateAtKeyPress =
           !charsWithoutModifier.UniCharsEqual(
                                   aNativeKey.mCommittedCharsAndModifiers);
@@ -3920,7 +3917,7 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
 
   
   
-  if (MaybeInitNativeKeyAsDeadKey(aNativeKey, aModKeyState)) {
+  if (MaybeInitNativeKeyAsDeadKey(aNativeKey)) {
     return;
   }
 
@@ -3941,12 +3938,11 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
   
   
   
-  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
+  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey)) {
     return;
   }
 
-  UniCharsAndModifiers baseChars =
-    GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
+  UniCharsAndModifiers baseChars = GetUniCharsAndModifiers(aNativeKey);
 
   
   
@@ -3966,13 +3962,10 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
 }
 
 bool
-KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
-                  NativeKey& aNativeKey,
-                  const ModifierKeyState& aModKeyState)
+KeyboardLayout::MaybeInitNativeKeyAsDeadKey(NativeKey& aNativeKey)
 {
   
-  if (!IsInDeadKeySequence() &&
-      !IsDeadKey(aNativeKey.mOriginalVirtualKeyCode, aModKeyState)) {
+  if (!IsInDeadKeySequence() && !IsDeadKey(aNativeKey)) {
     return false;
   }
 
@@ -3987,10 +3980,10 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
   
   bool isDeadKeyUpEvent =
     !aNativeKey.IsKeyDownMessage() &&
-    mActiveDeadKeys.Contains(aNativeKey.mOriginalVirtualKeyCode);
+    mActiveDeadKeys.Contains(aNativeKey.GenericVirtualKeyCode());
 
   if (isDeadKeyDownEvent || isDeadKeyUpEvent) {
-    ActivateDeadKeyState(aNativeKey, aModKeyState);
+    ActivateDeadKeyState(aNativeKey);
     
     
     
@@ -4006,14 +3999,14 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
   
   if (!IsInDeadKeySequence()) {
     aNativeKey.mCommittedCharsAndModifiers =
-      GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
+      GetUniCharsAndModifiers(aNativeKey);
     return true;
   }
 
   
   
   
-  if (!IsDeadKey(aNativeKey.mOriginalVirtualKeyCode, aModKeyState)) {
+  if (!IsDeadKey(aNativeKey)) {
     return false;
   }
 
@@ -4024,15 +4017,14 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
 
   
   
-  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey, aModKeyState)) {
+  if (MaybeInitNativeKeyWithCompositeChar(aNativeKey)) {
     return true;
   }
 
   
   
   UniCharsAndModifiers prevDeadChars = GetDeadUniCharsAndModifiers();
-  UniCharsAndModifiers newChars =
-    GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
+  UniCharsAndModifiers newChars = GetUniCharsAndModifiers(aNativeKey);
   
   aNativeKey.mCommittedCharsAndModifiers = prevDeadChars + newChars;
   if (aNativeKey.IsKeyDownMessage()) {
@@ -4042,9 +4034,7 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
 }
 
 bool
-KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
-                  NativeKey& aNativeKey,
-                  const ModifierKeyState& aModKeyState)
+KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(NativeKey& aNativeKey)
 {
   if (!IsInDeadKeySequence()) {
     return false;
@@ -4054,8 +4044,7 @@ KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
     return false;
   }
 
-  UniCharsAndModifiers baseChars =
-    GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
+  UniCharsAndModifiers baseChars = GetUniCharsAndModifiers(aNativeKey);
   if (baseChars.IsEmpty() || !baseChars.CharAt(0)) {
     return false;
   }
@@ -4086,20 +4075,6 @@ KeyboardLayout::GetUniCharsAndModifiers(
     return result;
   }
   return mVirtualKeys[key].GetUniChars(aShiftState);
-}
-
-UniCharsAndModifiers
-KeyboardLayout::GetNativeUniCharsAndModifiers(
-                  uint8_t aVirtualKey,
-                  const ModifierKeyState& aModKeyState) const
-{
-  int32_t key = GetKeyIndex(aVirtualKey);
-  if (key < 0) {
-    return UniCharsAndModifiers();
-  }
-  VirtualKey::ShiftState shiftState =
-    VirtualKey::ModifierKeyStateToShiftState(aModKeyState);
-  return mVirtualKeys[key].GetNativeUniChars(shiftState);
 }
 
 UniCharsAndModifiers
@@ -4533,8 +4508,7 @@ KeyboardLayout::EnsureDeadKeyActive(bool aIsActive,
 }
 
 void
-KeyboardLayout::ActivateDeadKeyState(const NativeKey& aNativeKey,
-                                     const ModifierKeyState& aModKeyState)
+KeyboardLayout::ActivateDeadKeyState(const NativeKey& aNativeKey)
 {
   
   if (!aNativeKey.IsKeyDownMessage()) {
@@ -4542,8 +4516,7 @@ KeyboardLayout::ActivateDeadKeyState(const NativeKey& aNativeKey,
   }
 
   mActiveDeadKeys.AppendElement(aNativeKey.mOriginalVirtualKeyCode);
-  mDeadKeyShiftStates.AppendElement(
-    VirtualKey::ModifierKeyStateToShiftState(aModKeyState));
+  mDeadKeyShiftStates.AppendElement(aNativeKey.GetShiftState());
 }
 
 void
