@@ -1138,7 +1138,7 @@ nsNSSCertificateDB::GetCerts(nsIX509CertList **_retval)
 
   
   
-  nssCertList = new nsNSSCertList(Move(certList));
+  nssCertList = new nsNSSCertList(std::move(certList));
 
   nssCertList.forget(_retval);
   return NS_OK;
@@ -1224,7 +1224,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
 
   nsCOMPtr<nsIX509CertList> nssCertList;
   
-  nssCertList = new nsNSSCertList(Move(resultChain));
+  nssCertList = new nsNSSCertList(std::move(resultChain));
   NS_ENSURE_TRUE(nssCertList, NS_ERROR_FAILURE);
 
   *_retval = mozilla::pkix::MapResultToPRErrorCode(result);

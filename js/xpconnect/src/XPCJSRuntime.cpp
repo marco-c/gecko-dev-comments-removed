@@ -2875,7 +2875,7 @@ XPCJSRuntime::Initialize(JSContext* cx)
     
     
     mozilla::UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
-    js::SetSourceHook(cx, Move(hook));
+    js::SetSourceHook(cx, std::move(hook));
 
     
     RegisterStrongMemoryReporter(new JSMainRuntimeRealmsReporter());

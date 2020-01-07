@@ -942,7 +942,7 @@ PresShell::Init(nsIDocument* aDocument,
   
   
   
-  mStyleSet = Move(aStyleSet);
+  mStyleSet = std::move(aStyleSet);
   mStyleSet->Init(aPresContext);
 
   
@@ -4279,7 +4279,7 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
       if (!mIsDestroying) {
         nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
-        AutoProfilerStyleMarker tracingStyleFlush(Move(mStyleCause));
+        AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause));
 #endif
 
         mPresContext->RestyleManager()->ProcessPendingRestyles();
@@ -4303,7 +4303,7 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     if (!mIsDestroying) {
       nsAutoScriptBlocker scriptBlocker;
 #ifdef MOZ_GECKO_PROFILER
-      AutoProfilerStyleMarker tracingStyleFlush(Move(mStyleCause));
+      AutoProfilerStyleMarker tracingStyleFlush(std::move(mStyleCause));
 #endif
 
       mPresContext->RestyleManager()->ProcessPendingRestyles();
@@ -4326,7 +4326,7 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
         !mIsDestroying) {
 #ifdef MOZ_GECKO_PROFILER
       AutoProfilerTracing tracingLayoutFlush("Paint", "Reflow",
-                                              Move(mReflowCause));
+                                              std::move(mReflowCause));
       mReflowCause = nullptr;
 #endif
       didLayoutFlush = true;
@@ -5125,7 +5125,7 @@ PresShell::RenderNode(nsINode* aNode,
   }
 
   UniquePtr<RangePaintInfo> info = CreateRangePaintInfo(range, area, false);
-  if (info && !rangeItems.AppendElement(Move(info))) {
+  if (info && !rangeItems.AppendElement(std::move(info))) {
     return nullptr;
   }
 
@@ -5171,7 +5171,7 @@ PresShell::RenderSelection(Selection* aSelection,
     RefPtr<nsRange> range = aSelection->GetRangeAt(r);
 
     UniquePtr<RangePaintInfo> info = CreateRangePaintInfo(range, area, true);
-    if (info && !rangeItems.AppendElement(Move(info))) {
+    if (info && !rangeItems.AppendElement(std::move(info))) {
       return nullptr;
     }
   }
@@ -5515,7 +5515,7 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll)
       return;
     }
 
-    mSynthMouseMoveEvent = Move(ev);
+    mSynthMouseMoveEvent = std::move(ev);
   }
 }
 
@@ -6068,7 +6068,7 @@ PresShell::ScheduleApproximateFrameVisibilityUpdateNow()
     mDocument->Dispatch(TaskCategory::Other, do_AddRef(event));
 
   if (NS_SUCCEEDED(rv)) {
-    mUpdateApproximateFrameVisibilityEvent = Move(event);
+    mUpdateApproximateFrameVisibilityEvent = std::move(event);
   }
 }
 
@@ -6253,7 +6253,7 @@ PresShell::Paint(nsView*         aViewToPaint,
       
       
       if (computeInvalidRect && layerManager->GetRoot()) {
-        props = Move(LayerProperties::CloneFrom(layerManager->GetRoot()));
+        props = std::move(LayerProperties::CloneFrom(layerManager->GetRoot()));
       }
 
       MaybeSetupTransactionIdAllocator(layerManager, presContext);
@@ -9755,7 +9755,7 @@ PresShell::VerifyIncrementalReflow()
   
   UniquePtr<ServoStyleSet> newSet = CloneStyleSet(StyleSet());
 
-  nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, Move(newSet));
+  nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, std::move(newSet));
   NS_ENSURE_TRUE(sh, false);
   
   sh->SetVerifyReflowEnable(false); 
