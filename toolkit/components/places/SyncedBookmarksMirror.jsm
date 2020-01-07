@@ -3300,9 +3300,9 @@ class BookmarkMerger {
     
     
     
-    let locallyDeleted = this.checkForLocalDeletionOfRemoteNode(mergedNode,
-      remoteChildNode);
-    if (locallyDeleted) {
+    let locallyMovedOrDeleted = this.checkForLocalMoveOrDeletionOfRemoteNode(
+      mergedNode, remoteChildNode);
+    if (locallyMovedOrDeleted) {
       return true;
     }
 
@@ -3426,9 +3426,9 @@ class BookmarkMerger {
     
     
     
-    let remotelyDeleted = this.checkForRemoteDeletionOfLocalNode(mergedNode,
-      localChildNode);
-    if (remotelyDeleted) {
+    let remotelyMovedOrDeleted = this.checkForRemoteMoveOrDeletionOfLocalNode(
+      mergedNode, localChildNode);
+    if (remotelyMovedOrDeleted) {
       return true;
     }
 
@@ -3584,7 +3584,12 @@ class BookmarkMerger {
 
 
 
-  checkForLocalDeletionOfRemoteNode(mergedNode, remoteNode) {
+  checkForLocalMoveOrDeletionOfRemoteNode(mergedNode, remoteNode) {
+    if (this.mergedGuids.has(remoteNode.guid)) {
+      
+      return true;
+    }
+
     if (!this.localTree.isDeleted(remoteNode.guid)) {
       return false;
     }
@@ -3638,7 +3643,12 @@ class BookmarkMerger {
 
 
 
-  checkForRemoteDeletionOfLocalNode(mergedNode, localNode) {
+  checkForRemoteMoveOrDeletionOfLocalNode(mergedNode, localNode) {
+    if (this.mergedGuids.has(localNode.guid)) {
+      
+      return true;
+    }
+
     if (!this.remoteTree.isDeleted(localNode.guid)) {
       return false;
     }
@@ -3688,9 +3698,9 @@ class BookmarkMerger {
     let remoteOrphanNodes = [];
 
     for (let remoteChildNode of remoteNode.children) {
-      let locallyDeleted = this.checkForLocalDeletionOfRemoteNode(mergedNode,
-        remoteChildNode);
-      if (locallyDeleted) {
+      let locallyMovedOrDeleted = this.checkForLocalMoveOrDeletionOfRemoteNode(
+        mergedNode, remoteChildNode);
+      if (locallyMovedOrDeleted) {
         
         
         continue;
@@ -3722,9 +3732,9 @@ class BookmarkMerger {
 
     let localOrphanNodes = [];
     for (let localChildNode of localNode.children) {
-      let remotelyDeleted = this.checkForRemoteDeletionOfLocalNode(mergedNode,
-        localChildNode);
-      if (remotelyDeleted) {
+      let remotelyMovedOrDeleted = this.checkForRemoteMoveOrDeletionOfLocalNode(
+        mergedNode, localChildNode);
+      if (remotelyMovedOrDeleted) {
         
         
         continue;
