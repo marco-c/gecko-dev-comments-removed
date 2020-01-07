@@ -58,7 +58,6 @@ const startupPhases = {
   
   "before first paint": {blacklist: {
     components: new Set([
-      "UnifiedComplete.js",
       "nsSearchService.js",
     ]),
     modules: new Set([
@@ -113,6 +112,9 @@ const startupPhases = {
   
   
   "before becoming idle": {blacklist: {
+    components: new Set([
+      "UnifiedComplete.js",
+    ]),
     modules: new Set([
       "resource://gre/modules/AsyncPrefs.jsm",
       "resource://gre/modules/LoginManagerContextMenu.jsm",

@@ -155,45 +155,7 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   mTree = nullptr;
 
   
-  uint32_t searchCount;
-  input->GetSearchCount(&searchCount);
-  mResults.SetCapacity(searchCount);
-  mSearches.SetCapacity(searchCount);
-  mImmediateSearchesCount = 0;
-
-  const char *searchCID = kAutoCompleteSearchCID;
-
-  
   mClearingAutoFillSearchesAgain = false;
-
-  for (uint32_t i = 0; i < searchCount; ++i) {
-    
-    nsAutoCString searchName;
-    input->GetSearchAt(i, searchName);
-    nsAutoCString cid(searchCID);
-    cid.Append(searchName);
-
-    
-    nsCOMPtr<nsIAutoCompleteSearch> search = do_GetService(cid.get());
-    if (search) {
-      mSearches.AppendObject(search);
-
-      
-      nsCOMPtr<nsIAutoCompleteSearchDescriptor> searchDesc =
-        do_QueryInterface(search);
-      if (searchDesc) {
-        uint16_t searchType = nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
-        if (NS_SUCCEEDED(searchDesc->GetSearchType(&searchType)) &&
-            searchType == nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE) {
-          mImmediateSearchesCount++;
-        }
-
-        if (!mClearingAutoFillSearchesAgain) {
-          searchDesc->GetClearingAutoFillSearchesAgain(&mClearingAutoFillSearchesAgain);
-        }
-      }
-    }
-  }
 
   return NS_OK;
 }
@@ -1380,11 +1342,51 @@ nsAutoCompleteController::StartSearches()
   if (mTimer || !mInput)
     return NS_OK;
 
+  nsCOMPtr<nsIAutoCompleteInput> input(mInput);
+
+  if (!mSearches.Length()) {
+    
+    uint32_t searchCount;
+    input->GetSearchCount(&searchCount);
+    mResults.SetCapacity(searchCount);
+    mSearches.SetCapacity(searchCount);
+    mImmediateSearchesCount = 0;
+
+    const char *searchCID = kAutoCompleteSearchCID;
+
+    for (uint32_t i = 0; i < searchCount; ++i) {
+      
+      nsAutoCString searchName;
+      input->GetSearchAt(i, searchName);
+      nsAutoCString cid(searchCID);
+      cid.Append(searchName);
+
+      
+      nsCOMPtr<nsIAutoCompleteSearch> search = do_GetService(cid.get());
+      if (search) {
+        mSearches.AppendObject(search);
+
+        
+        nsCOMPtr<nsIAutoCompleteSearchDescriptor> searchDesc =
+          do_QueryInterface(search);
+        if (searchDesc) {
+          uint16_t searchType = nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_DELAYED;
+          if (NS_SUCCEEDED(searchDesc->GetSearchType(&searchType)) &&
+              searchType == nsIAutoCompleteSearchDescriptor::SEARCH_TYPE_IMMEDIATE) {
+            mImmediateSearchesCount++;
+          }
+
+          if (!mClearingAutoFillSearchesAgain) {
+            searchDesc->GetClearingAutoFillSearchesAgain(&mClearingAutoFillSearchesAgain);
+          }
+        }
+      }
+    }
+  }
+
   
   
   MaybeCompletePlaceholder();
-
-  nsCOMPtr<nsIAutoCompleteInput> input(mInput);
 
   
   uint32_t timeout;
