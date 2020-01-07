@@ -464,11 +464,6 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
     void clear();
 
     
-    bool copy(JSContext* cx, const JSStructuredCloneData& data,
-              uint32_t version=JS_STRUCTURED_CLONE_VERSION,
-              const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
-
-    
 
 
 
