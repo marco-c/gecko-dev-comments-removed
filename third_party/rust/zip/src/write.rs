@@ -424,8 +424,7 @@ fn write_local_file_header<T: Write>(writer: &mut T, file: &ZipFileData) -> ZipR
     
     try!(writer.write_u32::<LittleEndian>(spec::LOCAL_FILE_HEADER_SIGNATURE));
     
-    let version_made_by = (file.system as u16) << 8 | (file.version_made_by as u16);
-    try!(writer.write_u16::<LittleEndian>(version_made_by));
+    try!(writer.write_u16::<LittleEndian>(file.version_needed()));
     
     let flag = if !file.file_name.is_ascii() { 1u16 << 11 } else { 0 };
     try!(writer.write_u16::<LittleEndian>(flag));
@@ -472,7 +471,7 @@ fn write_central_directory_header<T: Write>(writer: &mut T, file: &ZipFileData) 
     let version_made_by = (file.system as u16) << 8 | (file.version_made_by as u16);
     try!(writer.write_u16::<LittleEndian>(version_made_by));
     
-    try!(writer.write_u16::<LittleEndian>(20));
+    try!(writer.write_u16::<LittleEndian>(file.version_needed()));
     
     let flag = if !file.file_name.is_ascii() { 1u16 << 11 } else { 0 };
     try!(writer.write_u16::<LittleEndian>(flag));

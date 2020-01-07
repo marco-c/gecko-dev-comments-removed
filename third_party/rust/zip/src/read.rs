@@ -416,6 +416,11 @@ impl<'a> ZipFile<'a> {
         &*self.data.file_name_raw
     }
     
+    
+    pub fn sanitized_name(&self) -> ::std::path::PathBuf {
+        self.data.file_name_sanitized()
+    }
+    
     pub fn comment(&self) -> &str {
         &*self.data.file_comment
     }
