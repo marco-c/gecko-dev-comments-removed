@@ -139,17 +139,11 @@ function assert_iframe_with_csp(t, url, csp, shouldBlock, urlId, blockedURI) {
     }));
   } else {
     
-    window.addEventListener('message', t.step_func(e => {
-      if (e.source != i.contentWindow)
-        return;
-      assert_true(loaded[urlId]);
-      if (i.onloadReceived)
-        t.done();
-    }));
     i.onload = t.step_func(function () {
-      if (loaded[urlId])
-        t.done();
-      i.onloadReceived = true;
+      
+      setTimeout(t.step_func_done(function () {
+        assert_true(loaded[urlId]);
+      }), 1);
     });
   }
   document.body.appendChild(i);
