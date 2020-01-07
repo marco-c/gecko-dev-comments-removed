@@ -4771,6 +4771,10 @@ nsIDocument::SetContainer(nsDocShell* aContainer)
   }
 
   EnumerateActivityObservers(NotifyActivityChanged, nullptr);
+
+  
+  
+  UpdateDocumentStates(NS_DOCUMENT_STATE_WINDOW_INACTIVE);
   if (!aContainer) {
     return;
   }
