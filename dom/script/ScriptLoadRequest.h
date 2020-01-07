@@ -174,6 +174,13 @@ public:
     return mScriptMode == ScriptMode::eAsync;
   }
 
+  virtual bool IsTopLevel() const
+  {
+    
+    return true;
+  }
+
+
   void MaybeCancelOffThreadScript();
   void DropBytecodeCacheReferences();
 
