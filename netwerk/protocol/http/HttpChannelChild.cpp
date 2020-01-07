@@ -582,6 +582,10 @@ HttpChannelChild::OnStartRequest(const nsresult& channelStatus,
     mStatus = channelStatus;
   }
 
+  
+  MOZ_ASSERT(!requestHeaders.HasHeader(nsHttp::Cookie));
+  MOZ_ASSERT(!nsHttpResponseHead(responseHead).HasHeader(nsHttp::Set_Cookie));
+
   if (useResponseHead && !mCanceled)
     mResponseHead = new nsHttpResponseHead(responseHead);
 
@@ -1665,6 +1669,9 @@ HttpChannelChild::RecvRedirect1Begin(const uint32_t& registrarId,
   
   
   mPeerAddr = oldPeerAddr;
+
+  
+  MOZ_ASSERT(!nsHttpResponseHead(responseHead).HasHeader(nsHttp::Set_Cookie));
 
   mEventQ->RunOrEnqueue(new Redirect1Event(this, registrarId, newUri,
                                            redirectFlags, loadInfoForwarder,
