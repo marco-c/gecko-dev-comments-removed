@@ -98,7 +98,7 @@ async function checkBookmarkedPageTitle(url, default_title, overridden_title) {
 
   
   
-  PlacesCommandHook.bookmarkPage(gBrowser.selectedBrowser, url, overridden_title);
+  PlacesCommandHook.bookmarkPage(url, overridden_title);
   await promiseBookmark;
 
   let bookmark = await PlacesUtils.bookmarks.fetch({url});
@@ -121,7 +121,7 @@ async function checkBookmark(url, expected_title) {
 
   let promiseBookmark = PlacesTestUtils.waitForNotification("onItemAdded",
     (id, parentId, index, type, itemUrl) => itemUrl.equals(gBrowser.selectedBrowser.currentURI));
-  PlacesCommandHook.bookmarkPage(gBrowser.selectedBrowser);
+  PlacesCommandHook.bookmarkPage();
   await promiseBookmark;
 
   let bookmark = await PlacesUtils.bookmarks.fetch({url});

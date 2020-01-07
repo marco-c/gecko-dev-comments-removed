@@ -995,22 +995,12 @@ nsContextMenu.prototype = {
       target: this.target,
     });
 
-    
-    let {documentURIObject} = gContextMenuContentData;
-
     let onMessage = (message) => {
       mm.removeMessageListener("ContextMenu:SaveVideoFrameAsImage:Result", onMessage);
-      
       let dataURL = message.data.dataURL;
-      saveImageURL(dataURL, name, "SaveImageTitle",
-                   true, 
-                   false, 
-                   documentURIObject, 
-                   null, 
-                   null, 
-                   null, 
-                   isPrivate,
-                   this.principal);
+      saveImageURL(dataURL, name, "SaveImageTitle", true, false,
+                   document.documentURIObject, null, null, null,
+                   isPrivate);
     };
     mm.addMessageListener("ContextMenu:SaveVideoFrameAsImage:Result", onMessage);
   },
@@ -1248,15 +1238,13 @@ nsContextMenu.prototype = {
       this._canvasToBlobURL(this.target).then(function(blobURL) {
         saveImageURL(blobURL, "canvas.png", "SaveImageTitle",
                      true, false, referrerURI, null, null, null,
-                     isPrivate,
-                     document.nodePrincipal );
+                     isPrivate);
       }, Cu.reportError);
     } else if (this.onImage) {
       urlSecurityCheck(this.mediaURL, this.principal);
       saveImageURL(this.mediaURL, null, "SaveImageTitle", false,
                    false, referrerURI, null, gContextMenuContentData.contentType,
-                   gContextMenuContentData.contentDisposition, isPrivate,
-                   this.principal);
+                   gContextMenuContentData.contentDisposition, isPrivate);
     } else if (this.onVideo || this.onAudio) {
       var dialogTitle = this.onVideo ? "SaveVideoTitle" : "SaveAudioTitle";
       this.saveHelper(this.mediaURL, null, dialogTitle, false, doc, referrerURI,
@@ -1432,7 +1420,7 @@ nsContextMenu.prototype = {
 
   bookmarkThisPage: function CM_bookmarkThisPage() {
     window.top.PlacesCommandHook
-              .bookmarkPage(this.browser)
+              .bookmarkPage()
               .catch(Cu.reportError);
   },
 
