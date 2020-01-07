@@ -925,7 +925,7 @@ impl<T: 'static> Arc<T> {
 
 
 
-#[derive(Eq, Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ArcBorrow<'a, T: 'a>(&'a T);
 
 impl<'a, T> Copy for ArcBorrow<'a, T> {}

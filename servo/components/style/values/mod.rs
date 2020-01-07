@@ -71,7 +71,7 @@ where
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, MallocSizeOf, Serialize))]
-#[derive(Clone, Copy, Debug, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Impossible {}
 
 
@@ -162,7 +162,7 @@ impl ToCss for CustomIdent {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, ToComputedValue, SpecifiedValueInfo)]
+#[derive(Clone, Debug, MallocSizeOf, SpecifiedValueInfo, ToComputedValue)]
 pub enum KeyframesName {
     
     Ident(CustomIdent),
