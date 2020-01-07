@@ -1537,6 +1537,13 @@ nsIFrame::HasAnimationOfTransform() const
 }
 
 bool
+nsIFrame::ChildrenHavePerspective(const nsStyleDisplay* aStyleDisplay) const
+{
+  MOZ_ASSERT(aStyleDisplay == StyleDisplay());
+  return aStyleDisplay->HasPerspective(this);
+}
+
+bool
 nsIFrame::HasOpacityInternal(float aThreshold,
                              EffectSet* aEffectSet) const
 {
@@ -2954,12 +2961,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   
   
-  
-  
-  
   bool useOpacity = HasVisualOpacity(effectSet) &&
                     !nsSVGUtils::CanOptimizeOpacity(this) &&
-                    (!usingSVGEffects || nsDisplayOpacity::MayNeedActiveLayer(this));
+                    (!usingSVGEffects || nsDisplayOpacity::NeedsActiveLayer(aBuilder, this));
   bool useBlendMode = effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL;
   bool useStickyPosition = disp->mPosition == NS_STYLE_POSITION_STICKY &&
     IsScrollFrameActive(aBuilder,
@@ -10993,7 +10997,7 @@ nsIFrame::IsVisuallyAtomic(EffectSet* aEffectSet,
          IsTransformed(aStyleDisplay) ||
          
          
-         aStyleDisplay->mChildPerspective.GetUnit() == eStyleUnit_Coord ||
+         ChildrenHavePerspective(aStyleDisplay) ||
          aStyleEffects->mMixBlendMode != NS_STYLE_BLEND_NORMAL ||
          nsSVGIntegrationUtils::UsingEffectsForFrame(this);
 }

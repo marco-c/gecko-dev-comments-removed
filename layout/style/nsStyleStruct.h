@@ -2527,6 +2527,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
 
 
+  inline bool HasPerspective(const nsIFrame* aContextFrame) const;
+
+  
+
+
+
+
   inline bool IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const;
 
   
