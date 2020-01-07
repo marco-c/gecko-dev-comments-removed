@@ -1675,7 +1675,7 @@ class StaticAnalysis(MachCommandBase):
         
         
         common_args.append('-header-filter=%s' %
-                           (header_filter if len(header_filter) else ''.join(source)))
+                           (header_filter if len(header_filter) else '|'.join(source)))
 
         if fix:
             common_args.append('-fix')
@@ -1692,7 +1692,7 @@ class StaticAnalysis(MachCommandBase):
             return 0
 
         args = [python, self._run_clang_tidy_path, '-p', self.topobjdir]
-        args += ['-j', str(jobs)] + source + common_args
+        args += ['-j', str(jobs)] + common_args + source
         cwd = self.topobjdir
 
         monitor = StaticAnalysisMonitor(self.topsrcdir, self.topobjdir, total)
