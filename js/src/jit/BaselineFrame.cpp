@@ -142,7 +142,7 @@ BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues)
         
         
         
-        JSJitFrameIter frame(cx);
+        JSJitFrameIter frame(cx->activation()->asJit());
         MOZ_ASSERT(frame.returnAddress() == nullptr);
         BaselineScript* baseline = fp->script()->baselineScript();
         frame.current()->setReturnAddress(baseline->returnAddressForIC(baseline->icEntry(0)));

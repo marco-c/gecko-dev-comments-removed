@@ -112,7 +112,6 @@ class JSJitFrameIter
   public:
     
     explicit JSJitFrameIter(const JitActivation* activation);
-    explicit JSJitFrameIter(JSContext* cx);
 
     
     void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
