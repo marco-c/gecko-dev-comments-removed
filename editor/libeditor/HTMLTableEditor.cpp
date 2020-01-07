@@ -3168,11 +3168,7 @@ HTMLEditor::GetSelectedOrParentTableElement(nsAString& aTagName,
     
     if (anchorNode->HasChildNodes()) {
       nsINode* selectedNode = selection->GetChildAtAnchorOffset();
-      if (!selectedNode) {
-        selectedNode = anchorNode;
-        
-        
-      } else {
+      if (selectedNode) {
         if (selectedNode->IsHTMLElement(nsGkAtoms::td)) {
           tableOrCellElement = selectedNode->AsElement();
           aTagName = tdName;
