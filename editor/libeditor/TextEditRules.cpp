@@ -1045,9 +1045,12 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
     }
 
     
-    rv = CheckBidiLevelForDeletion(aSelection, startNode, startOffset,
+    rv = CheckBidiLevelForDeletion(aSelection,
+                                   EditorRawDOMPoint(startNode, startOffset),
                                    aCollapsedAction, aCancel);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     if (*aCancel) {
       return NS_OK;
     }
