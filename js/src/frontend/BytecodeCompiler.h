@@ -124,10 +124,13 @@ IsKeyword(JSLinearString* str);
 void
 TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
+#if defined(JS_BUILD_BINAST)
+
 
 void
 TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
+#endif 
 
 class MOZ_STACK_CLASS AutoFrontendTraceLog
 {
