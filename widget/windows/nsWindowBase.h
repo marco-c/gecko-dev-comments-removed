@@ -25,7 +25,7 @@ public:
   
 
 
-  virtual HWND GetWindowHandle() final {
+  HWND GetWindowHandle() {
     return static_cast<HWND>(GetNativeData(NS_NATIVE_WINDOW));
   }
 
