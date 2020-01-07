@@ -75,6 +75,10 @@ public:
   
   static bool RequestContextEnabled();
   static bool RequestContextEnabled(JSContext* aCx, JSObject* aObj);
+
+  
+  static bool OffscreenCanvasEnabled();
+  static bool OffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj);
 };
 
 } 
