@@ -354,7 +354,6 @@ VRDisplayOSVR::SubmitFrame(MacIOSurface* aMacIOSurface,
                            const gfx::Rect& aRightEyeRect)
 {
   
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
   return false;
 }
 
@@ -366,7 +365,6 @@ VRDisplayOSVR::SubmitFrame(const mozilla::layers::EGLImageDescriptor*,
                            const gfx::Rect& aRightEyeRect)
 {
   
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
   return false;
 }
 
@@ -552,23 +550,49 @@ VRSystemManagerOSVR::Shutdown()
   osvr_ClientShutdown(m_ctx);
 }
 
-bool
-VRSystemManagerOSVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+void
+VRSystemManagerOSVR::NotifyVSync()
+{
+  VRSystemManager::NotifyVSync();
+
+  
+}
+
+void
+VRSystemManagerOSVR::Enumerate()
 {
   
   CheckOSVRStatus();
 
   if (!Init()) {
-    return false;
+    return;
   }
 
   mHMDInfo = new VRDisplayOSVR(&m_ctx, &m_iface, &m_display);
+}
 
+bool
+VRSystemManagerOSVR::ShouldInhibitEnumeration()
+{
+  if (VRSystemManager::ShouldInhibitEnumeration()) {
+    return true;
+  }
   if (mHMDInfo) {
-    aHMDResult.AppendElement(mHMDInfo);
+    
+    
+    
+    
     return true;
   }
   return false;
+}
+
+void
+VRSystemManagerOSVR::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+{
+  if (mHMDInfo) {
+    aHMDResult.AppendElement(mHMDInfo);
+  }
 }
 
 bool

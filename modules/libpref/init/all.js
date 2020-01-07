@@ -22,6 +22,7 @@
 pref("preferences.allow.omt-write", true);
 
 pref("keyword.enabled", false);
+pref("general.useragent.locale", "chrome://global/locale/intl.properties");
 pref("general.useragent.compatMode.firefox", false);
 
 
@@ -2294,6 +2295,7 @@ pref("intl.charset.fallback.override",      "");
 pref("intl.charset.fallback.tld",           true);
 pref("intl.charset.fallback.utf8_for_file", false);
 pref("intl.ellipsis",                       "chrome://global-platform/locale/intl.properties");
+pref("intl.locale.matchOS",                 false);
 
 
 
@@ -5229,6 +5231,20 @@ pref("dom.vr.openvr.enabled", true);
 
 pref("dom.vr.openvr.enabled", false);
 #endif
+
+
+
+pref("dom.vr.controller.enumerate.interval", 1000);
+
+
+
+
+pref("dom.vr.display.enumerate.interval", 5000);
+
+
+
+
+pref("dom.vr.inactive.timeout", 5000);
 
 
 

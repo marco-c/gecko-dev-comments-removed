@@ -27,7 +27,6 @@ class MacIOSurface;
 #endif
 namespace mozilla {
 namespace gfx {
-class VRThread;
 class VRLayerParent;
 
 class VRDisplayHost {
@@ -42,7 +41,7 @@ public:
   virtual void ZeroSensor() = 0;
   virtual void StartPresentation() = 0;
   virtual void StopPresentation() = 0;
-  virtual void NotifyVSync();
+  void NotifyVSync();
 
   void StartFrame();
   void SubmitFrame(VRLayerParent* aLayer,
@@ -101,13 +100,7 @@ protected:
 protected:
   virtual VRHMDSensorState GetSensorState() = 0;
 
-  RefPtr<VRThread> mSubmitThread;
 private:
-  void SubmitFrameInternal(const layers::SurfaceDescriptor& aTexture,
-                           uint64_t aFrameId,
-                           const gfx::Rect& aLeftEyeRect,
-                           const gfx::Rect& aRightEyeRect);
-
   VRDisplayInfo mLastUpdateDisplayInfo;
   TimeStamp mLastFrameStart;
   bool mFrameStarted;

@@ -289,7 +289,6 @@ VRDisplayPuppet::SubmitFrame(ID3D11Texture2D* aSource,
                              const gfx::Rect& aLeftEyeRect,
                              const gfx::Rect& aRightEyeRect)
 {
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
   if (!mIsPresenting) {
     return false;
   }
@@ -486,7 +485,6 @@ VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
                              const gfx::Rect& aLeftEyeRect,
                              const gfx::Rect& aRightEyeRect)
 {
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
   if (!mIsPresenting || !aMacIOSurface) {
     return false;
   }
@@ -560,21 +558,18 @@ VRDisplayPuppet::SubmitFrame(MacIOSurface* aMacIOSurface,
 bool
 VRDisplayPuppet::SubmitFrame(const mozilla::layers::EGLImageDescriptor* aDescriptor,
                            const gfx::Rect& aLeftEyeRect,
-                           const gfx::Rect& aRightEyeRect)
-{
-  MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
+                           const gfx::Rect& aRightEyeRect) {
+
   return false;
 }
 
 #endif
 
 void
-VRDisplayPuppet::NotifyVSync()
+VRDisplayPuppet::Refresh()
 {
   
   mDisplayInfo.mIsConnected = true;
-
-  VRDisplayHost::NotifyVSync();
 }
 
 VRControllerPuppet::VRControllerPuppet(dom::GamepadHand aHand, uint32_t aDisplayID)
@@ -706,14 +701,45 @@ VRSystemManagerPuppet::Shutdown()
   mPuppetHMD = nullptr;
 }
 
-bool
-VRSystemManagerPuppet::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+void
+VRSystemManagerPuppet::NotifyVSync()
+{
+  VRSystemManager::NotifyVSync();
+  if (mPuppetHMD) {
+    mPuppetHMD->Refresh();
+  }
+}
+
+void
+VRSystemManagerPuppet::Enumerate()
 {
   if (mPuppetHMD == nullptr) {
     mPuppetHMD = new VRDisplayPuppet();
   }
-  aHMDResult.AppendElement(mPuppetHMD);
-  return true;
+}
+
+bool
+VRSystemManagerPuppet::ShouldInhibitEnumeration()
+{
+  if (VRSystemManager::ShouldInhibitEnumeration()) {
+    return true;
+  }
+  if (mPuppetHMD) {
+    
+    
+    
+    
+    return true;
+  }
+  return false;
+}
+
+void
+VRSystemManagerPuppet::GetHMDs(nsTArray<RefPtr<VRDisplayHost>>& aHMDResult)
+{
+  if (mPuppetHMD) {
+    aHMDResult.AppendElement(mPuppetHMD);
+  }
 }
 
 bool
