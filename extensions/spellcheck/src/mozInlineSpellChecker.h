@@ -226,7 +226,7 @@ public:
 
   
   nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
-                              nsIDOMNode *aNode,
+                              nsINode *aNode,
                               int32_t aOffset,
                               nsRange** aRange);
 

@@ -6,7 +6,6 @@
 #include "nsComposeTxtSrvFilter.h"
 #include "nsError.h"                    
 #include "nsIContent.h"                 
-#include "nsIDOMNode.h"                 
 #include "nsNameSpaceManager.h"        
 #include "nsLiteralString.h"            
 #include "nscore.h"                     
@@ -20,48 +19,47 @@ nsComposeTxtSrvFilter::nsComposeTxtSrvFilter() :
 NS_IMPL_ISUPPORTS(nsComposeTxtSrvFilter, nsITextServicesFilter)
 
 NS_IMETHODIMP
-nsComposeTxtSrvFilter::Skip(nsIDOMNode* aNode, bool *_retval)
+nsComposeTxtSrvFilter::Skip(nsINode* aNode, bool *_retval)
 {
   *_retval = false;
 
   
   
   
-  nsCOMPtr<nsIContent> content(do_QueryInterface(aNode));
-  if (content) {
-    if (content->IsHTMLElement(nsGkAtoms::blockquote)) {
+  if (aNode) {
+    if (aNode->IsHTMLElement(nsGkAtoms::blockquote)) {
       if (mIsForMail) {
-        *_retval = content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                     nsGkAtoms::type,
-                                                     nsGkAtoms::cite,
-                                                     eIgnoreCase);
+        *_retval = aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                   nsGkAtoms::type,
+                                                   nsGkAtoms::cite,
+                                                   eIgnoreCase);
       }
-    } else if (content->IsHTMLElement(nsGkAtoms::span)) {
+    } else if (aNode->IsHTMLElement(nsGkAtoms::span)) {
       if (mIsForMail) {
-        *_retval = content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                     nsGkAtoms::mozquote,
-                                                     nsGkAtoms::_true,
-                                                     eIgnoreCase);
+        *_retval = aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                   nsGkAtoms::mozquote,
+                                                   nsGkAtoms::_true,
+                                                   eIgnoreCase);
         if (!*_retval) {
-          *_retval = content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                                       nsGkAtoms::_class,
-                                                       nsGkAtoms::mozsignature,
-                                                       eCaseMatters);
+          *_retval = aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                     nsGkAtoms::_class,
+                                                     nsGkAtoms::mozsignature,
+                                                     eCaseMatters);
         }
       }
-    } else if (content->IsAnyOfHTMLElements(nsGkAtoms::script,
-                                            nsGkAtoms::textarea,
-                                            nsGkAtoms::select,
-                                            nsGkAtoms::style,
-                                            nsGkAtoms::map)) {
+    } else if (aNode->IsAnyOfHTMLElements(nsGkAtoms::script,
+                                          nsGkAtoms::textarea,
+                                          nsGkAtoms::select,
+                                          nsGkAtoms::style,
+                                          nsGkAtoms::map)) {
       *_retval = true;
-    } else if (content->IsHTMLElement(nsGkAtoms::table)) {
+    } else if (aNode->IsHTMLElement(nsGkAtoms::table)) {
       if (mIsForMail) {
         *_retval =
-          content->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                            nsGkAtoms::_class,
-                                            NS_LITERAL_STRING("moz-email-headers-table"),
-                                            eCaseMatters);
+          aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                          nsGkAtoms::_class,
+                                          NS_LITERAL_STRING("moz-email-headers-table"),
+                                          eCaseMatters);
       }
     }
   }
