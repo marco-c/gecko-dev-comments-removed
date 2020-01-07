@@ -659,7 +659,7 @@ BaselineCacheIRCompiler::emitCallScriptedGetterResult()
             return false;
 
         masm.loadPtr(getterAddr, callee);
-        masm.branchIfFunctionHasNoJitEntry(callee,  false, failure->label());
+        masm.branchIfFunctionHasNoScript(callee, failure->label());
         masm.loadJitCodeRaw(callee, code);
     }
 
@@ -1759,7 +1759,7 @@ BaselineCacheIRCompiler::emitCallScriptedSetter()
             return false;
 
         masm.loadPtr(setterAddr, scratch1);
-        masm.branchIfFunctionHasNoJitEntry(scratch1,  false, failure->label());
+        masm.branchIfFunctionHasNoScript(scratch1, failure->label());
     }
 
     allocator.discardStack(masm);
@@ -2342,6 +2342,24 @@ ICCacheIR_Updated::stubDataStart()
 {
     return reinterpret_cast<uint8_t*>(this) + stubInfo_->stubDataOffset();
 }
+
+ ICCacheIR_Regular*
+ICCacheIR_Regular::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
+                         ICCacheIR_Regular& other)
+{
+    const CacheIRStubInfo* stubInfo = other.stubInfo();
+    MOZ_ASSERT(stubInfo->makesGCCalls());
+
+    size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
+    void* newStub = space->alloc(bytesNeeded);
+    if (!newStub)
+        return nullptr;
+
+    ICCacheIR_Regular* res = new(newStub) ICCacheIR_Regular(other.jitCode(), stubInfo);
+    stubInfo->copyStubData(&other, res);
+    return res;
+}
+
 
  ICCacheIR_Monitored*
 ICCacheIR_Monitored::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
