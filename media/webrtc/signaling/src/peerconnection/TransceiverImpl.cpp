@@ -503,24 +503,31 @@ TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
 
   
   
-  if (mJsepTransceiver->HasLevel()) {
-    dom::RTCRtpTransceiverDirection currentDirection;
-    if (mJsepTransceiver->mSendTrack.GetActive()) {
-      if (mJsepTransceiver->mRecvTrack.GetActive()) {
-        currentDirection = dom::RTCRtpTransceiverDirection::Sendrecv;
+  if (mJsepTransceiver->HasLevel() && mJsepTransceiver->IsNegotiated()) {
+    if (mJsepTransceiver->mRecvTrack.GetActive()) {
+      if (mJsepTransceiver->mSendTrack.GetActive()) {
+        aJsTransceiver.SetCurrentDirection(
+            dom::RTCRtpTransceiverDirection::Sendrecv, aRv);
       } else {
-        currentDirection = dom::RTCRtpTransceiverDirection::Sendonly;
+        aJsTransceiver.SetCurrentDirection(
+            dom::RTCRtpTransceiverDirection::Recvonly, aRv);
       }
     } else {
-      if (mJsepTransceiver->mRecvTrack.GetActive()) {
-        currentDirection = dom::RTCRtpTransceiverDirection::Recvonly;
+      if (mJsepTransceiver->mSendTrack.GetActive()) {
+        aJsTransceiver.SetCurrentDirection(
+            dom::RTCRtpTransceiverDirection::Sendonly, aRv);
       } else {
-        currentDirection = dom::RTCRtpTransceiverDirection::Inactive;
+        aJsTransceiver.SetCurrentDirection(
+            dom::RTCRtpTransceiverDirection::Inactive, aRv);
       }
-    }
 
-    if (mJsepTransceiver->IsNegotiated()) {
-      aJsTransceiver.SetCurrentDirection(currentDirection, aRv);
+      
+      
+      
+      
+      if (!mReceiveTrack->Muted()) {
+        mReceiveTrack->MutedChanged(true);
+      }
     }
 
     if (aRv.Failed()) {
