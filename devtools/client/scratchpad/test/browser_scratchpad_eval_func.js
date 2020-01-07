@@ -2,12 +2,11 @@
 
 
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
 
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function () {
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
     openScratchpad(runTests);
   });
 
@@ -20,12 +19,15 @@ function reportErrorAndQuit(error) {
   finish();
 }
 
-function runTests(sw)
-{
+function runTests(sw) {
   const sp = sw.Scratchpad;
 
-  let foo = "" + function main() { console.log(1); };
-  let bar = "var bar = " + (() => { console.log(2); });
+  let foo = "" + function main() {
+    console.log(1);
+  };
+  let bar = "var bar = " + (() => {
+    console.log(2);
+  });
 
   const fullText =
     foo + "\n" +

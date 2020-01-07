@@ -3,21 +3,19 @@
 
 
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
 
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function () {
-    openScratchpad(runTests, {"state":{"text":""}});
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
+    openScratchpad(runTests, {"state": {"text": ""}});
   });
 
   gBrowser.loadURI("data:text/html, test that exceptions are output as " +
                    "comments correctly in Scratchpad");
 }
 
-function runTests()
-{
+function runTests() {
   var scratchpad = gScratchpadWindow.Scratchpad;
 
   var message = "\"Hello World!\"";
@@ -35,29 +33,29 @@ function runTests()
     result: message + openComment + "Hello World!" + closeComment,
     label: "message display output"
   },
-    {
+  {
     
       method: "display",
       code: error1,
       result: error1 + openComment +
             "Exception: Error: Ouch!\n@" + scratchpad.uniqueName + ":1:7" + closeComment,
       label: "error display output"
-    },
-    {
+  },
+  {
     
       method: "display",
       code: error2,
       result: error2 + openComment + "Exception: A thrown string" + closeComment,
       label: "thrown string display output"
-    },
-    {
+  },
+  {
     
       method: "display",
       code: error3,
       result: error3 + openComment + "Exception: [object Object]" + closeComment,
       label: "thrown object display output"
-    },
-    {
+  },
+  {
     
       method: "display",
       code: error4,
@@ -65,37 +63,37 @@ function runTests()
             "at the specified point in the hierarchy\n@" +
             scratchpad.uniqueName + ":1:0" + closeComment,
       label: "Alternative format error display output"
-    },
-    {
+  },
+  {
     
       method: "run",
       code: message,
       result: message,
       label: "message run output"
-    },
-    {
+  },
+  {
     
       method: "run",
       code: error1,
       result: error1 + openComment +
             "Exception: Error: Ouch!\n@" + scratchpad.uniqueName + ":1:7" + closeComment,
       label: "error run output"
-    },
-    {
+  },
+  {
     
       method: "run",
       code: error2,
       result: error2 + openComment + "Exception: A thrown string" + closeComment,
       label: "thrown string run output"
-    },
-    {
+  },
+  {
     
       method: "run",
       code: error3,
       result: error3 + openComment + "Exception: [object Object]" + closeComment,
       label: "thrown object run output"
-    },
-    {
+  },
+  {
     
       method: "run",
       code: error4,
@@ -103,7 +101,7 @@ function runTests()
             "at the specified point in the hierarchy\n@" +
             scratchpad.uniqueName + ":1:0" + closeComment,
       label: "Alternative format error run output"
-    }];
+  }];
 
   runAsyncTests(scratchpad, tests).then(finish);
 }

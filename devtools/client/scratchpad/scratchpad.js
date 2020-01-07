@@ -110,8 +110,7 @@ var Scratchpad = {
 
 
 
-  _scanModeLine: function SP__scanModeLine(aLine = "")
-  {
+  _scanModeLine: function SP__scanModeLine(aLine = "") {
     aLine = aLine.trim();
 
     let obj = {};
@@ -147,7 +146,7 @@ var Scratchpad = {
     for (let elementID of elementIDs) {
       let elem = document.getElementById(elementID);
       if (elem) {
-        elem.addEventListener("popupshowing", function () {
+        elem.addEventListener("popupshowing", function() {
           goUpdateGlobalEditMenuItems();
           let commands = ["cmd_undo", "cmd_redo", "cmd_delete", "cmd_findAgain"];
           commands.forEach(goUpdateCommand);
@@ -310,8 +309,7 @@ var Scratchpad = {
   
 
 
-  get dirty()
-  {
+  get dirty() {
     let clean = this.editor && this.editor.isClean();
     return this._dirty || !clean;
   },
@@ -319,11 +317,11 @@ var Scratchpad = {
   
 
 
-  set dirty(aValue)
-  {
+  set dirty(aValue) {
     this._dirty = aValue;
-    if (!aValue && this.editor)
+    if (!aValue && this.editor) {
       this.editor.setClean();
+    }
     this._updateTitle();
   },
 
@@ -331,24 +329,21 @@ var Scratchpad = {
 
 
 
-  get notificationBox()
-  {
+  get notificationBox() {
     return document.getElementById("scratchpad-notificationbox");
   },
 
   
 
 
-  hideMenu: function SP_hideMenu()
-  {
+  hideMenu: function SP_hideMenu() {
     document.getElementById("sp-menubar").style.display = "none";
   },
 
   
 
 
-  showMenu: function SP_showMenu()
-  {
+  showMenu: function SP_showMenu() {
     document.getElementById("sp-menubar").style.display = "";
   },
 
@@ -365,8 +360,7 @@ var Scratchpad = {
 
 
 
-  getText: function SP_getText(aStart, aEnd)
-  {
+  getText: function SP_getText(aStart, aEnd) {
     var value = this.editor.getText();
     return value.slice(aStart || 0, aEnd || value.length);
   },
@@ -377,8 +371,7 @@ var Scratchpad = {
 
 
 
-  setFilename: function SP_setFilename(aFilename)
-  {
+  setFilename: function SP_setFilename(aFilename) {
     this.filename = aFilename;
     this._updateTitle();
   },
@@ -387,12 +380,12 @@ var Scratchpad = {
 
 
 
-  _updateTitle: function SP__updateTitle()
-  {
+  _updateTitle: function SP__updateTitle() {
     let title = this.filename || this._initialWindowTitle;
 
-    if (this.dirty)
+    if (this.dirty) {
       title = "*" + title;
+    }
 
     document.title = title;
   },
@@ -405,8 +398,7 @@ var Scratchpad = {
 
 
 
-  getState: function SP_getState()
-  {
+  getState: function SP_getState() {
     return {
       filename: this.filename,
       text: this.getText(),
@@ -422,32 +414,31 @@ var Scratchpad = {
 
 
 
-  setState: function SP_setState(aState)
-  {
-    if (aState.filename)
+  setState: function SP_setState(aState) {
+    if (aState.filename) {
       this.setFilename(aState.filename);
+    }
 
     this.dirty = !aState.saved;
 
-    if (aState.executionContext == SCRATCHPAD_CONTEXT_BROWSER)
+    if (aState.executionContext == SCRATCHPAD_CONTEXT_BROWSER) {
       this.setBrowserContext();
-    else
+    } else {
       this.setContentContext();
+    }
   },
 
   
 
 
-  get browserWindow()
-  {
+  get browserWindow() {
     return Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   },
 
   
 
 
-  get gBrowser()
-  {
+  get gBrowser() {
     let recentWin = this.browserWindow;
     return recentWin ? recentWin.gBrowser : null;
   },
@@ -456,17 +447,14 @@ var Scratchpad = {
 
 
 
-  get uniqueName()
-  {
+  get uniqueName() {
     return "Scratchpad/" + this._instanceId;
   },
-
 
   
 
 
-  get sidebar()
-  {
+  get sidebar() {
     if (!this._sidebar) {
       this._sidebar = new ScratchpadSidebar(this);
     }
@@ -477,8 +465,7 @@ var Scratchpad = {
 
 
 
-  setText: function SP_setText(value)
-  {
+  setText: function SP_setText(value) {
     return this.editor.setText(value);
   },
 
@@ -491,16 +478,13 @@ var Scratchpad = {
 
 
 
-  evaluate: function SP_evaluate(aString)
-  {
+  evaluate: function SP_evaluate(aString) {
     let connection;
     if (this.target) {
       connection = ScratchpadTarget.consoleFor(this.target);
-    }
-    else if (this.executionContext == SCRATCHPAD_CONTEXT_CONTENT) {
+    } else if (this.executionContext == SCRATCHPAD_CONTEXT_CONTENT) {
       connection = ScratchpadTab.consoleFor(this.gBrowser.selectedTab);
-    }
-    else {
+    } else {
       connection = ScratchpadWindow.consoleFor(this.browserWindow);
     }
 
@@ -514,11 +498,9 @@ var Scratchpad = {
         this.webConsoleClient = webConsoleClient;
         if (aResponse.error) {
           deferred.reject(aResponse);
-        }
-        else if (aResponse.exception !== null) {
+        } else if (aResponse.exception !== null) {
           deferred.resolve([aString, aResponse]);
-        }
-        else {
+        } else {
           deferred.resolve([aString, undefined, aResponse.result]);
         }
       }, evalOptions);
@@ -534,8 +516,7 @@ var Scratchpad = {
 
 
 
-  execute: function SP_execute()
-  {
+  execute: function SP_execute() {
     WebConsoleUtils.usageCount++;
     let selection = this.editor.getSelection() || this.getText();
     return this.evaluate(selection);
@@ -548,8 +529,7 @@ var Scratchpad = {
 
 
 
-  run: function SP_run()
-  {
+  run: function SP_run() {
     let deferred = defer();
     let reject = aReason => deferred.reject(aReason);
 
@@ -558,8 +538,7 @@ var Scratchpad = {
 
       if (aError) {
         this.writeAsErrorComment(aError).then(resolve, reject);
-      }
-      else {
+      } else {
         this.editor.dropSelection();
         resolve();
       }
@@ -575,8 +554,7 @@ var Scratchpad = {
 
 
 
-  inspect: function SP_inspect()
-  {
+  inspect: function SP_inspect() {
     let deferred = defer();
     let reject = aReason => deferred.reject(aReason);
 
@@ -585,8 +563,7 @@ var Scratchpad = {
 
       if (aError) {
         this.writeAsErrorComment(aError).then(resolve, reject);
-      }
-      else {
+      } else {
         this.editor.dropSelection();
         this.sidebar.open(aString, aResult).then(resolve, reject);
       }
@@ -603,13 +580,12 @@ var Scratchpad = {
 
 
 
-  reloadAndRun: function SP_reloadAndRun()
-  {
+  reloadAndRun: function SP_reloadAndRun() {
     let deferred = defer();
 
     if (this.executionContext !== SCRATCHPAD_CONTEXT_CONTENT) {
-      console.error(this.strings.
-                    GetStringFromName("scratchpadContext.invalid"));
+      console.error(this.strings
+                    .GetStringFromName("scratchpadContext.invalid"));
       return;
     }
 
@@ -631,8 +607,7 @@ var Scratchpad = {
 
 
 
-  display: function SP_display()
-  {
+  display: function SP_display() {
     let deferred = defer();
     let reject = aReason => deferred.reject(aReason);
 
@@ -641,18 +616,15 @@ var Scratchpad = {
 
       if (aError) {
         this.writeAsErrorComment(aError).then(resolve, reject);
-      }
-      else if (VariablesView.isPrimitive({ value: aResult })) {
+      } else if (VariablesView.isPrimitive({ value: aResult })) {
         this._writePrimitiveAsComment(aResult).then(resolve, reject);
-      }
-      else {
+      } else {
         let objectClient = new ObjectClient(this.debuggerClient, aResult);
         objectClient.getDisplayString(aResponse => {
           if (aResponse.error) {
             reportError("display", aResponse);
             reject(aResponse);
-          }
-          else {
+          } else {
             this.writeAsComment(aResponse.displayString);
             resolve();
           }
@@ -721,7 +693,7 @@ var Scratchpad = {
 
 
 
-  _containsCursor: function (aLoc, aCursorPos) {
+  _containsCursor: function(aLoc, aCursorPos) {
     
     const lineNumber = aCursorPos.line + 1;
     const columnNumber = aCursorPos.ch;
@@ -874,8 +846,7 @@ var Scratchpad = {
 
 
 
-  _writePrimitiveAsComment: function SP__writePrimitiveAsComment(aValue)
-  {
+  _writePrimitiveAsComment: function SP__writePrimitiveAsComment(aValue) {
     let deferred = defer();
 
     if (aValue.type == "longString") {
@@ -884,13 +855,11 @@ var Scratchpad = {
         if (aResponse.error) {
           reportError("display", aResponse);
           deferred.reject(aResponse);
-        }
-        else {
+        } else {
           deferred.resolve(aResponse.substring);
         }
       });
-    }
-    else {
+    } else {
       deferred.resolve(aValue.type || aValue);
     }
 
@@ -905,8 +874,7 @@ var Scratchpad = {
 
 
 
-  writeAsComment: function SP_writeAsComment(aValue)
-  {
+  writeAsComment: function SP_writeAsComment(aValue) {
     let value = "\n/*\n" + aValue + "\n*/";
 
     if (this.editor.somethingSelected()) {
@@ -933,8 +901,7 @@ var Scratchpad = {
 
 
 
-  writeAsErrorComment: function SP_writeAsErrorComment(aError)
-  {
+  writeAsErrorComment: function SP_writeAsErrorComment(aError) {
     let deferred = defer();
 
     if (VariablesView.isPrimitive({ value: aError.exception })) {
@@ -947,11 +914,9 @@ var Scratchpad = {
           type == "NaN" ||
           type == "-0") {
         deferred.resolve(type);
-      }
-      else if (type == "longString") {
+      } else if (type == "longString") {
         deferred.resolve(error.initial + "\u2026");
-      }
-      else {
+      } else {
         deferred.resolve(error);
       }
     } else if ("preview" in aError.exception) {
@@ -987,16 +952,13 @@ var Scratchpad = {
 
         if (typeof error.message == "string") {
           deferred.resolve(error.message + stack);
-        }
-        else {
+        } else {
           objectClient.getDisplayString(aResponse => {
             if (aResponse.error) {
               deferred.reject(aResponse);
-            }
-            else if (typeof aResponse.displayString == "string") {
+            } else if (typeof aResponse.displayString == "string") {
               deferred.resolve(aResponse.displayString + stack);
-            }
-            else {
+            } else {
               deferred.resolve(stack);
             }
           });
@@ -1048,8 +1010,7 @@ var Scratchpad = {
 
 
 
-  openScratchpad: function SP_openScratchpad()
-  {
+  openScratchpad: function SP_openScratchpad() {
     return ScratchpadManager.openScratchpad();
   },
 
@@ -1069,11 +1030,10 @@ var Scratchpad = {
 
 
   exportToFile: function SP_exportToFile(aFile, aNoConfirmation, aSilentError,
-                                         aCallback)
-  {
+                                         aCallback) {
     if (!aNoConfirmation && aFile.exists() &&
-        !window.confirm(this.strings.
-                        GetStringFromName("export.fileOverwriteConfirmation"))) {
+        !window.confirm(this.strings
+                        .GetStringFromName("export.fileOverwriteConfirmation"))) {
       return;
     }
 
@@ -1092,7 +1052,6 @@ var Scratchpad = {
         aCallback.call(this, Cr.NS_ERROR_UNEXPECTED);
       }
     });
-
   },
 
   
@@ -1104,7 +1063,7 @@ var Scratchpad = {
 
   _getApplicableCharsets: function SP__getApplicableCharsets(aBestCharset = "UTF-8") {
     let charsets = Services.prefs.getCharPref(
-      FALLBACK_CHARSET_LIST).split(",").filter(function (value) {
+      FALLBACK_CHARSET_LIST).split(",").filter(function(value) {
         return value.length;
       });
     charsets.unshift(aBestCharset);
@@ -1153,8 +1112,7 @@ var Scratchpad = {
 
 
 
-  importFromFile: function SP_importFromFile(aFile, aSilentError, aCallback)
-  {
+  importFromFile: function SP_importFromFile(aFile, aSilentError, aCallback) {
     
     let channel = NetUtil.newChannel({
       uri: NetUtil.newURI(aFile),
@@ -1202,8 +1160,7 @@ var Scratchpad = {
         this.editor.clearHistory();
         this.dirty = false;
         document.getElementById("sp-cmd-revert").setAttribute("disabled", true);
-      }
-      else if (!aSilentError) {
+      } else if (!aSilentError) {
         window.alert(this.strings.GetStringFromName("openFile.failed"));
       }
       this.setFilename(aFile.path);
@@ -1220,8 +1177,7 @@ var Scratchpad = {
 
 
 
-  openFile: function SP_openFile(aIndex)
-  {
+  openFile: function SP_openFile(aIndex) {
     let promptCallback = aFile => {
       this.promptSave((aCloseFile, aSaved, aStatus) => {
         let shouldOpen = aCloseFile;
@@ -1234,8 +1190,8 @@ var Scratchpad = {
           if (aFile) {
             file = aFile;
           } else {
-            file = Cc["@mozilla.org/file/local;1"].
-                   createInstance(Ci.nsIFile);
+            file = Cc["@mozilla.org/file/local;1"]
+                   .createInstance(Ci.nsIFile);
             let filePath = this.getRecentFiles()[aIndex];
             file.initWithPath(filePath);
           }
@@ -1280,8 +1236,7 @@ var Scratchpad = {
 
 
 
-  getRecentFiles: function SP_getRecentFiles()
-  {
+  getRecentFiles: function SP_getRecentFiles() {
     let branch = Services.prefs.getBranch("devtools.scratchpad.");
     let filePaths = [];
 
@@ -1302,8 +1257,7 @@ var Scratchpad = {
 
 
 
-  setRecentFile: function SP_setRecentFile(aFile)
-  {
+  setRecentFile: function SP_setRecentFile(aFile) {
     let maxRecent = Services.prefs.getIntPref(PREF_RECENT_FILES_MAX);
     if (maxRecent < 1) {
       return;
@@ -1343,8 +1297,7 @@ var Scratchpad = {
   
 
 
-  populateRecentFilesMenu: function SP_populateRecentFilesMenu()
-  {
+  populateRecentFilesMenu: function SP_populateRecentFilesMenu() {
     let maxRecent = Services.prefs.getIntPref(PREF_RECENT_FILES_MAX);
     let recentFilesMenu = document.getElementById("sp-open_recent-menu");
 
@@ -1384,8 +1337,8 @@ var Scratchpad = {
       let clearItems = document.createElement("menuitem");
       clearItems.setAttribute("id", "sp-menu-clear_recent");
       clearItems.setAttribute("label",
-                              this.strings.
-                              GetStringFromName("clearRecentMenuItems.label"));
+                              this.strings
+                              .GetStringFromName("clearRecentMenuItems.label"));
       clearItems.setAttribute("command", "sp-cmd-clearRecentFiles");
       recentFilesPopup.appendChild(clearItems);
     }
@@ -1399,8 +1352,7 @@ var Scratchpad = {
 
 
 
-  clearFiles: function SP_clearFile(aIndex, aLength)
-  {
+  clearFiles: function SP_clearFile(aIndex, aLength) {
     let filePaths = this.getRecentFiles();
     filePaths.splice(aIndex, aLength);
 
@@ -1411,16 +1363,14 @@ var Scratchpad = {
   
 
 
-  clearRecentFiles: function SP_clearRecentFiles()
-  {
+  clearRecentFiles: function SP_clearRecentFiles() {
     Services.prefs.clearUserPref("devtools.scratchpad.recentFilePaths");
   },
 
   
 
 
-  handleRecentFileMaxChange: function SP_handleRecentFileMaxChange()
-  {
+  handleRecentFileMaxChange: function SP_handleRecentFileMaxChange() {
     let maxRecent = Services.prefs.getIntPref(PREF_RECENT_FILES_MAX);
     let menu = document.getElementById("sp-open_recent-menu");
 
@@ -1449,8 +1399,7 @@ var Scratchpad = {
 
 
 
-  saveFile: function SP_saveFile(aCallback)
-  {
+  saveFile: function SP_saveFile(aCallback) {
     if (!this.filename) {
       return this.saveFileAs(aCallback);
     }
@@ -1476,8 +1425,7 @@ var Scratchpad = {
 
 
 
-  saveFileAs: function SP_saveFileAs(aCallback)
-  {
+  saveFileAs: function SP_saveFileAs(aCallback) {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     let fpCallback = aResult => {
       if (aResult != Ci.nsIFilePicker.returnCancel) {
@@ -1508,8 +1456,7 @@ var Scratchpad = {
 
 
 
-  revertFile: function SP_revertFile(aCallback)
-  {
+  revertFile: function SP_revertFile(aCallback) {
     let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
     file.initWithPath(this.filename);
 
@@ -1534,8 +1481,7 @@ var Scratchpad = {
 
 
 
-  promptRevert: function SP_promptRervert(aCallback)
-  {
+  promptRevert: function SP_promptRervert(aCallback) {
     if (this.filename) {
       let ps = Services.prompt;
       let flags = ps.BUTTON_POS_0 * ps.BUTTON_TITLE_REVERT +
@@ -1570,16 +1516,14 @@ var Scratchpad = {
   
 
 
-  openErrorConsole: function SP_openErrorConsole()
-  {
+  openErrorConsole: function SP_openErrorConsole() {
     HUDService.toggleBrowserConsole();
   },
 
   
 
 
-  openWebConsole: function SP_openWebConsole()
-  {
+  openWebConsole: function SP_openWebConsole() {
     let target = TargetFactory.forTab(this.gBrowser.selectedTab);
     gDevTools.showToolbox(target, "webconsole");
     this.browserWindow.focus();
@@ -1588,8 +1532,7 @@ var Scratchpad = {
   
 
 
-  setContentContext: function SP_setContentContext()
-  {
+  setContentContext: function SP_setContentContext() {
     if (this.executionContext == SCRATCHPAD_CONTEXT_CONTENT) {
       return;
     }
@@ -1605,8 +1548,7 @@ var Scratchpad = {
   
 
 
-  setBrowserContext: function SP_setBrowserContext()
-  {
+  setBrowserContext: function SP_setBrowserContext() {
     if (this.executionContext == SCRATCHPAD_CONTEXT_BROWSER) {
       return;
     }
@@ -1634,14 +1576,12 @@ var Scratchpad = {
 
 
 
-  getInnerWindowId: function SP_getInnerWindowId(aWindow)
-  {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-           getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+  getInnerWindowId: function SP_getInnerWindowId(aWindow) {
+    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+           .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
   },
 
-  updateStatusBar: function SP_updateStatusBar(aEventType)
-  {
+  updateStatusBar: function SP_updateStatusBar(aEventType) {
     var statusBarField = document.getElementById("statusbar-line-col");
     let { line, ch } = this.editor.getCursor();
     statusBarField.textContent = this.strings.formatStringFromName(
@@ -1654,8 +1594,7 @@ var Scratchpad = {
 
 
 
-  onLoad: function SP_onLoad(aEvent)
-  {
+  onLoad: function SP_onLoad(aEvent) {
     if (aEvent.target != document) {
       return;
     }
@@ -1731,8 +1670,9 @@ var Scratchpad = {
       
       this.editor.insertCommandsController();
 
-      if (state)
+      if (state) {
         this.dirty = !state.saved;
+      }
 
       this.initialized = true;
       this._triggerObservers("Ready");
@@ -1759,31 +1699,29 @@ var Scratchpad = {
 
 
 
-  _onChanged: function SP__onChanged()
-  {
+  _onChanged: function SP__onChanged() {
     Scratchpad._updateTitle();
 
     if (Scratchpad.filename) {
-      if (Scratchpad.dirty)
+      if (Scratchpad.dirty) {
         document.getElementById("sp-cmd-revert").removeAttribute("disabled");
-      else
+      } else {
         document.getElementById("sp-cmd-revert").setAttribute("disabled", true);
+      }
     }
   },
 
   
 
 
-  undo: function SP_undo()
-  {
+  undo: function SP_undo() {
     this.editor.undo();
   },
 
   
 
 
-  redo: function SP_redo()
-  {
+  redo: function SP_redo() {
     this.editor.redo();
   },
 
@@ -1793,8 +1731,7 @@ var Scratchpad = {
 
 
 
-  onUnload: function SP_onUnload(aEvent)
-  {
+  onUnload: function SP_onUnload(aEvent) {
     if (aEvent.target != document) {
       return;
     }
@@ -1847,8 +1784,7 @@ var Scratchpad = {
 
 
 
-  promptSave: function SP_promptSave(aCallback)
-  {
+  promptSave: function SP_promptSave(aCallback) {
     if (this.dirty) {
       let ps = Services.prompt;
       let flags = ps.BUTTON_POS_0 * ps.BUTTON_TITLE_SAVE +
@@ -1892,8 +1828,7 @@ var Scratchpad = {
 
 
 
-  onClose: function SP_onClose(aEvent, aCallback)
-  {
+  onClose: function SP_onClose(aEvent, aCallback) {
     aEvent.preventDefault();
     this.close(aCallback);
   },
@@ -1905,8 +1840,7 @@ var Scratchpad = {
 
 
 
-  close: function SP_close(aCallback)
-  {
+  close: function SP_close(aCallback) {
     let shouldClose;
 
     this.promptSave((aShouldClose, aSaved, aStatus) => {
@@ -1930,8 +1864,7 @@ var Scratchpad = {
   
 
 
-  toggleEditorOption: function SP_toggleEditorOption(optionName, optionPreference)
-  {
+  toggleEditorOption: function SP_toggleEditorOption(optionName, optionPreference) {
     let newOptionValue = !this.editor.getOption(optionName);
     this.editor.setOption(optionName, newOptionValue);
     Services.prefs.setBoolPref(optionPreference, newOptionValue);
@@ -1940,8 +1873,7 @@ var Scratchpad = {
   
 
 
-  increaseFontSize: function SP_increaseFontSize()
-  {
+  increaseFontSize: function SP_increaseFontSize() {
     let size = this.editor.getFontSize();
 
     if (size < MAXIMUM_FONT_SIZE) {
@@ -1960,8 +1892,7 @@ var Scratchpad = {
   
 
 
-  decreaseFontSize: function SP_decreaseFontSize()
-  {
+  decreaseFontSize: function SP_decreaseFontSize() {
     let size = this.editor.getFontSize();
 
     if (size > MINIMUM_FONT_SIZE) {
@@ -1980,8 +1911,7 @@ var Scratchpad = {
   
 
 
-  normalFontSize: function SP_normalFontSize()
-  {
+  normalFontSize: function SP_normalFontSize() {
     this.editor.setFontSize(NORMAL_FONT_SIZE);
     Services.prefs.setIntPref(EDITOR_FONT_SIZE, NORMAL_FONT_SIZE);
 
@@ -2004,8 +1934,7 @@ var Scratchpad = {
 
 
 
-  addObserver: function SP_addObserver(aObserver)
-  {
+  addObserver: function SP_addObserver(aObserver) {
     this._observers.push(aObserver);
   },
 
@@ -2015,8 +1944,7 @@ var Scratchpad = {
 
 
 
-  removeObserver: function SP_removeObserver(aObserver)
-  {
+  removeObserver: function SP_removeObserver(aObserver) {
     let index = this._observers.indexOf(aObserver);
     if (index != -1) {
       this._observers.splice(index, 1);
@@ -2032,8 +1960,7 @@ var Scratchpad = {
 
 
 
-  _triggerObservers: function SP_triggerObservers(aName, aArgs)
-  {
+  _triggerObservers: function SP_triggerObservers(aName, aArgs) {
     
     if (!aArgs) {
       aArgs = [this];
@@ -2054,10 +1981,9 @@ var Scratchpad = {
   
 
 
-  openDocumentationPage: function SP_openDocumentationPage()
-  {
+  openDocumentationPage: function SP_openDocumentationPage() {
     let url = this.strings.GetStringFromName("help.openDocumentationPage");
-    this.browserWindow.openUILinkIn(url,"tab");
+    this.browserWindow.openUILinkIn(url, "tab");
     this.browserWindow.focus();
   },
 };
@@ -2069,9 +1995,7 @@ var Scratchpad = {
 
 
 
-
-function ScratchpadTab(aTab)
-{
+function ScratchpadTab(aTab) {
   this._tab = aTab;
 }
 
@@ -2086,14 +2010,12 @@ var scratchpadTargets = new WeakMap();
 
 
 
-ScratchpadTab.consoleFor = function consoleFor(aSubject)
-{
+ScratchpadTab.consoleFor = function consoleFor(aSubject) {
   if (!scratchpadTargets.has(aSubject)) {
     scratchpadTargets.set(aSubject, new this(aSubject));
   }
   return scratchpadTargets.get(aSubject).connect(aSubject);
 };
-
 
 ScratchpadTab.prototype = {
   
@@ -2109,8 +2031,7 @@ ScratchpadTab.prototype = {
 
 
 
-  connect: function ST_connect(aSubject)
-  {
+  connect: function ST_connect(aSubject) {
     if (this._connector) {
       return this._connector;
     }
@@ -2134,8 +2055,7 @@ ScratchpadTab.prototype = {
         if (aResponse.error) {
           reportError("attachConsole", aResponse);
           deferred.reject(aResponse);
-        }
-        else {
+        } else {
           deferred.resolve({
             webConsoleClient: aWebConsoleClient,
             debuggerClient: client
@@ -2155,8 +2075,7 @@ ScratchpadTab.prototype = {
 
 
 
-  _attach: function ST__attach(aSubject)
-  {
+  _attach: function ST__attach(aSubject) {
     let target = TargetFactory.forTab(this._tab);
     target.once("close", () => {
       if (scratchpadTargets) {
@@ -2166,7 +2085,6 @@ ScratchpadTab.prototype = {
     return target.makeRemote().then(() => target);
   },
 };
-
 
 
 
@@ -2183,8 +2101,7 @@ ScratchpadWindow.prototype = extend(ScratchpadTab.prototype, {
 
 
 
-  _attach: function SW__attach()
-  {
+  _attach: function SW__attach() {
     DebuggerServer.init();
     DebuggerServer.registerAllActors();
     DebuggerServer.allowChromeProcess = true;
@@ -2198,17 +2115,14 @@ ScratchpadWindow.prototype = extend(ScratchpadTab.prototype, {
   }
 });
 
-
-function ScratchpadTarget(aTarget)
-{
+function ScratchpadTarget(aTarget) {
   this._target = aTarget;
 }
 
 ScratchpadTarget.consoleFor = ScratchpadTab.consoleFor;
 
 ScratchpadTarget.prototype = extend(ScratchpadTab.prototype, {
-  _attach: function ST__attach()
-  {
+  _attach: function ST__attach() {
     if (this._target.isRemote) {
       return promise.resolve(this._target);
     }
@@ -2220,9 +2134,7 @@ ScratchpadTarget.prototype = extend(ScratchpadTab.prototype, {
 
 
 
-
-function ScratchpadSidebar(aScratchpad)
-{
+function ScratchpadSidebar(aScratchpad) {
   
   
   EventEmitter.decorate(this);
@@ -2260,8 +2172,7 @@ ScratchpadSidebar.prototype = {
 
 
 
-  open: function SS_open(aEvalString, aObject)
-  {
+  open: function SS_open(aEvalString, aObject) {
     this.show();
 
     let deferred = defer();
@@ -2269,8 +2180,7 @@ ScratchpadSidebar.prototype = {
     let onTabReady = () => {
       if (this.variablesView) {
         this.variablesView.controller.releaseActors();
-      }
-      else {
+      } else {
         let window = this._sidebar.getWindowForTab("variablesview");
         let container = window.document.querySelector("#variables");
 
@@ -2300,8 +2210,7 @@ ScratchpadSidebar.prototype = {
 
     if (this._sidebar.getCurrentTabID() == "variablesview") {
       onTabReady();
-    }
-    else {
+    } else {
       this._sidebar.once("variablesview-ready", onTabReady);
       this._sidebar.addTab("variablesview", VARIABLES_VIEW_URL, {selected: true});
     }
@@ -2312,8 +2221,7 @@ ScratchpadSidebar.prototype = {
   
 
 
-  show: function SS_show()
-  {
+  show: function SS_show() {
     if (!this.visible) {
       this.visible = true;
       this._sidebar.show();
@@ -2323,8 +2231,7 @@ ScratchpadSidebar.prototype = {
   
 
 
-  hide: function SS_hide()
-  {
+  hide: function SS_hide() {
     if (this.visible) {
       this.visible = false;
       this._sidebar.hide();
@@ -2337,8 +2244,7 @@ ScratchpadSidebar.prototype = {
 
 
 
-  destroy: function SS_destroy()
-  {
+  destroy: function SS_destroy() {
     if (this.variablesView) {
       this.variablesView.controller.releaseActors();
       this.variablesView = null;
@@ -2354,8 +2260,7 @@ ScratchpadSidebar.prototype = {
 
 
 
-  _update: function SS__update(aValue)
-  {
+  _update: function SS__update(aValue) {
     let options, onlyEnumVisible;
     if (VariablesView.isPrimitive({ value: aValue })) {
       options = { rawObject: { value: aValue } };
@@ -2379,9 +2284,7 @@ ScratchpadSidebar.prototype = {
 
 
 
-
-function reportError(aAction, aResponse)
-{
+function reportError(aAction, aResponse) {
   console.error(aAction + " failed: " + aResponse.error + " " +
                 aResponse.message);
 }
@@ -2390,12 +2293,10 @@ function reportError(aAction, aResponse)
 
 
 
-
 var PreferenceObserver = {
   _initialized: false,
 
-  init: function PO_init()
-  {
+  init: function PO_init() {
     if (this._initialized) {
       return;
     }
@@ -2405,16 +2306,14 @@ var PreferenceObserver = {
     this._initialized = true;
   },
 
-  observe: function PO_observe(aMessage, aTopic, aData)
-  {
+  observe: function PO_observe(aMessage, aTopic, aData) {
     if (aTopic != "nsPref:changed") {
       return;
     }
 
     if (aData == "recentFilesMax") {
       Scratchpad.handleRecentFileMaxChange();
-    }
-    else if (aData == "recentFilePaths") {
+    } else if (aData == "recentFilePaths") {
       Scratchpad.populateRecentFilesMenu();
     }
   },
@@ -2433,26 +2332,21 @@ var PreferenceObserver = {
 
 
 
-
 var CloseObserver = {
-  init: function CO_init()
-  {
+  init: function CO_init() {
     Services.obs.addObserver(this, "browser-lastwindow-close-requested");
   },
 
-  observe: function CO_observe(aSubject)
-  {
+  observe: function CO_observe(aSubject) {
     if (Scratchpad.close()) {
       this.uninit();
-    }
-    else {
+    } else {
       aSubject.QueryInterface(Ci.nsISupportsPRBool);
       aSubject.data = true;
     }
   },
 
-  uninit: function CO_uninit()
-  {
+  uninit: function CO_uninit() {
     
     if (this._uninited) {
       return;
@@ -2463,7 +2357,7 @@ var CloseObserver = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(Scratchpad, "strings", function () {
+XPCOMUtils.defineLazyGetter(Scratchpad, "strings", function() {
   return Services.strings.createBundle(SCRATCHPAD_L10N);
 });
 

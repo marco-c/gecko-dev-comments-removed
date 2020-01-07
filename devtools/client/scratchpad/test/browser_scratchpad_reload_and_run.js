@@ -30,8 +30,8 @@ async function runTests() {
   
   
 
-  let reloadAndRun = gScratchpadWindow.document.
-    getElementById("sp-cmd-reloadAndRun");
+  let reloadAndRun = gScratchpadWindow.document
+    .getElementById("sp-cmd-reloadAndRun");
   ok(reloadAndRun, "Reload And Run command exists");
   ok(!reloadAndRun.hasAttribute("disabled"),
       "Reload And Run command is enabled");

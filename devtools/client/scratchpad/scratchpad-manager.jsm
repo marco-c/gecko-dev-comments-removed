@@ -19,7 +19,6 @@ const Telemetry = require("devtools/client/shared/telemetry");
 
 
 
-
 this.ScratchpadManager = {
 
   _nextUid: 1,
@@ -34,8 +33,7 @@ this.ScratchpadManager = {
 
 
 
-  getSessionState: function SPM_getSessionState()
-  {
+  getSessionState: function SPM_getSessionState() {
     return this._scratchpads;
   },
 
@@ -49,14 +47,13 @@ this.ScratchpadManager = {
 
 
 
-  restoreSession: function SPM_restoreSession(aSession)
-  {
+  restoreSession: function SPM_restoreSession(aSession) {
     if (!Array.isArray(aSession)) {
       return [];
     }
 
     let wins = [];
-    aSession.forEach(function (state) {
+    aSession.forEach(function(state) {
       let win = this.openScratchpad(state);
       wins.push(win);
     }, this);
@@ -107,8 +104,7 @@ this.ScratchpadManager = {
 
 
 
-  openScratchpad: function SPM_openScratchpad(aState)
-  {
+  openScratchpad: function SPM_openScratchpad(aState) {
     let params = Cc["@mozilla.org/embedcomp/dialogparam;1"]
                  .createInstance(Ci.nsIDialogParamBlock);
 
@@ -141,12 +137,10 @@ this.ScratchpadManager = {
   
 
 
-  createUid: function SPM_createUid()
-  {
+  createUid: function SPM_createUid() {
     return JSON.stringify(this._nextUid++);
   }
 };
-
 
 
 

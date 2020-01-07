@@ -33,8 +33,7 @@ var gFileContent02 = "hello.world.02('bug651942');";
 var gFileContent03 = "hello.world.03('bug651942');";
 var gFileContent04 = "hello.world.04('bug651942');";
 
-function startTest()
-{
+function startTest() {
   gScratchpad = gScratchpadWindow.Scratchpad;
 
   gFile01 = createAndLoadTemporaryFile(gFile01, gFileName01, gFileContent01);
@@ -44,8 +43,7 @@ function startTest()
 
 
 
-function testAddedToRecent()
-{
+function testAddedToRecent() {
   lists.recentFiles01 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles01.length, 3,
@@ -57,8 +55,7 @@ function testAddedToRecent()
 
 
 
-function testOverwriteRecent()
-{
+function testOverwriteRecent() {
   lists.recentFiles02 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles02[0], lists.recentFiles01[1],
@@ -74,8 +71,7 @@ function testOverwriteRecent()
 
 
 
-function testOpenOldestRecent()
-{
+function testOpenOldestRecent() {
   lists.recentFiles03 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles02[0], lists.recentFiles03[2],
@@ -91,8 +87,7 @@ function testOpenOldestRecent()
 
 
 
-function testHideMenu()
-{
+function testHideMenu() {
   let menu = gScratchpadWindow.document.getElementById("sp-open_recent-menu");
   ok(menu.hasAttribute("hidden"), "The menu was hidden successfully.");
 
@@ -102,8 +97,7 @@ function testHideMenu()
 
 
 
-function testChangedMaxRecent()
-{
+function testChangedMaxRecent() {
   let menu = gScratchpadWindow.document.getElementById("sp-open_recent-menu");
   ok(!menu.hasAttribute("hidden"), "The menu is visible. \\o/");
 
@@ -168,8 +162,7 @@ function testOpenDeletedFile() {
 
 
 
-function testClearedAll()
-{
+function testClearedAll() {
   let doc = gScratchpadWindow.document;
   let menu = doc.getElementById("sp-open_recent-menu");
   let popup = doc.getElementById("sp-menu-open_recentPopup");
@@ -183,15 +176,14 @@ function testClearedAll()
   finishTest();
 }
 
-function createAndLoadTemporaryFile(aFile, aFileName, aFileContent)
-{
+function createAndLoadTemporaryFile(aFile, aFileName, aFileContent) {
   
   aFile = FileUtils.getFile("TmpD", [aFileName]);
   aFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
 
   
-  let fout = Cc["@mozilla.org/network/file-output-stream;1"].
-             createInstance(Ci.nsIFileOutputStream);
+  let fout = Cc["@mozilla.org/network/file-output-stream;1"]
+             .createInstance(Ci.nsIFileOutputStream);
   fout.init(aFile.QueryInterface(Ci.nsIFile), 0x02 | 0x08 | 0x20,
             0o644, fout.DEFER_OPEN);
 
@@ -203,25 +195,22 @@ function createAndLoadTemporaryFile(aFile, aFileName, aFileContent)
   return aFile;
 }
 
-function fileImported(aStatus)
-{
+function fileImported(aStatus) {
   ok(Components.isSuccessCode(aStatus),
      "the temporary file was imported successfully with Scratchpad");
 }
 
-function fileSaved(aStatus)
-{
+function fileSaved(aStatus) {
   ok(Components.isSuccessCode(aStatus),
      "the temporary file was saved successfully with Scratchpad");
 
   checkIfMenuIsPopulated();
 }
 
-function checkIfMenuIsPopulated()
-{
+function checkIfMenuIsPopulated() {
   let doc = gScratchpadWindow.document;
-  let expectedMenuitemCount = doc.getElementById("sp-menu-open_recentPopup").
-                              children.length;
+  let expectedMenuitemCount = doc.getElementById("sp-menu-open_recentPopup")
+                              .children.length;
   
   
   let recentFilesPlusExtra = gScratchpad.getRecentFiles().length + 2;
@@ -247,8 +236,7 @@ var PreferenceObserver = {
     return this._timesFired;
   },
 
-  init: function PO_init()
-  {
+  init: function PO_init() {
     if (this._initialized) {
       return;
     }
@@ -258,8 +246,7 @@ var PreferenceObserver = {
     this._initialized = true;
   },
 
-  observe: function PO_observe(aMessage, aTopic, aData)
-  {
+  observe: function PO_observe(aMessage, aTopic, aData) {
     if (aTopic != "nsPref:changed") {
       return;
     }
@@ -307,11 +294,10 @@ var PreferenceObserver = {
   }
 };
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
 
-  registerCleanupFunction(function () {
+  registerCleanupFunction(function() {
     gFile01.remove(false);
     gFile01 = null;
     gFile02.remove(false);
@@ -336,14 +322,13 @@ function test()
   PreferenceObserver.init();
 
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function () {
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
     openScratchpad(startTest);
   });
 
   gBrowser.loadURI("data:text/html,<p>test recent files in Scratchpad");
 }
 
-function finishTest()
-{
+function finishTest() {
   finish();
 }

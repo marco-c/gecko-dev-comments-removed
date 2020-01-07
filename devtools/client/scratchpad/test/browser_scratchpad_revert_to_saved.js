@@ -13,7 +13,6 @@ var gFile;
 var gFileName = "testFileForBug751744.tmp";
 
 
-
 var gFileContent = "/* this file is already saved */\n" +
                    "function foo() { alert('bar') }";
 var gLength = gFileContent.length;
@@ -21,8 +20,7 @@ var gLength = gFileContent.length;
 
 var menu;
 
-function startTest()
-{
+function startTest() {
   gScratchpad = gScratchpadWindow.Scratchpad;
   menu = gScratchpadWindow.document.getElementById("sp-cmd-revert");
   createAndLoadTemporaryFile();
@@ -88,28 +86,26 @@ function testAfterSecondRevert() {
   finish();
 }
 
-function createAndLoadTemporaryFile()
-{
+function createAndLoadTemporaryFile() {
   
   gFile = FileUtils.getFile("TmpD", [gFileName]);
   gFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o666);
 
   
-  let fout = Cc["@mozilla.org/network/file-output-stream;1"].
-             createInstance(Ci.nsIFileOutputStream);
+  let fout = Cc["@mozilla.org/network/file-output-stream;1"]
+             .createInstance(Ci.nsIFileOutputStream);
   fout.init(gFile.QueryInterface(Ci.nsIFile), 0x02 | 0x08 | 0x20,
             0o644, fout.DEFER_OPEN);
 
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-                  createInstance(Ci.nsIScriptableUnicodeConverter);
+  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+                  .createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
   let fileContentStream = converter.convertToInputStream(gFileContent);
 
   NetUtil.asyncCopy(fileContentStream, fout, tempFileSaved);
 }
 
-function tempFileSaved(aStatus)
-{
+function tempFileSaved(aStatus) {
   ok(Components.isSuccessCode(aStatus),
      "the temporary file was saved successfully");
 
@@ -119,12 +115,11 @@ function tempFileSaved(aStatus)
                              testAfterSaved);
 }
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
 
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function () {
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
     openScratchpad(startTest);
   });
 
