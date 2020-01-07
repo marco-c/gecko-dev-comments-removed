@@ -37,6 +37,9 @@ class SavantShieldStudyClass {
       this.endStudy("ineligible");
       return;
     }
+
+    
+
     
     this.shouldCollect = Services.prefs.getBoolPref(this.STUDY_PREF);
     if (this.shouldCollect) {
@@ -70,9 +73,6 @@ class SavantShieldStudyClass {
 
   
   uninit() {
-    
-    
-    
     
     Services.prefs.removeObserver(this.STUDY_PREF, this);
     Services.prefs.clearUserPref(this.STUDY_PREF);

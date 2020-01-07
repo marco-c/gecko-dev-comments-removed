@@ -1115,6 +1115,8 @@ BrowserGlue.prototype = {
     }
 
     Normandy.uninit();
+
+    SavantShieldStudy.uninit();
   },
 
   
