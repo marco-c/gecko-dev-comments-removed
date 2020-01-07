@@ -2331,6 +2331,12 @@ nsPIDOMWindowInner::GetController() const
   return Move(nsGlobalWindowInner::Cast(this)->GetController());
 }
 
+void
+nsPIDOMWindowInner::NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope)
+{
+  nsGlobalWindowInner::Cast(this)->NoteCalledRegisterForServiceWorkerScope(aScope);
+}
+
 bool
 nsGlobalWindowInner::ShouldReportForServiceWorkerScope(const nsAString& aScope)
 {
@@ -2377,8 +2383,26 @@ nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(const nsACString&
 
   
   
+  
+  if (mClientSource && mClientSource->CalledRegisterForServiceWorkerScope(aScope)) {
+    *aResultOut = true;
+    return CallState::Stop;
+  }
+
+  
+  
   return CallOnChildren(&nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal,
                         aScope, aResultOut);
+}
+
+void
+nsGlobalWindowInner::NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope)
+{
+  if (!mClientSource) {
+    return;
+  }
+
+  mClientSource->NoteCalledRegisterForServiceWorkerScope(aScope);
 }
 
 void

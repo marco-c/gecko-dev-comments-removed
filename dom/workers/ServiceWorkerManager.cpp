@@ -838,6 +838,7 @@ ServiceWorkerManager::Register(mozIDOMWindow* aWindow,
     return rv;
   }
 
+  window->NoteCalledRegisterForServiceWorkerScope(cleanedScope);
   AddRegisteringDocument(cleanedScope, doc);
 
   RefPtr<ServiceWorkerJobQueue> queue = GetOrCreateJobQueue(scopeKey,
@@ -3649,41 +3650,6 @@ ServiceWorkerManager::ShouldReportToWindow(mozIDOMWindowProxy* aWindow,
 
   targetWin = targetWin->GetScriptableTop();
   uint64_t winId = targetWin->WindowID();
-
-  
-  
-  WeakDocumentList* list = mRegisteringDocuments.Get(aScope);
-  if (list) {
-    for (int32_t i = list->Length() - 1; i >= 0; --i) {
-      nsCOMPtr<nsIDocument> doc = do_QueryReferent(list->ElementAt(i));
-      if (!doc) {
-        list->RemoveElementAt(i);
-        continue;
-      }
-
-      if (!doc->IsCurrentActiveDocument()) {
-        continue;
-      }
-
-      nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-      if (!win) {
-        continue;
-      }
-
-      win = win->GetScriptableTop();
-
-      
-      if (win && winId == win->WindowID()) {
-        *aResult = true;
-        return NS_OK;
-      }
-    }
-
-    if (list->IsEmpty()) {
-      list = nullptr;
-      mRegisteringDocuments.Remove(aScope);
-    }
-  }
 
   
   

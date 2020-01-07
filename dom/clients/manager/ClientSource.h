@@ -63,6 +63,12 @@ class ClientSource final : public ClientThing<ClientSourceChild>
   ClientInfo mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
 
+  
+  
+  
+  
+  AutoTArray<nsCString, 1> mRegisteringScopeList;
+
   void
   Shutdown();
 
@@ -163,6 +169,12 @@ public:
   Traverse(nsCycleCollectionTraversalCallback& aCallback,
            const char* aName,
            uint32_t aFlags);
+
+  void
+  NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
+
+  bool
+  CalledRegisterForServiceWorkerScope(const nsACString& aScope);
 };
 
 inline void
