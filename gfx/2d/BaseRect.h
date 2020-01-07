@@ -182,6 +182,11 @@ struct BaseRect {
     *static_cast<Sub*>(this) = aRect1.Union(aRect2);
   }
 
+  void OrWith(const Sub& aRect1)
+  {
+    UnionRect(*static_cast<Sub*>(this), aRect1);
+  }
+
   
   
   
