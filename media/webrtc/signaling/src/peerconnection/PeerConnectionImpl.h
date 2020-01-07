@@ -849,6 +849,10 @@ private:
   Atomic<bool> mPacketDumpEnabled;
   mutable Mutex mPacketDumpFlagsMutex;
 
+  
+  
+  std::vector<std::string> mRawTrickledCandidates;
+
 public:
   
   unsigned short listenPort;
