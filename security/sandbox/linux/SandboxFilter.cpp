@@ -694,7 +694,11 @@ public:
       
       
       
+      
+      
+      
     case SHMGET:
+      return Some(mAllowSysV ? Allow() : Error(EPERM));
     case SHMCTL:
     case SHMAT:
     case SHMDT:

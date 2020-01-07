@@ -124,17 +124,3 @@ inotify_init1(int flags)
   errno = ENOSYS;
   return -1;
 }
-
-#ifdef MOZ_X11
-
-
-
-
-
-
-extern "C" MOZ_EXPORT Bool
-XShmQueryExtension(Display* aDisplay)
-{
-  return False;
-}
-#endif
