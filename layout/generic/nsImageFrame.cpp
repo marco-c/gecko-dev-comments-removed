@@ -646,13 +646,12 @@ void
 nsImageFrame::InvalidateSelf(const nsIntRect* aLayerInvalidRect,
                              const nsRect* aFrameInvalidRect)
 {
-  if (HasProperty(nsIFrame::WebRenderUserDataProperty())) {
-    nsIFrame::WebRenderUserDataTable* userDataTable =
-      GetProperty(nsIFrame::WebRenderUserDataProperty());
-    RefPtr<WebRenderUserData> data;
-    userDataTable->Get(static_cast<uint32_t>(DisplayItemType::TYPE_IMAGE), getter_AddRefs(data));
-    if (data && data->AsFallbackData()) {
-      data->AsFallbackData()->SetInvalid(true);
+  
+  
+  if (HasProperty(WebRenderUserDataProperty::Key())) {
+    RefPtr<WebRenderFallbackData> data = GetWebRenderUserData<WebRenderFallbackData>(this, static_cast<uint32_t>(DisplayItemType::TYPE_IMAGE));
+    if (data) {
+      data->SetInvalid(true);
     }
     SchedulePaint();
     return;
