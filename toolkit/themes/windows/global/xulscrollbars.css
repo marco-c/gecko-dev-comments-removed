@@ -63,7 +63,7 @@ scrollbarbutton {
 
 
 scrollcorner {
-  
+  -moz-appearance: scrollcorner;
   width: 16px;
   cursor: default;
   background-color: -moz-Dialog;

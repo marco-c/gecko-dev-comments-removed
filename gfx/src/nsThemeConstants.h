@@ -181,6 +181,9 @@ enum ThemeWidgetType : uint8_t {
   NS_THEME_SCROLLBAR_NON_DISAPPEARING,
 
   
+  NS_THEME_SCROLLCORNER,
+
+  
   NS_THEME_TEXTFIELD,
 
   

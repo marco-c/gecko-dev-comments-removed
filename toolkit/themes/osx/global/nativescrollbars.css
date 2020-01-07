@@ -71,7 +71,7 @@ scrollbar[orient="vertical"] > scrollbarbutton[type="decrement"] {
 
 
 scrollcorner {
-  
+  -moz-appearance: scrollcorner;
   width: 16px;
   cursor: default;
   background-color: white;
