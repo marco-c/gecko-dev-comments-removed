@@ -24,24 +24,41 @@ module.exports.POSITION = POSITION;
 const TYPE = {
   NORMAL: "normal",
   ARROW: "arrow",
+  DOORHANGER: "doorhanger",
 };
 
 module.exports.TYPE = TYPE;
 
-const ARROW_WIDTH = 32;
+const ARROW_WIDTH = {
+  "normal": 0,
+  "arrow": 32,
+  
+  
+  
+  "doorhanger": 24,
+};
 
-
-const ARROW_OFFSET = 20;
+const ARROW_OFFSET = {
+  "normal": 0,
+  
+  "arrow": 20,
+  
+  
+  "doorhanger": 8,
+};
 
 const EXTRA_HEIGHT = {
   "normal": 0,
   
   "arrow": 13,
+  
+  "doorhanger": 9,
 };
 
 const EXTRA_BORDER = {
   "normal": 0,
   "arrow": 3,
+  "doorhanger": 0,
 };
 
 
@@ -133,16 +150,49 @@ const calculateVerticalPosition = (
 
 
 
+
+
+
+
+
+
+
+
 const calculateHorizontalPosition = (
   anchorRect,
   viewportRect,
+  windowRect,
   width,
   type,
   offset,
+  borderRadius,
   isRtl
 ) => {
   
-  const hangDirection = isRtl ? "left" : "right";
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let hangDirection;
+  if (type === TYPE.DOORHANGER) {
+    const anchorCenter = anchorRect.left + anchorRect.width / 2;
+    const viewCenter = windowRect.left + windowRect.width / 2;
+    hangDirection = anchorCenter >= viewCenter ? "left" : "right";
+  } else {
+    hangDirection = isRtl ? "left" : "right";
+  }
+
   const anchorWidth = anchorRect.width;
 
   
@@ -160,12 +210,14 @@ const calculateHorizontalPosition = (
   tooltipStart = Math.max(0, tooltipStart);
 
   
-  const arrowWidth = type === TYPE.ARROW ? ARROW_WIDTH : 0;
+  const arrowWidth = ARROW_WIDTH[type];
   let arrowStart;
   
-  if (type === TYPE.ARROW) {
+  if (type === TYPE.ARROW || type === TYPE.DOORHANGER) {
+    const arrowOffset = ARROW_OFFSET[type] + borderRadius;
+
     
-    const arrowCenter = tooltipStart + ARROW_OFFSET + arrowWidth / 2;
+    const arrowCenter = tooltipStart + arrowOffset + arrowWidth / 2;
 
     
     const anchorCenter = anchorStart + anchorWidth / 2;
@@ -175,12 +227,12 @@ const calculateHorizontalPosition = (
       tooltipStart = Math.max(0, tooltipStart - (arrowCenter - anchorCenter));
     }
     
-    arrowStart = Math.min(ARROW_OFFSET, (anchorWidth - arrowWidth) / 2) | 0;
+    arrowStart = Math.min(arrowOffset, (anchorWidth - arrowWidth) / 2) | 0;
     
     arrowStart += anchorStart - tooltipStart;
     
-    arrowStart = Math.min(arrowStart, tooltipWidth - arrowWidth);
-    arrowStart = Math.max(arrowStart, 0);
+    arrowStart = Math.min(arrowStart, tooltipWidth - arrowWidth - borderRadius);
+    arrowStart = Math.max(arrowStart, borderRadius);
   }
 
   
@@ -224,6 +276,7 @@ const getRelativeRect = function(node, relativeTo) {
 
   return {top, right, bottom, left, width, height};
 };
+
 
 
 
@@ -375,8 +428,7 @@ HTMLTooltip.prototype = {
       anchorRect = this._convertToScreenRect(anchorRect);
     }
 
-    
-    const viewportRect = this._getViewportRect();
+    const { viewportRect, windowRect } = this._getBoundingRects();
 
     
     let preferredWidth;
@@ -399,9 +451,29 @@ HTMLTooltip.prototype = {
     }
 
     const anchorWin = anchor.ownerDocument.defaultView;
-    const isRtl = anchorWin.getComputedStyle(anchor).direction === "rtl";
+    const anchorCS = anchorWin.getComputedStyle(anchor);
+    const isRtl = anchorCS.direction === "rtl";
+
+    let borderRadius = 0;
+    if (this.type === TYPE.DOORHANGER) {
+      borderRadius = parseFloat(
+        anchorCS.getPropertyValue("--theme-arrowpanel-border-radius")
+      );
+      if (Number.isNaN(borderRadius)) {
+        borderRadius = 0;
+      }
+    }
+
     const {left, width, arrowLeft} = calculateHorizontalPosition(
-      anchorRect, viewportRect, preferredWidth, this.type, x, isRtl);
+      anchorRect,
+      viewportRect,
+      windowRect,
+      preferredWidth,
+      this.type,
+      x,
+      borderRadius,
+      isRtl
+    );
 
     
     
@@ -411,9 +483,21 @@ HTMLTooltip.prototype = {
 
     
     this.container.style.width = width + "px";
-    if (this.type === TYPE.ARROW) {
+    if (this.type === TYPE.ARROW || this.type === TYPE.DOORHANGER) {
       this.arrow.style.left = arrowLeft + "px";
     }
+
+    
+    
+    
+    
+    
+    
+    const panelWindow = this.panel.ownerDocument.defaultView;
+    const panelComputedStyle = panelWindow.getComputedStyle(this.panel);
+    const verticalMargin =
+      parseFloat(panelComputedStyle.marginTop) +
+      parseFloat(panelComputedStyle.marginBottom);
 
     
     let preferredHeight;
@@ -424,8 +508,12 @@ HTMLTooltip.prototype = {
       } else {
         ({ height: preferredHeight } = this._measureContainerSize());
       }
+      preferredHeight += verticalMargin;
     } else {
-      const themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
+      const themeHeight =
+        EXTRA_HEIGHT[this.type] +
+        verticalMargin +
+        2 * EXTRA_BORDER[this.type];
       preferredHeight = this.preferredHeight + themeHeight;
     }
 
@@ -475,14 +563,39 @@ HTMLTooltip.prototype = {
 
 
 
-  _getViewportRect: function() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getBoundingRects: function() {
+    let viewportRect;
+    let windowRect;
+
     if (this.useXulWrapper) {
       
       
       
       
-      const {availLeft, availTop, availHeight, availWidth} = this.doc.defaultView.screen;
-      return {
+      
+      const {
+        availLeft,
+        availTop,
+        availHeight,
+        availWidth,
+      } = this.doc.defaultView.screen;
+      viewportRect = {
         top: availTop,
         right: availLeft + availWidth,
         bottom: availTop + availHeight,
@@ -490,9 +603,27 @@ HTMLTooltip.prototype = {
         width: availWidth,
         height: availHeight,
       };
+
+      const {
+        screenX,
+        screenY,
+        outerWidth,
+        outerHeight,
+      } = this.doc.defaultView;
+      windowRect = {
+        top: screenY,
+        right: screenX + outerWidth,
+        bottom: screenY + outerHeight,
+        left: screenX,
+        width: outerWidth,
+        height: outerHeight,
+      };
+    } else {
+      viewportRect = windowRect =
+        this.doc.documentElement.getBoundingClientRect();
     }
 
-    return this.doc.documentElement.getBoundingClientRect();
+    return { viewportRect, windowRect };
   },
 
   _measureContainerSize: function() {
@@ -573,7 +704,7 @@ HTMLTooltip.prototype = {
     let html = '<div class="tooltip-filler"></div>';
     html += '<div class="tooltip-panel"></div>';
 
-    if (this.type === TYPE.ARROW) {
+    if (this.type === TYPE.ARROW || this.type === TYPE.DOORHANGER) {
       html += '<div class="tooltip-arrow"></div>';
     }
     
