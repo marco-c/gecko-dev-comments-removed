@@ -172,6 +172,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "layout.css.report_errors",
+  layout_css_report_errors,
+  bool, true
+)
+
+
+VARCACHE_PREF(
   "layout.css.font-display.enabled",
    layout_css_font_display_enabled,
   bool, true
