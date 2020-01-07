@@ -146,6 +146,14 @@ enum class ForcedDeviceResetReason
   COMPOSITOR_UPDATED,
 };
 
+struct BackendPrefsData
+{
+  uint32_t mCanvasBitmask = 0;
+  mozilla::gfx::BackendType mCanvasDefault = mozilla::gfx::BackendType::NONE;
+  uint32_t mContentBitmask = 0;
+  mozilla::gfx::BackendType mContentDefault = mozilla::gfx::BackendType::NONE;
+};
+
 class gfxPlatform {
     friend class SRGBOverrideObserver;
 
@@ -741,13 +749,15 @@ protected:
     virtual void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends);
 
     
+    virtual BackendPrefsData GetBackendPrefs();
+
+    
 
 
 
 
 
-    void InitBackendPrefs(uint32_t aCanvasBitmask, mozilla::gfx::BackendType aCanvasDefault,
-                          uint32_t aContentBitmask, mozilla::gfx::BackendType aContentDefault);
+    void InitBackendPrefs(BackendPrefsData&& aPrefsData);
 
     
 

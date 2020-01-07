@@ -78,10 +78,7 @@ gfxPlatformMac::gfxPlatformMac()
     DisableFontActivation();
     mFontAntiAliasingThreshold = ReadAntiAliasingThreshold();
 
-    uint32_t canvasMask = BackendTypeBit(BackendType::SKIA);
-    uint32_t contentMask = BackendTypeBit(BackendType::SKIA);
-    InitBackendPrefs(canvasMask, BackendType::SKIA,
-                     contentMask, BackendType::SKIA);
+    InitBackendPrefs(GetBackendPrefs());
 
     
     
@@ -101,6 +98,19 @@ gfxPlatformMac::gfxPlatformMac()
 gfxPlatformMac::~gfxPlatformMac()
 {
     gfxCoreTextShaper::Shutdown();
+}
+
+BackendPrefsData
+gfxPlatformMac::GetBackendPrefs()
+{
+  BackendPrefsData data;
+
+  data.mCanvasBitmask = BackendTypeBit(BackendType::SKIA);
+  data.mContentBitmask = BackendTypeBit(BackendType::SKIA);
+  data.mCanvasDefault = BackendType::SKIA;
+  data.mContentDefault = BackendType::SKIA;
+
+  return mozilla::Move(data);
 }
 
 bool
