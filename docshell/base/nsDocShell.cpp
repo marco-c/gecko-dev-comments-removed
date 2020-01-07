@@ -13079,7 +13079,7 @@ nsDocShell::GetTopWindow(mozIDOMWindowProxy** aWindow)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetTopFrameElement(nsIDOMElement** aElement)
+nsDocShell::GetTopFrameElement(Element** aElement)
 {
   *aElement = nullptr;
   nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
@@ -13093,8 +13093,7 @@ nsDocShell::GetTopFrameElement(nsIDOMElement** aElement)
   
   
   
-  nsCOMPtr<nsIDOMElement> elt =
-    do_QueryInterface(top->GetFrameElementInternal());
+  RefPtr<Element> elt = top->GetFrameElementInternal();
   elt.forget(aElement);
   return NS_OK;
 }
