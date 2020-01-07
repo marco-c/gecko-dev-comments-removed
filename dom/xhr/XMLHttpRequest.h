@@ -132,12 +132,6 @@ public:
   virtual nsIChannel*
   GetChannel() const = 0;
 
-  virtual void
-  GetNetworkInterfaceId(nsACString& aId) const = 0;
-
-  virtual void
-  SetNetworkInterfaceId(const nsACString& aId) = 0;
-
   
   virtual void
   GetInterface(JSContext* aCx, nsIJSID* aIID,

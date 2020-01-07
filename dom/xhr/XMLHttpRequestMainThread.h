@@ -306,11 +306,6 @@ private:
   bool IsCrossSiteCORSRequest() const;
   bool IsDeniedCrossSiteCORSRequest();
 
-  
-  
-  
-  void PopulateNetworkInterfaceId();
-
   void UnsuppressEventHandlingAndResume();
 
   
@@ -440,18 +435,6 @@ public:
   GetChannel() const override
   {
     return mChannel;
-  }
-
-  virtual void
-  GetNetworkInterfaceId(nsACString& aId) const override
-  {
-    aId = mNetworkInterfaceId;
-  }
-
-  virtual void
-  SetNetworkInterfaceId(const nsACString& aId) override
-  {
-    mNetworkInterfaceId = aId;
   }
 
   
@@ -740,10 +723,6 @@ protected:
 
   bool mIsSystem;
   bool mIsAnon;
-
-  
-  
-  nsCString mNetworkInterfaceId;
 
   
 

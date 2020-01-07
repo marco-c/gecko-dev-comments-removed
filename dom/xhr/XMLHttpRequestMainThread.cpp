@@ -1539,20 +1539,6 @@ XMLHttpRequestMainThread::SetOriginAttributes(const OriginAttributesDictionary& 
   }
 }
 
-void
-XMLHttpRequestMainThread::PopulateNetworkInterfaceId()
-{
-  if (mNetworkInterfaceId.IsEmpty()) {
-    return;
-  }
-  nsCOMPtr<nsIHttpChannelInternal> channel(do_QueryInterface(mChannel));
-  if (!channel) {
-    return;
-  }
-  DebugOnly<nsresult> rv = channel->SetNetworkInterfaceId(mNetworkInterfaceId);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-}
-
 
 
 
@@ -2788,8 +2774,6 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
     mFlagSend = true; 
     return MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
   }
-
-  PopulateNetworkInterfaceId();
 
   
   
