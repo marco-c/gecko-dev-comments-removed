@@ -4084,7 +4084,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
     
     if (!aState.mReflowStatus.IsInlineBreakBefore()) {
       if (!PlaceLine(aState, aLineLayout, aLine, aFloatStateBeforeLine,
-                     aFloatAvailableSpace.mRect, aAvailableSpaceBSize,
+                     aFloatAvailableSpace, aAvailableSpaceBSize,
                      aKeepReflowGoing)) {
         lineReflowStatus = LineReflowStatus::RedoMoreFloats;
         
@@ -4474,7 +4474,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
                         nsLineLayout& aLineLayout,
                         LineIterator aLine,
                         nsFloatManager::SavedState *aFloatStateBeforeLine,
-                        LogicalRect& aFloatAvailableSpace,
+                        nsFlowAreaRect& aFlowArea,
                         nscoord& aAvailableSpaceBSize,
                         bool* aKeepReflowGoing)
 {
@@ -4544,28 +4544,28 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     
     
     
-    LogicalRect oldFloatAvailableSpace(aFloatAvailableSpace);
-    aFloatAvailableSpace =
-      aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
-                                            aAvailableSpaceBSize,
-                                            aFloatStateBeforeLine).mRect;
-    NS_ASSERTION(aFloatAvailableSpace.BStart(wm) ==
+    LogicalRect oldFloatAvailableSpace(aFlowArea.mRect);
+    aFlowArea = aState.GetFloatAvailableSpaceForBSize(aLine->BStart(),
+                                                      aAvailableSpaceBSize,
+                                                      aFloatStateBeforeLine);
+
+    NS_ASSERTION(aFlowArea.mRect.BStart(wm) ==
                  oldFloatAvailableSpace.BStart(wm), "yikes");
     
-    aFloatAvailableSpace.BSize(wm) = oldFloatAvailableSpace.BSize(wm);
+    aFlowArea.mRect.BSize(wm) = oldFloatAvailableSpace.BSize(wm);
 
     
     
     const nscoord iStartDiff =
-      aFloatAvailableSpace.IStart(wm) - oldFloatAvailableSpace.IStart(wm);
+      aFlowArea.mRect.IStart(wm) - oldFloatAvailableSpace.IStart(wm);
     const nscoord iEndDiff =
-      aFloatAvailableSpace.IEnd(wm) - oldFloatAvailableSpace.IEnd(wm);
+      aFlowArea.mRect.IEnd(wm) - oldFloatAvailableSpace.IEnd(wm);
     if (iStartDiff < 0) {
-      aFloatAvailableSpace.IStart(wm) -= iStartDiff;
-      aFloatAvailableSpace.ISize(wm) += iStartDiff;
+      aFlowArea.mRect.IStart(wm) -= iStartDiff;
+      aFlowArea.mRect.ISize(wm) += iStartDiff;
     }
     if (iEndDiff > 0) {
-      aFloatAvailableSpace.ISize(wm) -= iEndDiff;
+      aFlowArea.mRect.ISize(wm) -= iEndDiff;
     }
 
     return false;
