@@ -4,6 +4,7 @@
 "use strict";
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
 
 const nsIPKCS11Slot = Ci.nsIPKCS11Slot;
 const nsIPKCS11Module = Ci.nsIPKCS11Module;
@@ -40,16 +41,10 @@ function doConfirm(msg) {
 
 function RefreshDeviceList() {
   let modules = secmoddb.listModules();
-  while (modules.hasMoreElements()) {
-    let module = modules.getNext().QueryInterface(nsIPKCS11Module);
-    let slotnames = [];
+  for (let module of XPCOMUtils.IterSimpleEnumerator(modules,
+                                                     Ci.nsIPKCS11Module)) {
     let slots = module.listSlots();
-    while (slots.hasMoreElements()) {
-      let slot = slots.getNext().QueryInterface(nsIPKCS11Slot);
-      
-      slotnames.push(slot.tokenName ? slot.tokenName : slot.name);
-    }
-    AddModule(module.name, slotnames);
+    AddModule(module, slots);
   }
 
   
@@ -82,22 +77,25 @@ function AddModule(module, slots) {
   var item  = document.createElement("treeitem");
   var row  = document.createElement("treerow");
   var cell = document.createElement("treecell");
-  cell.setAttribute("label", module);
+  cell.setAttribute("label", module.name);
   row.appendChild(cell);
   item.appendChild(row);
   var parent = document.createElement("treechildren");
-  for (let slot of slots) {
+  for (let slot of XPCOMUtils.IterSimpleEnumerator(slots, Ci.nsIPKCS11Slot)) {
     var child_item = document.createElement("treeitem");
     var child_row = document.createElement("treerow");
     var child_cell = document.createElement("treecell");
-    child_cell.setAttribute("label", slot);
+    child_cell.setAttribute("label", slot.name);
     child_row.appendChild(child_cell);
     child_item.appendChild(child_row);
     child_item.setAttribute("pk11kind", "slot");
+    
+    child_item.slotObject = slot;
     parent.appendChild(child_item);
   }
   item.appendChild(parent);
   item.setAttribute("pk11kind", "module");
+  item.module = module;
   item.setAttribute("open", "true");
   item.setAttribute("container", "true");
   tree.appendChild(item);
@@ -108,28 +106,19 @@ var selected_module;
 
 
 function getSelectedItem() {
-  var tree = document.getElementById("device_tree");
-  if (tree.currentIndex < 0) return;
-  var item = tree.contentView.getItemAtIndex(tree.currentIndex);
+  let tree = document.getElementById("device_tree");
+  if (tree.currentIndex < 0) {
+    return;
+  }
+  let item = tree.contentView.getItemAtIndex(tree.currentIndex);
   selected_slot = null;
   selected_module = null;
   if (item) {
-    var kind = item.getAttribute("pk11kind");
-    var module_name;
+    let kind = item.getAttribute("pk11kind");
     if (kind == "slot") {
-      
-      var cell = item.parentNode.parentNode.firstChild.firstChild;
-      module_name = cell.getAttribute("label");
-      var module = secmoddb.findModuleByName(module_name);
-      
-      cell = item.firstChild.firstChild;
-      var slot_name = cell.getAttribute("label");
-      selected_slot = module.findSlotByName(slot_name);
+      selected_slot = item.slotObject;
     } else { 
-      
-      cell = item.firstChild.firstChild;
-      module_name = cell.getAttribute("label");
-      selected_module = secmoddb.findModuleByName(module_name);
+      selected_module = item.module;
     }
   }
 }
@@ -360,7 +349,9 @@ function changePassword() {
   getSelectedItem();
   let params = Cc[nsDialogParamBlock]
                  .createInstance(nsIDialogParamBlock);
-  params.SetString(1, selected_slot.tokenName);
+  let objects = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+  objects.appendElement(selected_slot.getToken());
+  params.objects = objects;
   window.openDialog("changepassword.xul", "", "chrome,centerscreen,modal",
                     params);
   showSlotInfo();

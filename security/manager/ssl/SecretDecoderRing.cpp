@@ -20,6 +20,7 @@
 #include "nsITokenPasswordDialogs.h"
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
+#include "nsPK11TokenDB.h"
 #include "pk11func.h"
 #include "pk11sdr.h" 
 #include "ssl.h" 
@@ -212,7 +213,9 @@ SecretDecoderRing::ChangePassword()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  NS_ConvertUTF8toUTF16 tokenName(PK11_GetTokenName(slot.get()));
+  
+  
+  nsCOMPtr<nsIPK11Token> token = new nsPK11Token(slot.get());
 
   nsCOMPtr<nsITokenPasswordDialogs> dialogs;
   nsresult rv = getNSSDialogs(getter_AddRefs(dialogs),
@@ -224,7 +227,7 @@ SecretDecoderRing::ChangePassword()
 
   nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
   bool canceled; 
-  return dialogs->SetPassword(ctx, tokenName, &canceled);
+  return dialogs->SetPassword(ctx, token, &canceled);
 }
 
 NS_IMETHODIMP
