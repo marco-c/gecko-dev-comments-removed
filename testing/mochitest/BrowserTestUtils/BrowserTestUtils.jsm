@@ -38,6 +38,8 @@ const EXISTING_JSID = Cc[PROCESSSELECTOR_CONTRACTID];
 const DEFAULT_PROCESSSELECTOR_CID = EXISTING_JSID ?
   Components.ID(EXISTING_JSID.number) : null;
 
+let gListenerId = 0;
+
 
 function NewProcessSelector() {
 }
@@ -308,9 +310,19 @@ this.BrowserTestUtils = {
 
 
 
-  firstBrowserLoaded(win, aboutBlank = true) {
+
+
+
+
+
+
+  firstBrowserLoaded(win, aboutBlank = true, checkFn = null) {
     let mm = win.messageManager;
     return this.waitForMessage(mm, "browser-test-utils:loadEvent", (msg) => {
+      if (checkFn) {
+        return checkFn(msg.target);
+      }
+
       let selectedBrowser = win.gBrowser.selectedBrowser;
       return msg.target == selectedBrowser &&
              (aboutBlank || selectedBrowser.currentURI.spec != "about:blank")
@@ -824,6 +836,115 @@ this.BrowserTestUtils = {
             }, capture, wantsUntrusted);
           });
         });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addContentEventListener(browser,
+                          eventName,
+                          listener,
+                          useCapture = false,
+                          checkFn,
+                          wantsUntrusted = false,
+                          autoremove = true) {
+    let id = gListenerId++;
+    let checkFnSource = checkFn ? encodeURIComponent(escape(checkFn.toSource())) : "";
+
+    
+    
+    
+
+    function frameScript(id, eventName, useCapture, checkFnSource, wantsUntrusted) {
+      let checkFn;
+      if (checkFnSource) {
+        checkFn = eval(`(() => (${unescape(checkFnSource)}))()`);
+      }
+
+      function listener(event) {
+        if (checkFn && !checkFn(event)) {
+          return;
+        }
+        sendAsyncMessage("ContentEventListener:Run", id);
+      }
+      function removeListener(msg) {
+        if (msg.data == id) {
+          removeMessageListener("ContentEventListener:Remove", removeListener);
+          removeEventListener(eventName, listener, useCapture, wantsUntrusted);
+        }
+      }
+      addMessageListener("ContentEventListener:Remove", removeListener);
+      addEventListener(eventName, listener, useCapture, wantsUntrusted);
+    }
+
+    let frameScriptSource =
+        `data:,(${frameScript.toString()})(${id}, "${eventName}", ${useCapture}, "${checkFnSource}", ${wantsUntrusted})`;
+
+    let mm = Services.mm;
+
+    function runListener(msg) {
+      if (msg.data == id && msg.target == browser) {
+        listener();
+      }
+    }
+    mm.addMessageListener("ContentEventListener:Run", runListener);
+
+    let needCleanup = true;
+
+    let unregisterFunction = function() {
+      if (!needCleanup) {
+        return;
+      }
+      needCleanup = false;
+      mm.removeMessageListener("ContentEventListener:Run", runListener);
+      mm.broadcastAsyncMessage("ContentEventListener:Remove", id);
+      mm.removeDelayedFrameScript(frameScriptSource);
+      if (autoremove) {
+        Services.obs.removeObserver(cleanupObserver, "message-manager-close");
+      }
+    };
+
+    function cleanupObserver(subject, topic, data) {
+      if (subject == browser.messageManager) {
+        unregisterFunction();
+      }
+    }
+    if (autoremove) {
+      Services.obs.addObserver(cleanupObserver, "message-manager-close");
+    }
+
+    mm.loadFrameScript(frameScriptSource, true);
+
+    return unregisterFunction;
   },
 
   
