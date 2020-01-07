@@ -1114,15 +1114,6 @@ nsHostResolver::TrrLookup(nsHostRecord *aRec, TRR *pushedTRR)
     rec->mTRRSuccess = 0; 
     rec->mTrrAUsed = nsHostRecord::INIT;
     rec->mTrrAAAAUsed = nsHostRecord::INIT;
-
-    if (gTRRService && gTRRService->IsTRRBlacklisted(rec->host, rec->pb, true)) {
-        Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED, true);
-        MOZ_ASSERT(!rec->mTRRUsed);
-        
-        return NS_ERROR_UNKNOWN_HOST;
-    }
-    Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED, false);
-
     rec->mTrrStart = TimeStamp::Now();
     rec->mTRRUsed = true; 
 

@@ -140,6 +140,22 @@ TRR::SendHTTPRequest()
     return NS_ERROR_FAILURE;
   }
 
+  if ((mType == TRRTYPE_A) || (mType == TRRTYPE_AAAA)) {
+    
+    if (gTRRService->IsTRRBlacklisted(mHost, mPB, true)) {
+      if (mType == TRRTYPE_A) {
+        
+        Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED, true);
+      }
+      
+      return NS_ERROR_UNKNOWN_HOST;
+    } else {
+      if (mType == TRRTYPE_A) {
+        Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED, false);
+      }
+    }
+  }
+
   nsresult rv;
   nsCOMPtr<nsIIOService> ios(do_GetIOService(&rv));
   NS_ENSURE_SUCCESS(rv, rv);

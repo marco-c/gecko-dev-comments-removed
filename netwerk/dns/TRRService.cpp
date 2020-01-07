@@ -384,13 +384,6 @@ bool
 TRRService::IsTRRBlacklisted(const nsACString &aHost, bool privateBrowsing,
                              bool aParentsToo) 
 {
-  if (mClearTRRBLStorage) {
-    if (mTRRBLStorage) {
-      mTRRBLStorage->Clear();
-    }
-    mClearTRRBLStorage = false;
-  }
-
   if (mMode == MODE_TRRONLY) {
     return false; 
   }
@@ -406,6 +399,15 @@ TRRService::IsTRRBlacklisted(const nsACString &aHost, bool privateBrowsing,
   }
   if (!mTRRBLStorage) {
     return false;
+  }
+
+  
+  MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
+
+  if (mClearTRRBLStorage) {
+    mTRRBLStorage->Clear();
+    mClearTRRBLStorage = false;
+    return false; 
   }
 
   int32_t dot = aHost.FindChar('.');
