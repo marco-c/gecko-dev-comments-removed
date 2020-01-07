@@ -1331,6 +1331,7 @@ var gBrowserInit = {
     BrowserSearch.init();
     BrowserPageActions.init();
     gAccessibilityServiceIndicator.init();
+    AccessibilityRefreshBlocker.init();
 
     gRemoteControl.updateVisualCue(Marionette.running);
 
@@ -1595,8 +1596,8 @@ var gBrowserInit = {
     
     let shouldRemoveFocusedAttribute = true;
     this._callWithURIToLoad(uriToLoad => {
-      if (isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") {
-        focusAndSelectUrlBar();
+      if ((isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") &&
+          focusAndSelectUrlBar()) {
         shouldRemoveFocusedAttribute = false;
         return;
       }
@@ -1854,6 +1855,8 @@ var gBrowserInit = {
     DownloadsButton.uninit();
 
     gAccessibilityServiceIndicator.uninit();
+
+    AccessibilityRefreshBlocker.uninit();
 
     LanguagePrompt.uninit();
 
@@ -2206,11 +2209,7 @@ function BrowserGoHome(aEvent) {
   switch (where) {
   case "current":
     loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
-    if (isBlankPageURL(homePage)) {
-      focusAndSelectUrlBar();
-    } else {
-      gBrowser.selectedBrowser.focus();
-    }
+    gBrowser.selectedBrowser.focus();
     notifyObservers = true;
     break;
   case "tabshifted":
@@ -2282,35 +2281,39 @@ function focusAndSelectUrlBar(userInitiatedFocus = false) {
     gNavToolbox.addEventListener("aftercustomization", function() {
       focusAndSelectUrlBar(userInitiatedFocus);
     }, {once: true});
-    return;
+
+    return true;
   }
 
-  if (window.fullScreen) {
-    FullScreen.showNavToolbox();
-  }
+  if (gURLBar) {
+    if (window.fullScreen)
+      FullScreen.showNavToolbox();
 
-  gURLBar.userInitiatedFocus = userInitiatedFocus;
-  gURLBar.select();
-  gURLBar.userInitiatedFocus = false;
+    gURLBar.userInitiatedFocus = userInitiatedFocus;
+    gURLBar.select();
+    gURLBar.userInitiatedFocus = false;
+    if (document.activeElement == gURLBar.inputField)
+      return true;
+  }
+  return false;
 }
 
 function openLocation() {
-  if (window.location.href == getBrowserURL()) {
-    focusAndSelectUrlBar(true);
+  if (focusAndSelectUrlBar(true))
     return;
-  }
 
-  
-  let win = getTopWin();
-  if (win) {
-    win.focus();
-    win.openLocation();
-    return;
+  if (window.location.href != getBrowserURL()) {
+    var win = getTopWin();
+    if (win) {
+      
+      win.focus();
+      win.openLocation();
+    } else {
+      
+      window.openDialog("chrome://browser/content/", "_blank",
+                        "chrome,all,dialog=no", BROWSER_NEW_TAB_URL);
+    }
   }
-
-  
-  window.openDialog("chrome://browser/content/", "_blank",
-                    "chrome,all,dialog=no", BROWSER_NEW_TAB_URL);
 }
 
 function BrowserOpenTab(event) {
@@ -5271,6 +5274,44 @@ var CombinedStopReload = {
     if (this._timer) {
       clearTimeout(this._timer);
       this._timer = 0;
+    }
+  }
+};
+
+
+
+
+
+
+const AccessibilityRefreshBlocker = {
+  PREF: "accessibility.blockautorefresh",
+
+  init() {
+    if (Services.prefs.getBoolPref(this.PREF)) {
+      this.loadFrameScript();
+    } else {
+      Services.prefs.addObserver(this.PREF, this);
+    }
+  },
+
+  uninit() {
+    Services.prefs.removeObserver(this.PREF, this);
+  },
+
+  observe(aSubject, aTopic, aPrefName) {
+    if (aTopic == "nsPref:changed" &&
+        aPrefName == this.PREF &&
+        Services.prefs.getBoolPref(this.PREF)) {
+      this.loadFrameScript();
+      Services.prefs.removeObserver(this.PREF, this);
+    }
+  },
+
+  loadFrameScript() {
+    if (!this._loaded) {
+      this._loaded = true;
+      let mm = window.getGroupMessageManager("browsers");
+      mm.loadFrameScript("chrome://browser/content/content-refreshblocker.js", true);
     }
   }
 };
