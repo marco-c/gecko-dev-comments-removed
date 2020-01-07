@@ -11,7 +11,6 @@ var EXPORTED_SYMBOLS = [
   
   
   
-  
 ];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -28,6 +27,7 @@ ChromeUtils.defineModuleGetter(this, "BinarySearch",
 const ACTION_ID_BOOKMARK = "bookmark";
 const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
+const ACTION_ID_TRANSIENT_SEPARATOR = "transientSeparator";
 
 const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
 const PERSISTED_ACTIONS_CURRENT_VERSION = 1;
@@ -87,38 +87,52 @@ var PageActions = {
 
 
 
-
-
   get actions() {
-    let actions = this.builtInActions;
-    if (this.nonBuiltInActions.length) {
-      
+    let lists = [
+      this._builtInActions,
+      this._nonBuiltInActions,
+      this._transientActions,
+    ];
+    return lists.reduce((memo, list) => memo.concat(list), []);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  actionsInPanel(browserWindow) {
+    function filter(action) {
+      return action.shouldShowInPanel(browserWindow);
+    }
+    let actions = this._builtInActions.filter(filter);
+    let nonBuiltInActions = this._nonBuiltInActions.filter(filter);
+    if (nonBuiltInActions.length) {
       if (actions.length) {
-        
-        
-        
         actions.push(new Action({
           id: ACTION_ID_BUILT_IN_SEPARATOR,
           _isSeparator: true,
         }));
       }
-      actions.push(...this.nonBuiltInActions);
+      actions.push(...nonBuiltInActions);
+    }
+    let transientActions = this._transientActions.filter(filter);
+    if (transientActions.length) {
+      if (actions.length) {
+        actions.push(new Action({
+          id: ACTION_ID_TRANSIENT_SEPARATOR,
+          _isSeparator: true,
+        }));
+      }
+      actions.push(...transientActions);
     }
     return actions;
-  },
-
-  
-
-
-  get builtInActions() {
-    return this._builtInActions.slice();
-  },
-
-  
-
-
-  get nonBuiltInActions() {
-    return this._nonBuiltInActions.slice();
   },
 
   
@@ -175,25 +189,10 @@ var PageActions = {
       this._deferredAddActionCalls.push(() => this.addAction(action));
       return action;
     }
-
-    let hadSep = this.actions.some(a => a.id == ACTION_ID_BUILT_IN_SEPARATOR);
-
     this._registerAction(action);
-
-    let sep = null;
-    if (!hadSep) {
-      sep = this.actions.find(a => a.id == ACTION_ID_BUILT_IN_SEPARATOR);
-    }
-
     for (let bpa of allBrowserPageActions()) {
-      if (sep) {
-        
-        
-        bpa.placeAction(sep);
-      }
       bpa.placeAction(action);
     }
-
     return action;
   },
 
@@ -219,9 +218,12 @@ var PageActions = {
         });
       if (index < 0) {
         
-        index = this._builtInActions.length;
+        index = this._builtInActions.filter(a => !a.__transient).length;
       }
       this._builtInActions.splice(index, 0, action);
+    } else if (action.__transient) {
+      
+      this._transientActions.push(action);
     } else if (gBuiltInActions.find(a => a.id == action.id)) {
       
       
@@ -269,70 +271,8 @@ var PageActions = {
   
   _builtInActions: [],
   _nonBuiltInActions: [],
+  _transientActions: [],
   _actionsByID: new Map(),
-
-  
-
-
-
-
-
-
-
-
-  nextActionIDInUrlbar(browserWindow, action) {
-    
-    
-    if (action.id == ACTION_ID_BOOKMARK) {
-      return null;
-    }
-    let id = this._nextActionID(action, this.actionsInUrlbar(browserWindow));
-    return id || ACTION_ID_BOOKMARK;
-  },
-
-  
-
-
-
-
-
-
-
-
-  nextActionIDInPanel(action) {
-    return this._nextActionID(action, this.actions);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _nextActionID(action, actionArray) {
-    let index = actionArray.findIndex(a => a.id == action.id);
-    if (index < 0) {
-      return null;
-    }
-    let nextAction = actionArray[index + 1];
-    if (!nextAction) {
-      return null;
-    }
-    return nextAction.id;
-  },
 
   
 
@@ -347,7 +287,12 @@ var PageActions = {
     }
 
     this._actionsByID.delete(action.id);
-    for (let list of [this._nonBuiltInActions, this._builtInActions]) {
+    let lists = [
+      this._builtInActions,
+      this._nonBuiltInActions,
+      this._transientActions,
+    ];
+    for (let list of lists) {
       let index = list.findIndex(a => a.id == action.id);
       if (index >= 0) {
         list.splice(index, 1);
@@ -401,6 +346,7 @@ var PageActions = {
     PageActions._purgeUnregisteredPersistedActions();
     PageActions._builtInActions = [];
     PageActions._nonBuiltInActions = [];
+    PageActions._transientActions = [];
     PageActions._actionsByID = new Map();
   },
 
@@ -573,6 +519,14 @@ var PageActions = {
 
 
 
+
+
+
+
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -593,11 +547,13 @@ function Action(options) {
     onPlacedInUrlbar: false,
     onRemovedFromWindow: false,
     onShowingInPanel: false,
+    onSubviewPlaced: false,
+    onSubviewShowing: false,
     pinnedToUrlbar: false,
-    subview: false,
     tooltip: false,
     urlbarIDOverride: false,
     wantsIframe: false,
+    wantsSubview: false,
 
     
 
@@ -615,13 +571,16 @@ function Action(options) {
     
     
     
+    _transient: false,
+
+    
+    
+    
+    
     
     
     _urlbarNodeInMarkup: false,
   });
-  if (this._subview) {
-    this._subview = new Subview(options.subview);
-  }
 
   
 
@@ -638,6 +597,7 @@ function Action(options) {
     iconProps: this._createIconProperties(this._iconURL),
     title: this._title,
     tooltip: this._tooltip,
+    wantsSubview: this._wantsSubview,
   };
 
   
@@ -761,6 +721,16 @@ Action.prototype = {
   
 
 
+  getWantsSubview(browserWindow = null) {
+    return !!this._getProperties(browserWindow).wantsSubview;
+  },
+  setWantsSubview(value, browserWindow = null) {
+    return this._setProperty("wantsSubview", !!value, browserWindow);
+  },
+
+  
+
+
 
 
 
@@ -781,7 +751,7 @@ Action.prototype = {
     
     if (PageActions.actionForID(this.id)) {
       for (let bpa of allBrowserPageActions(browserWindow)) {
-        bpa.updateAction(this, name, value);
+        bpa.updateAction(this, name, { value });
       }
     }
   },
@@ -814,7 +784,6 @@ Action.prototype = {
   
 
 
-
   get anchorIDOverride() {
     return this._anchorIDOverride;
   },
@@ -831,13 +800,6 @@ Action.prototype = {
 
   get wantsIframe() {
     return this._wantsIframe || false;
-  },
-
-  
-
-
-  get subview() {
-    return this._subview;
   },
 
   get labelForHistogram() {
@@ -1037,9 +999,47 @@ Action.prototype = {
 
 
 
+  onSubviewPlaced(panelViewNode) {
+    if (this._onSubviewPlaced) {
+      this._onSubviewPlaced(panelViewNode);
+    }
+  },
+
+  
+
+
+
+
+
+  onSubviewShowing(panelViewNode) {
+    if (this._onSubviewShowing) {
+      this._onSubviewShowing(panelViewNode);
+    }
+  },
+
+  
+
+
+
+
+
+
 
   remove() {
     PageActions.onActionRemoved(this);
+  },
+
+  
+
+
+
+
+
+
+
+
+  shouldShowInPanel(browserWindow) {
+    return !this.__transient || !this.getDisabled(browserWindow);
   },
 
   
@@ -1066,157 +1066,13 @@ Action.prototype = {
 
 this.PageActions.Action = Action;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Subview(options) {
-  setProperties(this, options, {
-    buttons: false,
-    onPlaced: false,
-    onShowing: false,
-  });
-  this._buttons = (this._buttons || []).map(buttonOptions => {
-    return new Button(buttonOptions);
-  });
-}
-
-Subview.prototype = {
-  
-
-
-  get buttons() {
-    return this._buttons;
-  },
-
-  
-
-
-
-
-
-  onPlaced(panelViewNode) {
-    if (this._onPlaced) {
-      this._onPlaced(panelViewNode);
-    }
-  },
-
-  
-
-
-
-
-
-  onShowing(panelViewNode) {
-    if (this._onShowing) {
-      this._onShowing(panelViewNode);
-    }
-  }
-};
-
-this.PageActions.Subview = Subview;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Button(options) {
-  setProperties(this, options, {
-    id: true,
-    title: true,
-    disabled: false,
-    onCommand: false,
-    shortcut: false,
-  });
-}
-
-Button.prototype = {
-  
-
-
-  get disabled() {
-    return this._disabled || false;
-  },
-
-  
-
-
-  get id() {
-    return this._id;
-  },
-
-  
-
-
-  get shortcut() {
-    return this._shortcut;
-  },
-
-  
-
-
-  get title() {
-    return this._title;
-  },
-
-  
-
-
-
-
-
-
-
-  onCommand(event, buttonNode) {
-    if (this._onCommand) {
-      this._onCommand(event, buttonNode);
-    }
-  }
-};
-
-this.PageActions.Button = Button;
-
+this.PageActions.ACTION_ID_BUILT_IN_SEPARATOR = ACTION_ID_BUILT_IN_SEPARATOR;
+this.PageActions.ACTION_ID_TRANSIENT_SEPARATOR = ACTION_ID_TRANSIENT_SEPARATOR;
 
 
 this.PageActions.ACTION_ID_BOOKMARK = ACTION_ID_BOOKMARK;
 this.PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
 this.PageActions.PREF_PERSISTED_ACTIONS = PREF_PERSISTED_ACTIONS;
-
-
-this.PageActions.ACTION_ID_BUILT_IN_SEPARATOR = ACTION_ID_BUILT_IN_SEPARATOR;
 
 
 
@@ -1275,7 +1131,7 @@ var gBuiltInActions = [
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
     },
-  }
+  },
 ];
 
 if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
@@ -1290,22 +1146,14 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     onLocationChange(browserWindow) {
       browserPageActions(browserWindow).sendToDevice.onLocationChange();
     },
-    subview: {
-      buttons: [
-        {
-          id: "notReady",
-          title: "sendToDevice-notReadyTitle",
-          disabled: true,
-        },
-      ],
-      onPlaced(panelViewNode) {
-        browserPageActions(panelViewNode).sendToDevice
-          .onSubviewPlaced(panelViewNode);
-      },
-      onShowing(panelViewNode) {
-        browserPageActions(panelViewNode).sendToDevice
-          .onShowingSubview(panelViewNode);
-      },
+    wantsSubview: true,
+    onSubviewPlaced(panelViewNode) {
+      browserPageActions(panelViewNode).sendToDevice
+        .onSubviewPlaced(panelViewNode);
+    },
+    onSubviewShowing(panelViewNode) {
+      browserPageActions(panelViewNode).sendToDevice
+        .onShowingSubview(panelViewNode);
     },
   });
 }

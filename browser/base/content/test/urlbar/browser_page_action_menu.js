@@ -14,15 +14,6 @@ const mockRemoteClients = [
   { id: "2", name: "baz", type: "mobile", serverLastModified: lastModifiedFixture },
 ];
 
-add_task(async function init() {
-  
-  
-  BrowserPageActions._disablePanelAnimations = true;
-  registerCleanupFunction(() => {
-    BrowserPageActions._disablePanelAnimations = false;
-  });
-});
-
 add_task(async function bookmark() {
   
   let url = "http://example.com/browser_page_action_menu";
@@ -236,7 +227,7 @@ add_task(async function sendToDevice_syncNotReady_other_states() {
 
     let expectedItems = [
       {
-        id: "pageAction-panel-sendToDevice-notReady",
+        className: "pageAction-sendToDevice-notReady",
         display: "none",
         disabled: true,
       },
@@ -309,7 +300,7 @@ add_task(async function sendToDevice_syncNotReady_configured() {
         
         checkSendToDeviceItems([
           {
-            id: "pageAction-panel-sendToDevice-notReady",
+            className: "pageAction-sendToDevice-notReady",
             disabled: true,
           },
         ]);
@@ -317,7 +308,7 @@ add_task(async function sendToDevice_syncNotReady_configured() {
         
         let expectedItems = [
           {
-            id: "pageAction-panel-sendToDevice-notReady",
+            className: "pageAction-sendToDevice-notReady",
             display: "none",
             disabled: true,
           },
@@ -373,7 +364,7 @@ add_task(async function sendToDevice_notSignedIn() {
 
     let expectedItems = [
       {
-        id: "pageAction-panel-sendToDevice-notReady",
+        className: "pageAction-sendToDevice-notReady",
         display: "none",
         disabled: true,
       },
@@ -434,7 +425,7 @@ add_task(async function sendToDevice_noDevices() {
 
     let expectedItems = [
       {
-        id: "pageAction-panel-sendToDevice-notReady",
+        className: "pageAction-sendToDevice-notReady",
         display: "none",
         disabled: true,
       },
@@ -500,7 +491,7 @@ add_task(async function sendToDevice_devices() {
     
     let expectedItems = [
       {
-        id: "pageAction-panel-sendToDevice-notReady",
+        className: "pageAction-sendToDevice-notReady",
         display: "none",
         disabled: true,
       },
@@ -570,7 +561,7 @@ add_task(async function sendToDevice_inUrlbar() {
     
     let expectedItems = [
       {
-        id: "pageAction-urlbar-sendToDevice-notReady",
+        className: "pageAction-sendToDevice-notReady",
         display: "none",
         disabled: true,
       },
@@ -771,6 +762,13 @@ function checkSendToDeviceItems(expectedItems, forUrlbar = false) {
     }
     if ("id" in expected) {
       Assert.equal(actual.id, expected.id);
+    }
+    if ("className" in expected) {
+      let expectedNames = expected.className.split(/\s+/);
+      for (let name of expectedNames) {
+        Assert.ok(actual.classList.contains(name),
+                  `classList contains: ${name}`);
+      }
     }
     let display = "display" in expected ? expected.display : "-moz-box";
     Assert.equal(getComputedStyle(actual).display, display);
