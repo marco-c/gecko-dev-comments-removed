@@ -260,9 +260,19 @@ ExecutableAllocator::purge()
     
     JitRuntime::AutoPreventBackedgePatching apbp(rt_);
 
-    for (size_t i = 0; i < m_smallPools.length(); i++)
-        m_smallPools[i]->release();
-    m_smallPools.clear();
+    for (size_t i = 0; i < m_smallPools.length(); ) {
+        ExecutablePool* pool = m_smallPools[i];
+        if (pool->m_refCount > 1) {
+            
+            
+            i++;
+            continue;
+        }
+
+        MOZ_ASSERT(pool->m_refCount == 1);
+        pool->release();
+        m_smallPools.erase(&m_smallPools[i]);
+    }
 }
 
 void
