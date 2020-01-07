@@ -115,9 +115,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this.frameMap = new Map();
   this.selectedFrameId = null;
 
-  
-  this._requestFinishedListeners = new Set();
-
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
@@ -154,6 +151,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
   this._onPickerStopped = this._onPickerStopped.bind(this);
   this._onInspectObject = this._onInspectObject.bind(this);
   this._onNewSelectedNodeFront = this._onNewSelectedNodeFront.bind(this);
+  this._updatePickerButton = this._updatePickerButton.bind(this);
   this.selectTool = this.selectTool.bind(this);
 
   this._target.on("close", this.destroy);
@@ -177,6 +175,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this.on("host-changed", this._refreshHostTitle);
   this.on("select", this._refreshHostTitle);
+  this.on("select", this._updatePickerButton);
 
   this.on("ready", this._showDevEditionPromo);
 
@@ -743,12 +742,14 @@ Toolbox.prototype = {
 
 
 
+
   _createButtonState: function (options) {
     let isCheckedValue = false;
     const {
       id,
       className,
       description,
+      disabled,
       onClick,
       isInStartContainer,
       setup,
@@ -762,6 +763,7 @@ Toolbox.prototype = {
       id,
       className,
       description,
+      disabled,
       onClick(event) {
         if (typeof onClick == "function") {
           onClick(event, toolbox);
@@ -1310,10 +1312,18 @@ Toolbox.prototype = {
 
 
 
+
+
+
   _onPickerClick: function () {
     let focus = this.hostType === Toolbox.HostType.BOTTOM ||
                 this.hostType === Toolbox.HostType.SIDE;
-    this.highlighterUtils.togglePicker(focus);
+    let currentPanel = this.getCurrentPanel();
+    if (currentPanel.togglePicker) {
+      currentPanel.togglePicker(focus);
+    } else {
+      this.highlighterUtils.togglePicker(focus);
+    }
   },
 
   
@@ -1322,7 +1332,12 @@ Toolbox.prototype = {
 
   _onPickerKeypress: function (event) {
     if (event.keyCode === KeyCodes.DOM_VK_ESCAPE) {
-      this.highlighterUtils.cancelPicker();
+      let currentPanel = this.getCurrentPanel();
+      if (currentPanel.cancelPicker) {
+        currentPanel.cancelPicker();
+      } else {
+        this.highlighterUtils.cancelPicker();
+      }
       
       event.stopImmediatePropagation();
     }
@@ -1394,6 +1409,29 @@ Toolbox.prototype = {
     this.toolbarButtons.forEach(button => {
       button.isVisible = this._commandIsVisible(button);
     });
+    this.component.setToolboxButtons(this.toolbarButtons);
+  },
+
+  
+
+
+
+
+
+  _updatePickerButton() {
+    const button = this.pickerButton;
+    let currentPanel = this.getCurrentPanel();
+
+    if (currentPanel && currentPanel.updatePickerButton) {
+      currentPanel.updatePickerButton();
+    } else {
+      
+      
+      button.description = L10N.getStr("pickButton.tooltip");
+      button.className = null;
+      button.disabled = null;
+    }
+
     this.component.setToolboxButtons(this.toolbarButtons);
   },
 
@@ -2583,7 +2621,13 @@ Toolbox.prototype = {
       
       yield this._initInspector;
 
-      yield this.highlighterUtils.stopPicker();
+      let currentPanel = this.getCurrentPanel();
+      if (currentPanel.stopPicker) {
+        yield currentPanel.stopPicker();
+      } else {
+        yield this.highlighterUtils.stopPicker();
+      }
+
       yield this._inspector.destroy();
       if (this._highlighter) {
         
@@ -2642,6 +2686,7 @@ Toolbox.prototype = {
     this._target.off("navigate", this._refreshHostTitle);
     this._target.off("frame-update", this._updateFrames);
     this.off("select", this._refreshHostTitle);
+    this.off("select", this._updatePickerButton);
     this.off("host-changed", this._refreshHostTitle);
     this.off("ready", this._showDevEditionPromo);
 
@@ -3003,8 +3048,6 @@ Toolbox.prototype = {
 
   
 
-  
-
 
   getHARFromNetMonitor: function () {
     let netPanel = this.getPanel("netmonitor");
@@ -3018,54 +3061,5 @@ Toolbox.prototype = {
 
     
     return netPanel.panelWin.Netmonitor.getHar();
-  },
-
-  
-
-
-
-
-
-
-
-  addRequestFinishedListener: function (listener) {
-    
-    
-    
-    let message = "The Network panel needs to be selected at least" +
-      " once in order to receive 'onRequestFinished' events.";
-    this.target.logErrorInPage(message, "har");
-
-    
-    this._requestFinishedListeners.add(listener);
-  },
-
-  removeRequestFinishedListener: function (listener) {
-    this._requestFinishedListeners.delete(listener);
-  },
-
-  getRequestFinishedListeners: function () {
-    return this._requestFinishedListeners;
-  },
-
-  
-
-
-
-
-
-
-
-  fetchResponseContent: function (requestId) {
-    let netPanel = this.getPanel("netmonitor");
-
-    
-    
-    
-    if (!netPanel) {
-      return Promise.resolve({content: {}});
-    }
-
-    return netPanel.panelWin.Netmonitor.fetchResponseContent(requestId);
   }
 };
