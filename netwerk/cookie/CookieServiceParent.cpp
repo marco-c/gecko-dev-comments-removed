@@ -264,7 +264,7 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   
   nsDependentCString cookieString(aCookieString, 0);
   mCookieService->SetCookieStringInternal(hostURI, aIsForeign, cookieString,
-                                          aServerTime, aFromHttp, aAttrs,
+                                          aServerTime, aFromHttp, true, aAttrs,
                                           dummyChannel);
   return IPC_OK();
 }
