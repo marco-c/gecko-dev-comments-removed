@@ -317,6 +317,7 @@ nsAccessiblePivot::MoveNextByText(TextBoundaryType aBoundary,
   Accessible* tempPosition = mPosition;
   Accessible* root = GetActiveRoot();
   while (true) {
+    NS_ENSURE_TRUE(tempPosition, NS_ERROR_UNEXPECTED);
     Accessible* curPosition = tempPosition;
     HyperTextAccessible* text = nullptr;
     
@@ -436,6 +437,7 @@ nsAccessiblePivot::MovePreviousByText(TextBoundaryType aBoundary,
   Accessible* tempPosition = mPosition;
   Accessible* root = GetActiveRoot();
   while (true) {
+    NS_ENSURE_TRUE(tempPosition, NS_ERROR_UNEXPECTED);
     Accessible* curPosition = tempPosition;
     HyperTextAccessible* text;
     
