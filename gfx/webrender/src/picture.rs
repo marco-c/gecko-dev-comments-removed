@@ -3,7 +3,7 @@
 
 
 use api::{FilterOp, MixBlendMode, PipelineId, PremultipliedColorF};
-use api::{DeviceIntRect, DeviceIntSize, LayerRect};
+use api::{DeviceIntRect, DeviceIntSize, LayoutRect};
 use api::{PictureIntPoint, PictureIntRect, PictureIntSize};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip_scroll_tree::ClipScrollNodeIndex;
@@ -151,7 +151,7 @@ pub struct PicturePrimitive {
     
     
     pub reference_frame_index: ClipScrollNodeIndex,
-    pub real_local_rect: LayerRect,
+    pub real_local_rect: LayoutRect,
     
     
     
@@ -195,7 +195,7 @@ impl PicturePrimitive {
             is_in_3d_context,
             frame_output_pipeline_id,
             reference_frame_index,
-            real_local_rect: LayerRect::zero(),
+            real_local_rect: LayoutRect::zero(),
             extra_gpu_data_handle: GpuCacheHandle::new(),
             apply_local_clip_rect,
             pipeline_id,
@@ -227,7 +227,7 @@ impl PicturePrimitive {
     pub fn update_local_rect(
         &mut self,
         prim_run_rect: PrimitiveRunLocalRect,
-    ) -> LayerRect {
+    ) -> LayoutRect {
         let local_content_rect = prim_run_rect.local_rect_in_actual_parent_space;
 
         self.real_local_rect = prim_run_rect.local_rect_in_original_parent_space;
@@ -270,6 +270,11 @@ impl PicturePrimitive {
                 true
             }
         }
+    }
+
+    
+    pub fn allow_subpixel_aa(&self) -> bool {
+        self.can_draw_directly_to_parent_surface()
     }
 
     pub fn prepare_for_render_inner(

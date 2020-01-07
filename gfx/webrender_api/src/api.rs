@@ -234,10 +234,6 @@ impl Transaction {
     
     
     
-    
-    
-    
-    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
@@ -313,6 +309,12 @@ impl Transaction {
         self.frame_ops.push(FrameMsg::SetPan(pan));
     }
 
+    
+    
+    
+    
+    
+    
     
     pub fn generate_frame(&mut self) {
         self.generate_frame = true;
@@ -1107,7 +1109,7 @@ pub struct DynamicProperties {
 pub trait RenderNotifier: Send {
     fn clone(&self) -> Box<RenderNotifier>;
     fn wake_up(&self);
-    fn new_document_ready(&self, DocumentId, scrolled: bool, composite_needed: bool);
+    fn new_frame_ready(&self, DocumentId, scrolled: bool, composite_needed: bool);
     fn external_event(&self, _evt: ExternalEvent) {
         unimplemented!()
     }

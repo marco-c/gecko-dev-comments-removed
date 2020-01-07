@@ -2,8 +2,8 @@
 
 
 
-use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, DeviceIntSize, LayerPrimitiveInfo};
-use api::{LayerRect, LayerSize, LayerVector2D, LayoutSize};
+use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, DeviceIntSize, LayoutPrimitiveInfo};
+use api::{LayoutRect, LayoutSize, LayoutVector2D};
 use clip::ClipSource;
 use display_list_flattener::DisplayListFlattener;
 use gpu_cache::GpuCacheHandle;
@@ -29,15 +29,15 @@ pub struct BoxShadowClipSource {
     pub clip_data_handle: GpuCacheHandle,
 
     
-    pub shadow_rect_alloc_size: LayerSize,
+    pub shadow_rect_alloc_size: LayoutSize,
 
     
     
-    pub minimal_shadow_rect: LayerRect,
+    pub minimal_shadow_rect: LayoutRect,
 
     
     
-    pub prim_shadow_rect: LayerRect,
+    pub prim_shadow_rect: LayoutRect,
 }
 
 
@@ -67,8 +67,8 @@ impl<'a> DisplayListFlattener<'a> {
     pub fn add_box_shadow(
         &mut self,
         clip_and_scroll: ScrollNodeAndClipChain,
-        prim_info: &LayerPrimitiveInfo,
-        box_offset: &LayerVector2D,
+        prim_info: &LayoutPrimitiveInfo,
+        box_offset: &LayoutVector2D,
         color: &ColorF,
         mut blur_radius: f32,
         spread_radius: f32,
@@ -147,12 +147,11 @@ impl<'a> DisplayListFlattener<'a> {
 
             self.add_primitive(
                 clip_and_scroll,
-                &LayerPrimitiveInfo::with_clip_rect(final_prim_rect, prim_info.clip_rect),
+                &LayoutPrimitiveInfo::with_clip_rect(final_prim_rect, prim_info.clip_rect),
                 clips,
                 PrimitiveContainer::Brush(
-                    BrushPrimitive::new(BrushKind::Solid {
-                            color: *color,
-                        },
+                    BrushPrimitive::new(
+                        BrushKind::new_solid(*color),
                         None,
                     )
                 ),
@@ -177,9 +176,7 @@ impl<'a> DisplayListFlattener<'a> {
             
             
             let prim = BrushPrimitive::new(
-                BrushKind::Solid {
-                    color: *color,
-                },
+                BrushKind::new_solid(*color),
                 None,
             );
 
@@ -204,7 +201,7 @@ impl<'a> DisplayListFlattener<'a> {
 
                     
                     
-                    LayerPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect)
+                    LayoutPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect)
                 }
                 BoxShadowClipMode::Inset => {
                     

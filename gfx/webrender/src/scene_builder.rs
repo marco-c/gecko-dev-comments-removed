@@ -38,6 +38,7 @@ pub enum SceneBuilderResult {
         render: bool,
         result_tx: Sender<SceneSwapResult>,
     },
+    Stopped,
 }
 
 
@@ -170,7 +171,12 @@ impl SceneBuilder {
                     hooks.post_scene_swap(pipeline_info);
                 }
             }
-            SceneBuilderRequest::Stop => { return false; }
+            SceneBuilderRequest::Stop => {
+                self.tx.send(SceneBuilderResult::Stopped).unwrap();
+                
+                
+                return false;
+            }
         }
 
         true

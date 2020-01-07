@@ -5,8 +5,8 @@
 use api::{AlphaType, BorderRadius, BoxShadowClipMode, BuiltDisplayList, ClipMode, ColorF, ComplexClipRegion};
 use api::{DeviceIntRect, DeviceIntSize, DevicePixelScale, Epoch, ExtendMode, FontRenderMode};
 use api::{FilterOp, GlyphInstance, GlyphKey, GradientStop, ImageKey, ImageRendering, ItemRange, ItemTag};
-use api::{GlyphRasterSpace, LayerPoint, LayerRect, LayerSize, LayerToWorldTransform, LayerVector2D};
-use api::{PipelineId, PremultipliedColorF, Shadow, YuvColorSpace, YuvFormat};
+use api::{GlyphRasterSpace, LayoutPoint, LayoutRect, LayoutSize, LayoutToWorldTransform, LayoutVector2D};
+use api::{PipelineId, PremultipliedColorF, PropertyBinding, Shadow, YuvColorSpace, YuvFormat};
 use border::{BorderCornerInstance, BorderEdgeKind};
 use box_shadow::BLUR_SAMPLE_SCALE;
 use clip_scroll_tree::{ClipChainIndex, ClipScrollNodeIndex, CoordinateSystemId};
@@ -26,10 +26,11 @@ use render_task::{BlitSource, RenderTask, RenderTaskCacheKey};
 use render_task::{RenderTaskCacheKeyKind, RenderTaskId, RenderTaskCacheEntryHandle};
 use renderer::{MAX_VERTEX_TEXTURE_WIDTH};
 use resource_cache::{ImageProperties, ImageRequest};
+use scene::SceneProperties;
 use segment::SegmentBuilder;
 use std::{mem, usize};
 use std::sync::Arc;
-use util::{MatrixHelpers, WorldToLayerFastTransform, calculate_screen_bounding_rect};
+use util::{MatrixHelpers, WorldToLayoutFastTransform, calculate_screen_bounding_rect};
 use util::{pack_as_float, recycle_vec};
 
 
@@ -110,8 +111,8 @@ impl CachedGradient {
 
 #[derive(Debug)]
 pub struct PrimitiveRunLocalRect {
-    pub local_rect_in_actual_parent_space: LayerRect,
-    pub local_rect_in_original_parent_space: LayerRect,
+    pub local_rect_in_actual_parent_space: LayoutRect,
+    pub local_rect_in_original_parent_space: LayoutRect,
 }
 
 
@@ -184,8 +185,8 @@ pub struct PrimitiveMetadata {
     
     
     
-    pub local_rect: LayerRect,
-    pub local_clip_rect: LayerRect,
+    pub local_rect: LayoutRect,
+    pub local_clip_rect: LayoutRect,
     pub clip_chain_rect_index: ClipChainRectIndex,
     pub is_backface_visible: bool,
     pub screen_rect: Option<ScreenRect>,
@@ -200,10 +201,52 @@ pub struct PrimitiveMetadata {
     pub prepared_frame_id: FrameId,
 }
 
+
+
+
+
+#[derive(Debug)]
+pub struct OpacityBinding {
+    bindings: Vec<PropertyBinding<f32>>,
+    current: f32,
+}
+
+impl OpacityBinding {
+    pub fn new() -> OpacityBinding {
+        OpacityBinding {
+            bindings: Vec::new(),
+            current: 1.0,
+        }
+    }
+
+    
+    pub fn push(&mut self, binding: PropertyBinding<f32>) {
+        self.bindings.push(binding);
+    }
+
+    
+    
+    
+    pub fn update(&mut self, scene_properties: &SceneProperties) -> bool {
+        let mut new_opacity = 1.0;
+
+        for binding in &self.bindings {
+            let opacity = scene_properties.resolve_float(binding, 1.0);
+            new_opacity = new_opacity * opacity;
+        }
+
+        let changed = new_opacity != self.current;
+        self.current = new_opacity;
+
+        changed
+    }
+}
+
 #[derive(Debug)]
 pub enum BrushKind {
     Solid {
         color: ColorF,
+        opacity_binding: OpacityBinding,
     },
     Clear,
     Picture {
@@ -213,10 +256,11 @@ pub enum BrushKind {
         request: ImageRequest,
         current_epoch: Epoch,
         alpha_type: AlphaType,
-        stretch_size: LayerSize,
-        tile_spacing: LayerSize,
+        stretch_size: LayoutSize,
+        tile_spacing: LayoutSize,
         source: ImageSource,
         sub_rect: Option<DeviceIntRect>,
+        opacity_binding: OpacityBinding,
     },
     YuvImage {
         yuv_key: [ImageKey; 3],
@@ -228,7 +272,7 @@ pub enum BrushKind {
         gradient_index: CachedGradientIndex,
         stops_range: ItemRange<GradientStop>,
         extend_mode: ExtendMode,
-        center: LayerPoint,
+        center: LayoutPoint,
         start_radius: f32,
         end_radius: f32,
         ratio_xy: f32,
@@ -239,8 +283,8 @@ pub enum BrushKind {
         stops_count: usize,
         extend_mode: ExtendMode,
         reverse_stops: bool,
-        start_point: LayerPoint,
-        end_point: LayerPoint,
+        start_point: LayoutPoint,
+        end_point: LayoutPoint,
     }
 }
 
@@ -258,6 +302,14 @@ impl BrushKind {
             BrushKind::Picture { .. } => false,
 
             BrushKind::Clear => false,
+        }
+    }
+
+    
+    pub fn new_solid(color: ColorF) -> BrushKind {
+        BrushKind::Solid {
+            color,
+            opacity_binding: OpacityBinding::new(),
         }
     }
 }
@@ -279,7 +331,7 @@ bitflags! {
 
 #[derive(Debug)]
 pub struct BrushSegment {
-    pub local_rect: LayerRect,
+    pub local_rect: LayoutRect,
     pub clip_task_id: Option<RenderTaskId>,
     pub may_need_clip_mask: bool,
     pub edge_flags: EdgeAaSegmentMask,
@@ -287,13 +339,13 @@ pub struct BrushSegment {
 
 impl BrushSegment {
     pub fn new(
-        origin: LayerPoint,
-        size: LayerSize,
+        origin: LayoutPoint,
+        size: LayoutSize,
         may_need_clip_mask: bool,
         edge_flags: EdgeAaSegmentMask,
     ) -> BrushSegment {
         BrushSegment {
-            local_rect: LayerRect::new(origin, size),
+            local_rect: LayoutRect::new(origin, size),
             clip_task_id: None,
             may_need_clip_mask,
             edge_flags,
@@ -347,15 +399,19 @@ impl BrushPrimitive {
         
         match self.kind {
             BrushKind::YuvImage { .. } => {}
-
-            BrushKind::Picture { .. } |
-            BrushKind::Image { .. } => {
+            BrushKind::Picture { .. } => {
                 request.push(PremultipliedColorF::WHITE);
                 request.push(PremultipliedColorF::WHITE);
             }
-
-            BrushKind::Solid { color } => {
-                request.push(color.premultiplied());
+            
+            
+            BrushKind::Image { ref opacity_binding, .. } => {
+                request.push(ColorF::new(1.0, 1.0, 1.0, opacity_binding.current).premultiplied());
+                request.push(PremultipliedColorF::WHITE);
+            }
+            
+            BrushKind::Solid { color, ref opacity_binding, .. } => {
+                request.push(color.scale_alpha(opacity_binding.current).premultiplied());
             }
             BrushKind::Clear => {
                 
@@ -418,9 +474,9 @@ pub enum ImageSource {
 
 #[derive(Debug)]
 pub struct ImagePrimitiveCpu {
-    pub tile_spacing: LayerSize,
+    pub tile_spacing: LayoutSize,
     pub alpha_type: AlphaType,
-    pub stretch_size: LayerSize,
+    pub stretch_size: LayoutSize,
     pub current_epoch: Epoch,
     pub source: ImageSource,
     pub key: ImageCacheKey,
@@ -634,7 +690,7 @@ impl<'a> GradientGpuBlockBuilder<'a> {
 #[derive(Debug, Clone)]
 pub struct TextRunPrimitiveCpu {
     pub font: FontInstance,
-    pub offset: LayerVector2D,
+    pub offset: LayoutVector2D,
     pub glyph_range: ItemRange<GlyphInstance>,
     pub glyph_keys: Vec<GlyphKey>,
     pub glyph_gpu_blocks: Vec<GpuBlockData>,
@@ -646,7 +702,7 @@ impl TextRunPrimitiveCpu {
     pub fn get_font(
         &self,
         device_pixel_scale: DevicePixelScale,
-        transform: Option<LayerToWorldTransform>,
+        transform: Option<LayoutToWorldTransform>,
     ) -> FontInstance {
         let mut font = self.font.clone();
         font.size = font.size.scale_by(device_pixel_scale.0);
@@ -665,10 +721,15 @@ impl TextRunPrimitiveCpu {
     fn prepare_for_render(
         &mut self,
         device_pixel_scale: DevicePixelScale,
-        transform: Option<LayerToWorldTransform>,
+        transform: Option<LayoutToWorldTransform>,
+        allow_subpixel_aa: bool,
         display_list: &BuiltDisplayList,
         frame_building_state: &mut FrameBuildingState,
     ) {
+        if !allow_subpixel_aa {
+            self.font.render_mode = self.font.render_mode.limit_by(FontRenderMode::Alpha);
+        }
+
         let font = self.get_font(device_pixel_scale, transform);
 
         
@@ -734,14 +795,14 @@ impl TextRunPrimitiveCpu {
 #[derive(Debug)]
 #[repr(C)]
 struct ClipRect {
-    rect: LayerRect,
+    rect: LayoutRect,
     mode: f32,
 }
 
 #[derive(Debug)]
 #[repr(C)]
 struct ClipCorner {
-    rect: LayerRect,
+    rect: LayoutRect,
     outer_radius_x: f32,
     outer_radius_y: f32,
     inner_radius_x: f32,
@@ -765,7 +826,7 @@ impl ClipCorner {
         ]);
     }
 
-    fn uniform(rect: LayerRect, outer_radius: f32, inner_radius: f32) -> ClipCorner {
+    fn uniform(rect: LayoutRect, outer_radius: f32, inner_radius: f32) -> ClipCorner {
         ClipCorner {
             rect,
             outer_radius_x: outer_radius,
@@ -779,7 +840,7 @@ impl ClipCorner {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ImageMaskData {
-    pub local_rect: LayerRect,
+    pub local_rect: LayoutRect,
 }
 
 impl ToGpuBlocks for ImageMaskData {
@@ -798,16 +859,16 @@ pub struct ClipData {
 }
 
 impl ClipData {
-    pub fn rounded_rect(rect: &LayerRect, radii: &BorderRadius, mode: ClipMode) -> ClipData {
+    pub fn rounded_rect(rect: &LayoutRect, radii: &BorderRadius, mode: ClipMode) -> ClipData {
         ClipData {
             rect: ClipRect {
                 rect: *rect,
                 mode: mode as u32 as f32,
             },
             top_left: ClipCorner {
-                rect: LayerRect::new(
-                    LayerPoint::new(rect.origin.x, rect.origin.y),
-                    LayerSize::new(radii.top_left.width, radii.top_left.height),
+                rect: LayoutRect::new(
+                    LayoutPoint::new(rect.origin.x, rect.origin.y),
+                    LayoutSize::new(radii.top_left.width, radii.top_left.height),
                 ),
                 outer_radius_x: radii.top_left.width,
                 outer_radius_y: radii.top_left.height,
@@ -815,12 +876,12 @@ impl ClipData {
                 inner_radius_y: 0.0,
             },
             top_right: ClipCorner {
-                rect: LayerRect::new(
-                    LayerPoint::new(
+                rect: LayoutRect::new(
+                    LayoutPoint::new(
                         rect.origin.x + rect.size.width - radii.top_right.width,
                         rect.origin.y,
                     ),
-                    LayerSize::new(radii.top_right.width, radii.top_right.height),
+                    LayoutSize::new(radii.top_right.width, radii.top_right.height),
                 ),
                 outer_radius_x: radii.top_right.width,
                 outer_radius_y: radii.top_right.height,
@@ -828,12 +889,12 @@ impl ClipData {
                 inner_radius_y: 0.0,
             },
             bottom_left: ClipCorner {
-                rect: LayerRect::new(
-                    LayerPoint::new(
+                rect: LayoutRect::new(
+                    LayoutPoint::new(
                         rect.origin.x,
                         rect.origin.y + rect.size.height - radii.bottom_left.height,
                     ),
-                    LayerSize::new(radii.bottom_left.width, radii.bottom_left.height),
+                    LayoutSize::new(radii.bottom_left.width, radii.bottom_left.height),
                 ),
                 outer_radius_x: radii.bottom_left.width,
                 outer_radius_y: radii.bottom_left.height,
@@ -841,12 +902,12 @@ impl ClipData {
                 inner_radius_y: 0.0,
             },
             bottom_right: ClipCorner {
-                rect: LayerRect::new(
-                    LayerPoint::new(
+                rect: LayoutRect::new(
+                    LayoutPoint::new(
                         rect.origin.x + rect.size.width - radii.bottom_right.width,
                         rect.origin.y + rect.size.height - radii.bottom_right.height,
                     ),
-                    LayerSize::new(radii.bottom_right.width, radii.bottom_right.height),
+                    LayoutSize::new(radii.bottom_right.width, radii.bottom_right.height),
                 ),
                 outer_radius_x: radii.bottom_right.width,
                 outer_radius_y: radii.bottom_right.height,
@@ -856,43 +917,43 @@ impl ClipData {
         }
     }
 
-    pub fn uniform(rect: LayerRect, radius: f32, mode: ClipMode) -> ClipData {
+    pub fn uniform(rect: LayoutRect, radius: f32, mode: ClipMode) -> ClipData {
         ClipData {
             rect: ClipRect {
                 rect,
                 mode: mode as u32 as f32,
             },
             top_left: ClipCorner::uniform(
-                LayerRect::new(
-                    LayerPoint::new(rect.origin.x, rect.origin.y),
-                    LayerSize::new(radius, radius),
+                LayoutRect::new(
+                    LayoutPoint::new(rect.origin.x, rect.origin.y),
+                    LayoutSize::new(radius, radius),
                 ),
                 radius,
                 0.0,
             ),
             top_right: ClipCorner::uniform(
-                LayerRect::new(
-                    LayerPoint::new(rect.origin.x + rect.size.width - radius, rect.origin.y),
-                    LayerSize::new(radius, radius),
+                LayoutRect::new(
+                    LayoutPoint::new(rect.origin.x + rect.size.width - radius, rect.origin.y),
+                    LayoutSize::new(radius, radius),
                 ),
                 radius,
                 0.0,
             ),
             bottom_left: ClipCorner::uniform(
-                LayerRect::new(
-                    LayerPoint::new(rect.origin.x, rect.origin.y + rect.size.height - radius),
-                    LayerSize::new(radius, radius),
+                LayoutRect::new(
+                    LayoutPoint::new(rect.origin.x, rect.origin.y + rect.size.height - radius),
+                    LayoutSize::new(radius, radius),
                 ),
                 radius,
                 0.0,
             ),
             bottom_right: ClipCorner::uniform(
-                LayerRect::new(
-                    LayerPoint::new(
+                LayoutRect::new(
+                    LayoutPoint::new(
                         rect.origin.x + rect.size.width - radius,
                         rect.origin.y + rect.size.height - radius,
                     ),
-                    LayerSize::new(radius, radius),
+                    LayoutSize::new(radius, radius),
                 ),
                 radius,
                 0.0,
@@ -937,7 +998,7 @@ impl PrimitiveContainer {
             }
             PrimitiveContainer::Brush(ref brush) => {
                 match brush.kind {
-                    BrushKind::Solid { ref color } => {
+                    BrushKind::Solid { ref color, .. } => {
                         color.a > 0.0
                     }
                     BrushKind::Clear |
@@ -987,9 +1048,7 @@ impl PrimitiveContainer {
                 match brush.kind {
                     BrushKind::Solid { .. } => {
                         PrimitiveContainer::Brush(BrushPrimitive::new(
-                            BrushKind::Solid {
-                                color: shadow.color,
-                            },
+                            BrushKind::new_solid(shadow.color),
                             None,
                         ))
                     }
@@ -1077,8 +1136,8 @@ impl PrimitiveStore {
 
     pub fn add_primitive(
         &mut self,
-        local_rect: &LayerRect,
-        local_clip_rect: &LayerRect,
+        local_rect: &LayoutRect,
+        local_clip_rect: &LayoutRect,
         is_backface_visible: bool,
         clip_sources: Option<ClipSourcesHandle>,
         tag: Option<ItemTag>,
@@ -1093,7 +1152,7 @@ impl PrimitiveStore {
             local_rect: *local_rect,
             local_clip_rect: *local_clip_rect,
             clip_chain_rect_index: ClipChainRectIndex(0),
-            is_backface_visible: is_backface_visible,
+            is_backface_visible,
             screen_rect: None,
             tag,
             opacity: PrimitiveOpacity::translucent(),
@@ -1107,7 +1166,7 @@ impl PrimitiveStore {
             PrimitiveContainer::Brush(brush) => {
                 let opacity = match brush.kind {
                     BrushKind::Clear => PrimitiveOpacity::translucent(),
-                    BrushKind::Solid { ref color } => PrimitiveOpacity::from_alpha(color.a),
+                    BrushKind::Solid { ref color, .. } => PrimitiveOpacity::from_alpha(color.a),
                     BrushKind::Image { .. } => PrimitiveOpacity::translucent(),
                     BrushKind::YuvImage { .. } => PrimitiveOpacity::opaque(),
                     BrushKind::RadialGradient { .. } => PrimitiveOpacity::translucent(),
@@ -1166,6 +1225,121 @@ impl PrimitiveStore {
         PrimitiveIndex(prim_index)
     }
 
+    
+    
+    fn get_opacity_collapse_prim(
+        &self,
+        pic_index: PictureIndex,
+    ) -> Option<PrimitiveIndex> {
+        let pic = &self.pictures[pic_index.0];
+
+        
+        
+        if pic.runs.len() != 1 {
+            return None;
+        }
+
+        let run = &pic.runs[0];
+        if run.count != 1 {
+            return None;
+        }
+
+        let prim_metadata = &self.cpu_metadata[run.base_prim_index.0];
+
+        
+        
+        
+        
+        match prim_metadata.prim_kind {
+            PrimitiveKind::Brush => {
+                let brush = &self.cpu_brushes[prim_metadata.cpu_prim_index.0];
+                match brush.kind {
+                    BrushKind::Picture { pic_index, .. } => {
+                        let pic = &self.pictures[pic_index.0];
+                        
+                        
+                        
+                        if pic.composite_mode.is_none() {
+                            return self.get_opacity_collapse_prim(pic_index);
+                        }
+                    }
+                    
+                    
+                    BrushKind::Solid { .. } | BrushKind::Image { .. } => {
+                        return Some(run.base_prim_index)
+                    }
+                    BrushKind::YuvImage { .. } |
+                    BrushKind::LinearGradient { .. } |
+                    BrushKind::RadialGradient { .. } |
+                    BrushKind::Clear => {}
+                }
+            }
+            PrimitiveKind::TextRun |
+            PrimitiveKind::Image |
+            PrimitiveKind::Border => {}
+        }
+
+        None
+    }
+
+    
+    
+    
+    
+    pub fn optimize_picture_if_possible(
+        &mut self,
+        pic_index: PictureIndex,
+    ) {
+        
+        let binding = match self.pictures[pic_index.0].composite_mode {
+            Some(PictureCompositeMode::Filter(FilterOp::Opacity(binding, _))) => {
+                binding
+            }
+            _ => {
+                return;
+            }
+        };
+
+        
+        
+        if let Some(prim_index) = self.get_opacity_collapse_prim(pic_index) {
+            let prim_metadata = &self.cpu_metadata[prim_index.0];
+            match prim_metadata.prim_kind {
+                PrimitiveKind::Brush => {
+                    let brush = &mut self.cpu_brushes[prim_metadata.cpu_prim_index.0];
+
+                    
+                    
+                    match brush.kind {
+                        BrushKind::Solid { ref mut opacity_binding, .. } |
+                        BrushKind::Image { ref mut opacity_binding, .. } => {
+                            opacity_binding.push(binding);
+                        }
+                        BrushKind::Clear { .. } |
+                        BrushKind::Picture { .. } |
+                        BrushKind::YuvImage { .. } |
+                        BrushKind::LinearGradient { .. } |
+                        BrushKind::RadialGradient { .. } => {
+                            unreachable!("bug: invalid prim type for opacity collapse");
+                        }
+                    };
+                }
+                PrimitiveKind::TextRun |
+                PrimitiveKind::Image |
+                PrimitiveKind::Border => {
+                    unreachable!("bug: invalid prim type for opacity collapse");
+                }
+            }
+
+            
+            
+            
+            
+            
+            self.pictures[pic_index.0].composite_mode = None;
+        }
+    }
+
     pub fn get_metadata(&self, index: PrimitiveIndex) -> &PrimitiveMetadata {
         &self.cpu_metadata[index.0]
     }
@@ -1199,6 +1373,7 @@ impl PrimitiveStore {
                 text.prepare_for_render(
                     frame_context.device_pixel_scale,
                     transform,
+                    pic_context.allow_subpixel_aa,
                     pic_context.display_list,
                     frame_state,
                 );
@@ -1318,19 +1493,26 @@ impl PrimitiveStore {
                 let brush = &mut self.cpu_brushes[metadata.cpu_prim_index.0];
 
                 match brush.kind {
-                    BrushKind::Image { request, sub_rect, ref mut current_epoch, ref mut source, .. } => {
+                    BrushKind::Image { request, sub_rect, ref mut current_epoch, ref mut source, ref mut opacity_binding, .. } => {
                         let image_properties = frame_state
                             .resource_cache
                             .get_image_properties(request.key);
 
                         
                         if let Some(image_properties) = image_properties {
+                            *current_epoch = image_properties.epoch;
+
                             
                             
-                            if image_properties.epoch != *current_epoch {
-                                *current_epoch = image_properties.epoch;
-                                metadata.opacity.is_opaque = image_properties.descriptor.is_opaque;
+                            if opacity_binding.update(frame_context.scene_properties) {
+                                frame_state.gpu_cache.invalidate(&mut metadata.gpu_location);
                             }
+
+                            
+                            
+                            metadata.opacity.is_opaque =
+                                image_properties.descriptor.is_opaque &&
+                                opacity_binding.current == 1.0;
 
                             
                             
@@ -1465,7 +1647,16 @@ impl PrimitiveStore {
                             frame_state,
                         );
                     }
-                    BrushKind::Solid { .. } |
+                    BrushKind::Solid { ref color, ref mut opacity_binding, .. } => {
+                        
+                        
+                        
+                        
+                        if opacity_binding.update(frame_context.scene_properties) {
+                            metadata.opacity = PrimitiveOpacity::from_alpha(opacity_binding.current * color.a);
+                            frame_state.gpu_cache.invalidate(&mut metadata.gpu_location);
+                        }
+                    }
                     BrushKind::Clear => {}
                 }
             }
@@ -1631,7 +1822,7 @@ impl PrimitiveStore {
                     let prim_transform = &prim_run_context.scroll_node.world_content_transform;
                     let relative_transform = prim_transform
                         .inverse()
-                        .unwrap_or(WorldToLayerFastTransform::identity())
+                        .unwrap_or(WorldToLayoutFastTransform::identity())
                         .pre_mul(&clip_transform.into());
 
                     relative_transform.transform_rect(&local_clip_rect)
@@ -1808,7 +1999,7 @@ impl PrimitiveStore {
                     
                     
                     
-                    local_clip_rect: LayerRect::zero(),
+                    local_clip_rect: LayoutRect::zero(),
                     screen_inner_rect,
                     screen_outer_rect: screen_outer_rect.unwrap_or(prim_screen_rect),
                     prev: None,
@@ -1899,7 +2090,7 @@ impl PrimitiveStore {
         pic_state: &mut PictureState,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-    ) -> Option<LayerRect> {
+    ) -> Option<LayoutRect> {
         let mut may_need_clip_mask = true;
         let mut pic_state_for_children = PictureState::new();
 
@@ -1966,6 +2157,8 @@ impl PrimitiveStore {
                         inv_world_transform,
                         apply_local_clip_rect: pic.apply_local_clip_rect,
                         inflation_factor,
+                        
+                        allow_subpixel_aa: pic_context.allow_subpixel_aa && pic.allow_subpixel_aa(),
                     }
                 };
 
@@ -2076,8 +2269,8 @@ impl PrimitiveStore {
         frame_state: &mut FrameBuildingState,
     ) -> PrimitiveRunLocalRect {
         let mut result = PrimitiveRunLocalRect {
-            local_rect_in_actual_parent_space: LayerRect::zero(),
-            local_rect_in_original_parent_space: LayerRect::zero(),
+            local_rect_in_actual_parent_space: LayoutRect::zero(),
+            local_rect_in_original_parent_space: LayoutRect::zero(),
         };
 
         for run in &pic_context.prim_runs {
@@ -2238,17 +2431,17 @@ fn convert_clip_chain_to_clip_vector(
 fn get_local_clip_rect_for_nodes(
     scroll_node: &ClipScrollNode,
     clip_chain: &ClipChain,
-) -> Option<LayerRect> {
+) -> Option<LayoutRect> {
     let local_rect = ClipChainNodeIter { current: clip_chain.nodes.clone() }.fold(
         None,
-        |combined_local_clip_rect: Option<LayerRect>, node| {
+        |combined_local_clip_rect: Option<LayoutRect>, node| {
             if node.work_item.coordinate_system_id != scroll_node.coordinate_system_id {
                 return combined_local_clip_rect;
             }
 
             Some(match combined_local_clip_rect {
                 Some(combined_rect) =>
-                    combined_rect.intersection(&node.local_clip_rect).unwrap_or_else(LayerRect::zero),
+                    combined_rect.intersection(&node.local_clip_rect).unwrap_or_else(LayoutRect::zero),
                 None => node.local_clip_rect,
             })
         }
@@ -2268,7 +2461,7 @@ impl<'a> GpuDataRequest<'a> {
     
     fn write_segment(
         &mut self,
-        local_rect: LayerRect,
+        local_rect: LayoutRect,
     ) {
         self.push(local_rect);
         self.push([

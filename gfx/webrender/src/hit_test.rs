@@ -2,14 +2,14 @@
 
 
 
-use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag, LayerPoint};
-use api::{LayerPrimitiveInfo, LayerRect, PipelineId, WorldPoint};
+use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag, LayoutPoint};
+use api::{LayoutPrimitiveInfo, LayoutRect, PipelineId, WorldPoint};
 use clip::{ClipSource, ClipStore, rounded_rectangle_contains_point};
 use clip_scroll_node::{ClipScrollNode, NodeType};
 use clip_scroll_tree::{ClipChainIndex, ClipScrollNodeIndex, ClipScrollTree};
 use internal_types::FastHashMap;
 use prim_store::ScrollNodeAndClipChain;
-use util::LayerToWorldFastTransform;
+use util::LayoutToWorldFastTransform;
 
 
 
@@ -23,13 +23,13 @@ pub struct HitTestClipScrollNode {
     regions: Vec<HitTestRegion>,
 
     
-    world_content_transform: LayerToWorldFastTransform,
+    world_content_transform: LayoutToWorldFastTransform,
 
     
-    world_viewport_transform: LayerToWorldFastTransform,
+    world_viewport_transform: LayoutToWorldFastTransform,
 
     
-    node_origin: LayerPoint,
+    node_origin: LayoutPoint,
 }
 
 
@@ -54,18 +54,18 @@ impl HitTestClipChainDescriptor {
 
 #[derive(Clone)]
 pub struct HitTestingItem {
-    rect: LayerRect,
-    clip_rect: LayerRect,
+    rect: LayoutRect,
+    clip_rect: LayoutRect,
     tag: ItemTag,
     is_backface_visible: bool,
 }
 
 impl HitTestingItem {
-    pub fn new(tag: ItemTag, info: &LayerPrimitiveInfo) -> HitTestingItem {
+    pub fn new(tag: ItemTag, info: &LayoutPrimitiveInfo) -> HitTestingItem {
         HitTestingItem {
             rect: info.rect,
             clip_rect: info.clip_rect,
-            tag: tag,
+            tag,
             is_backface_visible: info.is_backface_visible,
         }
     }
@@ -75,12 +75,12 @@ impl HitTestingItem {
 pub struct HitTestingRun(pub Vec<HitTestingItem>, pub ScrollNodeAndClipChain);
 
 enum HitTestRegion {
-    Rectangle(LayerRect, ClipMode),
-    RoundedRectangle(LayerRect, BorderRadius, ClipMode),
+    Rectangle(LayoutRect, ClipMode),
+    RoundedRectangle(LayoutRect, BorderRadius, ClipMode),
 }
 
 impl HitTestRegion {
-    pub fn contains(&self, point: &LayerPoint) -> bool {
+    pub fn contains(&self, point: &LayoutPoint) -> bool {
         match *self {
             HitTestRegion::Rectangle(ref rectangle, ClipMode::Clip) =>
                 rectangle.contains(point),
@@ -327,7 +327,7 @@ pub struct HitTest {
     pipeline_id: Option<PipelineId>,
     point: WorldPoint,
     flags: HitTestFlags,
-    node_cache: FastHashMap<ClipScrollNodeIndex, Option<LayerPoint>>,
+    node_cache: FastHashMap<ClipScrollNodeIndex, Option<LayoutPoint>>,
     clip_chain_cache: Vec<Option<bool>>,
 }
 
@@ -366,7 +366,7 @@ impl HitTest {
             return self.point;
         }
 
-        let point =  &LayerPoint::new(self.point.x, self.point.y);
+        let point =  &LayoutPoint::new(self.point.x, self.point.y);
         self.pipeline_id.map(|id|
             hit_tester.get_pipeline_root(id).world_viewport_transform.transform_point2d(point)
         ).unwrap_or_else(|| WorldPoint::new(self.point.x, self.point.y))

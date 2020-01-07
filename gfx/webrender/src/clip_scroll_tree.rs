@@ -2,7 +2,7 @@
 
 
 
-use api::{DeviceIntRect, DevicePixelScale, ExternalScrollId, LayerPoint, LayerRect, LayerVector2D};
+use api::{DeviceIntRect, DevicePixelScale, ExternalScrollId, LayoutPoint, LayoutRect, LayoutVector2D};
 use api::{PipelineId, ScrollClamping, ScrollLocation, ScrollNodeState};
 use api::WorldPoint;
 use clip::{ClipChain, ClipSourcesHandle, ClipStore};
@@ -13,7 +13,7 @@ use internal_types::{FastHashMap, FastHashSet};
 use print_tree::{PrintTree, PrintTreePrinter};
 use resource_cache::ResourceCache;
 use scene::SceneProperties;
-use util::{LayerFastTransform, LayerToWorldFastTransform};
+use util::{LayoutFastTransform, LayoutToWorldFastTransform};
 
 pub type ScrollStates = FastHashMap<ExternalScrollId, ScrollFrameInfo>;
 
@@ -68,7 +68,7 @@ pub struct ClipScrollTree {
     
     pub clip_chains: Vec<ClipChain>,
 
-    pub pending_scroll_offsets: FastHashMap<ExternalScrollId, (LayerPoint, ScrollClamping)>,
+    pub pending_scroll_offsets: FastHashMap<ExternalScrollId, (LayoutPoint, ScrollClamping)>,
 
     
     
@@ -82,10 +82,10 @@ pub struct ClipScrollTree {
 
 #[derive(Clone)]
 pub struct TransformUpdateState {
-    pub parent_reference_frame_transform: LayerToWorldFastTransform,
-    pub parent_accumulated_scroll_offset: LayerVector2D,
-    pub nearest_scrolling_ancestor_offset: LayerVector2D,
-    pub nearest_scrolling_ancestor_viewport: LayerRect,
+    pub parent_reference_frame_transform: LayoutToWorldFastTransform,
+    pub parent_accumulated_scroll_offset: LayoutVector2D,
+    pub nearest_scrolling_ancestor_offset: LayoutVector2D,
+    pub nearest_scrolling_ancestor_viewport: LayoutRect,
 
     
     pub parent_clip_chain_index: ClipChainIndex,
@@ -97,7 +97,7 @@ pub struct TransformUpdateState {
     pub current_coordinate_system_id: CoordinateSystemId,
 
     
-    pub coordinate_system_relative_transform: LayerFastTransform,
+    pub coordinate_system_relative_transform: LayoutFastTransform,
 
     
     
@@ -200,7 +200,7 @@ impl ClipScrollTree {
 
     pub fn scroll_node(
         &mut self,
-        origin: LayerPoint,
+        origin: LayoutPoint,
         id: ExternalScrollId,
         clamp: ScrollClamping
     ) -> bool {
@@ -246,13 +246,13 @@ impl ClipScrollTree {
 
         let root_reference_frame_index = self.root_reference_frame_index();
         let mut state = TransformUpdateState {
-            parent_reference_frame_transform: LayerVector2D::new(pan.x, pan.y).into(),
-            parent_accumulated_scroll_offset: LayerVector2D::zero(),
-            nearest_scrolling_ancestor_offset: LayerVector2D::zero(),
-            nearest_scrolling_ancestor_viewport: LayerRect::zero(),
+            parent_reference_frame_transform: LayoutVector2D::new(pan.x, pan.y).into(),
+            parent_accumulated_scroll_offset: LayoutVector2D::zero(),
+            nearest_scrolling_ancestor_offset: LayoutVector2D::zero(),
+            nearest_scrolling_ancestor_viewport: LayoutRect::zero(),
             parent_clip_chain_index: ClipChainIndex(0),
             current_coordinate_system_id: CoordinateSystemId::root(),
-            coordinate_system_relative_transform: LayerFastTransform::identity(),
+            coordinate_system_relative_transform: LayoutFastTransform::identity(),
             invertible: true,
         };
         let mut next_coordinate_system_id = state.current_coordinate_system_id.next();
@@ -380,7 +380,7 @@ impl ClipScrollTree {
         index: ClipScrollNodeIndex,
         parent_index: ClipScrollNodeIndex,
         handle: ClipSourcesHandle,
-        clip_rect: LayerRect,
+        clip_rect: LayoutRect,
         pipeline_id: PipelineId,
     )  -> ClipChainIndex {
         let clip_chain_index = self.allocate_clip_chain();
@@ -394,7 +394,7 @@ impl ClipScrollTree {
         &mut self,
         index: ClipScrollNodeIndex,
         parent_index: ClipScrollNodeIndex,
-        frame_rect: LayerRect,
+        frame_rect: LayoutRect,
         sticky_frame_info: StickyFrameInfo,
         pipeline_id: PipelineId,
     ) {
