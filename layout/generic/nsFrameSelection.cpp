@@ -59,7 +59,6 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 
 #include "nsITimer.h"
 
-#include "nsIDOMDocument.h"
 #include "nsIDocument.h"
 
 #include "nsISelectionController.h" 

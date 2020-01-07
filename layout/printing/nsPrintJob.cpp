@@ -76,7 +76,6 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsISupportsUtils.h"
 #include "nsIScriptContext.h"
-#include "nsIDOMDocument.h"
 #include "nsIDocumentObserver.h"
 #include "nsISelectionListener.h"
 #include "nsContentCID.h"
@@ -620,7 +619,7 @@ nsresult
 nsPrintJob::CommonPrint(bool                    aIsPrintPreview,
                         nsIPrintSettings*       aPrintSettings,
                         nsIWebProgressListener* aWebProgressListener,
-                        nsIDOMDocument* aDoc)
+                        nsIDocument* aDoc)
 {
   
   
@@ -651,7 +650,7 @@ nsresult
 nsPrintJob::DoCommonPrint(bool                    aIsPrintPreview,
                           nsIPrintSettings*       aPrintSettings,
                           nsIWebProgressListener* aWebProgressListener,
-                          nsIDOMDocument*         aDoc)
+                          nsIDocument*            aDoc)
 {
   nsresult rv;
 
@@ -1032,9 +1031,9 @@ nsPrintJob::Print(nsIPrintSettings*       aPrintSettings,
   
   
   
-  nsCOMPtr<nsIDOMDocument> doc =
-    do_QueryInterface(mPrtPreview && mPrtPreview->mPrintObject ?
-                        mPrtPreview->mPrintObject->mDocument : mDocument);
+  nsIDocument* doc =
+    mPrtPreview && mPrtPreview->mPrintObject ?
+      mPrtPreview->mPrintObject->mDocument : mDocument;
 
   return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 }
@@ -1061,11 +1060,9 @@ nsPrintJob::PrintPreview(nsIPrintSettings* aPrintSettings,
   NS_ENSURE_STATE(window);
   nsCOMPtr<nsIDocument> doc = window->GetDoc();
   NS_ENSURE_STATE(doc);
-  nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(doc);
-  MOZ_ASSERT(domDoc);
 
   
-  return CommonPrint(true, aPrintSettings, aWebProgressListener, domDoc);
+  return CommonPrint(true, aPrintSettings, aWebProgressListener, doc);
 }
 
 
@@ -1410,7 +1407,7 @@ nsPrintJob::BuildDocTree(nsIDocShell*      aParentNode,
       nsCOMPtr<nsIContentViewer>  viewer;
       childAsShell->GetContentViewer(getter_AddRefs(viewer));
       if (viewer) {
-        nsCOMPtr<nsIDOMDocument> doc = do_GetInterface(childAsShell);
+        nsCOMPtr<nsIDocument> doc = do_GetInterface(childAsShell);
         auto po = MakeUnique<nsPrintObject>();
         po->mParent = aPO.get();
         nsresult rv = po->Init(childAsShell, doc, aPO->mPrintPreview);

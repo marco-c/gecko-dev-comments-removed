@@ -8,7 +8,7 @@
 #include "inLayoutUtils.h"
 
 #include "nsString.h"
-#include "nsIDOMDocument.h"
+#include "nsIDocument.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIContent.h"
 #include "ChildIterator.h"
@@ -165,7 +165,8 @@ GetChildren(nsIDOMNode* aParent,
 
   nsCOMPtr<nsINodeList> ret;
   if (aShowSubDocuments) {
-    nsCOMPtr<nsIDOMDocument> domdoc = inLayoutUtils::GetSubDocumentFor(aParent);
+    nsCOMPtr<nsIDOMNode> domdoc =
+      do_QueryInterface(inLayoutUtils::GetSubDocumentFor(aParent));
     if (domdoc) {
       aParent = domdoc;
     }
@@ -298,7 +299,8 @@ inDeepTreeWalker::EdgeChild(nsIDOMNode** _retval, bool aFront)
     
     
     
-    echild = inLayoutUtils::GetSubDocumentFor(mCurrentNode);
+    echild =
+      do_QueryInterface(inLayoutUtils::GetSubDocumentFor(mCurrentNode));
   }
 
   nsCOMPtr<nsINodeList> children;
