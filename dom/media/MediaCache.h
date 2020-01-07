@@ -466,6 +466,7 @@ private:
   void UpdateDownloadStatistics(AutoLock&);
 
   void CloseInternal(AutoLock&);
+  void InitAsCloneInternal(MediaCacheStream* aOriginal);
 
   
   RefPtr<MediaCache> mMediaCache;
