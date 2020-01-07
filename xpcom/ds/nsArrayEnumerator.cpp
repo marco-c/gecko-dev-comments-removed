@@ -13,6 +13,7 @@
 
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
+#include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/RefPtr.h"
 
 class nsSimpleArrayEnumerator final : public nsISimpleEnumerator
@@ -113,13 +114,20 @@ public:
   NS_DECL_NSISIMPLEENUMERATOR
 
   
-  nsCOMArrayEnumerator() : mIndex(0) {}
+  static nsCOMArrayEnumerator* Allocate(const nsCOMArray_base& aArray);
 
   
-  void* operator new(size_t aSize, const nsCOMArray_base& aArray) CPP_THROW_NEW;
-  void operator delete(void* aPtr) { ::operator delete(aPtr); }
+  void operator delete(void* aPtr) { free(aPtr); }
 
 private:
+  
+  nsCOMArrayEnumerator()
+    : mIndex(0)
+    , mArraySize(0)
+  {
+    mValueArray[0] = nullptr;
+  }
+
   ~nsCOMArrayEnumerator(void);
 
 protected:
@@ -176,26 +184,32 @@ nsCOMArrayEnumerator::GetNext(nsISupports** aResult)
   return NS_OK;
 }
 
-void*
-nsCOMArrayEnumerator::operator new(size_t aSize,
-                                   const nsCOMArray_base& aArray) CPP_THROW_NEW
+nsCOMArrayEnumerator*
+nsCOMArrayEnumerator::Allocate(const nsCOMArray_base& aArray)
 {
   
   
   
-  aSize += (aArray.Count() - 1) * sizeof(aArray[0]);
+  size_t size = sizeof(nsCOMArrayEnumerator);
+  uint32_t count;
+  if (aArray.Count() > 0) {
+    count = static_cast<uint32_t>(aArray.Count());
+    size += (count - 1) * sizeof(aArray[0]);
+  } else {
+    count = 0;
+  }
 
   
-  nsCOMArrayEnumerator* result =
-    static_cast<nsCOMArrayEnumerator*>(::operator new(aSize));
+  void* mem = moz_xmalloc(size);
+  auto result = new (mozilla::KnownNotNull, mem) nsCOMArrayEnumerator();
+
+  result->mArraySize = count;
 
   
   
   
   
-  uint32_t i;
-  uint32_t max = result->mArraySize = aArray.Count();
-  for (i = 0; i < max; ++i) {
+  for (uint32_t i = 0; i < count; ++i) {
     result->mValueArray[i] = aArray[i];
     NS_IF_ADDREF(result->mValueArray[i]);
   }
@@ -207,7 +221,7 @@ nsresult
 NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
                       const nsCOMArray_base& aArray)
 {
-  RefPtr<nsCOMArrayEnumerator> enumerator = new (aArray) nsCOMArrayEnumerator();
+  RefPtr<nsCOMArrayEnumerator> enumerator = nsCOMArrayEnumerator::Allocate(aArray);
   enumerator.forget(aResult);
   return NS_OK;
 }
