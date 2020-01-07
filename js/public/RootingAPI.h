@@ -22,6 +22,7 @@
 #include "js/GCPolicyAPI.h"
 #include "js/HeapAPI.h"
 #include "js/ProfilingStack.h"
+#include "js/Realm.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
@@ -828,7 +829,7 @@ class RootingContext
     
 
     
-    JSCompartment*      compartment_;
+    JS::Realm*          realm_;
 
     
     JS::Zone*           zone_;
@@ -1018,7 +1019,7 @@ namespace js {
 inline JSCompartment*
 GetContextCompartment(const JSContext* cx)
 {
-    return JS::RootingContext::get(cx)->compartment_;
+    return GetCompartmentForRealm(JS::RootingContext::get(cx)->realm_);
 }
 
 inline JS::Zone*
