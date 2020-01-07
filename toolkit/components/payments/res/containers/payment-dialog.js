@@ -124,7 +124,6 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     let {
       request: {paymentOptions: {requestShipping: requestShipping}},
       savedAddresses,
-      savedBasicCards,
       selectedPayerAddress,
       selectedPaymentCard,
       selectedShippingAddress,
@@ -160,9 +159,11 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     
-    if (!savedBasicCards[selectedPaymentCard]) {
+    let basicCards = paymentRequest.getBasicCards(state);
+    if (!basicCards[selectedPaymentCard]) {
+      
       this.requestStore.setState({
-        selectedPaymentCard: Object.keys(savedBasicCards)[0] || null,
+        selectedPaymentCard: Object.keys(basicCards)[0] || null,
         selectedPaymentCardSecurityCode: null,
       });
     }

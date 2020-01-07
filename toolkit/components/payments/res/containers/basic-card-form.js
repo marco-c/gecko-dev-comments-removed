@@ -3,8 +3,10 @@
 
 
 
+import LabelledCheckbox from "../components/labelled-checkbox.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
+
 
 
 
@@ -25,6 +27,8 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
 
     this.saveButton = document.createElement("button");
     this.saveButton.addEventListener("click", this);
+
+    this.persistCheckbox = new LabelledCheckbox();
 
     
     let url = "formautofill/editCreditCard.xhtml";
@@ -60,6 +64,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
         getAddressLabel: PaymentDialogUtils.getAddressLabel,
       });
 
+      this.appendChild(this.persistCheckbox);
       this.appendChild(this.genericErrorText);
       this.appendChild(this.backButton);
       this.appendChild(this.saveButton);
@@ -72,14 +77,15 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
   render(state) {
     this.backButton.textContent = this.dataset.backButtonLabel;
     this.saveButton.textContent = this.dataset.saveButtonLabel;
+    this.persistCheckbox.label = this.dataset.persistCheckboxLabel;
 
     let record = {};
     let {
       page,
       savedAddresses,
-      savedBasicCards,
       selectedShippingAddress,
     } = state;
+    let basicCards = paymentRequest.getBasicCards(state);
 
     this.genericErrorText.textContent = page.error;
 
@@ -88,12 +94,19 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     if (editing) {
-      record = savedBasicCards[page.guid];
+      record = basicCards[page.guid];
       if (!record) {
         throw new Error("Trying to edit a non-existing card: " + page.guid);
       }
-    } else if (selectedShippingAddress) {
-      record.billingAddressGUID = selectedShippingAddress;
+      
+      this.persistCheckbox.hidden = true;
+    } else {
+      if (selectedShippingAddress) {
+        record.billingAddressGUID = selectedShippingAddress;
+      }
+      
+      this.persistCheckbox.hidden = false;
+      this.persistCheckbox.checked = !state.isPrivate;
     }
 
     this.formHandler.loadRecord(record, savedAddresses);
@@ -132,7 +145,10 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
     let record = this.formHandler.buildFormObject();
     let {
       page,
+      tempBasicCards,
     } = this.requestStore.getState();
+    let editing = !!page.guid;
+    let tempRecord = editing && tempBasicCards[page.guid];
 
     for (let editableFieldName of ["cc-name", "cc-exp-month", "cc-exp-year"]) {
       record[editableFieldName] = record[editableFieldName] || "";
@@ -140,25 +156,44 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     
-    if (!page.guid) {
+    if (!editing) {
       record["cc-number"] = record["cc-number"] || "";
     }
 
-    paymentRequest.updateAutofillRecord("creditCards", record, page.guid, {
-      errorStateChange: {
-        page: {
-          id: "basic-card-page",
-          error: this.dataset.errorGenericSave,
+    if (!tempRecord && this.persistCheckbox.checked) {
+      log.debug(`BasicCardForm: persisting creditCard record: ${page.guid || "(new)"}`);
+      paymentRequest.updateAutofillRecord("creditCards", record, page.guid, {
+        errorStateChange: {
+          page: {
+            id: "basic-card-page",
+            error: this.dataset.errorGenericSave,
+          },
         },
-      },
-      preserveOldProperties: true,
-      selectedStateKey: "selectedPaymentCard",
-      successStateChange: {
+        preserveOldProperties: true,
+        selectedStateKey: "selectedPaymentCard",
+        successStateChange: {
+          page: {
+            id: "payment-summary",
+          },
+        },
+      });
+    } else {
+      
+      
+      record.guid = page.guid || "temp-" + Math.abs(Math.random() * 0xffffffff|0);
+
+      log.debug(`BasicCardForm: saving temporary record: ${record.guid}`);
+      this.requestStore.setState({
         page: {
           id: "payment-summary",
         },
-      },
-    });
+        selectedPaymentCard: record.guid,
+        tempBasicCards: Object.assign({}, tempBasicCards, {
+        
+          [record.guid]: Object.assign({}, tempRecord, record),
+        }),
+      });
+    }
   }
 }
 
