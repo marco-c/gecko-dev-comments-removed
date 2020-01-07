@@ -3732,7 +3732,7 @@ MinSize(const GridItemInfo&    aGridItem,
   const nsStylePosition* stylePos = child->StylePosition();
   const nsStyleCoord& sizeStyle =
     axis == eAxisHorizontal ? stylePos->mWidth : stylePos->mHeight;
-  if (sizeStyle.GetUnit() != eStyleUnit_Auto) {
+  if (sizeStyle.GetUnit() != eStyleUnit_Auto && !sizeStyle.HasPercent()) {
     nscoord s =
       MinContentContribution(aGridItem, aState, aRC, aCBWM, aAxis, aCache);
     aCache->mMinSize.emplace(s);
