@@ -2503,7 +2503,7 @@ function displayRichPingData(ping, updatePayloadList) {
   }
 
   
-  ChromeHangs.render(payload);
+  ChromeHangs.render(payload.chromeHangs);
 
   
   TelLog.render(payload);
