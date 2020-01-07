@@ -12,12 +12,8 @@ requireHacker.global_hook("default", path => {
       return `const React = require('devtools/client/shared/vendor/react-dev'); module.exports = React`;
     case "react-dom/server":
       return `const React = require('devtools/client/shared/vendor/react-dev'); module.exports = React`;
-    
-    
-    
-    
     case "react-addons-test-utils":
-      return `const ReactDOM = require('devtools/client/shared/vendor/react-dom'); module.exports = ReactDOM.TestUtils`;
+      return `const TestUtils = require('devtools/client/shared/vendor/react-dom-test-utils'); module.exports = TestUtils`;
     
     case "react":
     case "devtools/client/shared/vendor/react":
