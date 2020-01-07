@@ -4,6 +4,8 @@
 
 
 ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
+ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 
 
 
@@ -133,26 +135,51 @@ var security = {
     return null;
   },
 
+  async _updateSiteDataInfo() {
+    
+    this.siteData = await SiteDataManager.getSites(
+      SiteDataManager.getBaseDomainFromHost(this.uri.host));
+
+    let pageInfoBundle = document.getElementById("pageinfobundle");
+    let clearSiteDataButton = document.getElementById("security-clear-sitedata");
+    let siteDataLabel = document.getElementById("security-privacy-sitedata-value");
+
+    if (!this.siteData.length) {
+      let noStr = pageInfoBundle.getString("securitySiteDataNo");
+      siteDataLabel.textContent = noStr;
+      clearSiteDataButton.setAttribute("disabled", "true");
+      return;
+    }
+
+    let usageText;
+    let usage = this.siteData.reduce((acc, site) => acc + site.usage, 0);
+    if (usage > 0) {
+      let size = DownloadUtils.convertByteUnits(usage);
+      let hasCookies = this.siteData.some(site => site.cookies.length > 0);
+      if (hasCookies) {
+        usageText = pageInfoBundle.getFormattedString("securitySiteDataCookies", size);
+      } else {
+        usageText = pageInfoBundle.getFormattedString("securitySiteDataOnly", size);
+      }
+    } else {
+      
+      usageText = pageInfoBundle.getString("securitySiteDataCookiesOnly");
+    }
+
+    clearSiteDataButton.removeAttribute("disabled");
+    siteDataLabel.textContent = usageText;
+  },
+
   
 
 
-  viewCookies() {
-    var win = Services.wm.getMostRecentWindow("Browser:Cookies");
-
-    var eTLD;
-    try {
-      eTLD = Services.eTLD.getBaseDomain(this.uri);
-    } catch (e) {
-      
-      eTLD = this.uri.asciiHost;
+  clearSiteData() {
+    if (this.siteData && this.siteData.length) {
+      let hosts = this.siteData.map(site => site.host);
+      if (SiteDataManager.promptSiteDataRemoval(window, hosts)) {
+        SiteDataManager.remove(hosts).then(() => this._updateSiteDataInfo());
+      }
     }
-
-    if (win) {
-      win.gCookiesWindow.setFilter(eTLD);
-      win.focus();
-    } else
-      window.openDialog("chrome://browser/content/preferences/cookies.xul",
-                        "Browser:Cookies", "", {filterString: eTLD});
   },
 
   
@@ -225,8 +252,13 @@ function securityOnLoad(uri, windowInfo) {
   var yesStr = pageInfoBundle.getString("yes");
   var noStr = pageInfoBundle.getString("no");
 
-  setText("security-privacy-cookies-value",
-          hostHasCookies(uri) ? yesStr : noStr);
+  
+  if (uri.scheme == "http" || uri.scheme == "https") {
+    SiteDataManager.updateSites().then(() => security._updateSiteDataInfo());
+  } else {
+    document.getElementById("security-privacy-sitedata-row").hidden = true;
+  }
+
   setText("security-privacy-passwords-value",
           realmHasPasswords(uri) ? yesStr : noStr);
 
@@ -304,13 +336,6 @@ function viewCertHelper(parent, cert) {
 
   var cd = Cc[CERTIFICATEDIALOGS_CONTRACTID].getService(nsICertificateDialogs);
   cd.viewCert(parent, cert);
-}
-
-
-
-
-function hostHasCookies(uri) {
-  return Services.cookies.countCookiesFromHost(uri.asciiHost) > 0;
 }
 
 
