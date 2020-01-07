@@ -89,6 +89,11 @@ nsHtml5Highlighter::Start(const nsAutoString& aTitle)
   
   Push(nsGkAtoms::head, nullptr, NS_NewHTMLSharedElement);
 
+  Push(nsGkAtoms::meta,
+       nsHtml5ViewSourceUtils::NewMetaViewportAttributes(),
+       NS_NewHTMLMetaElement);
+  Pop(); 
+
   Push(nsGkAtoms::title, nullptr, NS_NewHTMLTitleElement);
   
   uint32_t length = aTitle.Length();
