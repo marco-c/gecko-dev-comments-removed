@@ -61,36 +61,45 @@ ForbidUnsafeBrowserCPOWs()
 bool
 JavaScriptParent::allowMessage(JSContext* cx)
 {
+    MOZ_ASSERT(cx);
+
     
     
     
     
+    
+    
+    
+
+    if (!xpc::IsInAutomation()) {
+        JS_ReportErrorASCII(cx, "CPOW usage forbidden");
+        return false;
+    }
 
     MessageChannel* channel = GetIPCChannel();
     bool isSafe = channel->IsInTransaction();
 
-    bool warn = !isSafe;
+    if (isSafe)
+        return true;
+
     nsIGlobalObject* global = dom::GetIncumbentGlobal();
     JS::Rooted<JSObject*> jsGlobal(cx, global ? global->GetGlobalJSObject() : nullptr);
     if (jsGlobal) {
         JSAutoRealm ar(cx, jsGlobal);
 
-        if (!xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs) {
-            if (ForbidUnsafeBrowserCPOWs() && !isSafe) {
-                Telemetry::Accumulate(Telemetry::BROWSER_SHIM_USAGE_BLOCKED, 1);
-                JS_ReportErrorASCII(cx, "unsafe CPOW usage forbidden");
-                return false;
-            }
+        if (!xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs &&
+            ForbidUnsafeBrowserCPOWs())
+        {
+            Telemetry::Accumulate(Telemetry::BROWSER_SHIM_USAGE_BLOCKED, 1);
+            JS_ReportErrorASCII(cx, "unsafe CPOW usage forbidden");
+            return false;
         }
     }
-
-    if (!warn)
-        return true;
 
     static bool disableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
     if (!disableUnsafeCPOWWarnings) {
         nsCOMPtr<nsIConsoleService> console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
-        if (console && cx) {
+        if (console) {
             nsAutoString filename;
             uint32_t lineno = 0, column = 0;
             nsJSUtils::GetCallingLocation(cx, filename, &lineno, &column);
