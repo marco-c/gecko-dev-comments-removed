@@ -51,6 +51,20 @@ exports.translate = translate;
 
 
 
+const reflectAboutY = () => [
+  -1, 0, 0,
+  0,  1, 0,
+  0,  0, 1,
+];
+exports.reflectAboutY = reflectAboutY;
+
+
+
+
+
+
+
+
 
 
 
