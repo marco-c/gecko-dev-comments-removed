@@ -306,7 +306,10 @@ var gTests = [
     
     
     
-    await ignoreObserversCalled();
+    await Promise.all([
+      TestUtils.waitForCondition(() => webrtcUI.getActiveStreams(true, true, true).length == 1),
+      ignoreObserversCalled(),
+    ]);
 
     
     await closeStream();
