@@ -128,23 +128,15 @@ InstallTrigger.prototype = {
   
   
   
-  
-  
-  
   init(window) {
     this._window = window;
     this._principal = window.document.nodePrincipal;
     this._url = window.document.documentURIObject;
 
-    try {
-      this._mediator = new RemoteMediator(window);
-    } catch (ex) {
-      
-      
-      return null;
-    }
-
-    return window.InstallTriggerImpl._create(window, this);
+    this._mediator = new RemoteMediator(window);
+    
+    
+    
   },
 
   enabled() {
