@@ -5,8 +5,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/LoadContextInfo.jsm");
-
 
 var commonFile = do_get_file("../../../../toolkit/components/places/tests/head_common.js", false);
 

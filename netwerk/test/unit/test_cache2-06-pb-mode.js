@@ -10,13 +10,13 @@ function run_test()
   do_get_profile();
 
   
-  asyncOpenCacheEntry("http://p1/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, LoadContextInfo.private,
+  asyncOpenCacheEntry("http://p1/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, Services.loadContextInfo.private,
     new OpenCallback(NEW, "p1m", "p1d", function(entry) {
-      asyncOpenCacheEntry("http://p1/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, LoadContextInfo.private,
+      asyncOpenCacheEntry("http://p1/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, Services.loadContextInfo.private,
         new OpenCallback(NORMAL, "p1m", "p1d", function(entry) {
           
           syncWithCacheIOThread(function() {
-            var storage = getCacheStorage("disk", LoadContextInfo.private);
+            var storage = getCacheStorage("disk", Services.loadContextInfo.private);
             storage.asyncVisitStorage(
               new VisitCallback(1, 12, ["http://p1/"], function() {
                 

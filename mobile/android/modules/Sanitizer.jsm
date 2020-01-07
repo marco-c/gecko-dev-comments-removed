@@ -4,7 +4,6 @@
 
 
 
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
@@ -18,7 +17,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Downloads: "resource://gre/modules/Downloads.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   FormHistory: "resource://gre/modules/FormHistory.jsm",
-  LoadContextInfo: "resource://gre/modules/LoadContextInfo.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   Task: "resource://gre/modules/Task.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
@@ -159,7 +157,7 @@ Sanitizer.prototype = {
       clear: function() {
         return new Promise(function(resolve, reject) {
           var cacheService = Cc["@mozilla.org/netwerk/cache-storage-service;1"].getService(Ci.nsICacheStorageService);
-          var appCacheStorage = cacheService.appCacheStorage(LoadContextInfo.default, null);
+          var appCacheStorage = cacheService.appCacheStorage(Services.loadContextInfo.default, null);
           try {
             appCacheStorage.asyncEvictStorage(null);
           } catch (er) {}
