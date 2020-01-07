@@ -3,7 +3,6 @@
 
 
 package org.mozilla.gecko.tests;
-
 import android.util.Log;
 import com.robotium.solo.Condition;
 import org.mozilla.gecko.R;
@@ -45,7 +44,7 @@ public class testActivityStreamPocketReferrer extends JavascriptBridgeTest {
 
         
         
-        PocketStoriesLoader.configureForTesting(getAbsoluteHostnameUrl(StringHelper.get().ROBOCOP_BLANK_PAGE_01_URL));
+        PocketStoriesLoader.configureForTesting(getAbsoluteHostnameUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL));
     }
 
     public void testActivityStreamPocketReferrer() throws Exception {
@@ -87,11 +86,11 @@ public class testActivityStreamPocketReferrer extends JavascriptBridgeTest {
         Log.d(LOGTAG, "testReferrerInTopStoriesContextMenu");
 
         mSolo.clickLongOnText(PocketStoriesLoader.PLACEHOLDER_TITLE); 
-        mSolo.clickOnText(StringHelper.get().CONTEXT_MENU_OPEN_IN_NEW_TAB);
+        mSolo.clickOnText(mStringHelper.CONTEXT_MENU_OPEN_IN_NEW_TAB);
         WaitHelper.waitFor("context menu to close after item selection.", new Condition() {
             @Override
             public boolean isSatisfied() {
-                return !mSolo.searchText(StringHelper.get().CONTEXT_MENU_OPEN_IN_NEW_TAB);
+                return !mSolo.searchText(mStringHelper.CONTEXT_MENU_OPEN_IN_NEW_TAB);
             }
         }, 5000);
 
