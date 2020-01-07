@@ -672,7 +672,7 @@ protected:
 
 
 
-    nsIContent*                         mBindingParent;
+    nsCOMPtr<nsIContent> mBindingParent;
 
     
 
