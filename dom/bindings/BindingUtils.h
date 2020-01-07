@@ -2714,6 +2714,11 @@ InterfaceHasInstance(JSContext* cx, int prototypeID, int depth,
                      bool* bp);
 
 
+bool
+InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp,
+                    prototypes::ID prototypeID, int depth);
+
+
 
 bool
 ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj);
