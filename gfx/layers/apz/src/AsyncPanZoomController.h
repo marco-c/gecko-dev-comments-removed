@@ -928,7 +928,8 @@ protected:
 
     WHEEL_SCROLL,             
     KEYBOARD_SCROLL,          
-    AUTOSCROLL                
+    AUTOSCROLL,               
+    SCROLLBAR_DRAG            
   };
   
   
