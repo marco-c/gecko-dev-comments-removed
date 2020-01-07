@@ -231,7 +231,7 @@ private:
 
   
   
-  nsTArray<RefPtr<workers::WorkerRunnable>> mPendingFunctionalEvents;
+  nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
 };
 
 } 

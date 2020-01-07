@@ -37,21 +37,20 @@ class MessagePort;
 class MessagePortIdentifier;
 class PerformanceStorage;
 class SharedWorker;
+class WorkerControlRunnable;
 class WorkerDebugger;
 class WorkerDebuggerGlobalScope;
 class WorkerErrorReport;
 class WorkerEventTarget;
 class WorkerGlobalScope;
 struct WorkerOptions;
+class WorkerRunnable;
 class WorkerThread;
 
 } 
 } 
 
 BEGIN_WORKERS_NAMESPACE
-
-class WorkerControlRunnable;
-class WorkerRunnable;
 
 
 
