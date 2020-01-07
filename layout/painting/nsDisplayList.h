@@ -1747,6 +1747,12 @@ public:
     return false;
   }
 
+  void RebuildAllItemsInCurrentSubtree()
+  {
+    mInInvalidSubtree = true;
+    mDirtyRect = mVisibleRect;
+  }
+
   
 
 

@@ -452,21 +452,16 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     
-    if (!mPreviouslyNeededLayer ||
-        mPreviouslyNeededLayer.value() != needsOwnLayer) {
-      dirty = visible;
-      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
-    }
-    mPreviouslyNeededLayer = Some(needsOwnLayer);
-
-    
-    
-    
-    
-    
     if (mPreviousCaret != aBuilder->GetCaretFrame()) {
       dirty = visible;
-      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
+      aBuilder->RebuildAllItemsInCurrentSubtree();
+      
+      
+      
+      
+      if (mPreviousCaret) {
+        aBuilder->MarkFrameModifiedDuringBuilding(mPreviousCaret);
+      }
     }
     mPreviousCaret = aBuilder->GetCaretFrame();
   }
