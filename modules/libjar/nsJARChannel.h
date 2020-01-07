@@ -95,8 +95,6 @@ private:
         uint32_t suspendCount;
     }                               mPendingEvent;
 
-    bool                            mIsUnsafe;
-
     nsCOMPtr<nsIInputStreamPump>    mPump;
     
     
