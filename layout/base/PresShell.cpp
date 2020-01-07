@@ -959,7 +959,7 @@ PresShell::Init(nsIDocument* aDocument,
   
   
   mStyleSet = aStyleSet;
-  mStyleSet->Init(aPresContext);
+  mStyleSet->Init(aPresContext, mDocument->BindingManager());
 
   
   

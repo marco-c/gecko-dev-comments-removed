@@ -132,7 +132,7 @@ public:
   CreateXBLServoStyleSet(nsPresContext* aPresContext,
                          const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets);
 
-  void Init(nsPresContext* aPresContext);
+  void Init(nsPresContext* aPresContext, nsBindingManager* aBindingManager);
   void BeginShutdown() {}
   void Shutdown();
 
@@ -602,22 +602,8 @@ private:
 
   
   
-  
-  
-  nsIDocument* mDocument;
+  nsPresContext* MOZ_NON_OWNING_REF mPresContext = nullptr;
 
-  const nsPresContext* GetPresContext() const {
-    return const_cast<ServoStyleSet*>(this)->GetPresContext();
-  }
-
-  
-
-
-
-  nsPresContext* GetPresContext();
-
-  
-  
   
   
   
@@ -648,6 +634,9 @@ private:
   
   
   UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
+
+  
+  RefPtr<nsBindingManager> mBindingManager;
 
   static ServoStyleSet* sInServoTraversal;
 };
