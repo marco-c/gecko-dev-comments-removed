@@ -1,0 +1,150 @@
+ 
+
+
+
+
+const TEST_URL = "about:buildconfig";
+
+add_task(async function() {
+  await PlacesUtils.bookmarks.eraseEverything();
+  let tags = ["a", "b", "c", "d", "e", "f", "g",
+              "h", "i", "l", "m", "n", "o", "p"];
+
+  
+  let uri1 = Services.io.newURI(TEST_URL);
+  let bm1 = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "mozilla",
+    url: uri1.spec
+  });
+  PlacesUtils.tagging.tagURI(uri1, tags);
+
+  
+  let uri2 = Services.io.newURI("http://www2.mozilla.org/");
+  let bm2 = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "mozilla",
+    url: uri2.spec
+  });
+  PlacesUtils.tagging.tagURI(uri2, tags);
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TEST_URL,
+    waitForStateStop: true
+  });
+
+  registerCleanupFunction(async () => {
+    bookmarkPanel.removeAttribute("animate");
+    await BrowserTestUtils.removeTab(tab);
+    await PlacesUtils.bookmarks.eraseEverything();
+  });
+
+  let bookmarkPanel = document.getElementById("editBookmarkPanel");
+  bookmarkPanel.setAttribute("animate", false);
+  let shownPromise = promisePopupShown(bookmarkPanel);
+
+  let bookmarkStar = BookmarkingUI.star;
+  bookmarkStar.click();
+
+  await shownPromise;
+
+  
+  ok(gEditItemOverlay, "gEditItemOverlay is in context");
+  ok(gEditItemOverlay.initialized, "gEditItemOverlay is initialized");
+
+  await openTagSelector();
+  let tagsSelector = document.getElementById("editBMPanel_tagsSelector");
+
+  
+  for (let i = 8; i < tags.length; i += 2) {
+    tagsSelector.selectedIndex = i;
+    let listItem = tagsSelector.selectedItem;
+    isnot(listItem, null, "Valid listItem found");
+
+    tagsSelector.ensureElementIsVisible(listItem);
+    let visibleIndex = tagsSelector.getIndexOfFirstVisibleRow();
+
+    ok(listItem.checked, "Item is checked " + i);
+    let selectedTag = listItem.label;
+
+    
+    let promiseNotification = PlacesTestUtils.waitForNotification(
+      "onItemChanged", (id, property) => property == "tags");
+    listItem.checked = false;
+    await promiseNotification;
+    is(visibleIndex, tagsSelector.getIndexOfFirstVisibleRow(),
+       "Scroll position did not change");
+
+    
+    let newItem = tagsSelector.selectedItem;
+    isnot(newItem, null, "Valid new listItem found");
+    ok(!newItem.checked, "New listItem is unchecked " + i);
+    is(newItem.label, selectedTag, "Correct tag is still selected");
+
+    
+    promiseNotification = PlacesTestUtils.waitForNotification(
+      "onItemChanged", (id, property) => property == "tags");
+    newItem.checked = true;
+    await promiseNotification;
+    is(visibleIndex, tagsSelector.getIndexOfFirstVisibleRow(),
+       "Scroll position did not change");
+  }
+
+  
+  await PlacesUtils.bookmarks.remove(bm2);
+
+  
+  for (let i = tags.length - 1; i >= 0 ; i -= 2) {
+    tagsSelector.selectedIndex = i;
+    let listItem = tagsSelector.selectedItem;
+    isnot(listItem, null, "Valid listItem found");
+
+    tagsSelector.ensureElementIsVisible(listItem);
+    let firstVisibleTag = tags[tagsSelector.getIndexOfFirstVisibleRow()];
+
+    ok(listItem.checked, "Item is checked " + i);
+
+    
+    let promiseNotification = PlacesTestUtils.waitForNotification(
+      "onItemChanged", (id, property) => property == "tags");
+    listItem.checked = false;
+    await promiseNotification;
+
+    
+    let firstVisibleIndex = tagsSelector.getIndexOfFirstVisibleRow();
+    let lastVisibleIndex = firstVisibleIndex + tagsSelector.getNumberOfVisibleRows() - 1;
+    let expectedTagIndex = tags.indexOf(firstVisibleTag);
+    ok(expectedTagIndex >= firstVisibleIndex &&
+       expectedTagIndex <= lastVisibleIndex,
+       "Scroll position is correct");
+
+    
+    let newItem = tagsSelector.selectedItem;
+    isnot(newItem, null, "Valid new listItem found");
+    ok(newItem.checked, "New listItem is checked " + i);
+    is(tagsSelector.selectedItem.label,
+       tags[Math.min(i + 1, tags.length - 2)],
+       "The next tag is now selected");
+  }
+
+  let hiddenPromise = promisePopupHidden(bookmarkPanel);
+  let doneButton = document.getElementById("editBookmarkPanelDoneButton");
+  doneButton.click();
+  await hiddenPromise;
+  
+  await PlacesUtils.bookmarks.remove(bm1);
+});
+
+function openTagSelector() {
+  
+  let promise = new Promise(resolve => {
+    let row = document.getElementById("editBMPanel_tagsSelectorRow");
+    row.addEventListener("DOMAttrModified", function onAttrModified() {
+      resolve();
+    }, {once: true});
+  });
+  
+  document.getElementById("editBMPanel_tagsSelectorExpander").doCommand();
+  return promise;
+}
