@@ -463,9 +463,7 @@ nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream)
 
         
         
-        
-        
-        if (mSuspendCount && mRetargeting) {
+        if (mSuspendCount) {
             mState = nextState;
             mWaitingForInputStreamReady = false;
             break;
@@ -473,7 +471,7 @@ nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream)
 
         
         
-        if (!mSuspendCount && (stillTransferring || mRetargeting)) {
+        if (stillTransferring || mRetargeting) {
             mState = nextState;
             mWaitingForInputStreamReady = false;
             nsresult rv = EnsureWaiting();
