@@ -42,7 +42,8 @@ Atomic<bool> sInShutdown(false);
 nsNSSShutDownList *singleton = nullptr;
 
 nsNSSShutDownList::nsNSSShutDownList()
-  : mPK11LogoutCancelObjects(&gSetOps, sizeof(ObjectHashEntry))
+  : mObjects(&gSetOps, sizeof(ObjectHashEntry))
+  , mPK11LogoutCancelObjects(&gSetOps, sizeof(ObjectHashEntry))
 {
 }
 
@@ -52,6 +53,28 @@ nsNSSShutDownList::~nsNSSShutDownList()
   MOZ_ASSERT(sInShutdown,
              "evaporateAllNSSResourcesAndShutDown() should have been called");
   singleton = nullptr;
+}
+
+void nsNSSShutDownList::remember(nsNSSShutDownObject *o)
+{
+  StaticMutexAutoLock lock(sListLock);
+  if (!nsNSSShutDownList::construct(lock)) {
+    return;
+  }
+
+  MOZ_ASSERT(o);
+  singleton->mObjects.Add(o, fallible);
+}
+
+void nsNSSShutDownList::forget(nsNSSShutDownObject *o)
+{
+  StaticMutexAutoLock lock(sListLock);
+  if (!singleton) {
+    return;
+  }
+
+  MOZ_ASSERT(o);
+  singleton->mObjects.Remove(o);
 }
 
 void nsNSSShutDownList::remember(nsOnPK11LogoutCancelObject *o)
@@ -119,12 +142,66 @@ nsresult nsNSSShutDownList::evaporateAllNSSResourcesAndShutDown()
   }
 
   StaticMutexAutoLock lock(sListLock);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!singleton) {
     return NS_OK;
   }
+
+  
+  
+  
+  
+  
   sInShutdown = true;
+
+  {
+    StaticMutexAutoUnlock unlock(sListLock);
+    PRStatus rv = singleton->mActivityState.restrictActivityToCurrentThread();
+    if (rv != PR_SUCCESS) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("failed to restrict activity to current thread"));
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("now evaporating NSS resources"));
+  for (auto iter = singleton->mObjects.Iter(); !iter.Done(); iter.Next()) {
+    auto entry = static_cast<ObjectHashEntry*>(iter.Get());
+    entry->obj->shutdown(nsNSSShutDownObject::ShutdownCalledFrom::List);
+    iter.Remove();
+  }
+
+  singleton->mActivityState.releaseCurrentThreadActivityRestriction();
   delete singleton;
+
   return NS_OK;
+}
+
+void nsNSSShutDownList::enterActivityState( bool& enteredActivityState)
+{
+  StaticMutexAutoLock lock(sListLock);
+  if (nsNSSShutDownList::construct(lock)) {
+    singleton->mActivityState.enter();
+    enteredActivityState = true;
+  }
+}
+
+void nsNSSShutDownList::leaveActivityState()
+{
+  StaticMutexAutoLock lock(sListLock);
+  if (singleton) {
+    singleton->mActivityState.leave();
+  }
 }
 
 bool nsNSSShutDownList::construct(const StaticMutexAutoLock& )
@@ -140,8 +217,76 @@ bool nsNSSShutDownList::construct(const StaticMutexAutoLock& )
   return !!singleton;
 }
 
+nsNSSActivityState::nsNSSActivityState()
+:mNSSActivityStateLock("nsNSSActivityState.mNSSActivityStateLock"),
+ mNSSActivityChanged(mNSSActivityStateLock,
+                     "nsNSSActivityState.mNSSActivityStateLock"),
+ mNSSActivityCounter(0),
+ mNSSRestrictedThread(nullptr)
+{
+}
+
+nsNSSActivityState::~nsNSSActivityState()
+{
+}
+
+void nsNSSActivityState::enter()
+{
+  MutexAutoLock lock(mNSSActivityStateLock);
+
+  while (mNSSRestrictedThread && mNSSRestrictedThread != PR_GetCurrentThread()) {
+    mNSSActivityChanged.Wait();
+  }
+
+  ++mNSSActivityCounter;
+}
+
+void nsNSSActivityState::leave()
+{
+  MutexAutoLock lock(mNSSActivityStateLock);
+
+  --mNSSActivityCounter;
+
+  mNSSActivityChanged.NotifyAll();
+}
+
+PRStatus nsNSSActivityState::restrictActivityToCurrentThread()
+{
+  MutexAutoLock lock(mNSSActivityStateLock);
+
+  while (mNSSActivityCounter > 0) {
+    mNSSActivityChanged.Wait(PR_TicksPerSecond());
+  }
+
+  mNSSRestrictedThread = PR_GetCurrentThread();
+
+  return PR_SUCCESS;
+}
+
+void nsNSSActivityState::releaseCurrentThreadActivityRestriction()
+{
+  MutexAutoLock lock(mNSSActivityStateLock);
+
+  mNSSRestrictedThread = nullptr;
+
+  mNSSActivityChanged.NotifyAll();
+}
+
+nsNSSShutDownPreventionLock::nsNSSShutDownPreventionLock()
+  : mEnteredActivityState(false)
+{
+  nsNSSShutDownList::enterActivityState(mEnteredActivityState);
+}
+
+nsNSSShutDownPreventionLock::~nsNSSShutDownPreventionLock()
+{
+  if (mEnteredActivityState) {
+    nsNSSShutDownList::leaveActivityState();
+  }
+}
+
 bool
 nsNSSShutDownObject::isAlreadyShutDown() const
 {
-  return false;
+  return mAlreadyShutDown || sInShutdown;
 }

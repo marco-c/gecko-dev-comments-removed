@@ -17,25 +17,52 @@ class nsNSSShutDownObject;
 class nsOnPK11LogoutCancelObject;
 
 
+class nsNSSActivityState
+{
+public:
+  nsNSSActivityState();
+  ~nsNSSActivityState();
 
+  
+  
+  void enter();
+  void leave();
+  
+  
+  PRStatus restrictActivityToCurrentThread();
 
+  
+  void releaseCurrentThreadActivityRestriction();
 
+private:
+  
+  mozilla::Mutex mNSSActivityStateLock;
 
+  
+  
+  
+  mozilla::CondVar mNSSActivityChanged;
 
-static int sSilenceCompilerWarnings;
+  
+  int mNSSActivityCounter;
+
+  
+  
+  PRThread* mNSSRestrictedThread;
+};
+
 
 class nsNSSShutDownPreventionLock
 {
 public:
-  nsNSSShutDownPreventionLock()
-  {
-    sSilenceCompilerWarnings++;
-  }
-
-  ~nsNSSShutDownPreventionLock()
-  {
-    sSilenceCompilerWarnings--;
-  }
+  nsNSSShutDownPreventionLock();
+  ~nsNSSShutDownPreventionLock();
+private:
+  
+  
+  
+  
+  bool mEnteredActivityState;
 };
 
 
@@ -43,6 +70,10 @@ public:
 class nsNSSShutDownList
 {
 public:
+  
+  static void remember(nsNSSShutDownObject *o);
+  static void forget(nsNSSShutDownObject *o);
+
   
   
   static void remember(nsOnPK11LogoutCancelObject *o);
@@ -56,6 +87,12 @@ public:
   
   static nsresult doPK11Logout();
 
+  
+  
+  
+  static void enterActivityState( bool& enteredActivityState);
+  static void leaveActivityState();
+
 private:
   static bool construct(const mozilla::StaticMutexAutoLock& );
 
@@ -63,7 +100,9 @@ private:
   ~nsNSSShutDownList();
 
 protected:
+  PLDHashTable mObjects;
   PLDHashTable mPK11LogoutCancelObjects;
+  nsNSSActivityState mActivityState;
 };
 
 
@@ -168,6 +207,8 @@ public:
 
   nsNSSShutDownObject()
   {
+    mAlreadyShutDown = false;
+    nsNSSShutDownList::remember(this);
   }
 
   virtual ~nsNSSShutDownObject()
@@ -177,14 +218,29 @@ public:
     
   }
 
-  void shutdown(ShutdownCalledFrom)
+  void shutdown(ShutdownCalledFrom calledFrom)
   {
+    if (!mAlreadyShutDown) {
+      switch (calledFrom) {
+        case ShutdownCalledFrom::Object:
+          nsNSSShutDownList::forget(this);
+          break;
+        case ShutdownCalledFrom::List:
+          virtualDestroyNSSReference();
+          break;
+        default:
+          MOZ_CRASH("shutdown() called from an unknown source");
+      }
+      mAlreadyShutDown = true;
+    }
   }
 
   bool isAlreadyShutDown() const;
 
 protected:
   virtual void virtualDestroyNSSReference() = 0;
+private:
+  volatile bool mAlreadyShutDown;
 };
 
 class nsOnPK11LogoutCancelObject
