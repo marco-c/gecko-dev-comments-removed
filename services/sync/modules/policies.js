@@ -202,11 +202,27 @@ SyncScheduler.prototype = {
         }
         break;
       case "network:link-status-changed":
-        if (!this.offline) {
+        
+        
+        
+        
+        
+        
+        let isOffline = this.offline;
+        this._log.debug(`Network link status changed to "${data}". Offline?`,
+                        isOffline);
+        
+        
+        if (data == "up" && !isOffline) {
           this._log.debug("Network link looks up. Syncing.");
           this.scheduleNextSync(0, {why: topic});
+        } else if (data == "down") {
+          
+          
+          
+          this.clearSyncTriggers();
         }
-        
+        break;
       case "network:offline-status-changed":
       case "captive-portal-detected":
         
