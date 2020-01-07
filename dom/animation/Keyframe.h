@@ -27,8 +27,6 @@ struct PropertyValuePair
 {
   explicit PropertyValuePair(nsCSSPropertyID aProperty)
     : mProperty(aProperty) { }
-  PropertyValuePair(nsCSSPropertyID aProperty, nsCSSValue&& aValue)
-    : mProperty(aProperty), mValue(Move(aValue)) { }
   PropertyValuePair(nsCSSPropertyID aProperty,
                     RefPtr<RawServoDeclarationBlock>&& aValue)
     : mProperty(aProperty), mServoDeclarationBlock(Move(aValue))
@@ -37,10 +35,6 @@ struct PropertyValuePair
   }
 
   nsCSSPropertyID mProperty;
-  
-  
-  
-  nsCSSValue mValue;
 
   
   RefPtr<RawServoDeclarationBlock> mServoDeclarationBlock;
