@@ -125,6 +125,137 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
   }
 });
 
+function getSheetText(sheet, consoleActor) {
+  let cssText = modifiedStyleSheets.get(sheet);
+  if (cssText !== undefined) {
+    return Promise.resolve(cssText);
+  }
+
+  if (!sheet.href) {
+    
+    let content = sheet.ownerNode.textContent;
+    return Promise.resolve(content);
+  }
+
+  return fetchStylesheet(sheet, consoleActor).then(({ content }) => content);
+}
+
+exports.getSheetText = getSheetText;
+
+
+
+
+
+
+
+
+function fetchStylesheetFromNetworkMonitor(href, consoleActor) {
+  if (!consoleActor) {
+    return null;
+  }
+  let request = consoleActor.getNetworkEventActorForURL(href);
+  if (!request) {
+    return null;
+  }
+  let content = request._response.content;
+  if (request._discardResponseBody || request._truncated || !content) {
+    return null;
+  }
+  if (content.text.type != "longString") {
+    
+    return {
+      content: content.text,
+      contentType: content.mimeType,
+    };
+  }
+  
+  let longStringActor = consoleActor.conn._getOrCreateActor(content.text.actor);
+  if (!longStringActor) {
+    return null;
+  }
+  return {
+    content: longStringActor.rawValue(),
+    contentType: content.mimeType,
+  };
+}
+
+
+
+
+function getCSSCharset(sheet) {
+  if (sheet) {
+    
+    if (sheet.ownerNode && sheet.ownerNode.getAttribute) {
+      let linkCharset = sheet.ownerNode.getAttribute("charset");
+      if (linkCharset != null) {
+        return linkCharset;
+      }
+    }
+
+    
+    if (sheet.ownerNode && sheet.ownerNode.ownerDocument.characterSet) {
+      return sheet.ownerNode.ownerDocument.characterSet;
+    }
+  }
+
+  return "UTF-8";
+}
+
+
+
+
+
+
+
+
+
+
+
+async function fetchStylesheet(sheet, consoleActor) {
+  let href = sheet.href;
+
+  let result = fetchStylesheetFromNetworkMonitor(href, consoleActor);
+  if (result) {
+    return result;
+  }
+
+  let options = {
+    loadFromCache: true,
+    policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
+    charset: getCSSCharset(sheet)
+  };
+
+  
+  
+  
+  
+
+  
+  let excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
+  if (!excludedProtocolsRe.test(href)) {
+    
+    if (sheet.ownerNode) {
+      
+      options.window = sheet.ownerNode.ownerDocument.defaultView;
+      options.principal = sheet.ownerNode.ownerDocument.nodePrincipal;
+    }
+  }
+
+  try {
+    result = await fetch(href, options);
+  } catch (e) {
+    
+    
+    console.error(`stylesheets actor: fetch failed for ${href},` +
+      ` using system principal instead.`);
+    options.window = undefined;
+    options.principal = undefined;
+    result = await fetch(href, options);
+  }
+
+  return result;
+}
+
 
 
 
@@ -372,22 +503,9 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       return Promise.resolve(this.text);
     }
 
-    let cssText = modifiedStyleSheets.get(this.rawSheet);
-    if (cssText !== undefined) {
-      this.text = cssText;
-      return Promise.resolve(cssText);
-    }
-
-    if (!this.href) {
-      
-      let content = this.ownerNode.textContent;
-      this.text = content;
-      return Promise.resolve(content);
-    }
-
-    return this.fetchStylesheet(this.href).then(({ content }) => {
-      this.text = content;
-      return content;
+    return getSheetText(this.rawSheet, this._consoleActor).then(text => {
+      this.text = text;
+      return text;
     });
   },
 
@@ -396,101 +514,12 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-
-
-
-
-
-
-
-  async fetchStylesheet(href) {
-    
-    let result = this.fetchStylesheetFromNetworkMonitor(href);
-    if (result) {
-      return result;
-    }
-
-    let options = {
-      loadFromCache: true,
-      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
-      charset: this._getCSSCharset()
-    };
-
-    
-    
-    
-    
-
-    
-    let excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
-    if (!excludedProtocolsRe.test(this.href)) {
-      
-      options.window = this.ownerWindow;
-      options.principal = this.ownerDocument.nodePrincipal;
-    }
-
-    try {
-      result = await fetch(this.href, options);
-    } catch (e) {
-      
-      
-      console.error(`stylesheets actor: fetch failed for ${this.href},` +
-        ` using system principal instead.`);
-      options.window = undefined;
-      options.principal = undefined;
-      result = await fetch(this.href, options);
-    }
-
-    return result;
-  },
-
-  
-
-
   get _consoleActor() {
     if (this.parentActor.exited) {
       return null;
     }
     let form = this.parentActor.form();
     return this.conn._getOrCreateActor(form.consoleActor);
-  },
-
-  
-
-
-
-
-
-
-  fetchStylesheetFromNetworkMonitor(href) {
-    let consoleActor = this._consoleActor;
-    if (!consoleActor) {
-      return null;
-    }
-    let request = consoleActor.getNetworkEventActorForURL(href);
-    if (!request) {
-      return null;
-    }
-    let content = request._response.content;
-    if (request._discardResponseBody || request._truncated || !content) {
-      return null;
-    }
-    if (content.text.type != "longString") {
-      
-      return {
-        content: content.text,
-        contentType: content.mimeType,
-      };
-    }
-    
-    let longStringActor = this.conn._getOrCreateActor(content.text.actor);
-    if (!longStringActor) {
-      return null;
-    }
-    return {
-      content: longStringActor.rawValue(),
-      contentType: content.mimeType,
-    };
   },
 
   
@@ -521,49 +550,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       }
       return mediaRules;
     });
-  },
-
-  
-
-
-
-
-  _getCSSCharset: function() {
-    let sheet = this.rawSheet;
-    if (sheet) {
-      
-      
-      if (sheet.cssRules) {
-        let rules = sheet.cssRules;
-        if (rules.length
-            && rules.item(0).type == CSSRule.CHARSET_RULE) {
-          return rules.item(0).encoding;
-        }
-      }
-
-      
-      if (sheet.ownerNode && sheet.ownerNode.getAttribute) {
-        let linkCharset = sheet.ownerNode.getAttribute("charset");
-        if (linkCharset != null) {
-          return linkCharset;
-        }
-      }
-
-      
-      let parentSheet = sheet.parentStyleSheet;
-      if (parentSheet && parentSheet.cssRules &&
-          parentSheet.cssRules[0].type == CSSRule.CHARSET_RULE) {
-        return parentSheet.cssRules[0].encoding;
-      }
-
-      
-      if (sheet.ownerNode && sheet.ownerNode.ownerDocument.characterSet) {
-        return sheet.ownerNode.ownerDocument.characterSet;
-      }
-    }
-
-    
-    return "UTF-8";
   },
 
   

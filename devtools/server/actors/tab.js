@@ -24,6 +24,7 @@ var { assert } = DevToolsUtils;
 var { TabSources } = require("./utils/TabSources");
 var makeDebugger = require("./utils/make-debugger");
 const EventEmitter = require("devtools/shared/event-emitter");
+const InspectorUtils = require("InspectorUtils");
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
 
@@ -33,6 +34,7 @@ loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker
 loader.lazyImporter(this, "ExtensionContent", EXTENSION_CONTENT_JSM);
 
 loader.lazyRequireGetter(this, "StyleSheetActor", "devtools/server/actors/stylesheets", true);
+loader.lazyRequireGetter(this, "getSheetText", "devtools/server/actors/stylesheets", true);
 
 function getWindowID(window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -256,6 +258,17 @@ TabActor.prototype = {
 
   get attached() {
     return !!this._attached;
+  },
+
+  
+
+
+  get _consoleActor() {
+    if (this.exited) {
+      return null;
+    }
+    let form = this.form();
+    return this.conn._getOrCreateActor(form.consoleActor);
   },
 
   _tabPool: null,
@@ -1011,12 +1024,26 @@ TabActor.prototype = {
 
 
   ensureCSSErrorReportingEnabled(request) {
-    if (!this.docShell || this.docShell.cssErrorReportingEnabled) {
-      return {};
+    for (let docShell of this.docShells) {
+      if (docShell.cssErrorReportingEnabled) {
+        continue;
+      }
+      try {
+        docShell.cssErrorReportingEnabled = true;
+      } catch (e) {
+        continue;
+      }
+      
+      
+      let sheets =
+        InspectorUtils.getAllStyleSheets(docShell.document,  true);
+      for (let sheet of sheets) {
+        getSheetText(sheet, this._consoleActor).then(text => {
+          InspectorUtils.parseStyleSheet(sheet, text,  false);
+        });
+      }
     }
 
-    this.docShell.cssErrorReportingEnabled = true;
-    
     return {};
   },
 
