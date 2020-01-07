@@ -106,16 +106,10 @@ RootClient.prototype = {
 
 
   listAllWorkers: async function() {
-    let result = {
-      service: [],
-      shared: [],
-      other: []
-    };
+    let registrations = [];
+    let workers = [];
 
     try {
-      let registrations = [];
-      let workers = [];
-
       
       ({ registrations } = await this.listServiceWorkerRegistrations());
 
@@ -137,56 +131,62 @@ RootClient.prototype = {
         });
         workers = workers.concat(response.workers);
       }
-
-      registrations.forEach(form => {
-        result.service.push({
-          name: form.url,
-          url: form.url,
-          scope: form.scope,
-          fetch: form.fetch,
-          registrationActor: form.actor,
-          active: form.active
-        });
-      });
-
-      workers.forEach(form => {
-        let worker = {
-          name: form.url,
-          url: form.url,
-          workerActor: form.actor
-        };
-        switch (form.type) {
-          case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-            let registration = result.service.find(r => r.scope === form.scope);
-            if (registration) {
-              
-              
-              if (!registration.url) {
-                registration.name = registration.url = form.url;
-              }
-              registration.workerActor = form.actor;
-            } else {
-              worker.fetch = form.fetch;
-
-              
-              
-              
-              
-              worker.scope = form.scope;
-              worker.active = false;
-              result.service.push(worker);
-            }
-            break;
-          case Ci.nsIWorkerDebugger.TYPE_SHARED:
-            result.shared.push(worker);
-            break;
-          default:
-            result.other.push(worker);
-        }
-      });
     } catch (e) {
       
     }
+
+    let result = {
+      service: [],
+      shared: [],
+      other: []
+    };
+
+    registrations.forEach(form => {
+      result.service.push({
+        name: form.url,
+        url: form.url,
+        scope: form.scope,
+        fetch: form.fetch,
+        registrationActor: form.actor,
+        active: form.active
+      });
+    });
+
+    workers.forEach(form => {
+      let worker = {
+        name: form.url,
+        url: form.url,
+        workerActor: form.actor
+      };
+      switch (form.type) {
+        case Ci.nsIWorkerDebugger.TYPE_SERVICE:
+          let registration = result.service.find(r => r.scope === form.scope);
+          if (registration) {
+            
+            
+            if (!registration.url) {
+              registration.name = registration.url = form.url;
+            }
+            registration.workerActor = form.actor;
+          } else {
+            worker.fetch = form.fetch;
+
+            
+            
+            
+            
+            worker.scope = form.scope;
+            worker.active = false;
+            result.service.push(worker);
+          }
+          break;
+        case Ci.nsIWorkerDebugger.TYPE_SHARED:
+          result.shared.push(worker);
+          break;
+        default:
+          result.other.push(worker);
+      }
+    });
 
     return result;
   },
