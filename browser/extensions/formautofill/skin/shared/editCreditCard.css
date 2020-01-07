@@ -2,6 +2,10 @@
 
 
 
+html {
+  width: 500px;
+}
+
 form {
   justify-content: center;
 }

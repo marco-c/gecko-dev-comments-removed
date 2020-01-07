@@ -2,6 +2,9 @@
 
 
 
+html {
+  width: 620px;
+}
 
 label > span {
   flex: 0 0 9.5em;
