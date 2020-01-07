@@ -248,12 +248,14 @@ NarrateControls.prototype = {
   },
 
   _getLanguageName(lang) {
+    if (!this._langStrings) {
+      this._langStrings = Services.strings.createBundle(
+        "chrome://global/locale/languageNames.properties ");
+    }
+
     try {
       
-      
-      let langCode = lang.match(/^[a-z]{2,3}/)[0];
-
-      return Services.intl.getLanguageDisplayNames(undefined, [langCode]);
+      return this._langStrings.GetStringFromName(lang.match(/^[a-z]{2,3}/)[0]);
     } catch (e) {
       return "";
     }
