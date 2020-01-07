@@ -259,7 +259,12 @@ protected:
 
   MOZ_MUST_USE nsresult DidDeleteSelection();
 
-  nsresult InsertBRIfNeeded();
+  
+
+
+
+
+  MOZ_MUST_USE nsresult InsertBRIfNeeded();
 
   
 

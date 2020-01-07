@@ -3345,13 +3345,6 @@ HTMLEditRules::DeleteNodeIfCollapsedText(nsINode& aNode)
   return NS_OK;
 }
 
-
-
-
-
-
-
-
 nsresult
 HTMLEditRules::InsertBRIfNeeded()
 {
@@ -3381,6 +3374,9 @@ HTMLEditRules::InsertBRIfNeeded()
         HTMLEditorRef().InsertBrElementWithTransaction(SelectionRef(),
                                                        atStartOfSelection,
                                                        nsIEditor::ePrevious);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (NS_WARN_IF(!brElement)) {
         return NS_ERROR_FAILURE;
       }
