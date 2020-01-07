@@ -13,9 +13,9 @@ XPCOMUtils.defineLazyGetter(this, "dump", () =>
     ChromeUtils.import("resource://gre/modules/AndroidLog.jsm",
                        {}).AndroidLog.d.bind(null, "ViewTab"));
 
-function debug(aMsg) {
-  
-}
+
+
+
 
 
 class GeckoViewTab extends GeckoViewModule {

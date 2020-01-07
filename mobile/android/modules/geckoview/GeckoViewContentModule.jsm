@@ -15,9 +15,9 @@ XPCOMUtils.defineLazyGetter(this, "dump", () =>
     ChromeUtils.import("resource://gre/modules/AndroidLog.jsm",
                        {}).AndroidLog.d.bind(null, "ViewContentModule"));
 
-function debug(aMsg) {
-  
-}
+
+
+
 
 class GeckoViewContentModule {
   constructor(aModuleName, aMessageManager) {

@@ -165,8 +165,6 @@ LoginManagerPrompter.prototype = {
     let brandShortName = this._strBundle.brand.GetStringFromName("brandShortName");
     let notificationText  = this._getLocalizedString("saveLogin", [brandShortName]);
 
-    let username = aLogin.username ? this._sanitizeUsername(aLogin.username) : "";
-
     
     
     
@@ -268,8 +266,6 @@ LoginManagerPrompter.prototype = {
 
 
   promptToChangePasswordWithUsernames: function(logins, count, aNewLogin) {
-    const buttonFlags = Ci.nsIPrompt.STD_YES_NO_BUTTONS;
-
     var usernames = logins.map(l => l.username);
     var dialogText  = this._getLocalizedString("userSelectText2");
     var dialogTitle = this._getLocalizedString("passwordChangeTitle");
