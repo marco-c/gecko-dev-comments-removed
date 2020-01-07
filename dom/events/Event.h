@@ -39,6 +39,7 @@ class ExtendableEvent;
 class KeyboardEvent;
 class MouseEvent;
 class TimeEvent;
+class UIEvent;
 class WantsPopupControlCheck;
 class XULCommandEvent;
 #define GENERATED_EVENT(EventClass_) class EventClass_;
@@ -143,6 +144,12 @@ public:
   
   
   virtual MouseEvent* AsMouseEvent()
+  {
+    return nullptr;
+  }
+
+  
+  virtual UIEvent* AsUIEvent()
   {
     return nullptr;
   }
