@@ -8,7 +8,10 @@
 #define vm_Scope_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/TypeTraits.h"
 #include "mozilla/Variant.h"
+
+#include <stddef.h>
 
 #include "jsutil.h"
 
@@ -405,6 +408,20 @@ class Scope : public js::gc::TenuredCell
 };
 
 
+class BaseScopeData
+{};
+
+template<class Data>
+inline size_t
+SizeOfData(uint32_t numBindings)
+{
+    static_assert(mozilla::IsBaseOf<BaseScopeData, Data>::value,
+                  "Data must be the correct sort of data, i.e. it must "
+                  "inherit from BaseScopeData");
+    return sizeof(Data) + (numBindings ? numBindings - 1 : 0) * sizeof(BindingName);
+}
+
+
 
 
 
@@ -433,7 +450,7 @@ class LexicalScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         
@@ -455,15 +472,6 @@ class LexicalScope : public Scope
 
         void trace(JSTracer* trc);
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static LexicalScope* create(JSContext* cx, ScopeKind kind, Handle<Data*> data,
                                 uint32_t firstFrameSlot, HandleScope enclosing);
@@ -539,7 +547,7 @@ class FunctionScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         
@@ -581,15 +589,6 @@ class FunctionScope : public Scope
         void trace(JSTracer* trc);
         Zone* zone() const;
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static FunctionScope* create(JSContext* cx, Handle<Data*> data,
                                  bool hasParameterExprs, bool needsEnvironment,
@@ -667,7 +666,7 @@ class VarScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         uint32_t length = 0;
@@ -685,15 +684,6 @@ class VarScope : public Scope
 
         void trace(JSTracer* trc);
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static VarScope* create(JSContext* cx, ScopeKind kind, Handle<Data*> data,
                             uint32_t firstFrameSlot, bool needsEnvironment,
@@ -760,7 +750,7 @@ class GlobalScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         
@@ -782,15 +772,6 @@ class GlobalScope : public Scope
 
         void trace(JSTracer* trc);
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static GlobalScope* create(JSContext* cx, ScopeKind kind, Handle<Data*> data);
 
@@ -865,7 +846,7 @@ class EvalScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         
@@ -890,15 +871,6 @@ class EvalScope : public Scope
 
         void trace(JSTracer* trc);
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static EvalScope* create(JSContext* cx, ScopeKind kind, Handle<Data*> data,
                              HandleScope enclosing);
@@ -970,7 +942,7 @@ class ModuleScope : public Scope
   public:
     
     
-    struct Data
+    struct Data : BaseScopeData
     {
         
         GCPtr<ModuleObject*> module = {};
@@ -1000,15 +972,6 @@ class ModuleScope : public Scope
         void trace(JSTracer* trc);
         Zone* zone() const;
     };
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-    static void getDataNamesAndLength(Data* data, BindingName** names, uint32_t* length) {
-        *names = data->trailingNames.start();
-        *length = data->length;
-    }
 
     static ModuleScope* create(JSContext* cx, Handle<Data*> data,
                                Handle<ModuleObject*> module, HandleScope enclosing);
@@ -1046,7 +1009,7 @@ class WasmInstanceScope : public Scope
     static const ScopeKind classScopeKind_ = ScopeKind::WasmInstance;
 
   public:
-    struct Data
+    struct Data : BaseScopeData
     {
         uint32_t memoriesStart = 0;
         uint32_t globalsStart = 0;
@@ -1065,10 +1028,6 @@ class WasmInstanceScope : public Scope
     };
 
     static WasmInstanceScope* create(JSContext* cx, WasmInstanceObject* instance);
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
 
   private:
     Data& data() {
@@ -1109,7 +1068,7 @@ class WasmFunctionScope : public Scope
     static const ScopeKind classScopeKind_ = ScopeKind::WasmFunction;
 
   public:
-    struct Data
+    struct Data : BaseScopeData
     {
         uint32_t length = 0;
         uint32_t nextFrameSlot = 0;
@@ -1124,10 +1083,6 @@ class WasmFunctionScope : public Scope
     };
 
     static WasmFunctionScope* create(JSContext* cx, HandleScope enclosing, uint32_t funcIndex);
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
 
   private:
     Data& data() {
