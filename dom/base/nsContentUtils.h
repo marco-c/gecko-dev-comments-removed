@@ -2409,15 +2409,6 @@ public:
   
 
 
-
-  static bool AnimationsAPIPendingMemberEnabled()
-  {
-    return sAnimationsAPIPendingMemberEnabled;
-  }
-
-  
-
-
   static bool GetBoxQuadsEnabled()
   {
     return sGetBoxQuadsEnabled;
@@ -3452,7 +3443,6 @@ private:
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
   static bool sAnimationsAPIElementAnimateEnabled;
-  static bool sAnimationsAPIPendingMemberEnabled;
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;

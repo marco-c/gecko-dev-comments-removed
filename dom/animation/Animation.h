@@ -311,14 +311,7 @@ public:
 
   bool IsPausedOrPausing() const
   {
-    
-    
-    
-    
-    
-    
-    return PlayState() == AnimationPlayState::Paused ||
-           mPendingState == PendingState::PausePending;
+    return PlayState() == AnimationPlayState::Paused;
   }
 
   bool HasCurrentEffect() const
@@ -332,15 +325,10 @@ public:
 
   bool IsPlaying() const
   {
-    
-    
-    
-    
     return mPlaybackRate != 0.0 &&
            mTimeline &&
            !mTimeline->GetCurrentTime().IsNull() &&
-           (PlayState() == AnimationPlayState::Running ||
-            mPendingState == PendingState::PlayPending);
+           PlayState() == AnimationPlayState::Running;
   }
 
   bool ShouldBeSynchronizedWithMainThread(
