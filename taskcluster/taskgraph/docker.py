@@ -123,7 +123,7 @@ def load_image(url, imageName=None, imageTag=None):
 
     Returns an object with properties 'image', 'tag' and 'layer'.
     """
-    import zstd
+    import zstandard as zstd
 
     
     

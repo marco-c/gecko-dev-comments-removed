@@ -390,14 +390,10 @@ class MachCommands(MachCommandBase):
 class TaskClusterImagesProvider(MachCommandBase):
     def _ensure_zstd(self):
         try:
-            import zstd
-            
-            
-            zstd.ZstdCompressor
-            zstd.ZstdDecompressor
+            import zstandard  
         except (ImportError, AttributeError):
             self._activate_virtualenv()
-            self.virtualenv_manager.install_pip_package('zstandard==0.8.1')
+            self.virtualenv_manager.install_pip_package('zstandard==0.9.0')
 
     @Command('taskcluster-load-image', category="ci",
              description="Load a pre-built Docker image")
