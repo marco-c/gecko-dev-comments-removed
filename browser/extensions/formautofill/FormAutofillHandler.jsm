@@ -116,7 +116,10 @@ class FormAutofillSection {
 
 
 
-  async prepareFillingProfile(profile) {}
+
+  async prepareFillingProfile(profile) {
+    return true;
+  }
 
   
 
@@ -248,7 +251,10 @@ class FormAutofillSection {
       throw new Error("No fieldDetail for the focused input.");
     }
 
-    await this.prepareFillingProfile(profile);
+    if (!await this.prepareFillingProfile(profile)) {
+      log.debug("profile cannot be filled", profile);
+      return;
+    }
     log.debug("profile in autofillFields:", profile);
 
     this.filledRecordGUID = profile.guid;
@@ -855,6 +861,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
 
 
+
   async prepareFillingProfile(profile) {
     
     
@@ -865,11 +872,12 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
       if (!decrypted) {
         
-        return;
+        return false;
       }
 
       profile["cc-number"] = decrypted;
     }
+    return true;
   }
 }
 
