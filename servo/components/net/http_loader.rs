@@ -872,7 +872,7 @@ fn http_network_or_cache_fetch(request: &mut Request,
 
     
     if let Ok(http_cache) = context.state.http_cache.read() {
-        if let Some(response_from_cache) = http_cache.construct_response(&http_request) {
+        if let Some(response_from_cache) = http_cache.construct_response(&http_request, done_chan) {
             let response_headers = response_from_cache.response.headers.clone();
             
             let (cached_response, needs_revalidation) = match (http_request.cache_mode, &http_request.mode) {
@@ -902,6 +902,27 @@ fn http_network_or_cache_fetch(request: &mut Request,
             }
         }
     }
+
+    if let Some(ref ch) = *done_chan {
+        
+        
+        
+        loop {
+            match ch.1.recv()
+                    .expect("HTTP cache should always send Done or Cancelled") {
+                Data::Payload(_) => {},
+                Data::Done => break, 
+                Data::Cancelled => {
+                    
+                    
+                    response = None;
+                    break;
+                }
+            }
+        }
+    }
+    
+    *done_chan = None;
 
     
     if response.is_none() {
