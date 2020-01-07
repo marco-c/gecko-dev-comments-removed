@@ -962,7 +962,10 @@ def build_generic_worker_payload(config, task, task_def):
         'osGroups': worker.get('os-groups', []),
     }
 
-    
+    if task.get('needs-sccache'):
+        worker['env']['USE_SCCACHE'] = '1'
+    else:
+        worker['env']['SCCACHE_DISABLE'] = '1'
 
     
     features = {}
