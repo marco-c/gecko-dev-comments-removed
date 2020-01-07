@@ -32,10 +32,17 @@ add_task(function* runTest() {
   });
 
   let s = Cu.Sandbox("http://mozilla.org");
+
   
   
   
-  let testUrl = "http://mozilla.org/browser-toolbox-test.js";
+  
+  let id = new Date().getTime();
+
+  
+  
+  
+  let testUrl = `http://mozilla.org/browser-toolbox-test-${id}.js`;
   Cu.evalInSandbox("(" + function () {
     this.plop = function plop() {
       return 1;
@@ -117,7 +124,7 @@ add_task(function* runTest() {
   
   let testScript = (yield fetch(testScriptURL)).content;
   let source =
-    "try {" + testHead + debuggerHead + testScript + "} catch (e) {" +
+    "try { let testUrl = \""+testUrl+"\";" + testHead + debuggerHead + testScript + "} catch (e) {" +
     "  dump('Exception: '+ e + ' at ' + e.fileName + ':' + " +
     "       e.lineNumber + '\\nStack: ' + e.stack + '\\n');" +
     "}";
