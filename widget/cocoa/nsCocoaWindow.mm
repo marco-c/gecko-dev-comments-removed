@@ -23,7 +23,6 @@
 #include "nsToolkit.h"
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
-#include "nsIDOMElement.h"
 #include "nsThreadUtils.h"
 #include "nsMenuBarX.h"
 #include "nsMenuUtilsX.h"
@@ -1831,7 +1830,6 @@ nsCocoaWindow::BackingScaleFactorChanged()
   if (presShell) {
     presShell->BackingScaleFactorChanged();
   }
-  mWidgetListener->UIResolutionChanged();
 }
 
 int32_t
