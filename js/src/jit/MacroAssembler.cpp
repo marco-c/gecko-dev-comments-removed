@@ -1711,7 +1711,7 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output, Re
 
     
     
-    boundsCheck32ForLoad(index, Address(output, JSString::offsetOfLength()), scratch, fail);
+    spectreBoundsCheck32(index, Address(output, JSString::offsetOfLength()), scratch, fail);
 
     
     branchIfRope(output, fail);

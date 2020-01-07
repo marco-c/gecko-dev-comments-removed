@@ -11170,7 +11170,7 @@ CodeGenerator::visitLoadElementHole(LLoadElementHole* lir)
     
     
     Label outOfBounds, done;
-    masm.boundsCheck32ForLoad(index, initLength, out.scratchReg(), &outOfBounds);
+    masm.spectreBoundsCheck32(index, initLength, out.scratchReg(), &outOfBounds);
 
     masm.loadValue(BaseObjectElementIndex(elements, index), out);
 
@@ -11309,7 +11309,7 @@ CodeGenerator::visitLoadTypedArrayElementHole(LLoadTypedArrayElementHole* lir)
 
     
     Label outOfBounds, done;
-    masm.boundsCheck32ForLoad(index, scratch, scratch2, &outOfBounds);
+    masm.spectreBoundsCheck32(index, scratch, scratch2, &outOfBounds);
 
     
     masm.loadPtr(Address(object, TypedArrayObject::dataOffset()), scratch);

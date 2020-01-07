@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_arm_MacroAssembler_arm_inl_h
 #define jit_arm_MacroAssembler_arm_inl_h
@@ -12,7 +12,7 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
+
 
 void
 MacroAssembler::move64(Register64 src, Register64 dest)
@@ -101,8 +101,8 @@ MacroAssembler::move32To64SignExtend(Register src, Register64 dest)
     ma_asr(Imm32(31), dest.low, dest.high);
 }
 
-// ===============================================================
-// Logical instructions
+
+
 
 void
 MacroAssembler::not32(Register reg)
@@ -268,8 +268,8 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
     ma_eor(imm, dest, scratch);
 }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void
 MacroAssembler::add32(Register src, Register dest)
@@ -482,70 +482,70 @@ MacroAssembler::mul32(Register rhs, Register srcDest)
 void
 MacroAssembler::mul64(Imm64 imm, const Register64& dest)
 {
-    // LOW32  = LOW(LOW(dest) * LOW(imm));
-    // HIGH32 = LOW(HIGH(dest) * LOW(imm)) [multiply imm into upper bits]
-    //        + LOW(LOW(dest) * HIGH(imm)) [multiply dest into upper bits]
-    //        + HIGH(LOW(dest) * LOW(imm)) [carry]
+    
+    
+    
+    
 
     ScratchRegisterScope scratch(*this);
     SecondScratchRegisterScope scratch2(*this);
 
-    // HIGH(dest) = LOW(HIGH(dest) * LOW(imm));
+    
     ma_mov(Imm32(imm.value & 0xFFFFFFFFL), scratch);
     as_mul(dest.high, dest.high, scratch);
 
-    // high:low = LOW(dest) * LOW(imm);
+    
     as_umull(scratch2, scratch, dest.low, scratch);
 
-    // HIGH(dest) += high;
+    
     as_add(dest.high, dest.high, O2Reg(scratch2));
 
-    // HIGH(dest) += LOW(LOW(dest) * HIGH(imm));
+    
     if (((imm.value >> 32) & 0xFFFFFFFFL) == 5)
         as_add(scratch2, dest.low, lsl(dest.low, 2));
     else
         MOZ_CRASH("Not supported imm");
     as_add(dest.high, dest.high, O2Reg(scratch2));
 
-    // LOW(dest) = low;
+    
     ma_mov(scratch, dest.low);
 }
 
 void
 MacroAssembler::mul64(Imm64 imm, const Register64& dest, const Register temp)
 {
-    // LOW32  = LOW(LOW(dest) * LOW(src));                                  (1)
-    // HIGH32 = LOW(HIGH(dest) * LOW(src)) [multiply src into upper bits]   (2)
-    //        + LOW(LOW(dest) * HIGH(src)) [multiply dest into upper bits]  (3)
-    //        + HIGH(LOW(dest) * LOW(src)) [carry]                          (4)
+    
+    
+    
+    
 
     MOZ_ASSERT(temp != dest.high && temp != dest.low);
 
-    // Compute mul64
+    
     ScratchRegisterScope scratch(*this);
-    ma_mul(dest.high, imm.low(), dest.high, scratch); // (2)
-    ma_mul(dest.low, imm.hi(), temp, scratch); // (3)
+    ma_mul(dest.high, imm.low(), dest.high, scratch); 
+    ma_mul(dest.low, imm.hi(), temp, scratch); 
     ma_add(dest.high, temp, temp);
-    ma_umull(dest.low, imm.low(), dest.high, dest.low, scratch); // (4) + (1)
+    ma_umull(dest.low, imm.low(), dest.high, dest.low, scratch); 
     ma_add(temp, dest.high, dest.high);
 }
 
 void
 MacroAssembler::mul64(const Register64& src, const Register64& dest, const Register temp)
 {
-    // LOW32  = LOW(LOW(dest) * LOW(src));                                  (1)
-    // HIGH32 = LOW(HIGH(dest) * LOW(src)) [multiply src into upper bits]   (2)
-    //        + LOW(LOW(dest) * HIGH(src)) [multiply dest into upper bits]  (3)
-    //        + HIGH(LOW(dest) * LOW(src)) [carry]                          (4)
+    
+    
+    
+    
 
     MOZ_ASSERT(dest != src);
     MOZ_ASSERT(dest.low != src.high && dest.high != src.low);
 
-    // Compute mul64
-    ma_mul(dest.high, src.low, dest.high); // (2)
-    ma_mul(src.high, dest.low, temp); // (3)
+    
+    ma_mul(dest.high, src.low, dest.high); 
+    ma_mul(src.high, dest.low, temp); 
     ma_add(dest.high, temp, temp);
-    ma_umull(dest.low, src.low, dest.high, dest.low); // (4) + (1)
+    ma_umull(dest.low, src.low, dest.high, dest.low); 
     ma_add(temp, dest.high, dest.high);
 }
 
@@ -706,8 +706,8 @@ MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest, bool handl
     minMaxDouble(srcDest, other, handleNaN, true);
 }
 
-// ===============================================================
-// Shift functions
+
+
 
 void
 MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
@@ -736,8 +736,8 @@ MacroAssembler::lshift64(Imm32 imm, Register64 dest)
 void
 MacroAssembler::lshift64(Register unmaskedShift, Register64 dest)
 {
-    // dest.high = dest.high << shift | dest.low << shift - 32 | dest.low >> 32 - shift
-    // Note: one of the two dest.low shift will always yield zero due to negative shift.
+    
+    
 
     ScratchRegisterScope shift(*this);
     as_and(shift, unmaskedShift, Imm8(0x3f));
@@ -817,12 +817,12 @@ MacroAssembler::rshift64Arithmetic(Register unmaskedShift, Register64 dest)
 {
     Label proceed;
 
-    // dest.low = dest.low >>> shift | dest.high <<< 32 - shift
-    // if (shift - 32 >= 0)
-    //   dest.low |= dest.high >>> shift - 32
-    // Note: Negative shifts yield a zero as result, except for the signed
-    //       right shift. Therefore we need to test for it and only do it if
-    //       it isn't negative.
+    
+    
+    
+    
+    
+    
     ScratchRegisterScope shift(*this);
 
     as_and(shift, unmaskedShift, Imm8(0x3f));
@@ -876,8 +876,8 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 void
 MacroAssembler::rshift64(Register unmaskedShift, Register64 dest)
 {
-    // dest.low = dest.low >> shift | dest.high >> shift - 32 | dest.high << 32 - shift
-    // Note: one of the two dest.high shifts will always yield zero due to negative shift.
+    
+    
 
     ScratchRegisterScope shift(*this);
     as_and(shift, unmaskedShift, Imm8(0x3f));
@@ -890,8 +890,8 @@ MacroAssembler::rshift64(Register unmaskedShift, Register64 dest)
     as_mov(dest.high, lsr(dest.high, shift));
 }
 
-// ===============================================================
-// Rotate functions
+
+
 void
 MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest)
 {
@@ -954,8 +954,8 @@ MacroAssembler::rotateLeft64(Register shift, Register64 src, Register64 dest, Re
     as_cmp(shift_value, Imm8(32));
     ma_b(&high, GreaterThanOrEqual);
 
-    // high = high << shift | low >> 32 - shift
-    // low = low << shift | high >> 32 - shift
+    
+    
     as_mov(dest.high, lsl(src.high, shift_value));
     as_rsb(shift_value, shift_value, Imm8(32));
     as_orr(dest.high, dest.high, lsr(src.low, shift_value));
@@ -967,7 +967,7 @@ MacroAssembler::rotateLeft64(Register shift, Register64 src, Register64 dest, Re
 
     ma_b(&done);
 
-    // A 32 - 64 shift is a 0 - 32 shift in the other direction.
+    
     bind(&high);
     as_rsb(shift_value, shift_value, Imm8(64));
 
@@ -1044,8 +1044,8 @@ MacroAssembler::rotateRight64(Register shift, Register64 src, Register64 dest, R
     as_cmp(shift_value, Imm8(32));
     ma_b(&high, GreaterThanOrEqual);
 
-    // high = high >> shift | low << 32 - shift
-    // low = low >> shift | high << 32 - shift
+    
+    
     as_mov(dest.high, lsr(src.high, shift_value));
     as_rsb(shift_value, shift_value, Imm8(32));
     as_orr(dest.high, dest.high, lsl(src.low, shift_value));
@@ -1057,7 +1057,7 @@ MacroAssembler::rotateRight64(Register shift, Register64 src, Register64 dest, R
 
     ma_b(&done);
 
-    // A 32 - 64 shift is a 0 - 32 shift in the other direction.
+    
     bind(&high);
     as_rsb(shift_value, shift_value, Imm8(64));
 
@@ -1073,8 +1073,8 @@ MacroAssembler::rotateRight64(Register shift, Register64 src, Register64 dest, R
     bind(&done);
 }
 
-// ===============================================================
-// Condition functions
+
+
 
 template <typename T1, typename T2>
 void
@@ -1092,8 +1092,8 @@ MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
     emitSet(cond, dest);
 }
 
-// ===============================================================
-// Bit counting functions
+
+
 
 void
 MacroAssembler::clz32(Register src, Register dest, bool knownNotZero)
@@ -1127,11 +1127,11 @@ MacroAssembler::ctz64(Register64 src, Register dest)
     as_cmp(src.low, Imm8(0));
     ma_b(&high, Equal);
 
-    ctz32(src.low, dest, /* knownNotZero = */ true);
+    ctz32(src.low, dest,  true);
     ma_b(&done);
 
     bind(&high);
-    ctz32(src.high, dest, /* knownNotZero = */ false);
+    ctz32(src.high, dest,  false);
     as_add(dest, dest, Imm8(32));
 
     bind(&done);
@@ -1140,7 +1140,7 @@ MacroAssembler::ctz64(Register64 src, Register dest)
 void
 MacroAssembler::popcnt32(Register input,  Register output, Register tmp)
 {
-    // Equivalent to GCC output of mozilla::CountPopulation32()
+    
 
     ScratchRegisterScope scratch(*this);
 
@@ -1167,8 +1167,8 @@ MacroAssembler::popcnt64(Register64 src, Register64 dest, Register tmp)
     MOZ_ASSERT(dest.low != tmp);
     MOZ_ASSERT(dest.high != tmp);
     MOZ_ASSERT(dest.low != dest.high);
-    // The source and destination can overlap. Therefore make sure we don't
-    // clobber the source before we have the data.
+    
+    
     if (dest.low != src.high) {
         popcnt32(src.low, dest.low, tmp);
         popcnt32(src.high, dest.high, tmp);
@@ -1181,8 +1181,8 @@ MacroAssembler::popcnt64(Register64 src, Register64 dest, Register tmp)
     ma_mov(Imm32(0), dest.high);
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 template <class L>
 void
@@ -1229,7 +1229,7 @@ MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs, Register rh
 {
     ScratchRegisterScope scratch(*this);
 
-    // Load into scratch.
+    
     movePtr(ImmWord(uintptr_t(lhs.addr)), scratch);
     ma_ldr(DTRAddr(scratch, DtrOffImm(0)), scratch);
 
@@ -1243,7 +1243,7 @@ MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs, 
     ScratchRegisterScope scratch(*this);
     SecondScratchRegisterScope scratch2(*this);
 
-    // Load into scratch.
+    
     movePtr(ImmWord(uintptr_t(lhs.addr)), scratch);
     ma_ldr(DTRAddr(scratch, DtrOffImm(0)), scratch);
 
@@ -1261,7 +1261,7 @@ MacroAssembler::branch32(Condition cond, const BaseIndex& lhs, Imm32 rhs, Label*
         Register base = lhs.base;
         uint32_t scale = Imm32::ShiftOf(lhs.scale).value;
 
-        // Load lhs into scratch2.
+        
         if (lhs.offset != 0) {
             ma_add(base, Imm32(lhs.offset), scratch, scratch2);
             ma_ldr(DTRAddr(scratch, DtrRegImmShift(lhs.index, LSL, scale)), scratch2);
@@ -1547,7 +1547,7 @@ MacroAssembler::branchFloat(DoubleCondition cond, FloatRegister lhs, FloatRegist
     compareFloat(lhs, rhs);
 
     if (cond == DoubleNotEqual) {
-        // Force the unordered cases not to jump.
+        
         Label unordered;
         ma_b(&unordered, VFP_Unordered);
         ma_b(label, VFP_NotEqualOrUnordered);
@@ -1590,7 +1590,7 @@ MacroAssembler::branchDouble(DoubleCondition cond, FloatRegister lhs, FloatRegis
     compareDouble(lhs, rhs);
 
     if (cond == DoubleNotEqual) {
-        // Force the unordered cases not to jump.
+        
         Label unordered;
         ma_b(&unordered, VFP_Unordered);
         ma_b(label, VFP_NotEqualOrUnordered);
@@ -1613,14 +1613,14 @@ MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src, Register d
     branchTruncateDoubleToInt32(src, dest, fail);
 }
 
-// There are two options for implementing branchTruncateDoubleToInt32:
-//
-// 1. Convert the floating point value to an integer, if it did not fit, then it
-// was clamped to INT_MIN/INT_MAX, and we can test it. NOTE: if the value
-// really was supposed to be INT_MAX / INT_MIN then it will be wrong.
-//
-// 2. Convert the floating point value to an integer, if it did not fit, then it
-// set one or two bits in the fpcsr. Check those.
+
+
+
+
+
+
+
+
 void
 MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src, Register dest, Label* fail)
 {
@@ -1664,8 +1664,8 @@ void
 MacroAssembler::branchTest32(Condition cond, Register lhs, Register rhs, L label)
 {
     MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed || cond == NotSigned);
-    // x86 likes test foo, foo rather than cmp foo, #0.
-    // Convert the former into the latter.
+    
+    
     if (lhs == rhs && (cond == Zero || cond == NonZero))
         as_cmp(lhs, Imm8(0));
     else
@@ -2131,8 +2131,8 @@ MacroAssembler::branchToComputedAddress(const BaseIndex& addr)
     uint32_t scale = Imm32::ShiftOf(addr.scale).value;
 
     ma_ldr(DTRAddr(base, DtrRegImmShift(addr.index, LSL, scale)), pc);
-    // When loading from pc, the pc is shifted to the next instruction, we
-    // add one extra instruction to accomodate for this shifted offset.
+    
+    
     breakpoint();
 }
 
@@ -2194,7 +2194,7 @@ MacroAssembler::spectreZeroRegister(Condition cond, Register, Register dest)
 }
 
 void
-MacroAssembler::boundsCheck32ForLoad(Register index, Register length, Register scratch,
+MacroAssembler::spectreBoundsCheck32(Register index, Register length, Register scratch,
                                      Label* failure)
 {
     MOZ_ASSERT(index != length);
@@ -2211,7 +2211,7 @@ MacroAssembler::boundsCheck32ForLoad(Register index, Register length, Register s
 }
 
 void
-MacroAssembler::boundsCheck32ForLoad(Register index, const Address& length, Register scratch,
+MacroAssembler::spectreBoundsCheck32(Register index, const Address& length, Register scratch,
                                      Label* failure)
 {
     MOZ_ASSERT(index != length.base);
@@ -2227,8 +2227,8 @@ MacroAssembler::boundsCheck32ForLoad(Register index, const Address& length, Regi
         ma_mov(scratch, index, LeaveCC, Assembler::BelowOrEqual);
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 void
 MacroAssembler::storeUncanonicalizedDouble(FloatRegister src, const Address& addr)
 {
@@ -2273,7 +2273,7 @@ MacroAssembler::storeFloat32x3(FloatRegister src, const BaseIndex& dest)
 void
 MacroAssembler::memoryBarrier(MemoryBarrierBits barrier)
 {
-    // On ARMv6 the optional argument (BarrierST, etc) is ignored.
+    
     if (barrier == (MembarStoreStore|MembarSynchronizing))
         ma_dsb(BarrierST);
     else if (barrier & MembarSynchronizing)
@@ -2284,22 +2284,22 @@ MacroAssembler::memoryBarrier(MemoryBarrierBits barrier)
         ma_dmb();
 }
 
-// ===============================================================
-// Clamping functions.
+
+
 
 void
 MacroAssembler::clampIntToUint8(Register reg)
 {
-    // Look at (reg >> 8) if it is 0, then reg shouldn't be clamped if it is
-    // <0, then we want to clamp to 0, otherwise, we wish to clamp to 255
+    
+    
     ScratchRegisterScope scratch(*this);
     as_mov(scratch, asr(reg, 8), SetCC);
     ma_mov(Imm32(0xff), reg, NotEqual);
     ma_mov(Imm32(0), reg, Signed);
 }
 
-// ========================================================================
-// wasm support
+
+
 
 template <class L>
 void
@@ -2324,8 +2324,8 @@ MacroAssembler::wasmBoundsCheck(Condition cond, Register index, Address boundsCh
         ma_mov(scratch, index, LeaveCC, cond);
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
+
+
 
 void
 MacroAssemblerARMCompat::incrementInt32Value(const Address& addr)
@@ -2333,7 +2333,7 @@ MacroAssemblerARMCompat::incrementInt32Value(const Address& addr)
     asMasm().add32(Imm32(1), ToPayload(addr));
 }
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif /* jit_arm_MacroAssembler_arm_inl_h */
+#endif 

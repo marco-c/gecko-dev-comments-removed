@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_x86_shared_MacroAssembler_x86_shared_inl_h
 #define jit_x86_shared_MacroAssembler_x86_shared_inl_h
@@ -12,9 +12,9 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
-// ===============================================================
-// Move instructions
+
+
+
 
 void
 MacroAssembler::moveFloat32ToGPR(FloatRegister src, Register dest)
@@ -40,8 +40,8 @@ MacroAssembler::move16SignExtend(Register src, Register dest)
     movswl(src, dest);
 }
 
-// ===============================================================
-// Logical instructions
+
+
 
 void
 MacroAssembler::not32(Register reg)
@@ -106,12 +106,12 @@ MacroAssembler::xor32(Imm32 imm, Register dest)
 void
 MacroAssembler::clz32(Register src, Register dest, bool knownNotZero)
 {
-    // On very recent chips (Haswell and newer?) there is actually an
-    // LZCNT instruction that does all of this.
+    
+    
 
     bsrl(src, dest);
     if (!knownNotZero) {
-        // If the source is zero then bsrl leaves garbage in the destination.
+        
         Label nonzero;
         j(Assembler::NonZero, &nonzero);
         movl(Imm32(0x3F), dest);
@@ -142,7 +142,7 @@ MacroAssembler::popcnt32(Register input, Register output, Register tmp)
 
     MOZ_ASSERT(tmp != InvalidReg);
 
-    // Equivalent to mozilla::CountPopulation32()
+    
 
     movl(input, tmp);
     if (input != output)
@@ -163,8 +163,8 @@ MacroAssembler::popcnt32(Register input, Register output, Register tmp)
     shrl(Imm32(24), output);
 }
 
-// ===============================================================
-// Arithmetic instructions
+
+
 
 void
 MacroAssembler::add32(Register src, Register dest)
@@ -236,7 +236,7 @@ void
 MacroAssembler::mul32(Register rhs, Register srcDest)
 {
     MOZ_ASSERT(srcDest == eax);
-    imull(rhs, srcDest);        // Clobbers edx
+    imull(rhs, srcDest);        
 }
 
 void
@@ -256,7 +256,7 @@ MacroAssembler::quotient32(Register rhs, Register srcDest, bool isUnsigned)
 {
     MOZ_ASSERT(srcDest == eax);
 
-    // Sign extend eax into edx to make (edx:eax): idiv/udiv are 64-bit.
+    
     if (isUnsigned) {
         mov(ImmWord(0), edx);
         udiv(rhs);
@@ -271,7 +271,7 @@ MacroAssembler::remainder32(Register rhs, Register srcDest, bool isUnsigned)
 {
     MOZ_ASSERT(srcDest == eax);
 
-    // Sign extend eax into edx to make (edx:eax): idiv/udiv are 64-bit.
+    
     if (isUnsigned) {
         mov(ImmWord(0), edx);
         udiv(rhs);
@@ -307,20 +307,20 @@ MacroAssembler::negateFloat(FloatRegister reg)
     vpcmpeqw(Operand(scratch), scratch, scratch);
     vpsllq(Imm32(31), scratch, scratch);
 
-    // XOR the float in a float register with -0.0.
-    vxorps(scratch, reg, reg); // s ^ 0x80000000
+    
+    vxorps(scratch, reg, reg); 
 }
 
 void
 MacroAssembler::negateDouble(FloatRegister reg)
 {
-    // From MacroAssemblerX86Shared::maybeInlineDouble
+    
     ScratchDoubleScope scratch(*this);
     vpcmpeqw(Operand(scratch), scratch, scratch);
     vpsllq(Imm32(63), scratch, scratch);
 
-    // XOR the float in a float register with -0.0.
-    vxorpd(scratch, reg, reg); // s ^ 0x80000000000000
+    
+    vxorpd(scratch, reg, reg); 
 }
 
 void
@@ -375,8 +375,8 @@ MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest, bool handl
     minMaxDouble(srcDest, other, handleNaN, true);
 }
 
-// ===============================================================
-// Rotation instructions
+
+
 void
 MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest)
 {
@@ -411,8 +411,8 @@ MacroAssembler::rotateRight(Register count, Register input, Register dest)
     rorl_cl(input);
 }
 
-// ===============================================================
-// Shift instructions
+
+
 
 void
 MacroAssembler::lshift32(Register shift, Register srcDest)
@@ -453,8 +453,8 @@ MacroAssembler::rshift32Arithmetic(Imm32 shift, Register srcDest)
     sarl(shift, srcDest);
 }
 
-// ===============================================================
-// Condition functions
+
+
 
 template <typename T1, typename T2>
 void
@@ -464,8 +464,8 @@ MacroAssembler::cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest)
     emitSet(cond, dest);
 }
 
-// ===============================================================
-// Branch instructions
+
+
 
 template <class L>
 void
@@ -1113,13 +1113,13 @@ MacroAssembler::cmp32Move32(Condition cond, Register lhs, const Address& rhs, Re
 void
 MacroAssembler::spectreZeroRegister(Condition cond, Register scratch, Register dest)
 {
-    // Note: use movl instead of move32/xorl to ensure flags are not clobbered.
+    
     movl(Imm32(0), scratch);
     spectreMovePtr(cond, scratch, dest);
 }
 
 void
-MacroAssembler::boundsCheck32ForLoad(Register index, Register length, Register scratch,
+MacroAssembler::spectreBoundsCheck32(Register index, Register length, Register scratch,
                                      Label* failure)
 {
     MOZ_ASSERT(index != length);
@@ -1137,7 +1137,7 @@ MacroAssembler::boundsCheck32ForLoad(Register index, Register length, Register s
 }
 
 void
-MacroAssembler::boundsCheck32ForLoad(Register index, const Address& length, Register scratch,
+MacroAssembler::spectreBoundsCheck32(Register index, const Address& length, Register scratch,
                                      Label* failure)
 {
     MOZ_ASSERT(index != length.base);
@@ -1154,8 +1154,8 @@ MacroAssembler::boundsCheck32ForLoad(Register index, const Address& length, Regi
         cmovCCl(Assembler::AboveOrEqual, scratch, index);
 }
 
-// ========================================================================
-// Canonicalization primitives.
+
+
 void
 MacroAssembler::canonicalizeFloat32x4(FloatRegister reg, FloatRegister scratch)
 {
@@ -1177,8 +1177,8 @@ MacroAssembler::canonicalizeFloat32x4(FloatRegister reg, FloatRegister scratch)
     bitwiseOrSimd128(Operand(mask), reg);
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 void
 MacroAssembler::storeUncanonicalizedDouble(FloatRegister src, const Address& dest)
 {
@@ -1261,8 +1261,8 @@ MacroAssembler::memoryBarrier(MemoryBarrierBits barrier)
         storeLoadFence();
 }
 
-// ========================================================================
-// Truncate floating point.
+
+
 
 void
 MacroAssembler::truncateFloat32ToInt64(Address src, Address dest, Register temp)
@@ -1280,7 +1280,7 @@ MacroAssembler::truncateFloat32ToInt64(Address src, Address dest, Register temp)
 
     reserveStack(2 * sizeof(int32_t));
 
-    // Set conversion to truncation.
+    
     fnstcw(Operand(esp, 0));
     load32(Operand(esp, 0), temp);
     andl(Imm32(~0xFF00), temp);
@@ -1288,11 +1288,11 @@ MacroAssembler::truncateFloat32ToInt64(Address src, Address dest, Register temp)
     store32(temp, Address(esp, sizeof(int32_t)));
     fldcw(Operand(esp, sizeof(int32_t)));
 
-    // Load double on fp stack, convert and load regular stack.
+    
     fld32(Operand(src));
     fistp(Operand(dest));
 
-    // Reset the conversion flag.
+    
     fldcw(Operand(esp, 0));
 
     freeStack(2 * sizeof(int32_t));
@@ -1313,7 +1313,7 @@ MacroAssembler::truncateDoubleToInt64(Address src, Address dest, Register temp)
 
     reserveStack(2*sizeof(int32_t));
 
-    // Set conversion to truncation.
+    
     fnstcw(Operand(esp, 0));
     load32(Operand(esp, 0), temp);
     andl(Imm32(~0xFF00), temp);
@@ -1321,18 +1321,18 @@ MacroAssembler::truncateDoubleToInt64(Address src, Address dest, Register temp)
     store32(temp, Address(esp, 1*sizeof(int32_t)));
     fldcw(Operand(esp, 1*sizeof(int32_t)));
 
-    // Load double on fp stack, convert and load regular stack.
+    
     fld(Operand(src));
     fistp(Operand(dest));
 
-    // Reset the conversion flag.
+    
     fldcw(Operand(esp, 0));
 
     freeStack(2*sizeof(int32_t));
 }
 
-// ===============================================================
-// Clamping functions.
+
+
 
 void
 MacroAssembler::clampIntToUint8(Register reg)
@@ -1347,10 +1347,10 @@ MacroAssembler::clampIntToUint8(Register reg)
     bind(&inRange);
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
 
-} // namespace jit
-} // namespace js
 
-#endif /* jit_x86_shared_MacroAssembler_x86_shared_inl_h */
+
+} 
+} 
+
+#endif 

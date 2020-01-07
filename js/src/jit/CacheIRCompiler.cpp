@@ -1896,7 +1896,7 @@ CacheIRCompiler::emitLoadStringCharResult()
         return false;
 
     
-    masm.boundsCheck32ForLoad(index, Address(str, JSString::offsetOfLength()), scratch1,
+    masm.spectreBoundsCheck32(index, Address(str, JSString::offsetOfLength()), scratch1,
                               failure->label());
     masm.loadStringChar(str, index, scratch1, scratch2, failure->label());
 
@@ -1934,7 +1934,7 @@ CacheIRCompiler::emitLoadArgumentsObjectArgResult()
 
     
     masm.rshift32(Imm32(ArgumentsObject::PACKED_BITS_COUNT), scratch1);
-    masm.boundsCheck32ForLoad(index, scratch1, scratch2, failure->label());
+    masm.spectreBoundsCheck32(index, scratch1, scratch2, failure->label());
 
     
     masm.loadPrivate(Address(obj, ArgumentsObject::getDataSlotOffset()), scratch1);
@@ -1970,7 +1970,7 @@ CacheIRCompiler::emitLoadDenseElementResult()
 
     
     Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
-    masm.boundsCheck32ForLoad(index, initLength, scratch2, failure->label());
+    masm.spectreBoundsCheck32(index, initLength, scratch2, failure->label());
 
     
     BaseObjectElementIndex element(scratch1, index);
@@ -2041,7 +2041,7 @@ CacheIRCompiler::emitLoadDenseElementHoleResult()
     
     Label hole;
     Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
-    masm.boundsCheck32ForLoad(index, initLength, scratch2, &hole);
+    masm.spectreBoundsCheck32(index, initLength, scratch2, &hole);
 
     
     Label done;
@@ -2225,7 +2225,7 @@ CacheIRCompiler::emitLoadTypedElementResult()
 
     
     LoadTypedThingLength(masm, layout, obj, scratch1);
-    masm.boundsCheck32ForLoad(index, scratch1, scratch2, failure->label());
+    masm.spectreBoundsCheck32(index, scratch1, scratch2, failure->label());
 
     
     LoadTypedThingData(masm, layout, obj, scratch1);

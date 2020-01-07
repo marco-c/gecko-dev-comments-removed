@@ -1432,10 +1432,10 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    inline void boundsCheck32ForLoad(Register index, Register length, Register scratch,
+    inline void spectreBoundsCheck32(Register index, Register length, Register scratch,
                                      Label* failure)
         DEFINED_ON(arm, arm64, mips_shared, x86_shared);
-    inline void boundsCheck32ForLoad(Register index, const Address& length, Register scratch,
+    inline void spectreBoundsCheck32(Register index, const Address& length, Register scratch,
                                      Label* failure)
         DEFINED_ON(arm, arm64, mips_shared, x86_shared);
 
