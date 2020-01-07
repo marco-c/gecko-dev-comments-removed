@@ -214,15 +214,6 @@ GetEntryDocument()
   nsIGlobalObject* global = GetEntryGlobal();
   nsCOMPtr<nsPIDOMWindowInner> entryWin = do_QueryInterface(global);
 
-  
-  
-  
-  if (!entryWin && global) {
-    if (auto* win = xpc::AddonWindowOrNull(global->GetGlobalJSObject())) {
-      entryWin = win->AsInner();
-    }
-  }
-
   return entryWin ? entryWin->GetExtantDoc() : nullptr;
 }
 
@@ -553,12 +544,6 @@ WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep)
 
   RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
   nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(aCx);
-  if (!win) {
-    
-    
-    
-    win = xpc::AddonWindowOrNull(JS::CurrentGlobalOrNull(aCx));
-  }
   xpcReport->Init(aRep, nullptr, nsContentUtils::IsSystemCaller(aCx),
                   win ? win->AsInner()->WindowID() : 0);
   xpcReport->LogToConsole();
@@ -593,11 +578,6 @@ AutoJSAPI::ReportException()
       RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
 
       RefPtr<nsGlobalWindowInner> win = xpc::WindowGlobalOrNull(errorGlobal);
-      if (!win) {
-        
-        
-        win = xpc::AddonWindowOrNull(errorGlobal);
-      }
       nsPIDOMWindowInner* inner = win ? win->AsInner() : nullptr;
       bool isChrome = nsContentUtils::IsSystemPrincipal(
         nsContentUtils::ObjectPrincipal(errorGlobal));

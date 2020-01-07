@@ -191,9 +191,7 @@ CompartmentPrivate::~CompartmentPrivate()
 }
 
 RealmPrivate::RealmPrivate(JS::Realm* realm)
-    : writeToGlobalPrototype(false)
-    , skipWriteToGlobalPrototype(false)
-    , scriptability(JS::GetCompartmentForRealm(realm))
+    : scriptability(JS::GetCompartmentForRealm(realm))
     , scope(nullptr)
 {
 }
@@ -448,18 +446,6 @@ IsInContentXBLScope(JSObject* obj)
 }
 
 bool
-IsAddonCompartment(JSCompartment* compartment)
-{
-    return CompartmentPrivate::Get(compartment)->isAddonCompartment;
-}
-
-bool
-IsInAddonScope(JSObject* obj)
-{
-    return IsAddonCompartment(js::GetObjectCompartment(obj));
-}
-
-bool
 IsUniversalXPConnectEnabled(JSCompartment* compartment)
 {
     CompartmentPrivate* priv = CompartmentPrivate::Get(compartment);
@@ -547,26 +533,6 @@ WindowGlobalOrNull(JSObject* aObj)
     JSObject* glob = js::GetGlobalForObjectCrossCompartment(aObj);
 
     return WindowOrNull(glob);
-}
-
-nsGlobalWindowInner*
-AddonWindowOrNull(JSObject* aObj)
-{
-    if (!IsInAddonScope(aObj))
-        return nullptr;
-
-    JSObject* global = js::GetGlobalForObjectCrossCompartment(aObj);
-    JSObject* proto = js::GetPrototypeNoProxy(global);
-
-    
-    
-    
-    MOZ_RELEASE_ASSERT(js::IsCrossCompartmentWrapper(proto) ||
-                       xpc::IsSandboxPrototypeProxy(proto));
-    JSObject* mainGlobal = js::UncheckedUnwrap(proto,  false);
-    MOZ_RELEASE_ASSERT(JS_IsGlobalObject(mainGlobal));
-
-    return WindowOrNull(mainGlobal);
 }
 
 nsGlobalWindowInner*

@@ -17,7 +17,6 @@
 #include "nsIURI.h"
 #include "nsXBLSerialize.h"
 #include "nsXBLPrototypeBinding.h"
-#include "mozilla/AddonPathService.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -412,8 +411,6 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
   MOZ_ASSERT(!::JS_IsExceptionPending(jsapi.cx()),
              "Shouldn't get here when an exception is pending!");
 
-  JSAddonId* addonId = MapURIToAddonID(aBindingDocURI);
-
   
   JS::Rooted<JSObject*> boundNode(jsapi.cx(), aBoundNode);
   Element* boundElement = nullptr;
@@ -425,7 +422,7 @@ nsXBLProtoImplField::InstallField(JS::Handle<JSObject*> aBoundNode,
   
   
   JS::Rooted<JSObject*> scopeObject(jsapi.cx(),
-    xpc::GetScopeForXBLExecution(jsapi.cx(), aBoundNode, addonId));
+    xpc::GetXBLScopeOrGlobal(jsapi.cx(), aBoundNode));
   NS_ENSURE_TRUE(scopeObject, NS_ERROR_OUT_OF_MEMORY);
 
   AutoEntryScript aes(scopeObject, "XBL <field> initialization", true);

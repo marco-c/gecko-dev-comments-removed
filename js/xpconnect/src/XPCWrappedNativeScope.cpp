@@ -219,21 +219,6 @@ XPCWrappedNativeScope::AttachComponentsObject(JSContext* aCx)
     return true;
 }
 
-static bool
-CompartmentPerAddon()
-{
-    static bool initialized = false;
-    static bool pref = false;
-
-    if (!initialized) {
-        pref = Preferences::GetBool("dom.compartment_per_addon", false) ||
-               BrowserTabsRemoteAutostart();
-        initialized = true;
-    }
-
-    return pref;
-}
-
 JSObject*
 XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx)
 {
@@ -305,41 +290,13 @@ namespace xpc {
 JSObject*
 GetXBLScope(JSContext* cx, JSObject* contentScopeArg)
 {
-    MOZ_ASSERT(!IsInAddonScope(contentScopeArg));
-
     JS::RootedObject contentScope(cx, contentScopeArg);
-    JSCompartment* addonComp = js::GetObjectCompartment(contentScope);
-    JS::Rooted<JS::Realm*> addonRealm(cx, JS::GetRealmForCompartment(addonComp));
-    JSAutoCompartment ac(cx, contentScope);
-    JSObject* scope = RealmPrivate::Get(addonRealm)->scope->EnsureContentXBLScope(cx);
-    NS_ENSURE_TRUE(scope, nullptr); 
-    scope = js::UncheckedUnwrap(scope);
-    JS::ExposeObjectToActiveJS(scope);
-    return scope;
-}
-
-JSObject*
-GetScopeForXBLExecution(JSContext* cx, HandleObject contentScope, JSAddonId* addonId)
-{
-    MOZ_RELEASE_ASSERT(!IsInAddonScope(contentScope));
-
-    RootedObject global(cx, js::GetGlobalForObjectCrossCompartment(contentScope));
-    if (IsInContentXBLScope(contentScope))
-        return global;
-
     JSAutoCompartment ac(cx, contentScope);
     XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
-    bool isSystem = nsContentUtils::IsSystemPrincipal(nativeScope->GetPrincipal());
 
-    RootedObject scope(cx);
-    if (nativeScope->UseContentXBLScope())
-        scope = nativeScope->EnsureContentXBLScope(cx);
-    else if (addonId && CompartmentPerAddon() && isSystem)
-        scope = nativeScope->EnsureAddonScope(cx, addonId);
-    else
-        scope = global;
-
+    RootedObject scope(cx, nativeScope->EnsureContentXBLScope(cx));
     NS_ENSURE_TRUE(scope, nullptr); 
+
     scope = js::UncheckedUnwrap(scope);
     JS::ExposeObjectToActiveJS(scope);
     return scope;
@@ -366,73 +323,6 @@ ClearContentXBLScope(JSObject* global)
 }
 
 } 
-
-JSObject*
-XPCWrappedNativeScope::EnsureAddonScope(JSContext* cx, JSAddonId* addonId)
-{
-    JS::RootedObject global(cx, GetGlobalJSObject());
-    MOZ_ASSERT(js::IsObjectInContextCompartment(global, cx));
-    MOZ_ASSERT(!IsContentXBLScope());
-    MOZ_ASSERT(!IsAddonScope());
-    MOZ_ASSERT(addonId);
-    MOZ_ASSERT(nsContentUtils::IsSystemPrincipal(GetPrincipal()));
-
-    
-    
-    
-    
-    
-    
-    
-    if (AddonIdOfObject(global) == addonId)
-        return global;
-
-    
-    for (size_t i = 0; i < mAddonScopes.Length(); i++) {
-        if (JS::AddonIdOfObject(js::UncheckedUnwrap(mAddonScopes[i])) == addonId)
-            return mAddonScopes[i];
-    }
-
-    SandboxOptions options;
-    options.wantComponents = true;
-    options.proto = global;
-    options.sameZoneAs = global;
-    options.addonId = JS::StringOfAddonId(addonId);
-    options.writeToGlobalPrototype = true;
-
-    RootedValue v(cx);
-    nsresult rv = CreateSandboxObject(cx, &v, GetPrincipal(), options);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-    mAddonScopes.AppendElement(&v.toObject());
-
-    CompartmentPrivate::Get(js::UncheckedUnwrap(&v.toObject()))->isAddonCompartment = true;
-    return &v.toObject();
-}
-
-JSObject*
-xpc::GetAddonScope(JSContext* cx, JS::HandleObject contentScope, JSAddonId* addonId)
-{
-    MOZ_RELEASE_ASSERT(!IsInAddonScope(contentScope));
-
-    if (!addonId || !CompartmentPerAddon()) {
-        return js::GetGlobalForObjectCrossCompartment(contentScope);
-    }
-
-    JSAutoCompartment ac(cx, contentScope);
-    XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
-    if (nativeScope->GetPrincipal() != nsXPConnect::SystemPrincipal()) {
-        
-        
-        
-        return js::GetGlobalForObjectCrossCompartment(contentScope);
-    }
-    JSObject* scope = nativeScope->EnsureAddonScope(cx, addonId);
-    NS_ENSURE_TRUE(scope, nullptr);
-
-    scope = js::UncheckedUnwrap(scope);
-    JS::ExposeObjectToActiveJS(scope);
-    return scope;
-}
 
 XPCWrappedNativeScope::~XPCWrappedNativeScope()
 {
@@ -544,8 +434,6 @@ XPCWrappedNativeScope::UpdateWeakPointersAfterGC()
     if (!mGlobalJSObject) {
         JSContext* cx = dom::danger::GetJSContext();
         mContentXBLScope.finalize(cx);
-        for (size_t i = 0; i < mAddonScopes.Length(); i++)
-            mAddonScopes[i].finalize(cx);
         GetWrappedNativeMap()->Clear();
         mWrappedNativeProtoMap->Clear();
         return;
@@ -561,12 +449,6 @@ XPCWrappedNativeScope::UpdateWeakPointersAfterGC()
         mContentXBLScope.updateWeakPointerAfterGC();
         MOZ_ASSERT(prev == mContentXBLScope.unbarrieredGet());
         AssertSameCompartment(comp, mContentXBLScope);
-    }
-    for (size_t i = 0; i < mAddonScopes.Length(); i++) {
-        JSObject* prev = mAddonScopes[i].unbarrieredGet();
-        mAddonScopes[i].updateWeakPointerAfterGC();
-        MOZ_ASSERT(prev == mAddonScopes[i].unbarrieredGet());
-        AssertSameCompartment(comp, mAddonScopes[i]);
     }
 #endif
 

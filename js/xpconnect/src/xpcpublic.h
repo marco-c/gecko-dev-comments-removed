@@ -110,13 +110,6 @@ GetXBLScopeOrGlobal(JSContext* cx, JSObject* obj)
 
 
 
-
-
-JSObject*
-GetScopeForXBLExecution(JSContext* cx, JS::HandleObject obj, JSAddonId* addonId);
-
-
-
 bool
 AllowContentXBLScope(JS::Realm* realm);
 
@@ -131,15 +124,6 @@ UseContentXBLScope(JS::Realm* realm);
 
 void
 ClearContentXBLScope(JSObject* global);
-
-bool
-IsAddonCompartment(JSCompartment* c);
-
-bool
-IsInAddonScope(JSObject* obj);
-
-JSObject*
-GetAddonScope(JSContext* cx, JS::HandleObject contentScope, JSAddonId* addonId);
 
 bool
 IsSandboxPrototypeProxy(JSObject* obj);
@@ -521,14 +505,6 @@ WindowOrNull(JSObject* aObj);
 
 nsGlobalWindowInner*
 WindowGlobalOrNull(JSObject* aObj);
-
-
-
-
-
-
-nsGlobalWindowInner*
-AddonWindowOrNull(JSObject* aObj);
 
 
 

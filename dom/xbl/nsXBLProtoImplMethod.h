@@ -138,7 +138,7 @@ public:
     nsXBLProtoImplMethod(aName)
   {}
 
-  nsresult Execute(nsIContent* aBoundElement, JSAddonId* aAddonId);
+  nsresult Execute(nsIContent* aBoundElement);
 
   
   

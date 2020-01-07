@@ -442,119 +442,6 @@ sandbox_moved(JSObject* obj, JSObject* old)
     return static_cast<SandboxPrivate*>(sop)->ObjectMoved(obj, old);
 }
 
-static bool
-writeToProto_setProperty(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                         JS::HandleValue v, JS::ObjectOpResult& result)
-{
-    RootedObject proto(cx);
-    if (!JS_GetPrototype(cx, obj, &proto))
-        return false;
-
-    RootedValue receiver(cx, ObjectValue(*proto));
-    return JS_ForwardSetPropertyTo(cx, proto, id, v, receiver, result);
-}
-
-static bool
-writeToProto_getProperty(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                    JS::MutableHandleValue vp)
-{
-    RootedObject proto(cx);
-    if (!JS_GetPrototype(cx, obj, &proto))
-        return false;
-
-    return JS_GetPropertyById(cx, proto, id, vp);
-}
-
-struct AutoSkipPropertyMirroring
-{
-    explicit AutoSkipPropertyMirroring(RealmPrivate* priv) : priv(priv) {
-        MOZ_ASSERT(!priv->skipWriteToGlobalPrototype);
-        priv->skipWriteToGlobalPrototype = true;
-    }
-    ~AutoSkipPropertyMirroring() {
-        MOZ_ASSERT(priv->skipWriteToGlobalPrototype);
-        priv->skipWriteToGlobalPrototype = false;
-    }
-
-  private:
-    RealmPrivate* priv;
-};
-
-
-
-
-
-
-
-
-
-static bool
-sandbox_addProperty(JSContext* cx, HandleObject obj, HandleId id, HandleValue v)
-{
-    RealmPrivate* priv = RealmPrivate::Get(obj);
-    MOZ_ASSERT(priv->writeToGlobalPrototype);
-
-    
-    
-    
-    if (id == XPCJSRuntime::Get()->GetStringID(XPCJSContext::IDX_UNDEFINED))
-        return true;
-
-    
-    
-    if (priv->skipWriteToGlobalPrototype)
-        return true;
-
-    AutoSkipPropertyMirroring askip(priv);
-
-    RootedObject proto(cx);
-    if (!JS_GetPrototype(cx, obj, &proto))
-        return false;
-
-    
-    RootedObject unwrappedProto(cx, js::UncheckedUnwrap(proto,  false));
-
-    Rooted<JS::PropertyDescriptor> pd(cx);
-    if (!JS_GetPropertyDescriptorById(cx, proto, id, &pd))
-        return false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (pd.object() && !pd.configurable()) {
-        if (!JS_SetPropertyById(cx, proto, id, v))
-            return false;
-    } else {
-        if (!JS_CopyPropertyFrom(cx, id, unwrappedProto, obj,
-                                 MakeNonConfigurableIntoConfigurable))
-            return false;
-    }
-
-    if (!JS_GetPropertyDescriptorById(cx, obj, id, &pd))
-        return false;
-
-    unsigned attrs = pd.attributes() & ~(JSPROP_GETTER | JSPROP_SETTER);
-    attrs |= JSPROP_PROPOP_ACCESSORS | JSPROP_REDEFINE_NONCONFIGURABLE;
-
-    if (!JS_DefinePropertyById(cx, obj, id,
-                               JS_PROPERTYOP_GETTER(writeToProto_getProperty),
-                               JS_PROPERTYOP_SETTER(writeToProto_setProperty),
-                               attrs))
-        return false;
-
-    return true;
-}
-
 #define XPCONNECT_SANDBOX_CLASS_METADATA_SLOT (XPCONNECT_GLOBAL_EXTRA_SLOT_OFFSET)
 
 static const js::ClassOps SandboxClassOps = {
@@ -580,26 +467,6 @@ static const js::Class SandboxClass = {
     JS_NULL_OBJECT_OPS
 };
 
-
-
-static const js::ClassOps SandboxWriteToProtoClassOps = {
-    sandbox_addProperty, nullptr, nullptr,
-    JS_NewEnumerateStandardClasses, JS_ResolveStandardClass,
-    JS_MayResolveStandardClass,
-    sandbox_finalize,
-    nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook,
-};
-
-static const js::Class SandboxWriteToProtoClass = {
-    "Sandbox",
-    XPCONNECT_GLOBAL_FLAGS_WITH_EXTRA_SLOTS(1) |
-    JSCLASS_FOREGROUND_FINALIZE,
-    &SandboxWriteToProtoClassOps,
-    JS_NULL_CLASS_SPEC,
-    &SandboxClassExtension,
-    JS_NULL_OBJECT_OPS
-};
-
 static const JSFunctionSpec SandboxFunctions[] = {
     JS_FN("dump",    SandboxDump,    1,0),
     JS_FN("debug",   SandboxDebug,   1,0),
@@ -611,7 +478,7 @@ bool
 xpc::IsSandbox(JSObject* obj)
 {
     const js::Class* clasp = js::GetObjectClass(obj);
-    return clasp == &SandboxClass || clasp == &SandboxWriteToProtoClass;
+    return clasp == &SandboxClass;
 }
 
 
@@ -1124,9 +991,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     
     
 
-    if (principal == nsXPConnect::SystemPrincipal())
-        creationOptions.setClampAndJitterTime(false);
-
     if (xpc::SharedMemoryEnabled())
         creationOptions.setSharedMemoryAndAtomicsEnabled(true);
 
@@ -1158,17 +1022,12 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
 
     compartmentOptions.behaviors().setDiscardSource(options.discardSource);
 
-    const js::Class* clasp = options.writeToGlobalPrototype
-                             ? &SandboxWriteToProtoClass
-                             : &SandboxClass;
+    const js::Class* clasp = &SandboxClass;
 
     RootedObject sandbox(cx, xpc::CreateGlobalObject(cx, js::Jsvalify(clasp),
                                                      principal, compartmentOptions));
     if (!sandbox)
         return NS_ERROR_FAILURE;
-
-    RealmPrivate* realmPriv = RealmPrivate::Get(sandbox);
-    realmPriv->writeToGlobalPrototype = options.writeToGlobalPrototype;
 
     CompartmentPrivate* priv = CompartmentPrivate::Get(sandbox);
     priv->allowWaivers = options.allowWaivers;
@@ -1196,23 +1055,10 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
         
         JS_SetPrivate(sandbox, sbp.forget().take());
 
-        {
-            
-            
-            
-            AutoSkipPropertyMirroring askip(RealmPrivate::Get(sandbox));
-
-            
-            
-            
-            if (options.writeToGlobalPrototype) {
-                if (!JS_EnumerateStandardClasses(cx, sandbox))
-                    return NS_ERROR_XPC_UNEXPECTED;
-            } else {
-                if (!JS_GetObjectPrototype(cx, sandbox))
-                    return NS_ERROR_XPC_UNEXPECTED;
-            }
-        }
+        
+        
+        if (!JS_GetObjectPrototype(cx, sandbox))
+            return NS_ERROR_XPC_UNEXPECTED;
 
         if (options.proto) {
             bool ok = JS_WrapObject(cx, &options.proto);
@@ -1252,9 +1098,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
             if (!ok)
                 return NS_ERROR_XPC_UNEXPECTED;
         }
-
-        
-        AutoSkipPropertyMirroring askip(RealmPrivate::Get(sandbox));
 
         bool allowComponents = principal == nsXPConnect::SystemPrincipal() ||
                                nsContentUtils::IsExpandedPrincipal(principal);
@@ -1740,8 +1583,6 @@ SandboxOptions::Parse()
               ParseBoolean("freshZone", &freshZone) &&
               ParseBoolean("invisibleToDebugger", &invisibleToDebugger) &&
               ParseBoolean("discardSource", &discardSource) &&
-              ParseJSString("addonId", &addonId) &&
-              ParseBoolean("writeToGlobalPrototype", &writeToGlobalPrototype) &&
               ParseGlobalProperties() &&
               ParseValue("metadata", &metadata) &&
               ParseUInt32("userContextId", &userContextId) &&
@@ -1970,26 +1811,6 @@ xpc::EvalInSandbox(JSContext* cx, HandleObject sandboxArg, const nsAString& sour
 
     
     rval.set(v);
-    return NS_OK;
-}
-
-nsresult
-xpc::GetSandboxAddonId(JSContext* cx, HandleObject sandbox, MutableHandleValue rval)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(IsSandbox(sandbox));
-
-    JSAddonId* id = JS::AddonIdOfObject(sandbox);
-    if (!id) {
-        rval.setNull();
-        return NS_OK;
-    }
-
-    JS::RootedValue idStr(cx, StringValue(JS::StringOfAddonId(id)));
-    if (!JS_WrapValue(cx, &idStr))
-        return NS_ERROR_UNEXPECTED;
-
-    rval.set(idStr);
     return NS_OK;
 }
 
