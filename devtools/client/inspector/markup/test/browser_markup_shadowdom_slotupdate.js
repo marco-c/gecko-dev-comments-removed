@@ -2,11 +2,7 @@
 
 
 
-
-
 "use strict";
-
-loadHelperScript("helper_shadowdom.js");
 
 
 
@@ -48,7 +44,7 @@ add_task(async function() {
       slot1-2
       slot2-1
       slot2-2`;
-  await checkTreeFromRootSelector(tree, "test-component", inspector);
+  await assertMarkupViewAsTree(tree, "test-component", inspector);
 
   info("Listening for the markupmutation event");
   const mutated = inspector.once("markupmutation");
@@ -71,5 +67,5 @@ add_task(async function() {
       slot1-2
       slot2-1
       slot2-2`;
-  await checkTreeFromRootSelector(mutatedTree, "test-component", inspector);
+  await assertMarkupViewAsTree(mutatedTree, "test-component", inspector);
 });

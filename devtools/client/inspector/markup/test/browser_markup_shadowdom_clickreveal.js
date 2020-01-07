@@ -2,11 +2,7 @@
 
 
 
-
-
 "use strict";
-
-loadHelperScript("helper_shadowdom.js");
 
 
 
