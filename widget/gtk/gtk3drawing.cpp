@@ -3122,6 +3122,16 @@ GetActiveScrollbarMetrics(GtkOrientation aOrientation)
 bool
 GetCSDDecorationSize(GtkWindow *aGtkWindow, GtkBorder* aDecorationSize)
 {
+    
+    static auto sGtkRenderBackgroundGetClip =
+        (void (*)(GtkStyleContext*, gdouble, gdouble, gdouble, gdouble, GdkRectangle*))
+        dlsym(RTLD_DEFAULT, "gtk_render_background_get_clip");
+
+    if (!sGtkRenderBackgroundGetClip) {
+        *aDecorationSize = {0,0,0,0};
+        return false;
+    }
+
     GtkStyleContext* context = gtk_widget_get_style_context(GTK_WIDGET(aGtkWindow));
     bool solidDecorations = gtk_style_context_has_class(context, "solid-csd");
     context = GetStyleContext(solidDecorations ?
@@ -3135,54 +3145,32 @@ GetCSDDecorationSize(GtkWindow *aGtkWindow, GtkBorder* aDecorationSize)
     gtk_style_context_get_padding(context, state, &padding);
     *aDecorationSize += padding;
 
-    
-    static auto sGtkRenderBackgroundGetClip =
-        (void (*)(GtkStyleContext*, gdouble, gdouble, gdouble, gdouble, GdkRectangle*))
-        dlsym(RTLD_DEFAULT, "gtk_render_background_get_clip");
 
     GtkBorder margin;
     gtk_style_context_get_margin(context, state, &margin);
 
-    GtkBorder extents = {0, 0, 0, 0};
-    if (sGtkRenderBackgroundGetClip) {
-        
+    
 
-        GdkRectangle clip;
-        sGtkRenderBackgroundGetClip(context, 0, 0, 0, 0, &clip);
+    GdkRectangle clip;
+    sGtkRenderBackgroundGetClip(context, 0, 0, 0, 0, &clip);
 
-        extents.top = -clip.y;
-        extents.right = clip.width + clip.x;
-        extents.bottom = clip.height + clip.y;
-        extents.left = -clip.x;
+    GtkBorder extents;
+    extents.top = -clip.y;
+    extents.right = clip.width + clip.x;
+    extents.bottom = clip.height + clip.y;
+    extents.left = -clip.x;
 
-        
-        
-        if (gtk_window_get_window_type(aGtkWindow) != GTK_WINDOW_POPUP) {
-            extents.top = MAX(extents.top, margin.top);
-            extents.right = MAX(extents.right, margin.right);
-            extents.bottom = MAX(extents.bottom, margin.bottom);
-            extents.left = MAX(extents.left, margin.left);
-        }
-    } else {
-        
-
-
-
-
-        gint handle;
-        gtk_widget_style_get(GetWidget(MOZ_GTK_WINDOW),
-                             "decoration-resize-handle", &handle,
-                             NULL);
-
-        extents.top = handle + margin.top;
-        extents.right = handle + margin.right;
-        extents.bottom = handle + margin.bottom;
-        extents.left = handle + margin.left;
+    
+    
+    if (gtk_window_get_window_type(aGtkWindow) != GTK_WINDOW_POPUP) {
+        extents.top = MAX(extents.top, margin.top);
+        extents.right = MAX(extents.right, margin.right);
+        extents.bottom = MAX(extents.bottom, margin.bottom);
+        extents.left = MAX(extents.left, margin.left);
     }
 
     *aDecorationSize += extents;
-
-    return (sGtkRenderBackgroundGetClip != nullptr);
+    return true;
 }
 
 
