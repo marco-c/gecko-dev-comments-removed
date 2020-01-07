@@ -1347,6 +1347,13 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
     MOZ_MUST_USE bool getNonAsciiCodePoint(char16_t lead, int32_t* cp);
 
     void ungetCodePointIgnoreEOL(uint32_t codePoint);
+
+    
+
+
+
+
+    void ungetLineTerminator();
 };
 
 
