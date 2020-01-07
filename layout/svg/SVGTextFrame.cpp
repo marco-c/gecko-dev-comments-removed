@@ -3042,7 +3042,7 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
         RefPtr<Path> path = mContext.GetPath();
         SVGContentUtils::AutoStrokeOptions strokeOptions;
         SVGContentUtils::GetStrokeOptions(&strokeOptions, svgOwner,
-                                          mFrame->StyleContext(),
+                                          mFrame->Style(),
                                            nullptr);
         DrawOptions drawOptions;
         drawOptions.mAntialiasMode =
@@ -3154,9 +3154,9 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
 
 
 nsIFrame*
-NS_NewSVGTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
+NS_NewSVGTextFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
 {
-  return new (aPresShell) SVGTextFrame(aContext);
+  return new (aPresShell) SVGTextFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(SVGTextFrame)
@@ -3227,7 +3227,7 @@ SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 void
-SVGTextFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
+SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 {
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     
