@@ -987,12 +987,13 @@ var DebuggerServer = {
 
 
 
-  connectToChild(connection, frame, onDestroy, {addonId} = {}) {
+
+  connectToFrame(connection, frame, onDestroy, {addonId} = {}) {
     return new Promise(resolve => {
       
       
       let mm = frame.messageManager || frame.frameLoader.messageManager;
-      mm.loadFrameScript("resource://devtools/server/child.js", false);
+      mm.loadFrameScript("resource://devtools/server/startup/frame.js", false);
 
       let trackMessageManager = () => {
         frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
@@ -1067,7 +1068,7 @@ var DebuggerServer = {
 
         connection.setForwarding(prefix, childTransport);
 
-        dumpn("establishing forwarding for app with prefix " + prefix);
+        dumpn(`Start forwarding for frame with prefix ${prefix}`);
 
         actor = msg.json.actor;
         resolve(actor);

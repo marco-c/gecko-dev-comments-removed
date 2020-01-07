@@ -6,6 +6,12 @@
 
 
 
+
+
+
+
+
+
 try {
   var chromeGlobal = this;
 
@@ -128,5 +134,5 @@ try {
     });
   })();
 } catch (e) {
-  dump(`Exception in app child process: ${e}\n`);
+  dump(`Exception in DevTools frame startup: ${e}\n`);
 }
