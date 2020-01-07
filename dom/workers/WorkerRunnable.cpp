@@ -333,6 +333,7 @@ WorkerRunnable::Run()
   
   
   
+  
 
   
   
@@ -348,27 +349,31 @@ WorkerRunnable::Run()
   
   
   Maybe<JSAutoCompartment> ac;
-  if (!targetIsWorkerThread && mWorkerPrivate->GetWrapper()) {
+  if (!targetIsWorkerThread &&
+      mWorkerPrivate->IsDedicatedWorker() &&
+      mWorkerPrivate->ParentEventTargetRef()->GetWrapper()) {
+    JSObject* wrapper = mWorkerPrivate->ParentEventTargetRef()->GetWrapper();
+
     
     
     
     MOZ_ASSERT_IF(globalObject,
-                  js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+                  js::GetObjectCompartment(wrapper) ==
                     js::GetContextCompartment(cx));
     MOZ_ASSERT_IF(globalObject,
-                  js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+                  js::GetObjectCompartment(wrapper) ==
                     js::GetObjectCompartment(globalObject->GetGlobalJSObject()));
 
     
     
     
     MOZ_ASSERT(!js::GetContextCompartment(cx) ||
-               js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+               js::GetObjectCompartment(wrapper) ==
                  js::GetContextCompartment(cx),
                "Must either be in the null compartment or in our reflector "
                "compartment");
 
-    ac.emplace(cx, mWorkerPrivate->GetWrapper());
+    ac.emplace(cx, wrapper);
   }
 
   MOZ_ASSERT(!jsapi->HasException());
