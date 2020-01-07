@@ -184,7 +184,7 @@ private:
     
     
     NativePtr<mozilla::widget::GeckoEditableSupport> mEditableSupport;
-    mozilla::java::GeckoEditable::GlobalRef mEditable;
+    mozilla::jni::Object::GlobalRef mEditableParent;
 
     class GeckoViewSupport;
     
@@ -309,7 +309,7 @@ public:
     
     void UserActivity();
 
-    mozilla::java::GeckoEditable::Ref& GetEditableParent() { return mEditable; }
+    mozilla::jni::Object::Ref& GetEditableParent() { return mEditableParent; }
 
     void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) override;
     void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset, const CSSToScreenScale& aZoom) override;
