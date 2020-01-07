@@ -133,7 +133,7 @@ static constexpr Register RegExpTesterRegExpReg = CallTempReg0;
 static constexpr Register RegExpTesterStringReg = CallTempReg1;
 static constexpr Register RegExpTesterLastIndexReg = CallTempReg2;
 
-static constexpr uint32_t CodeAlignment = 4;
+static constexpr uint32_t CodeAlignment = 8;
 
 
 
