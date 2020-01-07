@@ -91,10 +91,11 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/quote/0.4.2")]
+#![doc(html_root_url = "https://docs.rs/quote/0.5.1")]
 
-extern crate proc_macro2;
+#[cfg(feature = "proc-macro")]
 extern crate proc_macro;
+extern crate proc_macro2;
 
 mod tokens;
 pub use tokens::Tokens;
@@ -112,19 +113,14 @@ pub mod __rt {
     pub fn parse(tokens: &mut ::Tokens, span: Span, s: &str) {
         let s: TokenStream = s.parse().expect("invalid token stream");
         tokens.append_all(s.into_iter().map(|mut t| {
-            t.span = span;
+            t.set_span(span);
             t
         }));
     }
-
-    
-    pub fn append_kind(tokens: &mut ::Tokens, span: Span, kind: TokenNode) {
-        tokens.append(TokenTree {
-            span: span,
-            kind: kind,
-        })
-    }
 }
+
+
+
 
 
 
@@ -206,8 +202,14 @@ pub mod __rt {
 
 #[macro_export]
 macro_rules! quote {
-    ($($tt:tt)*) => (quote_spanned!($crate::__rt::Span::def_site()=> $($tt)*));
+    ($($tt:tt)*) => (quote_spanned!($crate::__rt::Span::call_site()=> $($tt)*));
 }
+
+
+
+
+
+
 
 
 
@@ -449,12 +451,14 @@ macro_rules! quote_each_token {
 
     ($tokens:ident $span:ident # [ $($inner:tt)* ] $($rest:tt)*) => {
         quote_each_token!($tokens $span #);
-        $crate::__rt::append_kind(&mut $tokens,
-            $span,
-            $crate::__rt::TokenNode::Group(
+        $tokens.append({
+            let mut g = $crate::__rt::Group::new(
                 $crate::__rt::Delimiter::Bracket,
-                quote_spanned!($span=> $($inner)*).into()
-            ));
+                quote_spanned!($span=> $($inner)*).into(),
+            );
+            g.set_span($span);
+            g
+        });
         quote_each_token!($tokens $span $($rest)*);
     };
 
@@ -464,32 +468,38 @@ macro_rules! quote_each_token {
     };
 
     ($tokens:ident $span:ident ( $($first:tt)* ) $($rest:tt)*) => {
-        $crate::__rt::append_kind(&mut $tokens,
-            $span,
-            $crate::__rt::TokenNode::Group(
+        $tokens.append({
+            let mut g = $crate::__rt::Group::new(
                 $crate::__rt::Delimiter::Parenthesis,
-                quote_spanned!($span=> $($first)*).into()
-            ));
+                quote_spanned!($span=> $($first)*).into(),
+            );
+            g.set_span($span);
+            g
+        });
         quote_each_token!($tokens $span $($rest)*);
     };
 
     ($tokens:ident $span:ident [ $($first:tt)* ] $($rest:tt)*) => {
-        $crate::__rt::append_kind(&mut $tokens,
-            $span,
-            $crate::__rt::TokenNode::Group(
+        $tokens.append({
+            let mut g = $crate::__rt::Group::new(
                 $crate::__rt::Delimiter::Bracket,
-                quote_spanned!($span=> $($first)*).into()
-            ));
+                quote_spanned!($span=> $($first)*).into(),
+            );
+            g.set_span($span);
+            g
+        });
         quote_each_token!($tokens $span $($rest)*);
     };
 
     ($tokens:ident $span:ident { $($first:tt)* } $($rest:tt)*) => {
-        $crate::__rt::append_kind(&mut $tokens,
-            $span,
-            $crate::__rt::TokenNode::Group(
+        $tokens.append({
+            let mut g = $crate::__rt::Group::new(
                 $crate::__rt::Delimiter::Brace,
-                quote_spanned!($span=> $($first)*).into()
-            ));
+                quote_spanned!($span=> $($first)*).into(),
+            );
+            g.set_span($span);
+            g
+        });
         quote_each_token!($tokens $span $($rest)*);
     };
 

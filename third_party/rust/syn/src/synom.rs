@@ -149,6 +149,7 @@
 
 
 
+#[cfg(feature = "proc-macro")]
 use proc_macro;
 use proc_macro2;
 
@@ -167,6 +168,35 @@ use buffer::{Cursor, TokenBuffer};
 pub trait Synom: Sized {
     fn parse(input: Cursor) -> PResult<Self>;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn description() -> Option<&'static str> {
         None
     }
@@ -196,6 +226,7 @@ pub trait Parser: Sized {
     fn parse2(self, tokens: proc_macro2::TokenStream) -> Result<Self::Output, ParseError>;
 
     
+    #[cfg(feature = "proc-macro")]
     fn parse(self, tokens: proc_macro::TokenStream) -> Result<Self::Output, ParseError> {
         self.parse2(tokens.into())
     }

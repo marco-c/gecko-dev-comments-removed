@@ -127,8 +127,10 @@
 
 
 
+#[cfg(feature = "proc-macro")]
 use proc_macro as pm;
-use proc_macro2::{Delimiter, Literal, Spacing, Span, Term, TokenNode, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Literal, Span, Term, TokenStream};
+use proc_macro2::{Group, TokenTree, Op};
 
 use std::ptr;
 use std::marker::PhantomData;
@@ -141,9 +143,9 @@ use std::fmt::{self, Debug};
 enum Entry {
     
     Group(Span, Delimiter, TokenBuffer),
-    Term(Span, Term),
-    Op(Span, char, Spacing),
-    Literal(Span, Literal),
+    Term(Term),
+    Op(Op),
+    Literal(Literal),
     
     
     End(*const Entry),
@@ -174,20 +176,20 @@ impl TokenBuffer {
         let mut entries = Vec::new();
         let mut seqs = Vec::new();
         for tt in stream {
-            match tt.kind {
-                TokenNode::Term(sym) => {
-                    entries.push(Entry::Term(tt.span, sym));
+            match tt {
+                TokenTree::Term(sym) => {
+                    entries.push(Entry::Term(sym));
                 }
-                TokenNode::Op(chr, ok) => {
-                    entries.push(Entry::Op(tt.span, chr, ok));
+                TokenTree::Op(op) => {
+                    entries.push(Entry::Op(op));
                 }
-                TokenNode::Literal(lit) => {
-                    entries.push(Entry::Literal(tt.span, lit));
+                TokenTree::Literal(l) => {
+                    entries.push(Entry::Literal(l));
                 }
-                TokenNode::Group(delim, seq_stream) => {
+                TokenTree::Group(g) => {
                     
                     
-                    seqs.push((entries.len(), tt.span, delim, seq_stream));
+                    seqs.push((entries.len(), g.span(), g.delimiter(), g.stream().clone()));
                     entries.push(Entry::End(ptr::null()));
                 }
             }
@@ -218,6 +220,7 @@ impl TokenBuffer {
 
     
     
+    #[cfg(feature = "proc-macro")]
     pub fn new(stream: pm::TokenStream) -> TokenBuffer {
         Self::new2(stream.into())
     }
@@ -364,30 +367,30 @@ impl<'a> Cursor<'a> {
 
     
     
-    pub fn term(mut self) -> Option<(Span, Term, Cursor<'a>)> {
+    pub fn term(mut self) -> Option<(Term, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Term(span, term) => Some((span, term, unsafe { self.bump() })),
+            Entry::Term(term) => Some((term, unsafe { self.bump() })),
             _ => None,
         }
     }
 
     
     
-    pub fn op(mut self) -> Option<(Span, char, Spacing, Cursor<'a>)> {
+    pub fn op(mut self) -> Option<(Op, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Op(span, op, spacing) => Some((span, op, spacing, unsafe { self.bump() })),
+            Entry::Op(op) => Some((op, unsafe { self.bump() })),
             _ => None,
         }
     }
 
     
     
-    pub fn literal(mut self) -> Option<(Span, Literal, Cursor<'a>)> {
+    pub fn literal(mut self) -> Option<(Literal, Cursor<'a>)> {
         self.ignore_none();
         match *self.entry() {
-            Entry::Literal(span, ref lit) => Some((span, lit.clone(), unsafe { self.bump() })),
+            Entry::Literal(ref lit) => Some((lit.clone(), unsafe { self.bump() })),
             _ => None,
         }
     }
@@ -415,23 +418,13 @@ impl<'a> Cursor<'a> {
         let tree = match *self.entry() {
             Entry::Group(span, delim, ref buf) => {
                 let stream = buf.begin().token_stream();
-                TokenTree {
-                    span: span,
-                    kind: TokenNode::Group(delim, stream),
-                }
+                let mut g = Group::new(delim, stream);
+                g.set_span(span);
+                TokenTree::from(g)
             }
-            Entry::Literal(span, ref lit) => TokenTree {
-                span: span,
-                kind: TokenNode::Literal(lit.clone()),
-            },
-            Entry::Term(span, sym) => TokenTree {
-                span: span,
-                kind: TokenNode::Term(sym),
-            },
-            Entry::Op(span, chr, spacing) => TokenTree {
-                span: span,
-                kind: TokenNode::Op(chr, spacing),
-            },
+            Entry::Literal(ref lit) => lit.clone().into(),
+            Entry::Term(term) => term.into(),
+            Entry::Op(op) => op.into(),
             Entry::End(..) => {
                 return None;
             }
@@ -444,10 +437,10 @@ impl<'a> Cursor<'a> {
     
     pub fn span(self) -> Span {
         match *self.entry() {
-            Entry::Group(span, ..)
-            | Entry::Literal(span, ..)
-            | Entry::Term(span, ..)
-            | Entry::Op(span, ..) => span,
+            Entry::Group(span, ..) => span,
+            Entry::Literal(ref l) => l.span(),
+            Entry::Term(t) => t.span(),
+            Entry::Op(o) => o.span(),
             Entry::End(..) => Span::call_site(),
         }
     }
