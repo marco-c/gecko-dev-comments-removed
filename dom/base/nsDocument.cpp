@@ -1434,6 +1434,7 @@ nsIDocument::nsIDocument()
     mEncodingMenuDisabled(false),
     mIsShadowDOMEnabled(false),
     mIsSVGGlyphsDocument(false),
+    mAllowUnsafeHTML(false),
     mInDestructor(false),
     mIsGoingAway(false),
     mInXBLUpdate(false),
@@ -2367,6 +2368,10 @@ nsIDocument::ResetToURI(nsIURI* aURI,
         SetPrincipal(principal);
       }
     }
+  }
+
+  if (mFontFaceSet) {
+    mFontFaceSet->RefreshStandardFontLoadPrincipal();
   }
 
   
@@ -5859,6 +5864,13 @@ nsIDocument::CreateAttributeNS(const nsAString& aNamespaceURI,
   RefPtr<Attr> attribute = new Attr(nullptr, nodeInfo.forget(),
                                     EmptyString());
   return attribute.forget();
+}
+
+bool
+nsIDocument::AllowUnsafeHTML() const
+{
+  return (!nsContentUtils::IsSystemPrincipal(NodePrincipal()) ||
+          mAllowUnsafeHTML);
 }
 
 void

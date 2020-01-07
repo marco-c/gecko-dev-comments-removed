@@ -63,16 +63,12 @@ public:
 
     FontFaceSet* GetFontFaceSet() { return mFontFaceSet; }
 
-    gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() override;
+    gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() const final
+    {
+      return mFontFaceSet ? mFontFaceSet->mStandardFontLoadPrincipal.get() : nullptr;
+    }
 
-    virtual nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
-                                   gfxFontSrcPrincipal** aPrincipal,
-                                   bool* aBypassCache) override;
-
-    virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
-                                   nsIPrincipal* aPrincipal,
-                                   nsTArray<nsCOMPtr<nsIRunnable>>* aViolations)
-                                     override;
+    bool IsFontLoadAllowed(const gfxFontFaceSrc&) final;
 
     void DispatchFontLoadViolations(
 		  nsTArray<nsCOMPtr<nsIRunnable>>& aViolations) override;
@@ -82,6 +78,11 @@ public:
 
     void RecordFontLoadDone(uint32_t aFontSize,
                             mozilla::TimeStamp aDoneTime) override;
+
+    bool BypassCache() final
+    {
+      return mFontFaceSet && mFontFaceSet->mBypassCache;
+    }
 
   protected:
     virtual bool GetPrivateBrowsing() override;
@@ -172,14 +173,7 @@ public:
     return set ? set->GetPresContext() : nullptr;
   }
 
-  void UpdateStandardFontLoadPrincipal();
-
-  bool HasStandardFontLoadPrincipalChanged()
-  {
-    bool changed = mHasStandardFontLoadPrincipalChanged;
-    mHasStandardFontLoadPrincipalChanged = false;
-    return changed;
-  }
+  void RefreshStandardFontLoadPrincipal();
 
   nsIDocument* Document() const { return mDocument; }
 
@@ -208,6 +202,9 @@ public:
   void ForEach(JSContext* aCx, FontFaceSetForEachCallback& aCallback,
                JS::Handle<JS::Value> aThisArg,
                mozilla::ErrorResult& aRv);
+
+  
+  void CacheFontLoadability();
 
 private:
   ~FontFaceSet();
@@ -282,9 +279,8 @@ private:
   nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
                          gfxFontSrcPrincipal** aPrincipal,
                          bool* aBypassCache);
-  bool IsFontLoadAllowed(nsIURI* aFontLocation,
-                         nsIPrincipal* aPrincipal,
-                         nsTArray<nsCOMPtr<nsIRunnable>>* aViolations);
+  bool IsFontLoadAllowed(const gfxFontFaceSrc& aSrc);
+
   void DispatchFontLoadViolations(nsTArray<nsCOMPtr<nsIRunnable>>& aViolations);
   nsresult SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
                             const gfxFontFaceSrc* aFontFaceSrc,
@@ -346,7 +342,6 @@ private:
   
   
   
-  
   RefPtr<gfxFontSrcPrincipal> mStandardFontLoadPrincipal;
 
   
@@ -376,6 +371,14 @@ private:
   mozilla::dom::FontFaceSetLoadStatus mStatus;
 
   
+  
+  
+  
+  
+  
+  nsDataHashtable<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads;
+
+  
   bool mNonRuleFacesDirty;
 
   
@@ -397,10 +400,6 @@ private:
   
   
   bool mPrivateBrowsing;
-
-  
-  
-  bool mHasStandardFontLoadPrincipalChanged;
 };
 
 } 

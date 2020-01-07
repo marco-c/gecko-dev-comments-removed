@@ -63,6 +63,10 @@ struct gfxFontFaceSrc {
     RefPtr<gfxFontSrcPrincipal> mOriginPrincipal; 
 
     RefPtr<gfxFontFaceBufferSource> mBuffer;
+
+    
+    
+    gfxFontSrcPrincipal* LoadPrincipal(const gfxUserFontSet&) const;
 };
 
 inline bool
@@ -265,19 +269,10 @@ public:
     
     bool ContainsUserFontSetFonts(const mozilla::FontFamilyList& aFontList) const;
 
-    
-    
-    
-    virtual nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
-                                   gfxFontSrcPrincipal** aPrincipal,
-                                   bool* aBypassCache) = 0;
-
-    virtual gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() = 0;
+    virtual gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() const = 0;
 
     
-    virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
-                                   nsIPrincipal* aPrincipal,
-                                   nsTArray<nsCOMPtr<nsIRunnable>>* aViolations) = 0;
+    virtual bool IsFontLoadAllowed(const gfxFontFaceSrc&) = 0;
 
     
     
@@ -320,33 +315,11 @@ public:
         
         
         
-        static gfxFontEntry* GetFont(gfxFontSrcURI* aSrcURI,
-                                     gfxFontSrcPrincipal* aPrincipal,
-                                     gfxUserFontEntry* aUserFontEntry,
-                                     bool              aPrivate);
+        static gfxFontEntry* GetFont(const gfxFontFaceSrc&, const gfxUserFontEntry&);
 
         
         
         static uint32_t Generation() { return sGeneration; }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        static void UpdateAllowedFontSets(gfxUserFontSet* aUserFontSet);
-
-        
-        
-        
-        
-        
-        
-        
-        static void ClearAllowedFontSets(gfxUserFontSet* aUserFontSet);
 
         
         static void Shutdown();
@@ -415,11 +388,10 @@ public:
             { }
 
             Entry(Entry&& aOther)
-                : mAllowedFontSets(mozilla::Move(aOther.mAllowedFontSets)),
-                  mURI(mozilla::Move(aOther.mURI)),
-                  mPrincipal(mozilla::Move(aOther.mPrincipal)),
-                  mFontEntry(mozilla::Move(aOther.mFontEntry)),
-                  mPrivate(mozilla::Move(aOther.mPrivate))
+                : mURI(mozilla::Move(aOther.mURI))
+                , mPrincipal(mozilla::Move(aOther.mPrincipal))
+                , mFontEntry(mozilla::Move(aOther.mFontEntry))
+                , mPrivate(mozilla::Move(aOther.mPrivate))
             { }
 
             ~Entry() { }
@@ -449,14 +421,6 @@ public:
             gfxFontEntry* GetFontEntry() const { return mFontEntry; }
             bool IsPrivate() const { return mPrivate; }
 
-            bool CheckIsFontSetAllowed(gfxUserFontSet* aUserFontSet) const;
-            bool CheckIsFontSetAllowedAndDispatchViolations(gfxUserFontSet* aUserFontSet) const;
-            bool IsFontSetAllowedKnown(gfxUserFontSet* aUserFontSet) const;
-            void SetIsFontSetAllowed(gfxUserFontSet* aUserFontSet,
-                                     bool aAllowed,
-                                     nsTArray<nsCOMPtr<nsIRunnable>>&& aViolations);
-            void ClearIsFontSetAllowed(gfxUserFontSet* aUserFontSet);
-
             void ReportMemory(nsIHandleReportCallback* aHandleReport,
                               nsISupports* aData, bool aAnonymize);
 
@@ -476,51 +440,6 @@ public:
                 return mozilla::HashBytes(aVariations.Elements(),
                                           aVariations.Length() * sizeof(gfxFontVariation));
             }
-
-            
-            class LoadResultEntry : public nsPtrHashKey<gfxUserFontSet>
-            {
-            public:
-                explicit LoadResultEntry(KeyTypePointer aKey)
-                  : nsPtrHashKey(aKey)
-                  , mAllowed(false)
-                {
-                }
-
-                LoadResultEntry(LoadResultEntry&& aOther)
-                  : nsPtrHashKey(aOther.mKey)
-                  , mAllowed(aOther.mAllowed)
-                  , mViolations(mozilla::Move(aOther.mViolations))
-                {
-                }
-
-                ~LoadResultEntry() {}
-
-                
-                
-                bool mAllowed;
-
-                
-                
-                
-                nsTArray<nsCOMPtr<nsIRunnable>> mViolations;
-
-                enum { ALLOW_MEMMOVE = false };
-            };
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            nsTHashtable<LoadResultEntry> mAllowedFontSets;
 
             RefPtr<gfxFontSrcURI>  mURI;
             RefPtr<gfxFontSrcPrincipal> mPrincipal; 
@@ -560,6 +479,10 @@ protected:
 
     
     virtual bool GetPrivateBrowsing() = 0;
+
+    
+    
+    virtual bool BypassCache() = 0;
 
     
     virtual nsresult SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
@@ -703,6 +626,11 @@ public:
 #ifdef DEBUG
     gfxUserFontSet* GetUserFontSet() const { return mFontSet; }
 #endif
+
+    const nsTArray<gfxFontFaceSrc>& SourceList() const
+    {
+      return mSrcList;
+    }
 
 protected:
     const uint8_t* SanitizeOpenTypeData(const uint8_t* aData,
