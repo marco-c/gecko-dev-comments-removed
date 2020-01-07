@@ -132,18 +132,18 @@ global.TabContext = class extends EventEmitter {
 
 
 
-
-
-  constructor(getDefaults, extension) {
+  constructor(getDefaultPrototype) {
     super();
 
-    this.extension = extension;
-    this.getDefaults = getDefaults;
+    this.getDefaultPrototype = getDefaultPrototype;
 
     this.tabData = new WeakMap();
 
     windowTracker.addListener("progress", this);
     windowTracker.addListener("TabSelect", this);
+
+    this.tabDetached = this.tabDetached.bind(this);
+    tabTracker.on("tab-detached", this.tabDetached);
   }
 
   
@@ -155,7 +155,8 @@ global.TabContext = class extends EventEmitter {
 
   get(keyObject) {
     if (!this.tabData.has(keyObject)) {
-      this.tabData.set(keyObject, this.getDefaults(keyObject));
+      let data = Object.create(this.getDefaultPrototype(keyObject));
+      this.tabData.set(keyObject, data);
     }
 
     return this.tabData.get(keyObject);
@@ -187,12 +188,24 @@ global.TabContext = class extends EventEmitter {
     this.emit("location-change", tab, fromBrowse);
   }
 
+  tabDetached(eventType, {nativeTab, adoptedBy}) {
+    if (!this.tabData.has(nativeTab)) {
+      return;
+    }
+    
+    
+    let newData = this.get(adoptedBy);
+    let oldData = this.tabData.get(nativeTab);
+    Object.assign(newData, oldData);
+  }
+
   
 
 
   shutdown() {
     windowTracker.removeListener("progress", this);
     windowTracker.removeListener("TabSelect", this);
+    tabTracker.off("tab-detached", this.tabDetached);
   }
 };
 

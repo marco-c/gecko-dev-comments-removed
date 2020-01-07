@@ -57,10 +57,10 @@ this.sidebarAction = class extends ExtensionAPI {
     this.tabContext = new TabContext(target => {
       let window = target.ownerGlobal;
       if (target === window) {
-        return Object.create(this.globals);
+        return this.globals;
       }
-      return Object.create(this.tabContext.get(window));
-    }, extension);
+      return this.tabContext.get(window);
+    });
 
     
     this.windowOpenListener = (window) => {
