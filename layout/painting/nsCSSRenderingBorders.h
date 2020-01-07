@@ -59,8 +59,6 @@ class StackingContextHelper;
 
 
 
-
-
 typedef enum {
   BorderColorStyleNone,
   BorderColorStyleSolid,
@@ -99,7 +97,6 @@ public:
                       const Float* aBorderWidths,
                       RectCornerRadii& aBorderRadii,
                       const nscolor* aBorderColors,
-                      const nsBorderColors* aCompositeColors,
                       nscolor aBackgroundColor,
                       bool aBackfaceIsVisible,
                       const mozilla::Maybe<Rect>& aClipRect);
@@ -107,7 +104,6 @@ public:
   
   void DrawBorders();
 
-  bool CanCreateWebRenderCommands();
   void CreateWebRenderCommands(nsDisplayItem* aItem,
                                mozilla::wr::DisplayListBuilder& aBuilder,
                                mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -151,11 +147,6 @@ private:
 
   
   nscolor mBorderColors[4];
-
-  
-  
-  
-  const nsTArray<nscolor>* mCompositeColors[4];
 
   
   nscolor mBackgroundColor;
@@ -241,10 +232,6 @@ private:
   void DrawBorderSides (int aSides);
 
   
-  void DrawBorderSidesCompositeColors(
-    int aSides, const nsTArray<nscolor>& compositeColors);
-
-  
   void SetupDashedOptions(StrokeOptions* aStrokeOptions,
                           Float aDash[2], mozilla::Side aSide,
                           Float aBorderLength, bool isCorner);
@@ -277,18 +264,13 @@ private:
   
   
   
-  bool AllBordersSolid(bool *aHasCompositeColors);
+  bool AllBordersSolid();
 
   
   void DrawSingleWidthSolidBorder();
 
   
-  
-  void DrawNoCompositeColorSolidBorder();
-
-  
-  
-  void DrawRectangularCompositeColors();
+  void DrawSolidBorder();
 };
 
 class nsCSSBorderImageRenderer final
