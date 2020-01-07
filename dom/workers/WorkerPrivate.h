@@ -19,6 +19,7 @@
 #include "mozilla/dom/WorkerLoadInfo.h"
 #include "mozilla/dom/workerinternals/JSSettings.h"
 #include "mozilla/dom/workerinternals/Queue.h"
+#include "mozilla/PerformanceCounter.h"
 
 class nsIConsoleReportCollector;
 class nsIThreadInternal;
@@ -578,6 +579,11 @@ public:
 
   PerformanceStorage*
   GetPerformanceStorage();
+
+#ifndef RELEASE_OR_BETA
+  PerformanceCounter*
+  GetPerformanceCounter();
+#endif
 
   bool
   IsAcceptingEvents()
@@ -1495,6 +1501,10 @@ private:
   
   
   bool mIsInAutomation;
+
+#ifndef RELEASE_OR_BETA
+  RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
+#endif
 };
 
 class AutoSyncLoopHolder
