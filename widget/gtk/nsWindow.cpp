@@ -6887,7 +6887,13 @@ nsWindow::GetCSDSupportLevel() {
         } else if (strstr(currentDesktop, "LXQt") != nullptr) {
             sCSDSupportLevel = CSD_SUPPORT_FULL;
         } else {
+
+
+#if defined(RELEASE_OR_BETA)
+            sCSDSupportLevel = CSD_SUPPORT_NONE;
+#else
             sCSDSupportLevel = CSD_SUPPORT_FLAT;
+#endif
         }
     } else {
         sCSDSupportLevel = CSD_SUPPORT_NONE;
