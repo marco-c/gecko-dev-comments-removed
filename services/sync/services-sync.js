@@ -7,12 +7,15 @@
 pref("services.sync.lastversion", "firstrun");
 pref("services.sync.sendVersionInfo", true);
 
+pref("services.sync.scheduler.eolInterval", 604800); 
 pref("services.sync.scheduler.idleInterval", 3600);  
 pref("services.sync.scheduler.activeInterval", 600);   
 pref("services.sync.scheduler.immediateInterval", 90);    
 pref("services.sync.scheduler.idleTime", 300);   
 
 pref("services.sync.scheduler.fxa.singleDeviceInterval", 3600); 
+
+pref("services.sync.errorhandler.networkFailureReportTimeout", 1209600); 
 
 
 
