@@ -90,17 +90,17 @@ const AutoMigrate = {
 
 
 
-  migrate(profileStartup, migratorKey, profileToMigrate) {
+  async migrate(profileStartup, migratorKey, profileToMigrate) {
     let histogram = Services.telemetry.getHistogramById(
       "FX_STARTUP_MIGRATION_AUTOMATED_IMPORT_PROCESS_SUCCESS");
     histogram.add(0);
-    let {migrator, pickedKey} = this.pickMigrator(migratorKey);
+    let {migrator, pickedKey} = await this.pickMigrator(migratorKey);
     histogram.add(5);
 
-    profileToMigrate = this.pickProfile(migrator, profileToMigrate);
+    profileToMigrate = await this.pickProfile(migrator, profileToMigrate);
     histogram.add(10);
 
-    let resourceTypes = migrator.getMigrateData(profileToMigrate, profileStartup);
+    let resourceTypes = await migrator.getMigrateData(profileToMigrate, profileStartup);
     if (!(resourceTypes & this.resourceTypesToUse)) {
       throw new Error("No usable resources were found for the selected browser!");
     }
@@ -129,7 +129,7 @@ const AutoMigrate = {
     MigrationUtils.initializeUndoData();
     Services.obs.addObserver(migrationObserver, "Migration:Ended");
     Services.obs.addObserver(migrationObserver, "Migration:ItemError");
-    migrator.migrate(this.resourceTypesToUse, profileStartup, profileToMigrate);
+    await migrator.migrate(this.resourceTypesToUse, profileStartup, profileToMigrate);
     histogram.add(20);
   },
 
@@ -140,7 +140,7 @@ const AutoMigrate = {
 
 
 
-  pickMigrator(migratorKey) {
+  async pickMigrator(migratorKey) {
     if (!migratorKey) {
       let defaultKey = MigrationUtils.getMigratorKeyForDefaultBrowser();
       if (!defaultKey) {
@@ -152,7 +152,7 @@ const AutoMigrate = {
       throw new Error("Can't automatically migrate from Firefox.");
     }
 
-    let migrator = MigrationUtils.getMigrator(migratorKey);
+    let migrator = await MigrationUtils.getMigrator(migratorKey);
     if (!migrator) {
       throw new Error("Migrator specified or a default was found, but the migrator object is not available (or has no data).");
     }
@@ -167,8 +167,8 @@ const AutoMigrate = {
 
 
 
-  pickProfile(migrator, suggestedId) {
-    let profiles = migrator.sourceProfiles;
+  async pickProfile(migrator, suggestedId) {
+    let profiles = await migrator.getSourceProfiles();
     if (profiles && !profiles.length) {
       throw new Error("No profile data found to migrate.");
     }

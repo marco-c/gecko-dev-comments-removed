@@ -378,32 +378,30 @@ IEProfileMigrator.prototype.getLastUsedDate = function IE_getLastUsedDate() {
   });
 };
 
-Object.defineProperty(IEProfileMigrator.prototype, "sourceHomePageURL", {
-  get: function IE_get_sourceHomePageURL() {
-    let defaultStartPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-                                                      kMainKey, "Default_Page_URL");
-    let startPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                               kMainKey, "Start Page");
-    
-    
-    
-    let homepage = startPage != defaultStartPage ? startPage : "";
+IEProfileMigrator.prototype.getSourceHomePageURL = function IE_getSourceHomePageURL() {
+  let defaultStartPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+                                                    kMainKey, "Default_Page_URL");
+  let startPage = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+                                             kMainKey, "Start Page");
+  
+  
+  
+  let homepage = startPage != defaultStartPage ? startPage : "";
 
-    
-    
-    
-    
-    let secondaryPages = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-                                                    kMainKey, "Secondary Start Pages");
-    if (secondaryPages) {
-      if (homepage)
-        secondaryPages.unshift(homepage);
-      homepage = secondaryPages.join("|");
-    }
+  
+  
+  
+  
+  let secondaryPages = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+                                                  kMainKey, "Secondary Start Pages");
+  if (secondaryPages) {
+    if (homepage)
+      secondaryPages.unshift(homepage);
+    homepage = secondaryPages.join("|");
+  }
 
-    return homepage;
-  },
-});
+  return homepage;
+};
 
 IEProfileMigrator.prototype.classDescription = "IE Profile Migrator";
 IEProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=ie";

@@ -103,7 +103,7 @@ this.MigratorPrototype = {
 
 
 
-  get sourceProfiles() {
+  getSourceProfiles() {
     return null;
   },
 
@@ -206,8 +206,8 @@ this.MigratorPrototype = {
 
 
 
-  getMigrateData: function MP_getMigrateData(aProfile) {
-    let resources = this._getMaybeCachedResources(aProfile);
+  getMigrateData: async function MP_getMigrateData(aProfile) {
+    let resources = await this._getMaybeCachedResources(aProfile);
     if (!resources) {
       return [];
     }
@@ -225,8 +225,8 @@ this.MigratorPrototype = {
 
 
 
-  migrate: function MP_migrate(aItems, aStartup, aProfile) {
-    let resources = this._getMaybeCachedResources(aProfile);
+  migrate: async function MP_migrate(aItems, aStartup, aProfile) {
+    let resources = await this._getMaybeCachedResources(aProfile);
     if (resources.length == 0)
       throw new Error("migrate called for a non-existent source");
 
@@ -411,7 +411,7 @@ this.MigratorPrototype = {
 
 
 
-  get sourceExists() {
+  async isSourceAvailable() {
     if (this.startupOnlyMigrator && !MigrationUtils.isStartupMigration)
       return false;
 
@@ -420,9 +420,9 @@ this.MigratorPrototype = {
     
     let exists = false;
     try {
-      let profiles = this.sourceProfiles;
+      let profiles = await this.getSourceProfiles();
       if (!profiles) {
-        let resources = this._getMaybeCachedResources("");
+        let resources = await this._getMaybeCachedResources("");
         if (resources && resources.length > 0)
           exists = true;
       } else {
@@ -435,7 +435,7 @@ this.MigratorPrototype = {
   },
 
   
-  _getMaybeCachedResources: function PMB__getMaybeCachedResources(aProfile) {
+  _getMaybeCachedResources: async function PMB__getMaybeCachedResources(aProfile) {
     let profileKey = aProfile ? aProfile.id : "";
     if (this._resourcesByProfile) {
       if (profileKey in this._resourcesByProfile)
@@ -443,7 +443,7 @@ this.MigratorPrototype = {
     } else {
       this._resourcesByProfile = { };
     }
-    this._resourcesByProfile[profileKey] = this.getResources(aProfile);
+    this._resourcesByProfile[profileKey] = await this.getResources(aProfile);
     return this._resourcesByProfile[profileKey];
   },
 };
@@ -663,6 +663,28 @@ this.MigrationUtils = Object.freeze({
     return gMigrators;
   },
 
+  spinResolve: function MU_spinResolve(promise) {
+    if (!(promise instanceof Promise)) {
+      return promise;
+    }
+    let done = false;
+    let result = null;
+    let error = null;
+    promise.catch(e => {
+      error = e;
+    }).then(r => {
+      result = r;
+      done = true;
+    });
+
+    Services.tm.spinEventLoopUntil(() => done);
+    if (error) {
+      throw error;
+    } else {
+      return result;
+    }
+  },
+
   
 
 
@@ -685,7 +707,7 @@ this.MigrationUtils = Object.freeze({
 
 
 
-  getMigrator: function MU_getMigrator(aKey) {
+  getMigrator: async function MU_getMigrator(aKey) {
     let migrator = null;
     if (this._migrators.has(aKey)) {
       migrator = this._migrators.get(aKey);
@@ -698,7 +720,7 @@ this.MigrationUtils = Object.freeze({
     }
 
     try {
-      return migrator && migrator.sourceExists ? migrator : null;
+      return migrator && (await migrator.isSourceAvailable()) ? migrator : null;
     } catch (ex) { Cu.reportError(ex); return null; }
   },
 
@@ -893,8 +915,22 @@ this.MigrationUtils = Object.freeze({
 
 
 
+
   startupMigration:
   function MU_startupMigrator(aProfileStartup, aMigratorKey, aProfileToMigrate) {
+    if (Services.prefs.getBoolPref("browser.migrate.automigrate.enabled", false)) {
+      this.asyncStartupMigration(aProfileStartup,
+                                 aMigratorKey,
+                                 aProfileToMigrate);
+    } else {
+      this.spinResolve(this.asyncStartupMigration(aProfileStartup,
+                                                  aMigratorKey,
+                                                  aProfileToMigrate));
+    }
+  },
+
+  asyncStartupMigration:
+  async function MU_asyncStartupMigrator(aProfileStartup, aMigratorKey, aProfileToMigrate) {
     if (!aProfileStartup) {
       throw new Error("an profile-startup instance is required for startup-migration");
     }
@@ -902,7 +938,7 @@ this.MigrationUtils = Object.freeze({
 
     let skipSourcePage = false, migrator = null, migratorKey = "";
     if (aMigratorKey) {
-      migrator = this.getMigrator(aMigratorKey);
+      migrator = await this.getMigrator(aMigratorKey);
       if (!migrator) {
         
         
@@ -915,18 +951,19 @@ this.MigrationUtils = Object.freeze({
     } else {
       let defaultBrowserKey = this.getMigratorKeyForDefaultBrowser();
       if (defaultBrowserKey) {
-        migrator = this.getMigrator(defaultBrowserKey);
+        migrator = await this.getMigrator(defaultBrowserKey);
         if (migrator)
           migratorKey = defaultBrowserKey;
       }
     }
 
     if (!migrator) {
+      let migrators = await Promise.all(gAvailableMigratorKeys.map(key => this.getMigrator(key)));
       
       
       
       
-      if (!gAvailableMigratorKeys.some(key => !!this.getMigrator(key))) {
+      if (!migrators.some(m => m)) {
         
         this.finishMigration();
         return;
@@ -938,7 +975,7 @@ this.MigrationUtils = Object.freeze({
 
     if (!isRefresh && AutoMigrate.enabled) {
       try {
-        AutoMigrate.migrate(aProfileStartup, migratorKey, aProfileToMigrate);
+        await AutoMigrate.migrate(aProfileStartup, migratorKey, aProfileToMigrate);
         return;
       } catch (ex) {
         

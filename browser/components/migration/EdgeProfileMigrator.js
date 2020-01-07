@@ -374,10 +374,11 @@ EdgeProfileMigrator.prototype.getResources = function() {
   return resources.filter(r => r.exists);
 };
 
-EdgeProfileMigrator.prototype.getLastUsedDate = function() {
+EdgeProfileMigrator.prototype.getLastUsedDate = async function() {
   
   
-  if (this.sourceProfiles !== null || !gEdgeDatabase) {
+  let sourceProfiles = await this.getSourceProfiles();
+  if (sourceProfiles !== null || !gEdgeDatabase) {
     return Promise.resolve(new Date(0));
   }
   let logFilePath = OS.Path.join(gEdgeDatabase.parent.path, "LogFiles", "edb.log");
@@ -408,10 +409,10 @@ EdgeProfileMigrator.prototype.getLastUsedDate = function() {
 
 
 
-EdgeProfileMigrator.prototype.__defineGetter__("sourceProfiles", function() {
+EdgeProfileMigrator.prototype.getSourceProfiles = function() {
   let isWin10OrHigher = AppConstants.isPlatformAndVersionAtLeast("win", "10");
   return isWin10OrHigher ? null : [];
-});
+};
 
 EdgeProfileMigrator.prototype.__defineGetter__("sourceLocked", function() {
   
