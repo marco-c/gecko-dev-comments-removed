@@ -1318,10 +1318,6 @@ var PanelView = class extends this.AssociatedToNode {
     if (allowSyncReflows) {
       collectItems();
     } else {
-      
-      
-      await new Promise(r => Services.tm.dispatchToMainThread(r));
-
       await this.window.promiseDocumentFlushed(collectItems);
     }
 
@@ -1341,10 +1337,6 @@ var PanelView = class extends this.AssociatedToNode {
     if (allowSyncReflows) {
       measureItems();
     } else {
-      
-      
-      await new Promise(r => Services.tm.dispatchToMainThread(r));
-
       await this.window.promiseDocumentFlushed(measureItems);
     }
 
