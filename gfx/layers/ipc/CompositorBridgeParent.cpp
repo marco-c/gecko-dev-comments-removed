@@ -1225,6 +1225,27 @@ CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(const LayersId& aL
   return sIndirectLayerTrees[aLayersId].mParent;
 }
 
+ RefPtr<CompositorBridgeParent>
+CompositorBridgeParent::GetCompositorBridgeParentFromWindowId(const wr::WindowId& aWindowId)
+{
+  MonitorAutoLock lock(*sIndirectLayerTreesLock);
+  for (auto it = sIndirectLayerTrees.begin(); it != sIndirectLayerTrees.end(); it++) {
+    LayerTreeState* state = &it->second;
+    if (!state->mWrBridge) {
+      continue;
+    }
+    
+    
+    
+    if (RefPtr<wr::WebRenderAPI> api = state->mWrBridge->GetWebRenderAPI()) {
+      if (api->GetId() == aWindowId) {
+        return state->mParent;
+      }
+    }
+  }
+  return nullptr;
+}
+
 bool
 CompositorBridgeParent::CanComposite()
 {

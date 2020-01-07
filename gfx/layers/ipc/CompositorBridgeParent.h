@@ -482,6 +482,7 @@ public:
   Maybe<TimeStamp> GetTestingTimeStamp() const;
 
   static CompositorBridgeParent* GetCompositorBridgeParentFromLayersId(const LayersId& aLayersId);
+  static RefPtr<CompositorBridgeParent> GetCompositorBridgeParentFromWindowId(const wr::WindowId& aWindowId);
 
   
 
