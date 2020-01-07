@@ -784,6 +784,8 @@
 
 namespace js {
 
+class GlobalObject;
+
 
 
 
@@ -1133,7 +1135,7 @@ template<typename V>
 MOZ_MUST_USE bool ToSimdConstant(JSContext* cx, HandleValue v, jit::SimdConstant* out);
 
 JSObject*
-InitSimdClass(JSContext* cx, HandleObject obj);
+InitSimdClass(JSContext* cx, Handle<GlobalObject*> global);
 
 namespace jit {
 

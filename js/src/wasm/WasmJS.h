@@ -25,6 +25,7 @@
 
 namespace js {
 
+class GlobalObject;
 class TypedArrayObject;
 class WasmFunctionScope;
 class WasmInstanceScope;
@@ -90,7 +91,7 @@ IsSharedWasmMemoryObject(JSObject* obj);
 extern const Class WebAssemblyClass;
 
 JSObject*
-InitWebAssemblyClass(JSContext* cx, HandleObject global);
+InitWebAssemblyClass(JSContext* cx, Handle<GlobalObject*> global);
 
 
 

@@ -93,6 +93,8 @@
 
 namespace js {
 
+class GlobalObject;
+
 
 
 
@@ -1021,7 +1023,7 @@ TypedObject::opaque() const
 }
 
 JSObject*
-InitTypedObjectModuleObject(JSContext* cx, JS::HandleObject obj);
+InitTypedObjectModuleObject(JSContext* cx, JS::Handle<GlobalObject*> global);
 
 } 
 

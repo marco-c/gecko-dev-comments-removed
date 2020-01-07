@@ -11,6 +11,8 @@
 
 namespace js {
 
+class GlobalObject;
+
 class NumberObject : public NativeObject
 {
     
@@ -39,7 +41,7 @@ class NumberObject : public NativeObject
 
     
     friend JSObject*
-    js::InitNumberClass(JSContext* cx, HandleObject global);
+    js::InitNumberClass(JSContext* cx, Handle<GlobalObject*> global);
 };
 
 } 

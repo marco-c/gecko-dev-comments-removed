@@ -12,6 +12,8 @@
 
 namespace js {
 
+class GlobalObject;
+
 class SymbolObject : public NativeObject
 {
     
@@ -22,7 +24,7 @@ class SymbolObject : public NativeObject
 
     static const Class class_;
 
-    static JSObject* initClass(JSContext* cx, js::HandleObject obj, bool defineMembers);
+    static JSObject* initClass(JSContext* cx, Handle<GlobalObject*> global, bool defineMembers);
 
     
 
@@ -58,10 +60,10 @@ class SymbolObject : public NativeObject
 };
 
 extern JSObject*
-InitSymbolClass(JSContext* cx, HandleObject obj);
+InitSymbolClass(JSContext* cx, Handle<GlobalObject*> global);
 
 extern JSObject*
-InitBareSymbolCtor(JSContext* cx, HandleObject obj);
+InitBareSymbolCtor(JSContext* cx, Handle<GlobalObject*> global);
 
 } 
 

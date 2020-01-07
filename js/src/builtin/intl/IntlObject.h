@@ -15,6 +15,7 @@
 namespace js {
 
 struct Class;
+class GlobalObject;
 
 extern const Class IntlClass;
 
@@ -23,7 +24,7 @@ extern const Class IntlClass;
 
 
 extern JSObject*
-InitIntlClass(JSContext* cx, JS::Handle<JSObject*> obj);
+InitIntlClass(JSContext* cx, JS::Handle<GlobalObject*> global);
 
 
 

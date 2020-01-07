@@ -13,6 +13,8 @@
 
 namespace js {
 
+class GlobalObject;
+
 class BooleanObject : public NativeObject
 {
     
@@ -41,7 +43,7 @@ class BooleanObject : public NativeObject
 
     
     friend JSObject*
-    js::InitBooleanClass(JSContext* cx, js::HandleObject global);
+    js::InitBooleanClass(JSContext* cx, js::Handle<GlobalObject*> global);
 };
 
 } 

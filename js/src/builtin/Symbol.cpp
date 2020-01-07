@@ -48,10 +48,8 @@ const JSFunctionSpec SymbolObject::staticMethods[] = {
 };
 
 JSObject*
-SymbolObject::initClass(JSContext* cx, HandleObject obj, bool defineMembers)
+SymbolObject::initClass(JSContext* cx, Handle<GlobalObject*> global, bool defineMembers)
 {
-    Handle<GlobalObject*> global = obj.as<GlobalObject>();
-
     
     
     
@@ -234,13 +232,13 @@ SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp)
 }
 
 JSObject*
-js::InitSymbolClass(JSContext* cx, HandleObject obj)
+js::InitSymbolClass(JSContext* cx, Handle<GlobalObject*> global)
 {
-    return SymbolObject::initClass(cx, obj, true);
+    return SymbolObject::initClass(cx, global, true);
 }
 
 JSObject*
-js::InitBareSymbolCtor(JSContext* cx, HandleObject obj)
+js::InitBareSymbolCtor(JSContext* cx, Handle<GlobalObject*> global)
 {
-    return SymbolObject::initClass(cx, obj, false);
+    return SymbolObject::initClass(cx, global, false);
 }

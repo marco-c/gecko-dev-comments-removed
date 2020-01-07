@@ -24,9 +24,11 @@
 
 namespace js {
 
+class GlobalObject;
+
 
 extern JSObject*
-InitStringClass(JSContext* cx, HandleObject obj);
+InitStringClass(JSContext* cx, Handle<GlobalObject*> global);
 
 extern bool
 str_fromCharCode(JSContext* cx, unsigned argc, Value* vp);
