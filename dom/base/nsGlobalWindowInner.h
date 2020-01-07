@@ -679,7 +679,8 @@ public:
   int16_t Orientation(mozilla::dom::CallerType aCallerType) const;
 #endif
 
-  already_AddRefed<mozilla::dom::Console> GetConsole(mozilla::ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Console>
+  GetConsole(JSContext* aCx, mozilla::ErrorResult& aRv);
 
   
   bool IsSecureContext() const;
