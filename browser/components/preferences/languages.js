@@ -319,7 +319,7 @@ var gLanguagesDialog = {
       return false;
     }
 
-    var spoofEnglish = document.getElementById("privacy.spoof_english").value;
+    var spoofEnglish = Preferences.get("privacy.spoof_english").value;
     var activeLanguages = this._activeLanguages;
     var availableLanguages = this._availableLanguages;
     checkbox.hidden = false;
@@ -345,3 +345,8 @@ var gLanguagesDialog = {
     return document.getElementById("spoofEnglish").checked ? 2 : 1;
   }
 };
+
+
+
+window.addEventListener("focus", () => gLanguagesDialog.forceReflow());
+window.addEventListener("resize", () => gLanguagesDialog.forceReflow());
