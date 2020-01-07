@@ -554,6 +554,8 @@ public:
   
   
   void SetElementCreationCallback(const nsAString& aName, CustomElementCreationCallback& aCallback, ErrorResult& aRv);
+
+  void Upgrade(nsINode& aRoot);
 };
 
 class MOZ_RAII AutoCEReaction final {
