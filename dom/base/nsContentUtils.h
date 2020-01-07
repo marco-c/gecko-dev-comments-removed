@@ -2913,16 +2913,6 @@ public:
 
   static bool IsNonSubresourceRequest(nsIChannel* aChannel);
 
-  static uint32_t CookiesBehavior()
-  {
-    return sCookiesBehavior;
-  }
-
-  static uint32_t CookiesLifetimePolicy()
-  {
-    return sCookiesLifetimePolicy;
-  }
-
   
   
   
