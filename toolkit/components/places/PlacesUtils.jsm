@@ -429,6 +429,27 @@ this.PlacesUtils = {
 
 
 
+
+
+
+
+
+
+
+  convertMatchBucketsStringToArray(str) {
+    return str.split(",")
+              .map(v => {
+                let bucket = v.split(":");
+                return [ bucket[0].trim().toLowerCase(), Number(bucket[1]) ];
+              });
+  },
+
+  
+
+
+
+
+
   nodeIsFolder: function PU_nodeIsFolder(aNode) {
     return (aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER ||
             aNode.type == Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT);

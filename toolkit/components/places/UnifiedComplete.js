@@ -339,14 +339,6 @@ function setTimeout(callback, ms) {
   return timer;
 }
 
-function convertBucketsCharPrefToArray(str) {
-  return str.split(",")
-            .map(v => {
-              let bucket = v.split(":");
-              return [ bucket[0].trim().toLowerCase(), Number(bucket[1]) ];
-            });
-}
-
 
 
 
@@ -488,9 +480,9 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
         
         let val = readPref(pref);
         try {
-          val = convertBucketsCharPrefToArray(val);
+          val = PlacesUtils.convertMatchBucketsStringToArray(val);
         } catch (ex) {
-          val = convertBucketsCharPrefToArray(PREF_URLBAR_DEFAULTS.get(pref));
+          val = PlacesUtils.convertMatchBucketsStringToArray(PREF_URLBAR_DEFAULTS.get(pref));
         }
         return [ ...DEFAULT_BUCKETS_BEFORE,
                 ...val,
@@ -502,7 +494,7 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
         if (val) {
           
           try {
-            val = convertBucketsCharPrefToArray(val);
+            val = PlacesUtils.convertMatchBucketsStringToArray(val);
             return [ ...DEFAULT_BUCKETS_BEFORE,
                     ...val,
                     ...DEFAULT_BUCKETS_AFTER ];
