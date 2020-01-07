@@ -159,7 +159,12 @@ function prettifyCSS(text, ruleCount) {
   }
 
   
-  text = text.replace(/(?:^\s*<!--[\r\n]*)|(?:\s*-->\s*$)/g, "");
+  
+  let trimmed = text.trim();
+  if (trimmed.startsWith("<!--")) {
+    text = trimmed.replace(/^<!--/, "").replace(/-->$/, "").trim();
+  }
+
   let originalText = text;
   text = text.trim();
 
