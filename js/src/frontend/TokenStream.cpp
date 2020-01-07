@@ -575,7 +575,7 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::ungetChar(int32_t c)
 
 template<typename CharT>
 void
-TokenStreamCharsBase<CharT>::ungetCharIgnoreEOL(int32_t c)
+TokenStreamCharsBase<CharT>::ungetCodeUnit(int32_t c)
 {
     if (c == EOF)
         return;
@@ -597,7 +597,7 @@ TokenStreamChars<char16_t, AnyCharsAccess>::ungetCodePointIgnoreEOL(uint32_t cod
     MOZ_ASSERT(numUnits == 1 || numUnits == 2);
 
     while (numUnits-- > 0)
-        ungetCharIgnoreEOL(units[numUnits]);
+        ungetCodeUnit(units[numUnits]);
 }
 
 
@@ -618,7 +618,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::peekChars(int n, CharT* cp)
     }
 
     for (int j = i - 1; j >= 0; j--)
-        ungetCharIgnoreEOL(cp[j]);
+        ungetCodeUnit(cp[j]);
 
     return i == n;
 }
@@ -1009,7 +1009,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::peekUnicodeEscape(uint32_t* codePoin
 {
     int32_t c = getCodeUnit();
     if (c != 'u') {
-        ungetCharIgnoreEOL(c);
+        ungetCodeUnit(c);
         return 0;
     }
 
@@ -1030,8 +1030,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::peekUnicodeEscape(uint32_t* codePoin
         length = 0;
     }
 
-    ungetCharIgnoreEOL(c);
-    ungetCharIgnoreEOL('u');
+    ungetCodeUnit(c);
+    ungetCodeUnit('u');
     return length;
 }
 
@@ -1066,11 +1066,11 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::peekExtendedUnicodeEscape(uint32_t* 
         length = 0;
     }
 
-    ungetCharIgnoreEOL(c);
+    ungetCodeUnit(c);
     while (i--)
-        ungetCharIgnoreEOL(cp[i]);
+        ungetCodeUnit(cp[i]);
     while (leadingZeros--)
-        ungetCharIgnoreEOL('0');
+        ungetCodeUnit('0');
 
     return length;
 }
@@ -1193,8 +1193,8 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getDirective(bool isMultiline,
         
         
         if (isMultiline && c == '*' && matchChar('/')) {
-            ungetCharIgnoreEOL('/');
-            ungetCharIgnoreEOL('*');
+            ungetCodeUnit('/');
+            ungetCodeUnit('*');
             break;
         }
 
@@ -1321,7 +1321,7 @@ TokenStreamChars<char16_t, AnyCharsAccess>::matchMultiUnitCodePointSlow(char16_t
     if (MOZ_LIKELY(unicode::IsTrailSurrogate(maybeTrail))) {
         *codePoint = unicode::UTF16Decode(lead, maybeTrail);
     } else {
-        ungetCharIgnoreEOL(maybeTrail);
+        ungetCodeUnit(maybeTrail);
         *codePoint = 0;
     }
 }
@@ -1400,7 +1400,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::identifierName(TokenStart start,
             escaping = IdentifierEscapes::SawUnicodeEscape;
         }
     }
-    ungetCharIgnoreEOL(c);
+    ungetCodeUnit(c);
 
     const CharT* chars;
     size_t length;
@@ -1526,7 +1526,7 @@ GeneralTokenStreamChars<CharT, AnyCharsAccess>::consumeRestOfSingleLineComment()
         c = getCodeUnit();
     } while (c != EOF && !SourceUnits::isRawEOLChar(c));
 
-    ungetCharIgnoreEOL(c);
+    ungetCodeUnit(c);
 }
 
 template<typename CharT, class AnyCharsAccess>
@@ -1549,7 +1549,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, TokenStart star
     double dval;
     DecimalPoint decimalPoint = NoDecimal;
     if (c != '.' && c != 'e' && c != 'E') {
-        ungetCharIgnoreEOL(c);
+        ungetCodeUnit(c);
 
         
         
@@ -1575,7 +1575,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, TokenStart star
 
             
             if (!IsAsciiDigit(c)) {
-                ungetCharIgnoreEOL(c);
+                ungetCodeUnit(c);
                 error(JSMSG_MISSING_EXPONENT);
                 return false;
             }
@@ -1586,7 +1586,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, TokenStart star
             } while (IsAsciiDigit(c));
         }
 
-        ungetCharIgnoreEOL(c);
+        ungetCodeUnit(c);
 
         const CharT* dummy;
         if (!js_strtod(anyCharsAccess().cx, numStart, sourceUnits.addressOfNextCodeUnit(), &dummy,
@@ -1623,7 +1623,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::decimalNumber(int c, TokenStart star
         } else {
             
             
-            ungetCharIgnoreEOL(c);
+            ungetCodeUnit(c);
         }
     }
 
@@ -1788,7 +1788,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 radix = 16;
                 c = getCodeUnit();
                 if (!JS7_ISHEX(c)) {
-                    ungetCharIgnoreEOL(c);
+                    ungetCodeUnit(c);
                     reportError(JSMSG_MISSING_HEXDIGITS);
                     return badToken();
                 }
@@ -1802,7 +1802,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 radix = 2;
                 c = getCodeUnit();
                 if (c != '0' && c != '1') {
-                    ungetCharIgnoreEOL(c);
+                    ungetCodeUnit(c);
                     reportError(JSMSG_MISSING_BINARY_DIGITS);
                     return badToken();
                 }
@@ -1816,7 +1816,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 radix = 8;
                 c = getCodeUnit();
                 if (c < '0' || c > '7') {
-                    ungetCharIgnoreEOL(c);
+                    ungetCodeUnit(c);
                     reportError(JSMSG_MISSING_OCTAL_DIGITS);
                     return badToken();
                 }
@@ -1857,7 +1857,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
                 return decimalNumber(c, start, numStart, modifier, ttp);
             }
-            ungetCharIgnoreEOL(c);
+            ungetCodeUnit(c);
 
             if (c != EOF) {
                 if (unicode::IsIdentifierStart(char16_t(c))) {
@@ -1884,7 +1884,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                 } else {
                     
                     
-                    ungetCharIgnoreEOL(c);
+                    ungetCodeUnit(c);
                 }
             }
 
@@ -1926,7 +1926,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                     break;
                 }
             }
-            ungetCharIgnoreEOL(c);
+            ungetCodeUnit(c);
 
             simpleKind = TokenKind::Dot;
             break;
@@ -1959,7 +1959,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
             
             
             
-            ungetCharIgnoreEOL('\\');
+            ungetCodeUnit('\\');
             error(JSMSG_BAD_ESCAPE);
             return badToken();
           }
@@ -2002,9 +2002,9 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                             consumeRestOfSingleLineComment();
                             continue;
                         }
-                        ungetCharIgnoreEOL('-');
+                        ungetCodeUnit('-');
                     }
-                    ungetCharIgnoreEOL('!');
+                    ungetCodeUnit('!');
                 }
             }
             if (matchChar('<'))
@@ -2040,7 +2040,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
                     if (!getDirectives(false, shouldWarn))
                         return false;
                 } else {
-                    ungetCharIgnoreEOL(c);
+                    ungetCodeUnit(c);
                 }
 
                 consumeRestOfSingleLineComment();
@@ -2139,7 +2139,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getTokenInternal(TokenKind* const tt
 
                     reflags = RegExpFlag(reflags | flag);
                 }
-                ungetCharIgnoreEOL(c);
+                ungetCodeUnit(c);
 
                 newRegExpToken(reflags, start, modifier, ttp);
                 return true;
@@ -2214,7 +2214,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
     
     while ((c = getCodeUnit()) != untilChar) {
         if (c == EOF) {
-            ungetCharIgnoreEOL(c);
+            ungetCodeUnit(c);
             const char delimiters[] = { untilChar, untilChar, '\0' };
             error(JSMSG_EOF_BEFORE_END_OF_LITERAL, delimiters);
             return false;
@@ -2288,7 +2288,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                                 
                                 
                                 
-                                ungetCharIgnoreEOL(c);
+                                ungetCodeUnit(c);
 
                                 TokenStreamAnyChars& anyChars = anyCharsAccess();
                                 anyChars.setInvalidTemplateEscape(start,
@@ -2340,7 +2340,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
                         JS7_UNHEX(cp[2]);
                     skipChars(3);
                 } else {
-                    ungetCharIgnoreEOL(c2);
+                    ungetCodeUnit(c2);
                     uint32_t start = sourceUnits.offset() - 2;
                     if (parsingTemplate) {
                         TokenStreamAnyChars& anyChars = anyCharsAccess();
@@ -2415,7 +2415,7 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::getStringOrTemplateToken(char untilC
         } else if (c == '\r' || c == '\n') {
             if (!parsingTemplate) {
                 
-                ungetCharIgnoreEOL(c);
+                ungetCodeUnit(c);
                 const char delimiters[] = { untilChar, untilChar, '\0' };
                 error(JSMSG_EOL_BEFORE_END_OF_STRING, delimiters);
                 return false;
