@@ -1666,12 +1666,27 @@ SkStreamAsset* SkTypeface_Mac::onOpenStream(int* ttcIndex) const {
     this->getTableTags(tableTags.begin());
 
     
+    bool couldBeTyp1 = false;
+    constexpr SkFontTableTag TYPE1Tag = SkSetFourByteTag('T', 'Y', 'P', '1');
+    constexpr SkFontTableTag CIDTag = SkSetFourByteTag('C', 'I', 'D', ' ');
+    
     SkTDArray<size_t> tableSizes;
     size_t totalSize = sizeof(SkSFNTHeader) + sizeof(SkSFNTHeader::TableDirectoryEntry) * numTables;
     for (int tableIndex = 0; tableIndex < numTables; ++tableIndex) {
+        if (TYPE1Tag == tableTags[tableIndex] || CIDTag == tableTags[tableIndex]) {
+            couldBeTyp1 = true;
+        }
+
         size_t tableSize = this->getTableSize(tableTags[tableIndex]);
         totalSize += (tableSize + 3) & ~3;
         *tableSizes.append() = tableSize;
+    }
+
+    
+    
+    
+    if (fontType == SkSFNTHeader::fontType_PostScript::TAG && !couldBeTyp1) {
+        fontType = SkSFNTHeader::fontType_OpenTypeCFF::TAG;
     }
 
     
