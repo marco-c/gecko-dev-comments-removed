@@ -229,6 +229,8 @@ private:
   
   
   nsCOMPtr<nsIFile> mRootStoreDirectoryForUpdate;
+
+  bool mIsClosed; 
 };
 
 } 
