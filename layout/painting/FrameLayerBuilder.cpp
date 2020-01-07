@@ -5048,11 +5048,14 @@ FrameLayerBuilder::AddPaintedDisplayItem(PaintedLayerData* aLayerData,
 
   if (layer->Manager() == mRetainingManager) {
     DisplayItemData *data = aItem.mDisplayItemData;
-    if (data) {
-      if (!data->mUsed) {
-        data->BeginUpdate(layer, aItem.mLayerState, aItem.mItem, aItem.mReused, aItem.mMerged);
-      }
+    if (data && !data->mUsed) {
+      data->BeginUpdate(layer, aItem.mLayerState, aItem.mItem, aItem.mReused, aItem.mMerged);
     } else {
+      if (data && data->mUsed) {
+        
+        
+        aItem.mItem->SetDisplayItemData(nullptr);
+      }
       data = StoreDataForFrame(aItem.mItem, layer, aItem.mLayerState, nullptr);
     }
     data->mInactiveManager = tempManager;
