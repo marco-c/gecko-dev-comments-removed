@@ -17,3 +17,12 @@ exports.reloadInspectorAndLog = async function(label, toolbox) {
 
   await reloadPageAndLog(label + ".inspector", toolbox, onReload);
 };
+
+
+
+
+exports.selectNodeFront = function(inspector, nodeFront) {
+  let onRuleViewRefreshed = inspector.once("rule-view-refreshed");
+  inspector.selection.setNodeFront(nodeFront);
+  return onRuleViewRefreshed;
+};
