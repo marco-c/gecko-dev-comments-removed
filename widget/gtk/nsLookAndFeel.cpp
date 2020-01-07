@@ -741,7 +741,7 @@ GetSystemFontInfo(GtkStyleContext *aStyle,
     
     
     
-    size *= ScreenHelperGTK::GetGTKMonitorScaleFactor();
+    size *= mozilla::widget::ScreenHelperGTK::GetGTKMonitorScaleFactor();
 
     
 
