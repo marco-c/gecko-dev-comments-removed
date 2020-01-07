@@ -42,9 +42,6 @@ createEnum([
   "CHANGE_PIXEL_RATIO",
 
   
-  "CHANGE_RELOAD_CONDITION",
-
-  
   "CHANGE_TOUCH_SIMULATION",
 
   
@@ -55,9 +52,6 @@ createEnum([
 
   
   "LOAD_DEVICE_LIST_END",
-
-  
-  "LOAD_RELOAD_CONDITIONS_END",
 
   
   "REMOVE_DEVICE",
