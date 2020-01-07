@@ -857,6 +857,7 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         let skippedCount = 0;
         let weakCount = 0;
         let updateParams = [];
+        let tombstoneGuidsToRemove = [];
 
         for (let recordId in changeRecords) {
           
@@ -884,29 +885,36 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
           }
 
           let guid = BookmarkSyncUtils.recordIdToGuid(recordId);
-          updateParams.push({
-            guid,
-            syncChangeDelta: changeRecord.counter,
-            syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL,
-          });
+          if (changeRecord.tombstone) {
+            tombstoneGuidsToRemove.push(guid);
+          } else {
+            updateParams.push({
+              guid,
+              syncChangeDelta: changeRecord.counter,
+              syncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL,
+            });
+          }
         }
 
         
         
         
         
-        if (updateParams.length) {
+        if (updateParams.length || tombstoneGuidsToRemove.length) {
           await db.executeTransaction(async function() {
-            await db.executeCached(`
-              UPDATE moz_bookmarks
-              SET syncChangeCounter = MAX(syncChangeCounter - :syncChangeDelta, 0),
-                  syncStatus = :syncStatus
-              WHERE guid = :guid`,
-              updateParams);
-
-            
-            
-            let tombstoneGuidsToRemove = updateParams.map(({ guid }) => guid);
+            if (updateParams.length) {
+              await db.executeCached(`
+                UPDATE moz_bookmarks
+                SET syncChangeCounter = MAX(syncChangeCounter - :syncChangeDelta, 0),
+                    syncStatus = :syncStatus
+                WHERE guid = :guid`,
+                updateParams);
+              
+              
+              
+              let dupedGuids = updateParams.map(({ guid }) => guid);
+              await removeUndeletedTombstones(db, dupedGuids);
+            }
             await removeTombstones(db, tombstoneGuidsToRemove);
           });
         }
@@ -2537,6 +2545,22 @@ var removeTombstones = function(db, guids) {
     WHERE guid IN (${guids.map(guid => JSON.stringify(guid)).join(",")})`);
 };
 
+
+
+
+
+
+
+var removeUndeletedTombstones = function(db, guids) {
+  if (!guids.length) {
+    return Promise.resolve();
+  }
+  
+  return db.execute(`
+    DELETE FROM moz_bookmarks_deleted
+    WHERE guid IN (${guids.map(guid => JSON.stringify(guid)).join(",")})
+    AND guid IN (SELECT guid from moz_bookmarks)`);
+};
 
 
 
