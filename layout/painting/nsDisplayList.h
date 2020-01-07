@@ -320,6 +320,9 @@ struct ActiveScrolledRoot {
 
 private:
   ActiveScrolledRoot()
+    : mScrollableFrame{ nullptr }
+    , mDepth{}
+    , mRetained{ false }
   {
   }
 
@@ -840,8 +843,8 @@ public:
 
   bool IsInSubdocument() { return mPresShellStates.Length() > 1; }
 
-  void SetDisablePartialUpdates(bool aDisable) { mDisablePartialUpdates = aDisable; }
-  bool DisablePartialUpdates() { return mDisablePartialUpdates; }
+  void SetBuiltOverlayScrollbars(bool aOverlayScrollbars) { mBuiltOverlayScrollbars = aOverlayScrollbars; }
+  bool BuiltOverlayScrollbars() { return mBuiltOverlayScrollbars; }
 
   
 
@@ -1189,6 +1192,7 @@ public:
     AutoSaveRestorePerspectiveIndex(nsDisplayListBuilder* aBuilder,
                                     const bool aChildrenHavePerspective)
       : mBuilder(nullptr)
+      , mCachedItemIndex{}
     {
       if (aChildrenHavePerspective) {
         mBuilder = aBuilder;
@@ -2013,7 +2017,7 @@ private:
   bool                           mInInvalidSubtree;
   bool                           mBuildCompositorHitTestInfo;
   bool                           mLessEventRegionItems;
-  bool                           mDisablePartialUpdates;
+  bool                           mBuiltOverlayScrollbars;
 };
 
 class nsDisplayItem;

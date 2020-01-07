@@ -64,8 +64,12 @@ struct MotionSegment
   
   
   MotionSegment()
-    : mSegmentType(eSegmentType_Translation)
-  { }
+    : mRotateType{ static_cast<RotateType>(0) }
+    , mRotateAngle{ 0.0 }
+    , mSegmentType(eSegmentType_Translation)
+    , mU{}
+  {
+  }
 
   
   MotionSegment(float aX, float aY, float aRotateAngle)

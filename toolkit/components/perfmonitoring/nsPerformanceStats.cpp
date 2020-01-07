@@ -649,19 +649,25 @@ nsPerformanceStatsService::nsPerformanceStatsService()
   , mProcessId(getpid())
 #endif
   , mUIdCounter(0)
-  , mTopGroup(nsPerformanceGroup::Make(this,
-                                       NS_LITERAL_STRING("<process>"), 
-                                       0,    
-                                       mProcessId,
-                                       true, 
-                                       nsPerformanceGroup::GroupScope::RUNTIME 
-                                     ))
+  , mTopGroup(
+      nsPerformanceGroup::Make(this,
+                               NS_LITERAL_STRING("<process>"), 
+                               0,                              
+                               mProcessId,
+                               true, 
+                               nsPerformanceGroup::GroupScope::RUNTIME 
+                               ))
+  , mUserTimeStart{}
+  , mSystemTimeStart{}
   , mIsHandlingUserInput(false)
+  , mUserInputCount{}
+  , mIteration{}
   , mProcessStayed(0)
   , mProcessMoved(0)
   , mProcessUpdateCounter(0)
   , mIsMonitoringPerCompartment(false)
-  , mJankAlertThreshold(mozilla::MaxValue<uint64_t>::value) 
+  , mJankAlertThreshold(
+      mozilla::MaxValue<uint64_t>::value) 
   , mJankAlertBufferingDelay(1000 )
   , mJankLevelVisibilityThreshold( 8 )
   , mMaxExpectedDurationOfInteractionUS(150 * 1000)

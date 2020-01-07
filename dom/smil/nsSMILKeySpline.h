@@ -16,7 +16,13 @@
 class nsSMILKeySpline
 {
 public:
-  nsSMILKeySpline() {  }
+  nsSMILKeySpline()
+    : mX1{ 0.0 }
+    , mY1{ 0.0 }
+    , mX2{ 0.0 }
+    , mY2{ 0.0 }
+  { 
+  }
 
   
 
@@ -24,8 +30,11 @@ public:
 
 
 
-  nsSMILKeySpline(double aX1, double aY1,
-                  double aX2, double aY2)
+  nsSMILKeySpline(double aX1, double aY1, double aX2, double aY2)
+    : mX1{ 0.0 }
+    , mY1{ 0.0 }
+    , mX2{ 0.0 }
+    , mY2{ 0.0 }
   {
     Init(aX1, aY1, aX2, aY2);
   }

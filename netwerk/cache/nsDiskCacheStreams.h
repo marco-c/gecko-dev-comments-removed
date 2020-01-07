@@ -43,9 +43,19 @@ public:
 
     
     
-    nsDiskCacheStreamIO() { NS_NOTREACHED("oops"); }
+    nsDiskCacheStreamIO()
+      : mBinding{ nullptr }
+      , mDevice{ nullptr }
+      , mFD{ nullptr }
+      , mStreamEnd{}
+      , mBufSize{}
+      , mBuffer{ nullptr }
+      , mOutputStreamIsOpen{ false }
+    {
+      NS_NOTREACHED("oops");
+    }
 
-private:
+  private:
     virtual ~nsDiskCacheStreamIO();
 
     nsresult    OpenCacheFile(int flags, PRFileDesc ** fd);

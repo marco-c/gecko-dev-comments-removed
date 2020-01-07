@@ -43,7 +43,10 @@ class SVGAnimatedNumberList
   friend class DOMSVGNumberList;
 
 public:
-  SVGAnimatedNumberList() {}
+  SVGAnimatedNumberList()
+    : mIsBaseSet{ false }
+  {
+  }
 
   
 

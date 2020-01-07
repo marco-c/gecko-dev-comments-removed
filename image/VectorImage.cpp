@@ -367,14 +367,16 @@ NS_IMPL_ISUPPORTS(VectorImage,
 
 
 
-VectorImage::VectorImage(ImageURL* aURI ) :
-  ImageResource(aURI), 
-  mLockCount(0),
-  mIsInitialized(false),
-  mIsFullyLoaded(false),
-  mIsDrawing(false),
-  mHaveAnimations(false),
-  mHasPendingInvalidation(false)
+VectorImage::VectorImage(ImageURL* aURI )
+  : ImageResource(aURI)
+  , 
+  mLockCount(0)
+  , mIsInitialized(false)
+  , mDiscardable{ false }
+  , mIsFullyLoaded(false)
+  , mIsDrawing(false)
+  , mHaveAnimations(false)
+  , mHasPendingInvalidation(false)
 { }
 
 VectorImage::~VectorImage()

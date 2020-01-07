@@ -285,7 +285,7 @@ Http2BaseCompressor::Http2BaseCompressor()
   , mSetInitialMaxBufferSizeAllowed(true)
   , mPeakSize(0)
   , mPeakCount(0)
-{
+  {
   mDynamicReporter = new HpackDynamicTableReporter(this);
   RegisterStrongMemoryReporter(mDynamicReporter);
 }

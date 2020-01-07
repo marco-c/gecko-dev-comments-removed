@@ -17,6 +17,7 @@ PrintTargetSkPDF::PrintTargetSkPDF(const IntSize& aSize,
   : PrintTarget( nullptr, aSize)
   , mOStream(Move(aStream))
   , mPageCanvas(nullptr)
+  , mRefCanvas{ nullptr }
 {
 }
 

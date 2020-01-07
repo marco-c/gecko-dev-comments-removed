@@ -26,14 +26,20 @@ public:
     NS_DECL_NSISTREAMCONVERTER
 
     nsDeflateConverter()
+      : mWrapMode{ WRAP_NONE }
+      , mOffset{}
+      , mZstream{}
     {
-        
-        mLevel = 6;
+      
+      mLevel = 6;
     }
 
     explicit nsDeflateConverter(int32_t level)
+      : mWrapMode{ WRAP_NONE }
+      , mOffset{}
+      , mZstream{}
     {
-        mLevel = level;
+      mLevel = level;
     }
 
 private:

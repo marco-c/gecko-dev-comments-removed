@@ -266,8 +266,9 @@ public:
   
   explicit Log(int aOptions = Log::DefaultOptions(L == LOG_CRITICAL),
                LogReason aReason = LogReason::MustBeMoreThanThis)
-  : mOptions(0)
-  , mLogIt(false)
+    : mOptions(0)
+    , mReason{ aReason }
+    , mLogIt(false)
   {
     Init(aOptions, BasicLogger::ShouldOutputMessage(L), aReason);
   }
@@ -292,7 +293,8 @@ public:
     }
     return *this;
   }
-  Log &operator <<(const std::string &aLogText) { 
+  Log& operator<<(const std::string& aLogText)
+  {
     if (MOZ_UNLIKELY(LogIt())) {
       mMessage << aLogText;
     }

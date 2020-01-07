@@ -2005,6 +2005,14 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
+    
+    
+    
+    nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aDocument->GetChannel());
+    if (jarChannel && jarChannel->GetIsUnsafe()) {
+      xpc::Scriptability::Get(newInnerGlobal).Block();
+    }
+
     if (mArguments) {
       newInnerWindow->DefineArgumentsProperty(mArguments);
       mArguments = nullptr;
@@ -7668,6 +7676,7 @@ nsGlobalWindowOuter::AbstractMainThreadFor(TaskCategory aCategory)
 
 nsGlobalWindowOuter::TemporarilyDisableDialogs::TemporarilyDisableDialogs(
   nsGlobalWindowOuter* aWindow MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
+  : mSavedDialogsEnabled{ false }
 {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 

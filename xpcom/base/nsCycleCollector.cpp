@@ -610,6 +610,11 @@ public:
 
   
   PtrInfo()
+    : mPointer{ nullptr }
+    , mParticipant{ nullptr }
+    , mColor{}
+    , mInternalRefs{}
+    , mRefCount{}
   {
     NS_NOTREACHED("should never be called");
   }
@@ -691,6 +696,7 @@ private:
     
     
     NodeBlock()
+      : mNext{ nullptr }
     {
       NS_NOTREACHED("should never be called");
 
@@ -2231,6 +2237,7 @@ CCGraphBuilder::CCGraphBuilder(CCGraph& aGraph,
   , mResults(aResults)
   , mNodeBuilder(aGraph.mNodes)
   , mEdgeBuilder(aGraph.mEdges)
+  , mCurrPi{ nullptr }
   , mJSParticipant(nullptr)
   , mJSZoneParticipant(nullptr)
   , mLogger(aLogger)

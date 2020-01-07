@@ -387,10 +387,15 @@ class NonNull
 {
 public:
   NonNull()
+    : ptr
+  {
+    nullptr
+  }
 #ifdef DEBUG
-    : inited(false)
+  , inited(false)
 #endif
-  {}
+  {
+  }
 
   
   operator T&() const {

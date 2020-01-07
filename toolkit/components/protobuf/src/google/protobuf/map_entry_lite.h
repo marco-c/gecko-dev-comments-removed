@@ -341,52 +341,62 @@ class MapEntryImpl : public Base {
   template <typename MapField, typename Map>
   class Parser {
    public:
-    explicit Parser(MapField* mf) : mf_(mf), map_(mf->MutableMap()) {}
+     explicit Parser(MapField* mf)
+       : mf_(mf)
+       , map_(mf->MutableMap())
+       , value_ptr_{ nullptr }
+     {
+     }
 
-    
-    
-    
-    bool MergePartialFromCodedStream(::google::protobuf::io::CodedInputStream* input) {
-      
-      
-      
-      if (input->ExpectTag(kKeyTag)) {
-        if (!KeyTypeHandler::Read(input, &key_)) {
-          return false;
-        }
-        
-        const void* data;
-        int size;
-        input->GetDirectBufferPointerInline(&data, &size);
-        
-        GOOGLE_COMPILE_ASSERT(kTagSize == 1, tag_size_error);
-        if (size > 0 && *reinterpret_cast<const char*>(data) == kValueTag) {
-          typename Map::size_type size = map_->size();
-          value_ptr_ = &(*map_)[key_];
-          if (GOOGLE_PREDICT_TRUE(size != map_->size())) {
-            
-            typedef
-                typename MapIf<ValueTypeHandler::kIsEnum, int*, Value*>::type T;
-            input->Skip(kTagSize);  
-            if (!ValueTypeHandler::Read(input,
-                                        reinterpret_cast<T>(value_ptr_))) {
-              map_->erase(key_);  
-              return false;
-            }
-            if (input->ExpectAtEnd()) return true;
-            return ReadBeyondKeyValuePair(input);
-          }
-        }
-      } else {
-        key_ = Key();
-      }
+     
+     
+     
+     bool MergePartialFromCodedStream(
+       ::google::protobuf::io::CodedInputStream* input)
+     {
+       
+       
+       
+       if (input->ExpectTag(kKeyTag)) {
+         if (!KeyTypeHandler::Read(input, &key_)) {
+           return false;
+         }
+         
+         const void* data;
+         int size;
+         input->GetDirectBufferPointerInline(&data, &size);
+         
+         GOOGLE_COMPILE_ASSERT(kTagSize == 1, tag_size_error);
+         if (size > 0 && *reinterpret_cast<const char*>(data) == kValueTag) {
+           typename Map::size_type size = map_->size();
+           value_ptr_ = &(*map_)[key_];
+           if (GOOGLE_PREDICT_TRUE(size != map_->size())) {
+             
+             typedef
+               typename MapIf<ValueTypeHandler::kIsEnum, int*, Value*>::type T;
+             input->Skip(kTagSize); 
+             if (!ValueTypeHandler::Read(input,
+                                         reinterpret_cast<T>(value_ptr_))) {
+               map_->erase(key_); 
+               return false;
+             }
+             if (input->ExpectAtEnd())
+               return true;
+             return ReadBeyondKeyValuePair(input);
+           }
+         }
+       } else {
+         key_ = Key();
+       }
 
-      entry_.reset(mf_->NewEntry());
-      *entry_->mutable_key() = key_;
-      const bool result = entry_->MergePartialFromCodedStream(input);
-      if (result) UseKeyAndValueFromEntry();
-      if (entry_->GetArena() != NULL) entry_.release();
-      return result;
+       entry_.reset(mf_->NewEntry());
+       *entry_->mutable_key() = key_;
+       const bool result = entry_->MergePartialFromCodedStream(input);
+       if (result)
+         UseKeyAndValueFromEntry();
+       if (entry_->GetArena() != NULL)
+         entry_.release();
+       return result;
     }
 
     const Key& key() const { return key_; }

@@ -56,9 +56,9 @@ class BinASTParser : private JS::AutoGCRooter, public ErrorReporter
         , parseContext_(nullptr)
         , usedNames_(usedNames)
         , factory_(cx, alloc, nullptr, SourceKind::Binary)
-    {
-         cx_->frontendCollectionPool().addActiveCompilation();
-         tempPoolMark_ = alloc.mark();
+     {
+        cx_->frontendCollectionPool().addActiveCompilation();
+        tempPoolMark_ = alloc.mark();
     }
     ~BinASTParser()
     {

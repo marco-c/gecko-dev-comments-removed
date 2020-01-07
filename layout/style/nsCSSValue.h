@@ -104,10 +104,15 @@ protected:
   
   
   
+  URLValueData(const nsAString& aString,
+               already_AddRefed<URLExtraData> aExtraData);
   URLValueData(ServoRawOffsetArc<RustString> aString,
                already_AddRefed<URLExtraData> aExtraData);
   
-  URLValueData(already_AddRefed<nsIURI> aURI,
+  URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
+               const nsAString& aString,
+               already_AddRefed<URLExtraData> aExtraData);
+  URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
                ServoRawOffsetArc<RustString> aString,
                already_AddRefed<URLExtraData> aExtraData);
 
@@ -158,29 +163,40 @@ public:
 
   bool EqualsExceptRef(nsIURI* aURI) const;
 
-  bool IsStringEmpty() const
-  {
-    return GetString().IsEmpty();
-  }
+  
+  
+  const nsString& GetUTF16String() const;
+  
+  nsString GetUTF16StringForAnyThread() const;
 
-  nsDependentCSubstring GetString() const;
+  bool IsStringEmpty() const;
 
 private:
   
   
-  mutable nsCOMPtr<nsIURI> mURI;
-
+  mutable PtrHandle<nsIURI> mURI;
 public:
   RefPtr<URLExtraData> mExtraData;
-
 private:
-  mutable bool mURIResolved;
+  
+  
+  nsDependentCSubstring GetRustString() const;
 
+  mutable bool mURIResolved;
   
   mutable Maybe<bool> mIsLocalRef;
   mutable Maybe<bool> mMightHaveRef;
 
-  mozilla::ServoRawOffsetArc<RustString> mString;
+  mutable union RustOrGeckoString {
+    explicit RustOrGeckoString(const nsAString& aString)
+    : mString(aString) {}
+    explicit RustOrGeckoString(ServoRawOffsetArc<RustString> aString)
+    : mRustString(aString) {}
+    ~RustOrGeckoString() {}
+    nsString mString;
+    mozilla::ServoRawOffsetArc<RustString> mRustString;
+  } mStrings;
+  mutable bool mUsingRustString;
 
 protected:
   
@@ -207,10 +223,16 @@ private:
 
 struct URLValue final : public URLValueData
 {
+  
+  URLValue(const nsAString& aString, nsIURI* aBaseURI, nsIURI* aReferrer,
+           nsIPrincipal* aOriginPrincipal);
+  URLValue(nsIURI* aURI, const nsAString& aString, nsIURI* aBaseURI,
+           nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal);
+
+  
   URLValue(ServoRawOffsetArc<RustString> aString,
            already_AddRefed<URLExtraData> aExtraData)
-    : URLValueData(aString, Move(aExtraData))
-  { }
+    : URLValueData(aString, Move(aExtraData)) {}
 
   URLValue(const URLValue&) = delete;
   URLValue& operator=(const URLValue&) = delete;
@@ -220,8 +242,9 @@ struct URLValue final : public URLValueData
 
 struct ImageValue final : public URLValueData
 {
-  static already_AddRefed<ImageValue>
-    CreateFromURLValue(URLValue*, nsIDocument*, CORSMode);
+  static ImageValue* CreateFromURLValue(URLValue* url,
+                                        nsIDocument* aDocument,
+                                        CORSMode aCORSMode);
 
   
   
@@ -464,6 +487,7 @@ public:
   
   explicit nsCSSValue(nsCSSUnit aUnit = eCSSUnit_Null)
     : mUnit(aUnit)
+    , mValue{}
   {
     MOZ_ASSERT(aUnit <= eCSSUnit_DummyInherit, "not a valueless unit");
   }
@@ -660,6 +684,15 @@ public:
     MOZ_ASSERT(mUnit == eCSSUnit_GridTemplateAreas,
                "not a grid-template-areas value");
     return mValue.mGridTemplateAreas;
+  }
+
+  const char16_t* GetOriginalURLValue() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_URL || mUnit == eCSSUnit_Image,
+               "not a URL value");
+    return mUnit == eCSSUnit_URL ?
+             mValue.mURL->GetUTF16String().get() :
+             mValue.mImage->GetUTF16String().get();
   }
 
   

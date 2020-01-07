@@ -57,7 +57,12 @@ class DtoaCache {
     JSFlatString* s;      
 
   public:
-    DtoaCache() : s(nullptr) {}
+    DtoaCache()
+      : d{ 0.0 }
+      , base{}
+      , s(nullptr)
+    {
+    }
     void purge() { s = nullptr; }
 
     JSFlatString* lookup(int base, double d) {
@@ -308,7 +313,9 @@ class WrapperMap
             goToNext();
         }
 
-        Enum(WrapperMap& m, JSCompartment* target) {
+        Enum(WrapperMap& m, JSCompartment* target)
+          : filter{ nullptr } 
+        {
             
             
             auto p = m.map.lookup(target);

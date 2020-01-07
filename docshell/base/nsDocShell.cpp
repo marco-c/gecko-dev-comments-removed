@@ -389,6 +389,9 @@ nsDocShell::nsDocShell()
   , mHasLoadedNonBlankURI(false)
   , mBlankTiming(false)
 {
+  this->mHistoryID.m0 = {};
+  this->mHistoryID.m1 = {};
+  this->mHistoryID.m2 = {};
   AssertOriginAttributesMatchPrivateBrowsing();
 
   nsContentUtils::GenerateUUIDInPlace(mHistoryID);
@@ -1609,6 +1612,24 @@ nsDocShell::GetParentCharset(const Encoding*& aCharset,
 }
 
 NS_IMETHODIMP
+nsDocShell::GetChannelIsUnsafe(bool* aUnsafe)
+{
+  *aUnsafe = false;
+
+  nsIChannel* channel = GetCurrentDocChannel();
+  if (!channel) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(channel);
+  if (!jarChannel) {
+    return NS_OK;
+  }
+
+  return jarChannel->GetIsUnsafe(aUnsafe);
+}
+
+NS_IMETHODIMP
 nsDocShell::GetHasMixedActiveContentLoaded(bool* aHasMixedActiveContentLoaded)
 {
   nsCOMPtr<nsIDocument> doc(GetDocument());
@@ -1666,6 +1687,12 @@ nsDocShell::GetAllowPlugins(bool* aAllowPlugins)
   NS_ENSURE_ARG_POINTER(aAllowPlugins);
 
   *aAllowPlugins = mAllowPlugins;
+  if (!mAllowPlugins) {
+    return NS_OK;
+  }
+
+  bool unsafe;
+  *aAllowPlugins = NS_SUCCEEDED(GetChannelIsUnsafe(&unsafe)) && !unsafe;
   return NS_OK;
 }
 
@@ -1879,6 +1906,12 @@ nsDocShell::GetAllowMetaRedirects(bool* aReturn)
   NS_ENSURE_ARG_POINTER(aReturn);
 
   *aReturn = mAllowMetaRedirects;
+  if (!mAllowMetaRedirects) {
+    return NS_OK;
+  }
+
+  bool unsafe;
+  *aReturn = NS_SUCCEEDED(GetChannelIsUnsafe(&unsafe)) && !unsafe;
   return NS_OK;
 }
 
@@ -9509,6 +9542,34 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                                                                  &inherits)) &&
          inherits) {
       principalToInherit = GetInheritedPrincipal(true);
+    }
+  }
+
+  
+  
+  {
+    bool willInherit;
+    
+    
+    
+    
+    
+    rv = nsContentUtils::URIInheritsSecurityContext(aURI, &willInherit);
+    if (NS_FAILED(rv) || willInherit || NS_IsAboutBlank(aURI)) {
+      nsCOMPtr<nsIDocShellTreeItem> treeItem = this;
+      do {
+        nsCOMPtr<nsIDocShell> itemDocShell = do_QueryInterface(treeItem);
+        bool isUnsafe;
+        if (itemDocShell &&
+            NS_SUCCEEDED(itemDocShell->GetChannelIsUnsafe(&isUnsafe)) &&
+            isUnsafe) {
+          return NS_ERROR_DOM_SECURITY_ERR;
+        }
+
+        nsCOMPtr<nsIDocShellTreeItem> parent;
+        treeItem->GetSameTypeParent(getter_AddRefs(parent));
+        parent.swap(treeItem);
+      } while (treeItem);
     }
   }
 

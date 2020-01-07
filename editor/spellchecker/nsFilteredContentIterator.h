@@ -49,7 +49,11 @@ public:
   void         ClearDidSkip() {  mDidSkip = false; }
 
 protected:
-  nsFilteredContentIterator() : mDidSkip(false), mIsOutOfRange(false) { }
+  nsFilteredContentIterator()
+    : mDidSkip(false)
+    , mIsOutOfRange(false) 
+  {
+  }
 
   virtual ~nsFilteredContentIterator();
 
