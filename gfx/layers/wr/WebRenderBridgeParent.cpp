@@ -1277,6 +1277,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
 
   AUTO_PROFILER_TRACING("Paint", "CompositeToTraget");
   if (mPaused || !mReceivedDisplayList) {
+    mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
 
@@ -1284,6 +1285,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
       wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
     mCompositorScheduler->ScheduleComposition();
+    mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
 
@@ -1300,6 +1302,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
       !mForceRendering) {
     
+    mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
 
