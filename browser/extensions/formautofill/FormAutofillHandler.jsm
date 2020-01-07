@@ -986,12 +986,27 @@ class FormAutofillHandler {
     }
   }
 
+  
+
+
+
+
+
+
+
   createRecords() {
-    
-    
-    if (this.sections.length > 0) {
-      return this.sections[0].createRecords();
+    const records = {
+      address: [],
+      creditCard: [],
+    };
+
+    for (const section of this.sections) {
+      const secRecords = section.createRecords();
+      for (const [type, record] of Object.entries(secRecords)) {
+        records[type].push(record);
+      }
     }
-    return null;
+    log.debug("Create records:", records);
+    return records;
   }
 }

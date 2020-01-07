@@ -383,6 +383,7 @@ FormAutofillParent.prototype = {
   },
 
   _onAddressSubmit(address, target, timeStartedFillingMS) {
+    let showDoorhanger = null;
     if (address.guid) {
       
       let originalAddress = this.profileStorage.addresses.get(address.guid);
@@ -395,7 +396,8 @@ FormAutofillParent.prototype = {
       if (!this.profileStorage.addresses.mergeIfPossible(address.guid, address.record, true)) {
         this._recordFormFillingTime("address", "autofill-update", timeStartedFillingMS);
 
-        FormAutofillDoorhanger.show(target, "updateAddress").then((state) => {
+        showDoorhanger = async () => {
+          const state = await FormAutofillDoorhanger.show(target, "updateAddress");
           let changedGUIDs = this.profileStorage.addresses.mergeToStorage(address.record, true);
           switch (state) {
             case "create":
@@ -413,15 +415,15 @@ FormAutofillParent.prototype = {
               break;
           }
           changedGUIDs.forEach(guid => this.profileStorage.addresses.notifyUsed(guid));
-        });
+        };
         
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill_update", 1);
-        return;
+      } else {
+        this._recordFormFillingTime("address", "autofill", timeStartedFillingMS);
+        this.profileStorage.addresses.notifyUsed(address.guid);
+        
+        Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill", 1);
       }
-      this._recordFormFillingTime("address", "autofill", timeStartedFillingMS);
-      this.profileStorage.addresses.notifyUsed(address.guid);
-      
-      Services.telemetry.scalarAdd("formautofill.addresses.fill_type_autofill", 1);
     } else {
       let changedGUIDs = this.profileStorage.addresses.mergeToStorage(address.record);
       if (!changedGUIDs.length) {
@@ -433,22 +435,24 @@ FormAutofillParent.prototype = {
       
       if (FormAutofillUtils.isAutofillAddressesFirstTimeUse) {
         Services.prefs.setBoolPref(FormAutofillUtils.ADDRESSES_FIRST_TIME_USE_PREF, false);
-        FormAutofillDoorhanger.show(target, "firstTimeUse").then((state) => {
+        showDoorhanger = async () => {
+          const state = await FormAutofillDoorhanger.show(target, "firstTimeUse");
           if (state !== "open-pref") {
             return;
           }
 
           target.ownerGlobal.openPreferences("panePrivacy",
                                              {origin: "autofillDoorhanger"});
-        });
+        };
       } else {
         
         Services.telemetry.scalarAdd("formautofill.addresses.fill_type_manual", 1);
       }
     }
+    return showDoorhanger;
   },
 
-  async _onCreditCardSubmit(creditCard, target, timeStartedFillingMS) {
+  _onCreditCardSubmit(creditCard, target, timeStartedFillingMS) {
     
     
     let setUsedStatus = status => {
@@ -485,7 +489,7 @@ FormAutofillParent.prototype = {
         
         Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill", 1);
         this._recordFormFillingTime("creditCard", "autofill", timeStartedFillingMS);
-        return;
+        return false;
       }
       
       Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_autofill_modified", 1);
@@ -505,55 +509,79 @@ FormAutofillParent.prototype = {
     let dupGuid = this.profileStorage.creditCards.getDuplicateGuid(creditCard.record);
     if (dupGuid) {
       this.profileStorage.creditCards.notifyUsed(dupGuid);
-      return;
+      return false;
     }
 
     
     setUsedStatus(2);
 
-    let state = await FormAutofillDoorhanger.show(target, creditCard.guid ? "updateCreditCard" : "addCreditCard");
-    if (state == "cancel") {
-      return;
-    }
-
-    if (state == "disable") {
-      Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
-      return;
-    }
-
-    
-    
-    if (!await MasterPassword.ensureLoggedIn()) {
-      log.warn("User canceled master password entry");
-      return;
-    }
-
-    let changedGUIDs = [];
-    if (creditCard.guid) {
-      if (state == "update") {
-        this.profileStorage.creditCards.update(creditCard.guid, creditCard.record, true);
-        changedGUIDs.push(creditCard.guid);
-      } else if ("create") {
-        changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
+    return async () => {
+      
+      if (!FormAutofillUtils.isAutofillCreditCardsEnabled) {
+        return;
       }
-    } else {
-      changedGUIDs.push(...this.profileStorage.creditCards.mergeToStorage(creditCard.record));
-      if (!changedGUIDs.length) {
-        changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
+
+      const state = await FormAutofillDoorhanger.show(target, creditCard.guid ? "updateCreditCard" : "addCreditCard");
+      if (state == "cancel") {
+        return;
       }
-    }
-    changedGUIDs.forEach(guid => this.profileStorage.creditCards.notifyUsed(guid));
+
+      if (state == "disable") {
+        Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
+        return;
+      }
+
+      
+      
+      if (!await MasterPassword.ensureLoggedIn()) {
+        log.warn("User canceled master password entry");
+        return;
+      }
+
+      let changedGUIDs = [];
+      if (creditCard.guid) {
+        if (state == "update") {
+          this.profileStorage.creditCards.update(creditCard.guid, creditCard.record, true);
+          changedGUIDs.push(creditCard.guid);
+        } else if ("create") {
+          changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
+        }
+      } else {
+        changedGUIDs.push(...this.profileStorage.creditCards.mergeToStorage(creditCard.record));
+        if (!changedGUIDs.length) {
+          changedGUIDs.push(this.profileStorage.creditCards.add(creditCard.record));
+        }
+      }
+      changedGUIDs.forEach(guid => this.profileStorage.creditCards.notifyUsed(guid));
+    };
   },
 
-  _onFormSubmit(data, target) {
+  async _onFormSubmit(data, target) {
     let {profile: {address, creditCard}, timeStartedFillingMS} = data;
 
-    if (address) {
-      this._onAddressSubmit(address, target, timeStartedFillingMS);
+    
+    
+    
+    
+    
+    if (address.length > 1 || creditCard.length > 1) {
+      timeStartedFillingMS = null;
     }
-    if (creditCard) {
-      this._onCreditCardSubmit(creditCard, target, timeStartedFillingMS);
-    }
+
+    
+    
+    await Promise.all([
+      address.map(addrRecord => this._onAddressSubmit(addrRecord, target, timeStartedFillingMS)),
+      creditCard.map(ccRecord => this._onCreditCardSubmit(ccRecord, target, timeStartedFillingMS)),
+    ].map(pendingDoorhangers => {
+      return pendingDoorhangers.filter(pendingDoorhanger => !!pendingDoorhanger &&
+                                                            typeof pendingDoorhanger == "function");
+    }).map(pendingDoorhangers => new Promise(async resolve => {
+      for (const showDoorhanger of pendingDoorhangers) {
+        await showDoorhanger();
+      }
+      resolve();
+    })));
   },
   
 
