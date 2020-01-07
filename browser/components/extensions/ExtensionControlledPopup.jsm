@@ -134,8 +134,14 @@ class ExtensionControlledPopup {
     
     this.removeObserver();
 
+    let targetWindow;
     
-    this.topWindow.requestIdleCallback(() => this.open(subject));
+    if (subject && subject.document) {
+      targetWindow = subject;
+    }
+
+    
+    this.topWindow.requestIdleCallback(() => this.open(targetWindow));
   }
 
   removeObserver() {

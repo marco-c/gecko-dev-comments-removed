@@ -2314,16 +2314,6 @@ function openLocation() {
 }
 
 function BrowserOpenTab(event) {
-  
-  
-  
-  
-  
-  
-  
-  
-  Services.obs.notifyObservers(null, "browser-open-newtab-start");
-
   let where = "tab";
   let relatedToCurrent = false;
 
@@ -2343,9 +2333,24 @@ function BrowserOpenTab(event) {
     }
   }
 
-  openTrustedLinkIn(BROWSER_NEW_TAB_URL, where, {
-    relatedToCurrent,
-  });
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Services.obs.notifyObservers({
+    wrappedJSObject: new Promise(resolve => {
+      openTrustedLinkIn(BROWSER_NEW_TAB_URL, where, {
+        relatedToCurrent,
+        resolveOnNewTabCreated: resolve
+      });
+    })
+  }, "browser-open-newtab-start");
 }
 
 var gLastOpenDirectory = {

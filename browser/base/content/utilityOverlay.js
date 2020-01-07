@@ -298,6 +298,7 @@ function openLinkIn(url, where, params) {
   var aTriggeringPrincipal  = params.triggeringPrincipal;
   var aForceAboutBlankViewerInCurrent =
       params.forceAboutBlankViewerInCurrent;
+  var aResolveOnNewTabCreated = params.resolveOnNewTabCreated;
 
   if (where == "save") {
     
@@ -546,6 +547,10 @@ function openLinkIn(url, where, params) {
       focusUrlBar,
     });
     targetBrowser = tabUsedForLoad.linkedBrowser;
+
+    if (aResolveOnNewTabCreated) {
+      aResolveOnNewTabCreated(targetBrowser);
+    }
 
     if (params.frameOuterWindowID != undefined && w) {
       
