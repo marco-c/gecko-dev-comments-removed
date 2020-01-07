@@ -33,6 +33,7 @@ from mercurial import (
     cmdutil,
     hg,
     match as matchmod,
+    phases,
     registrar,
     scmutil,
     util,
@@ -41,8 +42,12 @@ from mercurial import (
 
 try:
     from mercurial import configitems
+    configitems.dynamicdefault
 except ImportError:
     configitems = None
+
+
+EXIT_PURGE_CACHE = 72
 
 testedwith = '3.7 3.8 3.9 4.0 4.1 4.2 4.3 4.4 4.5'
 minimumhgversion = '3.7'
@@ -694,6 +699,30 @@ def _docheckout(ui, url, dest, upstream, revision, branch, purge, sharebase,
             raise error.Abort('error updating')
 
     ui.write('updated to %s\n' % checkoutrevision)
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if url in ('https://hg.mozilla.org/try',
+               'https://hg.mozilla.org/try-comm-central'):
+        if repo[checkoutrevision].phase() == phases.public:
+            ui.write(_('error: phase of revision is public; this is likely '
+                       'a manifestation of bug 1462323; the task will be '
+                       'retried\n'))
+            return EXIT_PURGE_CACHE
+
     return None
 
 
