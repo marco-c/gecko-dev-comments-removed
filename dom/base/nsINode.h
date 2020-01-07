@@ -1045,8 +1045,6 @@ public:
 
   bool IsStyledByServo() const;
 
-  inline void UnsetRestyleFlagsIfGecko();
-
   
 
 

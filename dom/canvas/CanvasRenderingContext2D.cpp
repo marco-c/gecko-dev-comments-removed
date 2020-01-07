@@ -2736,7 +2736,7 @@ GetFontStyleForServo(Element* aElement, const nsAString& aFont,
              "being destroyed.");
 
   RefPtr<ComputedStyle> sc =
-    styleSet->ResolveForDeclarations(parentStyle->AsServo(), declarations);
+    styleSet->ResolveForDeclarations(parentStyle, declarations);
 
   
   

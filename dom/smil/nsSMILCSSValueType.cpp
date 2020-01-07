@@ -520,7 +520,7 @@ ValueFromStringHelper(nsCSSPropertyID aPropID,
   
   aPresContext->StyleSet()->AsServo()->GetAnimationValues(servoDeclarationBlock,
                                                           aTargetElement,
-                                                          aComputedStyle->AsServo(),
+                                                          aComputedStyle,
                                                           result);
 
   return result;

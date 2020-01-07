@@ -280,14 +280,10 @@ nsHTMLFramesetFrame::Init(nsIContent*       aContent,
       
       for (; child; child = child->GetNextSibling()) {
         child->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-        child->UnsetRestyleFlagsIfGecko();
       }
       break;
     }
     child->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-    
-    
-    child->UnsetRestyleFlagsIfGecko();
 
     
     

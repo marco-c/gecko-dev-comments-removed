@@ -63,10 +63,6 @@ public:
                 CSSPseudoElementType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
 
-  
-  ComputedStyle* AsServo() { return this; }
-  const ComputedStyle* AsServo() const { return this; }
-
   nsPresContext* PresContext() const { return mPresContext; }
   const ServoComputedData* ComputedData() const { return &mSource; }
 

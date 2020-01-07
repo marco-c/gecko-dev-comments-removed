@@ -1631,6 +1631,8 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   
 
+  MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
+
   
   if (aDocument) {
     
@@ -1650,14 +1652,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetIsInDocument();
 
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               
-               
-               
-               
-               
-               
-               ELEMENT_ALL_RESTYLE_FLAGS);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else if (IsInShadowTree()) {
     
     
@@ -1667,8 +1662,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
-               ELEMENT_ALL_RESTYLE_FLAGS);
+    UnsetFlags(NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
   } else {
     
     

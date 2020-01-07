@@ -2437,14 +2437,6 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     state.mPresShell->CaptureHistoryState(getter_AddRefs(mTempFrameTreeState));
 
   
-  
-  
-  
-  
-  
-  aDocElement->UnsetRestyleFlagsIfGecko();
-
-  
   if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
     
     if (!aDocElement->HasServoData()) {
@@ -5564,17 +5556,6 @@ nsCSSFrameConstructor::ShouldCreateItemsForChild(nsFrameConstructorState& aState
                                                  nsContainerFrame* aParentFrame)
 {
   aContent->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-  if (aContent->IsElement() && !aContent->IsStyledByServo()) {
-    
-    
-    
-    
-    
-    
-    aContent->UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS &
-                         ~ELEMENT_PENDING_RESTYLE_FLAGS);
-  }
-
   
   
   if (aContent->GetPrimaryFrame() &&
@@ -7172,8 +7153,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     
     
     
-    if (aContainer->IsStyledByServo() &&
-        aInsertionKind == InsertionKind::Async) {
+    if (aInsertionKind == InsertionKind::Async) {
       LazilyStyleNewChildRange(aFirstNewContent, nullptr);
     }
     return;
@@ -7181,16 +7161,14 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   if (aInsertionKind == InsertionKind::Async &&
       MaybeConstructLazily(CONTENTAPPEND, aFirstNewContent)) {
-    if (aContainer->IsStyledByServo()) {
-      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-    }
+    LazilyStyleNewChildRange(aFirstNewContent, nullptr);
     return;
   }
 
   
   
   
-  if (aInsertionKind == InsertionKind::Async && aContainer->IsStyledByServo()) {
+  if (aInsertionKind == InsertionKind::Async) {
     StyleNewChildRange(aFirstNewContent, nullptr);
   }
 
@@ -7544,11 +7522,10 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 #endif
 
   auto styleNewChildRangeEagerly =
-    [this, aInsertionKind, aContainer, aStartChild, aEndChild]() {
+    [this, aInsertionKind, aStartChild, aEndChild]() {
       
       
-      if (aInsertionKind == InsertionKind::Async &&
-          aContainer->IsStyledByServo()) {
+      if (aInsertionKind == InsertionKind::Async) {
         StyleNewChildRange(aStartChild, aEndChild);
       }
     };
@@ -7636,8 +7613,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     
     
-    if (aContainer->IsStyledByServo() &&
-        aInsertionKind == InsertionKind::Async) {
+    if (aInsertionKind == InsertionKind::Async) {
       LazilyStyleNewChildRange(aStartChild, aEndChild);
     }
     return;
@@ -7651,9 +7627,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   if (aInsertionKind == InsertionKind::Async &&
       MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
-    if (aContainer->IsStyledByServo()) {
-      LazilyStyleNewChildRange(aStartChild, aEndChild);
-    }
+    LazilyStyleNewChildRange(aStartChild, aEndChild);
     return;
   }
 
@@ -10296,9 +10270,6 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
   for (uint32_t i = 0; i < aAnonymousItems.Length(); ++i) {
     nsIContent* content = aAnonymousItems[i].mContent;
     
-    MOZ_ASSERT(content->IsStyledByServo() ||
-               !content->IsElement() ||
-               !(content->GetFlags() & ELEMENT_ALL_RESTYLE_FLAGS));
     
     MOZ_ASSERT(!(content->GetFlags() &
                  (NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME)),
@@ -10311,8 +10282,7 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
 
     
     
-    MOZ_ASSERT(!content->IsStyledByServo() || !content->IsElement() ||
-               content->AsElement()->HasServoData());
+    MOZ_ASSERT(!content->IsElement() || content->AsElement()->HasServoData());
 
     RefPtr<ComputedStyle> computedStyle = ResolveComputedStyle(content);
 
@@ -10452,9 +10422,6 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
         MOZ_ASSERT(insertion.mContainer == GetInsertionPoint(child).mContainer);
       }
 
-      
-      
-      child->UnsetRestyleFlagsIfGecko();
       if (addChildItems) {
         AddFrameConstructionItems(aState, child, iter.XBLInvolved(), insertion,
                                   itemsToConstruct);
@@ -11666,14 +11633,7 @@ nsCSSFrameConstructor::BuildInlineChildItems(nsFrameConstructorState& aState,
         continue;
       }
 
-      
-      
-      
-      
-      content->UnsetRestyleFlagsIfGecko();
-
       RefPtr<ComputedStyle> childContext = ResolveComputedStyle(content);
-
       AddFrameConstructionItemsInternal(aState, content, nullptr,
                                         content->NodeInfo()->NameAtom(),
                                         content->GetNameSpaceID(),
