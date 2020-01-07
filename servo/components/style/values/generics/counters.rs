@@ -6,36 +6,68 @@
 
 use std::fmt;
 use std::fmt::Write;
+use std::ops::Deref;
 use style_traits::{CssWriter, ToCss};
 use values::CustomIdent;
+
+
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct CounterIncrement<I>(Counters<I>);
+
+impl<I> CounterIncrement<I> {
+    
+    #[inline]
+    pub fn new(counters: Vec<(CustomIdent, I)>) -> Self {
+        CounterIncrement(Counters(counters.into_boxed_slice()))
+    }
+}
+
+impl<I> Deref for CounterIncrement<I> {
+    type Target = [(CustomIdent, I)];
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &(self.0).0
+    }
+}
+
+
+#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub struct CounterReset<I>(Counters<I>);
+
+impl<I> CounterReset<I> {
+    
+    #[inline]
+    pub fn new(counters: Vec<(CustomIdent, I)>) -> Self {
+        CounterReset(Counters(counters.into_boxed_slice()))
+    }
+}
+
+impl<I> Deref for CounterReset<I> {
+    type Target = [(CustomIdent, I)];
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &(self.0).0
+    }
+}
 
 
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
-pub struct CounterIntegerList<I>(Box<[(CustomIdent, I)]>);
+pub struct Counters<I>(Box<[(CustomIdent, I)]>);
 
-impl<I> CounterIntegerList<I> {
-    
+impl<I> Default for Counters<I> {
     #[inline]
-    pub fn none() -> CounterIntegerList<I> {
-        CounterIntegerList(vec![].into_boxed_slice())
-    }
-
-    
-    pub fn new(vec: Vec<(CustomIdent, I)>) -> CounterIntegerList<I> {
-        CounterIntegerList(vec.into_boxed_slice())
-    }
-
-    
-    pub fn get_values(&self) -> &[(CustomIdent, I)] {
-        self.0.as_ref()
+    fn default() -> Self {
+        Counters(vec![].into_boxed_slice())
     }
 }
 
-impl<I> ToCss for CounterIntegerList<I>
+impl<I> ToCss for Counters<I>
 where
-    I: ToCss
+    I: ToCss,
 {
     #[inline]
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
@@ -47,7 +79,7 @@ where
         }
 
         let mut first = true;
-        for &(ref name, ref value) in self.get_values() {
+        for &(ref name, ref value) in &*self.0 {
             if !first {
                 dest.write_str(" ")?;
             }
