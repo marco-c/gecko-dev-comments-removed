@@ -1392,49 +1392,19 @@ MacroAssemblerMIPSCompat::storeUnalignedDouble(const wasm::MemoryAccessDesc& acc
     append(access, store.getOffset(), framePushed);
 }
 
-
 void
 MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output)
 {
-    MOZ_ASSERT(input != ScratchDoubleReg);
-    Label positive, done;
-
-    
-    zeroDouble(ScratchDoubleReg);
-    branchDouble(DoubleGreaterThan, input, ScratchDoubleReg, &positive);
-    {
-        move32(Imm32(0), output);
-        jump(&done);
-    }
-
-    bind(&positive);
-
-    
-    loadConstantDouble(0.5, ScratchDoubleReg);
-    addDouble(ScratchDoubleReg, input);
-
-    Label outOfRange;
-
-    branchTruncateDoubleMaybeModUint32(input, output, &outOfRange);
-    asMasm().branch32(Assembler::Above, output, Imm32(255), &outOfRange);
-    {
-        
-        convertInt32ToDouble(output, ScratchDoubleReg);
-        branchDouble(DoubleNotEqual, input, ScratchDoubleReg, &done);
-
-        
-        
-        and32(Imm32(~1), output);
-        jump(&done);
-    }
-
-    
-    bind(&outOfRange);
-    {
-        move32(Imm32(255), output);
-    }
-
-    bind(&done);
+     as_roundwd(ScratchDoubleReg, input);
+     ma_li(ScratchRegister, Imm32(255));
+     as_mfc1(output, ScratchDoubleReg);
+     zeroDouble(ScratchDoubleReg);
+     as_sltiu(SecondScratchReg, output, 255);
+     as_colt(DoubleFloat, ScratchDoubleReg, input);
+     
+     as_movz(output, ScratchRegister, SecondScratchReg);
+     
+     as_movf(output, zero);
 }
 
 
