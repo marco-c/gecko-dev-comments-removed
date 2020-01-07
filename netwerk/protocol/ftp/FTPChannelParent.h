@@ -80,7 +80,8 @@ protected:
   bool DoAsyncOpen(const URIParams& aURI, const uint64_t& aStartPos,
                    const nsCString& aEntityID,
                    const OptionalIPCStream& aUploadStream,
-                   const OptionalLoadInfoArgs& aLoadInfoArgs);
+                   const OptionalLoadInfoArgs& aLoadInfoArgs,
+                   const uint32_t& aLoadFlags);
 
   
   
