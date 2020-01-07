@@ -15,79 +15,103 @@ var CacheFlushObserver = {
     if (aData == "cert-override")
       return;
 
-    Assert.ok(gExpectedFile != null);
-    Assert.ok(aSubject instanceof AM_Ci.nsIFile);
-    Assert.equal(aSubject.path, gExpectedFile.path);
+    ok(gExpectedFile != null);
+    ok(aSubject instanceof AM_Ci.nsIFile);
+    equal(aSubject.path, gExpectedFile.path);
     gCacheFlushCount++;
   }
 };
 
-function run_test() {
-  do_test_pending();
+const ADDONS = [
+  {
+    id: "addon1@tests.mozilla.org",
+    version: "2.0",
+    name: "Cache Flush Test",
+
+    targetApplications: [{
+      id: "xpcshell@tests.mozilla.org",
+      minVersion: "1",
+      maxVersion: "1" }],
+  },
+  {
+    id: "addon2@tests.mozilla.org",
+    version: "2.0",
+
+    name: "Cache Flush Test",
+    bootstrap: true,
+
+    targetApplications: [{
+      id: "xpcshell@tests.mozilla.org",
+      minVersion: "1",
+      maxVersion: "1" }],
+  },
+];
+
+const XPIS = ADDONS.map(addon => createTempXPIFile(addon));
+
+add_task(async function setup() {
   Services.obs.addObserver(CacheFlushObserver, "flush-cache-entry");
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "2");
 
-  startupManager();
-
-  run_test_1();
-}
+  await promiseStartupManager();
+});
 
 
-function run_test_1() {
-  AddonManager.getInstallForFile(do_get_addon("test_cacheflush1"), function(aInstall) {
-    completeAllInstalls([aInstall], function() {
-      
-      gExpectedFile = gProfD.clone();
-      gExpectedFile.append("extensions");
-      gExpectedFile.append("staged");
-      gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-      aInstall.cancel();
+add_task(async function test_flush_pending_install() {
+  let install = await AddonManager.getInstallForFile(XPIS[0]);
+  await promiseCompleteInstall(install);
 
-      Assert.equal(gCacheFlushCount, 1);
-      gExpectedFile = null;
-      gCacheFlushCount = 0;
+  
+  gExpectedFile = gProfD.clone();
+  gExpectedFile.append("extensions");
+  gExpectedFile.append("staged");
+  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
+  install.cancel();
 
-      run_test_2();
-    });
-  });
-}
+  equal(gCacheFlushCount, 1);
+  gExpectedFile = null;
+  gCacheFlushCount = 0;
+});
 
 
-function run_test_2() {
-  installAllFiles([do_get_addon("test_cacheflush1")], function() {
-    
-    gExpectedFile = gProfD.clone();
-    gExpectedFile.append("extensions");
-    gExpectedFile.append("staged");
-    gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-    restartManager();
-    Assert.equal(gCacheFlushCount, 1);
-    gExpectedFile = null;
-    gCacheFlushCount = 0;
+add_task(async function test_flush_uninstall() {
+  await promiseInstallFile(XPIS[0]);
 
-    AddonManager.getAddonByID("addon1@tests.mozilla.org", function(a1) {
-      
-      Assert.ok(a1 != null);
-      a1.uninstall();
-      Assert.equal(gCacheFlushCount, 0);
+  
+  gExpectedFile = gProfD.clone();
+  gExpectedFile.append("extensions");
+  gExpectedFile.append("staged");
+  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
 
-      gExpectedFile = gProfD.clone();
-      gExpectedFile.append("extensions");
-      gExpectedFile.append("addon1@tests.mozilla.org.xpi");
-      restartManager();
-      Assert.equal(gCacheFlushCount, 1);
-      gExpectedFile = null;
-      gCacheFlushCount = 0;
+  await promiseRestartManager();
 
-      executeSoon(run_test_3);
-    });
-  });
-}
+  equal(gCacheFlushCount, 1);
+  gExpectedFile = null;
+  gCacheFlushCount = 0;
+
+  let addon = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
+  
+  ok(addon != null);
+  addon.uninstall();
+  equal(gCacheFlushCount, 0);
+
+  gExpectedFile = gProfD.clone();
+  gExpectedFile.append("extensions");
+  gExpectedFile.append("addon1@tests.mozilla.org.xpi");
+
+  await promiseRestartManager();
+
+  equal(gCacheFlushCount, 1);
+  gExpectedFile = null;
+  gCacheFlushCount = 0;
+});
 
 
-function run_test_3() {
-  AddonManager.getInstallForFile(do_get_addon("test_cacheflush2"), function(aInstall) {
-    aInstall.addListener({
+add_task(async function test_flush_restartless_install() {
+  let install = await AddonManager.getInstallForFile(XPIS[1]);
+
+  await new Promise(resolve => {
+    install.addListener({
       onInstallStarted() {
         
         gExpectedFile = gProfD.clone();
@@ -97,31 +121,30 @@ function run_test_3() {
       },
 
       onInstallEnded() {
-        Assert.equal(gCacheFlushCount, 1);
+        equal(gCacheFlushCount, 1);
         gExpectedFile = null;
         gCacheFlushCount = 0;
 
-        executeSoon(run_test_4);
+        resolve();
       }
     });
 
-    aInstall.install();
+    install.install();
   });
-}
+});
 
 
-function run_test_4() {
-  AddonManager.getAddonByID("addon2@tests.mozilla.org", function(a2) {
-    
-    gExpectedFile = gProfD.clone();
-    gExpectedFile.append("extensions");
-    gExpectedFile.append("addon2@tests.mozilla.org.xpi");
+add_task(async function test_flush_uninstall() {
+  let addon = await AddonManager.getAddonByID("addon2@tests.mozilla.org");
 
-    a2.uninstall();
-    Assert.equal(gCacheFlushCount, 1);
-    gExpectedFile = null;
-    gCacheFlushCount = 0;
+  
+  gExpectedFile = gProfD.clone();
+  gExpectedFile.append("extensions");
+  gExpectedFile.append("addon2@tests.mozilla.org.xpi");
 
-    executeSoon(do_test_finished);
-  });
-}
+  addon.uninstall();
+
+  equal(gCacheFlushCount, 1);
+  gExpectedFile = null;
+  gCacheFlushCount = 0;
+});
