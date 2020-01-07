@@ -2,9 +2,8 @@
 
 
 
-#include "jsapi-tests/tests.h"
-
 #include "gc/GCInternals.h"
+#include "jsapi-tests/tests.h"
 #include "vm/Monitor.h"
 #include "vm/MutexIDs.h"
 
