@@ -150,6 +150,11 @@ public:
   const Maybe<ServiceWorkerDescriptor>&
   GetController() const;
 
+  
+  
+  void
+  NoteDOMContentLoaded();
+
   RefPtr<ClientOpPromise>
   Focus(const ClientFocusArgs& aArgs);
 
