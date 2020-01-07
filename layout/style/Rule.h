@@ -9,10 +9,10 @@
 #ifndef mozilla_css_Rule_h___
 #define mozilla_css_Rule_h___
 
+#include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsISupports.h"
-#include "nsIDOMCSSRule.h"
 #include "nsWrapperCache.h"
 
 class nsIDocument;
@@ -24,7 +24,7 @@ namespace mozilla {
 namespace css {
 class GroupRule;
 
-class Rule : public nsIDOMCSSRule
+class Rule : public nsISupports
            , public nsWrapperCache
 {
 protected:
@@ -53,9 +53,6 @@ public:
   
   
   virtual bool IsCCLeaf() const MOZ_MUST_OVERRIDE;
-
-  
-  NS_DECL_NSIDOMCSSRULE
 
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
@@ -120,7 +117,7 @@ public:
   virtual uint16_t Type() const = 0;
   virtual void GetCssTextImpl(nsAString& aCssText) const = 0;
   void GetCssText(nsAString& aCssText) const { GetCssTextImpl(aCssText); }
-  
+  void SetCssText(const nsAString& aCssText);
   Rule* GetParentRule() const;
   StyleSheet* GetParentStyleSheet() const { return GetStyleSheet(); }
   nsIDocument* GetParentObject() const { return GetDocument(); }

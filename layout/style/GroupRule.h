@@ -201,7 +201,6 @@ public:
   void DeleteRule(uint32_t aIndex, ErrorResult& aRv);
 
 protected:
-  
   void AppendRulesToCssText(nsAString& aCssText) const;
 
   

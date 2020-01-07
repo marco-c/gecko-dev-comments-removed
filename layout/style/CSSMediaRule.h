@@ -22,10 +22,7 @@ public:
   int32_t GetType() const override { return css::Rule::MEDIA_RULE; }
 
   
-  using Rule::GetType;
-
-  
-  uint16_t Type() const override { return nsIDOMCSSRule::MEDIA_RULE; }
+  uint16_t Type() const override { return CSSRuleBinding::MEDIA_RULE; }
   virtual MediaList* Media() = 0;
 
   JSObject* WrapObject(JSContext* aCx,

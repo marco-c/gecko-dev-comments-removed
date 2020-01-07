@@ -13,8 +13,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/CSSNamespaceRule.h"
 
-#include "nsIDOMCSSRule.h"
-
 class nsAtom;
 
 

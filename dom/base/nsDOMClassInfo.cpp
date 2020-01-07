@@ -68,7 +68,6 @@
 #include "nsIDOMEventTarget.h"
 
 
-#include "nsIDOMCSSRule.h"
 #include "nsMemory.h"
 
 
