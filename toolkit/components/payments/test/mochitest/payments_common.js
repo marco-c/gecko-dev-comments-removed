@@ -2,6 +2,9 @@
 
 
 
+const PTU = SpecialPowers.Cu.import("resource://testing-common/PaymentTestUtils.jsm", {})
+                            .PaymentTestUtils;
+
 
 
 

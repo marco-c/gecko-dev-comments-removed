@@ -27,3 +27,9 @@ var log = {
     console.debug("log.js", ...args);
   },
 };
+
+var PaymentDialogUtils = {
+  isCCNumber(str) {
+    return str.length > 0;
+  },
+};
