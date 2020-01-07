@@ -16,12 +16,8 @@ module.exports = {
     
     
     "files": [
-      "client/memory/test/**",
-      "server/tests/browser/**",
       "server/tests/mochitest/**",
-      "shared/heapsnapshot/tests/unit/**",
       "shared/tests/unit/**",
-      "shared/webconsole/test/**",
     ],
     "rules": {
       "no-undef": "off",

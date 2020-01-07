@@ -9,6 +9,9 @@ module.exports = {
     "_TEST_FILE": false,
     "add_task": false,
     "add_test": false,
+    
+    "allocationMarker": false,
+    "byteSize": false,
     "deepEqual": false,
     "do_await_remote_message": false,
     "do_check_instanceof": false,
@@ -29,6 +32,7 @@ module.exports = {
     "do_timeout": false,
     "equal": false,
     "executeSoon": false,
+    "gc": false,
     
     "gczeal": false,
     "greater": false,
