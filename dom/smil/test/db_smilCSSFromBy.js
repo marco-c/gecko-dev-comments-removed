@@ -44,18 +44,6 @@ var _fromByTestLists =
                            { midComp: "rgba(225, 225, 225, 0.8)",
                              toComp:  "rgb(255, 255, 255)"}),
   ],
-  
-  
-  colorNoCurrentColor: [
-    new AnimTestcaseFromBy("rgba(10, 20, 30, 0.2)", "rgba(50, 50, 50, 1)",
-                             
-                           { midComp: "rgba(45, 48, 52, 0.6)",
-                             
-                             toComp:  "rgb(52, 54, 56)"}),
-    new AnimTestcaseFromBy("rgba(100, 100, 100, 0.6)", "rgba(240, 240, 240, 1)",
-                           { midComp: "rgba(225, 225, 225, 0.8)",
-                             toComp:  "rgb(255, 255, 255)"}),
-  ],
   lengthNoUnits: [
     new AnimTestcaseFromBy("0", "50",  { fromComp: "0px", 
                                          midComp:  "25px",
@@ -146,7 +134,7 @@ var gFromByBundles =
   ]),
   
   
-  new TestcaseBundle(gPropList.lighting_color, _fromByTestLists.colorNoCurrentColor),
+  new TestcaseBundle(gPropList.lighting_color, _fromByTestLists.color),
   new TestcaseBundle(gPropList.marker,         _fromByTestLists.URIsAndNone),
   new TestcaseBundle(gPropList.marker_end,     _fromByTestLists.URIsAndNone),
   new TestcaseBundle(gPropList.marker_mid,     _fromByTestLists.URIsAndNone),
