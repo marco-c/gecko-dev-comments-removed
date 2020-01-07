@@ -35,6 +35,7 @@
 #include "mozilla/Atomics.h"
 
 #include "jit/IonTypes.h"
+#include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
 
@@ -320,7 +321,7 @@ class Simulator {
 
     
     void handleWasmInterrupt();
-    void startInterrupt(JitActivation* act);
+    JS::ProfilingFrameIterator::RegisterState registerState();
 
     
     bool handleWasmFault(uint64_t addr, unsigned numBytes);
