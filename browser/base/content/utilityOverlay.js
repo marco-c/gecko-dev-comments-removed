@@ -547,15 +547,15 @@ function createUserContextMenu(event, {
     event.target.firstChild.remove();
   }
 
-  let bundle = document.getElementById("bundle_browser");
+  let bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
   let docfrag = document.createDocumentFragment();
 
   
   if (excludeUserContextId || showDefaultTab) {
     let menuitem = document.createElement("menuitem");
     menuitem.setAttribute("data-usercontextid", "0");
-    menuitem.setAttribute("label", bundle.getString("userContextNone.label"));
-    menuitem.setAttribute("accesskey", bundle.getString("userContextNone.accesskey"));
+    menuitem.setAttribute("label", bundle.GetStringFromName("userContextNone.label"));
+    menuitem.setAttribute("accesskey", bundle.GetStringFromName("userContextNone.accesskey"));
 
     
     
@@ -577,7 +577,7 @@ function createUserContextMenu(event, {
     menuitem.setAttribute("label", ContextualIdentityService.getUserContextLabel(identity.userContextId));
 
     if (identity.accessKey && useAccessKeys) {
-      menuitem.setAttribute("accesskey", bundle.getString(identity.accessKey));
+      menuitem.setAttribute("accesskey", bundle.GetStringFromName(identity.accessKey));
     }
 
     menuitem.classList.add("menuitem-iconic");
@@ -597,10 +597,10 @@ function createUserContextMenu(event, {
 
     let menuitem = document.createElement("menuitem");
     menuitem.setAttribute("label",
-                          bundle.getString("userContext.aboutPage.label"));
+                          bundle.GetStringFromName("userContext.aboutPage.label"));
     if (useAccessKeys) {
       menuitem.setAttribute("accesskey",
-                            bundle.getString("userContext.aboutPage.accesskey"));
+                            bundle.GetStringFromName("userContext.aboutPage.accesskey"));
     }
     menuitem.setAttribute("command", "Browser:OpenAboutContainers");
     docfrag.appendChild(menuitem);
