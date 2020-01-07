@@ -405,7 +405,7 @@ class TabBase {
 
 
   get highlighted() {
-    return this.active;
+    throw new Error("Not implemented");
   }
 
   
