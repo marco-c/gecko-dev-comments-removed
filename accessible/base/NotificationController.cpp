@@ -648,17 +648,19 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
 
     
     
+    
     nsINode* containerNode = textNode->GetParentNode();
-    if (!containerNode) {
-      NS_ASSERTION(!textAcc,
-                   "Text node was removed but accessible is kept alive!");
+    if (!containerNode ||
+        textNode->GetOwnerDocument() != mDocument->DocumentNode()) {
+      MOZ_ASSERT(!textAcc,
+                 "Text node was removed but accessible is kept alive!");
       continue;
     }
 
     nsIFrame* textFrame = textNode->GetPrimaryFrame();
     if (!textFrame) {
-      NS_ASSERTION(!textAcc,
-                   "Text node isn't rendered but accessible is kept alive!");
+      MOZ_ASSERT(!textAcc,
+                 "Text node isn't rendered but accessible is kept alive!");
       continue;
     }
 
