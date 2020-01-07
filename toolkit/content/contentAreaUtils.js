@@ -197,7 +197,7 @@ function saveDocument(aDocument, aSkipPrompt) {
     
     contentDisposition = aDocument.contentDisposition;
     cacheKey = aDocument.cacheKey;
-  } else if (aDocument instanceof Ci.nsIDOMDocument) {
+  } else if (aDocument.nodeType == 9 ) {
     
     
     let ifreq =
@@ -406,7 +406,7 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
 
     let isPrivate = aIsContentWindowPrivate;
     if (isPrivate === undefined) {
-      isPrivate = aInitiatingDocument instanceof Ci.nsIDOMDocument
+      isPrivate = aInitiatingDocument.nodeType == 9 
         ? PrivateBrowsingUtils.isContentWindowPrivate(aInitiatingDocument.defaultView)
         : aInitiatingDocument.isPrivate;
     }

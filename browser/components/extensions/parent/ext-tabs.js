@@ -967,7 +967,7 @@ this.tabs = class extends ExtensionAPI {
 
               
               
-              if (browser instanceof Ci.nsIDOMDocument) {
+              if (browser.nodeType == browser.DOCUMENT_NODE) {
                 browser = browser.docShell.chromeEventHandler;
               }
 
