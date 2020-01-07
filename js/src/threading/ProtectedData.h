@@ -145,13 +145,13 @@ class ProtectedDataNoCheckArgs : public ProtectedData<Check, T>
 
 
 template <typename Check, typename T>
-class ProtectedDataZoneGroupArg : public ProtectedData<Check, T>
+class ProtectedDataZoneArg : public ProtectedData<Check, T>
 {
-    typedef ProtectedDataZoneGroupArg<Check, T> ThisType;
+    typedef ProtectedDataZoneArg<Check, T> ThisType;
 
   public:
     template <typename... Args>
-    explicit ProtectedDataZoneGroupArg(JS::Zone* zone, Args&&... args)
+    explicit ProtectedDataZoneArg(JS::Zone* zone, Args&&... args)
       : ProtectedData<Check, T>(Check(zone), mozilla::Forward<Args>(args)...)
     {}
 
@@ -243,19 +243,19 @@ class CheckZone
 
 template <typename T>
 using ZoneData =
-    ProtectedDataZoneGroupArg<CheckZone<AllowedHelperThread::None>, T>;
+    ProtectedDataZoneArg<CheckZone<AllowedHelperThread::None>, T>;
 
 
 
 template <typename T>
-using ZoneGroupOrGCTaskData =
-    ProtectedDataZoneGroupArg<CheckZone<AllowedHelperThread::GCTask>, T>;
+using ZoneOrGCTaskData =
+    ProtectedDataZoneArg<CheckZone<AllowedHelperThread::GCTask>, T>;
 template <typename T>
-using ZoneGroupOrIonCompileData =
-    ProtectedDataZoneGroupArg<CheckZone<AllowedHelperThread::IonCompile>, T>;
+using ZoneOrIonCompileData =
+    ProtectedDataZoneArg<CheckZone<AllowedHelperThread::IonCompile>, T>;
 template <typename T>
-using ZoneGroupOrGCTaskOrIonCompileData =
-    ProtectedDataZoneGroupArg<CheckZone<AllowedHelperThread::GCTaskOrIonCompile>, T>;
+using ZoneOrGCTaskOrIonCompileData =
+    ProtectedDataZoneArg<CheckZone<AllowedHelperThread::GCTaskOrIonCompile>, T>;
 
 
 enum class GlobalLock

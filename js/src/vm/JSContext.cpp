@@ -189,8 +189,6 @@ js::DestroyContext(JSContext* cx)
 
     
     
-    
-    
     CancelOffThreadIonCompile(cx->runtime());
 
     FreeJobQueueHandling(cx);

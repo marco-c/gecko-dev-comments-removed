@@ -236,7 +236,7 @@ class ArenaLists
     
     static FreeSpan placeholder;
 
-    ZoneGroupOrGCTaskData<AllAllocKindArray<ArenaList>> arenaLists_;
+    ZoneOrGCTaskData<AllAllocKindArray<ArenaList>> arenaLists_;
     ArenaList& arenaLists(AllocKind i) { return arenaLists_.ref()[i]; }
     const ArenaList& arenaLists(AllocKind i) const { return arenaLists_.ref()[i]; }
 
@@ -256,8 +256,8 @@ class ArenaLists
     Arena* arenaListsToSweep(AllocKind i) const { return arenaListsToSweep_.ref()[i]; }
 
     
-    ZoneGroupOrGCTaskData<AllocKind> incrementalSweptArenaKind;
-    ZoneGroupOrGCTaskData<ArenaList> incrementalSweptArenas;
+    ZoneOrGCTaskData<AllocKind> incrementalSweptArenaKind;
+    ZoneOrGCTaskData<ArenaList> incrementalSweptArenas;
 
     
     

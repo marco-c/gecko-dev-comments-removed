@@ -209,8 +209,6 @@ struct JSContext : public JS::RootingContext,
   private:
     
     
-    
-    
     inline void enterNonAtomsCompartment(JSCompartment* c);
     inline void enterAtomsCompartment(JSCompartment* c,
                                       const js::AutoLockForExclusiveAccess& lock);
@@ -306,25 +304,9 @@ struct JSContext : public JS::RootingContext,
     friend class js::jit::DebugModeOSRVolatileJitFrameIter;
     friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
 
-    
-    
-    
-    void yieldToEmbedding() {
-        (*yieldCallback_)(this);
-    }
-
-    void setYieldCallback(js::YieldCallback callback) {
-        yieldCallback_ = callback;
-    }
-
   private:
     static JS::Error reportedError;
     static JS::OOM reportedOOM;
-
-    
-    
-    
-    js::ThreadLocalData<js::YieldCallback> yieldCallback_;
 
   public:
     inline JS::Result<> boolToResult(bool ok);

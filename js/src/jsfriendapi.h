@@ -3128,15 +3128,6 @@ SetCompartmentValidAccessPtr(JSContext* cx, JS::HandleObject global, bool* acces
 
 
 
-
-typedef void
-(* YieldCallback)(JSContext* cx);
-
-extern JS_FRIEND_API(void)
-SetCooperativeYieldCallback(JSContext* cx, YieldCallback callback);
-
-
-
 extern JS_FRIEND_API(bool)
 SystemZoneAvailable(JSContext* cx);
 

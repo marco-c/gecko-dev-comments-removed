@@ -1348,7 +1348,7 @@ class TypeZone
 
   public:
     
-    ZoneGroupOrGCTaskOrIonCompileData<uint32_t> generation;
+    ZoneOrGCTaskOrIonCompileData<uint32_t> generation;
 
     
     
