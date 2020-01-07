@@ -2005,14 +2005,6 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    
-    
-    
-    nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aDocument->GetChannel());
-    if (jarChannel && jarChannel->GetIsUnsafe()) {
-      xpc::Scriptability::Get(newInnerGlobal).Block();
-    }
-
     if (mArguments) {
       newInnerWindow->DefineArgumentsProperty(mArguments);
       mArguments = nullptr;
