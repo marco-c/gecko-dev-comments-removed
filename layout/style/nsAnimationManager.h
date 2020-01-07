@@ -348,13 +348,6 @@ public:
     mozilla::CSSPseudoElementType aPseudoType,
     const mozilla::ServoStyleContext* aComputedValues);
 
-  
-
-
-
-
-
-
   void DispatchEvents()
   {
     RefPtr<nsAnimationManager> kungFuDeathGrip(this);
