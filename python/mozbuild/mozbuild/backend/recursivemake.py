@@ -520,38 +520,16 @@ class RecursiveMakeBackend(CommonBackend):
             self._process_defines(obj, backend_file)
 
         elif isinstance(obj, GeneratedFile):
-            if obj.required_for_compile:
-                tier = 'export'
-            elif obj.localized:
-                tier = 'libs'
-            else:
-                tier = 'misc'
+            tier = 'export' if obj.required_for_compile else 'misc'
             self._no_skip[tier].add(backend_file.relobjdir)
             first_output = obj.outputs[0]
             dep_file = "%s.pp" % first_output
 
-            if obj.inputs:
-                if obj.localized:
-                    
-                    
-                    def srcpath(p):
-                        bits = p.split('en-US/', 1)
-                        if len(bits) == 2:
-                            e, f = bits
-                            assert(not e)
-                            return '$(call MERGE_FILE,%s)' % f
-                        return self._pretty_path(p, backend_file)
-                    inputs = [srcpath(f) for f in obj.inputs]
-                else:
-                    inputs = [self._pretty_path(f, backend_file) for f in obj.inputs]
-            else:
-                inputs = []
-
             
             
             
             
-            if tier != 'export' or not self.environment.is_artifact_build:
+            if tier == 'misc' or not self.environment.is_artifact_build:
                 backend_file.write('%s:: %s\n' % (tier, first_output))
             for output in obj.outputs:
                 if output != first_output:
@@ -559,21 +537,15 @@ class RecursiveMakeBackend(CommonBackend):
                 backend_file.write('GARBAGE += %s\n' % output)
             backend_file.write('EXTRA_MDDEPEND_FILES += %s\n' % dep_file)
             if obj.script:
-                backend_file.write("""{output}: {script}{inputs}{backend}{repack_force}
+                backend_file.write("""{output}: {script}{inputs}{backend}
 \t$(REPORT_BUILD)
-\t$(call py_action,file_generate,{locale}{script} {method} {output} $(MDDEPDIR)/{dep_file}{inputs}{flags})
+\t$(call py_action,file_generate,{script} {method} {output} $(MDDEPDIR)/{dep_file}{inputs}{flags})
 
 """.format(output=first_output,
            dep_file=dep_file,
-           inputs=' ' + ' '.join(inputs) if inputs else '',
+           inputs=' ' + ' '.join([self._pretty_path(f, backend_file) for f in obj.inputs]) if obj.inputs else '',
            flags=' ' + ' '.join(shell_quote(f) for f in obj.flags) if obj.flags else '',
            backend=' backend.mk' if obj.flags else '',
-           
-           
-           
-           
-           repack_force=' $(if $(IS_LANGUAGE_REPACK),FORCE)' if obj.localized else '',
-           locale='--locale=$(AB_CD) ' if obj.localized else '',
            script=obj.script,
            method=obj.method))
 
@@ -1482,21 +1454,17 @@ class RecursiveMakeBackend(CommonBackend):
 
     def _write_localized_files_files(self, files, name, backend_file):
         for f in files:
-            if not isinstance(f, ObjDirPath):
+            
+            e, f = f.split('en-US/')
+            assert(not e)
+            if '*' in f:
                 
-                e, f = f.split('en-US/')
-                assert(not e)
-                if '*' in f:
-                    
-                    
-                    
-                    
-                    backend_file.write('%s += $(wildcard $(LOCALE_SRCDIR)/%s)\n' % (name, f))
-                else:
-                    backend_file.write('%s += $(call MERGE_FILE,%s)\n' % (name, f))
+                
+                
+                
+                backend_file.write('%s += $(wildcard $(LOCALE_SRCDIR)/%s)\n' % (name, f))
             else:
-                
-                backend_file.write('%s += %s\n' % (name, self._pretty_path(f, backend_file)))
+                backend_file.write('%s += $(call MERGE_FILE,%s)\n' % (name, f))
 
     def _process_localized_files(self, obj, files, backend_file):
         target = obj.install_target
@@ -1636,18 +1604,32 @@ class RecursiveMakeBackend(CommonBackend):
 
         backend_file.write('RS_STATICLIB_CRATE_SRC := %s\n' % extern_crate_file)
 
-    def _handle_ipdl_sources(self, ipdl_dir, sorted_ipdl_sources,
-                             unified_ipdl_cppsrcs_mapping):
+    def _handle_ipdl_sources(self, ipdl_dir, sorted_ipdl_sources, sorted_nonstatic_ipdl_sources,
+                             sorted_static_ipdl_sources, unified_ipdl_cppsrcs_mapping):
         
         mk = Makefile()
 
-        mk.add_statement('ALL_IPDLSRCS := %s' % ' '.join(sorted_ipdl_sources))
+        sorted_nonstatic_ipdl_basenames = list()
+        for source in sorted_nonstatic_ipdl_sources:
+            basename = os.path.basename(source)
+            sorted_nonstatic_ipdl_basenames.append(basename)
+            rule = mk.create_rule([basename])
+            rule.add_dependencies([source])
+            rule.add_commands([
+                '$(RM) $@',
+                '$(call py_action,preprocessor,$(DEFINES) $(ACDEFINES) '
+                    '$< -o $@)'
+            ])
+
+        mk.add_statement('ALL_IPDLSRCS := %s %s' % (' '.join(sorted_nonstatic_ipdl_basenames),
+                         ' '.join(sorted_static_ipdl_sources)))
 
         self._add_unified_build_rules(mk, unified_ipdl_cppsrcs_mapping,
                                       unified_files_makefile_variable='CPPSRCS')
 
-        mk.add_statement('IPDLDIRS := %s' % ' '.join(sorted(set(mozpath.dirname(p)
-            for p in self._ipdl_sources))))
+        
+        mk.add_statement('IPDLDIRS := %s %s' % (ipdl_dir, ' '.join(sorted(set(mozpath.dirname(p)
+            for p in sorted_static_ipdl_sources)))))
 
         with self._write_file(mozpath.join(ipdl_dir, 'ipdlsrcs.mk')) as ipdls:
             mk.dump(ipdls, removal_guard=False)

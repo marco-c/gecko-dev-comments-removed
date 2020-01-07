@@ -910,11 +910,6 @@ SchedulingComponents = ContextDerivedTypedRecord(
         ('inclusive', TypedList(unicode, StrictOrderingOnAppendList)),
         ('exclusive', TypedList(unicode, StrictOrderingOnAppendList)))
 
-GeneratedFilesList = StrictOrderingOnAppendListWithFlagsFactory({
-    'script': unicode,
-    'inputs': list,
-    'flags': list, })
-
 
 class Files(SubContext):
     """Metadata attached to files.
@@ -1296,7 +1291,10 @@ VARIABLES = {
         size.
         """),
 
-    'GENERATED_FILES': (GeneratedFilesList, list,
+    'GENERATED_FILES': (StrictOrderingOnAppendListWithFlagsFactory({
+                'script': unicode,
+                'inputs': list,
+                'flags': list, }), list,
         """Generic generated files.
 
         This variable contains a list of files for the build system to
@@ -1441,12 +1439,10 @@ VARIABLES = {
         * ``$LOCALE_SRCDIR`` with the leading ``en-US`` removed
         * the in-tree en-US location
 
-        Source directory paths specified here must must include a leading ``en-US``.
-        Wildcards are allowed, and will be expanded at the time of locale packaging to match
-        files in the locale directory.
-
-        Object directory paths are allowed here only if the path matches an entry in
-        ``LOCALIZED_GENERATED_FILES``.
+        Paths specified here must be relative to the source directory and must
+        include a leading ``en-US``. Wildcards are allowed, and will be
+        expanded at the time of locale packaging to match files in the
+        locale directory.
 
         Files that are missing from a locale will typically have the en-US
         version used, but for wildcard expansions only files from the
@@ -1473,23 +1469,6 @@ VARIABLES = {
 
         Note that the ``AB_CD`` define is available and expands to the current
         locale being packaged, as with preprocessed entries in jar manifests.
-        """),
-
-    'LOCALIZED_GENERATED_FILES': (GeneratedFilesList, list,
-        """Like ``GENERATED_FILES``, but for files whose content varies based on the locale in use.
-
-        For simple cases of text substitution, prefer ``LOCALIZED_PP_FILES``.
-
-        Refer to the documentation of ``GENERATED_FILES``; for the most part things work the same.
-        The two major differences are:
-        1. The function in the Python script will be passed an additional keyword argument `locale`
-           which provides the locale in use, i.e. ``en-US``.
-        2. The ``inputs`` list may contain paths to files that will be taken from the locale
-           source directory (see ``LOCALIZED_FILES`` for a discussion of the specifics). Paths
-           in ``inputs`` starting with ``en-US/`` are considered localized files.
-
-        To place the generated output file in a specific location, list its objdir path in
-        ``LOCALIZED_FILES``.
         """),
 
     'OBJDIR_FILES': (ContextDerivedTypedHierarchicalStringList(Path), list,
@@ -1811,6 +1790,13 @@ VARIABLES = {
         This flag exists primarily to prevent test-only XPIDL modules from being
         added to the application's chrome manifest. Most XPIDL modules should
         not use this flag.
+        """),
+
+    'PREPROCESSED_IPDL_SOURCES': (StrictOrderingOnAppendList, list,
+        """Preprocessed IPDL source files.
+
+        These files will be preprocessed, then parsed and converted to
+        ``.cpp`` files.
         """),
 
     'IPDL_SOURCES': (StrictOrderingOnAppendList, list,

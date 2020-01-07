@@ -244,6 +244,18 @@ class IPDLFile(ContextDerived):
 
         self.basename = path
 
+class PreprocessedIPDLFile(ContextDerived):
+    """Describes an individual .ipdl source file that requires preprocessing."""
+
+    __slots__ = (
+        'basename',
+    )
+
+    def __init__(self, context, path):
+        ContextDerived.__init__(self, context)
+
+        self.basename = path
+
 class WebIDLFile(ContextDerived):
     """Describes an individual .webidl source file."""
 
@@ -1057,17 +1069,15 @@ class GeneratedFile(ContextDerived):
         'inputs',
         'flags',
         'required_for_compile',
-        'localized',
     )
 
-    def __init__(self, context, script, method, outputs, inputs, flags=(), localized=False):
+    def __init__(self, context, script, method, outputs, inputs, flags=()):
         ContextDerived.__init__(self, context)
         self.script = script
         self.method = method
         self.outputs = outputs if isinstance(outputs, tuple) else (outputs,)
         self.inputs = inputs
         self.flags = flags
-        self.localized = localized
 
         suffixes = (
             '.c',
