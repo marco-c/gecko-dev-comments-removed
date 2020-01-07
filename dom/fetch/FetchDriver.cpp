@@ -107,6 +107,7 @@ public:
   eStatus Status();
   void Cancel();
   uint64_t GetAlternativeDataCacheEntryId();
+  const nsACString& GetAlternativeDataType() const;
   already_AddRefed<nsICacheInfoChannel> GetCacheInfoChannel();
   already_AddRefed<nsIInputStream> GetAlternativeInputStream();
 
@@ -169,6 +170,12 @@ uint64_t
 AlternativeDataStreamListener::GetAlternativeDataCacheEntryId()
 {
   return mAlternativeDataCacheEntryId;
+}
+
+const nsACString&
+AlternativeDataStreamListener::GetAlternativeDataType() const
+{
+  return mAlternativeDataType;
 }
 
 already_AddRefed<nsIInputStream>
@@ -851,29 +858,32 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   }
 
   nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aRequest);
-  response->SetCacheInfoChannel(cic);
-  uint64_t cacheEntryId = 0;
-  
-  
-  
-  
-  if (cic &&
-      mAltDataListener &&
-      mAltDataListener->Status() != AlternativeDataStreamListener::FALLBACK &&
-      NS_SUCCEEDED(cic->GetCacheEntryId(&cacheEntryId))) {
+  if (cic && mAltDataListener) {
     
     
     
-    if (cacheEntryId != mAltDataListener->GetAlternativeDataCacheEntryId()) {
-      mAltDataListener->Cancel();
-    } else {
+    if (mAltDataListener->Status() != AlternativeDataStreamListener::FALLBACK) {
       
       
-      nsCOMPtr<nsICacheInfoChannel> cacheInfo = mAltDataListener->GetCacheInfoChannel();
-      nsCOMPtr<nsIInputStream> altInputStream = mAltDataListener->GetAlternativeInputStream();
-      MOZ_ASSERT(altInputStream && cacheInfo);
-      response->SetAlternativeBody(altInputStream);
-      response->SetCacheInfoChannel(cacheInfo);
+      
+      uint64_t cacheEntryId = 0;
+      if (NS_SUCCEEDED(cic->GetCacheEntryId(&cacheEntryId)) &&
+          cacheEntryId != mAltDataListener->GetAlternativeDataCacheEntryId()) {
+        mAltDataListener->Cancel();
+      } else {
+        
+        
+        nsCOMPtr<nsICacheInfoChannel> cacheInfo = mAltDataListener->GetCacheInfoChannel();
+        nsCOMPtr<nsIInputStream> altInputStream = mAltDataListener->GetAlternativeInputStream();
+        MOZ_ASSERT(altInputStream && cacheInfo);
+        response->SetAlternativeBody(altInputStream);
+        response->SetCacheInfoChannel(cacheInfo);
+      }
+    } else if (!mAltDataListener->GetAlternativeDataType().IsEmpty()) {
+      
+      
+      
+      response->SetCacheInfoChannel(cic);
     }
   }
 
