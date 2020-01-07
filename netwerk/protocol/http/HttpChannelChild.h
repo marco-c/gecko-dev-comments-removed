@@ -146,11 +146,11 @@ protected:
                                              const uint32_t& cacheKey,
                                              const nsCString& altDataType,
                                              const int64_t& altDataLen,
-                                             const bool& aApplyConversion,
-                                             const ResourceTimingStruct& aTiming) override;
+                                             const bool& aApplyConversion) override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
   mozilla::ipc::IPCResult RecvRedirect1Begin(const uint32_t& registrarId,
                                              const URIParams& newURI,
+                                             const uint32_t& newLoadFlags,
                                              const uint32_t& redirectFlags,
                                              const ParentLoadInfoForwarderArgs& loadInfoForwarder,
                                              const nsHttpResponseHead& responseHead,
@@ -418,8 +418,7 @@ private:
                       const uint32_t& cacheKey,
                       const nsCString& altDataType,
                       const int64_t& altDataLen,
-                      const bool& aApplyConversion,
-                      const ResourceTimingStruct& aTiming);
+                      const bool& aApplyConversion);
   void MaybeDivertOnData(const nsCString& data,
                          const uint64_t& offset,
                          const uint32_t& count);
@@ -438,6 +437,7 @@ private:
   void HandleAsyncAbort();
   void Redirect1Begin(const uint32_t& registrarId,
                       const URIParams& newUri,
+                      const uint32_t& newLoadFlags,
                       const uint32_t& redirectFlags,
                       const ParentLoadInfoForwarderArgs& loadInfoForwarder,
                       const nsHttpResponseHead& responseHead,

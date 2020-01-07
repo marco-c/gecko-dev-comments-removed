@@ -112,8 +112,7 @@ child:
                        uint32_t            cacheKey,
                        nsCString           altDataType,
                        int64_t             altDataLength,
-                       bool                applyConversion,
-                       ResourceTimingStruct timing);
+                       bool                applyConversion);
 
   // Used to cancel child channel if we hit errors during creating and
   // AsyncOpen of nsHttpChannel on the parent.
@@ -123,6 +122,7 @@ child:
   // on the content process and reports result via Redirect2Verify above
   async Redirect1Begin(uint32_t           registrarId,
                        URIParams          newOriginalUri,
+                       uint32_t           newLoadFlags,
                        uint32_t           redirectFlags,
                        ParentLoadInfoForwarderArgs loadInfoForwarder,
                        nsHttpResponseHead responseHead,

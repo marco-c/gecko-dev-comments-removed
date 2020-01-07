@@ -1355,31 +1355,6 @@ HttpChannelParent::RecvRemoveCorsPreflightCacheEntry(const URIParams& uri,
 
 
 
-static void
-GetTimingAttributes(HttpBaseChannel* aChannel, ResourceTimingStruct& aTiming)
-{
-  aChannel->GetDomainLookupStart(&aTiming.domainLookupStart);
-  aChannel->GetDomainLookupEnd(&aTiming.domainLookupEnd);
-  aChannel->GetConnectStart(&aTiming.connectStart);
-  aChannel->GetTcpConnectEnd(&aTiming.tcpConnectEnd);
-  aChannel->GetSecureConnectionStart(&aTiming.secureConnectionStart);
-  aChannel->GetConnectEnd(&aTiming.connectEnd);
-  aChannel->GetRequestStart(&aTiming.requestStart);
-  aChannel->GetResponseStart(&aTiming.responseStart);
-  aChannel->GetResponseEnd(&aTiming.responseEnd);
-  aChannel->GetAsyncOpen(&aTiming.fetchStart);
-  aChannel->GetRedirectStart(&aTiming.redirectStart);
-  aChannel->GetRedirectEnd(&aTiming.redirectEnd);
-  aChannel->GetTransferSize(&aTiming.transferSize);
-  aChannel->GetEncodedBodySize(&aTiming.encodedBodySize);
-  
-  
-  aChannel->GetProtocolVersion(aTiming.protocolVersion);
-
-  aChannel->GetCacheReadStart(&aTiming.cacheReadStart);
-  aChannel->GetCacheReadEnd(&aTiming.cacheReadEnd);
-}
-
 NS_IMETHODIMP
 HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
 {
@@ -1512,9 +1487,6 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
     cleanedUpRequest = true;
   }
 
-  ResourceTimingStruct timing;
-  GetTimingAttributes(mChannel, timing);
-
   rv = NS_OK;
   if (mIPCClosed ||
       !SendOnStartRequest(channelStatus,
@@ -1532,8 +1504,7 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           cacheKey,
                           altDataType,
                           altDataLen,
-                          applyConversion,
-                          timing))
+                          applyConversion))
   {
     rv = NS_ERROR_UNEXPECTED;
   }
@@ -1564,7 +1535,26 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnStopRequest if diverting is set!");
   ResourceTimingStruct timing;
-  GetTimingAttributes(mChannel, timing);
+  mChannel->GetDomainLookupStart(&timing.domainLookupStart);
+  mChannel->GetDomainLookupEnd(&timing.domainLookupEnd);
+  mChannel->GetConnectStart(&timing.connectStart);
+  mChannel->GetTcpConnectEnd(&timing.tcpConnectEnd);
+  mChannel->GetSecureConnectionStart(&timing.secureConnectionStart);
+  mChannel->GetConnectEnd(&timing.connectEnd);
+  mChannel->GetRequestStart(&timing.requestStart);
+  mChannel->GetResponseStart(&timing.responseStart);
+  mChannel->GetResponseEnd(&timing.responseEnd);
+  mChannel->GetAsyncOpen(&timing.fetchStart);
+  mChannel->GetRedirectStart(&timing.redirectStart);
+  mChannel->GetRedirectEnd(&timing.redirectEnd);
+  mChannel->GetTransferSize(&timing.transferSize);
+  mChannel->GetEncodedBodySize(&timing.encodedBodySize);
+  
+  
+  mChannel->GetProtocolVersion(timing.protocolVersion);
+
+  mChannel->GetCacheReadStart(&timing.cacheReadStart);
+  mChannel->GetCacheReadEnd(&timing.cacheReadEnd);
 
   RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(mChannel);
   if (httpChannelImpl) {
@@ -1855,6 +1845,9 @@ HttpChannelParent::StartRedirect(uint32_t registrarId,
   URIParams uriParams;
   SerializeURI(newOriginalURI, uriParams);
 
+  uint32_t newLoadFlags = nsIRequest::LOAD_NORMAL;
+  MOZ_ALWAYS_SUCCEEDS(newChannel->GetLoadFlags(&newLoadFlags));
+
   nsCString secInfoSerialization;
   UpdateAndSerializeSecurityInfo(secInfoSerialization);
 
@@ -1889,8 +1882,8 @@ HttpChannelParent::StartRedirect(uint32_t registrarId,
 
   bool result = false;
   if (!mIPCClosed) {
-    result = SendRedirect1Begin(registrarId, uriParams, redirectFlags,
-                                loadInfoForwarderArg,
+    result = SendRedirect1Begin(registrarId, uriParams, newLoadFlags,
+                                redirectFlags, loadInfoForwarderArg,
                                 *responseHead,
                                 secInfoSerialization,
                                 channelId,
