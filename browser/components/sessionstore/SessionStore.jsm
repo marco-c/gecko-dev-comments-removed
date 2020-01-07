@@ -4345,23 +4345,41 @@ var SessionStoreInternal = {
       }
     }
 
-    var dimension;
-    switch (aAttribute) {
-    case "width":
-      dimension = aWindow.outerWidth;
-      break;
-    case "height":
-      dimension = aWindow.outerHeight;
-      break;
-    default:
-      dimension = aAttribute in aWindow ? aWindow[aAttribute] : "";
-      break;
+    
+    
+    
+    
+    
+    
+    
+    if (aWindow.windowState != aWindow.STATE_NORMAL) {
+      let docElem = aWindow.document.documentElement;
+      let attr = parseInt(docElem.getAttribute(aAttribute), 10);
+      if (attr) {
+        if (aAttribute != "width" && aAttribute != "height") {
+          return attr;
+        }
+        
+        
+        let xulWin = aWindow.getInterface(Ci.nsIDocShell)
+                            .treeOwner
+                            .QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIXULWindow);
+        let diff = aAttribute == "width"
+          ? xulWin.outerToInnerWidthDifferenceInCSSPixels
+          : xulWin.outerToInnerHeightDifferenceInCSSPixels;
+        return attr + diff;
+      }
     }
 
-    if (aWindow.windowState == aWindow.STATE_NORMAL) {
-      return dimension;
+    switch (aAttribute) {
+    case "width":
+      return aWindow.outerWidth;
+    case "height":
+      return aWindow.outerHeight;
+    default:
+      return aAttribute in aWindow ? aWindow[aAttribute] : "";
     }
-    return aWindow.document.documentElement.getAttribute(aAttribute) || dimension;
   },
 
   
