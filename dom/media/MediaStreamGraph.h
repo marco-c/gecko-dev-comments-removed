@@ -428,6 +428,12 @@ public:
   void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink, TrackID aID);
   void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
   void RemoveListenerImpl(MediaStreamListener* aListener);
+
+  
+
+
+
+  virtual void RemoveAllDirectListenersImpl() {}
   void RemoveAllListenersImpl();
   virtual void AddTrackListenerImpl(already_AddRefed<MediaStreamTrackListener> aListener,
                                     TrackID aTrackID);
@@ -801,17 +807,13 @@ public:
     MediaStream::ApplyTrackDisabling(aTrackID, aSegment, aRawSegment);
   }
 
+  void RemoveAllDirectListenersImpl() override;
+
   
 
 
 
   void EndAllTrackAndFinish();
-
-  
-
-
-
-  void RemoveAllDirectListeners();
 
   void RegisterForAudioMixing();
 
