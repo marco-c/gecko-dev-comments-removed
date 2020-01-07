@@ -102,6 +102,29 @@ BigInt::createFromBoolean(JSContext* cx, bool b)
     return x;
 }
 
+BigInt*
+BigInt::createFromBytes(JSContext* cx, int sign, void* bytes, size_t nbytes)
+{
+    BigInt* x = Allocate<BigInt>(cx);
+    if (!x)
+        return nullptr;
+    
+    mpz_init(x->num_);
+
+    if (nbytes == 0)
+        return x;
+
+    mpz_import(x->num_, nbytes,
+               -1, 
+               1, 
+               0, 
+               0, 
+               bytes);
+    if (sign < 0)
+        mpz_neg(x->num_, x->num_);
+    return x;
+}
+
 
 static bool
 IsInteger(double d)
@@ -294,6 +317,31 @@ js::StringToBigInt(JSContext* cx, HandleString str, uint8_t radix)
     return nullptr;
 }
 
+size_t
+BigInt::byteLength(BigInt* x)
+{
+    if (mpz_sgn(x->num_) == 0)
+        return 0;
+    return JS_HOWMANY(mpz_sizeinbase(x->num_, 2), 8);
+}
+
+void
+BigInt::writeBytes(BigInt* x, RangedPtr<uint8_t> buffer)
+{
+#ifdef DEBUG
+    
+    
+    
+    size_t reprSize = byteLength(x);
+    MOZ_ASSERT(buffer + reprSize, "out of bounds access to buffer");
+#endif
+
+    size_t count;
+    
+    mpz_export(buffer.get(), &count, -1, 1, 0, 0, x->num_);
+    MOZ_ASSERT(count == reprSize);
+}
+
 void
 BigInt::finalize(js::FreeOp* fop)
 {
@@ -313,6 +361,12 @@ bool
 BigInt::toBoolean()
 {
     return mpz_sgn(num_) != 0;
+}
+
+int8_t
+BigInt::sign()
+{
+    return mpz_sgn(num_);
 }
 
 js::HashNumber
