@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 function getScrollTop(dbg) {
   return getCM(dbg).doc.scrollTop;
@@ -19,12 +19,12 @@ async function waitForMatch(dbg, { matchIndex, count }) {
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
 
-  
-  
+  // Make sure that we can set a breakpoint on a line out of the
+  // viewport, and that pausing there scrolls the editor to it.
   let longSrc = findSource(dbg, "long.js");
   await addBreakpoint(dbg, longSrc, 66);
   invokeInTab("testModel");
-  await waitForPaused(dbg);
+  await waitForPaused(dbg, "long.js");
 
   const pauseScrollTop = getScrollTop(dbg);
 

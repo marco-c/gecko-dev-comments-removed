@@ -1,15 +1,15 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 function countSources(dbg) {
   const sources = dbg.selectors.getSources(dbg.getState());
   return sources.size;
 }
 
-
-
-
-
+/**
+ * Test navigating
+ * navigating while paused will reset the pause state and sources
+ */
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
   const { selectors: { getSelectedSource, isPaused }, getState } = dbg;
@@ -44,9 +44,11 @@ add_task(async function() {
 
   is(countSources(dbg), 5, "5 sources are loaded.");
 
-  
+  // Test that the current select source persists across reloads
   await selectSource(dbg, "long.js");
   await reload(dbg, "long.js");
+  await waitForSelectedSource(dbg, "long.js");
+
   ok(
     getSelectedSource(getState())
       .get("url")

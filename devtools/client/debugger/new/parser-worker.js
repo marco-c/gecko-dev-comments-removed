@@ -8,101 +8,101 @@
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
 })(typeof self !== 'undefined' ? self : this, function() {
-return  (function(modules) { 
- 	
- 	var installedModules = {};
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/assets/build";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 1272);
+/******/ })
+/************************************************************************/
+/******/ ({
 
- 	
- 	function __webpack_require__(moduleId) {
-
- 		
- 		if(installedModules[moduleId]) {
- 			return installedModules[moduleId].exports;
- 		}
- 		
- 		var module = installedModules[moduleId] = {
- 			i: moduleId,
- 			l: false,
- 			exports: {}
- 		};
-
- 		
- 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
- 		
- 		module.l = true;
-
- 		
- 		return module.exports;
- 	}
-
-
- 	
- 	__webpack_require__.m = modules;
-
- 	
- 	__webpack_require__.c = installedModules;
-
- 	
- 	__webpack_require__.d = function(exports, name, getter) {
- 		if(!__webpack_require__.o(exports, name)) {
- 			Object.defineProperty(exports, name, {
- 				configurable: false,
- 				enumerable: true,
- 				get: getter
- 			});
- 		}
- 	};
-
- 	
- 	__webpack_require__.n = function(module) {
- 		var getter = module && module.__esModule ?
- 			function getDefault() { return module['default']; } :
- 			function getModuleExports() { return module; };
- 		__webpack_require__.d(getter, 'a', getter);
- 		return getter;
- 	};
-
- 	
- 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
- 	
- 	__webpack_require__.p = "/assets/build";
-
- 	
- 	return __webpack_require__(__webpack_require__.s = 1272);
- })
-
- ({
-
- 10:
- (function(module, exports, __webpack_require__) {
+/***/ 10:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
 var nativeObjectToString = objectProto.toString;
 
-
+/** Built-in value references. */
 var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
 
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
 function getRawTag(value) {
   var isOwn = hasOwnProperty.call(value, symToStringTag),
       tag = value[symToStringTag];
@@ -126,23 +126,23 @@ function getRawTag(value) {
 module.exports = getRawTag;
 
 
- }),
+/***/ }),
 
- 100:
- (function(module, exports, __webpack_require__) {
+/***/ 100:
+/***/ (function(module, exports, __webpack_require__) {
 
 var assocIndexOf = __webpack_require__(96);
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
 function listCacheSet(key, value) {
   var data = this.__data__,
       index = assocIndexOf(data, key);
@@ -159,36 +159,36 @@ function listCacheSet(key, value) {
 module.exports = listCacheSet;
 
 
- }),
+/***/ }),
 
- 101:
- (function(module, exports, __webpack_require__) {
+/***/ 101:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81),
     root = __webpack_require__(8);
 
-
+/* Built-in method references that are verified to be native. */
 var Map = getNative(root, 'Map');
 
 module.exports = Map;
 
 
- }),
+/***/ }),
 
- 102:
- (function(module, exports, __webpack_require__) {
+/***/ 102:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getMapData = __webpack_require__(103);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
 function mapCacheDelete(key) {
   var result = getMapData(this, key)['delete'](key);
   this.size -= result ? 1 : 0;
@@ -198,10 +198,10 @@ function mapCacheDelete(key) {
 module.exports = mapCacheDelete;
 
 
- }),
+/***/ }),
 
- 1023:
- (function(module, exports, __webpack_require__) {
+/***/ 1023:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -227,7 +227,7 @@ function parseScript(_ref) {
   var source = _ref.source,
       line = _ref.line;
 
-  
+  // remove empty or only whitespace scripts
   if (source.length === 0 || /^\s+$/.test(source)) {
     return null;
   }
@@ -274,21 +274,21 @@ exports.parseScript = parseScript;
 exports.parseScripts = parseScripts;
 exports.parseScriptTags = parseScriptTags;
 
- }),
+/***/ }),
 
- 103:
- (function(module, exports, __webpack_require__) {
+/***/ 103:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isKeyable = __webpack_require__(104);
 
-
-
-
-
-
-
-
-
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
 function getMapData(map, key) {
   var data = map.__data__;
   return isKeyable(key)
@@ -299,18 +299,18 @@ function getMapData(map, key) {
 module.exports = getMapData;
 
 
- }),
+/***/ }),
 
- 104:
- (function(module, exports) {
+/***/ 104:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
 function isKeyable(value) {
   var type = typeof value;
   return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
@@ -321,22 +321,22 @@ function isKeyable(value) {
 module.exports = isKeyable;
 
 
- }),
+/***/ }),
 
- 105:
- (function(module, exports, __webpack_require__) {
+/***/ 105:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getMapData = __webpack_require__(103);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
 function mapCacheGet(key) {
   return getMapData(this, key).get(key);
 }
@@ -344,22 +344,22 @@ function mapCacheGet(key) {
 module.exports = mapCacheGet;
 
 
- }),
+/***/ }),
 
- 106:
- (function(module, exports, __webpack_require__) {
+/***/ 106:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getMapData = __webpack_require__(103);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
 function mapCacheHas(key) {
   return getMapData(this, key).has(key);
 }
@@ -367,23 +367,23 @@ function mapCacheHas(key) {
 module.exports = mapCacheHas;
 
 
- }),
+/***/ }),
 
- 107:
- (function(module, exports, __webpack_require__) {
+/***/ 107:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getMapData = __webpack_require__(103);
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
 function mapCacheSet(key, value) {
   var data = getMapData(this, key),
       size = data.size;
@@ -396,34 +396,34 @@ function mapCacheSet(key, value) {
 module.exports = mapCacheSet;
 
 
- }),
+/***/ }),
 
- 108:
- (function(module, exports, __webpack_require__) {
+/***/ 108:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseToString = __webpack_require__(109);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */
 function toString(value) {
   return value == null ? '' : baseToString(value);
 }
@@ -431,38 +431,38 @@ function toString(value) {
 module.exports = toString;
 
 
- }),
+/***/ }),
 
- 109:
- (function(module, exports, __webpack_require__) {
+/***/ 109:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7),
     arrayMap = __webpack_require__(110),
     isArray = __webpack_require__(70),
     isSymbol = __webpack_require__(72);
 
-
+/** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
 
-
+/** Used to convert symbols to primitives and strings. */
 var symbolProto = Symbol ? Symbol.prototype : undefined,
     symbolToString = symbolProto ? symbolProto.toString : undefined;
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.toString` which doesn't convert nullish
+ * values to empty strings.
+ *
+ * @private
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ */
 function baseToString(value) {
-  
+  // Exit early for strings to avoid a performance hit in some environments.
   if (typeof value == 'string') {
     return value;
   }
   if (isArray(value)) {
-    
+    // Recursively convert values (susceptible to call stack limits).
     return arrayMap(value, baseToString) + '';
   }
   if (isSymbol(value)) {
@@ -475,28 +475,28 @@ function baseToString(value) {
 module.exports = baseToString;
 
 
- }),
+/***/ }),
 
- 11:
- (function(module, exports) {
+/***/ 11:
+/***/ (function(module, exports) {
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
-
-
-
-
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
 var nativeObjectToString = objectProto.toString;
 
-
-
-
-
-
-
-
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
 function objectToString(value) {
   return nativeObjectToString.call(value);
 }
@@ -504,20 +504,20 @@ function objectToString(value) {
 module.exports = objectToString;
 
 
- }),
+/***/ }),
 
- 110:
- (function(module, exports) {
+/***/ 110:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.map` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+ */
 function arrayMap(array, iteratee) {
   var index = -1,
       length = array == null ? 0 : array.length,
@@ -532,23 +532,23 @@ function arrayMap(array, iteratee) {
 module.exports = arrayMap;
 
 
- }),
+/***/ }),
 
- 111:
- (function(module, exports, __webpack_require__) {
+/***/ 111:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isSymbol = __webpack_require__(72);
 
-
+/** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
 
-
-
-
-
-
-
-
+/**
+ * Converts `value` to a string key if it's not a string or symbol.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {string|symbol} Returns the key.
+ */
 function toKey(value) {
   if (typeof value == 'string' || isSymbol(value)) {
     return value;
@@ -560,30 +560,72 @@ function toKey(value) {
 module.exports = toKey;
 
 
- }),
+/***/ }),
 
- 114:
- (function(module, exports, __webpack_require__) {
+/***/ 1127:
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseIsEqual = __webpack_require__(799);
+
+/**
+ * Performs a deep comparison between two values to determine if they are
+ * equivalent.
+ *
+ * **Note:** This method supports comparing arrays, array buffers, booleans,
+ * date objects, error objects, maps, numbers, `Object` objects, regexes,
+ * sets, strings, symbols, and typed arrays. `Object` objects are compared
+ * by their own, not inherited, enumerable properties. Functions and DOM
+ * nodes are compared by strict equality, i.e. `===`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.isEqual(object, other);
+ * // => true
+ *
+ * object === other;
+ * // => false
+ */
+function isEqual(value, other) {
+  return baseIsEqual(value, other);
+}
+
+module.exports = isEqual;
+
+
+/***/ }),
+
+/***/ 114:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseAssignValue = __webpack_require__(115),
     eq = __webpack_require__(97);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Assigns `value` to `key` of `object` if the existing value is not equivalent
+ * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
 function assignValue(object, key, value) {
   var objValue = object[key];
   if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
@@ -595,22 +637,22 @@ function assignValue(object, key, value) {
 module.exports = assignValue;
 
 
- }),
+/***/ }),
 
- 115:
- (function(module, exports, __webpack_require__) {
+/***/ 115:
+/***/ (function(module, exports, __webpack_require__) {
 
 var defineProperty = __webpack_require__(116);
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `assignValue` and `assignMergeValue` without
+ * value checks.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
 function baseAssignValue(object, key, value) {
   if (key == '__proto__' && defineProperty) {
     defineProperty(object, key, {
@@ -627,10 +669,10 @@ function baseAssignValue(object, key, value) {
 module.exports = baseAssignValue;
 
 
- }),
+/***/ }),
 
- 116:
- (function(module, exports, __webpack_require__) {
+/***/ 116:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81);
 
@@ -645,25 +687,25 @@ var defineProperty = (function() {
 module.exports = defineProperty;
 
 
- }),
+/***/ }),
 
- 117:
- (function(module, exports) {
+/***/ 117:
+/***/ (function(module, exports) {
 
-
+/** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
-
+/** Used to detect unsigned integer values. */
 var reIsUint = /^(?:0|[1-9]\d*)$/;
 
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
 function isIndex(value, length) {
   var type = typeof value;
   length = length == null ? MAX_SAFE_INTEGER : length;
@@ -677,40 +719,40 @@ function isIndex(value, length) {
 module.exports = isIndex;
 
 
- }),
+/***/ }),
 
- 12:
- (function(module, exports, __webpack_require__) {
+/***/ 12:
+/***/ (function(module, exports, __webpack_require__) {
 
 var overArg = __webpack_require__(13);
 
-
+/** Built-in value references. */
 var getPrototype = overArg(Object.getPrototypeOf, Object);
 
 module.exports = getPrototype;
 
 
- }),
+/***/ }),
 
- 1272:
- (function(module, exports, __webpack_require__) {
+/***/ 1272:
+/***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(1618);
 
 
- }),
+/***/ }),
 
- 13:
- (function(module, exports) {
+/***/ 13:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
 function overArg(func, transform) {
   return function(arg) {
     return func(transform(arg));
@@ -720,14 +762,14 @@ function overArg(func, transform) {
 module.exports = overArg;
 
 
- }),
+/***/ }),
 
- 1360:
- (function(module, exports, __webpack_require__) {
+/***/ 1360:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const {
   originalToGeneratedId,
@@ -766,14 +808,14 @@ module.exports = {
   stopSourceMapWorker: dispatcher.stop.bind(dispatcher)
 };
 
- }),
+/***/ }),
 
- 1363:
- (function(module, exports, __webpack_require__) {
+/***/ 1363:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const networkRequest = __webpack_require__(1367);
 const workerUtils = __webpack_require__(1368);
@@ -783,14 +825,14 @@ module.exports = {
   workerUtils
 };
 
- }),
+/***/ }),
 
- 1367:
- (function(module, exports) {
+/***/ 1367:
+/***/ (function(module, exports) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function networkRequest(url, opts) {
   return fetch(url, {
@@ -805,19 +847,19 @@ function networkRequest(url, opts) {
 
 module.exports = networkRequest;
 
- }),
+/***/ }),
 
- 1368:
- (function(module, exports) {
+/***/ 1368:
+/***/ (function(module, exports) {
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 WorkerDispatcher.prototype = {
   start(url) {
@@ -872,15 +914,15 @@ function workerHandler(publicInterface) {
       const response = publicInterface[method].apply(undefined, args);
       if (response instanceof Promise) {
         response.then(val => self.postMessage({ id, response: val }),
-        
-        
+        // Error can't be sent via postMessage, so be sure to
+        // convert to string.
         err => self.postMessage({ id, error: err.toString() }));
       } else {
         self.postMessage({ id, response });
       }
     } catch (error) {
-      
-      
+      // Error can't be sent via postMessage, so be sure to convert to
+      // string.
       self.postMessage({ id, error: error.toString() });
     }
   };
@@ -944,10 +986,10 @@ module.exports = {
   streamingWorkerHandler
 };
 
- }),
+/***/ }),
 
- 1375:
- (function(module, exports, __webpack_require__) {
+/***/ 1375:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -956,9 +998,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
-
-
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                                                                                                                                                                                                                                   * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                                                                                                                                                                                                                                   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 exports.parseScript = parseScript;
 exports.getAst = getAst;
@@ -997,12 +1039,13 @@ function _parse(code, opts) {
 
 const sourceOptions = {
   generated: {
-    tokens: true
+    tokens: true,
+    plugins: ["objectRestSpread"]
   },
   original: {
     sourceType: "unambiguous",
     tokens: true,
-    plugins: ["jsx", "flow", "doExpressions", "objectRestSpread", "classProperties", "exportDefaultFrom", "exportNamespaceFrom", "asyncGenerators", "functionBind", "functionSent", "dynamicImport"]
+    plugins: ["jsx", "flow", "doExpressions", "decorators", "objectRestSpread", "classProperties", "exportDefaultFrom", "exportNamespaceFrom", "asyncGenerators", "functionBind", "functionSent", "dynamicImport", "react-jsx"]
   }
 };
 
@@ -1015,14 +1058,15 @@ function parse(text, opts) {
   try {
     ast = _parse(text, opts);
   } catch (error) {
+    console.error(error);
     ast = {};
   }
 
   return ast;
 }
 
-
-
+// Custom parser for parse-script-tags that adapts its input structure to
+// our parser's signature
 function htmlParser({ source, line }) {
   return parse(source, { startLine: line });
 }
@@ -1071,14 +1115,14 @@ function traverseAst(sourceId, visitor, state) {
   return ast;
 }
 
- }),
+/***/ }),
 
- 1389:
- (function(module, exports, __webpack_require__) {
+/***/ 1389:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const md5 = __webpack_require__(248);
 
@@ -1099,9 +1143,9 @@ function isGeneratedId(id) {
   return !isOriginalId(id);
 }
 
-
-
-
+/**
+ * Trims the query part or reference identifier of a URL string, if necessary.
+ */
 function trimUrlQuery(url) {
   let length = url.length;
   let q1 = url.indexOf("?");
@@ -1112,7 +1156,7 @@ function trimUrlQuery(url) {
   return url.slice(0, q);
 }
 
-
+// Map suffix to content type.
 const contentMap = {
   "js": "text/javascript",
   "jsm": "text/javascript",
@@ -1124,13 +1168,13 @@ const contentMap = {
   "cljs": "text/x-clojure"
 };
 
-
-
-
-
-
-
-
+/**
+ * Returns the content type for the specified URL.  If no specific
+ * content type can be determined, "text/plain" is returned.
+ *
+ * @return String
+ *         The content type.
+ */
 function getContentType(url) {
   url = trimUrlQuery(url);
   let dot = url.lastIndexOf(".");
@@ -1152,35 +1196,35 @@ module.exports = {
   contentMapForTesting: contentMap
 };
 
- }),
+/***/ }),
 
- 14:
- (function(module, exports) {
+/***/ 14:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
 function isObjectLike(value) {
   return value != null && typeof value == 'object';
 }
@@ -1188,10 +1232,10 @@ function isObjectLike(value) {
 module.exports = isObjectLike;
 
 
- }),
+/***/ }),
 
- 1411:
- (function(module, exports, __webpack_require__) {
+/***/ 1411:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1215,9 +1259,9 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function isFunction(node) {
   return t.isFunction(node) || t.isArrowFunctionExpression(node) || t.isObjectMethod(node) || t.isClassMethod(node);
-} 
-
-
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function isAwaitExpression(path) {
   const { node, parent } = path;
@@ -1271,8 +1315,8 @@ function getVariables(dec) {
       return [];
     }
 
-    
-    
+    // NOTE: it's possible that an element is empty
+    // e.g. const [, a] = arr
     return dec.id.elements.filter(element => element).map(element => {
       return {
         name: t.isAssignmentPattern(element) ? element.left.name : element.name || element.argument.name,
@@ -1287,10 +1331,10 @@ function getVariables(dec) {
   }];
 }
 
- }),
+/***/ }),
 
- 1455:
- (function(module, exports, __webpack_require__) {
+/***/ 1455:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1330,14 +1374,14 @@ function getClosestPath(sourceId, location) {
   }
 
   return closestPath;
-} 
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+/***/ }),
 
-
- }),
-
- 1456:
- (function(module, exports, __webpack_require__) {
+/***/ 1456:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1348,9 +1392,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.containsPosition = containsPosition;
 exports.containsLocation = containsLocation;
 exports.nodeContainsPosition = nodeContainsPosition;
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function startsBefore(a, b) {
   let before = a.start.line < b.line;
@@ -1380,10 +1424,10 @@ function nodeContainsPosition(node, position) {
   return containsPosition(node.loc, position);
 }
 
- }),
+/***/ }),
 
- 1457:
- (function(module, exports, __webpack_require__) {
+/***/ 1457:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1392,9 +1436,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
-
-
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                                                                                                                                                                                                                                   * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                                                                                                                                                                                                                                   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 exports.clearSymbols = clearSymbols;
 exports.getSymbols = getSymbols;
@@ -1434,7 +1478,7 @@ function getFunctionParameterNames(path) {
         return param.name;
       }
 
-      
+      // Parameter with default value
       if (param.left.type === "Identifier" && param.right.type === "Identifier") {
         return `${param.left.name} = ${param.right.name}`;
       } else if (param.left.type === "Identifier" && param.right.type === "StringLiteral") {
@@ -1575,7 +1619,7 @@ function extractSymbol(path, symbols) {
   if (t.isIdentifier(path) && !t.isGenericTypeAnnotation(path.parent)) {
     let { start, end } = path.node.loc;
 
-    
+    // We want to include function params, but exclude the function name
     if (t.isClassMethod(path.parent) && !path.inList) {
       return;
     }
@@ -1648,7 +1692,7 @@ function extractSymbols(sourceId) {
     }
   });
 
-  
+  // comments are extracted separately from the AST
   symbols.comments = getComments(ast);
 
   return symbols;
@@ -1819,10 +1863,10 @@ function getSymbols(sourceId) {
   return symbols;
 }
 
- }),
+/***/ }),
 
- 1458:
- (function(module, exports, __webpack_require__) {
+/***/ 1458:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1836,9 +1880,9 @@ exports.getSource = getSource;
 exports.clearSources = clearSources;
 
 
-let cachedSources = new Map(); 
-
-
+let cachedSources = new Map(); /* This Source Code Form is subject to the terms of the Mozilla Public
+                                * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function hasSource(sourceId) {
   return cachedSources.has(sourceId);
@@ -1860,10 +1904,10 @@ function clearSources() {
   cachedSources = new Map();
 }
 
- }),
+/***/ }),
 
- 1618:
- (function(module, exports, __webpack_require__) {
+/***/ 1618:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1900,9 +1944,9 @@ var _devtoolsUtils = __webpack_require__(1363);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const { workerHandler } = _devtoolsUtils.workerUtils;
 
@@ -1924,10 +1968,10 @@ self.onmessage = workerHandler({
   mapOriginalExpression: _mapOriginalExpression2.default
 });
 
- }),
+/***/ }),
 
- 1620:
- (function(module, exports, __webpack_require__) {
+/***/ 1620:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1943,8 +1987,8 @@ var t = _interopRequireWildcard(_types);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-
-
+// the function class is inferred from a call like
+// createClass or extend
 function fromCallExpression(callExpression) {
   const whitelist = ["extend", "createClass"];
   const callee = callExpression.node.callee;
@@ -1982,11 +2026,11 @@ function fromCallExpression(callExpression) {
   return null;
 }
 
-
-
-
-
-
+// the function class is inferred from a prototype assignment
+// e.g. TodoClass.prototype.render = function() {}
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function fromPrototype(assignment) {
   const left = assignment.node.left;
@@ -2001,10 +2045,10 @@ function fromPrototype(assignment) {
   return null;
 }
 
-
-
-
-
+// infer class finds an appropriate class for functions
+// that are defined inside of a class like thing.
+// e.g. `class Foo`, `TodoClass.prototype.foo`,
+//      `Todo = createClass({ foo: () => {}})`
 function inferClassName(path) {
   const classDeclaration = path.findParent(p => t.isClassDeclaration(p.node));
   if (classDeclaration) {
@@ -2024,10 +2068,10 @@ function inferClassName(path) {
   return null;
 }
 
- }),
+/***/ }),
 
- 1621:
- (function(module, exports, __webpack_require__) {
+/***/ 1621:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2043,9 +2087,9 @@ var t = _interopRequireWildcard(_types);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-
-
-
+// Perform ES6's anonymous function name inference for all
+// locations where static analysis is possible.
+// eslint-disable-next-line complexity
 function getFunctionName(node, parent) {
   if (t.isIdentifier(node.id)) {
     return node.id.name;
@@ -2066,9 +2110,9 @@ function getFunctionName(node, parent) {
   }
 
   if (t.isObjectProperty(parent, { computed: false, value: node }) ||
-  
-  
-  
+  // TODO: Babylon 6 doesn't support computed class props. It is included
+  // here so that it is most flexible. Once Babylon 7 is used, this
+  // can change to use computed: false like ObjectProperty.
   t.isClassProperty(parent, { value: node }) && !parent.computed) {
     const key = parent.key;
 
@@ -2088,8 +2132,8 @@ function getFunctionName(node, parent) {
       return parent.left.name;
     }
 
-    
-    
+    // This case is not supported in standard ES6 name inference, but it
+    // is included here since it is still a helpful case during debugging.
     if (t.isMemberExpression(parent.left, { computed: false })) {
       return parent.left.property.name;
     }
@@ -2108,14 +2152,14 @@ function getFunctionName(node, parent) {
   }
 
   return "anonymous";
-} 
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+/***/ }),
 
-
- }),
-
- 1624:
- (function(module, exports, __webpack_require__) {
+/***/ 1624:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2124,9 +2168,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
-
-
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                                                                                                                                                                                                                                   * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                                                                                                                                                                                                                                   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 var _get = __webpack_require__(67);
 
@@ -2151,17 +2195,17 @@ function findSymbols(source) {
   return { functions, comments };
 }
 
-
-
-
-
-
+/**
+ * Returns the location for a given function path. If the path represents a
+ * function declaration, the location will begin after the function identifier
+ * but before the function parameters.
+ */
 
 function getLocation(func) {
   const location = _extends({}, func.location);
 
-  
-  
+  // if the function has an identifier, start the block after it so the
+  // identifier is included in the "scope" of its parent
   const identifierEnd = (0, _get2.default)(func, "identifier.loc.end");
   if (identifierEnd) {
     location.start = identifierEnd;
@@ -2170,42 +2214,42 @@ function getLocation(func) {
   return location;
 }
 
-
-
-
-
-
-
-
+/**
+ * Find the nearest location containing the input position and
+ * return new locations without inner locations under that nearest location
+ *
+ * @param locations Notice! The locations MUST be sorted by `sortByStart`
+ *                  so that we can do linear time complexity operation.
+ */
 function removeInnerLocations(locations, position) {
-  
-  
+  // First, let's find the nearest position-enclosing function location,
+  // which is to find the last location enclosing the position.
   const newLocs = locations.slice();
   const parentIndex = (0, _findLastIndex2.default)(newLocs, loc => (0, _contains.containsPosition)(loc, position));
   if (parentIndex < 0) {
     return newLocs;
   }
 
-  
-  
-  
+  // Second, from the nearest location, loop locations again, stop looping
+  // once seeing the 1st location not enclosed by the nearest location
+  // to find the last inner locations inside the nearest location.
   const innerStartIndex = parentIndex + 1;
   const parentLoc = newLocs[parentIndex];
   const outerBoundaryIndex = (0, _findIndex2.default)(newLocs, loc => !(0, _contains.containsLocation)(parentLoc, loc), innerStartIndex);
   const innerBoundaryIndex = outerBoundaryIndex < 0 ? newLocs.length - 1 : outerBoundaryIndex - 1;
 
-  
+  // Third, remove those inner functions
   newLocs.splice(innerStartIndex, innerBoundaryIndex - parentIndex);
   return newLocs;
 }
 
-
-
-
-
-
-
-
+/**
+ * Return an new locations array which excludes
+ * items that are completely enclosed by another location in the input locations
+ *
+ * @param locations Notice! The locations MUST be sorted by `sortByStart`
+ *                  so that we can do linear time complexity operation.
+ */
 function removeOverlaps(locations) {
   if (locations.length == 0) {
     return [];
@@ -2222,9 +2266,9 @@ function deduplicateNode(nodes, location) {
   return nodes;
 }
 
-
-
-
+/**
+ * Sorts an array of locations by start position
+ */
 function sortByStart(a, b) {
   if (a.start.line < b.start.line) {
     return -1;
@@ -2235,26 +2279,26 @@ function sortByStart(a, b) {
   return 1;
 }
 
-
-
-
-
+/**
+ * Returns an array of locations that are considered out of scope for the given
+ * location.
+ */
 function findOutOfScopeLocations(sourceId, position) {
   const { functions, comments } = findSymbols(sourceId);
   const commentLocations = comments.map(c => c.location);
   let locations = functions.map(getLocation).concat(commentLocations).sort(sortByStart);
-  
-  
+  // Must remove inner locations then filter, otherwise,
+  // we will mis-judge in-scope inner locations as out of scope.
   locations = removeInnerLocations(locations, position).filter(loc => !(0, _contains.containsPosition)(loc, position));
   return removeOverlaps(locations);
 }
 
 exports.default = findOutOfScopeLocations;
 
- }),
+/***/ }),
 
- 1625:
- (function(module, exports, __webpack_require__) {
+/***/ 1625:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2263,9 +2307,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; 
-
-
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                                                                                                                                                                                                                                   * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                                                                                                                                                                                                                                   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 exports.getNextStep = getNextStep;
 
@@ -2321,10 +2365,10 @@ function _getNextStep(statement, sourceId, position) {
   return null;
 }
 
- }),
+/***/ }),
 
- 1629:
- (function(module, exports, __webpack_require__) {
+/***/ 1629:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2343,58 +2387,58 @@ function hasSyntaxError(input) {
   } catch (e) {
     return `${e.name} : ${e.message}`;
   }
-} 
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+/***/ }),
 
-
- }),
-
- 1686:
- (function(module, exports, __webpack_require__) {
+/***/ 1686:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseFindIndex = __webpack_require__(263),
     baseIteratee = __webpack_require__(814),
     toInteger = __webpack_require__(302);
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeMax = Math.max,
     nativeMin = Math.min;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method is like `_.findIndex` except that it iterates over elements
+ * of `collection` from right to left.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.0.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @param {Function} [predicate=_.identity] The function invoked per iteration.
+ * @param {number} [fromIndex=array.length-1] The index to search from.
+ * @returns {number} Returns the index of the found element, else `-1`.
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'barney',  'active': true },
+ *   { 'user': 'fred',    'active': false },
+ *   { 'user': 'pebbles', 'active': false }
+ * ];
+ *
+ * _.findLastIndex(users, function(o) { return o.user == 'pebbles'; });
+ * // => 2
+ *
+ * // The `_.matches` iteratee shorthand.
+ * _.findLastIndex(users, { 'user': 'barney', 'active': true });
+ * // => 0
+ *
+ * // The `_.matchesProperty` iteratee shorthand.
+ * _.findLastIndex(users, ['active', false]);
+ * // => 2
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.findLastIndex(users, 'active');
+ * // => 0
+ */
 function findLastIndex(array, predicate, fromIndex) {
   var length = array == null ? 0 : array.length;
   if (!length) {
@@ -2413,39 +2457,39 @@ function findLastIndex(array, predicate, fromIndex) {
 module.exports = findLastIndex;
 
 
- }),
+/***/ }),
 
- 1687:
- (function(module, exports, __webpack_require__) {
+/***/ 1687:
+/***/ (function(module, exports, __webpack_require__) {
 
 var toInteger = __webpack_require__(302);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is an integer.
+ *
+ * **Note:** This method is based on
+ * [`Number.isInteger`](https://mdn.io/Number/isInteger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an integer, else `false`.
+ * @example
+ *
+ * _.isInteger(3);
+ * // => true
+ *
+ * _.isInteger(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isInteger(Infinity);
+ * // => false
+ *
+ * _.isInteger('3');
+ * // => false
+ */
 function isInteger(value) {
   return typeof value == 'number' && value == toInteger(value);
 }
@@ -2453,10 +2497,10 @@ function isInteger(value) {
 module.exports = isInteger;
 
 
- }),
+/***/ }),
 
- 1689:
- (function(module, exports, __webpack_require__) {
+/***/ 1689:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2471,10 +2515,10 @@ module.exports = function (str) {
 };
 
 
- }),
+/***/ }),
 
- 1703:
- (function(module, exports, __webpack_require__) {
+/***/ 1703:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2500,11 +2544,11 @@ function getFramework(sourceId) {
   }
 }
 
+// React
 
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function isReactComponent(sourceSymbols) {
   const { imports, classes, callExpressions } = sourceSymbols;
@@ -2530,7 +2574,7 @@ function extendsReactComponent(classes) {
   return result;
 }
 
-
+// Angular
 
 const isAngularComponent = sourceSymbols => {
   const { memberExpressions, identifiers } = sourceSymbols;
@@ -2545,17 +2589,17 @@ const hasAngularExpressions = memberExpressions => {
   return memberExpressions.some(item => item.name == "controller" || item.name == "module");
 };
 
-
+// Vue
 
 const isVueComponent = sourceSymbols => {
   const { identifiers } = sourceSymbols;
   return identifiers.some(identifier => identifier.name == "Vue");
 };
 
- }),
+/***/ }),
 
- 198:
- (function(module, exports, __webpack_require__) {
+/***/ 198:
+/***/ (function(module, exports, __webpack_require__) {
 
 var DataView = __webpack_require__(199),
     Map = __webpack_require__(101),
@@ -2565,7 +2609,7 @@ var DataView = __webpack_require__(199),
     baseGetTag = __webpack_require__(6),
     toSource = __webpack_require__(87);
 
-
+/** `Object#toString` result references. */
 var mapTag = '[object Map]',
     objectTag = '[object Object]',
     promiseTag = '[object Promise]',
@@ -2574,23 +2618,23 @@ var mapTag = '[object Map]',
 
 var dataViewTag = '[object DataView]';
 
-
+/** Used to detect maps, sets, and weakmaps. */
 var dataViewCtorString = toSource(DataView),
     mapCtorString = toSource(Map),
     promiseCtorString = toSource(Promise),
     setCtorString = toSource(Set),
     weakMapCtorString = toSource(WeakMap);
 
-
-
-
-
-
-
-
+/**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
 var getTag = baseGetTag;
 
-
+// Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
 if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
     (Map && getTag(new Map) != mapTag) ||
     (Promise && getTag(Promise.resolve()) != promiseTag) ||
@@ -2617,74 +2661,74 @@ if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
 module.exports = getTag;
 
 
- }),
+/***/ }),
 
- 199:
- (function(module, exports, __webpack_require__) {
+/***/ 199:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81),
     root = __webpack_require__(8);
 
-
+/* Built-in method references that are verified to be native. */
 var DataView = getNative(root, 'DataView');
 
 module.exports = DataView;
 
 
- }),
+/***/ }),
 
- 200:
- (function(module, exports, __webpack_require__) {
+/***/ 200:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81),
     root = __webpack_require__(8);
 
-
+/* Built-in method references that are verified to be native. */
 var Promise = getNative(root, 'Promise');
 
 module.exports = Promise;
 
 
- }),
+/***/ }),
 
- 201:
- (function(module, exports, __webpack_require__) {
+/***/ 201:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81),
     root = __webpack_require__(8);
 
-
+/* Built-in method references that are verified to be native. */
 var Set = getNative(root, 'Set');
 
 module.exports = Set;
 
 
- }),
+/***/ }),
 
- 202:
- (function(module, exports, __webpack_require__) {
+/***/ 202:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81),
     root = __webpack_require__(8);
 
-
+/* Built-in method references that are verified to be native. */
 var WeakMap = getNative(root, 'WeakMap');
 
 module.exports = WeakMap;
 
 
- }),
+/***/ }),
 
- 203:
- (function(module, exports) {
+/***/ 203:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
 function mapToArray(map) {
   var index = -1,
       result = Array(map.size);
@@ -2698,43 +2742,43 @@ function mapToArray(map) {
 module.exports = mapToArray;
 
 
- }),
+/***/ }),
 
- 205:
- (function(module, exports, __webpack_require__) {
+/***/ 205:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayLikeKeys = __webpack_require__(206),
     baseKeys = __webpack_require__(217),
     isArrayLike = __webpack_require__(220);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
 function keys(object) {
   return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
 }
@@ -2742,10 +2786,10 @@ function keys(object) {
 module.exports = keys;
 
 
- }),
+/***/ }),
 
- 206:
- (function(module, exports, __webpack_require__) {
+/***/ 206:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseTimes = __webpack_require__(207),
     isArguments = __webpack_require__(208),
@@ -2754,20 +2798,20 @@ var baseTimes = __webpack_require__(207),
     isIndex = __webpack_require__(117),
     isTypedArray = __webpack_require__(212);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
+/**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
 function arrayLikeKeys(value, inherited) {
   var isArr = isArray(value),
       isArg = !isArr && isArguments(value),
@@ -2780,13 +2824,13 @@ function arrayLikeKeys(value, inherited) {
   for (var key in value) {
     if ((inherited || hasOwnProperty.call(value, key)) &&
         !(skipIndexes && (
-           
+           // Safari 9 has enumerable `arguments.length` in strict mode.
            key == 'length' ||
-           
+           // Node.js 0.10 has enumerable non-index properties on buffers.
            (isBuff && (key == 'offset' || key == 'parent')) ||
-           
+           // PhantomJS 2 has enumerable non-index properties on typed arrays.
            (isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset')) ||
-           
+           // Skip index properties.
            isIndex(key, length)
         ))) {
       result.push(key);
@@ -2798,20 +2842,20 @@ function arrayLikeKeys(value, inherited) {
 module.exports = arrayLikeKeys;
 
 
- }),
+/***/ }),
 
- 207:
- (function(module, exports) {
+/***/ 207:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
 function baseTimes(n, iteratee) {
   var index = -1,
       result = Array(n);
@@ -2825,41 +2869,41 @@ function baseTimes(n, iteratee) {
 module.exports = baseTimes;
 
 
- }),
+/***/ }),
 
- 208:
- (function(module, exports, __webpack_require__) {
+/***/ 208:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsArguments = __webpack_require__(209),
     isObjectLike = __webpack_require__(14);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
+/** Built-in value references. */
 var propertyIsEnumerable = objectProto.propertyIsEnumerable;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
 var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
   return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
     !propertyIsEnumerable.call(value, 'callee');
@@ -2868,24 +2912,24 @@ var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsAr
 module.exports = isArguments;
 
 
- }),
+/***/ }),
 
- 209:
- (function(module, exports, __webpack_require__) {
+/***/ 209:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var argsTag = '[object Arguments]';
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
 function baseIsArguments(value) {
   return isObjectLike(value) && baseGetTag(value) == argsTag;
 }
@@ -2893,70 +2937,70 @@ function baseIsArguments(value) {
 module.exports = baseIsArguments;
 
 
- }),
+/***/ }),
 
- 210:
- (function(module, exports, __webpack_require__) {
+/***/ 210:
+/***/ (function(module, exports, __webpack_require__) {
 
-(function(module) {var root = __webpack_require__(8),
+/* WEBPACK VAR INJECTION */(function(module) {var root = __webpack_require__(8),
     stubFalse = __webpack_require__(211);
 
-
+/** Detect free variable `exports`. */
 var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
 
-
+/** Detect free variable `module`. */
 var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
 
-
+/** Detect the popular CommonJS extension `module.exports`. */
 var moduleExports = freeModule && freeModule.exports === freeExports;
 
-
+/** Built-in value references. */
 var Buffer = moduleExports ? root.Buffer : undefined;
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
 var isBuffer = nativeIsBuffer || stubFalse;
 
 module.exports = isBuffer;
 
-}.call(exports, __webpack_require__(793)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(793)(module)))
 
- }),
+/***/ }),
 
- 211:
- (function(module, exports) {
+/***/ 211:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
 function stubFalse() {
   return false;
 }
@@ -2964,50 +3008,50 @@ function stubFalse() {
 module.exports = stubFalse;
 
 
- }),
+/***/ }),
 
- 212:
- (function(module, exports, __webpack_require__) {
+/***/ 212:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsTypedArray = __webpack_require__(213),
     baseUnary = __webpack_require__(215),
     nodeUtil = __webpack_require__(216);
 
-
+/* Node.js helper references. */
 var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a typed array.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ * @example
+ *
+ * _.isTypedArray(new Uint8Array);
+ * // => true
+ *
+ * _.isTypedArray([]);
+ * // => false
+ */
 var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
 
 module.exports = isTypedArray;
 
 
- }),
+/***/ }),
 
- 213:
- (function(module, exports, __webpack_require__) {
+/***/ 213:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     isLength = __webpack_require__(214),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var argsTag = '[object Arguments]',
     arrayTag = '[object Array]',
     boolTag = '[object Boolean]',
@@ -3034,7 +3078,7 @@ var arrayBufferTag = '[object ArrayBuffer]',
     uint16Tag = '[object Uint16Array]',
     uint32Tag = '[object Uint32Array]';
 
-
+/** Used to identify `toStringTag` values of typed arrays. */
 var typedArrayTags = {};
 typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
 typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
@@ -3050,13 +3094,13 @@ typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
 typedArrayTags[setTag] = typedArrayTags[stringTag] =
 typedArrayTags[weakMapTag] = false;
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isTypedArray` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ */
 function baseIsTypedArray(value) {
   return isObjectLike(value) &&
     isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
@@ -3065,40 +3109,40 @@ function baseIsTypedArray(value) {
 module.exports = baseIsTypedArray;
 
 
- }),
+/***/ }),
 
- 214:
- (function(module, exports) {
+/***/ 214:
+/***/ (function(module, exports) {
 
-
+/** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
 function isLength(value) {
   return typeof value == 'number' &&
     value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
@@ -3107,18 +3151,18 @@ function isLength(value) {
 module.exports = isLength;
 
 
- }),
+/***/ }),
 
- 215:
- (function(module, exports) {
+/***/ 215:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.unary` without support for storing metadata.
+ *
+ * @private
+ * @param {Function} func The function to cap arguments for.
+ * @returns {Function} Returns the new capped function.
+ */
 function baseUnary(func) {
   return function(value) {
     return func(value);
@@ -3128,26 +3172,26 @@ function baseUnary(func) {
 module.exports = baseUnary;
 
 
- }),
+/***/ }),
 
- 216:
- (function(module, exports, __webpack_require__) {
+/***/ 216:
+/***/ (function(module, exports, __webpack_require__) {
 
-(function(module) {var freeGlobal = __webpack_require__(9);
+/* WEBPACK VAR INJECTION */(function(module) {var freeGlobal = __webpack_require__(9);
 
-
+/** Detect free variable `exports`. */
 var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
 
-
+/** Detect free variable `module`. */
 var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
 
-
+/** Detect the popular CommonJS extension `module.exports`. */
 var moduleExports = freeModule && freeModule.exports === freeExports;
 
-
+/** Detect free variable `process` from Node.js. */
 var freeProcess = moduleExports && freeGlobal.process;
 
-
+/** Used to access faster Node.js helpers. */
 var nodeUtil = (function() {
   try {
     return freeProcess && freeProcess.binding && freeProcess.binding('util');
@@ -3156,29 +3200,29 @@ var nodeUtil = (function() {
 
 module.exports = nodeUtil;
 
-}.call(exports, __webpack_require__(793)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(793)(module)))
 
- }),
+/***/ }),
 
- 217:
- (function(module, exports, __webpack_require__) {
+/***/ 217:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isPrototype = __webpack_require__(218),
     nativeKeys = __webpack_require__(219);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
 function baseKeys(object) {
   if (!isPrototype(object)) {
     return nativeKeys(object);
@@ -3195,21 +3239,21 @@ function baseKeys(object) {
 module.exports = baseKeys;
 
 
- }),
+/***/ }),
 
- 218:
- (function(module, exports) {
+/***/ 218:
+/***/ (function(module, exports) {
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
 function isPrototype(value) {
   var Ctor = value && value.constructor,
       proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
@@ -3220,52 +3264,52 @@ function isPrototype(value) {
 module.exports = isPrototype;
 
 
- }),
+/***/ }),
 
- 219:
- (function(module, exports, __webpack_require__) {
+/***/ 219:
+/***/ (function(module, exports, __webpack_require__) {
 
 var overArg = __webpack_require__(13);
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeKeys = overArg(Object.keys, Object);
 
 module.exports = nativeKeys;
 
 
- }),
+/***/ }),
 
- 220:
- (function(module, exports, __webpack_require__) {
+/***/ 220:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isFunction = __webpack_require__(83),
     isLength = __webpack_require__(214);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
 function isArrayLike(value) {
   return value != null && isLength(value.length) && !isFunction(value);
 }
@@ -3273,10 +3317,10 @@ function isArrayLike(value) {
 module.exports = isArrayLike;
 
 
- }),
+/***/ }),
 
- 2255:
- (function(module, exports, __webpack_require__) {
+/***/ 2255:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -4551,10 +4595,10 @@ function isSpreadProperty(node, opts) {
   return (0, _is.default)("SpreadProperty", node, opts);
 }
 
- }),
+/***/ }),
 
- 2256:
- (function(module, exports, __webpack_require__) {
+/***/ 2256:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6472,10 +6516,10 @@ function SpreadProperty() {
   return SpreadProperty.apply(void 0, ["SpreadProperty"].concat(args));
 }
 
- }),
+/***/ }),
 
- 2257:
- (function(module, exports, __webpack_require__) {
+/***/ 2257:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6519,10 +6563,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var TYPES = Object.keys(_utils.VISITOR_KEYS).concat(Object.keys(_utils.FLIPPED_ALIAS_KEYS)).concat(Object.keys(_utils.DEPRECATED_KEYS));
 exports.TYPES = TYPES;
 
- }),
+/***/ }),
 
- 2258:
- (function(module, exports, __webpack_require__) {
+/***/ 2258:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6772,10 +6816,10 @@ function defineType(type, opts) {
 
 var store = {};
 
- }),
+/***/ }),
 
- 2259:
- (function(module, exports, __webpack_require__) {
+/***/ 2259:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6824,10 +6868,10 @@ exports.BLOCK_SCOPED_SYMBOL = BLOCK_SCOPED_SYMBOL;
 var NOT_LOCAL_BINDING = Symbol.for("should not be considered a local binding");
 exports.NOT_LOCAL_BINDING = NOT_LOCAL_BINDING;
 
- }),
+/***/ }),
 
- 2260:
- (function(module, exports, __webpack_require__) {
+/***/ 2260:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6849,10 +6893,10 @@ function isValidIdentifier(name) {
   }
 }
 
- }),
+/***/ }),
 
- 2261:
- (function(module, exports, __webpack_require__) {
+/***/ 2261:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6932,10 +6976,10 @@ function cloneNode(node, deep) {
   return newNode;
 }
 
- }),
+/***/ }),
 
- 2262:
- (function(module, exports, __webpack_require__) {
+/***/ 2262:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6961,10 +7005,10 @@ function is(type, node, opts) {
   }
 }
 
- }),
+/***/ }),
 
- 2263:
- (function(module, exports, __webpack_require__) {
+/***/ 2263:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -7066,10 +7110,10 @@ getBindingIdentifiers.keys = {
   VariableDeclarator: ["id"]
 };
 
- }),
+/***/ }),
 
- 2264:
- (function(module, exports, __webpack_require__) {
+/***/ 2264:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -7107,10 +7151,10 @@ function isType(nodeType, targetType) {
   return false;
 }
 
- }),
+/***/ }),
 
- 2265:
- (function(module, exports, __webpack_require__) {
+/***/ 2265:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -7817,10 +7861,10 @@ exports.patternLikeCommon = patternLikeCommon;
   }
 });
 
- }),
+/***/ }),
 
- 2266:
- (function(module, exports, __webpack_require__) {
+/***/ 2266:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8209,10 +8253,10 @@ exports.classMethodOrDeclareMethodCommon = classMethodOrDeclareMethodCommon;
   }
 });
 
- }),
+/***/ }),
 
- 2267:
- (function(module, exports, __webpack_require__) {
+/***/ 2267:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8230,10 +8274,10 @@ function inherit(key, child, parent) {
   }
 }
 
- }),
+/***/ }),
 
- 2268:
- (function(module, exports, __webpack_require__) {
+/***/ 2268:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8567,10 +8611,10 @@ var react = {
 };
 exports.react = react;
 
- }),
+/***/ }),
 
- 2269:
- (function(module, exports, __webpack_require__) {
+/***/ 2269:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8589,10 +8633,10 @@ function buildMatchMemberExpression(match, allowPartial) {
   };
 }
 
- }),
+/***/ }),
 
- 2270:
- (function(module, exports, __webpack_require__) {
+/***/ 2270:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8634,10 +8678,10 @@ function matchesPattern(member, match, allowPartial) {
   return true;
 }
 
- }),
+/***/ }),
 
- 2271:
- (function(module, exports, __webpack_require__) {
+/***/ 2271:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8660,10 +8704,10 @@ function shallowEqual(actual, expected) {
   return true;
 }
 
- }),
+/***/ }),
 
- 2272:
- (function(module, exports, __webpack_require__) {
+/***/ 2272:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8683,10 +8727,10 @@ function validate(node, key, val) {
   field.validate(node, key, val);
 }
 
- }),
+/***/ }),
 
- 2273:
- (function(module, exports, __webpack_require__) {
+/***/ 2273:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8700,10 +8744,10 @@ function isNode(node) {
   return !!(node && _definitions.VISITOR_KEYS[node.type]);
 }
 
- }),
+/***/ }),
 
- 2274:
- (function(module, exports, __webpack_require__) {
+/***/ 2274:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8779,10 +8823,10 @@ function removeTypeDuplicates(nodes) {
   return types;
 }
 
- }),
+/***/ }),
 
- 2275:
- (function(module, exports, __webpack_require__) {
+/***/ 2275:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8798,10 +8842,10 @@ function clone(node) {
   return (0, _cloneNode.default)(node, false);
 }
 
- }),
+/***/ }),
 
- 2276:
- (function(module, exports, __webpack_require__) {
+/***/ 2276:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8826,10 +8870,10 @@ function addComments(node, type, comments) {
   return node;
 }
 
- }),
+/***/ }),
 
- 2277:
- (function(module, exports, __webpack_require__) {
+/***/ 2277:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8845,10 +8889,10 @@ function inheritInnerComments(child, parent) {
   (0, _inherit.default)("innerComments", child, parent);
 }
 
- }),
+/***/ }),
 
- 2278:
- (function(module, exports, __webpack_require__) {
+/***/ 2278:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8864,10 +8908,10 @@ function inheritLeadingComments(child, parent) {
   (0, _inherit.default)("leadingComments", child, parent);
 }
 
- }),
+/***/ }),
 
- 2279:
- (function(module, exports, __webpack_require__) {
+/***/ 2279:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8890,10 +8934,10 @@ function inheritsComments(child, parent) {
   return child;
 }
 
- }),
+/***/ }),
 
- 2280:
- (function(module, exports, __webpack_require__) {
+/***/ 2280:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8909,10 +8953,10 @@ function inheritTrailingComments(child, parent) {
   (0, _inherit.default)("trailingComments", child, parent);
 }
 
- }),
+/***/ }),
 
- 2281:
- (function(module, exports, __webpack_require__) {
+/***/ 2281:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8948,10 +8992,10 @@ function toBlock(node, parent) {
   return (0, _generated2.blockStatement)(blockNodes);
 }
 
- }),
+/***/ }),
 
- 2282:
- (function(module, exports, __webpack_require__) {
+/***/ 2282:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -8978,10 +9022,10 @@ function toIdentifier(name) {
   return name || "_";
 }
 
- }),
+/***/ }),
 
- 2283:
- (function(module, exports, __webpack_require__) {
+/***/ 2283:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9000,10 +9044,10 @@ function removePropertiesDeep(tree, opts) {
   return tree;
 }
 
- }),
+/***/ }),
 
- 2284:
- (function(module, exports, __webpack_require__) {
+/***/ 2284:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9057,10 +9101,10 @@ function traverseFast(node, enter, opts) {
   }
 }
 
- }),
+/***/ }),
 
- 2285:
- (function(module, exports, __webpack_require__) {
+/***/ 2285:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9120,10 +9164,10 @@ function removeProperties(node, opts) {
   }
 }
 
- }),
+/***/ }),
 
- 2286:
- (function(module, exports, __webpack_require__) {
+/***/ 2286:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9139,58 +9183,58 @@ function isLet(node) {
   return (0, _generated.isVariableDeclaration)(node) && (node.kind !== "var" || node[_constants.BLOCK_SCOPED_SYMBOL]);
 }
 
- }),
+/***/ }),
 
- 2291:
- (function(module, exports, __webpack_require__) {
+/***/ 2291:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsMap = __webpack_require__(2292),
     baseUnary = __webpack_require__(215),
     nodeUtil = __webpack_require__(216);
 
-
+/* Node.js helper references. */
 var nodeIsMap = nodeUtil && nodeUtil.isMap;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a `Map` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a map, else `false`.
+ * @example
+ *
+ * _.isMap(new Map);
+ * // => true
+ *
+ * _.isMap(new WeakMap);
+ * // => false
+ */
 var isMap = nodeIsMap ? baseUnary(nodeIsMap) : baseIsMap;
 
 module.exports = isMap;
 
 
- }),
+/***/ }),
 
- 2292:
- (function(module, exports, __webpack_require__) {
+/***/ 2292:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getTag = __webpack_require__(198),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var mapTag = '[object Map]';
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isMap` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a map, else `false`.
+ */
 function baseIsMap(value) {
   return isObjectLike(value) && getTag(value) == mapTag;
 }
@@ -9198,58 +9242,58 @@ function baseIsMap(value) {
 module.exports = baseIsMap;
 
 
- }),
+/***/ }),
 
- 2293:
- (function(module, exports, __webpack_require__) {
+/***/ 2293:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsSet = __webpack_require__(2294),
     baseUnary = __webpack_require__(215),
     nodeUtil = __webpack_require__(216);
 
-
+/* Node.js helper references. */
 var nodeIsSet = nodeUtil && nodeUtil.isSet;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a `Set` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a set, else `false`.
+ * @example
+ *
+ * _.isSet(new Set);
+ * // => true
+ *
+ * _.isSet(new WeakSet);
+ * // => false
+ */
 var isSet = nodeIsSet ? baseUnary(nodeIsSet) : baseIsSet;
 
 module.exports = isSet;
 
 
- }),
+/***/ }),
 
- 2294:
- (function(module, exports, __webpack_require__) {
+/***/ 2294:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getTag = __webpack_require__(198),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var setTag = '[object Set]';
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isSet` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a set, else `false`.
+ */
 function baseIsSet(value) {
   return isObjectLike(value) && getTag(value) == setTag;
 }
@@ -9257,10 +9301,10 @@ function baseIsSet(value) {
 module.exports = baseIsSet;
 
 
- }),
+/***/ }),
 
- 2295:
- (function(module, exports, __webpack_require__) {
+/***/ 2295:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9276,10 +9320,10 @@ var isReactComponent = (0, _buildMatchMemberExpression.default)("React.Component
 var _default = isReactComponent;
 exports.default = _default;
 
- }),
+/***/ }),
 
- 2296:
- (function(module, exports, __webpack_require__) {
+/***/ 2296:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9658,10 +9702,10 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
   aliases: ["Flow", "FlowType", "FlowBaseAnnotation"]
 });
 
- }),
+/***/ }),
 
- 2297:
- (function(module, exports, __webpack_require__) {
+/***/ 2297:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9821,10 +9865,10 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
   aliases: ["JSX", "Immutable"]
 });
 
- }),
+/***/ }),
 
- 2298:
- (function(module, exports, __webpack_require__) {
+/***/ 2298:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9846,10 +9890,10 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
   }
 });
 
- }),
+/***/ }),
 
- 2299:
- (function(module, exports, __webpack_require__) {
+/***/ 2299:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -9991,10 +10035,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   }
 });
 
- }),
+/***/ }),
 
- 2300:
- (function(module, exports, __webpack_require__) {
+/***/ 2300:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10391,10 +10435,10 @@ var unionOrIntersection = {
   }
 });
 
- }),
+/***/ }),
 
- 2301:
- (function(module, exports, __webpack_require__) {
+/***/ 2301:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10406,10 +10450,10 @@ function isCompatTag(tagName) {
   return !!tagName && /^[a-z]/.test(tagName);
 }
 
- }),
+/***/ }),
 
- 2302:
- (function(module, exports, __webpack_require__) {
+/***/ 2302:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10442,10 +10486,10 @@ function buildChildren(node) {
   return elements;
 }
 
- }),
+/***/ }),
 
- 2303:
- (function(module, exports, __webpack_require__) {
+/***/ 2303:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10494,10 +10538,10 @@ function cleanJSXElementLiteralChild(child, args) {
   if (str) args.push((0, _generated.stringLiteral)(str));
 }
 
- }),
+/***/ }),
 
- 2304:
- (function(module, exports, __webpack_require__) {
+/***/ 2304:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10545,10 +10589,10 @@ function builder(type) {
   return node;
 }
 
- }),
+/***/ }),
 
- 2305:
- (function(module, exports, __webpack_require__) {
+/***/ 2305:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -10567,10 +10611,10 @@ function assertNode(node) {
   }
 }
 
- }),
+/***/ }),
 
- 2306:
- (function(module, exports, __webpack_require__) {
+/***/ 2306:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12843,10 +12887,10 @@ function assertSpreadProperty(node, opts) {
   assert("SpreadProperty", node, opts);
 }
 
- }),
+/***/ }),
 
- 2307:
- (function(module, exports, __webpack_require__) {
+/***/ 2307:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12876,10 +12920,10 @@ function createTypeAnnotationBasedOnTypeof(type) {
   }
 }
 
- }),
+/***/ }),
 
- 2308:
- (function(module, exports, __webpack_require__) {
+/***/ 2308:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12903,10 +12947,10 @@ function createUnionTypeAnnotation(types) {
   }
 }
 
- }),
+/***/ }),
 
- 2309:
- (function(module, exports, __webpack_require__) {
+/***/ 2309:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12922,10 +12966,10 @@ function cloneDeep(node) {
   return (0, _cloneNode.default)(node);
 }
 
- }),
+/***/ }),
 
- 2310:
- (function(module, exports, __webpack_require__) {
+/***/ 2310:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12943,10 +12987,10 @@ function cloneWithoutLoc(node) {
   return newNode;
 }
 
- }),
+/***/ }),
 
- 2311:
- (function(module, exports, __webpack_require__) {
+/***/ 2311:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12965,10 +13009,10 @@ function addComment(node, type, content, line) {
   }]);
 }
 
- }),
+/***/ }),
 
- 2312:
- (function(module, exports, __webpack_require__) {
+/***/ 2312:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -12986,10 +13030,10 @@ function removeComments(node) {
   return node;
 }
 
- }),
+/***/ }),
 
- 2313:
- (function(module, exports, __webpack_require__) {
+/***/ 2313:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13082,10 +13126,10 @@ exports.TSTYPEELEMENT_TYPES = TSTYPEELEMENT_TYPES;
 var TSTYPE_TYPES = _definitions.FLIPPED_ALIAS_KEYS["TSType"];
 exports.TSTYPE_TYPES = TSTYPE_TYPES;
 
- }),
+/***/ }),
 
- 2314:
- (function(module, exports, __webpack_require__) {
+/***/ 2314:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13105,10 +13149,10 @@ function ensureBlock(node, key) {
   return node[key] = (0, _toBlock.default)(node[key], node);
 }
 
- }),
+/***/ }),
 
- 2315:
- (function(module, exports, __webpack_require__) {
+/***/ 2315:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13126,10 +13170,10 @@ function toBindingIdentifierName(name) {
   return name;
 }
 
- }),
+/***/ }),
 
- 2316:
- (function(module, exports, __webpack_require__) {
+/***/ 2316:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13150,10 +13194,10 @@ function toComputedKey(node, key) {
   return key;
 }
 
- }),
+/***/ }),
 
- 2317:
- (function(module, exports, __webpack_require__) {
+/***/ 2317:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13185,10 +13229,10 @@ function toExpression(node) {
   return node;
 }
 
- }),
+/***/ }),
 
- 2318:
- (function(module, exports, __webpack_require__) {
+/***/ 2318:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13242,10 +13286,10 @@ toKeyAlias.increment = function () {
   }
 };
 
- }),
+/***/ }),
 
- 2319:
- (function(module, exports, __webpack_require__) {
+/***/ 2319:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13271,10 +13315,10 @@ function toSequenceExpression(nodes, scope) {
   return result;
 }
 
- }),
+/***/ }),
 
- 2320:
- (function(module, exports, __webpack_require__) {
+/***/ 2320:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13363,10 +13407,10 @@ function gatherSequenceExpressions(nodes, scope, declars) {
   }
 }
 
- }),
+/***/ }),
 
- 2321:
- (function(module, exports, __webpack_require__) {
+/***/ 2321:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13412,10 +13456,10 @@ function toStatement(node, ignore) {
   return node;
 }
 
- }),
+/***/ }),
 
- 2322:
- (function(module, exports, __webpack_require__) {
+/***/ 2322:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13485,10 +13529,10 @@ function valueToNode(value) {
   throw new Error("don't know how to turn this value into a node");
 }
 
- }),
+/***/ }),
 
- 2323:
- (function(module, exports, __webpack_require__) {
+/***/ 2323:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13509,10 +13553,10 @@ function appendToMemberExpression(member, append, computed) {
   return member;
 }
 
- }),
+/***/ }),
 
- 2324:
- (function(module, exports, __webpack_require__) {
+/***/ 2324:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13553,10 +13597,10 @@ function inherits(child, parent) {
   return child;
 }
 
- }),
+/***/ }),
 
- 2325:
- (function(module, exports, __webpack_require__) {
+/***/ 2325:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13571,10 +13615,10 @@ function prependToMemberExpression(member, prepend) {
   return member;
 }
 
- }),
+/***/ }),
 
- 2326:
- (function(module, exports, __webpack_require__) {
+/***/ 2326:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13590,10 +13634,10 @@ function getOuterBindingIdentifiers(node, duplicates) {
   return (0, _getBindingIdentifiers.default)(node, duplicates, true);
 }
 
- }),
+/***/ }),
 
- 2327:
- (function(module, exports, __webpack_require__) {
+/***/ 2327:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13661,10 +13705,10 @@ function traverseSimpleImpl(node, enter, exit, state, ancestors) {
   if (exit) exit(node, ancestors, state);
 }
 
- }),
+/***/ }),
 
- 2328:
- (function(module, exports, __webpack_require__) {
+/***/ 2328:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13695,10 +13739,10 @@ function isBinding(node, parent) {
   return false;
 }
 
- }),
+/***/ }),
 
- 2329:
- (function(module, exports, __webpack_require__) {
+/***/ 2329:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13716,10 +13760,10 @@ function isBlockScoped(node) {
   return (0, _generated.isFunctionDeclaration)(node) || (0, _generated.isClassDeclaration)(node) || (0, _isLet.default)(node);
 }
 
- }),
+/***/ }),
 
- 2330:
- (function(module, exports, __webpack_require__) {
+/***/ 2330:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13747,10 +13791,10 @@ function isImmutable(node) {
   return false;
 }
 
- }),
+/***/ }),
 
- 2331:
- (function(module, exports, __webpack_require__) {
+/***/ 2331:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13804,10 +13848,10 @@ function isNodesEquivalent(a, b) {
   return true;
 }
 
- }),
+/***/ }),
 
- 2332:
- (function(module, exports, __webpack_require__) {
+/***/ 2332:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13910,10 +13954,10 @@ function isReferenced(node, parent) {
   return true;
 }
 
- }),
+/***/ }),
 
- 2333:
- (function(module, exports, __webpack_require__) {
+/***/ 2333:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13939,10 +13983,10 @@ function isScope(node, parent) {
   return (0, _generated.isScopable)(node);
 }
 
- }),
+/***/ }),
 
- 2334:
- (function(module, exports, __webpack_require__) {
+/***/ 2334:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13958,10 +14002,10 @@ function isSpecifierDefault(specifier) {
   });
 }
 
- }),
+/***/ }),
 
- 2335:
- (function(module, exports, __webpack_require__) {
+/***/ 2335:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -13979,10 +14023,10 @@ function isValidES3Identifier(name) {
   return (0, _isValidIdentifier.default)(name) && !RESERVED_WORDS_ES3_ONLY.has(name);
 }
 
- }),
+/***/ }),
 
- 2336:
- (function(module, exports, __webpack_require__) {
+/***/ 2336:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14000,10 +14044,10 @@ function isVar(node) {
   }) && !node[_constants.BLOCK_SCOPED_SYMBOL];
 }
 
- }),
+/***/ }),
 
- 2337:
- (function(module, exports, __webpack_require__) {
+/***/ 2337:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14029,7 +14073,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 var startScript = /<script[^>]*>/im;
 var endScript = /<\/script\s*>/im;
-
+// https://stackoverflow.com/questions/5034781/js-regex-to-split-by-line#comment5633979_5035005
 var newLines = /\r\n|[\n\v\f\r\x85\u2028\u2029]/;
 
 function getType(tag) {
@@ -14058,8 +14102,8 @@ function getCandidateScriptLocations(source, index) {
       var locIndex = i + startsAt;
       var endIndex = locIndex + locLength + endMatch[0].length;
 
-      
-      
+      // extract the complete tag (incl start and end tags and content). if the
+      // type is invalid (= not JS), skip this tag and continue
       var tag = source.substring(i + startMatch.index, endIndex);
       var type = getType(tag);
       if (type && type !== "javascript" && type !== "text/javascript") {
@@ -14104,7 +14148,7 @@ function adjustForLineAndColumn(fullSource, location) {
   return Object.assign({}, location, {
     line: line,
     column: column,
-    
+    // prepend whitespace for scripts that do not start on the first column
     source: generateWhitespace(column) + location.source
   });
 }
@@ -14145,10 +14189,10 @@ exports.getCandidateScriptLocations = getCandidateScriptLocations;
 exports.parseScripts = parseScripts;
 exports.parseScriptTags = parseScriptTags;
 
- }),
+/***/ }),
 
- 2338:
- (function(module, exports, __webpack_require__) {
+/***/ 2338:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14200,28 +14244,28 @@ function parseAttributes(str, start) {
       }
     } else if (attribute !== null) {
       if (c === "=") {
-        
-        
+        // once we've started an attribute, look for = to indicate
+        // it's a non-boolean attribute
         attribute.bool = false;
         if (attribute.value === true) {
           attribute.value = "";
         }
       } else if (!attribute.bool && attribute.terminator === null && (c === '"' || c === "'")) {
-        
-        
+        // once we've determined it's non-boolean, look for a
+        // value terminator (", ')
         attribute.terminator = c;
       } else if (attribute.terminator) {
         if (c === attribute.terminator) {
-          
-          
+          // if we had a terminator and found another, we've
+          // reach the end of the attribute
           attributes[attribute.name] = attribute.value;
           attribute = null;
         } else {
-          
+          // otherwise, append the character to the attribute value
           attribute.value += c;
 
-          
-          
+          // check for an escaped terminator and push it as well
+          // to avoid terminating prematurely
           if (c === "\\") {
             var next = str.charAt(i + 1);
             if (next === attribute.terminator) {
@@ -14231,13 +14275,13 @@ function parseAttributes(str, start) {
           }
         }
       } else if (!/\s/.test(c)) {
-        
-        
-        
+        // if we've hit a non-space character and aren't processing a value,
+        // we're starting a new attribute so push the attribute and clear the
+        // local variable
         attributes[attribute.name] = attribute.value;
         attribute = null;
 
-        
+        // move the cursor back to re-find the start of the attribute
         i -= 1;
       }
     }
@@ -14267,7 +14311,7 @@ function parseFragment(str) {
     var c = str.charAt(i++);
 
     if (!open && !tag && c === "<") {
-      
+      // Open Start Tag
       open = true;
 
       var tagNode = parseToken(str, i);
@@ -14278,10 +14322,10 @@ function parseFragment(str) {
       i = tagNode.index - 1;
       tag = tagNode.token;
     } else if (open && c === ">") {
-      
+      // Close Start Tag
       break;
     } else if (open) {
-      
+      // Attributes
       var attributeNode = parseAttributes(str, i - 1);
 
       if (attributeNode) {
@@ -14304,10 +14348,10 @@ function parseFragment(str) {
 exports.default = parseFragment;
 exports.parseFragment = parseFragment;
 
- }),
+/***/ }),
 
- 2347:
- (function(module, exports, __webpack_require__) {
+/***/ 2347:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14460,10 +14504,10 @@ function StringLiteral(node) {
   return this.token(val);
 }
 
- }),
+/***/ }),
 
- 2353:
- (function(module, exports, __webpack_require__) {
+/***/ 2353:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14589,10 +14633,10 @@ function needsParens(node, parent, printStack) {
   return find(expandedParens, node, parent, printStack);
 }
 
- }),
+/***/ }),
 
- 2354:
- (function(module, exports, __webpack_require__) {
+/***/ 2354:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14800,10 +14844,10 @@ function ImportNamespaceSpecifier(node) {
   this.print(node.local, node);
 }
 
- }),
+/***/ }),
 
- 2365:
- (function(module, exports, __webpack_require__) {
+/***/ 2365:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14913,10 +14957,10 @@ function _default(ast, opts, code) {
   return gen.generate();
 }
 
- }),
+/***/ }),
 
- 2366:
- (function(module, exports, __webpack_require__) {
+/***/ 2366:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -14994,10 +15038,10 @@ var SourceMap = function () {
 
 exports.default = SourceMap;
 
- }),
+/***/ }),
 
- 2367:
- (function(module, exports, __webpack_require__) {
+/***/ 2367:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -15524,10 +15568,10 @@ function commaSeparator() {
   this.space();
 }
 
- }),
+/***/ }),
 
- 2368:
- (function(module, exports, __webpack_require__) {
+/***/ 2368:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -15738,10 +15782,10 @@ var Buffer = function () {
 
 exports.default = Buffer;
 
- }),
+/***/ }),
 
- 2369:
- (function(module, exports, __webpack_require__) {
+/***/ 2369:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -15918,10 +15962,10 @@ exports.list = list;
   });
 });
 
- }),
+/***/ }),
 
- 2370:
- (function(module, exports, __webpack_require__) {
+/***/ 2370:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -16158,10 +16202,10 @@ function isFirstInStatement(printStack, _temp) {
   return false;
 }
 
- }),
+/***/ }),
 
- 2371:
- (function(module, exports, __webpack_require__) {
+/***/ 2371:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -16245,10 +16289,10 @@ Object.keys(_typescript).forEach(function (key) {
   exports[key] = _typescript[key];
 });
 
- }),
+/***/ }),
 
- 2372:
- (function(module, exports, __webpack_require__) {
+/***/ 2372:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -16282,10 +16326,10 @@ function TemplateLiteral(node) {
   }
 }
 
- }),
+/***/ }),
 
- 2373:
- (function(module, exports, __webpack_require__) {
+/***/ 2373:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -16562,10 +16606,10 @@ function MetaProperty(node) {
   this.print(node.property, node);
 }
 
- }),
+/***/ }),
 
- 2374:
- (function(module, exports, __webpack_require__) {
+/***/ 2374:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -16888,10 +16932,10 @@ function VariableDeclarator(node) {
   }
 }
 
- }),
+/***/ }),
 
- 2375:
- (function(module, exports, __webpack_require__) {
+/***/ 2375:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -17047,10 +17091,10 @@ function _classMethodHead(node) {
   this._methodHead(node);
 }
 
- }),
+/***/ }),
 
- 2376:
- (function(module, exports, __webpack_require__) {
+/***/ 2376:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -17195,13 +17239,13 @@ function hasTypes(node, param) {
   return node.typeParameters || node.returnType || param.typeAnnotation || param.optional || param.trailingComments;
 }
 
- }),
+/***/ }),
 
- 2377:
- (function(module, exports, __webpack_require__) {
+/***/ 2377:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-(function(Buffer) {
+/* WEBPACK VAR INJECTION */(function(Buffer) {
 
 const object = {};
 const hasOwnProperty = object.hasOwnProperty;
@@ -17235,7 +17279,7 @@ const toString = object.toString;
 const isArray = Array.isArray;
 const isBuffer = Buffer.isBuffer;
 const isObject = (value) => {
-	
+	// This is a very simple check, but it’s good enough for what we need.
 	return toString.call(value) == '[object Object]';
 };
 const isString = (value) => {
@@ -17256,9 +17300,9 @@ const isSet = (value) => {
 	return toString.call(value) == '[object Set]';
 };
 
+/*--------------------------------------------------------------------------*/
 
-
-
+// https://mathiasbynens.be/notes/javascript-escapes#single
 const singleEscapes = {
 	'"': '\\"',
 	'\'': '\\\'',
@@ -17268,8 +17312,8 @@ const singleEscapes = {
 	'\n': '\\n',
 	'\r': '\\r',
 	'\t': '\\t'
-	
-	
+	// `\v` is omitted intentionally, because in IE < 9, '\v' == 'v'.
+	// '\v': '\\x0B'
 };
 const regexSingleEscape = /["'\\\b\f\n\r\t]/;
 
@@ -17282,7 +17326,7 @@ const jsesc = (argument, options) => {
 		++options.indentLevel;
 		indent = options.indent.repeat(options.indentLevel)
 	};
-	
+	// Handle options
 	const defaults = {
 		'escapeEverything': false,
 		'minimal': false,
@@ -17389,7 +17433,7 @@ const jsesc = (argument, options) => {
 				(compact ? '' : oldIndent) + ']';
 		} else if (isNumber(argument)) {
 			if (json) {
-				
+				// Some number values (e.g. `Infinity`) cannot be represented in JSON.
 				return JSON.stringify(argument);
 			}
 			if (useDecNumbers) {
@@ -17410,13 +17454,13 @@ const jsesc = (argument, options) => {
 			}
 		} else if (!isObject(argument)) {
 			if (json) {
-				
-				
-				
+				// For some values (e.g. `undefined`, `function` objects),
+				// `JSON.stringify(value)` returns `undefined` (which isn’t valid
+				// JSON) instead of `'null'`.
 				return JSON.stringify(argument) || 'null';
 			}
 			return String(argument);
-		} else { 
+		} else { // it’s an object
 			result = [];
 			options.wrap = true;
 			increaseIndentation();
@@ -17438,7 +17482,7 @@ const jsesc = (argument, options) => {
 	}
 
 	const string = argument;
-	
+	// Loop over each code unit in the string and escape it
 	let index = -1;
 	const length = string.length;
 	result = '';
@@ -17446,13 +17490,13 @@ const jsesc = (argument, options) => {
 		const character = string.charAt(index);
 		if (options.es6) {
 			const first = string.charCodeAt(index);
-			if ( 
-				first >= 0xD800 && first <= 0xDBFF && 
-				length > index + 1 
+			if ( // check if it’s the start of a surrogate pair
+				first >= 0xD800 && first <= 0xDBFF && // high surrogate
+				length > index + 1 // there is a next code unit
 			) {
 				const second = string.charCodeAt(index + 1);
-				if (second >= 0xDC00 && second <= 0xDFFF) { 
-					
+				if (second >= 0xDC00 && second <= 0xDFFF) { // low surrogate
+					// https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
 					const codePoint = (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
 					let hexadecimal = codePoint.toString(16);
 					if (!lowercaseHex) {
@@ -17466,8 +17510,8 @@ const jsesc = (argument, options) => {
 		}
 		if (!options.escapeEverything) {
 			if (regexWhitelist.test(character)) {
-				
-				
+				// It’s a printable ASCII character that is not `"`, `'` or `\`,
+				// so don’t escape it.
 				result += character;
 				continue;
 			}
@@ -17493,7 +17537,7 @@ const jsesc = (argument, options) => {
 			continue;
 		}
 		if (regexSingleEscape.test(character)) {
-			
+			// no need for a `hasOwnProperty` check here
 			result += singleEscapes[character];
 			continue;
 		}
@@ -17519,7 +17563,7 @@ const jsesc = (argument, options) => {
 		result = result.replace(/\$\{/g, '\\\$\{');
 	}
 	if (options.isScriptContext) {
-		
+		// https://mathiasbynens.be/notes/etago
 		return result
 			.replace(/<\/(script|style)/gi, '<\\/$1')
 			.replace(/<!--/g, json ? '\\u003C!--' : '\\x3C!--');
@@ -17531,12 +17575,12 @@ jsesc.version = '2.5.1';
 
 module.exports = jsesc;
 
-}.call(exports, __webpack_require__(794).Buffer))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(794).Buffer))
 
- }),
+/***/ }),
 
- 2378:
- (function(module, exports, __webpack_require__) {
+/***/ 2378:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -18099,10 +18143,10 @@ function VoidTypeAnnotation() {
   this.word("void");
 }
 
- }),
+/***/ }),
 
- 2379:
- (function(module, exports, __webpack_require__) {
+/***/ 2379:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -18161,10 +18205,10 @@ function Directive(node) {
   this.semicolon();
 }
 
- }),
+/***/ }),
 
- 2380:
- (function(module, exports, __webpack_require__) {
+/***/ 2380:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -18314,10 +18358,10 @@ function JSXClosingFragment() {
   this.token(">");
 }
 
- }),
+/***/ }),
 
- 2381:
- (function(module, exports, __webpack_require__) {
+/***/ 2381:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -18972,10 +19016,10 @@ function tsPrintSignatureDeclarationBase(node) {
   this.print(node.typeAnnotation, node);
 }
 
- }),
+/***/ }),
 
- 2413:
- (function(module, exports, __webpack_require__) {
+/***/ 2413:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -18988,9 +19032,9 @@ exports.clearScopes = clearScopes;
 
 var _visitor = __webpack_require__(2414);
 
-let parsedScopesCache = new Map(); 
-
-
+let parsedScopesCache = new Map(); /* This Source Code Form is subject to the terms of the Mozilla Public
+                                    * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                    * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function getScopes(location) {
   const { sourceId } = location;
@@ -19006,17 +19050,17 @@ function clearScopes() {
   parsedScopesCache = new Map();
 }
 
-
-
-
+/**
+ * Searches all scopes and their bindings at the specific location.
+ */
 function findScopes(scopes, location) {
-  
+  // Find inner most in the tree structure.
   let searchInScopes = scopes;
   const found = [];
   while (searchInScopes) {
     const foundOne = searchInScopes.some(s => {
       if (compareLocations(s.start, location) <= 0 && compareLocations(location, s.end) < 0) {
-        
+        // Found the next scope, trying to search recusevly in its children.
         found.unshift(s);
         searchInScopes = s.children;
         return true;
@@ -19039,16 +19083,16 @@ function findScopes(scopes, location) {
 }
 
 function compareLocations(a, b) {
-  
-  
-  
+  // According to type of Location.column can be undefined, if will not be the
+  // case here, ignoring flow error.
+  // $FlowIgnore
   return a.line == b.line ? a.column - b.column : a.line - b.line;
 }
 
- }),
+/***/ }),
 
- 2414:
- (function(module, exports, __webpack_require__) {
+/***/ 2414:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -19078,30 +19122,30 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * "implicit"
+ * Variables added automaticly like "this" and "arguments"
+ *
+ * "var"
+ * Variables declared with "var" or non-block function declarations
+ *
+ * "let"
+ * Variables declared with "let".
+ *
+ * "const"
+ * Variables declared with "const", or added as const
+ * bindings like inner function expressions and inner class names.
+ *
+ * "import"
+ * Imported binding names exposed from other modules.
+ *
+ * "global"
+ * Variables that reference undeclared global values.
+ */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Location information about the expression immediartely surrounding a
+// given binding reference.
 function parseSourceScopes(sourceId) {
   const ast = (0, _ast.getAst)(sourceId);
   if ((0, _isEmpty2.default)(ast)) {
@@ -19132,25 +19176,25 @@ function parseSourceScopes(sourceId) {
     binding.refs = freeVariables.concat(binding.refs);
   }
 
-  
-  
-  
+  // TODO: This should probably check for ".mjs" extension on the
+  // original file, and should also be skipped if the the generated
+  // code is an ES6 module rather than a script.
   if ((0, _devtoolsSourceMap.isGeneratedId)(sourceId) || ast.program.sourceType === "script" && !looksLikeCommonJS(global)) {
     stripModuleScope(global);
   }
 
   return toParsedScopes([global], sourceId) || [];
-} 
-
-
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function toParsedScopes(children, sourceId) {
   if (!children || children.length === 0) {
     return undefined;
   }
   return children.map(scope => {
-    
-    
+    // Removing unneed information from TempScope such as parent reference.
+    // We also need to convert BabelLocation to the Location type.
     return {
       start: scope.loc.start,
       end: scope.loc.end,
@@ -19274,7 +19318,7 @@ function createGlobalScope(ast, sourceId) {
 }
 
 const scopeCollectionVisitor = {
-  
+  // eslint-disable-next-line complexity
   enter(node, ancestors, state) {
     state.scopeStack.push(state.scope);
 
@@ -19311,8 +19355,8 @@ const scopeCollectionVisitor = {
       }
 
       if (t.isFunctionDeclaration(node) && isNode(node.id, "Identifier")) {
-        
-        
+        // This ignores Annex B function declaration hoisting, which
+        // is probably a fine assumption.
         const fnScope = getVarScope(scope);
         scope.bindings[node.id.name] = {
           type: fnScope === scope ? "var" : "let",
@@ -19329,8 +19373,8 @@ const scopeCollectionVisitor = {
       }
 
       scope = pushTempScope(state, "function", (0, _getFunctionName2.default)(node, parentNode), {
-        
-        
+        // Being at the start of a function doesn't count as
+        // being inside of it.
         start: fromBabelLocation(node.params[0] ? node.params[0].loc.start : node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
@@ -19385,10 +19429,10 @@ const scopeCollectionVisitor = {
     } else if (t.isForXStatement(node) || t.isForStatement(node)) {
       const init = node.init || node.left;
       if (isNode(init, "VariableDeclaration") && isLetOrConst(init)) {
-        
+        // Debugger will create new lexical environment for the for.
         pushTempScope(state, "block", "For", {
-          
-          
+          // Being at the start of a for loop doesn't count as
+          // being inside it.
           start: fromBabelLocation(init.loc.start, state.sourceId),
           end: fromBabelLocation(node.loc.end, state.sourceId)
         });
@@ -19400,15 +19444,15 @@ const scopeCollectionVisitor = {
       });
       parseDeclarator(node.param, scope, "var", node, state.sourceId);
     } else if (t.isBlockStatement(node) && hasLexicalDeclaration(node, parentNode)) {
-      
+      // Debugger will create new lexical environment for the block.
       pushTempScope(state, "block", "Block", {
         start: fromBabelLocation(node.loc.start, state.sourceId),
         end: fromBabelLocation(node.loc.end, state.sourceId)
       });
     } else if (t.isVariableDeclaration(node) && (node.kind === "var" ||
-    
+    // Lexical declarations in for statements are handled above.
     !t.isForStatement(parentNode, { init: node }) || !t.isForXStatement(parentNode, { left: node }))) {
-      
+      // Finds right lexical environment
       const hoistAt = !isLetOrConst(node) ? getVarScope(state.scope) : state.scope;
       node.declarations.forEach(declarator => {
         parseDeclarator(declarator.id, hoistAt, node.kind, node, state.sourceId);
@@ -19417,8 +19461,8 @@ const scopeCollectionVisitor = {
       node.specifiers.forEach(spec => {
         if (t.isImportNamespaceSpecifier(spec)) {
           state.scope.bindings[spec.local.name] = {
-            
-            
+            // Imported namespaces aren't live import bindings, they are
+            // just normal const bindings.
             type: "const",
             refs: [{
               type: "decl",
@@ -19456,8 +19500,8 @@ const scopeCollectionVisitor = {
         }]
       };
     } else if (t.isIdentifier(node) && t.isReferenced(node, parentNode) &&
-    
-    
+    // Babel doesn't cover this in 'isReferenced' yet, but it should
+    // eventually.
     !t.isTSEnumMember(parentNode, { id: node })) {
       let freeVariables = state.freeVariables.get(node.name);
       if (!freeVariables) {
@@ -19512,16 +19556,16 @@ const scopeCollectionVisitor = {
     }
     state.scope = parentScope;
 
-    
-    
-    
+    // It is possible, as in the case of function expressions, that a single
+    // node has added multiple scopes, so we need to traverse upward here
+    // rather than jumping stright to 'parentScope'.
     for (let scope = currentScope; scope && scope !== parentScope; scope = scope.parent) {
       const freeVariables = state.freeVariables;
       state.freeVariables = state.freeVariableStack.pop();
       const parentFreeVariables = state.freeVariables;
 
-      
-      
+      // Match up any free variables that match this scope's bindings and
+      // merge then into the refs.
       for (const key of Object.keys(scope.bindings)) {
         const binding = scope.bindings[key];
 
@@ -19532,8 +19576,8 @@ const scopeCollectionVisitor = {
         }
       }
 
-      
-      
+      // Move any undeclared references in this scope into the parent for
+      // processing in higher scopes.
       for (const [key, value] of freeVariables) {
         let refs = parentFreeVariables.get(key);
         if (!refs) {
@@ -19554,14 +19598,14 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
   const parent = ancestors[parentIndex].node;
   const grandparent = ancestors[parentIndex - 1].node;
 
-  
+  // Consider "0, foo" to be equivalent to "foo".
   if (t.isSequenceExpression(parent) && parent.expressions.length === 2 && t.isNumericLiteral(parent.expressions[0]) && parent.expressions[1] === node) {
     let start = parent.loc.start;
     let end = parent.loc.end;
 
     if (t.isCallExpression(grandparent, { callee: parent })) {
-      
-      
+      // Attempt to expand the range around parentheses, e.g.
+      // (0, foo.bar)()
       start = grandparent.loc.start;
       end = Object.assign({}, end);
       end.column += 1;
@@ -19575,7 +19619,7 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
     };
   }
 
-  
+  // Consider "Object(foo)" to be equivalent to "foo"
   if (t.isCallExpression(parent) && t.isIdentifier(parent.callee, { name: "Object" }) && parent.arguments.length === 1 && parent.arguments[0] === node) {
     return {
       type: "inherit",
@@ -19645,10 +19689,10 @@ function stripModuleScope(rootScope) {
   });
 }
 
- }),
+/***/ }),
 
- 2422:
- (function(module, exports, __webpack_require__) {
+/***/ 2422:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -19666,9 +19710,9 @@ var _ast = __webpack_require__(1375);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const STOP = {};
 
@@ -19700,25 +19744,25 @@ function invalidLocationVisitor(node, ancestors, state) {
   }
 
   if (location.line === node.loc.start.line && location.column >= node.loc.start.column && t.isFunction(node) && !t.isArrowFunctionExpression(node) && (location.line < node.body.loc.start.line || location.line === node.body.loc.start.line && location.column <= node.body.loc.start.column)) {
-    
-    
+    // Disallow pausing _inside_ in function arguments to avoid pausing inside
+    // of destructuring and other logic.
     state.invalid = true;
     throw STOP;
   }
 
   if (location.line === node.loc.start.line && location.column === node.loc.start.column && t.isBlockStatement(node)) {
-    
-    
-    
+    // Disallow pausing directly before the opening curly of a block statement.
+    // Babel occasionally maps statements with unknown original positions to
+    // this location.
     state.invalid = true;
     throw STOP;
   }
 }
 
- }),
+/***/ }),
 
- 248:
- (function(module, exports, __webpack_require__) {
+/***/ 248:
+/***/ (function(module, exports, __webpack_require__) {
 
 (function(){
   var crypt = __webpack_require__(249),
@@ -19726,9 +19770,9 @@ function invalidLocationVisitor(node, ancestors, state) {
       isBuffer = __webpack_require__(251),
       bin = __webpack_require__(250).bin,
 
-  
+  // The core
   md5 = function (message, options) {
-    
+    // Convert to byte array
     if (message.constructor == String)
       if (options && options.encoding === 'binary')
         message = bin.stringToBytes(message);
@@ -19738,7 +19782,7 @@ function invalidLocationVisitor(node, ancestors, state) {
       message = Array.prototype.slice.call(message, 0);
     else if (!Array.isArray(message))
       message = message.toString();
-    
+    // else, assume byte array already
 
     var m = crypt.bytesToWords(message),
         l = message.length * 8,
@@ -19747,17 +19791,17 @@ function invalidLocationVisitor(node, ancestors, state) {
         c = -1732584194,
         d =  271733878;
 
-    
+    // Swap endian
     for (var i = 0; i < m.length; i++) {
       m[i] = ((m[i] <<  8) | (m[i] >>> 24)) & 0x00FF00FF |
              ((m[i] << 24) | (m[i] >>>  8)) & 0xFF00FF00;
     }
 
-    
+    // Padding
     m[l >>> 5] |= 0x80 << (l % 32);
     m[(((l + 64) >>> 9) << 4) + 14] = l;
 
-    
+    // Method shortcuts
     var FF = md5._ff,
         GG = md5._gg,
         HH = md5._hh,
@@ -19847,7 +19891,7 @@ function invalidLocationVisitor(node, ancestors, state) {
     return crypt.endian([a, b, c, d]);
   };
 
-  
+  // Auxiliary functions
   md5._ff  = function (a, b, c, d, x, s, t) {
     var n = a + (b & c | ~b & d) + (x >>> 0) + t;
     return ((n << s) | (n >>> (32 - s))) + b;
@@ -19865,7 +19909,7 @@ function invalidLocationVisitor(node, ancestors, state) {
     return ((n << s) | (n >>> (32 - s))) + b;
   };
 
-  
+  // Package private blocksize
   md5._blocksize = 16;
   md5._digestsize = 16;
 
@@ -19882,61 +19926,61 @@ function invalidLocationVisitor(node, ancestors, state) {
 })();
 
 
- }),
+/***/ }),
 
- 249:
- (function(module, exports) {
+/***/ 249:
+/***/ (function(module, exports) {
 
 (function() {
   var base64map
       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
 
   crypt = {
-    
+    // Bit-wise rotation left
     rotl: function(n, b) {
       return (n << b) | (n >>> (32 - b));
     },
 
-    
+    // Bit-wise rotation right
     rotr: function(n, b) {
       return (n << (32 - b)) | (n >>> b);
     },
 
-    
+    // Swap big-endian to little-endian and vice versa
     endian: function(n) {
-      
+      // If number given, swap endian
       if (n.constructor == Number) {
         return crypt.rotl(n, 8) & 0x00FF00FF | crypt.rotl(n, 24) & 0xFF00FF00;
       }
 
-      
+      // Else, assume array and swap all items
       for (var i = 0; i < n.length; i++)
         n[i] = crypt.endian(n[i]);
       return n;
     },
 
-    
+    // Generate an array of any length of random bytes
     randomBytes: function(n) {
       for (var bytes = []; n > 0; n--)
         bytes.push(Math.floor(Math.random() * 256));
       return bytes;
     },
 
-    
+    // Convert a byte array to big-endian 32-bit words
     bytesToWords: function(bytes) {
       for (var words = [], i = 0, b = 0; i < bytes.length; i++, b += 8)
         words[b >>> 5] |= bytes[i] << (24 - b % 32);
       return words;
     },
 
-    
+    // Convert big-endian 32-bit words to a byte array
     wordsToBytes: function(words) {
       for (var bytes = [], b = 0; b < words.length * 32; b += 8)
         bytes.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
       return bytes;
     },
 
-    
+    // Convert a byte array to a hex string
     bytesToHex: function(bytes) {
       for (var hex = [], i = 0; i < bytes.length; i++) {
         hex.push((bytes[i] >>> 4).toString(16));
@@ -19945,14 +19989,14 @@ function invalidLocationVisitor(node, ancestors, state) {
       return hex.join('');
     },
 
-    
+    // Convert a hex string to a byte array
     hexToBytes: function(hex) {
       for (var bytes = [], c = 0; c < hex.length; c += 2)
         bytes.push(parseInt(hex.substr(c, 2), 16));
       return bytes;
     },
 
-    
+    // Convert a byte array to a base-64 string
     bytesToBase64: function(bytes) {
       for (var base64 = [], i = 0; i < bytes.length; i += 3) {
         var triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
@@ -19965,9 +20009,9 @@ function invalidLocationVisitor(node, ancestors, state) {
       return base64.join('');
     },
 
-    
+    // Convert a base-64 string to a byte array
     base64ToBytes: function(base64) {
-      
+      // Remove non-base-64 characters
       base64 = base64.replace(/[^A-Z0-9+\/]/ig, '');
 
       for (var bytes = [], i = 0, imod4 = 0; i < base64.length;
@@ -19985,35 +20029,35 @@ function invalidLocationVisitor(node, ancestors, state) {
 })();
 
 
- }),
+/***/ }),
 
- 250:
- (function(module, exports) {
+/***/ 250:
+/***/ (function(module, exports) {
 
 var charenc = {
-  
+  // UTF-8 encoding
   utf8: {
-    
+    // Convert a string to a byte array
     stringToBytes: function(str) {
       return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
     },
 
-    
+    // Convert a byte array to a string
     bytesToString: function(bytes) {
       return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
     }
   },
 
-  
+  // Binary encoding
   bin: {
-    
+    // Convert a string to a byte array
     stringToBytes: function(str) {
       for (var bytes = [], i = 0; i < str.length; i++)
         bytes.push(str.charCodeAt(i) & 0xFF);
       return bytes;
     },
 
-    
+    // Convert a byte array to a string
     bytesToString: function(bytes) {
       for (var str = [], i = 0; i < bytes.length; i++)
         str.push(String.fromCharCode(bytes[i]));
@@ -20025,20 +20069,20 @@ var charenc = {
 module.exports = charenc;
 
 
- }),
+/***/ }),
 
- 251:
- (function(module, exports) {
+/***/ 251:
+/***/ (function(module, exports) {
 
+/*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
 
-
-
-
-
-
-
-
-
+// The _isBuffer check is for Safari 5-7 support, because it's missing
+// Object.prototype.constructor. Remove this eventually
 module.exports = function (obj) {
   return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
 }
@@ -20047,59 +20091,59 @@ function isBuffer (obj) {
   return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
 }
 
-
+// For Node v0.10 support. Remove this eventually.
 function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
 
- }),
+/***/ }),
 
- 262:
- (function(module, exports, __webpack_require__) {
+/***/ 262:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseFindIndex = __webpack_require__(263),
     baseIteratee = __webpack_require__(814),
     toInteger = __webpack_require__(302);
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeMax = Math.max;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method is like `_.find` except that it returns the index of the first
+ * element `predicate` returns truthy for instead of the element itself.
+ *
+ * @static
+ * @memberOf _
+ * @since 1.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @param {Function} [predicate=_.identity] The function invoked per iteration.
+ * @param {number} [fromIndex=0] The index to search from.
+ * @returns {number} Returns the index of the found element, else `-1`.
+ * @example
+ *
+ * var users = [
+ *   { 'user': 'barney',  'active': false },
+ *   { 'user': 'fred',    'active': false },
+ *   { 'user': 'pebbles', 'active': true }
+ * ];
+ *
+ * _.findIndex(users, function(o) { return o.user == 'barney'; });
+ * // => 0
+ *
+ * // The `_.matches` iteratee shorthand.
+ * _.findIndex(users, { 'user': 'fred', 'active': false });
+ * // => 1
+ *
+ * // The `_.matchesProperty` iteratee shorthand.
+ * _.findIndex(users, ['active', false]);
+ * // => 0
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.findIndex(users, 'active');
+ * // => 2
+ */
 function findIndex(array, predicate, fromIndex) {
   var length = array == null ? 0 : array.length;
   if (!length) {
@@ -20115,22 +20159,22 @@ function findIndex(array, predicate, fromIndex) {
 module.exports = findIndex;
 
 
- }),
+/***/ }),
 
- 263:
- (function(module, exports) {
+/***/ 263:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.findIndex` and `_.findLastIndex` without
+ * support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} predicate The function invoked per iteration.
+ * @param {number} fromIndex The index to search from.
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
 function baseFindIndex(array, predicate, fromIndex, fromRight) {
   var length = array.length,
       index = fromIndex + (fromRight ? 1 : -1);
@@ -20146,10 +20190,10 @@ function baseFindIndex(array, predicate, fromIndex, fromRight) {
 module.exports = baseFindIndex;
 
 
- }),
+/***/ }),
 
- 267:
- (function(module, exports, __webpack_require__) {
+/***/ 267:
+/***/ (function(module, exports, __webpack_require__) {
 
 var ListCache = __webpack_require__(93),
     stackClear = __webpack_require__(268),
@@ -20158,19 +20202,19 @@ var ListCache = __webpack_require__(93),
     stackHas = __webpack_require__(271),
     stackSet = __webpack_require__(272);
 
-
-
-
-
-
-
-
+/**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
 function Stack(entries) {
   var data = this.__data__ = new ListCache(entries);
   this.size = data.size;
 }
 
-
+// Add methods to `Stack`.
 Stack.prototype.clear = stackClear;
 Stack.prototype['delete'] = stackDelete;
 Stack.prototype.get = stackGet;
@@ -20180,20 +20224,20 @@ Stack.prototype.set = stackSet;
 module.exports = Stack;
 
 
- }),
+/***/ }),
 
- 268:
- (function(module, exports, __webpack_require__) {
+/***/ 268:
+/***/ (function(module, exports, __webpack_require__) {
 
 var ListCache = __webpack_require__(93);
 
-
-
-
-
-
-
-
+/**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
 function stackClear() {
   this.__data__ = new ListCache;
   this.size = 0;
@@ -20202,20 +20246,20 @@ function stackClear() {
 module.exports = stackClear;
 
 
- }),
+/***/ }),
 
- 269:
- (function(module, exports) {
+/***/ 269:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
 function stackDelete(key) {
   var data = this.__data__,
       result = data['delete'](key);
@@ -20227,20 +20271,20 @@ function stackDelete(key) {
 module.exports = stackDelete;
 
 
- }),
+/***/ }),
 
- 270:
- (function(module, exports) {
+/***/ 270:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
 function stackGet(key) {
   return this.__data__.get(key);
 }
@@ -20248,20 +20292,20 @@ function stackGet(key) {
 module.exports = stackGet;
 
 
- }),
+/***/ }),
 
- 271:
- (function(module, exports) {
+/***/ 271:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
 function stackHas(key) {
   return this.__data__.has(key);
 }
@@ -20269,28 +20313,28 @@ function stackHas(key) {
 module.exports = stackHas;
 
 
- }),
+/***/ }),
 
- 272:
- (function(module, exports, __webpack_require__) {
+/***/ 272:
+/***/ (function(module, exports, __webpack_require__) {
 
 var ListCache = __webpack_require__(93),
     Map = __webpack_require__(101),
     MapCache = __webpack_require__(76);
 
-
+/** Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE = 200;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
 function stackSet(key, value) {
   var data = this.__data__;
   if (data instanceof ListCache) {
@@ -20310,23 +20354,23 @@ function stackSet(key, value) {
 module.exports = stackSet;
 
 
- }),
+/***/ }),
 
- 276:
- (function(module, exports, __webpack_require__) {
+/***/ 276:
+/***/ (function(module, exports, __webpack_require__) {
 
 var MapCache = __webpack_require__(76),
     setCacheAdd = __webpack_require__(277),
     setCacheHas = __webpack_require__(278);
 
-
-
-
-
-
-
-
-
+/**
+ *
+ * Creates an array cache object to store unique values.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [values] The values to cache.
+ */
 function SetCache(values) {
   var index = -1,
       length = values == null ? 0 : values.length;
@@ -20337,31 +20381,31 @@ function SetCache(values) {
   }
 }
 
-
+// Add methods to `SetCache`.
 SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
 SetCache.prototype.has = setCacheHas;
 
 module.exports = SetCache;
 
 
- }),
+/***/ }),
 
- 277:
- (function(module, exports) {
+/***/ 277:
+/***/ (function(module, exports) {
 
-
+/** Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED = '__lodash_hash_undefined__';
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Adds `value` to the array cache.
+ *
+ * @private
+ * @name add
+ * @memberOf SetCache
+ * @alias push
+ * @param {*} value The value to cache.
+ * @returns {Object} Returns the cache instance.
+ */
 function setCacheAdd(value) {
   this.__data__.set(value, HASH_UNDEFINED);
   return this;
@@ -20370,20 +20414,20 @@ function setCacheAdd(value) {
 module.exports = setCacheAdd;
 
 
- }),
+/***/ }),
 
- 278:
- (function(module, exports) {
+/***/ 278:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is in the array cache.
+ *
+ * @private
+ * @name has
+ * @memberOf SetCache
+ * @param {*} value The value to search for.
+ * @returns {number} Returns `true` if `value` is found, else `false`.
+ */
 function setCacheHas(value) {
   return this.__data__.has(value);
 }
@@ -20391,19 +20435,19 @@ function setCacheHas(value) {
 module.exports = setCacheHas;
 
 
- }),
+/***/ }),
 
- 280:
- (function(module, exports) {
+/***/ 280:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * Checks if a `cache` value for `key` exists.
+ *
+ * @private
+ * @param {Object} cache The cache to query.
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
 function cacheHas(cache, key) {
   return cache.has(key);
 }
@@ -20411,31 +20455,31 @@ function cacheHas(cache, key) {
 module.exports = cacheHas;
 
 
- }),
+/***/ }),
 
- 282:
- (function(module, exports, __webpack_require__) {
+/***/ 282:
+/***/ (function(module, exports, __webpack_require__) {
 
 var root = __webpack_require__(8);
 
-
+/** Built-in value references. */
 var Uint8Array = root.Uint8Array;
 
 module.exports = Uint8Array;
 
 
- }),
+/***/ }),
 
- 283:
- (function(module, exports) {
+/***/ 283:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
 function setToArray(set) {
   var index = -1,
       result = Array(set.size);
@@ -20449,22 +20493,22 @@ function setToArray(set) {
 module.exports = setToArray;
 
 
- }),
+/***/ }),
 
- 285:
- (function(module, exports, __webpack_require__) {
+/***/ 285:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetAllKeys = __webpack_require__(286),
     getSymbols = __webpack_require__(288),
     keys = __webpack_require__(205);
 
-
-
-
-
-
-
-
+/**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
 function getAllKeys(object) {
   return baseGetAllKeys(object, keys, getSymbols);
 }
@@ -20472,25 +20516,25 @@ function getAllKeys(object) {
 module.exports = getAllKeys;
 
 
- }),
+/***/ }),
 
- 286:
- (function(module, exports, __webpack_require__) {
+/***/ 286:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayPush = __webpack_require__(287),
     isArray = __webpack_require__(70);
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
 function baseGetAllKeys(object, keysFunc, symbolsFunc) {
   var result = keysFunc(object);
   return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
@@ -20499,19 +20543,19 @@ function baseGetAllKeys(object, keysFunc, symbolsFunc) {
 module.exports = baseGetAllKeys;
 
 
- }),
+/***/ }),
 
- 287:
- (function(module, exports) {
+/***/ 287:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
 function arrayPush(array, values) {
   var index = -1,
       length = values.length,
@@ -20526,30 +20570,30 @@ function arrayPush(array, values) {
 module.exports = arrayPush;
 
 
- }),
+/***/ }),
 
- 288:
- (function(module, exports, __webpack_require__) {
+/***/ 288:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayFilter = __webpack_require__(289),
     stubArray = __webpack_require__(290);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Built-in value references. */
 var propertyIsEnumerable = objectProto.propertyIsEnumerable;
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeGetSymbols = Object.getOwnPropertySymbols;
 
-
-
-
-
-
-
-
+/**
+ * Creates an array of the own enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
 var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
   if (object == null) {
     return [];
@@ -20563,20 +20607,20 @@ var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
 module.exports = getSymbols;
 
 
- }),
+/***/ }),
 
- 289:
- (function(module, exports) {
+/***/ 289:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.filter` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
 function arrayFilter(array, predicate) {
   var index = -1,
       length = array == null ? 0 : array.length,
@@ -20595,29 +20639,29 @@ function arrayFilter(array, predicate) {
 module.exports = arrayFilter;
 
 
- }),
+/***/ }),
 
- 290:
- (function(module, exports) {
+/***/ 290:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
 function stubArray() {
   return [];
 }
@@ -20625,10 +20669,10 @@ function stubArray() {
 module.exports = stubArray;
 
 
- }),
+/***/ }),
 
- 294:
- (function(module, exports, __webpack_require__) {
+/***/ 294:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsEqual = __webpack_require__(799),
     get = __webpack_require__(67),
@@ -20638,18 +20682,18 @@ var baseIsEqual = __webpack_require__(799),
     matchesStrictComparable = __webpack_require__(803),
     toKey = __webpack_require__(111);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1,
     COMPARE_UNORDERED_FLAG = 2;
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.matchesProperty` which doesn't clone `srcValue`.
+ *
+ * @private
+ * @param {string} path The path of the property to get.
+ * @param {*} srcValue The value to match.
+ * @returns {Function} Returns the new spec function.
+ */
 function baseMatchesProperty(path, srcValue) {
   if (isKey(path) && isStrictComparable(srcValue)) {
     return matchesStrictComparable(toKey(path), srcValue);
@@ -20665,10 +20709,10 @@ function baseMatchesProperty(path, srcValue) {
 module.exports = baseMatchesProperty;
 
 
- }),
+/***/ }),
 
- 297:
- (function(module, exports, __webpack_require__) {
+/***/ 297:
+/***/ (function(module, exports, __webpack_require__) {
 
 var castPath = __webpack_require__(69),
     isArguments = __webpack_require__(208),
@@ -20677,15 +20721,15 @@ var castPath = __webpack_require__(69),
     isLength = __webpack_require__(214),
     toKey = __webpack_require__(111);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `path` exists on `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path to check.
+ * @param {Function} hasFunc The function to check properties.
+ * @returns {boolean} Returns `true` if `path` exists, else `false`.
+ */
 function hasPath(object, path, hasFunc) {
   path = castPath(path, object);
 
@@ -20711,27 +20755,27 @@ function hasPath(object, path, hasFunc) {
 module.exports = hasPath;
 
 
- }),
+/***/ }),
 
- 298:
- (function(module, exports) {
+/***/ 298:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method returns the first argument it receives.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Util
+ * @param {*} value Any value.
+ * @returns {*} Returns `value`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ *
+ * console.log(_.identity(object) === object);
+ * // => true
+ */
 function identity(value) {
   return value;
 }
@@ -20739,39 +20783,39 @@ function identity(value) {
 module.exports = identity;
 
 
- }),
+/***/ }),
 
- 302:
- (function(module, exports, __webpack_require__) {
+/***/ 302:
+/***/ (function(module, exports, __webpack_require__) {
 
 var toFinite = __webpack_require__(303);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Converts `value` to an integer.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted integer.
+ * @example
+ *
+ * _.toInteger(3.2);
+ * // => 3
+ *
+ * _.toInteger(Number.MIN_VALUE);
+ * // => 0
+ *
+ * _.toInteger(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toInteger('3.2');
+ * // => 3
+ */
 function toInteger(value) {
   var result = toFinite(value),
       remainder = result % 1;
@@ -20782,40 +20826,40 @@ function toInteger(value) {
 module.exports = toInteger;
 
 
- }),
+/***/ }),
 
- 303:
- (function(module, exports, __webpack_require__) {
+/***/ 303:
+/***/ (function(module, exports, __webpack_require__) {
 
 var toNumber = __webpack_require__(304);
 
-
+/** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0,
     MAX_INTEGER = 1.7976931348623157e+308;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
 function toFinite(value) {
   if (!value) {
     return value === 0 ? value : 0;
@@ -20831,55 +20875,55 @@ function toFinite(value) {
 module.exports = toFinite;
 
 
- }),
+/***/ }),
 
- 304:
- (function(module, exports, __webpack_require__) {
+/***/ 304:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(84),
     isSymbol = __webpack_require__(72);
 
-
+/** Used as references for various `Number` constants. */
 var NAN = 0 / 0;
 
-
+/** Used to match leading and trailing whitespace. */
 var reTrim = /^\s+|\s+$/g;
 
-
+/** Used to detect bad signed hexadecimal string values. */
 var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
 
-
+/** Used to detect binary string values. */
 var reIsBinary = /^0b[01]+$/i;
 
-
+/** Used to detect octal string values. */
 var reIsOctal = /^0o[0-7]+$/i;
 
-
+/** Built-in method references without a dependency on `root`. */
 var freeParseInt = parseInt;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
 function toNumber(value) {
   if (typeof value == 'number') {
     return value;
@@ -20904,10 +20948,10 @@ function toNumber(value) {
 module.exports = toNumber;
 
 
- }),
+/***/ }),
 
- 3591:
- (function(module, exports, __webpack_require__) {
+/***/ 3591:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -20921,18 +20965,18 @@ function createSimplePath(ancestors) {
     return null;
   }
 
-  
-  
+  // Slice the array because babel-types traverse may continue mutating
+  // the ancestors array in later traversal logic.
   return new SimplePath(ancestors.slice());
-} 
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-
-
-
-
+/**
+ * Mimics @babel/traverse's NodePath API in a simpler fashion that isn't as
+ * heavy, but still allows the ease of passing paths around to process nested
+ * AST structures.
+ */
 class SimplePath {
 
   constructor(ancestors, index = ancestors.length - 1) {
@@ -21048,10 +21092,10 @@ class SimplePath {
   }
 }
 
- }),
+/***/ }),
 
- 3612:
- (function(module, exports, __webpack_require__) {
+/***/ 3612:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -21067,53 +21111,108 @@ var _types = __webpack_require__(2268);
 
 var t = _interopRequireWildcard(_types);
 
+var _isEqual = __webpack_require__(1127);
+
+var _isEqual2 = _interopRequireDefault(_isEqual);
+
+var _uniqBy = __webpack_require__(3624);
+
+var _uniqBy2 = _interopRequireDefault(_uniqBy);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-const isControlFlow = node => t.isForStatement(node) || t.isWhileStatement(node) || t.isIfStatement(node);
+const isControlFlow = node => t.isForStatement(node) || t.isWhileStatement(node) || t.isIfStatement(node) || t.isSwitchCase(node) || t.isSwitchStatement(node);
 
 const isAssignment = node => t.isVariableDeclarator(node) || t.isAssignmentExpression(node);
 
 const isImport = node => t.isImport(node) || t.isImportDeclaration(node);
 const isReturn = node => t.isReturnStatement(node);
-const inExpression = parent => t.isArrayExpression(parent.node) || t.isObjectProperty(parent.node) || t.isCallExpression(parent.node) || t.isTemplateLiteral(parent.node);
+const isCall = node => t.isCallExpression(node) || t.isJSXElement(node);
+
+const inExpression = (parent, grandParent) => t.isArrayExpression(parent) || t.isObjectProperty(parent) || t.isCallExpression(parent) || t.isJSXElement(parent) || t.isJSXAttribute(grandParent) || t.isTemplateLiteral(parent);
+
+const isExport = node => t.isExportNamedDeclaration(node) || t.isExportDefaultDeclaration(node);
+
+function removeDuplicatePoints(state) {
+  return (0, _uniqBy2.default)(state, ({ location }) => `${location.line}-$${location.column}`);
+}
 
 function getPausePoints(sourceId) {
   const state = [];
   (0, _ast.traverseAst)(sourceId, { enter: onEnter }, state);
-  return state;
+  const uniqPoints = removeDuplicatePoints(state);
+  return uniqPoints;
 }
 
 function onEnter(node, ancestors, state) {
   const parent = ancestors[ancestors.length - 1];
+  const grandParent = ancestors[ancestors.length - 2];
+  const startLocation = node.loc.start;
 
-  if (isAssignment(node) || isImport(node) || isControlFlow(node) || t.isDebuggerStatement(node)) {
-    addPoint(state, node.loc.start);
+  if (isImport(node) || t.isClassDeclaration(node) || isExport(node) || t.isDebuggerStatement(node)) {
+    addPoint(state, startLocation);
   }
 
-  if (isReturn(node)) {
-    if (t.isCallExpression(node.argument)) {
-      addEmptyPoint(state, node.loc.start);
-    } else {
-      addPoint(state, node.loc.start);
+  if (isControlFlow(node)) {
+    addEmptyPoint(state, startLocation);
+
+    const test = node.test || node.discriminant;
+    if (test) {
+      addPoint(state, test.loc.start);
     }
   }
 
-  if (t.isCallExpression(node)) {
-    addPoint(state, node.loc.start, {
-      breakpoint: true,
+  if (isReturn(node)) {
+    // We do not want to pause at the return and the call e.g. return foo()
+    if (isCall(node.argument)) {
+      addEmptyPoint(state, startLocation);
+    } else {
+      addPoint(state, startLocation);
+    }
+  }
 
-      
-      stepOver: !inExpression(parent)
-    });
+  if (isAssignment(node)) {
+    // We only want to pause at literal assignments `var a = foo()`
+    const value = node.right || node.init;
+    if (!isCall(value)) {
+      addPoint(state, startLocation);
+    }
+  }
+
+  if (isCall(node)) {
+    let location = startLocation;
+
+    // When functions are chained, we want to use the property location
+    // e.g `foo().bar()`
+    if (t.isMemberExpression(node.callee)) {
+      location = node.callee.property.loc.start;
+    }
+
+    // NOTE: we do not want to land inside an expression e.g. [], {}, call
+    const stepOver = !inExpression(parent.node, grandParent && grandParent.node);
+
+    // NOTE: we add a point at the beginning of the expression
+    // and each of the calls because the engine does not support
+    // column-based member expression calls.
+    addPoint(state, startLocation, { breakpoint: true, stepOver });
+    if (location && !(0, _isEqual2.default)(location, startLocation)) {
+      addPoint(state, location, { breakpoint: true, stepOver });
+    }
+  }
+
+  if (t.isClassProperty(node)) {
+    addBreakPoint(state, startLocation);
   }
 
   if (t.isFunction(node)) {
     const { line, column } = node.loc.end;
-    addBreakPoint(state, node.loc.start);
+    addBreakPoint(state, startLocation);
     addPoint(state, { line, column: column - 1 });
   }
 
@@ -21139,10 +21238,10 @@ function addBreakPoint(state, location) {
   addPoint(state, location, { breakpoint: true, stepOver: false });
 }
 
- }),
+/***/ }),
 
- 3613:
- (function(module, exports, __webpack_require__) {
+/***/ 3613:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -21166,7 +21265,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-
+// NOTE: this will only work if we are replacing an original identifier
 function replaceNode(ancestors, node) {
   const ancestor = ancestors[ancestors.length - 1];
 
@@ -21210,34 +21309,72 @@ function mapOriginalExpression(expression, mappings) {
   return (0, _generator2.default)(ast, { concise: true }).code;
 }
 
- }),
+/***/ }),
 
- 398:
- (function(module, exports, __webpack_require__) {
+/***/ 3624:
+/***/ (function(module, exports, __webpack_require__) {
 
-(function(module) {var root = __webpack_require__(8);
+var baseIteratee = __webpack_require__(814),
+    baseUniq = __webpack_require__(562);
+
+/**
+ * This method is like `_.uniq` except that it accepts `iteratee` which is
+ * invoked for each element in `array` to generate the criterion by which
+ * uniqueness is computed. The order of result values is determined by the
+ * order they occur in the array. The iteratee is invoked with one argument:
+ * (value).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ * @example
+ *
+ * _.uniqBy([2.1, 1.2, 2.3], Math.floor);
+ * // => [2.1, 1.2]
+ *
+ * // The `_.property` iteratee shorthand.
+ * _.uniqBy([{ 'x': 1 }, { 'x': 2 }, { 'x': 1 }], 'x');
+ * // => [{ 'x': 1 }, { 'x': 2 }]
+ */
+function uniqBy(array, iteratee) {
+  return (array && array.length) ? baseUniq(array, baseIteratee(iteratee, 2)) : [];
+}
+
+module.exports = uniqBy;
 
 
+/***/ }),
+
+/***/ 398:
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {var root = __webpack_require__(8);
+
+/** Detect free variable `exports`. */
 var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
 
-
+/** Detect free variable `module`. */
 var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
 
-
+/** Detect the popular CommonJS extension `module.exports`. */
 var moduleExports = freeModule && freeModule.exports === freeExports;
 
-
+/** Built-in value references. */
 var Buffer = moduleExports ? root.Buffer : undefined,
     allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined;
 
-
-
-
-
-
-
-
-
+/**
+ * Creates a clone of  `buffer`.
+ *
+ * @private
+ * @param {Buffer} buffer The buffer to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Buffer} Returns the cloned buffer.
+ */
 function cloneBuffer(buffer, isDeep) {
   if (isDeep) {
     return buffer.slice();
@@ -21251,23 +21388,23 @@ function cloneBuffer(buffer, isDeep) {
 
 module.exports = cloneBuffer;
 
-}.call(exports, __webpack_require__(793)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(793)(module)))
 
- }),
+/***/ }),
 
- 399:
- (function(module, exports, __webpack_require__) {
+/***/ 399:
+/***/ (function(module, exports, __webpack_require__) {
 
 var cloneArrayBuffer = __webpack_require__(400);
 
-
-
-
-
-
-
-
-
+/**
+ * Creates a clone of `typedArray`.
+ *
+ * @private
+ * @param {Object} typedArray The typed array to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned typed array.
+ */
 function cloneTypedArray(typedArray, isDeep) {
   var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
   return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
@@ -21276,20 +21413,20 @@ function cloneTypedArray(typedArray, isDeep) {
 module.exports = cloneTypedArray;
 
 
- }),
+/***/ }),
 
- 400:
- (function(module, exports, __webpack_require__) {
+/***/ 400:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Uint8Array = __webpack_require__(282);
 
-
-
-
-
-
-
-
+/**
+ * Creates a clone of `arrayBuffer`.
+ *
+ * @private
+ * @param {ArrayBuffer} arrayBuffer The array buffer to clone.
+ * @returns {ArrayBuffer} Returns the cloned array buffer.
+ */
 function cloneArrayBuffer(arrayBuffer) {
   var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
   new Uint8Array(result).set(new Uint8Array(arrayBuffer));
@@ -21299,19 +21436,19 @@ function cloneArrayBuffer(arrayBuffer) {
 module.exports = cloneArrayBuffer;
 
 
- }),
+/***/ }),
 
- 401:
- (function(module, exports) {
+/***/ 401:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
 function copyArray(source, array) {
   var index = -1,
       length = source.length;
@@ -21326,22 +21463,22 @@ function copyArray(source, array) {
 module.exports = copyArray;
 
 
- }),
+/***/ }),
 
- 402:
- (function(module, exports, __webpack_require__) {
+/***/ 402:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseCreate = __webpack_require__(403),
     getPrototype = __webpack_require__(12),
     isPrototype = __webpack_require__(218);
 
-
-
-
-
-
-
-
+/**
+ * Initializes an object clone.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @returns {Object} Returns the initialized clone.
+ */
 function initCloneObject(object) {
   return (typeof object.constructor == 'function' && !isPrototype(object))
     ? baseCreate(getPrototype(object))
@@ -21351,24 +21488,24 @@ function initCloneObject(object) {
 module.exports = initCloneObject;
 
 
- }),
+/***/ }),
 
- 403:
- (function(module, exports, __webpack_require__) {
+/***/ 403:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(84);
 
-
+/** Built-in value references. */
 var objectCreate = Object.create;
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} proto The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
 var baseCreate = (function() {
   function object() {}
   return function(proto) {
@@ -21388,24 +21525,24 @@ var baseCreate = (function() {
 module.exports = baseCreate;
 
 
- }),
+/***/ }),
 
- 406:
- (function(module, exports, __webpack_require__) {
+/***/ 406:
+/***/ (function(module, exports, __webpack_require__) {
 
 var assignValue = __webpack_require__(114),
     baseAssignValue = __webpack_require__(115);
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Copies properties of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy properties from.
+ * @param {Array} props The property identifiers to copy.
+ * @param {Object} [object={}] The object to copy properties to.
+ * @param {Function} [customizer] The function to customize copied values.
+ * @returns {Object} Returns `object`.
+ */
 function copyObject(source, props, object, customizer) {
   var isNew = !object;
   object || (object = {});
@@ -21435,38 +21572,38 @@ function copyObject(source, props, object, customizer) {
 module.exports = copyObject;
 
 
- }),
+/***/ }),
 
- 407:
- (function(module, exports, __webpack_require__) {
+/***/ 407:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayLikeKeys = __webpack_require__(206),
     baseKeysIn = __webpack_require__(408),
     isArrayLike = __webpack_require__(220);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates an array of the own and inherited enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keysIn(new Foo);
+ * // => ['a', 'b', 'c'] (iteration order is not guaranteed)
+ */
 function keysIn(object) {
   return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
 }
@@ -21474,28 +21611,28 @@ function keysIn(object) {
 module.exports = keysIn;
 
 
- }),
+/***/ }),
 
- 408:
- (function(module, exports, __webpack_require__) {
+/***/ 408:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(84),
     isPrototype = __webpack_require__(218),
     nativeKeysIn = __webpack_require__(409);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.keysIn` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
 function baseKeysIn(object) {
   if (!isObject(object)) {
     return nativeKeysIn(object);
@@ -21514,20 +21651,20 @@ function baseKeysIn(object) {
 module.exports = baseKeysIn;
 
 
- }),
+/***/ }),
 
- 409:
- (function(module, exports) {
+/***/ 409:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function is like
+ * [`Object.keys`](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * except that it includes inherited enumerable properties.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
 function nativeKeysIn(object) {
   var result = [];
   if (object != null) {
@@ -21541,26 +21678,26 @@ function nativeKeysIn(object) {
 module.exports = nativeKeysIn;
 
 
- }),
+/***/ }),
 
- 418:
- (function(module, exports, __webpack_require__) {
+/***/ 418:
+/***/ (function(module, exports, __webpack_require__) {
 
 var eq = __webpack_require__(97),
     isArrayLike = __webpack_require__(220),
     isIndex = __webpack_require__(117),
     isObject = __webpack_require__(84);
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if the given arguments are from an iteratee call.
+ *
+ * @private
+ * @param {*} value The potential iteratee value argument.
+ * @param {*} index The potential iteratee index or key argument.
+ * @param {*} object The potential iteratee object argument.
+ * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
+ *  else `false`.
+ */
 function isIterateeCall(value, index, object) {
   if (!isObject(object)) {
     return false;
@@ -21578,10 +21715,10 @@ function isIterateeCall(value, index, object) {
 module.exports = isIterateeCall;
 
 
- }),
+/***/ }),
 
- 435:
- (function(module, exports, __webpack_require__) {
+/***/ 435:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -31630,59 +31767,59 @@ exports.parseExpression = parseExpression;
 exports.tokTypes = types;
 
 
- }),
+/***/ }),
 
- 5:
- (function(module, exports, __webpack_require__) {
+/***/ 5:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     getPrototype = __webpack_require__(12),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var objectTag = '[object Object]';
 
-
+/** Used for built-in method references. */
 var funcProto = Function.prototype,
     objectProto = Object.prototype;
 
-
+/** Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
+/** Used to infer the `Object` constructor. */
 var objectCtorString = funcToString.call(Object);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a plain object, that is, an object created by the
+ * `Object` constructor or one with a `[[Prototype]]` of `null`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.8.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a plain object, else `false`.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ * }
+ *
+ * _.isPlainObject(new Foo);
+ * // => false
+ *
+ * _.isPlainObject([1, 2, 3]);
+ * // => false
+ *
+ * _.isPlainObject({ 'x': 0, 'y': 0 });
+ * // => true
+ *
+ * _.isPlainObject(Object.create(null));
+ * // => true
+ */
 function isPlainObject(value) {
   if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
     return false;
@@ -31699,34 +31836,34 @@ function isPlainObject(value) {
 module.exports = isPlainObject;
 
 
- }),
+/***/ }),
 
- 530:
- (function(module, exports, __webpack_require__) {
+/***/ 530:
+/***/ (function(module, exports, __webpack_require__) {
 
+/*
+  Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 
 (function () {
@@ -31736,37 +31873,37 @@ module.exports = isPlainObject;
     exports.code = __webpack_require__(532);
     exports.keyword = __webpack_require__(533);
 }());
+/* vim: set sw=4 ts=4 et tw=80 : */
 
 
+/***/ }),
 
- }),
+/***/ 531:
+/***/ (function(module, exports) {
 
- 531:
- (function(module, exports) {
+/*
+  Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 (function () {
     'use strict';
@@ -31887,74 +32024,74 @@ module.exports = isPlainObject;
         trailingStatement: trailingStatement
     };
 }());
+/* vim: set sw=4 ts=4 et tw=80 : */
 
 
+/***/ }),
 
- }),
+/***/ 532:
+/***/ (function(module, exports) {
 
- 532:
- (function(module, exports) {
+/*
+  Copyright (C) 2013-2014 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2014 Ivan Nikulin <ifaaan@gmail.com>
 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 (function () {
     'use strict';
 
     var ES6Regex, ES5Regex, NON_ASCII_WHITESPACES, IDENTIFIER_START, IDENTIFIER_PART, ch;
 
-    
+    // See `tools/generate-identifier-regex.js`.
     ES5Regex = {
-        
+        // ECMAScript 5.1/Unicode v7.0.0 NonAsciiIdentifierStart:
         NonAsciiIdentifierStart: /[\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0-\u08B2\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6EF\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA7AD\uA7B0\uA7B1\uA7F7-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB5F\uAB64\uAB65\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]/,
-        
+        // ECMAScript 5.1/Unicode v7.0.0 NonAsciiIdentifierPart:
         NonAsciiIdentifierPart: /[\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0300-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u0483-\u0487\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u05D0-\u05EA\u05F0-\u05F2\u0610-\u061A\u0620-\u0669\u066E-\u06D3\u06D5-\u06DC\u06DF-\u06E8\u06EA-\u06FC\u06FF\u0710-\u074A\u074D-\u07B1\u07C0-\u07F5\u07FA\u0800-\u082D\u0840-\u085B\u08A0-\u08B2\u08E4-\u0963\u0966-\u096F\u0971-\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BC-\u09C4\u09C7\u09C8\u09CB-\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E3\u09E6-\u09F1\u0A01-\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A59-\u0A5C\u0A5E\u0A66-\u0A75\u0A81-\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABC-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AD0\u0AE0-\u0AE3\u0AE6-\u0AEF\u0B01-\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3C-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B56\u0B57\u0B5C\u0B5D\u0B5F-\u0B63\u0B66-\u0B6F\u0B71\u0B82\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD0\u0BD7\u0BE6-\u0BEF\u0C00-\u0C03\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C58\u0C59\u0C60-\u0C63\u0C66-\u0C6F\u0C81-\u0C83\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBC-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CDE\u0CE0-\u0CE3\u0CE6-\u0CEF\u0CF1\u0CF2\u0D01-\u0D03\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D-\u0D44\u0D46-\u0D48\u0D4A-\u0D4E\u0D57\u0D60-\u0D63\u0D66-\u0D6F\u0D7A-\u0D7F\u0D82\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2\u0DF3\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB9\u0EBB-\u0EBD\u0EC0-\u0EC4\u0EC6\u0EC8-\u0ECD\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00\u0F18\u0F19\u0F20-\u0F29\u0F35\u0F37\u0F39\u0F3E-\u0F47\u0F49-\u0F6C\u0F71-\u0F84\u0F86-\u0F97\u0F99-\u0FBC\u0FC6\u1000-\u1049\u1050-\u109D\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u135D-\u135F\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1714\u1720-\u1734\u1740-\u1753\u1760-\u176C\u176E-\u1770\u1772\u1773\u1780-\u17D3\u17D7\u17DC\u17DD\u17E0-\u17E9\u180B-\u180D\u1810-\u1819\u1820-\u1877\u1880-\u18AA\u18B0-\u18F5\u1900-\u191E\u1920-\u192B\u1930-\u193B\u1946-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19D9\u1A00-\u1A1B\u1A20-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AA7\u1AB0-\u1ABD\u1B00-\u1B4B\u1B50-\u1B59\u1B6B-\u1B73\u1B80-\u1BF3\u1C00-\u1C37\u1C40-\u1C49\u1C4D-\u1C7D\u1CD0-\u1CD2\u1CD4-\u1CF6\u1CF8\u1CF9\u1D00-\u1DF5\u1DFC-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u200C\u200D\u203F\u2040\u2054\u2071\u207F\u2090-\u209C\u20D0-\u20DC\u20E1\u20E5-\u20F0\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D7F-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2DE0-\u2DFF\u2E2F\u3005-\u3007\u3021-\u302F\u3031-\u3035\u3038-\u303C\u3041-\u3096\u3099\u309A\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA62B\uA640-\uA66F\uA674-\uA67D\uA67F-\uA69D\uA69F-\uA6F1\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA7AD\uA7B0\uA7B1\uA7F7-\uA827\uA840-\uA873\uA880-\uA8C4\uA8D0-\uA8D9\uA8E0-\uA8F7\uA8FB\uA900-\uA92D\uA930-\uA953\uA960-\uA97C\uA980-\uA9C0\uA9CF-\uA9D9\uA9E0-\uA9FE\uAA00-\uAA36\uAA40-\uAA4D\uAA50-\uAA59\uAA60-\uAA76\uAA7A-\uAAC2\uAADB-\uAADD\uAAE0-\uAAEF\uAAF2-\uAAF6\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB5F\uAB64\uAB65\uABC0-\uABEA\uABEC\uABED\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE00-\uFE0F\uFE20-\uFE2D\uFE33\uFE34\uFE4D-\uFE4F\uFE70-\uFE74\uFE76-\uFEFC\uFF10-\uFF19\uFF21-\uFF3A\uFF3F\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]/
     };
 
     ES6Regex = {
-        
+        // ECMAScript 6/Unicode v7.0.0 NonAsciiIdentifierStart:
         NonAsciiIdentifierStart: /[\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0-\u08B2\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2118-\u211D\u2124\u2126\u2128\u212A-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309B-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6EF\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA7AD\uA7B0\uA7B1\uA7F7-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB5F\uAB64\uAB65\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]|\uD800[\uDC00-\uDC0B\uDC0D-\uDC26\uDC28-\uDC3A\uDC3C\uDC3D\uDC3F-\uDC4D\uDC50-\uDC5D\uDC80-\uDCFA\uDD40-\uDD74\uDE80-\uDE9C\uDEA0-\uDED0\uDF00-\uDF1F\uDF30-\uDF4A\uDF50-\uDF75\uDF80-\uDF9D\uDFA0-\uDFC3\uDFC8-\uDFCF\uDFD1-\uDFD5]|\uD801[\uDC00-\uDC9D\uDD00-\uDD27\uDD30-\uDD63\uDE00-\uDF36\uDF40-\uDF55\uDF60-\uDF67]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC60-\uDC76\uDC80-\uDC9E\uDD00-\uDD15\uDD20-\uDD39\uDD80-\uDDB7\uDDBE\uDDBF\uDE00\uDE10-\uDE13\uDE15-\uDE17\uDE19-\uDE33\uDE60-\uDE7C\uDE80-\uDE9C\uDEC0-\uDEC7\uDEC9-\uDEE4\uDF00-\uDF35\uDF40-\uDF55\uDF60-\uDF72\uDF80-\uDF91]|\uD803[\uDC00-\uDC48]|\uD804[\uDC03-\uDC37\uDC83-\uDCAF\uDCD0-\uDCE8\uDD03-\uDD26\uDD50-\uDD72\uDD76\uDD83-\uDDB2\uDDC1-\uDDC4\uDDDA\uDE00-\uDE11\uDE13-\uDE2B\uDEB0-\uDEDE\uDF05-\uDF0C\uDF0F\uDF10\uDF13-\uDF28\uDF2A-\uDF30\uDF32\uDF33\uDF35-\uDF39\uDF3D\uDF5D-\uDF61]|\uD805[\uDC80-\uDCAF\uDCC4\uDCC5\uDCC7\uDD80-\uDDAE\uDE00-\uDE2F\uDE44\uDE80-\uDEAA]|\uD806[\uDCA0-\uDCDF\uDCFF\uDEC0-\uDEF8]|\uD808[\uDC00-\uDF98]|\uD809[\uDC00-\uDC6E]|[\uD80C\uD840-\uD868\uD86A-\uD86C][\uDC00-\uDFFF]|\uD80D[\uDC00-\uDC2E]|\uD81A[\uDC00-\uDE38\uDE40-\uDE5E\uDED0-\uDEED\uDF00-\uDF2F\uDF40-\uDF43\uDF63-\uDF77\uDF7D-\uDF8F]|\uD81B[\uDF00-\uDF44\uDF50\uDF93-\uDF9F]|\uD82C[\uDC00\uDC01]|\uD82F[\uDC00-\uDC6A\uDC70-\uDC7C\uDC80-\uDC88\uDC90-\uDC99]|\uD835[\uDC00-\uDC54\uDC56-\uDC9C\uDC9E\uDC9F\uDCA2\uDCA5\uDCA6\uDCA9-\uDCAC\uDCAE-\uDCB9\uDCBB\uDCBD-\uDCC3\uDCC5-\uDD05\uDD07-\uDD0A\uDD0D-\uDD14\uDD16-\uDD1C\uDD1E-\uDD39\uDD3B-\uDD3E\uDD40-\uDD44\uDD46\uDD4A-\uDD50\uDD52-\uDEA5\uDEA8-\uDEC0\uDEC2-\uDEDA\uDEDC-\uDEFA\uDEFC-\uDF14\uDF16-\uDF34\uDF36-\uDF4E\uDF50-\uDF6E\uDF70-\uDF88\uDF8A-\uDFA8\uDFAA-\uDFC2\uDFC4-\uDFCB]|\uD83A[\uDC00-\uDCC4]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB]|\uD869[\uDC00-\uDED6\uDF00-\uDFFF]|\uD86D[\uDC00-\uDF34\uDF40-\uDFFF]|\uD86E[\uDC00-\uDC1D]|\uD87E[\uDC00-\uDE1D]/,
-        
+        // ECMAScript 6/Unicode v7.0.0 NonAsciiIdentifierPart:
         NonAsciiIdentifierPart: /[\xAA\xB5\xB7\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0300-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u0483-\u0487\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u05D0-\u05EA\u05F0-\u05F2\u0610-\u061A\u0620-\u0669\u066E-\u06D3\u06D5-\u06DC\u06DF-\u06E8\u06EA-\u06FC\u06FF\u0710-\u074A\u074D-\u07B1\u07C0-\u07F5\u07FA\u0800-\u082D\u0840-\u085B\u08A0-\u08B2\u08E4-\u0963\u0966-\u096F\u0971-\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BC-\u09C4\u09C7\u09C8\u09CB-\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E3\u09E6-\u09F1\u0A01-\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A59-\u0A5C\u0A5E\u0A66-\u0A75\u0A81-\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABC-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AD0\u0AE0-\u0AE3\u0AE6-\u0AEF\u0B01-\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3C-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B56\u0B57\u0B5C\u0B5D\u0B5F-\u0B63\u0B66-\u0B6F\u0B71\u0B82\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD0\u0BD7\u0BE6-\u0BEF\u0C00-\u0C03\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C58\u0C59\u0C60-\u0C63\u0C66-\u0C6F\u0C81-\u0C83\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBC-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CDE\u0CE0-\u0CE3\u0CE6-\u0CEF\u0CF1\u0CF2\u0D01-\u0D03\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D-\u0D44\u0D46-\u0D48\u0D4A-\u0D4E\u0D57\u0D60-\u0D63\u0D66-\u0D6F\u0D7A-\u0D7F\u0D82\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2\u0DF3\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB9\u0EBB-\u0EBD\u0EC0-\u0EC4\u0EC6\u0EC8-\u0ECD\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00\u0F18\u0F19\u0F20-\u0F29\u0F35\u0F37\u0F39\u0F3E-\u0F47\u0F49-\u0F6C\u0F71-\u0F84\u0F86-\u0F97\u0F99-\u0FBC\u0FC6\u1000-\u1049\u1050-\u109D\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u135D-\u135F\u1369-\u1371\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1714\u1720-\u1734\u1740-\u1753\u1760-\u176C\u176E-\u1770\u1772\u1773\u1780-\u17D3\u17D7\u17DC\u17DD\u17E0-\u17E9\u180B-\u180D\u1810-\u1819\u1820-\u1877\u1880-\u18AA\u18B0-\u18F5\u1900-\u191E\u1920-\u192B\u1930-\u193B\u1946-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19DA\u1A00-\u1A1B\u1A20-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AA7\u1AB0-\u1ABD\u1B00-\u1B4B\u1B50-\u1B59\u1B6B-\u1B73\u1B80-\u1BF3\u1C00-\u1C37\u1C40-\u1C49\u1C4D-\u1C7D\u1CD0-\u1CD2\u1CD4-\u1CF6\u1CF8\u1CF9\u1D00-\u1DF5\u1DFC-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u200C\u200D\u203F\u2040\u2054\u2071\u207F\u2090-\u209C\u20D0-\u20DC\u20E1\u20E5-\u20F0\u2102\u2107\u210A-\u2113\u2115\u2118-\u211D\u2124\u2126\u2128\u212A-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D7F-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2DE0-\u2DFF\u3005-\u3007\u3021-\u302F\u3031-\u3035\u3038-\u303C\u3041-\u3096\u3099-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA62B\uA640-\uA66F\uA674-\uA67D\uA67F-\uA69D\uA69F-\uA6F1\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA7AD\uA7B0\uA7B1\uA7F7-\uA827\uA840-\uA873\uA880-\uA8C4\uA8D0-\uA8D9\uA8E0-\uA8F7\uA8FB\uA900-\uA92D\uA930-\uA953\uA960-\uA97C\uA980-\uA9C0\uA9CF-\uA9D9\uA9E0-\uA9FE\uAA00-\uAA36\uAA40-\uAA4D\uAA50-\uAA59\uAA60-\uAA76\uAA7A-\uAAC2\uAADB-\uAADD\uAAE0-\uAAEF\uAAF2-\uAAF6\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB5F\uAB64\uAB65\uABC0-\uABEA\uABEC\uABED\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE00-\uFE0F\uFE20-\uFE2D\uFE33\uFE34\uFE4D-\uFE4F\uFE70-\uFE74\uFE76-\uFEFC\uFF10-\uFF19\uFF21-\uFF3A\uFF3F\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]|\uD800[\uDC00-\uDC0B\uDC0D-\uDC26\uDC28-\uDC3A\uDC3C\uDC3D\uDC3F-\uDC4D\uDC50-\uDC5D\uDC80-\uDCFA\uDD40-\uDD74\uDDFD\uDE80-\uDE9C\uDEA0-\uDED0\uDEE0\uDF00-\uDF1F\uDF30-\uDF4A\uDF50-\uDF7A\uDF80-\uDF9D\uDFA0-\uDFC3\uDFC8-\uDFCF\uDFD1-\uDFD5]|\uD801[\uDC00-\uDC9D\uDCA0-\uDCA9\uDD00-\uDD27\uDD30-\uDD63\uDE00-\uDF36\uDF40-\uDF55\uDF60-\uDF67]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC60-\uDC76\uDC80-\uDC9E\uDD00-\uDD15\uDD20-\uDD39\uDD80-\uDDB7\uDDBE\uDDBF\uDE00-\uDE03\uDE05\uDE06\uDE0C-\uDE13\uDE15-\uDE17\uDE19-\uDE33\uDE38-\uDE3A\uDE3F\uDE60-\uDE7C\uDE80-\uDE9C\uDEC0-\uDEC7\uDEC9-\uDEE6\uDF00-\uDF35\uDF40-\uDF55\uDF60-\uDF72\uDF80-\uDF91]|\uD803[\uDC00-\uDC48]|\uD804[\uDC00-\uDC46\uDC66-\uDC6F\uDC7F-\uDCBA\uDCD0-\uDCE8\uDCF0-\uDCF9\uDD00-\uDD34\uDD36-\uDD3F\uDD50-\uDD73\uDD76\uDD80-\uDDC4\uDDD0-\uDDDA\uDE00-\uDE11\uDE13-\uDE37\uDEB0-\uDEEA\uDEF0-\uDEF9\uDF01-\uDF03\uDF05-\uDF0C\uDF0F\uDF10\uDF13-\uDF28\uDF2A-\uDF30\uDF32\uDF33\uDF35-\uDF39\uDF3C-\uDF44\uDF47\uDF48\uDF4B-\uDF4D\uDF57\uDF5D-\uDF63\uDF66-\uDF6C\uDF70-\uDF74]|\uD805[\uDC80-\uDCC5\uDCC7\uDCD0-\uDCD9\uDD80-\uDDB5\uDDB8-\uDDC0\uDE00-\uDE40\uDE44\uDE50-\uDE59\uDE80-\uDEB7\uDEC0-\uDEC9]|\uD806[\uDCA0-\uDCE9\uDCFF\uDEC0-\uDEF8]|\uD808[\uDC00-\uDF98]|\uD809[\uDC00-\uDC6E]|[\uD80C\uD840-\uD868\uD86A-\uD86C][\uDC00-\uDFFF]|\uD80D[\uDC00-\uDC2E]|\uD81A[\uDC00-\uDE38\uDE40-\uDE5E\uDE60-\uDE69\uDED0-\uDEED\uDEF0-\uDEF4\uDF00-\uDF36\uDF40-\uDF43\uDF50-\uDF59\uDF63-\uDF77\uDF7D-\uDF8F]|\uD81B[\uDF00-\uDF44\uDF50-\uDF7E\uDF8F-\uDF9F]|\uD82C[\uDC00\uDC01]|\uD82F[\uDC00-\uDC6A\uDC70-\uDC7C\uDC80-\uDC88\uDC90-\uDC99\uDC9D\uDC9E]|\uD834[\uDD65-\uDD69\uDD6D-\uDD72\uDD7B-\uDD82\uDD85-\uDD8B\uDDAA-\uDDAD\uDE42-\uDE44]|\uD835[\uDC00-\uDC54\uDC56-\uDC9C\uDC9E\uDC9F\uDCA2\uDCA5\uDCA6\uDCA9-\uDCAC\uDCAE-\uDCB9\uDCBB\uDCBD-\uDCC3\uDCC5-\uDD05\uDD07-\uDD0A\uDD0D-\uDD14\uDD16-\uDD1C\uDD1E-\uDD39\uDD3B-\uDD3E\uDD40-\uDD44\uDD46\uDD4A-\uDD50\uDD52-\uDEA5\uDEA8-\uDEC0\uDEC2-\uDEDA\uDEDC-\uDEFA\uDEFC-\uDF14\uDF16-\uDF34\uDF36-\uDF4E\uDF50-\uDF6E\uDF70-\uDF88\uDF8A-\uDFA8\uDFAA-\uDFC2\uDFC4-\uDFCB\uDFCE-\uDFFF]|\uD83A[\uDC00-\uDCC4\uDCD0-\uDCD6]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB]|\uD869[\uDC00-\uDED6\uDF00-\uDFFF]|\uD86D[\uDC00-\uDF34\uDF40-\uDFFF]|\uD86E[\uDC00-\uDC1D]|\uD87E[\uDC00-\uDE1D]|\uDB40[\uDD00-\uDDEF]/
     };
 
     function isDecimalDigit(ch) {
-        return 0x30 <= ch && ch <= 0x39;  
+        return 0x30 <= ch && ch <= 0x39;  // 0..9
     }
 
     function isHexDigit(ch) {
-        return 0x30 <= ch && ch <= 0x39 ||  
-            0x61 <= ch && ch <= 0x66 ||     
-            0x41 <= ch && ch <= 0x46;       
+        return 0x30 <= ch && ch <= 0x39 ||  // 0..9
+            0x61 <= ch && ch <= 0x66 ||     // a..f
+            0x41 <= ch && ch <= 0x46;       // A..F
     }
 
     function isOctalDigit(ch) {
-        return ch >= 0x30 && ch <= 0x37;  
+        return ch >= 0x30 && ch <= 0x37;  // 0..7
     }
 
-    
+    // 7.2 White Space
 
     NON_ASCII_WHITESPACES = [
         0x1680, 0x180E,
@@ -31969,13 +32106,13 @@ module.exports = isPlainObject;
             ch >= 0x1680 && NON_ASCII_WHITESPACES.indexOf(ch) >= 0;
     }
 
-    
+    // 7.3 Line Terminators
 
     function isLineTerminator(ch) {
         return ch === 0x0A || ch === 0x0D || ch === 0x2028 || ch === 0x2029;
     }
 
-    
+    // 7.6 Identifier Names and Identifiers
 
     function fromCodePoint(cp) {
         if (cp <= 0xFFFF) { return String.fromCharCode(cp); }
@@ -31987,18 +32124,18 @@ module.exports = isPlainObject;
     IDENTIFIER_START = new Array(0x80);
     for(ch = 0; ch < 0x80; ++ch) {
         IDENTIFIER_START[ch] =
-            ch >= 0x61 && ch <= 0x7A ||  
-            ch >= 0x41 && ch <= 0x5A ||  
-            ch === 0x24 || ch === 0x5F;  
+            ch >= 0x61 && ch <= 0x7A ||  // a..z
+            ch >= 0x41 && ch <= 0x5A ||  // A..Z
+            ch === 0x24 || ch === 0x5F;  // $ (dollar) and _ (underscore)
     }
 
     IDENTIFIER_PART = new Array(0x80);
     for(ch = 0; ch < 0x80; ++ch) {
         IDENTIFIER_PART[ch] =
-            ch >= 0x61 && ch <= 0x7A ||  
-            ch >= 0x41 && ch <= 0x5A ||  
-            ch >= 0x30 && ch <= 0x39 ||  
-            ch === 0x24 || ch === 0x5F;  
+            ch >= 0x61 && ch <= 0x7A ||  // a..z
+            ch >= 0x41 && ch <= 0x5A ||  // A..Z
+            ch >= 0x30 && ch <= 0x39 ||  // 0..9
+            ch === 0x24 || ch === 0x5F;  // $ (dollar) and _ (underscore)
     }
 
     function isIdentifierStartES5(ch) {
@@ -32029,37 +32166,37 @@ module.exports = isPlainObject;
         isIdentifierPartES6: isIdentifierPartES6
     };
 }());
+/* vim: set sw=4 ts=4 et tw=80 : */
 
 
+/***/ }),
 
- }),
+/***/ 533:
+/***/ (function(module, exports, __webpack_require__) {
 
- 533:
- (function(module, exports, __webpack_require__) {
+/*
+  Copyright (C) 2013 Yusuke Suzuki <utatane.tea@gmail.com>
 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 (function () {
     'use strict';
@@ -32083,7 +32220,7 @@ module.exports = isPlainObject;
     }
 
     function isKeywordES5(id, strict) {
-        
+        // yield should not be treated as keyword under non-strict mode.
         if (!strict && id === 'yield') {
             return false;
         }
@@ -32201,61 +32338,61 @@ module.exports = isPlainObject;
         isIdentifierES6: isIdentifierES6
     };
 }());
+/* vim: set sw=4 ts=4 et tw=80 : */
 
 
+/***/ }),
 
- }),
-
- 538:
- (function(module, exports, __webpack_require__) {
+/***/ 538:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsRegExp = __webpack_require__(539),
     baseUnary = __webpack_require__(215),
     nodeUtil = __webpack_require__(216);
 
-
+/* Node.js helper references. */
 var nodeIsRegExp = nodeUtil && nodeUtil.isRegExp;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a `RegExp` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a regexp, else `false`.
+ * @example
+ *
+ * _.isRegExp(/abc/);
+ * // => true
+ *
+ * _.isRegExp('/abc/');
+ * // => false
+ */
 var isRegExp = nodeIsRegExp ? baseUnary(nodeIsRegExp) : baseIsRegExp;
 
 module.exports = isRegExp;
 
 
- }),
+/***/ }),
 
- 539:
- (function(module, exports, __webpack_require__) {
+/***/ 539:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var regexpTag = '[object RegExp]';
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isRegExp` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a regexp, else `false`.
+ */
 function baseIsRegExp(value) {
   return isObjectLike(value) && baseGetTag(value) == regexpTag;
 }
@@ -32263,24 +32400,24 @@ function baseIsRegExp(value) {
 module.exports = baseIsRegExp;
 
 
- }),
+/***/ }),
 
- 541:
- (function(module, exports, __webpack_require__) {
+/***/ 541:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 let fastProto = null;
 
-
-
-
-
+// Creates an object with permanently fast properties in V8. See Toon Verwaest's
+// post https://medium.com/@tverwaes/setting-up-prototypes-in-v8-ec9c9491dfe2#5f62
+// for more details. Use %HasFastProperties(object) and the Node.js flag
+// --allow-natives-syntax to check whether an object has fast properties.
 function FastObject(o) {
-	
-	
-	
+	// A prototype object will have "fast properties" enabled once it is checked
+	// against the inline property cache of a function, e.g. fastProto.property:
+	// https://github.com/v8/v8/blob/6.0.122/test/mjsunit/fast-prototype.js#L48-L63
 	if (fastProto !== null && typeof fastProto.property) {
 		const result = fastProto;
 		fastProto = FastObject.prototype = null;
@@ -32290,7 +32427,7 @@ function FastObject(o) {
 	return new FastObject;
 }
 
-
+// Initialize the inline property cache of FastObject
 FastObject();
 
 module.exports = function toFastproperties(o) {
@@ -32298,42 +32435,42 @@ module.exports = function toFastproperties(o) {
 };
 
 
- }),
+/***/ }),
 
- 542:
- (function(module, exports, __webpack_require__) {
+/***/ 542:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseClone = __webpack_require__(543);
 
-
+/** Used to compose bitmasks for cloning. */
 var CLONE_SYMBOLS_FLAG = 4;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a shallow clone of `value`.
+ *
+ * **Note:** This method is loosely based on the
+ * [structured clone algorithm](https://mdn.io/Structured_clone_algorithm)
+ * and supports cloning arrays, array buffers, booleans, date objects, maps,
+ * numbers, `Object` objects, regexes, sets, strings, symbols, and typed
+ * arrays. The own enumerable properties of `arguments` objects are cloned
+ * as plain objects. An empty object is returned for uncloneable values such
+ * as error objects, functions, DOM nodes, and WeakMaps.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to clone.
+ * @returns {*} Returns the cloned value.
+ * @see _.cloneDeep
+ * @example
+ *
+ * var objects = [{ 'a': 1 }, { 'b': 2 }];
+ *
+ * var shallow = _.clone(objects);
+ * console.log(shallow[0] === objects[0]);
+ * // => true
+ */
 function clone(value) {
   return baseClone(value, CLONE_SYMBOLS_FLAG);
 }
@@ -32341,10 +32478,10 @@ function clone(value) {
 module.exports = clone;
 
 
- }),
+/***/ }),
 
- 543:
- (function(module, exports, __webpack_require__) {
+/***/ 543:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Stack = __webpack_require__(267),
     arrayEach = __webpack_require__(544),
@@ -32368,12 +32505,12 @@ var Stack = __webpack_require__(267),
     isSet = __webpack_require__(2293),
     keys = __webpack_require__(205);
 
-
+/** Used to compose bitmasks for cloning. */
 var CLONE_DEEP_FLAG = 1,
     CLONE_FLAT_FLAG = 2,
     CLONE_SYMBOLS_FLAG = 4;
 
-
+/** `Object#toString` result references. */
 var argsTag = '[object Arguments]',
     arrayTag = '[object Array]',
     boolTag = '[object Boolean]',
@@ -32402,7 +32539,7 @@ var arrayBufferTag = '[object ArrayBuffer]',
     uint16Tag = '[object Uint16Array]',
     uint32Tag = '[object Uint32Array]';
 
-
+/** Used to identify `toStringTag` values supported by `_.clone`. */
 var cloneableTags = {};
 cloneableTags[argsTag] = cloneableTags[arrayTag] =
 cloneableTags[arrayBufferTag] = cloneableTags[dataViewTag] =
@@ -32418,22 +32555,22 @@ cloneableTags[uint16Tag] = cloneableTags[uint32Tag] = true;
 cloneableTags[errorTag] = cloneableTags[funcTag] =
 cloneableTags[weakMapTag] = false;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.clone` and `_.cloneDeep` which tracks
+ * traversed objects.
+ *
+ * @private
+ * @param {*} value The value to clone.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Deep clone
+ *  2 - Flatten inherited properties
+ *  4 - Clone symbols
+ * @param {Function} [customizer] The function to customize cloning.
+ * @param {string} [key] The key of `value`.
+ * @param {Object} [object] The parent object of `value`.
+ * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
+ * @returns {*} Returns the cloned value.
+ */
 function baseClone(value, bitmask, customizer, key, object, stack) {
   var result,
       isDeep = bitmask & CLONE_DEEP_FLAG,
@@ -32476,7 +32613,7 @@ function baseClone(value, bitmask, customizer, key, object, stack) {
       result = initCloneByTag(value, tag, isDeep);
     }
   }
-  
+  // Check for circular references and return its corresponding clone.
   stack || (stack = new Stack);
   var stacked = stack.get(value);
   if (stacked) {
@@ -32510,7 +32647,7 @@ function baseClone(value, bitmask, customizer, key, object, stack) {
       key = subValue;
       subValue = value[key];
     }
-    
+    // Recursively populate clone (susceptible to call stack limits).
     assignValue(result, key, baseClone(subValue, bitmask, customizer, key, value, stack));
   });
   return result;
@@ -32519,20 +32656,20 @@ function baseClone(value, bitmask, customizer, key, object, stack) {
 module.exports = baseClone;
 
 
- }),
+/***/ }),
 
- 544:
- (function(module, exports) {
+/***/ 544:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.forEach` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns `array`.
+ */
 function arrayEach(array, iteratee) {
   var index = -1,
       length = array == null ? 0 : array.length;
@@ -32548,23 +32685,23 @@ function arrayEach(array, iteratee) {
 module.exports = arrayEach;
 
 
- }),
+/***/ }),
 
- 545:
- (function(module, exports, __webpack_require__) {
+/***/ 545:
+/***/ (function(module, exports, __webpack_require__) {
 
 var copyObject = __webpack_require__(406),
     keys = __webpack_require__(205);
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.assign` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
 function baseAssign(object, source) {
   return object && copyObject(source, keys(source), object);
 }
@@ -32572,23 +32709,23 @@ function baseAssign(object, source) {
 module.exports = baseAssign;
 
 
- }),
+/***/ }),
 
- 546:
- (function(module, exports, __webpack_require__) {
+/***/ 546:
+/***/ (function(module, exports, __webpack_require__) {
 
 var copyObject = __webpack_require__(406),
     keysIn = __webpack_require__(407);
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.assignIn` without support for multiple sources
+ * or `customizer` functions.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @returns {Object} Returns `object`.
+ */
 function baseAssignIn(object, source) {
   return object && copyObject(source, keysIn(source), object);
 }
@@ -32596,22 +32733,22 @@ function baseAssignIn(object, source) {
 module.exports = baseAssignIn;
 
 
- }),
+/***/ }),
 
- 547:
- (function(module, exports, __webpack_require__) {
+/***/ 547:
+/***/ (function(module, exports, __webpack_require__) {
 
 var copyObject = __webpack_require__(406),
     getSymbols = __webpack_require__(288);
 
-
-
-
-
-
-
-
-
+/**
+ * Copies own symbols of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
 function copySymbols(source, object) {
   return copyObject(source, getSymbols(source), object);
 }
@@ -32619,22 +32756,22 @@ function copySymbols(source, object) {
 module.exports = copySymbols;
 
 
- }),
+/***/ }),
 
- 548:
- (function(module, exports, __webpack_require__) {
+/***/ 548:
+/***/ (function(module, exports, __webpack_require__) {
 
 var copyObject = __webpack_require__(406),
     getSymbolsIn = __webpack_require__(549);
 
-
-
-
-
-
-
-
-
+/**
+ * Copies own and inherited symbols of `source` to `object`.
+ *
+ * @private
+ * @param {Object} source The object to copy symbols from.
+ * @param {Object} [object={}] The object to copy symbols to.
+ * @returns {Object} Returns `object`.
+ */
 function copySymbolsIn(source, object) {
   return copyObject(source, getSymbolsIn(source), object);
 }
@@ -32642,26 +32779,26 @@ function copySymbolsIn(source, object) {
 module.exports = copySymbolsIn;
 
 
- }),
+/***/ }),
 
- 549:
- (function(module, exports, __webpack_require__) {
+/***/ 549:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayPush = __webpack_require__(287),
     getPrototype = __webpack_require__(12),
     getSymbols = __webpack_require__(288),
     stubArray = __webpack_require__(290);
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeGetSymbols = Object.getOwnPropertySymbols;
 
-
-
-
-
-
-
-
+/**
+ * Creates an array of the own and inherited enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
 var getSymbolsIn = !nativeGetSymbols ? stubArray : function(object) {
   var result = [];
   while (object) {
@@ -32674,23 +32811,23 @@ var getSymbolsIn = !nativeGetSymbols ? stubArray : function(object) {
 module.exports = getSymbolsIn;
 
 
- }),
+/***/ }),
 
- 550:
- (function(module, exports, __webpack_require__) {
+/***/ 550:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetAllKeys = __webpack_require__(286),
     getSymbolsIn = __webpack_require__(549),
     keysIn = __webpack_require__(407);
 
-
-
-
-
-
-
-
-
+/**
+ * Creates an array of own and inherited enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
 function getAllKeysIn(object) {
   return baseGetAllKeys(object, keysIn, getSymbolsIn);
 }
@@ -32698,29 +32835,29 @@ function getAllKeysIn(object) {
 module.exports = getAllKeysIn;
 
 
- }),
+/***/ }),
 
- 551:
- (function(module, exports) {
+/***/ 551:
+/***/ (function(module, exports) {
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
+/**
+ * Initializes an array clone.
+ *
+ * @private
+ * @param {Array} array The array to clone.
+ * @returns {Array} Returns the initialized clone.
+ */
 function initCloneArray(array) {
   var length = array.length,
       result = new array.constructor(length);
 
-  
+  // Add properties assigned by `RegExp#exec`.
   if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
     result.index = array.index;
     result.input = array.input;
@@ -32731,10 +32868,10 @@ function initCloneArray(array) {
 module.exports = initCloneArray;
 
 
- }),
+/***/ }),
 
- 552:
- (function(module, exports, __webpack_require__) {
+/***/ 552:
+/***/ (function(module, exports, __webpack_require__) {
 
 var cloneArrayBuffer = __webpack_require__(400),
     cloneDataView = __webpack_require__(553),
@@ -32742,7 +32879,7 @@ var cloneArrayBuffer = __webpack_require__(400),
     cloneSymbol = __webpack_require__(560),
     cloneTypedArray = __webpack_require__(399);
 
-
+/** `Object#toString` result references. */
 var boolTag = '[object Boolean]',
     dateTag = '[object Date]',
     mapTag = '[object Map]',
@@ -32764,18 +32901,18 @@ var arrayBufferTag = '[object ArrayBuffer]',
     uint16Tag = '[object Uint16Array]',
     uint32Tag = '[object Uint32Array]';
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Initializes an object clone based on its `toStringTag`.
+ *
+ * **Note:** This function only supports cloning values with tags of
+ * `Boolean`, `Date`, `Error`, `Map`, `Number`, `RegExp`, `Set`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @param {string} tag The `toStringTag` of the object to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the initialized clone.
+ */
 function initCloneByTag(object, tag, isDeep) {
   var Ctor = object.constructor;
   switch (tag) {
@@ -32815,21 +32952,21 @@ function initCloneByTag(object, tag, isDeep) {
 module.exports = initCloneByTag;
 
 
- }),
+/***/ }),
 
- 553:
- (function(module, exports, __webpack_require__) {
+/***/ 553:
+/***/ (function(module, exports, __webpack_require__) {
 
 var cloneArrayBuffer = __webpack_require__(400);
 
-
-
-
-
-
-
-
-
+/**
+ * Creates a clone of `dataView`.
+ *
+ * @private
+ * @param {Object} dataView The data view to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned data view.
+ */
 function cloneDataView(dataView, isDeep) {
   var buffer = isDeep ? cloneArrayBuffer(dataView.buffer) : dataView.buffer;
   return new dataView.constructor(buffer, dataView.byteOffset, dataView.byteLength);
@@ -32838,21 +32975,21 @@ function cloneDataView(dataView, isDeep) {
 module.exports = cloneDataView;
 
 
- }),
+/***/ }),
 
- 557:
- (function(module, exports) {
+/***/ 557:
+/***/ (function(module, exports) {
 
-
+/** Used to match `RegExp` flags from their coerced string values. */
 var reFlags = /\w*$/;
 
-
-
-
-
-
-
-
+/**
+ * Creates a clone of `regexp`.
+ *
+ * @private
+ * @param {Object} regexp The regexp to clone.
+ * @returns {Object} Returns the cloned regexp.
+ */
 function cloneRegExp(regexp) {
   var result = new regexp.constructor(regexp.source, reFlags.exec(regexp));
   result.lastIndex = regexp.lastIndex;
@@ -32862,24 +32999,24 @@ function cloneRegExp(regexp) {
 module.exports = cloneRegExp;
 
 
- }),
+/***/ }),
 
- 560:
- (function(module, exports, __webpack_require__) {
+/***/ 560:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7);
 
-
+/** Used to convert symbols to primitives and strings. */
 var symbolProto = Symbol ? Symbol.prototype : undefined,
     symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
 
-
-
-
-
-
-
-
+/**
+ * Creates a clone of the `symbol` object.
+ *
+ * @private
+ * @param {Object} symbol The symbol object to clone.
+ * @returns {Object} Returns the cloned symbol object.
+ */
 function cloneSymbol(symbol) {
   return symbolValueOf ? Object(symbolValueOf.call(symbol)) : {};
 }
@@ -32887,31 +33024,31 @@ function cloneSymbol(symbol) {
 module.exports = cloneSymbol;
 
 
- }),
+/***/ }),
 
- 561:
- (function(module, exports, __webpack_require__) {
+/***/ 561:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseUniq = __webpack_require__(562);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a duplicate-free version of an array, using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * for equality comparisons, in which only the first occurrence of each element
+ * is kept. The order of result values is determined by the order they occur
+ * in the array.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to inspect.
+ * @returns {Array} Returns the new duplicate free array.
+ * @example
+ *
+ * _.uniq([2, 1, 2]);
+ * // => [2, 1]
+ */
 function uniq(array) {
   return (array && array.length) ? baseUniq(array) : [];
 }
@@ -32919,10 +33056,10 @@ function uniq(array) {
 module.exports = uniq;
 
 
- }),
+/***/ }),
 
- 562:
- (function(module, exports, __webpack_require__) {
+/***/ 562:
+/***/ (function(module, exports, __webpack_require__) {
 
 var SetCache = __webpack_require__(276),
     arrayIncludes = __webpack_require__(563),
@@ -32931,18 +33068,18 @@ var SetCache = __webpack_require__(276),
     createSet = __webpack_require__(568),
     setToArray = __webpack_require__(283);
 
-
+/** Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE = 200;
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.uniqBy` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {Function} [iteratee] The iteratee invoked per element.
+ * @param {Function} [comparator] The comparator invoked per element.
+ * @returns {Array} Returns the new duplicate free array.
+ */
 function baseUniq(array, iteratee, comparator) {
   var index = -1,
       includes = arrayIncludes,
@@ -32998,22 +33135,22 @@ function baseUniq(array, iteratee, comparator) {
 module.exports = baseUniq;
 
 
- }),
+/***/ }),
 
- 563:
- (function(module, exports, __webpack_require__) {
+/***/ 563:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIndexOf = __webpack_require__(564);
 
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.includes` for arrays without support for
+ * specifying an index to search from.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
 function arrayIncludes(array, value) {
   var length = array == null ? 0 : array.length;
   return !!length && baseIndexOf(array, value, 0) > -1;
@@ -33022,24 +33159,24 @@ function arrayIncludes(array, value) {
 module.exports = arrayIncludes;
 
 
- }),
+/***/ }),
 
- 564:
- (function(module, exports, __webpack_require__) {
+/***/ 564:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseFindIndex = __webpack_require__(263),
     baseIsNaN = __webpack_require__(565),
     strictIndexOf = __webpack_require__(566);
 
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.indexOf` without `fromIndex` bounds checks.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
 function baseIndexOf(array, value, fromIndex) {
   return value === value
     ? strictIndexOf(array, value, fromIndex)
@@ -33049,18 +33186,18 @@ function baseIndexOf(array, value, fromIndex) {
 module.exports = baseIndexOf;
 
 
- }),
+/***/ }),
 
- 565:
- (function(module, exports) {
+/***/ 565:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isNaN` without support for number objects.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
+ */
 function baseIsNaN(value) {
   return value !== value;
 }
@@ -33068,21 +33205,21 @@ function baseIsNaN(value) {
 module.exports = baseIsNaN;
 
 
- }),
+/***/ }),
 
- 566:
- (function(module, exports) {
+/***/ 566:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.indexOf` which performs strict equality
+ * comparisons of values, i.e. `===`.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} value The value to search for.
+ * @param {number} fromIndex The index to search from.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
 function strictIndexOf(array, value, fromIndex) {
   var index = fromIndex - 1,
       length = array.length;
@@ -33098,20 +33235,20 @@ function strictIndexOf(array, value, fromIndex) {
 module.exports = strictIndexOf;
 
 
- }),
+/***/ }),
 
- 567:
- (function(module, exports) {
+/***/ 567:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * This function is like `arrayIncludes` except that it accepts a comparator.
+ *
+ * @private
+ * @param {Array} [array] The array to inspect.
+ * @param {*} target The value to search for.
+ * @param {Function} comparator The comparator invoked per element.
+ * @returns {boolean} Returns `true` if `target` is found, else `false`.
+ */
 function arrayIncludesWith(array, value, comparator) {
   var index = -1,
       length = array == null ? 0 : array.length;
@@ -33127,25 +33264,25 @@ function arrayIncludesWith(array, value, comparator) {
 module.exports = arrayIncludesWith;
 
 
- }),
+/***/ }),
 
- 568:
- (function(module, exports, __webpack_require__) {
+/***/ 568:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Set = __webpack_require__(201),
     noop = __webpack_require__(569),
     setToArray = __webpack_require__(283);
 
-
+/** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
 
-
-
-
-
-
-
-
+/**
+ * Creates a set object of `values`.
+ *
+ * @private
+ * @param {Array} values The values to add to the set.
+ * @returns {Object} Returns the new set.
+ */
 var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY) ? noop : function(values) {
   return new Set(values);
 };
@@ -33153,53 +33290,53 @@ var createSet = !(Set && (1 / setToArray(new Set([,-0]))[1]) == INFINITY) ? noop
 module.exports = createSet;
 
 
- }),
+/***/ }),
 
- 569:
- (function(module, exports) {
+/***/ 569:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This method returns `undefined`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.3.0
+ * @category Util
+ * @example
+ *
+ * _.times(2, _.noop);
+ * // => [undefined, undefined]
+ */
 function noop() {
-  
+  // No operation performed.
 }
 
 module.exports = noop;
 
 
- }),
+/***/ }),
 
- 6:
- (function(module, exports, __webpack_require__) {
+/***/ 6:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7),
     getRawTag = __webpack_require__(10),
     objectToString = __webpack_require__(11);
 
-
+/** `Object#toString` result references. */
 var nullTag = '[object Null]',
     undefinedTag = '[object Undefined]';
 
-
+/** Built-in value references. */
 var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
 function baseGetTag(value) {
   if (value == null) {
     return value === undefined ? undefinedTag : nullTag;
@@ -33212,38 +33349,38 @@ function baseGetTag(value) {
 module.exports = baseGetTag;
 
 
- }),
+/***/ }),
 
- 605:
- (function(module, exports, __webpack_require__) {
+/***/ 605:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseRepeat = __webpack_require__(606),
     isIterateeCall = __webpack_require__(418),
     toInteger = __webpack_require__(302),
     toString = __webpack_require__(108);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Repeats the given string `n` times.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category String
+ * @param {string} [string=''] The string to repeat.
+ * @param {number} [n=1] The number of times to repeat the string.
+ * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
+ * @returns {string} Returns the repeated string.
+ * @example
+ *
+ * _.repeat('*', 3);
+ * // => '***'
+ *
+ * _.repeat('abc', 2);
+ * // => 'abcabc'
+ *
+ * _.repeat('abc', 0);
+ * // => ''
+ */
 function repeat(string, n, guard) {
   if ((guard ? isIterateeCall(string, n, guard) : n === undefined)) {
     n = 1;
@@ -33256,32 +33393,32 @@ function repeat(string, n, guard) {
 module.exports = repeat;
 
 
- }),
+/***/ }),
 
- 606:
- (function(module, exports) {
+/***/ 606:
+/***/ (function(module, exports) {
 
-
+/** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
-
+/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeFloor = Math.floor;
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.repeat` which doesn't coerce arguments.
+ *
+ * @private
+ * @param {string} string The string to repeat.
+ * @param {number} n The number of times to repeat the string.
+ * @returns {string} Returns the repeated string.
+ */
 function baseRepeat(string, n) {
   var result = '';
   if (!string || n < 1 || n > MAX_SAFE_INTEGER) {
     return result;
   }
-  
-  
+  // Leverage the exponentiation by squaring algorithm for a faster repeat.
+  // See https://en.wikipedia.org/wiki/Exponentiation_by_squaring for more details.
   do {
     if (n % 2) {
       result += string;
@@ -33298,38 +33435,38 @@ function baseRepeat(string, n) {
 module.exports = baseRepeat;
 
 
- }),
+/***/ }),
 
- 67:
- (function(module, exports, __webpack_require__) {
+/***/ 67:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGet = __webpack_require__(68);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
 function get(object, path, defaultValue) {
   var result = object == null ? undefined : baseGet(object, path);
   return result === undefined ? defaultValue : result;
@@ -33338,22 +33475,22 @@ function get(object, path, defaultValue) {
 module.exports = get;
 
 
- }),
+/***/ }),
 
- 68:
- (function(module, exports, __webpack_require__) {
+/***/ 68:
+/***/ (function(module, exports, __webpack_require__) {
 
 var castPath = __webpack_require__(69),
     toKey = __webpack_require__(111);
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
 function baseGet(object, path) {
   path = castPath(path, object);
 
@@ -33369,24 +33506,24 @@ function baseGet(object, path) {
 module.exports = baseGet;
 
 
- }),
+/***/ }),
 
- 69:
- (function(module, exports, __webpack_require__) {
+/***/ 69:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isArray = __webpack_require__(70),
     isKey = __webpack_require__(71),
     stringToPath = __webpack_require__(73),
     toString = __webpack_require__(108);
 
-
-
-
-
-
-
-
-
+/**
+ * Casts `value` to a path array if it's not one.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {Array} Returns the cast property path array.
+ */
 function castPath(value, object) {
   if (isArray(value)) {
     return value;
@@ -33397,73 +33534,73 @@ function castPath(value, object) {
 module.exports = castPath;
 
 
- }),
+/***/ }),
 
- 7:
- (function(module, exports, __webpack_require__) {
+/***/ 7:
+/***/ (function(module, exports, __webpack_require__) {
 
 var root = __webpack_require__(8);
 
-
+/** Built-in value references. */
 var Symbol = root.Symbol;
 
 module.exports = Symbol;
 
 
- }),
+/***/ }),
 
- 70:
- (function(module, exports) {
+/***/ 70:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
 var isArray = Array.isArray;
 
 module.exports = isArray;
 
 
- }),
+/***/ }),
 
- 706:
- (function(module, exports, __webpack_require__) {
+/***/ 706:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseFlatten = __webpack_require__(707);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Flattens `array` a single level deep.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to flatten.
+ * @returns {Array} Returns the new flattened array.
+ * @example
+ *
+ * _.flatten([1, [2, [3, [4]], 5]]);
+ * // => [1, 2, [3, [4]], 5]
+ */
 function flatten(array) {
   var length = array == null ? 0 : array.length;
   return length ? baseFlatten(array, 1) : [];
@@ -33472,25 +33609,25 @@ function flatten(array) {
 module.exports = flatten;
 
 
- }),
+/***/ }),
 
- 707:
- (function(module, exports, __webpack_require__) {
+/***/ 707:
+/***/ (function(module, exports, __webpack_require__) {
 
 var arrayPush = __webpack_require__(287),
     isFlattenable = __webpack_require__(708);
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.flatten` with support for restricting flattening.
+ *
+ * @private
+ * @param {Array} array The array to flatten.
+ * @param {number} depth The maximum recursion depth.
+ * @param {boolean} [predicate=isFlattenable] The function invoked per iteration.
+ * @param {boolean} [isStrict] Restrict to values that pass `predicate` checks.
+ * @param {Array} [result=[]] The initial result value.
+ * @returns {Array} Returns the new flattened array.
+ */
 function baseFlatten(array, depth, predicate, isStrict, result) {
   var index = -1,
       length = array.length;
@@ -33502,7 +33639,7 @@ function baseFlatten(array, depth, predicate, isStrict, result) {
     var value = array[index];
     if (depth > 0 && predicate(value)) {
       if (depth > 1) {
-        
+        // Recursively flatten arrays (susceptible to call stack limits).
         baseFlatten(value, depth - 1, predicate, isStrict, result);
       } else {
         arrayPush(result, value);
@@ -33517,25 +33654,25 @@ function baseFlatten(array, depth, predicate, isStrict, result) {
 module.exports = baseFlatten;
 
 
- }),
+/***/ }),
 
- 708:
- (function(module, exports, __webpack_require__) {
+/***/ 708:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7),
     isArguments = __webpack_require__(208),
     isArray = __webpack_require__(70);
 
-
+/** Built-in value references. */
 var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
 
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a flattenable `arguments` object or array.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
+ */
 function isFlattenable(value) {
   return isArray(value) || isArguments(value) ||
     !!(spreadableSymbol && value && value[spreadableSymbol]);
@@ -33544,26 +33681,26 @@ function isFlattenable(value) {
 module.exports = isFlattenable;
 
 
- }),
+/***/ }),
 
- 71:
- (function(module, exports, __webpack_require__) {
+/***/ 71:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isArray = __webpack_require__(70),
     isSymbol = __webpack_require__(72);
 
-
+/** Used to match property names within property paths. */
 var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
     reIsPlainProp = /^\w*$/;
 
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is a property name and not a property path.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+ */
 function isKey(value, object) {
   if (isArray(value)) {
     return false;
@@ -33580,34 +33717,34 @@ function isKey(value, object) {
 module.exports = isKey;
 
 
- }),
+/***/ }),
 
- 72:
- (function(module, exports, __webpack_require__) {
+/***/ 72:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     isObjectLike = __webpack_require__(14);
 
-
+/** `Object#toString` result references. */
 var symbolTag = '[object Symbol]';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
 function isSymbol(value) {
   return typeof value == 'symbol' ||
     (isObjectLike(value) && baseGetTag(value) == symbolTag);
@@ -33616,29 +33753,29 @@ function isSymbol(value) {
 module.exports = isSymbol;
 
 
- }),
+/***/ }),
 
- 73:
- (function(module, exports, __webpack_require__) {
+/***/ 73:
+/***/ (function(module, exports, __webpack_require__) {
 
 var memoizeCapped = __webpack_require__(74);
 
-
+/** Used to match property names within property paths. */
 var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
 
-
+/** Used to match backslashes in property paths. */
 var reEscapeChar = /\\(\\)?/g;
 
-
-
-
-
-
-
-
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
 var stringToPath = memoizeCapped(function(string) {
   var result = [];
-  if (string.charCodeAt(0) === 46 ) {
+  if (string.charCodeAt(0) === 46 /* . */) {
     result.push('');
   }
   string.replace(rePropName, function(match, number, quote, subString) {
@@ -33650,24 +33787,24 @@ var stringToPath = memoizeCapped(function(string) {
 module.exports = stringToPath;
 
 
- }),
+/***/ }),
 
- 74:
- (function(module, exports, __webpack_require__) {
+/***/ 74:
+/***/ (function(module, exports, __webpack_require__) {
 
 var memoize = __webpack_require__(75);
 
-
+/** Used as the maximum memoize cache size. */
 var MAX_MEMOIZE_SIZE = 500;
 
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.memoize` which clears the memoized function's
+ * cache when it exceeds `MAX_MEMOIZE_SIZE`.
+ *
+ * @private
+ * @param {Function} func The function to have its output memoized.
+ * @returns {Function} Returns the new memoized function.
+ */
 function memoizeCapped(func) {
   var result = memoize(func, function(key) {
     if (cache.size === MAX_MEMOIZE_SIZE) {
@@ -33683,60 +33820,60 @@ function memoizeCapped(func) {
 module.exports = memoizeCapped;
 
 
- }),
+/***/ }),
 
- 75:
- (function(module, exports, __webpack_require__) {
+/***/ 75:
+/***/ (function(module, exports, __webpack_require__) {
 
 var MapCache = __webpack_require__(76);
 
-
+/** Error message constants. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a function that memoizes the result of `func`. If `resolver` is
+ * provided, it determines the cache key for storing the result based on the
+ * arguments provided to the memoized function. By default, the first argument
+ * provided to the memoized function is used as the map cache key. The `func`
+ * is invoked with the `this` binding of the memoized function.
+ *
+ * **Note:** The cache is exposed as the `cache` property on the memoized
+ * function. Its creation may be customized by replacing the `_.memoize.Cache`
+ * constructor with one whose instances implement the
+ * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
+ * method interface of `clear`, `delete`, `get`, `has`, and `set`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to have its output memoized.
+ * @param {Function} [resolver] The function to resolve the cache key.
+ * @returns {Function} Returns the new memoized function.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': 2 };
+ * var other = { 'c': 3, 'd': 4 };
+ *
+ * var values = _.memoize(_.values);
+ * values(object);
+ * // => [1, 2]
+ *
+ * values(other);
+ * // => [3, 4]
+ *
+ * object.a = 2;
+ * values(object);
+ * // => [1, 2]
+ *
+ * // Modify the result cache.
+ * values.cache.set(object, ['a', 'b']);
+ * values(object);
+ * // => ['a', 'b']
+ *
+ * // Replace `_.memoize.Cache`.
+ * _.memoize.Cache = WeakMap;
+ */
 function memoize(func, resolver) {
   if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
     throw new TypeError(FUNC_ERROR_TEXT);
@@ -33757,16 +33894,16 @@ function memoize(func, resolver) {
   return memoized;
 }
 
-
+// Expose `MapCache`.
 memoize.Cache = MapCache;
 
 module.exports = memoize;
 
 
- }),
+/***/ }),
 
- 76:
- (function(module, exports, __webpack_require__) {
+/***/ 76:
+/***/ (function(module, exports, __webpack_require__) {
 
 var mapCacheClear = __webpack_require__(77),
     mapCacheDelete = __webpack_require__(102),
@@ -33774,13 +33911,13 @@ var mapCacheClear = __webpack_require__(77),
     mapCacheHas = __webpack_require__(106),
     mapCacheSet = __webpack_require__(107);
 
-
-
-
-
-
-
-
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
 function MapCache(entries) {
   var index = -1,
       length = entries == null ? 0 : entries.length;
@@ -33792,7 +33929,7 @@ function MapCache(entries) {
   }
 }
 
-
+// Add methods to `MapCache`.
 MapCache.prototype.clear = mapCacheClear;
 MapCache.prototype['delete'] = mapCacheDelete;
 MapCache.prototype.get = mapCacheGet;
@@ -33802,22 +33939,22 @@ MapCache.prototype.set = mapCacheSet;
 module.exports = MapCache;
 
 
- }),
+/***/ }),
 
- 77:
- (function(module, exports, __webpack_require__) {
+/***/ 77:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Hash = __webpack_require__(78),
     ListCache = __webpack_require__(93),
     Map = __webpack_require__(101);
 
-
-
-
-
-
-
-
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
 function mapCacheClear() {
   this.size = 0;
   this.__data__ = {
@@ -33830,10 +33967,10 @@ function mapCacheClear() {
 module.exports = mapCacheClear;
 
 
- }),
+/***/ }),
 
- 78:
- (function(module, exports, __webpack_require__) {
+/***/ 78:
+/***/ (function(module, exports, __webpack_require__) {
 
 var hashClear = __webpack_require__(79),
     hashDelete = __webpack_require__(89),
@@ -33841,13 +33978,13 @@ var hashClear = __webpack_require__(79),
     hashHas = __webpack_require__(91),
     hashSet = __webpack_require__(92);
 
-
-
-
-
-
-
-
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
 function Hash(entries) {
   var index = -1,
       length = entries == null ? 0 : entries.length;
@@ -33859,7 +33996,7 @@ function Hash(entries) {
   }
 }
 
-
+// Add methods to `Hash`.
 Hash.prototype.clear = hashClear;
 Hash.prototype['delete'] = hashDelete;
 Hash.prototype.get = hashGet;
@@ -33869,20 +34006,20 @@ Hash.prototype.set = hashSet;
 module.exports = Hash;
 
 
- }),
+/***/ }),
 
- 79:
- (function(module, exports, __webpack_require__) {
+/***/ 79:
+/***/ (function(module, exports, __webpack_require__) {
 
 var nativeCreate = __webpack_require__(80);
 
-
-
-
-
-
-
-
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
 function hashClear() {
   this.__data__ = nativeCreate ? nativeCreate(null) : {};
   this.size = 0;
@@ -33891,44 +34028,44 @@ function hashClear() {
 module.exports = hashClear;
 
 
- }),
+/***/ }),
 
- 792:
- (function(module, exports) {
+/***/ 792:
+/***/ (function(module, exports) {
 
 var g;
 
-
+// This works in non-strict mode
 g = (function() {
 	return this;
 })();
 
 try {
-	
+	// This works if eval is allowed (see CSP)
 	g = g || Function("return this")() || (1,eval)("this");
 } catch(e) {
-	
+	// This works if the window reference is available
 	if(typeof window === "object")
 		g = window;
 }
 
-
-
-
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
 
 module.exports = g;
 
 
- }),
+/***/ }),
 
- 793:
- (function(module, exports) {
+/***/ 793:
+/***/ (function(module, exports) {
 
 module.exports = function(module) {
 	if(!module.webpackPolyfill) {
 		module.deprecate = function() {};
 		module.paths = [];
-		
+		// module.parent = undefined by default
 		if(!module.children) module.children = [];
 		Object.defineProperty(module, "loaded", {
 			enumerable: true,
@@ -33948,19 +34085,19 @@ module.exports = function(module) {
 };
 
 
- }),
+/***/ }),
 
- 794:
- (function(module, exports, __webpack_require__) {
+/***/ 794:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-(function(global) {
-
-
-
-
-
-
+/* WEBPACK VAR INJECTION */(function(global) {/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+ * @license  MIT
+ */
+/* eslint-disable no-proto */
 
 
 
@@ -33972,46 +34109,46 @@ exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
 exports.INSPECT_MAX_BYTES = 50
 
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
 Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
   ? global.TYPED_ARRAY_SUPPORT
   : typedArraySupport()
 
-
-
-
+/*
+ * Export kMaxLength after typed array support is determined.
+ */
 exports.kMaxLength = kMaxLength()
 
 function typedArraySupport () {
   try {
     var arr = new Uint8Array(1)
     arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
-    return arr.foo() === 42 && 
-        typeof arr.subarray === 'function' && 
-        arr.subarray(1, 1).byteLength === 0 
+    return arr.foo() === 42 && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
   } catch (e) {
     return false
   }
@@ -34028,11 +34165,11 @@ function createBuffer (that, length) {
     throw new RangeError('Invalid typed array length')
   }
   if (Buffer.TYPED_ARRAY_SUPPORT) {
-    
+    // Return an augmented `Uint8Array` instance, for best performance
     that = new Uint8Array(length)
     that.__proto__ = Buffer.prototype
   } else {
-    
+    // Fallback: Return an object instance of the Buffer class
     if (that === null) {
       that = new Buffer(length)
     }
@@ -34042,22 +34179,22 @@ function createBuffer (that, length) {
   return that
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * The Buffer constructor returns instances of `Uint8Array` that have their
+ * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+ * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+ * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+ * returns a single octet.
+ *
+ * The `Uint8Array` prototype remains unmodified.
+ */
 
 function Buffer (arg, encodingOrOffset, length) {
   if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
     return new Buffer(arg, encodingOrOffset, length)
   }
 
-  
+  // Common case.
   if (typeof arg === 'number') {
     if (typeof encodingOrOffset === 'string') {
       throw new Error(
@@ -34069,9 +34206,9 @@ function Buffer (arg, encodingOrOffset, length) {
   return from(this, arg, encodingOrOffset, length)
 }
 
-Buffer.poolSize = 8192 
+Buffer.poolSize = 8192 // not used by this implementation
 
-
+// TODO: Legacy, not needed anymore. Remove in next major version.
 Buffer._augment = function (arr) {
   arr.__proto__ = Buffer.prototype
   return arr
@@ -34093,14 +34230,14 @@ function from (that, value, encodingOrOffset, length) {
   return fromObject(that, value)
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+ * if value is a number.
+ * Buffer.from(str[, encoding])
+ * Buffer.from(array)
+ * Buffer.from(buffer)
+ * Buffer.from(arrayBuffer[, byteOffset[, length]])
+ **/
 Buffer.from = function (value, encodingOrOffset, length) {
   return from(null, value, encodingOrOffset, length)
 }
@@ -34110,7 +34247,7 @@ if (Buffer.TYPED_ARRAY_SUPPORT) {
   Buffer.__proto__ = Uint8Array
   if (typeof Symbol !== 'undefined' && Symbol.species &&
       Buffer[Symbol.species] === Buffer) {
-    
+    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
     Object.defineProperty(Buffer, Symbol.species, {
       value: null,
       configurable: true
@@ -34132,9 +34269,9 @@ function alloc (that, size, fill, encoding) {
     return createBuffer(that, size)
   }
   if (fill !== undefined) {
-    
-    
-    
+    // Only pay attention to encoding if it's a string. This
+    // prevents accidentally sending in a number that would
+    // be interpretted as a start offset.
     return typeof encoding === 'string'
       ? createBuffer(that, size).fill(fill, encoding)
       : createBuffer(that, size).fill(fill)
@@ -34142,10 +34279,10 @@ function alloc (that, size, fill, encoding) {
   return createBuffer(that, size)
 }
 
-
-
-
-
+/**
+ * Creates a new filled Buffer instance.
+ * alloc(size[, fill[, encoding]])
+ **/
 Buffer.alloc = function (size, fill, encoding) {
   return alloc(null, size, fill, encoding)
 }
@@ -34161,15 +34298,15 @@ function allocUnsafe (that, size) {
   return that
 }
 
-
-
-
+/**
+ * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+ * */
 Buffer.allocUnsafe = function (size) {
   return allocUnsafe(null, size)
 }
-
-
-
+/**
+ * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+ */
 Buffer.allocUnsafeSlow = function (size) {
   return allocUnsafe(null, size)
 }
@@ -34189,9 +34326,9 @@ function fromString (that, string, encoding) {
   var actual = that.write(string, encoding)
 
   if (actual !== length) {
-    
-    
-    
+    // Writing a hex string, for example, that contains invalid characters will
+    // cause everything after the first invalid character to be ignored. (e.g.
+    // 'abxxcd' will be treated as 'ab')
     that = that.slice(0, actual)
   }
 
@@ -34208,7 +34345,7 @@ function fromArrayLike (that, array) {
 }
 
 function fromArrayBuffer (that, array, byteOffset, length) {
-  array.byteLength 
+  array.byteLength // this throws if `array` is not a valid ArrayBuffer
 
   if (byteOffset < 0 || array.byteLength < byteOffset) {
     throw new RangeError('\'offset\' is out of bounds')
@@ -34227,11 +34364,11 @@ function fromArrayBuffer (that, array, byteOffset, length) {
   }
 
   if (Buffer.TYPED_ARRAY_SUPPORT) {
-    
+    // Return an augmented `Uint8Array` instance, for best performance
     that = array
     that.__proto__ = Buffer.prototype
   } else {
-    
+    // Fallback: Return an object instance of the Buffer class
     that = fromArrayLike(that, array)
   }
   return that
@@ -34268,8 +34405,8 @@ function fromObject (that, obj) {
 }
 
 function checked (length) {
-  
-  
+  // Note: cannot use `length < kMaxLength()` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
   if (length >= kMaxLength()) {
     throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
                          'size: 0x' + kMaxLength().toString(16) + ' bytes')
@@ -34278,7 +34415,7 @@ function checked (length) {
 }
 
 function SlowBuffer (length) {
-  if (+length != length) { 
+  if (+length != length) { // eslint-disable-line eqeqeq
     length = 0
   }
   return Buffer.alloc(+length)
@@ -34375,7 +34512,7 @@ function byteLength (string, encoding) {
   var len = string.length
   if (len === 0) return 0
 
-  
+  // Use a for loop to avoid recursion
   var loweredCase = false
   for (;;) {
     switch (encoding) {
@@ -34397,7 +34534,7 @@ function byteLength (string, encoding) {
       case 'base64':
         return base64ToBytes(string).length
       default:
-        if (loweredCase) return utf8ToBytes(string).length 
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
         encoding = ('' + encoding).toLowerCase()
         loweredCase = true
     }
@@ -34408,18 +34545,18 @@ Buffer.byteLength = byteLength
 function slowToString (encoding, start, end) {
   var loweredCase = false
 
-  
-  
+  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+  // property of a typed array.
 
-  
-  
-  
-  
+  // This behaves neither like String nor Uint8Array in that we set start/end
+  // to their upper/lower bounds if the value passed is out of range.
+  // undefined is handled specially as per ECMA-262 6th Edition,
+  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
   if (start === undefined || start < 0) {
     start = 0
   }
-  
-  
+  // Return early if start > this.length. Done here to prevent potential uint32
+  // coercion fail below.
   if (start > this.length) {
     return ''
   }
@@ -34432,7 +34569,7 @@ function slowToString (encoding, start, end) {
     return ''
   }
 
-  
+  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
   end >>>= 0
   start >>>= 0
 
@@ -34475,8 +34612,8 @@ function slowToString (encoding, start, end) {
   }
 }
 
-
-
+// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+// Buffer instances.
 Buffer.prototype._isBuffer = true
 
 function swap (b, n, m) {
@@ -34604,20 +34741,20 @@ Buffer.prototype.compare = function compare (target, start, end, thisStart, this
   return 0
 }
 
-
-
-
-
-
-
-
-
-
+// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+//
+// Arguments:
+// - buffer - a Buffer to search
+// - val - a string, Buffer, or number
+// - byteOffset - an index into `buffer`; will be clamped to an int32
+// - encoding - an optional encoding, relevant is val is a string
+// - dir - true for indexOf, false for lastIndexOf
 function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
-  
+  // Empty buffer means no match
   if (buffer.length === 0) return -1
 
-  
+  // Normalize byteOffset
   if (typeof byteOffset === 'string') {
     encoding = byteOffset
     byteOffset = 0
@@ -34626,13 +34763,13 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
   } else if (byteOffset < -0x80000000) {
     byteOffset = -0x80000000
   }
-  byteOffset = +byteOffset  
+  byteOffset = +byteOffset  // Coerce to Number.
   if (isNaN(byteOffset)) {
-    
+    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
     byteOffset = dir ? 0 : (buffer.length - 1)
   }
 
-  
+  // Normalize byteOffset: negative offsets start from the end of the buffer
   if (byteOffset < 0) byteOffset = buffer.length + byteOffset
   if (byteOffset >= buffer.length) {
     if (dir) return -1
@@ -34642,20 +34779,20 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
     else return -1
   }
 
-  
+  // Normalize val
   if (typeof val === 'string') {
     val = Buffer.from(val, encoding)
   }
 
-  
+  // Finally, search either indexOf (if dir is true) or lastIndexOf
   if (Buffer.isBuffer(val)) {
-    
+    // Special case: looking for empty string/buffer always fails
     if (val.length === 0) {
       return -1
     }
     return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
   } else if (typeof val === 'number') {
-    val = val & 0xFF 
+    val = val & 0xFF // Search for a byte value [0-255]
     if (Buffer.TYPED_ARRAY_SUPPORT &&
         typeof Uint8Array.prototype.indexOf === 'function') {
       if (dir) {
@@ -34750,7 +34887,7 @@ function hexWrite (buf, string, offset, length) {
     }
   }
 
-  
+  // must be an even number of digits
   var strLen = string.length
   if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
 
@@ -34786,17 +34923,17 @@ function ucs2Write (buf, string, offset, length) {
 }
 
 Buffer.prototype.write = function write (string, offset, length, encoding) {
-  
+  // Buffer#write(string)
   if (offset === undefined) {
     encoding = 'utf8'
     length = this.length
     offset = 0
-  
+  // Buffer#write(string, encoding)
   } else if (length === undefined && typeof offset === 'string') {
     encoding = offset
     length = this.length
     offset = 0
-  
+  // Buffer#write(string, offset[, length][, encoding])
   } else if (isFinite(offset)) {
     offset = offset | 0
     if (isFinite(length)) {
@@ -34806,7 +34943,7 @@ Buffer.prototype.write = function write (string, offset, length, encoding) {
       encoding = length
       length = undefined
     }
-  
+  // legacy write(string, encoding, offset, length) - remove in v0.13
   } else {
     throw new Error(
       'Buffer.write(string, encoding, offset[, length]) is no longer supported'
@@ -34840,7 +34977,7 @@ Buffer.prototype.write = function write (string, offset, length, encoding) {
         return latin1Write(this, string, offset, length)
 
       case 'base64':
-        
+        // Warning: maxLength not taken into account in base64Write
         return base64Write(this, string, offset, length)
 
       case 'ucs2':
@@ -34927,12 +35064,12 @@ function utf8Slice (buf, start, end) {
     }
 
     if (codePoint === null) {
-      
-      
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
       codePoint = 0xFFFD
       bytesPerSequence = 1
     } else if (codePoint > 0xFFFF) {
-      
+      // encode to utf16 (surrogate pair dance)
       codePoint -= 0x10000
       res.push(codePoint >>> 10 & 0x3FF | 0xD800)
       codePoint = 0xDC00 | codePoint & 0x3FF
@@ -34945,18 +35082,18 @@ function utf8Slice (buf, start, end) {
   return decodeCodePointsArray(res)
 }
 
-
-
-
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
 var MAX_ARGUMENTS_LENGTH = 0x1000
 
 function decodeCodePointsArray (codePoints) {
   var len = codePoints.length
   if (len <= MAX_ARGUMENTS_LENGTH) {
-    return String.fromCharCode.apply(String, codePoints) 
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
   }
 
-  
+  // Decode in chunks to avoid "call stack size exceeded".
   var res = ''
   var i = 0
   while (i < len) {
@@ -35046,9 +35183,9 @@ Buffer.prototype.slice = function slice (start, end) {
   return newBuf
 }
 
-
-
-
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
 function checkOffset (offset, ext, length) {
   if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
   if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
@@ -35484,7 +35621,7 @@ Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert
   return writeDouble(this, value, offset, false, noAssert)
 }
 
-
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
 Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   if (!start) start = 0
   if (!end && end !== 0) end = this.length
@@ -35492,18 +35629,18 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   if (!targetStart) targetStart = 0
   if (end > 0 && end < start) end = start
 
-  
+  // Copy 0 bytes; we're done
   if (end === start) return 0
   if (target.length === 0 || this.length === 0) return 0
 
-  
+  // Fatal error conditions
   if (targetStart < 0) {
     throw new RangeError('targetStart out of bounds')
   }
   if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
   if (end < 0) throw new RangeError('sourceEnd out of bounds')
 
-  
+  // Are we oob?
   if (end > this.length) end = this.length
   if (target.length - targetStart < end - start) {
     end = target.length - targetStart + start
@@ -35513,12 +35650,12 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   var i
 
   if (this === target && start < targetStart && targetStart < end) {
-    
+    // descending copy from end
     for (i = len - 1; i >= 0; --i) {
       target[i + targetStart] = this[i + start]
     }
   } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    
+    // ascending copy from start
     for (i = 0; i < len; ++i) {
       target[i + targetStart] = this[i + start]
     }
@@ -35533,12 +35670,12 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   return len
 }
 
-
-
-
-
+// Usage:
+//    buffer.fill(number[, offset[, end]])
+//    buffer.fill(buffer[, offset[, end]])
+//    buffer.fill(string[, offset[, end]][, encoding])
 Buffer.prototype.fill = function fill (val, start, end, encoding) {
-  
+  // Handle string cases:
   if (typeof val === 'string') {
     if (typeof start === 'string') {
       encoding = start
@@ -35564,7 +35701,7 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
     val = val & 255
   }
 
-  
+  // Invalid ranges are not set to a default, so can range check early.
   if (start < 0 || this.length < start || this.length < end) {
     throw new RangeError('Out of range index')
   }
@@ -35596,17 +35733,17 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
   return this
 }
 
-
-
+// HELPER FUNCTIONS
+// ================
 
 var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
 
 function base64clean (str) {
-  
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
   str = stringtrim(str).replace(INVALID_BASE64_RE, '')
-  
+  // Node converts strings with length < 2 to ''
   if (str.length < 2) return ''
-  
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
   while (str.length % 4 !== 0) {
     str = str + '='
   }
@@ -35633,44 +35770,44 @@ function utf8ToBytes (string, units) {
   for (var i = 0; i < length; ++i) {
     codePoint = string.charCodeAt(i)
 
-    
+    // is surrogate component
     if (codePoint > 0xD7FF && codePoint < 0xE000) {
-      
+      // last char was a lead
       if (!leadSurrogate) {
-        
+        // no lead yet
         if (codePoint > 0xDBFF) {
-          
+          // unexpected trail
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
         } else if (i + 1 === length) {
-          
+          // unpaired lead
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
         }
 
-        
+        // valid lead
         leadSurrogate = codePoint
 
         continue
       }
 
-      
+      // 2 leads in a row
       if (codePoint < 0xDC00) {
         if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
         leadSurrogate = codePoint
         continue
       }
 
-      
+      // valid surrogate pair
       codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
     } else if (leadSurrogate) {
-      
+      // valid bmp char, but last char was a lead
       if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
     }
 
     leadSurrogate = null
 
-    
+    // encode utf8
     if (codePoint < 0x80) {
       if ((units -= 1) < 0) break
       bytes.push(codePoint)
@@ -35706,7 +35843,7 @@ function utf8ToBytes (string, units) {
 function asciiToBytes (str) {
   var byteArray = []
   for (var i = 0; i < str.length; ++i) {
-    
+    // Node's code seems to be doing this and not & 0x7F..
     byteArray.push(str.charCodeAt(i) & 0xFF)
   }
   return byteArray
@@ -35741,15 +35878,15 @@ function blitBuffer (src, dst, offset, length) {
 }
 
 function isnan (val) {
-  return val !== val 
+  return val !== val // eslint-disable-line no-self-compare
 }
 
-}.call(exports, __webpack_require__(792)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(792)))
 
- }),
+/***/ }),
 
- 795:
- (function(module, exports, __webpack_require__) {
+/***/ 795:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -35768,8 +35905,8 @@ for (var i = 0, len = code.length; i < len; ++i) {
   revLookup[code.charCodeAt(i)] = i
 }
 
-
-
+// Support decoding URL-safe base64 strings, as Node.js does.
+// See: https://en.wikipedia.org/wiki/Base64#URL_applications
 revLookup['-'.charCodeAt(0)] = 62
 revLookup['_'.charCodeAt(0)] = 63
 
@@ -35779,16 +35916,16 @@ function placeHoldersCount (b64) {
     throw new Error('Invalid string. Length must be a multiple of 4')
   }
 
-  
-  
-  
-  
-  
+  // the number of equal signs (place holders)
+  // if there are two placeholders, than the two characters before it
+  // represent one byte
+  // if there is only one, then the three characters before it represent 2 bytes
+  // this is just a cheap hack to not do indexOf twice
   return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
 }
 
 function byteLength (b64) {
-  
+  // base64 is 4/3 + up to two characters of the original data
   return (b64.length * 3 / 4) - placeHoldersCount(b64)
 }
 
@@ -35799,7 +35936,7 @@ function toByteArray (b64) {
 
   arr = new Arr((len * 3 / 4) - placeHolders)
 
-  
+  // if there are placeholders, only get up to the last complete 4 chars
   l = placeHolders > 0 ? len - 4 : len
 
   var L = 0
@@ -35840,17 +35977,17 @@ function encodeChunk (uint8, start, end) {
 function fromByteArray (uint8) {
   var tmp
   var len = uint8.length
-  var extraBytes = len % 3 
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
   var output = ''
   var parts = []
-  var maxChunkLength = 16383 
+  var maxChunkLength = 16383 // must be multiple of 3
 
-  
+  // go through the array every three bytes, we'll deal with trailing stuff later
   for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
     parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
   }
 
-  
+  // pad the end with zeros, but make sure to not forget the extra bytes
   if (extraBytes === 1) {
     tmp = uint8[len - 1]
     output += lookup[tmp >> 2]
@@ -35870,10 +36007,10 @@ function fromByteArray (uint8) {
 }
 
 
- }),
+/***/ }),
 
- 796:
- (function(module, exports) {
+/***/ 796:
+/***/ (function(module, exports) {
 
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -35961,10 +36098,10 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 }
 
 
- }),
+/***/ }),
 
- 797:
- (function(module, exports) {
+/***/ 797:
+/***/ (function(module, exports) {
 
 var toString = {}.toString;
 
@@ -35973,28 +36110,28 @@ module.exports = Array.isArray || function (arr) {
 };
 
 
- }),
+/***/ }),
 
- 799:
- (function(module, exports, __webpack_require__) {
+/***/ 799:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsEqualDeep = __webpack_require__(832),
     isObjectLike = __webpack_require__(14);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isEqual` which supports partial comparisons
+ * and tracks traversed objects.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Unordered comparison
+ *  2 - Partial comparison
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @param {Object} [stack] Tracks traversed `value` and `other` objects.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ */
 function baseIsEqual(value, other, bitmask, customizer, stack) {
   if (value === other) {
     return true;
@@ -36008,61 +36145,61 @@ function baseIsEqual(value, other, bitmask, customizer, stack) {
 module.exports = baseIsEqual;
 
 
- }),
+/***/ }),
 
- 8:
- (function(module, exports, __webpack_require__) {
+/***/ 8:
+/***/ (function(module, exports, __webpack_require__) {
 
 var freeGlobal = __webpack_require__(9);
 
-
+/** Detect free variable `self`. */
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
-
+/** Used as a reference to the global object. */
 var root = freeGlobal || freeSelf || Function('return this')();
 
 module.exports = root;
 
 
- }),
+/***/ }),
 
- 80:
- (function(module, exports, __webpack_require__) {
+/***/ 80:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getNative = __webpack_require__(81);
 
-
+/* Built-in method references that are verified to be native. */
 var nativeCreate = getNative(Object, 'create');
 
 module.exports = nativeCreate;
 
 
- }),
+/***/ }),
 
- 800:
- (function(module, exports, __webpack_require__) {
+/***/ 800:
+/***/ (function(module, exports, __webpack_require__) {
 
 var SetCache = __webpack_require__(276),
     arraySome = __webpack_require__(833),
     cacheHas = __webpack_require__(280);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1,
     COMPARE_UNORDERED_FLAG = 2;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseIsEqualDeep` for arrays with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Array} array The array to compare.
+ * @param {Array} other The other array to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `array` and `other` objects.
+ * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
+ */
 function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
   var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
       arrLength = array.length,
@@ -36071,7 +36208,7 @@ function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
   if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
     return false;
   }
-  
+  // Assume cyclic values are equal.
   var stacked = stack.get(array);
   if (stacked && stack.get(other)) {
     return stacked == other;
@@ -36083,7 +36220,7 @@ function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
   stack.set(array, other);
   stack.set(other, array);
 
-  
+  // Ignore non-index properties.
   while (++index < arrLength) {
     var arrValue = array[index],
         othValue = other[index];
@@ -36100,7 +36237,7 @@ function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
       result = false;
       break;
     }
-    
+    // Recursively compare arrays (susceptible to call stack limits).
     if (seen) {
       if (!arraySome(other, function(othValue, othIndex) {
             if (!cacheHas(seen, othIndex) &&
@@ -36127,21 +36264,21 @@ function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
 module.exports = equalArrays;
 
 
- }),
+/***/ }),
 
- 801:
- (function(module, exports, __webpack_require__) {
+/***/ 801:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(84);
 
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is suitable for strict equality comparisons, i.e. `===`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` if suitable for strict
+ *  equality comparisons, else `false`.
+ */
 function isStrictComparable(value) {
   return value === value && !isObject(value);
 }
@@ -36149,20 +36286,20 @@ function isStrictComparable(value) {
 module.exports = isStrictComparable;
 
 
- }),
+/***/ }),
 
- 803:
- (function(module, exports) {
+/***/ 803:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `matchesProperty` for source values suitable
+ * for strict equality comparisons, i.e. `===`.
+ *
+ * @private
+ * @param {string} key The key of the property to get.
+ * @param {*} srcValue The value to match.
+ * @returns {Function} Returns the new spec function.
+ */
 function matchesStrictComparable(key, srcValue) {
   return function(object) {
     if (object == null) {
@@ -36176,22 +36313,22 @@ function matchesStrictComparable(key, srcValue) {
 module.exports = matchesStrictComparable;
 
 
- }),
+/***/ }),
 
- 81:
- (function(module, exports, __webpack_require__) {
+/***/ 81:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsNative = __webpack_require__(82),
     getValue = __webpack_require__(88);
 
-
-
-
-
-
-
-
-
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
 function getNative(object, key) {
   var value = getValue(object, key);
   return baseIsNative(value) ? value : undefined;
@@ -36200,10 +36337,10 @@ function getNative(object, key) {
 module.exports = getNative;
 
 
- }),
+/***/ }),
 
- 814:
- (function(module, exports, __webpack_require__) {
+/***/ 814:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseMatches = __webpack_require__(826),
     baseMatchesProperty = __webpack_require__(294),
@@ -36211,16 +36348,16 @@ var baseMatches = __webpack_require__(826),
     isArray = __webpack_require__(70),
     property = __webpack_require__(839);
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.iteratee`.
+ *
+ * @private
+ * @param {*} [value=_.identity] The value to convert to an iteratee.
+ * @returns {Function} Returns the iteratee.
+ */
 function baseIteratee(value) {
-  
-  
+  // Don't store the `typeof` result in a variable to avoid a JIT bug in Safari 9.
+  // See https://bugs.webkit.org/show_bug.cgi?id=156034 for more details.
   if (typeof value == 'function') {
     return value;
   }
@@ -36238,46 +36375,46 @@ function baseIteratee(value) {
 module.exports = baseIteratee;
 
 
- }),
+/***/ }),
 
- 815:
- (function(module, exports, __webpack_require__) {
+/***/ 815:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
+/*
+ * Copyright 2009-2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE.txt or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 exports.SourceMapGenerator = __webpack_require__(816).SourceMapGenerator;
 exports.SourceMapConsumer = __webpack_require__(822).SourceMapConsumer;
 exports.SourceNode = __webpack_require__(825).SourceNode;
 
 
- }),
+/***/ }),
 
- 816:
- (function(module, exports, __webpack_require__) {
+/***/ 816:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var base64VLQ = __webpack_require__(817);
 var util = __webpack_require__(819);
 var ArraySet = __webpack_require__(820).ArraySet;
 var MappingList = __webpack_require__(821).MappingList;
 
-
-
-
-
-
-
-
-
+/**
+ * An instance of the SourceMapGenerator represents a source map which is
+ * being built incrementally. You may pass an object with the following
+ * properties:
+ *
+ *   - file: The filename of the generated source.
+ *   - sourceRoot: A root for all relative URLs in this source map.
+ */
 function SourceMapGenerator(aArgs) {
   if (!aArgs) {
     aArgs = {};
@@ -36293,11 +36430,11 @@ function SourceMapGenerator(aArgs) {
 
 SourceMapGenerator.prototype._version = 3;
 
-
-
-
-
-
+/**
+ * Creates a new SourceMapGenerator based on a SourceMapConsumer
+ *
+ * @param aSourceMapConsumer The SourceMap.
+ */
 SourceMapGenerator.fromSourceMap =
   function SourceMapGenerator_fromSourceMap(aSourceMapConsumer) {
     var sourceRoot = aSourceMapConsumer.sourceRoot;
@@ -36340,16 +36477,16 @@ SourceMapGenerator.fromSourceMap =
     return generator;
   };
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Add a single mapping from original source line and column to the generated
+ * source's line and column for this source map being created. The mapping
+ * object should have the following properties:
+ *
+ *   - generated: An object with the generated line and column positions.
+ *   - original: An object with the original line and column positions.
+ *   - source: The original source file (relative to the sourceRoot).
+ *   - name: An optional original token name for this mapping.
+ */
 SourceMapGenerator.prototype.addMapping =
   function SourceMapGenerator_addMapping(aArgs) {
     var generated = util.getArg(aArgs, 'generated');
@@ -36385,9 +36522,9 @@ SourceMapGenerator.prototype.addMapping =
     });
   };
 
-
-
-
+/**
+ * Set the source content for a source file.
+ */
 SourceMapGenerator.prototype.setSourceContent =
   function SourceMapGenerator_setSourceContent(aSourceFile, aSourceContent) {
     var source = aSourceFile;
@@ -36396,15 +36533,15 @@ SourceMapGenerator.prototype.setSourceContent =
     }
 
     if (aSourceContent != null) {
-      
-      
+      // Add the source content to the _sourcesContents map.
+      // Create a new _sourcesContents map if the property is null.
       if (!this._sourcesContents) {
         this._sourcesContents = Object.create(null);
       }
       this._sourcesContents[util.toSetString(source)] = aSourceContent;
     } else if (this._sourcesContents) {
-      
-      
+      // Remove the source file from the _sourcesContents map.
+      // If the _sourcesContents map is empty, set the property to null.
       delete this._sourcesContents[util.toSetString(source)];
       if (Object.keys(this._sourcesContents).length === 0) {
         this._sourcesContents = null;
@@ -36412,26 +36549,26 @@ SourceMapGenerator.prototype.setSourceContent =
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Applies the mappings of a sub-source-map for a specific source file to the
+ * source map being generated. Each mapping to the supplied source file is
+ * rewritten using the supplied source map. Note: The resolution for the
+ * resulting mappings is the minimium of this map and the supplied map.
+ *
+ * @param aSourceMapConsumer The source map to be applied.
+ * @param aSourceFile Optional. The filename of the source file.
+ *        If omitted, SourceMapConsumer's file property will be used.
+ * @param aSourceMapPath Optional. The dirname of the path to the source map
+ *        to be applied. If relative, it is relative to the SourceMapConsumer.
+ *        This parameter is needed when the two source maps aren't in the same
+ *        directory, and the source map to be applied contains relative source
+ *        paths. If so, those relative source paths need to be rewritten
+ *        relative to the SourceMapGenerator.
+ */
 SourceMapGenerator.prototype.applySourceMap =
   function SourceMapGenerator_applySourceMap(aSourceMapConsumer, aSourceFile, aSourceMapPath) {
     var sourceFile = aSourceFile;
-    
+    // If aSourceFile is omitted, we will use the file property of the SourceMap
     if (aSourceFile == null) {
       if (aSourceMapConsumer.file == null) {
         throw new Error(
@@ -36442,25 +36579,25 @@ SourceMapGenerator.prototype.applySourceMap =
       sourceFile = aSourceMapConsumer.file;
     }
     var sourceRoot = this._sourceRoot;
-    
+    // Make "sourceFile" relative if an absolute Url is passed.
     if (sourceRoot != null) {
       sourceFile = util.relative(sourceRoot, sourceFile);
     }
-    
-    
+    // Applying the SourceMap can add and remove items from the sources and
+    // the names array.
     var newSources = new ArraySet();
     var newNames = new ArraySet();
 
-    
+    // Find mappings for the "sourceFile"
     this._mappings.unsortedForEach(function (mapping) {
       if (mapping.source === sourceFile && mapping.originalLine != null) {
-        
+        // Check if it can be mapped by the source map, then update the mapping.
         var original = aSourceMapConsumer.originalPositionFor({
           line: mapping.originalLine,
           column: mapping.originalColumn
         });
         if (original.source != null) {
-          
+          // Copy mapping
           mapping.source = original.source;
           if (aSourceMapPath != null) {
             mapping.source = util.join(aSourceMapPath, mapping.source)
@@ -36490,7 +36627,7 @@ SourceMapGenerator.prototype.applySourceMap =
     this._sources = newSources;
     this._names = newNames;
 
-    
+    // Copy sourcesContents of applied map.
     aSourceMapConsumer.sources.forEach(function (sourceFile) {
       var content = aSourceMapConsumer.sourceContentFor(sourceFile);
       if (content != null) {
@@ -36505,24 +36642,24 @@ SourceMapGenerator.prototype.applySourceMap =
     }, this);
   };
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A mapping can have one of the three levels of data:
+ *
+ *   1. Just the generated position.
+ *   2. The Generated position, original position, and original source.
+ *   3. Generated and original position, original source, as well as a name
+ *      token.
+ *
+ * To maintain consistency, we validate that any new mapping being added falls
+ * in to one of these categories.
+ */
 SourceMapGenerator.prototype._validateMapping =
   function SourceMapGenerator_validateMapping(aGenerated, aOriginal, aSource,
                                               aName) {
-    
-    
-    
-    
+    // When aOriginal is truthy but has empty values for .line and .column,
+    // it is most likely a programmer error. In this case we throw a very
+    // specific error message to try to guide them the right way.
+    // For example: https://github.com/Polymer/polymer-bundler/pull/519
     if (aOriginal && typeof aOriginal.line !== 'number' && typeof aOriginal.column !== 'number') {
         throw new Error(
             'original.line and original.column are not numbers -- you probably meant to omit ' +
@@ -36534,7 +36671,7 @@ SourceMapGenerator.prototype._validateMapping =
     if (aGenerated && 'line' in aGenerated && 'column' in aGenerated
         && aGenerated.line > 0 && aGenerated.column >= 0
         && !aOriginal && !aSource && !aName) {
-      
+      // Case 1.
       return;
     }
     else if (aGenerated && 'line' in aGenerated && 'column' in aGenerated
@@ -36542,7 +36679,7 @@ SourceMapGenerator.prototype._validateMapping =
              && aGenerated.line > 0 && aGenerated.column >= 0
              && aOriginal.line > 0 && aOriginal.column >= 0
              && aSource) {
-      
+      // Cases 2 and 3.
       return;
     }
     else {
@@ -36555,10 +36692,10 @@ SourceMapGenerator.prototype._validateMapping =
     }
   };
 
-
-
-
-
+/**
+ * Serialize the accumulated mappings in to the stream of base 64 VLQs
+ * specified by the source map format.
+ */
 SourceMapGenerator.prototype._serializeMappings =
   function SourceMapGenerator_serializeMappings() {
     var previousGeneratedColumn = 0;
@@ -36603,7 +36740,7 @@ SourceMapGenerator.prototype._serializeMappings =
         next += base64VLQ.encode(sourceIdx - previousSource);
         previousSource = sourceIdx;
 
-        
+        // lines are stored 0-based in SourceMap spec version 3
         next += base64VLQ.encode(mapping.originalLine - 1
                                    - previousOriginalLine);
         previousOriginalLine = mapping.originalLine - 1;
@@ -36641,9 +36778,9 @@ SourceMapGenerator.prototype._generateSourcesContent =
     }, this);
   };
 
-
-
-
+/**
+ * Externalize the source map.
+ */
 SourceMapGenerator.prototype.toJSON =
   function SourceMapGenerator_toJSON() {
     var map = {
@@ -36665,9 +36802,9 @@ SourceMapGenerator.prototype.toJSON =
     return map;
   };
 
-
-
-
+/**
+ * Render the source map being generated to a string.
+ */
 SourceMapGenerator.prototype.toString =
   function SourceMapGenerator_toString() {
     return JSON.stringify(this.toJSON());
@@ -36676,91 +36813,91 @@ SourceMapGenerator.prototype.toString =
 exports.SourceMapGenerator = SourceMapGenerator;
 
 
- }),
+/***/ }),
 
- 817:
- (function(module, exports, __webpack_require__) {
+/***/ 817:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ *
+ * Based on the Base 64 VLQ implementation in Closure Compiler:
+ * https://code.google.com/p/closure-compiler/source/browse/trunk/src/com/google/debugging/sourcemap/Base64VLQ.java
+ *
+ * Copyright 2011 The Closure Compiler Authors. All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *  * Neither the name of Google Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 var base64 = __webpack_require__(818);
 
-
-
-
-
-
-
-
-
-
-
-
+// A single base 64 digit can contain 6 bits of data. For the base 64 variable
+// length quantities we use in the source map spec, the first bit is the sign,
+// the next four bits are the actual value, and the 6th bit is the
+// continuation bit. The continuation bit tells us whether there are more
+// digits in this value following this digit.
+//
+//   Continuation
+//   |    Sign
+//   |    |
+//   V    V
+//   101011
 
 var VLQ_BASE_SHIFT = 5;
 
-
+// binary: 100000
 var VLQ_BASE = 1 << VLQ_BASE_SHIFT;
 
-
+// binary: 011111
 var VLQ_BASE_MASK = VLQ_BASE - 1;
 
-
+// binary: 100000
 var VLQ_CONTINUATION_BIT = VLQ_BASE;
 
-
-
-
-
-
-
+/**
+ * Converts from a two-complement value to a value where the sign bit is
+ * placed in the least significant bit.  For example, as decimals:
+ *   1 becomes 2 (10 binary), -1 becomes 3 (11 binary)
+ *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
+ */
 function toVLQSigned(aValue) {
   return aValue < 0
     ? ((-aValue) << 1) + 1
     : (aValue << 1) + 0;
 }
 
-
-
-
-
-
-
+/**
+ * Converts to a two-complement value from a value where the sign bit is
+ * placed in the least significant bit.  For example, as decimals:
+ *   2 (10 binary) becomes 1, 3 (11 binary) becomes -1
+ *   4 (100 binary) becomes 2, 5 (101 binary) becomes -2
+ */
 function fromVLQSigned(aValue) {
   var isNegative = (aValue & 1) === 1;
   var shifted = aValue >> 1;
@@ -36769,9 +36906,9 @@ function fromVLQSigned(aValue) {
     : shifted;
 }
 
-
-
-
+/**
+ * Returns the base 64 VLQ encoded value.
+ */
 exports.encode = function base64VLQ_encode(aValue) {
   var encoded = "";
   var digit;
@@ -36782,8 +36919,8 @@ exports.encode = function base64VLQ_encode(aValue) {
     digit = vlq & VLQ_BASE_MASK;
     vlq >>>= VLQ_BASE_SHIFT;
     if (vlq > 0) {
-      
-      
+      // There are still more digits in this value, so we must make sure the
+      // continuation bit is marked.
       digit |= VLQ_CONTINUATION_BIT;
     }
     encoded += base64.encode(digit);
@@ -36792,10 +36929,10 @@ exports.encode = function base64VLQ_encode(aValue) {
   return encoded;
 };
 
-
-
-
-
+/**
+ * Decodes the next base 64 VLQ value from the given string and returns the
+ * value and the rest of the string via the out parameter.
+ */
 exports.decode = function base64VLQ_decode(aStr, aIndex, aOutParam) {
   var strLen = aStr.length;
   var result = 0;
@@ -36823,23 +36960,23 @@ exports.decode = function base64VLQ_decode(aStr, aIndex, aOutParam) {
 };
 
 
- }),
+/***/ }),
 
- 818:
- (function(module, exports) {
+/***/ 818:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var intToCharMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split('');
 
-
-
-
+/**
+ * Encode an integer in the range of 0 to 63 to a single base 64 digit.
+ */
 exports.encode = function (number) {
   if (0 <= number && number < intToCharMap.length) {
     return intToCharMap[number];
@@ -36847,78 +36984,78 @@ exports.encode = function (number) {
   throw new TypeError("Must be between 0 and 63: " + number);
 };
 
-
-
-
-
+/**
+ * Decode a single base 64 character code digit to an integer. Returns -1 on
+ * failure.
+ */
 exports.decode = function (charCode) {
-  var bigA = 65;     
-  var bigZ = 90;     
+  var bigA = 65;     // 'A'
+  var bigZ = 90;     // 'Z'
 
-  var littleA = 97;  
-  var littleZ = 122; 
+  var littleA = 97;  // 'a'
+  var littleZ = 122; // 'z'
 
-  var zero = 48;     
-  var nine = 57;     
+  var zero = 48;     // '0'
+  var nine = 57;     // '9'
 
-  var plus = 43;     
-  var slash = 47;    
+  var plus = 43;     // '+'
+  var slash = 47;    // '/'
 
   var littleOffset = 26;
   var numberOffset = 52;
 
-  
+  // 0 - 25: ABCDEFGHIJKLMNOPQRSTUVWXYZ
   if (bigA <= charCode && charCode <= bigZ) {
     return (charCode - bigA);
   }
 
-  
+  // 26 - 51: abcdefghijklmnopqrstuvwxyz
   if (littleA <= charCode && charCode <= littleZ) {
     return (charCode - littleA + littleOffset);
   }
 
-  
+  // 52 - 61: 0123456789
   if (zero <= charCode && charCode <= nine) {
     return (charCode - zero + numberOffset);
   }
 
-  
+  // 62: +
   if (charCode == plus) {
     return 62;
   }
 
-  
+  // 63: /
   if (charCode == slash) {
     return 63;
   }
 
-  
+  // Invalid base64 digit.
   return -1;
 };
 
 
- }),
+/***/ }),
 
- 819:
- (function(module, exports) {
+/***/ 819:
+/***/ (function(module, exports) {
 
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This is a helper function for getting values from parameter/options
+ * objects.
+ *
+ * @param args The object we are extracting values from
+ * @param name The name of the property we are getting.
+ * @param defaultValue An optional value to return if the property is missing
+ * from the object. If this is not specified and the property is missing, an
+ * error will be thrown.
+ */
 function getArg(aArgs, aName, aDefaultValue) {
   if (aName in aArgs) {
     return aArgs[aName];
@@ -36970,17 +37107,17 @@ function urlGenerate(aParsedUrl) {
 }
 exports.urlGenerate = urlGenerate;
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Normalizes a path, or the path portion of a URL:
+ *
+ * - Replaces consecutive slashes with one slash.
+ * - Removes unnecessary '.' parts.
+ * - Removes unnecessary '<dir>/..' parts.
+ *
+ * Based on code in the Node.js 'path' core module.
+ *
+ * @param aPath The path or url to normalize.
+ */
 function normalize(aPath) {
   var path = aPath;
   var url = urlParse(aPath);
@@ -37001,9 +37138,9 @@ function normalize(aPath) {
       up++;
     } else if (up > 0) {
       if (part === '') {
-        
-        
-        
+        // The first part is blank if the path is absolute. Trying to go
+        // above the root is a no-op. Therefore we can remove all '..' parts
+        // directly after the root.
         parts.splice(i + 1, up);
         up = 0;
       } else {
@@ -37026,22 +37163,22 @@ function normalize(aPath) {
 }
 exports.normalize = normalize;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Joins two paths/URLs.
+ *
+ * @param aRoot The root path or URL.
+ * @param aPath The path or URL to be joined with the root.
+ *
+ * - If aPath is a URL or a data URI, aPath is returned, unless aPath is a
+ *   scheme-relative URL: Then the scheme of aRoot, if any, is prepended
+ *   first.
+ * - Otherwise aPath is a path. If aRoot is a URL, then its path portion
+ *   is updated with the result and aRoot is returned. Otherwise the result
+ *   is returned.
+ *   - If aPath is absolute, the result is aPath.
+ *   - Otherwise the two paths are joined with a slash.
+ * - Joining for example 'http://' and 'www.example.com' is also supported.
+ */
 function join(aRoot, aPath) {
   if (aRoot === "") {
     aRoot = ".";
@@ -37055,7 +37192,7 @@ function join(aRoot, aPath) {
     aRoot = aRootUrl.path || '/';
   }
 
-  
+  // `join(foo, '//www.example.org')`
   if (aPathUrl && !aPathUrl.scheme) {
     if (aRootUrl) {
       aPathUrl.scheme = aRootUrl.scheme;
@@ -37067,7 +37204,7 @@ function join(aRoot, aPath) {
     return aPath;
   }
 
-  
+  // `join('http://', 'www.example.com')`
   if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
     aRootUrl.host = aPath;
     return urlGenerate(aRootUrl);
@@ -37089,12 +37226,12 @@ exports.isAbsolute = function (aPath) {
   return aPath.charAt(0) === '/' || !!aPath.match(urlRegexp);
 };
 
-
-
-
-
-
-
+/**
+ * Make a path relative to a URL or another path.
+ *
+ * @param aRoot The root path or URL.
+ * @param aPath The path or URL to be made relative to aRoot.
+ */
 function relative(aRoot, aPath) {
   if (aRoot === "") {
     aRoot = ".";
@@ -37102,10 +37239,10 @@ function relative(aRoot, aPath) {
 
   aRoot = aRoot.replace(/\/$/, '');
 
-  
-  
-  
-  
+  // It is possible for the path to be above the root. In this case, simply
+  // checking whether the root is a prefix of the path won't work. Instead, we
+  // need to remove components from the root one by one, until either we find
+  // a prefix that fits, or we run out of components to remove.
   var level = 0;
   while (aPath.indexOf(aRoot + '/') !== 0) {
     var index = aRoot.lastIndexOf("/");
@@ -37113,9 +37250,9 @@ function relative(aRoot, aPath) {
       return aPath;
     }
 
-    
-    
-    
+    // If the only part of the root that is left is the scheme (i.e. http://,
+    // file:///, etc.), one or more slashes (/), or simply nothing at all, we
+    // have exhausted all components, so the path is not relative to the root.
     aRoot = aRoot.slice(0, index);
     if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
       return aPath;
@@ -37124,7 +37261,7 @@ function relative(aRoot, aPath) {
     ++level;
   }
 
-  
+  // Make sure we add a "../" for each component we removed from the root.
   return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
 }
 exports.relative = relative;
@@ -37138,15 +37275,15 @@ function identity (s) {
   return s;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Because behavior goes wacky when you set `__proto__` on objects, we
+ * have to prefix all the strings in our set with an arbitrary character.
+ *
+ * See https://github.com/mozilla/source-map/pull/31 and
+ * https://github.com/mozilla/source-map/issues/30
+ *
+ * @param String aStr
+ */
 function toSetString(aStr) {
   if (isProtoString(aStr)) {
     return '$' + aStr;
@@ -37172,24 +37309,24 @@ function isProtoString(s) {
 
   var length = s.length;
 
-  if (length < 9 ) {
+  if (length < 9 /* "__proto__".length */) {
     return false;
   }
 
-  if (s.charCodeAt(length - 1) !== 95   ||
-      s.charCodeAt(length - 2) !== 95   ||
-      s.charCodeAt(length - 3) !== 111  ||
-      s.charCodeAt(length - 4) !== 116  ||
-      s.charCodeAt(length - 5) !== 111  ||
-      s.charCodeAt(length - 6) !== 114  ||
-      s.charCodeAt(length - 7) !== 112  ||
-      s.charCodeAt(length - 8) !== 95   ||
-      s.charCodeAt(length - 9) !== 95  ) {
+  if (s.charCodeAt(length - 1) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 2) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 3) !== 111 /* 'o' */ ||
+      s.charCodeAt(length - 4) !== 116 /* 't' */ ||
+      s.charCodeAt(length - 5) !== 111 /* 'o' */ ||
+      s.charCodeAt(length - 6) !== 114 /* 'r' */ ||
+      s.charCodeAt(length - 7) !== 112 /* 'p' */ ||
+      s.charCodeAt(length - 8) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 9) !== 95  /* '_' */) {
     return false;
   }
 
   for (var i = length - 10; i >= 0; i--) {
-    if (s.charCodeAt(i) !== 36 ) {
+    if (s.charCodeAt(i) !== 36 /* '$' */) {
       return false;
     }
   }
@@ -37197,14 +37334,14 @@ function isProtoString(s) {
   return true;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Comparator between two mappings where the original positions are compared.
+ *
+ * Optionally pass in `true` as `onlyCompareGenerated` to consider two
+ * mappings with the same original source/line/column, but different generated
+ * line and column the same. Useful when searching for a mapping with a
+ * stubbed out mapping.
+ */
 function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
   var cmp = mappingA.source - mappingB.source;
   if (cmp !== 0) {
@@ -37235,15 +37372,15 @@ function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
 }
 exports.compareByOriginalPositions = compareByOriginalPositions;
 
-
-
-
-
-
-
-
-
-
+/**
+ * Comparator between two mappings with deflated source and name indices where
+ * the generated positions are compared.
+ *
+ * Optionally pass in `true` as `onlyCompareGenerated` to consider two
+ * mappings with the same generated line and column, but different
+ * source/name/original line and column the same. Useful when searching for a
+ * mapping with a stubbed out mapping.
+ */
 function compareByGeneratedPositionsDeflated(mappingA, mappingB, onlyCompareGenerated) {
   var cmp = mappingA.generatedLine - mappingB.generatedLine;
   if (cmp !== 0) {
@@ -37286,10 +37423,10 @@ function strcmp(aStr1, aStr2) {
   return -1;
 }
 
-
-
-
-
+/**
+ * Comparator between two mappings with inflated source and name strings where
+ * the generated positions are compared.
+ */
 function compareByGeneratedPositionsInflated(mappingA, mappingB) {
   var cmp = mappingA.generatedLine - mappingB.generatedLine;
   if (cmp !== 0) {
@@ -37321,49 +37458,49 @@ function compareByGeneratedPositionsInflated(mappingA, mappingB) {
 exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
 
 
- }),
+/***/ }),
 
- 82:
- (function(module, exports, __webpack_require__) {
+/***/ 82:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isFunction = __webpack_require__(83),
     isMasked = __webpack_require__(85),
     isObject = __webpack_require__(84),
     toSource = __webpack_require__(87);
 
-
-
-
-
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
 var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
 
-
+/** Used to detect host constructors (Safari). */
 var reIsHostCtor = /^\[object .+?Constructor\]$/;
 
-
+/** Used for built-in method references. */
 var funcProto = Function.prototype,
     objectProto = Object.prototype;
 
-
+/** Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
+/** Used to detect if a method is native. */
 var reIsNative = RegExp('^' +
   funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
   .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 );
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
 function baseIsNative(value) {
   if (!isObject(value) || isMasked(value)) {
     return false;
@@ -37375,36 +37512,36 @@ function baseIsNative(value) {
 module.exports = baseIsNative;
 
 
- }),
+/***/ }),
 
- 820:
- (function(module, exports, __webpack_require__) {
+/***/ 820:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var util = __webpack_require__(819);
 var has = Object.prototype.hasOwnProperty;
 var hasNativeMap = typeof Map !== "undefined";
 
-
-
-
-
-
-
+/**
+ * A data structure which is a combination of an array and a set. Adding a new
+ * member is O(1), testing for membership is O(1), and finding the index of an
+ * element is O(1). Removing elements from the set is not supported. Only
+ * strings are supported for membership.
+ */
 function ArraySet() {
   this._array = [];
   this._set = hasNativeMap ? new Map() : Object.create(null);
 }
 
-
-
-
+/**
+ * Static method for creating ArraySet instances from an existing array.
+ */
 ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
   var set = new ArraySet();
   for (var i = 0, len = aArray.length; i < len; i++) {
@@ -37413,21 +37550,21 @@ ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
   return set;
 };
 
-
-
-
-
-
-
+/**
+ * Return how many unique items are in this ArraySet. If duplicates have been
+ * added, than those do not count towards the size.
+ *
+ * @returns Number
+ */
 ArraySet.prototype.size = function ArraySet_size() {
   return hasNativeMap ? this._set.size : Object.getOwnPropertyNames(this._set).length;
 };
 
-
-
-
-
-
+/**
+ * Add the given string to this set.
+ *
+ * @param String aStr
+ */
 ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
   var sStr = hasNativeMap ? aStr : util.toSetString(aStr);
   var isDuplicate = hasNativeMap ? this.has(aStr) : has.call(this._set, sStr);
@@ -37444,11 +37581,11 @@ ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
   }
 };
 
-
-
-
-
-
+/**
+ * Is the given string a member of this set?
+ *
+ * @param String aStr
+ */
 ArraySet.prototype.has = function ArraySet_has(aStr) {
   if (hasNativeMap) {
     return this._set.has(aStr);
@@ -37458,11 +37595,11 @@ ArraySet.prototype.has = function ArraySet_has(aStr) {
   }
 };
 
-
-
-
-
-
+/**
+ * What is the index of the given string in the array?
+ *
+ * @param String aStr
+ */
 ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
   if (hasNativeMap) {
     var idx = this._set.get(aStr);
@@ -37479,11 +37616,11 @@ ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
   throw new Error('"' + aStr + '" is not in the set.');
 };
 
-
-
-
-
-
+/**
+ * What is the element at the given index?
+ *
+ * @param Number aIdx
+ */
 ArraySet.prototype.at = function ArraySet_at(aIdx) {
   if (aIdx >= 0 && aIdx < this._array.length) {
     return this._array[aIdx];
@@ -37491,11 +37628,11 @@ ArraySet.prototype.at = function ArraySet_at(aIdx) {
   throw new Error('No element indexed by ' + aIdx);
 };
 
-
-
-
-
-
+/**
+ * Returns the array representation of this set (which has the proper indices
+ * indicated by indexOf). Note that this is a copy of the internal array used
+ * for storing the members so that no one can mess with internal state.
+ */
 ArraySet.prototype.toArray = function ArraySet_toArray() {
   return this._array.slice();
 };
@@ -37503,26 +37640,26 @@ ArraySet.prototype.toArray = function ArraySet_toArray() {
 exports.ArraySet = ArraySet;
 
 
- }),
+/***/ }),
 
- 821:
- (function(module, exports, __webpack_require__) {
+/***/ 821:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2014 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var util = __webpack_require__(819);
 
-
-
-
-
+/**
+ * Determine whether mappingB is after mappingA with respect to generated
+ * position.
+ */
 function generatedPositionAfter(mappingA, mappingB) {
-  
+  // Optimized for most common case
   var lineA = mappingA.generatedLine;
   var lineB = mappingB.generatedLine;
   var columnA = mappingA.generatedColumn;
@@ -37531,34 +37668,34 @@ function generatedPositionAfter(mappingA, mappingB) {
          util.compareByGeneratedPositionsInflated(mappingA, mappingB) <= 0;
 }
 
-
-
-
-
-
+/**
+ * A data structure to provide a sorted view of accumulated mappings in a
+ * performance conscious manner. It trades a neglibable overhead in general
+ * case for a large speedup in case of mappings being added in order.
+ */
 function MappingList() {
   this._array = [];
   this._sorted = true;
-  
+  // Serves as infimum
   this._last = {generatedLine: -1, generatedColumn: 0};
 }
 
-
-
-
-
-
-
+/**
+ * Iterate through internal items. This method takes the same arguments that
+ * `Array.prototype.forEach` takes.
+ *
+ * NOTE: The order of the mappings is NOT guaranteed.
+ */
 MappingList.prototype.unsortedForEach =
   function MappingList_forEach(aCallback, aThisArg) {
     this._array.forEach(aCallback, aThisArg);
   };
 
-
-
-
-
-
+/**
+ * Add the given source mapping.
+ *
+ * @param Object aMapping
+ */
 MappingList.prototype.add = function MappingList_add(aMapping) {
   if (generatedPositionAfter(this._last, aMapping)) {
     this._last = aMapping;
@@ -37569,15 +37706,15 @@ MappingList.prototype.add = function MappingList_add(aMapping) {
   }
 };
 
-
-
-
-
-
-
-
-
-
+/**
+ * Returns the flat, sorted array of mappings. The mappings are sorted by
+ * generated position.
+ *
+ * WARNING: This method returns internal data without copying, for
+ * performance. The return value must NOT be mutated, and should be treated as
+ * an immutable borrow. If you want to take ownership, you must make your own
+ * copy.
+ */
 MappingList.prototype.toArray = function MappingList_toArray() {
   if (!this._sorted) {
     this._array.sort(util.compareByGeneratedPositionsInflated);
@@ -37589,17 +37726,17 @@ MappingList.prototype.toArray = function MappingList_toArray() {
 exports.MappingList = MappingList;
 
 
- }),
+/***/ }),
 
- 822:
- (function(module, exports, __webpack_require__) {
+/***/ 822:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var util = __webpack_require__(819);
 var binarySearch = __webpack_require__(823);
@@ -37622,40 +37759,40 @@ SourceMapConsumer.fromSourceMap = function(aSourceMap) {
   return BasicSourceMapConsumer.fromSourceMap(aSourceMap);
 }
 
-
-
-
+/**
+ * The version of the source mapping spec that we are consuming.
+ */
 SourceMapConsumer.prototype._version = 3;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// `__generatedMappings` and `__originalMappings` are arrays that hold the
+// parsed mapping coordinates from the source map's "mappings" attribute. They
+// are lazily instantiated, accessed via the `_generatedMappings` and
+// `_originalMappings` getters respectively, and we only parse the mappings
+// and create these arrays once queried for a source location. We jump through
+// these hoops because there can be many thousands of mappings, and parsing
+// them is expensive, so we only want to do it if we must.
+//
+// Each object in the arrays is of the form:
+//
+//     {
+//       generatedLine: The line number in the generated code,
+//       generatedColumn: The column number in the generated code,
+//       source: The path to the original source file that generated this
+//               chunk of code,
+//       originalLine: The line number in the original source that
+//                     corresponds to this chunk of generated code,
+//       originalColumn: The column number in the original source that
+//                       corresponds to this chunk of generated code,
+//       name: The name of the original symbol which generated this chunk of
+//             code.
+//     }
+//
+// All properties except for `generatedLine` and `generatedColumn` can be
+// `null`.
+//
+// `_generatedMappings` is ordered by the generated positions.
+//
+// `_originalMappings` is ordered by the original positions.
 
 SourceMapConsumer.prototype.__generatedMappings = null;
 Object.defineProperty(SourceMapConsumer.prototype, '_generatedMappings', {
@@ -37685,11 +37822,11 @@ SourceMapConsumer.prototype._charIsMappingSeparator =
     return c === ";" || c === ",";
   };
 
-
-
-
-
-
+/**
+ * Parse the mappings in a string in to a data structure which we can easily
+ * query (the ordered arrays in the `this.__generatedMappings` and
+ * `this.__originalMappings` properties).
+ */
 SourceMapConsumer.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     throw new Error("Subclasses must implement _parseMappings");
@@ -37701,22 +37838,22 @@ SourceMapConsumer.ORIGINAL_ORDER = 2;
 SourceMapConsumer.GREATEST_LOWER_BOUND = 1;
 SourceMapConsumer.LEAST_UPPER_BOUND = 2;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Iterate over each mapping between an original source/line/column and a
+ * generated line/column in this source map.
+ *
+ * @param Function aCallback
+ *        The function that is called with each mapping.
+ * @param Object aContext
+ *        Optional. If specified, this object will be the value of `this` every
+ *        time that `aCallback` is called.
+ * @param aOrder
+ *        Either `SourceMapConsumer.GENERATED_ORDER` or
+ *        `SourceMapConsumer.ORIGINAL_ORDER`. Specifies whether you want to
+ *        iterate over the mappings sorted by the generated file's line/column
+ *        order or the original's source/line/column order, respectively. Defaults to
+ *        `SourceMapConsumer.GENERATED_ORDER`.
+ */
 SourceMapConsumer.prototype.eachMapping =
   function SourceMapConsumer_eachMapping(aCallback, aContext, aOrder) {
     var context = aContext || null;
@@ -37751,33 +37888,33 @@ SourceMapConsumer.prototype.eachMapping =
     }, this).forEach(aCallback, context);
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns all generated line and column information for the original source,
+ * line, and column provided. If no column is provided, returns all mappings
+ * corresponding to a either the line we are searching for or the next
+ * closest line that has any mappings. Otherwise, returns all mappings
+ * corresponding to the given line and either the column we are searching for
+ * or the next closest column that has any offsets.
+ *
+ * The only argument is an object with the following properties:
+ *
+ *   - source: The filename of the original source.
+ *   - line: The line number in the original source.
+ *   - column: Optional. the column number in the original source.
+ *
+ * and an array of objects is returned, each with the following properties:
+ *
+ *   - line: The line number in the generated source, or null.
+ *   - column: The column number in the generated source, or null.
+ */
 SourceMapConsumer.prototype.allGeneratedPositionsFor =
   function SourceMapConsumer_allGeneratedPositionsFor(aArgs) {
     var line = util.getArg(aArgs, 'line');
 
-    
-    
-    
-    
+    // When there is no exact match, BasicSourceMapConsumer.prototype._findMapping
+    // returns the index of the closest mapping less than the needle. By
+    // setting needle.originalColumn to 0, we thus find the last mapping for
+    // the given line, provided such a mapping exists.
     var needle = {
       source: util.getArg(aArgs, 'source'),
       originalLine: line,
@@ -37806,10 +37943,10 @@ SourceMapConsumer.prototype.allGeneratedPositionsFor =
       if (aArgs.column === undefined) {
         var originalLine = mapping.originalLine;
 
-        
-        
-        
-        
+        // Iterate until either we run out of mappings, or we run into
+        // a mapping for a different line than the one we found. Since
+        // mappings are sorted, this is guaranteed to find all mappings for
+        // the line we found.
         while (mapping && mapping.originalLine === originalLine) {
           mappings.push({
             line: util.getArg(mapping, 'generatedLine', null),
@@ -37822,10 +37959,10 @@ SourceMapConsumer.prototype.allGeneratedPositionsFor =
       } else {
         var originalColumn = mapping.originalColumn;
 
-        
-        
-        
-        
+        // Iterate until either we run out of mappings, or we run into
+        // a mapping for a different line than the one we were searching for.
+        // Since mappings are sorted, this is guaranteed to find all mappings for
+        // the line we are searching for.
         while (mapping &&
                mapping.originalLine === line &&
                mapping.originalColumn == originalColumn) {
@@ -37845,36 +37982,36 @@ SourceMapConsumer.prototype.allGeneratedPositionsFor =
 
 exports.SourceMapConsumer = SourceMapConsumer;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A BasicSourceMapConsumer instance represents a parsed source map which we can
+ * query for information about the original file positions by giving it a file
+ * position in the generated source.
+ *
+ * The only parameter is the raw source map (either as a JSON string, or
+ * already parsed to an object). According to the spec, source maps have the
+ * following attributes:
+ *
+ *   - version: Which version of the source map spec this map is following.
+ *   - sources: An array of URLs to the original source files.
+ *   - names: An array of identifiers which can be referrenced by individual mappings.
+ *   - sourceRoot: Optional. The URL root from which all sources are relative.
+ *   - sourcesContent: Optional. An array of contents of the original source files.
+ *   - mappings: A string of base64 VLQs which contain the actual mappings.
+ *   - file: Optional. The generated file this source map is associated with.
+ *
+ * Here is an example source map, taken from the source map spec[0]:
+ *
+ *     {
+ *       version : 3,
+ *       file: "out.js",
+ *       sourceRoot : "",
+ *       sources: ["foo.js", "bar.js"],
+ *       names: ["src", "maps", "are", "fun"],
+ *       mappings: "AA,AB;;ABCDE;"
+ *     }
+ *
+ * [0]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?pli=1#
+ */
 function BasicSourceMapConsumer(aSourceMap) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
@@ -37883,40 +38020,40 @@ function BasicSourceMapConsumer(aSourceMap) {
 
   var version = util.getArg(sourceMap, 'version');
   var sources = util.getArg(sourceMap, 'sources');
-  
-  
+  // Sass 3.3 leaves out the 'names' array, so we deviate from the spec (which
+  // requires the array) to play nice here.
   var names = util.getArg(sourceMap, 'names', []);
   var sourceRoot = util.getArg(sourceMap, 'sourceRoot', null);
   var sourcesContent = util.getArg(sourceMap, 'sourcesContent', null);
   var mappings = util.getArg(sourceMap, 'mappings');
   var file = util.getArg(sourceMap, 'file', null);
 
-  
-  
+  // Once again, Sass deviates from the spec and supplies the version as a
+  // string rather than a number, so we use loose equality checking here.
   if (version != this._version) {
     throw new Error('Unsupported version: ' + version);
   }
 
   sources = sources
     .map(String)
-    
-    
-    
+    // Some source maps produce relative source paths like "./foo.js" instead of
+    // "foo.js".  Normalize these first so that future comparisons will succeed.
+    // See bugzil.la/1090768.
     .map(util.normalize)
-    
-    
-    
-    
+    // Always ensure that absolute sources are internally stored relative to
+    // the source root, if the source root is absolute. Not doing this would
+    // be particularly problematic when the source root is a prefix of the
+    // source (valid, but why??). See github issue #199 and bugzil.la/1188982.
     .map(function (source) {
       return sourceRoot && util.isAbsolute(sourceRoot) && util.isAbsolute(source)
         ? util.relative(sourceRoot, source)
         : source;
     });
 
-  
-  
-  
-  
+  // Pass `true` below to allow duplicate names and sources. While source maps
+  // are intended to be compressed and deduplicated, the TypeScript compiler
+  // sometimes generates source maps with duplicates in them. See Github issue
+  // #72 and bugzil.la/889492.
   this._names = ArraySet.fromArray(names.map(String), true);
   this._sources = ArraySet.fromArray(sources, true);
 
@@ -37929,13 +38066,13 @@ function BasicSourceMapConsumer(aSourceMap) {
 BasicSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
 BasicSourceMapConsumer.prototype.consumer = SourceMapConsumer;
 
-
-
-
-
-
-
-
+/**
+ * Create a BasicSourceMapConsumer from a SourceMapGenerator.
+ *
+ * @param SourceMapGenerator aSourceMap
+ *        The source map that will be consumed.
+ * @returns BasicSourceMapConsumer
+ */
 BasicSourceMapConsumer.fromSourceMap =
   function SourceMapConsumer_fromSourceMap(aSourceMap) {
     var smc = Object.create(BasicSourceMapConsumer.prototype);
@@ -37947,10 +38084,10 @@ BasicSourceMapConsumer.fromSourceMap =
                                                             smc.sourceRoot);
     smc.file = aSourceMap._file;
 
-    
-    
-    
-    
+    // Because we are modifying the entries (by converting string sources and
+    // names to indices into the sources and names ArraySets), we have to make
+    // a copy of the entry or else bad things happen. Shared mutable state
+    // strikes again! See github issue #191.
 
     var generatedMappings = aSourceMap._mappings.toArray().slice();
     var destGeneratedMappings = smc.__generatedMappings = [];
@@ -37982,14 +38119,14 @@ BasicSourceMapConsumer.fromSourceMap =
     return smc;
   };
 
-
-
-
+/**
+ * The version of the source mapping spec that we are consuming.
+ */
 BasicSourceMapConsumer.prototype._version = 3;
 
-
-
-
+/**
+ * The list of original sources.
+ */
 Object.defineProperty(BasicSourceMapConsumer.prototype, 'sources', {
   get: function () {
     return this._sources.toArray().map(function (s) {
@@ -37998,9 +38135,9 @@ Object.defineProperty(BasicSourceMapConsumer.prototype, 'sources', {
   }
 });
 
-
-
-
+/**
+ * Provide the JIT with a nice shape / hidden class.
+ */
 function Mapping() {
   this.generatedLine = 0;
   this.generatedColumn = 0;
@@ -38010,11 +38147,11 @@ function Mapping() {
   this.name = null;
 }
 
-
-
-
-
-
+/**
+ * Parse the mappings in a string in to a data structure which we can easily
+ * query (the ordered arrays in the `this.__generatedMappings` and
+ * `this.__originalMappings` properties).
+ */
 BasicSourceMapConsumer.prototype._parseMappings =
   function SourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     var generatedLine = 1;
@@ -38044,11 +38181,11 @@ BasicSourceMapConsumer.prototype._parseMappings =
         mapping = new Mapping();
         mapping.generatedLine = generatedLine;
 
-        
-        
-        
-        
-        
+        // Because each offset is encoded relative to the previous one,
+        // many segments often have the same encoding. We can exploit this
+        // fact by caching the parsed variable length fields of each segment,
+        // allowing us to avoid a second parse if we encounter the same
+        // segment again.
         for (end = index; end < length; end++) {
           if (this._charIsMappingSeparator(aStr, end)) {
             break;
@@ -38079,27 +38216,27 @@ BasicSourceMapConsumer.prototype._parseMappings =
           cachedSegments[str] = segment;
         }
 
-        
+        // Generated column.
         mapping.generatedColumn = previousGeneratedColumn + segment[0];
         previousGeneratedColumn = mapping.generatedColumn;
 
         if (segment.length > 1) {
-          
+          // Original source.
           mapping.source = previousSource + segment[1];
           previousSource += segment[1];
 
-          
+          // Original line.
           mapping.originalLine = previousOriginalLine + segment[2];
           previousOriginalLine = mapping.originalLine;
-          
+          // Lines are stored 0-based
           mapping.originalLine += 1;
 
-          
+          // Original column.
           mapping.originalColumn = previousOriginalColumn + segment[3];
           previousOriginalColumn = mapping.originalColumn;
 
           if (segment.length > 4) {
-            
+            // Original name.
             mapping.name = previousName + segment[4];
             previousName += segment[4];
           }
@@ -38119,17 +38256,17 @@ BasicSourceMapConsumer.prototype._parseMappings =
     this.__originalMappings = originalMappings;
   };
 
-
-
-
-
+/**
+ * Find the mapping that best matches the hypothetical "needle" mapping that
+ * we are searching for in the given "haystack" of mappings.
+ */
 BasicSourceMapConsumer.prototype._findMapping =
   function SourceMapConsumer_findMapping(aNeedle, aMappings, aLineName,
                                          aColumnName, aComparator, aBias) {
-    
-    
-    
-    
+    // To return the position we are searching for, we must first find the
+    // mapping for the given position and then return the opposite position it
+    // points to. Because the mappings are sorted, we can use binary search to
+    // find the best mapping.
 
     if (aNeedle[aLineName] <= 0) {
       throw new TypeError('Line must be greater than or equal to 1, got '
@@ -38143,19 +38280,19 @@ BasicSourceMapConsumer.prototype._findMapping =
     return binarySearch.search(aNeedle, aMappings, aComparator, aBias);
   };
 
-
-
-
-
+/**
+ * Compute the last column for each generated mapping. The last column is
+ * inclusive.
+ */
 BasicSourceMapConsumer.prototype.computeColumnSpans =
   function SourceMapConsumer_computeColumnSpans() {
     for (var index = 0; index < this._generatedMappings.length; ++index) {
       var mapping = this._generatedMappings[index];
 
-      
-      
-      
-      
+      // Mappings do not contain a field for the last generated columnt. We
+      // can come up with an optimistic estimate, however, by assuming that
+      // mappings are contiguous (i.e. given two consecutive mappings, the
+      // first mapping ends where the second one starts).
       if (index + 1 < this._generatedMappings.length) {
         var nextMapping = this._generatedMappings[index + 1];
 
@@ -38165,31 +38302,31 @@ BasicSourceMapConsumer.prototype.computeColumnSpans =
         }
       }
 
-      
+      // The last mapping for each line spans the entire line.
       mapping.lastGeneratedColumn = Infinity;
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns the original source, line, and column information for the generated
+ * source's line and column positions provided. The only argument is an object
+ * with the following properties:
+ *
+ *   - line: The line number in the generated source.
+ *   - column: The column number in the generated source.
+ *   - bias: Either 'SourceMapConsumer.GREATEST_LOWER_BOUND' or
+ *     'SourceMapConsumer.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ *     Defaults to 'SourceMapConsumer.GREATEST_LOWER_BOUND'.
+ *
+ * and an object is returned with the following properties:
+ *
+ *   - source: The original source file, or null.
+ *   - line: The line number in the original source, or null.
+ *   - column: The column number in the original source, or null.
+ *   - name: The original identifier, or null.
+ */
 BasicSourceMapConsumer.prototype.originalPositionFor =
   function SourceMapConsumer_originalPositionFor(aArgs) {
     var needle = {
@@ -38238,10 +38375,10 @@ BasicSourceMapConsumer.prototype.originalPositionFor =
     };
   };
 
-
-
-
-
+/**
+ * Return true if we have the source content for every source in the source
+ * map, false otherwise.
+ */
 BasicSourceMapConsumer.prototype.hasContentsOfAllSources =
   function BasicSourceMapConsumer_hasContentsOfAllSources() {
     if (!this.sourcesContent) {
@@ -38251,11 +38388,11 @@ BasicSourceMapConsumer.prototype.hasContentsOfAllSources =
       !this.sourcesContent.some(function (sc) { return sc == null; });
   };
 
-
-
-
-
-
+/**
+ * Returns the original source content. The only argument is the url of the
+ * original source file. Returns null if no original source content is
+ * available.
+ */
 BasicSourceMapConsumer.prototype.sourceContentFor =
   function SourceMapConsumer_sourceContentFor(aSource, nullOnMissing) {
     if (!this.sourcesContent) {
@@ -38273,10 +38410,10 @@ BasicSourceMapConsumer.prototype.sourceContentFor =
     var url;
     if (this.sourceRoot != null
         && (url = util.urlParse(this.sourceRoot))) {
-      
-      
-      
-      
+      // XXX: file:// URIs and absolute paths lead to unexpected behavior for
+      // many users. We can help them out when they expect file:// URIs to
+      // behave like it would if they were running a local HTTP server. See
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=885597.
       var fileUriAbsPath = aSource.replace(/^file:\/\//, "");
       if (url.scheme == "file"
           && this._sources.has(fileUriAbsPath)) {
@@ -38289,10 +38426,10 @@ BasicSourceMapConsumer.prototype.sourceContentFor =
       }
     }
 
-    
-    
-    
-    
+    // This function is used recursively from
+    // IndexedSourceMapConsumer.prototype.sourceContentFor. In that case, we
+    // don't want to throw if we can't find the source - we just want to
+    // return null, so we provide a flag to exit gracefully.
     if (nullOnMissing) {
       return null;
     }
@@ -38301,25 +38438,25 @@ BasicSourceMapConsumer.prototype.sourceContentFor =
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns the generated line and column information for the original source,
+ * line, and column positions provided. The only argument is an object with
+ * the following properties:
+ *
+ *   - source: The filename of the original source.
+ *   - line: The line number in the original source.
+ *   - column: The column number in the original source.
+ *   - bias: Either 'SourceMapConsumer.GREATEST_LOWER_BOUND' or
+ *     'SourceMapConsumer.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ *     Defaults to 'SourceMapConsumer.GREATEST_LOWER_BOUND'.
+ *
+ * and an object is returned with the following properties:
+ *
+ *   - line: The line number in the generated source, or null.
+ *   - column: The column number in the generated source, or null.
+ */
 BasicSourceMapConsumer.prototype.generatedPositionFor =
   function SourceMapConsumer_generatedPositionFor(aArgs) {
     var source = util.getArg(aArgs, 'source');
@@ -38371,51 +38508,51 @@ BasicSourceMapConsumer.prototype.generatedPositionFor =
 
 exports.BasicSourceMapConsumer = BasicSourceMapConsumer;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * An IndexedSourceMapConsumer instance represents a parsed source map which
+ * we can query for information. It differs from BasicSourceMapConsumer in
+ * that it takes "indexed" source maps (i.e. ones with a "sections" field) as
+ * input.
+ *
+ * The only parameter is a raw source map (either as a JSON string, or already
+ * parsed to an object). According to the spec for indexed source maps, they
+ * have the following attributes:
+ *
+ *   - version: Which version of the source map spec this map is following.
+ *   - file: Optional. The generated file this source map is associated with.
+ *   - sections: A list of section definitions.
+ *
+ * Each value under the "sections" field has two fields:
+ *   - offset: The offset into the original specified at which this section
+ *       begins to apply, defined as an object with a "line" and "column"
+ *       field.
+ *   - map: A source map definition. This source map could also be indexed,
+ *       but doesn't have to be.
+ *
+ * Instead of the "map" field, it's also possible to have a "url" field
+ * specifying a URL to retrieve a source map from, but that's currently
+ * unsupported.
+ *
+ * Here's an example source map, taken from the source map spec[0], but
+ * modified to omit a section which uses the "url" field.
+ *
+ *  {
+ *    version : 3,
+ *    file: "app.js",
+ *    sections: [{
+ *      offset: {line:100, column:10},
+ *      map: {
+ *        version : 3,
+ *        file: "section.js",
+ *        sources: ["foo.js", "bar.js"],
+ *        names: ["src", "maps", "are", "fun"],
+ *        mappings: "AAAA,E;;ABCDE;"
+ *      }
+ *    }],
+ *  }
+ *
+ * [0]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit#heading=h.535es3xeprgt
+ */
 function IndexedSourceMapConsumer(aSourceMap) {
   var sourceMap = aSourceMap;
   if (typeof aSourceMap === 'string') {
@@ -38438,8 +38575,8 @@ function IndexedSourceMapConsumer(aSourceMap) {
   };
   this._sections = sections.map(function (s) {
     if (s.url) {
-      
-      
+      // The url field will require support for asynchronicity.
+      // See https://github.com/mozilla/source-map/issues/16
       throw new Error('Support for url field in sections not implemented.');
     }
     var offset = util.getArg(s, 'offset');
@@ -38454,8 +38591,8 @@ function IndexedSourceMapConsumer(aSourceMap) {
 
     return {
       generatedOffset: {
-        
-        
+        // The offset fields are 0-based, but we use 1-based indices when
+        // encoding/decoding from VLQ.
         generatedLine: offsetLine + 1,
         generatedColumn: offsetColumn + 1
       },
@@ -38467,14 +38604,14 @@ function IndexedSourceMapConsumer(aSourceMap) {
 IndexedSourceMapConsumer.prototype = Object.create(SourceMapConsumer.prototype);
 IndexedSourceMapConsumer.prototype.constructor = SourceMapConsumer;
 
-
-
-
+/**
+ * The version of the source mapping spec that we are consuming.
+ */
 IndexedSourceMapConsumer.prototype._version = 3;
 
-
-
-
+/**
+ * The list of original sources.
+ */
 Object.defineProperty(IndexedSourceMapConsumer.prototype, 'sources', {
   get: function () {
     var sources = [];
@@ -38487,21 +38624,21 @@ Object.defineProperty(IndexedSourceMapConsumer.prototype, 'sources', {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns the original source, line, and column information for the generated
+ * source's line and column positions provided. The only argument is an object
+ * with the following properties:
+ *
+ *   - line: The line number in the generated source.
+ *   - column: The column number in the generated source.
+ *
+ * and an object is returned with the following properties:
+ *
+ *   - source: The original source file, or null.
+ *   - line: The line number in the original source, or null.
+ *   - column: The column number in the original source, or null.
+ *   - name: The original identifier, or null.
+ */
 IndexedSourceMapConsumer.prototype.originalPositionFor =
   function IndexedSourceMapConsumer_originalPositionFor(aArgs) {
     var needle = {
@@ -38509,8 +38646,8 @@ IndexedSourceMapConsumer.prototype.originalPositionFor =
       generatedColumn: util.getArg(aArgs, 'column')
     };
 
-    
-    
+    // Find the section containing the generated position we're trying to map
+    // to an original position.
     var sectionIndex = binarySearch.search(needle, this._sections,
       function(needle, section) {
         var cmp = needle.generatedLine - section.generatedOffset.generatedLine;
@@ -38543,10 +38680,10 @@ IndexedSourceMapConsumer.prototype.originalPositionFor =
     });
   };
 
-
-
-
-
+/**
+ * Return true if we have the source content for every source in the source
+ * map, false otherwise.
+ */
 IndexedSourceMapConsumer.prototype.hasContentsOfAllSources =
   function IndexedSourceMapConsumer_hasContentsOfAllSources() {
     return this._sections.every(function (s) {
@@ -38554,11 +38691,11 @@ IndexedSourceMapConsumer.prototype.hasContentsOfAllSources =
     });
   };
 
-
-
-
-
-
+/**
+ * Returns the original source content. The only argument is the url of the
+ * original source file. Returns null if no original source content is
+ * available.
+ */
 IndexedSourceMapConsumer.prototype.sourceContentFor =
   function IndexedSourceMapConsumer_sourceContentFor(aSource, nullOnMissing) {
     for (var i = 0; i < this._sections.length; i++) {
@@ -38577,27 +38714,27 @@ IndexedSourceMapConsumer.prototype.sourceContentFor =
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Returns the generated line and column information for the original source,
+ * line, and column positions provided. The only argument is an object with
+ * the following properties:
+ *
+ *   - source: The filename of the original source.
+ *   - line: The line number in the original source.
+ *   - column: The column number in the original source.
+ *
+ * and an object is returned with the following properties:
+ *
+ *   - line: The line number in the generated source, or null.
+ *   - column: The column number in the generated source, or null.
+ */
 IndexedSourceMapConsumer.prototype.generatedPositionFor =
   function IndexedSourceMapConsumer_generatedPositionFor(aArgs) {
     for (var i = 0; i < this._sections.length; i++) {
       var section = this._sections[i];
 
-      
-      
+      // Only consider this section if the requested source is in the list of
+      // sources of the consumer.
       if (section.consumer.sources.indexOf(util.getArg(aArgs, 'source')) === -1) {
         continue;
       }
@@ -38621,11 +38758,11 @@ IndexedSourceMapConsumer.prototype.generatedPositionFor =
     };
   };
 
-
-
-
-
-
+/**
+ * Parse the mappings in a string in to a data structure which we can easily
+ * query (the ordered arrays in the `this.__generatedMappings` and
+ * `this.__originalMappings` properties).
+ */
 IndexedSourceMapConsumer.prototype._parseMappings =
   function IndexedSourceMapConsumer_parseMappings(aStr, aSourceRoot) {
     this.__generatedMappings = [];
@@ -38647,10 +38784,10 @@ IndexedSourceMapConsumer.prototype._parseMappings =
         this._names.add(name);
         name = this._names.indexOf(name);
 
-        
-        
-        
-        
+        // The mappings coming from the consumer for the section have
+        // generated positions relative to the start of the section, so we
+        // need to offset them to be relative to the start of the concatenated
+        // generated file.
         var adjustedMapping = {
           source: source,
           generatedLine: mapping.generatedLine +
@@ -38678,59 +38815,59 @@ IndexedSourceMapConsumer.prototype._parseMappings =
 exports.IndexedSourceMapConsumer = IndexedSourceMapConsumer;
 
 
- }),
+/***/ }),
 
- 823:
- (function(module, exports) {
+/***/ 823:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 exports.GREATEST_LOWER_BOUND = 1;
 exports.LEAST_UPPER_BOUND = 2;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Recursive implementation of binary search.
+ *
+ * @param aLow Indices here and lower do not contain the needle.
+ * @param aHigh Indices here and higher do not contain the needle.
+ * @param aNeedle The element being searched for.
+ * @param aHaystack The non-empty array being searched.
+ * @param aCompare Function which takes two elements and returns -1, 0, or 1.
+ * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
+ *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ */
 function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This function terminates when one of the following is true:
+  //
+  //   1. We find the exact element we are looking for.
+  //
+  //   2. We did not find the exact element, but we can return the index of
+  //      the next-closest element.
+  //
+  //   3. We did not find the exact element, and there is no next-closest
+  //      element than the one we are searching for, so we return -1.
   var mid = Math.floor((aHigh - aLow) / 2) + aLow;
   var cmp = aCompare(aNeedle, aHaystack[mid], true);
   if (cmp === 0) {
-    
+    // Found the element we are looking for.
     return mid;
   }
   else if (cmp > 0) {
-    
+    // Our needle is greater than aHaystack[mid].
     if (aHigh - mid > 1) {
-      
+      // The element is in the upper half.
       return recursiveSearch(mid, aHigh, aNeedle, aHaystack, aCompare, aBias);
     }
 
-    
-    
+    // The exact needle element was not found in this haystack. Determine if
+    // we are in termination case (3) or (2) and return the appropriate thing.
     if (aBias == exports.LEAST_UPPER_BOUND) {
       return aHigh < aHaystack.length ? aHigh : -1;
     } else {
@@ -38738,13 +38875,13 @@ function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
     }
   }
   else {
-    
+    // Our needle is less than aHaystack[mid].
     if (mid - aLow > 1) {
-      
+      // The element is in the lower half.
       return recursiveSearch(aLow, mid, aNeedle, aHaystack, aCompare, aBias);
     }
 
-    
+    // we are in termination case (3) or (2) and return the appropriate thing.
     if (aBias == exports.LEAST_UPPER_BOUND) {
       return mid;
     } else {
@@ -38753,24 +38890,24 @@ function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This is an implementation of binary search which will always try and return
+ * the index of the closest element if there is no exact hit. This is because
+ * mappings between original and generated line/col pairs are single points,
+ * and there is an implicit region between each of them, so a miss just means
+ * that you aren't on the very start of a region.
+ *
+ * @param aNeedle The element you are looking for.
+ * @param aHaystack The array that is being searched.
+ * @param aCompare A function which takes the needle and an element in the
+ *     array and returns -1, 0, or 1 depending on whether the needle is less
+ *     than, equal to, or greater than the element, respectively.
+ * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
+ *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ *     Defaults to 'binarySearch.GREATEST_LOWER_BOUND'.
+ */
 exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
   if (aHaystack.length === 0) {
     return -1;
@@ -38782,9 +38919,9 @@ exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
     return -1;
   }
 
-  
-  
-  
+  // We have found either the exact element, or the next-closest element than
+  // the one we are searching for. However, there may be more than one such
+  // element. Make sure we always return the smallest of these.
   while (index - 1 >= 0) {
     if (aCompare(aHaystack[index], aHaystack[index - 1], true) !== 0) {
       break;
@@ -38796,97 +38933,97 @@ exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
 };
 
 
- }),
+/***/ }),
 
- 824:
- (function(module, exports) {
+/***/ 824:
+/***/ (function(module, exports) {
 
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
+// It turns out that some (most?) JavaScript engines don't self-host
+// `Array.prototype.sort`. This makes sense because C++ will likely remain
+// faster than JS when doing raw CPU-intensive sorting. However, when using a
+// custom comparator function, calling back and forth between the VM's C++ and
+// JIT'd JS is rather slow *and* loses JIT type information, resulting in
+// worse generated code for the comparator function than would be optimal. In
+// fact, when sorting with a comparator, these costs outweigh the benefits of
+// sorting in C++. By using our own JS-implemented Quick Sort (below), we get
+// a ~3500ms mean speed-up in `bench/bench.html`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Swap the elements indexed by `x` and `y` in the array `ary`.
+ *
+ * @param {Array} ary
+ *        The array.
+ * @param {Number} x
+ *        The index of the first item.
+ * @param {Number} y
+ *        The index of the second item.
+ */
 function swap(ary, x, y) {
   var temp = ary[x];
   ary[x] = ary[y];
   ary[y] = temp;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Returns a random integer within the range `low .. high` inclusive.
+ *
+ * @param {Number} low
+ *        The lower bound on the range.
+ * @param {Number} high
+ *        The upper bound on the range.
+ */
 function randomIntInRange(low, high) {
   return Math.round(low + (Math.random() * (high - low)));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The Quick Sort algorithm.
+ *
+ * @param {Array} ary
+ *        An array to sort.
+ * @param {function} comparator
+ *        Function to use to compare two items.
+ * @param {Number} p
+ *        Start index of the array
+ * @param {Number} r
+ *        End index of the array
+ */
 function doQuickSort(ary, comparator, p, r) {
-  
-  
-  
+  // If our lower bound is less than our upper bound, we (1) partition the
+  // array into two pieces and (2) recurse on each half. If it is not, this is
+  // the empty array and our base case.
 
   if (p < r) {
-    
-    
-    
-    
-    
-    
-    
-    
+    // (1) Partitioning.
+    //
+    // The partitioning chooses a pivot between `p` and `r` and moves all
+    // elements that are less than or equal to the pivot to the before it, and
+    // all the elements that are greater than it after it. The effect is that
+    // once partition is done, the pivot is in the exact place it will be when
+    // the array is put in sorted order, and it will not need to be moved
+    // again. This runs in O(n) time.
 
-    
-    
+    // Always choose a random pivot so that an input array which is reverse
+    // sorted does not cause O(n^2) running time.
     var pivotIndex = randomIntInRange(p, r);
     var i = p - 1;
 
     swap(ary, pivotIndex, r);
     var pivot = ary[r];
 
-    
-    
-    
-    
-    
-    
+    // Immediately after `j` is incremented in this loop, the following hold
+    // true:
+    //
+    //   * Every element in `ary[p .. i]` is less than or equal to the pivot.
+    //
+    //   * Every element in `ary[i+1 .. j-1]` is greater than the pivot.
     for (var j = p; j < r; j++) {
       if (comparator(ary[j], pivot) <= 0) {
         i += 1;
@@ -38897,65 +39034,65 @@ function doQuickSort(ary, comparator, p, r) {
     swap(ary, i + 1, j);
     var q = i + 1;
 
-    
+    // (2) Recurse on each half.
 
     doQuickSort(ary, comparator, p, q - 1);
     doQuickSort(ary, comparator, q + 1, r);
   }
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Sort the given array in-place with the given comparator function.
+ *
+ * @param {Array} ary
+ *        An array to sort.
+ * @param {function} comparator
+ *        Function to use to compare two items.
+ */
 exports.quickSort = function (ary, comparator) {
   doQuickSort(ary, comparator, 0, ary.length - 1);
 };
 
 
- }),
+/***/ }),
 
- 825:
- (function(module, exports, __webpack_require__) {
+/***/ 825:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
-
-
-
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
 var SourceMapGenerator = __webpack_require__(816).SourceMapGenerator;
 var util = __webpack_require__(819);
 
-
-
+// Matches a Windows-style `\r\n` newline or a `\n` newline used by all other
+// operating systems these days (capturing the result).
 var REGEX_NEWLINE = /(\r?\n)/;
 
-
+// Newline character code for charCodeAt() comparisons
 var NEWLINE_CODE = 10;
 
-
-
-
+// Private symbol for identifying `SourceNode`s when multiple versions of
+// the source-map library are loaded. This MUST NOT CHANGE across
+// versions!
 var isSourceNode = "$$$isSourceNode$$$";
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * SourceNodes provide a way to abstract over interpolating/concatenating
+ * snippets of generated JavaScript source code while maintaining the line and
+ * column information associated with the original source code.
+ *
+ * @param aLine The original line number.
+ * @param aColumn The original column number.
+ * @param aSource The original source's filename.
+ * @param aChunks Optional. An array of strings which are snippets of
+ *        generated JS, or other SourceNodes.
+ * @param aName The original identifier.
+ */
 function SourceNode(aLine, aColumn, aSource, aChunks, aName) {
   this.children = [];
   this.sourceContents = {};
@@ -38967,29 +39104,29 @@ function SourceNode(aLine, aColumn, aSource, aChunks, aName) {
   if (aChunks != null) this.add(aChunks);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Creates a SourceNode from generated code and a SourceMapConsumer.
+ *
+ * @param aGeneratedCode The generated code
+ * @param aSourceMapConsumer The SourceMap for the generated code
+ * @param aRelativePath Optional. The path that relative sources in the
+ *        SourceMapConsumer should be relative to.
+ */
 SourceNode.fromStringWithSourceMap =
   function SourceNode_fromStringWithSourceMap(aGeneratedCode, aSourceMapConsumer, aRelativePath) {
-    
-    
+    // The SourceNode we want to fill with the generated code
+    // and the SourceMap
     var node = new SourceNode();
 
-    
-    
-    
-    
+    // All even indices of this array are one line of the generated code,
+    // while all odd indices are the newlines between two adjacent lines
+    // (since `REGEX_NEWLINE` captures its match).
+    // Processed fragments are accessed by calling `shiftNextLine`.
     var remainingLines = aGeneratedCode.split(REGEX_NEWLINE);
     var remainingLinesIndex = 0;
     var shiftNextLine = function() {
       var lineContents = getNextLine();
-      
+      // The last line of a file might not have a newline.
       var newLine = getNextLine() || "";
       return lineContents + newLine;
 
@@ -38999,28 +39136,28 @@ SourceNode.fromStringWithSourceMap =
       }
     };
 
-    
+    // We need to remember the position of "remainingLines"
     var lastGeneratedLine = 1, lastGeneratedColumn = 0;
 
-    
-    
-    
+    // The generate SourceNodes we need a code range.
+    // To extract it current and last mapping is used.
+    // Here we store the last mapping.
     var lastMapping = null;
 
     aSourceMapConsumer.eachMapping(function (mapping) {
       if (lastMapping !== null) {
-        
-        
+        // We add the code from "lastMapping" to "mapping":
+        // First check if there is a new line in between.
         if (lastGeneratedLine < mapping.generatedLine) {
-          
+          // Associate first line with "lastMapping"
           addMappingWithCode(lastMapping, shiftNextLine());
           lastGeneratedLine++;
           lastGeneratedColumn = 0;
-          
+          // The remaining code is added without mapping
         } else {
-          
-          
-          
+          // There is no new line in between.
+          // Associate the code between "lastGeneratedColumn" and
+          // "mapping.generatedColumn" with "lastMapping"
           var nextLine = remainingLines[remainingLinesIndex];
           var code = nextLine.substr(0, mapping.generatedColumn -
                                         lastGeneratedColumn);
@@ -39028,14 +39165,14 @@ SourceNode.fromStringWithSourceMap =
                                               lastGeneratedColumn);
           lastGeneratedColumn = mapping.generatedColumn;
           addMappingWithCode(lastMapping, code);
-          
+          // No more remaining code, continue
           lastMapping = mapping;
           return;
         }
       }
-      
-      
-      
+      // We add the generated code until the first mapping
+      // to the SourceNode without any mapping.
+      // Each line is added as separate string.
       while (lastGeneratedLine < mapping.generatedLine) {
         node.add(shiftNextLine());
         lastGeneratedLine++;
@@ -39048,17 +39185,17 @@ SourceNode.fromStringWithSourceMap =
       }
       lastMapping = mapping;
     }, this);
-    
+    // We have processed all mappings.
     if (remainingLinesIndex < remainingLines.length) {
       if (lastMapping) {
-        
+        // Associate the remaining code in the current line with "lastMapping"
         addMappingWithCode(lastMapping, shiftNextLine());
       }
-      
+      // and add the remaining lines without any mapping
       node.add(remainingLines.splice(remainingLinesIndex).join(""));
     }
 
-    
+    // Copy sourcesContent into SourceNode
     aSourceMapConsumer.sources.forEach(function (sourceFile) {
       var content = aSourceMapConsumer.sourceContentFor(sourceFile);
       if (content != null) {
@@ -39087,12 +39224,12 @@ SourceNode.fromStringWithSourceMap =
     }
   };
 
-
-
-
-
-
-
+/**
+ * Add a chunk of generated JS to this source node.
+ *
+ * @param aChunk A string snippet of generated JS code, another instance of
+ *        SourceNode, or an array where each member is one of those things.
+ */
 SourceNode.prototype.add = function SourceNode_add(aChunk) {
   if (Array.isArray(aChunk)) {
     aChunk.forEach(function (chunk) {
@@ -39112,12 +39249,12 @@ SourceNode.prototype.add = function SourceNode_add(aChunk) {
   return this;
 };
 
-
-
-
-
-
-
+/**
+ * Add a chunk of generated JS to the beginning of this source node.
+ *
+ * @param aChunk A string snippet of generated JS code, another instance of
+ *        SourceNode, or an array where each member is one of those things.
+ */
 SourceNode.prototype.prepend = function SourceNode_prepend(aChunk) {
   if (Array.isArray(aChunk)) {
     for (var i = aChunk.length-1; i >= 0; i--) {
@@ -39135,13 +39272,13 @@ SourceNode.prototype.prepend = function SourceNode_prepend(aChunk) {
   return this;
 };
 
-
-
-
-
-
-
-
+/**
+ * Walk over the tree of JS snippets in this node and its children. The
+ * walking function is called once for each snippet of JS and is passed that
+ * snippet and the its original associated source's line/column location.
+ *
+ * @param aFn The traversal function.
+ */
 SourceNode.prototype.walk = function SourceNode_walk(aFn) {
   var chunk;
   for (var i = 0, len = this.children.length; i < len; i++) {
@@ -39160,12 +39297,12 @@ SourceNode.prototype.walk = function SourceNode_walk(aFn) {
   }
 };
 
-
-
-
-
-
-
+/**
+ * Like `String.prototype.join` except for SourceNodes. Inserts `aStr` between
+ * each of `this.children`.
+ *
+ * @param aSep The separator.
+ */
 SourceNode.prototype.join = function SourceNode_join(aSep) {
   var newChildren;
   var i;
@@ -39182,13 +39319,13 @@ SourceNode.prototype.join = function SourceNode_join(aSep) {
   return this;
 };
 
-
-
-
-
-
-
-
+/**
+ * Call String.prototype.replace on the very right-most source snippet. Useful
+ * for trimming whitespace from the end of a source node, etc.
+ *
+ * @param aPattern The pattern to replace.
+ * @param aReplacement The thing to replace the pattern with.
+ */
 SourceNode.prototype.replaceRight = function SourceNode_replaceRight(aPattern, aReplacement) {
   var lastChild = this.children[this.children.length - 1];
   if (lastChild[isSourceNode]) {
@@ -39203,24 +39340,24 @@ SourceNode.prototype.replaceRight = function SourceNode_replaceRight(aPattern, a
   return this;
 };
 
-
-
-
-
-
-
-
+/**
+ * Set the source content for a source file. This will be added to the SourceMapGenerator
+ * in the sourcesContent field.
+ *
+ * @param aSourceFile The filename of the source file
+ * @param aSourceContent The content of the source file
+ */
 SourceNode.prototype.setSourceContent =
   function SourceNode_setSourceContent(aSourceFile, aSourceContent) {
     this.sourceContents[util.toSetString(aSourceFile)] = aSourceContent;
   };
 
-
-
-
-
-
-
+/**
+ * Walk over the tree of SourceNodes. The walking function is called for each
+ * source file content and is passed the filename and source content.
+ *
+ * @param aFn The traversal function.
+ */
 SourceNode.prototype.walkSourceContents =
   function SourceNode_walkSourceContents(aFn) {
     for (var i = 0, len = this.children.length; i < len; i++) {
@@ -39235,10 +39372,10 @@ SourceNode.prototype.walkSourceContents =
     }
   };
 
-
-
-
-
+/**
+ * Return the string representation of this source node. Walks over the tree
+ * and concatenates all the various snippets together to one string.
+ */
 SourceNode.prototype.toString = function SourceNode_toString() {
   var str = "";
   this.walk(function (chunk) {
@@ -39247,10 +39384,10 @@ SourceNode.prototype.toString = function SourceNode_toString() {
   return str;
 };
 
-
-
-
-
+/**
+ * Returns the string representation of this source node along with a source
+ * map.
+ */
 SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSourceMap(aArgs) {
   var generated = {
     code: "",
@@ -39304,7 +39441,7 @@ SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSou
       if (chunk.charCodeAt(idx) === NEWLINE_CODE) {
         generated.line++;
         generated.column = 0;
-        
+        // Mappings end at eol
         if (idx + 1 === length) {
           lastOriginalSource = null;
           sourceMappingActive = false;
@@ -39337,22 +39474,22 @@ SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSou
 exports.SourceNode = SourceNode;
 
 
- }),
+/***/ }),
 
- 826:
- (function(module, exports, __webpack_require__) {
+/***/ 826:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseIsMatch = __webpack_require__(831),
     getMatchData = __webpack_require__(836),
     matchesStrictComparable = __webpack_require__(803);
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.matches` which doesn't clone `source`.
+ *
+ * @private
+ * @param {Object} source The object of property values to match.
+ * @returns {Function} Returns the new spec function.
+ */
 function baseMatches(source) {
   var matchData = getMatchData(source);
   if (matchData.length == 1 && matchData[0][2]) {
@@ -39366,43 +39503,43 @@ function baseMatches(source) {
 module.exports = baseMatches;
 
 
- }),
+/***/ }),
 
- 83:
- (function(module, exports, __webpack_require__) {
+/***/ 83:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGetTag = __webpack_require__(6),
     isObject = __webpack_require__(84);
 
-
+/** `Object#toString` result references. */
 var asyncTag = '[object AsyncFunction]',
     funcTag = '[object Function]',
     genTag = '[object GeneratorFunction]',
     proxyTag = '[object Proxy]';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
 function isFunction(value) {
   if (!isObject(value)) {
     return false;
   }
-  
-  
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 9 which returns 'object' for typed arrays and other constructors.
   var tag = baseGetTag(value);
   return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
 }
@@ -39410,28 +39547,28 @@ function isFunction(value) {
 module.exports = isFunction;
 
 
- }),
+/***/ }),
 
- 831:
- (function(module, exports, __webpack_require__) {
+/***/ 831:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Stack = __webpack_require__(267),
     baseIsEqual = __webpack_require__(799);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1,
     COMPARE_UNORDERED_FLAG = 2;
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.isMatch` without support for iteratee shorthands.
+ *
+ * @private
+ * @param {Object} object The object to inspect.
+ * @param {Object} source The object of property values to match.
+ * @param {Array} matchData The property names, values, and compare flags to match.
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @returns {boolean} Returns `true` if `object` is a match, else `false`.
+ */
 function baseIsMatch(object, source, matchData, customizer) {
   var index = matchData.length,
       length = index,
@@ -39479,10 +39616,10 @@ function baseIsMatch(object, source, matchData, customizer) {
 module.exports = baseIsMatch;
 
 
- }),
+/***/ }),
 
- 832:
- (function(module, exports, __webpack_require__) {
+/***/ 832:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Stack = __webpack_require__(267),
     equalArrays = __webpack_require__(800),
@@ -39493,34 +39630,34 @@ var Stack = __webpack_require__(267),
     isBuffer = __webpack_require__(210),
     isTypedArray = __webpack_require__(212);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1;
 
-
+/** `Object#toString` result references. */
 var argsTag = '[object Arguments]',
     arrayTag = '[object Array]',
     objectTag = '[object Object]';
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseIsEqual` for arrays and objects which performs
+ * deep comparisons and tracks traversed objects enabling objects with circular
+ * references to be compared.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} [stack] Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
 function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
   var objIsArr = isArray(object),
       othIsArr = isArray(other),
@@ -39569,21 +39706,21 @@ function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
 module.exports = baseIsEqualDeep;
 
 
- }),
+/***/ }),
 
- 833:
- (function(module, exports) {
+/***/ 833:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `_.some` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {boolean} Returns `true` if any element passes the predicate check,
+ *  else `false`.
+ */
 function arraySome(array, predicate) {
   var index = -1,
       length = array == null ? 0 : array.length;
@@ -39599,10 +39736,10 @@ function arraySome(array, predicate) {
 module.exports = arraySome;
 
 
- }),
+/***/ }),
 
- 834:
- (function(module, exports, __webpack_require__) {
+/***/ 834:
+/***/ (function(module, exports, __webpack_require__) {
 
 var Symbol = __webpack_require__(7),
     Uint8Array = __webpack_require__(282),
@@ -39611,11 +39748,11 @@ var Symbol = __webpack_require__(7),
     mapToArray = __webpack_require__(203),
     setToArray = __webpack_require__(283);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1,
     COMPARE_UNORDERED_FLAG = 2;
 
-
+/** `Object#toString` result references. */
 var boolTag = '[object Boolean]',
     dateTag = '[object Date]',
     errorTag = '[object Error]',
@@ -39629,27 +39766,27 @@ var boolTag = '[object Boolean]',
 var arrayBufferTag = '[object ArrayBuffer]',
     dataViewTag = '[object DataView]';
 
-
+/** Used to convert symbols to primitives and strings. */
 var symbolProto = Symbol ? Symbol.prototype : undefined,
     symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseIsEqualDeep` for comparing objects of
+ * the same `toStringTag`.
+ *
+ * **Note:** This function only supports comparing values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {string} tag The `toStringTag` of the objects to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
 function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
   switch (tag) {
     case dataViewTag:
@@ -39670,8 +39807,8 @@ function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
     case boolTag:
     case dateTag:
     case numberTag:
-      
-      
+      // Coerce booleans to `1` or `0` and dates to milliseconds.
+      // Invalid dates are coerced to `NaN`.
       return eq(+object, +other);
 
     case errorTag:
@@ -39679,9 +39816,9 @@ function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
 
     case regexpTag:
     case stringTag:
-      
-      
-      
+      // Coerce regexes to strings and treat strings, primitives and objects,
+      // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
+      // for more details.
       return object == (other + '');
 
     case mapTag:
@@ -39694,14 +39831,14 @@ function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
       if (object.size != other.size && !isPartial) {
         return false;
       }
-      
+      // Assume cyclic values are equal.
       var stacked = stack.get(object);
       if (stacked) {
         return stacked == other;
       }
       bitmask |= COMPARE_UNORDERED_FLAG;
 
-      
+      // Recursively compare objects (susceptible to call stack limits).
       stack.set(object, other);
       var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
       stack['delete'](object);
@@ -39718,35 +39855,35 @@ function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
 module.exports = equalByTag;
 
 
- }),
+/***/ }),
 
- 835:
- (function(module, exports, __webpack_require__) {
+/***/ 835:
+/***/ (function(module, exports, __webpack_require__) {
 
 var getAllKeys = __webpack_require__(285);
 
-
+/** Used to compose bitmasks for value comparisons. */
 var COMPARE_PARTIAL_FLAG = 1;
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseIsEqualDeep` for objects with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
 function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
   var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
       objProps = getAllKeys(object),
@@ -39764,7 +39901,7 @@ function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
       return false;
     }
   }
-  
+  // Assume cyclic values are equal.
   var stacked = stack.get(object);
   if (stacked && stack.get(other)) {
     return stacked == other;
@@ -39784,7 +39921,7 @@ function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
         ? customizer(othValue, objValue, key, other, object, stack)
         : customizer(objValue, othValue, key, object, other, stack);
     }
-    
+    // Recursively compare objects (susceptible to call stack limits).
     if (!(compared === undefined
           ? (objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack))
           : compared
@@ -39798,7 +39935,7 @@ function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
     var objCtor = object.constructor,
         othCtor = other.constructor;
 
-    
+    // Non `Object` object instances with different constructors are not equal.
     if (objCtor != othCtor &&
         ('constructor' in object && 'constructor' in other) &&
         !(typeof objCtor == 'function' && objCtor instanceof objCtor &&
@@ -39814,21 +39951,21 @@ function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
 module.exports = equalObjects;
 
 
- }),
+/***/ }),
 
- 836:
- (function(module, exports, __webpack_require__) {
+/***/ 836:
+/***/ (function(module, exports, __webpack_require__) {
 
 var isStrictComparable = __webpack_require__(801),
     keys = __webpack_require__(205);
 
-
-
-
-
-
-
-
+/**
+ * Gets the property names, values, and compare flags of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the match data of `object`.
+ */
 function getMatchData(object) {
   var result = keys(object),
       length = result.length;
@@ -39845,40 +39982,40 @@ function getMatchData(object) {
 module.exports = getMatchData;
 
 
- }),
+/***/ }),
 
- 837:
- (function(module, exports, __webpack_require__) {
+/***/ 837:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseHasIn = __webpack_require__(838),
     hasPath = __webpack_require__(297);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `path` is a direct or inherited property of `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path to check.
+ * @returns {boolean} Returns `true` if `path` exists, else `false`.
+ * @example
+ *
+ * var object = _.create({ 'a': _.create({ 'b': 2 }) });
+ *
+ * _.hasIn(object, 'a');
+ * // => true
+ *
+ * _.hasIn(object, 'a.b');
+ * // => true
+ *
+ * _.hasIn(object, ['a', 'b']);
+ * // => true
+ *
+ * _.hasIn(object, 'b');
+ * // => false
+ */
 function hasIn(object, path) {
   return object != null && hasPath(object, path, baseHasIn);
 }
@@ -39886,19 +40023,19 @@ function hasIn(object, path) {
 module.exports = hasIn;
 
 
- }),
+/***/ }),
 
- 838:
- (function(module, exports) {
+/***/ 838:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.hasIn` without support for deep paths.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {Array|string} key The key to check.
+ * @returns {boolean} Returns `true` if `key` exists, else `false`.
+ */
 function baseHasIn(object, key) {
   return object != null && key in Object(object);
 }
@@ -39906,38 +40043,38 @@ function baseHasIn(object, key) {
 module.exports = baseHasIn;
 
 
- }),
+/***/ }),
 
- 839:
- (function(module, exports, __webpack_require__) {
+/***/ 839:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseProperty = __webpack_require__(840),
     basePropertyDeep = __webpack_require__(841),
     isKey = __webpack_require__(71),
     toKey = __webpack_require__(111);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a function that returns the value at `path` of a given object.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Util
+ * @param {Array|string} path The path of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ * @example
+ *
+ * var objects = [
+ *   { 'a': { 'b': 2 } },
+ *   { 'a': { 'b': 1 } }
+ * ];
+ *
+ * _.map(objects, _.property('a.b'));
+ * // => [2, 1]
+ *
+ * _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
+ * // => [1, 2]
+ */
 function property(path) {
   return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
 }
@@ -39945,36 +40082,36 @@ function property(path) {
 module.exports = property;
 
 
- }),
+/***/ }),
 
- 84:
- (function(module, exports) {
+/***/ 84:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
 function isObject(value) {
   var type = typeof value;
   return value != null && (type == 'object' || type == 'function');
@@ -39983,18 +40120,18 @@ function isObject(value) {
 module.exports = isObject;
 
 
- }),
+/***/ }),
 
- 840:
- (function(module, exports) {
+/***/ 840:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * The base implementation of `_.property` without support for deep paths.
+ *
+ * @private
+ * @param {string} key The key of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ */
 function baseProperty(key) {
   return function(object) {
     return object == null ? undefined : object[key];
@@ -40004,20 +40141,20 @@ function baseProperty(key) {
 module.exports = baseProperty;
 
 
- }),
+/***/ }),
 
- 841:
- (function(module, exports, __webpack_require__) {
+/***/ 841:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseGet = __webpack_require__(68);
 
-
-
-
-
-
-
-
+/**
+ * A specialized version of `baseProperty` which supports deep paths.
+ *
+ * @private
+ * @param {Array|string} path The path of the property to get.
+ * @returns {Function} Returns the new accessor function.
+ */
 function basePropertyDeep(path) {
   return function(object) {
     return baseGet(object, path);
@@ -40027,26 +40164,26 @@ function basePropertyDeep(path) {
 module.exports = basePropertyDeep;
 
 
- }),
+/***/ }),
 
- 85:
- (function(module, exports, __webpack_require__) {
+/***/ 85:
+/***/ (function(module, exports, __webpack_require__) {
 
 var coreJsData = __webpack_require__(86);
 
-
+/** Used to detect methods masquerading as native. */
 var maskSrcKey = (function() {
   var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
   return uid ? ('Symbol(src)_1.' + uid) : '';
 }());
 
-
-
-
-
-
-
-
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
 function isMasked(func) {
   return !!maskSrcKey && (maskSrcKey in func);
 }
@@ -40054,37 +40191,37 @@ function isMasked(func) {
 module.exports = isMasked;
 
 
- }),
+/***/ }),
 
- 86:
- (function(module, exports, __webpack_require__) {
+/***/ 86:
+/***/ (function(module, exports, __webpack_require__) {
 
 var root = __webpack_require__(8);
 
-
+/** Used to detect overreaching core-js shims. */
 var coreJsData = root['__core-js_shared__'];
 
 module.exports = coreJsData;
 
 
- }),
+/***/ }),
 
- 87:
- (function(module, exports) {
+/***/ 87:
+/***/ (function(module, exports) {
 
-
+/** Used for built-in method references. */
 var funcProto = Function.prototype;
 
-
+/** Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
 
-
-
-
-
-
-
-
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to convert.
+ * @returns {string} Returns the source code.
+ */
 function toSource(func) {
   if (func != null) {
     try {
@@ -40100,19 +40237,19 @@ function toSource(func) {
 module.exports = toSource;
 
 
- }),
+/***/ }),
 
- 88:
- (function(module, exports) {
+/***/ 88:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
 function getValue(object, key) {
   return object == null ? undefined : object[key];
 }
@@ -40120,21 +40257,21 @@ function getValue(object, key) {
 module.exports = getValue;
 
 
- }),
+/***/ }),
 
- 89:
- (function(module, exports) {
+/***/ 89:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
 function hashDelete(key) {
   var result = this.has(key) && delete this.__data__[key];
   this.size -= result ? 1 : 0;
@@ -40144,43 +40281,43 @@ function hashDelete(key) {
 module.exports = hashDelete;
 
 
- }),
+/***/ }),
 
- 9:
- (function(module, exports, __webpack_require__) {
+/***/ 9:
+/***/ (function(module, exports, __webpack_require__) {
 
-(function(global) {
+/* WEBPACK VAR INJECTION */(function(global) {/** Detect free variable `global` from Node.js. */
 var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
 
 module.exports = freeGlobal;
 
-}.call(exports, __webpack_require__(792)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(792)))
 
- }),
+/***/ }),
 
- 90:
- (function(module, exports, __webpack_require__) {
+/***/ 90:
+/***/ (function(module, exports, __webpack_require__) {
 
 var nativeCreate = __webpack_require__(80);
 
-
+/** Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED = '__lodash_hash_undefined__';
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
 function hashGet(key) {
   var data = this.__data__;
   if (nativeCreate) {
@@ -40193,28 +40330,28 @@ function hashGet(key) {
 module.exports = hashGet;
 
 
- }),
+/***/ }),
 
- 91:
- (function(module, exports, __webpack_require__) {
+/***/ 91:
+/***/ (function(module, exports, __webpack_require__) {
 
 var nativeCreate = __webpack_require__(80);
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
 function hashHas(key) {
   var data = this.__data__;
   return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
@@ -40223,26 +40360,26 @@ function hashHas(key) {
 module.exports = hashHas;
 
 
- }),
+/***/ }),
 
- 92:
- (function(module, exports, __webpack_require__) {
+/***/ 92:
+/***/ (function(module, exports, __webpack_require__) {
 
 var nativeCreate = __webpack_require__(80);
 
-
+/** Used to stand-in for `undefined` hash values. */
 var HASH_UNDEFINED = '__lodash_hash_undefined__';
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
 function hashSet(key, value) {
   var data = this.__data__;
   this.size += this.has(key) ? 0 : 1;
@@ -40253,10 +40390,10 @@ function hashSet(key, value) {
 module.exports = hashSet;
 
 
- }),
+/***/ }),
 
- 93:
- (function(module, exports, __webpack_require__) {
+/***/ 93:
+/***/ (function(module, exports, __webpack_require__) {
 
 var listCacheClear = __webpack_require__(94),
     listCacheDelete = __webpack_require__(95),
@@ -40264,13 +40401,13 @@ var listCacheClear = __webpack_require__(94),
     listCacheHas = __webpack_require__(99),
     listCacheSet = __webpack_require__(100);
 
-
-
-
-
-
-
-
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
 function ListCache(entries) {
   var index = -1,
       length = entries == null ? 0 : entries.length;
@@ -40282,7 +40419,7 @@ function ListCache(entries) {
   }
 }
 
-
+// Add methods to `ListCache`.
 ListCache.prototype.clear = listCacheClear;
 ListCache.prototype['delete'] = listCacheDelete;
 ListCache.prototype.get = listCacheGet;
@@ -40292,18 +40429,18 @@ ListCache.prototype.set = listCacheSet;
 module.exports = ListCache;
 
 
- }),
+/***/ }),
 
- 94:
- (function(module, exports) {
+/***/ 94:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
 function listCacheClear() {
   this.__data__ = [];
   this.size = 0;
@@ -40312,28 +40449,28 @@ function listCacheClear() {
 module.exports = listCacheClear;
 
 
- }),
+/***/ }),
 
- 95:
- (function(module, exports, __webpack_require__) {
+/***/ 95:
+/***/ (function(module, exports, __webpack_require__) {
 
 var assocIndexOf = __webpack_require__(96);
 
-
+/** Used for built-in method references. */
 var arrayProto = Array.prototype;
 
-
+/** Built-in value references. */
 var splice = arrayProto.splice;
 
-
-
-
-
-
-
-
-
-
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
 function listCacheDelete(key) {
   var data = this.__data__,
       index = assocIndexOf(data, key);
@@ -40354,21 +40491,21 @@ function listCacheDelete(key) {
 module.exports = listCacheDelete;
 
 
- }),
+/***/ }),
 
- 96:
- (function(module, exports, __webpack_require__) {
+/***/ 96:
+/***/ (function(module, exports, __webpack_require__) {
 
 var eq = __webpack_require__(97);
 
-
-
-
-
-
-
-
-
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
 function assocIndexOf(array, key) {
   var length = array.length;
   while (length--) {
@@ -40382,10 +40519,10 @@ function assocIndexOf(array, key) {
 module.exports = assocIndexOf;
 
 
- }),
+/***/ }),
 
- 963:
- (function(module, exports, __webpack_require__) {
+/***/ 963:
+/***/ (function(module, exports, __webpack_require__) {
 
 var baseKeys = __webpack_require__(217),
     getTag = __webpack_require__(198),
@@ -40396,49 +40533,49 @@ var baseKeys = __webpack_require__(217),
     isPrototype = __webpack_require__(218),
     isTypedArray = __webpack_require__(212);
 
-
+/** `Object#toString` result references. */
 var mapTag = '[object Map]',
     setTag = '[object Set]';
 
-
+/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
-
+/** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if `value` is an empty object, collection, map, or set.
+ *
+ * Objects are considered empty if they have no own enumerable string keyed
+ * properties.
+ *
+ * Array-like values such as `arguments` objects, arrays, buffers, strings, or
+ * jQuery-like collections are considered empty if they have a `length` of `0`.
+ * Similarly, maps and sets are considered empty if they have a `size` of `0`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is empty, else `false`.
+ * @example
+ *
+ * _.isEmpty(null);
+ * // => true
+ *
+ * _.isEmpty(true);
+ * // => true
+ *
+ * _.isEmpty(1);
+ * // => true
+ *
+ * _.isEmpty([1, 2, 3]);
+ * // => false
+ *
+ * _.isEmpty({ 'a': 1 });
+ * // => false
+ */
 function isEmpty(value) {
   if (value == null) {
     return true;
@@ -40466,43 +40603,43 @@ function isEmpty(value) {
 module.exports = isEmpty;
 
 
- }),
+/***/ }),
 
- 97:
- (function(module, exports) {
+/***/ 97:
+/***/ (function(module, exports) {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
 function eq(value, other) {
   return value === other || (value !== value && other !== other);
 }
@@ -40510,22 +40647,22 @@ function eq(value, other) {
 module.exports = eq;
 
 
- }),
+/***/ }),
 
- 98:
- (function(module, exports, __webpack_require__) {
+/***/ 98:
+/***/ (function(module, exports, __webpack_require__) {
 
 var assocIndexOf = __webpack_require__(96);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
 function listCacheGet(key) {
   var data = this.__data__,
       index = assocIndexOf(data, key);
@@ -40536,22 +40673,22 @@ function listCacheGet(key) {
 module.exports = listCacheGet;
 
 
- }),
+/***/ }),
 
- 99:
- (function(module, exports, __webpack_require__) {
+/***/ 99:
+/***/ (function(module, exports, __webpack_require__) {
 
 var assocIndexOf = __webpack_require__(96);
 
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
 function listCacheHas(key) {
   return assocIndexOf(this.__data__, key) > -1;
 }
@@ -40559,7 +40696,7 @@ function listCacheHas(key) {
 module.exports = listCacheHas;
 
 
- })
+/***/ })
 
- });
+/******/ });
 });

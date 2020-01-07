@@ -1,11 +1,11 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
+// Tests that the source tree works.
 
 async function waitForSourceCount(dbg, i) {
-  
-  
+  // We are forced to wait until the DOM nodes appear because the
+  // source tree batches its rendering.
   await waitUntil(() => {
     return findAllElements(dbg, "sourceNodes").length === i;
   });
@@ -28,7 +28,7 @@ add_task(async function() {
 
   await waitForSources(dbg, "simple1", "simple2", "nested-source", "long.js");
 
-  
+  // Expand nodes and make sure more sources appear.
   await assertSourceCount(dbg, 2);
   await clickElement(dbg, "sourceDirectoryLabel", 2);
 
@@ -41,7 +41,7 @@ add_task(async function() {
   await selected;
   await waitForSelectedSource(dbg);
 
-  
+  // Ensure the source file clicked is now focused
   await waitForElementWithSelector(dbg, ".sources-list .focused");
 
   const focusedNode = findElementWithSelector(dbg, ".sources-list .focused");
@@ -51,10 +51,12 @@ add_task(async function() {
   ok(fourthNode.classList.contains("focused"), "4th node is focused");
   ok(
     selectedSource.includes("nested-source.js"),
-    "The right source is selected"
+    "nested-source is selected"
   );
 
-  
+  await waitForSelectedSource(dbg, "nested-source");
+
+  // Make sure new sources appear in the list.
   ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
     const script = content.document.createElement("script");
     script.src = "math.min.js";
