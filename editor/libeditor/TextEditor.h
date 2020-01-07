@@ -200,8 +200,7 @@ protected:
 
 
 
-
-  already_AddRefed<Element> CreateBR(nsINode* aNode, int32_t aOffset,
+  already_AddRefed<Element> CreateBR(const EditorRawDOMPoint& aPointToInsert,
                                      EDirection aSelect = eNone);
 
   
