@@ -9,6 +9,7 @@
 
 #include "jit/MacroAssembler.h"
 
+#include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
 #if defined(JS_CODEGEN_X86)
@@ -651,6 +652,8 @@ MacroAssembler::branchTestMagicValue(Condition cond, const ValueOperand& val, JS
 void
 MacroAssembler::branchDoubleNotInInt64Range(Address src, Register temp, Label* fail)
 {
+    using mozilla::FloatingPoint;
+
     
     uint32_t EXPONENT_MASK = 0x7ff00000;
     uint32_t EXPONENT_SHIFT = FloatingPoint<double>::kExponentShift - 32;
@@ -664,6 +667,8 @@ MacroAssembler::branchDoubleNotInInt64Range(Address src, Register temp, Label* f
 void
 MacroAssembler::branchDoubleNotInUInt64Range(Address src, Register temp, Label* fail)
 {
+    using mozilla::FloatingPoint;
+
     
     
     
@@ -679,6 +684,8 @@ MacroAssembler::branchDoubleNotInUInt64Range(Address src, Register temp, Label* 
 void
 MacroAssembler::branchFloat32NotInInt64Range(Address src, Register temp, Label* fail)
 {
+    using mozilla::FloatingPoint;
+
     
     uint32_t EXPONENT_MASK = 0x7f800000;
     uint32_t EXPONENT_SHIFT = FloatingPoint<float>::kExponentShift;
@@ -692,6 +699,8 @@ MacroAssembler::branchFloat32NotInInt64Range(Address src, Register temp, Label* 
 void
 MacroAssembler::branchFloat32NotInUInt64Range(Address src, Register temp, Label* fail)
 {
+    using mozilla::FloatingPoint;
+
     
     
     

@@ -41,8 +41,6 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/UnboxedObject.h"
 
-using mozilla::FloatingPoint;
-
 
 
 
