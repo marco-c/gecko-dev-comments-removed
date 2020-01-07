@@ -178,7 +178,8 @@ public:
     return NS_OK;
   }
 
-  nsresult SplitData(uint32_t aOffset, nsIContent** aReturn);
+  already_AddRefed<nsIContent> SplitData(uint32_t aOffset,
+                                         mozilla::ErrorResult& aRv);
 
   
   
