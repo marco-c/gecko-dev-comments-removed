@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  
+  "extends": "../../../.eslintrc.mochitests.js"
+};
