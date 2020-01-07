@@ -190,6 +190,7 @@ private:
         INIT, STARTED, OK, FAILED
     } mTrrAUsed, mTrrAAAAUsed;
 
+    Mutex mTrrLock; 
     RefPtr<mozilla::net::TRR> mTrrA;
     RefPtr<mozilla::net::TRR> mTrrAAAA;
 
