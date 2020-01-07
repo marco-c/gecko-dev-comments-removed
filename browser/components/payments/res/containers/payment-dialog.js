@@ -129,22 +129,22 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
 
   setStateFromParent(state) {
-    let oldSavedAddresses = this.requestStore.getState().savedAddresses;
+    let oldAddresses = paymentRequest.getAddresses(this.requestStore.getState());
     this.requestStore.setState(state);
 
     
     state = this.requestStore.getState();
     let {
-      savedAddresses,
       selectedPayerAddress,
       selectedPaymentCard,
       selectedShippingAddress,
       selectedShippingOption,
     } = state;
+    let addresses = paymentRequest.getAddresses(state);
     let shippingOptions = state.request.paymentDetails.shippingOptions;
-    let shippingAddress = selectedShippingAddress && savedAddresses[selectedShippingAddress];
+    let shippingAddress = selectedShippingAddress && addresses[selectedShippingAddress];
     let oldShippingAddress = selectedShippingAddress &&
-                             oldSavedAddresses[selectedShippingAddress];
+                             oldAddresses[selectedShippingAddress];
 
     
     
@@ -195,9 +195,9 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
     
     
-    if (!savedAddresses[selectedPayerAddress]) {
+    if (!addresses[selectedPayerAddress]) {
       this.requestStore.setState({
-        selectedPayerAddress: Object.keys(savedAddresses)[0] || null,
+        selectedPayerAddress: Object.keys(addresses)[0] || null,
       });
     }
   }

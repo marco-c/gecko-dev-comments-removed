@@ -3,6 +3,7 @@
 
 
 
+import LabelledCheckbox from "../components/labelled-checkbox.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
 
@@ -32,6 +33,8 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
     this.saveButton = document.createElement("button");
     this.saveButton.className = "save-button";
     this.saveButton.addEventListener("click", this);
+
+    this.persistCheckbox = new LabelledCheckbox();
 
     
     let url = "formautofill/editAddress.xhtml";
@@ -68,6 +71,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
         supportedCountries: PaymentDialogUtils.supportedCountries,
       });
 
+      this.appendChild(this.persistCheckbox);
       this.appendChild(this.genericErrorText);
       this.appendChild(this.cancelButton);
       this.appendChild(this.backButton);
@@ -79,15 +83,20 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
   }
 
   render(state) {
-    this.cancelButton.textContent = this.dataset.cancelButtonLabel;
-    this.backButton.textContent = this.dataset.backButtonLabel;
-    this.saveButton.textContent = this.dataset.saveButtonLabel;
-
     let record = {};
     let {
       page,
-      savedAddresses,
     } = state;
+
+    if (this.id && page && page.id !== this.id) {
+      log.debug(`AddressForm: no need to further render inactive page: ${page.id}`);
+      return;
+    }
+
+    this.cancelButton.textContent = this.dataset.cancelButtonLabel;
+    this.backButton.textContent = this.dataset.backButtonLabel;
+    this.saveButton.textContent = this.dataset.saveButtonLabel;
+    this.persistCheckbox.label = this.dataset.persistCheckboxLabel;
 
     this.backButton.hidden = page.onboardingWizard;
     this.cancelButton.hidden = !page.onboardingWizard;
@@ -102,13 +111,20 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
     this.genericErrorText.textContent = page.error;
 
     let editing = !!page.guid;
+    let addresses = paymentRequest.getAddresses(state);
 
     
     if (editing) {
-      record = savedAddresses[page.guid];
+      record = addresses[page.guid];
       if (!record) {
         throw new Error("Trying to edit a non-existing address: " + page.guid);
       }
+      
+      this.persistCheckbox.hidden = true;
+    } else {
+      
+      this.persistCheckbox.hidden = false;
+      this.persistCheckbox.checked = !state.isPrivate;
     }
 
     this.formHandler.loadRecord(record);
@@ -151,8 +167,14 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
     let record = this.formHandler.buildFormObject();
     let {
       page,
+      tempAddresses,
       savedBasicCards,
     } = this.requestStore.getState();
+    let editing = !!page.guid;
+
+    if (editing ? (page.guid in tempAddresses) : !this.persistCheckbox.checked) {
+      record.isTemporary = true;
+    }
 
     let state = {
       errorStateChange: {
