@@ -86,151 +86,6 @@ var gPermissionManager = {
     }
   },
 
-  _getCapabilityString(aCapability) {
-    var stringKey = null;
-    switch (aCapability) {
-    case nsIPermissionManager.ALLOW_ACTION:
-      stringKey = "can";
-      break;
-    case nsIPermissionManager.DENY_ACTION:
-      stringKey = "cannot";
-      break;
-    case nsICookiePermission.ACCESS_ALLOW_FIRST_PARTY_ONLY:
-      stringKey = "canAccessFirstParty";
-      break;
-    case nsICookiePermission.ACCESS_SESSION:
-      stringKey = "canSession";
-      break;
-    }
-    return this._bundle.getString(stringKey);
-  },
-
-  addPermission(aCapability) {
-    var textbox = document.getElementById("url");
-    var input_url = textbox.value.replace(/^\s*/, ""); 
-    let principal;
-    try {
-      
-      
-      
-      
-      
-      
-      
-      let uri;
-      try {
-        uri = Services.io.newURI(input_url);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-        if (principal.origin.startsWith("moz-nullprincipal:")) {
-          throw "Null principal";
-        }
-      } catch (ex) {
-        uri = Services.io.newURI("http://" + input_url);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-        
-        principal.origin;
-      }
-    } catch (ex) {
-      document.l10n.formatValues([
-        {id: "permissions-invalid-uri-title"},
-        {id: "permissions-invalid-uri-label"}
-      ]).then(([title, message]) => {
-        Services.prompt.alert(window, title, message);
-      });
-      return;
-    }
-
-    var capabilityString = this._getCapabilityString(aCapability);
-
-    
-    let permissionExists = false;
-    let capabilityExists = false;
-    for (var i = 0; i < this._permissions.length; ++i) {
-      if (this._permissions[i].principal.equals(principal)) {
-        permissionExists = true;
-        capabilityExists = this._permissions[i].capability == capabilityString;
-        if (!capabilityExists) {
-          this._permissions[i].capability = capabilityString;
-        }
-        break;
-      }
-    }
-
-    let permissionParams = {principal, type: this._type, capability: aCapability};
-    if (!permissionExists) {
-      this._permissionsToAdd.set(principal.origin, permissionParams);
-      this._addPermission(permissionParams);
-    } else if (!capabilityExists) {
-      this._permissionsToAdd.set(principal.origin, permissionParams);
-      this._handleCapabilityChange();
-    }
-
-    textbox.value = "";
-    textbox.focus();
-
-    
-    this.onHostInput(textbox);
-
-    
-    document.getElementById("removeAllPermissions").disabled = this._permissions.length == 0;
-  },
-
-  _removePermission(aPermission) {
-    this._removePermissionFromList(aPermission.principal);
-
-    
-    
-    
-    let isNewPermission = this._permissionsToAdd.delete(aPermission.principal.origin);
-
-    if (!isNewPermission) {
-      this._permissionsToDelete.set(aPermission.principal.origin, aPermission);
-    }
-
-  },
-
-  _handleCapabilityChange() {
-    
-    
-    
-    if (this._lastPermissionSortColumn == "statusCol") {
-      this._resortPermissions();
-    }
-    this._tree.treeBoxObject.invalidate();
-  },
-
-  _addPermission(aPermission) {
-    this._addPermissionToList(aPermission);
-    ++this._view._rowCount;
-    this._tree.treeBoxObject.rowCountChanged(this._view.rowCount - 1, 1);
-    
-    this._resortPermissions();
-  },
-
-  _resortPermissions() {
-    gTreeUtils.sort(this._tree, this._view, this._permissions,
-                    this._lastPermissionSortColumn,
-                    this._permissionsComparator,
-                    this._lastPermissionSortColumn,
-                    !this._lastPermissionSortAscending); 
-  },
-
-  onHostInput(aSiteField) {
-    document.getElementById("btnSession").disabled = !aSiteField.value;
-    document.getElementById("btnBlock").disabled = !aSiteField.value;
-    document.getElementById("btnAllow").disabled = !aSiteField.value;
-  },
-
-  onWindowKeyPress(aEvent) {
-    if (aEvent.keyCode == KeyEvent.DOM_VK_ESCAPE)
-      window.close();
-  },
-
-  onHostKeyPress(aEvent) {
-    if (aEvent.keyCode == KeyEvent.DOM_VK_RETURN)
-      document.getElementById("btnAllow").click();
-  },
-
   onLoad() {
     this._bundle = document.getElementById("bundlePreferences");
     var params = window.arguments[0];
@@ -330,11 +185,206 @@ var gPermissionManager = {
     }
   },
 
-  onPermissionSelect() {
-    var hasSelection = this._tree.view.selection.count > 0;
-    var hasRows = this._tree.view.rowCount > 0;
-    document.getElementById("removePermission").disabled = !hasRows || !hasSelection;
-    document.getElementById("removeAllPermissions").disabled = !hasRows;
+  _resortPermissions() {
+    gTreeUtils.sort(this._tree, this._view, this._permissions,
+                    this._lastPermissionSortColumn,
+                    this._permissionsComparator,
+                    this._lastPermissionSortColumn,
+                    !this._lastPermissionSortAscending); 
+  },
+
+  _handleCapabilityChange() {
+    
+    
+    
+    if (this._lastPermissionSortColumn == "statusCol") {
+      this._resortPermissions();
+    }
+    this._tree.treeBoxObject.invalidate();
+  },
+
+  _getCapabilityString(aCapability) {
+    var stringKey = null;
+    switch (aCapability) {
+    case nsIPermissionManager.ALLOW_ACTION:
+      stringKey = "can";
+      break;
+    case nsIPermissionManager.DENY_ACTION:
+      stringKey = "cannot";
+      break;
+    case nsICookiePermission.ACCESS_ALLOW_FIRST_PARTY_ONLY:
+      stringKey = "canAccessFirstParty";
+      break;
+    case nsICookiePermission.ACCESS_SESSION:
+      stringKey = "canSession";
+      break;
+    }
+    return this._bundle.getString(stringKey);
+  },
+
+  _addPermission(aPermission) {
+    this._addPermissionToList(aPermission);
+    ++this._view._rowCount;
+    this._tree.treeBoxObject.rowCountChanged(this._view.rowCount - 1, 1);
+    
+    this._resortPermissions();
+  },
+
+  _addPermissionToList(aPermission) {
+    if (aPermission.type == this._type &&
+        (!this._manageCapability ||
+         (aPermission.capability == this._manageCapability))) {
+
+      var principal = aPermission.principal;
+      var capabilityString = this._getCapabilityString(aPermission.capability);
+      var p = new Permission(principal,
+                             aPermission.type,
+                             capabilityString);
+      this._permissions.push(p);
+    }
+  },
+
+  addPermission(aCapability) {
+    var textbox = document.getElementById("url");
+    var input_url = textbox.value.replace(/^\s*/, ""); 
+    let principal;
+    try {
+      
+      
+      
+      
+      
+      
+      
+      let uri;
+      try {
+        uri = Services.io.newURI(input_url);
+        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+        if (principal.origin.startsWith("moz-nullprincipal:")) {
+          throw "Null principal";
+        }
+      } catch (ex) {
+        uri = Services.io.newURI("http://" + input_url);
+        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+        
+        principal.origin;
+      }
+    } catch (ex) {
+      document.l10n.formatValues([
+        {id: "permissions-invalid-uri-title"},
+        {id: "permissions-invalid-uri-label"}
+      ]).then(([title, message]) => {
+        Services.prompt.alert(window, title, message);
+      });
+      return;
+    }
+
+    var capabilityString = this._getCapabilityString(aCapability);
+
+    
+    let permissionExists = false;
+    let capabilityExists = false;
+    for (var i = 0; i < this._permissions.length; ++i) {
+      if (this._permissions[i].principal.equals(principal)) {
+        permissionExists = true;
+        capabilityExists = this._permissions[i].capability == capabilityString;
+        if (!capabilityExists) {
+          this._permissions[i].capability = capabilityString;
+        }
+        break;
+      }
+    }
+
+    let permissionParams = {principal, type: this._type, capability: aCapability};
+    if (!permissionExists) {
+      this._permissionsToAdd.set(principal.origin, permissionParams);
+      this._addPermission(permissionParams);
+    } else if (!capabilityExists) {
+      this._permissionsToAdd.set(principal.origin, permissionParams);
+      this._handleCapabilityChange();
+    }
+
+    textbox.value = "";
+    textbox.focus();
+
+    
+    this.onHostInput(textbox);
+
+    
+    document.getElementById("removeAllPermissions").disabled = this._permissions.length == 0;
+  },
+
+  _removePermission(aPermission) {
+    this._removePermissionFromList(aPermission.principal);
+
+    
+    
+    
+    let isNewPermission = this._permissionsToAdd.delete(aPermission.principal.origin);
+
+    if (!isNewPermission) {
+      this._permissionsToDelete.set(aPermission.principal.origin, aPermission);
+    }
+
+  },
+
+  _removePermissionFromList(aPrincipal) {
+    for (let i = 0; i < this._permissions.length; ++i) {
+      if (this._permissions[i].principal.equals(aPrincipal)) {
+        this._permissions.splice(i, 1);
+        this._view._rowCount--;
+        this._tree.treeBoxObject.rowCountChanged(this._view.rowCount - 1, -1);
+        this._tree.treeBoxObject.invalidate();
+        break;
+      }
+    }
+  },
+
+  _loadPermissions() {
+    this._tree = document.getElementById("permissionsTree");
+    this._permissions = [];
+
+    
+    var enumerator = Services.perms.enumerator;
+    while (enumerator.hasMoreElements()) {
+      var nextPermission = enumerator.getNext().QueryInterface(Ci.nsIPermission);
+      this._addPermissionToList(nextPermission);
+    }
+
+    this._view._rowCount = this._permissions.length;
+
+    
+    this._tree.view = this._view;
+    this.onPermissionSort("origin");
+
+    
+    document.getElementById("removeAllPermissions").disabled = this._permissions.length == 0;
+  },
+
+  onWindowKeyPress(aEvent) {
+    if (aEvent.keyCode == KeyEvent.DOM_VK_ESCAPE)
+      window.close();
+  },
+
+  onPermissionKeyPress(aEvent) {
+    if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
+      this.onPermissionDelete();
+    } else if (AppConstants.platform == "macosx" &&
+               aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
+      this.onPermissionDelete();
+      aEvent.preventDefault();
+    }
+  },
+
+  onHostKeyPress(aEvent) {
+    if (aEvent.keyCode == KeyEvent.DOM_VK_RETURN)
+      document.getElementById("btnAllow").click();
+  },
+
+  onHostInput(aSiteField) {
+    document.getElementById("btnSession").disabled = !aSiteField.value;
+    document.getElementById("btnBlock").disabled = !aSiteField.value;
+    document.getElementById("btnAllow").disabled = !aSiteField.value;
   },
 
   onPermissionDelete() {
@@ -363,37 +413,11 @@ var gPermissionManager = {
     document.getElementById("removeAllPermissions").disabled = true;
   },
 
-  onPermissionKeyPress(aEvent) {
-    if (aEvent.keyCode == KeyEvent.DOM_VK_DELETE) {
-      this.onPermissionDelete();
-    } else if (AppConstants.platform == "macosx" &&
-               aEvent.keyCode == KeyEvent.DOM_VK_BACK_SPACE) {
-      this.onPermissionDelete();
-      aEvent.preventDefault();
-    }
-  },
-
-  _lastPermissionSortColumn: "",
-  _lastPermissionSortAscending: false,
-  _permissionsComparator(a, b) {
-    return a.toLowerCase().localeCompare(b.toLowerCase());
-  },
-
-
-  onPermissionSort(aColumn) {
-    this._lastPermissionSortAscending = gTreeUtils.sort(this._tree,
-                                                        this._view,
-                                                        this._permissions,
-                                                        aColumn,
-                                                        this._permissionsComparator,
-                                                        this._lastPermissionSortColumn,
-                                                        this._lastPermissionSortAscending);
-    this._lastPermissionSortColumn = aColumn;
-    let sortDirection = this._lastPermissionSortAscending ? "descending" : "ascending";
-    let cols = document.querySelectorAll("treecol");
-    cols.forEach(c => c.removeAttribute("sortDirection"));
-    let column = document.querySelector(`treecol[data-field-name=${aColumn}]`);
-    column.setAttribute("sortDirection", sortDirection);
+  onPermissionSelect() {
+    var hasSelection = this._tree.view.selection.count > 0;
+    var hasRows = this._tree.view.rowCount > 0;
+    document.getElementById("removePermission").disabled = !hasRows || !hasSelection;
+    document.getElementById("removeAllPermissions").disabled = !hasRows;
   },
 
   onApplyChanges() {
@@ -413,51 +437,26 @@ var gPermissionManager = {
     window.close();
   },
 
-  _loadPermissions() {
-    this._tree = document.getElementById("permissionsTree");
-    this._permissions = [];
-
-    
-    var enumerator = Services.perms.enumerator;
-    while (enumerator.hasMoreElements()) {
-      var nextPermission = enumerator.getNext().QueryInterface(Ci.nsIPermission);
-      this._addPermissionToList(nextPermission);
-    }
-
-    this._view._rowCount = this._permissions.length;
-
-    
-    this._tree.view = this._view;
-    this.onPermissionSort("origin");
-
-    
-    document.getElementById("removeAllPermissions").disabled = this._permissions.length == 0;
+  _lastPermissionSortColumn: "",
+  _lastPermissionSortAscending: false,
+  _permissionsComparator(a, b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
   },
 
-  _addPermissionToList(aPermission) {
-    if (aPermission.type == this._type &&
-        (!this._manageCapability ||
-         (aPermission.capability == this._manageCapability))) {
-
-      var principal = aPermission.principal;
-      var capabilityString = this._getCapabilityString(aPermission.capability);
-      var p = new Permission(principal,
-                             aPermission.type,
-                             capabilityString);
-      this._permissions.push(p);
-    }
-  },
-
-  _removePermissionFromList(aPrincipal) {
-    for (let i = 0; i < this._permissions.length; ++i) {
-      if (this._permissions[i].principal.equals(aPrincipal)) {
-        this._permissions.splice(i, 1);
-        this._view._rowCount--;
-        this._tree.treeBoxObject.rowCountChanged(this._view.rowCount - 1, -1);
-        this._tree.treeBoxObject.invalidate();
-        break;
-      }
-    }
+  onPermissionSort(aColumn) {
+    this._lastPermissionSortAscending = gTreeUtils.sort(this._tree,
+                                                        this._view,
+                                                        this._permissions,
+                                                        aColumn,
+                                                        this._permissionsComparator,
+                                                        this._lastPermissionSortColumn,
+                                                        this._lastPermissionSortAscending);
+    this._lastPermissionSortColumn = aColumn;
+    let sortDirection = this._lastPermissionSortAscending ? "descending" : "ascending";
+    let cols = document.querySelectorAll("treecol");
+    cols.forEach(c => c.removeAttribute("sortDirection"));
+    let column = document.querySelector(`treecol[data-field-name=${aColumn}]`);
+    column.setAttribute("sortDirection", sortDirection);
   },
 
   setOrigin(aOrigin) {
