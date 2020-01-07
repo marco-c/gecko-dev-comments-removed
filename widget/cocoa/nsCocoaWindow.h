@@ -175,9 +175,7 @@ typedef struct _nsCocoaWindowList {
 
 @interface ToolbarWindow : BaseWindow
 {
-  TitlebarAndBackgroundColor *mColor; 
   CGFloat mUnifiedToolbarHeight;
-  NSColor *mBackgroundColor; 
   NSRect mWindowButtonsRect;
   NSRect mFullScreenButtonRect;
 }
