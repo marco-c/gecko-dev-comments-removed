@@ -105,6 +105,11 @@ class AsyncTabSwitcher {
     
     
     
+    this.activeSuppressDisplayport = new Set();
+
+    
+    
+    
     
     
     this.maybeVisibleTabs = new Set([tabbrowser.selectedTab]);
@@ -183,6 +188,11 @@ class AsyncTabSwitcher {
     this.window.removeEventListener("EndSwapDocShells", this, true);
 
     this.tabbrowser._switcher = null;
+
+    this.activeSuppressDisplayport.forEach(function(tabParent) {
+      tabParent.suppressDisplayport(false);
+    });
+    this.activeSuppressDisplayport.clear();
   }
 
   
@@ -866,7 +876,7 @@ class AsyncTabSwitcher {
 
     this.warmingTabs.add(tab);
     this.setTabState(tab, this.STATE_LOADING);
-    this.queueUnload(gTabWarmingUnloadDelayMs);
+    this.suppressDisplayPortAndQueueUnload(tab, gTabWarmingUnloadDelayMs);
   }
 
   
@@ -912,11 +922,19 @@ class AsyncTabSwitcher {
     }
     this.lastPrimaryTab = tab;
 
-    this.queueUnload(this.UNLOAD_DELAY);
+    this.suppressDisplayPortAndQueueUnload(this.requestedTab, this.UNLOAD_DELAY);
     this._requestingTab = false;
   }
 
-  queueUnload(unloadTimeout) {
+  suppressDisplayPortAndQueueUnload(tab, unloadTimeout) {
+    let browser = tab.linkedBrowser;
+    let fl = browser.frameLoader;
+
+    if (fl && fl.tabParent && !this.activeSuppressDisplayport.has(fl.tabParent)) {
+      fl.tabParent.suppressDisplayport(true);
+      this.activeSuppressDisplayport.add(fl.tabParent);
+    }
+
     this.preActions();
 
     if (this.unloadTimer) {
