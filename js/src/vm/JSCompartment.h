@@ -608,10 +608,7 @@ struct JSCompartment
     }
 
     
-    inline bool isProbablySystemOrAddonCode() const {
-        if (creationOptions_.addonIdOrNull())
-            return true;
-
+    inline bool isProbablySystemCode() const {
         return isSystem_;
     }
   private:

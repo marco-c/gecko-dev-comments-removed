@@ -1638,11 +1638,6 @@ StringToSource(JSContext* cx, JSString* str);
 
 } 
 
-
-
-class JSAddonId : public JSAtom
-{};
-
 MOZ_ALWAYS_INLINE bool
 JSString::getChar(JSContext* cx, size_t index, char16_t* code)
 {

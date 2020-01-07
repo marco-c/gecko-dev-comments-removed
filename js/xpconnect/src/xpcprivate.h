@@ -2584,9 +2584,6 @@ xpc_GetSafeJSContext()
 
 namespace xpc {
 
-JSAddonId*
-NewAddonId(JSContext* cx, const nsACString& id);
-
 
 bool
 Atob(JSContext* cx, unsigned argc, JS::Value* vp);

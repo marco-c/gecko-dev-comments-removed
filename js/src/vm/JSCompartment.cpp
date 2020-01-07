@@ -1343,7 +1343,7 @@ void
 JSCompartment::reportTelemetry()
 {
     
-    if (creationOptions_.addonIdOrNull() || isSystem_)
+    if (isSystem_)
         return;
 
     
@@ -1360,7 +1360,7 @@ void
 JSCompartment::addTelemetry(const char* filename, DeprecatedLanguageExtension e)
 {
     
-    if (creationOptions_.addonIdOrNull() || isSystem_)
+    if (isSystem_)
         return;
     if (!filename || strncmp(filename, "http", 4) != 0)
         return;
