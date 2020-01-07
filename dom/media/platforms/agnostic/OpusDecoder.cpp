@@ -95,17 +95,6 @@ OpusDataDecoder::Init()
                                                  mOpusParser->mCoupledStreams,
                                                  mMappingTable.Elements(),
                                                  &r);
-
-  
-  
-  
-  
-  
-  if (mOpusDecoder && mOpusParser->mChannels == 2 &&
-      DecideAudioPlaybackChannels(mInfo) == 1) {
-    opus_multistream_decoder_ctl(mOpusDecoder, OPUS_SET_PHASE_INVERSION_DISABLED(1));
-  }
-
   mSkip = mOpusParser->mPreSkip;
   mPaddingDiscarded = false;
 
