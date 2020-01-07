@@ -750,13 +750,20 @@ private:
 
 
 
-class LifeCycleEventWatcher final : public ExtendableEventCallback
+class LifeCycleEventWatcher final : public ExtendableEventCallback,
+                                    public WorkerHolder
 {
-  RefPtr<StrongWorkerRef> mWorkerRef;
+  WorkerPrivate* mWorkerPrivate;
   RefPtr<LifeCycleEventCallback> mCallback;
+  bool mDone;
 
   ~LifeCycleEventWatcher()
   {
+    if (mDone) {
+      return;
+    }
+
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
     
     
     
@@ -767,17 +774,22 @@ class LifeCycleEventWatcher final : public ExtendableEventCallback
 public:
   NS_INLINE_DECL_REFCOUNTING(LifeCycleEventWatcher, override)
 
-  explicit LifeCycleEventWatcher(LifeCycleEventCallback* aCallback)
-    : mCallback(aCallback)
+  LifeCycleEventWatcher(WorkerPrivate* aWorkerPrivate,
+                        LifeCycleEventCallback* aCallback)
+    : WorkerHolder("LifeCycleEventWatcher")
+    , mWorkerPrivate(aWorkerPrivate)
+    , mCallback(aCallback)
+    , mDone(false)
   {
-    MOZ_ASSERT(IsCurrentThreadRunningWorker());
+    MOZ_ASSERT(aWorkerPrivate);
+    aWorkerPrivate->AssertIsOnWorkerThread();
   }
 
   bool
   Init()
   {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
+    MOZ_ASSERT(mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
 
     
     
@@ -786,18 +798,24 @@ public:
     
     
     
-    RefPtr<LifeCycleEventWatcher> self = this;
-    mWorkerRef =
-      StrongWorkerRef::Create(workerPrivate, "LifeCycleEventWatcher",
-                              [self]() {
-      self->ReportResult(false);
-    });
-    if (NS_WARN_IF(!mWorkerRef)) {
-      mCallback->SetResult(false);
-      nsresult rv = workerPrivate->DispatchToMainThread(mCallback);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+    if (NS_WARN_IF(!HoldWorker(mWorkerPrivate, Terminating))) {
+      NS_WARNING("LifeCycleEventWatcher failed to add feature.");
+      ReportResult(false);
       return false;
     }
+
+    return true;
+  }
+
+  bool
+  Notify(WorkerStatus aStatus) override
+  {
+    if (aStatus < Terminating) {
+      return true;
+    }
+
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    ReportResult(false);
 
     return true;
   }
@@ -805,25 +823,27 @@ public:
   void
   ReportResult(bool aResult)
   {
-    MOZ_ASSERT(IsCurrentThreadRunningWorker());
+    mWorkerPrivate->AssertIsOnWorkerThread();
 
-    if (!mWorkerRef) {
+    if (mDone) {
       return;
     }
+    mDone = true;
 
     mCallback->SetResult(aResult);
-    nsresult rv = mWorkerRef->Private()->DispatchToMainThread(mCallback);
+    nsresult rv = mWorkerPrivate->DispatchToMainThread(mCallback);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_CRASH("Failed to dispatch life cycle event handler.");
     }
 
-    mWorkerRef = nullptr;
+    ReleaseWorker();
   }
 
   void
   FinishedWithResult(ExtendableEventResult aResult) override
   {
-    MOZ_ASSERT(IsCurrentThreadRunningWorker());
+    MOZ_ASSERT(GetCurrentThreadWorkerPrivate() == mWorkerPrivate);
+    mWorkerPrivate->AssertIsOnWorkerThread();
     ReportResult(aResult == Resolved);
 
     
@@ -857,7 +877,8 @@ LifecycleEventWorkerRunnable::DispatchLifecycleEvent(JSContext* aCx,
   
   
   
-  RefPtr<LifeCycleEventWatcher> watcher = new LifeCycleEventWatcher(mCallback);
+  RefPtr<LifeCycleEventWatcher> watcher =
+    new LifeCycleEventWatcher(aWorkerPrivate, mCallback);
 
   if (!watcher->Init()) {
     return true;
