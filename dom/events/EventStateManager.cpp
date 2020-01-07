@@ -643,7 +643,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       SetClickCount(mouseEvent, aStatus);
       break;
     }
-    NotifyTargetUserActivation(aEvent, aTargetContent);
     break;
   }
   case eMouseUp: {
@@ -660,6 +659,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       case WidgetMouseEvent::eMiddleButton:
         RefPtr<EventStateManager> esm = ESMFromContentOrThis(aOverrideClickTarget);
         esm->SetClickCount(mouseEvent, aStatus, aOverrideClickTarget);
+        NotifyTargetUserActivation(aEvent, aTargetContent);
         break;
     }
     break;
@@ -714,13 +714,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   case ePointerDown:
     if (aEvent->mMessage == ePointerDown) {
       PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
-#ifndef MOZ_WIDGET_ANDROID
-      
-      
-      
-      
-      NotifyTargetUserActivation(aEvent, aTargetContent);
-#endif
     }
     MOZ_FALLTHROUGH;
   case ePointerMove: {
@@ -801,10 +794,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     MOZ_FALLTHROUGH;
   case eKeyDown:
-    if (aEvent->mMessage == eKeyDown) {
-      NotifyTargetUserActivation(aEvent, aTargetContent);
-    }
-    MOZ_FALLTHROUGH;
   case eKeyUp:
     {
       nsIContent* content = GetFocusedContent();
@@ -833,6 +822,9 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
           !aEvent->PropagationStopped() &&
           !IsRemoteTarget(content)) {
         aEvent->ResetWaitingReplyFromRemoteProcessState();
+      }
+      if (aEvent->mMessage == eKeyUp) {
+        NotifyTargetUserActivation(aEvent, aTargetContent);
       }
     }
     break;
@@ -929,11 +921,8 @@ EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
     return;
   }
 
-  MOZ_ASSERT(aEvent->mMessage == eKeyDown   ||
-             aEvent->mMessage == eMouseDown ||
-#ifndef MOZ_WIDGET_ANDROID
-             aEvent->mMessage == ePointerDown ||
-#endif
+  MOZ_ASSERT(aEvent->mMessage == eKeyUp   ||
+             aEvent->mMessage == eMouseUp ||
              aEvent->mMessage == eTouchEnd);
   doc->NotifyUserActivation();
 }
