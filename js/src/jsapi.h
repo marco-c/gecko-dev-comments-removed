@@ -1197,8 +1197,20 @@ JS_ExtensibleLexicalEnvironment(JSObject* obj);
 
 namespace JS {
 
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 CurrentGlobalOrNull(JSContext* cx);
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetNonCCWObjectGlobal(JSObject* obj);
 
 } 
 
