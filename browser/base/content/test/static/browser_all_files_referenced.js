@@ -54,7 +54,7 @@ var whitelist = [
   
   {file: "chrome://global/locale/fallbackMenubar.properties",
    platforms: ["linux", "win"]},
-  {file: "chrome://global/locale/printPageSetup.dtd", platforms: ["macosx"]},
+  {file: "chrome://global/locale/printPageSetup.dtd", platforms: ["linux", "macosx"]},
   {file: "chrome://global/locale/printPreviewProgress.dtd",
    platforms: ["macosx"]},
   {file: "chrome://global/locale/printProgress.dtd", platforms: ["macosx"]},
