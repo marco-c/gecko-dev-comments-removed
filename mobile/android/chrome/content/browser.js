@@ -554,12 +554,6 @@ var BrowserApp = {
       
       InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
 
-      
-      
-      
-      InitLater(() => {
-        Services.obs.notifyObservers(window, "browser-idle-startup-tasks-finished");
-      });
     }, {once: true});
   },
 

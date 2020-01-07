@@ -7,8 +7,6 @@ ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "OS",
   "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
-  "resource:///modules/BrowserWindowTracker.jsm");
 
 Cu.importGlobalProperties(["TextEncoder"]);
 
@@ -214,35 +212,17 @@ TalosPowersService.prototype = {
     }
   },
 
-  async forceQuit(messageData) {
+  forceQuit(messageData) {
     if (messageData && messageData.waitForSafeBrowsing) {
       let SafeBrowsing = ChromeUtils.import("resource://gre/modules/SafeBrowsing.jsm", {}).SafeBrowsing;
 
+      let whenDone = () => {
+        this.forceQuit();
+      };
+      SafeBrowsing.addMozEntriesFinishedPromise.then(whenDone, whenDone);
       
       SafeBrowsing.init();
-
-      try {
-        await SafeBrowsing.addMozEntriesFinishedPromise;
-      } catch (e) {
-        
-      }
-    }
-
-    
-    
-    
-    
-    let topWin = BrowserWindowTracker.getTopWindow();
-    if (topWin &&
-        topWin.gBrowserInit &&
-        !topWin.gBrowserInit.idleTasksFinished) {
-      await new Promise(resolve => {
-        let obs = (subject, topic, data) => {
-          Services.obs.removeObserver(obs, "browser-idle-startup-tasks-finished");
-          resolve();
-        };
-        Services.obs.addObserver(obs, "browser-idle-startup-tasks-finished");
-      });
+      return;
     }
 
     let enumerator = Services.wm.getEnumerator(null);

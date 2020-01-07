@@ -1162,7 +1162,6 @@ var delayedStartupPromise = new Promise(resolve => {
 
 var gBrowserInit = {
   delayedStartupFinished: false,
-  idleTasksFinished: false,
 
   _tabToAdopt: undefined,
 
@@ -1780,14 +1779,6 @@ var gBrowserInit = {
         Cu.reportError(ex);
       }
     }, {timeout: 10000});
-
-    
-    
-    
-    scheduleIdleTask(() => {
-      this.idleTasksFinished = true;
-      Services.obs.notifyObservers(window, "browser-idle-startup-tasks-finished");
-    });
   },
 
   
