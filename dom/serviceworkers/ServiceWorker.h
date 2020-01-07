@@ -102,7 +102,12 @@ private:
   ~ServiceWorker();
 
   ServiceWorkerDescriptor mDescriptor;
-  const RefPtr<Inner> mInner;
+
+  
+  
+  
+  
+  RefPtr<Inner> mInner;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ServiceWorker, NS_DOM_SERVICEWORKER_IID)
