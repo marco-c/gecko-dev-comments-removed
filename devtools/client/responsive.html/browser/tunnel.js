@@ -555,6 +555,15 @@ MessageManagerTunnel.prototype = {
     }
   },
 
+  
+
+
+
+
+  get processMessageManager() {
+    return this.innerParentMM.processMessageManager;
+  },
+
   loadFrameScript(url, ...args) {
     debug(`Calling loadFrameScript for ${url}`);
 
