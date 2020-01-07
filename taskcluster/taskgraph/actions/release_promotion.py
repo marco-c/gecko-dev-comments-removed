@@ -354,4 +354,4 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
     
     parameters = Parameters(**parameters)
 
-    taskgraph_decision({}, parameters=parameters)
+    taskgraph_decision({'root': graph_config.root_dir}, parameters=parameters)
