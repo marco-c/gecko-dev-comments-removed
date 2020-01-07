@@ -2258,6 +2258,13 @@ APZCTreeManager::GetAPZCAtPointWR(const ScreenPoint& aHitTestPoint,
   RefPtr<AsyncPanZoomController> result;
   RefPtr<wr::WebRenderAPI> wr = GetWebRenderAPI();
   if (!wr) {
+    
+    
+    
+    
+    
+    result = FindRootApzcForLayersId(mRootLayersId);
+    *aOutHitResult = CompositorHitTestInfo::eVisibleToHitTest;
     return result.forget();
   }
 
