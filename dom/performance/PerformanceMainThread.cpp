@@ -393,16 +393,14 @@ PerformanceMainThread::GetEntriesByName(const nsAString& aName,
     return;
   }
 
-  if (aName.EqualsLiteral("document")) {
-    aRetval.Clear();
+  Performance::GetEntriesByName(aName, aEntryType, aRetval);
 
-    if (mDocEntry) {
-      aRetval.AppendElement(mDocEntry);
-    }
+  
+  
+  if (mDocEntry && mDocEntry->GetName().Equals(aName)) {
+    aRetval.InsertElementAt(0, mDocEntry);
     return;
   }
-
-  Performance::GetEntriesByName(aName, aEntryType, aRetval);
 }
 
 } 
