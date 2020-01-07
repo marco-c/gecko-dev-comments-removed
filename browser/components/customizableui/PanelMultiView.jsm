@@ -854,7 +854,7 @@ var PanelMultiView = class extends AssociatedToNode {
     this._viewContainer.style.height = prevPanelView.knownHeight + "px";
     this._viewContainer.style.width = prevPanelView.knownWidth + "px";
     
-    let rect = this._panel.popupBoxObject.getOuterScreenRect();
+    let rect = this._panel.getOuterScreenRect();
     this._panel.setAttribute("width", rect.width);
     this._panel.setAttribute("height", rect.height);
 
