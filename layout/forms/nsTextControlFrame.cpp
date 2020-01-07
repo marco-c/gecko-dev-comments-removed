@@ -494,7 +494,11 @@ nsTextControlFrame::CreatePlaceholderIfNeeded()
   
   nsAutoString placeholderTxt;
   mContent->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder, placeholderTxt);
-  nsContentUtils::RemoveNewlines(placeholderTxt);
+  if (IsTextArea()) { 
+    nsContentUtils::PlatformToDOMLineBreaks(placeholderTxt);
+  } else { 
+    nsContentUtils::RemoveNewlines(placeholderTxt);
+  }
 
   if (placeholderTxt.IsEmpty()) {
     return;
