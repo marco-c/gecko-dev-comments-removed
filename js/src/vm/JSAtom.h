@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsatom_h
-#define jsatom_h
+#ifndef vm_JSAtom_h
+#define vm_JSAtom_h
 
 #include "mozilla/Maybe.h"
 

@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsatominlines_h
-#define jsatominlines_h
+#ifndef vm_JSAtom_inl_h
+#define vm_JSAtom_inl_h
 
-#include "jsatom.h"
+#include "vm/JSAtom.h"
 
 #include "mozilla/RangedPtr.h"
 
