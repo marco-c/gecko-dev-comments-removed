@@ -10237,14 +10237,11 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     uint32_t warmUpCount = script->getWarmUpCount();
 
-    JitRuntime* jrt = cx->runtime()->jitRuntime();
-    IonCompilationId compilationId = jrt->nextCompilationId();
-#ifdef DEBUG
-    jrt->currentCompilationId().emplace(compilationId);
-    auto resetCurrentId = mozilla::MakeScopeExit([jrt] {
-        jrt->currentCompilationId().reset();
+    IonCompilationId compilationId = cx->runtime()->jitRuntime()->nextCompilationId();
+    cx->zone()->types.currentCompilationIdRef().emplace(compilationId);
+    auto resetCurrentId = mozilla::MakeScopeExit([cx] {
+        cx->zone()->types.currentCompilationIdRef().reset();
     });
-#endif
 
     
     

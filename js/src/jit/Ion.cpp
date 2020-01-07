@@ -2870,7 +2870,7 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
         if (cancelOffThread)
             CancelOffThreadIonCompile(info.script());
 
-        IonScript* ionScript = info.maybeIonScriptToInvalidate();
+        IonScript* ionScript = info.maybeIonScriptToInvalidate(types);
         if (!ionScript)
             continue;
 
@@ -2897,7 +2897,7 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
     
     
     for (const RecompileInfo& info : invalid) {
-        IonScript* ionScript = info.maybeIonScriptToInvalidate();
+        IonScript* ionScript = info.maybeIonScriptToInvalidate(types);
         if (!ionScript)
             continue;
 
@@ -2919,7 +2919,7 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
 
     
     for (const RecompileInfo& info : invalid) {
-        if (info.maybeIonScriptToInvalidate())
+        if (info.maybeIonScriptToInvalidate(types))
             ClearIonScriptAfterInvalidation(cx, info.script(), resetUses);
     }
 }
