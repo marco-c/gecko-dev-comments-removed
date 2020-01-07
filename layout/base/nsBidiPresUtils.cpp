@@ -4,12 +4,11 @@
 
 
 
-#include "nsBidiPresUtils.h"
-
 #include "mozilla/IntegerRange.h"
 
 #include "gfxContext.h"
 #include "nsAutoPtr.h"
+#include "nsBidiPresUtils.h"
 #include "nsFontMetrics.h"
 #include "nsGkAtoms.h"
 #include "nsPresContext.h"

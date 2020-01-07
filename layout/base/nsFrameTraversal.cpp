@@ -3,12 +3,10 @@
 
 
 
-
-#include "nsFrameTraversal.h"
-
 #include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
 
+#include "nsFrameTraversal.h"
 #include "nsFrameList.h"
 #include "nsPlaceholderFrame.h"
 #include "nsContainerFrame.h"

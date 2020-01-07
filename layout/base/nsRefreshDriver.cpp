@@ -17,8 +17,6 @@
 
 
 
-#include "nsRefreshDriver.h"
-
 #ifdef XP_WIN
 #include <windows.h>
 
@@ -32,6 +30,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/IntegerRange.h"
 #include "nsHostObjectProtocolHandler.h"
+#include "nsRefreshDriver.h"
 #include "nsITimer.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"

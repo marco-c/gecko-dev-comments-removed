@@ -6,8 +6,6 @@
 
 
 
-#include "nsFrameManager.h"
-
 #include "nscore.h"
 #include "nsIPresShell.h"
 #include "nsStyleContext.h"
@@ -27,6 +25,7 @@
 #include "nsAbsoluteContainingBlock.h"
 #include "ChildIterator.h"
 
+#include "nsFrameManager.h"
 #include "GeckoProfiler.h"
 #include "nsIStatefulFrame.h"
 #include "nsContainerFrame.h"
