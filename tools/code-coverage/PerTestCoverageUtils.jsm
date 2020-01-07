@@ -8,15 +8,25 @@
 
 var EXPORTED_SYMBOLS = ["PerTestCoverageUtils"];
 
-ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
-const tmp_gcov_dir = env.get("GCOV_PREFIX");
+const gcovPrefixPath = env.get("GCOV_PREFIX");
 
-const gcov_dir = env.get("GCOV_RESULTS_DIR");
+const gcovResultsPath = env.get("GCOV_RESULTS_DIR");
 
-const enabled = !!gcov_dir;
+const gcovPrefixDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+if (gcovPrefixPath) {
+  gcovPrefixDir.initWithPath(gcovPrefixPath);
+}
+
+let gcovResultsDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+if (gcovResultsPath) {
+  gcovResultsDir.initWithPath(gcovResultsPath);
+}
+
+const enabled = !!gcovResultsPath;
 
 function awaitPromise(promise) {
   let ret;
@@ -33,6 +43,20 @@ function awaitPromise(promise) {
   return ret;
 }
 
+function removeDirectoryContents(dir) {
+  let entries = dir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    entries.nextFile.remove(true);
+  }
+}
+
+function moveDirectoryContents(src, dst) {
+  let entries = src.directoryEntries;
+  while (entries.hasMoreElements()) {
+    entries.nextFile.moveTo(dst, null);
+  }
+}
+
 var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
   
   static async beforeTest() {
@@ -40,8 +64,15 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
       return;
     }
 
+    
     let codeCoverageService = Cc["@mozilla.org/tools/code-coverage;1"].getService(Ci.nsICodeCoverage);
     await codeCoverageService.resetCounters();
+
+    
+    removeDirectoryContents(gcovPrefixDir);
+
+    
+    moveDirectoryContents(gcovResultsDir, gcovPrefixDir);
   }
 
   static beforeTestSync() {
@@ -54,19 +85,12 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
       return;
     }
 
+    
     let codeCoverageService = Cc["@mozilla.org/tools/code-coverage;1"].getService(Ci.nsICodeCoverage);
     await codeCoverageService.dumpCounters();
 
-    let srcDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    srcDir.initWithPath(tmp_gcov_dir);
-
-    let destDir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    destDir.initWithPath(gcov_dir);
-
-    let srcDirEntries = srcDir.directoryEntries;
-    while (srcDirEntries.hasMoreElements()) {
-      srcDirEntries.nextFile.moveTo(destDir, null);
-    }
+    
+    moveDirectoryContents(gcovPrefixDir, gcovResultsDir);
   }
 
   static afterTestSync() {
