@@ -1192,21 +1192,6 @@ NewAddonId(JSContext* cx, const nsACString& id)
 }
 
 bool
-SetAddonInterposition(const nsACString& addonIdStr, nsIAddonInterposition* interposition)
-{
-    JSAddonId* addonId;
-    
-    
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(xpc::PrivilegedJunkScope()))
-        return false;
-    addonId = NewAddonId(jsapi.cx(), addonIdStr);
-    if (!addonId)
-        return false;
-    return XPCWrappedNativeScope::SetAddonInterposition(jsapi.cx(), addonId, interposition);
-}
-
-bool
 AllowCPOWsInAddon(const nsACString& addonIdStr, bool allow)
 {
     JSAddonId* addonId;

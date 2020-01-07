@@ -13,7 +13,6 @@
 #include "ExpandedPrincipal.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
-#include "nsIAddonInterposition.h"
 #include "nsIXULRuntime.h"
 #include "mozJSComponentLoader.h"
 
@@ -28,8 +27,6 @@ using namespace JS;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nullptr;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nullptr;
 bool XPCWrappedNativeScope::gShutdownObserverInitialized = false;
-XPCWrappedNativeScope::InterpositionMap* XPCWrappedNativeScope::gInterpositionMap = nullptr;
-InterpositionWhitelistArray* XPCWrappedNativeScope::gInterpositionWhitelists = nullptr;
 XPCWrappedNativeScope::AddonSet* XPCWrappedNativeScope::gAllowCPOWAddonSet = nullptr;
 
 NS_IMPL_ISUPPORTS(XPCWrappedNativeScope::ClearInterpositionsObserver, nsIObserver)
@@ -40,20 +37,6 @@ XPCWrappedNativeScope::ClearInterpositionsObserver::Observe(nsISupports* subject
                                                             const char16_t* data)
 {
     MOZ_ASSERT(strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0);
-
-    
-    
-    
-    
-    if (gInterpositionMap) {
-        delete gInterpositionMap;
-        gInterpositionMap = nullptr;
-    }
-
-    if (gInterpositionWhitelists) {
-        delete gInterpositionWhitelists;
-        gInterpositionWhitelists = nullptr;
-    }
 
     if (gAllowCPOWAddonSet) {
         delete gAllowCPOWAddonSet;
@@ -144,31 +127,7 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
         mUseContentXBLScope = principal && !nsContentUtils::IsSystemPrincipal(principal);
     }
 
-    JSAddonId* addonId = JS::AddonIdOfObject(aGlobal);
-    if (gInterpositionMap) {
-        bool isSystem = nsContentUtils::IsSystemPrincipal(principal);
-        bool waiveInterposition = priv->waiveInterposition;
-        InterpositionMap::Ptr interposition = gInterpositionMap->lookup(addonId);
-        if (!waiveInterposition && interposition) {
-            MOZ_RELEASE_ASSERT(isSystem);
-            mInterposition = interposition->value();
-            priv->hasInterposition = HasInterposition();
-        }
-        
-        if (!mInterposition && addonId && isSystem) {
-            bool interpositionEnabled = mozilla::Preferences::GetBool(
-                "extensions.interposition.enabled", false);
-            if (interpositionEnabled) {
-                mInterposition = do_GetService("@mozilla.org/addons/default-addon-shims;1");
-                MOZ_ASSERT(mInterposition);
-                priv->hasInterposition = true;
-                UpdateInterpositionWhitelist(cx, mInterposition);
-            }
-        }
-        MOZ_ASSERT(HasInterposition() == priv->hasInterposition);
-    }
-
-    if (addonId) {
+    if (JSAddonId* addonId = JS::AddonIdOfObject(aGlobal)) {
         
         priv->allowCPOWs = gAllowCPOWAddonSet ? gAllowCPOWAddonSet->has(addonId) : false;
         MOZ_ASSERT(!mozJSComponentLoader::Get()->IsLoaderGlobal(aGlobal),
@@ -775,31 +734,6 @@ XPCWrappedNativeScope::SetExpandoChain(JSContext* cx, HandleObject target,
 }
 
  bool
-XPCWrappedNativeScope::SetAddonInterposition(JSContext* cx,
-                                             JSAddonId* addonId,
-                                             nsIAddonInterposition* interp)
-{
-    if (!gInterpositionMap) {
-        gInterpositionMap = new InterpositionMap();
-        bool ok = gInterpositionMap->init();
-        NS_ENSURE_TRUE(ok, false);
-
-        if (!gShutdownObserverInitialized) {
-            gShutdownObserverInitialized = true;
-            nsContentUtils::RegisterShutdownObserver(new ClearInterpositionsObserver());
-        }
-    }
-    if (interp) {
-        bool ok = gInterpositionMap->put(addonId, interp);
-        NS_ENSURE_TRUE(ok, false);
-        UpdateInterpositionWhitelist(cx, interp);
-    } else {
-        gInterpositionMap->remove(addonId);
-    }
-    return true;
-}
-
- bool
 XPCWrappedNativeScope::AllowCPOWsInAddon(JSContext* cx,
                                          JSAddonId* addonId,
                                          bool allow)
@@ -823,121 +757,6 @@ XPCWrappedNativeScope::AllowCPOWsInAddon(JSContext* cx,
     return true;
 }
 
-nsCOMPtr<nsIAddonInterposition>
-XPCWrappedNativeScope::GetInterposition()
-{
-    return mInterposition;
-}
-
- InterpositionWhitelist*
-XPCWrappedNativeScope::GetInterpositionWhitelist(nsIAddonInterposition* interposition)
-{
-    if (!gInterpositionWhitelists)
-        return nullptr;
-
-    InterpositionWhitelistArray& wls = *gInterpositionWhitelists;
-    for (size_t i = 0; i < wls.Length(); i++) {
-        if (wls[i].interposition == interposition)
-            return &wls[i].whitelist;
-    }
-
-    return nullptr;
-}
-
- bool
-XPCWrappedNativeScope::UpdateInterpositionWhitelist(JSContext* cx,
-                                                    nsIAddonInterposition* interposition)
-{
-    
-    InterpositionWhitelist* whitelist = GetInterpositionWhitelist(interposition);
-    if (whitelist)
-        return true;
-
-    
-    
-    
-    static const size_t MAX_INTERPOSITION = 8;
-    if (!gInterpositionWhitelists)
-        gInterpositionWhitelists = new InterpositionWhitelistArray(MAX_INTERPOSITION);
-
-    MOZ_RELEASE_ASSERT(MAX_INTERPOSITION > gInterpositionWhitelists->Length() + 1);
-    InterpositionWhitelistPair* newPair = gInterpositionWhitelists->AppendElement();
-    newPair->interposition = interposition;
-    if (!newPair->whitelist.init()) {
-        JS_ReportOutOfMemory(cx);
-        return false;
-    }
-
-    whitelist = &newPair->whitelist;
-
-    RootedValue whitelistVal(cx);
-    nsresult rv = interposition->GetWhitelist(&whitelistVal);
-    if (NS_FAILED(rv)) {
-        JS_ReportErrorASCII(cx, "Could not get the whitelist from the interposition.");
-        return false;
-    }
-
-    if (!whitelistVal.isObject()) {
-        JS_ReportErrorASCII(cx, "Whitelist must be an array.");
-        return false;
-    }
-
-    
-    
-    
-    
-    RootedObject whitelistObj(cx, &whitelistVal.toObject());
-    whitelistObj = js::UncheckedUnwrap(whitelistObj);
-    if (!AccessCheck::isChrome(whitelistObj)) {
-        JS_ReportErrorASCII(cx, "Whitelist must be from system scope.");
-        return false;
-    }
-
-    {
-        JSAutoCompartment ac(cx, whitelistObj);
-
-        bool isArray;
-        if (!JS_IsArrayObject(cx, whitelistObj, &isArray))
-            return false;
-
-        if (!isArray) {
-            JS_ReportErrorASCII(cx, "Whitelist must be an array.");
-            return false;
-        }
-
-        uint32_t length;
-        if (!JS_GetArrayLength(cx, whitelistObj, &length))
-            return false;
-
-        for (uint32_t i = 0; i < length; i++) {
-            RootedValue idval(cx);
-            if (!JS_GetElement(cx, whitelistObj, i, &idval))
-                return false;
-
-            if (!idval.isString()) {
-                JS_ReportErrorASCII(cx, "Whitelist must contain strings only.");
-                return false;
-            }
-
-            RootedString str(cx, idval.toString());
-            str = JS_AtomizeAndPinJSString(cx, str);
-            if (!str) {
-                JS_ReportErrorASCII(cx, "String internization failed.");
-                return false;
-            }
-
-            
-            
-            jsid id = INTERNED_STRING_TO_JSID(cx, str);
-            if (!whitelist->put(JSID_BITS(id))) {
-                JS_ReportOutOfMemory(cx);
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
 
 
 

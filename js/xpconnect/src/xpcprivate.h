@@ -858,21 +858,9 @@ static inline bool IS_PROTO_CLASS(const js::Class* clazz)
            clazz == &XPC_WN_ModsAllowed_Proto_JSClass;
 }
 
-typedef js::HashSet<size_t,
-                    js::DefaultHasher<size_t>,
-                    js::SystemAllocPolicy> InterpositionWhitelist;
-
-struct InterpositionWhitelistPair {
-    nsIAddonInterposition* interposition;
-    InterpositionWhitelist whitelist;
-};
-
-typedef nsTArray<InterpositionWhitelistPair> InterpositionWhitelistArray;
 
 
 
-
-class nsIAddonInterposition;
 class nsXPCComponentsBase;
 class XPCWrappedNativeScope final
 {
@@ -986,11 +974,6 @@ public:
     static bool
     IsDyingScope(XPCWrappedNativeScope* scope);
 
-    typedef js::HashMap<JSAddonId*,
-                        nsCOMPtr<nsIAddonInterposition>,
-                        js::PointerHasher<JSAddonId*>,
-                        js::SystemAllocPolicy> InterpositionMap;
-
     typedef js::HashSet<JSAddonId*,
                         js::PointerHasher<JSAddonId*>,
                         js::SystemAllocPolicy> AddonSet;
@@ -1015,17 +998,6 @@ public:
 
     bool IsAddonScope() { return xpc::IsAddonCompartment(Compartment()); }
 
-    inline bool HasInterposition() { return mInterposition; }
-    nsCOMPtr<nsIAddonInterposition> GetInterposition();
-
-    static bool SetAddonInterposition(JSContext* cx,
-                                      JSAddonId* addonId,
-                                      nsIAddonInterposition* interp);
-
-    static InterpositionWhitelist* GetInterpositionWhitelist(nsIAddonInterposition* interposition);
-    static bool UpdateInterpositionWhitelist(JSContext* cx,
-                                             nsIAddonInterposition* interposition);
-
     static bool AllowCPOWsInAddon(JSContext* cx, JSAddonId* addonId, bool allow);
 
 protected:
@@ -1046,10 +1018,7 @@ private:
     static XPCWrappedNativeScope* gDyingScopes;
 
     static bool                      gShutdownObserverInitialized;
-    static InterpositionMap*         gInterpositionMap;
     static AddonSet*                 gAllowCPOWAddonSet;
-
-    static InterpositionWhitelistArray* gInterpositionWhitelists;
 
     Native2WrappedNativeMap*         mWrappedNativeMap;
     ClassInfo2WrappedNativeProtoMap* mWrappedNativeProtoMap;
@@ -1068,10 +1037,6 @@ private:
 
     
     nsTArray<JS::ObjectPtr>          mAddonScopes;
-
-    
-    
-    nsCOMPtr<nsIAddonInterposition>  mInterposition;
 
     JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
 
@@ -2749,7 +2714,6 @@ public:
         , wantComponents(true)
         , wantExportHelpers(false)
         , isWebExtensionContentScript(false)
-        , waiveInterposition(false)
         , proto(cx)
         , addonId(cx)
         , writeToGlobalPrototype(false)
@@ -2770,7 +2734,6 @@ public:
     bool wantComponents;
     bool wantExportHelpers;
     bool isWebExtensionContentScript;
-    bool waiveInterposition;
     JS::RootedObject proto;
     nsCString sandboxName;
     JS::RootedString addonId;
@@ -3039,21 +3002,6 @@ public:
     
     
     
-    bool hasInterposition;
-
-    
-    
-    
-    bool waiveInterposition;
-
-    
-    
-    
-    bool addonCallInterposition;
-
-    
-    
-    
     
     
     bool allowCPOWs;
@@ -3132,8 +3080,6 @@ public:
             return;
         locationURI = aLocationURI;
     }
-
-    void SetAddonCallInterposition() { addonCallInterposition = true; }
 
     JSObject2WrappedJSMap* GetWrappedJSMap() const { return mWrappedJSMap; }
     void UpdateWeakPointersAfterGC();
