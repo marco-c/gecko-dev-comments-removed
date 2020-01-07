@@ -5308,7 +5308,8 @@ pref("network.trr.confirmationNS", "example.com");
 
 pref("network.trr.bootstrapAddress", "");
 
-pref("network.trr.blacklist-duration", 1200);
+
+pref("network.trr.blacklist-duration", 60);
 
 pref("network.trr.request-timeout", 3000);
 
