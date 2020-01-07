@@ -54,7 +54,7 @@ ClientSourceOpChild::DoSourceOp(Method aMethod, const Args& aArgs)
   
   
   promise->Then(target, __func__,
-    [this, aArgs] (const mozilla::dom::ClientOpResult& aResult) {
+    [this] (const mozilla::dom::ClientOpResult& aResult) {
       mPromiseRequestHolder.Complete();
       Unused << PClientSourceOpChild::Send__delete__(this, aResult);
     },
