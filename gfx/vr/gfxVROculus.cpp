@@ -1582,6 +1582,9 @@ VRSystemManagerOculus::NotifyVSync()
   if (!mSession->IsTrackingReady()) {
     
     mDisplay = nullptr;
+    
+    
+    mSession->StopTracking();
   }
 }
 
@@ -1618,6 +1621,11 @@ VRSystemManagerOculus::Enumerate()
   if (mDisplay == nullptr && mSession->IsTrackingReady()) {
     
     mDisplay = new VRDisplayOculus(mSession);
+  }
+  if (mDisplay == nullptr) {
+    
+    
+    mSession->StopTracking();
   }
 }
 
