@@ -100,58 +100,56 @@ public:
   }
 };
 
-class StreamOptimizationTypeInfoOp : public JS::ForEachTrackedOptimizationTypeInfoOp
+struct TypeInfo
 {
-  JSONWriter& mWriter;
-  UniqueJSONStrings& mUniqueStrings;
-  bool mStartedTypeList;
-
-public:
-  StreamOptimizationTypeInfoOp(JSONWriter& aWriter, UniqueJSONStrings& aUniqueStrings)
-    : mWriter(aWriter)
-    , mUniqueStrings(aUniqueStrings)
-    , mStartedTypeList(false)
-  { }
-
-  void readType(const char* keyedBy, const char* name,
-                const char* location, const Maybe<unsigned>& lineno) override {
-    if (!mStartedTypeList) {
-      mStartedTypeList = true;
-      mWriter.StartObjectElement();
-      mWriter.StartArrayProperty("typeset");
-    }
-
-    mWriter.StartObjectElement();
-    {
-      mUniqueStrings.WriteProperty(mWriter, "keyedBy", keyedBy);
-      if (name) {
-        mUniqueStrings.WriteProperty(mWriter, "name", name);
-      }
-      if (location) {
-        mUniqueStrings.WriteProperty(mWriter, "location", location);
-      }
-      if (lineno.isSome()) {
-        mWriter.IntProperty("line", *lineno);
-      }
-    }
-    mWriter.EndObject();
-  }
-
-  void operator()(JS::TrackedTypeSite site, const char* mirType) override {
-    if (mStartedTypeList) {
-      mWriter.EndArray();
-      mStartedTypeList = false;
-    } else {
-      mWriter.StartObjectElement();
-    }
-
-    {
-      mUniqueStrings.WriteProperty(mWriter, "site", JS::TrackedTypeSiteString(site));
-      mUniqueStrings.WriteProperty(mWriter, "mirType", mirType);
-    }
-    mWriter.EndObject();
-  }
+  Maybe<nsCString> mKeyedBy;
+  Maybe<nsCString> mName;
+  Maybe<nsCString> mLocation;
+  Maybe<unsigned> mLineNumber;
 };
+
+template<typename LambdaT>
+class ForEachTrackedOptimizationTypeInfoLambdaOp : public JS::ForEachTrackedOptimizationTypeInfoOp
+{
+public:
+  
+  
+  
+  
+  explicit ForEachTrackedOptimizationTypeInfoLambdaOp(LambdaT&& aLambda)
+    : mLambda(aLambda)
+  {}
+
+  
+  
+  void readType(const char* keyedBy, const char* name,
+                const char* location, const Maybe<unsigned>& lineno) override
+  {
+    TypeInfo info = {
+      keyedBy ? Some(nsCString(keyedBy)) : Nothing(),
+      name ? Some(nsCString(name)) : Nothing(),
+      location ? Some(nsCString(location)) : Nothing(),
+      lineno
+    };
+    mTypesetForUpcomingEntry.AppendElement(Move(info));
+  }
+
+  void operator()(JS::TrackedTypeSite site, const char* mirType) override
+  {
+    nsTArray<TypeInfo> typeset(Move(mTypesetForUpcomingEntry));
+    mLambda(site, mirType, typeset);
+  }
+
+private:
+  nsTArray<TypeInfo> mTypesetForUpcomingEntry;
+  LambdaT mLambda;
+};
+
+template<typename LambdaT> ForEachTrackedOptimizationTypeInfoLambdaOp<LambdaT>
+MakeForEachTrackedOptimizationTypeInfoLambdaOp(LambdaT&& aLambda)
+{
+  return ForEachTrackedOptimizationTypeInfoLambdaOp<LambdaT>(Move(aLambda));
+}
 
 
 
@@ -443,8 +441,43 @@ StreamJITFrameOptimizations(SpliceableJSONWriter& aWriter,
   {
     aWriter.StartArrayProperty("types");
     {
-      StreamOptimizationTypeInfoOp typeInfoOp(aWriter, aUniqueStrings);
-      aJITFrame.forEachOptimizationTypeInfo(typeInfoOp);
+      auto op = MakeForEachTrackedOptimizationTypeInfoLambdaOp(
+        [&](JS::TrackedTypeSite site, const char* mirType,
+            const nsTArray<TypeInfo>& typeset) {
+          aWriter.StartObjectElement();
+          {
+            aUniqueStrings.WriteProperty(aWriter, "site",
+                                        JS::TrackedTypeSiteString(site));
+            aUniqueStrings.WriteProperty(aWriter, "mirType", mirType);
+
+            if (!typeset.IsEmpty()) {
+              aWriter.StartArrayProperty("typeset");
+              for (const TypeInfo& typeInfo : typeset) {
+                aWriter.StartObjectElement();
+                {
+                  aUniqueStrings.WriteProperty(aWriter, "keyedBy",
+                                              typeInfo.mKeyedBy->get());
+                  if (typeInfo.mName) {
+                    aUniqueStrings.WriteProperty(aWriter, "name",
+                                                typeInfo.mName->get());
+                  }
+                  if (typeInfo.mLocation) {
+                    aUniqueStrings.WriteProperty(aWriter, "location",
+                                                typeInfo.mLocation->get());
+                  }
+                  if (typeInfo.mLineNumber.isSome()) {
+                    aWriter.IntProperty("line", *typeInfo.mLineNumber);
+                  }
+                }
+                aWriter.EndObject();
+              }
+              aWriter.EndArray();
+            }
+
+          }
+          aWriter.EndObject();
+        });
+      aJITFrame.forEachOptimizationTypeInfo(op);
     }
     aWriter.EndArray();
 
