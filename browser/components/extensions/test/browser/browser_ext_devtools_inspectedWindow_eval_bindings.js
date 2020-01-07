@@ -121,58 +121,45 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
     let {jsterm} = hud;
 
     
-    if (jsterm.hud.NEW_CONSOLE_OUTPUT_ENABLED === true) {
-      
-      const messageNode = await new Promise(resolve => {
-        jsterm.hud.on("new-messages", function onThisMessage(messages) {
-          for (let m of messages) {
-            resolve(m.node);
-            jsterm.hud.off("new-messages", onThisMessage);
-            return;
-          }
-        });
+    const messageNode = await new Promise(resolve => {
+      jsterm.hud.on("new-messages", function onThisMessage(messages) {
+        for (let m of messages) {
+          resolve(m.node);
+          jsterm.hud.off("new-messages", onThisMessage);
+          return;
+        }
       });
-      let objectInspectors = [...messageNode.querySelectorAll(".tree")];
-      is(objectInspectors.length, 1, "There is the expected number of object inspectors");
+    });
+    let objectInspectors = [...messageNode.querySelectorAll(".tree")];
+    is(objectInspectors.length, 1, "There is the expected number of object inspectors");
 
+    
+    const [oi] = objectInspectors;
+    let nodes = oi.querySelectorAll(".node");
+
+    ok(nodes.length >= 1, "The object preview is rendered as expected");
+
+    
+    if (nodes.length === 1) {
+      info("Waiting for the object properties to be displayed");
       
-      const [oi] = objectInspectors;
-      let nodes = oi.querySelectorAll(".node");
-
-      ok(nodes.length >= 1, "The object preview is rendered as expected");
-
-      
-      if (nodes.length === 1) {
-        info("Waiting for the object properties to be displayed");
-        
-        await new Promise(resolve => {
-          const observer = new MutationObserver(mutations => {
-            resolve();
-            observer.disconnect();
-          });
-          observer.observe(oi, {childList: true});
+      await new Promise(resolve => {
+        const observer = new MutationObserver(mutations => {
+          resolve();
+          observer.disconnect();
         });
-
-        
-        nodes = oi.querySelectorAll(".node");
-      }
-
-      
-      
-      
-      
-      is(nodes.length, 3, "The object preview has the expected number of nodes");
-    } else {
-      const options = await new Promise(resolve => {
-        jsterm.once("variablesview-open", (view, options) => resolve(options));
+        observer.observe(oi, {childList: true});
       });
 
-      const objectType = options.objectActor.type;
-      const objectPreviewProperties = options.objectActor.preview.ownProperties;
-      is(objectType, "object", "The inspected object has the expected type");
-      Assert.deepEqual(Object.keys(objectPreviewProperties), ["testkey"],
-                       "The inspected object has the expected preview properties");
+      
+      nodes = oi.querySelectorAll(".node");
     }
+
+    
+    
+    
+    
+    is(nodes.length, 3, "The object preview has the expected number of nodes");
   })();
 
   const inspectJSObjectPromise = extension.awaitMessage(`inspectedWindow-eval-result`);
