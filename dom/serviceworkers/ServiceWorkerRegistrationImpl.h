@@ -89,7 +89,7 @@ private:
   void
   RegistrationRemovedInternal();
 
-  RefPtr<ServiceWorkerRegistration> mOuter;
+  ServiceWorkerRegistration* mOuter;
   const nsString mScope;
   bool mListeningForEvents;
 };
@@ -153,12 +153,7 @@ private:
   WorkerPrivate*
   GetWorkerPrivate(const MutexAutoLock& aProofOfLock);
 
-  
-  
-  
-  
-  RefPtr<ServiceWorkerRegistration> mOuter;
-
+  ServiceWorkerRegistration* mOuter;
   const nsString mScope;
   RefPtr<WorkerListener> mListener;
   RefPtr<WeakWorkerRef> mWorkerRef;

@@ -88,12 +88,13 @@ void
 ServiceWorkerRegistrationMainThread::RegistrationRemovedInternal()
 {
   MOZ_ASSERT(NS_IsMainThread());
-
+  
+  
+  
+  if (mOuter) {
+    mOuter->RegistrationRemoved();
+  }
   StopListeningForEvents();
-
-  
-  
-  mOuter = nullptr;
 }
 
 void
@@ -624,10 +625,7 @@ already_AddRefed<Promise>
 ServiceWorkerRegistrationMainThread::Update(ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mOuter) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mOuter);
 
   nsCOMPtr<nsIGlobalObject> go = mOuter->GetParentObject();
   if (!go) {
@@ -654,10 +652,7 @@ already_AddRefed<Promise>
 ServiceWorkerRegistrationMainThread::Unregister(ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mOuter) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mOuter);
 
   nsCOMPtr<nsIGlobalObject> go = mOuter->GetParentObject();
   if (!go) {
@@ -726,10 +721,7 @@ ServiceWorkerRegistrationMainThread::ShowNotification(JSContext* aCx,
                                                       ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mOuter) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mOuter);
 
   nsCOMPtr<nsPIDOMWindowInner> window = mOuter->GetOwner();
   if (NS_WARN_IF(!window)) {
@@ -763,10 +755,8 @@ already_AddRefed<Promise>
 ServiceWorkerRegistrationMainThread::GetNotifications(const GetNotificationOptions& aOptions, ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mOuter) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mOuter);
+
   nsCOMPtr<nsPIDOMWindowInner> window = mOuter->GetOwner();
   if (NS_WARN_IF(!window)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -780,11 +770,7 @@ ServiceWorkerRegistrationMainThread::GetPushManager(JSContext* aCx,
                                                     ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (!mOuter) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return nullptr;
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mOuter);
 
   nsCOMPtr<nsIGlobalObject> globalObject = mOuter->GetParentObject();
 
@@ -917,7 +903,12 @@ ServiceWorkerRegistrationWorkerThread::~ServiceWorkerRegistrationWorkerThread()
 void
 ServiceWorkerRegistrationWorkerThread::RegistrationRemoved()
 {
-  mOuter = nullptr;
+  
+  
+  
+  if (mOuter) {
+    mOuter->RegistrationRemoved();
+  }
 }
 
 void

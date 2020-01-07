@@ -83,6 +83,9 @@ public:
 
   void DisconnectFromOwner() override;
 
+  void
+  RegistrationRemoved();
+
   already_AddRefed<ServiceWorker>
   GetInstalling() const;
 
@@ -131,10 +134,6 @@ private:
   ~ServiceWorkerRegistration();
 
   ServiceWorkerRegistrationDescriptor mDescriptor;
-
-  
-  
-  
   RefPtr<Inner> mInner;
 
   RefPtr<ServiceWorker> mInstallingWorker;
