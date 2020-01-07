@@ -784,7 +784,7 @@ ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
 
       
       
-      nsRect previousVisible = wrapperItem->GetChildren()->GetBounds(&aBuilder);
+      nsRect previousVisible = wrapperItem->GetVisibleRectForChildren();
       if (wrapperItem->ReferenceFrameForChildren() == wrapperItem->ReferenceFrame()) {
         previousVisible -= wrapperItem->ToReferenceFrame();
       } else {
