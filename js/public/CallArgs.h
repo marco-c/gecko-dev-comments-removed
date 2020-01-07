@@ -345,49 +345,4 @@ CallArgsFromSp(unsigned stackSlots, Value* sp, bool constructing = false,
 
 } 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MOZ_ALWAYS_INLINE JS::Value
-JS_THIS(JSContext* cx, JS::Value* vp)
-{
-    return vp[1].isPrimitive() ? JS::detail::ComputeThis(cx, vp) : vp[1];
-}
-
-
-
-
-
-
-
-
-#define JS_THIS_OBJECT(cx,vp)   (JS_THIS(cx,vp).toObjectOrNull())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define JS_THIS_VALUE(cx,vp)    ((vp)[1])
-
 #endif 
