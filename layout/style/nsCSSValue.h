@@ -1206,10 +1206,11 @@ struct nsCSSValueSharedList final {
   {
   }
 
-  
+private:
   
   ~nsCSSValueSharedList();
 
+public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsCSSValueSharedList)
 
   void AppendToString(nsCSSPropertyID aProperty, nsAString& aResult) const;
