@@ -318,6 +318,13 @@ nsHttpHandler::SetFastOpenOSSupport()
     return;
 #elif defined(XP_WIN)
     mFastOpenSupported = IsWindows10BuildOrLater(16299);
+
+    if (mFastOpenSupported) {
+        
+        if (GetModuleHandleW(L"pmls64.dll") || GetModuleHandleW(L"rlls64.dll")) {
+            mFastOpenSupported = false;
+        }
+    }
 #else
 
     nsAutoCString version;
