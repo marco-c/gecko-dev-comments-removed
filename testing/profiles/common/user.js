@@ -1,6 +1,7 @@
 
 
 user_pref("app.update.enabled", false);
+user_pref("browser.chrome.guess_favicon", false);
 user_pref("browser.dom.window.dump.enabled", true);
 
 user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
