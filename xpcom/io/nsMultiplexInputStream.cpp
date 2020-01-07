@@ -333,6 +333,11 @@ nsMultiplexInputStream::Available(uint64_t* aResult)
     if (rv == NS_BASE_STREAM_CLOSED) {
       
       
+      if (mCurrentStream == i) {
+        ++mCurrentStream;
+      }
+
+      
       continue;
     }
 
