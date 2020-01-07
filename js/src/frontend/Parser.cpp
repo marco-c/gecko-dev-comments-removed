@@ -2300,9 +2300,9 @@ ParserBase::hasUsedFunctionSpecialName(HandlePropertyName name)
     return hasUsedName(name) || pc->functionBox()->bindingsAccessedDynamically();
 }
 
-template <class ParseHandler, typename CharT>
+template <class ParseHandler>
 bool
-GeneralParser<ParseHandler, CharT>::declareFunctionThis()
+PerHandlerParser<ParseHandler>::declareFunctionThis()
 {
     
     
