@@ -571,7 +571,16 @@ class JSString : public js::gc::Cell
         else
             kind = AllocKind::STRING;
 
-        MOZ_ASSERT_IF(isTenured(), kind == asTenured().getAllocKind());
+#if DEBUG
+        if (isTenured()) {
+            
+            
+            
+            AllocKind tenuredKind = asTenured().getAllocKind();
+            MOZ_ASSERT(kind == tenuredKind ||
+                       (tenuredKind == AllocKind::EXTERNAL_STRING && kind == AllocKind::STRING));
+        }
+#endif
         return kind;
     }
 
@@ -1047,6 +1056,11 @@ class JSExternalString : public JSLinearString
     
 
     inline void finalize(js::FreeOp* fop);
+
+    
+
+
+
 
     JSFlatString* ensureFlat(JSContext* cx);
 

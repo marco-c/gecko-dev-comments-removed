@@ -1106,6 +1106,8 @@ JSExternalString::ensureFlat(JSContext* cx)
     finalize(cx->runtime()->defaultFreeOp());
 
     
+    
+    
     setNonInlineChars<char16_t>(s);
     d.u1.flags = FLAT_FLAGS;
 
