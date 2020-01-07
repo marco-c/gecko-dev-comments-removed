@@ -65,7 +65,11 @@ Clients::Get(const nsAString& aClientID, ErrorResult& aRv)
   }
 
   nsID id;
-  if (!id.Parse(NS_ConvertUTF16toUTF8(aClientID).get())) {
+  
+  
+  
+  if (aClientID.IsEmpty() || aClientID.CharAt(0) == '{' ||
+      !id.Parse(NS_ConvertUTF16toUTF8(aClientID).get())) {
     
     
     outerPromise->MaybeResolveWithUndefined();
