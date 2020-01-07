@@ -33,6 +33,7 @@ namespace dom {
 class CSSImportRule;
 class CSSRuleList;
 class MediaList;
+class ShadowRoot;
 class SRIMetadata;
 } 
 
@@ -278,6 +279,8 @@ public:
   }
 
 private:
+  dom::ShadowRoot* GetContainingShadow() const;
+
   
   
   inline StyleSheetInfo& SheetInfo();
@@ -296,6 +299,8 @@ protected:
 
   
   void RuleRemoved(css::Rule&);
+
+  void ApplicableStateChanged(bool aApplicable);
 
   
   void EnabledStateChanged();
