@@ -45,6 +45,8 @@ user_pref("browser.safebrowsing.provider.google4.updateURL", "http://{server}/sa
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
 user_pref("browser.search.suggest.timeout", 10000); 
+
+user_pref("browser.sessionstore.debug_logging", true);
 user_pref("browser.snippets.firstrunHomepage.enabled", false);
 user_pref("browser.startup.page", 0); 
 
