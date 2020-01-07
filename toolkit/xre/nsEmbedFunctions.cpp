@@ -90,9 +90,8 @@
 #include "mozilla/Preferences.h"
 #endif
 
-#if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 #include "mozilla/Sandbox.h"
-#include "mozilla/SandboxInfo.h"
 #endif
 
 #if defined(XP_LINUX)
@@ -351,8 +350,8 @@ XRE_InitChildProcess(int aArgc,
   MOZ_ASSERT(aChildData);
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-    
-    mozilla::SandboxEarlyInit(XRE_GetProcessType());
+  
+  mozilla::SandboxEarlyInit();
 #endif
 
 #ifdef MOZ_JPROF

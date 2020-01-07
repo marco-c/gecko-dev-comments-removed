@@ -18,7 +18,8 @@
 namespace mozilla {
 
 
-MOZ_EXPORT void SandboxEarlyInit(GeckoProcessType aType);
+
+MOZ_EXPORT void SandboxEarlyInit();
 
 #ifdef MOZ_CONTENT_SANDBOX
 

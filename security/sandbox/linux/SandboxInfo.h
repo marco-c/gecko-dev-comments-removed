@@ -41,7 +41,6 @@ public:
     
     kPermissive        = 1 << 7,
     
-    kUnexpectedThreads = 1 << 8,
   };
 
   bool Test(Flags aFlag) const { return (mFlags & aFlag) == aFlag; }
@@ -63,17 +62,9 @@ public:
     return mFlags;
   }
 
-  
-  
-  
-  
-  
-  
-  static MOZ_EXPORT void ThreadingCheck();
 private:
   enum Flags mFlags;
-  
-  static MOZ_EXPORT SandboxInfo sSingleton;
+  static const MOZ_EXPORT SandboxInfo sSingleton;
   SandboxInfo();
 };
 

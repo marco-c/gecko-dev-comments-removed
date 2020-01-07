@@ -6,10 +6,8 @@
 
 #include "Sandbox.h"
 
-#include "LinuxCapabilities.h"
 #include "LinuxSched.h"
 #include "SandboxBrokerClient.h"
-#include "SandboxChroot.h"
 #include "SandboxFilter.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
@@ -17,7 +15,6 @@
 #include "SandboxOpenedFiles.h"
 #endif
 #include "SandboxReporterClient.h"
-#include "SandboxUtil.h"
 
 #include <dirent.h>
 #ifdef NIGHTLY_BUILD
@@ -44,6 +41,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "prenv.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/linux/bpf_dsl/dump_bpf.h"
 #include "sandbox/linux/bpf_dsl/policy.h"
@@ -88,7 +86,6 @@ static bool gSandboxCrashOnError = false;
 SandboxCrashFunc gSandboxCrashFunc;
 
 static SandboxReporterClient* gSandboxReporterClient;
-static UniquePtr<SandboxChroot> gChrootHelper;
 static void (*gChromiumSigSysHandler)(int, siginfo_t*, void*);
 
 
@@ -303,10 +300,6 @@ SetThreadSandboxHandler(int signum)
 static void
 EnterChroot()
 {
-  if (gChrootHelper) {
-    gChrootHelper->Invoke();
-    gChrootHelper = nullptr;
-  }
 }
 
 static void
@@ -456,12 +449,77 @@ ApplySandboxWithTSync(sock_fprog* aFilter)
   }
 }
 
+#ifdef NIGHTLY_BUILD
+static bool
+IsLibPresent(const char* aName)
+{
+  if (const auto handle = dlopen(aName, RTLD_LAZY | RTLD_NOLOAD)) {
+    dlclose(handle);
+    return true;
+  }
+  return false;
+}
+
+static const Array<const char*, 1> kLibsThatWillCrash {
+  "libesets_pac.so",
+};
+#endif 
+
+void
+SandboxEarlyInit() {
+  
+  
+  if (!SandboxInfo::Get().Test(SandboxInfo::kHasSeccompTSync)) {
+    
+    
+    
+    const int tsyncSignum = FindFreeSignalNumber();
+    if (tsyncSignum == 0) {
+      SANDBOX_LOG_ERROR("No available signal numbers!");
+      MOZ_CRASH();
+    }
+    gSeccompTsyncBroadcastSignum = tsyncSignum;
+
+    
+    
+    
+    void (*oldHandler)(int);
+    oldHandler = signal(tsyncSignum, SetThreadSandboxHandler);
+    if (oldHandler != SIG_DFL) {
+      
+      SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n",
+                        tsyncSignum, oldHandler);
+      MOZ_CRASH();
+    }
+  }
+}
+
+static void
+SandboxLateInit() {
+#ifdef NIGHTLY_BUILD
+  gSandboxCrashOnError = true;
+  for (const char* name : kLibsThatWillCrash) {
+    if (IsLibPresent(name)) {
+      gSandboxCrashOnError = false;
+      break;
+    }
+  }
+#endif
+
+  if (const char* envVar = PR_GetEnv("MOZ_SANDBOX_CRASH_ON_ERROR")) {
+    if (envVar[0]) {
+      gSandboxCrashOnError = envVar[0] != '0';
+    }
+  }
+}
+
 
 static void
 SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 {
   MOZ_ASSERT(gSandboxCrashFunc);
   MOZ_RELEASE_ASSERT(gSandboxReporterClient != nullptr);
+  SandboxLateInit();
 
   
   
@@ -505,165 +563,6 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
       SANDBOX_LOG_ERROR("no tsync support; using signal broadcast");
     }
     BroadcastSetThreadSandbox(&fprog);
-  }
-  MOZ_RELEASE_ASSERT(!gChrootHelper, "forgot to chroot");
-}
-
-#ifdef NIGHTLY_BUILD
-static bool
-IsLibPresent(const char* aName)
-{
-  if (const auto handle = dlopen(aName, RTLD_LAZY | RTLD_NOLOAD)) {
-    dlclose(handle);
-    return true;
-  }
-  return false;
-}
-
-static const Array<const char*, 1> kLibsThatWillCrash {
-  "libesets_pac.so",
-};
-#endif 
-
-void
-SandboxEarlyInit(GeckoProcessType aType)
-{
-  const SandboxInfo info = SandboxInfo::Get();
-  if (info.Test(SandboxInfo::kUnexpectedThreads)) {
-    return;
-  }
-  MOZ_RELEASE_ASSERT(IsSingleThreaded());
-
-  
-  
-  
-  
-  
-  
-#ifdef NIGHTLY_BUILD
-  gSandboxCrashOnError = true;
-  for (const char* name : kLibsThatWillCrash) {
-    if (IsLibPresent(name)) {
-      gSandboxCrashOnError = false;
-      break;
-    }
-  }
-#endif
-  if (const char* envVar = getenv("MOZ_SANDBOX_CRASH_ON_ERROR")) {
-    if (envVar[0]) {
-      gSandboxCrashOnError = envVar[0] != '0';
-    }
-  }
-
-  
-  
-  bool canChroot = false;
-  bool canUnshareNet = false;
-  bool canUnshareIPC = false;
-
-  switch (aType) {
-  case GeckoProcessType_Default:
-    MOZ_ASSERT(false, "SandboxEarlyInit in parent process");
-    return;
-#ifdef MOZ_GMP_SANDBOX
-  case GeckoProcessType_GMPlugin:
-    if (!info.Test(SandboxInfo::kEnabledForMedia)) {
-      break;
-    }
-    canUnshareNet = true;
-    canUnshareIPC = true;
-    
-    canChroot = info.Test(SandboxInfo::kHasSeccompBPF);
-    break;
-#endif
-    
-    
-  default:
-    
-    break;
-  }
-
-  
-  
-  if (!info.Test(SandboxInfo::kHasSeccompTSync)) {
-    const int tsyncSignum = FindFreeSignalNumber();
-    if (tsyncSignum == 0) {
-      SANDBOX_LOG_ERROR("No available signal numbers!");
-      MOZ_CRASH();
-    }
-    gSeccompTsyncBroadcastSignum = tsyncSignum;
-
-    void (*oldHandler)(int);
-    oldHandler = signal(tsyncSignum, SetThreadSandboxHandler);
-    if (oldHandler != SIG_DFL) {
-      
-      SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n",
-                        tsyncSignum, oldHandler);
-      MOZ_CRASH();
-    }
-  }
-
-  
-  if (!canChroot && !canUnshareNet && !canUnshareIPC) {
-    return;
-  }
-
-  {
-    LinuxCapabilities existingCaps;
-    if (existingCaps.GetCurrent() && existingCaps.AnyEffective()) {
-      SANDBOX_LOG_ERROR("PLEASE DO NOT RUN THIS AS ROOT.  Strange things may"
-                        " happen when capabilities are dropped.");
-    }
-  }
-
-  
-  if (!info.Test(SandboxInfo::kHasUserNamespaces)) {
-    
-    
-    
-    
-    
-    LinuxCapabilities().SetCurrent();
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (!UnshareUserNamespace()) {
-    SANDBOX_LOG_ERROR("unshare(CLONE_NEWUSER): %s", strerror(errno));
-    
-    
-    MOZ_CRASH("unshare(CLONE_NEWUSER)");
-  }
-  
-  
-
-  if (canUnshareIPC && syscall(__NR_unshare, CLONE_NEWIPC) != 0) {
-    SANDBOX_LOG_ERROR("unshare(CLONE_NEWIPC): %s", strerror(errno));
-    MOZ_CRASH("unshare(CLONE_NEWIPC)");
-  }
-
-  if (canUnshareNet && syscall(__NR_unshare, CLONE_NEWNET) != 0) {
-    SANDBOX_LOG_ERROR("unshare(CLONE_NEWNET): %s", strerror(errno));
-    MOZ_CRASH("unshare(CLONE_NEWNET)");
-  }
-
-  if (canChroot) {
-    gChrootHelper = MakeUnique<SandboxChroot>();
-    if (!gChrootHelper->Prepare()) {
-      SANDBOX_LOG_ERROR("failed to set up chroot helper");
-      MOZ_CRASH("SandboxChroot::Prepare");
-    }
-  }
-
-  if (!LinuxCapabilities().SetCurrent()) {
-    SANDBOX_LOG_ERROR("dropping capabilities: %s", strerror(errno));
-    MOZ_CRASH("can't drop capabilities");
   }
 }
 
