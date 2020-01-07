@@ -1253,6 +1253,18 @@ var gBrowserInit = {
     if (AppConstants.CAN_DRAW_IN_TITLEBAR) {
       gDragSpaceObserver.init();
     }
+
+    
+    
+    this._callWithURIToLoad(uriToLoad => {
+      if (uriToLoad == "about:home") {
+        gBrowser.setIcon(gBrowser.selectedTab, "chrome://branding/content/icon32.png");
+      } else if (uriToLoad == "about:privatebrowsing") {
+        gBrowser.setIcon(gBrowser.selectedTab, "chrome://browser/skin/privatebrowsing/favicon.svg");
+      }
+    });
+
+    this._setInitialFocus();
   },
 
   onLoad() {
@@ -1351,18 +1363,6 @@ var gBrowserInit = {
         Cu.reportError(e);
       }
     }
-
-    this._setInitialFocus();
-
-    
-    
-    this._callWithURIToLoad(uriToLoad => {
-      if (uriToLoad == "about:home") {
-        gBrowser.setIcon(gBrowser.selectedTab, "chrome://branding/content/icon32.png");
-      } else if (uriToLoad == "about:privatebrowsing") {
-        gBrowser.setIcon(gBrowser.selectedTab, "chrome://browser/skin/privatebrowsing/favicon.svg");
-      }
-    });
 
     
     this._boundDelayedStartup = this._delayedStartup.bind(this);
