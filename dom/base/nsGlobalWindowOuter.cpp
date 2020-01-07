@@ -215,7 +215,6 @@
 #include "nsRefreshDriver.h"
 #include "Layers.h"
 
-#include "mozilla/AddonPathService.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
@@ -1639,14 +1638,6 @@ CreateNativeGlobalForInner(JSContext* aCx,
 
   SelectZoneGroup(aNewInner, options.creationOptions());
 
-  
-  
-  
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    options.creationOptions().setAddonId(MapURIToAddonID(aURI));
-    options.creationOptions().setClampAndJitterTime(false);
-  }
-
   options.creationOptions().setSecureContext(aIsSecureContext);
 
   xpc::InitGlobalObjectOptions(options, aPrincipal);
@@ -1863,7 +1854,6 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
         if (currentInner->mPerformance) {
           newInnerWindow->mPerformance =
             Performance::CreateForMainThread(newInnerWindow->AsInner(),
-                                             aDocument->NodePrincipal(),
                                              currentInner->mPerformance->GetDOMTiming(),
                                              currentInner->mPerformance->GetChannel());
         }

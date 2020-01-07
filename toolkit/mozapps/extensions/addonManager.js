@@ -70,14 +70,6 @@ amManager.prototype = {
     }
   },
 
-  
-
-
-  mapURIToAddonID(uri, id) {
-    id.value = AddonManager.mapURIToAddonID(uri);
-    return !!id.value;
-  },
-
   installAddonFromWebpage(aMimetype, aBrowser, aInstallingPrincipal,
                                     aUri, aHash, aName, aIcon, aCallback) {
     let retval = true;

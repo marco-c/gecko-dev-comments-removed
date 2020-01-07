@@ -1802,36 +1802,6 @@ var AddonManagerInternal = {
 
 
 
-
-
-
-
-
-  mapURIToAddonID(aURI) {
-    if (!(aURI instanceof Ci.nsIURI)) {
-      throw Components.Exception("aURI is not a nsIURI",
-                                 Cr.NS_ERROR_INVALID_ARG);
-    }
-
-    
-    let providers = [...this.providers];
-    for (let provider of providers) {
-      var id = callProvider(provider, "mapURIToAddonID", null, aURI);
-      if (id !== null) {
-        return id;
-      }
-    }
-
-    return null;
-  },
-
-  
-
-
-
-
-
-
   isInstallEnabled(aMimetype) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
@@ -3519,10 +3489,6 @@ var AddonManager = {
     return promiseOrCallback(
       AddonManagerInternal.getAllInstalls(),
       aCallback);
-  },
-
-  mapURIToAddonID(aURI) {
-    return AddonManagerInternal.mapURIToAddonID(aURI);
   },
 
   isInstallEnabled(aType) {
