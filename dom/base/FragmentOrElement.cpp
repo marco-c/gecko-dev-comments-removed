@@ -184,108 +184,35 @@ nsIContent::GetAssignedSlotByMode() const
 }
 
 nsINode*
-nsIContent::GetFlattenedTreeParentForMaybeAssignedNode() const
+nsIContent::GetFlattenedTreeParentForDocumentElementNAC() const
 {
-  if (HTMLSlotElement* assignedSlot = GetAssignedSlot()) {
-    return assignedSlot;
-  }
+  MOZ_ASSERT(IsRootOfNativeAnonymousSubtree());
+  MOZ_ASSERT(GetParent());
+  MOZ_ASSERT(GetParent() == OwnerDoc()->GetRootElement());
+  MOZ_ASSERT(!IsGeneratedContentContainerForAfter());
+  MOZ_ASSERT(!IsGeneratedContentContainerForBefore());
 
-  HTMLSlotElement* parentSlot = HTMLSlotElement::FromContent(GetParent());
-  if (!parentSlot) {
-    return nullptr;
-  }
-
-  
-  MOZ_ASSERT(parentSlot->AssignedNodes().IsEmpty());
-
-  return parentSlot;
-}
-
-nsINode*
-nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
-{
-  nsINode* parentNode = GetParentNode();
-  if (!parentNode || !parentNode->IsContent()) {
-    MOZ_ASSERT(!parentNode || parentNode == OwnerDoc());
-    return parentNode;
-  }
-  nsIContent* parent = parentNode->AsContent();
-
-  
-  
-  
-  
-  
-  
-  
-  if (aType == eForStyle &&
-      IsRootOfNativeAnonymousSubtree() &&
-      OwnerDoc()->GetRootElement() == parent) {
-    
-    
-    if (IsGeneratedContentContainerForBefore() ||
-        IsGeneratedContentContainerForAfter()) {
-      return parent;
-    }
-
-    AutoTArray<nsIContent*, 8> rootElementNAC;
-    nsContentUtils::AppendNativeAnonymousChildren(
-        parent, rootElementNAC, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
-    bool isDocLevelNAC = !rootElementNAC.Contains(this);
+  nsIContent* parent = GetParent();
+  AutoTArray<nsIContent*, 8> rootElementNAC;
+  nsContentUtils::AppendNativeAnonymousChildren(
+    parent, rootElementNAC, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
+  const bool isDocLevelNAC = !rootElementNAC.Contains(this);
 
 #ifdef DEBUG
-    {
-      
-      
-      
-      
-      AutoTArray<nsIContent*, 8> docLevelNAC;
-      nsContentUtils::AppendDocumentLevelNativeAnonymousContentTo(OwnerDoc(), docLevelNAC);
-      nsIPresShell* shell = OwnerDoc()->GetShell();
-      MOZ_ASSERT_IF(shell && shell->GetRootScrollFrame(),
-                    isDocLevelNAC == docLevelNAC.Contains(this));
-    }
+  {
+    
+    
+    
+    
+    AutoTArray<nsIContent*, 8> docLevelNAC;
+    nsContentUtils::AppendDocumentLevelNativeAnonymousContentTo(OwnerDoc(), docLevelNAC);
+    nsIPresShell* shell = OwnerDoc()->GetShell();
+    MOZ_ASSERT_IF(shell && shell->GetRootScrollFrame(),
+                  isDocLevelNAC == docLevelNAC.Contains(this));
+  }
 #endif
 
-    if (isDocLevelNAC) {
-      return OwnerDoc();
-    }
-  }
-
-  if (IsRootOfAnonymousSubtree()) {
-    return parent;
-  }
-
-  if (nsContentUtils::HasDistributedChildren(parent)) {
-    return GetFlattenedTreeParentForMaybeAssignedNode();
-  }
-
-  if (HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
-      parent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
-    
-    
-    
-    
-    
-    if (nsIContent* insertionPoint = GetXBLInsertionPoint()) {
-      parent = insertionPoint->GetParent();
-      MOZ_ASSERT(parent);
-    } else if (parent->OwnerDoc()->BindingManager()->GetBindingWithContent(parent)) {
-      
-      
-      return nullptr;
-    }
-  }
-
-  
-  
-  if (parent->IsInShadowTree()) {
-    if (ShadowRoot* parentShadowRoot = ShadowRoot::FromNode(parent)) {
-      return parentShadowRoot->GetHost();
-    }
-  }
-
-  return parent;
+  return isDocLevelNAC ? OwnerDocAsNode() : parent;
 }
 
 nsIContent::IMEState
@@ -2378,8 +2305,7 @@ FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML, ErrorResult
   nsAtom* contextLocalName = NodeInfo()->NameAtom();
   int32_t contextNameSpaceID = GetNameSpaceID();
 
-  ShadowRoot* shadowRoot = ShadowRoot::FromNode(this);
-  if (shadowRoot) {
+  if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(this)) {
     
     contextLocalName = shadowRoot->GetHost()->NodeInfo()->NameAtom();
     contextNameSpaceID = shadowRoot->GetHost()->GetNameSpaceID();

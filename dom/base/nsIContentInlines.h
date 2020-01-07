@@ -13,6 +13,8 @@
 #include "nsAtom.h"
 #include "nsIFrame.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/ShadowRoot.h"
 
 inline bool
 nsIContent::IsInHTMLDocument() const
@@ -54,65 +56,81 @@ inline mozilla::dom::ShadowRoot* nsIContent::GetShadowRoot() const
     return nullptr;
   }
 
-  return AsElement()->FastGetShadowRoot();
+  return AsElement()->GetShadowRoot();
 }
 
-template<nsIContent::FlattenedParentType Type>
-static inline bool FlattenedTreeParentIsParent(const nsINode* aNode)
-{
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  if (aNode->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR | NODE_IS_IN_SHADOW_TREE)) {
-    return false;
-  }
-
-  
-  
-  
-  if (Type == nsIContent::eForStyle &&
-      aNode->HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT) &&
-      aNode->OwnerDoc()->GetRootElement() == aNode->GetParentNode())
-  {
-    return false;
-  }
-
-  
-  
-  
-  
-  nsIContent* parent = aNode->GetParent();
-  if (parent && (parent->GetShadowRoot() || parent->GetXBLBinding())) {
-    return false;
-  }
-
-  
-  return true;
-}
-
-template<nsIContent::FlattenedParentType Type>
+template<nsINode::FlattenedParentType aType>
 static inline nsINode*
 GetFlattenedTreeParentNode(const nsINode* aNode)
 {
-  if (MOZ_LIKELY(FlattenedTreeParentIsParent<Type>(aNode))) {
-    return aNode->GetParentNode();
+  if (!aNode->IsContent()) {
+    return nullptr;
   }
 
-  MOZ_ASSERT(aNode->IsContent());
-  return aNode->AsContent()->GetFlattenedTreeParentNodeInternal(Type);
+  nsINode* parent = aNode->GetParentNode();
+  if (!parent || !parent->IsContent()) {
+    return parent;
+  }
+
+  const nsIContent* content = aNode->AsContent();
+  nsIContent* parentAsContent = parent->AsContent();
+
+  if (aType == nsINode::eForStyle &&
+      content->IsRootOfNativeAnonymousSubtree() &&
+      parentAsContent == content->OwnerDoc()->GetRootElement() &&
+      !content->IsGeneratedContentContainerForAfter() &&
+      !content->IsGeneratedContentContainerForBefore()) {
+    return content->GetFlattenedTreeParentForDocumentElementNAC();
+  }
+
+  if (content->IsRootOfAnonymousSubtree()) {
+    return parent;
+  }
+
+  if (parentAsContent->GetShadowRoot()) {
+    
+    
+    return content->GetAssignedSlot();
+  }
+
+  if (parentAsContent->IsInShadowTree()) {
+    if (auto* slot = mozilla::dom::HTMLSlotElement::FromContent(parentAsContent)) {
+      
+      
+      return slot->AssignedNodes().IsEmpty()
+        ? parent
+        : nullptr;
+    }
+
+    if (auto* shadowRoot = mozilla::dom::ShadowRoot::FromNode(parentAsContent)) {
+      return shadowRoot->GetHost();
+    }
+  }
+
+  if (content->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
+      parent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
+    if (nsIContent* xblInsertionPoint = content->GetXBLInsertionPoint()) {
+      return xblInsertionPoint->GetParent();
+    }
+
+    if (parent->OwnerDoc()->BindingManager()->GetBindingWithContent(parentAsContent)) {
+      
+      
+      return nullptr;
+    }
+  }
+
+  MOZ_ASSERT(!parentAsContent->IsActiveChildrenElement(),
+             "<xbl:children> isn't in the flattened tree");
+
+  
+  return parent;
 }
 
 inline nsINode*
 nsINode::GetFlattenedTreeParentNode() const
 {
-  return ::GetFlattenedTreeParentNode<nsIContent::eNotForStyle>(this);
+  return ::GetFlattenedTreeParentNode<nsINode::eNotForStyle>(this);
 }
 
 inline nsIContent*
@@ -136,7 +154,7 @@ nsIContent::IsEventAttributeName(nsAtom* aName)
 inline nsINode*
 nsINode::GetFlattenedTreeParentNodeForStyle() const
 {
-  return ::GetFlattenedTreeParentNode<nsIContent::eForStyle>(this);
+  return ::GetFlattenedTreeParentNode<nsINode::eForStyle>(this);
 }
 
 inline bool

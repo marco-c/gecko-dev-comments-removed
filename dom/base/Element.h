@@ -1317,9 +1317,7 @@ public:
   
   already_AddRefed<ShadowRoot> CreateShadowRoot(ErrorResult& aError);
 
-  
-  
-  ShadowRoot* FastGetShadowRoot() const
+  ShadowRoot* GetShadowRoot() const
   {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     return slots ? slots->mShadowRoot.get() : nullptr;

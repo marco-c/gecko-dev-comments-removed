@@ -705,6 +705,14 @@ public:
     return IsMathMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
+  bool IsShadowRoot() const
+  {
+    const bool isShadowRoot = IsInShadowTree() && !GetParentNode();
+    MOZ_ASSERT_IF(isShadowRoot,
+                  NodeType() == nsIDOMNode::DOCUMENT_FRAGMENT_NODE);
+    return isShadowRoot;
+  }
+
   
 
 
@@ -941,6 +949,8 @@ public:
   {
     return mParent;
   }
+
+  enum FlattenedParentType { eNotForStyle, eForStyle };
 
   
 

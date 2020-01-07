@@ -534,7 +534,7 @@ public:
 
 
 
-  inline mozilla::dom::ShadowRoot *GetShadowRoot() const;
+  inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
 
   
 
@@ -605,11 +605,17 @@ public:
 
 
 
-  inline nsIContent *GetFlattenedTreeParent() const;
+  inline nsIContent* GetFlattenedTreeParent() const;
 
   
-  enum FlattenedParentType { eNotForStyle, eForStyle };
-  nsINode* GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const;
+
+
+
+
+
+
+
+  nsINode* GetFlattenedTreeParentForDocumentElementNAC() const;
 
   
 
@@ -954,12 +960,6 @@ protected:
 
 
   nsAtom* DoGetID() const;
-
-  
-
-
-
-  nsINode* GetFlattenedTreeParentForMaybeAssignedNode() const;
 
 public:
 #ifdef DEBUG
