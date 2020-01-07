@@ -976,6 +976,49 @@ public:
   virtual bool Notify(WorkerStatus aStatus) override { return true; }
 };
 
+
+
+
+
+class CancelingOnParentRunnable final : public WorkerRunnable
+{
+public:
+  explicit CancelingOnParentRunnable(WorkerPrivate* aWorkerPrivate)
+    : WorkerRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
+  {}
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    aWorkerPrivate->Cancel();
+    return true;
+  }
+};
+
+
+class CancelingRunnable final : public Runnable
+{
+public:
+  CancelingRunnable()
+    : Runnable("CancelingRunnable")
+  {}
+
+  NS_IMETHOD
+  Run() override
+  {
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+    workerPrivate->AssertIsOnWorkerThread();
+
+    
+    RefPtr<CancelingOnParentRunnable> r =
+      new CancelingOnParentRunnable(workerPrivate);
+    r->Dispatch();
+
+    return NS_OK;
+  }
+};
+
 } 
 
 class WorkerPrivate::EventTarget final : public nsISerialEventTarget
@@ -3609,6 +3652,13 @@ WorkerPrivate::InterruptCallback(JSContext* aCx)
   return true;
 }
 
+void
+WorkerPrivate::CloseInternal()
+{
+  AssertIsOnWorkerThread();
+  NotifyInternal(Closing);
+}
+
 bool
 WorkerPrivate::IsOnCurrentThread()
 {
@@ -4479,7 +4529,16 @@ WorkerPrivate::NotifyInternal(WorkerStatus aStatus)
   }
 
   
+  
   if (aStatus == Closing) {
+    if (mSyncLoopStack.IsEmpty()) {
+      
+      
+      
+      
+      RefPtr<CancelingRunnable> r = new CancelingRunnable();
+      mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+    }
     return true;
   }
 
