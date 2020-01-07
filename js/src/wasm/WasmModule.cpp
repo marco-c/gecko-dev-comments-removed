@@ -211,7 +211,7 @@ Module::startTier2(const CompileArgs& args)
     
     
 
-    UniqueTier2GeneratorTask task(js_new<Tier2GeneratorTaskImpl>(*this, args));
+    auto task = MakeUnique<Tier2GeneratorTaskImpl>(*this, args);
     if (!task)
         return;
 
