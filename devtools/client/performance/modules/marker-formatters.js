@@ -7,7 +7,6 @@
 
 
 
-const { Ci } = require("chrome");
 const { L10N, PREFS } = require("devtools/client/performance/modules/global");
 
 
@@ -68,13 +67,13 @@ exports.Formatters = {
     if ("eventPhase" in marker) {
       let label;
       switch (marker.eventPhase) {
-        case Ci.nsIDOMEvent.AT_TARGET:
+        case Event.AT_TARGET:
           label = L10N.getStr("marker.value.DOMEventTargetPhase");
           break;
-        case Ci.nsIDOMEvent.CAPTURING_PHASE:
+        case Event.CAPTURING_PHASE:
           label = L10N.getStr("marker.value.DOMEventCapturingPhase");
           break;
-        case Ci.nsIDOMEvent.BUBBLING_PHASE:
+        case Event.BUBBLING_PHASE:
           label = L10N.getStr("marker.value.DOMEventBubblingPhase");
           break;
       }

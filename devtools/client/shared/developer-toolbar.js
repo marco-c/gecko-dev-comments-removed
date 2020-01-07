@@ -11,13 +11,12 @@ const { TargetFactory } = require("devtools/client/framework/target");
 const Telemetry = require("devtools/client/shared/telemetry");
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
-const {Task} = require("devtools/shared/task");
 
 const NS_XHTML = "http://www.w3.org/1999/xhtml";
 
 const { PluralForm } = require("devtools/shared/plural-form");
 
-loader.lazyGetter(this, "prefBranch", function () {
+loader.lazyGetter(this, "prefBranch", function() {
   return Services.prefs.getBranch(null)
                     .QueryInterface(Ci.nsIPrefBranch);
 });
@@ -43,7 +42,7 @@ var CommandUtils = {
   
 
 
-  executeOnTarget: Task.async(function* (target, command) {
+  async executeOnTarget(target, command) {
     let requisitionPromise = this._requisitions.get(target);
     if (!requisitionPromise) {
       requisitionPromise = this.createRequisition(target, {
@@ -52,14 +51,14 @@ var CommandUtils = {
       
       this._requisitions.set(target, requisitionPromise);
     }
-    let requisition = yield requisitionPromise;
+    let requisition = await requisitionPromise;
     requisition.updateExec(command);
-  }),
+  },
 
   
 
 
-  createRequisition: function (target, options) {
+  createRequisition: function(target, options) {
     if (!gcliInit) {
       return promise.reject("Unable to load gcli");
     }
@@ -72,7 +71,7 @@ var CommandUtils = {
   
 
 
-  destroyRequisition: function (requisition, target) {
+  destroyRequisition: function(requisition, target) {
     requisition.destroy();
     gcliInit.releaseSystem(target);
   },
@@ -83,7 +82,7 @@ var CommandUtils = {
 
 
 
-  createEnvironment: function (container, targetProperty = "target") {
+  createEnvironment: function(container, targetProperty = "target") {
     if (!container[targetProperty].toString ||
         !/TabTarget/.test(container[targetProperty].toString())) {
       throw new Error("Missing target");
@@ -131,10 +130,10 @@ exports.CommandUtils = CommandUtils;
 
 
 
-loader.lazyGetter(this, "isLinux", function () {
+loader.lazyGetter(this, "isLinux", function() {
   return Services.appinfo.OS == "Linux";
 });
-loader.lazyGetter(this, "isMac", function () {
+loader.lazyGetter(this, "isMac", function() {
   return Services.appinfo.OS == "Darwin";
 });
 
@@ -197,7 +196,7 @@ DeveloperToolbar.prototype.NOTIFICATIONS = NOTIFICATIONS;
 
 
 Object.defineProperty(DeveloperToolbar.prototype, "visible", {
-  get: function () {
+  get: function() {
     return this._element && !this._element.hidden;
   },
   enumerable: true
@@ -209,7 +208,7 @@ var _gSequenceId = 0;
 
 
 Object.defineProperty(DeveloperToolbar.prototype, "sequenceId", {
-  get: function () {
+  get: function() {
     return _gSequenceId++;
   },
   enumerable: true
@@ -218,7 +217,7 @@ Object.defineProperty(DeveloperToolbar.prototype, "sequenceId", {
 
 
 
-DeveloperToolbar.prototype.createToolbar = function () {
+DeveloperToolbar.prototype.createToolbar = function() {
   if (this._element) {
     return;
   }
@@ -255,7 +254,7 @@ DeveloperToolbar.prototype.createToolbar = function () {
   toolboxBtn.setAttribute("tooltiptext", toolboxTooltip);
   let toolboxOpen = gDevToolsBrowser.hasToolboxOpened(this._chromeWindow);
   toolboxBtn.setAttribute("checked", toolboxOpen);
-  toolboxBtn.addEventListener("command", function (event) {
+  toolboxBtn.addEventListener("command", function(event) {
     let window = event.target.ownerDocument.defaultView;
     gDevToolsBrowser.toggleToolboxCommand(window.gBrowser);
   });
@@ -291,7 +290,7 @@ DeveloperToolbar.prototype.createToolbar = function () {
 
 
 
-DeveloperToolbar.prototype.toggle = function () {
+DeveloperToolbar.prototype.toggle = function() {
   if (this.visible) {
     return this.hide().catch(console.error);
   }
@@ -304,7 +303,7 @@ DeveloperToolbar.prototype.toggle = function () {
 
 
 
-DeveloperToolbar.prototype.focus = function () {
+DeveloperToolbar.prototype.focus = function() {
   if (this.visible) {
     
     
@@ -334,7 +333,7 @@ DeveloperToolbar.prototype.focus = function () {
 
 
 
-DeveloperToolbar.prototype.focusToggle = function () {
+DeveloperToolbar.prototype.focusToggle = function() {
   if (this.visible) {
     
     
@@ -361,7 +360,7 @@ DeveloperToolbar.introShownThisSession = false;
 
 
 
-DeveloperToolbar.prototype.show = function (focus) {
+DeveloperToolbar.prototype.show = function(focus) {
   
   
   if (this._showPromise !== null) {
@@ -371,15 +370,15 @@ DeveloperToolbar.prototype.show = function (focus) {
     return this._showPromise;
   }
 
-  this._showPromise = Task.spawn((function* () {
+  this._showPromise = ((async function() {
     
     
     
     
-    yield this._hidePromise;
+    await this._hidePromise;
 
     
-    yield gDevToolsBrowser.loadBrowserStyleSheet(this._chromeWindow);
+    await gDevToolsBrowser.loadBrowserStyleSheet(this._chromeWindow);
 
     this.createToolbar();
 
@@ -397,7 +396,7 @@ DeveloperToolbar.prototype.show = function (focus) {
       TooltipPanel.create(this),
       OutputPanel.create(this)
     ];
-    let panels = yield promise.all(panelPromises);
+    let panels = await promise.all(panelPromises);
 
     [ this.tooltipPanel, this.outputPanel ] = panels;
 
@@ -408,13 +407,13 @@ DeveloperToolbar.prototype.show = function (focus) {
       environment: CommandUtils.createEnvironment(this, "target"),
       document: this.outputPanel.document,
     };
-    let requisition = yield CommandUtils.createRequisition(this.target, options);
+    let requisition = await CommandUtils.createRequisition(this.target, options);
     this.requisition = requisition;
 
     
     
     let value = this._input.value || "";
-    yield this.requisition.update(value);
+    await this.requisition.update(value);
 
     const Inputter = require("gcli/mozui/inputter").Inputter;
     const Completer = require("gcli/mozui/completer").Completer;
@@ -470,7 +469,7 @@ DeveloperToolbar.prototype.show = function (focus) {
     this._element.hidden = false;
 
     if (focus) {
-      yield this.focus();
+      await this.focus();
     }
     this._notify(NOTIFICATIONS.SHOW);
 
@@ -481,7 +480,7 @@ DeveloperToolbar.prototype.show = function (focus) {
                            this.outputPanel);
       DeveloperToolbar.introShownThisSession = true;
     }
-  }).bind(this));
+  }).bind(this))();
 
   return this._showPromise;
 };
@@ -489,7 +488,7 @@ DeveloperToolbar.prototype.show = function (focus) {
 
 
 
-DeveloperToolbar.prototype.hide = function () {
+DeveloperToolbar.prototype.hide = function() {
   
   if (this._hidePromise !== null) {
     return this._hidePromise;
@@ -530,7 +529,7 @@ DeveloperToolbar.prototype.hide = function () {
 
 
 
-DeveloperToolbar.prototype._initErrorsCount = function (tab) {
+DeveloperToolbar.prototype._initErrorsCount = function(tab) {
   let tabId = tab.linkedPanel;
   if (tabId in this._errorsCount) {
     this._updateErrorsCount();
@@ -561,7 +560,7 @@ DeveloperToolbar.prototype._initErrorsCount = function (tab) {
 
 
 
-DeveloperToolbar.prototype._stopErrorsCount = function (tab) {
+DeveloperToolbar.prototype._stopErrorsCount = function(tab) {
   let tabId = tab.linkedPanel;
   if (!(tabId in this._errorsCount) || !(tabId in this._warningsCount)) {
     this._updateErrorsCount();
@@ -579,7 +578,7 @@ DeveloperToolbar.prototype._stopErrorsCount = function (tab) {
 
 
 
-DeveloperToolbar.prototype.destroy = function () {
+DeveloperToolbar.prototype.destroy = function() {
   if (this._input == null) {
     
     return;
@@ -625,7 +624,7 @@ DeveloperToolbar.prototype.destroy = function () {
 
 
 
-DeveloperToolbar.prototype._notify = function (topic) {
+DeveloperToolbar.prototype._notify = function(topic) {
   let data = { toolbar: this };
   data.wrappedJSObject = data;
   Services.obs.notifyObservers(data, topic);
@@ -634,7 +633,7 @@ DeveloperToolbar.prototype._notify = function (topic) {
 
 
 
-DeveloperToolbar.prototype.handleEvent = function (ev) {
+DeveloperToolbar.prototype.handleEvent = function(ev) {
   if (ev.type == "TabSelect" || ev.type == "load") {
     if (this.visible) {
       let tab = this._chromeWindow.gBrowser.selectedTab;
@@ -671,10 +670,10 @@ DeveloperToolbar.prototype.handleEvent = function (ev) {
 
 
 
-DeveloperToolbar.prototype._onToolboxReady = function () {
+DeveloperToolbar.prototype._onToolboxReady = function() {
   this._errorCounterButton.setAttribute("checked", "true");
 };
-DeveloperToolbar.prototype._onToolboxDestroyed = function () {
+DeveloperToolbar.prototype._onToolboxDestroyed = function() {
   this._errorCounterButton.setAttribute("checked", "false");
 };
 
@@ -687,7 +686,7 @@ DeveloperToolbar.prototype._onToolboxDestroyed = function () {
 
 
 
-DeveloperToolbar.prototype._onPageError = function (tabId, pageError) {
+DeveloperToolbar.prototype._onPageError = function(tabId, pageError) {
   if (pageError.category == "CSS Parser" ||
       pageError.category == "CSS Loader") {
     return;
@@ -708,14 +707,14 @@ DeveloperToolbar.prototype._onPageError = function (tabId, pageError) {
 
 
 
-DeveloperToolbar.prototype._onPageBeforeUnload = function (ev) {
+DeveloperToolbar.prototype._onPageBeforeUnload = function(ev) {
   let window = ev.target.defaultView;
   if (window.top !== window) {
     return;
   }
 
   let tabs = this._chromeWindow.gBrowser.tabs;
-  Array.prototype.some.call(tabs, function (tab) {
+  Array.prototype.some.call(tabs, function(tab) {
     if (tab.linkedBrowser.contentWindow === window) {
       let tabId = tab.linkedPanel;
       if (tabId in this._errorsCount || tabId in this._warningsCount) {
@@ -738,7 +737,7 @@ DeveloperToolbar.prototype._onPageBeforeUnload = function (ev) {
 
 
 
-DeveloperToolbar.prototype._updateErrorsCount = function (changedTabId) {
+DeveloperToolbar.prototype._updateErrorsCount = function(changedTabId) {
   let tabId = this._chromeWindow.gBrowser.selectedTab.linkedPanel;
   if (changedTabId && tabId != changedTabId) {
     return;
@@ -773,7 +772,7 @@ DeveloperToolbar.prototype._updateErrorsCount = function (changedTabId) {
 
 
 
-DeveloperToolbar.prototype.resetErrorsCount = function (tab) {
+DeveloperToolbar.prototype.resetErrorsCount = function(tab) {
   let tabId = tab.linkedPanel;
   if (tabId in this._errorsCount || tabId in this._warningsCount) {
     this._errorsCount[tabId] = 0;
@@ -805,7 +804,7 @@ function OutputPanel() {
 
 
 
-OutputPanel.create = function (devtoolbar) {
+OutputPanel.create = function(devtoolbar) {
   let outputPanel = Object.create(OutputPanel.prototype);
   return outputPanel._init(devtoolbar);
 };
@@ -813,7 +812,7 @@ OutputPanel.create = function (devtoolbar) {
 
 
 
-OutputPanel.prototype._init = function (devtoolbar) {
+OutputPanel.prototype._init = function(devtoolbar) {
   return new Promise((resolve, reject) => {
     this._devtoolbar = devtoolbar;
     this._input = this._devtoolbar._input;
@@ -888,7 +887,7 @@ OutputPanel.prototype._init = function (devtoolbar) {
 
 
 
-OutputPanel.prototype._copyTheme = function () {
+OutputPanel.prototype._copyTheme = function() {
   if (this.document) {
     let theme = this._devtoolbar._doc.getElementById("browser-bottombox")
                   .getAttribute("devtoolstheme");
@@ -899,7 +898,7 @@ OutputPanel.prototype._copyTheme = function () {
 
 
 
-OutputPanel.prototype._onpopuphiding = function (ev) {
+OutputPanel.prototype._onpopuphiding = function(ev) {
   
   
   if (isLinux && !this.canHide) {
@@ -910,7 +909,7 @@ OutputPanel.prototype._onpopuphiding = function (ev) {
 
 
 
-OutputPanel.prototype.show = function () {
+OutputPanel.prototype.show = function() {
   if (isLinux) {
     this.canHide = false;
   }
@@ -931,7 +930,7 @@ OutputPanel.prototype.show = function () {
 
 
 
-OutputPanel.prototype._resize = function () {
+OutputPanel.prototype._resize = function() {
   if (this._panel == null || this.document == null || !this._panel.state == "closed") {
     return;
   }
@@ -992,7 +991,7 @@ OutputPanel.prototype._resize = function () {
 
 
 
-OutputPanel.prototype._outputChanged = function (ev) {
+OutputPanel.prototype._outputChanged = function(ev) {
   if (ev.output.hidden) {
     return;
   }
@@ -1013,7 +1012,7 @@ OutputPanel.prototype._outputChanged = function (ev) {
 
 
 
-OutputPanel.prototype._update = function () {
+OutputPanel.prototype._update = function() {
   
   if (this._div == null) {
     return;
@@ -1049,7 +1048,7 @@ OutputPanel.prototype._update = function () {
 
 
 
-OutputPanel.prototype.remove = function () {
+OutputPanel.prototype.remove = function() {
   if (isLinux) {
     this.canHide = true;
   }
@@ -1066,7 +1065,7 @@ OutputPanel.prototype.remove = function () {
 
 
 
-OutputPanel.prototype.destroy = function () {
+OutputPanel.prototype.destroy = function() {
   this.remove();
 
   this._panel.removeEventListener("popuphiding", this._onpopuphiding, true);
@@ -1089,7 +1088,7 @@ OutputPanel.prototype.destroy = function () {
 
 
 
-OutputPanel.prototype._visibilityChanged = function (ev) {
+OutputPanel.prototype._visibilityChanged = function(ev) {
   if (ev.outputVisible === true) {
     
   } else {
@@ -1123,7 +1122,7 @@ function TooltipPanel() {
 
 
 
-TooltipPanel.create = function (devtoolbar) {
+TooltipPanel.create = function(devtoolbar) {
   let tooltipPanel = Object.create(TooltipPanel.prototype);
   return tooltipPanel._init(devtoolbar);
 };
@@ -1131,7 +1130,7 @@ TooltipPanel.create = function (devtoolbar) {
 
 
 
-TooltipPanel.prototype._init = function (devtoolbar) {
+TooltipPanel.prototype._init = function(devtoolbar) {
   return new Promise((resolve, reject) => {
     this._devtoolbar = devtoolbar;
     this._input = devtoolbar._doc.querySelector(".gclitoolbar-input-node");
@@ -1206,7 +1205,7 @@ TooltipPanel.prototype._init = function (devtoolbar) {
 
 
 
-TooltipPanel.prototype._copyTheme = function () {
+TooltipPanel.prototype._copyTheme = function() {
   if (this.document) {
     let theme = this._devtoolbar._doc.getElementById("browser-bottombox")
                   .getAttribute("devtoolstheme");
@@ -1217,7 +1216,7 @@ TooltipPanel.prototype._copyTheme = function () {
 
 
 
-TooltipPanel.prototype._onpopuphiding = function (ev) {
+TooltipPanel.prototype._onpopuphiding = function(ev) {
   
   
   if (isLinux && !this.canHide) {
@@ -1228,7 +1227,7 @@ TooltipPanel.prototype._onpopuphiding = function (ev) {
 
 
 
-TooltipPanel.prototype.show = function (dimensions) {
+TooltipPanel.prototype.show = function(dimensions) {
   if (!dimensions) {
     dimensions = { start: 0, end: 0 };
   }
@@ -1264,7 +1263,7 @@ const AVE_CHAR_WIDTH = 4.5;
 
 
 
-TooltipPanel.prototype._resize = function () {
+TooltipPanel.prototype._resize = function() {
   if (this._panel == null || this.document == null || !this._panel.state == "closed") {
     return;
   }
@@ -1287,7 +1286,7 @@ TooltipPanel.prototype._resize = function () {
 
 
 
-TooltipPanel.prototype.remove = function () {
+TooltipPanel.prototype.remove = function() {
   if (isLinux) {
     this.canHide = true;
   }
@@ -1299,7 +1298,7 @@ TooltipPanel.prototype.remove = function () {
 
 
 
-TooltipPanel.prototype.destroy = function () {
+TooltipPanel.prototype.destroy = function() {
   this.remove();
 
   this._panel.removeEventListener("popuphiding", this._onpopuphiding, true);
@@ -1323,7 +1322,7 @@ TooltipPanel.prototype.destroy = function () {
 
 
 
-TooltipPanel.prototype._visibilityChanged = function (ev) {
+TooltipPanel.prototype._visibilityChanged = function(ev) {
   if (ev.tooltipVisible === true) {
     this.show(ev.dimensions);
   } else {
