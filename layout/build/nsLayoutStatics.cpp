@@ -148,13 +148,13 @@ nsLayoutStatics::Initialize()
   ContentParent::StartUp();
 
   
+  
   nsCSSAnonBoxes::AddRefAtoms();
   nsCSSPseudoClasses::AddRefAtoms();
   nsCSSPseudoElements::AddRefAtoms();
   nsCSSKeywords::AddRefTable();
   nsCSSProps::AddRefTable();
   nsColorNames::AddRefTable();
-  nsGkAtoms::AddRefAtoms();
 
   NS_SetStaticAtomsDone();
 

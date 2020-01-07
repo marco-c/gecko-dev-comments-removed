@@ -15,17 +15,18 @@
 
 #include "nsAtom.h"
 #include "nsAtomTable.h"
+#include "nsAutoPtr.h"
+#include "nsCRT.h"
+#include "nsDataHashtable.h"
+#include "nsGkAtoms.h"
+#include "nsHashKeys.h"
+#include "nsPrintfCString.h"
 #include "nsStaticAtom.h"
 #include "nsString.h"
-#include "nsCRT.h"
+#include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
 #include "PLDHashTable.h"
 #include "prenv.h"
-#include "nsThreadUtils.h"
-#include "nsDataHashtable.h"
-#include "nsHashKeys.h"
-#include "nsAutoPtr.h"
-#include "nsUnicharUtils.h"
-#include "nsPrintfCString.h"
 
 
 
@@ -606,20 +607,6 @@ nsAtom::Release()
 
 static bool gStaticAtomsDone = false;
 
-class DefaultAtoms
-{
-public:
-  NS_STATIC_ATOM_DECL(empty)
-};
-
-NS_STATIC_ATOM_DEFN(DefaultAtoms, empty)
-
-NS_STATIC_ATOM_BUFFER(empty, "")
-
-static const nsStaticAtomSetup sDefaultAtomSetup[] = {
-  NS_STATIC_ATOM_SETUP(DefaultAtoms, empty)
-};
-
 void
 NS_InitAtomTable()
 {
@@ -632,7 +619,7 @@ NS_InitAtomTable()
   
   
   
-  NS_RegisterStaticAtoms(sDefaultAtomSetup);
+  nsGkAtoms::AddRefAtoms();
 }
 
 void
