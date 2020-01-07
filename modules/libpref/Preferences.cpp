@@ -756,8 +756,7 @@ public:
     : mDomain(moz_xstrdup(aDomain))
     , mFunc(aFunc)
     , mData(aData)
-    , mMatchKind(aMatchKind)
-    , mNext(nullptr)
+    , mNextAndMatchKind(aMatchKind)
   {
   }
 
@@ -770,10 +769,24 @@ public:
 
   void* Data() const { return mData; }
 
-  Preferences::MatchKind MatchKind() const { return mMatchKind; }
+  Preferences::MatchKind MatchKind() const
+  {
+    return static_cast<Preferences::MatchKind>(mNextAndMatchKind &
+                                               kMatchKindMask);
+  }
 
-  CallbackNode* Next() const { return mNext; }
-  void SetNext(CallbackNode* aNext) { mNext = aNext; }
+  CallbackNode* Next() const
+  {
+    return reinterpret_cast<CallbackNode*>(mNextAndMatchKind & kNextMask);
+  }
+
+  void SetNext(CallbackNode* aNext)
+  {
+    uintptr_t matchKind = mNextAndMatchKind & kMatchKindMask;
+    mNextAndMatchKind = reinterpret_cast<uintptr_t>(aNext);
+    MOZ_ASSERT((mNextAndMatchKind & kMatchKindMask) == 0);
+    mNextAndMatchKind |= matchKind;
+  }
 
   void AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes)
   {
@@ -782,6 +795,9 @@ public:
   }
 
 private:
+  static const uintptr_t kMatchKindMask = uintptr_t(0x1);
+  static const uintptr_t kNextMask = ~kMatchKindMask;
+
   UniqueFreePtr<const char> mDomain;
 
   
@@ -789,8 +805,12 @@ private:
   
   PrefChangedFunc mFunc;
   void* mData;
-  Preferences::MatchKind mMatchKind;
-  CallbackNode* mNext;
+
+  
+  
+  
+  
+  uintptr_t mNextAndMatchKind;
 };
 
 static PLDHashTable* gHashTable;
