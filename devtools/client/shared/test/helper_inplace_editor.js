@@ -11,6 +11,7 @@
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const { editableField } = require("devtools/client/shared/inplace-editor");
+const {colorUtils} = require("devtools/shared/css/color");
 
 
 
@@ -76,7 +77,9 @@ function createSpan(doc) {
 
 
 
-async function testCompletion([key, completion, index, total, postLabel], editor) {
+
+async function testCompletion([key, completion, index, total,
+    postLabel, colorSwatch], editor) {
   info("Pressing key " + key);
   info("Expecting " + completion);
 
@@ -112,6 +115,21 @@ async function testCompletion([key, completion, index, total, postLabel], editor
     let selectedElement = editor.popup.elements.get(selectedItem);
     ok(selectedElement.textContent.includes(postLabel),
       "Selected popup element contains the expected post-label");
+
+    
+    
+    let swatchSpan = selectedElement.getElementsByClassName(
+      "autocomplete-swatch autocomplete-colorswatch");
+    if (colorSwatch) {
+      ok(swatchSpan.length === 1, "Displayed the expected color swatch");
+      let color = new colorUtils.CssColor(swatchSpan[0].style.backgroundColor);
+      let swatchColor = color.rgba;
+      color.newColor(postLabel);
+      let postColor = color.rgba;
+      ok(swatchColor == postColor, "Color swatch matches postLabel value");
+    } else {
+      ok(swatchSpan.length === 0, "As expected no swatches were available");
+    }
   }
 
   if (total === 0) {
