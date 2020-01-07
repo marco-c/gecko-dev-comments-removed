@@ -572,7 +572,6 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     
     
     
-    
     net::ReferrerPolicy net_referrerPolicy = mRequest->GetEnvironmentReferrerPolicy();
     if (mRequest->ReferrerPolicy_() == ReferrerPolicy::_empty) {
       mRequest->SetReferrerPolicy(net_referrerPolicy);
@@ -580,15 +579,10 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     
     
     
-    
     if (mRequest->ReferrerPolicy_() == ReferrerPolicy::_empty) {
       nsCOMPtr<nsILoadInfo> loadInfo = httpChan->GetLoadInfo();
-      net::ReferrerPolicy referrerPolicy;
-      if (loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0){
-        referrerPolicy = static_cast<net::ReferrerPolicy>(NS_GetDefaultReferrerPolicy(true));
-      } else {
-        referrerPolicy = static_cast<net::ReferrerPolicy>(NS_GetDefaultReferrerPolicy());
-      }
+      bool isPrivate = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+      net::ReferrerPolicy referrerPolicy = static_cast<net::ReferrerPolicy>(NS_GetDefaultReferrerPolicy(isPrivate));
       mRequest->SetReferrerPolicy(referrerPolicy);
     }
 
