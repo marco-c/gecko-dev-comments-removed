@@ -1043,21 +1043,24 @@ nsHostResolver::ConditionallyCreateThread(nsHostRecord *rec)
     }
     else if ((mThreadCount < HighThreadThreshold) ||
              (IsHighPriority(rec->flags) && mThreadCount < MAX_RESOLVER_THREADS)) {
-        
-        NS_ADDREF_THIS(); 
+        static nsThreadPoolNaming naming;
+        nsCString name = naming.GetNextThreadName("DNS Resolver");
 
+        
+        nsCOMPtr<nsIThread> thread;
+        nsresult rv = NS_NewNamedThread(name, getter_AddRefs(thread), nullptr);
+        if (NS_WARN_IF(NS_FAILED(rv)) || !thread) {
+            return rv;
+        }
+
+        nsCOMPtr<nsIRunnable> event =
+            mozilla::NewRunnableMethod("nsHostResolver::ThreadFunc",
+                                       this,
+                                       &nsHostResolver::ThreadFunc);
         mThreadCount++;
-        PRThread *thr = PR_CreateThread(PR_SYSTEM_THREAD,
-                                        ThreadFunc,
-                                        this,
-                                        PR_PRIORITY_NORMAL,
-                                        PR_GLOBAL_THREAD,
-                                        PR_UNJOINABLE_THREAD,
-                                        0);
-        if (!thr) {
+        rv = thread->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+        if (NS_FAILED(rv)) {
             mThreadCount--;
-            NS_RELEASE_THIS();
-            return NS_ERROR_OUT_OF_MEMORY;
         }
     }
     else {
@@ -1770,27 +1773,20 @@ nsHostResolver::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const
 }
 
 void
-nsHostResolver::ThreadFunc(void *arg)
+nsHostResolver::ThreadFunc()
 {
     LOG(("DNS lookup thread - starting execution.\n"));
-
-    static nsThreadPoolNaming naming;
-    nsCString name = naming.GetNextThreadName("DNS Resolver");
-
-    AUTO_PROFILER_REGISTER_THREAD(name.BeginReading());
-    NS_SetCurrentThreadName(name.BeginReading());
 
 #if defined(RES_RETRY_ON_FAILURE)
     nsResState rs;
 #endif
-    RefPtr<nsHostResolver> resolver = dont_AddRef((nsHostResolver *)arg);
     RefPtr<nsHostRecord> rec;
     AddrInfo *ai = nullptr;
 
     do {
         if (!rec) {
             RefPtr<nsHostRecord> tmpRec;
-            if (!resolver->GetHostToLookup(getter_AddRefs(tmpRec))) {
+            if (!GetHostToLookup(getter_AddRefs(tmpRec))) {
                 break; 
             }
             
@@ -1800,7 +1796,7 @@ nsHostResolver::ThreadFunc(void *arg)
 
         LOG(("DNS lookup thread - Calling getaddrinfo for host [%s].\n",
              rec->host.get()));
-        
+
         TimeStamp startTime = TimeStamp::Now();
         bool getTtl = rec->mGetTtl;
         nsresult status = GetAddrInfo(rec->host, rec->af,
@@ -1814,9 +1810,9 @@ nsHostResolver::ThreadFunc(void *arg)
 #endif
 
         {   
-            MutexAutoLock lock(resolver->mLock);
+            MutexAutoLock lock(mLock);
 
-            if (!resolver->mShutdown) {
+            if (!mShutdown) {
                 TimeDuration elapsed = TimeStamp::Now() - startTime;
                 uint32_t millis = static_cast<uint32_t>(elapsed.ToMilliseconds());
 
@@ -1843,7 +1839,7 @@ nsHostResolver::ThreadFunc(void *arg)
              rec->host.get(),
              ai ? "success" : "failure: unknown host"));
 
-        if (LOOKUP_RESOLVEAGAIN == resolver->CompleteLookup(rec, status, ai, rec->pb)) {
+        if (LOOKUP_RESOLVEAGAIN == CompleteLookup(rec, status, ai, rec->pb)) {
             
             LOG(("DNS lookup thread - Re-resolving host [%s].\n", rec->host.get()));
         } else {
@@ -1851,8 +1847,7 @@ nsHostResolver::ThreadFunc(void *arg)
         }
     } while(true);
 
-    resolver->mThreadCount--;
-    resolver = nullptr;
+    mThreadCount--;
     LOG(("DNS lookup thread - queue empty, thread finished.\n"));
 }
 
