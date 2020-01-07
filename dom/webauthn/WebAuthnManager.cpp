@@ -760,7 +760,10 @@ WebAuthnManager::FinishMakeCredential(const uint64_t& aTransactionId,
   }
 
   mozilla::dom::CryptoBuffer authDataBuf;
-  rv = AssembleAuthenticatorData(rpIdHashBuf, FLAG_TUP, counterBuf, attDataBuf,
+  
+  
+  const uint8_t flags = FLAG_TUP | FLAG_AT;
+  rv = AssembleAuthenticatorData(rpIdHashBuf, flags, counterBuf, attDataBuf,
                                  authDataBuf);
   if (NS_FAILED(rv)) {
     RejectTransaction(rv);
@@ -841,9 +844,13 @@ WebAuthnManager::FinishGetAssertion(const uint64_t& aTransactionId,
     return;
   }
 
+  
+  
+  flags &= 0b11;
+
   CryptoBuffer attestationDataBuf;
   CryptoBuffer authenticatorDataBuf;
-  rv = AssembleAuthenticatorData(rpIdHashBuf, FLAG_TUP, counterBuf,
+  rv = AssembleAuthenticatorData(rpIdHashBuf, flags, counterBuf,
                                   attestationDataBuf,
                                  authenticatorDataBuf);
   if (NS_WARN_IF(NS_FAILED(rv))) {
