@@ -240,8 +240,6 @@ pub trait ThreadSafeLayoutNode: Clone + Copy + Debug + GetLayoutData + NodeInfo 
     
     unsafe fn unsafe_get(self) -> Self::ConcreteNode;
 
-    fn can_be_fragmented(&self) -> bool;
-
     fn node_text_content(&self) -> String;
 
     

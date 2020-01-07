@@ -345,18 +345,6 @@ impl<'ln> TNode for GeckoNode<'ln> {
             None
         }
     }
-
-    #[inline]
-    fn can_be_fragmented(&self) -> bool {
-        
-        
-        false
-    }
-
-    unsafe fn set_can_be_fragmented(&self, _value: bool) {
-        
-        
-    }
 }
 
 

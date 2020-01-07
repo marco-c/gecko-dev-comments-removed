@@ -239,13 +239,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
     
     fn as_document(&self) -> Option<Self::ConcreteDocument>;
-
-    
-    
-    fn can_be_fragmented(&self) -> bool;
-
-    
-    unsafe fn set_can_be_fragmented(&self, value: bool);
 }
 
 

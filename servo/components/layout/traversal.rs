@@ -281,6 +281,7 @@ impl<'a> PostorderFlowTraversal for AssignBSizes<'a> {
         let base = flow.base();
         base.restyle_damage.intersects(ServoRestyleDamage::REFLOW_OUT_OF_FLOW | ServoRestyleDamage::REFLOW) &&
         
+        
         !base.flags.contains(FlowFlags::CAN_BE_FRAGMENTED)
     }
 }
