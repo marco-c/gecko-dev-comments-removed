@@ -453,6 +453,9 @@ add_task(async function() {
 
 
 add_task(async function test_cachedResponse() {
+  if (AppConstants.platform === "android") {
+    return;
+  }
   Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
 
   let extension = ExtensionTestUtils.loadExtension({
