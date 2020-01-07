@@ -198,20 +198,6 @@ class MochiRemote(MochitestDesktop):
         options.profilePath = self.remoteProfile
         return manifest
 
-    def addChromeToProfile(self, options):
-        manifest = MochitestDesktop.addChromeToProfile(self, options)
-
-        
-        if options.flavor == 'chrome':
-            
-            chrome = ("overlay chrome://browser/content/browser.xul "
-                      "chrome://mochikit/content/browser-test-overlay.xul")
-            path = os.path.join(options.profilePath, 'extensions', 'staged',
-                                'mochikit@mozilla.org', 'chrome.manifest')
-            with open(path, "a") as f:
-                f.write(chrome)
-        return manifest
-
     def buildURLOptions(self, options, env):
         self.localLog = options.logFile
         options.logFile = self.remoteLog
