@@ -44,9 +44,9 @@ class ShapesInContextEditor {
     
     
     this.commit = debounce(this.commit, 200, this);
-    this.onChangesApplied = this.onChangesApplied.bind(this);
     this.onHighlighterEvent = this.onHighlighterEvent.bind(this);
     this.onNodeFrontChanged = this.onNodeFrontChanged.bind(this);
+    this.onShapeValueUpdated = this.onShapeValueUpdated.bind(this);
     this.onRuleViewChanged = this.onRuleViewChanged.bind(this);
 
     this.highlighter.on("highlighter-event", this.onHighlighterEvent);
@@ -111,6 +111,7 @@ class ShapesInContextEditor {
 
     this.inspector.selection.on("detached-front", this.onNodeFrontChanged);
     this.inspector.selection.on("new-node-front", this.onNodeFrontChanged);
+    this.ruleView.on("property-value-updated", this.onShapeValueUpdated);
     this.highlighterTargetNode = node;
     this.mode = options.mode;
     this.emit("show", { node, options });
@@ -135,6 +136,7 @@ class ShapesInContextEditor {
     this.emit("hide", { node: this.highlighterTargetNode });
     this.inspector.selection.off("detached-front", this.onNodeFrontChanged);
     this.inspector.selection.off("new-node-front", this.onNodeFrontChanged);
+    this.ruleView.off("property-value-updated", this.onShapeValueUpdated);
     this.highlighterTargetNode = null;
   }
 
@@ -147,7 +149,9 @@ class ShapesInContextEditor {
   findSwatch() {
     const valueSpan = this.textProperty.editor.valueSpan;
     this.swatch = valueSpan.querySelector(".ruleview-shapeswatch");
-    this.swatch.classList.add("active");
+    if (this.swatch) {
+      this.swatch.classList.add("active");
+    }
   }
 
   
@@ -205,14 +209,11 @@ class ShapesInContextEditor {
 
 
   onShapeHover(data) {
-    if (!this.textProperty) {
-      return;
-    }
-
-    const shapeValueEl = this.swatch.nextSibling;
+    const shapeValueEl = this.swatch && this.swatch.nextSibling;
     if (!shapeValueEl) {
       return;
     }
+
     const pointSelector = ".ruleview-shape-point";
     
     for (const node of shapeValueEl.querySelectorAll(`${pointSelector}.active`)) {
@@ -248,6 +249,19 @@ class ShapesInContextEditor {
 
 
 
+  onShapeValueUpdated() {
+    
+    
+    this.findSwatch();
+    this.inspector.highlighters.emit("shapes-highlighter-changes-applied");
+  }
+
+  
+
+
+
+
+
   preview(value) {
     if (!this.textProperty) {
       return;
@@ -271,21 +285,8 @@ class ShapesInContextEditor {
     if (!this.textProperty) {
       return;
     }
-    this.ruleView.once("ruleview-changed", this.onChangesApplied);
+
     this.textProperty.setValue(value);
-  }
-
-  
-
-
-
-
-
-  onChangesApplied() {
-    
-    
-    this.findSwatch();
-    this.inspector.highlighters.emit("shapes-highlighter-changes-applied");
   }
 
   destroy() {
