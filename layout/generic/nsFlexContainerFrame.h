@@ -308,6 +308,17 @@ protected:
 
 
 
+  bool ShouldUseMozBoxCollapseBehavior(const nsStyleDisplay* aFlexStyleDisp);
+
+  
+
+
+
+
+
+
+
+
 
   void GenerateFlexLines(nsPresContext* aPresContext,
                          const ReflowInput& aReflowInput,

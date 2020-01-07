@@ -3609,6 +3609,39 @@ AddNewFlexLineToList(LinkedList<FlexLine>& aLines,
   return newLine;
 }
 
+bool
+nsFlexContainerFrame::ShouldUseMozBoxCollapseBehavior(
+  const nsStyleDisplay* aThisStyleDisp)
+{
+  MOZ_ASSERT(StyleDisplay() == aThisStyleDisp, "wrong StyleDisplay passed in");
+
+  
+  
+  if (!IsLegacyBox(this)) {
+    return false;
+  }
+
+  
+  if (aThisStyleDisp->mDisplay == mozilla::StyleDisplay::MozBox ||
+      aThisStyleDisp->mDisplay == mozilla::StyleDisplay::MozInlineBox) {
+    return true;
+  }
+
+  
+  
+  auto pseudoType = StyleContext()->GetPseudo();
+  if (pseudoType == nsCSSAnonBoxes::scrolledContent ||
+      pseudoType == nsCSSAnonBoxes::buttonContent) {
+    const nsStyleDisplay* disp = GetParent()->StyleDisplay();
+    if (disp->mDisplay == mozilla::StyleDisplay::MozBox ||
+        disp->mDisplay == mozilla::StyleDisplay::MozInlineBox) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void
 nsFlexContainerFrame::GenerateFlexLines(
   nsPresContext* aPresContext,
@@ -3685,6 +3718,9 @@ nsFlexContainerFrame::GenerateFlexLines(
     RemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER);
   }
 
+  const bool useMozBoxCollapseBehavior =
+    ShouldUseMozBoxCollapseBehavior(aReflowInput.mStyleDisplay);
+
   for (; !iter.AtEnd(); iter.Next()) {
     nsIFrame* childFrame = *iter;
     
@@ -3700,9 +3736,14 @@ nsFlexContainerFrame::GenerateFlexLines(
     }
 
     UniquePtr<FlexItem> item;
-    if (nextStrutIdx < aStruts.Length() &&
-        aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
-
+    if (useMozBoxCollapseBehavior &&
+        (NS_STYLE_VISIBILITY_COLLAPSE ==
+         childFrame->StyleVisibility()->mVisible)) {
+      
+      
+      item = MakeUnique<FlexItem>(childFrame, 0, aReflowInput.GetWritingMode());
+    } else if (nextStrutIdx < aStruts.Length() &&
+               aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
       
       item = MakeUnique<FlexItem>(childFrame, aStruts[nextStrutIdx].mStrutCrossSize,
                                   aReflowInput.GetWritingMode());
@@ -4474,7 +4515,8 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   
   
   
-  if (aStruts.IsEmpty()) { 
+  if (aStruts.IsEmpty() && 
+      !ShouldUseMozBoxCollapseBehavior(aReflowInput.mStyleDisplay)) {
     BuildStrutInfoFromCollapsedItems(lines.getFirst(), aStruts);
     if (!aStruts.IsEmpty()) {
       
@@ -4920,20 +4962,29 @@ nsFlexContainerFrame::GetMinISize(gfxContext* aRenderingContext)
   const nsStylePosition* stylePos = StylePosition();
   const FlexboxAxisTracker axisTracker(this, GetWritingMode());
 
+  const bool useMozBoxCollapseBehavior =
+    ShouldUseMozBoxCollapseBehavior(StyleDisplay());
+
   for (nsIFrame* childFrame : mFrames) {
-    nscoord childMinISize =
-      nsLayoutUtils::IntrinsicForContainer(aRenderingContext, childFrame,
-                                           nsLayoutUtils::MIN_ISIZE);
     
     
-    
-    
-    
-    if (axisTracker.IsRowOriented() &&
-        NS_STYLE_FLEX_WRAP_NOWRAP == stylePos->mFlexWrap) {
-      minISize += childMinISize;
-    } else {
-      minISize = std::max(minISize, childMinISize);
+    if (!useMozBoxCollapseBehavior ||
+        (NS_STYLE_VISIBILITY_COLLAPSE !=
+         childFrame->StyleVisibility()->mVisible)) {
+      nscoord childMinISize =
+        nsLayoutUtils::IntrinsicForContainer(aRenderingContext, childFrame,
+                                             nsLayoutUtils::MIN_ISIZE);
+      
+      
+      
+      
+      
+      if (axisTracker.IsRowOriented() &&
+          NS_STYLE_FLEX_WRAP_NOWRAP == stylePos->mFlexWrap) {
+        minISize += childMinISize;
+      } else {
+        minISize = std::max(minISize, childMinISize);
+      }
     }
   }
   return minISize;
@@ -4954,14 +5005,23 @@ nsFlexContainerFrame::GetPrefISize(gfxContext* aRenderingContext)
   
   const FlexboxAxisTracker axisTracker(this, GetWritingMode());
 
+  const bool useMozBoxCollapseBehavior =
+    ShouldUseMozBoxCollapseBehavior(StyleDisplay());
+
   for (nsIFrame* childFrame : mFrames) {
-    nscoord childPrefISize =
-      nsLayoutUtils::IntrinsicForContainer(aRenderingContext, childFrame,
-                                           nsLayoutUtils::PREF_ISIZE);
-    if (axisTracker.IsRowOriented()) {
-      prefISize += childPrefISize;
-    } else {
-      prefISize = std::max(prefISize, childPrefISize);
+    
+    
+    if (!useMozBoxCollapseBehavior ||
+        (NS_STYLE_VISIBILITY_COLLAPSE !=
+         childFrame->StyleVisibility()->mVisible)) {
+      nscoord childPrefISize =
+        nsLayoutUtils::IntrinsicForContainer(aRenderingContext, childFrame,
+                                             nsLayoutUtils::PREF_ISIZE);
+      if (axisTracker.IsRowOriented()) {
+        prefISize += childPrefISize;
+      } else {
+        prefISize = std::max(prefISize, childPrefISize);
+      }
     }
   }
   return prefISize;
