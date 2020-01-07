@@ -28,6 +28,7 @@
 #include "TextEditUtils.h"              
 #include "mozInlineSpellChecker.h"      
 #include "mozilla/CheckedInt.h"         
+#include "mozilla/EditAction.h"         
 #include "mozilla/EditorDOMPoint.h"     
 #include "mozilla/EditorUtils.h"        
 #include "mozilla/EditTransactionBase.h" 

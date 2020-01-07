@@ -14,6 +14,7 @@
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"         
+#include "mozilla/TextEditRules.h"      
 #include "mozilla/WeakPtr.h"            
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
@@ -52,57 +53,6 @@ class nsIWidget;
 class nsRange;
 class nsTransactionManager;
 
-
-
-
-
-enum class EditAction : int32_t
-{
-  ignore = -1,
-  none = 0,
-  undo,
-  redo,
-  insertNode,
-  createNode,
-  deleteNode,
-  splitNode,
-  joinNode,
-  deleteText = 1003,
-
-  
-  insertText         = 2000,
-  insertIMEText      = 2001,
-  deleteSelection    = 2002,
-  setTextProperty    = 2003,
-  removeTextProperty = 2004,
-  outputText         = 2005,
-  setText            = 2006,
-
-  
-  insertBreak         = 3000,
-  makeList            = 3001,
-  indent              = 3002,
-  outdent             = 3003,
-  align               = 3004,
-  makeBasicBlock      = 3005,
-  removeList          = 3006,
-  makeDefListItem     = 3007,
-  insertElement       = 3008,
-  insertQuotation     = 3009,
-  htmlPaste           = 3012,
-  loadHTML            = 3013,
-  resetTextProperties = 3014,
-  setAbsolutePosition = 3015,
-  removeAbsolutePosition = 3016,
-  decreaseZIndex      = 3017,
-  increaseZIndex      = 3018
-};
-
-inline bool operator!(const EditAction& aOp)
-{
-  return aOp == EditAction::none;
-}
-
 namespace mozilla {
 class AddStyleSheetTransaction;
 class AutoRules;
@@ -126,6 +76,7 @@ class SplitNodeResult;
 class SplitNodeTransaction;
 class TextComposition;
 class TextEditor;
+enum class EditAction : int32_t;
 
 namespace dom {
 class DataTransfer;
@@ -1459,6 +1410,8 @@ protected:
   
   
   RefPtr<TextComposition> mComposition;
+
+  RefPtr<TextEditRules> mRules;
 
   
   typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 5>
