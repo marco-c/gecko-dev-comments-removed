@@ -343,11 +343,14 @@ struct BuiltDisplayListDescriptor {
   uint64_t builder_finish_time;
   
   uint64_t send_start_time;
+  
+  size_t total_clip_ids;
 
   bool operator==(const BuiltDisplayListDescriptor& aOther) const {
     return builder_start_time == aOther.builder_start_time &&
            builder_finish_time == aOther.builder_finish_time &&
-           send_start_time == aOther.send_start_time;
+           send_start_time == aOther.send_start_time &&
+           total_clip_ids == aOther.total_clip_ids;
   }
 };
 
@@ -1044,34 +1047,34 @@ void wr_dp_clear_save(WrState *aState)
 WR_FUNC;
 
 WR_INLINE
-uint64_t wr_dp_define_clip(WrState *aState,
-                           const uint64_t *aAncestorScrollId,
-                           const uint64_t *aAncestorClipId,
-                           LayoutRect aClipRect,
-                           const ComplexClipRegion *aComplex,
-                           size_t aComplexCount,
-                           const WrImageMask *aMask)
+size_t wr_dp_define_clip(WrState *aState,
+                         const size_t *aAncestorScrollId,
+                         const size_t *aAncestorClipId,
+                         LayoutRect aClipRect,
+                         const ComplexClipRegion *aComplex,
+                         size_t aComplexCount,
+                         const WrImageMask *aMask)
 WR_FUNC;
 
 WR_INLINE
-uint64_t wr_dp_define_scroll_layer(WrState *aState,
-                                   uint64_t aScrollId,
-                                   const uint64_t *aAncestorScrollId,
-                                   const uint64_t *aAncestorClipId,
-                                   LayoutRect aContentRect,
-                                   LayoutRect aClipRect)
+size_t wr_dp_define_scroll_layer(WrState *aState,
+                                 uint64_t aScrollId,
+                                 const size_t *aAncestorScrollId,
+                                 const size_t *aAncestorClipId,
+                                 LayoutRect aContentRect,
+                                 LayoutRect aClipRect)
 WR_FUNC;
 
 WR_INLINE
-uint64_t wr_dp_define_sticky_frame(WrState *aState,
-                                   LayoutRect aContentRect,
-                                   const float *aTopMargin,
-                                   const float *aRightMargin,
-                                   const float *aBottomMargin,
-                                   const float *aLeftMargin,
-                                   StickyOffsetBounds aVerticalBounds,
-                                   StickyOffsetBounds aHorizontalBounds,
-                                   LayoutVector2D aAppliedOffset)
+size_t wr_dp_define_sticky_frame(WrState *aState,
+                                 LayoutRect aContentRect,
+                                 const float *aTopMargin,
+                                 const float *aRightMargin,
+                                 const float *aBottomMargin,
+                                 const float *aLeftMargin,
+                                 StickyOffsetBounds aVerticalBounds,
+                                 StickyOffsetBounds aHorizontalBounds,
+                                 LayoutVector2D aAppliedOffset)
 WR_FUNC;
 
 WR_INLINE
@@ -1169,13 +1172,13 @@ WR_FUNC;
 
 WR_INLINE
 void wr_dp_push_clip(WrState *aState,
-                     uint64_t aClipId)
+                     size_t aClipId)
 WR_FUNC;
 
 WR_INLINE
 void wr_dp_push_clip_and_scroll_info(WrState *aState,
-                                     uint64_t aScrollId,
-                                     const uint64_t *aClipId)
+                                     size_t aScrollId,
+                                     const size_t *aClipId)
 WR_FUNC;
 
 WR_INLINE
@@ -1246,7 +1249,7 @@ WR_FUNC;
 
 WR_INLINE
 void wr_dp_push_scroll_layer(WrState *aState,
-                             uint64_t aScrollId)
+                             size_t aScrollId)
 WR_FUNC;
 
 WR_INLINE
