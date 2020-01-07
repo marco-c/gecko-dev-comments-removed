@@ -1,3 +1,4 @@
+
 import os
 
 BUILD_DIR = "mozilla-central"
@@ -10,7 +11,6 @@ REPO_PATH = "mozilla-central"
 L10N_REPO_PATH = "l10n-central"
 
 OBJDIR = "objdir-droid"
-
 ANDROID_DIR = "mobile/android"
 
 
