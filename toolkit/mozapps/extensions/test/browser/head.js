@@ -107,7 +107,7 @@ function checkOpenWindows(aWindowID) {
 
 
 var gCatMan = Cc["@mozilla.org/categorymanager;1"]
-                           .getService(Ci.nsICategoryManager);
+                .getService(Ci.nsICategoryManager);
 
 
 var backgroundUpdateConfig = "@mozilla.org/addons/integration;1,getService,addon-background-update-timer,extensions.update.interval,86400";

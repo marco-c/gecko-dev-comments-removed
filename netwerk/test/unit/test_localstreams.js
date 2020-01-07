@@ -12,8 +12,8 @@ function test_stream(stream) {
 
   
   Assert.equal(Cc["@mozilla.org/io-util;1"]
-                          .getService(Ci.nsIIOUtil)
-                          .inputStreamIsBuffered(stream),
+                 .getService(Ci.nsIIOUtil)
+                 .inputStreamIsBuffered(stream),
                false);
   
   
