@@ -324,7 +324,7 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
     }
 #endif 
 
-    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent);
+    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent, false);
     if (!menuFrameForKey) {
       return NS_OK;
     }
@@ -382,7 +382,7 @@ nsMenuBarListener::GetModifiersForAccessKey(nsIDOMKeyEvent* aKeyEvent)
 }
 
 nsMenuFrame*
-nsMenuBarListener::GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent)
+nsMenuBarListener::GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent, bool aPeek)
 {
   if (!IsAccessKeyPressed(aKeyEvent)) {
     return nullptr;
@@ -404,7 +404,7 @@ nsMenuBarListener::GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent)
     
     
     
-    return mMenuBarFrame->FindMenuWithShortcut(aKeyEvent);
+    return mMenuBarFrame->FindMenuWithShortcut(aKeyEvent, aPeek);
   }
 
   return nullptr;
@@ -493,7 +493,7 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
   }
 
   if (capturing && mAccessKey) {
-    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent);
+    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent, true);
     if (menuFrameForKey) {
       ReserveKeyIfNeeded(aKeyEvent);
     }

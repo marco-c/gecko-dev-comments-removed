@@ -144,7 +144,7 @@ nsMenuBarFrame::ToggleMenuActiveState()
 }
 
 nsMenuFrame*
-nsMenuBarFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent)
+nsMenuBarFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent, bool aPeek)
 {
   uint32_t charCode;
   aKeyEvent->GetCharCode(&charCode);
@@ -202,22 +202,24 @@ nsMenuBarFrame::FindMenuWithShortcut(nsIDOMKeyEvent* aKeyEvent)
 
   
 #ifdef XP_WIN
-  
-  if (mIsActive) {
-    nsCOMPtr<nsISound> soundInterface = do_CreateInstance("@mozilla.org/sound;1");
-    if (soundInterface)
-      soundInterface->Beep();
-  }
+  if (!aPeek) {
+    
+    if (mIsActive) {
+      nsCOMPtr<nsISound> soundInterface = do_CreateInstance("@mozilla.org/sound;1");
+      if (soundInterface)
+        soundInterface->Beep();
+    }
 
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) {
-    nsIFrame* popup = pm->GetTopPopup(ePopupTypeAny);
-    if (popup)
-      pm->HidePopup(popup->GetContent(), true, true, true, false);
-  }
+    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+    if (pm) {
+      nsIFrame* popup = pm->GetTopPopup(ePopupTypeMenu);
+      if (popup)
+        pm->HidePopup(popup->GetContent(), true, true, true, false);
+    }
 
-  SetCurrentMenuItem(nullptr);
-  SetActive(false);
+    SetCurrentMenuItem(nullptr);
+    SetActive(false);
+  }
 
 #endif  
 

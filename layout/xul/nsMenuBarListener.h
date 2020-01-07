@@ -79,7 +79,8 @@ protected:
 
 
 
-  nsMenuFrame* GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent);
+
+  nsMenuFrame* GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent, bool aPeek);
 
   
 
