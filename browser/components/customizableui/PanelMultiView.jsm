@@ -593,6 +593,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
   showSubView(viewIdOrNode, anchor) {
+    this._showSubView(viewIdOrNode, anchor).catch(Cu.reportError);
+  }
+  async _showSubView(viewIdOrNode, anchor) {
     let viewNode = typeof viewIdOrNode == "string" ?
                    this.document.getElementById(viewIdOrNode) : viewIdOrNode;
     if (!viewNode) {
@@ -600,33 +603,79 @@ this.PanelMultiView = class extends this.AssociatedToNode {
       return;
     }
 
+    let prevPanelView = this.openViews[this.openViews.length - 1];
     let nextPanelView = PanelView.forNode(viewNode);
     if (this.openViews.includes(nextPanelView)) {
       Cu.reportError(new Error(`Subview ${viewNode.id} is already open.`));
       return;
     }
+    if (!(await this._openView(nextPanelView))) {
+      return;
+    }
 
-    this._showView(nextPanelView, anchor);
+    prevPanelView.captureKnownSize();
+
+    
+    
+    nextPanelView.mainview = false;
+    
+    nextPanelView.headerText = viewNode.getAttribute("title") ||
+                               (anchor && anchor.getAttribute("label"));
+    
+    nextPanelView.minMaxWidth = prevPanelView.knownWidth;
+
+    if (anchor) {
+      viewNode.classList.add("PanelUI-subView");
+    }
+
+    await this._transitionViews(prevPanelView.node, viewNode, false, anchor);
   }
 
   
 
 
   goBack() {
+    this._goBack().catch(Cu.reportError);
+  }
+  async _goBack() {
     if (this.openViews.length < 2) {
       
       
       return;
     }
 
-    this._showView(this.openViews[this.openViews.length - 2], null, true);
+    let prevPanelView = this.openViews[this.openViews.length - 1];
+    let nextPanelView = this.openViews[this.openViews.length - 2];
+
+    prevPanelView.captureKnownSize();
+    await this._transitionViews(prevPanelView.node, nextPanelView.node, true);
+
+    this.openViews.pop();
   }
 
-  async showMainView() {
-    if (!this.node || !this._mainViewId)
-      return false;
+  
 
-    return this._showView(PanelView.forNode(this._mainView));
+
+  async showMainView() {
+    if (!this.node || !this._mainViewId) {
+      return false;
+    }
+
+    let nextPanelView = PanelView.forNode(this._mainView);
+    if (!(await this._openView(nextPanelView))) {
+      return false;
+    }
+
+    
+    
+    nextPanelView.mainview = true;
+    nextPanelView.headerText = "";
+    nextPanelView.minMaxWidth = 0;
+
+    await this._cleanupTransitionPhase();
+    this.hideAllViewsExcept(nextPanelView);
+
+    return true;
   }
 
   
@@ -651,74 +700,40 @@ this.PanelMultiView = class extends this.AssociatedToNode {
     this.showingSubView = nextPanelView.node.id != this._mainViewId;
   }
 
-  async _showView(nextPanelView, anchor, reverse) {
-    try {
-      let viewNode = nextPanelView.node;
-      this.knownViews.add(nextPanelView);
+  
 
-      viewNode.panelMultiView = this.node;
 
-      let previousViewNode = this._currentSubView;
 
-      if (viewNode.parentNode != this._viewStack) {
-        this._viewStack.appendChild(viewNode);
-      }
 
-      
-      
-      
-      if (await nextPanelView.dispatchAsyncEvent("ViewShowing")) {
-        return false;
-      }
 
-      if (!reverse) {
-        this.openViews.push(nextPanelView);
-      }
+  async _openView(panelView) {
+    if (panelView.node.parentNode != this._viewStack) {
+      this._viewStack.appendChild(panelView.node);
+    }
 
-      
-      
-      let showingSameView = viewNode == previousViewNode;
+    this.knownViews.add(panelView);
+    panelView.node.panelMultiView = this.node;
+    this.openViews.push(panelView);
 
-      let prevPanelView = PanelView.forNode(previousViewNode);
-      prevPanelView.captureKnownSize();
+    let canceled = await panelView.dispatchAsyncEvent("ViewShowing");
 
-      if (!reverse) {
-        
-        
-        
-        
-        nextPanelView.headerText = viewNode.getAttribute("title") ||
-                                   (anchor && anchor.getAttribute("label"));
-        
-        let isMainView = viewNode.id == this._mainViewId;
-        nextPanelView.mainview = isMainView;
-        
-        nextPanelView.minMaxWidth = isMainView ? 0 : prevPanelView.knownWidth;
-      }
-
-      if (anchor) {
-        viewNode.classList.add("PanelUI-subView");
-      }
-
-      
-      
-      await this._cleanupTransitionPhase();
-      if (!showingSameView && this._panel.state == "open") {
-        await this._transitionViews(previousViewNode, viewNode, reverse, anchor);
-        nextPanelView.focusSelectedElement();
-      } else {
-        this.hideAllViewsExcept(nextPanelView);
-      }
-
-      if (reverse) {
-        this.openViews.pop();
-      }
-
-      return true;
-    } catch (ex) {
-      Cu.reportError(ex);
+    
+    
+    
+    if (!this.openViews.length) {
       return false;
     }
+
+    
+    if (canceled) {
+      
+      
+      panelView.dispatchCustomEvent("ViewHiding");
+      this.openViews.pop();
+      return false;
+    }
+
+    return true;
   }
 
   
@@ -738,6 +753,9 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
 
   async _transitionViews(previousViewNode, viewNode, reverse, anchor) {
+    
+    await this._cleanupTransitionPhase();
+
     
     
     if (this._panel.state != "open") {
@@ -879,7 +897,13 @@ this.PanelMultiView = class extends this.AssociatedToNode {
 
     details.phase = TRANSITION_PHASES.END;
 
+    
     await this._cleanupTransitionPhase(details);
+
+    
+    if (nextPanelView.node.panelMultiView == this.node) {
+      nextPanelView.focusSelectedElement();
+    }
   }
 
   
