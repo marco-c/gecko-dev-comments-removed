@@ -9,6 +9,7 @@
 
 #include "IpdlTuple.h"
 #include "base/process.h"
+#include "mozilla/Atomics.h"
 
 #if defined(XP_WIN)
 #include "nsWindowsDllInterceptor.h"
@@ -96,12 +97,19 @@ typedef bool(ShouldHookFunc)(int aQuirks);
 template<FunctionHookId functionId, typename FunctionType>
 class BasicFunctionHook : public FunctionHook
 {
+#if defined(XP_WIN)
+  using FuncHookType = WindowsDllInterceptor::FuncHookType<FunctionType*>;
+#endif 
+
 public:
   BasicFunctionHook(const char* aModuleName,
                     const char* aFunctionName, FunctionType* aOldFunction,
-                    FunctionType* aNewFunction) :
-    mOldFunction(aOldFunction), mRegistration(UNREGISTERED), mModuleName(aModuleName),
-    mFunctionName(aFunctionName), mNewFunction(aNewFunction)
+                    FunctionType* aNewFunction)
+    : mOldFunction(aOldFunction)
+    , mRegistration(UNREGISTERED)
+    , mModuleName(aModuleName)
+    , mFunctionName(aFunctionName)
+    , mNewFunction(aNewFunction)
   {
     MOZ_ASSERT(mOldFunction);
     MOZ_ASSERT(mNewFunction);
@@ -128,7 +136,10 @@ protected:
   
   
   
-  FunctionType* mOldFunction;
+  Atomic<FunctionType*> mOldFunction;
+#if defined(XP_WIN)
+  FuncHookType mStub;
+#endif 
 
   enum RegistrationStatus { UNREGISTERED, FAILED, SUCCEEDED };
   RegistrationStatus mRegistration;
@@ -170,14 +181,16 @@ BasicFunctionHook<functionId, FunctionType>::Register(int aQuirks)
     return false;
   }
 
-  isHooked =
-    dllInterceptor->AddHook(mFunctionName.Data(), reinterpret_cast<intptr_t>(mNewFunction),
-                            reinterpret_cast<void**>(&mOldFunction));
+  isHooked = mStub.Set(*dllInterceptor, mFunctionName.Data(), mNewFunction);
 #endif
 
   if (isHooked) {
+#if defined(XP_WIN)
+    mOldFunction = mStub.GetStub();
+#endif
     mRegistration = SUCCEEDED;
   }
+
   HOOK_LOG(LogLevel::Debug,
            ("Registering to intercept function '%s' : '%s'", mFunctionName.Data(),
             SuccessMsg(isHooked)));
