@@ -1723,17 +1723,6 @@ nsCSSFrameConstructor::NotifyDestroyingFrame(nsIFrame* aFrame)
   nsFrameManager::NotifyDestroyingFrame(aFrame);
 }
 
-static bool
-HasGeneratedContent(const nsIContent* aChild)
-{
-  if (!aChild->MayHaveAnonymousChildren()) {
-    return false;
-  }
-
-  return nsLayoutUtils::GetBeforeFrame(aChild) ||
-         nsLayoutUtils::GetAfterFrame(aChild);
-}
-
 struct nsGenConInitializer {
   nsAutoPtr<nsGenConNode> mNode;
   nsGenConList*           mList;
@@ -8494,6 +8483,8 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
                                       RemoveFlags aFlags)
 {
   MOZ_ASSERT(aChild);
+  MOZ_ASSERT(!aChild->IsRootOfAnonymousSubtree() || !aOldNextSibling,
+             "Anonymous roots don't have siblings");
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   nsPresContext* presContext = mPresShell->GetPresContext();
   MOZ_ASSERT(presContext, "Our presShell should have a valid presContext");
@@ -8564,22 +8555,9 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   MOZ_ASSERT(!childFrame || !GetDisplayContentsStyleFor(aChild),
              "display:contents nodes shouldn't have a frame");
   if (!childFrame && GetDisplayContentsStyleFor(aChild)) {
-    if (HasGeneratedContent(aChild)) {
-      nsIContent* ancestor = aChild->GetFlattenedTreeParent();
-      MOZ_ASSERT(ancestor, "display: contents on the root?");
-      while (!ancestor->GetPrimaryFrame()) {
-        ancestor = ancestor->GetFlattenedTreeParent();
-        MOZ_ASSERT(ancestor, "we can't have a display: contents subtree root!");
-      }
-
-      
-      
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(ancestor, InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
-
+    
+    
+    
     StyleChildrenIterator iter(aChild);
     for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
       if (c->GetPrimaryFrame() || GetDisplayContentsStyleFor(c)) {
@@ -8742,14 +8720,18 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     }
 #endif
 
-
     
     if (childFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
       childFrame = childFrame->GetPlaceholderFrame();
       NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
       parentFrame = childFrame->GetParent();
     }
+
     RemoveFrame(nsLayoutUtils::GetChildListNameFor(childFrame), childFrame);
+
+    
+    
+    
 
     if (isRoot) {
       mRootElementFrame = nullptr;
@@ -8769,8 +8751,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     
     
     
-    if (aContainer && !aChild->IsRootOfAnonymousSubtree() &&
-        aFlags == REMOVE_CONTENT &&
+    if (aContainer && aOldNextSibling && aFlags == REMOVE_CONTENT &&
         GetParentType(parentType) == eTypeBlock) {
       
       
@@ -8785,17 +8766,15 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
       
       
       
-      if (aOldNextSibling) {
-        nsIContent* prevSibling = aOldNextSibling->GetPreviousSibling();
-        if (prevSibling && prevSibling->GetPreviousSibling()) {
-          LAYOUT_PHASE_TEMP_EXIT();
-          ReframeTextIfNeeded(aContainer, prevSibling);
-          LAYOUT_PHASE_TEMP_REENTER();
-        }
+      nsIContent* prevSibling = aOldNextSibling->GetPreviousSibling();
+      if (prevSibling && prevSibling->GetPreviousSibling()) {
+        LAYOUT_PHASE_TEMP_EXIT();
+        ReframeTextIfNeeded(aContainer, prevSibling);
+        LAYOUT_PHASE_TEMP_REENTER();
       }
       
       
-      if (aOldNextSibling && aOldNextSibling->GetNextSibling() &&
+      if (aOldNextSibling->GetNextSibling() &&
           aOldNextSibling->GetPreviousSibling()) {
         LAYOUT_PHASE_TEMP_EXIT();
         ReframeTextIfNeeded(aContainer, aOldNextSibling);
