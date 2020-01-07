@@ -185,6 +185,8 @@
                  command="View:PageSource">
       <observes element="canViewSource" attribute="disabled"/>
     </broadcaster>
+    <broadcaster id="reportPhishingBroadcaster" disabled="true"/>
+    <broadcaster id="reportPhishingErrorBroadcaster" disabled="true"/>
   </broadcasterset>
 
   <keyset id="mainKeyset">
@@ -387,7 +389,7 @@
 #ifdef NIGHTLY_BUILD
     <key id="key_wrCaptureCmd"
 #ifdef XP_MACOSX
-    key="3" modifiers="control,shift"
+    keycode="3" modifiers="control,shift"
 #else
     key="#" modifiers="control"
 #endif
