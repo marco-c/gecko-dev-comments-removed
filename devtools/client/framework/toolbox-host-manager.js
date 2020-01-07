@@ -104,20 +104,21 @@ ToolboxHostManager.prototype = {
     if (!event.data) {
       return;
     }
+    const msg = event.data;
     
     
-    if (event.data.frameId != this.frameId) {
+    if (msg.frameId != this.frameId) {
       return;
     }
-    switch (event.data.name) {
+    switch (msg.name) {
       case "switch-host":
-        this.switchHost(event.data.hostType);
+        this.switchHost(msg.hostType);
         break;
       case "raise-host":
         this.host.raise();
         break;
       case "set-host-title":
-        this.host.setTitle(event.data.title);
+        this.host.setTitle(msg.title);
         break;
     }
   },
