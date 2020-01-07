@@ -171,9 +171,19 @@ private:
         PRIntervalTime    mPollStartEpoch;  
 
     public:
+        
+        
         bool IsTimedOut(PRIntervalTime now) const;
-        void StartTimeout();
-        void StopTimeout();
+        
+        
+        
+        void EnsureTimeout(PRIntervalTime now);
+        
+        
+        void DisengageTimeout();
+        
+        
+        
         PRIntervalTime TimeoutIn(PRIntervalTime now) const;
     };
 
@@ -213,7 +223,7 @@ private:
     PRIntervalTime PollTimeout(PRIntervalTime now); 
     nsresult       DoPollIteration(TimeDuration *pollDuration);
                                              
-    int32_t        Poll(TimeDuration *pollDuration);
+    int32_t        Poll(TimeDuration *pollDuration, PRIntervalTime now);
                                              
                                              
                                              
