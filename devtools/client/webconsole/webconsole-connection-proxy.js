@@ -208,9 +208,15 @@ WebConsoleConnectionProxy.prototype = {
     this.webConsoleClient = webConsoleClient;
     this._hasNativeConsoleAPI = response.nativeConsoleAPI;
 
+    let saveBodies = Services.prefs.getBoolPref(
+      "devtools.netmonitor.saveRequestAndResponseBodies");
+
     
     
-    let saveBodies = !this.webConsoleFrame.isBrowserConsole;
+    if (this.webConsoleFrame.isBrowserConsole) {
+      saveBodies = false;
+    }
+
     this.webConsoleFrame.setSaveRequestAndResponseBodies(saveBodies);
 
     this.webConsoleClient.on("networkEvent", this._onNetworkEvent);

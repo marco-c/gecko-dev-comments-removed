@@ -36,11 +36,6 @@ const HTTP_SEE_OTHER = 303;
 const HTTP_TEMPORARY_REDIRECT = 307;
 
 
-const RESPONSE_BODY_LIMIT = 1048576;
-
-exports.RESPONSE_BODY_LIMIT = RESPONSE_BODY_LIMIT;
-
-
 
 
 
@@ -286,6 +281,9 @@ function NetworkResponseListener(owner, httpActivity) {
   let channel = this.httpActivity.channel;
   this._wrappedNotificationCallbacks = channel.notificationCallbacks;
   channel.notificationCallbacks = this;
+
+  this.responseBodyLimit = Services.prefs.getIntPref(
+    "devtools.netmonitor.responseBodyLimit");
 }
 
 NetworkResponseListener.prototype = {
@@ -415,10 +413,13 @@ NetworkResponseListener.prototype = {
     this.bodySize += count;
 
     if (!this.httpActivity.discardResponseBody) {
-      if (this.receivedData.length < RESPONSE_BODY_LIMIT) {
+      let limit = Services.prefs.getIntPref("devtools.netmonitor.responseBodyLimit");
+      if (this.receivedData.length < limit || limit == 0) {
         this.receivedData +=
           NetworkHelper.convertToUnicode(data, request.contentCharset);
-      } else {
+      }
+      if (this.receivedData.length > limit && limit > 0) {
+        this.receivedData = this.receivedData.substr(0, limit);
         this.truncated = true;
       }
     }
