@@ -137,21 +137,6 @@ CanCreateUserNamespace()
     return cached[0] > '0';
   }
 
-  
-  
-  
-  
-  if (syscall(__NR_unshare, 0) != 0) {
-#ifdef MOZ_VALGRIND
-    MOZ_ASSERT(errno == ENOSYS);
-#else
-    
-    
-    MOZ_ASSERT(false);
-#endif
-    return false;
-  }
-
   pid_t pid = syscall(__NR_clone, SIGCHLD | CLONE_NEWUSER,
                       nullptr, nullptr, nullptr, nullptr);
   if (pid == 0) {
