@@ -11,8 +11,7 @@
 
 #include <math.h>
 
-#include "builtin/Number.h"
-#include "vm/JSContext.h"
+#include "vm/JSContext.h"  
 
 
 
@@ -20,31 +19,72 @@
 
 
 #ifdef __GNUC__
-#define js_copysign __builtin_copysign
+    #define js_copysign __builtin_copysign
 #elif defined _WIN32
-#define js_copysign _copysign
+    #define js_copysign _copysign
 #else
-#define js_copysign copysign
+    #define js_copysign copysign
 #endif
 
 
-static inline double
-js_fmod(double d, double d2)
-{
-#ifdef XP_WIN
+
+#if __GNUC__ >= 5
     
-
-
-
-    if ((mozilla::IsFinite(d) && mozilla::IsInfinite(d2)) ||
-        (d == 0 && mozilla::IsFinite(d2))) {
-        return d;
-    }
+    #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) 1
+#else
+    
+    #ifdef __has_builtin
+        #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) __has_builtin(x)
+    #endif
 #endif
-    return fmod(d, d2);
-}
+#ifndef BUILTIN_CHECKED_ARITHMETIC_SUPPORTED
+    #define BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(x) 0
+#endif
 
 namespace js {
+
+MOZ_MUST_USE inline bool
+SafeAdd(int32_t one, int32_t two, int32_t* res)
+{
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_sadd_overflow)
+    
+    return !__builtin_sadd_overflow(one, two, res);
+#else
+    
+    
+    *res = uint32_t(one) + uint32_t(two);
+    int64_t ores = (int64_t)one + (int64_t)two;
+    return ores == (int64_t)*res;
+#endif
+}
+
+MOZ_MUST_USE inline bool
+SafeSub(int32_t one, int32_t two, int32_t* res)
+{
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_ssub_overflow)
+    return !__builtin_ssub_overflow(one, two, res);
+#else
+    *res = uint32_t(one) - uint32_t(two);
+    int64_t ores = (int64_t)one - (int64_t)two;
+    return ores == (int64_t)*res;
+#endif
+}
+
+MOZ_MUST_USE inline bool
+SafeMul(int32_t one, int32_t two, int32_t* res)
+{
+#if BUILTIN_CHECKED_ARITHMETIC_SUPPORTED(__builtin_smul_overflow)
+    return !__builtin_smul_overflow(one, two, res);
+#else
+    *res = uint32_t(one) * uint32_t(two);
+    int64_t ores = (int64_t)one * (int64_t)two;
+    return ores == (int64_t)*res;
+#endif
+}
+
+
+
+
 
 inline double
 NumberDiv(double a, double b)
@@ -66,13 +106,30 @@ NumberDiv(double a, double b)
     return a / b;
 }
 
+
+
+
+
 inline double
 NumberMod(double a, double b)
 {
     AutoUnsafeCallWithABI unsafe;
     if (b == 0)
         return JS::GenericNaN();
-    return js_fmod(a, b);
+
+#ifdef XP_WIN
+    
+
+
+
+    if ((mozilla::IsFinite(a) && mozilla::IsInfinite(b)) ||
+        (a == 0 && mozilla::IsFinite(b)))
+    {
+        return a;
+    }
+#endif
+
+    return fmod(a, b);
 }
 
 } 
