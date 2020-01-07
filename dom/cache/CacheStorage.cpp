@@ -160,7 +160,7 @@ CacheStorage::CreateOnMainThread(Namespace aNamespace, nsIGlobalObject* aGlobal,
   }
 
   bool testingEnabled = aForceTrustedOrigin ||
-    Preferences::GetBool("dom.caches.testing.enabled", false) ||
+    DOMPreferences::DOMCachesTestingEnabled() ||
     Preferences::GetBool("dom.serviceWorkers.testing.enabled", false);
 
   if (!IsTrusted(principalInfo, testingEnabled)) {
@@ -219,7 +219,7 @@ CacheStorage::CreateOnWorker(Namespace aNamespace, nsIGlobalObject* aGlobal,
   
   
   
-  bool testingEnabled = aWorkerPrivate->DOMCachesTestingEnabled() ||
+  bool testingEnabled = DOMPreferences::DOMCachesTestingEnabled() ||
                         aWorkerPrivate->ServiceWorkersTestingEnabled() ||
                         aWorkerPrivate->ServiceWorkersTestingInWindow() ||
                         aWorkerPrivate->IsServiceWorker();
