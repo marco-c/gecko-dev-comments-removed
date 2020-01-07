@@ -15,6 +15,7 @@ add_task(function* () {
   let { store, windowRequire, connector } = monitor.panelWin;
   let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   let {
+    getRequestById,
     getSortedRequests,
   } = windowRequire("devtools/client/netmonitor/src/selectors/index");
 
@@ -41,16 +42,27 @@ add_task(function* () {
   
   
   let onRequests = waitForNetworkEvents(monitor, 1);
-  ITEMS.forEach((item) => {
+  for (let item of ITEMS) {
     info(`Selecting the ${item.method} request`);
     store.dispatch(Actions.selectRequest(item.id));
+
+    
+    
+    yield waitUntil(() => {
+      item = getRequestById(store.getState(), item.id);
+      return item.requestHeaders && item.responseHeaders;
+    });
+
+    let { size } = getSortedRequests(store.getState());
 
     info("Cloning the selected request into a custom clone");
     store.dispatch(Actions.cloneSelectedRequest());
 
     info("Sending the cloned request (without change)");
     store.dispatch(Actions.sendCustomRequest(connector));
-  });
+
+    yield waitUntil(() => getSortedRequests(store.getState()).size === size + 1);
+  }
 
   info("Waiting for both resent requests");
   yield onRequests;
@@ -63,14 +75,26 @@ add_task(function* () {
     is(item.status, 200, `The ${item.method} response has the right status`);
 
     if (item.method === "POST") {
-      
-      let responseContent = yield connector.requestData(item.id, "responseContent");
-      let { requestPostData } = yield connector.requestData(item.id, "requestPostData");
+      is(item.method, "POST", `The ${item.method} request has the right method`);
 
-      is(requestPostData.postData.text, "post-data",
+      
+      
+      yield waitUntil(() => {
+        item = getRequestById(store.getState(), item.id);
+        return item.responseContentAvailable;
+      });
+      yield connector.requestData(item.id, "responseContent");
+
+      
+      yield waitUntil(() => {
+        item = getRequestById(store.getState(), item.id);
+        return item.responseContent && item.requestPostData;
+      });
+
+      is(item.requestPostData.postData.text, "post-data",
         "The POST request has the right POST data");
       
-      is(responseContent.content.text, "Access-Control-Allow-Origin: *",
+      is(item.responseContent.content.text, "Access-Control-Allow-Origin: *",
         "The POST response has the right content");
     }
   }

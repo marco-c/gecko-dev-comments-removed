@@ -235,7 +235,7 @@ function testEscapeStringWin() {
 }
 
 function* createCurlData(selected, getLongString, requestData) {
-  let { url, method, httpVersion } = selected;
+  let { id, url, method, httpVersion } = selected;
 
   
   let data = {
@@ -246,13 +246,14 @@ function* createCurlData(selected, getLongString, requestData) {
     postDataText: null
   };
 
+  let requestHeaders = yield requestData(id, "requestHeaders");
   
-  for (let { name, value } of selected.requestHeaders.headers) {
+  for (let { name, value } of requestHeaders.headers) {
     let text = yield getLongString(value);
     data.headers.push({ name: name, value: text });
   }
 
-  let { requestPostData } = yield requestData(selected.id, "requestPostData");
+  let { requestPostData } = yield requestData(id, "requestPostData");
   
   if (requestPostData) {
     let postData = requestPostData.postData.text;

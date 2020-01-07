@@ -73,14 +73,16 @@ class FirefoxConnector {
     if (this.tabTarget) {
       
       
+      this.tabTarget.off("will-navigate");
+      
+      
       if (this.tabTarget.getTrait("documentLoadingMarkers") && this.timelineFront) {
         this.timelineFront.off("doc-loading", this.onDocLoadingMarker);
         await this.timelineFront.destroy();
       }
-
-      this.tabTarget.off("will-navigate");
       this.tabTarget = null;
     }
+
     this.webConsoleClient = null;
     this.timelineFront = null;
     this.dataProvider = null;

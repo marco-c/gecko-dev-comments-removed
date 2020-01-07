@@ -56,10 +56,7 @@ add_task(function* () {
       });
     }
 
-    
-    
-    let done = waitForSecurityBrokenNetworkEvent();
-
+    let done = waitForNetworkEvents(monitor, 1);
     info("Requesting a resource that has a certificate problem.");
     yield executeRequests(1, "https://nocert.example.com");
 
@@ -80,7 +77,7 @@ add_task(function* () {
     yield executeRequests(1, "https://example.com" + CORS_SJS_PATH);
     yield done;
 
-    done = waitForSecurityBrokenNetworkEvent();
+    done = waitForNetworkEvents(monitor, 1);
     info("Requesting a resource over HTTP to localhost.");
     yield executeRequests(1, "http://localhost" + CORS_SJS_PATH);
     yield done;
@@ -89,26 +86,5 @@ add_task(function* () {
     is(store.getState().requests.requests.size,
       expectedCount,
       expectedCount + " events logged.");
-  }
-
-  
-
-
-
-  function waitForSecurityBrokenNetworkEvent() {
-    let awaitedEvents = [
-      "UPDATING_REQUEST_HEADERS",
-      "RECEIVED_REQUEST_HEADERS",
-      "UPDATING_REQUEST_COOKIES",
-      "RECEIVED_REQUEST_COOKIES",
-      "UPDATING_EVENT_TIMINGS",
-      "RECEIVED_EVENT_TIMINGS",
-    ];
-
-    let promises = awaitedEvents.map((event) => {
-      return monitor.panelWin.once(EVENTS[event]);
-    });
-
-    return Promise.all(promises);
   }
 });

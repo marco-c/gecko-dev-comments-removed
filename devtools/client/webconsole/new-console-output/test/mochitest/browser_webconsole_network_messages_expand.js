@@ -247,6 +247,10 @@ async function testTimings(messageNode) {
 
   
   timingsTab.click();
+  await waitUntil(() => {
+    return !!messageNode.querySelector(
+      "#timings-panel .timings-container .timings-label");
+  });
   let timingsContent = messageNode.querySelector(
     "#timings-panel .timings-container .timings-label");
   ok(timingsContent, "Timings content is available");
@@ -298,6 +302,10 @@ async function waitForRequestUpdates(toolbox) {
     });
   });
 }
+
+
+
+
 
 async function waitForLazyRequests(toolbox) {
   let {ui} = toolbox.getCurrentPanel().hud;

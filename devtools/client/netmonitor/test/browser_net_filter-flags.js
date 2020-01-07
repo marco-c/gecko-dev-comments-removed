@@ -145,8 +145,20 @@ add_task(function* () {
 
   store.dispatch(Actions.batchEnable(false));
 
+  function type(string) {
+    for (let ch of string) {
+      EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
+    }
+  }
+
+  
+  
+  
   function setFreetextFilter(value) {
-    store.dispatch(Actions.setRequestFilterText(value));
+    let filterBox = document.querySelector(".devtools-filterinput");
+    filterBox.focus();
+    filterBox.value = "";
+    type(value);
   }
 
   info("Starting test... ");
@@ -350,8 +362,15 @@ add_task(function* () {
       yield waitUntil(() => requestsListStatus.title);
     }
 
-    const items = getSortedRequests(store.getState());
-    const visibleItems = getDisplayedRequests(store.getState());
+    let items = getSortedRequests(store.getState());
+    let visibleItems = getDisplayedRequests(store.getState());
+
+    
+    
+    yield waitUntil(() => {
+      visibleItems = getDisplayedRequests(store.getState());
+      return visibleItems.size === visibility.filter(e => e).length;
+    });
 
     is(items.size, visibility.length,
       "There should be a specific amount of items in the requests menu.");
@@ -362,6 +381,15 @@ add_task(function* () {
       let itemId = items.get(i).id;
       let shouldBeVisible = !!visibility[i];
       let isThere = visibleItems.some(r => r.id == itemId);
+
+      
+      
+      yield waitUntil(() => {
+        visibleItems = getDisplayedRequests(store.getState());
+        isThere = visibleItems.some(r => r.id == itemId);
+        return isThere === shouldBeVisible;
+      });
+
       is(isThere, shouldBeVisible,
         `The item at index ${i} has visibility=${shouldBeVisible}`);
 

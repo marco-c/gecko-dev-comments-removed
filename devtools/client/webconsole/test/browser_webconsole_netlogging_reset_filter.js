@@ -6,17 +6,12 @@
 
 
 
-
-
 "use strict";
 
 const TEST_FILE_URI =
   "http://example.com/browser/devtools/client/webconsole/test/" +
   "test-network.html";
 const TEST_URI = "data:text/html;charset=utf8,<p>test file URI";
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/netmonitor/test/shared-head.js", this);
 
 var hud;
 
@@ -69,8 +64,6 @@ add_task(function* () {
   
   HUDService.lastFinishedRequest.callback = null;
   htmlRequest = browser = requests = hud = null;
-
-  yield waitForExistingRequests(monitor);
 });
 
 function testMessages() {

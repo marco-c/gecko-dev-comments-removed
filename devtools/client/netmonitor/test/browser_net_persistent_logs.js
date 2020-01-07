@@ -12,17 +12,26 @@ add_task(function* () {
   let { tab, monitor } = yield initNetMonitor(SINGLE_GET_URL);
   info("Starting test... ");
 
-  let { document } = monitor.panelWin;
+  let { document, store, windowRequire } = monitor.panelWin;
+  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+
+  store.dispatch(Actions.batchEnable(false));
 
   Services.prefs.setBoolPref("devtools.netmonitor.persistlog", false);
 
   yield reloadAndWait();
 
+  
+  
+  
+  
+  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
   is(document.querySelectorAll(".request-list-item").length, 2,
     "The request list should have two items at this point.");
 
   yield reloadAndWait();
 
+  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
   
   is(document.querySelectorAll(".request-list-item").length, 2,
     "The request list should still have two items at this point.");
@@ -32,6 +41,7 @@ add_task(function* () {
 
   yield reloadAndWait();
 
+  yield waitUntil(() => document.querySelectorAll(".request-list-item").length === 4);
   
   is(document.querySelectorAll(".request-list-item").length, 4,
     "The request list should now have four items at this point.");

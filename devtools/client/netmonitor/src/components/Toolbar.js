@@ -18,9 +18,9 @@ const {
   getTypeFilteredRequests,
   isNetworkDetailsToggleButtonDisabled,
 } = require("../selectors/index");
-
 const { autocompleteProvider } = require("../utils/filter-autocomplete-provider");
 const { L10N } = require("../utils/l10n");
+const { fetchNetworkUpdatePacket } = require("../utils/request-utils");
 
 
 const SearchBox = createFactory(require("devtools/client/shared/components/SearchBox"));
@@ -137,7 +137,10 @@ class Toolbar extends Component {
 
     
     filteredRequests.forEach((request) => {
-      connector.requestData(request.id, "responseCookies");
+      fetchNetworkUpdatePacket(connector.requestData, request, [
+        "responseCookies",
+        "responseHeaders",
+      ]);
     });
   }
 

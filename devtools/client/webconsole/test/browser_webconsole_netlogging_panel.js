@@ -4,16 +4,11 @@
 
 
 
-
-
 "use strict";
 
 const TEST_NETWORK_REQUEST_URI =
   "http://example.com/browser/devtools/client/webconsole/test/" +
   "test-network-request.html";
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/netmonitor/test/shared-head.js", this);
 
 add_task(function* () {
   let finishedRequest = waitForFinishedRequest(({ request }) => {
@@ -29,13 +24,12 @@ add_task(function* () {
   let monitor = toolbox.getCurrentPanel();
 
   let { store, windowRequire } = monitor.panelWin;
-  let { getSelectedRequest } = windowRequire("devtools/client/netmonitor/src/selectors/index");
+  let { getSelectedRequest } =
+    windowRequire("devtools/client/netmonitor/src/selectors/index");
 
   let selected = getSelectedRequest(store.getState());
   is(selected.method, request.request.method,
      "The correct request is selected");
   is(selected.url, request.request.url,
      "The correct request is definitely selected");
-
-  yield waitForExistingRequests(monitor);
 });

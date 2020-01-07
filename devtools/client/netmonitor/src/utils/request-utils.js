@@ -420,33 +420,40 @@ function getResponseHeader(item, header) {
 
 
 
-function updateFormDataSections(props) {
+async function updateFormDataSections(props) {
   let {
     connector,
     request = {},
     updateRequest,
   } = props;
   let {
+    id,
     formDataSections,
     requestHeaders,
+    requestHeadersAvailable,
     requestHeadersFromUploadStream,
     requestPostData,
+    requestPostDataAvailable,
   } = request;
 
-  if (!formDataSections && requestHeaders &&
-      requestHeadersFromUploadStream && requestPostData) {
-    getFormDataSections(
+  if (requestHeadersAvailable && !requestHeaders) {
+    requestHeaders = await connector.requestData(id, "requestHeaders");
+  }
+
+  if (requestPostDataAvailable && !requestPostData) {
+    requestPostData = await connector.requestData(id, "requestPostData");
+  }
+
+  if (!formDataSections && requestHeaders && requestPostData &&
+      requestHeadersFromUploadStream) {
+    formDataSections = await getFormDataSections(
       requestHeaders,
       requestHeadersFromUploadStream,
       requestPostData,
       connector.getLongString,
-    ).then((newFormDataSections) => {
-      updateRequest(
-        request.id,
-        { formDataSections: newFormDataSections },
-        true,
-      );
-    });
+    );
+
+    updateRequest(request.id, { formDataSections }, true);
   }
 }
 
@@ -455,7 +462,7 @@ function updateFormDataSections(props) {
 
 
 
-function processNetworkUpdates(request) {
+function processNetworkUpdates(request = {}) {
   let result = {};
   for (let [key, value] of Object.entries(request)) {
     if (UPDATE_PROPS.includes(key)) {

@@ -24,8 +24,7 @@ class FirefoxDataProvider {
     this.actions = actions;
 
     
-    this.payloadQueue = [];
-    this.rdpRequestMap = new Map();
+    this.payloadQueue = new Map();
 
     
     
@@ -33,7 +32,6 @@ class FirefoxDataProvider {
 
     
     this.getLongString = this.getLongString.bind(this);
-    this.getRequestFromQueue = this.getRequestFromQueue.bind(this);
 
     
     this.onNetworkEvent = this.onNetworkEvent.bind(this);
@@ -72,9 +70,8 @@ class FirefoxDataProvider {
         stacktrace: cause.stacktrace,
 
         fromCache,
-        fromServiceWorker},
-        true,
-      );
+        fromServiceWorker,
+      }, true);
     }
 
     emit(EVENTS.REQUEST_ADDED, id);
@@ -88,7 +85,6 @@ class FirefoxDataProvider {
 
   async updateRequest(id, data) {
     let {
-      mimeType,
       responseContent,
       responseCookies,
       responseHeaders,
@@ -106,7 +102,7 @@ class FirefoxDataProvider {
       requestCookiesObj,
       responseCookiesObj,
     ] = await Promise.all([
-      this.fetchResponseContent(mimeType, responseContent),
+      this.fetchResponseContent(responseContent),
       this.fetchRequestHeaders(requestHeaders),
       this.fetchResponseHeaders(responseHeaders),
       this.fetchPostData(requestPostData),
@@ -124,18 +120,24 @@ class FirefoxDataProvider {
       responseCookiesObj
     );
 
-    this.pushRequestToQueue(id, payload);
+    if (this.actions.updateRequest) {
+      await this.actions.updateRequest(id, payload, true);
+    }
 
     return payload;
   }
 
-  async fetchResponseContent(mimeType, responseContent) {
+  async fetchResponseContent(responseContent) {
     let payload = {};
-    if (mimeType && responseContent && responseContent.content) {
+    if (responseContent && responseContent.content) {
       let { text } = responseContent.content;
       let response = await this.getLongString(text);
       responseContent.content.text = response;
       payload.responseContent = responseContent;
+
+      
+      
+      payload.responseContentAvailable = false;
     }
     return payload;
   }
@@ -147,6 +149,10 @@ class FirefoxDataProvider {
       if (headers) {
         payload.requestHeaders = headers;
       }
+
+      
+      
+      payload.requestHeadersAvailable = false;
     }
     return payload;
   }
@@ -158,6 +164,10 @@ class FirefoxDataProvider {
       if (headers) {
         payload.responseHeaders = headers;
       }
+
+      
+      
+      payload.responseHeadersAvailable = false;
     }
     return payload;
   }
@@ -182,32 +192,6 @@ class FirefoxDataProvider {
       
       
       payload.requestPostDataAvailable = false;
-    }
-    return payload;
-  }
-
-  async fetchResponseCookies(responseCookies) {
-    let payload = {};
-    if (responseCookies) {
-      let resCookies = [];
-      
-      let cookies = responseCookies.cookies ?
-        responseCookies.cookies : responseCookies;
-      
-      if (typeof cookies[Symbol.iterator] === "function") {
-        for (let cookie of cookies) {
-          resCookies.push(Object.assign({}, cookie, {
-            value: await this.getLongString(cookie.value),
-          }));
-        }
-        if (resCookies.length) {
-          payload.responseCookies = resCookies;
-        }
-      }
-
-      
-      
-      payload.responseCookiesAvailable = false;
     }
     return payload;
   }
@@ -238,14 +222,30 @@ class FirefoxDataProvider {
     return payload;
   }
 
-  
+  async fetchResponseCookies(responseCookies) {
+    let payload = {};
+    if (responseCookies) {
+      let resCookies = [];
+      
+      let cookies = responseCookies.cookies ?
+        responseCookies.cookies : responseCookies;
+      
+      if (typeof cookies[Symbol.iterator] === "function") {
+        for (let cookie of cookies) {
+          resCookies.push(Object.assign({}, cookie, {
+            value: await this.getLongString(cookie.value),
+          }));
+        }
+        if (resCookies.length) {
+          payload.responseCookies = resCookies;
+        }
+      }
 
-
-
-
-
-  getRequestFromQueue(id) {
-    return this.payloadQueue.find((item) => item.id === id);
+      
+      
+      payload.responseCookiesAvailable = false;
+    }
+    return payload;
   }
 
   
@@ -254,30 +254,7 @@ class FirefoxDataProvider {
 
 
   isPayloadQueueEmpty() {
-    return this.payloadQueue.length === 0;
-  }
-
-  
-
-
-
-
-
-  isRequestPayloadReady(id) {
-    let record = this.rdpRequestMap.get(id);
-    if (!record) {
-      return false;
-    }
-
-    let { payload } = this.getRequestFromQueue(id);
-
-    
-    
-    
-    
-    return record.requestHeaders && record.eventTimings &&
-      (record.responseHeaders || payload.securityState === "broken" ||
-        (!payload.status && payload.responseContentAvailable));
+    return this.payloadQueue.size === 0;
   }
 
   
@@ -287,18 +264,12 @@ class FirefoxDataProvider {
 
 
   pushRequestToQueue(id, payload) {
-    let request = this.getRequestFromQueue(id);
-    if (!request) {
-      this.payloadQueue.push({ id, payload });
-    } else {
-      
-      request.payload = Object.assign({}, request.payload, payload);
+    let payloadFromQueue = this.payloadQueue.get(id);
+    if (!payloadFromQueue) {
+      payloadFromQueue = {};
+      this.payloadQueue.set(id, payloadFromQueue);
     }
-  }
-
-  cleanUpQueue(id) {
-    this.payloadQueue = this.payloadQueue.filter(
-      request => request.id != id);
+    Object.assign(payloadFromQueue, payload);
   }
 
   
@@ -332,7 +303,7 @@ class FirefoxDataProvider {
 
 
 
-  onNetworkEvent(type, networkInfo) {
+  async onNetworkEvent(type, networkInfo) {
     let {
       actor,
       cause,
@@ -346,14 +317,7 @@ class FirefoxDataProvider {
       startedDateTime,
     } = networkInfo;
 
-    
-    this.rdpRequestMap.set(actor, {
-      requestHeaders: false,
-      responseHeaders: false,
-      eventTimings: false,
-    });
-
-    this.addRequest(actor, {
+    await this.addRequest(actor, {
       cause,
       fromCache,
       fromServiceWorker,
@@ -373,59 +337,44 @@ class FirefoxDataProvider {
 
 
 
-  onNetworkEventUpdate(type, data) {
+  async onNetworkEventUpdate(type, data) {
     let { packet, networkInfo } = data;
     let { actor } = networkInfo;
     let { updateType } = packet;
 
-    
-    
-    if (!this.rdpRequestMap.has(actor)) {
-      return;
-    }
-
     switch (updateType) {
-      case "requestHeaders":
-      case "responseHeaders":
-        this.requestPayloadData(actor, updateType);
-        break;
-      case "requestCookies":
-      case "responseCookies":
-      case "requestPostData":
-        
-        
-        this.updateRequest(actor, { [`${updateType}Available`]: true });
-        break;
       case "securityInfo":
-        this.updateRequest(actor, { securityState: networkInfo.securityInfo });
+        this.pushRequestToQueue(actor, { securityState: networkInfo.securityInfo });
         break;
       case "responseStart":
-        this.updateRequest(actor, {
+        this.pushRequestToQueue(actor, {
           httpVersion: networkInfo.response.httpVersion,
           remoteAddress: networkInfo.response.remoteAddress,
           remotePort: networkInfo.response.remotePort,
           status: networkInfo.response.status,
           statusText: networkInfo.response.statusText,
           headersSize: networkInfo.response.headersSize
-        }).then(() => {
-          emit(EVENTS.STARTED_RECEIVING_RESPONSE, actor);
         });
+        emit(EVENTS.STARTED_RECEIVING_RESPONSE, actor);
         break;
       case "responseContent":
-        this.updateRequest(actor, {
+        this.pushRequestToQueue(actor, {
           contentSize: networkInfo.response.bodySize,
           transferredSize: networkInfo.response.transferredSize,
           mimeType: networkInfo.response.content.mimeType,
-          
-          
-          responseContentAvailable: true,
         });
         break;
       case "eventTimings":
         this.pushRequestToQueue(actor, { totalTime: networkInfo.totalTime });
-        this.requestPayloadData(actor, updateType);
+        await this._requestData(actor, updateType);
         break;
     }
+
+    
+    
+    this.pushRequestToQueue(actor, { [`${updateType}Available`]: true });
+
+    this.onPayloadDataReceived(actor);
 
     emit(EVENTS.NETWORK_EVENT_UPDATED, actor);
   }
@@ -437,52 +386,23 @@ class FirefoxDataProvider {
 
 
 
+  async onPayloadDataReceived(actor) {
+    let payload = this.payloadQueue.get(actor) || {};
 
-
-
-
-
-
-
-
-  requestPayloadData(actor, method) {
-    let record = this.rdpRequestMap.get(actor);
-
-    
-    if (record[method]) {
+    if (!payload.requestHeadersAvailable || !payload.requestCookiesAvailable ||
+        !payload.eventTimingsAvailable || !payload.responseContentAvailable) {
       return;
     }
 
-    let promise = this._requestData(actor, method);
-    promise.then(() => {
-      
-      
-      record[method] = true;
-      this.onPayloadDataReceived(actor, method, !record);
-    });
-  }
+    this.payloadQueue.delete(actor);
 
-  
-
-
-  async onPayloadDataReceived(actor, type) {
-    
-    
-    if (this.isRequestPayloadReady(actor)) {
-      let payloadFromQueue = this.getRequestFromQueue(actor).payload;
-
-      
-      this.cleanUpQueue(actor);
-      this.rdpRequestMap.delete(actor);
-
-      if (this.actions.updateRequest) {
-        await this.actions.updateRequest(actor, payloadFromQueue, true);
-      }
-
-      
-      
-      emit(EVENTS.PAYLOAD_READY, actor);
+    if (this.actions.updateRequest) {
+      await this.actions.updateRequest(actor, payload, true);
     }
+
+    
+    
+    emit(EVENTS.PAYLOAD_READY, actor);
   }
 
   
@@ -508,21 +428,20 @@ class FirefoxDataProvider {
       return promise;
     }
     
-    promise = this._requestData(actor, method);
-    this.lazyRequestData.set(key, promise);
-    promise.then(async () => {
+    promise = this._requestData(actor, method).then(async (payload) => {
       
       
-      this.lazyRequestData.delete(key, promise);
+      this.lazyRequestData.delete(key);
 
       if (this.actions.updateRequest) {
-        await this.actions.updateRequest(
-          actor,
-          this.getRequestFromQueue(actor).payload,
-          true,
-        );
+        await this.actions.updateRequest(actor, payload, true);
       }
+
+      return payload;
     });
+
+    this.lazyRequestData.set(key, promise);
+
     return promise;
   }
 
@@ -557,7 +476,7 @@ class FirefoxDataProvider {
         
         this.webConsoleClient[clientMethodName](actor.replace("-clone", ""), (res) => {
           if (res.error) {
-            console.error(res.message);
+            reject(new Error(res.message));
           }
           resolve(res);
         });
@@ -581,12 +500,25 @@ class FirefoxDataProvider {
 
 
 
-  onRequestHeaders(response) {
-    return this.updateRequest(response.from, {
+  async onRequestHeaders(response) {
+    let payload = await this.updateRequest(response.from, {
       requestHeaders: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
     });
+    emit(EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
+    return payload.requestHeaders;
+  }
+
+  
+
+
+
+
+  async onResponseHeaders(response) {
+    let payload = await this.updateRequest(response.from, {
+      responseHeaders: response
+    });
+    emit(EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
+    return payload.responseHeaders;
   }
 
   
@@ -620,25 +552,12 @@ class FirefoxDataProvider {
 
 
 
-  onSecurityInfo(response) {
-    return this.updateRequest(response.from, {
+  async onSecurityInfo(response) {
+    let payload = await this.updateRequest(response.from, {
       securityInfo: response.securityInfo
-    }).then(() => {
-      emit(EVENTS.RECEIVED_SECURITY_INFO, response.from);
     });
-  }
-
-  
-
-
-
-
-  onResponseHeaders(response) {
-    return this.updateRequest(response.from, {
-      responseHeaders: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
-    });
+    emit(EVENTS.RECEIVED_SECURITY_INFO, response.from);
+    return payload.securityInfo;
   }
 
   
@@ -676,12 +595,12 @@ class FirefoxDataProvider {
 
 
 
-  onEventTimings(response) {
-    return this.updateRequest(response.from, {
+  async onEventTimings(response) {
+    let payload = await this.updateRequest(response.from, {
       eventTimings: response
-    }).then(() => {
-      emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
     });
+    emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
+    return payload.eventTimings;
   }
 
   
