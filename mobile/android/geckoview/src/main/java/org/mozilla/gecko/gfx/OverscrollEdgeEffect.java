@@ -19,7 +19,7 @@ import android.widget.EdgeEffect;
 
 import java.lang.reflect.Field;
 
-public class OverscrollEdgeEffect {
+public final class OverscrollEdgeEffect {
     
     private static final int TOP = 0;
     private static final int BOTTOM = 1;
