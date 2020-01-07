@@ -4,10 +4,10 @@
 
 
 
-#include "jsnativestack.h"
+#include "util/NativeStack.h"
 
 #ifdef XP_WIN
-# include "jswin.h"
+# include "util/Windows.h"
 
 #elif defined(XP_DARWIN) || defined(DARWIN) || defined(XP_UNIX)
 # include <pthread.h>

@@ -114,7 +114,7 @@ oddly_ordered_inclnames = set([
     'frontend/ReservedWordsGenerated.h', 
     'gc/StatsPhasesGenerated.h',         
     'gc/StatsPhasesGenerated.cpp',       
-    'jswin.h',                  
+    'util/Windows.h',           
     'machine/endian.h',         
     'winbase.h',                
     'windef.h'                  

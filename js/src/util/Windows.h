@@ -4,8 +4,8 @@
 
 
 
-#ifndef jswin_h
-#define jswin_h
+#ifndef util_Windows_h
+#define util_Windows_h
 
 
 

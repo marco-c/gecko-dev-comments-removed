@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsnspr_h
-#define jsnspr_h
+#ifndef util_NSPR_h
+#define util_NSPR_h
 
 #ifdef JS_POSIX_NSPR
 

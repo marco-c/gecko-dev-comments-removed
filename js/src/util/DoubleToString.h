@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsdtoa_h
-#define jsdtoa_h
+#ifndef util_DoubleToString_h
+#define util_DoubleToString_h
 
 
 

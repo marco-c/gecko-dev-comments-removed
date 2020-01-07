@@ -3,9 +3,9 @@
 
 
 
-#include "jswin.h"
-
 #include "threading/CpuCount.h"
+
+#include "util/Windows.h"
 
 uint32_t
 js::GetCPUCount()
