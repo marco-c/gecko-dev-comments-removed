@@ -3870,7 +3870,10 @@ nsFrame::FireDOMEvent(const nsAString& aDOMEventName, nsIContent *aContent)
 
   if (target) {
     RefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(target, aDOMEventName, true, false);
+      new AsyncEventDispatcher(target,
+                               aDOMEventName,
+                               CanBubble::eYes,
+                               ChromeOnlyDispatch::eNo);
     DebugOnly<nsresult> rv = asyncDispatcher->PostDOMEvent();
     NS_ASSERTION(NS_SUCCEEDED(rv), "AsyncEventDispatcher failed to dispatch");
   }
@@ -10959,12 +10962,12 @@ nsIFrame::IsStackingContext()
 }
 
 static bool
-IsFrameScrolledOutOfView(const nsIFrame* aTarget,
+IsFrameScrolledOutOfView(nsIFrame* aTarget,
                          const nsRect& aTargetRect,
-                         const nsIFrame* aParent)
+                         nsIFrame* aParent)
 {
   nsIScrollableFrame* scrollableFrame =
-    nsLayoutUtils::GetNearestScrollableFrame(const_cast<nsIFrame*>(aParent),
+    nsLayoutUtils::GetNearestScrollableFrame(aParent,
       nsLayoutUtils::SCROLLABLE_SAME_DOC |
       nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT |
       nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
@@ -11008,7 +11011,7 @@ IsFrameScrolledOutOfView(const nsIFrame* aTarget,
 }
 
 bool
-nsIFrame::IsScrolledOutOfView() const
+nsIFrame::IsScrolledOutOfView()
 {
   nsRect rect = GetVisualOverflowRectRelativeToSelf();
   return IsFrameScrolledOutOfView(this, rect, this);

@@ -58,7 +58,9 @@ HTMLDetailsElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       
       mToggleEventDispatcher =
-        new AsyncEventDispatcher(this, NS_LITERAL_STRING("toggle"), false);
+        new AsyncEventDispatcher(this,
+                                 NS_LITERAL_STRING("toggle"),
+                                 CanBubble::eNo);
       mToggleEventDispatcher->PostDOMEvent();
     }
   }

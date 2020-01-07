@@ -1960,7 +1960,7 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
     nsContentUtils::DispatchTrustedEvent(scriptElem->OwnerDoc(),
                                          scriptElem,
                                          NS_LITERAL_STRING("beforescriptexecute"),
-                                         true, true, &runScript);
+                                         CanBubble::eYes, Cancelable::eYes, &runScript);
   }
 
   
@@ -1982,7 +1982,7 @@ ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest)
     nsContentUtils::DispatchTrustedEvent(scriptElem->OwnerDoc(),
                                          scriptElem,
                                          NS_LITERAL_STRING("afterscriptexecute"),
-                                         true, false);
+                                         CanBubble::eYes, Cancelable::eNo);
   }
 
   FireScriptEvaluated(rv, aRequest);

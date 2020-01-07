@@ -318,7 +318,7 @@ WheelTransaction::OnFailToScrollTarget()
                       sTargetFrame->GetContent()->OwnerDoc(),
                       sTargetFrame->GetContent(),
                       NS_LITERAL_STRING("MozMouseScrollFailed"),
-                      true, true);
+                      CanBubble::eYes, Cancelable::eYes);
   }
   
   
@@ -347,7 +347,7 @@ WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure)
                       frame->GetContent()->OwnerDoc(),
                       frame->GetContent(),
                       NS_LITERAL_STRING("MozMouseScrollTransactionTimeout"),
-                      true, true);
+                      CanBubble::eYes, Cancelable::eYes);
   }
 }
 

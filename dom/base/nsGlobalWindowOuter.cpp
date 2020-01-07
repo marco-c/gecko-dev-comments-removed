@@ -2069,8 +2069,8 @@ nsGlobalWindowOuter::DispatchDOMWindowCreated()
 
   
   nsContentUtils::DispatchChromeEvent(mDoc, mDoc, NS_LITERAL_STRING("DOMWindowCreated"),
-                                      true ,
-                                      false );
+                                      CanBubble::eYes,
+                                      Cancelable::eNo);
 
   nsCOMPtr<nsIObserverService> observerService =
     mozilla::services::GetObserverService();
@@ -3772,7 +3772,8 @@ nsGlobalWindowOuter::DispatchCustomEvent(const nsAString& aEventName)
 {
   bool defaultActionEnabled = true;
   nsContentUtils::DispatchTrustedEvent(mDoc, ToSupports(this), aEventName,
-                                       true, true, &defaultActionEnabled);
+                                       CanBubble::eYes, Cancelable::eYes,
+                                       &defaultActionEnabled);
 
   return defaultActionEnabled;
 }

@@ -58,8 +58,8 @@ private:
                                                   nullptr);
     event->InitMessageEvent(nullptr,
                             NS_LITERAL_STRING("message"),
-                            false, 
-                            true, 
+                            CanBubble::eNo,
+                            Cancelable::eYes,
                             data,
                             EmptyString(),
                             EmptyString(),

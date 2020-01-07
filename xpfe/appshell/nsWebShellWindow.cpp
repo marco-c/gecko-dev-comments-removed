@@ -283,7 +283,7 @@ nsWebShellWindow::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y)
     nsContentUtils::DispatchChromeEvent(mDocShell->GetDocument(),
                                         eventTarget,
                                         NS_LITERAL_STRING("MozUpdateWindowPos"),
-                                        false, false, nullptr);
+                                        CanBubble::eNo, Cancelable::eNo, nullptr);
   }
 
   

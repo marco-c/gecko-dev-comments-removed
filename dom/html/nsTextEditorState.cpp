@@ -1724,7 +1724,10 @@ nsTextEditorState::SetSelectionRange(uint32_t aStart, uint32_t aEnd,
     
     nsCOMPtr<nsINode> node = do_QueryInterface(mTextCtrlElement);
     RefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(node, NS_LITERAL_STRING("select"), true, false);
+      new AsyncEventDispatcher(node,
+                               NS_LITERAL_STRING("select"),
+                               CanBubble::eYes,
+                               ChromeOnlyDispatch::eNo);
     asyncDispatcher->PostDOMEvent();
   }
 
