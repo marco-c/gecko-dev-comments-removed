@@ -1990,7 +1990,7 @@ public:
 
 
 
-    static bool NativeArray2JS(JS::MutableHandleValue d, const void** s,
+    static bool NativeArray2JS(JS::MutableHandleValue d, const void* const* s,
                                const nsXPTType& type, const nsID* iid,
                                uint32_t count, nsresult* pErr);
 
