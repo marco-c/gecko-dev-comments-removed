@@ -25,22 +25,20 @@ class EventChainPreVisitor;
 namespace dom {
 class MessagePort;
 class StringOrWorkerOptions;
-}
-} 
 
-BEGIN_WORKERS_NAMESPACE
-
+namespace workers {
 class RuntimeService;
 class WorkerPrivate;
+}
 
 class SharedWorker final : public DOMEventTargetHelper
 {
-  friend class RuntimeService;
+  friend class workers::RuntimeService;
 
   typedef mozilla::ErrorResult ErrorResult;
   typedef mozilla::dom::GlobalObject GlobalObject;
 
-  RefPtr<WorkerPrivate> mWorkerPrivate;
+  RefPtr<workers::WorkerPrivate> mWorkerPrivate;
   RefPtr<MessagePort> mMessagePort;
   nsTArray<nsCOMPtr<nsIDOMEvent>> mFrozenEvents;
   bool mFrozen;
@@ -82,7 +80,7 @@ public:
   virtual nsresult
   GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-  WorkerPrivate*
+  workers::WorkerPrivate*
   GetWorkerPrivate() const
   {
     return mWorkerPrivate;
@@ -91,7 +89,7 @@ public:
 private:
   
   SharedWorker(nsPIDOMWindowInner* aWindow,
-               WorkerPrivate* aWorkerPrivate,
+               workers::WorkerPrivate* aWorkerPrivate,
                MessagePort* aMessagePort);
 
   
@@ -103,6 +101,7 @@ private:
               const Sequence<JSObject*>& aTransferable, ErrorResult& aRv);
 };
 
-END_WORKERS_NAMESPACE
+} 
+} 
 
 #endif 
