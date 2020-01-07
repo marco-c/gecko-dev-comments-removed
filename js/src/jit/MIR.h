@@ -14236,6 +14236,9 @@ class MWasmBoundsCheck
     {
         
         setGuard();
+
+        if (JitOptions.spectreIndexMasking)
+            setResultType(MIRType::Int32);
     }
 
   public:

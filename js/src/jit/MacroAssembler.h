@@ -1472,6 +1472,8 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
+    
+    
     template <class L>
     inline void wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, L label)
         DEFINED_ON(arm, arm64, mips32, mips64, x86);
