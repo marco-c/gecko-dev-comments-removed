@@ -460,6 +460,8 @@ IonBuilder::inlineNonFunctionCall(CallInfo& callInfo, JSObject* target)
     
     
 
+    MOZ_ASSERT(target->nonCCWRealm() == script()->realm());
+
     if (callInfo.constructing() && target->constructHook() == TypedObject::construct)
         return inlineConstructTypedObject(callInfo, &target->as<TypeDescr>());
 
