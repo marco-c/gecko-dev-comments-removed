@@ -64,27 +64,17 @@ class GeckoViewModule {
   
   onDisable() {}
 
-  registerContent(aUri) {
-    if (this._isContentLoaded) {
-      return;
-    }
-    this._isContentLoaded = true;
+  
+  
+  onLoadContentModule() {
     this._eventProxy.enableQueuing(true);
+  }
 
-    let self = this;
-    this.messageManager.addMessageListener("GeckoView:ContentRegistered",
-      function listener(aMsg) {
-        if (aMsg.data.module !== self.name) {
-          return;
-        }
-        self.messageManager.removeMessageListener("GeckoView:ContentRegistered",
-                                                  listener);
-        self.messageManager.sendAsyncMessage("GeckoView:UpdateSettings",
-                                             self.settings);
-        self._eventProxy.enableQueuing(false);
-        self._eventProxy.dispatchQueuedEvents();
-    });
-    this.messageManager.loadFrameScript(aUri, true);
+  
+  
+  onContentModuleLoaded() {
+    this._eventProxy.enableQueuing(false);
+    this._eventProxy.dispatchQueuedEvents();
   }
 
   registerListener(aEventList) {
