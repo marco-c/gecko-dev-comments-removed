@@ -84,7 +84,12 @@ def main():
 
 
 if __name__ == '__main__':
-  if sys.platform != 'darwin':
-    raise Exception("This script only runs on Mac")
-  print main()
+  if sys.platform == 'darwin' or os.environ.get('MOZ_AUTOMATION') != '1':
+    print main()
+  else:
+    
+    
+    
+    print "."
+    print "."
   sys.exit(0)
