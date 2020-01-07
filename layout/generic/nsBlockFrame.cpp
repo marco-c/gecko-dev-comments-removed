@@ -489,6 +489,10 @@ nsBlockFrame::GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
     return nsLayoutUtils::GetFirstLineBaseline(aWM, this, aBaseline);
   }
 
+  if (StyleDisplay()->IsContainSize()) {
+    return false;
+  }
+
   for (ConstReverseLineIterator line = LinesRBegin(), line_end = LinesREnd();
        line != line_end; ++line) {
     if (line->IsBlock()) {
@@ -701,6 +705,11 @@ nsBlockFrame::GetMinISize(gfxContext *aRenderingContext)
   if (mMinWidth != NS_INTRINSIC_WIDTH_UNKNOWN)
     return mMinWidth;
 
+  if (StyleDisplay()->IsContainSize()) {
+    mMinWidth = 0;
+    return mMinWidth;
+  }
+
 #ifdef DEBUG
   if (gNoisyIntrinsic) {
     IndentBy(stdout, gNoiseIndent);
@@ -788,6 +797,11 @@ nsBlockFrame::GetPrefISize(gfxContext *aRenderingContext)
 
   if (mPrefWidth != NS_INTRINSIC_WIDTH_UNKNOWN)
     return mPrefWidth;
+
+  if (StyleDisplay()->IsContainSize()) {
+    mPrefWidth = 0;
+    return mPrefWidth;
+  }
 
 #ifdef DEBUG
   if (gNoisyIntrinsic) {
@@ -1622,6 +1636,17 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
     
     aMetrics.mCarriedOutBEndMargin.Zero();
+  }
+  else if (aReflowInput.mStyleDisplay->IsContainSize()) {
+    
+    
+    
+    
+    nscoord contentBSize = 0;
+    nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(contentBSize);
+    aMetrics.mCarriedOutBEndMargin.Zero();
+    autoBSize += borderPadding.BStartEnd(wm);
+    finalSize.BSize(wm) = autoBSize;
   }
   else if (aState.mReflowStatus.IsComplete()) {
     nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
