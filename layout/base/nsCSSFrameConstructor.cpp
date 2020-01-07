@@ -10717,9 +10717,8 @@ static bool
 FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
                               const nsIFrame* aFrame)
 {
-  LayoutFrameType containerType = aContainerFrame->Type();
-  MOZ_ASSERT(containerType == LayoutFrameType::FlexContainer ||
-             containerType == LayoutFrameType::GridContainer);
+  MOZ_ASSERT(aContainerFrame->Type() == LayoutFrameType::FlexContainer ||
+             aContainerFrame->Type() == LayoutFrameType::GridContainer);
 
   
   
@@ -10729,8 +10728,7 @@ FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
 
   
   
-  if (containerType == LayoutFrameType::FlexContainer &&
-      aContainerFrame->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX) &&
+  if (IsFlexContainerForLegacyBox(aContainerFrame) &&
       aFrame->IsPlaceholderFrame()) {
     return true;
   }
