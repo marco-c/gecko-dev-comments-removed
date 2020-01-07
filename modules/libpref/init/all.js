@@ -2532,6 +2532,11 @@ pref("security.notification_enable_delay", 500);
 pref("security.csp.enable", true);
 pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
+#ifdef EARLY_BETA_OR_EARLIER
+pref("security.csp.enable_violation_events", true);
+#else
+pref("security.csp.enable_violation_events", false);
+#endif
 
 
 pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
@@ -2846,13 +2851,6 @@ pref("layout.css.report_errors", true);
 
 
 pref("layout.css.visited_links_enabled", true);
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("layout.css.moz-document.content.enabled",  false);
-#else
-pref("layout.css.moz-document.content.enabled",  true);
-#endif
 
 
 
