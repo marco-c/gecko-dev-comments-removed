@@ -515,7 +515,7 @@ add_test(function() {
 
 
 add_test(function() {
-  const url = "chrome://mochitests/content/" + RELATIVE_DIR + "addon_about.xul";
+  const url = "chrome://mochitests/content/" + RELATIVE_DIR + "addon_prefs.xul";
   Services.prefs.setCharPref(PREF_DISCOVERURL, url);
 
   open_manager("addons://discover/", function(aWindow) {

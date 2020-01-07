@@ -151,7 +151,6 @@ function initialize(event) {
   addonPage.addEventListener("keypress", function(event) {
     gHeader.onKeyPress(event);
   });
-
   if (!isDiscoverEnabled()) {
     gViewDefault = "addons://list/extension";
   }
@@ -858,8 +857,9 @@ var gViewController = {
       throw Components.Exception("Invalid view: " + view.type);
 
     var viewObj = this.viewObjects[view.type];
-    if (!viewObj.node)
+    if (!viewObj.node) {
       throw Components.Exception("Root node doesn't exist for '" + view.type + "' view");
+    }
 
     if (this.currentViewObj && aViewId != aPreviousView) {
       try {
@@ -1162,21 +1162,6 @@ var gViewController = {
         } else if (aAddon.optionsType == AddonManager.OPTIONS_TYPE_TAB) {
           openOptionsInTab(aAddon.optionsURL);
         }
-      }
-    },
-
-    cmd_showItemAbout: {
-      isEnabled(aAddon) {
-        
-        return !!aAddon;
-      },
-      doCommand(aAddon) {
-        var aboutURL = aAddon.aboutURL;
-        if (aboutURL)
-          openDialog(aboutURL, "", "chrome,centerscreen,modal", aAddon);
-        else
-          openDialog("chrome://mozapps/content/extensions/about.xul",
-                     "", "chrome,centerscreen,modal", aAddon);
       }
     },
 
@@ -1776,6 +1761,10 @@ var gCategories = {
     
     
     if (!this.node.selectedItem) {
+      this.node.value = gViewDefault;
+    }
+    
+    if (this.node.value == "addons://discover/" && !isDiscoverEnabled()) {
       this.node.value = gViewDefault;
     }
 
