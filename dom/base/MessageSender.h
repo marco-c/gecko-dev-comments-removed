@@ -12,6 +12,12 @@
 namespace mozilla {
 namespace dom {
 
+class MessageBroadcaster;
+
+
+
+
+
 class MessageSender : public MessageListenerManager
 {
 public:
@@ -19,7 +25,7 @@ public:
 
 protected:
   MessageSender(ipc::MessageManagerCallback* aCallback,
-                ChromeMessageBroadcaster* aParentManager,
+                MessageBroadcaster* aParentManager,
                 MessageManagerFlags aFlags)
     : MessageListenerManager(aCallback, aParentManager, aFlags)
   {}
