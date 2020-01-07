@@ -53,6 +53,14 @@ let listenerId = null;
 let curContainer = {frame: content, shadowRoot: null};
 let previousContainer = null;
 
+
+
+
+
+addEventListener("click", event.DoubleClickTracker.setClick);
+addEventListener("dblclick", event.DoubleClickTracker.resetClick);
+addEventListener("dblclick", event.DoubleClickTracker.cancelTimer);
+
 const seenEls = new element.Store();
 const SUPPORTED_STRATEGIES = new Set([
   element.Strategy.ClassName,
@@ -152,7 +160,6 @@ const loadListener = {
       let readyState = content.document.readyState;
       let documentURI = content.document.documentURI;
       logger.debug(`Check readyState "${readyState} for "${documentURI}"`);
-
       
       
       if (this.handleReadyState(readyState, documentURI)) {
