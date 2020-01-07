@@ -1,0 +1,902 @@
+
+
+"use strict";
+
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+var {
+  DefaultMap,
+  ExtensionError,
+} = ExtensionUtils;
+
+ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+
+var {
+  IconDetails,
+} = ExtensionParent;
+
+const ACTION_MENU_TOP_LEVEL_LIMIT = 6;
+
+
+
+
+var gMenuMap = new Map();
+
+
+var gRootItems = new Map();
+
+
+
+var gShownMenuItems = new DefaultMap(() => []);
+
+
+var gOnShownSubscribers = new Set();
+
+
+var gNextMenuItemID = 0;
+
+
+var gNextRadioGroupID = 0;
+
+
+var gMaxLabelLength = 64;
+
+var gMenuBuilder = {
+  
+  
+  
+  
+  build(contextData) {
+    let xulMenu = contextData.menu;
+    xulMenu.addEventListener("popuphidden", this);
+    this.xulMenu = xulMenu;
+    for (let [, root] of gRootItems) {
+      let rootElement = this.createTopLevelElement(root, contextData);
+      if (rootElement) {
+        this.appendTopLevelElement(rootElement);
+      }
+    }
+    this.afterBuildingMenu(contextData);
+  },
+
+  
+  buildActionContextMenu(contextData) {
+    const {menu} = contextData;
+
+    const root = gRootItems.get(contextData.extension);
+    if (!root) {
+      return;
+    }
+
+    const children = this.buildChildren(root, contextData);
+    const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
+
+    this.xulMenu = menu;
+    menu.addEventListener("popuphidden", this);
+
+    if (visible.length) {
+      const separator = menu.ownerDocument.createElement("menuseparator");
+      menu.insertBefore(separator, menu.firstChild);
+      this.itemsToCleanUp.add(separator);
+
+      for (const child of visible) {
+        this.itemsToCleanUp.add(child);
+        menu.insertBefore(child, separator);
+      }
+    }
+    this.afterBuildingMenu(contextData);
+  },
+
+  buildElementWithChildren(item, contextData) {
+    const element = this.buildSingleElement(item, contextData);
+    const children = this.buildChildren(item, contextData);
+    if (children.length) {
+      element.firstChild.append(...children);
+    }
+    return element;
+  },
+
+  buildChildren(item, contextData) {
+    let groupName;
+    let children = [];
+    for (let child of item.children) {
+      if (child.type == "radio" && !child.groupName) {
+        if (!groupName) {
+          groupName = `webext-radio-group-${gNextRadioGroupID++}`;
+        }
+        child.groupName = groupName;
+      } else {
+        groupName = null;
+      }
+
+      if (child.enabledForContext(contextData)) {
+        children.push(this.buildElementWithChildren(child, contextData));
+      }
+    }
+    return children;
+  },
+
+  createTopLevelElement(root, contextData) {
+    let rootElement = this.buildElementWithChildren(root, contextData);
+    if (!rootElement.firstChild || !rootElement.firstChild.childNodes.length) {
+      
+      
+      return null;
+    }
+    rootElement.setAttribute("ext-type", "top-level-menu");
+    rootElement = this.removeTopLevelMenuIfNeeded(rootElement);
+
+    
+    if (root.extension.manifest.icons) {
+      this.setMenuItemIcon(rootElement, root.extension, contextData, root.extension.manifest.icons);
+    }
+    return rootElement;
+  },
+
+  appendTopLevelElement(rootElement) {
+    if (this.itemsToCleanUp.size === 0) {
+      const separator = this.xulMenu.ownerDocument.createElement("menuseparator");
+      this.itemsToCleanUp.add(separator);
+      this.xulMenu.append(separator);
+    }
+
+    this.xulMenu.appendChild(rootElement);
+    this.itemsToCleanUp.add(rootElement);
+  },
+
+  removeSeparatorIfNoTopLevelItems() {
+    if (this.itemsToCleanUp.size === 1) {
+      
+      const separator = this.itemsToCleanUp.values().next().value;
+      separator.remove();
+      this.itemsToCleanUp.clear();
+    }
+  },
+
+  removeTopLevelMenuIfNeeded(element) {
+    
+    
+    let menuPopup = element.firstChild;
+    if (menuPopup && menuPopup.childNodes.length == 1) {
+      let onlyChild = menuPopup.firstChild;
+
+      
+      
+      if (AppConstants.platform === "linux" && onlyChild.getAttribute("type") === "checkbox") {
+        return element;
+      }
+
+      onlyChild.remove();
+      return onlyChild;
+    }
+
+    return element;
+  },
+
+  buildSingleElement(item, contextData) {
+    let doc = contextData.menu.ownerDocument;
+    let element;
+    if (item.children.length > 0) {
+      element = this.createMenuElement(doc, item);
+    } else if (item.type == "separator") {
+      element = doc.createElement("menuseparator");
+    } else {
+      element = doc.createElement("menuitem");
+    }
+
+    return this.customizeElement(element, item, contextData);
+  },
+
+  createMenuElement(doc, item) {
+    let element = doc.createElement("menu");
+    
+    let menupopup = doc.createElement("menupopup");
+    element.appendChild(menupopup);
+    return element;
+  },
+
+  customizeElement(element, item, contextData) {
+    let label = item.title;
+    if (label) {
+      if (contextData.isTextSelected && label.indexOf("%s") > -1) {
+        let selection = contextData.selectionText.trim();
+        
+        
+        
+
+        let codePointsToRemove = 0;
+
+        let selectionArray = Array.from(selection);
+
+        let completeLabelLength = label.length - 2 + selectionArray.length;
+        if (completeLabelLength > gMaxLabelLength) {
+          codePointsToRemove = completeLabelLength - gMaxLabelLength;
+        }
+
+        if (codePointsToRemove) {
+          let ellipsis = "\u2026";
+          try {
+            ellipsis = Services.prefs.getComplexValue("intl.ellipsis",
+                                                      Ci.nsIPrefLocalizedString).data;
+          } catch (e) { }
+          codePointsToRemove += 1;
+          selection = selectionArray.slice(0, -codePointsToRemove).join("") + ellipsis;
+        }
+
+        label = label.replace(/%s/g, selection);
+      }
+
+      element.setAttribute("label", label);
+    }
+
+    element.setAttribute("id", item.elementId);
+
+    if (item.icons) {
+      this.setMenuItemIcon(element, item.extension, contextData, item.icons);
+    }
+
+    if (item.type == "checkbox") {
+      element.setAttribute("type", "checkbox");
+      if (item.checked) {
+        element.setAttribute("checked", "true");
+      }
+    } else if (item.type == "radio") {
+      element.setAttribute("type", "radio");
+      element.setAttribute("name", item.groupName);
+      if (item.checked) {
+        element.setAttribute("checked", "true");
+      }
+    }
+
+    if (!item.enabled) {
+      element.setAttribute("disabled", "true");
+    }
+
+    element.addEventListener("command", event => { 
+      if (event.target !== event.currentTarget) {
+        return;
+      }
+      const wasChecked = item.checked;
+      if (item.type == "checkbox") {
+        item.checked = !item.checked;
+      } else if (item.type == "radio") {
+        
+        for (let child of item.parent.children) {
+          if (child.type == "radio" && child.groupName == item.groupName) {
+            child.checked = false;
+          }
+        }
+        
+        item.checked = true;
+      }
+
+      if (!contextData.onBookmark) {
+        item.tabManager.addActiveTabPermission();
+      }
+
+      let tab = contextData.tab && item.tabManager.convert(contextData.tab);
+      let info = item.getClickInfo(contextData, wasChecked);
+
+      const map = {shiftKey: "Shift", altKey: "Alt", metaKey: "Command", ctrlKey: "Ctrl"};
+      info.modifiers = Object.keys(map).filter(key => event[key]).map(key => map[key]);
+      if (event.ctrlKey && AppConstants.platform === "macosx") {
+        info.modifiers.push("MacCtrl");
+      }
+
+      
+      
+      let actionFor = {
+        _execute_page_action: global.pageActionFor,
+        _execute_browser_action: global.browserActionFor,
+        _execute_sidebar_action: global.sidebarActionFor,
+      }[item.command];
+      if (actionFor) {
+        let win = event.target.ownerGlobal;
+        actionFor(item.extension).triggerAction(win);
+      }
+
+      item.extension.emit("webext-menu-menuitem-click", info, tab);
+    });
+
+    
+    
+    if (item.parent) {
+      gShownMenuItems.get(item.extension).push(item.id);
+    }
+
+    return element;
+  },
+
+  setMenuItemIcon(element, extension, contextData, icons) {
+    let parentWindow = contextData.menu.ownerGlobal;
+
+    let {icon} = IconDetails.getPreferredIcon(icons, extension,
+                                              16 * parentWindow.devicePixelRatio);
+
+    
+    
+    
+    let resolvedURL = extension.baseURI.resolve(icon);
+
+    if (element.localName == "menu") {
+      element.setAttribute("class", "menu-iconic");
+    } else if (element.localName == "menuitem") {
+      element.setAttribute("class", "menuitem-iconic");
+    }
+
+    element.setAttribute("image", resolvedURL);
+  },
+
+  rebuildMenu(extension) {
+    let {contextData} = this;
+    if (!contextData) {
+      
+      return;
+    }
+
+    if (!gShownMenuItems.has(extension)) {
+      
+      
+      
+      return;
+    }
+
+    if (contextData.onBrowserAction || contextData.onPageAction) {
+      
+      
+      for (let item of this.itemsToCleanUp) {
+        item.remove();
+      }
+      this.itemsToCleanUp.clear();
+      this.buildActionContextMenu(contextData);
+      return;
+    }
+
+    
+    let elementIdPrefix = `${makeWidgetId(extension.id)}-menuitem-`;
+    let oldRoot = null;
+    for (let item = this.xulMenu.lastElementChild; item !== null; item = item.previousElementSibling) {
+      if (item.id && item.id.startsWith(elementIdPrefix)) {
+        oldRoot = item;
+        this.itemsToCleanUp.delete(oldRoot);
+        break;
+      }
+    }
+
+    let root = gRootItems.get(extension);
+    let newRoot = root && this.createTopLevelElement(root, contextData);
+    if (newRoot) {
+      this.itemsToCleanUp.add(newRoot);
+      if (oldRoot) {
+        oldRoot.replaceWith(newRoot);
+      } else {
+        this.appendTopLevelElement(newRoot);
+      }
+    } else if (oldRoot) {
+      oldRoot.remove();
+      this.removeSeparatorIfNoTopLevelItems();
+    }
+  },
+
+  afterBuildingMenu(contextData) {
+    if (this.contextData) {
+      
+      
+      return;
+    }
+
+    function dispatchOnShownEvent(extension) {
+      
+      
+      
+      
+      let menuIds = gShownMenuItems.get(extension);
+      extension.emit("webext-menu-shown", menuIds, contextData);
+    }
+
+    if (contextData.onBrowserAction || contextData.onPageAction) {
+      dispatchOnShownEvent(contextData.extension);
+    } else {
+      gOnShownSubscribers.forEach(dispatchOnShownEvent);
+    }
+
+    this.contextData = contextData;
+  },
+
+  handleEvent(event) {
+    if (this.xulMenu != event.target || event.type != "popuphidden") {
+      return;
+    }
+
+    delete this.xulMenu;
+    delete this.contextData;
+
+    let target = event.target;
+    target.removeEventListener("popuphidden", this);
+    for (let item of this.itemsToCleanUp) {
+      item.remove();
+    }
+    this.itemsToCleanUp.clear();
+    for (let extension of gShownMenuItems.keys()) {
+      extension.emit("webext-menu-hidden");
+    }
+    gShownMenuItems.clear();
+  },
+
+  itemsToCleanUp: new Set(),
+};
+
+
+global.actionContextMenu = function(contextData) {
+  contextData.tab = tabTracker.activeTab;
+  contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
+  gMenuBuilder.buildActionContextMenu(contextData);
+};
+
+const contextsMap = {
+  onAudio: "audio",
+  onEditable: "editable",
+  inFrame: "frame",
+  onImage: "image",
+  onLink: "link",
+  onPassword: "password",
+  isTextSelected: "selection",
+  onVideo: "video",
+
+  onBookmark: "bookmark",
+  onBrowserAction: "browser_action",
+  onPageAction: "page_action",
+  onTab: "tab",
+  inToolsMenu: "tools_menu",
+};
+
+const getMenuContexts = contextData => {
+  let contexts = new Set();
+
+  for (const [key, value] of Object.entries(contextsMap)) {
+    if (contextData[key]) {
+      contexts.add(value);
+    }
+  }
+
+  if (contexts.size === 0) {
+    contexts.add("page");
+  }
+
+  
+  if (!contextData.onBookmark && !contextData.onTab && !contextData.inToolsMenu) {
+    contexts.add("all");
+  }
+
+  return contexts;
+};
+
+function addMenuEventInfo(info, contextData, includeSensitiveData) {
+  if (contextData.onVideo) {
+    info.mediaType = "video";
+  } else if (contextData.onAudio) {
+    info.mediaType = "audio";
+  } else if (contextData.onImage) {
+    info.mediaType = "image";
+  }
+  if (contextData.frameId !== undefined) {
+    info.frameId = contextData.frameId;
+  }
+  if (contextData.onBookmark) {
+    info.bookmarkId = contextData.bookmarkId;
+  }
+  info.editable = contextData.onEditable || false;
+  if (includeSensitiveData) {
+    if (contextData.onLink) {
+      info.linkText = contextData.linkText;
+      info.linkUrl = contextData.linkUrl;
+    }
+    if (contextData.onAudio || contextData.onImage || contextData.onVideo) {
+      info.srcUrl = contextData.srcUrl;
+    }
+    if (!contextData.onBookmark) {
+      info.pageUrl = contextData.pageUrl;
+    }
+    if (contextData.inFrame) {
+      info.frameUrl = contextData.frameUrl;
+    }
+    if (contextData.isTextSelected) {
+      info.selectionText = contextData.selectionText;
+    }
+  }
+}
+
+function MenuItem(extension, createProperties, isRoot = false) {
+  this.extension = extension;
+  this.children = [];
+  this.parent = null;
+  this.tabManager = extension.tabManager;
+
+  this.setDefaults();
+  this.setProps(createProperties);
+
+  if (!this.hasOwnProperty("_id")) {
+    this.id = gNextMenuItemID++;
+  }
+  
+  
+  if (!isRoot && !this.parent) {
+    this.root.addChild(this);
+  }
+}
+
+MenuItem.prototype = {
+  setProps(createProperties) {
+    for (let propName in createProperties) {
+      if (createProperties[propName] === null) {
+        
+        continue;
+      }
+      this[propName] = createProperties[propName];
+    }
+
+    if (createProperties.documentUrlPatterns != null) {
+      this.documentUrlMatchPattern = new MatchPatternSet(this.documentUrlPatterns);
+    }
+
+    if (createProperties.targetUrlPatterns != null) {
+      this.targetUrlMatchPattern = new MatchPatternSet(this.targetUrlPatterns);
+    }
+
+    
+    
+    if (createProperties.parentId && !createProperties.contexts) {
+      this.contexts = this.parent.contexts;
+    }
+  },
+
+  setDefaults() {
+    this.setProps({
+      type: "normal",
+      checked: false,
+      contexts: ["all"],
+      enabled: true,
+    });
+  },
+
+  set id(id) {
+    if (this.hasOwnProperty("_id")) {
+      throw new ExtensionError("ID of a MenuItem cannot be changed");
+    }
+    let isIdUsed = gMenuMap.get(this.extension).has(id);
+    if (isIdUsed) {
+      throw new ExtensionError(`ID already exists: ${id}`);
+    }
+    this._id = id;
+  },
+
+  get id() {
+    return this._id;
+  },
+
+  get elementId() {
+    let id = this.id;
+    
+    
+    
+    if (typeof id !== "number") {
+      
+      id = `_${id}`;
+    }
+    return `${makeWidgetId(this.extension.id)}-menuitem-${id}`;
+  },
+
+  ensureValidParentId(parentId) {
+    if (parentId === undefined) {
+      return;
+    }
+    let menuMap = gMenuMap.get(this.extension);
+    if (!menuMap.has(parentId)) {
+      throw new ExtensionError(`Could not find any MenuItem with id: ${parentId}`);
+    }
+    for (let item = menuMap.get(parentId); item; item = item.parent) {
+      if (item === this) {
+        throw new ExtensionError("MenuItem cannot be an ancestor (or self) of its new parent.");
+      }
+    }
+  },
+
+  set parentId(parentId) {
+    this.ensureValidParentId(parentId);
+
+    if (this.parent) {
+      this.parent.detachChild(this);
+    }
+
+    if (parentId === undefined) {
+      this.root.addChild(this);
+    } else {
+      let menuMap = gMenuMap.get(this.extension);
+      menuMap.get(parentId).addChild(this);
+    }
+  },
+
+  get parentId() {
+    return this.parent ? this.parent.id : undefined;
+  },
+
+  addChild(child) {
+    if (child.parent) {
+      throw new Error("Child MenuItem already has a parent.");
+    }
+    this.children.push(child);
+    child.parent = this;
+  },
+
+  detachChild(child) {
+    let idx = this.children.indexOf(child);
+    if (idx < 0) {
+      throw new Error("Child MenuItem not found, it cannot be removed.");
+    }
+    this.children.splice(idx, 1);
+    child.parent = null;
+  },
+
+  get root() {
+    let extension = this.extension;
+    if (!gRootItems.has(extension)) {
+      let root = new MenuItem(extension,
+                              {title: extension.name},
+                               true);
+      gRootItems.set(extension, root);
+    }
+
+    return gRootItems.get(extension);
+  },
+
+  remove() {
+    if (this.parent) {
+      this.parent.detachChild(this);
+    }
+    let children = this.children.slice(0);
+    for (let child of children) {
+      child.remove();
+    }
+
+    let menuMap = gMenuMap.get(this.extension);
+    menuMap.delete(this.id);
+    if (this.root == this) {
+      gRootItems.delete(this.extension);
+    }
+  },
+
+  getClickInfo(contextData, wasChecked) {
+    let info = {
+      menuItemId: this.id,
+    };
+    if (this.parent) {
+      info.parentMenuItemId = this.parentId;
+    }
+
+    addMenuEventInfo(info, contextData, true);
+
+    if ((this.type === "checkbox") || (this.type === "radio")) {
+      info.checked = this.checked;
+      info.wasChecked = wasChecked;
+    }
+
+    return info;
+  },
+
+  enabledForContext(contextData) {
+    let contexts = getMenuContexts(contextData);
+    if (!this.contexts.some(n => contexts.has(n))) {
+      return false;
+    }
+
+    if (contextData.onBookmark) {
+      return this.extension.hasPermission("bookmarks");
+    }
+
+    let docPattern = this.documentUrlMatchPattern;
+    let pageURI = Services.io.newURI(contextData[contextData.inFrame ? "frameUrl" : "pageUrl"]);
+    if (docPattern && !docPattern.matches(pageURI)) {
+      return false;
+    }
+
+    let targetPattern = this.targetUrlMatchPattern;
+    if (targetPattern) {
+      let targetUrls = [];
+      if (contextData.onImage || contextData.onAudio || contextData.onVideo) {
+        
+        targetUrls.push(contextData.srcUrl);
+      }
+      if (contextData.onLink) {
+        targetUrls.push(contextData.linkUrl);
+      }
+      if (!targetUrls.some(targetUrl => targetPattern.matches(Services.io.newURI(targetUrl)))) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+};
+
+
+
+const menuTracker = {
+  menuIds: ["placesContext", "menu_ToolsPopup", "tabContextMenu"],
+
+  register() {
+    Services.obs.addObserver(this, "on-build-contextmenu");
+    for (const window of windowTracker.browserWindows()) {
+      this.onWindowOpen(window);
+    }
+    windowTracker.addOpenListener(this.onWindowOpen);
+  },
+
+  unregister() {
+    Services.obs.removeObserver(this, "on-build-contextmenu");
+    for (const window of windowTracker.browserWindows()) {
+      for (const id of this.menuIds) {
+        const menu = window.document.getElementById(id);
+        menu.removeEventListener("popupshowing", this);
+      }
+    }
+    windowTracker.removeOpenListener(this.onWindowOpen);
+  },
+
+  observe(subject, topic, data) {
+    subject = subject.wrappedJSObject;
+    gMenuBuilder.build(subject);
+  },
+
+  onWindowOpen(window) {
+    for (const id of menuTracker.menuIds) {
+      const menu = window.document.getElementById(id);
+      menu.addEventListener("popupshowing", menuTracker);
+    }
+  },
+
+  handleEvent(event) {
+    const menu = event.target;
+    if (menu.id === "placesContext") {
+      const trigger = menu.triggerNode;
+      if (!trigger._placesNode) {
+        return;
+      }
+
+      gMenuBuilder.build({
+        menu,
+        bookmarkId: trigger._placesNode.bookmarkGuid,
+        onBookmark: true,
+      });
+    }
+    if (menu.id === "menu_ToolsPopup") {
+      const tab = tabTracker.activeTab;
+      const pageUrl = tab.linkedBrowser.currentURI.spec;
+      gMenuBuilder.build({menu, tab, pageUrl, inToolsMenu: true});
+    }
+    if (menu.id === "tabContextMenu") {
+      const trigger = menu.triggerNode;
+      const tab = trigger.localName === "tab" ? trigger : tabTracker.activeTab;
+      const pageUrl = tab.linkedBrowser.currentURI.spec;
+      gMenuBuilder.build({menu, tab, pageUrl, onTab: true});
+    }
+  },
+};
+
+this.menusInternal = class extends ExtensionAPI {
+  constructor(extension) {
+    super(extension);
+
+    if (!gMenuMap.size) {
+      menuTracker.register();
+    }
+    gMenuMap.set(extension, new Map());
+  }
+
+  onShutdown(reason) {
+    let {extension} = this;
+
+    if (gMenuMap.has(extension)) {
+      gMenuMap.delete(extension);
+      gRootItems.delete(extension);
+      gShownMenuItems.delete(extension);
+      gOnShownSubscribers.delete(extension);
+      if (!gMenuMap.size) {
+        menuTracker.unregister();
+      }
+    }
+  }
+
+  getAPI(context) {
+    let {extension} = context;
+
+    const menus = {
+      refresh() {
+        gMenuBuilder.rebuildMenu(extension);
+      },
+
+      onShown: new EventManager(context, "menus.onShown", fire => {
+        let listener = (event, menuIds, contextData) => {
+          let info = {
+            menuIds,
+            contexts: Array.from(getMenuContexts(contextData)),
+          };
+
+          
+          
+          
+          let includeSensitiveData =
+            extension.tabManager.hasActiveTabPermission(contextData.tab) ||
+            extension.whiteListedHosts.matches(contextData.inFrame ? contextData.frameUrl : contextData.pageUrl);
+
+          addMenuEventInfo(info, contextData, includeSensitiveData);
+
+          let tab = extension.tabManager.convert(contextData.tab);
+          fire.sync(info, tab);
+        };
+        gOnShownSubscribers.add(extension);
+        extension.on("webext-menu-shown", listener);
+        return () => {
+          gOnShownSubscribers.delete(extension);
+          extension.off("webext-menu-shown", listener);
+        };
+      }).api(),
+      onHidden: new EventManager(context, "menus.onHidden", fire => {
+        let listener = () => {
+          fire.sync();
+        };
+        extension.on("webext-menu-hidden", listener);
+        return () => {
+          extension.off("webext-menu-hidden", listener);
+        };
+      }).api(),
+    };
+
+    return {
+      contextMenus: menus,
+      menus,
+      menusInternal: {
+        create: function(createProperties) {
+          
+          
+          
+          let menuItem = new MenuItem(extension, createProperties);
+          gMenuMap.get(extension).set(menuItem.id, menuItem);
+        },
+
+        update: function(id, updateProperties) {
+          let menuItem = gMenuMap.get(extension).get(id);
+          if (menuItem) {
+            menuItem.setProps(updateProperties);
+          }
+        },
+
+        remove: function(id) {
+          let menuItem = gMenuMap.get(extension).get(id);
+          if (menuItem) {
+            menuItem.remove();
+          }
+        },
+
+        removeAll: function() {
+          let root = gRootItems.get(extension);
+          if (root) {
+            root.remove();
+          }
+        },
+
+        onClicked: new EventManager(context, "menusInternal.onClicked", fire => {
+          let listener = (event, info, tab) => {
+            let {linkedBrowser} = tab || tabTracker.activeTab;
+            context.withPendingBrowser(linkedBrowser,
+                                       () => fire.sync(info, tab));
+          };
+
+          extension.on("webext-menu-menuitem-click", listener);
+          return () => {
+            extension.off("webext-menu-menuitem-click", listener);
+          };
+        }).api(),
+      },
+    };
+  }
+};
