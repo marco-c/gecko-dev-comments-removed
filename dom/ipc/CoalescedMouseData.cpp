@@ -20,6 +20,7 @@ CoalescedMouseData::Coalesce(const WidgetMouseEvent& aEvent,
     mCoalescedInputEvent = MakeUnique<WidgetMouseEvent>(aEvent);
     mGuid = aGuid;
     mInputBlockId = aInputBlockId;
+    MOZ_ASSERT(!mCoalescedInputEvent->mCoalescedWidgetEvents);
   } else {
     MOZ_ASSERT(mGuid == aGuid);
     MOZ_ASSERT(mInputBlockId == aInputBlockId);
@@ -33,6 +34,22 @@ CoalescedMouseData::Coalesce(const WidgetMouseEvent& aEvent,
     mCoalescedInputEvent->pressure = aEvent.pressure;
     mCoalescedInputEvent->AssignPointerHelperData(aEvent);
   }
+
+  if (aEvent.mMessage == eMouseMove &&
+      PointerEventHandler::IsPointerEventEnabled()) {
+    
+    if (!mCoalescedInputEvent->mCoalescedWidgetEvents) {
+      mCoalescedInputEvent->mCoalescedWidgetEvents =
+        new WidgetPointerEventHolder();
+    }
+    
+    
+    WidgetPointerEvent* event = mCoalescedInputEvent->mCoalescedWidgetEvents
+                                  ->mEvents.AppendElement(aEvent);
+
+    event->mFlags.mBubbles = false;
+    event->mFlags.mCancelable = false;
+  }
 }
 
 bool
@@ -40,6 +57,7 @@ CoalescedMouseData::CanCoalesce(const WidgetMouseEvent& aEvent,
                              const ScrollableLayerGuid& aGuid,
                              const uint64_t& aInputBlockId)
 {
+  MOZ_ASSERT(aEvent.mMessage == eMouseMove);
   return !mCoalescedInputEvent ||
          (mCoalescedInputEvent->mModifiers == aEvent.mModifiers &&
           mCoalescedInputEvent->inputSource == aEvent.inputSource &&
