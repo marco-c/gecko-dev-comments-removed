@@ -61,11 +61,14 @@ pref("extensions.autoDisableScopes", 15);
 
 pref("extensions.startupScanScopes", 0);
 
+
+
+pref("extensions.geckoProfiler.symbols.url", "http://symbols.mozilla.org/");
 pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com,quantum-foxfooding@mozilla.com");
 #if defined(XP_LINUX) || defined (XP_MACOSX)
-pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,nm");
+pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,remoteBreakpad,nm");
 #else // defined(XP_WIN)
-pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,dump_syms.exe");
+pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,remoteBreakpad,dump_syms.exe");
 #endif
 
 
@@ -293,6 +296,7 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 
 
 pref("browser.urlbar.autoFill", true);
+pref("browser.urlbar.autoFill.typed", true);
 pref("browser.urlbar.speculativeConnect.enabled", true);
 
 
