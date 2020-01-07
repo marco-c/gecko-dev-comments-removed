@@ -396,12 +396,6 @@ class TimeTicks {
   static TimeTicks Now();
 
   
-  
-  
-  
-  static TimeTicks HighResNow();
-
-  
   bool is_null() const {
     return ticks_ == 0;
   }
