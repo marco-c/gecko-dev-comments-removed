@@ -86,6 +86,9 @@ add_task(async function test_background_window() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   
+  await new Promise(resolve => SimpleTest.waitForFocus(resolve, win));
+
+  
   await promiseMakeCredential(tab_bg)
     .then(arrivingHereIsBad)
     .catch(expectNotAllowedError);
