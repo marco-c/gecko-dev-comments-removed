@@ -411,8 +411,7 @@ class FontInspector {
     const familiesUsedLowercase = families.used.map(family => family.toLowerCase());
     
     families.notUsed = fontFamilies
-      .map(family => family.toLowerCase())
-      .filter(family => !familiesUsedLowercase.includes(family));
+      .filter(family => !familiesUsedLowercase.includes(family.toLowerCase()));
 
     return families;
   }
