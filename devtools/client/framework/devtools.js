@@ -55,7 +55,6 @@ function DevTools() {
 
   
   
-  
   DevToolsShim.register(this);
 }
 
@@ -662,9 +661,7 @@ DevTools.prototype = {
 
 
 
-
   destroy({ shuttingDown }) {
-    
     
     if (!shuttingDown) {
       for (let [, toolbox] of this._toolboxes) {

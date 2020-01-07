@@ -35,26 +35,9 @@ function removeItem(array, callback) {
 
 
 
-
-
-
-
-
-
 this.DevToolsShim = {
   _gDevTools: null,
   listeners: [],
-
-  
-
-
-
-
-  isInstalled: function() {
-    return Services.io.getProtocolHandler("resource")
-             .QueryInterface(Ci.nsIResProtocolHandler)
-             .hasSubstitution("devtools");
-  },
 
   
 
