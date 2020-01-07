@@ -542,7 +542,7 @@ nsXULContentBuilder::BuildContentFromTemplate(nsIContent *aTemplateNode,
             
             
             rv = NS_ELEMENT_WAS_THERE;
-            if (!tmplKid->IsElement()) {
+            if (tmplKid->IsElement()) {
               rv = EnsureElementHasGenericChild(aRealElement, nameSpaceID, tag, aNotify, getter_AddRefs(realKid));
               if (NS_FAILED(rv))
                   return rv;
@@ -670,12 +670,10 @@ nsXULContentBuilder::BuildContentFromTemplate(nsIContent *aTemplateNode,
             
             mTemplateMap.Put(realKid, tmplKid);
 
-            if (tmplKid->IsElement()) {
-                rv = CopyAttributesToElement(tmplKid->AsElement(),
-                                             realKid, aChild,
-                                             false);
-                if (NS_FAILED(rv)) return rv;
-            }
+            rv = CopyAttributesToElement(tmplKid->AsElement(),
+                                         realKid, aChild,
+                                         false);
+            if (NS_FAILED(rv)) return rv;
 
             
             if (isGenerationElement) {
