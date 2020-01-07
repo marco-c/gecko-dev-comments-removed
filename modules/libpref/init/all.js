@@ -852,6 +852,11 @@ pref("gfx.webrender.enabled", false);
 #endif
 #endif
 
+
+
+
+pref("gfx.webrender.force-disabled", false);
+
 #ifdef XP_WIN
 pref("gfx.webrender.force-angle", true);
 pref("gfx.webrender.dcomp-win.enabled", true);
@@ -955,8 +960,6 @@ pref("accessibility.mouse_focuses_formcontrol", false);
 
 
 pref("accessibility.typeaheadfind", true);
-
-pref("accessibility.typeaheadfind.manual", true);
 pref("accessibility.typeaheadfind.autostart", true);
 
 
