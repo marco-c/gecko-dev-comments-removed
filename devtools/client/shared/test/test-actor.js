@@ -661,7 +661,15 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   eval: function(js) {
     
     let sb = Cu.Sandbox(this.content, { sandboxPrototype: this.content });
-    return Cu.evalInSandbox(js, sb);
+    let result = Cu.evalInSandbox(js, sb);
+
+    
+    if (typeof result == "function") {
+      return null;
+    } else if (typeof result == "object") {
+      return JSON.parse(JSON.stringify(result));
+    }
+    return result;
   },
 
   
