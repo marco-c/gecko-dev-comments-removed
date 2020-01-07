@@ -262,6 +262,16 @@ nsSHistory::CalcMaxTotalViewers()
 {
   
   
+  #ifdef ANDROID
+  #define MAX_TOTAL_VIEWERS_BIAS 15.9
+  #else
+  #define MAX_TOTAL_VIEWERS_BIAS 14
+  #endif
+
+  
+  
+  
+  
   
   
   
@@ -296,7 +306,7 @@ nsSHistory::CalcMaxTotalViewers()
   
   
   uint32_t viewers = 0;
-  double x = std::log(kBytesD) / std::log(2.0) - 14;
+  double x = std::log(kBytesD) / std::log(2.0) - MAX_TOTAL_VIEWERS_BIAS;
   if (x > 0) {
     viewers = (uint32_t)(x * x - x + 2.001); 
     viewers /= 4;
