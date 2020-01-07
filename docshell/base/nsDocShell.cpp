@@ -11854,6 +11854,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+  NS_ENSURE_TRUE(rootSH, NS_ERROR_UNEXPECTED);
+
   if (!aReplace) {
     int32_t curIndex = rootSH->Index();
     if (curIndex > -1) {
