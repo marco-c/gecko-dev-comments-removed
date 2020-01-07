@@ -3151,6 +3151,8 @@ TelemetryPrefValue()
  void
 Preferences::SetupTelemetryPref()
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   Maybe<bool> telemetryPrefValue = TelemetryPrefValue();
   if (telemetryPrefValue.isSome()) {
     Preferences::SetBoolInAnyProcess(
@@ -3199,9 +3201,25 @@ TelemetryPrefValue()
  void
 Preferences::SetupTelemetryPref()
 {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   Preferences::SetBoolInAnyProcess(
     kTelemetryPref, TelemetryPrefValue(), PrefValueKind::Default);
   Preferences::LockInAnyProcess(kTelemetryPref);
+}
+
+static void
+CheckTelemetryPref()
+{
+  MOZ_ASSERT(!XRE_IsParentProcess());
+
+  
+  DebugOnly<bool> value;
+  MOZ_ASSERT(NS_SUCCEEDED(Preferences::GetBool(kTelemetryPref, &value)) &&
+             value == TelemetryPrefValue());
+  
+  
+  
 }
 
 #endif 
@@ -3241,6 +3259,10 @@ Preferences::GetInstanceForService()
     }
     delete gChangedDomPrefs;
     gChangedDomPrefs = nullptr;
+
+#ifndef MOZ_WIDGET_ANDROID
+    CheckTelemetryPref();
+#endif
 
   } else {
     
@@ -4245,7 +4267,9 @@ Preferences::InitInitialObjects()
     }
   }
 
-  SetupTelemetryPref();
+  if (XRE_IsParentProcess()) {
+    SetupTelemetryPref();
+  }
 
   NS_CreateServicesFromCategory(NS_PREFSERVICE_APPDEFAULTS_TOPIC_ID,
                                 nullptr,
