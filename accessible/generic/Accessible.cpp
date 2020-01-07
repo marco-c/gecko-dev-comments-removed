@@ -670,32 +670,31 @@ Accessible::RelativeBounds(nsIFrame** aBoundingFrame) const
   return nsRect();
 }
 
-nsIntRect
-Accessible::Bounds() const
+nsRect
+Accessible::BoundsInAppUnits() const
 {
   nsIFrame* boundingFrame = nullptr;
   nsRect unionRectTwips = RelativeBounds(&boundingFrame);
-  if (!boundingFrame)
-    return nsIntRect();
-
-  nsIntRect screenRect;
-  nsPresContext* presContext = mDoc->PresContext();
-  screenRect.SetRect(presContext->AppUnitsToDevPixels(unionRectTwips.X()),
-                     presContext->AppUnitsToDevPixels(unionRectTwips.Y()),
-                     presContext->AppUnitsToDevPixels(unionRectTwips.Width()),
-                     presContext->AppUnitsToDevPixels(unionRectTwips.Height()));
+  if (!boundingFrame) {
+    return nsRect();
+  }
 
   
   
   
-  screenRect.ScaleRoundOut(presContext->PresShell()->GetResolution());
+  unionRectTwips.ScaleRoundOut(mDoc->PresContext()->PresShell()->GetResolution());
   
   
-  nsIntRect orgRectPixels = boundingFrame->GetScreenRectInAppUnits().
-    ToNearestPixels(presContext->AppUnitsPerDevPixel());
-  screenRect.MoveBy(orgRectPixels.X(), orgRectPixels.Y());
+  nsRect orgRectPixels = boundingFrame->GetScreenRectInAppUnits();
+  unionRectTwips.MoveBy(orgRectPixels.X(), orgRectPixels.Y());
 
-  return screenRect;
+  return unionRectTwips;
+}
+
+nsIntRect
+Accessible::BoundsInCSSPixels() const
+{
+  return BoundsInAppUnits().ToNearestPixels(mDoc->PresContext()->AppUnitsPerCSSPixel());
 }
 
 void
