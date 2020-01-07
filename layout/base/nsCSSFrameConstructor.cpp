@@ -3436,20 +3436,28 @@ FindAncestorWithGeneratedContentPseudo(nsIFrame* aFrame)
 
 
 const nsCSSFrameConstructor::FrameConstructionData*
-nsCSSFrameConstructor::FindTextData(nsIFrame* aParentFrame)
+nsCSSFrameConstructor::FindTextData(nsIFrame* aParentFrame,
+                                    nsIContent* aTextContent)
 {
+  MOZ_ASSERT(aTextContent, "How?");
   if (aParentFrame && IsFrameForSVG(aParentFrame)) {
-    nsIFrame *ancestorFrame =
+    nsIFrame* ancestorFrame =
       nsSVGUtils::GetFirstNonAAncestorFrame(aParentFrame);
-    if (ancestorFrame) {
-      static const FrameConstructionData sSVGTextData =
-        FCDATA_DECL(FCDATA_IS_LINE_PARTICIPANT | FCDATA_IS_SVG_TEXT,
-                    NS_NewTextFrame);
-      if (nsSVGUtils::IsInSVGTextSubtree(ancestorFrame)) {
-        return &sSVGTextData;
-      }
+    if (!ancestorFrame || !nsSVGUtils::IsInSVGTextSubtree(ancestorFrame)) {
+      return nullptr;
     }
-    return nullptr;
+
+    
+    
+    
+    if (aParentFrame->GetContent() != aTextContent->GetParent()) {
+      return nullptr;
+    }
+
+    static const FrameConstructionData sSVGTextData =
+      FCDATA_DECL(FCDATA_IS_LINE_PARTICIPANT | FCDATA_IS_SVG_TEXT,
+                  NS_NewTextFrame);
+    return &sSVGTextData;
   }
 
   static const FrameConstructionData sTextData =
@@ -5770,7 +5778,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   
   const FrameConstructionData* data;
   if (isText) {
-    data = FindTextData(aParentFrame);
+    data = FindTextData(aParentFrame, aContent);
     if (!data) {
       
       return;

@@ -1422,7 +1422,8 @@ private:
 
   
   
-  static const FrameConstructionData* FindTextData(nsIFrame* aParentFrame);
+  static const FrameConstructionData* FindTextData(nsIFrame* aParentFrame,
+                                                   nsIContent* aTextContent);
 
   void ConstructTextFrame(const FrameConstructionData* aData,
                           nsFrameConstructorState& aState,

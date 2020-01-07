@@ -4582,6 +4582,8 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
       mPositions[aIndex].mStartOfChunk = true;
     }
   } else if (!aContent->IsSVGElement(nsGkAtoms::a)) {
+    MOZ_ASSERT(aContent->IsSVGElement());
+
     
     nsSVGElement* element = static_cast<nsSVGElement*>(aContent);
 
