@@ -106,6 +106,9 @@ InitializeHandleVerifier()
 static sandbox::TargetServices*
 InitializeTargetServices()
 {
+  
+  InitializeHandleVerifier();
+
   sandbox::TargetServices* targetServices =
     sandbox::SandboxFactory::GetTargetServices();
   if (!targetServices) {
@@ -115,8 +118,6 @@ InitializeTargetServices()
   if (targetServices->Init() != sandbox::SBOX_ALL_OK) {
     return nullptr;
   }
-
-  InitializeHandleVerifier();
 
   return targetServices;
 }
@@ -139,6 +140,9 @@ LowerSandbox()
 static sandbox::BrokerServices*
 InitializeBrokerServices()
 {
+  
+  InitializeHandleVerifier();
+
   sandbox::BrokerServices* brokerServices =
     sandbox::SandboxFactory::GetBrokerServices();
   if (!brokerServices) {
@@ -157,8 +161,6 @@ InitializeBrokerServices()
   
   scoped_refptr<sandbox::TargetPolicy> policy = brokerServices->CreatePolicy();
   sandbox::ResultCode result = policy->CreateAlternateDesktop(true);
-
-  InitializeHandleVerifier();
 
   return brokerServices;
 }
