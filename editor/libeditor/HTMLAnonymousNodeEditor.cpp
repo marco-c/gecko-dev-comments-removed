@@ -302,7 +302,7 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 
 
 NS_IMETHODIMP
-HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
+HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 {
   NS_ENSURE_ARG_POINTER(aSelection);
 
