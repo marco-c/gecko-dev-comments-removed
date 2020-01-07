@@ -45,10 +45,8 @@ FAILURE_STR = "Failed"
 
 
 
-configuration_tokens = ('branch',
-                        'platform',
-                        'update_channel',
-                        )
+configuration_tokens = ('branch', 'update_channel')
+
 
 
 

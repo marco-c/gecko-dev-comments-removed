@@ -27,7 +27,6 @@ config = {
         "EN_US_BINARY_URL": os.environ["EN_US_BINARY_URL"],
         "MOZ_UPDATE_CHANNEL": "try", 
     },
-    "platform": "android", 
 
     
     "build_target": "Android_arm-eabi-gcc3",
