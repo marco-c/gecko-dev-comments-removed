@@ -1070,6 +1070,8 @@ PeerConnectionMedia::SelfDestruct()
 
   mTransceivers.clear();
 
+  mQueuedIceCtxOperations.clear();
+
   
   RUN_ON_THREAD(mSTSThread, WrapRunnable(
       this, &PeerConnectionMedia::ShutdownMediaTransport_s),
