@@ -2,8 +2,8 @@
 
 
 #if A
+# include "vm/JSScript-inl.h"
 # include "vm/Interpreter-inl.h"
-# include "jsscriptinlines.h"
 # include "js/Value.h"
 # include "ds/LifoAlloc.h"
 # include "jsapi.h"
@@ -24,7 +24,7 @@
 # include "mozilla/HashFunctions.h"
 #endif
 
-#include "jsscript.h"
-#include "vm/JSObject.h"  
 #include "jstypes.h"
+#include "vm/JSScript.h"  
 #include "vm/JSFunction.h"
+#include "vm/JSObject.h"

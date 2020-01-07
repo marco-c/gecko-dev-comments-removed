@@ -11,10 +11,10 @@
 
 
 
-#include "jsscript.h"
 #include "jstypes.h"
 
 #include "vm/JSObject.h"
+#include "vm/JSScript.h"
 
 namespace js {
 

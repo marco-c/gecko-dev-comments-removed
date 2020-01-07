@@ -6,8 +6,8 @@
 
 
 
-#ifndef jsscript_h
-#define jsscript_h
+#ifndef vm_JSScript_h
+#define vm_JSScript_h
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
@@ -213,8 +213,6 @@ class ScriptCounts
     
     
     PCCounts* getThrowCounts(size_t offset);
-
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   private:
     friend class ::JSScript;

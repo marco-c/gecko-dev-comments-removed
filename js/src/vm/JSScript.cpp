@@ -8,7 +8,7 @@
 
 
 
-#include "jsscriptinlines.h"
+#include "vm/JSScript-inl.h"
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"

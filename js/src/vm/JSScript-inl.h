@@ -4,10 +4,10 @@
 
 
 
-#ifndef jsscriptinlines_h
-#define jsscriptinlines_h
+#ifndef vm_JSScript_inl_h
+#define vm_JSScript_inl_h
 
-#include "jsscript.h"
+#include "vm/JSScript.h"
 
 #include "jit/BaselineJIT.h"
 #include "jit/IonAnalysis.h"

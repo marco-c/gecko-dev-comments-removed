@@ -2,9 +2,8 @@
 
 
 
-#include "jsscript.h"
-
 #include "jsapi-tests/tests.h"
+#include "vm/JSScript.h"
 
 BEGIN_TEST(testBug795104)
 {
