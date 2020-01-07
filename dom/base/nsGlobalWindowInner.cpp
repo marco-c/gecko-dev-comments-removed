@@ -1798,19 +1798,52 @@ nsGlobalWindowInner::EnsureClientSource()
   
   
   
-  if (!mClientSource) {
-    mClientSource = ClientManager::CreateSource(ClientType::Window,
-                                                EventTargetFor(TaskCategory::Other),
-                                                mDoc->NodePrincipal());
-    MOZ_DIAGNOSTIC_ASSERT(mClientSource);
-    newClientSource = true;
+  if (mClientSource) {
+    nsCOMPtr<nsIPrincipal> clientPrincipal(mClientSource->Info().GetPrincipal());
+    if (!clientPrincipal || !clientPrincipal->Equals(mDoc->NodePrincipal())) {
+      mClientSource.reset();
+    }
   }
 
   
   
   
   
-  if (loadInfo) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mClientSource) {
+    mClientSource = ClientManager::CreateSource(ClientType::Window,
+                                                EventTargetFor(TaskCategory::Other),
+                                                mDoc->NodePrincipal());
+    MOZ_DIAGNOSTIC_ASSERT(mClientSource);
+    newClientSource = true;
+
+    
+    
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  else if (loadInfo) {
     const Maybe<ServiceWorkerDescriptor> controller = loadInfo->GetController();
     if (controller.isSome()) {
       mClientSource->SetController(controller.ref());
