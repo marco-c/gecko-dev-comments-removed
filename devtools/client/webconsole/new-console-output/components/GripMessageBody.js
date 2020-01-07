@@ -96,7 +96,7 @@ function cleanupStyle(userProvidedStyle, createElement) {
   
   
   
-  return [...dummy.style]
+  return Array.from(dummy.style)
     .filter(name => {
       return allowedStylesRegex.test(name)
         && !forbiddenValuesRegexs.some(regex => regex.test(dummy.style[name]));
