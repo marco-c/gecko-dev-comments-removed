@@ -18,6 +18,12 @@
 #include "nsIDOMEventListener.h"
 #include "nsCycleCollectionParticipant.h"
 
+namespace mozilla {
+namespace dom {
+class MouseEvent;
+} 
+} 
+
 class nsXULPopupListener : public nsIDOMEventListener
 {
 public:
@@ -37,7 +43,8 @@ protected:
 
     
     
-    virtual nsresult LaunchPopup(nsIDOMEvent* aEvent, nsIContent* aTargetContent);
+    virtual nsresult LaunchPopup(mozilla::dom::MouseEvent* aEvent,
+                                 nsIContent* aTargetContent);
 
     
     virtual void ClosePopup();

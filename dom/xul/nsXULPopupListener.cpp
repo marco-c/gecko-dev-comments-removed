@@ -29,6 +29,7 @@
 #include "mozilla/dom/Event.h" 
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/FragmentOrElement.h"
+#include "mozilla/dom/MouseEvent.h"
 
 
 #include "nsPresContext.h"
@@ -100,16 +101,14 @@ nsXULPopupListener::HandleEvent(nsIDOMEvent* aEvent)
        (eventType.EqualsLiteral("contextmenu") && mIsContext)))
     return NS_OK;
 
-  int16_t button;
-
-  nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
+  MouseEvent* mouseEvent = aEvent->InternalDOMEvent()->AsMouseEvent();
   if (!mouseEvent) {
     
     return NS_OK;
   }
 
   
-  EventTarget* target = mouseEvent->AsEvent()->InternalDOMEvent()->GetTarget();
+  EventTarget* target = mouseEvent->GetTarget();
   nsCOMPtr<nsIDOMNode> targetNode = do_QueryInterface(target);
 
   if (!targetNode && mIsContext) {
@@ -134,15 +133,14 @@ nsXULPopupListener::HandleEvent(nsIDOMEvent* aEvent)
   }
 
   {
-    EventTarget* originalTarget = mouseEvent->AsEvent()->InternalDOMEvent()->GetOriginalTarget();
+    EventTarget* originalTarget = mouseEvent->GetOriginalTarget();
     nsCOMPtr<nsIContent> content = do_QueryInterface(originalTarget);
     if (content && EventStateManager::IsRemoteTarget(content)) {
       return NS_OK;
     }
   }
 
-  bool preventDefault;
-  mouseEvent->AsEvent()->GetDefaultPrevented(&preventDefault);
+  bool preventDefault = mouseEvent->DefaultPrevented();
   if (preventDefault && targetNode && mIsContext) {
     
     
@@ -203,14 +201,14 @@ nsXULPopupListener::HandleEvent(nsIDOMEvent* aEvent)
   }
   else {
     
-    mouseEvent->GetButton(&button);
-    if (button != 0)
+    if (mouseEvent->Button() != 0) {
       return NS_OK;
+    }
   }
 
   
   
-  LaunchPopup(aEvent, targetContent);
+  LaunchPopup(mouseEvent, targetContent);
 
   return NS_OK;
 }
@@ -328,7 +326,7 @@ GetImmediateChild(nsIContent* aContent, nsAtom *aTag)
 
 
 nsresult
-nsXULPopupListener::LaunchPopup(nsIDOMEvent* aEvent, nsIContent* aTargetContent)
+nsXULPopupListener::LaunchPopup(MouseEvent* aEvent, nsIContent* aTargetContent)
 {
   nsresult rv = NS_OK;
 
@@ -416,10 +414,8 @@ nsXULPopupListener::LaunchPopup(nsIDOMEvent* aEvent, nsIContent* aTargetContent)
                   false, true, false, aEvent);
   }
   else {
-    int32_t xPos = 0, yPos = 0;
-    nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
-    mouseEvent->GetScreenX(&xPos);
-    mouseEvent->GetScreenY(&yPos);
+    int32_t xPos = aEvent->ScreenX(CallerType::System);
+    int32_t yPos = aEvent->ScreenY(CallerType::System);
 
     pm->ShowPopupAtScreen(mPopupContent, xPos, yPos, mIsContext, aEvent);
   }
