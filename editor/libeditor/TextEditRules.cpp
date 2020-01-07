@@ -529,8 +529,7 @@ GetTextNode(Selection* selection)
   if (!EditorBase::IsTextNode(selNode)) {
     
     RefPtr<NodeIterator> iter =
-      new NodeIterator(selNode, nsIDOMNodeFilter::SHOW_TEXT,
-                       NodeFilterHolder());
+      new NodeIterator(selNode, nsIDOMNodeFilter::SHOW_TEXT, nullptr);
     while (!EditorBase::IsTextNode(selNode)) {
       selNode = iter->NextNode(IgnoreErrors());
       if (!selNode) {

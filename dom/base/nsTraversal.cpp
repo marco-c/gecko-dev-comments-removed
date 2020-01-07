@@ -18,10 +18,10 @@ using namespace mozilla::dom;
 
 nsTraversal::nsTraversal(nsINode *aRoot,
                          uint32_t aWhatToShow,
-                         NodeFilterHolder aFilter) :
+                         NodeFilter* aFilter) :
     mRoot(aRoot),
     mWhatToShow(aWhatToShow),
-    mFilter(Move(aFilter)),
+    mFilter(aFilter),
     mInAcceptNode(false)
 {
     NS_ASSERTION(aRoot, "invalid root in call to nsTraversal constructor");
@@ -53,28 +53,15 @@ nsTraversal::TestNode(nsINode* aNode, mozilla::ErrorResult& aResult)
         return nsIDOMNodeFilter::FILTER_SKIP;
     }
 
-    if (!mFilter.GetISupports()) {
+    if (!mFilter) {
         
         return nsIDOMNodeFilter::FILTER_ACCEPT;
     }
 
-    if (mFilter.HasWebIDLCallback()) {
-        AutoRestore<bool> inAcceptNode(mInAcceptNode);
-        mInAcceptNode = true;
-        
-        
-        return mFilter.GetWebIDLCallback()->
-            AcceptNode(*aNode, aResult, nullptr,
-                       CallbackObject::eRethrowExceptions);
-    }
-
-    nsCOMPtr<nsIDOMNode> domNode = do_QueryInterface(aNode);
     AutoRestore<bool> inAcceptNode(mInAcceptNode);
     mInAcceptNode = true;
-    int16_t filtered;
-    nsresult rv = mFilter.GetXPCOMCallback()->AcceptNode(domNode, &filtered);
-    if (NS_FAILED(rv)) {
-        aResult.Throw(rv);
-    }
-    return filtered;
+    
+    
+    return mFilter->AcceptNode(*aNode, aResult, nullptr,
+                               CallbackObject::eRethrowExceptions);
 }
