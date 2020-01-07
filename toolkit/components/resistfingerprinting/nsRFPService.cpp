@@ -58,12 +58,22 @@ static mozilla::LazyLogModule gResistFingerprintingLog("nsResistFingerprinting")
 
 NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver)
 
+
+
+
+
+
+
+
+
+
+
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
-Atomic<bool, ReleaseAcquire> nsRFPService::sPrivacyResistFingerprinting;
-Atomic<bool, ReleaseAcquire> nsRFPService::sPrivacyTimerPrecisionReduction;
+Atomic<bool, Relaxed> nsRFPService::sPrivacyResistFingerprinting;
+Atomic<bool, Relaxed> nsRFPService::sPrivacyTimerPrecisionReduction;
 
-Atomic<uint32_t, ReleaseAcquire> sResolutionUSec;
+Atomic<uint32_t, Relaxed> sResolutionUSec;
 static uint32_t sVideoFramesPerSec;
 static uint32_t sVideoDroppedRatio;
 static uint32_t sTargetVideoRes;

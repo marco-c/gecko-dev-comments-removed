@@ -54,7 +54,7 @@ using mozilla::ArrayLength;
 using mozilla::IsFinite;
 using mozilla::IsNaN;
 using mozilla::NumbersAreIdentical;
-using mozilla::ReleaseAcquire;
+using mozilla::Relaxed;
 
 using JS::AutoCheckCannotGC;
 using JS::ClippedTime;
@@ -63,7 +63,7 @@ using JS::TimeClip;
 using JS::ToInteger;
 
 
-static Atomic<uint32_t, ReleaseAcquire> sResolutionUsec;
+static Atomic<uint32_t, Relaxed> sResolutionUsec;
 
 
 
