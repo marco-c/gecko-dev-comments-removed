@@ -289,10 +289,6 @@ typedef mozilla::Variant<JSScript*, WasmInstanceObject*> DebuggerScriptReferent;
 
 typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*> DebuggerSourceReferent;
 
-
-
-typedef mozilla::Variant<AbstractFramePtr, wasm::DebugFrame*> DebuggerFrameReferent;
-
 class Debugger : private mozilla::LinkedListElement<Debugger>
 {
     friend class Breakpoint;
