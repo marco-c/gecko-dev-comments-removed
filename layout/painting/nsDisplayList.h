@@ -843,8 +843,8 @@ public:
 
   bool IsInSubdocument() { return mPresShellStates.Length() > 1; }
 
-  void SetBuiltOverlayScrollbars(bool aOverlayScrollbars) { mBuiltOverlayScrollbars = aOverlayScrollbars; }
-  bool BuiltOverlayScrollbars() { return mBuiltOverlayScrollbars; }
+  void SetDisablePartialUpdates(bool aDisable) { mDisablePartialUpdates = aDisable; }
+  bool DisablePartialUpdates() { return mDisablePartialUpdates; }
 
   
 
@@ -2017,7 +2017,7 @@ private:
   bool                           mInInvalidSubtree;
   bool                           mBuildCompositorHitTestInfo;
   bool                           mLessEventRegionItems;
-  bool                           mBuiltOverlayScrollbars;
+  bool                           mDisablePartialUpdates;
 };
 
 class nsDisplayItem;
