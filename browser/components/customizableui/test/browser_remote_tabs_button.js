@@ -46,6 +46,10 @@ add_task(async function testSyncRemoteTabsButtonFunctionality() {
   info("The sync now button was clicked");
 
   await waitForCondition(() => syncWasCalled);
+
+  
+  
+  gSync._onActivityStop();
 });
 
 add_task(async function asyncCleanup() {
@@ -69,10 +73,10 @@ function mockFunctions() {
     email: "user@mozilla.com"
   });
 
-  service.sync = mocked_syncAndReportErrors;
+  service.sync = mocked_sync;
 }
 
-function mocked_syncAndReportErrors() {
+function mocked_sync() {
   syncWasCalled = true;
 }
 
