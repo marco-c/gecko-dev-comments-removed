@@ -3093,6 +3093,14 @@ impl Renderer {
         textures: &BatchTextures,
         stats: &mut RendererStats,
     ) {
+        
+        
+        
+        let work_around_angle_bug = cfg!(windows);
+        if work_around_angle_bug {
+            self.device.reset_angle_sampler_metadata(&self.texture_resolver.dummy_cache_texture);
+        }
+
         for i in 0 .. textures.colors.len() {
             self.texture_resolver.bind(
                 &textures.colors[i],
