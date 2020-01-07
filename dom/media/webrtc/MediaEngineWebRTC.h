@@ -513,9 +513,10 @@ private:
   
   static int sChannelsOpen;
 
+  const UniquePtr<webrtc::AudioProcessing> mAudioProcessing;
 
   
-  nsAutoPtr<AudioPacketizer<AudioDataValue, int16_t>> mPacketizer;
+  nsAutoPtr<AudioPacketizer<AudioDataValue, AudioDataValue>> mPacketizer;
   ScopedCustomReleasePtr<webrtc::VoEExternalMedia> mVoERenderListener;
 
   
@@ -539,8 +540,6 @@ private:
   uint64_t mTotalFrames;
   uint64_t mLastLogFrames;
 
-  NullTransport *mNullTransport;
-
   
   
   
@@ -549,7 +548,8 @@ private:
   
   MediaEnginePrefs mLastPrefs;
 
-  AlignedShortBuffer mInputDownmixBuffer;
+  AlignedFloatBuffer mInputBuffer;
+  AlignedFloatBuffer mInputDownmixBuffer;
 };
 
 class MediaEngineWebRTC : public MediaEngine
