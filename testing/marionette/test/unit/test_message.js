@@ -2,7 +2,10 @@
 
 
 
-ChromeUtils.import("chrome://marionette/content/error.js");
+const {
+  InvalidArgumentError,
+  WebDriverError,
+} = ChromeUtils.import("chrome://marionette/content/error.js", {});
 ChromeUtils.import("chrome://marionette/content/message.js");
 
 add_test(function test_Message_Origin() {
@@ -125,10 +128,10 @@ add_test(function test_Response_ctor() {
 add_test(function test_Response_sendConditionally() {
   let fired = false;
   let resp = new Response(42, () => fired = true);
-  resp.sendConditionally(r => false);
+  resp.sendConditionally(() => false);
   equal(false, resp.sent);
   equal(false, fired);
-  resp.sendConditionally(r => true);
+  resp.sendConditionally(() => true);
   equal(true, resp.sent);
   equal(true, fired);
 
