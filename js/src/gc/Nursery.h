@@ -425,7 +425,6 @@ class Nursery
     ProfileTimes startTimes_;
     ProfileDurations profileDurations_;
     ProfileDurations totalDurations_;
-    uint64_t minorGcCount_;
 
     
 
