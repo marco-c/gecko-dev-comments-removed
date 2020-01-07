@@ -10,8 +10,6 @@
 #include <ctype.h> 
 #include <string.h> 
 
-#include "nscore.h" 
-
 
 
 
