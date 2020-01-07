@@ -24,8 +24,12 @@ enum class EditSubAction : int32_t
   eUndo,
   eRedo,
 
-  insertNode,
-  createNode,
+  
+  eInsertNode,
+
+  
+  eCreateNode,
+
   deleteNode,
   splitNode,
   joinNode,

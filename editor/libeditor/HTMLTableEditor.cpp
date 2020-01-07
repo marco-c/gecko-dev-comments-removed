@@ -376,7 +376,7 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
   AutoPlaceholderBatch beginBatching(this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertNode,
+                                      *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
   
@@ -511,7 +511,7 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
   AutoPlaceholderBatch beginBatching(this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertNode,
+                                      *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
   if (aAfter) {
@@ -1679,7 +1679,7 @@ HTMLEditor::SplitTableCell()
   AutoPlaceholderBatch beginBatching(this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertNode,
+                                      *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
   
@@ -1914,7 +1914,7 @@ HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
   
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertNode,
+                                      *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
   
@@ -2484,7 +2484,7 @@ HTMLEditor::NormalizeTable(Element* aTable)
   AutoPlaceholderBatch beginBatching(this);
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::insertNode,
+                                      *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
   RefPtr<Element> cell;
