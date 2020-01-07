@@ -1579,14 +1579,7 @@ nsCSPPolicy::toString(nsAString& outStr) const
 {
   uint32_t length = mDirectives.Length();
   for (uint32_t i = 0; i < length; ++i) {
-
-    if (mDirectives[i]->equals(nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
-      outStr.AppendASCII(CSP_CSPDirectiveToString(nsIContentSecurityPolicy::REFERRER_DIRECTIVE));
-      outStr.AppendASCII(" ");
-      outStr.Append(mReferrerPolicy);
-    } else {
-      mDirectives[i]->toString(outStr);
-    }
+    mDirectives[i]->toString(outStr);
     if (i != (length - 1)) {
       outStr.AppendASCII("; ");
     }
@@ -1599,14 +1592,7 @@ nsCSPPolicy::toDomCSPStruct(mozilla::dom::CSP& outCSP) const
   outCSP.mReport_only = mReportOnly;
 
   for (uint32_t i = 0; i < mDirectives.Length(); ++i) {
-    if (mDirectives[i]->equals(nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
-      mozilla::dom::Sequence<nsString> srcs;
-      srcs.AppendElement(mReferrerPolicy, mozilla::fallible);
-      outCSP.mReferrer.Construct();
-      outCSP.mReferrer.Value() = srcs;
-    } else {
-      mDirectives[i]->toDomCSPStruct(outCSP);
-    }
+    mDirectives[i]->toDomCSPStruct(outCSP);
   }
 }
 

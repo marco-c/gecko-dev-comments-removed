@@ -18,7 +18,6 @@
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/net/ReferrerPolicy.h"
 
 using namespace mozilla;
 
@@ -815,43 +814,6 @@ nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs)
 }
 
 void
-nsCSPParser::referrerDirectiveValue(nsCSPDirective* aDir)
-{
-  
-  
-  
-  CSPPARSERLOG(("nsCSPParser::referrerDirectiveValue"));
-
-  if (mCurDir.Length() != 2) {
-    CSPPARSERLOG(("Incorrect number of tokens in referrer directive, got %zu expected 1",
-                 mCurDir.Length() - 1));
-    delete aDir;
-    return;
-  }
-
-  if (!mozilla::net::IsValidReferrerPolicy(mCurDir[1])) {
-    CSPPARSERLOG(("invalid value for referrer directive: %s",
-                  NS_ConvertUTF16toUTF8(mCurDir[1]).get()));
-    delete aDir;
-    return;
-  }
-
-  
-  const char16_t* params[] = { mCurDir[1].get() };
-  logWarningErrorToConsole(nsIScriptError::warningFlag, "deprecatedReferrerDirective",
-                             params, ArrayLength(params));
-
-  
-  nsWeakPtr ctx = mCSPContext->GetLoadingContext();
-  nsCOMPtr<nsIDocument> doc = do_QueryReferent(ctx);
-  if (doc) {
-    doc->SetHasReferrerPolicyCSP(true);
-  }
-  mPolicy->setReferrerPolicy(&mCurDir[1]);
-  mPolicy->addDirective(aDir);
-}
-
-void
 nsCSPParser::requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir)
 {
   CSPPARSERLOG(("nsCSPParser::requireSRIForDirectiveValue"));
@@ -1156,13 +1118,6 @@ nsCSPParser::directive()
   
   if (cspDir->equals(nsIContentSecurityPolicy::REQUIRE_SRI_FOR)) {
     requireSRIForDirectiveValue(static_cast<nsRequireSRIForDirective*>(cspDir));
-    return;
-  }
-
-  
-  
-  if (cspDir->equals(nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
-    referrerDirectiveValue(cspDir);
     return;
   }
 

@@ -1156,15 +1156,6 @@ nsHtml5TreeOpExecutor::AddSpeculationCSP(const nsAString& aCSP)
                              true); 
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  
-  bool hasReferrerPolicy = false;
-  uint32_t referrerPolicy = mozilla::net::RP_Unset;
-  rv = preloadCsp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
-  NS_ENSURE_SUCCESS_VOID(rv);
-  if (hasReferrerPolicy) {
-    SetSpeculationReferrerPolicy(static_cast<ReferrerPolicy>(referrerPolicy));
-  }
-
   mDocument->ApplySettingsFromCSP(true);
 }
 

@@ -1388,7 +1388,6 @@ nsIDocument::nsIDocument()
     mHaveFiredTitleChange(false),
     mIsShowing(false),
     mVisible(true),
-    mHasReferrerPolicyCSP(false),
     mRemovedFromDocShell(false),
     
     
@@ -1630,7 +1629,6 @@ nsDocument::~nsDocument()
       
       if (mHasCSP) {
         Accumulate(Telemetry::CSP_DOCUMENTS_COUNT, 1);
-        Accumulate(Telemetry::CSP_REFERRER_DIRECTIVE, mHasReferrerPolicyCSP);
       }
       if (mHasUnsafeInlineCSP) {
         Accumulate(Telemetry::CSP_UNSAFE_INLINE_DOCUMENTS_COUNT, 1);
@@ -2823,16 +2821,6 @@ nsIDocument::ApplySettingsFromCSP(bool aSpeculative)
     rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
     NS_ENSURE_SUCCESS_VOID(rv);
     if (csp) {
-      
-      bool hasReferrerPolicy = false;
-      uint32_t referrerPolicy = mozilla::net::RP_Unset;
-      rv = csp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
-      NS_ENSURE_SUCCESS_VOID(rv);
-      if (hasReferrerPolicy) {
-        mReferrerPolicy = static_cast<enum ReferrerPolicy>(referrerPolicy);
-        mReferrerPolicySet = true;
-      }
-
       
       
       if (!mBlockAllMixedContent) {

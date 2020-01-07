@@ -90,7 +90,6 @@ static const char* CSPStrDirectives[] = {
   "reflected-xss",             
   "base-uri",                  
   "form-action",               
-  "referrer",                  
   "manifest-src",              
   "upgrade-insecure-requests", 
   "child-src",                 
@@ -677,15 +676,6 @@ class nsCSPPolicy {
     inline bool getReportOnlyFlag() const
       { return mReportOnly; }
 
-    inline void setReferrerPolicy(const nsAString* aValue)
-      {
-        mReferrerPolicy = *aValue;
-        ToLowerCase(mReferrerPolicy);
-      }
-
-    inline void getReferrerPolicy(nsAString& outPolicy) const
-      { outPolicy.Assign(mReferrerPolicy); }
-
     void getReportURIs(nsTArray<nsString> &outReportURIs) const;
 
     void getDirectiveStringForContentType(nsContentPolicyType aContentType,
@@ -706,7 +696,6 @@ class nsCSPPolicy {
     nsUpgradeInsecureDirective* mUpgradeInsecDir;
     nsTArray<nsCSPDirective*>   mDirectives;
     bool                        mReportOnly;
-    nsString                    mReferrerPolicy;
 };
 
 #endif 

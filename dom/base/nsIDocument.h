@@ -1007,14 +1007,6 @@ public:
   
 
 
-  void SetHasReferrerPolicyCSP(bool aHasReferrerPolicyCSP)
-  {
-    mHasReferrerPolicyCSP = aHasReferrerPolicyCSP;
-  }
-
-  
-
-
   void SetHasMixedDisplayContentBlocked(bool aHasMixedDisplayContentBlocked)
   {
     mHasMixedDisplayContentBlocked = aHasMixedDisplayContentBlocked;
@@ -3913,9 +3905,6 @@ protected:
   
   
   bool mVisible : 1;
-
-  
-  bool mHasReferrerPolicyCSP : 1;
 
   
   
