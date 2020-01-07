@@ -809,6 +809,42 @@ element.isReadOnly = function(el) {
 
 
 
+element.isDisabled = function(el) {
+  if (!element.isDOMElement(el)) {
+    return false;
+  }
+
+  switch (el.localName) {
+    case "option":
+    case "optgroup":
+      if (el.disabled) {
+        return true;
+      }
+      let parent = element.findClosest(el, "optgroup,select");
+      return element.isDisabled(parent);
+
+    case "button":
+    case "input":
+    case "select":
+    case "textarea":
+      return el.disabled;
+
+    default:
+      return false;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
