@@ -229,7 +229,7 @@ function exchangeIceCandidates(pc1, pc2) {
       
       
       
-      if(candidate && remotePc.signalingState !== 'closed') {
+      if(candidate) {
         remotePc.addIceCandidate(candidate);
       }
     });

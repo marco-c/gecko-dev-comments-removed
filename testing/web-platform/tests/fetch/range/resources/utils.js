@@ -7,18 +7,3 @@ function loadScript(url, { doc = document }={}) {
     doc.body.appendChild(script);
   })
 }
-
-
-
-
-
-
-
-function appendAudio(document, url) {
-  const audio = document.createElement('audio');
-  audio.muted = true;
-  audio.src = url;
-  audio.preload = true;
-  document.body.appendChild(audio);
-  return audio;
-}
