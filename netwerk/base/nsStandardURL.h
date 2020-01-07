@@ -55,7 +55,6 @@ class nsStandardURL : public nsIFileURL
 {
 protected:
     virtual ~nsStandardURL();
-    explicit nsStandardURL(bool aSupportsFileURL = false, bool aTrackURL = true);
 
 public:
     NS_DECL_ISUPPORTS
@@ -72,6 +71,8 @@ public:
     
     virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
     virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
+
+    explicit nsStandardURL(bool aSupportsFileURL = false, bool aTrackURL = true);
 
     static void InitGlobalObjects();
     static void ShutdownGlobalObjects();
@@ -401,7 +402,7 @@ public:
                 
                 BaseURIMutator<T>::mURI.swap(uri);
             } else {
-                uri = Create();
+                uri = new T();
             }
             nsresult rv = uri->Init(aURLType, aDefaultPort, aSpec, aCharset, aBaseURI);
             if (NS_FAILED(rv)) {
@@ -463,18 +464,6 @@ public:
             return BaseURIMutator<T>::mURI->SetFileExtensionInternal(aFileExtension);
         }
 
-        T* Create() override
-        {
-            return new T(mMarkedFileURL);
-        }
-
-        MOZ_MUST_USE NS_IMETHOD
-        MarkFileURL() override
-        {
-            mMarkedFileURL = true;
-            return NS_OK;
-        }
-
         MOZ_MUST_USE NS_IMETHOD
         SetFile(nsIFile* aFile) override
         {
@@ -497,8 +486,6 @@ public:
         explicit TemplatedMutator() { }
     private:
         virtual ~TemplatedMutator() { }
-
-        bool mMarkedFileURL = false;
 
         friend T;
     };
