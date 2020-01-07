@@ -286,7 +286,7 @@ def run(objdir):
     
     
     
-    configure = mozpath.join(data['srcdir'], 'configure')
+    configure = mozpath.join(data['srcdir'], 'old-configure')
     config_status_path = mozpath.join(objdir, 'config.status')
     skip_configure = True
     if not os.path.exists(config_status_path):
