@@ -787,6 +787,8 @@ nsIPresShell::nsIPresShell()
     , mDidInitialize(false)
     , mIsDestroying(false)
     , mIsReflowing(false)
+    , mIsObservingDocument(false)
+    , mIsDocumentGone(false)
     , mPaintingSuppressed(false)
     , mIsActive(false)
     , mFrozen(false)
@@ -834,7 +836,6 @@ PresShell::PresShell()
   , mLastRootReflowHadUnconstrainedBSize(false)
   , mNoDelayedMouseEvents(false)
   , mNoDelayedKeyEvents(false)
-  , mIsDocumentGone(false)
   , mShouldUnsuppressPainting(false)
   , mResizeEventPending(false)
   , mApproximateFrameVisibilityVisited(false)
@@ -1678,10 +1679,10 @@ PresShell::RepaintSelection(RawSelectionType aRawSelectionType)
 
 
 void
-PresShell::BeginObservingDocument()
+nsIPresShell::BeginObservingDocument()
 {
   if (mDocument && !mIsDestroying) {
-    mDocument->AddObserver(this);
+    mIsObservingDocument = true;
     if (mIsDocumentGone) {
       NS_WARNING("Adding a presshell that was disconnected from the document "
                  "as a document observer?  Sounds wrong...");
@@ -1692,14 +1693,12 @@ PresShell::BeginObservingDocument()
 
 
 void
-PresShell::EndObservingDocument()
+nsIPresShell::EndObservingDocument()
 {
   
   
   mIsDocumentGone = true;
-  if (mDocument) {
-    mDocument->RemoveObserver(this);
-  }
+  mIsObservingDocument = false;
 }
 
 #ifdef DEBUG_kipp

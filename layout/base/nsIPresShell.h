@@ -40,6 +40,7 @@
 #include "nsIImageLoadingContent.h"
 #include "nsMargin.h"
 #include "nsFrameState.h"
+#include "nsStubDocumentObserver.h"
 #include "Units.h"
 
 class gfxContext;
@@ -164,7 +165,7 @@ enum nsRectVisibility {
 
 
 
-class nsIPresShell : public nsISupports
+class nsIPresShell : public nsStubDocumentObserver
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IPRESSHELL_IID)
@@ -338,10 +339,13 @@ public:
 
   
   
-  virtual void BeginObservingDocument() = 0;
+  void BeginObservingDocument();
 
   
-  virtual void EndObservingDocument() = 0;
+  
+  void EndObservingDocument();
+
+  bool IsObservingDocument() const { return mIsObservingDocument; }
 
   
 
@@ -1738,6 +1742,11 @@ protected:
   bool                      mDidInitialize : 1;
   bool                      mIsDestroying : 1;
   bool                      mIsReflowing : 1;
+  bool                      mIsObservingDocument : 1;
+
+  
+  
+  bool                      mIsDocumentGone : 1;
 
   
   bool                      mPaintingSuppressed : 1;
