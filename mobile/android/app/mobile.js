@@ -85,6 +85,9 @@ pref("browser.cache.offline.capacity", 5120);
 pref("offline-apps.quota.warn", 1024); 
 
 
+pref("browser.enable_automatic_image_resizing", true);
+
+
 pref("browser.cache.compression_level", 0);
 
 
