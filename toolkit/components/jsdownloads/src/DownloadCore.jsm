@@ -1283,6 +1283,8 @@ this.DownloadSource.prototype = {
 
 
 
+
+
 this.DownloadSource.fromSerializable = function(aSerializable) {
   let source = new DownloadSource();
   if (isString(aSerializable)) {
@@ -1916,7 +1918,13 @@ this.DownloadCopySaver.prototype = {
       }
       if (channel instanceof Ci.nsIHttpChannel &&
           download.source.referrer) {
-        channel.referrer = NetUtil.newURI(download.source.referrer);
+        
+        
+        
+        
+        channel.setReferrerWithPolicy(
+          NetUtil.newURI(download.source.referrer),
+          Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL);
       }
 
       

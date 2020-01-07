@@ -66,7 +66,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "gMIMEService",
 const TEST_TARGET_FILE_NAME = "test-download.txt";
 const TEST_STORE_FILE_NAME = "test-downloads.json";
 
-const TEST_REFERRER_URL = "http://www.example.com/referrer.html";
+
+
+const TEST_REFERRER_URL = "https://www.example.com/referrer.html";
 
 const TEST_DATA_SHORT = "This test string is downloaded.";
 
@@ -239,6 +241,7 @@ function promiseNewDownload(aSourceUrl) {
 
 
 
+
 function promiseStartLegacyDownload(aSourceUrl, aOptions) {
   let sourceURI = NetUtil.newURI(aSourceUrl || httpUrl("source.txt"));
   let targetFile = (aOptions && aOptions.targetFile)
@@ -307,7 +310,8 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
       }).catch(do_report_unexpected_exception);
 
       let isPrivate = aOptions && aOptions.isPrivate;
-
+      let referrer = aOptions && aOptions.referrer ?
+        NetUtil.newURI(aOptions.referrer) : null;
       
       
       transfer.init(sourceURI, NetUtil.newURI(targetFile), null, mimeInfo, null,
@@ -315,8 +319,9 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
       persist.progressListener = transfer;
 
       
-      persist.savePrivacyAwareURI(sourceURI, null, null, 0, null, null, targetFile,
-                                  isPrivate);
+      persist.savePrivacyAwareURI(
+        sourceURI, null, referrer, Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL,
+        null, null, targetFile, isPrivate);
     }).catch(do_report_unexpected_exception);
 
   });
