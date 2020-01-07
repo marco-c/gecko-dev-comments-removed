@@ -167,7 +167,7 @@ var PushServiceAndroidGCM = {
     
   },
 
-  connect: function(records) {
+  connect: function(records, broadcastListeners) {
     console.debug("connect:", records);
     
     
@@ -192,6 +192,10 @@ var PushServiceAndroidGCM = {
           });
       }));
     });
+  },
+
+  sendSubscribeBroadcast: async function(serviceId, version) {
+    
   },
 
   isConnected: function() {
