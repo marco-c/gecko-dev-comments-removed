@@ -2767,6 +2767,7 @@ GeckoDriver.prototype.deleteSession = function() {
     
     Preferences.set(CONTENT_LISTENER_PREF, false);
 
+    globalMessageManager.broadcastAsyncMessage("Marionette:Session:Delete");
     globalMessageManager.broadcastAsyncMessage("Marionette:Deregister");
 
     for (let win of this.windows) {
