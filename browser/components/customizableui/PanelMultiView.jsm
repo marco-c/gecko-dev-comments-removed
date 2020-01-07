@@ -59,6 +59,12 @@ ChromeUtils.defineModuleGetter(this, "BrowserUtils",
 ChromeUtils.defineModuleGetter(this, "CustomizableUI",
   "resource:///modules/CustomizableUI.jsm");
 
+
+
+
+
+const BLOCKERS_TIMEOUT_MS = 10000;
+
 const TRANSITION_PHASES = Object.freeze({
   START: 1,
   PREPARE: 2,
@@ -81,6 +87,12 @@ this.AssociatedToNode = class {
 
 
     this.node = node;
+
+    
+
+
+
+    this._blockersPromise = Promise.resolve();
   }
 
   
@@ -132,6 +144,63 @@ this.AssociatedToNode = class {
     });
     this.node.dispatchEvent(event);
     return event.defaultPrevented;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async dispatchAsyncEvent(eventName) {
+    
+    let blockersPromise = this._blockersPromise.catch(() => {});
+    return this._blockersPromise = blockersPromise.then(async () => {
+      let blockers = new Set();
+      let cancel = this.dispatchCustomEvent(eventName, {
+        addBlocker(promise) {
+          
+          blockers.add(promise.catch(ex => {
+            Cu.reportError(ex);
+            return true;
+          }));
+        },
+      }, true);
+      if (blockers.size) {
+        let timeoutPromise = new Promise((resolve, reject) => {
+          this.window.setTimeout(reject, BLOCKERS_TIMEOUT_MS);
+        });
+        try {
+          let results = await Promise.race([Promise.all(blockers),
+                                            timeoutPromise]);
+          cancel = cancel || results.some(result => result === false);
+        } catch (ex) {
+          Cu.reportError(new Error(
+            `One of the blockers for ${eventName} timed out.`));
+          return true;
+        }
+      }
+      return cancel;
+    });
   }
 };
 
@@ -570,24 +639,7 @@ this.PanelMultiView = class extends this.AssociatedToNode {
         
         
         
-        let detail = {
-          blockers: new Set(),
-          addBlocker(promise) {
-            this.blockers.add(promise);
-          }
-        };
-        let cancel = nextPanelView.dispatchCustomEvent("ViewShowing", detail, true);
-        if (detail.blockers.size) {
-          try {
-            let results = await Promise.all(detail.blockers);
-            cancel = cancel || results.some(val => val === false);
-          } catch (e) {
-            Cu.reportError(e);
-            cancel = true;
-          }
-        }
-
-        if (cancel) {
+        if (await nextPanelView.dispatchAsyncEvent("ViewShowing")) {
           this._viewShowing = null;
           return false;
         }
