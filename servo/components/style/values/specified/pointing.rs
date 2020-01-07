@@ -8,44 +8,15 @@
 
 use cssparser::Parser;
 use parser::{Parse, ParserContext};
-use style_traits::ParseError;
+use style_traits::{ParseError, StyleParseErrorKind};
 use style_traits::cursor::CursorKind;
-use values::generics::pointing::CaretColor as GenericCaretColor;
+use values::generics::pointing as generics;
+use values::specified::Number;
 use values::specified::color::Color;
-#[cfg(feature = "gecko")]
 use values::specified::url::SpecifiedImageUrl;
 
 
-
-
-#[cfg(feature = "servo")]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
-pub struct Cursor(pub CursorKind);
-
-
-
-
-#[cfg(feature = "gecko")]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
-pub struct Cursor {
-    
-    pub images: Box<[CursorImage]>,
-    
-    pub keyword: CursorKind,
-}
-
-
-#[cfg(feature = "gecko")]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
-pub struct CursorImage {
-    
-    pub url: SpecifiedImageUrl,
-    
-    pub hotspot: Option<(f32, f32)>,
-}
-
-
-pub type CaretColor = GenericCaretColor<Color>;
+pub type CaretColor = generics::CaretColor<Color>;
 
 impl Parse for CaretColor {
     fn parse<'i, 't>(
@@ -53,8 +24,63 @@ impl Parse for CaretColor {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if input.try(|i| i.expect_ident_matching("auto")).is_ok() {
-            return Ok(GenericCaretColor::Auto);
+            return Ok(generics::CaretColor::Auto);
         }
-        Ok(GenericCaretColor::Color(Color::parse(context, input)?))
+        Ok(generics::CaretColor::Color(Color::parse(context, input)?))
+    }
+}
+
+
+pub type Cursor = generics::Cursor<CursorImage>;
+
+
+pub type CursorImage = generics::CursorImage<SpecifiedImageUrl, Number>;
+
+impl Parse for Cursor {
+    
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let mut images = vec![];
+        loop {
+            match input.try(|input| CursorImage::parse(context, input)) {
+                Ok(image) => images.push(image),
+                Err(_) => break,
+            }
+            input.expect_comma()?;
+        }
+        Ok(Self {
+            images: images.into_boxed_slice(),
+            keyword: CursorKind::parse(context, input)?,
+        })
+    }
+}
+
+impl Parse for CursorKind {
+    fn parse<'i, 't>(
+        _context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let location = input.current_source_location();
+        let ident = input.expect_ident()?;
+        CursorKind::from_css_keyword(&ident).map_err(|_| {
+            location.new_custom_error(StyleParseErrorKind::UnspecifiedError)
+        })
+    }
+}
+
+impl Parse for CursorImage {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(Self {
+            url: SpecifiedImageUrl::parse(context, input)?,
+            hotspot: match input.try(|input| Number::parse(context, input)) {
+                Ok(number) => Some((number, Number::parse(context, input)?)),
+                Err(_) => None,
+            },
+        })
     }
 }
