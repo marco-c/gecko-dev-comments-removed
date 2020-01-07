@@ -20,9 +20,7 @@ var histograms = {
   
   PLACES_IDLE_FRECENCY_DECAY_TIME_MS: val => Assert.ok(val >= 0),
   PLACES_IDLE_MAINTENANCE_TIME_MS: val => Assert.ok(val > 0),
-  
-  
-  PLACES_ANNOS_BOOKMARKS_COUNT: val => Assert.equal(val, 2),
+  PLACES_ANNOS_BOOKMARKS_COUNT: val => Assert.equal(val, 1),
   PLACES_ANNOS_PAGES_COUNT: val => Assert.equal(val, 1),
   PLACES_MAINTENANCE_DAYSFROMLAST: val => Assert.ok(val >= 0),
 };
