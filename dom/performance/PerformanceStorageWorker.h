@@ -55,7 +55,7 @@ private:
   } mState;
 
   
-  UniquePtr<WorkerHolder> mWorkerHolder;
+  UniquePtr<workers::WorkerHolder> mWorkerHolder;
 };
 
 } 
