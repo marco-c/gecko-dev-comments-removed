@@ -10,13 +10,11 @@
 #include "gc/Heap.h"
 #include "js/RootingAPI.h"
 
+class JSFatInlineString;
+
 namespace js {
 
 struct Class;
-
-
-
-
 
 
 
@@ -27,10 +25,42 @@ template <typename T, AllowGC allowGC = CanGC>
 T*
 Allocate(JSContext* cx);
 
+
+
+
 template <typename, AllowGC allowGC = CanGC>
 JSObject*
 Allocate(JSContext* cx, gc::AllocKind kind, size_t nDynamicSlots, gc::InitialHeap heap,
          const Class* clasp);
+
+
+
+template <typename StringT, AllowGC allowGC = CanGC>
+StringT*
+Allocate(JSContext* cx, gc::InitialHeap heap)
+{
+    MOZ_ASSERT(heap == gc::TenuredHeap);
+    return static_cast<StringT*>(js::Allocate<JSString, allowGC>(cx));
+}
+
+
+
+
+template <>
+inline JSFatInlineString*
+Allocate<JSFatInlineString, CanGC>(JSContext* cx, gc::InitialHeap heap)
+{
+    MOZ_ASSERT(heap == gc::TenuredHeap);
+    return static_cast<JSFatInlineString*>(js::Allocate<JSFatInlineString, CanGC>(cx));
+}
+
+template <>
+inline JSFatInlineString*
+Allocate<JSFatInlineString, NoGC>(JSContext* cx, gc::InitialHeap heap)
+{
+    MOZ_ASSERT(heap == gc::TenuredHeap);
+    return static_cast<JSFatInlineString*>(js::Allocate<JSFatInlineString, NoGC>(cx));
+}
 
 } 
 
