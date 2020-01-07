@@ -62,21 +62,21 @@ static BROTLI_INLINE uint16_t GetCopyLengthCode(size_t copylen) {
 static BROTLI_INLINE uint16_t CombineLengthCodes(
     uint16_t inscode, uint16_t copycode, BROTLI_BOOL use_last_distance) {
   uint16_t bits64 =
-      (uint16_t)((copycode & 0x7u) | ((inscode & 0x7u) << 3));
-  if (use_last_distance && inscode < 8 && copycode < 16) {
-    return (copycode < 8) ? bits64 : (bits64 | 64);
+      (uint16_t)((copycode & 0x7u) | ((inscode & 0x7u) << 3u));
+  if (use_last_distance && inscode < 8u && copycode < 16u) {
+    return (copycode < 8u) ? bits64 : (bits64 | 64u);
   } else {
     
     
-    int offset = 2 * ((copycode >> 3) + 3 * (inscode >> 3));
+    uint32_t offset = 2u * ((copycode >> 3u) + 3u * (inscode >> 3u));
     
 
 
 
 
 
-    offset = (offset << 5) + 0x40 + ((0x520D40 >> offset) & 0xC0);
-    return (uint16_t)offset | bits64;
+    offset = (offset << 5u) + 0x40u + ((0x520D40u >> offset) & 0xC0u);
+    return (uint16_t)(offset | bits64);
   }
 }
 

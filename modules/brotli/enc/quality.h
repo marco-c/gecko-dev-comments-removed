@@ -142,6 +142,24 @@ static BROTLI_INLINE void ChooseHasher(const BrotliEncoderParams* params,
     hparams->num_last_distances_to_check =
         params->quality < 7 ? 4 : params->quality < 9 ? 10 : 16;
   }
+
+  if (params->lgwin > 24) {
+    
+
+
+
+
+
+    if (hparams->type == 3) {
+      hparams->type = 35;
+    }
+    if (hparams->type == 54) {
+      hparams->type = 55;
+    }
+    if (hparams->type == 6) {
+      hparams->type = 65;
+    }
+  }
 }
 
 #endif  
