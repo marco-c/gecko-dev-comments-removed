@@ -26,10 +26,7 @@ namespace base {
 #if defined(OS_WIN)
 typedef HANDLE SharedMemoryHandle;
 #elif defined(OS_POSIX)
-
-
 typedef FileDescriptor SharedMemoryHandle;
-typedef ino_t SharedMemoryId;
 #endif
 
 
@@ -90,14 +87,6 @@ class SharedMemory {
   
   SharedMemoryHandle handle() const;
 
-#if defined(OS_POSIX)
-  
-  
-  
-  
-  SharedMemoryId id() const { return inode_; }
-#endif
-
   
   
   void Close(bool unmap_view = true);
@@ -133,7 +122,6 @@ class SharedMemory {
   HANDLE             mapped_file_;
 #elif defined(OS_POSIX)
   int                mapped_file_;
-  ino_t              inode_;
 #endif
   void*              memory_;
   bool               read_only_;
