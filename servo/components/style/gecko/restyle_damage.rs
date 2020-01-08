@@ -83,7 +83,7 @@ impl GeckoRestyleDamage {
     
     
     pub fn reconstruct() -> Self {
-        GeckoRestyleDamage(structs::nsChangeHint_nsChangeHint_ReconstructFrame)
+        GeckoRestyleDamage(structs::nsChangeHint::nsChangeHint_ReconstructFrame)
     }
 }
 

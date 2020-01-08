@@ -148,9 +148,6 @@ use style::gecko_bindings::structs::Loader;
 use style::gecko_bindings::structs::LoaderReusableStyleSheets;
 use style::gecko_bindings::structs::MallocSizeOf as GeckoMallocSizeOf;
 use style::gecko_bindings::structs::OriginFlags;
-use style::gecko_bindings::structs::OriginFlags_Author;
-use style::gecko_bindings::structs::OriginFlags_User;
-use style::gecko_bindings::structs::OriginFlags_UserAgent;
 use style::gecko_bindings::structs::PropertyValuePair;
 use style::gecko_bindings::structs::RawGeckoGfxMatrix4x4;
 use style::gecko_bindings::structs::RawServoFontFaceRule;
@@ -1764,10 +1761,13 @@ pub extern "C" fn Servo_StyleSheet_SizeOfIncludingThis(
 #[no_mangle]
 pub extern "C" fn Servo_StyleSheet_GetOrigin(sheet: RawServoStyleSheetContentsBorrowed) -> u8 {
     let origin = match StylesheetContents::as_arc(&sheet).origin {
-        Origin::UserAgent => OriginFlags_UserAgent,
-        Origin::User => OriginFlags_User,
-        Origin::Author => OriginFlags_Author,
+        Origin::UserAgent => OriginFlags::UserAgent,
+        Origin::User => OriginFlags::User,
+        Origin::Author => OriginFlags::Author,
     };
+    
+    
+    
     
     
     
