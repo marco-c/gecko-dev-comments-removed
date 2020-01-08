@@ -13,7 +13,7 @@ let originalThen = Promise.prototype.then;
 Promise.prototype.then = 1;
 
 
-Promise[Symbol.species] = function(){};
+Object.defineProperty(Promise, Symbol.species, { get: function(){} });
 
 
 let PromiseCtor = Promise;
