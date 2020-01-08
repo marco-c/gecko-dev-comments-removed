@@ -399,6 +399,21 @@ public:
     
     size_t Index() const { return mEntry - mMap->Entries().get(); }
 
+    bool operator==(const Pref& aPref) const { return mEntry == aPref.mEntry; }
+    bool operator!=(const Pref& aPref) const { return !(*this == aPref); }
+
+    
+    
+    Pref& operator*() { return *this; }
+
+    
+    
+    Pref& operator++()
+    {
+      mEntry++;
+      return *this;
+    }
+
     Pref(const Pref& aPref) = default;
 
   protected:
@@ -462,8 +477,34 @@ public:
   const Pref GetValueAt(uint32_t aIndex) const
   {
     MOZ_ASSERT(aIndex < Count());
+    return UncheckedGetValueAt(aIndex);
+  }
+
+private:
+  
+  
+  
+  
+  
+  
+  Pref UncheckedGetValueAt(uint32_t aIndex) const
+  {
     return { this, (Entries() + aIndex).get() };
   }
+
+public:
+  
+  
+  
+  
+  Pref begin() const { return UncheckedGetValueAt(0); }
+  Pref end() const { return UncheckedGetValueAt(Count()); }
+
+  
+  
+  
+  
+  const SharedPrefMap& Iter() const { return *this; }
 
   
   
