@@ -1,0 +1,14 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['webrtc-stats'],
+  [], 
+  idl_array => {
+    
+  },
+  'webrtc-stats interfaces.');
