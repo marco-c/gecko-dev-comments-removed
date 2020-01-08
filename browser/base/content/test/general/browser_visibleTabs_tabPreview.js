@@ -16,7 +16,10 @@ add_task(async function test() {
 
   gBrowser.showOnlyTheseTabs([origTab]);
   pressCtrlTab();
-  ok(ctrlTab.tabList.length, 1, "Show 1 tab in tab preview");
+
+  
+  
+  todo_is(ctrlTab.tabList.length, 1, "Show 1 tab in tab preview");
   ok(!ctrlTab.isOpen, "With 1 tab open, Ctrl+Tab doesn't open the preview panel");
 
   gBrowser.showOnlyTheseTabs([origTab, tabOne, tabTwo]);

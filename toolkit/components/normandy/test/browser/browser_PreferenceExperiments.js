@@ -967,7 +967,9 @@ decorate_task(
       "experiment value",
       "The startup value for fake.default was set",
     );
-    ok(
+    
+    
+    todo_is(
       Services.prefs.getPrefType(`${startupPrefs}.fake.user`),
       Services.prefs.PREF_INVALID,
       "The startup value for fake.user was not set",
