@@ -24,17 +24,8 @@
 }
 
 
-
 :root[lwt-popup-brighttext] panel .text-link {
   color: @lwtPopupBrighttextLinkColor@;
-}
-
-
-
-#navigator-toolbox:-moz-lwtheme {
-  background-image: var(--lwt-additional-images);
-  background-position: var(--lwt-background-alignment);
-  background-repeat: var(--lwt-background-tiling);
 }
 
 
