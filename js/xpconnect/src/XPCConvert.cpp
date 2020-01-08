@@ -584,6 +584,8 @@ XPCConvert::JSData2Native(void* d, HandleValue s,
             const char16_t* chars = JS_GetTwoByteExternalStringChars(str);
             ws->AssignLiteral(chars, length);
         } else {
+            
+            
             if (!AssignJSString(cx, *ws, str))
                 return false;
         }

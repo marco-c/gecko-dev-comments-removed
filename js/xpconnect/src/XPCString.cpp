@@ -48,6 +48,21 @@ const JSStringFinalizer XPCStringConvert::sDOMStringFinalizer =
     { XPCStringConvert::FinalizeDOMString };
 
 
+void
+XPCStringConvert::FinalizeDynamicAtom(const JSStringFinalizer* fin,
+                                      char16_t* chars)
+{
+    nsDynamicAtom* atom = nsDynamicAtom::FromChars(chars);
+    
+    
+    
+    static_cast<nsAtom*>(atom)->Release();
+}
+
+const JSStringFinalizer XPCStringConvert::sDynamicAtomFinalizer =
+    { XPCStringConvert::FinalizeDynamicAtom };
+
+
 
 bool
 XPCStringConvert::ReadableToJSVal(JSContext* cx,
