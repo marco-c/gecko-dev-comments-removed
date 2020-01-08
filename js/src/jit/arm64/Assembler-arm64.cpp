@@ -110,8 +110,9 @@ Assembler::swapBuffer(wasm::Bytes& bytes)
     
     
     MOZ_ASSERT(bytes.empty());
-    if (!bytes.resize(bytesNeeded()))
+    if (!bytes.resize(bytesNeeded())) {
         return false;
+    }
     armbuffer_.executableCopy(bytes.begin());
     return true;
 }
@@ -119,8 +120,9 @@ Assembler::swapBuffer(wasm::Bytes& bytes)
 BufferOffset
 Assembler::emitExtendedJumpTable()
 {
-    if (!pendingJumps_.length() || oom())
+    if (!pendingJumps_.length() || oom()) {
         return BufferOffset();
+    }
 
     armbuffer_.flushPool();
     armbuffer_.align(SizeOfJumpTableEntry);
@@ -149,8 +151,9 @@ Assembler::emitExtendedJumpTable()
         MOZ_ASSERT_IF(!oom(), postOffset - preOffset == SizeOfJumpTableEntry);
     }
 
-    if (oom())
+    if (oom()) {
         return BufferOffset();
+    }
 
     return tableOffset;
 }
@@ -191,8 +194,9 @@ Assembler::executableCopy(uint8_t* buffer, bool flushICache)
         }
     }
 
-    if (flushICache)
+    if (flushICache) {
         AutoFlushICache::setRange(uintptr_t(buffer), armbuffer_.size());
+    }
 }
 
 BufferOffset
@@ -324,8 +328,9 @@ Assembler::addJumpRelocation(BufferOffset src, RelocationKind reloc)
     
     
     
-    if (!jumpRelocations_.length())
+    if (!jumpRelocations_.length()) {
         jumpRelocations_.writeFixedUint32_t(0);
+    }
 
     
     jumpRelocations_.writeUnsigned(src.getOffset());
@@ -337,8 +342,9 @@ Assembler::addPendingJump(BufferOffset src, ImmPtr target, RelocationKind reloc)
 {
     MOZ_ASSERT(target.value != nullptr);
 
-    if (reloc == RelocationKind::JITCODE)
+    if (reloc == RelocationKind::JITCODE) {
         addJumpRelocation(src, reloc);
+    }
 
     
     
@@ -350,8 +356,9 @@ size_t
 Assembler::addPatchableJump(BufferOffset src, RelocationKind reloc)
 {
     MOZ_CRASH("TODO: This is currently unused (and untested)");
-    if (reloc == RelocationKind::JITCODE)
+    if (reloc == RelocationKind::JITCODE) {
         addJumpRelocation(src, reloc);
+    }
 
     size_t extendedTableIndex = pendingJumps_.length();
     enoughMemory_ &= pendingJumps_.append(RelativePatch(src, nullptr, reloc));
@@ -432,8 +439,9 @@ Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
     first = first->skipPool();
 
     
-    if (first->IsStackPtrSync())
+    if (first->IsStackPtrSync()) {
         first = first->InstructionAtOffset(vixl::kInstructionSize)->skipPool();
+    }
 
     load = const_cast<Instruction*>(first);
 
@@ -441,8 +449,9 @@ Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
     
     call = const_cast<Instruction*>(load->InstructionAtOffset(vixl::kInstructionSize)->skipPool());
 
-    if (call->IsBLR() == enabled)
+    if (call->IsBLR() == enabled) {
         return;
+    }
 
     if (call->IsBLR()) {
         
@@ -490,8 +499,9 @@ class RelocationIterator
     }
 
     bool read() {
-        if (!reader_.more())
+        if (!reader_.more()) {
             return false;
+        }
         offset_ = reader_.readUnsigned();
         extOffset_ = reader_.readUnsigned();
         return true;
@@ -527,8 +537,9 @@ CodeFromJump(JitCode* code, uint8_t* jump)
     inst = inst->skipPool();
 
     
-    if (inst->IsStackPtrSync())
+    if (inst->IsStackPtrSync()) {
         inst = inst->InstructionAtOffset(vixl::kInstructionSize)->skipPool();
+    }
 
     if (inst->BranchType() != vixl::UnknownBranchType) {
         
