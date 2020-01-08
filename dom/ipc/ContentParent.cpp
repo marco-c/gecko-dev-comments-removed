@@ -3078,26 +3078,6 @@ ContentParent::RecvPlayEventSound(const uint32_t& aEventId)
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvGetSystemColors(const uint32_t& colorsCount,
-                                   InfallibleTArray<uint32_t>* colors)
-{
-#ifdef MOZ_WIDGET_ANDROID
-  NS_ASSERTION(AndroidBridge::Bridge() != nullptr, "AndroidBridge is not available");
-  if (AndroidBridge::Bridge() == nullptr) {
-    
-    return IPC_OK();
-  }
-
-  colors->AppendElements(colorsCount);
-
-  
-  
-  AndroidBridge::Bridge()->GetSystemColors((AndroidSystemColors*)colors->Elements());
-#endif
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 ContentParent::RecvGetIconForExtension(const nsCString& aFileExt,
                                        const uint32_t& aIconSize,
                                        InfallibleTArray<uint8_t>* bits)
