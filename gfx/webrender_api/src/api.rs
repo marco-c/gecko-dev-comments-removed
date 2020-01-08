@@ -1225,6 +1225,7 @@ pub trait RenderNotifier: Send {
 pub enum Checkpoint {
     SceneBuilt,
     FrameBuilt,
+    FrameRendered,
     
     
     TransactionDropped,

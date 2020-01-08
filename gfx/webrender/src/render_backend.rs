@@ -1090,6 +1090,10 @@ impl RenderBackend {
             |n| { n.notify(); },
         );
 
+        if !notifications.is_empty() {
+            self.result_tx.send(ResultMsg::AppendNotificationRequests(notifications)).unwrap();
+        }
+
         
         
         
