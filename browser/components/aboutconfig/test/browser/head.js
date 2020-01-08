@@ -20,6 +20,10 @@ const PREF_STRING_LOCALIZED_MISSING = "gecko.handlerService.schemes.irc.1.name";
 
 const PREF_NEW = "test.aboutconfig.new";
 
+
+
+requestLongerTimeout(2);
+
 class AboutConfigRowTest {
   constructor(element) {
     this.element = element;
