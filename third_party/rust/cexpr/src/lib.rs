@@ -25,6 +25,8 @@ pub enum Error {
     
 	ExactToken(token::Kind,&'static [u8]),
     
+	ExactTokens(token::Kind,&'static [&'static str]),
+    
 	TypedToken(token::Kind),
     
 	UnknownIdentifier,
