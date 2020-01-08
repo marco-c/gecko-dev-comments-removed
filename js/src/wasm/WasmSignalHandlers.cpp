@@ -1315,18 +1315,6 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
             return false;
     }
 
-#ifdef JS_CODEGEN_ARM
-    if (signum == SIGBUS) {
-        
-        
-        
-        
-        activation->startWasmTrap(wasm::Trap::UnalignedAccess, 0, ToRegisterState(context));
-        *ppc = moduleSegment->unalignedAccessCode();
-        return true;
-    }
-#endif
-
     return HandleOutOfBounds(context, pc, faultingAddress, moduleSegment, *instance, activation, ppc);
 }
 

@@ -1602,42 +1602,6 @@ GenerateTrapExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 
 
 
-
-
-
-static bool
-GenerateGenericMemoryAccessTrap(MacroAssembler& masm, SymbolicAddress reporter, Label* throwLabel,
-                                Offsets* offsets)
-{
-    AssertExpectedSP(masm);
-    masm.haltingAlign(CodeAlignment);
-
-    offsets->begin = masm.currentOffset();
-
-    
-    
-    
-    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-    if (ShadowStackSpace)
-        masm.subFromStackPtr(Imm32(ShadowStackSpace));
-
-    masm.call(reporter);
-    masm.jump(throwLabel);
-
-    return FinishOffsets(masm, offsets);
-}
-
-static bool
-GenerateUnalignedExit(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
-{
-    return GenerateGenericMemoryAccessTrap(masm, SymbolicAddress::ReportUnalignedAccess, throwLabel,
-                                           offsets);
-}
-
-
-
-
-
 static bool
 GenerateThrowStub(MacroAssembler& masm, Label* throwLabel, Offsets* offsets)
 {
@@ -1804,11 +1768,6 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
     JitSpew(JitSpew_Codegen, "# Emitting wasm exit stubs");
 
     Offsets offsets;
-
-    if (!GenerateUnalignedExit(masm, &throwLabel, &offsets))
-        return false;
-    if (!code->codeRanges.emplaceBack(CodeRange::UnalignedExit, offsets))
-        return false;
 
     if (!GenerateTrapExit(masm, &throwLabel, &offsets))
         return false;

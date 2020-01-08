@@ -139,7 +139,6 @@ typedef UniquePtr<ModuleSegment> UniqueModuleSegment;
 class ModuleSegment : public CodeSegment
 {
     const Tier      tier_;
-    uint8_t* const  unalignedAccessCode_;
     uint8_t* const  trapCode_;
 
   public:
@@ -165,7 +164,6 @@ class ModuleSegment : public CodeSegment
 
     
 
-    uint8_t* unalignedAccessCode() const { return unalignedAccessCode_; }
     uint8_t* trapCode() const { return trapCode_; }
 
     
