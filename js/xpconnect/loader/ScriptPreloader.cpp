@@ -240,10 +240,10 @@ ScriptPreloader::ScriptPreloader()
   : mMonitor("[ScriptPreloader.mMonitor]")
   , mSaveMonitor("[ScriptPreloader.mSaveMonitor]")
 {
+    
+    
     if (XRE_IsParentProcess()) {
         sProcessType = ProcessType::Parent;
-    } else {
-        sProcessType = GetChildProcessType(dom::ContentChild::GetSingleton()->GetRemoteType());
     }
 
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
@@ -254,13 +254,8 @@ ScriptPreloader::ScriptPreloader()
         
         obs->AddObserver(this, STARTUP_COMPLETE_TOPIC, false);
         obs->AddObserver(this, CACHE_WRITE_TOPIC, false);
-    } else {
-        
-        
-        
-        
-        obs->AddObserver(this, DOC_ELEM_INSERTED_TOPIC, false);
     }
+
     obs->AddObserver(this, SHUTDOWN_TOPIC, false);
     obs->AddObserver(this, CLEANUP_TOPIC, false);
     obs->AddObserver(this, CACHE_INVALIDATE_TOPIC, false);
@@ -367,6 +362,7 @@ ScriptPreloader::Observe(nsISupports* subject, const char* topic, const char16_t
         mStartupFinished = true;
     } else if (!strcmp(topic, CACHE_WRITE_TOPIC)) {
         obs->RemoveObserver(this, CACHE_WRITE_TOPIC);
+
         MOZ_ASSERT(mStartupFinished);
         MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -503,6 +499,16 @@ ScriptPreloader::InitCache(const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCa
 
     mCacheInitialized = true;
     mChildActor = cacheChild;
+    sProcessType = GetChildProcessType(dom::ContentChild::GetSingleton()->GetRemoteType());
+
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+    MOZ_RELEASE_ASSERT(obs);
+
+    
+    
+    
+    
+    obs->AddObserver(this, DOC_ELEM_INSERTED_TOPIC, false);
 
     RegisterWeakMemoryReporter(this);
 
