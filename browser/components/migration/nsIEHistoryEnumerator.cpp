@@ -19,8 +19,6 @@
 
 
 
-NS_IMPL_ISUPPORTS(nsIEHistoryEnumerator, nsISimpleEnumerator)
-
 nsIEHistoryEnumerator::nsIEHistoryEnumerator()
 {
   ::CoInitialize(nullptr);

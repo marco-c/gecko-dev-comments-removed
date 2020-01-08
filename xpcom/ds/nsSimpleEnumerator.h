@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef nsSimpleEnumerator_h
+#define nsSimpleEnumerator_h
+
+#include "nsISimpleEnumerator.h"
+
+class nsSimpleEnumerator : public nsISimpleEnumerator
+{
+  NS_DECL_ISUPPORTS
+
+protected:
+  virtual ~nsSimpleEnumerator() = default;
+};
+
+#endif

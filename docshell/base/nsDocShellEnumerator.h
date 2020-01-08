@@ -7,7 +7,7 @@
 #ifndef nsDocShellEnumerator_h___
 #define nsDocShellEnumerator_h___
 
-#include "nsISimpleEnumerator.h"
+#include "nsSimpleEnumerator.h"
 #include "nsTArray.h"
 #include "nsIWeakReferenceUtils.h"
 
@@ -29,7 +29,7 @@ class nsIDocShellTreeItem;
 
 
 
-class nsDocShellEnumerator : public nsISimpleEnumerator
+class nsDocShellEnumerator : public nsSimpleEnumerator
 {
 protected:
   enum
@@ -42,9 +42,6 @@ protected:
 
 public:
   explicit nsDocShellEnumerator(int32_t aEnumerationDirection);
-
-  
-  NS_DECL_ISUPPORTS
 
   
   NS_DECL_NSISIMPLEENUMERATOR

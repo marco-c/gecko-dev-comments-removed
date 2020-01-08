@@ -11,7 +11,7 @@
 #include "nsAtom.h"
 #include "nsIFile.h"
 #include "nsString.h"
-#include "nsISimpleEnumerator.h"
+#include "nsSimpleEnumerator.h"
 #include "prenv.h"
 #include "nsCRT.h"
 #if defined(MOZ_WIDGET_COCOA)
@@ -375,10 +375,9 @@ nsAppFileLocationProvider::GetDefaultUserProfileRoot(nsIFile** aLocalFile,
 
 
 
-class nsAppDirectoryEnumerator : public nsISimpleEnumerator
+class nsAppDirectoryEnumerator : public nsSimpleEnumerator
 {
 public:
-  NS_DECL_ISUPPORTS
 
   
 
@@ -431,15 +430,7 @@ protected:
   nsCOMPtr<nsIDirectoryServiceProvider> mProvider;
   const char** mCurrentKey;
   nsCOMPtr<nsIFile> mNext;
-
-  
-  
-  virtual ~nsAppDirectoryEnumerator()
-  {
-  }
 };
-
-NS_IMPL_ISUPPORTS(nsAppDirectoryEnumerator, nsISimpleEnumerator)
 
 
 
