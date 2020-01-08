@@ -195,6 +195,12 @@ SourceClient.prototype = {
     };
 
     
+    
+    if (this._client.mainRoot.traits.breakpointWhileRunning) {
+      return doSetBreakpoint();
+    }
+
+    
     if (this._activeThread.paused) {
       return doSetBreakpoint();
     }

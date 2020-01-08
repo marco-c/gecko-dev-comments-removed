@@ -138,6 +138,9 @@ RootActor.prototype = {
     noPrettyPrinting: true,
     
     
+    breakpointWhileRunning: true,
+    
+    
     memoryActorAllocations: true,
     
     
