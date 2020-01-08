@@ -718,6 +718,11 @@ private:
                                                         const TabId& aOpenerTabId,
                                                         const TabId& aTabId);
 
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+  
+  static StaticAutoPtr<std::vector<std::string>> sMacSandboxParams;
+#endif
+
   
   
   virtual PBrowserParent* SendPBrowserConstructor(
@@ -1245,7 +1250,10 @@ public:
   
   void MaybeEnableRemoteInputEventQueue();
 
+#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
   void AppendSandboxParams(std::vector<std::string>& aArgs);
+  void AppendDynamicSandboxParams(std::vector<std::string>& aArgs);
+#endif
 
 public:
   void SendGetFilesResponseAndForget(const nsID& aID,
