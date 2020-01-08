@@ -199,63 +199,62 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-function Target({ activeTab, client, chrome, tab = null }) {
-  EventEmitter.decorate(this);
-  this.destroy = this.destroy.bind(this);
-  this._onTabNavigated = this._onTabNavigated.bind(this);
-  this.activeConsole = null;
+class Target extends EventEmitter {
+  constructor({ client, chrome, activeTab, tab = null }) {
+    if (!activeTab) {
+      throw new Error("Cannot instanciate target without a non-null activeTab");
+    }
 
-  if (!activeTab) {
-    throw new Error("Cannot instanciate target without a non-null activeTab");
+    super();
+
+    this.destroy = this.destroy.bind(this);
+    this._onTabNavigated = this._onTabNavigated.bind(this);
+    this.activeConsole = null;
+    this.activeTab = activeTab;
+
+    this._url = this.form.url;
+    this._title = this.form.title;
+
+    this._client = client;
+    this._chrome = chrome;
+
+    
+    
+    
+    
+    if (tab) {
+      this._tab = tab;
+      this._setupListeners();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.form.traits && ("isBrowsingContext" in this.form.traits)) {
+      this._isBrowsingContext = this.form.traits.isBrowsingContext;
+    } else {
+      this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess && !this.isWorkerTarget;
+    }
+
+    
+    
+    this.fronts = new Map();
+    
+    
+    
+    this._inspector = null;
   }
-  this.activeTab = activeTab;
-
-  this._url = this.form.url;
-  this._title = this.form.title;
-
-  this._client = client;
-  this._chrome = chrome;
 
   
-  
-  
-  
-  if (tab) {
-    this._tab = tab;
-    this._setupListeners();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (this.form.traits && ("isBrowsingContext" in this.form.traits)) {
-    this._isBrowsingContext = this.form.traits.isBrowsingContext;
-  } else {
-    this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess && !this.isWorkerTarget;
-  }
-
-  
-  
-  this.fronts = new Map();
-  
-  
-  
-  this._inspector = null;
-}
-
-exports.Target = Target;
-
-Target.prototype = {
-  
 
 
 
@@ -291,7 +290,7 @@ Target.prototype = {
 
 
 
-  getActorDescription: async function(actorName) {
+  async getActorDescription(actorName) {
     if (this._protocolDescription &&
         this._protocolDescription.types[actorName]) {
       return this._protocolDescription.types[actorName];
@@ -299,7 +298,7 @@ Target.prototype = {
     const description = await this.client.mainRoot.protocolDescription();
     this._protocolDescription = description;
     return description.types[actorName];
-  },
+  }
 
   
 
@@ -308,12 +307,12 @@ Target.prototype = {
 
 
 
-  hasActor: function(actorName) {
+  hasActor(actorName) {
     if (this.form) {
       return !!this.form[actorName + "Actor"];
     }
     return false;
-  },
+  }
 
   
 
@@ -326,14 +325,14 @@ Target.prototype = {
 
 
 
-  actorHasMethod: function(actorName, methodName) {
+  actorHasMethod(actorName, methodName) {
     return this.getActorDescription(actorName).then(desc => {
       if (desc && desc.methods) {
         return !!desc.methods.find(method => method.name === methodName);
       }
       return false;
     });
-  },
+  }
 
   
 
@@ -341,7 +340,7 @@ Target.prototype = {
 
 
 
-  getTrait: function(traitName) {
+  getTrait(traitName) {
     
     
     if (this.form.traits && traitName in this.form.traits) {
@@ -349,20 +348,20 @@ Target.prototype = {
     }
 
     return this.client.traits[traitName];
-  },
+  }
 
   get tab() {
     return this._tab;
-  },
+  }
 
   get form() {
     return this.activeTab.targetForm;
-  },
+  }
 
   
   get root() {
     return this.client.mainRoot.rootForm;
-  },
+  }
 
   
   
@@ -375,7 +374,7 @@ Target.prototype = {
     this._inspector = await getFront(this.client, "inspector", this.form);
     this.emit("inspector", this._inspector);
     return this._inspector;
-  },
+  }
 
   
   
@@ -385,7 +384,7 @@ Target.prototype = {
       return callback(front);
     }
     return this.on(typeName, callback);
-  },
+  }
 
   
   
@@ -402,7 +401,7 @@ Target.prototype = {
     this.emit(typeName, front);
     this.fronts.set(typeName, front);
     return front;
-  },
+  }
 
   getCachedFront(typeName) {
     
@@ -412,11 +411,11 @@ Target.prototype = {
       return front;
     }
     return null;
-  },
+  }
 
   get client() {
     return this._client;
-  },
+  }
 
   
   
@@ -424,45 +423,45 @@ Target.prototype = {
   
   get chrome() {
     return this._chrome;
-  },
+  }
 
   
   
   
   get isBrowsingContext() {
     return this._isBrowsingContext;
-  },
+  }
 
   get name() {
     if (this.isAddon) {
       return this.form.name;
     }
     return this._title;
-  },
+  }
 
   get url() {
     return this._url;
-  },
+  }
 
   get isAddon() {
     return this.isLegacyAddon || this.isWebExtension;
-  },
+  }
 
   get isWorkerTarget() {
     return this.activeTab && this.activeTab.typeName === "workerTarget";
-  },
+  }
 
   get isLegacyAddon() {
     return !!(this.form && this.form.actor &&
       this.form.actor.match(/conn\d+\.addon(Target)?\d+/));
-  },
+  }
 
   get isWebExtension() {
     return !!(this.form && this.form.actor && (
       this.form.actor.match(/conn\d+\.webExtension(Target)?\d+/) ||
       this.form.actor.match(/child\d+\/webExtension(Target)?\d+/)
     ));
-  },
+  }
 
   get isContentProcess() {
     
@@ -471,25 +470,25 @@ Target.prototype = {
     
     return !!(this.form && this.form.actor &&
       this.form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/));
-  },
+  }
 
   get isLocalTab() {
     return !!this._tab;
-  },
+  }
 
   get isMultiProcess() {
     return !this.window;
-  },
+  }
 
   get canRewind() {
     return this.activeTab && this.activeTab.traits.canRewind;
-  },
+  }
 
   isReplayEnabled() {
     return Services.prefs.getBoolPref("devtools.recordreplay.mvp.enabled")
       && this.canRewind
       && this.isLocalTab;
-  },
+  }
 
   getExtensionPathName(url) {
     
@@ -508,7 +507,7 @@ Target.prototype = {
       
       return url;
     }
-  },
+  }
 
   
 
@@ -521,7 +520,7 @@ Target.prototype = {
       return null;
     }
     return this.tab.linkedBrowser.contentPrincipal;
-  },
+  }
 
   
 
@@ -614,32 +613,32 @@ Target.prototype = {
     })();
 
     return this._attach;
-  },
+  }
 
   
 
 
-  _setupListeners: function() {
+  _setupListeners() {
     this.tab.addEventListener("TabClose", this);
     this.tab.ownerDocument.defaultView.addEventListener("unload", this);
     this.tab.addEventListener("TabRemotenessChange", this);
-  },
+  }
 
   
 
 
-  _teardownListeners: function() {
+  _teardownListeners() {
     if (this._tab.ownerDocument.defaultView) {
       this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
     }
     this._tab.removeEventListener("TabClose", this);
     this._tab.removeEventListener("TabRemotenessChange", this);
-  },
+  }
 
   
 
 
-  _onTabNavigated: function(packet) {
+  _onTabNavigated(packet) {
     const event = Object.create(null);
     event.url = packet.url;
     event.title = packet.title;
@@ -666,12 +665,12 @@ Target.prototype = {
       this.emit("navigate", event);
       this._navWindow = null;
     }
-  },
+  }
 
   
 
 
-  _setupRemoteListeners: function() {
+  _setupRemoteListeners() {
     this.client.addListener("closed", this.destroy);
 
     
@@ -700,12 +699,12 @@ Target.prototype = {
       this.client.addListener("newSource", this._onSourceUpdated);
       this.client.addListener("updatedSource", this._onSourceUpdated);
     }
-  },
+  }
 
   
 
 
-  _teardownRemoteListeners: function() {
+  _teardownRemoteListeners() {
     
     this.client.removeListener("closed", this.destroy);
     if (this.activeTab) {
@@ -728,12 +727,12 @@ Target.prototype = {
     if (this.activeConsole && this._onInspectObject) {
       this.activeConsole.off("inspectObject", this._onInspectObject);
     }
-  },
+  }
 
   
 
 
-  handleEvent: function(event) {
+  handleEvent(event) {
     switch (event.type) {
       case "TabClose":
       case "unload":
@@ -743,14 +742,14 @@ Target.prototype = {
         this.onRemotenessChange();
         break;
     }
-  },
+  }
 
   
 
 
 
 
-  onRemotenessChange: function() {
+  onRemotenessChange() {
     
     
     
@@ -771,12 +770,12 @@ Target.prototype = {
       gDevTools.showToolbox(newTarget);
     };
     gDevTools.on("toolbox-destroyed", onToolboxDestroyed);
-  },
+  }
 
   
 
 
-  destroy: function() {
+  destroy() {
     
     
     if (this._destroyer) {
@@ -818,12 +817,12 @@ Target.prototype = {
     })();
 
     return this._destroyer;
-  },
+  }
 
   
 
 
-  _cleanup: function() {
+  _cleanup() {
     if (this._tab) {
       targets.delete(this._tab);
     } else {
@@ -837,12 +836,12 @@ Target.prototype = {
     this._attach = null;
     this._title = null;
     this._url = null;
-  },
+  }
 
-  toString: function() {
+  toString() {
     const id = this._tab ? this._tab : (this.form && this.form.actor);
     return `Target:${id}`;
-  },
+  }
 
   
 
@@ -852,12 +851,12 @@ Target.prototype = {
 
 
 
-  logErrorInPage: function(text, category) {
+  logErrorInPage(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const errorFlag = 0;
       this.activeTab.logInPage({ text, category, flags: errorFlag });
     }
-  },
+  }
 
   
 
@@ -867,10 +866,11 @@ Target.prototype = {
 
 
 
-  logWarningInPage: function(text, category) {
+  logWarningInPage(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const warningFlag = 1;
       this.activeTab.logInPage({ text, category, flags: warningFlag });
     }
-  },
-};
+  }
+}
+exports.Target = Target;
