@@ -9660,11 +9660,6 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
                                          mozilla::layers::WebRenderLayerManager* aManager,
                                          nsDisplayListBuilder* aDisplayListBuilder)
 {
-  if (mFrame->IsFrameOfType(nsIFrame::eSVG)) {
-    return false;
-  }
-
-  
   
   
   nsTArray<mozilla::wr::WrFilterOp> wrFilters;
