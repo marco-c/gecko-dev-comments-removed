@@ -2,7 +2,7 @@
 
 
 
-use api::{ExternalScrollId, LayoutPoint, LayoutRect, LayoutVector2D, LayoutVector3D};
+use api::{ExternalScrollId, LayoutPoint, LayoutRect, LayoutVector2D};
 use api::{PipelineId, ScrollClamping, ScrollNodeState, ScrollLocation};
 use api::{LayoutSize, LayoutTransform, PropertyBinding, ScrollSensitivity, WorldPoint};
 use gpu_types::TransformPalette;
@@ -11,7 +11,7 @@ use print_tree::{PrintTree, PrintTreePrinter};
 use scene::SceneProperties;
 use smallvec::SmallVec;
 use spatial_node::{ScrollFrameInfo, SpatialNode, SpatialNodeType, StickyFrameInfo};
-use util::LayoutToWorldFastTransform;
+use util::{LayoutToWorldFastTransform, ScaleOffset};
 
 pub type ScrollStates = FastHashMap<ExternalScrollId, ScrollFrameInfo>;
 
@@ -28,7 +28,6 @@ pub struct CoordinateSystemId(pub u32);
 
 #[derive(Debug)]
 pub struct CoordinateSystem {
-    pub offset: LayoutVector3D,
     pub transform: LayoutTransform,
     pub parent: Option<CoordinateSystemId>,
 }
@@ -36,7 +35,6 @@ pub struct CoordinateSystem {
 impl CoordinateSystem {
     fn root() -> Self {
         CoordinateSystem {
-            offset: LayoutVector3D::zero(),
             transform: LayoutTransform::identity(),
             parent: None,
         }
@@ -88,7 +86,7 @@ pub struct TransformUpdateState {
     pub current_coordinate_system_id: CoordinateSystemId,
 
     
-    pub coordinate_system_relative_offset: LayoutVector2D,
+    pub coordinate_system_relative_scale_offset: ScaleOffset,
 
     
     
@@ -135,24 +133,17 @@ impl ClipScrollTree {
 
         nodes.reverse();
 
-        let mut transform = LayoutTransform::create_translation(
-            -parent.coordinate_system_relative_offset.x,
-            -parent.coordinate_system_relative_offset.y,
-            0.0,
-        );
+        let mut transform = parent.coordinate_system_relative_scale_offset
+                                  .inverse()
+                                  .to_transform();
 
         for node in nodes {
             let coord_system = &self.coord_systems[node.0 as usize];
-            transform = transform.pre_translate(coord_system.offset)
-                                 .pre_mul(&coord_system.transform);
+            transform = transform.pre_mul(&coord_system.transform);
         }
 
-        let transform = transform.pre_translate(
-            LayoutVector3D::new(
-                child.coordinate_system_relative_offset.x,
-                child.coordinate_system_relative_offset.y,
-                0.0,
-            )
+        let transform = transform.pre_mul(
+            &child.coordinate_system_relative_scale_offset.to_transform(),
         );
 
         if inverse {
@@ -274,7 +265,7 @@ impl ClipScrollTree {
             nearest_scrolling_ancestor_offset: LayoutVector2D::zero(),
             nearest_scrolling_ancestor_viewport: LayoutRect::zero(),
             current_coordinate_system_id: CoordinateSystemId::root(),
-            coordinate_system_relative_offset: LayoutVector2D::zero(),
+            coordinate_system_relative_scale_offset: ScaleOffset::identity(),
             invertible: true,
         };
 
