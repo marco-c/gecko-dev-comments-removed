@@ -335,7 +335,7 @@ class nsXULElement : public nsStyledElement
 {
 protected:
     
-    explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+    explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 public:
     using Element::Blur;

@@ -55,8 +55,8 @@ NS_IMPL_ISUPPORTS_INHERITED(SVGImageElement, SVGImageElementBase,
 
 
 
-SVGImageElement::SVGImageElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGImageElementBase(aNodeInfo)
+SVGImageElement::SVGImageElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGImageElementBase(std::move(aNodeInfo))
 {
   
   AddStatesSilently(NS_EVENT_STATE_BROKEN);

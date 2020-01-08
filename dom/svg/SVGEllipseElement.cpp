@@ -35,8 +35,8 @@ nsSVGElement::LengthInfo SVGEllipseElement::sLengthInfo[4] =
 
 
 
-SVGEllipseElement::SVGEllipseElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGEllipseElementBase(aNodeInfo)
+SVGEllipseElement::SVGEllipseElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGEllipseElementBase(std::move(aNodeInfo))
 {
 }
 

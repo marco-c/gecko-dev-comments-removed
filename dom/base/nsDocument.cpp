@@ -1349,13 +1349,11 @@ struct nsIDocument::FrameRequest
   int32_t mHandle;
 };
 
-static already_AddRefed<mozilla::dom::NodeInfo> nullNodeInfo;
-
 
 
 
 nsIDocument::nsIDocument()
-  : nsINode(nullNodeInfo),
+  : nsINode(nullptr),
     DocumentOrShadowRoot(*this),
     mReferrerPolicySet(false),
     mReferrerPolicy(mozilla::net::RP_Unset),
@@ -7300,12 +7298,6 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     
     mValidWidth = (!widthStr.IsEmpty() && NS_SUCCEEDED(widthErrorCode) && mViewportSize.width > 0);
     mValidHeight = (!heightStr.IsEmpty() && NS_SUCCEEDED(heightErrorCode) && mViewportSize.height > 0);
-
-    
-    
-    if ((!mValidWidth && !widthStr.IsEmpty()) && !mValidHeight) {
-      mAutoSize = true;
-    }
 
     mAllowZoom = true;
     nsAutoString userScalable;

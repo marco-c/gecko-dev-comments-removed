@@ -56,8 +56,8 @@ nsSVGElement::StringInfo SVGGradientElement::sStringInfo[2] =
 
 
 
-SVGGradientElement::SVGGradientElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGGradientElementBase(aNodeInfo)
+SVGGradientElement::SVGGradientElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGGradientElementBase(std::move(aNodeInfo))
 {
 }
 
@@ -141,8 +141,8 @@ nsSVGElement::LengthInfo SVGLinearGradientElement::sLengthInfo[4] =
 
 
 
-SVGLinearGradientElement::SVGLinearGradientElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGLinearGradientElementBase(aNodeInfo)
+SVGLinearGradientElement::SVGLinearGradientElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGLinearGradientElementBase(std::move(aNodeInfo))
 {
 }
 
@@ -217,8 +217,8 @@ nsSVGElement::LengthInfo SVGRadialGradientElement::sLengthInfo[6] =
 
 
 
-SVGRadialGradientElement::SVGRadialGradientElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGRadialGradientElementBase(aNodeInfo)
+SVGRadialGradientElement::SVGRadialGradientElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGRadialGradientElementBase(std::move(aNodeInfo))
 {
 }
 

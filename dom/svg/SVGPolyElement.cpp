@@ -15,8 +15,8 @@ using namespace mozilla::gfx;
 
 
 
-SVGPolyElement::SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGPolyElementBase(aNodeInfo)
+SVGPolyElement::SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGPolyElementBase(std::move(aNodeInfo))
 {
 }
 

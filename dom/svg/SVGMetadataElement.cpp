@@ -21,8 +21,8 @@ SVGMetadataElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-SVGMetadataElement::SVGMetadataElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGMetadataElementBase(aNodeInfo)
+SVGMetadataElement::SVGMetadataElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGMetadataElementBase(std::move(aNodeInfo))
 {
 }
 

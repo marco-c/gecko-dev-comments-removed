@@ -61,8 +61,8 @@ public:
   
   
 
-  explicit nsIContent(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-    : nsINode(aNodeInfo)
+  explicit nsIContent(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    : nsINode(std::move(aNodeInfo))
   {
     MOZ_ASSERT(mNodeInfo);
     SetNodeIsContent();

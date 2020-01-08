@@ -28,14 +28,7 @@ GeneratedImageContent::Create(nsIDocument& aDocument, uint32_t aContentIndex)
                   kNameSpaceID_XHTML,
                   nsINode::ELEMENT_NODE);
 
-  
-  
-  
-  
-  already_AddRefed<dom::NodeInfo>&& rvalue = nodeInfo.forget();
-
-  auto image =
-    MakeRefPtr<GeneratedImageContent>(rvalue);
+  auto image = MakeRefPtr<GeneratedImageContent>(nodeInfo.forget());
   image->mIndex = aContentIndex;
   return image.forget();
 }

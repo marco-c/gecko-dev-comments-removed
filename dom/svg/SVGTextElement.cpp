@@ -21,8 +21,8 @@ SVGTextElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-SVGTextElement::SVGTextElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : SVGTextElementBase(aNodeInfo)
+SVGTextElement::SVGTextElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  : SVGTextElementBase(std::move(aNodeInfo))
 {
 }
 
