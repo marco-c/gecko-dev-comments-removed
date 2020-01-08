@@ -97,7 +97,7 @@ private:
 
   friend class SharedSurfacesAnimation;
 
-  class ImageKeyData final {
+  class ImageKeyData {
   public:
     ImageKeyData(WebRenderLayerManager* aManager,
                  const wr::ImageKey& aImageKey);
@@ -120,7 +120,7 @@ private:
     wr::ImageKey mImageKey;
   };
 
-  class SharedUserData {
+  class SharedUserData final {
   public:
     SharedUserData()
       : mShared(false)
@@ -188,11 +188,15 @@ private:
 
 
 
-class SharedSurfacesAnimation final : private SharedSurfacesChild::SharedUserData
+class SharedSurfacesAnimation final
 {
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedSurfacesAnimation)
+
   SharedSurfacesAnimation()
   { }
+
+  void Destroy();
 
   
 
@@ -235,6 +239,14 @@ public:
 
 
   void Invalidate(WebRenderLayerManager* aManager);
+
+private:
+  ~SharedSurfacesAnimation();
+
+  typedef SharedSurfacesChild::ImageKeyData ImageKeyData;
+
+  AutoTArray<ImageKeyData, 1> mKeys;
+  wr::ExternalImageId mId;
 };
 
 } 
