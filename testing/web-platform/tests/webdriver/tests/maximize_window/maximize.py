@@ -1,3 +1,5 @@
+
+
 from tests.support.asserts import assert_error, assert_success
 from tests.support.helpers import document_hidden, is_fullscreen
 
@@ -69,29 +71,23 @@ def test_maximize_twice_is_idempotent(session):
     assert session.window.size == max_size
 
 
-"""
-TODO(ato): Implicit session start does not use configuration passed on
-from wptrunner.  This causes an exception.
-
-See https://bugzil.la/1398459.
-
 def test_maximize_when_resized_to_max_size(session):
-    # Determine the largest available window size by first maximising
-    # the window and getting the window rect dimensions.
-    #
-    # Then resize the window to the maximum available size.
+    
+    
+    
+    
     session.end()
-    available = session.window.maximize()
+    session.window.maximize()
+    available = session.window.size
     session.end()
 
     session.window.size = available
 
-    # In certain window managers a window extending to the full available
-    # dimensions of the screen may not imply that the window is maximised,
-    # since this is often a special state.  If a remote end expects a DOM
-    # resize event, this may not fire if the window has already reached
-    # its expected dimensions.
+    
+    
+    
+    
+    
     before = session.window.size
     session.window.maximize()
     assert session.window.size == before
-"""
