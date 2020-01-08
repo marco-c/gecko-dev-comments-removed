@@ -1939,6 +1939,20 @@ const JSClassOps JS::DefaultGlobalClassOps = {
     JS_GlobalObjectTraceHook
 };
 
+const JSClassOps JS::DefaultGlobalClassOps = {
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    JS_NewEnumerateStandardClasses,
+    JS_ResolveStandardClass,
+    JS_MayResolveStandardClass,
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    nullptr,  
+    JS_GlobalObjectTraceHook
+};
+
 JS_PUBLIC_API(void)
 JS_FireOnNewGlobalObject(JSContext* cx, JS::HandleObject global)
 {
