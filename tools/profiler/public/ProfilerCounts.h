@@ -65,6 +65,13 @@ typedef mozilla::Atomic<uint64_t, mozilla::MemoryOrdering::Relaxed> ProfilerAtom
 
 
 
+
+
+
+
+
+
+
 class BaseProfilerCount
 {
 public:

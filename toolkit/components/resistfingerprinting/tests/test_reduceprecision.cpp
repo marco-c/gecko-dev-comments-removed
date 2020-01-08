@@ -44,6 +44,8 @@ using namespace mozilla;
 
 
 
+
+
 bool setupJitter(bool enabled) {
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
 
@@ -214,6 +216,7 @@ TEST(ResistFingerprinting, ReducePrecision_JitterTestVectors) {
   bool jitterEnabled = setupJitter(true);
 
   
+  
 
 
 
@@ -241,6 +244,7 @@ TEST(ResistFingerprinting, ReducePrecision_JitterTestVectors) {
 
 
 
+  
 
   
   long long throwAway;

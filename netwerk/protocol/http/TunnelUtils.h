@@ -83,6 +83,11 @@
 
 
 
+
+
+
+
+
 struct PRSocketOptionData;
 
 namespace mozilla { namespace net {

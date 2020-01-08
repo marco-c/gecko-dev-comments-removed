@@ -81,6 +81,7 @@ TEST(psm_DeserializeCert, gecko33)
   
   
   
+  
   nsCString base64Serialization(
   "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAQAAgAAAAAAAAAAAAAAAAAAAAA"
   "B4vFIJp5wRkeyPxAQ9RJGKPqbqVvKO0mKuIl8ec8o/uhmCjImkVxP+7sgiYWmMt8F+O2DZM7ZTG6GukivU8OT5gAAAAIAAAWpMII"
@@ -104,12 +105,14 @@ TEST(psm_DeserializeCert, gecko33)
   "2cqB1GG4esFOalvI52dzn+J4fTIYZvNF+AtGyHSLm2XRXYZCw455laUKf6Sk9RDShDgUvzhOKL4GXfTwKXv12MyMknJybH8UCpjC"
   "HZmFBVHMcUN/87HsQo20PdOekeEvkjrrMIxW+gxw22Yb67yF/qKgwrWr+43bLN709iyw+LWiU7sQcHL2xk9SYiWQDj2tYz2soObV"
   "QYTJm0VUZMEVFhtALq46cx92Zu4vFwC8AAwAAAAABAQAA");
+  
 
   deserializeAndVerify(base64Serialization, false);
 }
 
 TEST(psm_DeserializeCert, gecko46)
 {
+  
   
   
   
@@ -137,12 +140,14 @@ TEST(psm_DeserializeCert, gecko46)
   "Bx3VmDRynTe4CqhsAwOoO1ERmCAmsAJBwY/rNr4mK22p8erBrqMW0nYXYU5NFynI+pNTjojhKD4II8PNV8G2yMWwYOb/u4+WPzUA"
   "HC9DpZdrWTEH/W69Cr/KxRqGsWPwpgMv2Wqav8jaT35JxqTXjOlhQqzo6fNn3eYOeCf4PkCxZKwckWjy10qDaRbjhwAMHAGj2TPr"
   "idlvOj/7QyyX5m8up/1US8z1fRW4yoCSOt6V2bwuH6cAvAAMAAAAAAQEAAA==");
+  
 
   deserializeAndVerify(base64Serialization, false);
 }
 
 TEST(psm_DeserializeCert, preSSLStatusConsolidation)
 {
+  
   
   
   nsCString base64Serialization(
@@ -184,12 +189,14 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidation)
   "9cZFVtzRWYEYkIlicAyTiPw34bXzxU1cK6sCSmBR+UTXbRPGb4OOy3MRaoF1m3jxwnPkQwxezDiqJTydCbYcBu0sKwURAZOd5QK9"
   "22MsOsnrLjNlpRDmuH0VFhb5uN2I5mM3NvMnP2Or19O1Bk//iGD6AyJfiZFcii+FsDrJhbzw6lakEV7O/EnD0kk2l7I0VMtg1xZB"
   "bEw7P6+V9zz5cAzaaq7EB0mCE+jJckSzSETBN+7lyVD8gwmHYxxZfPnUM/yvPbMU9L3xWD/z6HHwO6r+9m7BT+2pHjBCAAA=");
+  
 
   deserializeAndVerify(base64Serialization, false);
 }
 
 TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
 {
+  
   
   
   nsCString base64Serialization(
@@ -250,6 +257,7 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
   "4bXzxU1cK6sCSmBR+UTXbRPGb4OOy3MRaoF1m3jxwnPkQwxezDiqJTydCbYcBu0sKwURAZOd5QK922MsOsnrLjNlpRDmuH0VFhb5"
   "uN2I5mM3NvMnP2Or19O1Bk//iGD6AyJfiZFcii+FsDrJhbzw6lakEV7O/EnD0kk2l7I0VMtg1xZBbEw7P6+V9zz5cAzaaq7EB0mC"
   "E+jJckSzSETBN+7lyVD8gwmHYxxZfPnUM/yvPbMU9L3xWD/z6HHwO6r+9m7BT+2pHjBC");
+  
 
   deserializeAndVerify(base64Serialization, true, 2);
 }

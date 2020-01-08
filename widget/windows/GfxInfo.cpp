@@ -44,6 +44,7 @@ GfxInfo::GfxInfo()
 
 
 
+
 nsresult
 GfxInfo::GetD2DEnabled(bool *aEnabled)
 {
@@ -354,6 +355,7 @@ GfxInfo::Init()
   
   
   
+
   if (_wcsnicmp(displayDevice.DeviceKey, DEVICE_KEY_PREFIX, ArrayLength(DEVICE_KEY_PREFIX)-1) != 0)
     return rv;
 

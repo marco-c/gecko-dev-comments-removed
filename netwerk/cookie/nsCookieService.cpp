@@ -3929,6 +3929,8 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
 
 
 
+
+
 static inline bool iswhitespace     (char c) { return c == ' '  || c == '\t'; }
 static inline bool isterminator     (char c) { return c == '\n' || c == '\r'; }
 static inline bool isvalueseparator (char c) { return isterminator(c) || c == ';'; }

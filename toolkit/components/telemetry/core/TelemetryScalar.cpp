@@ -1383,6 +1383,8 @@ internal_CanRecordForScalarID(const StaticMutexAutoLock& lock,
 
 
 
+
+
 ScalarResult
 internal_CanRecordScalar(const StaticMutexAutoLock& lock, const ScalarKey& aId,
                          bool aKeyed, bool aForce = false)
@@ -2009,6 +2011,7 @@ internal_RegisterScalars(const StaticMutexAutoLock& lock,
 
 
 
+
 nsresult
 internal_ScalarSnapshotter(const StaticMutexAutoLock& aLock,
                            ScalarSnapshotTable& aScalarsToReflect,
@@ -2058,6 +2061,7 @@ internal_ScalarSnapshotter(const StaticMutexAutoLock& aLock,
   }
   return NS_OK;
 }
+
 
 
 

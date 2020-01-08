@@ -103,6 +103,7 @@ NS_IMETHODIMP ProxyHandlerInfo::GetDefaultDescription(nsAString & aDefaultDescri
 }
 
 
+
 NS_IMETHODIMP ProxyHandlerInfo::LaunchWithURI(nsIURI *aURI, nsIInterfaceRequestor *aWindowContext)
 {
   return NS_ERROR_NOT_IMPLEMENTED;

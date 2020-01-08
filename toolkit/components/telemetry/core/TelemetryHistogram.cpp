@@ -763,6 +763,7 @@ namespace {
 
 
 
+
 nsresult
 internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
                                 const base::Histogram *h,
@@ -902,6 +903,7 @@ internal_ShouldReflectHistogram(const StaticMutexAutoLock& aLock, base::Histogra
 
   return true;
 }
+
 
 
 
@@ -1461,6 +1463,7 @@ KeyedHistogram::GetSnapshot(const StaticMutexAutoLock& aLock,
 
   return NS_OK;
 }
+
 
 
 

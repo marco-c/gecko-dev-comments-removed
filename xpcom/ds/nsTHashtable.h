@@ -524,6 +524,7 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 
 
 
+
 namespace detail {
 
 class VoidPtrHashKey : public nsPtrHashKey<const void>

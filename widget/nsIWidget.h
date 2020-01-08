@@ -766,11 +766,16 @@ class nsIWidget : public nsISupports
 
 
 
+
     virtual void Resize(double aWidth,
                         double aHeight,
                         bool   aRepaint) = 0;
 
     
+
+
+
+
 
 
 

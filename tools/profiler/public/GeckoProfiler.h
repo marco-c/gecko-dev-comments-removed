@@ -275,6 +275,7 @@ void profiler_shutdown();
 
 
 
+
 void profiler_start(uint32_t aCapacity, double aInterval, uint32_t aFeatures,
                     const char** aFilters, uint32_t aFilterCount,
                     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
@@ -823,6 +824,7 @@ public:
     Push(sProfilingStack.get(), aLabel, aDynamicString, aCategory, aFlags);
   }
 
+  
   
   
   AutoProfilerLabel(JSContext* aJSContext,

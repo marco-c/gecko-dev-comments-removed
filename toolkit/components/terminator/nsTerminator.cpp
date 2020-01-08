@@ -100,14 +100,13 @@ Atomic<bool> sShutdownNotified;
 PRThread* CreateSystemThread(void (*start)(void* arg),
                              void* arg)
 {
-  PRThread* thread = PR_CreateThread(
-    PR_SYSTEM_THREAD, 
-    start,
-    arg,
-    PR_PRIORITY_LOW,
-    PR_GLOBAL_THREAD ,
-    PR_UNJOINABLE_THREAD,
-    0 
+  PRThread* thread =
+    PR_CreateThread(PR_SYSTEM_THREAD, 
+
+                    start, arg, PR_PRIORITY_LOW,
+                    PR_GLOBAL_THREAD, 
+
+                    PR_UNJOINABLE_THREAD, 0 
   );
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(thread); 
   return thread;

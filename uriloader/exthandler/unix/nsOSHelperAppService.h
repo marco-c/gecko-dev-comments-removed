@@ -40,6 +40,8 @@ public:
   
   
   
+  
+  
   virtual nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile) override;
 
 protected:

@@ -897,6 +897,7 @@ NativeFileWatcherIOTask::DeactivateRunnableMethod()
 
 
 
+
 nsresult
 NativeFileWatcherIOTask::DispatchChangeCallbacks(
   WatchedResourceDescriptor* aResourceDescriptor,
@@ -1019,6 +1020,8 @@ NativeFileWatcherIOTask::ReportSuccess(
     new WatchedSuccessEvent(aOnSuccess, aResource);
   return NS_DispatchToMainThread(successRunnable);
 }
+
+
 
 
 
@@ -1346,6 +1349,7 @@ NativeFileWatcherService::AddPath(const nsAString& aPathToWatch,
 
   return NS_OK;
 }
+
 
 
 

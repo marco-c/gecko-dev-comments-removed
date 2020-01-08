@@ -143,6 +143,7 @@ protected:
 
 
 
+
     uint8_t mDoomed : 1;    
 };
 
@@ -231,7 +232,9 @@ private:
     uint16_t    mTRRUsed : 1;    
     uint16_t    mNativeUsed : 1;
     uint16_t    onQueue : 1;    
+                                
     uint16_t    usingAnyThread : 1; 
+                                    
     uint16_t    mDidCallbacks : 1;
     uint16_t    mGetTtl : 1;
 

@@ -234,6 +234,8 @@ void glxtest()
   
   
   
+  
+  
   glXMakeCurrent(dpy, None, nullptr); 
   glXDestroyContext(dpy, context);
   XDestroyWindow(dpy, window);

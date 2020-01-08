@@ -517,7 +517,8 @@ nsUnixSystemProxySettings::GetProxyForURI(const nsACString & aSpec,
   return GetProxyFromEnvironment(aScheme, aHost, aPort, aResult);
 }
 
-#define NS_UNIXSYSTEMPROXYSERVICE_CID\
+
+#define NS_UNIXSYSTEMPROXYSERVICE_CID  \
      { 0x0fa3158c, 0xd5a7, 0x43de, \
        {0x91, 0x81, 0xa2, 0x85, 0xe7, 0x4c, 0xf1, 0xd4 } }
 

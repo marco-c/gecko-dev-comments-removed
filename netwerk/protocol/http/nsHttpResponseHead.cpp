@@ -702,6 +702,7 @@ nsHttpResponseHead::ComputeCurrentAge(uint32_t now,
 
 
 
+
 nsresult
 nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t *result)
 {

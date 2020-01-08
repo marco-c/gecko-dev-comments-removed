@@ -653,6 +653,7 @@ data_device_drop (void                  *data,
 
 
 
+
 static const struct wl_data_device_listener data_device_listener = {
     data_device_data_offer,
     data_device_enter,
@@ -682,6 +683,7 @@ primary_selection_selection (void                                *data,
         static_cast<nsRetrievalContextWayland*>(data);
     context->SetPrimaryDataOffer(gtk_primary_offer);
 }
+
 
 
 

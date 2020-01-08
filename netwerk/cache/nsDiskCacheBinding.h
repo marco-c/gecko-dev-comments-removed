@@ -92,6 +92,8 @@ nsDiskCacheBinding *   GetCacheEntryBinding(nsCacheEntry * entry);
 
 
 
+
+
 class nsDiskCacheBindery {
 public:
     nsDiskCacheBindery();

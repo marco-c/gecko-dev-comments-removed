@@ -806,6 +806,8 @@ nsAtomicFileOutputStream::DoOpen()
     
     
     
+    
+    
     nsCOMPtr<nsIFile> tempResult;
     rv = file->Clone(getter_AddRefs(tempResult));
     if (NS_SUCCEEDED(rv)) {

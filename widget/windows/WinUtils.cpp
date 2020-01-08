@@ -1203,6 +1203,7 @@ WinUtils::InvalidatePluginAsWorkaround(nsIWidget* aWidget,
 
 
 
+
 AsyncFaviconDataReady::AsyncFaviconDataReady(nsIURI *aNewURI, 
                                              nsCOMPtr<nsIThread> &aIOThread, 
                                              const bool aURLShortcut):
@@ -1504,6 +1505,7 @@ NS_IMETHODIMP AsyncDeleteAllFaviconsFromDisk::Run()
 AsyncDeleteAllFaviconsFromDisk::~AsyncDeleteAllFaviconsFromDisk()
 {
 }
+
 
 
 

@@ -7012,6 +7012,7 @@ bool nsWindow::OnTouch(WPARAM wParam, LPARAM lParam)
       
       
       
+      
 
       if (pInputs[i].dwFlags & (TOUCHEVENTF_DOWN | TOUCHEVENTF_MOVE)) {
         if (touchInput.mTimeStamp.IsNull()) {

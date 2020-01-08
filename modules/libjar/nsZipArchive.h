@@ -280,6 +280,7 @@ public:
 
 
 
+
   nsZipCursor(nsZipItem *aItem, nsZipArchive *aZip, uint8_t* aBuf = nullptr, uint32_t aBufSize = 0, bool doCRC = false);
 
   ~nsZipCursor();

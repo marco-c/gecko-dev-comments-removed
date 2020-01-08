@@ -129,6 +129,7 @@ private:
 
 
 
+
 nsresult
 GetAndroidDataDir(nsTString<PathChar>& aOutDir)
 {
@@ -144,6 +145,8 @@ GetAndroidDataDir(nsTString<PathChar>& aOutDir)
   aOutDir.AssignASCII(dataDir);
   return NS_OK;
 }
+
+
 
 
 
@@ -167,6 +170,7 @@ GetPersistenceFile(nsCOMPtr<nsIFile>& aOutFile)
   ANDROID_LOG("GetPersistenceFile -  %s", aOutFile->HumanReadablePath().get());
   return NS_OK;
 }
+
 
 
 

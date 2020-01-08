@@ -172,9 +172,11 @@ MainThreadIOLoggerImpl::IOThreadFunc()
           }
         }
         
+        
 
 
 
+        
         if (PR_fprintf(fd, "%f,%s,%f,%s,%s\n",
                        (i->mObservation.Start() - mLogStartTime).ToMilliseconds(),
                        i->mObservation.ObservedOperationString(), durationMs,

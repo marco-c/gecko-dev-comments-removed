@@ -184,6 +184,7 @@ void AccumulateCategoricalKeyed(const nsCString& key, const nsTArray<E>& enumVal
 
 
 
+
 void AccumulateCategorical(HistogramID id, const nsCString& label);
 
 

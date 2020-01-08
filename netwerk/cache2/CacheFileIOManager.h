@@ -113,6 +113,7 @@ private:
   
   
   
+  
   bool                 mKilled : 1;
   
   
@@ -305,6 +306,7 @@ public:
   static nsresult Write(CacheFileHandle *aHandle, int64_t aOffset,
                         const char *aBuf, int32_t aCount, bool aValidate,
                         bool aTruncate, CacheFileIOListener *aCallback);
+  
   
   
   

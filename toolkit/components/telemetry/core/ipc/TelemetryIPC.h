@@ -64,6 +64,7 @@ void UpdateChildScalars(Telemetry::ProcessID aProcessType,
 
 
 
+
 void UpdateChildKeyedScalars(Telemetry::ProcessID aProcessType,
                              const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
 

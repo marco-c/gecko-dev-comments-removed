@@ -271,6 +271,7 @@ public:
 
 
   
+  
   int32_t RFindChar(char16_t aChar, int32_t aOffset = -1,
                     int32_t aCount = -1) const;
 
@@ -359,6 +360,10 @@ public:
   float ToFloat(nsresult* aErrorCode) const;
 
   
+
+
+
+
 
 
 

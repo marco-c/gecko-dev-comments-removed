@@ -40,6 +40,8 @@ public:
   
   
   
+  
+  
   virtual MOZ_MUST_USE nsresult GetFileTokenForPath(const char16_t * platformAppPath, nsIFile ** aFile) override;
 
   MOZ_MUST_USE nsresult OSProtocolHandlerExists(const char * aScheme,

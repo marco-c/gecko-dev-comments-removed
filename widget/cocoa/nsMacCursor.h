@@ -14,6 +14,8 @@
 
 
 
+
+
 @interface nsMacCursor : NSObject
 {
   @private
@@ -30,7 +32,12 @@
 
 
 
+
 + (nsMacCursor *) cursorWithCursor: (NSCursor *) aCursor type: (nsCursor) aType;
+
+
+
+
 
 
 
@@ -54,7 +61,15 @@
 
 
 
+
+
+
+
 + (nsMacCursor *) cursorWithFrames: (NSArray *) aCursorFrames type: (nsCursor) aType;
+
+
+
+
 
 
 
@@ -77,7 +92,10 @@
 
 
 
+
 - (void) set;
+
+
 
 
 
@@ -90,7 +108,10 @@
 
 
 
+
 - (BOOL) isAnimated;
+
+
 
 
 

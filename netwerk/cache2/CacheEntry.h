@@ -359,6 +359,7 @@ private:
   
   
   
+  
   bool mHasData : 1;
   
   bool mPinned : 1;

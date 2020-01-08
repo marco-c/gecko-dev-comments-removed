@@ -1641,11 +1641,13 @@ nsBaseWidget::ResizeClient(double aX,
 
 
 
+
 LayoutDeviceIntRect
 nsBaseWidget::GetClientBounds()
 {
   return GetBounds();
 }
+
 
 
 

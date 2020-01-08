@@ -1307,6 +1307,7 @@ DataChannelConnection::SendDeferredMessages()
     
     
     
+    
     blocked = SendBufferedMessages(channel->mBufferedData);
     bufferedAmount = channel->GetBufferedAmountLocked();
 
@@ -1329,6 +1330,7 @@ DataChannelConnection::SendDeferredMessages()
                  this, channel)));
     }
 
+    
     
     
     
@@ -2800,6 +2802,7 @@ DataChannelConnection::SendDataMsg(DataChannel &channel, const uint8_t *data, si
 
       size_t left = len;
       while (left > 0) {
+        
         
         
         size_t chunkLen = std::min<size_t>(left, DATA_CHANNEL_MAX_BINARY_FRAGMENT);

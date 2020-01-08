@@ -33,6 +33,7 @@
 
 
 
+
 CONTROL(Alt,         AltLeft,     dom::KeyboardEvent_Binding::DOM_VK_ALT)
 CONTROL(ArrowDown,   ArrowDown,   dom::KeyboardEvent_Binding::DOM_VK_DOWN)
 CONTROL(ArrowLeft,   ArrowLeft,   dom::KeyboardEvent_Binding::DOM_VK_LEFT)
@@ -170,3 +171,4 @@ KEY("^",  Digit6,       dom::KeyboardEvent_Binding::DOM_VK_6, MODIFIER_SHIFT)
 KEY("&",  Digit7,       dom::KeyboardEvent_Binding::DOM_VK_7, MODIFIER_SHIFT)
 KEY("*",  Digit8,       dom::KeyboardEvent_Binding::DOM_VK_8, MODIFIER_SHIFT)
 KEY("(",  Digit9,       dom::KeyboardEvent_Binding::DOM_VK_9, MODIFIER_SHIFT)
+

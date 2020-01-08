@@ -449,6 +449,7 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
                 
                 
                 
+                
                 uint32_t allocLen = 0;
                 if ( NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen)) ) {
                   *aLen = strlen ( reinterpret_cast<char*>(*aData) );
@@ -458,6 +459,7 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
 
             case CF_UNICODETEXT:
               {
+                
                 
                 
                 
@@ -550,9 +552,12 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
                 
                 
                 
+                
+                
                 uint32_t allocLen = 0;
                 if ( NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen)) ) {
                   if ( fe.cfFormat == CF_HTML ) {
+                    
                     
                     
                     

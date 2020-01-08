@@ -15,6 +15,8 @@
 
 
 
+
+
 @interface nsCursorManager : NSObject
 {
   @private

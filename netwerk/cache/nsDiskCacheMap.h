@@ -56,6 +56,8 @@ struct nsDiskCacheEntry;
 
 
 
+
+
 #define kNumBlockFiles             3
 #define SIZE_SHIFT(idx)            (2 * ((idx) - 1))
 #define BLOCK_SIZE_FOR_INDEX(idx)  ((idx) ? (256    << SIZE_SHIFT(idx)) : 0)

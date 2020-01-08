@@ -138,6 +138,8 @@ protected:
 
 
 
+
+
   GtkPageSetup* mPageSetup;
   GtkPrintSettings* mPrintSettings;
   GtkPrinter* mGTKPrinter;

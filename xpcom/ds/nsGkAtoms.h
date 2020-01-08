@@ -54,6 +54,8 @@
 
 
 
+
+
 #define DEFINE_STATIC_ATOM_SUBCLASS(name_)                                     \
   class name_ : public nsStaticAtom                                            \
   {                                                                            \

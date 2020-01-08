@@ -90,6 +90,7 @@ nsTArray_base<Alloc, Copy>::UsesAutoArrayBuffer() const
   
   
   
+  
 
   static_assert(sizeof(nsTArrayHeader) > 4,
                 "see comment above");

@@ -351,6 +351,8 @@ nsScannerString::UngetReadable( const nsAString& aReadable, const nsScannerItera
 
 
 
+
+
   {
     Position insertPos(aInsertPoint);
 
@@ -359,6 +361,7 @@ nsScannerString::UngetReadable( const nsAString& aReadable, const nsScannerItera
       
 
     Buffer* new_buffer = AllocBufferFromString(aReadable);
+      
       
       
       

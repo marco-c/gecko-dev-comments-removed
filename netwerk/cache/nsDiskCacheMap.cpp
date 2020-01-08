@@ -628,6 +628,7 @@ nsDiskCacheMap::VisitRecords( nsDiskCacheRecordVisitor *  visitor)
 
 
 
+
 nsresult
 nsDiskCacheMap::EvictRecords( nsDiskCacheRecordVisitor * visitor)
 {

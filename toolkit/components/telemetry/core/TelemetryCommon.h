@@ -80,6 +80,7 @@ bool CanRecordProduct(SupportedProduct aProducts);
 
 
 
+
 nsresult MsSinceProcessStart(double* aResult);
 
 

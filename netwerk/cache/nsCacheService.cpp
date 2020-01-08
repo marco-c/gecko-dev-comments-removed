@@ -2874,6 +2874,9 @@ nsCacheService::ProcessPendingRequests(nsCacheEntry * entry)
                 NS_ASSERTION(NS_SUCCEEDED(rv),
                              "if entry is valid, RequestAccess must succeed.");
                 
+                
+                
+                
 
                 
                 nsICacheEntryDescriptor *descriptor = nullptr;

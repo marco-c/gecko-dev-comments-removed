@@ -89,6 +89,7 @@ static const size_t NUM_TEST_EV_ROOTS = 2;
 static const struct EVInfo kEVInfos[] = {
   
   
+  
 #ifdef DEBUG
   
   
@@ -892,6 +893,7 @@ static const struct EVInfo kEVInfos[] = {
     "ViBSb290IENlcnRpZmljYXRpb24gQXV0aG9yaXR5IFJTQSBSMg==",
     "VrYpzTS8ePY=",
   },
+  
 };
 
 static SECOidTag sEVInfoOIDTags[ArrayLength(kEVInfos)];

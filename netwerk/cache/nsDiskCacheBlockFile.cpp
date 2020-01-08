@@ -364,6 +364,7 @@ nsDiskCacheBlockFile::CalcBlockFileSize()
 
 
 
+
 bool
 nsDiskCacheBlockFile::Write(int32_t offset, const void *buf, int32_t amount)
 {

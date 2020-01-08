@@ -227,6 +227,7 @@ public:
 
 
 
+
   static bool GetSpoofedModifierStates(const nsIDocument* aDoc,
                                        const WidgetKeyboardEvent* aKeyboardEvent,
                                        const Modifiers aModifier,
@@ -240,11 +241,15 @@ public:
 
 
 
+
+
   static bool GetSpoofedCode(const nsIDocument* aDoc,
                              const WidgetKeyboardEvent* aKeyboardEvent,
                              nsAString& aOut);
 
   
+
+
 
 
 

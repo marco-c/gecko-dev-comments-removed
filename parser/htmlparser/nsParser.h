@@ -281,6 +281,7 @@ class nsParser final : public nsIParser,
 
 
 
+
     void SetCanInterrupt(bool aCanInterrupt);
 
     

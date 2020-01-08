@@ -44,6 +44,7 @@ nsLocalFile::InitWithFile(nsIFile* aFile)
 #define kMaxSequenceNumberLength 5 // "-9999"
 
 
+
 NS_IMETHODIMP
 nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes)
 {

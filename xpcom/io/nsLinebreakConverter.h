@@ -48,6 +48,9 @@ public:
 
 
 
+
+
+
   static char* ConvertLineBreaks(const char* aSrc,
                                  ELinebreakType aSrcBreaks, ELinebreakType aDestBreaks,
                                  int32_t aSrcLen = kIgnoreLen, int32_t* aOutLen = nullptr);
@@ -65,12 +68,16 @@ public:
 
 
 
+
+
+
   static char16_t* ConvertUnicharLineBreaks(const char16_t* aSrc,
                                             ELinebreakType aSrcBreaks, ELinebreakType aDestBreaks,
                                             int32_t aSrcLen = kIgnoreLen, int32_t* aOutLen = nullptr);
 
 
   
+
 
 
 
@@ -99,6 +106,10 @@ public:
 
 
 
+
+
+
+
   static nsresult ConvertLineBreaksInSitu(char** aIoBuffer,
                                           ELinebreakType aSrcBreaks,
                                           ELinebreakType aDestBreaks,
@@ -107,6 +118,10 @@ public:
 
 
   
+
+
+
+
 
 
 

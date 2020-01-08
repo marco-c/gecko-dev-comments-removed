@@ -325,6 +325,7 @@ int ParseFTPList(const char *line, struct list_state *state,
         if (lstyle == 'V')
         {
           
+          
 
 
 
@@ -341,6 +342,7 @@ int ParseFTPList(const char *line, struct list_state *state,
 
 
 
+          
           tokmarker = 0;
           p = tokens[0];
           pos = 0;
@@ -715,6 +717,7 @@ int ParseFTPList(const char *line, struct list_state *state,
     if (!lstyle && (!state->lstyle || state->lstyle == 'W'))
     {
       
+      
 
 
 
@@ -722,6 +725,7 @@ int ParseFTPList(const char *line, struct list_state *state,
 
 
 
+      
       
       
       

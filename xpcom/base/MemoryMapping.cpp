@@ -127,6 +127,8 @@ GetMemoryMappings(nsTArray<MemoryMapping>& aMappings)
     
     
     
+    
+    
     if (sscanf(buffer.c_str(), "%zx-%zx %4c %zx %*u:%*u %*u %511s\n",
                &start, &end, flags, &offset, name) >= 4) {
       PermSet perms;

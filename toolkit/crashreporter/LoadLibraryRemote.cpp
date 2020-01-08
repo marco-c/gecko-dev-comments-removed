@@ -92,6 +92,7 @@ CopySections(const unsigned char *data, PIMAGE_NT_HEADERS old_headers, PMEMORYMO
       memcpy(dest, data + section->PointerToRawData, section->SizeOfRawData);
     }
     
+    
   }
 }
 

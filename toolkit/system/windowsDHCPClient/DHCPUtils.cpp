@@ -22,6 +22,7 @@ namespace windowsDHCPClient {
 
 
 
+
 mozilla::LazyLogModule gDhcpUtilsLog("dhcpUtils");
 
 #undef LOG

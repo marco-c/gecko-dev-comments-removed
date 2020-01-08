@@ -315,6 +315,9 @@ static StaticRefPtr<LRUCache> sCache;
 
 
 
+
+
+
 nsresult
 nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
                              long long aResolutionUSec,
@@ -451,6 +454,9 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
   return NS_OK;
 }
+
+
+
 
 
 
