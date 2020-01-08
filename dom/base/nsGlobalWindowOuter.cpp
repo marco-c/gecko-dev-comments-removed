@@ -2117,7 +2117,7 @@ nsGlobalWindowOuter::SetDocShell(nsIDocShell* aDocShell)
   
   RefPtr<EventTarget> chromeEventHandler;
   mDocShell->GetChromeEventHandler(getter_AddRefs(chromeEventHandler));
-  mChromeEventHandler = chromeEventHandler;
+  mChromeEventHandler = do_QueryInterface(chromeEventHandler);
   if (!mChromeEventHandler) {
     
     
@@ -7004,7 +7004,7 @@ nsGlobalWindowOuter::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
   
 
-  if (!aCalledNoScript && !windowExists && uri) {
+  if (!aCalledNoScript && !windowExists && uri && !forceNoOpener) {
     MaybeAllowStorageForOpenedWindow(uri);
   }
 
