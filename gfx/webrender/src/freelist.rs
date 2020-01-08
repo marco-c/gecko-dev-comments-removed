@@ -3,7 +3,6 @@
 
 
 use std::marker::PhantomData;
-use util::recycle_vec;
 
 
 
@@ -80,15 +79,6 @@ impl<T, M> FreeList<T, M> {
     pub fn new() -> Self {
         FreeList {
             slots: Vec::new(),
-            free_list_head: None,
-            active_count: 0,
-            _marker: PhantomData,
-        }
-    }
-
-    pub fn recycle(self) -> FreeList<T, M> {
-        FreeList {
-            slots: recycle_vec(self.slots),
             free_list_head: None,
             active_count: 0,
             _marker: PhantomData,

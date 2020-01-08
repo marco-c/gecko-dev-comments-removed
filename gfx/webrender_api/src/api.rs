@@ -1090,7 +1090,7 @@ impl<T> From<T> for PropertyBinding<T> {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub struct PropertyValue<T> {
     pub key: PropertyBindingKey<T>,
     pub value: T,
@@ -1099,7 +1099,7 @@ pub struct PropertyValue<T> {
 
 
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug, PartialEq, Default)]
 pub struct DynamicProperties {
     pub transforms: Vec<PropertyValue<LayoutTransform>>,
     pub floats: Vec<PropertyValue<f32>>,

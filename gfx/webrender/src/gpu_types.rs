@@ -195,6 +195,7 @@ impl PrimitiveHeaders {
 
 
 
+#[derive(Debug)]
 pub struct PrimitiveHeader {
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
@@ -350,8 +351,11 @@ pub struct TransformPaletteId(pub u32);
 
 impl TransformPaletteId {
     
-    pub fn identity() -> TransformPaletteId {
-        TransformPaletteId(0)
+    pub const IDENTITY: Self = TransformPaletteId(0);
+
+    
+    pub fn _spatial_node_index(&self) -> SpatialNodeIndex {
+        SpatialNodeIndex(self.0 as usize & 0xFFFFFF)
     }
 
     
