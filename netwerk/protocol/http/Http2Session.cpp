@@ -3377,6 +3377,23 @@ Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter *writer,
           
           
           streamToCleanup->SetPushComplete();
+          Http2Stream *pushSink = streamToCleanup->GetConsumerStream();
+          if (pushSink) {
+            bool enqueueSink = true;
+            for (auto iter = mPushesReadyForRead.begin();
+                 iter != mPushesReadyForRead.end();
+                 ++iter) {
+              if (*iter == pushSink) {
+                enqueueSink = false;
+                break;
+              }
+            }
+            if (enqueueSink) {
+              mPushesReadyForRead.Push(pushSink);
+              
+              streamToCleanup = nullptr;
+            }
+          }
         }
         CleanupStream(streamToCleanup, NS_OK, CANCEL_ERROR);
       }
