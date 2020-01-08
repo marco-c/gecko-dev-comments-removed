@@ -5,7 +5,7 @@
 from __future__ import absolute_import, print_function
 
 from mozboot.base import BaseBootstrapper
-from mozboot.linux_common import NodeInstall, StyloInstall
+from mozboot.linux_common import NodeInstall, StyloInstall, ClangStaticAnalysisInstall
 
 
 MERCURIAL_INSTALL_PROMPT = '''
@@ -28,7 +28,8 @@ Choice:
 '''.strip()
 
 
-class DebianBootstrapper(NodeInstall, StyloInstall, BaseBootstrapper):
+class DebianBootstrapper(NodeInstall, StyloInstall, ClangStaticAnalysisInstall,
+                         BaseBootstrapper):
     
     
     COMMON_PACKAGES = [

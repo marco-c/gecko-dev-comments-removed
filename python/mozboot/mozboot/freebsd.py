@@ -66,6 +66,10 @@ class FreeBSDBootstrapper(BaseBootstrapper):
         
         self.pkg_install(*self.browser_packages)
 
+    def ensure_clang_static_analysis_package(self, checkout_root):
+        
+        pass
+
     def ensure_stylo_packages(self, state_dir, checkout_root):
         
         self.pkg_install('rust-cbindgen')

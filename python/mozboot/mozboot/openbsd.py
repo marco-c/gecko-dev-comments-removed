@@ -47,6 +47,10 @@ class OpenBSDBootstrapper(BaseBootstrapper):
         
         self.run_as_root(['pkg_add', '-z'] + self.browser_packages)
 
+    def ensure_clang_static_analysis_package(self, checkout_root):
+        
+        pass
+
     def ensure_stylo_packages(self, state_dir, checkout_root):
         
         self.run_as_root(['pkg_add', 'cbindgen'])
