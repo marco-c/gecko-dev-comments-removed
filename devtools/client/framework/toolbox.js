@@ -2897,9 +2897,6 @@ Toolbox.prototype = {
     outstanding.push(this.destroyInspector());
 
     
-    outstanding.push(this.destroyPerformance());
-
-    
     outstanding.push(this.resetPreference());
 
     
@@ -3054,22 +3051,6 @@ Toolbox.prototype = {
     this._performance.on("console-profile-start", this._onPerformanceFrontEvent);
 
     return this._performance;
-  },
-
-  
-
-
-
-
-  async destroyPerformance() {
-    if (!this.performance) {
-      return;
-    }
-    
-    
-    this.performance.off("console-profile-start", this._onPerformanceFrontEvent);
-    await this.performance.destroy();
-    this._performance = null;
   },
 
   
