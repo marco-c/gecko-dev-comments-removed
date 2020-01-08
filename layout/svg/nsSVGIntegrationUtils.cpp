@@ -325,13 +325,14 @@ nsSVGIntegrationUtils::AdjustInvalidAreaForSVGEffects(nsIFrame* aFrame,
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
   SVGFilterObserverListForCSSProp* observers =
     SVGObserverUtils::GetFilterObserverList(firstFrame);
-  if (!observers || !observers->IsInObserverLists()) {
-    return aInvalidRegion;
-  }
 
   int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   if (!observers || !observers->ReferencesValidResources()) {
+    
+    
+    
+    
     
     
     

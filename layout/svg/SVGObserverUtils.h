@@ -119,8 +119,6 @@ public:
   
   void NotifyEvictedFromRenderingObserverList();
 
-  bool IsInObserverList() const { return mInObserverList; }
-
   nsIFrame* GetReferencedFrame();
   
 
@@ -366,7 +364,6 @@ public:
                         nsIFrame* aFiltedFrame = nullptr);
 
   bool ReferencesValidResources();
-  bool IsInObserverLists() const;
   void Invalidate() { OnRenderingChange(); }
 
   
