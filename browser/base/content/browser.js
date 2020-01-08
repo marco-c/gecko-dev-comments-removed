@@ -4292,19 +4292,6 @@ function toOpenWindowByType(inType, uri, features) {
     window.open(uri, "_blank", "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 function OpenBrowserWindow(options) {
   var telemetryObj = {};
   TelemetryStopwatch.start("FX_NEW_WINDOW_MS", telemetryObj);
