@@ -23,6 +23,7 @@ StackingContextHelper::StackingContextHelper()
 }
 
 StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParentSC,
+                                             const ActiveScrolledRoot* aAsr,
                                              wr::DisplayListBuilder& aBuilder,
                                              const nsTArray<wr::WrFilterOp>& aFilters,
                                              const LayoutDeviceRect& aBounds,
@@ -80,6 +81,24 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
 
   mAffectsClipPositioning = mReferenceFrameId.isSome() ||
       (aBounds.TopLeft() != LayoutDevicePoint());
+
+  
+  
+  
+  
+  if (aParentSC.mDeferredTransformItem &&
+      aAsr == (*aParentSC.mDeferredTransformItem)->GetActiveScrolledRoot()) {
+    if (mDeferredTransformItem) {
+      
+      
+      mDeferredAncestorTransform = aParentSC.GetDeferredTransformMatrix();
+    } else {
+      
+      
+      mDeferredTransformItem = aParentSC.mDeferredTransformItem;
+      mDeferredAncestorTransform = aParentSC.mDeferredAncestorTransform;
+    }
+  }
 }
 
 StackingContextHelper::~StackingContextHelper()
@@ -99,7 +118,16 @@ Maybe<gfx::Matrix4x4>
 StackingContextHelper::GetDeferredTransformMatrix() const
 {
   if (mDeferredTransformItem) {
-    return Some((*mDeferredTransformItem)->GetTransform().GetMatrix());
+    
+    
+    
+    
+    
+    gfx::Matrix4x4 result = (*mDeferredTransformItem)->GetTransform().GetMatrix();
+    if (mDeferredAncestorTransform) {
+      result = *mDeferredAncestorTransform * result;
+    }
+    return Some(result);
   } else {
     return Nothing();
   }

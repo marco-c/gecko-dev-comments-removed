@@ -16,6 +16,9 @@
 class nsDisplayTransform;
 
 namespace mozilla {
+
+struct ActiveScrolledRoot;
+
 namespace layers {
 
 
@@ -26,6 +29,7 @@ class MOZ_RAII StackingContextHelper
 {
 public:
   StackingContextHelper(const StackingContextHelper& aParentSC,
+                        const ActiveScrolledRoot* aAsr,
                         wr::DisplayListBuilder& aBuilder,
                         const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>(),
                         const LayoutDeviceRect& aBounds = LayoutDeviceRect(),
@@ -98,7 +102,27 @@ private:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
+  Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
 
   bool mIsPreserve3D;
   bool mRasterizeLocally;
