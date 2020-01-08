@@ -96,12 +96,6 @@ class nsHtml5TreeOpExecutor final
 
   bool mAlreadyComplainedAboutCharset;
 
-  
-
-
-
-  bool mAlreadyComplainedAboutDeepTree;
-
  public:
   nsHtml5TreeOpExecutor();
 
@@ -196,8 +190,6 @@ class nsHtml5TreeOpExecutor final
                                  uint32_t aLineNumber);
 
   void ComplainAboutBogusProtocolCharset(mozilla::dom::Document*);
-
-  void MaybeComplainAboutDeepTree(uint32_t aLineNumber);
 
   bool HasStarted() { return mStarted; }
 

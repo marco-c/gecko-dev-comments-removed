@@ -37,6 +37,8 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
     private final T headPointer;
 
+    private final T deepTreeSurrogateParent;
+
     private final int mode;
 
     private final int originalMode;
@@ -60,21 +62,23 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
 
 
 
-    StateSnapshot(StackNode<T>[] stack, StackNode<T>[] listOfActiveFormattingElements,
-        int[] templateModeStack, T formPointer, T headPointer, int mode, int originalMode,
-        boolean framesetOk, boolean needToDropLF, boolean quirks) {
-      this.stack = stack;
-      this.listOfActiveFormattingElements = listOfActiveFormattingElements;
-      this.templateModeStack = templateModeStack;
-      this.formPointer = formPointer;
-      this.headPointer = headPointer;
-      this.mode = mode;
-      this.originalMode = originalMode;
-      this.framesetOk = framesetOk;
-      this.needToDropLF = needToDropLF;
-      this.quirks = quirks;
+    StateSnapshot(StackNode<T>[] stack,
+            StackNode<T>[] listOfActiveFormattingElements, int[] templateModeStack, T formPointer,
+            T headPointer, T deepTreeSurrogateParent, int mode, int originalMode,
+            boolean framesetOk, boolean needToDropLF, boolean quirks) {
+        this.stack = stack;
+        this.listOfActiveFormattingElements = listOfActiveFormattingElements;
+        this.templateModeStack = templateModeStack;
+        this.formPointer = formPointer;
+        this.headPointer = headPointer;
+        this.deepTreeSurrogateParent = deepTreeSurrogateParent;
+        this.mode = mode;
+        this.originalMode = originalMode;
+        this.framesetOk = framesetOk;
+        this.needToDropLF = needToDropLF;
+        this.quirks = quirks;
     }
-
+    
     
 
 
@@ -117,6 +121,16 @@ public class StateSnapshot<T> implements TreeBuilderState<T> {
         return headPointer;
     }
 
+    
+
+
+
+
+    @Override
+    public T getDeepTreeSurrogateParent() {
+        return deepTreeSurrogateParent;
+    }
+    
     
 
 

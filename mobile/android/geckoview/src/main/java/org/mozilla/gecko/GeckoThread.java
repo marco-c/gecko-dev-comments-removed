@@ -158,9 +158,7 @@ public class GeckoThread extends Thread {
     }
 
     GeckoThread() {
-        
-        
-        super(null, null, "Gecko", 8 * 1024 * 1024);
+        setName("Gecko");
     }
 
     @WrapForJNI
