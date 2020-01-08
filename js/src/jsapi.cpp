@@ -1091,8 +1091,9 @@ JS_EnumerateStandardClasses(JSContext* cx, HandleObject obj)
 }
 
 static bool
-EnumerateUnresolvedStandardClasses(JSContext* cx, Handle<GlobalObject*> global,
-                                   AutoIdVector& properties, const JSStdName* table)
+EnumerateStandardClassesInTable(JSContext* cx, Handle<GlobalObject*> global,
+                                AutoIdVector& properties, const JSStdName* table,
+                                bool includeResolved)
 {
     for (unsigned i = 0; !table[i].isSentinel(); i++) {
         if (table[i].isDummy()) {
@@ -1103,7 +1104,7 @@ EnumerateUnresolvedStandardClasses(JSContext* cx, Handle<GlobalObject*> global,
 
         
         
-        if (global->isStandardClassResolved(key)) {
+        if (!includeResolved && global->isStandardClassResolved(key)) {
             continue;
         }
 
@@ -1129,11 +1130,12 @@ EnumerateUnresolvedStandardClasses(JSContext* cx, Handle<GlobalObject*> global,
     return true;
 }
 
-JS_PUBLIC_API(bool)
-JS_NewEnumerateStandardClasses(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
-                               bool enumerableOnly)
+static bool
+EnumerateStandardClasses(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
+                         bool enumerableOnly, bool includeResolved)
 {
     if (enumerableOnly) {
+        
         
         return true;
     }
@@ -1146,14 +1148,31 @@ JS_NewEnumerateStandardClasses(JSContext* cx, JS::HandleObject obj, JS::AutoIdVe
         return false;
     }
 
-    if (!EnumerateUnresolvedStandardClasses(cx, global, properties, standard_class_names)) {
+    if (!EnumerateStandardClassesInTable(cx, global, properties, standard_class_names,
+                                         includeResolved)) {
         return false;
     }
-    if (!EnumerateUnresolvedStandardClasses(cx, global, properties, builtin_property_names)) {
+    if (!EnumerateStandardClassesInTable(cx, global, properties, builtin_property_names,
+                                         includeResolved)) {
         return false;
     }
 
     return true;
+}
+
+JS_PUBLIC_API(bool)
+JS_NewEnumerateStandardClasses(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
+                               bool enumerableOnly)
+{
+    return EnumerateStandardClasses(cx, obj, properties, enumerableOnly, false);
+}
+
+JS_PUBLIC_API(bool)
+JS_NewEnumerateStandardClassesIncludingResolved(JSContext* cx, JS::HandleObject obj,
+                                                JS::AutoIdVector& properties,
+                                                bool enumerableOnly)
+{
+    return EnumerateStandardClasses(cx, obj, properties, enumerableOnly, true);
 }
 
 JS_PUBLIC_API(bool)
