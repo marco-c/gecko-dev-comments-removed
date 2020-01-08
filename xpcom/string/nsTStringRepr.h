@@ -263,6 +263,9 @@ public:
   
   
   
+  
+  
+  
   template<int N>
   inline bool EqualsLiteral(const char (&aStr)[N]) const
   {
@@ -279,6 +282,9 @@ public:
                                         size_type aLen) const;
   bool NS_FASTCALL LowerCaseEqualsASCII(const char* aData) const;
 
+  
+  
+  
   
   
   
