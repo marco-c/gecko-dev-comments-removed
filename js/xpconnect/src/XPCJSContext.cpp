@@ -1234,11 +1234,6 @@ void XPCJSContext::BeforeProcessTask(bool aMightBlock) {
   mSlowScriptSecondHalf = false;
   mSlowScriptActualWait = mozilla::TimeDuration();
   mTimeoutAccumulated = false;
-
-  
-  
-  js::ResetPerformanceMonitoring(Context());
-
   CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
 }
 
@@ -1250,13 +1245,7 @@ void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
   
   MOZ_ASSERT(NS_IsMainThread());
   nsJSContext::MaybePokeCC();
-
   CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
-
-  
-  
-  js::FlushPerformanceMonitoring(Context());
-
   mozilla::jsipc::AfterProcessTask();
 }
 

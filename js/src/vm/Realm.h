@@ -409,8 +409,6 @@ class JS::Realm : public JS::shadow::Realm {
   js::ArraySpeciesLookup arraySpeciesLookup;
   js::PromiseLookup promiseLookup;
 
-  js::PerformanceGroupHolder performanceMonitoring;
-
   js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
   js::UniquePtr<js::ScriptNameMap> scriptNameMap;
   js::UniquePtr<js::DebugScriptMap> debugScriptMap;
@@ -641,18 +639,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   JSPrincipals* principals() { return principals_; }
   void setPrincipals(JSPrincipals* principals) {
-    if (principals_ == principals) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    performanceMonitoring.unlink();
     principals_ = principals;
   }
 

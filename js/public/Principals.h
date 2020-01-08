@@ -18,10 +18,6 @@
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 
-namespace js {
-struct JS_PUBLIC_API PerformanceGroup;
-}  
-
 struct JSPrincipals {
   
   mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent,

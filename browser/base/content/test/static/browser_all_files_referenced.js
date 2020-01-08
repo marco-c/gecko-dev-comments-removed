@@ -155,9 +155,6 @@ var whitelist = [
   
   {file: "chrome://global/content/test-ipc.xul"},
   
-  {file: "resource://gre/modules/PerformanceWatcher-content.js"},
-  {file: "resource://gre/modules/PerformanceWatcher.jsm"},
-  
   {file: "resource://gre/modules/Promise.jsm"},
   
   {file: "resource://gre/modules/ZipUtils.jsm"},
