@@ -488,27 +488,6 @@ const Class cls::protoClass_ = { \
 
 
 
-
-
-
-ReadableStream*
-ReadableStream::createStream(JSContext* cx, HandleObject proto )
-{
-    Rooted<ReadableStream*> stream(cx, NewObjectWithClassProto<ReadableStream>(cx, proto));
-    if (!stream) {
-        return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    stream->initStateBits(Readable);
-
-    return stream;
-}
-
 static MOZ_MUST_USE ReadableStreamDefaultController*
 CreateReadableStreamDefaultController(JSContext* cx,
                                       Handle<ReadableStream*> stream,
@@ -525,7 +504,7 @@ ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
                                     HandleObject proto )
 {
     
-    Rooted<ReadableStream*> stream(cx, createStream(cx));
+    Rooted<ReadableStream*> stream(cx, create(cx));
     if (!stream) {
         return nullptr;
     }
@@ -551,7 +530,7 @@ ReadableStream*
 ReadableStream::createExternalSourceStream(JSContext* cx, void* underlyingSource,
                                            uint8_t flags, HandleObject proto )
 {
-    Rooted<ReadableStream*> stream(cx, createStream(cx, proto));
+    Rooted<ReadableStream*> stream(cx, create(cx, proto));
     if (!stream) {
         return nullptr;
     }
@@ -863,6 +842,31 @@ CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
 
 
 
+
+MOZ_MUST_USE  ReadableStream*
+ReadableStream::create(JSContext* cx, HandleObject proto )
+{
+    
+    
+    Rooted<ReadableStream*> stream(cx, NewObjectWithClassProto<ReadableStream>(cx, proto));
+    if (!stream) {
+        return nullptr;
+    }
+
+    
+    stream->initStateBits(Readable);
+    MOZ_ASSERT(stream->readable());
+
+    
+    
+    MOZ_ASSERT(!stream->hasReader());
+    MOZ_ASSERT(stream->storedError().isUndefined());
+
+    
+    MOZ_ASSERT(!stream->disturbed());
+
+    return stream;
+}
 
 
 
