@@ -3312,6 +3312,14 @@ pref("dom.ipc.plugins.hangUIMinDisplaySecs", 0);
 #endif
 #endif
 
+
+
+#ifdef RELEASE_OR_BETA
+pref("dom.ipc.tabs.createKillHardCrashReports", false);
+#else
+pref("dom.ipc.tabs.createKillHardCrashReports", true);
+#endif
+
 pref("dom.ipc.plugins.flash.disable-protected-mode", false);
 
 pref("dom.ipc.plugins.flash.subprocess.crashreporter.enabled", true);

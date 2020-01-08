@@ -3438,7 +3438,9 @@ ContentParent::GeneratePairedMinidump(const char* aReason)
   
   
   
-  if (mCrashReporter && !mShuttingDown) {
+  if (mCrashReporter &&
+      !mShuttingDown &&
+      Preferences::GetBool("dom.ipc.tabs.createKillHardCrashReports", false)) {
     
     
     
@@ -3458,8 +3460,6 @@ ContentParent::GeneratePairedMinidump(const char* aReason)
     {
       mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
     }
-
-    Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
   }
 }
 
@@ -3480,6 +3480,9 @@ ContentParent::KillHard(const char* aReason)
   mForceKillTimer = nullptr;
 
   GeneratePairedMinidump(aReason);
+
+  nsDependentCString reason(aReason);
+  Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
 
   ProcessHandle otherProcessHandle;
   if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle)) {
