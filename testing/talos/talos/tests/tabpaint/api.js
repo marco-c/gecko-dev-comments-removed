@@ -1,0 +1,198 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyScriptGetter(this, "TalosParentProfiler",
+                                  "resource://talos-powers/TalosParentProfiler.js");
+
+const ANIMATION_PREF = "toolkit.cosmeticAnimations.enabled";
+const MULTI_OPT_OUT_PREF = "dom.ipc.multiOptOut";
+
+const MESSAGES = [
+  "TabPaint:Go",
+  "TabPaint:Painted",
+];
+
+
+this.tabpaint = class extends ExtensionAPI {
+  onStartup() {
+    
+    
+    
+    
+    
+    for (let msgName of MESSAGES) {
+      Services.mm.addMessageListener(msgName, this);
+    }
+
+    this.framescriptURL = this.extension.baseURI.resolve("/framescript.js");
+    Services.mm.loadFrameScript(this.framescriptURL, true);
+
+    this.originalAnimate = Services.prefs.getBoolPref(ANIMATION_PREF);
+    Services.prefs.setBoolPref(ANIMATION_PREF, false);
+    Services.prefs.setIntPref(MULTI_OPT_OUT_PREF,
+                              Services.appinfo.E10S_MULTI_EXPERIMENT);
+
+    
+
+
+
+    this.paintCallback = null;
+  }
+
+  onShutdown() {
+    for (let msgName of MESSAGES) {
+      Services.mm.removeMessageListener(msgName, this);
+    }
+
+    Services.mm.removeDelayedFrameScript(this.framescriptURL);
+
+    Services.prefs.setBoolPref(ANIMATION_PREF, this.originalAnimate);
+    Services.prefs.clearUserPref(MULTI_OPT_OUT_PREF);
+  }
+
+  receiveMessage(msg) {
+    let browser = msg.target;
+
+    let gBrowser = browser.ownerGlobal.gBrowser;
+
+    switch (msg.name) {
+      case "TabPaint:Go": {
+        
+        this.go(browser.messageManager, gBrowser, msg.data.target);
+        break;
+      }
+
+      case "TabPaint:Painted": {
+        
+        if (!this.paintCallback) {
+          throw new Error("TabPaint:Painted fired without a paintCallback set");
+        }
+
+        let tab = gBrowser.getTabForBrowser(browser);
+        let delta = msg.data.delta;
+        this.paintCallback({tab, delta});
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  async go(mm, gBrowser, target) {
+    let fromParent = await this.openTabFromParent(gBrowser, target);
+    let fromContent = await this.openTabFromContent(gBrowser);
+
+    mm.sendAsyncMessage("TabPaint:FinalResults", { fromParent, fromContent });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async openTabFromParent(gBrowser, target) {
+    TalosParentProfiler.resume("tabpaint parent start");
+
+    
+    gBrowser.selectedTab = gBrowser.addTab(`${target}?${Date.now()}`, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+
+    let {tab, delta} = await this.whenTabShown();
+    TalosParentProfiler.pause("tabpaint parent end");
+    await this.removeTab(tab);
+    return delta;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async openTabFromContent(gBrowser) {
+    TalosParentProfiler.resume("tabpaint content start");
+
+    Services.mm.broadcastAsyncMessage("TabPaint:OpenFromContent");
+
+    let {tab, delta} = await this.whenTabShown();
+    TalosParentProfiler.pause("tabpaint content end");
+    await this.removeTab(tab);
+    return delta;
+  }
+
+  
+
+
+
+
+
+  whenTabShown() {
+    return new Promise((resolve) => {
+      this.paintCallback = resolve;
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+  removeTab(tab) {
+    return new Promise((resolve) => {
+      let {messageManager: mm, frameLoader} = tab.linkedBrowser;
+      mm.addMessageListener("SessionStore:update", function onMessage(msg) {
+        if (msg.targetFrameLoader == frameLoader && msg.data.isFinal) {
+          mm.removeMessageListener("SessionStore:update", onMessage);
+          resolve();
+        }
+      }, true);
+
+      tab.ownerGlobal.gBrowser.removeTab(tab);
+    });
+  }
+};
