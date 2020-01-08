@@ -398,6 +398,15 @@ GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aCodebase,
 
   
   if (NS_URIIsLocalFile(aCodebase)) {
+    
+    
+    if (!nsScriptSecurityManager::GetStrictFileOriginPolicy()) {
+      *aHandled = true;
+      aBaseDomain.AssignLiteral("UNIVERSAL_FILE_URI_ORIGIN");
+      return NS_OK;
+    }
+
+    
     nsCOMPtr<nsIURL> url = do_QueryInterface(aCodebase);
 
     if (url) {
