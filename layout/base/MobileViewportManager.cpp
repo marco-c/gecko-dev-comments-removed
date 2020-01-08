@@ -324,8 +324,21 @@ MobileViewportManager::UpdateResolution(const nsViewportInfo& aViewportInfo,
   } else {  
     MOZ_ASSERT(aType == UpdateType::ContentSize);
     MOZ_ASSERT(aDisplayWidthChangeRatio.isNothing());
-    if (zoom != intrinsicScale) {
-      newZoom = Some(intrinsicScale);
+
+    
+    
+    if (mIsFirstPaint && !mRestoreResolution &&
+        !aViewportInfo.IsDefaultZoomValid()) {
+      if (zoom != intrinsicScale) {
+        newZoom = Some(intrinsicScale);
+      }
+    } else {
+      
+      
+      
+      if (zoom < intrinsicScale) {
+        newZoom = Some(intrinsicScale);
+      }
     }
   }
 
@@ -513,13 +526,6 @@ MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
     
     
     
-    return;
-  }
-
-  
-  
-  if (aViewportInfo.IsDefaultZoomValid() ||
-      !mIsFirstPaint || mRestoreResolution) {
     return;
   }
 
