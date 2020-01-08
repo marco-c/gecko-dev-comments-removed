@@ -121,9 +121,7 @@ class MozXULElement extends XULElement {
 
 
 
-
   static implementCustomInterface(cls, ifaces) {
-    cls.prototype.QueryInterface = ChromeUtils.generateQI(ifaces);
     cls.prototype.getCustomInterfaceCallback = function getCustomInterfaceCallback(iface) {
       if (ifaces.includes(Ci[Components.interfacesByID[iface.number]])) {
         return getInterfaceProxy(this);
