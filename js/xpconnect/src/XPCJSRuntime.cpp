@@ -195,7 +195,6 @@ CompartmentPrivate::CompartmentPrivate(JS::Compartment* c,
       isSandboxCompartment(false),
       universalXPConnectEnabled(false),
       forcePermissiveCOWs(false),
-      wasNuked(false),
       mWrappedJSMap(JSObject2WrappedJSMap::newMap(XPC_JS_MAP_LENGTH)) {
   MOZ_COUNT_CTOR(xpc::CompartmentPrivate);
   mozilla::PodArrayZero(wrapperDenialWarnings);
@@ -597,29 +596,19 @@ nsGlobalWindowInner* CurrentWindowOrNull(JSContext* cx) {
 
 
 
-void NukeAllWrappersForCompartment(
-    JSContext* cx, JS::Compartment* compartment,
+void NukeAllWrappersForRealm(
+    JSContext* cx, JS::Realm* realm,
     js::NukeReferencesToWindow nukeReferencesToWindow) {
   
   
   
   
-  
-  
-  js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(), compartment,
+  js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(), realm,
                                    nukeReferencesToWindow,
                                    js::NukeAllReferences);
 
   
-  
-  
-  
-  xpc::CompartmentPrivate::Get(compartment)->wasNuked = true;
-
-  auto blockScriptability = [](JSContext*, void*, Handle<Realm*> realm) {
-    xpc::RealmPrivate::Get(realm)->scriptability.Block();
-  };
-  JS::IterateRealmsInCompartment(cx, compartment, nullptr, blockScriptability);
+  xpc::RealmPrivate::Get(realm)->scriptability.Block();
 }
 
 }  

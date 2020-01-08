@@ -109,21 +109,19 @@ WindowDestroyedEvent::Run() {
         JS::Rooted<JSObject*> obj(cx, currentInner->FastGetGlobalJSObject());
         if (obj && !js::IsSystemRealm(js::GetNonCCWObjectRealm(obj))) {
           JS::Realm* realm = js::GetNonCCWObjectRealm(obj);
-          JS::Compartment* cpt = JS::GetCompartmentForRealm(realm);
-
           nsCOMPtr<nsIPrincipal> pc =
               nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
 
           if (BasePrincipal::Cast(pc)->AddonPolicy()) {
             
-            xpc::NukeAllWrappersForCompartment(
-                cx, cpt,
+            xpc::NukeAllWrappersForRealm(
+                cx, realm,
                 mIsInnerWindow ? js::DontNukeWindowReferences
                                : js::NukeWindowReferences);
           } else {
             
             js::NukeCrossCompartmentWrappers(
-                cx, BrowserCompartmentMatcher(), cpt,
+                cx, BrowserCompartmentMatcher(), realm,
                 mIsInnerWindow ? js::DontNukeWindowReferences
                                : js::NukeWindowReferences,
                 js::NukeIncomingReferences);

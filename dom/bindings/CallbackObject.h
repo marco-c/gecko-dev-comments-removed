@@ -127,6 +127,10 @@ class CallbackObject : public nsISupports {
     
     return JS::Handle<JSObject*>::fromMarkedLocation(mCallback.address());
   }
+  JS::Handle<JSObject*> CallbackGlobalPreserveColor() const {
+    
+    return JS::Handle<JSObject*>::fromMarkedLocation(mCallbackGlobal.address());
+  }
 
   
 

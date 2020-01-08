@@ -183,23 +183,6 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
   
   
   
-  
-  
-  
-  JS::Compartment* origin = js::GetObjectCompartment(obj);
-  JS::Compartment* target = js::GetObjectCompartment(scope);
-  if (!JS_IsScriptSourceObject(obj) &&
-      (CompartmentPrivate::Get(origin)->wasNuked ||
-       CompartmentPrivate::Get(target)->wasNuked)) {
-    NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
-
-    retObj.set(JS_NewDeadWrapper(cx));
-    return;
-  }
-
-  
-  
-  
   if (js::IsWindowProxy(obj)) {
     retObj.set(waive ? WaiveXray(cx, obj) : obj);
     return;
@@ -348,10 +331,7 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
                                     const js::Wrapper* handler,
                                     JS::Compartment* origin,
                                     JS::Compartment* target) {
-  if (!JS_IsScriptSourceObject(obj) &&
-      (CompartmentPrivate::Get(origin)->wasNuked ||
-       CompartmentPrivate::Get(target)->wasNuked)) {
-    
+  if (!js::AllowNewWrapper(target, obj)) {
     
     
     MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
