@@ -119,7 +119,7 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
 
       if (ok && (size > 0 || presentationTimeUs >= 0)) {
         RefPtr<layers::Image> img = new SurfaceTextureImage(
-            mDecoder->mSurfaceHandle, inputInfo.mImageSize,
+            mDecoder->mImageHandle, inputInfo.mImageSize,
             false , gl::OriginPos::BottomLeft);
 
         RefPtr<VideoData> v = VideoData::CreateFromImage(
@@ -168,7 +168,7 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
                                           __func__);
     }
 
-    mSurfaceHandle = mSurface->GetHandle();
+    mImageHandle = mSurface->GetImageHandle();
 
     
     JavaCallbacksSupport::Init();
@@ -256,7 +256,7 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
  private:
   const VideoInfo mConfig;
   GeckoSurface::GlobalRef mSurface;
-  AndroidSurfaceTextureHandle mSurfaceHandle;
+  AndroidSurfaceTextureHandle mImageHandle;
   
   bool mIsCodecSupportAdaptivePlayback = false;
   
