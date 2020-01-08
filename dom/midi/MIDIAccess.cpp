@@ -20,7 +20,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PContent.h"
 #include "nsIRunnable.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
 #include "nsContentPermissionHelper.h"
 #include "nsISupportsImpl.h"  

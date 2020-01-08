@@ -23,12 +23,15 @@
 
 class imgIContainer;
 class nsIFrame;
-class nsIDocument;
 class nsPresContext;
 class nsIURI;
 class nsIPrincipal;
 
 namespace mozilla {
+namespace dom {
+class Document;
+}
+
 namespace css {
 
 struct URLValue;
@@ -50,7 +53,7 @@ class ImageLoader final : public imgINotificationObserver {
     REQUEST_HAS_BLOCKED_ONLOAD = 1u << 1,
   };
 
-  explicit ImageLoader(nsIDocument* aDocument)
+  explicit ImageLoader(dom::Document* aDocument)
       : mDocument(aDocument), mInClone(false) {
     MOZ_ASSERT(mDocument);
   }
@@ -76,7 +79,7 @@ class ImageLoader final : public imgINotificationObserver {
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  static void LoadImage(URLValue* aImage, nsIDocument* aLoadingDoc);
+  static void LoadImage(URLValue* aImage, dom::Document* aLoadingDoc);
 
   
   
@@ -165,7 +168,7 @@ class ImageLoader final : public imgINotificationObserver {
   FrameToRequestMap mFrameToRequestMap;
 
   
-  nsIDocument* mDocument;
+  dom::Document* mDocument;
 
   
   

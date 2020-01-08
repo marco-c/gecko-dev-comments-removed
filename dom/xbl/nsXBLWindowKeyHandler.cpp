@@ -382,7 +382,7 @@ bool nsXBLWindowKeyHandler::IsHTMLEditableFieldFocused() {
     return false;
   }
 
-  nsCOMPtr<nsIDocument> doc = htmlEditor->GetDocument();
+  nsCOMPtr<Document> doc = htmlEditor->GetDocument();
   if (doc->HasFlag(NODE_IS_EDITABLE)) {
     
     return true;
@@ -661,7 +661,7 @@ bool nsXBLWindowKeyHandler::GetElementForHandler(
   }
 
   
-  nsIDocument* doc = keyElement->GetUncomposedDoc();
+  Document* doc = keyElement->GetUncomposedDoc();
   if (NS_WARN_IF(!doc)) {
     return false;
   }

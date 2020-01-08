@@ -39,7 +39,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-  void Sanitize(nsIDocument* aDocument);
+  void Sanitize(mozilla::dom::Document* aDocument);
 
  private:
   
@@ -190,7 +190,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
   bool SanitizeStyleSheet(const nsAString& aOriginal, nsAString& aSanitized,
-                          nsIDocument* aDocument, nsIURI* aBaseURI);
+                          mozilla::dom::Document* aDocument, nsIURI* aBaseURI);
 
   
 
@@ -208,7 +208,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-  void LogMessage(const char* aMessage, nsIDocument* aDoc,
+  void LogMessage(const char* aMessage, mozilla::dom::Document* aDoc,
                   Element* aElement = nullptr, nsAtom* aAttr = nullptr);
 
   

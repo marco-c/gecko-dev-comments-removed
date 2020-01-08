@@ -9,7 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIScriptContext.h"
 
 class nsIURI;
@@ -18,11 +18,11 @@ class nsIChannel;
 namespace mozilla {
 namespace dom {
 
-class XMLDocument : public nsIDocument {
+class XMLDocument : public Document {
  public:
   explicit XMLDocument(const char* aContentType = "application/xml");
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(XMLDocument, nsIDocument)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(XMLDocument, Document)
 
   virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) override;
   virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
@@ -58,8 +58,7 @@ class XMLDocument : public nsIDocument {
 
   
   
-  
-  using nsIDocument::GetLocation;
+  using Document::GetLocation;
 
  protected:
   virtual ~XMLDocument();
@@ -67,7 +66,7 @@ class XMLDocument : public nsIDocument {
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
-  friend nsresult(::NS_NewXMLDocument)(nsIDocument**, bool, bool);
+  friend nsresult(::NS_NewXMLDocument)(Document**, bool, bool);
 
   
   

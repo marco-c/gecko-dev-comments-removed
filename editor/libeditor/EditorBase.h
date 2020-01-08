@@ -22,7 +22,7 @@
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
-#include "nsIDocument.h"             
+#include "mozilla/dom/Document.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
 #include "nsIObserver.h"             
@@ -195,6 +195,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  typedef dom::Document Document;
   typedef dom::Element Element;
   typedef dom::Selection Selection;
   typedef dom::Text Text;
@@ -225,7 +226,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual nsresult Init(nsIDocument& doc, Element* aRoot,
+  virtual nsresult Init(Document& doc, Element* aRoot,
                         nsISelectionController* aSelCon, uint32_t aFlags,
                         const nsAString& aInitialValue);
 
@@ -247,7 +248,7 @@ class EditorBase : public nsIEditor,
   bool IsInitialized() const { return !!mDocument; }
   bool Destroyed() const { return mDidPreDestroy; }
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  Document* GetDocument() const { return mDocument; }
 
   nsIPresShell* GetPresShell() const {
     return mDocument ? mDocument->GetShell() : nullptr;
@@ -858,7 +859,7 @@ class EditorBase : public nsIEditor,
 
 
   virtual nsresult InsertTextWithTransaction(
-      nsIDocument& aDocument, const nsAString& aStringToInsert,
+      Document& aDocument, const nsAString& aStringToInsert,
       const EditorRawDOMPoint& aPointToInsert,
       EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
@@ -1172,7 +1173,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  static already_AddRefed<nsTextNode> CreateTextNode(nsIDocument& aDocument,
+  static already_AddRefed<nsTextNode> CreateTextNode(Document& aDocument,
                                                      const nsAString& aData);
 
   
@@ -1946,7 +1947,7 @@ class EditorBase : public nsIEditor,
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
 
   AutoEditActionDataSetter* mEditActionData;
 

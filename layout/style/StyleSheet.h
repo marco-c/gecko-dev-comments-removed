@@ -23,7 +23,6 @@
 #include "nsCompatibility.h"
 #include "nsStringFwd.h"
 
-class nsIDocument;
 class nsINode;
 class nsIPrincipal;
 
@@ -242,12 +241,12 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   bool IsKeptAliveByDocument() const;
 
   
-  nsIDocument* GetComposedDoc() const;
+  dom::Document* GetComposedDoc() const;
 
   
   
   
-  nsIDocument* GetAssociatedDocument() const;
+  dom::Document* GetAssociatedDocument() const;
 
   void SetAssociatedDocumentOrShadowRoot(dom::DocumentOrShadowRoot*,
                                          AssociationMode);

@@ -32,7 +32,6 @@
 class nsICSSLoaderObserver;
 class nsIConsoleReportCollector;
 class nsIContent;
-class nsIDocument;
 
 namespace mozilla {
 namespace dom {
@@ -209,7 +208,7 @@ class Loader final {
   
   
   explicit Loader(mozilla::dom::DocGroup*);
-  explicit Loader(nsIDocument*);
+  explicit Loader(mozilla::dom::Document*);
 
  private:
   
@@ -397,7 +396,7 @@ class Loader final {
   
 
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  mozilla::dom::Document* GetDocument() const { return mDocument; }
 
   
 
@@ -576,7 +575,8 @@ class Loader final {
 
   
   
-  nsIDocument* MOZ_NON_OWNING_REF mDocument;  
+  mozilla::dom::Document* MOZ_NON_OWNING_REF
+      mDocument;  
 
   
   RefPtr<mozilla::dom::DocGroup> mDocGroup;

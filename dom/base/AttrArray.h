@@ -110,7 +110,7 @@ class AttrArray {
 
   
   nsresult ForceMapped(nsMappedAttributeElement* aContent,
-                       nsIDocument* aDocument);
+                       mozilla::dom::Document* aDocument);
 
   
   

@@ -9,7 +9,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Mutex.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIObserver.h"
 
 #include "nsDataHashtable.h"
@@ -191,8 +191,9 @@ class nsRFPService final : public nsIObserver {
 
 
   static bool GetSpoofedModifierStates(
-      const nsIDocument* aDoc, const WidgetKeyboardEvent* aKeyboardEvent,
-      const Modifiers aModifier, bool& aOut);
+      const mozilla::dom::Document* aDoc,
+      const WidgetKeyboardEvent* aKeyboardEvent, const Modifiers aModifier,
+      bool& aOut);
 
   
 
@@ -204,7 +205,7 @@ class nsRFPService final : public nsIObserver {
 
 
 
-  static bool GetSpoofedCode(const nsIDocument* aDoc,
+  static bool GetSpoofedCode(const dom::Document* aDoc,
                              const WidgetKeyboardEvent* aKeyboardEvent,
                              nsAString& aOut);
 
@@ -218,7 +219,7 @@ class nsRFPService final : public nsIObserver {
 
 
 
-  static bool GetSpoofedKeyCode(const nsIDocument* aDoc,
+  static bool GetSpoofedKeyCode(const mozilla::dom::Document* aDoc,
                                 const WidgetKeyboardEvent* aKeyboardEvent,
                                 uint32_t& aOut);
 
@@ -242,7 +243,7 @@ class nsRFPService final : public nsIObserver {
   static void GetKeyboardLangAndRegion(const nsAString& aLanguage,
                                        KeyboardLangs& aLang,
                                        KeyboardRegions& aRegion);
-  static bool GetSpoofedKeyCodeInfo(const nsIDocument* aDoc,
+  static bool GetSpoofedKeyCodeInfo(const mozilla::dom::Document* aDoc,
                                     const WidgetKeyboardEvent* aKeyboardEvent,
                                     SpoofingKeyboardCode& aOut);
 

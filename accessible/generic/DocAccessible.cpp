@@ -23,7 +23,7 @@
 #include "nsIMutableArray.h"
 #include "nsICommandManager.h"
 #include "nsIDocShell.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
 #include "nsIEditingSession.h"
 #include "nsIFrame.h"
@@ -70,7 +70,7 @@ static const uint32_t kRelationAttrsLen = ArrayLength(kRelationAttrs);
 
 
 
-DocAccessible::DocAccessible(nsIDocument* aDocument, nsIPresShell* aPresShell)
+DocAccessible::DocAccessible(dom::Document* aDocument, nsIPresShell* aPresShell)
     :  
        
        
@@ -372,7 +372,7 @@ void DocAccessible::Init() {
   
   
   
-  if (mDocumentNode->GetReadyStateEnum() == nsIDocument::READYSTATE_COMPLETE)
+  if (mDocumentNode->GetReadyStateEnum() == dom::Document::READYSTATE_COMPLETE)
     mLoadState |= eDOMLoaded;
 
   AddEventListeners();
@@ -461,8 +461,8 @@ nsIFrame* DocAccessible::GetFrame() const {
 nsRect DocAccessible::RelativeBounds(nsIFrame** aRelativeFrame) const {
   *aRelativeFrame = GetFrame();
 
-  nsIDocument* document = mDocumentNode;
-  nsIDocument* parentDoc = nullptr;
+  dom::Document* document = mDocumentNode;
+  dom::Document* parentDoc = nullptr;
 
   nsRect bounds;
   while (document) {
@@ -1020,7 +1020,7 @@ void DocAccessible::ARIAActiveDescendantChanged(Accessible* aAccessible) {
 
 void DocAccessible::ContentAppended(nsIContent* aFirstNewContent) {}
 
-void DocAccessible::ContentStateChanged(nsIDocument* aDocument,
+void DocAccessible::ContentStateChanged(dom::Document* aDocument,
                                         nsIContent* aContent,
                                         EventStates aStateMask) {
   Accessible* accessible = GetAccessible(aContent);
@@ -1058,7 +1058,7 @@ void DocAccessible::ContentStateChanged(nsIDocument* aDocument,
   }
 }
 
-void DocAccessible::DocumentStatesChanged(nsIDocument* aDocument,
+void DocAccessible::DocumentStatesChanged(dom::Document* aDocument,
                                           EventStates aStateMask) {}
 
 void DocAccessible::CharacterDataWillChange(nsIContent* aContent,

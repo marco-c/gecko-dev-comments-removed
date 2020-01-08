@@ -44,7 +44,7 @@ class mock_Link : public mozilla::dom::Link {
     return 0;  
   }
 
-  void NodeInfoChanged(nsIDocument* aOldDoc) final {}
+  void NodeInfoChanged(mozilla::dom::Document* aOldDoc) final {}
 
  protected:
   ~mock_Link() {

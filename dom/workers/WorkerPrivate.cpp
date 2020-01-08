@@ -1225,7 +1225,7 @@ WorkerPrivate::SyncLoopInfo::SyncLoopInfo(EventTarget* aEventTarget)
 {
 }
 
-nsIDocument* WorkerPrivate::GetDocument() const {
+Document* WorkerPrivate::GetDocument() const {
   AssertIsOnMainThread();
   if (mLoadInfo.mWindow) {
     return mLoadInfo.mWindow->GetExtantDoc();
@@ -2339,7 +2339,7 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
       globalWindow = xpc::CurrentWindowOrNull(aCx);
     }
 
-    nsCOMPtr<nsIDocument> document;
+    nsCOMPtr<Document> document;
     Maybe<ClientInfo> clientInfo;
 
     if (globalWindow) {
@@ -2388,7 +2388,7 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
         
         
         if (document->GetSandboxFlags() & SANDBOXED_ORIGIN) {
-          nsCOMPtr<nsIDocument> tmpDoc = document;
+          nsCOMPtr<Document> tmpDoc = document;
           do {
             tmpDoc = tmpDoc->GetParentDocument();
           } while (tmpDoc && tmpDoc->GetSandboxFlags() & SANDBOXED_ORIGIN);

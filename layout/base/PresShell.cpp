@@ -45,7 +45,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PopupBlocker.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsAnimationManager.h"
 #include "nsNameSpaceManager.h"  
 #include "nsFrame.h"
@@ -510,7 +510,7 @@ class MOZ_STACK_CLASS nsPresShellEventCB : public EventDispatchingCallback {
 
 class nsBeforeFirstPaintDispatcher : public Runnable {
  public:
-  explicit nsBeforeFirstPaintDispatcher(nsIDocument* aDocument)
+  explicit nsBeforeFirstPaintDispatcher(Document* aDocument)
       : mozilla::Runnable("nsBeforeFirstPaintDispatcher"),
         mDocument(aDocument) {}
 
@@ -527,7 +527,7 @@ class nsBeforeFirstPaintDispatcher : public Runnable {
   }
 
  private:
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
 };
 
 
@@ -917,7 +917,7 @@ PresShell::~PresShell() {
 
 
 
-void PresShell::Init(nsIDocument* aDocument, nsPresContext* aPresContext,
+void PresShell::Init(Document* aDocument, nsPresContext* aPresContext,
                      nsViewManager* aViewManager,
                      UniquePtr<ServoStyleSet> aStyleSet) {
   MOZ_ASSERT(aDocument, "null ptr");
@@ -1686,7 +1686,7 @@ char* nsPresShell_ReflowStackPointerTop;
 
 class XBLConstructorRunner : public Runnable {
  public:
-  explicit XBLConstructorRunner(nsIDocument* aDocument)
+  explicit XBLConstructorRunner(Document* aDocument)
       : Runnable("XBLConstructorRunner"), mDocument(aDocument) {}
 
   NS_IMETHOD Run() override {
@@ -1695,7 +1695,7 @@ class XBLConstructorRunner : public Runnable {
   }
 
  private:
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
 };
 
 nsresult PresShell::Initialize() {
@@ -1816,8 +1816,8 @@ nsresult PresShell::Initialize() {
     
     mPaintingSuppressed = true;
     
-    nsIDocument::ReadyState readyState = mDocument->GetReadyStateEnum();
-    if (readyState != nsIDocument::READYSTATE_COMPLETE) {
+    Document::ReadyState readyState = mDocument->GetReadyStateEnum();
+    if (readyState != Document::READYSTATE_COMPLETE) {
       mPaintSuppressionTimer = NS_NewTimer();
     }
     if (!mPaintSuppressionTimer) {
@@ -2468,7 +2468,7 @@ void PresShell::MaybeReleaseCapturingContent() {
   }
 }
 
-void PresShell::BeginLoad(nsIDocument* aDocument) {
+void PresShell::BeginLoad(Document* aDocument) {
   mDocumentLoading = true;
 
   gfxTextPerfMetrics* tp = nullptr;
@@ -2489,7 +2489,7 @@ void PresShell::BeginLoad(nsIDocument* aDocument) {
   }
 }
 
-void PresShell::EndLoad(nsIDocument* aDocument) {
+void PresShell::EndLoad(Document* aDocument) {
   MOZ_ASSERT(aDocument == mDocument, "Wrong document");
 
   RestoreRootScrollPosition();
@@ -3386,7 +3386,7 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
                                           nsIPresShell::ScrollAxis aHorizontal,
                                           uint32_t aFlags) {
   NS_ENSURE_TRUE(aContent, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIDocument> composedDoc = aContent->GetComposedDoc();
+  RefPtr<Document> composedDoc = aContent->GetComposedDoc();
   NS_ENSURE_STATE(composedDoc);
 
   NS_ASSERTION(mDidInitialize, "should have done initial reflow by now");
@@ -4191,8 +4191,7 @@ void PresShell::CharacterDataChanged(nsIContent* aContent,
   mFrameConstructor->CharacterDataChanged(aContent, aInfo);
 }
 
-void PresShell::ContentStateChanged(nsIDocument* aDocument,
-                                    nsIContent* aContent,
+void PresShell::ContentStateChanged(Document* aDocument, nsIContent* aContent,
                                     EventStates aStateMask) {
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentStateChanged");
   MOZ_ASSERT(aDocument == mDocument, "Unexpected aDocument");
@@ -4203,7 +4202,7 @@ void PresShell::ContentStateChanged(nsIDocument* aDocument,
   }
 }
 
-void PresShell::DocumentStatesChanged(nsIDocument* aDocument,
+void PresShell::DocumentStatesChanged(Document* aDocument,
                                       EventStates aStateMask) {
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected DocumentStatesChanged");
   MOZ_ASSERT(aDocument == mDocument, "Unexpected aDocument");
@@ -4630,7 +4629,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   
   nsINode* startContainer = aRange->GetStartContainer();
   nsINode* endContainer = aRange->GetEndContainer();
-  nsIDocument* doc = startContainer->GetComposedDoc();
+  Document* doc = startContainer->GetComposedDoc();
   if (startContainer == doc || endContainer == doc) {
     ancestorFrame = rootFrame;
   } else {
@@ -5864,7 +5863,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
                       uint32_t aFlags) {
   nsCString url;
   nsIURI* uri = mDocument->GetDocumentURI();
-  nsIDocument* contentRoot = GetPrimaryContentDocument();
+  Document* contentRoot = GetPrimaryContentDocument();
   if (contentRoot) {
     uri = contentRoot->GetDocumentURI();
   }
@@ -6174,7 +6173,7 @@ bool PresShell::InZombieDocument(nsIContent* aContent) {
   
   
   
-  nsIDocument* doc = aContent->GetComposedDoc();
+  Document* doc = aContent->GetComposedDoc();
   return !doc || !doc->GetWindow();
 }
 
@@ -6322,7 +6321,7 @@ static nsIFrame* GetNearestFrameContainingPresShell(nsIPresShell* aPresShell) {
   return frame;
 }
 
-static bool FlushThrottledStyles(nsIDocument* aDocument, void* aData) {
+static bool FlushThrottledStyles(Document* aDocument, void* aData) {
   nsIPresShell* shell = aDocument->GetShell();
   if (shell && shell->IsVisible()) {
     nsPresContext* presContext = shell->GetPresContext();
@@ -6350,7 +6349,7 @@ bool PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const {
     return static_cast<PresShell*>(aFrame->PresShell());
   }
   if (aContent) {
-    nsIDocument* doc = aContent->GetComposedDoc();
+    Document* doc = aContent->GetComposedDoc();
     if (!doc) {
       return nullptr;
     }
@@ -6444,7 +6443,7 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
     
     
     nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
-    nsCOMPtr<nsIDocument> retargetEventDoc =
+    RefPtr<Document> retargetEventDoc =
         window ? window->GetExtantDoc() : nullptr;
     nsCOMPtr<nsIPresShell> presShell =
         retargetEventDoc ? retargetEventDoc->GetShell() : nullptr;
@@ -6488,7 +6487,7 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
            ? GetCapturingContent()
            : nullptr);
 
-  nsCOMPtr<nsIDocument> retargetEventDoc;
+  RefPtr<Document> retargetEventDoc;
   if (!aDontRetargetEvents) {
     
     
@@ -6575,7 +6574,7 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
   if (aEvent->IsUsingCoordinates()) {
     if (mDocument) {
       if (aEvent->mClass == eTouchEventClass) {
-        nsIDocument::UnlockPointer();
+        Document::UnlockPointer();
       }
 
       AutoWeakFrame weakFrame(frame);
@@ -6994,7 +6993,7 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
       }
 
       mCurrentEventFrame = nullptr;
-      nsIDocument* targetDoc = eventTarget ? eventTarget->OwnerDoc() : nullptr;
+      Document* targetDoc = eventTarget ? eventTarget->OwnerDoc() : nullptr;
       if (targetDoc && targetDoc != mDocument) {
         PopCurrentEventInfo();
         nsCOMPtr<nsIPresShell> shell = targetDoc->GetShell();
@@ -7041,7 +7040,7 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
   return rv;
 }
 
-nsIDocument* PresShell::GetPrimaryContentDocument() {
+Document* PresShell::GetPrimaryContentDocument() {
   nsPresContext* context = GetPresContext();
   if (!context || !context->IsRoot()) {
     return nullptr;
@@ -7092,7 +7091,7 @@ nsresult PresShell::HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
   MOZ_ASSERT(!aFrame || aFrame->PresContext()->GetPresShell() == this,
              "wrong shell");
   if (aContent) {
-    nsIDocument* doc = aContent->GetComposedDoc();
+    Document* doc = aContent->GetComposedDoc();
     NS_ASSERTION(doc, "event for content that isn't in a document");
     
     
@@ -7136,12 +7135,12 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
         case eKeyPress:
         case eKeyDown:
         case eKeyUp: {
-          nsIDocument* doc = GetCurrentEventContent()
-                                 ? mCurrentEventContent->OwnerDoc()
-                                 : nullptr;
+          Document* doc = GetCurrentEventContent()
+                              ? mCurrentEventContent->OwnerDoc()
+                              : nullptr;
           auto keyCode = aEvent->AsKeyboardEvent()->mKeyCode;
           if (keyCode == NS_VK_ESCAPE) {
-            nsIDocument* root = nsContentUtils::GetRootDocument(doc);
+            Document* root = nsContentUtils::GetRootDocument(doc);
             if (root && root->GetFullscreenElement()) {
               
               
@@ -7164,10 +7163,10 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
                 
                 
                 
-                nsIDocument::AsyncExitFullscreen(nullptr);
+                Document::AsyncExitFullscreen(nullptr);
               }
             }
-            nsCOMPtr<nsIDocument> pointerLockedDoc =
+            nsCOMPtr<Document> pointerLockedDoc =
                 do_QueryReferent(EventStateManager::sPointerLockedDoc);
             if (!mIsLastChromeOnlyEscapeKeyConsumed && pointerLockedDoc) {
               
@@ -7177,7 +7176,7 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
                   CrossProcessForwarding::eStop);
               aEvent->mFlags.mOnlyChromeDispatch = true;
               if (aEvent->mMessage == eKeyUp) {
-                nsIDocument::UnlockPointer();
+                Document::UnlockPointer();
               }
             }
           }
@@ -7454,7 +7453,7 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
     double millis = (now - aEvent->mTimeStamp).ToMilliseconds();
     Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_MS, millis);
     if (mDocument &&
-        mDocument->GetReadyStateEnum() != nsIDocument::READYSTATE_COMPLETE) {
+        mDocument->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
       Telemetry::Accumulate(Telemetry::LOAD_INPUT_EVENT_RESPONSE_MS, millis);
     }
 
@@ -7476,8 +7475,8 @@ nsresult PresShell::HandleEventInternal(WidgetEvent* aEvent,
           if (XRE_IsContentProcess() && mDocument &&
               mDocument->IsTopLevelContentDocument()) {
             switch (mDocument->GetReadyStateEnum()) {
-              case nsIDocument::READYSTATE_INTERACTIVE:
-              case nsIDocument::READYSTATE_COMPLETE:
+              case Document::READYSTATE_INTERACTIVE:
+              case Document::READYSTATE_COMPLETE:
                 sProcessInteractable = true;
                 break;
               default:
@@ -7513,7 +7512,7 @@ static already_AddRefed<nsIURI> GetDocumentURIToCompareWithBlacklist(
   }
   
   
-  for (nsIDocument* document = presContext->Document();
+  for (Document* document = presContext->Document();
        document && document->IsContentDocument();
        document = document->GetParentDocument()) {
     
@@ -7627,7 +7626,7 @@ void PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
       continue;
     }
 
-    nsIDocument* doc = content->OwnerDoc();
+    Document* doc = content->OwnerDoc();
     nsIContent* capturingContent = GetCapturingContent();
     if (capturingContent) {
       if (capturingContent->OwnerDoc() != doc) {
@@ -8222,7 +8221,7 @@ static void FreezeElement(nsISupports* aSupports, void* ) {
   }
 }
 
-static bool FreezeSubDocument(nsIDocument* aDocument, void* aData) {
+static bool FreezeSubDocument(Document* aDocument, void* aData) {
   nsIPresShell* shell = aDocument->GetShell();
   if (shell) shell->Freeze();
 
@@ -8269,7 +8268,7 @@ void PresShell::FireOrClearDelayedEvents(bool aFireEvents) {
   }
 
   if (mDocument) {
-    nsCOMPtr<nsIDocument> doc = mDocument;
+    RefPtr<Document> doc = mDocument;
     while (!mIsDestroying && mDelayedEvents.Length() &&
            !doc->EventHandlingSuppressed()) {
       UniquePtr<DelayedEvent> ev = std::move(mDelayedEvents[0]);
@@ -8292,7 +8291,7 @@ static void ThawElement(nsISupports* aSupports, void* aShell) {
   }
 }
 
-static bool ThawSubDocument(nsIDocument* aDocument, void* aData) {
+static bool ThawSubDocument(Document* aDocument, void* aData) {
   nsIPresShell* shell = aDocument->GetShell();
   if (shell) shell->Thaw();
 
@@ -9823,7 +9822,7 @@ nsAccessibilityService* nsIPresShell::AccService() { return GetAccService(); }
 void PresShell::QueryIsActive() {
   nsCOMPtr<nsISupports> container = mPresContext->GetContainerWeak();
   if (mDocument) {
-    nsIDocument* displayDoc = mDocument->GetDisplayDocument();
+    Document* displayDoc = mDocument->GetDisplayDocument();
     if (displayDoc) {
       
       
@@ -9851,8 +9850,7 @@ void PresShell::QueryIsActive() {
 }
 
 
-static bool SetExternalResourceIsActive(nsIDocument* aDocument,
-                                        void* aClosure) {
+static bool SetExternalResourceIsActive(Document* aDocument, void* aClosure) {
   nsIPresShell* shell = aDocument->GetShell();
   if (shell) {
     shell->SetIsActive(*static_cast<bool*>(aClosure));

@@ -35,7 +35,7 @@ class nsContainerFrame;
 class nsFirstLineFrame;
 class nsFirstLetterFrame;
 class nsCSSAnonBoxPseudoStaticAtom;
-class nsIDocument;
+
 class nsPageContentFrame;
 struct PendingBinding;
 
@@ -64,7 +64,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   friend class mozilla::RestyleManager;
 
-  nsCSSFrameConstructor(nsIDocument* aDocument, nsIPresShell* aPresShell);
+  nsCSSFrameConstructor(mozilla::dom::Document* aDocument,
+                        nsIPresShell* aPresShell);
   ~nsCSSFrameConstructor() { MOZ_ASSERT(mFCItemsInUse == 0); }
 
   
@@ -2136,7 +2137,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void* AllocateFCItem();
   void FreeFCItem(FrameConstructionItem*);
 
-  nsIDocument* mDocument;  
+  mozilla::dom::Document* mDocument;  
 
   
   

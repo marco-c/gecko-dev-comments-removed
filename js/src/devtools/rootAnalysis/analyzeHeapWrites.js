@@ -350,8 +350,8 @@ function ignoreCallEdge(entry, callee)
     
     
     
-    if (/nsIDocument::GetExtraPropertyTable/.test(callee) &&
-        /nsIDocument::PropertyTable/.test(name) &&
+    if (/Document::GetExtraPropertyTable/.test(callee) &&
+        /Document::PropertyTable/.test(name) &&
         entry.isSafeArgument(1))
     {
         return true;
@@ -1070,7 +1070,7 @@ function maybeProcessMissingFunction(entry, addCallee)
     
     
     if (/mozilla::dom::Element/.test(name)) {
-        var callee = name.replace("mozilla::dom::Element", "nsIDocument::Element");
+        var callee = name.replace("mozilla::dom::Element", "Document::Element");
         addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location, entry.parameterNames));
         return true;
     }

@@ -33,7 +33,8 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/TouchEvent.h"
-#include "nsIDocumentInlines.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "nsIDocumentEncoder.h"
 #include "nsIContentIterator.h"
 #include "nsFocusManager.h"
@@ -61,7 +62,6 @@
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MouseEvents.h"
 #include "nsNodeUtils.h"
-#include "nsIDocument.h"
 #include "nsAttrValueOrString.h"
 #include "nsQueryObject.h"
 #ifdef MOZ_XUL
@@ -223,7 +223,7 @@ nsIContent::IMEState nsIContent::GetDesiredIMEState() {
   if (editableAncestor && editableAncestor != this) {
     return editableAncestor->GetDesiredIMEState();
   }
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc) {
     return IMEState(IMEState::DISABLED);
   }
@@ -251,7 +251,7 @@ dom::Element* nsIContent::GetEditingHost() {
     return nullptr;
   }
 
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc) {
     return nullptr;
   }
@@ -338,7 +338,7 @@ already_AddRefed<nsIURI> nsIContent::GetBaseURI(
     }
   }
 
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
   
   nsCOMPtr<nsIURI> base = doc->GetBaseURI(aTryUseXHRDocBaseURI);
 
@@ -1148,7 +1148,7 @@ void FragmentOrElement::DestroyContent() {
     AsElement()->ClearServoData();
   }
 
-  nsIDocument* document = OwnerDoc();
+  Document* document = OwnerDoc();
 
   document->BindingManager()->RemovedFromDocument(this, document,
                                                   nsBindingManager::eRunDtor);
@@ -1188,8 +1188,7 @@ void FragmentOrElement::SaveSubtreeState() {
 
 
 void FragmentOrElement::FireNodeInserted(
-    nsIDocument* aDoc, nsINode* aParent,
-    nsTArray<nsCOMPtr<nsIContent>>& aNodes) {
+    Document* aDoc, nsINode* aParent, nsTArray<nsCOMPtr<nsIContent>>& aNodes) {
   uint32_t count = aNodes.Length();
   for (uint32_t i = 0; i < count; ++i) {
     nsIContent* childContent = aNodes[i];
@@ -1358,7 +1357,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
     tmp->ExtendedDOMSlots()->mShadowRoot = nullptr;
   }
 
-  nsIDocument* doc = tmp->OwnerDoc();
+  Document* doc = tmp->OwnerDoc();
   doc->BindingManager()->RemovedFromDocument(tmp, doc,
                                              nsBindingManager::eDoNotRunDtor);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -1415,7 +1414,7 @@ void FragmentOrElement::RemoveBlackMarkedNode(nsINode* aNode) {
   gCCBlackMarkedNodes->RemoveEntry(aNode);
 }
 
-static bool IsCertainlyAliveNode(nsINode* aNode, nsIDocument* aDoc) {
+static bool IsCertainlyAliveNode(nsINode* aNode, Document* aDoc) {
   MOZ_ASSERT(aNode->GetComposedDoc() == aDoc);
 
   
@@ -1435,7 +1434,7 @@ bool FragmentOrElement::CanSkipInCC(nsINode* aNode) {
     return false;
   }
 
-  nsIDocument* currentDoc = aNode->GetComposedDoc();
+  Document* currentDoc = aNode->GetComposedDoc();
   if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc)) {
     return !NeedsScriptTraverse(aNode);
   }
@@ -1580,12 +1579,12 @@ static bool ShouldClearPurple(nsIContent* aContent) {
 
 
 
-bool NodeHasActiveFrame(nsIDocument* aCurrentDoc, nsINode* aNode) {
+bool NodeHasActiveFrame(Document* aCurrentDoc, nsINode* aNode) {
   return aCurrentDoc->GetShell() && aNode->IsElement() &&
          aNode->AsElement()->GetPrimaryFrame();
 }
 
-bool OwnedByBindingManager(nsIDocument* aCurrentDoc, nsINode* aNode) {
+bool OwnedByBindingManager(Document* aCurrentDoc, nsINode* aNode) {
   return aNode->IsElement() && aNode->AsElement()->GetXBLBinding();
 }
 
@@ -1602,7 +1601,7 @@ bool FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed) {
   }
 
   bool unoptimizable = aNode->UnoptimizableCCNode();
-  nsIDocument* currentDoc = aNode->GetComposedDoc();
+  Document* currentDoc = aNode->GetComposedDoc();
   if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc) &&
       (!unoptimizable || NodeHasActiveFrame(currentDoc, aNode) ||
        OwnedByBindingManager(currentDoc, aNode))) {
@@ -1728,7 +1727,7 @@ bool FragmentOrElement::CanSkipThis(nsINode* aNode) {
   if (aNode->HasKnownLiveWrapper()) {
     return true;
   }
-  nsIDocument* c = aNode->GetComposedDoc();
+  Document* c = aNode->GetComposedDoc();
   return ((c && IsCertainlyAliveNode(aNode, c)) || aNode->InCCBlackTree()) &&
          !NeedsScriptTraverse(aNode);
 }
@@ -1925,7 +1924,7 @@ bool FragmentOrElement::IsHTMLVoid(nsAtom* aLocalName) {
 void FragmentOrElement::GetMarkup(bool aIncludeSelf, nsAString& aMarkup) {
   aMarkup.Truncate();
 
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
   if (IsInHTMLDocument()) {
     nsContentUtils::SerializeNodeToMarkup(this, !aIncludeSelf, aMarkup);
     return;
@@ -2026,7 +2025,7 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
     return;
   }
 
-  nsIDocument* doc = target->OwnerDoc();
+  Document* doc = target->OwnerDoc();
 
   
   mozAutoSubtreeModified subtree(doc, nullptr);
@@ -2079,7 +2078,7 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
 }
 
 void FragmentOrElement::FireNodeRemovedForChildren() {
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
   
   if (!nsContentUtils::HasMutationListeners(
           doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {

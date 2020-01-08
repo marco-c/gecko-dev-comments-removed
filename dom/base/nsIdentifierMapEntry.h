@@ -52,7 +52,6 @@ class nsIdentifierMapEntry : public PLDHashEntryHdr {
   
 
 
-
   typedef bool (*IDTargetObserver)(Element* aOldElement, Element* aNewelement,
                                    void* aData);
 

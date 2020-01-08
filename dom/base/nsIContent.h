@@ -107,7 +107,7 @@ class nsIContent : public nsINode {
 
 
 
-  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) = 0;
 
   

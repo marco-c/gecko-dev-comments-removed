@@ -18,11 +18,10 @@
 #include "mozilla/dom/AnimationEffectBinding.h"  
                                                  
 
-class nsIDocument;
-
 namespace mozilla {
 
 namespace dom {
+class Document;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 class UnrestrictedDoubleOrKeyframeAnimationOptions;
 }  
@@ -56,15 +55,16 @@ struct TimingParams {
 
   template <class OptionsType>
   static TimingParams FromOptionsType(const OptionsType& aOptions,
-                                      nsIDocument* aDocument, ErrorResult& aRv);
+                                      dom::Document* aDocument,
+                                      ErrorResult& aRv);
   static TimingParams FromOptionsUnion(
       const dom::UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
-      nsIDocument* aDocument, ErrorResult& aRv);
+      dom::Document* aDocument, ErrorResult& aRv);
   static TimingParams FromOptionsUnion(
       const dom::UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-      nsIDocument* aDocument, ErrorResult& aRv);
+      dom::Document* aDocument, ErrorResult& aRv);
   static TimingParams FromEffectTiming(const dom::EffectTiming& aEffectTiming,
-                                       nsIDocument* aDocument,
+                                       dom::Document* aDocument,
                                        ErrorResult& aRv);
   
   
@@ -74,7 +74,7 @@ struct TimingParams {
   
   static TimingParams MergeOptionalEffectTiming(
       const TimingParams& aSource,
-      const dom::OptionalEffectTiming& aEffectTiming, nsIDocument* aDocument,
+      const dom::OptionalEffectTiming& aEffectTiming, dom::Document* aDocument,
       ErrorResult& aRv);
 
   
@@ -115,7 +115,7 @@ struct TimingParams {
   }
 
   static Maybe<ComputedTimingFunction> ParseEasing(const nsAString& aEasing,
-                                                   nsIDocument* aDocument,
+                                                   dom::Document* aDocument,
                                                    ErrorResult& aRv);
 
   static StickyTimeDuration CalcActiveDuration(

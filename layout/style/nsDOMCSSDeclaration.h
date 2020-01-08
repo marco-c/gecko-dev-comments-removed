@@ -20,7 +20,6 @@
 #include "nsCompatibility.h"
 
 class nsIPrincipal;
-class nsIDocument;
 struct JSContext;
 class JSObject;
 
@@ -32,6 +31,7 @@ class Loader;
 class Rule;
 }  
 namespace dom {
+class Document;
 class Element;
 }
 
@@ -174,7 +174,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
   
   
   
-  virtual nsIDocument* DocToUpdate() = 0;
+  virtual mozilla::dom::Document* DocToUpdate() = 0;
 
   
   

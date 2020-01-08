@@ -11,7 +11,7 @@
 #include "mozilla/dom/Event.h"  
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIDocShell.h"
 #include "nsPresContext.h"
 #include "nsFocusManager.h"
@@ -163,10 +163,10 @@ nsPrintPreviewListener::HandleEvent(Event* aEvent) {
         if (eventString.EqualsLiteral("keydown")) {
           
           
-          nsIDocument* doc = content->GetUncomposedDoc();
+          Document* doc = content->GetUncomposedDoc();
           NS_ASSERTION(doc, "no document");
 
-          nsIDocument* parentDoc = doc->GetParentDocument();
+          Document* parentDoc = doc->GetParentDocument();
           NS_ASSERTION(parentDoc, "no parent document");
 
           nsCOMPtr<nsPIDOMWindowOuter> win = parentDoc->GetWindow();

@@ -20,7 +20,7 @@
 #include "nsWrapperCache.h"
 
 class nsAtom;
-class nsIDocument;
+
 namespace mozilla {
 namespace dom {
 class DocGroup;
@@ -85,6 +85,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
  public:
   typedef mozilla::dom::Attr Attr;
   typedef mozilla::dom::DocGroup DocGroup;
+  typedef mozilla::dom::Document Document;
   typedef mozilla::dom::Element Element;
   typedef mozilla::ErrorResult ErrorResult;
 
@@ -101,7 +102,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
 
 
 
-  nsresult SetOwnerDocument(nsIDocument* aDocument);
+  nsresult SetOwnerDocument(Document* aDocument);
 
   
 

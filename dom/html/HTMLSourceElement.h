@@ -34,7 +34,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
 
   
   
-  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) override;
 
   
@@ -45,7 +45,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
   
   
   static bool WouldMatchMediaForDocument(const nsAString& aMediaStr,
-                                         const nsIDocument* aDocument);
+                                         const Document* aDocument);
 
   
   

@@ -113,7 +113,7 @@ nsresult TextServicesDocument::InitWithEditor(nsIEditor* aEditor) {
   
   
 
-  nsCOMPtr<nsIDocument> doc = aEditor->AsEditorBase()->GetDocument();
+  RefPtr<Document> doc = aEditor->AsEditorBase()->GetDocument();
   if (!doc || (mDocument && doc != mDocument)) {
     return NS_ERROR_FAILURE;
   }

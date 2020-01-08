@@ -19,7 +19,6 @@
 #include "mozilla/RefPtr.h"
 #include "nsString.h"
 
-class nsIDocument;
 class nsIFrame;
 class nsIPresShell;
 struct nsPoint;
@@ -162,14 +161,13 @@ class AccessibleCaret {
   
   static nsAutoString AppearanceString(Appearance aAppearance);
 
-  already_AddRefed<dom::Element> CreateCaretElement(
-      nsIDocument* aDocument) const;
+  already_AddRefed<dom::Element> CreateCaretElement(dom::Document*) const;
 
   
-  void InjectCaretElement(nsIDocument* aDocument);
+  void InjectCaretElement(dom::Document*);
 
   
-  void RemoveCaretElement(nsIDocument* aDocument);
+  void RemoveCaretElement(dom::Document*);
 
   
   

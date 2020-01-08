@@ -5,7 +5,7 @@
 
 
 #include "nsDragServiceProxy.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsISupportsPrimitives.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/gfx/2D.h"

@@ -192,11 +192,8 @@ xpcAccessibilityService::GetAccessibleFromCache(nsINode* aNode,
   
   
   Accessible* accessible = accService->FindAccessibleInCache(aNode);
-  if (!accessible) {
-    nsCOMPtr<nsIDocument> document(do_QueryInterface(aNode));
-    if (document) {
-      accessible = mozilla::a11y::GetExistingDocAccessible(document);
-    }
+  if (!accessible && aNode->IsDocument()) {
+    accessible = mozilla::a11y::GetExistingDocAccessible(aNode->AsDocument());
   }
 
   NS_IF_ADDREF(*aAccessible = ToXPC(accessible));

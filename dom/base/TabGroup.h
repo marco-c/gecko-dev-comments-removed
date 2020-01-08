@@ -19,12 +19,12 @@
 
 class mozIDOMWindowProxy;
 class nsIDocShellTreeItem;
-class nsIDocument;
 class nsPIDOMWindowOuter;
 
 namespace mozilla {
 class AbstractThread;
 namespace dom {
+class Document;
 class TabChild;
 
 
@@ -82,7 +82,7 @@ class TabGroup final : public SchedulerGroup,
   already_AddRefed<DocGroup> GetDocGroup(const nsACString& aKey);
 
   already_AddRefed<DocGroup> AddDocument(const nsACString& aKey,
-                                         nsIDocument* aDocument);
+                                         Document* aDocument);
 
   
   

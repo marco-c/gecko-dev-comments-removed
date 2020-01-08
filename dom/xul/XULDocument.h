@@ -44,7 +44,7 @@ class nsIObjectOutputStream;
 
 
 
-nsresult NS_NewXULDocument(nsIDocument** result);
+nsresult NS_NewXULDocument(mozilla::dom::Document** result);
 
 namespace mozilla {
 namespace dom {
@@ -124,7 +124,7 @@ class XULDocument final : public XMLDocument,
   virtual ~XULDocument();
 
   
-  friend nsresult(::NS_NewXULDocument(nsIDocument** aResult));
+  friend nsresult(::NS_NewXULDocument(Document** aResult));
 
   nsresult Init(void) override;
   nsresult StartLayout(void);
@@ -325,12 +325,12 @@ class XULDocument final : public XMLDocument,
   
 };
 
-}  
-}  
-
-inline mozilla::dom::XULDocument* nsIDocument::AsXULDocument() {
+inline XULDocument* Document::AsXULDocument() {
   MOZ_ASSERT(IsXULDocument());
   return static_cast<mozilla::dom::XULDocument*>(this);
 }
+
+}  
+}  
 
 #endif  

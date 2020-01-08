@@ -88,6 +88,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   friend class AutoResetInShow;
   friend class AutoResetInFrameSwap;
   typedef mozilla::dom::PBrowserParent PBrowserParent;
+  typedef mozilla::dom::Document Document;
   typedef mozilla::dom::TabParent TabParent;
   typedef mozilla::layout::RenderFrame RenderFrame;
 
@@ -265,7 +266,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  nsIDocument* GetOwnerDoc() const {
+  Document* GetOwnerDoc() const {
     return mOwnerContent ? mOwnerContent->OwnerDoc() : nullptr;
   }
 
@@ -318,13 +319,13 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
   void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame,
-                              nsIDocument* aContainerDoc);
+                              Document* aContainerDoc);
 
   
 
 
 
-  nsIFrame* GetDetachedSubdocFrame(nsIDocument** aContainerDoc) const;
+  nsIFrame* GetDetachedSubdocFrame(Document** aContainerDoc) const;
 
   
 
@@ -447,7 +448,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  nsCOMPtr<nsIDocument> mContainerDocWhileDetached;
+  RefPtr<Document> mContainerDocWhileDetached;
 
   
   nsCOMPtr<nsPIDOMWindowOuter> mOpener;

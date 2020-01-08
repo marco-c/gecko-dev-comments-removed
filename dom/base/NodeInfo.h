@@ -29,11 +29,12 @@
 #include "nsAtom.h"
 #include "nsHashKeys.h"
 
-class nsIDocument;
 class nsNodeInfoManager;
 
 namespace mozilla {
 namespace dom {
+
+class Document;
 
 class NodeInfo final {
  public:
@@ -172,7 +173,7 @@ class NodeInfo final {
   
 
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  Document* GetDocument() const { return mDocument; }
 
  private:
   NodeInfo() = delete;
@@ -281,8 +282,7 @@ class NodeInfo final {
 
   
   
-  nsIDocument* MOZ_NON_OWNING_REF
-      mDocument;  
+  Document* MOZ_NON_OWNING_REF mDocument;  
 
   NodeInfoInner mInner;
 

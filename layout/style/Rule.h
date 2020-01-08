@@ -16,7 +16,6 @@
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 
-class nsIDocument;
 struct nsRuleData;
 template <class T>
 struct already_AddRefed;
@@ -72,7 +71,7 @@ class Rule : public nsISupports, public nsWrapperCache {
   
   
   
-  nsIDocument* GetComposedDoc() const {
+  dom::Document* GetComposedDoc() const {
     return mSheet ? mSheet->GetComposedDoc() : nullptr;
   }
 

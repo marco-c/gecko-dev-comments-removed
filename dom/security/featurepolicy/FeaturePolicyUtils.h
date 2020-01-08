@@ -10,10 +10,10 @@
 #include "nsString.h"
 #include <functional>
 
-class nsIDocument;
-
 namespace mozilla {
 namespace dom {
+
+class Document;
 
 class FeaturePolicyUtils final {
  public:
@@ -30,7 +30,7 @@ class FeaturePolicyUtils final {
 
   
   
-  static bool IsFeatureAllowed(nsIDocument* aDocument,
+  static bool IsFeatureAllowed(Document* aDocument,
                                const nsAString& aFeatureName);
 
   
@@ -45,7 +45,7 @@ class FeaturePolicyUtils final {
       const nsAString& aFeatureName);
 
  private:
-  static void ReportViolation(nsIDocument* aDocument,
+  static void ReportViolation(Document* aDocument,
                               const nsAString& aFeatureName);
 };
 

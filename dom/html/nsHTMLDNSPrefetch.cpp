@@ -25,7 +25,7 @@
 #include "nsIDNSService.h"
 #include "nsICancelable.h"
 #include "nsGkAtoms.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsThreadUtils.h"
 #include "nsITimer.h"
 #include "nsIObserverService.h"
@@ -94,7 +94,7 @@ nsresult nsHTMLDNSPrefetch::Shutdown() {
   return NS_OK;
 }
 
-bool nsHTMLDNSPrefetch::IsAllowed(nsIDocument *aDocument) {
+bool nsHTMLDNSPrefetch::IsAllowed(Document *aDocument) {
   
   return aDocument->IsDNSPrefetchAllowed() && aDocument->GetWindow();
 }

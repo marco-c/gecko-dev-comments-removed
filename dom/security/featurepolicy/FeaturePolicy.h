@@ -55,12 +55,12 @@
 
 
 
-class nsIDocument;
 class nsIHttpChannel;
 class nsINode;
 
 namespace mozilla {
 namespace dom {
+class Document;
 
 class FeaturePolicyUtils;
 
@@ -87,7 +87,8 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
 
   
   
-  void SetDeclaredPolicy(nsIDocument* aDocument, const nsAString& aPolicyString,
+  void SetDeclaredPolicy(mozilla::dom::Document* aDocument,
+                         const nsAString& aPolicyString,
                          nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin);
 
   

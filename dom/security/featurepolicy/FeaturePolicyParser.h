@@ -9,19 +9,19 @@
 
 #include "nsString.h"
 
-class nsIDocument;
 class nsIPrincipal;
 
 namespace mozilla {
 namespace dom {
 
+class Document;
 class Feature;
 
 class FeaturePolicyParser final {
  public:
   
   
-  static bool ParseString(const nsAString& aPolicy, nsIDocument* aDocument,
+  static bool ParseString(const nsAString& aPolicy, Document* aDocument,
                           nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin,
                           nsTArray<Feature>& aParsedFeatures);
 };

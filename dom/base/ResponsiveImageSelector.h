@@ -31,7 +31,7 @@ class ResponsiveImageSelector {
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ResponsiveImageSelector)
 
   explicit ResponsiveImageSelector(nsIContent* aContent);
-  explicit ResponsiveImageSelector(nsIDocument* aDocument);
+  explicit ResponsiveImageSelector(dom::Document* aDocument);
 
   
   
@@ -65,7 +65,7 @@ class ResponsiveImageSelector {
 
   
   
-  nsIDocument* Document();
+  dom::Document* Document();
 
   
   

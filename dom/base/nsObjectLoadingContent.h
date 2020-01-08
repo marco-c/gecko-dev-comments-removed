@@ -194,7 +194,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
                            bool , mozilla::ErrorResult& aRv);
 
   
-  nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
+  mozilla::dom::Document* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
   void GetActualType(nsAString& aType) const {
     CopyUTF8toUTF16(mContentType, aType);
   }
@@ -320,7 +320,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner);
 
-  nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  nsresult BindToTree(mozilla::dom::Document* aDocument, nsIContent* aParent,
                       nsIContent* aBindingParent);
   void UnbindFromTree(bool aDeep = true, bool aNullParent = true);
 

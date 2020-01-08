@@ -10,7 +10,7 @@
 #include "mozilla/dom/Element.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
-#include "nsIDocument.h"  
+#include "mozilla/dom/Document.h"  
 #include "nsIPresShell.h"
 
 #include "nsPoint.h"
@@ -29,6 +29,8 @@ class nsIWidget;
 
 class nsCoreUtils {
  public:
+  typedef mozilla::dom::Document Document;
+
   
 
 
@@ -185,22 +187,22 @@ class nsCoreUtils {
   
 
 
-  static bool IsRootDocument(nsIDocument *aDocument);
+  static bool IsRootDocument(Document *aDocument);
 
   
 
 
-  static bool IsContentDocument(nsIDocument *aDocument);
+  static bool IsContentDocument(Document *aDocument);
 
   
 
 
-  static bool IsTabDocument(nsIDocument *aDocumentNode);
+  static bool IsTabDocument(Document *aDocumentNode);
 
   
 
 
-  static bool IsErrorPage(nsIDocument *aDocument);
+  static bool IsErrorPage(Document *aDocument);
 
   
 

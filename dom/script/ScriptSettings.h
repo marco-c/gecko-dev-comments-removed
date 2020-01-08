@@ -22,11 +22,12 @@
 class nsPIDOMWindowInner;
 class nsGlobalWindowInner;
 class nsIScriptContext;
-class nsIDocument;
 class nsIDocShell;
 
 namespace mozilla {
 namespace dom {
+
+class Document;
 
 
 
@@ -89,7 +90,7 @@ nsIGlobalObject* GetEntryGlobal();
 
 
 
-nsIDocument* GetEntryDocument();
+Document* GetEntryDocument();
 
 
 

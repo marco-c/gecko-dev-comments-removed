@@ -8,7 +8,7 @@
 
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -116,12 +116,12 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   
   static void NormalizeWord(nsAString& aWord);
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  mozilla::dom::Document* GetDocument() const { return mDocument; }
   nsINode* GetRootNode() { return mRootNode; }
 
  private:
   
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<mozilla::dom::Document> mDocument;
   bool mIsContentEditableOrDesignMode;
 
   

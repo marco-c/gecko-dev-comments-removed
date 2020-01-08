@@ -10,7 +10,7 @@
 
 #include "gfxContext.h"
 #include "nsDisplayList.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObjectLoadingContent.h"
 #include "nsSVGIntegrationUtils.h"
@@ -109,7 +109,7 @@ void nsSVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsSVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  nsIDocument* doc = mContent->GetUncomposedDoc();
+  Document* doc = mContent->GetUncomposedDoc();
   if (doc) {
     
     
@@ -899,7 +899,7 @@ bool nsSVGOuterSVGFrame::IsRootOfReplacedElementSubDoc(
 bool nsSVGOuterSVGFrame::IsRootOfImage() {
   if (!mContent->GetParent()) {
     
-    nsIDocument* doc = mContent->GetUncomposedDoc();
+    Document* doc = mContent->GetUncomposedDoc();
     if (doc && doc->IsBeingUsedAsImage()) {
       
       return true;

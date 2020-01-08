@@ -561,11 +561,13 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  already_AddRefed<nsINode> GetLastTriggerPopupNode(nsIDocument* aDocument) {
+  already_AddRefed<nsINode> GetLastTriggerPopupNode(
+      mozilla::dom::Document* aDocument) {
     return GetLastTriggerNode(aDocument, false);
   }
 
-  already_AddRefed<nsINode> GetLastTriggerTooltipNode(nsIDocument* aDocument) {
+  already_AddRefed<nsINode> GetLastTriggerTooltipNode(
+      mozilla::dom::Document* aDocument) {
     return GetLastTriggerNode(aDocument, true);
   }
 
@@ -753,8 +755,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
                                        nsNavigationDirection aDir);
 
  protected:
-  already_AddRefed<nsINode> GetLastTriggerNode(nsIDocument* aDocument,
-                                               bool aIsTooltip);
+  already_AddRefed<nsINode> GetLastTriggerNode(
+      mozilla::dom::Document* aDocument, bool aIsTooltip);
 
   
 
@@ -779,7 +781,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
-  bool IsChildOfDocShell(nsIDocument* aDoc, nsIDocShellTreeItem* aExpected);
+  bool IsChildOfDocShell(mozilla::dom::Document* aDoc,
+                         nsIDocShellTreeItem* aExpected);
 
   
   nsCOMPtr<mozilla::dom::EventTarget> mKeyListener;

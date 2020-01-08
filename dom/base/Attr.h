@@ -18,11 +18,11 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsStubMutationObserver.h"
 
-class nsIDocument;
-
 namespace mozilla {
 class EventChainPreVisitor;
 namespace dom {
+
+class Document;
 
 
 
@@ -61,7 +61,7 @@ class Attr final : public nsINode {
 
 
 
-  nsresult SetOwnerDocument(nsIDocument* aDocument);
+  nsresult SetOwnerDocument(Document* aDocument);
 
   
   virtual bool IsNodeOfType(uint32_t aFlags) const override;

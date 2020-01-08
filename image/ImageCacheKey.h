@@ -15,7 +15,6 @@
 #include "mozilla/RefPtr.h"
 #include "PLDHashTable.h"
 
-class nsIDocument;
 class nsIURI;
 
 namespace mozilla {
@@ -32,7 +31,7 @@ namespace image {
 class ImageCacheKey final {
  public:
   ImageCacheKey(nsIURI* aURI, const OriginAttributes& aAttrs,
-                nsIDocument* aDocument, nsresult& aRv);
+                dom::Document* aDocument, nsresult& aRv);
 
   ImageCacheKey(const ImageCacheKey& aOther);
   ImageCacheKey(ImageCacheKey&& aOther);
@@ -59,7 +58,7 @@ class ImageCacheKey final {
 
   
   
-  static void* GetSpecialCaseDocumentToken(nsIDocument* aDocument,
+  static void* GetSpecialCaseDocumentToken(dom::Document* aDocument,
                                            nsIURI* aURI);
 
   nsCOMPtr<nsIURI> mURI;

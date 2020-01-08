@@ -12,8 +12,6 @@
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
-class nsIDocument;
-
 
 #define NS_NSICONSOLEREPORTCOLLECTOR_IID             \
   {                                                  \
@@ -94,7 +92,8 @@ class NS_NO_VTABLE nsIConsoleReportCollector : public nsISupports {
   
   
   virtual void FlushConsoleReports(
-      nsIDocument* aDocument, ReportAction aAction = ReportAction::Forget) = 0;
+      mozilla::dom::Document* aDocument,
+      ReportAction aAction = ReportAction::Forget) = 0;
 
   
   

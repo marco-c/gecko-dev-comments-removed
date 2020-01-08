@@ -22,8 +22,13 @@
 #define REPEAT_DELAY 50
 #endif
 
-class nsIDocument;
 class nsITimer;
+
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
 
 class nsRepeatService final {
  public:
@@ -40,8 +45,8 @@ class nsRepeatService final {
   
   
   
-  void Start(Callback aCallback, void* aCallbackData, nsIDocument* aDocument,
-             const nsACString& aCallbackName,
+  void Start(Callback aCallback, void* aCallbackData,
+             mozilla::dom::Document* aDocument, const nsACString& aCallbackName,
              uint32_t aInitialDelay = INITAL_REPEAT_DELAY);
   
   

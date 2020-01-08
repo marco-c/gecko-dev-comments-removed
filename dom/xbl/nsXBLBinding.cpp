@@ -16,7 +16,7 @@
 #include "nsReadableUtils.h"
 #include "plstr.h"
 #include "nsIContent.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "ChildIterator.h"
 #ifdef MOZ_XUL
@@ -166,7 +166,7 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
   
   
   
-  nsIDocument* doc = aElement->GetUncomposedDoc();
+  Document* doc = aElement->GetUncomposedDoc();
 
   nsAutoScriptBlocker scriptBlocker;
   for (nsIContent* child = aAnonParent->GetFirstChild(); child;
@@ -198,7 +198,7 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
   }
 }
 
-void nsXBLBinding::UnbindAnonymousContent(nsIDocument* aDocument,
+void nsXBLBinding::UnbindAnonymousContent(Document* aDocument,
                                           nsIContent* aAnonParent,
                                           bool aNullParent) {
   nsAutoScriptBlocker scriptBlocker;
@@ -259,7 +259,7 @@ void nsXBLBinding::GenerateAnonymousContent() {
   
   bool hasContent = (contentCount > 0);
   if (hasContent) {
-    nsIDocument* doc = mBoundElement->OwnerDoc();
+    Document* doc = mBoundElement->OwnerDoc();
 
     nsCOMPtr<nsINode> clonedNode = nsNodeUtils::Clone(
         content, true, doc->NodeInfoManager(), nullptr, IgnoreErrors());
@@ -626,8 +626,8 @@ void nsXBLBinding::UnhookEventHandlers() {
   }
 }
 
-void nsXBLBinding::ChangeDocument(nsIDocument* aOldDocument,
-                                  nsIDocument* aNewDocument) {
+void nsXBLBinding::ChangeDocument(Document* aOldDocument,
+                                  Document* aNewDocument) {
   if (aOldDocument == aNewDocument) return;
 
   

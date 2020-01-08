@@ -9,7 +9,7 @@
 #include "mozilla/dom/HTMLEmbedElementBinding.h"
 #include "mozilla/dom/ElementInlines.h"
 
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIPluginDocument.h"
 #include "nsThreadUtils.h"
 #include "nsIScriptError.h"
@@ -73,8 +73,7 @@ void HTMLEmbedElement::AsyncEventRunning(AsyncEventDispatcher* aEvent) {
   nsImageLoadingContent::AsyncEventRunning(aEvent);
 }
 
-nsresult HTMLEmbedElement::BindToTree(nsIDocument* aDocument,
-                                      nsIContent* aParent,
+nsresult HTMLEmbedElement::BindToTree(Document* aDocument, nsIContent* aParent,
                                       nsIContent* aBindingParent) {
   nsresult rv =
       nsGenericHTMLElement::BindToTree(aDocument, aParent, aBindingParent);

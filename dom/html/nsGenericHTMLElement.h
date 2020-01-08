@@ -240,7 +240,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
  public:
   
-  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) override;
   virtual void UnbindFromTree(bool aDeep = true,
                               bool aNullParent = true) override;
@@ -577,7 +577,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  static bool InNavQuirksMode(nsIDocument* aDoc);
+  static bool InNavQuirksMode(Document*);
 
   
 
@@ -932,7 +932,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
   virtual bool AllowDrop() override { return true; }
 
   
-  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) override;
   virtual void UnbindFromTree(bool aDeep = true,
                               bool aNullParent = true) override;
@@ -1104,7 +1104,7 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
 
 
 
-  virtual void NodeInfoChanged(nsIDocument* aOldDoc) override;
+  virtual void NodeInfoChanged(Document* aOldDoc) override;
 
  protected:
   

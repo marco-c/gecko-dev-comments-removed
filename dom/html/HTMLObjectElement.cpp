@@ -12,7 +12,7 @@
 #include "nsAttrValueInlines.h"
 #include "nsGkAtoms.h"
 #include "nsError.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIPluginDocument.h"
 #include "nsIObjectFrame.h"
 #include "nsNPAPIPluginInstance.h"
@@ -195,8 +195,7 @@ HTMLObjectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
 #endif  
 
-nsresult HTMLObjectElement::BindToTree(nsIDocument* aDocument,
-                                       nsIContent* aParent,
+nsresult HTMLObjectElement::BindToTree(Document* aDocument, nsIContent* aParent,
                                        nsIContent* aBindingParent) {
   nsresult rv =
       nsGenericHTMLFormElement::BindToTree(aDocument, aParent, aBindingParent);
@@ -275,7 +274,7 @@ nsresult HTMLObjectElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
 }
 
 bool HTMLObjectElement::IsFocusableForTabIndex() {
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     return false;
   }
@@ -289,7 +288,7 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                         int32_t* aTabIndex) {
   
   
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     if (aTabIndex) {
       *aTabIndex = TabIndex();
@@ -376,7 +375,7 @@ int32_t HTMLObjectElement::TabIndexDefault() {
 
 Nullable<WindowProxyHolder> HTMLObjectElement::GetContentWindow(
     nsIPrincipal& aSubjectPrincipal) {
-  nsIDocument* doc = GetContentDocument(aSubjectPrincipal);
+  Document* doc = GetContentDocument(aSubjectPrincipal);
   if (doc) {
     nsPIDOMWindowOuter* win = doc->GetWindow();
     if (win) {

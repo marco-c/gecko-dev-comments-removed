@@ -5,7 +5,7 @@
 
 
 #include "MediaStreamAudioDestinationNode.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaStreamAudioDestinationNodeBinding.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeStream.h"
@@ -72,7 +72,7 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
       mDOMStream(DOMAudioNodeMediaStream::CreateTrackUnionStreamAsInput(
           GetOwner(), this, aContext->Graph())) {
   
-  nsIDocument* doc = aContext->GetParentObject()->GetExtantDoc();
+  Document* doc = aContext->GetParentObject()->GetExtantDoc();
   RefPtr<MediaStreamTrackSource> source =
       new AudioDestinationTrackSource(this, doc->NodePrincipal());
   RefPtr<MediaStreamTrack> track = mDOMStream->CreateDOMTrack(

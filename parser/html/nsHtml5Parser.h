@@ -210,7 +210,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
-  virtual nsresult Initialize(nsIDocument* aDoc, nsIURI* aURI,
+  virtual nsresult Initialize(mozilla::dom::Document* aDoc, nsIURI* aURI,
                               nsISupports* aContainer, nsIChannel* aChannel);
 
   inline nsHtml5Tokenizer* GetTokenizer() { return mTokenizer; }

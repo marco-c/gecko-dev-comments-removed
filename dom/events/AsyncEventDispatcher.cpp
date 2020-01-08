@@ -86,7 +86,7 @@ nsresult AsyncEventDispatcher::PostDOMEvent() {
     
     
     if (nsCOMPtr<nsINode> node = do_QueryInterface(mTarget)) {
-      nsCOMPtr<nsIDocument> doc = node->OwnerDoc();
+      nsCOMPtr<Document> doc = node->OwnerDoc();
       return doc->Dispatch(TaskCategory::Other,
                            ensureDeletionWhenFailing.forget());
     }

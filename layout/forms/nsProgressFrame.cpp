@@ -10,7 +10,7 @@
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
 #include "nsNameSpaceManager.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIPresShell.h"
 #include "nsNodeInfoManager.h"
 #include "nsContentCreatorFunctions.h"
@@ -49,7 +49,7 @@ void nsProgressFrame::DestroyFrom(nsIFrame* aDestructRoot,
 nsresult nsProgressFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   
-  nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
+  nsCOMPtr<Document> doc = mContent->GetComposedDoc();
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
   

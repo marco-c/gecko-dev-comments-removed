@@ -107,7 +107,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FontFaceSet, DOMEventTargetHelper)
   NS_DECL_NSIDOMEVENTLISTENER
 
-  FontFaceSet(nsPIDOMWindowInner* aWindow, nsIDocument* aDocument);
+  FontFaceSet(nsPIDOMWindowInner* aWindow, dom::Document* aDocument);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -169,7 +169,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
 
   void CopyNonRuleFacesTo(FontFaceSet* aFontFaceSet) const;
 
-  nsIDocument* Document() const { return mDocument; }
+  dom::Document* Document() const { return mDocument; }
 
   
 
@@ -316,7 +316,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
   RefPtr<UserFontSet> mUserFontSet;
 
   
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<dom::Document> mDocument;
 
   
   

@@ -116,7 +116,7 @@
 #include "nsIDeviceSensors.h"
 #include "nsIContent.h"
 #include "nsIDocShell.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "Crypto.h"
 #include "nsDOMString.h"
 #include "nsIEmbeddingSiteWindow.h"
@@ -1605,7 +1605,7 @@ void nsGlobalWindowInner::TraceGlobalJSObject(JSTracer* aTrc) {
   TraceWrapper(aTrc, "active window global");
 }
 
-nsresult nsGlobalWindowInner::SetNewDocument(nsIDocument* aDocument,
+nsresult nsGlobalWindowInner::SetNewDocument(Document* aDocument,
                                              nsISupports* aState,
                                              bool aForceReuseInnerWindow) {
   MOZ_ASSERT(mDocumentPrincipal == nullptr,
@@ -1627,7 +1627,7 @@ nsresult nsGlobalWindowInner::SetNewDocument(nsIDocument* aDocument,
 }
 
 void nsGlobalWindowInner::InnerSetNewDocument(JSContext* aCx,
-                                              nsIDocument* aDocument) {
+                                              Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
   if (MOZ_LOG_TEST(gDOMLeakPRLogInner, LogLevel::Debug)) {
@@ -2687,9 +2687,9 @@ bool nsGlobalWindowInner::ResolveComponentsShim(
   Telemetry::Accumulate(Telemetry::COMPONENTS_SHIM_ACCESSED_BY_CONTENT, true);
 
   
-  nsCOMPtr<nsIDocument> doc = GetExtantDoc();
+  nsCOMPtr<Document> doc = GetExtantDoc();
   if (doc) {
-    doc->WarnOnceAbout(nsIDocument::eComponents,  true);
+    doc->WarnOnceAbout(Document::eComponents,  true);
   }
 
   
@@ -2799,7 +2799,7 @@ bool nsGlobalWindowInner::DoResolve(
       !nsContentUtils::IsSystemPrincipal(
           nsContentUtils::ObjectPrincipal(aObj))) {
     if (GetExtantDoc()) {
-      GetExtantDoc()->WarnOnceAbout(nsIDocument::eWindow_Cc_ontrollers);
+      GetExtantDoc()->WarnOnceAbout(Document::eWindow_Cc_ontrollers);
     }
     const JSClass* clazz;
     if (aId ==
@@ -3684,13 +3684,13 @@ void nsGlobalWindowInner::SetResizable(bool aResizable) const {
 
 void nsGlobalWindowInner::CaptureEvents() {
   if (mDoc) {
-    mDoc->WarnOnceAbout(nsIDocument::eUseOfCaptureEvents);
+    mDoc->WarnOnceAbout(Document::eUseOfCaptureEvents);
   }
 }
 
 void nsGlobalWindowInner::ReleaseEvents() {
   if (mDoc) {
-    mDoc->WarnOnceAbout(nsIDocument::eUseOfReleaseEvents);
+    mDoc->WarnOnceAbout(Document::eUseOfReleaseEvents);
   }
 }
 
@@ -7272,7 +7272,7 @@ void nsPIDOMWindowInner::MaybeCreateDoc() {
     
     
     
-    nsCOMPtr<nsIDocument> document = docShell->GetDocument();
+    nsCOMPtr<Document> document = docShell->GetDocument();
     Unused << document;
   }
 }
@@ -7314,7 +7314,7 @@ void nsGlobalWindowInner::PropagateClearSiteDataReload(
 }
 
 mozilla::dom::DocGroup* nsPIDOMWindowInner::GetDocGroup() const {
-  nsIDocument* doc = GetExtantDoc();
+  Document* doc = GetExtantDoc();
   if (doc) {
     return doc->GetDocGroup();
   }

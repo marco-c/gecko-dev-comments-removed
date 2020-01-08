@@ -66,7 +66,7 @@ class nsMappedAttributes final {
 
   
   
-  void LazilyResolveServoDeclaration(nsIDocument* aDocument);
+  void LazilyResolveServoDeclaration(mozilla::dom::Document* aDocument);
 
   
   

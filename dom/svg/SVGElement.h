@@ -97,7 +97,7 @@ class SVGElement : public SVGElementBase
 
   
 
-  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+  virtual nsresult BindToTree(Document* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) override;
 
   virtual nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
@@ -109,7 +109,7 @@ class SVGElement : public SVGElementBase
 
 
 
-  virtual void NodeInfoChanged(nsIDocument* aOldDoc) override;
+  virtual void NodeInfoChanged(Document* aOldDoc) override;
 
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
@@ -328,7 +328,7 @@ class SVGElement : public SVGElementBase
                               const nsAString& aValue,
                               nsIPrincipal* aMaybeScriptedPrincipal,
                               nsAttrValue& aResult) override;
-  static nsresult ReportAttributeParseFailure(nsIDocument* aDocument,
+  static nsresult ReportAttributeParseFailure(Document* aDocument,
                                               nsAtom* aAttribute,
                                               const nsAString& aValue);
 

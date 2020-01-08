@@ -414,7 +414,7 @@ already_AddRefed<IDBOpenDBRequest> IDBFactory::Open(
   if (!IsChrome() && aOptions.mStorage.WasPassed()) {
     if (mWindow && mWindow->GetExtantDoc()) {
       mWindow->GetExtantDoc()->WarnOnceAbout(
-          nsIDocument::eIDBOpenDBOptions_StorageType);
+          Document::eIDBOpenDBOptions_StorageType);
     } else if (!NS_IsMainThread()) {
       
       

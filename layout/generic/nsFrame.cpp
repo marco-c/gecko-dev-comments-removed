@@ -4452,7 +4452,7 @@ NS_IMETHODIMP nsFrame::HandleRelease(nsPresContext* aPresContext,
   
   
   if (!frameSelection && captureContent) {
-    nsIDocument* doc = captureContent->GetUncomposedDoc();
+    Document* doc = captureContent->GetUncomposedDoc();
     if (doc) {
       nsIPresShell* capturingShell = doc->GetShell();
       if (capturingShell && capturingShell != PresContext()->GetPresShell()) {

@@ -527,7 +527,7 @@ void nsCaret::PaintCaret(DrawTarget& aDrawTarget, nsIFrame* aForFrame,
 }
 
 NS_IMETHODIMP
-nsCaret::NotifySelectionChanged(nsIDocument*, Selection* aDomSel,
+nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel,
                                 int16_t aReason) {
   
   
@@ -574,7 +574,7 @@ void nsCaret::ResetBlinking() {
   } else {
     nsIEventTarget* target = nullptr;
     if (nsCOMPtr<nsIPresShell> presShell = do_QueryReferent(mPresShell)) {
-      if (nsCOMPtr<nsIDocument> doc = presShell->GetDocument()) {
+      if (nsCOMPtr<Document> doc = presShell->GetDocument()) {
         target = doc->EventTargetFor(TaskCategory::Other);
       }
     }

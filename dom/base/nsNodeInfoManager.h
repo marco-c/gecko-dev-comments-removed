@@ -21,11 +21,16 @@
 
 class nsBindingManager;
 class nsAtom;
-class nsIDocument;
 class nsIPrincipal;
 class nsWindowSizes;
 template <class T>
 struct already_AddRefed;
+
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
 
 class nsNodeInfoManager final {
  private:
@@ -41,7 +46,7 @@ class nsNodeInfoManager final {
   
 
 
-  nsresult Init(nsIDocument* aDocument);
+  nsresult Init(mozilla::dom::Document*);
 
   
 
@@ -81,7 +86,7 @@ class nsNodeInfoManager final {
 
 
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  mozilla::dom::Document* GetDocument() const { return mDocument; }
 
   
 
@@ -118,7 +123,7 @@ class nsNodeInfoManager final {
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
  protected:
-  friend class nsIDocument;
+  friend class mozilla::dom::Document;
   friend class nsXULPrototypeDocument;
 
   
@@ -154,7 +159,7 @@ class nsNodeInfoManager final {
   };
 
   nsDataHashtable<NodeInfoInnerKey, mozilla::dom::NodeInfo*> mNodeInfoHash;
-  nsIDocument* MOZ_NON_OWNING_REF mDocument;  
+  mozilla::dom::Document* MOZ_NON_OWNING_REF mDocument;  
   uint32_t mNonDocumentNodeInfos;
   nsCOMPtr<nsIPrincipal> mPrincipal;  
   nsCOMPtr<nsIPrincipal> mDefaultPrincipal;  

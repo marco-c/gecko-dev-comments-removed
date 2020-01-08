@@ -40,7 +40,6 @@ class nsAttrChildContentList;
 class nsDOMAttributeMap;
 class nsIAnimationObserver;
 class nsIContent;
-class nsIDocument;
 class nsIFrame;
 class nsIHTMLCollection;
 class nsIMutationObserver;
@@ -75,6 +74,7 @@ class AccessibleNode;
 struct BoxQuadOptions;
 struct ConvertCoordinateOptions;
 class DocGroup;
+class Document;
 class DocumentFragment;
 class DocumentOrShadowRoot;
 class DOMPoint;
@@ -284,6 +284,7 @@ class nsINode : public mozilla::dom::EventTarget {
   typedef mozilla::dom::BoxQuadOptions BoxQuadOptions;
   typedef mozilla::dom::ConvertCoordinateOptions ConvertCoordinateOptions;
   typedef mozilla::dom::DocGroup DocGroup;
+  typedef mozilla::dom::Document Document;
   typedef mozilla::dom::DOMPoint DOMPoint;
   typedef mozilla::dom::DOMPointInit DOMPointInit;
   typedef mozilla::dom::DOMQuad DOMQuad;
@@ -409,8 +410,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  inline nsIDocument* AsDocument();
-  inline const nsIDocument* AsDocument() const;
+  inline Document* AsDocument();
+  inline const Document* AsDocument() const;
 
   
 
@@ -580,7 +581,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIDocument* OwnerDoc() const { return mNodeInfo->GetDocument(); }
+  Document* OwnerDoc() const { return mNodeInfo->GetDocument(); }
 
   
 
@@ -602,7 +603,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIDocument* GetUncomposedDoc() const {
+  Document* GetUncomposedDoc() const {
     return IsInUncomposedDoc() ? OwnerDoc() : nullptr;
   }
 
@@ -619,7 +620,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIDocument* GetComposedDoc() const {
+  Document* GetComposedDoc() const {
     return IsInComposedDoc() ? OwnerDoc() : nullptr;
   }
 
@@ -746,14 +747,10 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
   virtual nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
                                      bool aNotify);
 
   
-
-
 
 
 
@@ -774,7 +771,6 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
-
 
 
 
@@ -1195,7 +1191,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsIDocument* GetOwnerDocument() const;
+  Document* GetOwnerDocument() const;
 
   void Normalize();
 

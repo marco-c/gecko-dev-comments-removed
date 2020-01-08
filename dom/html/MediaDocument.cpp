@@ -143,7 +143,7 @@ nsresult MediaDocument::StartDocumentLoad(const char* aCommand,
                                           nsISupports* aContainer,
                                           nsIStreamListener** aDocListener,
                                           bool aReset, nsIContentSink* aSink) {
-  nsresult rv = nsIDocument::StartDocumentLoad(
+  nsresult rv = Document::StartDocumentLoad(
       aCommand, aChannel, aLoadGroup, aContainer, aDocListener, aReset, aSink);
   if (NS_FAILED(rv)) {
     return rv;
@@ -184,12 +184,12 @@ nsresult MediaDocument::StartDocumentLoad(const char* aCommand,
 }
 
 void MediaDocument::InitialSetupDone() {
-  MOZ_ASSERT(GetReadyStateEnum() == nsIDocument::READYSTATE_LOADING,
+  MOZ_ASSERT(GetReadyStateEnum() == Document::READYSTATE_LOADING,
              "Bad readyState: we should still be doing our initial load");
   mDidInitialDocumentSetup = true;
   nsContentUtils::AddScriptRunner(
       new nsDocElementCreatedNotificationRunner(this));
-  SetReadyStateInternal(nsIDocument::READYSTATE_INTERACTIVE);
+  SetReadyStateInternal(Document::READYSTATE_INTERACTIVE);
 }
 
 nsresult MediaDocument::CreateSyntheticDocument() {

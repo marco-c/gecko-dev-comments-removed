@@ -27,6 +27,7 @@ namespace dom {
 
 class AudioNode;
 class Blob;
+class Document;
 class DOMException;
 
 
@@ -166,7 +167,7 @@ class MediaRecorder final : public DOMEventTargetHelper,
   
   nsTArray<RefPtr<Session>> mSessions;
 
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
 
   
   

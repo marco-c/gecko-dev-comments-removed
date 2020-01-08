@@ -19,8 +19,6 @@
 #include "nsHashKeys.h"
 #include "nsRefreshDriver.h"
 
-class nsIDocument;
-
 namespace mozilla {
 struct SMILTargetIdentifier;
 namespace dom {
@@ -44,8 +42,9 @@ class SVGAnimationElement;
 class SMILAnimationController final : public SMILTimeContainer,
                                       public nsARefreshObserver {
  public:
-  explicit SMILAnimationController(nsIDocument* aDoc);
+  explicit SMILAnimationController(mozilla::dom::Document* aDoc);
 
+  
   
   void Disconnect();
 
@@ -197,7 +196,7 @@ class SMILAnimationController final : public SMILTimeContainer,
 
   
   
-  nsIDocument* mDocument;
+  mozilla::dom::Document* mDocument;
 
   
   

@@ -46,7 +46,6 @@
 
 class gfxContext;
 class nsDocShell;
-class nsIDocument;
 class nsIFrame;
 class nsPresContext;
 class nsWindowSizes;
@@ -96,6 +95,7 @@ class EventStates;
 namespace dom {
 class Element;
 class Event;
+class Document;
 class HTMLSlotElement;
 class Touch;
 class Selection;
@@ -175,6 +175,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IPRESSHELL_IID)
 
  protected:
+  typedef mozilla::dom::Document Document;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
@@ -247,7 +248,7 @@ class nsIPresShell : public nsStubDocumentObserver {
     mFrameArena.ClearArenaRefPtrs(aObjectID);
   }
 
-  nsIDocument* GetDocument() const { return mDocument; }
+  Document* GetDocument() const { return mDocument; }
 
   nsPresContext* GetPresContext() const { return mPresContext; }
 
@@ -1015,7 +1016,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   virtual void ContentStateChanged(
-      nsIDocument* aDocument, nsIContent* aContent,
+      Document* aDocument, nsIContent* aContent,
       mozilla::EventStates aStateMask) override = 0;
 
   
@@ -1679,7 +1680,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   void SyncWindowProperties(nsView* aView);
 
-  virtual nsIDocument* GetPrimaryContentDocument() = 0;
+  virtual Document* GetPrimaryContentDocument() = 0;
 
   
   virtual void NotifyStyleSheetServiceSheetAdded(mozilla::StyleSheet* aSheet,
@@ -1696,7 +1697,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   
   
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
   RefPtr<nsPresContext> mPresContext;
   mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
   mozilla::UniquePtr<nsCSSFrameConstructor> mFrameConstructor;

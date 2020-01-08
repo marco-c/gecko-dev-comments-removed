@@ -91,7 +91,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  virtual void FreezeExecutionAttrs(nsIDocument* aOwnerDoc) = 0;
+  virtual void FreezeExecutionAttrs(mozilla::dom::Document*) = 0;
 
   
 

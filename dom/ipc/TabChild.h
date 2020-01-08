@@ -163,7 +163,7 @@ class TabChildBase : public nsISupports,
   virtual ScreenIntSize GetInnerSize() = 0;
 
   
-  already_AddRefed<nsIDocument> GetDocument() const;
+  already_AddRefed<Document> GetDocument() const;
 
   
   already_AddRefed<nsIPresShell> GetPresShell() const;

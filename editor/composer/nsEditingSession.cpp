@@ -27,7 +27,7 @@
 #include "nsHTMLDocument.h"        
 #include "nsIDOMWindow.h"          
 #include "nsIDocShell.h"           
-#include "nsIDocument.h"           
+#include "mozilla/dom/Document.h"  
 #include "nsIDocumentStateListener.h"
 #include "nsIEditor.h"                   
 #include "nsIHTMLDocument.h"             
@@ -300,7 +300,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   nsAutoCString mimeCType;
 
   
-  if (nsCOMPtr<nsIDocument> doc = window->GetDoc()) {
+  if (RefPtr<Document> doc = window->GetDoc()) {
     nsAutoString mimeType;
     doc->GetContentType(mimeType);
     AppendUTF16toUTF8(mimeType, mimeCType);
@@ -427,7 +427,7 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(contentViewer, NS_ERROR_FAILURE);
 
-  nsCOMPtr<nsIDocument> doc = contentViewer->GetDocument();
+  RefPtr<Document> doc = contentViewer->GetDocument();
   if (NS_WARN_IF(!doc)) {
     return NS_ERROR_FAILURE;
   }
@@ -511,7 +511,7 @@ nsEditingSession::TearDownEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   
   auto* window = nsPIDOMWindowOuter::From(aWindow);
 
-  nsCOMPtr<nsIDocument> doc = window->GetDoc();
+  RefPtr<Document> doc = window->GetDoc();
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(doc);
   bool stopEditing = htmlDoc && htmlDoc->IsEditingOn();
   if (stopEditing) {
@@ -637,7 +637,7 @@ nsEditingSession::OnStateChange(nsIWebProgress* aWebProgress,
         aWebProgress->GetDOMWindow(getter_AddRefs(window));
 
         auto* piWindow = nsPIDOMWindowOuter::From(window);
-        nsCOMPtr<nsIDocument> doc = piWindow->GetDoc();
+        RefPtr<Document> doc = piWindow->GetDoc();
         nsHTMLDocument* htmlDoc =
             doc && doc->IsHTMLOrXHTML() ? doc->AsHTMLDocument() : nullptr;
         if (htmlDoc && htmlDoc->IsWriting()) {
@@ -749,7 +749,7 @@ nsEditingSession::OnLocationChange(nsIWebProgress* aWebProgress,
 
   auto* piWindow = nsPIDOMWindowOuter::From(domWindow);
 
-  nsCOMPtr<nsIDocument> doc = piWindow->GetDoc();
+  RefPtr<Document> doc = piWindow->GetDoc();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
   doc->SetDocumentURI(aURI);

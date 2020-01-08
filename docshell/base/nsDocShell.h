@@ -77,7 +77,6 @@ class nsICommandManager;
 class nsIContentViewer;
 class nsIController;
 class nsIDocShellTreeOwner;
-class nsIDocument;
 class nsIHttpChannel;
 class nsIMutableArray;
 class nsIPrompt;
@@ -729,7 +728,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool CanSavePresentation(uint32_t aLoadType, nsIRequest* aNewRequest,
-                           nsIDocument* aNewDocument);
+                           mozilla::dom::Document* aNewDocument);
 
   
   

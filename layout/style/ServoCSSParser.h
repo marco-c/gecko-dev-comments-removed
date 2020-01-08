@@ -19,7 +19,6 @@
 #include "nsStringFwd.h"
 
 class nsCSSValue;
-class nsIDocument;
 struct nsCSSRect;
 struct nsTimingFunction;
 struct RawServoDeclarationBlock;
@@ -27,16 +26,18 @@ struct RawServoDeclarationBlock;
 using RawGeckoGfxMatrix4x4 = mozilla::gfx::Float[16];
 
 namespace mozilla {
-namespace css {
-class Loader;
-}  
-}  
-
-namespace mozilla {
 
 class ServoStyleSet;
 class SharedFontList;
 struct URLExtraData;
+
+namespace css {
+class Loader;
+}
+
+namespace dom {
+class Document;
+}
 
 class ServoCSSParser {
  public:
@@ -131,18 +132,12 @@ class ServoCSSParser {
   
 
 
-
-
-
-  static already_AddRefed<URLExtraData> GetURLExtraData(nsIDocument* aDocument);
+  static already_AddRefed<URLExtraData> GetURLExtraData(dom::Document*);
 
   
 
 
-
-
-
-  static ParsingEnvironment GetParsingEnvironment(nsIDocument* aDocument);
+  static ParsingEnvironment GetParsingEnvironment(dom::Document*);
 };
 
 }  

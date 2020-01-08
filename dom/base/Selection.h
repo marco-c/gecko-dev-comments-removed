@@ -28,7 +28,6 @@
 struct CachedOffsetForFrame;
 class nsAutoScrollTimer;
 class nsIContentIterator;
-class nsIDocument;
 class nsIFrame;
 class nsFrameSelection;
 class nsPIDOMWindowOuter;
@@ -118,7 +117,7 @@ class Selection final : public nsSupportsWeakReference,
     }
   }
 
-  nsIDocument* GetParentObject() const;
+  Document* GetParentObject() const;
   DocGroup* GetDocGroup() const;
 
   
@@ -517,7 +516,7 @@ class Selection final : public nsSupportsWeakReference,
   friend class ::nsCopySupport;
   friend class ::nsHTMLCopyEncoder;
   MOZ_CAN_RUN_SCRIPT
-  void AddRangeInternal(nsRange& aRange, nsIDocument* aDocument, ErrorResult&);
+  void AddRangeInternal(nsRange& aRange, Document* aDocument, ErrorResult&);
 
   
   
@@ -633,7 +632,7 @@ class Selection final : public nsSupportsWeakReference,
 
   nsresult AddItemInternal(nsRange* aRange, int32_t* aOutIndex);
 
-  nsIDocument* GetDocument() const;
+  Document* GetDocument() const;
   nsPIDOMWindowOuter* GetWindow() const;
   HTMLEditor* GetHTMLEditor() const;
 

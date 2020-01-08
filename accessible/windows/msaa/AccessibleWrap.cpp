@@ -481,7 +481,7 @@ AccessibleWrap::get_accRole(
     if (roleString.IsEmpty()) {
       
       
-      nsIDocument* document = content->GetUncomposedDoc();
+      dom::Document* document = content->GetUncomposedDoc();
       if (!document) return E_FAIL;
 
       dom::NodeInfo* nodeInfo = content->NodeInfo();

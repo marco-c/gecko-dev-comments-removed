@@ -734,7 +734,7 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   
   
   if (!mNeedsRegistration && mLinkState != eLinkState_NotLink) {
-    nsIDocument *doc = mElement->GetComposedDoc();
+    Document *doc = mElement->GetComposedDoc();
     if (doc && (mRegistered || mLinkState == eLinkState_Visited)) {
       
       

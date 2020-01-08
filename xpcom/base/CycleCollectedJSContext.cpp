@@ -226,7 +226,7 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
     if (global && !global->IsDying()) {
       
       nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(global);
-      nsCOMPtr<nsIDocument> doc;
+      RefPtr<Document> doc;
       if (win) {
         doc = win->GetExtantDoc();
       }

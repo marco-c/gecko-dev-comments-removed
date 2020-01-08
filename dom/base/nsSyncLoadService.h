@@ -20,8 +20,13 @@ class nsILoadGroup;
 class nsIStreamListener;
 class nsIURI;
 class nsIPrincipal;
-class nsIDocument;
 class nsIChannel;
+
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
 
 class nsSyncLoadService {
  public:
@@ -45,7 +50,7 @@ class nsSyncLoadService {
                                nsSecurityFlags aSecurityFlags,
                                nsILoadGroup* aLoadGroup, bool aForceToXML,
                                mozilla::net::ReferrerPolicy aReferrerPolicy,
-                               nsIDocument** aResult);
+                               mozilla::dom::Document** aResult);
 
   
 

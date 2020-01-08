@@ -351,7 +351,7 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
     
     
     
-    if (nsCOMPtr<nsIDocument> doc = do_QueryInterface(subject)) {
+    if (nsCOMPtr<dom::Document> doc = do_QueryInterface(subject)) {
       nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();
 
       bool schemeIs;

@@ -16,7 +16,7 @@
 #include "mozilla/TypeTraits.h"     
 #include "nsAnimationManager.h"     
 #include "nsDOMMutationObserver.h"  
-#include "nsIDocument.h"            
+#include "mozilla/dom/Document.h"
 #include "nsIPresShell.h"           
 #include "nsThreadUtils.h"  
 #include "nsTransitionManager.h"      
@@ -63,12 +63,7 @@ class MOZ_RAII AutoMutationBatchForAnimation {
     }
 
     
-    nsIDocument* doc = target->mElement->OwnerDoc();
-    if (!doc) {
-      return;
-    }
-
-    mAutoBatch.emplace(doc);
+    mAutoBatch.emplace(target->mElement->OwnerDoc());
   }
 
  private:
@@ -92,7 +87,7 @@ class MOZ_RAII AutoMutationBatchForAnimation {
   if (aTimeline.WasPassed()) {
     timeline = aTimeline.Value();
   } else {
-    nsIDocument* document =
+    Document* document =
         AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
     if (!document) {
       aRv.Throw(NS_ERROR_FAILURE);
@@ -1077,8 +1072,7 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   mSyncWithGeometricAnimations = false;
 
-  nsIDocument* doc = GetRenderedDocument();
-  if (doc) {
+  if (Document* doc = GetRenderedDocument()) {
     PendingAnimationTracker* tracker =
         doc->GetOrCreatePendingAnimationTracker();
     tracker->AddPlayPending(*this);
@@ -1126,8 +1120,7 @@ void Animation::Pause(ErrorResult& aRv) {
 
   mPendingState = PendingState::PausePending;
 
-  nsIDocument* doc = GetRenderedDocument();
-  if (doc) {
+  if (Document* doc = GetRenderedDocument()) {
     PendingAnimationTracker* tracker =
         doc->GetOrCreatePendingAnimationTracker();
     tracker->AddPausePending(*this);
@@ -1284,8 +1277,7 @@ void Animation::UpdateEffect() {
 }
 
 void Animation::FlushUnanimatedStyle() const {
-  nsIDocument* doc = GetRenderedDocument();
-  if (doc) {
+  if (Document* doc = GetRenderedDocument()) {
     doc->FlushPendingNotifications(
         ChangesToFlush(FlushType::Style, false ));
   }
@@ -1308,8 +1300,7 @@ void Animation::CancelPendingTasks() {
     return;
   }
 
-  nsIDocument* doc = GetRenderedDocument();
-  if (doc) {
+  if (Document* doc = GetRenderedDocument()) {
     PendingAnimationTracker* tracker = doc->GetPendingAnimationTracker();
     if (tracker) {
       if (mPendingState == PendingState::PlayPending) {
@@ -1346,8 +1337,7 @@ void Animation::ReschedulePendingTasks() {
 
   mPendingReadyTime.SetNull();
 
-  nsIDocument* doc = GetRenderedDocument();
-  if (doc) {
+  if (Document* doc = GetRenderedDocument()) {
     PendingAnimationTracker* tracker =
         doc->GetOrCreatePendingAnimationTracker();
     if (mPendingState == PendingState::PlayPending &&
@@ -1401,7 +1391,7 @@ bool Animation::IsPossiblyOrphanedPendingAnimation() const {
   
   
   
-  nsIDocument* doc = GetRenderedDocument();
+  Document* doc = GetRenderedDocument();
   if (!doc) {
     return true;
   }
@@ -1419,7 +1409,7 @@ StickyTimeDuration Animation::EffectEnd() const {
   return mEffect->SpecifiedTiming().EndTime();
 }
 
-nsIDocument* Animation::GetRenderedDocument() const {
+Document* Animation::GetRenderedDocument() const {
   if (!mEffect || !mEffect->AsKeyframeEffect()) {
     return nullptr;
   }
@@ -1427,7 +1417,7 @@ nsIDocument* Animation::GetRenderedDocument() const {
   return mEffect->AsKeyframeEffect()->GetRenderedDocument();
 }
 
-nsIDocument* Animation::GetTimelineDocument() const {
+Document* Animation::GetTimelineDocument() const {
   return mTimeline ? mTimeline->GetDocument() : nullptr;
 }
 
@@ -1495,7 +1485,7 @@ void Animation::QueuePlaybackEvent(const nsAString& aName,
                                    TimeStamp&& aScheduledEventTime) {
   
   
-  nsIDocument* doc = GetTimelineDocument();
+  Document* doc = GetTimelineDocument();
   if (!doc) {
     return;
   }

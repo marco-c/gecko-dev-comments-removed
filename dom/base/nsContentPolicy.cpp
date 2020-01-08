@@ -98,7 +98,7 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
 
 
   if (!requestingLocation) {
-    nsCOMPtr<nsIDocument> doc;
+    nsCOMPtr<Document> doc;
     nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext);
     if (node) {
       doc = node->OwnerDoc();

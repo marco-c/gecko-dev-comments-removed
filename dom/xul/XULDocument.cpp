@@ -167,7 +167,7 @@ XULDocument::~XULDocument() {
 }  
 }  
 
-nsresult NS_NewXULDocument(nsIDocument** result) {
+nsresult NS_NewXULDocument(Document** result) {
   MOZ_ASSERT(result != nullptr, "null ptr");
   if (!result) return NS_ERROR_NULL_POINTER;
 

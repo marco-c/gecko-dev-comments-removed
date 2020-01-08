@@ -8,8 +8,13 @@
 
 #include "txCore.h"
 
-class nsIDocument;
 class nsINode;
+
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
 
 
 
@@ -21,7 +26,8 @@ class URIUtils {
   
 
 
-  static void ResetWithSource(nsIDocument* aNewDoc, nsINode* aSourceNode);
+  static void ResetWithSource(mozilla::dom::Document* aNewDoc,
+                              nsINode* aSourceNode);
 
   
 

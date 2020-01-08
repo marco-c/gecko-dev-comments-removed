@@ -17,7 +17,7 @@
 #include "nsIDocShellTreeOwner.h"
 
 class nsIContent;
-class nsIDocument;
+
 class nsPresContext;
 
 
@@ -32,7 +32,8 @@ class nsPrintObject {
   ~nsPrintObject();  
 
   
-  nsresult Init(nsIDocShell* aDocShell, nsIDocument* aDoc, bool aPrintPreview);
+  nsresult Init(nsIDocShell* aDocShell, mozilla::dom::Document* aDoc,
+                bool aPrintPreview);
 
   bool IsPrintable() { return !mDontPrint; }
   void DestroyPresentation();
@@ -40,7 +41,7 @@ class nsPrintObject {
   
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIDocShellTreeOwner> mTreeOwner;
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<mozilla::dom::Document> mDocument;
 
   RefPtr<nsPresContext> mPresContext;
   nsCOMPtr<nsIPresShell> mPresShell;

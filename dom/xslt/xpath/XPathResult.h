@@ -18,7 +18,6 @@
 #include "nsWrapperCache.h"
 #include "nsINode.h"
 
-class nsIDocument;
 class txAExprResult;
 
 
@@ -171,7 +170,7 @@ class XPathResult final : public nsIXPathResult,
   nsCOMPtr<nsINode> mParent;
   RefPtr<txAExprResult> mResult;
   nsCOMArray<nsINode> mResultNodes;
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
   nsWeakPtr mContextNode;
   uint32_t mCurrentPos;
   uint16_t mResultType;

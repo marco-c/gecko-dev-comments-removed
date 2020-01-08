@@ -12,8 +12,6 @@
 #include "nsSize.h"
 #include "TrackID.h"
 
-class nsIDocument;
-
 namespace mozilla {
 
 class AbstractThread;
@@ -23,6 +21,7 @@ class MediaInfo;
 class MediaResult;
 
 namespace dom {
+class Document;
 class HTMLMediaElement;
 }  
 
@@ -171,7 +170,7 @@ class MediaDecoderOwner {
   virtual VideoFrameContainer* GetVideoFrameContainer() { return nullptr; }
 
   
-  virtual nsIDocument* GetDocument() const { return nullptr; }
+  virtual mozilla::dom::Document* GetDocument() const { return nullptr; }
 
   
   virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() {

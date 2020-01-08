@@ -22,12 +22,12 @@
 #include "nsIStyleSheetLinkingElement.h"
 #include "nsTArray.h"
 
-class nsIDocument;
 class nsIURI;
 
 namespace mozilla {
 class CSSStyleSheet;
 namespace dom {
+class Document;
 class ShadowRoot;
 }  
 }  
@@ -90,8 +90,8 @@ class nsStyleLinkElement : public nsIStyleSheetLinkingElement {
 
 
   mozilla::Result<Update, nsresult> UpdateStyleSheetInternal(
-      nsIDocument* aOldDocument, mozilla::dom::ShadowRoot* aOldShadowRoot,
-      ForceUpdate = ForceUpdate::No);
+      mozilla::dom::Document* aOldDocument,
+      mozilla::dom::ShadowRoot* aOldShadowRoot, ForceUpdate = ForceUpdate::No);
 
   
   
@@ -124,8 +124,9 @@ class nsStyleLinkElement : public nsIStyleSheetLinkingElement {
 
 
   mozilla::Result<Update, nsresult> DoUpdateStyleSheet(
-      nsIDocument* aOldDocument, mozilla::dom::ShadowRoot* aOldShadowRoot,
-      nsICSSLoaderObserver* aObserver, ForceUpdate);
+      mozilla::dom::Document* aOldDocument,
+      mozilla::dom::ShadowRoot* aOldShadowRoot, nsICSSLoaderObserver* aObserver,
+      ForceUpdate);
 
   RefPtr<mozilla::StyleSheet> mStyleSheet;
 

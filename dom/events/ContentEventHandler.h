@@ -126,7 +126,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
 
  protected:
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<dom::Document> mDocument;
   
   
   

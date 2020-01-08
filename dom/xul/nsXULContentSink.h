@@ -14,7 +14,6 @@
 #include "nsXULElement.h"
 #include "nsIDTD.h"
 
-class nsIDocument;
 class nsIScriptSecurityManager;
 class nsAttrName;
 class nsXULPrototypeDocument;
@@ -47,8 +46,8 @@ class XULContentSinkImpl final : public nsIXMLContentSink, public nsIExpatSink {
 
 
 
-
-  nsresult Init(nsIDocument* aDocument, nsXULPrototypeDocument* aPrototype);
+  nsresult Init(mozilla::dom::Document* aDocument,
+                nsXULPrototypeDocument* aPrototype);
 
  protected:
   virtual ~XULContentSinkImpl();

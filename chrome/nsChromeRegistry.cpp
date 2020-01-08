@@ -18,7 +18,7 @@
 #include "mozilla/dom/URL.h"
 #include "nsDOMWindowList.h"
 #include "nsIConsoleService.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIDOMWindow.h"
 #include "nsIObserverService.h"
 #include "nsIPresShell.h"
@@ -39,6 +39,7 @@ nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
 using mozilla::StyleSheet;
+using mozilla::dom::Document;
 using mozilla::dom::IsChromeURI;
 using mozilla::dom::Location;
 
@@ -275,7 +276,7 @@ nsChromeRegistry::ConvertChromeURL(nsIURI* aChromeURI, nsIURI** aResult) {
 
 static void FlushSkinBindingsForWindow(nsPIDOMWindowOuter* aWindow) {
   
-  nsCOMPtr<nsIDocument> document = aWindow->GetDoc();
+  RefPtr<Document> document = aWindow->GetDoc();
   if (!document) return;
 
   
@@ -339,7 +340,7 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow) {
 
   nsresult rv;
   
-  nsCOMPtr<nsIDocument> document = aWindow->GetDoc();
+  RefPtr<Document> document = aWindow->GetDoc();
   if (!document) return NS_OK;
 
   

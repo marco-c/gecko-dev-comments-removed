@@ -19,8 +19,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/MediaQueryListBinding.h"
 
-class nsIDocument;
-
 namespace mozilla {
 namespace dom {
 
@@ -31,8 +29,8 @@ class MediaQueryList final : public DOMEventTargetHelper,
  public:
   
   
-  MediaQueryList(nsIDocument* aDocument, const nsAString& aMediaQueryList,
-                 mozilla::dom::CallerType aCallerType);
+  MediaQueryList(Document* aDocument, const nsAString& aMediaQueryList,
+                 CallerType aCallerType);
 
  private:
   ~MediaQueryList();
@@ -89,7 +87,7 @@ class MediaQueryList final : public DOMEventTargetHelper,
   
   
   
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<Document> mDocument;
 
   RefPtr<MediaList> mMediaList;
   bool mMatches;

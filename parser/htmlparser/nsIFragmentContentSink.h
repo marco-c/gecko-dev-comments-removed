@@ -7,10 +7,9 @@
 
 #include "nsISupports.h"
 
-class nsIDocument;
-
 namespace mozilla {
 namespace dom {
+class Document;
 class DocumentFragment;
 }  
 }  
@@ -48,7 +47,7 @@ class nsIFragmentContentSink : public nsISupports {
 
 
 
-  NS_IMETHOD SetTargetDocument(nsIDocument* aDocument) = 0;
+  NS_IMETHOD SetTargetDocument(mozilla::dom::Document*) = 0;
 
   
 

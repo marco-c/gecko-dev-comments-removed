@@ -17,9 +17,7 @@ namespace dom {
 
 class XULBroadcastManager final {
  public:
-  typedef mozilla::dom::Element Element;
-
-  explicit XULBroadcastManager(nsIDocument* aDocument);
+  explicit XULBroadcastManager(Document* aDocument);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(XULBroadcastManager)
 
@@ -62,7 +60,7 @@ class XULBroadcastManager final {
 
   
   
-  nsIDocument* MOZ_NON_OWNING_REF mDocument;
+  Document* MOZ_NON_OWNING_REF mDocument;
 
   
 

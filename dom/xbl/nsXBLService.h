@@ -18,12 +18,12 @@
 class nsXBLBinding;
 class nsXBLDocumentInfo;
 class nsIContent;
-class nsIDocument;
 class nsIURI;
 class nsIPrincipal;
 
 namespace mozilla {
 namespace dom {
+class Document;
 class EventTarget;
 }  
 }  
@@ -55,7 +55,7 @@ class nsXBLService final : public nsSupportsWeakReference {
   
   
   nsresult LoadBindingDocumentInfo(nsIContent* aBoundElement,
-                                   nsIDocument* aBoundDocument,
+                                   mozilla::dom::Document* aBoundDocument,
                                    nsIURI* aBindingURI,
                                    nsIPrincipal* aOriginPrincipal,
                                    bool aForceSyncLoad,
@@ -75,10 +75,11 @@ class nsXBLService final : public nsSupportsWeakReference {
 
   
   nsresult FetchBindingDocument(nsIContent* aBoundElement,
-                                nsIDocument* aBoundDocument,
+                                mozilla::dom::Document* aBoundDocument,
                                 nsIURI* aDocumentURI, nsIURI* aBindingURI,
                                 nsIPrincipal* aOriginPrincipal,
-                                bool aForceSyncLoad, nsIDocument** aResult);
+                                bool aForceSyncLoad,
+                                mozilla::dom::Document** aResult);
 
   
 

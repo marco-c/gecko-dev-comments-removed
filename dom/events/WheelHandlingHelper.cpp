@@ -17,8 +17,8 @@
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsIDocument.h"
-#include "nsIDocumentInlines.h"  
+#include "mozilla/dom/Document.h"
+#include "DocumentInlines.h"  
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
 #include "nsITextControlElement.h"
@@ -659,7 +659,7 @@ ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
     
     
     
-    nsIDocument* document = aScrollFrame.PresShell()->GetDocument();
+    Document* document = aScrollFrame.PresShell()->GetDocument();
     if (document) {
       Element* bodyElement = document->GetBodyElement();
       if (bodyElement) {

@@ -7,7 +7,7 @@
 #include "nsCOMPtr.h"
 #include "nsXMLContentSink.h"
 #include "nsIParser.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIContent.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -72,7 +72,7 @@ using namespace mozilla::dom;
 
 
 
-nsresult NS_NewXMLContentSink(nsIXMLContentSink** aResult, nsIDocument* aDoc,
+nsresult NS_NewXMLContentSink(nsIXMLContentSink** aResult, Document* aDoc,
                               nsIURI* aURI, nsISupports* aContainer,
                               nsIChannel* aChannel) {
   MOZ_ASSERT(nullptr != aResult, "null ptr");
@@ -102,7 +102,7 @@ nsXMLContentSink::nsXMLContentSink()
 
 nsXMLContentSink::~nsXMLContentSink() {}
 
-nsresult nsXMLContentSink::Init(nsIDocument* aDoc, nsIURI* aURI,
+nsresult nsXMLContentSink::Init(Document* aDoc, nsIURI* aURI,
                                 nsISupports* aContainer, nsIChannel* aChannel) {
   nsresult rv = nsContentSink::Init(aDoc, aURI, aContainer, aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -319,7 +319,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
 }
 
 NS_IMETHODIMP
-nsXMLContentSink::OnDocumentCreated(nsIDocument* aResultDocument) {
+nsXMLContentSink::OnDocumentCreated(Document* aResultDocument) {
   NS_ENSURE_ARG(aResultDocument);
 
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(aResultDocument);
@@ -336,8 +336,7 @@ nsXMLContentSink::OnDocumentCreated(nsIDocument* aResultDocument) {
 }
 
 NS_IMETHODIMP
-nsXMLContentSink::OnTransformDone(nsresult aResult,
-                                  nsIDocument* aResultDocument) {
+nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
   MOZ_ASSERT(aResultDocument,
              "Don't notify about transform end without a document.");
 
@@ -353,7 +352,7 @@ nsXMLContentSink::OnTransformDone(nsresult aResult,
     contentViewer->SetDocument(aResultDocument);
   }
 
-  nsCOMPtr<nsIDocument> originalDocument = mDocument;
+  RefPtr<Document> originalDocument = mDocument;
   bool blockingOnload = mIsBlockingOnload;
   if (!mRunsToCompletion) {
     

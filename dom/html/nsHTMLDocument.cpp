@@ -62,7 +62,7 @@
 
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
-#include "nsIDocumentInlines.h"
+#include "DocumentInlines.h"
 #include "nsIDocumentEncoder.h"  
 #include "nsICachingChannel.h"
 #include "nsIContentViewer.h"
@@ -147,8 +147,7 @@ static bool IsAsciiCompatible(const Encoding* aEncoding) {
   return aEncoding->IsAsciiCompatible() || aEncoding == ISO_2022_JP_ENCODING;
 }
 
-nsresult NS_NewHTMLDocument(nsIDocument** aInstancePtrResult,
-                            bool aLoadedAsData) {
+nsresult NS_NewHTMLDocument(Document** aInstancePtrResult, bool aLoadedAsData) {
   RefPtr<nsHTMLDocument> doc = new nsHTMLDocument();
 
   nsresult rv = doc->Init();
@@ -165,7 +164,7 @@ nsresult NS_NewHTMLDocument(nsIDocument** aInstancePtrResult,
 }
 
 nsHTMLDocument::nsHTMLDocument()
-    : nsIDocument("text/html"),
+    : Document("text/html"),
       mContentListHolder(nullptr),
       mNumForms(0),
       mWriteLevel(0),
@@ -184,10 +183,10 @@ nsHTMLDocument::nsHTMLDocument()
 
 nsHTMLDocument::~nsHTMLDocument() {}
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, nsIDocument, mAll,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, Document, mAll,
                                    mWyciwygChannel, mMidasCommandManager)
 
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, nsIDocument,
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, Document,
                                              nsIHTMLDocument)
 
 JSObject* nsHTMLDocument::WrapNode(JSContext* aCx,
@@ -196,7 +195,7 @@ JSObject* nsHTMLDocument::WrapNode(JSContext* aCx,
 }
 
 nsresult nsHTMLDocument::Init() {
-  nsresult rv = nsIDocument::Init();
+  nsresult rv = Document::Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -207,7 +206,7 @@ nsresult nsHTMLDocument::Init() {
 }
 
 void nsHTMLDocument::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
-  nsIDocument::Reset(aChannel, aLoadGroup);
+  Document::Reset(aChannel, aLoadGroup);
 
   if (aChannel) {
     aChannel->GetLoadFlags(&mLoadFlags);
@@ -218,7 +217,7 @@ void nsHTMLDocument::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
                                 nsIPrincipal* aPrincipal) {
   mLoadFlags = nsIRequest::LOAD_NORMAL;
 
-  nsIDocument::ResetToURI(aURI, aLoadGroup, aPrincipal);
+  Document::ResetToURI(aURI, aLoadGroup, aPrincipal);
 
   mImages = nullptr;
   mApplets = nullptr;
@@ -443,7 +442,7 @@ void nsHTMLDocument::TryFallback(int32_t& aCharsetSource,
 
 void nsHTMLDocument::SetDocumentCharacterSet(
     NotNull<const Encoding*> aEncoding) {
-  nsIDocument::SetDocumentCharacterSet(aEncoding);
+  Document::SetDocumentCharacterSet(aEncoding);
   
   
   nsCOMPtr<nsIWyciwygChannel> wyciwygChannel = do_QueryInterface(mChannel);
@@ -526,8 +525,8 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
   CSSLoader()->SetCompatibilityMode(mCompatMode);
 
-  nsresult rv = nsIDocument::StartDocumentLoad(aCommand, aChannel, aLoadGroup,
-                                              aContainer, aDocListener, aReset);
+  nsresult rv = Document::StartDocumentLoad(aCommand, aChannel, aLoadGroup,
+                                            aContainer, aDocListener, aReset);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -771,7 +770,7 @@ void nsHTMLDocument::StopDocumentLoad() {
                "nsHTMLDocument::StopDocumentLoad(): "
                "nsIWyciwygChannel could not be removed!");
 
-  nsIDocument::StopDocumentLoad();
+  Document::StopDocumentLoad();
   UnblockOnload(false);
 }
 
@@ -785,14 +784,14 @@ void nsHTMLDocument::BeginLoad() {
     TurnEditingOff();
     EditingStateChanged();
   }
-  nsIDocument::BeginLoad();
+  Document::BeginLoad();
 }
 
 void nsHTMLDocument::EndLoad() {
   bool turnOnEditing =
       mParser && (HasFlag(NODE_IS_EDITABLE) || mContentEditableCount > 0);
   
-  nsIDocument::EndLoad();
+  Document::EndLoad();
   if (turnOnEditing) {
     EditingStateChanged();
   }
@@ -816,7 +815,7 @@ nsIContent* nsHTMLDocument::GetUnfocusedKeyEventTarget() {
   if (nsGenericHTMLElement* body = GetBody()) {
     return body;
   }
-  return nsIDocument::GetUnfocusedKeyEventTarget();
+  return Document::GetUnfocusedKeyEventTarget();
 }
 
 already_AddRefed<nsIURI> nsHTMLDocument::GetDomainURI() {
@@ -1165,7 +1164,7 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> nsHTMLDocument::Open(
   return WindowProxyHolder(newWindow->GetBrowsingContext());
 }
 
-already_AddRefed<nsIDocument> nsHTMLDocument::Open(
+already_AddRefed<Document> nsHTMLDocument::Open(
     JSContext* cx, const Optional<nsAString>& ,
     const nsAString& aReplace, ErrorResult& aError) {
   
@@ -1195,26 +1194,26 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
     
     
     
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
   
   
   if (ShouldIgnoreOpens()) {
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
   
   if (!mScriptGlobalObject) {
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
   nsPIDOMWindowOuter* outer = GetWindow();
   if (!outer || (GetInnerWindow() != outer->GetCurrentInnerWindow())) {
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
@@ -1222,21 +1221,21 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
   nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
   if (!shell) {
     
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
   bool inUnload;
   shell->GetIsInUnload(&inUnload);
   if (inUnload) {
-    nsCOMPtr<nsIDocument> ret = this;
+    nsCOMPtr<Document> ret = this;
     return ret.forget();
   }
 
   
   
   
-  nsCOMPtr<nsIDocument> callerDoc = GetEntryDocument();
+  nsCOMPtr<Document> callerDoc = GetEntryDocument();
   if (!callerDoc) {
     
     
@@ -1267,7 +1266,7 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
   if (NS_FAILED(callerPrincipal->Equals(NodePrincipal(), &equals)) || !equals) {
 #ifdef DEBUG
     nsCOMPtr<nsIURI> callerDocURI = callerDoc->GetDocumentURI();
-    nsCOMPtr<nsIURI> thisURI = nsIDocument::GetDocumentURI();
+    nsCOMPtr<nsIURI> thisURI = Document::GetDocumentURI();
     printf("nsHTMLDocument::Open callerDoc %s this %s\n",
            callerDocURI ? callerDocURI->GetSpecOrDefault().get() : "",
            thisURI ? thisURI->GetSpecOrDefault().get() : "");
@@ -1295,19 +1294,19 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
       if (NS_SUCCEEDED(cv->PermitUnload(&okToUnload)) && !okToUnload) {
         
         
-        nsCOMPtr<nsIDocument> ret = this;
+        nsCOMPtr<Document> ret = this;
         return ret.forget();
       }
 
       
       if (!mScriptGlobalObject) {
-        nsCOMPtr<nsIDocument> ret = this;
+        nsCOMPtr<Document> ret = this;
         return ret.forget();
       }
 
       nsPIDOMWindowOuter* outer = GetWindow();
       if (!outer || (GetInnerWindow() != outer->GetCurrentInnerWindow())) {
-        nsCOMPtr<nsIDocument> ret = this;
+        nsCOMPtr<Document> ret = this;
         return ret.forget();
       }
     }
@@ -1406,7 +1405,7 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
   
 
   
-  nsCOMPtr<nsIDocument> kungFuDeathGrip = this;
+  nsCOMPtr<Document> kungFuDeathGrip = this;
 
   if (nsPIDOMWindowInner* window = GetInnerWindow()) {
     
@@ -1416,7 +1415,7 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
     bool willReparent = mWillReparent;
     mWillReparent = true;
 
-    nsIDocument* templateContentsOwner = mTemplateContentsOwner.get();
+    Document* templateContentsOwner = mTemplateContentsOwner.get();
 
     if (templateContentsOwner) {
       templateContentsOwner->mWillReparent = true;
@@ -1536,7 +1535,7 @@ already_AddRefed<nsIDocument> nsHTMLDocument::Open(
 
   --mWriteLevel;
 
-  SetReadyStateInternal(nsIDocument::READYSTATE_LOADING);
+  SetReadyStateInternal(Document::READYSTATE_LOADING);
 
   
   
@@ -1688,7 +1687,7 @@ void nsHTMLDocument::WriteCommon(JSContext* cx, const nsAString& aText,
           mDocumentURI);
       return;
     }
-    nsCOMPtr<nsIDocument> ignored =
+    nsCOMPtr<Document> ignored =
         Open(cx, Optional<nsAString>(), EmptyString(), aRv);
 
     
@@ -1830,11 +1829,11 @@ void nsHTMLDocument::SetFgColor(const nsAString& aFgColor) {
 }
 
 void nsHTMLDocument::CaptureEvents() {
-  WarnOnceAbout(nsIDocument::eUseOfCaptureEvents);
+  WarnOnceAbout(Document::eUseOfCaptureEvents);
 }
 
 void nsHTMLDocument::ReleaseEvents() {
-  WarnOnceAbout(nsIDocument::eUseOfReleaseEvents);
+  WarnOnceAbout(Document::eUseOfReleaseEvents);
 }
 
 bool nsHTMLDocument::ResolveName(JSContext* aCx, const nsAString& aName,
@@ -2025,7 +2024,7 @@ void nsHTMLDocument::MaybeEditingStateChanged() {
 void nsHTMLDocument::EndUpdate() {
   const bool reset = !mPendingMaybeEditingStateChanged;
   mPendingMaybeEditingStateChanged = true;
-  nsIDocument::EndUpdate();
+  Document::EndUpdate();
   if (reset) {
     mPendingMaybeEditingStateChanged = false;
   }
@@ -2033,7 +2032,7 @@ void nsHTMLDocument::EndUpdate() {
 }
 
 void nsHTMLDocument::SetMayStartLayout(bool aMayStartLayout) {
-  nsIDocument::SetMayStartLayout(aMayStartLayout);
+  Document::SetMayStartLayout(aMayStartLayout);
 
   MaybeEditingStateChanged();
 }
@@ -2125,7 +2124,7 @@ HTMLAllCollection* nsHTMLDocument::All() {
   return mAll;
 }
 
-static void NotifyEditableStateChange(nsINode* aNode, nsIDocument* aDocument) {
+static void NotifyEditableStateChange(nsINode* aNode, Document* aDocument) {
   for (nsIContent* child = aNode->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     if (child->IsElement()) {
@@ -3091,7 +3090,7 @@ nsresult nsHTMLDocument::Clone(dom::NodeInfo* aNodeInfo,
 }
 
 bool nsHTMLDocument::IsEditingOnAfterFlush() {
-  nsIDocument* doc = GetParentDocument();
+  Document* doc = GetParentDocument();
   if (doc) {
     
     
@@ -3103,12 +3102,12 @@ bool nsHTMLDocument::IsEditingOnAfterFlush() {
 
 void nsHTMLDocument::RemovedFromDocShell() {
   mEditingState = eOff;
-  nsIDocument::RemovedFromDocShell();
+  Document::RemovedFromDocShell();
 }
 
  void nsHTMLDocument::DocAddSizeOfExcludingThis(
     nsWindowSizes& aWindowSizes) const {
-  nsIDocument::DocAddSizeOfExcludingThis(aWindowSizes);
+  Document::DocAddSizeOfExcludingThis(aWindowSizes);
 
   
   

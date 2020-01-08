@@ -9,8 +9,6 @@
 
 #include "mozilla/NotNull.h"
 
-class nsIDocument;
-
 namespace mozilla {
 
 class AutoplayPermissionManager;
@@ -19,6 +17,7 @@ namespace dom {
 
 class HTMLMediaElement;
 class AudioContext;
+class Document;
 
 
 
@@ -51,7 +50,7 @@ class AutoplayPolicy {
   
   
   static already_AddRefed<AutoplayPermissionManager> RequestFor(
-      const nsIDocument& aDocument);
+      const Document& aDocument);
 };
 
 }  

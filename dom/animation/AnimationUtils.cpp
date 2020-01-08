@@ -9,13 +9,15 @@
 #include "nsDebug.h"
 #include "nsAtom.h"
 #include "nsIContent.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsGlobalWindow.h"
 #include "nsString.h"
 #include "xpcpublic.h"  
 #include "mozilla/EffectSet.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/Preferences.h"
+
+using namespace mozilla::dom;
 
 namespace mozilla {
 
@@ -37,8 +39,7 @@ namespace mozilla {
   printf_stderr("%s", aMessage.get());
 }
 
- nsIDocument* AnimationUtils::GetCurrentRealmDocument(
-    JSContext* aCx) {
+ Document* AnimationUtils::GetCurrentRealmDocument(JSContext* aCx) {
   nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(aCx);
   if (!win) {
     return nullptr;
@@ -46,7 +47,7 @@ namespace mozilla {
   return win->GetDoc();
 }
 
- nsIDocument* AnimationUtils::GetDocumentFromGlobal(
+ Document* AnimationUtils::GetDocumentFromGlobal(
     JSObject* aGlobalObject) {
   nsGlobalWindowInner* win = xpc::WindowOrNull(aGlobalObject);
   if (!win) {

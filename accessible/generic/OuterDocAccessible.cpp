@@ -37,9 +37,9 @@ OuterDocAccessible::OuterDocAccessible(nsIContent* aContent,
 
   
   
-  nsIDocument* outerDoc = mContent->GetUncomposedDoc();
+  dom::Document* outerDoc = mContent->GetUncomposedDoc();
   if (outerDoc) {
-    nsIDocument* innerDoc = outerDoc->GetSubDocumentFor(mContent);
+    dom::Document* innerDoc = outerDoc->GetSubDocumentFor(mContent);
     if (innerDoc) GetAccService()->GetDocAccessible(innerDoc);
   }
 }

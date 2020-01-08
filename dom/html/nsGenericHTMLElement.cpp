@@ -23,7 +23,7 @@
 #include "nsQueryObject.h"
 #include "nsIContentInlines.h"
 #include "nsIContentViewer.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIDocumentEncoder.h"
 #include "nsIDOMWindow.h"
 #include "nsMappedAttributes.h"
@@ -158,7 +158,7 @@ static const nsAttrValue::EnumTable kDirTable[] = {
 
 void nsGenericHTMLElement::AddToNameTable(nsAtom* aName) {
   MOZ_ASSERT(HasName(), "Node doesn't have name?");
-  nsIDocument* doc = GetUncomposedDoc();
+  Document* doc = GetUncomposedDoc();
   if (doc && !IsInAnonymousSubtree()) {
     doc->AddToNameTable(this, aName);
   }
@@ -166,7 +166,7 @@ void nsGenericHTMLElement::AddToNameTable(nsAtom* aName) {
 
 void nsGenericHTMLElement::RemoveFromNameTable() {
   if (HasName() && CanHaveName(NodeInfo()->NameAtom())) {
-    if (nsIDocument* doc = GetUncomposedDoc()) {
+    if (Document* doc = GetUncomposedDoc()) {
       doc->RemoveFromNameTable(this,
                                GetParsedAttr(nsGkAtoms::name)->GetAtomValue());
     }
@@ -347,7 +347,7 @@ bool nsGenericHTMLElement::Spellcheck() {
   return spellcheckLevel == 2;  
 }
 
-bool nsGenericHTMLElement::InNavQuirksMode(nsIDocument* aDoc) {
+bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
   return aDoc && aDoc->GetCompatibilityMode() == eCompatibility_NavQuirks;
 }
 
@@ -378,7 +378,7 @@ EventStates nsGenericHTMLElement::IntrinsicState() const {
   return state;
 }
 
-nsresult nsGenericHTMLElement::BindToTree(nsIDocument* aDocument,
+nsresult nsGenericHTMLElement::BindToTree(Document* aDocument,
                                           nsIContent* aParent,
                                           nsIContent* aBindingParent) {
   nsresult rv =
@@ -703,7 +703,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
     
     
     
-    nsIDocument* document = OwnerDoc();
+    Document* document = OwnerDoc();
 
     *aDefer = false;
     if ((win = document->GetInnerWindow())) {
@@ -843,7 +843,7 @@ bool nsGenericHTMLElement::ParseBackgroundAttribute(int32_t aNamespaceID,
   if (aNamespaceID == kNameSpaceID_None &&
       aAttribute == nsGkAtoms::background && !aValue.IsEmpty()) {
     
-    nsIDocument* doc = OwnerDoc();
+    Document* doc = OwnerDoc();
     nsCOMPtr<nsIURI> baseURI = GetBaseURI();
     nsCOMPtr<nsIURI> uri;
     nsresult rv = nsContentUtils::NewURIWithDocumentCharset(
@@ -898,7 +898,7 @@ nsIFormControlFrame* nsGenericHTMLElement::GetFormControlFrame(
 
 nsPresContext* nsGenericHTMLElement::GetPresContext(PresContextFor aFor) {
   
-  nsIDocument* doc =
+  Document* doc =
       (aFor == eForComposedDoc) ? GetComposedDoc() : GetUncomposedDoc();
   if (doc) {
     return doc->GetPresContext();
@@ -1396,7 +1396,7 @@ HTMLMenuElement* nsGenericHTMLElement::GetContextMenu() const {
   GetHTMLAttr(nsGkAtoms::contextmenu, value);
   if (!value.IsEmpty()) {
     
-    nsIDocument* doc = GetUncomposedDoc();
+    Document* doc = GetUncomposedDoc();
     if (doc) {
       return HTMLMenuElement::FromNodeOrNull(doc->GetElementById(value));
     }
@@ -1550,7 +1550,7 @@ nsIContent::IMEState nsGenericHTMLFormElement::GetDesiredIMEState() {
   return state;
 }
 
-nsresult nsGenericHTMLFormElement::BindToTree(nsIDocument* aDocument,
+nsresult nsGenericHTMLFormElement::BindToTree(Document* aDocument,
                                               nsIContent* aParent,
                                               nsIContent* aBindingParent) {
   nsresult rv =
@@ -1855,7 +1855,7 @@ EventStates nsGenericHTMLFormElement::IntrinsicState() const {
 
 nsGenericHTMLFormElement::FocusTristate nsGenericHTMLFormElement::FocusState() {
   
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc) return eUnfocusable;
 
   
@@ -2150,7 +2150,7 @@ void nsGenericHTMLFormElement::GetFormAction(nsString& aValue) {
 
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::formaction, aValue) ||
       aValue.IsEmpty()) {
-    nsIDocument* document = OwnerDoc();
+    Document* document = OwnerDoc();
     nsIURI* docURI = document->GetDocumentURI();
     if (docURI) {
       nsAutoCString spec;
@@ -2174,7 +2174,7 @@ void nsGenericHTMLElement::Click(CallerType aCallerType) {
   }
 
   
-  nsCOMPtr<nsIDocument> doc = GetComposedDoc();
+  nsCOMPtr<Document> doc = GetComposedDoc();
 
   RefPtr<nsPresContext> context;
   if (doc) {
@@ -2196,7 +2196,7 @@ void nsGenericHTMLElement::Click(CallerType aCallerType) {
 
 bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                            int32_t* aTabIndex) {
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     
     if (aTabIndex) {
@@ -2355,7 +2355,7 @@ void nsGenericHTMLElement::RecompileScriptEventListeners() {
 }
 
 bool nsGenericHTMLElement::IsEditableRoot() const {
-  nsIDocument* document = GetComposedDoc();
+  Document* document = GetComposedDoc();
   if (!document) {
     return false;
   }
@@ -2374,7 +2374,7 @@ bool nsGenericHTMLElement::IsEditableRoot() const {
 }
 
 static void MakeContentDescendantsEditable(nsIContent* aContent,
-                                           nsIDocument* aDocument) {
+                                           Document* aDocument) {
   
   
   
@@ -2399,7 +2399,7 @@ static void MakeContentDescendantsEditable(nsIContent* aContent,
 }
 
 void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
-  nsIDocument* document = GetComposedDoc();
+  Document* document = GetComposedDoc();
   if (!document) {
     return;
   }
@@ -2435,7 +2435,7 @@ nsresult nsGenericHTMLFormElementWithState::GenerateStateKey() {
     return NS_OK;
   }
 
-  nsIDocument* doc = GetUncomposedDoc();
+  Document* doc = GetUncomposedDoc();
   if (!doc) {
     return NS_OK;
   }
@@ -2481,7 +2481,7 @@ PresState* nsGenericHTMLFormElementWithState::GetPrimaryPresState() {
 
 already_AddRefed<nsILayoutHistoryState>
 nsGenericHTMLFormElementWithState::GetLayoutHistory(bool aRead) {
-  nsCOMPtr<nsIDocument> doc = GetUncomposedDoc();
+  nsCOMPtr<Document> doc = GetUncomposedDoc();
   if (!doc) {
     return nullptr;
   }
@@ -2522,7 +2522,7 @@ bool nsGenericHTMLFormElementWithState::RestoreFormControlState() {
   return false;
 }
 
-void nsGenericHTMLFormElementWithState::NodeInfoChanged(nsIDocument* aOldDoc) {
+void nsGenericHTMLFormElementWithState::NodeInfoChanged(Document* aOldDoc) {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
   mStateKey.SetIsVoid(true);
 }
@@ -2579,7 +2579,7 @@ nsresult nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
 
   *aURI = nullptr;
 
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
 
   nsCOMPtr<nsIURI> baseURI = GetBaseURI();
   nsresult rv =
@@ -2623,7 +2623,7 @@ void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
   
 
   
-  nsIDocument* doc = GetComposedDoc();
+  Document* doc = GetComposedDoc();
   if (doc) {
     doc->FlushPendingNotifications(FlushType::Style);
   }

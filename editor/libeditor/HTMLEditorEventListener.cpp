@@ -180,7 +180,7 @@ nsresult HTMLEditorEventListener::ListenToWindowResizeEvent(bool aListen) {
     return aListen ? NS_ERROR_FAILURE : NS_OK;
   }
 
-  nsIDocument* document = mEditorBase->AsHTMLEditor()->GetDocument();
+  Document* document = mEditorBase->AsHTMLEditor()->GetDocument();
   if (NS_WARN_IF(!document)) {
     return NS_ERROR_FAILURE;
   }

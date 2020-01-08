@@ -16,7 +16,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 
-class nsIDocument;
 class nsSelection;
 class nsTreeColumn;
 class Row;
@@ -24,6 +23,7 @@ class Row;
 namespace mozilla {
 namespace dom {
 class DataTransfer;
+class Document;
 class Element;
 class TreeBoxObject;
 }  
@@ -160,7 +160,7 @@ class nsTreeContentView final : public nsITreeView,
   nsCOMPtr<nsITreeSelection> mSelection;
   nsCOMPtr<Element> mRoot;
   nsCOMPtr<nsIContent> mBody;
-  nsIDocument* mDocument;  
+  mozilla::dom::Document* mDocument;  
   nsTArray<mozilla::UniquePtr<Row>> mRows;
 };
 

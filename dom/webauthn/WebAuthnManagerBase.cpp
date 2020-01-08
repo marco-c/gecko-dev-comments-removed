@@ -120,7 +120,7 @@ WebAuthnManagerBase::HandleEvent(Event* aEvent) {
   
   
   if (type.Equals(kVisibilityChange)) {
-    nsCOMPtr<nsIDocument> doc = do_QueryInterface(aEvent->GetTarget());
+    nsCOMPtr<Document> doc = do_QueryInterface(aEvent->GetTarget());
     if (NS_WARN_IF(!doc) || !doc->Hidden()) {
       return NS_OK;
     }

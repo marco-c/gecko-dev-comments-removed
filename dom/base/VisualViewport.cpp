@@ -48,7 +48,7 @@ void VisualViewport::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   
   if (msg == eMozVisualScroll || msg == eMozVisualResize) {
     if (nsPIDOMWindowInner* win = GetOwner()) {
-      if (nsIDocument* doc = win->GetExtantDoc()) {
+      if (Document* doc = win->GetExtantDoc()) {
         parentTarget = doc;
       }
     }

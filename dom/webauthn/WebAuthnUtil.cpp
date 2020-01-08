@@ -76,7 +76,7 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   
   
   
-  nsCOMPtr<nsIDocument> document = aParent->GetDoc();
+  nsCOMPtr<Document> document = aParent->GetDoc();
   if (!document || !document->IsHTMLDocument()) {
     return false;
   }

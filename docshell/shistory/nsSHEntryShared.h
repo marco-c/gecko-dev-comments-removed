@@ -21,12 +21,17 @@
 
 class nsSHEntry;
 class nsISHEntry;
-class nsIDocument;
 class nsIContentViewer;
 class nsIDocShellTreeItem;
 class nsILayoutHistoryState;
 class nsDocShellEditorData;
 class nsIMutableArray;
+
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
 
 
 
@@ -84,7 +89,7 @@ class nsSHEntryShared final : public nsIBFCacheEntry,
   
   uint64_t mID;
   nsCOMPtr<nsIContentViewer> mContentViewer;
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<mozilla::dom::Document> mDocument;
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
   nsCOMPtr<nsISupports> mWindowState;
   nsIntRect mViewerBounds;

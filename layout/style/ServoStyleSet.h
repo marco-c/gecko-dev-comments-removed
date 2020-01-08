@@ -42,7 +42,7 @@ class StyleSheet;
 }  
 class gfxFontFeatureValueSet;
 class nsIContent;
-class nsIDocument;
+
 class nsPresContext;
 struct nsTimingFunction;
 struct RawServoRuleNode;
@@ -228,7 +228,7 @@ class ServoStyleSet {
   }
 
   nsresult RemoveDocStyleSheet(StyleSheet* aSheet);
-  nsresult AddDocStyleSheet(StyleSheet* aSheet, nsIDocument* aDocument);
+  nsresult AddDocStyleSheet(StyleSheet* aSheet, dom::Document* aDocument);
 
   
   already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
@@ -513,7 +513,7 @@ class ServoStyleSet {
   
   
   
-  nsIDocument* mDocument;
+  dom::Document* mDocument;
 
   const nsPresContext* GetPresContext() const {
     return const_cast<ServoStyleSet*>(this)->GetPresContext();

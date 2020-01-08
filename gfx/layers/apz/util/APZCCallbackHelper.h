@@ -17,7 +17,6 @@
 #include <functional>
 
 class nsIContent;
-class nsIDocument;
 class nsIPresShell;
 class nsIScrollableFrame;
 class nsIWidget;
@@ -163,13 +162,14 @@ class APZCCallbackHelper {
 
 
   static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
-      nsIWidget* aWidget, nsIDocument* aDocument, const WidgetGUIEvent& aEvent,
-      const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId);
+      nsIWidget* aWidget, mozilla::dom::Document* aDocument,
+      const WidgetGUIEvent& aEvent, const ScrollableLayerGuid& aGuid,
+      uint64_t aInputBlockId);
 
   
 
   static void SendSetAllowedTouchBehaviorNotification(
-      nsIWidget* aWidget, nsIDocument* aDocument,
+      nsIWidget* aWidget, mozilla::dom::Document* aDocument,
       const WidgetTouchEvent& aEvent, uint64_t aInputBlockId,
       const SetAllowedTouchBehaviorCallback& aCallback);
 

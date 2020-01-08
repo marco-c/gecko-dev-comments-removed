@@ -32,7 +32,7 @@
 #include "nsITransport.h"
 #include "nsISocketTransport.h"
 #include "nsIDocShell.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsPresContext.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsILoadURIDelegate.h"
@@ -632,7 +632,8 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
 
     
     if (aFlushLayout && !mDontFlushLayout) {
-      nsCOMPtr<nsIDocument> doc = do_GetInterface(GetAsSupports(this));
+      nsCOMPtr<mozilla::dom::Document> doc =
+          do_GetInterface(GetAsSupports(this));
       if (doc) {
         
         

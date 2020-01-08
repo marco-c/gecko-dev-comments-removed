@@ -9,11 +9,10 @@
 
 #include "nsString.h"
 
-class nsIDocument;
-
 namespace mozilla {
 
 namespace dom {
+class Document;
 class SVGSVGElement;
 }  
 
@@ -32,7 +31,7 @@ class SVGFragmentIdentifier {
 
 
 
-  static bool ProcessFragmentIdentifier(nsIDocument *aDocument,
+  static bool ProcessFragmentIdentifier(dom::Document *aDocument,
                                         const nsAString &aAnchorName);
 
  private:

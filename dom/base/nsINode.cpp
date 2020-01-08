@@ -43,7 +43,6 @@
 #include "nsContentList.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIDocument.h"
 #include "mozilla/dom/Attr.h"
 #include "nsDOMAttributeMap.h"
 #include "nsDOMCID.h"
@@ -63,7 +62,7 @@
 #include "nsIContentInlines.h"
 #include "nsIContentIterator.h"
 #include "nsIControllers.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIDOMEventListener.h"
 #include "nsILinkHandler.h"
 #include "mozilla/dom/NodeInfo.h"
@@ -223,7 +222,7 @@ nsIContent* nsINode::GetTextEditorRootContent(TextEditor** aTextEditor) {
 
 nsINode* nsINode::GetRootNode(const GetRootNodeOptions& aOptions) {
   if (aOptions.mComposed) {
-    if (nsIDocument* doc = GetComposedDoc()) {
+    if (Document* doc = GetComposedDoc()) {
       return doc;
     }
 
@@ -336,7 +335,7 @@ nsIContent* nsINode::GetSelectionRootContent(nsIPresShell* aPresShell) {
     HTMLEditor* htmlEditor = nsContentUtils::GetHTMLEditor(presContext);
     if (htmlEditor) {
       
-      nsIDocument* doc = GetComposedDoc();
+      Document* doc = GetComposedDoc();
       if (!doc || doc->HasFlag(NODE_IS_EDITABLE) ||
           !HasFlag(NODE_IS_EDITABLE)) {
         nsIContent* editorRoot = htmlEditor->GetRoot();
@@ -356,7 +355,7 @@ nsIContent* nsINode::GetSelectionRootContent(nsIPresShell* aPresShell) {
   if (!content) {
     content = fs->GetAncestorLimiter();
     if (!content) {
-      nsIDocument* doc = aPresShell->GetDocument();
+      Document* doc = aPresShell->GetDocument();
       NS_ENSURE_TRUE(doc, nullptr);
       content = doc->GetRootElement();
       if (!content) return nullptr;
@@ -544,7 +543,7 @@ void nsINode::Normalize() {
   }
 
   
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
 
   
   mozAutoSubtreeModified subtree(doc, nullptr);
@@ -1015,7 +1014,7 @@ bool nsINode::DispatchEvent(Event& aEvent, CallerType aCallerType,
                             ErrorResult& aRv) {
   
   
-  nsCOMPtr<nsIDocument> document = OwnerDoc();
+  nsCOMPtr<Document> document = OwnerDoc();
 
   
   if (!document) {
@@ -1072,7 +1071,7 @@ bool nsINode::UnoptimizableCCNode() const {
 
 bool nsINode::Traverse(nsINode* tmp, nsCycleCollectionTraversalCallback& cb) {
   if (MOZ_LIKELY(!cb.WantAllTraces())) {
-    nsIDocument* currentDoc = tmp->GetComposedDoc();
+    Document* currentDoc = tmp->GetComposedDoc();
     if (currentDoc && nsCCUncollectableMarker::InGeneration(
                           currentDoc->GetMarkedCCGeneration())) {
       return false;
@@ -1164,7 +1163,7 @@ static void AdoptNodeIntoOwnerDoc(nsINode* aParent, nsINode* aNode,
   NS_ASSERTION(!aNode->GetParentNode(),
                "Should have removed from parent already");
 
-  nsIDocument* doc = aParent->OwnerDoc();
+  Document* doc = aParent->OwnerDoc();
 
   DebugOnly<nsINode*> adoptedNode = doc->AdoptNode(*aNode, aError);
 
@@ -1238,7 +1237,7 @@ nsresult nsINode::InsertChildBefore(nsIContent* aKid,
   nsMutationGuard::DidMutate();
 
   
-  nsIDocument* doc = GetUncomposedDoc();
+  Document* doc = GetUncomposedDoc();
   mozAutoDocUpdate updateBatch(GetComposedDoc(), aNotify);
 
   if (OwnerDoc() != aKid->OwnerDoc()) {
@@ -1516,7 +1515,7 @@ int32_t nsINode::ComputeIndexOf(const nsINode* aChild) const {
 }
 
 static already_AddRefed<nsINode> GetNodeFromNodeOrString(
-    const OwningNodeOrString& aNode, nsIDocument* aDocument) {
+    const OwningNodeOrString& aNode, Document* aDocument) {
   if (aNode.IsNode()) {
     nsCOMPtr<nsINode> node = aNode.GetAsNode();
     return node.forget();
@@ -1538,7 +1537,7 @@ static already_AddRefed<nsINode> GetNodeFromNodeOrString(
 
 MOZ_CAN_RUN_SCRIPT static already_AddRefed<nsINode>
 ConvertNodesOrStringsIntoNode(const Sequence<OwningNodeOrString>& aNodes,
-                              nsIDocument* aDocument, ErrorResult& aRv) {
+                              Document* aDocument, ErrorResult& aRv) {
   if (aNodes.Length() == 1) {
     return GetNodeFromNodeOrString(aNodes[0], aDocument);
   }
@@ -1610,7 +1609,7 @@ void nsINode::Before(const Sequence<OwningNodeOrString>& aNodes,
   nsCOMPtr<nsINode> viablePreviousSibling =
       FindViablePreviousSibling(*this, aNodes);
 
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
   nsCOMPtr<nsINode> node = ConvertNodesOrStringsIntoNode(aNodes, doc, aRv);
   if (aRv.Failed()) {
     return;
@@ -1632,7 +1631,7 @@ void nsINode::After(const Sequence<OwningNodeOrString>& aNodes,
 
   nsCOMPtr<nsINode> viableNextSibling = FindViableNextSibling(*this, aNodes);
 
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
   nsCOMPtr<nsINode> node = ConvertNodesOrStringsIntoNode(aNodes, doc, aRv);
   if (aRv.Failed()) {
     return;
@@ -1650,7 +1649,7 @@ void nsINode::ReplaceWith(const Sequence<OwningNodeOrString>& aNodes,
 
   nsCOMPtr<nsINode> viableNextSibling = FindViableNextSibling(*this, aNodes);
 
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
   nsCOMPtr<nsINode> node = ConvertNodesOrStringsIntoNode(aNodes, doc, aRv);
   if (aRv.Failed()) {
     return;
@@ -1764,7 +1763,7 @@ already_AddRefed<nsIHTMLCollection> nsINode::GetElementsByAttributeNS(
 
 void nsINode::Prepend(const Sequence<OwningNodeOrString>& aNodes,
                       ErrorResult& aRv) {
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
   nsCOMPtr<nsINode> node = ConvertNodesOrStringsIntoNode(aNodes, doc, aRv);
   if (aRv.Failed()) {
     return;
@@ -1777,7 +1776,7 @@ void nsINode::Prepend(const Sequence<OwningNodeOrString>& aNodes,
 
 void nsINode::Append(const Sequence<OwningNodeOrString>& aNodes,
                      ErrorResult& aRv) {
-  nsCOMPtr<nsIDocument> doc = OwnerDoc();
+  nsCOMPtr<Document> doc = OwnerDoc();
   nsCOMPtr<nsINode> node = ConvertNodesOrStringsIntoNode(aNodes, doc, aRv);
   if (aRv.Failed()) {
     return;
@@ -1887,7 +1886,7 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         return;
       }
 
-      nsIDocument* parentDocument = aParent->AsDocument();
+      Document* parentDocument = aParent->AsDocument();
       Element* rootElement = parentDocument->GetRootElement();
       if (rootElement) {
         
@@ -1931,7 +1930,7 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         return;
       }
 
-      nsIDocument* parentDocument = aParent->AsDocument();
+      Document* parentDocument = aParent->AsDocument();
       nsIContent* docTypeContent = parentDocument->GetDoctype();
       if (docTypeContent) {
         
@@ -2306,7 +2305,7 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   
   
   
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
   if (doc != newContent->OwnerDoc()) {
     AdoptNodeIntoOwnerDoc(this, aNewChild, aError);
     if (aError.Failed()) {
@@ -2515,11 +2514,10 @@ uint32_t nsINode::Length() const {
 
 const RawServoSelectorList* nsINode::ParseSelectorList(
     const nsAString& aSelectorString, ErrorResult& aRv) {
-  nsIDocument* doc = OwnerDoc();
+  Document* doc = OwnerDoc();
 
-  nsIDocument::SelectorCache& cache = doc->GetSelectorCache();
-  nsIDocument::SelectorCache::SelectorList* list =
-      cache.GetList(aSelectorString);
+  Document::SelectorCache& cache = doc->GetSelectorCache();
+  Document::SelectorCache::SelectorList* list = cache.GetList(aSelectorString);
   if (list) {
     if (!*list) {
       

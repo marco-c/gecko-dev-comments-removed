@@ -273,7 +273,7 @@ PerformanceCounter* TimeoutManager::GetPerformanceCounter() {
   if (!StaticPrefs::dom_performance_enable_scheduler_timing()) {
     return nullptr;
   }
-  nsIDocument* doc = mWindow.GetDocument();
+  Document* doc = mWindow.GetDocument();
   if (doc) {
     dom::DocGroup* docGroup = doc->GetDocGroup();
     if (docGroup) {
@@ -472,7 +472,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
                                     Timeout::Reason aReason, int32_t* aReturn) {
   
   
-  nsCOMPtr<nsIDocument> doc = mWindow.GetExtantDoc();
+  nsCOMPtr<Document> doc = mWindow.GetExtantDoc();
   if (!doc) {
     return NS_OK;
   }

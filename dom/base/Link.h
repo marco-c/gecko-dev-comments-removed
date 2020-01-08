@@ -138,7 +138,7 @@ class Link : public nsISupports {
   
   
   
-  virtual void NodeInfoChanged(nsIDocument *aOldDoc) = 0;
+  virtual void NodeInfoChanged(Document *aOldDoc) = 0;
 
   bool IsInDNSPrefetch() { return mInDNSPrefetch; }
   void SetIsInDNSPrefetch() { mInDNSPrefetch = true; }

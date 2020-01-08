@@ -14,7 +14,6 @@
 
 struct JSContext;
 class JSObject;
-class nsIDocument;
 class ComputedStyle;
 struct RawServoDeclarationBlock;
 
@@ -26,6 +25,7 @@ struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 
 namespace dom {
+class Document;
 class Element;
 }  
 }  
@@ -56,7 +56,7 @@ class KeyframeUtils {
 
 
   static nsTArray<Keyframe> GetKeyframesFromObject(
-      JSContext* aCx, nsIDocument* aDocument, JS::Handle<JSObject*> aFrames,
+      JSContext* aCx, dom::Document* aDocument, JS::Handle<JSObject*> aFrames,
       ErrorResult& aRv);
 
   

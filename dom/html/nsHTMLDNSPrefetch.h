@@ -15,10 +15,10 @@
 #include "nsWeakReference.h"
 #include "nsIObserver.h"
 
-class nsIDocument;
 class nsITimer;
 namespace mozilla {
 namespace dom {
+class Document;
 class Link;
 }  
 }  
@@ -34,7 +34,7 @@ class nsHTMLDNSPrefetch {
   
   
   
-  static bool IsAllowed(nsIDocument *aDocument);
+  static bool IsAllowed(mozilla::dom::Document *aDocument);
 
   static nsresult Initialize();
   static nsresult Shutdown();

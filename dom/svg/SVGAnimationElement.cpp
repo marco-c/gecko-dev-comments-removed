@@ -133,7 +133,7 @@ float SVGAnimationElement::GetSimpleDuration(ErrorResult& rv) {
 
 
 
-nsresult SVGAnimationElement::BindToTree(nsIDocument* aDocument,
+nsresult SVGAnimationElement::BindToTree(Document* aDocument,
                                          nsIContent* aParent,
                                          nsIContent* aBindingParent) {
   MOZ_ASSERT(!mHrefTarget.get(),
@@ -143,7 +143,7 @@ nsresult SVGAnimationElement::BindToTree(nsIDocument* aDocument,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (nsIDocument* doc = GetComposedDoc()) {
+  if (Document* doc = GetComposedDoc()) {
     SMILAnimationController* controller = doc->GetAnimationController();
     if (controller) {
       controller->RegisterAnimationElement(this);

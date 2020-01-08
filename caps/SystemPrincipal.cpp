@@ -66,7 +66,7 @@ SystemPrincipal::SetCsp(nsIContentSecurityPolicy* aCsp) {
 }
 
 NS_IMETHODIMP
-SystemPrincipal::EnsureCSP(nsIDocument* aDocument,
+SystemPrincipal::EnsureCSP(dom::Document* aDocument,
                            nsIContentSecurityPolicy** aCSP) {
   
   return NS_ERROR_FAILURE;
@@ -79,7 +79,7 @@ SystemPrincipal::GetPreloadCsp(nsIContentSecurityPolicy** aPreloadCSP) {
 }
 
 NS_IMETHODIMP
-SystemPrincipal::EnsurePreloadCSP(nsIDocument* aDocument,
+SystemPrincipal::EnsurePreloadCSP(dom::Document* aDocument,
                                   nsIContentSecurityPolicy** aPreloadCSP) {
   
   return NS_ERROR_FAILURE;

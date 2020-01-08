@@ -123,9 +123,9 @@ class ServiceWorkerContainer final : public DOMEventTargetHelper {
   
   
   
-  nsIGlobalObject* GetGlobalIfValid(ErrorResult& aRv,
-                                    const std::function<void(nsIDocument*)>&&
-                                        aStorageFailureCB = nullptr) const;
+  nsIGlobalObject* GetGlobalIfValid(
+      ErrorResult& aRv,
+      const std::function<void(Document*)>&& aStorageFailureCB = nullptr) const;
 
   struct ReceivedMessage;
 

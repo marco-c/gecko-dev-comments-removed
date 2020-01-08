@@ -50,7 +50,6 @@ class nsBidi;
 class nsIPrintSettings;
 class nsDocShell;
 class nsIDocShell;
-class nsIDocument;
 class nsITheme;
 class nsIContent;
 class nsIFrame;
@@ -83,6 +82,7 @@ class ContainerLayer;
 class LayerManager;
 }  
 namespace dom {
+class Document;
 class Element;
 }  
 }  
@@ -152,7 +152,7 @@ class nsPresContext : public nsISupports,
     eContext_PageLayout     
   };
 
-  nsPresContext(nsIDocument* aDocument, nsPresContextType aType);
+  nsPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
 
   
 
@@ -217,7 +217,7 @@ class nsPresContext : public nsISupports,
 
   virtual bool IsRoot() { return false; }
 
-  nsIDocument* Document() const {
+  mozilla::dom::Document* Document() const {
     NS_ASSERTION(
         !mShell || !mShell->GetDocument() || mShell->GetDocument() == mDocument,
         "nsPresContext doesn't have the same document as nsPresShell!");
@@ -1162,11 +1162,11 @@ class nsPresContext : public nsISupports,
   
   
   
-  static bool UIResolutionChangedSubdocumentCallback(nsIDocument* aDocument,
-                                                     void* aData);
+  static bool UIResolutionChangedSubdocumentCallback(
+      mozilla::dom::Document* aDocument, void* aData);
 
   void SetImgAnimations(nsIContent* aParent, uint16_t aMode);
-  void SetSMILAnimations(nsIDocument* aDoc, uint16_t aNewMode,
+  void SetSMILAnimations(mozilla::dom::Document* aDoc, uint16_t aNewMode,
                          uint16_t aOldMode);
   void GetDocumentColorPreferences();
 
@@ -1190,10 +1190,10 @@ class nsPresContext : public nsISupports,
 
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
 
-  static bool NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument,
-                                                void* aData);
-  static bool NotifyRevokingDidPaintSubdocumentCallback(nsIDocument* aDocument,
-                                                        void* aData);
+  static bool NotifyDidPaintSubdocumentCallback(
+      mozilla::dom::Document* aDocument, void* aData);
+  static bool NotifyRevokingDidPaintSubdocumentCallback(
+      mozilla::dom::Document* aDocument, void* aData);
 
  public:
   
@@ -1244,7 +1244,7 @@ class nsPresContext : public nsISupports,
   
   
   nsIPresShell* MOZ_NON_OWNING_REF mShell;  
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<mozilla::dom::Document> mDocument;
   RefPtr<nsDeviceContext> mDeviceContext;  
                                            
                                            
@@ -1475,7 +1475,7 @@ class nsPresContext : public nsISupports,
 
 class nsRootPresContext final : public nsPresContext {
  public:
-  nsRootPresContext(nsIDocument* aDocument, nsPresContextType aType);
+  nsRootPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
   virtual ~nsRootPresContext();
   virtual void Detach() override;
 

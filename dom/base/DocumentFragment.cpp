@@ -18,7 +18,7 @@
 #include "nsContentUtils.h"  
 #include "mozilla/dom/DocumentFragmentBinding.h"
 #include "nsPIDOMWindow.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
 namespace mozilla {

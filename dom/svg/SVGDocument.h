@@ -38,12 +38,12 @@ class SVGDocument final : public XMLDocument {
   const SVGContextPaint* mCurrentContextPaint = nullptr;
 };
 
-}  
-}  
-
-inline mozilla::dom::SVGDocument* nsIDocument::AsSVGDocument() {
+inline SVGDocument* Document::AsSVGDocument() {
   MOZ_ASSERT(IsSVGDocument());
-  return static_cast<mozilla::dom::SVGDocument*>(this);
+  return static_cast<SVGDocument*>(this);
 }
+
+}  
+}  
 
 #endif  

@@ -11,7 +11,7 @@
 #include <new>
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsINode.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsPIDOMWindow.h"
@@ -97,12 +97,12 @@ class ELMCreationDetector {
 };
 
 static bool IsEventTargetChrome(EventTarget* aEventTarget,
-                                nsIDocument** aDocument = nullptr) {
+                                Document** aDocument = nullptr) {
   if (aDocument) {
     *aDocument = nullptr;
   }
 
-  nsIDocument* doc = nullptr;
+  Document* doc = nullptr;
   if (nsCOMPtr<nsINode> node = do_QueryInterface(aEventTarget)) {
     doc = node->OwnerDoc();
   } else if (nsCOMPtr<nsPIDOMWindowInner> window =
@@ -115,7 +115,7 @@ static bool IsEventTargetChrome(EventTarget* aEventTarget,
   if (doc) {
     isChrome = nsContentUtils::IsChromeDoc(doc);
     if (aDocument) {
-      nsCOMPtr<nsIDocument> retVal = doc;
+      nsCOMPtr<Document> retVal = doc;
       retVal.swap(*aDocument);
     }
   } else if (nsCOMPtr<nsIScriptObjectPrincipal> sop =
@@ -772,7 +772,7 @@ static bool ShouldClearTargets(WidgetEvent* aEvent) {
   }
 
   if (aEvent->mFlags.mOnlyChromeDispatch) {
-    nsCOMPtr<nsIDocument> doc;
+    nsCOMPtr<Document> doc;
     if (!IsEventTargetChrome(target, getter_AddRefs(doc)) && doc) {
       nsPIDOMWindowInner* win = doc->GetInnerWindow();
       
@@ -807,7 +807,7 @@ static bool ShouldClearTargets(WidgetEvent* aEvent) {
       
       
       
-      nsIDocument* doc = node->OwnerDoc();
+      Document* doc = node->OwnerDoc();
       bool hasHadScriptHandlingObject;
       nsIGlobalObject* global =
           doc->GetScriptHandlingObject(hasHadScriptHandlingObject);

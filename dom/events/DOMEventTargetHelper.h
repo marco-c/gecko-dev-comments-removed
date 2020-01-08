@@ -19,13 +19,12 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/dom/EventTarget.h"
 
-class nsIDocument;
-
 namespace mozilla {
 
 class ErrorResult;
 
 namespace dom {
+class Document;
 class Event;
 }  
 
@@ -146,7 +145,7 @@ class DOMEventTargetHelper : public dom::EventTarget,
   nsPIDOMWindowInner* GetWindowIfCurrent() const;
   
   
-  nsIDocument* GetDocumentIfCurrent() const;
+  mozilla::dom::Document* GetDocumentIfCurrent() const;
 
   
   

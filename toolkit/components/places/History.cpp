@@ -1463,7 +1463,7 @@ void History::InitMemoryReporter() { RegisterWeakMemoryReporter(this); }
 
 
 
-static nsIDocument* GetLinkDocument(Link* aLink) {
+static Document* GetLinkDocument(Link* aLink) {
   
   
   
@@ -1505,11 +1505,11 @@ History::NotifyVisited(nsIURI* aURI) {
   
   
   {
-    nsTArray<nsIDocument*> seen;  
+    nsTArray<Document*> seen;  
     ObserverArray::BackwardIterator iter(key->array);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      nsIDocument* doc = GetLinkDocument(link);
+      Document* doc = GetLinkDocument(link);
       if (seen.Contains(doc)) {
         continue;
       }
@@ -1521,7 +1521,7 @@ History::NotifyVisited(nsIURI* aURI) {
   return NS_OK;
 }
 
-void History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument) {
+void History::NotifyVisitedForDocument(nsIURI* aURI, Document* aDocument) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
@@ -1539,7 +1539,7 @@ void History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument) {
     ObserverArray::BackwardIterator iter(key->array);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      nsIDocument* doc = GetLinkDocument(link);
+      Document* doc = GetLinkDocument(link);
       if (doc == aDocument) {
         link->SetLinkState(eLinkState_Visited);
         iter.Remove();
@@ -1557,9 +1557,9 @@ void History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument) {
   }
 }
 
-void History::DispatchNotifyVisited(nsIURI* aURI, nsIDocument* aDocument) {
+void History::DispatchNotifyVisited(nsIURI* aURI, Document* aDocument) {
   
-  nsCOMPtr<nsIDocument> doc = aDocument;
+  RefPtr<Document> doc = aDocument;
   nsCOMPtr<nsIURI> uri = aURI;
 
   

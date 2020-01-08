@@ -46,7 +46,7 @@ static bool IsInActiveTab(nsPIDOMWindowInner* aParent) {
   
   MOZ_ASSERT(aParent);
 
-  nsCOMPtr<nsIDocument> doc(aParent->GetExtantDoc());
+  RefPtr<Document> doc = aParent->GetExtantDoc();
   if (NS_WARN_IF(!doc)) {
     return false;
   }

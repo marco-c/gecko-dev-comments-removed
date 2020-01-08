@@ -62,8 +62,7 @@ PostMessageEvent::Run() {
   
   
   
-  nsCOMPtr<nsIURI> callerDocumentURI;
-  callerDocumentURI.swap(mCallerDocumentURI);
+  nsCOMPtr<nsIURI> callerDocumentURI = mCallerDocumentURI.forget();
 
   
   

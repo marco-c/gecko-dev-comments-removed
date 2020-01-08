@@ -14,7 +14,7 @@
 #include "nsFocusManager.h"
 #include "nsIControllers.h"
 #include "nsIDOMWindow.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
 #include "nsIScriptGlobalObject.h"
@@ -37,7 +37,7 @@ static LazyLogModule gCommandLog("nsXULCommandDispatcher");
 
 
 
-nsXULCommandDispatcher::nsXULCommandDispatcher(nsIDocument* aDocument)
+nsXULCommandDispatcher::nsXULCommandDispatcher(Document* aDocument)
     : mDocument(aDocument), mUpdaters(nullptr), mLocked(false) {}
 
 nsXULCommandDispatcher::~nsXULCommandDispatcher() { Disconnect(); }
@@ -137,7 +137,7 @@ nsXULCommandDispatcher::GetFocusedWindow(mozIDOMWindowProxy** aWindow) {
 
   
   
-  nsCOMPtr<nsIDocument> doc = window->GetDoc();
+  nsCOMPtr<Document> doc = window->GetDoc();
 
   
   

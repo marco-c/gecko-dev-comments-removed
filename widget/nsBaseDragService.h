@@ -24,7 +24,7 @@
 #define DRAG_TRANSLUCENCY 0.65
 
 class nsIContent;
-class nsIDocument;
+
 class nsINode;
 class nsPresContext;
 class nsIImageLoadingContent;
@@ -160,12 +160,15 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   nsCOMPtr<nsINode> mSourceNode;
   nsCString mTriggeringPrincipalURISpec;
-  nsCOMPtr<nsIDocument>
-      mSourceDocument;  
-                        
-  nsContentPolicyType
-      mContentPolicyType;  
-                           
+
+  
+  
+  RefPtr<mozilla::dom::Document> mSourceDocument;
+
+  
+  
+  nsContentPolicyType mContentPolicyType;
+
   RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
 
   

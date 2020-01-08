@@ -33,7 +33,7 @@
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DragEvent.h"
-#include "nsIDocument.h"             
+#include "mozilla/dom/Document.h"    
 #include "nsIFocusManager.h"         
 #include "nsIFormControl.h"          
 #include "nsINode.h"                 
@@ -63,7 +63,7 @@ namespace mozilla {
 using namespace dom;
 
 static void DoCommandCallback(Command aCommand, void* aData) {
-  nsIDocument* doc = static_cast<nsIDocument*>(aData);
+  Document* doc = static_cast<Document*>(aData);
   nsPIDOMWindowOuter* win = doc->GetWindow();
   if (!win) {
     return;
@@ -271,7 +271,7 @@ nsIContent* EditorEventListener::GetFocusedRootContent() {
     return nullptr;
   }
 
-  nsIDocument* composedDoc = focusedContent->GetComposedDoc();
+  Document* composedDoc = focusedContent->GetComposedDoc();
   NS_ENSURE_TRUE(composedDoc, nullptr);
 
   if (composedDoc->HasFlag(NODE_IS_EDITABLE)) {
@@ -287,7 +287,7 @@ bool EditorEventListener::EditorHasFocus() {
   if (!focusedContent) {
     return false;
   }
-  nsIDocument* composedDoc = focusedContent->GetComposedDoc();
+  Document* composedDoc = focusedContent->GetComposedDoc();
   return !!composedDoc;
 }
 
@@ -564,7 +564,7 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
     NS_ENSURE_TRUE(widget, NS_OK);
   }
 
-  nsCOMPtr<nsIDocument> doc = editorBase->GetDocument();
+  RefPtr<Document> doc = editorBase->GetDocument();
 
   
   
@@ -853,10 +853,10 @@ bool EditorEventListener::CanDrop(DragEvent* aEvent) {
   
   
 
-  nsCOMPtr<nsIDocument> domdoc = editorBase->GetDocument();
+  RefPtr<Document> domdoc = editorBase->GetDocument();
   NS_ENSURE_TRUE(domdoc, false);
 
-  nsCOMPtr<nsIDocument> sourceDoc = sourceNode->OwnerDoc();
+  RefPtr<Document> sourceDoc = sourceNode->OwnerDoc();
 
   
   if (domdoc != sourceDoc) {
@@ -1108,7 +1108,7 @@ bool EditorEventListener::ShouldHandleNativeKeyBindings(
     return false;
   }
 
-  nsCOMPtr<nsIDocument> doc = editorBase->GetDocument();
+  RefPtr<Document> doc = editorBase->GetDocument();
   if (doc->HasFlag(NODE_IS_EDITABLE)) {
     
     return true;

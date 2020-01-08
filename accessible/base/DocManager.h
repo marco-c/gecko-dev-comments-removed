@@ -6,7 +6,7 @@
 #define mozilla_a11_DocManager_h_
 
 #include "mozilla/ClearOnShutdown.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIDOMEventListener.h"
 #include "nsRefPtrHashtable.h"
 #include "nsIWebProgressListener.h"
@@ -36,7 +36,7 @@ class DocManager : public nsIWebProgressListener,
   
 
 
-  DocAccessible* GetDocAccessible(nsIDocument* aDocument);
+  DocAccessible* GetDocAccessible(dom::Document* aDocument);
 
   
 
@@ -60,7 +60,7 @@ class DocManager : public nsIWebProgressListener,
 
 
   void NotifyOfDocumentShutdown(DocAccessible* aDocument,
-                                nsIDocument* aDOMDocument);
+                                dom::Document* aDOMDocument);
 
   void RemoveFromXPCDocumentCache(DocAccessible* aDocument);
 
@@ -142,25 +142,25 @@ class DocManager : public nsIWebProgressListener,
 
 
 
-  void HandleDOMDocumentLoad(nsIDocument* aDocument, uint32_t aLoadEventType);
+  void HandleDOMDocumentLoad(dom::Document* aDocument, uint32_t aLoadEventType);
 
   
 
 
-  void AddListeners(nsIDocument* aDocument, bool aAddPageShowListener);
-  void RemoveListeners(nsIDocument* aDocument);
+  void AddListeners(dom::Document* aDocument, bool aAddPageShowListener);
+  void RemoveListeners(dom::Document* aDocument);
 
   
 
 
-  DocAccessible* CreateDocOrRootAccessible(nsIDocument* aDocument);
+  DocAccessible* CreateDocOrRootAccessible(dom::Document* aDocument);
 
   
 
 
   void ClearDocCache();
 
-  typedef nsRefPtrHashtable<nsPtrHashKey<const nsIDocument>, DocAccessible>
+  typedef nsRefPtrHashtable<nsPtrHashKey<const dom::Document>, DocAccessible>
       DocAccessibleHashtable;
   DocAccessibleHashtable mDocAccessibleCache;
 
@@ -182,7 +182,7 @@ class DocManager : public nsIWebProgressListener,
 
 
 
-inline DocAccessible* GetExistingDocAccessible(const nsIDocument* aDocument) {
+inline DocAccessible* GetExistingDocAccessible(const dom::Document* aDocument) {
   nsIPresShell* ps = aDocument->GetShell();
   return ps ? ps->GetDocAccessible() : nullptr;
 }

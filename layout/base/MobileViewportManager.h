@@ -13,12 +13,12 @@
 #include "nsIObserver.h"
 #include "Units.h"
 
-class nsIDocument;
 class nsIPresShell;
 class nsViewportInfo;
 
 namespace mozilla {
 namespace dom {
+class Document;
 class EventTarget;
 }  
 }  
@@ -30,7 +30,8 @@ class MobileViewportManager final : public nsIDOMEventListener,
   NS_DECL_NSIDOMEVENTLISTENER
   NS_DECL_NSIOBSERVER
 
-  MobileViewportManager(nsIPresShell* aPresShell, nsIDocument* aDocument);
+  MobileViewportManager(nsIPresShell* aPresShell,
+                        mozilla::dom::Document* aDocument);
   void Destroy();
 
   
@@ -135,7 +136,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
   void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
                                    const mozilla::ScreenIntSize& aDisplaySize);
 
-  nsCOMPtr<nsIDocument> mDocument;
+  RefPtr<mozilla::dom::Document> mDocument;
   
   nsIPresShell* MOZ_NON_OWNING_REF mPresShell;
   nsCOMPtr<mozilla::dom::EventTarget> mEventTarget;

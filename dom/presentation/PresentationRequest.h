@@ -10,8 +10,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/DOMEventTargetHelper.h"
 
-class nsIDocument;
-
 namespace mozilla {
 namespace dom {
 
@@ -65,7 +63,7 @@ class PresentationRequest final : public DOMEventTargetHelper {
 
   
   
-  bool IsProhibitMixedSecurityContexts(nsIDocument* aDocument);
+  bool IsProhibitMixedSecurityContexts(Document* aDocument);
 
   
   

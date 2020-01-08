@@ -165,13 +165,14 @@ class History final : public IHistory,
 
 
 
-  void NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument);
+  void NotifyVisitedForDocument(nsIURI* aURI,
+                                mozilla::dom::Document* aDocument);
 
   
 
 
 
-  void DispatchNotifyVisited(nsIURI* aURI, nsIDocument* aDocument);
+  void DispatchNotifyVisited(nsIURI* aURI, mozilla::dom::Document* aDocument);
 
   
 

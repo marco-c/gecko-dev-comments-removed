@@ -19,7 +19,6 @@ class nsXBLPrototypeResources;
 class nsXBLPrototypeBinding;
 struct nsXBLResource;
 class nsIObjectOutputStream;
-class nsIDocument;
 
 
 
@@ -69,7 +68,7 @@ class nsXBLResourceLoader : public nsICSSLoaderObserver {
  private:
   
   
-  nsIDocument* MOZ_NON_OWNING_REF mBoundDocument;
+  dom::Document* MOZ_NON_OWNING_REF mBoundDocument;
 };
 
 #endif

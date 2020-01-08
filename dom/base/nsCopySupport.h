@@ -7,12 +7,11 @@
 #define nsCopySupport_h__
 
 #include "nsError.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsStringFwd.h"
 #include "mozilla/EventForwards.h"
 
 class nsINode;
-class nsIDocument;
 class nsIImageLoadingContent;
 class nsIContent;
 class nsITransferable;
@@ -21,6 +20,7 @@ class nsILoadContext;
 
 namespace mozilla {
 namespace dom {
+class Document;
 class Selection;
 }  
 }  
@@ -29,15 +29,16 @@ class nsCopySupport {
   
  public:
   static nsresult ClearSelectionCache();
-  static nsresult HTMLCopy(mozilla::dom::Selection* aSel, nsIDocument* aDoc,
-                           int16_t aClipboardID, bool aWithRubyAnnotation);
+  static nsresult HTMLCopy(mozilla::dom::Selection* aSel,
+                           mozilla::dom::Document* aDoc, int16_t aClipboardID,
+                           bool aWithRubyAnnotation);
 
   
   
   
   static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags,
-                              mozilla::dom::Selection* aSel, nsIDocument* aDoc,
-                              nsAString& outdata);
+                              mozilla::dom::Selection* aSel,
+                              mozilla::dom::Document* aDoc, nsAString& outdata);
 
   static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
                             nsILoadContext* aLoadContext, int32_t aCopyFlags);
@@ -45,12 +46,13 @@ class nsCopySupport {
   
   
   static nsresult GetTransferableForSelection(
-      mozilla::dom::Selection* aSelection, nsIDocument* aDocument,
+      mozilla::dom::Selection* aSelection, mozilla::dom::Document* aDocument,
       nsITransferable** aTransferable);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  static nsresult GetTransferableForNode(nsINode* aNode, nsIDocument* aDoc,
+  static nsresult GetTransferableForNode(nsINode* aNode,
+                                         mozilla::dom::Document* aDoc,
                                          nsITransferable** aTransferable);
   
 
@@ -58,14 +60,14 @@ class nsCopySupport {
 
 
 
-  static nsIContent* GetSelectionForCopy(nsIDocument* aDocument,
+  static nsIContent* GetSelectionForCopy(mozilla::dom::Document* aDocument,
                                          mozilla::dom::Selection** aSelection);
 
   
 
 
 
-  static bool CanCopy(nsIDocument* aDocument);
+  static bool CanCopy(mozilla::dom::Document* aDocument);
 
   
 

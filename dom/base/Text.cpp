@@ -27,7 +27,7 @@ already_AddRefed<Text> Text::SplitText(uint32_t aOffset, ErrorResult& aRv) {
     return nullptr;
   }
 
-  nsIDocument* document = GetComposedDoc();
+  Document* document = GetComposedDoc();
   mozAutoDocUpdate updateBatch(document, true);
 
   

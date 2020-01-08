@@ -174,8 +174,7 @@ class Event : public nsISupports, public nsWrapperCache {
   EventTarget* GetCurrentTarget() const;
 
   
-  
-  already_AddRefed<nsIDocument> GetDocument() const;
+  already_AddRefed<Document> GetDocument() const;
 
   void ComposedPath(nsTArray<RefPtr<EventTarget>>& aPath);
 

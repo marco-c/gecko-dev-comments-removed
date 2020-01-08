@@ -9,7 +9,7 @@
 #include "nsContentPolicyUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
-#include "nsIDocument.h"
+#include "mozilla/dom/Document.h"
 #include "nsIServiceWorkerManager.h"
 #include "nsIScriptError.h"
 #include "nsThreadUtils.h"
@@ -204,7 +204,7 @@ already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
     return nullptr;
   }
 
-  nsIDocument* doc = window->GetExtantDoc();
+  Document* doc = window->GetExtantDoc();
   if (!doc) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
@@ -307,7 +307,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  nsIDocument* doc = window->GetExtantDoc();
+  Document* doc = window->GetExtantDoc();
   if (!doc) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
@@ -357,7 +357,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
   
   
   
-  Unused << GetGlobalIfValid(aRv, [&](nsIDocument* aDoc) {
+  Unused << GetGlobalIfValid(aRv, [&](Document* aDoc) {
     NS_ConvertUTF8toUTF16 reportScope(cleanedScopeURL);
     const char16_t* param[] = {reportScope.get()};
     nsContentUtils::ReportToConsole(
@@ -401,7 +401,7 @@ already_AddRefed<ServiceWorker> ServiceWorkerContainer::GetController() {
 
 already_AddRefed<Promise> ServiceWorkerContainer::GetRegistrations(
     ErrorResult& aRv) {
-  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIDocument* aDoc) {
+  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](Document* aDoc) {
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     NS_LITERAL_CSTRING("Service Workers"), aDoc,
                                     nsContentUtils::eDOM_PROPERTIES,
@@ -459,7 +459,7 @@ void ServiceWorkerContainer::StartMessages() {
 
 already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
     const nsAString& aURL, ErrorResult& aRv) {
-  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIDocument* aDoc) {
+  nsIGlobalObject* global = GetGlobalIfValid(aRv, [](Document* aDoc) {
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     NS_LITERAL_CSTRING("Service Workers"), aDoc,
                                     nsContentUtils::eDOM_PROPERTIES,
@@ -593,7 +593,7 @@ void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
     return;
   }
 
-  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
+  nsCOMPtr<Document> doc = window->GetExtantDoc();
   if (NS_WARN_IF(!doc)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -604,7 +604,7 @@ void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
 
 nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     ErrorResult& aRv,
-    const std::function<void(nsIDocument*)>&& aStorageFailureCB) const {
+    const std::function<void(Document*)>&& aStorageFailureCB) const {
   
   
   
@@ -615,7 +615,7 @@ nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     return nullptr;
   }
 
-  nsCOMPtr<nsIDocument> doc = window->GetExtantDoc();
+  nsCOMPtr<Document> doc = window->GetExtantDoc();
   if (NS_WARN_IF(!doc)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;

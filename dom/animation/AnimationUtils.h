@@ -14,7 +14,6 @@
 #include "nsStringFwd.h"
 
 class nsIContent;
-class nsIDocument;
 class nsIFrame;
 struct JSContext;
 
@@ -23,8 +22,14 @@ namespace mozilla {
 class ComputedTimingFunction;
 class EffectSet;
 
+namespace dom {
+class Document;
+}
+
 class AnimationUtils {
  public:
+  typedef dom::Document Document;
+
   static dom::Nullable<double> TimeDurationToDouble(
       const dom::Nullable<TimeDuration>& aTime) {
     dom::Nullable<double> result;
@@ -58,14 +63,14 @@ class AnimationUtils {
   
 
 
-  static nsIDocument* GetCurrentRealmDocument(JSContext* aCx);
+  static Document* GetCurrentRealmDocument(JSContext* aCx);
 
   
 
 
 
 
-  static nsIDocument* GetDocumentFromGlobal(JSObject* aGlobalObject);
+  static Document* GetDocumentFromGlobal(JSObject* aGlobalObject);
 
   
 
