@@ -326,12 +326,12 @@ public:
 
 
 
-  GraphTime RoundUpToEndOfAudioBlock(GraphTime aTime);
+  static GraphTime RoundUpToEndOfAudioBlock(GraphTime aTime);
   
 
 
 
-  GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
+  static GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
   
 
 
