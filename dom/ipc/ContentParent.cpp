@@ -3103,6 +3103,8 @@ ContentParent::Observe(nsISupports* aSubject,
 {
   if (mSubprocess && (!strcmp(aTopic, "profile-before-change") ||
                       !strcmp(aTopic, "xpcom-shutdown"))) {
+    mShuttingDown = true;
+
     
     ProcessPriorityManager::SetProcessPriority(this,
                                                PROCESS_PRIORITY_FOREGROUND);
@@ -3405,26 +3407,14 @@ ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure)
   self->KillHard("ShutDownKill");
 }
 
-
-
 void
-ContentParent::KillHard(const char* aReason)
+ContentParent::GeneratePairedMinidump(const char* aReason)
 {
-  AUTO_PROFILER_LABEL("ContentParent::KillHard", OTHER);
-
   
   
   
-  if (mCalledKillHard) {
-    return;
-  }
-  mCalledKillHard = true;
-  mForceKillTimer = nullptr;
-
   
-  
-  
-  if (mCrashReporter) {
+  if (mCrashReporter && !mShuttingDown) {
     
     
     
@@ -3447,6 +3437,25 @@ ContentParent::KillHard(const char* aReason)
 
     Telemetry::Accumulate(Telemetry::SUBPROCESS_KILL_HARD, reason, 1);
   }
+}
+
+
+
+void
+ContentParent::KillHard(const char* aReason)
+{
+  AUTO_PROFILER_LABEL("ContentParent::KillHard", OTHER);
+
+  
+  
+  
+  if (mCalledKillHard) {
+    return;
+  }
+  mCalledKillHard = true;
+  mForceKillTimer = nullptr;
+
+  GeneratePairedMinidump(aReason);
 
   ProcessHandle otherProcessHandle;
   if (!base::OpenProcessHandle(OtherPid(), &otherProcessHandle)) {

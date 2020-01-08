@@ -792,6 +792,9 @@ private:
   
   void InitInternal(ProcessPriority aPriority);
 
+  
+  void GeneratePairedMinidump(const char* aReason);
+
   virtual ~ContentParent();
 
   void Init();
@@ -1296,8 +1299,6 @@ private:
   
   int32_t mJSPluginID;
 
-  nsCString mKillHardAnnotation;
-
   
   
   
@@ -1315,6 +1316,7 @@ private:
   
   bool mIsAlive;
 
+  bool mShuttingDown;
   bool mIsForBrowser;
 
   
