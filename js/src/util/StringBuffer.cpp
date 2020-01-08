@@ -28,10 +28,9 @@ ExtractWellSized(JSContext* cx, Buffer& cb)
     
     MOZ_ASSERT(capacity >= length);
     if (length > Buffer::sMaxInlineStorage && capacity - length > length / 4) {
-        CharT* tmp = cx->zone()->pod_realloc<CharT>(buf, capacity, length + 1);
+        CharT* tmp = cx->pod_realloc<CharT>(buf, capacity, length + 1);
         if (!tmp) {
             js_free(buf);
-            ReportOutOfMemory(cx);
             return nullptr;
         }
         buf = tmp;
