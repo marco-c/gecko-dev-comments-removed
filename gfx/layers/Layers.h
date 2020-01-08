@@ -2223,11 +2223,7 @@ public:
 
 
 
-  RenderTargetIntRect GetIntermediateSurfaceRect()
-  {
-    NS_ASSERTION(mUseIntermediateSurface, "Must have intermediate surface");
-    return RenderTargetIntRect::FromUnknownRect(GetLocalVisibleRegion().ToUnknownRegion().GetBounds());
-  }
+  RenderTargetIntRect GetIntermediateSurfaceRect();
 
   
 
