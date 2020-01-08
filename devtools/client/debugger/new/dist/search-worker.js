@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
+		module.exports = factory(require("devtools/shared/flags"));
 	else if(typeof define === 'function' && define.amd)
-		define([], factory);
+		define(["devtools/shared/flags"], factory);
 	else {
-		var a = factory();
+		var a = typeof exports === 'object' ? factory(require("devtools/shared/flags")) : factory(root["devtools/shared/flags"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function() {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_52__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -264,10 +264,224 @@ module.exports = arrayMap;
 
  }),
 
+ 120:
+ (function(module, exports) {
+
+
+var process = module.exports = {};
+
+
+
+
+
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        
+        return setTimeout(fun, 0);
+    }
+    
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        
+        return clearTimeout(marker);
+    }
+    
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            
+            
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; 
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+ }),
+
  1284:
  (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(1631);
+
+
+ }),
+
+ 1384:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = assert;
+
+var _devtoolsEnvironment = __webpack_require__(3721);
+
+function assert(condition, message) {
+  if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
+    throw new Error(`Assertion failure: ${message}`);
+  }
+} 
+
 
 
  }),
@@ -343,11 +557,19 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = getMatches;
 
+var _assert = __webpack_require__(1384);
+
+var _assert2 = _interopRequireDefault(_assert);
+
 var _buildQuery = __webpack_require__(3761);
 
 var _buildQuery2 = _interopRequireDefault(_buildQuery);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
 
 function getMatches(query, text, modifiers) {
   if (!query || !text || !modifiers) {
@@ -363,12 +585,18 @@ function getMatches(query, text, modifiers) {
     const line = lines[i];
     while ((singleMatch = regexQuery.exec(line)) !== null) {
       matchedLocations.push({ line: i, ch: singleMatch.index });
+
+      
+      
+      
+      if (singleMatch[0] === "") {
+        (0, _assert2.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
+        regexQuery.lastIndex++;
+      }
     }
   }
   return matchedLocations;
-} 
-
-
+}
 
  }),
 
@@ -677,6 +905,58 @@ module.exports = {
 
  }),
 
+ 3721:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+(function(process) {
+
+
+
+
+
+const flag = __webpack_require__(52);
+
+function isBrowser() {
+  return typeof window == "object";
+}
+
+function isNode() {
+  return process && process.release && process.release.name == 'node';
+}
+
+function isDevelopment() {
+  if (!isNode() && isBrowser()) {
+    const href = window.location ? window.location.href : "";
+    return href.match(/^file:/) || href.match(/localhost:/);
+  }
+
+  return "production" != "production";
+}
+
+function isTesting() {
+  return flag.testing;
+}
+
+function isFirefoxPanel() {
+  return !isDevelopment();
+}
+
+function isFirefox() {
+  return (/firefox/i.test(navigator.userAgent)
+  );
+}
+
+module.exports = {
+  isDevelopment,
+  isTesting,
+  isFirefoxPanel,
+  isFirefox
+};
+}.call(exports, __webpack_require__(120)))
+
+ }),
+
  3761:
  (function(module, exports, __webpack_require__) {
 
@@ -756,6 +1036,13 @@ function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces =
 
   return new RegExp(query);
 }
+
+ }),
+
+ 52:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_52__;
 
  }),
 
