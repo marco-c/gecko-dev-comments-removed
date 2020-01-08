@@ -4851,7 +4851,12 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 
         
         
+
         
+        itemInfo->mMainMinSize = item->GetMainMinSize();
+        itemInfo->mMainMaxSize = item->GetMainMaxSize();
+        itemInfo->mCrossMinSize = item->GetCrossMinSize();
+        itemInfo->mCrossMaxSize = item->GetCrossMaxSize();
       }
     }
   }
@@ -5266,17 +5271,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       lineInfo.mCrossSize = line->GetLineCrossSize();
       lineInfo.mFirstBaselineOffset = line->GetFirstBaselineOffset();
       lineInfo.mLastBaselineOffset = line->GetLastBaselineOffset();
-
-      uint32_t itemIndex = 0;
-      for (const FlexItem* item = line->GetFirstItem(); item;
-           item = item->getNext(), ++itemIndex) {
-        ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
-        itemInfo.mFrameRect = item->Frame()->GetRect();
-        itemInfo.mMainMinSize = item->GetMainMinSize();
-        itemInfo.mMainMaxSize = item->GetMainMaxSize();
-        itemInfo.mCrossMinSize = item->GetCrossMinSize();
-        itemInfo.mCrossMaxSize = item->GetCrossMaxSize();
-      }
     }
   }
 }

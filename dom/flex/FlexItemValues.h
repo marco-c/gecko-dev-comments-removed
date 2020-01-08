@@ -39,7 +39,6 @@ public:
   }
 
   nsINode* GetNode() const;
-  DOMRectReadOnly* FrameRect() const;
   double MainBaseSize() const;
   double MainDeltaSize() const;
   double MainMinSize() const;
@@ -51,7 +50,6 @@ public:
 protected:
   RefPtr<FlexLineValues> mParent;
   RefPtr<nsINode> mNode;
-  RefPtr<DOMRectReadOnly> mFrameRect;
 
   
   double mMainBaseSize;
