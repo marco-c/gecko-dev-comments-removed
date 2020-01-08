@@ -4624,6 +4624,7 @@ impl DebugServer {
 
 
 
+#[repr(C)]
 pub struct RendererStats {
     pub total_draw_calls: usize,
     pub alpha_target_count: usize,

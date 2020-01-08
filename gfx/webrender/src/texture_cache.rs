@@ -20,14 +20,6 @@ use std::mem;
 use std::rc::Rc;
 
 
-
-const TEXTURE_ARRAY_LAYERS_LINEAR: usize = 4;
-const TEXTURE_ARRAY_LAYERS_NEAREST: usize = 1;
-
-
-const TEXTURE_LAYER_DIMENSIONS: u32 = 2048;
-
-
 const TEXTURE_REGION_DIMENSIONS: u32 = 512;
 
 
@@ -238,25 +230,44 @@ impl TextureCache {
     pub fn new(max_texture_size: u32) -> Self {
         TextureCache {
             max_texture_size,
+            
+            
+            
             array_a8_linear: TextureArray::new(
                 ImageFormat::R8,
                 TextureFilter::Linear,
-                TEXTURE_ARRAY_LAYERS_LINEAR,
+                1024,
+                1,
             ),
+            
+            
             array_a16_linear: TextureArray::new(
                 ImageFormat::R16,
                 TextureFilter::Linear,
-                TEXTURE_ARRAY_LAYERS_LINEAR,
+                1024,
+                1,
             ),
+            
             array_rgba8_linear: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Linear,
-                TEXTURE_ARRAY_LAYERS_LINEAR,
+                2048,
+                4,
             ),
+            
+            
+            
+            
+            
+            
+            
+            
+            
             array_rgba8_nearest: TextureArray::new(
                 ImageFormat::BGRA8,
                 TextureFilter::Nearest,
-                TEXTURE_ARRAY_LAYERS_NEAREST,
+                1024,
+                1,
             ),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
@@ -746,8 +757,8 @@ impl TextureCache {
             let update_op = TextureUpdate {
                 id: texture_id,
                 op: TextureUpdateOp::Create {
-                    width: TEXTURE_LAYER_DIMENSIONS,
-                    height: TEXTURE_LAYER_DIMENSIONS,
+                    width: texture_array.dimensions,
+                    height: texture_array.dimensions,
                     format: descriptor.format,
                     filter: texture_array.filter,
                     
@@ -1081,6 +1092,7 @@ impl TextureRegion {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureArray {
     filter: TextureFilter,
+    dimensions: u32,
     layer_count: usize,
     format: ImageFormat,
     is_allocated: bool,
@@ -1092,11 +1104,13 @@ impl TextureArray {
     fn new(
         format: ImageFormat,
         filter: TextureFilter,
-        layer_count: usize
+        dimensions: u32,
+        layer_count: usize,
     ) -> Self {
         TextureArray {
             format,
             filter,
+            dimensions,
             layer_count,
             is_allocated: false,
             regions: Vec::new(),
@@ -1112,8 +1126,8 @@ impl TextureArray {
 
     fn update_profile(&self, counter: &mut ResourceProfileCounter) {
         if self.is_allocated {
-            let size = self.layer_count as u32 * TEXTURE_LAYER_DIMENSIONS *
-                TEXTURE_LAYER_DIMENSIONS * self.format.bytes_per_pixel();
+            let size = self.layer_count as u32 * self.dimensions *
+                self.dimensions * self.format.bytes_per_pixel();
             counter.set(self.layer_count as usize, size as usize);
         } else {
             counter.set(0, 0);
@@ -1132,8 +1146,8 @@ impl TextureArray {
         
         
         if !self.is_allocated {
-            debug_assert!(TEXTURE_LAYER_DIMENSIONS % TEXTURE_REGION_DIMENSIONS == 0);
-            let regions_per_axis = TEXTURE_LAYER_DIMENSIONS / TEXTURE_REGION_DIMENSIONS;
+            debug_assert!(self.dimensions % TEXTURE_REGION_DIMENSIONS == 0);
+            let regions_per_axis = self.dimensions / TEXTURE_REGION_DIMENSIONS;
             for layer_index in 0 .. self.layer_count {
                 for y in 0 .. regions_per_axis {
                     for x in 0 .. regions_per_axis {
