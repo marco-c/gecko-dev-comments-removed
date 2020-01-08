@@ -162,8 +162,8 @@ ProfileBufferCollector::CollectProfilingStackFrame(const js::ProfilingStackFrame
 {
   
 
-  MOZ_ASSERT(aFrame.kind() == js::ProfilingStackFrame::Kind::LABEL ||
-             aFrame.kind() == js::ProfilingStackFrame::Kind::JS_NORMAL);
+  MOZ_ASSERT(aFrame.isLabelFrame() ||
+             (aFrame.isJsFrame() && !aFrame.isOSRFrame()));
 
   const char* label = aFrame.label();
   const char* dynamicString = aFrame.dynamicString();

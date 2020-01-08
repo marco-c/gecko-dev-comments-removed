@@ -985,7 +985,7 @@ MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       
-      if (profilingStackFrame.kind() == js::ProfilingStackFrame::Kind::JS_OSR) {
+      if (profilingStackFrame.isOSRFrame()) {
           profilingStackIndex++;
           continue;
       }
