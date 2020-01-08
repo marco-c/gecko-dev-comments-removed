@@ -646,6 +646,14 @@ public:
 
 
 
+  static void InitiateResourceDocLoads(nsIFrame* aFrame);
+
+  
+
+
+
+
+
 
 
 

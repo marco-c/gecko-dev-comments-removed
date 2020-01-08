@@ -1174,8 +1174,7 @@ nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
   if (!IsTextFrame() && !GetPrevContinuation()) {
     
     
-    
-    Unused << SVGObserverUtils::GetEffectProperties(this);
+    SVGObserverUtils::InitiateResourceDocLoads(this);
   }
 
   
