@@ -999,7 +999,8 @@ TRR::OnStopRequest(nsIRequest *aRequest,
   channel.swap(mChannel);
 
   
-  gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode));
+  gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode) ? TRRService::OKAY_NORMAL :
+                         TRRService::OKAY_BAD);
 
   
   if (!mFailed && NS_SUCCEEDED(aStatusCode)) {
@@ -1137,7 +1138,7 @@ TRR::Cancel()
     LOG(("TRR: %p canceling Channel %p %s %d\n", this,
          mChannel.get(), mHost.get(), mType));
     mChannel->Cancel(NS_ERROR_ABORT);
-    gTRRService->TRRIsOkay(false);
+    gTRRService->TRRIsOkay(TRRService::OKAY_TIMEOUT);
   }
 }
 
