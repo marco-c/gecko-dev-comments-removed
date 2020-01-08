@@ -1067,12 +1067,6 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         latin1 = lengthAndEncoding & 0x1;
     }
 
-    
-    
-    if (!latin1) {
-        MOZ_TRY(xdr->codeAlign(sizeof(char16_t)));
-    }
-
     if (mode == XDR_ENCODE) {
         JS::AutoCheckCannotGC nogc;
         if (latin1) {
@@ -1100,7 +1094,13 @@ js::XDRAtom(XDRState<mode>* xdr, MutableHandleAtom atomp)
         
         const char16_t* chars = nullptr;
         if (length) {
-            const uint8_t *ptr;
+            
+            
+            
+            
+            MOZ_TRY(xdr->codeAlign(sizeof(char16_t)));
+
+            const uint8_t* ptr;
             size_t nbyte = length * sizeof(char16_t);
             MOZ_TRY(xdr->peekData(&ptr, nbyte));
             MOZ_ASSERT(reinterpret_cast<uintptr_t>(ptr) % sizeof(char16_t) == 0,
