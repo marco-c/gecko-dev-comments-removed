@@ -1289,6 +1289,8 @@ nsCSPParser::parseContentSecurityPolicy(const nsAString& aPolicyString,
     }
   }
 
+  policy->setDeliveredViaMetaTagFlag(aDeliveredViaMetaTag);
+
   if (policy->getNumDirectives() == 0) {
     
     
