@@ -620,8 +620,12 @@ function remoteSettingsFunction() {
     const { bucketName } = rsOptions;
     const key = `${bucketName}/${collectionName}`;
     if (!_clients.has(key)) {
+      
       const c = new RemoteSettingsClient(collectionName, rsOptions);
       _clients.set(key, c);
+      
+      
+      Services.prefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
     }
     return _clients.get(key);
   };
