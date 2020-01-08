@@ -197,7 +197,9 @@ exports.getFrameOffsets = getFrameOffsets;
 
 
 
-function getAdjustedQuads(boundaryWindow, node, region) {
+
+
+function getAdjustedQuads(boundaryWindow, node, region, {ignoreZoom} = {}) {
   if (!node || !node.getBoxQuads) {
     return [];
   }
@@ -211,7 +213,7 @@ function getAdjustedQuads(boundaryWindow, node, region) {
     return [];
   }
 
-  const scale = getCurrentZoom(node);
+  const scale = ignoreZoom ? 1 : getCurrentZoom(node);
   const { scrollX, scrollY } = boundaryWindow;
 
   const xOffset = scrollX * scale;
