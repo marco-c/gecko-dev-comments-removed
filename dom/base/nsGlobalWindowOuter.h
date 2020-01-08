@@ -113,6 +113,7 @@ class MediaQueryList;
 class Navigator;
 class OwningExternalOrWindowProxy;
 class Promise;
+class PostMessageData;
 class PostMessageEvent;
 struct RequestInit;
 class RequestOrUSVString;
@@ -757,7 +758,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   inline void MaybeClearInnerWindow(nsGlobalWindowInner* aExpectedInner);
 
   
-  nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
+  static nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
 
   
   nsPIDOMWindowOuter* GetParentInternal();
@@ -966,6 +967,68 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                            JS::Handle<JS::Value> aTransfer,
                            nsIPrincipal& aSubjectPrincipal,
                            mozilla::ErrorResult& aError);
+
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool GatherPostMessageData(
+      JSContext* aCx, const nsAString& aTargetOrigin,
+      mozilla::dom::BrowsingContext** aSource, nsAString& aOrigin,
+      nsIURI** aTargetOriginURI, nsIPrincipal** aCallerPrincipal,
+      uint64_t* aCallerInnerWindowID, nsIURI** aCallerDocumentURI,
+      mozilla::ErrorResult& aError);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool GetPrincipalForPostMessage(const nsAString& aTargetOrigin,
+                                  nsIURI* aTargetOriginURI,
+                                  nsIPrincipal* aCallerPrincipal,
+                                  nsIPrincipal& aSubjectPrincipal,
+                                  nsIPrincipal** aProvidedPrincipal);
 
   
   
