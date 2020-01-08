@@ -439,9 +439,69 @@ nsHttpChannel::LogBlockedCORSRequest(const nsAString& aMessage, const nsACString
 
 
 nsresult
+nsHttpChannel::PrepareToConnect()
+{
+    LOG(("nsHttpChannel::PrepareToConnect [this=%p]\n", this));
+
+    AddCookiesToRequest();
+
+    
+    CallOnModifyRequestObservers();
+
+    SetLoadGroupUserAgentOverride();
+
+    
+    if (mCanceled) {
+        return mStatus;
+    }
+
+    if (mSuspendCount) {
+        
+        LOG(("Waiting until resume OnBeforeConnect [this=%p]\n", this));
+        MOZ_ASSERT(!mCallOnResume);
+        mCallOnResume = &nsHttpChannel::HandleOnBeforeConnect;
+        return NS_OK;
+    }
+
+    return OnBeforeConnect();
+}
+
+void
+nsHttpChannel::HandleOnBeforeConnect()
+{
+    MOZ_ASSERT(!mCallOnResume, "How did that happen?");
+    nsresult rv;
+
+    if (mSuspendCount) {
+        LOG(("Waiting until resume OnBeforeConnect [this=%p]\n", this));
+        mCallOnResume = &nsHttpChannel::HandleOnBeforeConnect;
+        return;
+    }
+
+    LOG(("nsHttpChannel::HandleOnBeforeConnect [this=%p]\n", this));
+    rv = OnBeforeConnect();
+    if (NS_FAILED(rv)) {
+        CloseCacheEntry(false);
+        Unused << AsyncAbort(rv);
+    }
+}
+
+nsresult
 nsHttpChannel::OnBeforeConnect()
 {
     nsresult rv;
+
+    
+    
+    if (mCanceled) {
+        return mStatus;
+    }
+
+    
+    
+    if (mAPIRedirectToURI) {
+        return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
+    }
 
     
     
@@ -6109,8 +6169,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
         mUserSetCookieHeader = cookieHeader;
     }
 
-    AddCookiesToRequest();
-
     
     
     
@@ -6323,23 +6381,6 @@ nsHttpChannel::BeginConnect()
              this, static_cast<uint32_t>(rv)));
     }
 
-    
-    CallOnModifyRequestObservers();
-
-    SetLoadGroupUserAgentOverride();
-
-    
-    if (mCanceled) {
-        return mStatus;
-    }
-
-    if (mSuspendCount) {
-        LOG(("Waiting until resume BeginConnect [this=%p]\n", this));
-        MOZ_ASSERT(!mCallOnResume);
-        mCallOnResume = &nsHttpChannel::HandleBeginConnectContinue;
-        return NS_OK;
-    }
-
     return BeginConnectContinue();
 }
 
@@ -6368,7 +6409,6 @@ nsHttpChannel::BeginConnectContinue()
 {
     nsresult rv;
 
-    
     
     if (mCanceled) {
         return mStatus;
@@ -6651,7 +6691,7 @@ nsHttpChannel::ContinueBeginConnectWithResult()
         
         rv = mStatus;
     } else {
-        rv = OnBeforeConnect();
+        rv = PrepareToConnect();
     }
 
     LOG(("nsHttpChannel::ContinueBeginConnectWithResult result [this=%p rv=%" PRIx32
