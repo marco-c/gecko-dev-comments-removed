@@ -300,6 +300,7 @@ private:
     
     
     nsresult BeginConnectActual();
+    void MaybeStartDNSPrefetch();
 
     
     
