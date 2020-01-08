@@ -47,6 +47,43 @@ const declaration = exports.declaration = {
 
 
 
+exports.pseudoClasses = {
+  
+  ":active": PropTypes.shape({
+    
+    isChecked: PropTypes.bool,
+    
+    isDisabled: PropTypes.bool,
+  }),
+
+  
+  ":focus": PropTypes.shape({
+    
+    isChecked: PropTypes.bool,
+    
+    isDisabled: PropTypes.bool,
+  }),
+
+  
+  ":focus-within": PropTypes.shape({
+    
+    isChecked: PropTypes.bool,
+    
+    isDisabled: PropTypes.bool,
+  }),
+
+  
+  ":hover": PropTypes.shape({
+    
+    isChecked: PropTypes.bool,
+    
+    isDisabled: PropTypes.bool,
+  }),
+};
+
+
+
+
 const selector = exports.selector = {
   
   matchedSelectors: PropTypes.arrayOf(PropTypes.string),

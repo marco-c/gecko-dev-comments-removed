@@ -9,6 +9,11 @@ const ElementStyle = require("devtools/client/inspector/rules/models/element-sty
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
+const {
+  disableAllPseudoClasses,
+  setPseudoClassLocks,
+  togglePseudoClass,
+} = require("./actions/pseudo-classes");
 const { updateRules } = require("./actions/rules");
 
 const RulesApp = createFactory(require("./components/RulesApp"));
@@ -32,6 +37,7 @@ class RulesView {
     this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
 
     this.onSelection = this.onSelection.bind(this);
+    this.onTogglePseudoClass = this.onTogglePseudoClass.bind(this);
 
     this.inspector.sidebar.on("select", this.onSelection);
     this.selection.on("detached-front", this.onSelection);
@@ -45,7 +51,9 @@ class RulesView {
       return;
     }
 
-    const rulesApp = RulesApp({});
+    const rulesApp = RulesApp({
+      onTogglePseudoClass: this.onTogglePseudoClass,
+    });
 
     const provider = createElement(Provider, {
       id: "ruleview",
@@ -131,9 +139,22 @@ class RulesView {
 
 
 
+  onTogglePseudoClass(value) {
+    this.store.dispatch(togglePseudoClass(value));
+    this.inspector.togglePseudoClass(value);
+  }
+
+  
+
+
+
+
+
+
 
   async update(element) {
     if (!element) {
+      this.store.dispatch(disableAllPseudoClasses());
       this.store.dispatch(updateRules([]));
       return;
     }
@@ -142,6 +163,7 @@ class RulesView {
       this.showUserAgentStyles);
     await this.elementStyle.populate();
 
+    this.store.dispatch(setPseudoClassLocks(this.elementStyle.element.pseudoClassLocks));
     this.store.dispatch(updateRules(this.elementStyle.rules));
   }
 }

@@ -9,6 +9,17 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
+  
+  "DISABLE_ALL_PSEUDO_CLASSES",
+
+  
+  
+  "SET_PSEUDO_CLASSES",
+
+  
+  "TOGGLE_PSEUDO_CLASS",
+
+  
   "UPDATE_RULES",
 
 ], module.exports);
