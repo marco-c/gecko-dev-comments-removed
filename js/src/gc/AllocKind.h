@@ -36,6 +36,7 @@ namespace gc {
 
 
 
+
 #define FOR_EACH_OBJECT_ALLOCKIND(D)
  \
     D(FUNCTION,            Object,       JSObject,          JSFunction,        true,   true,   true) \
@@ -74,6 +75,7 @@ namespace gc {
     D(FAT_INLINE_STRING,   String,        JSFatInlineString, JSFatInlineString, true,   true,  true) \
     D(STRING,              String,        JSString,          JSString,          true,   true,  true)
 
+
 #define FOR_EACH_NONOBJECT_ALLOCKIND(D) \
     FOR_EACH_NONOBJECT_NONNURSERY_ALLOCKIND(D) \
     FOR_EACH_NURSERY_STRING_ALLOCKIND(D)
@@ -82,9 +84,9 @@ namespace gc {
     FOR_EACH_OBJECT_ALLOCKIND(D) \
     FOR_EACH_NONOBJECT_ALLOCKIND(D)
 
-enum class AllocKind : uint8_t {
 #define DEFINE_ALLOC_KIND(allocKind, _1, _2, _3, _4, _5, _6) allocKind,
-
+enum class AllocKind : uint8_t {
+    
     FOR_EACH_OBJECT_ALLOCKIND(DEFINE_ALLOC_KIND)
 
     OBJECT_LIMIT,
@@ -97,9 +99,9 @@ enum class AllocKind : uint8_t {
 
     FIRST = 0,
     OBJECT_FIRST = FUNCTION 
-
-#undef DEFINE_ALLOC_KIND
+    
 };
+#undef DEFINE_ALLOC_KIND
 
 static_assert(int(AllocKind::FIRST) == 0,
               "Various places depend on AllocKind starting at 0");
