@@ -297,13 +297,26 @@ inline wchar_t* ArgToString(wchar_t* d, const wchar_t* s) {
 
 
 
-inline UniquePtr<wchar_t[]> MakeCommandLine(int argc, wchar_t** argv) {
+
+
+
+
+
+
+inline UniquePtr<wchar_t[]> MakeCommandLine(int argc, wchar_t** argv,
+                                            int aArgcExtra = 0,
+                                            wchar_t** aArgvExtra = nullptr) {
   int i;
   int len = 0;
 
   
+  
   for (i = 0; i < argc; ++i) {
     len += internal::ArgStrLen(argv[i]) + 1;
+  }
+
+  for (i = 0; i < aArgcExtra; ++i) {
+    len += internal::ArgStrLen(aArgvExtra[i]) + 1;
   }
 
   
@@ -316,10 +329,20 @@ inline UniquePtr<wchar_t[]> MakeCommandLine(int argc, wchar_t** argv) {
     return s;
   }
 
+  int totalArgc = argc + aArgcExtra;
+
   wchar_t* c = s.get();
   for (i = 0; i < argc; ++i) {
     c = internal::ArgToString(c, argv[i]);
-    if (i + 1 != argc) {
+    if (i + 1 != totalArgc) {
+      *c = ' ';
+      ++c;
+    }
+  }
+
+  for (i = 0; i < aArgcExtra; ++i) {
+    c = internal::ArgToString(c, aArgvExtra[i]);
+    if (i + 1 != aArgcExtra) {
       *c = ' ';
       ++c;
     }
