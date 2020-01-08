@@ -87,10 +87,10 @@ struct BasePoint3D {
   }
 
   Sub& operator/=(T aScale) {
-      x /= aScale;
-      y /= aScale;
-      z /= aScale;
-      return *static_cast<Sub*>(this);
+    x /= aScale;
+    y /= aScale;
+    z /= aScale;
+    return *static_cast<Sub*>(this);
   }
 
   Sub operator-() const {
@@ -98,22 +98,34 @@ struct BasePoint3D {
   }
 
   Sub CrossProduct(const Sub& aPoint) const {
-      return Sub(y * aPoint.z - aPoint.y * z,
-                 z * aPoint.x - aPoint.z * x,
-                 x * aPoint.y - aPoint.x * y);
+    return Sub(y * aPoint.z - aPoint.y * z,
+               z * aPoint.x - aPoint.z * x,
+               x * aPoint.y - aPoint.x * y);
   }
 
   T DotProduct(const Sub& aPoint) const {
-      return x * aPoint.x + y * aPoint.y + z * aPoint.z;
+    return x * aPoint.x + y * aPoint.y + z * aPoint.z;
   }
 
   T Length() const {
-      return sqrt(x*x + y*y + z*z);
+    return sqrt(x*x + y*y + z*z);
   }
 
   
   void Normalize() {
-      *this /= Length();
+    *this /= Length();
+  }
+
+  void RobustNormalize() {
+    
+    
+    T length = Length();
+    if (mozilla::IsInfinite(length)) {
+      *this /= std::numeric_limits<T>::max();
+      length = Length();
+    }
+
+    *this /= length;
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const BasePoint3D<T, Sub>& aPoint) {
