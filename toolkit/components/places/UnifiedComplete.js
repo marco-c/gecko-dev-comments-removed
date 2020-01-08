@@ -21,44 +21,6 @@ const {
 } = Ci.mozIPlacesAutoComplete;
 
 
-const INSERTMETHOD = {
-  APPEND: 0, 
-  MERGE_RELATED: 1, 
-  MERGE: 2, 
-};
-
-
-
-
-const PREF_URLBAR_BRANCH = "browser.urlbar.";
-const PREF_URLBAR_DEFAULTS = new Map([
-  ["autocomplete.enabled", true],
-  ["autoFill", true],
-  ["autoFill.searchEngines", false],
-  ["autoFill.stddevMultiplier", [0.0, "getFloatPref"]],
-  ["restyleSearches", false],
-  ["delay", 50],
-  ["matchBehavior", MATCH_BOUNDARY_ANYWHERE],
-  ["filter.javascript", true],
-  ["maxRichResults", 10],
-  ["suggest.history", true],
-  ["suggest.bookmark", true],
-  ["suggest.openpage", true],
-  ["suggest.history.onlyTyped", false],
-  ["suggest.searches", false],
-  ["maxCharsForSearchSuggestions", 20],
-  ["maxHistoricalSearchSuggestions", 0],
-  ["usepreloadedtopurls.enabled", true],
-  ["usepreloadedtopurls.expire_days", 14],
-  ["matchBuckets", "suggestion:4,general:Infinity"],
-  ["matchBucketsSearch", ""],
-  ["insertMethod", INSERTMETHOD.MERGE_RELATED],
-]);
-const PREF_OTHER_DEFAULTS = new Map([
-  ["keyword.enabled", true],
-]);
-
-
 
 const QUERYTYPE_FILTERED            = 0;
 const QUERYTYPE_AUTOFILL_ORIGIN     = 1;
@@ -75,12 +37,6 @@ const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
 const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
 
 const FRECENCY_DEFAULT = 1000;
-
-
-
-
-
-const MAXIMUM_ALLOWED_EXTENSION_MATCHES = 6;
 
 
 const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 3000;
@@ -135,35 +91,6 @@ const TOKEN_TO_BEHAVIOR_MAP = new Map([
   ["#", "title"],
   ["@", "url"],
 ]);
-
-const MATCHTYPE = {
-  HEURISTIC: "heuristic",
-  GENERAL: "general",
-  SUGGESTION: "suggestion",
-  EXTENSION: "extension",
-};
-
-
-
-
-
-
-
-
-
-
-
-const DEFAULT_BUCKETS_BEFORE = [
-  [MATCHTYPE.HEURISTIC, 1],
-  [MATCHTYPE.EXTENSION, MAXIMUM_ALLOWED_EXTENSION_MATCHES - 1],
-];
-
-
-
-const DEFAULT_BUCKETS_AFTER = [
-  [MATCHTYPE.SUGGESTION, Infinity],
-  [MATCHTYPE.GENERAL, Infinity],
-];
 
 
 
@@ -407,15 +334,17 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
-  Sqlite: "resource://gre/modules/Sqlite.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
-  ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
-  PlacesSearchAutocompleteProvider: "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
-  PlacesRemoteTabsAutocompleteProvider: "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
+  ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  PlacesRemoteTabsAutocompleteProvider: "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
+  PlacesSearchAutocompleteProvider: "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
+  Sqlite: "resource://gre/modules/Sqlite.jsm",
+  TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "syncUsernamePref",
@@ -553,175 +482,6 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
     this._queue.clear();
   },
 }));
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
-  let branch = Services.prefs.getBranch(PREF_URLBAR_BRANCH);
-  let types = ["history", "bookmark", "openpage", "searches"];
-  let prefTypes = new Map([["boolean", "Bool"], ["string", "Char"], ["number", "Int"]]);
-
-  function readPref(pref) {
-    let prefs = branch;
-    let def = PREF_URLBAR_DEFAULTS.get(pref);
-    if (def === undefined) {
-      prefs = Services.prefs;
-      def = PREF_OTHER_DEFAULTS.get(pref);
-    }
-    if (def === undefined)
-      throw new Error("Trying to access an unknown pref " + pref);
-    let getterName;
-    if (!Array.isArray(def)) {
-      getterName = `get${prefTypes.get(typeof def)}Pref`;
-    } else {
-      if (def.length != 2) {
-        throw new Error("Malformed pref def: " + pref);
-      }
-      [def, getterName] = def;
-    }
-    return prefs[getterName](pref, def);
-  }
-
-  function getPrefValue(pref) {
-    switch (pref) {
-      case "matchBuckets": {
-        
-        let val = readPref(pref);
-        try {
-          val = PlacesUtils.convertMatchBucketsStringToArray(val);
-        } catch (ex) {
-          val = PlacesUtils.convertMatchBucketsStringToArray(PREF_URLBAR_DEFAULTS.get(pref));
-        }
-        return [ ...DEFAULT_BUCKETS_BEFORE,
-                ...val,
-                ...DEFAULT_BUCKETS_AFTER ];
-      }
-      case "matchBucketsSearch": {
-        
-        let val = readPref(pref);
-        if (val) {
-          
-          try {
-            val = PlacesUtils.convertMatchBucketsStringToArray(val);
-            return [ ...DEFAULT_BUCKETS_BEFORE,
-                    ...val,
-                    ...DEFAULT_BUCKETS_AFTER ];
-          } catch (ex) {  }
-        }
-        return store.get("matchBuckets");
-      }
-      case "suggest.history.onlyTyped": {
-        
-        return store.get("suggest.history") && readPref(pref);
-      }
-      case "defaultBehavior": {
-        let val = 0;
-        for (let type of [...types, "history.onlyTyped"]) {
-          let behavior = type == "history.onlyTyped" ? "TYPED" : type.toUpperCase();
-          val |= store.get("suggest." + type) &&
-                      Ci.mozIPlacesAutoComplete["BEHAVIOR_" + behavior];
-        }
-        return val;
-      }
-      case "emptySearchDefaultBehavior": {
-        
-        
-        
-        
-        let val = Ci.mozIPlacesAutoComplete.BEHAVIOR_RESTRICT;
-        if (store.get("suggest.history")) {
-          val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_HISTORY |
-                Ci.mozIPlacesAutoComplete.BEHAVIOR_TYPED;
-        } else if (store.get("suggest.bookmark")) {
-          val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_BOOKMARK;
-        } else {
-          val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_OPENPAGE;
-        }
-        return val;
-      }
-      case "matchBehavior": {
-        
-        let val = readPref(pref);
-        if (![MATCH_ANYWHERE, MATCH_BOUNDARY, MATCH_BEGINNING].includes(val)) {
-          val = MATCH_BOUNDARY_ANYWHERE;
-        }
-        return val;
-      }
-    }
-    return readPref(pref);
-  }
-
-  
-  
-  
-  let linkingPrefs = false;
-  function updateLinkedPrefs(changedPref = "") {
-    
-    if (linkingPrefs)
-      return;
-    linkingPrefs = true;
-    try {
-      if (changedPref.startsWith("suggest.")) {
-        
-        branch.setBoolPref("autocomplete.enabled",
-                          types.some(type => store.get("suggest." + type)));
-      } else if (store.get("autocomplete.enabled")) {
-        
-        
-        if (types.every(type => !store.get("suggest." + type))) {
-          for (let type of types) {
-            let def = PREF_URLBAR_DEFAULTS.get("suggest." + type);
-            branch.setBoolPref("suggest." + type, def);
-          }
-        }
-      } else {
-        
-        for (let type of types) {
-          branch.setBoolPref("suggest." + type, false);
-        }
-      }
-    } finally {
-      linkingPrefs = false;
-    }
-  }
-
-  let store = {
-    _map: new Map(),
-    get(pref) {
-      if (!this._map.has(pref))
-        this._map.set(pref, getPrefValue(pref));
-      return this._map.get(pref);
-    },
-    observe(subject, topic, data) {
-      let pref = data.replace(PREF_URLBAR_BRANCH, "");
-      if (!PREF_URLBAR_DEFAULTS.has(pref) && !PREF_OTHER_DEFAULTS.has(pref))
-        return;
-      this._map.delete(pref);
-      
-      if (pref == "matchBuckets") {
-        this._map.delete("matchBucketsSearch");
-      } else if (pref == "suggest.history") {
-        this._map.delete("suggest.history.onlyTyped");
-      }
-      if (pref == "autocomplete.enabled" || pref.startsWith("suggest.")) {
-        this._map.delete("defaultBehavior");
-        this._map.delete("emptySearchDefaultBehavior");
-        updateLinkedPrefs(pref);
-      }
-    },
-    QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIObserver,
-      Ci.nsISupportsWeakReference,
-    ]),
-  };
-  Services.prefs.addObserver(PREF_URLBAR_BRANCH, store, true);
-  Services.prefs.addObserver("keyword.enabled", store, true);
-
-  
-  updateLinkedPrefs();
-  return store;
-});
 
 
 
@@ -897,10 +657,10 @@ function Search(searchString, searchParam, autocompleteListener,
   this._searchString = Services.textToSubURI.unEscapeURIForUI("UTF-8", suffix);
   this._strippedPrefix = prefix.toLowerCase();
 
-  this._matchBehavior = Prefs.get("matchBehavior");
+  this._matchBehavior = UrlbarPrefs.get("matchBehavior");
   
-  this._behavior = this._searchString ? Prefs.get("defaultBehavior")
-                                      : Prefs.get("emptySearchDefaultBehavior");
+  this._behavior = this._searchString ? UrlbarPrefs.get("defaultBehavior")
+                                      : UrlbarPrefs.get("emptySearchDefaultBehavior");
 
   let params = new Set(searchParam.split(" "));
   this._enableActions = params.has("enable-actions");
@@ -946,13 +706,13 @@ function Search(searchString, searchParam, autocompleteListener,
   for (let i = 0; previousResult && i < previousResult.matchCount; ++i) {
     let style = previousResult.getStyleAt(i);
     if (style.includes("heuristic")) {
-      this._previousSearchMatchTypes.push(MATCHTYPE.HEURISTIC);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.HEURISTIC);
     } else if (style.includes("suggestion")) {
-      this._previousSearchMatchTypes.push(MATCHTYPE.SUGGESTION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.SUGGESTION);
     } else if (style.includes("extension")) {
-      this._previousSearchMatchTypes.push(MATCHTYPE.EXTENSION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.EXTENSION);
     } else {
-      this._previousSearchMatchTypes.push(MATCHTYPE.GENERAL);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.GENERAL);
     }
   }
 
@@ -973,7 +733,7 @@ function Search(searchString, searchParam, autocompleteListener,
   this._usedPlaceIds = new Set();
 
   
-  this._counts = Object.values(MATCHTYPE)
+  this._counts = Object.values(UrlbarUtils.MATCHTYPE)
                        .reduce((o, p) => { o[p] = 0; return o; }, {});
 }
 
@@ -1062,7 +822,7 @@ Search.prototype = {
     
     
     
-    if (!Prefs.get("filter.javascript")) {
+    if (!UrlbarPrefs.get("filter.javascript")) {
       this.setBehavior("javascript");
     }
 
@@ -1160,7 +920,7 @@ Search.prototype = {
     this._addingHeuristicFirstMatch = true;
     let hasHeuristic = await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
-    this._cleanUpNonCurrentMatches(MATCHTYPE.HEURISTIC);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.HEURISTIC);
     if (!this.pending)
       return;
 
@@ -1170,7 +930,7 @@ Search.prototype = {
     
     
     if (hasHeuristic) {
-      await this._sleep(Prefs.get("delay"));
+      await this._sleep(UrlbarPrefs.get("delay"));
       if (!this.pending)
         return;
     }
@@ -1192,7 +952,7 @@ Search.prototype = {
     if (this._enableActions && this._searchTokens.length > 0) {
       
       let searchString = this._searchTokens.join(" ")
-                             .substr(0, Prefs.get("maxCharsForSearchSuggestions"));
+                             .substr(0, UrlbarPrefs.get("maxCharsForSearchSuggestions"));
       
       
       if (this.hasBehavior("searches") && !this._inPrivateWindow &&
@@ -1201,7 +961,7 @@ Search.prototype = {
         if (this.hasBehavior("restrict")) {
           
           await searchSuggestionsCompletePromise;
-          this._cleanUpNonCurrentMatches(MATCHTYPE.SUGGESTION);
+          this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.SUGGESTION);
           
           
           this._autocompleteSearch.finishSearch(true);
@@ -1211,7 +971,7 @@ Search.prototype = {
     }
     
     searchSuggestionsCompletePromise.then(() => {
-      this._cleanUpNonCurrentMatches(MATCHTYPE.SUGGESTION);
+      this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.SUGGESTION);
     });
 
     
@@ -1246,26 +1006,27 @@ Search.prototype = {
 
     
     while (this._extraAdaptiveRows.length &&
-           this._currentMatchCount < Prefs.get("maxRichResults")) {
+           this._currentMatchCount < UrlbarPrefs.get("maxRichResults")) {
       this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
     }
 
     
     while (this._extraRemoteTabRows.length &&
-          this._currentMatchCount < Prefs.get("maxRichResults")) {
+          this._currentMatchCount < UrlbarPrefs.get("maxRichResults")) {
       this._addMatch(this._extraRemoteTabRows.shift());
     }
 
     
     
-    this._cleanUpNonCurrentMatches(MATCHTYPE.GENERAL);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.GENERAL);
 
     
     
     
-    let count = this._counts[MATCHTYPE.GENERAL] + this._counts[MATCHTYPE.HEURISTIC];
+    let count = this._counts[UrlbarUtils.MATCHTYPE.GENERAL] +
+                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
     if (this._matchBehavior == MATCH_BOUNDARY_ANYWHERE &&
-        count < Prefs.get("maxRichResults")) {
+        count < UrlbarPrefs.get("maxRichResults")) {
       this._matchBehavior = MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
@@ -1283,16 +1044,16 @@ Search.prototype = {
   },
 
   async _checkPreloadedSitesExpiry() {
-    if (!Prefs.get("usepreloadedtopurls.enabled"))
+    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled"))
       return;
     let profileCreationDate = await ProfileAgeCreatedPromise;
     let daysSinceProfileCreation = (Date.now() - profileCreationDate) / MS_PER_DAY;
-    if (daysSinceProfileCreation > Prefs.get("usepreloadedtopurls.expire_days"))
+    if (daysSinceProfileCreation > UrlbarPrefs.get("usepreloadedtopurls.expire_days"))
       Services.prefs.setBoolPref("browser.urlbar.usepreloadedtopurls.enabled", false);
   },
 
   _matchPreloadedSites() {
-    if (!Prefs.get("usepreloadedtopurls.enabled")) {
+    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
       return;
     }
 
@@ -1317,7 +1078,7 @@ Search.prototype = {
   },
 
   _matchPreloadedSiteForAutofill() {
-    if (!Prefs.get("usepreloadedtopurls.enabled")) {
+    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
       return false;
     }
 
@@ -1416,7 +1177,8 @@ Search.prototype = {
         try {
           new URL(this._originalSearchString);
         } catch (ex) {
-          if (Prefs.get("keyword.enabled") && !looksLikeUrl(this._originalSearchString, true)) {
+          if (UrlbarPrefs.get("keyword.enabled") &&
+              !looksLikeUrl(this._originalSearchString, true)) {
             this._addingHeuristicFirstMatch = false;
             await this._matchCurrentSearchEngine();
             this._addingHeuristicFirstMatch = true;
@@ -1443,8 +1205,8 @@ Search.prototype = {
       PlacesSearchAutocompleteProvider.getSuggestionController(
         searchString,
         this._inPrivateWindow,
-        Prefs.get("maxHistoricalSearchSuggestions"),
-        Prefs.get("maxRichResults") - Prefs.get("maxHistoricalSearchSuggestions"),
+        UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
+        UrlbarPrefs.get("maxRichResults") - UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
         this._userContextId
       );
     return this._searchSuggestionController.fetchCompletePromise.then(() => {
@@ -1579,7 +1341,7 @@ Search.prototype = {
   },
 
   async _matchSearchEngineDomain() {
-    if (!Prefs.get("autoFill.searchEngines")) {
+    if (!UrlbarPrefs.get("autoFill.searchEngines")) {
       return false;
     }
     if (!this._searchString) {
@@ -1668,8 +1430,9 @@ Search.prototype = {
   },
 
   _addExtensionMatch(content, comment) {
-    let count = this._counts[MATCHTYPE.EXTENSION] + this._counts[MATCHTYPE.HEURISTIC];
-    if (count >= MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
+    let count = this._counts[UrlbarUtils.MATCHTYPE.EXTENSION] +
+                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
+    if (count >= UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
       return;
     }
 
@@ -1682,7 +1445,7 @@ Search.prototype = {
       icon: "chrome://browser/content/extension.svg",
       style: "action extension",
       frecency: Infinity,
-      type: MATCHTYPE.EXTENSION,
+      type: UrlbarUtils.MATCHTYPE.EXTENSION,
     });
   },
 
@@ -1707,7 +1470,7 @@ Search.prototype = {
     };
     if (suggestion) {
       match.style += " suggestion";
-      match.type = MATCHTYPE.SUGGESTION;
+      match.type = UrlbarUtils.MATCHTYPE.SUGGESTION;
     }
 
     this._addMatch(match);
@@ -1726,7 +1489,7 @@ Search.prototype = {
     
     
     
-    setTimeout(() => this._cleanUpNonCurrentMatches(MATCHTYPE.EXTENSION), 100);
+    setTimeout(() => this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.EXTENSION), 100);
 
     
     
@@ -1782,7 +1545,8 @@ Search.prototype = {
       fixupInfo = Services.uriFixup.getFixupURIInfo(searchUrl,
                                                     flags);
     } catch (e) {
-      if (e.result == Cr.NS_ERROR_MALFORMED_URI && !Prefs.get("keyword.enabled")) {
+      if (e.result == Cr.NS_ERROR_MALFORMED_URI &&
+          !UrlbarPrefs.get("keyword.enabled")) {
         let value = PlacesUtils.mozActionURI("visiturl", {
           url: searchUrl,
           input: searchUrl,
@@ -1871,8 +1635,9 @@ Search.prototype = {
     }
     
     
-    let count = this._counts[MATCHTYPE.GENERAL] + this._counts[MATCHTYPE.HEURISTIC];
-    if (!this.pending || count >= Prefs.get("maxRichResults")) {
+    let count = this._counts[UrlbarUtils.MATCHTYPE.GENERAL] +
+                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
+    if (!this.pending || count >= UrlbarPrefs.get("maxRichResults")) {
       cancel();
     }
   },
@@ -1911,9 +1676,9 @@ Search.prototype = {
       throw new Error("Frecency not provided");
 
     if (this._addingHeuristicFirstMatch)
-      match.type = MATCHTYPE.HEURISTIC;
+      match.type = UrlbarUtils.MATCHTYPE.HEURISTIC;
     else if (typeof match.type != "string")
-      match.type = MATCHTYPE.GENERAL;
+      match.type = UrlbarUtils.MATCHTYPE.GENERAL;
 
     
     
@@ -1923,7 +1688,7 @@ Search.prototype = {
     match.style = match.style || "favicon";
 
     
-    if (Prefs.get("restyleSearches") && match.style == "favicon") {
+    if (UrlbarPrefs.get("restyleSearches") && match.style == "favicon") {
       this._maybeRestyleSearchMatch(match);
     }
 
@@ -1953,7 +1718,7 @@ Search.prototype = {
       TelemetryStopwatch.finish(TELEMETRY_1ST_RESULT, this);
     if (this._currentMatchCount == 6)
       TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, this);
-    this.notifyResult(true, match.type == MATCHTYPE.HEURISTIC);
+    this.notifyResult(true, match.type == UrlbarUtils.MATCHTYPE.HEURISTIC);
   },
 
   _getInsertIndexForMatch(match) {
@@ -1978,7 +1743,8 @@ Search.prototype = {
             isDupe = true;
             
             
-            if (matchType == MATCHTYPE.HEURISTIC && action.type == "switchtab") {
+            if (matchType == UrlbarUtils.MATCHTYPE.HEURISTIC &&
+                action.type == "switchtab") {
               isDupe = false;
               
               
@@ -2013,9 +1779,9 @@ Search.prototype = {
     
     if (!this._buckets) {
       
-      let buckets = match.type == MATCHTYPE.HEURISTIC &&
-                    match.style.includes("searchengine") ? Prefs.get("matchBucketsSearch")
-                                                         : Prefs.get("matchBuckets");
+      let buckets = match.type == UrlbarUtils.MATCHTYPE.HEURISTIC &&
+                    match.style.includes("searchengine") ? UrlbarPrefs.get("matchBucketsSearch")
+                                                         : UrlbarPrefs.get("matchBuckets");
       
       
       
@@ -2183,7 +1949,7 @@ Search.prototype = {
     
     
     
-    if (this._adaptiveCount < Math.ceil(Prefs.get("maxRichResults") / 4)) {
+    if (this._adaptiveCount < Math.ceil(UrlbarPrefs.get("maxRichResults") / 4)) {
       this._addFilteredQueryMatch(row);
     } else {
       this._extraAdaptiveRows.push(row);
@@ -2329,7 +2095,7 @@ Search.prototype = {
         userContextId: this._userContextId,
         
         
-        maxResults: Prefs.get("maxRichResults"),
+        maxResults: UrlbarPrefs.get("maxRichResults"),
       },
     ];
   },
@@ -2351,7 +2117,7 @@ Search.prototype = {
         
         searchString: this._keywordSubstitutedSearchString,
         userContextId: this._userContextId,
-        maxResults: Prefs.get("maxRichResults"),
+        maxResults: UrlbarPrefs.get("maxRichResults"),
       },
     ];
   },
@@ -2372,7 +2138,7 @@ Search.prototype = {
         matchBehavior: this._matchBehavior,
         searchBehavior: this._behavior,
         userContextId: this._userContextId,
-        maxResults: Prefs.get("maxRichResults"),
+        maxResults: UrlbarPrefs.get("maxRichResults"),
       },
     ];
   },
@@ -2382,7 +2148,7 @@ Search.prototype = {
 
   get _shouldAutofill() {
     
-    if (!Prefs.get("autoFill"))
+    if (!UrlbarPrefs.get("autoFill"))
       return false;
 
     if (this._searchTokens.length != 1)
@@ -2432,7 +2198,7 @@ Search.prototype = {
     let opts = {
       query_type: QUERYTYPE_AUTOFILL_ORIGIN,
       searchString: searchStr.toLowerCase(),
-      stddevMultiplier: Prefs.get("autoFill.stddevMultiplier"),
+      stddevMultiplier: UrlbarPrefs.get("autoFill.stddevMultiplier"),
     };
 
     let bookmarked = this.hasBehavior("bookmark") &&
@@ -2486,7 +2252,7 @@ Search.prototype = {
       query_type: QUERYTYPE_AUTOFILL_URL,
       revHost,
       strippedURL,
-      stddevMultiplier: Prefs.get("autoFill.stddevMultiplier"),
+      stddevMultiplier: UrlbarPrefs.get("autoFill.stddevMultiplier"),
     };
 
     let bookmarked = this.hasBehavior("bookmark") &&
@@ -2556,13 +2322,7 @@ Search.prototype = {
 
 
 function UnifiedComplete() {
-  
-  
-  
-  
-  Prefs;
-
-  if (Prefs.get("usepreloadedtopurls.enabled")) {
+  if (UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
     
     
     
@@ -2592,7 +2352,8 @@ UnifiedComplete.prototype = {
 
 
   getDatabaseHandle() {
-    if (Prefs.get("autocomplete.enabled") && !this._promiseDatabase) {
+    if (UrlbarPrefs.get("autocomplete.enabled") &&
+        !this._promiseDatabase) {
       this._promiseDatabase = (async () => {
         let conn = await PlacesUtils.promiseLargeCacheDBConnection();
 
@@ -2664,8 +2425,8 @@ UnifiedComplete.prototype = {
     
     
     let previousResult = null;
-    let insertMethod = Prefs.get("insertMethod");
-    if (this._currentSearch && insertMethod != INSERTMETHOD.APPEND) {
+    let insertMethod = UrlbarPrefs.get("insertMethod");
+    if (this._currentSearch && insertMethod != UrlbarUtils.INSERTMETHOD.APPEND) {
       let result = this._currentSearch._result;
       
       
@@ -2675,7 +2436,7 @@ UnifiedComplete.prototype = {
                            searchString.length > 0 &&
                            (previousSearchString.includes(searchString) ||
                             searchString.includes(previousSearchString));
-      if (insertMethod == INSERTMETHOD.MERGE || stringsRelated) {
+      if (insertMethod == UrlbarUtils.INSERTMETHOD.MERGE || stringsRelated) {
         previousResult = result;
       }
     }
@@ -2686,7 +2447,7 @@ UnifiedComplete.prototype = {
 
     
     
-    if (!Prefs.get("autocomplete.enabled")) {
+    if (!UrlbarPrefs.get("autocomplete.enabled")) {
       this.finishSearch(true);
       return;
     }
