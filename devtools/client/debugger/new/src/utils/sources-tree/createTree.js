@@ -11,6 +11,8 @@ var _collapseTree = require("./collapseTree");
 
 var _utils = require("./utils");
 
+var _treeOrder = require("./treeOrder");
+
 
 
 
@@ -20,10 +22,11 @@ function createTree({
   projectRoot
 }) {
   const uncollapsedTree = (0, _utils.createDirectoryNode)("root", "", []);
+  const debuggeeHost = (0, _treeOrder.getDomain)(debuggeeUrl);
 
   for (const sourceId in sources) {
     const source = sources[sourceId];
-    (0, _addToTree.addToTree)(uncollapsedTree, source, debuggeeUrl, projectRoot);
+    (0, _addToTree.addToTree)(uncollapsedTree, source, debuggeeHost, projectRoot);
   }
 
   const sourceTree = (0, _collapseTree.collapseTree)(uncollapsedTree);

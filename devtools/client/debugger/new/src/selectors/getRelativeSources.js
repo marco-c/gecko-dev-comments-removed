@@ -9,25 +9,31 @@ var _selectors = require("../selectors/index");
 
 var _lodash = require("devtools/client/shared/vendor/lodash");
 
-var _source = require("../utils/source");
+var _sourcesTree = require("../utils/sources-tree/index");
 
 var _reselect = require("devtools/client/debugger/new/dist/vendors").vendored["reselect"];
 
 
 
 
-function getRelativeUrl(url, root) {
+function getRelativeUrl(source, root) {
+  const {
+    group,
+    path
+  } = (0, _sourcesTree.getURL)(source);
+
   if (!root) {
-    return (0, _source.getSourcePath)(url);
+    return path;
   } 
 
 
+  const url = group + path;
   return url.slice(url.indexOf(root) + root.length + 1);
 }
 
 function formatSource(source, root) {
   return { ...source,
-    relativeUrl: getRelativeUrl(source.url, root)
+    relativeUrl: getRelativeUrl(source, root)
   };
 }
 

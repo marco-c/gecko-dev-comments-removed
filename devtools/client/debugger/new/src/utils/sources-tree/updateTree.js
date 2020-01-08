@@ -13,6 +13,8 @@ var _utils = require("./utils");
 
 var _lodash = require("devtools/client/shared/vendor/lodash");
 
+var _treeOrder = require("./treeOrder");
+
 
 
 
@@ -31,9 +33,10 @@ function updateTree({
   sourceTree
 }) {
   const newSet = newSourcesSet(newSources, prevSources);
+  const debuggeeHost = (0, _treeOrder.getDomain)(debuggeeUrl);
 
   for (const source of newSet) {
-    (0, _addToTree.addToTree)(uncollapsedTree, source, debuggeeUrl, projectRoot);
+    (0, _addToTree.addToTree)(uncollapsedTree, source, debuggeeHost, projectRoot);
   }
 
   const newSourceTree = (0, _collapseTree.collapseTree)(uncollapsedTree);
