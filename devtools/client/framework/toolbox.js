@@ -2275,19 +2275,14 @@ Toolbox.prototype = {
     return prefFront.getBoolPref(DISABLE_AUTOHIDE_PREF);
   },
 
-  _listFrames: function(event) {
-    if (!this._target.activeTab || !this._target.activeTab.traits.frames) {
+  _listFrames: async function(event) {
+    if (!this.target.activeTab || !this.target.activeTab.traits.frames) {
       
       
       return promise.resolve();
     }
-    const packet = {
-      to: this._target.form.actor,
-      type: "listFrames"
-    };
-    return this._target.client.request(packet, resp => {
-      this._updateFrames({ frames: resp.frames });
-    });
+    const { frames } = await this.target.activeTab.listFrames();
+    this._updateFrames({ frames });
   },
 
   
@@ -2378,12 +2373,7 @@ Toolbox.prototype = {
   onSelectFrame: function(frameId) {
     
     
-    const packet = {
-      to: this._target.form.actor,
-      type: "switchToFrame",
-      windowId: frameId
-    };
-    this._target.client.request(packet);
+    this.target.activeTab.switchToFrame(frameId);
   },
 
   
