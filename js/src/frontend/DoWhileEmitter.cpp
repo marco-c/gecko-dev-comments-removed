@@ -32,12 +32,11 @@ DoWhileEmitter::emitBody(const Maybe<uint32_t>& doPos, const Maybe<uint32_t>& bo
     }
 
     
-    if (!bce_->newSrcNote(SRC_WHILE, &noteIndex_))
-        return false;
     if (!bce_->emit1(JSOP_NOP))
         return false;
 
-    if (!bce_->newSrcNote(SRC_WHILE, &noteIndex2_))
+    
+    if (!bce_->newSrcNote3(SRC_DO_WHILE, 0, 0, &noteIndex_))
         return false;
 
     loopInfo_.emplace(bce_, StatementKind::DoLoop);
@@ -84,18 +83,13 @@ DoWhileEmitter::emitEnd()
 
     
     
-    
-    
-    
-    
-    if (!bce_->setSrcNoteOffset(noteIndex2_, SrcNote::DoWhile2::BackJumpOffset,
-                                loopInfo_->loopEndOffsetFromLoopHead()))
+    if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile::CondOffset,
+                                loopInfo_->continueTargetOffsetFromLoopHead()))
     {
         return false;
     }
-    
-    if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile1::CondOffset,
-                                loopInfo_->continueTargetOffsetFromLoopHead() + 1))
+    if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::DoWhile::BackJumpOffset,
+                                loopInfo_->loopEndOffsetFromLoopHead()))
     {
         return false;
     }

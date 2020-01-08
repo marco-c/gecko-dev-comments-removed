@@ -36,9 +36,7 @@ class MOZ_STACK_CLASS DoWhileEmitter
     BytecodeEmitter* bce_;
 
     
-    
     unsigned noteIndex_ = 0;
-    unsigned noteIndex2_ = 0;
 
     mozilla::Maybe<LoopControl> loopInfo_;
 

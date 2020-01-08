@@ -264,17 +264,8 @@ ControlFlowGenerator::snoopControlFlow(JSOp op)
     switch (op) {
       case JSOP_NOP: {
         jssrcnote* sn = GetSrcNote(gsn, script, pc);
-        if (sn) {
-            
-            if (SN_TYPE(sn) == SRC_WHILE)
-                return processDoWhileLoop(sn);
-            
-            
-
-            
-            if (SN_TYPE(sn) == SRC_FOR)
-                return processForLoop(op, sn);
-        }
+        if (sn && SN_TYPE(sn) == SRC_FOR)
+            return processForLoop(op, sn);
         break;
       }
 
@@ -309,6 +300,13 @@ ControlFlowGenerator::snoopControlFlow(JSOp op)
             
             MOZ_CRASH("unknown goto case");
         }
+        break;
+      }
+
+      case JSOP_LOOPHEAD: {
+        jssrcnote* sn = GetSrcNote(gsn, script, pc);
+        if (sn && SN_TYPE(sn) == SRC_DO_WHILE)
+            return processDoWhileLoop(sn);
         break;
       }
 
@@ -1513,16 +1511,14 @@ ControlFlowGenerator::processDoWhileLoop(jssrcnote* sn)
     
     
     
-    int condition_offset = GetSrcNoteOffset(sn, SrcNote::DoWhile1::CondOffset);
+    int condition_offset = GetSrcNoteOffset(sn, SrcNote::DoWhile::CondOffset);
     jsbytecode* conditionpc = pc + condition_offset;
-
-    jssrcnote* sn2 = GetSrcNote(gsn, script, pc + 1);
-    int offset = GetSrcNoteOffset(sn2, SrcNote::DoWhile2::BackJumpOffset);
-    jsbytecode* ifne = pc + offset + 1;
+    int offset = GetSrcNoteOffset(sn, SrcNote::DoWhile::BackJumpOffset);
+    jsbytecode* ifne = pc + offset;
     MOZ_ASSERT(ifne > pc);
 
     
-    jsbytecode* loopHead = GetNextPc(pc);
+    jsbytecode* loopHead = pc;
     MOZ_ASSERT(JSOp(*loopHead) == JSOP_LOOPHEAD);
     MOZ_ASSERT(loopHead == ifne + GetJumpOffset(ifne));
 

@@ -65,22 +65,12 @@ class SrcNote {
         };
     };
     
-    
-    
-    class DoWhile1 {
+    class DoWhile {
       public:
         enum Fields {
             
             CondOffset,
-            Count,
-        };
-    };
-    
-    
-    
-    class DoWhile2 {
-      public:
-        enum Fields {
+
             
             
             BackJumpOffset,
@@ -171,12 +161,6 @@ class SrcNote {
     };
 };
 
-
-static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile1::Count),
-              "SRC_WHILE can be shared between while and do-while");
-static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile2::Count),
-              "SRC_WHILE can be shared between while and do-while");
-
 #define FOR_EACH_SRC_NOTE_TYPE(M)                                                                  \
     M(SRC_NULL,         "null",        0)  /* Terminates a note vector. */                         \
     M(SRC_IF,           "if",          0)  /* JSOP_IFEQ bytecode is from an if-then. */            \
@@ -184,6 +168,7 @@ static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile2::Cou
     M(SRC_COND,         "cond",        0)  /* JSOP_IFEQ is from conditional ?: operator. */        \
     M(SRC_FOR,          "for",         SrcNote::For::Count) \
     M(SRC_WHILE,        "while",       SrcNote::While::Count) \
+    M(SRC_DO_WHILE,     "do-while",    SrcNote::DoWhile::Count) \
     M(SRC_FOR_IN,       "for-in",      SrcNote::ForIn::Count) \
     M(SRC_FOR_OF,       "for-of",      SrcNote::ForOf::Count) \
     M(SRC_CONTINUE,     "continue",    0)  /* JSOP_GOTO is a continue. */                          \
@@ -201,7 +186,6 @@ static_assert(unsigned(SrcNote::While::Count) == unsigned(SrcNote::DoWhile2::Cou
     M(SRC_COLSPAN,      "colspan",     SrcNote::ColSpan::Count) \
     M(SRC_NEWLINE,      "newline",     0)  /* Bytecode follows a source newline. */                \
     M(SRC_SETLINE,      "setline",     SrcNote::SetLine::Count) \
-    M(SRC_UNUSED21,     "unused21",    0)  /* Unused. */                                           \
     M(SRC_UNUSED22,     "unused22",    0)  /* Unused. */                                           \
     M(SRC_UNUSED23,     "unused23",    0)  /* Unused. */                                           \
     M(SRC_XDELTA,       "xdelta",      0)  /* 24-31 are for extended delta notes. */
