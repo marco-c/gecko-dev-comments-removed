@@ -140,7 +140,7 @@ const ADDONS = {
     },
     compatible: {
       nonStrict: true,
-      strict: false,
+      strict: true,
     },
   },
 };

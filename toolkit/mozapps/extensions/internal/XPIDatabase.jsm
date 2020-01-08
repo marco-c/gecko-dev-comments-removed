@@ -486,8 +486,11 @@ class AddonInternal {
 
     
     
+    
     if (this.type in COMPATIBLE_BY_DEFAULT_TYPES &&
-        !AddonManager.strictCompatibility && !this.strictCompatibility) {
+        !this.strictCompatibility &&
+        (!AddonManager.strictCompatibility ||
+         this.type == "webextension-dictionary")) {
 
       
       
