@@ -2,19 +2,6 @@ import os
 
 platform = "win32"
 
-download_config = {
-        "target.zip": os.environ.get("SIGNED_ZIP"),
-        "setup.exe": os.environ.get("SIGNED_SETUP"),
-        "mar.exe": os.environ.get("UNSIGNED_MAR"),
-}
-
-if not os.environ.get("NO_STUB_INSTALLER"):
-    
-    download_config.update({
-        
-        "setup-stub.exe": os.environ.get("SIGNED_SETUP_STUB"),
-    })
-
 repackage_config = [[
         "installer",
         "--package-name", "firefox",
@@ -42,8 +29,6 @@ if not os.environ.get("NO_STUB_INSTALLER"):
 
 config = {
     "locale": os.environ.get("LOCALE"),
-
-    "download_config": download_config,
 
     "repackage_config": repackage_config,
 
