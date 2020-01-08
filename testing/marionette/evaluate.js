@@ -292,13 +292,58 @@ evaluate.toJSON = function(obj, seenEls) {
 
 
 
-evaluate.isCyclic = function(obj) {
-  try {
-    JSON.stringify(obj);
+
+
+
+
+evaluate.isCyclic = function(value, stack = []) {
+  let t = Object.prototype.toString.call(value);
+
+  
+  if (t == "[object Undefined]" || t == "[object Null]") {
     return false;
-  } catch (e) {
+
+  
+  } else if (t == "[object Boolean]" ||
+      t == "[object Number]" ||
+      t == "[object String]") {
+    return false;
+
+  
+  } else if (element.isElement(value)) {
+    return false;
+
+  
+  } else if (element.isCollection(value)) {
+    if (stack.includes(value)) {
+      return true;
+    }
+    stack.push(value);
+
+    for (let i = 0; i < value.length; i++) {
+      if (evaluate.isCyclic(value[i], stack)) {
+        return true;
+      }
+    }
+
+    stack.pop();
+    return false;
+  }
+
+  
+  if (stack.includes(value)) {
     return true;
   }
+  stack.push(value);
+
+  for (let prop in value) {
+    if (evaluate.isCyclic(value[prop], stack)) {
+      return true;
+    }
+  }
+
+  stack.pop();
+  return false;
 };
 
 
