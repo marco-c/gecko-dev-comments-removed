@@ -34,6 +34,7 @@
 #include "frontend/ForOfEmitter.h"
 #include "frontend/ForOfLoopControl.h"
 #include "frontend/IfEmitter.h"
+#include "frontend/NameOpEmitter.h"
 #include "frontend/Parser.h"
 #include "frontend/PropOpEmitter.h"
 #include "frontend/SwitchEmitter.h"
@@ -997,19 +998,6 @@ BytecodeEmitter::emitEnvCoordOp(JSOp op, EnvironmentCoordinate ec)
     return true;
 }
 
-static JSOp
-GetIncDecInfo(ParseNodeKind kind, bool* post)
-{
-    MOZ_ASSERT(kind == ParseNodeKind::PostIncrement ||
-               kind == ParseNodeKind::PreIncrement ||
-               kind == ParseNodeKind::PostDecrement ||
-               kind == ParseNodeKind::PreDecrement);
-    *post = kind == ParseNodeKind::PostIncrement || kind == ParseNodeKind::PostDecrement;
-    return (kind == ParseNodeKind::PostIncrement || kind == ParseNodeKind::PreIncrement)
-           ? JSOP_ADD
-           : JSOP_SUB;
-}
-
 JSOp
 BytecodeEmitter::strictifySetNameOp(JSOp op)
 {
@@ -1718,67 +1706,9 @@ BytecodeEmitter::emitFinishIteratorResult(bool done)
 bool
 BytecodeEmitter::emitGetNameAtLocation(JSAtom* name, const NameLocation& loc)
 {
-    switch (loc.kind()) {
-      case NameLocation::Kind::Dynamic:
-        if (!emitAtomOp(name, JSOP_GETNAME)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::Global:
-        if (!emitAtomOp(name, JSOP_GETGNAME)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::Intrinsic:
-        if (!emitAtomOp(name, JSOP_GETINTRINSIC)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::NamedLambdaCallee:
-        if (!emit1(JSOP_CALLEE)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::Import:
-        if (!emitAtomOp(name, JSOP_GETIMPORT)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::ArgumentSlot:
-        if (!emitArgOp(JSOP_GETARG, loc.argumentSlot())) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::FrameSlot:
-        if (loc.isLexical()) {
-            if (!emitTDZCheckIfNeeded(name, loc)) {
-                return false;
-            }
-        }
-        if (!emitLocalOp(JSOP_GETLOCAL, loc.frameSlot())) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::EnvironmentCoordinate:
-        if (loc.isLexical()) {
-            if (!emitTDZCheckIfNeeded(name, loc)) {
-                return false;
-            }
-        }
-        if (!emitEnvCoordOp(JSOP_GETALIASEDVAR, loc.environmentCoordinate())) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::DynamicAnnexBVar:
-        MOZ_CRASH("Synthesized vars for Annex B.3.3 should only be used in initialization");
+    NameOpEmitter noe(this, name, loc, NameOpEmitter::Kind::Get);
+    if (!noe.emitGet()) {
+        return false;
     }
 
     return true;
@@ -1788,183 +1718,6 @@ bool
 BytecodeEmitter::emitGetName(ParseNode* pn)
 {
     return emitGetName(pn->name());
-}
-
-template <typename RHSEmitter>
-bool
-BytecodeEmitter::emitSetOrInitializeNameAtLocation(HandleAtom name, const NameLocation& loc,
-                                                   RHSEmitter emitRhs, bool initialize)
-{
-    bool emittedBindOp = false;
-
-    switch (loc.kind()) {
-      case NameLocation::Kind::Dynamic:
-      case NameLocation::Kind::Import:
-      case NameLocation::Kind::DynamicAnnexBVar: {
-        uint32_t atomIndex;
-        if (!makeAtomIndex(name, &atomIndex)) {
-            return false;
-        }
-        if (loc.kind() == NameLocation::Kind::DynamicAnnexBVar) {
-            
-            
-            
-            if (!emit1(JSOP_BINDVAR)) {
-                return false;
-            }
-        } else {
-            if (!emitIndexOp(JSOP_BINDNAME, atomIndex)) {
-                return false;
-            }
-        }
-        emittedBindOp = true;
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (!emitIndexOp(strictifySetNameOp(JSOP_SETNAME), atomIndex)) {
-            return false;
-        }
-        break;
-      }
-
-      case NameLocation::Kind::Global: {
-        JSOp op;
-        uint32_t atomIndex;
-        if (!makeAtomIndex(name, &atomIndex)) {
-            return false;
-        }
-        if (loc.isLexical() && initialize) {
-            
-            
-            MOZ_ASSERT(innermostScope()->is<GlobalScope>());
-            op = JSOP_INITGLEXICAL;
-        } else {
-            if (!emitIndexOp(JSOP_BINDGNAME, atomIndex)) {
-                return false;
-            }
-            emittedBindOp = true;
-            op = strictifySetNameOp(JSOP_SETGNAME);
-        }
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (!emitIndexOp(op, atomIndex)) {
-            return false;
-        }
-        break;
-      }
-
-      case NameLocation::Kind::Intrinsic:
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (!emitAtomOp(name, JSOP_SETINTRINSIC)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::NamedLambdaCallee:
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        
-        
-        if (sc->strict() && !emit1(JSOP_THROWSETCALLEE)) {
-            return false;
-        }
-        break;
-
-      case NameLocation::Kind::ArgumentSlot: {
-        
-        
-        
-        
-        
-        
-        
-        FunctionBox* funbox = sc->asFunctionBox();
-        if (funbox->argumentsHasLocalBinding() && !funbox->hasMappedArgsObj()) {
-            funbox->setDefinitelyNeedsArgsObj();
-        }
-
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (!emitArgOp(JSOP_SETARG, loc.argumentSlot())) {
-            return false;
-        }
-        break;
-      }
-
-      case NameLocation::Kind::FrameSlot: {
-        JSOp op = JSOP_SETLOCAL;
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (loc.isLexical()) {
-            if (initialize) {
-                op = JSOP_INITLEXICAL;
-            } else {
-                if (loc.isConst()) {
-                    op = JSOP_THROWSETCONST;
-                }
-
-                if (!emitTDZCheckIfNeeded(name, loc)) {
-                    return false;
-                }
-            }
-        }
-        if (!emitLocalOp(op, loc.frameSlot())) {
-            return false;
-        }
-        if (op == JSOP_INITLEXICAL) {
-            if (!innermostTDZCheckCache->noteTDZCheck(this, name, DontCheckTDZ)) {
-                return false;
-            }
-        }
-        break;
-      }
-
-      case NameLocation::Kind::EnvironmentCoordinate: {
-        JSOp op = JSOP_SETALIASEDVAR;
-        if (!emitRhs(this, loc, emittedBindOp)) {
-            return false;
-        }
-        if (loc.isLexical()) {
-            if (initialize) {
-                op = JSOP_INITALIASEDLEXICAL;
-            } else {
-                if (loc.isConst()) {
-                    op = JSOP_THROWSETALIASEDCONST;
-                }
-
-                if (!emitTDZCheckIfNeeded(name, loc)) {
-                    return false;
-                }
-            }
-        }
-        if (loc.bindingKind() == BindingKind::NamedLambdaCallee) {
-            
-            
-            op = JSOP_THROWSETALIASEDCONST;
-            if (sc->strict() && !emitEnvCoordOp(op, loc.environmentCoordinate())) {
-                return false;
-            }
-        } else {
-            if (!emitEnvCoordOp(op, loc.environmentCoordinate())) {
-                return false;
-            }
-        }
-        if (op == JSOP_INITALIASEDLEXICAL) {
-            if (!innermostTDZCheckCache->noteTDZCheck(this, name, DontCheckTDZ)) {
-                return false;
-            }
-        }
-        break;
-      }
-    }
-
-    return true;
 }
 
 bool
@@ -2084,77 +1837,20 @@ BytecodeEmitter::emitPropIncDec(UnaryNode* incDec)
     return true;
 }
 
-bool
-BytecodeEmitter::emitGetNameAtLocationForCompoundAssignment(JSAtom* name, const NameLocation& loc)
-{
-    if (loc.kind() == NameLocation::Kind::Dynamic) {
-        
-        
-        
-        
-        
-        
-        
-        if (!emit1(JSOP_DUP)) {                            
-            return false;
-        }
-        if (!emitAtomOp(name, JSOP_GETBOUNDNAME)) {        
-            return false;
-        }
-    } else {
-        if (!emitGetNameAtLocation(name, loc)) {           
-            return false;
-        }
-    }
-
-    return true;
-}
 
 bool
 BytecodeEmitter::emitNameIncDec(UnaryNode* incDec)
 {
     MOZ_ASSERT(incDec->kid()->isKind(ParseNodeKind::Name));
 
-    bool post;
-    JSOp binop = GetIncDecInfo(incDec->getKind(), &post);
-
-    auto emitRhs = [incDec, post, binop](BytecodeEmitter* bce, const NameLocation& loc,
-                                         bool emittedBindOp)
-    {
-        JSAtom* name = incDec->kid()->name();
-        if (!bce->emitGetNameAtLocationForCompoundAssignment(name, loc)) { 
-            return false;
-        }
-        if (!bce->emit1(JSOP_POS)) {                       
-            return false;
-        }
-        if (post && !bce->emit1(JSOP_DUP)) {               
-            return false;
-        }
-        if (!bce->emit1(JSOP_ONE)) {                       
-            return false;
-        }
-        if (!bce->emit1(binop)) {                          
-            return false;
-        }
-
-        if (post && emittedBindOp) {
-            if (!bce->emit2(JSOP_PICK, 2)) {               
-                return false;
-            }
-            if (!bce->emit1(JSOP_SWAP)) {                  
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-    if (!emitSetName(incDec->kid(), emitRhs)) {
-        return false;
-    }
-
-    if (post && !emit1(JSOP_POP)) {
+    ParseNodeKind kind = incDec->getKind();
+    NameNode* name = &incDec->kid()->as<NameNode>();
+    NameOpEmitter noe(this, name->atom(),
+                      kind == ParseNodeKind::PostIncrement ? NameOpEmitter::Kind::PostIncrement
+                      : kind == ParseNodeKind::PreIncrement ? NameOpEmitter::Kind::PreIncrement
+                      : kind == ParseNodeKind::PostDecrement ? NameOpEmitter::Kind::PostDecrement
+                      : NameOpEmitter::Kind::PreDecrement);
+    if (!noe.emitIncDec()) {
         return false;
     }
 
@@ -2525,25 +2221,6 @@ BytecodeEmitter::emitSetThis(BinaryNode* setThisNode)
     MOZ_ASSERT(setThisNode->left()->isKind(ParseNodeKind::Name));
 
     RootedAtom name(cx, setThisNode->left()->name());
-    auto emitRhs = [&name, setThisNode](BytecodeEmitter* bce, const NameLocation&, bool) {
-        
-        if (!bce->emitTree(setThisNode->right())) {
-            return false;
-        }
-        
-        
-        
-        if (!bce->emitGetName(name)) {
-            return false;
-        }
-        if (!bce->emit1(JSOP_CHECKTHISREINIT)) {
-            return false;
-        }
-        if (!bce->emit1(JSOP_POP)) {
-            return false;
-        }
-        return true;
-    };
 
     
     
@@ -2560,7 +2237,32 @@ BytecodeEmitter::emitSetThis(BinaryNode* setThisNode)
         lexicalLoc = loc;
     }
 
-    return emitSetOrInitializeNameAtLocation(name, lexicalLoc, emitRhs, true);
+    NameOpEmitter noe(this, name, lexicalLoc, NameOpEmitter::Kind::Initialize);
+    if (!noe.prepareForRhs()) {                           
+        return false;
+    }
+
+    
+    if (!emitTree(setThisNode->right()))                  
+        return false;
+
+    
+    
+    
+    if (!emitGetName(name)) {                             
+        return false;
+    }
+    if (!emit1(JSOP_CHECKTHISREINIT)) {                   
+        return false;
+    }
+    if (!emit1(JSOP_POP)) {                               
+        return false;
+    }
+    if (!noe.emitAssignment()) {                          
+        return false;
+    }
+
+    return true;
 }
 
 bool
@@ -2855,59 +2557,58 @@ BytecodeEmitter::emitSetOrInitializeDestructuring(ParseNode* target, Destructuri
     } else {
         switch (target->getKind()) {
           case ParseNodeKind::Name: {
-            auto emitSwapScopeAndRhs = [](BytecodeEmitter* bce, const NameLocation&,
-                                          bool emittedBindOp)
-            {
-                if (emittedBindOp) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    return bce->emit1(JSOP_SWAP);
-                }
-
-                
-                
-                return true;
-            };
-
             RootedAtom name(cx, target->name());
+            NameLocation loc;
+            NameOpEmitter::Kind kind;
             switch (flav) {
               case DestructuringDeclaration:
-                if (!emitInitializeName(name, emitSwapScopeAndRhs)) {
-                    return false;
-                }
+                loc = lookupName(name);
+                kind = NameOpEmitter::Kind::Initialize;
                 break;
-
               case DestructuringFormalParameterInVarScope: {
                 
                 
                 
                 
                 EmitterScope* funScope = innermostEmitterScope()->enclosingInFrame();
-                NameLocation paramLoc = *locationOfNameBoundInScope(name, funScope);
-                if (!emitSetOrInitializeNameAtLocation(name, paramLoc, emitSwapScopeAndRhs, true)) {
-                    return false;
-                }
+                loc = *locationOfNameBoundInScope(name, funScope);
+                kind = NameOpEmitter::Kind::Initialize;
                 break;
               }
 
               case DestructuringAssignment:
-                if (!emitSetName(name, emitSwapScopeAndRhs)) {
+                loc = lookupName(name);
+                kind = NameOpEmitter::Kind::SimpleAssignment;
+                break;
+            }
+
+            NameOpEmitter noe(this, name, loc, kind);
+            if (!noe.prepareForRhs()) {                   
+                return false;
+            }
+            if (noe.emittedBindOp()) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if (!emit1(JSOP_SWAP)) {                  
                     return false;
                 }
-                break;
+            } else {
+                
+                
+            }
+            if (!noe.emitAssignment()) {                  
+                return false;
             }
 
             break;
@@ -4086,27 +3787,33 @@ BytecodeEmitter::emitSingleDeclaration(ParseNode* declList, ParseNode* decl,
         return true;
     }
 
-    auto emitRhs = [initializer, declList, decl](BytecodeEmitter* bce, const NameLocation&, bool) {
-        if (!initializer) {
-            
-            
-            MOZ_ASSERT(declList->isKind(ParseNodeKind::Let),
-                       "var declarations without initializers handled above, "
-                       "and const declarations must have initializers");
-            Unused << declList; 
-            return bce->emit1(JSOP_UNDEFINED);
+    NameOpEmitter noe(this, decl->name(), NameOpEmitter::Kind::Initialize);
+    if (!noe.prepareForRhs()) {                           
+        return false;
+    }
+    if (!initializer) {
+        
+        
+        MOZ_ASSERT(declList->isKind(ParseNodeKind::Let),
+                   "var declarations without initializers handled above, "
+                   "and const declarations must have initializers");
+        if (!emit1(JSOP_UNDEFINED)) {                     
+            return false;
         }
-
+    } else {
         MOZ_ASSERT(initializer);
-        return bce->emitInitializer(initializer, decl);
-    };
-
-    if (!emitInitializeName(decl, emitRhs)) {
+        if (!emitInitializer(initializer, decl)) {        
+            return false;
+        }
+    }
+    if (!noe.emitAssignment()) {                          
+         return false;
+    }
+    if (!emit1(JSOP_POP)) {                               
         return false;
     }
 
-    
-    return emit1(JSOP_POP);
+    return true;
 }
 
 static bool
@@ -4157,44 +3864,41 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp compoundOp, ParseNode* rhs)
     
     
     if (lhs->isKind(ParseNodeKind::Name)) {
-        auto emitRhs = [lhs, compoundOp, rhs, isCompound](BytecodeEmitter* bce,
-                                                          const NameLocation& lhsLoc,
-                                                          bool emittedBindOp)
-        {
-            
-            
-            if (isCompound) {
-                if (!bce->emitGetNameAtLocationForCompoundAssignment(lhs->name(), lhsLoc)) {
-                    return false;
-                }
-            }
+        NameOpEmitter noe(this,
+                          lhs->name(),
+                          isCompound
+                          ? NameOpEmitter::Kind::CompoundAssignment
+                          : NameOpEmitter::Kind::SimpleAssignment);
+        if (!noe.prepareForRhs()) {                       
+            return false;
+        }
 
-            
-            
-            if (!EmitAssignmentRhs(bce, rhs, emittedBindOp ? 2 : 1)) {
+        
+        
+        uint8_t offset = noe.emittedBindOp() ? 2 : 1;
+        if (!EmitAssignmentRhs(this, rhs, offset)) {      
+            return false;
+        }
+        if (rhs && rhs->isDirectRHSAnonFunction()) {
+            MOZ_ASSERT(!lhs->isInParens());
+            MOZ_ASSERT(!isCompound);
+            RootedAtom name(cx, lhs->name());
+            if (!setOrEmitSetFunName(rhs, name)) {         
                 return false;
             }
+        }
 
-            if (rhs && rhs->isDirectRHSAnonFunction()) {
-                MOZ_ASSERT(!lhs->isInParens());
-                MOZ_ASSERT(!isCompound);
-                RootedAtom name(bce->cx, lhs->name());
-                if (!bce->setOrEmitSetFunName(rhs, name)) {
-                    return false;
-                }
+        
+        if (isCompound) {
+            if (!emit1(compoundOp)) {                     
+                return false;
             }
+        }
+        if (!noe.emitAssignment()) {                      
+            return false;
+        }
 
-            
-            if (isCompound) {
-                if (!bce->emit1(compoundOp)) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
-
-        return emitSetName(lhs, emitRhs);
+        return true;
     }
 
     Maybe<PropOpEmitter> poe;
@@ -5204,26 +4908,30 @@ BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead)
     target = parser->astGenerator().singleBindingFromDeclaration(&target->as<ListNode>());
 
     if (target->isKind(ParseNodeKind::Name)) {
-        auto emitSwapScopeAndRhs = [](BytecodeEmitter* bce, const NameLocation&,
-                                      bool emittedBindOp)
-        {
-            if (emittedBindOp) {
-                
-                
-                
-                
-                MOZ_ASSERT(bce->stackDepth >= 2);
-                return bce->emit1(JSOP_SWAP);
+        NameOpEmitter noe(this, target->name(), NameOpEmitter::Kind::Initialize);
+        if (!noe.prepareForRhs()) {
+            return false;
+        }
+        if (noe.emittedBindOp()) {
+            
+            
+            
+            
+            MOZ_ASSERT(stackDepth >= 2);
+            if (!emit1(JSOP_SWAP)) {
+                return false;
             }
-
-            
-            
-            MOZ_ASSERT(bce->stackDepth >= 1);
-            return true;
-        };
+        } else {
+             
+             
+            MOZ_ASSERT(stackDepth >= 1);
+        }
+        if (!noe.emitAssignment()) {
+            return false;
+        }
 
         
-        return emitInitializeName(target, emitSwapScopeAndRhs);
+        return true;
     }
 
     MOZ_ASSERT(!target->isKind(ParseNodeKind::Assign),
@@ -5327,11 +5035,14 @@ BytecodeEmitter::emitForIn(ForNode* forInLoop, const EmitterScope* headLexicalEm
                     return false;
                 }
 
-                auto emitRhs = [decl, initializer](BytecodeEmitter* bce, const NameLocation&, bool) {
-                    return bce->emitInitializer(initializer, decl);
-                };
-
-                if (!emitInitializeName(decl, emitRhs)) {
+                NameOpEmitter noe(this, decl->name(), NameOpEmitter::Kind::Initialize);
+                if (!noe.prepareForRhs()) {
+                    return false;
+                }
+                if (!emitInitializer(initializer, decl)) {
+                    return false;
+                }
+                if (!noe.emitAssignment()) {
                     return false;
                 }
 
@@ -5504,12 +5215,6 @@ BytecodeEmitter::emitFunction(CodeNode* funNode, bool needsProto)
         
         
         if (funbox->isAnnexB) {
-            auto emitRhs = [&name](BytecodeEmitter* bce, const NameLocation&, bool) {
-                
-                
-                return bce->emitGetName(name);
-            };
-
             
             
             
@@ -5532,7 +5237,14 @@ BytecodeEmitter::emitFunction(CodeNode* funNode, bool needsProto)
                             sc->asFunctionBox()->hasParameterExprs));
             }
 
-            if (!emitSetOrInitializeNameAtLocation(name, *lhsLoc, emitRhs, false)) {
+            NameOpEmitter noe(this, name, *lhsLoc, NameOpEmitter::Kind::SimpleAssignment);
+            if (!noe.prepareForRhs()) {
+                return false;
+            }
+            if (!emitGetName(name)) {
+                return false;
+            }
+            if (!noe.emitAssignment()) {
                 return false;
             }
             if (!emit1(JSOP_POP)) {
@@ -5701,18 +5413,22 @@ BytecodeEmitter::emitFunction(CodeNode* funNode, bool needsProto)
         
         
 
-        bool isAsync = funbox->isAsync();
-        bool isGenerator = funbox->isGenerator();
-        auto emitLambda = [index, isAsync, isGenerator](BytecodeEmitter* bce,
-                                                        const NameLocation&, bool) {
-            if (isAsync) {
-                return bce->emitAsyncWrapper(index,  false,
-                                              false, isGenerator);
+        NameOpEmitter noe(this, name, NameOpEmitter::Kind::Initialize);
+        if (!noe.prepareForRhs()) {
+            return false;
+        }
+        if (funbox->isAsync()) {
+            if (!emitAsyncWrapper(index,  false,
+                                   false, funbox->isGenerator()))
+            {
+                return false;
             }
-            return bce->emitIndexOp(JSOP_LAMBDA, index);
-        };
-
-        if (!emitInitializeName(name, emitLambda)) {
+        } else {
+            if (!emitIndexOp(JSOP_LAMBDA, index)) {
+                return false;
+            }
+        }
+        if (!noe.emitAssignment()) {
             return false;
         }
         if (!emit1(JSOP_POP)) {
@@ -7066,43 +6782,13 @@ BytecodeEmitter::emitCalleeAndThis(ParseNode* callee, ParseNode* call, bool isCa
     switch (callee->getKind()) {
       case ParseNodeKind::Name: {
         JSAtom* name = callee->name();
-        NameLocation loc = lookupName(name);
-        if (!emitGetNameAtLocation(name, loc)) {          
+        NameOpEmitter noe(this, name,
+                          isCall
+                          ? NameOpEmitter::Kind::Call
+                          : NameOpEmitter::Kind::Get);
+        if (!noe.emitGet()) {                             
             return false;
         }
-
-        if (isCall) {
-            switch (loc.kind()) {
-              case NameLocation::Kind::Dynamic: {
-                JSOp thisOp = needsImplicitThis() ? JSOP_IMPLICITTHIS : JSOP_GIMPLICITTHIS;
-                if (!emitAtomOp(name, thisOp)) {
-                    return false;
-                }
-                break;
-              }
-
-              case NameLocation::Kind::Global:
-                if (!emitAtomOp(name, JSOP_GIMPLICITTHIS)) {
-                    return false;
-                }
-                break;
-
-              case NameLocation::Kind::Intrinsic:
-              case NameLocation::Kind::NamedLambdaCallee:
-              case NameLocation::Kind::Import:
-              case NameLocation::Kind::ArgumentSlot:
-              case NameLocation::Kind::FrameSlot:
-              case NameLocation::Kind::EnvironmentCoordinate:
-                if (!emit1(JSOP_UNDEFINED)) {
-                    return false;
-                }
-                break;
-
-              case NameLocation::Kind::DynamicAnnexBVar:
-                MOZ_CRASH("Synthesized vars for Annex B.3.3 should only be used in initialization");
-            }
-        }
-
         break;
       }
       case ParseNodeKind::Dot: {
@@ -8253,14 +7939,16 @@ BytecodeEmitter::emitFunctionFormalParametersAndBody(ListNode* paramsBody)
                         MOZ_ASSERT(name != cx->names().dotThis &&
                                    name != cx->names().dotGenerator);
 
-                        NameLocation paramLoc = *locationOfNameBoundInScope(name, &funEmitterScope);
-                        auto emitRhs = [&name, &paramLoc](BytecodeEmitter* bce,
-                                                          const NameLocation&, bool)
-                        {
-                            return bce->emitGetNameAtLocation(name, paramLoc);
-                        };
+                        NameOpEmitter noe(this, name, NameOpEmitter::Kind::Initialize);
+                        if (!noe.prepareForRhs()) {
+                            return false;
+                        }
 
-                        if (!emitInitializeName(name, emitRhs)) {
+                        NameLocation paramLoc = *locationOfNameBoundInScope(name, &funEmitterScope);
+                        if (!emitGetNameAtLocation(name, paramLoc)) {
+                            return false;
+                        }
+                        if (!noe.emitAssignment()) {
                             return false;
                         }
                         if (!emit1(JSOP_POP)) {
@@ -8400,40 +8088,27 @@ BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody)
             if (!emit1(JSOP_POP)) {
                 return false;
             }
-        } else {
+        } else if (hasParameterExprs || isRest) {
             RootedAtom paramName(cx, bindingElement->name());
             NameLocation paramLoc = *locationOfNameBoundInScope(paramName, funScope);
-
+            NameOpEmitter noe(this, paramName, paramLoc, NameOpEmitter::Kind::Initialize);
+            if (!noe.prepareForRhs()) {
+                return false;
+            }
             if (hasParameterExprs) {
-                auto emitRhs = [argSlot, initializer, isRest](BytecodeEmitter* bce,
-                                                              const NameLocation&, bool)
-                {
-                    
-                    
-                    if (!initializer && !isRest) {
-                        return bce->emitArgOp(JSOP_GETARG, argSlot);
-                    }
-                    return true;
-                };
-
-                if (!emitSetOrInitializeNameAtLocation(paramName, paramLoc, emitRhs, true)) {
-                    return false;
-                }
-                if (!emit1(JSOP_POP)) {
-                    return false;
-                }
-            } else if (isRest) {
                 
-                auto nop = [](BytecodeEmitter*, const NameLocation&, bool) {
-                    return true;
-                };
-
-                if (!emitSetOrInitializeNameAtLocation(paramName, paramLoc, nop, true)) {
-                    return false;
+                
+                if (!initializer && !isRest) {
+                    if (!emitArgOp(JSOP_GETARG, argSlot)) {
+                        return false;
+                    }
                 }
-                if (!emit1(JSOP_POP)) {
-                    return false;
-                }
+            }
+            if (!noe.emitAssignment()) {
+                return false;
+            }
+            if (!emit1(JSOP_POP)) {
+                return false;
             }
         }
 
@@ -8459,11 +8134,14 @@ BytecodeEmitter::emitInitializeFunctionSpecialNames()
         
         MOZ_ASSERT(bce->lookupName(name).hasKnownSlot());
 
-        auto emitInitial = [op](BytecodeEmitter* bce, const NameLocation&, bool) {
-            return bce->emit1(op);
-        };
-
-        if (!bce->emitInitializeName(name, emitInitial)) {
+        NameOpEmitter noe(bce, name, NameOpEmitter::Kind::Initialize);
+        if (!noe.prepareForRhs()) {
+            return false;
+        }
+        if (!bce->emit1(op)) {
+            return false;
+        }
+        if (!noe.emitAssignment()) {
             return false;
         }
         if (!bce->emit1(JSOP_POP)) {
@@ -8560,14 +8238,21 @@ BytecodeEmitter::emitFunctionBody(ParseNode* funBody)
 bool
 BytecodeEmitter::emitLexicalInitialization(ParseNode* pn)
 {
+    NameOpEmitter noe(this, pn->name(), NameOpEmitter::Kind::Initialize);
+    if (!noe.prepareForRhs()) {
+        return false;
+    }
+
     
     
-    auto assertLexical = [](BytecodeEmitter*, const NameLocation& loc, bool emittedBindOp) {
-        MOZ_ASSERT(loc.isLexical());
-        MOZ_ASSERT(!emittedBindOp);
-        return true;
-    };
-    return emitInitializeName(pn, assertLexical);
+    MOZ_ASSERT(noe.loc().isLexical());
+    MOZ_ASSERT(!noe.emittedBindOp());
+
+    if (!noe.emitAssignment()) {
+        return false;
+    }
+
+    return true;
 }
 
 
