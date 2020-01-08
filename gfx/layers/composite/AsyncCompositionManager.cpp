@@ -953,6 +953,9 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
         
         
         
+        
+        
+        
         ClipParts& clipParts = clipPartsCache[layer];
         clipParts.mFixedClip = layer->GetClipRect();
         clipParts.mScrolledClip = layer->GetScrolledClipRect();

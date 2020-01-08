@@ -69,6 +69,9 @@ public:
         
         
         
+        
+        
+        
         const char* (GLAPIENTRY * fGetExtensionsStringARB) (HDC hdc);
         HGLRC (GLAPIENTRY * fCreateContextAttribsARB) (HDC hdc, HGLRC hShareContext,
                                                        const int* attribList);

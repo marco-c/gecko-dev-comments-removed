@@ -1131,6 +1131,8 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
     
     
     
+    
+    
     uint32_t charsFit;
     bool usedHyphenation = false;
     if (width - trimmableAdvance <= aWidth) {
@@ -3093,6 +3095,7 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
         return font;
     }
 
+    
     
     
     if (aPrevMatchedFont && aPrevMatchedFont->HasCharacter(aCh)) {

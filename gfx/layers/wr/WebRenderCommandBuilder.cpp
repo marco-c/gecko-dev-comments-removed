@@ -286,6 +286,7 @@ UpdateContainerLayerPropertiesAndDetectChange(nsDisplayItem* aItem, BlobItemData
         std::stringstream ss;
         
         
+        
       }
 
       aData->mTransform = trans;
@@ -436,6 +437,10 @@ struct DIGroup
       MOZ_RELEASE_ASSERT(mLayerBounds.TopLeft() == aData->mGroupOffset);
       UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
       
+
+
+
+
 
 
 
@@ -678,6 +683,8 @@ struct DIGroup
 
     PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder);
 
+    
+    
     
     wr::OpacityType opacity = wr::OpacityType::HasAlphaChannel;
 

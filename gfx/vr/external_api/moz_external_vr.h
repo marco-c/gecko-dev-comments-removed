@@ -277,6 +277,8 @@ struct VRDisplayState
   char mDisplayName[kVRDisplayNameMaxLen];
   
   
+  
+  
   uint64_t mEightCC;
   VRDisplayCapabilityFlags mCapabilityFlags;
   VRFieldOfView mEyeFOV[VRDisplayState::NumEyes];

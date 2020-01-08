@@ -61,6 +61,7 @@ public:
 
 
 
+
     void BlitTextureImage(gl::TextureImage *aSrc, const gfx::IntRect& aSrcRect,
                           gl::TextureImage *aDst, const gfx::IntRect& aDstRect);
 };

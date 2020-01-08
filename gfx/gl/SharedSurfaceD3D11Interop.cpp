@@ -115,6 +115,8 @@ namespace gl {
 
 
 
+
+
 class ScopedContextState final
 {
     ID3D11DeviceContext1* const mD3DContext;

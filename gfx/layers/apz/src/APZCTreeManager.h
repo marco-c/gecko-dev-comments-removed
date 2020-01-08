@@ -123,6 +123,7 @@ struct ScrollThumbData;
 
 
 
+
 class APZCTreeManager : public IAPZCTreeManager
                       , public APZInputBridge {
 
@@ -176,6 +177,7 @@ public:
                         const FocusTarget& aFocusTarget);
 
   
+
 
 
 
@@ -390,6 +392,13 @@ public:
       const nsTArray<TouchBehaviorFlags>& aValues) override;
 
   
+
+
+
+
+
+
+
 
 
 

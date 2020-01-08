@@ -342,6 +342,7 @@ void nsRegion::VisitEdges (visit_fn visit, void *closure) const
         int lastX = std::min(topStrip->left, bottomStrip->left) - 1;
 
         
+        
         bool topEdgeIsLeft = true;
         bool bottomEdgeIsLeft = true;
         while (topStrip != std::end(topBand.mStrips) && bottomStrip != std::end(bottomBand.mStrips)) {
@@ -686,6 +687,7 @@ nsIntRegion nsRegion::ScaleToInsidePixels (float aScaleX, float aScaleY,
   intRegion.OrWith(firstDeviceRect);
   return intRegion;
 }
+
 
 
 

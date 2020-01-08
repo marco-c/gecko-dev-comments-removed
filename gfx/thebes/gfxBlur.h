@@ -162,6 +162,8 @@ public:
 
 
 
+
+
     void BlurInsetBox(gfxContext* aDestinationCtx,
                       const mozilla::gfx::Rect& aDestinationRect,
                       const mozilla::gfx::Rect& aShadowClipRect,

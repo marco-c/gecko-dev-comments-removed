@@ -271,6 +271,7 @@ gfxFontUtils::ReadCMAPTableFormat4(const uint8_t *aBuf, uint32_t aLength,
             }
         } else {
             
+            
             for (uint32_t c = startCount; c <= endCount; ++c) {
                 if (c == 0xFFFF)
                     break;

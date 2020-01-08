@@ -18,6 +18,8 @@ struct gfxLineSegment {
   bool PointsOnSameSide(const gfxPoint& aOne, const gfxPoint& aTwo)
   {
     
+    
+    
   
     gfxFloat deltaY = (mEnd.y - mStart.y);
     gfxFloat deltaX = (mEnd.x - mStart.x);

@@ -184,6 +184,10 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   
   
+  
+  
+  
+  
 
   RefPtr<TestAsyncPanZoomController> apzcroot = ApzcOf(root);
   TestAsyncPanZoomController* apzc1 = ApzcOf(layers[1]);

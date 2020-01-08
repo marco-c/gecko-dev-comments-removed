@@ -151,6 +151,9 @@ public:
 
 
 
+
+
+
 template<typename T>
 constexpr T
 WrappingAdd(T aX, T aY)
@@ -229,6 +232,7 @@ public:
 };
 
 } 
+
 
 
 

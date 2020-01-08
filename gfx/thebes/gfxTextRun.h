@@ -432,6 +432,16 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
     uint32_t BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                                  bool aLineBreakBefore, gfxFloat aWidth,
                                  PropertyProvider *aProvider,

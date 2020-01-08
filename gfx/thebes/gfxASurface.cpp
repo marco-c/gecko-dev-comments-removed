@@ -114,6 +114,7 @@ void
 gfxASurface::SurfaceDestroyFunc(void *data) {
     gfxASurface *surf = (gfxASurface*) data;
     
+    
     delete surf;
 }
 

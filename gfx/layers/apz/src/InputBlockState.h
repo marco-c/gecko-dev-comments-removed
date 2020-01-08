@@ -468,6 +468,7 @@ public:
 
 
 
+
   bool TouchActionAllowsPanningX() const;
   bool TouchActionAllowsPanningY() const;
   bool TouchActionAllowsPanningXY() const;

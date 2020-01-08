@@ -114,6 +114,10 @@ public:
 
 
 
+
+
+
+
   MediaConduitErrorCode SendAudioFrame(const int16_t speechData[],
                                        int32_t lengthSamples,
                                        int32_t samplingFreqHz,
@@ -121,6 +125,11 @@ public:
                                        int32_t capture_time) override;
 
   
+
+
+
+
+
 
 
 

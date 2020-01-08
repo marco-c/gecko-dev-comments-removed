@@ -3903,6 +3903,7 @@ gfxFont::SanitizeMetrics(gfxFont::Metrics *aMetrics, bool aIsBadUnderlineFont)
 
 
 
+
     if (!mStyle.systemFont && aIsBadUnderlineFont) {
         
         

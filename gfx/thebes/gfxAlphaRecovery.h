@@ -97,6 +97,7 @@ public:
 
 
 
+
         uint32_t diff = (white & GREEN_MASK) - (black & GREEN_MASK);
         
 

@@ -207,6 +207,7 @@ public:
 
 
 
+
   virtual MediaConduitErrorCode
   SetLocalRTPExtensions(MediaSessionConduitLocalDirection aDirection,
                         const RtpExtList& aExtensions) = 0;
@@ -463,6 +464,7 @@ public:
 
 
 
+
   virtual MediaConduitErrorCode ConfigureSendMediaCodec(const VideoCodecConfig* sendSessionConfig) = 0;
 
   
@@ -545,6 +547,11 @@ public:
 
 
 
+
+
+
+
+
   virtual MediaConduitErrorCode SendAudioFrame(const int16_t audioData[],
                                                int32_t lengthSamples,
                                                int32_t samplingFreqHz,
@@ -552,6 +559,10 @@ public:
                                                int32_t capture_delay) = 0;
 
   
+
+
+
+
 
 
 

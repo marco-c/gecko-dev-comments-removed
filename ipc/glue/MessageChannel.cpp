@@ -1732,6 +1732,7 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
             NeuteredWindowRegion neuteredRgn(mFlags & REQUIRE_DEFERRED_MESSAGE_PROTECTION);
             
 
+
             neuteredRgn.PumpOnce();
         }
 #endif

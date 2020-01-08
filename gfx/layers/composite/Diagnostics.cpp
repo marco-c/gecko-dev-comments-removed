@@ -82,6 +82,7 @@ Diagnostics::GetFrameOverlayString(const GPUStats& aStats)
   
   
   
+  
   nsPrintfCString line1("FPS: %d (TXN: %d)", fps, txnFps);
   nsPrintfCString line2("[CC] Build: %0.1fms Exec: %0.1fms GPU: %s Fill Ratio: %0.1f/%0.1f",
     mPrepareMs.Average(),

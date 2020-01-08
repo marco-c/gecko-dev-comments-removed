@@ -98,9 +98,18 @@ typedef enum nsCharType nsCharType;
 
 
 
+
+
+
+
+
   char16_t HandleNumberInChar(char16_t aChar, bool aPrevCharArabic, uint32_t aNumFlag);
 
   
+
+
+
+
 
 
 

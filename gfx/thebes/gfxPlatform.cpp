@@ -2887,6 +2887,9 @@ gfxPlatform::InitWebRenderConfig()
   
   
   
+  
+  
+  
   ScopedGfxFeatureReporter reporter("WR", prefEnabled || envvarEnabled);
   if (!XRE_IsParentProcess()) {
     
@@ -3182,6 +3185,7 @@ gfxPlatform::ContentUsesTiling() const
       contentUsesSkia &&
       contentUsesPOMTP);
 }
+
 
 
 

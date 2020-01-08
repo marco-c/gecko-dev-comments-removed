@@ -772,6 +772,8 @@ JSXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper, HandleId id,
     
     
     
+    
+    
     JSProtoKey key = getProtoKey(holder);
     bool isInstance = !isPrototype(holder);
     bool isObjectOrArray = (key == JSProto_Object || key == JSProto_Array);

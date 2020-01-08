@@ -15,6 +15,9 @@ namespace layers {
 
 
 
+
+
+
 enum UiCompositorControllerMessageTypes {
   STATIC_TOOLBAR_NEEDS_UPDATE      = 0,  
   STATIC_TOOLBAR_READY             = 1,  
@@ -31,6 +34,7 @@ enum UiCompositorControllerMessageTypes {
   COMPOSITOR_CONTROLLER_OPEN       = 20, 
   IS_COMPOSITOR_CONTROLLER_OPEN    = 21  
 };
+
 
 } 
 } 

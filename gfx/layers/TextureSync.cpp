@@ -91,6 +91,7 @@ WaitForTextureIdsToUnlock(pid_t pid, const Span<const uint64_t>& textureIds)
 
       
       
+      
       if ((TimeStamp::Now() - start).ToMilliseconds() > (double)kTextureLockTimeout) {
         return false;
       }

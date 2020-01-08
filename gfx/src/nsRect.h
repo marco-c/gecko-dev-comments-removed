@@ -144,6 +144,8 @@ struct nsRect :
 
       
       
+      
+      
       __m128i widthheight = _mm_min_epi32(_mm_add_epi32(_mm_sub_epi32(rect1, resultRect), _mm_srli_si128(rect1, 8)),
                                           _mm_add_epi32(_mm_sub_epi32(rect2, resultRect), _mm_srli_si128(rect2, 8))); 
       widthheight = _mm_slli_si128(widthheight, 8); 
@@ -178,6 +180,8 @@ struct nsRect :
       __m128i rect2 = _mm_loadu_si128((__m128i*)&aRect2); 
 
       __m128i resultRect = _mm_max_epi32(rect1, rect2); 
+      
+      
       
       
       __m128i widthheight = _mm_min_epi32(_mm_add_epi32(_mm_sub_epi32(rect1, resultRect), _mm_srli_si128(rect1, 8)),
@@ -396,6 +400,7 @@ nsRect::ScaleToOutsidePixels(float aXScale, float aYScale,
   __m128 rectFloat = _mm_cvtepi32_ps(rectPacked);
 
   
+  
   rectFloat = _mm_mul_ps(_mm_div_ps(rectFloat, appUnitsPacked), scalesPacked);
   rectPacked = ceil_ps2epi32(rectFloat); 
   __m128i tmp = floor_ps2epi32(rectFloat); 
@@ -409,6 +414,8 @@ nsRect::ScaleToOutsidePixels(float aXScale, float aYScale,
   
   __m128i mask = _mm_or_si128(_mm_cmpgt_epi32(rectPacked, _mm_setzero_si128()),
                               _mm_set_epi32(0, 0, 0xFFFFFFFF, 0xFFFFFFFF));
+  
+  
   
   rectPacked = _mm_and_si128(rectPacked, mask);
 

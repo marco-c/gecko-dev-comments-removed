@@ -782,6 +782,7 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
       childArgv.push_back("false");
     }
 #elif defined(MOZ_WIDGET_COCOA) 
+
     childArgv.push_back(CrashReporter::GetChildNotificationPipe());
 #endif  
   }

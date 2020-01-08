@@ -275,6 +275,7 @@ WMFH264Decoder::GetOutputSample(IMFSample** aOutSample)
   DWORD status = 0;
   hr = mDecoder->ProcessOutput(0, 1, &output, &status);
   
+  
   CComPtr<IMFCollection> events = output.pEvents; 
 
   if (hr == MF_E_TRANSFORM_STREAM_CHANGE) {

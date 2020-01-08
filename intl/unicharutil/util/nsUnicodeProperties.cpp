@@ -65,6 +65,7 @@ namespace unicode {
 
 const nsUGenCategory sDetailedToGeneralCategory[] = {
   
+  
 
 
 
@@ -98,9 +99,11 @@ const nsUGenCategory sDetailedToGeneralCategory[] = {
         nsUGenCategory::kSeparator,
    nsUGenCategory::kSeparator,
        nsUGenCategory::kSeparator
+  
 };
 
 const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
+  
   HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED, 
   HB_UNICODE_GENERAL_CATEGORY_UPPERCASE_LETTER, 
   HB_UNICODE_GENERAL_CATEGORY_LOWERCASE_LETTER, 
@@ -131,6 +134,7 @@ const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
   HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL, 
   HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION, 
   HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION, 
+  
 };
 
 #define DEFINE_BMP_1PLANE_MAPPING_GET_FUNC(prefix_) \

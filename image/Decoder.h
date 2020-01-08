@@ -138,6 +138,7 @@ public:
 
 
 
+
   LexerResult Decode(IResumable* aOnResume = nullptr);
 
   

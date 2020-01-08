@@ -1217,6 +1217,7 @@ PeerConnectionImpl::CreateDataChannel(const nsAString& aLabel,
 
 
 
+
 static already_AddRefed<PeerConnectionObserver>
 do_QueryObjectReferent(nsIWeakReference* aRawPtr) {
   nsCOMPtr<nsISupportsWeakReference> tmp = do_QueryReferent(aRawPtr);
