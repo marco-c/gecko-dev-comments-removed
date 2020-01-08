@@ -1231,6 +1231,7 @@ public:
     
     
     
+    
     MOZ_COLLECT_REPORT(
       "imagelib-surface-cache-estimated-total",
       KIND_OTHER, UNITS_BYTES, (mMaxCost - mAvailableCost),
@@ -1246,6 +1247,7 @@ public:
       KIND_OTHER, UNITS_COUNT, mOverflowCount,
 "Count of how many times the surface cache has hit its capacity and been "
 "unable to insert a new surface.");
+    
 
     return NS_OK;
   }
