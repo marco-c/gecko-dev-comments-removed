@@ -21,6 +21,7 @@
 #include "mozilla/layers/PaintThread.h" 
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/layers/APZTestData.h" 
+#include "mozilla/layers/MemoryPressureObserver.h"
 #include "nsCOMPtr.h"                   
 #include "nsIObserver.h"                
 #include "nsISupportsImpl.h"            
@@ -47,6 +48,7 @@ class ImageLayer;
 class FrameUniformityData;
 
 class ClientLayerManager final : public LayerManager
+                               , public MemoryPressureListener
 {
   typedef nsTArray<RefPtr<Layer> > LayerRefArray;
 
@@ -149,7 +151,7 @@ public:
   
   virtual void ClearCachedResources(Layer* aSubtree = nullptr) override;
 
-  void HandleMemoryPressure();
+  virtual void OnMemoryPressure(MemoryPressureReason aWhy) override;
 
   void SetRepeatTransaction() { mRepeatTransaction = true; }
   bool GetRepeatTransaction() { return mRepeatTransaction; }
@@ -267,29 +269,6 @@ protected:
   TransactionPhase mPhase;
 
 private:
-  
-  class MemoryPressureObserver final : public nsIObserver
-  {
-  public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
-
-    explicit MemoryPressureObserver(ClientLayerManager* aClientLayerManager)
-      : mClientLayerManager(aClientLayerManager)
-    {
-      RegisterMemoryPressureEvent();
-    }
-
-    void Destroy();
-
-  private:
-    virtual ~MemoryPressureObserver() {}
-    void RegisterMemoryPressureEvent();
-    void UnregisterMemoryPressureEvent();
-
-    ClientLayerManager* mClientLayerManager;
-  };
-
   
 
 
