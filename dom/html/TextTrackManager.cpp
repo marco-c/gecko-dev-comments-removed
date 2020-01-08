@@ -5,21 +5,22 @@
 
 
 #include "mozilla/dom/TextTrackManager.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTrackElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/TextTrack.h"
 #include "mozilla/dom/TextTrackCue.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Telemetry.h"
 #include "nsComponentManagerUtils.h"
 #include "nsGlobalWindow.h"
+#include "nsIFrame.h"
+#include "nsIWebVTTParserWrapper.h"
+#include "nsTArrayHelpers.h"
 #include "nsVariant.h"
 #include "nsVideoFrame.h"
-#include "nsIFrame.h"
-#include "nsTArrayHelpers.h"
-#include "nsIWebVTTParserWrapper.h"
 
 static mozilla::LazyLogModule gTextTrackLog("TextTrackManager");
 #define WEBVTT_LOG(...) MOZ_LOG(gTextTrackLog, LogLevel::Debug, (__VA_ARGS__))
@@ -613,6 +614,17 @@ void TextTrackManager::DispatchTimeMarchesOn() {
 
 void TextTrackManager::TimeMarchesOn() {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+  CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
+  if (context && context->IsInStableOrMetaStableState()) {
+    
+    
+    
+    
+    
+    
+    DispatchTimeMarchesOn();
+    return;
+  }
   WEBVTT_LOG("TimeMarchesOn");
   mTimeMarchesOnDispatched = false;
 
