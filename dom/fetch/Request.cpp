@@ -64,7 +64,7 @@ Request::Request(nsIGlobalObject* aOwner, InternalRequest* aRequest,
   if (aSignal) {
     
     
-    mSignal = new AbortSignal(aSignal->Aborted());
+    mSignal = new AbortSignal(aOwner, aSignal->Aborted());
     if (!mSignal->Aborted()) {
       mSignal->Follow(aSignal);
     }
@@ -626,14 +626,14 @@ AbortSignal*
 Request::GetOrCreateSignal()
 {
   if (!mSignal) {
-    mSignal = new AbortSignal(false);
+    mSignal = new AbortSignal(mOwner, false);
   }
 
   return mSignal;
 }
 
-AbortSignal*
-Request::GetSignal() const
+AbortSignalImpl*
+Request::GetSignalImpl() const
 {
   return mSignal;
 }

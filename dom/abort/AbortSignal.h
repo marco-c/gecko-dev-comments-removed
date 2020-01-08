@@ -13,6 +13,8 @@ namespace mozilla {
 namespace dom {
 
 class AbortSignal;
+class AbortSignalImpl;
+
 
 
 class AbortFollower
@@ -21,7 +23,7 @@ public:
   virtual void Abort() = 0;
 
   void
-  Follow(AbortSignal* aSignal);
+  Follow(AbortSignalImpl* aSignal);
 
   void
   Unfollow();
@@ -32,21 +34,16 @@ public:
 protected:
   virtual ~AbortFollower();
 
-  RefPtr<AbortSignal> mFollowingSignal;
+  
+  RefPtr<AbortSignalImpl> mFollowingSignal;
 };
 
-class AbortSignal final : public DOMEventTargetHelper
-                        , public AbortFollower
+
+class AbortSignalImpl : public AbortFollower
+                      , public nsISupports
 {
 public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
-
-  AbortSignal(nsIGlobalObject* aGlobalObject, bool aAborted);
-  explicit AbortSignal(bool aAborted);
-
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  explicit AbortSignalImpl(bool aAborted);
 
   bool
   Aborted() const;
@@ -54,21 +51,41 @@ public:
   void
   Abort() override;
 
-  IMPL_EVENT_HANDLER(abort);
-
   void
   AddFollower(AbortFollower* aFollower);
 
   void
   RemoveFollower(AbortFollower* aFollower);
 
-private:
-  ~AbortSignal() = default;
+protected:
+  virtual ~AbortSignalImpl() = default;
 
+private:
   
   nsTArray<AbortFollower*> mFollowers;
 
   bool mAborted;
+};
+
+class AbortSignal final : public DOMEventTargetHelper
+                        , public AbortSignalImpl
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
+
+  AbortSignal(nsIGlobalObject* aGlobalObject, bool aAborted);
+
+  JSObject*
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+
+  IMPL_EVENT_HANDLER(abort);
+
+  void
+  Abort() override;
+
+private:
+  ~AbortSignal() = default;
 };
 
 } 

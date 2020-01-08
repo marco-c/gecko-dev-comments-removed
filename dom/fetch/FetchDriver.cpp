@@ -362,7 +362,7 @@ FetchDriver::~FetchDriver()
 }
 
 nsresult
-FetchDriver::Fetch(AbortSignal* aSignal, FetchDriverObserver* aObserver)
+FetchDriver::Fetch(AbortSignalImpl* aSignalImpl, FetchDriverObserver* aObserver)
 {
   AssertIsOnMainThread();
 #ifdef DEBUG
@@ -391,13 +391,13 @@ FetchDriver::Fetch(AbortSignal* aSignal, FetchDriverObserver* aObserver)
 
   
   
-  if (aSignal) {
-    if (aSignal->Aborted()) {
+  if (aSignalImpl) {
+    if (aSignalImpl->Aborted()) {
       Abort();
       return NS_OK;
     }
 
-    Follow(aSignal);
+    Follow(aSignalImpl);
   }
 
   rv = HttpFetch(mRequest->GetPreferredAlternativeDataType());

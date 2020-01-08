@@ -168,8 +168,8 @@ public:
   GetOrCreateSignal();
 
   
-  AbortSignal*
-  GetSignal() const override;
+  AbortSignalImpl*
+  GetSignalImpl() const override;
 
 private:
   ~Request();
