@@ -3137,9 +3137,9 @@ nsGlobalWindowOuter::GetInnerSize(CSSIntSize& aSize)
 
 
 
-  if (presShell->IsScrollPositionClampingScrollPortSizeSet()) {
+  if (presShell->IsVisualViewportSizeSet()) {
     aSize = CSSIntRect::FromAppUnitsRounded(
-      presShell->GetScrollPositionClampingScrollPortSize());
+      presShell->GetVisualViewportSize());
   } else {
     RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
     if (viewManager) {
