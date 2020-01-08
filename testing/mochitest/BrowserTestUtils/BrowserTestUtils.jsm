@@ -633,7 +633,9 @@ var BrowserTestUtils = {
 
   async loadURI(browser, uri) {
     
-    browser.loadURI(uri);
+    browser.loadURI(uri, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
 
     
     if (!browser.ownerGlobal.gMultiProcessBrowser) {
