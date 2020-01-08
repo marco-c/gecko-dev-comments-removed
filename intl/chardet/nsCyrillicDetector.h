@@ -9,12 +9,8 @@
 #include "nsIStringCharsetDetector.h"
 
 
-
-
-
 #define NS_RU_PROBDETECTOR_CID \
 { 0x2002f781, 0x3960, 0x11d3, { 0xb3, 0xc3, 0x0, 0x80, 0x5f, 0x8a, 0x66, 0x70 } }
-
 
 
 #define NS_UK_PROBDETECTOR_CID \
@@ -101,26 +97,6 @@ class nsCyrXPCOMDetector :
     virtual void Report(const char* aCharset) override;
   private:
     nsCOMPtr<nsICharsetDetectionObserver> mObserver;
-};
-
-class nsCyrXPCOMStringDetector :
-      public nsCyrillicDetector,
-      public nsIStringCharsetDetector
-{
-  public:
-    
-    NS_DECL_ISUPPORTS
-    nsCyrXPCOMStringDetector(uint8_t aItems,
-                      const uint8_t ** aCyrillicClass,
-                      const char **aCharsets);
-    NS_IMETHOD DoIt(const char* aBuf, uint32_t aLen,
-                     const char** oCharset, nsDetectionConfident &oConf) override;
-  protected:
-    virtual ~nsCyrXPCOMStringDetector();
-    virtual void Report(const char* aCharset) override;
-  private:
-    nsCOMPtr<nsICharsetDetectionObserver> mObserver;
-    const char* mResult;
 };
 
 class nsRUProbDetector final : public nsCyrXPCOMDetector
