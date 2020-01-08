@@ -605,6 +605,7 @@ nsObjectLoadingContent::BindToTree(nsIDocument* aDocument,
   if (aDocument) {
     aDocument->AddPlugin(this);
   }
+
   return NS_OK;
 }
 
@@ -634,6 +635,21 @@ nsObjectLoadingContent::UnbindFromTree(bool aDeep, bool aNullParent)
     
     UnloadObject();
   }
+
+  
+  if (thisElement->IsInComposedDoc() && thisElement->GetShadowRoot()) {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "nsObjectLoadingContent::UnbindFromTree::UAWidgetUnbindFromTree",
+      [thisElement]() {
+        nsContentUtils::DispatchChromeEvent(
+          thisElement->OwnerDoc(), thisElement,
+          NS_LITERAL_STRING("UAWidgetUnbindFromTree"),
+          CanBubble::eYes, Cancelable::eNo);
+        thisElement->UnattachShadow();
+      })
+    );
+  }
+
   if (mType == eType_Plugin) {
     nsIDocument* doc = thisElement->GetComposedDoc();
     if (doc && doc->IsActive()) {
@@ -2632,25 +2648,23 @@ nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
        " (sync %i, notify %i)", this, aOldType, aOldState.GetInternalValue(),
        mType, ObjectState().GetInternalValue(), aSync, aNotify));
 
-  nsCOMPtr<nsIContent> thisContent =
+  nsCOMPtr<dom::Element> thisEl =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-  NS_ASSERTION(thisContent, "must be a content");
-
-  NS_ASSERTION(thisContent->IsElement(), "Not an element?");
+  MOZ_ASSERT(thisEl, "must be an element");
 
   
 
   
   
   
-  thisContent->AsElement()->UpdateState(false);
+  thisEl->UpdateState(false);
 
   if (!aNotify) {
     
     return;
   }
 
-  nsIDocument* doc = thisContent->GetComposedDoc();
+  nsIDocument* doc = thisEl->GetComposedDoc();
   if (!doc) {
     return; 
   }
@@ -2662,24 +2676,59 @@ nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
   }
 
   if (newState != aOldState) {
-    NS_ASSERTION(thisContent->IsInComposedDoc(), "Something is confused");
+    MOZ_ASSERT(thisEl->IsInComposedDoc(), "Something is confused");
     
     EventStates changedBits = aOldState ^ newState;
     {
       nsAutoScriptBlocker scriptBlocker;
-      doc->ContentStateChanged(thisContent, changedBits);
+      doc->ContentStateChanged(thisEl, changedBits);
+    }
+
+    
+    if (nsContentUtils::IsUAWidgetEnabled()) {
+      const EventStates pluginProblemState =
+        NS_EVENT_STATE_HANDLER_BLOCKED |
+        NS_EVENT_STATE_HANDLER_CRASHED |
+        NS_EVENT_STATE_TYPE_CLICK_TO_PLAY |
+        NS_EVENT_STATE_VULNERABLE_UPDATABLE |
+        NS_EVENT_STATE_VULNERABLE_NO_UPDATE;
+
+      bool hadProblemState = !(aOldState & pluginProblemState).IsEmpty();
+      bool hasProblemState = !(newState & pluginProblemState).IsEmpty();
+
+      if (hadProblemState && !hasProblemState) {
+        nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+          "nsObjectLoadingContent::UnbindFromTree::UAWidgetUnbindFromTree",
+          [thisEl]() {
+            nsContentUtils::DispatchChromeEvent(
+              thisEl->OwnerDoc(), thisEl,
+              NS_LITERAL_STRING("UAWidgetUnbindFromTree"),
+              CanBubble::eYes, Cancelable::eNo);
+            thisEl->UnattachShadow();
+          })
+        );
+      } else if (!hadProblemState && hasProblemState) {
+        nsGenericHTMLElement::FromNode(thisEl)->AttachAndSetUAShadowRoot();
+
+        AsyncEventDispatcher* dispatcher =
+          new AsyncEventDispatcher(thisEl,
+                                   NS_LITERAL_STRING("UAWidgetBindToTree"),
+                                   CanBubble::eYes,
+                                   ChromeOnlyDispatch::eYes);
+        dispatcher->RunDOMEventWhenSafe();
+      }
     }
   } else if (aOldType != mType) {
     
     
     nsCOMPtr<nsIPresShell> shell = doc->GetShell();
     if (shell) {
-      shell->PostRecreateFramesFor(thisContent->AsElement());
+      shell->PostRecreateFramesFor(thisEl);
     }
   }
 
   if (aSync) {
-    NS_ASSERTION(InActiveDocument(thisContent), "Something is confused");
+    MOZ_ASSERT(InActiveDocument(thisEl), "Something is confused");
     
     doc->FlushPendingNotifications(FlushType::Frames);
   }
