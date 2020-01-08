@@ -107,20 +107,20 @@ GetPasswordString(void *arg, char *prompt)
 char *
 SECU_FilePasswd(PK11SlotInfo *slot, PRBool retry, void *arg)
 {
-  char* phrases, *phrase;
+  char *phrases, *phrase;
   PRFileDesc *fd;
   int32_t nb;
   char *pwFile = arg;
   int i;
   const long maxPwdFileSize = 4096;
-  char* tokenName = NULL;
+  char *tokenName = NULL;
   int tokenLen = 0;
 
   if (!pwFile)
     return 0;
 
   if (retry) {
-    return 0;  
+    return 0; 
   }
 
   phrases = PORT_ZAlloc(maxPwdFileSize);
@@ -153,33 +153,38 @@ SECU_FilePasswd(PK11SlotInfo *slot, PRBool retry, void *arg)
     }
   }
   i = 0;
-  do
-  {
+  do {
     int startphrase = i;
     int phraseLen;
 
     
-    while (phrases[i] != '\r' && phrases[i] != '\n' && i < nb) i++;
+    while (phrases[i] != '\r' && phrases[i] != '\n' && i < nb)
+      i++;
     
-    phrases[i++] = '\0';
+    if (i < nb) {
+      phrases[i++] = '\0';
+    }
     
-    while ( (i<nb) && (phrases[i] == '\r' || phrases[i] == '\n')) {
+    while ((i < nb) && (phrases[i] == '\r' || phrases[i] == '\n')) {
       phrases[i++] = '\0';
     }
     
     phrase = &phrases[startphrase];
     if (!tokenName)
       break;
-    if (PORT_Strncmp(phrase, tokenName, tokenLen)) continue;
+    if (PORT_Strncmp(phrase, tokenName, tokenLen))
+      continue;
     phraseLen = PORT_Strlen(phrase);
-    if (phraseLen < (tokenLen+1)) continue;
-    if (phrase[tokenLen] != ':') continue;
+    if (phraseLen < (tokenLen + 1))
+      continue;
+    if (phrase[tokenLen] != ':')
+      continue;
     phrase = &phrase[tokenLen+1];
     break;
 
-  } while (i<nb);
+  } while (i < nb);
 
-  phrase = PORT_Strdup((char*)phrase);
+  phrase = PORT_Strdup((char *)phrase);
   PORT_Free(phrases);
   return phrase;
 }
