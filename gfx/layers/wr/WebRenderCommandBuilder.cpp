@@ -1511,14 +1511,14 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
           
           mLayerScrollData.emplace_back();
           mLayerScrollData.back().Initialize(mManager->GetScrollData(), *deferred,
-              descendants, stopAtAsr, Some((*deferred)->GetTransform().GetMatrix()));
+              descendants, stopAtAsr, aSc.GetDeferredTransformMatrix());
         } else {
           
           
           
           mLayerScrollData.emplace_back();
           mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
-              descendants, stopAtAsr, deferred ? Some((*deferred)->GetTransform().GetMatrix()) : Nothing());
+              descendants, stopAtAsr, aSc.GetDeferredTransformMatrix());
         }
       }
     }
