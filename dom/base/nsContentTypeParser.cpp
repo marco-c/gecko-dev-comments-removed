@@ -5,27 +5,18 @@
 
 
 #include "nsContentTypeParser.h"
-#include "nsContentUtils.h"
+#include "nsNetUtil.h"
 
 nsContentTypeParser::nsContentTypeParser(const nsAString& aString)
   : mString(aString)
-  , mService(nullptr)
 {
-  CallGetService("@mozilla.org/network/mime-hdrparam;1", &mService);
-}
-
-nsContentTypeParser::~nsContentTypeParser()
-{
-  NS_IF_RELEASE(mService);
 }
 
 nsresult
 nsContentTypeParser::GetParameter(const char* aParameterName,
                                   nsAString& aResult) const
 {
-  NS_ENSURE_TRUE(mService, NS_ERROR_FAILURE);
-  return mService->GetParameterHTTP(
-    mString, aParameterName, EmptyCString(), false, nullptr, aResult);
+  return net::GetParameterHTTP(mString, aParameterName, aResult);
 }
 
 nsresult
