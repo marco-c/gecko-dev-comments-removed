@@ -578,6 +578,13 @@ var BrowserTestUtils = {
           Services.ww.unregisterNotification(observe);
         }
 
+        
+        
+        let promises = [
+          this.waitForEvent(win, "focus"),
+          this.waitForEvent(win, "activate"),
+        ];
+
         if (url) {
           await this.waitForEvent(win, "DOMContentLoaded");
 
@@ -586,12 +593,8 @@ var BrowserTestUtils = {
           }
         }
 
-        let promises = [
-          TestUtils.topicObserved("browser-delayed-startup-finished",
-                                  subject => subject == win),
-          this.waitForEvent(win, "focus"),
-          this.waitForEvent(win, "activate"),
-        ];
+        promises.push(TestUtils.topicObserved("browser-delayed-startup-finished",
+                                              subject => subject == win));
 
         if (url) {
           let browser = win.gBrowser.selectedBrowser;
