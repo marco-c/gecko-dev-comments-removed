@@ -21,6 +21,8 @@
 #include "GLTypes.h"
 #include "Units.h"
 
+class nsDisplayItem;
+
 namespace mozilla {
 
 struct ActiveScrolledRoot;
@@ -32,6 +34,11 @@ class CompositorWidget;
 namespace layers {
 class CompositorBridgeParent;
 class WebRenderBridgeParent;
+class WebRenderLayerManager;
+}
+
+namespace layout {
+class TextDrawTarget;
 }
 
 namespace wr {
@@ -535,6 +542,13 @@ public:
   
   void ClearHitTestInfo();
 
+  already_AddRefed<gfxContext> GetTextContext(wr::IpcResourceUpdateQueue& aResources,
+                                              const layers::StackingContextHelper& aSc,
+                                              layers::WebRenderLayerManager* aManager,
+                                              nsDisplayItem* aItem,
+                                              nsRect& aBounds,
+                                              const gfx::Point& aDeviceOffset);
+
   
   wr::WrState* Raw() { return mWrState; }
 
@@ -576,6 +590,9 @@ protected:
   
   
   Maybe<wr::LayoutRect> mClipChainLeaf;
+
+  RefPtr<layout::TextDrawTarget> mCachedTextDT;
+  RefPtr<gfxContext> mCachedContext;
 
   FixedPosScrollTargetTracker* mActiveFixedPosTracker;
 
