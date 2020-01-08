@@ -2343,7 +2343,10 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
   }
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-  if (sEarlySandboxInit && IsContentSandboxEnabled()) {
+  
+  
+  if (sEarlySandboxInit && IsContentSandboxEnabled() &&
+      !IsRecordingOrReplaying()) {
     AppendSandboxParams(extraArgs);
   }
 #endif
@@ -2751,7 +2754,10 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
 #ifdef XP_MACOSX
   
   
-  shouldSandbox = shouldSandbox && !sEarlySandboxInit;
+  
+  
+  shouldSandbox = shouldSandbox &&
+    (!sEarlySandboxInit || IsRecordingOrReplaying());
 #endif
 
 #ifdef XP_LINUX

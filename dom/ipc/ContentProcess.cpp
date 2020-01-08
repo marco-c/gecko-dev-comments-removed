@@ -298,8 +298,11 @@ ContentProcess::Init(int aArgc, char* aArgv[])
 #if (defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   mContent.SetProfileDir(profileDir);
 #if defined(DEBUG)
+  
+  
   if (IsContentSandboxEnabled() &&
-      Preferences::GetBool("security.sandbox.content.mac.earlyinit")) {
+      Preferences::GetBool("security.sandbox.content.mac.earlyinit") &&
+      !recordreplay::IsMiddleman()) {
     AssertMacSandboxEnabled();
   }
 #endif 
