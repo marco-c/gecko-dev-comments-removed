@@ -22,8 +22,18 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ThreadLocal.h"
 
+#include "threading/Thread.h"
 #include "vm/Runtime.h"
 #include "wasm/WasmInstance.h"
+
+#if defined(XP_WIN)
+# include "util/Windows.h"
+#elif defined(XP_DARWIN)
+# include <mach/exc.h>
+# include <mach/mach.h>
+#else
+# include <signal.h>
+#endif
 
 using namespace js;
 using namespace js::wasm;
@@ -35,13 +45,6 @@ using mozilla::DebugOnly;
 
 
 
-
-#if defined(XP_WIN)
-# include "util/Windows.h"
-#else
-# include <signal.h>
-# include <sys/mman.h>
-#endif
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 # include <sys/ucontext.h> 
@@ -486,7 +489,6 @@ HandleTrap(CONTEXT* context, JSContext* assertCx = nullptr)
 
 
 
-
 #if defined(XP_WIN)
 
 static LONG WINAPI
@@ -512,7 +514,9 @@ WasmTrapHandler(LPEXCEPTION_POINTERS exception)
 }
 
 #elif defined(XP_DARWIN)
-# include <mach/exc.h>
+
+
+
 
 
 
@@ -539,7 +543,7 @@ struct ExceptionRequest
 };
 
 static bool
-HandleMachException(JSContext* cx, const ExceptionRequest& request)
+HandleMachException(const ExceptionRequest& request)
 {
     
     mach_port_t cxThread = request.body.thread.name;
@@ -585,7 +589,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     {
         AutoNoteSingleThreadedRegion anstr;
         AutoHandlingTrap aht;
-        if (!HandleTrap(&context, cx)) {
+        if (!HandleTrap(&context)) {
             return false;
         }
     }
@@ -603,22 +607,18 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     return true;
 }
 
-
-static const mach_msg_id_t sExceptionId = 2405;
-
-
-static const mach_msg_id_t sQuitId = 42;
+static mach_port_t sMachDebugPort = MACH_PORT_NULL;
 
 static void
-MachExceptionHandlerThread(JSContext* cx)
+MachExceptionHandlerThread()
 {
-    mach_port_t port = cx->wasmMachExceptionHandler.port();
-    kern_return_t kret;
+    
+    static const unsigned EXCEPTION_MSG_ID = 2405;
 
-    while(true) {
+    while (true) {
         ExceptionRequest request;
-        kret = mach_msg(&request.body.Head, MACH_RCV_MSG, 0, sizeof(request),
-                        port, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+        kern_return_t kret = mach_msg(&request.body.Head, MACH_RCV_MSG, 0, sizeof(request),
+                                      sMachDebugPort, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 
         
         
@@ -627,13 +627,7 @@ MachExceptionHandlerThread(JSContext* cx)
             MOZ_CRASH();
         }
 
-        
-        
-        
-        if (request.body.Head.msgh_id == sQuitId) {
-            break;
-        }
-        if (request.body.Head.msgh_id != sExceptionId) {
+        if (request.body.Head.msgh_id != EXCEPTION_MSG_ID) {
             fprintf(stderr, "Unexpected msg header id %d\n", (int)request.body.Head.msgh_bits);
             MOZ_CRASH();
         }
@@ -644,7 +638,7 @@ MachExceptionHandlerThread(JSContext* cx)
         
         
         
-        bool handled = HandleMachException(cx, request);
+        bool handled = HandleMachException(request);
         kern_return_t replyCode = handled ? KERN_SUCCESS : KERN_FAILURE;
 
         
@@ -660,101 +654,6 @@ MachExceptionHandlerThread(JSContext* cx)
         mach_msg(&reply.Head, MACH_SEND_MSG, sizeof(reply), 0, MACH_PORT_NULL,
                  MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
     }
-}
-
-MachExceptionHandler::MachExceptionHandler()
-  : installed_(false),
-    thread_(),
-    port_(MACH_PORT_NULL)
-{}
-
-void
-MachExceptionHandler::uninstall()
-{
-    if (installed_) {
-        thread_port_t thread = mach_thread_self();
-        kern_return_t kret = thread_set_exception_ports(thread,
-                                                        EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION,
-                                                        MACH_PORT_NULL,
-                                                        EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
-                                                        THREAD_STATE_NONE);
-        mach_port_deallocate(mach_task_self(), thread);
-        if (kret != KERN_SUCCESS) {
-            MOZ_CRASH();
-        }
-        installed_ = false;
-    }
-    if (thread_.joinable()) {
-        
-        mach_msg_header_t msg;
-        msg.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0);
-        msg.msgh_size = sizeof(msg);
-        msg.msgh_remote_port = port_;
-        msg.msgh_local_port = MACH_PORT_NULL;
-        msg.msgh_reserved = 0;
-        msg.msgh_id = sQuitId;
-        kern_return_t kret = mach_msg(&msg, MACH_SEND_MSG, sizeof(msg), 0, MACH_PORT_NULL,
-                                      MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
-        if (kret != KERN_SUCCESS) {
-            fprintf(stderr, "MachExceptionHandler: failed to send quit message: %d\n", (int)kret);
-            MOZ_CRASH();
-        }
-
-        
-        thread_.join();
-    }
-    if (port_ != MACH_PORT_NULL) {
-        DebugOnly<kern_return_t> kret = mach_port_destroy(mach_task_self(), port_);
-        MOZ_ASSERT(kret == KERN_SUCCESS);
-        port_ = MACH_PORT_NULL;
-    }
-}
-
-bool
-MachExceptionHandler::install(JSContext* cx)
-{
-    MOZ_ASSERT(!installed());
-    kern_return_t kret;
-    mach_port_t thread;
-
-    auto onFailure = mozilla::MakeScopeExit([&] {
-        uninstall();
-    });
-
-    
-    kret = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &port_);
-    if (kret != KERN_SUCCESS) {
-        return false;
-    }
-    kret = mach_port_insert_right(mach_task_self(), port_, port_, MACH_MSG_TYPE_MAKE_SEND);
-    if (kret != KERN_SUCCESS) {
-        return false;
-    }
-
-    
-    if (!thread_.init(MachExceptionHandlerThread, cx)) {
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    thread = mach_thread_self();
-    kret = thread_set_exception_ports(thread,
-                                      EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION,
-                                      port_,
-                                      EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
-                                      THREAD_STATE_NONE);
-    mach_port_deallocate(mach_task_self(), thread);
-    if (kret != KERN_SUCCESS) {
-        return false;
-    }
-
-    installed_ = true;
-    onFailure.release();
-    return true;
 }
 
 #else  
@@ -814,39 +713,45 @@ WasmTrapHandler(int signum, siginfo_t* info, void* context)
 extern "C" MFBT_API bool IsSignalHandlingBroken();
 #endif
 
-static bool sTriedInstallSignalHandlers = false;
-static bool sHaveSignalHandlers = false;
-
-static bool
-ProcessHasSignalHandlers()
+struct InstallState
 {
-    
-    if (sTriedInstallSignalHandlers) {
-        return sHaveSignalHandlers;
+    bool tried;
+    bool success;
+    InstallState() : tried(false), success(false) {}
+};
+
+static ExclusiveData<InstallState> sEagerInstallState(mutexid::WasmSignalInstallState);
+
+void
+wasm::EnsureEagerProcessSignalHandlers()
+{
+    auto eagerInstallState = sEagerInstallState.lock();
+    if (eagerInstallState->tried) {
+        return;
     }
-    sTriedInstallSignalHandlers = true;
+
+    eagerInstallState->tried = true;
+    MOZ_RELEASE_ASSERT(eagerInstallState->success == false);
 
 #if defined (JS_CODEGEN_NONE)
     
-    return false;
+    return;
 #endif
 
     
     if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return false;
+        return;
     }
 
 #if defined(ANDROID) && defined(MOZ_LINKER)
     
     if (IsSignalHandlingBroken()) {
-        return false;
+        return;
     }
 #endif
 
-    
     sAlreadyHandlingTrap.infallibleInit();
 
-    
     
 #if defined(XP_WIN)
 
@@ -862,10 +767,12 @@ ProcessHasSignalHandlers()
     const bool firstHandler = true;
 # endif
     if (!AddVectoredExceptionHandler(firstHandler, WasmTrapHandler)) {
-        return false;
+        
+        
+        return;
     }
+
 #elif defined(XP_DARWIN)
-    
     
 #else
     
@@ -903,33 +810,94 @@ ProcessHasSignalHandlers()
     }
 #endif
 
-    sHaveSignalHandlers = true;
+    eagerInstallState->success = true;
+}
+
+static ExclusiveData<InstallState> sLazyInstallState(mutexid::WasmSignalInstallState);
+
+static bool
+EnsureLazyProcessSignalHandlers()
+{
+    auto lazyInstallState = sLazyInstallState.lock();
+    if (lazyInstallState->tried) {
+        return lazyInstallState->success;
+    }
+
+    lazyInstallState->tried = true;
+    MOZ_RELEASE_ASSERT(lazyInstallState->success == false);
+
+#ifdef XP_DARWIN
+    
+    kern_return_t kret;
+    kret = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &sMachDebugPort);
+    if (kret != KERN_SUCCESS) {
+        return false;
+    }
+    kret = mach_port_insert_right(mach_task_self(), sMachDebugPort, sMachDebugPort,
+                                  MACH_MSG_TYPE_MAKE_SEND);
+    if (kret != KERN_SUCCESS) {
+        return false;
+    }
+
+    
+    
+    
+    Thread handlerThread;
+    if (!handlerThread.init(MachExceptionHandlerThread)) {
+        return false;
+    }
+    handlerThread.detach();
+#endif
+
+    lazyInstallState->success = true;
     return true;
 }
 
 bool
-wasm::EnsureSignalHandlers(JSContext* cx)
+wasm::EnsureFullSignalHandlers(JSContext* cx)
 {
-    
-    if (!ProcessHasSignalHandlers()) {
-        return true;
+    if (cx->wasmTriedToInstallSignalHandlers) {
+        return cx->wasmHaveSignalHandlers;
     }
 
-#if defined(XP_DARWIN)
+    cx->wasmTriedToInstallSignalHandlers = true;
+    MOZ_RELEASE_ASSERT(!cx->wasmHaveSignalHandlers);
+
+    {
+        auto eagerInstallState = sEagerInstallState.lock();
+        MOZ_RELEASE_ASSERT(eagerInstallState->tried);
+        if (!eagerInstallState->success) {
+            return false;
+        }
+    }
+
+    if (!EnsureLazyProcessSignalHandlers()) {
+        return false;
+    }
+
+#ifdef XP_DARWIN
     
-    if (!cx->wasmMachExceptionHandler.installed() && !cx->wasmMachExceptionHandler.install(cx)) {
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(sMachDebugPort != MACH_PORT_NULL);
+    thread_port_t thisThread = mach_thread_self();
+    kern_return_t kret = thread_set_exception_ports(thisThread,
+                                                    EXC_MASK_BAD_ACCESS | EXC_MASK_BAD_INSTRUCTION,
+                                                    sMachDebugPort,
+                                                    EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
+                                                    THREAD_STATE_NONE);
+    mach_port_deallocate(mach_task_self(), thisThread);
+    if (kret != KERN_SUCCESS) {
         return false;
     }
 #endif
 
+    cx->wasmHaveSignalHandlers = true;
     return true;
-}
-
-bool
-wasm::HaveSignalHandlers()
-{
-    MOZ_ASSERT(sTriedInstallSignalHandlers);
-    return sHaveSignalHandlers;
 }
 
 bool

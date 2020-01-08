@@ -623,9 +623,10 @@ struct JSContext : public JS::RootingContext,
         suppressProfilerSampling = false;
     }
 
-#if defined(XP_DARWIN)
-    js::wasm::MachExceptionHandler wasmMachExceptionHandler;
-#endif
+    
+    
+    bool wasmTriedToInstallSignalHandlers;
+    bool wasmHaveSignalHandlers;
 
     
     static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
