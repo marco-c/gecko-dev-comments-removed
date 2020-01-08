@@ -34,6 +34,44 @@ namespace js {
 
 
 
+
+class SrcNote {
+  public:
+    
+    class TableSwitch {
+      public:
+        enum Fields {
+            
+            
+            EndOffset,
+            Count
+        };
+    };
+    
+    class CondSwitch {
+      public:
+        enum Fields {
+            
+            
+            EndOffset,
+
+            
+            FirstCaseOffset,
+            Count
+        };
+    };
+    
+    class NextCase {
+      public:
+        enum Fields {
+            
+            
+            NextCaseOffset,
+            Count
+        };
+    };
+};
+
 #define FOR_EACH_SRC_NOTE_TYPE(M)                                                                  \
     M(SRC_NULL,         "null",        0)  /* Terminates a note vector. */                         \
     M(SRC_IF,           "if",          0)  /* JSOP_IFEQ bytecode is from an if-then. */            \
@@ -50,11 +88,9 @@ namespace js {
     M(SRC_BREAK,        "break",       0)  /* JSOP_GOTO is a break. */                             \
     M(SRC_BREAK2LABEL,  "break2label", 0)  /* JSOP_GOTO for 'break label'. */                      \
     M(SRC_SWITCHBREAK,  "switchbreak", 0)  /* JSOP_GOTO is a break in a switch. */                 \
-    M(SRC_TABLESWITCH,  "tableswitch", 1)  /* JSOP_TABLESWITCH; offset points to end of switch. */ \
-    M(SRC_CONDSWITCH,   "condswitch",  2)  /* JSOP_CONDSWITCH; 1st offset points to end of switch, \
-                                              2nd points to first JSOP_CASE. */                    \
-    M(SRC_NEXTCASE,     "nextcase",    1)  /* Distance forward from one CASE in a CONDSWITCH to    \
-                                              the next. */                                         \
+    M(SRC_TABLESWITCH,  "tableswitch", SrcNote::TableSwitch::Count) \
+    M(SRC_CONDSWITCH,   "condswitch",  SrcNote::CondSwitch::Count) \
+    M(SRC_NEXTCASE,     "nextcase",    SrcNote::NextCase::Count) \
     M(SRC_ASSIGNOP,     "assignop",    0)  /* += or another assign-op follows. */                  \
     M(SRC_CLASS_SPAN,   "class",       2)  /* The starting and ending offsets for the class, used  \
                                               for toString correctness for default ctors. */       \

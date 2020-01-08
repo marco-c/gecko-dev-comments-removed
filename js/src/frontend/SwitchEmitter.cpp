@@ -233,8 +233,11 @@ SwitchEmitter::emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault)
     if (state_ == State::Case) {
         
         
-        if (!bce_->setSrcNoteOffset(caseNoteIndex_, 0, bce_->offset() - lastCaseOffset_))
+        if (!bce_->setSrcNoteOffset(caseNoteIndex_, SrcNote::NextCase::NextCaseOffset,
+                                    bce_->offset() - lastCaseOffset_))
+        {
             return false;
+        }
     }
 
     if (!bce_->newSrcNote2(SRC_NEXTCASE, 0, &caseNoteIndex_))
@@ -392,8 +395,14 @@ SwitchEmitter::emitEnd()
     }
 
     
-    if (!bce_->setSrcNoteOffset(noteIndex_, 0, bce_->lastNonJumpTargetOffset() - top_))
+    
+    static_assert(unsigned(SrcNote::TableSwitch::EndOffset) == unsigned(SrcNote::CondSwitch::EndOffset),
+                  "{TableSwitch,CondSwitch}::EndOffset should be same");
+    if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::TableSwitch::EndOffset,
+                                bce_->lastNonJumpTargetOffset() - top_))
+    {
         return false;
+    }
 
     if (kind_ == Kind::Table) {
         
