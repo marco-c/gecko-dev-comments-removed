@@ -575,7 +575,14 @@ var BrowserPageActions = {
       panelNode.setAttribute("label", title);
     }
     if (urlbarNode) {
-      urlbarNode.setAttribute("aria-label", title);
+      
+      
+      
+      
+      
+      if (urlbarNode.nodeName != "hbox") {
+        urlbarNode.setAttribute("aria-label", title);
+      }
       
       let tooltip = action.getTooltip(window);
       if (!tooltip && title) {
