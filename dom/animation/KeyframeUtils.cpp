@@ -14,6 +14,7 @@
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoCSSParser.h"
 #include "mozilla/StyleAnimationValue.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h" 
 #include "mozilla/dom/Element.h"
@@ -23,7 +24,6 @@
 #include "jsapi.h" 
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h" 
-                            
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h" 
@@ -206,7 +206,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
                                            ErrorResult& aRv);
 
 static bool
-RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
+HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument);
 
 static void
@@ -256,8 +256,8 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
     return keyframes;
   }
 
-  if (!nsDocument::IsWebAnimationsEnabled(aCx, nullptr) &&
-      RequiresAdditiveAnimation(keyframes, aDocument)) {
+  if (!nsDocument::AreWebAnimationsImplicitKeyframesEnabled(aCx, nullptr) &&
+      HasImplicitKeyframeValues(keyframes, aDocument)) {
     keyframes.Clear();
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
   }
@@ -791,8 +791,7 @@ HandleMissingInitialKeyframe(nsTArray<AnimationProperty>& aResult,
 
   
   
-  
-  if (!nsContentUtils::AnimationsAPICoreEnabled()) {
+  if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled()) {
     return nullptr;
   }
 
@@ -814,8 +813,7 @@ HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
 
   
   
-  
-  if (!nsContentUtils::AnimationsAPICoreEnabled()) {
+  if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled()) {
     
     
     if (aCurrentAnimationProperty) {
@@ -1056,8 +1054,8 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
 
     
     
-    
-    if (!nsContentUtils::AnimationsAPICoreEnabled() && count == 1) {
+    if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled() &&
+        count == 1) {
       aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
       return;
     }
@@ -1223,12 +1221,11 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
 
 
 
-
-
 static bool
-RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
+HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument)
 {
+  
   
   
   
