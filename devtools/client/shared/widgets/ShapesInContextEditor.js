@@ -38,8 +38,6 @@ class ShapesInContextEditor {
     this.state = state;
     
     this.swatch = null;
-    
-    this.textProperty = null;
 
     
     
@@ -51,6 +49,28 @@ class ShapesInContextEditor {
 
     this.highlighter.on("highlighter-event", this.onHighlighterEvent);
     this.ruleView.on("ruleview-changed", this.onRuleViewChanged);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  get textProperty() {
+    if (!this.rule || !this.rule.textProps) {
+      return null;
+    }
+
+    const textProp = this.rule.textProps[this.textPropIndex];
+    return (textProp && textProp.name === this.textPropName) ? textProp : null;
   }
 
   
@@ -90,7 +110,12 @@ class ShapesInContextEditor {
       await this.hide();
     }
 
-    this.textProperty = prop;
+    
+    
+    this.rule = prop.rule;
+    this.textPropIndex = this.rule.textProps.indexOf(prop);
+    this.textPropName = prop.name;
+
     this.findSwatch();
     await this.show(node, options);
   }
@@ -131,7 +156,9 @@ class ShapesInContextEditor {
       this.swatch.classList.remove("active");
     }
     this.swatch = null;
-    this.textProperty = null;
+    this.rule = null;
+    this.textPropIndex = -1;
+    this.textPropName = null;
 
     this.emit("hide", { node: this.highlighterTargetNode });
     this.inspector.selection.off("detached-front", this.onNodeFrontChanged);
@@ -147,6 +174,10 @@ class ShapesInContextEditor {
 
 
   findSwatch() {
+    if (!this.textProperty) {
+      return;
+    }
+
     const valueSpan = this.textProperty.editor.valueSpan;
     this.swatch = valueSpan.querySelector(".ruleview-shapeswatch");
     if (this.swatch) {
@@ -249,11 +280,15 @@ class ShapesInContextEditor {
 
 
 
-  onShapeValueUpdated() {
-    
-    
-    this.findSwatch();
-    this.inspector.highlighters.emit("shapes-highlighter-changes-applied");
+  async onShapeValueUpdated() {
+    if (this.textProperty) {
+      
+      
+      this.findSwatch();
+      this.inspector.highlighters.emit("shapes-highlighter-changes-applied");
+    } else {
+      await this.hide();
+    }
   }
 
   
