@@ -2737,8 +2737,16 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result)
     if (obj->is<ProxyObject>())
         return js::Proxy::preventExtensions(cx, obj, result);
 
-    if (!obj->nonProxyIsExtensible())
+    if (!obj->nonProxyIsExtensible()) {
+        
+        
+        
+        MOZ_ASSERT_IF(obj->isNative(),
+                      obj->as<NativeObject>().getDenseInitializedLength() ==
+                      obj->as<NativeObject>().getDenseCapacity());
+
         return result.succeed();
+    }
 
     if (!MaybeConvertUnboxedObjectToNative(cx, obj))
         return false;

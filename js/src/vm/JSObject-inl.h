@@ -211,6 +211,13 @@ js::IsExtensible(JSContext* cx, HandleObject obj, bool* extensible)
     }
 
     *extensible = obj->nonProxyIsExtensible();
+
+    
+    
+    
+    MOZ_ASSERT_IF(obj->isNative() && !*extensible,
+                  obj->as<NativeObject>().getDenseInitializedLength() ==
+                  obj->as<NativeObject>().getDenseCapacity());
     return true;
 }
 
