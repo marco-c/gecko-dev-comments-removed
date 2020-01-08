@@ -581,7 +581,10 @@ class RTCPeerConnection {
         name: "ECDSA", namedCurve: "P-256",
       });
     }
-    this._impl.certificate = certificate;
+    
+    if (!this._closed) {
+      this._impl.certificate = certificate;
+    }
   }
 
   _resetPeerIdentityPromise() {
