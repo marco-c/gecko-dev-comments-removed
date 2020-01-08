@@ -1585,6 +1585,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
 
 #ifdef XP_WIN32
   ReserveBreakpadVM();
+
+  
+  ::LoadLibraryW(L"psapi.dll");
 #endif 
 
 #ifdef MOZ_WIDGET_ANDROID
