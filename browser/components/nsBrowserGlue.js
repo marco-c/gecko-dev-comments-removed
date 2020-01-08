@@ -500,7 +500,6 @@ const listeners = {
     "AsyncPrefs:ResetPref": ["AsyncPrefs"],
     
 
-    "FeedConverter:addLiveBookmark": ["Feeds"],
     "webrtc:UpdateGlobalIndicators": ["webrtcUI"],
     "webrtc:UpdatingIndicators": ["webrtcUI"],
   },

@@ -742,10 +742,6 @@ pref("layout.spellcheckDefault", 1);
 
 pref("browser.send_pings", false);
 
-pref("browser.feeds.handler", "ask");
-pref("browser.videoFeeds.handler", "ask");
-pref("browser.audioFeeds.handler", "ask");
-
 
 
 

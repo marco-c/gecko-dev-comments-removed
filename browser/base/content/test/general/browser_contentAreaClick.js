@@ -38,7 +38,6 @@ var gTests = [
   },
 
   
-  
   {
     desc: "Shift+Alt left click",
     setup() {
