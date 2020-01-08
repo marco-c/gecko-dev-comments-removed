@@ -402,7 +402,6 @@ private:
     HWND               mChildPluginHWND;
     HWND               mChildPluginsParentHWND;
     WNDPROC            mPluginWndProc;
-    bool               mNestedEventState;
 #endif 
 #if defined(MOZ_WIDGET_COCOA)
 private:
