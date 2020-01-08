@@ -3020,7 +3020,7 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
                cmdToDispatch.EqualsLiteral("cmd_insertText")) {
       rv = cmdParams->SetStringValue("state_data", value);
     } else {
-      rv = cmdParams->SetCStringValue("state_attribute", paramStr.get());
+      rv = cmdParams->SetCStringValue("state_attribute", paramStr);
     }
     if (rv.Failed()) {
       return false;
@@ -3181,16 +3181,10 @@ nsHTMLDocument::QueryCommandState(const nsAString& commandID, ErrorResult& rv)
   
   
   if (cmdToDispatch.EqualsLiteral("cmd_align")) {
-    char * actualAlignmentType = nullptr;
-    rv = cmdParams->GetCStringValue("state_attribute", &actualAlignmentType);
-    bool retval = false;
-    if (!rv.Failed() && actualAlignmentType && actualAlignmentType[0]) {
-      retval = paramToCheck.Equals(actualAlignmentType);
-    }
-    if (actualAlignmentType) {
-      free(actualAlignmentType);
-    }
-    return retval;
+    nsAutoCString actualAlignmentType;
+    rv = cmdParams->GetCStringValue("state_attribute", actualAlignmentType);
+    return !rv.Failed() && !actualAlignmentType.IsEmpty() &&
+           paramToCheck == actualAlignmentType;
   }
 
   
@@ -3278,7 +3272,7 @@ nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
     if (rv.Failed()) {
       return;
     }
-    rv = cmdParams->SetCStringValue("format", "text/html");
+    rv = cmdParams->SetCStringValue("format", NS_LITERAL_CSTRING("text/html"));
     if (rv.Failed()) {
       return;
     }
@@ -3290,7 +3284,7 @@ nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
     return;
   }
 
-  rv = cmdParams->SetCStringValue("state_attribute", paramStr.get());
+  rv = cmdParams->SetCStringValue("state_attribute", paramStr);
   if (rv.Failed()) {
     return;
   }
@@ -3304,10 +3298,9 @@ nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
   
   
   
-  nsCString cStringResult;
-  cmdParams->GetCStringValue("state_attribute",
-                             getter_Copies(cStringResult));
-  CopyUTF8toUTF16(cStringResult, aValue);
+  nsAutoCString result;
+  cmdParams->GetCStringValue("state_attribute", result);
+  CopyUTF8toUTF16(result, aValue);
 }
 
 nsresult

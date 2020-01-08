@@ -777,9 +777,10 @@ nsClipboardGetContentsCommand::DoClipboardCommand(const char *aCommandName, nsIC
 
   nsAutoCString mimeType("text/plain");
 
-  nsCString format;    
-  if (NS_SUCCEEDED(aParams->GetCStringValue("format", getter_Copies(format))))
+  nsAutoCString format;
+  if (NS_SUCCEEDED(aParams->GetCStringValue("format", format))) {
     mimeType.Assign(format);
+  }
 
   bool selectionOnly = false;
   aParams->GetBooleanValue("selection_only", &selectionOnly);
