@@ -3,16 +3,11 @@
 
 
 
-.tab-modal-background,
 tabmodalprompt {
   background-color: hsla(0,0%,10%,.5);
-}
-
-tabmodalprompt {
   font-family: sans-serif; 
 }
 
-.paymentDialogContainerFrame,
 .tabmodalprompt-mainContainer {
   color: -moz-fieldText;
   background-color: -moz-field;

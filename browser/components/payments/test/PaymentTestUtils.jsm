@@ -113,7 +113,6 @@ var PaymentTestUtils = {
 
 
 
-
     createAndShowRequest: ({methodData, details, options}) => {
       const rq = new content.PaymentRequest(Cu.cloneInto(methodData, content), details, options);
       content.rq = rq; 
@@ -122,9 +121,19 @@ var PaymentTestUtils = {
       content.showPromise = rq.show();
 
       handle.destruct();
-      return {
-        requestId: rq.id,
-      };
+    },
+
+    
+
+
+
+    catchShowPromiseRejection: () => {
+      content.rqResult = {};
+      content.showPromise.then(res => content.rqResult.response = res)
+                         .catch(ex => content.rqResult.showException = {
+                           name: ex.name,
+                           message: ex.message,
+                         });
     },
   },
 

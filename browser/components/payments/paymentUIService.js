@@ -15,12 +15,8 @@
 
 "use strict";
 
-const XHTML_NS = "http://www.w3.org/1999/xhtml";
-
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
-ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
-                               "resource:///modules/BrowserWindowTracker.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this,
                                    "paymentSrv",
@@ -36,6 +32,7 @@ function PaymentUIService() {
       prefix: "Payment UI Service",
     });
   });
+  Services.wm.addListener(this);
   this.log.debug("constructor");
 }
 
@@ -47,42 +44,25 @@ PaymentUIService.prototype = {
 
   
 
+  onOpenWindow(aWindow) {},
+  onCloseWindow(aWindow) {
+    let domWindow = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
+    let requestId = this.requestIdForWindow(domWindow);
+    if (!requestId || !paymentSrv.getPaymentRequestById(requestId)) {
+      return;
+    }
+    this.log.debug(`onCloseWindow, close of window for active requestId: ${requestId}`);
+    this.rejectPaymentForClosedDialog(requestId);
+  },
+
+  
+
   showPayment(requestId) {
     this.log.debug("showPayment:", requestId);
-    let request = paymentSrv.getPaymentRequestById(requestId);
-    let merchantBrowser = this.findBrowserByTabId(request.tabId);
-    let chromeWindow = merchantBrowser.ownerGlobal;
-    let {gBrowser} = chromeWindow;
-    let browserContainer = gBrowser.getBrowserContainer(merchantBrowser);
-    let container = chromeWindow.document.createElementNS(XHTML_NS, "div");
-    container.dataset.requestId = requestId;
-    container.classList.add("paymentDialogContainer");
-    container.hidden = true;
-    let paymentsBrowser = chromeWindow.document.createElementNS(XHTML_NS, "iframe");
-    paymentsBrowser.classList.add("paymentDialogContainerFrame");
-    paymentsBrowser.setAttribute("type", "content");
-    paymentsBrowser.setAttribute("remote", "true");
-    paymentsBrowser.setAttribute("src", `${this.DIALOG_URL}?requestId=${requestId}`);
-    
-    container.appendChild(paymentsBrowser);
-    browserContainer.prepend(container);
-
-    
-    paymentsBrowser.addEventListener("tabmodaldialogready", function readyToShow() {
-      container.hidden = false;
-
-      
-      merchantBrowser.setAttribute("tabmodalPromptShowing", "true");
-
-      
-      let tabModalBackground = chromeWindow.document.createElement("box");
-      tabModalBackground.classList.add("tab-modal-background", "payment-dialog-background");
-      
-      merchantBrowser.parentNode.insertBefore(tabModalBackground,
-                                              merchantBrowser.nextElementSibling);
-    }, {
-      once: true,
-    });
+    let chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    chromeWindow.openDialog(`${this.DIALOG_URL}?requestId=${requestId}`,
+                            `${this.REQUEST_ID_PREFIX}${requestId}`,
+                            "modal,dialog,centerscreen,resizable=no");
   },
 
   abortPayment(requestId) {
@@ -101,6 +81,20 @@ PaymentUIService.prototype = {
     paymentSrv.respondPayment(abortResponse);
   },
 
+  rejectPaymentForClosedDialog(requestId) {
+    this.log.debug("rejectPaymentForClosedDialog:", requestId);
+    const rejectResponse = Cc["@mozilla.org/dom/payments/payment-show-action-response;1"]
+                            .createInstance(Ci.nsIPaymentShowActionResponse);
+    rejectResponse.init(requestId,
+                        Ci.nsIPaymentActionResponse.PAYMENT_REJECTED,
+                        "", 
+                        null, 
+                        "", 
+                        "", 
+                        "");
+    paymentSrv.respondPayment(rejectResponse);
+  },
+
   completePayment(requestId) {
     
     let {completeStatus} = paymentSrv.getPaymentRequestById(requestId);
@@ -115,18 +109,6 @@ PaymentUIService.prototype = {
         closed = this.closeDialog(requestId);
         break;
     }
-
-    let dialogContainer;
-    if (!closed) {
-      
-      
-      dialogContainer = this.findDialog(requestId).dialogContainer;
-      if (!dialogContainer) {
-        this.log.error("completePayment: no dialog found");
-        return;
-      }
-    }
-
     let responseCode = closed ?
         Ci.nsIPaymentActionResponse.COMPLETE_SUCCEEDED :
         Ci.nsIPaymentActionResponse.COMPLETE_FAILED;
@@ -136,18 +118,23 @@ PaymentUIService.prototype = {
     paymentSrv.respondPayment(completeResponse.QueryInterface(Ci.nsIPaymentActionResponse));
 
     if (!closed) {
-      dialogContainer.querySelector("iframe").contentWindow.paymentDialogWrapper.updateRequest();
+      let dialog = this.findDialog(requestId);
+      if (!dialog) {
+        this.log.error("completePayment: no dialog found");
+        return;
+      }
+      dialog.paymentDialogWrapper.updateRequest();
     }
   },
 
   updatePayment(requestId) {
-    let {dialogContainer} = this.findDialog(requestId);
+    let dialog = this.findDialog(requestId);
     this.log.debug("updatePayment:", requestId);
-    if (!dialogContainer) {
+    if (!dialog) {
       this.log.error("updatePayment: no dialog found");
       return;
     }
-    dialogContainer.querySelector("iframe").contentWindow.paymentDialogWrapper.updateRequest();
+    dialog.paymentDialogWrapper.updateRequest();
   },
 
   closePayment(requestId) {
@@ -161,47 +148,31 @@ PaymentUIService.prototype = {
 
 
   closeDialog(requestId) {
-    let {
-      browser,
-      dialogContainer,
-    } = this.findDialog(requestId);
-    if (!dialogContainer) {
+    let win = this.findDialog(requestId);
+    if (!win) {
       return false;
     }
-    this.log.debug(`closing: ${requestId}`);
-    dialogContainer.remove();
-    browser.parentElement.querySelector(".payment-dialog-background").remove();
+    this.log.debug(`closing: ${win.name}`);
+    win.close();
     return true;
   },
 
   findDialog(requestId) {
-    for (let win of BrowserWindowTracker.orderedWindows) {
-      for (let dialogContainer of win.document.querySelectorAll(".paymentDialogContainer")) {
-        if (dialogContainer.dataset.requestId == requestId) {
-          return {
-            dialogContainer,
-            browser: dialogContainer.parentElement.querySelector("browser"),
-          };
-        }
+    for (let win of Services.wm.getEnumerator(null)) {
+      if (win.name == `${this.REQUEST_ID_PREFIX}${requestId}`) {
+        return win;
       }
     }
-    return {};
+
+    return null;
   },
 
-  findBrowserByTabId(tabId) {
-    for (let win of BrowserWindowTracker.orderedWindows) {
-      for (let browser of win.gBrowser.browsers) {
-        if (!browser.frameLoader || !browser.frameLoader.tabParent) {
-          continue;
-        }
-        if (browser.frameLoader.tabParent.tabId == tabId) {
-          return browser;
-        }
-      }
-    }
+  requestIdForWindow(window) {
+    let windowName = window.name;
 
-    this.log.error("findBrowserByTabId: No browser found for tabId:", tabId);
-    return null;
+    return windowName.startsWith(this.REQUEST_ID_PREFIX) ?
+      windowName.replace(this.REQUEST_ID_PREFIX, "") : 
+      null;
   },
 };
 
