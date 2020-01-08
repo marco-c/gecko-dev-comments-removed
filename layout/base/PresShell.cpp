@@ -2101,9 +2101,12 @@ static nsIContent* GetNativeAnonymousSubtreeRoot(nsIContent* aContent)
     return nullptr;
   }
   auto* current = aContent;
+  
+  
+  
+  
   while (current && !current->IsRootOfNativeAnonymousSubtree()) {
     current = current->GetFlattenedTreeParent();
-    MOZ_DIAGNOSTIC_ASSERT(current, "How?");
   }
   return current;
 }
