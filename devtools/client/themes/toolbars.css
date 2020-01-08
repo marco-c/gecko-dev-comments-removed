@@ -233,3 +233,15 @@ splitter.devtools-horizontal-splitter,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+
+
+
+
+#network-throttling-menu {
+  padding-left: 2px;
+  padding-right: 10px;
+  background-position: right center;
+}
+
