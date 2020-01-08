@@ -9,6 +9,7 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Services: "resource://gre/modules/Services.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -44,6 +45,21 @@ this.sessionrestore = class extends ExtensionAPI {
           await new Promise(resolve => {
             async function observe() {
               Services.obs.removeObserver(observe, StartupPerformance.RESTORED_TOPIC);
+
+              let win = BrowserWindowTracker.getTopWindow();
+              let args = win.arguments[0];
+              if (args && args instanceof Ci.nsIArray) {
+                
+                
+                
+                
+                
+                
+                
+                Cu.importGlobalProperties(["URL"]);
+                let url = new URL(args.queryElementAt(0, Ci.nsISupportsString).data);
+                TalosParentProfiler.initFromURLQueryParams(url.search);
+              }
 
               await TalosParentProfiler.pause("This test measures the time between sessionRestoreInit and sessionRestored, ignore everything around that");
               await TalosParentProfiler.finishStartupProfiling();
