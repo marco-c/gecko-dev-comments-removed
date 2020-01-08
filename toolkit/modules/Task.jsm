@@ -89,10 +89,6 @@ var EXPORTED_SYMBOLS = [
 
 
 
-Cu.permitCPOWsInScope(this);
-
-
-
 const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeError"];
 
 
