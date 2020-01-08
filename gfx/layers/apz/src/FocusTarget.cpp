@@ -9,7 +9,7 @@
 #include "mozilla/dom/EventTarget.h" 
 #include "mozilla/dom/TabParent.h"   
 #include "mozilla/EventDispatcher.h" 
-#include "mozilla/layout/RenderFrameParent.h" 
+#include "mozilla/layout/RenderFrame.h" 
 #include "nsIContentInlines.h" 
 #include "nsIPresShell.h"  
 #include "nsLayoutUtils.h" 
@@ -166,16 +166,16 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
 
   
   if (TabParent* browserParent = TabParent::GetFrom(keyEventTarget)) {
-    RenderFrameParent* rfp = browserParent->GetRenderFrame();
+    RenderFrame* rf = browserParent->GetRenderFrame();
 
     
-    if (rfp) {
+    if (rf) {
       FT_LOG("Creating reflayer target with seq=%" PRIu64 ", kl=%d, lt=%" PRIu64 "\n",
              aFocusSequenceNumber,
              mFocusHasKeyEventListeners,
-             rfp->GetLayersId());
+             rf->GetLayersId());
 
-      mData = AsVariant<LayersId>(rfp->GetLayersId());
+      mData = AsVariant<LayersId>(rf->GetLayersId());
       return;
     }
 

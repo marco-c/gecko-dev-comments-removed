@@ -13,7 +13,7 @@
 
 #include "gfxPrefs.h"
 
-#include "mozilla/layout/RenderFrameParent.h"
+#include "mozilla/layout/RenderFrame.h"
 
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
@@ -46,7 +46,7 @@
 #include "RetainedDisplayListBuilder.h"
 
 using namespace mozilla;
-using mozilla::layout::RenderFrameParent;
+using mozilla::layout::RenderFrame;
 
 static bool sShowPreviousPage = true;
 
@@ -333,9 +333,9 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
 
   nsFrameLoader* frameLoader = FrameLoader();
-  RenderFrameParent* rfp = nullptr;
+  RenderFrame* rf = nullptr;
   if (frameLoader) {
-    rfp = frameLoader->GetCurrentRenderFrame();
+    rf = frameLoader->GetCurrentRenderFrame();
   }
 
   
@@ -344,7 +344,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   if (!aBuilder->IsForEventDelivery() || !pointerEventsNone) {
     nsDisplayListCollection decorations(aBuilder);
     DisplayBorderBackgroundOutline(aBuilder, decorations);
-    if (rfp) {
+    if (rf) {
       
       
       
@@ -366,7 +366,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  if (rfp) {
+  if (rf) {
     
     
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
@@ -1081,8 +1081,8 @@ nsSubDocumentFrame::FrameLoader() const
   return mFrameLoader;
 }
 
-mozilla::layout::RenderFrameParent*
-nsSubDocumentFrame::GetRenderFrameParent() const
+mozilla::layout::RenderFrame*
+nsSubDocumentFrame::GetRenderFrame() const
 {
   return FrameLoader() ? FrameLoader()->GetCurrentRenderFrame() : nullptr;
 }

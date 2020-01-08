@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layout_RenderFrameParent_h
-#define mozilla_layout_RenderFrameParent_h
+#ifndef mozilla_layout_RenderFrame_h
+#define mozilla_layout_RenderFrame_h
 
 #include "base/process.h"
 
@@ -28,7 +28,7 @@ struct TextureFactoryIdentifier;
 
 namespace layout {
 
-class RenderFrameParent final
+class RenderFrame final
 {
   typedef mozilla::layers::CompositorOptions CompositorOptions;
   typedef mozilla::layers::LayerManager LayerManager;
@@ -36,8 +36,8 @@ class RenderFrameParent final
   typedef mozilla::layers::TextureFactoryIdentifier TextureFactoryIdentifier;
 public:
 
-  RenderFrameParent();
-  virtual ~RenderFrameParent();
+  RenderFrame();
+  virtual ~RenderFrame();
 
   bool Initialize(nsFrameLoader* aFrameLoader);
   void Destroy();
@@ -92,7 +92,7 @@ class nsDisplayRemote final : public nsDisplayItem
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayersId LayersId;
   typedef mozilla::layers::RefLayer RefLayer;
-  typedef mozilla::layout::RenderFrameParent RenderFrameParent;
+  typedef mozilla::layout::RenderFrame RenderFrame;
   typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
   typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
 
@@ -124,7 +124,7 @@ public:
 
 private:
   LayersId GetRemoteLayersId() const;
-  RenderFrameParent* GetRenderFrameParent() const;
+  RenderFrame* GetRenderFrame() const;
 
   TabId mTabId;
   LayoutDeviceIntPoint mOffset;
