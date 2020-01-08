@@ -51,7 +51,13 @@ enum Count {
 
 enum Stat {
     
+    STAT_STRINGS_TENURED,
+
+    
     STAT_OBJECT_GROUPS_PRETENURED,
+
+    
+    STAT_NURSERY_STRING_REALMS_DISABLED,
 
     STAT_LIMIT
 };
