@@ -1970,7 +1970,7 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
   
   
   if (doomCurrentInner) {
-    currentInner->FreeInnerObjects();
+    currentInner->FreeInnerObjects(handleDocumentOpen);
   }
   currentInner = nullptr;
 

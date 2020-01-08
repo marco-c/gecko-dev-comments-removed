@@ -1083,7 +1083,7 @@ protected:
   
   virtual ~nsGlobalWindowInner();
 
-  void FreeInnerObjects();
+  void FreeInnerObjects(bool aForDocumentOpen = false);
 
   
   
