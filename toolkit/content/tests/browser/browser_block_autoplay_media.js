@@ -84,7 +84,7 @@ add_task(async function block_autoplay_media() {
   
   
   await SpecialPowers.pushPrefEnv({"set": [
-    ["media.autoplay.enabled", false],
+    ["media.autoplay.default", SpecialPowers.Ci.nsIAutoplay.PROMPT],
     ["media.autoplay.enabled.user-gestures-needed", true],
     ["media.autoplay.ask-permission", true],
   ]});

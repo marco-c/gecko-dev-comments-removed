@@ -17,7 +17,7 @@ Cu.importGlobalProperties(["URL"]);
 
 
 
-Services.prefs.setBoolPref("media.autoplay.enabled", true);
+Services.prefs.setIntPref("media.autoplay.default", Ci.nsIAutoplay.ALLOWED);
 Services.prefs.setIntPref("media.preload.default", 3);
 
 

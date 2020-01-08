@@ -77,7 +77,8 @@ Preferences.addAll([
   { id: "privacy.donottrackheader.enabled", type: "bool" },
 
   
-  { id: "media.autoplay.enabled", type: "bool" },
+  { id: "media.autoplay.default", type: "int" },
+  { id: "media.autoplay.enabled.ask-permission", type: "bool" },
   { id: "media.autoplay.enabled.user-gestures-needed", type: "bool" },
 
   
@@ -258,7 +259,6 @@ var gPrivacyPane = {
 
     this._updateSanitizeSettingsButton();
     this.initializeHistoryMode();
-    this.updateAutoplayMediaControls();
     this.updateAutoplayMediaControlsVisibility();
     this.updateHistoryModePane();
     this.updatePrivacyMicroControls();
@@ -276,8 +276,8 @@ var gPrivacyPane = {
       gPrivacyPane.trackingProtectionReadPrefs.bind(gPrivacyPane));
     Preferences.get("privacy.trackingprotection.pbmode.enabled").on("change",
       gPrivacyPane.trackingProtectionReadPrefs.bind(gPrivacyPane));
-    Preferences.get("media.autoplay.enabled").on("change",
-     gPrivacyPane.updateAutoplayMediaControls.bind(gPrivacyPane));
+    Preferences.get("media.autoplay.enabled.ask-permission").on("change",
+     gPrivacyPane.updateAutoplayMediaControlsVisibility.bind(gPrivacyPane));
     Preferences.get("media.autoplay.enabled.user-gestures-needed").on("change",
      gPrivacyPane.updateAutoplayMediaControlsVisibility.bind(gPrivacyPane));
     setEventListener("historyMode", "command", function() {
@@ -342,9 +342,11 @@ var gPrivacyPane = {
       gPrivacyPane.showMicrophoneExceptions);
     setEventListener("popupPolicyButton", "command",
       gPrivacyPane.showPopupExceptions);
-    setEventListener("autoplayMediaPolicy", "command",
+    setEventListener("autoplayMediaCheckbox", "command",
       gPrivacyPane.toggleAutoplayMedia);
     setEventListener("autoplayMediaPolicyButton", "command",
+      gPrivacyPane.showAutoplayMediaExceptions);
+    setEventListener("autoplayMediaPolicyComboboxButton", "command",
       gPrivacyPane.showAutoplayMediaExceptions);
     setEventListener("notificationsDoNotDisturb", "command",
       gPrivacyPane.toggleDoNotDisturbNotifications);
@@ -990,23 +992,32 @@ var gPrivacyPane = {
   
 
 
-
   toggleAutoplayMedia(event) {
-    Services.prefs.setBoolPref("media.autoplay.enabled", !event.target.checked);
-  },
-
-  updateAutoplayMediaControls() {
-    let autoPlayEnabled = Preferences.get("media.autoplay.enabled").value;
-    document.getElementById("autoplayMediaPolicy").checked = !autoPlayEnabled;
-    document.getElementById("autoplayMediaPolicyButton").disabled = autoPlayEnabled;
+    let blocked = event.target.checked ? Ci.nsIAutoplay.BLOCKED : Ci.nsIAutoplay.ALLOWED;
+    Services.prefs.setIntPref("media.autoplay.default", blocked);
   },
 
   
 
 
+
+
+
+
+
+
+
   updateAutoplayMediaControlsVisibility() {
-    document.getElementById("autoplayMediaBox").hidden =
-      !Services.prefs.getBoolPref("media.autoplay.enabled.user-gestures-needed", false);
+    let askPermission =
+      Services.prefs.getBoolPref("media.autoplay.ask-permission", false);
+    let userGestures =
+        Services.prefs.getBoolPref("media.autoplay.enabled.user-gestures-needed", false);
+    
+    document.getElementById("autoplayMediaComboboxWrapper").hidden =
+      !userGestures || !askPermission;
+    
+    document.getElementById("autoplayMediaCheckboxWrapper").hidden =
+      !userGestures || askPermission;
   },
 
   
@@ -1015,7 +1026,7 @@ var gPrivacyPane = {
 
   showAutoplayMediaExceptions() {
     var params = {
-      blockVisible: false, sessionVisible: false, allowVisible: true,
+      blockVisible: true, sessionVisible: false, allowVisible: true,
       prefilledHost: "", permissionType: "autoplay-media"
     };
 
