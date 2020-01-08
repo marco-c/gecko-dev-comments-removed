@@ -4525,6 +4525,14 @@ ScrollFrameHelper::FireScrollPortEvent()
   nsSize scrollportSize = mScrollPort.Size();
   nsSize childSize = GetScrolledRect().Size();
 
+  
+  
+  
+  
+  
+  
+  
+
   bool newVerticalOverflow = childSize.height > scrollportSize.height;
   bool vertChanged = mVerticalOverflow != newVerticalOverflow;
 
@@ -5077,10 +5085,6 @@ ScrollFrameHelper::PostScrollEvent()
 NS_IMETHODIMP
 ScrollFrameHelper::AsyncScrollPortEvent::Run()
 {
-  if (mHelper) {
-    mHelper->mOuter->PresContext()->Document()->
-      FlushPendingNotifications(FlushType::InterruptibleLayout);
-  }
   return mHelper ? mHelper->FireScrollPortEvent() : NS_OK;
 }
 
