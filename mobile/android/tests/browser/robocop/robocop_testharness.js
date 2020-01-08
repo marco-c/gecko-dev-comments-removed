@@ -3,6 +3,13 @@
 
 
 
+if (!("SpecialPowers" in window)) {
+  dump("Robocop robocop_testharness.js found SpecialPowers unavailable: reloading...\n");
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
+}
+
 function sendMessageToJava(message) {
   SpecialPowers.Services.androidBridge.dispatch(message.type, message);
 }
