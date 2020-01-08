@@ -68,7 +68,6 @@ enum class nsDisplayOwnLayerFlags;
 
 namespace mozilla {
 class FrameLayerBuilder;
-struct MotionPathData;
 namespace layers {
 class Layer;
 class ImageLayer;
@@ -6578,11 +6577,6 @@ public:
     FrameTransformProperties(const nsIFrame* aFrame,
                              float aAppUnitsPerPixel,
                              const nsRect* aBoundsOverride);
-    
-    
-    
-    
-    
     FrameTransformProperties(RefPtr<const nsCSSValueSharedList>&&
                                aTransformList,
                              const Point3D& aToTransformOrigin)
@@ -6591,14 +6585,7 @@ public:
       , mToTransformOrigin(aToTransformOrigin)
     {}
 
-    bool HasTransform() const
-    {
-      return mIndividualTransformList || mTransformList || mMotion.isSome();
-    }
-
     const nsIFrame* mFrame;
-    const RefPtr<const nsCSSValueSharedList> mIndividualTransformList;
-    const mozilla::Maybe<mozilla::MotionPathData> mMotion;
     const RefPtr<const nsCSSValueSharedList> mTransformList;
     const Point3D mToTransformOrigin;
   };

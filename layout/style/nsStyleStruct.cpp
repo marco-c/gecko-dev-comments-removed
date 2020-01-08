@@ -1039,9 +1039,6 @@ StyleShapeSource::operator==(const StyleShapeSource& aOther) const
 
     case StyleShapeSourceType::Box:
       return mReferenceBox == aOther.mReferenceBox;
-
-    case StyleShapeSourceType::Path:
-      return *mSVGPath == *aOther.mSVGPath;
   }
 
   MOZ_ASSERT_UNREACHABLE("Unexpected shape source type!");
@@ -1094,15 +1091,6 @@ StyleShapeSource::SetBasicShape(UniquePtr<StyleBasicShape> aBasicShape,
 }
 
 void
-StyleShapeSource::SetPath(UniquePtr<StyleSVGPath> aPath)
-{
-  MOZ_ASSERT(aPath);
-  DoDestroy();
-  new (&mSVGPath) UniquePtr<StyleSVGPath>(std::move(aPath));
-  mType = StyleShapeSourceType::Path;
-}
-
-void
 StyleShapeSource::SetReferenceBox(StyleGeometryBox aReferenceBox)
 {
   DoDestroy();
@@ -1135,10 +1123,6 @@ StyleShapeSource::DoCopy(const StyleShapeSource& aOther)
     case StyleShapeSourceType::Box:
       SetReferenceBox(aOther.GetReferenceBox());
       break;
-
-    case StyleShapeSourceType::Path:
-      SetPath(MakeUnique<StyleSVGPath>(*aOther.GetPath()));
-      break;
   }
 }
 
@@ -1152,9 +1136,6 @@ StyleShapeSource::DoDestroy()
     case StyleShapeSourceType::Image:
     case StyleShapeSourceType::URL:
       mShapeImage.~UniquePtr<nsStyleImage>();
-      break;
-    case StyleShapeSourceType::Path:
-      mSVGPath.~UniquePtr<StyleSVGPath>();
       break;
     case StyleShapeSourceType::None:
     case StyleShapeSourceType::Box:
@@ -3636,10 +3617,7 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
   , mSpecifiedRotate(aSource.mSpecifiedRotate)
   , mSpecifiedTranslate(aSource.mSpecifiedTranslate)
   , mSpecifiedScale(aSource.mSpecifiedScale)
-  , mIndividualTransform(aSource.mIndividualTransform)
-  , mMotion(aSource.mMotion
-            ? MakeUnique<StyleMotion>(*aSource.mMotion)
-            : nullptr)
+  , mCombinedTransform(aSource.mCombinedTransform)
   , mTransformOrigin{ aSource.mTransformOrigin[0],
                       aSource.mTransformOrigin[1],
                       aSource.mTransformOrigin[2] }
@@ -3704,8 +3682,9 @@ nsStyleDisplay::~nsStyleDisplay()
                                 mSpecifiedTranslate);
   ReleaseSharedListOnMainThread("nsStyleDisplay::mSpecifiedScale",
                                 mSpecifiedScale);
-  ReleaseSharedListOnMainThread("nsStyleDisplay::mIndividualTransform",
-                                mIndividualTransform);
+  ReleaseSharedListOnMainThread("nsStyleDisplay::mCombinedTransform",
+                                mCombinedTransform);
+
   MOZ_COUNT_DTOR(nsStyleDisplay);
 }
 
@@ -3733,7 +3712,7 @@ nsStyleDisplay::FinishStyle(
     }
   }
 
-  GenerateCombinedIndividualTransform();
+  GenerateCombinedTransform();
 }
 
 static inline nsChangeHint
@@ -3753,29 +3732,6 @@ CompareTransformValues(const RefPtr<nsCSSValueSharedList>& aList,
     }
   }
 
-  return result;
-}
-
-static inline nsChangeHint
-CompareMotionValues(const StyleMotion* aMotion,
-                    const StyleMotion* aNewMotion)
-{
-  nsChangeHint result = nsChangeHint(0);
-
-  
-  
-  if (!aMotion != !aNewMotion ||
-      (aMotion && *aMotion != *aNewMotion)) {
-    
-    
-    result |= nsChangeHint_UpdateTransformLayer;
-    if ((aMotion && aMotion->HasPath()) &&
-        (aNewMotion && aNewMotion->HasPath())) {
-      result |= nsChangeHint_UpdatePostTransformOverflow;
-    } else {
-      result |= nsChangeHint_UpdateOverflow;
-    }
-  }
   return result;
 }
 
@@ -3910,7 +3866,6 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
                                             aNewData.mSpecifiedTranslate);
     transformHint |= CompareTransformValues(mSpecifiedScale,
                                             aNewData.mSpecifiedScale);
-    transformHint |= CompareMotionValues(mMotion.get(), aNewData.mMotion.get());
 
     const nsChangeHint kUpdateOverflowAndRepaintHint =
       nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
@@ -4030,17 +3985,17 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 }
 
 void
-nsStyleDisplay::GenerateCombinedIndividualTransform()
+nsStyleDisplay::GenerateCombinedTransform()
 {
   
   
   
   
-  mIndividualTransform = nullptr;
+  mCombinedTransform = nullptr;
 
   
   
-  AutoTArray<nsCSSValueSharedList*, 3> shareLists;
+  AutoTArray<nsCSSValueSharedList*, 4> shareLists;
   if (mSpecifiedTranslate) {
     shareLists.AppendElement(mSpecifiedTranslate.get());
   }
@@ -4050,12 +4005,16 @@ nsStyleDisplay::GenerateCombinedIndividualTransform()
   if (mSpecifiedScale) {
     shareLists.AppendElement(mSpecifiedScale.get());
   }
+  if (mSpecifiedTransform) {
+    shareLists.AppendElement(mSpecifiedTransform.get());
+  }
 
   if (shareLists.Length() == 0) {
     return;
   }
+
   if (shareLists.Length() == 1) {
-    mIndividualTransform = shareLists[0];
+    mCombinedTransform = shareLists[0];
     return;
   }
 
@@ -4063,7 +4022,7 @@ nsStyleDisplay::GenerateCombinedIndividualTransform()
   
   
   
-  AutoTArray<nsCSSValueList*, 3> valueLists;
+  AutoTArray<nsCSSValueList*, 6> valueLists;
   for (auto list: shareLists) {
     if (list) {
       valueLists.AppendElement(list->mHead->Clone());
@@ -4078,9 +4037,8 @@ nsStyleDisplay::GenerateCombinedIndividualTransform()
     valueLists[i]->mNext = valueLists[i + 1];
   }
 
-  mIndividualTransform = new nsCSSValueSharedList(valueLists[0]);
+  mCombinedTransform = new nsCSSValueSharedList(valueLists[0]);
 }
-
 
 
 

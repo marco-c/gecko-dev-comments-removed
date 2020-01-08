@@ -169,16 +169,6 @@ public:
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder,
                                uint8_t aCapStyle,
                                Float aStrokeWidth) const;
-  
-
-
-
-
-  static already_AddRefed<Path>
-  BuildPath(const nsTArray<StylePathCommand>& aPath,
-            PathBuilder* aBuilder,
-            uint8_t aCapStyle,
-            Float aStrokeWidth);
 
   const_iterator begin() const { return mData.Elements(); }
   const_iterator end() const { return mData.Elements() + mData.Length(); }

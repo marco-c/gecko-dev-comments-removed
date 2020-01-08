@@ -1971,27 +1971,6 @@ private:
   nsStyleCorners mRadius;
 };
 
-struct StyleSVGPath final
-{
-  const nsTArray<StylePathCommand>& Path() const
-  {
-    return mPath;
-  }
-
-  bool operator==(const StyleSVGPath& aOther) const
-  {
-    return mPath == aOther.mPath;
-  }
-
-  bool operator!=(const StyleSVGPath& aOther) const
-  {
-    return !(*this == aOther);
-  }
-
-private:
-  nsTArray<StylePathCommand> mPath;
-};
-
 struct StyleShapeSource final
 {
   StyleShapeSource();
@@ -2056,13 +2035,6 @@ struct StyleShapeSource final
 
   void SetReferenceBox(StyleGeometryBox aReferenceBox);
 
-  const StyleSVGPath* GetPath() const
-  {
-    MOZ_ASSERT(mType == StyleShapeSourceType::Path, "Wrong shape source type!");
-    return mSVGPath.get();
-  }
-  void SetPath(UniquePtr<StyleSVGPath> aPath);
-
 private:
   void* operator new(size_t) = delete;
 
@@ -2072,39 +2044,11 @@ private:
   union {
     mozilla::UniquePtr<StyleBasicShape> mBasicShape;
     mozilla::UniquePtr<nsStyleImage> mShapeImage;
-    mozilla::UniquePtr<StyleSVGPath> mSVGPath;
+    
     
   };
   StyleShapeSourceType mType = StyleShapeSourceType::None;
   StyleGeometryBox mReferenceBox = StyleGeometryBox::NoBox;
-};
-
-struct StyleMotion final
-{
-  bool operator==(const StyleMotion& aOther) const
-  {
-    return mOffsetPath == aOther.mOffsetPath;
-  }
-
-  bool operator!=(const StyleMotion& aOther) const
-  {
-    return !(*this == aOther);
-  }
-
-  const StyleShapeSource& OffsetPath() const
-  {
-    return mOffsetPath;
-  }
-
-  bool HasPath() const
-  {
-    
-    
-    return mOffsetPath.GetType() == StyleShapeSourceType::Path;
-  }
-
-private:
-  StyleShapeSource mOffsetPath;
 };
 
 } 
@@ -2181,10 +2125,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   RefPtr<nsCSSValueSharedList> mSpecifiedRotate;
   RefPtr<nsCSSValueSharedList> mSpecifiedTranslate;
   RefPtr<nsCSSValueSharedList> mSpecifiedScale;
+
   
   
-  RefPtr<nsCSSValueSharedList> mIndividualTransform;
-  mozilla::UniquePtr<mozilla::StyleMotion> mMotion;
+  
+  
+  RefPtr<nsCSSValueSharedList> mCombinedTransform;
 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
@@ -2434,8 +2380,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
     return mSpecifiedTransform || mSpecifiedRotate || mSpecifiedTranslate ||
            mSpecifiedScale ||
            mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D ||
-           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM) ||
-           (mMotion && mMotion->HasPath());
+           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM);
   }
 
   bool HasIndividualTransform() const {
@@ -2527,15 +2472,19 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
 
 
-  already_AddRefed<nsCSSValueSharedList> GetCombinedTransform() const
-  {
-    return mIndividualTransform ? do_AddRef(mIndividualTransform) : nullptr;
+  already_AddRefed<nsCSSValueSharedList> GetCombinedTransform() const {
+    if (mCombinedTransform) {
+      return do_AddRef(mCombinedTransform);
+    }
+
+    
+    return mSpecifiedTransform ? do_AddRef(mSpecifiedTransform) : nullptr;
   }
 
 private:
   
   
-  void GenerateCombinedIndividualTransform();
+  void GenerateCombinedTransform();
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable
