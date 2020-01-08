@@ -6268,6 +6268,11 @@ nsGlobalWindowInner::GetTopLevelPrincipal()
 nsIPrincipal*
 nsGlobalWindowInner::GetTopLevelStorageAreaPrincipal()
 {
+  if (mDoc && (mDoc->GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS)) {
+    
+    return nullptr;
+  }
+
   nsPIDOMWindowOuter* outerWindow = GetParentInternal();
   if (!outerWindow) {
     
