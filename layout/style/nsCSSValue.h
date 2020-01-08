@@ -720,40 +720,15 @@ public:
   void SetPairValue(const nsCSSValuePair* aPair);
   void SetPairValue(const nsCSSValue& xValue, const nsCSSValue& yValue);
   void SetSharedListValue(nsCSSValueSharedList* aList);
-  void SetDependentListValue(nsCSSValueList* aList);
-  void SetDependentPairListValue(nsCSSValuePairList* aList);
-  void SetAutoValue();
-  void SetInheritValue();
-  void SetInitialValue();
-  void SetUnsetValue();
   void SetNoneValue();
-  void SetAllValue();
-  void SetNormalValue();
-  void SetSystemFontValue();
-  void SetDummyValue();
-  void SetDummyInheritValue();
-
-  
-  void SetCalcValue(const nsStyleCoord::CalcValue* aCalc);
 
   nsStyleCoord::CalcValue GetCalcValue() const;
+  void SetCalcValue(const nsStyleCoord::CalcValue&);
 
   
   
   nsCSSValueList* SetListValue();
   nsCSSValuePairList* SetPairListValue();
-
-  
-  void AdoptListValue(mozilla::UniquePtr<nsCSSValueList> aValue);
-  void AdoptPairListValue(mozilla::UniquePtr<nsCSSValuePairList> aValue);
-
-  void StartImageLoad(nsIDocument* aDocument,
-                      mozilla::CORSMode aCORSMode) const;  
-
-  
-  Array* InitFunction(nsCSSKeyword aFunctionId, uint32_t aNumArgs);
-  
-  bool EqualsFunction(nsCSSKeyword aFunctionId) const;
 
   
   
