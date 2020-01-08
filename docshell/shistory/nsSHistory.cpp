@@ -1468,7 +1468,8 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
                                   nsIDocShell* aFrameDS, long aLoadType) {
   NS_ENSURE_STATE(aFrameDS && aFrameEntry);
 
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState();
+  nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
 
   
 
@@ -1484,8 +1485,6 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
 
   loadState->SetLoadReplace(aFrameEntry->GetLoadReplace());
 
-  nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
-  loadState->SetURI(newURI);
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
       aFrameEntry->GetTriggeringPrincipal();

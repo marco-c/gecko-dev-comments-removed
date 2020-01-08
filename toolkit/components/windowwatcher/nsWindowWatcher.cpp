@@ -1051,8 +1051,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   RefPtr<nsDocShellLoadState> loadState = aLoadState;
-  if (uriToLoad && aNavigate && !loadState) {
-    loadState = new nsDocShellLoadState();
+  if (uriToLoad && loadState) {
+    
+    
+    loadState->SetURI(uriToLoad);
+  } else if (uriToLoad && aNavigate && !loadState) {
+    loadState = new nsDocShellLoadState(uriToLoad);
 
     if (subjectPrincipal) {
       loadState->SetTriggeringPrincipal(subjectPrincipal);
@@ -1122,7 +1126,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   if (uriToLoad && aNavigate) {
-    loadState->SetURI(uriToLoad);
     loadState->SetLoadFlags(
         windowIsNew
             ? static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD)
