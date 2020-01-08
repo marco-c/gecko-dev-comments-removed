@@ -90,7 +90,9 @@ public:
   {
     if (mTransform->HasOwner()) {
       mTransform->Element()->DidChangeTransformList(mEmptyOrOldValue);
-      if (mTransform->mList->IsAnimating()) {
+      
+      
+      if (mTransform->mList && mTransform->mList->IsAnimating()) {
         mTransform->Element()->AnimationNeedsResample();
       }
     }
