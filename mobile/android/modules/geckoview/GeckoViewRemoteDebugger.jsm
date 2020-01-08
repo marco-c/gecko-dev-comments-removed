@@ -57,26 +57,19 @@ var GeckoViewRemoteDebugger = {
     DebuggerServer.allowChromeProcess = true;
     DebuggerServer.chromeWindowType = "navigator:geckoview";
 
-    
-    
-    
-    
-    
-    
-
     const env = Cc["@mozilla.org/process/environment;1"]
               .getService(Ci.nsIEnvironment);
-    let packageName = env.get("MOZ_ANDROID_PACKAGE_NAME");
-    if (packageName) {
-      packageName = packageName + "/";
-    } else {
-      warn `Missing env MOZ_ANDROID_PACKAGE_NAME. Unable to get pacakge name`;
+    const dataDir = env.get("MOZ_ANDROID_DATA_DIR");
+
+    if (!dataDir) {
+      warn `Missing env MOZ_ANDROID_DATA_DIR - aborting debugger server start`;
+      return;
     }
 
     this._isEnabled = true;
     this._usbDebugger.stop();
 
-    const portOrPath = packageName + "firefox-debugger-socket";
+    const portOrPath = dataDir + "/firefox-debugger-socket";
     this._usbDebugger.start(portOrPath);
   },
 
