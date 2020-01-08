@@ -181,6 +181,22 @@ VARCACHE_PREF(
 
 
 
+
+#if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && \
+    !defined(MOZ_TSAN)
+# define PREF_VALUE 10
+#else
+# define PREF_VALUE 0
+#endif
+VARCACHE_PREF(
+  "dom.ipc.tabs.shutdownTimeoutSecs",
+   dom_ipc_tabs_shutdownTimeoutSecs,
+  RelaxedAtomicUint32, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+
 VARCACHE_PREF(
   "dom.keyboardevent.keypress.set_keycode_and_charcode_to_same_value",
    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value,
