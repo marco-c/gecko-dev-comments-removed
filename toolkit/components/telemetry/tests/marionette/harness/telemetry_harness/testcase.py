@@ -7,8 +7,6 @@ import simplejson as json
 import time
 import zlib
 
-from multiprocessing import Process
-
 from firefox_puppeteer import PuppeteerMixin
 from marionette_driver.addons import Addons
 from marionette_driver.errors import MarionetteException
@@ -123,22 +121,21 @@ class TelemetryTestCase(PuppeteerMixin, MarionetteTestCase):
         self.restart(clean=False, in_app=True)
 
     def install_addon(self):
-        trigger = Process(target=self._install_addon)
-        trigger.start()
+        """Install a minimal addon."""
 
-    def _install_addon(self):
-        
-        
-        
-        
-        
+        resources_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "resources"
+        )
+
+        addon_path = os.path.abspath(os.path.join(resources_dir, "helloworld"))
+
         try:
-            
-            addon_path = os.path.join('resources_dir', 'easyscreenshot.xpi')
             addons = Addons(self.marionette)
-            addons.install(addon_path)
+            addons.install(addon_path, temp=True)
         except MarionetteException as e:
-            self.fail('{} - Error installing addon: {} - '.format(e.cause, e.message))
+            self.fail(
+                "{} - Error installing addon: {} - ".format(e.cause, e.message)
+            )
 
     @property
     def client_id(self):
