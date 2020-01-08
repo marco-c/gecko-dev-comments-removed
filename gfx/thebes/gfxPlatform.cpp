@@ -2943,6 +2943,11 @@ bool gfxPlatform::ContentUsesTiling() const {
           contentUsesPOMTP);
 }
 
+ bool gfxPlatform::ShouldAdjustForLowEndMachine() {
+  return gfxPrefs::AdjustToMachine() && !gfxPrefs::ResistFingerprinting() &&
+         gfxPrefs::IsLowEndMachineDoNotUseDirectly();
+}
+
 
 
 
@@ -2967,7 +2972,7 @@ gfxPlatform::CreateHardwareVsyncSource() {
 }
 
  bool gfxPlatform::ForceSoftwareVsync() {
-  return gfxPrefs::LayoutFrameRate() > 0 ||
+  return ShouldAdjustForLowEndMachine() || gfxPrefs::LayoutFrameRate() > 0 ||
          recordreplay::IsRecordingOrReplaying();
 }
 
@@ -2979,7 +2984,9 @@ gfxPlatform::CreateHardwareVsyncSource() {
   return preferenceRate;
 }
 
- int gfxPlatform::GetDefaultFrameRate() { return 60; }
+ int gfxPlatform::GetDefaultFrameRate() {
+  return ShouldAdjustForLowEndMachine() ? 30 : 60;
+}
 
 void gfxPlatform::GetAzureBackendInfo(mozilla::widget::InfoObject& aObj) {
   if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {

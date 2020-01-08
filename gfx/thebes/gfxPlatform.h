@@ -625,6 +625,15 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+
+
+
+  static bool ShouldAdjustForLowEndMachine();
+
+  
+
+
+
   virtual mozilla::gfx::VsyncSource* GetHardwareVsync() {
     MOZ_ASSERT(mVsyncSource != nullptr);
     MOZ_ASSERT(XRE_IsParentProcess() ||
@@ -642,12 +651,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static int GetSoftwareVsyncRate();
+  static bool ForceSoftwareVsync();
 
   
 
 
-  static bool ForceSoftwareVsync();
+  static int GetSoftwareVsyncRate();
 
   
 
