@@ -452,7 +452,9 @@ struct PrefsSizes
 };
 }
 
-static ArenaAllocator<8192, 1> gPrefNameArena;
+static StaticRefPtr<SharedPrefMap> gSharedMap;
+
+static ArenaAllocator<4096, 1> gPrefNameArena;
 
 class PrefWrapper;
 
@@ -501,7 +503,14 @@ public:
   void SetIsLocked(bool aValue)
   {
     mIsLocked = aValue;
-    mHasChangedSinceInit = true;
+    OnChanged();
+  }
+
+  void OnChanged()
+  {
+    if (gSharedMap) {
+      mHasChangedSinceInit = true;
+    }
   }
 
   bool IsSticky() const { return mIsSticky; }
@@ -554,7 +563,7 @@ public:
   bool MustSendToContentProcesses() const
   {
     MOZ_ASSERT(XRE_IsParentProcess());
-    return mHasUserValue || mHasChangedSinceInit;
+    return mHasChangedSinceInit;
   }
 
   
@@ -674,7 +683,7 @@ public:
       userValueChanged = true;
     }
 
-    mHasChangedSinceInit = true;
+    OnChanged();
 
     if (userValueChanged || (defaultValueChanged && !mHasUserValue)) {
       *aValueChanged = true;
@@ -723,14 +732,13 @@ public:
   {
     mUserValue.Clear(Type());
     mHasUserValue = false;
-    mHasChangedSinceInit = true;
+    OnChanged();
   }
 
   nsresult SetDefaultValue(PrefType aType,
                            PrefValue aValue,
                            bool aIsSticky,
                            bool aIsLocked,
-                           bool aFromInit,
                            bool* aValueChanged)
   {
     
@@ -747,9 +755,7 @@ public:
       if (!ValueMatches(PrefValueKind::Default, aType, aValue)) {
         mDefaultValue.Replace(mHasDefaultValue, Type(), aType, aValue);
         mHasDefaultValue = true;
-        if (!aFromInit) {
-          mHasChangedSinceInit = true;
-        }
+        OnChanged();
         if (aIsSticky) {
           mIsSticky = true;
         }
@@ -792,9 +798,7 @@ public:
       mUserValue.Replace(mHasUserValue, Type(), aType, aValue);
       SetType(aType); 
       mHasUserValue = true;
-      if (!aFromInit) {
-        mHasChangedSinceInit = true;
-      }
+      OnChanged();
       if (!IsLocked()) {
         *aValueChanged = true;
       }
@@ -1288,8 +1292,6 @@ private:
 
 static PLDHashTable* gHashTable;
 
-static StaticRefPtr<SharedPrefMap> gSharedMap;
-
 
 
 static CallbackNode* gFirstCallback = nullptr;
@@ -1579,7 +1581,29 @@ NotifyCallbacks(const char* aPrefName, const PrefWrapper& aPref)
   NotifyCallbacks(aPrefName, &aPref);
 }
 
-#define PREF_HASHTABLE_INITIAL_LENGTH 1024
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr size_t kHashTableInitialLengthParent = 3000;
+constexpr size_t kHashTableInitialLengthContent = 64;
 
 static PrefSaveData
 pref_savePrefs()
@@ -1737,7 +1761,7 @@ pref_SetPref(const char* aPrefName,
   nsresult rv;
   if (aKind == PrefValueKind::Default) {
     rv = pref->SetDefaultValue(
-      aType, aValue, aIsSticky, aIsLocked, aFromInit, &valueChanged);
+      aType, aValue, aIsSticky, aIsLocked, &valueChanged);
   } else {
     MOZ_ASSERT(!aIsLocked); 
     rv = pref->SetUserValue(aType, aValue, aFromInit, &valueChanged);
@@ -3839,8 +3863,11 @@ Preferences::GetInstanceForService()
   sPreferences = new Preferences();
 
   MOZ_ASSERT(!gHashTable);
-  gHashTable = new PLDHashTable(
-    &pref_HashTableOps, sizeof(PrefEntry), PREF_HASHTABLE_INITIAL_LENGTH);
+  gHashTable =
+    new PLDHashTable(&pref_HashTableOps,
+                     sizeof(PrefEntry),
+                     (XRE_IsParentProcess() ? kHashTableInitialLengthParent
+                                            : kHashTableInitialLengthContent));
 
   gTelemetryLoadData =
     new nsDataHashtable<nsCStringHashKey, TelemetryLoadData>();
@@ -4172,7 +4199,7 @@ Preferences::ResetPrefs()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  gHashTable->ClearAndPrepareForLength(PREF_HASHTABLE_INITIAL_LENGTH);
+  gHashTable->ClearAndPrepareForLength(kHashTableInitialLengthParent);
   gPrefNameArena.Clear();
 
   return InitInitialObjects( false).isOk() ? NS_OK
@@ -4752,6 +4779,28 @@ Preferences::InitInitialObjects(bool aIsStartup)
   
   
   StaticPrefs::InitAll(aIsStartup);
+
+  if (!XRE_IsParentProcess()) {
+    MOZ_ASSERT(gSharedMap);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (auto& pref : gSharedMap->Iter()) {
+      if (pref.HasUserValue() || pref.IsLocked()) {
+        NotifyCallbacks(pref.Name(), PrefWrapper(pref));
+      }
+    }
+
+    return Ok();
+  }
 
   
   
@@ -5749,9 +5798,12 @@ static void
 InitVarCachePref(const nsACString& aName,
                  bool* aCache,
                  bool aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_bool(PromiseFlatCString(aName).get(), aDefaultValue);
+  if (aSetValue) {
+    SetPref_bool(PromiseFlatCString(aName).get(), aDefaultValue);
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddBoolVarCache(aCache, aName, aDefaultValue, true);
@@ -5763,9 +5815,12 @@ static void
 InitVarCachePref(const nsACString& aName,
                  Atomic<bool, Order>* aCache,
                  bool aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_bool(PromiseFlatCString(aName).get(), aDefaultValue);
+  if (aSetValue) {
+    SetPref_bool(PromiseFlatCString(aName).get(), aDefaultValue);
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicBoolVarCache(aCache, aName, aDefaultValue, true);
@@ -5777,9 +5832,12 @@ MOZ_MAYBE_UNUSED static void
 InitVarCachePref(const nsACString& aName,
                  int32_t* aCache,
                  int32_t aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_int32_t(PromiseFlatCString(aName).get(), aDefaultValue);
+  if (aSetValue) {
+    SetPref_int32_t(PromiseFlatCString(aName).get(), aDefaultValue);
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddIntVarCache(aCache, aName, aDefaultValue, true);
@@ -5791,9 +5849,12 @@ static void
 InitVarCachePref(const nsACString& aName,
                  Atomic<int32_t, Order>* aCache,
                  int32_t aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_int32_t(PromiseFlatCString(aName).get(), aDefaultValue);
+  if (aSetValue) {
+    SetPref_int32_t(PromiseFlatCString(aName).get(), aDefaultValue);
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicIntVarCache(aCache, aName, aDefaultValue, true);
@@ -5804,10 +5865,13 @@ static void
 InitVarCachePref(const nsACString& aName,
                  uint32_t* aCache,
                  uint32_t aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_int32_t(PromiseFlatCString(aName).get(),
-                  static_cast<int32_t>(aDefaultValue));
+  if (aSetValue) {
+    SetPref_int32_t(PromiseFlatCString(aName).get(),
+                    static_cast<int32_t>(aDefaultValue));
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddUintVarCache(aCache, aName, aDefaultValue, true);
@@ -5819,10 +5883,13 @@ static void
 InitVarCachePref(const nsACString& aName,
                  Atomic<uint32_t, Order>* aCache,
                  uint32_t aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_int32_t(PromiseFlatCString(aName).get(),
-                  static_cast<int32_t>(aDefaultValue));
+  if (aSetValue) {
+    SetPref_int32_t(PromiseFlatCString(aName).get(),
+                    static_cast<int32_t>(aDefaultValue));
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddAtomicUintVarCache(aCache, aName, aDefaultValue, true);
@@ -5834,9 +5901,12 @@ MOZ_MAYBE_UNUSED static void
 InitVarCachePref(const nsACString& aName,
                  float* aCache,
                  float aDefaultValue,
-                 bool aIsStartup)
+                 bool aIsStartup,
+                 bool aSetValue)
 {
-  SetPref_float(PromiseFlatCString(aName).get(), aDefaultValue);
+  if (aSetValue) {
+    SetPref_float(PromiseFlatCString(aName).get(), aDefaultValue);
+  }
   *aCache = aDefaultValue;
   if (aIsStartup) {
     Preferences::AddFloatVarCache(aCache, aName, aDefaultValue, true);
@@ -5846,27 +5916,35 @@ InitVarCachePref(const nsACString& aName,
  void
 StaticPrefs::InitAll(bool aIsStartup)
 {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define PREF(name, cpp_type, value) SetPref_##cpp_type(name, value);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isParent = XRE_IsParentProcess();
+#define PREF(name, cpp_type, value)                                            \
+  if (isParent)                                                                \
+    SetPref_##cpp_type(name, value);
 #define VARCACHE_PREF(name, id, cpp_type, value)                               \
   InitVarCachePref(NS_LITERAL_CSTRING(name),                                   \
                    &StaticPrefs::sVarCache_##id,                               \
                    value,                                                      \
-                   aIsStartup);
+                   aIsStartup,                                                 \
+                   isParent);
 #include "mozilla/StaticPrefList.h"
 #undef PREF
 #undef VARCACHE_PREF
