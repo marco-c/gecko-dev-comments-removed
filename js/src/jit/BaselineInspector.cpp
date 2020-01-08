@@ -381,10 +381,15 @@ ParseCacheIRStub(ICStub* stub)
       case CacheOp::Int32BitAndResult:
       case CacheOp::Int32LeftShiftResult:
       case CacheOp::Int32RightShiftResult:
-      case CacheOp::Int32URightShiftResult:
       case CacheOp::Int32NotResult:
       case CacheOp::Int32NegationResult:
         return MIRType::Int32;
+      
+      
+      case CacheOp::Int32URightShiftResult:
+        reader.skip(); 
+        reader.skip(); 
+        return reader.readByte() == 0  ?  MIRType::Int32 : MIRType::Double;
       case CacheOp::LoadValueResult:
         return MIRType::Value;
       default:
