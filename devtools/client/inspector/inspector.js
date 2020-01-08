@@ -264,6 +264,10 @@ Inspector.prototype = {
     return this._search;
   },
 
+  get cssProperties() {
+    return this._cssProperties.cssProperties;
+  },
+
   
 
 

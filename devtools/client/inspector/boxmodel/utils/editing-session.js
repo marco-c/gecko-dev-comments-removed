@@ -4,8 +4,6 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "getCssProperties", "devtools/shared/fronts/css-properties", true);
-
 
 
 
@@ -28,14 +26,6 @@ function EditingSession({inspector, doc, elementRules}) {
 }
 
 EditingSession.prototype = {
-  get cssProperties() {
-    if (!this._cssProperties) {
-      this._cssProperties = getCssProperties(this._inspector.toolbox);
-    }
-
-    return this._cssProperties;
-  },
-
   
 
 
@@ -120,7 +110,8 @@ EditingSession.prototype = {
       
       
       
-      const modifications = this._rules[0].startModifyingProperties(this.cssProperties);
+      const modifications = this._rules[0].startModifyingProperties(
+        this._inspector.cssProperties);
 
       
       if (!this._modifications.has(property.name)) {
@@ -154,7 +145,8 @@ EditingSession.prototype = {
     
     
     for (const [property, value] of this._modifications) {
-      const modifications = this._rules[0].startModifyingProperties(this.cssProperties);
+      const modifications = this._rules[0].startModifyingProperties(
+        this._inspector.cssProperties);
 
       
       let index = this.getPropertyIndex(property);
