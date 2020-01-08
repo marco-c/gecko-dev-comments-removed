@@ -133,13 +133,6 @@ TypedArrayObject::assertZeroLengthArrayData() const
 }
 #endif
 
- void
-TypedArrayObject::trace(JSTracer* trc, JSObject* objArg)
-{
-    
-    ArrayBufferViewObject::trace(trc, objArg);
-}
-
 void
 TypedArrayObject::finalize(FreeOp* fop, JSObject* obj)
 {
@@ -2035,7 +2028,7 @@ static const ClassOps TypedArrayClassOps = {
     nullptr,                 
     nullptr,                 
     nullptr,                 
-    TypedArrayObject::trace, 
+    ArrayBufferViewObject::trace, 
 };
 
 static const ClassExtension TypedArrayClassExtension = {

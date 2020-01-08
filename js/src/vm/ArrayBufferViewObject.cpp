@@ -25,49 +25,29 @@ using namespace js;
 ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
 {
     NativeObject* obj = &objArg->as<NativeObject>();
-    HeapSlot& bufSlot = obj->getFixedSlotRef(TypedArrayObject::BUFFER_SLOT);
-    TraceEdge(trc, &bufSlot, "typedarray.buffer");
+    HeapSlot& bufSlot = obj->getFixedSlotRef(BUFFER_SLOT);
+    TraceEdge(trc, &bufSlot, "ArrayBufferViewObject.buffer");
 
     
     if (bufSlot.isObject()) {
         if (IsArrayBuffer(&bufSlot.toObject())) {
             ArrayBufferObject& buf = AsArrayBuffer(MaybeForwarded(&bufSlot.toObject()));
-            uint32_t offset = uint32_t(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT).toInt32());
+            uint32_t offset = uint32_t(obj->getFixedSlot(BYTEOFFSET_SLOT).toInt32());
             MOZ_ASSERT(offset <= INT32_MAX);
 
-            if (buf.forInlineTypedObject()) {
-                MOZ_ASSERT(buf.dataPointer() != nullptr);
+            
+            
+            
+            
+            MOZ_RELEASE_ASSERT(!buf.forInlineTypedObject());
 
-                
-                
-                JSObject* view = buf.firstView();
+            MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
 
-                
-                TraceManuallyBarrieredEdge(trc, &view, "typed array nursery owner");
-                MOZ_ASSERT(view->is<InlineTypedObject>());
-                MOZ_ASSERT(view != obj);
-
-                size_t nfixed = obj->numFixedSlotsMaybeForwarded();
-                void* srcData = obj->getPrivate(nfixed);
-                void* dstData = view->as<InlineTypedObject>().inlineTypedMemForGC() + offset;
-                obj->setPrivateUnbarriered(nfixed, dstData);
-
-                
-                
-                
-                if (trc->isTenuringTracer()) {
-                    Nursery& nursery = trc->runtime()->gc.nursery();
-                    nursery.maybeSetForwardingPointer(trc, srcData, dstData,  false);
-                }
-            } else {
-                MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
-
-                
-                
-                
-                size_t nfixed = obj->numFixedSlotsMaybeForwarded();
-                obj->setPrivateUnbarriered(nfixed, buf.dataPointer() + offset);
-            }
+            
+            
+            
+            size_t nfixed = obj->numFixedSlotsMaybeForwarded();
+            obj->setPrivateUnbarriered(nfixed, buf.dataPointer() + offset);
         }
     }
 }
