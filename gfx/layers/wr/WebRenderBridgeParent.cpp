@@ -1393,6 +1393,12 @@ WebRenderBridgeParent::RecvScheduleComposite()
   if (mDestroyed) {
     return IPC_OK();
   }
+
+  
+  wr::TransactionBuilder fastTxn( false);
+  fastTxn.InvalidateRenderedFrame();
+  mApi->SendTransaction(fastTxn);
+
   ScheduleGenerateFrame();
   return IPC_OK();
 }

@@ -280,6 +280,8 @@ AsyncImagePipelineManager::UpdateImageKeys(const wr::Epoch& aEpoch,
   }
 
   if (aPipeline->mWrTextureWrapper) {
+    
+    aMaybeFastTxn.InvalidateRenderedFrame();
     HoldExternalImage(aPipelineId, aEpoch, aPipeline->mWrTextureWrapper);
   }
 
