@@ -180,10 +180,20 @@ class IMEHandler final {
   static nsWindow* sFocusedWindow;
   static InputContextAction::Cause sLastContextActionCause;
 
+  static bool sMaybeEditable;
   static bool sForceDisableCurrentIMM_IME;
   static bool sPluginHasFocus;
   static bool sNativeCaretIsCreated;
   static bool sHasNativeCaretBeenRequested;
+
+  
+
+
+
+
+
+
+  static bool MaybeCreateNativeCaret(nsWindow* aWindow);
 
 #ifdef NS_ENABLE_TSF
   static decltype(SetInputScopes)* sSetInputScopes;

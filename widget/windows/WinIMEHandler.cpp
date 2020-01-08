@@ -7,6 +7,7 @@
 
 #include "IMMHandler.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/TextEvents.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowDefs.h"
 #include "WinTextEventDispatcherListener.h"
@@ -47,6 +48,7 @@ namespace widget {
 nsWindow* IMEHandler::sFocusedWindow = nullptr;
 InputContextAction::Cause IMEHandler::sLastContextActionCause =
     InputContextAction::CAUSE_UNKNOWN;
+bool IMEHandler::sMaybeEditable = false;
 bool IMEHandler::sForceDisableCurrentIMM_IME = false;
 bool IMEHandler::sPluginHasFocus = false;
 bool IMEHandler::sNativeCaretIsCreated = false;
@@ -179,15 +181,14 @@ bool IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
   
   
   
-  
-  
-  
   if (!sHasNativeCaretBeenRequested && aMessage == WM_GETOBJECT &&
       static_cast<DWORD>(aLParam) == OBJID_CARET) {
     
     
     sHasNativeCaretBeenRequested = true;
     
+    
+    MaybeCreateNativeCaret(aWindow);
   }
 
 #ifdef NS_ENABLE_TSF
@@ -301,6 +302,7 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
         IMMHandler::OnFocusChange(true, aWindow);
         nsresult rv = TSFTextStore::OnFocusChange(true, aWindow,
                                                   aWindow->GetInputContext());
+        MaybeCreateNativeCaret(aWindow);
         IMEHandler::MaybeShowOnScreenKeyboard();
         return rv;
       }
@@ -351,6 +353,10 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
       return NS_OK;
     case NOTIFY_IME_OF_SELECTION_CHANGE:
       IMMHandler::OnSelectionChange(aWindow, aIMENotification, true);
+      
+      
+      
+      MaybeCreateNativeCaret(aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_MOUSE_BUTTON_EVENT:
       return IMMHandler::OnMouseButtonEvent(aWindow, aIMENotification);
@@ -358,6 +364,7 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
       sFocusedWindow = aWindow;
       IMMHandler::OnFocusChange(true, aWindow);
       IMEHandler::MaybeShowOnScreenKeyboard();
+      MaybeCreateNativeCaret(aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_BLUR:
       sFocusedWindow = nullptr;
@@ -1066,6 +1073,50 @@ void IMEHandler::DefaultProcOfPluginEvent(nsWindow* aWindow,
     return;
   }
   IMMHandler::DefaultProcOfPluginEvent(aWindow, aPluginEvent);
+}
+
+bool IMEHandler::MaybeCreateNativeCaret(nsWindow* aWindow) {
+  MOZ_ASSERT(aWindow);
+
+  if (IsA11yHandlingNativeCaret()) {
+    return false;
+  }
+
+  if (!sHasNativeCaretBeenRequested) {
+    
+    
+    
+    
+    
+    
+    
+    
+    ::NotifyWinEvent(EVENT_OBJECT_LOCATIONCHANGE, aWindow->GetWindowHandle(),
+                     OBJID_CARET, OBJID_CLIENT);
+    return false;
+  }
+
+  MaybeDestroyNativeCaret();
+
+  
+  
+  if (!aWindow->GetInputContext().mIMEState.IsEditable()) {
+    return false;
+  }
+
+  WidgetQueryContentEvent queryCaretRect(true, eQueryCaretRect, aWindow);
+  aWindow->InitEvent(queryCaretRect);
+
+  WidgetQueryContentEvent::Options options;
+  options.mRelativeToInsertionPoint = true;
+  queryCaretRect.InitForQueryCaretRect(0, options);
+
+  aWindow->DispatchWindowEvent(&queryCaretRect);
+  if (NS_WARN_IF(!queryCaretRect.mSucceeded)) {
+    return false;
+  }
+
+  return CreateNativeCaret(aWindow, queryCaretRect.mReply.mRect);
 }
 
 bool IMEHandler::CreateNativeCaret(nsWindow* aWindow,
