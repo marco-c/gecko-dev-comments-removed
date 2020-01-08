@@ -4726,10 +4726,13 @@ class TabProgressListener {
       
       
       
+      
+      
       if (this.mBrowser.didStartLoadSinceLastUserTyping() ||
           ((aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) &&
             aLocation.spec != "about:blank") ||
-          (isSameDocument && this.mBrowser.inLoadURI)) {
+          (isSameDocument && this.mBrowser.inLoadURI) ||
+          (isSameDocument && !this.mBrowser.userTypedValue)) {
         this.mBrowser.userTypedValue = null;
       }
 

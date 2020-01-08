@@ -2688,7 +2688,10 @@ function URLBarSetURI(aURI) {
   var value = gBrowser.userTypedValue;
   var valid = false;
 
-  if (value == null) {
+  
+  
+  
+  if (value === null) {
     let uri = aURI || gBrowser.currentURI;
     
     try {
