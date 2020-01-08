@@ -9,11 +9,12 @@ const { ConnectionManager } = require("devtools/shared/client/connection-manager
 const { runCommand } = require("./run-command");
 
 
-const forwardPort = function(localPort, devicePort) {
+const forwardPort = function(deviceId, localPort, devicePort) {
   dumpn("forwardPort " + localPort + " -- " + devicePort);
   
-
-  return runCommand("host:forward:" + localPort + ";" + devicePort)
+  
+  
+  return runCommand(`host-serial:${ deviceId }:forward:${ localPort };${ devicePort }`)
              .then(function onSuccess(data) {
                return data;
              });
@@ -21,13 +22,13 @@ const forwardPort = function(localPort, devicePort) {
 
 
 
-const prepareTCPConnection = async function(socketPath) {
+const prepareTCPConnection = async function(deviceId, socketPath) {
   const port = ConnectionManager.getFreeTCPPort();
   const local = `tcp:${ port }`;
   const remote = socketPath.startsWith("@")
                    ? `localabstract:${ socketPath.substring(1) }`
                    : `localfilesystem:${ socketPath }`;
-  await forwardPort(local, remote);
+  await forwardPort(deviceId, local, remote);
   return port;
 };
 exports.prepareTCPConnection = prepareTCPConnection;

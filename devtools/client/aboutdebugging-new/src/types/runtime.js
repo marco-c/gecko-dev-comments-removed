@@ -43,6 +43,8 @@ const networkRuntimeConnectionParameter = {
 
 const usbRuntimeConnectionParameter = {
   
+  deviceId: PropTypes.string.isRequired,
+  
   socketPath: PropTypes.string.isRequired,
 };
 
