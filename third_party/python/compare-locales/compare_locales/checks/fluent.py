@@ -30,7 +30,7 @@ class FluentChecker(Checker):
                 refs[node.id.name] = node
             if isinstance(node, ftl.TermReference):
                 
-                refs[node.id.name] = node
+                refs['-' + node.id.name] = node
             
             return node
 

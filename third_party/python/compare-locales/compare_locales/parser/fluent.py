@@ -11,13 +11,13 @@ from fluent.syntax import ast as ftl
 from fluent.syntax.serializer import serialize_comment
 from .base import (
     CAN_SKIP,
-    EntityBase, Entity, Comment, Junk, Whitespace,
+    Entry, Entity, Comment, Junk, Whitespace,
     LiteralEntity,
     Parser
 )
 
 
-class FluentAttribute(EntityBase):
+class FluentAttribute(Entry):
     ignored_fields = ['span']
 
     def __init__(self, entity, attr_node):
@@ -44,7 +44,13 @@ class FluentEntity(Entity):
         self.ctx = ctx
         self.span = (start, end)
 
-        self.key_span = (entry.id.span.start, entry.id.span.end)
+        if isinstance(entry, ftl.Term):
+            
+            
+            self.key_span = (entry.id.span.start - 1, entry.id.span.end)
+        else:
+            
+            self.key_span = (entry.id.span.start, entry.id.span.end)
 
         if entry.value is not None:
             self.val_span = (entry.value.span.start, entry.value.span.end)
