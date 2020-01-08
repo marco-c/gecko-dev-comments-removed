@@ -214,8 +214,6 @@ public class BrowserApp extends GeckoApp
 
     private static final String BROWSER_SEARCH_TAG = "browser_search";
 
-    private static final int MAX_BUNDLE_SIZE = 300000; 
-
     
     public static final int ACTIVITY_REQUEST_PREFERENCES = 1001;
     private static final int ACTIVITY_REQUEST_TAB_QUEUE = 2001;
@@ -2299,7 +2297,7 @@ public class BrowserApp extends GeckoApp
         
         
         
-        if (getBundleSizeInBytes(outState) > MAX_BUNDLE_SIZE) {
+        if (getBundleSizeInBytes(outState) > MAX_BUNDLE_SIZE_BYTES) {
             outState.remove("android:viewHierarchyState");
         }
     }
