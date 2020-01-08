@@ -5,8 +5,10 @@
 
 
 
+#include <stdlib.h>
 #include "mozilla/Types.h"
 #include <gtk/gtk.h>
+#include <gtk/gtkx.h>
 #include <gdk/gdkwayland.h>
 
 union wl_argument;
@@ -300,3 +302,13 @@ wl_egl_window_resize(struct wl_egl_window *egl_window,
                      int dx, int dy)
 {
 }
+
+MOZ_EXPORT GType
+gdk_wayland_display_get_type(void)
+{
+   
+   abort();
+
+   return GDK_TYPE_X11_DISPLAY;
+}
+
