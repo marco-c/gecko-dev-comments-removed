@@ -15,7 +15,7 @@ const {
   DEBUG_TARGET_COLLAPSIBILITY_UPDATED,
   NETWORK_LOCATIONS_UPDATED,
   PAGE_SELECTED,
-  PAGES,
+  PAGE_TYPES,
   USB_RUNTIMES_SCAN_START,
   USB_RUNTIMES_SCAN_SUCCESS,
 } = require("../constants");
@@ -26,32 +26,35 @@ const { refreshUSBRuntimes } = require("../modules/usb-runtimes");
 
 const Actions = require("./index");
 
-
-
-function _isRuntimePage(page) {
-  return page && page !== PAGES.CONNECT;
-}
-
 function selectPage(page, runtimeId) {
   return async (dispatch, getState) => {
+    const isSamePage = (oldPage, newPage) => {
+      if (newPage === PAGE_TYPES.RUNTIME && oldPage === PAGE_TYPES.RUNTIME) {
+        return runtimeId === getState().runtimes.selectedRuntimeId;
+      }
+      return newPage === oldPage;
+    };
+
     const currentPage = getState().ui.selectedPage;
     
-    if (page === currentPage) {
+    
+    
+    if (!page || isSamePage(currentPage, page)) {
       return;
     }
 
     
-    if (_isRuntimePage(currentPage)) {
+    if (currentPage === PAGE_TYPES.RUNTIME) {
       const currentRuntimeId = getState().runtimes.selectedRuntimeId;
       await dispatch(Actions.unwatchRuntime(currentRuntimeId));
     }
 
     
-    if (_isRuntimePage(page)) {
+    if (page === PAGE_TYPES.RUNTIME) {
       await dispatch(Actions.watchRuntime(runtimeId));
     }
 
-    dispatch({ type: PAGE_SELECTED, page });
+    dispatch({ type: PAGE_SELECTED, page, runtimeId });
   };
 }
 

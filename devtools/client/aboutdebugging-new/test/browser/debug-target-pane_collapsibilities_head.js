@@ -33,8 +33,14 @@ const TARGET_PANES = [
 
 
 function getDebugTargetPane(title, document) {
+  
+  const sanitizeTitle = (x) => {
+    return x.replace(/\s+\(\d+\)$/, "");
+  };
+
+  const targetTitle = sanitizeTitle(title);
   for (const titleEl of document.querySelectorAll(".js-debug-target-pane-title")) {
-    if (titleEl.textContent !== title) {
+    if (sanitizeTitle(titleEl.textContent) !== targetTitle) {
       continue;
     }
 

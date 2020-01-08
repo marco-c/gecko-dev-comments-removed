@@ -40,7 +40,9 @@ add_task(async function() {
 
   info("Wait until Connect page is displayed");
   await waitUntil(() => document.querySelector(".js-connect-page"));
-  ok(isSidebarItemSelected(connectSidebarItem), "Connect sidebar item is selected");
+  
+  info("Wait until Connect sidebar item is selected");
+  await waitUntil(() => isSidebarItemSelected(connectSidebarItem));
   ok(!document.querySelector(".js-runtime-page"), "Runtime page no longer rendered");
 
   info("Open a new tab which should be listed when we go back to This Firefox");

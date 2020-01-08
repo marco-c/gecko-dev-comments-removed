@@ -217,6 +217,7 @@ function updateUSBRuntimes(runtimes) {
       
       
       
+
       await dispatch(Actions.selectPage(RUNTIMES.THIS_FIREFOX, RUNTIMES.THIS_FIREFOX));
     }
 
