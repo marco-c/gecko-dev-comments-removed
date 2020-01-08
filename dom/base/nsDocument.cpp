@@ -10219,8 +10219,6 @@ nsIDocument::MaybeResolveReadyForIdle()
 FeaturePolicy*
 nsIDocument::Policy() const
 {
-  MOZ_ASSERT(StaticPrefs::dom_security_featurePolicy_enabled());
-
   
   
   
