@@ -374,11 +374,17 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
     if (StringBeginsWith(icon.host, NS_LITERAL_CSTRING("www."))) {
       icon.host.Cut(0, 4);
     }
-    nsAutoCString path;
-    rv = aFaviconURI->GetPathQueryRef(path);
-    if (NS_SUCCEEDED(rv) && path.EqualsLiteral("/favicon.ico")) {
-      icon.rootIcon = 1;
-    }
+  }
+
+  
+  
+  
+  nsAutoCString path;
+  if (NS_SUCCEEDED(aFaviconURI->GetPathQueryRef(path)) &&
+      !icon.host.IsEmpty() &&
+      icon.host.Equals(page.host) &&
+      path.EqualsLiteral("/favicon.ico")) {
+    icon.rootIcon = 1;
   }
 
   
@@ -448,16 +454,14 @@ nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI,
   iconData->fetchMode = FETCH_NEVER;
   nsresult rv = aFaviconURI->GetSpec(iconData->spec);
   NS_ENSURE_SUCCESS(rv, rv);
-  nsAutoCString path;
-  rv = aFaviconURI->GetPathQueryRef(path);
-  if (NS_SUCCEEDED(rv) && path.EqualsLiteral("/favicon.ico")) {
-    iconData->rootIcon = 1;
-  }
   
   Unused << aFaviconURI->GetHost(iconData->host);
   if (StringBeginsWith(iconData->host, NS_LITERAL_CSTRING("www."))) {
     iconData->host.Cut(0, 4);
   }
+
+  
+  
 
   IconPayload payload;
   payload.mimeType = aMimeType;
