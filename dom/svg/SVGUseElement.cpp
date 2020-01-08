@@ -20,6 +20,7 @@
 #include "mozilla/URLExtraData.h"
 #include "SVGObserverUtils.h"
 #include "nsSVGUseFrame.h"
+#include "mozilla/net/ReferrerPolicy.h"
 
 NS_IMPL_NS_NEW_NAMESPACED_SVG_ELEMENT(Use)
 
@@ -327,9 +328,11 @@ SVGUseElement::UpdateShadowTree()
   }
 
   
+  
   mContentURLData = new URLExtraData(baseURI.forget(),
                                      do_AddRef(OwnerDoc()->GetDocumentURI()),
-                                     do_AddRef(NodePrincipal()));
+                                     do_AddRef(NodePrincipal()),
+                                     mozilla::net::RP_Unset);
 
   targetElement->AddMutationObserver(this);
 }

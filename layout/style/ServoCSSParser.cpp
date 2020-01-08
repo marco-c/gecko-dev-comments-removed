@@ -86,7 +86,8 @@ ServoCSSParser::GetURLExtraData(nsIDocument* aDocument)
   
   RefPtr<URLExtraData> url = new URLExtraData(aDocument->GetDocumentURI(),
                                               aDocument->GetDocumentURI(),
-                                              aDocument->NodePrincipal());
+                                              aDocument->NodePrincipal(),
+                                              aDocument->GetReferrerPolicy());
   return url.forget();
 }
 

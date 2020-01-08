@@ -1869,8 +1869,10 @@ nsXULPrototypeElement::SetAttrAt(uint32_t aPos, const nsAString& aValue,
         
         
         
+        
         RefPtr<URLExtraData> data =
-          new URLExtraData(aDocumentURI, aDocumentURI, principal);
+          new URLExtraData(aDocumentURI, aDocumentURI, principal,
+                           mozilla::net::RP_Unset);
         RefPtr<DeclarationBlock> declaration =
           DeclarationBlock::FromCssText(
             aValue, data, eCompatibility_FullStandards, nullptr);

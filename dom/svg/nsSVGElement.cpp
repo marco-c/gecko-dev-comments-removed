@@ -1194,8 +1194,9 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
     bool changed = false; 
     NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
     
-    RefPtr<URLExtraData> data = new URLExtraData(mBaseURI, mDocURI,
-                                                 mElement->NodePrincipal());
+    RefPtr<URLExtraData> data =
+      new URLExtraData(mBaseURI, mDocURI, mElement->NodePrincipal(),
+                       mElement->OwnerDoc()->GetReferrerPolicy());
     changed = Servo_DeclarationBlock_SetPropertyById(
       mDecl->Raw(), propertyID, &value, false, data,
       ParsingMode::AllowUnitlessLength,

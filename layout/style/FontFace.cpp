@@ -21,6 +21,7 @@
 #include "mozilla/StaticPrefs.h"
 #include "nsIDocument.h"
 #include "nsStyleUtil.h"
+#include "mozilla/net/ReferrerPolicy.h"
 
 namespace mozilla {
 namespace dom {
@@ -530,7 +531,10 @@ FontFace::GetURLExtraData() const
   nsCOMPtr<nsIURI> docURI = window->GetDocumentURI();
   nsCOMPtr<nsIURI> base = window->GetDocBaseURI();
 
-  RefPtr<URLExtraData> url = new URLExtraData(base, docURI, principal);
+  
+  
+  RefPtr<URLExtraData> url = new URLExtraData(base, docURI, principal,
+                                              net::RP_Unset);
   return url.forget();
 }
 

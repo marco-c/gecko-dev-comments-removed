@@ -440,7 +440,8 @@ nsIContent::GetURLDataForStyleAttr(nsIPrincipal* aSubjectPrincipal) const
     
     return MakeAndAddRef<URLExtraData>(OwnerDoc()->GetDocBaseURI(),
                                        OwnerDoc()->GetDocumentURI(),
-                                       aSubjectPrincipal);
+                                       aSubjectPrincipal,
+                                       OwnerDoc()->GetReferrerPolicy());
   }
   
   
