@@ -5,6 +5,7 @@
 
 
 
+#include "js/LocaleSensitive.h"
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testDateToLocaleString)
