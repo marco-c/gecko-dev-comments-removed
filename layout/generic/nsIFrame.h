@@ -3232,7 +3232,10 @@ public:
   
 
 
-  bool IsSelected() const;
+  bool IsSelected() const {
+    return (GetContent() && GetContent()->IsSelectionDescendant()) ?
+      IsFrameSelected() : false;
+  }
 
   
 

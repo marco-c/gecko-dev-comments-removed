@@ -704,7 +704,7 @@ protected:
 
 
 
-  bool IsFrameSelected() const override;
+  bool IsFrameSelected() const final;
 
   mozilla::UniquePtr<SelectionDetails> GetSelectionDetails();
 

@@ -7798,14 +7798,7 @@ public:
              : nullptr;
   }
 
-  bool IsSelected() const
-  {
-    if (mIsFrameSelected.isNothing()) {
-      mIsFrameSelected.emplace(mFrame->IsSelected());
-    }
-
-    return mIsFrameSelected.value();
-  }
+  bool IsSelected() const;
 
   
   
