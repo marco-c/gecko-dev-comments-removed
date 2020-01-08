@@ -32,22 +32,30 @@ ChromeUtils.defineModuleGetter(this, "FilterExpressions",
 ChromeUtils.defineModuleGetter(this, "pushBroadcastService",
                                "resource://gre/modules/PushBroadcastService.jsm");
 
-const PREF_SETTINGS_SERVER             = "services.settings.server";
 const PREF_SETTINGS_DEFAULT_BUCKET     = "services.settings.default_bucket";
-const PREF_SETTINGS_DEFAULT_SIGNER     = "services.settings.default_signer";
-const PREF_SETTINGS_VERIFY_SIGNATURE   = "services.settings.verify_signature";
-const PREF_SETTINGS_SERVER_BACKOFF     = "services.settings.server.backoff";
-const PREF_SETTINGS_CHANGES_PATH       = "services.settings.changes.path";
-const PREF_SETTINGS_LAST_UPDATE        = "services.settings.last_update_seconds";
-const PREF_SETTINGS_LAST_ETAG          = "services.settings.last_etag";
-const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "services.settings.clock_skew_seconds";
-const PREF_SETTINGS_LOAD_DUMP          = "services.settings.load_dump";
+const PREF_SETTINGS_BRANCH             = "services.settings.";
+const PREF_SETTINGS_SERVER             = "server";
+const PREF_SETTINGS_DEFAULT_SIGNER     = "default_signer";
+const PREF_SETTINGS_VERIFY_SIGNATURE   = "verify_signature";
+const PREF_SETTINGS_SERVER_BACKOFF     = "server.backoff";
+const PREF_SETTINGS_CHANGES_PATH       = "changes.path";
+const PREF_SETTINGS_LAST_UPDATE        = "last_update_seconds";
+const PREF_SETTINGS_LAST_ETAG          = "last_etag";
+const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "clock_skew_seconds";
+const PREF_SETTINGS_LOAD_DUMP          = "load_dump";
 
 
 const TELEMETRY_HISTOGRAM_KEY = "settings-changes-monitoring";
 
 const INVALID_SIGNATURE = "Invalid content/signature";
 const MISSING_SIGNATURE = "Missing signature";
+
+XPCOMUtils.defineLazyGetter(this, "gPrefs", () => {
+  return Services.prefs.getBranch(PREF_SETTINGS_BRANCH);
+});
+XPCOMUtils.defineLazyPreferenceGetter(this, "gVerifySignature", PREF_SETTINGS_BRANCH + PREF_SETTINGS_VERIFY_SIGNATURE, true);
+XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL", PREF_SETTINGS_BRANCH + PREF_SETTINGS_SERVER);
+XPCOMUtils.defineLazyPreferenceGetter(this, "gChangesPath", PREF_SETTINGS_BRANCH + PREF_SETTINGS_CHANGES_PATH);
 
 
 
@@ -127,8 +135,8 @@ async function fetchCollectionMetadata(remote, collection) {
   return signature;
 }
 
-async function fetchRemoteCollection(remote, collection) {
-  const client = new KintoHttpClient(remote);
+async function fetchRemoteCollection(collection) {
+  const client = new KintoHttpClient(gServerURL);
   return client.bucket(collection.bucket)
            .collection(collection.name)
            .listRecords({sort: "id"});
@@ -168,7 +176,7 @@ async function fetchLatestChanges(url, lastEtag) {
       
       
       
-      const is404FromCustomServer = response.status == 404 && Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER);
+      const is404FromCustomServer = response.status == 404 && gPrefs.prefHasUserValue(PREF_SETTINGS_SERVER);
       if (!is404FromCustomServer) {
         throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
       }
@@ -214,18 +222,20 @@ async function loadDumpFile(bucket, collection) {
 
 class RemoteSettingsClient {
 
-  constructor(collectionName, { bucketName, signerName, filterFunc = jexlFilterFunc, localFields = [], lastCheckTimePref }) {
+  constructor(collectionName, { bucketNamePref, signerName, filterFunc = jexlFilterFunc, localFields = [], lastCheckTimePref }) {
     this.collectionName = collectionName;
-    this.bucketName = bucketName;
     this.signerName = signerName;
     this.filterFunc = filterFunc;
     this.localFields = localFields;
     this._lastCheckTimePref = lastCheckTimePref;
 
+    
+    
+    this.bucketNamePref = bucketNamePref;
+    XPCOMUtils.defineLazyPreferenceGetter(this, "bucketName", this.bucketNamePref);
+
     this._listeners = new Map();
     this._listeners.set("sync", []);
-
-    this._kinto = null;
   }
 
   get identifier() {
@@ -287,23 +297,21 @@ class RemoteSettingsClient {
 
   async openCollection() {
     if (!this._kinto) {
-      this._kinto = new Kinto({ bucket: this.bucketName, adapter: Kinto.adapters.IDB });
+      this._kinto = new Kinto();
     }
     const options = {
       localFields: this.localFields,
     };
     
     
-    const verifySignature = Services.prefs.getBoolPref(PREF_SETTINGS_VERIFY_SIGNATURE, true);
-    if (this.signerName && verifySignature) {
-      const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
+    if (this.signerName && gVerifySignature) {
       options.hooks = {
         "incoming-changes": [(payload, collection) => {
-          return this._validateCollectionSignature(remote, payload, collection);
+          return this._validateCollectionSignature(payload, collection);
         }],
       };
     }
-    return this._kinto.collection(this.collectionName, options);
+    return this._kinto.collection(this.collectionName, { ...options, bucket: this.bucketName });
   }
 
   
@@ -350,7 +358,6 @@ class RemoteSettingsClient {
 
   async maybeSync(lastModified, serverTime, options = { loadDump: true }) {
     const {loadDump} = options;
-    const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
 
     let reportStatus = null;
     try {
@@ -386,7 +393,7 @@ class RemoteSettingsClient {
       try {
         
         const strategy = Kinto.syncStrategy.SERVER_WINS;
-        syncResult = await collection.sync({remote, strategy});
+        syncResult = await collection.sync({ remote: gServerURL, strategy });
         const { ok } = syncResult;
         if (!ok) {
           
@@ -401,9 +408,9 @@ class RemoteSettingsClient {
           
           
           
-          const payload = await fetchRemoteCollection(remote, collection);
+          const payload = await fetchRemoteCollection(collection);
           try {
-            await this._validateCollectionSignature(remote, payload, collection, {ignoreLocal: true});
+            await this._validateCollectionSignature(payload, collection, { ignoreLocal: true });
           } catch (e) {
             reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
             throw e;
@@ -500,10 +507,10 @@ class RemoteSettingsClient {
     }
   }
 
-  async _validateCollectionSignature(remote, payload, collection, options = {}) {
+  async _validateCollectionSignature(payload, collection, options = {}) {
     const {ignoreLocal} = options;
     
-    const signaturePayload = await fetchCollectionMetadata(remote, collection);
+    const signaturePayload = await fetchCollectionMetadata(gServerURL, collection);
     if (!signaturePayload) {
       throw new Error(MISSING_SIGNATURE);
     }
@@ -610,8 +617,11 @@ function remoteSettingsFunction() {
   const _clients = new Map();
 
   
-  const mainBucket = Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET);
-  const defaultSigner = Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_SIGNER);
+  const defaultSigner = gPrefs.getCharPref(PREF_SETTINGS_DEFAULT_SIGNER);
+  const defaultOptions = {
+    bucketNamePref: PREF_SETTINGS_DEFAULT_BUCKET,
+    signerName: defaultSigner,
+  };
 
   
 
@@ -622,29 +632,21 @@ function remoteSettingsFunction() {
 
   const remoteSettings = function(collectionName, options) {
     
-    const rsOptions = {
-      bucketName: mainBucket,
-      signerName: defaultSigner,
-      ...options,
-    };
-    const { bucketName } = rsOptions;
-    const key = `${bucketName}/${collectionName}`;
-    if (!_clients.has(key)) {
+    if (!_clients.has(collectionName)) {
       
-      const c = new RemoteSettingsClient(collectionName, rsOptions);
-      _clients.set(key, c);
+      const c = new RemoteSettingsClient(collectionName, { ...defaultOptions, ...options });
+      
+      _clients.set(collectionName, c);
       
       
-      Services.prefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
+      gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
     }
-    return _clients.get(key);
+    return _clients.get(collectionName);
   };
 
   Object.defineProperty(remoteSettings, "pollingEndpoint", {
     get() {
-      const kintoServer = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-      const changesPath = Services.prefs.getCharPref(PREF_SETTINGS_CHANGES_PATH);
-      return kintoServer + changesPath;
+      return gServerURL + gChangesPath;
     },
   });
 
@@ -655,8 +657,8 @@ function remoteSettingsFunction() {
   async function _client(bucketName, collectionName) {
     
     
-    const key = `${bucketName}/${collectionName}`;
-    const client = _clients.get(key);
+    const client = _clients.get(collectionName);
+
     if (client) {
       
       
@@ -668,13 +670,13 @@ function remoteSettingsFunction() {
     
     
     
-    } else if (bucketName == mainBucket) {
+    } else if (bucketName == Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET)) {
       const [dbExists, localDump] = await Promise.all([
         databaseExists(bucketName, collectionName),
         hasLocalDump(bucketName, collectionName),
       ]);
       if (dbExists || localDump) {
-        return new RemoteSettingsClient(collectionName, { bucketName, signerName: defaultSigner });
+        return new RemoteSettingsClient(collectionName, defaultOptions);
       }
     }
     
@@ -691,8 +693,8 @@ function remoteSettingsFunction() {
 
   remoteSettings.pollChanges = async () => {
     
-    if (Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
-      const backoffReleaseTime = Services.prefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
+    if (gPrefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
+      const backoffReleaseTime = gPrefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
       const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
       if (remainingMilliseconds > 0) {
         
@@ -700,13 +702,13 @@ function remoteSettingsFunction() {
                                UptakeTelemetry.STATUS.BACKOFF);
         throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
       } else {
-        Services.prefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
+        gPrefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
       }
     }
 
     let lastEtag;
-    if (Services.prefs.prefHasUserValue(PREF_SETTINGS_LAST_ETAG)) {
-      lastEtag = Services.prefs.getCharPref(PREF_SETTINGS_LAST_ETAG);
+    if (gPrefs.prefHasUserValue(PREF_SETTINGS_LAST_ETAG)) {
+      lastEtag = gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG);
     }
 
     let pollResult;
@@ -737,17 +739,17 @@ function remoteSettingsFunction() {
     
     if (backoffSeconds) {
       const backoffReleaseTime = Date.now() + backoffSeconds * 1000;
-      Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
+      gPrefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
     }
 
     
     
     
     const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
-    Services.prefs.setIntPref(PREF_SETTINGS_CLOCK_SKEW_SECONDS, clockDifference);
-    Services.prefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, serverTimeMillis / 1000);
+    gPrefs.setIntPref(PREF_SETTINGS_CLOCK_SKEW_SECONDS, clockDifference);
+    gPrefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, serverTimeMillis / 1000);
 
-    const loadDump = Services.prefs.getBoolPref(PREF_SETTINGS_LOAD_DUMP, true);
+    const loadDump = gPrefs.getBoolPref(PREF_SETTINGS_LOAD_DUMP, true);
 
     
     
@@ -777,7 +779,7 @@ function remoteSettingsFunction() {
 
     
     if (currentEtag) {
-      Services.prefs.setCharPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
+      gPrefs.setCharPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
     }
 
     Services.obs.notifyObservers(null, "remote-settings-changes-polled");
@@ -810,11 +812,11 @@ function remoteSettingsFunction() {
     }));
 
     return {
-      serverURL: Services.prefs.getCharPref(PREF_SETTINGS_SERVER),
+      serverURL: gServerURL,
       serverTimestamp,
-      localTimestamp: Services.prefs.getCharPref(PREF_SETTINGS_LAST_ETAG, null),
-      lastCheck: Services.prefs.getIntPref(PREF_SETTINGS_LAST_UPDATE, 0),
-      mainBucket,
+      localTimestamp: gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG, null),
+      lastCheck: gPrefs.getIntPref(PREF_SETTINGS_LAST_UPDATE, 0),
+      mainBucket: Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET),
       defaultSigner,
       collections: collections.filter(c => !!c),
     };
@@ -831,7 +833,7 @@ function remoteSettingsFunction() {
     
     
     
-    const currentVersion = Services.prefs.getStringPref(PREF_SETTINGS_LAST_ETAG, "\"0\"");
+    const currentVersion = gPrefs.getStringPref(PREF_SETTINGS_LAST_ETAG, "\"0\"");
     const moduleInfo = {
       moduleURI: __URI__,
       symbolName: "remoteSettingsBroadcastHandler",

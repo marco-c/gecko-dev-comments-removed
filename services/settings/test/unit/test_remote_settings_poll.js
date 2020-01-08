@@ -79,10 +79,10 @@ add_task(async function test_check_success() {
 
   
   
+  
+  Services.prefs.setCharPref("services.settings.test_bucket", "test-bucket");
+  const c = RemoteSettings("test-collection", { bucketNamePref: "services.settings.test_bucket" });
   let maybeSyncCalled = false;
-  const c = RemoteSettings("test-collection", {
-    bucketName: "test-bucket",
-  });
   c.maybeSync = () => { maybeSyncCalled = true; };
 
   
@@ -210,7 +210,7 @@ add_task(async function test_success_with_partial_list() {
       last_modified: 42,
       host: "localhost",
       bucket: "main",
-      collection: "test-collection",
+      collection: "poll-test-collection",
     }];
     if (request.queryString == `_since=${encodeURIComponent('"42"')}`) {
       response.write(JSON.stringify({
@@ -228,7 +228,7 @@ add_task(async function test_success_with_partial_list() {
   }
   server.registerPathHandler(CHANGES_PATH, partialList);
 
-  const c = RemoteSettings("test-collection");
+  const c = RemoteSettings("poll-test-collection");
   let maybeSyncCount = 0;
   c.maybeSync = () => { maybeSyncCount++; };
 
