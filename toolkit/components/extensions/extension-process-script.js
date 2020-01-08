@@ -159,54 +159,6 @@ DocumentManager = {
       this.globals.delete(global);
     });
   },
-
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-  checkParentFrames(window, addonId) {
-    while (window.parent !== window) {
-      window = window.parent;
-
-      let principal = window.document.nodePrincipal;
-
-      if (Services.scriptSecurityManager.isSystemPrincipal(principal)) {
-        
-        
-        if (window.location.href === "about:addons") {
-          return true;
-        }
-      }
-
-      if (principal.addonId !== addonId) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-
-  loadInto(policy, window) {
-    let extension = extensions.get(policy);
-    if (WebExtensionPolicy.isExtensionProcess && this.checkParentFrames(window, policy.id)) {
-      
-      
-      ExtensionPageChild.initExtensionContext(extension, window);
-    } else {
-      
-      
-      ExtensionContent.initExtensionContext(extension, window);
-    }
-  },
 };
 
 ExtensionManager = {
@@ -378,9 +330,12 @@ ExtensionProcessScript.prototype = {
     return ExtensionManager.initExtensionPolicy(extension);
   },
 
-  initExtensionDocument(policy, doc) {
-    if (DocumentManager.globals.has(doc.defaultView.docShell.messageManager)) {
-      DocumentManager.loadInto(policy, doc.defaultView);
+  initExtensionDocument(policy, doc, privileged) {
+    let extension = extensions.get(policy);
+    if (privileged) {
+      ExtensionPageChild.initExtensionContext(extension, doc.defaultView);
+    } else {
+      ExtensionContent.initExtensionContext(extension, doc.defaultView);
     }
   },
 
