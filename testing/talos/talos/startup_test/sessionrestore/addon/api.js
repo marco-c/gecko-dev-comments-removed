@@ -14,7 +14,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   StartupPerformance: "resource:///modules/sessionstore/StartupPerformance.jsm",
-  TalosParentProfiler: "resource://talos-powers/TalosParentProfiler.jsm",
 });
 
 
@@ -25,6 +24,47 @@ this.sessionrestore = class extends ExtensionAPI {
     
     
     this.run();
+  }
+
+  async ensureTalosParentProfiler() {
+    
+    
+    
+    
+    
+    async function getTalosParentProfiler() {
+      try {
+        ChromeUtils.import("resource://talos-powers/TalosParentProfiler.jsm");
+        return TalosParentProfiler;
+      } catch (err) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return getTalosParentProfiler();
+      }
+    }
+
+    this.TalosParentProfiler = await getTalosParentProfiler();
+  }
+
+  async finishProfiling(msg) {
+    await this.ensureTalosParentProfiler();
+
+    let win = BrowserWindowTracker.getTopWindow();
+    let args = win.arguments[0];
+    if (args && args instanceof Ci.nsIArray) {
+      
+      
+      
+      
+      
+      
+      
+      Cu.importGlobalProperties(["URL"]);
+      let url = new URL(args.queryElementAt(0, Ci.nsISupportsString).data);
+      this.TalosParentProfiler.initFromURLQueryParams(url.search);
+    }
+
+    await this.TalosParentProfiler.pause(msg);
+    await this.TalosParentProfiler.finishStartupProfiling();
   }
 
   async run() {
@@ -40,32 +80,19 @@ this.sessionrestore = class extends ExtensionAPI {
           if (!Services.prefs.getBoolPref("talos.sessionrestore.norestore", false)) {
             throw new Error("Session was not restored!");
           }
+          await this.finishProfiling("This test measures the time between sessionRestoreInit " +
+                                     "and sessionRestored, ignore everything around that");
+
           didRestore = false;
         } else {
           await new Promise(resolve => {
-            async function observe() {
+            let observe = async () => {
               Services.obs.removeObserver(observe, StartupPerformance.RESTORED_TOPIC);
-
-              let win = BrowserWindowTracker.getTopWindow();
-              let args = win.arguments[0];
-              if (args && args instanceof Ci.nsIArray) {
-                
-                
-                
-                
-                
-                
-                
-                Cu.importGlobalProperties(["URL"]);
-                let url = new URL(args.queryElementAt(0, Ci.nsISupportsString).data);
-                TalosParentProfiler.initFromURLQueryParams(url.search);
-              }
-
-              await TalosParentProfiler.pause("This test measures the time between sessionRestoreInit and sessionRestored, ignore everything around that");
-              await TalosParentProfiler.finishStartupProfiling();
+              await this.finishProfiling("This test measures the time between sessionRestoreInit " +
+                                         "and the last restored tab, ignore everything around that");
 
               resolve();
-            }
+            };
             Services.obs.addObserver(observe, StartupPerformance.RESTORED_TOPIC);
           });
         }
