@@ -199,8 +199,7 @@ Push.prototype = {
 
     
     
-    let windowUtils = this._window.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDOMWindowUtils);
+    let windowUtils = this._window.windowUtils;
     windowUtils.askPermission(request);
   },
 };

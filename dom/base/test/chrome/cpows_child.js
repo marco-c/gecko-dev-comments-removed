@@ -371,9 +371,7 @@ function dead_test(finish)
 
   let gcTrigger = function() {
     
-    content.QueryInterface(Ci.nsIInterfaceRequestor)
-           .getInterface(Ci.nsIDOMWindowUtils)
-           .garbageCollect();
+    content.windowUtils.garbageCollect();
   }
 
   {
