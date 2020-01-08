@@ -85,6 +85,10 @@ TextEditor::TextEditor()
 #endif
 {
   
+  static_assert(sizeof(TextEditor) <= 512,
+    "TextEditor instance should be allocatable in the quantum class bins");
+
+  
   
   GetDefaultEditorPrefs(mNewlineHandling, mCaretStyle);
 }
