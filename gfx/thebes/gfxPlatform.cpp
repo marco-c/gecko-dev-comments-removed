@@ -963,6 +963,8 @@ gfxPlatform::Init()
     if (XRE_IsParentProcess()) {
       gfxVars::SetDXInterop2Blocked(IsDXInterop2Blocked());
       gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
+      gfxVars::SetDXP010Blocked(IsDXP010Blocked());
+      gfxVars::SetDXP016Blocked(IsDXP016Blocked());
       Preferences::Unlock(FONT_VARIATIONS_PREF);
       if (!gPlatform->HasVariationFontSupport()) {
         
@@ -991,30 +993,40 @@ gfxPlatform::Init()
     }
 }
 
- bool
-gfxPlatform::IsDXInterop2Blocked()
+bool
+IsFeatureSupported(long aFeature)
 {
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsCString blockId;
   int32_t status;
-  if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DX_INTEROP2,
+  if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(aFeature,
                                               blockId, &status))) {
     return true;
   }
   return status != nsIGfxInfo::FEATURE_STATUS_OK;
 }
+ bool
+gfxPlatform::IsDXInterop2Blocked()
+{
+  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_INTEROP2);
+}
 
  bool
 gfxPlatform::IsDXNV12Blocked()
 {
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString blockId;
-  int32_t status;
-  if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DX_NV12,
-                                              blockId, &status))) {
-    return true;
-  }
-  return status != nsIGfxInfo::FEATURE_STATUS_OK;
+  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_NV12);
+}
+
+ bool
+gfxPlatform::IsDXP010Blocked()
+{
+  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P010);
+}
+
+ bool
+gfxPlatform::IsDXP016Blocked()
+{
+  return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P016);
 }
 
  int32_t
