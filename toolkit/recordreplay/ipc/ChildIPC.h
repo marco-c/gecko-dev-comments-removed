@@ -41,9 +41,6 @@ namespace child {
 
 void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv);
 
-
-char* PrefsShmemContents(size_t aPrefsLen);
-
 base::ProcessId MiddlemanProcessId();
 base::ProcessId ParentProcessId();
 

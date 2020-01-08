@@ -262,32 +262,22 @@ ContentProcess::Init(int aArgc, char* aArgv[])
     return false;
   }
 
-  if (recordreplay::IsRecordingOrReplaying()) {
-    
-    Preferences::DeserializePreferences(recordreplay::child::PrefsShmemContents(*prefsLen),
-                                        *prefsLen);
-  } else {
-    
-    
-    Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
+  
+  
+  Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
 
-    
-    base::SharedMemory shm;
-    if (!shm.SetHandle(*prefsHandle,  true)) {
-      NS_ERROR("failed to open shared memory in the child");
-      return false;
-    }
-    if (!shm.Map(*prefsLen)) {
-      NS_ERROR("failed to map shared memory in the child");
-      return false;
-    }
-    Preferences::DeserializePreferences(static_cast<char*>(shm.memory()),
-                                        *prefsLen);
-    if (recordreplay::IsMiddleman()) {
-      recordreplay::parent::NotePrefsShmemContents(static_cast<char*>(shm.memory()),
-                                                   *prefsLen);
-    }
+  
+  base::SharedMemory shm;
+  if (!shm.SetHandle(*prefsHandle,  true)) {
+    NS_ERROR("failed to open shared memory in the child");
+    return false;
   }
+  if (!shm.Map(*prefsLen)) {
+    NS_ERROR("failed to map shared memory in the child");
+    return false;
+  }
+  Preferences::DeserializePreferences(static_cast<char*>(shm.memory()),
+                                      *prefsLen);
 
   Scheduler::SetPrefs(*schedulerPrefs);
 

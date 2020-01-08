@@ -50,9 +50,6 @@ static base::ProcessId gMiddlemanPid;
 static base::ProcessId gParentPid;
 static StaticInfallibleVector<char*> gParentArgv;
 
-static char* gShmemPrefs;
-static size_t gShmemPrefsLen;
-
 
 
 static FileHandle gCheckpointWriteFd;
@@ -144,13 +141,6 @@ ChannelMessageHandler(Message* aMsg)
   }
 
   free(aMsg);
-}
-
-char*
-PrefsShmemContents(size_t aPrefsLen)
-{
-  MOZ_RELEASE_ASSERT(aPrefsLen == gShmemPrefsLen);
-  return gShmemPrefs;
 }
 
 
@@ -248,7 +238,6 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
   HitCheckpoint(CheckpointId::Invalid,  false);
 
   
-  MOZ_RELEASE_ASSERT(!gShmemPrefs);
   MOZ_RELEASE_ASSERT(gParentArgv.empty());
 
   gParentPid = gIntroductionMessage->mParentPid;
@@ -257,10 +246,6 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
   
   {
     IntroductionMessage* msg = IntroductionMessage::RecordReplay(*gIntroductionMessage);
-
-    gShmemPrefs = new char[msg->mPrefsLen];
-    memcpy(gShmemPrefs, msg->PrefsData(), msg->mPrefsLen);
-    gShmemPrefsLen = msg->mPrefsLen;
 
     const char* pos = msg->ArgvString();
     for (size_t i = 0; i < msg->mArgc; i++) {

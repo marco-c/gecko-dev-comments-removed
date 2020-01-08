@@ -46,9 +46,6 @@ ipc::MessageChannel* ChannelToUIProcess();
 void InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid);
 
 
-void NotePrefsShmemContents(char* aPrefs, size_t aPrefsLen);
-
-
 
 void OpenChannel(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
                  ipc::FileDescriptor* aConnection);
