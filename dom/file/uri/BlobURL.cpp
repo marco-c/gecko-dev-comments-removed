@@ -206,17 +206,18 @@ BlobURL::EqualsInternal(nsIURI* aOther,
   }
 
   
-  if (!mozilla::net::nsSimpleURI::EqualsInternal(otherUri, aRefHandlingMode)) {
-    *aResult = false;
-    return NS_OK;
-  }
+  *aResult = mozilla::net::nsSimpleURI::EqualsInternal(otherUri,
+                                                       aRefHandlingMode);
 
-  if (mPrincipal && otherUri->mPrincipal) {
-    
-    return mPrincipal->Equals(otherUri->mPrincipal, aResult);
-  }
+#ifdef DEBUG
   
-  *aResult = (!mPrincipal && !otherUri->mPrincipal);
+  if (*aResult && mPrincipal && otherUri->mPrincipal) {
+    bool equal = false;
+    nsresult rv = mPrincipal->Equals(otherUri->mPrincipal, &equal);
+    MOZ_ASSERT(NS_SUCCEEDED(rv) && equal);
+  }
+#endif
+
   return NS_OK;
 }
 
