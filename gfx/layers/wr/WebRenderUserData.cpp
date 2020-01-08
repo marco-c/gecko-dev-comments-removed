@@ -157,16 +157,27 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
 
   
   
-  ClearImageKey();
+  bool useUpdate = mKey.isSome()
+                   && !!mTextureOfImage
+                   && !!currentTexture
+                   && mTextureOfImage->GetSize() == currentTexture->GetSize()
+                   && mTextureOfImage->GetFormat() == currentTexture->GetFormat();
 
   wr::MaybeExternalImageId extId = currentTexture->GetExternalImageKey();
   MOZ_RELEASE_ASSERT(extId.isSome());
-  MOZ_ASSERT(!mTextureOfImage);
 
-  key = WrBridge()->GetNextImageKey();
-  aResources.AddExternalImageForTexture(extId.ref(), key, currentTexture);
+  if (useUpdate) {
+    MOZ_ASSERT(mKey.isSome());
+    MOZ_ASSERT(mTextureOfImage);
+    aResources.PushExternalImageForTexture(extId.ref(), mKey.ref(), currentTexture,  true);
+  } else {
+    ClearImageKey();
+    key = WrBridge()->GetNextImageKey();
+    aResources.PushExternalImageForTexture(extId.ref(), key, currentTexture,  false);
+    mKey = Some(key);
+  }
+
   mTextureOfImage = currentTexture;
-  mKey = Some(key);
   mOwnsKey = true;
 
   return mKey;
