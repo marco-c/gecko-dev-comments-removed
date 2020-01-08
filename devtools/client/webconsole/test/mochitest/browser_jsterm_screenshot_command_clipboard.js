@@ -178,9 +178,6 @@ async function getImageSizeFromClipboard() {
   
   
   
-  if (image instanceof Ci.nsISupportsInterfacePointer) {
-    image = image.data;
-  }
 
   if (image instanceof Ci.imgIContainer) {
     image = Cc["@mozilla.org/image/tools;1"]

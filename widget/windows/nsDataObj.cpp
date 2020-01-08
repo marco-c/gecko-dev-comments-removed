@@ -901,18 +901,6 @@ nsDataObj::GetDib(const nsACString& inFlavor,
   nsCOMPtr<nsISupports> genericDataWrapper;
   mTransferable->GetTransferData(PromiseFlatCString(inFlavor).get(), getter_AddRefs(genericDataWrapper), &len);
   nsCOMPtr<imgIContainer> image ( do_QueryInterface(genericDataWrapper) );
-  if ( !image ) {
-    
-    
-    
-    nsCOMPtr<nsISupportsInterfacePointer> ptr(do_QueryInterface(genericDataWrapper));
-    if ( ptr ) {
-      nsCOMPtr<nsISupports> supports;
-      ptr->GetData(getter_AddRefs(supports));
-      image = do_QueryInterface(supports);
-    }
-  }
-  
   if ( image ) {
     
     
@@ -1466,17 +1454,6 @@ HRESULT nsDataObj::DropFile(FORMATETC& aFE, STGMEDIUM& aSTG)
   mTransferable->GetTransferData(kFileMime, getter_AddRefs(genericDataWrapper),
                                  &len);
   nsCOMPtr<nsIFile> file ( do_QueryInterface(genericDataWrapper) );
-
-  if (!file)
-  {
-    nsCOMPtr<nsISupportsInterfacePointer> ptr(do_QueryInterface(genericDataWrapper));
-    if (ptr) {
-      nsCOMPtr<nsISupports> supports;
-      ptr->GetData(getter_AddRefs(supports));
-      file = do_QueryInterface(supports);
-    }
-  }
-
   if (!file)
     return E_FAIL;
 
@@ -1531,19 +1508,6 @@ HRESULT nsDataObj::DropImage(FORMATETC& aFE, STGMEDIUM& aSTG)
 
     mTransferable->GetTransferData(kNativeImageMime, getter_AddRefs(genericDataWrapper), &len);
     nsCOMPtr<imgIContainer> image(do_QueryInterface(genericDataWrapper));
-
-    if (!image) {
-      
-      
-      
-      nsCOMPtr<nsISupportsInterfacePointer> ptr(do_QueryInterface(genericDataWrapper));
-      if (ptr) {
-        nsCOMPtr<nsISupports> supports;
-        ptr->GetData(getter_AddRefs(supports));
-        image = do_QueryInterface(supports);
-      }
-    }
-
     if (!image) 
       return E_FAIL;
 
