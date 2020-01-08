@@ -265,7 +265,7 @@ pref("devtools.webconsole.ui.filterbar", false);
 pref("devtools.browserconsole.ui.filterbar", false);
 
 
-pref("devtools.webconsole.inputHistoryCount", 50);
+pref("devtools.webconsole.inputHistoryCount", 300);
 
 
 
