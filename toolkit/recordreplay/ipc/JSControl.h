@@ -58,6 +58,9 @@ struct BreakpointPosition
     NewScript,
 
     
+    ConsoleMessage,
+
+    
     WarpTarget,
 
     
@@ -114,6 +117,7 @@ struct BreakpointPosition
     case OnPop: return "OnPop";
     case EnterFrame: return "EnterFrame";
     case NewScript: return "NewScript";
+    case ConsoleMessage: return "ConsoleMessage";
     case WarpTarget: return "WarpTarget";
     case ForcedPause: return "ForcedPause";
     }
