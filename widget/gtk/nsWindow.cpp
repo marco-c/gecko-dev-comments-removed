@@ -3935,12 +3935,14 @@ nsWindow::Create(nsIWidget* aParent,
             gtk_style_context_has_class(style, "csd");
         eventWidget = (drawToContainer) ? container : mShell;
 
-        gtk_widget_add_events(eventWidget, kEvents);
-        if (drawToContainer)
-            gtk_widget_add_events(mShell, GDK_PROPERTY_CHANGE_MASK);
-
         
         gtk_widget_set_app_paintable(eventWidget, TRUE);
+
+        gtk_widget_add_events(eventWidget, kEvents);
+        if (drawToContainer) {
+            gtk_widget_add_events(mShell, GDK_PROPERTY_CHANGE_MASK);
+            gtk_widget_set_app_paintable(mShell, TRUE);
+        }
 
         
         
