@@ -358,6 +358,8 @@ doIgnoreSection(XML_Parser parser, const ENCODING *, const char **startPtr,
                 const char *end, const char **nextPtr, XML_Bool haveMore);
 #endif 
 
+static void
+freeBindings(XML_Parser parser, BINDING *bindings);
 static enum XML_Error
 storeAtts(XML_Parser parser, const ENCODING *, const char *s,
           TAG_NAME *tagNamePtr, BINDING **bindingsPtr);
@@ -2817,8 +2819,10 @@ doContent(XML_Parser parser,
           return XML_ERROR_NO_MEMORY;
         poolFinish(&tempPool);
         result = storeAtts(parser, enc, s, &name, &bindings);
-        if (result)
+        if (result != XML_ERROR_NONE) {
+          freeBindings(parser, bindings);
           return result;
+        }
         poolFinish(&tempPool);
         if (startElementHandler) {
           startElementHandler(handlerArg, name.str, (const XML_Char **)atts);
@@ -2833,15 +2837,7 @@ doContent(XML_Parser parser,
         if (noElmHandlers && defaultHandler)
           reportDefault(parser, enc, s, next);
         poolClear(&tempPool);
-        while (bindings) {
-          BINDING *b = bindings;
-          if (endNamespaceDeclHandler)
-            endNamespaceDeclHandler(handlerArg, b->prefix->name);
-          bindings = bindings->nextTagBinding;
-          b->nextTagBinding = freeBindingList;
-          freeBindingList = b;
-          b->prefix->binding = b->prevPrefixBinding;
-        }
+        freeBindings(parser, bindings);
       }
       if (tagLevel == 0)
         return epilogProcessor(parser, next, end, nextPtr);
@@ -3057,6 +3053,29 @@ doContent(XML_Parser parser,
     }
   }
   
+}
+
+
+
+
+
+static void
+freeBindings(XML_Parser parser, BINDING *bindings)
+{
+  while (bindings) {
+    BINDING *b = bindings;
+
+    
+
+
+    if (endNamespaceDeclHandler)
+        endNamespaceDeclHandler(handlerArg, b->prefix->name);
+
+    bindings = bindings->nextTagBinding;
+    b->nextTagBinding = freeBindingList;
+    freeBindingList = b;
+    b->prefix->binding = b->prevPrefixBinding;
+  }
 }
 
 
