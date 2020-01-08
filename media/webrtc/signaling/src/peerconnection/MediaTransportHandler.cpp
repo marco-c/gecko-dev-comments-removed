@@ -24,6 +24,9 @@
 #include "CSFLog.h"
 
 
+#include "rlogconnector.h"
+
+
 #include "signaling/src/sdp/SdpAttribute.h"
 
 #include "mozilla/Telemetry.h"
@@ -549,6 +552,51 @@ MediaTransportHandler::GetIceStats(UniquePtr<RTCStatsQuery>&& aQuery)
     }
   }
   return RTCStatsQueryPromise::CreateAndResolve(std::move(aQuery), __func__);
+}
+
+
+RefPtr<MediaTransportHandler::IceLogPromise>
+MediaTransportHandler::GetIceLog(const nsCString& aPattern)
+{
+  RLogConnector* logs = RLogConnector::GetInstance();
+  nsAutoPtr<std::deque<std::string>> result(new std::deque<std::string>);
+  
+  if (logs) {
+    logs->Filter(aPattern.get(), 0, result);
+  }
+  dom::Sequence<nsString> converted;
+  for (auto& line : *result) {
+    converted.AppendElement(NS_ConvertUTF8toUTF16(line.c_str()), fallible);
+  }
+  return IceLogPromise::CreateAndResolve(std::move(converted), __func__);
+}
+
+
+void
+MediaTransportHandler::ClearIceLog()
+{
+  RLogConnector* logs = RLogConnector::GetInstance();
+  if (logs) {
+    logs->Clear();
+  }
+}
+
+
+void
+MediaTransportHandler::EnterPrivateMode()
+{
+  RLogConnector::CreateInstance()->EnterPrivateMode();
+}
+
+
+void
+MediaTransportHandler::ExitPrivateMode()
+{
+  auto* log = RLogConnector::GetInstance();
+  MOZ_ASSERT(log);
+  if (log) {
+    log->ExitPrivateMode();
+  }
 }
 
 static void ToRTCIceCandidateStats(
