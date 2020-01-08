@@ -234,6 +234,12 @@ public:
 
 
 
+  void SetWriteOnly(nsIPrincipal* aExpandedReader);
+
+  
+
+
+
   void InvalidateCanvasContent(const mozilla::gfx::Rect* aDamageRect);
   
 
@@ -395,8 +401,15 @@ public:
   
   
   
-  bool                     mWriteOnly;
+  bool mWriteOnly;
 
+  
+  
+  RefPtr<nsIPrincipal> mExpandedReader;
+
+  
+  bool CallerCanRead(JSContext* aCx);
+  
   bool IsPrintCallbackDone();
 
   void HandlePrintCallback(nsPresContext::nsPresContextType aType);

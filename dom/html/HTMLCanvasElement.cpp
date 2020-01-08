@@ -671,8 +671,7 @@ HTMLCanvasElement::ToDataURL(JSContext* aCx, const nsAString& aType,
                              ErrorResult& aRv)
 {
   
-  if (mWriteOnly &&
-      !nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::all_urlsPermission)) {
+  if (mWriteOnly && !CallerCanRead(aCx)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
@@ -882,8 +881,7 @@ HTMLCanvasElement::ToBlob(JSContext* aCx,
                           ErrorResult& aRv)
 {
   
-  if (mWriteOnly &&
-      !nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::all_urlsPermission)) {
+  if (mWriteOnly && !CallerCanRead(aCx)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
@@ -1093,7 +1091,34 @@ HTMLCanvasElement::IsWriteOnly()
 void
 HTMLCanvasElement::SetWriteOnly()
 {
+  mExpandedReader = nullptr;
   mWriteOnly = true;
+}
+
+void
+HTMLCanvasElement::SetWriteOnly(nsIPrincipal* aExpandedReader)
+{
+  mExpandedReader = aExpandedReader;
+  mWriteOnly = true;
+}
+
+bool
+HTMLCanvasElement::CallerCanRead(JSContext* aCx)
+{
+  if (!mWriteOnly) {
+    return true;
+  }
+
+  nsIPrincipal* prin = nsContentUtils::SubjectPrincipal(aCx);
+
+  
+  
+  
+  if (mExpandedReader && prin->Subsumes(mExpandedReader)) {
+    return true;
+  }
+
+  return nsContentUtils::PrincipalHasPermission(prin, nsGkAtoms::all_urlsPermission);
 }
 
 void

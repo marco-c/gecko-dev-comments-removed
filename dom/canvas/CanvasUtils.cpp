@@ -233,8 +233,9 @@ DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
         return;
     }
 
-    if (aCanvasElement->IsWriteOnly())
+    if (aCanvasElement->IsWriteOnly() && !aCanvasElement->mExpandedReader) {
         return;
+    }
 
     
     if (forceWriteOnly) {
@@ -251,6 +252,25 @@ DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
     if (aCanvasElement->NodePrincipal()->Subsumes(aPrincipal)) {
         
         return;
+    }
+
+    if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+        
+
+        if (aCanvasElement->mExpandedReader &&
+            aCanvasElement->mExpandedReader->Subsumes(aPrincipal)) {
+            
+            return;
+        }
+
+        if (!aCanvasElement->mExpandedReader) {
+            
+            aCanvasElement->SetWriteOnly(aPrincipal);
+            return;
+        }
+
+        
+        
     }
 
     aCanvasElement->SetWriteOnly();

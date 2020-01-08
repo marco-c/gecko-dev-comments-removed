@@ -5439,13 +5439,7 @@ CanvasRenderingContext2D::GetImageData(JSContext* aCx, double aSx,
 
   
   
-  if (mCanvasElement && mCanvasElement->IsWriteOnly() &&
-      
-      
-      
-      
-      !nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::all_urlsPermission))
-  {
+  if (mCanvasElement && !mCanvasElement->CallerCanRead(aCx)) {
     
     aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
