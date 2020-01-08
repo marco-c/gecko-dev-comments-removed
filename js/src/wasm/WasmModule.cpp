@@ -254,11 +254,11 @@ Module::finishTier2(UniqueLinkDataTier linkData2, UniqueCodeTier tier2Arg, Modul
                 return false;
         }
 
-        HasGcTypes gcTypesEnabled = code().metadata().temporaryHasGcTypes;
+        HasGcTypes gcTypesConfigured = code().metadata().temporaryGcTypesConfigured;
         const CodeTier& tier2 = code().codeTier(Tier::Ion);
 
         Maybe<size_t> stub2Index;
-        if (!stubs2->createTier2(gcTypesEnabled, funcExportIndices, tier2, &stub2Index))
+        if (!stubs2->createTier2(gcTypesConfigured, funcExportIndices, tier2, &stub2Index))
             return false;
 
         
