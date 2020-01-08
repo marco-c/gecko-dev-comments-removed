@@ -179,7 +179,7 @@ const nullPrincipalTests = [{
   afterTest: `trapDidRun === false`,
 }, {
   
-  string: "[object Function]",
+  string: "function () {\n    [native code]\n}",
   isFunction: true,
   hasPreview: false,
   code: `
