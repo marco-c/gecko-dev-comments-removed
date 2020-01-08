@@ -295,9 +295,9 @@ window._gBrowser = {
     browser.loadURI = _loadURI.bind(null, browser);
 
     let uniqueId = this._generateUniquePanelID();
-    let notificationbox = this.getNotificationBox(browser);
-    notificationbox.id = uniqueId;
-    this.tabpanels.appendChild(notificationbox);
+    let panel = this.getPanel(browser);
+    panel.id = uniqueId;
+    this.tabpanels.appendChild(panel);
 
     let tab = this.tabs[0];
     tab.linkedPanel = uniqueId;
@@ -507,8 +507,14 @@ window._gBrowser = {
   async _createFindBar(aTab) {
     let findBar = document.createXULElement("findbar");
     let browser = this.getBrowserForTab(aTab);
-    let browserContainer = this.getBrowserContainer(browser);
-    browserContainer.appendChild(findBar);
+
+    
+    
+    let insertAfterElement = browser.parentNode;
+    if (insertAfterElement.nextElementSibling == StatusPanel.panel) {
+      insertAfterElement = StatusPanel.panel;
+    }
+    insertAfterElement.insertAdjacentElement("afterend", findBar);
 
     await new Promise(r => requestAnimationFrame(r));
     delete aTab._pendingFindBar;
@@ -529,9 +535,8 @@ window._gBrowser = {
   },
 
   _appendStatusPanel() {
-    let browser = this.selectedBrowser;
-    let browserContainer = this.getBrowserContainer(browser);
-    browserContainer.insertBefore(StatusPanel.panel, browser.parentNode.nextElementSibling);
+    this.selectedBrowser.parentNode.insertAdjacentElement("afterend",
+                                                          StatusPanel.panel);
   },
 
   _updateTabBarForPinnedTabs() {
@@ -640,16 +645,16 @@ window._gBrowser = {
     return this._tabForBrowser.get(aBrowser);
   },
 
-  getNotificationBox(aBrowser) {
-    return this.getSidebarContainer(aBrowser).parentNode;
-  },
-
-  getSidebarContainer(aBrowser) {
+  getPanel(aBrowser) {
     return this.getBrowserContainer(aBrowser).parentNode;
   },
 
   getBrowserContainer(aBrowser) {
     return (aBrowser || this.selectedBrowser).parentNode.parentNode;
+  },
+
+  getNotificationBox(aBrowser) {
+    return this.getBrowserContainer(aBrowser).firstElementChild;
   },
 
   getTabModalPromptBox(aBrowser) {
@@ -1735,7 +1740,7 @@ window._gBrowser = {
     let browser = this._getPreloadedBrowser();
 
     if (browser) {
-      browser.remove();
+      this.getPanel(browser).remove();
     }
   },
 
@@ -1786,8 +1791,8 @@ window._gBrowser = {
     let browser = this._createBrowser({ isPreloadBrowser: true, remoteType });
     this._preloadedBrowser = browser;
 
-    let notificationbox = this.getNotificationBox(browser);
-    this.tabpanels.appendChild(notificationbox);
+    let panel = this.getPanel(browser);
+    this.tabpanels.appendChild(panel);
 
     if (remoteType != E10SUtils.NOT_REMOTE) {
       
@@ -1909,11 +1914,8 @@ window._gBrowser = {
       b.setAttribute("name", name);
     }
 
-    
-    let stack = document.createXULElement("stack");
-    stack.className = "browserStack";
-    stack.appendChild(b);
-    stack.setAttribute("flex", "1");
+    let notificationbox = document.createXULElement("notificationbox");
+    notificationbox.setAttribute("notificationside", "top");
 
     
     
@@ -1921,21 +1923,20 @@ window._gBrowser = {
     
     
     
+    let stack = document.createXULElement("stack");
+    stack.className = "browserStack";
+    stack.appendChild(b);
+    stack.setAttribute("flex", "10000");
+
     let browserContainer = document.createXULElement("vbox");
     browserContainer.className = "browserContainer";
+    browserContainer.appendChild(notificationbox);
     browserContainer.appendChild(stack);
     browserContainer.setAttribute("flex", "10000");
 
     let browserSidebarContainer = document.createXULElement("hbox");
     browserSidebarContainer.className = "browserSidebarContainer";
     browserSidebarContainer.appendChild(browserContainer);
-    browserSidebarContainer.setAttribute("flex", "10000");
-
-    
-    let notificationbox = document.createXULElement("notificationbox");
-    notificationbox.setAttribute("flex", "1");
-    notificationbox.setAttribute("notificationside", "top");
-    notificationbox.appendChild(browserSidebarContainer);
 
     
     
@@ -2071,19 +2072,19 @@ window._gBrowser = {
     delete aTab._browserParams;
     delete aTab._cachedCurrentURI;
 
-    let notificationbox = this.getNotificationBox(browser);
+    let panel = this.getPanel(browser);
     let uniqueId = this._generateUniquePanelID();
-    notificationbox.id = uniqueId;
+    panel.id = uniqueId;
     aTab.linkedPanel = uniqueId;
 
     
-    if (!notificationbox.parentNode) {
+    if (!panel.parentNode) {
       
       
       
       
       
-      this.tabpanels.appendChild(notificationbox);
+      this.tabpanels.appendChild(panel);
     }
 
     
@@ -2190,7 +2191,7 @@ window._gBrowser = {
     }
 
     aBrowser.destroy();
-    this.getNotificationBox(aBrowser).remove();
+    this.getPanel(aBrowser).remove();
     tab.removeAttribute("linkedpanel");
 
     this._createLazyBrowser(tab);
@@ -2502,8 +2503,7 @@ window._gBrowser = {
       if (t.linkedBrowser) {
         this._tabFilters.delete(t);
         this._tabListeners.delete(t);
-        let notificationbox = this.getNotificationBox(t.linkedBrowser);
-        notificationbox.remove();
+        this.getPanel(t.linkedBrowser).remove();
       }
       throw e;
     }
@@ -2658,16 +2658,21 @@ window._gBrowser = {
   },
 
   getTabsToTheEndFrom(aTab) {
+    let tab;
+    if (aTab.multiselected) {
+      
+      
+      let selectedTabs = this.selectedTabs;
+      tab = selectedTabs[selectedTabs.length - 1];
+    } else {
+      tab = aTab;
+    }
+
     let tabsToEnd = [];
     let tabs = this.visibleTabs;
     for (let i = tabs.length - 1; i >= 0; --i) {
-      if (tabs[i] == aTab || tabs[i].pinned) {
+      if (tabs[i] == tab || tabs[i].pinned) {
         break;
-      }
-      
-      
-      if (aTab.multiselected && tabs[i].multiselected) {
-        continue;
       }
       tabsToEnd.push(tabs[i]);
     }
@@ -3095,7 +3100,7 @@ window._gBrowser = {
     
     
 
-    var panel = this.getNotificationBox(browser);
+    var panel = this.getPanel(browser);
 
     
     
@@ -5454,6 +5459,9 @@ var TabContextMenu = {
     
     document.getElementById("context_closeTab").hidden = multiselectionContext;
     document.getElementById("context_closeSelectedTabs").hidden = !multiselectionContext;
+
+    
+    document.getElementById("context_closeTabOptions").disabled = gBrowser.allTabsSelected();
 
     
     

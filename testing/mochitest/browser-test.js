@@ -917,12 +917,7 @@ Tester.prototype = {
             ChromeUtils.import("resource://gre/modules/BackgroundPageThumbs.jsm", {});
           BackgroundPageThumbs._destroy();
 
-          
-          if (gBrowser._preloadedBrowser) {
-            let browser = gBrowser._preloadedBrowser;
-            gBrowser._preloadedBrowser = null;
-            gBrowser.getNotificationBox(browser).remove();
-          }
+          gBrowser.removePreloadedBrowser();
         }
 
         
