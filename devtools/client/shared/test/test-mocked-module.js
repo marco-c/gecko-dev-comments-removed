@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+const methodToMock = function() {
+  return "Original value";
+};
+
+exports.methodToMock = methodToMock;
+exports.someProperty = "someProperty";
