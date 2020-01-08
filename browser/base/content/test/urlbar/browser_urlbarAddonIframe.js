@@ -1,6 +1,4 @@
 
-
-
 "use strict";
 
 
@@ -135,14 +133,13 @@ add_task(async function() {
   
   let newHeight = height + 100;
   await promiseUrlbarFunctionCall("setPanelHeight", newHeight);
-  
-  await TestUtils.waitForCondition(
-    () => Math.round(iframe.getBoundingClientRect().height) == newHeight,
-    "Wait for panel height change after setPanelHeight"
-  ).catch(ex => {
-    info("Last detected height: " + Math.round(iframe.getBoundingClientRect().height));
-    throw ex;
+  await new Promise(resolve => {
+    
+    
+    setTimeout(resolve, 1000);
   });
+  Assert.equal(iframe.getBoundingClientRect().height, newHeight,
+               "setPanelHeight");
 });
 
 function promiseIframeLoad() {
