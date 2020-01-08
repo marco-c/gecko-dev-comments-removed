@@ -427,7 +427,11 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
   
   
   if (startColIndex >= tableSize.mColumnCount) {
-    NormalizeTable(table);
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_FAILURE;
+    }
+    DebugOnly<nsresult> rv = NormalizeTable(*selection, *table);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to normalize the table");
   }
 
   RefPtr<Element> rowElement;
@@ -2418,7 +2422,8 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
 
 
     
-    NormalizeTable(table);
+    DebugOnly<nsresult> rv = NormalizeTable(*selection, *table);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to normalize the table");
   } else {
     
     rv = GetCellDataAt(table, startRowIndex, startColIndex,
@@ -2584,7 +2589,10 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
                     &actualRowSpan, &actualColSpan, &isSelected);
     
     
-    if (NS_FAILED(rv)) {
+    
+    
+    
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     if (!cell) {
@@ -2608,7 +2616,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
         GetCellDataAt(aTable, aRowIndex, colIndex, getter_AddRefs(cell),
                       &startRowIndex, &startColIndex, &rowSpan, &colSpan,
                       &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_FAILED(rv)) {
+      if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       
@@ -2616,7 +2624,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
           startRowIndex == aRowIndex &&
           startColIndex ==  colIndex ) {
         rv = SetRowSpan(cell, rowSpan-rowsReduced);
-        if (NS_FAILED(rv)) {
+        if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
@@ -2662,7 +2670,10 @@ HTMLEditor::FixBadColSpan(Element* aTable,
                     &actualRowSpan, &actualColSpan, &isSelected);
     
     
-    if (NS_FAILED(rv)) {
+    
+    
+    
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     if (!cell) {
@@ -2686,7 +2697,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
         GetCellDataAt(aTable, rowIndex, aColIndex, getter_AddRefs(cell),
                       &startRowIndex, &startColIndex, &rowSpan, &colSpan,
                       &actualRowSpan, &actualColSpan, &isSelected);
-      if (NS_FAILED(rv)) {
+      if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       
@@ -2694,7 +2705,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
           startColIndex == aColIndex &&
           startRowIndex ==  rowIndex) {
         rv = SetColSpan(cell, colSpan-colsReduced);
-        if (NS_FAILED(rv)) {
+        if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
@@ -2710,30 +2721,51 @@ HTMLEditor::FixBadColSpan(Element* aTable,
 }
 
 NS_IMETHODIMP
-HTMLEditor::NormalizeTable(Element* aTable)
+HTMLEditor::NormalizeTable(Element* aTableOrElementInTable)
 {
   RefPtr<Selection> selection = GetSelection();
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-
-  RefPtr<Element> table =
-    aTable ?
-      GetElementOrParentByTagNameInternal(*nsGkAtoms::table, *aTable) :
+  if (!aTableOrElementInTable) {
+    aTableOrElementInTable =
       GetElementOrParentByTagNameAtSelection(*selection, *nsGkAtoms::table);
-  if (NS_WARN_IF(!table)) {
-    
-    return NS_OK;
+    if (!aTableOrElementInTable) {
+      return NS_OK; 
+    }
+  }
+  nsresult rv = NormalizeTable(*selection, *aTableOrElementInTable);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::NormalizeTable(Selection& aSelection,
+                           Element& aTableOrElementInTable)
+{
+
+  RefPtr<Element> tableElement;
+  if (aTableOrElementInTable.NodeInfo()->NameAtom() == nsGkAtoms::table) {
+    tableElement = &aTableOrElementInTable;
+  } else {
+    tableElement =
+      GetElementOrParentByTagNameInternal(*nsGkAtoms::table,
+                                          aTableOrElementInTable);
+    if (!tableElement) {
+      return NS_OK; 
+    }
   }
 
   ErrorResult error;
-  TableSize tableSize(*this, *table, error);
+  TableSize tableSize(*this, *tableElement, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }
 
   
-  AutoSelectionRestorer selectionRestorer(selection, this);
+  AutoSelectionRestorer selectionRestorer(&aSelection, this);
 
   AutoPlaceholderBatch beginBatching(this);
   
@@ -2741,20 +2773,19 @@ HTMLEditor::NormalizeTable(Element* aTable)
                                       *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
-  RefPtr<Element> cell;
-  int32_t startRowIndex, startColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
-
+  
+  
+  
   
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
-    nsresult rv = FixBadRowSpan(table, rowIndex, tableSize.mRowCount);
+    nsresult rv = FixBadRowSpan(tableElement, rowIndex, tableSize.mRowCount);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   }
   
   for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount; colIndex++) {
-    nsresult rv = FixBadColSpan(table, colIndex, tableSize.mColumnCount);
+    nsresult rv = FixBadColSpan(tableElement, colIndex, tableSize.mColumnCount);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -2762,46 +2793,47 @@ HTMLEditor::NormalizeTable(Element* aTable)
 
   
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
-    RefPtr<Element> previousCellInRow;
+    RefPtr<Element> previousCellElementInRow;
     for (int32_t colIndex = 0; colIndex < tableSize.mColumnCount; colIndex++) {
+      int32_t startRowIndex = 0, startColIndex = 0;
+      int32_t rowSpan = 0, colSpan = 0;
+      int32_t actualRowSpan = 0, actualColSpan = 0;
+      bool isSelected;
+      RefPtr<Element> cellElement;
       nsresult rv =
-        GetCellDataAt(table, rowIndex, colIndex, getter_AddRefs(cell),
+        GetCellDataAt(tableElement, rowIndex, colIndex,
+                      getter_AddRefs(cellElement),
                       &startRowIndex, &startColIndex, &rowSpan, &colSpan,
                       &actualRowSpan, &actualColSpan, &isSelected);
       
       
-      if (NS_FAILED(rv)) {
+      if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      if (!cell) {
+      if (!cellElement) {
         
-#ifdef DEBUG
-        printf("NormalizeTable found missing cell at row=%d, col=%d\n",
-               rowIndex, colIndex);
-#endif
         
-        if (!previousCellInRow) {
+        if (NS_WARN_IF(!previousCellElementInRow)) {
           
-#ifdef DEBUG
-          printf("NormalizeTable found no cells in row=%d, col=%d\n",
-                 rowIndex, colIndex);
-#endif
           return NS_ERROR_FAILURE;
         }
 
         
-        rv = InsertCell(previousCellInRow, 1, 1, true, false,
-                        getter_AddRefs(cell));
-        NS_ENSURE_SUCCESS(rv, rv);
+        rv = InsertCell(previousCellElementInRow, 1, 1, true, false,
+                        getter_AddRefs(cellElement));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
 
         
-        if (cell) {
+        
+        if (cellElement) {
           startRowIndex = rowIndex;
         }
       }
       
       if (startRowIndex == rowIndex) {
-        previousCellInRow = cell;
+        previousCellElementInRow = cellElement;
       }
     }
   }

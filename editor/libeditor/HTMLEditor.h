@@ -1553,6 +1553,20 @@ protected:
 
 
 
+
+
+
+
+
+
+
+  nsresult NormalizeTable(Selection& aSelection,
+                          Element& aTableOrElementInTable);
+
+  
+
+
+
   nsresult SetSelectionAtDocumentStart(Selection* aSelection);
 
   static Element* GetEnclosingTable(nsINode* aNode);
