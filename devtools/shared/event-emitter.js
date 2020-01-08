@@ -167,14 +167,14 @@ class EventEmitter {
       
       const listenersForType = new Set(target[eventListeners].get(type));
 
+      const events = target[eventListeners];
+      const listeners = events.get(type);
+
       for (const listener of listenersForType) {
         
         if (!(eventListeners in target)) {
           break;
         }
-
-        const events = target[eventListeners];
-        const listeners = events.get(type);
 
         
         
