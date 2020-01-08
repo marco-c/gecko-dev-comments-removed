@@ -524,7 +524,6 @@ public:
     , flags(0)
     , collapsedAction(nsIEditor::eNext)
     , stripWrappers(nsIEditor::eStrip)
-    , bOrdered(false)
     , entireList(false)
     , bulletType(nullptr)
     , alignType(nullptr)
@@ -545,9 +544,6 @@ public:
   
   nsIEditor::EDirection collapsedAction;
   nsIEditor::EStripWrappers stripWrappers;
-
-  
-  bool bOrdered;
 
   
   bool entireList;
