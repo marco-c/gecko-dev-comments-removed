@@ -1190,9 +1190,13 @@ extern "C" {
 MOZ_EXPORT ProgressCounter
 RecordReplayInterface_NewTimeWarpTarget()
 {
+  if (AreThreadEventsDisallowed()) {
+    return 0;
+  }
+
   
   
-  recordreplay::RecordReplayAssert("NewTimeWarpTarget");
+  RecordReplayAssert("NewTimeWarpTarget");
 
   if (!gNavigation) {
     return 0;
