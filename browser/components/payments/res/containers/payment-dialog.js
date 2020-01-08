@@ -22,10 +22,6 @@ import "./shipping-option-picker.js";
 
 
 
-
-
-
-
 export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
@@ -418,6 +414,16 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     }
     this.setAttribute("complete-status", request.completeStatus);
     this._disabledOverlay.hidden = !state.changesPrevented;
+  }
+
+  static maybeCreateFieldErrorElement(container) {
+    let span = container.querySelector(".error-text");
+    if (!span) {
+      span = document.createElement("span");
+      span.className = "error-text";
+      container.appendChild(span);
+    }
+    return span;
   }
 }
 
