@@ -4,17 +4,14 @@
 
 package org.mozilla.gecko.telemetry;
 
-import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.v4.app.JobIntentService;
 import android.util.Log;
-import ch.boye.httpclientandroidlib.HttpHeaders;
-import ch.boye.httpclientandroidlib.HttpResponse;
-import ch.boye.httpclientandroidlib.client.ClientProtocolException;
-import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
-import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
+
 import org.mozilla.gecko.GeckoProfile;
-import org.mozilla.gecko.Telemetry;
+import org.mozilla.gecko.JobIdsConstants;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.restrictions.Restrictable;
 import org.mozilla.gecko.restrictions.Restrictions;
@@ -36,14 +33,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import ch.boye.httpclientandroidlib.HttpHeaders;
+import ch.boye.httpclientandroidlib.HttpResponse;
+import ch.boye.httpclientandroidlib.client.ClientProtocolException;
+import ch.boye.httpclientandroidlib.client.methods.HttpRequestBase;
+import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 
 
 
 
 
-public class TelemetryUploadService extends IntentService {
+
+public class TelemetryUploadService extends JobIntentService {
     private static final String LOGTAG = StringUtils.safeSubstring("Gecko" + TelemetryUploadService.class.getSimpleName(), 0, 23);
-    private static final String WORKER_THREAD_NAME = LOGTAG + "Worker";
 
     public static final String ACTION_UPLOAD = "upload";
     public static final String EXTRA_STORE = "store";
@@ -58,12 +60,8 @@ public class TelemetryUploadService extends IntentService {
         }
     }
 
-    public TelemetryUploadService() {
-        super(WORKER_THREAD_NAME);
-
-        
-        
-        setIntentRedelivery(false);
+    public static void enqueueWork(@NonNull final Context context, @NonNull final Intent workIntent) {
+        enqueueWork(context, TelemetryUploadService.class, JobIdsConstants.getIdForTelemetryUploadJob(), workIntent);
     }
 
     
@@ -71,7 +69,7 @@ public class TelemetryUploadService extends IntentService {
 
 
     @Override
-    public void onHandleIntent(final Intent intent) {
+    protected void onHandleWork(@NonNull Intent intent) {
         Log.d(LOGTAG, "Service started");
 
         if (!isReadyToUpload(this, intent)) {
@@ -88,8 +86,18 @@ public class TelemetryUploadService extends IntentService {
             
             
             Log.d(LOGTAG, "Clearing Intent queue due to connection failures");
+
+            
+            
             stopSelf();
         }
+    }
+
+    @Override
+    public boolean onStopCurrentWork() {
+        
+        
+        return false;
     }
 
     
