@@ -85,6 +85,7 @@ class ProviderUnifiedComplete {
     
     
     let params = ["enable-actions"];
+    params.push(`max-results:${queryContext.maxResults}`);
     if (queryContext.isPrivate) {
       params.push("private-window");
       if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {

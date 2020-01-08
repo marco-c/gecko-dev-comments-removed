@@ -45,6 +45,9 @@ const REGEXP_SINGLEWORD_HOST = new RegExp("^[a-z0-9-]+$", "i");
 const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 
 
+const REGEXP_MAX_RESULTS = /(?:^| )max-results:(\d+)/;
+
+
 const REGEXP_SPACES = /\s+/;
 
 
@@ -609,6 +612,12 @@ function Search(searchString, searchParam, autocompleteListener,
   this._inPrivateWindow = params.has("private-window");
   this._prohibitAutoFill = params.has("prohibit-autofill");
 
+  
+  let maxResults = searchParam.match(REGEXP_MAX_RESULTS);
+  this._maxResults = maxResults ? parseInt(maxResults[1])
+                                : UrlbarPrefs.get("maxRichResults");
+
+  
   let userContextId = searchParam.match(REGEXP_USER_CONTEXT_ID);
   this._userContextId = userContextId ?
                           parseInt(userContextId[1], 10) :
@@ -1024,13 +1033,13 @@ Search.prototype = {
 
     
     while (this._extraAdaptiveRows.length &&
-           this._currentMatchCount < UrlbarPrefs.get("maxRichResults")) {
+           this._currentMatchCount < this._maxResults) {
       this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
     }
 
     
     while (this._extraRemoteTabRows.length &&
-          this._currentMatchCount < UrlbarPrefs.get("maxRichResults")) {
+          this._currentMatchCount < this._maxResults) {
       this._addMatch(this._extraRemoteTabRows.shift());
     }
 
@@ -1044,7 +1053,7 @@ Search.prototype = {
     
     let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
                 this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
-    if (count < UrlbarPrefs.get("maxRichResults")) {
+    if (count < this._maxResults) {
       this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
@@ -1353,7 +1362,7 @@ Search.prototype = {
         searchString,
         this._inPrivateWindow,
         UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
-        UrlbarPrefs.get("maxRichResults") - UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
+        this._maxResults - UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
         this._userContextId
       );
     return this._suggestionsFetch.fetchCompletePromise.then(() => {
@@ -1844,7 +1853,7 @@ Search.prototype = {
     
     let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
                 this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
-    if (!this.pending || count >= UrlbarPrefs.get("maxRichResults")) {
+    if (!this.pending || count >= this._maxResults) {
       cancel();
     }
   },
@@ -2157,7 +2166,7 @@ Search.prototype = {
     
     
     
-    if (this._adaptiveCount < Math.ceil(UrlbarPrefs.get("maxRichResults") / 4)) {
+    if (this._adaptiveCount < Math.ceil(this._maxResults / 4)) {
       this._addFilteredQueryMatch(row);
     } else {
       this._extraAdaptiveRows.push(row);
@@ -2299,7 +2308,7 @@ Search.prototype = {
         userContextId: this._userContextId,
         
         
-        maxResults: UrlbarPrefs.get("maxRichResults"),
+        maxResults: this._maxResults,
       },
     ];
   },
@@ -2321,7 +2330,7 @@ Search.prototype = {
         
         searchString: this._keywordSubstitutedSearchString,
         userContextId: this._userContextId,
-        maxResults: UrlbarPrefs.get("maxRichResults"),
+        maxResults: this._maxResults,
       },
     ];
   },
@@ -2342,7 +2351,7 @@ Search.prototype = {
         matchBehavior: this._matchBehavior,
         searchBehavior: this._behavior,
         userContextId: this._userContextId,
-        maxResults: UrlbarPrefs.get("maxRichResults"),
+        maxResults: this._maxResults,
       },
     ];
   },
