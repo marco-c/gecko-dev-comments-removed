@@ -163,7 +163,7 @@ ConvertDetailsInit(JSContext* aCx,
   }
 
   
-  nsString id(EmptyString());
+  nsAutoString id;
   if (aDetails.mId.WasPassed()) {
     id = aDetails.mId.Value();
   }
@@ -177,6 +177,8 @@ ConvertDetailsInit(JSContext* aCx,
                                   displayItems,
                                   shippingOptions,
                                   modifiers,
+                                  EmptyString(), 
+                                  EmptyString(), 
                                   EmptyString(), 
                                   EmptyString()); 
   return NS_OK;
@@ -204,14 +206,28 @@ ConvertDetailsUpdate(JSContext* aCx,
   ConvertItem(aDetails.mTotal, total);
 
   
-  nsString error(EmptyString());
+  nsAutoString error;
   if (aDetails.mError.WasPassed()) {
     error = aDetails.mError.Value();
   }
 
-  nsString shippingAddressErrors(EmptyString());
+  nsAutoString shippingAddressErrors;
   if (!aDetails.mShippingAddressErrors.ToJSON(shippingAddressErrors)) {
     return NS_ERROR_FAILURE;
+  }
+
+  nsAutoString payerErrors;
+  if (!aDetails.mPayerErrors.ToJSON(payerErrors)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsAutoString paymentMethodErrors;
+  if (aDetails.mPaymentMethodErrors.WasPassed()) {
+    JS::RootedObject object(aCx, aDetails.mPaymentMethodErrors.Value());
+    nsresult rv = SerializeFromJSObject(aCx, object, paymentMethodErrors);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
   aIPCDetails = IPCPaymentDetails(EmptyString(), 
@@ -220,7 +236,9 @@ ConvertDetailsUpdate(JSContext* aCx,
                                   shippingOptions,
                                   modifiers,
                                   error,
-                                  shippingAddressErrors);
+                                  shippingAddressErrors,
+                                  payerErrors,
+                                  paymentMethodErrors);
   return NS_OK;
 }
 
@@ -550,18 +568,18 @@ PaymentRequestManager::RetryPayment(JSContext* aCx,
   nsAutoString requestId;
   aRequest->GetInternalId(requestId);
 
-  nsAutoString error(EmptyString());
+  nsAutoString error;
   if (aErrors.mError.WasPassed()) {
     error = aErrors.mError.Value();
   }
 
-  nsAutoString shippingAddressErrors(EmptyString());
+  nsAutoString shippingAddressErrors;
   aErrors.mShippingAddress.ToJSON(shippingAddressErrors);
 
-  nsAutoString payerErrors(EmptyString());
+  nsAutoString payerErrors;
   aErrors.mPayer.ToJSON(payerErrors);
 
-  nsAutoString paymentMethodErrors(EmptyString());
+  nsAutoString paymentMethodErrors;
   if (aErrors.mPaymentMethod.WasPassed()) {
     JS::RootedObject object(aCx, aErrors.mPaymentMethod.Value());
     nsresult rv = SerializeFromJSObject(aCx, object, paymentMethodErrors);
