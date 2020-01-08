@@ -1570,6 +1570,17 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  uint32_t referrerPolicy = nsIHttpChannel::REFERRER_POLICY_UNSET;
+  rv = reqCh->GetReferrerPolicy(&referrerPolicy);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIURI> requestReferrerURI;
+  rv = reqCh->GetReferrer(getter_AddRefs(requestReferrerURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = preCh->SetReferrerWithPolicy(requestReferrerURI, referrerPolicy);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   rv = preflightChannel->AsyncOpen2(preflightListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
