@@ -6790,6 +6790,11 @@ public:
                     gfxContext* aCtx,
                     LayerManager* aManager);
 
+  void PaintWithContentsPaintCallback(nsDisplayListBuilder* aBuilder,
+                                      gfxContext* aCtx,
+                                      const std::function<void()>& aPaintChildren);
+
+
   
 
 
