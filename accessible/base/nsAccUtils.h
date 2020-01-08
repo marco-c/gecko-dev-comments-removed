@@ -255,6 +255,12 @@ class nsAccUtils {
 
   static bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
                                           nsTArray<Attribute>* aAttributes);
+
+  
+
+
+
+  static bool IsARIALive(const Accessible* aAccessible);
 };
 
 }  

@@ -197,9 +197,9 @@ bool DocAccessibleChild::SendCaretMoveEvent(
 bool DocAccessibleChild::SendTextChangeEvent(
     const uint64_t& aID, const nsString& aStr, const int32_t& aStart,
     const uint32_t& aLen, const bool& aIsInsert, const bool& aFromUser,
-    const bool aDoSyncCheck) {
+    const bool aDoSync) {
   if (IsConstructedInParentProcess()) {
-    if (aDoSyncCheck && aStr.Contains(L'\xfffc')) {
+    if (aDoSync) {
       
       
       return PDocAccessibleChild::SendSyncTextChangeEvent(
