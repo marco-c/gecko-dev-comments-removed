@@ -909,8 +909,19 @@ static bool HasBoxAncestor(nsIFrame* aFrame) {
 
 
 
-static bool FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
-                                                     uint32_t aPositionMask) {
+
+
+
+
+
+
+
+
+
+
+static bool ContainingBlockChangeAffectsDescendants(
+    nsIFrame* aPossiblyChangingContainingBlock, nsIFrame* aFrame,
+    uint32_t aPositionMask, bool aIsContainingBlock) {
   MOZ_ASSERT(aPositionMask & (1 << NS_STYLE_POSITION_FIXED));
 
   for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone();
@@ -923,10 +934,27 @@ static bool FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
         NS_ASSERTION(!nsSVGUtils::IsInSVGTextSubtree(outOfFlow),
                      "SVG text frames can't be out of flow");
         if (aPositionMask & (1 << outOfFlow->StyleDisplay()->mPosition)) {
-          return true;
+          
+          
+          nsIFrame* parent = outOfFlow->GetParent()->FirstContinuation();
+          if (aIsContainingBlock) {
+            
+            
+            
+            if (parent != aPossiblyChangingContainingBlock &&
+                nsLayoutUtils::IsProperAncestorFrame(
+                    parent, aPossiblyChangingContainingBlock)) {
+              return true;
+            }
+          } else {
+            
+            
+            if (parent == aPossiblyChangingContainingBlock) {
+              return true;
+            }
+          }
         }
       }
-      uint32_t positionMask = aPositionMask;
       
       
       
@@ -935,7 +963,9 @@ static bool FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
       
       
       
-      if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
+      if (ContainingBlockChangeAffectsDescendants(
+              aPossiblyChangingContainingBlock, f, aPositionMask,
+              aIsContainingBlock)) {
         return true;
       }
     }
@@ -943,7 +973,7 @@ static bool FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
   return false;
 }
 
-static bool NeedToReframeForAddingOrRemovingTransform(nsIFrame* aFrame) {
+static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
   static_assert(
       0 <= NS_STYLE_POSITION_ABSOLUTE && NS_STYLE_POSITION_ABSOLUTE < 32,
       "Style constant out of range");
@@ -951,6 +981,7 @@ static bool NeedToReframeForAddingOrRemovingTransform(nsIFrame* aFrame) {
                 "Style constant out of range");
 
   uint32_t positionMask;
+  bool isContainingBlock;
   
   
   if (aFrame->IsAbsolutelyPositioned() || aFrame->IsRelativelyPositioned()) {
@@ -958,16 +989,25 @@ static bool NeedToReframeForAddingOrRemovingTransform(nsIFrame* aFrame) {
     
     
     
+    
     positionMask = 1 << NS_STYLE_POSITION_FIXED;
+    isContainingBlock = aFrame->IsFixedPosContainingBlock();
   } else {
     
     
     positionMask =
         (1 << NS_STYLE_POSITION_FIXED) | (1 << NS_STYLE_POSITION_ABSOLUTE);
+    isContainingBlock = aFrame->IsAbsPosContainingBlock() ||
+                        aFrame->IsFixedPosContainingBlock();
   }
+
+  MOZ_ASSERT(!aFrame->GetPrevContinuation(),
+             "We only process change hints on first continuations");
+
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
-    if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
+    if (ContainingBlockChangeAffectsDescendants(aFrame, f, positionMask,
+                                                isContainingBlock)) {
       return true;
     }
   }
@@ -1445,7 +1485,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
     if ((hint & nsChangeHint_UpdateContainingBlock) && frame &&
         !(hint & nsChangeHint_ReconstructFrame)) {
-      if (NeedToReframeForAddingOrRemovingTransform(frame) ||
+      if (NeedToReframeToUpdateContainingBlock(frame) ||
           frame->IsFieldSetFrame() ||
           frame->GetContentInsertionFrame() != frame) {
         
