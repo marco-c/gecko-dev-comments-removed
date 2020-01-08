@@ -180,7 +180,7 @@
 #endif
 
 
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
 #include "XRemoteClient.h"
 #include "nsIRemoteService.h"
 #include "nsProfileLock.h"
@@ -1659,7 +1659,7 @@ DumpVersion()
   printf("\n");
 }
 
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
 static RemoteResult
 ParseRemoteCommandLine(nsCString& program,
                        const char** profile,
@@ -3019,10 +3019,8 @@ public:
   XREMain() :
     mStartOffline(false)
     , mShuttingDown(false)
-#ifdef MOZ_ENABLE_XREMOTE
-    , mDisableRemote(false)
-#endif
 #if defined(MOZ_WIDGET_GTK)
+    , mDisableRemote(false)
     , mGdkDisplay(nullptr)
 #endif
   {};
@@ -3044,7 +3042,7 @@ public:
   nsCOMPtr<nsIFile> mProfD;
   nsCOMPtr<nsIFile> mProfLD;
   nsCOMPtr<nsIProfileLock> mProfileLock;
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
   nsCOMPtr<nsIRemoteService> mRemoteService;
   nsProfileLock mRemoteLock;
   nsCOMPtr<nsIFile> mRemoteLockDir;
@@ -3059,7 +3057,7 @@ public:
 
   bool mStartOffline;
   bool mShuttingDown;
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
   bool mDisableRemote;
 #endif
 
@@ -3911,7 +3909,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
 #endif 
 
-#if defined(MOZ_WIDGET_GTK) || defined(MOZ_ENABLE_XREMOTE)
+#if defined(MOZ_WIDGET_GTK)
   
 #define HAVE_DESKTOP_STARTUP_ID
   const char* desktopStartupIDEnv = PR_GetEnv("DESKTOP_STARTUP_ID");
@@ -4041,7 +4039,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
     mDisableRemote = true;
   }
 #endif
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
   
   bool newInstance;
   {
@@ -4724,7 +4722,7 @@ XREMain::XRE_mainRun()
   }
 
   if (!mShuttingDown) {
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
     
     
     if (!mDisableRemote)
@@ -4941,7 +4939,7 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
   }
 
   if (!mShuttingDown) {
-#ifdef MOZ_ENABLE_XREMOTE
+#if defined(MOZ_WIDGET_GTK)
     
     if (mRemoteService) {
       mRemoteService->Shutdown();
