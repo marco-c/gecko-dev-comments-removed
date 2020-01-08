@@ -1668,10 +1668,45 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
             free(elements);
             break;
         }
+
+        
+        case nsXPTType::T_JSVAL:
+            ((JS::Value*)aValue)->setUndefined();
+            break;
     }
 
     
     if (aType.HasPointerRepr()) {
         *(void**)aValue = nullptr;
+    }
+}
+
+
+
+
+
+void
+xpc::InitializeValue(const nsXPTType& aType, void* aValue)
+{
+    switch (aType.Tag()) {
+        
+        case nsXPTType::T_JSVAL:
+            new (aValue) JS::Value();
+            MOZ_ASSERT(reinterpret_cast<JS::Value*>(aValue)->isUndefined());
+            break;
+
+        case nsXPTType::T_ASTRING:
+        case nsXPTType::T_DOMSTRING:
+            new (aValue) nsString();
+            break;
+        case nsXPTType::T_CSTRING:
+        case nsXPTType::T_UTF8STRING:
+            new (aValue) nsCString();
+            break;
+
+        
+        default:
+            memset(aValue, 0, aType.Stride());
+            break;
     }
 }
