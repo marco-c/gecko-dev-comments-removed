@@ -12,12 +12,15 @@ Services.scriptloader.loadSubScript(
 
 var { DebuggerServer } = require("devtools/server/main");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
-
 var { Toolbox } = require("devtools/client/framework/toolbox");
 
 const FRAME_SCRIPT_URL = getRootDirectory(gTestPath) + "code_frame-script.js";
 
 var nextId = 0;
+
+
+
+
 
 function getDeferredPromise() {
   
