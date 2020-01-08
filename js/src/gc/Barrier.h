@@ -303,14 +303,16 @@ struct InternalBarrierMethods<Value>
             
             
             
-            if ((prev.isObject() || prev.isString()) && prev.toGCThing()->storeBuffer())
+            if ((prev.isObject() || prev.isString()) && prev.toGCThing()->storeBuffer()) {
                 return;
+            }
             sb->putValue(vp);
             return;
         }
         
-        if ((prev.isObject() || prev.isString()) && (sb = prev.toGCThing()->storeBuffer()))
+        if ((prev.isObject() || prev.isString()) && (sb = prev.toGCThing()->storeBuffer())) {
             sb->unputValue(vp);
+        }
     }
 
     static void readBarrier(const Value& v) {
@@ -647,8 +649,9 @@ class ReadBarriered : public ReadBarrieredBase<T>,
     }
 
     const T& get() const {
-        if (InternalBarrierMethods<T>::isMarkable(this->value))
+        if (InternalBarrierMethods<T>::isMarkable(this->value)) {
             this->read();
+        }
         return this->value;
     }
 
@@ -721,8 +724,9 @@ class HeapSlot : public WriteBarrieredBase<Value>
 #endif
         if (this->value.isObject() || this->value.isString()) {
             gc::Cell* cell = this->value.toGCThing();
-            if (cell->storeBuffer())
+            if (cell->storeBuffer()) {
                 cell->storeBuffer()->putSlot(owner, kind, slot, 1);
+            }
         }
     }
 };

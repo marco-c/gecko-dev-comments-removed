@@ -40,8 +40,9 @@ IsMarkedBlack(JSObject* obj)
 bool
 HeapSlot::preconditionForSet(NativeObject* owner, Kind kind, uint32_t slot) const
 {
-    if (kind == Slot)
+    if (kind == Slot) {
         return &owner->getSlotRef(slot) == this;
+    }
 
     uint32_t numShifted = owner->getElementsHeader()->numShiftedElements();
     MOZ_ASSERT(slot >= numShifted);
@@ -138,8 +139,9 @@ template <typename T>
  bool
 MovableCellHasher<T>::hasHash(const Lookup& l)
 {
-    if (!l)
+    if (!l) {
         return true;
+    }
 
     return l->zoneFromAnyThread()->hasUniqueId(l);
 }
@@ -148,8 +150,9 @@ template <typename T>
  bool
 MovableCellHasher<T>::ensureHash(const Lookup& l)
 {
-    if (!l)
+    if (!l) {
         return true;
+    }
 
     uint64_t unusedId;
     return l->zoneFromAnyThread()->getOrCreateUniqueId(l, &unusedId);
@@ -159,8 +162,9 @@ template <typename T>
  HashNumber
 MovableCellHasher<T>::hash(const Lookup& l)
 {
-    if (!l)
+    if (!l) {
         return 0;
+    }
 
     
     
@@ -178,10 +182,12 @@ template <typename T>
 MovableCellHasher<T>::match(const Key& k, const Lookup& l)
 {
     
-    if (!k)
+    if (!k) {
         return !l;
-    if (!l)
+    }
+    if (!l) {
         return false;
+    }
 
     MOZ_ASSERT(k);
     MOZ_ASSERT(l);
@@ -189,8 +195,9 @@ MovableCellHasher<T>::match(const Key& k, const Lookup& l)
                l->zoneFromAnyThread()->isSelfHostingZone());
 
     Zone* zone = k->zoneFromAnyThread();
-    if (zone != l->zoneFromAnyThread())
+    if (zone != l->zoneFromAnyThread()) {
         return false;
+    }
 
 #ifdef DEBUG
     
