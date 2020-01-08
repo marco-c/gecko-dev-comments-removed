@@ -3895,13 +3895,35 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
 
         msgvar, stmts = self.makeMessage(md, errfnSendCtor)
         sendok, sendstmts = self.sendAsync(md, msgvar)
+
+        warnif = StmtIf(ExprNot(sendok))
+        warnif.addifstmt(_printWarningMessage('Error sending constructor'))
+
         method.addstmts(
+            
             stmts
             + self.genVerifyMessage(md.decl.type.verify, md.params,
                                     errfnSendCtor, ExprVar('msg__'))
+
+            
+            + [_abortIfFalse(ExprCall(ExprVar('IPCOpen')),
+                             "Cannot send constructor after ActorDestroy")]
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
             + sendstmts
-            + self.failCtorIf(md, ExprNot(sendok))
-            + [StmtReturn(actor.var())])
+
+            
+            
+            + [warnif,
+               StmtReturn(actor.var())])
 
         lbl = CaseLabel(md.pqReplyId())
         case = StmtBlock()
