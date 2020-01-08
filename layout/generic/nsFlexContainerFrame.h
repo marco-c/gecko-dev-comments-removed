@@ -232,6 +232,11 @@ public:
   static bool IsUsedFlexBasisContent(const nsStyleCoord* aFlexBasis,
                                      const nsStyleCoord* aMainSize);
 
+  
+
+
+  static void MarkCachedFlexMeasurementsDirty(nsIFrame* aItemFrame);
+
 protected:
   
   explicit nsFlexContainerFrame(ComputedStyle* aStyle)
