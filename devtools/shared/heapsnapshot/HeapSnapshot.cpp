@@ -1449,7 +1449,7 @@ HeapSnapshot::CreateUniqueCoreDumpFile(ErrorResult& rv,
     return nullptr;
 
   auto ms = msSinceProcessCreation(now);
-  rv = file->AppendNative(nsPrintfCString("%lu.fxsnapshot", ms));
+  rv = file->AppendNative(nsPrintfCString("%lu.fxsnapshot.gz", ms));
   if (NS_WARN_IF(rv.Failed()))
     return nullptr;
 
@@ -1464,7 +1464,7 @@ HeapSnapshot::CreateUniqueCoreDumpFile(ErrorResult& rv,
   
   
   outSnapshotId.Assign(Substring(outFilePath, tempPath.Length() + 1,
-                                 outFilePath.Length() - tempPath.Length() - sizeof(".fxsnapshot")));
+                                 outFilePath.Length() - tempPath.Length() - sizeof(".fxsnapshot.gz")));
 
   return file.forget();
 }
