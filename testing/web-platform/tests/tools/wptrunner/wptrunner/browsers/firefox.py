@@ -251,7 +251,7 @@ class FirefoxBrowser(Browser):
         self.profile.set_preferences({
             "marionette.port": self.marionette_port,
             "network.dns.localDomains": ",".join(self.config.domains_set),
-
+            "dom.file.createInChild": True,
             
             "network.proxy.type": 0,
             "places.history.enabled": False,
