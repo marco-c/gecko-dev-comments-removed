@@ -172,7 +172,9 @@ protected:
   nsresult SetHrefWithContext(JSContext* cx, const nsAString& aHref,
                               bool aReplace);
 
-  nsresult GetSourceBaseURL(JSContext* cx, nsIURI** sourceURL);
+  
+  
+  already_AddRefed<nsIURI> GetSourceBaseURL();
   nsresult CheckURL(nsIURI *url, nsDocShellLoadInfo** aLoadInfo);
   bool CallerSubsumes(nsIPrincipal* aSubjectPrincipal);
 
