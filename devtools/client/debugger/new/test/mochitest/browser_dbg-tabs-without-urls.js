@@ -1,10 +1,6 @@
 
 
 
-function countTabs(dbg) {
-  return findElement(dbg, "sourceTabs").children.length;
-}
-
 
 
 add_task(async function() {

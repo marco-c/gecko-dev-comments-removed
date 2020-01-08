@@ -3,10 +3,6 @@
 
 
 
-function countTabs(dbg) {
-  return findElement(dbg, "sourceTabs").children.length;
-}
-
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
 
