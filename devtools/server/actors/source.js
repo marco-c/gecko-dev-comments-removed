@@ -402,16 +402,15 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       let principal, cacheKey;
       
       if (!isWorker && win instanceof Ci.nsIDOMWindow) {
-        const webNav = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIWebNavigation);
-        const channel = webNav.currentDocumentChannel;
+        const docShell = win.docShell;
+        const channel = docShell.currentDocumentChannel;
         principal = channel.loadInfo.loadingPrincipal;
 
         
         
         if (loadFromCache &&
-          webNav.currentDocumentChannel instanceof Ci.nsICacheInfoChannel) {
-          cacheKey = webNav.currentDocumentChannel.cacheKey;
+          docShell.currentDocumentChannel instanceof Ci.nsICacheInfoChannel) {
+          cacheKey = docShell.currentDocumentChannel.cacheKey;
         }
       }
 

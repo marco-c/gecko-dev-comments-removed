@@ -1922,9 +1922,7 @@ WebConsoleActor.prototype =
   chromeWindow: function() {
     let window = null;
     try {
-      window = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
-             .getInterface(Ci.nsIWebNavigation).QueryInterface(Ci.nsIDocShell)
-             .chromeEventHandler.ownerGlobal;
+      window = this.window.docShell.chromeEventHandler.ownerGlobal;
     } catch (ex) {
       
       
