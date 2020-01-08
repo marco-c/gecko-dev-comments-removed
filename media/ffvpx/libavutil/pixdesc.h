@@ -155,6 +155,14 @@ typedef struct AVPixFmtDescriptor {
 
 
 
+
+
+
+
+
+
+
+
 #define AV_PIX_FMT_FLAG_PSEUDOPAL    (1 << 6)
 
 
@@ -220,11 +228,6 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_next(const AVPixFmtDescriptor *prev);
 
 
 enum AVPixelFormat av_pix_fmt_desc_get_id(const AVPixFmtDescriptor *desc);
-
-
-
-
-
 
 
 
