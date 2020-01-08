@@ -1216,12 +1216,13 @@ InitFromBailout(JSContext* cx, size_t frameNo,
                 
                 
                 
-                
-                
-                
                 jsbytecode* throwPC = script->offsetToPC(iter.pcOffset());
                 builder.setResumePC(throwPC);
-                nativeCodeForPC = baselineScript->nativeCodeForPC(script, throwPC);
+
+                
+                
+                PCMappingSlotInfo unused;
+                nativeCodeForPC = baselineScript->nativeCodeForPC(script, throwPC, &unused);
             } else {
                 nativeCodeForPC = baselineScript->nativeCodeForPC(script, pc, &slotInfo);
             }
