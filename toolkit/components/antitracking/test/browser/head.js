@@ -12,10 +12,6 @@ const TEST_3RD_PARTY_PAGE_WO = TEST_3RD_PARTY_DOMAIN + TEST_PATH + "3rdPartyWO.h
 const TEST_3RD_PARTY_PAGE_UI = TEST_3RD_PARTY_DOMAIN + TEST_PATH + "3rdPartyUI.html";
 const TEST_3RD_PARTY_PAGE_WITH_SVG = TEST_3RD_PARTY_DOMAIN + TEST_PATH + "3rdPartySVG.html";
 
-const BEHAVIOR_ACCEPT         = Ci.nsICookieService.BEHAVIOR_ACCEPT;
-const BEHAVIOR_REJECT_FOREIGN = Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
-const BEHAVIOR_REJECT_TRACKER = Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER;
-
 var gFeatures = undefined;
 
 let {UrlClassifierTestUtils} = ChromeUtils.import("resource://testing-common/UrlClassifierTestUtils.jsm", {});
@@ -32,10 +28,11 @@ this.AntiTracking = {
       if (typeof callbackNonTracking == "object") {
         callbackNonTracking = callbackNonTracking.callback;
         runExtraTests = callbackNonTracking.runExtraTests;
-        if ("cookieBehavior" in callbackNonTracking) {
-          options.cookieBehavior = callbackNonTracking.cookieBehavior;
+        if ("blockingByCookieBehavior" in callbackNonTracking) {
+          options.blockingByCookieBehavior =
+            callbackNonTracking.blockingByCookieBehavior;
         } else {
-          options.cookieBehavior = BEHAVIOR_ACCEPT;
+          options.blockingByCookieBehavior = false;
         }
         if ("blockingByContentBlocking" in callbackNonTracking) {
           options.blockingByContentBlocking =
@@ -59,32 +56,19 @@ this.AntiTracking = {
         
         
         
-        this._createTask(name, BEHAVIOR_ACCEPT, true, false, callbackNonTracking);
+        this._createTask(name, false, true, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask(name, BEHAVIOR_REJECT_FOREIGN, false, false, callbackNonTracking);
+        this._createTask(name, true, false, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask(name, BEHAVIOR_REJECT_TRACKER, false, false, callbackNonTracking);
+        this._createTask(name, false, false, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask(name, BEHAVIOR_REJECT_FOREIGN, false, true, callbackNonTracking);
-        this._createCleanupTask(cleanupFunction);
-
-        this._createTask(name, BEHAVIOR_REJECT_TRACKER, false, true, callbackNonTracking);
-        this._createCleanupTask(cleanupFunction);
-
-        this._createTask(name, BEHAVIOR_ACCEPT, false, false, callbackNonTracking);
-        this._createCleanupTask(cleanupFunction);
-
-        
-        this._createTask(name, BEHAVIOR_REJECT_FOREIGN, true, true, callbackNonTracking);
-        this._createCleanupTask(cleanupFunction);
-
-        this._createTask(name, BEHAVIOR_REJECT_TRACKER, true, true, callbackNonTracking);
+        this._createTask(name, true, true, true, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
       } else {
-        this._createTask(name, options.cookieBehavior,
+        this._createTask(name, options.blockingByCookieBehavior,
                          options.blockingByContentBlocking,
                          options.blockingByAllowList,
                          callbackNonTracking);
@@ -107,14 +91,14 @@ this.AntiTracking = {
     }
   },
 
-  async _setupTest(cookieBehavior, blockingByContentBlocking, extraPrefs) {
+  async _setupTest(blockingByCookieBehavior, blockingByContentBlocking, extraPrefs) {
     await SpecialPowers.flushPrefEnv();
     await SpecialPowers.pushPrefEnv({"set": [
       ["browser.contentblocking.enabled", blockingByContentBlocking],
-      ["network.cookie.cookieBehavior", cookieBehavior],
+      ["network.cookie.cookieBehavior", blockingByCookieBehavior ? Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER : Ci.nsICookieService.BEHAVIOR_ACCEPT],
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
-      ["privacy.trackingprotection.annotate_channels", cookieBehavior != BEHAVIOR_ACCEPT],
+      ["privacy.trackingprotection.annotate_channels", blockingByCookieBehavior],
       [ContentBlocking.prefIntroCount, ContentBlocking.MAX_INTROS],
     ]});
 
@@ -125,14 +109,14 @@ this.AntiTracking = {
     await UrlClassifierTestUtils.addTestTrackers();
   },
 
-  _createTask(name, cookieBehavior, blockingByContentBlocking,
+  _createTask(name, blockingByCookieBehavior, blockingByContentBlocking,
               allowList, callback, extraPrefs) {
     add_task(async function() {
-      info("Starting " + (cookieBehavior != BEHAVIOR_ACCEPT ? "blocking" : "non-blocking") + " cookieBehavior (" + cookieBehavior + ") and " +
+      info("Starting " + (blockingByCookieBehavior ? "blocking" : "non-blocking") + " cookieBehavior and " +
                          (blockingByContentBlocking ? "blocking" : "non-blocking") + " contentBlocking with" +
                          (allowList ? "" : "out") + " allow list test " + name);
 
-      await AntiTracking._setupTest(cookieBehavior, blockingByContentBlocking, extraPrefs);
+      await AntiTracking._setupTest(blockingByCookieBehavior, blockingByContentBlocking, extraPrefs);
 
       info("Creating a new tab");
       let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
@@ -211,7 +195,7 @@ this.AntiTracking = {
   _createWindowOpenTask(name, blockingCallback, nonBlockingCallback, extraPrefs) {
     add_task(async function() {
       info("Starting window-open test " + name);
-      await AntiTracking._setupTest(BEHAVIOR_REJECT_TRACKER, true, extraPrefs);
+      await AntiTracking._setupTest(true, true, extraPrefs);
 
       info("Creating a new tab");
       let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
@@ -272,7 +256,7 @@ this.AntiTracking = {
   _createUserInteractionTask(name, blockingCallback, nonBlockingCallback, extraPrefs) {
     add_task(async function() {
       info("Starting user-interaction test " + name);
-      await AntiTracking._setupTest(BEHAVIOR_REJECT_TRACKER, true, extraPrefs);
+      await AntiTracking._setupTest(true, true, extraPrefs);
 
       info("Creating a new tab");
       let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);

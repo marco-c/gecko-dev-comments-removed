@@ -161,10 +161,7 @@ CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel)
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
-    
-    
-    
-    if (isForeign &&
+    if (isForeign && isTrackingResource &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 uri)) {
       storageAccessGranted = true;
