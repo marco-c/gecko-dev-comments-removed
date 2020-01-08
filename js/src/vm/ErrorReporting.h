@@ -12,6 +12,7 @@
 #include <stdarg.h>
 
 #include "jsapi.h" 
+#include "jsfriendapi.h" 
 
 #include "js/UniquePtr.h" 
 #include "js/Utility.h" 
@@ -66,6 +67,18 @@ class CompileError : public JSErrorReport
 {
   public:
     void throwError(JSContext* cx);
+};
+
+class MOZ_STACK_CLASS ReportExceptionClosure final
+  : public ScriptEnvironmentPreparer::Closure
+{
+    JS::HandleValue exn_;
+
+  public:
+    explicit ReportExceptionClosure(JS::HandleValue exn)
+      : exn_(exn) { }
+
+    bool operator()(JSContext* cx) override;
 };
 
 

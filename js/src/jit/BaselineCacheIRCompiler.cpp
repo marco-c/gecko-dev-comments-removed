@@ -467,7 +467,7 @@ BaselineCacheIRCompiler::emitGuardXrayExpandoShapeAndDefaultProto()
 
         
         masm.loadPtr(Address(scratch, ProxyObject::offsetOfReservedSlots()), scratch);
-        masm.unboxObject(Address(scratch, detail::ProxyReservedSlots::offsetOfPrivateSlot()), scratch);
+        masm.unboxObject(Address(scratch, js::detail::ProxyReservedSlots::offsetOfPrivateSlot()), scratch);
 
         masm.loadPtr(shapeWrapperAddress, scratch2.ref());
         LoadShapeWrapperContents(masm, scratch2.ref(), scratch2.ref(), failure->label());
@@ -2047,7 +2047,7 @@ BaselineCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration()
         return false;
 
     masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-    Address expandoAddr(scratch, detail::ProxyReservedSlots::offsetOfPrivateSlot());
+    Address expandoAddr(scratch, js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
 
     
     
