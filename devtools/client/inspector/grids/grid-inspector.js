@@ -248,9 +248,15 @@ class GridInspector {
     }
 
     if (!gridFronts.length) {
-      this.store.dispatch(updateGrids([]));
-      this.inspector.emit("grid-panel-updated");
-      return;
+      try {
+        this.store.dispatch(updateGrids([]));
+        this.inspector.emit("grid-panel-updated");
+        return;
+      } catch (e) {
+        
+        
+        return;
+      }
     }
 
     const currentUrl = this.inspector.target.url;

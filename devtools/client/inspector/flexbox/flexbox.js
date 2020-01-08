@@ -327,7 +327,12 @@ class FlexboxInspector {
     
     
     if (!flexboxFront) {
-      this.store.dispatch(clearFlexbox());
+      try {
+        this.store.dispatch(clearFlexbox());
+      } catch (e) {
+        
+        
+      }
       return;
     }
 
