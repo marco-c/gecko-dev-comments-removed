@@ -69,7 +69,6 @@
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsISSLStatus.h"
-#include "nsISSLStatusProvider.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIWebProgressListener.h"
 #include "LoadContextInfo.h"
@@ -1897,10 +1896,10 @@ nsHttpChannel::ProcessSecurityHeaders()
       NS_UsePrivateBrowsing(this) ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
 
     
-    nsCOMPtr<nsISSLStatusProvider> sslprov = do_QueryInterface(mSecurityInfo);
-    NS_ENSURE_TRUE(sslprov, NS_ERROR_FAILURE);
+    nsCOMPtr<nsITransportSecurityInfo> transSecInfo = do_QueryInterface(mSecurityInfo);
+    NS_ENSURE_TRUE(transSecInfo, NS_ERROR_FAILURE);
     nsCOMPtr<nsISSLStatus> sslStatus;
-    rv = sslprov->GetSSLStatus(getter_AddRefs(sslStatus));
+    rv = transSecInfo->GetSSLStatus(getter_AddRefs(sslStatus));
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_TRUE(sslStatus, NS_ERROR_FAILURE);
 
@@ -2031,17 +2030,15 @@ nsHttpChannel::ProcessSSLInformation()
         !IsHTTPS() || mPrivateBrowsing)
         return;
 
-    nsCOMPtr<nsISSLStatusProvider> statusProvider =
+    nsCOMPtr<nsITransportSecurityInfo> securityInfo =
         do_QueryInterface(mSecurityInfo);
-    if (!statusProvider)
+    if (!securityInfo)
         return;
     nsCOMPtr<nsISSLStatus> sslstat;
-    statusProvider->GetSSLStatus(getter_AddRefs(sslstat));
+    securityInfo->GetSSLStatus(getter_AddRefs(sslstat));
     if (!sslstat)
         return;
 
-    nsCOMPtr<nsITransportSecurityInfo> securityInfo =
-        do_QueryInterface(mSecurityInfo);
     uint32_t state;
     if (securityInfo &&
         NS_SUCCEEDED(securityInfo->GetSecurityState(&state)) &&
