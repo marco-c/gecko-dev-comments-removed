@@ -44,11 +44,11 @@ struct StreamChunkLocation
   
   uint32_t mDecompressedSize;
 
-  inline bool operator == (const StreamChunkLocation& aOther) const {
-    return mOffset == aOther.mOffset
-        && mCompressedSize == aOther.mCompressedSize
-        && mDecompressedSize == aOther.mDecompressedSize;
-  }
+  
+  uint32_t mHash;
+
+  
+  uint64_t mStreamPos;
 };
 
 enum class StreamName
@@ -282,7 +282,7 @@ public:
 private:
   StreamChunkLocation WriteChunk(const char* aStart,
                                  size_t aCompressedSize, size_t aDecompressedSize,
-                                 bool aTakeLock);
+                                 uint64_t aStreamPos, bool aTakeLock);
   void ReadChunk(char* aDest, const StreamChunkLocation& aChunk);
 };
 
