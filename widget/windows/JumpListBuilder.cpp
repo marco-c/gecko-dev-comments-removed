@@ -229,6 +229,8 @@ NS_IMETHODIMP JumpListBuilder::InitListBuild(JSContext* aCx,
 
 void JumpListBuilder::DoInitListBuild(RefPtr<Promise>&& aPromise)
 {
+  
+  
   mscom::STARegion sta;
   MOZ_ASSERT(sta.IsValid());
 
@@ -515,6 +517,8 @@ NS_IMETHODIMP JumpListBuilder::CommitListBuild(nsIJumpListCommittedCallback* aCa
 
 void JumpListBuilder::DoCommitListBuild(RefPtr<detail::DoneCommitListBuildCallback> aCallback)
 {
+  
+  
   mscom::STARegion sta;
   MOZ_ASSERT(sta.IsValid());
 
