@@ -644,9 +644,19 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
                                                 bool success, ResumeMode resumeMode,
                                                 MutableHandleValue vp);
 
-    bool processResumptionValue(mozilla::Maybe<AutoRealm>& ar, AbstractFramePtr frame,
-                                const mozilla::Maybe<HandleValue>& maybeThis, HandleValue rval,
-                                ResumeMode& resumeMode, MutableHandleValue vp);
+    
+
+
+
+
+
+
+    bool processResumptionValueNoUncaughtExceptionHook(mozilla::Maybe<AutoRealm>& ar,
+                                                       AbstractFramePtr frame,
+                                                       const mozilla::Maybe<HandleValue>& maybeThis,
+                                                       HandleValue rval,
+                                                       ResumeMode& resumeMode,
+                                                       MutableHandleValue vp);
 
     GlobalObject* unwrapDebuggeeArgument(JSContext* cx, const Value& v);
 
