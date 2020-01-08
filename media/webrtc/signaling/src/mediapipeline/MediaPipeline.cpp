@@ -2000,7 +2000,7 @@ private:
 
   void NotifyPullImpl(StreamTime aDesiredTime)
   {
-    TRACE();
+    TRACE_AUDIO_CALLBACK_COMMENT("Track %i", mTrackId);
     uint32_t samplesPer10ms = mRate / 100;
 
     
@@ -2179,6 +2179,7 @@ public:
   
   void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) override
   {
+    TRACE_AUDIO_CALLBACK_COMMENT("Track %i", mTrackId);
     MutexAutoLock lock(mMutex);
 
     RefPtr<Image> image = mImage;
