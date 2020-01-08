@@ -10,7 +10,7 @@ use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
 use gpu_types::{ImageSource, UvRectKind};
 use internal_types::{CacheTextureId, LayerIndex, TextureUpdateList, TextureUpdateSource};
-use internal_types::{RenderTargetInfo, TextureSource, TextureUpdate, TextureUpdateOp};
+use internal_types::{TextureSource, TextureCacheAllocInfo, TextureCacheUpdate};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use render_backend::FrameId;
 use resource_cache::CacheItem;
@@ -33,9 +33,7 @@ enum EntryKind {
         
         origin: DeviceUintPoint,
         
-        layer_index: u16,
-        
-        region_index: u16,
+        layer_index: usize,
     },
 }
 
@@ -191,15 +189,99 @@ impl EvictionNotice {
     }
 }
 
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TextureCache {
-    
-    
+struct SharedTextures {
     array_rgba8_nearest: TextureArray,
     array_a8_linear: TextureArray,
     array_a16_linear: TextureArray,
     array_rgba8_linear: TextureArray,
+}
+
+impl SharedTextures {
+    
+    fn new() -> Self {
+        Self {
+            
+            
+            
+            array_a8_linear: TextureArray::new(
+                ImageFormat::R8,
+                TextureFilter::Linear,
+                4,
+            ),
+            
+            
+            array_a16_linear: TextureArray::new(
+                ImageFormat::R16,
+                TextureFilter::Linear,
+                4,
+            ),
+            
+            array_rgba8_linear: TextureArray::new(
+                ImageFormat::BGRA8,
+                TextureFilter::Linear,
+                16 * 4,
+            ),
+            
+            
+            
+            
+            
+            
+            
+            array_rgba8_nearest: TextureArray::new(
+                ImageFormat::BGRA8,
+                TextureFilter::Nearest,
+                4,
+            ),
+        }
+    }
+
+    
+    fn clear(&mut self, updates: &mut TextureUpdateList) {
+        self.array_a8_linear.clear(updates);
+        self.array_a16_linear.clear(updates);
+        self.array_rgba8_linear.clear(updates);
+        self.array_rgba8_nearest.clear(updates);
+    }
+
+    
+    fn select(&mut self, format: ImageFormat, filter: TextureFilter) -> &mut TextureArray {
+        match (format, filter) {
+            (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
+            (ImageFormat::R16, TextureFilter::Linear) => &mut self.array_a16_linear,
+            (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
+            (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
+            (_, _) => unreachable!(),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct TextureCache {
+    
+    shared_textures: SharedTextures,
 
     
     max_texture_size: u32,
@@ -207,6 +289,7 @@ pub struct TextureCache {
     
     next_id: CacheTextureId,
 
+    
     
     
     #[cfg_attr(all(feature = "serde", any(feature = "capture", feature = "replay")), serde(skip))]
@@ -233,46 +316,8 @@ pub struct TextureCache {
 impl TextureCache {
     pub fn new(max_texture_size: u32) -> Self {
         TextureCache {
+            shared_textures: SharedTextures::new(),
             max_texture_size,
-            
-            
-            
-            array_a8_linear: TextureArray::new(
-                ImageFormat::R8,
-                TextureFilter::Linear,
-                1024,
-                1,
-            ),
-            
-            
-            array_a16_linear: TextureArray::new(
-                ImageFormat::R16,
-                TextureFilter::Linear,
-                1024,
-                1,
-            ),
-            
-            array_rgba8_linear: TextureArray::new(
-                ImageFormat::BGRA8,
-                TextureFilter::Linear,
-                2048,
-                4,
-            ),
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            array_rgba8_nearest: TextureArray::new(
-                ImageFormat::BGRA8,
-                TextureFilter::Nearest,
-                1024,
-                1,
-            ),
             next_id: CacheTextureId(1),
             pending_updates: TextureUpdateList::new(),
             frame_id: FrameId::invalid(),
@@ -307,33 +352,7 @@ impl TextureCache {
 
         assert!(self.entries.len() == 0);
 
-        if let Some(texture_id) = self.array_a8_linear.clear() {
-            self.pending_updates.push(TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Free,
-            });
-        }
-
-        if let Some(texture_id) = self.array_a16_linear.clear() {
-            self.pending_updates.push(TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Free,
-            });
-        }
-
-        if let Some(texture_id) = self.array_rgba8_linear.clear() {
-            self.pending_updates.push(TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Free,
-            });
-        }
-
-        if let Some(texture_id) = self.array_rgba8_nearest.clear() {
-            self.pending_updates.push(TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Free,
-            });
-        }
+        self.shared_textures.clear(&mut self.pending_updates);
     }
 
     pub fn begin_frame(&mut self, frame_id: FrameId) {
@@ -343,13 +362,13 @@ impl TextureCache {
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
         self.expire_old_standalone_entries();
 
-        self.array_a8_linear
+        self.shared_textures.array_a8_linear
             .update_profile(&mut texture_cache_profile.pages_a8_linear);
-        self.array_a16_linear
+        self.shared_textures.array_a16_linear
             .update_profile(&mut texture_cache_profile.pages_a16_linear);
-        self.array_rgba8_linear
+        self.shared_textures.array_rgba8_linear
             .update_profile(&mut texture_cache_profile.pages_rgba8_linear);
-        self.array_rgba8_nearest
+        self.shared_textures.array_rgba8_nearest
             .update_profile(&mut texture_cache_profile.pages_rgba8_nearest);
     }
 
@@ -461,7 +480,7 @@ impl TextureCache {
                 } => (layer_index, origin),
             };
 
-            let op = TextureUpdate::new_update(
+            let op = TextureCacheUpdate::new_update(
                 data,
                 &descriptor,
                 origin,
@@ -470,7 +489,7 @@ impl TextureCache {
                 layer_index as i32,
                 dirty_rect,
             );
-            self.pending_updates.push(op);
+            self.pending_updates.push_update(op);
         }
     }
 
@@ -478,24 +497,10 @@ impl TextureCache {
     fn get_region_mut(&mut self,
         format: ImageFormat,
         filter: TextureFilter,
-        region_index: u16
+        layer_index: usize,
     ) -> &mut TextureRegion {
-        let texture_array = match (format, filter) {
-            (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
-            (ImageFormat::R16, TextureFilter::Linear) => &mut self.array_a16_linear,
-            (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
-            (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
-            (ImageFormat::RGBAF32, _) |
-            (ImageFormat::RG8, _) |
-            (ImageFormat::RGBAI32, _) |
-            (ImageFormat::R8, TextureFilter::Nearest) |
-            (ImageFormat::R8, TextureFilter::Trilinear) |
-            (ImageFormat::R16, TextureFilter::Nearest) |
-            (ImageFormat::R16, TextureFilter::Trilinear) |
-            (ImageFormat::BGRA8, TextureFilter::Trilinear) => unreachable!(),
-        };
-
-        &mut texture_array.regions[region_index as usize]
+        let texture_array = self.shared_textures.select(format, filter);
+        &mut texture_array.regions[layer_index]
     }
 
     
@@ -691,22 +696,18 @@ impl TextureCache {
         match entry.kind {
             EntryKind::Standalone { .. } => {
                 
-                self.pending_updates.push(TextureUpdate {
-                    id: entry.texture_id,
-                    op: TextureUpdateOp::Free,
-                });
+                self.pending_updates.push_free(entry.texture_id);
                 None
             }
             EntryKind::Cache {
                 origin,
-                region_index,
-                ..
+                layer_index,
             } => {
                 
                 let region = self.get_region_mut(
                     entry.format,
                     entry.filter,
-                    region_index
+                    layer_index,
                 );
                 region.free(origin);
                 Some(region)
@@ -723,42 +724,25 @@ impl TextureCache {
         uv_rect_kind: UvRectKind,
     ) -> Option<CacheEntry> {
         
-        let texture_array = match (descriptor.format, filter) {
-            (ImageFormat::R8, TextureFilter::Linear) => &mut self.array_a8_linear,
-            (ImageFormat::R16, TextureFilter::Linear) => &mut self.array_a16_linear,
-            (ImageFormat::BGRA8, TextureFilter::Linear) => &mut self.array_rgba8_linear,
-            (ImageFormat::BGRA8, TextureFilter::Nearest) => &mut self.array_rgba8_nearest,
-            (ImageFormat::RGBAF32, _) |
-            (ImageFormat::RGBAI32, _) |
-            (ImageFormat::R8, TextureFilter::Nearest) |
-            (ImageFormat::R8, TextureFilter::Trilinear) |
-            (ImageFormat::R16, TextureFilter::Nearest) |
-            (ImageFormat::R16, TextureFilter::Trilinear) |
-            (ImageFormat::BGRA8, TextureFilter::Trilinear) |
-            (ImageFormat::RG8, _) => unreachable!(),
-        };
+        let texture_array = self.shared_textures.select(descriptor.format, filter);
 
         
         if texture_array.texture_id.is_none() {
+            assert!(texture_array.regions.is_empty());
             let texture_id = self.next_id;
             self.next_id.0 += 1;
 
-            let update_op = TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Create {
-                    width: texture_array.dimensions,
-                    height: texture_array.dimensions,
-                    format: descriptor.format,
-                    filter: texture_array.filter,
-                    
-                    
-                    render_target: Some(RenderTargetInfo { has_depth: false }),
-                    layer_count: texture_array.layer_count as i32,
-                },
+            let info = TextureCacheAllocInfo {
+                width: TEXTURE_REGION_DIMENSIONS,
+                height: TEXTURE_REGION_DIMENSIONS,
+                format: descriptor.format,
+                filter: texture_array.filter,
+                layer_count: 1,
             };
-            self.pending_updates.push(update_op);
+            self.pending_updates.push_alloc(texture_id, info);
 
             texture_array.texture_id = Some(texture_id);
+            texture_array.regions.push(TextureRegion::new(0));
         }
 
         
@@ -824,6 +808,7 @@ impl TextureCache {
 
         
         if allowed_in_shared_cache {
+
             new_cache_entry = self.allocate_from_shared_cache(
                 &descriptor,
                 filter,
@@ -833,8 +818,34 @@ impl TextureCache {
 
             
             
+            
+            
+            
+            
             if new_cache_entry.is_none() {
-                self.expire_old_shared_entries(&descriptor);
+                let reallocated = {
+                    let texture_array = self.shared_textures.select(descriptor.format, filter);
+                    let num_regions = texture_array.regions.len();
+                    if num_regions < texture_array.max_layer_count {
+                        
+                        let info = TextureCacheAllocInfo {
+                            width: TEXTURE_REGION_DIMENSIONS,
+                            height: TEXTURE_REGION_DIMENSIONS,
+                            format: descriptor.format,
+                            filter: texture_array.filter,
+                            layer_count: (num_regions + 1) as i32,
+                        };
+                        self.pending_updates.push_realloc(texture_array.texture_id.unwrap(), info);
+                        texture_array.regions.push(TextureRegion::new(num_regions));
+                        true
+                    } else {
+                        false
+                    }
+                };
+                if !reallocated {
+                    
+                    self.expire_old_shared_entries(&descriptor);
+                }
 
                 new_cache_entry = self.allocate_from_shared_cache(
                     &descriptor,
@@ -853,19 +864,14 @@ impl TextureCache {
             self.next_id.0 += 1;
 
             
-            
-            let update_op = TextureUpdate {
-                id: texture_id,
-                op: TextureUpdateOp::Create {
-                    width: descriptor.size.width,
-                    height: descriptor.size.height,
-                    format: descriptor.format,
-                    filter,
-                    render_target: Some(RenderTargetInfo { has_depth: false }),
-                    layer_count: 1,
-                },
+            let info = TextureCacheAllocInfo {
+                width: descriptor.size.width,
+                height: descriptor.size.height,
+                format: descriptor.format,
+                filter,
+                layer_count: 1,
             };
-            self.pending_updates.push(update_op);
+            self.pending_updates.push_alloc(texture_id, info);
 
             new_cache_entry = Some(CacheEntry::new_standalone(
                 texture_id,
@@ -978,26 +984,23 @@ impl TextureLocation {
 
 
 
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureRegion {
-    layer_index: i32,
-    region_size: u32,
+    layer_index: usize,
     slab_size: SlabSize,
     free_slots: Vec<TextureLocation>,
     total_slot_count: usize,
-    origin: DeviceUintPoint,
 }
 
 impl TextureRegion {
-    fn new(region_size: u32, layer_index: i32, origin: DeviceUintPoint) -> Self {
+    fn new(layer_index: usize) -> Self {
         TextureRegion {
             layer_index,
-            region_size,
             slab_size: SlabSize::invalid(),
             free_slots: Vec::new(),
             total_slot_count: 0,
-            origin,
         }
     }
 
@@ -1007,8 +1010,8 @@ impl TextureRegion {
         debug_assert!(self.free_slots.is_empty());
 
         self.slab_size = slab_size;
-        let slots_per_x_axis = self.region_size / self.slab_size.width;
-        let slots_per_y_axis = self.region_size / self.slab_size.height;
+        let slots_per_x_axis = TEXTURE_REGION_DIMENSIONS / self.slab_size.width;
+        let slots_per_y_axis = TEXTURE_REGION_DIMENSIONS / self.slab_size.height;
 
         
         for y in 0 .. slots_per_y_axis {
@@ -1038,16 +1041,16 @@ impl TextureRegion {
 
         self.free_slots.pop().map(|location| {
             DeviceUintPoint::new(
-                self.origin.x + self.slab_size.width * location.0 as u32,
-                self.origin.y + self.slab_size.height * location.1 as u32,
+                self.slab_size.width * location.0 as u32,
+                self.slab_size.height * location.1 as u32,
             )
         })
     }
 
     
     fn free(&mut self, point: DeviceUintPoint) {
-        let x = (point.x - self.origin.x) / self.slab_size.width;
-        let y = (point.y - self.origin.y) / self.slab_size.height;
+        let x = point.x / self.slab_size.width;
+        let y = point.y / self.slab_size.height;
         self.free_slots.push(TextureLocation::new(x, y));
 
         
@@ -1061,15 +1064,12 @@ impl TextureRegion {
 
 
 
-
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct TextureArray {
     filter: TextureFilter,
-    dimensions: u32,
-    layer_count: usize,
+    max_layer_count: usize,
     format: ImageFormat,
-    is_allocated: bool,
     regions: Vec<TextureRegion>,
     texture_id: Option<CacheTextureId>,
 }
@@ -1078,31 +1078,30 @@ impl TextureArray {
     fn new(
         format: ImageFormat,
         filter: TextureFilter,
-        dimensions: u32,
-        layer_count: usize,
+        max_layer_count: usize,
     ) -> Self {
         TextureArray {
             format,
             filter,
-            dimensions,
-            layer_count,
-            is_allocated: false,
+            max_layer_count,
             regions: Vec::new(),
             texture_id: None,
         }
     }
 
-    fn clear(&mut self) -> Option<CacheTextureId> {
-        self.is_allocated = false;
+    fn clear(&mut self, updates: &mut TextureUpdateList) {
         self.regions.clear();
-        self.texture_id.take()
+        if let Some(id) = self.texture_id.take() {
+            updates.push_free(id);
+        }
     }
 
     fn update_profile(&self, counter: &mut ResourceProfileCounter) {
-        if self.is_allocated {
-            let size = self.layer_count as u32 * self.dimensions *
-                self.dimensions * self.format.bytes_per_pixel();
-            counter.set(self.layer_count as usize, size as usize);
+        let layer_count = self.regions.len();
+        if layer_count != 0 {
+            let size = layer_count as u32 * TEXTURE_REGION_DIMENSIONS *
+                TEXTURE_REGION_DIMENSIONS * self.format.bytes_per_pixel();
+            counter.set(layer_count as usize, size as usize);
         } else {
             counter.set(0, 0);
         }
@@ -1116,31 +1115,6 @@ impl TextureArray {
         frame_id: FrameId,
         uv_rect_kind: UvRectKind,
     ) -> Option<CacheEntry> {
-        
-        
-        
-        if !self.is_allocated {
-            debug_assert!(self.dimensions % TEXTURE_REGION_DIMENSIONS == 0);
-            let regions_per_axis = self.dimensions / TEXTURE_REGION_DIMENSIONS;
-            for layer_index in 0 .. self.layer_count {
-                for y in 0 .. regions_per_axis {
-                    for x in 0 .. regions_per_axis {
-                        let origin = DeviceUintPoint::new(
-                            x * TEXTURE_REGION_DIMENSIONS,
-                            y * TEXTURE_REGION_DIMENSIONS,
-                        );
-                        let region = TextureRegion::new(
-                            TEXTURE_REGION_DIMENSIONS,
-                            layer_index as i32,
-                            origin
-                        );
-                        self.regions.push(region);
-                    }
-                }
-            }
-            self.is_allocated = true;
-        }
-
         
         
         let slab_size = SlabSize::new(size);
@@ -1164,8 +1138,7 @@ impl TextureArray {
             } else if region.slab_size == slab_size {
                 if let Some(location) = region.alloc() {
                     entry_kind = Some(EntryKind::Cache {
-                        layer_index: region.layer_index as u16,
-                        region_index: i as u16,
+                        layer_index: region.layer_index,
                         origin: location,
                     });
                     break;
@@ -1180,8 +1153,7 @@ impl TextureArray {
                 region.init(slab_size);
                 entry_kind = region.alloc().map(|location| {
                     EntryKind::Cache {
-                        layer_index: region.layer_index as u16,
-                        region_index: empty_region_index as u16,
+                        layer_index: region.layer_index,
                         origin: location,
                     }
                 });
@@ -1206,7 +1178,7 @@ impl TextureArray {
     }
 }
 
-impl TextureUpdate {
+impl TextureCacheUpdate {
     
     
     
@@ -1218,7 +1190,7 @@ impl TextureUpdate {
         texture_id: CacheTextureId,
         layer_index: i32,
         dirty_rect: Option<DeviceUintRect>,
-    ) -> TextureUpdate {
+    ) -> TextureCacheUpdate {
         let source = match data {
             ImageData::Blob(..) => {
                 panic!("The vector image should have been rasterized.");
@@ -1248,7 +1220,8 @@ impl TextureUpdate {
                 let stride = descriptor.compute_stride();
                 let offset = descriptor.offset + dirty.origin.y * stride + dirty.origin.x * descriptor.format.bytes_per_pixel();
 
-                TextureUpdateOp::Update {
+                TextureCacheUpdate {
+                    id: texture_id,
                     rect: DeviceUintRect::new(
                         DeviceUintPoint::new(origin.x + dirty.origin.x, origin.y + dirty.origin.y),
                         DeviceUintSize::new(
@@ -1263,7 +1236,8 @@ impl TextureUpdate {
                 }
             }
             None => {
-                TextureUpdateOp::Update {
+                TextureCacheUpdate {
+                    id: texture_id,
                     rect: DeviceUintRect::new(origin, size),
                     source,
                     stride: descriptor.stride,
@@ -1273,10 +1247,7 @@ impl TextureUpdate {
             }
         };
 
-        TextureUpdate {
-            id: texture_id,
-            op: update_op,
-        }
+        update_op
     }
 }
 
