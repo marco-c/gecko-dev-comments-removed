@@ -400,6 +400,17 @@ protected:
   
   
   
+  
+  
+  template<typename ActualAlloc>
+  typename ActualAlloc::ResultTypeProxy ExtendCapacity(size_type aLength,
+                                                       size_type aCount,
+                                                       size_type aElemSize);
+
+  
+  
+  
+  
   void ShrinkCapacity(size_type aElemSize, size_t aElemAlign);
 
   
@@ -1761,8 +1772,8 @@ public:
 protected:
   template<typename ActualAlloc = Alloc>
   elem_type* AppendElements(size_type aCount) {
-    if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
-          Length() + aCount, sizeof(elem_type)))) {
+    if (!ActualAlloc::Successful(this->template ExtendCapacity<ActualAlloc>(
+          Length(), aCount, sizeof(elem_type)))) {
       return nullptr;
     }
     elem_type* elems = Elements() + Length();
@@ -2480,6 +2491,7 @@ nsTArray_Impl<E, Alloc>::InsertElementAt(index_type aIndex) -> elem_type*
     InvalidArrayIndex_CRASH(aIndex, Length());
   }
 
+  
   if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
         Length() + 1, sizeof(elem_type)))) {
     return nullptr;
@@ -2500,6 +2512,7 @@ nsTArray_Impl<E, Alloc>::InsertElementAt(index_type aIndex, Item&& aItem) -> ele
     InvalidArrayIndex_CRASH(aIndex, Length());
   }
 
+  
   if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
          Length() + 1, sizeof(elem_type)))) {
     return nullptr;
@@ -2516,8 +2529,8 @@ template<class Item, typename ActualAlloc>
 auto
 nsTArray_Impl<E, Alloc>::AppendElements(const Item* aArray, size_type aArrayLen) -> elem_type*
 {
-  if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
-        Length() + aArrayLen, sizeof(elem_type)))) {
+  if (!ActualAlloc::Successful(this->template ExtendCapacity<ActualAlloc>(
+        Length(), aArrayLen, sizeof(elem_type)))) {
     return nullptr;
   }
   index_type len = Length();
@@ -2539,8 +2552,8 @@ nsTArray_Impl<E, Alloc>::AppendElements(nsTArray_Impl<Item, Allocator>&& aArray)
 
   index_type len = Length();
   index_type otherLen = aArray.Length();
-  if (!Alloc::Successful(this->template EnsureCapacity<Alloc>(
-        len + otherLen, sizeof(elem_type)))) {
+  if (!Alloc::Successful(this->template ExtendCapacity<Alloc>(
+        len, otherLen, sizeof(elem_type)))) {
     return nullptr;
   }
   copy_type::MoveNonOverlappingRegion(Elements() + len, aArray.Elements(), otherLen,
@@ -2556,6 +2569,7 @@ template<class Item, typename ActualAlloc>
 auto
 nsTArray_Impl<E, Alloc>::AppendElement(Item&& aItem) -> elem_type*
 {
+  
   if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
          Length() + 1, sizeof(elem_type)))) {
     return nullptr;
