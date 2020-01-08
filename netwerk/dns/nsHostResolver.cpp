@@ -849,28 +849,16 @@ nsHostResolver::Shutdown()
     for (auto iter = mRecordDB.Iter(); !iter.Done(); iter.Next()) {
         iter.UserData()->Cancel();
     }
-#ifdef NS_BUILD_REFCNT_LOGGING
 
     
     
-    
-    
-    
-    
-
-    PRIntervalTime delay = PR_MillisecondsToInterval(25);
-    PRIntervalTime stopTime = PR_IntervalNow() + PR_SecondsToInterval(20);
-    while (mActiveTaskCount && PR_IntervalNow() < stopTime)
-        PR_Sleep(delay);
-#endif
+    mResolverThreads->ShutdownWithTimeout(20 * 1000);
 
     {
         mozilla::DebugOnly<nsresult> rv = GetAddrInfoShutdown();
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "Failed to shutdown GetAddrInfo");
     }
-
-    mResolverThreads->Shutdown();
 }
 
 nsresult
