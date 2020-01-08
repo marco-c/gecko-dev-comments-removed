@@ -119,9 +119,20 @@ DataStorageSharedThread::Shutdown()
     return NS_ERROR_FAILURE;
   }
 
-  nsresult rv = gDataStorageSharedThread->mThread->Shutdown();
-  gDataStorageSharedThread->mThread = nullptr;
+  
+  
+  
+  
+  
+  
   gDataStorageSharedThreadShutDown = true;
+  nsCOMPtr<nsIThread> threadHandle = gDataStorageSharedThread->mThread;
+  nsresult rv;
+  {
+    StaticMutexAutoUnlock unlock(sDataStorageSharedThreadMutex);
+    rv = threadHandle->Shutdown();
+  }
+  gDataStorageSharedThread->mThread = nullptr;
   delete gDataStorageSharedThread;
   gDataStorageSharedThread = nullptr;
 
@@ -133,7 +144,8 @@ DataStorageSharedThread::Dispatch(nsIRunnable* event)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
   StaticMutexAutoLock lock(sDataStorageSharedThreadMutex);
-  if (!gDataStorageSharedThread || !gDataStorageSharedThread->mThread) {
+  if (gDataStorageSharedThreadShutDown || !gDataStorageSharedThread ||
+      !gDataStorageSharedThread->mThread) {
     return NS_ERROR_FAILURE;
   }
   return gDataStorageSharedThread->mThread->Dispatch(event, NS_DISPATCH_NORMAL);
