@@ -143,9 +143,8 @@ public:
   nsresult UpdateShippingOption(const nsAString& aShippingOption);
 
   nsresult UpdatePayment(JSContext* aCx,
-                         const PaymentDetailsUpdate& aDetails,
-                         bool aDeferredShow);
-  void AbortUpdate(nsresult aRv, bool aDeferredShow);
+                         const PaymentDetailsUpdate& aDetails);
+  void AbortUpdate(nsresult aRv);
 
   void SetShippingType(const Nullable<PaymentShippingType>& aShippingType);
   Nullable<PaymentShippingType> GetShippingType() const;
@@ -209,10 +208,6 @@ protected:
   
   
   bool mRequestShipping;
-
-  
-  
-  bool mDeferredShow;
 
   
   nsresult mUpdateError;
