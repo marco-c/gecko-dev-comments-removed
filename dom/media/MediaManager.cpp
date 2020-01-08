@@ -1845,7 +1845,7 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
     if (realDeviceRequested) {
       MediaManager* manager = MediaManager::GetIfExists();
       MOZ_RELEASE_ASSERT(manager);  
-      realBackend = manager->GetBackend(aWindowId);
+      realBackend = manager->GetBackend();
     }
 
     if (hasVideo) {
@@ -2173,9 +2173,9 @@ int MediaManager::AddDeviceChangeCallback(DeviceChangeCallback* aCallback) {
     MOZ_RELEASE_ASSERT(manager);  
     
     
-    manager->GetBackend(0);
+    manager->GetBackend();
     if (fakeDeviceChangeEventOn)
-      manager->GetBackend(0)->SetFakeDeviceChangeEvents();
+      manager->GetBackend()->SetFakeDeviceChangeEvents();
   }));
 
   return DeviceChangeCallback::AddDeviceChangeCallback(aCallback);
@@ -3345,7 +3345,7 @@ nsresult MediaManager::GetUserMediaDevices(
   return NS_ERROR_UNEXPECTED;
 }
 
-MediaEngine* MediaManager::GetBackend(uint64_t aWindowId) {
+MediaEngine* MediaManager::GetBackend() {
   MOZ_ASSERT(MediaManager::IsInMediaThread());
   
   
