@@ -62,6 +62,14 @@ def get_type(type, calltype, iid_is=None, size_is=None):
             ret['size_is'] = size_is
         return ret
 
+    if isinstance(type, xpidl.Sequence):
+        
+        
+        return {
+            'tag': 'TD_SEQUENCE',
+            'element': get_type(type.type, calltype, iid_is),
+        }
+
     if isinstance(type, xpidl.Array):
         
         
