@@ -595,6 +595,11 @@ function assertContainerHasText(container, expectedText) {
 
 
 
+
+
+
+
+
 async function assertMarkupViewAsTree(tree, selector, inspector) {
   const {markup} = inspector;
 
@@ -612,13 +617,21 @@ async function _checkMarkupViewNode(treeNode, container, inspector) {
   info("Checking [" + path + "]");
   info("Checking node: " + node);
 
+  const ignoreChildren = node.includes("!ignore-children");
   const slotted = node.includes("!slotted");
+
+  
+  const nodeText = node.replace("!slotted", "")
+                       .replace("!ignore-children", "");
+
+  assertContainerHasText(container, nodeText);
+
   if (slotted) {
-    const nodeName = node.replace("!slotted", "");
-    assertContainerHasText(container, nodeName);
     assertContainerSlotted(container);
-  } else {
-    assertContainerHasText(container, node);
+  }
+
+  if (ignoreChildren) {
+    return;
   }
 
   if (!children.length) {
