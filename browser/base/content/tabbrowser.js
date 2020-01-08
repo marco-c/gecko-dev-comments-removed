@@ -1094,13 +1094,8 @@ window._gBrowser = {
     if (newBrowser.hasAttribute("tabmodalPromptShowing")) {
       let prompts = newBrowser.parentNode.getElementsByTagNameNS(this._XUL_NS, "tabmodalprompt");
       let prompt = prompts[prompts.length - 1];
-      
-      
-      
-      if (prompt) {
-        prompt.Dialog.setDefaultFocus();
-        return;
-      }
+      prompt.Dialog.setDefaultFocus();
+      return;
     }
 
     
