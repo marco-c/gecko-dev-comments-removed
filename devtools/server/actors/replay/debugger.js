@@ -41,7 +41,7 @@ function ReplayDebugger() {
   }
 
   
-  this._paused = false;
+  assert(this._control);
 
   
   this._direction = Direction.NONE;
@@ -97,14 +97,17 @@ ReplayDebugger.prototype = {
   canRewind: RecordReplayControl.canRewind,
 
   replayCurrentExecutionPoint() {
-    return this._sendRequest({ type: "currentExecutionPoint" });
+    assert(this._paused);
+    return this._control.pausePoint();
   },
 
   replayRecordingEndpoint() {
     return this._sendRequest({ type: "recordingEndpoint" });
   },
 
-  replayIsRecording: RecordReplayControl.childIsRecording,
+  replayIsRecording() {
+    return this._control.childIsRecording();
+  },
 
   addDebuggee() {},
   removeAllDebuggees() {},
@@ -117,8 +120,7 @@ ReplayDebugger.prototype = {
   
   
   _sendRequest(request) {
-    assert(this._paused);
-    const data = RecordReplayControl.sendRequest(request);
+    const data = this._control.sendRequest(request);
     dumpv("SendRequest: " +
           JSON.stringify(request) + " -> " + JSON.stringify(data));
     if (data.exception) {
@@ -132,8 +134,7 @@ ReplayDebugger.prototype = {
   
   
   _sendRequestAllowDiverge(request) {
-    assert(this._paused);
-    RecordReplayControl.maybeSwitchToReplayingChild();
+    this._control.maybeSwitchToReplayingChild();
     return this._sendRequest(request);
   },
 
@@ -173,16 +174,19 @@ ReplayDebugger.prototype = {
   
   
 
+  get _paused() {
+    return !!this._control.pausePoint();
+  },
+
   replayResumeBackward() { this._resume( false); },
   replayResumeForward() { this._resume( true); },
 
   _resume(forward) {
     this._ensurePaused();
     this._setResume(() => {
-      this._paused = false;
       this._direction = forward ? Direction.FORWARD : Direction.BACKWARD;
       dumpv("Resuming " + this._direction);
-      RecordReplayControl.resume(forward);
+      this._control.resume(forward);
       if (this._paused) {
         
         
@@ -194,10 +198,9 @@ ReplayDebugger.prototype = {
   replayTimeWarp(target) {
     this._ensurePaused();
     this._setResume(() => {
-      this._paused = false;
       this._direction = Direction.NONE;
       dumpv("Warping " + JSON.stringify(target));
-      RecordReplayControl.timeWarp(target);
+      this._control.timeWarp(target);
 
       
       
@@ -215,7 +218,7 @@ ReplayDebugger.prototype = {
 
   _ensurePaused() {
     if (!this._paused) {
-      RecordReplayControl.waitUntilPaused();
+      this._control.waitUntilPaused();
       assert(this._paused);
     }
   },
@@ -224,8 +227,6 @@ ReplayDebugger.prototype = {
   
   
   _onPause() {
-    this._paused = true;
-
     
     if (this.replayingOnPositionChange) {
       this.replayingOnPositionChange();
@@ -248,7 +249,7 @@ ReplayDebugger.prototype = {
     const point = this.replayCurrentExecutionPoint();
     dumpv("PerformPause " + JSON.stringify(point));
 
-    if (point.position.kind == "Invalid") {
+    if (!point.position) {
       
     } else {
       
@@ -280,11 +281,7 @@ ReplayDebugger.prototype = {
   _onSwitchChild() {
     
     if (this.replayingOnPositionChange) {
-      
-      const paused = this._paused;
-      this._paused = true;
       this.replayingOnPositionChange();
-      this._paused = paused;
     }
   },
 
@@ -295,7 +292,7 @@ ReplayDebugger.prototype = {
     assert(!this._resumeCallback);
     if (++this._threadPauseCount == 1) {
       
-      RecordReplayControl.markExplicitPause();
+      this._control.markExplicitPause();
 
       
       this._direction = Direction.NONE;
@@ -358,7 +355,7 @@ ReplayDebugger.prototype = {
   _setBreakpoint(handler, position, data) {
     this._ensurePaused();
     dumpv("AddBreakpoint " + JSON.stringify(position));
-    RecordReplayControl.addBreakpoint(position);
+    this._control.addBreakpoint(position);
     this._breakpoints.push({handler, position, data});
   },
 
@@ -367,10 +364,10 @@ ReplayDebugger.prototype = {
     const newBreakpoints = this._breakpoints.filter(bp => !callback(bp));
     if (newBreakpoints.length != this._breakpoints.length) {
       dumpv("ClearBreakpoints");
-      RecordReplayControl.clearBreakpoints();
+      this._control.clearBreakpoints();
       for (const { position } of newBreakpoints) {
         dumpv("AddBreakpoint " + JSON.stringify(position));
-        RecordReplayControl.addBreakpoint(position);
+        this._control.addBreakpoint(position);
       }
     }
     this._breakpoints = newBreakpoints;
