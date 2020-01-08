@@ -209,6 +209,19 @@ VARCACHE_PREF(
 PREF("dom.serviceWorkers.parent_intercept", bool, false)
 
 
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE  true
+#else
+# define PREF_VALUE  false
+#endif
+VARCACHE_PREF(
+  "dom.payments.request.enabled",
+   dom_payments_request_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 VARCACHE_PREF(
   "dom.payments.request.user_interaction_required",
   dom_payments_request_user_interaction_required,
