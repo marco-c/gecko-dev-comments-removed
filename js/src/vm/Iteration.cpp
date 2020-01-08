@@ -674,8 +674,8 @@ static PropertyIteratorObject* CreatePropertyIterator(
 NativeIterator::NativeIterator() {
   
   
-  JS_POISON(static_cast<void*>(this), 0xCC, sizeof(*this),
-            MemCheckKind::MakeUndefined);
+  Poison(static_cast<void*>(this), 0xCC, sizeof(*this),
+         MemCheckKind::MakeUndefined);
 
   
   

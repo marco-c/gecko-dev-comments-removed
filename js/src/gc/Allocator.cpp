@@ -734,8 +734,8 @@ void Chunk::init(JSRuntime* rt) {
 
 
 
-  JS_POISON(this, JS_FRESH_TENURED_PATTERN, ChunkSize,
-            MemCheckKind::MakeUndefined);
+  Poison(this, JS_FRESH_TENURED_PATTERN, ChunkSize,
+         MemCheckKind::MakeUndefined);
 
   
 

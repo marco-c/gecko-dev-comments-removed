@@ -4469,9 +4469,9 @@ void ConstraintTypeSet::sweep(const AutoSweepBase& sweep, Zone* zone) {
     }
     setBaseObjectCount(objectCount);
     
-    JS_POISON(oldArray - 1, JS_SWEPT_TI_PATTERN,
-              (oldCapacity + 1) * sizeof(oldArray[0]),
-              MemCheckKind::MakeUndefined);
+    Poison(oldArray - 1, JS_SWEPT_TI_PATTERN,
+           (oldCapacity + 1) * sizeof(oldArray[0]),
+           MemCheckKind::MakeUndefined);
   } else if (objectCount == 1) {
     ObjectKey* key = (ObjectKey*)objectSet;
     if (!IsObjectKeyAboutToBeFinalized(&key)) {
@@ -4507,8 +4507,8 @@ void ConstraintTypeSet::sweep(const AutoSweepBase& sweep, Zone* zone) {
       }
     }
     TypeConstraint* next = constraint->next();
-    JS_POISON(constraint, JS_SWEPT_TI_PATTERN, sizeof(TypeConstraint),
-              MemCheckKind::MakeUndefined);
+    Poison(constraint, JS_SWEPT_TI_PATTERN, sizeof(TypeConstraint),
+           MemCheckKind::MakeUndefined);
     constraint = next;
   }
 }
@@ -4585,8 +4585,8 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
 
     auto poisonArray = mozilla::MakeScopeExit([oldArray, oldCapacity] {
       size_t size = sizeof(Property*) * (oldCapacity + 1);
-      JS_POISON(oldArray - 1, JS_SWEPT_TI_PATTERN, size,
-                MemCheckKind::MakeUndefined);
+      Poison(oldArray - 1, JS_SWEPT_TI_PATTERN, size,
+             MemCheckKind::MakeUndefined);
     });
 
     unsigned oldPropertyCount = propertyCount;
@@ -4607,14 +4607,14 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
 
 
 
-          JS_POISON(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
-                    MemCheckKind::MakeUndefined);
+          Poison(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
+                 MemCheckKind::MakeUndefined);
           continue;
         }
 
         Property* newProp = typeLifoAlloc.new_<Property>(*prop);
-        JS_POISON(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
-                  MemCheckKind::MakeUndefined);
+        Poison(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
+               MemCheckKind::MakeUndefined);
         if (newProp) {
           Property** pentry = TypeHashSet::Insert<jsid, Property, Property>(
               typeLifoAlloc, propertySet, propertyCount, newProp->id);
@@ -4640,13 +4640,13 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
     if (singleton() && !prop->types.constraintList(sweep) &&
         !zone()->isPreservingCode()) {
       
-      JS_POISON(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
-                MemCheckKind::MakeUndefined);
+      Poison(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
+             MemCheckKind::MakeUndefined);
       clearProperties(sweep);
     } else {
       Property* newProp = typeLifoAlloc.new_<Property>(*prop);
-      JS_POISON(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
-                MemCheckKind::MakeUndefined);
+      Poison(prop, JS_SWEPT_TI_PATTERN, sizeof(Property),
+             MemCheckKind::MakeUndefined);
       if (newProp) {
         propertySet = (Property**)newProp;
         newProp->types.sweep(sweep, zone());

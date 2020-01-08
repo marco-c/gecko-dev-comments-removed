@@ -23,6 +23,16 @@
 #include "js/Utility.h"
 #include "js/Value.h"
 
+
+#if defined(DEBUG) || defined(NIGHTLY_BUILD)
+#define JS_CRASH_DIAGNOSTICS 1
+#endif
+
+
+#if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
+#define JS_GC_POISONING 1
+#endif
+
 #if defined(JS_DEBUG)
 #define JS_DIAGNOSTICS_ASSERT(expr) MOZ_ASSERT(expr)
 #elif defined(JS_CRASH_DIAGNOSTICS)
@@ -287,6 +297,7 @@ static MOZ_ALWAYS_INLINE void SetMemCheckKind(void* ptr, size_t bytes,
 
 namespace js {
 
+
 static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
                                 MemCheckKind kind) {
   
@@ -320,33 +331,27 @@ static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
 
 extern bool gDisablePoisoning;
 
+
+
+
 static inline void Poison(void* ptr, uint8_t value, size_t num,
                           MemCheckKind kind) {
+#if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
   if (!js::gDisablePoisoning) {
     AlwaysPoison(ptr, value, num, kind);
   }
+#endif
+}
+
+
+
+static inline void DebugOnlyPoison(void* ptr, uint8_t value, size_t num,
+                                   MemCheckKind kind) {
+#if defined(DEBUG)
+  Poison(ptr, value, num, kind);
+#endif
 }
 
 }  
-
-
-#if defined(DEBUG) || defined(NIGHTLY_BUILD)
-#define JS_CRASH_DIAGNOSTICS 1
-#endif
-
-
-#if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
-#define JS_POISON(p, val, size, kind) js::Poison(p, val, size, kind)
-#define JS_GC_POISONING 1
-#else
-#define JS_POISON(p, val, size, kind) ((void)0)
-#endif
-
-
-#if defined(DEBUG)
-#define JS_EXTRA_POISON(p, val, size, kind) js::Poison(p, val, size, kind)
-#else
-#define JS_EXTRA_POISON(p, val, size, kind) ((void)0)
-#endif
 
 #endif 
