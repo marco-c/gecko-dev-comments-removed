@@ -107,7 +107,7 @@ XPCOMUtils.defineLazyScriptGetter(this, ["LightWeightThemeWebInstaller",
                                   "chrome://browser/content/browser-addons.js");
 XPCOMUtils.defineLazyScriptGetter(this, "ctrlTab",
                                   "chrome://browser/content/browser-ctrlTab.js");
-XPCOMUtils.defineLazyScriptGetter(this, "CustomizationHandler",
+XPCOMUtils.defineLazyScriptGetter(this, ["CustomizationHandler", "AutoHideMenubar"],
                                   "chrome://browser/content/browser-customization.js");
 XPCOMUtils.defineLazyScriptGetter(this, ["PointerLock", "FullScreen"],
                                   "chrome://browser/content/browser-fullScreenAndPointerLock.js");
@@ -1242,6 +1242,9 @@ var gBrowserInit = {
       }
     }
 
+    
+    
+    AutoHideMenubar.init();
     
     window.TabBarVisibility.update();
     TabsInTitlebar.init();
