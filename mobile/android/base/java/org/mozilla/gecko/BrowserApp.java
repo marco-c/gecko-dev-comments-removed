@@ -91,7 +91,8 @@ import org.mozilla.gecko.delegates.OfflineTabStatusDelegate;
 import org.mozilla.gecko.delegates.ScreenshotDelegate;
 import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.distribution.DistributionStoreCallback;
-import org.mozilla.gecko.dlc.DownloadContentService;
+import org.mozilla.gecko.dlc.DlcStudyService;
+import org.mozilla.gecko.dlc.DlcSyncService;
 import org.mozilla.gecko.extensions.ExtensionPermissionsHelper;
 import org.mozilla.gecko.firstrun.OnboardingHelper;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator;
@@ -727,7 +728,7 @@ public class BrowserApp extends GeckoApp
         if (!isInAutomation && AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
             
             
-            DownloadContentService.startStudy(this);
+            DlcStudyService.enqueueServiceWork(this);
         }
 
         
@@ -1868,8 +1869,7 @@ public class BrowserApp extends GeckoApp
                 if (AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE &&
                         !IntentUtils.getIsInAutomationFromEnvironment(new SafeIntent(getIntent()))) {
                     
-                    DownloadContentService.startSync(this);
-                    DownloadContentService.startVerification(this);
+                    DlcSyncService.enqueueServiceWork(this);
                 }
 
                 break;
