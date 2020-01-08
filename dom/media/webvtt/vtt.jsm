@@ -1021,6 +1021,10 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
         controlBar = controls.parentNode.getElementById("controlBar");
       }
       controlBarShown = controlBar ? !!controlBar.clientHeight : false;
+    } else {
+      
+      
+      controlBarShown = false;
     }
 
     
