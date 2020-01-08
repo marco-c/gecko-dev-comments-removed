@@ -3076,9 +3076,6 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-justify.enabled", true);
 
 
-pref("layout.css.image-orientation.enabled", true);
-
-
 
 pref("layout.css.paint-order.enabled", true);
 
