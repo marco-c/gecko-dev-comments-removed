@@ -64,6 +64,8 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/recordreplay/ChildIPC.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 #include "ScopedXREEmbed.h"
 
 #include "mozilla/plugins/PluginProcessChild.h"
@@ -444,6 +446,9 @@ XRE_InitChildProcess(int aArgc,
     return NS_ERROR_FAILURE;
   const char* const mach_port_name = aArgv[--aArgc];
 
+  Maybe<recordreplay::AutoPassThroughThreadEvents> pt;
+  pt.emplace();
+
   const int kTimeoutMs = 1000;
 
   MachSendMessage child_message(0);
@@ -510,6 +515,7 @@ XRE_InitChildProcess(int aArgc,
     return NS_ERROR_FAILURE;
   }
 
+  pt.reset();
 #endif
 
   SetupErrorHandling(aArgv[0]);
@@ -619,6 +625,12 @@ XRE_InitChildProcess(int aArgc,
     }
   }
 
+  
+  
+  
+  base::ProcessId actualParentPID = parentPID;
+  parentPID = recordreplay::RecordReplayValue(parentPID);
+
 #ifdef XP_MACOSX
   mozilla::ipc::SharedMemoryBasic::SetupMachMemory(parentPID, ports_in_receiver, ports_in_sender,
                                                    ports_out_sender, ports_out_receiver, true);
@@ -664,6 +676,12 @@ XRE_InitChildProcess(int aArgc,
       uiLoopType = MessageLoop::TYPE_UI;
       break;
   }
+
+  
+  
+  
+  
+  recordreplay::child::InitRecordingOrReplayingProcess(actualParentPID, &aArgc, &aArgv);
 
   {
     
