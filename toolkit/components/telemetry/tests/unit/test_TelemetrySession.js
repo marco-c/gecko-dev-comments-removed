@@ -1079,6 +1079,8 @@ add_task(async function test_sendShutdownPing() {
   await TelemetryController.testReset();
   Services.obs.notifyObservers(null, "quit-application-forced");
   await TelemetryController.testShutdown();
+  
+  gClientID = await ClientID.getClientID();
 
   
   await checkPendingShutdownPing();
