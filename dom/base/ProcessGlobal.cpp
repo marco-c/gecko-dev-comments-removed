@@ -1,14 +1,16 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ProcessGlobal.h"
 
 #include "nsContentCID.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/ResolveSystemBinding.h"
+#include "mozilla/dom/ipc/SharedMap.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -43,7 +45,7 @@ ProcessGlobal::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
     return true;
 }
 
-
+/* static */
 bool
 ProcessGlobal::MayResolve(jsid aId)
 {
@@ -70,6 +72,16 @@ ProcessGlobal::Get()
     sWasCreated = true;
   }
   return global;
+}
+
+already_AddRefed<mozilla::dom::ipc::SharedMap>
+ProcessGlobal::SharedData()
+{
+  if (ContentChild* child = ContentChild::GetSingleton()) {
+    return do_AddRef(child->SharedData());
+  }
+  auto* ppmm = nsFrameMessageManager::sParentProcessManager;
+  return do_AddRef(ppmm->SharedData()->GetReadOnly());
 }
 
 bool
@@ -136,7 +148,7 @@ ProcessGlobal::WrapGlobalObject(JSContext* aCx,
                                                          nsJSPrincipals::get(mPrincipal),
                                                          true, aReflector);
   if (ok) {
-    
+    // Since we can't rewrap we have to preserve the global's wrapper here.
     PreserveWrapper(ToSupports(this));
   }
   return ok;

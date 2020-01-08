@@ -1,13 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim: set ts=8 sts=4 et sw=4 tw=99: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AutoMemMap.h"
 #include "ScriptPreloader-inl.h"
 
 #include "mozilla/Unused.h"
+#include "mozilla/ipc/FileDescriptor.h"
 #include "nsIFile.h"
 
 #include <private/pprio.h>
@@ -79,10 +80,10 @@ AutoMemMap::initInternal(PRFileMapProtect prot, size_t expectedSize)
         return Err(NS_ERROR_FAILURE);
 
     size_ = fileInfo.size;
-    
-    
-    
-    
+    // The memory region size passed in certain IPC messages isn't necessary on
+    // Unix-like systems, since we can always stat the file descriptor to
+    // determine it accurately. But since we have it, anyway, sanity check that
+    // it matches the size returned by the stat.
     MOZ_ASSERT_IF(expectedSize > 0, size_ == expectedSize);
 
     addr = PR_MemMap(fileMap, 0, size_);
@@ -142,12 +143,11 @@ AutoMemMap::cloneHandle() const
 void
 AutoMemMap::reset()
 {
+    if (addr && !persistent_) {
+        Unused << NS_WARN_IF(PR_MemUnmap(addr, size()) != PR_SUCCESS);
+        addr = nullptr;
+    }
     if (fileMap) {
-        if (addr && !persistent_) {
-            Unused << NS_WARN_IF(PR_MemUnmap(addr, size()) != PR_SUCCESS);
-            addr = nullptr;
-        }
-
         Unused << NS_WARN_IF(PR_CloseFileMap(fileMap) != PR_SUCCESS);
         fileMap = nullptr;
     }
@@ -160,5 +160,5 @@ AutoMemMap::reset()
     fd.dispose();
 }
 
-} 
-} 
+} // namespace loader
+} // namespace mozilla

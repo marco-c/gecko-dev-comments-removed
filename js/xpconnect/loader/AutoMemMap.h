@@ -1,7 +1,7 @@
-
-
-
-
+/* -*-  Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4; -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef loader_AutoMemMap_h
 #define loader_AutoMemMap_h
@@ -10,7 +10,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/Result.h"
-#include "mozilla/ipc/FileDescriptor.h"
 #include "nsIMemoryReporter.h"
 
 #include <prio.h>
@@ -18,6 +17,10 @@
 class nsIFile;
 
 namespace mozilla {
+namespace ipc {
+  class FileDescriptor;
+}
+
 namespace loader {
 
 using mozilla::ipc::FileDescriptor;
@@ -38,10 +41,10 @@ class AutoMemMap
              PRFileMapProtect prot = PR_PROT_READONLY,
              size_t expectedSize = 0);
 
-        
-        
-        
-        
+        // Initializes the mapped memory with a shared memory handle. On
+        // Unix-like systems, this is identical to the above init() method. On
+        // Windows, the FileDescriptor must be a handle for a file mapping,
+        // rather than a file descriptor.
         Result<Ok, nsresult>
         initWithHandle(const ipc::FileDescriptor& file, size_t size,
                        PRFileMapProtect prot = PR_PROT_READONLY);
@@ -71,8 +74,8 @@ class AutoMemMap
         FileDescriptor cloneFileDescriptor() const;
         FileDescriptor cloneHandle() const;
 
-        
-        
+        // Makes this mapping persistent. After calling this, the mapped memory
+        // will remained mapped, even after this instance is destroyed.
         void setPersistent() { persistent_ = true; }
 
     private:
@@ -83,9 +86,9 @@ class AutoMemMap
         PRFileMap* fileMap = nullptr;
 
 #ifdef XP_WIN
-        
-        
-        
+        // We can't include windows.h in this header, since it gets included
+        // by some binding headers (which are explicitly incompatible with
+        // windows.h). So we can't use the HANDLE type here.
         void* handle_ = nullptr;
 #endif
 
@@ -98,7 +101,7 @@ class AutoMemMap
         void operator=(const AutoMemMap&) = delete;
 };
 
-} 
-} 
+} // namespace loader
+} // namespace mozilla
 
-#endif 
+#endif // loader_AutoMemMap_h
