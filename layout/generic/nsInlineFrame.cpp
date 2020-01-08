@@ -1018,13 +1018,13 @@ nsFirstLineFrame::Init(nsIContent*       aContent,
 {
   nsInlineFrame::Init(aContent, aParent, aPrevInFlow);
   if (!aPrevInFlow) {
-    MOZ_ASSERT(Style()->GetPseudo() == nsCSSPseudoElements::firstLine);
+    MOZ_ASSERT(Style()->GetPseudo() == nsCSSPseudoElements::firstLine());
     return;
   }
 
   
   
-  if (aPrevInFlow->Style()->GetPseudo() == nsCSSPseudoElements::firstLine) {
+  if (aPrevInFlow->Style()->GetPseudo() == nsCSSPseudoElements::firstLine()) {
     MOZ_ASSERT(FirstInFlow() == aPrevInFlow);
     
     
