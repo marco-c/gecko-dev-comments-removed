@@ -48,7 +48,7 @@ AddToWindowContainer(GtkWidget* widget)
 }
 
 static GtkWidget*
-CreateScrollbarWidget(WidgetNodeType aWidgetType, GtkOrientation aOrientation)
+CreateScrollbarWidget(WidgetNodeType aAppearance, GtkOrientation aOrientation)
 {
   GtkWidget* widget = gtk_scrollbar_new(aOrientation, nullptr);
   AddToWindowContainer(widget);
@@ -529,23 +529,23 @@ CreateNotebookWidget()
 }
 
 static void
-CreateHeaderBarWidget(WidgetNodeType aWidgetType)
+CreateHeaderBarWidget(WidgetNodeType aAppearance)
 {
   MOZ_ASSERT(gtk_check_version(3, 10, 0) == nullptr,
              "GtkHeaderBar is only available on GTK 3.10+.");
-  MOZ_ASSERT(sWidgetStorage[aWidgetType] == nullptr,
+  MOZ_ASSERT(sWidgetStorage[aAppearance] == nullptr,
              "Header bar widget is already created!");
 
   static auto sGtkHeaderBarNewPtr = (GtkWidget* (*)())
     dlsym(RTLD_DEFAULT, "gtk_header_bar_new");
 
   GtkWidget* headerbar = sGtkHeaderBarNewPtr();
-  sWidgetStorage[aWidgetType] = headerbar;
+  sWidgetStorage[aAppearance] = headerbar;
 
   GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
   GtkStyleContext* style = gtk_widget_get_style_context(window);
 
-  if (aWidgetType == MOZ_GTK_HEADER_BAR_MAXIMIZED) {
+  if (aAppearance == MOZ_GTK_HEADER_BAR_MAXIMIZED) {
     gtk_style_context_add_class(style, "maximized");
     MOZ_ASSERT(sWidgetStorage[MOZ_GTK_HEADERBAR_WINDOW_MAXIMIZED] == nullptr,
                "Window widget is already created!");
@@ -648,7 +648,7 @@ GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale)
 
 static void
 CreateHeaderBarButton(GtkWidget* aParentWidget,
-                      WidgetNodeType aWidgetType)
+                      WidgetNodeType aAppearance)
 {
   GtkWidget* widget = gtk_button_new();
 
@@ -662,9 +662,9 @@ CreateHeaderBarButton(GtkWidget* aParentWidget,
 
   
   
-  NS_ASSERTION(sWidgetStorage[aWidgetType] == nullptr,
+  NS_ASSERTION(sWidgetStorage[aAppearance] == nullptr,
                "Titlebar button is already created!");
-  sWidgetStorage[aWidgetType] = widget;
+  sWidgetStorage[aAppearance] = widget;
 
   
   
@@ -675,7 +675,7 @@ CreateHeaderBarButton(GtkWidget* aParentWidget,
   gtk_style_context_add_class(style, "titlebutton");
 
   GtkWidget *image = nullptr;
-  switch (aWidgetType) {
+  switch (aAppearance) {
      case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
        gtk_style_context_add_class(style, "close");
        image = gtk_image_new_from_icon_name("window-close-symbolic",
@@ -716,10 +716,10 @@ CreateHeaderBarButton(GtkWidget* aParentWidget,
 
 static bool
 IsToolbarButtonEnabled(WidgetNodeType* aButtonLayout, int aButtonNums,
-                       WidgetNodeType aWidgetType)
+                       WidgetNodeType aAppearance)
 {
     for (int i = 0; i < aButtonNums; i++) {
-      if (aButtonLayout[i] == aWidgetType) {
+      if (aButtonLayout[i] == aAppearance) {
         return true;
       }
     }
@@ -776,12 +776,12 @@ CreateHeaderBar()
 }
 
 static GtkWidget*
-CreateWidget(WidgetNodeType aWidgetType)
+CreateWidget(WidgetNodeType aAppearance)
 {
-  MOZ_ASSERT(aWidgetType != MOZ_GTK_DROPDOWN_ENTRY,
+  MOZ_ASSERT(aAppearance != MOZ_GTK_DROPDOWN_ENTRY,
              "Callers should be passing MOZ_GTK_ENTRY");
 
-  switch (aWidgetType) {
+  switch (aAppearance) {
     case MOZ_GTK_WINDOW:
       return CreateWindowWidget();
     case MOZ_GTK_WINDOW_CONTAINER:
@@ -793,10 +793,10 @@ CreateWidget(WidgetNodeType aWidgetType)
     case MOZ_GTK_RADIOBUTTON_CONTAINER:
       return CreateRadiobuttonWidget();
     case MOZ_GTK_SCROLLBAR_HORIZONTAL:
-      return CreateScrollbarWidget(aWidgetType,
+      return CreateScrollbarWidget(aAppearance,
                                    GTK_ORIENTATION_HORIZONTAL);
     case MOZ_GTK_SCROLLBAR_VERTICAL:
-      return CreateScrollbarWidget(aWidgetType,
+      return CreateScrollbarWidget(aAppearance,
                                    GTK_ORIENTATION_VERTICAL);
     case MOZ_GTK_MENUBAR:
       return CreateMenuBarWidget();
@@ -869,7 +869,7 @@ CreateWidget(WidgetNodeType aWidgetType)
       
 
       CreateHeaderBar();
-      return sWidgetStorage[aWidgetType];
+      return sWidgetStorage[aAppearance];
     default:
       
       return nullptr;
@@ -877,11 +877,11 @@ CreateWidget(WidgetNodeType aWidgetType)
 }
 
 GtkWidget*
-GetWidget(WidgetNodeType aWidgetType)
+GetWidget(WidgetNodeType aAppearance)
 {
-  GtkWidget* widget = sWidgetStorage[aWidgetType];
+  GtkWidget* widget = sWidgetStorage[aAppearance];
   if (!widget) {
-    widget = CreateWidget(aWidgetType);
+    widget = CreateWidget(aAppearance);
     
     
     if (!widget)
@@ -900,7 +900,7 @@ GetWidget(WidgetNodeType aWidgetType)
     GtkStyleContext* style = gtk_widget_get_style_context(widget);
     gtk_style_context_invalidate(style);
 
-    sWidgetStorage[aWidgetType] = widget;
+    sWidgetStorage[aAppearance] = widget;
   }
   return widget;
 }
@@ -1082,13 +1082,13 @@ CreateChildCSSNode(const char* aName, WidgetNodeType aParentNodeType)
 
 
 static GtkStyleContext*
-CreateSubStyleWithClass(WidgetNodeType aWidgetType, const gchar* aStyleClass)
+CreateSubStyleWithClass(WidgetNodeType aAppearance, const gchar* aStyleClass)
 {
   static auto sGtkWidgetPathIterGetObjectName =
     reinterpret_cast<const char* (*)(const GtkWidgetPath*, gint)>
     (dlsym(RTLD_DEFAULT, "gtk_widget_path_iter_get_object_name"));
 
-  GtkStyleContext* parentStyle = GetWidgetRootStyle(aWidgetType);
+  GtkStyleContext* parentStyle = GetWidgetRootStyle(aAppearance);
 
   
   

@@ -55,13 +55,13 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
 
   
   mozilla::EventStates GetContentState(nsIFrame* aFrame,
-                                       mozilla::StyleAppearance aWidgetType);
+                                       mozilla::StyleAppearance aAppearance);
 
   
   
   
   bool IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
-                      mozilla::StyleAppearance aWidgetType);
+                      mozilla::StyleAppearance aAppearance);
 
   
 
@@ -187,7 +187,7 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   bool IsDarkBackground(nsIFrame* aFrame);
   
   typedef nscolor (*AutoColorGetter)(mozilla::ComputedStyle*);
-  bool IsWidgetScrollbarPart(mozilla::StyleAppearance aWidgetType);
+  bool IsWidgetScrollbarPart(mozilla::StyleAppearance aAppearance);
   nscolor GetScrollbarFaceColor(mozilla::ComputedStyle* aStyle,
                                 AutoColorGetter aAutoGetter);
   nscolor GetScrollbarTrackColor(mozilla::ComputedStyle* aStyle,
