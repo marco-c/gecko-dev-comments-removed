@@ -336,10 +336,6 @@
     "@mozilla.org/system-proxy-settings;1"
 
 
-#define NS_DHCPCLIENT_CONTRACTID \
-    "@mozilla.org/dhcp-client;1"
-
-
 #define NS_STREAMTRANSPORTSERVICE_CONTRACTID \
     "@mozilla.org/network/stream-transport-service;1"
 #define NS_STREAMTRANSPORTSERVICE_CID \

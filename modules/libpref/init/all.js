@@ -2229,7 +2229,6 @@ pref("network.proxy.autoconfig_url.include_path", false);
 
 pref("network.proxy.autoconfig_retry_interval_min", 5);    
 pref("network.proxy.autoconfig_retry_interval_max", 300);  
-pref("network.proxy.enable_wpad_over_dhcp", true);
 
 
 pref("network.stricttransportsecurity.preloadlist", true);
