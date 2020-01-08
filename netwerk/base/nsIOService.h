@@ -48,6 +48,7 @@ namespace mozilla {
 namespace net {
 class NeckoChild;
 class nsAsyncRedirectVerifyHelper;
+class SocketProcessHost;
 
 class nsIOService final : public nsIIOService,
                           public nsIObserver,
@@ -113,6 +114,11 @@ class nsIOService final : public nsIIOService,
   
   nsresult RecheckCaptivePortal();
 
+  void OnProcessLaunchComplete(SocketProcessHost* aHost, bool aSucceeded);
+  void OnProcessUnexpectedShutdown(SocketProcessHost* aHost);
+  bool SocketProcessReady();
+  void NotifySocketProcessPrefsChanged(const char* aName);
+
  private:
   
   
@@ -161,6 +167,9 @@ class nsIOService final : public nsIIOService,
   nsresult SpeculativeConnectInternal(nsIURI* aURI, nsIPrincipal* aPrincipal,
                                       nsIInterfaceRequestor* aCallbacks,
                                       bool aAnonymous);
+
+  nsresult LaunchSocketProcess();
+  void DestroySocketProcess();
 
  private:
   bool mOffline;
@@ -213,6 +222,9 @@ class nsIOService final : public nsIIOService,
 
   
   mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
+
+  SocketProcessHost* mSocketProcess;
+  nsTArray<const char*> mQueuedPrefNames;
 
  public:
   
