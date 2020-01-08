@@ -1009,6 +1009,12 @@ protected:
                                     nscoord* aOutsideBoxSizing) const;
 
   void CalculateBlockSideMargins(LayoutFrameType aFrameType);
+
+  
+
+
+
+  static void MarkFrameChildrenDirty(nsIFrame* aFrame);
 };
 
 } 
