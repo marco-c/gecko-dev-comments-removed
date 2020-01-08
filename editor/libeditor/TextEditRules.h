@@ -89,12 +89,10 @@ public:
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult WillDoAction(Selection* aSelection,
-                                EditSubActionInfo& aInfo,
+  virtual nsresult WillDoAction(EditSubActionInfo& aInfo,
                                 bool* aCancel,
                                 bool* aHandled);
-  virtual nsresult DidDoAction(Selection* aSelection,
-                               EditSubActionInfo& aInfo,
+  virtual nsresult DidDoAction(EditSubActionInfo& aInfo,
                                nsresult aResult);
 
   
@@ -154,7 +152,7 @@ public:
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput(Selection& aSelection);
+  MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput();
 
 protected:
 
@@ -416,8 +414,7 @@ protected:
   {
   public:
     AutoSafeEditorData(TextEditRules& aTextEditRules,
-                       TextEditor& aTextEditor,
-                       Selection& aSelection)
+                       TextEditor& aTextEditor)
       : mTextEditRules(aTextEditRules)
       , mHTMLEditor(nullptr)
     {
@@ -430,7 +427,6 @@ protected:
       }
       mTextEditor = &aTextEditor;
       mHTMLEditor = aTextEditor.AsHTMLEditor();
-      mSelection = &aSelection;
       mTextEditRules.mData = this;
     }
 
@@ -448,7 +444,6 @@ protected:
       MOZ_ASSERT(mHTMLEditor);
       return *mHTMLEditor;
     }
-    Selection& SelectionRef() const { return *mSelection; }
 
   private:
     
@@ -458,7 +453,6 @@ protected:
     RefPtr<TextEditor> mTextEditor;
     
     HTMLEditor* MOZ_NON_OWNING_REF mHTMLEditor;
-    RefPtr<Selection> mSelection;
   };
   AutoSafeEditorData* mData;
 
@@ -467,10 +461,13 @@ protected:
     MOZ_ASSERT(mData);
     return mData->TextEditorRef();
   }
-  Selection& SelectionRef() const
+  
+  
+  
+  const RefPtr<Selection>& SelectionRefPtr() const
   {
     MOZ_ASSERT(mData);
-    return mData->SelectionRef();
+    return TextEditorRef().SelectionRefPtr();
   }
   bool CanHandleEditAction() const
   {

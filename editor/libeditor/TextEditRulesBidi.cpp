@@ -50,7 +50,8 @@ TextEditRules::CheckBidiLevelForDeletion(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsFrameSelection> frameSelection = SelectionRef().GetFrameSelection();
+  RefPtr<nsFrameSelection> frameSelection =
+    SelectionRefPtr()->GetFrameSelection();
   if (NS_WARN_IF(!frameSelection)) {
     return NS_ERROR_FAILURE;
   }
@@ -96,7 +97,8 @@ TextEditRules::UndefineCaretBidiLevel()
 
 
 
-  RefPtr<nsFrameSelection> frameSelection = SelectionRef().GetFrameSelection();
+  RefPtr<nsFrameSelection> frameSelection =
+    SelectionRefPtr()->GetFrameSelection();
   if (frameSelection) {
     frameSelection->UndefineCaretBidiLevel();
   }

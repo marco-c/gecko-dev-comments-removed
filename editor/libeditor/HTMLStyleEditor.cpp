@@ -112,6 +112,8 @@ HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
                                       nsAtom* aAttribute,
                                       const nsAString& aValue)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   if (NS_WARN_IF(!mRules)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -119,12 +121,7 @@ HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
   RefPtr<TextEditRules> rules(mRules);
   CommitComposition();
 
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (selection->IsCollapsed()) {
+  if (SelectionRefPtr()->IsCollapsed()) {
     
     
     mTypeInState->SetProp(&aProperty, aAttribute, aValue);
@@ -141,14 +138,13 @@ HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
   bool cancel, handled;
   EditSubActionInfo subActionInfo(EditSubAction::eSetTextProperty);
   
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   if (!cancel && !handled) {
     
-    AutoRangeArray arrayOfRanges(selection);
+    AutoRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       
       
@@ -238,7 +234,7 @@ HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
     return NS_OK;
   }
 
-  rv = rules->DidDoAction(selection, subActionInfo, rv);
+  rv = rules->DidDoAction(subActionInfo, rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1334,18 +1330,15 @@ nsresult
 HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
                                          nsAtom* aAttribute)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   if (NS_WARN_IF(!mRules)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   CommitComposition();
 
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (selection->IsCollapsed()) {
+  if (SelectionRefPtr()->IsCollapsed()) {
     
     
 
@@ -1373,8 +1366,7 @@ HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
   EditSubActionInfo subActionInfo(EditSubAction::eRemoveTextProperty);
   
   RefPtr<TextEditRules> rules(mRules);
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1382,7 +1374,7 @@ HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
     
     
     
-    AutoRangeArray arrayOfRanges(selection);
+    AutoRangeArray arrayOfRanges(SelectionRefPtr());
     for (auto& range : arrayOfRanges.mRanges) {
       if (aProperty == nsGkAtoms::name) {
         
@@ -1480,7 +1472,7 @@ HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
     return NS_OK;
   }
 
-  rv = rules->DidDoAction(selection, subActionInfo, rv);
+  rv = rules->DidDoAction(subActionInfo, rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

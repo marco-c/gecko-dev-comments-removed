@@ -92,7 +92,11 @@ static nsresult FindTargetNode(nsINode* aStart,
 nsresult
 HTMLEditor::LoadHTML(const nsAString& aInputString)
 {
-  NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (NS_WARN_IF(!mRules)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
 
   
   CommitComposition();
@@ -102,16 +106,11 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
                                       EditSubAction::eInsertHTMLSource,
                                       nsIEditor::eNext);
 
-  
-  RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_STATE(selection);
-
   EditSubActionInfo subActionInfo(EditSubAction::eInsertHTMLSource);
   bool cancel, handled;
   
   RefPtr<TextEditRules> rules(mRules);
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -121,7 +120,7 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
 
   if (!handled) {
     
-    if (!selection->IsCollapsed()) {
+    if (!SelectionRefPtr()->IsCollapsed()) {
       rv = DeleteSelectionAsSubAction(eNone, eStrip);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -129,8 +128,10 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
     }
 
     
-    RefPtr<nsRange> range = selection->GetRangeAt(0);
-    NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
+    RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(0);
+    if (NS_WARN_IF(!range)) {
+      return NS_ERROR_FAILURE;
+    }
 
     
     ErrorResult error;
@@ -169,7 +170,11 @@ HTMLEditor::LoadHTML(const nsAString& aInputString)
     }
   }
 
-  return rules->DidDoAction(selection, subActionInfo, rv);
+  rv = rules->DidDoAction(subActionInfo, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -197,7 +202,11 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                     bool aTrustedInput,
                                     bool aClearStyle)
 {
-  NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (NS_WARN_IF(!mRules)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
 
   
   RefPtr<TextEditRules> rules(mRules);
@@ -208,12 +217,6 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::ePasteHTMLContent,
                                       nsIEditor::eNext);
-
-  
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
 
   
   nsCOMPtr<nsINode> fragmentAsNode, streamStartParent, streamEndParent;
@@ -232,7 +235,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   if (!aDestNode) {
     
     
-    targetPoint = EditorBase::GetStartPoint(*selection);
+    targetPoint = EditorBase::GetStartPoint(*SelectionRefPtr());
     if (NS_WARN_IF(!targetPoint.IsSet()) ||
         !IsEditable(targetPoint.GetContainer())) {
       return NS_ERROR_FAILURE;
@@ -259,7 +262,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     }
 
     ErrorResult error;
-    selection->Collapse(targetPoint, error);
+    SelectionRefPtr()->Collapse(targetPoint, error);
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -315,8 +318,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 
     if (aClearStyle) {
       
-      nsCOMPtr<nsINode> tmpNode = selection->GetAnchorNode();
-      int32_t tmpOffset = static_cast<int32_t>(selection->AnchorOffset());
+      nsCOMPtr<nsINode> tmpNode = SelectionRefPtr()->GetAnchorNode();
+      int32_t tmpOffset =
+        static_cast<int32_t>(SelectionRefPtr()->AnchorOffset());
       rv = ClearStyle(address_of(tmpNode), &tmpOffset, nullptr, nullptr);
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -334,14 +338,19 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
       }
     }
     
-    selection->CollapseToStart(IgnoreErrors());
+    IgnoredErrorResult ignoredError;
+    SelectionRefPtr()->CollapseToStart(ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse Selection to start");
   }
 
   
   EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
   bool cancel, handled;
-  rv = rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
-  NS_ENSURE_SUCCESS(rv, rv);
+  rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (cancel) {
     return NS_OK; 
   }
@@ -351,7 +360,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     
     EditorDOMPoint pointToInsert =
       GetBetterInsertionPointFor(nodeList[0],
-                                 EditorBase::GetStartPoint(*selection));
+                                 EditorBase::GetStartPoint(*SelectionRefPtr()));
     if (NS_WARN_IF(!pointToInsert.IsSet())) {
       return NS_ERROR_FAILURE;
     }
@@ -667,7 +676,8 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
           }
         }
       }
-      selection->Collapse(selNode, selOffset);
+      DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(selNode, selOffset);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse Selection");
 
       
       nsCOMPtr<nsIContent> linkContent;
@@ -686,14 +696,20 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
         if (splitLinkResult.GetPreviousNode()) {
           EditorRawDOMPoint afterLeftLink(splitLinkResult.GetPreviousNode());
           if (afterLeftLink.AdvanceOffset()) {
-            selection->Collapse(afterLeftLink);
+            DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(afterLeftLink);
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+              "Failed to collapse Selection after the left link");
           }
         }
       }
     }
   }
 
-  return rules->DidDoAction(selection, subActionInfo, rv);
+  rv = rules->DidDoAction(subActionInfo, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 
@@ -1729,17 +1745,11 @@ HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
                                       *this, EditSubAction::eInsertQuotation,
                                       nsIEditor::eNext);
 
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
-
   
   EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
   bool cancel, handled;
   RefPtr<TextEditRules> rules(mRules);
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1759,7 +1769,7 @@ HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
                    NS_LITERAL_STRING("cite"), true);
 
   
-  rv = selection->Collapse(newNode, 0);
+  rv = SelectionRefPtr()->Collapse(newNode, 0);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1978,13 +1988,10 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                                        bool aAddCites,
                                        nsINode** aNodeInserted)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   if (aNodeInserted) {
     *aNodeInserted = nullptr;
-  }
-
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
   }
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
@@ -1996,8 +2003,7 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   bool cancel, handled;
   
   RefPtr<TextEditRules> rules(mRules);
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2034,7 +2040,7 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     }
 
     
-    DebugOnly<nsresult> rv = selection->Collapse(newNode, 0);
+    DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(newNode, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
       "Failed to collapse selection into the new node");
   }
@@ -2061,7 +2067,7 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   NS_WARNING_ASSERTION(advanced,
     "Failed to advance offset to after the new <span> element");
   if (advanced) {
-    DebugOnly<nsresult> rvIgnored = selection->Collapse(afterNewNode);
+    DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(afterNewNode);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
       "Failed to collapse after the new node");
   }
@@ -2171,12 +2177,8 @@ HTMLEditor::InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
                                            bool aInsertHTML,
                                            nsINode** aNodeInserted)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsPlaintextEditor());
-
-  RefPtr<Selection> selection = GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertQuotation,
@@ -2187,8 +2189,7 @@ HTMLEditor::InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
   bool cancel, handled;
   
   RefPtr<TextEditRules> rules(mRules);
-  nsresult rv =
-    rules->WillDoAction(selection, subActionInfo, &cancel, &handled);
+  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2211,7 +2212,9 @@ HTMLEditor::InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
   }
 
   
-  selection->Collapse(newNode, 0);
+  DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(newNode, 0);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+    "Failed to collapse Selection in the new <blockquote> element");
 
   if (aInsertHTML) {
     rv = LoadHTML(aQuotedText);
@@ -2235,7 +2238,7 @@ HTMLEditor::InsertAsCitedQuotationInternal(const nsAString& aQuotedText,
   NS_WARNING_ASSERTION(advanced,
     "Failed advance offset to after the new <blockquote> element");
   if (advanced) {
-    DebugOnly<nsresult> rvIgnored = selection->Collapse(afterNewNode);
+    DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(afterNewNode);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
       "Failed to collapse after the new node");
   }
