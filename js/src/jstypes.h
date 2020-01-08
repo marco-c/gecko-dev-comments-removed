@@ -76,7 +76,7 @@
 
 
 #if MOZ_IS_GCC
-#  if !MOZ_GCC_VERSION_AT_LEAST(8, 1, 0)
+#  if !MOZ_GCC_VERSION_AT_LEAST(8, 2, 0)
 #    define JS_BROKEN_GCC_ATTRIBUTE_WARNING
 #  endif
 #endif
