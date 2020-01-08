@@ -709,7 +709,7 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, OffsetAndDefIndex* offsetSt
       case JSOP_INITHOMEOBJECT:
         
         MOZ_ASSERT(nuses == 2);
-        MOZ_ASSERT(ndefs == 2);
+        MOZ_ASSERT(ndefs == 1);
         break;
 
       case JSOP_SETGNAME:

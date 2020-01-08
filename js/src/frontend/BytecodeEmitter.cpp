@@ -5861,6 +5861,7 @@ BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isA
     
     
     
+    
     if (!emitAsyncWrapperLambda(index, isArrow)) {
         return false;
     }
@@ -7902,7 +7903,10 @@ BytecodeEmitter::emitPropertyList(ListNode* obj, MutableHandlePlainObject objp, 
                     return false;
                 }
             }
-            if (!emit2(JSOP_INITHOMEOBJECT, isIndex + isAsync)) {
+            if (!emitDupAt(1 + isIndex + isAsync)) {
+                return false;
+            }
+            if (!emit1(JSOP_INITHOMEOBJECT)) {
                 return false;
             }
             if (isAsync) {
@@ -8806,7 +8810,11 @@ BytecodeEmitter::emitClass(ClassNode* classNode)
             return false;
         }
         if (constructor->funbox()->needsHomeObject()) {
-            if (!emit2(JSOP_INITHOMEOBJECT, 0)) {
+            if (!emitDupAt(1)) {
+                
+                return false;
+            }
+            if (!emit1(JSOP_INITHOMEOBJECT)) {
                 
                 return false;
             }

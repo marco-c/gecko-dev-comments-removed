@@ -927,7 +927,7 @@
 
 
  \
-    MACRO(JSOP_INITHOMEOBJECT, 92, "inithomeobject", NULL, 2, 2, 2, JOF_UINT8) \
+    MACRO(JSOP_INITHOMEOBJECT, 92, "inithomeobject", NULL, 1, 2, 1, JOF_BYTE) \
     
 
 
