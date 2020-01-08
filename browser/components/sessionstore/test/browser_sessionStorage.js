@@ -94,6 +94,22 @@ add_task(async function session_storage() {
   ok(!state.hasOwnProperty("storage"), "storage data was discarded");
 
   
+  
+  await modifySessionStorage(browser, {}, {frameIndex: 0});
+  await TabStateFlusher.flush(browser);
+  ({storage} = JSON.parse(ss.getTabState(tab)));
+  is(storage["http://example.com"], undefined,
+    "sessionStorage data for example.com has been cleared correctly");
+
+  
+  
+  await modifySessionStorage(browser, {});
+  await TabStateFlusher.flush(browser);
+  ({storage} = JSON.parse(ss.getTabState(tab)));
+  is(storage, null,
+    "sessionStorage data for the entire tab has been cleared correctly");
+
+  
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);
 });
