@@ -4,8 +4,6 @@
 
 
 
-#include <locale.h>
-
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 
@@ -35,23 +33,4 @@ TEST(PrefsBasics, Errors)
     Preferences::GetFloat("foo.float", 1.0f, PrefValueKind::Default), 3.33f);
   ASSERT_FLOAT_EQ(Preferences::GetFloat("foo.float", 1.0f, PrefValueKind::User),
                   4.44f);
-}
-
-TEST(PrefsBasics, FloatConversions)
-{
-  
-  
-  
-  const char* oldLocale = setlocale(LC_NUMERIC, "nl_NL");
-  if (oldLocale != nullptr) {
-    Preferences::SetFloat("foo.float", 3.33f, PrefValueKind::Default);
-    Preferences::SetFloat("foo.float", 4.44f, PrefValueKind::User);
-    ASSERT_FLOAT_EQ(
-      Preferences::GetFloat("foo.float", 1.0f, PrefValueKind::Default), 3.33f);
-    ASSERT_FLOAT_EQ(
-      Preferences::GetFloat("foo.float", 1.0f, PrefValueKind::User), 4.44f);
-
-    
-    setlocale(LC_NUMERIC, oldLocale);
-  }
 }

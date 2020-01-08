@@ -14,7 +14,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "nsILabelableRunnable.h"
-#include "nsPrintfCString.h"
 
 
 #undef Yield
