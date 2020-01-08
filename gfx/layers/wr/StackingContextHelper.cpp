@@ -36,12 +36,12 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
                                              bool aIsPreserve3D,
                                              const Maybe<nsDisplayTransform*>& aDeferredTransformItem,
                                              const wr::WrClipId* aClipNodeId,
-                                             bool aRasterizeLocally)
+                                             bool aAnimated)
   : mBuilder(&aBuilder)
   , mScale(1.0f, 1.0f)
   , mDeferredTransformItem(aDeferredTransformItem)
   , mIsPreserve3D(aIsPreserve3D)
-  , mRasterizeLocally(aRasterizeLocally || aParentSC.mRasterizeLocally)
+  , mRasterizeLocally(aAnimated || aParentSC.mRasterizeLocally)
 {
   
   
@@ -51,7 +51,7 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
       && !aParentSC.mIsPreserve3D) {
     mInheritedTransform = transform2d * aParentSC.mInheritedTransform;
     mScale = mInheritedTransform.ScaleFactors(true);
-    if (aAnimation) {
+    if (aAnimated) {
       mSnappingSurfaceTransform = gfx::Matrix::Scaling(mScale.width, mScale.height);
     } else {
       mSnappingSurfaceTransform = transform2d * aParentSC.mSnappingSurfaceTransform;

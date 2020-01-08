@@ -39,7 +39,7 @@ public:
                         bool aIsPreserve3D = false,
                         const Maybe<nsDisplayTransform*>& aDeferredTransformItem = Nothing(),
                         const wr::WrClipId* aClipNodeId = nullptr,
-                        bool aRasterizeLocally = false);
+                        bool aAnimated = false);
   
   
   
