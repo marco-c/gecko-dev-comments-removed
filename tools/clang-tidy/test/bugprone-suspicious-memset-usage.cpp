@@ -2,20 +2,21 @@
 
 #include "structures.h"
 
-void test(int* ip, char* cp) {
+void test(int* ip, char* cp)
+{
   
-  memset(ip, '0', 1);  
-  memset(cp, '0', 1);  
+  memset(ip, '0', 1); 
+  memset(cp, '0', 1); 
 
   
-  memset(ip, 0xabcd, 1);  
-  memset(ip, 0x00cd, 1);  
-  memset(ip, 0x00, 1);    
+  memset(ip, 0xabcd, 1); 
+  memset(ip, 0x00cd, 1); 
+  memset(ip, 0x00, 1);   
 
   
-  memset(ip, sizeof(int), 0);  
-  memset(ip, sizeof(int), 1);  
+  memset(ip, sizeof(int), 0); 
+  memset(ip, sizeof(int), 1); 
 
   
-  memset(ip, 8, 0);  
+  memset(ip, 8, 0); 
 }

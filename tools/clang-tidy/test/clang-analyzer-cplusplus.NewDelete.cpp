@@ -2,43 +2,49 @@
 
 void use(int *p);
 
-void test_use_parameter_after_delete(int *p) {
+void test_use_parameter_after_delete(int *p)
+{
   delete p;
-  use(p);  
+  use(p); 
 }
 
 class SomeClass {
- public:
+public:
   void f();
 };
 
-void test_use_local_after_delete() {
+void test_use_local_after_delete()
+{
   SomeClass *c = new SomeClass;
   delete c;
-  c->f();  
+  c->f(); 
 }
 
 
-void test_delete_alloca() {
+void test_delete_alloca()
+{
   int *p = (int *)__builtin_alloca(sizeof(int));
-  delete p;  
+  delete p; 
 }
 
-void test_double_free() {
+void test_double_free()
+{
   int *p = new int;
   delete p;
-  delete p;  
+  delete p; 
 }
 
-void test_delete_local() {
+void test_delete_local()
+{
   int i;
-  delete &i;  
+  delete &i; 
 }
 
 
-void test_delete_offset() {
+void test_delete_offset()
+{
   int *p = new int[1];
-  delete[](++p);
-  
-  
+  delete[] (++p);
+    
+    
 }

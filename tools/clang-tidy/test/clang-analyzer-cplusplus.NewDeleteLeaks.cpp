@@ -1,3 +1,6 @@
 
 
-void test() { int *p = new int; }  
+void test()
+{
+  int *p = new int;
+} 

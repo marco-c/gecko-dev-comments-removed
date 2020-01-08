@@ -2,15 +2,16 @@
 
 #include "structures.h"
 
-void test() {
+void test()
+{
   
-  std::string str('x', 50);  
+  std::string str('x', 50); 
 
   
   
-  std::string("test", 200);  
+  std::string("test", 200);   
 
   
   
-  std::string("test", 0);  
+  std::string("test", 0);   
 }

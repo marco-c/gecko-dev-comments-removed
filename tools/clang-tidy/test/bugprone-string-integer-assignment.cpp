@@ -2,24 +2,27 @@
 
 #include "structures.h"
 
-void test_int() {
+void test_int()
+{
   
   std::string s;
   int x = 5965;
-  s = 6;  
-  s = x;  
+  s = 6; 
+  s = x; 
 }
 
-void test_conversion() {
+void test_conversion()
+{
   
   std::string s;
   int x = 5965;
-  s = '6';                
-  s = std::to_string(x);  
+  s = '6'; 
+  s = std::to_string(x); 
 }
 
-void test_cast() {
+void test_cast()
+{
   
   std::string s;
-  s = static_cast<char>(6);  
+  s = static_cast<char>(6); 
 }
