@@ -95,5 +95,18 @@ WebRenderCanvasRendererAsync::Destroy()
   }
 }
 
+void
+WebRenderCanvasRendererAsync::UpdateCompositableClientForEmptyTransaction()
+{
+  UpdateCompositableClient();
+  if (mPipelineId.isSome()) {
+    
+    
+    
+    
+    mManager->WrBridge()->AddWebRenderParentCommand(OpUpdatedAsyncImagePipeline(mPipelineId.ref()));
+  }
+}
+
 } 
 } 
