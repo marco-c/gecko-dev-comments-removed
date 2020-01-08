@@ -3,16 +3,16 @@
 
 
 
-const Cm = Components.manager;
+this.EXPORTED_SYMBOLS = ["AsanReporter"];
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
+  Log: "resource://gre/modules/Log.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["TextDecoder", "XMLHttpRequest"]);
 
@@ -22,24 +22,34 @@ const PREF_API_URL = "asanreporter.apiurl";
 const PREF_AUTH_TOKEN = "asanreporter.authtoken";
 const PREF_LOG_LEVEL = "asanreporter.loglevel";
 
+const LOGGER_NAME = "asanreporter";
 
-const LOGGER_NAME = "extensions.asanreporter";
-let logger = Log.repository.getLogger(LOGGER_NAME);
-logger.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
-logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
-logger.level = Preferences.get(PREF_LOG_LEVEL, Log.Level.Info);
+let logger;
 
+XPCOMUtils.defineLazyGetter(this, "asanDumpDir", () => {
+  let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  return OS.Path.join(profileDir.path, "asan");
+});
 
-let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-let asanDumpDir = OS.Path.join(profileDir.path, "asan");
-
-this.TabCrashObserver = {
+this.AsanReporter = {
   init() {
     if (this.initialized)
       return;
     this.initialized = true;
 
+    
+    logger = Log.repository.getLogger(LOGGER_NAME);
+    logger.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+    logger.addAppender(new Log.DumpAppender(new Log.BasicFormatter()));
+    logger.level = Services.prefs.getIntPref(PREF_LOG_LEVEL, Log.Level.Info);
+
+    logger.info("Starting up...");
+
+    
+    
     Services.obs.addObserver(this, "ipc:content-shutdown");
+
+    processDirectory();
   },
 
   observe(aSubject, aTopic, aData) {
@@ -48,31 +58,13 @@ this.TabCrashObserver = {
         if (!aSubject.get("abnormal")) {
           return;
         }
-        processDirectory(asanDumpDir);
+        processDirectory();
     }
   },
 };
 
-function install(aData, aReason) {}
-
-function uninstall(aData, aReason) {}
-
-function startup(aData, aReason) {
-  logger.info("Starting up...");
-
-  
-  
-  TabCrashObserver.init();
-
-  processDirectory(asanDumpDir);
-}
-
-function shutdown(aData, aReason) {
-  logger.info("Shutting down...");
-}
-
-function processDirectory(pathString) {
-  let iterator = new OS.File.DirectoryIterator(pathString);
+function processDirectory() {
+  let iterator = new OS.File.DirectoryIterator(asanDumpDir);
   let results = [];
 
   
@@ -130,9 +122,9 @@ function submitReport(reportFile) {
 function submitToServer(data) {
   return new Promise(function(resolve, reject) {
       logger.debug("Setting up XHR request");
-      let client = Preferences.get(PREF_CLIENT_ID);
-      let api_url = Preferences.get(PREF_API_URL);
-      let auth_token = Preferences.get(PREF_AUTH_TOKEN);
+      let client = Services.prefs.getStringPref(PREF_CLIENT_ID);
+      let api_url = Services.prefs.getStringPref(PREF_API_URL);
+      let auth_token = Services.prefs.getStringPref(PREF_AUTH_TOKEN, null);
 
       let decoder = new TextDecoder();
 
