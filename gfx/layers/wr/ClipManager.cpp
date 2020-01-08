@@ -101,7 +101,7 @@ ClipManager::PushOverrideForASR(const ActiveScrolledRoot* aASR,
   MOZ_ASSERT(scrollId.isSome());
 
   CLIP_LOG("Pushing override %zu -> %s\n", scrollId->id,
-      Stringify(aClipId->id).c_str());
+      Stringify(aClipId.id).c_str());
   auto it = mASROverride.insert({ *scrollId, std::stack<wr::WrClipId>() });
   it.first->second.push(aClipId);
 
@@ -122,7 +122,7 @@ ClipManager::PopOverrideForASR(const ActiveScrolledRoot* aASR)
   MOZ_ASSERT(it != mASROverride.end());
   MOZ_ASSERT(!(it->second.empty()));
   CLIP_LOG("Popping override %zu -> %s\n", scrollId->id,
-      Stringify(it->second.top()->id).c_str());
+      Stringify(it->second.top().id).c_str());
   it->second.pop();
   if (it->second.empty()) {
     mASROverride.erase(it);
@@ -141,7 +141,7 @@ ClipManager::ClipIdAfterOverride(const Maybe<wr::WrClipId>& aClipId)
   }
   MOZ_ASSERT(!it->second.empty());
   CLIP_LOG("Overriding %zu with %s\n", aClipId->id,
-      it->second.top() ? Stringify(it->second.top()->id).c_str() : "(none)");
+      Stringify(it->second.top().id).c_str());
   return Some(it->second.top());
 }
 
@@ -231,26 +231,7 @@ ClipManager::BeginItem(nsDisplayItem* aItem,
   
   clips.mClipChainId = DefineClipChain(clip, auPerDevPixel, aStackingContext);
 
-  if (clip && clip->mASR == asr) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const ClipIdMap& cache = mCacheStack.top();
-    auto it = cache.find(clip);
-    MOZ_ASSERT(it != cache.end());
-    clips.mScrollId = Some(it->second);
-  } else if (clip) {
+if (clip) {
     
     
     Maybe<wr::WrClipId> scrollId = GetScrollLayer(asr);
