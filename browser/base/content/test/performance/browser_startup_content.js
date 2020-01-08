@@ -74,9 +74,6 @@ const whitelist = {
 
     
     "resource://gre/modules/ServiceWorkerCleanUp.jsm",
-
-    
-    "resource://normandy-content/AboutPages.jsm",
   ]),
 };
 
