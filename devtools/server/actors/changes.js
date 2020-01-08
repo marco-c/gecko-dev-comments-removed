@@ -26,7 +26,7 @@ const ChangesActor = protocol.ActorClassWithSpec(changesSpec, {
     this.targetActor = targetActor;
 
     this.onTrackChange = this.pushChange.bind(this);
-    this.onWillNavigate = this.clearChanges.bind(this);
+    this.onWillNavigate = this.onWillNavigate.bind(this);
 
     TrackChangeEmitter.on("track-change", this.onTrackChange);
     this.targetActor.on("will-navigate", this.onWillNavigate);
@@ -72,6 +72,28 @@ const ChangesActor = protocol.ActorClassWithSpec(changesSpec, {
 
     this._changesHaveBeenRequested = true;
     return this.changes.slice();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onWillNavigate: function(eventData) {
+    if (eventData.isTopLevel) {
+      this.clearChanges();
+    }
   },
 
   pushChange: function(change) {
