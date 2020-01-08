@@ -52,14 +52,14 @@ enum class CompositorHitTestFlags : uint8_t {
 using CompositorHitTestInfo = EnumSet<CompositorHitTestFlags, uint32_t>;
 
 
-const CompositorHitTestInfo CompositorHitTestInvisibleToHit;
+constexpr CompositorHitTestInfo CompositorHitTestInvisibleToHit;
 
 
-const CompositorHitTestInfo CompositorHitTestTouchActionMask =
-  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPanXDisabled) +
-  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPanYDisabled) +
-  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionPinchZoomDisabled) +
-  CompositorHitTestInfo(CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
+constexpr CompositorHitTestInfo CompositorHitTestTouchActionMask(
+  CompositorHitTestFlags::eTouchActionPanXDisabled,
+  CompositorHitTestFlags::eTouchActionPanYDisabled,
+  CompositorHitTestFlags::eTouchActionPinchZoomDisabled,
+  CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
 
 } 
 
