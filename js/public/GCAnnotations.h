@@ -55,6 +55,11 @@
 
 # define JS_HAZ_CAN_RUN_SCRIPT __attribute__((annotate("Can run script")))
 
+
+
+
+# define JS_HAZ_JSNATIVE_CALLER __attribute__((annotate("Calls JSNatives")))
+
 #else
 
 # define JS_HAZ_GC_THING
@@ -66,6 +71,7 @@
 # define JS_HAZ_GC_CALL
 # define JS_HAZ_GC_SUPPRESSED
 # define JS_HAZ_CAN_RUN_SCRIPT
+# define JS_HAZ_JSNATIVE_CALLER
 
 #endif
 

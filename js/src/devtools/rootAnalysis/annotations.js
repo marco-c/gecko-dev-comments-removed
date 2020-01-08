@@ -427,3 +427,15 @@ function listNonGCPointers() {
         'NPIdentifier',
     ];
 }
+
+function isJSNative(mangled)
+{
+    
+    
+    
+    
+    
+    
+    
+    return mangled.endsWith("P9JSContextjPN2JS5ValueE") && mangled.startsWith("_Z");
+}
