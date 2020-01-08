@@ -194,6 +194,30 @@ VectorAddOrRemoveEntry(Vector& aVector, const Entry& aEntry, bool aAdding)
   aVector.append(aEntry);
 }
 
+bool SpewEnabled();
+void InternalPrint(const char* aFormat, va_list aArgs);
+
+#define MOZ_MakeRecordReplayPrinter(aName, aSpewing)            \
+  static inline void                                            \
+  aName(const char* aFormat, ...)                               \
+  {                                                             \
+    if ((IsRecordingOrReplaying() || IsMiddleman()) && (!aSpewing || SpewEnabled())) { \
+      va_list ap;                                               \
+      va_start(ap, aFormat);                                    \
+      InternalPrint(aFormat, ap);                               \
+      va_end(ap);                                               \
+    }                                                           \
+  }
+
+
+
+
+
+MOZ_MakeRecordReplayPrinter(Print, false)
+MOZ_MakeRecordReplayPrinter(PrintSpew, true)
+
+#undef MOZ_MakeRecordReplayPrinter
+
 
 
 
@@ -226,25 +250,94 @@ private:
 void DumpTimers();
 
 
-namespace UntrackedMemoryKind {
+
+
+
+
+
+
+
+
+
+
+
+enum class MemoryKind {
   
-  static const AllocatedMemoryKind Generic = 2;
+  Tracked,
 
   
-  static const AllocatedMemoryKind File = 3;
 
   
-  static const AllocatedMemoryKind ThreadSnapshot = 4;
+  Generic,
 
   
-  static const AllocatedMemoryKind TrackedRegions = 5;
-  static const AllocatedMemoryKind FreeRegions = 6;
-  static const AllocatedMemoryKind DirtyPageSet = 7;
-  static const AllocatedMemoryKind SortedDirtyPageSet = 8;
-  static const AllocatedMemoryKind PageCopy = 9;
+  ThreadSnapshot,
 
-  static const size_t Count = 10;
-}
+  
+  TrackedRegions,
+  FreeRegions,
+  DirtyPageSet,
+  SortedDirtyPageSet,
+  PageCopy,
+
+  
+  Navigation,
+
+  Count
+};
+
+
+
+void* AllocateMemory(size_t aSize, MemoryKind aKind);
+void DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind);
+
+
+template <MemoryKind Kind>
+class AllocPolicy
+{
+public:
+  template <typename T>
+  T* maybe_pod_calloc(size_t aNumElems) {
+    if (aNumElems & tl::MulOverflowMask<sizeof(T)>::value) {
+      MOZ_CRASH();
+    }
+    
+    return static_cast<T*>(AllocateMemory(aNumElems * sizeof(T), Kind));
+  }
+
+  template <typename T>
+  void free_(T* aPtr, size_t aSize) {
+    DeallocateMemory(aPtr, aSize * sizeof(T), Kind);
+  }
+
+  template <typename T>
+  T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
+    T* res = maybe_pod_calloc<T>(aNewSize);
+    memcpy(res, aPtr, aOldSize * sizeof(T));
+    free_<T>(aPtr, aOldSize);
+    return res;
+  }
+
+  template <typename T>
+  T* maybe_pod_malloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
+
+  template <typename T>
+  T* pod_malloc(size_t aNumElems) { return maybe_pod_malloc<T>(aNumElems); }
+
+  template <typename T>
+  T* pod_calloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
+
+  template <typename T>
+  T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
+    return maybe_pod_realloc<T>(aPtr, aOldSize, aNewSize);
+  }
+
+  void reportAllocOverflow() const {}
+
+  MOZ_MUST_USE bool checkSimulatedOOM() const {
+    return true;
+  }
+};
 
 
 

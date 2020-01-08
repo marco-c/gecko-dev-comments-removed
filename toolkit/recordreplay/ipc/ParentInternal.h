@@ -52,6 +52,19 @@ void Shutdown();
 static Monitor* gMonitor;
 
 
+void Resume(bool aForward);
+
+
+void Pause();
+
+
+
+void SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse);
+
+
+void SetBreakpoint(size_t aId, const js::BreakpointPosition& aPosition);
+
+
 
 
 
@@ -258,7 +271,7 @@ public:
 
   
   
-  typedef std::function<bool(JS::replay::ExecutionPosition::Kind)> BreakpointFilter;
+  typedef std::function<bool(js::BreakpointPosition::Kind)> BreakpointFilter;
   bool IsPausedAtMatchingBreakpoint(const BreakpointFilter& aFilter);
 
   

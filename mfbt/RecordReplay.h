@@ -18,6 +18,8 @@
 #include <stdarg.h>
 
 struct PLDHashTableOps;
+struct JSContext;
+class JSObject;
 
 namespace mozilla {
 namespace recordreplay {
@@ -201,7 +203,7 @@ static inline void MovePLDHashTableContents(const PLDHashTableOps* aFirstOps,
 
 
 
-MFBT_API void SetWeakPointerJSRoot(const void* aPtr, void* aJSObj);
+MFBT_API void SetWeakPointerJSRoot(const void* aPtr, JSObject* aJSObj);
 
 
 
@@ -331,54 +333,24 @@ static const char gRecordingFileOption[] = "-recordReplayFile";
 
 
 
+typedef uint64_t ProgressCounter;
+MFBT_API ProgressCounter* ExecutionProgressCounter();
 
-
-struct CheckpointId
+static inline void
+AdvanceExecutionProgressCounter()
 {
-  
-  
-  size_t mNormal;
-
-  
-  static const size_t Invalid = 0;
-  static const size_t First = 1;
-
-  
-  
-  size_t mTemporary;
-
-  explicit CheckpointId(size_t aNormal = Invalid, size_t aTemporary = 0)
-    : mNormal(aNormal), mTemporary(aTemporary)
-  {}
-
-  inline bool operator==(const CheckpointId& o) const {
-    return mNormal == o.mNormal && mTemporary == o.mTemporary;
-  }
-
-  inline bool operator!=(const CheckpointId& o) const {
-    return mNormal != o.mNormal || mTemporary != o.mTemporary;
-  }
-};
+  ++*ExecutionProgressCounter();
+}
 
 
 
-typedef void (*BeforeCheckpointHook)();
+
+MFBT_API bool IsInternalScript(const char* aURL);
 
 
 
-typedef void (*AfterCheckpointHook)(const CheckpointId& aCheckpoint);
 
-
-MFBT_API void SetCheckpointHooks(BeforeCheckpointHook aBeforeCheckpoint,
-                                 AfterCheckpointHook aAfterCheckpoint);
-
-
-
-MFBT_API void ResumeExecution();
-
-
-
-MFBT_API void RestoreCheckpointAndResume(const CheckpointId& aCheckpoint);
+MFBT_API bool DefineRecordReplayControlObject(JSContext* aCx, JSObject* aObj);
 
 
 
@@ -386,97 +358,26 @@ MFBT_API void RestoreCheckpointAndResume(const CheckpointId& aCheckpoint);
 
 
 
-MFBT_API void DivergeFromRecording();
+MFBT_API void BeginContentParse(const void* aToken,
+                                const char* aURL, const char* aContentType);
 
 
+MFBT_API void AddContentParseData(const void* aToken,
+                                  const char16_t* aBuffer, size_t aLength);
 
 
+MFBT_API void EndContentParse(const void* aToken);
 
 
-MFBT_API void DisallowUnhandledDivergeFromRecording();
-
-
-
-
-
-MFBT_API bool NewCheckpoint(bool aTemporary);
-
-
-
-
-
-static inline void Print(const char* aFormat, ...);
-static inline void PrintSpew(const char* aFormat, ...);
-MFBT_API bool SpewEnabled();
-
-
-
-
-
-
-
-
-
-
-
-typedef size_t AllocatedMemoryKind;
-static const AllocatedMemoryKind TrackedMemoryKind = 0;
-
-
-static const AllocatedMemoryKind DebuggerAllocatedMemoryKind = 1;
-
-
-
-MFBT_API void* AllocateMemory(size_t aSize, AllocatedMemoryKind aKind);
-MFBT_API void DeallocateMemory(void* aAddress, size_t aSize, AllocatedMemoryKind aKind);
-
-
-template <AllocatedMemoryKind Kind>
-class AllocPolicy
+static inline void
+NoteContentParse(const void* aToken,
+                 const char* aURL, const char* aContentType,
+                 const char16_t* aBuffer, size_t aLength)
 {
-public:
-  template <typename T>
-  T* maybe_pod_calloc(size_t aNumElems) {
-    if (aNumElems & tl::MulOverflowMask<sizeof(T)>::value) {
-      MOZ_CRASH();
-    }
-    
-    return static_cast<T*>(AllocateMemory(aNumElems * sizeof(T), Kind));
-  }
-
-  template <typename T>
-  void free_(T* aPtr, size_t aSize) {
-    DeallocateMemory(aPtr, aSize * sizeof(T), Kind);
-  }
-
-  template <typename T>
-  T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    T* res = maybe_pod_calloc<T>(aNewSize);
-    memcpy(res, aPtr, aOldSize * sizeof(T));
-    free_<T>(aPtr, aOldSize);
-    return res;
-  }
-
-  template <typename T>
-  T* maybe_pod_malloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
-
-  template <typename T>
-  T* pod_malloc(size_t aNumElems) { return maybe_pod_malloc<T>(aNumElems); }
-
-  template <typename T>
-  T* pod_calloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
-
-  template <typename T>
-  T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    return maybe_pod_realloc<T>(aPtr, aOldSize, aNewSize);
-  }
-
-  void reportAllocOverflow() const {}
-
-  MOZ_MUST_USE bool checkSimulatedOOM() const {
-    return true;
-  }
-};
+  BeginContentParse(aToken, aURL, aContentType);
+  AddContentParseData(aToken, aBuffer, aLength);
+  EndContentParse(aToken);
+}
 
 
 
@@ -570,25 +471,6 @@ RecordReplayAssert(const char* aFormat, ...)
     va_end(ap);
   }
 }
-
-MFBT_API void InternalPrint(const char* aFormat, va_list aArgs);
-
-#define MOZ_MakeRecordReplayPrinter(aName, aSpewing)            \
-  static inline void                                            \
-  aName(const char* aFormat, ...)                               \
-  {                                                             \
-    if ((IsRecordingOrReplaying() || IsMiddleman()) && (!aSpewing || SpewEnabled())) { \
-      va_list ap;                                               \
-      va_start(ap, aFormat);                                    \
-      InternalPrint(aFormat, ap);                               \
-      va_end(ap);                                               \
-    }                                                           \
-  }
-
-MOZ_MakeRecordReplayPrinter(Print, false)
-MOZ_MakeRecordReplayPrinter(PrintSpew, true)
-
-#undef MOZ_MakeRecordReplayPrinter
 
 } 
 } 
