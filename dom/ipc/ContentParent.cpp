@@ -2179,6 +2179,11 @@ ContentParent::AppendSandboxParams(std::vector<std::string> &aArgs)
   }
 
   
+  if (!Preferences::GetBool("security.sandbox.content.mac.disconnect-windowserver")) {
+    aArgs.push_back("-sbAllowWindowServer");
+  }
+
+  
   nsAutoCString appPath;
   if (!nsMacUtilsImpl::GetAppPath(appPath)) {
     MOZ_CRASH("Failed to get app dir paths");
