@@ -82,7 +82,10 @@ using mozilla::dom::AutoEntryScript;
 
 
 
-static constexpr size_t kWatchdogStackSize = 32 * 1024;
+#if ! defined(PTHREAD_STACK_MIN)
+#define PTHREAD_STACK_MIN 0
+#endif
+static constexpr size_t kWatchdogStackSize = PTHREAD_STACK_MIN < 32 * 1024 ? 32 * 1024 : PTHREAD_STACK_MIN;
 
 static void WatchdogMain(void* arg);
 class Watchdog;
