@@ -353,6 +353,11 @@ pref("devtools.responsive.showUserAgentInput", false);
 
 
 pref("devtools.aboutdebugging.new-enabled", false);
+
+pref("devtools.aboutdebugging.network", false);
+
+pref("devtools.aboutdebugging.wifi", false);
+
 pref("devtools.aboutdebugging.network-locations", "[]");
 
 pref("devtools.aboutdebugging.collapsibilities.installedExtension", false);
