@@ -2545,16 +2545,7 @@ DecodingState::Step()
     mMaster->MaybeStartPlayback();
   }
 
-  TimeUnit before = mMaster->GetMediaTime();
   mMaster->UpdatePlaybackPositionPeriodically();
-
-  
-  
-  if (before > mMaster->GetMediaTime()) {
-    MOZ_ASSERT(mMaster->mLooping);
-    mMaster->mOnPlaybackEvent.Notify(MediaPlaybackEvent::Loop);
-  }
-
   MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),
              "Must have timer scheduled");
 
