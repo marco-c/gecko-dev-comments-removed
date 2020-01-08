@@ -216,7 +216,7 @@ public:
   nsRect GetScrollRange() const;
   
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
-  nsSize GetVisualViewportSize() const;
+  nsSize GetScrollPositionClampingScrollPortSize() const;
   void ScrollSnap(nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::SMOOTH_MSD);
   void ScrollSnap(const nsPoint &aDestination,
                   nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::SMOOTH_MSD);
@@ -852,8 +852,8 @@ public:
   virtual nsRect GetScrollRange() const override {
     return mHelper.GetScrollRange();
   }
-  virtual nsSize GetVisualViewportSize() const override {
-    return mHelper.GetVisualViewportSize();
+  virtual nsSize GetScrollPositionClampingScrollPortSize() const override {
+    return mHelper.GetScrollPositionClampingScrollPortSize();
   }
   virtual nsSize GetLineScrollAmount() const override {
     return mHelper.GetLineScrollAmount();
@@ -1304,8 +1304,8 @@ public:
   virtual nsRect GetScrollRange() const override {
     return mHelper.GetScrollRange();
   }
-  virtual nsSize GetVisualViewportSize() const override {
-    return mHelper.GetVisualViewportSize();
+  virtual nsSize GetScrollPositionClampingScrollPortSize() const override {
+    return mHelper.GetScrollPositionClampingScrollPortSize();
   }
   virtual nsSize GetLineScrollAmount() const override {
     return mHelper.GetLineScrollAmount();

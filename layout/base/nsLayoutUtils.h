@@ -2856,7 +2856,7 @@ public:
 
 
 
-  static void SetVisualViewportSize(nsIPresShell* aPresShell,
+  static void SetScrollPositionClampingScrollPortSize(nsIPresShell* aPresShell,
                                                       CSSSize aSize);
 
   

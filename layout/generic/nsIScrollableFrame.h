@@ -151,7 +151,7 @@ public:
 
 
 
-  virtual nsSize GetVisualViewportSize() const = 0;
+  virtual nsSize GetScrollPositionClampingScrollPortSize() const = 0;
   
 
 

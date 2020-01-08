@@ -1466,10 +1466,11 @@ public:
           aBuilder->IsPaintingToWindow()) {
         
         
+        
         nsIPresShell* ps = aFrame->PresShell();
-        if (ps->IsVisualViewportSizeSet()) {
+        if (ps->IsScrollPositionClampingScrollPortSizeSet()) {
           dirtyRectRelativeToDirtyFrame =
-            nsRect(nsPoint(0, 0), ps->GetVisualViewportSize());
+            nsRect(nsPoint(0, 0), ps->GetScrollPositionClampingScrollPortSize());
           visible = dirtyRectRelativeToDirtyFrame;
 #ifdef MOZ_WIDGET_ANDROID
         } else {
