@@ -5,4 +5,4 @@
 "use strict";
 
 
-exports.MIN_VIEWPORT_DIMENSION = 50;
+exports.MIN_VIEWPORT_DIMENSION = 280;

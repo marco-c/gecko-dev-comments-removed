@@ -28,6 +28,10 @@ let whitelist = [
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
    isFromDevTools: true},
   
+  {sourceName: /responsive-ua\.css$/i,
+   errorMessage: /Unknown pseudo-class.*moz-dropdown-list/i,
+   isFromDevTools: true},
+  
   {sourceName: /\b(autocomplete-item|svg)\.css$/,
    errorMessage: /Expected media feature name but found \u2018-moz.*/i,
    isFromDevTools: false},

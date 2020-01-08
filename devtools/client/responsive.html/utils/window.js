@@ -9,10 +9,10 @@ const Services = require("Services");
 
 
 
-function getTopLevelWindow(window) {
+function getToplevelWindow(window) {
   return window.docShell.rootTreeItem.domWindow;
 }
-exports.getTopLevelWindow = getTopLevelWindow;
+exports.getToplevelWindow = getToplevelWindow;
 
 function getDOMWindowUtils(window) {
   return window.windowUtils;

@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+const { getDOMWindowUtils } = require("./window");
+
+
+
+
+
+
+function loadAgentSheet(window, url) {
+  const winUtils = getDOMWindowUtils(window);
+  winUtils.loadSheetUsingURIString(url, winUtils.AGENT_SHEET);
+}
+exports.loadAgentSheet = loadAgentSheet;

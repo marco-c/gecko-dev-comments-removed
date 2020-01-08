@@ -311,19 +311,11 @@ pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
 
 
-pref("devtools.responsive.leftAlignViewport.enabled", false);
-
 pref("devtools.responsive.reloadConditions.touchSimulation", false);
 
 pref("devtools.responsive.reloadConditions.userAgent", false);
 
 pref("devtools.responsive.reloadNotification.enabled", true);
-
-#if defined(RELEASE_OR_BETA)
-pref("devtools.responsive.show-setting-tooltip", true);
-#else
-pref("devtools.responsive.show-setting-tooltip", false);
-#endif
 
 
 pref("devtools.aboutdebugging.new-enabled", false);

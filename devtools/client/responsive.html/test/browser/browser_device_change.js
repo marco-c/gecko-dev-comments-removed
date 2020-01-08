@@ -43,7 +43,7 @@ addRDMTask(TEST_URL, async function({ ui }) {
   await testUserAgent(ui, DEFAULT_UA);
   await testDevicePixelRatio(ui, DEFAULT_DPPX);
   await testTouchEventsOverride(ui, false);
-  testViewportDeviceMenuLabel(ui, "Responsive");
+  testViewportDeviceSelectLabel(ui, "no device selected");
 
   
   let reloaded = waitForViewportLoad(ui);
@@ -65,7 +65,7 @@ addRDMTask(TEST_URL, async function({ ui }) {
   await testUserAgent(ui, DEFAULT_UA);
   await testDevicePixelRatio(ui, DEFAULT_DPPX);
   await testTouchEventsOverride(ui, false);
-  testViewportDeviceMenuLabel(ui, "Responsive");
+  testViewportDeviceSelectLabel(ui, "no device selected");
 
   
   await selectDevice(ui, "Laptop (1366 x 768)");

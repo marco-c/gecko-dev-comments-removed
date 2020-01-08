@@ -7,15 +7,6 @@
 const Menu = require("devtools/client/framework/menu");
 const MenuItem = require("devtools/client/framework/menu-item");
 
-loader.lazyRequireGetter(this, "getTopLevelWindow", "devtools/client/responsive.html/utils/window", true);
-
-
-
-
-
-
-
-
 
 
 
@@ -64,14 +55,7 @@ function showMenu(items, options) {
     screenY = rect.bottom + defaultView.mozInnerScreenY;
   }
 
-  let doc;
-  if (options.useTopLevelWindow) {
-    doc = getTopLevelWindow(window).document;
-  } else {
-    doc = window.parent.document;
-  }
-
-  menu.popup(screenX, screenY, { doc });
+  menu.popup(screenX, screenY, { doc: window.parent.document });
 }
 
 module.exports = {
