@@ -66,7 +66,8 @@ function inspectDebugTarget(type, id) {
       }
       case DEBUG_TARGETS.WORKER: {
         
-        const front = runtimeDetails.client.client.getActor(id);
+        const devtoolsClient = runtimeDetails.clientWrapper.client;
+        const front = devtoolsClient.getActor(id);
         gDevToolsBrowser.openWorkerToolbox(front);
         break;
       }
