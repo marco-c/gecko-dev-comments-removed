@@ -3439,6 +3439,10 @@ public:
   
   bool HasBeenUserGestureActivated();
 
+  
+  
+  bool IsExtensionPage() const;
+
   bool HasScriptsBlockedBySandbox();
 
   bool InlineScriptAllowedByCSP();

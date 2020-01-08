@@ -71,6 +71,11 @@ IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow)
     return true;
   }
 
+  if (approver->IsExtensionPage()) {
+    
+    return true;
+  }
+
   return false;
 }
 
