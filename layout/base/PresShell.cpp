@@ -4271,6 +4271,10 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 
       
       
+      mStyleSet->UpdateStylistIfNeeded();
+
+      
+      
       
       mDocument->FlushUserFontSet();
 
