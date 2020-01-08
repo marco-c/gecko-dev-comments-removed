@@ -139,6 +139,8 @@ public:
 
   NS_IMETHOD DeleteNode(nsINode* aNode) override;
 
+  NS_IMETHOD InsertLineBreak() override;
+
   virtual nsresult HandleKeyPressEvent(
                      WidgetKeyboardEvent* aKeyboardEvent) override;
   virtual nsIContent* GetFocusedContent() override;
@@ -175,6 +177,12 @@ public:
 
 
   virtual nsresult InsertLineBreakAsAction() override;
+
+  
+
+
+
+  nsresult InsertParagraphSeparatorAsAction();
 
   
 
@@ -997,6 +1005,12 @@ protected:
 
 protected: 
   virtual ~HTMLEditor();
+
+  
+
+
+
+  nsresult InsertParagraphSeparatorAsSubAction();
 
   virtual nsresult SelectAllInternal() override;
 

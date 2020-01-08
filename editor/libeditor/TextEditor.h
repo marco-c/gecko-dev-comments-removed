@@ -196,12 +196,6 @@ public:
 
 
 
-  nsresult InsertParagraphSeparatorAsAction();
-
-  
-
-
-
   nsresult OnCompositionStart(WidgetCompositionEvent& aCompositionStartEvent);
 
   
@@ -386,12 +380,6 @@ protected:
 
 
   nsresult InsertLineBreakAsSubAction();
-
-  
-
-
-
-  nsresult InsertParagraphSeparatorAsSubAction();
 
   nsresult InsertTextAt(const nsAString& aStringToInsert,
                         nsINode* aDestinationNode,
