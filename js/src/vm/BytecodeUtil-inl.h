@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef vm_BytecodeUtil_inl_h
 #define vm_BytecodeUtil_inl_h
@@ -17,22 +17,22 @@ namespace js {
 static inline unsigned
 GetDefCount(jsbytecode* pc)
 {
-    /*
-     * Add an extra pushed value for OR/AND opcodes, so that they are included
-     * in the pushed array of stack values for type inference.
-     */
+    
+
+
+
     switch (JSOp(*pc)) {
       case JSOP_OR:
       case JSOP_AND:
         return 1;
       case JSOP_PICK:
       case JSOP_UNPICK:
-        /*
-         * Pick pops and pushes how deep it looks in the stack + 1
-         * items. i.e. if the stack were |a b[2] c[1] d[0]|, pick 2
-         * would pop b, c, and d to rearrange the stack to |a c[0]
-         * d[1] b[2]|.
-         */
+        
+
+
+
+
+
         return pc[1] + 1;
       default:
         return StackDefs(pc);
@@ -144,9 +144,9 @@ class BytecodeRangeWithPosition : private BytecodeRange
         else
             updatePosition();
 
-        // The following conditions are handling artifacts introduced by the
-        // bytecode emitter, such that we do not add breakpoints on empty
-        // statements of the source code of the user.
+        
+        
+        
         if (wasArtifactEntryPoint) {
             wasArtifactEntryPoint = false;
             isEntryPoint = true;
@@ -161,24 +161,25 @@ class BytecodeRangeWithPosition : private BytecodeRange
     size_t frontLineNumber() const { return lineno; }
     size_t frontColumnNumber() const { return column; }
 
-    // Entry points are restricted to bytecode offsets that have an
-    // explicit mention in the line table.  This restriction avoids a
-    // number of failing cases caused by some instructions not having
-    // sensible (to the user) line numbers, and it is one way to
-    // implement the idea that the bytecode emitter should tell the
-    // debugger exactly which offsets represent "interesting" (to the
-    // user) places to stop.
+    
+    
+    
+    
+    
+    
+    
     bool frontIsEntryPoint() const { return isEntryPoint; }
 
   private:
     void updatePosition() {
-        // Determine the current line number by reading all source notes up to
-        // and including the current offset.
+        
+        
         jsbytecode *lastLinePC = nullptr;
         while (!SN_IS_TERMINATOR(sn) && snpc <= frontPC()) {
             SrcNoteType type = SN_TYPE(sn);
             if (type == SRC_COLSPAN) {
-                ptrdiff_t colspan = SN_OFFSET_TO_COLSPAN(GetSrcNoteOffset(sn, 0));
+                ptrdiff_t colspan =
+                    SN_OFFSET_TO_COLSPAN(GetSrcNoteOffset(sn, SrcNote::ColSpan::Span));
                 MOZ_ASSERT(ptrdiff_t(column) + colspan >= 0);
                 column += colspan;
                 lastLinePC = snpc;
@@ -206,6 +207,6 @@ class BytecodeRangeWithPosition : private BytecodeRange
     bool wasArtifactEntryPoint;
 };
 
-} // namespace js
+} 
 
-#endif /* vm_BytecodeUtil_inl_h */
+#endif 
