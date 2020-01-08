@@ -10794,33 +10794,10 @@ nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aC
   return target.forget();
 }
 
-namespace {
-template<class T>
-bool IsLocalRefURL(const T& aString) {
-  
-  const typename T::char_type* current = aString.BeginReading();
-  for (; current != aString.EndReading(); current++) {
-    if (*current > 0x20) {
-      
-      
-      return *current == '#';
-    }
-  }
-
-  return false;
-}
-}
-
  bool
 nsContentUtils::IsLocalRefURL(const nsString& aString)
 {
-  return ::IsLocalRefURL(aString);
-}
-
- bool
-nsContentUtils::IsLocalRefURL(const nsACString& aString)
-{
-  return ::IsLocalRefURL(aString);
+  return !aString.IsEmpty() && aString[0] == '#';
 }
 
 static const uint64_t kIdProcessBits = 32;

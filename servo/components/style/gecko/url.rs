@@ -54,8 +54,9 @@ impl CssUrl {
 
     
     
+    #[inline]
     pub fn is_fragment(&self) -> bool {
-        self.as_str().chars().next().map_or(false, |c| c == '#')
+        self.0.is_fragment()
     }
 
     
@@ -67,6 +68,12 @@ impl CssUrl {
 }
 
 impl CssUrlData {
+    
+    
+    pub fn is_fragment(&self) -> bool {
+        self.as_str().chars().next().map_or(false, |c| c == '#')
+    }
+
     
     
     pub fn as_str(&self) -> &str {

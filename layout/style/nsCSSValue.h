@@ -94,6 +94,8 @@ class CSSStyleSheet;
 extern "C" {
   RawGeckoURLExtraDataBorrowedMut Servo_CssUrlData_GetExtraData(
     RawServoCssUrlDataBorrowed url);
+
+  bool Servo_CssUrlData_IsLocalRef(RawServoCssUrlDataBorrowed url);
 }
 
 namespace mozilla {
@@ -133,7 +135,10 @@ public:
 
   nsIURI* GetURI() const;
 
-  bool IsLocalRef() const;
+  bool IsLocalRef() const
+  {
+    return Servo_CssUrlData_IsLocalRef(mCssUrl);
+  }
 
   bool HasRef() const;
 
@@ -169,9 +174,6 @@ private:
   mutable nsCOMPtr<nsIURI> mURI;
 
   mutable bool mURIResolved;
-
-  
-  mutable Maybe<bool> mIsLocalRef;
 
   RefPtr<RawServoCssUrlData> mCssUrl;
 
