@@ -457,7 +457,7 @@ void
 Navigator::GetProductSub(nsAString& aProductSub)
 {
   
-  aProductSub.AssignLiteral(LEGACY_BUILD_ID);
+  aProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
 }
 
 nsMimeTypeArray*
