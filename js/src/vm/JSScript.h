@@ -219,6 +219,13 @@ using ScriptNameMap = HashMap<JSScript*,
                               DefaultHasher<JSScript*>,
                               SystemAllocPolicy>;
 
+#ifdef MOZ_VTUNE
+using ScriptVTuneIdMap = HashMap<JSScript*,
+                                 uint32_t,
+                                 DefaultHasher<JSScript*>,
+                                 SystemAllocPolicy>;
+#endif
+
 class DebugScript
 {
     friend class ::JSScript;
@@ -1626,12 +1633,6 @@ class JSScript : public js::gc::TenuredCell
     uint32_t toStringStart_ = 0;
     uint32_t toStringEnd_ = 0;
 
-#ifdef MOZ_VTUNE
-    
-    
-    uint32_t vtuneMethodId_ = 0;
-#endif
-
     
     
     
@@ -1705,6 +1706,8 @@ class JSScript : public js::gc::TenuredCell
         
         ArgsHasVarBinding = 1 << 21,
     };
+    
+    
     uint32_t immutableFlags_ = 0;
 
     
@@ -1775,6 +1778,8 @@ class JSScript : public js::gc::TenuredCell
         HideScriptFromDebugger = 1 << 19,
     };
   private:
+    
+    
     uint32_t mutableFlags_ = 0;
 
     
@@ -2394,7 +2399,9 @@ class JSScript : public js::gc::TenuredCell
     const char* maybeForwardedFilename() const { return maybeForwardedScriptSource()->filename(); }
 
 #ifdef MOZ_VTUNE
-    uint32_t vtuneMethodID() const { return vtuneMethodId_; }
+    
+    
+    uint32_t vtuneMethodID();
 #endif
 
   public:
