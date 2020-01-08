@@ -113,7 +113,15 @@ InitListUpdateRequest(ThreatType aThreatType,
                       ListUpdateRequest* aListUpdateRequest)
 {
   aListUpdateRequest->set_threat_type(aThreatType);
-  aListUpdateRequest->set_platform_type(GetPlatformType());
+  PlatformType platform = GetPlatformType();
+#if defined(ANDROID)
+  
+  if ((aThreatType == SOCIAL_ENGINEERING_PUBLIC) ||
+      (aThreatType == SOCIAL_ENGINEERING)) {
+    platform = LINUX_PLATFORM;
+  }
+#endif
+  aListUpdateRequest->set_platform_type(platform);
   aListUpdateRequest->set_threat_entry_type(URL);
 
   Constraints* contraints = new Constraints();
@@ -419,6 +427,8 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
   
   auto threatInfo = r.mutable_threat_info();
 
+  PlatformType platform = GetPlatformType();
+
   
   for (uint32_t i = 0; i < aListCount; i++) {
     
@@ -434,6 +444,14 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
     }
     threatInfo->add_threat_types((ThreatType)threatType);
 
+#if defined(ANDROID)
+    
+    if (((ThreatType)threatType == SOCIAL_ENGINEERING_PUBLIC) ||
+        ((ThreatType)threatType == SOCIAL_ENGINEERING)) {
+      platform = LINUX_PLATFORM;
+    }
+#endif
+
     
     
     nsCString stateBinary;
@@ -443,7 +461,7 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
   }
 
   
-  threatInfo->add_platform_types(GetPlatformType());
+  threatInfo->add_platform_types(platform);
 
   
   threatInfo->add_threat_entry_types(URL);
