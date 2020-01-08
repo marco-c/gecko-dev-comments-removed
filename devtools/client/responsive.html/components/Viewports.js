@@ -33,22 +33,42 @@ class Viewports extends Component {
       onResizeViewport,
     } = this.props;
 
-    return dom.div(
-      {
-        id: "viewports",
-      },
-      viewports.map((viewport, i) => {
-        return ResizableViewport({
-          key: viewport.id,
-          screenshot,
-          swapAfterMount: i == 0,
-          viewport,
-          onBrowserMounted,
-          onContentResize,
-          onRemoveDeviceAssociation,
-          onResizeViewport,
-        });
-      })
+    const viewportSize = window.getViewportSize();
+    
+    
+    let justifyContent = "center";
+
+    
+    
+    
+    
+    if (viewportSize && viewportSize.width > window.innerWidth) {
+      justifyContent = "start";
+    }
+
+    return (
+      dom.div(
+        {
+          id: "viewports-container",
+          style: {
+            justifyContent,
+          },
+        },
+        dom.div({ id: "viewports" },
+          viewports.map((viewport, i) => {
+            return ResizableViewport({
+              key: viewport.id,
+              screenshot,
+              swapAfterMount: i == 0,
+              viewport,
+              onBrowserMounted,
+              onContentResize,
+              onRemoveDeviceAssociation,
+              onResizeViewport,
+            });
+          })
+        )
+      )
     );
   }
 }
