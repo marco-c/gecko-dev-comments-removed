@@ -43,6 +43,8 @@ def apply_patches():
     os.system("mv libvpx/vpx_dsp/x86/loopfilter_sse2.c libvpx/vpx_dsp/x86/loopfilter_intrin_sse2.c")
     
     os.system("patch -p3 < bug1480092.patch")
+    
+    os.system("patch -p3 < aarch64-windows.patch")
 
 
 def update_readme(commit):
