@@ -23,7 +23,7 @@
 var { Ci, Cu, Cr, Cc } = require("chrome");
 var Services = require("Services");
 const ChromeUtils = require("ChromeUtils");
-var { DebuggerServer } = require("devtools/server/main");
+var { ActorRegistry } = require("devtools/server/actor-registry");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { assert } = DevToolsUtils;
 var { TabSources } = require("devtools/server/actors/utils/TabSources");
@@ -483,13 +483,13 @@ const browsingContextTargetPrototype = {
 
     
     
-    const addedActors = createExtraActors(
-      DebuggerServer.targetScopedActorFactories,
+    const actors = createExtraActors(
+      ActorRegistry.targetScopedActorFactories,
       this._targetScopedActorPool,
       this
     );
 
-    Object.assign(response, addedActors);
+    Object.assign(response, actors);
     return response;
   },
 

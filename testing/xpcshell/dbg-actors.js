@@ -10,6 +10,7 @@ const { DebuggerServer } = require("devtools/server/main");
 const { RootActor } = require("devtools/server/actors/root");
 const { BrowserTabList } = require("devtools/server/actors/webbrowser");
 const Services = require("Services");
+const { ActorRegistry } = require("devtools/server/actor-registry");
 
 
 
@@ -23,7 +24,7 @@ const Services = require("Services");
 function createRootActor(connection) {
   let parameters = {
     tabList: new XPCSTTabList(connection),
-    globalActorFactories: DebuggerServer.globalActorFactories,
+    globalActorFactories: ActorRegistry.globalActorFactories,
     onShutdown() {
       
       

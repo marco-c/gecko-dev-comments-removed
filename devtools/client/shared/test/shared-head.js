@@ -755,7 +755,7 @@ async function registerActorInContentProcess(url, options) {
   return ContentTask.spawn(gBrowser.selectedBrowser, { url, options }, args => {
     
     const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-    const { DebuggerServer } = require("devtools/server/main");
-    DebuggerServer.registerModule(args.url, args.options);
+    const { ActorRegistry } = require("devtools/server/actor-registry");
+    ActorRegistry.registerModule(args.url, args.options);
   });
 }
