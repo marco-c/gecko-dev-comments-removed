@@ -1464,8 +1464,7 @@ WebConsoleActor.prototype =
     
     
     
-    if (this._lastConsoleInputEvaluation &&
-        this._lastConsoleInputEvaluation.global !== dbgWindow) {
+    if (this._lastConsoleInputEvaluation) {
       this._lastConsoleInputEvaluation = dbg.adoptDebuggeeValue(
         this._lastConsoleInputEvaluation
       );
