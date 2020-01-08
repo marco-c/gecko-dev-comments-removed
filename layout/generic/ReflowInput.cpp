@@ -837,13 +837,6 @@ ReflowInput::InitFrameType(LayoutFrameType aFrameType)
   const nsStyleDisplay *disp = mStyleDisplay;
   nsCSSFrameType frameType;
 
-  
-  
-  
-  
-  
-  
-
   DISPLAY_INIT_TYPE(mFrame, this);
 
   if (aFrameType == LayoutFrameType::Table) {

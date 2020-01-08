@@ -3270,7 +3270,7 @@ nsCSSFrameConstructor::ConstructFieldSetFrame(nsFrameConstructorState& aState,
       break;
     default: {
       MOZ_ASSERT(fieldsetContentDisplay->mDisplay == StyleDisplay::Block,
-                 "bug in nsRuleNode::ComputeDisplayData?");
+                 "bug in StyleAdjuster::adjust_for_fieldset_content?");
 
       contentFrame = NS_NewBlockFormattingContext(mPresShell, fieldsetContentStyle);
       contentFrameTop =
@@ -4897,6 +4897,7 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
 
   
   if (tag == nsGkAtoms::math) {
+    
     
     
     

@@ -1202,9 +1202,6 @@ impl StrongRuleNode {
 
     
     
-    
-    
-    
     #[cfg(feature = "gecko")]
     pub fn has_author_specified_rules<E>(
         &self,

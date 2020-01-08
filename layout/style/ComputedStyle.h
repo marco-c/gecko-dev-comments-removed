@@ -62,8 +62,6 @@ class ComputedStyle;
 
 
 
-
-
 enum class ComputedStyleBit : uint8_t
 {
   HasTextDecorationLines = 1 << 0,

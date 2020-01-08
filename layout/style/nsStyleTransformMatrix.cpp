@@ -147,19 +147,8 @@ ProcessTranslatePart(const nsCSSValue& aValue,
   } else if (aValue.GetUnit() == eCSSUnit_Pixel ||
              aValue.GetUnit() == eCSSUnit_Number) {
     
-    
-    
-    
-    
-    
-    
-    
-    
     return aValue.GetFloatValue();
   } else if (aValue.IsCalcUnit()) {
-    
-    
-    
     
     
     nsStyleCoord::CalcValue calc = aValue.GetCalcValue();

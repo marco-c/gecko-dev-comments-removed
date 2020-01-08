@@ -746,7 +746,12 @@ impl ToComputedValue for KeywordSize {
     fn to_computed_value(&self, cx: &Context) -> NonNegativeLength {
         use context::QuirksMode;
         use values::specified::length::au_to_int_px;
+
         
+        
+        
+        
+
         
         
         
@@ -765,9 +770,6 @@ impl ToComputedValue for KeywordSize {
             [9, 10, 13, 16, 18, 24, 32, 48],
         ];
 
-        
-        
-        
         
         
         
