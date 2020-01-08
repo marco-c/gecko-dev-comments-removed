@@ -127,6 +127,7 @@ class _ASRouter {
       lastMessageId: null,
       providers: [],
       blockList: [],
+      impressions: {},
       messages: [],
       ...initialState
     };
@@ -211,6 +212,7 @@ class _ASRouter {
         }
       }
       await this.setState(newState);
+      await this.cleanupImpressions();
     }
   }
 
@@ -226,11 +228,13 @@ class _ASRouter {
     this.messageChannel = channel;
     this.messageChannel.addMessageListener(INCOMING_MESSAGE_NAME, this.onMessage);
     this._addASRouterPrefListener();
-    await this.loadMessagesFromAllProviders();
     this._storage = storage;
 
     const blockList = await this._storage.get("blockList") || [];
-    await this.setState({blockList});
+    const impressions = await this._storage.get("impressions") || {};
+    await this.setState({blockList, impressions});
+    await this.loadMessagesFromAllProviders();
+
     
     this._finishInitializing();
   }
@@ -264,18 +268,18 @@ class _ASRouter {
     this.messageChannel.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: state});
   }
 
-  async _findMessage(msgs, target, data = {}) {
+  async _findMessage(messages, target, data = {}) {
     let message;
-    let {trigger} = data;
+    const {trigger} = data;
+    const {impressions} = this.state;
     if (trigger) {
       
-      message = await ASRouterTargeting.findMatchingMessageWithTrigger(msgs, target, trigger);
+      message = await ASRouterTargeting.findMatchingMessageWithTrigger({messages, impressions, target, trigger});
     }
     if (!message) {
       
-      message = await ASRouterTargeting.findMatchingMessage(msgs, target);
+      message = await ASRouterTargeting.findMatchingMessage({messages, impressions, target});
     }
-
     return message;
   }
 
@@ -343,6 +347,75 @@ class _ASRouter {
     }
   }
 
+  async addImpression(message) {
+    
+    if (!message.frequency) {
+      return;
+    }
+    await this.setState(state => {
+      
+      
+      const impressions = {...state.impressions};
+      impressions[message.id] = impressions[message.id] ? [...impressions[message.id]] : [];
+      impressions[message.id].push(Date.now());
+      this._storage.set("impressions", impressions);
+      return {impressions};
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  getLongestPeriod(message) {
+    if (!message.frequency || !message.frequency.custom) {
+      return null;
+    }
+    return message.frequency.custom.sort((a, b) => b.period - a.period)[0].period;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async cleanupImpressions() {
+    await this.setState(state => {
+      const impressions = {...state.impressions};
+      let needsUpdate = false;
+      Object.keys(impressions).forEach(id => {
+        const [message] = state.messages.filter(msg => msg.id === id);
+        
+        if (!message || !message.frequency || !Array.isArray(impressions[id])) {
+          delete impressions[id];
+          needsUpdate = true;
+          return;
+        }
+        if (!impressions[id].length) {
+          return;
+        }
+        
+        if (message.frequency.custom && !message.frequency.lifetime) {
+          const now = Date.now();
+          impressions[id] = impressions[id].filter(t => (now - t) < this.getLongestPeriod(message));
+          needsUpdate = true;
+        }
+      });
+      if (needsUpdate) {
+        this._storage.set("impressions", impressions);
+      }
+      return {impressions};
+    });
+  }
+
   async sendNextMessage(target, action = {}) {
     let {data} = action;
     const msgs = this._getUnblockedMessages();
@@ -354,8 +427,8 @@ class _ASRouter {
     } else {
       message = await this._findMessage(msgs, target, data);
     }
-    await this.setState({lastMessageId: message ? message.id : null});
 
+    await this.setState({lastMessageId: message ? message.id : null});
     await this._sendMessageToTarget(message, target, data);
   }
 
@@ -368,10 +441,14 @@ class _ASRouter {
 
   async blockById(idOrIds) {
     const idsToBlock = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+
     await this.setState(state => {
       const blockList = [...state.blockList, ...idsToBlock];
+      
+      const impressions = {...state.impressions};
+      idsToBlock.forEach(id => delete impressions[id]);
       this._storage.set("blockList", blockList);
-      return {blockList};
+      return {blockList, impressions};
     });
   }
 
@@ -472,6 +549,9 @@ class _ASRouter {
         } else {
           target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "ADMIN_SET_STATE", data: this.state});
         }
+        break;
+      case "IMPRESSION":
+        this.addImpression(action.data);
         break;
     }
   }
