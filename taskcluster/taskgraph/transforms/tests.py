@@ -472,14 +472,12 @@ def validate(config, tests):
 def setup_talos(config, tests):
     """Add options that are specific to talos jobs (identified by suite=talos)"""
     for test in tests:
-        if test['suite'] not in ['talos', 'raptor']:
+        if test['suite'] != 'talos':
             yield test
             continue
 
-        if test['suite'] == 'talos':
-            extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
-            extra_options.append('--use-talos-json')
-
+        extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
+        extra_options.append('--use-talos-json')
         
         if test['build-platform'].startswith('win32'):
             extra_options.append('--add-option')
@@ -487,7 +485,7 @@ def setup_talos(config, tests):
 
         
         
-        if test['suite'] == 'talos' and config.params.is_try():
+        if config.params.is_try():
             extra_options.append('--branch-name')
             extra_options.append('try')
 
@@ -840,7 +838,8 @@ def split_chunks(config, tests):
            test['suite'].startswith('test-coverage'):
             env = config.params.get('try_task_config', {}) or {}
             env = env.get('templates', {}).get('env', {})
-            test['chunks'] = perfile_number_of_chunks(env.get('MOZHARNESS_TEST_PATHS', ''),
+            test['chunks'] = perfile_number_of_chunks(config.params.is_try(),
+                                                      env.get('MOZHARNESS_TEST_PATHS', ''),
                                                       config.params.get('head_repository', ''),
                                                       config.params.get('head_rev', ''),
                                                       test['test-name'])
@@ -993,7 +992,7 @@ def set_worker_type(config, tests):
         elif test_platform.startswith('android-em-7.0-x86'):
             test['worker-type'] = 'terraform-packet/gecko-t-linux'
         elif test_platform.startswith('linux') or test_platform.startswith('android'):
-            if test.get('suite', '') in ['talos', 'raptor'] and \
+            if test.get('suite', '') == 'talos' and \
                  not test['build-platform'].startswith('linux64-ccov'):
                 test['worker-type'] = 'releng-hardware/gecko-t-linux-talos'
             else:
