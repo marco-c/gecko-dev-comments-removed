@@ -529,9 +529,8 @@ GetPseudoType(nsAtom* aPseudo)
   if (!aPseudo) {
     return CSSPseudoElementType::NotPseudo;
   }
-  
   return nsCSSPseudoElements::GetPseudoType(
-    aPseudo, CSSEnabledState::eIgnoreEnabledState);
+    aPseudo, CSSEnabledState::eForAllContent);
 }
 
 already_AddRefed<ComputedStyle>
