@@ -1701,7 +1701,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
   mozilla::UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
   nsViewManager* mViewManager;  
-  nsPresArena mFrameArena;
+  nsPresArena<8192> mFrameArena;
   RefPtr<nsFrameSelection> mSelection;
   
   
