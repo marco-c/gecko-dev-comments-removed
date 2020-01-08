@@ -744,6 +744,29 @@ XML_GetSpecifiedAttributeCount(XML_Parser parser);
 XMLPARSEAPI(int)
 XML_GetIdAttributeIndex(XML_Parser parser);
 
+#ifdef XML_ATTR_INFO
+
+
+
+
+
+typedef struct {
+  XML_Index  nameStart;  
+  XML_Index  nameEnd;    
+  XML_Index  valueStart; 
+  XML_Index  valueEnd;   
+} XML_AttrInfo;
+
+
+
+
+
+
+
+XMLPARSEAPI(const XML_AttrInfo *)
+XML_GetAttributeInfo(XML_Parser parser);
+#endif
+
 
 
 
@@ -1000,7 +1023,8 @@ enum XML_FeatureEnum {
   XML_FEATURE_MIN_SIZE,
   XML_FEATURE_SIZEOF_XML_CHAR,
   XML_FEATURE_SIZEOF_XML_LCHAR,
-  XML_FEATURE_NS
+  XML_FEATURE_NS,
+  XML_FEATURE_ATTR_INFO
   
 };
 
