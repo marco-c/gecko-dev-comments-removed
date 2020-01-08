@@ -183,7 +183,7 @@ function getHTTPStatusCodeURL(statusCode, panelId) {
 
 
 function getNetMonitorTimingsURL() {
-  return `${MDN_URL}Tools/Network_Monitor${getGAParams()}#Timings`;
+  return `${MDN_URL}Tools/Network_Monitor/request_details#Timings`;
 }
 
 
@@ -192,7 +192,7 @@ function getNetMonitorTimingsURL() {
 
 
 function getPerformanceAnalysisURL() {
-  return `${MDN_URL}Tools/Network_Monitor${getGAParams()}#Performance_analysis`;
+  return `${MDN_URL}Tools/Network_Monitor/Performance_analysis`;
 }
 
 
@@ -201,7 +201,7 @@ function getPerformanceAnalysisURL() {
 
 
 function getFilterBoxURL() {
-  return `${MDN_URL}Tools/Network_Monitor${getGAParams()}#Filtering_by_properties`;
+  return `${MDN_URL}Tools/Network_Monitor/request_list#Filtering_requests`;
 }
 
 module.exports = {
