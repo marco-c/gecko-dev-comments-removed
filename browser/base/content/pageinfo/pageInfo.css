@@ -12,10 +12,6 @@
   display: none;
 }
 
-groupbox[closed="true"] > .groupbox-body {
-  visibility: collapse;
-}
-
 #thepreviewimage {
   display: block;
 
