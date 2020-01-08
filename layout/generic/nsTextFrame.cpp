@@ -4796,28 +4796,6 @@ nsTextFrame::DisconnectTextRuns()
   }
 }
 
-void
-nsTextFrame::NotifyNativeAnonymousTextnodeChange(uint32_t aOldLength)
-{
-  MOZ_ASSERT(mContent->IsInNativeAnonymousSubtree());
-
-  MarkIntrinsicISizesDirty();
-
-  
-  for (nsTextFrame* f = this; f; f = f->GetNextContinuation()) {
-    f->AddStateBits(NS_FRAME_IS_DIRTY);
-    f->mReflowRequestedForCharDataChange = true;
-  }
-
-  
-  CharacterDataChangeInfo info;
-  info.mAppend = false;
-  info.mChangeStart = 0;
-  info.mChangeEnd = aOldLength;
-  info.mReplaceLength = mContent->TextLength();
-  CharacterDataChanged(info);
-}
-
 nsresult
 nsTextFrame::CharacterDataChanged(const CharacterDataChangeInfo& aInfo)
 {
