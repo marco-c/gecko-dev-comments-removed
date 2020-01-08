@@ -388,10 +388,7 @@ XPCVariant::VariantDataToJS(nsIVariant* variant,
                             nsresult* pErr, MutableHandleValue pJSVal)
 {
     
-    uint16_t type;
-    if (NS_FAILED(variant->GetDataType(&type))) {
-        return false;
-    }
+    uint16_t type = variant->GetDataType();
 
     AutoJSContext cx;
     RootedValue realVal(cx);
@@ -705,10 +702,9 @@ XPCVariant::VariantDataToJS(nsIVariant* variant,
 
 
 
-NS_IMETHODIMP XPCVariant::GetDataType(uint16_t* aDataType)
+uint16_t XPCVariant::GetDataType()
 {
-    *aDataType = mData.GetType();
-    return NS_OK;
+    return mData.GetType();
 }
 
 NS_IMETHODIMP XPCVariant::GetAsInt8(uint8_t* _retval)

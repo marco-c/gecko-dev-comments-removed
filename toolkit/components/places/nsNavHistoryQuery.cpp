@@ -850,8 +850,7 @@ NS_IMETHODIMP nsNavHistoryQuery::SetTags(nsIVariant *aTags)
 {
   NS_ENSURE_ARG(aTags);
 
-  uint16_t dataType;
-  aTags->GetDataType(&dataType);
+  uint16_t dataType = aTags->GetDataType();
 
   
   if (dataType == nsIDataType::VTYPE_EMPTY_ARRAY) {
