@@ -26,6 +26,7 @@ function createClientMock() {
     
     
     _eventEmitter: eventEmitter,
+    _preferences: {},
     addOneTimeListener: (evt, listener) => {
       eventEmitter.once(evt, listener);
     },
@@ -55,7 +56,10 @@ function createClientMock() {
     
     getDeviceDescription: () => {},
     
-    getPreference: (prefName) => {
+    getPreference: function(prefName) {
+      if (prefName in this._preferences) {
+        return this._preferences[prefName];
+      }
       if (prefName in DEFAULT_PREFERENCES) {
         return DEFAULT_PREFERENCES[prefName];
       }
@@ -72,7 +76,9 @@ function createClientMock() {
       sharedWorkers: [],
     }),
     
-    setPreference: () => {},
+    setPreference: function(prefName, value) {
+      this._preferences[prefName] = value;
+    },
   };
 }
 
