@@ -5282,10 +5282,6 @@ pref("io.activity.intervalMilliseconds", 0);
 pref("jsloader.shareGlobal", true);
 
 
-
-pref("dom.browserElement.maxScreenshotDelayMS", 2000);
-
-
 pref("dom.placeholder.show_on_focus", true);
 
 

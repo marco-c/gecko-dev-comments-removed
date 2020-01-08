@@ -270,7 +270,6 @@ BrowserElementChild.prototype = {
     let self = this;
 
     let mmCalls = {
-      "get-screenshot": this._recvGetScreenshot,
       "get-contentdimensions": this._recvGetContentDimensions,
       "send-mouse-event": this._recvSendMouseEvent,
       "send-touch-event": this._recvSendTouchEvent,
@@ -881,28 +880,6 @@ BrowserElementChild.prototype = {
     sendAsyncMsg("scroll", { top: win.scrollY, left: win.scrollX });
   },
 
-  _recvGetScreenshot: function(data) {
-    debug("Received getScreenshot message: (" + data.json.id + ")");
-
-    let self = this;
-    let maxWidth = data.json.args.width;
-    let maxHeight = data.json.args.height;
-    let mimeType = data.json.args.mimeType;
-    let domRequestID = data.json.id;
-
-    let takeScreenshotClosure = function() {
-      self._takeScreenshot(maxWidth, maxHeight, mimeType, domRequestID);
-    };
-
-    let maxDelayMS = Services.prefs.getIntPref('dom.browserElement.maxScreenshotDelayMS', 2000);
-
-    
-    
-    
-    Cc['@mozilla.org/message-loop;1'].getService(Ci.nsIMessageLoop).postIdleTask(
-      takeScreenshotClosure, maxDelayMS);
-  },
-
   _recvExecuteScript: function(data) {
     debug("Received executeScript message: (" + data.json.id + ")");
 
@@ -1021,98 +998,6 @@ BrowserElementChild.prototype = {
       width: content.document.body.scrollWidth,
       height: content.document.body.scrollHeight
     }
-  },
-
-  
-
-
-
-
-  _takeScreenshot: function(maxWidth, maxHeight, mimeType, domRequestID) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    debug("Taking a screenshot: maxWidth=" + maxWidth +
-          ", maxHeight=" + maxHeight +
-          ", mimeType=" + mimeType +
-          ", domRequestID=" + domRequestID + ".");
-
-    if (!content) {
-      
-      
-      debug("No content yet!");
-      return;
-    }
-
-    let devicePixelRatio = content.devicePixelRatio;
-
-    let maxPixelWidth = Math.round(maxWidth * devicePixelRatio);
-    let maxPixelHeight = Math.round(maxHeight * devicePixelRatio);
-
-    let contentPixelWidth = content.innerWidth * devicePixelRatio;
-    let contentPixelHeight = content.innerHeight * devicePixelRatio;
-
-    let scaleWidth = Math.min(1, maxPixelWidth / contentPixelWidth);
-    let scaleHeight = Math.min(1, maxPixelHeight / contentPixelHeight);
-
-    let scale = Math.max(scaleWidth, scaleHeight);
-
-    let canvasWidth =
-      Math.min(maxPixelWidth, Math.round(contentPixelWidth * scale));
-    let canvasHeight =
-      Math.min(maxPixelHeight, Math.round(contentPixelHeight * scale));
-
-    let transparent = (mimeType !== 'image/jpeg');
-
-    var canvas = content.document
-      .createElementNS("http://www.w3.org/1999/xhtml", "canvas");
-    if (!transparent)
-      canvas.mozOpaque = true;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    let ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.scale(scale * devicePixelRatio, scale * devicePixelRatio);
-
-    let flags = ctx.DRAWWINDOW_DRAW_VIEW |
-                ctx.DRAWWINDOW_USE_WIDGET_LAYERS |
-                ctx.DRAWWINDOW_DO_NOT_FLUSH |
-                ctx.DRAWWINDOW_ASYNC_DECODE_IMAGES;
-    ctx.drawWindow(content, 0, 0, content.innerWidth, content.innerHeight,
-                   transparent ? "rgba(255,255,255,0)" : "rgb(255,255,255)",
-                   flags);
-
-    
-    
-    
-    
-    canvas.toBlob(function(blob) {
-      sendAsyncMsg('got-screenshot', {
-        id: domRequestID,
-        successRv: blob
-      });
-    }, mimeType);
   },
 
   _recvFireCtxCallback: function(data) {
