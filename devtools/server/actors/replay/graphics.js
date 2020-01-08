@@ -26,80 +26,39 @@ Cu.evalInSandbox(
 const RecordReplayControl = sandbox.RecordReplayControl;
 
 
-let dragx, dragy;
-
-
 
 
 function setupContents(window) {
   
-  const overlay = window.middlemanOverlay = window.document.createElement("div");
+  const overlay = (window.middlemanOverlay = window.document.createElement("div"));
   overlay.style.position = "absolute";
-  overlay.style.border = "medium solid #000000";
-  overlay.style.backgroundColor = "#BBCCCC";
+  overlay.style.visibility = "hidden";
+  overlay.style.backgroundColor = "#F9F9FA";
+  overlay.style.width = "100%";
+  overlay.style.height = "29px";
+  overlay.style.left = "0px";
+  overlay.style.bottom = "0px";
+  overlay.style["border-top"] = "1px solid #DCE1E4";
 
   
   
-  const position = window.middlemanPosition = window.document.createElement("div");
-  position.innerText = "";
-  position.style.textAlign = "center";
-  position.style.padding = "5px 5px 0px 5px";
-  overlay.appendChild(position);
-
-  
-  
-  const progressBar =
-    window.middlemanProgressBar = window.document.createElement("canvas");
-  progressBar.width = 100;
-  progressBar.height = 5;
-  progressBar.getContext("2d").fillStyle = "white";
-  progressBar.getContext("2d").fillRect(0, 0, 100, 5);
-  progressBar.style.padding = "5px 5px 5px 5px";
-
+  const progressBar = window.document.createElement("div");
+  progressBar.style.position = "relative";
+  progressBar.style.width = "calc(100% - 20px)";
+  progressBar.style.height = "6px";
+  progressBar.style.background = "#DCDCDC";
+  progressBar.style.margin = "11px 10px";
   overlay.appendChild(progressBar);
+
+  const progress = (window.middlemanProgress = window.document.createElement("div"));
+  progress.style.position = "absolute";
+  progress.style.width = "0";
+  progress.style.height = "100%";
+  progress.style.background = "#B7B6B6";
+
+  progressBar.appendChild(progress);
+
   window.document.body.prepend(overlay);
-
-  overlay.onmousedown = window.middlemanMouseDown = function(e) {
-    e.preventDefault();
-    dragx = e.clientX;
-    dragy = e.clientY;
-    window.document.onmouseup = window.middlemanMouseUp;
-    window.document.onmousemove = window.middlemanMouseMove;
-  };
-
-  window.middlemanMouseMove = function(e) {
-    
-    
-    e.preventDefault();
-    const canvas = window.middlemanCanvas;
-    let diffx = e.clientX - dragx;
-    let diffy = e.clientY - dragy;
-    const newTop = () => overlay.offsetTop + diffy;
-    if (newTop() < 0) {
-      diffy -= newTop();
-    }
-    const maxTop = canvas.height / window.devicePixelRatio;
-    if (newTop() + overlay.offsetHeight >= maxTop) {
-      diffy -= newTop() + overlay.offsetHeight - maxTop;
-    }
-    overlay.style.top = newTop() + "px";
-    const newLeft = () => overlay.offsetLeft + diffx;
-    if (newLeft() < 0) {
-      diffx -= newLeft();
-    }
-    const maxLeft = canvas.width / window.devicePixelRatio;
-    if (newLeft() + overlay.offsetWidth >= maxLeft) {
-      diffx -= newLeft() + overlay.offsetWidth - maxLeft;
-    }
-    overlay.style.left = (overlay.offsetLeft + diffx) + "px";
-    dragx += diffx;
-    dragy += diffy;
-  };
-
-  window.middlemanMouseUp = function(e) {
-    window.document.onmouseup = null;
-    window.document.onmousemove = null;
-  };
 
   
   const canvas = window.middlemanCanvas = window.document.createElement("canvas");
@@ -174,14 +133,17 @@ function UpdateCanvas(buffer, width, height, hadFailure) {
 }
 
 function updateWindowOverlay(window) {
-  const overlay = getOverlay(window);
+  if (!Services.prefs.getBoolPref("devtools.recordreplay.timeline.enabled")) {
+    return;
+  }
 
-  const position = RecordReplayControl.recordingPosition();
+  const overlay = getOverlay(window);
+  const position = RecordReplayControl.recordingPosition() || 1;
   if (position === undefined) {
     overlay.style.visibility = "hidden";
   } else {
     overlay.style.visibility = "visible";
-    window.middlemanPosition.innerText = (Math.round(position * 10000) / 100) + "%";
+    window.middlemanProgress.style.width = (Math.round(position * 10000) / 100) + "%";
   }
 }
 
