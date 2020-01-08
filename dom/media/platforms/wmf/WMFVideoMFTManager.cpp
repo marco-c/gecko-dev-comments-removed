@@ -686,8 +686,8 @@ WMFVideoMFTManager::InitInternal()
       (mUseHwAccel ? "Yes" : "No"));
 
   if (mUseHwAccel) {
-    hr = mDXVA2Manager->ConfigureForSize(mVideoInfo.ImageRect().width,
-                                         mVideoInfo.ImageRect().height);
+    hr = mDXVA2Manager->ConfigureForSize(
+      outputType, mVideoInfo.ImageRect().width, mVideoInfo.ImageRect().height);
     NS_ENSURE_TRUE(SUCCEEDED(hr),
                    MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                                RESULT_DETAIL("Fail to configure image size for "
@@ -1062,19 +1062,37 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
       MOZ_ASSERT(!sample);
       
       
-      hr = mDecoder->SetDecoderOutputType(false ,
-                                          nullptr,
-                                          nullptr);
+      
+
+      
+      
+      
+      if (FAILED((hr = (mDecoder->FindDecoderOutputTypeWithSubtype(
+                    mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12,
+                    false)))) &&
+          (!mUseHwAccel ||
+           (FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
+                      MFVideoFormat_P010, false))) &&
+            FAILED((hr = mDecoder->FindDecoderOutputTypeWithSubtype(
+                      MFVideoFormat_P016, false)))))) {
+        LOG("No suitable output format found");
+        return hr;
+      }
+
+      RefPtr<IMFMediaType> outputType;
+      hr = mDecoder->GetOutputMediaType(outputType);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-      if (!mUseHwAccel) {
-        
-        RefPtr<IMFMediaType> outputType;
-        hr = mDecoder->GetOutputMediaType(outputType);
+      if (mUseHwAccel) {
+        hr = mDXVA2Manager->ConfigureForSize(outputType,
+                                             mVideoInfo.ImageRect().width,
+                                             mVideoInfo.ImageRect().height);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+      } else {
+        
         mYUVColorSpace = GetYUVColorSpace(outputType);
-        hr = GetDefaultStride(outputType, mVideoInfo.ImageRect().width,
-                              &mVideoStride);
+        hr = GetDefaultStride(
+          outputType, mVideoInfo.ImageRect().width, &mVideoStride);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
         UINT32 width = 0, height = 0;
