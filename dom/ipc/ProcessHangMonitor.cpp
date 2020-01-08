@@ -350,7 +350,9 @@ HangMonitorChild::InterruptCallback()
     mPaintWhileInterruptingJS = false;
   }
 
-  if (paintWhileInterruptingJS) {
+  
+  
+  if (paintWhileInterruptingJS && !recordreplay::IsRecordingOrReplaying()) {
     RefPtr<TabChild> tabChild = TabChild::FindTabChild(paintWhileInterruptingJSTab);
     if (tabChild) {
       js::AutoAssertNoContentJS nojs(mContext);
