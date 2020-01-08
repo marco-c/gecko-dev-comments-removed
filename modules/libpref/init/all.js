@@ -4707,7 +4707,7 @@ pref("image.decode-immediately.enabled", false);
 pref("image.downscale-during-decode.enabled", true);
 
 
-pref("image.http.accept", "*/*");
+pref("image.http.accept", "image/webp,*/*");
 
 
 
@@ -4790,7 +4790,7 @@ pref("image.multithreaded_decoding.limit", -1);
 pref("image.multithreaded_decoding.idle_timeout", 600000);
 
 
-pref("image.webp.enabled", false);
+pref("image.webp.enabled", true);
 
 
 
