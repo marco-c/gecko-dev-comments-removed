@@ -169,6 +169,9 @@ impl Image {
 
     
     
+    
+    
+    
     pub fn parse_with_cors_anonymous<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
