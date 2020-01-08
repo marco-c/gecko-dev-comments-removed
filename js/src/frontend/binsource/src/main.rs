@@ -22,22 +22,6 @@ use clap::{ App, Arg };
 use itertools::Itertools;
 
 
-trait NewLineIfNotEmpty {
-    
-    fn newline_if_not_empty(&self) -> String;
-}
-impl<T> NewLineIfNotEmpty for T where T: ToStr {
-    fn newline_if_not_empty(&self) -> String {
-        let str = self.to_str();
-        if str.len() == 0 {
-            "".to_string()
-        } else {
-            format!("{}\n", str)
-        }
-    }
-}
-
-
 
 
 

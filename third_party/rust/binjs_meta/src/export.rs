@@ -1,7 +1,7 @@
 use spec::*;
 use util::*;
 
-use std::collections::{ HashSet };
+use std::collections::{ HashMap, HashSet };
 
 use itertools::Itertools;
 
@@ -61,12 +61,21 @@ use itertools::Itertools;
 
 pub struct TypeDeanonymizer {
     builder: SpecBuilder,
+
+    
+    
+    
+    
+    
+    
+    supersums_of: HashMap<NodeName, HashSet<NodeName>>,
 }
 impl TypeDeanonymizer {
     
     pub fn new(spec: &Spec) -> Self {
         let mut result = TypeDeanonymizer {
             builder: SpecBuilder::new(),
+            supersums_of: HashMap::new(),
         };
         
         for (_, name) in spec.field_names() {
@@ -74,7 +83,7 @@ impl TypeDeanonymizer {
         }
 
         
-        let mut field_offset = None;
+        let mut field_skip = None;
 
         
         for (name, interface) in spec.interfaces_by_name() {
@@ -85,8 +94,8 @@ impl TypeDeanonymizer {
             let mut fields = vec![];
             
             if interface.is_skippable() {
-                let name = field_offset.get_or_insert_with(||
-                    result.builder.field_name("_offset")
+                let name = field_skip.get_or_insert_with(||
+                    result.builder.field_name("_skip")
                 );
                 fields.push(Field::new(
                     name.clone(),
@@ -106,6 +115,7 @@ impl TypeDeanonymizer {
             for field in fields.drain(..) {
                 declaration.with_field(field.name(), field.type_().clone());
             }
+            declaration.with_skippable(interface.is_skippable());
         }
         
         for (name, definition) in spec.typedefs_by_name() {
@@ -131,6 +141,10 @@ impl TypeDeanonymizer {
         debug!(target: "export_utils", "Names: {:?}", result.builder.names().keys().format(", "));
 
         result
+    }
+
+    pub fn supersums(&self) -> &HashMap<NodeName, HashSet<NodeName>> {
+        &self.supersums_of
     }
 
     
@@ -278,11 +292,16 @@ impl TypeDeanonymizer {
             TypeSpec::TypeSum(ref sum) => {
                 let mut full_sum = HashSet::new();
                 let mut names = vec![];
+                let mut subsums = vec![];
                 for sub_type in sum.types() {
                     let (mut sub_sum, name) = self.import_typespec(spec, sub_type, None);
                     let mut sub_sum = sub_sum.unwrap_or_else(
                         || panic!("While treating {:?}, attempting to create a sum containing {}, which isn't an interface or a sum of interfaces", type_spec, name)
                     );
+                    if sub_sum.len() > 1 {
+                        
+                        subsums.push(name.clone())
+                    }
                     names.push(name);
                     for item in sub_sum.drain() {
                         full_sum.insert(item);
@@ -291,9 +310,16 @@ impl TypeDeanonymizer {
                 let my_name =
                     match public_name {
                         None => self.builder.node_name(&format!("{}",
-                            names.drain(..).format("Or"))),
+                            names.drain(..)
+                                .format("Or"))),
                         Some(ref name) => name.clone()
                     };
+                for subsum_name in subsums {
+                    
+                    let mut supersum_entry = self.supersums_of.entry(subsum_name.clone())
+                        .or_insert_with(|| HashSet::new());
+                    supersum_entry.insert(my_name.clone());
+                }
                 let sum : Vec<_> = full_sum.iter()
                     .map(Type::named)
                     .collect();

@@ -8,6 +8,16 @@ pub trait ToStr {
     fn newline(&self) -> String {
         format!("{}\n", self.to_str())
     }
+
+    
+    fn newline_if_not_empty(&self) -> String {
+        let s = self.to_str();
+        if s.len() == 0 {
+            "".to_string()
+        } else {
+            format!("{}\n", s)
+        }
+    }
 }
 
 impl<'a> ToStr for &'a str {
