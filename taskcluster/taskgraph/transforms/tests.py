@@ -500,12 +500,6 @@ def setup_talos(config, tests):
             extra_options.append('--add-option')
             extra_options.append('--setpref,gfx.direct2d.disabled=true')
 
-        
-        
-        if test['suite'] == 'talos' and config.params.is_try():
-            extra_options.append('--branch-name')
-            extra_options.append('try')
-
         yield test
 
 
@@ -518,12 +512,6 @@ def setup_raptor(config, tests):
             continue
 
         extra_options = test.setdefault('mozharness', {}).setdefault('extra-options', [])
-
-        
-        
-        if config.params.is_try():
-            extra_options.append('--branch-name')
-            extra_options.append('try')
 
         if config.params['project'] in ('mozilla-beta', 'mozilla-release') or \
            config.params['project'].startswith('mozilla-esr'):
