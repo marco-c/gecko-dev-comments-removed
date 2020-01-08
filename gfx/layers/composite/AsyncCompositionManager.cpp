@@ -1068,11 +1068,11 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             
             
             
-            LayerToParentLayerMatrix4x4 transformWithoutOverscrollOrOmta =
-                layer->GetTransformTyped()
-              * CompleteAsyncTransform(
-                  AdjustForClip(asyncTransformWithoutOverscroll, layer));
-
+            AsyncTransform asyncTransformForFixedAdjustment
+              = sampler->GetCurrentAsyncTransformForFixedAdjustment(wrapper);
+            LayerToParentLayerMatrix4x4 transformWithoutOverscrollOrOmta
+              = layer->GetTransformTyped()
+              * CompleteAsyncTransform(AdjustForClip(asyncTransformForFixedAdjustment, layer));
             AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
                                       transformWithoutOverscrollOrOmta, fixedLayerMargins,
                                       &clipPartsCache);

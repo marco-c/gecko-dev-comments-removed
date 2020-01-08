@@ -1053,7 +1053,22 @@ public:
 
 
 
+
+  AsyncTransform GetCurrentAsyncViewportTransform(AsyncTransformConsumer aMode) const;
+
+  
+
+
+
+
+
   AsyncTransform GetCurrentAsyncTransform(AsyncTransformConsumer aMode) const;
+
+  
+
+
+
+  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(AsyncTransformConsumer aMode) const;
 
   
 
