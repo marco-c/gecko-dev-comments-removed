@@ -644,12 +644,9 @@ this.VideoControlsImplPageWidget = class {
           case "resizevideocontrols":
             this.adjustControlSize();
             break;
-          
-          
-
-
-
-
+          case "fullscreenchange":
+            this.onFullscreenChange();
+            break;
           case "keypress":
             this.keyHandler(aEvent);
             break;
@@ -1186,6 +1183,10 @@ this.VideoControlsImplPageWidget = class {
         }
 
         if (fadeIn) {
+          if (element == this.controlBar) {
+            this.controlsSpacer.removeAttribute("hideCursor");
+          }
+
           
           if (element.isAdjustableControl && element.hiddenByAdjustment) {
             return;
@@ -1196,21 +1197,17 @@ this.VideoControlsImplPageWidget = class {
             return;
           }
 
-          if (element == this.controlBar) {
-            this.controlsSpacer.removeAttribute("hideCursor");
-          }
-
           
           element.hidden = false;
         } else {
-          
-          if (element.hidden) {
-            return;
-          }
-
           if (element == this.controlBar && !this.hasError() &&
               this.document.mozFullScreenElement == this.video) {
             this.controlsSpacer.setAttribute("hideCursor", true);
+          }
+
+          
+          if (element.hidden) {
+            return;
           }
         }
 
@@ -1307,34 +1304,15 @@ this.VideoControlsImplPageWidget = class {
         }
       },
 
-      
-      
-      
-      
-      
-      
-      
+      onFullscreenChange() {
+        this.updateOrientationState(this.isVideoInFullScreen);
 
+        if (this.isVideoInFullScreen) {
+          this.startFadeOut(this.controlBar, true);
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        this.setFullscreenButtonState();
+      },
 
       updateOrientationState(lock) {
         if (!this.video.mozOrientationLockEnabled) {
@@ -1950,8 +1928,7 @@ this.VideoControlsImplPageWidget = class {
 
           { el: this.videocontrols, type: "resizevideocontrols" },
 
-          
-          
+          { el: this.document, type: "fullscreenchange" },
           { el: this.video, type: "keypress", capture: true },
 
           
