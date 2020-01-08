@@ -15,8 +15,7 @@ use values::generics::CounterStyleOrNone;
 
 
 #[cfg(feature = "gecko")]
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub enum ListStyleType {
     
     CounterStyle(CounterStyleOrNone),
@@ -79,8 +78,7 @@ impl Parse for ListStyleType {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct Quotes(#[css(if_empty = "none")] pub Box<[(Box<str>, Box<str>)]>);
 
 impl ToCss for Quotes {

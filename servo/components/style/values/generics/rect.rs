@@ -11,8 +11,17 @@ use style_traits::{CssWriter, ParseError, ToCss};
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+)]
 pub struct Rect<T>(pub T, pub T, pub T, pub T);
 
 impl<T> Rect<T> {

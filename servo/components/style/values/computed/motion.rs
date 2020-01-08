@@ -7,4 +7,4 @@
 
 
 
-pub use values::specified::motion::OffsetPath as OffsetPath;
+pub use values::specified::motion::OffsetPath;

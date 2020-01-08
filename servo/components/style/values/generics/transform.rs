@@ -15,8 +15,9 @@ use values::specified::length::LengthOrPercentage as SpecifiedLengthOrPercentage
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 #[css(comma, function)]
 pub struct Matrix<T> {
     pub a: T,
@@ -66,8 +67,19 @@ impl<T: Into<f64>> From<Matrix3D<T>> for Transform3D<f64> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub struct TransformOrigin<H, V, Depth> {
     
     pub horizontal: H,
@@ -80,8 +92,7 @@ pub struct TransformOrigin<H, V, Depth> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 #[value_info(ty = "TIMING_FUNCTION")]
 pub enum TimingFunction<Integer, Number> {
     
@@ -106,8 +117,18 @@ pub enum TimingFunction<Integer, Number> {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
-         SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum TimingKeyword {
     Linear,
     Ease,
@@ -163,8 +184,7 @@ impl TimingKeyword {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 
 pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> {
     
@@ -268,8 +288,7 @@ pub enum TransformOperation<Angle, Number, Length, Integer, LengthOrPercentage> 
     },
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 
 pub struct Transform<T>(#[css(if_empty = "none", iterable)] pub Vec<T>);
 
@@ -281,11 +300,7 @@ impl<Angle, Number, Length, Integer, LengthOrPercentage>
         use self::TransformOperation::*;
         matches!(
             *self,
-            Rotate(..) |
-            Rotate3D(..) |
-            RotateX(..) |
-            RotateY(..) |
-            RotateZ(..)
+            Rotate(..) | Rotate3D(..) | RotateX(..) | RotateY(..) | RotateZ(..)
         )
     }
 
@@ -574,8 +589,18 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
     }
 }
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 
 
 
@@ -588,8 +613,18 @@ pub enum Rotate<Number, Angle> {
     Rotate3D(Number, Number, Number, Angle),
 }
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 
 
 
@@ -604,8 +639,17 @@ pub enum Scale<Number> {
     Scale3D(Number, Number, Number),
 }
 
-#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 
 
 
@@ -621,8 +665,9 @@ pub enum Translate<LengthOrPercentage, Length> {
 }
 
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub enum TransformStyle {
     #[cfg(feature = "servo")]
     Auto,

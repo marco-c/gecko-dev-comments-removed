@@ -60,7 +60,8 @@ where
         E: TElement,
         S: ToMediaListKey,
     {
-        let flusher = self.stylesheets
+        let flusher = self
+            .stylesheets
             .flush::<E>( None,  None);
 
         if flusher.sheets.dirty() {
@@ -68,7 +69,8 @@ where
         }
 
         
-        let _ = self.data
+        let _ = self
+            .data
             .rebuild(device, quirks_mode, flusher.sheets, guard);
     }
 }

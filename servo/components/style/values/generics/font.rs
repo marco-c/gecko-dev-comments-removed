@@ -16,8 +16,7 @@ use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct FeatureTagValue<Integer> {
     
     pub tag: FontTag,
@@ -47,8 +46,9 @@ where
 
 
 
-#[derive(Animate, Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Animate, Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub struct VariationValue<Number> {
     
     #[animation(constant)]
@@ -72,8 +72,7 @@ where
 
 
 #[css(comma)]
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
 
 impl<T> FontSettings<T> {
@@ -109,8 +108,7 @@ impl<T: Parse> Parse for FontSettings<T> {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct FontTag(pub u32);
 
 impl ToCss for FontTag {
@@ -145,8 +143,18 @@ impl Parse for FontTag {
     }
 }
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToAnimatedValue, ToAnimatedZero, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+)]
 
 pub struct KeywordInfo<Length> {
     
@@ -189,9 +197,20 @@ impl<L> SpecifiedValueInfo for KeywordInfo<L> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         Parse, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
-         ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+)]
 #[allow(missing_docs)]
 pub enum KeywordSize {
     #[css(keyword = "xx-small")]
@@ -228,8 +247,19 @@ impl Default for KeywordSize {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, Hash, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+)]
 pub enum FontStyle<Angle> {
     #[animation(error)]
     Normal,

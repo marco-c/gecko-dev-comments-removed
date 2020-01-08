@@ -137,7 +137,9 @@ impl PseudoElement {
 
     
     #[inline]
-    pub fn is_unknown_webkit_pseudo_element(&self) -> bool { false }
+    pub fn is_unknown_webkit_pseudo_element(&self) -> bool {
+        false
+    }
 
     
     #[inline]
@@ -766,7 +768,8 @@ impl ServoElementSnapshot {
         operation: &AttrSelectorOperation<&String>,
     ) -> bool {
         match *ns {
-            NamespaceConstraint::Specific(ref ns) => self.get_attr(ns, local_name)
+            NamespaceConstraint::Specific(ref ns) => self
+                .get_attr(ns, local_name)
                 .map_or(false, |value| value.eval_selector(operation)),
             NamespaceConstraint::Any => {
                 self.any_attr_ignore_ns(local_name, |value| value.eval_selector(operation))

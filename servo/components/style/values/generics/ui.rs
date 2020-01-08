@@ -11,8 +11,7 @@ use style_traits::cursor::CursorKind;
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct Cursor<Image> {
     
     pub images: Box<[Image]>,
@@ -45,8 +44,7 @@ impl<Image: ToCss> ToCss for Cursor<Image> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct CursorImage<ImageUrl, Number> {
     
     pub url: ImageUrl,

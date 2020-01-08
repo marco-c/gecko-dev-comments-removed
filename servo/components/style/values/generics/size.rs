@@ -13,8 +13,17 @@ use values::animated::ToAnimatedValue;
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         ToAnimatedZero, ToComputedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedZero,
+    ToComputedValue,
+)]
 pub struct Size<L>(pub Size2D<L>);
 
 impl<L> Size<L> {

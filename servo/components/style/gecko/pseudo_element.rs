@@ -62,7 +62,9 @@ impl PseudoElement {
     
     
     #[inline]
-    pub fn inherits_all(&self) -> bool { false }
+    pub fn inherits_all(&self) -> bool {
+        false
+    }
 
     
     

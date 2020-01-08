@@ -38,8 +38,10 @@ use smallvec::SmallVec;
 #[derive(Clone, Debug, MallocSizeOf)]
 pub struct Dependency {
     
-    #[cfg_attr(feature = "gecko",
-               ignore_malloc_size_of = "CssRules have primary refs, we measure there")]
+    #[cfg_attr(
+        feature = "gecko",
+        ignore_malloc_size_of = "CssRules have primary refs, we measure there"
+    )]
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub selector: Selector<SelectorImpl>,
 
@@ -127,8 +129,10 @@ impl SelectorMapEntry for StateDependency {
 pub struct DocumentStateDependency {
     
     
-    #[cfg_attr(feature = "gecko",
-               ignore_malloc_size_of = "CssRules have primary refs, we measure there")]
+    #[cfg_attr(
+        feature = "gecko",
+        ignore_malloc_size_of = "CssRules have primary refs, we measure there"
+    )]
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
     pub selector: Selector<SelectorImpl>,
     
@@ -185,7 +189,8 @@ impl InvalidationMap {
 
     
     pub fn len(&self) -> usize {
-        self.state_affecting_selectors.len() + self.document_state_selectors.len() +
+        self.state_affecting_selectors.len() +
+            self.document_state_selectors.len() +
             self.other_attribute_affecting_selectors.len() +
             self.id_to_selector
                 .iter()

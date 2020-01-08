@@ -42,7 +42,10 @@ use traversal_flags::TraversalFlags;
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf, Deserialize, Serialize))]
+#[cfg_attr(
+    feature = "servo",
+    derive(MallocSizeOf, Deserialize, Serialize)
+)]
 pub struct OpaqueNode(pub usize);
 
 impl OpaqueNode {
@@ -459,7 +462,9 @@ pub trait TElement:
     fn is_svg_element(&self) -> bool;
 
     
-    fn is_xul_element(&self) -> bool { false }
+    fn is_xul_element(&self) -> bool {
+        false
+    }
 
     
     fn slotted_nodes(&self) -> &[Self::ConcreteNode] {
@@ -892,11 +897,7 @@ pub trait TElement:
     
     
     
-    fn match_element_lang(
-        &self,
-        override_lang: Option<Option<AttrValue>>,
-        value: &Lang,
-    ) -> bool;
+    fn match_element_lang(&self, override_lang: Option<Option<AttrValue>>, value: &Lang) -> bool;
 
     
     

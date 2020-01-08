@@ -5,9 +5,20 @@
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
-         ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum ColumnCount<PositiveInteger> {
     
     Integer(PositiveInteger),

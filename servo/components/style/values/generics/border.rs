@@ -10,8 +10,9 @@ use values::generics::rect::Rect;
 use values::generics::size::Size;
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
     
     Length(LengthOrPercentage),
@@ -22,8 +23,9 @@ pub enum BorderImageSideWidth<LengthOrPercentage, Number> {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub struct BorderImageSlice<NumberOrPercentage> {
     
     #[css(field_bound)]
@@ -34,8 +36,18 @@ pub struct BorderImageSlice<NumberOrPercentage> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
 pub struct BorderCornerRadius<L>(#[css(field_bound)] pub Size<L>);
 
 impl<L> BorderCornerRadius<L> {
@@ -46,9 +58,20 @@ impl<L> BorderCornerRadius<L> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero,
-         ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub struct BorderSpacing<L>(#[css(field_bound)] pub Size<L>);
 
 impl<L> BorderSpacing<L> {
@@ -61,8 +84,17 @@ impl<L> BorderSpacing<L> {
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+)]
 pub struct BorderRadius<LengthOrPercentage> {
     
     pub top_left: BorderCornerRadius<LengthOrPercentage>,
@@ -120,7 +152,9 @@ where
         W: Write,
     {
         widths.to_css(dest)?;
-        if widths.0 != heights.0 || widths.1 != heights.1 || widths.2 != heights.2 ||
+        if widths.0 != heights.0 ||
+            widths.1 != heights.1 ||
+            widths.2 != heights.2 ||
             widths.3 != heights.3
         {
             dest.write_str(" / ")?;

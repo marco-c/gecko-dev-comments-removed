@@ -15,7 +15,9 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 #[animate(fallback = "Self::animate_fallback")]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToAnimatedZero, ToCss)]
+#[derive(
+    Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToAnimatedZero, ToCss,
+)]
 pub enum Angle {
     
     #[css(dimension)]
@@ -73,7 +75,9 @@ impl Angle {
     
     #[inline]
     fn animate_fallback(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        Ok(Angle::from_radians(self.radians().animate(&other.radians(), procedure)?))
+        Ok(Angle::from_radians(
+            self.radians().animate(&other.radians(), procedure)?,
+        ))
     }
 }
 

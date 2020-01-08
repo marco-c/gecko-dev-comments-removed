@@ -14,8 +14,7 @@ use values::generics::CounterStyleOrNone;
 use values::specified::Attr;
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct CounterPair<Integer> {
     
     pub name: CustomIdent,
@@ -24,8 +23,9 @@ pub struct CounterPair<Integer> {
 }
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub struct CounterIncrement<I>(Counters<I>);
 
 impl<I> CounterIncrement<I> {
@@ -46,8 +46,9 @@ impl<I> Deref for CounterIncrement<I> {
 }
 
 
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub struct CounterReset<I>(Counters<I>);
 
 impl<I> CounterReset<I> {
@@ -70,8 +71,7 @@ impl<I> Deref for CounterReset<I> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub struct Counters<I>(#[css(iterable, if_empty = "none")] Box<[CounterPair<I>]>);
 
 impl<I> Default for Counters<I> {
@@ -102,8 +102,7 @@ fn is_decimal(counter_type: &CounterStyleType) -> bool {
 
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub enum Content<ImageUrl> {
     
     Normal,
@@ -125,8 +124,7 @@ impl<ImageUrl> Content<ImageUrl> {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
 pub enum ContentItem<ImageUrl> {
     
     String(Box<str>),

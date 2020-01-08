@@ -6,8 +6,18 @@
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedZero, ToComputedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+)]
 pub struct Position<H, V> {
     
     pub horizontal: H,
@@ -26,8 +36,19 @@ impl<H, V> Position<H, V> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf,
-         PartialEq, SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum ZIndex<Integer> {
     
     Integer(Integer),

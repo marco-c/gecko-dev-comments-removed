@@ -16,8 +16,18 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 #[animation(no_bound(UrlPaintServer))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+)]
 pub struct SVGPaint<ColorType, UrlPaintServer> {
     
     pub kind: SVGPaintKind<ColorType, UrlPaintServer>,
@@ -31,9 +41,19 @@ pub struct SVGPaint<ColorType, UrlPaintServer> {
 
 
 #[animation(no_bound(UrlPaintServer))]
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue,
-         ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum SVGPaintKind<ColorType, UrlPaintServer> {
     
     #[animation(error)]
@@ -113,8 +133,18 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number> {
     
     LengthOrPercentage(LengthOrPercentage),
@@ -191,9 +221,19 @@ impl<LengthOrPercentageType: Parse, NumberType: Parse> Parse
 }
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue,
-         ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum SVGLength<LengthType> {
     
     Length(LengthType),
@@ -202,23 +242,38 @@ pub enum SVGLength<LengthType> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum SVGStrokeDashArray<LengthType> {
     
     #[css(comma)]
-    Values(
-        #[css(if_empty = "none", iterable)]
-        Vec<LengthType>,
-    ),
+    Values(#[css(if_empty = "none", iterable)] Vec<LengthType>),
     
     ContextValue,
 }
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum SVGOpacity<OpacityType> {
     
     Opacity(OpacityType),

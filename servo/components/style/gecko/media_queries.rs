@@ -126,7 +126,8 @@ impl Device {
 
     
     pub fn set_root_font_size(&self, size: Au) {
-        self.root_font_size.store(size.0 as isize, Ordering::Relaxed)
+        self.root_font_size
+            .store(size.0 as isize, Ordering::Relaxed)
     }
 
     

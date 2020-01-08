@@ -71,7 +71,8 @@ impl UseCounters {
     
     #[inline]
     pub fn merge(&self, other: &Self) {
-        self.non_custom_properties.merge(&other.non_custom_properties)
+        self.non_custom_properties
+            .merge(&other.non_custom_properties)
     }
 }
 

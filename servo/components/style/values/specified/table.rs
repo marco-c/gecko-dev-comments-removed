@@ -8,8 +8,9 @@ use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use style_traits::{ParseError, StyleParseErrorKind};
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 
 pub struct XSpan(#[css(skip)] pub i32);
 

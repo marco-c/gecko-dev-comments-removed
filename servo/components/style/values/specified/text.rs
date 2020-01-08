@@ -94,7 +94,10 @@ impl Parse for LineHeight {
             {
                 Ok(GenericLineHeight::MozBlockHeight)
             },
-            ident => Err(location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone()))),
+            ident => {
+                Err(location
+                    .new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())))
+            },
         }
     }
 }
@@ -587,8 +590,7 @@ impl TextEmphasisKeywordValue {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo,
-         ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisFillMode {
     
     Filled,
@@ -597,8 +599,7 @@ pub enum TextEmphasisFillMode {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
-         SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisShapeKeyword {
     
     Dot,
@@ -724,8 +725,18 @@ impl Parse for TextEmphasisStyle {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
-         SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum TextEmphasisHorizontalWritingModeValue {
     
     Over,
@@ -734,8 +745,18 @@ pub enum TextEmphasisHorizontalWritingModeValue {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq,
-         SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum TextEmphasisVerticalWritingModeValue {
     
     Right,
@@ -744,8 +765,9 @@ pub enum TextEmphasisVerticalWritingModeValue {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+)]
 pub struct TextEmphasisPosition(
     pub TextEmphasisHorizontalWritingModeValue,
     pub TextEmphasisVerticalWritingModeValue,
@@ -846,8 +868,7 @@ impl Parse for MozTabSize {
             return Ok(GenericMozTabSize::Number(number));
         }
         Ok(GenericMozTabSize::Length(NonNegativeLength::parse(
-            context,
-            input,
+            context, input,
         )?))
     }
 }

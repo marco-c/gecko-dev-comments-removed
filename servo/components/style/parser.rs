@@ -137,11 +137,7 @@ impl<'a> ParserContext<'a> {
     }
 
     
-    pub fn log_css_error(
-        &self,
-        location: SourceLocation,
-        error: ContextualParseError,
-    ) {
+    pub fn log_css_error(&self, location: SourceLocation, error: ContextualParseError) {
         let error_reporter = match self.error_reporter {
             Some(r) => r,
             None => return,

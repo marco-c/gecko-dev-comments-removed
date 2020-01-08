@@ -190,8 +190,7 @@ where
     ) -> PrimaryStyle {
         
         
-        let may_reuse =
-            !self.element.is_in_native_anonymous_subtree() &&
+        let may_reuse = !self.element.is_in_native_anonymous_subtree() &&
             parent_style.is_some() &&
             inputs.rules.is_some();
 
@@ -485,7 +484,8 @@ where
 
         let stylist = &self.context.shared.stylist;
 
-        if !self.element
+        if !self
+            .element
             .may_generate_pseudo(pseudo_element, originating_element_style)
         {
             return None;

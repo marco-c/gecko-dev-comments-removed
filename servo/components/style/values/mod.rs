@@ -92,8 +92,13 @@ where
 }
 
 
-#[cfg_attr(feature = "servo", derive(Deserialize, MallocSizeOf, Serialize))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
+#[cfg_attr(
+    feature = "servo",
+    derive(Deserialize, MallocSizeOf, Serialize)
+)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss,
+)]
 pub enum Impossible {}
 
 
@@ -115,9 +120,19 @@ impl Parse for Impossible {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue,
-         ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum Either<A, B> {
     
     First(A),
@@ -148,8 +163,7 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
@@ -164,7 +178,9 @@ impl CustomIdent {
             _ => true
         };
         if !valid {
-            return Err(location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())));
+            return Err(
+                location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone()))
+            );
         }
         if excluding.iter().any(|s| ident.eq_ignore_ascii_case(s)) {
             Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError))

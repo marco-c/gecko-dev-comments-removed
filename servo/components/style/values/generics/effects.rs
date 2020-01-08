@@ -5,8 +5,17 @@
 
 
 
-#[derive(Animate, Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToAnimatedValue, ToAnimatedZero, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+)]
 pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
     pub base: SimpleShadow<Color, SizeLength, BlurShapeLength>,
@@ -21,8 +30,17 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[animation(no_bound(Url))]
-#[derive(Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+)]
 pub enum Filter<Angle, Factor, Length, DropShadow, Url> {
     
     #[css(function)]
@@ -63,8 +81,18 @@ pub enum Filter<Angle, Factor, Length, DropShadow, Url> {
 
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Debug, MallocSizeOf, PartialEq,
-         SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToCss)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+)]
 pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub color: Color,
