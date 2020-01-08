@@ -5619,13 +5619,11 @@ nsGlobalWindowOuter::GetFramesOuter()
 }
 
 nsGlobalWindowInner*
-nsGlobalWindowOuter::CallerInnerWindow()
+nsGlobalWindowOuter::CallerInnerWindow(JSContext* aCx)
 {
-  JSContext *cx = nsContentUtils::GetCurrentJSContext();
-  NS_ENSURE_TRUE(cx, nullptr);
   nsIGlobalObject* global = GetIncumbentGlobal();
   NS_ENSURE_TRUE(global, nullptr);
-  JS::Rooted<JSObject*> scope(cx, global->GetGlobalJSObject());
+  JS::Rooted<JSObject*> scope(aCx, global->GetGlobalJSObject());
   NS_ENSURE_TRUE(scope, nullptr);
 
   
@@ -5635,9 +5633,9 @@ nsGlobalWindowOuter::CallerInnerWindow()
   
   
   if (xpc::IsSandbox(scope)) {
-    JSAutoRealm ar(cx, scope);
-    JS::Rooted<JSObject*> scopeProto(cx);
-    bool ok = JS_GetPrototype(cx, scope, &scopeProto);
+    JSAutoRealm ar(aCx, scope);
+    JS::Rooted<JSObject*> scopeProto(aCx);
+    bool ok = JS_GetPrototype(aCx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);
     if (scopeProto && xpc::IsSandboxPrototypeProxy(scopeProto) &&
         (scopeProto = js::CheckedUnwrap(scopeProto,  false)))
@@ -5669,7 +5667,7 @@ nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> a
   
 
   
-  RefPtr<nsGlobalWindowInner> callerInnerWin = CallerInnerWindow();
+  RefPtr<nsGlobalWindowInner> callerInnerWin = CallerInnerWindow(aCx);
   nsIPrincipal* callerPrin;
   if (callerInnerWin) {
     

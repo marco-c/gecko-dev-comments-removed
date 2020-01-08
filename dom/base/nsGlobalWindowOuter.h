@@ -807,7 +807,8 @@ protected:
 
   inline void MaybeClearInnerWindow(nsGlobalWindowInner* aExpectedInner);
 
-  nsGlobalWindowInner *CallerInnerWindow();
+  
+  nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
 
   
   nsPIDOMWindowOuter* GetParentInternal();
