@@ -283,7 +283,6 @@ public:
   
   
   
-  
   template<int N>
   bool LowerCaseEqualsLiteral(const char (&aStr)[N]) const
   {
