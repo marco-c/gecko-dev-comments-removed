@@ -14,6 +14,8 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.content.SharedPreferences;
 
@@ -1210,28 +1212,23 @@ public class BrowserSearch extends HomeFragment
         @Override
         public CharSequence format(@NonNull CharSequence title) {
             
-            
             if (TextUtils.isEmpty(mSearchTerm)) {
                 return title;
             }
 
-            
-            final String titleInLowerCase = title.toString().toLowerCase();
-            final String pattern = mSearchTerm.toLowerCase();
-            final int patternLength = pattern.length();
-
             final SpannableStringBuilder sb = new SpannableStringBuilder(title);
 
-            int indexOfMatch = 0;
-            int lastIndexOfMatch = 0;
-            while (indexOfMatch != -1) {
-                indexOfMatch = titleInLowerCase.indexOf(pattern, lastIndexOfMatch);
-                lastIndexOfMatch = indexOfMatch + patternLength;
-                if (indexOfMatch != -1) {
-                    final StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
-                    sb.setSpan(boldSpan, indexOfMatch, lastIndexOfMatch, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-                }
+            
+            
+            
+            Pattern pattern = Pattern.compile(mSearchTerm, Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(title.toString());
+
+            while (matcher.find()) {
+                final StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
+                sb.setSpan(boldSpan, matcher.start(), matcher.end(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             }
+
             return sb;
         }
     };
