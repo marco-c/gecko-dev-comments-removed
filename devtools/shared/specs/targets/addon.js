@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Arg, Option, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {Option, RetVal, generateActorSpec} = require("devtools/shared/protocol");
 
 const addonTargetSpec = generateActorSpec({
   typeName: "addonTarget",
@@ -18,9 +18,7 @@ const addonTargetSpec = generateActorSpec({
       response: RetVal("json"),
     },
     connect: {
-      request: {
-        options: Arg(0, "json"),
-      },
+      request: {},
       response: RetVal("json"),
     },
     reload: {
