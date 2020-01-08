@@ -3,71 +3,28 @@
 
 "use strict";
 
-const MOCKS_ROOT = CHROME_URL_ROOT + "mocks/";
 
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-client-wrapper-mock.js", this);
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-runtime-client-factory-mock.js",
-  this);
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "head-usb-runtimes-mock.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "mocks/head-usb-mocks.js", this);
 
 const RUNTIME_ID = "test-runtime-id";
-
-const { RUNTIMES } = require("devtools/client/aboutdebugging-new/src/constants");
+const RUNTIME_DEVICE_NAME = "test device name";
 
 
 add_task(async function() {
-  const usbRuntimesMock = createUsbRuntimesMock();
-  const observerMock = addObserverMock(usbRuntimesMock);
-  enableUsbRuntimesMock(usbRuntimesMock);
-
-  
-  const mockUsbClient = createClientMock();
-  mockUsbClient.getDeviceDescription = () => {
-    return {
-      name: "TestBrand",
-      channel: "release",
-      version: "1.0",
-    };
-  };
-
-  
-  
-  const RuntimeClientFactoryMock = createRuntimeClientFactoryMock();
-  enableRuntimeClientFactoryMock(RuntimeClientFactoryMock);
-  RuntimeClientFactoryMock.createClientForRuntime = runtime => {
-    let client = null;
-    if (runtime.id === RUNTIMES.THIS_FIREFOX) {
-      client = createThisFirefoxClientMock();
-    } else if (runtime.id === RUNTIME_ID) {
-      client = mockUsbClient;
-    }
-    return { client };
-  };
-
-  
+  const usbMocks = new UsbMocks();
+  usbMocks.enableMocks();
   registerCleanupFunction(() => {
-    disableRuntimeClientFactoryMock();
-    disableUsbRuntimesMock();
+    usbMocks.disableMocks();
   });
 
   const { document, tab } = await openAboutDebugging();
 
-  usbRuntimesMock.getUSBRuntimes = function() {
-    return [{
-      id: RUNTIME_ID,
-      _socketPath: "test/path",
-      deviceName: "test device name",
-      shortName: "testshort",
-    }];
-  };
-  observerMock.emit("runtime-list-updated");
+  usbMocks.createRuntime(RUNTIME_ID, { deviceName: RUNTIME_DEVICE_NAME });
+  usbMocks.emitUpdate();
 
   info("Wait until the USB sidebar item appears");
-  await waitUntil(() => findSidebarItemByText("test device name", document));
-  const usbRuntimeSidebarItem = findSidebarItemByText("test device name", document);
+  await waitUntil(() => findSidebarItemByText(RUNTIME_DEVICE_NAME, document));
+  const usbRuntimeSidebarItem = findSidebarItemByText(RUNTIME_DEVICE_NAME, document);
   const connectButton = usbRuntimeSidebarItem.querySelector(".js-connect-button");
   ok(connectButton, "Connect button is displayed for the USB runtime");
 
@@ -76,13 +33,11 @@ add_task(async function() {
   await waitUntil(() => !usbRuntimeSidebarItem.querySelector(".js-connect-button"));
 
   info("Remove all USB runtimes");
-  usbRuntimesMock.getUSBRuntimes = function() {
-    return [];
-  };
-  observerMock.emit("runtime-list-updated");
+  usbMocks.removeRuntime(RUNTIME_ID);
+  usbMocks.emitUpdate();
 
   info("Wait until the USB sidebar item disappears");
-  await waitUntil(() => !findSidebarItemByText("test device name", document));
+  await waitUntil(() => !findSidebarItemByText(RUNTIME_DEVICE_NAME, document));
 
   await removeTab(tab);
 });
