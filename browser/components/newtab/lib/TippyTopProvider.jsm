@@ -29,7 +29,7 @@ this.TippyTopProvider = class TippyTopProvider {
   async init() {
     
     try {
-      for (const site of await (await fetch(TIPPYTOP_JSON_PATH)).json()) {
+      for (const site of await (await fetch(TIPPYTOP_JSON_PATH, {credentials: "omit"})).json()) {
         
         
         for (const url of site.url ? [site.url] : site.urls || []) {
