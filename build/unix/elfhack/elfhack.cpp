@@ -1206,15 +1206,19 @@ void undo_file(const char *name, bool backup = false)
         return;
     }
 
+    
+    
+    
+    
     ElfSegment *first = data->getSegmentByType(PT_LOAD);
     ElfSegment *second = text->getSegmentByType(PT_LOAD);
-    if (first != second) {
-        fprintf(stderr, elfhack_data " and " elfhack_text " not in the same segment. Skipping\n");
-        return;
+    if (first == second) {
+        second = elf.getSegmentByType(PT_LOAD, first);
     }
-    second = elf.getSegmentByType(PT_LOAD, first);
+
+    
     if (second->getFlags() != first->getFlags()) {
-        fprintf(stderr, "Couldn't identify elfhacked PT_LOAD segments. Skipping\n");
+        fprintf(stderr, "Couldn't merge PT_LOAD segments. Skipping\n");
         return;
     }
     
@@ -1224,6 +1228,7 @@ void undo_file(const char *name, bool backup = false)
         first->addSection(*section);
 
     elf.removeSegment(second);
+    elf.normalize();
 
     if (backup && backup_file(name) != 0) {
         fprintf(stderr, "Couln't create backup file\n");
