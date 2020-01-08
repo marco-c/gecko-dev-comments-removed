@@ -13,9 +13,9 @@ const PREFERENCE_NAME = "devtools.toolbox.tabsOrder";
 
 
 class ToolboxTabsOrderManager {
-  constructor(onOrderUpdated) {
+  constructor(onOrderUpdated, panelDefinitions) {
     this.onOrderUpdated = onOrderUpdated;
-    this.currentPanelDefinitions = [];
+    this.currentPanelDefinitions = panelDefinitions || [];
 
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
@@ -53,6 +53,25 @@ class ToolboxTabsOrderManager {
   isLastTab(tabElement) {
     return !tabElement.nextSibling ||
            tabElement.nextSibling.id === "tools-chevron-menu-button";
+  }
+
+  saveOrderPreference() {
+    const tabs = [...this.toolboxTabsElement.querySelectorAll(".devtools-tab")];
+    const tabIds = tabs.map(tab => tab.dataset.extensionId || tab.dataset.id);
+    
+    
+    
+    const overflowedTabIds =
+      this.currentPanelDefinitions
+          .filter(definition => !tabs.some(tab => tab.dataset.id === definition.id))
+          .map(definition => definition.extensionId || definition.id);
+    const currentTabIds = tabIds.concat(overflowedTabIds);
+    const dragTargetId =
+      this.dragTarget.dataset.extensionId || this.dragTarget.dataset.id;
+    const prefIds = getTabsOrderFromPreference();
+
+    const result = toAbsoluteOrder(prefIds, currentTabIds, dragTargetId);
+    Services.prefs.setCharPref(PREFERENCE_NAME, result.join(","));
   }
 
   setCurrentPanelDefinitions(currentPanelDefinitions) {
@@ -131,17 +150,7 @@ class ToolboxTabsOrderManager {
     }
 
     if (this.isOrderUpdated) {
-      const tabs = [...this.toolboxTabsElement.querySelectorAll(".devtools-tab")];
-      const tabIds = tabs.map(tab => tab.dataset.extensionId || tab.dataset.id);
-      
-      
-      
-      const overflowedTabIds =
-        this.currentPanelDefinitions
-            .filter(definition => !tabs.some(tab => tab.dataset.id === definition.id))
-            .map(definition => definition.extensionId || definition.id);
-      const pref = tabIds.concat(overflowedTabIds).join(",");
-      Services.prefs.setCharPref(PREFERENCE_NAME, pref);
+      this.saveOrderPreference();
 
       
       
@@ -161,9 +170,13 @@ class ToolboxTabsOrderManager {
   }
 }
 
-function sortPanelDefinitions(definitions) {
+function getTabsOrderFromPreference() {
   const pref = Services.prefs.getCharPref(PREFERENCE_NAME, "");
-  const toolIds = pref.split(",");
+  return pref ? pref.split(",") : [];
+}
+
+function sortPanelDefinitions(definitions) {
+  const toolIds = getTabsOrderFromPreference();
 
   return definitions.sort((a, b) => {
     let orderA = toolIds.indexOf(a.extensionId || a.id);
@@ -174,5 +187,61 @@ function sortPanelDefinitions(definitions) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toAbsoluteOrder(prefIds, currentTabIds, dragTargetId) {
+  currentTabIds = [...currentTabIds];
+  let indexAtCurrentTabs = 0;
+
+  for (const prefId of prefIds) {
+    if (prefId === dragTargetId) {
+      
+    } else if (currentTabIds.includes(prefId)) {
+      indexAtCurrentTabs = currentTabIds.indexOf(prefId) + 1;
+    } else {
+      currentTabIds.splice(indexAtCurrentTabs, 0, prefId);
+      indexAtCurrentTabs += 1;
+    }
+  }
+
+  return currentTabIds;
+}
+
 module.exports.ToolboxTabsOrderManager = ToolboxTabsOrderManager;
 module.exports.sortPanelDefinitions = sortPanelDefinitions;
+module.exports.toAbsoluteOrder = toAbsoluteOrder;
