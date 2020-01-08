@@ -798,6 +798,7 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
 
  bool ChromeUtils::IsPopupTokenUnused(GlobalObject& aGlobal) {
   return PopupBlocker::IsPopupOpeningTokenUnused();
+}
 
  void ChromeUtils::RegisterWindowActor(
     const GlobalObject& aGlobal, const nsAString& aName,
