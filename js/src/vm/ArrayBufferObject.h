@@ -326,7 +326,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     
     
     
-    ArrayBufferViewObject* firstView();
+    JSObject* firstView();
 
     bool addView(JSContext* cx, JSObject* view);
 
@@ -341,7 +341,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
   private:
     void changeViewContents(JSContext* cx, ArrayBufferViewObject* view,
                             uint8_t* oldDataPointer, BufferContents newContents);
-    void setFirstView(ArrayBufferViewObject* view);
+    void setFirstView(JSObject* view);
 
     uint8_t* inlineDataPointer() const;
 
@@ -562,7 +562,7 @@ template<> inline bool TypeIsUnsigned<uint32_t>() { return true; }
 class InnerViewTable
 {
   public:
-    typedef Vector<ArrayBufferViewObject*, 1, SystemAllocPolicy> ViewVector;
+    typedef Vector<JSObject*, 1, SystemAllocPolicy> ViewVector;
 
     friend class ArrayBufferObject;
 
@@ -604,7 +604,7 @@ class InnerViewTable
     
     static bool sweepEntry(JSObject** pkey, ViewVector& views);
 
-    bool addView(JSContext* cx, ArrayBufferObject* obj, ArrayBufferViewObject* view);
+    bool addView(JSContext* cx, ArrayBufferObject* buffer, JSObject* view);
     ViewVector* maybeViewsUnbarriered(ArrayBufferObject* obj);
     void removeViews(ArrayBufferObject* obj);
 
