@@ -2935,89 +2935,81 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
 
   MOZ_ASSERT(!aRv.Failed());
 
+  
+  
+  if (SelectionRefPtr()->RangeCount() != 1) {
+    return nullptr;
+  }
+
   bool isLinkTag = aTagName && IsLinkTag(*aTagName);
   bool isNamedAnchorTag = aTagName && IsNamedAnchorTag(*aTagName);
 
   RefPtr<nsRange> firstRange = SelectionRefPtr()->GetRangeAt(0);
-  if (NS_WARN_IF(!firstRange)) {
+  MOZ_ASSERT(firstRange);
+
+  const RangeBoundary& startRef = firstRange->StartRef();
+  if (NS_WARN_IF(!startRef.IsSet())) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  const RangeBoundary& endRef = firstRange->EndRef();
+  if (NS_WARN_IF(!endRef.IsSet())) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
 
-  nsCOMPtr<nsINode> startContainer = firstRange->GetStartContainer();
-  nsIContent* startNode = firstRange->GetChildAtStartOffset();
-
-  nsCOMPtr<nsINode> endContainer = firstRange->GetEndContainer();
-  nsIContent* endNode = firstRange->GetChildAtEndOffset();
-
   
-  if (startContainer && startContainer == endContainer &&
-      startNode && endNode && startNode->GetNextSibling() == endNode) {
-    if (!aTagName) {
-      if (NS_WARN_IF(!startNode->IsElement())) {
-        
-        
-        return nullptr;
+  if (startRef.Container() == endRef.Container()) {
+    nsIContent* startContent = startRef.GetChildAtOffset();
+    nsIContent* endContent = endRef.GetChildAtOffset();
+    if (startContent && endContent &&
+        startContent->GetNextSibling() == endContent) {
+      if (!aTagName) {
+        if (!startContent->IsElement()) {
+          
+          
+          return nullptr;
+        }
+        return do_AddRef(startContent->AsElement());
       }
-      RefPtr<Element> selectedElement = startNode->AsElement();
-      return selectedElement.forget();
-    }
-    
-    if (aTagName == startNode->NodeInfo()->NameAtom() ||
-        (isLinkTag && HTMLEditUtils::IsLink(startNode)) ||
-        (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(startNode))) {
-      MOZ_ASSERT(startNode->IsElement());
-      RefPtr<Element> selectedElement = startNode->AsElement();
-      return selectedElement.forget();
+      
+      if (aTagName == startContent->NodeInfo()->NameAtom() ||
+          (isLinkTag && HTMLEditUtils::IsLink(startContent)) ||
+          (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(startContent))) {
+        MOZ_ASSERT(startContent->IsElement());
+        return do_AddRef(startContent->AsElement());
+      }
     }
   }
 
-  RefPtr<Element> selectedElement;
   if (isLinkTag) {
     
-    
-    
-    const RangeBoundary& anchor = SelectionRefPtr()->AnchorRef();
-    const RangeBoundary& focus = SelectionRefPtr()->FocusRef();
-    
-    if (anchor.IsSet()) {
-      Element* parentLinkOfAnchor =
-        GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
-                                            *anchor.Container());
-      
-      if (parentLinkOfAnchor) {
-        if (SelectionRefPtr()->IsCollapsed()) {
-          
-          return do_AddRef(parentLinkOfAnchor);
-        }
-        if (focus.IsSet()) {
-          
-          Element* parentLinkOfFocus =
-            GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
-                                                *focus.Container());
-          if (parentLinkOfFocus == parentLinkOfAnchor) {
-            return do_AddRef(parentLinkOfAnchor);
-          }
-        }
-      } else if (anchor.GetChildAtOffset() && focus.GetChildAtOffset()) {
+    Element* parentLinkOfStart =
+      GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
+                                          *startRef.Container());
+    if (parentLinkOfStart) {
+      if (SelectionRefPtr()->IsCollapsed()) {
         
-        if (HTMLEditUtils::IsLink(anchor.GetChildAtOffset()) &&
-            anchor.Container() == focus.Container() &&
-            focus.GetChildAtOffset() ==
-              anchor.GetChildAtOffset()->GetNextSibling()) {
-          selectedElement = Element::FromNodeOrNull(anchor.GetChildAtOffset());
-        }
+        return do_AddRef(parentLinkOfStart);
+      }
+      
+      Element* parentLinkOfEnd =
+        GetElementOrParentByTagNameInternal(*nsGkAtoms::href,
+                                            *endRef.Container());
+      if (parentLinkOfStart == parentLinkOfEnd) {
+        return do_AddRef(parentLinkOfStart);
       }
     }
   }
 
   if (SelectionRefPtr()->IsCollapsed()) {
-    return selectedElement.forget();
+    return nullptr;
   }
 
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
 
-  bool found = !!selectedElement;
+  RefPtr<Element> selectedElement;
+  bool found = false;
   iter->Init(firstRange);
   
   while (!iter->IsDone()) {
