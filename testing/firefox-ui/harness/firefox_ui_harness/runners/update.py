@@ -13,6 +13,7 @@ from firefox_ui_harness.testcases import UpdateTestCase
 
 
 DEFAULT_PREFS = {
+    'app.update.disabledForTesting': False,
     
     'app.update.doorhanger': False,
     'app.update.log': True,
