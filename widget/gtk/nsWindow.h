@@ -414,6 +414,9 @@ public:
 
     virtual bool WidgetTypeSupportsAcceleration() override;
 
+    nsresult SetSystemFont(const nsCString& aFontName) override;
+    nsresult GetSystemFont(nsCString& aFontName) override;
+
     typedef enum { CSD_SUPPORT_SYSTEM,    
                    CSD_SUPPORT_CLIENT,    
                    CSD_SUPPORT_NONE,      
