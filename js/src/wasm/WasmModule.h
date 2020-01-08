@@ -168,6 +168,15 @@ typedef RefPtr<Module> SharedModule;
 
 
 
+
+void
+ComputeWasmCallee(const Code& code, const Instance* instance,
+                  Handle<FunctionVector> funcImports,
+                  uint32_t funcIndexIndex, const Table& table,
+                  const ElemSegment& seg, WasmCallee* out);
+
+
+
 SharedModule
 DeserializeModule(PRFileDesc* bytecode, UniqueChars filename, unsigned line);
 

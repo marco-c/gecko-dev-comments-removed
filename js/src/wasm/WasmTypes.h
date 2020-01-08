@@ -160,6 +160,29 @@ struct ShareableBase : AtomicRefCounted<T>
 
 
 
+struct ShareableBytes : ShareableBase<ShareableBytes>
+{
+    
+    Bytes bytes;
+
+    ShareableBytes() = default;
+    explicit ShareableBytes(Bytes&& bytes) : bytes(std::move(bytes)) {}
+    size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
+        return bytes.sizeOfExcludingThis(mallocSizeOf);
+    }
+    const uint8_t* begin() const { return bytes.begin(); }
+    const uint8_t* end() const { return bytes.end(); }
+    size_t length() const { return bytes.length(); }
+    bool append(const uint8_t* start, uint32_t len) {
+        return bytes.append(start, len);
+    }
+};
+
+typedef RefPtr<ShareableBytes> MutableBytes;
+typedef RefPtr<const ShareableBytes> SharedBytes;
+
+
+
 
 
 
@@ -1063,17 +1086,24 @@ typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 
 
 
+
+
+
+
 struct ElemSegment
 {
     uint32_t tableIndex;
-    InitExpr offset;
+    Maybe<InitExpr> offsetIfActive;
     Uint32Vector elemFuncIndices;
     Uint32Vector elemCodeRangeIndices1_;
     mutable Uint32Vector elemCodeRangeIndices2_;
 
     ElemSegment() = default;
-    ElemSegment(uint32_t tableIndex, InitExpr offset, Uint32Vector&& elemFuncIndices)
-      : tableIndex(tableIndex), offset(offset), elemFuncIndices(std::move(elemFuncIndices))
+    ElemSegment(uint32_t tableIndex, Maybe<InitExpr>&& offsetIfActive,
+                Uint32Vector&& elemFuncIndices)
+      : tableIndex(tableIndex),
+        offsetIfActive(std::move(offsetIfActive)),
+        elemFuncIndices(std::move(elemFuncIndices))
     {}
 
     Uint32Vector& elemCodeRangeIndices(Tier t) {
@@ -1115,7 +1145,7 @@ typedef Vector<ElemSegment, 0, SystemAllocPolicy> ElemSegmentVector;
 
 struct DataSegment
 {
-    InitExpr offset;
+    Maybe<InitExpr> offsetIfActive;
     uint32_t bytecodeOffset;
     uint32_t length;
 };
