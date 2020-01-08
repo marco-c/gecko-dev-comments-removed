@@ -978,7 +978,10 @@ LongestPhaseSelfTimeInMajorGC(const Statistics::PhaseTimeTable& times)
 
             
             
+            
+#ifndef XP_WIN
             MOZ_ASSERT(ok, "Inconsistent time data; see bug 1400153");
+#endif
             if (!ok) {
                 return PhaseKind::NONE;
             }
