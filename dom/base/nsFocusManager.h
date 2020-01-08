@@ -429,11 +429,6 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  bool IsHostOrSlot(nsIContent* aContent);
-
-  
-
-
 
 
 

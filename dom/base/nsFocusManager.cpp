@@ -2842,6 +2842,10 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   return NS_OK;
 }
 
+static bool IsHostOrSlot(const nsIContent* aContent) {
+  return aContent->GetShadowRoot() || aContent->IsHTMLElement(nsGkAtoms::slot);
+}
+
 
 
 class MOZ_STACK_CLASS ScopedContentTraversal {
@@ -2856,7 +2860,7 @@ class MOZ_STACK_CLASS ScopedContentTraversal {
 
   void Reset() { SetCurrent(mOwner); }
 
-  nsIContent* GetCurrent() { return mCurrent; }
+  nsIContent* GetCurrent() const { return mCurrent; }
 
  private:
   void SetCurrent(nsIContent* aContent) { mCurrent = aContent; }
@@ -2869,9 +2873,7 @@ void ScopedContentTraversal::Next() {
   MOZ_ASSERT(mCurrent);
 
   
-  if (!(mCurrent->GetShadowRoot() ||
-        mCurrent->IsHTMLElement(nsGkAtoms::slot)) ||
-      mCurrent == mOwner) {
+  if (!IsHostOrSlot(mCurrent) || mCurrent == mOwner) {
     StyleChildrenIterator iter(mCurrent);
     nsIContent* child = iter.GetNextChild();
     if (child) {
@@ -2932,7 +2934,7 @@ void ScopedContentTraversal::Prev() {
 
   while (last) {
     parent = last;
-    if (parent->GetShadowRoot() || parent->IsHTMLElement(nsGkAtoms::slot)) {
+    if (IsHostOrSlot(parent)) {
       
       break;
     }
@@ -2969,11 +2971,6 @@ nsIContent* nsFocusManager::FindOwner(nsIContent* aContent) {
   }
 
   return nullptr;
-}
-
-bool nsFocusManager::IsHostOrSlot(nsIContent* aContent) {
-  return aContent->GetShadowRoot() ||               
-         aContent->IsHTMLElement(nsGkAtoms::slot);  
 }
 
 int32_t nsFocusManager::HostOrSlotTabIndexValue(nsIContent* aContent,
