@@ -2302,7 +2302,8 @@ static bool
 LoadScriptInMiddleman(const nsString& aURL)
 {
   return 
-         StringBeginsWith(aURL, NS_LITERAL_STRING("resource://devtools/"))
+         (StringBeginsWith(aURL, NS_LITERAL_STRING("resource://devtools/")) &&
+          recordreplay::parent::DebuggerRunsInMiddleman())
          
          
       || aURL.EqualsLiteral("chrome://global/content/browser-child.js")

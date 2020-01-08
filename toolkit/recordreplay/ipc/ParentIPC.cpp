@@ -628,9 +628,15 @@ PreferencesLoaded()
     gRewindingEnabled = false;
   }
 
-  
-  
-  if (!gRecordingChild) {
+  if (gRecordingChild) {
+    
+    
+    if (DebuggerRunsInMiddleman()) {
+      gRecordingChild->SendMessage(SetDebuggerRunsInMiddlemanMessage());
+    }
+  } else {
+    
+    
     if (CanRewind()) {
       SpawnReplayingChildren();
     } else {
@@ -644,6 +650,22 @@ CanRewind()
 {
   MOZ_RELEASE_ASSERT(gPreferencesLoaded);
   return gRewindingEnabled;
+}
+
+bool
+DebuggerRunsInMiddleman()
+{
+  if (IsRecordingOrReplaying()) {
+    
+    
+    return child::DebuggerRunsInMiddleman();
+  }
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(IsMiddleman());
+  return !gRecordingChild || CanRewind();
 }
 
 

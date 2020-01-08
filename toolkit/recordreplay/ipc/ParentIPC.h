@@ -66,6 +66,9 @@ void GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid, uint32_t aChanne
                                  const char* aRecordingFile, bool aRecording,
                                  std::vector<std::string>& aExtraArgs);
 
+
+bool DebuggerRunsInMiddleman();
+
 } 
 } 
 } 

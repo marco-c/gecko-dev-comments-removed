@@ -113,6 +113,9 @@ void ReportFatalError(const char* aFormat, ...);
 void BeginIdleTime();
 void EndIdleTime();
 
+
+bool DebuggerRunsInMiddleman();
+
 } 
 
 } 
