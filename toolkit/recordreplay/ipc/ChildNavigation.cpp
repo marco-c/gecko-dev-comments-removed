@@ -698,13 +698,15 @@ PausedPhase::MaybeDivergeFromRecording()
     return false;
   }
 
+  size_t index = mRequestIndex;
+
   if (!EnsureTemporaryCheckpoint()) {
     
     
     return false;
   }
 
-  if (mRequests[mRequestIndex].mUnhandledDivergence) {
+  if (mRequests[index].mUnhandledDivergence) {
     
     
     
