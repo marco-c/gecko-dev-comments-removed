@@ -970,10 +970,13 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
       
       
       
+      MOZ_DIAGNOSTIC_ASSERT(outDesc.Width <= inDesc.Width &&
+                            outDesc.Height <= inDesc.Height);
+      D3D11_BOX srcBox = { 0, 0, 0, outDesc.Width, outDesc.Height, 1 };
 
       UINT index;
       dxgiBuf->GetSubresourceIndex(&index);
-      mContext->CopySubresourceRegion(texture, 0, 0, 0, 0, tex, index, nullptr);
+      mContext->CopySubresourceRegion(texture, 0, 0, 0, 0, tex, index, &srcBox);
     } else {
       
       hr = E_FAIL;
