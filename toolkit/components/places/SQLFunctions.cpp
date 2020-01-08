@@ -447,55 +447,6 @@ namespace places {
   }
 
   
-  bool
-  MatchAutoCompleteFunction::findBeginning(const nsDependentCSubstring &aToken,
-                                           const nsACString &aSourceString)
-  {
-    MOZ_ASSERT(!aToken.IsEmpty(), "Don't search for an empty token!");
-
-    
-    
-    
-    
-    
-    
-
-    const_char_iterator tokenStart(aToken.BeginReading()),
-                        tokenEnd(aToken.EndReading()),
-                        sourceStart(aSourceString.BeginReading()),
-                        sourceEnd(aSourceString.EndReading());
-
-    bool dummy;
-    while (sourceStart < sourceEnd &&
-           CaseInsensitiveUTF8CharsEqual(sourceStart, tokenStart,
-                                         sourceEnd, tokenEnd,
-                                         &sourceStart, &tokenStart, &dummy)) {
-
-      
-      if (tokenStart >= tokenEnd) {
-        return true;
-      }
-    }
-
-    
-    
-    
-
-    return false;
-  }
-
-  
-  bool
-  MatchAutoCompleteFunction::findBeginningCaseSensitive(
-    const nsDependentCSubstring &aToken,
-    const nsACString &aSourceString)
-  {
-    MOZ_ASSERT(!aToken.IsEmpty(), "Don't search for an empty token!");
-
-    return StringBeginsWith(aSourceString, aToken);
-  }
-
-  
   MatchAutoCompleteFunction::searchFunctionPtr
   MatchAutoCompleteFunction::getSearchFunction(int32_t aBehavior)
   {
@@ -503,10 +454,6 @@ namespace places {
       case mozIPlacesAutoComplete::MATCH_ANYWHERE:
       case mozIPlacesAutoComplete::MATCH_ANYWHERE_UNMODIFIED:
         return findAnywhere;
-      case mozIPlacesAutoComplete::MATCH_BEGINNING:
-        return findBeginning;
-      case mozIPlacesAutoComplete::MATCH_BEGINNING_CASE_SENSITIVE:
-        return findBeginningCaseSensitive;
       case mozIPlacesAutoComplete::MATCH_BOUNDARY:
       default:
         return findOnBoundary;

@@ -12,16 +12,6 @@ const MS_PER_DAY = 86400000;
 
 
 
-const {
-  MATCH_ANYWHERE,
-  MATCH_BOUNDARY_ANYWHERE,
-  MATCH_BOUNDARY,
-  MATCH_BEGINNING,
-  MATCH_BEGINNING_CASE_SENSITIVE,
-} = Ci.mozIPlacesAutoComplete;
-
-
-
 const QUERYTYPE_FILTERED            = 0;
 const QUERYTYPE_AUTOFILL_ORIGIN     = 1;
 const QUERYTYPE_AUTOFILL_URL        = 2;
@@ -576,7 +566,7 @@ function Search(searchString, searchParam, autocompleteListener,
   this._searchString = Services.textToSubURI.unEscapeURIForUI("UTF-8", suffix);
   this._strippedPrefix = prefix.toLowerCase();
 
-  this._matchBehavior = UrlbarPrefs.get("matchBehavior");
+  this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY;
   
   this._behavior = this._searchString ? UrlbarPrefs.get("defaultBehavior")
                                       : UrlbarPrefs.get("emptySearchDefaultBehavior");
@@ -984,12 +974,10 @@ Search.prototype = {
 
     
     
-    
     let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
                 this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
-    if (this._matchBehavior == MATCH_BOUNDARY_ANYWHERE &&
-        count < UrlbarPrefs.get("maxRichResults")) {
-      this._matchBehavior = MATCH_ANYWHERE;
+    if (count < UrlbarPrefs.get("maxRichResults")) {
+      this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
         await conn.executeCached(query, params, this._onResultRow.bind(this));

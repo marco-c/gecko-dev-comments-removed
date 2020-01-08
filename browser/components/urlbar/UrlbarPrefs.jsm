@@ -69,10 +69,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["insertMethod", UrlbarUtils.INSERTMETHOD.MERGE_RELATED],
 
   
-  
-  ["matchBehavior", Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY_ANYWHERE],
-
-  
   ["matchBuckets", "suggestion:4,general:Infinity"],
 
   
@@ -308,16 +304,6 @@ class Preferences {
           val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_BOOKMARK;
         } else {
           val |= Ci.mozIPlacesAutoComplete.BEHAVIOR_OPENPAGE;
-        }
-        return val;
-      }
-      case "matchBehavior": {
-        
-        let val = this._readPref(pref);
-        if (![Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE,
-              Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY,
-              Ci.mozIPlacesAutoComplete.MATCH_BEGINNING].includes(val)) {
-          val = Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY_ANYWHERE;
         }
         return val;
       }
