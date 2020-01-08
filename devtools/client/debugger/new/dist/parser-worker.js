@@ -23083,6 +23083,13 @@ function mapOriginalExpression(expression, mappings) {
       return;
     }
 
+    const ancestor = ancestors[ancestors.length - 1];
+    
+    
+    if (t.isObjectProperty(ancestor.node) && ancestor.key !== "value") {
+      return;
+    }
+
     const replacement = replacements.get(locationKey(node.loc.start));
     if (replacement) {
       replaceNode(ancestors, t.cloneNode(replacement));
