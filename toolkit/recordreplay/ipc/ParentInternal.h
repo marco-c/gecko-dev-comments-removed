@@ -87,6 +87,7 @@ void SendGraphicsMemoryToChild();
 
 
 
+
 void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
 
 

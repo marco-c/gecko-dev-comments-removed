@@ -77,11 +77,6 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
       
       PreferencesLoaded();
     }
-    if (type == dom::PBrowser::Msg_RenderLayers__ID) {
-      
-      
-      UpdateGraphicsInUIProcess(nullptr);
-    }
     return false;
   }
 
