@@ -55,7 +55,6 @@ class Module : public JS::WasmModule
     const DataSegmentVector   dataSegments_;
     const ElemSegmentVector   elemSegments_;
     const CustomSectionVector customSections_;
-    const SharedBytes         bytecode_;
 
     
     
@@ -68,6 +67,7 @@ class Module : public JS::WasmModule
     mutable Atomic<bool>    debugCodeClaimed_;
     const UniqueConstBytes  debugUnlinkedCode_;
     const UniqueLinkData    debugLinkData_;
+    const SharedBytes       debugBytecode_;
 
     
     
@@ -98,9 +98,9 @@ class Module : public JS::WasmModule
            DataSegmentVector&& dataSegments,
            ElemSegmentVector&& elemSegments,
            CustomSectionVector&& customSections,
-           const ShareableBytes& bytecode,
            UniqueConstBytes debugUnlinkedCode = nullptr,
-           UniqueLinkData debugLinkData = nullptr)
+           UniqueLinkData debugLinkData = nullptr,
+           const ShareableBytes* debugBytecode = nullptr)
       : code_(&code),
         imports_(std::move(imports)),
         exports_(std::move(exports)),
@@ -108,10 +108,10 @@ class Module : public JS::WasmModule
         dataSegments_(std::move(dataSegments)),
         elemSegments_(std::move(elemSegments)),
         customSections_(std::move(customSections)),
-        bytecode_(&bytecode),
         debugCodeClaimed_(false),
         debugUnlinkedCode_(std::move(debugUnlinkedCode)),
         debugLinkData_(std::move(debugLinkData)),
+        debugBytecode_(debugBytecode),
         testingTier2Active_(false)
     {
         MOZ_ASSERT_IF(metadata().debugEnabled, debugUnlinkedCode_ && debugLinkData_);
@@ -125,7 +125,7 @@ class Module : public JS::WasmModule
     const ImportVector& imports() const { return imports_; }
     const ExportVector& exports() const { return exports_; }
     const CustomSectionVector& customSections() const { return customSections_; }
-    const ShareableBytes& bytecode() const { return *bytecode_; }
+    const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
     uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
 
     
@@ -144,7 +144,7 @@ class Module : public JS::WasmModule
     
     
 
-    void startTier2(const CompileArgs& args);
+    void startTier2(const CompileArgs& args, const ShareableBytes& bytecode);
     bool finishTier2(const LinkData& linkData2, UniqueCodeTier code2) const;
 
     void testingBlockOnTier2Complete() const;
