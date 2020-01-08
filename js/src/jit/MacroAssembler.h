@@ -830,6 +830,28 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
+    void flexibleRemainder32(Register rhs, Register srcDest, bool isUnsigned,
+                             const LiveRegisterSet& volatileLiveRegs)
+                             DEFINED_ON(mips_shared, arm, arm64, x86_shared);
+
+    
+    
+    
+    
+    
+    
+    
+    void flexibleQuotient32(Register rhs, Register srcDest, bool isUnsigned,
+                            const LiveRegisterSet& volatileLiveRegs)
+                            DEFINED_ON(mips_shared, arm, arm64, x86_shared);
+
+    
+    
+    
+    
+    
+    
+    
     
     void flexibleDivMod32(Register rhs, Register srcDest, Register remOutput,
                           bool isUnsigned, const LiveRegisterSet& volatileLiveRegs)
