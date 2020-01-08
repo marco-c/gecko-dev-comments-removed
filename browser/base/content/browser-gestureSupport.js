@@ -726,9 +726,7 @@ var gHistorySwipeAnimation = {
 
 
   _addBoxes: function HSA__addBoxes() {
-    let browserStack =
-      document.getAnonymousElementByAttribute(gBrowser.getPanel(),
-                                              "class", "browserStack");
+    let browserStack = gBrowser.getPanel().querySelector(".browserStack");
     this._container = this._createElement("historySwipeAnimationContainer",
                                           "stack");
     browserStack.appendChild(this._container);
