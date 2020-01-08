@@ -1,8 +1,7 @@
 
 
 
-if (helperThreadCount() == 0)
-  quit();
+
 
 evalInWorker(`
   var lfGlobal = newGlobal();
