@@ -364,8 +364,9 @@ PLDHashTable::Clear()
 
 
 
+
 template <PLDHashTable::SearchReason Reason>
-PLDHashEntryHdr* NS_FASTCALL
+MOZ_ALWAYS_INLINE PLDHashEntryHdr*
 PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash) const
 {
   MOZ_ASSERT(mEntryStore.Get());
