@@ -4105,9 +4105,16 @@ html[dir="rtl"] .object-node {
   padding-bottom: 10px;
 }
 
-.scopes-list .scope-type-toggle a {
+.scopes-list .scope-type-toggle button {
   
   color: var(--theme-body-color);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.scopes-list .scope-type-toggle button:hover {
+  background: transparent;
 }
 
 
