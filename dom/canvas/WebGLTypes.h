@@ -26,53 +26,10 @@ class GLContext;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class FakeBlackType : uint8_t {
-    None,
-    RGBA0001, 
-    RGBA0000, 
-};
-
-
-
-
-
-
-
 enum class WebGLVertexAttrib0Status : uint8_t {
     Default, 
     EmulatedUninitializedArray, 
     EmulatedInitializedArray 
-};
-
-
-
-
-
-
-
-
-
-
-
-enum class WebGLImageDataStatus : uint8_t {
-    NoImageData,
-    UninitializedImageData,
-    InitializedImageData
 };
 
 
@@ -218,6 +175,29 @@ public:
     UniqueBuffer(const UniqueBuffer& other) = delete; 
     void operator =(const UniqueBuffer& other) = delete; 
 };
+
+namespace webgl {
+struct FormatUsageInfo;
+
+struct SampleableInfo final
+{
+    const char* incompleteReason = nullptr;
+    uint32_t levels = 0;
+    const webgl::FormatUsageInfo* usage = nullptr;
+    bool isDepthTexCompare = false;
+
+    bool IsComplete() const { return bool(levels); }
+};
+
+enum class AttribBaseType : uint8_t {
+    Int,
+    UInt,
+    Float, 
+    Bool, 
+};
+const char* ToString(AttribBaseType);
+
+} 
 
 } 
 

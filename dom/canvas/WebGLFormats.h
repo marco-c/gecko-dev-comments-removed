@@ -207,14 +207,20 @@ enum class UnsizedFormat : uint8_t {
 
 
 enum class ComponentType : uint8_t {
-    None,
     Int,          
     UInt,         
     NormInt,      
     NormUInt,     
     Float,        
-    Special,      
 };
+
+enum class TextureBaseType : uint8_t {
+    Int = uint8_t(ComponentType::Int),
+    UInt = uint8_t(ComponentType::UInt),
+    Float = uint8_t(ComponentType::Float), 
+};
+
+const char* ToString(TextureBaseType);
 
 enum class CompressionFamily : uint8_t {
     ASTC,
@@ -244,6 +250,7 @@ struct FormatInfo
     const GLenum sizedFormat;
     const UnsizedFormat unsizedFormat;
     const ComponentType componentType;
+    const TextureBaseType baseType;
     const bool isSRGB;
 
     const CompressedFormatInfo* const compression;
