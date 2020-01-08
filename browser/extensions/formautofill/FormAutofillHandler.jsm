@@ -10,8 +10,9 @@
 
 var EXPORTED_SYMBOLS = ["FormAutofillHandler"];
 
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
-
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://formautofill/FormAutofill.jsm");
 
 ChromeUtils.defineModuleGetter(this, "FormAutofillUtils",
@@ -20,6 +21,12 @@ ChromeUtils.defineModuleGetter(this, "FormAutofillHeuristics",
                                "resource://formautofill/FormAutofillHeuristics.jsm");
 ChromeUtils.defineModuleGetter(this, "FormLikeFactory",
                                "resource://gre/modules/FormLikeFactory.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "reauthPasswordPromptMessage", () => {
+  const brandShortName = FormAutofillUtils.brandBundle.GetStringFromName("brandShortName");
+  return FormAutofillUtils.stringBundle.formatStringFromName(
+    `useCreditCardPasswordPrompt.${AppConstants.platform}`, [brandShortName], 1);
+});
 
 this.log = null;
 FormAutofill.defineLazyLogGetter(this, EXPORTED_SYMBOLS[0]);
@@ -869,10 +876,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   async prepareFillingProfile(profile) {
     
     
-    
-    
     if (profile["cc-number-encrypted"]) {
-      let decrypted = await this._decrypt(profile["cc-number-encrypted"], true);
+      let decrypted = await this._decrypt(profile["cc-number-encrypted"], reauthPasswordPromptMessage);
 
       if (!decrypted) {
         
