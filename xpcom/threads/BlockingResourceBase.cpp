@@ -587,7 +587,7 @@ RecursiveMutex::AssertCurrentThreadIn()
 
 
 void
-CondVar::Wait()
+OffTheBooksCondVar::Wait()
 {
   
   CVStatus status = Wait(TimeDuration::Forever());
@@ -595,7 +595,7 @@ CondVar::Wait()
 }
 
 CVStatus
-CondVar::Wait(TimeDuration aDuration)
+OffTheBooksCondVar::Wait(TimeDuration aDuration)
 {
   AssertCurrentThreadOwnsMutex();
 
