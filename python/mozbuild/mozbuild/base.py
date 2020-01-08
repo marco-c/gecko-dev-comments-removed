@@ -11,7 +11,11 @@ import multiprocessing
 import os
 import subprocess
 import sys
-import which
+try:
+    from shutil import which
+except ImportError:
+    
+    import which
 
 from mach.mixin.process import ProcessExecutionMixin
 from mozversioncontrol import (
