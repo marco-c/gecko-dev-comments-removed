@@ -24,6 +24,11 @@ const MenuItem = props => {
     attr.className += " " + props.className;
   }
 
+  if (props.icon) {
+    attr.className += " iconic";
+    attr.style = { "--menuitem-icon-image": "url(" + props.icon + ")" };
+  }
+
   if (props.onClick) {
     attr.onClick = props.onClick;
   }
@@ -72,6 +77,15 @@ MenuItem.propTypes = {
 
   
   onClick: PropTypes.func,
+
+  
+  
+  
+  
+  
+  
+  
+  icon: PropTypes.string,
 };
 
 module.exports = MenuItem;
