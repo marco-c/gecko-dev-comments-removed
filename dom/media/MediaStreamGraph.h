@@ -746,8 +746,9 @@ class SourceMediaStream : public MediaStream {
 
 
 
-  virtual bool AppendToTrack(TrackID aID, MediaSegment* aSegment,
-                             MediaSegment* aRawSegment = nullptr);
+
+  virtual StreamTime AppendToTrack(TrackID aID, MediaSegment* aSegment,
+                                   MediaSegment* aRawSegment = nullptr);
   
 
 
