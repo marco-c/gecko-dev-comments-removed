@@ -167,6 +167,11 @@ public:
   PaintMaskAndClipPath(const PaintFramesParams& aParams);
 
   
+  
+  static void
+  PaintMaskAndClipPath(const PaintFramesParams& aParams, const std::function<void()>& aPaintChild);
+
+  
 
 
 
