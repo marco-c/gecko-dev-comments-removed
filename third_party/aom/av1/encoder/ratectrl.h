@@ -173,7 +173,7 @@ typedef struct {
 
   
   int rf_level_maxq[RATE_FACTOR_LEVELS];
-  float_t arf_boost_factor;
+  float arf_boost_factor;
   
   int arf_q;
 } RATE_CONTROL;

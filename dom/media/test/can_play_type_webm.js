@@ -37,7 +37,7 @@ async function check_webm(v, enabled) {
 
   await SpecialPowers.pushPrefEnv({"set": [["media.av1.enabled", true]]});
   
-  check("video/webm; codecs=\"av1\"", (isWindows32() || isAndroid()) ? "" : "probably");
+  check("video/webm; codecs=\"av1\"", isWindows32() ? "" : "probably");
 
   await SpecialPowers.pushPrefEnv({"set": [["media.av1.enabled", false]]});
   check("video/webm; codecs=\"av1\"", "");
