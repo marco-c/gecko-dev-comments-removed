@@ -10967,8 +10967,9 @@ nsIFrame::IsStackingContext(EffectSet* aEffectSet,
 {
   return HasOpacity(aEffectSet) ||
          IsTransformed(aStyleDisplay) ||
-         aStyleDisplay->IsContainPaint() ||
-         aStyleDisplay->IsContainLayout() ||
+         (IsFrameOfType(eSupportsContainLayoutAndPaint) &&
+          (aStyleDisplay->IsContainPaint() ||
+           aStyleDisplay->IsContainLayout())) ||
          
          
          ChildrenHavePerspective(aStyleDisplay) ||
