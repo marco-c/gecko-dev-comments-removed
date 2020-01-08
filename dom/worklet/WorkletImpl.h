@@ -45,10 +45,12 @@ public:
   }
 
 private:
+  
   uint64_t mOuterWindowID;
-  uint64_t mInnerWindowID;
-  bool mDumpEnabled;
-  OriginAttributes mOriginAttributes;
+  const uint64_t mInnerWindowID;
+  const bool mDumpEnabled;
+  const OriginAttributes mOriginAttributes;
+  
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   friend class WorkletImpl;
@@ -95,6 +97,8 @@ private:
               WorkletType aWorkletType);
   ~WorkletImpl();
 
+  
+  
   WorkletLoadInfo mWorkletLoadInfo;
   const WorkletType mWorkletType;
 
