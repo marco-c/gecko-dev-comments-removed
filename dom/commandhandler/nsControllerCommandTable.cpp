@@ -197,83 +197,61 @@ nsControllerCommandTable::GetSupportedCommands(uint32_t* aCount,
   return NS_OK;
 }
 
+typedef nsresult (*CommandTableRegistrar)(nsIControllerCommandTable*);
 
-already_AddRefed<nsIControllerCommandTable>
-nsControllerCommandTable::CreateEditorCommandTable()
+static already_AddRefed<nsIControllerCommandTable>
+CreateCommandTableWithCommands(CommandTableRegistrar aRegistrar)
 {
   nsCOMPtr<nsIControllerCommandTable> commandTable =
       new nsControllerCommandTable();
 
-  nsresult rv = EditorController::RegisterEditorCommands(commandTable);
+  nsresult rv = aRegistrar(commandTable);
   if (NS_FAILED(rv)) return nullptr;
 
   
   
 
   return commandTable.forget();
+}
+
+
+already_AddRefed<nsIControllerCommandTable>
+nsControllerCommandTable::CreateEditorCommandTable()
+{
+  return CreateCommandTableWithCommands(
+      EditorController::RegisterEditorCommands);
 }
 
 
 already_AddRefed<nsIControllerCommandTable>
 nsControllerCommandTable::CreateEditingCommandTable()
 {
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      new nsControllerCommandTable();
-
-  nsresult rv = EditorController::RegisterEditingCommands(commandTable);
-  if (NS_FAILED(rv)) return nullptr;
-
-  
-  
-
-  return commandTable.forget();
+  return CreateCommandTableWithCommands(
+      EditorController::RegisterEditingCommands);
 }
 
 
 already_AddRefed<nsIControllerCommandTable>
 nsControllerCommandTable::CreateHTMLEditorCommandTable()
 {
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      new nsControllerCommandTable();
-
-  nsresult rv = mozilla::HTMLEditorController::RegisterHTMLEditorCommands(commandTable);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  
-  
-
-  return commandTable.forget();
+  return CreateCommandTableWithCommands(
+      HTMLEditorController::RegisterHTMLEditorCommands);
 }
 
 
 already_AddRefed<nsIControllerCommandTable>
 nsControllerCommandTable::CreateHTMLEditorDocStateCommandTable()
 {
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      new nsControllerCommandTable();
-
-  nsresult rv = mozilla::HTMLEditorController::RegisterEditorDocStateCommands(
-                                        commandTable);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  
-  
-
-  return commandTable.forget();
+  return CreateCommandTableWithCommands(
+      HTMLEditorController::RegisterEditorDocStateCommands);
 }
 
 
 already_AddRefed<nsIControllerCommandTable>
 nsControllerCommandTable::CreateWindowCommandTable()
 {
-  nsCOMPtr<nsIControllerCommandTable> commandTable =
-      new nsControllerCommandTable();
-
-  nsresult rv =
-    nsWindowCommandRegistration::RegisterWindowCommands(commandTable);
-  if (NS_FAILED(rv)) return nullptr;
-
-  return commandTable.forget();
+  return CreateCommandTableWithCommands(
+      nsWindowCommandRegistration::RegisterWindowCommands);
 }
 
 nsresult
