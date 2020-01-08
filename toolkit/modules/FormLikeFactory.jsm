@@ -6,6 +6,8 @@
 
 var EXPORTED_SYMBOLS = ["FormLikeFactory"];
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 
 
 
@@ -73,21 +75,31 @@ let FormLikeFactory = {
     }
 
     let doc = aField.ownerDocument;
-    let elements = [];
-    for (let el of rootElement.querySelectorAll("input, select")) {
-      
-      
-      if (!el.form) {
-        elements.push(el);
-      }
-    }
+
     let formLike = {
       action: doc.baseURI,
       autocomplete: "on",
-      elements,
       ownerDocument: doc,
       rootElement,
     };
+
+    
+    
+    
+    
+    
+    XPCOMUtils.defineLazyGetter(formLike, "elements", function() {
+      let elements = [];
+      for (let el of this.rootElement.querySelectorAll("input, select")) {
+        
+        
+        if (!el.form) {
+          elements.push(el);
+        }
+      }
+
+      return elements;
+    });
 
     this._addToJSONProperty(formLike);
     return formLike;
