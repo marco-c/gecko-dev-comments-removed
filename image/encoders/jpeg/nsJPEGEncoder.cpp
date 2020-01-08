@@ -10,7 +10,7 @@
 #include "gfxColor.h"
 
 extern "C" {
-  #include "jpeglib.h"
+#include "jpeglib.h"
 }
 
 #include <setjmp.h>
@@ -32,7 +32,7 @@ class nsJPEGEncoderInternal {
 
   static void initDestination(jpeg_compress_struct* cinfo);
 
- 
+  
 
 
 
@@ -43,7 +43,6 @@ class nsJPEGEncoderInternal {
 
 
   static boolean emptyOutputBuffer(jpeg_compress_struct* cinfo);
-
 
   
 
@@ -390,7 +389,6 @@ void nsJPEGEncoder::ConvertRGBARow(const uint8_t* aSrc, uint8_t* aDest,
   }
 }
 
-
 void nsJPEGEncoder::NotifyListener() {
   
   
@@ -420,9 +418,8 @@ void nsJPEGEncoder::NotifyListener() {
   }
 }
 
-
- void
-nsJPEGEncoderInternal::initDestination(jpeg_compress_struct* cinfo) {
+ void nsJPEGEncoderInternal::initDestination(
+    jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   NS_ASSERTION(!that->mImageBuffer, "Image buffer already initialized");
 
@@ -434,8 +431,8 @@ nsJPEGEncoderInternal::initDestination(jpeg_compress_struct* cinfo) {
   cinfo->dest->free_in_buffer = that->mImageBufferSize;
 }
 
- boolean
-nsJPEGEncoderInternal::emptyOutputBuffer(jpeg_compress_struct* cinfo) {
+ boolean nsJPEGEncoderInternal::emptyOutputBuffer(
+    jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   NS_ASSERTION(that->mImageBuffer, "No buffer to empty!");
 
@@ -470,8 +467,8 @@ nsJPEGEncoderInternal::emptyOutputBuffer(jpeg_compress_struct* cinfo) {
   return 1;
 }
 
- void
-nsJPEGEncoderInternal::termDestination(jpeg_compress_struct* cinfo) {
+ void nsJPEGEncoderInternal::termDestination(
+    jpeg_compress_struct* cinfo) {
   nsJPEGEncoder* that = static_cast<nsJPEGEncoder*>(cinfo->client_data);
   if (!that->mImageBuffer) {
     return;
@@ -482,8 +479,7 @@ nsJPEGEncoderInternal::termDestination(jpeg_compress_struct* cinfo) {
   that->NotifyListener();
 }
 
- void
-nsJPEGEncoderInternal::errorExit(jpeg_common_struct* cinfo) {
+ void nsJPEGEncoderInternal::errorExit(jpeg_common_struct* cinfo) {
   nsresult error_code;
   encoder_error_mgr* err = (encoder_error_mgr*)cinfo->err;
 
