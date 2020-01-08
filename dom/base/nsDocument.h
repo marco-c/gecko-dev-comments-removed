@@ -173,13 +173,6 @@ class nsDocument : public nsIDocument {
   virtual ~nsDocument();
 
  public:
-  
-  
-  
-  
-  
-  
-  js::ExpandoAndGeneration mExpandoAndGeneration;
 
   friend class nsCallRequestFullscreen;
 

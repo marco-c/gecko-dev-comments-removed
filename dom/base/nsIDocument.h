@@ -4418,6 +4418,10 @@ class nsIDocument : public nsINode,
 
   
   float mSavedResolution;
+
+ public:
+  
+  js::ExpandoAndGeneration mExpandoAndGeneration;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
