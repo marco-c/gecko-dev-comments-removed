@@ -746,8 +746,14 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
         continue;
       }
 
-      AutoEntryScript aes(object, "message manager handler");
+      AutoEntryScript aes(js::UncheckedUnwrap(object), "message manager handler");
       JSContext* cx = aes.cx();
+
+      
+      
+      
+      
+      JSAutoRealm ar(cx, object);
 
       RootedDictionary<ReceiveMessageArgument> argument(cx);
 
