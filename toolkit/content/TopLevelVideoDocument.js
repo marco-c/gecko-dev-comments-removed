@@ -5,42 +5,51 @@
 "use strict";
 
 
-let videoElement = document.getElementsByTagName("video")[0];
 
+{
+  
+  let videoElement = document.getElementsByTagName("video")[0];
 
-
-document.addEventListener("focus", (e) => {
-  
-  
-  
-  
-  if (e.target == videoElement) {
-    return;
-  }
-  videoElement.focus();
-}, true);
-
-
-document.addEventListener("keypress", ev => {
-  
-  
-  if (ev.key == "F11" && videoElement.videoWidth != 0 && videoElement.videoHeight != 0) {
+  let setFocusToVideoElement = function(e) {
     
     
     
-    if (window.fullScreen) {
+    
+    if (e && e.target == videoElement) {
       return;
     }
+    videoElement.focus();
+  };
 
+  
+  
+  document.addEventListener("focus", setFocusToVideoElement, true);
+
+  
+  setFocusToVideoElement();
+
+  
+  document.addEventListener("keypress", ev => {
     
     
-    ev.preventDefault();
-    ev.stopPropagation();
+    if (ev.key == "F11" && videoElement.videoWidth != 0 && videoElement.videoHeight != 0) {
+      
+      
+      
+      if (window.fullScreen) {
+        return;
+      }
 
-    if (!document.mozFullScreenElement) {
-      videoElement.mozRequestFullScreen();
-    } else {
-      document.mozCancelFullScreen();
+      
+      
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      if (!document.mozFullScreenElement) {
+        videoElement.mozRequestFullScreen();
+      } else {
+        document.mozCancelFullScreen();
+      }
     }
-  }
-});
+  });
+}
