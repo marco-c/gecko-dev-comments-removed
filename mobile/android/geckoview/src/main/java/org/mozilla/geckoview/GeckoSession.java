@@ -2042,7 +2042,8 @@ public class GeckoSession extends LayerSession
 
         final int FLAG_IS_PASSWORD = 4;
 
-        @StringDef({ACTION_CUT,
+        @StringDef({ACTION_HIDE,
+                    ACTION_CUT,
                     ACTION_COPY,
                     ACTION_DELETE,
                     ACTION_PASTE,
@@ -2052,6 +2053,10 @@ public class GeckoSession extends LayerSession
                     ACTION_COLLAPSE_TO_END})
          @interface Action {}
 
+        
+
+
+        final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
         
 
 
@@ -2170,7 +2175,6 @@ public class GeckoSession extends LayerSession
 
         final int HIDE_REASON_NO_SELECTION = 0;
         
-
 
 
 
