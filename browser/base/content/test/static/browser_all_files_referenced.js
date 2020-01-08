@@ -133,11 +133,6 @@ var whitelist = [
   
   {file: "chrome://global/skin/icons/error-16.png"},
   
-  {file: "chrome://global/skin/tree/sort-asc-classic.png", platforms: ["linux"]},
-  {file: "chrome://global/skin/tree/sort-asc.png", platforms: ["linux"]},
-  {file: "chrome://global/skin/tree/sort-dsc-classic.png", platforms: ["linux"]},
-  {file: "chrome://global/skin/tree/sort-dsc.png", platforms: ["linux"]},
-  
   {file: "chrome://marionette/content/test_anonymous_content.xul"},
   {file: "chrome://marionette/content/test_dialog.properties"},
   {file: "chrome://marionette/content/test_dialog.xul"},
