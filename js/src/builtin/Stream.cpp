@@ -493,16 +493,20 @@ CreateReadableStreamDefaultController(JSContext* cx,
                                       Handle<ReadableStream*> stream,
                                       HandleValue underlyingSource,
                                       HandleValue size,
-                                      HandleValue highWaterMarkVal);
+                                      double highWaterMarkVal);
 
 
 
 
 ReadableStream*
 ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
-                                    HandleValue size, HandleValue highWaterMark,
+                                    HandleValue size, double highWaterMark,
                                     HandleObject proto )
 {
+    cx->check(underlyingSource, size, proto);
+    MOZ_ASSERT(size.isUndefined() || IsCallable(size));
+    MOZ_ASSERT(highWaterMark >= 0);
+
     
     Rooted<ReadableStream*> stream(cx, create(cx));
     if (!stream) {
@@ -514,7 +518,8 @@ ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
     
     
     ReadableStreamDefaultController* controller =
-        CreateReadableStreamDefaultController(cx, stream, underlyingSource, size, highWaterMark);
+        CreateReadableStreamDefaultController(cx, stream, underlyingSource, size,
+                                              highWaterMark);
     if (!controller) {
         return nullptr;
     }
@@ -547,6 +552,14 @@ ReadableStream::createExternalSourceStream(JSContext* cx, void* underlyingSource
     return stream;
 }
 
+static MOZ_MUST_USE bool
+MakeSizeAlgorithmFromSizeFunction(JSContext* cx, HandleValue size);
+
+static MOZ_MUST_USE bool
+ValidateAndNormalizeHighWaterMark(JSContext* cx,
+                                  HandleValue highWaterMarkVal,
+                                  double* highWaterMark);
+
 
 
 
@@ -555,85 +568,104 @@ ReadableStream::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedValue underlyingSource(cx, args.get(0));
-    RootedValue options(cx, args.get(1));
-
-    
-    if (underlyingSource.isUndefined()) {
-        RootedObject sourceObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
-        if (!sourceObj) {
-            return false;
-        }
-        underlyingSource = ObjectValue(*sourceObj);
-    }
-    RootedValue size(cx);
-    RootedValue highWaterMark(cx);
-
-    if (!options.isUndefined()) {
-        if (!GetProperty(cx, options, cx->names().size, &size)) {
-            return false;
-        }
-
-        if (!GetProperty(cx, options, cx->names().highWaterMark, &highWaterMark)) {
-            return false;
-        }
-    }
-
     if (!ThrowIfNotConstructing(cx, args, "ReadableStream")) {
         return false;
     }
 
     
-    RootedValue typeVal(cx);
-    if (!GetProperty(cx, underlyingSource, cx->names().type, &typeVal)) {
+    RootedValue underlyingSource(cx, args.get(0));
+    if (underlyingSource.isUndefined()) {
+        JSObject* emptyObj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!emptyObj) {
+            return false;
+        }
+        underlyingSource = ObjectValue(*emptyObj);
+    }
+
+    RootedValue strategy(cx, args.get(1));
+    if (strategy.isUndefined()) {
+        JSObject* emptyObj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!emptyObj) {
+            return false;
+        }
+        strategy = ObjectValue(*emptyObj);
+    }
+
+    
+    
+
+    
+    RootedValue size(cx);
+    if (!GetProperty(cx, strategy, cx->names().size, &size)) {
         return false;
     }
 
     
-    RootedString type(cx, ToString<CanGC>(cx, typeVal));
-    if (!type) {
-        return false;
-    }
-
-    int32_t notByteStream;
-    if (!CompareStrings(cx, type, cx->names().bytes, &notByteStream)) {
+    RootedValue highWaterMarkVal(cx);
+    if (!GetProperty(cx, strategy, cx->names().highWaterMark, &highWaterMarkVal)) {
         return false;
     }
 
     
-    
-    if (highWaterMark.isUndefined()) {
-        highWaterMark = Int32Value(notByteStream ? 1 : 0);
+    RootedValue type(cx);
+    if (!GetProperty(cx, underlyingSource, cx->names().type, &type)) {
+        return false;
     }
 
-    Rooted<ReadableStream*> stream(cx);
+    
+    RootedString typeString(cx, ToString<CanGC>(cx, type));
+    if (!typeString) {
+        return false;
+    }
 
     
-    if (!notByteStream) {
-        
+    int32_t cmp;
+    if (!CompareStrings(cx, typeString, cx->names().bytes, &cmp)) {
+        return false;
+    }
+    if (cmp == 0) {
         
         
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_READABLESTREAM_BYTES_TYPE_NOT_IMPLEMENTED);
         return false;
-    } else if (typeVal.isUndefined()) {
-        
-        
-        
-        
-        stream = createDefaultStream(cx, underlyingSource, size, highWaterMark);
-    } else {
-        
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_READABLESTREAM_UNDERLYINGSOURCE_TYPE_WRONG);
-        return false;
-    }
-    if (!stream) {
-        return false;
     }
 
-    args.rval().setObject(*stream);
-    return true;
+    
+    if (type.isUndefined()) {
+        
+        if (!MakeSizeAlgorithmFromSizeFunction(cx, size)) {
+            return false;
+        }
+
+        
+        double highWaterMark;
+        if (highWaterMarkVal.isUndefined()) {
+            highWaterMark = 1;
+        } else {
+            
+            if (!ValidateAndNormalizeHighWaterMark(cx, highWaterMarkVal, &highWaterMark)) {
+                return false;
+            }
+        }
+
+        
+        
+        
+        Rooted<ReadableStream*> stream(cx,
+            createDefaultStream(cx, underlyingSource, size, highWaterMark));
+        if (!stream) {
+            return false;
+        }
+
+        args.rval().setObject(*stream);
+        return true;
+    }
+
+    
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_UNDERLYINGSOURCE_TYPE_WRONG);
+    return false;
 }
 
 
@@ -1241,11 +1273,9 @@ ReadableStreamTee(JSContext* cx,
     
     
     
-    RootedValue hwmValue(cx, NumberValue(1));
     RootedValue underlyingSource(cx, ObjectValue(*teeState));
     branch1Stream.set(ReadableStream::createDefaultStream(cx, underlyingSource,
-                                                          UndefinedHandleValue,
-                                                          hwmValue));
+                                                          UndefinedHandleValue, 1));
     if (!branch1Stream) {
         return false;
     }
@@ -1259,8 +1289,7 @@ ReadableStreamTee(JSContext* cx,
     
     
     branch2Stream.set(ReadableStream::createDefaultStream(cx, underlyingSource,
-                                                          UndefinedHandleValue,
-                                                          hwmValue));
+                                                          UndefinedHandleValue, 1));
     if (!branch2Stream) {
         return false;
     }
@@ -2262,17 +2291,6 @@ ControllerStartFailedHandler(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-static MOZ_MUST_USE bool
-ValidateAndNormalizeHighWaterMark(JSContext* cx,
-                                  HandleValue highWaterMarkVal,
-                                  double* highWaterMark);
-
-static MOZ_MUST_USE bool
-ValidateAndNormalizeQueuingStrategy(JSContext* cx,
-                                    HandleValue size,
-                                    HandleValue highWaterMarkVal,
-                                    double* highWaterMark);
-
 
 
 
@@ -2287,9 +2305,11 @@ CreateReadableStreamDefaultController(JSContext* cx,
                                       Handle<ReadableStream*> stream,
                                       HandleValue underlyingSource,
                                       HandleValue size,
-                                      HandleValue highWaterMarkVal)
+                                      double highWaterMark)
 {
-    cx->check(stream, underlyingSource, size, highWaterMarkVal);
+    cx->check(stream, underlyingSource, size);
+    MOZ_ASSERT(highWaterMark >= 0);
+    MOZ_ASSERT(size.isUndefined() || IsCallable(size));
 
     Rooted<ReadableStreamDefaultController*> controller(cx,
         NewBuiltinClassInstance<ReadableStreamDefaultController>(cx));
@@ -2314,10 +2334,7 @@ CreateReadableStreamDefaultController(JSContext* cx,
 
     
     
-    double highWaterMark;
-    if (!ValidateAndNormalizeQueuingStrategy(cx, size, highWaterMarkVal, &highWaterMark)) {
-        return nullptr;
-    }
+    
 
     
     
@@ -4072,15 +4089,18 @@ PromiseInvokeOrNoop(JSContext* cx, HandleValue O, HandlePropertyName P, HandleVa
 }
 
 
+
+
+
 static MOZ_MUST_USE bool
-ValidateAndNormalizeHighWaterMark(JSContext* cx, HandleValue highWaterMarkVal, double* highWaterMark)
+ValidateAndNormalizeHighWaterMark(JSContext* cx, HandleValue highWaterMarkVal,
+                                  double* highWaterMark)
 {
     
     if (!ToNumber(cx, highWaterMarkVal, highWaterMark)) {
         return false;
     }
 
-    
     
     if (mozilla::IsNaN(*highWaterMark) || *highWaterMark < 0) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_STREAM_INVALID_HIGHWATERMARK);
@@ -4093,13 +4113,25 @@ ValidateAndNormalizeHighWaterMark(JSContext* cx, HandleValue highWaterMarkVal, d
 
 
 
+
+
+
+
+
+
+
+
 static MOZ_MUST_USE bool
-ValidateAndNormalizeQueuingStrategy(JSContext* cx, HandleValue size,
-                                    HandleValue highWaterMarkVal, double* highWaterMark)
+MakeSizeAlgorithmFromSizeFunction(JSContext* cx, HandleValue size)
 {
     
+    if (size.isUndefined()) {
+        
+        return true;
+    }
+
     
-    if (!size.isUndefined() && !IsCallable(size)) {
+    if (!IsCallable(size)) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_FUNCTION,
                                   "ReadableStream argument options.size");
         return false;
@@ -4107,10 +4139,7 @@ ValidateAndNormalizeQueuingStrategy(JSContext* cx, HandleValue size,
 
     
     
-    if (!ValidateAndNormalizeHighWaterMark(cx, highWaterMarkVal, highWaterMark)) {
-        return false;
-    }
-
+    
     
     return true;
 }
@@ -4177,6 +4206,7 @@ JS::NewReadableDefaultStreamObject(JSContext* cx,
     AssertHeapIsIdle();
     CHECK_THREAD(cx);
     cx->check(underlyingSource, size, proto);
+    MOZ_ASSERT(highWaterMark >= 0);
 
     RootedObject source(cx, underlyingSource);
     if (!source) {
@@ -4187,8 +4217,7 @@ JS::NewReadableDefaultStreamObject(JSContext* cx,
     }
     RootedValue sourceVal(cx, ObjectValue(*source));
     RootedValue sizeVal(cx, size ? ObjectValue(*size) : UndefinedValue());
-    RootedValue highWaterMarkVal(cx, NumberValue(highWaterMark));
-    return ReadableStream::createDefaultStream(cx, sourceVal, sizeVal, highWaterMarkVal, proto);
+    return ReadableStream::createDefaultStream(cx, sourceVal, sizeVal, highWaterMark, proto);
 }
 
 JS_PUBLIC_API JSObject*
