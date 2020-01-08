@@ -90,7 +90,9 @@ private:
   RefPtr<nsThread>  mMainThread;
   PRThread*         mMainPRThread;
   mozilla::OffTheBooksMutex mLock;  
-  mozilla::Atomic<bool> mInitialized;
+  mozilla::Atomic<bool,
+                  mozilla::SequentiallyConsistent,
+                  mozilla::recordreplay::Behavior::DontPreserve> mInitialized;
 
   
   uint32_t            mCurrentNumberOfThreads;
