@@ -1008,11 +1008,15 @@ JS_ResolveStandardClass(JSContext* cx, HandleObject obj, HandleId id, bool* reso
 
     
     JSAtom* idAtom = JSID_TO_ATOM(id);
-    JSAtom* undefinedAtom = cx->names().undefined;
-    if (idAtom == undefinedAtom) {
+    if (idAtom == cx->names().undefined) {
         *resolved = true;
         return DefineDataProperty(cx, global, id, UndefinedHandleValue,
                                   JSPROP_PERMANENT | JSPROP_READONLY | JSPROP_RESOLVING);
+    }
+
+    
+    if (idAtom == cx->names().globalThis) {
+        return GlobalObject::maybeResolveGlobalThis(cx, global, resolved);
     }
 
     
@@ -1072,6 +1076,7 @@ JS_MayResolveStandardClass(const JSAtomState& names, jsid id, JSObject* maybeObj
     
 
     return atom == names.undefined ||
+           atom == names.globalThis ||
            LookupStdName(names, atom, standard_class_names) ||
            LookupStdName(names, atom, builtin_property_names);
 }
@@ -4654,11 +4659,9 @@ JS::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId)
 }
 
 JS_PUBLIC_API(void)
-JS::InitConsumeStreamCallback(JSContext* cx, ConsumeStreamCallback consume,
-                              ReportStreamErrorCallback report)
+JS::InitConsumeStreamCallback(JSContext* cx, ConsumeStreamCallback callback)
 {
-    cx->runtime()->consumeStreamCallback = consume;
-    cx->runtime()->reportStreamErrorCallback = report;
+    cx->runtime()->consumeStreamCallback = callback;
 }
 
 JS_PUBLIC_API(void)

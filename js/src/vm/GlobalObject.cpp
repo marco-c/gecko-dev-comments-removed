@@ -309,6 +309,33 @@ GlobalObject::resolveConstructor(JSContext* cx,
     return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+ bool
+GlobalObject::maybeResolveGlobalThis(JSContext* cx, Handle<GlobalObject*> global, bool* resolved)
+{
+    if (global->getSlot(GLOBAL_THIS_RESOLVED).isUndefined()) {
+        RootedValue v(cx, ObjectValue(*ToWindowProxyIfWindow(global)));
+        if (!DefineDataProperty(cx, global, cx->names().globalThis, v, JSPROP_RESOLVING)) {
+            return false;
+        }
+
+        *resolved = true;
+        global->setSlot(GLOBAL_THIS_RESOLVED, BooleanValue(true));
+    }
+
+    return true;
+}
+
  JSObject*
 GlobalObject::createObject(JSContext* cx, Handle<GlobalObject*> global, unsigned slot, ObjectInitOp init)
 {
@@ -610,6 +637,12 @@ GlobalObject::initStandardClasses(JSContext* cx, Handle<GlobalObject*> global)
     if (!DefineDataProperty(cx, global, cx->names().undefined, UndefinedHandleValue,
                             JSPROP_PERMANENT | JSPROP_READONLY | JSPROP_RESOLVING))
     {
+        return false;
+    }
+
+    
+    bool resolved;
+    if (!GlobalObject::maybeResolveGlobalThis(cx, global, &resolved)) {
         return false;
     }
 
