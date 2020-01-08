@@ -118,11 +118,6 @@ XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory",
         for (let path of gPathsToRemove) {
           await this.tolerantRemove(path);
         }
-
-        if (!(await OS.File.exists(dir.path))) {
-          return;
-        }
-
         
         let iterator = new OS.File.DirectoryIterator(dir.path);
         try {

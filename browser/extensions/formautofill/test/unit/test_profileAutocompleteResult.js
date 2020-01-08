@@ -1,10 +1,8 @@
 "use strict";
 
 
-add_task(async function setup() {
-  
-  ChromeUtils.import("resource://formautofill/ProfileAutoCompleteResult.jsm");
-});
+
+ChromeUtils.import("resource://formautofill/ProfileAutoCompleteResult.jsm");
 
 let matchingProfiles = [{
   guid: "test-guid-1",
@@ -343,15 +341,15 @@ let creditCardTestCases = [{
   },
 }];
 
-add_task(async function test_all_patterns() {
-  let testSets = [{
-    collectionConstructor: AddressResult,
-    testCases: addressTestCases,
-  }, {
-    collectionConstructor: CreditCardResult,
-    testCases: creditCardTestCases,
-  }];
+let testSets = [{
+  collectionConstructor: AddressResult,
+  testCases: addressTestCases,
+}, {
+  collectionConstructor: CreditCardResult,
+  testCases: creditCardTestCases,
+}];
 
+add_task(async function test_all_patterns() {
   testSets.forEach(({collectionConstructor, testCases}) => {
     testCases.forEach(testCase => {
       info("Starting testcase: " + testCase.description);
