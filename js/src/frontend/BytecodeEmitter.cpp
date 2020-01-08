@@ -35,6 +35,7 @@
 #include "frontend/SwitchEmitter.h"
 #include "frontend/TDZCheckCache.h"
 #include "frontend/TryEmitter.h"
+#include "frontend/WhileEmitter.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Debugger.h"
 #include "vm/GeneratorObject.h"
@@ -5375,73 +5376,20 @@ BytecodeEmitter::emitDo(ParseNode* pn)
 bool
 BytecodeEmitter::emitWhile(ParseNode* pn)
 {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (parser->errorReporter().lineAt(pn->pn_pos.begin) ==
-        parser->errorReporter().lineAt(pn->pn_pos.end))
-    {
-        if (!updateSourceCoordNotes(pn->pn_pos.begin))
-            return false;
-    }
-
-    JumpTarget top{ -1 };
-    if (!emitJumpTarget(&top))
+    WhileEmitter wh(this);
+    if (!wh.emitBody(Some(pn->pn_pos.begin), getOffsetForLoop(pn->pn_right), Some(pn->pn_pos.end)))
         return false;
 
-    LoopControl loopInfo(this, StatementKind::WhileLoop);
-    loopInfo.setContinueTarget(top.offset);
-
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_WHILE, &noteIndex))
+    if (!emitTree(pn->pn_right))
         return false;
 
-    if (!loopInfo.emitEntryJump(this))
+    if (!wh.emitCond(getOffsetForLoop(pn->pn_left)))
         return false;
 
-    if (!loopInfo.emitLoopHead(this, getOffsetForLoop(pn->pn_right)))
-        return false;
-
-    if (!emitTreeInBranch(pn->pn_right))
-        return false;
-
-    if (!loopInfo.emitLoopEntry(this, getOffsetForLoop(pn->pn_left)))
-        return false;
     if (!emitTree(pn->pn_left))
         return false;
 
-    if (!loopInfo.emitLoopEnd(this, JSOP_IFNE))
-        return false;
-
-    if (!tryNoteList.append(JSTRY_LOOP, stackDepth, loopInfo.headOffset(),
-                            loopInfo.breakTargetOffset()))
-    {
-        return false;
-    }
-
-    if (!setSrcNoteOffset(noteIndex, 0, loopInfo.loopEndOffsetFromEntryJump()))
-        return false;
-
-    if (!loopInfo.patchBreaksAndContinues(this))
+    if (!wh.emitEnd())
         return false;
 
     return true;
