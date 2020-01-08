@@ -3,8 +3,7 @@
 
 
 
-function run_test()
-{
+function run_test() {
   
 
 
@@ -23,13 +22,11 @@ function run_test()
 
 var doc; 
 
-function init()
-{
+function init() {
   doc = ParseFile("empty_document.xml");
 }
 
-function test_element()
-{
+function test_element() {
   var x = doc.createElement("funk");
 
   
@@ -102,8 +99,7 @@ function test_element()
 
 
 
-function clearKids(node)
-{
+function clearKids(node) {
   while (node.hasChildNodes())
     node.removeChild(node.childNodes.item(0));
 }

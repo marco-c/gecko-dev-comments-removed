@@ -122,7 +122,7 @@ function evalXPathInDocumentFragment(aContextNode, aPath) {
       }
 
       return NodeFilter.FILTER_ACCEPT;
-    }
+    },
   };
 
   
@@ -291,7 +291,7 @@ function do_extract_test(doc) {
         foundEnd = true;
         break;
       }
-    } while (walker.nextNode())
+    } while (walker.nextNode());
     Assert.ok(foundEnd);
 
     
@@ -324,7 +324,7 @@ function do_extract_test(doc) {
         foundEnd = true;
         break;
       }
-    } while (walker.nextNode())
+    } while (walker.nextNode());
     Assert.ok(foundEnd);
 
     
@@ -389,7 +389,7 @@ function do_miscellaneous_tests(doc) {
     } catch (e) {
       Assert.equal(e.name, "IndexSizeError");
     }
-  
+
     
     var newOffset = isText(startContainer) ?
                       startContainer.nodeValue.length + 1 :
@@ -400,7 +400,7 @@ function do_miscellaneous_tests(doc) {
     } catch (e) {
       Assert.equal(e.name, "IndexSizeError");
     }
-  
+
     newOffset--;
     
     baseRange.setStart(startContainer, newOffset);
@@ -414,7 +414,7 @@ function do_miscellaneous_tests(doc) {
     Assert.equal(baseRange.startOffset, 0);
     Assert.ok(baseRange.collapsed);
   } else {
-    do_throw("The first test should be a text-only range test.  Test is invalid.")
+    do_throw("The first test should be a text-only range test.  Test is invalid.");
   }
 
   

@@ -14,7 +14,7 @@ let textTests = {
   "foob": "Zm9vYg",
   "fooba": "Zm9vYmE",
   "foobar": "Zm9vYmFy",
-}
+};
 
 
 let binaryTests = [{

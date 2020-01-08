@@ -11,15 +11,15 @@ const replacementChar = Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER
 
 function loadContentFile(aFile, aCharset) {
     
-    if(aCharset == undefined)
-        aCharset = 'UTF-8';
+    if (aCharset == undefined)
+        aCharset = "UTF-8";
 
     var file = do_get_file(aFile);
-    var ios = Cc['@mozilla.org/network/io-service;1']
+    var ios = Cc["@mozilla.org/network/io-service;1"]
             .getService(Ci.nsIIOService);
     var chann = NetUtil.newChannel({
       uri: ios.newFileURI(file),
-      loadUsingSystemPrincipal: true
+      loadUsingSystemPrincipal: true,
     });
     chann.contentCharset = aCharset;
 
@@ -32,7 +32,7 @@ function loadContentFile(aFile, aCharset) {
     var inputStream = Cc["@mozilla.org/intl/converter-input-stream;1"]
                        .createInstance(Ci.nsIConverterInputStream);
     inputStream.init(chann.open2(), aCharset, 1024, replacementChar);
-    var str = {}, content = '';
+    var str = {}, content = "";
     while (inputStream.readString(4096, str) != 0) {
         content += str.value;
     }
