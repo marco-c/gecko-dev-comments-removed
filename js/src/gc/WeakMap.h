@@ -25,7 +25,14 @@ class WeakMapBase;
 struct WeakMapTracer;
 
 namespace gc {
+
 struct WeakMarkable;
+
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
+
+bool CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key, Cell* value);
+#endif
+
 }  
 
 
@@ -89,6 +96,10 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
 
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
+  static bool checkMarkingForZone(JS::Zone* zone);
+#endif
+
  protected:
   
   
@@ -105,7 +116,13 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 
   virtual bool markIteratively(GCMarker* marker) = 0;
 
- protected:
+#ifdef JS_GC_ZEAL
+  virtual bool checkMarking() const = 0;
+  virtual bool allowKeysInOtherZones() const { return false; }
+  friend bool gc::CheckWeakMapEntryMarking(const WeakMapBase*, gc::Cell*,
+                                           gc::Cell*);
+#endif
+
   
   GCPtrObject memberOf;
 
@@ -199,6 +216,10 @@ class WeakMap
  protected:
 #if DEBUG
   void assertEntriesNotAboutToBeFinalized();
+#endif
+
+#ifdef JS_GC_ZEAL
+  bool checkMarking() const override;
 #endif
 };
 
