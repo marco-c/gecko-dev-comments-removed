@@ -23,43 +23,6 @@ enum ReaderType {
     ReaderType_BYOB
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum TeeStateSlots {
-    TeeStateSlot_Flags = 0,
-    TeeStateSlot_Reason1,
-    TeeStateSlot_Reason2,
-    TeeStateSlot_Promise,
-    TeeStateSlot_Stream,
-    TeeStateSlot_Branch1,
-    TeeStateSlot_Branch2,
-    TeeStateSlotCount
-};
-
-enum BYOBRequestSlots {
-    BYOBRequestSlot_Controller,
-    BYOBRequestSlot_View,
-    BYOBRequestSlotCount
-};
-
 template<class T>
 bool
 Is(const HandleValue v)
@@ -391,6 +354,38 @@ const Class QueueEntry::class_ = {
 
 class TeeState : public NativeObject
 {
+  public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    enum Slots {
+        Slot_Flags = 0,
+        Slot_Reason1,
+        Slot_Reason2,
+        Slot_Promise,
+        Slot_Stream,
+        Slot_Branch1,
+        Slot_Branch2,
+        SlotCount
+    };
+
   private:
     enum Flags {
         Flag_ClosedOrErrored = 1 << 0,
@@ -398,8 +393,8 @@ class TeeState : public NativeObject
         Flag_Canceled2 =       1 << 2,
         Flag_CloneForBranch2 = 1 << 3,
     };
-    uint32_t flags() const { return getFixedSlot(TeeStateSlot_Flags).toInt32(); }
-    void setFlags(uint32_t flags) { setFixedSlot(TeeStateSlot_Flags, Int32Value(flags)); }
+    uint32_t flags() const { return getFixedSlot(Slot_Flags).toInt32(); }
+    void setFlags(uint32_t flags) { setFixedSlot(Slot_Flags, Int32Value(flags)); }
 
   public:
     static const Class class_;
@@ -416,33 +411,33 @@ class TeeState : public NativeObject
     void setCanceled1(HandleValue reason) {
         MOZ_ASSERT(!(flags() & Flag_Canceled1));
         setFlags(flags() | Flag_Canceled1);
-        setFixedSlot(TeeStateSlot_Reason1, reason);
+        setFixedSlot(Slot_Reason1, reason);
     }
 
     bool canceled2() const { return flags() & Flag_Canceled2; }
     void setCanceled2(HandleValue reason) {
         MOZ_ASSERT(!(flags() & Flag_Canceled2));
         setFlags(flags() | Flag_Canceled2);
-        setFixedSlot(TeeStateSlot_Reason2, reason);
+        setFixedSlot(Slot_Reason2, reason);
     }
 
     Value reason1() const {
         MOZ_ASSERT(canceled1());
-        return getFixedSlot(TeeStateSlot_Reason1);
+        return getFixedSlot(Slot_Reason1);
     }
 
     Value reason2() const {
         MOZ_ASSERT(canceled2());
-        return getFixedSlot(TeeStateSlot_Reason2);
+        return getFixedSlot(Slot_Reason2);
     }
 
     PromiseObject* promise() {
-        return &getFixedSlot(TeeStateSlot_Promise).toObject().as<PromiseObject>();
+        return &getFixedSlot(Slot_Promise).toObject().as<PromiseObject>();
     }
 
     ReadableStreamDefaultController* branch1() {
         ReadableStreamDefaultController* controller =
-            &getFixedSlot(TeeStateSlot_Branch1).toObject()
+            &getFixedSlot(Slot_Branch1).toObject()
             .as<ReadableStreamDefaultController>();
         MOZ_ASSERT(controller->flags() & ReadableStreamController::Flag_TeeBranch);
         MOZ_ASSERT(controller->isTeeBranch1());
@@ -451,12 +446,12 @@ class TeeState : public NativeObject
     void setBranch1(ReadableStreamDefaultController* controller) {
         MOZ_ASSERT(controller->flags() & ReadableStreamController::Flag_TeeBranch);
         MOZ_ASSERT(controller->isTeeBranch1());
-        setFixedSlot(TeeStateSlot_Branch1, ObjectValue(*controller));
+        setFixedSlot(Slot_Branch1, ObjectValue(*controller));
     }
 
     ReadableStreamDefaultController* branch2() {
         ReadableStreamDefaultController* controller =
-            &getFixedSlot(TeeStateSlot_Branch2).toObject()
+            &getFixedSlot(Slot_Branch2).toObject()
             .as<ReadableStreamDefaultController>();
         MOZ_ASSERT(controller->flags() & ReadableStreamController::Flag_TeeBranch);
         MOZ_ASSERT(controller->isTeeBranch2());
@@ -465,7 +460,7 @@ class TeeState : public NativeObject
     void setBranch2(ReadableStreamDefaultController* controller) {
         MOZ_ASSERT(controller->flags() & ReadableStreamController::Flag_TeeBranch);
         MOZ_ASSERT(controller->isTeeBranch2());
-        setFixedSlot(TeeStateSlot_Branch2, ObjectValue(*controller));
+        setFixedSlot(Slot_Branch2, ObjectValue(*controller));
     }
 
     static TeeState* create(JSContext* cx, Handle<ReadableStream*> stream) {
@@ -479,13 +474,13 @@ class TeeState : public NativeObject
             return nullptr;
         }
 
-        state->setFixedSlot(TeeStateSlot_Flags, Int32Value(0));
-        state->setFixedSlot(TeeStateSlot_Promise, ObjectValue(*promise));
+        state->setFixedSlot(Slot_Flags, Int32Value(0));
+        state->setFixedSlot(Slot_Promise, ObjectValue(*promise));
         RootedObject wrappedStream(cx, stream);
         if (!cx->compartment()->wrap(cx, &wrappedStream)) {
             return nullptr;
         }
-        state->setFixedSlot(TeeStateSlot_Stream, ObjectValue(*wrappedStream));
+        state->setFixedSlot(Slot_Stream, ObjectValue(*wrappedStream));
 
         return state;
     }
@@ -493,7 +488,7 @@ class TeeState : public NativeObject
 
 const Class TeeState::class_ = {
     "TeeState",
-    JSCLASS_HAS_RESERVED_SLOTS(TeeStateSlotCount)
+    JSCLASS_HAS_RESERVED_SLOTS(SlotCount)
 };
 
 #define CLASS_SPEC(cls, nCtorArgs, nSlots, specFlags, classFlags, classOps) \
@@ -1006,7 +1001,7 @@ ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
     
     
     Rooted<ReadableStream*> unwrappedStream(cx);
-    if (!UnwrapInternalSlot(cx, unwrappedTeeState, TeeStateSlot_Stream, &unwrappedStream)) {
+    if (!UnwrapInternalSlot(cx, unwrappedTeeState, TeeState::Slot_Stream, &unwrappedStream)) {
         return nullptr;
     }
     Rooted<ReadableStreamReader*> unwrappedReaderObj(cx);
@@ -1044,7 +1039,7 @@ ReadableStreamTee_Cancel(JSContext* cx, Handle<TeeState*> teeState,
 {
     
     Rooted<ReadableStream*> stream(cx);
-    if (!UnwrapInternalSlot(cx, teeState, TeeStateSlot_Stream, &stream)) {
+    if (!UnwrapInternalSlot(cx, teeState, TeeState::Slot_Stream, &stream)) {
         return nullptr;
     }
 
@@ -3719,6 +3714,12 @@ ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
     
     return ReadableStreamControllerCallPullIfNeeded(cx, controller);
 }
+
+enum BYOBRequestSlots {
+    BYOBRequestSlot_Controller,
+    BYOBRequestSlot_View,
+    BYOBRequestSlotCount
+};
 
 
 
