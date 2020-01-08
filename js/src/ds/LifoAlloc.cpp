@@ -149,7 +149,18 @@ static size_t MallocGoodSize(size_t aSize) {
 
 
 
-static size_t NextSize(size_t start, size_t used) { return start; }
+static size_t NextSize(size_t start, size_t used) {
+  
+  const size_t mb = 1 * 1024 * 1024;
+  if (used < mb) {
+    return Max(start, used);
+  }
+
+  
+  
+  
+  return JS_ROUNDUP(used / 8, mb);
+}
 
 LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n,
                                                            bool oversize) {
