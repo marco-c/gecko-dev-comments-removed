@@ -7,85 +7,94 @@
 
 
 
+const { PureComponent } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { button, li, span } = dom;
 
-const MenuItem = props => {
-  const attr = {
-    className: "command"
-  };
+class MenuItem extends PureComponent {
+  static get propTypes() {
+    return {
+      
+      
+      accelerator: PropTypes.string,
 
-  if (props.id) {
-    attr.id = props.id;
+      
+      
+      checked: PropTypes.bool,
+
+      
+      
+      className: PropTypes.string,
+
+      
+      id: PropTypes.string,
+
+      
+      label: PropTypes.string.isRequired,
+
+      
+      onClick: PropTypes.func,
+
+      
+      
+      
+      
+      
+      
+      
+      
+      icon: PropTypes.string,
+    };
   }
 
-  if (props.className) {
-    attr.className += " " + props.className;
-  }
+  render() {
+    const attr = {
+      className: "command",
+    };
 
-  if (props.icon) {
-    attr.className += " iconic";
-    attr.style = { "--menuitem-icon-image": "url(" + props.icon + ")" };
-  }
-
-  if (props.onClick) {
-    attr.onClick = props.onClick;
-  }
-
-  if (typeof props.checked !== "undefined") {
-    attr.role = "menuitemcheckbox";
-    if (props.checked) {
-      attr["aria-checked"] = true;
+    if (this.props.id) {
+      attr.id = this.props.id;
     }
-  } else {
-    attr.role = "menuitem";
-  }
 
-  const textLabel = span({ className: "label" }, props.label);
-  const children = [textLabel];
+    if (this.props.className) {
+      attr.className += " " + this.props.className;
+    }
 
-  if (typeof props.accelerator !== "undefined") {
-    const acceleratorLabel = span(
-      { className: "accelerator" },
-      props.accelerator
+    if (this.props.icon) {
+      attr.className += " iconic";
+      attr.style = { "--menuitem-icon-image": "url(" + this.props.icon + ")" };
+    }
+
+    if (this.props.onClick) {
+      attr.onClick = this.props.onClick;
+    }
+
+    if (typeof this.props.checked !== "undefined") {
+      attr.role = "menuitemcheckbox";
+      if (this.props.checked) {
+        attr["aria-checked"] = true;
+      }
+    } else {
+      attr.role = "menuitem";
+    }
+
+    const textLabel = span(
+      { className: "label" },
+      this.props.label
     );
-    children.push(acceleratorLabel);
+    const children = [textLabel];
+
+    if (typeof this.props.accelerator !== "undefined") {
+      const acceleratorLabel = span(
+        { className: "accelerator" },
+        this.props.accelerator
+      );
+      children.push(acceleratorLabel);
+    }
+
+    return li({ className: "menuitem" }, button(attr, children));
   }
-
-  return li({ className: "menuitem" }, button(attr, children));
-};
-
-MenuItem.propTypes = {
-  
-  
-  accelerator: PropTypes.string,
-
-  
-  
-  checked: PropTypes.bool,
-
-  
-  
-  className: PropTypes.string,
-
-  
-  id: PropTypes.string,
-
-  
-  label: PropTypes.string.isRequired,
-
-  
-  onClick: PropTypes.func,
-
-  
-  
-  
-  
-  
-  
-  
-  icon: PropTypes.string,
-};
+}
 
 module.exports = MenuItem;
