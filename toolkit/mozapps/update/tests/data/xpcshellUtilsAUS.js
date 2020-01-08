@@ -3091,7 +3091,7 @@ function replaceLogPaths(aLogContents) {
 
 function checkUpdateLogContents(aCompareLogFile, aStaged = false,
                                 aReplace = false, aExcludeDistDir = false) {
-  if (IS_UNIX && !IS_MACOSX) {
+  if (IS_UNIX) {
     
     
     return;
