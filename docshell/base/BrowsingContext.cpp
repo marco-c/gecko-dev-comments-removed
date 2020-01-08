@@ -327,8 +327,16 @@ void BrowsingContext::NotifyUserGestureActivation() {
   
   
   RefPtr<BrowsingContext> topLevelBC = TopLevelBrowsingContext();
+  USER_ACTIVATION_LOG("Get top level browsing context 0x%08" PRIx64,
+                      topLevelBC->Id());
   topLevelBC->SetUserGestureActivation();
-  
+
+  if (!XRE_IsContentProcess()) {
+    return;
+  }
+  auto cc = ContentChild::GetSingleton();
+  MOZ_ASSERT(cc);
+  cc->SendSetUserGestureActivation(BrowsingContextId(topLevelBC->Id()), true);
 }
 
 void BrowsingContext::SetUserGestureActivation() {

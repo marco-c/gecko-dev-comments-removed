@@ -10,6 +10,11 @@
 namespace mozilla {
 namespace dom {
 
+extern mozilla::LazyLogModule gUserInteractionPRLog;
+
+#define USER_ACTIVATION_LOG(msg, ...) \
+  MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
+
 ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
                                              BrowsingContext* aOpener,
                                              const nsAString& aName,
@@ -93,6 +98,21 @@ void ChromeBrowsingContext::SetCurrentWindowGlobal(
 JSObject* ChromeBrowsingContext::WrapObject(JSContext* aCx,
                                             JS::Handle<JSObject*> aGivenProto) {
   return ChromeBrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+void ChromeBrowsingContext::NotifyUserGestureActivationFromIPC() {
+  if (!mCurrentWindowGlobal) {
+    return;
+  }
+
+  SetUserGestureActivation();
+  USER_ACTIVATION_LOG("Chrome browsing context 0x%08" PRIx64
+                      " would notify other browsing contexts for setting "
+                      "user gesture activation.",
+                      Id());
+  
+  
+  
 }
 
 void ChromeBrowsingContext::Traverse(nsCycleCollectionTraversalCallback& cb) {

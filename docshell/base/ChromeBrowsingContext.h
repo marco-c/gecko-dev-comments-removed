@@ -51,6 +51,11 @@ class ChromeBrowsingContext final : public BrowsingContext {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  
+  
+  
+  void NotifyUserGestureActivationFromIPC();
  protected:
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
