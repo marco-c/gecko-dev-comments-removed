@@ -4268,8 +4268,6 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
     return NS_OK;
   }
 
-  
-  
   bool useFrameSelection = (selectStyle == StyleUserSelect::Text);
 
   
