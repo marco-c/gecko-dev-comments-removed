@@ -3022,6 +3022,9 @@ pref("layout.css.convertFromNode.enabled", true);
 #endif
 
 
+pref("layout.css.text-align-unsafe-value.enabled", false);
+
+
 pref("layout.css.text-justify.enabled", true);
 
 
@@ -5433,10 +5436,6 @@ pref("network.captive-portal-service.maxInterval", 1500000);
 pref("network.captive-portal-service.backoffFactor", "5.0");
 pref("network.captive-portal-service.enabled", false);
 
-pref("network.connectivity-service.enabled", true);
-pref("network.connectivity-service.DNSv4.domain", "mozilla.org");
-pref("network.connectivity-service.DNSv6.domain", "mozilla.org");
-
 
 
 pref("network.trr.mode", 0);
@@ -5951,6 +5950,5 @@ pref("prio.enabled", false);
 #ifdef NIGHTLY_BUILD
 
 
-pref("app.normandy.test.with_true_default", true);
-pref("app.normandy.test.with_false_default", false);
+pref("app.normandy.test.with_default", false);
 #endif
