@@ -33,9 +33,7 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
   
   if (Services.prefs.getBoolPref("browser.tabs.drawInTitlebar")) {
-    win.QueryInterface(Ci.nsIInterfaceRequestor)
-       .getInterface(Ci.nsIDOMWindowUtils)
-       .setChromeMargin(0, 2, 2, 2);
+    win.windowUtils.setChromeMargin(0, 2, 2, 2);
   }
 
   if (AppConstants.platform != "macosx") {
