@@ -64,3 +64,22 @@ pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
 
 
 pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json");
+
+
+pref("devtools.gcli.hideIntro", false);
+
+
+pref("devtools.gcli.eagerHelper", 2);
+
+
+pref("devtools.gcli.jquerySrc", "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js");
+pref("devtools.gcli.lodashSrc", "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.min.js");
+pref("devtools.gcli.underscoreSrc", "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js");
+
+
+pref("devtools.gcli.imgurClientID", '0df414e888d7240');
+
+pref("devtools.gcli.imgurUploadURL", "https://api.imgur.com/3/image");
+
+
+pref("devtools.commands.dir", "");

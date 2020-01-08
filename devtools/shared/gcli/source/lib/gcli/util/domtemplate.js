@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'use strict';
+
+var {template} = require("devtools/shared/gcli/templater");
+exports.template = template;
