@@ -294,7 +294,11 @@ const QuotaCleaner = {
     
     
     
-    Services.obs.notifyObservers(null, "browser:purge-domain-data",
+    Services.obs.notifyObservers(null, "extension:purge-localStorage",
+                                 aPrincipal.URI.host);
+
+    
+    Services.obs.notifyObservers(null, "browser:purge-sessionStorage",
                                  aPrincipal.URI.host);
 
     
@@ -320,7 +324,10 @@ const QuotaCleaner = {
     
     
     
-    Services.obs.notifyObservers(null, "browser:purge-domain-data", aHost);
+    Services.obs.notifyObservers(null, "extension:purge-localStorage", aHost);
+
+    
+    Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
 
     let exceptionThrown = false;
 
@@ -423,6 +430,9 @@ const QuotaCleaner = {
   deleteAll() {
     
     Services.obs.notifyObservers(null, "extension:purge-localStorage");
+
+    
+    Services.obs.notifyObservers(null, "browser:purge-sessionStorage");
 
     
     return ServiceWorkerCleanUp.removeAll()
@@ -532,6 +542,7 @@ const HistoryCleaner = {
 const SessionHistoryCleaner = {
   deleteByHost(aHost, aOriginAttributes) {
     return new Promise(aResolve => {
+      Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
       Services.obs.notifyObservers(null, "browser:purge-session-history-for-domain", aHost);
       aResolve();
     });

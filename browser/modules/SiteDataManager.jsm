@@ -343,7 +343,8 @@ var SiteDataManager = {
       let site = this._sites.get(host);
       if (site) {
         
-        Services.obs.notifyObservers(null, "browser:purge-domain-data", host);
+        Services.obs.notifyObservers(null, "extension:purge-localStorage", host);
+        Services.obs.notifyObservers(null, "extension:purge-sessionStorage", host);
         this._removePermission(site);
         this._removeAppCache(site);
         this._removeCookies(site);
