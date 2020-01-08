@@ -525,6 +525,19 @@ struct cubeb_mixer
   {
     if (_context._in_ch_count <= _context._out_ch_count) {
       
+      if (_context._in_ch_count == 1 && _context._out_ch_count >= 2) {
+        
+        
+        
+        
+        for (uint32_t i = 0; i < frames; i++) {
+          output_buffer[0] = output_buffer[1] = *input_buffer;
+          PodZero(output_buffer + 2, _context._out_ch_count - 2);
+          output_buffer += _context._out_ch_count;
+          input_buffer++;
+        }
+        return;
+      }
       for (uint32_t i = 0; i < frames; i++) {
         PodCopy(output_buffer, input_buffer, _context._in_ch_count);
         output_buffer += _context._in_ch_count;
@@ -533,18 +546,6 @@ struct cubeb_mixer
         output_buffer += _context._out_ch_count - _context._in_ch_count;
       }
     } else {
-      if (_context._in_ch_count == 1 && _context._out_ch_count >= 2) {
-        
-        
-        
-        
-        for (uint32_t i = 0; i < frames; i++) {
-          output_buffer[0] = output_buffer[1] = *input_buffer;
-          output_buffer += _context._out_ch_count ;
-          input_buffer++;
-        }
-        return;
-      }
       for (uint32_t i = 0; i < frames; i++) {
         PodCopy(output_buffer, input_buffer, _context._out_ch_count);
         output_buffer += _context._out_ch_count;
