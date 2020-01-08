@@ -373,7 +373,7 @@ class FontInspector {
 
 
 
-  getFontProperties() {
+  async getFontProperties() {
     const properties = {};
 
     
@@ -383,6 +383,14 @@ class FontInspector {
           ? this.nodeComputedStyle[prop].value
           : "";
     }
+
+    
+    
+    
+
+    properties["line-height"] =
+      await this.convertUnits("line-height", parseFloat(properties["line-height"]),
+                              "px", "");
 
     
     for (const rule of this.ruleView.rules) {
@@ -953,7 +961,7 @@ class FontInspector {
     this.selectedRule =
       this.ruleView.rules.find(rule => rule.domRule.type === ELEMENT_STYLE);
 
-    const properties = this.getFontProperties();
+    const properties = await this.getFontProperties();
     const familiesDeclared =
       properties["font-family"].split(",")
       .map(font => font.replace(/["']+/g, "").trim());
