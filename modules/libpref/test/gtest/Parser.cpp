@@ -51,9 +51,7 @@ user_pref("string", "value");
   );
 
   
-  DEFAULT("",
-    ""
-  );
+  DEFAULT("", "");
 
   
   DEFAULT(R"(
@@ -61,6 +59,11 @@ user_pref("string", "value");
     )" "\v \t \v \f",
     ""
   );
+
+  
+  DEFAULT(R"(// blah)", "");
+  DEFAULT(R"(# blah)", "");
+  DEFAULT(R"(/* blah */)", "");
 
   
   
