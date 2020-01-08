@@ -29,6 +29,7 @@
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -55,6 +56,9 @@ using namespace dom;
 #endif  
 
 #if defined(XP_LINUX)
+
+#include "mozilla/MemoryMapping.h"
+#include "nsThread.h"
 
 #include <malloc.h>
 #include <string.h>
@@ -1398,6 +1402,108 @@ public:
 };
 NS_IMPL_ISUPPORTS(AtomTablesReporter, nsIMemoryReporter)
 
+#ifdef XP_LINUX
+class ThreadStacksReporter final : public nsIMemoryReporter
+{
+  ~ThreadStacksReporter() = default;
+
+public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
+                            nsISupports* aData, bool aAnonymize) override
+  {
+    nsTArray<MemoryMapping> mappings(1024);
+    MOZ_TRY(GetMemoryMappings(mappings));
+
+    
+    
+    
+    struct ThreadData
+    {
+      nsCString mName;
+      uint32_t mThreadId;
+      size_t mPrivateSize;
+    };
+    AutoTArray<ThreadData, 32> threads;
+
+    for (auto* thread : nsThread::Enumerate()) {
+      if (!thread->StackBase()) {
+        continue;
+      }
+
+      int idx = mappings.BinaryIndexOf(thread->StackBase());
+      if (idx < 0) {
+        continue;
+      }
+      
+      
+      
+      
+      size_t privateSize = mappings[idx].Referenced();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(mappings[idx].Size() == thread->StackSize(),
+                 "Mapping region size doesn't match stack allocation size");
+
+      threads.AppendElement(ThreadData{
+        nsCString(PR_GetThreadName(thread->GetPRThread())),
+        thread->ThreadId(),
+        
+        
+        
+        
+        
+        std::min(privateSize, thread->StackSize()),
+      });
+    }
+
+    for (auto& thread : threads) {
+      nsPrintfCString path("explicit/thread-stacks/%s (tid=%u)",
+                           thread.mName.get(), thread.mThreadId);
+
+      aHandleReport->Callback(
+          EmptyCString(), path,
+          KIND_NONHEAP, UNITS_BYTES,
+          thread.mPrivateSize,
+          NS_LITERAL_CSTRING("The sizes of thread stacks which have been "
+                             "committed to memory."),
+          aData);
+    }
+
+    return NS_OK;
+  }
+};
+NS_IMPL_ISUPPORTS(ThreadStacksReporter, nsIMemoryReporter)
+#endif
+
 #ifdef DEBUG
 
 
@@ -1558,6 +1664,10 @@ nsMemoryReporterManager::Init()
 #endif
 
   RegisterStrongReporter(new AtomTablesReporter());
+
+#ifdef XP_LINUX
+  RegisterStrongReporter(new ThreadStacksReporter());
+#endif
 
 #ifdef DEBUG
   RegisterStrongReporter(new DeadlockDetectorReporter());
