@@ -635,11 +635,6 @@ pref("media.audioipc.stack_size", 262144);
 pref("media.cubeb.sandbox", false);
 #endif
 
-#ifdef XP_LINUX
-
-pref("media.cubeb_max_input_streams", 1);
-#endif
-
 #ifdef MOZ_AV1
 pref("media.av1.enabled", false);
 #endif
@@ -2241,12 +2236,9 @@ pref("network.auth.private-browsing-sso", false);
 
 
 
-#ifdef ANDROID
+
 
 pref("network.http.throttle.enable", false);
-#else
-pref("network.http.throttle.enable", true);
-#endif
 
 
 #ifdef NIGHTLY_BUILD
@@ -4865,13 +4857,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-#if !defined(EARLY_BETA_OR_EARLIER)
 pref("network.tcp.tcp_fastopen_enable", false);
-#elif  defined(XP_WIN) || defined(XP_MACOSX)
-pref("network.tcp.tcp_fastopen_enable", true);
-#else
-pref("network.tcp.tcp_fastopen_enable", false);
-#endif
 
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
