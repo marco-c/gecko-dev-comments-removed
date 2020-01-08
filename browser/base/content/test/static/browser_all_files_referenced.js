@@ -168,7 +168,7 @@ var whitelist = [
   {file: "resource://gre/modules/ZipUtils.jsm"},
   
   {file: "chrome://global/content/bindings/toolbar.xml",
-   platforms: ["macosx"]},
+   platforms: ["macosx", "win"]},
   
   {file: "chrome://browser/content/browser.xhtml"},
   
