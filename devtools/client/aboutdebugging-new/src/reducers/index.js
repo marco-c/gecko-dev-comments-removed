@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+const { combineReducers } = require("devtools/client/shared/vendor/redux");
+const { uiReducer } = require("./ui-state");
+
+module.exports = combineReducers({
+  ui: uiReducer
+});

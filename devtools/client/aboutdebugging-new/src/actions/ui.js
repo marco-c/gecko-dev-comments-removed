@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const {
+  PAGE_SELECTED,
+} = require("../constants");
+
+function selectPage(page) {
+  return {
+    type: PAGE_SELECTED,
+    page,
+  };
+}
+
+module.exports = {
+  selectPage,
+};

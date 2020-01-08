@@ -4,22 +4,58 @@
 
 "use strict";
 
+const { connect } = require("devtools/client/shared/vendor/react-redux");
 const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+const { PAGES } = require("../constants");
 
 const RuntimePage = createFactory(require("./RuntimePage"));
 const Sidebar = createFactory(require("./Sidebar"));
 
 class App extends PureComponent {
+  static get propTypes() {
+    return {
+      
+      
+      
+      dispatch: PropTypes.func.isRequired,
+      selectedPage: PropTypes.string.isRequired,
+    };
+  }
+
+  getSelectedPageComponent() {
+    switch (this.props.selectedPage) {
+      case PAGES.THIS_FIREFOX:
+        return RuntimePage();
+      default:
+        
+        return null;
+    }
+  }
+
   render() {
+    const { dispatch, selectedPage } = this.props;
+
     return dom.div(
       {
         className: "app",
       },
-      Sidebar(),
-      RuntimePage(),
+      Sidebar({ dispatch, selectedPage }),
+      this.getSelectedPageComponent(),
     );
   }
 }
 
-module.exports = App;
+const mapStateToProps = state => {
+  return {
+    selectedPage: state.ui.selectedPage,
+  };
+};
+
+const mapDispatchToProps = dispatch => ({
+  dispatch,
+});
+
+module.exports = connect(mapStateToProps, mapDispatchToProps)(App);
