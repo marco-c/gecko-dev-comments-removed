@@ -1377,6 +1377,7 @@ class HTMLMediaElement::ErrorSink
 public:
   explicit ErrorSink(HTMLMediaElement* aOwner)
     : mOwner(aOwner)
+    , mSrcIsUnsupportedTypeMedia(false)
   {
     MOZ_ASSERT(mOwner);
   }
@@ -1395,29 +1396,59 @@ public:
       return;
     }
 
-
-    mError = new MediaError(mOwner, aErrorCode, aErrorDetails);
-    mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("error"));
-    if (mOwner->ReadyState() == HAVE_NOTHING &&
-        aErrorCode == MEDIA_ERR_ABORTED) {
+    
+    
+    if (CanOwnerPlayUnsupportedTypeMedia() &&
+        aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
       
       
-      mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("abort"));
-      mOwner->ChangeNetworkState(NETWORK_EMPTY);
-      mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("emptied"));
-      if (mOwner->mDecoder) {
-        mOwner->ShutdownDecoder();
-      }
-    } else if (aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+      mSrcIsUnsupportedTypeMedia = true;
       mOwner->ChangeNetworkState(NETWORK_NO_SOURCE);
+      MaybeOpenUnsupportedMediaForOwner();
     } else {
-      mOwner->ChangeNetworkState(NETWORK_IDLE);
+      mError = new MediaError(mOwner, aErrorCode, aErrorDetails);
+      mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("error"));
+      if (mOwner->ReadyState() == HAVE_NOTHING &&
+          aErrorCode == MEDIA_ERR_ABORTED) {
+        
+        
+        mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("abort"));
+        mOwner->ChangeNetworkState(NETWORK_EMPTY);
+        mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("emptied"));
+        if (mOwner->mDecoder) {
+          mOwner->ShutdownDecoder();
+        }
+      } else if (aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        mOwner->ChangeNetworkState(NETWORK_NO_SOURCE);
+      } else {
+        mOwner->ChangeNetworkState(NETWORK_IDLE);
+      }
     }
   }
 
   void ResetError()
   {
     mError = nullptr;
+    mSrcIsUnsupportedTypeMedia = false;
+  }
+
+  void MaybeOpenUnsupportedMediaForOwner() const
+  {
+    
+    if (!mSrcIsUnsupportedTypeMedia || !CanOwnerPlayUnsupportedTypeMedia()) {
+      return;
+    }
+
+    
+    if (mOwner->Paused()) {
+      return;
+    }
+
+    nsContentUtils::DispatchTrustedEvent(
+      mOwner->OwnerDoc(),
+      static_cast<nsIContent*>(mOwner),
+      NS_LITERAL_STRING("OpenMediaWithExternalApp"),
+      CanBubble::eYes, Cancelable::eYes);
   }
 
   RefPtr<MediaError> mError;
@@ -1430,9 +1461,19 @@ private:
             aErrorCode == MEDIA_ERR_SRC_NOT_SUPPORTED);
   }
 
+  bool CanOwnerPlayUnsupportedTypeMedia() const
+  {
+#if defined(MOZ_WIDGET_ANDROID)
+    
+    return Preferences::GetBool("media.openUnsupportedTypeWithExternalApp");
+#endif
+    return false;
+  }
+
   
   
   HTMLMediaElement* mOwner;
+  bool mSrcIsUnsupportedTypeMedia;
 };
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLMediaElement)
@@ -6977,6 +7018,12 @@ HTMLMediaElement::GetError() const
 }
 
 void
+HTMLMediaElement::OpenUnsupportedMediaWithExternalAppIfNeeded() const
+{
+  mErrorSink->MaybeOpenUnsupportedMediaForOwner();
+}
+
+void
 HTMLMediaElement::GetCurrentSpec(nsCString& aString)
 {
   if (mLoadingSrc) {
@@ -7920,6 +7967,7 @@ HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
 void
 HTMLMediaElement::UpdateCustomPolicyAfterPlayed()
 {
+  OpenUnsupportedMediaWithExternalAppIfNeeded();
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyPlayStateChanged();
   }

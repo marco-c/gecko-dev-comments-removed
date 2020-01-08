@@ -1312,6 +1312,10 @@ protected:
 
   
   
+  void OpenUnsupportedMediaWithExternalAppIfNeeded() const;
+
+  
+  
   nsTArray<RefPtr<PlayPromise>> TakePendingPlayPromises();
 
   
