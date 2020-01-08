@@ -8,11 +8,24 @@ ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 let gPrefArray;
 
 function onLoad() {
-  gPrefArray = Services.prefs.getChildList("").map(name => ({
-    name,
-    value: Preferences.get(name),
-    hasUserValue: Services.prefs.prefHasUserValue(name),
-  }));
+  gPrefArray = Services.prefs.getChildList("").map(function(name) {
+    let pref = {
+      name,
+      value: Preferences.get(name),
+      hasUserValue: Services.prefs.prefHasUserValue(name),
+    };
+    
+    
+    
+    try {
+      if (!pref.hasUserValue && /^chrome:\/\/.+\/locale\/.+\.properties/.test(pref.value)) {
+        pref.value = Services.prefs.getComplexValue(name, Ci.nsIPrefLocalizedString).data;
+      }
+    } catch (ex) {
+      pref.value = "";
+    }
+    return pref;
+  });
 
   gPrefArray.sort((a, b) => a.name > b.name);
 

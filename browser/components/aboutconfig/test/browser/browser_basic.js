@@ -3,6 +3,14 @@
 
 const PAGE_URL = "chrome://browser/content/aboutconfig/aboutconfig.html";
 
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["random.user.pref", "chrome://test/locale/testing.properties"],
+    ],
+  });
+});
+
 add_task(async function test_load_title() {
   await BrowserTestUtils.withNewTab({
     gBrowser,
@@ -27,9 +35,24 @@ add_task(async function test_load_settings() {
       function findPref(name) {
         return list.some(e => e.textContent.trim().startsWith(name + " "));
       }
+
+      
       Assert.ok(findPref("plugins.testmode"));
       Assert.ok(findPref("dom.vr.enabled"));
       Assert.ok(findPref("accessibility.AOM.enabled"));
+
+      function containsLocalizedValue(value) {
+        return list.some(e => e.textContent.trim() == value);
+      }
+      
+      Assert.ok(containsLocalizedValue("font.language.group || Default || String || x-western"));
+      Assert.ok(containsLocalizedValue("intl.ellipsis || Default || String || \u2026"));
+      Assert.ok(containsLocalizedValue("gecko.handlerService.schemes.mailto.1.uriTemplate || Default || String || https://mail.google.com/mail/?extsrc=mailto&url=%s"));
+
+      
+      Assert.ok(containsLocalizedValue("random.user.pref || Modified || String || chrome://test/locale/testing.properties"));
+      
+      Assert.ok(containsLocalizedValue("gecko.handlerService.schemes.irc.1.name || Default || String ||"));
     });
   });
 });
