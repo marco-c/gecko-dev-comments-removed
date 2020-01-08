@@ -40,9 +40,7 @@ public:
   ~AutoChangePointNotifier()
   {
     mPoint->Element()->DidChangePointList(mEmptyOrOldValue);
-    
-    
-    if (mPoint->mList && mPoint->mList->AttrIsAnimating()) {
+    if (mPoint->mList->AttrIsAnimating()) {
       mPoint->Element()->AnimationNeedsResample();
     }
   }
