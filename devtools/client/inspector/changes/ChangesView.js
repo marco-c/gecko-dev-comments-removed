@@ -49,21 +49,16 @@ class ChangesView {
 
     
     
-    
-    
-    
-    this.syncChangesToServer();
-  }
-
-  async syncChangesToServer() {
-    
-    this.onClearChanges();
-
-    
-    const changes = await this.changesFront.allChanges();
-    changes.forEach((change) => {
-      this.onAddChange(change);
-    });
+    this.changesFront.allChanges()
+      .then(changes => {
+        changes.forEach(change => {
+          this.onAddChange(change);
+        });
+      })
+      .catch(err => {
+        
+        
+      });
   }
 
   onAddChange(change) {
