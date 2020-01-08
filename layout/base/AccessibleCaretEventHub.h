@@ -4,8 +4,8 @@
 
 
 
-#ifndef AccessibleCaretEventHub_h
-#define AccessibleCaretEventHub_h
+#ifndef mozilla_AccessibleCaretEventHub_h
+#define mozilla_AccessibleCaretEventHub_h
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/UniquePtr.h"
@@ -15,7 +15,6 @@
 #include "nsIFrame.h"
 #include "nsIReflowObserver.h"
 #include "nsIScrollObserver.h"
-#include "nsISelectionListener.h"
 #include "nsPoint.h"
 #include "mozilla/RefPtr.h"
 #include "nsWeakReference.h"
@@ -64,7 +63,6 @@ class WidgetTouchEvent;
 class AccessibleCaretEventHub
   : public nsIReflowObserver
   , public nsIScrollObserver
-  , public nsISelectionListener
   , public nsSupportsWeakReference
 {
 public:
@@ -82,21 +80,15 @@ public:
   NS_DECL_ISUPPORTS
 
   
-  MOZ_CAN_RUN_SCRIPT
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Reflow(DOMHighResTimeStamp start,
                     DOMHighResTimeStamp end) final;
-  MOZ_CAN_RUN_SCRIPT
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD ReflowInterruptible(DOMHighResTimeStamp start,
                                  DOMHighResTimeStamp end) final;
 
   
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD NotifySelectionChanged(nsIDocument* doc,
-                                    dom::Selection* sel,
-                                    int16_t reason) final;
-
-  
-  MOZ_CAN_RUN_SCRIPT
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual void ScrollPositionChanged() override;
   MOZ_CAN_RUN_SCRIPT
   virtual void AsyncPanZoomStarted() override;
@@ -106,6 +98,11 @@ public:
   
   class State;
   State* GetState() const;
+
+  MOZ_CAN_RUN_SCRIPT
+  void OnSelectionChange(nsIDocument* aDocument,
+                         dom::Selection* aSelection,
+                         int16_t aReason);
 
 protected:
   virtual ~AccessibleCaretEventHub() = default;

@@ -239,7 +239,7 @@ public:
 
 
 
-  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult HandleClick(nsIContent *aNewFocus,
                        uint32_t aContentOffset,
                        uint32_t aContentEndOffset,
@@ -360,7 +360,7 @@ public:
 
 
 
-  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetDragState(bool aState);
 
   
@@ -524,8 +524,7 @@ public:
   
 
 
-  
-  nsresult SelectAll();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SelectAll();
 
   
 
@@ -573,8 +572,7 @@ public:
   nsIContent* GetLimiter() const { return mLimiter; }
 
   nsIContent* GetAncestorLimiter() const { return mAncestorLimiter; }
-  
-  void SetAncestorLimiter(nsIContent *aLimiter);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetAncestorLimiter(nsIContent* aLimiter);
 
   
 
@@ -638,6 +636,8 @@ public:
   nsFrameSelection();
 
   void StartBatchChanges();
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void EndBatchChanges(int16_t aReason = nsISelectionListener::NO_REASON);
 
   
@@ -651,6 +651,7 @@ public:
 private:
   ~nsFrameSelection();
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult TakeFocus(nsIContent *aNewFocus,
                      uint32_t aContentOffset,
                      uint32_t aContentEndOffset,
@@ -706,6 +707,7 @@ private:
     eVisual,
     eUsePrefStyle
   };
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult     MoveCaret(nsDirection aDirection, bool aContinueSelection,
                          nsSelectionAmount aAmount,
                          CaretMovementStyle aMovementStyle);
@@ -720,6 +722,7 @@ private:
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult     NotifySelectionListeners(mozilla::SelectionType aSelectionType);
   
   

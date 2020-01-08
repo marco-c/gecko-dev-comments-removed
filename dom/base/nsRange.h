@@ -460,7 +460,7 @@ public:
   
 
 
-  void NotifySelectionListenersAfterRangeSet();
+  MOZ_CAN_RUN_SCRIPT void NotifySelectionListenersAfterRangeSet();
 
   typedef nsTHashtable<nsPtrHashKey<nsRange> > RangeHashTable;
 protected:
@@ -488,6 +488,7 @@ protected:
   
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void DoSetRange(const RawRangeBoundary& lowerBound,
                   const RawRangeBoundary& upperBound,
                   nsINode* aRoot, bool aNotInsertedYet = false);

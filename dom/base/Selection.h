@@ -9,6 +9,7 @@
 
 #include "nsIWeakReference.h"
 
+#include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/TextRange.h"
@@ -94,6 +95,26 @@ public:
     mNotifyAutoCopy = true;
   }
 
+  
+
+
+
+  void MaybeNotifyAccessibleCaretEventHub(nsIPresShell* aPresShell)
+  {
+    if (!mAccessibleCaretEventHub && aPresShell) {
+      mAccessibleCaretEventHub = aPresShell->GetAccessibleCaretEventHub();
+    }
+  }
+
+  
+
+
+
+  void StopNotifyingAccessibleCaretEventHub()
+  {
+    mAccessibleCaretEventHub = nullptr;
+  }
+
   nsIDocument* GetParentObject() const;
   DocGroup* GetDocGroup() const;
 
@@ -160,7 +181,10 @@ public:
     Collapse(aPoint, result);
     return result.StealNSResult();
   }
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult      Extend(nsINode* aContainer, int32_t aOffset);
+
   nsRange*      GetRangeAt(int32_t aIndex) const;
 
   
@@ -259,6 +283,7 @@ public:
   void CollapseToStartJS(mozilla::ErrorResult& aRv);
   void CollapseToEndJS(mozilla::ErrorResult& aRv);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void ExtendJS(nsINode& aContainer, uint32_t aOffset,
                 mozilla::ErrorResult& aRv);
 
@@ -278,8 +303,11 @@ public:
 
   nsRange* GetRangeAt(uint32_t aIndex, mozilla::ErrorResult& aRv);
   void AddRangeJS(nsRange& aRange, mozilla::ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void RemoveRange(nsRange& aRange, mozilla::ErrorResult& aRv);
-  void RemoveAllRanges(mozilla::ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RemoveAllRanges(mozilla::ErrorResult& aRv);
 
   
 
@@ -386,13 +414,17 @@ public:
   {
     Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
   }
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void Collapse(const RawRangeBoundary& aPoint, ErrorResult& aRv);
+
   
 
 
 
 
   void CollapseToStart(mozilla::ErrorResult& aRv);
+
   
 
 
@@ -409,13 +441,19 @@ public:
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void Extend(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void AddRange(nsRange& aRange, mozilla::ErrorResult& aRv);
+
   
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SelectAllChildren(nsINode& aNode, mozilla::ErrorResult& aRv);
+
   void SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
                         nsINode& aFocusNode, uint32_t aFocusOffset,
                         mozilla::ErrorResult& aRv);
@@ -489,6 +527,7 @@ private:
   
   friend class ::nsCopySupport;
   friend class ::nsHTMLCopyEncoder;
+  MOZ_CAN_RUN_SCRIPT
   void AddRangeInternal(nsRange& aRange, nsIDocument* aDocument, ErrorResult&);
 
   
@@ -513,8 +552,8 @@ public:
 
   SelectionCustomColors* GetCustomColors() const { return mCustomColors.get(); }
 
-  nsresult NotifySelectionListeners(bool aCalledByJS);
-  nsresult NotifySelectionListeners();
+  MOZ_CAN_RUN_SCRIPT nsresult NotifySelectionListeners(bool aCalledByJS);
+  MOZ_CAN_RUN_SCRIPT nsresult NotifySelectionListeners();
 
   friend struct AutoUserInitiated;
   struct MOZ_RAII AutoUserInitiated
@@ -678,6 +717,7 @@ private:
   
   RefPtr<nsRange> mCachedRange;
   RefPtr<nsFrameSelection> mFrameSelection;
+  RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
   RefPtr<nsAutoScrollTimer> mAutoScrollTimer;
   nsTArray<nsCOMPtr<nsISelectionListener>> mSelectionListeners;
   nsRevocableEventPtr<ScrollSelectionIntoViewEvent> mScrollEvent;
