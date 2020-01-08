@@ -212,7 +212,6 @@ HTMLEditor::InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
   
-  
 
   int32_t newCellIndex;
   switch (aInsertPosition) {
@@ -446,7 +445,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
   }
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
-  int32_t    actualColSpan =    cellDataAtSelection.mEffectiveColSpan;
   
 
   ErrorResult error;
@@ -468,13 +466,14 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
       break;
     case InsertPosition::eAfterSelectedCell:
       
-      startColIndex += actualColSpan;
+      startColIndex += cellDataAtSelection.mEffectiveColSpan;
 
       
       
       
       if (!cellDataAtSelection.mColSpan) {
-        SetColSpan(cellDataAtSelection.mElement, actualColSpan);
+        SetColSpan(cellDataAtSelection.mElement,
+                   cellDataAtSelection.mEffectiveColSpan);
       }
       break;
     default:
@@ -511,7 +510,6 @@ HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
         return NS_ERROR_FAILURE;
       }
 
-      
       
 
       
@@ -641,7 +639,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
   MOZ_ASSERT(curCell == cellDataAtSelection.mElement);
 
   
-  
 
   ErrorResult error;
   TableSize tableSize(*this, *table, error);
@@ -695,7 +692,6 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         break; 
       }
 
-                 actualColSpan =              cellData.mEffectiveColSpan;
       
 
       
@@ -703,6 +699,8 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         actualColSpan = 1;
         continue;
       }
+
+      actualColSpan = cellData.mEffectiveColSpan;
 
       if (cellData.IsSpannedFromOtherRow()) {
         
@@ -736,8 +734,9 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         break; 
       }
 
-                 actualColSpan =              cellData.mEffectiveColSpan;
       
+
+     actualColSpan = cellData.mEffectiveColSpan;
 
       if (!cellData.mRowSpan) {
         MOZ_ASSERT(cellsInRow >= actualColSpan);
@@ -1386,7 +1385,6 @@ HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
     }
 
     
-    
 
     
     MOZ_ASSERT(cellData.mColSpan >= 0);
@@ -1657,7 +1655,6 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    actualColSpan =       cellData.mEffectiveColSpan;
     
 
     
@@ -1703,7 +1700,7 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
       }
     }
     
-    columnIndex += actualColSpan;
+    columnIndex += cellData.mEffectiveColSpan;
   }
 
   
@@ -1876,7 +1873,6 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
         return NS_ERROR_FAILURE;
       }
 
-                 actualColSpan =       cellData.mEffectiveColSpan;
       bool       isSelected =          cellData.mIsSelected;
 
       
@@ -1889,6 +1885,8 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
           break;
         }
       }
+
+      actualColSpan = cellData.mEffectiveColSpan;
     }
   }
   
@@ -1945,7 +1943,6 @@ HTMLEditor::SelectAllTableCells()
         break;
       }
 
-                 actualColSpan =       cellData.mEffectiveColSpan;
       
 
       
@@ -1959,6 +1956,8 @@ HTMLEditor::SelectAllTableCells()
         }
         cellSelected = true;
       }
+
+      actualColSpan = cellData.mEffectiveColSpan;
     }
   }
   
@@ -2033,7 +2032,6 @@ HTMLEditor::SelectTableRow()
       break;
     }
 
-               actualColSpan =       cellData.mEffectiveColSpan;
     
 
     
@@ -2047,6 +2045,8 @@ HTMLEditor::SelectTableRow()
       }
       cellSelected = true;
     }
+
+    actualColSpan = cellData.mEffectiveColSpan;
   }
   
   if (!cellSelected) {
@@ -2116,7 +2116,6 @@ HTMLEditor::SelectTableColumn()
       break;
     }
 
-    
     
 
     
@@ -2254,11 +2253,11 @@ HTMLEditor::SplitCellIntoColumns(Element* aTable,
     return NS_ERROR_FAILURE;
   }
 
-  int32_t    actualColSpan =       cellData.mEffectiveColSpan;
   
 
   
-  if (actualColSpan <= 1 || (aColSpanLeft + aColSpanRight) > actualColSpan) {
+  if (cellData.mEffectiveColSpan <= 1 ||
+      aColSpanLeft + aColSpanRight > cellData.mEffectiveColSpan) {
     return NS_OK;
   }
 
@@ -2312,7 +2311,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
     return NS_ERROR_FAILURE;
   }
 
-  int32_t    actualColSpan =       cellData.mEffectiveColSpan;
   
 
   
@@ -2347,7 +2345,6 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       return NS_ERROR_FAILURE;
     }
 
-               actualColSpan2 = cellDataAtInsertionPoint.mEffectiveColSpan;
     
 
     
@@ -2365,8 +2362,9 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       }
       
       
-      if (cellDataAtInsertionPoint.mFirst.mColumn + actualColSpan2 ==
-            cellData.mFirst.mColumn) {
+      if (cellDataAtInsertionPoint.mFirst.mColumn +
+            cellDataAtInsertionPoint.mEffectiveColSpan ==
+              cellData.mFirst.mColumn) {
         break;
       }
       
@@ -2379,6 +2377,8 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       }
       lastCellFound = std::move(cellDataAtInsertionPoint.mElement);
     }
+
+    actualColSpan2 = cellDataAtInsertionPoint.mEffectiveColSpan;
   }
 
   if (!cellElementAtInsertionPoint && lastCellFound) {
@@ -2399,7 +2399,8 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
   
   
   RefPtr<Element> newCell;
-  rv = InsertCell(cellElementAtInsertionPoint, aRowSpanBelow, actualColSpan,
+  rv = InsertCell(cellElementAtInsertionPoint,
+                  aRowSpanBelow, cellData.mEffectiveColSpan,
                   insertAfter, false, getter_AddRefs(newCell));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -2568,7 +2569,6 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           return NS_ERROR_FAILURE;
         }
 
-                   actualColSpan2 =          cellData.mEffectiveColSpan;
         bool       isSelected2 =             cellData.mIsSelected;
 
         if (isSelected2) {
@@ -2589,7 +2589,8 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             break;
           }
           
-          lastColInRow = cellData.mCurrent.mColumn + actualColSpan2 - 1;
+          lastColInRow =
+            cellData.mCurrent.mColumn + cellData.mEffectiveColSpan - 1;
           cellFoundInRow = true;
         } else if (cellFoundInRow) {
           
@@ -2603,6 +2604,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           
           break;
         }
+        actualColSpan2 = cellData.mEffectiveColSpan;
       } 
 
       
@@ -2646,11 +2648,10 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           return NS_ERROR_FAILURE;
         }
 
-                   actualColSpan2 =       cellData.mEffectiveColSpan;
         bool       isSelected2 =          cellData.mIsSelected;
 
         
-        if (!actualColSpan2) {
+        if (!cellData.mEffectiveColSpan) {
           break;
         }
 
@@ -2667,17 +2668,18 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             NS_ASSERTION(!cellData.IsSpannedFromOtherRow(),
                          "JoinTableCells: StartRowIndex is in row above");
 
-            if (actualColSpan2 > 1) {
+            if (cellData.mEffectiveColSpan > 1) {
               
               
               int32_t extraColSpan =
-                cellData.mFirst.mColumn + actualColSpan2 - (lastColIndex + 1);
+                cellData.mFirst.mColumn + cellData.mEffectiveColSpan -
+                  (lastColIndex + 1);
               if ( extraColSpan > 0) {
-                rv = SplitCellIntoColumns(table,
-                                          cellData.mFirst.mRow,
-                                          cellData.mFirst.mColumn,
-                                          actualColSpan2 - extraColSpan,
-                                          extraColSpan, nullptr);
+                rv = SplitCellIntoColumns(
+                       table,
+                       cellData.mFirst.mRow, cellData.mFirst.mColumn,
+                       cellData.mEffectiveColSpan - extraColSpan,
+                       extraColSpan, nullptr);
                 if (NS_WARN_IF(NS_FAILED(rv))) {
                   return rv;
                 }
@@ -2701,6 +2703,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             }
           }
         }
+        actualColSpan2 = cellData.mEffectiveColSpan;
       }
     }
 
@@ -2764,19 +2767,18 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    actualColSpan =             leftCellData.mEffectiveColSpan;
     
 
     
-    CellData rightCellData(*this, *table,
-                           leftCellData.mFirst.mRow,
-                           leftCellData.mFirst.mColumn + actualColSpan,
-                           ignoredError);
+    CellData rightCellData(
+               *this, *table,
+               leftCellData.mFirst.mRow,
+               leftCellData.mFirst.mColumn + leftCellData.mEffectiveColSpan,
+               ignoredError);
     if (NS_WARN_IF(rightCellData.FailedOrNotFound())) {
       return NS_ERROR_FAILURE;
     }
 
-    int32_t    actualColSpan2 =       rightCellData.mEffectiveColSpan;
     
 
     
@@ -2837,7 +2839,9 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     }
 
     
-    rv = SetColSpan(leftCellData.mElement, actualColSpan+actualColSpan2);
+    rv = SetColSpan(leftCellData.mElement,
+                    leftCellData.mEffectiveColSpan +
+                      rightCellData.mEffectiveColSpan);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -2943,7 +2947,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       return NS_ERROR_FAILURE;
     }
 
-               actualColSpan =       cellData.mEffectiveColSpan;
     
 
     
@@ -2957,7 +2960,8 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
         (cellData.mRowSpan < minRowSpan || minRowSpan == -1)) {
       minRowSpan = cellData.mRowSpan;
     }
-    NS_ASSERTION((actualColSpan > 0),"ActualColSpan = 0 in FixBadRowSpan");
+    MOZ_ASSERT(cellData.mEffectiveColSpan > 0);
+    actualColSpan = cellData.mEffectiveColSpan;
   }
   if (minRowSpan > 1) {
     
@@ -2971,7 +2975,6 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
         return NS_ERROR_FAILURE;
       }
 
-                 actualColSpan =       cellData.mEffectiveColSpan;
       
 
       
@@ -2985,7 +2988,8 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
           return rv;
         }
       }
-      NS_ASSERTION((actualColSpan > 0),"ActualColSpan = 0 in FixBadRowSpan");
+      MOZ_ASSERT(cellData.mEffectiveColSpan > 0);
+      actualColSpan = cellData.mEffectiveColSpan;
     }
   }
   tableSize.Update(*this, *aTable, error);
@@ -3027,7 +3031,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
     }
 
     
-    
 
     
     
@@ -3054,7 +3057,6 @@ HTMLEditor::FixBadColSpan(Element* aTable,
         return NS_ERROR_FAILURE;
       }
 
-      
       
 
       
@@ -3165,7 +3167,6 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
         return NS_ERROR_FAILURE;
       }
 
-      
       
 
       if (cellData.mElement) {
@@ -3315,7 +3316,6 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
       break;
     }
 
-    int32_t    actualColSpan =              cellData.mEffectiveColSpan;
     
 
     if (cellData.mElement) {
@@ -3324,7 +3324,7 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
         numberOfCells++;
       }
       
-      columnIndex += actualColSpan;
+      columnIndex += cellData.mEffectiveColSpan;
     } else {
       columnIndex++;
     }
@@ -4297,7 +4297,6 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
       return false;
     }
 
-               actualColSpan =       cellData.mEffectiveColSpan;
     bool       isSelected =          cellData.mIsSelected;
 
     
@@ -4315,7 +4314,8 @@ HTMLEditor::AllCellsInRowSelected(Element* aTable,
       return false;
     }
 
-    MOZ_ASSERT(actualColSpan > 0);
+    MOZ_ASSERT(cellData.mEffectiveColSpan > 0);
+    actualColSpan = cellData.mEffectiveColSpan;
   }
   return true;
 }
@@ -4338,7 +4338,6 @@ HTMLEditor::AllCellsInColumnSelected(Element* aTable,
       return false;
     }
 
-    
     bool       isSelected =          cellData.mIsSelected;
 
     
