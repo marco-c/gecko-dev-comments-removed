@@ -139,8 +139,6 @@ public:
   nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
                    bool aOriginalSrc);
 
-  void AddProcessChangeBlockingPromise(mozilla::dom::Promise& aPromise, mozilla::ErrorResult& aRv);
-
   
 
 
@@ -165,8 +163,6 @@ public:
                           mozilla::ErrorResult& aRv);
 
   void RequestNotifyAfterRemotePaint();
-
-  void RequestFrameLoaderClose(mozilla::ErrorResult& aRv);
 
   void RequestUpdatePosition(mozilla::ErrorResult& aRv);
 
@@ -443,14 +439,6 @@ private:
   nsresult
   PopulateUserContextIdFromAttribute(mozilla::OriginAttributes& aAttr);
 
-  
-  
-  bool SwapBrowsersAndNotify(nsFrameLoader* aOther);
-
-  
-  
-  already_AddRefed<mozilla::dom::Promise> FireWillChangeProcessEvent();
-
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
@@ -481,10 +469,6 @@ private:
 
   
   mozilla::ScreenIntSize mLazySize;
-
-  
-  
-  nsTArray<RefPtr<mozilla::dom::Promise>>* mBrowserChangingProcessBlockers;
 
   RefPtr<mozilla::dom::ParentSHistory> mParentSHistory;
 
