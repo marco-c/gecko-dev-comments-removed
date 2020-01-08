@@ -535,12 +535,6 @@ Marionette.prototype = {
   
   _xpcom_factory: MarionetteFactory,
 
-  _xpcom_categories: [
-    {category: "command-line-handler", entry: "b-marionette"},
-    {category: "profile-after-change", service: true},
-  ],
-  
-
   helpInfo: "  --marionette       Enable remote control server.\n",
 };
 
