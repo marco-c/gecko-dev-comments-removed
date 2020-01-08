@@ -8,11 +8,52 @@ use euclid::{Point2D, Rect, Size2D, TypedPoint2D, TypedRect, TypedSize2D, Vector
 use euclid::{TypedTransform2D, TypedTransform3D, TypedVector2D, TypedScale};
 use num_traits::Zero;
 use plane_split::{Clipper, Polygon};
-use std::{i32, f32, fmt};
+use std::{i32, f32, fmt, ptr};
 use std::borrow::Cow;
 
 
+
 const NEARLY_ZERO: f32 = 1.0 / 4096.0;
+
+
+
+#[must_use]
+pub struct Allocation<'a, T: 'a> {
+    vec: &'a mut Vec<T>,
+    index: usize,
+}
+
+impl<'a, T> Allocation<'a, T> {
+    
+    
+    
+    #[inline(always)]
+    pub fn init(self, value: T) -> usize {
+        unsafe {
+            ptr::write(self.vec.as_mut_ptr().add(self.index), value);
+            self.vec.set_len(self.index + 1);
+        }
+        self.index
+    }
+}
+
+pub trait VecHelper<T> {
+    fn alloc(&mut self) -> Allocation<T>;
+}
+
+impl<T> VecHelper<T> for Vec<T> {
+    fn alloc(&mut self) -> Allocation<T> {
+        let index = self.len();
+        if self.capacity() == index {
+            self.reserve(1);
+        }
+        Allocation {
+            vec: self,
+            index,
+        }
+    }
+}
+
 
 
 

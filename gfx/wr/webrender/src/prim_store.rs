@@ -2587,10 +2587,6 @@ pub struct PrimitiveStore {
 
     
     pub opacity_bindings: OpacityBindingStorage,
-
-    
-    
-    pub prim_count: usize,
 }
 
 impl PrimitiveStore {
@@ -2600,7 +2596,6 @@ impl PrimitiveStore {
             text_runs: TextRunStorage::new(stats.text_run_count),
             images: ImageInstanceStorage::new(stats.image_count),
             opacity_bindings: OpacityBindingStorage::new(stats.opacity_binding_count),
-            prim_count: 0,
         }
     }
 
@@ -2626,14 +2621,12 @@ impl PrimitiveStore {
         }
     }
 
-    pub fn create_picture(
-        &mut self,
-        prim: PicturePrimitive,
-    ) -> PictureIndex {
-        let index = PictureIndex(self.pictures.len());
-        self.prim_count += prim.prim_list.prim_instances.len();
-        self.pictures.push(prim);
-        index
+    
+    pub fn prim_count(&self) -> usize {
+        self.pictures
+            .iter()
+            .map(|p| p.prim_list.prim_instances.len())
+            .sum()
     }
 
     
