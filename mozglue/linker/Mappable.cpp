@@ -284,7 +284,7 @@ public:
                 length, str, buf);
       return new _MappableBuffer(fd.forget(), buf, length);
     }
-#elif defined(__i386__) || defined(__aarch64__)
+#elif defined(__i386__) || defined(__x86_64__) || defined(__aarch64__)
     
     size_t anon_mapping_length = length + PAGE_SIZE;
     void *buf = ::mmap(nullptr, anon_mapping_length, PROT_NONE,
@@ -350,7 +350,7 @@ public:
     
 #if defined(__arm__)
     ::munmap(AlignedEndPtr(*this + GetLength(), PAGE_SIZE), PAGE_SIZE);
-#elif defined(__i386__) || defined(__aarch64__)
+#elif defined(__i386__) || defined(__x86_64__) || defined(__aarch64__)
     ::munmap(*this - PAGE_SIZE, GetLength() + PAGE_SIZE);
 #else
 #error need to add a case for your CPU
