@@ -54,8 +54,6 @@ public:
 
 protected:
   ~PaymentRequestUpdateEvent();
-
-private:
   
   bool mWaitForUpdate;
   RefPtr<PaymentRequest> mRequest;
