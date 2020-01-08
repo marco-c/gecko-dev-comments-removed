@@ -621,7 +621,7 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 
   @media (-moz-gtk-csd-transparent-background) {
-    :root[tabsintitlebar]:not(:-moz-lwtheme) {
+    :root[tabsintitlebar][sizemode="normal"]:not(:-moz-lwtheme) {
       background-color: transparent;
       -moz-appearance: none;
     }
